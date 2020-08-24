@@ -6,6 +6,8 @@ else()
   cmake_policy(VERSION 3.12)
 endif()
 
+cmake_policy(SET CMP0057 NEW)
+
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
 set(BOUT_FULL_VERSION 5.0.0-alpha)
@@ -16,6 +18,50 @@ project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
   VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
+
+  
+
+#------------------------------------------------------------------------------
+# Initialize BLT build system
+#------------------------------------------------------------------------------
+if (DEFINED BLT_SOURCE_DIR)
+
+    # Support a shared BLT outside of the repository if given a BLT_SOURCE_DIR
+    if (NOT EXISTS ${BLT_SOURCE_DIR}/SetupBLT.cmake)
+        message(FATAL_ERROR "Cannot find SetupBLT.cmake in [${BLT_SOURCE_DIR}]")
+    endif()
+
+else()
+
+    # Use internal 'blt' submodule path if BLT_SOURCE_DIR not provided
+    set(BLT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/blt" CACHE PATH "")
+    if (NOT EXISTS ${BLT_SOURCE_DIR}/SetupBLT.cmake)
+         message(FATAL_ERROR "The BLT submodule is not present. \
+                  If in the git repository, please run the following commands:\n \
+                  git submodule init\n \
+                  git submodule update")
+    endif()
+
+endif()
+
+message(STATUS "BLT : ${BLT_SOURCE_DIR} ")
+# BLT Options need to be set in the CACHE
+set(ENABLE_FORTRAN Off CACHE STRING "Enable Fortran")
+set(ENABLE_OPENMP On CACHE STRING "Enable OpenMP")
+set(ENABLE_CUDA Off CACHE STRING "Enable CUDA")
+set(ENABLE_MPI On CACHE STRING "Enable MPI.")
+set(ENABLE_TESTS On CACHE STRING "Enable Tests.")
+set(ENABLE_DOCS Off CACHE STRING "Enable Docs.")
+set(BLT_CXX_STD "c++14" CACHE STRING "Version of C++ standard")
+set(gtest_disable_pthreads ON CACHE STRING "")
+option(ENABLE_UMPIRE "Enable UMPIRE memory management" Off)
+option(ENABLE_RAJA "Enable RAJA" Off)
+message(STATUS "Enable Test Flag Top: ${ENABLE_TESTS} " )
+
+include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
+include_directories(${CMAKE_BINARY_DIR}/include)
+include(cmake/CMakeBasics.cmake)
+
 
 # This might not be entirely sensible, but helps CMake to find the
 # correct MPI, workaround for https://gitlab.kitware.com/cmake/cmake/issues/18895
@@ -29,7 +75,8 @@ option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding goo
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" ON)
+# reconcile submodules only after FMT cuda bug fixed (cuda 10.2 ok?)
+option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" On)
 # Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
 # Update submodules as needed
 function(bout_update_submodules)
@@ -48,7 +95,7 @@ function(bout_update_submodules)
   endif()
 endfunction()
 
-set(BOUT_SOURCES
+set(BOUT_HEADERS
   ./include/boundary_factory.hxx
   ./include/boundary_op.hxx
   ./include/boundary_region.hxx
@@ -147,6 +194,54 @@ set(BOUT_SOURCES
   ./include/vector2d.hxx
   ./include/vector3d.hxx
   ./include/where.hxx
+  ./src/field/fieldgenerators.hxx
+  ./src/fileio/formatfactory.hxx
+  ./src/fileio/impls/emptyformat.hxx
+  ./src/fileio/impls/hdf5/h5_format.hxx
+  ./src/fileio/impls/netcdf/nc_format.hxx
+  ./src/fileio/impls/netcdf4/ncxx4.hxx
+  ./src/fileio/impls/pnetcdf/pnetcdf.hxx
+  ./src/invert/laplace/impls/cyclic/cyclic_laplace.hxx
+  ./src/invert/laplace/impls/naulin/naulin_laplace.hxx
+  ./src/invert/laplace/impls/pdd/pdd.hxx
+  ./src/invert/laplace/impls/petsc/petsc_laplace.hxx
+  ./src/invert/laplace/impls/petsc3damg/petsc3damg.hxx
+  ./src/invert/laplace/impls/serial_band/serial_band.hxx
+  ./src/invert/laplace/impls/serial_tri/serial_tri.hxx
+  ./src/invert/laplace/impls/shoot/shoot_laplace.hxx
+  ./src/invert/laplace/impls/spt/spt.hxx
+  ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
+  ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.hxx
+  ./src/invert/parderiv/impls/cyclic/cyclic.hxx
+  ./src/mesh/impls/bout/boutmesh.hxx
+  ./src/mesh/parallel/fci.hxx
+  ./src/mesh/parallel/shiftedmetricinterp.hxx
+  ./src/solver/impls/adams_bashforth/adams_bashforth.hxx
+  ./src/solver/impls/arkode/arkode.hxx
+  ./src/solver/impls/cvode/cvode.hxx
+  ./src/solver/impls/euler/euler.hxx
+  ./src/solver/impls/ida/ida.hxx
+  ./src/solver/impls/imex-bdf2/imex-bdf2.hxx
+  ./src/solver/impls/karniadakis/karniadakis.hxx
+  ./src/solver/impls/petsc/petsc.hxx
+  ./src/solver/impls/power/power.hxx
+  ./src/solver/impls/pvode/pvode.hxx
+  ./src/solver/impls/rk3-ssp/rk3-ssp.hxx
+  ./src/solver/impls/rk4/rk4.hxx
+  ./src/solver/impls/rkgeneric/impls/cashkarp/cashkarp.hxx
+  ./src/solver/impls/rkgeneric/impls/rk4simple/rk4simple.hxx
+  ./src/solver/impls/rkgeneric/impls/rkf34/rkf34.hxx
+  ./src/solver/impls/rkgeneric/impls/rkf45/rkf45.hxx
+  ./src/solver/impls/rkgeneric/rkgeneric.hxx
+  ./src/solver/impls/slepc/slepc.hxx
+  ./src/solver/impls/snes/snes.hxx
+  ./src/solver/impls/split-rk/split-rk.hxx
+  ./src/sys/options/optionparser.hxx
+  ./src/sys/options/options_ini.hxx
+  ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
+  ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
+)
+set(BOUT_SOURCES
   ./src/bout++.cxx
   ./src/field/field.cxx
   ./src/field/field2d.cxx
@@ -154,7 +249,6 @@ set(BOUT_SOURCES
   ./src/field/field_data.cxx
   ./src/field/field_factory.cxx
   ./src/field/fieldgenerators.cxx
-  ./src/field/fieldgenerators.hxx
   ./src/field/fieldgroup.cxx
   ./src/field/fieldperp.cxx
   ./src/field/generated_fieldops.cxx
@@ -167,51 +261,33 @@ set(BOUT_SOURCES
   ./src/fileio/datafile.cxx
   ./src/fileio/dataformat.cxx
   ./src/fileio/formatfactory.cxx
-  ./src/fileio/formatfactory.hxx
-  ./src/fileio/impls/emptyformat.hxx
   ./src/fileio/impls/hdf5/h5_format.cxx
-  ./src/fileio/impls/hdf5/h5_format.hxx
   ./src/fileio/impls/netcdf/nc_format.cxx
-  ./src/fileio/impls/netcdf/nc_format.hxx
   ./src/fileio/impls/netcdf4/ncxx4.cxx
-  ./src/fileio/impls/netcdf4/ncxx4.hxx
   ./src/fileio/impls/pnetcdf/pnetcdf.cxx
-  ./src/fileio/impls/pnetcdf/pnetcdf.hxx
   ./src/invert/fft_fftw.cxx
   ./src/invert/lapack_routines.cxx
   ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx
-  ./src/invert/laplace/impls/cyclic/cyclic_laplace.hxx
   ./src/invert/laplace/impls/multigrid/multigrid_alg.cxx
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.cxx
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.hxx
   ./src/invert/laplace/impls/multigrid/multigrid_solver.cxx
   ./src/invert/laplace/impls/naulin/naulin_laplace.cxx
-  ./src/invert/laplace/impls/naulin/naulin_laplace.hxx
   ./src/invert/laplace/impls/pdd/pdd.cxx
-  ./src/invert/laplace/impls/pdd/pdd.hxx
   ./src/invert/laplace/impls/petsc/petsc_laplace.cxx
-  ./src/invert/laplace/impls/petsc/petsc_laplace.hxx
   ./src/invert/laplace/impls/petsc3damg/petsc3damg.cxx
-  ./src/invert/laplace/impls/petsc3damg/petsc3damg.hxx
  ./src/invert/laplace/impls/serial_band/serial_band.cxx
-  ./src/invert/laplace/impls/serial_band/serial_band.hxx
   ./src/invert/laplace/impls/serial_tri/serial_tri.cxx
-  ./src/invert/laplace/impls/serial_tri/serial_tri.hxx
   ./src/invert/laplace/impls/shoot/shoot_laplace.cxx
-  ./src/invert/laplace/impls/shoot/shoot_laplace.hxx
   ./src/invert/laplace/impls/spt/spt.cxx
-  ./src/invert/laplace/impls/spt/spt.hxx
   ./src/invert/laplace/invert_laplace.cxx
   ./src/invert/laplacexy/laplacexy.cxx
   ./src/invert/laplacexy2/laplacexy2.cxx
   ./src/invert/laplacexy2/laplacexy2_hypre.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
-  ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
   ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.cxx
-  ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.hxx
   ./src/invert/laplacexz/laplacexz.cxx
   ./src/invert/parderiv/impls/cyclic/cyclic.cxx
-  ./src/invert/parderiv/impls/cyclic/cyclic.hxx
   ./src/invert/parderiv/invert_parderiv.cxx
   ./src/mesh/boundary_factory.cxx
   ./src/mesh/boundary_region.cxx
@@ -222,7 +298,6 @@ set(BOUT_SOURCES
   ./src/mesh/difops.cxx
   ./src/mesh/fv_ops.cxx
   ./src/mesh/impls/bout/boutmesh.cxx
-  ./src/mesh/impls/bout/boutmesh.hxx
   ./src/mesh/index_derivs.cxx
   ./src/mesh/interpolation_xz.cxx
   ./src/mesh/interpolation/bilinear_xz.cxx
@@ -233,11 +308,9 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
   ./src/mesh/mesh.cxx
   ./src/mesh/parallel/fci.cxx
-  ./src/mesh/parallel/fci.hxx
   ./src/mesh/parallel/identity.cxx
   ./src/mesh/parallel/shiftedmetric.cxx
   ./src/mesh/parallel/shiftedmetricinterp.cxx
-  ./src/mesh/parallel/shiftedmetricinterp.hxx
   ./src/mesh/parallel_boundary_op.cxx
   ./src/mesh/parallel_boundary_region.cxx
   ./src/mesh/surfaceiter.cxx
@@ -247,46 +320,26 @@ set(BOUT_SOURCES
   ./src/physics/snb.cxx
   ./src/physics/sourcex.cxx
   ./src/solver/impls/adams_bashforth/adams_bashforth.cxx
-  ./src/solver/impls/adams_bashforth/adams_bashforth.hxx
   ./src/solver/impls/arkode/arkode.cxx
-  ./src/solver/impls/arkode/arkode.hxx
   ./src/solver/impls/cvode/cvode.cxx
-  ./src/solver/impls/cvode/cvode.hxx
   ./src/solver/impls/euler/euler.cxx
-  ./src/solver/impls/euler/euler.hxx
   ./src/solver/impls/ida/ida.cxx
-  ./src/solver/impls/ida/ida.hxx
   ./src/solver/impls/imex-bdf2/imex-bdf2.cxx
-  ./src/solver/impls/imex-bdf2/imex-bdf2.hxx
   ./src/solver/impls/karniadakis/karniadakis.cxx
-  ./src/solver/impls/karniadakis/karniadakis.hxx
   ./src/solver/impls/petsc/petsc.cxx
-  ./src/solver/impls/petsc/petsc.hxx
   ./src/solver/impls/power/power.cxx
-  ./src/solver/impls/power/power.hxx
   ./src/solver/impls/pvode/pvode.cxx
-  ./src/solver/impls/pvode/pvode.hxx
   ./src/solver/impls/rk3-ssp/rk3-ssp.cxx
-  ./src/solver/impls/rk3-ssp/rk3-ssp.hxx
   ./src/solver/impls/rk4/rk4.cxx
-  ./src/solver/impls/rk4/rk4.hxx
   ./src/solver/impls/rkgeneric/impls/cashkarp/cashkarp.cxx
-  ./src/solver/impls/rkgeneric/impls/cashkarp/cashkarp.hxx
   ./src/solver/impls/rkgeneric/impls/rk4simple/rk4simple.cxx
-  ./src/solver/impls/rkgeneric/impls/rk4simple/rk4simple.hxx
   ./src/solver/impls/rkgeneric/impls/rkf34/rkf34.cxx
-  ./src/solver/impls/rkgeneric/impls/rkf34/rkf34.hxx
   ./src/solver/impls/rkgeneric/impls/rkf45/rkf45.cxx
-  ./src/solver/impls/rkgeneric/impls/rkf45/rkf45.hxx
   ./src/solver/impls/rkgeneric/rkgeneric.cxx
-  ./src/solver/impls/rkgeneric/rkgeneric.hxx
   ./src/solver/impls/rkgeneric/rkscheme.cxx
   ./src/solver/impls/slepc/slepc.cxx
-  ./src/solver/impls/slepc/slepc.hxx
   ./src/solver/impls/snes/snes.cxx
-  ./src/solver/impls/snes/snes.hxx
   ./src/solver/impls/split-rk/split-rk.cxx
-  ./src/solver/impls/split-rk/split-rk.hxx
   ./src/solver/solver.cxx
   ./src/sys/bout_types.cxx
   ./src/sys/boutcomm.cxx
@@ -297,9 +350,7 @@ set(BOUT_SOURCES
   ./src/sys/globalindexer.cxx
   ./src/sys/msg_stack.cxx
   ./src/sys/options.cxx
-  ./src/sys/options/optionparser.hxx
   ./src/sys/options/options_ini.cxx
-  ./src/sys/options/options_ini.hxx
   ./src/sys/options/options_netcdf.cxx
   ./src/sys/optionsreader.cxx
   ./src/sys/output.cxx
@@ -309,13 +360,54 @@ set(BOUT_SOURCES
   ./src/sys/timer.cxx
   ./src/sys/type_name.cxx
   ./src/sys/utils.cxx
-  ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
-  ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
   )
 
-add_library(bout++
-  ${BOUT_SOURCES}
-  )
+
+set (BOUT_DEPENDS "")
+if (HAVE_OPENMP)
+   list(APPEND BOUT_DEPENDS openmp)
+endif ()
+
+if (HAVE_CUDA)
+   list(APPEND BOUT_DEPENDS cuda)
+endif ()   
+
+# UMPIRE
+if (HAVE_UMPIRE)
+  list(APPEND BOUT_DEPENDS umpire)
+endif ()
+
+# RAJA
+if (HAVE_RAJA)
+  list(APPEND BOUT_DEPENDS RAJA)
+endif ()
+
+if(BOUT_HAS_PETSC)
+   list(APPEND BOUT_DEPENDS PETSc)
+endif ()
+
+if(BOUT_HAS_HYPRE)
+   list(APPEND BOUT_DEPENDS HYPRE)
+endif ()
+
+message(STATUS "BOUT_DEPENDS: ${BOUT_DEPENDS}")
+blt_add_library(NAME bout++
+   SOURCES ${BOUT_SOURCES}
+   HEADERS ${BOUT_HEADERS}
+   DEPENDS_ON ${BOUT_DEPENDS})
+
+blt_register_library(
+   NAME BOUT_LIBS
+      LIBRARIES
+         bout++
+)         
+
+
+set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CXX)
+#add_library(bout++
+#  ${BOUT_SOURCES}
+#  )
+
 add_library(bout++::bout++ ALIAS bout++)
 target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
 target_include_directories(bout++ PUBLIC
@@ -389,7 +481,9 @@ else()
 endif()
 target_link_libraries(bout++ PUBLIC fmt::fmt)
 
-option(BOUT_ENABLE_WARNINGS "Enable compiler warnings" ON)
+# temporarily turn this off - need to reconcile with nvcc
+option(ENABLE_WARNINGS "Enable compiler warnings" Off)
+#option(BOUT_ENABLE_WARNINGS "Enable compiler warnings" ON)
 if (BOUT_ENABLE_WARNINGS)
   target_compile_options(bout++ PRIVATE
     $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
@@ -736,8 +830,10 @@ if(PACKAGE_TESTS)
   add_custom_target(build-check)
   add_dependencies(build-check build-check-unit-tests build-check-integrated-tests)
 
-  add_subdirectory(tests/unit EXCLUDE_FROM_ALL)
-  add_subdirectory(tests/integrated EXCLUDE_FROM_ALL)
+  #add_subdirectory(tests/unit EXCLUDE_FROM_ALL)
+  #add_subdirectory(tests/integrated EXCLUDE_FROM_ALL)
+  add_subdirectory(tests/unit)
+  #add_subdirectory(tests/integrated)
 
   # Targets for running the tests
   add_custom_target(check-unit-tests
@@ -749,8 +845,8 @@ if(PACKAGE_TESTS)
   add_dependencies(check-integrated-tests build-check-integrated-tests)
 
   # Run all the tests
-  add_custom_target(check)
-  add_dependencies(check check-unit-tests check-integrated-tests)
+  add_custom_target(check_bout)
+  add_dependencies(check_bout check-unit-tests check-integrated-tests)
 endif()
 
 ##################################################

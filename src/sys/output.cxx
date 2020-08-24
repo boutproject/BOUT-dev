@@ -49,7 +49,7 @@ int Output::open(const std::string& filename) {
   file.open(filename);
 
   if (!file.is_open()) {
-    fmt::print(stderr, "Could not open log file '{}'\n", filename);
+    //fmt::print(stderr, "Could not open log file '{}'\n", filename);
     return 1;
   }
 
