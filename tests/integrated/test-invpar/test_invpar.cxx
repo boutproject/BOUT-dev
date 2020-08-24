@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   auto location = CELL_LOCFromString(options["test_location"].withDefault("CELL_CENTRE"));
   BoutReal tol = options["tol"].withDefault(1e-10);
 
-  auto inv = InvertParFactory::getInstance().create(nullptr, location, mesh);
+  auto inv = InvertPar::create(nullptr, location, mesh);
 
   Field2D A = f.create2D(acoef, nullptr, nullptr, location);
   Field2D B = f.create2D(bcoef, nullptr, nullptr, location);

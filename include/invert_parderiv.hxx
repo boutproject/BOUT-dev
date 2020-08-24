@@ -100,11 +100,11 @@ public:
 
   /*!
    * Create an instance of InvertPar
-   * 
-   * Note: For consistency this should be renamed "create" and take an Options* argument
    */
-  static std::unique_ptr<InvertPar> Create(Mesh *mesh_in = nullptr) {
-    return InvertParFactory::getInstance().create(nullptr, CELL_CENTRE, mesh_in);
+  static std::unique_ptr<InvertPar> create(Options *opt_in = nullptr,
+                                           CELL_LOC location_in = CELL_CENTRE,
+                                           Mesh *mesh_in = nullptr) {
+    return InvertParFactory::getInstance().create(opt_in, location_in, mesh_in);
   }
   
   /*!
