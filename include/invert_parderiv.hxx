@@ -63,8 +63,9 @@ public:
    * with pure virtual members, so can't be created directly.
    * To create an InvertPar object call the create() static function.
    */ 
-  InvertPar(Options *UNUSED(opt), Mesh *mesh_in = nullptr)
-    : localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {}
+  InvertPar(Options *UNUSED(opt), CELL_LOC location_in, Mesh *mesh_in = nullptr)
+    : location(location_in),
+      localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {}
   virtual ~InvertPar() = default;
 
   /*!
@@ -131,6 +132,7 @@ public:
   virtual void setCoefE(BoutReal f) { setCoefE(Field2D(f, localmesh)); }
 
 protected:
+  CELL_LOC location;
   Mesh* localmesh; ///< Mesh object for this solver
 
 private:
