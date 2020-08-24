@@ -16,7 +16,6 @@ int main(int argc, char **argv) {
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
 
-  auto inv = InvertPar::Create();
   FieldFactory f(mesh);
 
   // Get options
@@ -28,13 +27,16 @@ int main(int argc, char **argv) {
   options.get("dcoef", dcoef, "0.0");
   options.get("ecoef", ecoef, "0.0");
   options.get("input", func, "sin(2*y)*(1. + 0.2*exp(cos(z)))");
+  auto location = CELL_LOCFromString(options["test_location"].withDefault("CELL_CENTRE"));
   BoutReal tol = options["tol"].withDefault(1e-10);
 
-  Field2D A = f.create2D(acoef);
-  Field2D B = f.create2D(bcoef);
-  Field2D C = f.create2D(ccoef);
-  Field2D D = f.create2D(dcoef);
-  Field2D E = f.create2D(ecoef);
+  auto inv = InvertParFactory::getInstance().create(nullptr, location, mesh);
+
+  Field2D A = f.create2D(acoef, nullptr, nullptr, location);
+  Field2D B = f.create2D(bcoef, nullptr, nullptr, location);
+  Field2D C = f.create2D(ccoef, nullptr, nullptr, location);
+  Field2D D = f.create2D(dcoef, nullptr, nullptr, location);
+  Field2D E = f.create2D(ecoef, nullptr, nullptr, location);
 
   inv->setCoefA(A);
   inv->setCoefB(B);
@@ -42,7 +44,7 @@ int main(int argc, char **argv) {
   inv->setCoefD(D);
   inv->setCoefE(E);
 
-  Field3D input = f.create3D(func);
+  Field3D input = f.create3D(func, nullptr, nullptr, location);
   Field3D result = inv->solve(input);
   mesh->communicate(result);
 
@@ -51,12 +53,14 @@ int main(int argc, char **argv) {
 
   // Check the result
   int passed = 1;
-  for (int y = 2; y < mesh->LocalNy - 2; y++) {
+  for (int y = mesh->ystart; y < mesh->yend; y++) {
     for (int z = 0; z < mesh->LocalNz; z++) {
-      output.write("result: [{:d},{:d}] : {:e}, {:e}, {:e}\n", y, z, input(2, y, z),
-                   result(2, y, z), deriv(2, y, z));
-      if (std::abs(input(2, y, z) - deriv(2, y, z)) > tol)
+      output.write("result: [{:d},{:d}] : {:e}, {:e}, {:e}\n", y, z,
+                   input(mesh->xstart, y, z), result(mesh->xstart, y, z),
+                   deriv(mesh->xstart, y, z));
+      if (std::abs(input(mesh->xstart, y, z) - deriv(mesh->xstart, y, z)) > tol) {
         passed = 0;
+      }
     }
   }
 
