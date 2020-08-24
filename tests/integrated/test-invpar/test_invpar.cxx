@@ -52,7 +52,13 @@ int main(int argc, char **argv) {
 
   // Check the result
   int passed = 1;
-  for (int y = mesh->ystart; y < mesh->yend; y++) {
+  int local_ystart = mesh->ystart;
+  if (location == CELL_YLOW) {
+    // Point at mesh->ystart in 'result' is set by the Neumann boundary condition, so may
+    // not agree with 'deriv'
+    local_ystart = mesh->ystart + 1;
+  }
+  for (int y = local_ystart; y < mesh->yend; y++) {
     for (int z = 0; z < mesh->LocalNz; z++) {
       output.write("result: [%d,%d] : %e, %e, %e\n", y, z, input(mesh->xstart, y, z),
                    result(mesh->xstart, y, z), deriv(mesh->xstart, y, z));
