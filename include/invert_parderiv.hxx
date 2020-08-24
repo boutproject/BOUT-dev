@@ -44,15 +44,16 @@ class InvertPar;
 
 class InvertParFactory
     : public Factory<InvertPar, InvertParFactory,
-                             std::function<std::unique_ptr<InvertPar>(Options*, Mesh*)>> {
+                     std::function<std::unique_ptr<InvertPar>(Options*, CELL_LOC, Mesh*)>> {
 public:
   static constexpr auto type_name = "InvertPar";
   static constexpr auto section_name = "parderiv";
   static constexpr auto option_name = "type";
   static constexpr auto default_type = PARDERIVCYCLIC;
 
-  ReturnType create(Options* options = nullptr, Mesh* mesh = nullptr) {
-    return Factory::create(getType(options), options, mesh);
+  ReturnType create(Options* options = nullptr, CELL_LOC location = CELL_CENTRE,
+                    Mesh* mesh = nullptr) {
+    return Factory::create(getType(options), options, location, mesh);
   }
   static void ensureRegistered();
 };
@@ -62,8 +63,8 @@ class RegisterInvertPar {
 public:
   RegisterInvertPar(const std::string& name) {
     InvertParFactory::getInstance().add(
-        name, [](Options* options, Mesh* mesh) -> std::unique_ptr<InvertPar> {
-          return std::make_unique<DerivedType>(options, mesh);
+        name, [](Options* options, CELL_LOC location, Mesh* mesh) -> std::unique_ptr<InvertPar> {
+          return std::make_unique<DerivedType>(options, location, mesh);
         });
   }
 };
@@ -92,8 +93,9 @@ public:
    * with pure virtual members, so can't be created directly.
    * To create an InvertPar object call the create() static function.
    */ 
-  InvertPar(Options *UNUSED(opt), Mesh *mesh_in = nullptr)
-    : localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {}
+  InvertPar(Options *UNUSED(opt), CELL_LOC location_in, Mesh *mesh_in = nullptr)
+    : location(location_in),
+      localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {}
   virtual ~InvertPar() = default;
 
   /*!
@@ -102,7 +104,7 @@ public:
    * Note: For consistency this should be renamed "create" and take an Options* argument
    */
   static std::unique_ptr<InvertPar> Create(Mesh *mesh_in = nullptr) {
-    return InvertParFactory::getInstance().create(nullptr, mesh_in);
+    return InvertParFactory::getInstance().create(nullptr, CELL_CENTRE, mesh_in);
   }
   
   /*!
@@ -162,6 +164,7 @@ public:
   virtual void setCoefE(BoutReal f) { setCoefE(Field2D(f, localmesh)); }
 
 protected:
+  CELL_LOC location;
   Mesh* localmesh; ///< Mesh object for this solver
 
 private:
