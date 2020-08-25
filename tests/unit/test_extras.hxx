@@ -309,6 +309,12 @@ public:
   int getGlobalZIndexNoBoundaries(int) const override { return 0; }
   int XLOCAL(int UNUSED(xglo)) const override { return 0; }
   int YLOCAL(int UNUSED(yglo)) const override { return 0; }
+  virtual int localSize3D() override { return LocalNx * LocalNy * LocalNz; }
+  virtual int localSize2D() override { return LocalNx * LocalNy; }
+  virtual int localSizePerp() override { return LocalNx * LocalNz; }
+  virtual int globalStartIndex3D() override { return 0; }
+  virtual int globalStartIndex2D() override { return 0; }
+  virtual int globalStartIndexPerp() override { return 0; }
 
   void initDerivs(Options * opt){
     StaggerGrids=true;
@@ -320,10 +326,15 @@ public:
                 Region<Ind2D>(0, LocalNx - 1, 0, ystart - 1, 0, 0, LocalNy, 1));
     addRegion3D("RGN_LOWER_Y", Region<Ind3D>(0, LocalNx - 1, 0, ystart - 1, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
+    addRegion2D("RGN_LOWER_Y_THIN", getRegion2D("RGN_LOWER_Y"));
+    addRegion3D("RGN_LOWER_Y_THIN", getRegion3D("RGN_LOWER_Y"));
+
     addRegion2D("RGN_UPPER_Y",
                 Region<Ind2D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0, 0, LocalNy, 1));
     addRegion3D("RGN_UPPER_Y", Region<Ind3D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
+    addRegion2D("RGN_UPPER_Y_THIN", getRegion2D("RGN_UPPER_Y"));
+    addRegion3D("RGN_UPPER_Y_THIN", getRegion3D("RGN_UPPER_Y"));
 
     addRegion2D("RGN_INNER_X",
                 Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy, 1));
@@ -331,12 +342,21 @@ public:
                                              LocalNy, LocalNz));
     addRegionPerp("RGN_INNER_X",
                   Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz));
+    addRegion2D("RGN_INNER_X_THIN", getRegion2D("RGN_INNER_X"));
+    addRegion3D("RGN_INNER_X_THIN", getRegion3D("RGN_INNER_X"));
+
     addRegion2D("RGN_OUTER_X",
                 Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
     addRegionPerp("RGN_OUTER_X", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0,
                                                  LocalNz - 1, 1, LocalNz));
+    addRegionPerp("RGN_OUTER_X_THIN", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0,
+                                                      LocalNz - 1, 1, LocalNz));
+    addRegion2D("RGN_OUTER_X_THIN", getRegion2D("RGN_OUTER_X"));
+    addRegion3D("RGN_OUTER_X_THIN", getRegion3D("RGN_OUTER_X"));
 
     const auto boundary_names = {"RGN_LOWER_Y", "RGN_UPPER_Y", "RGN_INNER_X",
                                  "RGN_OUTER_X"};

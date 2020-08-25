@@ -58,14 +58,35 @@ void GlobalIndexer::initialise() {
 }
 
 int GlobalIndexer::getGlobal(Ind2D ind) const {
+#if CHECKLEVEL >= 1
+  if ((ind.ind < 0)
+      or (ind.ind >= indices2D.getNx() * indices2D.getNy())) {
+    throw BoutException("GlobalIndexer::getGlobal(Ind2D): Index {} out of range",
+                        ind.ind);
+  }
+#endif
   return static_cast<int>(std::round(indices2D[ind]));
 }
 
 int GlobalIndexer::getGlobal(Ind3D ind) const {
+#if CHECKLEVEL >= 1
+  if ((ind.ind < 0)
+      or (ind.ind >= indices3D.getNx() * indices3D.getNy() * indices3D.getNz())) {
+    throw BoutException("GlobalIndexer::getGlobal(Ind3D): Index {} out of range",
+                        ind.ind);
+  }
+#endif
   return static_cast<int>(std::round(indices3D[ind]));
 }
 
 int GlobalIndexer::getGlobal(IndPerp ind) const {
+#if CHECKLEVEL >= 1
+  if ((ind.ind < 0)
+      or (ind.ind >= indicesPerp.getNx() * indicesPerp.getNz())) {
+    throw BoutException("GlobalIndexer::getGlobal(IndPerp): Index {} out of range",
+                        ind.ind);
+  }
+#endif
   return static_cast<int>(std::round(indicesPerp[ind]));
 }
 
