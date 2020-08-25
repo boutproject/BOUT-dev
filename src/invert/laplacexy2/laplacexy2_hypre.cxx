@@ -20,8 +20,9 @@ Ind2D index2d(Mesh* mesh, int x, int y) {
 }
 
 LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
-    : localmesh(m == nullptr ? bout::globals::mesh : m), f2dinit(localmesh),
-      matrix(f2dinit), location(loc) {
+    : localmesh(m == nullptr ? bout::globals::mesh : m),
+      indexer(std::make_shared<GlobalIndexer<Field2D>>(localmesh)), matrix(indexer),
+      location(loc) {
   Timer timer("invert");
 
   if (opt == nullptr) {
@@ -271,7 +272,7 @@ const Field2D LaplaceXY2Hypre::solve(const Field2D& rhs, const Field2D& x0) {
 
   // Load initial guess x0 into xs and rhs into bs
 
-  bout::HypreVector<Field2D> xs(x0), bs(rhs);
+  bout::HypreVector<Field2D> xs(x0, indexer), bs(rhs, indexer);
 
   if (localmesh->firstX()) {
     if (x_inner_dirichlet) {

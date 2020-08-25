@@ -30,7 +30,7 @@ template <class T>
 class HypreVector {
   HYPRE_IJVector hypre_vector{nullptr};
   HYPRE_ParVector parallel_vector{nullptr};
-  IndexerPtr indexConverter;
+  IndexerPtr<T> indexConverter;
   CELL_LOC location;
   bool initialised{false};
 
@@ -71,11 +71,13 @@ public:
     other.initialised = false;
     return *this;
   }
-
-  explicit HypreVector(const T& f) {
+  
+  /// Construct from a field, copying over the field values
+  explicit HypreVector(const T& f, IndexerPtr<T> indConverter)
+      : indexConverter(indConverter) {
+    ASSERT1(indConverter->getMesh() == f.getMesh());
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
-    indexConverter = GlobalIndexer::getInstance(f.getMesh());
 
     const auto& region = f.getRegion("RGN_ALL_THIN");
     const auto jlower =
@@ -110,10 +112,11 @@ public:
 
   // Mesh can't be const yet, need const-correctness on Mesh;
   // GlobalIndexer ctor also modifies mesh -- FIXME
-  explicit HypreVector(Mesh& mesh) {
+  explicit HypreVector(Mesh& mesh, IndexerPtr<T> indConverter)
+      : indexConverter(indConverter) {
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
-    indexConverter = GlobalIndexer::getInstance(&mesh);
+    ASSERT1(indConverter->getMesh() == &mesh);
 
     const auto& region = mesh.getRegion<T>("RGN_ALL_THIN");
 
@@ -236,7 +239,7 @@ template <class T>
 class HypreMatrix {
   std::shared_ptr<HYPRE_IJMatrix> hypre_matrix{nullptr};
   HYPRE_ParCSRMatrix parallel_matrix{nullptr};
-  IndexerPtr index_converter;
+  IndexerPtr<T> index_converter;
   bool initialised{false};
   int yoffset{0};
   ParallelTransform* parallel_transform{nullptr};
@@ -280,14 +283,19 @@ public:
     other.initialised = false;
     return *this;
   }
-
-  explicit HypreMatrix(const T& f) : hypre_matrix(new HYPRE_IJMatrix, MatrixDeleter{}) {
+  
+  /// Construct a matrix capable of operating on the specified field,
+  /// preallocating memory if requeted and possible.
+  ///
+  /// note: preallocate not currently used, but here to match PetscMatrix interface 
+  explicit HypreMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
+      : hypre_matrix(new HYPRE_IJMatrix, MatrixDeleter{}), index_converter(indConverter) {
+    Mesh *mesh = indConverter->getMesh();
     const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
-    index_converter = GlobalIndexer::getInstance(f.getMesh());
-    parallel_transform = &f.getCoordinates()->getParallelTransform();
+        std::is_same<T, FieldPerp>::value ? mesh->getXcomm() : BoutComm::get();
+    parallel_transform = &mesh->getCoordinates()->getParallelTransform();
 
-    const auto& region = f.getRegion("RGN_ALL_THIN");
+    const auto& region = mesh->getRegion<T>("RGN_ALL_THIN");
 
     const auto ilower =
         static_cast<HYPRE_BigInt>(index_converter->getGlobal(*std::begin(region)));

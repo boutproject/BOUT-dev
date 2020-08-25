@@ -115,8 +115,8 @@ public:
 
 private:
   Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
-
-  Field2D f2dinit;                   ///< This is here just to initialise matrix
+  IndexerPtr<Field2D> indexer;
+  
   bout::HypreMatrix<Field2D> matrix; ///< Matrix to be inverted
   HYPRE_Solver solver;               ///< Solver
 
