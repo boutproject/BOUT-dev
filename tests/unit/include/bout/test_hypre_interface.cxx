@@ -45,7 +45,7 @@ TYPED_TEST(HypreVectorTest, FieldConstructor) {
   auto hypre_vector = vector.get();
   HYPRE_IJVectorGetLocalRange(hypre_vector, &jlower, &jupper);
   const auto local_size = (jupper + 1) - jlower;
-  ASSERT_EQ(local_size, this->field.getNx() * this->field.getNy() * this->field.getNz());
+  ASSERT_EQ(local_size, this->indexer->size());
   const TypeParam result = vector.toField();
 
   EXPECT_TRUE(IsFieldEqual(this->field, result, "RGN_NOY"));
@@ -79,7 +79,7 @@ TYPED_TEST(HypreVectorTest, Assemble) {
   HypreVector<TypeParam> vector(this->field, this->indexer);
   auto raw_vector = vector.get();
 
-  const auto& region = this->field.getRegion("RGN_ALL_THIN");
+  const auto& region = this->field.getRegion("RGN_NOBNDRY");
   auto i = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(*std::begin(region)));
 
   HYPRE_Complex value{23.};
@@ -246,7 +246,7 @@ TYPED_TEST(HypreMatrixTest, Assemble) {
   auto raw_matrix = matrix.get();
 
   HYPRE_Int ncolumns{1};
-  const auto& region = this->field.getRegion("RGN_ALL_THIN");
+  const auto& region = this->field.getRegion("RGN_NOBNDRY");
   auto i = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(*std::begin(region)));
 
   HYPRE_Complex value{23.};

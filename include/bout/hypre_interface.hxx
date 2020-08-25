@@ -79,11 +79,8 @@ public:
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
 
-    const auto& region = f.getRegion("RGN_ALL_THIN");
-    const auto jlower =
-        static_cast<HYPRE_BigInt>(indexConverter->getGlobal(*std::begin(region)));
-    const auto jupper =
-        static_cast<HYPRE_BigInt>(indexConverter->getGlobal(*--std::end(region)));
+    const auto jlower = indConverter->getGlobalStart();
+    const auto jupper = jlower + indConverter->size() - 1; // inclusive end
 
     HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector);
     HYPRE_IJVectorSetObjectType(hypre_vector, HYPRE_PARCSR);
@@ -92,7 +89,7 @@ public:
     location = f.getLocation();
     initialised = true;
 
-    BOUT_FOR_SERIAL(i, region) {
+    BOUT_FOR_SERIAL(i, indConverter->getRegionAll()) {
       const auto index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
       if (index != -1) {
         HYPRE_IJVectorSetValues(hypre_vector, static_cast<HYPRE_Int>(1), &index, &f[i]);
@@ -117,14 +114,10 @@ public:
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
     ASSERT1(indConverter->getMesh() == &mesh);
-
-    const auto& region = mesh.getRegion<T>("RGN_ALL_THIN");
-
-    const auto jlower =
-        static_cast<HYPRE_BigInt>(indexConverter->getGlobal(*std::begin(region)));
-    const auto jupper =
-        static_cast<HYPRE_BigInt>(indexConverter->getGlobal(*--std::end(region)));
-
+    
+    const auto jlower = indConverter->getGlobalStart();
+    const auto jupper = jlower + indConverter->size() - 1; // inclusive end
+    
     HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector);
     HYPRE_IJVectorSetObjectType(hypre_vector, HYPRE_PARCSR);
     HYPRE_IJVectorInitialize(hypre_vector);
@@ -142,7 +135,7 @@ public:
     result.allocate().setLocation(location);
 
     // Note that this only populates boundaries to a depth of 1
-    BOUT_FOR_SERIAL(i, result.getRegion("RGN_ALL_THIN")) {
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
       const auto index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
       if (index != -1) {
         // Yes, complex, but this is a HYPRE typedef for real
@@ -295,13 +288,9 @@ public:
         std::is_same<T, FieldPerp>::value ? mesh->getXcomm() : BoutComm::get();
     parallel_transform = &mesh->getCoordinates()->getParallelTransform();
 
-    const auto& region = mesh->getRegion<T>("RGN_ALL_THIN");
-
-    const auto ilower =
-        static_cast<HYPRE_BigInt>(index_converter->getGlobal(*std::begin(region)));
-    const auto iupper =
-        static_cast<HYPRE_BigInt>(index_converter->getGlobal(*--std::end(region)));
-
+    const auto ilower = indConverter->getGlobalStart();
+    const auto iupper = ilower + indConverter->size() - 1; // inclusive end
+    
     HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &*hypre_matrix);
     HYPRE_IJMatrixSetObjectType(*hypre_matrix, HYPRE_PARCSR);
     HYPRE_IJMatrixInitialize(*hypre_matrix);

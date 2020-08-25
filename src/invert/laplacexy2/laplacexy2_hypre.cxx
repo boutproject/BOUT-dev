@@ -21,8 +21,10 @@ Ind2D index2d(Mesh* mesh, int x, int y) {
 
 LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
     : localmesh(m == nullptr ? bout::globals::mesh : m),
-      indexer(std::make_shared<GlobalIndexer<Field2D>>(localmesh)), matrix(indexer),
-      location(loc) {
+      lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
+      indexer(std::make_shared<GlobalIndexer<Field2D>>(
+          localmesh, getStencil(localmesh, lowerY, upperY))),
+      matrix(indexer), location(loc) {
   Timer timer("invert");
 
   if (opt == nullptr) {
@@ -345,6 +347,65 @@ const Field2D LaplaceXY2Hypre::solve(const Field2D& rhs, const Field2D& x0) {
 
   // Convert result into a Field2D
   return xs.toField();
+}
+
+OperatorStencil<Ind2D> LaplaceXY2Hypre::getStencil(Mesh* localmesh,
+                                                   RangeIterator lowerYBoundary,
+                                                   RangeIterator upperYBoundary) {
+  OperatorStencil<Ind2D> stencil;
+
+  OffsetInd2D zero;
+
+  // Create a part of the stencil for the interior cells.
+  stencil.add(
+      [localmesh](Ind2D ind) -> bool {
+        return (localmesh->xstart <= ind.x() && ind.x() <= localmesh->xend
+                && localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend);
+      },
+      // Stencil in the interior
+      {zero, zero.xp(), zero.xm(), zero.yp(), zero.ym()});
+
+  // If there's a lower boundary, create a stencil
+  if (lowerYBoundary.max() - lowerYBoundary.min() > 0) {
+    stencil.add(
+        [yindex = localmesh->ystart - 1, &lowerYBoundary](Ind2D ind) -> bool {
+          return yindex == ind.y() && lowerYBoundary.intersects(ind.x());
+        },
+        // Stencil in lower boundary
+        {zero, zero.yp()});
+  }
+
+  // If there is an upper y-boundary then create a stencil for the
+  // first layer of cells in the boundary
+  if (upperYBoundary.max() - upperYBoundary.min() > 0) {
+    stencil.add(
+        [yindex = localmesh->yend + 1, &upperYBoundary](Ind2D ind) -> bool {
+          return yindex == ind.y() && upperYBoundary.intersects(ind.x());
+        },
+        // Stencil in upper boundary
+        {zero, zero.ym()});
+  }
+
+  // Add inner X boundary. Note: No corner cells
+  if (localmesh->firstX()) {
+    stencil.add(
+        [localmesh, index = localmesh->xstart - 1](Ind2D ind) -> bool {
+          return ind.x() == index && localmesh->ystart <= ind.y()
+                 && ind.y() <= localmesh->yend;
+        },
+        {zero, zero.xp()});
+  }
+  // Add outer X boundary
+  if (localmesh->lastX()) {
+    stencil.add(
+        [localmesh, index = localmesh->xend + 1](Ind2D ind) -> bool {
+          return ind.x() == index && localmesh->ystart <= ind.y()
+                 && ind.y() <= localmesh->yend;
+        },
+        {zero, zero.xm()});
+  }
+
+  return stencil;
 }
 
 #endif // BOUT_HAS_HYPRE
