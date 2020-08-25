@@ -4,7 +4,6 @@
 #include <bout/mesh.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/paralleltransform.hxx>
-#include <bout/petsclib.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
 #include <bout_types.hxx>
@@ -114,8 +113,8 @@ public:
 
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
-  PetscInt getGlobal(const ind_type& ind) const {
-    return static_cast<PetscInt>(std::round(indices[ind]));
+  int getGlobal(const ind_type& ind) const {
+    return static_cast<int>(std::round(indices[ind]));
   }
 
   /// Check whether the local index corresponds to an element which is
@@ -124,11 +123,11 @@ public:
     if (ind.ind < 0) {
       return false;
     }
-    PetscInt index = getGlobal(ind);
+    int index = getGlobal(ind);
     return (globalStart <= index) && (index <= globalEnd);
   }
 
-  PetscInt getGlobalStart() const { return globalStart; }
+  int getGlobalStart() const { return globalStart; }
 
   const Region<ind_type>& getRegionAll() const { return regionAll; }
   const Region<ind_type>& getRegionNobndry() const {
@@ -212,7 +211,7 @@ private:
   T indices;
   /// The first and last global index on this processor (inclusive in
   /// both cases)
-  PetscInt globalStart, globalEnd;
+  int globalStart, globalEnd;
 
   /// Stencil for which this indexer has been configured
   OperatorStencil<ind_type> stencils;
@@ -222,7 +221,7 @@ private:
       regionBndry;
 
   mutable bool sparsityCalculated = false;
-  mutable std::vector<PetscInt> numDiagonal, numOffDiagonal;
+  mutable std::vector<int> numDiagonal, numOffDiagonal;
 };
 
 #endif // BOUT_GLOBALINDEXER_H
