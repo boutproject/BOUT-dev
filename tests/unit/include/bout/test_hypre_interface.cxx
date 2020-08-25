@@ -25,8 +25,10 @@ class HypreVectorTest : public FakeMeshFixture {
 public:
   WithQuietOutput all{output};
   T field;
-  HypreVectorTest() : FakeMeshFixture(), field(1.5, bout::globals::mesh) {
-    GlobalIndexer::recreateGlobalInstance();
+  IndexerPtr<T> indexer;
+  HypreVectorTest()
+      : FakeMeshFixture(), field(1.5, bout::globals::mesh),
+        indexer(std::make_shared<GlobalIndexer<T>>(bout::globals::mesh)) {
   }
   virtual ~HypreVectorTest() = default;
 };
@@ -38,7 +40,7 @@ TYPED_TEST(HypreVectorTest, FieldConstructor) {
   BOUT_FOR(i, this->field.getRegion("RGN_ALL")) {
     this->field[i] = static_cast<BoutReal>(i.ind);
   }
-  HypreVector<TypeParam> vector(this->field);
+  HypreVector<TypeParam> vector(this->field, this->indexer);
   HYPRE_BigInt jlower, jupper;
   auto hypre_vector = vector.get();
   HYPRE_IJVectorGetLocalRange(hypre_vector, &jlower, &jupper);
@@ -58,14 +60,14 @@ TYPED_TEST(HypreVectorTest, FieldAssignment) {
 }
 
 TYPED_TEST(HypreVectorTest, MoveConstructor) {
-  HypreVector<TypeParam> vector(this->field);
+  HypreVector<TypeParam> vector(this->field, this->indexer);
   HypreVector<TypeParam> moved(std::move(vector));
 
   EXPECT_TRUE(IsFieldEqual(this->field, moved.toField(), "RGN_NOY"));
 }
 
 TYPED_TEST(HypreVectorTest, MoveAssignment) {
-  HypreVector<TypeParam> vector{this->field};
+  HypreVector<TypeParam> vector{this->field, this->indexer};
   HypreVector<TypeParam> moved{};
 
   moved = std::move(vector);
@@ -74,12 +76,11 @@ TYPED_TEST(HypreVectorTest, MoveAssignment) {
 }
 
 TYPED_TEST(HypreVectorTest, Assemble) {
-  HypreVector<TypeParam> vector(this->field);
+  HypreVector<TypeParam> vector(this->field, this->indexer);
   auto raw_vector = vector.get();
 
   const auto& region = this->field.getRegion("RGN_ALL_THIN");
-  auto indexer = GlobalIndexer::getInstance(this->field.getMesh());
-  auto i = static_cast<HYPRE_BigInt>(indexer->getGlobal(*std::begin(region)));
+  auto i = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(*std::begin(region)));
 
   HYPRE_Complex value{23.};
 
@@ -103,13 +104,13 @@ TYPED_TEST(HypreVectorTest, GetElements) {
   BOUT_FOR(i, this->field.getRegion("RGN_ALL")) {
     this->field[i] = static_cast<BoutReal>(i.ind);
   }
-  HypreVector<TypeParam> vector(this->field);
+  HypreVector<TypeParam> vector(this->field, this->indexer);
 
   BOUT_FOR(i, this->field.getRegion("RGN_NOY")) { EXPECT_EQ(vector(i), this->field[i]); }
 }
 
 TYPED_TEST(HypreVectorTest, SetElements) {
-  HypreVector<TypeParam> vector{*bout::globals::mesh};
+  HypreVector<TypeParam> vector{*bout::globals::mesh, this->indexer};
 
   BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
     vector(i) = static_cast<BoutReal>(i.ind);
@@ -128,7 +129,7 @@ TYPED_TEST(HypreVectorTest, TestGetUninitialised) {
 }
 
 TYPED_TEST(HypreVectorTest, OutOfRange) {
-  HypreVector<TypeParam> vector{this->field};
+  HypreVector<TypeParam> vector{this->field, this->indexer};
   typename TypeParam::ind_type index1(this->field.getNx() * this->field.getNy()
                                       * this->field.getNz());
   EXPECT_THROW(vector(index1), BoutException);
@@ -140,9 +141,9 @@ TYPED_TEST(HypreVectorTest, OutOfRange) {
 #endif
 
 TYPED_TEST(HypreVectorTest, Swap) {
-  HypreVector<TypeParam> vector{this->field};
+  HypreVector<TypeParam> vector{this->field, this->indexer};
   TypeParam field2(2., bout::globals::mesh);
-  HypreVector<TypeParam> vector2{field2};
+  HypreVector<TypeParam> vector2{field2, this->indexer};
 
   swap(vector, vector2);
 
@@ -167,13 +168,15 @@ class HypreMatrixTest : public FakeMeshFixture {
 public:
   WithQuietOutput all{output};
   T field;
+  IndexerPtr<T> indexer;
   MockTransform* pt{nullptr};
   std::vector<ParallelTransform::PositionsAndWeights> yUpWeights, yDownWeights;
   using ind_type = typename T::ind_type;
   ind_type indexA, indexB, iWU0, iWU1, iWU2, iWD0, iWD1, iWD2;
 
-  HypreMatrixTest() : FakeMeshFixture(), field(1.5, bout::globals::mesh) {
-    GlobalIndexer::recreateGlobalInstance();
+  HypreMatrixTest()
+      : FakeMeshFixture(), field(1.5, bout::globals::mesh),
+        indexer(std::make_shared<GlobalIndexer<T>>(bout::globals::mesh)) {
 
     indexA = ind_type(field.getNy() * field.getNz() + 1, field.getNy(), field.getNz());
     if (std::is_same<T, FieldPerp>::value) {
@@ -212,7 +215,7 @@ using FieldTypes = ::testing::Types<Field3D, Field2D, FieldPerp>;
 TYPED_TEST_SUITE(HypreMatrixTest, FieldTypes);
 
 TYPED_TEST(HypreMatrixTest, FieldConstructor) {
-  HypreMatrix<TypeParam> matrix(this->field);
+  HypreMatrix<TypeParam> matrix(this->indexer);
   HYPRE_BigInt ilower, iupper, jlower, jupper;
   auto hypre_matrix = matrix.get();
   HYPRE_IJMatrixGetLocalRange(hypre_matrix, &ilower, &iupper, &jlower, &jupper);
@@ -223,14 +226,14 @@ TYPED_TEST(HypreMatrixTest, FieldConstructor) {
 }
 
 TYPED_TEST(HypreMatrixTest, MoveConstructor) {
-  HypreMatrix<TypeParam> moved(this->field);
+  HypreMatrix<TypeParam> moved(this->indexer);
   HypreMatrix<TypeParam> matrix{std::move(moved)};
 
   EXPECT_NE(matrix.get(), nullptr);
 }
 
 TYPED_TEST(HypreMatrixTest, MoveAssignment) {
-  HypreMatrix<TypeParam> moved(this->field);
+  HypreMatrix<TypeParam> moved(this->indexer);
   HypreMatrix<TypeParam> matrix;
 
   matrix = std::move(moved);
@@ -239,13 +242,12 @@ TYPED_TEST(HypreMatrixTest, MoveAssignment) {
 }
 
 TYPED_TEST(HypreMatrixTest, Assemble) {
-  HypreMatrix<TypeParam> matrix(this->field);
+  HypreMatrix<TypeParam> matrix(this->indexer);
   auto raw_matrix = matrix.get();
 
   HYPRE_Int ncolumns{1};
   const auto& region = this->field.getRegion("RGN_ALL_THIN");
-  auto indexer = GlobalIndexer::getInstance(this->field.getMesh());
-  auto i = static_cast<HYPRE_BigInt>(indexer->getGlobal(*std::begin(region)));
+  auto i = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(*std::begin(region)));
 
   HYPRE_Complex value{23.};
 
@@ -266,7 +268,7 @@ TYPED_TEST(HypreMatrixTest, Assemble) {
 }
 
 TYPED_TEST(HypreMatrixTest, SetElements) {
-  HypreMatrix<TypeParam> matrix(this->field);
+  HypreMatrix<TypeParam> matrix(this->indexer);
 
   BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
     matrix(i, i) = static_cast<BoutReal>(i.ind);
@@ -275,12 +277,11 @@ TYPED_TEST(HypreMatrixTest, SetElements) {
   matrix.assemble();
 
   auto raw_matrix = matrix.get();
-  auto indexer = GlobalIndexer::getInstance(this->field.getMesh());
 
   BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
     BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOY")) {
-      auto i_index = static_cast<HYPRE_BigInt>(indexer->getGlobal(i));
-      auto j_index = static_cast<HYPRE_BigInt>(indexer->getGlobal(j));
+      auto i_index = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(i));
+      auto j_index = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(j));
       HYPRE_Int ncolumns{1};
       HYPRE_Complex value;
       BOUT_OMP(critical) {
@@ -296,7 +297,7 @@ TYPED_TEST(HypreMatrixTest, SetElements) {
 }
 
 TYPED_TEST(HypreMatrixTest, GetElements) {
-  HypreMatrix<TypeParam> matrix(this->field);
+  HypreMatrix<TypeParam> matrix(this->indexer);
 
   auto hypre_matrix = matrix.get();
   HYPRE_BigInt ilower, iupper, jlower, jupper;
@@ -325,7 +326,7 @@ TYPED_TEST(HypreMatrixTest, GetElements) {
 #if CHECKLEVEL >= 1
 
 TYPED_TEST(HypreMatrixTest, GetOutOfBounds) {
-  HypreMatrix<TypeParam> matrix(this->field);
+  HypreMatrix<TypeParam> matrix(this->indexer);
   typename TypeParam::ind_type indexa(-1), indexb(1), indexc(100000);
   typename TypeParam::ind_type index1(this->field.getNx() * this->field.getNy()
                                       * this->field.getNz());
@@ -382,14 +383,14 @@ auto IsHypreMatrixEqual(const HypreMatrix<T>& matrix, const HypreMatrix<T>& refe
 TYPED_TEST(HypreMatrixTest, YUp) {
   using namespace ::testing;
 
-  HypreMatrix<TypeParam> matrix(this->field);
+  HypreMatrix<TypeParam> matrix(this->indexer);
 
   if (std::is_same<TypeParam, FieldPerp>::value) {
     EXPECT_THROW(matrix.yup(), BoutException);
     return;
   }
 
-  HypreMatrix<TypeParam> expected(this->field);
+  HypreMatrix<TypeParam> expected(this->indexer);
   MockTransform* transform = this->pt;
   const BoutReal value = 42.0;
 
@@ -415,14 +416,14 @@ TYPED_TEST(HypreMatrixTest, YUp) {
 TYPED_TEST(HypreMatrixTest, YDown) {
   using namespace ::testing;
 
-  HypreMatrix<TypeParam> matrix(this->field);
+  HypreMatrix<TypeParam> matrix(this->indexer);
 
   if (std::is_same<TypeParam, FieldPerp>::value) {
     EXPECT_THROW(matrix.yup(), BoutException);
     return;
   }
 
-  HypreMatrix<TypeParam> expected(this->field);
+  HypreMatrix<TypeParam> expected(this->indexer);
   MockTransform* transform = this->pt;
   const BoutReal value = 42.0;
 
@@ -446,8 +447,8 @@ TYPED_TEST(HypreMatrixTest, YDown) {
 }
 
 TYPED_TEST(HypreMatrixTest, YNext0) {
-  HypreMatrix<TypeParam> matrix(this->field);
-  HypreMatrix<TypeParam> expected(this->field);
+  HypreMatrix<TypeParam> matrix(this->indexer);
+  HypreMatrix<TypeParam> expected(this->indexer);
 
   const BoutReal value = 42.0;
 

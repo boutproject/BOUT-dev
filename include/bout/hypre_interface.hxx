@@ -105,14 +105,14 @@ public:
   }
 
   HypreVector<T>& operator=(const T& f) {
-    HypreVector<T> result(f);
+    HypreVector<T> result(f, indexConverter);
     *this = std::move(result);
     return *this;
   }
 
   // Mesh can't be const yet, need const-correctness on Mesh;
   // GlobalIndexer ctor also modifies mesh -- FIXME
-  explicit HypreVector(Mesh& mesh, IndexerPtr<T> indConverter)
+  HypreVector(Mesh& mesh, IndexerPtr<T> indConverter)
       : indexConverter(indConverter) {
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
