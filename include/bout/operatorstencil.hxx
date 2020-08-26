@@ -146,8 +146,10 @@ public:
   };
 
   /// Add a stencil test/part pair
-  void add(stencil_test test, stencil_part stencil) {
+  /// Returns this to allow chaining, inline definitions
+  OperatorStencil<T>& add(stencil_test test, stencil_part stencil) {
     stencils.push_back({test, stencil});
+    return *this;
   }
 
   /// Get the ith stencil-part to have been added

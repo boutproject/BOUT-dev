@@ -222,7 +222,7 @@ public:
 using FieldTypes = ::testing::Types<Field3D, Field2D, FieldPerp>;
 TYPED_TEST_SUITE(HypreMatrixTest, FieldTypes);
 
-TYPED_TEST(HypreMatrixTest, FieldConstructor) {
+TYPED_TEST(HypreMatrixTest, FieldConstructorNoBndry) {
   HypreMatrix<TypeParam> matrix(this->indexer);
   HYPRE_BigInt ilower, iupper, jlower, jupper;
   auto hypre_matrix = matrix.get();
@@ -230,7 +230,27 @@ TYPED_TEST(HypreMatrixTest, FieldConstructor) {
   ASSERT_EQ(ilower, jlower);
   ASSERT_EQ(iupper, jupper);
   const auto local_size = (iupper + 1) - ilower;
-  ASSERT_EQ(local_size, this->field.getNx() * this->field.getNy() * this->field.getNz());
+  ASSERT_EQ(local_size, this->field.getRegion("RGN_NOBNDRY").size());
+}
+
+TYPED_TEST(HypreMatrixTest, FieldConstructor) {
+  using ind_type = typename TypeParam::ind_type;
+
+  IndexOffset<ind_type> zero;
+  OperatorStencil<ind_type> stencil;
+  stencil.add([](const ind_type&) { return true; }, {zero});
+
+  auto allindexer =
+      std::make_shared<GlobalIndexer<TypeParam>>(bout::globals::mesh, stencil);
+
+  HypreMatrix<TypeParam> matrix(allindexer);
+  HYPRE_BigInt ilower, iupper, jlower, jupper;
+  auto hypre_matrix = matrix.get();
+  HYPRE_IJMatrixGetLocalRange(hypre_matrix, &ilower, &iupper, &jlower, &jupper);
+  ASSERT_EQ(ilower, jlower);
+  ASSERT_EQ(iupper, jupper);
+  const auto local_size = (iupper + 1) - ilower;
+  ASSERT_EQ(local_size, this->field.getRegion("RGN_ALL").size());
 }
 
 TYPED_TEST(HypreMatrixTest, MoveConstructor) {
