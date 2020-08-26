@@ -102,18 +102,17 @@ public:
   }
 
   HypreVector<T>& operator=(const T& f) {
+    ASSERT0(indexConverter); // Needs to have an index set
     HypreVector<T> result(f, indexConverter);
     *this = std::move(result);
     return *this;
   }
 
-  // Mesh can't be const yet, need const-correctness on Mesh;
-  // GlobalIndexer ctor also modifies mesh -- FIXME
-  HypreVector(Mesh& mesh, IndexerPtr<T> indConverter)
-      : indexConverter(indConverter) {
+  /// Construct a vector with given index set, but don't set any values
+  HypreVector(IndexerPtr<T> indConverter) : indexConverter(indConverter) {
+    Mesh& mesh = *indConverter->getMesh();
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
-    ASSERT1(indConverter->getMesh() == &mesh);
     
     const auto jlower = indConverter->getGlobalStart();
     const auto jupper = jlower + indConverter->size() - 1; // inclusive end
@@ -281,7 +280,7 @@ public:
   /// preallocating memory if requeted and possible.
   ///
   /// note: preallocate not currently used, but here to match PetscMatrix interface 
-  explicit HypreMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
+  explicit HypreMatrix(IndexerPtr<T> indConverter, bool UNUSED(preallocate) = true)
       : hypre_matrix(new HYPRE_IJMatrix, MatrixDeleter{}), index_converter(indConverter) {
     Mesh *mesh = indConverter->getMesh();
     const MPI_Comm comm =

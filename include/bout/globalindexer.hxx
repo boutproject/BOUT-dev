@@ -18,7 +18,7 @@ using IndexerPtr = std::shared_ptr<GlobalIndexer<T>>;
 using InterpolationWeights = std::vector<ParallelTransform::PositionsAndWeights>;
 
 /*!
- * A singleton which accepts index objects produced by iterating over
+ * An object which accepts index objects produced by iterating over
  * fields and returns a global index. This index can be used when
  * constructing PETSc arrays. Guard regions used for communication
  * between processes will have the indices of the part of the interior

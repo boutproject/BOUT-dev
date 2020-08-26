@@ -48,22 +48,30 @@ TYPED_TEST(HypreVectorTest, FieldConstructor) {
   ASSERT_EQ(local_size, this->indexer->size());
   const TypeParam result = vector.toField();
 
-  EXPECT_TRUE(IsFieldEqual(this->field, result, "RGN_NOY"));
+  // Note: Indexer doesn't have a stencil, so doesn't include boundaries
+  EXPECT_TRUE(IsFieldEqual(this->field, result, "RGN_NOBNDRY"));
+}
+
+TYPED_TEST(HypreVectorTest, FieldAssignmentEmptyVector) {
+  HypreVector<TypeParam> vector{};
+  // vector doesn't have an index set
+
+  EXPECT_THROW(vector = this->field, BoutException);
 }
 
 TYPED_TEST(HypreVectorTest, FieldAssignment) {
-  HypreVector<TypeParam> vector{};
+  HypreVector<TypeParam> vector{this->indexer};
 
   vector = this->field;
 
-  EXPECT_TRUE(IsFieldEqual(this->field, vector.toField(), "RGN_NOY"));
+  EXPECT_TRUE(IsFieldEqual(this->field, vector.toField(), "RGN_NOBNDRY"));
 }
 
 TYPED_TEST(HypreVectorTest, MoveConstructor) {
   HypreVector<TypeParam> vector(this->field, this->indexer);
   HypreVector<TypeParam> moved(std::move(vector));
 
-  EXPECT_TRUE(IsFieldEqual(this->field, moved.toField(), "RGN_NOY"));
+  EXPECT_TRUE(IsFieldEqual(this->field, moved.toField(), "RGN_NOBNDRY"));
 }
 
 TYPED_TEST(HypreVectorTest, MoveAssignment) {
@@ -72,7 +80,7 @@ TYPED_TEST(HypreVectorTest, MoveAssignment) {
 
   moved = std::move(vector);
 
-  EXPECT_TRUE(IsFieldEqual(this->field, moved.toField(), "RGN_NOY"));
+  EXPECT_TRUE(IsFieldEqual(this->field, moved.toField(), "RGN_NOBNDRY"));
 }
 
 TYPED_TEST(HypreVectorTest, Assemble) {
@@ -106,19 +114,19 @@ TYPED_TEST(HypreVectorTest, GetElements) {
   }
   HypreVector<TypeParam> vector(this->field, this->indexer);
 
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) { EXPECT_EQ(vector(i), this->field[i]); }
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) { EXPECT_EQ(vector(i), this->field[i]); }
 }
 
 TYPED_TEST(HypreVectorTest, SetElements) {
-  HypreVector<TypeParam> vector{*bout::globals::mesh, this->indexer};
+  HypreVector<TypeParam> vector{this->indexer};
 
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     vector(i) = static_cast<BoutReal>(i.ind);
     // Set to identical values, but only "coincidentally"
     this->field[i] = static_cast<BoutReal>(i.ind);
   }
 
-  EXPECT_TRUE(IsFieldEqual(this->field, vector.toField(), "RGN_NOY"));
+  EXPECT_TRUE(IsFieldEqual(this->field, vector.toField(), "RGN_NOBNDRY"));
 }
 
 #if CHECKLEVEL >= 1
@@ -147,8 +155,8 @@ TYPED_TEST(HypreVectorTest, Swap) {
 
   swap(vector, vector2);
 
-  EXPECT_TRUE(IsFieldEqual(vector.toField(), field2, "RGN_NOY"));
-  EXPECT_TRUE(IsFieldEqual(vector2.toField(), this->field, "RGN_NOY"));
+  EXPECT_TRUE(IsFieldEqual(vector.toField(), field2, "RGN_NOBNDRY"));
+  EXPECT_TRUE(IsFieldEqual(vector2.toField(), this->field, "RGN_NOBNDRY"));
 }
 
 //////////////////////////////////////////////////
@@ -270,7 +278,7 @@ TYPED_TEST(HypreMatrixTest, Assemble) {
 TYPED_TEST(HypreMatrixTest, SetElements) {
   HypreMatrix<TypeParam> matrix(this->indexer);
 
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     matrix(i, i) = static_cast<BoutReal>(i.ind);
   }
 
@@ -278,8 +286,8 @@ TYPED_TEST(HypreMatrixTest, SetElements) {
 
   auto raw_matrix = matrix.get();
 
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
-    BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
+    BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOBNDRY")) {
       auto i_index = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(i));
       auto j_index = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(j));
       HYPRE_Int ncolumns{1};
@@ -312,8 +320,8 @@ TYPED_TEST(HypreMatrixTest, GetElements) {
   }
   matrix.assemble();
 
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
-    BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
+    BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOBNDRY")) {
       if (i == j) {
         EXPECT_EQ(matrix(i, j), static_cast<BoutReal>(i.ind));
       } else {
