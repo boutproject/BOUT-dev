@@ -622,8 +622,7 @@ ac_includes_default="\
 #endif"
 
 gt_needs=
-ac_subst_vars='BOUT_HAS_HYPRE
-SLEPC_ARCH
+ac_subst_vars='SLEPC_ARCH
 SLEPC_DIR
 SLEPC_MAKE_INCLUDE
 PETSC_ARCH
@@ -643,6 +642,7 @@ BOUT_HAS_SCOREP
 BOUT_HAS_PVODE
 BOUT_HAS_PRETTY_FUNCTION
 BOUT_HAS_PNETCDF
+BOUT_HAS_HYPRE
 BOUT_HAS_PETSC
 BOUT_HAS_NETCDF
 BOUT_HAS_LAPACK
@@ -12066,7 +12066,6 @@ fi
 
    if test $BACL_found = yes; then :
 
-       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_HYPRE"
        BOUT_HAS_HYPRE="yes"
 
 else
@@ -16545,6 +16544,18 @@ fi
 
 
 
+if test "x$BOUT_HAS_HYPRE" = "xyes"; then :
+
+$as_echo "#define BOUT_HAS_HYPRE 1" >>confdefs.h
+
+else
+
+$as_echo "#define BOUT_HAS_HYPRE 0" >>confdefs.h
+
+fi
+
+
+
 if test "x$BOUT_HAS_PNETCDF" = "xyes"; then :
 
 $as_echo "#define BOUT_HAS_PNETCDF 1" >>confdefs.h
@@ -16698,7 +16709,6 @@ else
 $as_echo "#define BOUT_USE_TRACK 0" >>confdefs.h
 
 fi
-
 
 
 
