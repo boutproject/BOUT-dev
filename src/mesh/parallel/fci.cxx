@@ -47,8 +47,8 @@
 
 #include <string>
 
-FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* boundary,
-               bool zperiodic)
+FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* inner_boundary,
+	       BoundaryRegionPar* outer_boundary, bool zperiodic)
     : map_mesh(mesh), offset(offset_), boundary_mask(map_mesh),
       corner_boundary_mask(map_mesh) {
 
@@ -218,7 +218,7 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
         // are set to -1
 
         if (xt_prime(x, y, z) < 0.0) {
-          // Hit a boundary
+          // Hit an inner boundary
 
           // Set to false to not skip this point
           boundary_mask(x, y, z) = false;
@@ -261,7 +261,59 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
           // Invert 2x2 matrix to get change in index
           BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
           BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
-          boundary->add_point(
+          inner_boundary->add_point(
+              x, y, z, x + dx, y + 0.5 * offset,
+              z + dz, // Intersection point in local index space
+              0.5
+                  * coord.dy(x, y,
+                             z), // sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
+              PI                 // Right-angle intersection
+          );
+        } else if (xt_prime(x, y, z) > map_mesh.xend) {
+          // Hit an outer boundary
+
+          // Set to false to not skip this point
+          boundary_mask(x, y, z) = false;
+
+          // Need to specify the index of the boundary intersection, but
+          // this may not be defined in general.
+          // We do however have the real-space (R,Z) coordinates. Here we extrapolate,
+          // using the change in R and Z to calculate the change in (x,z) indices
+          //
+          // ( dR ) = ( dR/dx  dR/dz ) ( dx )
+          // ( dZ )   ( dZ/dx  dZ/dz ) ( dz )
+          //
+          // where (dR,dZ) is the change in (R,Z) along the field,
+          // (dx,dz) is the change in (x,z) index along the field,
+          // and the gradients dR/dx etc. are evaluated at (x,y,z)
+
+          BoutReal dR_dx = 0.5 * (R(x + 1, y, z) - R(x - 1, y, z));
+          BoutReal dZ_dx = 0.5 * (Z(x + 1, y, z) - Z(x - 1, y, z));
+
+          BoutReal dR_dz, dZ_dz;
+          // Handle the edge cases in Z
+          if (z == 0) {
+            dR_dz = R(x, y, z + 1) - R(x, y, z);
+            dZ_dz = Z(x, y, z + 1) - Z(x, y, z);
+
+          } else if (z == map_mesh.LocalNz - 1) {
+            dR_dz = R(x, y, z) - R(x, y, z - 1);
+            dZ_dz = Z(x, y, z) - Z(x, y, z - 1);
+
+          } else {
+            dR_dz = 0.5 * (R(x, y, z + 1) - R(x, y, z - 1));
+            dZ_dz = 0.5 * (Z(x, y, z + 1) - Z(x, y, z - 1));
+          }
+
+          BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
+
+          BoutReal dR = R_prime(x, y, z) - R(x, y, z);
+          BoutReal dZ = Z_prime(x, y, z) - Z(x, y, z);
+
+          // Invert 2x2 matrix to get change in index
+          BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
+          BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
+          outer_boundary->add_point(
               x, y, z, x + dx, y + 0.5 * offset,
               z + dz, // Intersection point in local index space
               0.5

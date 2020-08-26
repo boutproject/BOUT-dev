@@ -20,15 +20,19 @@ enum class BndryLoc {xin,
                      ydown,
                      yup,
                      all,
-                     par_fwd,   // Don't include parallel boundaries
-                     par_bkwd};
+                     par_fwd_xin,   // Don't include parallel boundaries
+                     par_bkwd_xin,
+                     par_fwd_xout,   // Don't include parallel boundaries
+                     par_bkwd_xout};
 constexpr BndryLoc BNDRY_XIN = BndryLoc::xin;
 constexpr BndryLoc BNDRY_XOUT = BndryLoc::xout;
 constexpr BndryLoc BNDRY_YDOWN = BndryLoc::ydown;
 constexpr BndryLoc BNDRY_YUP = BndryLoc::yup;
 constexpr BndryLoc BNDRY_ALL = BndryLoc::all;
-constexpr BndryLoc BNDRY_PAR_FWD = BndryLoc::par_fwd;
-constexpr BndryLoc BNDRY_PAR_BKWD = BndryLoc::par_bkwd;
+constexpr BndryLoc BNDRY_PAR_FWD_XIN = BndryLoc::par_fwd_xin;
+constexpr BndryLoc BNDRY_PAR_BKWD_XIN = BndryLoc::par_bkwd_xin;
+constexpr BndryLoc BNDRY_PAR_FWD_XOUT = BndryLoc::par_fwd_xout;
+constexpr BndryLoc BNDRY_PAR_BKWD_XOUT = BndryLoc::par_bkwd_xout;
 
 class BoundaryRegionBase {
 public:

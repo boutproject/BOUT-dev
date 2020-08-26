@@ -103,9 +103,9 @@ namespace FV {
       // 3D Metric, need yup/ydown fields.
       // Requires previous communication of metrics
       // -- should insert communication here?
-      if (!coord->g23.hasParallelSlices() || !coord->J.hasParallelSlices() || 
-	  !coord->dy.hasParallelSlices() || !coord->dz.hasParallelSlices() ||
-	  !coord->Bxy.hasParallelSlices() ) {
+      if (!coord->g23.hasParallelSlices() || !coord->g_23.hasParallelSlices() || 
+	  !coord->dy.hasParallelSlices()  || !coord->dz.hasParallelSlices()   ||
+	  !coord->Bxy.hasParallelSlices() || !coord->J.hasParallelSlices()    ) {
 	throw BoutException("metrics have no yup/down: Maybe communicate in init?");
       }
  

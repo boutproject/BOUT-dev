@@ -153,7 +153,7 @@ def make_maps(grid, magnetic_field, nslice=1, quiet=False, **kwargs):
                 for i in np.arange(0,xind.shape[0]):
                     for k in np.arange(0,xind.shape[-1]):
                         if (xind[i,k] > xind.shape[0]-mxg) :
-                            xind[i,k] = -1
+                            xind[i,k] = xind.shape[0]
 
             parallel_slice.xt_prime[:, j, :] = xind
             parallel_slice.zt_prime[:, j, :] = zind

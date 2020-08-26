@@ -234,12 +234,20 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
     side = "yup";
     break;
   }
-  case BNDRY_PAR_FWD: {
-    side = "par_yup";
+  case BNDRY_PAR_FWD_XIN: {
+    side = "par_yup_xin";
     break;
   }
-  case BNDRY_PAR_BKWD: {
-    side = "par_ydown";
+  case BNDRY_PAR_FWD_XOUT: {
+    side = "par_yup_xout";
+    break;
+  }
+  case BNDRY_PAR_BKWD_XIN: {
+    side = "par_ydown_xin";
+    break;
+  }
+  case BNDRY_PAR_BKWD_XOUT: {
+    side = "par_ydown_xout";
     break;
   }
   default: {
