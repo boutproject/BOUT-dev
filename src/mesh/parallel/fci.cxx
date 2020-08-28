@@ -269,9 +269,8 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* inn
                              z), // sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
               PI                 // Right-angle intersection
           );
-        } else if (xt_prime(x, y, z) > map_mesh.xend) {
+        } else if (xt_prime(x, y, z) >= map_mesh.xend+1) {
           // Hit an outer boundary
-
           // Set to false to not skip this point
           boundary_mask(x, y, z) = false;
 

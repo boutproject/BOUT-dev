@@ -149,12 +149,6 @@ def make_maps(grid, magnetic_field, nslice=1, quiet=False, **kwargs):
                 xind[outside] = -1
                 zind[outside] = -1
 
-                # Check if xind is outside of the domain
-                for i in np.arange(0,xind.shape[0]):
-                    for k in np.arange(0,xind.shape[-1]):
-                        if (xind[i,k] > xind.shape[0]-mxg) :
-                            xind[i,k] = xind.shape[0]
-
             parallel_slice.xt_prime[:, j, :] = xind
             parallel_slice.zt_prime[:, j, :] = zind
 
@@ -288,6 +282,7 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
 
         # Magnetic field
         f.write("B", Bmag)
+        f.write("Bxy", Bmag)
 
         # Pressure
         f.write("pressure", pressure)
