@@ -1,7 +1,9 @@
 #ifndef BOUT_HYPRE_INTERFACE_H
 #define BOUT_HYPRE_INTERFACE_H
 
-#ifdef BOUT_HAS_HYPRE
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_HYPRE
 
 #include "boutcomm.hxx"
 #include "field.hxx"
