@@ -33,7 +33,7 @@
 #ifndef LAPLACE_XY2_HYPRE_H
 #define LAPLACE_XY2_HYPRE_H
 
-#ifndef BOUT_HAS_HYPRE
+#if !BOUT_HAS_HYPRE
 // If no Hypre
 
 #warning LaplaceXY requires Hypre. No LaplaceXY available
@@ -113,10 +113,15 @@ public:
    */
   int precon(HYPRE_IJVector x, HYPRE_IJVector y);
 
+  /// Set up a stencil describing the structure of the operator.
+  static OperatorStencil<Ind2D> getStencil(Mesh* localmesh, RangeIterator lowerYBound,
+                                           RangeIterator upperYBound);
+
 private:
   Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
-
-  Field2D f2dinit;                   ///< This is here just to initialise matrix
+  RangeIterator lowerY, upperY; ///< Lower and upper boundary ranges
+  IndexerPtr<Field2D> indexer;  ///< Converts local to global indices
+  
   bout::HypreMatrix<Field2D> matrix; ///< Matrix to be inverted
   HYPRE_Solver solver;               ///< Solver
 

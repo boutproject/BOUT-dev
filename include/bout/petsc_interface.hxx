@@ -132,6 +132,7 @@ public:
   }
 
   PetscVector<T>& operator=(const T& f) {
+    ASSERT1(indexConverter); // Needs to have index set
     BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
       const PetscInt ind = indexConverter->getGlobal(i);
       if (ind != -1) {

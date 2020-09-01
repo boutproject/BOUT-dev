@@ -18,6 +18,9 @@
 /* HDF5 support */
 #undef BOUT_HAS_HDF5
 
+/* Hypre support */
+#undef BOUT_HAS_HYPRE
+
 /* IDA support */
 #undef BOUT_HAS_IDA
 
