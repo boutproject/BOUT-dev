@@ -14,6 +14,7 @@
 - Most factories and `create` methods standardised. Run
   `bin/bout-v5-factory-upgrader.py` on your physics models to update
   them [\#1842](https://github.com/boutproject/BOUT-dev/pull/1842)
+  [\#2087](https://github.com/boutproject/BOUT-dev/pull/2087)
 - We now use [fmt](https://fmt.dev) for all our string formatting,
   instead of the printf-style formatting. This affects calls to
   `Output`, `BoutException`/`ParseException`, `DataFile`,
