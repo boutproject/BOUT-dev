@@ -14,6 +14,7 @@
 #cmakedefine01 BOUT_HAS_LAPACK
 #cmakedefine01 BOUT_HAS_NETCDF
 #cmakedefine01 BOUT_HAS_PETSC
+#cmakedefine01 BOUT_HAS_HYPRE
 #cmakedefine01 BOUT_HAS_PRETTY_FUNCTION
 #cmakedefine01 BOUT_HAS_PVODE
 #cmakedefine01 BOUT_HAS_SCOREP
