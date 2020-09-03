@@ -26,7 +26,7 @@ set(serial_tests_sources
   ./include/bout/test_hypre_interface.cxx
   ./include/bout/test_macro_for_each.cxx
   ./include/bout/test_monitor.cxx
-  ./include/bout/test_petsc_indexer.cxx
+  # ./include/bout/test_petsc_indexer.cxx
   ./include/bout/test_petsc_matrix.cxx
   ./include/bout/test_petsc_setters.cxx
   ./include/bout/test_petsc_vector.cxx
@@ -66,7 +66,10 @@ set(serial_tests_sources
   ./src/test_bout++.cxx
   )
 
-set(serial_tests_depends bout++ gtest gmock)
+set(serial_tests_depends bout++ gtest gmock PETSc HYPRE)
+set(HYPRE_USING_CUDA_DEFINE "")
+set(HYPRE_USING_CUBLAS_DEFINE "")
+set(MEMORY_DEFINE "")
 if (ENABLE_OPENMP)
   set(serial_tests_depends ${serial_tests_depends} openmp)
   set(OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
@@ -74,12 +77,26 @@ endif ()
 
 if (ENABLE_CUDA)
   set(serial_tests_depends ${serial_tests_depends} cuda)
+  set(HYPRE_USING_CUDA_DEFINE "HYPRE_USING_CUDA")
+  set(MEMORY_DEFINE "HYPRE_USING_UNIFIED_MEMORY")
 endif ()
 
 message(STATUS "serial_tests depends ${serial_tests_depends}")
 blt_add_executable(
   NAME serial_tests
   SOURCES ${serial_tests_sources}
+   INCLUDES 
+     ${PROJECT_SOURCE_DIR}/include
+     ${PROJECT_SOURCE_DIR}/externalpackages/fmt/include
+     ${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/include
+     ${CUDA_TOOLKIT_ROOT_DIR}/include
+   DEFINES 
+      "BOUT_VERSION_STRING=\"${BOUT_FULL_VERSION}\""
+      "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
+      BOUT_HAS_HYPRE
+      ${HYPRE_USING_CUDA_DEFINE}
+      ${HYPRE_USING_CUBLAS_DEFINE}
+      ${MEMORY_DEFINE}
   DEPENDS_ON ${serial_tests_depends})
 
 
@@ -99,6 +116,17 @@ set_target_properties(serial_tests PROPERTIES LINKER_LANGUAGE CXX)
 #add_test(NAME serial_tests COMMAND serial_tests)
 set_target_properties(serial_tests PROPERTIES FOLDER tests/unit)
 add_dependencies(build-check-unit-tests serial_tests)
+target_link_libraries(
+   serial_tests PUBLIC 
+   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcusparse_static.a
+   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcurand_static.a
+   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libculibos.a
+   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublas_static.a
+   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublasLt_static.a
+)
+
+
+
 blt_add_test(
   NAME serial_tests
   COMMAND serial_tests)
