@@ -54,6 +54,7 @@ jobs:
 # Fedora
   - name: "Fedora (rawhide)"
     dist: bionic
+    env: FLEXIBLAS=NETLIB
     script: ./.travis_fedora.sh setup mpich rawhide
     addons:
       apt:
