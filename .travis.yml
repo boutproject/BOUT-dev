@@ -172,16 +172,16 @@ jobs:
 
 before_install:
   ##################################################
+  # Install remaining python3 packages using pip
+  ##################################################
+  - source .pip_install_for_travis.sh ${PIP_PACKAGES}
+  ##################################################
   # Job specific setup
   ##################################################
   # The following eval is the way to force CC/CXX to desired values as travis forces values
   # for these in the pre-before_install stage, see https://docs.travis-ci.com/user/languages/cpp/#C11-C%2B%2B11-(and-Beyond)-and-Toolchain-Versioning
   - eval "${MATRIX_EVAL}"
   - echo "${CC} $(${CC} --version)"
-  ##################################################
-  # Install remaining python3 packages using pip
-  ##################################################
-  - source .pip_install_for_travis.sh ${PIP_PACKAGES}
 
 script:
   # Configure, compile and run test_suite
