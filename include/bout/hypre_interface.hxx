@@ -13,11 +13,22 @@
 #include "HYPRE.h"
 #include "HYPRE_IJ_mv.h"
 #include "HYPRE_parcsr_mv.h"
+#include "HYPRE_parcsr_ls.h"
 #include "HYPRE_utilities.h"
+#include "_hypre_utilities.h"
 
 #include <memory>
 
 namespace bout {
+
+#if 1   //HYPRE with Cuda enabled : todo use appropriate flag
+#define HypreMalloc(P, SIZE)  cudaMallocManaged(P, SIZE)
+#define HypreFree(P)  cudaFree(P)
+#else
+#define HypreMalloc(P, SIZE)  malloc(P, SIZE)
+#define HypreFree(P)  free(P)
+#endif
+
 
 template <class T>
 class HypreVector;
@@ -30,11 +41,17 @@ void swap(HypreVector<T>& lhs, HypreVector<T>& rhs);
 
 template <class T>
 class HypreVector {
+  MPI_Comm comm;
+  HYPRE_BigInt jlower, jupper, vsize;
   HYPRE_IJVector hypre_vector{nullptr};
   HYPRE_ParVector parallel_vector{nullptr};
   IndexerPtr<T> indexConverter;
   CELL_LOC location;
   bool initialised{false};
+  bool have_indices;
+  HYPRE_BigInt *I{nullptr};
+  HYPRE_Complex *V{nullptr};
+
 
 public:
   static_assert(bout::utils::is_Field<T>::value, "HypreVector only works with Fields");
@@ -48,6 +65,8 @@ public:
     }
     // Also destroys parallel_vector
     HYPRE_IJVectorDestroy(hypre_vector);
+    HypreFree(I);  
+    HypreFree(V);
   }
 
   // Disable copy, at least for now: not clear that HYPRE_IJVector is
@@ -62,6 +81,10 @@ public:
     location = other.location;
     initialised = other.initialised;
     other.initialised = false;
+    I = other.I;
+    V = other.V;
+    other.I = nullptr;
+    other.V = nullptr;
   }
 
   HypreVector<T>& operator=(HypreVector<T>&& other) {
@@ -71,6 +94,10 @@ public:
     location = other.location;
     initialised = other.initialised;
     other.initialised = false;
+    I = other.I;
+    V = other.V;
+    other.I = nullptr;
+    other.V = nullptr;
     return *this;
   }
   
@@ -83,6 +110,7 @@ public:
 
     const auto jlower = indConverter->getGlobalStart();
     const auto jupper = jlower + indConverter->size() - 1; // inclusive end
+    vsize = jupper - jlower + 1;
 
     HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector);
     HYPRE_IJVectorSetObjectType(hypre_vector, HYPRE_PARCSR);
@@ -90,17 +118,9 @@ public:
 
     location = f.getLocation();
     initialised = true;
-
-    BOUT_FOR_SERIAL(i, indConverter->getRegionAll()) {
-      const auto index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
-      if (index != -1) {
-        HYPRE_IJVectorSetValues(hypre_vector, static_cast<HYPRE_Int>(1), &index, &f[i]);
-      }
-    }
-
-    // FIXME: call HYPRE_IJVectorSetMaxOffProcElmts
-
-    assemble();
+    HypreMalloc(&I, vsize*sizeof(HYPRE_BigInt)); 
+    HypreMalloc(&V, vsize*sizeof(HYPRE_Complex));
+    importValuesFromField(f);
   }
 
   HypreVector<T>& operator=(const T& f) {
@@ -118,12 +138,15 @@ public:
     
     const auto jlower = indConverter->getGlobalStart();
     const auto jupper = jlower + indConverter->size() - 1; // inclusive end
+    vsize = jupper - jlower + 1;
     
     HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector);
     HYPRE_IJVectorSetObjectType(hypre_vector, HYPRE_PARCSR);
     HYPRE_IJVectorInitialize(hypre_vector);
     initialised = true;
     location = CELL_LOC::centre;
+    HypreMalloc(&I, vsize*sizeof(HYPRE_BigInt)); 
+    HypreMalloc(&V, vsize*sizeof(HYPRE_Complex));
   }
 
   void assemble() {
@@ -135,18 +158,36 @@ public:
     T result(indexConverter->getMesh());
     result.allocate().setLocation(location);
 
+    HYPRE_IJVectorGetValues(hypre_vector, vsize, I, V);
     // Note that this only populates boundaries to a depth of 1
+    int count = 0;
     BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
       const auto index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
-      if (index != -1) {
-        // Yes, complex, but this is a HYPRE typedef for real
-        HYPRE_Complex value;
-        HYPRE_IJVectorGetValues(hypre_vector, 1, &index, &value);
-        result[i] = static_cast<BoutReal>(value);
+      if (index != -1) { // Todo double check why index out of bounds does not return -1
+        result[i] = static_cast<BoutReal>(V[count]);
+        count++;
       }
     }
 
     return result;
+  }
+
+  void importValuesFromField(const T &f) {
+    int vec_i = 0;
+    //BOUT_FOR_SERIAL(i, f.getRegion("RGN_ALL_THIN")) {
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
+      const auto index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
+      if (index != -1) {
+        I[vec_i] = index;        
+        V[vec_i] = f[i];
+        vec_i ++;
+      }
+    }
+
+    ASSERT2(vec_i == vsize);
+    HYPRE_IJVectorSetValues(hypre_vector, vsize, I, V);
+    assemble();
+    have_indices = true;
   }
 
   HYPRE_IJVector get() { return hypre_vector; }
@@ -231,21 +272,29 @@ void swap(HypreMatrix<T>& lhs, HypreMatrix<T>& rhs);
 
 template <class T>
 class HypreMatrix {
+  MPI_Comm comm;
+  HYPRE_BigInt ilower, iupper;
   std::shared_ptr<HYPRE_IJMatrix> hypre_matrix{nullptr};
   HYPRE_ParCSRMatrix parallel_matrix{nullptr};
   IndexerPtr<T> index_converter;
+  CELL_LOC location;
   bool initialised{false};
   int yoffset{0};
   ParallelTransform* parallel_transform{nullptr};
   bool assembled{false};
+  HYPRE_BigInt max_num_cols, num_rows;
+  HYPRE_BigInt *num_cols; 
+  HYPRE_BigInt *I;
+  HYPRE_BigInt **J;
+  HYPRE_Complex **V;
 
+  // todo also take care of J,V
   struct MatrixDeleter {
     void operator()(HYPRE_IJMatrix* matrix) const {
       if (*matrix == nullptr) {
         return;
       }
       HYPRE_IJMatrixDestroy(*matrix);
-      delete matrix;
     }
   };
 
@@ -264,6 +313,12 @@ public:
     yoffset = other.yoffset;
     parallel_transform = other.parallel_transform;
     other.initialised = false;
+    I = other.I;
+    J = other.J;
+    V = other.V;
+    other.I = nullptr;
+    other.J = nullptr;
+    other.V = nullptr;
   }
   HypreMatrix<T>& operator=(const HypreMatrix<T>&) = delete;
   HypreMatrix<T>& operator=(HypreMatrix<T>&& other) {
@@ -275,6 +330,12 @@ public:
     yoffset = other.yoffset;
     parallel_transform = other.parallel_transform;
     other.initialised = false;
+    I = other.I;
+    J = other.J;
+    V = other.V;
+    other.I = nullptr;
+    other.J = nullptr;
+    other.V = nullptr;
     return *this;
   }
   
@@ -291,6 +352,20 @@ public:
 
     const auto ilower = indConverter->getGlobalStart();
     const auto iupper = ilower + indConverter->size() - 1; // inclusive end
+    num_rows = iupper - ilower + 1;
+
+    max_num_cols = num_rows; // bogus until we reconcile interface and test_hypre_interface
+    HypreMalloc(&I, num_rows*sizeof(HYPRE_BigInt)); 
+    HypreMalloc(&num_cols, num_rows*sizeof(HYPRE_BigInt)); 
+    J = new HYPRE_BigInt*[num_rows];
+    V = new HYPRE_Complex*[num_rows];
+    for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
+      num_cols[i] = 0;
+      I[i] = ilower + i;
+      J[i] = new HYPRE_BigInt[max_num_cols];
+      V[i] = new HYPRE_Complex[max_num_cols];
+    }
+
     
     HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &*hypre_matrix);
     HYPRE_IJMatrixSetObjectType(*hypre_matrix, HYPRE_PARCSR);
@@ -300,6 +375,101 @@ public:
     // HYPRE_IJMatrixSetPrintLevel(hypre_matrix, 0);
 
     initialised = true;
+  }
+
+
+  explicit HypreMatrix(IndexerPtr<T> indConverter, HYPRE_BigInt max_num_cols_, bool UNUSED(preallocate) = true)
+      : hypre_matrix(new HYPRE_IJMatrix, MatrixDeleter{}), index_converter(indConverter) {
+    Mesh *mesh = indConverter->getMesh();
+    const MPI_Comm comm =
+        std::is_same<T, FieldPerp>::value ? mesh->getXcomm() : BoutComm::get();
+    parallel_transform = &mesh->getCoordinates()->getParallelTransform();
+
+    const auto ilower = indConverter->getGlobalStart();
+    const auto iupper = ilower + indConverter->size() - 1; // inclusive end
+    num_rows = iupper - ilower + 1;
+
+    max_num_cols = max_num_cols_;
+    HypreMalloc(&I, num_rows*sizeof(HYPRE_BigInt)); 
+    HypreMalloc(&num_cols, num_rows*sizeof(HYPRE_BigInt)); 
+    J = new HYPRE_BigInt*[num_rows];
+    V = new HYPRE_Complex*[num_rows];
+    for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
+      num_cols[i] = 0;
+      I[i] = ilower + i;
+      J[i] = new HYPRE_BigInt[max_num_cols];
+      V[i] = new HYPRE_Complex[max_num_cols];
+    }
+
+    
+    HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &*hypre_matrix);
+    HYPRE_IJMatrixSetObjectType(*hypre_matrix, HYPRE_PARCSR);
+    HYPRE_IJMatrixInitialize(*hypre_matrix);
+    // TODO: redirect printf into BoutException using freopen
+    // Second argument here is meaningless
+    // HYPRE_IJMatrixSetPrintLevel(hypre_matrix, 0);
+
+    initialised = true;
+  }
+
+
+  BoutReal getVal(const ind_type& row, const ind_type& column) const {
+    const HYPRE_BigInt global_row = index_converter->getGlobal(row);
+    const HYPRE_BigInt global_column = index_converter->getGlobal(column);
+#if CHECKLEVEL >= 1
+    if (global_row < 0 or global_column < 0) {
+      throw BoutException(
+          "Invalid HypreMatrix element at row = ({}, {}, {}), column = ({}, {}, {})",
+          row.x(), row.y(), row.z(), column.x(), column.y(), column.z());
+    }
+#endif
+    return getVal(global_row, global_column);
+  }
+
+  BoutReal getVal(const HYPRE_BigInt row, const HYPRE_BigInt column) const {
+    HYPRE_Complex value = 0.0;
+    HYPRE_BigInt i = row - ilower;
+    ASSERT2(i >= 0 && i < num_rows);
+    for(HYPRE_BigInt col_ind = 0; col_ind < num_cols[i]; ++col_ind) {
+      if (J[i][col_ind] == column) {
+        value = V[i][col_ind];
+        break;
+      }
+    }
+    return static_cast<BoutReal>(value);
+  }
+
+  void setVal(const ind_type& row, const ind_type& column, BoutReal value) {
+    const HYPRE_BigInt global_row = index_converter->getGlobal(row);
+    const HYPRE_BigInt global_column = index_converter->getGlobal(column);
+#if CHECKLEVEL >= 1
+    if (global_row < 0 or global_column < 0) {
+      throw BoutException(
+          "Invalid HypreMatrix element at row = ({}, {}, {}), column = ({}, {}, {})",
+          row.x(), row.y(), row.z(), column.x(), column.y(), column.z());
+    }
+#endif
+    return setVal(global_row, global_column, value);
+  }
+
+  void setVal(const HYPRE_BigInt row, const HYPRE_BigInt column, BoutReal value) {
+    HYPRE_BigInt i = row - ilower;
+    ASSERT2(i >= 0 && i < num_rows);
+    bool value_set = false;
+    for(HYPRE_BigInt col_ind = 0; col_ind < num_cols[i]; ++col_ind) {
+      if (J[i][col_ind] == column) {
+        V[i][col_ind] = value;
+        value_set  = true;
+        break;
+      }
+    }
+
+    if (!value_set)
+    {
+      ASSERT2(num_cols[i] != max_num_cols);
+      V[i][num_cols[i]] = value;
+      num_cols[i] ++;
+    }
   }
 
   class Element {
@@ -469,10 +639,31 @@ public:
   }
 
   void assemble() {
+    HYPRE_BigInt num_entries = 0;
+    HYPRE_BigInt *cols;
+    HYPRE_Complex *vals;
+    for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
+      num_entries += num_cols[i];
+    }
+    HypreMalloc(&cols, num_entries*sizeof(HYPRE_BigInt)); 
+    HypreMalloc(&vals, num_entries*sizeof(HYPRE_Complex));
+    int entry = 0;
+    for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
+      for(HYPRE_BigInt col_ind = 0; col_ind < num_cols[i]; ++col_ind) {
+        cols[entry] = J[i][col_ind];
+        vals[entry] = V[i][col_ind];
+      }
+    }
+    HYPRE_IJMatrixSetValues(*hypre_matrix, num_rows, num_cols, I, cols, vals);
+
     HYPRE_IJMatrixAssemble(*hypre_matrix);
     HYPRE_IJMatrixGetObject(*hypre_matrix, reinterpret_cast<void**>(&parallel_matrix));
     assembled = true;
+
+    HypreFree(cols);
+    HypreFree(vals);
   }
+
 
   bool isAssembled() const { return assembled; }
 
@@ -497,6 +688,106 @@ public:
   HYPRE_ParCSRMatrix getParallel() { return parallel_matrix; }
   const HYPRE_ParCSRMatrix& getParallel() const { return parallel_matrix; }
 };
+
+// This is a specific Hypre matrix system.  here we will be setting is the system
+// AMG(Px=b) A x = b
+// and we will be solvingthe system using the preconditioned conjugate gradient 
+// method utilizing the AMG preconditioner on the system Px = b.  In some cases
+// it will be advantage to us a P that is an approximation to A instead of P = A
+template <class T>
+class HypreSystem
+{
+private:
+  HypreMatrix<T> *P{nullptr};
+  HypreMatrix<T> *A{nullptr};
+  HypreVector<T> *x{nullptr};
+  HypreVector<T> *b{nullptr};
+  MPI_Comm comm;
+  HYPRE_Solver solver;
+  HYPRE_Solver precon;
+public:
+  HypreSystem(Mesh& mesh)
+  {
+    HYPRE_Init();
+# if 1
+    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
+#endif
+
+    comm = std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
+    HYPRE_ParCSRPCGCreate(comm, &solver);
+    HYPRE_PCGSetTol(solver, 1e-7);
+    HYPRE_PCGSetMaxIter(solver, 200);
+
+    HYPRE_BoomerAMGCreate(&precon);
+    HYPRE_BoomerAMGSetOldDefault(precon);
+    HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation
+    HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
+    HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU 
+    HYPRE_BoomerAMGSetInterpType(precon, 3); // must be 3 or 15 for GPU 
+    HYPRE_BoomerAMGSetNumSweeps(precon, 1);
+    HYPRE_BoomerAMGSetMaxLevels(precon, 20);
+    HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
+    //TODO:  add methods to change some of these defaults
+  }
+
+  ~HypreSystem() {
+    HYPRE_Finalize();
+  }
+
+  void setMatrix(HypreMatrix<T>* A_) {
+    A=A_;
+  }
+
+  void setupAMG(HypreMatrix<T>* P_) {
+    P = P_;
+    HYPRE_ParCSRPCGSetPrecond(solver, HYPRE_BoomerAMGSolve, HYPRE_BoomerAMGSetup, precon);
+    HYPRE_BoomerAMGSetup(precon, P->getParallel(), nullptr, nullptr);    
+  }
+
+  void setSolutionVector(HypreVector<T>* x_) {
+    x = x_;
+  }
+
+  void setRHSVector(HypreVector<T>* b_) {
+    b = b_;
+  }
+
+  HypreMatrix<T>* getMatrix() {
+    return A;
+  }
+
+  HypreMatrix<T>* getAMGMatrix() {
+    return P;
+  }  
+
+  HypreVector<T>* getRHS() {
+    return b;
+  }
+
+  HypreVector<T>* getSolution() {
+    return x;
+  }
+
+  HYPRE_PtrToParSolverFcn SetupFcn() const { 
+    return (HYPRE_PtrToParSolverFcn) HYPRE_BoomerAMGSetup; 
+  }
+  
+  HYPRE_PtrToParSolverFcn SolveFcn() const { 
+    return (HYPRE_PtrToParSolverFcn) HYPRE_BoomerAMGSolve; 
+  }
+
+  void solve()
+  {
+    ASSERT2(A != nullptr);
+    ASSERT2(x != nullptr);
+    ASSERT2(b != nullptr);
+
+    HYPRE_ParCSRPCGSolve(solver, A->getParallel(), b->getParallel(), x->getParallel());   
+  }
+
+
+};
+
 
 } // namespace bout
 
