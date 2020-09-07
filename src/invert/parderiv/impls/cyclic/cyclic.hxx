@@ -49,8 +49,8 @@
 
 class InvertParCR : public InvertPar {
 public:
-  InvertParCR(Options *opt, CELL_LOC location = CELL_CENTRE,
-              Mesh *mesh_in = bout::globals::mesh);
+  explicit InvertParCR(Options* opt, CELL_LOC location = CELL_CENTRE,
+                       Mesh* mesh_in = bout::globals::mesh);
 
   using InvertPar::solve;
   const Field3D solve(const Field3D &f) override;
