@@ -18,6 +18,7 @@ factories = {
         "type_name": "InvertPar",
         "create_method": "create",
         "old_create_method": "Create",
+        "arguments_changed": True,
     },
     "Mesh": {"factory_name": "Mesh", "type_name": "Mesh", "create_method": "Create"},
     "Laplacian": {
@@ -178,11 +179,22 @@ def fix_create_method(factory, source):
 
     if "old_create_method" not in factory:
         return source
+    old_create_pattern = re.compile(
+        r"({factory_name})\s*::\s*{old_create_method}\b".format(**factory)
+    )
+    if not old_create_pattern.findall(source):
+        return source
+
+    if factory.get("arguments_changed", False):
+        print(
+            "**WARNING** Arguments of {factory_name}::{create_method} have changed, and your current arguments may not work."
+            " Please consult the documentation for the new arguments.".format(**factory)
+        )
+
     return re.sub(
         r"({factory_name})\s*::\s*{old_create_method}\b".format(**factory),
         r"\1::{create_method}".format(**factory),
         source,
-        flags=re.VERBOSE,
     )
 
 
