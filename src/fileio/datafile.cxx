@@ -1596,6 +1596,11 @@ bool Datafile::varAdded(const std::string &name) {
       return true;
   }
   
+  for(const auto& var : fperp_arr ) {
+    if(name == var.name)
+      return true;
+  }
+
   for(const auto& var : v2d_arr ) {
     if(name == var.name)
       return true;
@@ -1634,6 +1639,12 @@ void *Datafile::varPtr(const std::string &name) {
   }
 
   for (const auto &var : f3d_arr) {
+    if (name == var.name) {
+      return static_cast<void *>(var.ptr);
+    }
+  }
+
+  for (const auto &var : fperp_arr) {
     if (name == var.name) {
       return static_cast<void *>(var.ptr);
     }
