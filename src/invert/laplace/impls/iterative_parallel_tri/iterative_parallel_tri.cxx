@@ -432,7 +432,16 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   /// SCOREP_USER_REGION_DEFINE(whileloop);
   /// SCOREP_USER_REGION_BEGIN(whileloop, "while loop",///SCOREP_USER_REGION_TYPE_COMMON);
 
-  while (true) {
+  const auto all = [](const Array<bool>& a) {
+    return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
+  };
+
+  // Check for convergence before loop to skip work with cvode
+  levels[0].calculate_residual(*this);
+  levels[0].calculate_total_residual(*this, errornorm, converged);
+  bool execute_loop = not all(converged);
+
+  while (execute_loop) {
 
     levels[current_level].gauss_seidel_red_black(*this);
 
@@ -495,10 +504,6 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     ++count;
     ++subcount;
     /// SCOREP_USER_REGION_END(increment);
-
-    const auto all = [](const Array<bool>& a) {
-      return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
-    };
 
     // Force at least max_cycle iterations at each level
     // Do not skip with tolerence to minimize comms
