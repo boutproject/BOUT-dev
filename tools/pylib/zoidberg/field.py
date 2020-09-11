@@ -489,7 +489,32 @@ try:
 
         def Rfunc(self, x, z, phi):
             return np.full(x.shape, x)
+
+    class Screwpinch(MagneticField):
+        
+        def __init__(self, xcentre=1.5, zcentre=0.0, shear = 0, yperiod=2*np.pi, Btor=1.0):
+            self.x = Symbol('x')
+            self.z = Symbol('z')
+            self.y = Symbol('y')
+            self.r = Symbol('r')
+            self.r = ((self.x-xcentre)**2 + (self.z-zcentre)**2)**(0.5)
             
+            self.phi = Symbol('phi')
+            
+            alpha = shear
+            self.theta = atan2(self.z - zcentre, self.x - xcentre)
+            A = alpha*self.r**2
+            Bx = -alpha*self.r*self.r*sin(self.theta)
+            Bz = alpha*self.r*self.r*cos(self.theta)
+            By = Btor/self.x
+            
+            self.Afunc  = lambdify((self.x, self.z, self.phi), A, "numpy")
+            self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
+            self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
+            self.Byfunc = lambdify((self.x, self.z, self.phi), By, "numpy")
+        def Rfunc(self, x, z, phi):
+            return np.full(x.shape, x)
+               
 except ImportError:
     class StraightStellarator(MagneticField):
         """
@@ -511,6 +536,16 @@ except ImportError:
         """
         def __init__(self, *args, **kwargs):
             raise ImportError("No Sympy module: Can't generate RotatingEllipse fields")
+
+    class Screwpinch(MagneticField):
+        """
+        Invalid screwpinch, since no Sympy module.
+        Rather than printing an error on startup, which may
+        be missed or ignored, this raises
+        an exception if StraightStellarator is ever used.
+        """
+        def __init__(self, *args, **kwargs):
+            raise ImportError("No Sympy module: Can't generate screwpinch fields")
         
 class VMEC(MagneticField):
     """A numerical magnetic field from a VMEC equilibrium file
@@ -916,13 +951,13 @@ class GEQDSK(MagneticField):
         return f_spl(psinorm)
 
 class W7X_vacuum(MagneticField):
-    def __init__(self,nx=512,ny=32,nz=512,xmin=4.05,zmin=-1.35, phimax=2.*np.pi, configuration=0, plot_poincare=False,include_plasma_field=False, wout_file='wout_w7x.0972_0926_0880_0852_+0000_+0000.01.00jh.nc'):
+    def __init__(self,nx=128,ny=32,nz=128,x_range=[4.05,6.55],z_range=[-1.35,1,35], phimax=2.*np.pi, configuration=0, plot_poincare=False,include_plasma_field=False, wout_file='wout_w7x.0972_0926_0880_0852_+0000_+0000.01.00jh.nc'):
         from scipy.interpolate import griddata, RegularGridInterpolator
         import numpy as np
         ## create 1D arrays of cylindrical coordinates
-        r = np.linspace(xmin,xmin+2.5,nx)
+        r = np.linspace(x_range[0],x_range[-1],nx)
         phi = np.linspace(0,phimax,ny)
-        z = np.linspace(zmin,-zmin,nz)
+        z = np.linspace(z_range[0],z_range[-1],nz)
 
         ## make those 1D arrays 3D
         rarray,yarray,zarray = np.meshgrid(r,phi,z,indexing='ij')
@@ -1177,6 +1212,71 @@ class W7X_vacuum(MagneticField):
         index = index[0]
 
         return np.asarray([magnetic_axis_r[index],magnetic_axis_z[index]])[:,0]
+
+    def Bxfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.*np.pi)
+        return self.br_interp((x,phi,z))
+
+    def Bzfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.*np.pi)
+        return self.bz_interp((x,phi,z))
+
+    def Byfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.*np.pi)
+        # Interpolate to get flux surface normalised psi
+        return self.bphi_interp((x,phi,z))
+    
+    def Rfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.*np.pi)
+        return x
+
+class W7X_VMEC(MagneticField):
+    def __init__(self,nx=512,ny=32,nz=512,x_range=[4.05,6.55],z_range=[-1.35,1,35], phi_range=[0,2*np.pi], vmec_id='w7x_ref_171'):
+        from scipy.interpolate import griddata, RegularGridInterpolator
+        import numpy as np
+        ## create 1D arrays of cylindrical coordinates
+        r = np.linspace(x_range[0], x_range[-1], nx)
+        phi = np.linspace(phi_range[0], phi_range[-1],ny)
+        z = np.linspace(z_range[0], z_range[-1], nz)
+
+        ## make those 1D arrays 3D
+        rarray,yarray,zarray = np.meshgrid(r,phi,z,indexing='ij')
+    
+        ## call vacuum field values
+        b_vmec  = W7X_VMEC.field_values(rarray,yarray,zarray,vmec_id)
+        Bx_vmec = b_vmec[0]
+        By_vmec = b_vmec[1]
+        Bz_vmec = b_vmec[2]
+
+        # Now we have a field and regular grid in (R,Z,phi) so
+        # we can get an interpolation function in 3D
+        points = (r,phi,z)
+            
+        self.br_interp   = RegularGridInterpolator(points, Bx, bounds_error=False, fill_value=0.0)
+        self.bz_interp   = RegularGridInterpolator(points, Bz, bounds_error=False, fill_value=0.0)
+        self.bphi_interp = RegularGridInterpolator(points, By, bounds_error=False, fill_value=1.0)
+
+    def field_values(r,phi,z, vmec_id='w7x_ref_171'):
+        from osa import Client
+        vmec = Client('http://esb:8280/services/vmec_v5?wsdl')
+
+        pos = vmec.types.Points3D()
+
+        pos.x1 = np.ndarray.flatten(np.ones((nx,ny,nz))*r*np.cos(phi)) #x in Cartesian (real-space) 
+        pos.x2 = np.ndarray.flatten(np.ones((nx,ny,nz))*r*np.sin(phi)) #y in Cartesian (real-space) 
+        pos.x3 = np.ndarray.flatten(z)                                 #z in Cartesian (real-space) 
+        b = vmec.service.magneticField(str(vmec_id), p)
+
+        ## Reshape to 3d array
+        Bx = np.ndarray.reshape(np.asarray(b.field.x1),(nx,ny,nz))
+        By = np.ndarray.reshape(np.asarray(b.field.x2),(nx,ny,nz))
+        Bz = np.ndarray.reshape(np.asarray(b.field.x3), (nx,ny,nz))
+        
+        ## Convert to cylindrical coordinates
+        Br = Bx*np.cos(phi) + By*np.sin(phi)
+        Bphi = -Bx*np.sin(phi) + By*np.cos(phi)
+
+        return Br, Bphi, Bz
 
     def Bxfunc(self, x, z, phi):
         phi = np.mod(phi, 2.*np.pi)
