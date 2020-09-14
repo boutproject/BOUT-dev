@@ -119,6 +119,40 @@ print("Checking with variables added twice")
 if not check_output():
     success = False
 
+# Test incorrectly double-adding variables - should throw exception
+for check_incorrect_add in [
+    "ivar",
+    "rvar",
+    "bvar",
+    "f2d",
+    "f3d",
+    "fperp",
+    "ivar_evol",
+    "rvar_evol",
+    "bvar_evol",
+    "v2d_evol",
+    "v3d_evol"
+]:
+    try:
+        s, out = launch_safe(
+            "./test_io check_incorrect_add="+check_incorrect_add, nproc=nproc, pipe=True
+        )
+    except RuntimeError as e:
+        if not (
+            "Variable with name '" + check_incorrect_add + "' already added to Datafile"
+        ):
+            print(
+                "incorrect error message for check_incorrect_add=" + check_incorrect_add
+            )
+            success = False
+    else:
+        # was supposed to fail and raise an exception
+        print(
+            "did not raise an exception for incorrect double-add of "
+            + check_incorrect_add
+        )
+        success = False
+
 if success:
   print(" => All I/O tests passed")
   exit(0)
