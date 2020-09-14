@@ -282,11 +282,10 @@ class HypreMatrix {
   int yoffset{0};
   ParallelTransform* parallel_transform{nullptr};
   bool assembled{false};
-  HYPRE_BigInt max_num_cols, num_rows;
-  HYPRE_BigInt *num_cols; 
-  HYPRE_BigInt *I;
-  HYPRE_BigInt **J;
-  HYPRE_Complex **V;
+  HYPRE_BigInt num_rows;
+  std::vector<HYPRE_BigInt> I;
+  std::vector<std::vector<HYPRE_BigInt> > J;
+  std::vector<std::vector<HYPRE_Complex> > V;
 
   // todo also take care of J,V
   struct MatrixDeleter {
@@ -316,9 +315,9 @@ public:
     I = other.I;
     J = other.J;
     V = other.V;
-    other.I = nullptr;
-    other.J = nullptr;
-    other.V = nullptr;
+    // other.I = nullptr;
+    // other.J = nullptr;
+    // other.V = nullptr;
   }
   HypreMatrix<T>& operator=(const HypreMatrix<T>&) = delete;
   HypreMatrix<T>& operator=(HypreMatrix<T>&& other) {
@@ -333,9 +332,9 @@ public:
     I = other.I;
     J = other.J;
     V = other.V;
-    other.I = nullptr;
-    other.J = nullptr;
-    other.V = nullptr;
+    // other.I = nullptr;
+    // other.J = nullptr;
+    // other.V = nullptr;
     return *this;
   }
   
@@ -353,20 +352,17 @@ public:
     const auto ilower = indConverter->getGlobalStart();
     const auto iupper = ilower + indConverter->size() - 1; // inclusive end
     num_rows = iupper - ilower + 1;
-
-    max_num_cols = num_rows; // bogus until we reconcile interface and test_hypre_interface
-    HypreMalloc(&I, num_rows*sizeof(HYPRE_BigInt)); 
-    HypreMalloc(&num_cols, num_rows*sizeof(HYPRE_BigInt)); 
-    J = new HYPRE_BigInt*[num_rows];
-    V = new HYPRE_Complex*[num_rows];
+    I.resize(num_rows);
+    J.resize(num_rows);
+    V.resize(num_rows);
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
-      num_cols[i] = 0;
       I[i] = ilower + i;
-      J[i] = new HYPRE_BigInt[max_num_cols];
-      V[i] = new HYPRE_Complex[max_num_cols];
+      J[i].resize(0);
+      J[i].reserve(10);      
+      V[i].resize(0);
+      V[i].reserve(10);
     }
 
-    
     HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &*hypre_matrix);
     HYPRE_IJMatrixSetObjectType(*hypre_matrix, HYPRE_PARCSR);
     HYPRE_IJMatrixInitialize(*hypre_matrix);
@@ -388,20 +384,17 @@ public:
     const auto ilower = indConverter->getGlobalStart();
     const auto iupper = ilower + indConverter->size() - 1; // inclusive end
     num_rows = iupper - ilower + 1;
-
-    max_num_cols = max_num_cols_;
-    HypreMalloc(&I, num_rows*sizeof(HYPRE_BigInt)); 
-    HypreMalloc(&num_cols, num_rows*sizeof(HYPRE_BigInt)); 
-    J = new HYPRE_BigInt*[num_rows];
-    V = new HYPRE_Complex*[num_rows];
+    I.resize(num_rows);
+    J.resize(num_rows);
+    V.resize(num_rows);
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
-      num_cols[i] = 0;
       I[i] = ilower + i;
-      J[i] = new HYPRE_BigInt[max_num_cols];
-      V[i] = new HYPRE_Complex[max_num_cols];
+      J[i].resize(0);
+      J[i].reserve(10);      
+      V[i].resize(0);
+      V[i].reserve(10);
     }
 
-    
     HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &*hypre_matrix);
     HYPRE_IJMatrixSetObjectType(*hypre_matrix, HYPRE_PARCSR);
     HYPRE_IJMatrixInitialize(*hypre_matrix);
@@ -430,7 +423,7 @@ public:
     HYPRE_Complex value = 0.0;
     HYPRE_BigInt i = row - ilower;
     ASSERT2(i >= 0 && i < num_rows);
-    for(HYPRE_BigInt col_ind = 0; col_ind < num_cols[i]; ++col_ind) {
+    for(HYPRE_BigInt col_ind = 0; col_ind < J[i].size(); ++col_ind) {
       if (J[i][col_ind] == column) {
         value = V[i][col_ind];
         break;
@@ -456,7 +449,7 @@ public:
     HYPRE_BigInt i = row - ilower;
     ASSERT2(i >= 0 && i < num_rows);
     bool value_set = false;
-    for(HYPRE_BigInt col_ind = 0; col_ind < num_cols[i]; ++col_ind) {
+    for(HYPRE_BigInt col_ind = 0; col_ind < J[i].size(); ++col_ind) {
       if (J[i][col_ind] == column) {
         V[i][col_ind] = value;
         value_set  = true;
@@ -466,9 +459,7 @@ public:
 
     if (!value_set)
     {
-      ASSERT2(num_cols[i] != max_num_cols);
-      V[i][num_cols[i]] = value;
-      num_cols[i] ++;
+      V[i].push_back(value);
     }
   }
 
@@ -640,26 +631,37 @@ public:
 
   void assemble() {
     HYPRE_BigInt num_entries = 0;
+    HYPRE_BigInt *num_cols;
     HYPRE_BigInt *cols;
+    HYPRE_BigInt *rawI;
     HYPRE_Complex *vals;
+
+    HypreMalloc(&num_cols, num_rows*sizeof(HYPRE_BigInt)); 
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
-      num_entries += num_cols[i];
+      num_cols[i] = J[i].size();;
+      num_entries += J[i].size();
     }
+
+    HypreMalloc(&rawI, num_rows*sizeof(HYPRE_BigInt));
     HypreMalloc(&cols, num_entries*sizeof(HYPRE_BigInt)); 
     HypreMalloc(&vals, num_entries*sizeof(HYPRE_Complex));
-    int entry = 0;
+    HYPRE_BigInt entry = 0;
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
+      rawI[i] = I[i];
       for(HYPRE_BigInt col_ind = 0; col_ind < num_cols[i]; ++col_ind) {
         cols[entry] = J[i][col_ind];
         vals[entry] = V[i][col_ind];
+        entry ++;
       }
     }
-    HYPRE_IJMatrixSetValues(*hypre_matrix, num_rows, num_cols, I, cols, vals);
+    HYPRE_IJMatrixSetValues(*hypre_matrix, num_rows, num_cols, rawI, cols, vals);
 
     HYPRE_IJMatrixAssemble(*hypre_matrix);
     HYPRE_IJMatrixGetObject(*hypre_matrix, reinterpret_cast<void**>(&parallel_matrix));
     assembled = true;
 
+    HypreFree(rawI);
+    HypreFree(num_cols);
     HypreFree(cols);
     HypreFree(vals);
   }
