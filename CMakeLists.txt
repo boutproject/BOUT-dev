@@ -849,6 +849,9 @@ if(PACKAGE_TESTS)
   add_dependencies(check_bout check-unit-tests check-integrated-tests)
 endif()
 
+add_subdirectory(examples/laplacexy/simple-hypre)
+add_subdirectory(examples/laplacexy/simple)
+
 ##################################################
 # Generate the build config header
 

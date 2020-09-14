@@ -17,6 +17,7 @@
 #include "HYPRE_utilities.h"
 #include "_hypre_utilities.h"
 
+
 #include <memory>
 
 namespace bout {
@@ -150,8 +151,11 @@ public:
   }
 
   void assemble() {
+    std::cerr << "hypre_error_flag  V Assemble Init:" << hypre_error_flag << "\n";
     HYPRE_IJVectorAssemble(hypre_vector);
+    std::cerr << "hypre_error_flag V Post Assemble:" << hypre_error_flag << "\n";
     HYPRE_IJVectorGetObject(hypre_vector, reinterpret_cast<void**>(&parallel_vector));
+    std::cerr << "hypre_error_flag V IJVectorGetObject:" << hypre_error_flag << "\n";
   }
 
   T toField() {
@@ -655,11 +659,17 @@ public:
       }
     }
     HYPRE_IJMatrixSetValues(*hypre_matrix, num_rows, num_cols, rawI, cols, vals);
+    std::cerr << "hypre_error_flag Assemble M SetValues:" << hypre_error_flag << "\n";
 
     HYPRE_IJMatrixAssemble(*hypre_matrix);
+    std::cerr << "hypre_error_flag Assemble M MatrixAssemble:" << hypre_error_flag << "\n";
     HYPRE_IJMatrixGetObject(*hypre_matrix, reinterpret_cast<void**>(&parallel_matrix));
+    std::cerr << "hypre_error_flag Assemble M MatrixGetObject:" << hypre_error_flag << "\n";
     assembled = true;
 
+    char errorString[2048];
+    HYPRE_DescribeError(hypre_error_flag,&errorString[0]);
+    std::cerr << "Hypre Error String " << errorString << std::endl;
     HypreFree(rawI);
     HypreFree(num_cols);
     HypreFree(cols);
