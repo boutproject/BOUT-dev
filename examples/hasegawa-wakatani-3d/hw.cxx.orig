@@ -1,27 +1,13 @@
-/// 3D simulations of HW
-/////
-///// This version uses indexed operators
-///// which reduce the number of loops over the domain
-/////
-////  GPU processing is enabled if BOUT_ENABLE_CUDA is defined
-/////  Profiling markers and ranges are set if USE_NVTX is defined
-/////  Baesed on Ben Duddson, Steven Glenn code, Yining Qin update 0521-2020
-
-#include <iostream>
-#include <cstdlib>
-#include <gpu_functions.hxx>
 
 #include <bout/physicsmodel.hxx>
 #include <smoothing.hxx>
 #include <invert_laplace.hxx>
 #include <derivs.hxx>
-#include <bout/single_index_ops.hxx>
-#include "RAJA/RAJA.hpp" // using RAJA lib
-#include <cuda_profiler_api.h>
 
+#include <bout/single_index_ops.hxx>
 
 class HW3D : public PhysicsModel {
-public:
+private:
   Field3D n, vort;  // Evolving density and vorticity
   Field3D phi;      // Electrostatic potential
 
@@ -29,9 +15,10 @@ public:
   BoutReal alpha;      // Adiabaticity (~conductivity)
   BoutReal kappa;      // Density gradient drive
   BoutReal Dvort, Dn;  // Diffusion
+  
   std::unique_ptr<Laplacian> phiSolver; // Laplacian solver for vort -> phi
 
-
+protected:
   int init(bool UNUSED(restart)) {
 
     auto& options = Options::root()["hw"];
@@ -45,13 +32,14 @@ public:
     
     phiSolver = Laplacian::create();
     phi = 0.; // Starting phi
-
+    
     return 0;
   }
 
   int rhs(BoutReal UNUSED(time)) {
     // Solve for potential
-    phi = phiSolver->solve(vort, phi);    
+    phi = phiSolver->solve(vort, phi);
+    
     Field3D phi_minus_n = phi - n;
     
     // Communicate variables
@@ -62,27 +50,22 @@ public:
     auto vort_acc = FieldAccessor<>(vort);
     auto phi_acc = FieldAccessor<>(phi);
     auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n);
+    
+    BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
 
-    auto region = n.getRegion("RGN_NOBNDRY"); // Region object
-    auto indices = region.getIndices();   // A std::vector of Ind3D objects
-//  Copy data to __device__
-    RAJA_data_copy(n,vort, phi,phi_minus_n,phi_acc,phi_minus_n_acc);
+      BoutReal div_current = alpha * Div_par_Grad_par(phi_minus_n_acc, i);
 
+      // Density equation
+      ddt(n)[i] = -bracket(phi_acc, n_acc, i)
+                  - div_current
+                  - kappa * DDZ(phi_acc, i)
+                  + Dn * Delp2(n_acc, i);
 
-//  GPU loop RAJA_DEVICE 
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int i) {
-	
-	  	BoutReal div_current = alpha * gpu_Div_par_Grad_par(phi_minus_n_acc, i);
-		gpu_n_ddt[i]= - gpu_bracket_par(phi_acc, n_acc, i)
-			          - div_current
-         	                  - kappa * gpu_DZZ_par(phi_acc, i)
-                                  + Dn *gpu_Delp2_par(n_acc, i) ;	
-
-                gpu_vort_ddt[i]= - gpu_bracket_par(phi_acc, vort_acc, i)
-                                     - div_current
-                                     + Dvort *gpu_Delp2_par(vort_acc, i) ;   
-	
-	});
+      // Vorticity equation
+      ddt(vort)[i] = -bracket(phi_acc, vort_acc, i)
+                     - div_current
+                     + Dvort * Delp2(vort_acc, i);
+    }
 
     return 0;
   }

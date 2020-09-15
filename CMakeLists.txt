@@ -170,6 +170,7 @@ set(BOUT_HEADERS
   ./include/field_factory.hxx
   ./include/fieldperp.hxx
   ./include/globals.hxx
+  ./include/gpu_functions.hxx
   ./include/gyro_average.hxx
   ./include/initialprofiles.hxx
   ./include/interpolation.hxx
@@ -277,7 +278,7 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/pdd/pdd.cxx
   ./src/invert/laplace/impls/petsc/petsc_laplace.cxx
   ./src/invert/laplace/impls/petsc3damg/petsc3damg.cxx
- ./src/invert/laplace/impls/serial_band/serial_band.cxx
+  ./src/invert/laplace/impls/serial_band/serial_band.cxx
   ./src/invert/laplace/impls/serial_tri/serial_tri.cxx
   ./src/invert/laplace/impls/shoot/shoot_laplace.cxx
   ./src/invert/laplace/impls/spt/spt.cxx
@@ -415,6 +416,18 @@ target_include_directories(bout++ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
+
+# todo start using BOUT_config.h
+if(BOUT_HAS_HYPRE)
+   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
+   #add_subdirectory(src/invert/laplacexy2)
+   #target_link_libraries(bout++ PUBLIC LaplaceXY2Hypre)
+endif ()
+
+# todo reconcile PETSc INTERFACE FOR LAPLACEXY2
+#if(BOUT_HAS_PETSC)
+#   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_PETSC")
+#endif ()
 
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
@@ -851,6 +864,7 @@ endif()
 
 add_subdirectory(examples/laplacexy/simple-hypre)
 add_subdirectory(examples/laplacexy/simple)
+add_subdirectory(examples/hasegawa-wakatani-3d)
 
 ##################################################
 # Generate the build config header
