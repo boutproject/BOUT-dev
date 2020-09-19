@@ -1,4 +1,4 @@
-BOUT_TOP	= ../..
+BOUT_TOP	?= ../..
 
 SOURCEC		= globals.cxx init.cxx run.cxx
 
