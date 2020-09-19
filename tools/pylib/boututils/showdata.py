@@ -26,7 +26,7 @@ FFwriter = animation.FFMpegWriter()
 
 
 ###################
-#http://stackoverflow.com/questions/16732379/stop-start-pause-in-python-matplotlib-animation
+#https://stackoverflow.com/questions/16732379/stop-start-pause-in-python-matplotlib-animation
 #
 j=-2
 pause = False
@@ -363,7 +363,7 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0, t_ar
     Nframes = int(Nt[0][0]/intv)
 
     # Generate grids for plotting
-    # Try to use provided grids where possible 
+    # Try to use provided grids where possible
     # If x and/or y are not lists, apply to all variables
     if not isinstance(x, (list,tuple)):
         x = [x]*Nvar # Make list of x with length Nvar
@@ -377,18 +377,18 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0, t_ar
             xnew[i].append(x[i])
             if not (x[i].shape==(Nx[i][0],) or x[i].shape==(Nx[i][0],Ny[i][0]) or x[i].shape==(Nt[i][0],Nx[i][0],Ny[i],[0])):
                 raise ValueError("For variable number "+str(i)+", "+titles[i]+", the shape of x is not compatible with the shape of the variable. Shape of x should be (Nx), (Nx,Ny) or (Nt,Nx,Ny).")
-        except: 
+        except:
             for j in range(0, Nlines[i]):
                 xnew[i].append(linspace(0,Nx[i][j]-1, Nx[i][j]))
 
         #x.append(linspace(0,Nx[i][0]-1, Nx[i][0]))
-        
+
         if (Ndims[i][0] == 3):
             try:
                 ynew.append(y[i])
                 if not (y[i].shape==(Ny[i][0],) or y[i].shape==(Nx[i][0],Ny[i][0]) or y[i].shape==(Nt[i][0],Nx[i][0],Ny[i],[0])):
                     raise ValueError("For variable number "+str(i)+", "+titles[i]+", the shape of y is not compatible with the shape of the variable. Shape of y should be (Ny), (Nx,Ny) or (Nt,Nx,Ny).")
-            except:        
+            except:
                 ynew.append(linspace(0, Ny[i][0]-1, Ny[i][0]))
         else:
             ynew.append(0)
