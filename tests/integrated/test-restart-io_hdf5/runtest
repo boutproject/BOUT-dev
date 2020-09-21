@@ -3,6 +3,7 @@
 # Test file I/O by loading from restart files and writing to dump files
 #
 # requires: hdf5
+# cores: 4
 
 from boutdata import restart
 from boutdata.collect import collect
