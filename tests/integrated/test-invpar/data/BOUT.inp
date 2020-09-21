@@ -5,8 +5,6 @@ NOUT = 0  # No timesteps
 
 MZ = 5    # Z size
 
-dump_format = "nc"  # NetCDF format. Alternative is "pdb"
-
 TwistShift = false
 Ballooning = false
 
