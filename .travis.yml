@@ -53,7 +53,7 @@ jobs:
   include:
   - name: "Optimised"
     env: &default_env
-      - CONFIGURE_OPTIONS="--enable-shared --enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace --with-petsc --with-slepc --with-sundials=$HOME/local"
+      - CONFIGURE_OPTIONS="--enable-shared --enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace --with-hdf5 --with-petsc --with-slepc --with-sundials=$HOME/local"
       - SCRIPT_FLAGS='-uim'
       - PIP_PACKAGES='cython~=0.29 netcdf4~=1.5 sympy~=1.5'
       - LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
@@ -68,23 +68,23 @@ jobs:
           - *standard_packages
     env:
       - *default_env
-      - CONFIGURE_OPTIONS="--enable-sigfpe --enable-debug --with-petsc --with-slepc --with-sundials=$HOME/local CXXFLAGS=-g0"
+      - CONFIGURE_OPTIONS="--enable-sigfpe --enable-debug --with-hdf5 --with-petsc --with-slepc --with-sundials=$HOME/local CXXFLAGS=-g0"
       - CC=gcc-7 CXX=g++-7
       - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
   - name: "Shared library + Python"
     env:
       - *default_env
-      - CONFIGURE_OPTIONS="--enable-shared --with-petsc --with-slepc --with-sundials=$HOME/local"
+      - CONFIGURE_OPTIONS="--enable-shared --with-hdf5 --with-petsc --with-slepc --with-sundials=$HOME/local"
       - SCRIPT_FLAGS="-uim -t python"
   - name: "4to5 test"
     env:
       - *default_env
-      - CONFIGURE_OPTIONS="--enable-shared --with-petsc --with-slepc --with-sundials=$HOME/local"
+      - CONFIGURE_OPTIONS="--enable-shared --with-hdf5 --with-petsc --with-slepc --with-sundials=$HOME/local"
       - SCRIPT_FLAGS="-uim5t python -s dash"
   - name: "OpenMP"
     env:
       - *default_env
-      - CONFIGURE_OPTIONS="--enable-shared --enable-openmp --with-petsc --with-slepc --with-sundials=$HOME/local"
+      - CONFIGURE_OPTIONS="--enable-shared --enable-openmp --with-hdf5 --with-petsc --with-slepc --with-sundials=$HOME/local"
       - OMP_NUM_THREADS=2
 #CMAKE
   - name: "CMake"
@@ -97,14 +97,15 @@ jobs:
       - mkdir build && cd build
       - |
         cmake .. -DBOUT_USE_PETSC=ON -DBOUT_USE_SLEPC=ON -DBOUT_USE_SUNDIALS=ON \
-        -DSUNDIALS_ROOT="$HOME/local" -DBOUT_ENABLE_OPENMP=ON -DBUILD_SHARED_LIBS=ON
+        -DSUNDIALS_ROOT="$HOME/local" -DBOUT_ENABLE_OPENMP=ON -DBUILD_SHARED_LIBS=ON \
+        -DBOUT_USE_HDF5=ON
       - cmake --build . --target build-check -j 2
       - cmake --build . --target check
 #CLANG
   - name: "Clang"
     env:
       - *default_env
-      - CONFIGURE_OPTIONS="--enable-shared --enable-debug --with-petsc --with-slepc --with-sundials=$HOME/local"
+      - CONFIGURE_OPTIONS="--enable-shared --enable-debug --with-hdf5 --with-petsc --with-slepc --with-sundials=$HOME/local"
       - MPICH_CC=clang MPICH_CXX=clang++
       - OMPI_CC=clang OMPI_CXX=clang++
     compiler: clang
@@ -139,7 +140,7 @@ jobs:
           - *standard_packages
           - jq
     env:
-      - CONFIGURE_OPTIONS="--enable-code-coverage --enable-shared --enable-debug --enable-track --enable-checks=3 --with-petsc --with-lapack --with-slepc --enable-openmp --with-sundials=$HOME/local"
+      - CONFIGURE_OPTIONS="--enable-code-coverage --enable-shared --enable-debug --enable-track --enable-checks=3 --with-hdf5 --with-petsc --with-lapack --with-slepc --enable-openmp --with-sundials=$HOME/local"
       - OMP_NUM_THREADS=2
       - LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
       - *coverage_vars
