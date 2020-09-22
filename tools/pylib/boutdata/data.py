@@ -355,6 +355,25 @@ class BoutOptions(object):
     def __len__(self):
         return len(self._sections) + len(self._keys)
 
+    def __eq__(self, other):
+        """Test if this BoutOptions is the same as another one."""
+        if not isinstance(other, BoutOptions):
+            return False
+        if self is other:
+            # other is a reference to the same object
+            return True
+        if len(self._sections) != len(other._sections):
+            return False
+        if len(self._keys) != len(other._keys):
+            return False
+        for secname, section in self._sections.items():
+            if secname not in other or section != other[secname]:
+                return False
+        for key, value in self._keys.items():
+            if key not in other or value != other[key]:
+                return False
+        return True
+
     def __iter__(self):
         """Iterates over all keys. First values, then sections
 
