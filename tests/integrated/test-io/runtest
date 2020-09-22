@@ -140,6 +140,7 @@ for check_incorrect_add in [
     except RuntimeError as e:
         if not (
             "Variable with name '" + check_incorrect_add + "' already added to Datafile"
+            == str(e)
         ):
             print(
                 "incorrect error message for check_incorrect_add=" + check_incorrect_add
