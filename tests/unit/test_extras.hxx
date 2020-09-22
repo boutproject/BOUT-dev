@@ -291,8 +291,12 @@ public:
   int getGlobalYIndexNoBoundaries(int) const override { return 0; }
   int getGlobalZIndex(int) const override { return 0; }
   int getGlobalZIndexNoBoundaries(int) const override { return 0; }
-  int XLOCAL(int UNUSED(xglo)) const override { return 0; }
-  int YLOCAL(int UNUSED(yglo)) const override { return 0; }
+  int getLocalXIndex(int) const override { return 0; }
+  int getLocalXIndexNoBoundaries(int) const override { return 0; }
+  int getLocalYIndex(int) const override { return 0; }
+  int getLocalYIndexNoBoundaries(int) const override { return 0; }
+  int getLocalZIndex(int) const override { return 0; }
+  int getLocalZIndexNoBoundaries(int) const override { return 0; }
 
   void initDerivs(Options * opt){
     StaggerGrids=true;
