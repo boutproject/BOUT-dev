@@ -198,7 +198,7 @@ class BoutOptions(object):
                 return key_parts[1] in self[key_parts[0]]
             return False
 
-        return key in self.keys()
+        return key in self._keys or key in self._sections
 
     __marker = object()
 
