@@ -13,6 +13,8 @@ Ballooning = false
 tol = 1e-10
 
 [mesh]
+staggergrids = true
+
 nx = 12
 ny = 12
 
