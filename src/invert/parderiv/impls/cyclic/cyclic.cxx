@@ -148,7 +148,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
 
     // Set up tridiagonal system
     for (int k = 0; k < nsys; k++) {
-      BoutReal kwave = k * 2.0 * PI / zlength(); // wave number is 1/length
+      BoutReal kwave = k * 2.0 * PI / zlength; // wave number is 1/length
       for (int y = 0; y < localmesh->LocalNy - localmesh->ystart - local_ystart; y++) {
 
         BoutReal acoef = A(x, y + local_ystart);                       // Constant
