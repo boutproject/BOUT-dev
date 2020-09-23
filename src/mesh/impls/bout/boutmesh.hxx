@@ -177,16 +177,16 @@ class BoutMesh : public Mesh {
 
   int getGlobalXIndex(int xlocal) const override;
   int getGlobalXIndexNoBoundaries(int xlocal) const override;
-  int getLocalXIndex(int xlocal) const override;
-  int getLocalXIndexNoBoundaries(int xlocal) const override;
+  int getLocalXIndex(int xglobal) const override;
+  int getLocalXIndexNoBoundaries(int xglobal) const override;
   int getGlobalYIndex(int ylocal) const override;
   int getGlobalYIndexNoBoundaries(int ylocal) const override;
-  int getLocalYIndex(int ylocal) const override;
-  int getLocalYIndexNoBoundaries(int ylocal) const override;
+  int getLocalYIndex(int yglobal) const override;
+  int getLocalYIndexNoBoundaries(int yglobal) const override;
   int getGlobalZIndex(int zlocal) const override;
   int getGlobalZIndexNoBoundaries(int zlocal) const override;
-  int getLocalZIndex(int zlocal) const override;
-  int getLocalZIndexNoBoundaries(int zlocal) const override;
+  int getLocalZIndex(int zglobal) const override;
+  int getLocalZIndexNoBoundaries(int zglobal) const override;
 
 private:
   std::string gridname;
