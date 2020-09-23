@@ -78,7 +78,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   
   Coordinates *coord = f.getCoordinates();
 
-  Field3D alignedField = toFieldAligned(f, "RGN_NOX");
+  Field3D alignedField = toFieldAligned(f, "RGN_NOBNDRY");
 
   // Create cyclic reduction object
   auto cr = bout::utils::make_unique<CyclicReduce<dcomplex>>();
