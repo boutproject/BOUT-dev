@@ -8,7 +8,7 @@ endif()
 
 project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
-  VERSION 4.2.2
+  VERSION 4.3.2
   LANGUAGES CXX)
 
 # This might not be entirely sensible, but helps CMake to find the
