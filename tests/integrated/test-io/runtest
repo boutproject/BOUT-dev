@@ -54,6 +54,16 @@ def check_output():
             success = False
             continue
 
+        for attrname in bmk[v].attributes:
+            bmkattr = bmk[v].attributes[attrname]
+            resattr = result.attributes[attrname]
+            if not bmkattr == resattr:
+                print(
+                    "attribute " + attrname + " not the same for " + v + ". Expected "
+                    + str(bmkattr) + " got " + str(resattr) + "."
+                )
+                success = False
+
         if v in field_vars:
             # Check cell location
             if "cell_location" not in result.attributes:
