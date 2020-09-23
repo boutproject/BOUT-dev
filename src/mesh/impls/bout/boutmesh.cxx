@@ -1630,10 +1630,10 @@ int BoutMesh::getGlobalXIndexNoBoundaries(int xlocal) const {
   return xlocal + PE_XIND * MXSUB - MXG;
 }
 
-int BoutMesh::getLocalXIndex(int xlocal) const { return xlocal - PE_XIND * MXSUB; }
+int BoutMesh::getLocalXIndex(int xglobal) const { return xglobal - PE_XIND * MXSUB; }
 
-int BoutMesh::getLocalXIndexNoBoundaries(int xlocal) const {
-  return xlocal - PE_XIND * MXSUB + MXG;
+int BoutMesh::getLocalXIndexNoBoundaries(int xglobal) const {
+  return xglobal - PE_XIND * MXSUB + MXG;
 }
 
 /// Returns the global Y index given a local index

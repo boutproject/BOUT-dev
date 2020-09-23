@@ -585,11 +585,11 @@ class Mesh {
 
   /// Returns a local X index given a global index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
-  virtual int getLocalXIndex(int xlocal) const = 0;
+  virtual int getLocalXIndex(int xglobal) const = 0;
 
   /// Returns a local X index given a global index.
   /// Global index excludes boundary cells, local index includes boundary or guard cells.
-  virtual int getLocalXIndexNoBoundaries(int xlocal) const = 0;
+  virtual int getLocalXIndexNoBoundaries(int xglobal) const = 0;
 
   /// Returns a global Y index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
@@ -601,11 +601,11 @@ class Mesh {
 
   /// Returns a local Y index given a global index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
-  virtual int getLocalYIndex(int ylocal) const = 0;
+  virtual int getLocalYIndex(int yglobal) const = 0;
 
   /// Returns a local Y index given a global index.
   /// Global index excludes boundary cells, local index includes boundary or guard cells.
-  virtual int getLocalYIndexNoBoundaries(int ylocal) const = 0;
+  virtual int getLocalYIndexNoBoundaries(int yglobal) const = 0;
 
   /// Returns a global Z index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
@@ -617,11 +617,11 @@ class Mesh {
 
   /// Returns a local Z index given a global index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
-  virtual int getLocalZIndex(int zlocal) const = 0;
+  virtual int getLocalZIndex(int zglobal) const = 0;
 
   /// Returns a local Z index given a global index.
   /// Global index excludes boundary cells, local index includes boundary or guard cells.
-  virtual int getLocalZIndexNoBoundaries(int zlocal) const = 0;
+  virtual int getLocalZIndexNoBoundaries(int zglobal) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
