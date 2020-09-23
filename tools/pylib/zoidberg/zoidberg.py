@@ -282,7 +282,6 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
 
         # Magnetic field
         f.write("B", Bmag)
-        f.write("Bxy", Bmag)
 
         # Pressure
         f.write("pressure", pressure)
