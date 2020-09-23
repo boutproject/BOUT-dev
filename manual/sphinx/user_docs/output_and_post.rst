@@ -3,7 +3,13 @@
 Post-processing
 ===============
 
-The majority of the existing analysis and post-processing code is
+The recommended tool for analysing BOUT++ output is xBOUT, a Python
+library that provides analysis, plotting and animation with
+human-readable syntax (no magic numbers!) using `xarray
+<http://xarray.pydata.org/en/stable/>`_. See the xBOUT documentation
+`xbout.readthedocs.io <https://xbout.readthedocs.io/en/latest/>`_.
+
+There is also older analysis and post-processing code, the majority
 written in Python. Routines to read BOUT++ output data, usually called
 "collect" because it collects data from multiple files, are also
 available in IDL, Matlab, Mathematica and Octave. All these
