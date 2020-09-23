@@ -11,7 +11,7 @@ def query_yes_no(question, default="yes"):
 
     Answers are case-insensitive.
 
-    Probably originally from http://code.activestate.com/recipes/577058/
+    Probably originally from https://code.activestate.com/recipes/577058/
     via https://stackoverflow.com/a/3041990/2043465
 
     Parameters
