@@ -42,16 +42,6 @@ src/.libfast
 .BOUT.pid.*
 build/
 build*/
-/tests/integrated/test-griddata-yboundary-guards/test_griddata
-/tests/integrated/test-laplacexz/test-laplacexz
-/tests/integrated/test-twistshift-staggered/test-twistshift
-/tests/integrated/test-twistshift/test-twistshift
-/tests/integrated/test-griddata-yboundary-guards/*/*.nc
-/tests/integrated/test-options-netcdf/*.nc
-/tests/integrated/test-options-netcdf/test-options-netcdf
-/tests/integrated/test-options-netcdf/*.ini
-/tools/pylib/boututils/bout_config.py
-/tests/integrated/test-snb/test_snb
 /.vs
 /CMakeSettings.json
 /CppProperties.json
@@ -65,3 +55,5 @@ src/fmt/format.cxx
 /include/bout/build_config.hxx
 /include/bout/revision.hxx
 /include/bout/version.hxx
+/include/bout/build_defines.hxx
+/tools/pylib/boutconfig/__init__.py
