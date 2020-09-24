@@ -12524,23 +12524,25 @@ _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    SYSTEM_HAS_MPARK=no
+    SYSTEM_HAS_MPARK=yes
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     SYSTEM_HAS_MPARK=no
-    if test ".$with_system_mpark" = "yes"; then :
+    if test "$with_system_mpark" = "yes"; then :
 
       { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "*** Could not determine SUNDIALS version
+as_fn_error $? "*** System mpark.variant not found - but requested to use
 See \`config.log' for more details" "$LINENO" 5; }
 
 fi
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  echo info0 $SYSTEM_HAS_MPARK $with_system_mpark
 
 fi
+  echo info1 $SYSTEM_HAS_MPARK
 
 if test "$SYSTEM_HAS_MPARK" = "yes"; then :
 
@@ -12549,6 +12551,28 @@ if test "$SYSTEM_HAS_MPARK" = "yes"; then :
   OWN_MPARK=
 
 else
+
+  if test -d externalpackages/mpark.variant/include; then :
+
+else
+   if test -d .git && which git; then :
+
+        git submodule update --init --recursive externalpackages/mpark.variant || \
+	  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "*** Could not download mpark.variant
+See \`config.log' for more details" "$LINENO" 5; }
+
+else
+
+        { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "mpark.variant not found. Please install mpark.variant or use the official releases.
+See \`config.log' for more details" "$LINENO" 5; }
+
+fi
+
+fi
 
   MPARK_VARIANT_INCLUDE_PATH="$PWD/externalpackages/mpark.variant/include"
   MPARK_INCLUDE="-I$MPARK_VARIANT_INCLUDE_PATH"
