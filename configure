@@ -12539,10 +12539,8 @@ See \`config.log' for more details" "$LINENO" 5; }
 fi
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  echo info0 $SYSTEM_HAS_MPARK $with_system_mpark
 
 fi
-  echo info1 $SYSTEM_HAS_MPARK
 
 if test "$SYSTEM_HAS_MPARK" = "yes"; then :
 
