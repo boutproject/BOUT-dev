@@ -167,8 +167,10 @@ install: libfast
 	$(MKDIR) $(DESTDIR)/{@libdir@,@bindir@,@datadir@/bout++/idllib}
 	$(MKDIR) $(DESTDIR)/@datadir@/bout++/pylib/{boutdata,boututils}
 	$(INSTALL_DATA) include/*.hxx $(INSTALL_INCLUDE_PATH)
-	test @OWN_MPARK@ && $(MKDIR) $(INSTALL_INCLUDE_PATH)/{,pvode,bout/sys,bout/invert,mpark}
-	test @OWN_MPARK@ && $(INSTALL_DATA) $(MPARK_VARIANT_INCLUDE_PATH)/mpark/*.hpp $(INSTALL_INCLUDE_PATH)/mpark
+ifeq ("@OWN_MPARK@", "yes")
+	$(MKDIR) $(INSTALL_INCLUDE_PATH)/mpark
+	$(INSTALL_DATA) $(MPARK_VARIANT_INCLUDE_PATH)/mpark/*.hpp $(INSTALL_INCLUDE_PATH)/mpark
+endif
 	$(INSTALL_DATA) include/pvode/*.h $(INSTALL_INCLUDE_PATH)/pvode/
 	$(INSTALL_DATA) include/bout/*.hxx $(INSTALL_INCLUDE_PATH)/bout/
 	$(INSTALL_DATA) include/bout/sys/*.hxx $(INSTALL_INCLUDE_PATH)/bout/sys/
@@ -192,13 +194,17 @@ install: libfast
 	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@includedir@/bout++/make.config|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^idlpath=.*|idlpath=@datadir@/bout++/idllib/|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^pythonpath=.*|pythonpath=@datadir@/bout++/pylib/|" $(DESTDIR)@bindir@/bout-config
-	test @OWN_MPARK@ && sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@bindir@/bout-config
+ifeq ("@OWN_MPARK@", "yes")
+	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@bindir@/bout-config
+endif
 
 	@# Modify paths in the make.config file
 	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(INSTALL_INCLUDE_PATH)/make.config
 	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(INSTALL_INCLUDE_PATH)/make.config
 	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@includedir@/bout++/make.config|" $(INSTALL_INCLUDE_PATH)/make.config
-	test @OWN_MPARK@ && sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(INSTALL_INCLUDE_PATH)/make.config
+ifeq ("@OWN_MPARK@", "yes")
+	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(INSTALL_INCLUDE_PATH)/make.config
+endif
 
 #	Set the make.config as released, so the library isn't rebuild. This way the .a file doesn't need to be preserved/installed
 	sed -i '26 i RELEASED                 = yes' $(INSTALL_INCLUDE_PATH)/make.config
