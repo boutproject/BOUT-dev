@@ -192,27 +192,35 @@ File formats
 BOUT++ can currently use two different file formats: NetCDF-4_, and
 HDF5_ and experimental support for parallel flavours of both. NetCDF
 is a widely used format and so has many more tools for viewing and
-manipulating files. In particular, the NetCDF-4 library can produce
-files in either NetCDF3 “classic” format, which is backwards-compatible
-with NetCDF libraries since 1994 (version 2.3), or in the newer NetCDF4
-format, which is based on (and compatible with) HDF5. HDF5 is another
-widely used format. If you have multiple libraries installed then BOUT++
-can use them simultaneously, for example reading in grid files in NetCDF
-format, but writing output data in HDF5 format.
+manipulating files. HDF5 is another widely used format. If you have
+multiple libraries installed then BOUT++ can use them simultaneously,
+for example reading in grid files in NetCDF format, but writing output
+data in HDF5 format.
 
 .. _NetCDF-4: https://www.unidata.ucar.edu/software/netcdf/
 .. _HDF5: https://www.hdfgroup.org/HDF5/
 
-To enable NetCDF support, you will need to install NetCDF version 4.0.1
-or later. Note that although the NetCDF-4 library is used for the C++
-interface, by default BOUT++ writes the “classic” format. Because of
-this, you don’t need to install zlib or HDF5 for BOUT++ NetCDF support
-to work. If you want to output to HDF5 then you need to first install
-the zlib and HDF5 libraries, and then compile NetCDF with HDF5 support.
-When NetCDF is installed, a script ``nc-config`` should be put into
-somewhere on the path. If this is found then configure should have all
-the settings it needs. If this isn’t found then configure will search
-for the NetCDF include and library files.
+BOUT++ will try to use NetCDF by default. It will look for
+``ncxx4-config`` or ``nc-config`` in your ``$PATH``. If it cannot find
+the libraries, or finds a different version than the one you want, you
+can point it at the correct version using::
+
+   ./configure --with-netcdf=/path/to/ncxx4-config
+
+where ``/path/to/ncxx4-config`` is the location of the
+``ncxx4-config`` tool (``nc-config`` will also work, but
+``ncxx4-config`` is preferred).
+
+To use HDF5, you will need to explicitly enable it::
+
+   ./configure --with-hdf5
+
+BOUT++ will look for ``h5cc`` in your ``$PATH``. Similar to NetCDF,
+you can pass the location of the particular version you wish to use
+with::
+
+   ./configure --with-hdf5=/path/to/h5cc
+
 
 .. _sec-netcdf-from-source:
 
@@ -223,12 +231,12 @@ The latest versions of NetCDF have separated out the C++ API from the
 main C library. As a result, you will need to download and install both.
 Download the latest versions of the NetCDF-C and NetCDF-4 C++ libraries
 from https://www.unidata.ucar.edu/downloads/netcdf. As of
-January 2017, these are versions 4.4.1.1 and 4.3.0 respectively.
+September 2020, these are versions 4.7.4 and 4.3.1 respectively.
 
 Untar the file and ’cd’ into the resulting directory::
 
-    $ tar -xzvf netcdf-4.4.1.1.tar.gz
-    $ cd netcdf-4.4.1.1
+    $ tar -xzvf netcdf-4.7.4.tar.gz
+    $ cd netcdf-4.7.4
 
 Then run ``configure``, ``make`` and ``make install``::
 
@@ -244,8 +252,8 @@ Sometimes configure can fail, in which case try disabling Fortran::
 
 Similarly for the C++ API::
 
-    $ tar -xzvf netcdf-cxx4-4.3.0.tar.gz
-    $ cd netcdf-cxx4-4.3.0
+    $ tar -xzvf netcdf-cxx4-4.3.1.tar.gz
+    $ cd netcdf-cxx4-4.3.1
     $ ./configure --prefix=$HOME/local
     $ make
     $ make install
@@ -330,30 +338,25 @@ solver. Currently, BOUT++ also supports the SUNDIALS solvers CVODE, IDA
 and ARKODE which are available from
 https://computation.llnl.gov/casc/sundials/main.html.
 
-.. note:: BOUT++ currently supports SUNDIALS > 2.6, up to 4.1.0 as of
-          March 2019. It is advisable to use the highest possible
+.. note:: BOUT++ currently supports SUNDIALS > 2.6, up to 5.4.0 as of
+          September 2020. It is advisable to use the highest possible
           version
 
-In order for a smooth install it is recommended to install SUNDIALS
-from an install directory. The full installation guide is found in the
-downloaded ``.tar.gz``, but we will provide a step-by-step guide to
-install it and make it compatible with BOUT++ here::
+The full installation guide is found in the downloaded ``.tar.gz``,
+but we will provide a step-by-step guide to install it and make it
+compatible with BOUT++ here::
 
-     $ cd ~
-     $ mkdir -p install/sundials-install
-     $ cd install/sundials-install
-     $ # Move the downloaded sundials-4.1.0.tar.gz to sundials-install
-     $ tar -xzvf sundials-4.1.0.tar.gz
+     $ tar -xzvf sundials-5.4.0.tar.gz
+     $ cd sundials-5.4.0
      $ mkdir build && cd build
 
-     $ cmake \
+     $ cmake .. \
        -DCMAKE_INSTALL_PREFIX=$HOME/local \
        -DLAPACK_ENABLE=ON \
        -DOPENMP_ENABLE=ON \
        -DMPI_ENABLE=ON \
        -DCMAKE_C_COMPILER=$(which mpicc) \
        -DCMAKE_CXX_COMPILER=$(which mpicxx) \
-       ../sundials-4.1.0
 
      $ make
      $ make test
@@ -364,9 +367,7 @@ solver, which evolves a system of the form
 :math:`\mathbf{f}(\mathbf{u},\dot{\mathbf{u}},t) = 0`. This allows
 algebraic constraints on variables to be specified.
 
-To configure BOUT++ with SUNDIALS only (see section
-:ref:`sec-PETSc-install` on how to build PETSc with SUNDIALS), go to
-the root directory of BOUT++ and type::
+Use the ``--with-sundials`` option to configure BOUT++ with SUNDIALS::
 
     $ ./configure --with-sundials=/path/to/sundials/install
 
@@ -382,17 +383,15 @@ BOUT++ can use PETSc https://www.mcs.anl.gov/petsc/ for time-integration
 and for solving elliptic problems, such as inverting Poisson and
 Helmholtz equations.
 
-Currently, BOUT++ supports PETSc versions 3.4 - 3.9. To install PETSc
-version 3.4.5, use the following steps::
+Currently, BOUT++ supports PETSc versions 3.7 - 3.13. To install PETSc
+version 3.13, use the following steps::
 
     $ cd ~
-    $ wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.4.5.tar.gz
-    $ tar -xzvf petsc-3.4.5.tar.gz
-    $ # Optional
-    $ # rm petsc-3.4.5.tar.gz
-    $ cd petsc-3.4.5
+    $ wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.13.4.tar.gz
+    $ tar -xzvf petsc-3.13.4.tar.gz
+    $ cd petsc-3.13.4
 
-To build PETSc without SUNDIALS, configure with::
+Use the following configure options to ensure PETSc is compatible with BOUT++::
 
     $ ./configure \
       --with-clanguage=cxx \
@@ -401,12 +400,11 @@ To build PETSc without SUNDIALS, configure with::
       --with-scalar-type=real \
       --with-shared-libraries=0
 
-Add ``--with-debugging=yes`` to ``./configure`` in order to allow
-debugging.
+You may also wish to add ``--with-debugging=yes`` to ``./configure``
+in order to allow debugging.
 
-.. note:: To build PETSc with SUNDIALS, install SUNDIALS as explained
-          in section :ref:`sec-sundials`, and append ``./configure``
-          with ``--with-sundials-dir=$HOME/local``
+.. note:: If you build BOUT++ using a standalone version of SUNDIALS,
+          it is advisable to not also build PETSc with SUNDIALS.
 
 .. note:: It is also possible to get PETSc to download and install
           MUMPS (see :ref:`sec-MUMPS`), by adding::
@@ -423,24 +421,24 @@ debugging.
 
 To make PETSc, type::
 
-    $ make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug all
+    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug all
 
 Should BLAS, LAPACK, or any other packages be missing, you will get an
 error, and a suggestion that you can append
 ``--download-name-of-package`` to the ``./configure`` line. You may want
 to test that everything is configured properly. To do this, type::
 
-    $ make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug test
+    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug test
 
 To use PETSc, you have to define the ``PETSC_DIR`` and ``PETSC_ARCH``
 environment variables to match how PETSc was built::
 
-    $ export PETSC_DIR=$HOME/petsc-3.4.5
+    $ export PETSC_DIR=$HOME/petsc-3.13.4
     $ export PETSC_ARCH=arch-linux2-cxx-debug
 
 and add to your startup file ``$HOME/.bashrc``::
 
-    export PETSC_DIR=$HOME/petsc-3.4.5
+    export PETSC_DIR=$HOME/petsc-3.13.4
     export PETSC_ARCH=arch-linux2-cxx-debug
 
 To configure BOUT++ with PETSc, go to the BOUT++ root directory, and
@@ -782,7 +780,7 @@ When using the ``xlC`` compiler, an error may occur::
 
 
 The workaround is to change line 428 of  ``externalpackages/mpark.variant/include/mpark/lib.hpp`` from::
-  
+
   #ifdef MPARK_TYPE_PACK_ELEMENT
 
 to::
