@@ -337,9 +337,10 @@ Please note that here "core" means "core and adjacent SOL". See
 :ref:`sec-bout-topology` for a more detailed explanation of these regions.
 
 When BOUT++ automatically chooses ``NXPE`` and ``NYPE`` it finds all valid pairs
-which give ``total number of processors = NXPE * NYPE`` and also satisfy the
-constraints above. It then chooses the pair that minimises the difference
-between ``NXPE`` and ``NYPE``.
+which give ``total number of processors == NPES = NXPE * NYPE`` and also satisfy
+the constraints above. It then chooses the pair that makes the grid on each
+processor as close to square as possible (technically it chooses the pair that
+minimises ``((nx - 4) * NPES / ny) - NXPE``).
 
 If you need to specify complex input values, e.g. numerical values
 from experiment, you may want to use a grid file. The grid file to use
