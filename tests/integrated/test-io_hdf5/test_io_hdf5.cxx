@@ -9,6 +9,9 @@
 
 #include <bout.hxx>
 
+using bout::globals::dump;
+using bout::globals::mesh;
+
 int main(int argc, char **argv) {
 
   // Initialise BOUT++, setting up mesh

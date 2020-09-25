@@ -4,7 +4,6 @@
 # Run the test, compare results against the benchmark
 #
 
-# Requires: all_tests
 # Requires: hdf5
 # Cores: 4
 
