@@ -317,14 +317,19 @@ given, ``NXPE`` takes precedence and ``NYPE`` is ignored):
 When choosing ``NXPE`` or ``NYPE``, they must also obey some constraints:
 
 - ``NXPE`` must be a factor of the number of grid points in the x-direction
+
   - That is, ``(nx - 4) / NXPE`` must be an integer, assuming the usual two
     boundary points
+
 - For simple slab grids, ``NYPE`` must be a factor of the number of grid points
   in the y-direction
+
   - That is, ``ny / NYPE`` must be an integer
+
 - For more general topologies, the number of points per processor ``ny / NYPE``
   must also be a factor of the number of points in each region. For example, in
   the usual tokamak topologies:
+
   - in single-null there are two divertor leg and one core regions
   - in double-null there are four divertor leg, one inner core and one outer
     core regions
