@@ -30,7 +30,7 @@ testvars = {}
 testvars['f3d'] = BoutArray(numpy.exp(numpy.sin(x + y + z)), attributes = {'bout_type':'Field3D'})
 testvars['f2d'] = BoutArray(numpy.exp(numpy.sin(x + y + 1.))[:, :, 0], attributes = {'bout_type':'Field2D'})
 testvars['fperp_lower'] = BoutArray(numpy.exp(numpy.sin(x + z + 2.))[:, 0, :], attributes = {'bout_type':'FieldPerp', 'yindex_global':0})
-testvars['fperp_upper'] = BoutArray(numpy.exp(numpy.sin(x + z + 3.))[:, 0, :], attributes = {'bout_type':'FieldPerp', 'yindex_global':16})
+testvars['fperp_upper'] = BoutArray(numpy.exp(numpy.sin(x + z + 3.))[:, 0, :], attributes = {'bout_type':'FieldPerp', 'yindex_global':ny-1})
 
 # make restart file
 restartdir = os.path.join('data', 'restart')
