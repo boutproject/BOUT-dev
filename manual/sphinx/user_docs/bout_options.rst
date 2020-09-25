@@ -321,8 +321,7 @@ When choosing ``NXPE`` or ``NYPE``, they must also obey some constraints:
   - That is, ``(nx - 4) / NXPE`` must be an integer, assuming the usual two
     boundary points
 
-- For simple slab grids, ``NYPE`` must be a factor of the number of grid points
-  in the y-direction
+- ``NYPE`` must be a factor of the number of grid points in the y-direction
 
   - That is, ``ny / NYPE`` must be an integer
 
@@ -339,8 +338,8 @@ Please note that here "core" means "core and adjacent SOL". See
 
 When BOUT++ automatically chooses ``NXPE`` and ``NYPE`` it finds all valid pairs
 which give ``total number of processors = NXPE * NYPE`` and also satisfy the
-constraints above. It then chooses the pair that makes the grid on each
-processor as close to square as possible.
+constraints above. It then chooses the pair that minimises the difference
+between ``NXPE`` and ``NYPE``.
 
 If you need to specify complex input values, e.g. numerical values
 from experiment, you may want to use a grid file. The grid file to use
