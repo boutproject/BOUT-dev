@@ -5,14 +5,14 @@ NOUT = 0  # No timesteps
 
 MZ = 5    # Z size
 
-dump_format = "nc"  # NetCDF format. Alternative is "pdb"
-
 TwistShift = false
 Ballooning = false
 
 tol = 1e-10
 
 [mesh]
+staggergrids = true
+
 nx = 12
 ny = 12
 
