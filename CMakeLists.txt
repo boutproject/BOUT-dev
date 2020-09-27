@@ -306,6 +306,16 @@ set(BOUT_SOURCES
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
   )
 
+
+ADD_CUSTOM_COMMAND( OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/field/generated_fieldops.cxx
+  COMMAND python gen_fieldops.py --filename generated_fieldops.cxx.tmp
+  COMMAND clang-format generated_fieldops.cxx.tmp -i
+  COMMAND mv generated_fieldops.cxx.tmp generated_fieldops.cxx
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.jinja  ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/field/
+  COMMENT "Generating source code" )
+
+
 add_library(bout++
   ${BOUT_SOURCES}
   )
