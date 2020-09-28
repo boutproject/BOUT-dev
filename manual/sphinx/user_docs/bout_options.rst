@@ -340,7 +340,7 @@ When BOUT++ automatically chooses ``NXPE`` and ``NYPE`` it finds all valid pairs
 which give ``total number of processors == NPES = NXPE * NYPE`` and also satisfy
 the constraints above. It then chooses the pair that makes the grid on each
 processor as close to square as possible (technically it chooses the pair that
-minimises ``((nx - 4) * NPES / ny) - NXPE``).
+minimises ``abs(sqrt(NPES * (nx - 4) / ny) - NXPE)``).
 
 If you need to specify complex input values, e.g. numerical values
 from experiment, you may want to use a grid file. The grid file to use
