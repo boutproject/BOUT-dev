@@ -10,11 +10,11 @@
 #cmakedefine01 BOUT_HAS_FFTW
 #cmakedefine01 BOUT_HAS_GETTEXT
 #cmakedefine01 BOUT_HAS_HDF5
+#cmakedefine01 BOUT_HAS_HYPRE
 #cmakedefine01 BOUT_HAS_IDA
 #cmakedefine01 BOUT_HAS_LAPACK
 #cmakedefine01 BOUT_HAS_NETCDF
 #cmakedefine01 BOUT_HAS_PETSC
-#cmakedefine01 BOUT_HAS_HYPRE
 #cmakedefine01 BOUT_HAS_PRETTY_FUNCTION
 #cmakedefine01 BOUT_HAS_PVODE
 #cmakedefine01 BOUT_HAS_SCOREP
@@ -27,5 +27,8 @@
 #cmakedefine01 BOUT_USE_SIGFPE
 #cmakedefine01 BOUT_USE_SIGNAL
 #cmakedefine01 BOUT_USE_TRACK
+#cmakedefine BOUT_HAS_UMPIRE @BOUT_HAS_UMPIRE@
+#cmakedefine BOUT_HAS_RAJA @BOUT_HAS_RAJA@ 
+#cmakedefine BOUT_USE_CUDA @BOUT_USE_CUDA@
 
 #endif // BOUT_BUILD_CONFIG_HXX

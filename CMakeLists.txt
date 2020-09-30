@@ -369,17 +369,17 @@ if (HAVE_OPENMP)
    list(APPEND BOUT_DEPENDS openmp)
 endif ()
 
-if (HAVE_CUDA)
+if (BOUT_USE_CUDA)
    list(APPEND BOUT_DEPENDS cuda)
 endif ()   
 
 # UMPIRE
-if (HAVE_UMPIRE)
+if (BOUT_HAS_UMPIRE)
   list(APPEND BOUT_DEPENDS umpire)
 endif ()
 
 # RAJA
-if (HAVE_RAJA)
+if (BOUT_HAS_RAJA)
   list(APPEND BOUT_DEPENDS RAJA)
 endif ()
 
@@ -418,6 +418,19 @@ target_include_directories(bout++ PUBLIC
   )
 
 # todo start using BOUT_config.h
+
+if(BOUT_HAS_RAJA)
+   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_RAJA")
+endif()
+
+if(BOUT_HAS_UMPIRE)
+   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_UMPIRE")
+endif()
+
+if(BOUT_USE_CUDA)
+   target_compile_definitions(bout++ PUBLIC "BOUT_USE_CUDA")
+endif()
+
 if(BOUT_HAS_HYPRE)
    target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
    #add_subdirectory(src/invert/laplacexy2)
@@ -960,6 +973,9 @@ message("
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
    Backtrace enabled        : ${BOUT_USE_BACKTRACE}
+   RAJA enabled             : ${BOUT_HAS_RAJA}
+   Umpire enabled           : ${BOUT_HAS_UMPIRE}
+   CUDA enabled             : ${BOUT_USE_CUDA}
 
    === Python ===
 

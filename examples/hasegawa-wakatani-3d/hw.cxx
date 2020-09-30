@@ -70,19 +70,38 @@ public:
 
 
 //  GPU loop RAJA_DEVICE 
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int i) {
-	
-	  	BoutReal div_current = alpha * gpu_Div_par_Grad_par(phi_minus_n_acc, i);
-		gpu_n_ddt[i]= - gpu_bracket_par(phi_acc, n_acc, i)
-			          - div_current
-         	                  - kappa * gpu_DZZ_par(phi_acc, i)
-                                  + Dn *gpu_Delp2_par(n_acc, i) ;	
+    {
+    
+       ArrayData<double> data(10);
+       std::iota(data.begin(), data.end(), 10);
 
-                gpu_vort_ddt[i]= - gpu_bracket_par(phi_acc, vort_acc, i)
-                                     - div_current
-                                     + Dvort *gpu_Delp2_par(vort_acc, i) ;   
-	
-	});
+       double *dataPtr = data.begin();
+
+       Array<double> dd(10);
+       double *ddPtr = dd.begin();
+
+       //RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int i) {
+       RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0,10), [=] RAJA_DEVICE (int i) {
+#if 0          
+         BoutReal div_current = alpha * gpu_Div_par_Grad_par(phi_minus_n_acc, i);
+         gpu_n_ddt[i]= - gpu_bracket_par(phi_acc, n_acc, i)
+                      - div_current
+                                 - kappa * gpu_DZZ_par(phi_acc, i)
+                                     + Dn *gpu_Delp2_par(n_acc, i) ;	
+
+                   gpu_vort_ddt[i]= - gpu_bracket_par(phi_acc, vort_acc, i)
+                                        - div_current
+                                        + Dvort *gpu_Delp2_par(vort_acc, i) ;   
+#endif	
+        if(i<10) {
+           double v1 = dataPtr[i];
+           ddPtr[i] = v1;
+           double v2 = ddPtr[i];
+           printf("Raja loop: data[%d]=%f dd[%d]=%f\n",i,v1,i,v2);
+        }
+      });
+       printf("done with raja kernel\n");
+    }
 
     return 0;
   }

@@ -1,15 +1,5 @@
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/thirdparty/")
 
-#if (ENABLE_CUDA)
-   #if (NOT ENABLE_RAJA)
-   # message(FATAL_ERROR "CUDA support requires RAJA")
-   #endif ()
-
-   #if (NOT ENABLE_UMPIRE)
-   # message(FATAL_ERROR "CUDA support requires UMPIRE")
-   #endif ()
-   #endif ()
-
 # MPI is setup by BLT
 if (MPI_FOUND)
   set(HAVE_MPI True)
@@ -27,7 +17,7 @@ endif ()
 # CUDA is setup by BLT
 if (ENABLE_CUDA)
   if (CUDA_FOUND)
-    set (HAVE_CUDA True)
+     set (BOUT_USE_CUDA True)
   endif ()
 endif ()
 
@@ -35,7 +25,7 @@ endif ()
 if (ENABLE_UMPIRE)
   find_package(umpire REQUIRED)
 
-  set (HAVE_UMPIRE True)
+  set (BOUT_HAS_UMPIRE True)
 
   blt_register_library(
     NAME umpire
@@ -61,7 +51,7 @@ if (ENABLE_RAJA)
   endif ()
 
   if (RAJA_FOUND)
-    set (HAVE_RAJA True)
+     set (BOUT_HAS_RAJA True)
 
     blt_register_library(
       NAME RAJA
@@ -156,17 +146,3 @@ endif ()
 #  endif ()
 #endif ()
 
-
-#HAVE_CONDUIT
-if (ENABLE_CONDUIT OR CONDUIT_DIR)
-  find_package(CONDUIT REQUIRED)
-  if (CONDUIT_FOUND)
-    set (HAVE_CONDUIT True)
-    set (ENABLE_CONDUIT ON)
-
-    blt_register_library(
-      NAME CONDUIT
-      INCLUDES ${CONDUIT_INCLUDE_DIRS}
-      LIBRARIES ${CONDUIT_LIBRARIES})
-  endif ()
-endif ()

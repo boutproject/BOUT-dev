@@ -29,9 +29,22 @@
 #include <map>
 #include <vector>
 #include <memory>
+#include <numeric>
 
 #ifdef _OPENMP
 #include <omp.h>
+#endif
+
+#if defined(BOUT_USE_CUDA) && defined(_CUDACC_)
+#define BOUT_HOST_DEVICE __host__ __device__
+#else
+#define BOUT_HOST_DEVICE
+#endif
+
+
+#ifdef BOUT_HAS_UMPIRE
+#include "umpire/Allocator.hpp"
+#include "umpire/ResourceManager.hpp"
 #endif
 
 #include <bout/assert.hxx>
@@ -50,13 +63,39 @@ using const_iterator = const T*;
  */
 template <typename T>
 struct ArrayData {
-  ArrayData(int size) : len(size) { data = new T[len]; }
-  ~ArrayData() { delete[] data; }
+   ArrayData(int size) : len(size) { 
+#ifdef BOUT_HAS_UMPIRE 
+     auto& rm = umpire::ResourceManager::getInstance();
+#ifdef BOUT_USE_CUDA
+     auto allocator = rm.getAllocator("UM");
+#else
+     auto allocator = rm.getAllocator("HOST");
+#endif
+     data = static_cast<T*>(allocator.allocate(size * sizeof(T)));
+#else
+     data = new T[len]; 
+#endif
+  }
+   
+   ~ArrayData() { 
+#ifdef BOUT_HAS_UMPIRE 
+     auto& rm = umpire::ResourceManager::getInstance();
+     rm.deallocate(data);
+#else
+     delete[] data;
+#endif 
+  }
+
+  // cannot be captured by value by lambda functions
+  // more of a diagnostic currently
+  ArrayData(const ArrayData&) = delete;
+
   iterator<T> begin() const { return data; }
   iterator<T> end() const { return data + len; }
   int size() const { return len; }
   void operator=(ArrayData<T>& in) { std::copy(std::begin(in), std::end(in), begin()); }
   T& operator[](int ind) { return data[ind]; };
+  const T& operator[](int ind) const { return data[ind]; };
 private:
   int len; ///< Size of the array
   T* data; ///< Array of data  
@@ -155,6 +194,7 @@ public:
     ptr = get(new_size);
   }
 
+#ifndef BOUT_HAS_UMPIRE 
   /*!
    * Holds a static variable which controls whether
    * memory blocks (dataBlock) are put into a store
@@ -173,7 +213,12 @@ public:
     value = false;
     return value;
   }
-  
+#else
+  static bool useStore( bool keep_using = true ) noexcept {
+    static bool value = false;
+    return value;
+  }
+#endif  
   /*!
    * Release data. After this the Array is empty and any data access
    * will be invalid
@@ -182,6 +227,7 @@ public:
     release(ptr);
   }
 
+#ifndef BOUT_HAS_UMPIRE
   /*!
    * Delete all data from the store and disable the store
    * 
@@ -194,6 +240,11 @@ public:
     // after cleanup() get deleted rather than put into the store
     useStore(false);
   }
+#else
+  static void cleanup() {
+     // maybe do some umpire pool cleanup
+  } 
+#endif
 
   /*!
    * Returns true if the Array is empty
@@ -268,6 +319,7 @@ public:
     ASSERT3(0 <= ind && ind < size());
     return ptr->operator[](ind);
   }
+
   const T& operator[](size_type ind) const {
     ASSERT3(0 <= ind && ind < size());
     return ptr->operator[](ind);
@@ -294,6 +346,7 @@ private:
    */
   dataPtrType ptr;
 
+#ifndef BOUT_HAS_UMPIRE 
   using storeType = std::map<size_type, std::vector<dataPtrType>>;
   using arenaType = std::vector<storeType>;
 
@@ -346,6 +399,7 @@ private:
     //so return an empty storeType from the arena.
     return arena[0];
   }
+ #endif // #ifndef BOUT_HAS_UMPIRE
   
   /*!
    * Returns a pointer to a dataBlock object of size \p len with no
@@ -353,6 +407,7 @@ private:
    *
    * Expects \p len >= 0
    */
+ #ifndef BOUT_HAS_UMPIRE
   dataPtrType get(size_type len) {
     ASSERT3(len >= 0);
 
@@ -373,6 +428,15 @@ private:
 
     return p;
   }
+#else
+  dataPtrType get(size_type len) {
+    ASSERT3(len >= 0);
+
+    dataPtrType p;
+    p = std::make_shared<dataBlock>(len);
+    return p;
+  }
+#endif
 
   /*!
    * Release an dataBlock object, reducing its reference count by one.
@@ -386,10 +450,12 @@ private:
    * one data block. Of course, store() could throw -- in which case
    * we're doomed anyway, so the only thing we can do is abort
    */
+
   void release(dataPtrType& d) noexcept {
     if (!d)
       return;
 
+#ifndef BOUT_HAS_UMPIRE
     // Reduce reference count, and if zero return to store
     if (d.use_count() == 1) {
       if (useStore()) {
@@ -398,17 +464,18 @@ private:
         // Could return here but seems to slow things down a lot
       }
     }
-
+#endif
     // Finish by setting pointer to nullptr if not putting on store
     d = nullptr;
   }
+
 };
 
 /*!
  * Create a copy of an Array, which does not share data
  */
 template <typename T, typename Backing>
-Array<T, Backing> copy(const Array<T, Backing>& other) {
+ Array<T, Backing> copy(const Array<T, Backing>& other) {
   Array<T, Backing> a(other);
   a.ensureUnique();
   return a;

@@ -9,15 +9,15 @@ set(hw_sources
 
 set(hw_depends bout++ PETSc)
 
-if(HAVE_CUDA)
+if(BOUT_USE_CUDA)
    list(APPEND hw_depends cuda nvToolsExt)
 endif ()
 
-if(HAVE_RAJA)
+if(BOUT_HAS_RAJA)
    list(APPEND hw_depends RAJA)
 endif ()
 
-if(HAVE_UMPIRE)
+if(BOUT_HAS_UMPIRE)
    list(APPEND hw_depends umpire)
 endif ()
 
