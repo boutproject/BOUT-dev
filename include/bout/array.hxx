@@ -30,15 +30,20 @@
 #include <vector>
 #include <memory>
 #include <numeric>
+#include <mutex>
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
-#if defined(BOUT_USE_CUDA) && defined(_CUDACC_)
+#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
 #define BOUT_HOST_DEVICE __host__ __device__
+#define BOUT_HOST __host__
+#define BOUT_DEVICE __device__
 #else
 #define BOUT_HOST_DEVICE
+#define BOUT_HOST
+#define BOUT_DEVICE
 #endif
 
 
@@ -49,6 +54,7 @@
 
 #include <bout/assert.hxx>
 #include <bout/openmpwrap.hxx>
+
 
 namespace {
 template <typename T>
@@ -98,6 +104,63 @@ struct ArrayData {
   const T& operator[](int ind) const { return data[ind]; };
 private:
   int len; ///< Size of the array
+  T* data; ///< Array of data  
+};
+
+template <typename T>
+struct ArrayData2 {
+   ArrayData2(int size) : len(size), Owner(true) { 
+#ifdef BOUT_HAS_UMPIRE 
+     auto& rm = umpire::ResourceManager::getInstance();
+#ifdef BOUT_USE_CUDA
+     auto allocator = rm.getAllocator("UM");
+     printf("UM Allocation\n");
+#else
+     auto allocator = rm.getAllocator("HOST");
+     printf("HOST Allocation\n");
+#endif
+     data = static_cast<T*>(allocator.allocate(size * sizeof(T)));
+#else
+     data = new T[len]; 
+#endif
+  }
+  
+BOUT_HOST_DEVICE   ~ArrayData2() { 
+#ifndef __CUDA_ARCH__
+   printf("host ~ArrayData2()\n");
+#ifdef BOUT_HAS_UMPIRE
+     if(data != nullptr && Owner) { 
+      auto& rm = umpire::ResourceManager::getInstance();
+      rm.deallocate(data);
+      data = nullptr;
+      printf("umpire dealloc\n");
+     }
+#else
+     if(data != nullptr && Owner) {
+      delete[] data;
+      data = nullptr;
+     }
+#endif
+#else
+   //printf("device ~ArrayData2()\n");     
+#endif 
+  }
+
+BOUT_HOST_DEVICE ArrayData2(const ArrayData2& other) {
+   len = other.len;
+   data = other.data;
+   Owner = false;
+}
+
+BOUT_HOST_DEVICE inline iterator<T> begin() const { return data; }
+BOUT_HOST_DEVICE inline iterator<T> end() const { return data + len; }
+BOUT_HOST_DEVICE inline int size() const { return len; }
+//BOUT_HOST_DEVICE  void operator=(ArrayData2<T>& in) { std::copy(std::begin(in), std::end(in), begin()); }
+BOUT_HOST_DEVICE inline T& operator[](int ind) { return data[ind]; };
+BOUT_HOST_DEVICE inline  const T operator[](int ind) const { return data[ind]; };
+private:
+  int len; ///< Size of the array
+  bool Owner;
   T* data; ///< Array of data  
 };
 

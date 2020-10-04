@@ -18,6 +18,9 @@
 #define BOUT_ENABLE_CUDA
 #define UMPIRE_ENABLE_CUDA
 
+#define gpu_ddt(name) gpu_ddt_helper(#name, name )
+
+
 //--  RAJA CUDA settings--------------------------------------------------------start
 #define BOUT_ENABLE_CUDA
 #define BOUT_DEVICE RAJA_DEVICE
@@ -58,6 +61,8 @@ template <typename G>
   };
 
 //----prepare varaibles for GPU----------------------------------------------- Start
+ // int region_size =0;
+
   __managed__  int nxMesh = 0;  // Mesh x size
   __managed__  int nyMesh = 0;  // Mesh y size
   __managed__ int nzMesh = 0;  // Mesh z size
@@ -83,12 +88,28 @@ template <typename G>
  __managed__ BoutReal* phi_minus_n_acc_yup = nullptr;
  __managed__ BoutReal* phi_minus_n_acc_ydown= nullptr;   
 
-
   __managed__  BoutReal* gpu_n_ddt; // copy ddt(n) to __device__
   __managed__  BoutReal* gpu_vort_ddt; // copy ddt(vort) to __device__  
 
+
+//static BoutReal* gpu_ddt( char* name, fiedl3d &f){
+//	gpu_n_ddt= const_cast<BoutReal*>(f.timeDeriv()->operator()(0,0));
+//	return gpu_n_ddt;
+
+//}
+static BoutReal* RAJA_DEVICE gpu_ddt_helper(const char* p_name, Field3D &f ){
+auto ddt = gpu_n_ddt;
+//std::cout<<"Name is  "<< p_name <<std::endl;
+//if (p_name == "n"){std::cout<<"I am n:     "<< p_name <<std::endl;}
+//if (p_name == "vort"){std::cout<<"I am vort:     "<< p_name <<std::endl;}
+if (p_name == "n"){ddt =gpu_n_ddt;}
+if (p_name == "vort"){ddt = gpu_vort_ddt;}
+return ddt;
+
+}
+
 // copy data from host to device
-static void RAJA_data_copy( Field3D n, Field3D vort,  Field3D phi, Field3D phi_minus_n,  const FieldAccessor<> &phi_acc, const FieldAccessor<> &phi_minus_n_acc) {
+static void RAJA_data_copy( Field3D &n, Field3D &vort,  Field3D &phi, Field3D &phi_minus_n,  const FieldAccessor<> &phi_acc, const FieldAccessor<> &phi_minus_n_acc) {
   
     nxMesh = n.getNx();
     nyMesh = n.getNy();
@@ -111,9 +132,15 @@ static void RAJA_data_copy( Field3D n, Field3D vort,  Field3D phi, Field3D phi_m
     const Field3D &ydown = *phi_minus_n_acc.ydown;
     phi_minus_n_acc_yup = const_cast<BoutReal*>(yup(0,0));
     phi_minus_n_acc_ydown = const_cast<BoutReal*>(ydown(0,0));
-	
+ 
+
+ //   RAJA::synchronize<RAJA::cuda_synchronize>();	
     gpu_n_ddt= const_cast<BoutReal*>(n.timeDeriv()->operator()(0,0)); // copy ddt(n) to __device__
     gpu_vort_ddt = const_cast<BoutReal*>(vort.timeDeriv()->operator()(0,0)); // copy ddt(vort) to __device__  
+
+    //auto region = n.getRegion("RGN_NOBNDRY"); // Region object
+    //auto indices = region.getIndices();   // A std::vector of Ind3D objects 
+   // region_size = indices.size();
 
 }
 
@@ -243,16 +270,42 @@ static  BoutReal RAJA_DEVICE gpu_Div_par_Grad_par_G(
   const auto iyp = i + nz; // auto iyp = i.yp();
   const auto iym = i - nz; // auto iym = i.ym():
   const int  k = i / nz;  // index for Field2D data (has no z-dependence)
-  const int  kyp = iyp/ nz;
-  const int  kym = iym/nz;
+  const int  kyp = iyp / nz;
+  const int  kym = iym / nz;
 
+
+
+  // Fetch values used more than once
+  //   BoutReal dy = metric->dy[i];
+  //     BoutReal J = metric->J[i];
+  //       BoutReal g_22 = metric->g_22[i];
+  //         
+  //           BoutReal gradient_upper = 2.*(yup[iyp] - f[i]) / (dy + metric->dy[iyp]);
+  //             BoutReal flux_upper = gradient_upper * (J + metric->J[iyp]) / (g_22 + metric->g_22[iyp]);
+  //               
+  //                 BoutReal gradient_lower = 2.*(f[i] - ydown[iym]) / (dy + metric->dy[iyp]);
+  //                   BoutReal flux_lower = gradient_lower * (J + metric->J[iym]) / (g_22 + metric->g_22[iym]);
+  //
+  //                     return (flux_upper - flux_lower) / (dy * J);
+
+/*
 	BoutReal gradient_upper = 2.*(yup[kyp] - f[k]) / (dy[k]+dy[kyp]);
 	BoutReal flux_upper = gradient_upper*(J[k]+J[kyp])/ (g22[k]+g22[kyp]) ;
 	BoutReal gradient_lower = 2.0*(f[k]-ydown[kym])/(dy[k]+ dy[kyp]);
 	BoutReal flux_lower = gradient_lower*(J[k]+J[kym])/(g22[k]+ g22[kym]);
 	BoutReal output =(flux_upper - flux_lower) /(dy[k]*J[k]);
 	return output;
+*/
+
+	BoutReal gradient_upper = 2.*(yup[iyp] - f[i]) / (dy[k] + dy[kyp]);
+	BoutReal flux_upper = gradient_upper*(J[k]+J[kyp]) / (g22[k] + g22[kyp]) ;
+	BoutReal gradient_lower = 2.0*(f[i] - ydown[iym])/(dy[k] + dy[kyp]);
+	BoutReal flux_lower = gradient_lower*(J[k] + J[kym])/(g22[k]+ g22[kym]);
+	BoutReal output =(flux_upper - flux_lower) /(dy[k]*J[k]);
+	return output;
+
 }
+
 
 
 static  BoutReal RAJA_DEVICE gpu_DZZ(
@@ -267,14 +320,15 @@ const BoutReal dz
 
 
 template<CELL_LOC location>
-static BoutReal RAJA_DEVICE gpu_Delp2_par(const FieldAccessor<location> &f, const int i) {
-
-	auto dp2=gpu_delpsq(i, p_n, p_G1, p_G3, p_g11, p_g13, p_g33, dxMesh, dzMesh, nyMesh, nzMesh) ;
+static BoutReal RAJA_DEVICE Delp2(const FieldAccessor<location> &f, const int i) {
+        Coordinates *metric = f.coords;
+        BoutReal dz = metric->dz;
+	auto dp2=gpu_delpsq(i, p_n, p_G1, p_G3, p_g11, p_g13, p_g33, dxMesh, dz, nyMesh, nzMesh) ;
 	return dp2;
 }
 
 template<CELL_LOC location>
-static BoutReal RAJA_DEVICE gpu_bracket_par(const FieldAccessor<location> &f, const FieldAccessor<location> &g, const int i) {
+static BoutReal RAJA_DEVICE bracket(const FieldAccessor<location> &f, const FieldAccessor<location> &g, const int i) {
 	Coordinates *metric = g.coords;
 	BoutReal dz = metric->dz;
 	auto gbp = gpu_arakawa_bracket(i, p_phi, p_n, dxMesh, dz, nyMesh, nzMesh);
@@ -282,22 +336,129 @@ static BoutReal RAJA_DEVICE gpu_bracket_par(const FieldAccessor<location> &f, co
 
 }
 
+/*
+template<IND_TYPE N, CELL_LOC location>
+BoutReal DDZ(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
+  return (f[ind.zp()] - f[ind.zm()]) / (2. * f.coords->dz);
+}
+*/
+
 template< CELL_LOC location>
-static BoutReal RAJA_DEVICE  gpu_DZZ_par(const FieldAccessor<location> &f, const int i) {
+static BoutReal RAJA_DEVICE  DDZ(const FieldAccessor<location> &f, const int i) {
+
 	Coordinates *metric = f.coords;
-	BoutReal dz = metric->dz;
-	auto ddz = (p_phi[i+1] - p_phi[i-1]) / (2.0 * dz);	
+	auto dzz = metric->dz;
+/*	int  dz = 1;
+	auto nz = nzMesh;
+	auto ny = nyMesh;
+	dz = dz <= nz ? dz :dz % nz;
+	//if( dz <= nz) { dz = dz;} 
+	//else {dz =  dz % nz;} //Fix in case dz > nz, if not force it to be in range
+	// izp = ind.zp()
+	auto izp = {(i + dz) % nz < dz ? i - nz + dz : i + dz, ny, nz};
+	//int izp = (i + (int)dz) % nz < dz ? i - nz + dz : i + dz; 	// izp = ind.zp();
+	//izm = ind.zm()
+	//int izm = i % nz < dz ? i + nz - dz : i - dz;  // izm = ind.zm();
+	//auto ddz = 0.5*(f[izp]-f[izm])
+	
+//	auto test = f[izp.ind];
+*/
+       auto ddz = 0.5* (p_phi[i+1] - p_phi[i-1]) / dzz;	
        return ddz;
 }
 
 
 template< CELL_LOC location>
-static BoutReal RAJA_DEVICE  gpu_Div_par_Grad_par(const FieldAccessor<location> &f, const int i) {  
+static BoutReal RAJA_DEVICE  Div_par_Grad_par(const FieldAccessor<location> &f, const int i) {  
 	Coordinates *metric = f.coords;
 	BoutReal dz = metric->dz;
 	auto div_p =  gpu_Div_par_Grad_par_G(i, p_phi_minus_n,  p_g22, dxMesh,dyMesh,
                                            dz,JMesh,nxMesh, nyMesh, nzMesh,phi_minus_n_acc_yup, phi_minus_n_acc_ydown);
   return div_p;
      }
+
+
+template<IND_TYPE N, CELL_LOC location>
+static BoutReal RAJA_DEVICE t_DDZ(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
+	Coordinates *metric = f.coords;
+	auto dzz = metric->dz;
+	int  dz = 1;
+	auto nz = nzMesh;
+	dz = dz <= nz ? dz :dz % nz;
+
+	int izp_ind = ((ind.ind + dz) % nz < dz ? ind.ind - nz + dz : ind.ind + dz);
+	SpecificInd<IND_TYPE::IND_3D> izp = ind;
+	izp.ind = izp_ind;
+	int izm_ind = ind.ind % nz < dz ? ind.ind + nz - dz : ind.ind - dz;  // izm = ind.zm();
+	SpecificInd<IND_TYPE::IND_3D> izm = ind;
+	izm.ind = izm_ind;
+	auto ddz = 0.5*(f[izp]-f[izm]) / dzz; // return (f[ind.zp()] - f[ind.zm()]) / (2. * f.coords->dz);
+	return ddz;
+}
+
+
+template<IND_TYPE N, CELL_LOC location>
+static BoutReal RAJA_DEVICE t_Div(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
+
+	Coordinates *metric = f.coords;
+	auto dzz = metric->dz;
+	int  ind_dy = 1;
+	auto nz = nzMesh;
+	auto ny = nyMesh;
+  	// Index offsets
+  	// auto iyp = i.yp();
+	int ind_iyp = i.ind + (ind_dy * nz);
+	int ind_iym = i.ind + (-ind_dy * nz);
+	SpecificInd<IND_TYPE::IND_3D> iyp = i;
+	iyp.ind = ind_iyp;
+	SpecificInd<IND_TYPE::IND_3D> iym = i;
+	iym.ind = ind_iym;
+
+	// Use the raw pointers to yup/ydown fields. These must have been set before calling
+	const Field3D &yup = *f.yup;
+  	const Field3D &ydown = *f.ydown;
+ 
+
+	  // Fetch values used more than once
+	SpecificInd<IND_TYPE::IND_2D> i_2D ;
+	i_2D.ind = i.ind/nz;
+	i_2D.ny= ny;
+	i_2D.nz = 1;
+	//BoutReal tempArr= metric->dy.data.ptr.data[i_2D.ind];
+//	ArrayData<BoutReal>* arrPtrTemp = &(metric->dy.data.ptr);
+//	BoutReal dy = tempArr.data[i_2D.ind];	
+	//BoutReal dy = metric->dy[i_2D];
+	  //     BoutReal J = metric->J[i];
+	  //       BoutReal g_22 = metric->g_22[i];	
+
+//   phi_minus_n_acc_yup = const_cast<BoutReal*>(yup(0,0));
+//   phi_minus_n_acc_ydown = const_cast<BoutReal*>(ydown(0,0));
+	
+	
+
+
+	//BoutReal gradient_upper = 2.*(yup[iyp] - f[i]) / (dy + metric->dy[iyp]);
+//	BoutReal gradient_upper = 2.*(phi_minus_n_acc_yup[iyp.ind] - f[i]) / (dyMesh[k] + dyMesh[k]);
+	
+//	BoutReal flux_upper = gradient_upper * (J + metric->J[iyp]) / (g_22 + metric->g_22[iyp]);
+	
+//	BoutReal flux_upper = gradient_upper * (JMesh[k] + JMesh[kyp]) / (p_g22[k] + p_g22[kyp]);
+
+
+//  	BoutReal gradient_lower = 2.*(f[i] - ydown[iym]) / (dy + metric->dy[iyp]);
+
+  //	BoutReal gradient_lower = 2.*(f[i] - phi_minus_n_acc_ydown[iym.ind]) / (dyMesh[k] + dyMesh[kyp]);
+  	
+
+//	BoutReal flux_lower = gradient_lower * (J + metric->J[iym]) / (g_22 + metric->g_22[iym]);
+
+//	BoutReal flux_lower = gradient_lower * (JMesh[k] + JMesh[kym]) / (p_g22[k] + p_g22[kym]);
+  
+//	BoutReal r =  (flux_upper - flux_lower) / (dyMesh[k] * JMesh[k]);
+	BoutReal r = 0.001;
+	return r;
+
+//	return 0.001;
+}
 
 

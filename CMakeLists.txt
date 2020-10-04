@@ -843,7 +843,7 @@ function(bout_add_integrated_test TESTNAME)
   add_dependencies(build-check-integrated-tests ${TESTNAME})
 endfunction()
 
-option(PACKAGE_TESTS "Build the tests" ON)
+option(PACKAGE_TESTS "Build the tests" OFF)
 if(PACKAGE_TESTS)
   enable_testing()
 
@@ -875,8 +875,8 @@ if(PACKAGE_TESTS)
   add_dependencies(check_bout check-unit-tests check-integrated-tests)
 endif()
 
-add_subdirectory(examples/laplacexy/simple-hypre)
-add_subdirectory(examples/laplacexy/simple)
+#add_subdirectory(examples/laplacexy/simple-hypre)
+#add_subdirectory(examples/laplacexy/simple)
 add_subdirectory(examples/hasegawa-wakatani-3d)
 
 ##################################################
