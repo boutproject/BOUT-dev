@@ -12555,7 +12555,7 @@ else
 else
    if test -d .git && which git; then :
 
-        git submodule update --init --recursive externalpackages/mpark.variant || \
+        make -f makefile.submodules mpark_submodule || \
 	  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "*** Could not download mpark.variant

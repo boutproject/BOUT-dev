@@ -1168,7 +1168,7 @@ AS_IF([test "$SYSTEM_HAS_MPARK" = "yes"], [
 ], [
   AS_IF([test -d externalpackages/mpark.variant/include], [],
     [ AS_IF([test -d .git && which git], [
-        git submodule update --init --recursive externalpackages/mpark.variant || \
+        make -f makefile.submodules mpark_submodule || \
 	  AC_MSG_FAILURE([*** Could not download mpark.variant])
       ], [
         AC_MSG_FAILURE([mpark.variant not found. Please install mpark.variant or use the official releases.])
