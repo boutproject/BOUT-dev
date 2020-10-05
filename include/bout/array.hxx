@@ -63,61 +63,17 @@ template <typename T>
 using const_iterator = const T*;
 }
 
-/*!
- * ArrayData holds the actual data
- * Handles the allocation and deletion of data
- */
 template <typename T>
 struct ArrayData {
-   ArrayData(int size) : len(size) { 
+   ArrayData(int size) : len(size), owner(true) { 
 #ifdef BOUT_HAS_UMPIRE 
      auto& rm = umpire::ResourceManager::getInstance();
 #ifdef BOUT_USE_CUDA
      auto allocator = rm.getAllocator("UM");
+     //printf("UM Allocation\n");
 #else
      auto allocator = rm.getAllocator("HOST");
-#endif
-     data = static_cast<T*>(allocator.allocate(size * sizeof(T)));
-#else
-     data = new T[len]; 
-#endif
-  }
-   
-   ~ArrayData() { 
-#ifdef BOUT_HAS_UMPIRE 
-     auto& rm = umpire::ResourceManager::getInstance();
-     rm.deallocate(data);
-#else
-     delete[] data;
-#endif 
-  }
-
-  // cannot be captured by value by lambda functions
-  // more of a diagnostic currently
-  ArrayData(const ArrayData&) = delete;
-
-  iterator<T> begin() const { return data; }
-  iterator<T> end() const { return data + len; }
-  int size() const { return len; }
-  void operator=(ArrayData<T>& in) { std::copy(std::begin(in), std::end(in), begin()); }
-  T& operator[](int ind) { return data[ind]; };
-  const T& operator[](int ind) const { return data[ind]; };
-private:
-  int len; ///< Size of the array
-  T* data; ///< Array of data  
-};
-
-template <typename T>
-struct ArrayData2 {
-   ArrayData2(int size) : len(size), Owner(true) { 
-#ifdef BOUT_HAS_UMPIRE 
-     auto& rm = umpire::ResourceManager::getInstance();
-#ifdef BOUT_USE_CUDA
-     auto allocator = rm.getAllocator("UM");
-     printf("UM Allocation\n");
-#else
-     auto allocator = rm.getAllocator("HOST");
-     printf("HOST Allocation\n");
+     //printf("HOST Allocation\n");
 #endif
      data = static_cast<T*>(allocator.allocate(size * sizeof(T)));
 #else
@@ -125,42 +81,70 @@ struct ArrayData2 {
 #endif
   }
   
-BOUT_HOST_DEVICE   ~ArrayData2() { 
+BOUT_HOST_DEVICE   ~ArrayData() { 
+// __CUDA_ARCH__ is only defined device side
 #ifndef __CUDA_ARCH__
-   printf("host ~ArrayData2()\n");
+   //printf("host ~ArrayData()\n");
 #ifdef BOUT_HAS_UMPIRE
-     if(data != nullptr && Owner) { 
+     if(data != nullptr && owner) { 
       auto& rm = umpire::ResourceManager::getInstance();
       rm.deallocate(data);
       data = nullptr;
-      printf("umpire dealloc\n");
+      //printf("umpire dealloc\n");
      }
 #else
-     if(data != nullptr && Owner) {
+     if(data != nullptr && owner) {
       delete[] data;
       data = nullptr;
      }
 #endif
 #else
-   //printf("device ~ArrayData2()\n");     
+   //printf("device ~ArrayData()\n");     
 #endif 
   }
 
-BOUT_HOST_DEVICE ArrayData2(const ArrayData2& other) {
+BOUT_HOST_DEVICE ArrayData(const ArrayData& other) {
    len = other.len;
    data = other.data;
-   Owner = false;
+   owner = false;
 }
 
 BOUT_HOST_DEVICE inline iterator<T> begin() const { return data; }
 BOUT_HOST_DEVICE inline iterator<T> end() const { return data + len; }
 BOUT_HOST_DEVICE inline int size() const { return len; }
-//BOUT_HOST_DEVICE  void operator=(ArrayData2<T>& in) { std::copy(std::begin(in), std::end(in), begin()); }
+
+BOUT_HOST_DEVICE inline void operator=(ArrayData<T>& in) { 
+#ifndef __CUDA_ARCH__
+   std::copy(std::begin(in), std::end(in), begin()); 
+#else
+   int threadId = threadIdx.x + blockDim.x * threadIdx.y +
+                 (blockDim.x * blockDim.y) * threadIdx.z;
+
+   if(threadId < len) {
+      data[threadId] = in[threadId];
+   }
+#endif
+}
+
+// this is the operator likely to be called on the device
+BOUT_HOST_DEVICE inline void operator=(const ArrayData<T>& in) const { 
+#ifndef __CUDA_ARCH__
+   std::copy(std::begin(in), std::end(in), begin()); 
+#else
+   int threadId = threadIdx.x + blockDim.x * threadIdx.y +
+                 (blockDim.x * blockDim.y) * threadIdx.z;
+
+   if(threadId < len) {
+      data[threadId] = in[threadId];
+   }
+#endif
+}
+
 BOUT_HOST_DEVICE inline T& operator[](int ind) { return data[ind]; };
 BOUT_HOST_DEVICE inline  const T operator[](int ind) const { return data[ind]; };
 private:
   int len; ///< Size of the array
-  bool Owner;
+  bool owner;
   T* data; ///< Array of data  
 };
 

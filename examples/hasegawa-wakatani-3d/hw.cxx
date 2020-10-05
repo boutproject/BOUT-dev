@@ -71,20 +71,14 @@ public:
 
 //  GPU loop RAJA_DEVICE 
     {
-     
-       ArrayData<double> data(10);
-       std::iota(data.begin(), data.end(), 10);
-
-       double *dataPtr = data.begin();
-
-       Array<double> dd(10);
-       double *ddPtr = dd.begin();
-
-       ArrayData2<double> d2(10);
+       ArrayData<double> d2(10);
        std::iota(d2.begin(), d2.end(), 20);
 
+       ArrayData<double> d3(10);
+       std::iota(d3.begin(), d3.end(),30);
+
        //RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int i) {
-       RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0,1), [=] RAJA_DEVICE (int i) {
+       RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0,10), [=] RAJA_DEVICE (int i) {
 #if 0          
          BoutReal div_current = alpha * gpu_Div_par_Grad_par(phi_minus_n_acc, i);
          gpu_n_ddt[i]= - gpu_bracket_par(phi_acc, n_acc, i)
@@ -96,16 +90,25 @@ public:
                                         - div_current
                                         + Dvort *gpu_Delp2_par(vort_acc, i) ;   
 #endif	
-        if(i==0) {
-#if 0
-           double v1 = dataPtr[i];
-           ddPtr[i] = v1;
-           double v2 = ddPtr[i];
-#endif
-           int ss = d2.size();
-           //printf("Raja loop: data[%d]=%f dd[%d]=%f\n",i,v1,i,v2);
-           printf("Raja loop: d2.size()=%d\n",ss);
+        int len = d2.size();                                 
+        if(i < len) {
+           double v2 = d2[i];
+           double v3 = d3[i];
+           printf("Before Assignment: d2[%d]=%f d3[%d]=%f\n",i,v2,i,v3);
         }
+#if 1
+        d2 = d3;
+        if(i < len) {
+           double v2 = d2[i];
+           double v3 = d3[i];
+           printf("After Assignment: d2[%d]=%f d3[%d]=%f\n",i,v2,i,v3);
+        }
+        if(i==0) {
+           double *b = d2.begin();
+           double *e = d2.end();
+           printf("begin: %p end:%p\n",b,e);
+        }
+#endif
       });
        printf("done with raja kernel\n");
     }
