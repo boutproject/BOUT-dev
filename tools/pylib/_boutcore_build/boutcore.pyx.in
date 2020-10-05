@@ -41,6 +41,7 @@ inc_dirs="${numpyheader%/*/*} $inc_dirs"
 # Main file
 cat <<EOF
 # distutils: language=c++
+# distutils: language_level=3
 # distutils: include_dirs = $inc_dirs
 # distutils: libraries = $libs
 # distutils: library_dirs = $lib_dirs
