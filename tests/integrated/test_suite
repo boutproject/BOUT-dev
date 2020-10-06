@@ -89,7 +89,9 @@ if args.get_list:
 ##################################################################
 # Run the actual test
 
-command = './runtest' if not args.make else 'make'
+# Kill tests that take longer than 10 minutes (default)
+timeout = os.environ.get("BOUT_TEST_TIMEOUT", "10m")
+command = 'timeout {} ./runtest'.format(timeout) if not args.make else 'make'
 
 savepath = os.getcwd()  # Save current working directory
 failed = []

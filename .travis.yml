@@ -57,6 +57,7 @@ jobs:
       - SCRIPT_FLAGS='-uim'
       - PIP_PACKAGES='cython~=0.29 netcdf4~=1.5 sympy~=1.5'
       - LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
+      - BOUT_TEST_TIMEOUT="5m"
       - *petsc_vars
   - name: "GCC 7"
     addons:
