@@ -77,6 +77,8 @@ public:
        ArrayData<double> d3(10);
        std::iota(d3.begin(), d3.end(),30);
 
+       //Array<double> dd(10);
+
        //RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int i) {
        RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0,10), [=] RAJA_DEVICE (int i) {
 #if 0          
@@ -107,6 +109,8 @@ public:
            double *b = d2.begin();
            double *e = d2.end();
            printf("begin: %p end:%p\n",b,e);
+           //int dsize = dd.size();
+           //printf("data size %d\n",dsize);
         }
 #endif
       });

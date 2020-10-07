@@ -189,6 +189,7 @@ set(BOUT_HEADERS
   ./include/parallel_boundary_region.hxx
   ./include/smoothing.hxx
   ./include/sourcex.hxx
+  ./include/StackTrace.hxx
   ./include/stencils.hxx
   ./include/unused.hxx
   ./include/utils.hxx
