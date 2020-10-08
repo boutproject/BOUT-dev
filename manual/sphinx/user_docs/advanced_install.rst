@@ -789,3 +789,33 @@ to::
 
 This will force an alternate implementation of type_pack_element to be defined.
 See also https://software.intel.com/en-us/forums/intel-c-compiler/topic/501502
+
+
+Compiling fails after changing branch
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If compiling fails after changing branch, for example from ``master``
+to ``next``, with an error like the following::
+
+   $ make
+   Downloading mpark.variant
+   You need to run this command from the toplevel of the working tree.
+   make[2]: *** [BOUT-dev/externalpackages/mpark.variant/include/mpark/variant.hpp] Error 1
+   make[1]: *** [field] Error 2
+   make: *** [src] Error 2
+
+it's possible something has gone wrong with the submodules. To fix,
+just run ``make submodules``::
+
+  $ make submodules
+  Downloading mpark.variant
+  git submodule update --init --recursive /home/peter/Codes/BOUT-dev/externalpackages/mpark.variant
+  Submodule path 'externalpackages/mpark.variant': checked out '0b488da9bebac980e7ba0e158a959c956a449676'
+
+If you regularly work on two different branches and need to run ``make
+submodules`` a lot, you may consider telling git to automatically
+update the submodules::
+
+  git config submodule.recurse=true
+
+This requires ``git >= 2.14``.
