@@ -90,7 +90,7 @@ if args.get_list:
 # Run the actual test
 
 # Kill tests that take longer than 10 minutes (default)
-timeout = os.environ.get("BOUT_TEST_TIMEOUT", "10m")
+timeout = os.environ.get("BOUT_TEST_TIMEOUT", "10m" if not args.all_tests else "30m")
 command = 'timeout {} ./runtest'.format(timeout) if not args.make else 'make'
 
 savepath = os.getcwd()  # Save current working directory
@@ -122,13 +122,18 @@ for t in tests:
     # Run test, piping stdout so it is not sent to console
     status, out = shell(command, pipe=True)
 
-    if status != 0:
-        # ❌ Failed
-        print(u"\u274C", end='')  # No newline
-        failed.append((t, out))
-    else:
+    if status == 0:
         # ✓ Passed
         print(u"\u2713", end='')  # No newline
+    else:
+        if status == 124:
+            # 💤 timeout
+            print(u"\U0001f4a4", end='')  # No newline
+            out += "\n(It is likely that a timeout occured)"
+        else:
+            # ❌ Failed
+            print(u"\u274C", end='')  # No newline
+        failed.append((t, out))
 
     print(" %7.3f s" % (time.time() - start_time_))
     sys.stdout.flush()  # Make sure '✓' or '❌' is flushed
