@@ -98,7 +98,7 @@ jobs:
       - mkdir build && cd build
       - cmake .. -DUSE_PETSC=ON -DUSE_SLEPC=ON -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT="$HOME/local" -DENABLE_OPENMP=ON
       - cmake --build .
-      - ctest --output-on-failure --time 300
+      - ctest --output-on-failure --timeout 300
 #CLANG
   - name: "Clang"
     env:
