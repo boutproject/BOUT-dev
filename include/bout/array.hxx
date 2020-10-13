@@ -65,37 +65,42 @@ using const_iterator = const T*;
 
 template <typename T>
 struct ArrayData {
-   ArrayData(int size) : len(size), owner(true) { 
+   ArrayData(int size) : len(size), clientUseCount(1), owner(true) { 
 #ifdef BOUT_HAS_UMPIRE 
      auto& rm = umpire::ResourceManager::getInstance();
 #ifdef BOUT_USE_CUDA
      auto allocator = rm.getAllocator("UM");
-     //printf("UM Allocation\n");
 #else
      auto allocator = rm.getAllocator("HOST");
-     //printf("HOST Allocation\n");
 #endif
      data = static_cast<T*>(allocator.allocate(size * sizeof(T)));
+     printf("UM ArrayData %d %p \n",len,data);
 #else
      data = new T[len]; 
 #endif
   }
+
   
 BOUT_HOST_DEVICE   ~ArrayData() { 
 // __CUDA_ARCH__ is only defined device side
 #ifndef __CUDA_ARCH__
-   //printf("host ~ArrayData()\n");
+     printf("UM dealloc len %d owner %d count %d\n",len,owner,clientUseCount);
 #ifdef BOUT_HAS_UMPIRE
-     if(data != nullptr && owner) { 
+     if(data != nullptr && owner && (clientUseCount == 1)) { 
+      printf("UM dealloc %d %p\n",len,data);
       auto& rm = umpire::ResourceManager::getInstance();
       rm.deallocate(data);
       data = nullptr;
-      //printf("umpire dealloc\n");
+      len = 0;
+      clientUseCount = 0;
+      owner = false;
      }
 #else
-     if(data != nullptr && owner) {
+     if(data != nullptr && owner && (clientUseCount == 1) {
       delete[] data;
       data = nullptr;
+      clientUseCount = 0;
+      owner = false;
      }
 #endif
 #else
@@ -112,6 +117,9 @@ BOUT_HOST_DEVICE ArrayData(const ArrayData& other) {
 BOUT_HOST_DEVICE inline iterator<T> begin() const { return data; }
 BOUT_HOST_DEVICE inline iterator<T> end() const { return data + len; }
 BOUT_HOST_DEVICE inline int size() const { return len; }
+BOUT_HOST_DEVICE inline void dec_count() {clientUseCount--;}
+BOUT_HOST_DEVICE inline void inc_count() {clientUseCount++;}
+BOUT_HOST_DEVICE inline int use_count() { return clientUseCount;}
 
 BOUT_HOST_DEVICE inline void operator=(ArrayData<T>& in) { 
 #ifndef __CUDA_ARCH__
@@ -143,9 +151,10 @@ BOUT_HOST_DEVICE inline void operator=(const ArrayData<T>& in) const {
 BOUT_HOST_DEVICE inline T& operator[](int ind) { return data[ind]; };
 BOUT_HOST_DEVICE inline  const T operator[](int ind) const { return data[ind]; };
 private:
-  int len; ///< Size of the array
-  bool owner;
-  T* data; ///< Array of data  
+   T* data=nullptr;
+   int len=0;
+   int clientUseCount=0;
+   bool owner = false;
 };
 
 /*!
@@ -176,6 +185,7 @@ private:
  * provided T is a compatible type), std::vector etc. Must provide the following :
  *  size, operator=, operator[], begin, end
  */
+
 template<typename T, typename Backing = ArrayData<T>>
 class Array {
 public:
@@ -197,20 +207,31 @@ public:
    */
   Array(size_type len) {
     ptr = get(len);
+    printf("Array create %d @ %p\n",len,ptr->begin());  
   }
   
   /*!
    * Destructor. Releases the underlying dataBlock
    */
-  ~Array() noexcept {
-    release(ptr);
+BOUT_HOST_DEVICE inline   ~Array() {
+#ifndef __CUDA_ARCH__
+    if(ptr) {
+      printf("~Array count %d data %p\n",ptr->use_count(),ptr->begin());  
+      release(ptr);
+    }
+#else
+    //printf("~Array Device\n");
+#endif
   }
   
   /*!
    * Copy constructor
    */
-  Array(const Array &other) noexcept {
-    ptr = other.ptr; 
+BOUT_HOST_DEVICE Array(const Array &other) {
+    ptr = other.ptr;
+#ifndef __CUDA_ARCH__
+    ptr->inc_count();
+#endif
   }
 
   /*!
@@ -219,9 +240,14 @@ public:
    *
    * Uses copy-and-swap idiom
    */
-  Array& operator=(Array other) noexcept {
+
+BOUT_HOST  inline Array& operator=(Array other) noexcept {
     swap(*this, other);
     return *this;
+  }
+
+BOUT_DEVICE  inline void operator=(const Array other) const {
+    ptr->operator=(*other.ptr);
   }
 
   /*!
@@ -237,11 +263,16 @@ public:
    * Note that this invalidates the existing data!
    */
   void reallocate(size_type new_size) {
-    release(ptr);
+    printf("Array realloc attempt %d\n",new_size);
+    int old_size = 0;
+    if(ptr) {
+      old_size = ptr->size();
+      release(ptr);
+    }
     ptr = get(new_size);
+    printf("Array realloc from %d to %d @ %p\n",old_size,new_size,ptr->begin());  
   }
 
-#ifndef BOUT_HAS_UMPIRE 
   /*!
    * Holds a static variable which controls whether
    * memory blocks (dataBlock) are put into a store
@@ -251,21 +282,11 @@ public:
    * but can be set to false by passing "false" as input.
    * Once set to false it can't be changed back to true.
    */
-  static bool useStore( bool keep_using = true ) noexcept {
-    static bool value = true;
-    if (keep_using) {
-      return value; 
-    }
-    // Change to false
-    value = false;
-    return value;
-  }
-#else
+
   static bool useStore( bool keep_using = true ) noexcept {
     static bool value = false;
     return value;
   }
-#endif  
   /*!
    * Release data. After this the Array is empty and any data access
    * will be invalid
@@ -274,36 +295,22 @@ public:
     release(ptr);
   }
 
-#ifndef BOUT_HAS_UMPIRE
-  /*!
-   * Delete all data from the store and disable the store
-   * 
-   * Note: After this is called the store cannot be re-enabled
-   */
-  static void cleanup() {
-    // Clean the store, deleting data
-    store(true);
-    // Don't use the store anymore. This is so that array releases
-    // after cleanup() get deleted rather than put into the store
-    useStore(false);
-  }
-#else
+
   static void cleanup() {
      // maybe do some umpire pool cleanup
   } 
-#endif
 
   /*!
    * Returns true if the Array is empty
    */
-  bool empty() const noexcept {
+BOUT_HOST_DEVICE inline   bool empty() const noexcept {
     return ptr == nullptr;
   }
 
   /*!
    * Return size of the array. Zero if the array is empty.
    */
-  size_type size() const noexcept {
+BOUT_HOST_DEVICE inline   size_type size() const noexcept {
     if(!ptr)
       return 0;
 
@@ -318,7 +325,11 @@ public:
    * 
    */
   bool unique() const noexcept {
-    return ptr.use_count() == 1;
+    printf("Array unique()\n");
+    if(ptr) {
+      return ptr->use_count() == 1;
+    }
+    return true;
   }
 
   /*!
@@ -327,6 +338,7 @@ public:
    * on the data.
    */
   void ensureUnique() {
+    printf("Array ensureUnique\n");
     if(!ptr || unique())
       return;
 
@@ -345,14 +357,41 @@ public:
   //////////////////////////////////////////////////////////
   // Iterators
 
-  iterator<T> begin() noexcept { return (ptr) ? std::begin(*ptr) : nullptr; }
+BOUT_HOST_DEVICE inline iterator<T> begin() noexcept { 
+   if(ptr) {
+      return (ptr->begin());
+   }
+   else {
+      return(nullptr);
+   }
+}
 
-  iterator<T> end() noexcept { return (ptr) ? std::end(*ptr) : nullptr; }
+BOUT_HOST_DEVICE inline iterator<T> end() noexcept { 
+   if(ptr) {
+      return (ptr->end());
+   }
+   else {
+      return(nullptr);
+   }
+}
 
-  // Const iterators
-  const_iterator<T> begin() const noexcept { return (ptr) ? std::begin(*ptr) : nullptr; }
+BOUT_HOST_DEVICE inline const_iterator<T> begin() const noexcept { 
+   if(ptr) {
+      return (ptr->begin());
+   }
+   else {
+      return(nullptr);
+   }
+}
 
-  const_iterator<T> end() const noexcept { return (ptr) ? std::end(*ptr) : nullptr; }
+BOUT_HOST_DEVICE inline const_iterator<T> end() const noexcept { 
+   if(ptr) {
+      return (ptr->end());
+   }
+   else {
+      return(nullptr);
+   }
+}
 
   //////////////////////////////////////////////////////////
   // Element access
@@ -362,13 +401,11 @@ public:
    * or if ind is out of bounds. For efficiency no checking is performed,
    * so the user should perform checks.
    */
-  T& operator[](size_type ind) {
-    ASSERT3(0 <= ind && ind < size());
+BOUT_HOST_DEVICE inline   T& operator[](size_type ind) {
     return ptr->operator[](ind);
   }
 
-  const T& operator[](size_type ind) const {
-    ASSERT3(0 <= ind && ind < size());
+BOUT_HOST_DEVICE inline   const T& operator[](size_type ind) const {
     return ptr->operator[](ind);
   }
 
@@ -385,105 +422,36 @@ private:
 
   //Type defs to help keep things brief -- which backing do we use
   using dataBlock = Backing;
-  using dataPtrType = std::shared_ptr<dataBlock>;
-
+  using dataPtrType = dataBlock*;
   /*!
    * Pointer to the data container object owned by this Array. 
    * May be null
    */
-  dataPtrType ptr;
+  dataPtrType ptr = nullptr;
 
-#ifndef BOUT_HAS_UMPIRE 
-  using storeType = std::map<size_type, std::vector<dataPtrType>>;
-  using arenaType = std::vector<storeType>;
 
-  /*!
-   * This maps from array size (size_type) to vectors of pointers to dataBlock objects
-   *
-   * By putting the static store inside a function it is initialised on first use,
-   * and doesn't need to be separately declared for each type T
-   *
-   * Inputs
-   * ------
-   *
-   * @param[in] cleanup   If set to true, deletes all dataBlock and clears the store
-   */
-  static storeType& store(bool cleanup=false) {
-#ifdef _OPENMP    
-    static arenaType arena(omp_get_max_threads());
-#else
-    static arenaType arena(1);
-#endif
-    
-    if (!cleanup) {
-#ifdef _OPENMP 
-      return arena[omp_get_thread_num()];
-#else
-      return arena[0];
-#endif
-    }
-
-    // Clean by deleting all data -- possible that just stores.clear() is
-    // sufficient rather than looping over each entry.
-    BOUT_OMP(single)
-    {
-      for (auto &stores : arena) {
-        for (auto &p : stores) {
-          auto &v = p.second;
-          for (dataPtrType a : v) {
-            a.reset();
-          }
-          v.clear();
-        }
-        stores.clear();
-      }
-      // Here we ensure there is exactly one empty map still
-      // left in the arena as we have to return one such item
-      arena.resize(1);
-    }
-
-    //Store should now be empty but we need to return something,
-    //so return an empty storeType from the arena.
-    return arena[0];
-  }
- #endif // #ifndef BOUT_HAS_UMPIRE
-  
   /*!
    * Returns a pointer to a dataBlock object of size \p len with no
    * references. This is either from the store, or newly allocated
    *
    * Expects \p len >= 0
    */
- #ifndef BOUT_HAS_UMPIRE
   dataPtrType get(size_type len) {
-    ASSERT3(len >= 0);
-
-    dataPtrType p;
-
-    auto& st = store()[len];
-    
-    if (!st.empty()) {
-      p = st.back();
-      st.pop_back();
-    } else {
-      // Ensure that when we release the data block later we'll have
-      // enough space to put it in the store so that `release` can be
-      // noexcept
-      st.reserve(1);
-      p = std::make_shared<dataBlock>(len);
-    }
-
-    return p;
-  }
+#ifdef BOUT_HAS_UMPIRE 
+     auto& rm = umpire::ResourceManager::getInstance();
+#ifdef BOUT_USE_CUDA
+     auto allocator = rm.getAllocator("UM");
 #else
-  dataPtrType get(size_type len) {
-    ASSERT3(len >= 0);
-
-    dataPtrType p;
-    p = std::make_shared<dataBlock>(len);
+     auto allocator = rm.getAllocator("HOST");
+#endif
+     dataPtrType pp = static_cast<dataPtrType>(allocator.allocate(sizeof(dataBlock)));
+     dataPtrType p = new (pp) dataBlock(len);
+     printf("UM  Array %d %p %p\n",len,p,pp);
+#else
+     dataPtrType p = new dataBlock(len);
+#endif
     return p;
   }
-#endif
 
   /*!
    * Release an dataBlock object, reducing its reference count by one.
@@ -498,22 +466,27 @@ private:
    * we're doomed anyway, so the only thing we can do is abort
    */
 
-  void release(dataPtrType& d) noexcept {
-    if (!d)
+  void release(dataPtrType& d) {
+    if (!d) {
       return;
-
-#ifndef BOUT_HAS_UMPIRE
-    // Reduce reference count, and if zero return to store
-    if (d.use_count() == 1) {
-      if (useStore()) {
-        // Put back into store
-        store()[d->size()].push_back(std::move(d));
-        // Could return here but seems to slow things down a lot
-      }
     }
+
+    printf("release size %d count %d data %p dataBlock %p\n",d->size(),d->use_count(),d->begin(),d);
+    // Reduce reference count, and if zero return to store
+    if (d->use_count() == 1) {
+#ifdef BOUT_HAS_UMPIRE
+      auto& rm = umpire::ResourceManager::getInstance();
+      rm.deallocate(d->begin());
+      rm.deallocate(d);
+      umpire::Allocator alloc = rm.getAllocator("UM");
+      printf("Umpire UM Allocations %d\n",alloc.getAllocationCount());
+#else
+      delete d;
 #endif
-    // Finish by setting pointer to nullptr if not putting on store
-    d = nullptr;
+      d = nullptr;
+    } else {
+      d->dec_count();
+    }
   }
 
 };
@@ -527,6 +500,5 @@ template <typename T, typename Backing>
   a.ensureUnique();
   return a;
 }
-
 #endif // __ARRAY_H__
 
