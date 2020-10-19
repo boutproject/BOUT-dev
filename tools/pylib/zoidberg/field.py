@@ -312,7 +312,7 @@ class CurvedSlab(MagneticField):
         return np.full(x.shape, self.Rmaj)
 
 try:
-    from sympy import Symbol, atan2, cos, sin, log, pi, sqrt, lambdify
+    from sympy import Symbol, atan2, cos, sin, log, pi, sqrt, lambdify, Piecewise, Sum, gamma, And, factorial, symbols, Add, symarray, diff
 
     class StraightStellarator(MagneticField):
         """A "rotating ellipse" stellarator without curvature
@@ -489,6 +489,305 @@ try:
 
         def Rfunc(self, x, z, phi):
             return np.full(x.shape, x)
+        
+    class DommaschkPotentials(MagneticField):
+        """A magnetic field generator using the Dommaschk potentials. 
+        Parameters
+        ----------
+        A: Coefficient matrix for the torodial and polidial harmonics. Form: (m,l,(a,b,c,d))
+        R_0: major radius [m]
+        B_0: magnetic field on axis [T]
+
+        Important Methods
+        -----------------
+        Bxfunc/Byfunc/Bzfunc(x,z,y): Returns magnetic field in radial/torodial/z-direction
+        Sfunc(x,z,y): Returns approximate magnetic surface invariant for Dommaschk potentials. Use this to visualize flux surfaces
+        
+
+
+        """
+
+        
+        def __init__(self, A, R_0=1.0, B_0=1.0):
+
+            self.R_0 = R_0
+            self.B_0 = B_0
+            
+
+            self.R = Symbol('R')
+            self.phi = Symbol('phi')
+            self.Z = Symbol('Z')
+
+
+            self.m = Symbol('m')
+            self.l = Symbol('l')
+            self.n = Symbol('n')
+            self.k = Symbol('k')
+
+            self.A = A
+
+            
+            self.P = self.U(self.A).doit().subs([(self.R, self.R/self.R_0), (self.Z, self.Z/R_0)])
+            self.P_hat = self.U_hat(self.A).doit().subs([(self.R, self.R/self.R_0), (self.Z, self.Z/R_0)])
+
+            S = (0.5*(log(self.R/self.R_0)**2 + (self.Z/R_0)**2) - self.R/self.R_0 * (log(self.R/self.R_0)*self.R_0*diff(self.P_hat, self.R) + self.Z*self.R/self.R_0*diff(self.P_hat, self.Z)))#.subs([(self.R, self.R/self.R_0), (self.Z, self.Z)])
+
+
+            Bx = R_0*diff(self.P, self.R)
+            By = R_0/self.R * diff(self.P, self.phi)
+            Bz = diff(self.P, self.Z)
+
+            self.Sf = lambdify((self.R, self.phi, self.Z), S, "numpy")
+
+            self.Bxf = lambdify((self.R, self.phi, self.Z), Bx, "numpy")
+            self.Byf = lambdify((self.R, self.phi, self.Z), By, "numpy")
+            self.Bzf = lambdify((self.R, self.phi, self.Z), Bz, "numpy")
+
+        def Bxfunc(self, x, z, y):
+            
+            return self.Bxf(x, y, z)/self.Byf(self.R_0, 0, 0)*self.B_0
+        
+        def Byfunc(self, x, z, y):
+
+
+            return self.Byf(x, y, z)/self.Byf(self.R_0, 0, 0)*self.B_0
+
+        def Bzfunc(self, x, z, y):
+
+            return self.Bzf(x, y, z)/self.Byf(self.R_0, 0, 0)*self.B_0
+
+        def Sfunc(self, x, z, y):
+            """
+            Parameters
+            ----------
+            x: radial coordinates normalized to R_0
+            z: binormal coordinate
+            y: torodial angle normalized to 2*pi
+
+            Returns
+            -------
+            Approximate magnetic surface invariant S at location (x,z,y). This is from the original Dommaschk paper. Use to visualize flux surfaces
+            """
+            return self.Sf(x,y,z)
+
+        def Rfunc(self, x, z, y):
+            """
+            Parameters
+            ----------
+            x: radial coordinates normalized to R_0
+            z: binormal coordinate
+            y: torodial angle normalized to 2*pi
+
+            Returns
+            -------
+            Radial coordinate x
+            """
+
+            return x
+
+
+
+        def CD(self, m, k):
+            """
+            Parameters
+            ----------
+            m: torodial harmonic
+            k: summation index in D
+
+            Returns:
+            --------
+            Sympy function CD_mk (R) (Dirichlet boudary conditions)
+            """
+
+            n = Symbol('n')
+            b = Symbol('b')
+            i = Symbol('i')
+
+            alpha = Piecewise(((((-1)**n)/(gamma(b + n + 1) * gamma(n + 1) * 2**(2 * n + b) )), n >= 0), (0, True))
+            alpha_st = Piecewise((alpha * (2*n + b), n >= 0), (0, True))
+
+
+            beta = Piecewise(((gamma(b  - n))/(gamma(n + 1) * 2**(2*n - b + 1)), And(n >= 0, n < b)), (0, True))
+            beta_st = Piecewise((beta * (2*n - b), And(n >= 0, n < b)), (0, True))
+
+
+            delta = Piecewise((alpha/2 * Sum(1/i + 1/(b + i), (i, 1, n+1)), n > 0), (0, True))
+            delta_st = Piecewise((delta * (2 * n + b), n > 0), (0, True))
+
+            j = Symbol('j')
+
+            CD = Sum(-( alpha.subs([(n, j), (b,m)]) * ( alpha_st.subs([(n, k - m - j), (b, m)]) * log(self.R) + delta_st.subs([(n, k - m - j), (b, m)]) - alpha.subs([(n, k - m - j), (b, m)]) ) - delta.subs([(n, j), (b,m)]) * alpha_st.subs([(n, k - m - j), (b, m)]) + alpha.subs([(n, j), (b,m)]) * beta_st.subs([(n, k - j), (b, m)])) * self.R**(2*j + m)\
+                + beta.subs([(n, j), (b, m)]) * alpha_st.subs([(n, k - j), (b, m)]) * self.R**(2*j - m), (j, 0, k))
+
+            return CD
+
+
+        def CN(self, m, k):
+            """
+            Parameters
+            ----------
+            m: torodial harmonic
+            k: summation index in N
+
+            Returns:
+            --------
+            Sympy function CN_mk (R) (Neumann boundary conditions)
+            """
+
+
+            n = Symbol('n')
+            b = Symbol('b')
+            i = Symbol('i')
+
+
+            alpha = Piecewise(((((-1)**n)/(gamma(b + n + 1) * gamma(n + 1) * 2**(2 * n + b) )), n >= 0), (0, True))
+            alpha_st = Piecewise((alpha * (2*n + b), n >= 0), (0, True))
+
+
+            beta = Piecewise(((gamma(b  - n))/(gamma(n + 1) * 2**(2*n - b + 1)), And(n >= 0, n < b)), (0, True))
+            beta_st = Piecewise((beta * (2*n - b), And(n >= 0, n < b)), (0, True))
+
+
+            delta = Piecewise((alpha/2 * Sum(1/i + 1/(b + i), (i, 1, n+1)), n > 0), (0, True))
+            delta_st = Piecewise((delta * (2 * n + b), n > 0), (0, True))
+
+            j = Symbol('j')
+            
+            CN = Sum(( alpha.subs([(n, j), (b,m)]) * ( alpha.subs( [(n, k - m - j), (b, m)] ) * log(self.R) + delta.subs([(n, k - m - j), (b, m)])) - delta.subs([(n, j), (b,m)]) * alpha.subs( [(n, k - m - j), (b, m)] ) + alpha.subs([(n, j), (b,m)]) * beta.subs([(n, k - j), (b, m)]) ) * self.R**( 2*j + m )\
+                 - beta.subs([(n, j), (b,m)]) * alpha.subs([(n, k-j),(b, m)]) * self.R**(2*j - m), (j, 0, k))
+
+            
+
+            return CN
+
+
+        def D(self, m, n):
+            """
+            Parameters
+            ----------
+            m: torodial mode number
+            n: summation index in  V
+
+            Returns:
+            --------
+            Sympy function D_mn (R, Z) (Dirichlet boundary conditions)
+            """
+            
+            i = Symbol('i')
+            D = log(1)
+            k_arr = np.arange(0,int(n/2)+1,1)
+            CD_f = self.CD(m, i)
+            
+
+            for k in k_arr:
+                D += ((self.Z**(n - 2*k))/factorial(n-2*k)*CD_f.subs(i,k))
+                
+
+            return D
+
+
+
+        def N(self, m, n):
+            """
+            Parameters
+            ----------
+            m: torodial mode number
+            n: summation index in V
+
+            Returns:
+            --------
+            Sympy function N_mn (R, Z) (Neumann boundary conditions)
+            """
+
+            i = Symbol('i')
+            N = log(1)
+            k_arr = np.arange(0, int(n/2)+1, 1)
+            CN_f = self.CN(m, i)
+            for k in k_arr:
+                N += ((self.Z**(n - 2*k))/factorial(n-2*k)*CN_f.subs(i,k))
+        
+            return N
+
+
+        def V(self, m, l, a, b, c, d):
+            """
+            Parameters
+            ----------
+            m: torodial mode number
+            l: polodial mode number
+            a,b,c,d: Coefficients for m,l-th Dommaschk potential (elements of matrix A)
+
+            Returns:
+            --------
+            Sympy function V_ml
+            """
+
+            V = ( a*cos(m*self.phi) + b*sin(m*self.phi) ) * self.D(m, l) + ( c*cos(m*self.phi) + d*sin(m*self.phi) ) * self.N(m, l-1) 
+
+            return V
+
+
+
+        def U(self, A):
+            """
+            Parameters
+            ----------
+            A: Coefficient matrix for the torodial and polidial harmonics. Form: (m,l,(a,b,c,d))
+            
+            Returns
+            -----------------
+            U: Superposition of all modes given in A
+            
+            """
+            U = self.phi
+            for i in range(A.shape[0]):
+                for j  in range(A.shape[1]):
+                    if A[i,j,0] or A[i,j,1] or A[i,j,2] or A[i,j,3] != 0:
+
+                        U += self.V(i, j, A[i,j,0], A[i,j,1], A[i,j,2], A[i,j,3])
+
+            return U
+
+        def V_hat(self, m, l, a, b, c, d):
+            """
+            Parameters
+            ----------
+            m: torodial mode number
+            l: polodial mode number
+            a,b,c,d: Coefficients for m,l-th Dommaschk potential (elements of matrix A)
+
+            Returns:
+            --------
+            Sympy function V_hat_ml; Similar to V; needed for calculation of magnetic surface invariant S
+            """
+
+            V = ( a*cos(m*(self.phi-np.pi/(2*m))) + b*sin(m*(self.phi-np.pi/(2*m)) ) ) * self.D(m, l) + ( c*cos(m*(self.phi-np.pi/(2*m))) + d*sin(m*(self.phi-np.pi/(2*m)) ) ) * self.N(m, l-1) 
+            
+
+            return V
+
+        def U_hat(self, A):
+            """
+            Parameters
+            ----------
+            A: Coefficient matrix for the torodial and polidial harmonics. Form: (m,l,(a,b,c,d))
+
+            Returns
+            -----------------
+            U: Superposition of all modes given in A
+
+            """
+            
+            U = log(1)
+            for i in range(A.shape[0]):
+                for j  in range(A.shape[1]):
+                    if A[i,j,0] or A[i,j,1] or A[i,j,2] or A[i,j,3] != 0:
+                        U += self.V_hat(i, j, A[i,j,0], A[i,j,1], A[i,j,2], A[i,j,3]) * Piecewise((self.phi, i==0), (1/i, i>0))
+
+            return U
+
+
+
 
     class Screwpinch(MagneticField):
         
