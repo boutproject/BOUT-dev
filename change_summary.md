@@ -4,13 +4,17 @@ This is a slightly more readable, and therefore incomplete, summary of
 the changes from the full [changelog](CHANGELOG.md)
 
 4.3.2 is a bugfix release:
-- Make downloading the submodules a bit nicer
+- Make downloading the submodules a bit nicer, including an option for
+  using non-bundled versions when using `configure`
 - Make `dz` in the Python API a property
 - Make `Div_par_K_Grad_par` check the staggered location of its inputs
 - Enable split-flux derivatives on staggered fields
 - Fix `Grad2_par2` implementation in `InvertParCR`
 - Fix an issue writing `FieldPerp`s
-- Make it easier to compile the examples with different versions of BOUT++
+- Make it easier to compile the examples with different versions of
+  BOUT++, plus fixes for the `tokamak-2fluid` example
+- Fix `Div_par` when using more than one y-guard cell
+- Fix an issue with text attributes in HDF5 files
 
 4.3.1 is a bugfix release, with a few minor fixes to library code,
 notably:
