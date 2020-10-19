@@ -21,7 +21,6 @@
 #include <memory>
 
 namespace bout {
-
 #if 1   //HYPRE with Cuda enabled : todo use appropriate flag
 #define HypreMalloc(P, SIZE)  cudaMallocManaged(P, SIZE)
 #define HypreFree(P)  cudaFree(P)
@@ -109,8 +108,8 @@ public:
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
 
-    const auto jlower = indConverter->getGlobalStart();
-    const auto jupper = jlower + indConverter->size() - 1; // inclusive end
+    HYPRE_BigInt jlower = indConverter->getGlobalStart();
+    HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
     vsize = jupper - jlower + 1;
 
     HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector);
@@ -137,8 +136,8 @@ public:
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
     
-    const auto jlower = indConverter->getGlobalStart();
-    const auto jupper = jlower + indConverter->size() - 1; // inclusive end
+    HYPRE_BigInt jlower = indConverter->getGlobalStart();
+    HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
     vsize = jupper - jlower + 1;
     
     HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector);
@@ -166,7 +165,7 @@ public:
     // Note that this only populates boundaries to a depth of 1
     int count = 0;
     BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
-      const auto index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
+      HYPRE_BigInt index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
       if (index != -1) { // Todo double check why index out of bounds does not return -1
         result[i] = static_cast<BoutReal>(V[count]);
         count++;
@@ -178,9 +177,8 @@ public:
 
   void importValuesFromField(const T &f) {
     int vec_i = 0;
-    //BOUT_FOR_SERIAL(i, f.getRegion("RGN_ALL_THIN")) {
     BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
-      const auto index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
+      HYPRE_BigInt index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
       if (index != -1) {
         I[vec_i] = index;        
         V[vec_i] = f[i];
@@ -353,8 +351,8 @@ public:
         std::is_same<T, FieldPerp>::value ? mesh->getXcomm() : BoutComm::get();
     parallel_transform = &mesh->getCoordinates()->getParallelTransform();
 
-    const auto ilower = indConverter->getGlobalStart();
-    const auto iupper = ilower + indConverter->size() - 1; // inclusive end
+    ilower = indConverter->getGlobalStart();
+    iupper = ilower + indConverter->size() - 1; // inclusive end
     num_rows = iupper - ilower + 1;
     I.resize(num_rows);
     J.resize(num_rows);
@@ -362,7 +360,7 @@ public:
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
       I[i] = ilower + i;
       J[i].resize(0);
-      J[i].reserve(10);      
+      J[i].reserve(10);
       V[i].resize(0);
       V[i].reserve(10);
     }
@@ -377,38 +375,69 @@ public:
     initialised = true;
   }
 
+  class Element {
+    HypreMatrix *matrix;
+    HYPRE_IJMatrix hypre_matrix;
+    HYPRE_BigInt row, column;
+    HYPRE_Complex value;
+    std::vector<HYPRE_BigInt> positions;
+    std::vector<BoutReal> weights;
 
-  explicit HypreMatrix(IndexerPtr<T> indConverter, HYPRE_BigInt max_num_cols_, bool UNUSED(preallocate) = true)
-      : hypre_matrix(new HYPRE_IJMatrix, MatrixDeleter{}), index_converter(indConverter) {
-    Mesh *mesh = indConverter->getMesh();
-    const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? mesh->getXcomm() : BoutComm::get();
-    parallel_transform = &mesh->getCoordinates()->getParallelTransform();
+  public:
+    Element() = delete;
+    Element(const Element&) = default;
+    Element(Element&&) = default;
 
-    const auto ilower = indConverter->getGlobalStart();
-    const auto iupper = ilower + indConverter->size() - 1; // inclusive end
-    num_rows = iupper - ilower + 1;
-    I.resize(num_rows);
-    J.resize(num_rows);
-    V.resize(num_rows);
-    for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
-      I[i] = ilower + i;
-      J[i].resize(0);
-      J[i].reserve(10);      
-      V[i].resize(0);
-      V[i].reserve(10);
+    Element(HypreMatrix<T>& matrix_, HYPRE_BigInt row_, HYPRE_BigInt column_,
+            std::vector<HYPRE_BigInt> positions_ = {},
+            std::vector<BoutReal> weights_ = {})
+        : hypre_matrix(matrix_.get()), row(row_), column(column_), positions(positions_),
+          weights(weights_) {
+      ASSERT2(positions.size() == weights.size());
+      if (positions.empty()) {
+        positions = {column};
+        weights = {1.0};
+      }
+      matrix = &matrix_;
+      value = matrix->getVal(row, column);
+    }
+    Element& operator=(const Element& other) {
+      return *this = static_cast<BoutReal>(other);
+    }
+    Element& operator=(BoutReal value_) {
+      value = value_;
+      setValues(value);
+      return *this;
+    }
+    Element& operator+=(BoutReal value_) {
+      auto column_position = std::find(cbegin(positions), cend(positions), column);
+      if (column_position != cend(positions)) {
+        const auto i = std::distance(cbegin(positions), column_position);
+        value += weights[i] * value_;
+      }
+      setValues(value);
+      return *this;
     }
 
-    HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &*hypre_matrix);
-    HYPRE_IJMatrixSetObjectType(*hypre_matrix, HYPRE_PARCSR);
-    HYPRE_IJMatrixInitialize(*hypre_matrix);
-    // TODO: redirect printf into BoutException using freopen
-    // Second argument here is meaningless
-    // HYPRE_IJMatrixSetPrintLevel(hypre_matrix, 0);
+    operator BoutReal() const { return value; }
 
-    initialised = true;
-  }
+  private:
+    void setValues(BoutReal value_) {
+      ASSERT3(!positions.empty());
+      std::vector<HYPRE_Complex> values;
+      std::transform(
+          weights.begin(), weights.end(), std::back_inserter(values),
+          [&value_](BoutReal weight) -> HYPRE_Complex { return weight * value_; });
+      HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>(positions.size());
+      //BOUT_OMP(critical)
+      for (HYPRE_BigInt i = 0; i < positions.size(); ++i) {
+        matrix->setVal(row, positions[i], values[i]);
+      }
+      // HYPRE_IJMatrixSetValues(hypre_matrix, 1, &ncolumns, &row, positions.data(),
+      //                             values.data())
 
+    }
+  };
 
   BoutReal getVal(const ind_type& row, const ind_type& column) const {
     const HYPRE_BigInt global_row = index_converter->getGlobal(row);
@@ -464,88 +493,13 @@ public:
     if (!value_set)
     {
       V[i].push_back(value);
+      J[i].push_back(column);
     }
   }
 
-  class Element {
-    HYPRE_IJMatrix hypre_matrix;
-    HYPRE_BigInt row, column;
-    HYPRE_Complex value;
-    std::vector<HYPRE_BigInt> positions;
-    std::vector<BoutReal> weights;
-
-  public:
-    Element() = delete;
-    Element(const Element&) = default;
-    Element(Element&&) = default;
-
-    Element(HypreMatrix<T>& matrix_, HYPRE_BigInt row_, HYPRE_BigInt column_,
-            std::vector<HYPRE_BigInt> positions_ = {},
-            std::vector<BoutReal> weights_ = {})
-        : hypre_matrix(matrix_.get()), row(row_), column(column_), positions(positions_),
-          weights(weights_) {
-      ASSERT2(positions.size() == weights.size());
-      if (positions.empty()) {
-        positions = {column};
-        weights = {1.0};
-      }
-      if (matrix_.isAssembled()) {
-        HYPRE_Int ncolumns{1};
-        BOUT_OMP(critial)
-        if (HYPRE_IJMatrixGetValues(hypre_matrix, 1, &ncolumns, &row, &column, &value)
-            != 0) {
-          // Not clearing the (global) error will break future calls!
-          HYPRE_ClearAllErrors();
-          throw BoutException("Error when getting value of matrix, row = {}, column = {}",
-                              row, column);
-        }
-      } else {
-        value = 0.0;
-      }
-    }
-    Element& operator=(const Element& other) {
-      return *this = static_cast<BoutReal>(other);
-    }
-    Element& operator=(BoutReal value_) {
-      value = value_;
-      setValues(value);
-      return *this;
-    }
-    Element& operator+=(BoutReal value_) {
-      auto column_position = std::find(cbegin(positions), cend(positions), column);
-      if (column_position != cend(positions)) {
-        const auto i = std::distance(cbegin(positions), column_position);
-        value += weights[i] * value_;
-      }
-      setValues(value);
-      return *this;
-    }
-
-    operator BoutReal() const { return value; }
-
-  private:
-    void setValues(BoutReal value_) {
-      ASSERT3(!positions.empty());
-      std::vector<HYPRE_Complex> values;
-      std::transform(
-          weights.begin(), weights.end(), std::back_inserter(values),
-          [&value_](BoutReal weight) -> HYPRE_Complex { return weight * value_; });
-      auto ncolumns = static_cast<HYPRE_Int>(positions.size());
-      BOUT_OMP(critical)
-      if (HYPRE_IJMatrixSetValues(hypre_matrix, 1, &ncolumns, &row, positions.data(),
-                                  values.data())
-          != 0) {
-        HYPRE_ClearAllErrors();
-        throw BoutException("Error when setting elements of a HYPRE matrix, row = {}, "
-                            "column = {}",
-                            row, column);
-      }
-    }
-  };
-
   BoutReal operator()(const ind_type& row, const ind_type& column) const {
-    const auto global_row = index_converter->getGlobal(row);
-    const auto global_column = index_converter->getGlobal(column);
+    HYPRE_BigInt global_row = index_converter->getGlobal(row);
+    HYPRE_BigInt global_column = index_converter->getGlobal(column);
 #if CHECKLEVEL >= 1
     if (global_row == -1 or global_column == -1) {
       throw BoutException(
@@ -557,34 +511,12 @@ public:
   }
 
   BoutReal operator()(const HYPRE_BigInt& row, const HYPRE_BigInt& column) const {
-#if CHECKLEVEL >= 1
-    if (not initialised) {
-      throw BoutException("Cannot return element of uninitialised HypreMatrix");
-    }
-    if (not assembled) {
-      throw BoutException("Cannot return element of unassembled HypreMatrix (call "
-                          "HypreMatrix::assemble() first)");
-    }
-#endif
-    HYPRE_Complex value;
-    // The following need to be non-const for some reason
-    HYPRE_Int ncolumns{1};
-    HYPRE_BigInt row_{row};
-    HYPRE_BigInt column_{column};
-    BOUT_OMP(critial)
-    if (HYPRE_IJMatrixGetValues(*hypre_matrix, 1, &ncolumns, &row_, &column_, &value)
-        != 0) {
-      // Not clearing the (global) error will break future calls!
-      HYPRE_ClearAllErrors();
-      throw BoutException("Error when getting value of matrix, row = {}, column = {}",
-                          row, column);
-    }
-    return static_cast<BoutReal>(value);
+    return getVal(row, column);
   }
 
   Element operator()(const ind_type& row, const ind_type& column) {
-    const auto global_row = index_converter->getGlobal(row);
-    const auto global_column = index_converter->getGlobal(column);
+    HYPRE_BigInt global_row = index_converter->getGlobal(row);
+    HYPRE_BigInt global_column = index_converter->getGlobal(column);
 
 #if CHECKLEVEL >= 1
     if (!initialised) {
@@ -592,8 +524,8 @@ public:
     }
     if (global_row == -1 or global_column == -1) {
       throw BoutException(
-          "Invalid HypreMatrix element at row = ({}, {}, {}), column = ({}, {}, {})",
-          row.x(), row.y(), row.z(), column.x(), column.y(), column.z());
+          "Invalid HypreMatrix element at row = ({}, {}, {}), column = ({}, {}, {}), global: {} {}",
+          row.x(), row.y(), row.z(), column.x(), column.y(), column.z(), global_row, global_column);
     }
 #endif
 
@@ -659,23 +591,17 @@ public:
       }
     }
     HYPRE_IJMatrixSetValues(*hypre_matrix, num_rows, num_cols, rawI, cols, vals);
-    std::cerr << "hypre_error_flag Assemble M SetValues:" << hypre_error_flag << "\n";
-
     HYPRE_IJMatrixAssemble(*hypre_matrix);
-    std::cerr << "hypre_error_flag Assemble M MatrixAssemble:" << hypre_error_flag << "\n";
     HYPRE_IJMatrixGetObject(*hypre_matrix, reinterpret_cast<void**>(&parallel_matrix));
-    std::cerr << "hypre_error_flag Assemble M MatrixGetObject:" << hypre_error_flag << "\n";
     assembled = true;
 
     char errorString[2048];
     HYPRE_DescribeError(hypre_error_flag,&errorString[0]);
-    std::cerr << "Hypre Error String " << errorString << std::endl;
     HypreFree(rawI);
     HypreFree(num_cols);
     HypreFree(cols);
     HypreFree(vals);
   }
-
 
   bool isAssembled() const { return assembled; }
 
@@ -686,11 +612,20 @@ public:
       throw BoutException("Can not get ynext for FieldPerp");
     }
     HypreMatrix<T> result;
+    result.comm = comm;
     result.hypre_matrix = hypre_matrix;
+    result.parallel_matrix = parallel_matrix;
+    result.location = location;
     result.index_converter = index_converter;
     result.parallel_transform = parallel_transform;
     result.yoffset = std::is_same<T, Field2D>::value ? 0 : yoffset + dir;
     result.initialised = initialised;
+    result.assembled = assembled;
+    result.num_rows = num_rows;
+    result.I = I;
+    result.J = J;
+    result.V = V;
+
     return result;
   }
 
