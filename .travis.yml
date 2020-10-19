@@ -57,6 +57,7 @@ jobs:
       - SCRIPT_FLAGS='-uim'
       - PIP_PACKAGES='cython~=0.29 netcdf4~=1.5 sympy~=1.5'
       - LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
+      - BOUT_TEST_TIMEOUT="5m"
       - *petsc_vars
   - name: "GCC 7"
     addons:
@@ -97,7 +98,7 @@ jobs:
       - mkdir build && cd build
       - cmake .. -DUSE_PETSC=ON -DUSE_SLEPC=ON -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT="$HOME/local" -DENABLE_OPENMP=ON
       - cmake --build .
-      - ctest --output-on-failure
+      - ctest --output-on-failure --timeout 300
 #CLANG
   - name: "Clang"
     env:
@@ -161,6 +162,15 @@ before_install:
 script:
   # Configure, compile and run test_suite
   - "./.travis_script.sh ${SCRIPT_FLAGS}"
+
+# sleep a little bit after the build finishes to try and make sure stdout gets flushed
+after_failure:
+  - echo "Build failed!"
+  - sleep 5
+
+after_success:
+  - echo "Build passed!"
+  - sleep 1
 
 notifications:
   # Send a notification to the BOUT++ Slack team
