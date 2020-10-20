@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BOUT++ 4.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-03-19 12:26+0000\n"
+"POT-Creation-Date: 2020-09-23 17:43+0100\n"
 "PO-Revision-Date: 2018-10-22 22:56+0100\n"
 "Last-Translator:  <benjamin.dudson@york.ac.uk>\n"
 "Language-Team: Chinese (traditional)\n"
@@ -160,10 +160,10 @@ msgstr "\t啟用OpenMP並行化。 使用%d個線程\n"
 
 #. Mark the option as used
 #. Option not found
-#: ../include/options.hxx:406 ../include/options.hxx:438
-#: ../include/options.hxx:460 ../include/options.hxx:635
 #: ../src/sys/options.cxx:183 ../src/sys/options.cxx:238
 #: ../src/sys/options.cxx:280 ../src/sys/options.cxx:319
+#: ../include/options.hxx:406 ../include/options.hxx:438
+#: ../include/options.hxx:460 ../include/options.hxx:635
 msgid "\tOption "
 msgstr "\t選項 "
 
@@ -326,7 +326,7 @@ msgstr ""
 msgid "Command line"
 msgstr ""
 
-#: ../tests/unit/src/test_bout++.cxx:300 ../src/bout++.cxx:374
+#: ../src/bout++.cxx:374 ../tests/unit/src/test_bout++.cxx:300
 msgid "Compile-time options:\n"
 msgstr "編譯選項:\n"
 
@@ -632,7 +632,7 @@ msgstr ""
 msgid "Trying to add an already existing region %s to regionMapPerp"
 msgstr ""
 
-#: ../src/mesh/coordinates.cxx:1140
+#: ../src/mesh/coordinates.cxx:1207
 msgid ""
 "Unrecognised paralleltransform option.\n"
 "Valid choices are 'identity', 'shifted', 'fci'"
@@ -723,21 +723,21 @@ msgid ""
 "performance -- consider changing MZ (%d) if using FFTs\n"
 msgstr ""
 
-#: ../src/mesh/coordinates.cxx:430
+#: ../src/mesh/coordinates.cxx:440
 msgid "WARNING: extrapolating input mesh quantities into x-boundary cells\n"
 msgstr ""
 
-#: ../src/mesh/coordinates.cxx:217
+#: ../src/mesh/coordinates.cxx:219
 msgid ""
 "WARNING: extrapolating input mesh quantities into x-boundary cells. Set "
 "option extrapolate_x=false to disable this.\n"
 msgstr ""
 
-#: ../src/mesh/coordinates.cxx:435
+#: ../src/mesh/coordinates.cxx:445
 msgid "WARNING: extrapolating input mesh quantities into y-boundary cells\n"
 msgstr ""
 
-#: ../src/mesh/coordinates.cxx:222
+#: ../src/mesh/coordinates.cxx:224
 msgid ""
 "WARNING: extrapolating input mesh quantities into y-boundary cells. Set "
 "option extrapolate_y=false to disable this.\n"

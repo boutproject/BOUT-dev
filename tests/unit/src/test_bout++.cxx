@@ -18,7 +18,7 @@ std::vector<char*> get_c_string_vector(std::vector<std::string>& vec_args) {
   return c_args;
 }
 
-TEST(ParseCommandLineArgs, HelpShortOption) {
+TEST(ParseCommandLineArgsDeathTest, HelpShortOption) {
   std::vector<std::string> v_args{"test", "-h"};
   auto c_args = get_c_string_vector(v_args);
   char** argv = c_args.data();
@@ -32,7 +32,7 @@ TEST(ParseCommandLineArgs, HelpShortOption) {
   std::cout.rdbuf(cout_buf);
 }
 
-TEST(ParseCommandLineArgs, HelpLongOption) {
+TEST(ParseCommandLineArgsDeathTest, HelpLongOption) {
   std::vector<std::string> v_args{"test", "--help"};
   auto c_args = get_c_string_vector(v_args);
   char** argv = c_args.data();
@@ -333,7 +333,9 @@ public:
   }
 };
 
-TEST_F(SignalHandlerTest, SegFault) {
+using SignalHandlerTestDeathTest = SignalHandlerTest;
+
+TEST_F(SignalHandlerTestDeathTest, SegFault) {
   bout::experimental::setupSignalHandler(bout::experimental::defaultSignalHandler);
   // This test is *incredibly* expensive, maybe as much as 1s, so only test the one signal
   EXPECT_DEATH(std::raise(SIGSEGV), "SEGMENTATION FAULT");
