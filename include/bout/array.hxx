@@ -472,7 +472,6 @@ private:
     }
 
     printf("release size %d count %d data %p dataBlock %p\n",d->size(),d->use_count(),d->begin(),d);
-    // Reduce reference count, and if zero return to store
     if (d->use_count() == 1) {
 #ifdef BOUT_HAS_UMPIRE
       auto& rm = umpire::ResourceManager::getInstance();

@@ -5,6 +5,17 @@
 
 #include "field_accessor.hxx"
 
+#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
+#define BOUT_HOST_DEVICE __host__ __device__
+#define BOUT_HOST __host__
+#define BOUT_DEVICE __device__
+#else
+#define BOUT_HOST_DEVICE
+#define BOUT_HOST
+#define BOUT_DEVICE
+#endif
+
+
 template<IND_TYPE N, CELL_LOC location>
 BoutReal bracket(const FieldAccessor<location> &f, const FieldAccessor<location> &g, const SpecificInd<N> &ind) {
   Coordinates *metric = g.coords;
@@ -67,6 +78,22 @@ BoutReal Delp2(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
     + 2 * metric->g13[i] * ((f[izp.xp()] - f[izp.xm()]) -
                             (f[izm.xp()] - f[izm.xm()])) / (4. * metric->dz * metric->dx[i]) // D2DXDZ
     ;
+}
+
+template<IND_TYPE N, CELL_LOC location>
+BOUT_HOST_DEVICE BoutReal Delp2_gt(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
+  Coordinates *metric = f.coords;
+
+  // Index offsets
+  auto izm = i.zm();
+  auto izp = i.zp();
+  auto ixm = i.xm();
+  auto ixp = i.xp();
+
+  auto g1= metric->G1[i];
+  //return metric->G1[i] * (f[ixp] - f[ixm]) / (2.*metric->dx[i])  // DDX
+  return 0.5*(f[ixm] - f[ixp]) ;
+
 }
 
 template<IND_TYPE N, CELL_LOC location>
