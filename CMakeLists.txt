@@ -306,15 +306,23 @@ set(BOUT_SOURCES
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
   )
 
-
-ADD_CUSTOM_COMMAND( OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/field/generated_fieldops.cxx
-  COMMAND python gen_fieldops.py --filename generated_fieldops.cxx.tmp
-  COMMAND clang-format generated_fieldops.cxx.tmp -i
-  COMMAND mv generated_fieldops.cxx.tmp generated_fieldops.cxx
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.jinja  ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.py
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/field/
-  COMMENT "Generating source code" )
-
+find_package(Python)
+find_package(ClangFormat)
+if (Python_FOUND AND ClangFormat_FOUND)
+  add_custom_command( OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/field/generated_fieldops.cxx
+    COMMAND ${Python_EXECUTABLE} gen_fieldops.py --filename generated_fieldops.cxx.tmp
+    COMMAND ${ClangFormat_BIN} generated_fieldops.cxx.tmp -i
+    COMMAND ${CMAKE_COMMAND} -E rename generated_fieldops.cxx.tmp generated_fieldops.cxx
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.jinja  ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/field/
+    COMMENT "Generating source code" )
+else()
+  message(AUTHOR_WARNING "'src/field/generated_fieldops.cxx' will not be \
+regenerated when you make changes to either \
+'src/field/gen_fieldops.py' or 'src/field/gen_fieldops.jinja'. \
+This is because either Python or clang-format is missing \
+(see above messages for more information)")
+endif()
 
 add_library(bout++
   ${BOUT_SOURCES}
