@@ -122,9 +122,9 @@ The bare-minimum requirements for compiling and running BOUT++ are:
 
 #. A C++ compiler that supports C++11
 
-#. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <www.open-mpi.org/>`__),
+#. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <https://www.open-mpi.org/>`__),
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
-   LAM (`www.lam-mpi.org/ <www.lam-mpi.org/>`__)
+   LAM (`www.lam-mpi.org/ <https://www.lam-mpi.org/>`__)
    
 #. The NetCDF library (`https://www.unidata.ucar.edu/downloads/netcdf
    <https://www.unidata.ucar.edu/downloads/netcdf>`__)
