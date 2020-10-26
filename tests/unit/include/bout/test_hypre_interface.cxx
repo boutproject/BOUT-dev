@@ -251,6 +251,7 @@ TYPED_TEST(HypreMatrixTest, FieldConstructor) {
   ASSERT_EQ(iupper, jupper);
   fprintf(stderr,"FieldConstructorRGN_ALL i=[%ld,%ld] j=[%ld,%ld]\n",ilower,iupper,jlower,jupper); 
   const auto local_size = (iupper + 1) - ilower;
+  std::cerr << this->field.getRegion("RGN_ALL").size() << std::endl;
   //ASSERT_EQ(local_size, this->field.getRegion("RGN_ALL").size());
   ASSERT_GE(std::pow(local_size,2), this->field.getRegion("RGN_ALL").size());
 }
@@ -446,18 +447,23 @@ TYPED_TEST(HypreMatrixTest, YUp) {
   const BoutReal value = 42.0;
 
   std::cout << "3" << std::endl;
-  std::cout << this->indexer->getGlobal(this->indexA) << std::endl;
+  std::cout << this->indexer->getGlobal(this->indexA) << ", " <<
+               this->indexer->getGlobal(this->indexB) << std::endl;
+  std::cout << this->indexer->getGlobal(this->iWU0) << ", " <<
+               this->indexer->getGlobal(this->iWU1) << ", " <<
+               this->indexer->getGlobal(this->iWU2) << std::endl;               
 
   if (std::is_same<TypeParam, Field2D>::value) {
     expected(this->indexA, this->indexB) = value;
   } else {
-    EXPECT_CALL(*transform, getWeightsForYUpApproximation(
-                                this->indexB.x(), this->indexA.y(), this->indexB.z()))
-        .WillOnce(Return(this->yUpWeights));
-    std::cout << "4" << std::endl;
+//    EXPECT_CALL(*transform, getWeightsForYUpApproximation(
+//                                this->indexB.x(), this->indexA.y(), this->indexB.z()))
+//        .WillOnce(Return(this->yUpWeights));
+    this->yUpWeights = transform->getWeightsForYUpApproximation(this->indexB.x(), this->indexA.y(), this->indexB.z());
     expected(this->indexA, this->iWU0) = this->yUpWeights[0].weight * value;
     expected(this->indexA, this->iWU1) = this->yUpWeights[1].weight * value;
     expected(this->indexA, this->iWU2) = this->yUpWeights[2].weight * value;
+    std::cout << "4" << std::endl;
   }
 
   std::cout << "5" << std::endl;

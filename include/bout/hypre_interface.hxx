@@ -285,11 +285,11 @@ class HypreMatrix {
   ParallelTransform* parallel_transform{nullptr};
   bool assembled{false};
   HYPRE_BigInt num_rows;
-  std::vector<HYPRE_BigInt> I;
-  std::vector<std::vector<HYPRE_BigInt> > J;
-  std::vector<std::vector<HYPRE_Complex> > V;
+  std::vector<HYPRE_BigInt> *I;
+  std::vector<std::vector<HYPRE_BigInt> > *J;
+  std::vector<std::vector<HYPRE_Complex> > *V;
 
-  // todo also take care of J,V
+  // todo also take care of I,J,V
   struct MatrixDeleter {
     void operator()(HYPRE_IJMatrix* matrix) const {
       if (*matrix == nullptr) {
@@ -306,37 +306,39 @@ public:
   HypreMatrix() = default;
   HypreMatrix(const HypreMatrix<T>&) = delete;
   HypreMatrix(HypreMatrix<T>&& other) {
-    using std::swap;
-    swap(hypre_matrix, other.hypre_matrix);
-    swap(parallel_matrix, other.parallel_matrix);
+    comm = other.comm;
+    ilower = other.ilower;
+    iupper = other.iupper;
+    std::swap(hypre_matrix, other.hypre_matrix);
+    std::swap(parallel_matrix, other.parallel_matrix);
     index_converter = other.index_converter;
+    location = other.location;
     initialised = other.initialised;
     yoffset = other.yoffset;
     parallel_transform = other.parallel_transform;
-    other.initialised = false;
+    assembled = other.assembled;
+    num_rows = other.num_rows;
     I = other.I;
     J = other.J;
     V = other.V;
-    // other.I = nullptr;
-    // other.J = nullptr;
-    // other.V = nullptr;
   }
   HypreMatrix<T>& operator=(const HypreMatrix<T>&) = delete;
   HypreMatrix<T>& operator=(HypreMatrix<T>&& other) {
-    using std::swap;
-    swap(hypre_matrix, other.hypre_matrix);
-    swap(parallel_matrix, other.parallel_matrix);
+    comm = other.comm;
+    ilower = other.ilower;
+    iupper = other.iupper;
+    std::swap(hypre_matrix, other.hypre_matrix);
+    std::swap(parallel_matrix, other.parallel_matrix);
     index_converter = other.index_converter;
+    location = other.location;
     initialised = other.initialised;
     yoffset = other.yoffset;
     parallel_transform = other.parallel_transform;
-    other.initialised = false;
+    assembled = other.assembled;
+    num_rows = other.num_rows;
     I = other.I;
     J = other.J;
     V = other.V;
-    // other.I = nullptr;
-    // other.J = nullptr;
-    // other.V = nullptr;
     return *this;
   }
   
@@ -354,15 +356,19 @@ public:
     ilower = indConverter->getGlobalStart();
     iupper = ilower + indConverter->size() - 1; // inclusive end
     num_rows = iupper - ilower + 1;
-    I.resize(num_rows);
-    J.resize(num_rows);
-    V.resize(num_rows);
+
+    I = new std::vector<HYPRE_BigInt>;
+    J = new std::vector<std::vector<HYPRE_BigInt> >;
+    V = new std::vector<std::vector<HYPRE_Complex> >;
+    (*I).resize(num_rows);
+    (*J).resize(num_rows);
+    (*V).resize(num_rows);
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
-      I[i] = ilower + i;
-      J[i].resize(0);
-      J[i].reserve(10);
-      V[i].resize(0);
-      V[i].reserve(10);
+      (*I)[i] = ilower + i;
+      (*J)[i].resize(0);
+      (*J)[i].reserve(10);
+      (*V)[i].resize(0);
+      (*V)[i].reserve(10);
     }
 
     HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &*hypre_matrix);
@@ -456,9 +462,9 @@ public:
     HYPRE_Complex value = 0.0;
     HYPRE_BigInt i = row - ilower;
     ASSERT2(i >= 0 && i < num_rows);
-    for(HYPRE_BigInt col_ind = 0; col_ind < J[i].size(); ++col_ind) {
-      if (J[i][col_ind] == column) {
-        value = V[i][col_ind];
+    for(HYPRE_BigInt col_ind = 0; col_ind < (*J)[i].size(); ++col_ind) {
+      if ((*J)[i][col_ind] == column) {
+        value = (*V)[i][col_ind];
         break;
       }
     }
@@ -482,9 +488,9 @@ public:
     HYPRE_BigInt i = row - ilower;
     ASSERT2(i >= 0 && i < num_rows);
     bool value_set = false;
-    for(HYPRE_BigInt col_ind = 0; col_ind < J[i].size(); ++col_ind) {
-      if (J[i][col_ind] == column) {
-        V[i][col_ind] = value;
+    for(HYPRE_BigInt col_ind = 0; col_ind < (*J)[i].size(); ++col_ind) {
+      if ((*J)[i][col_ind] == column) {
+        (*V)[i][col_ind] = value;
         value_set  = true;
         break;
       }
@@ -492,8 +498,8 @@ public:
 
     if (!value_set)
     {
-      V[i].push_back(value);
-      J[i].push_back(column);
+      (*V)[i].push_back(value);
+      (*J)[i].push_back(column);
     }
   }
 
@@ -574,8 +580,8 @@ public:
 
     HypreMalloc(&num_cols, num_rows*sizeof(HYPRE_BigInt)); 
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
-      num_cols[i] = J[i].size();;
-      num_entries += J[i].size();
+      num_cols[i] = (*J)[i].size();;
+      num_entries += (*J)[i].size();
     }
 
     HypreMalloc(&rawI, num_rows*sizeof(HYPRE_BigInt));
@@ -583,10 +589,10 @@ public:
     HypreMalloc(&vals, num_entries*sizeof(HYPRE_Complex));
     HYPRE_BigInt entry = 0;
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
-      rawI[i] = I[i];
+      rawI[i] = (*I)[i];
       for(HYPRE_BigInt col_ind = 0; col_ind < num_cols[i]; ++col_ind) {
-        cols[entry] = J[i][col_ind];
-        vals[entry] = V[i][col_ind];
+        cols[entry] = (*J)[i][col_ind];
+        vals[entry] = (*V)[i][col_ind];
         entry ++;
       }
     }
@@ -613,16 +619,18 @@ public:
     }
     HypreMatrix<T> result;
     result.comm = comm;
+    result.ilower = ilower;
+    result.iupper = iupper;
     result.hypre_matrix = hypre_matrix;
-    result.parallel_matrix = parallel_matrix;
-    result.location = location;
+    result.parallel_matrix = parallel_matrix;    
     result.index_converter = index_converter;
-    result.parallel_transform = parallel_transform;
-    result.yoffset = std::is_same<T, Field2D>::value ? 0 : yoffset + dir;
+    result.location = location;
     result.initialised = initialised;
+    result.yoffset = std::is_same<T, Field2D>::value ? 0 : yoffset + dir;
+    result.parallel_transform = parallel_transform;
     result.assembled = assembled;
     result.num_rows = num_rows;
-    result.I = I;
+    result.I = I;   //We want the pointer to transfer so this works like a view
     result.J = J;
     result.V = V;
 
