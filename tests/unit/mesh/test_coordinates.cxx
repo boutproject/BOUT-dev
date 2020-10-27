@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "bout/build_config.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/mesh.hxx"
 #include "output.hxx"
@@ -46,6 +47,40 @@ TEST_F(CoordinatesTest, ZLength) {
 
   EXPECT_TRUE(IsFieldEqual(coords.zlength(), 7.0));
 }
+
+#if BOUT_USE_METRIC_3D
+TEST_F(CoordinatesTest, ZLength3D) {
+  auto dz = makeField<FieldMetric>([](const Ind3D& i) -> BoutReal {
+    return static_cast<BoutReal>(i.x() + i.y()) / nz;
+  });
+  auto expected =
+      makeField<Field2D>([](const Ind2D& i) -> BoutReal { return i.x() + i.y(); });
+
+  Coordinates coords{mesh,
+                     FieldMetric{1.0}, // dx
+                     FieldMetric{1.0}, // dy
+                     dz,               // dz
+                     FieldMetric{1.0}, // J
+                     FieldMetric{1.0}, // Bxy
+                     FieldMetric{1.0}, // g11
+                     FieldMetric{1.0}, // g22
+                     FieldMetric{1.0}, // g33
+                     FieldMetric{0.0}, // g12
+                     FieldMetric{0.0}, // g13
+                     FieldMetric{0.0}, // g23
+                     FieldMetric{1.0}, // g_11
+                     FieldMetric{1.0}, // g_22
+                     FieldMetric{1.0}, // g_23
+                     FieldMetric{0.0}, // g_12
+                     FieldMetric{0.0}, // g_13
+                     FieldMetric{0.0}, // g_23
+                     FieldMetric{0.0}, // ShiftTorsion
+                     FieldMetric{0.0}, // IntShiftTorsion
+                     false};           // calculate_geometry
+
+  EXPECT_TRUE(IsFieldEqual(coords.zlength(), expected));
+}
+#endif
 
 TEST_F(CoordinatesTest, Jacobian) {
   Coordinates coords{mesh,
