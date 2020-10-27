@@ -365,12 +365,13 @@ void communicate(T& t, Ts&... ts) {
 
 } // anonymous namespace
 
-Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J,
-                         Field2D Bxy, Field2D g11, Field2D g22, Field2D g33, Field2D g12,
-                         Field2D g13, Field2D g23, Field2D g_11, Field2D g_22,
-                         Field2D g_33, Field2D g_12, Field2D g_13, Field2D g_23,
-                         Field2D ShiftTorsion, Field2D IntShiftTorsion,
-                         bool calculate_geometry)
+Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric dz,
+                         FieldMetric J, FieldMetric Bxy, FieldMetric g11, FieldMetric g22,
+                         FieldMetric g33, FieldMetric g12, FieldMetric g13,
+                         FieldMetric g23, FieldMetric g_11, FieldMetric g_22,
+                         FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
+                         FieldMetric g_23, FieldMetric ShiftTorsion,
+                         FieldMetric IntShiftTorsion, bool calculate_geometry)
     : dx(std::move(dx)), dy(std::move(dy)), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
       g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
       g13(std::move(g13)), g23(std::move(g23)), g_11(std::move(g_11)),

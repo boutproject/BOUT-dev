@@ -15,24 +15,60 @@ extern Mesh* mesh;
 
 using bout::globals::mesh;
 
-using CoordinatesTest = FakeMeshFixture;
+class CoordinatesTest : public FakeMeshFixture {
+public:
+  using FieldMetric = Coordinates::FieldMetric;
+  CoordinatesTest() : FakeMeshFixture() {}
+};
 
 TEST_F(CoordinatesTest, ZLength) {
-  Coordinates coords{
-      mesh,         Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{1.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, false};
+  Coordinates coords{mesh,
+                     FieldMetric{1.0}, // dx
+                     FieldMetric{1.0}, // dy
+                     FieldMetric{1.0}, // dz
+                     FieldMetric{1.0}, // J
+                     FieldMetric{1.0}, // Bxy
+                     FieldMetric{1.0}, // g11
+                     FieldMetric{1.0}, // g22
+                     FieldMetric{1.0}, // g33
+                     FieldMetric{0.0}, // g12
+                     FieldMetric{0.0}, // g13
+                     FieldMetric{0.0}, // g23
+                     FieldMetric{1.0}, // g_11
+                     FieldMetric{1.0}, // g_22
+                     FieldMetric{1.0}, // g_23
+                     FieldMetric{0.0}, // g_12
+                     FieldMetric{0.0}, // g_13
+                     FieldMetric{0.0}, // g_23
+                     FieldMetric{0.0}, // ShiftTorsion
+                     FieldMetric{0.0}, // IntShiftTorsion
+                     false};           // calculate_geometry
 
   EXPECT_TRUE(IsFieldEqual(coords.zlength(), 7.0));
 }
 
 TEST_F(CoordinatesTest, Jacobian) {
-  Coordinates coords{
-      mesh,         Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{1.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, false};
+  Coordinates coords{mesh,
+                     FieldMetric{1.0}, // dx
+                     FieldMetric{1.0}, // dy
+                     FieldMetric{1.0}, // dz
+                     FieldMetric{1.0}, // J
+                     FieldMetric{1.0}, // Bxy
+                     FieldMetric{1.0}, // g11
+                     FieldMetric{1.0}, // g22
+                     FieldMetric{1.0}, // g33
+                     FieldMetric{0.0}, // g12
+                     FieldMetric{0.0}, // g13
+                     FieldMetric{0.0}, // g23
+                     FieldMetric{1.0}, // g_11
+                     FieldMetric{1.0}, // g_22
+                     FieldMetric{1.0}, // g_23
+                     FieldMetric{0.0}, // g_12
+                     FieldMetric{0.0}, // g_13
+                     FieldMetric{0.0}, // g_23
+                     FieldMetric{0.0}, // ShiftTorsion
+                     FieldMetric{0.0}, // IntShiftTorsion
+                     false};           // calculate_geometry
 
   EXPECT_NO_THROW(coords.jacobian());
 
@@ -43,11 +79,27 @@ TEST_F(CoordinatesTest, Jacobian) {
 /// To do generalise these tests
 #if not(BOUT_USE_METRIC_3D)
 TEST_F(CoordinatesTest, CalcContravariant) {
-  Coordinates coords{
-      mesh,         Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, false};
+  Coordinates coords{mesh,
+                     FieldMetric{1.0}, // dx
+                     FieldMetric{1.0}, // dy
+                     FieldMetric{1.0}, // dz
+                     FieldMetric{0.0}, // J
+                     FieldMetric{0.0}, // Bxy
+                     FieldMetric{1.0}, // g11
+                     FieldMetric{1.0}, // g22
+                     FieldMetric{1.0}, // g33
+                     FieldMetric{0.0}, // g12
+                     FieldMetric{0.0}, // g13
+                     FieldMetric{0.0}, // g23
+                     FieldMetric{0.0}, // g_11
+                     FieldMetric{0.0}, // g_22
+                     FieldMetric{0.0}, // g_23
+                     FieldMetric{0.0}, // g_12
+                     FieldMetric{0.0}, // g_13
+                     FieldMetric{0.0}, // g_23
+                     FieldMetric{0.0}, // ShiftTorsion
+                     FieldMetric{0.0}, // IntShiftTorsion
+                     false};           // calculate_geometry
 
   output_info.disable();
   coords.calcCovariant();
@@ -62,11 +114,27 @@ TEST_F(CoordinatesTest, CalcContravariant) {
 }
 
 TEST_F(CoordinatesTest, CalcCovariant) {
-  Coordinates coords{
-      mesh,         Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, false};
+  Coordinates coords{mesh,
+                     FieldMetric{1.0}, // dx
+                     FieldMetric{1.0}, // dy
+                     FieldMetric{1.0}, // dz
+                     FieldMetric{0.0}, // J
+                     FieldMetric{0.0}, // Bxy
+                     FieldMetric{0.0}, // g11
+                     FieldMetric{0.0}, // g22
+                     FieldMetric{0.0}, // g33
+                     FieldMetric{0.0}, // g12
+                     FieldMetric{0.0}, // g13
+                     FieldMetric{0.0}, // g23
+                     FieldMetric{1.0}, // g_11
+                     FieldMetric{1.0}, // g_22
+                     FieldMetric{1.0}, // g_23
+                     FieldMetric{0.0}, // g_12
+                     FieldMetric{0.0}, // g_13
+                     FieldMetric{0.0}, // g_23
+                     FieldMetric{0.0}, // ShiftTorsion
+                     FieldMetric{0.0}, // IntShiftTorsion
+                     false};           // calculate_geometry
 
   output_info.disable();
   coords.calcContravariant();
