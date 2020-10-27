@@ -1485,4 +1485,11 @@ TEST_F(Field2DTest, ZeroFrom) {
   EXPECT_TRUE(field2.isAllocated());
   EXPECT_TRUE(IsFieldEqual(field2, 0.));
 }
+
+TEST_F(Field2DTest, DC) {
+  Field2D field =
+      makeField<Field2D>([](const Ind2D& i) -> BoutReal { return i.x() * i.y(); });
+  EXPECT_EQ(DC(field), field);
+}
+
 #pragma GCC diagnostic pop
