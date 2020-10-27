@@ -384,9 +384,16 @@ inline BoutReal min(const T& f, bool allpe, REGION rgn) {
   return min(f, allpe, toString(rgn));
 }
 
+/// Returns true if all elements of \p f over \p region are equal. By
+/// default only checks the local processor, use \p allpe to check
+/// globally
+///
+/// @param[in] f       The field to check
+/// @param[in] allpe   Check over all processors
+/// @param[in] region  The region to check for uniformity over
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline bool isUniform(const T& f, bool allpe = false,
-                    const std::string& region = "RGN_ALL") {
+                      const std::string& region = "RGN_ALL") {
   bool result = true;
   auto element = f[*f.getRegion(region).begin()];
   // TODO: maybe parallise this loop, as the early return is unlikely
@@ -403,12 +410,21 @@ inline bool isUniform(const T& f, bool allpe = false,
   return result;
 }
 
+/// Returns the value of the first element of \p f (in the region \p
+/// region if given). If checks are enabled, then throws an exception
+/// if \p f is not uniform over \p region. By default only checks the
+/// local processor, use \p allpe to check globally
+///
+/// @param[in] f       The field to check
+/// @param[in] allpe   Check over all processors
+/// @param[in] region  The region to assume is uniform
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline BoutReal getUniform(const T& f, bool allpe = false,
-                         const std::string& region = "RGN_ALL") {
+                           const std::string& region = "RGN_ALL") {
 #if CHECK > 1
-  if (! isUniform(f, allpe, region)) {
-    throw BoutException("Requested getUniform({}, {}, {}) but Field is not const", f.name, allpe, region);
+  if (not isUniform(f, allpe, region)) {
+    throw BoutException("Requested getUniform({}, {}, {}) but Field is not const", f.name,
+                        allpe, region);
   }
 #endif
   return f[*f.getRegion(region).begin()];
