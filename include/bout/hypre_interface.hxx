@@ -48,7 +48,7 @@ class HypreVector {
   IndexerPtr<T> indexConverter;
   CELL_LOC location;
   bool initialised{false};
-  bool have_indices;
+  bool have_indices{false};
   HYPRE_BigInt *I{nullptr};
   HYPRE_Complex *V{nullptr};
 
@@ -75,12 +75,18 @@ public:
   auto operator=(const HypreVector<T>&) = delete;
 
   HypreVector(HypreVector<T>&& other) {
+    comm = other.comm;
+    jlower = other.jlower;
+    jupper = other.jupper;
+    vsize = other.vsize;
     std::swap(hypre_vector, other.hypre_vector);
     std::swap(parallel_vector, other.parallel_vector);
     indexConverter = other.indexConverter;
     location = other.location;
     initialised = other.initialised;
     other.initialised = false;
+    have_indices = other.have_indices;
+    other.have_indices = false;
     I = other.I;
     V = other.V;
     other.I = nullptr;
@@ -88,12 +94,18 @@ public:
   }
 
   HypreVector<T>& operator=(HypreVector<T>&& other) {
+    comm = other.comm;
+    jlower = other.jlower;
+    jupper = other.jupper;
+    vsize = other.vsize;
     std::swap(hypre_vector, other.hypre_vector);
     std::swap(parallel_vector, other.parallel_vector);
     indexConverter = other.indexConverter;
     location = other.location;
     initialised = other.initialised;
     other.initialised = false;
+    have_indices = other.have_indices;
+    other.have_indices = false;
     I = other.I;
     V = other.V;
     other.I = nullptr;
@@ -150,11 +162,8 @@ public:
   }
 
   void assemble() {
-    std::cerr << "hypre_error_flag  V Assemble Init:" << hypre_error_flag << "\n";
     HYPRE_IJVectorAssemble(hypre_vector);
-    std::cerr << "hypre_error_flag V Post Assemble:" << hypre_error_flag << "\n";
     HYPRE_IJVectorGetObject(hypre_vector, reinterpret_cast<void**>(&parallel_vector));
-    std::cerr << "hypre_error_flag V IJVectorGetObject:" << hypre_error_flag << "\n";
   }
 
   T toField() {
@@ -439,8 +448,6 @@ public:
       for (HYPRE_BigInt i = 0; i < positions.size(); ++i) {
         matrix->setVal(row, positions[i], values[i]);
       }
-      // HYPRE_IJMatrixSetValues(hypre_matrix, 1, &ncolumns, &row, positions.data(),
-      //                             values.data())
 
     }
   };

@@ -42,7 +42,6 @@ TYPED_TEST(HypreVectorTest, FieldConstructor) {
     this->field[i] = static_cast<BoutReal>(i.ind);
   }
   
-  //std::cerr << "field RGN_ALL Dimensions" << this->field.getNx() << ":" << this->field.getNy() << ":" << this->field.getNz() << "\n";
   HypreVector<TypeParam> vector(this->field, this->indexer);
   HYPRE_BigInt jlower, jupper;
   auto hypre_vector = vector.get();
@@ -52,7 +51,6 @@ TYPED_TEST(HypreVectorTest, FieldConstructor) {
   const TypeParam result = vector.toField();
 
   // Note: Indexer doesn't have a stencil, so doesn't include boundaries
-  //EXPECT_TRUE(IsFieldEqual(this->field, result, "RGN_NOBNDRY"));
   EXPECT_TRUE(IsFieldEqual(result,this->field, "RGN_NOBNDRY"));
 }
 
@@ -126,26 +124,6 @@ TYPED_TEST(HypreVectorTest, SetElements) {
 
   EXPECT_TRUE(IsFieldEqual(this->field, vector.toField(), "RGN_NOBNDRY"));
 }
-#if 0
-#if CHECKLEVEL >= 1
-TYPED_TEST(HypreVectorTest, TestGetUninitialised) {
-  HypreVector<TypeParam> vector;
-  typename TypeParam::ind_type index(0);
-  EXPECT_THROW(vector(index), BoutException);
-}
-
-TYPED_TEST(HypreVectorTest, OutOfRange) {
-  HypreVector<TypeParam> vector{this->field, this->indexer};
-  typename TypeParam::ind_type index1(this->field.getNx() * this->field.getNy()
-                                      * this->field.getNz());
-  EXPECT_THROW(vector(index1), BoutException);
-  typename TypeParam::ind_type index2(-1);
-  EXPECT_THROW(vector(index2), BoutException);
-  typename TypeParam::ind_type index3(10000000);
-  EXPECT_THROW(vector(index3), BoutException);
-}
-#endif
-#endif
 
 TYPED_TEST(HypreVectorTest, Swap) {
   HypreVector<TypeParam> vector{this->field, this->indexer};
@@ -183,9 +161,10 @@ public:
 
   HypreMatrixTest()
       : FakeMeshFixture(), field(1.5, bout::globals::mesh),
-        indexer(std::make_shared<GlobalIndexer<T>>(bout::globals::mesh)) {
+        indexer(std::make_shared<GlobalIndexer<T>>(bout::globals::mesh, squareStencil<ind_type>(bout::globals::mesh))) {
+        //indexer(std::make_shared<GlobalIndexer<T>>(bout::globals::mesh)) {
 
-    indexA = ind_type(field.getNy() * field.getNz() + 1, field.getNy(), field.getNz());
+    indexA = ind_type((1 + field.getNy()) * field.getNz() + 1, field.getNy(), field.getNz());
     if (std::is_same<T, FieldPerp>::value) {
       indexB = indexA.zp();
 
@@ -221,38 +200,16 @@ public:
 using FieldTypes = ::testing::Types<Field3D, Field2D, FieldPerp>;
 TYPED_TEST_SUITE(HypreMatrixTest, FieldTypes);
 
-TYPED_TEST(HypreMatrixTest, FieldConstructorNoBndry) {
+TYPED_TEST(HypreMatrixTest, FieldConstructor) {
+  using ind_type = typename TypeParam::ind_type;
+
   HypreMatrix<TypeParam> matrix(this->indexer);
   HYPRE_BigInt ilower, iupper, jlower, jupper;
   auto hypre_matrix = matrix.get();
   HYPRE_IJMatrixGetLocalRange(hypre_matrix, &ilower, &iupper, &jlower, &jupper);
   ASSERT_EQ(ilower, jlower);
   ASSERT_EQ(iupper, jupper);
-  fprintf(stderr,"FieldConstructorNoBndry i=[%ld,%ld] j=[%ld,%ld]\n",ilower,iupper,jlower,jupper); 
   const auto local_size = (iupper + 1) - ilower;
-  ASSERT_EQ(local_size, this->field.getRegion("RGN_NOBNDRY").size());
-}
-
-TYPED_TEST(HypreMatrixTest, FieldConstructor) {
-  using ind_type = typename TypeParam::ind_type;
-
-  IndexOffset<ind_type> zero;
-  OperatorStencil<ind_type> stencil;
-  stencil.add([](const ind_type&) { return true; }, {zero});
-
-  auto allindexer =
-      std::make_shared<GlobalIndexer<TypeParam>>(bout::globals::mesh, stencil);
-
-  HypreMatrix<TypeParam> matrix(allindexer);
-  HYPRE_BigInt ilower, iupper, jlower, jupper;
-  auto hypre_matrix = matrix.get();
-  HYPRE_IJMatrixGetLocalRange(hypre_matrix, &ilower, &iupper, &jlower, &jupper);
-  ASSERT_EQ(ilower, jlower);
-  ASSERT_EQ(iupper, jupper);
-  fprintf(stderr,"FieldConstructorRGN_ALL i=[%ld,%ld] j=[%ld,%ld]\n",ilower,iupper,jlower,jupper); 
-  const auto local_size = (iupper + 1) - ilower;
-  std::cerr << this->field.getRegion("RGN_ALL").size() << std::endl;
-  //ASSERT_EQ(local_size, this->field.getRegion("RGN_ALL").size());
   ASSERT_GE(std::pow(local_size,2), this->field.getRegion("RGN_ALL").size());
 }
 
@@ -279,39 +236,11 @@ TYPED_TEST(HypreMatrixTest, SetGetValue) {
   auto idx = *std::begin(region);
   BoutReal value = 23.;
   BoutReal actual = -1.;
-  
-  std::cerr << "hypre_index:  " << i << "\n";
 
   matrix.setVal(idx, idx, value);
   actual = matrix.getVal(idx, idx);
   EXPECT_EQ(actual, value);
 }
-
-// TYPED_TEST(HypreMatrixTest, Assemble) {
-//   //std::cerr << "hypre_error_flag:" << hypre_error_flag << "\n";
-//   HypreMatrix<TypeParam> matrix(this->indexer);
-//   const auto& region = this->field.getRegion("RGN_NOBNDRY");
-//   auto i = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(*std::begin(region)));    
-  
-//   matrix.setVal(i, i, value);
-//   matrix.assemble();
-
-//   std::cerr << "hypre_error_flag2:" << hypre_error_flag << "\n";
-  
-//   status = HYPRE_IJMatrixGetValues(raw_matrix, 1, ncolumns, i, i, actual);
-//   std::cerr << "status2:" << status << "\n";
-
-//   std::cerr << "hypre_error_flag3:" << hypre_error_flag << "\n";
-//   //std::cerr << "value:" << value << " actual:" << actual << "\n";
-//   if (status != 0) {
-//     // Not clearing the (global) error will break future calls!
-//     HYPRE_ClearAllErrors();
-//   }
-
-//   std::cerr << "hypre_error_flag4:" << hypre_error_flag << "\n";
-//   EXPECT_EQ(status, 0);
-//   EXPECT_EQ(actual, value);
-// }
 
 TYPED_TEST(HypreMatrixTest, SetElements) {
   HypreMatrix<TypeParam> matrix(this->indexer);
@@ -369,30 +298,6 @@ TYPED_TEST(HypreMatrixTest, GetElements) {
   }
 }
 
-#if 0
-#if CHECKLEVEL >= 1
-
-TYPED_TEST(HypreMatrixTest, GetOutOfBounds) {
-  HypreMatrix<TypeParam> matrix(this->indexer);
-  typename TypeParam::ind_type indexa(-1), indexb(1), indexc(100000);
-  typename TypeParam::ind_type index1(this->field.getNx() * this->field.getNy()
-                                      * this->field.getNz());
-  EXPECT_THROW((matrix(index1, indexa)), BoutException);
-  EXPECT_THROW((matrix(index1, indexb)), BoutException);
-  EXPECT_THROW((matrix(index1, indexc)), BoutException);
-  typename TypeParam::ind_type index2(-1);
-  EXPECT_THROW((matrix(index2, indexa)), BoutException);
-  EXPECT_THROW((matrix(index2, indexb)), BoutException);
-  EXPECT_THROW((matrix(index2, indexc)), BoutException);
-  typename TypeParam::ind_type index3(10000000);
-  EXPECT_THROW((matrix(index3, indexa)), BoutException);
-  EXPECT_THROW((matrix(index3, indexb)), BoutException);
-  EXPECT_THROW((matrix(index3, indexc)), BoutException);
-}
-
-#endif
-#endif
-
 template <class T>
 auto IsHypreMatrixEqual(const HypreMatrix<T>& matrix, const HypreMatrix<T>& reference)
     -> ::testing::AssertionResult {
@@ -433,45 +338,30 @@ TYPED_TEST(HypreMatrixTest, YUp) {
 
   HypreMatrix<TypeParam> matrix(this->indexer);
 
-  std::cout << "1" << std::endl;
-
   if (std::is_same<TypeParam, FieldPerp>::value) {
     EXPECT_THROW(matrix.yup(), BoutException);
     return;
   }
 
-  std::cout << "2" << std::endl;
-
   HypreMatrix<TypeParam> expected(this->indexer);
   MockTransform* transform = this->pt;
-  const BoutReal value = 42.0;
-
-  std::cout << "3" << std::endl;
-  std::cout << this->indexer->getGlobal(this->indexA) << ", " <<
-               this->indexer->getGlobal(this->indexB) << std::endl;
-  std::cout << this->indexer->getGlobal(this->iWU0) << ", " <<
-               this->indexer->getGlobal(this->iWU1) << ", " <<
-               this->indexer->getGlobal(this->iWU2) << std::endl;               
+  const BoutReal value = 42.0;     
 
   if (std::is_same<TypeParam, Field2D>::value) {
     expected(this->indexA, this->indexB) = value;
   } else {
-//    EXPECT_CALL(*transform, getWeightsForYUpApproximation(
-//                                this->indexB.x(), this->indexA.y(), this->indexB.z()))
-//        .WillOnce(Return(this->yUpWeights));
-    this->yUpWeights = transform->getWeightsForYUpApproximation(this->indexB.x(), this->indexA.y(), this->indexB.z());
+    EXPECT_CALL(*transform, getWeightsForYUpApproximation(
+                            this->indexB.x(), this->indexA.y(), this->indexB.z()))
+               .WillOnce(Return(this->yUpWeights));
     expected(this->indexA, this->iWU0) = this->yUpWeights[0].weight * value;
     expected(this->indexA, this->iWU1) = this->yUpWeights[1].weight * value;
     expected(this->indexA, this->iWU2) = this->yUpWeights[2].weight * value;
-    std::cout << "4" << std::endl;
   }
 
-  std::cout << "5" << std::endl;
   matrix.yup()(this->indexA, this->indexB) = value;
 
   expected.assemble();
   matrix.assemble();
-  std::cout << "6" << std::endl;
 
   EXPECT_TRUE(IsHypreMatrixEqual(matrix, expected));
 }
