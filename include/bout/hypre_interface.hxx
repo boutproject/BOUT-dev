@@ -208,21 +208,28 @@ public:
   const HYPRE_ParVector& getParallel() const { return parallel_vector; }
 
   class Element {
-    HYPRE_IJVector vector{nullptr};
+    HypreVector<T> *vector;
+    HYPRE_IJVector hypre_vector{nullptr};
     HYPRE_BigInt index;
+    int vec_i;
     HYPRE_Complex value;
 
   public:
     Element() = delete;
     Element(const Element&) = default;
     Element(Element&&) = default;
-    Element(HYPRE_IJVector vector_, int index_) : vector(vector_), index(index_) {
-      BOUT_OMP(critical) {
-        if (HYPRE_IJVectorGetValues(vector, 1, &index, &value) != 0) {
-          throw BoutException("Error when getting element of a HYPRE vector, index = {}",
-                              index);
+    Element(HypreVector<T> &vector_, int index_) : vector(&vector_), hypre_vector(vector_.get()), index(index_) {
+      vector = &vector_;
+      vec_i = -1;
+      for (HYPRE_BigInt i = 0; i < vector->vsize; ++i) {
+        if (vector->I[i] == index) {
+          vec_i = i;
+          break;
         }
       }
+      throw BoutException("Error cannot find global index in HypreVector, index = {}",index);
+
+      value = vector->V[vec_i];
     }
 
     Element& operator=(const Element& other) {
@@ -230,22 +237,12 @@ public:
     }
     Element& operator=(BoutReal value_) {
       value = value_;
-      BOUT_OMP(critical) {
-        if (HYPRE_IJVectorSetValues(vector, 1, &index, &value) != 0) {
-          throw BoutException("Error when setting element of a HYPRE vector, index = {}",
-                              index);
-        }
-      }
+      vector->V[vec_i] = value_;
       return *this;
     }
     Element& operator+=(BoutReal value_) {
-      value = value_;
-      BOUT_OMP(critical) {
-        if (HYPRE_IJVectorAddToValues(vector, 1, &index, &value) != 0) {
-          throw BoutException(
-              "Error when adding to element of a HYPRE vector, index = {}", index);
-        }
-      }
+      value += value_;
+      vector->V[vec_i] += value_;
       return *this;
     }
     operator BoutReal() const { return value; }
@@ -263,7 +260,7 @@ public:
       throw BoutException("Request to return invalid vector element");
     }
 #endif
-    return Element(hypre_vector, global);
+    return Element(*this, global);
   }
 
   friend void swap(HypreVector<T>& lhs, HypreVector<T>& rhs) {
