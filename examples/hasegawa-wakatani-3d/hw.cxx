@@ -5,7 +5,7 @@
 /////
 ////  GPU processing is enabled if BOUT_ENABLE_CUDA is defined
 /////  Profiling markers and ranges are set if USE_NVTX is defined
-/////  Baesed on Ben Duddson's code, Steven Glenn, Yining Qin and Jones Holger update from 0521-2020
+/////  Baesed on Ben Duddson's code, Yining Qin update from 0521-2020
 
 
 #include <bout/physicsmodel.hxx>
