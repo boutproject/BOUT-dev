@@ -12,13 +12,17 @@
 
 #include "bout/single_index_ops.hxx" // Operators at a single index
 
+#include "RAJA/RAJA.hpp" // using RAJA lib
+#include <cuda_profiler_api.h>
+#include <gpu_functions.hxx>
+
 /// 2D drift-reduced model, mainly used for blob studies
 ///
 ///
 class Blob2D : public PhysicsModel {
-private:
+public:
   // Evolving variables
-  Field3D n, omega; ///< Density and vorticity
+  Field3D n, vort; ///< Density and vorticity
 
   // Auxilliary variables
   Field3D phi; ///< Electrostatic potential
@@ -47,7 +51,6 @@ private:
 
   std::unique_ptr<Laplacian> phiSolver{nullptr}; ///< Performs Laplacian inversions to calculate phi
 
-protected:
   int init(bool UNUSED(restarting)) {
 
     /******************Reading options *****************/
@@ -108,7 +111,7 @@ protected:
 
     /************ Tell BOUT++ what to solve ************/
 
-    SOLVE_FOR(n, omega);
+    SOLVE_FOR(n, vort);
 
     // Output phi
     SAVE_REPEAT(phi);
@@ -119,9 +122,11 @@ protected:
 
   int rhs(BoutReal UNUSED(t)) {
 
+
+    // RAJA::synchronize<RAJA::cuda_synchronize>();
     // Run communications
     ////////////////////////////////////////////////////////////////////////////
-    mesh->communicate(n, omega);
+    mesh->communicate(n, vort);
 
     // Invert div(n grad(phi)) = grad(n) grad(phi) + n Delp_perp^2(phi) = omega
     ////////////////////////////////////////////////////////////////////////////
@@ -129,57 +134,101 @@ protected:
     if (!boussinesq) {
       // Including full density in vorticit inversion
       phiSolver->setCoefC(n); // Update the 'C' coefficient. See invert_laplace.hxx
-      phi = phiSolver->solve(omega / n, phi); // Use previous solution as guess
+      phi = phiSolver->solve(vort / n, phi); // Use previous solution as guess
     } else {
       // Background density only (1 in normalised units)
-      phi = phiSolver->solve(omega);
+      phi = phiSolver->solve(vort);
     }
 
     mesh->communicate(phi);
 
-    // Make sure fields have Coordinates
-    // This sets the Field::fast_coords member to a Coordinate*
-    // Not a long-term solution, but here until a better solution is found.
-    n.fast_coords = n.getCoordinates();
-    omega.fast_coords = omega.getCoordinates();
-    phi.fast_coords = phi.getCoordinates();
-    
+    // Create data accessors for fast inner loop
+    auto n_acc = FieldAccessor<>(n);
+    auto vort_acc = FieldAccessor<>(vort);
+    auto phi_acc = FieldAccessor<>(phi);
+
+
+
+// / GPU code --------------------------start   
+
+RAJA::synchronize<RAJA::cuda_synchronize>();
+//BoutReal*   gpu_n_ddt= const_cast<BoutReal*>(n.timeDeriv()->operator()(0,0)); // copy ddt(n) to __device__
+//BoutReal*   gpu_vort_ddt = const_cast<BoutReal*>(vort.timeDeriv()->operator()(0,0)); // copy ddt(vort) to __device__
+ 
+ 
+  gpu_n_ddt= const_cast<BoutReal*>(n.timeDeriv()->operator()(0,0)); // copy ddt(n) to __device__
+  gpu_vort_ddt = const_cast<BoutReal*>(vort.timeDeriv()->operator()(0,0)); // copy ddt(vort) to __device__
+
+   auto region = n.getRegion("RGN_NOBNDRY"); // Region object
+   auto indices = region.getIndices();   // A std::vector of Ind3D objects
+   
+//  Copy data to __device__
+   RAJA_data_copy(n,vort,phi, phi,n_acc,phi_acc);
+
+    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int i) {
+
+                gpu_n_ddt[i] = - gpu_bracket_par(phi_acc, n_acc, i) //gpu_n_ddt[i]
+                                  - 2 * gpu_DZZ_par(n_acc, i) * (rho_s / R_c)
+                                  + D_n *gpu_Delp2_par(n_acc, i) 
+				;
+
+                gpu_vort_ddt[i] = - gpu_bracket_par(phi_acc, vort_acc, i)
+                                     + 2 * gpu_DZZ_par(n_acc, i) * (rho_s / R_c)/ p_n[i]
+                                     + D_vort *gpu_Delp2_par(vort_acc, i) / p_n[i]
+				 ;
+
+        });
+
+//cudaDeviceSynchronize();
+
+//RAJA::synchronize<RAJA::cuda_synchronize>();
+//std::cout<<"gpu_n_ddt[99]:  "<< gpu_n_ddt[99]<< std::endl;
+//std::cout<<"gpu_vort_ddt[99]:  "<< gpu_vort_ddt[99]<< std::endl;
+
+
+
+// GPU code --------------------------end
+
+
+  /*
     // Allocate arrays to store the time derivatives
     ddt(n).allocate();
-    ddt(omega).allocate();
+    ddt(vort).allocate();
     // Iterate over the mesh except boundaries because derivatives are needed
     BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
 
       // Density Evolution
       /////////////////////////////////////////////////////////////////////////////
 
-      ddt(n)[i] = -bracket(phi, n, i)             // ExB term
-                  + 2 * DDZ(n, i) * (rho_s / R_c) // Curvature term
-                  + D_n * Delp2(n, i);            // Diffusion term
+      ddt(n)[i] = -bracket(phi_acc, n_acc, i)             // ExB term
+                  + 2 * DDZ(n_acc, i) * (rho_s / R_c) // Curvature term
+                  + D_n * Delp2(n_acc, i);            // Diffusion term
       
       // Vorticity evolution
       /////////////////////////////////////////////////////////////////////////////
-
-      ddt(omega)[i] = -bracket(phi, omega, i)                // ExB term
-                   + 2 * DDZ(n, i) * (rho_s / R_c) / n[i] // Curvature term
-                   + D_vort * Delp2(omega, i) / n[i]      // Viscous diffusion term
+      ddt(vort)[i] = -bracket(phi_acc, vort_acc, i)                // ExB term
+                   + 2 * DDZ(n_acc, i) * (rho_s / R_c) / n_acc[i] // Curvature term
+                   + D_vort * Delp2(vort_acc, i) / n_acc[i]      // Viscous diffusion term
           ;
-    }
+    
+
+	}
 
     if (compressible) {
       BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
-        ddt(n)[i] -= 2 * n[i] * DDZ(phi, i) * (rho_s / R_c); // ExB Compression term
+        ddt(n)[i] -= 2 * n_acc[i] * DDZ(phi_acc, i) * (rho_s / R_c); // ExB Compression term
       }
     }
     
     if (sheath) {
       // Sheath closure
       BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
-        ddt(n)[i] += n[i] * phi[i] * (rho_s / L_par);
-        ddt(omega)[i] += phi[i] * (rho_s / L_par);
+        ddt(n)[i] += n_acc[i] * phi_acc[i] * (rho_s / L_par);
+        ddt(vort)[i] += phi_acc[i] * (rho_s / L_par);
       }
     }
-    
+ */ 
+ 
     return 0;
   }
 };

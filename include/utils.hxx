@@ -29,6 +29,7 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
+
 #include "bout_types.hxx"
 #include "dcomplex.hxx"
 #include "boutexception.hxx"
@@ -44,6 +45,7 @@
 #include <ctime>
 #include <algorithm>
 #include <memory>
+
 
 #ifdef _MSC_VER
 // finite is not actually standard C++, it's a BSD extention for C

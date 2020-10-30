@@ -46,7 +46,7 @@ Field::Field(Mesh *localmesh, CELL_LOC location_in,
   }
 }
 
-void Field::setLocation(CELL_LOC new_location) {
+ void Field::setLocation(CELL_LOC new_location) {
   AUTO_TRACE();
   if (getMesh()->StaggerGrids) {
     if (new_location == CELL_VSHIFT) {
@@ -79,8 +79,7 @@ CELL_LOC Field::getLocation() const {
   AUTO_TRACE();
   return location;
 }
-
-Coordinates *Field::getCoordinates() const {
+__host__ __device__ Coordinates *Field::getCoordinates() const {
   if (fieldCoordinates) {
     return fieldCoordinates.get();
   } else {
@@ -88,8 +87,7 @@ Coordinates *Field::getCoordinates() const {
     return fieldCoordinates.get();
   }
 }
-
-Coordinates *Field::getCoordinates(CELL_LOC loc) const {
+ __host__ __device__ Coordinates *Field::getCoordinates(CELL_LOC loc) const {
   if (loc == CELL_DEFAULT) return getCoordinates();  
   return getMesh()->getCoordinates(loc);
 }

@@ -11,7 +11,7 @@ module --ignore-cache load spectrum-mpi/rolling-release
 module --ignore-cache load cmake/3.14.5
 module --ignore-cache load cuda/10.1.243
 module --ignore-cache load gcc/8.3.1
-#module --ignore-cache load sundials/4.1.0
+module --ignore-cache load sundials/4.1.0
 module --ignore-cache load sundials-5.1.0-gcc-8.3.1-g7h45nh
 module --ignore-cache load lapack/3.8.0-gcc-4.9.3
 
@@ -25,7 +25,7 @@ module --ignore-cache load superlu-dist-6.1.1-gcc-8.3.1-43evi4b
 module --ignore-cache load python-3.7.6-gcc-8.3.1-usivcqa
 module --ignore-cache load netcdf-c-4.7.3-gcc-8.3.1-usnrhsd # auto installed as part of netcdf-cxx4 install
 module --ignore-cache load zlib-1.2.11-gcc-8.3.1-drkbhfs
-module --ignore-cache load netcdf-cxx4-4.3.1-gcc-8.3.1-uj77ss3
+module --ignore-cache load netcdf-cxx4-4.3.1-gcc-8.3.1-uj77ss
 #module --ignore-cache load petsc-3.12.3-gcc-8.3.1-ut4eyhs 
 #module --ignore-cache load petsc-3.12.3-gcc-8.3.1-jnsim2o
 module --ignore-cache load py-setuptools-41.4.0-gcc-8.3.1-d4wih3g

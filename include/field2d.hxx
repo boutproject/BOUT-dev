@@ -44,6 +44,8 @@ class Field3D; //#include "field3d.hxx"
 #include "utils.hxx"
 
 #include "unused.hxx"
+#include "RAJA/RAJA.hpp" // using RAJA lib
+#include <cuda_profiler_api.h>
 
 /*!
  * \brief 2D X-Y scalar fields
@@ -168,13 +170,13 @@ class Field2D : public Field, public FieldData {
    * call .allocate() after assignment, or use the copy()
    * function.
    */
-  Field2D & operator=(const Field2D &rhs);
+ Field2D & operator=(const Field2D &rhs);
 
   /*!
    * Allocates data if not already allocated, then
    * sets all cells to \p rhs
    */ 
-  Field2D & operator=(BoutReal rhs);
+   Field2D & operator=(BoutReal rhs);
 
   /////////////////////////////////////////////////////////
   // Data access
@@ -186,15 +188,16 @@ class Field2D : public Field, public FieldData {
   Region<Ind2D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
   Region<Ind2D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
   
-  BoutReal& operator[](const Ind2D &d) {
+  BoutReal& __host__ __device__ operator[](const Ind2D &d) {
     return data[d.ind];
   }
-  const BoutReal& operator[](const Ind2D &d) const {
+  const BoutReal& __host__ __device__ operator[](const Ind2D &d) const {
     return data[d.ind];
   }
-  BoutReal& operator[](const Ind3D &d);
-  const BoutReal& operator[](const Ind3D &d) const;
+  BoutReal& __host__ __device__ operator[](const Ind3D &d);
+  //const BoutReal&  operator[](const Ind3D &d) const;
 
+  const BoutReal& __host__ __device__ operator [](const Ind3D &d) const;
   /*!
    * Access to the underlying data array. 
    * 
@@ -203,7 +206,7 @@ class Field2D : public Field, public FieldData {
    * If CHECK > 2 then both \p jx and \p jy are bounds checked. This will
    * significantly reduce performance.
    */
-  inline BoutReal& operator()(int jx, int jy) {
+ __host__ __device__ inline BoutReal& operator()(int jx, int jy) {
 #if CHECK > 2
     if(!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
@@ -216,7 +219,7 @@ class Field2D : public Field, public FieldData {
   
     return data[jx*ny + jy];
   }
-  inline const BoutReal& operator()(int jx, int jy) const {
+ __host__ __device__ inline const BoutReal& operator()(int jx, int jy) const {
 #if CHECK > 2
     if(!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
@@ -234,10 +237,10 @@ class Field2D : public Field, public FieldData {
    * DIrect access to underlying array. This version is for compatibility
    * with Field3D objects
    */
-  BoutReal& operator()(int jx, int jy, int UNUSED(jz)) {
+ __host__ __device__ BoutReal& operator()(int jx, int jy, int UNUSED(jz)) {
     return operator()(jx, jy);
   }
-  const BoutReal& operator()(int jx, int jy, int UNUSED(jz)) const {
+ __host__ __device__ const BoutReal& operator()(int jx, int jy, int UNUSED(jz)) const {
     return operator()(jx, jy);
   }
   
@@ -292,15 +295,15 @@ class Field2D : public Field, public FieldData {
     swap(first.bndry_op_par, second.bndry_op_par);
     swap(first.bndry_generator, second.bndry_generator);
   }
+/// Internal data array. Handles allocation/freeing of memory
+  Array<BoutReal> data;
+
 
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1};
 
-  /// Internal data array. Handles allocation/freeing of memory
-  Array<BoutReal> data;
-
-  /// Time-derivative, can be nullptr
+    /// Time-derivative, can be nullptr
   Field2D *deriv{nullptr};
 };
 
@@ -380,7 +383,7 @@ inline void invalidateGuards(Field2D &UNUSED(var)) {}
 /// Returns a reference to the time-derivative of a field \p f
 ///
 /// Wrapper around member function f.timeDeriv()
-inline Field2D& ddt(Field2D &f) {
+__host__ __device__ inline Field2D& ddt(Field2D &f) {
   return *(f.timeDeriv());
 }
 

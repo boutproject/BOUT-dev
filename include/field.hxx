@@ -119,7 +119,7 @@ public:
   bool bndry_xin{true}, bndry_xout{true}, bndry_yup{true}, bndry_ydown{true};
 #endif
 
-  Mesh* getMesh() const {
+   Mesh* getMesh() const {
     if (fieldmesh) {
       return fieldmesh;
     } else {
@@ -134,12 +134,12 @@ public:
 
   /// Returns a pointer to the coordinates object at this field's
   /// location from the mesh this field is on.
-  Coordinates* getCoordinates() const;
+ Coordinates* getCoordinates() const;
 
   /// Returns a pointer to the coordinates object at the requested
   /// location from the mesh this field is on. If location is CELL_DEFAULT
   /// then return coordinates at field location
-  Coordinates* getCoordinates(CELL_LOC loc) const;
+    Coordinates* getCoordinates(CELL_LOC loc) const;
 
   /*!
    * Return the number of nx points
@@ -231,7 +231,7 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 /// Return an empty shell field of some type derived from Field, with metadata
 /// copied and a data array that is allocated but not initialised.
 template<typename T>
-inline T emptyFrom(const T& f) {
+ inline T emptyFrom(const T& f) {
   static_assert(bout::utils::is_Field<T>::value, "emptyFrom only works on Fields");
   return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()}).allocate();
 }
@@ -239,7 +239,7 @@ inline T emptyFrom(const T& f) {
 /// Return a field of some type derived from Field, with metadata copied from
 /// another field and a data array allocated and initialised to zero.
 template<typename T>
-inline T zeroFrom(const T& f) {
+ inline T zeroFrom(const T& f) {
   static_assert(bout::utils::is_Field<T>::value, "zeroFrom only works on Fields");
   T result{emptyFrom(f)};
   result = 0.;

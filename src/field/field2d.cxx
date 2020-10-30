@@ -115,7 +115,7 @@ Field2D& Field2D::allocate() {
   return *this;
 }
 
-Field2D* Field2D::timeDeriv() {
+__host__ __device__ Field2D* Field2D::timeDeriv() {
   if(deriv == nullptr)
     deriv = new Field2D{emptyFrom(*this)};
   return deriv;
@@ -131,11 +131,11 @@ const Region<Ind2D> &Field2D::getRegion(const std::string &region_name) const {
 }
 
 // Not in header because we need to access fieldmesh
-BoutReal& Field2D::operator[](const Ind3D &d) {
+__host__ __device__ BoutReal& Field2D::operator[](const Ind3D &d) {
   return operator[](fieldmesh->map3Dto2D(d));
 }
 
-const BoutReal& Field2D::operator[](const Ind3D &d) const {
+__host__ __device__ const BoutReal& Field2D::operator[](const Ind3D &d) const {
   return operator[](fieldmesh->map3Dto2D(d));
 }
 
