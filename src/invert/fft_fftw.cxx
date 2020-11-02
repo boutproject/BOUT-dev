@@ -67,6 +67,8 @@ void fft_init(Options* options) {
                     .withDefault(FFT_MEASUREMENT_FLAG::estimate);
 
   if ((*options)["fft_measure"].isSet()) {
+    output << "WARNING: fft_measure is deprecated and will be removed in BOUT++ v5.0. "
+           << "Use fft_measurement_flag instead." << std::endl;
     if ((*options)["fft_measurement_flag"].isSet()) {
       throw BoutException("Cannot set both fft_measure and fft_measurement_flag");
     }
