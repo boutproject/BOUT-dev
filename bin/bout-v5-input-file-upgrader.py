@@ -9,9 +9,10 @@ import warnings
 from boutdata.data import BoutOptionsFile
 from boututils.boutwarnings import AlwaysWarning
 
-# This should be a list of dicts, each containing exactly two keys:
-# "old" and "new". The values of these keys should be the old/new
-# names of input file values or sections
+# This should be a list of dicts, each containing "old", "new" and optionally "values".
+# The values of "old"/"new" keys should be the old/new names of input file values or
+# sections. The value of "values" is a dict containing replacements for values of the
+# option.
 REPLACEMENTS = [
     {"old": "mesh:paralleltransform", "new": "mesh:paralleltransform:type"},
     {"old": "fci", "new": "mesh:paralleltransform"},
@@ -34,6 +35,12 @@ def fix_replacements(replacements, options_file):
                 "Could not apply transformation: '{old}' -> '{new}' to file '{0}', due to error:"
                 "\n\t{1}".format(options_file.filename, e.args[0], **replacement)
             ) from e
+        else:
+            if "values" in replacement:
+                old_value = options_file[replacement["new"]]
+                options_file[replacement["new"]] = replacement["values"].get(
+                    old_value, old_value
+                )
 
 
 def apply_fixes(replacements, options_file):
