@@ -61,21 +61,11 @@ void fft_init(Options* options) {
   if (options == nullptr) {
     options = Options::getRoot()->getSection("fft");
   }
-  bool fft_measure = (*options)["fft_measure"]
-                    .doc("Perform speed measurements to optimise settings?")
-                    .withDefault(false);
   fft_measurement_flag = (*options)["fft_measurement_flag"]
                     .doc("Level speed measurements to optimise FFT settings: [estimate], measure, exhaustive")
                     .withDefault(FFT_MEASUREMENT_FLAG::estimate);
 
-  if ((*options)["fft_measure"].isSet()) {
-    if ((*options)["fft_measurement_flag"].isSet()) {
-      throw BoutException("Cannot set both fft_measure and fft_measurement_flag");
-    }
-    fft_init(fft_measure);
-  } else {
-    fft_init(fft_measurement_flag);
-  }
+  fft_init(fft_measurement_flag);
 }
 
 unsigned int get_measurement_flag(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
