@@ -50,7 +50,7 @@ namespace fft {
 /// Have we set fft_measure?
 bool fft_initialised{false};
 /// Should FFTW find an optimised plan by measuring various plans?
-FFT_FLAG fft_flag{FFT_FLAG::estimate};
+FFT_MEASUREMENT_FLAG fft_measurement_flag{FFT_MEASUREMENT_FLAG::estimate};
 
 void fft_init(Options* options) {
   if (fft_initialised) {
@@ -62,43 +62,43 @@ void fft_init(Options* options) {
   bool fft_measure = (*options)["fft_measure"]
                     .doc("Perform speed measurements to optimise settings?")
                     .withDefault(false);
-  fft_flag = (*options)["fft_flag"]
+  fft_measurement_flag = (*options)["fft_measurement_flag"]
                     .doc("Level speed measurements to optimise FFT settings: [estimate], measure, exhaustive")
-                    .withDefault(FFT_FLAG::estimate);
+                    .withDefault(FFT_MEASUREMENT_FLAG::estimate);
 
   if ((*options)["fft_measure"].isSet()) {
-    if ((*options)["fft_flag"].isSet()) {
-      throw BoutException("Cannot set both fft_measure and fft_flag");
+    if ((*options)["fft_measurement_flag"].isSet()) {
+      throw BoutException("Cannot set both fft_measure and fft_measurement_flag");
     }
     fft_init(fft_measure);
   } else {
-    fft_init(fft_flag);
+    fft_init(fft_measurement_flag);
   }
 }
 
-unsigned int get_flags(FFT_FLAG fft_flag) {
-  switch (fft_flag) {
-    case FFT_FLAG::estimate:
+unsigned int get_measurement_flag(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
+  switch (fft_measurement_flag) {
+    case FFT_MEASUREMENT_FLAG::estimate:
       return FFTW_ESTIMATE;
-    case FFT_FLAG::measure:
+    case FFT_MEASUREMENT_FLAG::measure:
       return FFTW_MEASURE;
-    case FFT_FLAG::exhaustive:
+    case FFT_MEASUREMENT_FLAG::exhaustive:
       return FFTW_EXHAUSTIVE;
     default:
-      throw BoutException("Error, unimplemented fft_flag");
+      throw BoutException("Error, unimplemented fft_measurement_flag");
   }
 }
 
-void fft_init(FFT_FLAG fft_flag) {
-  bout::fft::fft_flag = fft_flag;
+void fft_init(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
+  bout::fft::fft_measurement_flag = fft_measurement_flag;
   fft_initialised = true;
 }
 
 void fft_init(bool fft_measure) {
   if (fft_measure) {
-    fft_flag = FFT_FLAG::measure;
+    fft_measurement_flag = FFT_MEASUREMENT_FLAG::measure;
   } else {
-    fft_flag = FFT_FLAG::estimate;
+    fft_measurement_flag = FFT_MEASUREMENT_FLAG::estimate;
   }
   fft_initialised = true;
 }
@@ -140,7 +140,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
      */
     fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1));
 
-    auto flags = get_flags(fft_flag);
+    auto flags = get_measurement_flag(fft_measurement_flag);
 
     /* fftw call
      * Plan a real-input/complex-output discrete Fourier transform (DFT)
@@ -200,7 +200,7 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
     // Initialize the output of the fourier transformation
     fout = (double*) fftw_malloc(sizeof(double) * length);
 
-    auto flags = get_flags(fft_flag);
+    auto flags = get_measurement_flag(fft_measurement_flag);
 
     /* fftw call
      * Plan a complex-input/real-output discrete Fourier transform (DFT)
@@ -270,7 +270,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
           fftw_malloc(sizeof(fftw_complex) * (length / 2 + 1) * n_th));
       p = new fftw_plan[n_th]; //Never freed
 
-      auto flags = get_flags(fft_flag);
+      auto flags = get_measurement_flag(fft_measurement_flag);
 
       for(int i=0;i<n_th;i++)
         // fftw call
@@ -343,7 +343,7 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
 
       p = new fftw_plan[n_th]; // Never freed
 
-      auto flags = get_flags(fft_flag);
+      auto flags = get_measurement_flag(fft_measurement_flag);
 
       for (int i = 0; i < n_th; i++)
         p[i] = fftw_plan_dft_c2r_1d(length, finall + i * (length / 2 + 1),
@@ -399,7 +399,7 @@ void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSE
     fin = static_cast<double *>(fftw_malloc(sizeof(double) * 2 * length));
     fout = static_cast<fftw_complex *>(fftw_malloc(sizeof(fftw_complex) * 2 * length));
 
-    auto flags = get_flags(fft_flag);
+    auto flags = get_measurement_flag(fft_measurement_flag);
 
     // fftw call
     // Plan a real-input/complex-output discrete Fourier transform (DFT)
@@ -455,7 +455,7 @@ void DST_rev(MAYBE_UNUSED(dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(
         static_cast<fftw_complex *>(fftw_malloc(sizeof(fftw_complex) * 2 * (length - 1)));
     fout = static_cast<double *>(fftw_malloc(sizeof(double) * 2 * (length - 1)));
 
-    auto flags = get_flags(fft_flag);
+    auto flags = get_measurement_flag(fft_measurement_flag);
 
     p = fftw_plan_dft_c2r_1d(2*(length-1), fin, fout, flags);
 

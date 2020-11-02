@@ -34,7 +34,7 @@
 
 class Options;
 
-BOUT_ENUM_CLASS(FFT_FLAG, estimate, measure, exhaustive);
+BOUT_ENUM_CLASS(FFT_MEASUREMENT_FLAG, estimate, measure, exhaustive);
 
 namespace bout {
 namespace fft {
@@ -90,7 +90,7 @@ void DST_rev(dcomplex *in, int length, BoutReal *out);
 /// Should the FFT functions find and use an optimised plan?
 void fft_init(bool fft_measure);
 /// Should the FFT functions find and use an optimised plan?
-void fft_init(FFT_FLAG fft_flag);
+void fft_init(FFT_MEASUREMENT_FLAG fft_flag);
 /// Should the FFT functions find and use an optimised plan?
 ///
 /// If \p options is not nullptr, it should contain a bool called
