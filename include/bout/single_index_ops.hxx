@@ -80,6 +80,7 @@ BoutReal Delp2(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
     ;
 }
 
+#if 0
 template<IND_TYPE N, CELL_LOC location>
 BOUT_HOST_DEVICE BoutReal Delp2_gt(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
   Coordinates *metric = f.coords;
@@ -95,6 +96,25 @@ BOUT_HOST_DEVICE BoutReal Delp2_gt(const FieldAccessor<location> &f, const Speci
   return 0.5*(f[ixm] - f[ixp]) ;
 
 }
+#else
+
+template<IND_TYPE N, CELL_LOC location>
+BOUT_HOST_DEVICE BoutReal Delp2_gt(const FieldAccessorLite<location> &f,const SpecificInd<N> &i) {
+
+  // Index offsets
+  auto izm = i.zm();
+
+  auto yup = f.yup;
+
+  //metrics
+  auto G1 = f.G1;
+  auto g_11 = f.g_11;
+
+  //return f[izm] * G1[i.ind] * g_11[i.ind] * yup[i.ind] ;
+  return yup[i.ind];
+
+}
+#endif
 
 template<IND_TYPE N, CELL_LOC location>
 BoutReal Div_par_Grad_par(const FieldAccessor<location> &f, const SpecificInd<N> &i) {

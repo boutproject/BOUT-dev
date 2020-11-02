@@ -93,6 +93,7 @@ public:
     // Create accessors which enable fast access
     auto n_acc = FieldAccessor<>(n);
     auto vort_acc = FieldAccessor<>(vort);
+    auto vort_acc_lite = FieldAccessorLite<>(vort);
     auto phi_acc = FieldAccessor<>(phi);
     auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n);
 
@@ -114,8 +115,9 @@ gpu_n_ddt= const_cast<BoutReal*>(n.timeDeriv()->operator()(0,0)); // copy ddt(n)
 
 	//	BoutReal test = 0;
    //   BoutReal test1 =- kappa * DDZ_g(phi_acc, ind);
-	BoutReal test2 = - Delp2_gt(vort_acc, ind) ;
-   if(i == 0) {
+	//BoutReal test2 = - Delp2_gt(vort_acc, ind) ;
+	BoutReal test2 = - Delp2_gt(vort_acc_lite,ind) ;
+   if(i < 16) {
       printf("test2 = %f\n",test2);
    }
 	//gpu_n_ddt[i] = test2 ;
