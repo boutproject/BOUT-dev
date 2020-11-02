@@ -211,7 +211,7 @@ class Field3D : public Field, public FieldData {
    * The first time this is called, a new field will be
    * allocated. Subsequent calls return the same field
    */
-  Field3D* timeDeriv();
+  __host__ __device__ Field3D* timeDeriv();
 
   /*!
    * Return the number of nx points
@@ -329,18 +329,18 @@ class Field3D : public Field, public FieldData {
   Region<Ind3D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
   Region<Ind3D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
   
-  BoutReal& operator[](const Ind3D &d) {
+  BoutReal& __host__ __device__ operator[](const Ind3D &d) {
     return data[d.ind];
   }
-  const BoutReal& operator[](const Ind3D &d) const {
+  const BoutReal& __host__ __device__ operator[](const Ind3D &d) const {
     return data[d.ind];
   }
 
-  BoutReal& operator()(const IndPerp &d, int jy);
-  const BoutReal& operator()(const IndPerp &d, int jy) const;
+  BoutReal& __host__ __device__ operator()(const IndPerp &d, int jy);
+  const BoutReal& __host__ __device__ operator()(const IndPerp &d, int jy) const;
 
-  BoutReal& operator()(const Ind2D &d, int jz);
-  const BoutReal& operator()(const Ind2D &d, int jz) const;
+  BoutReal& __host__ __device__ operator()(const Ind2D &d, int jz);
+  const BoutReal&  __host__ __device__ operator()(const Ind2D &d, int jz) const;
   
   /*!
    * Direct access to the underlying data array
@@ -699,7 +699,7 @@ inline void invalidateGuards(Field3D &UNUSED(var)) {}
 /// Returns a reference to the time-derivative of a field \p f
 ///
 /// Wrapper around member function f.timeDeriv()
-inline Field3D& ddt(Field3D &f) {
+__host__ __device__ inline Field3D& ddt(Field3D &f) {
   return *(f.timeDeriv());
 }
 

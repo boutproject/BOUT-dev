@@ -20,7 +20,7 @@ tol = 1e-10                  # Absolute tolerance
 build_and_log("Delp2 operator test")
 
 # The command to run
-exefile = "./test_delp2"
+exefile = "../../../bin/test_delp2"
 
 # List of settings to apply
 settings = ["mxg=2 mesh:nx=36 diffusion:useFFT=true", 

@@ -107,12 +107,15 @@
 ///     BOUT_FOR(index, region) {
 ///        A[index] = B[index] + C[index];
 ///     }
+//
+
+
 #define BOUT_FOR_SERIAL(index, region)                                                   \
   for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();        \
        block < end; ++block)                                                             \
     for (auto index = block->first; index < block->second; ++index)
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP 
 #define BOUT_FOR_OMP(index, region, omp_pragmas)                                         \
   BOUT_OMP(omp_pragmas)                                                                  \
   for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
@@ -158,7 +161,7 @@ template<IND_TYPE N>
 class SpecificInd {
 public:
   int ind = -1; //< 1D index into Field
-private:
+//private:
   int ny = -1, nz = -1; //< Sizes of y and z dimensions
 
 public:
@@ -326,7 +329,7 @@ inline bool operator!=(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
 }
 
 template<IND_TYPE N>
-inline bool operator<(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
+inline  bool  operator<(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
   return lhs.ind < rhs.ind;
 }
 

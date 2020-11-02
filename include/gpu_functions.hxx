@@ -18,7 +18,14 @@
 #define BOUT_ENABLE_CUDA
 #define UMPIRE_ENABLE_CUDA
 
+<<<<<<< HEAD
 #define gpu_ddt(name) gpu_ddt_helper(#name, name )
+=======
+#define BOUT_HAS_UMPIRE
+#define BOUT_USE_CUDA
+
+#define ddt(name) gpu_ddt_helper(#name, name )
+>>>>>>> next-outerloop-GPU-umpire
 
 
 //--  RAJA CUDA settings--------------------------------------------------------start
@@ -43,6 +50,7 @@ using const_itr = const G*;
 template <typename G>
   struct UMData {
     int len;    ///< Size of the array
+<<<<<<< HEAD
     G *data;    ///< Array of data
 
     UMData(int size) : len(size) {
@@ -90,6 +98,69 @@ template <typename G>
 
   __managed__  BoutReal* gpu_n_ddt; // copy ddt(n) to __device__
   __managed__  BoutReal* gpu_vort_ddt; // copy ddt(vort) to __device__  
+=======
+G *data;    ///< Array of data
+
+UMData(int size) : len(size) {
+#ifdef BOUT_ENABLE_CUDA
+const std::string MEM_RESOURCE_NAME{"UM"};
+#else
+const std::string MEM_RESOURCE_NAME{"HOST"};
+#endif
+auto allocator = umpire::ResourceManager::getInstance().getAllocator(MEM_RESOURCE_NAME);
+data = static_cast<G*>(allocator.allocate(size*sizeof(G)));
+}
+~UMData() {
+auto allocator = umpire::ResourceManager::getInstance().getAllocator(data);
+allocator.deallocate(data);
+}
+
+
+
+};
+//----prepare varaibles for GPU----------------------------------------------- Start
+// int region_size =0;
+
+UMData<int> test(3);
+
+constexpr std::size_t SIZE = 10;
+auto& rm = umpire::ResourceManager::getInstance();
+umpire::Allocator allocator = rm.getAllocator("UM");
+
+double* g_data = static_cast<double*>(allocator.allocate(SIZE * sizeof(double)));
+
+
+
+
+__managed__  int nxMesh = 0;  // Mesh x size
+__managed__  int nyMesh = 0;  // Mesh y size
+__managed__ int nzMesh = 0;  // Mesh z size
+__managed__ BoutReal* dxMesh = nullptr;  // pointer to Field2D data
+__managed__ BoutReal* dyMesh = nullptr;  // pointer to Field2D data
+__managed__ BoutReal dzMesh = 0.0;
+__managed__ BoutReal* JMesh = nullptr;
+
+
+// Raw pointers to copy data to GPU. Unless noted, data are owned by Field3D objects.
+
+__managed__ BoutReal* p_n = nullptr;
+__managed__ BoutReal* p_phi = nullptr;
+__managed__ BoutReal* p_phi_minus_n= nullptr;
+__managed__ BoutReal* p_vort = nullptr;
+__managed__ BoutReal* p_dn_dt = nullptr;
+__managed__ BoutReal* p_dvort_dt = nullptr;
+__managed__ BoutReal* p_G1 = nullptr;         // Field2D
+__managed__ BoutReal* p_G3 = nullptr;         // Field2D
+__managed__ BoutReal* p_g11 = nullptr;         // Field2D
+__managed__ BoutReal* p_g13 = nullptr;         // Field2D
+__managed__ BoutReal* p_g33 = nullptr;         // Field2D
+__managed__ BoutReal* p_g22 = nullptr;         // Field2D
+__managed__ BoutReal* phi_minus_n_acc_yup = nullptr;
+__managed__ BoutReal* phi_minus_n_acc_ydown= nullptr;   
+
+__managed__  BoutReal* gpu_n_ddt; // copy ddt(n) to __device__
+__managed__  BoutReal* gpu_vort_ddt; // copy ddt(vort) to __device__  
+>>>>>>> next-outerloop-GPU-umpire
 
 
 //static BoutReal* gpu_ddt( char* name, fiedl3d &f){
@@ -142,10 +213,30 @@ static void RAJA_data_copy( Field3D &n, Field3D &vort,  Field3D &phi, Field3D &p
     //auto indices = region.getIndices();   // A std::vector of Ind3D objects 
    // region_size = indices.size();
 
+<<<<<<< HEAD
 }
 
 
 static  BoutReal RAJA_DEVICE gpu_delpsq(
+=======
+
+//g_data[0]= 0.0099;
+
+  for (std::size_t i = 0; i < SIZE; i++) {
+    g_data[i] = 0.0;
+  }
+
+g_data[0]= 0.9988776;
+
+}
+
+static  BoutReal RAJA_HOST_DEVICE g_test( const BoutReal t){
+	 return t;
+}
+
+
+static  BoutReal RAJA_HOST_DEVICE gpu_delpsq(
+>>>>>>> next-outerloop-GPU-umpire
   const int i,                // linear mesh index
   const BoutReal* f,          // pointer to Field3D data
   const BoutReal* G1,         // pointer to Field2D data
@@ -196,7 +287,11 @@ static  BoutReal RAJA_DEVICE gpu_delpsq(
   return result;
 }
 
+<<<<<<< HEAD
 static BoutReal RAJA_DEVICE gpu_arakawa_bracket(
+=======
+static BoutReal RAJA_HOST_DEVICE gpu_arakawa_bracket(
+>>>>>>> next-outerloop-GPU-umpire
   const int i,                // linear mesh index
   const BoutReal* f,          // pointer to array of field values
   const BoutReal* g,          // pointer to array of field values
@@ -253,7 +348,11 @@ static BoutReal RAJA_DEVICE gpu_arakawa_bracket(
 }
 
 
+<<<<<<< HEAD
 static  BoutReal RAJA_DEVICE gpu_Div_par_Grad_par_G(
+=======
+static  BoutReal RAJA_HOST_DEVICE gpu_Div_par_Grad_par_G(
+>>>>>>> next-outerloop-GPU-umpire
   const int i,                // linear mesh index
   const BoutReal* f,          // pointer to Field3D data
   const BoutReal* g22,        // pointer to Field2D data
@@ -274,6 +373,7 @@ static  BoutReal RAJA_DEVICE gpu_Div_par_Grad_par_G(
   const int  kym = iym / nz;
 
 
+<<<<<<< HEAD
 
   // Fetch values used more than once
   //   BoutReal dy = metric->dy[i];
@@ -297,6 +397,8 @@ static  BoutReal RAJA_DEVICE gpu_Div_par_Grad_par_G(
 	return output;
 */
 
+=======
+>>>>>>> next-outerloop-GPU-umpire
 	BoutReal gradient_upper = 2.*(yup[iyp] - f[i]) / (dy[k] + dy[kyp]);
 	BoutReal flux_upper = gradient_upper*(J[k]+J[kyp]) / (g22[k] + g22[kyp]) ;
 	BoutReal gradient_lower = 2.0*(f[i] - ydown[iym])/(dy[k] + dy[kyp]);
@@ -308,7 +410,11 @@ static  BoutReal RAJA_DEVICE gpu_Div_par_Grad_par_G(
 
 
 
+<<<<<<< HEAD
 static  BoutReal RAJA_DEVICE gpu_DZZ(
+=======
+static  BoutReal RAJA_HOST_DEVICE gpu_DZZ(
+>>>>>>> next-outerloop-GPU-umpire
 const int i,
 BoutReal* f,
 const BoutReal dz
@@ -320,7 +426,11 @@ const BoutReal dz
 
 
 template<CELL_LOC location>
+<<<<<<< HEAD
 static BoutReal RAJA_DEVICE Delp2(const FieldAccessor<location> &f, const int i) {
+=======
+static BoutReal RAJA_HOST_DEVICE Delp2(const FieldAccessor<location> &f, const int i) {
+>>>>>>> next-outerloop-GPU-umpire
         Coordinates *metric = f.coords;
         BoutReal dz = metric->dz;
 	auto dp2=gpu_delpsq(i, p_n, p_G1, p_G3, p_g11, p_g13, p_g33, dxMesh, dz, nyMesh, nzMesh) ;
@@ -328,7 +438,11 @@ static BoutReal RAJA_DEVICE Delp2(const FieldAccessor<location> &f, const int i)
 }
 
 template<CELL_LOC location>
+<<<<<<< HEAD
 static BoutReal RAJA_DEVICE bracket(const FieldAccessor<location> &f, const FieldAccessor<location> &g, const int i) {
+=======
+static BoutReal RAJA_HOST_DEVICE bracket(const FieldAccessor<location> &f, const FieldAccessor<location> &g, const int i) {
+>>>>>>> next-outerloop-GPU-umpire
 	Coordinates *metric = g.coords;
 	BoutReal dz = metric->dz;
 	auto gbp = gpu_arakawa_bracket(i, p_phi, p_n, dxMesh, dz, nyMesh, nzMesh);
@@ -344,6 +458,7 @@ BoutReal DDZ(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
 */
 
 template< CELL_LOC location>
+<<<<<<< HEAD
 static BoutReal RAJA_DEVICE  DDZ(const FieldAccessor<location> &f, const int i) {
 
 	Coordinates *metric = f.coords;
@@ -380,11 +495,24 @@ static BoutReal RAJA_DEVICE  Div_par_Grad_par(const FieldAccessor<location> &f, 
 
 template<IND_TYPE N, CELL_LOC location>
 static BoutReal RAJA_DEVICE t_DDZ(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
+=======
+static BoutReal RAJA_HOST_DEVICE  DDZ(const FieldAccessor<location> &f, const int i) {
+
+	Coordinates *metric = f.coords;
+	auto dzz = metric->dz;
+       auto ddz_o = 0.5* (p_phi[i+1] - p_phi[i-1]) / dzz;	
+       return ddz_o;
+}
+
+template<IND_TYPE N, CELL_LOC location>
+static BoutReal RAJA_HOST_DEVICE t_DDZ(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
+>>>>>>> next-outerloop-GPU-umpire
 	Coordinates *metric = f.coords;
 	auto dzz = metric->dz;
 	int  dz = 1;
 	auto nz = nzMesh;
 	dz = dz <= nz ? dz :dz % nz;
+<<<<<<< HEAD
 
 	int izp_ind = ((ind.ind + dz) % nz < dz ? ind.ind - nz + dz : ind.ind + dz);
 	SpecificInd<IND_TYPE::IND_3D> izp = ind;
@@ -399,6 +527,35 @@ static BoutReal RAJA_DEVICE t_DDZ(const FieldAccessor<location> &f, const Specif
 
 template<IND_TYPE N, CELL_LOC location>
 static BoutReal RAJA_DEVICE t_Div(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
+=======
+        // ind.zp();
+	int izp_ind = ((ind.ind + dz) % nz < dz ? ind.ind - nz + dz : ind.ind + dz);
+	SpecificInd<IND_TYPE::IND_3D> izp = ind;
+	izp.ind = izp_ind;
+	// ind.zm()
+	int izm_ind = ind.ind % nz < dz ? ind.ind + nz - dz : ind.ind - dz;  // izm = ind.zm();
+	SpecificInd<IND_TYPE::IND_3D> izm = ind;
+	izm.ind = izm_ind;
+	auto ddz_o = 0.5*(f[izp]-f[izm]) / dzz; // return (f[ind.zp()] - f[ind.zm()]) / (2. * f.coords->dz);
+	return ddz_o;
+}
+
+
+
+template< CELL_LOC location>
+static BoutReal RAJA_HOST_DEVICE  Div_par_Grad_par(const FieldAccessor<location> &f, const int i) {  
+	Coordinates *metric = f.coords;
+//	BoutReal t =g_data[0];
+	BoutReal dz = metric->dz;
+	auto div_p =  gpu_Div_par_Grad_par_G(i, p_phi_minus_n,  p_g22, dxMesh,dyMesh,
+                                           dz,JMesh,nxMesh, nyMesh, nzMesh,phi_minus_n_acc_yup, phi_minus_n_acc_ydown);
+  return div_p;
+     }
+
+
+template<IND_TYPE N, CELL_LOC location>
+static BoutReal RAJA_HOST_DEVICE t_Div(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
+>>>>>>> next-outerloop-GPU-umpire
 
 	Coordinates *metric = f.coords;
 	auto dzz = metric->dz;

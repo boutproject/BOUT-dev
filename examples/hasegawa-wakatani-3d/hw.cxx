@@ -5,7 +5,7 @@
 /////
 ////  GPU processing is enabled if BOUT_ENABLE_CUDA is defined
 /////  Profiling markers and ranges are set if USE_NVTX is defined
-/////  Baesed on Ben Duddson, Steven Glenn code, Yining Qin update 0521-2020
+/////  Based on Ben Dudson, Steven Glenn code, Yining Qin update 0521-2020
 
 #include <iostream>
 #include <cstdlib>
@@ -21,9 +21,6 @@
 
 
 #include <bout/single_index_ops.hxx>
-
-//	#include <gpu_functions.hxx>
-
 #include <bout/physicsmodel.hxx>
 #include <smoothing.hxx>
 #include <invert_laplace.hxx>
@@ -49,9 +46,6 @@ using EXEC_POL = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
 #else   
 using EXEC_POL = RAJA::loop_exec;
 #endif  
-
-
-__managed__  BoutReal* gpu_n_ddt; // copy ddt(n) to __device__
 
 
 class HW3D : public PhysicsModel {
@@ -86,79 +80,45 @@ public:
     // Solve for potential
     phi = phiSolver->solve(vort, phi);    
     Field3D phi_minus_n = phi - n;
-    
     // Communicate variables
     mesh->communicate(n, vort, phi, phi_minus_n);
 
     // Create accessors which enable fast access
     auto n_acc = FieldAccessor<>(n);
     auto vort_acc = FieldAccessor<>(vort);
-    auto vort_acc_lite = FieldAccessorLite<>(vort);
     auto phi_acc = FieldAccessor<>(phi);
-    auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n);
-
-	auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
-	Ind3D *ob_i = &(indices[0]);
-
-gpu_n_ddt= const_cast<BoutReal*>(n.timeDeriv()->operator()(0,0)); // copy ddt(n) to __device__
-
-
-///*
+    auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n); 
+   
 //  RAJA GPU code ----------- start
- //   RAJA_data_copy(n,vort, phi,phi_minus_n,phi_acc,phi_minus_n_acc);
-    
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, n.getRegion("RGN_NOBNDRY").getIndices().size()), [=] BOUT_HOST_DEVICE (int i) {	
+    auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
+    Ind3D *ob_i = &(indices)[0];
+    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
+                int i = ob_i[id].ind;
+		DDT(n_acc)[i] =  - bracket_g(phi_acc, n_acc, i)
+                	    - div_current
+                	    - kappa * DDZ_g(phi_acc, i)
+                	    + Dn * Delp2_g(n_acc, i)
+			;
 
+
+		DDT(vort_acc)[i] = - bracket_g(phi_acc, vort_acc, i)
+			      - div_current
+		              + Dvort * Delp2_g (vort_acc, i)
+			;
 		
-	auto ind = ob_i[i];
+	  });
 
-
-	//	BoutReal test = 0;
-   //   BoutReal test1 =- kappa * DDZ_g(phi_acc, ind);
-	//BoutReal test2 = - Delp2_gt(vort_acc, ind) ;
-	BoutReal test2 = - Delp2_gt(vort_acc_lite,ind) ;
-   if(i < 16) {
-      printf("test2 = %f\n",test2);
-   }
-	//gpu_n_ddt[i] = test2 ;
-
-              // BoutReal test = - kappa * DDZ(phi_acc, id); 
-	
-
-	//	ddt(n)[id]= test;
-	//	ddt(vort)[id]= -test;
-
-
-		/*
-		//auto test =  t_Div(phi_minus_n_acc, id);
-
-	 // 	BoutReal div_current = alpha * t_Div(phi_minus_n_acc, id);
-	  	
-		BoutReal div_current = alpha * Div_par_Grad_par(phi_minus_n_acc, i);
-		
-		ddt(n)[i]= - bracket(phi_acc, n_acc, i)
-			          - div_current
-         	                  - kappa * DDZ(phi_acc, i)
-				 // + kappa * t_DDZ(phi_acc,id)
-                                  + Dn * Delp2(n_acc, i)
-				 ;	
-
-                ddt(vort)[i]= - bracket(phi_acc, vort_acc, i)
-                                     - div_current
-                                     + Dvort * Delp2 (vort_acc, i) 		
-		;   
-
-		*/
-	});
 //  RAJA GPU code ----------- end
-//*/
 
-/*
+/*  -- CPU code ------------- start
+    
     BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
+      
       BoutReal div_current = alpha * Div_par_Grad_par(phi_minus_n_acc, i);
+
       ddt(n)[i] = -bracket(phi_acc, n_acc, i)
                   - div_current
-               //   - kappa * DDZ(phi_acc, i)
+                  - kappa * DDZ(phi_acc, i)
                   + Dn * Delp2(n_acc, i)
 		;
 
@@ -167,8 +127,7 @@ gpu_n_ddt= const_cast<BoutReal*>(n.timeDeriv()->operator()(0,0)); // copy ddt(n)
                      + Dvort * Delp2(vort_acc, i)
 		;
     }
-*/
-
+*/ //--CPU code ---------------- end
 
     return 0;
   }  // end RHS

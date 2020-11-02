@@ -22,7 +22,7 @@ with DataFile("test.nc", create=True, format="NETCDF4") as f:
     f.write("string", "hello");
 
 # run BOUT++
-launch("./test-options-netcdf", nproc=1, mthread=1)
+launch("../../../bin/test-options-netcdf", nproc=1, mthread=1)
 
 # Check the output INI file
 result = BoutOptionsFile("test-out.ini")

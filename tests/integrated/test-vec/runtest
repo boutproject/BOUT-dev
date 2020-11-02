@@ -6,7 +6,7 @@ make
 
 test ".$MPIRUN" = "." && MPIRUN="mpirun -np"
 
-$MPIRUN 4 ./testVec  > log.4
+$MPIRUN 4 ../../../bin/testVec  > log.4
 
 exit=$?
 

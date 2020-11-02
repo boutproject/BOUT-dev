@@ -21,7 +21,6 @@
  *
  */
 
-
 #ifndef __ARRAY_H__
 #define __ARRAY_H__
 
@@ -38,6 +37,10 @@
 
 #if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
 #define BOUT_HOST_DEVICE __host__ __device__
+<<<<<<< HEAD
+=======
+#define RAJA_HOST_DEVICE __host__ __device__
+>>>>>>> next-outerloop-GPU-umpire
 #define BOUT_HOST __host__
 #define BOUT_DEVICE __device__
 #else
@@ -74,7 +77,11 @@ struct ArrayData {
      auto allocator = rm.getAllocator("HOST");
 #endif
      data = static_cast<T*>(allocator.allocate(size * sizeof(T)));
+<<<<<<< HEAD
      printf("UM ArrayData %d %p \n",len,data);
+=======
+//     printf("UM ArrayData %d %p \n",len,data);
+>>>>>>> next-outerloop-GPU-umpire
 #else
      data = new T[len]; 
 #endif
@@ -84,10 +91,17 @@ struct ArrayData {
 BOUT_HOST_DEVICE   ~ArrayData() { 
 // __CUDA_ARCH__ is only defined device side
 #ifndef __CUDA_ARCH__
+<<<<<<< HEAD
      printf("UM dealloc len %d owner %d count %d\n",len,owner,clientUseCount);
 #ifdef BOUT_HAS_UMPIRE
      if(data != nullptr && owner && (clientUseCount == 1)) { 
       printf("UM dealloc %d %p\n",len,data);
+=======
+   //  printf("UM dealloc len %d owner %d count %d\n",len,owner,clientUseCount);
+#ifdef BOUT_HAS_UMPIRE
+     if(data != nullptr && owner && (clientUseCount == 1)) { 
+    //  printf("UM dealloc %d %p\n",len,data);
+>>>>>>> next-outerloop-GPU-umpire
       auto& rm = umpire::ResourceManager::getInstance();
       rm.deallocate(data);
       data = nullptr;
@@ -96,7 +110,11 @@ BOUT_HOST_DEVICE   ~ArrayData() {
       owner = false;
      }
 #else
+<<<<<<< HEAD
      if(data != nullptr && owner && (clientUseCount == 1) {
+=======
+     if(data != nullptr && owner && (clientUseCount == 1)) {
+>>>>>>> next-outerloop-GPU-umpire
       delete[] data;
       data = nullptr;
       clientUseCount = 0;
@@ -207,7 +225,11 @@ public:
    */
   Array(size_type len) {
     ptr = get(len);
+<<<<<<< HEAD
     printf("Array create %d @ %p\n",len,ptr->begin());  
+=======
+ //   printf("Array create %d @ %p\n",len,ptr->begin());  
+>>>>>>> next-outerloop-GPU-umpire
   }
   
   /*!
@@ -216,7 +238,11 @@ public:
 BOUT_HOST_DEVICE inline   ~Array() {
 #ifndef __CUDA_ARCH__
     if(ptr) {
+<<<<<<< HEAD
       printf("~Array count %d data %p\n",ptr->use_count(),ptr->begin());  
+=======
+   //   printf("~Array count %d data %p\n",ptr->use_count(),ptr->begin());  
+>>>>>>> next-outerloop-GPU-umpire
       release(ptr);
     }
 #else
@@ -263,14 +289,22 @@ BOUT_DEVICE  inline void operator=(const Array other) const {
    * Note that this invalidates the existing data!
    */
   void reallocate(size_type new_size) {
+<<<<<<< HEAD
     printf("Array realloc attempt %d\n",new_size);
+=======
+   // printf("Array realloc attempt %d\n",new_size);
+>>>>>>> next-outerloop-GPU-umpire
     int old_size = 0;
     if(ptr) {
       old_size = ptr->size();
       release(ptr);
     }
     ptr = get(new_size);
+<<<<<<< HEAD
     printf("Array realloc from %d to %d @ %p\n",old_size,new_size,ptr->begin());  
+=======
+   // printf("Array realloc from %d to %d @ %p\n",old_size,new_size,ptr->begin());  
+>>>>>>> next-outerloop-GPU-umpire
   }
 
   /*!
@@ -325,7 +359,11 @@ BOUT_HOST_DEVICE inline   size_type size() const noexcept {
    * 
    */
   bool unique() const noexcept {
+<<<<<<< HEAD
     printf("Array unique()\n");
+=======
+   // printf("Array unique()\n");
+>>>>>>> next-outerloop-GPU-umpire
     if(ptr) {
       return ptr->use_count() == 1;
     }
@@ -338,7 +376,11 @@ BOUT_HOST_DEVICE inline   size_type size() const noexcept {
    * on the data.
    */
   void ensureUnique() {
+<<<<<<< HEAD
     printf("Array ensureUnique\n");
+=======
+   // printf("Array ensureUnique\n");
+>>>>>>> next-outerloop-GPU-umpire
     if(!ptr || unique())
       return;
 
@@ -446,7 +488,11 @@ private:
 #endif
      dataPtrType pp = static_cast<dataPtrType>(allocator.allocate(sizeof(dataBlock)));
      dataPtrType p = new (pp) dataBlock(len);
+<<<<<<< HEAD
      printf("UM  Array %d %p %p\n",len,p,pp);
+=======
+ //    printf("UM  Array %d %p %p\n",len,p,pp);
+>>>>>>> next-outerloop-GPU-umpire
 #else
      dataPtrType p = new dataBlock(len);
 #endif
@@ -465,6 +511,7 @@ private:
    * one data block. Of course, store() could throw -- in which case
    * we're doomed anyway, so the only thing we can do is abort
    */
+<<<<<<< HEAD
 
   void release(dataPtrType& d) {
     if (!d) {
@@ -486,6 +533,30 @@ private:
     } else {
       d->dec_count();
     }
+=======
+
+  void release(dataPtrType& d) {
+    if (!d) {
+      return;
+    }
+
+   // printf("release size %d count %d data %p dataBlock %p\n",d->size(),d->use_count(),d->begin(),d);
+    // Reduce reference count, and if zero return to store
+    if (d->use_count() == 1) {
+#ifdef BOUT_HAS_UMPIRE
+      auto& rm = umpire::ResourceManager::getInstance();
+      rm.deallocate(d->begin());
+      rm.deallocate(d);
+      umpire::Allocator alloc = rm.getAllocator("UM");
+    //  printf("Umpire UM Allocations %d\n",alloc.getAllocationCount());
+#else
+      delete d;
+#endif
+      d = nullptr;
+    } else {
+      d->dec_count();
+    }
+>>>>>>> next-outerloop-GPU-umpire
   }
 
 };

@@ -79,7 +79,7 @@ for nproc in [1, 2, 4]:
     print("   %d processor...." % (nproc))
 
     # run the test executable
-    s, out = launch_safe('./test-restart-io', nproc=nproc, pipe=True)
+    s, out = launch_safe('../../../bin/test-restart-io', nproc=nproc, pipe=True)
     with open("run.log."+str(nproc), "w") as f:
         f.write(out)
 

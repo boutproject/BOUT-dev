@@ -11,7 +11,7 @@ tol = 1.e-13
 
 build_and_log('twistshift test')
 
-s, out = launch_safe('./test-twistshift', nproc=nproc, pipe=True)
+s, out = launch_safe('../../../bin/test-twistshift', nproc=nproc, pipe=True)
 with open("run.log."+str(nproc), "w") as f:
     f.write(out)
 

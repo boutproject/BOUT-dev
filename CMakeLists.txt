@@ -5,6 +5,10 @@ if(${CMAKE_VERSION} VERSION_LESS 3.12)
 else()
   cmake_policy(VERSION 3.12)
 endif()
+cmake_policy(SET CMP0025 NEW)
+cmake_policy(SET CMP0048 NEW)
+cmake_policy(SET CMP0057 NEW)
+
 
 cmake_policy(SET CMP0057 NEW)
 cmake_policy(SET CMP0074 NEW)
@@ -19,8 +23,6 @@ project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
   VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
-
-  
 
 #------------------------------------------------------------------------------
 # Initialize BLT build system
@@ -66,18 +68,19 @@ include(cmake/CMakeBasics.cmake)
 
 # This might not be entirely sensible, but helps CMake to find the
 # correct MPI, workaround for https://gitlab.kitware.com/cmake/cmake/issues/18895
-find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
-find_package(MPI REQUIRED)
+#find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
+#find_package(MPI REQUIRED)
 
 include(CMakeDependentOption)
 
 # Override default
-option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
+#option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # reconcile submodules only after FMT cuda bug fixed (cuda 10.2 ok?)
 option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" On)
+
 # Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
 # Update submodules as needed
 function(bout_update_submodules)
@@ -104,6 +107,7 @@ set(BOUT_HEADERS
   ./include/bout.hxx
   ./include/bout/array.hxx
   ./include/bout/assert.hxx
+  ./include/bout/bout_enum_class.hxx
   ./include/bout/constants.hxx
   ./include/bout/coordinates.hxx
   ./include/bout/deprecated.hxx
@@ -130,6 +134,7 @@ set(BOUT_HEADERS
   ./include/bout/monitor.hxx
   ./include/bout/mpi_wrapper.hxx
   ./include/bout/openmpwrap.hxx
+  ./include/bout/operatorstencil.hxx
   ./include/bout/paralleltransform.hxx
   ./include/bout/petsclib.hxx
   ./include/bout/petsc_interface.hxx
@@ -138,11 +143,12 @@ set(BOUT_HEADERS
   ./include/bout/rkscheme.hxx
   ./include/bout/rvec.hxx
   ./include/bout/scorepwrapper.hxx
+  ./include/bout/single_index_ops.hxx
   ./include/bout/slepclib.hxx
   ./include/bout/snb.hxx
   ./include/bout/solver.hxx
+  ./include/bout/solverfactory.hxx
   ./include/bout/surfaceiter.hxx
-  ./include/bout/operatorstencil.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
@@ -151,7 +157,12 @@ set(BOUT_HEADERS
   ./include/bout/sys/type_name.hxx
   ./include/bout/sys/uncopyable.hxx
   ./include/bout/sys/variant.hxx
+  ./include/bout/sys/Collectives.h
+  ./include/bout/sys/ExecutionPolicy.h
+  ./include/bout/sys/ForAll.h
+  ./include/bout/sys/NVTXUtilities.h
   ./include/bout/template_combinations.hxx
+  ./include/bout/traits.hxx
   ./include/bout_types.hxx
   ./include/boutcomm.hxx
   ./include/boutexception.hxx
@@ -175,6 +186,7 @@ set(BOUT_HEADERS
   ./include/initialprofiles.hxx
   ./include/interpolation.hxx
   ./include/interpolation_xz.hxx
+  ./include/interpolation_z.hxx
   ./include/invert_laplace.hxx
   ./include/invert_parderiv.hxx
   ./include/lapack_routines.hxx
@@ -205,6 +217,7 @@ set(BOUT_HEADERS
   ./src/fileio/impls/netcdf4/ncxx4.hxx
   ./src/fileio/impls/pnetcdf/pnetcdf.hxx
   ./src/invert/laplace/impls/cyclic/cyclic_laplace.hxx
+  ./src/invert/laplace/impls/multigrid/multigrid_laplace.hxx
   ./src/invert/laplace/impls/naulin/naulin_laplace.hxx
   ./src/invert/laplace/impls/pdd/pdd.hxx
   ./src/invert/laplace/impls/petsc/petsc_laplace.hxx
@@ -244,6 +257,7 @@ set(BOUT_HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
 )
+
 set(BOUT_SOURCES
   ./src/bout++.cxx
   ./src/field/field.cxx
@@ -273,7 +287,6 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx
   ./src/invert/laplace/impls/multigrid/multigrid_alg.cxx
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.cxx
-  ./src/invert/laplace/impls/multigrid/multigrid_laplace.hxx
   ./src/invert/laplace/impls/multigrid/multigrid_solver.cxx
   ./src/invert/laplace/impls/naulin/naulin_laplace.cxx
   ./src/invert/laplace/impls/pdd/pdd.cxx
@@ -363,7 +376,10 @@ set(BOUT_SOURCES
   ./src/sys/type_name.cxx
   ./src/sys/utils.cxx
   )
-
+set(BOUT_DEPENDS "")
+if (HAVE_MPI)
+   list(APPEND BOUT_DEPENDS mpi)
+endif ()
 
 set (BOUT_DEPENDS "")
 if (HAVE_OPENMP)
@@ -404,14 +420,10 @@ blt_register_library(
          bout++
 )         
 
-
 set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CXX)
-#add_library(bout++
-#  ${BOUT_SOURCES}
-#  )
-
 add_library(bout++::bout++ ALIAS bout++)
-target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
+target_link_libraries(bout++ PUBLIC MPI::MPI_CXX mpark_variant)
+
 target_include_directories(bout++ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
@@ -476,6 +488,8 @@ configure_file(
 
 cmake_dependent_option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF
   "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/mpark.variant/CMakeLists.txt" ON)
+
+message(STATUS "BOUT_USE_SYSTEM_MPARK_VARIANT : ${BOUT_USE_SYSTEM_MPARK_VARIANT}") 
 
 if(BOUT_USE_SYSTEM_MPARK_VARIANT)
   message(STATUS "Using external mpark.variant")

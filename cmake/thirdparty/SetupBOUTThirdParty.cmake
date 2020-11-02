@@ -1,5 +1,17 @@
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/thirdparty/")
 
+
+# uncomment the following when you want cuda requiring RAJA and Umpire
+#if (ENABLE_CUDA)
+#  if (NOT ENABLE_RAJA)
+#    message(FATAL_ERROR "CUDA support requires RAJA")
+#  endif ()
+
+#  if (NOT ENABLE_UMPIRE)
+#    message(FATAL_ERROR "CUDA support requires UMPIRE")
+#  endif ()
+#endif ()
+
 # MPI is setup by BLT
 if (MPI_FOUND)
   set(HAVE_MPI True)
@@ -115,34 +127,3 @@ if (ENABLE_PETSC OR PETSC_DIR)
       LIBRARIES ${PETSC_LIBRARIES})
   endif ()
 endif()
-
-#HAVE_SILO
-if (ENABLE_SILO OR SILO_DIR)
-  find_package(SILO REQUIRED)
-
-  if (SILO_FOUND)
-    set (HAVE_SILO True)
-    set (ENABLE_SILO ON)
-
-    blt_register_library(
-      NAME silo
-      INCLUDES ${SILO_INCLUDE_DIRS}
-      LIBRARIES ${SILO_LIBRARIES})
-  endif ()
-endif ()
-
-
-#HAVE_SUNDIALS defer to BOUT
-#if (ENABLE_SUNDIALS OR SUNDIALS_DIR)
-#  find_package(SUNDIALS REQUIRED)
-#  if (SUNDIALS_FOUND)
-#    set (HAVE_SUNDIALS True)
-#    set (ENABLE_SUNDIALS ON)
-#
-#    blt_register_library(
-#      NAME SUNDIALS
-#      INCLUDES ${SUNDIALS_INCLUDE_DIRS}
-#      LIBRARIES ${SUNDIALS_LIBRARIES})
-#  endif ()
-#endif ()
-

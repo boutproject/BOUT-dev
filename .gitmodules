@@ -1,6 +1,3 @@
-[submodule "googletest"]
-	path = externalpackages/googletest
-	url = https://github.com/google/googletest.git
 [submodule "externalpackages/git-archive-all.sh"]
 	path = externalpackages/git-archive-all.sh
 	url = https://github.com/meitar/git-archive-all.sh/
@@ -14,3 +11,4 @@
 	path = blt
    url = https://github.com/LLNL/blt
    branch = release-v0.3.0
+
