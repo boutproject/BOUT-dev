@@ -178,6 +178,84 @@ to enable AVX512 vectorization.
           ``boutcore.pyx`` needs to be manually triggered, if
           ``boutcore.pyx`` has already been created.
 
+Marconi with gnu compilers
+**************************
+
+It is also possible to configure on Marconi using gnu compilers, which may give better performance. A set of modules which work as of 30/9/2020 is
+
+.. code-block:: bash
+
+    module load env-skl
+    module load profile/advanced
+    module load intel/pe-xe-2018--binary  # note need to keep the 'intel' module loaded in order for shared libraries needed by numpy/scipy to be available
+    module load gnu/7.3.0
+    module load openmpi/4.0.1--gnu--7.3.0
+    module load mkl/2017--binary
+    module load python/3.6.4
+    module load szip/2.1--gnu--6.1.0 zlib/1.2.8--gnu--6.1.0
+
+Then download source code for hdf5-1.12.0 (hdf5 is available in a module on
+Marconi, but has issues linking OpenMPI), netCDF-c-4.7.4, netCDF-cxx4-4.3.1,
+and FFTW-3.3.8. Optionally also SUNDIALS-5.1.0 or PETSc-3.13.0. Configure and
+compile all of the downloaded packages. Make sure to install netCDF and
+netCDF-cxx4 into the same directory (this is assumed by netCDF's linking
+strategy, and makes netCDF configuration simpler).
+
+The following configuration commands have been used successfully:
+
+* hdf5-1.12.0::
+
+    ./configure --prefix /directory/to/install/hdf5 --enable-build-mode=production
+    make
+    make install
+
+* netCDF-4.7.4::
+
+    mkdir build
+    cd build
+    cmake -DCMAKE_INSTALL_PREFIX=/directory/to/install/netcdf -DCMAKE_BUILD_TYPE=Release ..
+    make
+    make install
+
+* netCDF-cxx4-4.3.1::
+
+    mkdir build
+    cd build
+    cmake -DCMAKE_INSTALL_PREFIX=/directory/to/install/netcdf -DCMAKE_BUILD_TYPE=Release ..
+    make
+    make install
+
+* FFTW-3.3.8::
+
+    ./configure --prefix /directory/to/install/fftw --enable-shared --enable-sse2 --enable-avx --enable-avx2 --enable-avx512 --enable-avx-128-fma
+    make
+    make install
+
+* SUNDIALS-5.1.0::
+
+    mkdir build
+    cd build
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/directory/to/install/sundials -DMPI_ENABLE=ON ..
+    make
+    make install
+
+* PETSc-3.13.0::
+
+    unset PETSC_DIR
+    ./configure COPTFLAGS="-O3" CXXOPTFLAGS="-O3" FOPTFLAGS="-O3" --with-batch --known-mpi-shared-libraries=1 --with-mpi-dir=$OPENMPI_HOME --download-fblaslapack --known-64-bit-blas-indices=0 --download-hypre --with-debugging=0 --prefix=/directory/to/install/petsc
+
+  then follow the instructions printed by PETSc at the end of each step to make, install and check the build.
+
+Finally example configurations for BOUT++, where you should replace <...> by appropriate directories that you used to install the libraries:
+
+* for an optimized build (some experimentation with optimisation flags would be welcome, please share the results if you do!)::
+
+    ./configure --enable-optimize=3 --enable-checks=no --without-hdf5 --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
+
+* for a debugging build::
+
+    ./configure --enable-debug --without-hdf5 --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
+
 Ubgl
 ~~~~
 

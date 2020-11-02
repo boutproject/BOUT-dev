@@ -1228,7 +1228,11 @@ void H5Format::setAttribute(const hid_t &dataSet, const std::string &attrname,
     if (myatt_in < 0)
       throw BoutException("Failed to create attribute");
   }
-  if (H5Awrite(myatt_in, variable_length_string_type, &text) < 0)
+  // Need to pass `const char**` to HDF5 for reasons, and
+  // `&text.c_str()` isn't valid (can't take address of an
+  // r-value/temporary), so we need an intermediate variable
+  const char* c_text = text.c_str();
+  if (H5Awrite(myatt_in, variable_length_string_type, &c_text) < 0)
     throw BoutException("Failed to write attribute");
 
   if (H5Sclose(attribute_dataspace) < 0)
@@ -1368,9 +1372,14 @@ bool H5Format::getAttribute(const hid_t &dataSet, const std::string &attrname, s
   if (H5Tset_size(variable_length_string_type, H5T_VARIABLE) < 0)
     throw BoutException("Failed to create string type");
 
-  // Read attribute
-  if (H5Aread(myatt, variable_length_string_type, &text) < 0)
+  // Read attribute: Need to pass `char**` to HDF5 for reasons, but
+  // luckliy it will allocate c_text for us
+  char* c_text;
+  if (H5Aread(myatt, variable_length_string_type, &c_text) < 0)
     throw BoutException("Failed to read attribute");
+  text = c_text;
+  // Release resources allocated by HDF5
+  free(c_text);
 
   if (H5Tclose(variable_length_string_type) < 0)
     throw BoutException("Failed to close variable_length_string_type");

@@ -30,6 +30,7 @@ int main(int argc, char **argv) {
   Vector2D v2d;
   Vector3D v3d;
   bool check_double_add = Options::root()["check_double_add"].withDefault(false);
+  auto check_incorrect_add = Options::root()["check_incorrect_add"].withDefault("none");
 
   f2d = 0.0;
   f3d = 0.0;
@@ -77,6 +78,42 @@ int main(int argc, char **argv) {
     dump.add(v2d, "v2d_evol", true);
     dump.add(v3d, "v3d_evol", true);
     dump.add(fperp2_evol, "fperp2_evol", true);
+  }
+
+  // Cases to check expected fails
+  if (check_incorrect_add == "ivar") {
+    int dummy = 0;
+    dump.add(dummy, "ivar", false);
+  } else if (check_incorrect_add == "rvar") {
+    BoutReal dummy = 0.0;
+    dump.add(dummy, "rvar", false);
+  } else if (check_incorrect_add == "bvar") {
+    bool dummy = false;
+    dump.add(dummy, "bvar", false);
+  } else if (check_incorrect_add == "f2d") {
+    Field2D dummy = 0.0;
+    dump.add(dummy, "f2d", false);
+  } else if (check_incorrect_add == "f3d") {
+    Field3D dummy = 0.0;
+    dump.add(dummy, "f3d", false);
+  } else if (check_incorrect_add == "fperp") {
+    FieldPerp dummy = 0.0;
+    dump.add(dummy, "fperp", false);
+  } else if (check_incorrect_add == "ivar_evol") {
+    int dummy = 0;
+    dump.add(dummy, "ivar_evol", true);
+  } else if (check_incorrect_add == "rvar_evol") {
+    BoutReal dummy = 0.0;
+    dump.add(dummy, "rvar_evol", true);
+  } else if (check_incorrect_add == "bvar_evol") {
+    bool dummy = false;
+    dump.add(dummy, "bvar_evol", true);
+  } else if (check_incorrect_add == "v2d_evol") {
+    Vector2D dummy;
+    dump.add(dummy, "v2d_evol", true);
+  } else if (check_incorrect_add == "v3d_evol") {
+    Vector3D dummy;
+    dump.add(dummy, "v3d_evol", true);
   }
 
   int MYPE;

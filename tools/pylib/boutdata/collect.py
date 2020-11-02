@@ -107,9 +107,9 @@ def _convert_to_nice_slice(r, N, name="range"):
     elif len(r) == 2:
         r2 = list(r)
         if r2[0] < 0:
-            r2[0] += N
+            r2[0] = r2[0] + N
         if r2[1] < 0:
-            r2[1] += N
+            r2[1] = r2[1] + N
         if r2[0] > r2[1]:
             raise ValueError("{} start ({}) is larger than end ({})"
                              .format(name, *r2))
@@ -143,8 +143,10 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
         Path to data files (default: ".")
     prefix : str, optional
         File prefix (default: "BOUT.dmp")
-    yguards : bool, optional
+    yguards : bool or "include_upper", optional
         Collect Y boundary guard cells? (default: False)
+        If yguards=="include_upper" the y-boundary cells from the upper (second) target
+        are also included.
     xguards : bool, optional
         Collect X boundary guard cells? (default: True)
         (Set to True to be consistent with the definition of nx)
@@ -192,6 +194,12 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
 
         f = getDataFile(0)
 
+        if varname not in f.keys():
+            if strict:
+                raise ValueError("Variable '{}' not found".format(varname))
+            else:
+                varname = findVar(varname, f.list())
+
         dimensions = f.dimensions(varname)
 
         try:
@@ -211,6 +219,10 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
             nx = f["nx"] - 2*mxg
         if yguards:
             ny = f["ny"] + 2*myg
+            if yguards == "include_upper" and f["jyseps2_1"] != f["jyseps1_2"]:
+                # Simulation has a second (upper) target, with a second set of y-boundary
+                # points
+                ny = ny + 2*myg
         else:
             ny = f["ny"]
         nz = f["MZ"]
@@ -236,9 +248,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
         if not yguards:
             yind = slice(yind.start+myg, yind.stop+myg, yind.step)
 
-        if len(dimensions) == ():
+        if dimensions == ():
             ranges = []
-        elif dimensions == ('t'):
+        elif dimensions == ('t',):
             ranges = [tind]
         elif dimensions == ('x', 'y'):
             # Field2D
@@ -276,9 +288,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
             raise ValueError("Variable '{}' not found".format(varname))
         else:
             varname = findVar(varname, f.list())
-            
+
     dimensions = f.dimensions(varname)
-    
+
     var_attributes = f.attributes(varname)
     ndims = len(dimensions)
 
@@ -363,6 +375,18 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
 
     if yguards:
         ny = mysub * nype + 2*myg
+        if yguards == "include_upper" and f["jyseps2_1"] != f["jyseps1_2"]:
+            # Simulation has a second (upper) target, with a second set of y-boundary
+            # points
+            ny = ny + 2*myg
+            ny_inner = f["ny_inner"]
+            yproc_upper_target = ny_inner // mysub - 1
+            if f["ny_inner"] % mysub != 0:
+                raise ValueError("Trying to keep upper boundary cells but "
+                                 "mysub={} does not divide ny_inner={}"
+                                 .format(mysub, ny_inner))
+        else:
+            yproc_upper_target = None
     else:
         ny = mysub * nype
 
@@ -428,6 +452,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
                     inrange = False
                 if ystart < myg:
                     ystart = myg
+            # and lower y boundary at upper target
+            if yproc_upper_target is not None and pe_yind - 1 == yproc_upper_target:
+                ystart = ystart - myg
 
             # Upper y boundary
             if pe_yind == (nype - 1):
@@ -441,10 +468,17 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
                     inrange = False
                 if ystop > (mysub + myg):
                     ystop = (mysub + myg)
+            # upper y boundary at upper target
+            if yproc_upper_target is not None and pe_yind == yproc_upper_target:
+                ystop = ystop + myg
 
             # Calculate global indices
             ygstart = ystart + pe_yind * mysub
             ygstop = ystop + pe_yind * mysub
+
+            if yproc_upper_target is not None and pe_yind > yproc_upper_target:
+                ygstart = ygstart + 2*myg
+                ygstop = ygstop + 2*myg
 
         else:
             # Get local ranges

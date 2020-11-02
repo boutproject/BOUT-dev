@@ -37,3 +37,6 @@ else:
     do_import.append('plotpolslice')
     do_import.append('View3D')
     __all__ = do_import
+
+__version__ = '0.1.4'
+__name__ = 'boututils'

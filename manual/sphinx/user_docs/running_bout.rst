@@ -113,8 +113,16 @@ and see the section on options (:ref:`sec-options`).
 To analyse the output of the simulation, cd into the ``data``
 subdirectory and start python or IDL (skip to :ref:`Using IDL <sec-intro-using-idl>` for IDL).
 
-Analysing the output Using python
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Analysing the output using Python
+---------------------------------
+
+The recommended tool for analysing BOUT++ output is xBOUT, a Python library
+that provides analysis, plotting and animation with human-readable syntax (no
+magic numbers!) using `xarray <http://xarray.pydata.org/en/stable/>`_. See the
+xBOUT documentation
+`xbout.readthedocs.io <https://xbout.readthedocs.io/en/latest/>`_.
+
+There is also an older set of NumPy-based Python tools, described below.
 
 In order to analyse the output of the simulation using Python, you
 will first need to have set up python to use the BOUT++ libraries
@@ -131,7 +139,7 @@ class. This is a wrapper around the various NetCDF and HDF5 libraries for python
     >>> from boututils.datafile import DataFile
     >>> DataFile("BOUT.dmp.0.nc").list()
 
-To collect a variable, reading in the data as a NumPy array:
+To collect a variable, reading in the data as a NumPy-like ``BoutArray`` array:
 
 .. code-block:: pycon
 
@@ -140,8 +148,11 @@ To collect a variable, reading in the data as a NumPy array:
     >>> T.shape
 
 Note that the order of the indices is different in Python and IDL: In
-Python, 4D variables are arranged as ``[t, x, y, z]``. To show an
-animation
+Python, 4D variables are arranged as ``[t, x, y, z]``.
+
+``BoutArray`` as a thin wrapper for ``numpy.ndarray`` which adds BOUT++ attributes.
+
+To show an animation
 
 .. code-block:: pycon
 
