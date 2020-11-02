@@ -807,24 +807,25 @@ Some issues:
 FFT
 ---
 
-There is one global option for Fourier transforms, ``fft_measure``
-(default: ``false``). Setting this to true enables the
-``FFTW_MEASURE`` mode when performing FFTs, otherwise
-``FFTW_ESTIMATE`` is used:
+There is one option for Fourier transforms, ``fft_measurement_flag`` (default:
+``estimate``). This can be used to control FFTW's measurement mode:
+``estimate`` for ``FFTW_ESTIMATE``, ``measure`` for ``FFTW_MEASURE`` or
+``exhaustive`` for ``FFTW_EXHAUSTIVE``:
 
 .. code-block:: cfg
 
     [fft]
-    fft_measure = true
+    fft_measurement_flag = measure
 
-In ``FFTW_MEASURE`` mode, FFTW runs and measures how long several
-FFTs take, and tries to find the optimal method.
+In ``FFTW_MEASURE`` mode, FFTW runs and measures how long several FFTs take,
+and tries to find the optimal method; ``FFTW_EXHAUSTIVE`` tests even more
+algorithms.
 
-.. note:: Technically, ``FFTW_MEASURE`` is non-deterministic and
-          enabling ``fft_measure`` may result in slightly different
-          answers from run to run, or be dependent on the number of
-          MPI processes. This may be important if you are trying to
-          benchmark or measure performance of your code.
+.. note:: Technically, ``FFTW_MEASURE`` and ``FFTW_EXHAUSTIVE`` are
+          non-deterministic and enabling ``fft_measure`` may result in slightly
+          different answers from run to run, or be dependent on the number of
+          MPI processes. This may be important if you are trying to benchmark
+          or measure performance of your code.
 
           See the `FFTW FAQ`_ for more information.
 
