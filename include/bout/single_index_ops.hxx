@@ -6,7 +6,6 @@
 #define SINGLE_INDEX_OPS_H
 
 #include "field_accessor.hxx"
-<<<<<<< HEAD
 
 #if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
 #define BOUT_HOST_DEVICE __host__ __device__
@@ -19,71 +18,59 @@
 #endif
 
 
-=======
-
-#define BOUT_HOST_DEVICE __host__ __device__
-#define RAJA_HOST_DEVICE __host__ __device__
-
-#define BOUT_HAS_UMPIRE
-#define BOUT_USE_CUDA
-
 //--  RAJA CUDA settings--------------------------------------------------------start
-#define BOUT_ENABLE_CUDA
-#define BOUT_DEVICE RAJA_DEVICE
-#ifdef BOUT_ENABLE_CUDA
+#ifdef BOUT_USE_CUDA
 const int CUDA_BLOCK_SIZE = 256;  // TODO: Make configurable
 using EXEC_POL = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
-#define BOUT_DEVICE RAJA_DEVICE
 #else   // BOUT_ENABLE_CUDA not defined
 using EXEC_POL = RAJA::loop_exec;
-#define BOUT_DEVICE
 #endif  // defined(BOUT_ENABLE_CUDA)
 ////-----------CUDA settings------------------------------------------------------end
 
 template<CELL_LOC location>
-RAJA_DEVICE BoutReal* DDT( const FieldAccessor<location> &f){
+BOUT_DEVICE inline BoutReal* DDT( const FieldAccessor<location> &f){
 
 return f.f_ddt;
 
 } 
 
 // Ind3D: i.zp():
-BOUT_DEVICE int i_zp(const int id, const int nz){
+BOUT_DEVICE inline int i_zp(const int id, const int nz){
  int jz = id % nz;
  int jzmax = nz -1;
  return (jz < jzmax) ? (id + 1) : (id - jzmax);
 }
 // Ind3D: i.zm():
-BOUT_DEVICE int i_zm(const int id, const int nz){
+BOUT_DEVICE inline int i_zm(const int id, const int nz){
  int jz = id % nz;
  int jzmax = nz -1;
  return (jz > 0) ? (id - 1) : (id + jzmax);
 }
 
 // Ind3D: i.ym(): 
-BOUT_DEVICE int i_yp(const int id, const int nz){
+BOUT_DEVICE inline int i_yp(const int id, const int nz){
 return id + nz;
 }
 
 // Ind3D: i.yp();
-BOUT_DEVICE int i_ym(const int id, const int nz){
+BOUT_DEVICE inline int i_ym(const int id, const int nz){
 return id - nz;
 }
 
 
 // Ind3D: i.xp();
-BOUT_DEVICE int i_xp(const int id, const int ny, const int nz){
+BOUT_DEVICE inline int i_xp(const int id, const int ny, const int nz){
 return id + ny*nz;
 }
 
 
 // Ind3D: i.xm();
-BOUT_DEVICE int i_xm(const int id, const int ny, const int nz){
+BOUT_DEVICE inline int i_xm(const int id, const int ny, const int nz){
 return id - ny*nz;
 }
 
 template<CELL_LOC location>
-BOUT_DEVICE BoutReal  bracket_g(const FieldAccessor<location> &f, const FieldAccessor<location> &g, const int i) {
+BOUT_DEVICE inline BoutReal  bracket_g(const FieldAccessor<location> &f, const FieldAccessor<location> &g, const int i) {
 
   BoutReal* dx = g.f2d_dx;
   BoutReal dz = g.f2d_dz;
@@ -134,9 +121,8 @@ BOUT_DEVICE BoutReal  bracket_g(const FieldAccessor<location> &f, const FieldAcc
 }
 
 
->>>>>>> next-outerloop-GPU-umpire
 template<IND_TYPE N, CELL_LOC location>
-BoutReal bracket(const FieldAccessor<location> &f, const FieldAccessor<location> &g, const SpecificInd<N> &ind) {
+inline BoutReal bracket(const FieldAccessor<location> &f, const FieldAccessor<location> &g, const SpecificInd<N> &ind) {
   Coordinates *metric = g.coords;
 
   // Offset indices
@@ -166,23 +152,8 @@ BoutReal bracket(const FieldAccessor<location> &f, const FieldAccessor<location>
 }
 
 template<IND_TYPE N, CELL_LOC location>
-<<<<<<< HEAD
-BoutReal DDX(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
-  return (f[ind.xp()] - f[ind.xm()]) / (2. * f.coords->dx[ind]);
-}
 
-template<IND_TYPE N, CELL_LOC location>
-BoutReal DDY(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
-  return ( (*f.yup)[ind.yp()] - (*f.ydown)[ind.ym()]) / (2. * f.coords->dy[ind]);
-}
-
-template<IND_TYPE N, CELL_LOC location>
-BoutReal DDZ(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
-  return (f[ind.zp()] - f[ind.zm()]) / (2. * f.coords->dz);
-}
-
-=======
-BoutReal DDX_g(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
+inline BoutReal DDX_g(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
    
   int nz = f.f_nz;
   auto dx = f.f2d_dx;
@@ -198,12 +169,12 @@ BoutReal DDX(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
 }
 
 template<IND_TYPE N, CELL_LOC location>
-BoutReal DDY(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
+inline BoutReal DDY(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
   return ( (*f.yup)[ind.yp()] - (*f.ydown)[ind.ym()]) / (2. * f.coords->dy[ind]);
 }
 
 template<CELL_LOC location>
-BOUT_DEVICE BoutReal DDZ_g(const FieldAccessor<location> &f, const int i) {
+BOUT_DEVICE inline BoutReal DDZ_g(const FieldAccessor<location> &f, const int i) {
    BoutReal dz = f.f2d_dz;
    int nz = f.f_nz;
    BoutReal* f_a = f.f_data;
@@ -215,13 +186,13 @@ BOUT_DEVICE BoutReal DDZ_g(const FieldAccessor<location> &f, const int i) {
 
 
 template<IND_TYPE N, CELL_LOC location>
-BoutReal  DDZ(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
+inline BoutReal  DDZ(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
   return (f[ind.zp()] - f[ind.zm()]) / (2. * f.coords->dz);
 }
 
 
 template<CELL_LOC location>
-RAJA_DEVICE BoutReal Delp2_g(const FieldAccessor<location> &f, const int i) {
+BOUT_DEVICE inline BoutReal Delp2_g(const FieldAccessor<location> &f, const int i) {
 
   BoutReal* dx = f.f2d_dx;
   BoutReal dz = f.f2d_dz;
@@ -265,9 +236,8 @@ RAJA_DEVICE BoutReal Delp2_g(const FieldAccessor<location> &f, const int i) {
 }
 
 
->>>>>>> next-outerloop-GPU-umpire
 template<IND_TYPE N, CELL_LOC location>
-BoutReal Delp2(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
+inline BoutReal Delp2(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
   Coordinates *metric = f.coords;
 
   // Index offsets
@@ -284,45 +254,9 @@ BoutReal Delp2(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
     ;
 }
 
-<<<<<<< HEAD
-#if 0
-template<IND_TYPE N, CELL_LOC location>
-BOUT_HOST_DEVICE BoutReal Delp2_gt(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
-  Coordinates *metric = f.coords;
 
-  // Index offsets
-  auto izm = i.zm();
-  auto izp = i.zp();
-  auto ixm = i.xm();
-  auto ixp = i.xp();
-
-  auto g1= metric->G1[i];
-  //return metric->G1[i] * (f[ixp] - f[ixm]) / (2.*metric->dx[i])  // DDX
-  return 0.5*(f[ixm] - f[ixp]) ;
-
-}
-#else
-
-template<IND_TYPE N, CELL_LOC location>
-BOUT_HOST_DEVICE BoutReal Delp2_gt(const FieldAccessorLite<location> &f,const SpecificInd<N> &i) {
-
-  // Index offsets
-  auto izm = i.zm();
-
-  auto yup = f.yup;
-
-  //metrics
-  auto G1 = f.G1;
-  auto g_11 = f.g_11;
-
-  //return f[izm] * G1[i.ind] * g_11[i.ind] * yup[i.ind] ;
-  return yup[i.ind];
-
-}
-#endif
-=======
 template< CELL_LOC location>
-RAJA_DEVICE BoutReal Div_par_Grad_par_g(const FieldAccessor<location> &f, const int i) {
+BOUT_DEVICE inline BoutReal Div_par_Grad_par_g(const FieldAccessor<location> &f, const int i) {
 
 // use raw pointer to field data 
   BoutReal* f_a = f.f_data;
@@ -360,10 +294,9 @@ RAJA_DEVICE BoutReal Div_par_Grad_par_g(const FieldAccessor<location> &f, const 
 
 }
 
->>>>>>> next-outerloop-GPU-umpire
 
 template<IND_TYPE N, CELL_LOC location>
-BoutReal Div_par_Grad_par(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
+inline BoutReal Div_par_Grad_par(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
   Coordinates *metric = f.coords;
   // Index offsets
   auto iyp = i.yp();
@@ -377,17 +310,10 @@ BoutReal Div_par_Grad_par(const FieldAccessor<location> &f, const SpecificInd<N>
   BoutReal dy = metric->dy[i];
   BoutReal J = metric->J[i];
   BoutReal g_22 = metric->g_22[i];
-<<<<<<< HEAD
   
   BoutReal gradient_upper = 2.*(yup[iyp] - f[i]) / (dy + metric->dy[iyp]);
   BoutReal flux_upper = gradient_upper * (J + metric->J[iyp]) / (g_22 + metric->g_22[iyp]);
   
-=======
-  
-  BoutReal gradient_upper = 2.*(yup[iyp] - f[i]) / (dy + metric->dy[iyp]);
-  BoutReal flux_upper = gradient_upper * (J + metric->J[iyp]) / (g_22 + metric->g_22[iyp]);
-  
->>>>>>> next-outerloop-GPU-umpire
   BoutReal gradient_lower = 2.*(f[i] - ydown[iym]) / (dy + metric->dy[iyp]);
   BoutReal flux_lower = gradient_lower * (J + metric->J[iym]) / (g_22 + metric->g_22[iym]);
 

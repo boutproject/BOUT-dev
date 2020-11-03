@@ -29,25 +29,6 @@
 #include "RAJA/RAJA.hpp" // using RAJA lib
 #include <cuda_profiler_api.h>
 
-#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
-#define BOUT_HOST_DEVICE __host__ __device__
-#define BOUT_HOST __host__
-#define BOUT_DEVICE __device__
-#else
-#define BOUT_HOST_DEVICE
-#define BOUT_HOST
-#define BOUT_DEVICE
-#endif
-
-
-#ifdef BOUT_USE_CUDA
-const int CUDA_BLOCK_SIZE = 256;  // TODO: Make configurable
-using EXEC_POL = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
-#else   
-using EXEC_POL = RAJA::loop_exec;
-#endif  
-
-
 class HW3D : public PhysicsModel {
 public:
   Field3D n, vort;  // Evolving density and vorticity
@@ -93,7 +74,8 @@ public:
     auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
     Ind3D *ob_i = &(indices)[0];
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-                int i = ob_i[id].ind;
+      int i = ob_i[id].ind;
+      BoutReal div_current = alpha * Div_par_Grad_par_g(phi_minus_n_acc, i);
 		DDT(n_acc)[i] =  - bracket_g(phi_acc, n_acc, i)
                 	    - div_current
                 	    - kappa * DDZ_g(phi_acc, i)
