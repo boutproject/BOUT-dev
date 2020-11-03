@@ -12,14 +12,32 @@ from boututils.boutwarnings import AlwaysWarning
 # This should be a list of dicts, each containing "old", "new" and optionally "values".
 # The values of "old"/"new" keys should be the old/new names of input file values or
 # sections. The value of "values" is a dict containing replacements for values of the
-# option.
+# option. "type" optionally specifies the type of the old value of the option; for
+# example this is needed for special handling of boolean values.
 REPLACEMENTS = [
     {"old": "mesh:paralleltransform", "new": "mesh:paralleltransform:type"},
     {"old": "fci", "new": "mesh:paralleltransform"},
     {"old": "interpolation", "new": "mesh:paralleltransform:xzinterpolation"},
     {"old": "fft:fft_measure", "new": "fft:fft_measurement_flag",
-        "values": {"false": "estimate", "true": "measure"}}
+        "type": bool, "values": {False: "estimate", True: "measure"}}
 ]
+
+
+def parse_bool(bool_expression):
+    try:
+        bool_expression_lower = bool_expression.lower()
+    except AttributeError:
+        # bool_expression was not a str: no need to lower
+        bool_expression_lower = bool_expression
+
+    if bool_expression_lower in ["true", "y", "t", 1, True]:
+        return True
+    elif bool_expression_lower in ["false", "n", "f", 0, False]:
+        return False
+    else:
+        raise RuntimeError(
+            f"Expected boolean option. Could not parse {bool_expression}"
+        )
 
 
 def fix_replacements(replacements, options_file):
@@ -38,11 +56,35 @@ def fix_replacements(replacements, options_file):
                 "\n\t{1}".format(options_file.filename, e.args[0], **replacement)
             ) from e
         else:
-            if "values" in replacement:
-                old_value = options_file[replacement["new"]]
-                options_file[replacement["new"]] = replacement["values"].get(
-                    old_value, old_value
-                )
+            if "type" in replacement:
+                # Special handling for certain types, replicating what BOUT++ does
+                if replacement["type"] is bool:
+                    # The original value must be something that BOUT++ recognises as a
+                    # bool.
+                    # replacement["values"] must contain both True and False keys.
+                    old_value = parse_bool(options_file[replacement["new"]])
+                    options_file[replacement["new"]] = replacement["values"][old_value]
+                else:
+                    raise ValueError(
+                        f"Error in REPLACEMENTS: type {replacement['type']} is not handled"
+                    )
+            else:
+                # Option values are just a string
+                if "values" in replacement:
+                    old_value = options_file[replacement["new"]]
+                    try:
+                        old_value = old_value.lower()
+                    except AttributeError:
+                        # old_value was not a str, so no need to convert to lower case
+                        pass
+
+                    try:
+                        options_file[replacement["new"]] = replacement["values"][
+                            old_value
+                        ]
+                    except KeyError:
+                        # No replacement given for this value: keep the old one
+                        pass
 
 
 def apply_fixes(replacements, options_file):
