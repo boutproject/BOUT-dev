@@ -329,6 +329,8 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
   naulinsolver_mean_underrelax_counts = (naulinsolver_mean_underrelax_counts * BoutReal(ncalls - 1)
                                          + BoutReal(underrelax_count)) / BoutReal(ncalls);
 
+  checkData(b_x_pair.second);
+
   return b_x_pair.second;
 }
 
