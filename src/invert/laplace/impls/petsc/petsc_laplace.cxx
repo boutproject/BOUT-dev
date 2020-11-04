@@ -846,6 +846,8 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
     throw BoutException("Petsc index sanity check 2 failed");
   }
 
+  checkData(sol);
+
   // Return the solution
   return sol;
 }
