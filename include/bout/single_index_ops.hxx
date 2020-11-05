@@ -28,49 +28,49 @@ using EXEC_POL = RAJA::loop_exec;
 ////-----------CUDA settings------------------------------------------------------end
 
 template<CELL_LOC location>
-BOUT_DEVICE inline BoutReal* DDT( const FieldAccessor<location> &f){
+BOUT_HOST_DEVICE inline BoutReal* DDT( const FieldAccessor<location> &f){
 
 return f.f_ddt;
 
 } 
 
 // Ind3D: i.zp():
-BOUT_DEVICE inline int i_zp(const int id, const int nz){
+BOUT_HOST_DEVICE inline int i_zp(const int id, const int nz){
  int jz = id % nz;
  int jzmax = nz -1;
  return (jz < jzmax) ? (id + 1) : (id - jzmax);
 }
 // Ind3D: i.zm():
-BOUT_DEVICE inline int i_zm(const int id, const int nz){
+BOUT_HOST_DEVICE inline int i_zm(const int id, const int nz){
  int jz = id % nz;
  int jzmax = nz -1;
  return (jz > 0) ? (id - 1) : (id + jzmax);
 }
 
 // Ind3D: i.ym(): 
-BOUT_DEVICE inline int i_yp(const int id, const int nz){
+BOUT_HOST_DEVICE inline int i_yp(const int id, const int nz){
 return id + nz;
 }
 
 // Ind3D: i.yp();
-BOUT_DEVICE inline int i_ym(const int id, const int nz){
+BOUT_HOST_DEVICE inline int i_ym(const int id, const int nz){
 return id - nz;
 }
 
 
 // Ind3D: i.xp();
-BOUT_DEVICE inline int i_xp(const int id, const int ny, const int nz){
+BOUT_HOST_DEVICE inline int i_xp(const int id, const int ny, const int nz){
 return id + ny*nz;
 }
 
 
 // Ind3D: i.xm();
-BOUT_DEVICE inline int i_xm(const int id, const int ny, const int nz){
+BOUT_HOST_DEVICE inline int i_xm(const int id, const int ny, const int nz){
 return id - ny*nz;
 }
 
 template<CELL_LOC location>
-BOUT_DEVICE inline BoutReal  bracket_g(const FieldAccessor<location> &f, const FieldAccessor<location> &g, const int i) {
+BOUT_HOST_DEVICE inline BoutReal  bracket_g(const FieldAccessor<location> &f, const FieldAccessor<location> &g, const int i) {
 
   BoutReal* dx = g.f2d_dx;
   BoutReal dz = g.f2d_dz;
@@ -174,7 +174,7 @@ inline BoutReal DDY(const FieldAccessor<location> &f, const SpecificInd<N> &ind)
 }
 
 template<CELL_LOC location>
-BOUT_DEVICE inline BoutReal DDZ_g(const FieldAccessor<location> &f, const int i) {
+BOUT_HOST_DEVICE inline BoutReal DDZ_g(const FieldAccessor<location> &f, const int i) {
    BoutReal dz = f.f2d_dz;
    int nz = f.f_nz;
    BoutReal* f_a = f.f_data;
@@ -192,7 +192,7 @@ inline BoutReal  DDZ(const FieldAccessor<location> &f, const SpecificInd<N> &ind
 
 
 template<CELL_LOC location>
-BOUT_DEVICE inline BoutReal Delp2_g(const FieldAccessor<location> &f, const int i) {
+BOUT_HOST_DEVICE inline BoutReal Delp2_g(const FieldAccessor<location> &f, const int i) {
 
   BoutReal* dx = f.f2d_dx;
   BoutReal dz = f.f2d_dz;
@@ -256,7 +256,7 @@ inline BoutReal Delp2(const FieldAccessor<location> &f, const SpecificInd<N> &i)
 
 
 template< CELL_LOC location>
-BOUT_DEVICE inline BoutReal Div_par_Grad_par_g(const FieldAccessor<location> &f, const int i) {
+BOUT_HOST_DEVICE inline BoutReal Div_par_Grad_par_g(const FieldAccessor<location> &f, const int i) {
 
 // use raw pointer to field data 
   BoutReal* f_a = f.f_data;

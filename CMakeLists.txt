@@ -181,7 +181,6 @@ set(BOUT_HEADERS
   ./include/field_factory.hxx
   ./include/fieldperp.hxx
   ./include/globals.hxx
-  ./include/gpu_functions.hxx
   ./include/gyro_average.hxx
   ./include/initialprofiles.hxx
   ./include/interpolation.hxx

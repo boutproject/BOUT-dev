@@ -1,9 +1,0 @@
-#include <iostream>
-#include <bout/physicsmodel.hxx>
-#include "RAJA/RAJA.hpp" // using RAJA lib
-#include <cuda_profiler_api.h>
-#define BOUT_ENABLE_CUDA
-
- inline  ROUT_DEVICE gpu_add( BoutReal x, BoutReal y ){	
-		return x+y;
-	}

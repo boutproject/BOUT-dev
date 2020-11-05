@@ -3,7 +3,7 @@
 #
 
 timestep = 1.   # Output timestep
-nout = 200      # Number of output steps
+nout = 100      # Number of output steps
 #nout = 1    # Number of output steps
 
 [mesh]

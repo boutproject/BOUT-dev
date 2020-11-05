@@ -25,7 +25,6 @@
 #include <smoothing.hxx>
 #include <invert_laplace.hxx>
 #include <derivs.hxx>
-#include <bout/single_index_ops.hxx>
 #include "RAJA/RAJA.hpp" // using RAJA lib
 #include <cuda_profiler_api.h>
 
@@ -73,6 +72,8 @@ public:
 //  RAJA GPU code ----------- start
     auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
     Ind3D *ob_i = &(indices)[0];
+
+#if 1
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
       int i = ob_i[id].ind;
       BoutReal div_current = alpha * Div_par_Grad_par_g(phi_minus_n_acc, i);
@@ -91,8 +92,8 @@ public:
 	  });
 
 //  RAJA GPU code ----------- end
-
-/*  -- CPU code ------------- start
+#else
+// -- CPU code ------------- start
     
     BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
       
@@ -109,8 +110,8 @@ public:
                      + Dvort * Delp2(vort_acc, i)
 		;
     }
-*/ //--CPU code ---------------- end
-
+//--CPU code ---------------- end
+#endif
     return 0;
   }  // end RHS
 }; // end class HW3D
