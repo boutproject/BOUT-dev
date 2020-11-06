@@ -507,9 +507,11 @@ if (BOUT_USE_NETCDF)
       )
     # Don't build the netcdf tests, they have lots of warnings
     set(NCXX_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    # Use our own FindnetCDF module which uses nc-config
+    find_package(netCDF REQUIRED)
     FetchContent_MakeAvailable(netcdf-cxx4)
   else()
-    find_package(NetCDF REQUIRED)
+    find_package(netCDFCxx REQUIRED)
   endif()
   target_link_libraries(bout++ PUBLIC netCDF::netcdf-cxx4)
 endif()
