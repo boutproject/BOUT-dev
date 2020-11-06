@@ -16,8 +16,8 @@
 #   NetCDF_INCLUDE_DIRS - Location of the NetCDF includes
 #   NetCDF_LIBRARIES - Required libraries
 #
-# This module will also export ``NetCDF::NetCDF_C`` and
-# ``NetCDF::NetCDF_CXX`` targets.
+# This module will also export ``netCDF::netcdf`` and
+# ``netCDF::netcdf-cxx4`` targets.
 #
 # You can also set the following variables:
 #
@@ -27,23 +27,8 @@
 # ``NetCDF_DEBUG``
 #   Set to TRUE to get extra debugging output
 
-
-# Taken from https://github.com/conan-io/conan/issues/2125#issuecomment-351176653
-# This is needed so we can make a clone of the NetCDF C++ target which
-# has the name "netcdf-cxx4" by default
-function(add_cloned_imported_target dst src)
-    add_library(${dst} INTERFACE IMPORTED)
-    foreach(name INTERFACE_LINK_LIBRARIES INTERFACE_INCLUDE_DIRECTORIES INTERFACE_COMPILE_DEFINITIONS INTERFACE_COMPILE_OPTIONS)
-        get_property(value TARGET ${src} PROPERTY ${name} )
-        set_property(TARGET ${dst} PROPERTY ${name} ${value})
-    endforeach()
-endfunction()
-
 find_package(netCDFCxx QUIET)
 if (netCDFCxx_FOUND)
-  if(NOT TARGET NetCDF::NetCDF_CXX)
-    add_cloned_imported_target(NetCDF::NetCDF_CXX netCDF::netcdf-cxx4)
-  endif()
   set(NetCDF_FOUND TRUE)
   return()
 endif()
@@ -209,15 +194,15 @@ if (NetCDF_FOUND)
   set(NetCDF_INCLUDE_DIRS "${NetCDF_CXX_INCLUDE_DIR}" "${NetCDF_C_INCLUDE_DIR}")
   set(NetCDF_LIBRARIES "${NetCDF_CXX_LIBRARY}" "${NetCDF_LIBRARY}")
 
-  if (NOT TARGET NetCDF::NetCDF)
-    add_library(NetCDF::NetCDF_C UNKNOWN IMPORTED)
-    set_target_properties(NetCDF::NetCDF_C PROPERTIES
+  if (NOT TARGET netCDF::netcdf)
+    add_library(netCDF::netcdf UNKNOWN IMPORTED)
+    set_target_properties(netCDF::netcdf PROPERTIES
       IMPORTED_LOCATION "${NetCDF_C_LIBRARY}"
       INTERFACE_INCLUDE_DIRECTORIES "${NetCDF_C_INCLUDE_DIR}"
       )
-    add_library(NetCDF::NetCDF_CXX UNKNOWN IMPORTED)
-    set_target_properties(NetCDF::NetCDF_CXX PROPERTIES
-      IMPORTED_LINK_INTERFACE_LIBRARIES NetCDF::NetCDF_C
+    add_library(netCDF::netcdf-cxx4 UNKNOWN IMPORTED)
+    set_target_properties(netCDF::netcdf-cxx4 PROPERTIES
+      IMPORTED_LINK_INTERFACE_LIBRARIES netCDF::netcdf
       IMPORTED_LOCATION "${NetCDF_CXX_LIBRARY}"
       INTERFACE_INCLUDE_DIRECTORIES "${NetCDF_CXX_INCLUDE_DIR}")
   endif ()
