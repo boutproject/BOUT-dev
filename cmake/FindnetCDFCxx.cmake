@@ -117,11 +117,11 @@ unset(_netcdf_version_minor)
 unset(_netcdf_version_patch)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(netCDF
+find_package_handle_standard_args(netCDFCxx
   REQUIRED_VARS netCDF_CXX_LIBRARY netCDF_CXX_INCLUDE_DIR
   VERSION_VAR netCDFCxx_VERSION)
 
-if (netCDF_FOUND)
+if (netCDFCxx_FOUND)
   set(netCDFCxx_INCLUDE_DIRS "${netCDF_CXX_INCLUDE_DIR}")
   set(netCDFCxx_LIBRARIES "${netCDF_CXX_LIBRARY}")
 
