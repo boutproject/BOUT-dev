@@ -25,24 +25,13 @@
 # ``netCDF_DEBUG``
 #   Set to TRUE to get extra debugging output
 
+include(BOUT++functions)
+
 find_package(netCDF QUIET CONFIG)
 if (netCDF_FOUND)
   set(netCDF_FOUND TRUE)
   return()
 endif()
-
-# A function to call nx-config with an argument, and append the resulting path to a list
-# Taken from https://github.com/LiamBindle/geos-chem/blob/feature/CMake/CMakeScripts/FindNetCDF.cmake
-function(inspect_netcdf_config VAR NX_CONFIG ARG)
-    execute_process(
-        COMMAND ${NX_CONFIG} ${ARG}
-        OUTPUT_VARIABLE NX_CONFIG_OUTPUT
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(EXISTS "${NX_CONFIG_OUTPUT}")
-        set(${VAR} ${NX_CONFIG_OUTPUT} PARENT_SCOPE)
-    endif()
-endfunction()
 
 find_program(NC_CONFIG "nc-config"
   PATHS "${netCDF_ROOT}"
@@ -63,8 +52,8 @@ if (netCDF_DEBUG)
     " netCDF_ROOT = ${netCDF_ROOT}")
 endif()
 
-inspect_netcdf_config(NC_HINTS_INCLUDE_DIR "${NC_CONFIG}" "--includedir")
-inspect_netcdf_config(NC_HINTS_PREFIX "${NC_CONFIG}" "--prefix")
+bout_inspect_netcdf_config(NC_HINTS_INCLUDE_DIR "${NC_CONFIG}" "--includedir")
+bout_inspect_netcdf_config(NC_HINTS_PREFIX "${NC_CONFIG}" "--prefix")
 
 find_path(netCDF_C_INCLUDE_DIR
   NAMES netcdf.h

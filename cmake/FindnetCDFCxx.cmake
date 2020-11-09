@@ -25,6 +25,8 @@
 # ``netCDFCxx_DEBUG``
 #   Set to TRUE to get extra debugging output
 
+include(BOUT++functions)
+
 find_package(netCDFCxx QUIET CONFIG)
 if (netCDFCxx_FOUND)
   set(netCDFCxx_FOUND TRUE)
@@ -32,19 +34,6 @@ if (netCDFCxx_FOUND)
 endif()
 
 find_package(netCDF REQUIRED)
-
-# A function to call nx-config with an argument, and append the resulting path to a list
-# Taken from https://github.com/LiamBindle/geos-chem/blob/feature/CMake/CMakeScripts/FindNetCDF.cmake
-function(inspect_netcdf_config VAR NX_CONFIG ARG)
-    execute_process(
-        COMMAND ${NX_CONFIG} ${ARG}
-        OUTPUT_VARIABLE NX_CONFIG_OUTPUT
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(EXISTS "${NX_CONFIG_OUTPUT}")
-        set(${VAR} ${NX_CONFIG_OUTPUT} PARENT_SCOPE)
-    endif()
-endfunction()
 
 find_program(NCXX4_CONFIG "ncxx4-config"
   PATHS "${netCDFCxx_ROOT}"
@@ -64,8 +53,8 @@ if (netCDFCxx_DEBUG)
     " NCXX4_CONFIG_LOCATION = ${NCXX4_CONFIG_LOCATION}")
 endif()
 
-inspect_netcdf_config(NCXX4_HINTS_INCLUDE_DIR "${NCXX4_CONFIG}" "--includedir")
-inspect_netcdf_config(NCXX4_HINTS_PREFIX "${NCXX4_CONFIG}" "--prefix")
+bout_inspect_netcdf_config(NCXX4_HINTS_INCLUDE_DIR "${NCXX4_CONFIG}" "--includedir")
+bout_inspect_netcdf_config(NCXX4_HINTS_PREFIX "${NCXX4_CONFIG}" "--prefix")
 
 find_path(netCDF_CXX_INCLUDE_DIR
   NAMES netcdf
@@ -106,7 +95,7 @@ if (netCDFCxx_DEBUG)
 endif()
 mark_as_advanced(netCDF_CXX_LIBRARY)
 
-inspect_netcdf_config(_ncxx4_version "${NCXX4_CONFIG}" "--version")
+bout_inspect_netcdf_config(_ncxx4_version "${NCXX4_CONFIG}" "--version")
 string(REGEX REPLACE "netCDF-cxx4 \([0-9]+\)\.\([0-9]+\)\.\([0-9]+\)" "\\1" _netcdfcxx_version_major "${_ncxx4_version}")
 string(REGEX REPLACE "netCDF-cxx4 \([0-9]+\)\.\([0-9]+\)\.\([0-9]+\)" "\\2" _netcdfcxx_version_minor "${_ncxx4_version}")
 string(REGEX REPLACE "netCDF-cxx4 \([0-9]+\)\.\([0-9]+\)\.\([0-9]+\)" "\\3" _netcdfcxx_version_patch "${_ncxx4_version}")
