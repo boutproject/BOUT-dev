@@ -365,6 +365,7 @@ distclean:: clean clean-tests
 	@echo autom4te.cache cleaned
 	-@$(RM) $(BOUT_TOP)/include/bout/version.hxx
 	-@$(RM) $(BOUT_TOP)/include/bout/revision.hxx
+	-@$(RM) $(BOUT_TOP)/include/bout/build_defines.hxx
 	@echo generated version headers cleaned
 
 clean-tests: clean-unit-tests clean-integrated-tests clean-mms-tests
