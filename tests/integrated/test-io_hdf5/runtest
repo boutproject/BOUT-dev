@@ -110,7 +110,7 @@ def check_output():
 def check_output():
     success = True
     for v in vars:
-        stdout.write("      Checking variable "+v+" ... ")
+        print("      Checking variable "+v+" ... ")
         result = collect(v, path="data", info=False)
 
         # Compare benchmark and output
