@@ -128,13 +128,14 @@ if "--jobserver-auth=" in makeflags or "--jobserver-fds=" in makeflags:
 
 
 class Test(threading.Thread):
-    def __init__(self, name, cmd, width):
+    def __init__(self, name, cmd, width, timeout):
         threading.Thread.__init__(self)
         self.name = name
         self.cmd = cmd
         self.width = width
         self.local = threading.local()
         self.cost = self._cost()
+        self.timeout = timeout
 
     def run(self):
         # Check requirements
@@ -147,7 +148,8 @@ class Test(threading.Thread):
             self.status = 0
         else:
             # Run test, piping stdout so it is not sent to console
-            self.status, self.output = shell("cd "+self.name+";"+self.cmd, pipe=True)
+            command = "cd {}; timeout {} {}".format(self.name, self.timeout, self.cmd)
+            self.status, self.output = shell(command, pipe=True)
             print("{:{width}}".format(self.name, width=self.width), end='')
             if self.status == 0:
                 # ✓ Passed
@@ -159,7 +161,7 @@ class Test(threading.Thread):
             else:
                 # ❌ Failed
                 print(u"\u274C", end='')  # No newline
-            sys.stdout.flush()  # Make sure '✓' or '❌' is flushed
+            print(" %7.3f s" % (time.time() - self.local.start_time), flush=True)
 
     def _cost(self):
         if self.cmd == "make":
@@ -233,10 +235,9 @@ def get_threads():
 
 ##################################################################
 # Run the actual test
-
 # Kill tests that take longer than 10 minutes (default)
 timeout = os.environ.get("BOUT_TEST_TIMEOUT", "10m" if not args.all_tests else "30m")
-command = 'timeout {} ./runtest'.format(timeout) if not args.make else 'make'
+command = "./runtest" if not args.make else "make"
 
 savepath = os.getcwd()  # Save current working directory
 failed = []
@@ -249,7 +250,7 @@ print("======= {} {} {} tests ========".format(test_type, len(tests), savepath.s
 
 longest = max([len(s) for s in tests])
 avail_threads = num_threads
-tester = sorted([Test(t, command, longest+1) for t in tests],
+tester = sorted([Test(t, command, longest+1, timeout) for t in tests],
                 key=lambda x: x.cost, reverse=True)
 cost_remain = sum(x.cost for x in tester)
 get_threads()
