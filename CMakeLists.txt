@@ -339,52 +339,8 @@ else ()
    add_library(bout++ STATIC ${BOUT_SOURCES} ${BOUT_HEADERS})
 endif ()
 
-
-include(cmake/SetupBOUTThirdParty.cmake)
-
-set(BOUT_DEPENDS "")
-if (HAVE_MPI)
-   list(APPEND BOUT_DEPENDS mpi)
-endif ()
-
-set (BOUT_DEPENDS "")
-if (HAVE_OPENMP)
-   list(APPEND BOUT_DEPENDS openmp)
-endif ()
-
-if (BOUT_USE_CUDA)
-   list(APPEND BOUT_DEPENDS cuda)
-   message(STATUS "BOUT_USE_CUDA ${CMAKE_CUDA_COMPILER}")
-   set_source_files_properties(${BOUT_SOURCES} PROPERTIES LANGUAGE CUDA )
-   set_target_properties(bout++ PROPERTIES CUDA_STANDARD 14)
-   set_target_properties(bout++ PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-   set_target_properties(bout++ PROPERTIES POSITION_INDEPENDENT_CODE ON)
-   set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CUDA)
-endif ()   
-
-# UMPIRE
-if (BOUT_HAS_UMPIRE)
-  list(APPEND BOUT_DEPENDS umpire)
-endif ()
-
-# RAJA
-if (BOUT_HAS_RAJA)
-  list(APPEND BOUT_DEPENDS RAJA)
-endif ()
-
-if(BOUT_HAS_PETSC)
-   list(APPEND BOUT_DEPENDS PETSc)
-endif ()
-
-if(BOUT_HAS_HYPRE)
-   list(APPEND BOUT_DEPENDS HYPRE)
-endif ()
-
-message(STATUS "BOUT_DEPENDS: ${BOUT_DEPENDS}")
-
 set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CXX)
 add_library(bout++::bout++ ALIAS bout++)
-target_link_libraries(bout++ PUBLIC MPI::MPI_CXX mpark_variant)
 
 target_include_directories(bout++ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -392,35 +348,11 @@ target_include_directories(bout++ PUBLIC
   $<INSTALL_INTERFACE:include>
   )
 
-# todo start using BOUT_config.h
-
-if(BOUT_HAS_RAJA)
-   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_RAJA")
-   target_include_directories(bout++ PUBLIC ${RAJA_PATH}/include)
-   target_link_libraries(bout++ PUBLIC RAJA)
-endif()
-
-if(BOUT_HAS_UMPIRE)
-   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_UMPIRE")
-endif()
-
-if(BOUT_USE_CUDA)
-   target_compile_definitions(bout++ PUBLIC "BOUT_USE_CUDA")
-endif()
-
-if(BOUT_HAS_HYPRE)
-   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
-   target_include_directories(bout++ PUBLIC ${HYPRE_DIR}/include)
-   target_link_libraries(bout++ PUBLIC HYPRE::HYPRE)
-endif ()
-
-# todo reconcile PETSc INTERFACE FOR LAPLACEXY2
-#if(BOUT_HAS_PETSC)
-#   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_PETSC")
-#endif ()
-
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
+
+# Optional dependencies
+include(cmake/SetupBOUTThirdParty.cmake)
 
 ##################################################
 # Components of the version number
@@ -449,42 +381,6 @@ configure_file(
   "${PROJECT_BINARY_DIR}/include/bout/revision.hxx")
 
 ##################################################
-
-cmake_dependent_option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF
-  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/mpark.variant/CMakeLists.txt" ON)
-
-message(STATUS "BOUT_USE_SYSTEM_MPARK_VARIANT : ${BOUT_USE_SYSTEM_MPARK_VARIANT}") 
-
-if(BOUT_USE_SYSTEM_MPARK_VARIANT)
-  message(STATUS "Using external mpark.variant")
-  find_package(mpark_variant REQUIRED)
-else()
-  message(STATUS "Using mpark.variant submodule")
-  bout_update_submodules()
-  add_subdirectory(externalpackages/mpark.variant)
-  if(NOT TARGET mpark_variant)
-    message(FATAL_ERROR "mpark_variant not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
-  endif()
-endif()
-target_link_libraries(bout++ PUBLIC mpark_variant)
-
-cmake_dependent_option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF
-  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/fmt/CMakeLists.txt" ON)
-
-if(BOUT_USE_SYSTEM_FMT)
-  message(STATUS "Using external fmt")
-  find_package(fmt 6 REQUIRED)
-else()
-  message(STATUS "Using fmt submodule")
-  bout_update_submodules()
-  # Need to install fmt alongside BOUT++
-  set(FMT_INSTALL ON CACHE BOOL "")
-  add_subdirectory(externalpackages/fmt)
-  if(NOT TARGET fmt::fmt)
-    message(FATAL_ERROR "fmt not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
-  endif()
-endif()
-target_link_libraries(bout++ PUBLIC fmt::fmt)
 
 # temporarily turn this off - need to reconcile with nvcc
 option(ENABLE_WARNINGS "Enable compiler warnings" Off)
@@ -549,134 +445,6 @@ if (BOUT_ENABLE_BACKTRACE)
 endif()
 message(STATUS "Enable backtrace: BOUT_USE_BACKTRACE=${BOUT_ENABLE_BACKTRACE}")
 set(BOUT_USE_BACKTRACE ${BOUT_ENABLE_BACKTRACE})
-
-option(BOUT_ENABLE_OPENMP "Enable OpenMP support" OFF)
-set(BOUT_OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
-set_property(CACHE BOUT_OPENMP_SCHEDULE PROPERTY STRINGS static dynamic guided auto)
-if (BOUT_ENABLE_OPENMP)
-  find_package(OpenMP REQUIRED)
-  target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
-  set(possible_openmp_schedules static dynamic guided auto)
-  if (NOT BOUT_OPENMP_SCHEDULE IN_LIST possible_openmp_schedules)
-    message(FATAL_ERROR "BOUT_OPENMP_SCHEDULE must be one of ${possible_openmp_schedules}; got ${BOUT_OPENMP_SCHEDULE}")
-  endif()
-  message(STATUS "OpenMP schedule: ${BOUT_OPENMP_SCHEDULE}")
-endif()
-message(STATUS "Enable OpenMP: ${BOUT_ENABLE_OPENMP}")
-set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
-
-# Optional dependencies
-
-option(BOUT_USE_PVODE "Enable support for bundled PVODE" ON)
-if (BOUT_USE_PVODE)
-  add_subdirectory(externalpackages/PVODE)
-  target_link_libraries(bout++ PUBLIC pvode pvpre)
-endif()
-message(STATUS "PVODE support: ${BOUT_USE_PVODE}")
-set(BOUT_HAS_PVODE ${BOUT_USE_PVODE})
-
-option(BOUT_USE_NETCDF "Enable support for NetCDF output" ON)
-if (BOUT_USE_NETCDF)
-  find_package(NetCDF REQUIRED)
-  target_link_libraries(bout++ PUBLIC NetCDF::NetCDF_CXX)
-endif()
-message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
-set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
-
-option(BOUT_USE_HDF5 "Enable support for HDF5 output" OFF)
-if (BOUT_USE_HDF5)
-  find_package(HDF5 REQUIRED COMPONENTS CXX)
-  target_link_libraries(bout++ PUBLIC "${HDF5_CXX_LIBRARIES}")
-  target_include_directories(bout++ PUBLIC "${HDF5_CXX_INCLUDE_DIRS}")
-endif()
-message(STATUS "HDF5 support: ${BOUT_USE_HDF5}")
-set(BOUT_HAS_HDF5 ${BOUT_USE_HDF5})
-
-option(BOUT_USE_FFTW "Enable support for FFTW" ON)
-if (BOUT_USE_FFTW)
-  find_package(FFTW REQUIRED)
-  target_link_libraries(bout++ PUBLIC FFTW::FFTW)
-endif()
-message(STATUS "FFTW support: ${BOUT_USE_FFTW}")
-set(BOUT_HAS_FFTW ${BOUT_USE_FFTW})
-
-option(BOUT_USE_LAPACK "Enable support for LAPACK" ON)
-if (BOUT_USE_LAPACK)
-  if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
-    # Cray wrappers sort this out for us
-    find_package(LAPACK REQUIRED)
-    target_link_libraries(bout++ PUBLIC "${LAPACK_LIBRARIES}")
-  endif()
-endif()
-message(STATUS "LAPACK support: ${BOUT_USE_LAPACK}")
-set(BOUT_HAS_LAPACK ${BOUT_USE_LAPACK})
-
-#option(BOUT_USE_PETSC "Enable support for PETSc time solvers and inversions" On)
-#if (BOUT_USE_PETSC)
-#  if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
-    # Cray wrappers sort this out for us
-    #    find_package(PETSc REQUIRED)
-    #    target_link_libraries(bout++ PUBLIC PETSc::PETSc)
-    #  endif()
-    #endif()
-    #message(STATUS "PETSc support: ${BOUT_USE_PETSC}")
-    #set(BOUT_HAS_PETSC ${BOUT_USE_PETSC})
-
-option(BOUT_USE_SLEPC "Enable support for SLEPc eigen solver" OFF)
-if (BOUT_USE_SLEPC)
-  find_package(SLEPc REQUIRED)
-  target_link_libraries(bout++ PUBLIC SLEPc::SLEPc)
-endif()
-message(STATUS "SLEPc support: ${BOUT_USE_SLEPC}")
-set(BOUT_HAS_SLEPC ${BOUT_USE_SLEPC})
-
-option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" On)
-if (BOUT_USE_SUNDIALS)
-  find_package(SUNDIALS REQUIRED)
-  target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
-  target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
-  target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
-endif()
-message(STATUS "SUNDIALS support: ${BOUT_USE_SUNDIALS}")
-set(BOUT_HAS_SUNDIALS ${BOUT_USE_SUNDIALS})
-set(BOUT_HAS_ARKODE ${BOUT_USE_SUNDIALS})
-set(BOUT_HAS_CVODE ${BOUT_USE_SUNDIALS})
-set(BOUT_HAS_IDA ${BOUT_USE_SUNDIALS})
-
-option(BOUT_USE_NLS "Enable Native Language Support" ON)
-if (BOUT_USE_NLS)
-  find_package(Gettext)
-  if (GETTEXT_FOUND)
-	find_package(Intl)
-	if (Intl_FOUND)
-	  target_link_libraries(bout++
-		PUBLIC ${Intl_LIBRARIES})
-	  target_include_directories(bout++
-		PUBLIC ${Intl_INCLUDE_DIRS})
-	endif()
-  endif()
-endif()
-set(BOUT_HAS_GETTEXT ${BOUT_USE_NLS})
-
-#option(USE_HYPRE "Enable support for HYPRE" On)
-#if (USE_HYPRE)
-#  enable_language(C)
-#  find_package(HYPRE REQUIRED)
-#  target_compile_definitions(bout++
-#    PUBLIC "BOUT_HAS_HYPRE")
-#  target_link_libraries(bout++ PUBLIC HYPRE::HYPRE)
-#endif()
-#message(STATUS "HYPRE support: ${USE_HYPRE}")
-#set(BOUT_HAS_HYPRE ${USE_HYPRE})
-
-option(BOUT_USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
-if (BOUT_USE_SCOREP)
-  message(STATUS "Score-P support enabled. Please make sure you are calling CMake like so:
-
-  SCOREP_WRAPPER=off cmake -DCMAKE_C_COMPILER=scorep-mpicc -DCMAKE_CXX_COMPILER=scorep-mpicxx <other CMake options>
-")
-endif()
-set(BOUT_HAS_SCOREP ${BOUT_USE_SCOREP})
 
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("int main() { const char* name = __PRETTY_FUNCTION__; }"

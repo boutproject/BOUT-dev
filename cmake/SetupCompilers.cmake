@@ -1,7 +1,20 @@
 # This might not be entirely sensible, but helps CMake to find the
 # correct MPI, workaround for https://gitlab.kitware.com/cmake/cmake/issues/18895
-find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
-find_package(MPI REQUIRED)
+if(ENABLE_MPI)
+   find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
+   find_package(MPI REQUIRED)
+   set(HAVE_MPI TRUE)
+endif ()
+
+
+option(BOUT_ENABLE_OPENMP "Enable OpenMP support" OFF)
+set(BOUT_OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
+set_property(CACHE BOUT_OPENMP_SCHEDULE PROPERTY STRINGS static dynamic guided auto)
+
+if (BOUT_ENABLE_OPENMP)
+  find_package(OpenMP REQUIRED)
+  set(HAVE_OPENMP TRUE)
+endif ()
 
 # Set specific options for CUDA if enabled
 if(ENABLE_CUDA)
