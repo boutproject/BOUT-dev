@@ -8,10 +8,9 @@ endif()
 cmake_policy(SET CMP0025 NEW)
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0057 NEW)
-
-
-cmake_policy(SET CMP0057 NEW)
 cmake_policy(SET CMP0074 NEW)
+
+set(CXX_STANDARD "14")
 
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
@@ -24,61 +23,19 @@ project(BOUT++
   VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
 
-#------------------------------------------------------------------------------
-# Initialize BLT build system
-#------------------------------------------------------------------------------
-if (DEFINED BLT_SOURCE_DIR)
-
-    # Support a shared BLT outside of the repository if given a BLT_SOURCE_DIR
-    if (NOT EXISTS ${BLT_SOURCE_DIR}/SetupBLT.cmake)
-        message(FATAL_ERROR "Cannot find SetupBLT.cmake in [${BLT_SOURCE_DIR}]")
-    endif()
-
-else()
-
-    # Use internal 'blt' submodule path if BLT_SOURCE_DIR not provided
-    set(BLT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/blt" CACHE PATH "")
-    if (NOT EXISTS ${BLT_SOURCE_DIR}/SetupBLT.cmake)
-         message(FATAL_ERROR "The BLT submodule is not present. \
-                  If in the git repository, please run the following commands:\n \
-                  git submodule init\n \
-                  git submodule update")
-    endif()
-
-endif()
-
-message(STATUS "BLT : ${BLT_SOURCE_DIR} ")
-# BLT Options need to be set in the CACHE
-set(ENABLE_FORTRAN Off CACHE STRING "Enable Fortran")
 set(ENABLE_OPENMP On CACHE STRING "Enable OpenMP")
 set(ENABLE_CUDA Off CACHE STRING "Enable CUDA")
-set(ENABLE_MPI On CACHE STRING "Enable MPI.")
-set(ENABLE_TESTS On CACHE STRING "Enable Tests.")
-set(ENABLE_DOCS Off CACHE STRING "Enable Docs.")
-set(BLT_CXX_STD "c++14" CACHE STRING "Version of C++ standard")
-set(gtest_disable_pthreads ON CACHE STRING "")
 option(ENABLE_UMPIRE "Enable UMPIRE memory management" Off)
 option(ENABLE_RAJA "Enable RAJA" Off)
-message(STATUS "Enable Test Flag Top: ${ENABLE_TESTS} " )
 
-include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 include_directories(${CMAKE_BINARY_DIR}/include)
-include(cmake/CMakeBasics.cmake)
-
-
-# This might not be entirely sensible, but helps CMake to find the
-# correct MPI, workaround for https://gitlab.kitware.com/cmake/cmake/issues/18895
-#find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
-#find_package(MPI REQUIRED)
-
 include(CMakeDependentOption)
 
-# Override default
-#option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
-
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+include(cmake/SetupCompilers.cmake)
 
-# reconcile submodules only after FMT cuda bug fixed (cuda 10.2 ok?)
+# Override default
+option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
 option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" On)
 
 # Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
@@ -375,6 +332,16 @@ set(BOUT_SOURCES
   ./src/sys/type_name.cxx
   ./src/sys/utils.cxx
   )
+
+if(BUILD_SHARED_LIBS)
+   add_library(bout++ SHARED ${BOUT_SOURCES} ${BOUT_HEADERS})
+else ()
+   add_library(bout++ STATIC ${BOUT_SOURCES} ${BOUT_HEADERS})
+endif ()
+
+
+include(cmake/SetupBOUTThirdParty.cmake)
+
 set(BOUT_DEPENDS "")
 if (HAVE_MPI)
    list(APPEND BOUT_DEPENDS mpi)
@@ -387,6 +354,12 @@ endif ()
 
 if (BOUT_USE_CUDA)
    list(APPEND BOUT_DEPENDS cuda)
+   message(STATUS "BOUT_USE_CUDA ${CMAKE_CUDA_COMPILER}")
+   set_source_files_properties(${BOUT_SOURCES} PROPERTIES LANGUAGE CUDA )
+   set_target_properties(bout++ PROPERTIES CUDA_STANDARD 14)
+   set_target_properties(bout++ PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+   set_target_properties(bout++ PROPERTIES POSITION_INDEPENDENT_CODE ON)
+   set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CUDA)
 endif ()   
 
 # UMPIRE
@@ -408,16 +381,6 @@ if(BOUT_HAS_HYPRE)
 endif ()
 
 message(STATUS "BOUT_DEPENDS: ${BOUT_DEPENDS}")
-blt_add_library(NAME bout++
-   SOURCES ${BOUT_SOURCES}
-   HEADERS ${BOUT_HEADERS}
-   DEPENDS_ON ${BOUT_DEPENDS})
-
-blt_register_library(
-   NAME BOUT_LIBS
-      LIBRARIES
-         bout++
-)         
 
 set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CXX)
 add_library(bout++::bout++ ALIAS bout++)
@@ -433,6 +396,8 @@ target_include_directories(bout++ PUBLIC
 
 if(BOUT_HAS_RAJA)
    target_compile_definitions(bout++ PUBLIC "BOUT_HAS_RAJA")
+   target_include_directories(bout++ PUBLIC ${RAJA_PATH}/include)
+   target_link_libraries(bout++ PUBLIC RAJA)
 endif()
 
 if(BOUT_HAS_UMPIRE)
@@ -445,8 +410,8 @@ endif()
 
 if(BOUT_HAS_HYPRE)
    target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
-   #add_subdirectory(src/invert/laplacexy2)
-   #target_link_libraries(bout++ PUBLIC LaplaceXY2Hypre)
+   target_include_directories(bout++ PUBLIC ${HYPRE_DIR}/include)
+   target_link_libraries(bout++ PUBLIC HYPRE::HYPRE)
 endif ()
 
 # todo reconcile PETSc INTERFACE FOR LAPLACEXY2
@@ -891,7 +856,7 @@ endif()
 
 #add_subdirectory(examples/laplacexy/simple-hypre)
 #add_subdirectory(examples/laplacexy/simple)
-add_subdirectory(examples/hasegawa-wakatani-3d)
+#add_subdirectory(examples/hasegawa-wakatani-3d)
 
 ##################################################
 # Generate the build config header
