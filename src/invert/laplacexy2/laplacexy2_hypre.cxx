@@ -1,5 +1,5 @@
 
-#if BOUT_HAS_HYPRE
+#ifdef BOUT_HAS_HYPRE
 
 #include <bout/invert/laplacexy2_hypre.hxx>
 
@@ -14,17 +14,24 @@
 
 #include <cmath>
 
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
 Ind2D index2d(Mesh* mesh, int x, int y) {
   int ny = mesh->LocalNy;
   return Ind2D(x * ny + y, ny, 1);
 }
 
 LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
-    : localmesh(m == nullptr ? bout::globals::mesh : m),
-      lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
-      indexer(std::make_shared<GlobalIndexer<Field2D>>(
-          localmesh, getStencil(localmesh, lowerY, upperY))),
-      matrix(indexer), location(loc) {
+    : localmesh(m == nullptr ? bout::globals::mesh : m), f2dinit(localmesh),
+      location(loc) {
   Timer timer("invert");
 
   if (opt == nullptr) {
@@ -32,44 +39,13 @@ LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
     opt = &(Options::root()["laplacexy"]);
   }
 
-  //////////////////////////////////////////////////
-  // Pre-allocate Hypre storage
-
-  // Note: This is a significant performance optimisation
-
-  //////////////////////////////////////////////////
-  // Set up KSP
-
-  // Declare KSP Context
-  HYPRE_BoomerAMGCreate(&solver);
-
-  // Configure Linear Solver
-
-  // Defaults taken from one of the HYPRE examples (ex5.c)
-  const BoutReal tol = (*opt)["tol"].doc("Tolerance").withDefault(1e-7);
-  const int relax_type = (*opt)["relax_type"].doc("What smoother to use").withDefault(3);
-  const bool cf_relaxation =
-      (*opt)["cf_relaxtion"].doc("Use CF-relaxation").withDefault(true);
-  const int num_sweeps = (*opt)["num_sweeps"].doc("Number of sweeps").withDefault(1);
-  const int max_levels =
-      (*opt)["max_levels"].doc("Maximum number of multigrid levels").withDefault(20);
-
-#if CHECKLEVEL >= 1
-  HYPRE_BoomerAMGSetPrintLevel(solver, 3);
-#endif
-
-  // Falgout coarsening with modified classical interpolaiton
-  HYPRE_BoomerAMGSetOldDefault(solver);
-  // G-S/Jacobi hybrid relaxation
-  HYPRE_BoomerAMGSetRelaxType(solver, relax_type);
-  // uses C/F relaxation
-  HYPRE_BoomerAMGSetRelaxOrder(solver, cf_relaxation);
-  // Sweeps on each level
-  HYPRE_BoomerAMGSetNumSweeps(solver, num_sweeps);
-  // maximum number of levels
-  HYPRE_BoomerAMGSetMaxLevels(solver, max_levels);
-  // convergence tolerance
-  HYPRE_BoomerAMGSetTol(solver, tol);
+  linearSystem = new bout::HypreSystem<Field2D>(*localmesh);
+  M = new bout::HypreMatrix<Field2D>(*localmesh, 7);
+  x = new bout::HypreVector<Field2D>(*localmesh);
+  b = new bout::HypreVector<Field2D>(*localmesh);
+  linearSystem->setMatrix(M);
+  linearSystem->setSolutionVector(x);
+  linearSystem->setRHSVector(b);
 
   ///////////////////////////////////////////////////
   // Decide boundary condititions
@@ -96,6 +72,7 @@ LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
   one.setLocation(location);
   zero.setLocation(location);
   setCoefs(one, zero);
+  std::cout << "New Methods." << std::endl;
 }
 
 void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
@@ -106,18 +83,19 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
   ASSERT1(A.getLocation() == location);
   ASSERT1(B.getLocation() == location);
 
+  const auto& region = f2dinit.getRegion("RGN_NOBNDRY");
+
   Coordinates* coords = localmesh->getCoordinates(location);
 
   //////////////////////////////////////////////////
   // Set Matrix elements
   //
   // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
-
+  auto start = std::chrono::system_clock::now();  //AARON
   for (auto& index : A.getRegion("RGN_NOBNDRY")) {
     // Index offsets
     auto ind_xp = index.xp();
     auto ind_xm = index.xm();
-
     // XX component
 
     // Metrics on x+1/2 boundary
@@ -138,8 +116,10 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
 
     BoutReal c = B[index] - xp - xm; // Central coefficient
 
-    matrix(index, ind_xp) = xp;
-    matrix(index, ind_xm) = xm;
+    M->setVal(index, ind_xp, xp);
+    M->setVal(index, ind_xm, xm);
+    //matrix(index, ind_xp) = xp;
+    //matrix(index, ind_xm) = xm;
 
     if (include_y_derivs) {
       auto ind_yp = index.yp();
@@ -157,7 +137,6 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
       BoutReal yp =
           -Acoef * J * g23 * g_23 / (g_22 * coords->J[index] * dy * coords->dy[index]);
       c -= yp;
-      matrix(index, ind_yp) = yp;
 
       // Metrics at y-1/2
       J = 0.5 * (coords->J[index] + coords->J[ind_ym]);
@@ -170,11 +149,15 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
       BoutReal ym =
           -Acoef * J * g23 * g_23 / (g_22 * coords->J[index] * dy * coords->dy[index]);
       c -= ym;
-      matrix(index, ind_ym) = ym;
+      M->setVal(index, ind_yp, yp);
+      M->setVal(index, ind_ym, ym);      
+      //matrix(index, ind_yp) = yp;
+      //matrix(index, ind_ym) = ym;  
     }
     // Note: The central coefficient is done last because this may be modified
     // if y derivs are/are not included.
-    matrix(index, index) = c;
+    M->setVal(index, index, c); 
+    //matrix(index, index) = c;
   }
 
   // X boundaries
@@ -185,9 +168,10 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
       for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
         auto index = index2d(localmesh, localmesh->xstart, y);
         auto ind_xm = index.xm();
-
-        matrix(ind_xm, index) = 0.5;
-        matrix(ind_xm, ind_xm) = 0.5;
+        M->setVal(ind_xm, index, 0.5);
+        M->setVal(ind_xm, ind_xm, 0.5);  
+        // matrix(ind_xm, index) = 0.5;
+        // matrix(ind_xm, ind_xm) = 0.5;
       }
 
     } else {
@@ -196,9 +180,12 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
       for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
         auto index = index2d(localmesh, localmesh->xstart, y);
         auto ind_xm = index.xm();
-
-        matrix(ind_xm, index) = 1.0;
-        matrix(ind_xm, ind_xm) = -1.0;
+        HYPRE_BigInt I = indexConverter->getGlobal(index);
+        HYPRE_BigInt XM = indexConverter->getGlobal(ind_xm);
+        M->setVal(ind_xm, index, 1.0);
+        M->setVal(ind_xm, ind_xm, -1.0);           
+        // matrix(ind_xm, index) = 1.0;
+        // matrix(ind_xm, ind_xm) = -1.0;
       }
     }
   }
@@ -206,65 +193,82 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
     // Dirichlet on outer X boundary
 
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-      auto index = index2d(localmesh, localmesh->xend, y);
+      auto index = index2d(localmesh, localmesh->xend, y);      
       auto ind_xp = index.xp();
-
-      matrix(ind_xp, ind_xp) = 0.5;
-      matrix(ind_xp, index) = 0.5;
+      M->setVal(ind_xp, ind_xp, 0.5);  
+      M->setVal(ind_xp, index, 0.5);
+      // matrix(ind_xp, ind_xp) = 0.5;
+      // matrix(ind_xp, index) = 0.5;   
     }
   }
 
   if (y_bndry_dirichlet) {
-    // Dirichlet on Y boundaries
+    // Dirichlet on Y boundaries 
     for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
       auto index = index2d(localmesh, it.ind, localmesh->ystart);
       auto ind_ym = index.ym();
-
-      matrix(ind_ym, ind_ym) = 0.5;
-      matrix(ind_ym, index) = 0.5;
+      M->setVal(ind_ym, ind_ym, 0.5);
+      M->setVal(ind_ym, index, 0.5);        
+      // matrix(ind_ym, ind_ym) = 0.5;
+      // matrix(ind_ym, index) = 0.5;       
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-
       auto index = index2d(localmesh, it.ind, localmesh->yend);
       auto ind_yp = index.yp();
-
-      matrix(ind_yp, ind_yp) = 0.5;
-      matrix(ind_yp, index) = 0.5;
+      M->setVal(ind_yp, ind_yp, 0.5);
+      M->setVal(ind_yp, index, 0.5);    
+      // matrix(ind_yp, ind_yp) = 0.5;
+      // matrix(ind_yp, index) = 0.5;
     }
   } else {
-    // Neumann on Y boundaries
+    // Neumann on Y boundaries   
     for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
       auto index = index2d(localmesh, it.ind, localmesh->ystart);
       auto ind_ym = index.ym();
-
-      matrix(ind_ym, ind_ym) = -1.0;
-      matrix(ind_ym, index) = 1.0;
+      M->setVal(ind_ym, ind_ym, -1.0);
+      M->setVal(ind_ym, index, 1.0); 
+      // matrix(ind_ym, ind_ym) = -1.0;
+      // matrix(ind_ym, index) = 1.0;    
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
       auto index = index2d(localmesh, it.ind, localmesh->yend);
       auto ind_yp = index.yp();
-
-      matrix(ind_yp, ind_yp) = 1.0;
-      matrix(ind_yp, index) = -1.0;
+      M->setVal(ind_yp, ind_yp, 1.0);
+      M->setVal(ind_yp, index, -1.0);     
+      // matrix(ind_yp, ind_yp) = 1.0;
+      // matrix(ind_yp, index) = -1.0;   
     }
   }
+  auto end = std::chrono::system_clock::now();  //AARON
+  std::chrono::duration<double> dur = end-start;  //AARON
+  std::cout << "*****Matrix set time:  " << dur.count() << std::endl;    
 
+  start = std::chrono::system_clock::now();
   // Assemble Matrix
-  matrix.assemble();
+  M->assemble();
 
-  // Set the operator
-  HYPRE_BoomerAMGSetup(solver, matrix.getParallel(), nullptr, nullptr);
+  end = std::chrono::system_clock::now();  //AARON
+  dur = end-start;  //AARON
+  std::cout << "*****Matrix asm time:  " << dur.count() << std::endl;    
+
+  start = std::chrono::system_clock::now();
+  linearSystem->setupAMG(M);
+
+  end = std::chrono::system_clock::now();  //AARON
+  dur = end-start;  //AARON
+  std::cout << "*****Matrix prec time:  " << dur.count() << std::endl;
 }
 
 LaplaceXY2Hypre::~LaplaceXY2Hypre() {
-  if (solver != nullptr) {
-    HYPRE_BoomerAMGDestroy(solver);
-  }
+  delete M;
+  delete x;
+  delete b;
+  delete linearSystem;
 }
 
-const Field2D LaplaceXY2Hypre::solve(const Field2D& rhs, const Field2D& x0) {
+Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
   Timer timer("invert");
 
   ASSERT1(rhs.getMesh() == localmesh);
@@ -272,140 +276,36 @@ const Field2D LaplaceXY2Hypre::solve(const Field2D& rhs, const Field2D& x0) {
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
 
-  // Load initial guess x0 into xs and rhs into bs
+  auto start = std::chrono::system_clock::now();  //AARON
 
-  bout::HypreVector<Field2D> xs(x0, indexer), bs(rhs, indexer);
+  x->importValuesFromField(x0);
+  b->importValuesFromField(rhs);
+  x->assemble();
+  b->assemble();
 
-  if (localmesh->firstX()) {
-    if (x_inner_dirichlet) {
-      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-        auto index = index2d(localmesh, localmesh->xstart - 1, y);
-
-        xs(index) = x0[index];
-        bs(index) = 0.5 * (x0[index] + x0[index.xp()]);
-      }
-    } else {
-      // Inner X boundary (Neumann)
-      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-        auto index = index2d(localmesh, localmesh->xstart - 1, y);
-
-        xs(index) = x0[index];
-        bs(index) = 0.0; // x0[index] - x0[index.xp()];
-      }
-    }
-  }
-
-  // Outer X boundary (Dirichlet)
-  if (localmesh->lastX()) {
-    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-      auto index = index2d(localmesh, localmesh->xend + 1, y);
-
-      xs(index) = x0[index];
-      bs(index) = 0.5 * (x0[index.xm()] + x0[index]);
-    }
-  }
-
-  if (y_bndry_dirichlet) {
-    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-      auto index = index2d(localmesh, it.ind, localmesh->ystart - 1);
-
-      xs(index) = x0[index];
-      bs(index) = 0.5 * (x0[index] + x0[index.yp()]);
-    }
-
-    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-      auto index = index2d(localmesh, it.ind, localmesh->yend + 1);
-
-      xs(index) = x0[index];
-      bs(index) = 0.5 * (x0[index] + x0[index.xm()]);
-    }
-  } else {
-    // Y boundaries Neumann
-    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-      auto index = index2d(localmesh, it.ind, localmesh->ystart - 1);
-
-      xs(index) = x0[index];
-      bs(index) = 0.0;
-    }
-
-    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-      auto index = index2d(localmesh, it.ind, localmesh->yend + 1);
-
-      xs(index) = x0[index];
-      bs(index) = 0.0;
-    }
-  }
-
-  // Assemble RHS Vector
-  bs.assemble();
-
-  // Assemble Trial Solution Vector
-  xs.assemble();
+  auto form_vec = std::chrono::system_clock::now();  //AARON  
+  std::chrono::duration<double> formvec_dur = form_vec-start;  //AARON
+  std::cout << "*****Form Vectors time:  " << formvec_dur.count() << std::endl;
 
   // Solve the system
-  HYPRE_BoomerAMGSolve(solver, matrix.getParallel(), bs.getParallel(), xs.getParallel());
+  start = std::chrono::system_clock::now();  //AARON
+  linearSystem->solve();
+
+  auto slv = std::chrono::system_clock::now();  //AARON
+  std::chrono::duration<double> slv_dur = slv-start;  //AARON
+  std::cout << "*****BoomerAMG solve time:  " << slv_dur.count() << std::endl;
 
   // Convert result into a Field2D
-  return xs.toField();
-}
+  start = std::chrono::system_clock::now();  //AARON  
+  Field2D sol;
+  sol.allocate().setLocation(CELL_LOC::centre);
+  x->exportValuesToField(sol);
 
-OperatorStencil<Ind2D> LaplaceXY2Hypre::getStencil(Mesh* localmesh,
-                                                   RangeIterator lowerYBoundary,
-                                                   RangeIterator upperYBoundary) {
-  OperatorStencil<Ind2D> stencil;
+  auto formfield = std::chrono::system_clock::now();  //AARON
+  std::chrono::duration<double> formfield_dur = formfield-start;  //AARON
+  std::cout << "*****Form field time:  " << formfield_dur.count() << std::endl;  
 
-  OffsetInd2D zero;
-
-  // Create a part of the stencil for the interior cells.
-  stencil.add(
-      [localmesh](Ind2D ind) -> bool {
-        return (localmesh->xstart <= ind.x() && ind.x() <= localmesh->xend
-                && localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend);
-      },
-      // Stencil in the interior
-      {zero, zero.xp(), zero.xm(), zero.yp(), zero.ym()});
-
-  // If there's a lower boundary, create a stencil
-  if (lowerYBoundary.max() - lowerYBoundary.min() > 0) {
-    stencil.add(
-        [yindex = localmesh->ystart - 1, &lowerYBoundary](Ind2D ind) -> bool {
-          return yindex == ind.y() && lowerYBoundary.intersects(ind.x());
-        },
-        // Stencil in lower boundary
-        {zero, zero.yp()});
-  }
-
-  // If there is an upper y-boundary then create a stencil for the
-  // first layer of cells in the boundary
-  if (upperYBoundary.max() - upperYBoundary.min() > 0) {
-    stencil.add(
-        [yindex = localmesh->yend + 1, &upperYBoundary](Ind2D ind) -> bool {
-          return yindex == ind.y() && upperYBoundary.intersects(ind.x());
-        },
-        // Stencil in upper boundary
-        {zero, zero.ym()});
-  }
-
-  // Add inner X boundary. Note: No corner cells
-  if (localmesh->firstX()) {
-    stencil.add(
-        [localmesh, index = localmesh->xstart - 1](Ind2D ind) -> bool {
-          return ind.x() == index && localmesh->ystart <= ind.y()
-                 && ind.y() <= localmesh->yend;
-        },
-        {zero, zero.xp()});
-  }
-  // Add outer X boundary
-  if (localmesh->lastX()) {
-    stencil.add(
-        [localmesh, index = localmesh->xend + 1](Ind2D ind) -> bool {
-          return ind.x() == index && localmesh->ystart <= ind.y()
-                 && ind.y() <= localmesh->yend;
-        },
-        {zero, zero.xm()});
-  }
-
-  return stencil;
+  return sol;
 }
 
 #endif // BOUT_HAS_HYPRE
