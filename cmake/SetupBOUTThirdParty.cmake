@@ -66,6 +66,10 @@ if (ENABLE_HYPRE OR HYPRE_DIR)
   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
   target_include_directories(bout++ PUBLIC ${HYPRE_DIR}/include)
   target_link_libraries(bout++ PUBLIC HYPRE::HYPRE)
+  if (HYPRE_CUDA)
+     target_compile_definitions(bout++ PUBLIC "HYPRE_USING_CUDA;HYPRE_USING_UNIFIED_MEMORY")
+     target_link_libraries(bout++ PUBLIC "${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcusparse_static.a;${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcurand_static.a;${CUDA_TOOLKIT_ROOT_DIR}/lib64/libculibos.a")
+  endif ()
 endif ()
 
 

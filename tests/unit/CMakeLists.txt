@@ -1,15 +1,10 @@
-<<<<<<< HEAD
-#add_subdirectory("${PROJECT_SOURCE_DIR}/externalpackages/googletest"
-#  "externalpackages/googletest")
-=======
-#bout_update_submodules()
-#add_subdirectory("${PROJECT_SOURCE_DIR}/externalpackages/googletest"
-#  "externalpackages/googletest")
+bout_update_submodules()
+add_subdirectory("${PROJECT_SOURCE_DIR}/externalpackages/googletest"
+  "externalpackages/googletest")
 
 if(NOT TARGET gtest)
   message(FATAL_ERROR "googletest not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
 endif()
->>>>>>> next-outerloop-GPU-umpire
 
 mark_as_advanced(
   BUILD_GMOCK BUILD_GTEST BUILD_SHARED_LIBS
@@ -17,7 +12,7 @@ mark_as_advanced(
   gtest_disable_pthreads gtest_force_shared_crt gtest_hide_internal_symbols
   )
 
-set(serial_tests_sources
+set(serial_tests_source
   ./bout_test_main.cxx
   ./field/test_field.cxx
   ./field/test_field2d.cxx
@@ -76,107 +71,24 @@ set(serial_tests_sources
   ./test_extras.hxx
   ./src/test_bout++.cxx)
 
-set(serial_tests_depends bout++ gtest gmock)
-if (ENABLE_OPENMP)
-  set(serial_tests_depends ${serial_tests_depends} openmp)
-  set(OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
-endif ()
-
-if (ENABLE_CUDA)
-  set(serial_tests_depends ${serial_tests_depends} cuda)
-endif ()
-
-message(STATUS "serial_tests depends ${serial_tests_depends}")
-blt_add_executable(
-  NAME serial_tests
-  SOURCES ${serial_tests_sources}
-  DEPENDS_ON ${serial_tests_depends})
-
-
-target_include_directories(serial_tests PUBLIC .
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../externalpackages/fmt/include>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../externalpackages/mpark.variant/include>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../../include>
-  $<INSTALL_INTERFACE:include>
+add_executable(serial_tests ${serial_tests_source})
+target_include_directories(serial_tests PUBLIC bout++
+   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../../include>
+   ${CMAKE_INSTALL_PREFIX}/include
   )
-
-<<<<<<< HEAD
-set(serial_tests_depends bout++ gtest gmock PETSc HYPRE)
-set(HYPRE_USING_CUDA_DEFINE "")
-set(HYPRE_USING_CUBLAS_DEFINE "")
-set(MEMORY_DEFINE "")
-if (ENABLE_OPENMP)
-  set(serial_tests_depends ${serial_tests_depends} openmp)
-  set(OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
-endif ()
-
-if (ENABLE_CUDA)
-  set(serial_tests_depends ${serial_tests_depends} cuda)
-  set(HYPRE_USING_CUDA_DEFINE "HYPRE_USING_CUDA")
-  set(MEMORY_DEFINE "HYPRE_USING_UNIFIED_MEMORY")
-endif ()
-
-message(STATUS "serial_tests depends ${serial_tests_depends}")
-blt_add_executable(
-  NAME serial_tests
-  SOURCES ${serial_tests_sources}
-   INCLUDES 
-     ${PROJECT_SOURCE_DIR}/include
-     ${PROJECT_SOURCE_DIR}/externalpackages/fmt/include
-     ${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/include
-     ${CUDA_TOOLKIT_ROOT_DIR}/include
-   DEFINES 
-      "BOUT_VERSION_STRING=\"${BOUT_FULL_VERSION}\""
-      "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
-      BOUT_HAS_HYPRE
-      ${HYPRE_USING_CUDA_DEFINE}
-      ${HYPRE_USING_CUBLAS_DEFINE}
-      ${MEMORY_DEFINE}
-  DEPENDS_ON ${serial_tests_depends})
-
-
-target_include_directories(serial_tests PUBLIC .
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../externalpackages/fmt/include>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../externalpackages/mpark.variant/include>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../../include>
-  $<INSTALL_INTERFACE:include>
-  )
-
-=======
->>>>>>> next-outerloop-GPU-umpire
-target_compile_definitions(bout++
-    PUBLIC "OPENMP_SCHEDULE=${OPENMP_SCHEDULE}"
-    PUBLIC "BOUT_OPENMP_SCHEDULE=${OPENMP_SCHEDULE}")
 set_target_properties(serial_tests PROPERTIES LINKER_LANGUAGE CXX)
-#target_link_libraries(serial_tests gtest gmock bout++::bout++)
-#add_test(NAME serial_tests COMMAND serial_tests)
+target_link_libraries(serial_tests gtest gmock bout++::bout++)
+add_test(NAME serial_tests COMMAND serial_tests)
 set_target_properties(serial_tests PROPERTIES FOLDER tests/unit)
 add_dependencies(build-check-unit-tests serial_tests)
-<<<<<<< HEAD
-target_link_libraries(
-   serial_tests PUBLIC 
-   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcusparse_static.a
-   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcurand_static.a
-   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libculibos.a
-   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublas_static.a
-   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublasLt_static.a
-)
+if (BOUT_USE_CUDA)
+   set_source_files_properties(${serial_tests_source} PROPERTIES LANGUAGE CUDA )
+   set_target_properties(serial_tests PROPERTIES CUDA_STANDARD 14)
+   set_target_properties(serial_tests PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+   set_target_properties(serial_tests PROPERTIES POSITION_INDEPENDENT_CODE ON)
+   set_target_properties(serial_tests PROPERTIES LINKER_LANGUAGE CUDA)
+endif ()   
 
-
-
-blt_add_test(
-  NAME serial_tests
-  COMMAND serial_tests)
-
-#target_include_directories(serial_tests PUBLIC .)
-#target_link_libraries(serial_tests gtest gmock bout++::bout++)
-#add_test(NAME serial_tests COMMAND serial_tests)
-#set_target_properties(serial_tests PROPERTIES FOLDER tests/unit)
-#add_dependencies(build-check-unit-tests serial_tests)
-=======
-blt_add_test(
-  NAME serial_tests
-  COMMAND serial_tests)
->>>>>>> next-outerloop-GPU-umpire
+file(GENERATE OUTPUT "/g/g0/holger/workspace/BOUT_build_cuda/build/ppc64le-gcc/BOUT-dev/dirs.txt" CONTENT ${CMAKE_INSTALL_PREFIX}
+ )

@@ -14,8 +14,6 @@ if (HYPRE_FOUND)
 endif()
 set(HYPRE_DIR ${loc})
 message(STATUS "Find HYPRE did not find cmake config - looking for includes and lib instead: ${loc}" )
-## Note if you don't have a Hypre cmake config then you may need to add additional libraries; especially for cuda such as libcusparse
-## This file does not add those properties
 
 find_path(HYPRE_INCLUDE_DIR   NAMES HYPRE.h
   DOC "HYPRE include directories"
@@ -55,11 +53,12 @@ find_package_handle_standard_args(HYPRE
   )
 
 if (HYPRE_FOUND AND NOT TARGET HYPRE::HYPRE)
-   add_library(HYPRE::HYPRE UNKNOWN IMPORTED)
+  add_library(HYPRE::HYPRE UNKNOWN IMPORTED)
   set_target_properties(HYPRE::HYPRE PROPERTIES
     IMPORTED_LOCATION "${HYPRE_LIBRARY}"
     INTERFACE_INCLUDE_DIRECTORIES "${HYPRE_INCLUDE_DIR}"
     )
+
 endif()
 
 
