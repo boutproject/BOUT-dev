@@ -53,12 +53,6 @@
 /* HDF5 library is available so use it */
 #cmakedefine HAVE_HDF5
 
-<<<<<<< HEAD
-=======
-/* HYPRE library is available so use it */
-#cmakedefine HAVE_HYPRE
-
->>>>>>> next-outerloop-GPU-umpire
 /* HAVE_INLINE_ISNAND */
 #undef HAVE_INLINE_ISNAND
 
@@ -111,16 +105,16 @@
 #cmakedefine BOUT_USE_OPENMP
 
 /* Compiling with NVCC for CUDA */
-#cmakedefine HAVE_CUDA
+#cmakedefine BOUT_USE_CUDA
 
 /* Add NVTX regions */
 #cmakedefine ENABLE_NVTX_REGIONS
 
 /* Use RAJA for loop abstractions */
-#cmakedefine HAVE_RAJA
+#cmakedefine BOUT_HAS_RAJA
 
 /* Use Umpire for memory management */
-#cmakedefine HAVE_UMPIRE
+#cmakedefine BOUT_HAS_UMPIRE
 
 /* HYPRE library is available so use it */
 #cmakedefine BOUT_HAS_HYPRE
