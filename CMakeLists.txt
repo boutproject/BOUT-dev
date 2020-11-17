@@ -416,6 +416,10 @@ target_include_directories(bout++ PUBLIC
   $<INSTALL_INTERFACE:include>
   )
 
+if(BOUT_HAS_HYPRE)
+   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
+endif ()
+
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
