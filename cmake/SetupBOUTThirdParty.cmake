@@ -23,8 +23,14 @@ set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
 
 if (BOUT_USE_CUDA)
    list(APPEND BOUT_DEPENDS cuda)
+   enable_language(CUDA)
    message(STATUS "BOUT_USE_CUDA ${CMAKE_CUDA_COMPILER}")
    set_source_files_properties(${BOUT_SOURCES} PROPERTIES LANGUAGE CUDA )
+   # CMAKE 3.14 if we don't use deprecated FindCUDA, then need to compute CUDA_TOOLKIT_ROOT_DIR
+   #cmake 3.17 has FindCUDAToolkit
+   get_filename_component(cuda_bin_dir ${CMAKE_CUDA_COMPILER} DIRECTORY)
+   set(BOUT_CUDA_LIB_DIR ${cuda_bin_dir}/../lib64 CACHE STRING "CUDA Library DIR")
+   message(STATUS "CUDA LIBRARY DIR: ${BOUT_CUDA_LIB_DIR}")
    set_target_properties(bout++ PROPERTIES CUDA_STANDARD 14)
    set_target_properties(bout++ PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
    set_target_properties(bout++ PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -68,7 +74,7 @@ if (ENABLE_HYPRE OR HYPRE_DIR)
   target_link_libraries(bout++ PUBLIC HYPRE::HYPRE)
   if (HYPRE_CUDA)
      target_compile_definitions(bout++ PUBLIC "HYPRE_USING_CUDA;HYPRE_USING_UNIFIED_MEMORY")
-     target_link_libraries(bout++ PUBLIC "${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcusparse_static.a;${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcurand_static.a;${CUDA_TOOLKIT_ROOT_DIR}/lib64/libculibos.a")
+     target_link_libraries(bout++ PUBLIC "${BOUT_CUDA_LIB_DIR}/libcusparse_static.a;${BOUT_CUDA_LIB_DIR}/libcurand_static.a;${BOUT_CUDA_LIB_DIR}/libculibos.a;${BOUT_CUDA_LIB_DIR}/libcublas_static.a;${BOUT_CUDA_LIB_DIR}/libcublasLt_static.a")
   endif ()
 endif ()
 

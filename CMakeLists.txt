@@ -214,7 +214,7 @@ set(BOUT_HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
 )
 
-#  ./src/invert/laplacexy2/laplacexy2_hypre.cxx -- not yet ready 
+
 set(BOUT_SOURCES
   ./src/bout++.cxx
   ./src/field/field.cxx
@@ -256,6 +256,7 @@ set(BOUT_SOURCES
   ./src/invert/laplace/invert_laplace.cxx
   ./src/invert/laplacexy/laplacexy.cxx
   ./src/invert/laplacexy2/laplacexy2.cxx
+  ./src/invert/laplacexy2/laplacexy2_hypre.cxx 
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
   ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.cxx
   ./src/invert/laplacexz/laplacexz.cxx
@@ -348,15 +349,16 @@ target_include_directories(bout++ PUBLIC
   $<INSTALL_INTERFACE:include>
   )
 
-if(BOUT_HAS_HYPRE)
-   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
-endif ()
 
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
 # Optional dependencies
 include(cmake/SetupBOUTThirdParty.cmake)
+
+if(BOUT_HAS_HYPRE)
+   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
+endif ()
 
 ##################################################
 # Components of the version number
@@ -626,7 +628,7 @@ if(PACKAGE_TESTS)
   add_dependencies(check_bout check-unit-tests check-integrated-tests)
 endif()
 
-#add_subdirectory(examples/laplacexy/simple-hypre)
+add_subdirectory(examples/laplacexy/simple-hypre)
 #add_subdirectory(examples/laplacexy/simple)
 #add_subdirectory(examples/hasegawa-wakatani-3d)
 

@@ -6,7 +6,7 @@
 #include "field3d.hxx"
 #include "bout/hypre_interface.hxx"
 
-#if BOUT_HAS_HYPRE
+#ifdef BOUT_HAS_HYPRE
 
 #include "HYPRE.h"
 #include "HYPRE_IJ_mv.h"
