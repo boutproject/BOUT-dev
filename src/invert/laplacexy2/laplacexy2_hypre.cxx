@@ -39,10 +39,12 @@ LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
     opt = &(Options::root()["laplacexy"]);
   }
 
+  indexConverter = std::make_shared<GlobalIndexer<Field2D>>(localmesh);
+
   linearSystem = new bout::HypreSystem<Field2D>(*localmesh);
-  M = new bout::HypreMatrix<Field2D>(*localmesh, 7);
-  x = new bout::HypreVector<Field2D>(*localmesh);
-  b = new bout::HypreVector<Field2D>(*localmesh);
+  M = new bout::HypreMatrix<Field2D>(indexConverter);
+  x = new bout::HypreVector<Field2D>(indexConverter);
+  b = new bout::HypreVector<Field2D>(indexConverter);
   linearSystem->setMatrix(M);
   linearSystem->setSolutionVector(x);
   linearSystem->setRHSVector(b);
@@ -116,10 +118,8 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
 
     BoutReal c = B[index] - xp - xm; // Central coefficient
 
-    M->setVal(index, ind_xp, xp);
-    M->setVal(index, ind_xm, xm);
-    //matrix(index, ind_xp) = xp;
-    //matrix(index, ind_xm) = xm;
+    (*M)(index, ind_xp) = xp;
+    (*M)(index, ind_xm) = xm;
 
     if (include_y_derivs) {
       auto ind_yp = index.yp();
@@ -148,16 +148,13 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
 
       BoutReal ym =
           -Acoef * J * g23 * g_23 / (g_22 * coords->J[index] * dy * coords->dy[index]);
-      c -= ym;
-      M->setVal(index, ind_yp, yp);
-      M->setVal(index, ind_ym, ym);      
-      //matrix(index, ind_yp) = yp;
-      //matrix(index, ind_ym) = ym;  
+      c -= ym;  
+      (*M)(index, ind_yp) = yp;
+      (*M)(index, ind_ym) = ym;  
     }
     // Note: The central coefficient is done last because this may be modified
     // if y derivs are/are not included.
-    M->setVal(index, index, c); 
-    //matrix(index, index) = c;
+    (*M)(index, index) = c;
   }
 
   // X boundaries
@@ -168,10 +165,8 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
       for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
         auto index = index2d(localmesh, localmesh->xstart, y);
         auto ind_xm = index.xm();
-        M->setVal(ind_xm, index, 0.5);
-        M->setVal(ind_xm, ind_xm, 0.5);  
-        // matrix(ind_xm, index) = 0.5;
-        // matrix(ind_xm, ind_xm) = 0.5;
+        (*M)(ind_xm, index) = 0.5;
+        (*M)(ind_xm, ind_xm) = 0.5;
       }
 
     } else {
@@ -181,11 +176,9 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
         auto index = index2d(localmesh, localmesh->xstart, y);
         auto ind_xm = index.xm();
         HYPRE_BigInt I = indexConverter->getGlobal(index);
-        HYPRE_BigInt XM = indexConverter->getGlobal(ind_xm);
-        M->setVal(ind_xm, index, 1.0);
-        M->setVal(ind_xm, ind_xm, -1.0);           
-        // matrix(ind_xm, index) = 1.0;
-        // matrix(ind_xm, ind_xm) = -1.0;
+        HYPRE_BigInt XM = indexConverter->getGlobal(ind_xm);       
+        (*M)(ind_xm, index) = 1.0;
+        (*M)(ind_xm, ind_xm) = -1.0;
       }
     }
   }
@@ -195,10 +188,8 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       auto index = index2d(localmesh, localmesh->xend, y);      
       auto ind_xp = index.xp();
-      M->setVal(ind_xp, ind_xp, 0.5);  
-      M->setVal(ind_xp, index, 0.5);
-      // matrix(ind_xp, ind_xp) = 0.5;
-      // matrix(ind_xp, index) = 0.5;   
+      (*M)(ind_xp, ind_xp) = 0.5;
+      (*M)(ind_xp, index) = 0.5;   
     }
   }
 
@@ -207,38 +198,30 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
     for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
       auto index = index2d(localmesh, it.ind, localmesh->ystart);
       auto ind_ym = index.ym();
-      M->setVal(ind_ym, ind_ym, 0.5);
-      M->setVal(ind_ym, index, 0.5);        
-      // matrix(ind_ym, ind_ym) = 0.5;
-      // matrix(ind_ym, index) = 0.5;       
+      (*M)(ind_ym, ind_ym) = 0.5;
+      (*M)(ind_ym, index) = 0.5;       
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
       auto index = index2d(localmesh, it.ind, localmesh->yend);
       auto ind_yp = index.yp();
-      M->setVal(ind_yp, ind_yp, 0.5);
-      M->setVal(ind_yp, index, 0.5);    
-      // matrix(ind_yp, ind_yp) = 0.5;
-      // matrix(ind_yp, index) = 0.5;
+      (*M)(ind_yp, ind_yp) = 0.5;
+      (*M)(ind_yp, index) = 0.5;
     }
   } else {
     // Neumann on Y boundaries   
     for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
       auto index = index2d(localmesh, it.ind, localmesh->ystart);
       auto ind_ym = index.ym();
-      M->setVal(ind_ym, ind_ym, -1.0);
-      M->setVal(ind_ym, index, 1.0); 
-      // matrix(ind_ym, ind_ym) = -1.0;
-      // matrix(ind_ym, index) = 1.0;    
+      (*M)(ind_ym, ind_ym) = -1.0;
+      (*M)(ind_ym, index) = 1.0;    
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
       auto index = index2d(localmesh, it.ind, localmesh->yend);
       auto ind_yp = index.yp();
-      M->setVal(ind_yp, ind_yp, 1.0);
-      M->setVal(ind_yp, index, -1.0);     
-      // matrix(ind_yp, ind_yp) = 1.0;
-      // matrix(ind_yp, index) = -1.0;   
+      (*M)(ind_yp, ind_yp) = 1.0;
+      (*M)(ind_yp, index) = -1.0;   
     }
   }
   auto end = std::chrono::system_clock::now();  //AARON
@@ -297,9 +280,9 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
 
   // Convert result into a Field2D
   start = std::chrono::system_clock::now();  //AARON  
-  Field2D sol;
-  sol.allocate().setLocation(CELL_LOC::centre);
-  x->exportValuesToField(sol);
+  Field2D sol = x->toField();
+  //sol.allocate().setLocation(CELL_LOC::centre);
+  //x->exportValuesToField(sol);
 
   auto formfield = std::chrono::system_clock::now();  //AARON
   std::chrono::duration<double> formfield_dur = formfield-start;  //AARON
