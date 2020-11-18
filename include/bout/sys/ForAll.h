@@ -11,9 +11,7 @@
 #ifndef included_ForAll
 #define included_ForAll
 
-#include "BOUT_config.h"
-
-#if defined(HAVE_RAJA)
+#if defined(BOUT_HAS_RAJA)
 #include "RAJA/RAJA.hpp"
 
 #include "bout/sys/ExecutionPolicy.h"
@@ -32,7 +30,7 @@ namespace bout
  */
 #define BOUT_INLINE inline
 
-#if defined(HAVE_CUDA) && defined(__CUDACC__)
+#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
 #define BOUT_HOST_DEVICE __host__ __device__
 #else
 #define BOUT_HOST_DEVICE

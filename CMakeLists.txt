@@ -214,6 +214,7 @@ set(BOUT_HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
 )
 
+#  ./src/invert/laplacexy2/laplacexy2_hypre.cxx -- not yet ready 
 set(BOUT_SOURCES
   ./src/bout++.cxx
   ./src/field/field.cxx
@@ -255,7 +256,6 @@ set(BOUT_SOURCES
   ./src/invert/laplace/invert_laplace.cxx
   ./src/invert/laplacexy/laplacexy.cxx
   ./src/invert/laplacexy2/laplacexy2.cxx
-  ./src/invert/laplacexy2/laplacexy2_hypre.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
   ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.cxx
   ./src/invert/laplacexz/laplacexz.cxx
