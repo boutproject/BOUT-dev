@@ -1,4 +1,4 @@
-bout_update_submodules()
+#bout_update_submodules()
 add_subdirectory("${PROJECT_SOURCE_DIR}/externalpackages/googletest"
   "externalpackages/googletest")
 
@@ -87,7 +87,7 @@ if (BOUT_USE_CUDA)
    set_target_properties(serial_tests PROPERTIES CUDA_STANDARD 14)
    #   set_target_properties(serial_tests PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
    #set_target_properties(serial_tests PROPERTIES POSITION_INDEPENDENT_CODE ON)
-   #set_target_properties(serial_tests PROPERTIES LINKER_LANGUAGE CUDA)
+   #   set_target_properties(serial_tests PROPERTIES LINKER_LANGUAGE CUDA)
 endif ()   
 
 #file(GENERATE OUTPUT "/g/g0/holger/workspace/BOUT_build_cuda/build/ppc64le-gcc/BOUT-dev/dirs.txt" CONTENT ${CMAKE_INSTALL_PREFIX})

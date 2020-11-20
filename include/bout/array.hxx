@@ -230,7 +230,9 @@ BOUT_HOST_DEVICE inline   ~Array() {
 BOUT_HOST_DEVICE Array(const Array &other) {
     ptr = other.ptr;
 #ifndef __CUDA_ARCH__
-    ptr->inc_count();
+    if(ptr) {
+       ptr->inc_count();
+    }
 #endif
   }
 

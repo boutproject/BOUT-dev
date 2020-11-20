@@ -35,7 +35,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 include(cmake/SetupCompilers.cmake)
 
 # Override default
-option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
+option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" ON)
 option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" On)
 
 # Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html

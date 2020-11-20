@@ -43,6 +43,9 @@ if (ENABLE_UMPIRE)
   find_package(UMPIRE REQUIRED)
   list(APPEND BOUT_DEPENDS umpire)
   set (BOUT_HAS_UMPIRE ON)
+  target_compile_definitions(bout++ PUBLIC "BOUT_HAS_UMPIRE")
+  target_include_directories(bout++ PUBLIC ${UMPIRE_INCLUDE_DIRS}/include)
+  target_link_libraries(bout++ PUBLIC umpire)
 endif ()
 
 # RAJA
