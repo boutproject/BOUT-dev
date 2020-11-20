@@ -387,6 +387,56 @@ bool NcFormat::addVarInt(const string &name, bool repeat) {
   return true;
 }
 
+bool NcFormat::addVarIntVec(const string &name, bool repeat, size_t size) {
+  if(!is_valid())
+    return false;
+
+  // Create an error object so netCDF doesn't exit
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar* var;
+  if (!(var = dataFile->get_var(name.c_str()))) {
+    // Variable not in file, so add it.
+    NcDim* vecDim;
+    auto vecDimName = "vec" + std::to_string(size);
+    if (!(vecDim = dataFile->get_dim(vecDimName.c_str()))) {
+      vecDim = dataFile->add_dim(vecDimName.c_str(), int(size));
+    }
+    if (repeat) {
+      std::vector<const NcDim*> local_dim_list{recDimList[0], vecDim};
+      var = dataFile->add_var(name.c_str(), ncInt, 2, &local_dim_list[0]);
+    } else {
+      std::vector<const NcDim*> local_dim_list{vecDim};
+      var = dataFile->add_var(name.c_str(), ncInt, 1, &local_dim_list[0]);
+    }
+
+    if(!var->is_valid()) {
+      output_error.write("ERROR: NetCDF could not add int '{:s}' to file '{:s}'\n", name, fname);
+      return false;
+    }
+  } else {
+    // Check the existing variable is consistent with what's being added
+    if (repeat) {
+      ASSERT0(var->num_dims() == 2);
+      if (size_t(var->get_dim(1)->size()) != size) {
+        throw BoutException("Found existing variable '{:s}' with size {}. Trying to add "
+                            "with size {}.", name, var->get_dim(1)->size(), size);
+      }
+    } else {
+      ASSERT0(var->num_dims() == 1);
+      if (size_t(var->get_dim(0)->size()) != size) {
+        throw BoutException("Found existing variable '{:s}' with size {}. Trying to add "
+                            "with size {}.", name, var->get_dim(0)->size(), size);
+      }
+    }
+  }
+  return true;
+}
+
 bool NcFormat::addVarBoutReal(const string &name, bool repeat) {
   if(!is_valid())
     return false;
