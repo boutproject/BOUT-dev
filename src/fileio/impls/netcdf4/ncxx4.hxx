@@ -90,6 +90,7 @@ class Ncxx4 : public DataFormat {
 
   // Add a variable to the file
   bool addVarInt(const std::string &name, bool repeat) override;
+  bool addVarIntVec(const std::string &name, bool repeat, size_t size) override;
   bool addVarBoutReal(const std::string &name, bool repeat) override;
   bool addVarField2D(const std::string &name, bool repeat) override;
   bool addVarField3D(const std::string &name, bool repeat) override;
