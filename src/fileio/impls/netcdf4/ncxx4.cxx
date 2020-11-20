@@ -352,6 +352,36 @@ bool Ncxx4::addVarInt(const string &name, bool repeat) {
   return true;
 }
 
+bool Ncxx4::addVarIntVec(const string &name, bool repeat, size_t size) {
+  if(!is_valid())
+    return false;
+
+  NcVar var = dataFile->getVar(name);
+  const auto vec_dim_name = "vec" + std::to_string(size);
+  auto vec_dim = dataFile->getDim(vec_dim_name);
+  if (vec_dim.isNull()) {
+    vec_dim = dataFile->addDim(vec_dim_name, size);
+  }
+  if(var.isNull()) {
+    // Variable not in file, so add it.
+    if (repeat) {
+      auto dims = getRecDimVec(2);
+      dims[1] = vec_dim;
+      var = dataFile->addVar(name, ncInt, dims);
+    } else {
+      auto dims = getDimVec(1);
+      dims[0] = vec_dim;
+      var = dataFile->addVar(name, ncInt, dims);
+    }
+
+    if(var.isNull()) {
+      output_error.write("ERROR: NetCDF could not add int '{:s}' to file '{:s}'\n", name, fname);
+      return false;
+    }
+  }
+  return true;
+}
+
 bool Ncxx4::addVarBoutReal(const string &name, bool repeat) {
   if(!is_valid())
     return false;
