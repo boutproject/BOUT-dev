@@ -162,22 +162,35 @@ public:
   }
 
   void assemble() {
+    writeCacheToHypre();
     HYPRE_IJVectorAssemble(hypre_vector);
     HYPRE_IJVectorGetObject(hypre_vector, reinterpret_cast<void**>(&parallel_vector));
+  }
+
+  void writeCacheToHypre()
+  {
+    HYPRE_IJVectorSetValues(hypre_vector, vsize, I, V);
+  }
+
+  void readCacheFromHypre()
+  {
+    HYPRE_IJVectorGetValues(hypre_vector, vsize, I, V);
   }
 
   T toField() {
     T result(indexConverter->getMesh());
     result.allocate().setLocation(location);
 
-    HYPRE_IJVectorGetValues(hypre_vector, vsize, I, V);
+    readCacheFromHypre();
     // Note that this only populates boundaries to a depth of 1
     int count = 0;
     BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
       HYPRE_BigInt index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
       if (index != -1) { // Todo double check why index out of bounds does not return -1
         result[i] = static_cast<BoutReal>(V[count]);
+        std::cout << index << ", " << V[count] << std::endl;
         count++;
+
       }
     }
 
@@ -196,7 +209,7 @@ public:
     }
 
     ASSERT2(vec_i == vsize);
-    HYPRE_IJVectorSetValues(hypre_vector, vsize, I, V);
+    writeCacheToHypre();
     assemble();
     have_indices = true;
   }
@@ -227,7 +240,8 @@ public:
           break;
         }
       }
-      throw BoutException("Error cannot find global index in HypreVector, index = {}",index);
+      if (vec_i < 0)
+        throw BoutException("Error cannot find global index in HypreVector, index = {}",index);
 
       value = vector->V[vec_i];
     }
@@ -238,6 +252,7 @@ public:
     Element& operator=(BoutReal value_) {
       value = value_;
       vector->V[vec_i] = value_;
+      std::cout << "Set:  V[] vec_i = " << value_ << std::endl;
       return *this;
     }
     Element& operator+=(BoutReal value_) {
