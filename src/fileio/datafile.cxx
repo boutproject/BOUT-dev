@@ -78,10 +78,10 @@ Datafile::Datafile(Datafile&& other) noexcept
       flushFrequency(other.flushFrequency), file(std::move(other.file)),
       filename(std::move(other.filename)), writable(other.writable),
       appending(other.appending), first_time(other.first_time),
-      int_arr(std::move(other.int_arr)), BoutReal_arr(std::move(other.BoutReal_arr)),
-      bool_arr(std::move(other.bool_arr)), f2d_arr(std::move(other.f2d_arr)),
-      f3d_arr(std::move(other.f3d_arr)), v2d_arr(std::move(other.v2d_arr)),
-      v3d_arr(std::move(other.v3d_arr)) {
+      int_arr(std::move(other.int_arr)), int_vec_arr(std::move(other.int_vec_arr)),
+      BoutReal_arr(std::move(other.BoutReal_arr)), bool_arr(std::move(other.bool_arr)),
+      f2d_arr(std::move(other.f2d_arr)), f3d_arr(std::move(other.f3d_arr)),
+      v2d_arr(std::move(other.v2d_arr)), v3d_arr(std::move(other.v3d_arr)) {
   other.file = nullptr;
 }
 
@@ -93,9 +93,9 @@ Datafile::Datafile(const Datafile& other)
       shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter),
       flushFrequency(other.flushFrequency), file(nullptr), filename(other.filename),
       writable(other.writable), appending(other.appending), first_time(other.first_time),
-      int_arr(other.int_arr), BoutReal_arr(other.BoutReal_arr), bool_arr(other.bool_arr),
-      f2d_arr(other.f2d_arr), f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr),
-      v3d_arr(other.v3d_arr) {}
+      int_arr(other.int_arr), int_vec_arr(other.int_vec_arr),
+      BoutReal_arr(other.BoutReal_arr), bool_arr(other.bool_arr), f2d_arr(other.f2d_arr),
+      f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {}
 
 Datafile& Datafile::operator=(Datafile &&rhs) noexcept {
   mesh         = rhs.mesh;
@@ -116,6 +116,7 @@ Datafile& Datafile::operator=(Datafile &&rhs) noexcept {
   appending    = rhs.appending;
   first_time   = rhs.first_time;
   int_arr      = std::move(rhs.int_arr);
+  int_vec_arr  = std::move(rhs.int_vec_arr);
   BoutReal_arr = std::move(rhs.BoutReal_arr);
   bool_arr     = std::move(rhs.bool_arr);
   f2d_arr      = std::move(rhs.f2d_arr);
@@ -202,6 +203,13 @@ bool Datafile::openw(const std::string& filename_) {
   for(const auto& var : int_arr) {
     if (!file->addVarInt(var.name, var.save_repeat)) {
       throw BoutException("Failed to add int variable {:s} to Datafile", var.name);
+    }
+  }
+
+  // Add vectors of integers
+  for(const auto& var : int_vec_arr) {
+    if (!file->addVarIntVec(var.name, var.save_repeat, var.ptr->size())) {
+      throw BoutException("Failed to add int vector variable {:s} to Datafile", var.name);
     }
   }
   
@@ -319,6 +327,13 @@ bool Datafile::opena(const std::string& filename_) {
   for(const auto& var : int_arr) {
     if (!file->addVarInt(var.name, var.save_repeat)) {
       throw BoutException("Failed to add int variable {:s} to Datafile", var.name);
+    }
+  }
+
+  // Add vectors of integers
+  for(const auto& var : int_vec_arr) {
+    if (!file->addVarIntVec(var.name, var.save_repeat, var.ptr->size())) {
+      throw BoutException("Failed to add int vector variable {:s} to Datafile", var.name);
     }
   }
 
@@ -468,6 +483,63 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
 
     // Add variable to file
     if (!file->addVarInt(name, save_repeat)) {
+      throw BoutException("Failed to add int variable {:s} to Datafile", name);
+    }
+
+    if(openclose) {
+      file->close();
+    }
+  }
+}
+
+void Datafile::add(std::vector<int> &i, const char *name, bool save_repeat) {
+  TRACE("DataFile::add(std::vector<int>)");
+  if (!enabled)
+    return;
+  if (varAdded(name)) {
+    // Check if it's the same variable
+    if (&i == varPtr(name)) {
+      output_warn.write("WARNING: variable '{:s}' already added to Datafile, skipping...\n",
+                        name);
+      return;
+    } else {
+      throw BoutException("Variable with name '{:s}' already added to Datafile", name);
+    }
+  }
+
+  VarStr<std::vector<int>> d;
+
+  d.ptr = &i;
+  d.name = name;
+  d.save_repeat = save_repeat;
+  d.covar = false;
+
+  int_vec_arr.push_back(d);
+
+  if (writable) {
+    // Otherwise will add variables when Datafile is opened for writing/appending
+    if (openclose) {
+      // Open the file
+      // Check filename has been set
+      if (filename.empty())
+        throw BoutException("Datafile::add: Filename has not been set");
+      if(!file->openw(filename, BoutComm::rank(), appending)) {
+        if (appending) {
+          throw BoutException("Datafile::add: Failed to open file {:s} for appending!",
+                              filename);
+        } else {
+          throw BoutException("Datafile::add: Failed to open file {:s} for writing!",
+                              filename);
+        }
+      }
+      appending = true;
+    }
+
+    if(!file->is_valid())
+      throw BoutException("Datafile::add: File is not valid!");
+
+    // Add variable to file
+    if (!file->addVarIntVec(name, save_repeat, i.size())) {
       throw BoutException("Failed to add int variable {:s} to Datafile", name);
     }
 
@@ -974,6 +1046,33 @@ bool Datafile::read() {
     }
   }
 
+  // Read vectors of integers
+  for(const auto& var : int_vec_arr) {
+    if(var.save_repeat) {
+      if(!file->read_rec(&(*var.ptr)[0], var.name.c_str(), var.ptr->size())) {
+        if(!init_missing) {
+          throw BoutException(
+              "Missing data for {:s} in input. Set init_missing=true to set to zero.",
+              var.name);
+        }
+        output_warn.write("\tWARNING: Could not read integer vector {:s}. Setting to zero\n", var.name);
+        *(var.ptr) = {};
+        continue;
+      }
+    } else {
+      if(!file->read(&(*var.ptr)[0], var.name.c_str(), var.ptr->size())) {
+        if(!init_missing) {
+          throw BoutException(
+              "Missing data for {:s} in input. Set init_missing=true to set to zero.",
+              var.name);
+        }
+        output_warn.write("\tWARNING: Could not read integer vector {:s}. Setting to zero\n", var.name);
+        *(var.ptr) = {};
+        continue;
+      }
+    }
+  }
+
   // Read BoutReals
   for(const auto& var : BoutReal_arr) {
     if(var.save_repeat) {
@@ -1164,6 +1263,11 @@ bool Datafile::write() {
     write_int(var.name, var.ptr, var.save_repeat);
   }
   
+  // Write vectors of integers
+  for(const auto& var : int_vec_arr) {
+    write_int_vec(var.name, var.ptr, var.save_repeat);
+  }
+
   // Write BoutReals
   for(const auto& var : BoutReal_arr) {
     write_real(var.name, var.ptr, var.save_repeat);
@@ -1519,6 +1623,14 @@ bool Datafile::write_int(const std::string &name, int *f, bool save_repeat) {
   }
 }
 
+bool Datafile::write_int_vec(const std::string &name, std::vector<int> *f, bool save_repeat) {
+  if(save_repeat) {
+    return file->write_rec(&(*f)[0], name, f->size());
+  }else {
+    return file->write(&(*f)[0], name, f->size());
+  }
+}
+
 bool Datafile::write_real(const std::string &name, BoutReal *f, bool save_repeat) {
   if(save_repeat) {
     return file->write_rec(f, name);
@@ -1597,6 +1709,11 @@ bool Datafile::varAdded(const std::string &name) {
       return true;
   }
 
+  for(const auto& var : int_vec_arr ) {
+    if(name == var.name)
+      return true;
+  }
+
   for(const auto& var : BoutReal_arr ) {
     if(name == var.name)
       return true;
@@ -1636,6 +1753,12 @@ bool Datafile::varAdded(const std::string &name) {
 
 void *Datafile::varPtr(const std::string &name) {
   for (const auto &var : int_arr) {
+    if (name == var.name) {
+      return static_cast<void *>(var.ptr);
+    }
+  }
+
+  for (const auto &var : int_vec_arr) {
     if (name == var.name) {
       return static_cast<void *>(var.ptr);
     }
