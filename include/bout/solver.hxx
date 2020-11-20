@@ -417,6 +417,12 @@ protected:
   /// Current iteration (output time-step) number
   int iteration{0};
 
+  /// Randomly generated run ID
+  int run_id {1};  // 0 = unknown restart, 1 = not restarted
+  /// The run from which this was restarted.
+  /// Set to zero if no restart
+  int run_restart_from {1};
+
   /// Run the user's RHS function
   int run_rhs(BoutReal t);
   /// Calculate only the convective parts
