@@ -114,13 +114,14 @@ TYPED_TEST(HypreVectorTest, GetElements) {
 }
 
 TYPED_TEST(HypreVectorTest, SetElements) {
-  HypreVector<TypeParam> vector{this->indexer};
+  HypreVector<TypeParam> vector{this->field, this->indexer};
 
   BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     vector(i) = static_cast<BoutReal>(i.ind);
-    // Set to identical values, but only "coincidentally"
     this->field[i] = static_cast<BoutReal>(i.ind);
   }
+
+  vector.assemble();
 
   EXPECT_TRUE(IsFieldEqual(this->field, vector.toField(), "RGN_NOBNDRY"));
 }
