@@ -249,7 +249,7 @@ bool H5Format::setRecord(int t) {
 
 // Add a variable to the file
 bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_type,
-    std::string datatype) {
+    std::string datatype, int lx, int ly, int lz) {
   hid_t dataSet = H5Dopen(dataFile, name.c_str(), H5P_DEFAULT);
   if (dataSet >= 0) { // >=0 means variable already exists, so return.
     if (H5Dclose(dataSet) < 0)
@@ -259,6 +259,7 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
 
   int nd = 0;
   if (datatype == "scalar") nd = 0;
+  else if (datatype == "vector") nd = 1;
   else if (datatype == "FieldX") nd = 1;
   else if (datatype == "Field2D") nd = 2;
   else if (datatype == "FieldPerp") nd = 2;
@@ -273,23 +274,23 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
     hsize_t init_size[4];
     if (parallel) {
       init_size[0]=0;
-      init_size[1]=mesh->GlobalNx-2*mesh->xstart;
+      init_size[1] = lx == 0 ? mesh->GlobalNx-2*mesh->xstart : lx;
       if (datatype == "FieldPerp_t") {
-        init_size[2]=mesh->GlobalNz;
+        init_size[2] = lz == 0 ? mesh->GlobalNz : lz;
       } else {
-        init_size[2]=mesh->GlobalNy-2*mesh->ystart;
+        init_size[2] = ly == 0 ? mesh->GlobalNy - 2*mesh->ystart : ly;
       }
-      init_size[3]=mesh->GlobalNz;
+      init_size[3] = lz == 0 ? mesh->GlobalNz : lz;
     }
     else {
       init_size[0]=0;
-      init_size[1]=mesh->LocalNx;
+      init_size[1] = lx == 0 ? mesh->LocalNx : lx;
       if (datatype == "FieldPerp_t") {
-        init_size[2]=mesh->LocalNz;
+        init_size[2] = lz == 0 ? mesh->LocalNz : lz;
       } else {
-        init_size[2]=mesh->LocalNy;
+        init_size[2] = ly == 0 ? mesh->LocalNy : ly;
       }
-      init_size[3]=mesh->LocalNz;
+      init_size[3] = lz == 0 ? mesh->LocalNz : lz;
     }
 
     // Modify dataset creation properties, i.e. enable chunking.
@@ -346,21 +347,21 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
       // Negative value indicates error, i.e. file does not exist, so create:
       hsize_t init_size[3];
       if (parallel) {
-        init_size[0] = mesh->GlobalNx - 2 * mesh->xstart;
+        init_size[0] = lx == 0 ? mesh->GlobalNx - 2 * mesh->xstart : lx;
         if (datatype == "FieldPerp") {
-          init_size[1] = mesh->GlobalNz;
+          init_size[1] = lz == 0 ? mesh->GlobalNz : lz;
         } else {
-          init_size[1] = mesh->GlobalNy - 2 * mesh->ystart;
+          init_size[1] = ly == 0 ? mesh->GlobalNy - 2 * mesh->ystart : ly;
         }
-        init_size[2] = mesh->GlobalNz;
+        init_size[2] = lz == 0 ? mesh->GlobalNz : lz;
       } else {
-        init_size[0] = mesh->LocalNx;
+        init_size[0] = lx == 0 ? mesh->LocalNx : lx;
         if (datatype == "FieldPerp") {
-          init_size[1] = mesh->LocalNz;
+          init_size[1] = lz == 0 ? mesh->LocalNz : lz;
         } else {
-          init_size[1] = mesh->LocalNy;
+          init_size[1] = ly == 0 ? mesh->LocalNy : ly;
         }
-        init_size[2] = mesh->LocalNz;
+        init_size[2] = lz == 0 ? mesh->LocalNz : lz;
       }
 
       // Create value for attribute to say what kind of field this is
@@ -390,6 +391,10 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
 
 bool H5Format::addVarInt(const std::string &name, bool repeat) {
   return addVar(name, repeat, H5T_NATIVE_INT, "scalar");
+}
+
+bool H5Format::addVarIntVec(const std::string &name, bool repeat, size_t size) {
+  return addVar(name, repeat, H5T_NATIVE_INT, "vector", size);
 }
 
 bool H5Format::addVarBoutReal(const std::string &name, bool repeat) {
