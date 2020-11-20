@@ -453,8 +453,28 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
 
+  // Set the run ID to a random number
+  run_restart_from = run_id; // Restarting from the previous run ID
+
+  if (MYPE == 0) {
+    srand(static_cast<unsigned int>(time(nullptr)));
+    do {
+      run_id = rand(); // Different each time the simulation is run
+    } while((run_id == 0) || (run_id == 1)); // Ensure that run_id != 0 or 1
+  }
+  MPI_Bcast(&run_id, 1, MPI_INT, 0, BoutComm::get()); // All ranks have same run_id
+
+  // Put the run ID into the options tree
+  // Forcing in case the value has been previously set
+  Options::root()["run"]["run_id"].force(run_id, "Solver");
+  Options::root()["run"]["run_restart_from"].force(run_restart_from, "Solver");
+
   /// Run the solver
   output_info.write(_("Running simulation\n\n"));
+  output_info.write("Run ID: {:d}\n", run_id);
+  if (run_restart_from != 0) {
+    output_info.write("Restarting from ID: {:d}\n", run_restart_from);
+  }
 
   time_t start_time = time(nullptr);
   output_progress.write(_("\nRun started at  : %s\n"), toString(start_time).c_str());
@@ -542,6 +562,10 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
   /// Add basic variables to the file
   outputfile.addOnce(simtime,  "tt");
   outputfile.addOnce(iteration, "hist_hi");
+
+  // Add run information
+  outputfile.addOnce(run_id, "run_id");
+  outputfile.addOnce(run_restart_from, "run_restart_from");
 
   // Add 2D and 3D evolving fields to output file
   for(const auto& f : f2d) {
