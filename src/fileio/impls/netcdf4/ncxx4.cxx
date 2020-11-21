@@ -844,8 +844,8 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   
   std::vector<size_t> start(1);
   start[0] = rec_nr[name];
-  std::vector<size_t> counts(1);
-  counts[0] = 1;
+  std::vector<size_t> counts(4);
+  counts[0] = 1; counts[1] = lx; counts[2] = ly; counts[3] = lz;
 
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: write_rec { Writing variable } \n");
