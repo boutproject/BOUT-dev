@@ -89,6 +89,7 @@ class Ncxx4 : public DataFormat {
   // Add a variable to the file
   bool addVarInt(const std::string &name, bool repeat) override;
   bool addVarIntVec(const std::string &name, bool repeat, size_t size) override;
+  bool addVarCharVec(const std::string &name, bool repeat, size_t size) override;
   bool addVarBoutReal(const std::string &name, bool repeat) override;
   bool addVarField2D(const std::string &name, bool repeat) override;
   bool addVarField3D(const std::string &name, bool repeat) override;
@@ -98,12 +99,16 @@ class Ncxx4 : public DataFormat {
 
   bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(char *var, const char *name, int n = 1) override;
+  bool read(char *var, const std::string &name, int n = 1) override;
   bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) override;
 
   bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(char *var, const char *name, int n = 1) override;
+  bool write(char *var, const std::string &name, int n = 1) override;
   bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) override;
@@ -112,12 +117,16 @@ class Ncxx4 : public DataFormat {
 
   bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read_rec(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(char *var, const char *name, int n = 1) override;
+  bool read_rec(char *var, const std::string &name, int n = 1) override;
   bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read_rec(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read_rec_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) override;
 
   bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write_rec(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(char *var, const char *name, int n = 1) override;
+  bool write_rec(char *var, const std::string &name, int n = 1) override;
   bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write_rec(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write_rec_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) override;
