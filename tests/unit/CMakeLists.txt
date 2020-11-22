@@ -1,4 +1,4 @@
-#bout_update_submodules()
+bout_update_submodules()
 add_subdirectory("${PROJECT_SOURCE_DIR}/externalpackages/googletest"
   "externalpackages/googletest")
 
@@ -6,6 +6,8 @@ if(NOT TARGET gtest)
   message(FATAL_ERROR "googletest not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
 endif()
 
+add_definitions(-DGTEST_HAS_PTHREAD=0)
+set(gtest_disable_othreads ON)
 mark_as_advanced(
   BUILD_GMOCK BUILD_GTEST BUILD_SHARED_LIBS
   gmock_build_tests gtest_build_samples gtest_build_tests
@@ -31,7 +33,7 @@ set(serial_tests_source
   ./include/bout/test_hypre_interface.cxx
   ./include/bout/test_macro_for_each.cxx
   ./include/bout/test_monitor.cxx
-  # ./include/bout/test_petsc_indexer.cxx
+  ./include/bout/test_petsc_indexer.cxx
   ./include/bout/test_petsc_matrix.cxx
   ./include/bout/test_petsc_setters.cxx
   ./include/bout/test_petsc_vector.cxx
@@ -62,7 +64,7 @@ set(serial_tests_source
   ./sys/test_optionsreader.cxx
   ./sys/test_output.cxx
   ./sys/test_range.cxx
-  ./sys/test_timer.cxx
+  #./sys/test_timer.cxx
   ./sys/test_type_name.cxx
   ./sys/test_utils.cxx
   ./sys/test_variant.cxx
@@ -85,9 +87,6 @@ add_dependencies(build-check-unit-tests serial_tests)
 if (BOUT_USE_CUDA)
    set_source_files_properties(${serial_tests_source} PROPERTIES LANGUAGE CUDA )
    set_target_properties(serial_tests PROPERTIES CUDA_STANDARD 14)
-   #   set_target_properties(serial_tests PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-   #set_target_properties(serial_tests PROPERTIES POSITION_INDEPENDENT_CODE ON)
-   #   set_target_properties(serial_tests PROPERTIES LINKER_LANGUAGE CUDA)
 endif ()   
 
 #file(GENERATE OUTPUT "/g/g0/holger/workspace/BOUT_build_cuda/build/ppc64le-gcc/BOUT-dev/dirs.txt" CONTENT ${CMAKE_INSTALL_PREFIX})

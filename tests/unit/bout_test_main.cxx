@@ -15,7 +15,6 @@ GTEST_API_ int main(int argc, char** argv) {
   // setting fft_measure to false
   bout::fft::fft_init(false);
 
-  printf("Running main() from bout_test_main.cxx\n");
   testing::InitGoogleTest(&argc, argv);
 
   // Explicitly setup and teardown PETSc to avoid reentry problems

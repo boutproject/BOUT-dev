@@ -98,6 +98,7 @@ BOUT_HOST_DEVICE   ~ArrayData() {
      if(data != nullptr && owner && (clientUseCount == 1)) {
       delete[] data;
       data = nullptr;
+      len = 0;
       clientUseCount = 0;
       owner = false;
      }
@@ -216,7 +217,6 @@ public:
 BOUT_HOST_DEVICE inline   ~Array() {
 #ifndef __CUDA_ARCH__
     if(ptr) {
-   //   printf("~Array count %d data %p\n",ptr->use_count(),ptr->begin());  
       release(ptr);
     }
 #else
@@ -327,11 +327,10 @@ BOUT_HOST_DEVICE inline   size_type size() const noexcept {
    * 
    */
   bool unique() const noexcept {
-   // printf("Array unique()\n");
     if(ptr) {
       return ptr->use_count() == 1;
     }
-    return true;
+    return false;
   }
 
   /*!
@@ -340,7 +339,7 @@ BOUT_HOST_DEVICE inline   size_type size() const noexcept {
    * on the data.
    */
   void ensureUnique() {
-   // printf("Array ensureUnique\n");
+
     if(!ptr || unique())
       return;
 
