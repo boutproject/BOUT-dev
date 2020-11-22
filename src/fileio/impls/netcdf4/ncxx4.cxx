@@ -397,6 +397,37 @@ bool Ncxx4::addVarIntVec(const string &name, bool repeat, size_t size) {
   return true;
 }
 
+bool Ncxx4::addVarCharVec(const string &name, bool repeat, size_t size) {
+  if (!is_valid()) {
+    return false;
+  }
+
+  NcVar var = dataFile->getVar(name);
+  const auto vec_dim_name = "char" + std::to_string(size);
+  auto vec_dim = dataFile->getDim(vec_dim_name);
+  if (vec_dim.isNull()) {
+    vec_dim = dataFile->addDim(vec_dim_name, size);
+  }
+  if(var.isNull()) {
+    // Variable not in file, so add it.
+    if (repeat) {
+      auto dims = getRecDimVec(2);
+      dims[1] = vec_dim;
+      var = dataFile->addVar(name, ncChar, dims);
+    } else {
+      auto dims = getDimVec(1);
+      dims[0] = vec_dim;
+      var = dataFile->addVar(name, ncChar, dims);
+    }
+
+    if(var.isNull()) {
+      output_error.write("ERROR: NetCDF could not add char '{:s}' to file '{:s}'\n", name, fname);
+      return false;
+    }
+  }
+  return true;
+}
+
 bool Ncxx4::addVarBoutReal(const string &name, bool repeat) {
   if(!is_valid())
     return false;
@@ -544,6 +575,41 @@ bool Ncxx4::read(int *var, const std::string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
 }
 
+bool Ncxx4::read(char *data, const char *name, int n) {
+  TRACE("Ncxx4::read(char)");
+
+#ifdef NCDF_VERBOSE
+  output.write("Ncxx4:: read(char, {:s})\n", name);
+#endif
+
+  if (!is_valid()) {
+    return false;
+  }
+
+  if (n < 0) {
+    return false;
+  }
+
+  NcVar var = dataFile->getVar(name);
+  if (var.isNull()) {
+#ifdef NCDF_VERBOSE
+    output_info.write("INFO: NetCDF variable '{:s}' not found\n", name);
+#endif
+    return false;
+  }
+
+  std::vector<size_t> start = {1};
+  std::vector<size_t> counts = {size_t(n)};
+
+  var.getVar(start, counts, data);
+
+  return true;
+}
+
+bool Ncxx4::read(char *var, const std::string &name, int n) {
+  return read(var, name.c_str(), n);
+}
+
 bool Ncxx4::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   TRACE("Ncxx4::read(BoutReal)");
 
@@ -642,6 +708,46 @@ bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
 
 bool Ncxx4::write(int *var, const std::string &name, int lx, int ly, int lz) {
   return write(var, name.c_str(), lx, ly, lz);
+}
+
+bool Ncxx4::write(char *data, const char *name, int n) {
+  TRACE("Ncxx4::write(char)");
+
+#ifdef NCDF_VERBOSE
+  output.write("Ncxx4:: write(char, {:s})\n", name);
+#endif
+  if (!is_valid()) {
+    return false;
+  }
+
+  if (n < 0) {
+    return false;
+  }
+
+  NcVar var = dataFile->getVar(name);
+  if (var.isNull()) {
+    output_error.write("ERROR: NetCDF char variable '{:s}' has not been added to file '{:s}'\n", name, fname);
+    return false;
+  }
+
+#ifdef NCDF_VERBOSE
+  output.write("Ncxx4:: write { Writing Variable } \n");
+#endif
+
+  std::vector<size_t> start = {0};
+  std::vector<size_t> counts = {size_t(n)};
+
+  var.putVar(start, counts, data);
+
+#ifdef NCDF_VERBOSE
+  output.write("Ncxx4:: write { Done } \n");
+#endif
+
+  return true;
+}
+
+bool Ncxx4::write(char *var, const std::string &name, int n) {
+  return write(var, name.c_str(), n);
 }
 
 bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
@@ -776,6 +882,38 @@ bool Ncxx4::read_rec(int *var, const std::string &name, int lx, int ly, int lz) 
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
+bool Ncxx4::read_rec(char *data, const char *name, int n) {
+#ifdef NCDF_VERBOSE
+  output.write("Ncxx4:: read_rec(char, {:s})\n", name);
+#endif
+  if (!is_valid()) {
+    return false;
+  }
+
+  if (n < 0) {
+    return false;
+  }
+
+  NcVar var = dataFile->getVar(name);
+
+  if (var.isNull()) {
+    return false;
+  }
+
+  // NOTE: Probably should do something here to check t0
+
+  std::vector<size_t> start = {size_t(t0), 0};
+  std::vector<size_t> counts = {1, size_t(n)};
+
+  var.getVar(start, counts, data);
+
+  return true;
+}
+
+bool Ncxx4::read_rec(char *var, const std::string &name, int n) {
+  return read_rec(var, name.c_str(), n);
+}
+
 bool Ncxx4::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
 #ifdef NCDF_VERBOSE
   output.write("Ncxx4:: read_rec(BoutReal, {:s})\n", name); 
@@ -876,6 +1014,50 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
 
 bool Ncxx4::write_rec(int *var, const std::string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
+}
+
+bool Ncxx4::write_rec(char *data, const char *name, int n) {
+#ifdef NCDF_VERBOSE
+  output.write("Ncxx4:: write_rec(char, {:s})\n", name);
+#endif
+  if (!is_valid()) {
+    return false;
+  }
+
+  if (n < 0) {
+    return false;
+  }
+
+  // Try to find variable
+  NcVar var = dataFile->getVar(name);
+  if (var.isNull()) {
+    output_error.write("ERROR: NetCDF char variable '{:s}' has not been added to file '{:s}'\n", name, fname);
+    return false;
+  } else {
+    // Get record number
+    if (rec_nr.find(name) == rec_nr.end()) {
+      // Add to map
+      rec_nr[name] = default_rec;
+    }
+  }
+
+  std::vector<size_t> start = {size_t(rec_nr[name]), 0};
+  std::vector<size_t> counts = {1, size_t(n)};
+
+#ifdef NCDF_VERBOSE
+  output.write("Ncxx4:: write_rec { Writing variable } \n");
+#endif
+
+  var.putVar(start, counts, data);
+
+  // Increment record number
+  rec_nr[name] = rec_nr[name] + 1;
+
+  return true;
+}
+
+bool Ncxx4::write_rec(char *var, const std::string &name, int n) {
+  return write_rec(var, name.c_str(), n);
 }
 
 bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
