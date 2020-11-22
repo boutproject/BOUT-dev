@@ -856,8 +856,8 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
     }
   }
   
-  std::vector<size_t> start(1);
-  start[0] = rec_nr[name];
+  std::vector<size_t> start(4);
+  start[0] = rec_nr[name]; start[1] = x0; start[2] = y0; start[3] = z0;
   std::vector<size_t> counts(4);
   counts[0] = 1; counts[1] = lx; counts[2] = ly; counts[3] = lz;
 
