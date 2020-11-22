@@ -1052,10 +1052,10 @@ bool Datafile::read() {
       if(!file->read_rec(&(*var.ptr)[0], var.name.c_str(), var.ptr->size())) {
         if(!init_missing) {
           throw BoutException(
-              "Missing data for {:s} in input. Set init_missing=true to set to zero.",
+              "Missing data for {:s} in input. Set init_missing=true to create empty vector.",
               var.name);
         }
-        output_warn.write("\tWARNING: Could not read integer vector {:s}. Setting to zero\n", var.name);
+        output_warn.write("\tWARNING: Could not read integer vector {:s}. Creating empty vector\n", var.name);
         *(var.ptr) = {};
         continue;
       }
@@ -1063,10 +1063,10 @@ bool Datafile::read() {
       if(!file->read(&(*var.ptr)[0], var.name.c_str(), var.ptr->size())) {
         if(!init_missing) {
           throw BoutException(
-              "Missing data for {:s} in input. Set init_missing=true to set to zero.",
+              "Missing data for {:s} in input. Set init_missing=true to create empty vector.",
               var.name);
         }
-        output_warn.write("\tWARNING: Could not read integer vector {:s}. Setting to zero\n", var.name);
+        output_warn.write("\tWARNING: Could not read integer vector {:s}. Creating empty vector\n", var.name);
         *(var.ptr) = {};
         continue;
       }
