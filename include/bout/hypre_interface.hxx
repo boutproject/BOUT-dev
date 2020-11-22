@@ -188,7 +188,7 @@ public:
       HYPRE_BigInt index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
       if (index != -1) { // Todo double check why index out of bounds does not return -1
         result[i] = static_cast<BoutReal>(V[count]);
-        std::cout << index << ", " << V[count] << std::endl;
+        //std::cout << index << ", " << V[count] << std::endl;
         count++;
 
       }
@@ -252,7 +252,7 @@ public:
     Element& operator=(BoutReal value_) {
       value = value_;
       vector->V[vec_i] = value_;
-      std::cout << "Set:  V[] vec_i = " << value_ << std::endl;
+      //std::cout << "Set:  V[] vec_i = " << value_ << std::endl;
       return *this;
     }
     Element& operator+=(BoutReal value_) {
