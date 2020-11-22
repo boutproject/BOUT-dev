@@ -422,6 +422,42 @@ bool NcFormat::addVarIntVec(const string &name, bool repeat, size_t size) {
   return true;
 }
 
+bool NcFormat::addVarCharVec(const string &name, bool repeat, size_t size) {
+  if (!is_valid()) {
+    return false;
+  }
+
+  // Create an error object so netCDF doesn't exit
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar* var;
+  if (!(var = dataFile->get_var(name.c_str()))) {
+    // Variable not in file, so add it.
+    NcDim* vecDim;
+    auto vecDimName = "char" + std::to_string(size);
+    if (!(vecDim = dataFile->get_dim(vecDimName.c_str()))) {
+      vecDim = dataFile->add_dim(vecDimName.c_str(), int(size));
+    }
+    if (repeat) {
+      std::vector<const NcDim*> local_dim_list{recDimList[0], vecDim};
+      var = dataFile->add_var(name.c_str(), ncChar, 2, &local_dim_list[0]);
+    } else {
+      std::vector<const NcDim*> local_dim_list{vecDim};
+      var = dataFile->add_var(name.c_str(), ncChar, 1, &local_dim_list[0]);
+    }
+
+    if (!var->is_valid()) {
+      output_error.write("ERROR: NetCDF could not add char vector '{:s}' to file '{:s}'\n", name, fname);
+      return false;
+    }
+  }
+  return true;
+}
+
 bool NcFormat::addVarBoutReal(const string &name, bool repeat) {
   if(!is_valid())
     return false;
@@ -592,6 +628,62 @@ bool NcFormat::read(int *var, const string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
 }
 
+bool NcFormat::read(char *data, const char *name, int n) {
+  if (!is_valid()) {
+    return false;
+  }
+
+  if (n < 0) {
+    return false;
+  }
+
+  // Check for valid name
+  checkName(name);
+
+  TRACE("NcFormat::read(char)");
+
+  // Create an error object so netCDF doesn't exit
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar *var;
+
+  if (!(var = dataFile->get_var(name))) {
+#ifdef NCDF_VERBOSE
+    output_info.write("INFO: NetCDF variable '{:s}' not found\n", name);
+#endif
+    return false;
+  }
+
+  long cur[1], counts[1];
+  cur[0] = 0;
+  counts[0] = n;
+
+  if (!(var->set_cur(cur))) {
+#ifdef NCDF_VERBOSE
+    output_info.write(
+        "INFO: NetCDF Could not set cur({:d}) for variable '{:s}'\n", n, name);
+#endif
+    return false;
+  }
+
+  if (!(var->get(data, counts))) {
+#ifdef NCDF_VERBOSE
+    output_info.write("INFO: NetCDF could not read data for '{:s}'\n", name);
+#endif
+    return false;
+  }
+
+  return true;
+}
+
+bool NcFormat::read(char *var, const string &name, int n) {
+  return read(var, name.c_str(), n);
+}
+
 bool NcFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
@@ -709,6 +801,51 @@ bool NcFormat::write(int *data, const char *name, int lx, int ly, int lz) {
 
 bool NcFormat::write(int *var, const string &name, int lx, int ly, int lz) {
   return write(var, name.c_str(), lx, ly, lz);
+}
+
+bool NcFormat::write(char *data, const char *name, int n) {
+  if (!is_valid()) {
+    return false;
+  }
+
+  if (n < 0) {
+    return false;
+  }
+
+  // Check for valid name
+  checkName(name);
+
+  TRACE("NcFormat::write(char)");
+
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar *var;
+  if (!(var = dataFile->get_var(name))) {
+    output_error.write("ERROR: NetCDF char variable '{:s}' has not been added to file '{:s}'\n", name, fname);
+    return false;
+  }
+
+  long cur[1], counts[1];
+  cur[0] = 0;
+  counts[0] = n;
+
+  if (!(var->set_cur(cur))) {
+    return false;
+  }
+
+  if (!(var->put(data, counts))) {
+    return false;
+  }
+
+  return true;
+}
+
+bool NcFormat::write(char *var, const string &name, int n) {
+  return write(var, name.c_str(), n);
 }
 
 bool NcFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
@@ -875,6 +1012,52 @@ bool NcFormat::read_rec(int *var, const string &name, int lx, int ly, int lz) {
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
+bool NcFormat::read_rec(char *data, const char *name, int n) {
+  if (!is_valid()) {
+    return false;
+  }
+
+  if (n < 0) {
+    return false;
+  }
+
+  // Check for valid name
+  checkName(name);
+
+  // Create an error object so netCDF doesn't exit
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar *var;
+
+  if (!(var = dataFile->get_var(name))) {
+    return false;
+  }
+
+  // NOTE: Probably should do something here to check t0
+
+  long cur[2], counts[2];
+  cur[0] = t0; cur[1] = 0;
+  counts[0] = 1; counts[1] = n;
+
+  if (!(var->set_cur(cur))) {
+    return false;
+  }
+
+  if (!(var->get(data, counts))) {
+    return false;
+  }
+
+  return true;
+}
+
+bool NcFormat::read_rec(char *var, const string &name, int n) {
+  return read_rec(var, name.c_str(), n);
+}
+
 bool NcFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
@@ -996,6 +1179,54 @@ bool NcFormat::write_rec(int *data, const char *name, int lx, int ly, int lz) {
 
 bool NcFormat::write_rec(int *var, const string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
+}
+
+bool NcFormat::write_rec(char *data, const char *name, int n) {
+  if (!is_valid()) {
+    return false;
+  }
+
+  if (n < 0) {
+    return false;
+  }
+
+  // Check for valid name
+  checkName(name);
+
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar *var;
+
+  // Try to find variable
+  if (!(var = dataFile->get_var(name))) {
+    output_error.write("ERROR: NetCDF char variable '{:s}' has not been added to file '{:s}'\n", name, fname);
+    return false;
+  } else {
+    // Get record number
+    if (rec_nr.find(name) == rec_nr.end()) {
+      // Add to map
+      rec_nr[name] = default_rec;
+    }
+  }
+
+  if (!var->put_rec(data, rec_nr[name])) {
+    return false;
+  }
+
+  var->sync();
+
+  // Increment record number
+  rec_nr[name] = rec_nr[name] + 1;
+
+  return true;
+}
+
+bool NcFormat::write_rec(char *var, const string &name, int n) {
+  return write_rec(var, name.c_str(), n);
 }
 
 bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {

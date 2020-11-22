@@ -399,6 +399,10 @@ bool H5Format::addVarIntVec(const std::string &name, bool repeat, size_t size) {
   return addVar(name, repeat, H5T_NATIVE_INT, "vector", size);
 }
 
+bool H5Format::addVarCharVec(const std::string &name, bool repeat, size_t size) {
+  return addVar(name, repeat, H5T_C_S1, "vector", size);
+}
+
 bool H5Format::addVarBoutReal(const std::string &name, bool repeat) {
   auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
   return addVar(name, repeat, h5_float_type, "scalar");
@@ -425,6 +429,14 @@ bool H5Format::read(int *data, const char *name, int lx, int ly, int lz) {
 
 bool H5Format::read(int *var, const std::string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
+}
+
+bool H5Format::read(char *data, const char *name, int n) {
+  return read(data, H5T_C_S1, name, n);
+}
+
+bool H5Format::read(char *var, const std::string &name, int n) {
+  return read(var, name.c_str(), n);
 }
 
 bool H5Format::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
@@ -550,6 +562,14 @@ bool H5Format::write(int *data, const char *name, int lx, int ly, int lz) {
 
 bool H5Format::write(int *var, const std::string &name, int lx, int ly, int lz) {
   return write(var, name.c_str(), lx, ly, lz);
+}
+
+bool H5Format::write(char *data, const char *name, int n) {
+  return write(data, H5T_C_S1, name, n);
+}
+
+bool H5Format::write(char *var, const std::string &name, int n) {
+  return write(var, name.c_str(), n);
 }
 
 bool H5Format::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
@@ -730,6 +750,14 @@ bool H5Format::read_rec(int *var, const std::string &name, int lx, int ly, int l
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
+bool H5Format::read_rec(char *data, const char *name, int n) {
+  return read_rec(data, H5T_C_S1, name, n);
+}
+
+bool H5Format::read_rec(char *var, const std::string &name, int n) {
+  return read_rec(var, name.c_str(), n);
+}
+
 bool H5Format::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
   
   return read_rec(data, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
@@ -892,6 +920,14 @@ bool H5Format::write_rec(int *data, const char *name, int lx, int ly, int lz) {
 
 bool H5Format::write_rec(int *var, const std::string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
+}
+
+bool H5Format::write_rec(char *data, const char *name, int n) {
+  return write_rec(data, H5T_C_S1, name, n);
+}
+
+bool H5Format::write_rec(char *var, const std::string &name, int n) {
+  return write_rec(var, name.c_str(), n);
 }
 
 bool H5Format::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
