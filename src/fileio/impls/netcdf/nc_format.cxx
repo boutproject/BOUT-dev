@@ -418,6 +418,21 @@ bool NcFormat::addVarIntVec(const string &name, bool repeat, size_t size) {
       output_error.write("ERROR: NetCDF could not add int '{:s}' to file '{:s}'\n", name, fname);
       return false;
     }
+  } else {
+    // Check the existing variable is consistent with what's being added
+    if (repeat) {
+      ASSERT0(var->num_dims() == 2);
+      if (size_t(var->get_dim(1)->size()) != size) {
+        throw BoutException("Found existing variable '{:s}' with size {}. Trying to add "
+                            "with size {}.", name, var->get_dim(1)->size(), size);
+      }
+    } else {
+      ASSERT0(var->num_dims() == 1);
+      if (size_t(var->get_dim(0)->size()) != size) {
+        throw BoutException("Found existing variable '{:s}' with size {}. Trying to add "
+                            "with size {}.", name, var->get_dim(0)->size(), size);
+      }
+    }
   }
   return true;
 }
