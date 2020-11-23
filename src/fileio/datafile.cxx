@@ -530,6 +530,7 @@ void Datafile::add(std::vector<int> &i, const char *name, bool save_repeat) {
   d.name = name;
   d.save_repeat = save_repeat;
   d.covar = false;
+  d.size = i.size();
 
   int_vec_arr.push_back(d);
 
@@ -588,6 +589,7 @@ void Datafile::add(std::vector<char> &cvec, const char *name, bool save_repeat) 
   d.name = name;
   d.save_repeat = save_repeat;
   d.covar = false;
+  d.size = cvec.size();
 
   char_vec_arr.push_back(d);
 
@@ -1125,6 +1127,10 @@ bool Datafile::read() {
 
   // Read vectors of integers
   for(const auto& var : int_vec_arr) {
+    if (var.ptr->size() != var.size) {
+      throw BoutException("Size of std::vector<int> '{:s}' has changed since being added "
+                          "to Datafile. Cannot read.", var.name);
+    }
     if(var.save_repeat) {
       if(!file->read_rec(&(*var.ptr)[0], var.name.c_str(), var.ptr->size())) {
         if(!init_missing) {
@@ -1152,6 +1158,10 @@ bool Datafile::read() {
 
   // Read vectors of chars
   for (const auto& var : char_vec_arr) {
+    if (var.ptr->size() != var.size) {
+      throw BoutException("Size of std::vector<char> '{:s}' has changed since being "
+                          "added to Datafile. Cannot read.", var.name);
+    }
     if (var.save_repeat) {
       if (!file->read_rec(&(*var.ptr)[0], var.name.c_str(), var.ptr->size())) {
         if (!init_missing) {
@@ -1369,11 +1379,19 @@ bool Datafile::write() {
   
   // Write vectors of integers
   for(const auto& var : int_vec_arr) {
+    if (var.ptr->size() != var.size) {
+      throw BoutException("Size of std::vector<int> '{:s}' has changed since being added "
+                          "to Datafile. Cannot write.", var.name);
+    }
     write_int_vec(var.name, var.ptr, var.save_repeat);
   }
 
   // Write vectors of chars
   for (const auto& var : char_vec_arr) {
+    if (var.ptr->size() != var.size) {
+      throw BoutException("Size of std::vector<char> '{:s}' has changed since being "
+                          "added to Datafile. Cannot write.", var.name);
+    }
     write_char_vec(var.name, var.ptr, var.save_repeat);
   }
 

@@ -147,6 +147,16 @@ class Datafile {
     bool save_repeat;   ///< If true, has a time dimension and is saved every time step
     bool covar;         ///< For vectors, true if a covariant vector, false if contravariant
   };
+  /// Specialisation of VarStr to store the original size with a std::vector variable
+  template <class T>
+  struct VarStr<std::vector<T>> {
+    std::vector<T> *ptr; ///< Pointer to the data.
+                         ///< Note that this may be a user object, not a copy, so must not be destroyed
+    std::string name;    ///< Name as it appears in the output file
+    bool save_repeat;    ///< If true, has a time dimension and is saved every time step
+    bool covar;          ///< For vectors, true if a covariant vector, false if contravariant
+    size_t size;         ///< Size of the stored vector, to check it does not change after being added
+  };
 
   // one set per variable type
   std::vector<VarStr<int>> int_arr;
