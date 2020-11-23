@@ -90,7 +90,7 @@ class Datafile {
   }
   void add(int &i, const char *name, bool save_repeat = false);
   void add(std::vector<int> &ivec, const char *name, bool save_repeat = false);
-  void add(std::vector<char> &cvec, const char *name, bool save_repeat = false);
+  void add(std::string &s, const char *name, bool save_repeat = false);
   void add(BoutReal &r, const char *name, bool save_repeat = false);
   void add(bool &b, const char* name, bool save_repeat = false);
   void add(Field2D &f, const char *name, bool save_repeat = false);
@@ -152,7 +152,7 @@ class Datafile {
   // one set per variable type
   std::vector<VarStr<int>> int_arr;
   std::vector<VarStr<std::vector<int>>> int_vec_arr;
-  std::vector<VarStr<std::vector<char>>> char_vec_arr;
+  std::vector<VarStr<std::string>> string_arr;
   std::vector<VarStr<BoutReal>> BoutReal_arr;
   std::vector<VarStr<bool>> bool_arr;
   std::vector<VarStr<Field2D>> f2d_arr;
@@ -167,7 +167,7 @@ class Datafile {
 
   bool write_int(const std::string &name, int *f, bool save_repeat);
   bool write_int_vec(const std::string &name, std::vector<int> *f, bool save_repeat);
-  bool write_char_vec(const std::string &name, std::vector<char> *f, bool save_repeat);
+  bool write_string(const std::string &name, std::string *f, bool save_repeat);
   bool write_real(const std::string &name, BoutReal *f, bool save_repeat);
   bool write_f2d(const std::string &name, Field2D *f, bool save_repeat);
   bool write_f3d(const std::string &name, Field3D *f, bool save_repeat);
