@@ -48,6 +48,7 @@ class Options;
 #include "bout/deprecated.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
+#include "fieldperp.hxx"
 
 #include <map>
 #include <string>
@@ -177,7 +178,7 @@ public:
 
   /// The type used to store values
   using ValueType =
-      bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D,
+      bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D, FieldPerp,
                            Array<BoutReal>, Matrix<BoutReal>, Tensor<BoutReal>>;
 
   /// The type used to store attributes
@@ -696,6 +697,7 @@ template<> inline void Options::assign<>(const char *val, const std::string sour
 // Note: Field assignments don't check for previous assignment (always force)
 template<> void Options::assign<>(Field2D val, const std::string source);
 template<> void Options::assign<>(Field3D val, const std::string source);
+template<> void Options::assign<>(FieldPerp val, const std::string source);
 template<> void Options::assign<>(Array<BoutReal> val, const std::string source);
 template<> void Options::assign<>(Matrix<BoutReal> val, const std::string source);
 template<> void Options::assign<>(Tensor<BoutReal> val, const std::string source);
@@ -710,6 +712,7 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& similar_to) const;
 template <> bool Options::as<bool>(const bool& similar_to) const;
 template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const;
 template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
+template <> FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \
