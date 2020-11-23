@@ -988,7 +988,7 @@ class Mesh {
   }
   
   /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
-  __host__ __device__ Ind2D map3Dto2D(const Ind3D &ind3D){
+  BOUT_HOST_DEVICE Ind2D map3Dto2D(const Ind3D &ind3D){
     return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
   }
   

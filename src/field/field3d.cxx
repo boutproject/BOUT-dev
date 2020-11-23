@@ -133,7 +133,7 @@ Field3D& Field3D::allocate() {
   return *this;
 }
 
-__host__ __device__ Field3D* Field3D::timeDeriv() {
+BOUT_HOST_DEVICE Field3D* Field3D::timeDeriv() {
   if(deriv == nullptr) {
     deriv = new Field3D{emptyFrom(*this)};
   }

@@ -1,49 +1,36 @@
 cmake_minimum_required(VERSION 3.13)
 
 
-set(BLT_CXX_STD "c++14" CACHE STRING "Version of C++ standard")
+project(hw3d LANGUAGES CXX C)
 
 set(hw_sources
    hw.cxx
 )
 
 set(hw_depends bout++ PETSc)
-
-if(BOUT_USE_CUDA)
-   list(APPEND hw_depends cuda nvToolsExt)
-endif ()
-
 if(BOUT_HAS_RAJA)
    list(APPEND hw_depends RAJA)
+   find_package(RAJA REQUIRED)
 endif ()
 
 if(BOUT_HAS_UMPIRE)
    list(APPEND hw_depends umpire)
+   find_package(umpire REQUIRED)
 endif ()
 
-message(STATUS "CUDA_TOOLKIT_ROOT_DIR : ${CUDA_TOOLKIT_ROOT_DIR}")
+add_executable(hw ${hw_sources})
+target_link_libraries(hw PRIVATE bout++::bout++)
+target_include_directories(hw PUBLIC 
+      ${PROJECT_SOURCE_DIR}/include
+      ${PROJECT_SOURCE_DIR}/externalpackages/fmt/include
+      ${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/include
+      )
+if(BOUT_USE_CUDA)
+   list(APPEND hw_depends cuda)
+   set_source_files_properties(${hw_sources} PROPERTIES LANGUAGE CUDA )
+   message(STATUS "hw needs CUDA LIBRARY DIR: ${BOUT_CUDA_LIB_DIR}") 
+   target_include_directories(hw PUBLIC ${BOUT_CUDA_LIB_DIR}/../include ) 
+endif ()
+
+
 message(STATUS "hw_depends: ${hw_depends}")
-blt_add_executable(
-   NAME hw
-   SOURCES ${hw_sources}
-   INCLUDES 
-     ${PROJECT_SOURCE_DIR}/include
-     ${PROJECT_SOURCE_DIR}/externalpackages/fmt/include
-     ${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/include
-     ${CUDA_TOOLKIT_ROOT_DIR}/include
-   DEFINES 
-      "BOUT_VERSION_STRING=\"${BOUT_FULL_VERSION}\""
-      "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
-   DEPENDS_ON
-     ${hw_depends})
-
-
-  #target_link_libraries(
-  #   test_laplacexy_hypre PUBLIC 
-  # ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcusparse_static.a
-  # ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcurand_static.a
-  # ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libculibos.a
-  # ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublas_static.a
-  # ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublasLt_static.a
-  #)
-

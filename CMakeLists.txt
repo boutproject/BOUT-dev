@@ -628,9 +628,9 @@ if(PACKAGE_TESTS)
   add_dependencies(check_bout check-unit-tests check-integrated-tests)
 endif()
 
-#add_subdirectory(examples/laplacexy/simple-hypre)
+add_subdirectory(examples/laplacexy/simple-hypre)
 #add_subdirectory(examples/laplacexy/simple)
-#add_subdirectory(examples/hasegawa-wakatani-3d)
+add_subdirectory(examples/hasegawa-wakatani-3d)
 
 ##################################################
 # Generate the build config header

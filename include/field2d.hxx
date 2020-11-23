@@ -188,16 +188,16 @@ class Field2D : public Field, public FieldData {
   Region<Ind2D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
   Region<Ind2D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
   
-  BoutReal& __host__ __device__ operator[](const Ind2D &d) {
+  BoutReal& BOUT_HOST_DEVICE operator[](const Ind2D &d) {
     return data[d.ind];
   }
-  const BoutReal& __host__ __device__ operator[](const Ind2D &d) const {
+  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind2D &d) const {
     return data[d.ind];
   }
-  BoutReal& __host__ __device__ operator[](const Ind3D &d);
+  BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D &d);
   //const BoutReal&  operator[](const Ind3D &d) const;
 
-  const BoutReal& __host__ __device__ operator [](const Ind3D &d) const;
+  const BoutReal& BOUT_HOST_DEVICE operator [](const Ind3D &d) const;
   /*!
    * Access to the underlying data array. 
    * 
@@ -206,7 +206,7 @@ class Field2D : public Field, public FieldData {
    * If CHECK > 2 then both \p jx and \p jy are bounds checked. This will
    * significantly reduce performance.
    */
- __host__ __device__ inline BoutReal& operator()(int jx, int jy) {
+ BOUT_HOST_DEVICE inline BoutReal& operator()(int jx, int jy) {
 #if CHECK > 2
     if(!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
@@ -219,7 +219,7 @@ class Field2D : public Field, public FieldData {
   
     return data[jx*ny + jy];
   }
- __host__ __device__ inline const BoutReal& operator()(int jx, int jy) const {
+ BOUT_HOST_DEVICE inline const BoutReal& operator()(int jx, int jy) const {
 #if CHECK > 2
     if(!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
@@ -237,10 +237,10 @@ class Field2D : public Field, public FieldData {
    * DIrect access to underlying array. This version is for compatibility
    * with Field3D objects
    */
- __host__ __device__ BoutReal& operator()(int jx, int jy, int UNUSED(jz)) {
+ BOUT_HOST_DEVICE BoutReal& operator()(int jx, int jy, int UNUSED(jz)) {
     return operator()(jx, jy);
   }
- __host__ __device__ const BoutReal& operator()(int jx, int jy, int UNUSED(jz)) const {
+ BOUT_HOST_DEVICE const BoutReal& operator()(int jx, int jy, int UNUSED(jz)) const {
     return operator()(jx, jy);
   }
   
@@ -383,7 +383,7 @@ inline void invalidateGuards(Field2D &UNUSED(var)) {}
 /// Returns a reference to the time-derivative of a field \p f
 ///
 /// Wrapper around member function f.timeDeriv()
-__host__ __device__ inline Field2D& ddt(Field2D &f) {
+BOUT_HOST_DEVICE inline Field2D& ddt(Field2D &f) {
   return *(f.timeDeriv());
 }
 

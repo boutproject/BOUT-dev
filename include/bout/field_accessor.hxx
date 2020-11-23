@@ -61,10 +61,10 @@ struct FieldAccessor {
 	}
   }
 
-    BoutReal& __host__ __device__ operator[](const Ind3D &d) {
+    BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D &d) {
     return data[d.ind];
   }
-  const BoutReal& __host__ __device__ operator[](const Ind3D &d) const {
+  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D &d) const {
     return data[d.ind];
   }
   

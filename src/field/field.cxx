@@ -79,7 +79,7 @@ CELL_LOC Field::getLocation() const {
   AUTO_TRACE();
   return location;
 }
-__host__ __device__ Coordinates *Field::getCoordinates() const {
+BOUT_HOST_DEVICE Coordinates *Field::getCoordinates() const {
   if (fieldCoordinates) {
     return fieldCoordinates.get();
   } else {
@@ -87,7 +87,7 @@ __host__ __device__ Coordinates *Field::getCoordinates() const {
     return fieldCoordinates.get();
   }
 }
- __host__ __device__ Coordinates *Field::getCoordinates(CELL_LOC loc) const {
+BOUT_HOST_DEVICE Coordinates *Field::getCoordinates(CELL_LOC loc) const {
   if (loc == CELL_DEFAULT) return getCoordinates();  
   return getMesh()->getCoordinates(loc);
 }
