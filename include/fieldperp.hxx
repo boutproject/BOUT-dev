@@ -78,6 +78,14 @@ class FieldPerp : public Field {
    */ 
   FieldPerp(BoutReal val, Mesh *localmesh = nullptr);
 
+  /*!
+   * Constructor from Array and Mesh
+   */
+  FieldPerp(Array<BoutReal> data, Mesh* fieldmesh, CELL_LOC location_in = CELL_CENTRE,
+            int yindex_in = -1,
+            DirectionTypes directions_in = {YDirectionType::Standard,
+                                            ZDirectionType::Standard});
+
   ~FieldPerp() override = default;
 
   /*!

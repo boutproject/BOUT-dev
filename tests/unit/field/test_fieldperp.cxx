@@ -3,6 +3,7 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "gtest/gtest.h"
 
+#include "bout/array.hxx"
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include "boutexception.hxx"
@@ -13,6 +14,7 @@
 #include "utils.hxx"
 
 #include <cmath>
+#include <numeric>
 #include <set>
 #include <sstream>
 #include <string>
@@ -125,6 +127,27 @@ TEST_F(FieldPerpTest, CreateOnGivenMesh) {
   EXPECT_EQ(field.getNx(), test_nx);
   EXPECT_EQ(field.getNy(), 1);
   EXPECT_EQ(field.getNz(), test_nz);
+}
+
+TEST_F(FieldPerpTest, CreateFromArray) {
+  WithQuietOutput quiet{output_info};
+
+  int test_nx = FieldPerpTest::nx + 1;
+  int test_ny = FieldPerpTest::ny + 1;
+  int test_nz = FieldPerpTest::nz + 1;
+
+  FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  fieldmesh.setCoordinates(nullptr);
+  fieldmesh.createDefaultRegions();
+
+  auto expected = makeField<FieldPerp>([](IndPerp& i) { return i.ind; }, &fieldmesh);
+
+  Array<BoutReal> array_data(test_nx * test_nz);
+  std::iota(array_data.begin(), array_data.end(), 0);
+
+  FieldPerp field{array_data, &fieldmesh};
+
+  EXPECT_TRUE(IsFieldEqual(field, expected));
 }
 
 TEST_F(FieldPerpTest, CopyCheckFieldmesh) {
