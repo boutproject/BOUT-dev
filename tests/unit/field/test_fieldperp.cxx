@@ -14,6 +14,8 @@
 
 #include <cmath>
 #include <set>
+#include <sstream>
+#include <string>
 #include <vector>
 
 /// Global mesh
@@ -1762,4 +1764,39 @@ TEST_F(FieldPerpTest, ZeroFrom) {
   EXPECT_TRUE(field2.isAllocated());
   EXPECT_TRUE(IsFieldEqual(field2, 0.));
 }
+
+TEST_F(FieldPerpTest, ToString) {
+  // Just check we can call toString
+  const std::string expected = "<FieldPerp>";
+  const FieldPerp field{};
+  EXPECT_EQ(toString(field), expected);
+}
+
+TEST_F(FieldPerpTest, OperatorStream) {
+  // Just check we can call operator<<
+  const FieldPerp field{};
+  std::stringstream stream;
+  stream << field;
+  EXPECT_EQ(stream.str(), toString(field));
+}
+
+TEST_F(FieldPerpTest, Equality) {
+  FieldPerp field1 = 1.;
+  FieldPerp field2 = 1.;
+  EXPECT_TRUE(field1 == field2);
+}
+
+TEST_F(FieldPerpTest, Inequality) {
+  FieldPerp field1 = 1.;
+  FieldPerp field2{};
+  EXPECT_FALSE(field1 == field2);
+
+  FieldPerp field3{};
+  EXPECT_FALSE(field2 == field3);
+
+  FieldPerp field4 = 1.00001;
+  EXPECT_FALSE(field1 == field4);
+}
+
+
 #pragma GCC diagnostic pop
