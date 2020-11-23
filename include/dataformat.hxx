@@ -78,7 +78,7 @@ class DataFormat {
   // Add a variable to the file
   virtual bool addVarInt(const std::string &name, bool repeat) = 0;
   virtual bool addVarIntVec(const std::string &name, bool repeat, size_t size) = 0;
-  virtual bool addVarCharVec(const std::string &name, bool repeat, size_t size) = 0;
+  virtual bool addVarString(const std::string &name, bool repeat, size_t size) = 0;
   virtual bool addVarBoutReal(const std::string &name, bool repeat) = 0;
   virtual bool addVarField2D(const std::string &name, bool repeat) = 0;
   virtual bool addVarField3D(const std::string &name, bool repeat) = 0;

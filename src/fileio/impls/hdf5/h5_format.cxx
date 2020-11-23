@@ -397,7 +397,7 @@ bool H5Format::addVarIntVec(const std::string &name, bool repeat, size_t size) {
   return addVar(name, repeat, H5T_NATIVE_INT, "vector", size);
 }
 
-bool H5Format::addVarCharVec(const std::string &name, bool repeat, size_t size) {
+bool H5Format::addVarString(const std::string &name, bool repeat, size_t size) {
   return addVar(name, repeat, H5T_C_S1, "vector", size);
 }
 

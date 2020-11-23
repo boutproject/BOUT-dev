@@ -440,7 +440,7 @@ bool NcFormat::addVarIntVec(const string &name, bool repeat, size_t size) {
   return true;
 }
 
-bool NcFormat::addVarCharVec(const string &name, bool repeat, size_t size) {
+bool NcFormat::addVarString(const string &name, bool repeat, size_t size) {
   if (!is_valid()) {
     return false;
   }
@@ -471,6 +471,21 @@ bool NcFormat::addVarCharVec(const string &name, bool repeat, size_t size) {
     if (!var->is_valid()) {
       output_error.write("ERROR: NetCDF could not add char vector '%s' to file '%s'\n", name.c_str(), fname);
       return false;
+    }
+  } else {
+    // Check the existing variable is consistent with what's being added
+    if (repeat) {
+      ASSERT0(var->num_dims() == 2);
+      if (size_t(var->get_dim(1)->size()) != size) {
+        throw BoutException("Found existing variable '%s' with size %lu. Trying to add "
+                            "with size %lu.", name.c_str(), var->get_dim(1)->size(), size);
+      }
+    } else {
+      ASSERT0(var->num_dims() == 1);
+      if (size_t(var->get_dim(0)->size()) != size) {
+        throw BoutException("Found existing variable '%s' with size %lu. Trying to add "
+                            "with size %lu.", name.c_str(), var->get_dim(0)->size(), size);
+      }
     }
   }
   return true;
