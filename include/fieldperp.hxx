@@ -36,6 +36,9 @@ class FieldPerp;
 
 #include "unused.hxx"
 
+#include <ostream>
+#include <string>
+
 class Field2D; // #include "field2d.hxx"
 class Field3D; // #include "field3d.hxx"
 
@@ -333,5 +336,19 @@ void invalidateGuards(FieldPerp &var);
 #else
 inline void invalidateGuards(FieldPerp &UNUSED(var)) {}
 #endif
+
+/// toString template specialisation
+/// Defined in utils.hxx
+template <>
+inline std::string toString<>(const FieldPerp& UNUSED(val)) {
+  return "<FieldPerp>";
+}
+
+/// Test if two fields are the same, by calculating
+/// the minimum absolute difference between them
+bool operator==(const FieldPerp &a, const FieldPerp &b);
+
+/// Output a string describing a FieldPerp to a stream
+std::ostream& operator<<(std::ostream &out, const FieldPerp &value);
 
 #endif
