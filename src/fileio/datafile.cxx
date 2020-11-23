@@ -79,6 +79,7 @@ Datafile::Datafile(Datafile&& other) noexcept
       filename(std::move(other.filename)), writable(other.writable),
       appending(other.appending), first_time(other.first_time),
       int_arr(std::move(other.int_arr)), int_vec_arr(std::move(other.int_vec_arr)),
+      char_vec_arr(std::move(other.char_vec_arr)),
       BoutReal_arr(std::move(other.BoutReal_arr)), bool_arr(std::move(other.bool_arr)),
       f2d_arr(std::move(other.f2d_arr)), f3d_arr(std::move(other.f3d_arr)),
       v2d_arr(std::move(other.v2d_arr)), v3d_arr(std::move(other.v3d_arr)) {
@@ -94,8 +95,9 @@ Datafile::Datafile(const Datafile& other)
       flushFrequency(other.flushFrequency), file(nullptr), filename(other.filename),
       writable(other.writable), appending(other.appending), first_time(other.first_time),
       int_arr(other.int_arr), int_vec_arr(other.int_vec_arr),
-      BoutReal_arr(other.BoutReal_arr), bool_arr(other.bool_arr), f2d_arr(other.f2d_arr),
-      f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {}
+      char_vec_arr(other.char_vec_arr), BoutReal_arr(other.BoutReal_arr),
+      bool_arr(other.bool_arr), f2d_arr(other.f2d_arr), f3d_arr(other.f3d_arr),
+      v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {}
 
 Datafile& Datafile::operator=(Datafile &&rhs) noexcept {
   mesh         = rhs.mesh;
@@ -117,6 +119,7 @@ Datafile& Datafile::operator=(Datafile &&rhs) noexcept {
   first_time   = rhs.first_time;
   int_arr      = std::move(rhs.int_arr);
   int_vec_arr  = std::move(rhs.int_vec_arr);
+  char_vec_arr = std::move(rhs.char_vec_arr);
   BoutReal_arr = std::move(rhs.BoutReal_arr);
   bool_arr     = std::move(rhs.bool_arr);
   f2d_arr      = std::move(rhs.f2d_arr);
