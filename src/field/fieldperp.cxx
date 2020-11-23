@@ -48,6 +48,16 @@ FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : FieldPerp(localmesh) {
   *this = val;
 }
 
+FieldPerp::FieldPerp(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC location_in,
+                     int yindex_in, DirectionTypes directions)
+    : Field(localmesh, location_in, directions), yindex(yindex_in),
+      nx(fieldmesh->LocalNx), nz(fieldmesh->LocalNz), data(std::move(data_in)) {
+
+  ASSERT1(data.size() == nx * nz);
+
+  setLocation(location_in);
+}
+
 FieldPerp& FieldPerp::allocate() {
   if (data.empty()) {
     if (!fieldmesh) {
