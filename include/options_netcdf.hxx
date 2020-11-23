@@ -55,7 +55,8 @@ public:
                        append   ///< Append to file when writing
   };
 
-  OptionsNetCDF(std::string filename, FileMode mode = FileMode::replace)
+  OptionsNetCDF() {}
+  explicit OptionsNetCDF(std::string filename, FileMode mode = FileMode::replace)
       : filename(std::move(filename)), file_mode(mode) {}
 
   /// Read options from file
