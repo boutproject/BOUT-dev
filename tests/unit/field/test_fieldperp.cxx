@@ -467,7 +467,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_XGUARDS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1]) = sentinel;
   }
 
@@ -509,7 +509,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_YGUARDS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1]) = sentinel;
   }
 
@@ -551,7 +551,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_ZGUARDS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1]) = sentinel;
   }
 
@@ -597,7 +597,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOCORNERS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1]) = sentinel;
   }
 
