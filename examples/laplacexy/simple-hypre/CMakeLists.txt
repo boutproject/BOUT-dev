@@ -28,12 +28,6 @@ if(BOUT_USE_CUDA)
    message(STATUS "test_laplacexy_hypre needs CUDA LIBRARY DIR: ${BOUT_CUDA_LIB_DIR}") 
    target_compile_definitions(test_laplacexy_hypre PUBLIC "HYPRE_USING_CUDA;HYPRE_USING_UNIFIED_MEMORY")
    target_include_directories(test_laplacexy_hypre PUBLIC ${BOUT_CUDA_LIB_DIR}/../include ) 
-   #   target_link_libraries(
-   #   test_laplacexy_hypre PUBLIC 
-   #   ${BOUT_CUDA_LIB_DIR}/libcusparse_static.a
-   #   ${BOUT_CUDA_LIB_DIR}/libcurand_static.a
-   #   ${BOUT_CUDA_LIB_DIR}/libculibos.a
-   #)
 endif ()
 
 message(STATUS "test_laplacexy_hypre_depends: ${test_laplacexy_hypre_depends}")
