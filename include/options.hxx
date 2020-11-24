@@ -336,27 +336,27 @@ public:
   ///
   /// Example:
   ///
-  /// Options option;
-  /// option["test"] = 2.0;
-  /// int value = option["test"];
+  ///     Options option;
+  ///     option["test"] = 2.0;
+  ///     int value = option["test"];
   ///
   template <typename T> operator T() const { return as<T>(); }
   
-  /// Get the value as a specified type
-  /// If there is no value then an exception is thrown
-  /// Note there are specialised versions of this template
-  /// for some types.
+  /// Get the value as a specified type. If there is no value then an
+  /// exception is thrown. Note there are specialised versions of
+  /// this template for some types.
   ///
   /// Example:
   ///
-  /// Options option;
-  /// option["test"] = 2.0;
-  /// int value = option["test"].as<int>();
+  ///     Options option;
+  ///     option["test"] = 2.0;
+  ///     int value = option["test"].as<int>();
   ///
   /// An optional argument is an object which the result should be similar to.
   /// The main use for this is in Field2D and Field3D specialisations,
   /// where the Mesh and cell location are taken from this input.
   /// 
+  /// Attributes override properties of the \p similar_to argument.
   template <typename T>
   T as(const T& UNUSED(similar_to) = {}) const {
     if (!is_value) {
