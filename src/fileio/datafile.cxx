@@ -558,7 +558,7 @@ void Datafile::add(std::vector<int> &i, const char *name, bool save_repeat) {
 
     // Add variable to file
     if (!file->addVarIntVec(name, save_repeat, i.size())) {
-      throw BoutException("Failed to add int variable {:s} to Datafile", name);
+      throw BoutException("Failed to add int vector variable {:s} to Datafile", name);
     }
 
     if(openclose) {
@@ -619,7 +619,7 @@ void Datafile::add(std::vector<char> &cvec, const char *name, bool save_repeat) 
 
     // Add variable to file
     if (!file->addVarCharVec(name, save_repeat, cvec.size())) {
-      throw BoutException("Failed to add int variable {:s} to Datafile", name);
+      throw BoutException("Failed to add char vector variable {:s} to Datafile", name);
     }
 
     if (openclose) {
