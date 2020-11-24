@@ -934,11 +934,11 @@ void checkGridValue(DataFormat* file, const std::string& name,
                     const std::string& filename, const int reference_value) {
   int file_value;
   if (!file->read(&file_value, name)) {
-    throw BoutException("Could not read {} from file '{}'", name, filename);
+    throw BoutException("Could not read %s from file '%s'", name, filename);
   }
 
   if (file_value != reference_value) {
-    throw BoutException("{} ({}) in file '{}' does not match value in mesh ({})", name,
+    throw BoutException("%s (%i) in file '%s' does not match value in mesh (%i)", name,
                         file_value, filename, reference_value);
   }
 }
@@ -950,8 +950,8 @@ void checkFileGrid(DataFormat* file, const std::string& filename, const Mesh* me
   checkGridValue(file, "MZG", filename, mesh->zstart);
   // nx includes boundaries
   checkGridValue(file, "nx", filename, mesh->GlobalNx);
-  checkGridValue(file, "ny", filename, mesh->GlobalNyNoBoundaries);
-  checkGridValue(file, "nz", filename, mesh->GlobalNzNoBoundaries);
+  checkGridValue(file, "ny", filename, mesh->GlobalNy);
+  checkGridValue(file, "nz", filename, mesh->LocalNz);
 }
 } // namespace
 
