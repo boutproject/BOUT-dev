@@ -1805,12 +1805,16 @@ TEST_F(FieldPerpTest, OperatorStream) {
 
 TEST_F(FieldPerpTest, Equality) {
   FieldPerp field1 = 1.;
+  field1.setIndex(1);
   FieldPerp field2 = 1.;
+  field2.setIndex(1);
   EXPECT_TRUE(field1 == field2);
 }
 
 TEST_F(FieldPerpTest, Inequality) {
   FieldPerp field1 = 1.;
+  field1.setIndex(2);
+
   FieldPerp field2{};
   EXPECT_FALSE(field1 == field2);
 
@@ -1818,7 +1822,12 @@ TEST_F(FieldPerpTest, Inequality) {
   EXPECT_FALSE(field2 == field3);
 
   FieldPerp field4 = 1.00001;
+  field4.setIndex(2);
   EXPECT_FALSE(field1 == field4);
+
+  FieldPerp field5 = 1.;
+  field5.setIndex(3);
+  EXPECT_FALSE(field1 == field5);
 }
 
 
