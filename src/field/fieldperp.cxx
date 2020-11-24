@@ -114,6 +114,31 @@ const Region<IndPerp> &FieldPerp::getRegion(const std::string &region_name) cons
   return fieldmesh->getRegionPerp(region_name);
 }
 
+int FieldPerp::getGlobalIndex() const {
+  auto& fieldmesh = *getMesh();
+  const int start = fieldmesh.hasBndryLowerY() ? 0 : fieldmesh.ystart;
+  const int end = fieldmesh.hasBndryUpperY() ? fieldmesh.LocalNy : fieldmesh.yend + 1;
+
+  // Only use the global y index if it's either an interior (grid)
+  // point, or a boundary point. Otherwise, use -1 to indicate a guard
+  // cell or an invalid value. The actual FieldPerp value is still
+  // written to file
+  return (yindex >= start and yindex < end) ? fieldmesh.getGlobalYIndex(yindex) : -1;
+}
+
+FieldPerp& FieldPerp::setIndexFromGlobal(int y_global) {
+  auto& fieldmesh = *getMesh();
+  const int start = fieldmesh.hasBndryLowerY() ? 0 : fieldmesh.ystart;
+  const int end = fieldmesh.hasBndryUpperY() ? fieldmesh.LocalNy : fieldmesh.yend + 1;
+
+  // Only use the global y index if it's either an interior (grid)
+  // point, or a boundary point. Otherwise, use -1 to indicate a
+  // guard cell or an invalid value
+  const int yindex_local = fieldmesh.getLocalYIndex(y_global);
+  yindex = (yindex_local >= start and yindex_local < end) ? yindex_local : -1;
+  return *this;
+}
+
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 FieldPerp toFieldAligned(const FieldPerp& f, const std::string& region) {
