@@ -7,6 +7,7 @@
 #include <exception>
 #include <netcdf>
 #include <vector>
+#include <iostream>
 
 using namespace netCDF;
 
@@ -560,7 +561,11 @@ void OptionsNetCDF::write(const Options& options) {
   // Check the file mode to use
   auto ncmode = NcFile::replace;
   if (file_mode == FileMode::append) {
-    ncmode = NcFile::write;
+    // NetCDF doesn't have a "read-write, create if exists" mode, so
+    // we need to check ourselves if the file already exists; if it
+    // doesn't, tell NetCDF to create it
+    std::ifstream file(filename);
+    ncmode = file.good() ? NcFile::FileMode::write : NcFile::FileMode::newFile;
   }
 
   NcFile dataFile(filename, ncmode);
