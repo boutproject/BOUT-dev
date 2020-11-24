@@ -1,0 +1,9 @@
+# This is in a separate file so that we can download the submodules at
+# configure-time, as well as exposing a nice target if things go wrong
+# afterwards (for example, after changing branches)
+
+submodules: mpark_submodule
+
+mpark_submodule:
+	@echo "Downloading mpark.variant"
+	git submodule update --init --recursive $(PWD)/externalpackages/mpark.variant
