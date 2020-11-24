@@ -362,11 +362,12 @@ inline std::string toString<>(const FieldPerp& UNUSED(val)) {
   return "<FieldPerp>";
 }
 
-/// Test if two fields are the same, by calculating
-/// the minimum absolute difference between them
-bool operator==(const FieldPerp &a, const FieldPerp &b);
+/// Test if two fields are the same, by checking that they are defined
+/// at the same y-index, and if the minimum absolute difference
+/// between them is less than 1e-10
+bool operator==(const FieldPerp& a, const FieldPerp& b);
 
 /// Output a string describing a FieldPerp to a stream
-std::ostream& operator<<(std::ostream &out, const FieldPerp &value);
+std::ostream& operator<<(std::ostream& out, const FieldPerp& value);
 
 #endif

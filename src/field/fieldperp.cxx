@@ -206,14 +206,14 @@ void invalidateGuards(FieldPerp &var) {
 }
 #endif
 
-bool operator==(const FieldPerp &a, const FieldPerp &b) {
+bool operator==(const FieldPerp& a, const FieldPerp& b) {
   if (!a.isAllocated() || !b.isAllocated()) {
     return false;
   }
-  return min(abs(a - b)) < 1e-10;
+  return (a.getIndex() == b.getIndex()) and (min(abs(a - b)) < 1e-10);
 }
 
-std::ostream& operator<<(std::ostream &out, const FieldPerp &value) {
+std::ostream& operator<<(std::ostream& out, const FieldPerp& value) {
   out << toString(value);
   return out;
 }
