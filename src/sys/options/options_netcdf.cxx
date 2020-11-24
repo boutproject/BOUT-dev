@@ -295,6 +295,8 @@ void NcPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   var.putVar(&value(0, 0));
   // Set cell location attribute
   var.putAtt("cell_location", toString(value.getLocation()));
+  var.putAtt("direction_y", toString(value.getDirectionY()));
+  var.putAtt("direction_z", toString(value.getDirectionZ()));
 }
   
 /// In addition to writing the data, set the "cell_location" attribute
@@ -305,6 +307,8 @@ void NcPutVarVisitor::operator()<Field3D>(const Field3D& value) {
 
   // Set cell location attribute
   var.putAtt("cell_location", toString(value.getLocation()));
+  var.putAtt("direction_y", toString(value.getDirectionY()));
+  var.putAtt("direction_z", toString(value.getDirectionZ()));
 }
 
 template <>
