@@ -91,6 +91,7 @@ class Datafile {
   void add(int &i, const char *name, bool save_repeat = false);
   void add(std::vector<int> &ivec, const char *name, bool save_repeat = false);
   void add(std::vector<char> &cvec, const char *name, bool save_repeat = false);
+  void add(std::string &s, const char *name, bool save_repeat = false);
   void add(BoutReal &r, const char *name, bool save_repeat = false);
   void add(bool &b, const char* name, bool save_repeat = false);
   void add(Field2D &f, const char *name, bool save_repeat = false);
@@ -146,22 +147,14 @@ class Datafile {
     std::string name;        ///< Name as it appears in the output file
     bool save_repeat;   ///< If true, has a time dimension and is saved every time step
     bool covar;         ///< For vectors, true if a covariant vector, false if contravariant
-  };
-  /// Specialisation of VarStr to store the original size with a std::vector variable
-  template <class T>
-  struct VarStr<std::vector<T>> {
-    std::vector<T> *ptr; ///< Pointer to the data.
-                         ///< Note that this may be a user object, not a copy, so must not be destroyed
-    std::string name;    ///< Name as it appears in the output file
-    bool save_repeat;    ///< If true, has a time dimension and is saved every time step
-    bool covar;          ///< For vectors, true if a covariant vector, false if contravariant
-    size_t size;         ///< Size of the stored vector, to check it does not change after being added
+    size_t size;         ///< Size of a stored vector or string, to check it does not change after being added
   };
 
   // one set per variable type
   std::vector<VarStr<int>> int_arr;
   std::vector<VarStr<std::vector<int>>> int_vec_arr;
   std::vector<VarStr<std::vector<char>>> char_vec_arr;
+  std::vector<VarStr<std::string>> string_arr;
   std::vector<VarStr<BoutReal>> BoutReal_arr;
   std::vector<VarStr<bool>> bool_arr;
   std::vector<VarStr<Field2D>> f2d_arr;

@@ -80,6 +80,7 @@ Datafile::Datafile(Datafile&& other) noexcept
       appending(other.appending), first_time(other.first_time),
       int_arr(std::move(other.int_arr)), int_vec_arr(std::move(other.int_vec_arr)),
       char_vec_arr(std::move(other.char_vec_arr)),
+      string_arr(std::move(other.string_arr)),
       BoutReal_arr(std::move(other.BoutReal_arr)), bool_arr(std::move(other.bool_arr)),
       f2d_arr(std::move(other.f2d_arr)), f3d_arr(std::move(other.f3d_arr)),
       v2d_arr(std::move(other.v2d_arr)), v3d_arr(std::move(other.v3d_arr)) {
@@ -95,9 +96,9 @@ Datafile::Datafile(const Datafile& other)
       flushFrequency(other.flushFrequency), file(nullptr), filename(other.filename),
       writable(other.writable), appending(other.appending), first_time(other.first_time),
       int_arr(other.int_arr), int_vec_arr(other.int_vec_arr),
-      char_vec_arr(other.char_vec_arr), BoutReal_arr(other.BoutReal_arr),
-      bool_arr(other.bool_arr), f2d_arr(other.f2d_arr), f3d_arr(other.f3d_arr),
-      v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {}
+      char_vec_arr(other.char_vec_arr), string_arr(other.string_arr),
+      BoutReal_arr(other.BoutReal_arr), bool_arr(other.bool_arr), f2d_arr(other.f2d_arr),
+      f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {}
 
 Datafile& Datafile::operator=(Datafile &&rhs) noexcept {
   mesh         = rhs.mesh;
@@ -120,6 +121,7 @@ Datafile& Datafile::operator=(Datafile &&rhs) noexcept {
   int_arr      = std::move(rhs.int_arr);
   int_vec_arr  = std::move(rhs.int_vec_arr);
   char_vec_arr = std::move(rhs.char_vec_arr);
+  string_arr   = std::move(rhs.string_arr);
   BoutReal_arr = std::move(rhs.BoutReal_arr);
   bool_arr     = std::move(rhs.bool_arr);
   f2d_arr      = std::move(rhs.f2d_arr);
@@ -220,6 +222,14 @@ bool Datafile::openw(const std::string& filename_) {
   for(const auto& var : char_vec_arr) {
     if (!file->addVarCharVec(var.name, var.save_repeat, var.ptr->size())) {
       throw BoutException("Failed to add char vector variable {:s} to Datafile", var.name);
+    }
+  }
+
+  // Add strings
+  for(const auto& var : string_arr) {
+    // '+ 1' for null-termination character added in write method
+    if (!file->addVarCharVec(var.name, var.save_repeat, var.ptr->size() + 1)) {
+      throw BoutException("Failed to add string variable {:s} to Datafile", var.name);
     }
   }
 
@@ -351,6 +361,14 @@ bool Datafile::opena(const std::string& filename_) {
   for(const auto& var : char_vec_arr) {
     if (!file->addVarCharVec(var.name, var.save_repeat, var.ptr->size())) {
       throw BoutException("Failed to add char vector variable {:s} to Datafile", var.name);
+    }
+  }
+
+  // Add strings
+  for(const auto& var : string_arr) {
+    // '+ 1' for null-termination character added in write method
+    if (!file->addVarCharVec(var.name, var.save_repeat, var.ptr->size() + 1)) {
+      throw BoutException("Failed to add string variable {:s} to Datafile", var.name);
     }
   }
 
@@ -620,6 +638,68 @@ void Datafile::add(std::vector<char> &cvec, const char *name, bool save_repeat) 
     // Add variable to file
     if (!file->addVarCharVec(name, save_repeat, cvec.size())) {
       throw BoutException("Failed to add char vector variable {:s} to Datafile", name);
+    }
+
+    if (openclose) {
+      file->close();
+    }
+  }
+}
+
+void Datafile::add(std::string &s, const char *name, bool save_repeat) {
+  TRACE("DataFile::add(std::string)");
+  if (!enabled) {
+    return;
+  }
+  if (varAdded(name)) {
+    // Check if it's the same variable
+    if (&s == varPtr(name)) {
+      output_warn.write("WARNING: variable '{:s}' already added to Datafile, skipping...\n",
+                        name);
+      return;
+    } else {
+      throw BoutException("Variable with name '{:s}' already added to Datafile", name);
+    }
+  }
+
+  VarStr<std::string> d;
+
+  d.ptr = &s;
+  d.name = name;
+  d.save_repeat = save_repeat;
+  d.covar = false;
+  d.size = s.size();
+
+  string_arr.push_back(d);
+
+  if (writable) {
+    // Otherwise will add variables when Datafile is opened for writing/appending
+    if (openclose) {
+      // Open the file
+      // Check filename has been set
+      if (filename.empty()) {
+        throw BoutException("Datafile::add: Filename has not been set");
+      }
+      if(!file->openw(filename, BoutComm::rank(), appending)) {
+        if (appending) {
+          throw BoutException("Datafile::add: Failed to open file {:s} for appending!",
+                              filename);
+        } else {
+          throw BoutException("Datafile::add: Failed to open file {:s} for writing!",
+                              filename);
+        }
+      }
+      appending = true;
+    }
+
+    if (!file->is_valid()) {
+      throw BoutException("Datafile::add: File is not valid!");
+    }
+
+    // Add variable to file
+    // '+ 1' for null-termination character added in write method
+    if (!file->addVarCharVec(name, save_repeat, s.size() + 1)) {
+      throw BoutException("Failed to add string variable {:s} to Datafile", name);
     }
 
     if (openclose) {
@@ -1187,6 +1267,41 @@ bool Datafile::read() {
     }
   }
 
+  // Read strings
+  for (const auto& var : string_arr) {
+    if (var.ptr->size() != var.size) {
+      throw BoutException("Size of std::string '{:s}' has changed since being "
+                          "added to Datafile. Cannot read.", var.name);
+    }
+    std::vector<char> char_buffer;
+    char_buffer.resize(var.size + 1); // Allow for null-termination
+    if (var.save_repeat) {
+      if (!file->read_rec(&char_buffer[0], var.name.c_str(), var.size + 1)) {
+        if (!init_missing) {
+          throw BoutException(
+              "Missing data for {:s} in input. Set init_missing=true to create empty string.",
+              var.name);
+        }
+        output_warn.write("\tWARNING: Could not read string {:s}. Creating empty string\n", var.name);
+        char_buffer.clear();
+        char_buffer.push_back('\0');
+      }
+    } else {
+      if (!file->read(&char_buffer[0], var.name.c_str(), var.size + 1)) {
+        if (!init_missing) {
+          throw BoutException(
+              "Missing data for {:s} in input. Set init_missing=true to create empty string.",
+              var.name);
+        }
+        output_warn.write("\tWARNING: Could not read string {:s}. Creating empty string\n", var.name);
+        char_buffer.clear();
+        char_buffer.push_back('\0');
+      }
+    }
+
+    *var.ptr = std::string(&char_buffer[0], char_buffer.size() - 1);
+  }
+
   // Read BoutReals
   for(const auto& var : BoutReal_arr) {
     if(var.save_repeat) {
@@ -1393,6 +1508,17 @@ bool Datafile::write() {
                           "added to Datafile. Cannot write.", var.name);
     }
     write_char_vec(var.name, var.ptr, var.save_repeat);
+  }
+
+  // Write strings
+  for (const auto& var : string_arr) {
+    if (var.ptr->size() != var.size) {
+      throw BoutException("Size of string '{:s}' has changed since being "
+                          "added to Datafile. Cannot write.", var.name);
+    }
+    std::vector<char> char_buffer(var.ptr->begin(), var.ptr->end());
+    char_buffer.push_back('\0'); // to get null-termination
+    write_char_vec(var.name, &char_buffer, var.save_repeat);
   }
 
   // Write BoutReals
@@ -1855,6 +1981,12 @@ bool Datafile::varAdded(const std::string &name) {
     }
   }
 
+  for (const auto& var : string_arr) {
+    if(name == var.name) {
+      return true;
+    }
+  }
+
   for(const auto& var : BoutReal_arr ) {
     if(name == var.name)
       return true;
@@ -1906,6 +2038,12 @@ void *Datafile::varPtr(const std::string &name) {
   }
 
   for (const auto &var : char_vec_arr) {
+    if (name == var.name) {
+      return static_cast<void *>(var.ptr);
+    }
+  }
+
+  for (const auto &var : string_arr) {
     if (name == var.name) {
       return static_cast<void *>(var.ptr);
     }
