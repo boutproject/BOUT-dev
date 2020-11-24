@@ -102,8 +102,6 @@ Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation
   nz = fieldmesh->LocalNz;
 
   ASSERT1(data.size() == nx * ny * nz);
-
-  setLocation(datalocation);
 }
 
 Field3D::~Field3D() { delete deriv; }
