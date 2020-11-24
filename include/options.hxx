@@ -256,6 +256,11 @@ public:
   ///  - doc              [string] Documentation, describing what the variable does
   ///
   std::map<std::string, AttributeType> attributes;
+
+  /// Return true if this value has attribute \p key
+  bool hasAttribute(const std::string& key) const {
+    return attributes.find(key) != attributes.end();
+  }
   
   /// Get a sub-section or value
   ///
