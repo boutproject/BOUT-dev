@@ -497,7 +497,7 @@ FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
     } else if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
       auto localmesh = similar_to.getMesh();
       if (!localmesh) {
-        throw BoutException("mesh must be supplied when converting Tensor to Field3D");
+        throw BoutException("mesh must be supplied when converting Matrix to FieldPerp");
       }
 
       // Get a reference, to try and avoid copying
