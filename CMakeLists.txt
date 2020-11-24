@@ -629,7 +629,7 @@ if(PACKAGE_TESTS)
 endif()
 
 add_subdirectory(examples/laplacexy/simple-hypre)
-#add_subdirectory(examples/laplacexy/simple)
+add_subdirectory(examples/laplacexy/simple)
 add_subdirectory(examples/hasegawa-wakatani-3d)
 
 ##################################################

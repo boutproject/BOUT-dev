@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(test_laplacexy LANGUAGES CXX C)
-#find_package(bout++ REQUIRED)
+project(test_laplacexy_hypre LANGUAGES CXX C)
 
 if(NOT BOUT_HAS_HYPRE)
   message(FATAL_ERROR "This example requires BOUT++ to have been built with HYPRE")
@@ -13,7 +12,7 @@ set(test_laplacexy_hypre_sources
 
 set(test_laplacexy_hypre_depends bout++ PETSc HYPRE)
 
-add_executable(test_laplacexy_hypre test-laplacexy-hypre.cxx)
+add_executable(test_laplacexy_hypre ${test_laplacexy_hypre_sources})
 target_link_libraries(test_laplacexy_hypre PRIVATE bout++::bout++)
 target_compile_definitions(test_laplacexy_hypre PUBLIC "BOUT_HAS_HYPRE")
 target_include_directories(test_laplacexy_hypre PUBLIC 
