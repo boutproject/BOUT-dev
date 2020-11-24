@@ -116,22 +116,32 @@ class FieldPerp : public Field {
   inline const BoutReal& operator[](const Ind3D &d) const {
     ASSERT3(d.y() == yindex);
     return operator()(d.x(), d.z());
-  }  
+  }
 
-  /*!
-   * Returns the y index at which this field is defined
-   */ 
-  int getIndex() const {return yindex;}
-  
-  /*!
-   * Sets the y index at which this field is defined
-   *
-   * This is used in arithmetic operations
-   */
+  /// Return the y index at which this field is defined. This value is
+  /// local to each processor
+  int getIndex() const { return yindex; }
+
+  /// Return the globally defined y index if it's either an interior
+  /// (grid) point, or a boundary point. Otherwise, return -1 to
+  /// indicate a guard cell or an invalid value
+  int getGlobalIndex() const;
+
+  /// Set the (local) y index at which this field is defined
+  ///
+  /// This is used in arithmetic operations
   FieldPerp& setIndex(int y) {
     yindex = y;
     return *this;
   }
+
+  /// Set the (local) y index at which this field is defined from a
+  /// globally defined y index
+  ///
+  /// Only use the global y index if it's either an interior (grid)
+  /// point, or a boundary point. Otherwise, sets yindex to -1 to
+  /// indicate a guard cell or an invalid value
+  FieldPerp& setIndexFromGlobal(int y_global);
 
   // these methods return FieldPerp to allow method chaining
   FieldPerp& setLocation(CELL_LOC new_location) {
