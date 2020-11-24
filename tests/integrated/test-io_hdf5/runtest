@@ -107,41 +107,6 @@ def check_output():
     return success
 
 
-def check_output():
-    success = True
-    for v in vars:
-        print("      Checking variable "+v+" ... ")
-        result = collect(v, path="data", info=False)
-
-        # Compare benchmark and output
-        if np.shape(bmk[v]) != np.shape(result):
-            print("Fail, wrong shape")
-            success = False
-            continue
-
-        diff =  np.max(np.abs(bmk[v] - result))
-        if diff > tol:
-            print("Fail, maximum difference = "+str(diff))
-            success = False
-            continue
-
-        if v in field_vars:
-            # Check cell location
-            if "cell_location" not in result.attributes:
-                print("Fail: {0} has no cell_location attribute".format(v))
-                success = False
-                continue
-
-            if result.attributes["cell_location"] != "CELL_CENTRE":
-                print("Fail: Expecting cell_location == CELL_CENTRE, but got {0}".format(result.attributes["cell_location"]))
-                success = False
-                continue
-
-        print("Pass")
-
-    return success
-
-
 print("Running I/O test")
 success = True
 for nproc in [1, 2, 4]:
