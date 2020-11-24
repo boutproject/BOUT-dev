@@ -812,6 +812,15 @@ TEST_F(OptionsTest, AssignSubSectionParent) {
   EXPECT_EQ(&option2["key2"]["key1"].parent(), &option2["key2"]);
 }
 
+TEST_F(OptionsTest, HasAttribute) {
+  Options option;
+
+  EXPECT_FALSE(option.hasAttribute("not here"));
+
+  option.attributes["here"] = true;
+  EXPECT_TRUE(option.hasAttribute("here"));
+}
+
 TEST_F(OptionsTest, AttributeMissingBool) {
   Options option;
 
