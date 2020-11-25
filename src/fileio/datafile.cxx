@@ -934,12 +934,12 @@ void checkGridValue(DataFormat* file, const std::string& name,
                     const std::string& filename, const int reference_value) {
   int file_value;
   if (!file->read(&file_value, name)) {
-    throw BoutException("Could not read %s from file '%s'", name, filename);
+    throw BoutException("Could not read %s from file '%s'", name.c_str(), filename.c_str());
   }
 
   if (file_value != reference_value) {
-    throw BoutException("%s (%i) in file '%s' does not match value in mesh (%i)", name,
-                        file_value, filename, reference_value);
+    throw BoutException("%s (%i) in file '%s' does not match value in mesh (%i)", name.c_str(),
+                        file_value, filename.c_str(), reference_value);
   }
 }
 
