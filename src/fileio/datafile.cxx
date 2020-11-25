@@ -950,7 +950,7 @@ void checkFileGrid(DataFormat* file, const std::string& filename, const Mesh* me
   checkGridValue(file, "MZG", filename, mesh->zstart);
   // nx includes boundaries
   checkGridValue(file, "nx", filename, mesh->GlobalNx);
-  checkGridValue(file, "ny", filename, mesh->GlobalNy);
+  checkGridValue(file, "ny", filename, mesh->GlobalNy - 2*mesh->ystart);
   checkGridValue(file, "nz", filename, mesh->LocalNz);
 }
 } // namespace
