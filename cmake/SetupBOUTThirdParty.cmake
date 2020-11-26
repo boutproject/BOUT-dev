@@ -3,11 +3,13 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 
 set(BOUT_DEPENDS "")
 
+# determined in SetupCompilers.cmake
 if (HAVE_MPI)
    list(APPEND BOUT_DEPENDS mpi)
    target_link_libraries(bout++ PUBLIC MPI::MPI_CXX mpark_variant)
 endif ()
 
+# determined in SetupCompilers.cmake
 if (HAVE_OPENMP)
    list(APPEND BOUT_DEPENDS openmp)
    target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
@@ -21,6 +23,7 @@ message(STATUS "Enable OpenMP: ${BOUT_ENABLE_OPENMP}")
 set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
 
 
+# determined in SetupCompilers.cmake
 if (BOUT_USE_CUDA)
    list(APPEND BOUT_DEPENDS cuda)
    enable_language(CUDA)
@@ -66,6 +69,7 @@ endif ()
 
 #HAVE_HYPRE
 set(BOUT_HAS_HYPRE OFF)
+set(HYPRE_DIR "" CACHE STRING "Point to HYPRE Install")
 if (ENABLE_HYPRE OR HYPRE_DIR)
   enable_language(C)
   find_package(HYPRE REQUIRED)
@@ -73,7 +77,7 @@ if (ENABLE_HYPRE OR HYPRE_DIR)
   set (BOUT_HAS_HYPRE ON)
   set (ENABLE_HYPRE ON) # may just have HYPRE_DIR
   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
-  target_include_directories(bout++ PUBLIC ${HYPRE_DIR}/include)
+  #target_include_directories(bout++ PUBLIC ${HYPRE_DIR}/include)
   target_link_libraries(bout++ PUBLIC HYPRE::HYPRE)
   if (HYPRE_CUDA)
      target_compile_definitions(bout++ PUBLIC "HYPRE_USING_CUDA;HYPRE_USING_UNIFIED_MEMORY")
