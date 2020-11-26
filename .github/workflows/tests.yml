@@ -2,42 +2,36 @@ name: Tests
 on: [push, pull_request]
 jobs:
   build:
-    name: ${{ matrix.config.name }}
-    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        config:
-          - {
-              name: "Optimised, shared, Python",
-              os: ubuntu-18.04,
-              configure_options: "--enable-shared
-                                 --enable-checks=no
-                                 --enable-optimize=3
-                                 --disable-signal
-                                 --disable-track
-                                 --disable-backtrace
-                                 --with-petsc
-                                 --with-slepc
-                                 --with-hdf5
-                                 --with-sundials=/home/runner/local
-                                 ",
-              script_flags: "-uim -t shared -t python",
-              pip_packages: "cython~=0.29 netcdf4~=1.5 sympy~=1.5",
-            }
-          - {
-              name: "Debug, static",
-              os: ubuntu-18.04,
-              configure_options: "--enable-sigfpe
-                                 --enable-debug
-                                 --with-hdf5
-                                 --with-petsc
-                                 --with-slepc
-                                 --with-sundials=/home/runner/local
-                                 ",
-              script_flags: "-uim",
-              pip_packages: "cython~=0.29 netcdf4~=1.5 sympy~=1.5",
-            }
+        include:
+          - name: "Optimised, shared, Python"
+            os: ubuntu-18.04
+            configure_options: "--enable-shared
+                                --enable-checks=no
+                                --enable-optimize=3
+                                --disable-signal
+                                --disable-track
+                                --disable-backtrace
+                                --with-petsc
+                                --with-slepc
+                                --with-hdf5
+                                --with-sundials=/home/runner/local"
+            script_flags: "-uim -t shared -t python"
+
+          - name: "Debug, static"
+            os: ubuntu-18.04
+            configure_options: "--enable-sigfpe
+                                --enable-debug
+                                --with-hdf5
+                                --with-petsc
+                                --with-slepc
+                                --with-sundials=/home/runner/local"
+            script_flags: "-uim"
+
     steps:
       - name: Install dependencies
         run: sudo apt update &&
@@ -67,7 +61,7 @@ jobs:
           submodules: true
 
       - name: Install pip packages
-        run: ./.pip_install_for_travis.sh ${{ matrix.config.pip_packages }}
+        run: ./.pip_install_for_travis.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5'
         shell: bash
 
       - name: Cache SUNDIALS build
@@ -81,14 +75,13 @@ jobs:
         shell: bash
 
       - name: Build
-        run: ./.travis_script.sh ${{ matrix.config.script_flags }}
+        run: ./.travis_script.sh ${{ matrix.script_flags }}
         shell: bash
         env:
           LD_LIBRARY_PATH: /home/runner/local/lib:$LD_LIBRARY_PATH
           BOUT_TEST_TIMEOUT: "5m"
-          CONFIGURE_OPTIONS: ${{ matrix.config.configure_options }}
+          CONFIGURE_OPTIONS: ${{ matrix.configure_options }}
           PETSC_DIR: /usr/lib/petscdir/3.7.7/x86_64-linux-gnu-real
           PETSC_ARCH: ""
           SLEPC_DIR: /usr/lib/slepcdir/3.7.4/x86_64-linux-gnu-real
           SLEPC_ARCH: ""
-
