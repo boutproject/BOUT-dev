@@ -16,6 +16,7 @@ jobs:
       SLEPC_DIR: /usr/lib/slepcdir/3.7.4/x86_64-linux-gnu-real
       SLEPC_ARCH: ""
       OMP_NUM_THREADS: ${{ matrix.config.omp_num_threads }}
+      PYTHONPATH: ${{ github.workspace }}/tools/pylib
     strategy:
       fail-fast: false
       matrix:
