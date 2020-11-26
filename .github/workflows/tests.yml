@@ -100,7 +100,7 @@ jobs:
     steps:
       - name: Job information
         run: |
-          echo Build: ${{ matrix.config.name }}
+          echo Build: ${{ matrix.config.name }}, ${{ matrix.config.os }}
           echo Configure options: ${{ matrix.config.configure_options }}
           echo CMake options: ${{ matrix.config.cmake_options }}
 
@@ -132,12 +132,15 @@ jobs:
           submodules: true
 
       - name: Install pip packages
-        run: ./.pip_install_for_travis.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'ninja' 'gcovr' 'cmake'
+        run: |
+          ./.pip_install_for_travis.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'ninja' 'gcovr' 'cmake'
+          # Add the pip install location to the runner's PATH
+          echo ~/.local/bin >> $GITHUB_PATH
 
       - name: Cache SUNDIALS build
         uses: actions/cache@v2
         with:
-          path: $HOME/local
+          path: /home/runner/local
           key: bout-sundials
 
       - name: Build SUNDIALS
@@ -158,9 +161,6 @@ jobs:
           cmake --build build --target build-check -j 2
           cd build
           ctest --output-on-failure --timeout 300
-        shell: bash
-        env:
-          PATH: $HOME/.local/bin:$PATH
 
       - name: Capture coverage
         if: ${{ matrix.config.name == 'Coverage' }}
