@@ -4,6 +4,13 @@ jobs:
   build:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    env:
+      BOUT_TEST_TIMEOUT: "5m"
+      PETSC_DIR: /usr/lib/petscdir/3.7.7/x86_64-linux-gnu-real
+      PETSC_ARCH: ""
+      SLEPC_DIR: /usr/lib/slepcdir/3.7.4/x86_64-linux-gnu-real
+      SLEPC_ARCH: ""
+      OMP_NUM_THREADS: ${{ matrix.omp_num_threads }}
     strategy:
       fail-fast: false
       matrix:
@@ -22,15 +29,46 @@ jobs:
                                 --with-sundials=/home/runner/local"
             script_flags: "-uim -t shared -t python"
 
-          - name: "Debug, static"
+          - name: "Debug, shared"
             os: ubuntu-18.04
-            configure_options: "--enable-sigfpe
+            configure_options: "--enable-shared
+                                --enable-sigfpe
                                 --enable-debug
                                 --with-hdf5
                                 --with-petsc
                                 --with-slepc
                                 --with-sundials=/home/runner/local"
             script_flags: "-uim"
+
+          - name: "Default options"
+            os: ubuntu-18.04
+            configure_options: "--with-petsc
+                                --with-slepc
+                                --with-hdf5
+                                --with-sundials=/home/runner/local"
+            script_flags: "-uim"
+
+          - name: "OpenMP, shared"
+            os: ubuntu-18.04
+            configure_options: "--enable-shared
+                                --enable-openmp
+                                --with-petsc
+                                --with-slepc
+                                --with-hdf5
+                                --with-sundials=/home/runner/local"
+            script_flags: "-uim"
+            omp_num_threads: 2
+
+          - name: "CMake, shared"
+            os: ubuntu-18.04
+            cmake_options: "-DBUILD_SHARED_LIBS=ON
+                            -DBOUT_ENABLE_OPENMP=ON
+                            -DBOUT_USE_PETSC=ON
+                            -DBOUT_USE_SLEPC=ON
+                            -DBOUT_USE_HDF5=ON
+                            -DBOUT_USE_SUNDIALS=ON
+                            -DSUNDIALS_ROOT=/home/runner/local"
+            omp_num_threads: 2
 
     steps:
       - name: Install dependencies
@@ -61,7 +99,7 @@ jobs:
           submodules: true
 
       - name: Install pip packages
-        run: ./.pip_install_for_travis.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5'
+        run: ./.pip_install_for_travis.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'ninja'
         shell: bash
 
       - name: Cache SUNDIALS build
@@ -74,14 +112,20 @@ jobs:
         run: ./.build_sundials_for_travis.sh
         shell: bash
 
-      - name: Build
+      - name: Build (configure)
+        if: ${{ ! contains(matrix.name, 'CMake') }}
         run: ./.travis_script.sh ${{ matrix.script_flags }}
         shell: bash
         env:
           LD_LIBRARY_PATH: /home/runner/local/lib:$LD_LIBRARY_PATH
-          BOUT_TEST_TIMEOUT: "5m"
           CONFIGURE_OPTIONS: ${{ matrix.configure_options }}
-          PETSC_DIR: /usr/lib/petscdir/3.7.7/x86_64-linux-gnu-real
-          PETSC_ARCH: ""
-          SLEPC_DIR: /usr/lib/slepcdir/3.7.4/x86_64-linux-gnu-real
-          SLEPC_ARCH: ""
+
+      - name: Build (CMake)
+        if: ${{ contains(matrix.name, 'CMake') }}
+        run: |
+          cmake --version
+          cmake . -B build ${{ matrix.cmake_options }} -G Ninja
+          cmake --build build --target build-check -j 2
+          cd build
+          ctest --output-on-failure --timeout 300
+        shell: bash
