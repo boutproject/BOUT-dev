@@ -136,7 +136,7 @@ jobs:
 
       - name: Install pip packages
         run: |
-          ./.pip_install_for_travis.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'ninja' 'gcovr' 'cmake'
+          ./.pip_install_for_travis.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'gcovr' 'cmake'
           # Add the pip install location to the runner's PATH
           echo ~/.local/bin >> $GITHUB_PATH
 
@@ -160,7 +160,7 @@ jobs:
         if: ${{ contains(matrix.config.name, 'CMake') }}
         run: |
           cmake --version
-          cmake . -B build ${{ matrix.config.cmake_options }} -G Ninja
+          cmake . -B build ${{ matrix.config.cmake_options }}
           cmake --build build --target build-check -j 2
           cd build
           ctest --output-on-failure --timeout 300
