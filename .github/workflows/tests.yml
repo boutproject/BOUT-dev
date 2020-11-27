@@ -142,7 +142,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/local
-          key: bout-sundials
+          key: bout-sundials-${{ matrix.config.os }}
 
       - name: Build SUNDIALS
         run: ./.build_sundials_for_travis.sh
