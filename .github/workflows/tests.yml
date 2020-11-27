@@ -17,6 +17,8 @@ jobs:
       SLEPC_ARCH: ""
       OMP_NUM_THREADS: ${{ matrix.config.omp_num_threads }}
       PYTHONPATH: ${{ github.workspace }}/tools/pylib
+      OMPI_MCA_rmaps_base_oversubscribe: yes
+      MPIRUN: mpiexec -np
     strategy:
       fail-fast: false
       matrix:
