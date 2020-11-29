@@ -1132,12 +1132,12 @@ bool Datafile::write() {
 
     // 3D fields
     for (const auto& var : f3d_arr) {
-      file->writeFieldAttributes(var.name, *var.ptr);
+      file->writeFieldAttributes(var.name, *var.ptr, shiftOutput);
     }
 
     // FieldPerps
     for (const auto& var : fperp_arr) {
-      file->writeFieldAttributes(var.name, *var.ptr);
+      file->writeFieldAttributes(var.name, *var.ptr, shiftOutput);
     }
 
     // 2D vectors
@@ -1153,9 +1153,9 @@ bool Datafile::write() {
     for(const auto& var : v3d_arr) {
       Vector3D v  = *(var.ptr);
       auto name = var.covar ? var.name + "_" : var.name;
-      file->writeFieldAttributes(name+"x", v.x);
-      file->writeFieldAttributes(name+"y", v.y);
-      file->writeFieldAttributes(name+"z", v.z);
+      file->writeFieldAttributes(name+"x", v.x, shiftOutput);
+      file->writeFieldAttributes(name+"y", v.y, shiftOutput);
+      file->writeFieldAttributes(name+"z", v.z, shiftOutput);
     }
   }
 

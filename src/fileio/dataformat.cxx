@@ -35,14 +35,17 @@ bool DataFormat::setLocalOrigin(int x, int y, int z, int UNUSED(offset_x),
   return setGlobalOrigin(x + mesh->OffsetX, y + mesh->OffsetY, z + mesh->OffsetZ);
 }
 
-void DataFormat::writeFieldAttributes(const std::string& name, const Field& f) {
+void DataFormat::writeFieldAttributes(const std::string& name, const Field& f, bool shiftOutput) {
+  // If shiftOutput is true, the data will be written in field-aligned form
+  auto direction_y = shiftOutput ? YDirectionType::Aligned : f.getDirectionY();
+
   setAttribute(name, "cell_location", toString(f.getLocation()));
-  setAttribute(name, "direction_y", toString(f.getDirectionY()));
+  setAttribute(name, "direction_y", toString(direction_y));
   setAttribute(name, "direction_z", toString(f.getDirectionZ()));
 }
 
-void DataFormat::writeFieldAttributes(const std::string& name, const FieldPerp& f) {
-  writeFieldAttributes(name, static_cast<const Field&>(f));
+void DataFormat::writeFieldAttributes(const std::string& name, const FieldPerp& f, bool shiftOutput) {
+  writeFieldAttributes(name, static_cast<const Field&>(f), shiftOutput);
 
   auto& fieldmesh = *f.getMesh();
   const int yindex = f.getIndex();
