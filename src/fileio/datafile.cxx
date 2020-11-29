@@ -1550,7 +1550,7 @@ bool Datafile::write_f3d(const std::string &name, Field3D *f, bool save_repeat) 
 
   //Deal with shifting the output
   Field3D f_out{emptyFrom(*f)};
-  if(shiftOutput) {
+  if(shiftOutput and not (f->getDirectionY() == YDirectionType::Aligned)) {
     f_out = toFieldAligned(*f);
   }else {
     f_out = *f;
@@ -1573,7 +1573,7 @@ bool Datafile::write_fperp(const std::string &name, FieldPerp *f, bool save_repe
 
     //Deal with shifting the output
     FieldPerp f_out{emptyFrom(*f)};
-    if(shiftOutput) {
+    if(shiftOutput and not (f->getDirectionY() == YDirectionType::Aligned)) {
       f_out = toFieldAligned(*f);
     }else {
       f_out = *f;
