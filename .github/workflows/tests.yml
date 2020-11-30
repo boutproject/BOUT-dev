@@ -24,7 +24,7 @@ jobs:
       matrix:
         # Need this to be able to exclude the coverage job
         is_master_or_next:
-          - ${{ github.ref ==  'refs/heads/master' || github.ref == 'refs/heads/next' }}
+          - ${{ github.ref ==  'refs/heads/master' || github.ref == 'refs/heads/next'  || github.base_ref ==  'refs/heads/master' || github.base_ref == 'refs/heads/next' }}
         config:
           - name: "Default options"
             os: ubuntu-18.04
