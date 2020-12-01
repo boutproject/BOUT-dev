@@ -188,9 +188,7 @@ public:
       HYPRE_BigInt index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
       if (index != -1) { // Todo double check why index out of bounds does not return -1
         result[i] = static_cast<BoutReal>(V[count]);
-        std::cout << index << ", " << V[count] << std::endl;
         count++;
-
       }
     }
 
@@ -252,7 +250,6 @@ public:
     Element& operator=(BoutReal value_) {
       value = value_;
       vector->V[vec_i] = value_;
-      std::cout << "Set:  V[] vec_i = " << value_ << std::endl;
       return *this;
     }
     Element& operator+=(BoutReal value_) {
@@ -679,6 +676,7 @@ private:
   MPI_Comm comm;
   HYPRE_Solver solver;
   HYPRE_Solver precon;
+  bool pcg_setup;
 public:
   HypreSystem(Mesh& mesh)
   {
@@ -701,7 +699,8 @@ public:
     HYPRE_BoomerAMGSetNumSweeps(precon, 1);
     HYPRE_BoomerAMGSetMaxLevels(precon, 20);
     HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
-    //TODO:  add methods to change some of these defaults
+
+    pcg_setup = false;
   }
 
   ~HypreSystem() {
@@ -755,6 +754,10 @@ public:
     ASSERT2(A != nullptr);
     ASSERT2(x != nullptr);
     ASSERT2(b != nullptr);
+    if (!pcg_setup) {
+      HYPRE_ParCSRPCGSetup(solver, A->getParallel(), b->getParallel(), x->getParallel());
+      pcg_setup = true;
+    }
 
     HYPRE_ParCSRPCGSolve(solver, A->getParallel(), b->getParallel(), x->getParallel());   
   }
