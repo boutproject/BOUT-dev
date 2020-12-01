@@ -39,7 +39,7 @@ LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
     opt = &(Options::root()["laplacexy"]);
   }
 
-  indexConverter = std::make_shared<GlobalIndexer<Field2D>>(localmesh);
+  indexConverter = std::make_shared<GlobalIndexer<Field2D>>(localmesh, squareStencil<Field2D::ind_type>(localmesh));
 
   linearSystem = new bout::HypreSystem<Field2D>(*localmesh);
   M = new bout::HypreMatrix<Field2D>(indexConverter);
@@ -74,7 +74,6 @@ LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
   one.setLocation(location);
   zero.setLocation(location);
   setCoefs(one, zero);
-  std::cout << "New Methods." << std::endl;
 }
 
 void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
@@ -85,16 +84,21 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
   ASSERT1(A.getLocation() == location);
   ASSERT1(B.getLocation() == location);
 
-  const auto& region = f2dinit.getRegion("RGN_NOBNDRY");
+  //const auto& region = f2dinit.getRegion("RGN_NOBNDRY");
+  const auto &region = indexConverter->getRegionAll();
 
   Coordinates* coords = localmesh->getCoordinates(location);
 
   //////////////////////////////////////////////////
   // Set Matrix elements
   //
+
+
+
   // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
+  std::cout << "setting up matrix..." << std::endl;
   auto start = std::chrono::system_clock::now();  //AARON
-  for (auto& index : A.getRegion("RGN_NOBNDRY")) {
+  for (auto& index : indexConverter->getRegionNobndry()) {
     // Index offsets
     auto ind_xp = index.xp();
     auto ind_xm = index.xm();
