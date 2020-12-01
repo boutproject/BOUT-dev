@@ -26,19 +26,11 @@ jobs:
                  slepc-dev
                  liblapack-dev
                  libparpack2-dev
+                 libsundials-dev
 
       - uses: actions/checkout@v2
         with:
           submodules: true
-
-      - name: Cache SUNDIALS build
-        uses: actions/cache@v2
-        with:
-          path: /home/runner/local
-          key: bout-sundials-ubuntu-20.04
-
-      - name: Build SUNDIALS
-        run: ./.build_sundials_for_travis.sh
 
       - name: Create compile_commands.json
         run: |
@@ -49,7 +41,6 @@ jobs:
                            -DBOUT_USE_SLEPC=ON \
                            -DBOUT_USE_HDF5=ON \
                            -DBOUT_USE_SUNDIALS=ON \
-                           -DSUNDIALS_ROOT=/home/runner/local \
                            -DBOUT_BUILD_EXAMPLES=ON \
                            -DCMAKE_EXPORT_COMPILE_COMMANDS=On
 
@@ -58,5 +49,5 @@ jobs:
         id: review
         with:
           build_dir: build
-          apt_packages: "libfftw3-dev,libnetcdf-c++4-dev,libhdf5-mpi-dev,libopenmpi-dev,petsc-dev,slepc-dev,liblapack-dev,libparpack2-dev"
+          apt_packages: "libfftw3-dev,libnetcdf-c++4-dev,libhdf5-mpi-dev,libopenmpi-dev,petsc-dev,slepc-dev,liblapack-dev,libparpack2-dev,libsundials-dev"
 
