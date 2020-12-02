@@ -330,7 +330,7 @@ private:
       output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n", hthe0/rho_s);
     }
     
-    if (stagger) {
+    if (mesh->StaggerGrids) {
       ////////////////////////////////////////////////////////
       // SHIFTED GRIDS LOCATION
 
@@ -496,8 +496,8 @@ private:
     if (! (estatic || ZeroElMass)) {
       // Create a solver for the electromagnetic potential
       aparSolver = Laplacian::create(&options["aparSolver"],
-                                     stagger ? CELL_YLOW : CELL_CENTRE);
-      if (stagger) {
+                                     mesh->StaggerGrids ? CELL_YLOW : CELL_CENTRE);
+      if (mesh->StaggerGrids) {
         acoef = (-0.5 * beta_p / fmei) * interp_to(Ni0, CELL_YLOW);
       } else {
         acoef = (-0.5 * beta_p / fmei) * Ni0;
@@ -579,7 +579,7 @@ private:
     
     ////////////////////////////////////////////////////////
     // Update non-linear coefficients on the mesh
-    if (stagger) {
+    if (mesh->StaggerGrids) {
       nu      = nu_hat * interp_to(Nit / pow(Tet,1.5), CELL_YLOW);
     } else {
       nu      = nu_hat * Nit / pow(Tet,1.5);
@@ -606,7 +606,7 @@ private:
       mesh->communicate(jpar);
       jpar.applyBoundary();
       
-      if (!stagger) {
+      if (!mesh->StaggerGrids) {
         Ve = Vi - jpar/Ni0;
       } else {
         Ve = Vi - jpar/interp_to(Ni0, CELL_YLOW);
@@ -615,7 +615,7 @@ private:
     } else {
     
       Ve = Ajpar + Apar;
-      if (!stagger) {
+      if (!mesh->StaggerGrids) {
         jpar = Ni0*(Vi - Ve);
       } else {
         jpar = interp_to(Ni0, CELL_YLOW)*(Vi - Ve);
@@ -837,7 +837,7 @@ private:
         ddt(Ajpar) -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni, CELL_YLOW);
       }
       
-      if (stagger) {
+      if (mesh->StaggerGrids) {
         ddt(Ajpar) += 0.51*nu*jpar/interp_to(Ni0, CELL_YLOW);
       } else {
         ddt(Ajpar) += 0.51*nu*jpar/Ni0;
