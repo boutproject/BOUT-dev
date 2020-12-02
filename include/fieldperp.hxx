@@ -36,6 +36,9 @@ class FieldPerp;
 
 #include "unused.hxx"
 
+#include <ostream>
+#include <string>
+
 class Field2D; // #include "field2d.hxx"
 class Field3D; // #include "field3d.hxx"
 
@@ -75,6 +78,14 @@ class FieldPerp : public Field {
    */ 
   FieldPerp(BoutReal val, Mesh *localmesh = nullptr);
 
+  /*!
+   * Constructor from Array and Mesh
+   */
+  FieldPerp(Array<BoutReal> data, Mesh* fieldmesh, CELL_LOC location_in = CELL_CENTRE,
+            int yindex_in = -1,
+            DirectionTypes directions_in = {YDirectionType::Standard,
+                                            ZDirectionType::Standard});
+
   ~FieldPerp() override = default;
 
   /*!
@@ -105,22 +116,32 @@ class FieldPerp : public Field {
   inline const BoutReal& operator[](const Ind3D &d) const {
     ASSERT3(d.y() == yindex);
     return operator()(d.x(), d.z());
-  }  
+  }
 
-  /*!
-   * Returns the y index at which this field is defined
-   */ 
-  int getIndex() const {return yindex;}
-  
-  /*!
-   * Sets the y index at which this field is defined
-   *
-   * This is used in arithmetic operations
-   */
+  /// Return the y index at which this field is defined. This value is
+  /// local to each processor
+  int getIndex() const { return yindex; }
+
+  /// Return the globally defined y index if it's either an interior
+  /// (grid) point, or a boundary point. Otherwise, return -1 to
+  /// indicate a guard cell or an invalid value
+  int getGlobalIndex() const;
+
+  /// Set the (local) y index at which this field is defined
+  ///
+  /// This is used in arithmetic operations
   FieldPerp& setIndex(int y) {
     yindex = y;
     return *this;
   }
+
+  /// Set the (local) y index at which this field is defined from a
+  /// globally defined y index
+  ///
+  /// Only use the global y index if it's either an interior (grid)
+  /// point, or a boundary point. Otherwise, sets yindex to -1 to
+  /// indicate a guard cell or an invalid value
+  FieldPerp& setIndexFromGlobal(int y_global);
 
   // these methods return FieldPerp to allow method chaining
   FieldPerp& setLocation(CELL_LOC new_location) {
@@ -333,5 +354,20 @@ void invalidateGuards(FieldPerp &var);
 #else
 inline void invalidateGuards(FieldPerp &UNUSED(var)) {}
 #endif
+
+/// toString template specialisation
+/// Defined in utils.hxx
+template <>
+inline std::string toString<>(const FieldPerp& UNUSED(val)) {
+  return "<FieldPerp>";
+}
+
+/// Test if two fields are the same, by checking that they are defined
+/// at the same y-index, and if the minimum absolute difference
+/// between them is less than 1e-10
+bool operator==(const FieldPerp& a, const FieldPerp& b);
+
+/// Output a string describing a FieldPerp to a stream
+std::ostream& operator<<(std::ostream& out, const FieldPerp& value);
 
 #endif

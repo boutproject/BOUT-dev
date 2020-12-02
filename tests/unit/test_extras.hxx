@@ -303,14 +303,14 @@ public:
   BoutReal GlobalY(BoutReal jy) const override { return jy; }
   int getGlobalXIndex(int) const override { return 0; }
   int getGlobalXIndexNoBoundaries(int) const override { return 0; }
-  int getGlobalYIndex(int) const override { return 0; }
-  int getGlobalYIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalYIndex(int y) const override { return y; }
+  int getGlobalYIndexNoBoundaries(int y) const override { return y; }
   int getGlobalZIndex(int) const override { return 0; }
   int getGlobalZIndexNoBoundaries(int) const override { return 0; }
   int getLocalXIndex(int) const override { return 0; }
   int getLocalXIndexNoBoundaries(int) const override { return 0; }
-  int getLocalYIndex(int) const override { return 0; }
-  int getLocalYIndexNoBoundaries(int) const override { return 0; }
+  int getLocalYIndex(int y) const override { return y; }
+  int getLocalYIndexNoBoundaries(int y) const override { return y; }
   int getLocalZIndex(int) const override { return 0; }
   int getLocalZIndexNoBoundaries(int) const override { return 0; }
 
