@@ -311,10 +311,12 @@ private:
 #define BOUTMAIN(ModelClass)                                       \
   int main(int argc, char** argv) {                                \
     int init_err = BoutInitialise(argc, argv);                     \
-    if (init_err < 0)                                              \
+    if (init_err < 0) {                                            \
       return 0;                                                    \
-    else if (init_err > 0)                                         \
+    }                                                              \
+    if (init_err > 0) {                                            \
       return init_err;                                             \
+    }                                                              \
     try {                                                          \
       auto model = bout::utils::make_unique<ModelClass>();         \
       auto solver = Solver::create();                              \
