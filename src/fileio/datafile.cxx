@@ -1117,12 +1117,12 @@ bool Datafile::write() {
 
     // 3D fields
     for (const auto& var : f3d_arr) {
-      file->writeFieldAttributes(var.name, *var.ptr);
+      file->writeFieldAttributes(var.name, *var.ptr, shiftOutput);
     }
 
     // FieldPerps
     for (const auto& var : fperp_arr) {
-      file->writeFieldAttributes(var.name, *var.ptr);
+      file->writeFieldAttributes(var.name, *var.ptr, shiftOutput);
     }
 
     // 2D vectors
@@ -1138,9 +1138,9 @@ bool Datafile::write() {
     for(const auto& var : v3d_arr) {
       Vector3D v  = *(var.ptr);
       auto name = var.covar ? var.name + "_" : var.name;
-      file->writeFieldAttributes(name+"x", v.x);
-      file->writeFieldAttributes(name+"y", v.y);
-      file->writeFieldAttributes(name+"z", v.z);
+      file->writeFieldAttributes(name+"x", v.x, shiftOutput);
+      file->writeFieldAttributes(name+"y", v.y, shiftOutput);
+      file->writeFieldAttributes(name+"z", v.z, shiftOutput);
     }
   }
 
@@ -1530,7 +1530,7 @@ bool Datafile::write_f3d(const std::string &name, Field3D *f, bool save_repeat) 
 
   //Deal with shifting the output
   Field3D f_out{emptyFrom(*f)};
-  if(shiftOutput) {
+  if(shiftOutput and not (f->getDirectionY() == YDirectionType::Aligned)) {
     f_out = toFieldAligned(*f);
   }else {
     f_out = *f;
@@ -1552,7 +1552,7 @@ bool Datafile::write_fperp(const std::string &name, FieldPerp *f, bool save_repe
 
     //Deal with shifting the output
     FieldPerp f_out{emptyFrom(*f)};
-    if(shiftOutput) {
+    if(shiftOutput and not (f->getDirectionY() == YDirectionType::Aligned)) {
       f_out = toFieldAligned(*f);
     }else {
       f_out = *f;

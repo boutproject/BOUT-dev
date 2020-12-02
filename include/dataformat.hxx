@@ -207,9 +207,9 @@ class DataFormat {
   virtual bool getAttribute(const std::string &varname, const std::string &attrname, BoutReal &value) = 0;
 
   /// Write out the meta-data of a field as attributes of the variable
-  void writeFieldAttributes(const std::string& name, const Field& f);
+  void writeFieldAttributes(const std::string& name, const Field& f, bool shiftOutput = false);
   /// Overload for FieldPerp so we can also write 'yindex'
-  void writeFieldAttributes(const std::string& name, const FieldPerp& f);
+  void writeFieldAttributes(const std::string& name, const FieldPerp& f, bool shiftOutput);
 
   /// Read the attributes of a field
   void readFieldAttributes(const std::string& name, Field& f);
