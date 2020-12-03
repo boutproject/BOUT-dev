@@ -548,7 +548,7 @@ FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
       // is from the input grid file.
     }
   }
-  throw BoutException(_("Value for option {:s} cannot be converted to a Field3D"),
+  throw BoutException(_("Value for option {:s} cannot be converted to a FieldPerp"),
                       full_name);
 }
 
