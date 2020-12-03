@@ -144,7 +144,8 @@ class Mesh {
   
   /// Add output variables to a data file
   /// These are used for post-processing
-  virtual void outputVars(Datafile &UNUSED(file)) {} 
+  virtual void outputVars(MAYBE_UNUSED(Datafile& file)) {}
+  virtual void outputVars(MAYBE_UNUSED(Options& output_options)) {}
   
   // Get routines to request data from mesh file
   

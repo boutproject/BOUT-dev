@@ -334,6 +334,11 @@ public:
   /// @param[in] save_repeat    If true, add variables with time dimension
   virtual void outputVars(Datafile& outputfile, bool save_repeat = true);
 
+  virtual void outputVars(Options& outputfile, bool save_repeat = true);
+
+  /// Copy evolving variables out of \p options
+  virtual void readEvolvingVariablesFromOptions(Options& options);
+
   /// Create a Solver object. This uses the "type" option in the given
   /// Option section to determine which solver type to create.
   static std::unique_ptr<Solver> create(Options* opts = nullptr);

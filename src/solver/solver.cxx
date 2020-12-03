@@ -594,6 +594,47 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
   }
 }
 
+void Solver::outputVars(Options& output_options, bool save_repeat) {
+  output_options["tt"].force(simtime, "Solver");
+  output_options["hist_hi"].force(iteration, "Solver");
+
+  // Add 2D and 3D evolving fields to output file
+  for (const auto& f : f2d) {
+    // Add to dump file (appending)
+    output_options[f.name].force(*(f.var), "Solver");
+    if (save_repeat) {
+      output_options[f.name].attributes["time_dimension"] = "t";
+    }
+  }
+  for (const auto& f : f3d) {
+    // Add to dump file (appending)
+    output_options[f.name].force(*(f.var), "Solver");
+    if (save_repeat) {
+      output_options[f.name].attributes["time_dimension"] = "t";
+    }
+
+    if (mms) {
+      // Add an error variable
+      output_options["E_" + f.name].force(*(f.MMS_err), "Solver");
+      if (save_repeat) {
+        output_options["E_" + f.name].attributes["time_dimension"] = "t";
+      }
+    }
+  }
+}
+
+void Solver::readEvolvingVariablesFromOptions(Options& options) {
+  for (auto& f : f2d) {
+    *(f.var) = options[f.name].as<Field2D>();
+  }
+  for (const auto& f : f3d) {
+    *(f.var) = options[f.name].as<Field3D>();
+    if (mms) {
+      *(f.MMS_err) = options["E_" + f.name].as<Field3D>();
+    }
+  }
+}
+
 /////////////////////////////////////////////////////
 
 BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {

@@ -733,6 +733,37 @@ void Coordinates::outputVars(Datafile& file) {
   getParallelTransform().outputVars(file);
 }
 
+void Coordinates::outputVars(Options& output_options) {
+  const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
+
+  output_options["dx" + loc_string].force(dx, "Coordinates");
+  output_options["dy" + loc_string].force(dy, "Coordinates");
+  output_options["dz" + loc_string].force(dz, "Coordinates");
+
+  output_options["g11" + loc_string].force(g11, "Coordinates");
+  output_options["g22" + loc_string].force(g22, "Coordinates");
+  output_options["g33" + loc_string].force(g33, "Coordinates");
+  output_options["g12" + loc_string].force(g12, "Coordinates");
+  output_options["g13" + loc_string].force(g13, "Coordinates");
+  output_options["g23" + loc_string].force(g23, "Coordinates");
+
+  output_options["g_11" + loc_string].force(g_11, "Coordinates");
+  output_options["g_22" + loc_string].force(g_22, "Coordinates");
+  output_options["g_33" + loc_string].force(g_33, "Coordinates");
+  output_options["g_12" + loc_string].force(g_12, "Coordinates");
+  output_options["g_13" + loc_string].force(g_13, "Coordinates");
+  output_options["g_23" + loc_string].force(g_23, "Coordinates");
+
+  output_options["J" + loc_string].force(J, "Coordinates");
+  output_options["Bxy" + loc_string].force(Bxy, "Coordinates");
+
+  output_options["G1" + loc_string].force(G1, "Coordinates");
+  output_options["G2" + loc_string].force(G2, "Coordinates");
+  output_options["G3" + loc_string].force(G3, "Coordinates");
+
+  getParallelTransform().outputVars(output_options);
+}
+
 int Coordinates::geometry(bool recalculate_staggered,
     bool force_interpolate_from_centre) {
   TRACE("Coordinates::geometry");

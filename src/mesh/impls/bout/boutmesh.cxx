@@ -3103,3 +3103,34 @@ void BoutMesh::outputVars(Datafile &file) {
 
   getCoordinates()->outputVars(file);
 }
+
+void BoutMesh::outputVars(Options& output_options) {
+  output_options["zperiod"].force(zperiod, "BoutMesh");
+  output_options["MXSUB"].force(MXSUB, "BoutMesh");
+  output_options["MYSUB"].force(MYSUB, "BoutMesh");
+  output_options["MZSUB"].force(MZSUB, "BoutMesh");
+  output_options["PE_XIND"].force(PE_XIND, "BoutMesh");
+  output_options["PE_YIND"].force(PE_YIND, "BoutMesh");
+  output_options["MYPE"].force(MYPE, "BoutMesh");
+  output_options["MXG"].force(MXG, "BoutMesh");
+  output_options["MYG"].force(MYG, "BoutMesh");
+  output_options["MZG"].force(MZG, "BoutMesh");
+  output_options["nx"].force(nx, "BoutMesh");
+  output_options["ny"].force(ny, "BoutMesh");
+  output_options["nz"].force(nz, "BoutMesh");
+  output_options["MZ"].force(MZ, "BoutMesh");
+  output_options["NXPE"].force(NXPE, "BoutMesh");
+  output_options["NYPE"].force(NYPE, "BoutMesh");
+  output_options["NZPE"].force(NZPE, "BoutMesh");
+  output_options["ZMAX"].force(ZMAX, "BoutMesh");
+  output_options["ZMIN"].force(ZMIN, "BoutMesh");
+  output_options["ixseps1"].force(ixseps1, "BoutMesh");
+  output_options["ixseps2"].force(ixseps2, "BoutMesh");
+  output_options["jyseps1_1"].force(jyseps1_1, "BoutMesh");
+  output_options["jyseps1_2"].force(jyseps1_2, "BoutMesh");
+  output_options["jyseps2_1"].force(jyseps2_1, "BoutMesh");
+  output_options["jyseps2_2"].force(jyseps2_2, "BoutMesh");
+  output_options["ny_inner"].force(ny_inner, "BoutMesh");
+
+  getCoordinates()->outputVars(output_options);
+}

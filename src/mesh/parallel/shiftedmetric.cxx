@@ -45,6 +45,12 @@ void ShiftedMetric::outputVars(Datafile& file) {
   file.addOnce(zShift, "zShift" + loc_string);
 }
 
+void ShiftedMetric::outputVars(Options& output_options) {
+  const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
+
+  output_options["zShift" + loc_string].force(zShift, "ShiftedMetric");
+}
+
 void ShiftedMetric::cachePhases() {
   // If we wanted to be efficient we could move the following cached phase setup
   // into the relevant shifting routines (with static bool first protection)

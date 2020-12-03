@@ -185,6 +185,7 @@ class BoutMesh : public Mesh {
   BoutReal getIxseps2() const { return ixseps2; }
 
   void outputVars(Datafile& file) override;
+  void outputVars(Options& output_options) override;
 
   int getGlobalXIndex(int xlocal) const override;
   int getGlobalXIndexNoBoundaries(int xlocal) const override;

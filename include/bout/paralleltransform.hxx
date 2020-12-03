@@ -100,7 +100,8 @@ public:
   }
 
   /// Output variables used by a ParallelTransform instance to the dump files
-  virtual void outputVars(Datafile& UNUSED(file)) {}
+  virtual void outputVars(MAYBE_UNUSED(Datafile& file)) {}
+  virtual void outputVars(MAYBE_UNUSED(Options& output_options)) {}
 
   /// If \p twist_shift_enabled is true, does a `Field3D` with Y direction \p ytype
   /// require a twist-shift at branch cuts on closed field lines?
@@ -228,6 +229,7 @@ public:
 
   /// Save zShift to the output
   void outputVars(Datafile& file) override;
+  void outputVars(Options& output_options) override;
 
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
     // Twist-shift only if field-aligned

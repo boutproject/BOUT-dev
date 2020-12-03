@@ -79,7 +79,8 @@ public:
    * 
    * Must be a better way so that Coordinates doesn't depend on Datafile
    */
-  void outputVars(Datafile &file);
+  void outputVars(Datafile& file);
+  void outputVars(Options& output_options);
   
   Field2D dx, dy; ///< Mesh spacing in x and y
   BoutReal dz; ///< Mesh spacing in Z
