@@ -1,14 +1,6 @@
-/*************************************************************************
- *
- * This file is part of the SAMRAI distribution.  For full copyright
- * information, see COPYRIGHT and LICENSE.
- *
- * Copyright:     (c) 1997-2018 Lawrence Livermore National Security, LLC
- * Description:   Class to record statistics during program execution.
- *
- ************************************************************************/
+// These policies are not currently in use -- placeholder for future ref
 
-#ifndef included_ExecutionPolicy
+#if defined(included_ExecutionPolicy) && defined(BOUT_HAS_RAJA) 
 #define included_ExecutionPolicy
 
 #include "RAJA/RAJA.hpp"
@@ -57,7 +49,7 @@ struct policy_traits<policy::sequential> {
    using ReductionPolicy = RAJA::seq_reduce;
 };
 
-#if defined(HAVE_CUDA)
+#if defined(BOUT_USE_CUDA)
 
 template <>
 struct policy_traits<policy::parallel> {
@@ -142,10 +134,10 @@ struct policy_traits<policy::parallel> {
    using ReductionPolicy = RAJA::seq_reduce;
 };
 
-#endif // HAVE_CUDA
+#endif // BOUT_USE_CUDA
 
 } // namespace detail
 
 } // namespace bout
 
-#endif
+#endif   // defined(included_ExecutionPolicy) && defined(BOUT_HAS_RAJA) 

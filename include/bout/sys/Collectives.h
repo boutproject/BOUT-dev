@@ -11,7 +11,7 @@
 #ifndef included_Collectives
 #define included_Collectives
 
-#if defined(HAVE_RAJA)
+#if defined(BOUT_HAS_RAJA)
 
 #include "RAJA/RAJA.hpp"
 
@@ -23,7 +23,7 @@ template <typename policy>
 inline void
 synchronize() {}
 
-#if defined(HAVE_CUDA)
+#if defined(BOUT_USE_CUDA)
 template<>
 inline void
 synchronize<policy::parallel>()

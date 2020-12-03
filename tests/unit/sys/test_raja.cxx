@@ -1,3 +1,5 @@
+#ifdef BOUT_HAS_RAJA
+
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -183,3 +185,4 @@ TEST(RajaTest, ParallelForall) {
 }
 
 #endif
+#endif // BOUT_HAS_RAJA
