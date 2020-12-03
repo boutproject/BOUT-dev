@@ -258,10 +258,11 @@ class Elm_6f : public PhysicsModel {
     result.allocate();
 
     for (auto i : result) {
-      if (f[i] >= limit)
+      if (f[i] >= limit) {
         result[i] = f[i];
-      else
+      } else {
         result[i] = limit;
+      }
     }
     mesh->communicate(result);
     return result;
@@ -309,8 +310,9 @@ class Elm_6f : public PhysicsModel {
           int globaly = mesh->getGlobalYIndex(jy);
           // output.write("local y = {:d};   global y: {:d}\n", jy, globaly);
           if (mgx > xgrid_num || (globaly <= int(Jysep) - 2)
-              || (globaly > int(Jysep2) + 2))
+              || (globaly > int(Jysep2) + 2)) {
             mgx = xgrid_num;
+          }
           BoutReal rlx = mgx - n0_center;
           BoutReal temp = exp(rlx / n0_width);
           BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
@@ -321,13 +323,15 @@ class Elm_6f : public PhysicsModel {
       for (int jx = 0; jx < mesh->LocalNx; jx++) {
         BoutReal mgx = mesh->GlobalX(jx);
         BoutReal xgrid_num = Grid_NXlimit / Grid_NX;
-        if (mgx > xgrid_num)
+        if (mgx > xgrid_num) {
           mgx = xgrid_num;
+        }
         BoutReal rlx = mgx - n0_center;
         BoutReal temp = exp(rlx / n0_width);
         BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           result(jx, jy) = 0.5 * (1.0 - dampr) * n0_height + n0_ave;
+        }
       }
     }
 
@@ -653,15 +657,18 @@ protected:
     phi_curv = options["phi_curv"].withDefault(true);
     g = options["gamma"].withDefault(5.0 / 3.0);
 
-    if (!include_curvature)
+    if (!include_curvature) {
       b0xcv = 0.0;
+    }
 
-    if (!include_jpar0)
+    if (!include_jpar0) {
       J0 = 0.0;
+    }
 
     if (noshear) {
-      if (include_curvature)
+      if (include_curvature) {
         b0xcv.z += I * b0xcv.x;
+      }
       I = 0.0;
     }
 
@@ -674,27 +681,33 @@ protected:
 
     } else {
       // Dimits style, using local coordinate system
-      if (include_curvature)
+      if (include_curvature) {
         b0xcv.z += I * b0xcv.x;
+      }
       I = 0.0; // I disappears from metric
     }
 
     //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
 
-    if (mesh->get(Bbar, "bmag")) // Typical magnetic field
+    if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
       Bbar = 1.0;
-    if (mesh->get(Lbar, "rmag")) // Typical length scale
+    }
+    if (mesh->get(Lbar, "rmag")) { // Typical length scale
       Lbar = 1.0;
+    }
 
-    if (mesh->get(Tibar, "Ti_x")) // Typical ion temperature scale
+    if (mesh->get(Tibar, "Ti_x")) { // Typical ion temperature scale
       Tibar = 1.0;
+    }
 
-    if (mesh->get(Tebar, "Te_x")) // Typical electron temperature scale
+    if (mesh->get(Tebar, "Te_x")) { // Typical electron temperature scale
       Tebar = 1.0;
+    }
 
-    if (mesh->get(Nbar, "Nixexp")) // Typical ion density scale
+    if (mesh->get(Nbar, "Nixexp")) { // Typical ion density scale
       Nbar = 1.0;
+    }
     Nbar *= 1.e20 / density;
 
     Tau_ie = Tibar / Tebar;
@@ -1070,8 +1083,9 @@ protected:
     U.setLocation(CELL_CENTRE);
     phi.setLocation(CELL_CENTRE);
     Psi.setLocation(CELL_YLOW);
-    if (emass)
+    if (emass) {
       Ajpar.setLocation(CELL_YLOW);
+    }
     Jpar.setLocation(CELL_YLOW);
 
     Ni.setLocation(CELL_YLOW);
@@ -1357,19 +1371,24 @@ protected:
       // Zero j in boundary regions. Prevents vorticity drive
       // at the boundary
 
-      for (int i = 0; i < jpar_bndry_width; i++)
-        for (int j = 0; j < mesh->LocalNy; j++)
+      for (int i = 0; i < jpar_bndry_width; i++) {
+        for (int j = 0; j < mesh->LocalNy; j++) {
           for (int k = 0; k < mesh->LocalNz; k++) {
-            if (mesh->firstX())
+            if (mesh->firstX()) {
               Jpar(i, j, k) = 0.0;
-            if (mesh->lastX())
+            }
+            if (mesh->lastX()) {
               Jpar(mesh->LocalNx - 1 - i, j, k) = 0.0;
+            }
           }
+        }
+      }
     }
 
     // Smooth j in x
-    if (smooth_j_x)
+    if (smooth_j_x) {
       Jpar = smooth_x(Jpar);
+    }
 
     if (compress0) {
       if (nonlinear) {
@@ -1392,14 +1411,18 @@ protected:
       // Zero jpar2 in boundary regions. Prevents vorticity drive
       // at the boundary
 
-      for (int i = 0; i < jpar_bndry_width; i++)
-        for (int j = 0; j < mesh->LocalNy; j++)
+      for (int i = 0; i < jpar_bndry_width; i++) {
+        for (int j = 0; j < mesh->LocalNy; j++) {
           for (int k = 0; k < mesh->LocalNz; k++) {
-            if (mesh->firstX())
+            if (mesh->firstX()) {
               Jpar2(i, j, k) = 0.0;
-            if (mesh->lastX())
+            }
+            if (mesh->lastX()) {
               Jpar2(mesh->LocalNx - 1 - i, j, k) = 0.0;
+            }
           }
+        }
+      }
     }
 
     ////////////////////////////////////////////////////
@@ -1668,14 +1691,17 @@ protected:
 
     if (damp_width > 0) {
       for (int i = 0; i < damp_width; i++) {
-        for (int j = 0; j < mesh->LocalNy; j++)
+        for (int j = 0; j < mesh->LocalNy; j++) {
           for (int k = 0; k < mesh->LocalNz; k++) {
-            if (mesh->firstX())
+            if (mesh->firstX()) {
               ddt(U)(i, j, k) -= U(i, j, k) / damp_t_const;
-            if (mesh->lastX())
+            }
+            if (mesh->lastX()) {
               ddt(U)(mesh->LocalNx - 1 - i, j, k) -=
                   U(mesh->LocalNx - 1 - i, j, k) / damp_t_const;
+            }
           }
+        }
       }
     }
 

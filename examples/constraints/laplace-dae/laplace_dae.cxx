@@ -105,8 +105,9 @@ int Laplace_dae::rhs(BoutReal UNUSED(time)) {
   output << "phi " << max(phi) << endl;
   
   for(int y=0;y<5;y++) {
-    for(int x=0;x<5;x++)
+    for (int x = 0; x < 5; x++) {
       output << phi(x,y,64) << ", ";
+    }
     output << endl;
   }
   

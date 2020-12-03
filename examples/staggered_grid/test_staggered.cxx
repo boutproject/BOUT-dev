@@ -32,11 +32,13 @@ protected:
     ddt(v) = -Grad_par(n, maybe_ylow);
 
     // Have to manually apply the lower Y boundary region, using a width of 3
-    for (RangeIterator rlow = mesh->iterateBndryLowerY(); !rlow.isDone(); rlow++)
-      for (int y = 2; y >= 0; y--)
+    for (RangeIterator rlow = mesh->iterateBndryLowerY(); !rlow.isDone(); rlow++) {
+      for (int y = 2; y >= 0; y--) {
         for (int z = 0; z < mesh->LocalNz; z++) {
           ddt(v)(rlow.ind, y, z) = ddt(v)(rlow.ind, y + 1, z);
         }
+      }
+    }
 
     return 0;
   }

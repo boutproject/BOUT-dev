@@ -300,8 +300,8 @@ private:
 
     RangeIterator xrup = mesh->iterateBndryUpperY();
 
-    for (xrup.first(); !xrup.isDone(); xrup.next())
-      for (int jy = mesh->yend + 1; jy < mesh->LocalNy; jy++)
+    for (xrup.first(); !xrup.isDone(); xrup.next()) {
+      for (int jy = mesh->yend + 1; jy < mesh->LocalNy; jy++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           var(xrup.ind, jy, jz) = var(xrup.ind, jy - 1, jz)
@@ -309,14 +309,16 @@ private:
                                         * sqrt(coord->g_22(xrup.ind, jy))
                                         * value(xrup.ind, jy, jz);
         }
+      }
+    }
   }
 
   void bndry_ydown_Grad_par(Field3D& var, const Field3D& value) {
 
     RangeIterator xrdn = mesh->iterateBndryLowerY();
 
-    for (xrdn.first(); !xrdn.isDone(); xrdn.next())
-      for (int jy = mesh->ystart - 1; jy >= 0; jy--)
+    for (xrdn.first(); !xrdn.isDone(); xrdn.next()) {
+      for (int jy = mesh->ystart - 1; jy >= 0; jy--) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           var(xrdn.ind, jy, jz) = var(xrdn.ind, jy + 1, jz)
@@ -324,6 +326,8 @@ private:
                                         * sqrt(coord->g_22(xrdn.ind, jy))
                                         * value(xrdn.ind, jy, jz);
         }
+      }
+    }
   }
 
   /////////////////////////////////////////////////////////////////
