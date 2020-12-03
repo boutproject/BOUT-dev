@@ -34,11 +34,60 @@
 
 #include <bout/mesh.hxx>
 
-PhysicsModel::PhysicsModel()
-    : mesh(bout::globals::mesh), dump(bout::globals::dump), modelMonitor(this) {
+#include <fmt/core.h>
 
-  // Set up restart file
-  restart = Datafile(Options::getRoot()->getSection("restart"));
+#include <string>
+
+namespace bout {
+/// Name of the directory for restart files
+std::string getRestartDirectoryName(Options& options) {
+  if (options["restartdir"].isSet()) {
+    // Solver-specific restart directory
+    return options["restartdir"].withDefault<std::string>("data");
+  }
+  // Use the root data directory
+  return options["datadir"].withDefault<std::string>("data");
+}
+
+std::string getRestartFilename(Options& options, int rank) {
+  return fmt::format("{}/BOUT.restart.{}.nc", bout::getRestartDirectoryName(options),
+                     rank);
+}
+} // namespace bout
+
+PhysicsModel::PhysicsModel()
+    : mesh(bout::globals::mesh), dump(bout::globals::dump),
+      restart_file(bout::getRestartFilename(Options::root(), BoutComm::rank()),
+                   bout::experimental::OptionsNetCDF::FileMode::append),
+      modelMonitor(this) {}
+
+void PhysicsModel::initialise(Solver* s) {
+  if (initialised) {
+    return; // Ignore second initialisation
+  }
+  initialised = true;
+
+  // Set the protected variable, so user code can
+  // call the solver functions
+  solver = s;
+
+  // Restart option
+  const bool restarting = Options::root()["restart"].withDefault(false);
+
+  if (restarting) {
+    restart_options = restart_file.read();
+  }
+
+  // Call user init code to specify evolving variables
+  if (init(restarting)) {
+    throw BoutException("Couldn't initialise physics model");
+  }
+
+  // Post-initialise, which reads restart files
+  // This function can be overridden by the user
+  if (postInit(restarting)) {
+    throw BoutException("Couldn't restart physics model");
+  }
 }
 
 int PhysicsModel::runRHS(BoutReal time) {
@@ -96,50 +145,23 @@ void PhysicsModel::bout_solve(Vector3D &var, const char *name,
 
 int PhysicsModel::postInit(bool restarting) {
   TRACE("PhysicsModel::postInit");
-  
-  // Add the solver variables to the restart file
-  // Second argument specifies no time history
-  solver->outputVars(restart, false);
 
-  auto& options = Options::root();
+  using namespace bout::experimental;
 
-  const std::string restart_dir = options["restartdir"]
-                                      .doc("Directory for restart files")
-                                      .withDefault(options["datadir"]);
-
-  const std::string restart_ext = options["restart_format"]
-                                      .doc("Restart file extension")
-                                      .withDefault(options["dump_format"]);
-
-  const std::string filename = restart_dir + "/BOUT.restart." + restart_ext;
   if (restarting) {
-    output.write("Loading restart file: {:s}\n", filename);
-
-    /// Load restart file
-    if (!restart.openr(filename))
-      throw BoutException("Error: Could not open restart file {:s}\n", filename);
-    if (!restart.read())
-      throw BoutException("Error: Could not read restart file {:s}\n", filename);
-    restart.close();
+    solver->readEvolvingVariablesFromOptions(restart_options);
   }
 
-  // Add mesh information to restart file
-  // Note this is done after reading, so mesh variables
-  // are not overwritten.
-  bout::globals::mesh->outputVars(restart);
-  // Version expected by collect routine
-  restart.addOnce(const_cast<BoutReal &>(bout::version::as_double), "BOUT_VERSION");
+  const bool restart_enabled = Options::root()["restart"]["enabled"].withDefault(true);
 
-  /// Open the restart file for writing
-  if (!restart.openw(filename))
-    throw BoutException("Error: Could not open restart file for writing\n");
+  if (restart_enabled) {
+    solver->outputVars(restart_options, false);
+    bout::globals::mesh->outputVars(restart_options);
 
-  if (restarting) {
-    // Write variables to the restart files so that the initial data is not lost if there is
-    // a crash before modelMonitor is called for the first time
-    if (!restart.write()) {
-      throw BoutException("Error: Failed to write initial data back to restart file");
-    }
+    restart_options["BOUT_VERSION"].force(bout::version::as_double, "PhysicsModel");
+
+    // Write _everything_ to restart file
+    restart_file.write(restart_options);
   }
 
   // Add monitor to the solver which calls restart.write() and
@@ -147,4 +169,13 @@ int PhysicsModel::postInit(bool restarting) {
   solver->addMonitor(&modelMonitor);
 
   return 0;
+}
+
+int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime, int iter,
+                                            int nout) {
+  solver->outputVars(model->restart_options, false);
+  model->restart_file.write(model->restart_options);
+
+  // Call user output monitor
+  return model->outputMonitor(simtime, iter, nout);
 }

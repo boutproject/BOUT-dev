@@ -37,9 +37,10 @@ class PhysicsModel;
 #ifndef __PHYSICS_MODEL_H__
 #define __PHYSICS_MODEL_H__
 
-#include <bout.hxx>
-#include <options.hxx>
-#include <msg_stack.hxx>
+#include "bout.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "options_netcdf.hxx"
 #include "solver.hxx"
 #include "unused.hxx"
 #include "utils.hxx"
@@ -67,31 +68,8 @@ public:
    *
    * Note: this is usually only called by the Solver
    */
-  void initialise(Solver *s) {
-    if(initialised)
-      return; // Ignore second initialisation
-    initialised = true;
-    
-    // Restart option
-    bool restarting;
-    Options::getRoot()->get("restart", restarting, false);
-    
-    // Set the protected variable, so user code can
-    // call the solver functions
-    solver = s;
+  void initialise(Solver* s);
 
-    // Call user init code to specify evolving variables
-    if ( init(restarting) ) {
-      throw BoutException("Couldn't initialise physics model");
-    }
-    
-    // Post-initialise, which reads restart files
-    // This function can be overridden by the user
-    if (postInit(restarting)) {
-      throw BoutException("Couldn't restart physics model");
-    }
-  }
-  
   /*!
    * Run the RHS function, to calculate the time derivatives
    *
@@ -248,7 +226,10 @@ protected:
   void bout_solve(Vector3D &var, const char *name, const std::string& description="");
 
   /// Stores the state for restarting
-  Datafile restart; 
+  Options restart_options;
+
+  /// File to write the restart-state to
+  bout::experimental::OptionsNetCDF restart_file;
 
   /*!
    * Specify a constrained variable \p var, which will be
@@ -269,12 +250,7 @@ protected:
   public:
     PhysicsModelMonitor() = delete;
     PhysicsModelMonitor(PhysicsModel *model) : model(model) {}
-    int call(Solver* UNUSED(solver), BoutReal simtime, int iter, int nout) override {
-      // Save state to restart file
-      model->restart.write();
-      // Call user output monitor
-      return model->outputMonitor(simtime, iter, nout);
-    }
+    int call(Solver* solver, BoutReal simtime, int iter, int nout) override;
 
   private:
     PhysicsModel *model;

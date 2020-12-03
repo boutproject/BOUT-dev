@@ -1,13 +1,16 @@
 #include "bout/physicsmodel.hxx"
 
 class TestRestartIO : public PhysicsModel {
-  int init(bool UNUSED(restarting)) override {
+  int init(bool restarting) override {
     solver->add(f3d, "f3d");
     solver->add(f2d, "f2d");
     dump.addRepeat(fperp_lower, "fperp_lower");
     dump.addRepeat(fperp_upper, "fperp_upper");
-    restart.addOnce(fperp_lower, "fperp_lower");
-    restart.addOnce(fperp_upper, "fperp_upper");
+
+    if (restarting) {
+      fperp_lower = restart_options["fperp_lower"].as<FieldPerp>();
+      fperp_upper = restart_options["fperp_upper"].as<FieldPerp>();
+    }
 
     dump.addOnce(f3d, "f3d_once");
     dump.addOnce(f2d, "f2d_once");
@@ -21,6 +24,13 @@ class TestRestartIO : public PhysicsModel {
     ddt(f3d) = 0.;
     ddt(f2d) = 0.;
     return 0;
+  }
+
+  int postInit(bool restarting) override {
+    restart_options["fperp_lower"] = fperp_lower;
+    restart_options["fperp_upper"] = fperp_upper;
+
+    return PhysicsModel::postInit(restarting);
   }
 
   Field3D f3d;
