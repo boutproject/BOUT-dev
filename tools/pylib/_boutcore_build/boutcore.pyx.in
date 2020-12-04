@@ -1084,7 +1084,32 @@ cdef class PhysicsModelBase(object):
             del self.callbackinit
 
 class PhysicsModel(PhysicsModelBase):
-    """The PhysicsModel base class for python"""
+    """
+    The PhysicsModel base class for python
+
+    To implement your own PhysicsModel derive from this class and
+    provide a rhs function which takes the self and the simulation
+    time as input, and the init function which takes self and whether
+    the simulation has been restarted as an argument.
+
+    A complete simulation could look something like this:
+
+    import boutcore as bc
+
+    bc.init("mesh:n=48")
+    class MyModel(bc.PhysicsModel):
+        def init(self,restart):
+            self.dens = bc.create3D("sin(x)")
+            self.solve_for(n=self.dens)
+
+        def rhs(self,time):
+            self.dens.ddt(bc.DDX(self.dens))
+
+
+    model = MyModel()
+    model.solve()
+    """
+
     def __init__(self):
         super(PhysicsModel,self).__init__()
         self._super_is_initialised=True
