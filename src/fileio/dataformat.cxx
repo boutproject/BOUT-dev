@@ -82,7 +82,8 @@ void DataFormat::readFieldAttributes(const std::string& name, FieldPerp& f) {
   // Note: don't use DataFormat::mesh variable, because it may be null if the DataFormat
   // is part of a GridFromFile, which is created before the Mesh.
   if (getAttribute(name, "yindex_global", yindex_global)) {
-    f.setIndex(f.getMesh()->YLOCAL(yindex_global));
+    // Apply correction because yindex_global includes boundaries
+    f.setIndex(f.getMesh()->YLOCAL(yindex_global) - f.getMesh()->ystart);
   } else {
     f.setIndex(f.getMesh()->YLOCAL(0));
   }

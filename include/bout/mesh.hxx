@@ -498,7 +498,7 @@ class Mesh {
   /// If the global index includes the boundary cells, then so does the local.
   virtual int XLOCAL(int xglo) const = 0;
   /// Returns the local Y index given a global index
-  /// If the global index includes the boundary cells, then so does the local.
+  /// The global index does not include the boundary cells, the local does.
   virtual int YLOCAL(int yglo) const = 0;
 
   /// Returns a global X index given a local index.
