@@ -20,36 +20,39 @@ BOUT++ tokamak models, and useful derivations and expressions.
 Orthogonal toroidal coordinates
 ===============================
 
-Starting with an orthogonal toroidal coordinate system
-`\left(\psi, \theta, \zeta\right)`, where `\psi` is the
-poloidal flux, `\theta` the poloidal angle (from `0` to
-`2\pi`), and `\zeta` the toroidal angle (also `0` to
-`2\pi`). We have that the magnetic field
-`{\boldsymbol{B}}` can be expressed as
+Starting with an orthogonal, right-handed toroidal coordinate system
+`\left(r, \theta, \phi\right)`. `\theta` is the poloidal angle (from
+`0` to `2\pi`) in the clockwise direction in the right R-Z
+plane. `\phi` is the toroidal angle (also `0` to `2\pi`) going
+anti-clockwise from the top of the tokamak.
+
+We define the poloidal magnetic field `B_{pol}` as the component of
+the magnetic field in the `\theta` direction, and the toroidal field `B_{tor}`
+as the component of the magnetic field in the `\phi` direction.
+
+We now introduce the poloidal flux `\psi` as the new radial
+coordinate.  If the poloidal magnetic field `B_{pol}` is positive
+then `\psi` increases with radius; if `B_{pol}` is negative then
+`\psi` decreases with radius. To keep the coordinate system
+right-handed, we define a new toroidal coordinate `\zeta` which is
+defined as `\zeta = \sigma_{B\theta}\phi`, where the sign of the
+poloidal magnetic field is `\sigma_{B\theta} \equiv {B_{\text{pol}}}/
+\left|{B_{\text{pol}}}\right|`. If `B_{pol} > 0` then `\zeta` is
+anti-clockwise looking down from above the tokamak, and if `B_{pol} <
+0` then `\zeta` is clockwise. This coordinate system `\left(\psi,
+\theta, \zeta\right)` is orthogonal and right-handed.
+
+The magnitudes of the basis vectors are
 
 .. math::
 
    \begin{aligned}
-    {\boldsymbol{B}}=& B_\theta \nabla \theta + B_\zeta \nabla \zeta\\ =& B_\theta
-       {\boldsymbol{e}}_\theta + B_\zeta {\boldsymbol{e}}_\zeta\\ =& {B_{\text{pol}}}h_\theta {\boldsymbol{e}}_\theta + {B_{\text{tor}}}
-       R {\boldsymbol{e}}_\zeta\\ =& {B_{\text{pol}}}\hat{{\boldsymbol{e}}}_\theta + {B_{\text{tor}}}\hat{{\boldsymbol{e}}}_\zeta\end{aligned}
+   \left|{\boldsymbol{e}}_\psi\right| = \frac{1}{R\left|{B_{\text{pol}}}\right|} \qquad \left|\boldsymbol{e}_\theta\right| = {h_\theta}
+   \qquad \left|\boldsymbol{e}_\zeta\right| = R
+   \end{aligned}
 
-The magnitudes of the unit vectors are
-
-.. math::
-
-   \begin{aligned}
-   \left|\hat{{\boldsymbol{e}}}_\psi\right| = \frac{1}{R\left|{B_{\text{pol}}}\right|} \qquad \left|\hat{{\boldsymbol{e}}}_\theta\right| = {h_\theta}
-   \qquad \left|\hat{{\boldsymbol{e}}}_\zeta\right| = R\end{aligned}
-
-where `{h_\theta}` is the poloidal arc length per radian. The
-coordinate system is right handed, so
-`\hat{{\boldsymbol{e}}}_\psi\times\hat{{\boldsymbol{e}}}_\theta
-= \hat{{\boldsymbol{e}}}_\zeta`,
-`\hat{{\boldsymbol{e}}}_\psi\times\hat{{\boldsymbol{e}}}_\zeta =
--\hat{{\boldsymbol{e}}}_\theta` and
-`\hat{{\boldsymbol{e}}}_\theta\times\hat{{\boldsymbol{e}}}_\zeta
-= \hat{{\boldsymbol{e}}}_\psi`.  The covariant metric coefficients are
+where `{h_\theta}` is the poloidal arc length per radian.
+The non-zero covariant metric coefficients are
 
 .. math::
 
@@ -65,75 +68,108 @@ and the magnitudes of the reciprocal vectors are therefore
    \left|\nabla\psi\right| = R\left|{B_{\text{pol}}}\right| \qquad \left|\nabla\theta\right| = \frac{1}{h_\theta}
    \qquad \left|\nabla\zeta\right| = \frac{1}{R}\end{aligned}
 
-Because the coordinate system is orthogonal, `g^{ii} = 1/g_{ii}`
-and so the cross-products can be calculated as
+The cross products are:
+
+.. math::
+
+   \boldsymbol{e}_\psi\times\boldsymbol{e}_\theta = J \nabla\zeta \qquad 
+   \boldsymbol{e}_\psi\times\boldsymbol{e}_\zeta = -J \nabla\theta \qquad
+   \boldsymbol{e}_\theta\times\boldsymbol{e}_\zeta = J \nabla\psi
+
+where `J = h_\theta / \left|{B_{\text{pol}}}\right|` is the Jacobian, which is
+always positive. Similarly,
 
 .. math::
 
    \begin{aligned}
-   \nabla\psi\times\nabla\theta = &\hat{{\boldsymbol{e}}}^\psi\times \hat{{\boldsymbol{e}}}^\theta =
-       g^{\psi\psi}{\boldsymbol{e}}_\psi\times g^{\theta\theta}{\boldsymbol{e}}_\theta \nonumber \\ =
-       & g^{\psi\psi}g^{\theta\theta}h_\psi h_\theta
-       \hat{e}_\psi\times\hat{e}_\theta \nonumber \\ = &\frac{1}{h_\psi
-   h_\theta}\hat{{\boldsymbol{e}}}_\zeta = \frac{R\left|{B_{\text{pol}}}\right|}{h_\theta}\hat{e}_\zeta\end{aligned}
+   \nabla\psi \times \nabla\theta = \frac{1}{J} \boldsymbol{e}_\zeta \qquad
+   \nabla\psi \times \nabla\zeta = - \frac{1}{J} \boldsymbol{e}_\theta \qquad
+   \nabla\theta \times \nabla\zeta = \frac{1}{J} \boldsymbol{e}_\psi
+   \end{aligned}
 
-Similarly,
+The magnetic field `{\boldsymbol{B}}` can be expressed as
 
 .. math::
 
    \begin{aligned}
-   \nabla\psi\times\nabla\zeta = -\left|{B_{\text{pol}}}\right|\hat{{\boldsymbol{e}}}_\theta \qquad
-   \nabla\theta\times\nabla\zeta = \frac{1}{Rh_\theta}\hat{{\boldsymbol{e}}}_\psi =
-   \frac{1}{h_\theta R^2\left|{B_{\text{pol}}}\right|}\nabla \psi\end{aligned}
+    {\boldsymbol{B}}=& B_\theta \nabla \theta + B_\zeta \nabla \zeta \\
+    =& B_\theta \boldsymbol{e}^\theta + B_\zeta \boldsymbol{e}^\zeta \\
+    =& B_{\text{pol}} \frac{\boldsymbol{e}_\theta}{h_\theta} + B_{\text{tor}} \frac{\boldsymbol{e}_\zeta}{R} \\
+    =& {B_{\text{pol}}}\hat{{\boldsymbol{e}}}_\theta + {B_{\text{tor}}}\hat{{\boldsymbol{e}}}_\zeta\end{aligned}
+
 
 Field-aligned coordinates
 =========================
 
 In order to efficiently simulate (predominantly) field-aligned
-structures, grid-points are placed in a field-aligned coordinate system.
-We define
-`\sigma_{B\theta} \equiv {B_{\text{pol}}}/ \left|{B_{\text{pol}}}\right|`
-i.e. the sign of the poloidal field. The new coordinates
-`\left(x,y,z\right)` are defined by:
+structures, the standard coordinate system used by BOUT++ models is a
+Clebsch system where grid-points are aligned to the magnetic field
+along the `y` coordinate.
+
+To align to the magnetic field we define a local field line pitch `\nu`:
+
+.. math::
+
+   \begin{aligned}
+   \nu\left(\psi, \theta\right) = \frac{{\boldsymbol{B}}\cdot\nabla\phi}{{\boldsymbol{B}}\cdot\nabla\theta} =
+   \frac{{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R}
+
+The sign of the poloidal field `{B_{\text{pol}}}` and toroidal field 
+`{B_{\text{tor}}}` can be either + or -.
+
+The field-aligned coordinates `\left(x,y,z\right)` are defined by:
 
 .. math::
    :label: eq:coordtransform
 
    \begin{aligned}
    x = {\sigma_{B\theta}}\left(\psi - \psi_0\right) \qquad y = \theta \qquad z = \sigma_{B\theta}
-   \left(\zeta - \int_{\theta_0}^{\theta}\nu\left(\psi,\theta\right)d\theta\right)
+   \left(\phi - \int_{\theta_0}^{\theta}\nu\left(\psi,\theta\right)d\theta\right)
    \end{aligned}
 
-Where `\nu` is the local field-line pitch given by
-
-.. math::
-
-   \begin{aligned}
-   \nu\left(\psi, \theta\right) = \frac{{\boldsymbol{B}}\cdot\nabla\zeta}{{\boldsymbol{B}}\cdot\nabla\theta} =
-   \frac{{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R} = \frac{\left(F/R\right)h_\theta}{{B_{\text{pol}}}R} = FJ/R^2\end{aligned}
-
-where `F={B_{\text{tor}}}R` is a function only of `\psi`
-(sometimes called the poloidal current function).
-
 The coordinate system is chosen so that `x` increases radially
-outwards, from plasma to the wall. The sign of the toroidal field
-`{B_{\text{tor}}}` can then be either + or -.
+outwards, from plasma to the wall. The `y` coordinate increases in the
+same direction as `\theta` i.e. clockwise in the right-hand poloidal
+plane. The `z` coordinate increases in the same direction as `\zeta`
+i.e.  anti-clockwise looking from the top if `B_{pol}>0` and clockwise
+if `B_{pol} < 0`.
 
-The contravariant basis vectors are therefore
+This coordinate system is right-handed if `B_{pol}>0`, and left-handed if `B_{pol}<0`. 
+
+The reciprocal basis vectors are therefore
 
 .. math::
 
    \begin{aligned}
-   \nabla x = {\sigma_{B\theta}}\nabla \psi \qquad \nabla y = \nabla \theta \qquad \nabla z =
-   {\sigma_{B\theta}}\left(\nabla\zeta - \left[\int_{\theta_0}^\theta{\frac{\partial \nu\left(\psi,
-   \theta\right)}{\partial \psi}} d\theta\right] \nabla\psi - \nu\left(\psi, \theta\right)\nabla\theta\right)\end{aligned}
-
+   \nabla x = {\sigma_{B\theta}}\nabla \psi \qquad
+   \nabla y = \nabla \theta \qquad
+   \nabla z = \nabla\zeta - \sigma_{B\theta}\left[\int_{\theta_0}^\theta{\frac{\partial \nu\left(\psi,\theta\right)}{\partial \psi}} d\theta\right] \nabla\psi
+   - \sigma_{B\theta}\nu\left(\psi, \theta\right)\nabla\theta\right)
+   \end{aligned}
+  
 The term in square brackets is the integrated local shear:
 
 .. math::
 
    \begin{aligned}
    I = \int_{y_0}^y\frac{\partial\nu\left(x, y\right)}{\partial\psi}dy\end{aligned}
+
+  
+The basis vectors are:
+
+.. math::
+   
+   \begin{aligned}
+   \boldsymbol{e}_x =& J\left(\nabla y \times \nabla z\right) = {\sigma_{B\theta}} {\boldsymbol{e}}_\psi + I{\boldsymbol{e}}_\zeta \\
+   \boldsymbol{e}_y =& J\left(\nabla z \times \nabla x\right) = {\boldsymbol{e}}_\theta + \nu{\boldsymbol{e}}_\phi \\
+   \boldsymbol{e}_z =& J\left(\nabla x \times \nabla y\right) = {\boldsymbol{e}}_\zeta
+   \end{aligned}
+ 
+where `{\boldsymbol{e}}_\phi =
+{\sigma_{B\theta}}{\boldsymbol{e}}_\zeta` is always anticlockwise when
+seen from above the tokamak looking down. The direction of
+`{\boldsymbol{e}}_\zeta` depends on the sign of the poloidal field
+`\sigma_{B\theta}`.
 
 Magnetic field
 --------------
@@ -216,8 +252,113 @@ and the covariant metric tensor:
    %
     \right)\end{aligned}
 
-Differential operators
-----------------------
+or equivalently:
+
+.. math::
+
+   \begin{aligned}
+   g_{ij} = \left(%
+   \begin{array}{ccc}
+   I^2 R^2 + 1 / {\left({R{B_{\text{pol}}}}\right)^2}& {\sigma_{B\theta}} I \nu R^2 & I R^2 \\
+   {\sigma_{B\theta}} I \nu R^2 & J^2B^2 & {\sigma_{B\theta}} \nu R^2 \\
+   I R^2 & {\sigma_{B\theta}}\nu R^2 & R^2
+   \end{array}
+   %
+   \right)\end{aligned}
+
+Right-handed field-aligned coordinates
+======================================
+
+If the poloidal magnetic field is negative, i.e. anti-clockwise in the right-hand R-Z plane, then the above
+coordinate system is left-handed and the Jacobian `J` is negative.
+To obtain a consistently right-handed coordinate system, we have to reverse the direction of the `y` coordinate
+when `B_{pol} < 0`:
+
+This `\left(x,y,z\right)` coordinate system is defined by:
+.. math::
+   :label: eq:coordtransform2
+
+   \begin{aligned}
+   x = {\sigma_{B\theta}}\left(\psi - \psi_0\right) \qquad y = {\sigma_{B\theta}}\theta \qquad z = \sigma_{B\theta}
+   \left(\phi - \int_{\theta_0}^{\theta}\nu\left(\psi,\theta\right)d\theta\right)
+   \end{aligned}
+
+The radial coordinate `x` always points outwards. The `y` coordinate
+increases in the direction of the poloidal magnetic field: clockwise
+in the right-hand poloidal plane if `B_{pol} > 0`, and anti-clockwise
+otherwise.  The `z` coordinate increases in the same direction as
+`\zeta` i.e.  anti-clockwise looking from the top if `B_{pol}>0` and
+clockwise if `B_{pol} < 0`.
+
+This is still a Clebsch coordinate system:
+
+.. math::
+
+   \begin{aligned}
+   {\boldsymbol{B}}= \nabla z\times \nabla x = \frac{1}{J}{\boldsymbol{e}}_y
+   \end{aligned}
+
+but the Jacobian is now always positive:
+
+.. math::
+
+   \begin{aligned}
+   J = h_\theta / \left|B_{\text{pol}}\right|
+   \end{aligned}
+
+
+The reciprocal basis vectors are
+
+.. math::
+   
+   \begin{aligned}
+   \nabla x =& {\sigma_{B\theta}} \nabla \psi \\
+   \nabla y =& {\sigma_{B\theta}} \nabla \theta \\
+   \nabla z =& \nabla \zeta - {\sigma_{B\theta}} I \nabla \psi - {\sigma_{B\theta}}\nu\nabla\theta
+   \end{aligned}
+
+and basis vectors
+
+.. math::
+   
+   \begin{aligned}
+   \boldsymbol{e}_x =& J\left(\nabla y \times \nabla z\right) = {\sigma_{B\theta}} {\boldsymbol{e}}_\psi + I{\boldsymbol{e}}_\zeta \\
+   \boldsymbol{e}_y =& J\left(\nabla z \times \nabla x\right) = {\sigma_{B\theta}} {\boldsymbol{e}}_\theta + \nu{\boldsymbol{e}}_\zeta \\
+   \boldsymbol{e}_z =& J\left(\nabla x \times \nabla y\right) = {\boldsymbol{e}}_\zeta
+   \end{aligned}
+
+
+The contravariant metric tensor is:
+
+.. math::
+
+   \begin{aligned}
+   g^{ij} \equiv {\boldsymbol{e}}^i \cdot{\boldsymbol{e}}^j \equiv \nabla u^i \cdot \nabla u^j = \left(%
+   \begin{array}{ccc}
+   \left(R{B_{\text{pol}}}\right)^2 & 0 & -I\left(R{B_{\text{pol}}}\right)^2 \\
+   0 & 1 / {h_\theta}^2 & -\nu / {h_\theta}^2 \\
+   -I\left(R{B_{\text{pol}}}\right)^2 & -\nu / {h_\theta}^2 & I^2\left(R{B_{\text{pol}}}\right)^2 + B^2 /
+   \left(R{B_{\text{pol}}}\right)^2
+   \end{array}
+   %
+   \right)\end{aligned}
+
+and the covariant metric tensor:
+
+.. math::
+
+   \begin{aligned}
+   g_{ij} = \left(%
+   \begin{array}{ccc}
+   I^2 R^2 + 1 / {\left({R{B_{\text{pol}}}}\right)^2}& I \nu R^2 & I R^2 \\
+   I \nu R^2 & J^2B^2 & \nu R^2 \\
+   I R^2 & {\sigma_{B\theta}}\nu R^2 & R^2
+   \end{array}
+   %
+   \right)\end{aligned}
+   
+Differential operators in field-aligned coordinates
+===================================================
 
 The derivative of a scalar field `f` along the *unperturbed*
 magnetic field `{\boldsymbol{b}}_0` is given by
@@ -226,9 +367,9 @@ magnetic field `{\boldsymbol{b}}_0` is given by
 
    \begin{aligned}
    \partial^0_{||}f \equiv {\boldsymbol{b}}_0 \cdot\nabla f =
-   \frac{1}{\sqrt{g_{yy}}}{\frac{\partial f}{\partial y}} = \frac{{B_{\text{pol}}}}{B{h_\theta}}{\frac{\partial f}{\partial y}}\end{aligned}
+   \frac{1}{JB}{\frac{\partial f}{\partial y}} = \frac{{B_{\text{pol}}}}{B{h_\theta}}{\frac{\partial f}{\partial y}}\end{aligned}
 
-whilst the parallel divergence is given by
+Note that J could be positive or negative. The parallel divergence is given by
 
 .. math::
 
@@ -281,7 +422,7 @@ The second derivative along the equilibrium field
 
    \begin{aligned}
    \partial^2_{||}\phi = \partial^0_{||}\left(\partial^0_{||}\phi\right) =
-   \frac{1}{\sqrt{g_{yy}}}{\frac{\partial }{\partial y}}\left(\frac{1}{\sqrt{g_{yy}}}\right){\frac{\partial  \phi}{\partial y}}
+   \frac{1}{JB}{\frac{\partial }{\partial y}}\left(\frac{1}{JB}\right){\frac{\partial \phi}{\partial y}}
    + \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}\end{aligned}
 
 A common expression (the Poisson bracket in reduced MHD) is (from
@@ -291,7 +432,7 @@ equation :eq:`eq:brackets`)):
 
    \begin{aligned}
    {\boldsymbol{b}}_0\cdot\nabla\phi\times\nabla A =
-   \frac{1}{J\sqrt{g_{yy}}}\left[\left(g_{yy}{\frac{\partial \phi}{\partial z}} -
+   \frac{1}{J^2B}\left[\left(g_{yy}{\frac{\partial \phi}{\partial z}} -
    g_{yz}{\frac{\partial \phi}{\partial y}}\right){\frac{\partial A}{\partial x}} + \left(g_{yz}{\frac{\partial \phi}{\partial x}} -
    g_{xy}{\frac{\partial \phi}{\partial z}}\right){\frac{\partial A}{\partial y}} + \left(g_{xy}{\frac{\partial \phi}{\partial y}} -
    g_{yy}{\frac{\partial \phi}{\partial x}}\right){\frac{\partial A}{\partial z}}\right]\end{aligned}
