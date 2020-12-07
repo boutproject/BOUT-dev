@@ -144,7 +144,7 @@ The reciprocal basis vectors are therefore
    \nabla x = {\sigma_{B\theta}}\nabla \psi \qquad
    \nabla y = \nabla \theta \qquad
    \nabla z = \nabla\zeta - \sigma_{B\theta}\left[\int_{\theta_0}^\theta{\frac{\partial \nu\left(\psi,\theta\right)}{\partial \psi}} d\theta\right] \nabla\psi
-   - \sigma_{B\theta}\nu\left(\psi, \theta\right)\nabla\theta\right)
+   - \sigma_{B\theta}\nu\left(\psi, \theta\right)\nabla\theta
    \end{aligned}
   
 The term in square brackets is the integrated local shear:
