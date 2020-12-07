@@ -113,7 +113,7 @@ To align to the magnetic field we define a local field line pitch `\nu`:
    \begin{aligned}
    \nu\left(\psi, \theta\right) = \frac{{\boldsymbol{B}}\cdot\nabla\phi}{{\boldsymbol{B}}\cdot\nabla\theta} =
    \frac{{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R}
-
+   \end{aligned}
 The sign of the poloidal field `{B_{\text{pol}}}` and toroidal field 
 `{B_{\text{tor}}}` can be either + or -.
 
