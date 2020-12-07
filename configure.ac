@@ -60,6 +60,8 @@ AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
         [Use the SUNDIALS ARKODE solver])],,[])
 AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
         [Enable support for scorep based instrumentation])],,[with_scorep=no])
+AC_ARG_WITH(system_mpark, [AS_HELP_STRING([--with-system-mpark],
+        [Use mpark.variant already installed rather then the bundled one])],,[with_system_mpark=auto])
 
 dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 
@@ -1111,6 +1113,45 @@ Please supply the path using --with-scorep=/path/to/scorep])
 ])
 
 #############################################################
+# Check for mpark.variant
+#############################################################
+
+AS_IF([test ".$with_system_mpark" = "no"], [
+  SYSTEM_HAS_MPARK=no
+], [
+  AC_MSG_CHECKING([for mpark.variant])
+  AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([
+    #include "mpark/variant.hpp"
+    ], [])],
+    [AC_MSG_RESULT([yes])
+    SYSTEM_HAS_MPARK=yes],
+    [AC_MSG_RESULT([no])
+    SYSTEM_HAS_MPARK=no
+    AS_IF([test "$with_system_mpark" = "yes"], [
+      AC_MSG_FAILURE([*** System mpark.variant not found - but requested to use])
+    ])])
+])
+
+AS_IF([test "$SYSTEM_HAS_MPARK" = "yes"], [
+  MPARK_VARIANT_INCLUDE_PATH=
+  MPARK_INCLUDE=
+  OWN_MPARK=
+], [
+  AS_IF([test -d externalpackages/mpark.variant/include], [],
+    [ AS_IF([test -d .git && which git], [
+        make -f makefile.submodules mpark_submodule || \
+	  AC_MSG_FAILURE([*** Could not download mpark.variant])
+      ], [
+        AC_MSG_FAILURE([mpark.variant not found. Please install mpark.variant or use the official releases.])
+      ])
+    ])
+
+  MPARK_VARIANT_INCLUDE_PATH="$PWD/externalpackages/mpark.variant/include"
+  MPARK_INCLUDE="-I$MPARK_VARIANT_INCLUDE_PATH"
+  OWN_MPARK=yes
+])
+#############################################################
 # Download + Build PVODE '98
 #############################################################
 
@@ -1278,12 +1319,13 @@ AC_SUBST(CONFIG_LDFLAGS)
 # If make install is run then that replaces these paths
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
-MPARK_VARIANT_INCLUDE_PATH=$PWD/externalpackages/mpark.variant/include
 FMT_INCLUDE_PATH=$PWD/externalpackages/fmt/include
 AC_SUBST(BOUT_LIB_PATH)
 AC_SUBST(BOUT_INCLUDE_PATH)
-AC_SUBST(MPARK_VARIANT_INCLUDE_PATH)
 AC_SUBST(FMT_INCLUDE_PATH)
+AC_SUBST(MPARK_VARIANT_INCLUDE_PATH)
+AC_SUBST(MPARK_INCLUDE)
+AC_SUBST(OWN_MPARK)
 
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)

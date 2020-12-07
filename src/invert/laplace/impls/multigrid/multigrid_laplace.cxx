@@ -547,9 +547,7 @@ BOUT_OMP(for)
     }
   }
 
-#if CHECK > 2
   checkData(result);
-#endif
 
   return result;
 #else

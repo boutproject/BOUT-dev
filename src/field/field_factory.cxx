@@ -132,6 +132,7 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
 
   addGenerator("min", std::make_shared<FieldMin>());
   addGenerator("max", std::make_shared<FieldMax>());
+  addGenerator("clamp", std::make_shared<FieldClamp>());
 
   addGenerator("power", std::make_shared<FieldGenTwoArg<pow>>(nullptr, nullptr));
 

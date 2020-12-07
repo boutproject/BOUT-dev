@@ -16,7 +16,7 @@ from boutdata.collect import collect
 from numpy.fft import rfftn
 from numpy import argmax
 
-from boututils.run_wrapper import shell, launch
+from boututils.run_wrapper import build_and_log, launch
 
 def analyse(path="test"):
   """
@@ -45,8 +45,8 @@ def analyse(path="test"):
 
 ####################################################
 
-print("Making I/O test")
-shell("make > make.log")
+
+build_and_log("Staggered wave")
 
 # Run with and without staggered grids
 print("Running with staggered grids")

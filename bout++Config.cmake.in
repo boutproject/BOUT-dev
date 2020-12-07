@@ -24,6 +24,20 @@ set(BOUT_HAS_GETTEXT @BOUT_HAS_GETTEXT@)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
 
+# Enables the use of the build directory directly, without having to
+# specify the paths for the external packages as well
+if(EXISTS "@CMAKE_BINARY_DIR@/externalpackages/fmt")
+  list(APPEND CMAKE_PREFIX_PATH "@CMAKE_BINARY_DIR@/externalpackages/fmt")
+  list(APPEND CMAKE_PREFIX_PATH "@CMAKE_BINARY_DIR@/externalpackages/mpark.variant")
+endif()
+
+# If using the build directory directly, we need the CMake modules too
+if(EXISTS "@PROJECT_SOURCE_DIR@/cmake")
+  list(APPEND CMAKE_MODULE_PATH "@PROJECT_SOURCE_DIR@/cmake")
+endif()
+
+include(BOUT++functions)
+
 if(EXISTS "@PETSC_DIR@")
   set(PETSC_DIR "@PETSC_DIR@")
 endif()
@@ -42,8 +56,8 @@ endif()
 if(EXISTS "@ScoreP_ROOT@")
   set(ScoreP_ROOT "@ScoreP_ROOT@")
 endif()
-if(EXISTS "@NetCDF_ROOT@")
-  set(NetCDF_ROOT "@NetCDF_ROOT@")
+if(EXISTS "@netCDFCxx_ROOT@")
+  set(netCDFCxx_ROOT "@netCDFCxx_ROOT@")
 endif()
 if(EXISTS "@HDF5F_ROOT@")
   set(HDF5F_ROOT "@HDF5F_ROOT@")
@@ -70,7 +84,7 @@ if (BOUT_USE_OPENMP)
   find_dependency(OpenMP)
 endif()
 if (BOUT_HAS_NETCDF)
-  find_dependency(NetCDF @NetCDF_VERSION@)
+  find_dependency(netCDFCxx @netCDFCxx_VERSION@)
 endif()
 if (BOUT_HAS_HDF5)
   find_dependency(HDF5 @HDF5_VERSION@)

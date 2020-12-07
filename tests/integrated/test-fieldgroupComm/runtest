@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-# 
+#
 # Run the test, compare results
 #
 
-#requires: all_tests
-#requires: not metric_3d
-#cores: 4
+# Requires: all_tests
+# Requires: netcdf
+# Requires: not metric_3d
+# Cores: 4
 
 # Variables to compare
 from __future__ import print_function

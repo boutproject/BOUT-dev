@@ -258,6 +258,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   BOUT_FOR(i, indexer->getRegionUpperY()) {
     solution.yup()[i] = solution[i];
   }
+
+  checkData(solution);
+
   return solution;
 }
 

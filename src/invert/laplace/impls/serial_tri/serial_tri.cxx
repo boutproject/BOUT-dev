@@ -237,5 +237,7 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 #endif
   }
 
+  checkData(x);
+
   return x; // Result of the inversion
 }

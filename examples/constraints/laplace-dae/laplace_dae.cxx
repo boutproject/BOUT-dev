@@ -30,14 +30,13 @@ int physics_init(bool UNUSED(restarting)) {
   // Give the solver two RHS functions
   
   // Get options
-  auto globalOptions = Options::root();
-  auto options = globalOptions["dae"];
+  auto& globalOptions = Options::root();
+  auto& options = globalOptions["dae"];
   constraint = options["constraint"].withDefault(true);
 
   // Create a solver for the Laplacian
   phiSolver = Laplacian::create();
   
-  // Just solving one variable, U
   SOLVE_FOR2(U, Apar);
   
   if(constraint) {

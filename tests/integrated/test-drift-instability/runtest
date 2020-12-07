@@ -1,6 +1,7 @@
 #!/bin/sh
 
-#requires: all_tests
-#requires: not metric_3d
+# Requires: all_tests
+# Requires: netcdf
+# Requires: not metric_3d
 
 ./runtest.py

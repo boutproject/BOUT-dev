@@ -527,7 +527,8 @@ cell is added to another. There are several caveats to this:
 * There will always be a small rounding error, even with double
   precision.
 
-The methods can be used by including the header::
+The methods can be used by including the
+:doc:`header<../_breathe_autogen/file/fv__ops_8cxx>`::
 
    #include "bout/fv_ops.hxx"
 
@@ -535,7 +536,7 @@ The methods can be used by including the header::
 **Note** The methods are defined in a namespace ``FV``.
 
 Some methods (those with templates) are defined in the header, but others
-are defined in ``src/mesh/fv_ops.cxx``.
+are defined in :doc:`src/mesh/fv_ops.cxx<../_breathe_autogen/file/fv__ops_8cxx>`.
 
 
 Parallel divergence ``Div_par``
@@ -615,7 +616,7 @@ The parallel diffusion operator calculates :math:`\nabla_{||}\left[k\partial_||\
                                     bool bndry_flux=true);
 
 
-This is done by calculating the flux :math:`k\partial_||\left(f\right)` on cell boundaries
+This is done by calculating the flux :math:`k\partial_{||}\left(f\right)` on cell boundaries
 using central differencing.
 
 

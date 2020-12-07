@@ -1,20 +1,15 @@
-                   Tokamak edge turbulence case
-
+Tokamak edge turbulence
+=======================
 
 Equilibrium from DIII-D tokamak, discharge 129131
-
-
 
 Running the case
 ----------------
 
 To set up the case, run the following in this directory
 
-make
+    make
 
 Then run the 2fluid executable on >= 16 processors
 
-e.g.
-
-mpirun -np 16 ./2fluid
-
+    mpirun -np 16 ./2fluid

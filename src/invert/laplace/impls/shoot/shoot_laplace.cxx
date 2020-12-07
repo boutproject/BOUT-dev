@@ -172,6 +172,8 @@ FieldPerp LaplaceShoot::solve(const FieldPerp& rhs) {
       }
     }
   }
+
+  checkData(x);
   
   return x;
 }

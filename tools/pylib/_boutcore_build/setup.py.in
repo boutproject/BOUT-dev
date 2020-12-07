@@ -13,7 +13,6 @@ os.environ["CC"]  = "$(bout-config --cc)"
 #os.environ["LDSHARED"]  = "$(bout-config --ld)"
 
 setup(
-    ext_modules = cythonize("boutcore.pyx",
-                            )
+    ext_modules = cythonize("boutcore.pyx")
 )
 EOF

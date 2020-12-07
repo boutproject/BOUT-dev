@@ -1235,7 +1235,7 @@ class GEQDSK(MagneticField):
         if hasattr(psinorm, "shape"):
             return np.reshape(self.f_spl(np.ravel(psinorm)),psinorm.shape) / x
 
-        return f_spl(psinorm) / x  # f = R*Bt
+        return self.f_spl(psinorm) / x  # f = R*Bt
 
     def Rfunc(self, x, z, phi):
         return x
@@ -1247,7 +1247,7 @@ class GEQDSK(MagneticField):
         if hasattr(psinorm, "shape"):
             return np.reshape(self.p_spl(np.ravel(psinorm)),psinorm.shape)
 
-        return f_spl(psinorm)
+        return self.p_spl(psinorm)
 
 class W7X_vacuum(MagneticField):
     def __init__(self,nx=128,ny=32,nz=128,x_range=[4.05,6.55],z_range=[-1.35,1,35], phimax=2.*np.pi, configuration=0, plot_poincare=False,include_plasma_field=False, wout_file='wout_w7x.0972_0926_0880_0852_+0000_+0000.01.00jh.nc'):

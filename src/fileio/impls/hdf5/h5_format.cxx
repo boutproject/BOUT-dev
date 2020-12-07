@@ -251,7 +251,7 @@ bool H5Format::setRecord(int t) {
 
 // Add a variable to the file
 bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_type,
-    std::string datatype) {
+    std::string datatype, int lx, int ly, int lz) {
   hid_t dataSet = H5Dopen(dataFile, name.c_str(), H5P_DEFAULT);
   if (dataSet >= 0) { // >=0 means variable already exists, so return.
     if (H5Dclose(dataSet) < 0)
@@ -261,6 +261,7 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
 
   int nd = 0;
   if (datatype == "scalar") nd = 0;
+  else if (datatype == "vector") nd = 1;
   else if (datatype == "FieldX") nd = 1;
   else if (datatype == "Field2D") nd = 2;
   else if (datatype == "FieldPerp") nd = 2;
@@ -275,23 +276,23 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
     hsize_t init_size[4];
     if (parallel) {
       init_size[0]=0;
-      init_size[1]=mesh->GlobalNx-2*mesh->xstart;
+      init_size[1] = lx == 0 ? mesh->GlobalNx-2*mesh->xstart : lx;
       if (datatype == "FieldPerp_t") {
-        init_size[2]=mesh->GlobalNz;
+        init_size[2] = lz == 0 ? mesh->GlobalNz : lz;
       } else {
-        init_size[2]=mesh->GlobalNy - mesh->numberOfYBoundaries()*2*mesh->ystart;
+        init_size[2] = ly == 0 ? mesh->GlobalNy - mesh->numberOfYBoundaries()*2*mesh->ystart : ly;
       }
-      init_size[3]=mesh->GlobalNz;
+      init_size[3] = lz == 0 ? mesh->GlobalNz : lz;
     }
     else {
       init_size[0]=0;
-      init_size[1]=mesh->LocalNx;
+      init_size[1] = lx == 0 ? mesh->LocalNx : lx;
       if (datatype == "FieldPerp_t") {
-        init_size[2]=mesh->LocalNz;
+        init_size[2] = lz == 0 ? mesh->LocalNz : lz;
       } else {
-        init_size[2]=mesh->LocalNy;
+        init_size[2] = ly == 0 ? mesh->LocalNy : ly;
       }
-      init_size[3]=mesh->LocalNz;
+      init_size[3] = lz == 0 ? mesh->LocalNz : lz;
     }
 
     // Modify dataset creation properties, i.e. enable chunking.
@@ -348,21 +349,21 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
       // Negative value indicates error, i.e. file does not exist, so create:
       hsize_t init_size[3];
       if (parallel) {
-        init_size[0] = mesh->GlobalNx - 2 * mesh->xstart;
+        init_size[0] = lx == 0 ? mesh->GlobalNx - 2 * mesh->xstart : lx;
         if (datatype == "FieldPerp") {
-          init_size[1] = mesh->GlobalNy - mesh->numberOfYBoundaries() * 2 * mesh->ystart;
+          init_size[1] = lz == 0 ? mesh->GlobalNz : lz;
         } else {
-          init_size[1] = mesh->GlobalNz;
+          init_size[1] = ly == 0 ? mesh->GlobalNy - mesh->numberOfYBoundaries() * 2 * mesh->ystart : ly;
         }
-        init_size[2] = mesh->GlobalNz;
+        init_size[2] = lz == 0 ? mesh->GlobalNz : lz;
       } else {
-        init_size[0] = mesh->LocalNx;
+        init_size[0] = lx == 0 ? mesh->LocalNx : lx;
         if (datatype == "FieldPerp") {
-          init_size[1] = mesh->LocalNz;
+          init_size[1] = lz == 0 ? mesh->LocalNz : lz;
         } else {
-          init_size[1] = mesh->LocalNy;
+          init_size[1] = ly == 0 ? mesh->LocalNy : ly;
         }
-        init_size[2] = mesh->LocalNz;
+        init_size[2] = lz == 0 ? mesh->LocalNz : lz;
       }
 
       // Create value for attribute to say what kind of field this is
@@ -394,6 +395,14 @@ bool H5Format::addVarInt(const std::string &name, bool repeat) {
   return addVar(name, repeat, H5T_NATIVE_INT, "scalar");
 }
 
+bool H5Format::addVarIntVec(const std::string &name, bool repeat, size_t size) {
+  return addVar(name, repeat, H5T_NATIVE_INT, "vector", size);
+}
+
+bool H5Format::addVarString(const std::string &name, bool repeat, size_t size) {
+  return addVar(name, repeat, H5T_C_S1, "vector", size);
+}
+
 bool H5Format::addVarBoutReal(const std::string &name, bool repeat) {
   auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
   return addVar(name, repeat, h5_float_type, "scalar");
@@ -420,6 +429,14 @@ bool H5Format::read(int *data, const char *name, int lx, int ly, int lz) {
 
 bool H5Format::read(int *var, const std::string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
+}
+
+bool H5Format::read(char *data, const char *name, int n) {
+  return read(data, H5T_C_S1, name, n);
+}
+
+bool H5Format::read(char *var, const std::string &name, int n) {
+  return read(var, name.c_str(), n);
 }
 
 bool H5Format::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
@@ -545,6 +562,14 @@ bool H5Format::write(int *data, const char *name, int lx, int ly, int lz) {
 
 bool H5Format::write(int *var, const std::string &name, int lx, int ly, int lz) {
   return write(var, name.c_str(), lx, ly, lz);
+}
+
+bool H5Format::write(char *data, const char *name, int n) {
+  return write(data, H5T_C_S1, name, n);
+}
+
+bool H5Format::write(char *var, const std::string &name, int n) {
+  return write(var, name.c_str(), n);
 }
 
 bool H5Format::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
@@ -725,6 +750,14 @@ bool H5Format::read_rec(int *var, const std::string &name, int lx, int ly, int l
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
+bool H5Format::read_rec(char *data, const char *name, int n) {
+  return read_rec(data, H5T_C_S1, name, n);
+}
+
+bool H5Format::read_rec(char *var, const std::string &name, int n) {
+  return read_rec(var, name.c_str(), n);
+}
+
 bool H5Format::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
   
   return read_rec(data, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
@@ -887,6 +920,14 @@ bool H5Format::write_rec(int *data, const char *name, int lx, int ly, int lz) {
 
 bool H5Format::write_rec(int *var, const std::string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
+}
+
+bool H5Format::write_rec(char *data, const char *name, int n) {
+  return write_rec(data, H5T_C_S1, name, n);
+}
+
+bool H5Format::write_rec(char *var, const std::string &name, int n) {
+  return write_rec(var, name.c_str(), n);
 }
 
 bool H5Format::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
@@ -1228,7 +1269,11 @@ void H5Format::setAttribute(const hid_t &dataSet, const std::string &attrname,
     if (myatt_in < 0)
       throw BoutException("Failed to create attribute");
   }
-  if (H5Awrite(myatt_in, variable_length_string_type, &text) < 0)
+  // Need to pass `const char**` to HDF5 for reasons, and
+  // `&text.c_str()` isn't valid (can't take address of an
+  // r-value/temporary), so we need an intermediate variable
+  const char* c_text = text.c_str();
+  if (H5Awrite(myatt_in, variable_length_string_type, &c_text) < 0)
     throw BoutException("Failed to write attribute");
 
   if (H5Sclose(attribute_dataspace) < 0)
@@ -1368,9 +1413,14 @@ bool H5Format::getAttribute(const hid_t &dataSet, const std::string &attrname, s
   if (H5Tset_size(variable_length_string_type, H5T_VARIABLE) < 0)
     throw BoutException("Failed to create string type");
 
-  // Read attribute
-  if (H5Aread(myatt, variable_length_string_type, &text) < 0)
+  // Read attribute: Need to pass `char**` to HDF5 for reasons, but
+  // luckliy it will allocate c_text for us
+  char* c_text;
+  if (H5Aread(myatt, variable_length_string_type, &c_text) < 0)
     throw BoutException("Failed to read attribute");
+  text = c_text;
+  // Release resources allocated by HDF5
+  free(c_text);
 
   if (H5Tclose(variable_length_string_type) < 0)
     throw BoutException("Failed to close variable_length_string_type");

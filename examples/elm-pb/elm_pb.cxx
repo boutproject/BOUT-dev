@@ -1748,7 +1748,7 @@ protected:
     // Second matrix, solving Alfven wave dynamics
     static std::unique_ptr<InvertPar> invU{nullptr};
     if (!invU)
-      invU = InvertPar::Create();
+      invU = InvertPar::create();
 
     invU->setCoefA(1.);
     invU->setCoefB(-SQ(gamma) * B0 * B0);
