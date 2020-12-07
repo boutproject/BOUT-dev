@@ -39,6 +39,7 @@
 #include <bout_types.hxx>
 #include "field2d.hxx"
 #include "field3d.hxx"
+#include "bout/deprecated.hxx"
 
 class Mesh;
 
@@ -50,7 +51,14 @@ class Mesh;
 class Coordinates {
 public:
   /// Standard constructor from input
-  Coordinates(Mesh *mesh, Options* options = nullptr);
+  DEPRECATED(Coordinates(Mesh* mesh, Options* options = nullptr));
+
+  /// Constructor, taking values from options
+  Coordinates(Mesh* mesh, Options& options);
+
+  /// Take an Options rvalue, convert to lvalue and delegate construction
+  /// This allows construction using an initializer list for the Options
+  Coordinates(Mesh* mesh, Options&& options) : Coordinates(mesh, options) {}
 
   /// Constructor interpolating from another Coordinates object
   /// By default attempts to read staggered Coordinates from grid data source,
@@ -58,8 +66,24 @@ public:
   /// force_interpolate_from_centre argument to true to always interpolate
   /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
   /// would not be correct).
-  Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc, const Coordinates* coords_in,
-      bool force_interpolate_from_centre=false);
+  DEPRECATED(Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
+                         const Coordinates* coords_in,
+                         bool force_interpolate_from_centre = false));
+
+  /// Constructor interpolating from another Coordinates object
+  /// By default attempts to get staggered Coordinates from options,
+  /// interpolating from CELL_CENTRE if not present. Set
+  /// force_interpolate_from_centre argument to true to always interpolate
+  /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
+  /// would not be correct).
+  Coordinates(Mesh* mesh, Options& options, const CELL_LOC loc,
+              const Coordinates* coords_in, bool force_interpolate_from_centre = false);
+
+  /// Take an Options rvalue, convert to lvalue and delegate construction
+  /// This allows construction using an initializer list for the Options
+  Coordinates(Mesh* mesh, Options&& options, const CELL_LOC loc,
+              const Coordinates* coords_in, bool force_interpolate_from_centre = false)
+      : Coordinates(mesh, options, loc, coords_in, force_interpolate_from_centre){};
 
   /// A constructor useful for testing purposes. To use it, inherit
   /// from Coordinates. If \p calculate_geometry is true (default),
@@ -264,6 +288,7 @@ private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
   CELL_LOC location;
+  Options options;  // Copy of the input options
 
   /// Handles calculation of yup and ydown
   std::unique_ptr<ParallelTransform> transform{nullptr};
