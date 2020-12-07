@@ -275,6 +275,7 @@ To obtain a consistently right-handed coordinate system, we have to reverse the 
 when `B_{pol} < 0`:
 
 This `\left(x,y,z\right)` coordinate system is defined by:
+
 .. math::
    :label: eq:coordtransform2
 
