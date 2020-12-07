@@ -126,6 +126,17 @@ TEST_F(CoordinatesTest, ConstructWithMeshSpacing) {
   EXPECT_TRUE(IsFieldEqual(coords.Bxy, 1.0));
 }
 
+TEST_F(CoordinatesTest, SmallMeshSpacing) {
+  static_cast<FakeMesh*>(bout::globals::mesh)
+      ->setGridDataSource(new FakeGridDataSource({{"dx", 1e-9}}));
+
+  output_info.disable();
+  output_warn.disable();
+  EXPECT_THROW(Coordinates coords(mesh), BoutException);
+  output_warn.enable();
+  output_info.enable();
+}
+
 TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
 
   static_cast<FakeMesh*>(bout::globals::mesh)
@@ -158,4 +169,26 @@ TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
 
   EXPECT_TRUE(IsFieldEqual(coords.J, 1. / sqrt(2.0 * 3.2 * 42), "RGN_NOCORNERS"));
   EXPECT_TRUE(IsFieldEqual(coords.Bxy, sqrt(2.0 * 42), "RGN_NOCORNERS", 1e-10));
+}
+
+TEST_F(CoordinatesTest, NegativeJacobian) {
+  static_cast<FakeMesh*>(bout::globals::mesh)
+      ->setGridDataSource(new FakeGridDataSource({{"J", -1.0}}));
+
+  output_info.disable();
+  output_warn.disable();
+  EXPECT_THROW(Coordinates coords(mesh), BoutException);
+  output_warn.enable();
+  output_info.enable();
+}
+
+TEST_F(CoordinatesTest, NegativeB) {
+  static_cast<FakeMesh*>(bout::globals::mesh)
+      ->setGridDataSource(new FakeGridDataSource({{"Bxy", -1.0}}));
+
+  output_info.disable();
+  output_warn.disable();
+  EXPECT_THROW(Coordinates coords(mesh), BoutException);
+  output_warn.enable();
+  output_info.enable();
 }
