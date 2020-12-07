@@ -412,6 +412,20 @@ cat <<EOF
         """
         return ${fdd}FromObj(c_minus(self.cobj[0]))
 
+    def __pow__($ftype self, exponent, other):
+        """
+        other must be None
+
+        Returns
+        -------
+	$ftype
+            exponential of the field to the power of the exponential
+        """
+        if other is not None:
+            return NotImplemented
+
+        return ${fdd}FromObj(c.pow(self.cobj[0], float(exponent)))
+
     def isAllocated(self):
         """
         Check if the $ftype has its own datablock allocated
