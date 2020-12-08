@@ -672,8 +672,6 @@ cdef extern from "helper.h":
     void c_laplacian_solve(c.Laplacian *, c.Field3D *, c.Field3D*)
     c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
     void c_mesh_normalise(c.Mesh* , double)
-    void c_set_dz(c.Coordinates*, double)
-    double c_get_dz(c.Coordinates*)
     c.Datafile * c_get_global_datafile()
 
 cdef class Mesh:
@@ -851,19 +849,6 @@ do
     echo "        self.${f} = ${metric_fdd}FromPtr(&self.cobj.${f})"
 done
 cat <<"EOF"
-    cdef getDz(self):
-        return c_get_dz(self.cobj)
-
-    cdef setDz(self, val):
-        c_set_dz(self.cobj, <double> val)
-
-    @property
-    def dz(self):
-        return self.getDz()
-
-    @dz.setter
-    def dz(self, val):
-        self.setDz(val)
 
     def __dealloc__(self):
         self.__mydealloc__()
