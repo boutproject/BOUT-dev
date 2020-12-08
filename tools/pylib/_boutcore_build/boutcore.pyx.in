@@ -1089,7 +1089,10 @@ cdef class PhysicsModelBase(object):
         self.cmodel.set_init_func(self.callbackinit)
 
     def __dealloc__(self):
-        self.__mydealloc__()
+        if hasattr(self, '__mydealloc__'):
+            self.__mydealloc__()
+        else:
+            PhysicsModelBase.__mydealloc__(self)
 
     def __mydealloc__(self):
         if self.cmodel != <c.PythonModel *> 0:
@@ -1097,6 +1100,7 @@ cdef class PhysicsModelBase(object):
             del self.cmodel
             del self.callback
             del self.callbackinit
+            self.cmodel = <c.PythonModel *> 0
 
 class PhysicsModel(PhysicsModelBase):
     """
@@ -1253,7 +1257,13 @@ def finalise():
                   PythonModelCallback)
     for obj in objects:
         if isinstance(obj,ourClasses):
-            obj.__mydealloc__()
+            if hasattr(obj, '__mydealloc__'):
+                obj.__mydealloc__()
+            else:
+                for ourClass in ourClasses:
+                    if isinstance(obj, ourClass):
+                         ourClass.__mydealloc__(obj)
+                         break
     del objects
     # Actually finalise
     if wasInit:
