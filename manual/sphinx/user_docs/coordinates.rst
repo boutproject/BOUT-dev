@@ -353,10 +353,15 @@ and the covariant metric tensor:
    \begin{array}{ccc}
    I^2 R^2 + 1 / {\left({R{B_{\text{pol}}}}\right)^2}& I \nu R^2 & I R^2 \\
    I \nu R^2 & J^2B^2 & \nu R^2 \\
-   I R^2 & {\sigma_{B\theta}}\nu R^2 & R^2
+   I R^2 & \nu R^2 & R^2
    \end{array}
    %
    \right)\end{aligned}
+
+The differences from the previous coordinate system are that `g_{xy}`,
+`g_{yz}`, `g^{yz}` and `J` are multiplied by `{\sigma_{B\theta}}`. If
+`B_{pol} < 0` so the poloidal magnetic field is anticlockwise in the
+right-hand R-Z plane, then the `y` direction changes.
    
 Differential operators in field-aligned coordinates
 ===================================================
