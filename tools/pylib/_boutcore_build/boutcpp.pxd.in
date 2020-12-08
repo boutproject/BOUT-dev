@@ -206,4 +206,8 @@ cdef extern from "helper.h":
         void cy_execute(void * parameter)
     void throw_BoutException(string)
 
+cdef extern from "output.hxx":
+    cppclass ConditionalOutput:
+        void write(const char * fmt, const char * str)
+    ConditionalOutput output_info
 EOF
