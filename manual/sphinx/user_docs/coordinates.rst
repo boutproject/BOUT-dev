@@ -92,11 +92,10 @@ The magnetic field `{\boldsymbol{B}}` can be expressed as
 .. math::
 
    \begin{aligned}
-    {\boldsymbol{B}}=& B_\theta \nabla \theta + B_\zeta \nabla \zeta \\
-    =& B_\theta \boldsymbol{e}^\theta + B_\zeta \boldsymbol{e}^\zeta \\
-    =& B_{\text{pol}} \frac{\boldsymbol{e}_\theta}{h_\theta} + B_{\text{tor}} \frac{\boldsymbol{e}_\zeta}{R} \\
-    =& {B_{\text{pol}}}\hat{{\boldsymbol{e}}}_\theta + {B_{\text{tor}}}\hat{{\boldsymbol{e}}}_\zeta\end{aligned}
+    {\boldsymbol{B}}=& B_{\text{pol}} \frac{\boldsymbol{e}_\theta}{h_\theta} + B_{\text{tor}} \frac{\boldsymbol{e}_\phi}{R} \\
+    =& {B_{\text{pol}}}\hat{{\boldsymbol{e}}}_\theta + {B_{\text{tor}}}\hat{{\boldsymbol{e}}}_\phi\end{aligned}
 
+where the hats on the basis vectors indicate unit directions e.g. `\hat{{\boldsymbol{e}}}_\theta = {\boldsymbol{e}}_\theta / \left|{\boldsymbol{e}}_\theta\right|`.
 
 Field-aligned coordinates
 =========================
