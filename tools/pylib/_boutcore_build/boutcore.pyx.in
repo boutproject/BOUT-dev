@@ -1766,7 +1766,7 @@ cdef class Datafile:
         pass
 
 def print(*args, sep=' ', end='\n'):
-    _print(sep.join(args)+end)
+    _print(sep.join([str(a) for a in args])+end)
 
 cdef _print(value):
     cdef c.string str_=value.encode('utf-8')
