@@ -265,6 +265,22 @@ or equivalently:
    %
    \right)\end{aligned}
 
+zShift
+------
+
+The zShift input is used to connect grid cells in the closed
+field-line region (i.e core). It is the change in the Z coordinate
+after one poloidal circuit in Y:
+
+.. math::
+
+   \begin{aligned}
+   \texttt{zShift}\left(\psi\right) &= \int_{y = 0}^{2\pi}\frac{{\boldsymbol{B}}\cdot\nabla z}{{\boldsymbol{B}}\cdot\nabla y} dy \\
+   &= \int_{\theta = 0}^{2\pi}\frac{{\sigma_{B\theta}}{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R} d\theta \\
+   &= {\sigma_{B\theta}} \int_{\theta = 0}^{2\pi} \nu d\theta
+   \end{aligned}
+
+
 Right-handed field-aligned coordinates
 ======================================
 
@@ -357,11 +373,24 @@ and the covariant metric tensor:
    %
    \right)\end{aligned}
 
+The `\texttt{zShift}` quantity is modified, because
+`\int_0^{2\pi}\cdot dy = \int_0^{2\pi}\cdot d\theta` but `\nabla y`
+becomes `{\sigma_{B\theta}}\nabla\theta`:
+
+.. math::
+
+   \begin{aligned}
+   \texttt{zShift}\left(\psi\right) = \int_{y = 0}^{2\pi}\frac{{\boldsymbol{B}}\cdot\nabla z}{{\boldsymbol{B}}\cdot\nabla y} dy =
+   \int_{\theta = 0}^{2\pi}\frac{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R}
+   \end{aligned}
+
 The differences from the previous coordinate system are that `g_{xy}`,
-`g_{yz}`, `g^{yz}` and `J` are multiplied by `{\sigma_{B\theta}}`. If
-`B_{pol} < 0` so the poloidal magnetic field is anticlockwise in the
-right-hand R-Z plane, then the `y` direction changes.
-   
+`g_{yz}`, `g^{yz}`, `J` and `\texttt{zShift}` are multiplied by
+`{\sigma_{B\theta}}`. If `B_{pol} < 0` so the poloidal magnetic field
+is anticlockwise in the right-hand R-Z plane, then the `y` direction
+changes.
+
+
 Differential operators in field-aligned coordinates
 ===================================================
 
