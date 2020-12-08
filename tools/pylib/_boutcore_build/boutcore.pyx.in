@@ -1769,6 +1769,13 @@ cdef class Datafile:
         # is never self owned
         pass
 
+def print(*args, sep=' ', end='\n'):
+    _print(sep.join(args)+end)
+
+cdef _print(value):
+    cdef c.string str_=value.encode('utf-8')
+    c.output_info.write("%s", str_.c_str())
+
 EOF
 
 cat helper.py
