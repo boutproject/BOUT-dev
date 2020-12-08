@@ -74,11 +74,11 @@ jobs:
           - name: "CMake, shared, Ubuntu 20.04"
             os: ubuntu-20.04
             cmake_options: "-DBUILD_SHARED_LIBS=ON
-                            -DBOUT_ENABLE_OPENMP=ON
-                            -DBOUT_USE_PETSC=ON
-                            -DBOUT_USE_SLEPC=ON
-                            -DBOUT_USE_HDF5=ON
-                            -DBOUT_USE_SUNDIALS=ON
+                            -DENABLE_OPENMP=ON
+                            -DUSE_PETSC=ON
+                            -DUSE_SLEPC=ON
+                            -DUSE_HDF5=ON
+                            -DUSE_SUNDIALS=ON
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
 
@@ -160,7 +160,7 @@ jobs:
         run: |
           cmake --version
           cmake . -B build ${{ matrix.config.cmake_options }}
-          cmake --build build --target build-check -j 2
+          cmake --build build -j 2
           cd build
           ctest --output-on-failure --timeout 300
 
@@ -179,17 +179,3 @@ jobs:
       - name: Upload coverage
         if: ${{ matrix.config.name == 'Coverage' }}
         uses: codecov/codecov-action@v1
-
-  Fedora:
-    # This is its own job as it doesn't use most of the steps of the
-    # standard_tests
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: Build Fedora rawhide
-        run: ./.travis_fedora.sh setup mpich rawhide
-        shell: bash
-        env:
-          TRAVIS_BUILD_DIR: ${{ github.workspace }}
