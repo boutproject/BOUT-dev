@@ -135,7 +135,7 @@ if `B_{pol} < 0`.
 
 This coordinate system is right-handed if `B_{pol}>0`, and left-handed if `B_{pol}<0`. 
 
-The reciprocal basis vectors are therefore
+The reciprocal basis vectors are
 
 .. math::
 
@@ -268,16 +268,28 @@ or equivalently:
 zShift
 ------
 
-The zShift input is used to connect grid cells in the closed
-field-line region (i.e core). It is the change in the Z coordinate
-after one poloidal circuit in Y:
+The `\texttt{zShift}` input is used to connect grid cells in the
+closed field-line region (i.e core). It is the `z` angle of a point on
+a field line relative to a reference location:
 
 .. math::
 
    \begin{aligned}
-   \texttt{zShift}\left(\psi\right) &= \int_{y = 0}^{2\pi}\frac{{\boldsymbol{B}}\cdot\nabla z}{{\boldsymbol{B}}\cdot\nabla y} dy \\
-   &= \int_{\theta = 0}^{2\pi}\frac{{\sigma_{B\theta}}{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R} d\theta \\
-   &= {\sigma_{B\theta}} \int_{\theta = 0}^{2\pi} \nu d\theta
+   \texttt{zShift}\left(x, y\right) &= \int_{y = 0}^{y}\frac{{\boldsymbol{B}}\cdot\nabla z}{{\boldsymbol{B}}\cdot\nabla y} dy \\
+   &= \int_{\theta = 0}^{\theta}\frac{{\sigma_{B\theta}}{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R} d\theta \\
+   &= {\sigma_{B\theta}} \int_{\theta = 0}^{\theta} \nu d\theta
+   \end{aligned}
+
+The `\texttt{ShiftAngle}` is then defined as the change in
+`\texttt{zShift}` between `y=0` and `y=2\pi`: It is the change in the
+`Z` coordinate after one poloidal circuit in `Y`.
+
+Note that `\texttt{zShift}` can be related to the integrated shear `I`:
+
+.. math::
+
+   \begin{aligned}
+   I = \int_{y_0}^y\frac{\partial\nu\left(x, y\right)}{\partial\psi}dy = \frac{\partial}{\partial x} `\texttt{zShift}`
    \end{aligned}
 
 
@@ -373,19 +385,23 @@ and the covariant metric tensor:
    %
    \right)\end{aligned}
 
-The `\texttt{zShift}` quantity is modified, because
-`\int_0^{2\pi}\cdot dy = \int_0^{2\pi}\cdot d\theta` but `\nabla y`
-becomes `{\sigma_{B\theta}}\nabla\theta`:
+The `\texttt{zShift}` quantity is the `z` angle of a point on a field
+line relative to a reference location. This is a scalar which doesn't
+change if the sign of the `y` coordinate is reversed:
 
 .. math::
 
    \begin{aligned}
-   \texttt{zShift}\left(\psi\right) = \int_{y = 0}^{2\pi}\frac{{\boldsymbol{B}}\cdot\nabla z}{{\boldsymbol{B}}\cdot\nabla y} dy =
-   \int_{\theta = 0}^{2\pi}\frac{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R}
+   \texttt{zShift}\left(x, y\right) = \int_{y = 0}^{y}\frac{{\boldsymbol{B}}\cdot\nabla z}{{\boldsymbol{B}}\cdot\nabla y} dy =
+   \int_{\theta = 0}^{{\sigma_{B\theta}}\theta}\frac{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R} d\theta
    \end{aligned}
 
+The `\texttt{ShiftAngle}` quantity is related to `\texttt{zShift}`: It
+is the change in `\texttt{zShift}` from `y=0` to `y=2\pi`. It
+therefore does change sign if the `y` direction is reversed.
+
 The differences from the previous coordinate system are that `g_{xy}`,
-`g_{yz}`, `g^{yz}`, `J` and `\texttt{zShift}` are multiplied by
+`g_{yz}`, `g^{yz}`, `J` and `\texttt{ShiftAngle}` are multiplied by
 `{\sigma_{B\theta}}`. If `B_{pol} < 0` so the poloidal magnetic field
 is anticlockwise in the right-hand R-Z plane, then the `y` direction
 changes.
