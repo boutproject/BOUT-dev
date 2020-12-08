@@ -576,6 +576,7 @@ cat <<EOF
             return NotImplemented
         return self
 
+
 EOF
 
 done
@@ -1300,7 +1301,7 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
     if method.startswith("DIFF_"):
         method=method[5:]
     cdef c.string method_ = method.encode('ascii')
-    cdef benum.REGION region_=benum.resolve_region(region)
+    cdef c.string region_ = region.encode('ascii')
     return f3dFromObj(c.$DD($in2,outloc_,method_,region_))
 EOF
 }
