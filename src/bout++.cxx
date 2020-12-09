@@ -250,6 +250,20 @@ void setupGetText() {
 #endif // BOUT_HAS_GETTEXT
 }
 
+template <class T>
+void printAvailableImplementations(const T& factory) {
+  for (const auto& implementation : factory.listAvailable()) {
+    std::cout << implementation << "\n";
+  }
+  auto unavailable = factory.listUnavailableReasons();
+  if (not unavailable.empty()) {
+    std::cout << fmt::format("\nThe following {}s are currently unavailable:\n", T::type_name);
+    for (const auto& implementation : unavailable) {
+      std::cout << implementation << "\n";
+    }
+  }
+}
+
 auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
   /// NB: "restart" and "append" are now caught by options
   /// Check for help flag separately
@@ -297,53 +311,35 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-solvers") {
-      for (const auto &solver : SolverFactory::getInstance().listAvailable()) {
-        std::cout << solver << "\n";
-      }
+      printAvailableImplementations(SolverFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-laplacians") {
-      for (const auto &laplacian : LaplaceFactory::getInstance().listAvailable()) {
-        std::cout << laplacian << "\n";
-      }
+      printAvailableImplementations(LaplaceFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-laplacexzs") {
-      for (const auto &laplacexz : LaplaceXZFactory::getInstance().listAvailable()) {
-        std::cout << laplacexz << "\n";
-      }
+      printAvailableImplementations(LaplaceXZFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-invertpars") {
-      for (const auto &invertpar : InvertParFactory::getInstance().listAvailable()) {
-        std::cout << invertpar << "\n";
-      }
+      printAvailableImplementations(InvertParFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-rkschemes") {
-      for (const auto &rkscheme : RKSchemeFactory::getInstance().listAvailable()) {
-        std::cout << rkscheme << "\n";
-      }
+      printAvailableImplementations(RKSchemeFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-meshes") {
-      for (const auto &mesh : MeshFactory::getInstance().listAvailable()) {
-        std::cout << mesh << "\n";
-      }
+      printAvailableImplementations(MeshFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-xzinterpolations") {
-      for (const auto& interpolation :
-           XZInterpolationFactory::getInstance().listAvailable()) {
-        std::cout << interpolation << "\n";
-      }
+      printAvailableImplementations(XZInterpolationFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-zinterpolations") {
-      for (const auto& interpolation :
-           ZInterpolationFactory::getInstance().listAvailable()) {
-        std::cout << interpolation << "\n";
-      }
+      printAvailableImplementations(ZInterpolationFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
   }
