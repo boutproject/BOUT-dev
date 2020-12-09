@@ -6,6 +6,7 @@
 # requires: netcdf
 # cores: 4
 
+from boutconfig import isMetric3D
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 from boututils.datafile import DataFile
@@ -75,7 +76,7 @@ def check_output():
 
         # Compare benchmark and output
         if np.shape(bmk[v]) != np.shape(result):
-            if (conf.isMetric3D() and v.startswith('v2d')
+            if (isMetric3D() and v.startswith('v2d')
                 and bmk[v].shape == result.shape[:-1]):
                 result = result[...,0]
             else:
