@@ -38,7 +38,7 @@
  * Gradient operators
  **************************************************************************/
 
-const Vector2D Grad(const Field2D& f, CELL_LOC outloc, const std::string& method) {
+Vector2D Grad(const Field2D& f, CELL_LOC outloc, const std::string& method) {
   TRACE("Grad( Field2D )");
   SCOREP0();
   CELL_LOC outloc_x, outloc_y, outloc_z;
@@ -67,7 +67,7 @@ const Vector2D Grad(const Field2D& f, CELL_LOC outloc, const std::string& method
   return result;
 }
 
-const Vector3D Grad(const Field3D &f, CELL_LOC outloc, const std::string& method) {
+Vector3D Grad(const Field3D &f, CELL_LOC outloc, const std::string& method) {
   TRACE("Grad( Field3D )");
   SCOREP0();
   CELL_LOC outloc_x, outloc_y, outloc_z;
@@ -96,7 +96,7 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc, const std::string& method
   return result;
 }
 
-const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc, const std::string& method) {
+Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc, const std::string& method) {
   TRACE("Grad_perp( Field3D )");
   SCOREP0();
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
@@ -118,7 +118,7 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc, const std::string& m
   return result;
 }
 
-const Vector2D Grad_perp(const Field2D &f, CELL_LOC outloc, const std::string& method) {
+Vector2D Grad_perp(const Field2D &f, CELL_LOC outloc, const std::string& method) {
   AUTO_TRACE();
   SCOREP0();
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
@@ -143,8 +143,8 @@ const Vector2D Grad_perp(const Field2D &f, CELL_LOC outloc, const std::string& m
  * Divergence operators
  **************************************************************************/
 
-const Coordinates::FieldMetric Div(const Vector2D& v, CELL_LOC outloc,
-                                         const std::string& method) {
+Coordinates::FieldMetric Div(const Vector2D& v, CELL_LOC outloc,
+                             const std::string& method) {
   TRACE("Div( Vector2D )");
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
@@ -169,7 +169,7 @@ const Coordinates::FieldMetric Div(const Vector2D& v, CELL_LOC outloc,
   return result;
 }
 
-const Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method) {
+Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method) {
   TRACE("Div( Vector3D )");
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
@@ -207,8 +207,8 @@ const Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method)
  * Divergence operators for flux methods
  **************************************************************************/
 
-const Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f,
-                                         CELL_LOC outloc, const std::string& method) {
+Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f, CELL_LOC outloc,
+                             const std::string& method) {
   TRACE("Div( Vector2D, Field2D )");
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
@@ -234,8 +234,8 @@ const Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f,
   return result;
 }
 
-const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
-                  const std::string& method) {
+Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
+            const std::string& method) {
   TRACE("Div( Vector3D, Field3D )");
 
   if (outloc == CELL_DEFAULT) {
@@ -263,7 +263,7 @@ const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
  * Curl operators
  **************************************************************************/
 
-const Vector2D Curl(const Vector2D &v) {
+Vector2D Curl(const Vector2D &v) {
 
   TRACE("Curl( Vector2D )");
 
@@ -291,7 +291,7 @@ const Vector2D Curl(const Vector2D &v) {
   return result;
 }
 
-const Vector3D Curl(const Vector3D &v) {
+Vector3D Curl(const Vector3D &v) {
   TRACE("Curl( Vector3D )");
   SCOREP0();
   ASSERT1(v.getLocation() != CELL_VSHIFT);
@@ -322,7 +322,7 @@ const Vector3D Curl(const Vector3D &v) {
 /**************************************************************************
  * Upwinding operators
  **************************************************************************/
-const Coordinates::FieldMetric V_dot_Grad(const Vector2D& v, const Field2D& f) {
+Coordinates::FieldMetric V_dot_Grad(const Vector2D& v, const Field2D& f) {
   TRACE("V_dot_Grad( Vector2D , Field2D )");
   SCOREP0();
 
@@ -333,7 +333,7 @@ const Coordinates::FieldMetric V_dot_Grad(const Vector2D& v, const Field2D& f) {
   return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
-const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f) {
+Field3D V_dot_Grad(const Vector2D &v, const Field3D &f) {
   TRACE("V_dot_Grad( Vector2D , Field3D )");
   SCOREP0();
 
@@ -344,7 +344,7 @@ const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f) {
   return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
-const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f) {
+Field3D V_dot_Grad(const Vector3D &v, const Field2D &f) {
   TRACE("V_dot_Grad( Vector3D , Field2D )");
   SCOREP0();
 
@@ -355,7 +355,7 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f) {
   return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
-const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f) {
+Field3D V_dot_Grad(const Vector3D &v, const Field3D &f) {
   TRACE("V_dot_Grad( Vector3D , Field3D )");
   SCOREP0();
 
@@ -440,15 +440,15 @@ R V_dot_Grad(const T &v, const F &a) {
 }
 
 // Implement vector-vector operation in terms of templated routine above
-const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a) {
+Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a) {
   return V_dot_Grad<Vector2D, Vector2D>(v, a);
 }
-const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a) {
+Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a) {
   return V_dot_Grad<Vector2D, Vector3D>(v, a);
 }
-const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a) {
+Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a) {
   return V_dot_Grad<Vector3D, Vector2D>(v, a);
 }
-const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a) {
+Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a) {
   return V_dot_Grad<Vector3D, Vector3D>(v, a);
 }

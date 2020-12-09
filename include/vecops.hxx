@@ -44,7 +44,6 @@ class Vector3D;
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 
-
 /// Gradient of scalar field \p f, returning a covariant vector
 ///
 /// All locations supported
@@ -53,10 +52,10 @@ class Vector3D;
 /// @param[in] outloc  The location where the result is desired
 ///                    By default this is the same location as the input \p f
 /// @param[in] method  The method to use. The default is set in the options.
-const Vector2D Grad(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                    const std::string& method = "DEFAULT");
-const Vector3D Grad(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-                    const std::string& method = "DEFAULT");
+Vector2D Grad(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT");
+Vector3D Grad(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT");
 
 /// Perpendicular gradient of scalar field \p f
 ///
@@ -70,13 +69,13 @@ const Vector3D Grad(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
 /// @param[in] outloc  The cell location where the result is desired
 /// @param[in] method  The method to use. The default is set in the options.
 ///
-const Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-                         const std::string& method = "DEFAULT");
-inline const Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
+Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT");
+inline Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
   return Grad_perp(f, outloc, toString(method));
 }
-const Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                         const std::string& method = "DEFAULT");
+Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT");
 
 /// Divergence of a vector \p v, returning a scalar
 ///
@@ -87,29 +86,28 @@ const Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 /// @param[in] outloc  The cell location where the result is desired
 /// @param[in] method  The method to use. The default is set in the options.
 ///
-const Coordinates::FieldMetric Div(const Vector2D& v,
-                                         CELL_LOC outloc = CELL_DEFAULT,
-                                         const std::string& method = "DEFAULT");
-const Field3D Div(const Vector3D& v, CELL_LOC outloc = CELL_DEFAULT,
-                  const std::string& method = "DEFAULT");
+Coordinates::FieldMetric Div(const Vector2D& v, CELL_LOC outloc = CELL_DEFAULT,
+                             const std::string& method = "DEFAULT");
+Field3D Div(const Vector3D& v, CELL_LOC outloc = CELL_DEFAULT,
+            const std::string& method = "DEFAULT");
 
-const Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f,
-                                         CELL_LOC outloc = CELL_DEFAULT,
-                                         const std::string& method = "DEFAULT");
+Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f,
+                             CELL_LOC outloc = CELL_DEFAULT,
+                             const std::string& method = "DEFAULT");
 
-const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-                  const std::string& method = "DEFAULT");
+Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+            const std::string& method = "DEFAULT");
 DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
                                     const std::string& method,
                                     CELL_LOC outloc = CELL_DEFAULT)) {
   return Div(v, f, outloc, method);
 }
-inline const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
-                         DIFF_METHOD method = DIFF_DEFAULT) {
+inline Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
+                   DIFF_METHOD method = DIFF_DEFAULT) {
   return Div(v, f, outloc, toString(method));
 }
-DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
-                                    DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT)) {
+DEPRECATED(inline Field3D Div(const Vector3D& v, const Field3D& f, DIFF_METHOD method,
+                              CELL_LOC outloc = CELL_DEFAULT)) {
   return Div(v, f, outloc, toString(method));
 }
 
@@ -125,8 +123,8 @@ DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
 ///
 /// @param[in] v  The vector to differentiate
 ///
-const Vector2D Curl(const Vector2D &v);
-const Vector3D Curl(const Vector3D &v);
+Vector2D Curl(const Vector2D& v);
+Vector3D Curl(const Vector3D& v);
 
 // Upwinding routines
 
@@ -134,17 +132,17 @@ const Vector3D Curl(const Vector3D &v);
 ///
 /// The vector and the field must be at the same location, which
 /// cannot be CELL_VSHIFT
-const Coordinates::FieldMetric V_dot_Grad(const Vector2D& v, const Field2D& f);
-const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f);
-const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f);
-const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f);
+Coordinates::FieldMetric V_dot_Grad(const Vector2D& v, const Field2D& f);
+Field3D V_dot_Grad(const Vector2D& v, const Field3D& f);
+Field3D V_dot_Grad(const Vector3D& v, const Field2D& f);
+Field3D V_dot_Grad(const Vector3D& v, const Field3D& f);
 
 /// Advection of a vector field \p a by a velocity vector \p v
 ///
 /// Both vectors must be at the same location, which cannot be CELL_VSHIFT
-const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a);
-const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a);
-const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a);
-const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a);
+Vector2D V_dot_Grad(const Vector2D& v, const Vector2D& a);
+Vector3D V_dot_Grad(const Vector2D& v, const Vector3D& a);
+Vector3D V_dot_Grad(const Vector3D& v, const Vector2D& a);
+Vector3D V_dot_Grad(const Vector3D& v, const Vector3D& a);
 
 #endif // __VECOPS_H__
