@@ -461,7 +461,7 @@ BOUT++ can use PETSc https://www.mcs.anl.gov/petsc/ for time-integration
 and for solving elliptic problems, such as inverting Poisson and
 Helmholtz equations.
 
-Currently, BOUT++ supports PETSc versions 3.7 - 3.13. More recent versions may
+Currently, BOUT++ supports PETSc versions 3.7 - 3.14. More recent versions may
 well work, but the PETSc API does sometimes change in backward-incompatible
 ways, so this is not guaranteed. To install PETSc version 3.13, use the
 following steps::
