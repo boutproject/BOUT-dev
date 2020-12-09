@@ -485,6 +485,14 @@ endif()
 message(STATUS "Enable OpenMP: ${BOUT_ENABLE_OPENMP}")
 set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
 
+option(BOUT_ENABLE_METRIC_3D "Enable 3D metric support" OFF)
+if(BOUT_ENABLE_METRIC_3D)
+  set(BOUT_METRIC_TYPE "3D")
+else()
+  set(BOUT_METRIC_TYPE "2D")
+endif()
+set(BOUT_USE_METRIC_3D ${BOUT_ENABLE_METRIC_3D})
+
 # Optional dependencies
 
 option(BOUT_USE_PVODE "Enable support for bundled PVODE" ON)
@@ -786,14 +794,6 @@ if(PACKAGE_TESTS)
   add_custom_target(check)
   add_dependencies(check check-unit-tests check-integrated-tests)
 endif()
-
-option(BOUT_ENABLE_METRIC_3D "Enable 3D metric support" OFF)
-if(BOUT_ENABLE_METRIC_3D)
-  set(BOUT_METRIC_TYPE "3D")
-else()
-  set(BOUT_METRIC_TYPE "2D")
-endif()
-set(BOUT_USE_METRIC_3D ${BOUT_ENABLE_METRIC_3D})
 
 option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
 if(BOUT_BUILD_EXAMPLES)
