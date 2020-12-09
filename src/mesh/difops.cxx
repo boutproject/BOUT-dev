@@ -1095,15 +1095,18 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
           // Above is alternative to const int jzm = (jz - 1 + ncz) % ncz;
 
           // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+          // NOLINTNEXTLINE
           BoutReal Jpp = ((Fx[jzp] - Fx[jzm]) * (Gxp[jz] - Gxm[jz])
                           - (Fxp[jz] - Fxm[jz]) * (Gx[jzp] - Gx[jzm]));
 
           // J+x
+          // NOLINTNEXTLINE
           BoutReal Jpx =
               (Gxp[jz] * (Fxp[jzp] - Fxp[jzm]) - Gxm[jz] * (Fxm[jzp] - Fxm[jzm])
                - Gx[jzp] * (Fxp[jzp] - Fxm[jzp]) + Gx[jzm] * (Fxp[jzm] - Fxm[jzm]));
 
           // Jx+
+          // NOLINTNEXTLINE
           BoutReal Jxp =
               (Gxp[jzp] * (Fx[jzp] - Fxp[jz]) - Gxm[jzm] * (Fxm[jz] - Fx[jzm])
                - Gxm[jzp] * (Fx[jzp] - Fxm[jz]) + Gxp[jzm] * (Fxp[jz] - Fx[jzm]));
