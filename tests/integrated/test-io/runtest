@@ -98,6 +98,11 @@ def check_output():
                 success = False
                 continue
 
+        if (isMetric3D() and v.startswith('v2d')):
+            # Vector2Ds are based on Field3Ds for 3D metrics
+            bmk[v].attributes["bout_type"] = "Field3D_t"
+            bmk[v].attributes["direction_z"] = "Standard"
+
         for attrname in bmk[v].attributes:
             bmkattr = bmk[v].attributes[attrname]
             resattr = result.attributes[attrname]
