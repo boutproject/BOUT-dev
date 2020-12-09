@@ -317,16 +317,13 @@ private:
                                        const std::string& region = "RGN_ALL") {
     ASSERT1(location == f.getLocation());
     ASSERT1(localmesh == f.getMesh());
-    if (f.getDirectionY() != YDirectionType::Standard) {
-      if (this->getParallelTransform().canToFromFieldAligned()) {
-        return this->getParallelTransform().fromFieldAligned(f, region);
-      } else {
-        Field3D f_ = f;
-        f_.setDirectionY(YDirectionType::Standard);
-        return f_;
-      }
+    if (f.getDirectionY() == YDirectionType::Standard) {
+      return f;
     }
-    return f;
+    if (this->getParallelTransform().canToFromFieldAligned()) {
+      return this->getParallelTransform().fromFieldAligned(f, region);
+    }
+    return copy(f).setDirectionY(YDirectionType::Standard);
   }
 
   inline Field2D maybeFromFieldAligned(const Field2D& f,
