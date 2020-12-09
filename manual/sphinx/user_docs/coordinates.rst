@@ -393,7 +393,7 @@ change if the sign of the `y` coordinate is reversed:
 
    \begin{aligned}
    \texttt{zShift}\left(x, y\right) = \int_{y = 0}^{y}\frac{{\boldsymbol{B}}\cdot\nabla z}{{\boldsymbol{B}}\cdot\nabla y} dy =
-   \int_{\theta = 0}^{{\sigma_{B\theta}}\theta}\frac{{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R} d\theta
+   \int_{\theta = 0}^{{\sigma_{B\theta}}\theta}\frac{{\sigma_{B\theta}}{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R} d\theta
    \end{aligned}
 
 The `\texttt{ShiftAngle}` quantity is related to `\texttt{zShift}`: It
