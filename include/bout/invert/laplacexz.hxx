@@ -69,6 +69,8 @@ public:
   }
 };
 
+using RegisterUnavailableLaplaceXZ = RegisterUnavailableInFactory<LaplaceXZ, LaplaceXZFactory>;
+
 class LaplaceXZ {
 public:
   LaplaceXZ(Mesh* m = nullptr, Options* UNUSED(options) = nullptr,
