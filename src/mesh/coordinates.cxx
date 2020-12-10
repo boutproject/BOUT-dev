@@ -1962,7 +1962,8 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
 
 // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
 // solver
-Field2D Coordinates::Laplace_perpXY(const Field2D& A, const Field2D& f) {
+Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
+                                    MAYBE_UNUSED(const Field2D& f)) {
   TRACE("Coordinates::Laplace_perpXY( Field2D )");
 #if not(BOUT_USE_METRIC_3D)
   Field2D result;

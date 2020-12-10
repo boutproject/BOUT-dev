@@ -265,13 +265,18 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
               ccoef, d, loc);
 }
 
+#if BOUT_USE_METRIC_3D
+void Laplacian::tridagCoefs(int /* jx */, int /* jy */, BoutReal /* kwave */,
+                            dcomplex& /* a */, dcomplex& /* b */, dcomplex& /* c */,
+                            const Field2D* /* c1coef */, const Field2D* /* c2coef */,
+                            const Field2D* /* d */, CELL_LOC /* loc */) {
+  throw BoutException("Laplacian::tridagCoefs() does not support 3d metrics.");
+}
+#else
 void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
                             dcomplex &a, dcomplex &b, dcomplex &c,
                             const Field2D *c1coef, const Field2D *c2coef,
                             const Field2D *d, CELL_LOC loc) {
-#if BOUT_USE_METRIC_3D
-  throw BoutException("Laplacian::tridagCoefs() does not support 3d metrics.");
-#else
   /* Function: Laplacian::tridagCoef
    * Purpose:  - Set the matrix components of A in Ax=b, solving
    *
@@ -362,8 +367,8 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
   a = dcomplex(coef1 - coef4,-kwave*coef3);
   b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,kwave*coef5);
   c = dcomplex(coef1 + coef4,kwave*coef3);
-#endif
 }
+#endif
 
 /*!
  * Set the matrix components of A in Ax=b
@@ -402,13 +407,22 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
  * \param[out] cvec     The upper diagonal.
  *                      DO NOT CONFUSE WITH "C" (called ccoef here)
  */
+#if BOUT_USE_METRIC_3D
+void Laplacian::tridagMatrix(dcomplex* /*avec*/, dcomplex* /*bvec*/, dcomplex* /*cvec*/,
+                             dcomplex* /*bk*/, int /*jy*/, int /*kz*/, BoutReal /*kwave*/,
+                             int /*global_flags*/, int /*inner_boundary_flags*/,
+                             int /*outer_boundary_flags*/, const Field2D* /*a*/,
+                             const Field2D* /*c1coef*/, const Field2D* /*c2coef*/,
+                             const Field2D* /*d*/, bool /*includeguards*/) {
+  throw BoutException("Error: tridagMatrix does not yet work with 3D metric.");
+}
+#else
 void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              dcomplex *bk, int jy, int kz, BoutReal kwave,
                              int global_flags, int inner_boundary_flags, int outer_boundary_flags,
                              const Field2D *a, const Field2D *c1coef, const Field2D *c2coef,
                              const Field2D *d,
                              bool includeguards) {
-#if not(BOUT_USE_METRIC_3D)
   ASSERT1(a->getLocation() == location);
   ASSERT1(c1coef->getLocation() == location);
   ASSERT1(c2coef->getLocation() == location);
@@ -728,10 +742,9 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
       }
     }
   }
-#else
-  throw BoutException("Error: tridagMatrix does not yet work with 3D metric.");
-#endif
 }
+#endif
+
 
 /**********************************************************************************
  *                              LEGACY INTERFACE
