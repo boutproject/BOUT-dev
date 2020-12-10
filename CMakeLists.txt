@@ -22,22 +22,25 @@ project(BOUT++
 find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
 find_package(MPI REQUIRED)
 
+include(CMakeDependentOption)
+
 # Override default
 option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+include(BOUT++functions)
 
-option(GIT_SUBMODULE "Check submodules during build" ON)
+option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" ON)
 # Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
 # Update submodules as needed
 function(bout_update_submodules)
-  if(NOT GIT_SUBMODULE)
+  if(NOT BOUT_UPDATE_GIT_SUBMODULE)
     return()
   endif()
   find_package(Git QUIET)
   if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     message(STATUS "Submodule update")
-    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+    execute_process(COMMAND ${GIT_EXECUTABLE} -c submodule.recurse=false submodule update --init --recursive
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       RESULT_VARIABLE GIT_SUBMOD_RESULT)
     if(NOT GIT_SUBMOD_RESULT EQUAL "0")
@@ -179,8 +182,6 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.cxx
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.hxx
   ./src/invert/laplace/impls/multigrid/multigrid_solver.cxx
-  ./src/invert/laplace/impls/mumps/mumps_laplace.cxx
-  ./src/invert/laplace/impls/mumps/mumps_laplace.hxx
   ./src/invert/laplace/impls/naulin/naulin_laplace.cxx
   ./src/invert/laplace/impls/naulin/naulin_laplace.hxx
   ./src/invert/laplace/impls/pdd/pdd.cxx
@@ -222,6 +223,7 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation/bilinear_xz.cxx
   ./src/mesh/interpolation/hermite_spline_xz.cxx
   ./src/mesh/interpolation/hermite_spline_z.cxx
+  ./src/mesh/interpolation/interpolation_z.cxx
   ./src/mesh/interpolation/lagrange_4pt_xz.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
   ./src/mesh/mesh.cxx
@@ -239,6 +241,8 @@ set(BOUT_SOURCES
   ./src/physics/smoothing.cxx
   ./src/physics/snb.cxx
   ./src/physics/sourcex.cxx
+  ./src/solver/impls/adams_bashforth/adams_bashforth.cxx
+  ./src/solver/impls/adams_bashforth/adams_bashforth.hxx
   ./src/solver/impls/arkode/arkode.cxx
   ./src/solver/impls/arkode/arkode.hxx
   ./src/solver/impls/cvode/cvode.cxx
@@ -303,6 +307,31 @@ set(BOUT_SOURCES
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
   )
 
+option(BOUT_GENERATE_FIELDOPS "Automatically re-generate the Field arithmetic operators from the Python templates. \
+Requires Python, clang-format, and Jinja2. Turn this OFF to skip generating them if, for example, \
+you are unable to install the Jinja2 Python module. This is only important for BOUT++ developers." ON)
+
+find_package(Python)
+find_package(ClangFormat)
+if (BOUT_GENERATE_FIELDOPS AND Python_FOUND AND ClangFormat_FOUND)
+  add_custom_command( OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/field/generated_fieldops.cxx
+    COMMAND ${Python_EXECUTABLE} gen_fieldops.py --filename generated_fieldops.cxx.tmp
+    COMMAND ${ClangFormat_BIN} generated_fieldops.cxx.tmp -i
+    COMMAND ${CMAKE_COMMAND} -E rename generated_fieldops.cxx.tmp generated_fieldops.cxx
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.jinja  ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/field/
+    COMMENT "Generating source code" )
+else()
+  message(AUTHOR_WARNING "'src/field/generated_fieldops.cxx' will not be \
+regenerated when you make changes to either \
+'src/field/gen_fieldops.py' or 'src/field/gen_fieldops.jinja'. \
+This is because either Python or clang-format is missing \
+(see above messages for more information) \
+or BOUT_GENERATE_FIELDOPS is OFF (current value: ${BOUT_GENERATE_FIELDOPS}). \
+This warning is only important for BOUT++ developers and can otherwise be \
+safely ignored.")
+endif()
+
 add_library(bout++
   ${BOUT_SOURCES}
   )
@@ -345,50 +374,42 @@ configure_file(
 
 ##################################################
 
-if(GIT_SUBMODULE OR (EXISTS externalpackages/mpark.variant/CMakeLists.txt))
-  option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF)
-else()
-  option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" ON)
-endif()
+cmake_dependent_option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF
+  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/mpark.variant/CMakeLists.txt" ON)
 
 if(BOUT_USE_SYSTEM_MPARK_VARIANT)
-  find_package(mpark_variant REQUIRED)
   message(STATUS "Using external mpark.variant")
+  find_package(mpark_variant REQUIRED)
 else()
+  message(STATUS "Using mpark.variant submodule")
   bout_update_submodules()
   add_subdirectory(externalpackages/mpark.variant)
-  if(TARGET mpark_variant)
-    message(STATUS "Using mpark.variant submodule")
-  else()
-    message(FATAL_ERROR "mpark_variant not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
+  if(NOT TARGET mpark_variant)
+    message(FATAL_ERROR "mpark_variant not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
   endif()
 endif()
 target_link_libraries(bout++ PUBLIC mpark_variant)
 
-if(GIT_SUBMODULE OR (EXISTS externalpackages/fmt/CMakeLists.txt))
-  option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF)
-else()
-  option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" ON)
-endif()
+cmake_dependent_option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF
+  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/fmt/CMakeLists.txt" ON)
 
 if(BOUT_USE_SYSTEM_FMT)
-  find_package(fmt 6 REQUIRED)
   message(STATUS "Using external fmt")
+  find_package(fmt 6 REQUIRED)
 else()
+  message(STATUS "Using fmt submodule")
   bout_update_submodules()
   # Need to install fmt alongside BOUT++
   set(FMT_INSTALL ON CACHE BOOL "")
   add_subdirectory(externalpackages/fmt)
-  if(TARGET fmt::fmt)
-    message(STATUS "Using fmt submodule")
-  else()
-    message(FATAL_ERROR "fmt not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
+  if(NOT TARGET fmt::fmt)
+    message(FATAL_ERROR "fmt not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
   endif()
 endif()
 target_link_libraries(bout++ PUBLIC fmt::fmt)
 
-option(ENABLE_WARNINGS "Enable compiler warnings" ON)
-if (ENABLE_WARNINGS)
+option(BOUT_ENABLE_WARNINGS "Enable compiler warnings" ON)
+if (BOUT_ENABLE_WARNINGS)
   target_compile_options(bout++ PRIVATE
     $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
       -Wall -Wextra >
@@ -414,190 +435,153 @@ if (NOT CHECK IN_LIST CHECK_LEVELS)
   message(FATAL_ERROR "CHECK must be one of ${CHECK_LEVELS}")
 endif()
 message(STATUS "Runtime checking level: CHECK=${CHECK}")
-target_compile_definitions(bout++
-  PUBLIC "CHECK=${CHECK}"
-  PUBLIC "BOUT_CHECK=${CHECK}")
+target_compile_definitions(bout++ PUBLIC "CHECK=${CHECK}")
 set(BOUT_CHECK_LEVEL ${CHECK})
 
-option(DEBUG_ENABLED "Enable extra debug output" OFF)
-option(ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF)
-if (ENABLE_OUTPUT_DEBUG OR DEBUG_ENABLED)
-  target_compile_definitions(bout++
-    PUBLIC "DEBUG_ENABLED"
-    PUBLIC "BOUT_OUTPUT_DEBUG")
-endif()
-message(STATUS "Extra debug output: DEBUG_ENABLED=${DEBUG_ENABLED}")
-set(BOUT_USE_OUTPUT_DEBUG ${DEBUG_ENABLED})
+cmake_dependent_option(BOUT_ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF
+  "CHECK LESS 3" ON)
+message(STATUS "Extra debug output: BOUT_USE_OUTPUT_DEBUG=${BOUT_ENABLE_OUTPUT_DEBUG}")
+set(BOUT_USE_OUTPUT_DEBUG ${BOUT_ENABLE_OUTPUT_DEBUG})
 
-option(ENABLE_SIGNAL "SegFault handling" ON)
-if (ENABLE_SIGNAL)
-  target_compile_definitions(bout++
-    PUBLIC "SIGHANDLE"
-    PUBLIC "BOUT_SIGHANDLE")
-endif()
-message(STATUS "Signal handling: SIGHANDLE=${ENABLE_SIGNAL}")
-set(BOUT_USE_SIGNAL ${ENABLE_SIGNAL})
+option(BOUT_ENABLE_SIGNAL "SegFault handling" ON)
+message(STATUS "Signal handling: BOUT_USE_SIGNAL=${BOUT_ENABLE_SIGNAL}")
+set(BOUT_USE_SIGNAL ${BOUT_ENABLE_SIGNAL})
 
-option(ENABLE_COLOR "Output coloring" ON)
-if (ENABLE_COLOR)
-  target_compile_definitions(bout++
-    PUBLIC "LOGCOLOR"
-    PUBLIC "BOUT_LOGCOLOR")
-endif()
-message(STATUS "Output coloring: LOGCOLOR=${ENABLE_COLOR}")
-set(BOUT_USE_COLOR ${ENABLE_COLOR})
+option(BOUT_ENABLE_COLOR "Output coloring" ON)
+message(STATUS "Output coloring: BOUT_USE_COLOR=${BOUT_ENABLE_COLOR}")
+set(BOUT_USE_COLOR ${BOUT_ENABLE_COLOR})
 
-option(ENABLE_TRACK "Field name tracking" ON)
-if (ENABLE_TRACK)
-  target_compile_definitions(bout++
-    PUBLIC "TRACK"
-    PUBLIC "BOUT_TRACK")
-endif()
-message(STATUS "Field name tracking: TRACK=${ENABLE_TRACK}")
-set(BOUT_USE_TRACK ${ENABLE_TRACK})
+option(BOUT_ENABLE_TRACK "Field name tracking" ON)
+message(STATUS "Field name tracking: BOUT_USE_TRACK=${BOUT_ENABLE_TRACK}")
+set(BOUT_USE_TRACK ${BOUT_ENABLE_TRACK})
 
-option(ENABLE_SIGFPE "Signalling floating point exceptions" OFF)
-if (ENABLE_SIGFPE)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_FPE")
-endif()
-message(STATUS "Signalling floating point exceptions: BOUT_FPE=${ENABLE_SIGFPE}")
-set(BOUT_USE_SIGFPE ${ENABLE_SIGFPE})
+option(BOUT_ENABLE_SIGFPE "Signalling floating point exceptions" OFF)
+message(STATUS "Signalling floating point exceptions: BOUT_USE_SIGFPE=${BOUT_ENABLE_SIGFPE}")
+set(BOUT_USE_SIGFPE ${BOUT_ENABLE_SIGFPE})
 
-option(ENABLE_BACKTRACE "Enable backtrace" ON)
-if (ENABLE_BACKTRACE)
+option(BOUT_ENABLE_BACKTRACE "Enable backtrace" ON)
+if (BOUT_ENABLE_BACKTRACE)
   find_program(ADDR2LINE_FOUND addr2line)
   if (NOT ADDR2LINE_FOUND)
     message(FATAL_ERROR "addr2line not found")
   endif()
-  target_compile_definitions(bout++
-    PUBLIC "BACKTRACE"
-    PUBLIC "BOUT_BACKTRACE")
   target_link_libraries(bout++ PUBLIC ${CMAKE_DL_LIBS})
 endif()
-message(STATUS "Enable backtrace: BACKTRACE=${ENABLE_BACKTRACE}")
-set(BOUT_USE_BACKTRACE ${ENABLE_BACKTRACE})
+message(STATUS "Enable backtrace: BOUT_USE_BACKTRACE=${BOUT_ENABLE_BACKTRACE}")
+set(BOUT_USE_BACKTRACE ${BOUT_ENABLE_BACKTRACE})
 
-option(ENABLE_OPENMP "Enable OpenMP support" OFF)
-if (ENABLE_OPENMP)
+option(BOUT_ENABLE_OPENMP "Enable OpenMP support" OFF)
+set(BOUT_OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
+set_property(CACHE BOUT_OPENMP_SCHEDULE PROPERTY STRINGS static dynamic guided auto)
+if (BOUT_ENABLE_OPENMP)
   find_package(OpenMP REQUIRED)
   target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
   set(possible_openmp_schedules static dynamic guided auto)
-  set(OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
-  if (NOT OPENMP_SCHEDULE IN_LIST possible_openmp_schedules)
-    message(FATAL_ERROR "OPENMP_SCHEDULE must be one of ${possible_openmp_schedules}")
+  if (NOT BOUT_OPENMP_SCHEDULE IN_LIST possible_openmp_schedules)
+    message(FATAL_ERROR "BOUT_OPENMP_SCHEDULE must be one of ${possible_openmp_schedules}; got ${BOUT_OPENMP_SCHEDULE}")
   endif()
-  target_compile_definitions(bout++
-    PUBLIC "OPENMP_SCHEDULE=${OPENMP_SCHEDULE}"
-    PUBLIC "BOUT_OPENMP_SCHEDULE=${OPENMP_SCHEDULE}")
-  message(STATUS "OpenMP schedule: ${OPENMP_SCHEDULE}")
+  message(STATUS "OpenMP schedule: ${BOUT_OPENMP_SCHEDULE}")
 endif()
-message(STATUS "Enable OpenMP: ${ENABLE_OPENMP}")
-set(BOUT_USE_OPENMP ${ENABLE_OPENMP})
+message(STATUS "Enable OpenMP: ${BOUT_ENABLE_OPENMP}")
+set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
 
 # Optional dependencies
 
-option(USE_PVODE "Enable support for bundled PVODE" ON)
-if (USE_PVODE)
+option(BOUT_USE_PVODE "Enable support for bundled PVODE" ON)
+if (BOUT_USE_PVODE)
   add_subdirectory(externalpackages/PVODE)
   target_link_libraries(bout++ PUBLIC pvode pvpre)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_PVODE")
 endif()
-message(STATUS "PVODE support: ${USE_PVODE}")
-set(BOUT_HAS_PVODE ${USE_PVODE})
+message(STATUS "PVODE support: ${BOUT_USE_PVODE}")
+set(BOUT_HAS_PVODE ${BOUT_USE_PVODE})
 
-option(USE_NETCDF "Enable support for NetCDF output" ON)
-if (USE_NETCDF)
-  find_package(NetCDF REQUIRED)
-  target_compile_definitions(bout++
-    PUBLIC "NCDF4"
-    PUBLIC "BOUT_HAS_NETCDF")
-  target_link_libraries(bout++ PUBLIC NetCDF::NetCDF_CXX)
+option(BOUT_USE_NETCDF "Enable support for NetCDF output" ON)
+option(BOUT_DOWNLOAD_NETCDF_CXX4 "Download and build netCDF-cxx4" OFF)
+if (BOUT_USE_NETCDF)
+  if (BOUT_DOWNLOAD_NETCDF_CXX4)
+    include(FetchContent)
+    FetchContent_Declare(
+      netcdf-cxx4
+      GIT_REPOSITORY https://github.com/ZedThree/netcdf-cxx4
+      GIT_TAG        "ad3e50953190615cb69dcc8a4652f9a88a8499cf"
+      )
+    # Don't build the netcdf tests, they have lots of warnings
+    set(NCXX_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    # Use our own FindnetCDF module which uses nc-config
+    find_package(netCDF REQUIRED)
+    FetchContent_MakeAvailable(netcdf-cxx4)
+  else()
+    find_package(netCDFCxx REQUIRED)
+  endif()
+  target_link_libraries(bout++ PUBLIC netCDF::netcdf-cxx4)
 endif()
-message(STATUS "NetCDF support: ${USE_NETCDF}")
-set(BOUT_HAS_NETCDF ${USE_NETCDF})
+message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
+set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
 
-option(USE_HDF5 "Enable support for HDF5 output" OFF)
-if (USE_HDF5)
+option(BOUT_USE_HDF5 "Enable support for HDF5 output" OFF)
+if (BOUT_USE_HDF5)
   find_package(HDF5 REQUIRED COMPONENTS CXX)
-  target_compile_definitions(bout++
-    PUBLIC "HDF5"
-    PUBLIC "BOUT_HAS_HDF5")
   target_link_libraries(bout++ PUBLIC "${HDF5_CXX_LIBRARIES}")
   target_include_directories(bout++ PUBLIC "${HDF5_CXX_INCLUDE_DIRS}")
 endif()
-message(STATUS "HDF5 support: ${USE_HDF5}")
-set(BOUT_HAS_HDF5 ${USE_HDF5})
+message(STATUS "HDF5 support: ${BOUT_USE_HDF5}")
+set(BOUT_HAS_HDF5 ${BOUT_USE_HDF5})
 
-option(USE_FFTW "Enable support for FFTW" ON)
-if (USE_FFTW)
+option(BOUT_USE_FFTW "Enable support for FFTW" ON)
+if (BOUT_USE_FFTW)
   find_package(FFTW REQUIRED)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_FFTW")
   target_link_libraries(bout++ PUBLIC FFTW::FFTW)
 endif()
-message(STATUS "FFTW support: ${USE_FFTW}")
-set(BOUT_HAS_FFTW ${USE_FFTW})
+message(STATUS "FFTW support: ${BOUT_USE_FFTW}")
+set(BOUT_HAS_FFTW ${BOUT_USE_FFTW})
 
-option(USE_LAPACK "Enable support for LAPACK" ON)
-if (USE_LAPACK)
+option(BOUT_USE_LAPACK "Enable support for LAPACK" ON)
+if (BOUT_USE_LAPACK)
   if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     # Cray wrappers sort this out for us
     find_package(LAPACK REQUIRED)
     target_link_libraries(bout++ PUBLIC "${LAPACK_LIBRARIES}")
   endif()
-  target_compile_definitions(bout++
-    PUBLIC "LAPACK"
-    PUBLIC "BOUT_HAS_LAPACK")
 endif()
-message(STATUS "LAPACK support: ${USE_LAPACK}")
-set(BOUT_HAS_LAPACK ${USE_LAPACK})
+message(STATUS "LAPACK support: ${BOUT_USE_LAPACK}")
+set(BOUT_HAS_LAPACK ${BOUT_USE_LAPACK})
 
-option(USE_PETSC "Enable support for PETSc time solvers and inversions" OFF)
-if (USE_PETSC)
+option(BOUT_USE_PETSC "Enable support for PETSc time solvers and inversions" OFF)
+if (BOUT_USE_PETSC)
   if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     # Cray wrappers sort this out for us
     find_package(PETSc REQUIRED)
     target_link_libraries(bout++ PUBLIC PETSc::PETSc)
   endif()
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_PETSC")
 endif()
-message(STATUS "PETSc support: ${USE_PETSC}")
-set(BOUT_HAS_PETSC ${USE_PETSC})
+message(STATUS "PETSc support: ${BOUT_USE_PETSC}")
+set(BOUT_HAS_PETSC ${BOUT_USE_PETSC})
 
-option(USE_SLEPC "Enable support for SLEPc eigen solver" OFF)
-if (USE_SLEPC)
+option(BOUT_USE_SLEPC "Enable support for SLEPc eigen solver" OFF)
+if (BOUT_USE_SLEPC)
   find_package(SLEPc REQUIRED)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_SLEPC")
   target_link_libraries(bout++ PUBLIC SLEPc::SLEPc)
 endif()
-message(STATUS "SLEPc support: ${USE_SLEPC}")
-set(BOUT_HAS_SLEPC ${USE_SLEPC})
+message(STATUS "SLEPc support: ${BOUT_USE_SLEPC}")
+set(BOUT_HAS_SLEPC ${BOUT_USE_SLEPC})
 
-option(USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF)
-if (USE_SUNDIALS)
+option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF)
+if (BOUT_USE_SUNDIALS)
   find_package(SUNDIALS REQUIRED)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_CVODE"
-    PUBLIC "BOUT_HAS_IDA"
-    PUBLIC "BOUT_HAS_ARKODE"
-    PUBLIC "BOUT_HAS_SUNDIALS")
   target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
   target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
   target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
 endif()
-message(STATUS "SUNDIALS support: ${USE_SUNDIALS}")
-set(BOUT_HAS_SUNDIALS ${USE_SUNDIALS})
+message(STATUS "SUNDIALS support: ${BOUT_USE_SUNDIALS}")
+set(BOUT_HAS_SUNDIALS ${BOUT_USE_SUNDIALS})
+set(BOUT_HAS_ARKODE ${BOUT_USE_SUNDIALS})
+set(BOUT_HAS_CVODE ${BOUT_USE_SUNDIALS})
+set(BOUT_HAS_IDA ${BOUT_USE_SUNDIALS})
 
-option(USE_NLS "Enable Native Language Support" ON)
-if (USE_NLS)
+option(BOUT_USE_NLS "Enable Native Language Support" ON)
+if (BOUT_USE_NLS)
   find_package(Gettext)
   if (GETTEXT_FOUND)
-	target_compile_definitions(bout++
-	  PUBLIC "BOUT_HAS_GETTEXT")
 	find_package(Intl)
 	if (Intl_FOUND)
 	  target_link_libraries(bout++
@@ -607,28 +591,21 @@ if (USE_NLS)
 	endif()
   endif()
 endif()
-set(BOUT_HAS_GETTEXT ${USE_NLS})
+set(BOUT_HAS_GETTEXT ${BOUT_USE_NLS})
 
-option(USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
-if (USE_SCOREP)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_SCOREP")
+option(BOUT_USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
+if (BOUT_USE_SCOREP)
   message(STATUS "Score-P support enabled. Please make sure you are calling CMake like so:
 
   SCOREP_WRAPPER=off cmake -DCMAKE_C_COMPILER=scorep-mpicc -DCMAKE_CXX_COMPILER=scorep-mpicxx <other CMake options>
 ")
 endif()
-set(BOUT_HAS_SCOREP ${USE_SCOREP})
+set(BOUT_HAS_SCOREP ${BOUT_USE_SCOREP})
 
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("int main() { const char* name = __PRETTY_FUNCTION__; }"
   HAS_PRETTY_FUNCTION)
 set(BOUT_HAS_PRETTY_FUNCTION ${HAS_PRETTY_FUNCTION})
-if (HAS_PRETTY_FUNCTION)
-  target_compile_definitions(bout++
-    PUBLIC "HAS_PRETTY_FUNCTION"
-    PUBLIC "BOUT_HAS_PRETTY_FUNCTION")
-endif()
 
 # We want to compile the actual flags used into the library so we can
 # see them at runtime. This needs a few steps:
@@ -677,14 +654,6 @@ target_compile_definitions(bout++
 
 ##################################################
 # Tests
-
-# Copy FILENAME from source directory to build directory
-macro(bout_test_copy_file FILENAME)
-  configure_file(
-      ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
-      ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}
-      COPYONLY)
-endmacro()
 
 # Add a new integrated test. By default, the executable is named like
 # the first source, stripped of its file extension.
@@ -746,20 +715,20 @@ function(bout_add_integrated_test TESTNAME)
   # Set the actual test command
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
     add_test(NAME ${TESTNAME} COMMAND ./runtest)
-    bout_test_copy_file(runtest)
+    bout_copy_file(runtest)
   else()
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
   endif()
 
   # Copy the input file if needed
   if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
-    bout_test_copy_file(data/BOUT.inp)
+    bout_copy_file(data/BOUT.inp)
   endif()
 
   # Copy any other needed files
   if (BOUT_TEST_OPTIONS_EXTRA_FILES)
     foreach (FILE ${BOUT_TEST_OPTIONS_EXTRA_FILES})
-      bout_test_copy_file("${FILE}")
+      bout_copy_file("${FILE}")
     endforeach()
   endif()
 
@@ -798,6 +767,20 @@ if(PACKAGE_TESTS)
   add_custom_target(check)
   add_dependencies(check check-unit-tests check-integrated-tests)
 endif()
+
+option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
+if(BOUT_BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
+
+##################################################
+# Generate the build config header
+
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_defines.hxx")
+  message(FATAL_ERROR "Generated build_defines.hxx header already exists; please remove '${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_defines.hxx' before continuing")
+endif()
+
+configure_file(cmake_build_defines.hxx.in include/bout/build_defines.hxx)
 
 ##################################################
 # Installation
@@ -876,7 +859,7 @@ message("
    Natural language support : ${BOUT_HAS_GETTEXT}
    ScoreP support           : ${BOUT_HAS_SCOREP}
    Extra debug output       : ${BOUT_USE_OUTPUT_DEBUG}
-   CHECK level              : ${BOUT_CHECK_LEVEL}
+   Runtime error check level: ${BOUT_CHECK_LEVEL}
    Signal handling          : ${BOUT_USE_SIGNAL}
    Output coloring          : ${BOUT_USE_COLOR}
    Field name tracking      : ${BOUT_USE_TRACK}

@@ -8,10 +8,9 @@
 NOUT = 200     # number of time-steps
 TIMESTEP = 1e1   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false  # use twist-shift condition?
 
-MZ = 33     # number of points in z direction (2^n + 1)
+MZ = 32     # number of points in z direction (2^n)
 
 ZMIN = 0.0
 ZMAX = 0.0202509 # 1e1 / 4.938060e+02
@@ -23,8 +22,6 @@ MYG = 2
 grid="data/uedge.grd.nc"
 
 dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
-
-NXPE = 2
 
 [mesh]
 StaggerGrids = true
@@ -115,21 +112,7 @@ outer_boundary_flags = 0
 
 [All]
 scale = 0.0 # default size of initial perturbations
-
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 0
-ys_opt = 1
-zs_opt = 2
-
-ys_mode = 1 
-ys_wd = 0.1
-zs_mode = 1 # toroidal mode number
-
+function = gauss(y, 0.1) * sin(z)
 
 # boundary conditions 
 #

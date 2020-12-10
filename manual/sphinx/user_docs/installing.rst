@@ -89,10 +89,10 @@ the "shared" directory.
 
 If this is successful, then you can skip to section :ref:`sec-running`.
 
- Obtaining BOUT++
-----------------
-
 .. _sec-obtainbout:
+
+Obtaining BOUT++
+----------------
 
 BOUT++ is hosted publicly on github at
 https://github.com/boutproject/BOUT-dev. You can the latest stable
@@ -122,13 +122,22 @@ The bare-minimum requirements for compiling and running BOUT++ are:
 
 #. A C++ compiler that supports C++14
 
-#. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <www.open-mpi.org/>`__),
+#. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <https://www.open-mpi.org/>`__),
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
-   LAM (`www.lam-mpi.org/ <www.lam-mpi.org/>`__)
+   LAM (`www.lam-mpi.org/ <https://www.lam-mpi.org/>`__)
    
-#. The NetCDF library ( `https://www.unidata.ucar.edu/downloads/netcdf <https://www.unidata.ucar.edu/downloads/netcdf>`__ )
+#. The NetCDF library (`https://www.unidata.ucar.edu/downloads/netcdf
+   <https://www.unidata.ucar.edu/downloads/netcdf>`__)
    
-The FFTW-3 library ( `http://www.fftw.org/ <http://www.fftw.org/>`__ ) is also strongly recommended
+The FFTW-3 library (`http://www.fftw.org/ <http://www.fftw.org/>`__)
+is also strongly recommended. Fourier transforms are used for some
+derivative methods, as well as the `ShiftedMetric` parallel transform
+which is used in the majority of BOUT++ tokamak simulations. Without
+FFTW-3, these options will not be available.
+
+.. note::
+   Only GCC versions >= 4.9 are supported. This is due to a bug in
+   previous versions.
 
 .. note::
    If you use an Intel compiler, you must also make sure that you have
@@ -194,7 +203,7 @@ Arch Linux
 
 ::
 
-   $ pacman -S openmpi fftw netcdf-cxx 
+   $ pacman -S openmpi fftw netcdf-cxx make gcc
 
 
 Fedora
@@ -202,25 +211,19 @@ Fedora
 
 On Fedora the required libraries can be installed by running::
 
-   $ sudo dnf install autoconf automake netcdf-cxx4-devel fftw-devel hdf5-devel make python3-jinja2
-   $ sudo dnf install python3 python3-h5py python3-numpy python3-netcdf4 python3-scipy
-   $ sudo dnf install python2 python2-h5py python2-numpy python2-netcdf4 python2-scipy
-   $ sudo dnf install mpich-devel
-   $ sudo dnf install openmpi-devel
+   $ sudo dnf build-dep bout++
 
-Note that the python2/python3 stack is only required for for post
-processing and the tests, so feel free to install only what you
-actually need.
-Further, only either mpich or openmpi is required.
+This will install all the dependencies that are used to install
+BOUT++ for fedora. Feel free to install only a subset of the
+suggested packages. For example, only mpich or openmpi is required.
 To load an mpi implementation type::
 
    $ module load mpi
 
 After that the mpi library is loaded.
 Precompiled binaries are available for fedora as well.
-To get the latest release run::
+To get precompiled BOUT++ run::
 
-   $ sudo dnf copr enable davidsch/bout
    $ # install the mpich version - openmpi is available as well
    $ sudo dnf install bout++-mpich-devel
    $ # get the python3 modules - python2 is available as well
@@ -272,7 +275,6 @@ configuration::
       NetCDF support: yes
       Parallel-NetCDF support: no
       HDF5 support: yes (parallel: no)
-      MUMPS support: no
 
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.
@@ -297,16 +299,16 @@ You can see what build options are available with::
   $ cmake . -B build -LH
   ...
   // Enable backtrace
-  ENABLE_BACKTRACE:BOOL=ON
+  BOUT_ENABLE_BACKTRACE:BOOL=ON
 
   // Output coloring
-  ENABLE_COLOR:BOOL=ON
+  BOUT_ENABLE_COLOR:BOOL=ON
 
   // Enable OpenMP support
-  ENABLE_OPENMP:BOOL=OFF
+  BOUT_ENABLE_OPENMP:BOOL=OFF
 
   // Enable support for PETSc time solvers and inversions
-  USE_PETSC:BOOL=OFF
+  BOUT_USE_PETSC:BOOL=OFF
   ...
 
 CMake uses the ``-D<variable>=<choice>`` syntax to control these
@@ -326,12 +328,12 @@ A more complicated CMake configuration command
 might look like::
 
   $ CC=mpicc CXX=mpic++ cmake . -B build \
-      -DUSE_PETSC=ON -DPETSC_DIR=/path/to/petsc/ \
-      -DUSE_SLEPC=ON -DSLEPC_DIR=/path/to/slepc/ \
-      -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials \
-      -DUSE_NETCDF=ON -DNetCDF_ROOT=/path/to/netcdf \
-      -DENABLE_OPENMP=ON \
-      -DENABLE_SIGFPE=OFF \
+      -DBOUT_USE_PETSC=ON -DPETSC_DIR=/path/to/petsc/ \
+      -DBOUT_USE_SLEPC=ON -DSLEPC_DIR=/path/to/slepc/ \
+      -DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials \
+      -DBOUT_USE_NETCDF=ON -DNetCDF_ROOT=/path/to/netcdf \
+      -DBOUT_ENABLE_OPENMP=ON \
+      -DBOUT_ENABLE_SIGFPE=OFF \
       -DCMAKE_BUILD_TYPE=Debug \
       -DBUILD_SHARED_LIBS=ON
       -DCMAKE_INSTALL_PREFIX=/path/to/install/BOUT++
@@ -349,13 +351,15 @@ BOUT++ bundles some dependencies, currently `mpark.variant
 `googletest <https://github.com/google/googletest>`_. If you wish to
 use an existing installation of ``mpark.variant``, you can set
 ``-DBOUT_USE_SYSTEM_MPARK_VARIANT=ON``, and supply the installation
-path using ``mpark_variant_ROOT`` via the command line or
-environment variable if it is installed in a non standard
-loction. Similarly for ``fmt``, using ``-DBOUT_USE_SYSTEM_FMT=ON``
-and ``fmt_ROOT`` respectively. The recommended way to use
-``googletest`` is to compile it at the same time as your project,
-therefore there is no option to use an external installation for
-that.
+path using ``mpark_variant_ROOT`` via the command line or environment
+variable if it is installed in a non standard loction. Similarly for
+``fmt``, using ``-DBOUT_USE_SYSTEM_FMT=ON`` and ``fmt_ROOT``
+respectively. To turn off both, you can set
+``-DBOUT_USE_GIT_SUBMODULE=OFF``.
+
+The recommended way to use ``googletest`` is to compile it at the same
+time as your project, therefore there is no option to use an external
+installation for that.
 
 Using CMake with your physics model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -370,10 +374,26 @@ physics model in only four lines:
     add_executable(blob2d blob2d.cxx)
     target_link_libraries(blob2d PRIVATE bout++::bout++)
 
-You just need to give CMake the location where you installed BOUT++
-via the ``CMAKE_PREFIX_PATH`` variable::
+You just need to give CMake the location where you built or installed
+BOUT++ via the ``CMAKE_PREFIX_PATH`` variable::
 
-  $ cmake . -B build -DCMAKE_PREFIX_PATH=/path/to/install/BOUT++
+  $ cmake . -B build -DCMAKE_PREFIX_PATH=/path/to/built/BOUT++
+
+If you want to modify BOUT++ along with developing your model, you may
+instead wish to place the BOUT++ as a subdirectory of your model and
+use ``add_subdirectory`` instead of ``find_package`` above:
+
+.. code-block:: cmake
+
+    project(blob2d LANGUAGES CXX)
+    add_subdirectory(BOUT++/source)
+    add_executable(blob2d blob2d.cxx)
+    target_link_libraries(blob2d PRIVATE bout++::bout++)
+
+where ``BOUT++/source`` is the subdirectory containing the BOUT++
+source. Doing this has the advantage that any changes you make to
+BOUT++ source files will trigger a rebuild of both the BOUT++ library
+and your model when you next build your code.
 
 .. _sec-config-nls:
 
@@ -394,7 +414,10 @@ finishes, the configuration summary should contain a line like::
   configure:   Natural language support: yes (path: /home/user/BOUT-dev/locale)
 
 where the ``path`` is the directory containing the translations.
-  
+
+See :ref:`sec-run-nls` for details of how to switch language when running
+BOUT++ simulations.
+
 .. _sec-configanalysis:
 
 Configuring analysis routines

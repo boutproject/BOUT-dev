@@ -56,7 +56,7 @@ int physics_init(bool UNUSED(restarting)) {
 
 int physics_run(BoutReal UNUSED(time)) {
   // Need communication
-  mesh->communicate(U);
+  U.getMesh()->communicate(U);
 
   // Form of advection operator for reduced MHD type models
   ddt(U) = -bracket(phi, U, BRACKET_SIMPLE);

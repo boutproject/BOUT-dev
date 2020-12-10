@@ -23,9 +23,11 @@
  * 
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include "pvode.hxx"
 
-#ifdef BOUT_HAS_PVODE
+#if BOUT_HAS_PVODE
 
 #include <bout/mesh.hxx>
 #include <boutcomm.hxx>

@@ -4,7 +4,9 @@
 #ifndef __OPTIONS_NETCDF_H__
 #define __OPTIONS_NETCDF_H__
 
-#ifndef NCDF4
+#include "bout/build_config.hxx"
+
+#if !BOUT_HAS_NETCDF
 
 #include <string>
 

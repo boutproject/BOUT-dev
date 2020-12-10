@@ -7,6 +7,9 @@ import numpy
 import os.path
 from sys import stdout, exit
 
+# Cores: 6
+# Requires: netcdf
+
 build_and_log("griddata test")
 
 nx = 4

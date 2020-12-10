@@ -330,16 +330,18 @@ private:
       output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n", hthe0/rho_s);
     }
     
-    ////////////////////////////////////////////////////////
-    // SHIFTED GRIDS LOCATION
-    
-    // Velocities defined on cell boundaries
-    Vi.setLocation(CELL_YLOW);
-    Ajpar.setLocation(CELL_YLOW);
-    
-    // Apar and jpar too
-    Apar.setLocation(CELL_YLOW); 
-    jpar.setLocation(CELL_YLOW);
+    if (stagger) {
+      ////////////////////////////////////////////////////////
+      // SHIFTED GRIDS LOCATION
+
+      // Velocities defined on cell boundaries
+      Vi.setLocation(CELL_YLOW);
+      Ajpar.setLocation(CELL_YLOW);
+
+      // Apar and jpar too
+      Apar.setLocation(CELL_YLOW);
+      jpar.setLocation(CELL_YLOW);
+    }
     
     ////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
@@ -493,8 +495,13 @@ private:
 
     if (! (estatic || ZeroElMass)) {
       // Create a solver for the electromagnetic potential
-      aparSolver = Laplacian::create(&options["aparSolver"]);
-      acoef = (-0.5 * beta_p / fmei) * Ni0;
+      aparSolver = Laplacian::create(&options["aparSolver"],
+                                     stagger ? CELL_YLOW : CELL_CENTRE);
+      if (stagger) {
+        acoef = (-0.5 * beta_p / fmei) * interp_to(Ni0, CELL_YLOW);
+      } else {
+        acoef = (-0.5 * beta_p / fmei) * Ni0;
+      }
       aparSolver->setCoefA(acoef);
     }
     
@@ -572,7 +579,11 @@ private:
     
     ////////////////////////////////////////////////////////
     // Update non-linear coefficients on the mesh
-    nu      = nu_hat * Nit / pow(Tet,1.5);
+    if (stagger) {
+      nu      = nu_hat * interp_to(Nit / pow(Tet,1.5), CELL_YLOW);
+    } else {
+      nu      = nu_hat * Nit / pow(Tet,1.5);
+    }
     mu_i    = mui_hat * Nit / sqrt(Tit);
     kapa_Te = 3.2*(1./fmei)*(wci/nueix)*pow(Tet,2.5);
     kapa_Ti = 3.9*(wci/nuiix)*pow(Tit,2.5);
@@ -595,12 +606,20 @@ private:
       mesh->communicate(jpar);
       jpar.applyBoundary();
       
-      Ve = Vi - jpar/Ni0;
+      if (!stagger) {
+        Ve = Vi - jpar/Ni0;
+      } else {
+        Ve = Vi - jpar/interp_to(Ni0, CELL_YLOW);
+      }
       Ajpar = Ve;
     } else {
     
       Ve = Ajpar + Apar;
-      jpar = Ni0*(Vi - Ve);
+      if (!stagger) {
+        jpar = Ni0*(Vi - Ve);
+      } else {
+        jpar = interp_to(Ni0, CELL_YLOW)*(Vi - Ve);
+      }
     }
     
     ////////////////////////////////////////////////////////
@@ -818,7 +837,11 @@ private:
         ddt(Ajpar) -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni, CELL_YLOW);
       }
       
-      ddt(Ajpar) += 0.51*interp_to(nu, CELL_YLOW)*jpar/Ni0;
+      if (stagger) {
+        ddt(Ajpar) += 0.51*nu*jpar/interp_to(Ni0, CELL_YLOW);
+      } else {
+        ddt(Ajpar) += 0.51*nu*jpar/Ni0;
+      }
       
       if(lowPass_z > 0)
         ddt(Ajpar) = lowPass(ddt(Ajpar), lowPass_z);

@@ -49,13 +49,13 @@ class CreateInitialProfiles : public PhysicsModel {
     mesh->get(jyseps2_2, "jyseps2_2");
 
     // outboard midplane
-    int yind = mesh->YLOCAL((jyseps1_2 + jyseps2_2)/2);
+    int yind = mesh->getLocalYIndexNoBoundaries((jyseps1_2 + jyseps2_2)/2);
     if (yind >= mesh->ystart and yind <= mesh->yend) {
       initial = sliceXZ(input1, yind);
     }
 
     // inboard midplane
-    yind = mesh->YLOCAL((jyseps1_1 + jyseps2_1)/2);
+    yind = mesh->getLocalYIndexNoBoundaries((jyseps1_1 + jyseps2_1)/2);
     if (yind >= mesh->ystart and yind <= mesh->yend) {
       initial = sliceXZ(input2, yind);
     }

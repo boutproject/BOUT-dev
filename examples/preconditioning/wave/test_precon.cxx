@@ -28,15 +28,15 @@ int physics_init(bool UNUSED(restarting)) {
   solver->setJacobian(jacobian);
   
   // Initialise parallel inversion class
-  inv = InvertPar::Create();
+  inv = InvertPar::create();
   inv->setCoefA(1.0);
   
   return 0;
 }
 
 int physics_run(BoutReal UNUSED(t)) {
-  mesh->communicate(u,v);
-  
+  u.getMesh()->communicate(u, v);
+
   ddt(u) = Grad_par(v);
   ddt(v) = Grad_par(u);
   
@@ -53,6 +53,8 @@ int physics_run(BoutReal UNUSED(t)) {
  * 
  *********************************************************/
 int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
+  auto* mesh = u.getMesh();
+
   // Communicate vector to be inverted
   mesh->communicate(ddt(u), ddt(v));
   
@@ -94,6 +96,8 @@ int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
  *********************************************************/
 
 int jacobian(BoutReal UNUSED(t)) {
+  auto* mesh = u.getMesh();
+
   mesh->communicate(ddt(u), ddt(v));
   Field3D utmp = Grad_par(ddt(v)); // Shouldn't overwrite ddt(u) before using it
   ddt(v) = Grad_par(ddt(u));

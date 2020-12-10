@@ -1,3 +1,5 @@
+#include "bout/build_config.hxx"
+
 #include "gtest/gtest.h"
 
 #include "bout.hxx"
@@ -314,9 +316,9 @@ TEST_F(PrintStartupTest, CommandLineArguments) {
   }
 }
 
-#ifdef SIGHANDLE
+#if BOUT_USE_SIGNAL
 
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
 #include <fenv.h>
 #endif
 
@@ -327,7 +329,7 @@ public:
     std::signal(SIGUSR1, SIG_DFL);
     std::signal(SIGFPE, SIG_DFL);
     std::signal(SIGSEGV, SIG_DFL);
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
     std::signal(SIGFPE, SIG_DFL);
     fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
@@ -354,7 +356,9 @@ TEST(BoutInitialiseFunctions, SetRunStartInfo) {
 
   ASSERT_TRUE(run_section.isSection());
   EXPECT_TRUE(run_section.isSet("version"));
+#ifdef REVISION
   EXPECT_TRUE(run_section.isSet("revision"));
+#endif
   EXPECT_TRUE(run_section.isSet("started"));
 }
 

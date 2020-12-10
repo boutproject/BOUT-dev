@@ -35,6 +35,7 @@
  *
  ************************************************************************/
 
+#include <derivs.hxx>
 #include <globals.hxx>
 #include <utils.hxx>
 #include "cyclic.hxx"
@@ -48,21 +49,25 @@
 
 #include <cmath>
 
-InvertParCR::InvertParCR(Options *opt, Mesh *mesh_in)
-  : InvertPar(opt, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
+InvertParCR::InvertParCR(Options *opt, CELL_LOC location, Mesh *mesh_in)
+  : InvertPar(opt, location, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz)/2; 
+
+  sg = sqrt(localmesh->getCoordinates(location)->g_22);
+  sg = DDY(1. / sg) / sg;
 }
 
 const Field3D InvertParCR::solve(const Field3D &f) {
   TRACE("InvertParCR::solve(Field3D)");
   ASSERT1(localmesh == f.getMesh());
+  ASSERT1(location == f.getLocation());
 
   Field3D result = emptyFrom(f).setDirectionY(YDirectionType::Aligned);
   
   Coordinates *coord = f.getCoordinates();
 
-  Field3D alignedField = toFieldAligned(f, "RGN_NOX");
+  Field3D alignedField = toFieldAligned(f, "RGN_NOBNDRY");
 
   // Create cyclic reduction object
   auto cr = bout::utils::make_unique<CyclicReduce<dcomplex>>();
@@ -70,14 +75,21 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   // Find out if we are on a boundary
   int size = localmesh->LocalNy - 2 * localmesh->ystart;
   SurfaceIter surf(localmesh);
-  for(surf.first(); !surf.isDone(); surf.next()) {
+  for (surf.first(); !surf.isDone(); surf.next()) {
     int n = localmesh->LocalNy - 2 * localmesh->ystart;
     if (!surf.closed()) {
       // Open field line
-      if (surf.firstY())
+      if (surf.firstY()) {
+        if (location == CELL_YLOW) {
+          // The 'boundary' includes the grid point at mesh->ystart
+          n += localmesh->ystart - 1;
+        } else {
+          n += localmesh->ystart;
+        }
+      }
+      if (surf.lastY()) {
         n += localmesh->ystart;
-      if (surf.lastY())
-        n += localmesh->ystart;
+      }
 
       if (n > size)
         size = n; // Maximum size
@@ -101,40 +113,54 @@ const Field3D InvertParCR::solve(const Field3D &f) {
 
     // Number of rows
     int y0 = 0;
+    int local_ystart = localmesh->ystart;
     size = localmesh->LocalNy - 2 * localmesh->ystart; // If no boundaries
-    if(!closed) {
-      if(surf.firstY()) {
-        y0 += localmesh->ystart;
+    if (!closed) {
+      if (surf.firstY()) {
+        if (location == CELL_YLOW) {
+          // The 'boundary' includes the grid point at mesh->ystart
+          y0 += localmesh->ystart;
+          size += localmesh->ystart - 1;
+          local_ystart = localmesh->ystart + 1;
+        } else {
+          y0 += localmesh->ystart;
+          size += localmesh->ystart;
+        }
+      }
+      if (surf.lastY()) {
         size += localmesh->ystart;
       }
-      if(surf.lastY())
-        size += localmesh->ystart;
     }
-      
+
     // Setup CyclicReduce object
     cr->setup(surf.communicator(), size);
     cr->setPeriodic(closed);
     
     // Take Fourier transform
-    for (int y = 0; y < localmesh->LocalNy - 2 * localmesh->ystart; y++)
-      rfft(alignedField(x, y + localmesh->ystart), localmesh->LocalNz, &rhs(y + y0, 0));
+    for (int y = 0; y < localmesh->LocalNy - localmesh->ystart - local_ystart; y++)
+      rfft(alignedField(x, y + local_ystart), localmesh->LocalNz, &rhs(y + y0, 0));
 
     // Set up tridiagonal system
-    for(int k=0; k<nsys; k++) {
-      BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/[rad]
-      for (int y = 0; y < localmesh->LocalNy - 2 * localmesh->ystart; y++) {
+    for (int k = 0; k < nsys; k++) {
+      BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/length
+      for (int y = 0; y < localmesh->LocalNy - localmesh->ystart - local_ystart; y++) {
 
-        BoutReal acoef = A(x, y + localmesh->ystart); // Constant
+        BoutReal acoef = A(x, y + local_ystart);                       // Constant
         BoutReal bcoef =
-            B(x, y + localmesh->ystart) / coord->g_22(x, y + localmesh->ystart); // d2dy2
-        BoutReal ccoef = C(x, y + localmesh->ystart);                            // d2dydz
-        BoutReal dcoef = D(x, y + localmesh->ystart);                            // d2dz2
-        BoutReal ecoef = E(x, y + localmesh->ystart);                            // ddy
+            B(x, y + local_ystart) / coord->g_22(x, y + local_ystart); // d2dy2
+        BoutReal ccoef = C(x, y + local_ystart);                       // d2dydz
+        BoutReal dcoef = D(x, y + local_ystart);                       // d2dz2
+        BoutReal ecoef =
+            E(x, y + local_ystart)
+            + sg(x, y + local_ystart)*B(x, y + local_ystart);          // ddy
 
-        bcoef /= SQ(coord->dy(x, y + localmesh->ystart));
-        ccoef /= coord->dy(x, y + localmesh->ystart) * coord->dz;
-        dcoef /= SQ(coord->dz);
-        ecoef /= coord->dy(x, y + localmesh->ystart);
+        if (coord->non_uniform) {
+          ecoef += bcoef * coord->d1_dy(x, y + local_ystart);
+        }
+
+        bcoef /= SQ(coord->dy(x, y + local_ystart));
+        ccoef /= coord->dy(x, y + local_ystart);
+        ecoef /= coord->dy(x, y + local_ystart);
 
         //           const       d2dy2        d2dydz              d2dz2           ddy
         //           -----       -----        ------              -----           ---
@@ -146,29 +172,29 @@ const Field3D InvertParCR::solve(const Field3D &f) {
       }
     }
 
-    if(closed) {
+    if (closed) {
       // Twist-shift
       int rank, np;
       bout::globals::mpi->MPI_Comm_rank(surf.communicator(), &rank);
       bout::globals::mpi->MPI_Comm_size(surf.communicator(), &np);
-      if(rank == 0) {
-        for(int k=0; k<nsys; k++) {
+      if (rank == 0) {
+        for (int k = 0; k < nsys; k++) {
           BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
           a(k, 0) *= phase;
         }
       }
-      if(rank == np-1) {
-        for(int k=0; k<nsys; k++) {
+      if (rank == np - 1) {
+        for (int k = 0; k < nsys; k++) {
           BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , sin(kwave*ts));
           c(k, localmesh->LocalNy - 2 * localmesh->ystart - 1) *= phase;
         }
       }
-    }else {
+    } else {
       // Open surface, so may have boundaries
-      if(surf.firstY()) {
-        for(int k=0; k<nsys; k++) {
+      if (surf.firstY()) {
+        for (int k = 0; k < nsys; k++) {
           for (int y = 0; y < localmesh->ystart; y++) {
             a(k, y) = 0.;
             b(k, y) = 1.;
@@ -178,8 +204,8 @@ const Field3D InvertParCR::solve(const Field3D &f) {
           }
         }
       }
-      if(surf.lastY()) {
-        for(int k=0; k<nsys; k++) {
+      if (surf.lastY()) {
+        for (int k = 0; k < nsys; k++) {
           for (int y = size - localmesh->ystart; y < size; y++) {
             a(k, y) = -1.;
             b(k, y) = 1.;
@@ -190,20 +216,20 @@ const Field3D InvertParCR::solve(const Field3D &f) {
         }
       }
     }
-    
+
     // Solve cyclic tridiagonal system for each k
     cr->setCoefs(a, b, c);
     cr->solve(rhsk, xk);
 
     // Put back into rhs array
-    for(int k=0;k<nsys;k++) {
-      for(int y=0;y<size;y++)
+    for (int k = 0; k < nsys; k++) {
+      for (int y = 0; y < size; y++)
         rhs(y, k) = xk(k, y);
     }
-    
-    // Inverse Fourier transform 
-    for(int y=0;y<size;y++)
-      irfft(&rhs(y, 0), localmesh->LocalNz, result(x, y + localmesh->ystart - y0));
+
+    // Inverse Fourier transform
+    for (int y = 0; y < size; y++)
+      irfft(&rhs(y, 0), localmesh->LocalNz, result(x, y + local_ystart - y0));
   }
 
   return fromFieldAligned(result, "RGN_NOBNDRY");

@@ -25,6 +25,8 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <boutcomm.hxx>
 #include <globals.hxx>
 
@@ -47,7 +49,7 @@
 Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in,
                  DirectionTypes directions_in)
     : Field(localmesh, location_in, directions_in) {
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = "<F3D>";
 #endif
 
@@ -103,8 +105,6 @@ Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation
   nz = fieldmesh->LocalNz;
 
   ASSERT1(data.size() == nx * ny * nz);
-
-  setLocation(datalocation);
 }
 
 Field3D::~Field3D() { delete deriv; }
@@ -302,7 +302,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 
   /// Make sure there's a unique array to copy data into
   allocate();
-  ASSERT1(areFieldsCompatible(*this, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
   /// Copy data
   BOUT_FOR(i, rhs.getRegion("RGN_ALL")) {
@@ -317,7 +317,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 void Field3D::operator=(const FieldPerp &rhs) {
   TRACE("Field3D = FieldPerp");
 
-  ASSERT1(areFieldsCompatible(*this, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
 
@@ -630,7 +630,7 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs, const std::string& rgn) {
   // Check if the inputs are allocated
   checkData(lhs);
   checkData(rhs);
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   // Define and allocate the output result
   Field3D result{emptyFrom(lhs)};
@@ -646,7 +646,7 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, const std::string& rgn) 
 
   checkData(lhs);
   checkData(rhs);
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
   
@@ -698,7 +698,7 @@ Field3D filter(const Field3D &var, int N0, const std::string& rgn) {
     }
   }
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "filter(" + var.name + ")";
 #endif
 

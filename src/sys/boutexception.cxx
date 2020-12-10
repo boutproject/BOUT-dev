@@ -1,3 +1,5 @@
+#include "bout/build_config.hxx"
+
 #include <mpi.h>
 #include <boutcomm.hxx>
 #include <boutexception.hxx>
@@ -5,12 +7,14 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 
-#ifdef BACKTRACE
+#if BOUT_USE_BACKTRACE
 #include <execinfo.h>
 #include <dlfcn.h>
 #endif
 
 #include <utils.hxx>
+
+#include <fmt/format.h>
 
 void BoutParallelThrowRhsFail(int status, const char *message) {
   int allstatus;
@@ -26,14 +30,14 @@ BoutException::~BoutException() {
   // up the msg_stack. We also won't know how many messages to pop, so
   // just clear everything
   msg_stack.clear();
-#ifdef BACKTRACE
+#if BOUT_USE_BACKTRACE
   free(messages);
 #endif
 }
 
 std::string BoutException::getBacktrace() const {
   std::string backtrace_message;
-#ifdef BACKTRACE
+#if BOUT_USE_BACKTRACE
   backtrace_message = "====== Exception path ======\n";
   // skip first stack frame (points here)
   for (int i = trace_size - 1; i > 1; --i) {
@@ -51,8 +55,9 @@ std::string BoutException::getBacktrace() const {
     void * ptr=trace[i];
     if (dladdr(trace[i],&info)){
       // Additionally, check whether this is the default offset for an executable
-      if (info.dli_fbase != (void*)0x400000)
-        ptr=(void*) ((size_t)trace[i]-(size_t)info.dli_fbase);
+      if (info.dli_fbase != reinterpret_cast<void*>(0x400000))
+        ptr = reinterpret_cast<void*>(reinterpret_cast<size_t>(trace[i])
+                                      - reinterpret_cast<size_t>(info.dli_fbase));
     }
 
     // Pipe stderr to /dev/null to avoid cluttering output
@@ -84,7 +89,7 @@ std::string BoutException::getBacktrace() const {
 }
 
 void BoutException::makeBacktrace() {
-#ifdef BACKTRACE
+#if BOUT_USE_BACKTRACE
   trace_size = backtrace(trace, TRACE_MAX);
   messages = backtrace_symbols(trace, trace_size);
 #endif

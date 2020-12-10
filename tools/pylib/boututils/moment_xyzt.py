@@ -3,8 +3,7 @@ from __future__ import division
 from builtins import range
 from past.utils import old_div
 import numpy as np
-from bunch import Bunch
-
+from boututils.bunch import Bunch
 
 def RMSvalue( vec1d):
 #;
@@ -16,9 +15,9 @@ def RMSvalue( vec1d):
     valrms=np.sqrt(old_div(np.sum((vec1d-valav)**2),nel))
     acvec=vec1d-valav
 
-
-    return Bunch(valrms=valrms, valav=valav, acvec=acvec)
- 
+    return Bunch(valrms=valrms,
+                 valav=valav,
+                 acvec=acvec)
 
 
 
@@ -30,8 +29,6 @@ def moment_xyzt( sig_xyzt, *args):#rms=None, dc=None, ac=None):
 #; -AC (DC subtracted out), i.e., a function of (x,y,z,t)
 #;-------------------------------------------------------------------
 
-    try:                     # return to caller
- 
         d = np.shape(sig_xyzt)
         if np.size(d) != 4 :
             print("Error: Variable must be 4D (x,y,z,t)")
@@ -73,8 +70,5 @@ def moment_xyzt( sig_xyzt, *args):#rms=None, dc=None, ac=None):
             res.ac = ac
 
         if 'RMS' not in args and 'DC' not in args and 'AC' not in args :
-            print('Wrong argument')
+            raise RuntimeError('Wrong argument')
         return res
-    except:
-        print('moment_xyz failed')
-        return

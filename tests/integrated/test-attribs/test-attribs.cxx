@@ -6,9 +6,9 @@ int main(int argc, char** argv) {
   Field3D a = 0.0;
 
   SAVE_ONCE(a);
-  dump.setAttribute("a", "meta", "something useful");
-  dump.setAttribute("g12", "value", 42);
-  dump.write();
+  bout::globals::dump.setAttribute("a", "meta", "something useful");
+  bout::globals::dump.setAttribute("g12", "value", 42);
+  bout::globals::dump.write();
 
   BoutFinalise();
   return 0;

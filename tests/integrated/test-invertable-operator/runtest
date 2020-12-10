@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 #requires: petsc
+#cores: 2
 
 # 
 # Run the test, compare results against expected value

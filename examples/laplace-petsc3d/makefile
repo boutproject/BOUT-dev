@@ -1,4 +1,4 @@
-BOUT_TOP = ../..
+BOUT_TOP ?= ../..
 
 SOURCEC = test-laplace3d.cxx
 

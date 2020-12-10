@@ -113,8 +113,16 @@ and see the section on options (:ref:`sec-options`).
 To analyse the output of the simulation, cd into the ``data``
 subdirectory and start python or IDL (skip to :ref:`Using IDL <sec-intro-using-idl>` for IDL).
 
-Analysing the output Using python
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Analysing the output using Python
+---------------------------------
+
+The recommended tool for analysing BOUT++ output is xBOUT, a Python library
+that provides analysis, plotting and animation with human-readable syntax (no
+magic numbers!) using `xarray <http://xarray.pydata.org/en/stable/>`_. See the
+xBOUT documentation
+`xbout.readthedocs.io <https://xbout.readthedocs.io/en/latest/>`_.
+
+There is also an older set of NumPy-based Python tools, described below.
 
 In order to analyse the output of the simulation using Python, you
 will first need to have set up python to use the BOUT++ libraries
@@ -131,7 +139,7 @@ class. This is a wrapper around the various NetCDF and HDF5 libraries for python
     >>> from boututils.datafile import DataFile
     >>> DataFile("BOUT.dmp.0.nc").list()
 
-To collect a variable, reading in the data as a NumPy array:
+To collect a variable, reading in the data as a NumPy-like ``BoutArray`` array:
 
 .. code-block:: pycon
 
@@ -140,8 +148,11 @@ To collect a variable, reading in the data as a NumPy array:
     >>> T.shape
 
 Note that the order of the indices is different in Python and IDL: In
-Python, 4D variables are arranged as ``[t, x, y, z]``. To show an
-animation
+Python, 4D variables are arranged as ``[t, x, y, z]``.
+
+``BoutArray`` as a thin wrapper for ``numpy.ndarray`` which adds BOUT++ attributes.
+
+To show an animation
 
 .. code-block:: pycon
 
@@ -219,47 +230,38 @@ Natural language support
 
 If you have locales installed, and configured the ``locale`` path
 correctly (see :ref:`sec-config-nls`), then the ``LANG`` environment
-variable selects the language to use. Currently BOUT++ only has limited support
-for ``fr``, ``zh_TW`` and ``zh_CN`` locales e.g. ::
+variable selects the language to use. Currently BOUT++ only has support
+for ``fr``, ``de``, ``es``, ``zh_TW`` and ``zh_CN`` locales e.g. ::
 
     LANG=zh_TW.utf8 ./conduction
 
 which should produce an output like::
 
-  BOUT++ 版 4.2.0
-  版: dc95c252d9447ca72d27d4cc0d30f4d9c8a91a41
-  MD5 checksum: 086b600cc54f9c0eb0ee9338dbba71a6
-  代碼於 Nov  1 2018 17:41:02 编译
+  BOUT++ 版 4.3.0
+  版: 667c19c136fc3e72fcd7c7b2109d44886fdf818d
+  MD5 checksum: 2263dc17fa414179c7ad87c3972f624b
+  代碼於 Nov 21 2019 17:26:55 编译
   ...
 
-  
-Further examples
-----------------
+or ::
 
-The next example to look at is ``tests/integrated/test-wave``, which
-is solving a wave equation using
+    LANG=es_ES.utf8 ./conduction
 
-.. math::
+which should produce::
 
-   \frac{\partial f}{\partial t} = \partial_{||} g \qquad \frac{\partial g}{\partial t} = \partial_{||} f
+  Versión de BOUT++ 4.3.0
+  Revisión: 667c19c136fc3e72fcd7c7b2109d44886fdf818d
+  MD5 checksum: 2263dc17fa414179c7ad87c3972f624b
+  Código compilado en Nov 21 2019 en 17:26:55
+  ...
 
-using two different methods. Other examples contain two scripts: One
-for running the example and then an IDL script to plot the results::
+The name of the locale (``zh_TW.utf8`` or ``es_ES.utf8`` above) can be different
+on different machines. To see a list of available locales on your system try running::
 
-    ./runcase.sh
-    idl runidl.pro
+  locale -a
 
-Assuming these examples work (which they should), looking through the
-scripts and code may give you an idea of how BOUT++ works. More
-information on setting up and running BOUT++ is given in
-:ref:`sec-running`, and details of analysing the results using IDL
-are given in :ref:`sec-output`.
-
-Alternatively, one can run BOUT++ with the python wrapper
-``bout_runners``, as explained in section
-:ref:`sec-bout_runners`. Examples of using ``bout_runners`` can be
-found in ``examples/bout_runners_example``.
-
+If you are missing a locale you need, see your distribution's help, or try this
+`Arch wiki page on locale <https://wiki.archlinux.org/index.php/locale>`__.
 
 When things go wrong
 --------------------

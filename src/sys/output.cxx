@@ -98,7 +98,7 @@ void ConditionalOutput::print(const std::string& message) {
   }
 }
 
-#ifdef DEBUG_ENABLED
+#ifdef BOUT_USE_OUTPUT_DEBUG
 ConditionalOutput output_debug(Output::getInstance());
 #else
 DummyOutput output_debug;

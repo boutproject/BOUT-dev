@@ -3,6 +3,31 @@
 This is a slightly more readable, and therefore incomplete, summary of
 the changes from the full [changelog](CHANGELOG.md)
 
+4.3.2 is a bugfix release:
+- Make downloading the submodules a bit nicer, including an option for
+  using non-bundled versions when using `configure`
+- Make `dz` in the Python API a property
+- Make `Div_par_K_Grad_par` check the staggered location of its inputs
+- Enable split-flux derivatives on staggered fields
+- Fix `Grad2_par2` implementation in `InvertParCR`
+- Fix an issue writing `FieldPerp`s
+- Make it easier to compile the examples with different versions of
+  BOUT++, plus fixes for the `tokamak-2fluid` example
+- Fix `Div_par` when using more than one y-guard cell
+- Fix an issue with text attributes in HDF5 files
+
+4.3.1 is a bugfix release, with a few minor fixes to library code,
+notably:
+- Fix the creation of the `RGN_OUTER_X` region
+- Several small bugs in the Python API
+- Preserve restart files if there's a crash during initialisation
+- Fix some segfaults in the PvodeSolver
+- Fix some issues with Hypnotoad (see
+  [\#1783](https://github.com/boutproject/BOUT-dev/pull/1783)
+  ([friva000](https://github.com/friva000)))
+
+Other changes are mostly housekeeping changes for the BOUT++ project.
+
 4.3.0 is a big feature release:
 - `Field`s are now "tagged" with their "y-direction": that is, whether
   they are in field-aligned space or not. This allows us to perform

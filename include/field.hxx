@@ -29,6 +29,8 @@ class Field;
 #ifndef __FIELD_H__
 #define __FIELD_H__
 
+#include "bout/build_config.hxx"
+
 #include <cmath>
 #include <cstdio>
 #include <memory>
@@ -50,7 +52,7 @@ class Field;
 class Mesh;
 class Coordinates;
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
 #include <string>
 #endif
 
@@ -191,6 +193,38 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
       areDirectionsCompatible(field1.getDirections(), field2.getDirections());
 }
 
+#if CHECKLEVEL >= 1
+#define ASSERT1_FIELDS_COMPATIBLE(field1, field2)			\
+  if ((field1).getLocation() != (field2).getLocation()){		\
+    throw BoutException("Error in {:s}:{:d}\nFields at different position:" \
+			"`{:s}` at {:s}, `{:s}` at {:s}",__FILE__,__LINE__, \
+			#field1, toString((field1).getLocation()),	\
+			#field2, toString((field2).getLocation()));	\
+  }									\
+  if ((field1).getCoordinates() != (field2).getCoordinates()){		\
+    throw BoutException("Error in {:s}:{:d}\nFields have different coordinates:" \
+			"`{:s}` at {:p}, `{:s}` at {:p}",__FILE__,__LINE__, \
+			#field1, static_cast<void*>((field1).getCoordinates()), \
+			#field2, static_cast<void*>((field2).getCoordinates())); \
+  }								\
+  if ((field1).getMesh() != (field2).getMesh()){			\
+    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:" \
+			"`{:s}` at {:p}, `{:s}` at {:p}",__FILE__,__LINE__, \
+			#field1, static_cast<void*>((field1).getMesh()), \
+			#field2, static_cast<void*>((field2).getMesh())); \
+  }									\
+  if (!areDirectionsCompatible((field1).getDirections(),		\
+			       (field2).getDirections())){		\
+    throw BoutException("Error in {:s}:{:d}\nFields at different directions:" \
+			"`{:s}` at {:s}, `{:s}` at {:s}",__FILE__,__LINE__, \
+			#field1, toString((field1).getDirections()),	\
+			#field2, toString((field2).getDirections()));	\
+  }
+
+#else
+#define ASSERT1_FIELDS_COMPATIBLE(field1, field2);
+#endif
+
 /// Return an empty shell field of some type derived from Field, with metadata
 /// copied and a data array that is allocated but not initialised.
 template<typename T>
@@ -216,6 +250,27 @@ inline T filledFrom(const T& f, BoutReal fill_value) {
   static_assert(bout::utils::is_Field<T>::value, "filledFrom only works on Fields");
   T result{emptyFrom(f)};
   result = fill_value;
+  return result;
+}
+
+/// Return a field of some type derived from Field, with metadata copied from
+/// another field and a data array allocated and filled using a callable e.g. lambda function
+///
+/// e.g.
+///   Field3D result = filledFrom(field, [&](const auto& index) {
+///                                          return ...;
+///                                      });
+/// 
+/// An optional third argument is the region string
+template <
+    typename T, typename Function,
+    typename = decltype(std::declval<Function&>()(std::declval<typename T::ind_type&>()))>
+inline T filledFrom(const T& f, Function func, std::string region_string = "RGN_ALL") {
+  static_assert(bout::utils::is_Field<T>::value, "filledFrom only works on Fields");
+  T result{emptyFrom(f)};
+  BOUT_FOR(i, result.getRegion(region_string)) {
+    result[i] = func(i);
+  }
   return result;
 }
 
