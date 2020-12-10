@@ -2054,3 +2054,20 @@ Field3D Coordinates::indexDDY(const Field3D& f, CELL_LOC outloc,
 #endif
   return bout::derivatives::index::DDY(f, outloc, method, region);
 }
+
+Field3D Coordinates::maybeFromFieldAligned(const Field3D& f, const std::string& region) {
+  ASSERT1(location == f.getLocation());
+  ASSERT1(localmesh == f.getMesh());
+  if (f.getDirectionY() == YDirectionType::Standard) {
+    return f;
+  }
+  if (this->getParallelTransform().canToFromFieldAligned()) {
+    return this->getParallelTransform().fromFieldAligned(f, region);
+  }
+  return copy(f).setDirectionY(YDirectionType::Standard);
+}
+
+Field2D Coordinates::maybeFromFieldAligned(const Field2D& f,
+                                           const std::string& UNUSED(region)) {
+  return f;
+}

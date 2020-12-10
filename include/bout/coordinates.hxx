@@ -313,30 +313,18 @@ private:
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
 
-  inline Field3D maybeFromFieldAligned(const Field3D& f,
-                                       const std::string& region = "RGN_ALL") {
-    ASSERT1(location == f.getLocation());
-    ASSERT1(localmesh == f.getMesh());
-    if (f.getDirectionY() == YDirectionType::Standard) {
-      return f;
-    }
-    if (this->getParallelTransform().canToFromFieldAligned()) {
-      return this->getParallelTransform().fromFieldAligned(f, region);
-    }
-    return copy(f).setDirectionY(YDirectionType::Standard);
-  }
+  /// Alternative implementation for `fromFieldAligned` that can be
+  /// called before the `Coordinates` constructor is finisehd
+  Field3D maybeFromFieldAligned(const Field3D& f, const std::string& region = "RGN_ALL");
 
-  inline Field2D maybeFromFieldAligned(const Field2D& f,
-                                       const std::string& UNUSED(region) = "RGN_ALL") {
-    return f;
-  }
+  Field2D maybeFromFieldAligned(const Field2D& f,
+                                const std::string& UNUSED(region) = "RGN_ALL");
 
   /// A wrapper for index:DDY derivative that is able to tranform
   /// fields before the constructor is finished.
-  Coordinates::FieldMetric indexDDY(const Field2D& f,
-                                          CELL_LOC outloc = CELL_DEFAULT,
-                                          const std::string& method = "DEFAULT",
-                                          const std::string& region = "RGN_NOBNDRY");
+  FieldMetric indexDDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                       const std::string& method = "DEFAULT",
+                       const std::string& region = "RGN_NOBNDRY");
   Field3D indexDDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
                    const std::string& method = "DEFAULT",
                    const std::string& region = "RGN_NOBNDRY");
