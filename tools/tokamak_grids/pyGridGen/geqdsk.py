@@ -16,7 +16,7 @@ Copyright &copy; 2006-2008, Tech-X Corporation, Boulder, CO
 See LICENSE file for conditions of use.
 
 The official document describing g-eqdsk files:
-http://fusion.gat.com/conferences/snowmass/working/mfe/physics/p3/equilibria/g_eqdsk_s.pdf
+https://fusion.gat.com/conferences/snowmass/working/mfe/physics/p3/equilibria/g_eqdsk_s.pdf
 """
 
 class Geqdsk(object):

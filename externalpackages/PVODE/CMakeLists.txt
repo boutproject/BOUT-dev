@@ -58,10 +58,30 @@ target_link_libraries(pvpre PUBLIC MPI::MPI_CXX)
 
 include(GNUInstallDirs)
 install(TARGETS pvode pvpre
-  EXPORT bout++Targets
+  EXPORT PVODETargets
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   )
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  PVODEConfigVersion.cmake
+  VERSION ${PACKAGE_VERSION}
+  COMPATIBILITY SameMajorVersion
+  )
+
+install(EXPORT PVODETargets
+  FILE PVODETargets.cmake
+  NAMESPACE PVODE::
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/PVODE"
+  )
+
+export(EXPORT PVODETargets
+  FILE "${CMAKE_CURRENT_BINARY_DIR}/PVODEConfig.cmake"
+  NAMESPACE PVODE::
+  )
+
+export(PACKAGE PVODE)

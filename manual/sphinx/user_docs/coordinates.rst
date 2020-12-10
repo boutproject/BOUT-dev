@@ -551,7 +551,7 @@ we can re-write the above components as:
    \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^z =& -\frac{\mu_0}{B}{\frac{\partial P}{\partial x}} - {\frac{\partial B}{\partial x}} -
    I\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x\end{aligned}
 
-Curvature from div (b/B)
+Curvature from `{\boldsymbol{b}}\times{\boldsymbol{\kappa}}`
 ------------------------
 
 The vector `{\boldsymbol{b}}\times{\boldsymbol{\kappa}}` is an

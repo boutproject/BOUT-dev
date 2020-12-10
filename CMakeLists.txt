@@ -28,6 +28,7 @@ include(CMakeDependentOption)
 option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+include(BOUT++functions)
 
 option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" ON)
 # Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
@@ -306,6 +307,31 @@ set(BOUT_SOURCES
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
   )
 
+option(BOUT_GENERATE_FIELDOPS "Automatically re-generate the Field arithmetic operators from the Python templates. \
+Requires Python, clang-format, and Jinja2. Turn this OFF to skip generating them if, for example, \
+you are unable to install the Jinja2 Python module. This is only important for BOUT++ developers." ON)
+
+find_package(Python)
+find_package(ClangFormat)
+if (BOUT_GENERATE_FIELDOPS AND Python_FOUND AND ClangFormat_FOUND)
+  add_custom_command( OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/field/generated_fieldops.cxx
+    COMMAND ${Python_EXECUTABLE} gen_fieldops.py --filename generated_fieldops.cxx.tmp
+    COMMAND ${ClangFormat_BIN} generated_fieldops.cxx.tmp -i
+    COMMAND ${CMAKE_COMMAND} -E rename generated_fieldops.cxx.tmp generated_fieldops.cxx
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.jinja  ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/field/
+    COMMENT "Generating source code" )
+else()
+  message(AUTHOR_WARNING "'src/field/generated_fieldops.cxx' will not be \
+regenerated when you make changes to either \
+'src/field/gen_fieldops.py' or 'src/field/gen_fieldops.jinja'. \
+This is because either Python or clang-format is missing \
+(see above messages for more information) \
+or BOUT_GENERATE_FIELDOPS is OFF (current value: ${BOUT_GENERATE_FIELDOPS}). \
+This warning is only important for BOUT++ developers and can otherwise be \
+safely ignored.")
+endif()
+
 add_library(bout++
   ${BOUT_SOURCES}
   )
@@ -470,9 +496,24 @@ message(STATUS "PVODE support: ${BOUT_USE_PVODE}")
 set(BOUT_HAS_PVODE ${BOUT_USE_PVODE})
 
 option(BOUT_USE_NETCDF "Enable support for NetCDF output" ON)
+option(BOUT_DOWNLOAD_NETCDF_CXX4 "Download and build netCDF-cxx4" OFF)
 if (BOUT_USE_NETCDF)
-  find_package(NetCDF REQUIRED)
-  target_link_libraries(bout++ PUBLIC NetCDF::NetCDF_CXX)
+  if (BOUT_DOWNLOAD_NETCDF_CXX4)
+    include(FetchContent)
+    FetchContent_Declare(
+      netcdf-cxx4
+      GIT_REPOSITORY https://github.com/ZedThree/netcdf-cxx4
+      GIT_TAG        "ad3e50953190615cb69dcc8a4652f9a88a8499cf"
+      )
+    # Don't build the netcdf tests, they have lots of warnings
+    set(NCXX_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    # Use our own FindnetCDF module which uses nc-config
+    find_package(netCDF REQUIRED)
+    FetchContent_MakeAvailable(netcdf-cxx4)
+  else()
+    find_package(netCDFCxx REQUIRED)
+  endif()
+  target_link_libraries(bout++ PUBLIC netCDF::netcdf-cxx4)
 endif()
 message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
@@ -614,14 +655,6 @@ target_compile_definitions(bout++
 ##################################################
 # Tests
 
-# Copy FILENAME from source directory to build directory
-macro(bout_test_copy_file FILENAME)
-  configure_file(
-      ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
-      ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}
-      COPYONLY)
-endmacro()
-
 # Add a new integrated test. By default, the executable is named like
 # the first source, stripped of its file extension.
 #
@@ -682,20 +715,20 @@ function(bout_add_integrated_test TESTNAME)
   # Set the actual test command
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
     add_test(NAME ${TESTNAME} COMMAND ./runtest)
-    bout_test_copy_file(runtest)
+    bout_copy_file(runtest)
   else()
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
   endif()
 
   # Copy the input file if needed
   if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
-    bout_test_copy_file(data/BOUT.inp)
+    bout_copy_file(data/BOUT.inp)
   endif()
 
   # Copy any other needed files
   if (BOUT_TEST_OPTIONS_EXTRA_FILES)
     foreach (FILE ${BOUT_TEST_OPTIONS_EXTRA_FILES})
-      bout_test_copy_file("${FILE}")
+      bout_copy_file("${FILE}")
     endforeach()
   endif()
 
@@ -733,6 +766,11 @@ if(PACKAGE_TESTS)
   # Run all the tests
   add_custom_target(check)
   add_dependencies(check check-unit-tests check-integrated-tests)
+endif()
+
+option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
+if(BOUT_BUILD_EXAMPLES)
+  add_subdirectory(examples)
 endif()
 
 ##################################################

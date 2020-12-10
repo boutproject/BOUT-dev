@@ -24,31 +24,40 @@ flags = [
     "acoef=1.5 'bcoef=2.*sin(2*y)'",
     "acoef=1",
     "bcoef=2",
-    "ccoef=3",
-    "dcoef=4",
+    "ccoef=1.793",
+    "ccoef=3 bcoef=0",
+    "dcoef=3.5",
     "ecoef=-1",
     "'input=ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'",
 ]
 
+locations = ["CELL_CENTRE", "CELL_XLOW", "CELL_YLOW", "CELL_ZLOW"]
+flags = [f + " test_location=" + l for f in flags for l in locations]
+
+regions = ["", " mesh:ixseps1=0 mesh:ixseps2=0"]
+flags = [f + r for f in flags for r in regions]
+
 code = 0 # Return code
 for nproc in [1,2,4]:
     cmd = "./test_invpar"
-    
+
     print("   %d processors...." % (nproc))
     r = 0
     for f in flags:
         stdout.write("\tflags '"+f+"' ... ")
-        
-        shell("rm data/BOUT.dmp.* 2> err.log")
-        
-        # Run the case
-        s, out = launch_safe(cmd+" "+f, nproc=nproc, mthread=1, pipe=True)
 
-        with open("run.log."+str(nproc)+"."+str(r), "w") as f:
-          f.write(out)
+        shell("rm data/BOUT.dmp.* 2> err.log")
+
+        # Run the case
+        s, out = launch_safe(
+            cmd+" "+f, nproc=nproc, mthread=1, pipe=True
+        )
+
+        with open("run.log."+str(nproc)+"."+str(r), "w") as outfile:
+          outfile.write(out)
 
         r = r + 1
-        
+
         # Find out if it worked
         allpassed = collect("allpassed", path="data", info=False)
         if allpassed:

@@ -28,7 +28,7 @@ int physics_init(bool UNUSED(restarting)) {
   solver->setJacobian(jacobian);
   
   // Initialise parallel inversion class
-  inv = InvertPar::Create();
+  inv = InvertPar::create();
   inv->setCoefA(1.0);
   
   return 0;

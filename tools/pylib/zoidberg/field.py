@@ -802,7 +802,7 @@ class GEQDSK(MagneticField):
         if hasattr(psinorm, "shape"):
             return np.reshape(self.f_spl(np.ravel(psinorm)),psinorm.shape) / x
 
-        return f_spl(psinorm) / x  # f = R*Bt
+        return self.f_spl(psinorm) / x  # f = R*Bt
 
     def Rfunc(self, x, z, phi):
         return x
@@ -814,4 +814,4 @@ class GEQDSK(MagneticField):
         if hasattr(psinorm, "shape"):
             return np.reshape(self.p_spl(np.ravel(psinorm)),psinorm.shape)
 
-        return f_spl(psinorm)
+        return self.p_spl(psinorm)

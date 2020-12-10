@@ -114,9 +114,9 @@ filter_z = false   # remove all except one mode
 filter_z_mode = 1  # Specify which harmonic to keep (1 = fundamental)
 
 low_pass_z = -1    # Keep up to and including this harmonic (-1 = keep all)
-zonal_flow = -1    # remove this zonal harmonic  (-1 = keep zonal harmonic)
-zonal_field= -1     # remove this zonal harmonic  (-1 = keep zonal harmonic)
-zonal_bkgd = -1    # remove this zonal harmonic  (-1 = keep zonal harmonic)
+zonal_flow = false    # remove this zonal harmonic  (-1 = keep zonal harmonic)
+zonal_field= false     # remove this zonal harmonic  (-1 = keep zonal harmonic)
+zonal_bkgd = false    # remove this zonal harmonic  (-1 = keep zonal harmonic)
 
 ## Vacuum region control
 

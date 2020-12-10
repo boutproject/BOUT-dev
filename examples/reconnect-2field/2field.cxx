@@ -206,7 +206,7 @@ protected:
     setPrecon((preconfunc)&TwoField::precon);
     
     // Initialise parallel inversion class
-    inv = InvertPar::Create();
+    inv = InvertPar::create();
     inv->setCoefA(1.0);
     U.setBoundary("U");
     Apar.setBoundary("Apar");
