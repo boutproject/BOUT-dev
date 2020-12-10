@@ -89,10 +89,10 @@ the "shared" directory.
 
 If this is successful, then you can skip to section :ref:`sec-running`.
 
+.. _sec-obtainbout:
+
 Obtaining BOUT++
 ----------------
-
-.. _sec-obtainbout:
 
 BOUT++ is hosted publicly on github at
 https://github.com/boutproject/BOUT-dev. You can the latest stable

@@ -496,9 +496,24 @@ message(STATUS "PVODE support: ${BOUT_USE_PVODE}")
 set(BOUT_HAS_PVODE ${BOUT_USE_PVODE})
 
 option(BOUT_USE_NETCDF "Enable support for NetCDF output" ON)
+option(BOUT_DOWNLOAD_NETCDF_CXX4 "Download and build netCDF-cxx4" OFF)
 if (BOUT_USE_NETCDF)
-  find_package(NetCDF REQUIRED)
-  target_link_libraries(bout++ PUBLIC NetCDF::NetCDF_CXX)
+  if (BOUT_DOWNLOAD_NETCDF_CXX4)
+    include(FetchContent)
+    FetchContent_Declare(
+      netcdf-cxx4
+      GIT_REPOSITORY https://github.com/ZedThree/netcdf-cxx4
+      GIT_TAG        "ad3e50953190615cb69dcc8a4652f9a88a8499cf"
+      )
+    # Don't build the netcdf tests, they have lots of warnings
+    set(NCXX_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    # Use our own FindnetCDF module which uses nc-config
+    find_package(netCDF REQUIRED)
+    FetchContent_MakeAvailable(netcdf-cxx4)
+  else()
+    find_package(netCDFCxx REQUIRED)
+  endif()
+  target_link_libraries(bout++ PUBLIC netCDF::netcdf-cxx4)
 endif()
 message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
@@ -591,6 +606,14 @@ include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("int main() { const char* name = __PRETTY_FUNCTION__; }"
   HAS_PRETTY_FUNCTION)
 set(BOUT_HAS_PRETTY_FUNCTION ${HAS_PRETTY_FUNCTION})
+
+# Locations of the various Python modules, including the generated boutconfig module
+set(BOUT_PYTHONPATH "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib:${CMAKE_CURRENT_SOURCE_DIR}/tools/pylib")
+# Variables for boutconfig module -- note that these will contain
+# generator expressions and CMake targets, and not generally be very
+# useful
+get_target_property(BOUT_LIBS bout++ INTERFACE_LINK_LIBRARIES)
+get_target_property(BOUT_CFLAGS bout++ INTERFACE_INCLUDE_DIRECTORIES)
 
 # We want to compile the actual flags used into the library so we can
 # see them at runtime. This needs a few steps:
@@ -801,6 +824,7 @@ install(EXPORT bout++Targets
 configure_package_config_file(bout++Config.cmake.in bout++Config.cmake
   INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
   )
+
 install(
   FILES
       "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
@@ -815,6 +839,15 @@ install(
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSUNDIALS.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ResolveCompilerPaths.cmake"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
+  )
+
+configure_package_config_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib/boutconfig/__init__.py
+  INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
+  )
+
+install(
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/boutconfig"
   )
 
 export(EXPORT bout++Targets
@@ -856,7 +889,7 @@ message("
    Make sure that the tools/pylib directory is in your PYTHONPATH
    e.g. by adding to your ~/.bashrc file
 
-       export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH
+       export PYTHONPATH=${BOUT_PYTHONPATH}:\$PYTHONPATH
 
 *** Now run `cmake --build .` to compile BOUT++ ***
 ")
