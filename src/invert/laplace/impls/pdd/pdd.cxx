@@ -49,6 +49,8 @@ FieldPerp LaplacePDD::solve(const FieldPerp& b) {
   start(b, data);
   next(data);
   finish(data, x);
+
+  checkData(x);
   
   return x;
 }
@@ -96,6 +98,8 @@ Field3D LaplacePDD::solve(const Field3D& b) {
   }
 
   x.setLocation(b.getLocation()); 
+
+  checkData(x);
 
   return x;
 }

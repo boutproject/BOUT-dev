@@ -419,5 +419,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     irfft(&xk(ix, 0), ncz, x[ix]);
   }
 
+  checkData(x);
+
   return x;
 }

@@ -120,5 +120,7 @@ if success:
 
     # clean up binary files
     shell("rm data/BOUT.dmp.*.nc data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc")
+    exit(0)
 
-exit(0)
+print("=> Some failed tests")
+exit(1)
