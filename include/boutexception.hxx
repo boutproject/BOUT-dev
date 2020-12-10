@@ -30,11 +30,6 @@ public:
   ~BoutException() override;
 
   const char* what() const noexcept override {
-    if (getenv("BOUT_SHOW_BACKTRACE") != nullptr) {
-      getBacktrace();
-      return (backtrace_message + "\n" + message).c_str();
-    }
-
     return message.c_str();
   }
   void DEPRECATED(Backtrace()) {};
