@@ -16555,6 +16555,8 @@ ac_config_files="$ac_config_files bin/bout-config"
 
 ac_config_files="$ac_config_files src/makefile"
 
+ac_config_files="$ac_config_files tools/pylib/boutconfig/__init__.py"
+
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -17277,6 +17279,7 @@ do
     "include/bout/revision.hxx") CONFIG_FILES="$CONFIG_FILES include/bout/revision.hxx" ;;
     "bin/bout-config") CONFIG_FILES="$CONFIG_FILES bin/bout-config" ;;
     "src/makefile") CONFIG_FILES="$CONFIG_FILES src/makefile" ;;
+    "tools/pylib/boutconfig/__init__.py") CONFIG_FILES="$CONFIG_FILES tools/pylib/boutconfig/__init__.py" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
