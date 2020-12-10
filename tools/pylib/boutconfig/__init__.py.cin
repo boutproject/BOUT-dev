@@ -15,7 +15,7 @@ config = {
     "version": "@BOUT_VERSION@",
     "git": "@BOUT_REVISION@",
     "idlpath": "@IDLCONFIGPATH@",
-    "pythonpath": "@PYTHONCONFIGPATH@",
+    "pythonpath": "@BOUT_PYTHONPATH@",
     "has_netcdf": "@BOUT_HAS_NETCDF@",
     "has_pnetcdf": "OFF",
     "has_hdf5": "@BOUT_HAS_HDF5@",
