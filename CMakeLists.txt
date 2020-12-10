@@ -190,12 +190,10 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/petsc/petsc_laplace.hxx
   ./src/invert/laplace/impls/petsc3damg/petsc3damg.cxx
   ./src/invert/laplace/impls/petsc3damg/petsc3damg.hxx
- ./src/invert/laplace/impls/serial_band/serial_band.cxx
+  ./src/invert/laplace/impls/serial_band/serial_band.cxx
   ./src/invert/laplace/impls/serial_band/serial_band.hxx
   ./src/invert/laplace/impls/serial_tri/serial_tri.cxx
   ./src/invert/laplace/impls/serial_tri/serial_tri.hxx
-  ./src/invert/laplace/impls/shoot/shoot_laplace.cxx
-  ./src/invert/laplace/impls/shoot/shoot_laplace.hxx
   ./src/invert/laplace/impls/spt/spt.cxx
   ./src/invert/laplace/impls/spt/spt.hxx
   ./src/invert/laplace/invert_laplace.cxx
