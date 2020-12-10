@@ -35,14 +35,17 @@ bool DataFormat::setLocalOrigin(int x, int y, int z, int UNUSED(offset_x),
   return setGlobalOrigin(x + mesh->OffsetX, y + mesh->OffsetY, z + mesh->OffsetZ);
 }
 
-void DataFormat::writeFieldAttributes(const std::string& name, const Field& f) {
+void DataFormat::writeFieldAttributes(const std::string& name, const Field& f, bool shiftOutput) {
+  // If shiftOutput is true, the data will be written in field-aligned form
+  auto direction_y = shiftOutput ? YDirectionType::Aligned : f.getDirectionY();
+
   setAttribute(name, "cell_location", toString(f.getLocation()));
-  setAttribute(name, "direction_y", toString(f.getDirectionY()));
+  setAttribute(name, "direction_y", toString(direction_y));
   setAttribute(name, "direction_z", toString(f.getDirectionZ()));
 }
 
-void DataFormat::writeFieldAttributes(const std::string& name, const FieldPerp& f) {
-  writeFieldAttributes(name, static_cast<const Field&>(f));
+void DataFormat::writeFieldAttributes(const std::string& name, const FieldPerp& f, bool shiftOutput) {
+  writeFieldAttributes(name, static_cast<const Field&>(f), shiftOutput);
 
   auto& fieldmesh = *f.getMesh();
   int yindex = f.getIndex();
@@ -79,7 +82,8 @@ void DataFormat::readFieldAttributes(const std::string& name, FieldPerp& f) {
   // Note: don't use DataFormat::mesh variable, because it may be null if the DataFormat
   // is part of a GridFromFile, which is created before the Mesh.
   if (getAttribute(name, "yindex_global", yindex_global)) {
-    f.setIndex(f.getMesh()->YLOCAL(yindex_global));
+    // Apply correction because yindex_global includes boundaries
+    f.setIndex(f.getMesh()->YLOCAL(yindex_global) - f.getMesh()->ystart);
   } else {
     f.setIndex(f.getMesh()->YLOCAL(0));
   }
