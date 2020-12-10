@@ -6,14 +6,14 @@ _yesno = {"TRUE": True, "ON": True, "FALSE": False, "OFF": False}
 _iyesno = {True: "yes", False: "no"}
 
 config = {
-    "cc": "@MPICXX@",
-    "cxx": "@MPICXX@",
-    "ld": "@MPICXX@",
+    "cc": "@CMAKE_C_COMPILER@",
+    "cxx": "@CMAKE_CXX_COMPILER@",
+    "ld": "@CMAKE_CXX_COMPILER@",
     "checks": "@BOUT_CHECK_LEVEL@",
-    "cflags": "@CONFIG_CFLAGS@",
-    "libs": "@CONFIG_LDFLAGS@",
+    "cflags": "",
+    "libs": "",
     "version": "@BOUT_VERSION@",
-    "git": "@GIT_REVISION@",
+    "git": "@BOUT_REVISION@",
     "idlpath": "@IDLCONFIGPATH@",
     "pythonpath": "@PYTHONCONFIGPATH@",
     "has_netcdf": "@BOUT_HAS_NETCDF@",
