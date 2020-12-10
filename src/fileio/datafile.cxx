@@ -1079,6 +1079,33 @@ void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
   }
 }
 
+namespace {
+// Read a value from file and check it matches reference_value, throw if not
+void checkGridValue(DataFormat* file, const std::string& name,
+                    const std::string& filename, const int reference_value) {
+  int file_value;
+  if (!file->read(&file_value, name)) {
+    throw BoutException("Could not read %s from file '%s'", name.c_str(), filename.c_str());
+  }
+
+  if (file_value != reference_value) {
+    throw BoutException("%s (%i) in file '%s' does not match value in mesh (%i)", name.c_str(),
+                        file_value, filename.c_str(), reference_value);
+  }
+}
+
+// Check that the array sizes in \p file match those in existing \p mesh
+void checkFileGrid(DataFormat* file, const std::string& filename, const Mesh* mesh) {
+  checkGridValue(file, "MXG", filename, mesh->xstart);
+  checkGridValue(file, "MYG", filename, mesh->ystart);
+  checkGridValue(file, "MZG", filename, mesh->zstart);
+  // nx includes boundaries
+  checkGridValue(file, "nx", filename, mesh->GlobalNx);
+  checkGridValue(file, "ny", filename, mesh->GlobalNy - 2*mesh->ystart);
+  checkGridValue(file, "nz", filename, mesh->LocalNz);
+}
+} // namespace
+
 bool Datafile::read() {
   Timer timer("io");  ///< Start timer. Stops when goes out of scope
 
@@ -1092,6 +1119,8 @@ bool Datafile::read() {
   
   if(!file->is_valid())
     throw BoutException("Datafile::read: File is not valid!");
+
+  checkFileGrid(file.get(), filename, mesh);
 
   file->setRecord(-1); // Read the latest record
 
