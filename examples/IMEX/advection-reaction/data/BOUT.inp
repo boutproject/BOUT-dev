@@ -6,7 +6,7 @@
 NOUT = 100     # number of time-steps
 TIMESTEP = 1e-2   # time between outputs
 
-MZ = 64     # number of points in z direction (2^n + 1)
+MZ = 64     # number of points in z direction (2^n)
 
 grid = "simple_xz.nc"
 
