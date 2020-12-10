@@ -869,9 +869,6 @@ configure_package_config_file(bout++Config.cmake.in bout++Config.cmake
   INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
   )
 
-configure_package_config_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib/boutconfig/__init__.py
-  INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
-  )
 install(
   FILES
       "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
@@ -891,6 +888,15 @@ install(
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSphinx.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ResolveCompilerPaths.cmake"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
+  )
+
+configure_package_config_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib/boutconfig/__init__.py
+  INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
+  )
+
+install(
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/boutconfig"
   )
 
 export(EXPORT bout++Targets
