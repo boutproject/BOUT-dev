@@ -165,6 +165,8 @@ public:
   }
 };
 
+using RegisterUnavailableLaplace = RegisterUnavailableInFactory<Laplacian, LaplaceFactory>;
+
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
