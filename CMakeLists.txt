@@ -883,7 +883,6 @@ message("
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
    Backtrace enabled        : ${BOUT_USE_BACKTRACE}
-   3D Metric enabled        : ${BOUT_USE_METRIC_3D}
 
    === Python ===
 
