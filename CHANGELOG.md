@@ -13,7 +13,7 @@
     than just being a temporary variable for an x-z slice) should only be
     defined and used at a single, global y-position. Should not be a problem
     for `PhysicsModel` implementations that define a `FieldPerp` correctly, but
-    caused a problem for `test-io`.
+    caused a problem for `test-io` and `test-io_hdf5`.
 
   See [\#2154](https://github.com/boutproject/BOUT-dev/pull/2154).
 
