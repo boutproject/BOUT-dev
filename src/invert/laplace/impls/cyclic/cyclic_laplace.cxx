@@ -33,6 +33,11 @@
  *
  */
 
+#include "bout/build_config.hxx"
+#include "cyclic_laplace.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include <globals.hxx>
 #include <boutexception.hxx>
 #include <bout/mesh.hxx>
@@ -42,13 +47,8 @@
 #include <bout/constants.hxx>
 #include <output.hxx>
 
-#include "cyclic_laplace.hxx"
-
 LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(1.0), Dcoef(1.0) {
-#if BOUT_USE_METRIC_3D
-  throw BoutException("Laplacian cyclic solver does not support 3D metric yet.");
-#endif
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);
@@ -482,3 +482,5 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
   return x;
 }
+
+#endif // BOUT_USE_METRIC_3D

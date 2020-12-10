@@ -1,4 +1,7 @@
+#include "bout/build_config.hxx"
 #include "laplacexz-cyclic.hxx"
+
+#if not BOUT_USE_METRIC_3D
 
 #include <utils.hxx>
 #include <fft.hxx>
@@ -9,10 +12,6 @@
 #include <output.hxx>
 
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc) {
-#if BOUT_USE_METRIC_3D
-  throw BoutException("LaplaceXZ cyclic solver does not support 3D metric yet.");
-#endif
-
   // Number of Z Fourier modes, including DC
   nmode = (m->LocalNz) / 2 + 1;
 
@@ -59,7 +58,6 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) 
 }
 
 void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
-#if not(BOUT_USE_METRIC_3D)
   TRACE("LaplaceXZcyclic::setCoefs");
   Timer timer("invert");
 
@@ -161,11 +159,9 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   }
   // Set coefficients in tridiagonal solver
   cr->setCoefs(acoef, bcoef, ccoef);
-#endif
 }
 
 Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
-#if not(BOUT_USE_METRIC_3D)
   Timer timer("invert");
 
   ASSERT1(rhs.getMesh() == localmesh);
@@ -273,7 +269,6 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   }
   
   return result;
-#else
-  return Field3D{};
-#endif
 }
+
+#endif // BOUT_USE_METRIC_3D

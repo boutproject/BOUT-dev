@@ -24,9 +24,12 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
+#include "bout/build_config.hxx"
 #include "serial_band.hxx"
 
+#if not BOUT_USE_METRIC_3D
+
+#include <globals.hxx>
 #include <bout/mesh.hxx>
 #include <fft.hxx>
 #include <utils.hxx>
@@ -41,9 +44,6 @@
 
 LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
-#if BOUT_USE_METRIC_3D
-  throw BoutException("Laplacian serial band solver does not support 3D metric yet.");
-#endif
   Acoef.setLocation(location);
   Ccoef.setLocation(location);
   Dcoef.setLocation(location);
@@ -82,7 +82,6 @@ LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mes
 FieldPerp LaplaceSerialBand::solve(const FieldPerp& b) { return solve(b, b); }
 
 FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
-#if not(BOUT_USE_METRIC_3D)
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
@@ -429,7 +428,6 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   checkData(x);
   return x;
-#else
-  return FieldPerp{};
-#endif
 }
+
+#endif // BOUT_USE_METRIC_3D

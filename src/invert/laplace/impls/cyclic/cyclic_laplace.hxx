@@ -31,7 +31,18 @@ class LaplaceCyclic;
 #ifndef __LAP_CYCLIC_H__
 #define __LAP_CYCLIC_H__
 
-#include <invert_laplace.hxx>
+#include "bout/build_config.hxx"
+#include "invert_laplace.hxx"
+
+#if BOUT_USE_METRIC_3D
+
+namespace{
+RegisterUnavailableLaplace registerlaplacecycle(LAPLACE_CYCLIC,
+                                                "BOUT++ was configured with 3D metrics");
+}
+
+#else
+
 #include <cyclic_reduction.hxx>
 #include <dcomplex.hxx>
 #include <options.hxx>
@@ -106,5 +117,7 @@ private:
   
   CyclicReduce<dcomplex> *cr; ///< Tridiagonal solver
 };
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // __SPT_H__

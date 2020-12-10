@@ -35,10 +35,14 @@
  *
  ************************************************************************/
 
+#include "bout/build_config.hxx"
+#include "cyclic.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include <derivs.hxx>
 #include <globals.hxx>
 #include <utils.hxx>
-#include "cyclic.hxx"
 #include <fft.hxx>
 #include <boutexception.hxx>
 #include <cyclic_reduction.hxx>
@@ -51,19 +55,14 @@
 
 InvertParCR::InvertParCR(Options *opt, CELL_LOC location, Mesh *mesh_in)
   : InvertPar(opt, location, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
-#if BOUT_USE_METRIC_3D
-  throw BoutException("Parallel cyclic solver does not support 3D metric yet.");
-#else
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz)/2; 
 
   sg = sqrt(localmesh->getCoordinates(location)->g_22);
   sg = DDY(1. / sg) / sg;
-#endif
 }
 
 const Field3D InvertParCR::solve(const Field3D &f) {
-#if not(BOUT_USE_METRIC_3D)
   TRACE("InvertParCR::solve(Field3D)");
   ASSERT1(localmesh == f.getMesh());
   ASSERT1(location == f.getLocation());
@@ -240,7 +239,6 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   }
 
   return fromFieldAligned(result, "RGN_NOBNDRY");
-#else
-  return Field3D{};
-#endif
 };
+
+#endif // BOUT_USE_METRIC_3D
