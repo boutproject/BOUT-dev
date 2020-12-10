@@ -359,6 +359,8 @@ distclean:: clean clean-tests
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
+	-@$(RM) $(BOUT_TOP)/tools/pylib/boutconfig/__init__.py
+	@echo generated Python boutconfig module cleaned
 
 clean-tests: clean-unit-tests clean-integrated-tests clean-mms-tests
 
