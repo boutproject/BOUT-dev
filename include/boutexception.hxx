@@ -21,7 +21,7 @@ void BoutParallelThrowRhsFail(int status, const char* message);
 
 class BoutException : public std::exception {
 public:
-  BoutException(std::string msg) : message(std::move(msg)) { makeBacktrace(); }
+  BoutException(std::string msg);
 
   template <class S, class... Args>
   BoutException(const S& format, const Args&... args)
@@ -30,11 +30,6 @@ public:
   ~BoutException() override;
 
   const char* what() const noexcept override {
-    if (std::getenv("BOUT_SHOW_BACKTRACE") != nullptr) {
-      getBacktrace();
-      return (backtrace_message + "\n" + message).c_str();
-    }
-
     return message.c_str();
   }
   void DEPRECATED(Backtrace()) {};
@@ -53,7 +48,6 @@ protected:
   int trace_size;
   char** messages;
 #endif
-  std::string backtrace_message{};
 
   void makeBacktrace();
 };
