@@ -154,12 +154,12 @@ do
     for f in DDd D2Dd2 #VDDd FDDd
     do
         DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, benum.CELL_LOC, string, benum.REGION) except +raise_bout_py_error"
+        echo "    Field3D $DD(Field3D, benum.CELL_LOC, string, string) except +raise_bout_py_error"
     done
     for f in VDDd FDDd
     do
         DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, Field3D, benum.CELL_LOC, string, benum.REGION) except +raise_bout_py_error"
+        echo "    Field3D $DD(Field3D, Field3D, benum.CELL_LOC, string, string) except +raise_bout_py_error"
     done
 done
 cat <<EOF
@@ -205,4 +205,8 @@ cdef extern from "helper.h":
         void cy_execute(void * parameter)
     void throw_BoutException(string)
 
+cdef extern from "output.hxx":
+    cppclass ConditionalOutput:
+        void write(const char * fmt, const char * str)
+    ConditionalOutput output_info
 EOF
