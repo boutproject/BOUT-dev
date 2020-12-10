@@ -30,7 +30,7 @@ For (sometimes) more useful error messages, there is the
 and includes these in error messages.
 
 To get a backtrace, you can set the environment variable
-`BOUT_SHOW_BACKTRACE` in order for the exception to include the
+``BOUT_SHOW_BACKTRACE`` in order for the exception to include the
 backtrace.
 
 To enable optimization, configure with ``--enable-optimize=3``.
