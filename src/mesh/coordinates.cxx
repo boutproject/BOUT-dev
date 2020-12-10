@@ -451,32 +451,29 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y, false,
                                  transform.get());
 
-#define GET(a, b)             \
-  mesh->get(a, #a, b, false); \
-  a = maybeFromFieldAligned(a);
+  auto getUnaligned = [this](auto& field, const std::string& name,
+                             BoutReal default_value) {
+    localmesh->get(field, name, default_value, false);
+    return maybeFromFieldAligned(field);
+  };
+
+  auto getUnalignedAtLocation = [this, extrapolate_x, extrapolate_y,
+                                 getUnaligned](auto& field, const std::string& name,
+                                               BoutReal default_value) {
+    field = getUnaligned(field, name, default_value);
+    return interpolateAndExtrapolate(field, location, extrapolate_x, extrapolate_y, false,
+                                     transform.get());
+  };
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
-  GET(g11, 1.0);
-  GET(g22, 1.0);
-  GET(g33, 1.0);
+  g11 = getUnalignedAtLocation(g11, "g11", 1.0);
+  g22 = getUnalignedAtLocation(g22, "g22", 1.0);
+  g33 = getUnalignedAtLocation(g33, "g33", 1.0);
 
   // Off-diagonal elements. Default to 0
-  GET(g12, 0.0);
-  GET(g13, 0.0);
-  GET(g23, 0.0);
-
-  g11 = interpolateAndExtrapolate(g11, location, extrapolate_x, extrapolate_y, false,
-                                  transform.get());
-  g22 = interpolateAndExtrapolate(g22, location, extrapolate_x, extrapolate_y, false,
-                                  transform.get());
-  g33 = interpolateAndExtrapolate(g33, location, extrapolate_x, extrapolate_y, false,
-                                  transform.get());
-  g12 = interpolateAndExtrapolate(g12, location, extrapolate_x, extrapolate_y, false,
-                                  transform.get());
-  g13 = interpolateAndExtrapolate(g13, location, extrapolate_x, extrapolate_y, false,
-                                  transform.get());
-  g23 = interpolateAndExtrapolate(g23, location, extrapolate_x, extrapolate_y, false,
-                                  transform.get());
+  g12 = getUnalignedAtLocation(g12, "g12", 0.0);
+  g13 = getUnalignedAtLocation(g13, "g13", 0.0);
+  g23 = getUnalignedAtLocation(g23, "g23", 0.0);
 
   // Check input metrics
   // Diagonal metric components should be finite
@@ -503,14 +500,12 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     // Check that all components are present
     if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
                     source_has_component)) {
-      GET(g_11, 1.0);
-      GET(g_22, 1.0);
-      GET(g_33, 1.0);
-      GET(g_12, 0.0);
-      GET(g_13, 0.0);
-      GET(g_23, 0.0);
-
-#undef GET
+      g_11 = getUnaligned(g_11, "g_11", 1.0);
+      g_22 = getUnaligned(g_22, "g_22", 1.0);
+      g_33 = getUnaligned(g_33, "g_33", 1.0);
+      g_12 = getUnaligned(g_12, "g_12", 0.0);
+      g_13 = getUnaligned(g_13, "g_13", 0.0);
+      g_23 = getUnaligned(g_23, "g_23", 0.0);
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
@@ -631,7 +626,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
     IntShiftTorsion = 0.;
   }
-
 }
 
 // use anonymous namespace so this utility function is not available outside this file
