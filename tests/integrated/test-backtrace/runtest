@@ -1,28 +1,37 @@
-#!/bin/bash
-set -ex
+#!/usr/bin/env python3
 
-#requires all_tests
+# Test enabling/disabling exception backtrace from environment variable
 
-e=1
-make || e=$?
-test $e = 1
+# requires all_tests
 
-unset BOUT_SHOW_BACKTRACE
+from boututils.run_wrapper import build_and_log, shell
+import os
 
-if ./boutexcept 2>&1 | grep troublemaker
-then
-    echo "Did not expect the offending function name in output"
-    exit 2
-fi
+build_and_log("backtrace environment variable test")
 
-export BOUT_SHOW_BACKTRACE=yes
+try:
+    del os.environ["BOUT_SHOW_BACKTRACE"]
+except KeyError:
+    pass
 
-if ./boutexcept 2>&1 | grep troublemaker
-then
-    :
-else
-    echo "Did expect the offending function name in output"
-    exit 2
-fi
+success = True
+errors = []
 
-exit 0
+_, output = shell("./boutexcept", pipe=True)
+
+if "troublemaker" in output:
+    success = False
+    print("Fail: detected offending function name in output when not expected")
+
+_, output = shell("BOUT_SHOW_BACKTRACE=yes ./boutexcept", pipe=True)
+
+if "troublemaker" not in output:
+    success = False
+    print("Fail: did not detect offending function name in output when expected")
+
+if success:
+    print("=> All BoutException backtrace tests passed")
+    exit(0)
+
+print("=> Some failed tests")
+exit(1)
