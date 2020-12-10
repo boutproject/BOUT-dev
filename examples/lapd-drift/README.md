@@ -1,3 +1,6 @@
+2-fluid Turbulence in a Linear device
+=====================================
+
 Benchmark cases for comparisons of BOUT 06 vs BOUT++ results
 
 Electrostatic drift wave

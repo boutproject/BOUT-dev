@@ -27,17 +27,24 @@
  **************************************************************************/
 class LaplacePetsc3dAmg;
 
-#include "bout/build_config.hxx"
-
 #ifndef __PETSC_LAPLACE_3DAMG_H__
 #define __PETSC_LAPLACE_3DAMG_H__
 
-#if BOUT_HAS_PETSC
+#include "bout/build_config.hxx"
+#include "invert_laplace.hxx"
+
+#if not BOUT_HAS_PETSC
+
+namespace {
+RegisterUnavailableLaplace registerlaplacepetsc3damg(LAPLACE_PETSC3DAMG,
+                                                     "BOUT++ was not configured with PETSc");
+}
+
+#else
 
 #include <globals.hxx>
 #include <output.hxx>
 #include <options.hxx>
-#include <invert_laplace.hxx>
 #include <boutexception.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/petsclib.hxx>

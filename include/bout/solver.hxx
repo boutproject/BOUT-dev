@@ -125,6 +125,8 @@ public:
 template <typename DerivedType>
 using RegisterSolver = RegisterInFactory<Solver, DerivedType, SolverFactory>;
 
+using RegisterUnavailableSolver = RegisterUnavailableInFactory<Solver, SolverFactory>;
+
 ///////////////////////////////////////////////////////////////////
 
 /*!

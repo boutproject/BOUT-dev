@@ -24,7 +24,7 @@ public:
 
   /// Construct using options in given section.
   explicit HeatFluxSNB(Options& options) {
-    invertpar = std::unique_ptr<InvertPar>{InvertPar::Create()};
+    invertpar = std::unique_ptr<InvertPar>{InvertPar::create()};
 
     // Read options. Note that the defaults are initialised already
     r = options["r"]

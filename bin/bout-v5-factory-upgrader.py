@@ -16,7 +16,9 @@ factories = {
     "InvertPar": {
         "factory_name": "InvertPar",
         "type_name": "InvertPar",
-        "create_method": "Create",
+        "create_method": "create",
+        "old_create_method": "Create",
+        "arguments_changed": True,
     },
     "Mesh": {"factory_name": "Mesh", "type_name": "Mesh", "create_method": "Create"},
     "Laplacian": {
@@ -170,6 +172,32 @@ def fix_deletions(variables, source):
     return source
 
 
+def fix_create_method(factory, source):
+    """Fix change of name of factory `create` method
+
+    """
+
+    if "old_create_method" not in factory:
+        return source
+    old_create_pattern = re.compile(
+        r"({factory_name})\s*::\s*{old_create_method}\b".format(**factory)
+    )
+    if not old_create_pattern.findall(source):
+        return source
+
+    if factory.get("arguments_changed", False):
+        print(
+            "**WARNING** Arguments of {factory_name}::{create_method} have changed, and your current arguments may not work."
+            " Please consult the documentation for the new arguments.".format(**factory)
+        )
+
+    return re.sub(
+        r"({factory_name})\s*::\s*{old_create_method}\b".format(**factory),
+        r"\1::{create_method}".format(**factory),
+        source,
+    )
+
+
 def yes_or_no(question):
     """Convert user input from yes/no variations to True/False
 
@@ -197,6 +225,7 @@ def apply_fixes(factories, source, all_declarations=False):
     modified = source
 
     for factory in factories.values():
+        modified = fix_create_method(factory, modified)
         variables = find_factory_calls(factory, modified)
         if all_declarations:
             variables = variables + find_type_pointers(factory, modified)

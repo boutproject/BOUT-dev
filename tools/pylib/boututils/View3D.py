@@ -4,7 +4,7 @@ The quality of the later can be used as an indicator of the quality of the grid.
 is computed from efit_analyzed.py. The script can be used as a template to show additional properties of the field
 
 based on enthought's example by Gael Varoquaux <gael.varoquaux@normalesup.org>
-http://docs.enthought.com/mayavi/mayavi/auto/example_magnetic_field.html#example-magnetic-field
+https://docs.enthought.com/mayavi/mayavi/auto/example_magnetic_field.html#example-magnetic-field
 
 """
 from __future__ import absolute_import
