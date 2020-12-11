@@ -72,9 +72,9 @@ The cross products are:
 
 .. math::
 
-   \boldsymbol{e}_\psi\times\boldsymbol{e}_\theta = J \nabla\zeta \qquad 
-   \boldsymbol{e}_\psi\times\boldsymbol{e}_\zeta = -J \nabla\theta \qquad
-   \boldsymbol{e}_\theta\times\boldsymbol{e}_\zeta = J \nabla\psi
+   \boldsymbol{e}_\psi\times\boldsymbol{e}_\theta = J_{\psi\theta\zeta} \nabla\zeta \qquad 
+   \boldsymbol{e}_\psi\times\boldsymbol{e}_\zeta = -J_{\psi\theta\zeta} \nabla\theta \qquad
+   \boldsymbol{e}_\theta\times\boldsymbol{e}_\zeta = J_{\psi\theta\zeta} \nabla\psi
 
 where `J_{\psi\theta\zeta} = h_\theta / \left|{B_{\text{pol}}}\right|` is the Jacobian, which is
 always positive. Similarly,
@@ -182,7 +182,7 @@ Magnetic field is given in Clebsch form by:
 .. math::
 
    \begin{aligned}
-   {\boldsymbol{B}}= \nabla z\times \nabla x = \frac{1}{J}{\boldsymbol{e}}_y\end{aligned}
+   {\boldsymbol{B}}= \nabla z\times \nabla x = \frac{1}{J_{xyz}}{\boldsymbol{e}}_y\end{aligned}
 
 The contravariant components of this are then
 
@@ -211,7 +211,7 @@ therefore
 .. math::
 
    \begin{aligned}
-   {\boldsymbol{b}} = \frac{1}{JB}{\boldsymbol{e}}_y = \frac{1}{JB}\left[g_{xy}\nabla x + g_{yy}\nabla y
+   {\boldsymbol{b}} = \frac{1}{J_{xyz}B}{\boldsymbol{e}}_y = \frac{1}{J_{xyz}B}\left[g_{xy}\nabla x + g_{yy}\nabla y
    + g_{yz}\nabla z\right]\end{aligned}
 
 Jacobian and metric tensors
