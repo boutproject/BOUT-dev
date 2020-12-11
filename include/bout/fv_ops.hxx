@@ -514,5 +514,5 @@ namespace FV {
    */
   Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f,
                        CELL_LOC outloc = CELL_DEFAULT);
-  }    // namespace FV
+}    // namespace FV
 #endif // __FV_OPS_H__

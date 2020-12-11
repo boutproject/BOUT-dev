@@ -89,8 +89,7 @@ public:
    */
   void outputVars(Datafile &file);
 
-  FieldMetric dx, dy, dz; ///< Mesh spacing in x and y
-  // BoutReal dz; ///< Mesh spacing in Z
+  FieldMetric dx, dy, dz; ///< Mesh spacing in x, y and z
 
   Field2D zlength() const {
 #if BOUT_USE_METRIC_3D
@@ -314,7 +313,7 @@ private:
   void setParallelTransform(Options* options);
 
   /// Alternative implementation for `fromFieldAligned` that can be
-  /// called before the `Coordinates` constructor is finisehd
+  /// called before the `Coordinates` constructor is finished
   Field3D maybeFromFieldAligned(const Field3D& f, const std::string& region = "RGN_ALL");
 
   Field2D maybeFromFieldAligned(const Field2D& f,

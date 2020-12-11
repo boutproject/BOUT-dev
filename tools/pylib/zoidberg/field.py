@@ -1531,8 +1531,10 @@ class W7X_vacuum(MagneticField):
 
 class W7X_VMEC(MagneticField):
     def __init__(self,nx=512,ny=32,nz=512,x_range=[4.05,6.55],z_range=[-1.35,1,35], phi_range=[0,2*np.pi], vmec_id='w7x_ref_171'):
-        from scipy.interpolate import griddata, RegularGridInterpolator
-        import numpy as np
+        from scipy.interpolate import RegularGridInterpolator
+        self.nx = nx
+        self.ny = ny
+        self.nz = nz
         ## create 1D arrays of cylindrical coordinates
         r = np.linspace(x_range[0], x_range[-1], nx)
         phi = np.linspace(phi_range[0], phi_range[-1],ny)
@@ -1542,7 +1544,7 @@ class W7X_VMEC(MagneticField):
         rarray,yarray,zarray = np.meshgrid(r,phi,z,indexing='ij')
     
         ## call vacuum field values
-        b_vmec  = W7X_VMEC.field_values(rarray,yarray,zarray,vmec_id)
+        b_vmec  = self.field_values(rarray,yarray,zarray,vmec_id)
         Bx_vmec = b_vmec[0]
         By_vmec = b_vmec[1]
         Bz_vmec = b_vmec[2]
@@ -1551,9 +1553,9 @@ class W7X_VMEC(MagneticField):
         # we can get an interpolation function in 3D
         points = (r,phi,z)
             
-        self.br_interp   = RegularGridInterpolator(points, Bx, bounds_error=False, fill_value=0.0)
-        self.bz_interp   = RegularGridInterpolator(points, Bz, bounds_error=False, fill_value=0.0)
-        self.bphi_interp = RegularGridInterpolator(points, By, bounds_error=False, fill_value=1.0)
+        self.br_interp   = RegularGridInterpolator(points, Bx_vmec, bounds_error=False, fill_value=0.0)
+        self.bz_interp   = RegularGridInterpolator(points, Bz_vmec, bounds_error=False, fill_value=0.0)
+        self.bphi_interp = RegularGridInterpolator(points, By_vmec, bounds_error=False, fill_value=1.0)
 
     def field_values(r,phi,z, vmec_id='w7x_ref_171'):
         from osa import Client
@@ -1561,15 +1563,15 @@ class W7X_VMEC(MagneticField):
 
         pos = vmec.types.Points3D()
 
-        pos.x1 = np.ndarray.flatten(np.ones((nx,ny,nz))*r*np.cos(phi)) #x in Cartesian (real-space) 
-        pos.x2 = np.ndarray.flatten(np.ones((nx,ny,nz))*r*np.sin(phi)) #y in Cartesian (real-space) 
+        pos.x1 = np.ndarray.flatten(np.ones((self.nx,self.ny,self.nz))*r*np.cos(phi)) #x in Cartesian (real-space) 
+        pos.x2 = np.ndarray.flatten(np.ones((self.nx,self.ny,self.nz))*r*np.sin(phi)) #y in Cartesian (real-space) 
         pos.x3 = np.ndarray.flatten(z)                                 #z in Cartesian (real-space) 
-        b = vmec.service.magneticField(str(vmec_id), p)
+        b = vmec.service.magneticField(str(vmec_id), pos)
 
         ## Reshape to 3d array
-        Bx = np.ndarray.reshape(np.asarray(b.field.x1),(nx,ny,nz))
-        By = np.ndarray.reshape(np.asarray(b.field.x2),(nx,ny,nz))
-        Bz = np.ndarray.reshape(np.asarray(b.field.x3), (nx,ny,nz))
+        Bx = np.ndarray.reshape(np.asarray(b.field.x1),(self.nx,self.ny,self.nz))
+        By = np.ndarray.reshape(np.asarray(b.field.x2),(self.nx,self.ny,self.nz))
+        Bz = np.ndarray.reshape(np.asarray(b.field.x3), (self.nx,self.ny,self.nz))
         
         ## Convert to cylindrical coordinates
         Br = Bx*np.cos(phi) + By*np.sin(phi)
