@@ -39,20 +39,17 @@ void Output::disable() {
   enabled = false;
 }
 
-int Output::open(const char *fname, ...) {
-
-  if (fname == nullptr) {
+int Output::open(const std::string& filename) {
+  if (filename.empty()) {
     return 1;
   }
 
-  bout_vsnprintf(buffer, buffer_len, fname);
-
   close();
 
-  file.open(buffer);
+  file.open(filename);
 
   if (!file.is_open()) {
-    fprintf(stderr, "Could not open log file '%s'\n", buffer);
+    fmt::print(stderr, "Could not open log file '{}'\n", filename);
     return 1;
   }
 
@@ -69,52 +66,16 @@ void Output::close() {
   remove(file);
   file.close();
 }
-#define bout_vsnprintf_(buf, len, fmt, va)            \
-  {                                                   \
-    int _vsnprintflen = vsnprintf(buf, len, fmt, va); \
-    if (_vsnprintflen + 1 > (len)) {                  \
-      _vsnprintflen += 1;                             \
-      delete[](buf);                                  \
-      (buf) = new char[_vsnprintflen];                \
-      (len) = _vsnprintflen;                          \
-      vsnprintf(buf, len, fmt, va);                   \
-    }                                                 \
-  }
 
-void Output::write(const char *string, ...) {
-  va_list va;
-  va_start(va, string);
-  this->vwrite(string, va);
-  va_end(va);
+void Output::write(const std::string& message) {
+  multioutbuf_init::buf()->sputn(message.c_str(), message.length());
 }
 
-void Output::vwrite(const char *string, va_list va) {
-  if (string == (const char *)nullptr) {
-    return;
-  }
-
-  bout_vsnprintf_(buffer, buffer_len, string, va);
-
-  multioutbuf_init::buf()->sputn(buffer, strlen(buffer));
-}
-
-void Output::print(const char *string, ...) {
-  va_list va;
-  va_start(va, string);
-  this->vprint(string, va);
-  va_end(va);
-}
-
-void Output::vprint(const char *string, va_list ap) {
+void Output::print(const std::string& message) {
   if (!enabled) {
     return; // Only output if to screen
   }
-
-  if (string == (const char *)nullptr) {
-    return;
-  }
-  bout_vsnprintf_(buffer, buffer_len, string, ap);
-  std::cout << std::string(buffer);
+  std::cout << message;
   std::cout.flush();
 }
 
@@ -123,25 +84,21 @@ Output *Output::getInstance() {
   return &instance;
 }
 
-void ConditionalOutput::write(const char *str, ...) {
+void ConditionalOutput::write(const std::string& message) {
   if (enabled) {
-    va_list va;
-    va_start(va, str);
-    base->vwrite(str, va);
-    va_end(va);
+    ASSERT1(base != nullptr);
+    base->write(message);
   }
 }
 
-void ConditionalOutput::print(const char *str, ...) {
+void ConditionalOutput::print(const std::string& message) {
   if (enabled) {
-    va_list va;
-    va_start(va, str);
-    base->vprint(str, va);
-    va_end(va);
+    ASSERT1(base != nullptr);
+    base->print(message);
   }
 }
 
-#ifdef DEBUG_ENABLED
+#ifdef BOUT_USE_OUTPUT_DEBUG
 ConditionalOutput output_debug(Output::getInstance());
 #else
 DummyOutput output_debug;

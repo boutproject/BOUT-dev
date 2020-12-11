@@ -1,3 +1,4 @@
+BOUT_TOP ?= .
 
 include make.config
 
@@ -9,6 +10,7 @@ include make.config
 BOUT_INCLUDE_PATH="\$$BOUT_INCLUDE_PATH"
 BOUT_LIB_PATH="\$$BOUT_LIB_PATH"
 MPARK_VARIANT_INCLUDE_PATH="\$$MPARK_VARIANT_INCLUDE_PATH"
+FMT_INCLUDE_PATH="\$$FMT_INCLUDE_PATH"
 
 .PHONY: cflags
 cflags:

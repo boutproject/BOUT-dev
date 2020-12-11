@@ -6,13 +6,14 @@
 #
 
 #requires: all_tests
+#cores: 4
 
 from __future__ import division
 from __future__ import print_function
 from builtins import str
 from builtins import range
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import shell, build_and_log, launch_safe
 from boututils import check_scaling
 from boutdata.collect import collect
 
@@ -29,8 +30,7 @@ parser.add_argument("-n", "--no-show", action="store_false", dest="show",
 
 cli_args = parser.parse_args()
 
-print("Making MMS steady-state advection test")
-shell_safe("make > make.log")
+build_and_log("MMS steady-state advection test")
 
 # List of options to be passed for each test
 options = [

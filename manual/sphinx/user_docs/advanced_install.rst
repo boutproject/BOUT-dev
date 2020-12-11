@@ -178,6 +178,84 @@ to enable AVX512 vectorization.
           ``boutcore.pyx`` needs to be manually triggered, if
           ``boutcore.pyx`` has already been created.
 
+Marconi with gnu compilers
+**************************
+
+It is also possible to configure on Marconi using gnu compilers, which may give better performance. A set of modules which work as of 30/9/2020 is
+
+.. code-block:: bash
+
+    module load env-skl
+    module load profile/advanced
+    module load intel/pe-xe-2018--binary  # note need to keep the 'intel' module loaded in order for shared libraries needed by numpy/scipy to be available
+    module load gnu/7.3.0
+    module load openmpi/4.0.1--gnu--7.3.0
+    module load mkl/2017--binary
+    module load python/3.6.4
+    module load szip/2.1--gnu--6.1.0 zlib/1.2.8--gnu--6.1.0
+
+Then download source code for hdf5-1.12.0 (hdf5 is available in a module on
+Marconi, but has issues linking OpenMPI), netCDF-c-4.7.4, netCDF-cxx4-4.3.1,
+and FFTW-3.3.8. Optionally also SUNDIALS-5.1.0 or PETSc-3.13.0. Configure and
+compile all of the downloaded packages. Make sure to install netCDF and
+netCDF-cxx4 into the same directory (this is assumed by netCDF's linking
+strategy, and makes netCDF configuration simpler).
+
+The following configuration commands have been used successfully:
+
+* hdf5-1.12.0::
+
+    ./configure --prefix /directory/to/install/hdf5 --enable-build-mode=production
+    make
+    make install
+
+* netCDF-4.7.4::
+
+    mkdir build
+    cd build
+    cmake -DCMAKE_INSTALL_PREFIX=/directory/to/install/netcdf -DCMAKE_BUILD_TYPE=Release ..
+    make
+    make install
+
+* netCDF-cxx4-4.3.1::
+
+    mkdir build
+    cd build
+    cmake -DCMAKE_INSTALL_PREFIX=/directory/to/install/netcdf -DCMAKE_BUILD_TYPE=Release ..
+    make
+    make install
+
+* FFTW-3.3.8::
+
+    ./configure --prefix /directory/to/install/fftw --enable-shared --enable-sse2 --enable-avx --enable-avx2 --enable-avx512 --enable-avx-128-fma
+    make
+    make install
+
+* SUNDIALS-5.1.0::
+
+    mkdir build
+    cd build
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/directory/to/install/sundials -DMPI_ENABLE=ON ..
+    make
+    make install
+
+* PETSc-3.13.0::
+
+    unset PETSC_DIR
+    ./configure COPTFLAGS="-O3" CXXOPTFLAGS="-O3" FOPTFLAGS="-O3" --with-batch --known-mpi-shared-libraries=1 --with-mpi-dir=$OPENMPI_HOME --download-fblaslapack --known-64-bit-blas-indices=0 --download-hypre --with-debugging=0 --prefix=/directory/to/install/petsc
+
+  then follow the instructions printed by PETSc at the end of each step to make, install and check the build.
+
+Finally example configurations for BOUT++, where you should replace <...> by appropriate directories that you used to install the libraries:
+
+* for an optimized build (some experimentation with optimisation flags would be welcome, please share the results if you do!)::
+
+    ./configure --enable-optimize=3 --enable-checks=no --without-hdf5 --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
+
+* for a debugging build::
+
+    ./configure --enable-debug --without-hdf5 --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
+
 Ubgl
 ~~~~
 
@@ -192,27 +270,35 @@ File formats
 BOUT++ can currently use two different file formats: NetCDF-4_, and
 HDF5_ and experimental support for parallel flavours of both. NetCDF
 is a widely used format and so has many more tools for viewing and
-manipulating files. In particular, the NetCDF-4 library can produce
-files in either NetCDF3 “classic” format, which is backwards-compatible
-with NetCDF libraries since 1994 (version 2.3), or in the newer NetCDF4
-format, which is based on (and compatible with) HDF5. HDF5 is another
-widely used format. If you have multiple libraries installed then BOUT++
-can use them simultaneously, for example reading in grid files in NetCDF
-format, but writing output data in HDF5 format.
+manipulating files. HDF5 is another widely used format. If you have
+multiple libraries installed then BOUT++ can use them simultaneously,
+for example reading in grid files in NetCDF format, but writing output
+data in HDF5 format.
 
 .. _NetCDF-4: https://www.unidata.ucar.edu/software/netcdf/
 .. _HDF5: https://www.hdfgroup.org/HDF5/
 
-To enable NetCDF support, you will need to install NetCDF version 4.0.1
-or later. Note that although the NetCDF-4 library is used for the C++
-interface, by default BOUT++ writes the “classic” format. Because of
-this, you don’t need to install zlib or HDF5 for BOUT++ NetCDF support
-to work. If you want to output to HDF5 then you need to first install
-the zlib and HDF5 libraries, and then compile NetCDF with HDF5 support.
-When NetCDF is installed, a script ``nc-config`` should be put into
-somewhere on the path. If this is found then configure should have all
-the settings it needs. If this isn’t found then configure will search
-for the NetCDF include and library files.
+BOUT++ will try to use NetCDF by default. It will look for
+``ncxx4-config`` or ``nc-config`` in your ``$PATH``. If it cannot find
+the libraries, or finds a different version than the one you want, you
+can point it at the correct version using::
+
+   ./configure --with-netcdf=/path/to/ncxx4-config
+
+where ``/path/to/ncxx4-config`` is the location of the
+``ncxx4-config`` tool (``nc-config`` will also work, but
+``ncxx4-config`` is preferred).
+
+To use HDF5, you will need to explicitly enable it::
+
+   ./configure --with-hdf5
+
+BOUT++ will look for ``h5cc`` in your ``$PATH``. Similar to NetCDF,
+you can pass the location of the particular version you wish to use
+with::
+
+   ./configure --with-hdf5=/path/to/h5cc
+
 
 .. _sec-netcdf-from-source:
 
@@ -223,12 +309,12 @@ The latest versions of NetCDF have separated out the C++ API from the
 main C library. As a result, you will need to download and install both.
 Download the latest versions of the NetCDF-C and NetCDF-4 C++ libraries
 from https://www.unidata.ucar.edu/downloads/netcdf. As of
-January 2017, these are versions 4.4.1.1 and 4.3.0 respectively.
+September 2020, these are versions 4.7.4 and 4.3.1 respectively.
 
 Untar the file and ’cd’ into the resulting directory::
 
-    $ tar -xzvf netcdf-4.4.1.1.tar.gz
-    $ cd netcdf-4.4.1.1
+    $ tar -xzvf netcdf-4.7.4.tar.gz
+    $ cd netcdf-4.7.4
 
 Then run ``configure``, ``make`` and ``make install``::
 
@@ -244,8 +330,8 @@ Sometimes configure can fail, in which case try disabling Fortran::
 
 Similarly for the C++ API::
 
-    $ tar -xzvf netcdf-cxx4-4.3.0.tar.gz
-    $ cd netcdf-cxx4-4.3.0
+    $ tar -xzvf netcdf-cxx4-4.3.1.tar.gz
+    $ cd netcdf-cxx4-4.3.1
     $ ./configure --prefix=$HOME/local
     $ make
     $ make install
@@ -330,30 +416,25 @@ solver. Currently, BOUT++ also supports the SUNDIALS solvers CVODE, IDA
 and ARKODE which are available from
 https://computation.llnl.gov/casc/sundials/main.html.
 
-.. note:: BOUT++ currently supports SUNDIALS > 2.6, up to 4.1.0 as of
-          March 2019. It is advisable to use the highest possible
+.. note:: BOUT++ currently supports SUNDIALS > 2.6, up to 5.4.0 as of
+          September 2020. It is advisable to use the highest possible
           version
 
-In order for a smooth install it is recommended to install SUNDIALS
-from an install directory. The full installation guide is found in the
-downloaded ``.tar.gz``, but we will provide a step-by-step guide to
-install it and make it compatible with BOUT++ here::
+The full installation guide is found in the downloaded ``.tar.gz``,
+but we will provide a step-by-step guide to install it and make it
+compatible with BOUT++ here::
 
-     $ cd ~
-     $ mkdir -p install/sundials-install
-     $ cd install/sundials-install
-     $ # Move the downloaded sundials-4.1.0.tar.gz to sundials-install
-     $ tar -xzvf sundials-4.1.0.tar.gz
+     $ tar -xzvf sundials-5.4.0.tar.gz
+     $ cd sundials-5.4.0
      $ mkdir build && cd build
 
-     $ cmake \
+     $ cmake .. \
        -DCMAKE_INSTALL_PREFIX=$HOME/local \
        -DLAPACK_ENABLE=ON \
        -DOPENMP_ENABLE=ON \
        -DMPI_ENABLE=ON \
        -DCMAKE_C_COMPILER=$(which mpicc) \
        -DCMAKE_CXX_COMPILER=$(which mpicxx) \
-       ../sundials-4.1.0
 
      $ make
      $ make test
@@ -364,9 +445,7 @@ solver, which evolves a system of the form
 :math:`\mathbf{f}(\mathbf{u},\dot{\mathbf{u}},t) = 0`. This allows
 algebraic constraints on variables to be specified.
 
-To configure BOUT++ with SUNDIALS only (see section
-:ref:`sec-PETSc-install` on how to build PETSc with SUNDIALS), go to
-the root directory of BOUT++ and type::
+Use the ``--with-sundials`` option to configure BOUT++ with SUNDIALS::
 
     $ ./configure --with-sundials=/path/to/sundials/install
 
@@ -382,17 +461,17 @@ BOUT++ can use PETSc https://www.mcs.anl.gov/petsc/ for time-integration
 and for solving elliptic problems, such as inverting Poisson and
 Helmholtz equations.
 
-Currently, BOUT++ supports PETSc versions 3.4 - 3.9. To install PETSc
-version 3.4.5, use the following steps::
+Currently, BOUT++ supports PETSc versions 3.7 - 3.14. More recent versions may
+well work, but the PETSc API does sometimes change in backward-incompatible
+ways, so this is not guaranteed. To install PETSc version 3.13, use the
+following steps::
 
     $ cd ~
-    $ wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.4.5.tar.gz
-    $ tar -xzvf petsc-3.4.5.tar.gz
-    $ # Optional
-    $ # rm petsc-3.4.5.tar.gz
-    $ cd petsc-3.4.5
+    $ wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.13.4.tar.gz
+    $ tar -xzvf petsc-3.13.4.tar.gz
+    $ cd petsc-3.13.4
 
-To build PETSc without SUNDIALS, configure with::
+Use the following configure options to ensure PETSc is compatible with BOUT++::
 
     $ ./configure \
       --with-clanguage=cxx \
@@ -401,15 +480,14 @@ To build PETSc without SUNDIALS, configure with::
       --with-scalar-type=real \
       --with-shared-libraries=0
 
-Add ``--with-debugging=yes`` to ``./configure`` in order to allow
-debugging.
+You may also wish to add ``--with-debugging=yes`` to ``./configure``
+in order to allow debugging.
 
-.. note:: To build PETSc with SUNDIALS, install SUNDIALS as explained
-          in section :ref:`sec-sundials`, and append ``./configure``
-          with ``--with-sundials-dir=$HOME/local``
+.. note:: If you build BOUT++ using a standalone version of SUNDIALS,
+          it is advisable to not also build PETSc with SUNDIALS.
 
 .. note:: It is also possible to get PETSc to download and install
-          MUMPS (see :ref:`sec-MUMPS`), by adding::
+          MUMPS, by adding::
 
               --download-mumps \
               --download-scalapack \
@@ -423,24 +501,24 @@ debugging.
 
 To make PETSc, type::
 
-    $ make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug all
+    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug all
 
 Should BLAS, LAPACK, or any other packages be missing, you will get an
 error, and a suggestion that you can append
 ``--download-name-of-package`` to the ``./configure`` line. You may want
 to test that everything is configured properly. To do this, type::
 
-    $ make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug test
+    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug test
 
 To use PETSc, you have to define the ``PETSC_DIR`` and ``PETSC_ARCH``
 environment variables to match how PETSc was built::
 
-    $ export PETSC_DIR=$HOME/petsc-3.4.5
+    $ export PETSC_DIR=$HOME/petsc-3.13.4
     $ export PETSC_ARCH=arch-linux2-cxx-debug
 
 and add to your startup file ``$HOME/.bashrc``::
 
-    export PETSC_DIR=$HOME/petsc-3.4.5
+    export PETSC_DIR=$HOME/petsc-3.13.4
     export PETSC_ARCH=arch-linux2-cxx-debug
 
 To configure BOUT++ with PETSc, go to the BOUT++ root directory, and
@@ -500,27 +578,6 @@ and to specify a non-standard path::
 
     $ ./configure --with-lapack=/path/to/lapack
 
-.. _sec-mumps:
-
-MUMPS
------
-
-This is still experimental, but does work on at least some systems at
-York. The PETSc library can be used to call MUMPS for directly solving
-matrices (e.g. for Laplacian inversions), or MUMPS can be used directly.
-To enable MUMPS, configure with::
-
-    $ ./configure --with-mumps
-
-MUMPS has many dependencies, including ScaLapack and
-ParMetis. Unfortunately, the exact dependencies and configuration of
-MUMPS varies a lot from system to system. The easiest way to get MUMPS
-installed is to install PETSc with MUMPS, or supply the ``CPPFLAGS``,
-``LDFLAGS`` and ``LIBS`` environment variables to ``configure``::
-
-   $ ./configure --with-mumps CPPFLAGS=-I/path/to/mumps/includes \
-       LDFLAGS=-L/path/to/mumps/libs \
-       LIBS="-ldmumps -lmumps_common -lother_libs_needed_for_mumps"
 
 MPI compilers
 -------------
@@ -726,6 +783,54 @@ make.config, replacing ``-lnetcdf_c++`` with -lnetcdf64\_c++, and
      sed 's/netcdf/netcdf64/g' make.config > make.config.new
      mv make.config.new make.config
 
+Compiling on Windows
+~~~~~~~~~~~~~~~~~~~~
+
+It is possible to compile BOUT++ on Windows using the CMake
+interface. Support is currently very experimental, and some features do
+not work. Testing has been done with MSVC 19.24 and Visual Studio 16.4,
+although previous versions may still work.
+
+The main difficulty of using BOUT++ on Windows is getting the
+dependencies sorted. The easiest way to install dependencies on Windows
+is using `vcpkg <https://github.com/microsoft/vcpkg/>`_. You may need to
+set the CMake toolchain file if calling ``cmake`` from PowerShell, or on
+older versions of Visual Studio. This will be a file somewhere like
+``C:/vcpkg/scripts/buildsystems/vcpkg.cmake``
+
+The minimal required CMake options are as follows:
+
+.. code-block:: bash
+
+    -DBOUT_ENABLE_BACKTRACE=OFF \
+    -DCMAKE_CXX_FLAGS="/permissive- /EHsc /bigobj" \
+    -DBUILD_SHARED_LIBS=OFF
+
+``ENABLE_BACKTRACE`` must be turned off due to the currently required
+``addr2line`` executable not being available on Windows.
+
+The following flags for the MSVC compiler are required:
+
+- ``/permissive-`` for standards compliance, such as treating the binary
+  operator alternative tokens (``and``, ``or``, etc) as tokens
+- ``/EHsc`` for standard C++ exception handling, and to assume that
+  ``extern "C"`` functions never throw
+- ``/bigobj`` to increase the number of sections in the .obj file,
+  required for the template-heavy derivatives machinery
+
+No modification to the source has been done to export the correct
+symbols for shared libraries on Windows, so you must either specifiy
+``-DBUILD_SHARED_LIBS=OFF`` to only build static libraries, or, if you
+really want shared libraries, ``-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON``.
+The latter is untested, use at your own risk!
+
+The unit tests should all pass, but most of the integrated tests will
+not run work out of the box yet as Windows doesn't understand
+shabangs. That is, without a file extension, it doesn't know what
+program to use to run ``runtest``. The majority of the tests can be
+run manually with ``python.exe runtest``. You will stil need to set
+``PYTHONPATH`` and have a suitable Python environment.
+
 Issues
 ------
 
@@ -782,7 +887,7 @@ When using the ``xlC`` compiler, an error may occur::
 
 
 The workaround is to change line 428 of  ``externalpackages/mpark.variant/include/mpark/lib.hpp`` from::
-  
+
   #ifdef MPARK_TYPE_PACK_ELEMENT
 
 to::
@@ -791,3 +896,33 @@ to::
 
 This will force an alternate implementation of type_pack_element to be defined.
 See also https://software.intel.com/en-us/forums/intel-c-compiler/topic/501502
+
+
+Compiling fails after changing branch
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If compiling fails after changing branch, for example from ``master``
+to ``next``, with an error like the following::
+
+   $ make
+   Downloading mpark.variant
+   You need to run this command from the toplevel of the working tree.
+   make[2]: *** [BOUT-dev/externalpackages/mpark.variant/include/mpark/variant.hpp] Error 1
+   make[1]: *** [field] Error 2
+   make: *** [src] Error 2
+
+it's possible something has gone wrong with the submodules. To fix,
+just run ``make submodules``::
+
+  $ make submodules
+  Downloading mpark.variant
+  git submodule update --init --recursive /home/peter/Codes/BOUT-dev/externalpackages/mpark.variant
+  Submodule path 'externalpackages/mpark.variant': checked out '0b488da9bebac980e7ba0e158a959c956a449676'
+
+If you regularly work on two different branches and need to run ``make
+submodules`` a lot, you may consider telling git to automatically
+update the submodules::
+
+  git config submodule.recurse=true
+
+This requires ``git >= 2.14``.

@@ -24,27 +24,36 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_PETSC
-
-class PetscSolver;
-
 #ifndef __PETSC_SOLVER_H__
 #define __PETSC_SOLVER_H__
 
-#include <petsc.h>
+#include "bout/build_config.hxx"
+#include "bout/solver.hxx"
+
+#if not BOUT_HAS_PETSC
+
+namespace {
+RegisterUnavailableSolver registerunavailablepetsc("petsc",
+                                                   "BOUT++ was not configured with PETSc");
+}
+
+#else
+
+class PetscSolver;
 
 #include <field2d.hxx>
 #include <field3d.hxx>
 #include <vector2d.hxx>
 #include <vector3d.hxx>
 
-#include <bout/solver.hxx>
+#include <petsc.h>
+// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
+#undef MPI_Allreduce
 
 #include <bout/petsclib.hxx>
 
 #include <vector>
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<PetscSolver> registersolverpetsc("petsc");
 }
@@ -146,6 +155,6 @@ private:
   bool adaptive; ///< Use adaptive timestepping
 };
 
-#endif // __PETSC_SOLVER_H__
-
 #endif // BOUT_HAS_PETSC
+
+#endif // __PETSC_SOLVER_H__

@@ -46,10 +46,11 @@ name in square brackets.
     工作的 = true            # a boolean
     इनपुट = "some text"      # a string
 
-Option names can contain almost any character except ’=’ and ’:’, including unicode.
-If they start with a number or ``.``, contain arithmetic symbols
-(``+-*/^``), brackets (``(){}[]``), whitespace or comma ``,``, then these will need
-to be escaped in expressions. See below for how this is done. 
+Option names can contain almost any character except ’=’ and ’:’,
+including unicode.  If they start with a number or ``.``, contain
+arithmetic symbols (``+-*/^``), brackets (``(){}[]``), equality
+(``=``), whitespace or comma ``,``, then these will need to be escaped
+in expressions. See below for how this is done.
 
 Subsections can also be used, separated by colons ’:’, e.g.
 
@@ -73,7 +74,7 @@ Variables can even reference other variables:
    density = 3
 
 Note that variables can be used before their definition; all variables
-are first read, and then processed afterwards.
+are first read, and then processed afterwards on demand.
 The value ``pi`` is already defined, as is ``π``, and can be used in expressions.
 
 Uses for expressions include initialising variables
@@ -86,14 +87,28 @@ operators, with the usual precedence rules. In addition to ``π``,
 expressions can use predefined variables ``x``, ``y``, ``z`` and ``t``
 to refer to the spatial and time coordinates.
 A number of functions are defined, listed in table
-:numref:`tab-initexprfunc`. One slightly unusual feature is that if a
-number comes before a symbol or an opening bracket (``(``)
+:numref:`tab-initexprfunc`. One slightly unusual feature (borrowed from `Julia <https://julialang.org/>`_)
+is that if a number comes before a symbol or an opening bracket (``(``)
 then a multiplication is assumed: ``2x+3y^2`` is the same as
 ``2*x + 3*y^2``, which with the usual precedence rules is the same as
 ``(2*x) + (3*(y^2))``. 
 
+Expressions can span more than one line, which can make long expressions
+easier to read:
+
+.. code-block:: cfg
+
+   pressure = temperature * ( density0 +
+                              density1 )
+   temperature = 12
+   density0 = 3
+   density1 = 1
+
+The convention is the same as in `Python <https://www.python.org/>`_:
+If brackets are not balanced (closed) then the expression continues on the next line.
+
 All expressions are calculated in floating point and then converted to
-an integer when read inside BOUT++. The conversion is done by rounding
+an integer if needed when read inside BOUT++. The conversion is done by rounding
 to the nearest integer, but throws an error if the floating point
 value is not within :math:`1e-3` of an integer. This is to minimise
 unexpected behaviour. If you want to round any result to an integer,
@@ -239,12 +254,23 @@ of the input file (see :ref:`sec-gridgen` for more information):
 .. code-block:: cfg
 
     [mesh]
-    nx = 16  # Number of points in X
+    nx = 20  # Number of points in X
     ny = 16  # Number of points in Y
     nz = 32  # Number of points in Z
 
+Due to historical reasons, ``nx`` is defined differently to ``ny`` and ``nz``:
+
+- ``nx`` is the number of points in X **including** the boundaries
+- ``ny`` and ``nz`` are the number of points in Y and Z **not including** the
+  boundaries
+
+The default number of boundary points in X is 2, so taking into account the
+boundary at each end of the domain, ``nx`` usually means "the number of interior
+grid points in X plus four". In the example above, both X and Y have 16 interior
+grid points.
+
 It is recommended, but not necessary, that this be :math:`\texttt{nz}
-= 2^n`, i.e.  :math:`1,2,4,8,\ldots`. This is because FFTs are usually
+= 2^n`, that is :math:`1,2,4,8,\ldots`. This is because FFTs are usually
 slightly faster with power-of-two length arrays, and FFTs are used
 quite frequently in many models.
 
@@ -302,6 +328,34 @@ given, ``NXPE`` takes precedence and ``NYPE`` is ignored):
 .. code-block:: cfg
 
     NYPE = 1  # Set number of Y processors
+
+When choosing ``NXPE`` or ``NYPE``, they must also obey some constraints:
+
+- ``NXPE`` must be a factor of the number of grid points in the x-direction
+
+  - That is, ``(nx - 4) / NXPE`` must be an integer, assuming the usual two
+    boundary points
+
+- ``NYPE`` must be a factor of the number of grid points in the y-direction
+
+  - That is, ``ny / NYPE`` must be an integer
+
+- For more general topologies, the number of points per processor ``ny / NYPE``
+  must also be a factor of the number of points in each region. For example, in
+  the usual tokamak topologies:
+
+  - in single-null there are two divertor leg and one core regions
+  - in double-null there are four divertor leg, one inner core and one outer
+    core regions
+
+Please note that here "core" means "core and adjacent SOL". See
+:ref:`sec-bout-topology` for a more detailed explanation of these regions.
+
+When BOUT++ automatically chooses ``NXPE`` and ``NYPE`` it finds all valid pairs
+which give ``total number of processors == NPES = NXPE * NYPE`` and also satisfy
+the constraints above. It then chooses the pair that makes the grid on each
+processor as close to square as possible (technically it chooses the pair that
+minimises ``abs(sqrt(NPES * (nx - 4) / ny) - NXPE)``).
 
 If you need to specify complex input values, e.g. numerical values
 from experiment, you may want to use a grid file. The grid file to use
@@ -489,6 +543,10 @@ or just::
 
     options["mysection"]["myswitch"] = true;
 
+Names including sections, subsections, etc. can be specified using ``":"`` as a
+separator, e.g.::
+    options["mysection:mysubsection:myswitch"] = true;
+
 To get options, they can be assigned to a variable::
 
     int nout = options["nout"];
@@ -566,6 +624,36 @@ This string is stored in the attributes of the option::
 
   std::string docstring = options["value"].attributes["doc"];
 
+Creating Options
+~~~~~~~~~~~~~~~~
+
+Options and subsections can be created by setting values, creating subsections as needed::
+
+  Options options;
+  options["value1"] = 42;
+  options["subsection1"]["value2"] = "some string";
+  options["subsection1"]["value3"] = 3.1415;
+
+or using an initializer list::
+
+  Options options {{"value1", 42},
+                   {"subsection1", {{"value2", "some string"},
+                                    {"value3", 3.1415}}}};
+
+These are equivalent, but the initializer list method makes the tree structure clearer.
+Note that the list can contain many of the types which ``Options`` can hold, including
+``Field2D`` and ``Field3D`` objects.
+
+Overriding library defaults
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+BOUT++ sets defaults for options controlling the mesh, etc. A physics model (or
+other user code) can override these defaults by using the convenience macro
+BOUT_OVERRIDE_DEFAULT_OPTION, for example if you want to change the default
+value of ``mesh::staggergrids`` from false to true, put (outside any
+class/function body)::
+
+    BOUT_OVERRIDE_DEFAULT_OPTION("mesh:staggergrids", true);
 
 Older interface
 ~~~~~~~~~~~~~~~
@@ -758,26 +846,71 @@ Some issues:
 FFT
 ---
 
-There is one global option for Fourier transforms, ``fft_measure``
-(default: ``false``). Setting this to true enables the
-``FFTW_MEASURE`` mode when performing FFTs, otherwise
-``FFTW_ESTIMATE`` is used:
+There is one option for Fourier transforms, ``fft_measurement_flag`` (default:
+``estimate``). This can be used to control FFTW's measurement mode:
+``estimate`` for ``FFTW_ESTIMATE``, ``measure`` for ``FFTW_MEASURE`` or
+``exhaustive`` for ``FFTW_EXHAUSTIVE``:
 
 .. code-block:: cfg
 
     [fft]
-    fft_measure = true
+    fft_measurement_flag = measure
 
-In ``FFTW_MEASURE`` mode, FFTW runs and measures how long several
-FFTs take, and tries to find the optimal method.
+In ``FFTW_MEASURE`` mode, FFTW runs and measures how long several FFTs take,
+and tries to find the optimal method; ``FFTW_EXHAUSTIVE`` tests even more
+algorithms.
 
-.. note:: Technically, ``FFTW_MEASURE`` is non-deterministic and
-          enabling ``fft_measure`` may result in slightly different
-          answers from run to run, or be dependent on the number of
-          MPI processes. This may be important if you are trying to
-          benchmark or measure performance of your code.
+.. note:: Technically, ``FFTW_MEASURE`` and ``FFTW_EXHAUSTIVE`` are
+          non-deterministic and enabling ``fft_measure`` may result in slightly
+          different answers from run to run, or be dependent on the number of
+          MPI processes. This may be important if you are trying to benchmark
+          or measure performance of your code.
 
           See the `FFTW FAQ`_ for more information.
 
 
 .. _FFTW FAQ: http://www.fftw.org/faq/section3.html#nondeterministic
+
+
+Types for multi-valued options
+------------------------------
+
+An ``enum class`` can be a useful construct for options in a physics model. It
+can have an arbitrary number of user-defined, named values (although the code
+in ``include/bout/bout_enum_class.hxx`` needs extending for more than 10
+values). The advantage over using a ``std::string`` for an option is that a
+typo cannot produce an unexpected value: in C++ code it is a compile-time error
+and reading from ``BOUT.inp`` it is a run-time exception. We provide a utility
+macro ``BOUT_ENUM_CLASS`` to define an ``enum class`` with some extra
+convenience methods. For example, after defining ``myoption`` like::
+
+    BOUT_ENUM_TYPE(myoption, foo, bar, baz);
+
+it is possible not only to test for a value, e.g.::
+
+    myoption x = <something>;
+    ...
+    if (x == myoption::foo) {
+      do a foo thing
+    }
+
+but also to convert the option to a string::
+
+    std::string s = toString(x);
+
+pass it to a stream::
+
+    output << x;
+
+or get an option like ``myinput=baz`` from an input file or the command line as
+a ``myoption``::
+
+    myoption y = Options::root()["myinput"].as<myoption>();
+
+or with a default value::
+
+    myoption y = Options::root()["myinput"].withDefault(myoption::bar);
+
+Only strings exactly (but case-insensitively) matching the name of one of the
+defined ``myoption`` values are allowed, anything else results in an exception
+being thrown.

@@ -1,5 +1,6 @@
+#include "bout/build_config.hxx"
 
-#ifdef NCDF4
+#if BOUT_HAS_NETCDF
 
 #include "options_netcdf.hxx"
 
@@ -125,7 +126,7 @@ Options OptionsNetCDF::read() {
   NcFile dataFile(filename, NcFile::read);
 
   if (dataFile.isNull()) {
-    throw BoutException("Could not open NetCDF file '%s'", filename.c_str());
+    throw BoutException("Could not open NetCDF file '{:s}'", filename);
   }
 
   Options result;
@@ -184,6 +185,11 @@ NcType NcTypeVisitor::operator()<Field3D>(const Field3D& UNUSED(t)) {
   return operator()<BoutReal>(0.0);
 }
 
+template <>
+NcType NcTypeVisitor::operator()<FieldPerp>(const FieldPerp& UNUSED(t)) {
+  return operator()<BoutReal>(0.0);
+}
+
 /// Visit a variant type, returning dimensions
 struct NcDimVisitor {
   NcDimVisitor(NcGroup& group) : group(group) {}
@@ -218,7 +224,7 @@ NcDim findDimension(NcGroup& group, const std::string& name, unsigned int size) 
     }
     return dim;
   } catch (const std::exception& e) {
-    throw BoutException("Error in findDimension('%s'): %s", name.c_str(), e.what());
+    throw BoutException("Error in findDimension('{:s}'): {:s}", name, e.what());
   }
 }
 
@@ -245,6 +251,17 @@ std::vector<NcDim> NcDimVisitor::operator()<Field3D>(const Field3D& value) {
   ASSERT0(!zdim.isNull());
 
   return {xdim, ydim, zdim};
+}
+
+template <>
+std::vector<NcDim> NcDimVisitor::operator()<FieldPerp>(const FieldPerp& value) {
+  auto xdim = findDimension(group, "x", value.getNx());
+  ASSERT0(!xdim.isNull());
+
+  auto zdim = findDimension(group, "z", value.getNz());
+  ASSERT0(!zdim.isNull());
+
+  return {xdim, zdim};
 }
 
 /// Visit a variant type, and put the data into a NcVar
@@ -290,6 +307,18 @@ void NcPutVarVisitor::operator()<Field3D>(const Field3D& value) {
   var.putAtt("cell_location", toString(value.getLocation()));
 }
 
+template <>
+void NcPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
+  // Pointer to data. Assumed to be contiguous array
+  var.putVar(&value(0, 0));
+
+  // Set cell location attribute
+  var.putAtt("cell_location", toString(value.getLocation()));
+  var.putAtt("direction_y", toString(value.getDirectionY()));
+  var.putAtt("direction_z", toString(value.getDirectionZ()));
+  var.putAtt("yindex_global", ncInt, value.getGlobalIndex());
+}
+
 /// Visit a variant type, and put the data into a NcVar
 struct NcPutVarCountVisitor {
   NcPutVarCountVisitor(NcVar& var, const std::vector<size_t>& start,
@@ -320,6 +349,11 @@ template <>
 void NcPutVarCountVisitor::operator()<Field3D>(const Field3D& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(start, count, &value(0, 0, 0));
+}
+template <>
+void NcPutVarCountVisitor::operator()<FieldPerp>(const FieldPerp& value) {
+  // Pointer to data. Assumed to be contiguous array
+  var.putVar(start, count, &value(0, 0));
 }
 
 /// Visit a variant type, and put the data into an attributute
@@ -407,8 +441,8 @@ void writeGroup(const Options& options, NcGroup group,
           // Check types are the same
           if (var.getType() != nctype) {
             throw BoutException(
-                "Changed type of variable '%s'. Was '%s', now writing '%s'", name.c_str(),
-                var.getType().getName().c_str(), nctype.getName().c_str());
+                "Changed type of variable '{:s}'. Was '{:s}', now writing '{:s}'", name,
+                var.getType().getName(), nctype.getName());
           }
 
           // Check that the dimensions are correct
@@ -416,9 +450,10 @@ void writeGroup(const Options& options, NcGroup group,
 
           // Same number of dimensions?
           if (var_dims.size() != dims.size()) {
-            throw BoutException("Changed dimensions for variable '%s'\nIn file has %zu "
-                                "dimensions, now writing %zu\n",
-                                name.c_str(), var_dims.size(), dims.size());
+            throw BoutException(
+                "Changed dimensions for variable '{:s}'\nIn file has {:d} "
+                "dimensions, now writing {:d}\n",
+                name, var_dims.size(), dims.size());
           }
           // Dimensions compatible?
           for (std::vector<netCDF::NcDim>::size_type i = 0; i < dims.size(); ++i) {
@@ -426,12 +461,11 @@ void writeGroup(const Options& options, NcGroup group,
               continue; // The same dimension -> ok
             }
             if (var_dims[i].isUnlimited() != dims[i].isUnlimited()) {
-              throw BoutException("Unlimited dimension changed for variable '%s'",
-                                  name.c_str());
+              throw BoutException("Unlimited dimension changed for variable '{:s}'",
+                                  name);
             }
             if (var_dims[i].getSize() != dims[i].getSize()) {
-              throw BoutException("Dimension size changed for variable '%s'",
-                                  name.c_str());
+              throw BoutException("Dimension size changed for variable '{:s}'", name);
             }
           }
           // All ok. Set dimensions to the variable's NcDims
@@ -493,13 +527,13 @@ void writeGroup(const Options& options, NcGroup group,
         }
         
       } catch (const std::exception &e) {
-        throw BoutException("Error while writing value '%s' : %s", name.c_str(), e.what());
+        throw BoutException("Error while writing value '{:s}' : {:s}", name, e.what());
       }
     }
 
     if (child.isSection()) {
       // Check if the group exists
-      TRACE("Writing group '%s'", name.c_str());
+      TRACE("Writing group '{:s}'", name);
 
       auto subgroup = group.getGroup(name);
       if (subgroup.isNull()) {
@@ -528,7 +562,7 @@ void OptionsNetCDF::write(const Options& options) {
   NcFile dataFile(filename, ncmode);
 
   if (dataFile.isNull()) {
-    throw BoutException("Could not open NetCDF file '%s' for writing", filename.c_str());
+    throw BoutException("Could not open NetCDF file '{:s}' for writing", filename);
   }
 
   writeGroup(options, dataFile, time_index);
@@ -537,4 +571,4 @@ void OptionsNetCDF::write(const Options& options) {
 } // experimental
 } // bout
 
-#endif // NCDF4
+#endif // BOUT_HAS_NETCDF

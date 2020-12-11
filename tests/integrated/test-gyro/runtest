@@ -4,6 +4,9 @@
 # Run the test, compare results against the benchmark
 #
 
+# Requires: netcdf
+# Cores: 4
+
 # Variables to compare
 from __future__ import print_function
 try:
@@ -15,15 +18,13 @@ vars = ['pade1', 'pade2']
   
 tol = 1e-10                  # Absolute tolerance
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
 
-
-print("Making Gyro-average inversion test")
-shell_safe("make > make.log")
+build_and_log("Gyro-average inversion test")
 
 # Read benchmark values
 print("Reading benchmark data")

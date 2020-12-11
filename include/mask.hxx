@@ -53,10 +53,10 @@ public:
     mask(nx, ny, nz) {
     mask = value;
   }
-  BoutMask(Mesh& mesh, bool value=false) :
+  explicit BoutMask(const Mesh& mesh, bool value=false) :
     BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz, value) {}
-  // Default constructor uses global mesh
-  BoutMask() : BoutMask(*bout::globals::mesh) {}
+  explicit BoutMask(const Mesh* mesh = nullptr, bool value = false)
+      : BoutMask(mesh == nullptr ? *bout::globals::mesh : *mesh, value) {}
 
   // Assignment from bool
   BoutMask& operator=(bool value) {
@@ -65,11 +65,11 @@ public:
   }
 
   inline bool& operator()(int jx, int jy, int jz) {
-    TRACE("BoutMask::operator()(%d, %d, %d)", jx, jy, jz);
+    TRACE("BoutMask::operator()({}, {}, {})", jx, jy, jz);
     return mask(jx, jy, jz);
   }
   inline const bool& operator()(int jx, int jy, int jz) const {
-    TRACE("BoutMask::operator()(%d, %d, %d)", jx, jy, jz);
+    TRACE("BoutMask::operator()({}, {}, {})", jx, jy, jz);
     return mask(jx, jy, jz);
   }
 };

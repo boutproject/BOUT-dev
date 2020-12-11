@@ -25,32 +25,34 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 const char DEFAULT_DIR[] = "data";
 
-// Value passed at compile time
-// Used for MD5SUM, BOUT_LOCALE_PATH, and REVISION
-#define BUILDFLAG1_(x) #x
-#define BUILDFLAG(x) BUILDFLAG1_(x)
-
 #define GLOBALORIGIN
-
-#define INDIRECT1_BOUTMAIN(a) #a
-#define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
-#define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
 
 #include "boundary_factory.hxx"
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
 #include "datafile.hxx"
+#include "interpolation_xz.hxx"
+#include "interpolation_z.hxx"
 #include "invert_laplace.hxx"
+#include "invert_parderiv.hxx"
 #include "msg_stack.hxx"
 #include "optionsreader.hxx"
 #include "output.hxx"
+#include "bout/invert/laplacexz.hxx"
+#include "bout/mpi_wrapper.hxx"
 #include "bout/openmpwrap.hxx"
 #include "bout/petsclib.hxx"
+#include "bout/revision.hxx"
+#include "bout/rkscheme.hxx"
 #include "bout/slepclib.hxx"
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/version.hxx"
+#include "fmt/format.h"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -61,11 +63,32 @@ const char DEFAULT_DIR[] = "data";
 #include <string>
 #include <vector>
 
-// POSIX headers
 #include <sys/stat.h>
-#include <unistd.h>
 
-#ifdef BOUT_FPE
+// Value passed at compile time
+// Used for MD5SUM, BOUT_LOCALE_PATH, and REVISION
+#define BUILDFLAG1_(x) #x
+#define BUILDFLAG(x) BUILDFLAG1_(x)
+
+#define INDIRECT1_BOUTMAIN(a) #a
+#define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
+#define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
+
+// Define S_ISDIR if not defined by system headers (that is, MSVC)
+// Taken from https://github.com/curl/curl/blob/e59540139a398dc70fde6aec487b19c5085105af/lib/curl_setup.h#L748-L751
+#if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
+#define S_ISDIR(m) (((m)&S_IFMT) == S_IFDIR)
+#endif
+
+#ifdef _MSC_VER
+#include <windows.h>
+inline auto getpid() -> int { return GetCurrentProcessId(); }
+#else
+// POSIX headers
+#include <unistd.h>
+#endif
+
+#if BOUT_USE_SIGFPE
 #include <fenv.h>
 #endif
 
@@ -78,6 +101,11 @@ bool user_requested_exit = false;
 void bout_signal_handler(int sig);   // Handles signals
 std::string time_to_hms(BoutReal t); // Converts to h:mm:ss.s format
 char get_spin();                     // Produces a spinning bar
+
+// Return the string "enabled" or "disabled"
+namespace {
+constexpr auto is_enabled(bool enabled) { return enabled ? "enabled" : "disabled"; }
+} // namespace
 
 /*!
   Initialise BOUT++
@@ -137,8 +165,7 @@ int BoutInitialise(int& argc, char**& argv) {
 
     // Load settings file
     OptionsReader* reader = OptionsReader::getInstance();
-    reader->read(Options::getRoot(), "%s/%s", args.data_dir.c_str(),
-                 args.opt_file.c_str());
+    reader->read(Options::getRoot(), "{}/{}", args.data_dir, args.opt_file);
 
     // Get options override from command-line
     reader->parseCommandLine(Options::getRoot(), argc, argv);
@@ -154,6 +181,8 @@ int BoutInitialise(int& argc, char**& argv) {
       writeSettingsFile(Options::root(), args.data_dir, args.set_file);
     }
 
+    bout::globals::mpi = new MpiWrapper();
+
     // Create the mesh
     bout::globals::mesh = Mesh::create();
     // Load from sources. Required for Field initialisation
@@ -163,7 +192,7 @@ int BoutInitialise(int& argc, char**& argv) {
         setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);
 
   } catch (const BoutException& e) {
-    output_error.write(_("Error encountered during initialisation: %s\n"), e.what());
+    output_error.write(_("Error encountered during initialisation: {:s}\n"), e.what());
     throw;
   }
 
@@ -173,16 +202,18 @@ int BoutInitialise(int& argc, char**& argv) {
 namespace bout {
 namespace experimental {
 void setupSignalHandler(SignalHandler signal_handler) {
-#ifdef SIGHANDLE
+#if BOUT_USE_SIGNAL
   std::signal(SIGSEGV, signal_handler);
 #endif
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
   std::signal(SIGFPE, signal_handler);
   feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
+#ifndef _MSC_VER
   /// Trap SIGUSR1 to allow a clean exit after next write
   std::signal(SIGUSR1, signal_handler);
+#endif
 }
 
 // This is currently just an alias to the existing handler
@@ -207,44 +238,108 @@ void setupGetText() {
 
     bindtextdomain(GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
   } catch (const std::runtime_error& e) {
-    fprintf(stderr, "WARNING: Could not set locale. Check the LANG environment variable "
-        "(get available values by running 'locale -a'). If LANG is correct, there may be "
-        "a problem with the BOUT_LOCALE_PATH=%s that BOUT++ was compiled with.\n",
+    fmt::print(
+        stderr,
+        FMT_STRING(
+            "WARNING: Could not set locale. Check the LANG environment variable "
+            "(get available values by running 'locale -a'). If LANG is correct, there "
+            "may be "
+            "a problem with the BOUT_LOCALE_PATH={:s} that BOUT++ was compiled with.\n"),
         BUILDFLAG(BOUT_LOCALE_PATH));
   }
 #endif // BOUT_HAS_GETTEXT
+}
+
+template <class T>
+void printAvailableImplementations(const T& factory) {
+  for (const auto& implementation : factory.listAvailable()) {
+    std::cout << implementation << "\n";
+  }
+  auto unavailable = factory.listUnavailableReasons();
+  if (not unavailable.empty()) {
+    std::cout << fmt::format("\nThe following {}s are currently unavailable:\n", T::type_name);
+    for (const auto& implementation : unavailable) {
+      std::cout << implementation << "\n";
+    }
+  }
 }
 
 auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
   /// NB: "restart" and "append" are now caught by options
   /// Check for help flag separately
   for (int i = 1; i < argc; i++) {
-    if (string(argv[i]) == "-h" || string(argv[i]) == "--help") {
+    const std::string current_arg{argv[i]};
+    if (current_arg == "-h" || current_arg == "--help") {
       // Print help message -- note this will be displayed once per processor as we've not
       // started MPI yet.
-      output.write(_("Usage: %s [-d <data directory>] [-f <options filename>] [restart "
+      output.write(_("Usage: {:s} [-d <data directory>] [-f <options filename>] [restart "
                      "[append]] [VAR=VALUE]\n"),
                    argv[0]);
       output.write(
           _("\n"
-            "  -d <data directory>\tLook in <data directory> for input/output files\n"
-            "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
+            "  -d <data directory>\t\tLook in <data directory> for input/output files\n"
+            "  -f <options filename>\t\tUse OPTIONS given in <options filename>\n"
             "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
             "  -l, --log <log filename>\tPrint log to <log filename>\n"
-            "  -v, --verbose\t\tIncrease verbosity\n"
-            "  -q, --quiet\t\tDecrease verbosity\n"));
-#ifdef LOGCOLOR
-      output.write(_("  -c, --color\t\tColor output using bout-log-color\n"));
+            "  -v, --verbose\t\t\tIncrease verbosity\n"
+            "  -q, --quiet\t\t\tDecrease verbosity\n"));
+#if BOUT_USE_COLOR
+      output.write(_("  -c, --color\t\t\tColor output using bout-log-color\n"));
 #endif
       output.write(
-          _("  -h, --help\t\tThis message\n"
-            "  restart [append]\tRestart the simulation. If append is specified, "
+          _("  --print-config\t\tPrint the compile-time configuration\n"
+            "  --list-solvers\t\tList the available time solvers\n"
+            "  --list-laplacians\t\tList the available Laplacian inversion solvers\n"
+            "  --list-laplacexz\t\tList the available LaplaceXZ inversion solvers\n"
+            "  --list-invertpars\t\tList the available InvertPar solvers\n"
+            "  --list-rkschemes\t\tList the available Runge-Kutta schemes\n"
+            "  --list-meshes\t\t\tList the available Meshes\n"
+            "  --list-xzinterpolations\tList the available XZInterpolations\n"
+            "  --list-zinterpolations\tList the available ZInterpolations\n"
+            "  -h, --help\t\t\tThis message\n"
+            "  restart [append]\t\tRestart the simulation. If append is specified, "
             "append to the existing output files, otherwise overwrite them\n"
-            "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
+            "  VAR=VALUE\t\t\tSpecify a VALUE for input parameter VAR\n"
             "\nFor all possible input parameters, see the user manual and/or the "
-            "physics model source (e.g. %s.cxx)\n"),
+            "physics model source (e.g. {:s}.cxx)\n"),
           argv[0]);
 
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--print-config") {
+      printCompileTimeOptions();
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-solvers") {
+      printAvailableImplementations(SolverFactory::getInstance());
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-laplacians") {
+      printAvailableImplementations(LaplaceFactory::getInstance());
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-laplacexzs") {
+      printAvailableImplementations(LaplaceXZFactory::getInstance());
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-invertpars") {
+      printAvailableImplementations(InvertParFactory::getInstance());
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-rkschemes") {
+      printAvailableImplementations(RKSchemeFactory::getInstance());
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-meshes") {
+      printAvailableImplementations(MeshFactory::getInstance());
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-xzinterpolations") {
+      printAvailableImplementations(XZInterpolationFactory::getInstance());
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-zinterpolations") {
+      printAvailableImplementations(ZInterpolationFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
   }
@@ -258,7 +353,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
     if (string(argv[i]) == "-d") {
       // Set data directory
       if (i + 1 >= argc) {
-        throw BoutException(_("Usage is %s -d <data directory>\n"), argv[0]);
+        throw BoutException(_("Usage is {:s} -d <data directory>\n"), argv[0]);
       }
 
       args.data_dir = argv[++i];
@@ -269,7 +364,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
     } else if (string(argv[i]) == "-f") {
       // Set options file
       if (i + 1 >= argc) {
-        throw BoutException(_("Usage is %s -f <options filename>\n"), argv[0]);
+        throw BoutException(_("Usage is {:s} -f <options filename>\n"), argv[0]);
       }
 
       args.opt_file = argv[++i];
@@ -280,7 +375,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
     } else if (string(argv[i]) == "-o") {
       // Set options file
       if (i + 1 >= argc) {
-        throw BoutException(_("Usage is %s -o <settings filename>\n"), argv[0]);
+        throw BoutException(_("Usage is {:s} -o <settings filename>\n"), argv[0]);
       }
 
       args.set_file = argv[++i];
@@ -290,7 +385,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
 
     } else if ((string(argv[i]) == "-l") || (string(argv[i]) == "--log")) {
       if (i + 1 >= argc) {
-        throw BoutException(_("Usage is %s -l <log filename>\n"), argv[0]);
+        throw BoutException(_("Usage is {:s} -l <log filename>\n"), argv[0]);
       }
 
       args.log_file = argv[++i];
@@ -331,11 +426,11 @@ void checkDataDirectoryIsAccessible(const std::string& data_dir) {
   struct stat test;
   if (stat(data_dir.c_str(), &test) == 0) {
     if (!S_ISDIR(test.st_mode)) {
-      throw BoutException(_("DataDir \"%s\" is not a directory\n"), data_dir.c_str());
+      throw BoutException(_("DataDir \"{:s}\" is not a directory\n"), data_dir);
     }
   } else {
-    throw BoutException(_("DataDir \"%s\" does not exist or is not accessible\n"),
-                        data_dir.c_str());
+    throw BoutException(_("DataDir \"{:s}\" does not exist or is not accessible\n"),
+                        data_dir);
   }
 }
 
@@ -346,7 +441,7 @@ void savePIDtoFile(const std::string& data_dir, int MYPE) {
   pid_file.open(filename.str(), std::ios::out | std::ios::trunc);
 
   if (not pid_file.is_open()) {
-    throw BoutException(_("Could not create PID file %s"), filename.str().c_str());
+    throw BoutException(_("Could not create PID file {:s}"), filename.str());
   }
 
   pid_file << getpid() << "\n";
@@ -354,41 +449,35 @@ void savePIDtoFile(const std::string& data_dir, int MYPE) {
 }
 
 void printStartupHeader(int MYPE, int NPES) {
-  output_progress.write(_("BOUT++ version %s\n"), BOUT_VERSION_STRING);
-#ifdef REVISION
-  output_progress.write(_("Revision: %s\n"), BUILDFLAG(REVISION));
-#endif
+  output_progress.write(_("BOUT++ version {:s}\n"), bout::version::full);
+  output_progress.write(_("Revision: {:s}\n"), bout::version::revision);
 #ifdef MD5SUM
-  output_progress.write("MD5 checksum: %s\n", BUILDFLAG(MD5SUM));
+  output_progress.write("MD5 checksum: {:s}\n", BUILDFLAG(MD5SUM));
 #endif
-  output_progress.write(_("Code compiled on %s at %s\n\n"), __DATE__, __TIME__);
+  output_progress.write(_("Code compiled on {:s} at {:s}\n\n"), __DATE__, __TIME__);
   output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
   output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
-  output_info.write(_("Processor number: %d of %d\n\n"), MYPE, NPES);
+  output_info.write(_("Processor number: {:d} of {:d}\n\n"), MYPE, NPES);
 
-  output_info.write("pid: %d\n\n", getpid());
+  output_info.write("pid: {:d}\n\n", getpid());
 }
 
 void printCompileTimeOptions() {
   output_info.write(_("Compile-time options:\n"));
 
-#if CHECK > 0
-  output_info.write(_("\tChecking enabled, level %d\n"), CHECK);
-#else
-  output_info.write(_("\tChecking disabled\n"));
-#endif
+  using namespace bout::build;
 
-#ifdef SIGHANDLE
-  output_info.write(_("\tSignal handling enabled\n"));
-#else
-  output_info.write(_("\tSignal handling disabled\n"));
-#endif
+  output_info.write(_("\tRuntime error checking {}"), is_enabled(check_level > 0));
+  if (check_level > 0) {
+    output_info.write(_(", level {}"), check_level);
+  }
+  output_info.write("\n");
 
 #ifdef NCDF
   output_info.write(_("\tnetCDF support enabled\n"));
 #else
-#ifdef NCDF4
+#if BOUT_HAS_NETCDF
   output_info.write(_("\tnetCDF4 support enabled\n"));
 #else
   output_info.write(_("\tnetCDF support disabled\n"));
@@ -401,24 +490,37 @@ void printCompileTimeOptions() {
   output_info.write(_("\tParallel NetCDF support disabled\n"));
 #endif
 
-#ifdef _OPENMP
-  output_info.write(_("\tOpenMP parallelisation enabled, using %d threads\n"),
-                    omp_get_max_threads());
-#else
-  output_info.write(_("\tOpenMP parallelisation disabled\n"));
-#endif
-
 #ifdef METRIC3D
   output_info.write("\tRUNNING IN 3D-METRIC MODE\n");
 #endif
 
-#ifdef BOUT_FPE
-  output_info.write("\tFloatingPointExceptions enabled\n");
+  output_info.write(_("\tFFT support {}\n"), is_enabled(has_fftw));
+  output_info.write(_("\tNatural language support {}\n"), is_enabled(has_gettext));
+  output_info.write(_("\tHDF5 support {}\n"), is_enabled(has_hdf5));
+  output_info.write(_("\tLAPACK support {}\n"), is_enabled(has_lapack));
+  output_info.write(_("\tNetCDF support {}\n"), is_enabled(has_netcdf));
+  output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
+  output_info.write(_("\tPretty function name support {}\n"),
+                    is_enabled(has_pretty_function));
+  output_info.write(_("\tPVODE support {}\n"), is_enabled(has_pvode));
+  output_info.write(_("\tScore-P support {}\n"), is_enabled(has_scorep));
+  output_info.write(_("\tSLEPc support {}\n"), is_enabled(has_slepc));
+  output_info.write(_("\tSUNDIALS support {}\n"), is_enabled(has_sundials));
+  output_info.write(_("\tBacktrace in exceptions {}\n"), is_enabled(use_backtrace));
+  output_info.write(_("\tColour in logs {}\n"), is_enabled(use_color));
+  output_info.write(_("\tOpenMP parallelisation {}"), is_enabled(use_openmp));
+#ifdef _OPENMP
+  output_info.write(_(", using {} threads"), omp_get_max_threads());
 #endif
+  output_info.write("\n");
+  output_info.write(_("\tExtra debug output {}\n"), is_enabled(use_output_debug));
+  output_info.write(_("\tFloating-point exceptions {}\n"), is_enabled(use_sigfpe));
+  output_info.write(_("\tSignal handling support {}\n"), is_enabled(use_signal));
+  output_info.write(_("\tField name tracking {}\n"), is_enabled(use_track));
 
   // The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
   // which could cause problems (e.g. terminate strings).
-  output_info.write(_("\tCompiled with flags : %s\n"), STRINGIFY(BOUT_FLAGS_STRING));
+  output_info.write(_("\tCompiled with flags : {:s}\n"), STRINGIFY(BOUT_FLAGS_STRING));
 }
 
 void printCommandLineArguments(const std::vector<std::string>& original_argv) {
@@ -430,7 +532,7 @@ void printCommandLineArguments(const std::vector<std::string>& original_argv) {
 }
 
 bool setupBoutLogColor(bool color_output, int MYPE) {
-#ifdef LOGCOLOR
+#if BOUT_USE_COLOR
   if (color_output && (MYPE == 0)) {
     // Color stdout by piping through bout-log-color script
     // Only done on processor 0, since this is the only processor which writes to stdout
@@ -464,7 +566,7 @@ bool setupBoutLogColor(bool color_output, int MYPE) {
     }
     return success;
   }
-#endif // LOGCOLOR
+#endif // BOUT_USE_COLOR
   return false;
 }
 
@@ -479,9 +581,9 @@ void setupOutput(const std::string& data_dir, const std::string& log_file, int v
     }
     /// Open an output file to echo everything to
     /// On processor 0 anything written to output will go to stdout and the file
-    if (output.open("%s/%s.%d", data_dir.c_str(), log_file.c_str(), MYPE)) {
-      throw BoutException(_("Could not open %s/%s.%d for writing"), data_dir.c_str(),
-                          log_file.c_str(), MYPE);
+    if (output.open("{:s}/{:s}.{:d}", data_dir, log_file, MYPE)) {
+      throw BoutException(_("Could not open {:s}/{:s}.{:d} for writing"), data_dir,
+                          log_file, MYPE);
     }
   }
 
@@ -490,7 +592,7 @@ void setupOutput(const std::string& data_dir, const std::string& log_file, int v
   output_progress.enable(verbosity > 2);
   output_info.enable(verbosity > 3);
   output_verbose.enable(verbosity > 4);
-  // Only actually enabled if also compiled with DEBUG
+  // Only actually enabled if also compiled with ENABLE_OUTPUT_DEBUG
   output_debug.enable(verbosity > 5);
 
   // The backward-compatible output object same as output_progress
@@ -502,10 +604,8 @@ void setRunStartInfo(Options& options) {
 
   // Note: have to force value, since may already be set if a previously
   // output BOUT.settings file was used as input
-  runinfo["version"].force(BOUT_VERSION_STRING, "");
-#ifdef REVISION
-  runinfo["revision"].force(BUILDFLAG(REVISION), "");
-#endif
+  runinfo["version"].force(bout::version::full, "");
+  runinfo["revision"].force(bout::version::revision, "");
 
   time_t start_time = time(nullptr);
   runinfo["started"].force(ctime(&start_time), "");
@@ -523,23 +623,20 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
                         .withDefault(false);
 
   // Get file extensions
-  const auto dump_ext = options["dump_format"].withDefault(std::string{"nc"});
-
+  const auto default_dump_format = bout::build::has_netcdf ? "nc" : "h5";
+  const auto dump_ext = options["dump_format"].withDefault(default_dump_format);
   output_progress << "Setting up output (dump) file\n";
 
   auto dump_file = Datafile(&(options["output"]), &mesh);
 
   if (append) {
-    dump_file.opena("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+    dump_file.opena("{}/BOUT.dmp.{}", data_dir, dump_ext);
   } else {
-    dump_file.openw("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+    dump_file.openw("{}/BOUT.dmp.{}", data_dir, dump_ext);
   }
 
   // Add book-keeping variables to the output files
-  dump_file.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
-#ifdef REVISION
-  dump_file.setAttribute("", "BOUT_REVISION", BUILDFLAG(REVISION));
-#endif
+  dump_file.add(const_cast<BoutReal&>(bout::version::as_double), "BOUT_VERSION", false);
   // Appends the time of dumps into an array
   dump_file.add(simtime, "t_array", true);
   dump_file.add(iteration, "iteration", false);
@@ -547,13 +644,33 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   // Save mesh configuration into output file
   mesh.outputVars(dump_file);
 
+  // Add compile-time options
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_fftw), "has_fftw");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_gettext), "has_gettext");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_hdf5), "has_hdf5");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_lapack), "has_lapack");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_netcdf), "has_netcdf");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_petsc), "has_petsc");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_pretty_function),
+                    "has_pretty_function");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_pvode), "has_pvode");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_scorep), "has_scorep");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_slepc), "has_slepc");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_sundials), "has_sundials");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_backtrace), "use_backtrace");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_color), "use_color");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_openmp), "use_openmp");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_output_debug), "use_output_debug");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_sigfpe), "use_sigfpe");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_signal), "use_signal");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_track), "use_track");
+
   return dump_file;
 }
 
 void writeSettingsFile(Options& options, const std::string& data_dir,
                        const std::string& settings_file) {
-  OptionsReader::getInstance()->write(&options, "%s/%s", data_dir.c_str(),
-                                      settings_file.c_str());
+  OptionsReader::getInstance()->write(&options, "{}/{}", data_dir, settings_file);
 }
 
 } // namespace experimental
@@ -594,6 +711,12 @@ int BoutFinalise(bool write_settings) {
     }
   }
 
+  if (Options::root()["time_report:show"].withDefault(false)) {
+    output.write("\nTimer report \n\n");
+    Timer::printTimeReport();
+    output.write("\n");
+  }
+
   // Delete the mesh
   delete bout::globals::mesh;
 
@@ -601,7 +724,7 @@ int BoutFinalise(bool write_settings) {
   bout::globals::dump.close();
 
   // Make sure all processes have finished writing before exit
-  MPI_Barrier(BoutComm::get());
+  bout::globals::mpi->MPI_Barrier(BoutComm::get());
 
   // Laplacian inversion
   Laplacian::cleanup();
@@ -635,6 +758,9 @@ int BoutFinalise(bool write_settings) {
   // Debugging message stack
   msg_stack.clear();
 
+  // Delete the MPI wrapper
+  delete bout::globals::mpi;
+
   return 0;
 }
 
@@ -645,7 +771,7 @@ int BoutFinalise(bool write_settings) {
  **************************************************************************/
 
 int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
-  TRACE("BoutMonitor::call(%e, %d, %d)", t, iter, NOUT);
+  TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
 
   // Data used for timing
   static bool first_time = true;
@@ -700,7 +826,7 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
     }
 
     /// Record the starting time
-    mpi_start_time = MPI_Wtime() - run_data.wtime;
+    mpi_start_time = bout::globals::mpi->MPI_Wtime() - run_data.wtime;
 
     first_time = false;
 
@@ -718,14 +844,13 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
 
   // This bit only to screen, not log file
 
-  run_data.t_elapsed = MPI_Wtime() - mpi_start_time;
+  run_data.t_elapsed = bout::globals::mpi->MPI_Wtime() - mpi_start_time;
 
-  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration + 1, NOUT,
-                        (time_to_hms(run_data.t_elapsed)).c_str());
+  output_progress.print("{:c}  Step {:d} of {:d}. Elapsed {:s}", get_spin(),
+                        iteration + 1, NOUT, time_to_hms(run_data.t_elapsed));
   output_progress.print(
-      " ETA %s",
-      (time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1)))
-          .c_str());
+      " ETA {:s}",
+      time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1)));
 
   /// Write dump file
   bout::globals::dump.write();
@@ -733,14 +858,14 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   if (wall_limit > 0.0) {
     // Check if enough time left
 
-    BoutReal t_remain = mpi_start_time + wall_limit - MPI_Wtime();
+    BoutReal t_remain = mpi_start_time + wall_limit - bout::globals::mpi->MPI_Wtime();
     if (t_remain < run_data.wtime * 2) {
       // Less than 2 time-steps left
-      output_warn.write(_("Only %e seconds (%.2f steps) left. Quitting\n"), t_remain,
+      output_warn.write(_("Only {:e} seconds ({:.2f} steps) left. Quitting\n"), t_remain,
                         t_remain / run_data.wtime);
       user_requested_exit = true;
     } else {
-      output_progress.print(" Wall %s", (time_to_hms(t_remain)).c_str());
+      output_progress.print(" Wall {:s}", time_to_hms(t_remain));
     }
   }
 
@@ -765,8 +890,8 @@ void bout_signal_handler(int sig) {
   // Set signal handler back to default to prevent possible infinite loop
   signal(SIGSEGV, SIG_DFL);
   // print number of process to stderr, so the user knows which log to check
-  fprintf(stderr, "\nSighandler called on process %d with sig %d\n", BoutComm::rank(),
-          sig);
+  fmt::print(stderr, FMT_STRING("\nSighandler called on process {:d} with sig {:d}\n"),
+             BoutComm::rank(), sig);
 
   switch (sig) {
   case SIGSEGV:
@@ -779,14 +904,16 @@ void bout_signal_handler(int sig) {
   case SIGINT:
     throw BoutException("\n****** SigInt caught ******\n\n");
     break;
+#ifndef _MSC_VER
   case SIGKILL:
     throw BoutException("\n****** SigKill caught ******\n\n");
     break;
   case SIGUSR1:
     user_requested_exit = true;
     break;
+#endif
   default:
-    throw BoutException("\n****** Signal %d  caught ******\n\n", sig);
+    throw BoutException("\n****** Signal {:d}  caught ******\n\n", sig);
     break;
   }
 }
@@ -804,10 +931,7 @@ std::string time_to_hms(BoutReal t) {
   m = static_cast<int>(t / 60);
   t -= 60 * static_cast<BoutReal>(m);
 
-  char buffer[256];
-  sprintf(buffer, "%d:%02d:%04.1f", h, m, t);
-
-  return string(buffer);
+  return fmt::format(FMT_STRING("{:d}:{:02d}:{:04.1f}"), h, m, t);
 }
 
 /// Produce a spinning bar character
@@ -864,7 +988,7 @@ void RunMetrics::calculateDerivedMetrics() {
 void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
   if (!output_split) {
     output_progress.write(
-        "%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", simtime, ncalls,
+        "{:.3e}      {:5d}       {:.2e}   {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n", simtime, ncalls,
         wtime, 100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
         100. * wtime_invert / wtime,                    // Inversions
         100. * wtime_comms / wtime,                     // Communications
@@ -873,7 +997,7 @@ void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
 
   } else {
     output_progress.write(
-        "%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
+        "{:.3e}      {:5d}            {:5d}       {:.2e}   {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n",
         simtime, ncalls_e, ncalls_i, wtime,
         100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
         100. * wtime_invert / wtime,                    // Inversions

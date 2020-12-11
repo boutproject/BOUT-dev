@@ -12,7 +12,6 @@ from builtins import range
 from past.utils import old_div
 
 import numpy
-from bunch import Bunch
 from . import local_min_max
 from scipy.interpolate import RectBivariateSpline
 from matplotlib.pyplot import contour, gradient,  annotate, plot, draw
@@ -35,8 +34,8 @@ def analyse_equil(F, R, Z):
 
     Returns
     -------
-    bunch
-        A structure of critical points containing:
+    object
+        An object of critical points containing:
 
           n_opoint, n_xpoint   - Number of O- and X-points
           primary_opt          - Index of plasma centre O-point
@@ -169,8 +168,7 @@ def analyse_equil(F, R, Z):
     print("Number of O-points: "+str(n_opoint))
 
     if n_opoint == 0 :
-        print("No O-points! Giving up on this equilibrium")
-        return Bunch(n_opoint=0, n_xpoint=0, primary_opt=-1)
+        raise RuntimeError("No O-points! Giving up on this equilibrium")
 
 
   #;;;;;;;;;;;;;; Find plasma centre ;;;;;;;;;;;;;;;;;;;
@@ -259,8 +257,8 @@ def analyse_equil(F, R, Z):
     
 
 
-  #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  # Put results into a structure
+    #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    # Put results into a structure
   
     result = Bunch(n_opoint=n_opoint, n_xpoint=n_xpoint, # Number of O- and X-points
             primary_opt=primary_opt, # Which O-point is the plasma centre

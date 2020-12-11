@@ -8,7 +8,7 @@ from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import shell, build_and_log, launch_safe
 from boutdata.collect import collect
 
 import pickle
@@ -19,8 +19,7 @@ from os.path import join
 import time
 
 
-print("Making MMS test")
-shell_safe("make > make.log")
+build_and_log("MMS test")
 
 #nxlist = [256, 128, 64, 32, 16, 8] # do in reverse order to save disk space
 nxlist = [32, 64]

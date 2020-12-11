@@ -1,3 +1,4 @@
+#include "bout/build_config.hxx"
 
 #include <globals.hxx>
 
@@ -39,7 +40,7 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
 #else
     }
 
-#ifdef NCDF4
+#if BOUT_HAS_NETCDF
     return bout::utils::make_unique<Ncxx4>(mesh_in);
 #else
 
@@ -47,7 +48,7 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
     return bout::utils::make_unique<NcFormat>(mesh_in);
 #else
 
-#ifdef HDF5
+#if BOUT_HAS_HDF5
     return bout::utils::make_unique<H5Format>(mesh_in);
 #else
 
@@ -55,7 +56,7 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
 
 #endif // HDF5
 #endif // NCDF
-#endif // NCDF4
+#endif // BOUT_HAS_NETCDF
 #endif // PNCDF
     throw BoutException("Parallel I/O disabled, no serial library found");
   }
@@ -77,16 +78,16 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
   if(parallel) {
     const char *pncdf_match[] = {"cdl", "nc", "ncdf"};
     if(matchString(s, 3, pncdf_match) != -1) {
-      output.write("\tUsing Parallel NetCDF format for file '%s'\n", filename);
+      output.write("\tUsing Parallel NetCDF format for file '{:s}'\n", filename);
       return bout::utils::make_unique<PncFormat>();
     }
   }
 #endif
 
-#ifdef NCDF4
+#if BOUT_HAS_NETCDF
   const char *ncdf_match[] = {"cdl", "nc", "ncdf"};
   if(matchString(s, 3, ncdf_match) != -1) {
-    output.write("\tUsing NetCDF4 format for file '%s'\n", filename);
+    output.write("\tUsing NetCDF4 format for file '{:s}'\n", filename);
     return bout::utils::make_unique<Ncxx4>();
   }
 #endif
@@ -94,15 +95,15 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
 #ifdef NCDF
   const char *ncdf_match[] = {"cdl", "nc", "ncdf"};
   if(matchString(s, 3, ncdf_match) != -1) {
-    output.write("\tUsing NetCDF format for file '%s'\n", filename);
+    output.write("\tUsing NetCDF format for file '{:s}'\n", filename);
     return bout::utils::make_unique<NcFormat>();
   }
 #endif
 
-#ifdef HDF5
+#if BOUT_HAS_HDF5
   const char *hdf5_match[] = {"h5","hdf","hdf5"};
   if(matchString(s, 3, hdf5_match) != -1) {
-    output.write("\tUsing HDF5 format for file '%s'\n", filename);
+    output.write("\tUsing HDF5 format for file '{:s}'\n", filename);
 #ifdef PHDF5
     return bout::utils::make_unique<H5Format>(parallel);
 #else
@@ -111,7 +112,7 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
   }
 #endif
 
-  throw BoutException("\tFile extension not recognised for '%s'\n", filename);
+  throw BoutException("\tFile extension not recognised for '{:s}'\n", filename);
   return nullptr;
 }
 

@@ -28,11 +28,19 @@
 #ifndef __SUNDIAL_SOLVER_H__
 #define __SUNDIAL_SOLVER_H__
 
-#ifdef BOUT_HAS_CVODE
+#include "bout/build_config.hxx"
+#include "bout/solver.hxx"
+
+#if not BOUT_HAS_CVODE
+
+namespace {
+RegisterUnavailableSolver registerunavailablecvode("cvode",
+                                                   "BOUT++ was not configured with CVODE/SUNDIALS");
+}
+
+#else
 
 #include "bout_types.hxx"
-#include "bout/solver.hxx"
-#include "bout/solverfactory.hxx"
 
 #include <sundials/sundials_config.h>
 #if SUNDIALS_VERSION_MAJOR >= 3

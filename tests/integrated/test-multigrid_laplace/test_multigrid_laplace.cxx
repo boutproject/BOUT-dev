@@ -40,12 +40,15 @@ int main(int argc, char** argv) {
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
 
-  class Laplacian* invert = Laplacian::create();
+  auto invert = Laplacian::create();
 
   // Solving equations of the form d*Grad_perp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various boundary conditions
   Field3D f1,a1,b1,c1,d1,sol1,bcheck1;
   Field3D absolute_error1;
   BoutReal max_error1; //Output of test
+
+  using bout::globals::dump;
+  using bout::globals::mesh;
 
   dump.add(mesh->getCoordinates()->G1,"G1");
   dump.add(mesh->getCoordinates()->G3,"G3");
@@ -275,6 +278,8 @@ int main(int argc, char** argv) {
 }
 
 Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g) {
+  auto* mesh = f.getMesh();
+
   Field3D result = mesh->getCoordinates()->g11 * ::DDX(f) * ::DDX(g) + mesh->getCoordinates()->g33 * ::DDZ(f) * ::DDZ(g)
                    + mesh->getCoordinates()->g13 * (DDX(f)*DDZ(g) + DDZ(f)*DDX(g));
   
@@ -282,6 +287,7 @@ Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g) {
 }
 
 BoutReal max_error_at_ystart(const Field3D &error) {
+  auto* mesh = error.getMesh();
 
   BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
 

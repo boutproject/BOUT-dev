@@ -8,10 +8,9 @@
 NOUT = 200     # number of time-steps
 TIMESTEP = 1e1   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false  # use twist-shift condition?
 
-MZ = 33     # number of points in z direction (2^n + 1)
+MZ = 32     # number of points in z direction (2^n)
 
 ZMIN = 0.0
 ZMAX = 0.0202509 # 1e1 / 4.938060e+02
@@ -24,9 +23,8 @@ grid="data/uedge.grd.nc"
 
 dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
 
-NXPE = 2
-
-#StaggerGrids = true
+[mesh]
+StaggerGrids = true
 
 ##################################################
 # derivative methods
@@ -84,8 +82,6 @@ Zeff = 32.0        # Z effective
 estatic = true     # if true, electrostatic (Apar = 0). (BOUT-06 = esop)
 ZeroElMass = true  # Use Ohms law without electron inertia
 bout_jpar = true   # Use BOUT-06 method to calculate ZeroElMass jpar 
-
-stagger = true     # Use CtoL and LtoC parallel differencing
 
 bout_exb = true    # Use the BOUT-06 subset of ExB terms
 

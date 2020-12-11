@@ -25,6 +25,8 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <boutcomm.hxx>
 #include <globals.hxx>
 
@@ -47,7 +49,7 @@
 Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in,
                  DirectionTypes directions_in)
     : Field(localmesh, location_in, directions_in) {
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = "<F3D>";
 #endif
 
@@ -60,7 +62,8 @@ Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in,
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
 /// later)
-Field3D::Field3D(const Field3D& f) : Field(f), data(f.data) {
+Field3D::Field3D(const Field3D& f)
+    : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields) {
 
   TRACE("Field3D(Field3D&)");
 
@@ -102,8 +105,6 @@ Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation
   nz = fieldmesh->LocalNz;
 
   ASSERT1(data.size() == nx * ny * nz);
-
-  setLocation(datalocation);
 }
 
 Field3D::~Field3D() { delete deriv; }
@@ -180,8 +181,8 @@ const Field3D& Field3D::ynext(int dir) const {
   // Asked for more than yguards
   if (std::abs(dir) > fieldmesh->ystart) {
     throw BoutException(
-        "Field3D: Call to ynext with %d which is more than number of yguards (%d)", dir,
-        fieldmesh->ystart);
+        "Field3D: Call to ynext with {:d} which is more than number of yguards ({:d})",
+        dir, fieldmesh->ystart);
   }
 #endif
 
@@ -227,17 +228,17 @@ const BoutReal &Field3D::operator()(const Ind2D &d, int jz) const {
 
 const Region<Ind3D> &Field3D::getRegion(REGION region) const {
   return fieldmesh->getRegion3D(toString(region));
-};
+}
 const Region<Ind3D> &Field3D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion3D(region_name);
-};
+}
 
 const Region<Ind2D> &Field3D::getRegion2D(REGION region) const {
   return fieldmesh->getRegion2D(toString(region));
-};
+}
 const Region<Ind2D> &Field3D::getRegion2D(const std::string &region_name) const {
   return fieldmesh->getRegion2D(region_name);
-};
+}
 
 /***************************************************************
  *                         OPERATORS 
@@ -252,9 +253,9 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
   TRACE("Field3D: Assignment from Field3D");
 
-  // Delete existing parallel slices. We don't copy parallel slices, so any
-  // that currently exist will be incorrect.
-  clearParallelSlices();
+  // Copy parallel slices or delete existing ones.
+  yup_fields = rhs.yup_fields;
+  ydown_fields = rhs.ydown_fields;
 
   copyFieldMembers(rhs);
 
@@ -264,6 +265,25 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   nz = rhs.nz;
 
   data = rhs.data;
+
+  return *this;
+}
+
+Field3D& Field3D::operator=(Field3D&& rhs) {
+  TRACE("Field3D: Assignment from Field3D");
+
+  // Copy parallel slices or delete existing ones.
+  yup_fields = std::move(rhs.yup_fields);
+  ydown_fields = std::move(rhs.ydown_fields);
+
+  copyFieldMembers(rhs);
+
+  // Copy the data and data sizes
+  nx = rhs.nx;
+  ny = rhs.ny;
+  nz = rhs.nz;
+
+  data = std::move(rhs.data);
 
   return *this;
 }
@@ -282,7 +302,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 
   /// Make sure there's a unique array to copy data into
   allocate();
-  ASSERT1(areFieldsCompatible(*this, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
   /// Copy data
   BOUT_FOR(i, rhs.getRegion("RGN_ALL")) {
@@ -297,7 +317,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 void Field3D::operator=(const FieldPerp &rhs) {
   TRACE("Field3D = FieldPerp");
 
-  ASSERT1(areFieldsCompatible(*this, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
 
@@ -432,7 +452,7 @@ void Field3D::applyBoundary(const std::string &region, const std::string &condit
   }
 
   if (!region_found) {
-    throw BoutException("Region '%s' not found", region.c_str());
+    throw BoutException("Region '{:s}' not found", region);
   }
 
   //Field2D sets the corners to zero here, should we do the same here?
@@ -610,7 +630,7 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs, const std::string& rgn) {
   // Check if the inputs are allocated
   checkData(lhs);
   checkData(rhs);
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   // Define and allocate the output result
   Field3D result{emptyFrom(lhs)};
@@ -626,7 +646,7 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, const std::string& rgn) 
 
   checkData(lhs);
   checkData(rhs);
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
   
@@ -678,7 +698,7 @@ Field3D filter(const Field3D &var, int N0, const std::string& rgn) {
     }
   }
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "filter(" + var.name + ")";
 #endif
 
@@ -688,7 +708,7 @@ Field3D filter(const Field3D &var, int N0, const std::string& rgn) {
 
 // Fourier filter in z with zmin
 Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, const std::string& rgn) {
-  TRACE("lowPass(Field3D, %d, %d)", zmax, keep_zonal);
+  TRACE("lowPass(Field3D, {}, {})", zmax, keep_zonal);
 
   checkData(var);
   int ncz = var.getNz();
@@ -783,7 +803,7 @@ void checkDataIsFiniteOnRegion(const Field3D& f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!finite(f[i])) {
-      throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n",
+      throw BoutException("Field3D: Operation on non-finite data at [{:d}][{:d}][{:d}]\n",
                           i.x(), i.y(), i.z());
     }
   }

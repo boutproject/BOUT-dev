@@ -1,9 +1,12 @@
+#include "bout/build_config.hxx"
+
 #include "gtest/gtest.h"
 
 #include "bout.hxx"
 #include "boutexception.hxx"
 #include "test_extras.hxx"
 #include "utils.hxx"
+#include "bout/version.hxx"
 
 #include <algorithm>
 #include <csignal>
@@ -18,7 +21,7 @@ std::vector<char*> get_c_string_vector(std::vector<std::string>& vec_args) {
   return c_args;
 }
 
-TEST(ParseCommandLineArgs, HelpShortOption) {
+TEST(ParseCommandLineArgsDeathTest, HelpShortOption) {
   std::vector<std::string> v_args{"test", "-h"};
   auto c_args = get_c_string_vector(v_args);
   char** argv = c_args.data();
@@ -32,7 +35,7 @@ TEST(ParseCommandLineArgs, HelpShortOption) {
   std::cout.rdbuf(cout_buf);
 }
 
-TEST(ParseCommandLineArgs, HelpLongOption) {
+TEST(ParseCommandLineArgsDeathTest, HelpLongOption) {
   std::vector<std::string> v_args{"test", "--help"};
   auto c_args = get_c_string_vector(v_args);
   char** argv = c_args.data();
@@ -290,7 +293,7 @@ public:
 TEST_F(PrintStartupTest, Header) {
   bout::experimental::printStartupHeader(4, 8);
 
-  EXPECT_TRUE(IsSubString(buffer.str(), BOUT_VERSION_STRING));
+  EXPECT_TRUE(IsSubString(buffer.str(), bout::version::full));
   EXPECT_TRUE(IsSubString(buffer.str(), _("4 of 8")));
 }
 
@@ -313,9 +316,9 @@ TEST_F(PrintStartupTest, CommandLineArguments) {
   }
 }
 
-#ifdef SIGHANDLE
+#if BOUT_USE_SIGNAL
 
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
 #include <fenv.h>
 #endif
 
@@ -326,14 +329,16 @@ public:
     std::signal(SIGUSR1, SIG_DFL);
     std::signal(SIGFPE, SIG_DFL);
     std::signal(SIGSEGV, SIG_DFL);
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
     std::signal(SIGFPE, SIG_DFL);
     fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
   }
 };
 
-TEST_F(SignalHandlerTest, SegFault) {
+using SignalHandlerTestDeathTest = SignalHandlerTest;
+
+TEST_F(SignalHandlerTestDeathTest, SegFault) {
   bout::experimental::setupSignalHandler(bout::experimental::defaultSignalHandler);
   // This test is *incredibly* expensive, maybe as much as 1s, so only test the one signal
   EXPECT_DEATH(std::raise(SIGSEGV), "SEGMENTATION FAULT");
@@ -394,5 +399,5 @@ TEST(BoutInitialiseFunctions, SavePIDtoFile) {
 
   std::remove(filename.c_str());
 
-  EXPECT_THROW(bout::experimental::savePIDtoFile("/", 2), BoutException);
+  EXPECT_THROW(bout::experimental::savePIDtoFile("/does/likely/not/exists", 2), BoutException);
 }

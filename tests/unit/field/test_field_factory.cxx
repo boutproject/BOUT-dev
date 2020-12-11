@@ -20,6 +20,7 @@ extern Mesh* mesh;
 
 // The unit tests use the global mesh
 using namespace bout::globals;
+using bout::generator::Context;
 
 // Reuse the "standard" fixture for FakeMesh
 template <typename T>
@@ -478,6 +479,23 @@ TYPED_TEST(FieldFactoryCreationTest, CreateMaxX) {
   EXPECT_TRUE(IsFieldEqual(output, 4.));
 }
 
+TYPED_TEST(FieldFactoryCreationTest, CreateClampX) {
+  // Check that the first argument is within low and high limits
+  // Also check that each input can be an expression
+  
+  auto output = this->create("clamp(1 + 1, 1, 3)");
+
+  EXPECT_TRUE(IsFieldEqual(output, 2.));
+
+  output = this->create("clamp(-1, 2 - 1, 3)");
+
+  EXPECT_TRUE(IsFieldEqual(output, 1.));
+  
+  output = this->create("clamp(5, 1, 6 / 2)");
+
+  EXPECT_TRUE(IsFieldEqual(output, 3.));
+}
+
 TYPED_TEST(FieldFactoryCreationTest, CreatePowX) {
   auto output = this->create("power(x, 2)");
 
@@ -719,6 +737,12 @@ TEST_F(FieldFactoryTest, MaxArgs) {
   EXPECT_THROW(factory.parse("max()"), ParseException);
 }
 
+TEST_F(FieldFactoryTest, ClampArgs) {
+  EXPECT_THROW(factory.parse("clamp()"), ParseException);
+  EXPECT_THROW(factory.parse("clamp(1)"), ParseException);
+  EXPECT_THROW(factory.parse("clamp(1,2)"), ParseException);
+}
+
 TEST_F(FieldFactoryTest, PowerArgs) {
   EXPECT_THROW(factory.parse("power()"), ParseException);
   EXPECT_THROW(factory.parse("power(x)"), ParseException);
@@ -745,6 +769,31 @@ TEST_F(FieldFactoryTest, TanhhatArgs) {
   EXPECT_THROW(factory.parse("tanhhat(x, x, x, x, x)"), ParseException);
 }
 
+TEST_F(FieldFactoryTest, Where) {
+  auto fieldgen = factory.parse("where({val}, 3, 5)");
+
+  EXPECT_DOUBLE_EQ(fieldgen->generate(Context().set("val", 1.0)), 3);
+  EXPECT_DOUBLE_EQ(fieldgen->generate(Context().set("val", -1.0)), 5);
+}
+
+TEST_F(FieldFactoryTest, Recursion) {
+  // Need to enable recursion
+  Options opt;
+  opt["input"]["max_recursion_depth"] = 4; // Should be sufficient for n=6
+
+  // Create a factory with a max_recursion_depth != 0
+  FieldFactory factory_rec(nullptr, &opt);
+  
+  // Fibonacci sequence: 1 1 2 3 5 8
+  opt["fib"] = "where({n} - 2.5, [n={n}-1](fib) + [n={n}-2](fib), 1)";
+  
+  auto gen = factory_rec.parse("fib", &opt);
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 3)), 2);
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 4)), 3);
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 5)), 5);
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 6)), 8);
+  EXPECT_THROW(gen->generate(Context().set("n", 7)), BoutException); // Max recursion exceeded
+}
 // A mock ParallelTransform to test transform_from_field_aligned
 // property of FieldFactory. For now, the transform just returns the
 // negative of the input. Ideally, this will get moved to GoogleMock

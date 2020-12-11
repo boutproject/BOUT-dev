@@ -13,7 +13,8 @@
 #include "bout.hxx"
 #include "bout/constants.hxx"
 #include "field_factory.hxx"
-#include "interpolation_factory.hxx"
+#include "bout/sys/generator_context.hxx"
+#include "interpolation_xz.hxx"
 
 /// Get a FieldGenerator from the options for a variable
 std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varname,
@@ -34,6 +35,8 @@ int main(int argc, char **argv) {
   std::default_random_engine generator;
   // Uniform distribution of BoutReals from 0 to 1
   std::uniform_real_distribution<BoutReal> distribution{0.0, 1.0};
+
+  using bout::globals::mesh;
 
   FieldFactory f(mesh);
 
@@ -75,17 +78,17 @@ int main(int argc, char **argv) {
     deltax[index] = dx;
     deltaz[index] = dz;
     // Get the global indices
-    BoutReal x = mesh->GlobalX(dx);
-    BoutReal y = TWOPI * mesh->GlobalY(index.y());
-    BoutReal z = TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz);
+    bout::generator::Context pos{index, CELL_CENTRE, deltax.getMesh(), 0.0};
+    pos.set("x", mesh->GlobalX(dx),
+            "z", TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz));
     // Generate the analytic solution at the displacements
-    a_solution[index] = a_gen->generate(x, y, z, 0.0);
-    b_solution[index] = b_gen->generate(x, y, z, 0.0);
-    c_solution[index] = c_gen->generate(x, y, z, 0.0);
+    a_solution[index] = a_gen->generate(pos);
+    b_solution[index] = b_gen->generate(pos);
+    c_solution[index] = c_gen->generate(pos);
   }
 
   // Create the interpolation object from the input options
-  Interpolation *interp = InterpolationFactory::getInstance()->create();
+  auto interp = XZInterpolationFactory::getInstance().create();
 
   // Interpolate the analytic functions at the displacements
   a_interp = interp->interpolate(a, deltax, deltaz);
@@ -96,7 +99,7 @@ int main(int argc, char **argv) {
   SAVE_ONCE3(b, b_interp, b_solution);
   SAVE_ONCE3(c, c_interp, c_solution);
 
-  dump.write();
+  bout::globals::dump.write();
 
   BoutFinalise();
 

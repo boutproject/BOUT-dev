@@ -32,10 +32,50 @@
 #include <utils.hxx>
 #include <bout/mesh.hxx>
 
-Field::Field(Mesh *localmesh, CELL_LOC location_in,
-             DirectionTypes directions_in)
-    : fieldmesh(localmesh==nullptr ? bout::globals::mesh : localmesh),
-      location(location_in), directions(directions_in) {
+namespace bout {
+/// Make sure \p location is a sensible value for \p mesh
+///
+/// Throws if checks are enabled and trying to use a staggered
+/// location on a non-staggered mesh
+CELL_LOC normaliseLocation(CELL_LOC location, Mesh* mesh) {
+  AUTO_TRACE();
+
+  // CELL_DEFAULT always means CELL_CENTRE
+  if (location == CELL_DEFAULT) {
+    return CELL_CENTRE;
+  }
+
+  // No mesh means we can't check if we're using staggered grids, so
+  // we'll have to trust the user in this case. This can happen if
+  // we're making a field before the global mesh has been initialised
+  // -- probably not good, but possible.
+  if (mesh == nullptr) {
+    return location;
+  }
+
+  if (mesh->StaggerGrids) {
+    if (location == CELL_VSHIFT) {
+      throw BoutException(
+          "Field: CELL_VSHIFT cell location only makes sense for vectors");
+    }
+    return location;
+  } else {
+#if CHECK > 0
+    if (location != CELL_CENTRE) {
+      throw BoutException("Field: Trying to set off-centre location on "
+                          "non-staggered grid\n"
+                          "         Did you mean to enable staggered grids?");
+    }
+#endif
+    return CELL_CENTRE;
+  }
+}
+} // namespace bout
+
+Field::Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
+    : fieldmesh(localmesh == nullptr ? bout::globals::mesh : localmesh),
+      location(bout::normaliseLocation(location_in, fieldmesh)),
+      directions(directions_in) {
 
   // Need to check for nullptr again, because the fieldmesh might still be
   // nullptr if the global mesh hasn't been initialized yet
@@ -48,26 +88,8 @@ Field::Field(Mesh *localmesh, CELL_LOC location_in,
 
 void Field::setLocation(CELL_LOC new_location) {
   AUTO_TRACE();
-  if (getMesh()->StaggerGrids) {
-    if (new_location == CELL_VSHIFT) {
-      throw BoutException(
-          "Field: CELL_VSHIFT cell location only makes sense for vectors");
-    }
-    if (new_location == CELL_DEFAULT) {
-      new_location = CELL_CENTRE;
-    }
 
-    location = new_location;
-  } else {
-#if CHECK > 0
-    if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
-      throw BoutException("Field: Trying to set off-centre location on "
-                          "non-staggered grid\n"
-                          "         Did you mean to enable staggered grids?");
-    }
-#endif
-    location = CELL_CENTRE;
-  }
+  location = bout::normaliseLocation(new_location, getMesh());
 
   fieldCoordinates = nullptr;
   // Sets correct fieldCoordinates pointer and ensures Coordinates object is
@@ -96,12 +118,12 @@ Coordinates *Field::getCoordinates(CELL_LOC loc) const {
 
 int Field::getNx() const{
   return getMesh()->LocalNx;
-};
+}
 
 int Field::getNy() const{
   return getMesh()->LocalNy;
-};
+}
 
 int Field::getNz() const{
   return getMesh()->LocalNz;
-};
+}

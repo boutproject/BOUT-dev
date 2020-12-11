@@ -32,24 +32,33 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_PETSC
-
-class IMEXBDF2;
-
 #ifndef __IMEXBDF2_SOLVER_H__
 #define __IMEXBDF2_SOLVER_H__
+
+#include "bout/build_config.hxx"
+#include "bout/solver.hxx"
+
+#if not BOUT_HAS_PETSC
+
+namespace {
+RegisterUnavailableSolver registerunavailableimdexbdef2("imdexbdef2",
+                                                        "BOUT++ was not configured with PETSc");
+}
+
+#else
+
+class IMEXBDF2;
 
 #include "mpi.h"
 
 #include <bout_types.hxx>
-#include <bout/solver.hxx>
-
 #include <bout/petsclib.hxx>
 
 #include <petsc.h>
 #include <petscsnes.h>
+// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
+#undef MPI_Allreduce
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<IMEXBDF2> registersolverimexbdf2("imexbdf2");
 }
@@ -99,7 +108,7 @@ class IMEXBDF2 : public Solver {
   /// @param[out] f  The result of the operation
   PetscErrorCode precon(Vec x, Vec f);
  private:
-  static const int MAX_SUPPORTED_ORDER = 4; //Should this be #defined instead?
+  static constexpr int MAX_SUPPORTED_ORDER = 4; //Should this be #defined instead?
 
   int maxOrder; ///< Specify the maximum order of the scheme to use (1/2/3)
 

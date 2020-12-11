@@ -45,6 +45,8 @@ class PhysicsModel;
 #include "utils.hxx"
 #include "bout/macro_for_each.hxx"
 
+class Mesh;
+
 /*!
   Base class for physics models
  */
@@ -57,6 +59,9 @@ public:
   
   virtual ~PhysicsModel() = default;
   
+  Mesh* mesh{nullptr};
+  Datafile& dump;
+
   /*!
    * Initialse the model, calling the init() and postInit() methods
    *
@@ -312,7 +317,7 @@ private:
       return init_err;                                             \
     try {                                                          \
       auto model = bout::utils::make_unique<ModelClass>();         \
-      auto solver = std::unique_ptr<Solver>(Solver::create());     \
+      auto solver = Solver::create();                              \
       solver->setModel(model.get());                               \
       auto bout_monitor = bout::utils::make_unique<BoutMonitor>(); \
       solver->addMonitor(bout_monitor.get(), Solver::BACK);        \

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BOUT++ 4.2.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-03-19 12:26+0000\n"
+"POT-Creation-Date: 2019-11-22 16:33+0000\n"
 "PO-Revision-Date: 2019-02-11 12:46+0900\n"
 "Last-Translator: Marta <mpee500@york.ac.uk>\n"
 "Language-Team: Spanish\n"
@@ -16,137 +16,141 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:339
-#, c-format
+#: ../src/mesh/impls/bout/boutmesh.cxx:347
+#, fuzzy
 msgid ""
-"\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must be a multiple of "
-"MYSUB (%d)\n"
+"\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must be a multiple "
+"of MYSUB ({:d})\n"
 msgstr ""
-"\t -> La región `Core` jyseps2_1-jyseps1_1 (%d-%d = %d) debe ser un múltiplo "
-"de MYSUB (%d)\n"
+"\t -> La región `Core` jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) debe ser un múltiplo "
+"de MYSUB ({:d})\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:368
-#, c-format
+#: ../src/mesh/impls/bout/boutmesh.cxx:376
+#, fuzzy
 msgid ""
-"\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must be a multiple of "
-"MYSUB (%d)\n"
+"\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must be a multiple "
+"of MYSUB ({:d})\n"
 msgstr ""
-"\t -> La región `Core` jyseps2_2-jyseps1_1 (%d-%d = %d) debe ser un múltiplo "
-"de MYSUB (%d)\n"
+"\t -> La región `Core` jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) debe ser un múltiplo "
+"de MYSUB ({:d})\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:346
-#, c-format
+#: ../src/mesh/impls/bout/boutmesh.cxx:354
+#, fuzzy
 msgid ""
-"\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must be a multiple of "
-"MYSUB (%d)\n"
+"\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must be a multiple "
+"of MYSUB ({:d})\n"
 msgstr ""
-"\t -> La región `Core` jyseps2_2-jyseps1_2 (%d-%d = %d) debe ser un múltiplo "
-"de MYSUB (%d)\n"
+"\t -> La región `Core` jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) debe ser un múltiplo "
+"de MYSUB ({:d})\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:381
+#: ../src/mesh/impls/bout/boutmesh.cxx:389
 msgid "\t -> Good value\n"
 msgstr "\t -> El valor es bueno\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:330
-#, c-format
-msgid "\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n"
-msgstr ""
-"\t -> La región `Leg` jyseps1_1+1 (%d) debe ser un múltiplo de MYSUB (%d)\n"
-
-#: ../src/mesh/impls/bout/boutmesh.cxx:360
-#, c-format
+#: ../src/mesh/impls/bout/boutmesh.cxx:338
+#, fuzzy
 msgid ""
-"\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must be a multiple of "
-"MYSUB (%d)\n"
+"\t -> Leg region jyseps1_1+1 ({:d}) must be a multiple of MYSUB ({:d})\n"
 msgstr ""
-"\t -> La región `Leg` jyseps1_2-ny_inner+1 (%d-%d+1 = %d) debe ser un "
-"múltiplo de MYSUB (%d)\n"
+"\t -> La región `Leg` jyseps1_1+1 ({:d}) debe ser un múltiplo de MYSUB ({:d})\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:376
-#, c-format
+#: ../src/mesh/impls/bout/boutmesh.cxx:368
+#, fuzzy
 msgid ""
-"\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a multiple of MYSUB "
-"(%d)\n"
+"\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must be a "
+"multiple of MYSUB ({:d})\n"
 msgstr ""
-"\t -> La región `Leg` ny-jyseps2_2-1 (%d-%d-1 = %d) debe ser un múltiplo de "
-"MYSUB (%d)\n"
+"\t -> La región `Leg` jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) debe ser un "
+"múltiplo de MYSUB ({:d})\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:354
-#, c-format
+#: ../src/mesh/impls/bout/boutmesh.cxx:384
+#, fuzzy
 msgid ""
-"\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must be a multiple of "
-"MYSUB (%d)\n"
+"\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a multiple of "
+"MYSUB ({:d})\n"
 msgstr ""
-"\t -> La región `Leg` ny_inner-jyseps2_1-1 (%d-%d-1 = %d) debe ser un "
-"múltiplo de MYSUB (%d)\n"
+"\t -> La región `Leg` ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) debe ser un múltiplo de "
+"MYSUB ({:d})\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:323
-#, c-format
-msgid "\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n"
-msgstr "\t -> ny/NYPE (%d/%d = %d) debe ser >= MYG (%d)\n"
+#: ../src/mesh/impls/bout/boutmesh.cxx:362
+#, fuzzy
+msgid ""
+"\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must be a "
+"multiple of MYSUB ({:d})\n"
+msgstr ""
+"\t -> La región `Leg` ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) debe ser un "
+"múltiplo de MYSUB ({:d})\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:331
+#, fuzzy
+msgid "\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"
+msgstr "\t -> ny/NYPE ({:d}/{:d} = {:d}) debe ser >= MYG ({:d})\n"
 
 #. Loop over all possibilities
 #. Processors divide equally
 #. Mesh in X divides equally
 #. Mesh in Y divides equally
-#: ../src/mesh/impls/bout/boutmesh.cxx:316
-#, c-format
-msgid "\tCandidate value: %d\n"
-msgstr "\tValor candidato: %d\n"
+#: ../src/mesh/impls/bout/boutmesh.cxx:324
+#, fuzzy
+msgid "\tCandidate value: {:d}\n"
+msgstr "\tValor candidato: {:d}\n"
 
-#: ../src/bout++.cxx:379
+#: ../src/bout++.cxx:430
 msgid "\tChecking disabled\n"
 msgstr "\tComprobación desactivada\n"
 
-#: ../src/bout++.cxx:377
-#, c-format
-msgid "\tChecking enabled, level %d\n"
-msgstr "\tComprobación activada, nivel %d\n"
+#: ../src/bout++.cxx:428
+#, fuzzy
+msgid "\tChecking enabled, level {:d}\n"
+msgstr "\tComprobación activada, nivel {:d}\n"
 
-#: ../src/bout++.cxx:425
+#: ../src/bout++.cxx:476
 msgid "\tCommand line options for this run : "
 msgstr "\tParámetros de línea de comandos para esta ejecución :"
 
 #. The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
 #. which could cause problems (e.g. terminate strings).
-#: ../src/bout++.cxx:421
-#, c-format
-msgid "\tCompiled with flags : %s\n"
-msgstr "\tCompilado con las opciones `flags` : %s\n"
+#: ../src/bout++.cxx:472
+#, fuzzy
+msgid "\tCompiled with flags : {:s}\n"
+msgstr "\tCompilado con las opciones `flags` : {:s}\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:396
-#, c-format
+#: ../src/mesh/impls/bout/boutmesh.cxx:404
+#, fuzzy
 msgid ""
-"\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n"
+"\tDomain split (NXPE={:d}, NYPE={:d}) into domains (localNx={:d}, localNy={:"
+"d})\n"
 msgstr ""
-"\tDominio separado (NXPE=%d, NYPE=%d) en los dominios (localNx=%d, localNy="
-"%d)\n"
+"\tDominio separado (NXPE={:d}, NYPE={:d}) en los dominios (localNx={:d}, localNy="
+"{:d})\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:421
-#, c-format
-msgid "\tERROR: Cannot split %d Y points equally between %d processors\n"
+#: ../src/mesh/impls/bout/boutmesh.cxx:429
+#: ../src/mesh/impls/bout/boutmesh.cxx:1645
+#, fuzzy
+msgid "\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"
 msgstr ""
-"\tERROR: No se pueden separar %d Y puntos entre %d procesadores por igual\n"
+"\tERROR: No se pueden separar {:d} Y puntos entre {:d} procesadores por igual\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:427
-#, fuzzy, c-format
-msgid "\tERROR: Cannot split %d Z points equally between %d processors\n"
+#: ../src/mesh/impls/bout/boutmesh.cxx:436
+#: ../src/mesh/impls/bout/boutmesh.cxx:1653
+#, fuzzy
+msgid "\tERROR: Cannot split {:d} Z points equally between {:d} processors\n"
 msgstr ""
-"\tERROR: No se pueden separar %d Y puntos entre %d procesadores por igual\n"
+"\tERROR: No se pueden separar {:d} Y puntos entre {:d} procesadores por igual\n"
 
-#: ../src/sys/options/options_ini.cxx:167
-#, c-format
+#: ../src/sys/options/options_ini.cxx:168
+#, fuzzy
 msgid ""
 "\tEmpty key\n"
-"\tLine: %s"
+"\tLine: {:s}"
 msgstr ""
 "\tEntrada vacía\n"
-"\tLínea: %s"
+"\tLínea: {:s}"
 
-#: ../src/sys/optionsreader.cxx:144
-#, c-format
-msgid "\tEmpty key or value in command line '%s'\n"
-msgstr "\tEntrada o valor vacío en la línea de comandos '%s'\n"
+#: ../src/sys/optionsreader.cxx:119
+#, fuzzy
+msgid "\tEmpty key or value in command line '{:s}'\n"
+msgstr "\tEntrada o valor vacío en la línea de comandos '{:s}'\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:128
 msgid "\tGrid size: "
@@ -157,53 +161,53 @@ msgstr "\tTamaño de la malla (`grid`): "
 msgid "\tGuard cells (x,y,z): "
 msgstr "\tProteger celdas (x,y): "
 
-#: ../src/sys/options/options_ini.cxx:171
-#, c-format
+#: ../src/sys/options/options_ini.cxx:172
+#, fuzzy
 msgid ""
 "\tKey must not contain ':' character\n"
-"\tLine: %s"
+"\tLine: {:s}"
 msgstr ""
 "\tLa entrada no debe contener el carácter ':'\n"
-"\tLínea: %s"
+"\tLínea: {:s}"
 
-#: ../src/sys/optionsreader.cxx:131
-#, c-format
-msgid "\tMultiple '=' in command-line argument '%s'\n"
-msgstr "\tMutilples '=' en el argumento de la línea de comandos '%s'\n"
+#: ../src/sys/optionsreader.cxx:103
+#, fuzzy
+msgid "\tMultiple '=' in command-line argument '{:s}'\n"
+msgstr "\tMutilples '=' en el argumento de la línea de comandos '{:s}'\n"
 
-#: ../src/bout++.cxx:408
+#: ../src/bout++.cxx:459
 msgid "\tOpenMP parallelisation disabled\n"
 msgstr "\tParalelización en OpenMP desactivada\n"
 
-#: ../src/bout++.cxx:405
-#, c-format
-msgid "\tOpenMP parallelisation enabled, using %d threads\n"
-msgstr "\tParalelización en OpenMP activada, usando %d procesos (`threads`)\n"
+#: ../src/bout++.cxx:456
+#, fuzzy
+msgid "\tOpenMP parallelisation enabled, using {:d} threads\n"
+msgstr "\tParalelización en OpenMP activada, usando {:d} procesos (`threads`)\n"
 
 #. Mark the option as used
 #. Option not found
-#: ../include/options.hxx:406 ../include/options.hxx:438
-#: ../include/options.hxx:460 ../include/options.hxx:635
-#: ../src/sys/options.cxx:183 ../src/sys/options.cxx:238
-#: ../src/sys/options.cxx:280 ../src/sys/options.cxx:319
+#: ../include/options.hxx:406 ../include/options.hxx:439
+#: ../include/options.hxx:462 ../include/options.hxx:638
+#: ../src/sys/options.cxx:183 ../src/sys/options.cxx:237
+#: ../src/sys/options.cxx:279 ../src/sys/options.cxx:318
 msgid "\tOption "
 msgstr "\tOpción "
 
-#: ../src/sys/options.cxx:309
-#, c-format
-msgid "\tOption '%s': Boolean expected. Got '%s'\n"
-msgstr "\tOpción '%s': valor Booleano esperado. Se obtuvo '%s'\n"
+#: ../src/sys/options.cxx:308
+#, fuzzy
+msgid "\tOption '{:s}': Boolean expected. Got '{:s}'\n"
+msgstr "\tOpción '{:s}': valor Booleano esperado. Se obtuvo '{:s}'\n"
 
 #: ../src/sys/options/options_ini.cxx:68
-#, c-format
-msgid "\tOptions file '%s' not found\n"
-msgstr "\tOpciones de archivo '%s' no encontrados\n"
+#, fuzzy
+msgid "\tOptions file '{:s}' not found\n"
+msgstr "\tOpciones de archivo '{:s}' no encontrados\n"
 
-#: ../src/bout++.cxx:401
+#: ../src/bout++.cxx:452
 msgid "\tParallel NetCDF support disabled\n"
 msgstr "\tSoporte para NetCDF paralelo desactivado\n"
 
-#: ../src/bout++.cxx:399
+#: ../src/bout++.cxx:450
 msgid "\tParallel NetCDF support enabled\n"
 msgstr "\tSoporte para NetCDF paralelo activado\n"
 
@@ -211,40 +215,39 @@ msgstr "\tSoporte para NetCDF paralelo activado\n"
 msgid "\tRead nz from input grid file\n"
 msgstr "\tLeer nz del archivo input de la malla `grid`\n"
 
-#: ../src/mesh/mesh.cxx:181
+#: ../src/mesh/mesh.cxx:212
 msgid "\tReading contravariant vector "
 msgstr "\tLeyendo vector contravariante "
 
-#: ../src/mesh/mesh.cxx:174 ../src/mesh/mesh.cxx:195
+#: ../src/mesh/mesh.cxx:205 ../src/mesh/mesh.cxx:226
 msgid "\tReading covariant vector "
 msgstr "\tLeyendo vector covariante "
 
-#: ../src/bout++.cxx:385
+#: ../src/bout++.cxx:436
 msgid "\tSignal handling disabled\n"
 msgstr "\tGestión de señal desactivada\n"
 
-#: ../src/bout++.cxx:383
+#: ../src/bout++.cxx:434
 msgid "\tSignal handling enabled\n"
 msgstr "\tGestión de señal activada\n"
 
 #: ../src/solver/impls/split-rk/split-rk.cxx:74
-#, c-format
-msgid "\tUsing a timestep %e\n"
+msgid "\tUsing a timestep {:e}\n"
 msgstr ""
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:880
+#: ../src/mesh/impls/bout/boutmesh.cxx:891
 msgid "\tdone\n"
 msgstr "\tlisto\n"
 
-#: ../src/bout++.cxx:394
+#: ../src/bout++.cxx:445
 msgid "\tnetCDF support disabled\n"
 msgstr "\tSoporte netCDF desactivado\n"
 
-#: ../src/bout++.cxx:389
+#: ../src/bout++.cxx:440
 msgid "\tnetCDF support enabled\n"
 msgstr "\tSoporte netCDF activado\n"
 
-#: ../src/bout++.cxx:392
+#: ../src/bout++.cxx:443
 msgid "\tnetCDF4 support enabled\n"
 msgstr "\tSoporte netCDF4 activado\n"
 
@@ -254,7 +257,7 @@ msgid ""
 "\tSplit Runge-Kutta-Legendre and SSP-RK3 solver\n"
 msgstr ""
 
-#: ../src/bout++.cxx:229
+#: ../src/bout++.cxx:237
 msgid ""
 "\n"
 "  -d <data directory>\tLook in <data directory> for input/output files\n"
@@ -273,30 +276,30 @@ msgstr ""
 "  -v, --verbose\t\tAumentar verbosidad\n"
 "  -q, --quiet\t\tDisminuir verbosidad\n"
 
-#: ../src/solver/solver.cxx:491
-#, c-format
+#: ../src/solver/solver.cxx:507
+#, fuzzy
 msgid ""
 "\n"
-"Run finished at  : %s\n"
+"Run finished at  : {:s}\n"
 msgstr ""
 "\n"
-"Ejecución finalizada en  : %s\n"
+"Ejecución finalizada en  : {:s}\n"
 
-#: ../src/solver/solver.cxx:456
-#, c-format
+#: ../src/solver/solver.cxx:472
+#, fuzzy
 msgid ""
 "\n"
-"Run started at  : %s\n"
+"Run started at  : {:s}\n"
 msgstr ""
 "\n"
-"Ejecución iniciada en  : %s\n"
+"Ejecución iniciada en  : {:s}\n"
 
-#: ../src/bout++.cxx:237
+#: ../src/bout++.cxx:245
 msgid "  -c, --color\t\tColor output using bout-log-color\n"
 msgstr "  -c, --color\t\tSalida de color usando bout-log-color\n"
 
-#: ../src/bout++.cxx:240
-#, c-format
+#: ../src/bout++.cxx:248
+#, fuzzy
 msgid ""
 "  -h, --help\t\tThis message\n"
 "  restart [append]\tRestart the simulation. If append is specified, append "
@@ -304,7 +307,7 @@ msgid ""
 "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
 "\n"
 "For all possible input parameters, see the user manual and/or the physics "
-"model source (e.g. %s.cxx)\n"
+"model source (e.g. {:s}.cxx)\n"
 msgstr ""
 "  -h, --help\t\tEste mensaje\n"
 "  restart [append]\tReiniciar la simulación. Si se especificó `append`, "
@@ -313,9 +316,9 @@ msgstr ""
 "  VAR=VALUE\t\tEspecificar un VALOR para el parámetro input VAR\n"
 "\n"
 "Para todos los possibles parámetros input, vea el manual de usuario y/o el "
-"modelo físico fuente (ej. %s.cxx)\n"
+"modelo físico fuente (ej. {:s}.cxx)\n"
 
-#: ../include/options.hxx:638
+#: ../include/options.hxx:641
 msgid ") overwritten with:"
 msgstr ""
 
@@ -323,166 +326,166 @@ msgstr ""
 msgid "4 of 8"
 msgstr ""
 
-#: ../src/sys/options.cxx:464
+#: ../src/sys/options.cxx:463
 msgid "All options used\n"
 msgstr "Usando todas las opciones\n"
 
-#: ../src/bout++.cxx:357
-#, c-format
-msgid "BOUT++ version %s\n"
-msgstr "Versión de BOUT++ %s\n"
+#: ../src/bout++.cxx:408
+#, fuzzy
+msgid "BOUT++ version {:s}\n"
+msgstr "Versión de BOUT++ {:s}\n"
 
-#: ../src/bout++.cxx:112
+#: ../src/bout++.cxx:116
 #, fuzzy
 msgid "Bad command line arguments:\n"
-msgstr "\tMutilples '=' en el argumento de la línea de comandos '%s'\n"
+msgstr "\tMutilples '=' en el argumento de la línea de comandos '{:s}'\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:862
+#: ../src/mesh/impls/bout/boutmesh.cxx:873
 msgid "Boundary regions in this processor: "
 msgstr "Regiones frontera en este procesador: "
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:412
-#, c-format
-msgid "Cannot split %d X points equally between %d processors\n"
-msgstr "No se pueden dividir %d X points entre %d procesadores por igual\n"
+#: ../src/mesh/impls/bout/boutmesh.cxx:420
+#: ../src/mesh/impls/bout/boutmesh.cxx:1636
+#, fuzzy
+msgid "Cannot split {:d} X points equally between {:d} processors\n"
+msgstr "No se pueden dividir {:d} X points entre {:d} procesadores por igual\n"
 
-#: ../src/bout++.cxx:691
+#: ../src/bout++.cxx:736
 msgid "Check if a file exists, and exit if it does."
 msgstr ""
 
-#: ../src/bout++.cxx:364
-#, c-format
+#: ../src/bout++.cxx:415
+#, fuzzy
 msgid ""
-"Code compiled on %s at %s\n"
+"Code compiled on {:s} at {:s}\n"
 "\n"
 msgstr ""
-"Código compilado en %s en %s\n"
+"Código compilado en {:s} en {:s}\n"
 "\n"
 
-#: ../src/sys/optionsreader.cxx:146
+#: ../src/sys/optionsreader.cxx:122
 msgid "Command line"
 msgstr "Línea de comandos"
 
-#: ../tests/unit/src/test_bout++.cxx:300 ../src/bout++.cxx:374
+#: ../tests/unit/src/test_bout++.cxx:300 ../src/bout++.cxx:425
 msgid "Compile-time options:\n"
 msgstr "Opciones de tiempo de compilación:\n"
 
 #: ../tests/unit/src/test_bout++.cxx:304
 #, fuzzy
 msgid "Compiled with flags"
-msgstr "\tCompilado con las opciones `flags` : %s\n"
+msgstr "\tCompilado con las opciones `flags` : {:s}\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:871
+#: ../src/mesh/impls/bout/boutmesh.cxx:882
 msgid "Constructing default regions"
 msgstr "Construyendo regiones por defecto"
 
-#: ../src/bout++.cxx:349
-#, fuzzy, c-format
-msgid "Could not create PID file %s"
-msgstr "No se pudo abrir el archivo de salida `output` '%s'\n"
+#: ../src/bout++.cxx:400
+#, fuzzy
+msgid "Could not create PID file {:s}"
+msgstr "No se pudo abrir el archivo de salida `output` '{:s}'\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:390
+#: ../src/mesh/impls/bout/boutmesh.cxx:398
 msgid ""
 "Could not find a valid value for NXPE. Try a different number of processors."
 msgstr ""
 "No se pudo encontrar un valor válido para NXPE. Intente usar un número "
 "diferente de procesadores."
 
-#: ../src/bout++.cxx:483
-#, c-format
-msgid "Could not open %s/%s.%d for writing"
+#: ../src/sys/options/options_ini.cxx:127
+#, fuzzy
+msgid "Could not open output file '{:s}'\n"
+msgstr "No se pudo abrir el archivo de salida `output` '{:s}'\n"
+
+#: ../src/bout++.cxx:534
+msgid "Could not open {:s}/{:s}.{:d} for writing"
 msgstr ""
 
-#: ../src/sys/options/options_ini.cxx:126
-#, c-format
-msgid "Could not open output file '%s'\n"
-msgstr "No se pudo abrir el archivo de salida `output` '%s'\n"
-
 #. Error reading
-#: ../src/mesh/mesh.cxx:352
-#, c-format
-msgid "Could not read integer array '%s'\n"
-msgstr "No se pudo leer la matriz de enteros '%s'\n"
+#: ../src/mesh/mesh.cxx:466
+#, fuzzy
+msgid "Could not read integer array '{:s}'\n"
+msgstr "No se pudo leer la matriz de enteros '{:s}'\n"
 
 #. Failed . Probably not important enough to stop the simulation
-#: ../src/bout++.cxx:463
+#: ../src/bout++.cxx:514
 msgid "Could not run bout-log-color. Make sure it is in your PATH\n"
 msgstr ""
 "No se pudo ejecutar bout-log-color. Asegúrese de que se encuentre en su "
 "PATH\n"
 
-#: ../src/solver/solver.cxx:574
-#, c-format
-msgid "Couldn't add Monitor: %g is not a multiple of %g!"
-msgstr "No se pudo añadir el Monitor: %g no és multiplo de %g!"
+#: ../src/solver/solver.cxx:590
+#, fuzzy
+msgid "Couldn't add Monitor: {:g} is not a multiple of {:g}!"
+msgstr "No se pudo añadir el Monitor: {:g} no és multiplo de {:g}!"
 
-#: ../src/mesh/mesh.cxx:386
-#, c-format
-msgid "Couldn't find region %s in regionMap2D"
-msgstr "No se pudo encontrar la región %s en regionMap2D"
+#: ../src/mesh/mesh.cxx:500
+#, fuzzy
+msgid "Couldn't find region {:s} in regionMap2D"
+msgstr "No se pudo encontrar la región {:s} en regionMap2D"
 
-#: ../src/mesh/mesh.cxx:378
-#, c-format
-msgid "Couldn't find region %s in regionMap3D"
-msgstr "No se pudo encontrar la región %s en regionMap2D"
+#: ../src/mesh/mesh.cxx:492
+#, fuzzy
+msgid "Couldn't find region {:s} in regionMap3D"
+msgstr "No se pudo encontrar la región {:s} en regionMap2D"
 
-#: ../src/mesh/mesh.cxx:394
-#, c-format
-msgid "Couldn't find region %s in regionMapPerp"
-msgstr "No se pudo encontrar la región %s en regionMapPerp"
+#: ../src/mesh/mesh.cxx:508
+#, fuzzy
+msgid "Couldn't find region {:s} in regionMapPerp"
+msgstr "No se pudo encontrar la región {:s} en regionMapPerp"
 
-#: ../src/sys/options.cxx:268
-#, c-format
-msgid "Couldn't get BoutReal from option %s = '%s'"
-msgstr "No se pudo recuperar BoutReal de la opción %s = '%s'"
+#: ../src/sys/options.cxx:267
+#, fuzzy
+msgid "Couldn't get BoutReal from option {:s} = '{:s}'"
+msgstr "No se pudo recuperar BoutReal de la opción {:s} = '{:s}'"
 
 #: ../src/sys/options.cxx:216
-#, c-format
-msgid "Couldn't get integer from option %s = '%s'"
-msgstr "No se pudo recuperar el entero de la opción %s = '%s'"
+#, fuzzy
+msgid "Couldn't get integer from option {:s} = '{:s}'"
+msgstr "No se pudo recuperar el entero de la opción {:s} = '{:s}'"
 
-#: ../src/bout++.cxx:337
-#, c-format
-msgid "DataDir \"%s\" does not exist or is not accessible\n"
-msgstr "DataDir \"%s\" no existe o no es accessible\n"
+#: ../src/bout++.cxx:388
+#, fuzzy
+msgid "DataDir \"{:s}\" does not exist or is not accessible\n"
+msgstr "DataDir \"{:s}\" no existe o no es accessible\n"
 
-#: ../src/bout++.cxx:334
-#, c-format
-msgid "DataDir \"%s\" is not a directory\n"
-msgstr "DataDir \"%s\" no es un directorio\n"
+#: ../src/bout++.cxx:385
+#, fuzzy
+msgid "DataDir \"{:s}\" is not a directory\n"
+msgstr "DataDir \"{:s}\" no es un directorio\n"
 
-#: ../src/solver/solver.cxx:524
+#: ../src/solver/solver.cxx:540
 msgid "ERROR: Solver is already initialised\n"
 msgstr "ERROR: el Solver ya se encuentra inicializado\n"
 
-#: ../src/bout++.cxx:166
-#, c-format
-msgid "Error encountered during initialisation: %s\n"
-msgstr "Error encontrado durante la inicialización:%s\n"
+#: ../src/bout++.cxx:169
+#, fuzzy
+msgid "Error encountered during initialisation: {:s}\n"
+msgstr "Error encontrado durante la inicialización:{:s}\n"
 
-#: ../src/bout++.cxx:593
+#: ../src/bout++.cxx:638
 msgid "Error whilst writing settings"
 msgstr "Error durante el paso de opciones"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:153
-#, c-format
-msgid "Error: nx must be greater than 2 times MXG (2 * %d)"
-msgstr "Error: nx debe ser mayor que 2 veces MXG (2 * %d)"
+#, fuzzy
+msgid "Error: nx must be greater than 2 times MXG (2 * {:d})"
+msgstr "Error: nx debe ser mayor que 2 veces MXG (2 * {:d})"
 
-#: ../src/solver/solver.cxx:449
+#: ../src/solver/solver.cxx:465
 msgid "Failed to initialise solver-> Aborting\n"
 msgstr "Fallo en inicializar el solver-> Abortando\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:309
-#, c-format
-msgid "Finding value for NXPE (ideal = %f)\n"
-msgstr "Encontrando valor para NXPE (ideal = %f)\n"
+#: ../src/mesh/impls/bout/boutmesh.cxx:317
+#, fuzzy
+msgid "Finding value for NXPE (ideal = {:f})\n"
+msgstr "Encontrando valor para NXPE (ideal = {:f})\n"
 
-#: ../src/solver/solver.cxx:526
+#: ../src/solver/solver.cxx:542
 msgid "Initialising solver\n"
 msgstr "Initializando el solver\n"
 
-#: ../src/bout++.cxx:323
+#: ../src/bout++.cxx:374
 msgid ""
 "Input and output file for settings must be different.\n"
 "Provide -o <settings file> to avoid this issue.\n"
@@ -491,7 +494,7 @@ msgstr ""
 "diferentes.\n"
 "Añada -o <settings file> para evitar este problema.\n"
 
-#: ../src/sys/optionsreader.cxx:97
+#: ../src/sys/optionsreader.cxx:68
 msgid "Invalid command line option '-' found - maybe check whitespace?"
 msgstr ""
 
@@ -508,106 +511,108 @@ msgid "Mesh must contain ny"
 msgstr "La malla `mesh` debe contener ny"
 
 #. Not found
-#: ../src/mesh/mesh.cxx:356
-#, c-format
-msgid "Missing integer array %s\n"
-msgstr "Fala la matriz entera %s\n"
+#: ../src/mesh/mesh.cxx:470
+#, fuzzy
+msgid "Missing integer array {:s}\n"
+msgstr "Fala la matriz entera {:s}\n"
 
-#: ../src/solver/solver.cxx:678
+#: ../src/solver/solver.cxx:695
 msgid "Monitor signalled to quit"
 msgstr "Monitor indicó salir"
 
-#: ../src/solver/solver.cxx:685
+#: ../src/solver/solver.cxx:702
 msgid "Monitor signalled to quit\n"
 msgstr "Monitor indicó salir\n"
 
-#: ../src/bout++.cxx:695
+#: ../src/bout++.cxx:740
 msgid "Name of file whose existence triggers a stop"
 msgstr ""
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:868
+#: ../src/mesh/impls/bout/boutmesh.cxx:879
 msgid "No boundary regions in this processor"
 msgstr "Sin regiones de frontera en este procesador"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:225
-#, c-format
-msgid "Number of processors (%d) not divisible by NPs in x direction (%d)\n"
+#: ../src/mesh/impls/bout/boutmesh.cxx:227
+#, fuzzy
+msgid ""
+"Number of processors ({:d}) not divisible by NPs in x direction ({:d})\n"
 msgstr ""
-"Número de procesadores (%d) no divisible para NPs en la dirección x (%d)\n"
+"Número de procesadores ({:d}) no divisible para NPs en la dirección x ({:d})\n"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:238
-#, fuzzy, c-format
-msgid "Number of processors (%d) not divisible by NPs in y direction (%d)\n"
+#: ../src/mesh/impls/bout/boutmesh.cxx:240
+#, fuzzy
+msgid ""
+"Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"
 msgstr ""
-"Número de procesadores (%d) no divisible para NPs en la dirección x (%d)\n"
+"Número de procesadores ({:d}) no divisible para NPs en la dirección x ({:d})\n"
 
 #. Less than 2 time-steps left
-#: ../src/bout++.cxx:739
-#, fuzzy, c-format
-msgid "Only %e seconds (%.2f steps) left. Quitting\n"
-msgstr "Solo faltan %e segundos. Saliendo\n"
+#: ../src/bout++.cxx:783
+#, fuzzy
+msgid "Only {:e} seconds ({:.2f} steps) left. Quitting\n"
+msgstr "Solo faltan {:e} segundos. Saliendo\n"
 
 #: ../src/sys/options.cxx:175 ../src/sys/options.cxx:195
-#: ../src/sys/options.cxx:250 ../src/sys/options.cxx:292
-#, c-format
-msgid "Option %s has no value"
-msgstr "Opción %s sin valor"
+#: ../src/sys/options.cxx:249 ../src/sys/options.cxx:291
+#, fuzzy
+msgid "Option {:s} has no value"
+msgstr "Opción {:s} sin valor"
 
 #: ../src/sys/options.cxx:72
-#, c-format
-msgid "Option %s is not a section"
-msgstr "Opción %s no es una sección"
+#, fuzzy
+msgid "Option {:s} is not a section"
+msgstr "Opción {:s} no es una sección"
 
 #. Doesn't exist
 #: ../src/sys/options.cxx:83
-#, c-format
-msgid "Option %s:%s does not exist"
-msgstr "Opción %s:%s no existe"
+#, fuzzy
+msgid "Option {:s}:{:s} does not exist"
+msgstr "Opción {:s}:{:s} no existe"
 
-#: ../include/options.hxx:643
-#, c-format
+#: ../include/options.hxx:646
+#, fuzzy
 msgid ""
-"Options: Setting a value from same source (%s) to new value '%s' - old value "
-"was '%s'."
+"Options: Setting a value from same source ({:s}) to new value '{:s}' - old "
+"value was '{:s}'."
 msgstr ""
-"Opciones: Cambiando valor de la misma fuente (%s) al valor nuevo '%s' - "
-"valor anterior era '%s'."
+"Opciones: Cambiando valor de la misma fuente ({:s}) al valor nuevo '{:s}' - "
+"valor anterior era '{:s}'."
 
-#: ../src/bout++.cxx:368
-#, c-format
+#: ../src/bout++.cxx:419
+#, fuzzy
 msgid ""
-"Processor number: %d of %d\n"
+"Processor number: {:d} of {:d}\n"
 "\n"
 msgstr ""
-"Procesador número: %d de %d\n"
+"Procesador número: {:d} de {:d}\n"
 "\n"
 
-#: ../src/mesh/mesh.cxx:426
-#, c-format
-msgid "Registered region 2D %s"
-msgstr "Región 2D registrada %s"
+#: ../src/mesh/mesh.cxx:541
+#, fuzzy
+msgid "Registered region 2D {:s}"
+msgstr "Región 2D registrada {:s}"
 
-#: ../src/mesh/mesh.cxx:417
-#, c-format
-msgid "Registered region 3D %s"
-msgstr "Región 3D registrada %s"
+#: ../src/mesh/mesh.cxx:531
+#, fuzzy
+msgid "Registered region 3D {:s}"
+msgstr "Región 3D registrada {:s}"
 
-#: ../src/mesh/mesh.cxx:435
-#, c-format
-msgid "Registered region Perp %s"
-msgstr "Región Perp registrada %s"
+#: ../src/mesh/mesh.cxx:551
+#, fuzzy
+msgid "Registered region Perp {:s}"
+msgstr "Región Perp registrada {:s}"
 
-#: ../src/bout++.cxx:359
-#, c-format
-msgid "Revision: %s\n"
-msgstr "Revisión: %s\n"
+#: ../src/bout++.cxx:410
+#, fuzzy
+msgid "Revision: {:s}\n"
+msgstr "Revisión: {:s}\n"
 
-#: ../src/solver/solver.cxx:492
+#: ../src/solver/solver.cxx:508
 msgid "Run time : "
 msgstr "Tiempo de ejecución : "
 
 #. / Run the solver
-#: ../src/solver/solver.cxx:453
+#: ../src/solver/solver.cxx:469
 msgid ""
 "Running simulation\n"
 "\n"
@@ -619,7 +624,7 @@ msgstr ""
 msgid "Signal"
 msgstr ""
 
-#: ../src/bout++.cxx:709
+#: ../src/bout++.cxx:754
 msgid ""
 "Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n"
 "\n"
@@ -628,7 +633,7 @@ msgstr ""
 "SOLVER\n"
 "\n"
 
-#: ../src/bout++.cxx:712
+#: ../src/bout++.cxx:757
 msgid ""
 "Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   "
 "Comm    I/O   SOLVER\n"
@@ -638,57 +643,57 @@ msgstr ""
 "Com    I/O   SOLVER\n"
 "\n"
 
-#: ../src/solver/solver.cxx:444
-#, c-format
-msgid "Solver running for %d outputs with monitor timestep of %e\n"
+#: ../src/solver/solver.cxx:460
+#, fuzzy
+msgid "Solver running for {:d} outputs with monitor timestep of {:e}\n"
 msgstr ""
-"Solver corriendo para %d outputs con intervalos de tiempo de monitor de %e\n"
+"Solver corriendo para {:d} outputs con intervalos de tiempo de monitor de {:e}\n"
 
-#: ../src/solver/solver.cxx:440
-#, c-format
-msgid "Solver running for %d outputs with output timestep of %e\n"
+#: ../src/solver/solver.cxx:456
+#, fuzzy
+msgid "Solver running for {:d} outputs with output timestep of {:e}\n"
 msgstr ""
-"Solver corriendo para %d outputs con intervalos de tiempo de output de %e\n"
+"Solver corriendo para {:d} outputs con intervalos de tiempo de output de {:e}\n"
 
-#: ../src/solver/solver.cxx:589
-#, c-format
+#: ../src/solver/solver.cxx:606
+#, fuzzy
 msgid ""
-"Solver::addMonitor: Cannot reduce timestep (from %g to %g) after init is "
+"Solver::addMonitor: Cannot reduce timestep (from {:g} to {:g}) after init is "
 "called!"
 msgstr ""
-"Solver::addMonitor: No se puedo reducir el intervalo de tiempo (de %g a %g) "
+"Solver::addMonitor: No se puedo reducir el intervalo de tiempo (de {:g} a {:g}) "
 "después de que init fuera llamado!"
 
-#: ../src/solver/solver.cxx:1037
-#, c-format
+#: ../src/solver/solver.cxx:1054
+#, fuzzy
 msgid ""
-"Time derivative at wrong location - Field is at %s, derivative is at %s for "
-"field '%s'\n"
+"Time derivative at wrong location - Field is at {:s}, derivative is at {:s} "
+"for field '{:s}'\n"
 msgstr ""
-"Derivada del tiempo en lugar erróneo - El field se encuentra en  %s, la "
-"derivada se encuentra en %s para el field '%s'\n"
+"Derivada del tiempo en lugar erróneo - El field se encuentra en  {:s}, la "
+"derivada se encuentra en {:s} para el field '{:s}'\n"
 
-#: ../src/solver/solver.cxx:1259
-#, c-format
-msgid "Time derivative for variable '%s' not set"
-msgstr "Derivada del tiempo para la variable '%s' no fijada"
+#: ../src/solver/solver.cxx:1276
+#, fuzzy
+msgid "Time derivative for variable '{:s}' not set"
+msgstr "Derivada del tiempo para la variable '{:s}' no fijada"
 
-#: ../src/mesh/mesh.cxx:423
-#, c-format
-msgid "Trying to add an already existing region %s to regionMap2D"
-msgstr "Intentando añadir una región ya existente %s a regionMap2D"
+#: ../src/mesh/mesh.cxx:537
+#, fuzzy
+msgid "Trying to add an already existing region {:s} to regionMap2D"
+msgstr "Intentando añadir una región ya existente {:s} a regionMap2D"
 
-#: ../src/mesh/mesh.cxx:414
-#, c-format
-msgid "Trying to add an already existing region %s to regionMap3D"
-msgstr "Intentando añadir una región ya existente %s a regionMap3D"
+#: ../src/mesh/mesh.cxx:527
+#, fuzzy
+msgid "Trying to add an already existing region {:s} to regionMap3D"
+msgstr "Intentando añadir una región ya existente {:s} a regionMap3D"
 
-#: ../src/mesh/mesh.cxx:432
-#, c-format
-msgid "Trying to add an already existing region %s to regionMapPerp"
-msgstr "Intentando añadir una región ya existente %s a regionMapPerp"
+#: ../src/mesh/mesh.cxx:548
+#, fuzzy
+msgid "Trying to add an already existing region {:s} to regionMapPerp"
+msgstr "Intentando añadir una región ya existente {:s} a regionMapPerp"
 
-#: ../src/mesh/coordinates.cxx:1140
+#: ../src/mesh/coordinates.cxx:1143
 msgid ""
 "Unrecognised paralleltransform option.\n"
 "Valid choices are 'identity', 'shifted', 'fci'"
@@ -696,29 +701,29 @@ msgstr ""
 "Opción paralleltransform desconocida.\n"
 "Opciones válidas son 'identity', 'shifted', 'fci'"
 
-#: ../src/sys/options.cxx:466
+#: ../src/sys/options.cxx:465
 msgid "Unused options:\n"
 msgstr "Opciones sin usar:\n"
 
-#: ../src/bout++.cxx:261
-#, c-format
-msgid "Usage is %s -d <data directory>\n"
-msgstr "Correcto uso es %s -d <data directory>\n"
+#: ../src/bout++.cxx:312
+#, fuzzy
+msgid "Usage is {:s} -d <data directory>\n"
+msgstr "Correcto uso es {:s} -d <data directory>\n"
 
-#: ../src/bout++.cxx:272
-#, c-format
-msgid "Usage is %s -f <options filename>\n"
-msgstr "Correcto uso es %s -f <options filename>\n"
+#: ../src/bout++.cxx:323
+#, fuzzy
+msgid "Usage is {:s} -f <options filename>\n"
+msgstr "Correcto uso es {:s} -f <options filename>\n"
 
-#: ../src/bout++.cxx:293
-#, c-format
-msgid "Usage is %s -l <log filename>\n"
-msgstr "Correcto uso es %s -l <log filename>\n"
+#: ../src/bout++.cxx:344
+#, fuzzy
+msgid "Usage is {:s} -l <log filename>\n"
+msgstr "Correcto uso es {:s} -l <log filename>\n"
 
-#: ../src/bout++.cxx:283
-#, c-format
-msgid "Usage is %s -o <settings filename>\n"
-msgstr "Correcto uso es %s -o <settings filename>\n"
+#: ../src/bout++.cxx:334
+#, fuzzy
+msgid "Usage is {:s} -o <settings filename>\n"
+msgstr "Correcto uso es {:s} -o <settings filename>\n"
 
 #: ../tests/unit/src/test_bout++.cxx:30 ../tests/unit/src/test_bout++.cxx:44
 msgid "Usage:"
@@ -726,110 +731,108 @@ msgstr ""
 
 #. Print help message -- note this will be displayed once per processor as we've not
 #. started MPI yet.
-#: ../src/bout++.cxx:225
-#, c-format
+#: ../src/bout++.cxx:233
+#, fuzzy
 msgid ""
-"Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] "
+"Usage: {:s} [-d <data directory>] [-f <options filename>] [restart [append]] "
 "[VAR=VALUE]\n"
 msgstr ""
-"Uso: %s [-d <data directory>] [-f <options filename>] [restart [append]] "
+"Uso: {:s} [-d <data directory>] [-f <options filename>] [restart [append]] "
 "[VAR=VALUE]\n"
 
 #. restart file should be written by physics model
-#: ../src/solver/solver.cxx:700
+#: ../src/solver/solver.cxx:717
 #, fuzzy
 msgid "User signalled to quit. Returning\n"
 msgstr "Monitor indicó salir\n"
 
-#: ../src/sys/options.cxx:231
-#, c-format
-msgid "Value for option %s = %e is not an integer"
-msgstr "Valor para la opción %s = %e no es un entero"
+#: ../src/sys/options.cxx:230
+#, fuzzy
+msgid "Value for option {:s} = {:e} is not an integer"
+msgstr "Valor para la opción {:s} = {:e} no es un entero"
 
-#: ../src/sys/options.cxx:273
-#, fuzzy, c-format
-msgid "Value for option %s cannot be converted to a BoutReal"
-msgstr "Valor para la opción %s = %e no es un entero"
+#: ../src/sys/options.cxx:272
+msgid "Value for option {:s} cannot be converted to a BoutReal"
+msgstr ""
 
-#: ../src/sys/options.cxx:440
-#, fuzzy, c-format
-msgid "Value for option %s cannot be converted to a Field2D"
-msgstr "Valor para la opción %s = %e no es un entero"
+#: ../src/sys/options.cxx:439
+#, fuzzy
+msgid "Value for option {:s} cannot be converted to a Field2D"
+msgstr "Valor para la opción {:s} = {:e} no es un entero"
 
-#: ../src/sys/options.cxx:390
-#, fuzzy, c-format
-msgid "Value for option %s cannot be converted to a Field3D"
-msgstr "Valor para la opción %s = %e no es un entero"
+#: ../src/sys/options.cxx:389
+#, fuzzy
+msgid "Value for option {:s} cannot be converted to a Field3D"
+msgstr "Valor para la opción {:s} = {:e} no es un entero"
 
-#: ../src/sys/options.cxx:313
-#, fuzzy, c-format
-msgid "Value for option %s cannot be converted to a bool"
-msgstr "Valor para la opción %s = %e no es un entero"
+#: ../src/sys/options.cxx:312
+msgid "Value for option {:s} cannot be converted to a bool"
+msgstr ""
 
 #. Another type which can't be converted
 #: ../src/sys/options.cxx:222
-#, fuzzy, c-format
-msgid "Value for option %s is not an integer"
-msgstr "Valor para la opción %s = %e no es un entero"
+#, fuzzy
+msgid "Value for option {:s} is not an integer"
+msgstr "Valor para la opción {:s} = {:e} no es un entero"
 
-#: ../src/solver/solver.cxx:996 ../src/solver/solver.cxx:1000
-#, c-format
-msgid "Variable '%s' not initialised"
-msgstr "Variable '%s' sin inicializar"
+#: ../src/solver/solver.cxx:1013 ../src/solver/solver.cxx:1017
+#, fuzzy
+msgid "Variable '{:s}' not initialised"
+msgstr "Variable '{:s}' sin inicializar"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:119
-#, fuzzy, c-format
+#, fuzzy
 msgid ""
 "WARNING: Number of toroidal points should be 2^n for efficient FFT "
-"performance -- consider changing MZ (%d) if using FFTs\n"
+"performance -- consider changing MZ ({:d}) if using FFTs\n"
 msgstr ""
 "WARNING: el número de puntos toroidales debería ser 2^n para una FFT "
 "eficiente -- considere cambiar MZ si se usan FFTs\n"
 
-#: ../src/mesh/coordinates.cxx:430
+#: ../src/mesh/coordinates.cxx:433
 msgid "WARNING: extrapolating input mesh quantities into x-boundary cells\n"
 msgstr ""
 
-#: ../src/mesh/coordinates.cxx:217
+#: ../src/mesh/coordinates.cxx:220
 msgid ""
 "WARNING: extrapolating input mesh quantities into x-boundary cells. Set "
 "option extrapolate_x=false to disable this.\n"
 msgstr ""
 
-#: ../src/mesh/coordinates.cxx:435
+#: ../src/mesh/coordinates.cxx:438
 msgid "WARNING: extrapolating input mesh quantities into y-boundary cells\n"
 msgstr ""
 
-#: ../src/mesh/coordinates.cxx:222
+#: ../src/mesh/coordinates.cxx:225
 msgid ""
 "WARNING: extrapolating input mesh quantities into y-boundary cells. Set "
 "option extrapolate_y=false to disable this.\n"
 msgstr ""
 
-#: ../src/bout++.cxx:686
+#: ../src/bout++.cxx:731
 msgid "Wall time limit in hours. By default (< 0), no limit"
 msgstr ""
 
-#: ../src/sys/optionsreader.cxx:60
-#, c-format
-msgid "Writing options to file %s\n"
-msgstr "Escribiendo opciones a archivo %s\n"
+#: ../src/sys/optionsreader.cxx:42
+#, fuzzy
+msgid "Writing options to file {:s}\n"
+msgstr "Escribiendo opciones a archivo {:s}\n"
 
 #. / The source label given to default values
 #: ../src/sys/options.cxx:11
 msgid "default"
 msgstr "por defecto"
 
-#: ../src/mesh/impls/bout/boutmesh.cxx:162
+#: ../src/mesh/impls/bout/boutmesh.cxx:1618
 msgid "nx must be greater than 2*MXG"
 msgstr "nx debe ser mayor que 2*MXG"
 
 #~ msgid ""
-#~ "\tOption %s = %s (%s) overwritten with:\n"
-#~ "\t\t%s = %s (%s)\n"
+#~ "\tOption {:s} = {:s} ({:s}) overwritten with:\n"
+#~ "\t\t{:s} = {:s} ({:s})\n"
 #~ msgstr ""
-#~ "\tOpción %s = %s (%s) sobreescrita con:\n"
-#~ "\t\t%s = %s (%s)\n"
+#~ "\tOpción {:s} = {:s} ({:s}) sobreescrita con:\n"
+#~ "\t\t{:s} = {:s} ({:s})\n"
 
 #~ msgid "Error encountered during initialisation\n"
 #~ msgstr "Error encontrado durante la inicialización\n"

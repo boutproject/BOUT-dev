@@ -65,6 +65,28 @@ TEST_F(OptionsTest, IsSectionNotCaseSensitive) {
   ASSERT_TRUE(options.isSection("Subsection"));
 }
 
+TEST_F(OptionsTest, CompoundName) {
+  Options options;
+
+  // make sure options is initialized as a section
+  options["compoundkey"] = 321.;
+
+  ASSERT_TRUE(options.isSection());
+  ASSERT_FALSE(options["compoundkey"].isSection());
+  ASSERT_TRUE(options.isSection(""));
+  ASSERT_FALSE(options.isSection("compoundsubsection"));
+
+  options["compoundsubsection:compoundkey"] = 321.;
+
+  ASSERT_TRUE(options.isSection("compoundsubsection"));
+
+  BoutReal value = options["compoundsubsection"]["compoundkey"];
+  EXPECT_EQ(value, 321.);
+
+  BoutReal value2 = options["compoundsubsection:compoundkey"];
+  EXPECT_EQ(value2, 321.);
+}
+
 TEST_F(OptionsTest, SetGetInt) {
   Options options;
   options.set("int_key", 42, "code");
@@ -365,6 +387,16 @@ TEST_F(OptionsTest, InconsistentDefaultValueOptions) {
       BoutException);
 
   EXPECT_EQ(value, 0);
+}
+
+TEST_F(OptionsTest, OverrideDefaultValueOptions) {
+  Options options;
+
+  options["override_key"].overrideDefault("override_value");
+
+  std::string value = options["override_key"].withDefault("default_value");
+
+  EXPECT_EQ(value, "override_value");
 }
 
 TEST_F(OptionsTest, SingletonTest) {
@@ -780,6 +812,15 @@ TEST_F(OptionsTest, AssignSubSectionParent) {
   EXPECT_EQ(&option2["key2"]["key1"].parent(), &option2["key2"]);
 }
 
+TEST_F(OptionsTest, HasAttribute) {
+  Options option;
+
+  EXPECT_FALSE(option.hasAttribute("not here"));
+
+  option.attributes["here"] = true;
+  EXPECT_TRUE(option.hasAttribute("here"));
+}
+
 TEST_F(OptionsTest, AttributeMissingBool) {
   Options option;
 
@@ -982,7 +1023,7 @@ TEST_F(OptionsTest, TypeAttributeInt) {
   Options option;
   option = "42";
 
-  // Casting to bool should modify the "type" attribute
+  // Casting to int should modify the "type" attribute
   int value = option.withDefault<int>(-1);
 
   EXPECT_EQ(value, 42);
@@ -993,7 +1034,7 @@ TEST_F(OptionsTest, TypeAttributeField2D) {
   Options option;
   option = "42";
 
-  // Casting to bool should modify the "type" attribute
+  // Casting to Field2D should modify the "type" attribute
   Field2D value = option.withDefault<Field2D>(Field2D(-1, bout::globals::mesh));
 
   EXPECT_EQ(value(0,0), 42);
@@ -1004,11 +1045,22 @@ TEST_F(OptionsTest, TypeAttributeField3D) {
   Options option;
   option = "42";
 
-  // Casting to bool should modify the "type" attribute
+  // Casting to Field3D should modify the "type" attribute
   Field3D value = option.withDefault<Field3D>(Field3D(-1, bout::globals::mesh));
 
   EXPECT_EQ(value(0,0,0), 42);
   EXPECT_EQ(option.attributes["type"].as<std::string>(), "Field3D");
+}
+
+TEST_F(OptionsTest, TypeAttributeFieldPerp) {
+  Options option;
+  option = "36";
+
+  // Casting to FieldPerp should modify the "type" attribute
+  FieldPerp value = option.withDefault<FieldPerp>(FieldPerp(-1, bout::globals::mesh));
+
+  EXPECT_EQ(value(0,0,0), 36);
+  EXPECT_EQ(option.attributes["type"].as<std::string>(), "FieldPerp");
 }
 
 TEST_F(OptionsTest, DocString) {
@@ -1060,3 +1112,23 @@ TEST_F(OptionsTest, DocStringNotCopied) {
   EXPECT_EQ(option2.attributes["doc"].as<std::string>(), "test value");
   EXPECT_EQ(option.attributes.count("doc"), 0);
 }
+
+TEST_F(OptionsTest, InitializeInt) {
+  Options option {3};
+  EXPECT_EQ(option.as<int>(), 3);
+}
+
+TEST_F(OptionsTest, InitialiseTree) {
+  Options option {{"section1", {{"value1", 42},
+                                {"value2", "hello"}}},
+                  {"section2", {{"subsection1", {{"value3", true},
+                                                 {"value4", 3.2}}},
+                                {"value5", 3}}}};
+  
+  EXPECT_EQ(option["section1"]["value1"].as<int>(), 42);
+  EXPECT_EQ(option["section1"]["value2"].as<std::string>(), "hello");
+  EXPECT_EQ(option["section2"]["subsection1"]["value3"].as<bool>(), true);
+  EXPECT_DOUBLE_EQ(option["section2"]["subsection1"]["value4"].as<BoutReal>(), 3.2);
+  EXPECT_EQ(option["section2"]["value5"].as<int>(), 3);
+}
+

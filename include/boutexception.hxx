@@ -4,11 +4,16 @@ class BoutException;
 #ifndef __BOUT_EXCEPTION_H__
 #define __BOUT_EXCEPTION_H__
 
+#include "bout/build_config.hxx"
+
 #include <exception>
 #include <string>
+#include <utility>
 
 #include "bout/deprecated.hxx"
 #include "bout/format.hxx"
+
+#include "fmt/core.h"
 
 /// Throw BoutRhsFail with \p message if any one process has non-zero
 /// \p status
@@ -16,8 +21,12 @@ void BoutParallelThrowRhsFail(int status, const char* message);
 
 class BoutException : public std::exception {
 public:
-  BoutException(const char*, ...) BOUT_FORMAT_ARGS(2, 3);
   BoutException(std::string msg) : message(std::move(msg)) { makeBacktrace(); }
+
+  template <class S, class... Args>
+  BoutException(const S& format, const Args&... args)
+      : BoutException(fmt::format(format, args...)) {}
+
   ~BoutException() override;
 
   const char* what() const noexcept override {
@@ -32,11 +41,8 @@ public:
   const std::string header{"====== Exception thrown ======\n"};
 
 protected:
-  char *buffer = nullptr;
-  static constexpr int BUFFER_LEN = 1024; // Length of char buffer for printing
-  int buflen; // Length of char buffer for printing
   std::string message;
-#ifdef BACKTRACE
+#if BOUT_USE_BACKTRACE
   static constexpr unsigned int TRACE_MAX = 128;
   void* trace[TRACE_MAX];
   int trace_size;
@@ -49,12 +55,18 @@ protected:
 
 class BoutRhsFail : public BoutException {
 public:
-  BoutRhsFail(const char*, ...) BOUT_FORMAT_ARGS(2, 3);
+  BoutRhsFail(std::string message) : BoutException(std::move(message)) {}
+  template <class S, class... Args>
+  BoutRhsFail(const S& format, const Args&... args)
+      : BoutRhsFail(fmt::format(format, args...)) {}
 };
 
 class BoutIterationFail : public BoutException {
 public:
-  BoutIterationFail(const char*, ...) BOUT_FORMAT_ARGS(2, 3);
+  BoutIterationFail(std::string message) : BoutException(std::move(message)) {}
+  template <class S, class... Args>
+  BoutIterationFail(const S& format, const Args&... args)
+      : BoutIterationFail(fmt::format(format, args...)) {}
 };
 
 #endif

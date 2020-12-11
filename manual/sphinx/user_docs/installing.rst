@@ -89,10 +89,10 @@ the "shared" directory.
 
 If this is successful, then you can skip to section :ref:`sec-running`.
 
- Obtaining BOUT++
-----------------
-
 .. _sec-obtainbout:
+
+Obtaining BOUT++
+----------------
 
 BOUT++ is hosted publicly on github at
 https://github.com/boutproject/BOUT-dev. You can the latest stable
@@ -120,11 +120,11 @@ Installing dependencies
 
 The bare-minimum requirements for compiling and running BOUT++ are:
 
-#. A C++ compiler that supports C++11
+#. A C++ compiler that supports C++14
 
-#. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <www.open-mpi.org/>`__),
+#. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <https://www.open-mpi.org/>`__),
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
-   LAM (`www.lam-mpi.org/ <www.lam-mpi.org/>`__)
+   LAM (`www.lam-mpi.org/ <https://www.lam-mpi.org/>`__)
    
 #. The NetCDF library (`https://www.unidata.ucar.edu/downloads/netcdf
    <https://www.unidata.ucar.edu/downloads/netcdf>`__)
@@ -141,7 +141,7 @@ FFTW-3, these options will not be available.
 
 .. note::
    If you use an Intel compiler, you must also make sure that you have
-   a version of GCC that supports C++11 (GCC 4.8+).
+   a version of GCC that supports C++14 (GCC 5+).
 
    On supercomputers, or in other environments that use a module
    system, you may need to load modules for both Intel and GCC.
@@ -178,7 +178,7 @@ MPICH2 and the needed libraries by running::
 
 On Ubuntu 16.04::
 
-    $ sudo apt-get libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
+    $ sudo apt-get install libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
 
 On Ubuntu 18.04::
 
@@ -191,7 +191,7 @@ The first line should be sufficient to install BOUT++, while the 2nd
 and 3rd line make sure that the tests work, and that the python
 interface can be build.
 Further, the encoding for python needs to be utf8 - it may be required
-to set `export LC_CTYPE=C.utf8`.
+to set ``export LC_CTYPE=C.utf8``.
 
 If you do not have administrator rights, so can't install packages, then
 you need to install these libraries from source into your home directory.
@@ -275,7 +275,6 @@ configuration::
       NetCDF support: yes
       Parallel-NetCDF support: no
       HDF5 support: yes (parallel: no)
-      MUMPS support: no
 
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.
@@ -289,50 +288,81 @@ There is now (experimental) support for `CMake <https://cmake.org/>`_. You will 
 3.9. CMake supports out-of-source builds by default, which are A Good
 Idea. Basic configuration with CMake looks like::
 
-  $ mkdir build && cd build
-  $ cmake ..
+  $ cmake . -B build
 
-You can then run ``make`` as usual.
+which creates a new directory ``build``, which you can then compile with::
+
+  $ cmake --build build
 
 You can see what build options are available with::
 
-  $ cmake .. -LH
+  $ cmake . -B build -LH
   ...
   // Enable backtrace
-  ENABLE_BACKTRACE:BOOL=ON
+  BOUT_ENABLE_BACKTRACE:BOOL=ON
 
   // Output coloring
-  ENABLE_COLOR:BOOL=ON
+  BOUT_ENABLE_COLOR:BOOL=ON
 
   // Enable OpenMP support
-  ENABLE_OPENMP:BOOL=OFF
+  BOUT_ENABLE_OPENMP:BOOL=OFF
 
   // Enable support for PETSc time solvers and inversions
-  USE_PETSC:BOOL=OFF
+  BOUT_USE_PETSC:BOOL=OFF
   ...
 
 CMake uses the ``-D<variable>=<choice>`` syntax to control these
 variables. You can set ``<package>_ROOT`` to guide CMake in finding
 the various optional third-party packages (except for PETSc/SLEPc,
-which use ``_DIR``). CMake understands the usual environment variables
-for setting the compiler, compiler/linking flags, as well as having
-built-in options to control them and things like static vs shared
-libraries, etc. See the `CMake documentation
-<https://cmake.org/documentation/>`_ for more infomation.
+which use ``_DIR``). Note that some packages have funny
+captialisation, for example ``NetCDF_ROOT``! Use ``-LH`` to see the
+form that each package expects.
+
+CMake understands the usual environment variables for setting the
+compiler, compiler/linking flags, as well as having built-in options
+to control them and things like static vs shared libraries, etc. See
+the `CMake documentation <https://cmake.org/documentation/>`_ for more
+infomation.
 
 A more complicated CMake configuration command
 might look like::
 
-  $ CC=mpicc CXX=mpic++ cmake .. \
-      -DUSE_PETSC=ON -DPETSC_DIR=/path/to/petsc/ \
-      -DUSE_SLEPC=ON -DSLEPC_DIR=/path/to/slepc/ \
-      -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials \
-      -DUSE_NETCDF=ON -DNetCDF_ROOT=/path/to/netcdf \
-      -DENABLE_OPENMP=ON \
-      -DENABLE_SIGFPE=OFF \
+  $ CC=mpicc CXX=mpic++ cmake . -B build \
+      -DBOUT_USE_PETSC=ON -DPETSC_DIR=/path/to/petsc/ \
+      -DBOUT_USE_SLEPC=ON -DSLEPC_DIR=/path/to/slepc/ \
+      -DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials \
+      -DBOUT_USE_NETCDF=ON -DNetCDF_ROOT=/path/to/netcdf \
+      -DBOUT_ENABLE_OPENMP=ON \
+      -DBOUT_ENABLE_SIGFPE=OFF \
       -DCMAKE_BUILD_TYPE=Debug \
       -DBUILD_SHARED_LIBS=ON
       -DCMAKE_INSTALL_PREFIX=/path/to/install/BOUT++
+
+If you wish to change the configuration after having built ``BOUT++``,
+it's wise to delete the ``CMakeCache.txt`` file in the build
+directory. The equivalent of ``make distclean`` with CMake is to just
+delete the entire build directory and reconfigure.
+
+Bundled Dependencies
+^^^^^^^^^^^^^^^^^^^^
+
+BOUT++ bundles some dependencies, currently `mpark.variant
+<https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
+`googletest <https://github.com/google/googletest>`_. If you wish to
+use an existing installation of ``mpark.variant``, you can set
+``-DBOUT_USE_SYSTEM_MPARK_VARIANT=ON``, and supply the installation
+path using ``mpark_variant_ROOT`` via the command line or environment
+variable if it is installed in a non standard loction. Similarly for
+``fmt``, using ``-DBOUT_USE_SYSTEM_FMT=ON`` and ``fmt_ROOT``
+respectively. To turn off both, you can set
+``-DBOUT_USE_GIT_SUBMODULE=OFF``.
+
+The recommended way to use ``googletest`` is to compile it at the same
+time as your project, therefore there is no option to use an external
+installation for that.
+
+Using CMake with your physics model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can write a CMake configuration file (``CMakeLists.txt``) for your
 physics model in only four lines:
@@ -344,11 +374,26 @@ physics model in only four lines:
     add_executable(blob2d blob2d.cxx)
     target_link_libraries(blob2d PRIVATE bout++::bout++)
 
-You just need to give CMake the location where you installed BOUT++
-via the ``CMAKE_PREFIX_PATH`` variable::
+You just need to give CMake the location where you built or installed
+BOUT++ via the ``CMAKE_PREFIX_PATH`` variable::
 
-  $ mkdir build && cd build
-  $ cmake .. -DCMAKE_PREFIX_PATH=/path/to/install/BOUT++
+  $ cmake . -B build -DCMAKE_PREFIX_PATH=/path/to/built/BOUT++
+
+If you want to modify BOUT++ along with developing your model, you may
+instead wish to place the BOUT++ as a subdirectory of your model and
+use ``add_subdirectory`` instead of ``find_package`` above:
+
+.. code-block:: cmake
+
+    project(blob2d LANGUAGES CXX)
+    add_subdirectory(BOUT++/source)
+    add_executable(blob2d blob2d.cxx)
+    target_link_libraries(blob2d PRIVATE bout++::bout++)
+
+where ``BOUT++/source`` is the subdirectory containing the BOUT++
+source. Doing this has the advantage that any changes you make to
+BOUT++ source files will trigger a rebuild of both the BOUT++ library
+and your model when you next build your code.
 
 .. _sec-config-nls:
 

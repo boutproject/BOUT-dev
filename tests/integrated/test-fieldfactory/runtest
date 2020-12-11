@@ -4,6 +4,8 @@
 # Run the test, compare results against the benchmark
 #
 
+# Requires: netcdf
+# Cores: 4
 
 from __future__ import print_function
 
@@ -15,15 +17,13 @@ except:
 vars = ['a', 'b', 'c', 'd']  # Variables to compare
 tol = 1e-10                  # Absolute tolerance
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
 
-
-print("Making FieldFactory test")
-shell_safe("make > make.log")
+build_and_log("FieldFactory test")
 
 # Read benchmark values
 print("Reading benchmark data")

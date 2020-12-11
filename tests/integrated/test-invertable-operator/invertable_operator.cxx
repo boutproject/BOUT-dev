@@ -29,7 +29,7 @@ private:
   myLaplacian mm;
   bout::inversion::InvertableOperator<Field3D> mySolver;
 
-  class Laplacian* laplacianSolver;
+  std::unique_ptr<Laplacian> laplacianSolver{nullptr};
 
 protected:
   int init(bool) override {

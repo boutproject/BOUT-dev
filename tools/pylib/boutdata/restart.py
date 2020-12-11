@@ -54,7 +54,7 @@ def resize3DField(var, data, coordsAndSizesTuple, method, mute):
               ' to (nx,ny,nz) = ({},{},{})'.format(newNx, newNy, newNz))
 
     # Make the regular grid function (see examples in
-    # http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RegularGridInterpolator.html
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RegularGridInterpolator.html
     # for details)
     gridInterpolator = RegularGridInterpolator(
         (xCoordOld, yCoordOld, zCoordOld), data, method)
@@ -719,7 +719,8 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None, myg=2)
         varnames = infile.list()
 
         for var in varnames:
-            if infile.ndims(var) == 3:
+            dimensions = infile.dimensions(var)
+            if dimensions == ('x', 'y', 'z'):
                 # Could be an evolving variable [x,y,z]
 
                 print(" -> Resizing " + var)
@@ -742,7 +743,7 @@ def resizeY(newy, path="data", output=".", informat="nc", outformat=None, myg=2)
                         outdata[x, :, z] = f(outy)
 
                 outfile.write(var, outdata)
-            elif infile.ndims(var) == 2:
+            elif dimensions == ('x', 'y'):
                 # Assume evolving variable [x,y]
                 print(" -> Resizing " + var)
 

@@ -26,10 +26,10 @@ int SurfaceIter::yGlobal(int UNUSED(yloc)) {
   
   // Get number of processors and processor rank
   int np;
-  MPI_Comm_size(comm, &np);
+  bout::globals::mpi->MPI_Comm_size(comm, &np);
   int myp;
-  MPI_Comm_rank(comm, &myp);
-  
+  bout::globals::mpi->MPI_Comm_rank(comm, &myp);
+
   // Need a generic method
 
   throw BoutException("SurfaceIter::yGlobal not implemented");
@@ -46,8 +46,8 @@ bool SurfaceIter::firstY() { ///< Is this processor at the lower end?
   
   // Get processor rank
   int myp;
-  MPI_Comm_rank(comm, &myp);
-  
+  bout::globals::mpi->MPI_Comm_rank(comm, &myp);
+
   return myp == 0;
 }
 
@@ -60,15 +60,15 @@ bool SurfaceIter::lastY() {
   
   // Get number of processors and processor rank
   int np;
-  MPI_Comm_size(comm, &np);
+  bout::globals::mpi->MPI_Comm_size(comm, &np);
   int myp;
-  MPI_Comm_rank(comm, &myp);
-  
+  bout::globals::mpi->MPI_Comm_rank(comm, &myp);
+
   return myp == np-1;
 }
 
 void SurfaceIter::first() {
-  xpos = 0;
+  xpos = firstpos;
 }
 
 void SurfaceIter::next() {
@@ -76,7 +76,7 @@ void SurfaceIter::next() {
     return;
   
   xpos++;
-  if(xpos >= m->LocalNx)
+  if(xpos > lastpos)
     xpos = -1;
 }
 

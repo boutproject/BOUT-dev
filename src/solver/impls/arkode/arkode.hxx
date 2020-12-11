@@ -29,11 +29,19 @@
 #ifndef __ARKODE_SOLVER_H__
 #define __ARKODE_SOLVER_H__
 
-#ifdef BOUT_HAS_ARKODE
+#include "bout/build_config.hxx"
+#include "bout/solver.hxx"
+
+#if not BOUT_HAS_ARKODE
+
+namespace {
+RegisterUnavailableSolver registerunavailablearkode("arkode",
+                                                    "BOUT++ was not configured with ARKODE/SUNDIALS");
+}
+
+#else
 
 #include "bout_types.hxx"
-#include "bout/solver.hxx"
-#include "bout/solverfactory.hxx"
 
 #include <sundials/sundials_config.h>
 #if SUNDIALS_VERSION_MAJOR >= 3

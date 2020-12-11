@@ -47,7 +47,7 @@ def smart_open(filename, mode='r'):
     try:
         yield fh
     finally:
-        if filename is not '-':
+        if filename != '-':
             fh.close()
 
 

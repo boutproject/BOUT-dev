@@ -8,9 +8,11 @@
  * http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex6f.F.html
  */
 
+#include "bout/build_config.hxx"
+
 #include "laplacexz-petsc.hxx"
 
-#ifdef BOUT_HAS_PETSC  // Requires PETSc
+#if BOUT_HAS_PETSC // Requires PETSc
 
 #include <bout/assert.hxx>
 #include <bout/sys/timer.hxx>
@@ -19,7 +21,10 @@
 #include <output.hxx>
 
 LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
-  : LaplaceXZ(m, opt, loc), coefs_set(false) {
+  : LaplaceXZ(m, opt, loc),
+    lib(opt==nullptr ? &(Options::root()["laplacexz"]) : opt),
+    coefs_set(false) {
+
   /* Constructor: LaplaceXZpetsc
    * Purpose:     - Setting inversion solver options
    *              - Setting the solver method
@@ -225,7 +230,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
 
     //////////////////////////////////////////////////
     // Declare KSP Context
-    KSPCreate( comm, &data.ksp );
+    KSPCreate(comm, &data.ksp);
 
     // Set KSP type
     KSPSetType( data.ksp, ksptype.c_str() );
@@ -242,7 +247,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
     PCFactorSetMatSolverPackage(pc,factor_package.c_str());
 #endif
 
-    KSPSetFromOptions( data.ksp );
+    lib.setOptionsFromInputFile(data.ksp);
 
     /// Add to slice vector
     slice.push_back(data);
@@ -771,7 +776,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
     KSPGetConvergedReason(it.ksp, &reason);
 
     if(reason <= 0) {
-      throw BoutException("LaplaceXZ failed to converge. Reason %d", reason);
+      throw BoutException("LaplaceXZ failed to converge. Reason {:d}", reason);
     }
 
     //////////////////////////

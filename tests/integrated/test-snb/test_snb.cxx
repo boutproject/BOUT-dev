@@ -25,7 +25,7 @@ bool IsFieldEqual(const T& field, const U& reference,
                   const std::string& region = "RGN_ALL", BoutReal tolerance = 1e-10) {
   for (auto i : field.getRegion(region)) {
     if (fabs(field[i] - reference[i]) > tolerance) {
-      output.write("Field: %e, reference: %e, tolerance: %e\n", field[i], reference[i],
+      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i], reference[i],
                    tolerance);
       return false;
     }
@@ -40,7 +40,7 @@ bool IsFieldEqual(const T& field, BoutReal reference,
                   const std::string& region = "RGN_ALL", BoutReal tolerance = 1e-10) {
   for (auto i : field.getRegion(region)) {
     if (fabs(field[i] - reference) > tolerance) {
-      output.write("Field: %e, reference: %e, tolerance: %e\n", field[i], reference,
+      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i], reference,
                    tolerance);
       return false;
     }
@@ -55,7 +55,7 @@ bool IsFieldClose(const T& field, const U& reference,
   for (auto i : field.getRegion(region)) {
     if (fabs(field[i] - reference[i])
         > tolerance * (fabs(reference[i]) + fabs(field[i]))) {
-      output.write("Field: %e, reference: %e, tolerance: %e\n", field[i], reference[i],
+      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i], reference[i],
                    tolerance * (fabs(reference[i]) + fabs(field[i])));
       return false;
     }
@@ -65,6 +65,7 @@ bool IsFieldClose(const T& field, const U& reference,
 
 int main(int argc, char** argv) {
   using bout::HeatFluxSNB;
+  using bout::globals::mesh;
 
   BoutInitialise(argc, argv);
 
@@ -169,13 +170,13 @@ int main(int argc, char** argv) {
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
       if (fabs(Div_q_SH_2(0, y, 0) - Div_q_SH_1(0, mesh->yend - y + mesh->ystart, 0))
           > 1e-6 * (fabs(Div_q_SH_2(0, y, 0)) + fabs(Div_q_SH_1(0, y, 0)))) {
-        throw BoutException("SH: y = %d: %e != %e", y, Div_q_SH_2(0, y, 0),
+        throw BoutException("SH: y = {:d}: {:e} != {:e}", y, Div_q_SH_2(0, y, 0),
                             Div_q_SH_1(0, mesh->yend - y + mesh->ystart, 0));
       }
 
       if (fabs(Div_q_2(0, y, 0) - Div_q_1(0, mesh->yend - y + mesh->ystart, 0))
           > 1e-6 * (fabs(Div_q_2(0, y, 0)) + fabs(Div_q_1(0, y, 0)))) {
-        throw BoutException("SNB: y = %d: %e != %e", y, Div_q_2(0, y, 0),
+        throw BoutException("SNB: y = {:d}: {:e} != {:e}", y, Div_q_2(0, y, 0),
                             Div_q_1(0, mesh->yend - y + mesh->ystart, 0));
       }
     }

@@ -23,7 +23,9 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-#ifdef BOUT_HAS_PETSC
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_PETSC
 
 #include "petsc_laplace.hxx"
 
@@ -53,7 +55,7 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
 
   // Get the context
   LaplacePetsc *s;
-  ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
+  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s)); CHKERRQ(ierr);
 
   PetscFunctionReturn(s->precon(x, y));
 }
@@ -61,7 +63,8 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
 LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-  issetD(false), issetC(false), issetE(false)
+  issetD(false), issetC(false), issetE(false),
+  lib(opt==nullptr ? &(Options::root()["laplace"]) : opt)
 {
   A.setLocation(location);
   C1.setLocation(location);
@@ -110,7 +113,8 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
     localN += localmesh->xstart * (localmesh->LocalNz);    // If on last processor add on width of boundary region
 
   // Calculate 'size' (the total number of points in physical grid)
-  if(MPI_Allreduce(&localN, &size, 1, MPI_INT, MPI_SUM, comm) != MPI_SUCCESS)
+  if (bout::globals::mpi->MPI_Allreduce(&localN, &size, 1, MPI_INT, MPI_SUM, comm)
+      != MPI_SUCCESS)
     throw BoutException("Error in MPI_Allreduce during LaplacePetsc initialisation");
 
   // Calculate total (physical) grid dimensions
@@ -273,7 +277,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   MatSetUp(MatA);
 
   // Declare KSP Context (abstract PETSc object that manages all Krylov methods)
-  KSPCreate( comm, &ksp );
+  KSPCreate(comm, &ksp);
 
   // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
   ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSP_GMRES);
@@ -309,7 +313,6 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
     output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
   }
 
-  pcsolve = nullptr;
   if (pctype == PCSHELL) {
 
     rightprec = (*opts)["rightprec"].doc("Right preconditioning?").withDefault(true);
@@ -759,7 +762,9 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
     KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
 
     // If the initial guess is not set to zero
-    if( !( global_flags & INVERT_START_NEW ) ) KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
+    if (!(global_flags & INVERT_START_NEW)) {
+      KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true));
+    }
 
     // Get the preconditioner
     KSPGetPC(ksp,&pc);
@@ -782,7 +787,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
       //ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
     }
 
-    KSPSetFromOptions( ksp );
+    lib.setOptionsFromInputFile(ksp);
   }
   }
 
@@ -841,6 +846,8 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
     throw BoutException("Petsc index sanity check 2 failed");
   }
 
+  checkData(sol);
+
   // Return the solution
   return sol;
 }
@@ -884,8 +891,8 @@ void LaplacePetsc::Element(int i, int x, int z,
 
 #if CHECK > 2
   if (!finite(ele)) {
-    throw BoutException("Non-finite element at x=%d, z=%d, row=%d, col=%d\n",
-                        x, z, i, index);
+    throw BoutException("Non-finite element at x={:d}, z={:d}, row={:d}, col={:d}\n", x,
+                        z, i, index);
   }
 #endif
   

@@ -7,6 +7,8 @@
 #include <bout/constants.hxx>
 #include <unused.hxx>
 
+using bout::globals::mesh;
+
 void solution(Field3D &f, BoutReal t, BoutReal D);
 class ErrorMonitor: public Monitor{
 public:
@@ -76,7 +78,7 @@ int physics_init(bool UNUSED(restarting)) {
   for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
     for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        output.write("Initial condition at %d,%d,%d\n", xi, yj, zk);
+        output.write("Initial condition at {:d},{:d},{:d}\n", xi, yj, zk);
         N(xi, yj, zk) = MS(0.,mesh->GlobalX(xi)*Lx,mesh->GlobalY(yj)*Ly,coord->dz*zk);
       }
     }
@@ -114,7 +116,7 @@ int physics_run(BoutReal t) {
 
 //Manufactured solution
 BoutReal MS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
-  output.write("-> MS at %e, %e, %e, %e\n", t, x, y, z);
+  output.write("-> MS at {:e}, {:e}, {:e}, {:e}\n", t, x, y, z);
   // Input is in normalised x,y,z location
   x *= Lx;         // X input [0,1]
   y *= Ly / TWOPI; // Y input [0, 2pi]
@@ -123,7 +125,7 @@ BoutReal MS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
 
 //x-derivative of MS. For Neumann bnd cond
 BoutReal dxMS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
-  output.write("-> dxMS at %e, %e, %e, %e\n", t, x, y, z);
+  output.write("-> dxMS at {:e}, {:e}, {:e}, {:e}\n", t, x, y, z);
   x *= Lx;         // X input [0,1]
   y *= Ly / TWOPI; // Y input [0, 2pi]
   return 0.9 + 2.*x*Cos(10*t)*Cos(5.*Power(x,2));
@@ -142,7 +144,7 @@ void solution(Field3D &f, BoutReal t, BoutReal UNUSED(D)) {
       y = mesh->GlobalY(yj);//GlobalY not fixed yet
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
         z = coord->dz*zk;
-        output.write("Solution at %d,%d,%d\n", xi, yj, zk);
+        output.write("Solution at {:d},{:d},{:d}\n", xi, yj, zk);
         f(xi, yj, zk) = MS(t,x,y,z);
       }
     }
@@ -182,7 +184,7 @@ int ErrorMonitor::call(Solver *UNUSED(solver), BoutReal simtime, int UNUSED(iter
       for (int zk = 0; zk < mesh->LocalNz ; zk++) {
         E_N(xi, yj, zk) = N(xi, yj, zk) - S(xi, yj, zk);
 
-        output_error.write("Error(%d,%d,%d): %e, %e -> %e\n",
+        output_error.write("Error({:d},{:d},{:d}): {:e}, {:e} -> {:e}\n",
                      xi, yj, zk, 
                      N(xi, yj, zk), S(xi, yj, zk), E_N(xi, yj, zk));
       }

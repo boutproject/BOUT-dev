@@ -28,12 +28,10 @@ private:
   BoutReal resistivity;
   
   bool newXZsolver; 
-  Laplacian *phiSolver; // Old Laplacian in X-Z
-  LaplaceXZ *newSolver; // New Laplacian in X-Z
+  std::unique_ptr<Laplacian> phiSolver{nullptr}; // Old Laplacian in X-Z
+  std::unique_ptr<LaplaceXZ> newSolver{nullptr}; // New Laplacian in X-Z
 protected:
-  
-  int init(bool restarting) {
-    
+  int init(bool) {
     // Normalisation
     auto opt = Options::root()["alfven"];
     Tnorm = opt["Tnorm"].withDefault(100);  // Reference temperature [eV]
@@ -41,7 +39,7 @@ protected:
     Bnorm = opt["Bnorm"].withDefault(1.0);  // Reference magnetic field [T]
     AA = opt["AA"].withDefault(2.0);        // Ion mass
 
-    output.write("Normalisation Te=%e, Ne=%e, B=%e\n", Tnorm, Nnorm, Bnorm);
+    output.write("Normalisation Te={:e}, Ne={:e}, B={:e}\n", Tnorm, Nnorm, Bnorm);
     SAVE_ONCE4(Tnorm, Nnorm, Bnorm, AA); // Save
     
     Cs0      = sqrt(qe*Tnorm / (AA*Mp)); // Reference sound speed [m/s]
@@ -51,10 +49,10 @@ protected:
     mi_me  = AA*Mp/Me;
     beta_e = qe*Tnorm*Nnorm / (SQ(Bnorm)/mu0);
 
-    output.write("\tmi_me=%e, beta_e=%e\n", mi_me, beta_e);
+    output.write("\tmi_me={:e}, beta_e={:e}\n", mi_me, beta_e);
     SAVE_ONCE2(mi_me, beta_e);
     
-    output.write("\t Cs=%e, rho_s=%e, Omega_ci=%e\n", Cs0, rho_s0, Omega_ci);
+    output.write("\t Cs={:e}, rho_s={:e}, Omega_ci={:e}\n", Cs0, rho_s0, Omega_ci);
     SAVE_ONCE3(Cs0, rho_s0, Omega_ci);
 
     mu_epar = opt["mu_epar"].withDefault(-1e7); // Electron parallel viscosity [m^2/s]
@@ -151,7 +149,7 @@ protected:
    * 
    * ddt(f) = Result of the inversion
    */
-  int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  int precon(BoutReal, BoutReal, BoutReal) {
     if(newXZsolver) {
       ddt(phi) = newSolver->solve(ddt(phi) - ddt(Vort), 0.0);
     }else {
@@ -188,8 +186,8 @@ protected:
     coord->Bxy  /= Bnorm;
     
     // Check type of parallel transform
-    std::string ptstr;
-    Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
+                                       .withDefault("identity");
 
     if(lowercase(ptstr) == "shifted") {
       // Using shifted metric method

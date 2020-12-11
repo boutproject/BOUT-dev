@@ -4,7 +4,7 @@
 # Run the test, compare results against the benchmark
 #
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata import collect
 from numpy import sqrt, max, abs, mean, array, log, polyfit
 from sys import stdout, exit
@@ -30,9 +30,7 @@ methods = {
 }
 
 
-
-print("Making Interpolation test")
-shell_safe("make > make.log")
+build_and_log("Interpolation test")
 
 print("Running Interpolation test")
 success = True
@@ -50,7 +48,7 @@ for method in methods:
     for nx in nxlist:
         dx = 1. / (nx)
 
-        args = " mesh:nx={nx4} mesh:dx={dx} MZ={nx} interpolation:type={method}".format(
+        args = " mesh:nx={nx4} mesh:dx={dx} MZ={nx} xzinterpolation:type={method}".format(
             nx4=nx + 4, dx=dx, nx=nx, method=method)
 
         cmd = "./test_interpolate"+args

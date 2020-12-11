@@ -1,5 +1,10 @@
+bout_update_submodules()
 add_subdirectory("${PROJECT_SOURCE_DIR}/externalpackages/googletest"
   "externalpackages/googletest")
+
+if(NOT TARGET gtest)
+  message(FATAL_ERROR "googletest not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
+endif()
 
 mark_as_advanced(
   BUILD_GMOCK BUILD_GTEST BUILD_SHARED_LIBS
@@ -21,17 +26,23 @@ add_executable(serial_tests
   ./field/test_where.cxx
   ./include/bout/test_array.cxx
   ./include/bout/test_assert.cxx
+  ./include/bout/test_bout_enum_class.cxx
   ./include/bout/test_deriv_store.cxx
   ./include/bout/test_generic_factory.cxx
   ./include/bout/test_macro_for_each.cxx
   ./include/bout/test_monitor.cxx
+  ./include/bout/test_petsc_indexer.cxx
+  ./include/bout/test_petsc_matrix.cxx
+  ./include/bout/test_petsc_setters.cxx
+  ./include/bout/test_petsc_vector.cxx
   ./include/bout/test_region.cxx
+  ./include/bout/test_stencil.cxx
   ./include/bout/test_template_combinations.cxx
   ./include/test_cyclic_reduction.cxx
   ./include/test_derivs.cxx
-  ./include/test_interpolation_factory.cxx
   ./include/test_mask.cxx
   ./invert/test_fft.cxx
+  ./invert/laplace/test_laplace_petsc3damg.cxx
   ./mesh/data/test_gridfromoptions.cxx
   ./mesh/parallel/test_shiftedmetric.cxx
   ./mesh/test_boundary_factory.cxx
@@ -66,3 +77,4 @@ target_include_directories(serial_tests PUBLIC .)
 target_link_libraries(serial_tests gtest gmock bout++::bout++)
 add_test(NAME serial_tests COMMAND serial_tests)
 set_target_properties(serial_tests PROPERTIES FOLDER tests/unit)
+add_dependencies(build-check-unit-tests serial_tests)

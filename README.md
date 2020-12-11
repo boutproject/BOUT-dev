@@ -60,7 +60,7 @@ Homepage found at [http://boutproject.github.io/](http://boutproject.github.io/)
 
 BOUT++ needs the following:
 
-* A C++11 compiler (GCC must be at least 4.9)
+* A C++14 compiler
 * MPI
 * Either NetCDF or HDF5
 
@@ -75,7 +75,6 @@ BOUT++ has the following optional dependencies:
 * ARKODE
 * IDA
 * CVODE
-* MUMPS
 * LAPACK
 * Score-p (for performance diagnostics)
 

@@ -15,6 +15,9 @@
 #include <cstdio>
 #include <cstdlib>
 
+using bout::globals::dump;
+using bout::globals::mesh;
+
 // 2D initial profiles
 Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0;
 // Staggered versions of initial profiles
@@ -53,8 +56,8 @@ bool evolve_rho, evolve_te, evolve_ni, evolve_ajpar, evolve_vi, evolve_ti;
 BoutReal ShearFactor;
 
 // Inversion objects
-Laplacian* phi_solver;
-Laplacian* apar_solver;
+std::unique_ptr<Laplacian> phi_solver;
+std::unique_ptr<Laplacian> apar_solver;
 
 FieldGroup comms; // Group of variables for communications
 
@@ -170,12 +173,12 @@ int physics_init(bool UNUSED(restarting)) {
   
   BoutReal hthe0;
   if(mesh->get(hthe0, "hthe0") == 0) {
-    output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
+    output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n", hthe0/rho_s);
   }
 
   /************** NORMALISE QUANTITIES *****************/
 
-  output.write("\tNormalising to rho_s = %e\n", rho_s);
+  output.write("\tNormalising to rho_s = {:e}\n", rho_s);
 
   // Normalise profiles
   Ni0 /= Ni_x/1.0e14;

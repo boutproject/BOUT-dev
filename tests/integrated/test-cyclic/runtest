@@ -4,19 +4,20 @@
 # Run the test, check it completed successfully
 #
 
+# Requires: netcdf
+# Cores: 4
+
 from __future__ import print_function
 try:
   from builtins import str
 except:
   pass
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 from sys import stdout, exit
 
 
-
-print("Making Cyclic Reduction test")
-shell_safe("make > make.log")
+build_and_log("Cyclic Reduction test")
 
 flags = ["", "nsys=2", "nsys=5 periodic", "nsys=7 n=10"]
 

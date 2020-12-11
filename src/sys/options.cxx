@@ -39,12 +39,29 @@ Options::Options(const Options& other)
   }
 }
 
+template <>
+Options::Options(const char* value) {
+  assign<std::string>(value);
+}
+
+Options::Options(std::initializer_list<std::pair<std::string, Options>> values) {
+  for (auto& value : values) {
+    (*this)[value.first] = value.second;
+  }
+}
+
 Options &Options::operator[](const std::string &name) {
   // Mark this object as being a section
   is_section = true;
 
   if (name.empty()) {
     return *this;
+  }
+
+  // If name is compound, e.g. "section:subsection", then split the name
+  auto subsection_split = name.find(":");
+  if (subsection_split != std::string::npos) {
+    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split+1)];
   }
 
   // Find and return if already exists
@@ -69,18 +86,24 @@ const Options &Options::operator[](const std::string &name) const {
   TRACE("Options::operator[] const");
   
   if (!is_section) {
-    throw BoutException(_("Option %s is not a section"), full_name.c_str());
+    throw BoutException(_("Option {:s} is not a section"), full_name);
   }
 
   if (name.empty()) {
     return *this;
   }
 
+  // If name is compound, e.g. "section:subsection", then split the name
+  auto subsection_split = name.find(":");
+  if (subsection_split != std::string::npos) {
+    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split+1)];
+  }
+
   // Find and return if already exists
   auto it = children.find(lowercase(name));
   if (it == children.end()) {
     // Doesn't exist
-    throw BoutException(_("Option %s:%s does not exist"), full_name.c_str(), name.c_str());
+    throw BoutException(_("Option {:s}:{:s} does not exist"), full_name, name);
   }
 
   return it->second;
@@ -149,6 +172,13 @@ void Options::assign<>(Field3D val, std::string source) {
   is_value = true;
 }
 template <>
+void Options::assign<>(FieldPerp val, std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+template <>
 void Options::assign<>(Array<BoutReal> val, std::string source) {
   value = std::move(val);
   attributes["source"] = std::move(source);
@@ -172,7 +202,7 @@ void Options::assign<>(Tensor<BoutReal> val, std::string source) {
 
 template <> std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
   if (!is_value) {
-    throw BoutException(_("Option %s has no value"), full_name.c_str());
+    throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
   // Mark this option as used
@@ -192,7 +222,7 @@ template <> std::string Options::as<std::string>(const std::string& UNUSED(simil
 
 template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
   if (!is_value) {
-    throw BoutException(_("Option %s has no value"), full_name.c_str());
+    throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
   int result;
@@ -213,14 +243,13 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
       // then generate a value at t,x,y,z = 0,0,0,0
       auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
       if (!gen) {
-        throw BoutException(_("Couldn't get integer from option %s = '%s'"),
-                            full_name.c_str(), bout::utils::variantToString(value).c_str());
+        throw BoutException(_("Couldn't get integer from option {:s} = '{:s}'"),
+                            full_name, bout::utils::variantToString(value));
       }
-      rval = gen->generate(0, 0, 0, 0);
+      rval = gen->generate({});
     } else {
       // Another type which can't be converted
-      throw BoutException(_("Value for option %s is not an integer"),
-                            full_name.c_str());
+      throw BoutException(_("Value for option {:s} is not an integer"), full_name);
     }
     
     // Convert to int by rounding
@@ -228,8 +257,8 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
     
     // Check that the value is close to an integer
     if (fabs(rval - static_cast<BoutReal>(result)) > 1e-3) {
-      throw BoutException(_("Value for option %s = %e is not an integer"),
-                          full_name.c_str(), rval);
+      throw BoutException(_("Value for option {:s} = {:e} is not an integer"), full_name,
+                          rval);
     }
   }
 
@@ -247,7 +276,7 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
 
 template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
   if (!is_value) {
-    throw BoutException(_("Option %s has no value"), full_name.c_str());
+    throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
   BoutReal result;
@@ -265,13 +294,13 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) c
     // then generate a value at t,x,y,z = 0,0,0,0
     auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
     if (!gen) {
-      throw BoutException(_("Couldn't get BoutReal from option %s = '%s'"), full_name.c_str(),
-                          bout::utils::get<std::string>(value).c_str());
+      throw BoutException(_("Couldn't get BoutReal from option {:s} = '{:s}'"), full_name,
+                          bout::utils::get<std::string>(value));
     }
-    result = gen->generate(0, 0, 0, 0);
+    result = gen->generate({});
   } else {
-    throw BoutException(_("Value for option %s cannot be converted to a BoutReal"),
-                        full_name.c_str());
+    throw BoutException(_("Value for option {:s} cannot be converted to a BoutReal"),
+                        full_name);
   }
   
   // Mark this option as used
@@ -289,7 +318,7 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) c
 
 template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
   if (!is_value) {
-    throw BoutException(_("Option %s has no value"), full_name.c_str());
+    throw BoutException(_("Option {:s} has no value"), full_name);
   }
   
   bool result;
@@ -306,12 +335,12 @@ template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
     } else if ((c == 'N') || (c == 'F') || (c == '0')) {
       result = false;
     } else {
-      throw BoutException(_("\tOption '%s': Boolean expected. Got '%s'\n"), full_name.c_str(),
-                          strvalue.c_str());
+      throw BoutException(_("\tOption '{:s}': Boolean expected. Got '{:s}'\n"), full_name,
+                          strvalue);
     }
   } else {
-    throw BoutException(_("Value for option %s cannot be converted to a bool"),
-                        full_name.c_str());
+    throw BoutException(_("Value for option {:s} cannot be converted to a bool"),
+                        full_name);
   }
   
   value_used = true;
@@ -329,7 +358,7 @@ template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
 
 template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
   if (!is_value) {
-    throw BoutException("Option %s has no value", full_name.c_str());
+    throw BoutException("Option {:s} has no value", full_name);
   }
 
   // Mark value as used
@@ -339,7 +368,7 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
     Field3D stored_value = bout::utils::get<Field3D>(value);
     
     // Check that meta-data is consistent
-    ASSERT1(areFieldsCompatible(stored_value, similar_to));
+    ASSERT1_FIELDS_COMPATIBLE(stored_value, similar_to);
     
     return stored_value;
   }
@@ -348,7 +377,7 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
     const auto& stored_value = bout::utils::get<Field2D>(value);
 
     // Check that meta-data is consistent
-    ASSERT1(areFieldsCompatible(stored_value, similar_to));
+    ASSERT1_FIELDS_COMPATIBLE(stored_value, similar_to);
 
     return Field3D(stored_value);
   }
@@ -358,7 +387,7 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
     
     // Get metadata from similar_to, fill field with scalar_value
     return filledFrom(similar_to, scalar_value);
-  } catch (const std::bad_cast &e) {
+  } catch (const std::bad_cast&) {
     
     // Convert from a string using FieldFactory
     if (bout::utils::holds_alternative<std::string>(value)) {
@@ -387,13 +416,13 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
 
     }
   }
-  throw BoutException(_("Value for option %s cannot be converted to a Field3D"),
-                      full_name.c_str());
+  throw BoutException(_("Value for option {:s} cannot be converted to a Field3D"),
+                      full_name);
 }
 
 template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
   if (!is_value) {
-    throw BoutException("Option %s has no value", full_name.c_str());
+    throw BoutException("Option {:s} has no value", full_name);
   }
   
   // Mark value as used
@@ -403,7 +432,7 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
     Field2D stored_value = bout::utils::get<Field2D>(value);
     
     // Check that meta-data is consistent
-    ASSERT1(areFieldsCompatible(stored_value, similar_to));
+    ASSERT1_FIELDS_COMPATIBLE(stored_value, similar_to);
 
     return stored_value;
   }
@@ -413,7 +442,7 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
 
     // Get metadata from similar_to, fill field with scalar_value
     return filledFrom(similar_to, scalar_value);
-  } catch (const std::bad_cast &e) {
+  } catch (const std::bad_cast&) {
     
     // Convert from a string using FieldFactory
     if (bout::utils::holds_alternative<std::string>(value)) {
@@ -437,8 +466,90 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
       }
     }
   }
-  throw BoutException(_("Value for option %s cannot be converted to a Field2D"),
-                      full_name.c_str());
+  throw BoutException(_("Value for option {:s} cannot be converted to a Field2D"),
+                      full_name);
+}
+
+template <>
+FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
+  if (!is_value) {
+    throw BoutException("Option {:s} has no value", full_name);
+  }
+
+  // Mark value as used
+  value_used = true;
+
+  if (bout::utils::holds_alternative<FieldPerp>(value)) {
+    FieldPerp stored_value = bout::utils::get<FieldPerp>(value);
+
+    // Check that meta-data is consistent
+    ASSERT1_FIELDS_COMPATIBLE(stored_value, similar_to);
+
+    return stored_value;
+  }
+
+  try {
+    BoutReal scalar_value =
+        bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
+
+    // Get metadata from similar_to, fill field with scalar_value
+    return filledFrom(similar_to, scalar_value);
+  } catch (const std::bad_cast&) {
+
+    const CELL_LOC location = hasAttribute("cell_location")
+                                  ? CELL_LOCFromString(attributes.at("cell_location"))
+                                  : similar_to.getLocation();
+
+    // Convert from a string using FieldFactory
+    if (bout::utils::holds_alternative<std::string>(value)) {
+      return FieldFactory::get()->createPerp(bout::utils::get<std::string>(value), this,
+                                             similar_to.getMesh(), location);
+    } else if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
+      auto localmesh = similar_to.getMesh();
+      if (!localmesh) {
+        throw BoutException("mesh must be supplied when converting Matrix to FieldPerp");
+      }
+
+      // Get a reference, to try and avoid copying
+      const auto& matrix = bout::utils::get<Matrix<BoutReal>>(value);
+
+      // Check if the dimension sizes are the same as a FieldPerp
+      if (matrix.shape() == std::make_tuple(localmesh->LocalNx, localmesh->LocalNz)) {
+        const auto y_direction =
+            hasAttribute("direction_y")
+                ? YDirectionTypeFromString(attributes.at("direction_y"))
+                : similar_to.getDirectionY();
+        const auto z_direction =
+            hasAttribute("direction_z")
+                ? ZDirectionTypeFromString(attributes.at("direction_z"))
+                : similar_to.getDirectionZ();
+
+        auto result = FieldPerp(matrix.getData(), localmesh, location, -1,
+                                {y_direction, z_direction});
+
+        // Set the index after creating the field so as to not
+        // duplicate the code in `FieldPerp::setIndexFromGlobal`
+        if (hasAttribute("yindex_global")) {
+          result.setIndexFromGlobal(attributes.at("yindex_global"));
+        } else if (similar_to.getIndex() == -1) {
+          // If `yindex_global` attribute wasn't present (might be an
+          // older file), and `similar_to` doesn't have its index set
+          // (might not have been passed, so be default constructed),
+          // use the no-boundary form so that we get a default value
+          // on a grid cell
+          result.setIndex(localmesh->getLocalYIndexNoBoundaries(0));
+        } else {
+          result.setIndex(similar_to.getIndex());
+        }
+        return result;
+      }
+      // If dimension sizes not the same, may be able
+      // to select a region from it using Mesh e.g. if this
+      // is from the input grid file.
+    }
+  }
+  throw BoutException(_("Value for option {:s} cannot be converted to a Field3D"),
+                      full_name);
 }
 
 // Note: This is defined here rather than in the header

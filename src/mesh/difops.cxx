@@ -23,6 +23,8 @@
 * 
 **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <globals.hxx>
 #include <bout/solver.hxx>
 #include <difops.hxx>
@@ -73,7 +75,7 @@ const Field3D Grad_par(const Field3D &var, const std::string &method, CELL_LOC o
 *******************************************************************************/
 
 const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
-  ASSERT1(areFieldsCompatible(apar, f));
+  ASSERT1_FIELDS_COMPATIBLE(apar, f);
   ASSERT1(f.hasParallelSlices());
 
   Mesh *mesh = apar.getMesh();
@@ -201,7 +203,7 @@ const Field3D Div_par(const Field3D &f, const std::string &method, CELL_LOC outl
 }
 
 const Field3D Div_par(const Field3D& f, const Field3D& v) {
-  ASSERT1(areFieldsCompatible(f, v));
+  ASSERT1_FIELDS_COMPATIBLE(f, v);
   ASSERT1(f.hasParallelSlices());
   ASSERT1(v.hasParallelSlices());
 
@@ -293,18 +295,22 @@ const Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D &f, CELL_LOC outloc)
 }
 
 const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f, CELL_LOC outloc) {
+  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
 const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, CELL_LOC outloc) {
+  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
 const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, CELL_LOC outloc) {
+  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
 const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC outloc) {
+  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
@@ -332,12 +338,18 @@ const FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 * Laplace_perp = Laplace - Laplace_par
 *******************************************************************************/
 
-const Field2D Laplace_perp(const Field2D &f, CELL_LOC outloc) {
-  return Laplace(f, outloc) - Laplace_par(f, outloc);
+const Field2D Laplace_perp(const Field2D& f, CELL_LOC outloc,
+                           const std::string& dfdy_boundary_condition,
+                           const std::string& dfdy_region) {
+  return Laplace(f, outloc, dfdy_boundary_condition, dfdy_region)
+         - Laplace_par(f, outloc);
 }
 
-const Field3D Laplace_perp(const Field3D &f, CELL_LOC outloc) {
-  return Laplace(f, outloc) - Laplace_par(f, outloc);
+const Field3D Laplace_perp(const Field3D& f, CELL_LOC outloc,
+                           const std::string& dfdy_boundary_condition,
+                           const std::string& dfdy_region) {
+  return Laplace(f, outloc, dfdy_boundary_condition, dfdy_region)
+         - Laplace_par(f, outloc);
 }
 
 /*******************************************************************************
@@ -361,12 +373,27 @@ const Field3D Laplace_par(const Field3D &f, CELL_LOC outloc) {
 * Full Laplacian operator on scalar field
 *******************************************************************************/
 
-const Field2D Laplace(const Field2D &f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Laplace(f, outloc);
+const Field2D Laplace(const Field2D& f, CELL_LOC outloc,
+                      const std::string& dfdy_boundary_condition,
+                      const std::string& dfdy_region) {
+  return f.getCoordinates(outloc)->Laplace(f, outloc, dfdy_boundary_condition,
+                                           dfdy_region);
 }
 
-const Field3D Laplace(const Field3D &f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Laplace(f, outloc);
+const Field3D Laplace(const Field3D& f, CELL_LOC outloc,
+                      const std::string& dfdy_boundary_condition,
+                      const std::string& dfdy_region) {
+  return f.getCoordinates(outloc)->Laplace(f, outloc, dfdy_boundary_condition,
+                                           dfdy_region);
+}
+
+/*******************************************************************************
+ * Laplace_perpXY
+ * Inverse of Laplacian operator in LaplaceXY solver
+ *******************************************************************************/
+
+const Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) {
+  return f.getCoordinates()->Laplace_perpXY(A, f);
 }
 
 /*******************************************************************************
@@ -399,7 +426,7 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A, CELL_LOC ou
 
   ASSERT1(result.getLocation() == outloc);
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
   return result;
@@ -436,7 +463,7 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A, CELL_LOC ou
 
   result /= (metric->J*sqrt(metric->g_22));
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
 
@@ -468,8 +495,8 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
 
   result /= (metric->J*sqrt(metric->g_22));
-  
-#ifdef TRACK
+
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+p.name+","+A.name+")";
 #endif
   
@@ -508,7 +535,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 
   result /=  (metric->J*sqrt(metric->g_22));
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
 
@@ -526,7 +553,7 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *UNUSED(solver)) {
   TRACE("bracket(Field2D, Field2D)");
 
-  ASSERT1(areFieldsCompatible(f, g));
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
@@ -549,7 +576,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field3D, Field2D)");
 
-  ASSERT1(areFieldsCompatible(f, g));
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
@@ -726,7 +753,7 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field2D, Field3D)");
 
-  ASSERT1(areFieldsCompatible(f, g));
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
@@ -763,7 +790,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("Field3D, Field3D");
 
-  ASSERT1(areFieldsCompatible(f, g));
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }

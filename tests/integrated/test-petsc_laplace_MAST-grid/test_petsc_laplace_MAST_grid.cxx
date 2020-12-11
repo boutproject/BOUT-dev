@@ -36,18 +36,20 @@ BoutReal max_error_at_ystart(const Field3D &error);
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
-  
+  {
   Options *options = Options::getRoot()->getSection("petsc2nd");
-  class Laplacian* invert = Laplacian::create(options);
+  auto invert = Laplacian::create(options);
   options = Options::getRoot()->getSection("petsc4th");
-  class Laplacian* invert_4th = Laplacian::create(options);
+  auto invert_4th = Laplacian::create(options);
   
   // Solving equations of the form d*Delp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various f, a, c, d
   Field3D f1,a1,b1,c1,d1,sol1;
   BoutReal p,q; //Use to set parameters in constructing trial functions
   Field3D error1,absolute_error1; //Absolute value of relative error: abs( (f1-sol1)/f1 )
   BoutReal max_error1; //Output of test
-  
+
+  using bout::globals::mesh;
+
   // Only Neumann x-boundary conditions are implemented so far, so test functions should be Neumann in x and periodic in z.
   // Use Field3D's, but solver only works on FieldPerp slices, so only use 1 y-point
   BoutReal nx = mesh->GlobalNx-2*mesh->xstart - 1;
@@ -210,7 +212,8 @@ int main(int argc, char** argv) {
   output<<"Magnitude of maximum absolute error is "<<max_error1<<endl;
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
-  
+
+  using bout::globals::dump;
   dump.add(a1,"a1");
   dump.add(b1,"b1");
   dump.add(c1,"c1");
@@ -326,10 +329,11 @@ int main(int argc, char** argv) {
   dump.add(absolute_error3,"absolute_error3");
   dump.add(max_error3,"max_error3");
   
-  class Laplacian* invert_SPT;
   Options* SPT_options;
   SPT_options = Options::getRoot()->getSection("SPT");
-  invert_SPT = Laplacian::create(SPT_options);
+  auto invert_SPT = Laplacian::create(SPT_options);
+  invert_SPT->setInnerBoundaryFlags(INVERT_AC_GRAD | INVERT_DC_GRAD);
+  invert_SPT->setOuterBoundaryFlags(INVERT_AC_GRAD | INVERT_DC_GRAD);
   invert_SPT->setCoefA(a3);
   invert_SPT->setCoefC(c3);
   invert_SPT->setCoefD(d3);
@@ -665,13 +669,13 @@ int main(int argc, char** argv) {
   output << "\nFinished running test. Triggering error to quit\n\n";
   
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
-  
+  }
   BoutFinalise();
   return 0;
 }
 
 BoutReal max_error_at_ystart(const Field3D &error) {
-
+  const auto* mesh = error.getMesh();
   BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
 
   for (int jx = mesh->xstart; jx <= mesh->xend; jx++)

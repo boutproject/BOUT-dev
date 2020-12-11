@@ -24,17 +24,36 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_SLEPC
-
-class SlepcSolver;
-
 #ifndef __SLEPC_SOLVER_H__
 #define __SLEPC_SOLVER_H__
 
-#include <slepc.h>
+#include "bout/build_config.hxx"
+#include "bout/solver.hxx"
 
-#include "bout/solverfactory.hxx"
-#include <bout/solver.hxx>
+#if not BOUT_HAS_SLEPC
+
+namespace {
+RegisterUnavailableSolver registerunavailableslepc("slepc",
+                                                   "BOUT++ was not configured with SLEPc");
+}
+
+#else
+
+class SlepcSolver;
+
+#include <slepc.h>
+// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
+#undef MPI_Allreduce
+#undef MPI_Gatherv
+#undef MPI_Irecv
+#undef MPI_Isend
+#undef MPI_Recv
+#undef MPI_Scatterv
+#undef MPI_Send
+#undef MPI_Wait
+#undef MPI_Waitall
+#undef MPI_Waitany
+
 #include <field2d.hxx>
 #include <field3d.hxx>
 #include <utils.hxx>
@@ -207,7 +226,7 @@ private:
   ST st;               // Spectral transform object
   PetscBool stIsShell; // Is the ST a shell object?
 
-  Solver *advanceSolver; // Pointer to actual solver used to advance fields
+  std::unique_ptr<Solver> advanceSolver{nullptr}; // Pointer to actual solver used to advance fields
 
   void vecToFields(Vec &inVec);
   void fieldsToVec(Vec &outVec);
@@ -247,6 +266,6 @@ private:
   PetscInt localSize;
 };
 
-#endif // __SLEPC_SOLVER_H__
+#endif // BOUT_HAS_SLEPC
 
-#endif
+#endif // __SLEPC_SOLVER_H__

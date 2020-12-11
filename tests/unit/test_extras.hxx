@@ -9,10 +9,12 @@
 #include <vector>
 
 #include "boutcomm.hxx"
-#include "bout/mesh.hxx"
-#include "bout/coordinates.hxx"
 #include "field3d.hxx"
 #include "unused.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
+#include "bout/operatorstencil.hxx"
 
 static constexpr BoutReal BoutRealTolerance{1e-15};
 // FFTs have a slightly looser tolerance than other functions
@@ -173,6 +175,7 @@ public:
 
     // Need some options for parallelTransform
     options = Options::getRoot();
+    mpi = bout::globals::mpi;
   }
 
   void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
@@ -191,7 +194,15 @@ public:
     addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
-  comm_handle send(FieldGroup& UNUSED(g)) override { return nullptr; };
+  comm_handle send(FieldGroup& UNUSED(g)) override { return nullptr; }
+  comm_handle sendX(FieldGroup& UNUSED(g), comm_handle UNUSED(handle) = nullptr,
+                    bool UNUSED(disable_corners) = false) override {
+    return nullptr;
+  }
+  comm_handle sendY(FieldGroup& UNUSED(g), comm_handle UNUSED(handle) = nullptr) override
+  {
+    return nullptr;
+  }
   int wait(comm_handle UNUSED(handle)) override { return 0; }
   MPI_Request sendToProc(int UNUSED(xproc), int UNUSED(yproc), BoutReal* UNUSED(buffer),
                          int UNUSED(size), int UNUSED(tag)) override {
@@ -206,8 +217,8 @@ public:
   int getNYPE() override { return 1; }
   int getXProcIndex() override { return 1; }
   int getYProcIndex() override { return 1; }
-  bool firstX() override { return true; }
-  bool lastX() override { return true; }
+  bool firstX() const override { return true; }
+  bool lastX() const override { return true; }
   int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
     return 0;
   }
@@ -222,10 +233,11 @@ public:
                        int UNUSED(tag)) override {
     return nullptr;
   }
-  MPI_Comm getXcomm(int UNUSED(jy)) const override { return MPI_COMM_NULL; }
-  MPI_Comm getYcomm(int UNUSED(jx)) const override { return MPI_COMM_NULL; }
+  MPI_Comm getXcomm(int UNUSED(jy)) const override { return BoutComm::get(); }
+  MPI_Comm getYcomm(int UNUSED(jx)) const override { return BoutComm::get(); }
   bool periodicY(int UNUSED(jx)) const override { return true; }
   bool periodicY(int UNUSED(jx), BoutReal& UNUSED(ts)) const override { return true; }
+  int numberOfYBoundaries() const override { return 1; }
   std::pair<bool, BoutReal> hasBranchCutLower(int UNUSED(jx)) const override {
     return std::make_pair(false, 0.);
   }
@@ -270,8 +282,12 @@ public:
                               int UNUSED(tag)) override {
     return nullptr;
   }
-  const RangeIterator iterateBndryLowerY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperY() const override { return RangeIterator(); }
+  const RangeIterator iterateBndryLowerY() const override {
+    return RangeIterator(xstart, xend);
+  }
+  const RangeIterator iterateBndryUpperY() const override {
+    return RangeIterator(xstart, xend);
+  }
   const RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
   const RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
   const RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
@@ -287,12 +303,16 @@ public:
   BoutReal GlobalY(BoutReal jy) const override { return jy; }
   int getGlobalXIndex(int) const override { return 0; }
   int getGlobalXIndexNoBoundaries(int) const override { return 0; }
-  int getGlobalYIndex(int) const override { return 0; }
-  int getGlobalYIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalYIndex(int y) const override { return y; }
+  int getGlobalYIndexNoBoundaries(int y) const override { return y; }
   int getGlobalZIndex(int) const override { return 0; }
   int getGlobalZIndexNoBoundaries(int) const override { return 0; }
-  int XLOCAL(int UNUSED(xglo)) const override { return 0; }
-  int YLOCAL(int UNUSED(yglo)) const override { return 0; }
+  int getLocalXIndex(int) const override { return 0; }
+  int getLocalXIndexNoBoundaries(int) const override { return 0; }
+  int getLocalYIndex(int y) const override { return y; }
+  int getLocalYIndexNoBoundaries(int y) const override { return y; }
+  int getLocalZIndex(int) const override { return 0; }
+  int getLocalZIndexNoBoundaries(int) const override { return 0; }
 
   void initDerivs(Options * opt){
     StaggerGrids=true;
@@ -308,14 +328,19 @@ public:
                 Region<Ind2D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0, 0, LocalNy, 1));
     addRegion3D("RGN_UPPER_Y", Region<Ind3D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
+
     addRegion2D("RGN_INNER_X",
-                Region<Ind2D>(0, xstart - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, 0, LocalNy - 1, 0,
-                                             LocalNz - 1, LocalNy, LocalNz));
+                Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy, 1));
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, 0, LocalNz - 1,
+                                             LocalNy, LocalNz));
+    addRegionPerp("RGN_INNER_X",
+                  Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz));
     addRegion2D("RGN_OUTER_X",
-                Region<Ind2D>(xend + 1, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, 0, LocalNy - 1, 0,
+                Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1));
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
+    addRegionPerp("RGN_OUTER_X", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0,
+                                                 LocalNz - 1, 1, LocalNz));
 
     const auto boundary_names = {"RGN_LOWER_Y", "RGN_UPPER_Y", "RGN_INNER_X",
                                  "RGN_OUTER_X"};
@@ -336,6 +361,8 @@ public:
                                   return a + getRegion3D(b);
                                 })
                     .unique());
+    addRegionPerp("RGN_BNDRY",
+                  getRegionPerp("RGN_INNER_X") + getRegionPerp("RGN_OUTER_X"));
   }
 
 private:
@@ -388,6 +415,7 @@ public:
     WithQuietOutput quiet_warn{output_warn};
 
     delete bout::globals::mesh;
+    bout::globals::mpi = new MpiWrapper();
     bout::globals::mesh = new FakeMesh(nx, ny, nz);
     bout::globals::mesh->createDefaultRegions();
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
@@ -404,6 +432,7 @@ public:
     // fromFieldAligned
     test_coords->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
+    static_cast<FakeMesh*>(bout::globals::mesh)->createBoundaryRegions();
 
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
@@ -433,6 +462,8 @@ public:
     bout::globals::mesh = nullptr;
     delete mesh_staggered;
     mesh_staggered = nullptr;
+    delete bout::globals::mpi;
+    bout::globals::mpi = nullptr;
   }
 
   static constexpr int nx = 3;
@@ -444,5 +475,87 @@ public:
   std::shared_ptr<Coordinates> test_coords{nullptr};
   std::shared_ptr<Coordinates> test_coords_staggered{nullptr};
 };
+
+/// Returns a stencil object which indicates that non-boundary cells
+/// depend on all of their neighbours to a depth of one, including
+/// corners.
+template <class T>
+OperatorStencil<T> squareStencil(Mesh* localmesh) {
+  OperatorStencil<T> stencil;
+  IndexOffset<T> zero;
+  std::set<IndexOffset<T>> offsets = {
+      zero,
+      zero.xp(),
+      zero.xm(),
+  };
+  if (!std::is_same<T, IndPerp>::value) {
+    offsets.insert(zero.yp());
+    offsets.insert(zero.ym());
+    offsets.insert(zero.xp().yp());
+    offsets.insert(zero.xp().ym());
+    offsets.insert(zero.xm().yp());
+    offsets.insert(zero.xm().ym());
+  }
+  if (!std::is_same<T, Ind2D>::value) {
+    offsets.insert(zero.zp());
+    offsets.insert(zero.zm());
+    offsets.insert(zero.xp().zp());
+    offsets.insert(zero.xp().zm());
+    offsets.insert(zero.xm().zp());
+    offsets.insert(zero.xm().zm());
+  }
+  if (std::is_same<T, Ind3D>::value) {
+    offsets.insert(zero.yp().zp());
+    offsets.insert(zero.yp().zm());
+    offsets.insert(zero.ym().zp());
+    offsets.insert(zero.ym().zm());
+  }
+  std::vector<IndexOffset<T>> offsetsVec(offsets.begin(), offsets.end());
+  stencil.add(
+      [localmesh](T ind) -> bool {
+        return (localmesh->xstart <= ind.x() && ind.x() <= localmesh->xend
+                && (std::is_same<T, IndPerp>::value
+                    || (localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend))
+                && (std::is_same<T, Ind2D>::value
+                    || (localmesh->zstart <= ind.z() && ind.z() <= localmesh->zend)));
+      },
+      offsetsVec);
+  stencil.add([](T UNUSED(ind)) -> bool { return true; }, {zero});
+  return stencil;
+}
+
+/// Returns a stencil object which indicates that non-boundary cells
+/// depend on all of their neighbours to a depth of one, excluding
+/// corners.
+template <class T>
+OperatorStencil<T> starStencil(Mesh* localmesh) {
+  OperatorStencil<T> stencil;
+  IndexOffset<T> zero;
+  std::set<IndexOffset<T>> offsets = {
+      zero,
+      zero.xp(),
+      zero.xm(),
+  };
+  if (!std::is_same<T, IndPerp>::value) {
+    offsets.insert(zero.yp());
+    offsets.insert(zero.ym());
+  }
+  if (!std::is_same<T, Ind2D>::value) {
+    offsets.insert(zero.zp());
+    offsets.insert(zero.zm());
+  }
+  std::vector<IndexOffset<T>> offsetsVec(offsets.begin(), offsets.end());
+  stencil.add(
+      [localmesh](T ind) -> bool {
+        return (localmesh->xstart <= ind.x() && ind.x() <= localmesh->xend
+                && (std::is_same<T, IndPerp>::value
+                    || (localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend))
+                && (std::is_same<T, Ind2D>::value
+                    || (localmesh->zstart <= ind.z() && ind.z() <= localmesh->zend)));
+      },
+      offsetsVec);
+  stencil.add([](T UNUSED(ind)) -> bool { return true; }, {zero});
+  return stencil;
+}
 
 #endif //  TEST_EXTRAS_H__

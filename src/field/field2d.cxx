@@ -25,6 +25,8 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <boutcomm.hxx>
 #include <bout/rvec.hxx>
 
@@ -55,7 +57,7 @@ Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in,
     ny = fieldmesh->LocalNy;
   }
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = "<F2D>";
 #endif
 }
@@ -63,7 +65,7 @@ Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in,
 Field2D::Field2D(const Field2D& f) : Field(f), data(f.data) {
   TRACE("Field2D(Field2D&)");
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = f.name;
 #endif
 
@@ -125,10 +127,10 @@ Field2D* Field2D::timeDeriv() {
 
 const Region<Ind2D> &Field2D::getRegion(REGION region) const {
   return fieldmesh->getRegion2D(toString(region));
-};
+}
 const Region<Ind2D> &Field2D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion2D(region_name);
-};
+}
 
 // Not in header because we need to access fieldmesh
 BoutReal& Field2D::operator[](const Ind3D &d) {
@@ -148,7 +150,7 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
 
   TRACE("Field2D: Assignment from Field2D");
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = rhs.name;
 #endif
 
@@ -165,7 +167,7 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
 }
 
 Field2D &Field2D::operator=(const BoutReal rhs) {
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = "<r2D>";
 #endif
 
@@ -267,7 +269,7 @@ void Field2D::applyBoundary(const std::string &region, const std::string &condit
   }
 
   if (!region_found) {
-    throw BoutException("Region '%s' not found", region.c_str());
+    throw BoutException("Region '{:s}' not found", region);
   }
 
   // Set the corners to zero
@@ -334,8 +336,8 @@ void checkDataIsFiniteOnRegion(const Field2D& f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!::finite(f[i])) {
-      throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x(),
-                          i.y());
+      throw BoutException("Field2D: Operation on non-finite data at [{:d}][{:d}]\n",
+                          i.x(), i.y());
     }
   }
 }

@@ -78,6 +78,9 @@ variable. Expressions can include the usual operators
 (``+``,\ ``-``,\ ``*``,\ ``/``), including ``^`` for exponents. The
 following values are also already defined:
 
+.. _tab-initexprvals:
+.. table:: Initialisation expression values
+
 +--------+------------------------------------------------------------------------------------+
 | Name   | Description                                                                        |
 +========+====================================================================================+
@@ -90,7 +93,6 @@ following values are also already defined:
 | pi  π  | :math:`3.1415\ldots`                                                               |
 +--------+------------------------------------------------------------------------------------+
 
-Table: Initialisation expression values
 
 By default, :math:`x` is defined as ``i / (nx - 2*MXG)``, where ``MXG``
 is the width of the boundary region, by default 2. Hence :math:`x`
@@ -162,6 +164,10 @@ expressions.
    +------------------------------------------+------------------------------------------------------+
    | ``min(x,y,...)``                         | Minimum (variable arguments)                         |
    +------------------------------------------+------------------------------------------------------+
+   | ``clamp(value, low, high)``              | If value < low, return low;                          |
+   |                                          | If value > high, return high;                        |
+   |                                          | otherwise return value                               |
+   +------------------------------------------+------------------------------------------------------+
    | ``mixmode(x)``                           | A mixture of Fourier modes                           |
    +------------------------------------------+------------------------------------------------------+
    | ``mixmode(x, seed)``                     | seed determines random phase (default 0.5)           |
@@ -185,6 +191,32 @@ expressions.
    | ``fmod(x)``                              | The modulo operator, returns floating point remainder|
    +------------------------------------------+------------------------------------------------------+
 
+In addition there are some special functions which enable control flow
+
+.. _tab-exprcontrol:
+.. table:: Control flow and special functions
+           
+   +------------------------------------------+------------------------------------------------------+ 
+   |  Name                                    | Description                                          |
+   +==========================================+======================================================+
+   | ``where(expr, gt0, lt0)``                | If the first ``expr`` evaluates to a value greater   |
+   |                                          | than zero then the second expression ``gt0`` is      |
+   |                                          | evaluated. Otherwise the last expression ``lt0``     |
+   +------------------------------------------+------------------------------------------------------+
+   | ``sum(symbol, count, expr)``             | Evaluate expression ``expr``  ``count`` times, and   |
+   |                                          | sum the result. Each time the symbol is incremented  |
+   |                                          | from 0 to ``count``-1. The value of the symbol is    |
+   |                                          | accessed by putting it in braces ``{}``. Example:    |
+   |                                          | ``sum(i, 3, {i}^2)`` is ``0^2 + 1^2 + 2^2``          |
+   +------------------------------------------+------------------------------------------------------+
+   | ``[var = value,...](expr)``              | Define a new scope with variables whose value can be |
+   |                                          | accessed using braces ``{}``. The ``value`` each     |
+   |                                          | variable ``var`` is set to can be an expression, and |
+   |                                          | is evaluated before the ``expr`` expression.         |
+   |                                          | Example: ``[n=2]( {n}^{n} )`` is ``2^2``.            |
+   +------------------------------------------+------------------------------------------------------+
+   
+   
 For field-aligned tokamak simulations, the Y direction is along the
 field and in the core this will have a discontinuity at the twist-shift
 location where field-lines are matched onto each other. To handle this,
@@ -221,6 +253,118 @@ term is chosen so that the 4th harmonic (:math:`i=4`) has the highest
 amplitude. This is useful mainly for initialising turbulence
 simulations, where a mixture of mode numbers is desired.
 
+Context variables and scope
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Expressions can use a form of local variables, by using ``[]()`` to
+define new scopes:
+
+.. code-block:: cfg
+
+   var = [a = 2,
+          b = 3]( {a} + {b}^{a} )
+
+Where here the braces ``{}`` refer to context variables, to
+distinguish them from variables in the options which have no
+braces. One application of these is a (modest) performance
+improvement: If ``{a}`` is a large expression then in the above
+example it would only be evaluated once, the value stored as ``{a}``
+and used twice in the expression.
+
+Passing data into expressions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A second application of context variables is that they can be set by
+the calling C++ code, providing a way for data to be passed from BOUT++
+into these expressions. The evaluation of expressions is currently not very efficient,
+but this provides a very flexible way for the input options to modify
+simulation behaviour.
+
+This can be done by first parsing an expression and then passing values
+to ``generate`` in the ``Context`` object.
+
+::
+
+  Field3D shear = ...; // Value calculated in BOUT++
+  
+  FieldFactory factory(mesh);
+  auto gen = factory->parse("model:viscosity");
+
+  Field3D viscosity;
+  viscosity.allocate();
+  
+  BOUT_FOR(i, viscosity.region("RGN_ALL")) {
+    viscosity[i] = gen->generate(bout::generator::Context(i, CELL_CENTRE, mesh, 0.0)
+                                   .set("shear", shear[i]));
+  }
+
+Note that the ``Context`` constructor takes the index, the cell
+location (e.g. staggered), a mesh, and then the time (set to 0.0
+here). Additional variables can be ``set``, "shear" in this case.  In
+the input options file (or command line) the viscosity could now be a
+function of ``{shear}``
+
+.. code-block:: cfg
+
+    [model]
+    viscosity = 1 + {shear}
+
+Defining functions in input options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Defining context variables in a new scope can be used to define and
+call functions, as in the above example ``viscosity`` is a function of
+``{shear}``.  For example we could define a cosh function using
+
+.. code-block:: cfg
+
+    mycosh = 0.5 * (exp({arg}) + exp(-{arg}))
+
+which uses ``{arg}`` as the input value. We could then call this function:
+
+.. code-block:: cfg
+                
+    result = [arg = x*2](mycosh)
+
+
+Recursive functions
+~~~~~~~~~~~~~~~~~~~
+
+By default recursive expressions are not allowed in the input options,
+and a ``ParseException`` will be thrown if circular dependencies
+occur. Recursive functions can however be enabled by setting
+``input:max_recursion_depth != 0`` e.g.:
+
+.. code-block:: cfg
+                
+    [input]
+    max_recursion_depth = 10  # 0 = none, -1 = unlimited
+
+By putting a limit on the depth, expressions should (eventually)
+terminate or fail with a ``BoutException``, rather than entering an
+infinite loop. To remove this restriction ``max_recursion_depth`` can
+be set to -1 to allow arbitrary recursion (limited by stack, memory
+sizes).
+
+If recursion is allowed, then the ``where`` special function and
+``Context`` scopes can be (ab)used to define quite general
+functions. For example the Fibonnacci sequence ``1,1,2,3,5,8,...`` can
+be generated:
+
+.. code-block:: cfg
+
+    fib = where({n} - 2.5,
+                [n={n}-1](fib) + [n={n}-2](fib),
+                1)
+
+so if ``n`` = 1 or 2 then ``fib`` = 1, but if n = 3 or above then
+recursion is used.
+
+Note: Use of this facility in general is not encouraged, as it can
+easily lead to very inefficient and hard to understand code. It is
+here because occasionally it might be necessary, and because making
+the input language Turing complete was irresistible. 
+
 Initalising variables with the ``FieldFactory`` class
 -----------------------------------------------------
 
@@ -256,13 +400,22 @@ which then generate the field values::
     class FieldGenerator {
      public:
       virtual ~FieldGenerator() { }
-      virtual FieldGenerator* clone(const list<FieldGenerator*> args) {return NULL;}
-      virtual BoutReal generate(int x, int y, int z) = 0;
+      virtual FieldGeneratorPtr clone(const list<FieldGeneratorPtr> args) {return NULL;}
+      virtual BoutReal generate(const bout::generator::Context& ctx) = 0;
     };
 
+where `FieldGeneratorPtr` is an alias for
+`std::shared_ptr<FieldGenerator>`, a shared pointer to a
+`FieldGenerator`. The `Context` input to `generate` is an object
+containing values which can be used in expressions, in particular `x`,
+`y`, `z` and `t` coordinates.  Additional values can be stored in the
+`Context` object, allowing data from BOUT++ to be used in expressions.
+There are also ways to manipulate `Context` objects for more complex
+expressions and functions, see below for details.
+    
 All classes inheriting from `FieldGenerator` must implement
 a `FieldGenerator::generate` function, which returns the
-value at the given ``(x,y,z)`` position. Classes should also implement
+value at the given ``(x,y,z,t)`` position. Classes should also implement
 a `FieldGenerator::clone` function, which takes a list of
 arguments and creates a new instance of its class. This takes as input
 a list of other `FieldGenerator` objects, allowing a
@@ -274,7 +427,7 @@ represented by a `FieldValue` object::
     class FieldValue : public FieldGenerator {
      public:
       FieldValue(BoutReal val) : value(val) {}
-      BoutReal generate(int x, int y, int z) { return value; }
+      BoutReal generate(const bout::generator::Context&) override { return value; }
      private:
       BoutReal value;
     };
@@ -295,34 +448,31 @@ definition::
 
     class FieldSinh : public FieldGenerator {
      public:
-      FieldSinh(FieldGenerator* g) : gen(g) {}
-      ~FieldSinh() {if(gen) delete gen;}
+      FieldSinh(FieldGeneratorPtr g) : gen(g) {}
 
-      FieldGenerator* clone(const list<FieldGenerator*> args);
-      BoutReal generate(int x, int y, int z);
+      FieldGeneratorPtr clone(const list<FieldGenerator*> args) override;
+      BoutReal generate(const bout::generator::Context& ctx) override;
      private:
-      FieldGenerator *gen;
+      FieldGeneratorPtr gen;
     };
 
-The ``gen`` member is used to store the input argument, and to make
-sure it’s deleted properly we add some code to the destructor. The
-constructor takes a single input, the `FieldGenerator`
-argument to the ``sinh`` function, which is stored in the member
-``gen`` .
+The ``gen`` member is used to store the input argument. The
+constructor takes a single input, the `FieldGenerator` argument to the
+``sinh`` function, which is stored in the member ``gen`` .
 
 Next edit ``src/field/fieldgenerators.cxx`` and add the implementation
 of the ``clone`` and ``generate`` functions::
 
-    FieldGenerator* FieldSinh::clone(const list<FieldGenerator*> args) {
-      if(args.size() != 1) {
+    FieldGeneratorPtr FieldSinh::clone(const list<FieldGeneratorPtr> args) {
+      if (args.size() != 1) {
         throw ParseException("Incorrect number of arguments to sinh function. Expecting 1, got %d", args.size());
       }
 
-      return new FieldSinh(args.front());
+      return std::make_shared<FieldSinh>(args.front());
     }
 
-    BoutReal FieldSinh::generate(double x, double y, double z, double t) {
-      return sinh(gen->generate(x,y,z,t));
+    BoutReal FieldSinh::generate(const bout::generator::Context& ctx) {
+      return sinh(gen->generate(ctx));
     }
 
 The ``clone`` function first checks the number of arguments using
@@ -332,20 +482,20 @@ different numbers of input, but in this case we throw a
 one. ``clone`` then creates a new `FieldSinh` object,
 passing the first argument ( ``args.front()`` ) to the constructor
 (which then gets stored in the ``gen`` member variable).
+Note that ``std::make_shared`` is used to make a shared pointer.
 
-The ``generate`` function for ``sinh`` just gets the value of the input
-by calling ``gen->generate(x,y,z)``, calculates ``sinh`` of it and
-returns the result.
+The ``generate`` function for ``sinh`` just gets the value of the
+input by calling ``gen->generate(ctx)`` with the input ``Context``
+object ``ctx``, calculates ``sinh`` of it and returns the result.
 
 The ``clone`` function means that the parsing code can make copies of
-any `FieldGenerator` class if it’s given a single instance
-to start with. The final step is therefore to give the
-`FieldFactory` class an instance of this new
-generator. Edit the `FieldFactory` constructor
-`FieldFactory::FieldFactory` in
-``src/field/field_factory.cxx`` and add the line::
+any `FieldGenerator` class if it’s given a single instance to start
+with. The final step is therefore to give the `FieldFactory` class an
+instance of this new generator. Edit the `FieldFactory` constructor
+`FieldFactory::FieldFactory` in ``src/field/field_factory.cxx`` and
+add the line::
 
-    addGenerator("sinh", new FieldSinh(NULL));
+    addGenerator("sinh", std::make_shared<FieldSinh>(nullptr));
 
 That’s it! This line associates the string ``"sinh"`` with a
 `FieldGenerator` . Even though `FieldFactory`
@@ -357,19 +507,28 @@ Constructor” idiom.
 Parser internals
 ----------------
 
+The basic expression parser is defined in
+``include/bout/sys/expressionparser.hxx`` and the code in
+``src/sys/expressionparser.cxx``. The ``FieldFactory`` adds the
+function in table :numref:`tab-initexprfunc` on top of this basic
+functionality, and also uses ``Options`` to resolve unknown symbols to
+``Options``.
+
 When a `FieldGenerator` is added using the ``addGenerator``
 function, it is entered into a ``std::map`` which maps strings to
-`FieldGenerator` objects (``include/field_factory.hxx``)::
+`FieldGenerator` objects (``include/bout/sys/expressionparser.hxx``)::
 
-    map<string, FieldGenerator*> gen;
+    std::map<std::string, FieldGeneratorPtr> gen;
 
-Parsing a string into a tree of `FieldGenerator` objects is
-done by first splitting the string up into separate tokens like
-operators like ’\*’, brackets ’(’, names like ’sinh’ and so on, then
-recognising patterns in the stream of tokens. Recognising tokens is
-done in ``src/field/field_factory.cxx``::
+Parsing a string into a tree of `FieldGenerator` objects is done by a
+first splitting the string up into separate tokens like operators like
+’\*’, brackets ’(’, names like ’sinh’ and so on (`Lexical analysis
+<https://en.wikipedia.org/wiki/Lexical_analysis>`_), then recognising
+patterns in the stream of tokens (`Parsing
+<https://en.wikipedia.org/wiki/Parsing>`_). Recognising tokens is done
+in ``src/sys/expressionparser.cxx``::
 
-    char FieldFactory::nextToken() {
+    char ExpressionParser::LexInfo::nextToken() {
      ...
 
 This returns the next token, and setting the variable ``char curtok`` to
@@ -378,11 +537,12 @@ the same value. This can be one of:
 -  -1 if the next token is a number. The variable ``BoutReal curval`` is
    set to the value of the token
 
--  -2 for a string (e.g. “sinh”, “x” or “pi”). This includes anything
+-  -2 for a symbol (e.g. “sinh”, “x” or “pi”). This includes anything
    which starts with a letter, and contains only letters, numbers, and
    underscores. The string is stored in the variable ``string curident``
-   .
-
+  
+-  -3 for a ``Context`` parameter which appeared surrounded by braces ``{}``.
+   
 -  0 to mean end of input
 
 -  The character if none of the above. Since letters and numbers are
@@ -436,7 +596,7 @@ either variable names, or functions
 i.e. a name, optionally followed by brackets containing one or more
 expressions separated by commas. names without brackets are treated the
 same as those with empty brackets, so ``"x"`` is the same as ``"x()"``.
-A list of inputs (``list<FieldGenerator*> args;`` ) is created, the
+A list of inputs (``list<FieldGeneratorPtr> args;`` ) is created, the
 ``gen`` map is searched to find the ``FieldGenerator`` object
 corresponding to the name, and the list of inputs is passed to the
 object’s ``clone`` function.

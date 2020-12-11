@@ -12,4 +12,8 @@ public:
   CASHKARPScheme(Options* options);
 };
 
+namespace {
+RegisterRKScheme<CASHKARPScheme> registerrkschemecashkarp(RKSCHEME_CASHKARP);
+}
+
 #endif // __CASHKARP_SCHEME_H__

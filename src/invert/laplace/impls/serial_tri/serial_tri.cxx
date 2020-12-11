@@ -233,9 +233,11 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 #if CHECK > 2
     for(int kz=0;kz<ncz;kz++)
       if(!finite(x(ix,kz)))
-        throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
+        throw BoutException("Non-finite at {:d}, {:d}, {:d}", ix, jy, kz);
 #endif
   }
+
+  checkData(x);
 
   return x; // Result of the inversion
 }

@@ -29,6 +29,8 @@ class Field;
 #ifndef __FIELD_H__
 #define __FIELD_H__
 
+#include "bout/build_config.hxx"
+
 #include <cmath>
 #include <cstdio>
 #include <memory>
@@ -50,7 +52,7 @@ class Field;
 class Mesh;
 class Coordinates;
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
 #include <string>
 #endif
 
@@ -191,6 +193,38 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
       areDirectionsCompatible(field1.getDirections(), field2.getDirections());
 }
 
+#if CHECKLEVEL >= 1
+#define ASSERT1_FIELDS_COMPATIBLE(field1, field2)			\
+  if ((field1).getLocation() != (field2).getLocation()){		\
+    throw BoutException("Error in {:s}:{:d}\nFields at different position:" \
+			"`{:s}` at {:s}, `{:s}` at {:s}",__FILE__,__LINE__, \
+			#field1, toString((field1).getLocation()),	\
+			#field2, toString((field2).getLocation()));	\
+  }									\
+  if ((field1).getCoordinates() != (field2).getCoordinates()){		\
+    throw BoutException("Error in {:s}:{:d}\nFields have different coordinates:" \
+			"`{:s}` at {:p}, `{:s}` at {:p}",__FILE__,__LINE__, \
+			#field1, static_cast<void*>((field1).getCoordinates()), \
+			#field2, static_cast<void*>((field2).getCoordinates())); \
+  }								\
+  if ((field1).getMesh() != (field2).getMesh()){			\
+    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:" \
+			"`{:s}` at {:p}, `{:s}` at {:p}",__FILE__,__LINE__, \
+			#field1, static_cast<void*>((field1).getMesh()), \
+			#field2, static_cast<void*>((field2).getMesh())); \
+  }									\
+  if (!areDirectionsCompatible((field1).getDirections(),		\
+			       (field2).getDirections())){		\
+    throw BoutException("Error in {:s}:{:d}\nFields at different directions:" \
+			"`{:s}` at {:s}, `{:s}` at {:s}",__FILE__,__LINE__, \
+			#field1, toString((field1).getDirections()),	\
+			#field2, toString((field2).getDirections()));	\
+  }
+
+#else
+#define ASSERT1_FIELDS_COMPATIBLE(field1, field2);
+#endif
+
 /// Return an empty shell field of some type derived from Field, with metadata
 /// copied and a data array that is allocated but not initialised.
 template<typename T>
@@ -219,6 +253,27 @@ inline T filledFrom(const T& f, BoutReal fill_value) {
   return result;
 }
 
+/// Return a field of some type derived from Field, with metadata copied from
+/// another field and a data array allocated and filled using a callable e.g. lambda function
+///
+/// e.g.
+///   Field3D result = filledFrom(field, [&](const auto& index) {
+///                                          return ...;
+///                                      });
+/// 
+/// An optional third argument is the region string
+template <
+    typename T, typename Function,
+    typename = decltype(std::declval<Function&>()(std::declval<typename T::ind_type&>()))>
+inline T filledFrom(const T& f, Function func, std::string region_string = "RGN_ALL") {
+  static_assert(bout::utils::is_Field<T>::value, "filledFrom only works on Fields");
+  T result{emptyFrom(f)};
+  BOUT_FOR(i, result.getRegion(region_string)) {
+    result[i] = func(i);
+  }
+  return result;
+}
+
 /// Unary + operator. This doesn't do anything
 template<typename T, typename = bout::utils::EnableIfField<T>>
 T operator+(const T& f) {return f;}
@@ -237,12 +292,12 @@ inline void checkFinite(const T& f, const std::string& name="field", const std::
   AUTO_TRACE();
 
   if (!f.isAllocated()) {
-    throw BoutException("%s is not allocated", name.c_str());
+    throw BoutException("{:s} is not allocated", name);
   }
 
   BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
     if (!::finite(f[i])) {
-      throw BoutException("%s is not finite at %s", name.c_str(), toString(i).c_str());
+      throw BoutException("{:s} is not finite at {:s}", name, toString(i));
     }
   }
 }
@@ -260,12 +315,12 @@ inline void checkPositive(const T& f, const std::string& name="field", const std
   AUTO_TRACE();
 
   if (!f.isAllocated()) {
-    throw BoutException("%s is not allocated", name.c_str());
+    throw BoutException("{:s} is not allocated", name);
   }
 
   BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
     if (f[i] <= 0.) {
-      throw BoutException("%s is not positive at %s", name.c_str(), toString(i).c_str());
+      throw BoutException("{:s} is not positive at {:s}", name, toString(i));
     }
   }
 }
@@ -279,7 +334,7 @@ inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
 }
 template<typename T>
-[[gnu::deprecated("Please use toFieldAligned(const T& f, "
+[[deprecated("Please use toFieldAligned(const T& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T toFieldAligned(const T& f, REGION region) {
   return toFieldAligned(f, toString(region));
@@ -291,7 +346,7 @@ inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
 }
 template<typename T>
-[[gnu::deprecated("Please use fromFieldAligned(const T& f, "
+[[deprecated("Please use fromFieldAligned(const T& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T fromFieldAligned(const T& f, REGION region) {
   return fromFieldAligned(f, toString(region));
@@ -321,7 +376,7 @@ inline BoutReal min(const T& f, bool allpe = false, const std::string& rgn = "RG
   return result;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use Field3D min(const Field3D& f, bool allpe, "
+[[deprecated("Please use Field3D min(const Field3D& f, bool allpe, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline BoutReal min(const T& f, bool allpe, REGION rgn) {
   return min(f, allpe, toString(rgn));
@@ -351,7 +406,7 @@ inline BoutReal max(const T& f, bool allpe = false, const std::string& rgn = "RG
   return result;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use Field3D max(const Field3D& f, bool allpe, "
+[[deprecated("Please use Field3D max(const Field3D& f, bool allpe, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline BoutReal max(const T& f, bool allpe, REGION rgn) {
   return max(f, allpe, toString(rgn));
@@ -384,7 +439,7 @@ inline BoutReal mean(const T &f, bool allpe = false,
   return result / static_cast<BoutReal>(count);
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use Field3D mean(const Field3D& f, bool allpe, "
+[[deprecated("Please use Field3D mean(const Field3D& f, bool allpe, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline BoutReal mean(const T& f, bool allpe, REGION rgn) {
   return mean(f, allpe, toString(rgn));
@@ -409,7 +464,7 @@ T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
   return result;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use pow(const T& lhs, const T& rhs"
+[[deprecated("Please use pow(const T& lhs, const T& rhs"
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T pow(const T& lhs, const T& rhs, REGION rgn) {
   return pow(lhs, rhs, toString(rgn));
@@ -431,7 +486,7 @@ T pow(const T &lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
   return result;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use pow(const T& lhs, BoutReal rhs"
+[[deprecated("Please use pow(const T& lhs, BoutReal rhs"
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T pow(const T& lhs, BoutReal rhs, REGION rgn) {
   return pow(lhs, rhs, toString(rgn));
@@ -454,7 +509,7 @@ T pow(BoutReal lhs, const T &rhs, const std::string& rgn = "RGN_ALL") {
   return result;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use pow(BoutReal lhs, const T& rhs"
+[[deprecated("Please use pow(BoutReal lhs, const T& rhs"
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T pow(BoutReal lhs, const T& rhs, REGION rgn) {
   return pow(lhs, rhs, toString(rgn));
@@ -493,7 +548,7 @@ inline T pow(BoutReal lhs, const T& rhs, REGION rgn) {
     return result;                                                                   \
   }                                                                                  \
   template<typename T, typename = bout::utils::EnableIfField<T>>                     \
-  [[gnu::deprecated("Please use func(const T& f, "                                   \
+  [[deprecated("Please use func(const T& f, "                                   \
       "const std::string& region = \"RGN_ALL\") instead")]]                          \
   inline T name(const T& f, REGION region) {                                         \
     return name(f, toString(region));                                                \
@@ -505,14 +560,14 @@ inline T pow(BoutReal lhs, const T& rhs, REGION rgn) {
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(sqrt, ::sqrt);
+FIELD_FUNC(sqrt, ::sqrt)
 
 /// Absolute value (modulus, |f|) of \p f over region \p rgn
 ///
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(abs, ::fabs);
+FIELD_FUNC(abs, ::fabs)
 
 /// Exponential: \f$\exp(f)\f$ is e to the power of \p f, over region
 /// \p rgn
@@ -520,7 +575,7 @@ FIELD_FUNC(abs, ::fabs);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(exp, ::exp);
+FIELD_FUNC(exp, ::exp)
 
 /// Natural logarithm of \p f over region \p rgn, inverse of
 /// exponential
@@ -530,7 +585,7 @@ FIELD_FUNC(exp, ::exp);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the rgn argument)
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(log, ::log);
+FIELD_FUNC(log, ::log)
 
 /// Sine trigonometric function.
 ///
@@ -540,7 +595,7 @@ FIELD_FUNC(log, ::log);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(sin, ::sin);
+FIELD_FUNC(sin, ::sin)
 
 /// Cosine trigonometric function.
 ///
@@ -550,7 +605,7 @@ FIELD_FUNC(sin, ::sin);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(cos, ::cos);
+FIELD_FUNC(cos, ::cos)
 
 /// Tangent trigonometric function.
 ///
@@ -560,7 +615,7 @@ FIELD_FUNC(cos, ::cos);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(tan, ::tan);
+FIELD_FUNC(tan, ::tan)
 
 /// Hyperbolic sine trigonometric function.
 ///
@@ -570,7 +625,7 @@ FIELD_FUNC(tan, ::tan);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(sinh, ::sinh);
+FIELD_FUNC(sinh, ::sinh)
 
 /// Hyperbolic cosine trigonometric function.
 ///
@@ -580,7 +635,7 @@ FIELD_FUNC(sinh, ::sinh);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(cosh, ::cosh);
+FIELD_FUNC(cosh, ::cosh)
 
 /// Hyperbolic tangent trigonometric function.
 ///
@@ -590,7 +645,7 @@ FIELD_FUNC(cosh, ::cosh);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(tanh, ::tanh);
+FIELD_FUNC(tanh, ::tanh)
 
 /// Check if all values of a field \p var are finite.
 /// Loops over all points including the boundaries by
@@ -612,7 +667,7 @@ inline bool finite(const T &f, const std::string& rgn = "RGN_ALL") {
   return true;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use bool finite(const Field3D& f, "
+[[deprecated("Please use bool finite(const Field3D& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline bool finite(const T& f, REGION rgn) {
   return finite(f, toString(rgn));
@@ -647,7 +702,7 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
   return result;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use floor(const T& var, BoutReal f, "
+[[deprecated("Please use floor(const T& var, BoutReal f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T floor(const T& var, BoutReal f, REGION rgn) {
   return floor(var, f, toString(rgn));

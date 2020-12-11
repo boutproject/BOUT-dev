@@ -2,13 +2,14 @@
 #
 # Test file I/O by loading from restart files and writing to dump files
 #
-# require: netcdf
+# requires: netcdf
+# cores: 4
 
 from boutdata import restart
 from boutdata.collect import collect
 from boututils.boutarray import BoutArray
 from boututils.datafile import DataFile
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 import numpy
 import os
 from sys import exit
@@ -19,8 +20,7 @@ nz = 4
 mxg = 2
 myg = 2
 
-print("Making restart I/O test")
-shell_safe("make > make.log")
+build_and_log("restart I/O test")
 
 x = numpy.linspace(0., 1., nx+2*mxg)[:, numpy.newaxis, numpy.newaxis]
 y = numpy.linspace(0., 1., ny+2*myg)[numpy.newaxis, :, numpy.newaxis]
@@ -30,7 +30,7 @@ testvars = {}
 testvars['f3d'] = BoutArray(numpy.exp(numpy.sin(x + y + z)), attributes = {'bout_type':'Field3D'})
 testvars['f2d'] = BoutArray(numpy.exp(numpy.sin(x + y + 1.))[:, :, 0], attributes = {'bout_type':'Field2D'})
 testvars['fperp_lower'] = BoutArray(numpy.exp(numpy.sin(x + z + 2.))[:, 0, :], attributes = {'bout_type':'FieldPerp', 'yindex_global':0})
-testvars['fperp_upper'] = BoutArray(numpy.exp(numpy.sin(x + z + 3.))[:, 0, :], attributes = {'bout_type':'FieldPerp', 'yindex_global':16})
+testvars['fperp_upper'] = BoutArray(numpy.exp(numpy.sin(x + z + 3.))[:, 0, :], attributes = {'bout_type':'FieldPerp', 'yindex_global':ny-1})
 
 # make restart file
 restartdir = os.path.join('data', 'restart')
@@ -71,7 +71,7 @@ success = True
 # y-processor-indices, and collect() cannot handle this.
 for nproc in [1, 2, 4]:
     # delete any existing output
-    shell("rm data/BOUT.dmp.*.nc data/BOUT.restart.*.nc")
+    shell("rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc")
 
     # create restart files for the run
     restart.redistribute(nproc, path=restartdir, output='data')
@@ -92,8 +92,10 @@ for nproc in [1, 2, 4]:
         if not numpy.all(testvar == result):
             success = False
             print(name+' is different')
-            from boututils.showdata import showdata
-            showdata([result, testvar])
+            # Don't plot anything by default
+            if False:
+                from boututils.showdata import showdata
+                showdata([result, testvar])
         if name == 'fperp_lower' or name == 'fperp_upper':
             yindex_result = result.attributes['yindex_global']
             yindex_test = testvar.attributes['yindex_global']
@@ -116,9 +118,10 @@ for nproc in [1, 2, 4]:
                     print('Fail: yindex_global of '+name+' evolving version is '+str(yindex_result)+' should be '+str(yindex_test))
 
 if success:
-    print('pass')
-
+    print('=> All restart I/O tests passed')
     # clean up binary files
-    shell("rm data/BOUT.dmp.*.nc data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc")
+    shell("rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc")
+    exit(0)
 
-exit(0)
+print("=> Some failed tests")
+exit(1)

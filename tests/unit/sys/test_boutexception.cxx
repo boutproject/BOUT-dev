@@ -1,3 +1,5 @@
+#include "bout/build_config.hxx"
+
 #include "gtest/gtest.h"
 #include "boutexception.hxx"
 #include "test_extras.hxx"
@@ -17,10 +19,10 @@ TEST(BoutExceptionTest, What) {
     EXPECT_EQ(e.what(), test_message);
   }
   try {
-    throw BoutException("%s", "second");
+    throw BoutException("this is {}", "second");
   } catch (const BoutException &e) {
     std::string message(e.what());
-    EXPECT_EQ(message, "second");
+    EXPECT_EQ(message, "this is second");
   }
 }
 
@@ -32,7 +34,7 @@ TEST(BoutExceptionTest, GetBacktrace) {
   } catch (const BoutException &e) {
     std::string expected_1{"[bt] #1"};
     std::string expected_2{"serial_tests"};
-#ifdef BACKTRACE
+#if BOUT_USE_BACKTRACE
     // Should be able to find something about backtrace
     EXPECT_TRUE(IsSubString(e.getBacktrace(), expected_1));
     EXPECT_TRUE(IsSubString(e.getBacktrace(), expected_2));

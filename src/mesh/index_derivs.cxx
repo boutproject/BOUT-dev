@@ -20,6 +20,8 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include "bout/traits.hxx"
 #include <bout/index_derivs.hxx>
 #include <bout/mesh.hxx>
@@ -70,7 +72,7 @@ STAGGER Mesh::getStagger(const CELL_LOC vloc, MAYBE_UNUSED(const CELL_LOC inloc)
 /// central, 2nd order
 REGISTER_STANDARD_DERIVATIVE(DDX_C2, "C2", 1, DERIV::Standard) {
   return 0.5 * (f.p - f.m);
-};
+}
 
 /// central, 4th order
 REGISTER_STANDARD_DERIVATIVE(DDX_C4, "C4", 2, DERIV::Standard) {
@@ -410,7 +412,7 @@ REGISTER_FLUX_DERIVATIVE_STAGGERED(FDDX_U2_stag, "U2", 2, DERIV::Flux) {
 /// into the standard stencil based approach.
 // /////////////////////////////////////////////////////////////////////////////////
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 class FFTDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
@@ -421,10 +423,6 @@ public:
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
     ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
-
-    // Only allow a whitelist of regions for now
-    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
-            || region == "RGN_NOX" || region == "RGN_NOY");
 
     auto* theMesh = var.getMesh();
 
@@ -475,8 +473,9 @@ public:
     AUTO_TRACE();
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
   }
-  metaData meta{"FFT", 0, DERIV::Standard};
+  static constexpr metaData meta{"FFT", 0, DERIV::Standard};
 };
+constexpr metaData FFTDerivativeType::meta;
 
 class FFT2ndDerivativeType {
 public:
@@ -488,10 +487,6 @@ public:
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
     ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
-
-    // Only allow a whitelist of regions for now
-    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
-            || region == "RGN_NOX" || region == "RGN_NOY");
 
     auto* theMesh = var.getMesh();
 
@@ -535,8 +530,9 @@ public:
     AUTO_TRACE();
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
   }
-  metaData meta{"FFT", 0, DERIV::StandardSecond};
+  static constexpr metaData meta{"FFT", 0, DERIV::StandardSecond};
 };
+constexpr metaData FFT2ndDerivativeType::meta;
 
 produceCombinations<Set<WRAP_ENUM(DIRECTION, Z)>, Set<WRAP_ENUM(STAGGER, None)>,
                     Set<TypeContainer<Field3D>>,
@@ -563,12 +559,14 @@ public:
                   vel, result.getLocation(), "DEFAULT", region)
               * interp_to(var, result.getLocation());
   }
-  metaData meta{"SPLIT", 2, DERIV::Flux};
+  static constexpr metaData meta{"SPLIT", 2, DERIV::Flux};
 };
+constexpr metaData SplitFluxDerivativeType::meta;
 
 produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),
                         WRAP_ENUM(DIRECTION, YOrthogonal), WRAP_ENUM(DIRECTION, Z)>,
-                    Set<WRAP_ENUM(STAGGER, None)>,
+                    Set<WRAP_ENUM(STAGGER, None), WRAP_ENUM(STAGGER, C2L),
+                        WRAP_ENUM(STAGGER, L2C)>,
                     Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
                     Set<SplitFluxDerivativeType>>
     registerSplitDerivative(registerMethod{});

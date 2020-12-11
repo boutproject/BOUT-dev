@@ -81,7 +81,7 @@ class DataFile(object):
     def __init__(self, filename=None, write=False, create=False, format='NETCDF3_64BIT', **kwargs):
         """
 
-        NetCDF formats are described here: http://unidata.github.io/netcdf4-python/
+        NetCDF formats are described here: https://unidata.github.io/netcdf4-python/
         - NETCDF3_CLASSIC   Limited to 2.1Gb files
         - NETCDF3_64BIT_OFFSET or NETCDF3_64BIT is an extension to allow larger file sizes
         - NETCDF3_64BIT_DATA adds 64-bit integer data types and 64-bit dimension sizes
@@ -478,7 +478,7 @@ class DataFile_netCDF(DataFile):
             ('x', 'y', 'z'): "Field3D",
             ('x', 'y'): "Field2D",
             ('x', 'z'): "FieldPerp",
-            ('x'): "ArrayX",
+            ('x',): "ArrayX",
             (): "scalar",
         }
 
@@ -493,7 +493,7 @@ class DataFile_netCDF(DataFile):
             "Field3D": ('x', 'y', 'z'),
             "Field2D": ('x', 'y'),
             "FieldPerp": ('x', 'z'),
-            "ArrayX": ('x'),
+            "ArrayX": ('x',),
             "scalar": (),
         }
 
@@ -729,11 +729,12 @@ class DataFile_HDF5(DataFile):
             if var is None:
                 return None
 
-        if asBoutArray:
-            attributes = self.attributes(n)
+        attributes = self.attributes(n) if asBoutArray else {}
+
+        time_dependent = attributes.get("bout_type", "none").endswith("_t")
 
         ndims = len(var.shape)
-        if ndims == 1 and var.shape[0] == 1:
+        if ndims == 1 and var.shape[0] == 1 and not time_dependent:
             data = var
             if asBoutArray:
                 data = BoutArray(data, attributes=attributes)
@@ -788,7 +789,7 @@ class DataFile_HDF5(DataFile):
             "Field3D": ('x', 'y', 'z'),
             "FieldPerp": ('x', 'z'),
             "Field2D": ('x', 'y'),
-            "ArrayX": ('x'),
+            "ArrayX": ('x',),
             "scalar": (),
         }
         try:
