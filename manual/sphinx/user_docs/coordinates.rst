@@ -76,15 +76,15 @@ The cross products are:
    \boldsymbol{e}_\psi\times\boldsymbol{e}_\zeta = -J \nabla\theta \qquad
    \boldsymbol{e}_\theta\times\boldsymbol{e}_\zeta = J \nabla\psi
 
-where `J = h_\theta / \left|{B_{\text{pol}}}\right|` is the Jacobian, which is
+where `J_{\psi\theta\zeta} = h_\theta / \left|{B_{\text{pol}}}\right|` is the Jacobian, which is
 always positive. Similarly,
 
 .. math::
 
    \begin{aligned}
-   \nabla\psi \times \nabla\theta = \frac{1}{J} \boldsymbol{e}_\zeta \qquad
-   \nabla\psi \times \nabla\zeta = - \frac{1}{J} \boldsymbol{e}_\theta \qquad
-   \nabla\theta \times \nabla\zeta = \frac{1}{J} \boldsymbol{e}_\psi
+   \nabla\psi \times \nabla\theta = \frac{1}{J_{\psi\theta\zeta}} \boldsymbol{e}_\zeta \qquad
+   \nabla\psi \times \nabla\zeta = - \frac{1}{J_{\psi\theta\zeta}} \boldsymbol{e}_\theta \qquad
+   \nabla\theta \times \nabla\zeta = \frac{1}{J_{\psi\theta\zeta}} \boldsymbol{e}_\psi
    \end{aligned}
 
 The magnetic field `{\boldsymbol{B}}` can be expressed as
@@ -133,7 +133,10 @@ plane. The `z` coordinate increases in the same direction as `\zeta`
 i.e.  anti-clockwise looking from the top if `B_{pol}>0` and clockwise
 if `B_{pol} < 0`.
 
-This coordinate system is right-handed if `B_{pol}>0`, and left-handed if `B_{pol}<0`. 
+This coordinate system is right-handed if `B_{pol}>0`, and left-handed if `B_{pol}<0`.
+The Jacobian of this coordinate system, `J_{xyz} = {h_\theta} / {B_{\text{pol}}}`, can
+therefore be positive or negative. This therefore differs from the Jacobian for the
+orthogonal system above: `J_{xyz} = \sigma_{B\theta} J_{\psi\theta\zeta}`.
 
 The reciprocal basis vectors are
 
@@ -159,16 +162,17 @@ The basis vectors are:
 .. math::
    
    \begin{aligned}
-   \boldsymbol{e}_x =& J\left(\nabla y \times \nabla z\right) = {\sigma_{B\theta}} {\boldsymbol{e}}_\psi + I{\boldsymbol{e}}_\zeta \\
-   \boldsymbol{e}_y =& J\left(\nabla z \times \nabla x\right) = {\boldsymbol{e}}_\theta + \nu{\boldsymbol{e}}_\phi \\
-   \boldsymbol{e}_z =& J\left(\nabla x \times \nabla y\right) = {\boldsymbol{e}}_\zeta
+   \boldsymbol{e}_x =& J_{xyz}\left(\nabla y \times \nabla z\right) = {\sigma_{B\theta}} {\boldsymbol{e}}_\psi + I{\boldsymbol{e}}_\zeta \\
+   \boldsymbol{e}_y =& J_{xyz}\left(\nabla z \times \nabla x\right) = {\boldsymbol{e}}_\theta + \nu{\boldsymbol{e}}_\phi \\
+   \boldsymbol{e}_z =& J_{xyz}\left(\nabla x \times \nabla y\right) = {\boldsymbol{e}}_\zeta
    \end{aligned}
  
 where `{\boldsymbol{e}}_\phi =
 {\sigma_{B\theta}}{\boldsymbol{e}}_\zeta` is always anticlockwise when
 seen from above the tokamak looking down. The direction of
 `{\boldsymbol{e}}_\zeta` depends on the sign of the poloidal field
-`\sigma_{B\theta}`.
+`\sigma_{B\theta}`. Note that `J_{xyz} = \sigma_{B\theta} J_{\psi\theta\zeta}`, and
+can be either positive or negative.
 
 Magnetic field
 --------------
@@ -218,7 +222,7 @@ The Jacobian of this coordinate system is
 .. math::
 
    \begin{aligned}
-   J^{-1} \equiv \left(\nabla x\times\nabla y\right)\cdot\nabla z = {B_{\text{pol}}}/ {h_\theta}\end{aligned}
+   J_{xyz}^{-1} \equiv \left(\nabla x\times\nabla y\right)\cdot\nabla z = {B_{\text{pol}}}/ {h_\theta}\end{aligned}
 
 which can be either positive or negative, depending on the sign of
 `{B_{\text{pol}}}`. The contravariant metric tensor is
@@ -259,7 +263,7 @@ or equivalently:
    g_{ij} = \left(%
    \begin{array}{ccc}
    I^2 R^2 + 1 / {\left({R{B_{\text{pol}}}}\right)^2}& {\sigma_{B\theta}} I \nu R^2 & I R^2 \\
-   {\sigma_{B\theta}} I \nu R^2 & J^2B^2 & {\sigma_{B\theta}} \nu R^2 \\
+   {\sigma_{B\theta}} I \nu R^2 & J_{xyz}^2B^2 & {\sigma_{B\theta}} \nu R^2 \\
    I R^2 & {\sigma_{B\theta}}\nu R^2 & R^2
    \end{array}
    %
@@ -297,21 +301,21 @@ Right-handed field-aligned coordinates
 ======================================
 
 If the poloidal magnetic field is negative, i.e. anti-clockwise in the right-hand R-Z plane, then the above
-coordinate system is left-handed and the Jacobian `J` is negative.
+coordinate system is left-handed and the Jacobian `J_{xyz}` is negative.
 To obtain a consistently right-handed coordinate system, we have to reverse the direction of the `y` coordinate
 when `B_{pol} < 0`:
 
-This `\left(x,y,z\right)` coordinate system is defined by:
+This `\left(x,\eta,z\right)` coordinate system is defined by:
 
 .. math::
    :label: eq:coordtransform2
 
    \begin{aligned}
-   x = {\sigma_{B\theta}}\left(\psi - \psi_0\right) \qquad y = {\sigma_{B\theta}}\theta \qquad z = \sigma_{B\theta}
+   x = {\sigma_{B\theta}}\left(\psi - \psi_0\right) \qquad \eta = {\sigma_{B\theta}}\theta \qquad z = \sigma_{B\theta}
    \left(\phi - \int_{\theta_0}^{\theta}\nu\left(\psi,\theta\right)d\theta\right)
    \end{aligned}
 
-The radial coordinate `x` always points outwards. The `y` coordinate
+The radial coordinate `x` always points outwards. The `\eta` coordinate
 increases in the direction of the poloidal magnetic field: clockwise
 in the right-hand poloidal plane if `B_{pol} > 0`, and anti-clockwise
 otherwise.  The `z` coordinate increases in the same direction as
@@ -323,7 +327,7 @@ This is still a Clebsch coordinate system:
 .. math::
 
    \begin{aligned}
-   {\boldsymbol{B}}= \nabla z\times \nabla x = \frac{1}{J}{\boldsymbol{e}}_y
+   {\boldsymbol{B}}= \nabla z\times \nabla x = \frac{1}{J}{\boldsymbol{e}}_\eta
    \end{aligned}
 
 but the Jacobian is now always positive:
@@ -331,7 +335,7 @@ but the Jacobian is now always positive:
 .. math::
 
    \begin{aligned}
-   J = h_\theta / \left|B_{\text{pol}}\right|
+   J_{x\eta z} = h_\theta / \left|B_{\text{pol}}\right|
    \end{aligned}
 
 
@@ -341,7 +345,7 @@ The reciprocal basis vectors are
    
    \begin{aligned}
    \nabla x =& {\sigma_{B\theta}} \nabla \psi \\
-   \nabla y =& {\sigma_{B\theta}} \nabla \theta \\
+   \nabla \eta =& {\sigma_{B\theta}} \nabla \theta \\
    \nabla z =& \nabla \zeta - {\sigma_{B\theta}} I \nabla \psi - {\sigma_{B\theta}}\nu\nabla\theta
    \end{aligned}
 
@@ -350,9 +354,9 @@ and basis vectors
 .. math::
    
    \begin{aligned}
-   \boldsymbol{e}_x =& J\left(\nabla y \times \nabla z\right) = {\sigma_{B\theta}} {\boldsymbol{e}}_\psi + I{\boldsymbol{e}}_\zeta \\
-   \boldsymbol{e}_y =& J\left(\nabla z \times \nabla x\right) = {\sigma_{B\theta}} {\boldsymbol{e}}_\theta + \nu{\boldsymbol{e}}_\zeta \\
-   \boldsymbol{e}_z =& J\left(\nabla x \times \nabla y\right) = {\boldsymbol{e}}_\zeta
+   \boldsymbol{e}_x =& J_{x\eta z}\left(\nabla y \times \nabla z\right) = {\sigma_{B\theta}} {\boldsymbol{e}}_\psi + I{\boldsymbol{e}}_\zeta \\
+   \boldsymbol{e}_\eta =& J_{x\eta z}\left(\nabla z \times \nabla x\right) = {\sigma_{B\theta}} {\boldsymbol{e}}_\theta + \nu{\boldsymbol{e}}_\zeta \\
+   \boldsymbol{e}_z =& J_{x\eta z}\left(\nabla x \times \nabla y\right) = {\boldsymbol{e}}_\zeta
    \end{aligned}
 
 
@@ -379,7 +383,7 @@ and the covariant metric tensor:
    g_{ij} = \left(%
    \begin{array}{ccc}
    I^2 R^2 + 1 / {\left({R{B_{\text{pol}}}}\right)^2}& I \nu R^2 & I R^2 \\
-   I \nu R^2 & J^2B^2 & \nu R^2 \\
+   I \nu R^2 & J_{x\eta z}^2B^2 & \nu R^2 \\
    I R^2 & \nu R^2 & R^2
    \end{array}
    %
@@ -387,28 +391,34 @@ and the covariant metric tensor:
 
 The `\texttt{zShift}` quantity is the `z` angle of a point on a field
 line relative to a reference location. This is a scalar which doesn't
-change if the sign of the `y` coordinate is reversed:
+change if the sign of the `\eta` coordinate is reversed:
 
 .. math::
 
    \begin{aligned}
-   \texttt{zShift}\left(x, y\right) = \int_{y = 0}^{y}\frac{{\boldsymbol{B}}\cdot\nabla z}{{\boldsymbol{B}}\cdot\nabla y} dy =
+   \texttt{zShift}\left(x, \eta\right) = \int_{\eta = 0}^{\eta}\frac{{\boldsymbol{B}}\cdot\nabla z}{{\boldsymbol{B}}\cdot\nabla \eta} d\eta =
    \int_{\theta = 0}^{{\sigma_{B\theta}}\theta}\frac{{\sigma_{B\theta}}{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R} d\theta
    \end{aligned}
 
 The `\texttt{ShiftAngle}` quantity is related to `\texttt{zShift}`: It
-is the change in `\texttt{zShift}` from `y=0` to `y=2\pi`. It
-therefore does change sign if the `y` direction is reversed.
+is the change in `\texttt{zShift}` from `\eta=0` to `\eta=2\pi`. It
+therefore does change sign if the `\eta` direction is reversed.
 
-The differences from the previous coordinate system are that `g_{xy}`,
-`g_{yz}`, `g^{yz}`, `J` and `\texttt{ShiftAngle}` are multiplied by
-`{\sigma_{B\theta}}`. If `B_{pol} < 0` so the poloidal magnetic field
-is anticlockwise in the right-hand R-Z plane, then the `y` direction
-changes.
+The differences from the previous `\left(x,y,z\right)` coordinate
+system are that `g_{xy}`, `g_{yz}`, `g^{yz}`, `J` and
+`\texttt{ShiftAngle}` are multiplied by `{\sigma_{B\theta}}` to obtain
+their equivalents in the `\left(x,\eta,z\right)` coordinate system. If
+`B_{pol} < 0` so the poloidal magnetic field is anticlockwise in the
+right-hand R-Z plane, then the `\eta` direction changes.
 
 
 Differential operators in field-aligned coordinates
 ===================================================
+
+These operators are valid for either `\left(x,y,z\right)` or
+`\left(x,\eta,z\right)` field-aligned coordinates defined
+above. Unless explicitly stated, in the sections that follow `y` will
+be used to indicate the parallel coordinate (`y` or `eta`).
 
 The derivative of a scalar field `f` along the *unperturbed*
 magnetic field `{\boldsymbol{b}}_0` is given by
