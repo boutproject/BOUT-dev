@@ -272,9 +272,9 @@ or equivalently:
 zShift
 ------
 
-The `\texttt{zShift}` input is used to connect grid cells in the
-closed field-line region (i.e core). It is the `z` angle of a point on
-a field line relative to a reference location:
+The `\texttt{zShift}` is used to connect grid cells along the magnetic
+field. It is the `z` angle of a point on a field line relative to a
+reference location:
 
 .. math::
 
