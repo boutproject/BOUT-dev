@@ -327,7 +327,7 @@ This is still a Clebsch coordinate system:
 .. math::
 
    \begin{aligned}
-   {\boldsymbol{B}}= \nabla z\times \nabla x = \frac{1}{J}{\boldsymbol{e}}_\eta
+   {\boldsymbol{B}}= \nabla z\times \nabla x = \frac{1}{J_{x\eta z}}{\boldsymbol{e}}_\eta
    \end{aligned}
 
 but the Jacobian is now always positive:
