@@ -371,20 +371,14 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric g23, FieldMetric g_11, FieldMetric g_22,
                          FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
                          FieldMetric g_23, FieldMetric ShiftTorsion,
-                         FieldMetric IntShiftTorsion, bool calculate_geometry)
+                         FieldMetric IntShiftTorsion)
     : dx(std::move(dx)), dy(std::move(dy)), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
       g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
       g13(std::move(g13)), g23(std::move(g23)), g_11(std::move(g_11)),
       g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
       g_13(std::move(g_13)), g_23(std::move(g_23)), ShiftTorsion(std::move(ShiftTorsion)),
       IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE) {
-  if (calculate_geometry) {
-    if (geometry()) {
-      throw BoutException("Differential geometry failed\n");
-    }
-  }
-}
+      location(CELL_CENTRE) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
@@ -599,12 +593,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   // Check Bxy
   bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
   bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
-
-  //////////////////////////////////////////////////////
-  /// Calculate Christoffel symbols. Needs communication
-  if (geometry()) {
-    throw BoutException("Differential geometry failed\n");
-  }
 
   if (mesh->get(ShiftTorsion, "ShiftTorsion", 0.0, false)) {
     output_warn.write(
@@ -1029,12 +1017,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
   ShiftTorsion =
       interpolateAndNeumann(coords_in->ShiftTorsion, location, transform.get());
-
-  //////////////////////////////////////////////////////
-  /// Calculate Christoffel symbols. Needs communication
-  if (geometry(false, force_interpolate_from_centre)) {
-    throw BoutException("Differential geometry failed while constructing staggered Coordinates");
-  }
 }
 
 void Coordinates::outputVars(Datafile& file) {

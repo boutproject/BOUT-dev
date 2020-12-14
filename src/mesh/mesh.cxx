@@ -433,11 +433,15 @@ std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC locat
 
   if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
-    return std::make_shared<Coordinates>(this, options);
+    auto result = std::make_shared<Coordinates>(this, options);
+    result->geometry();
+    return result;
   } else {
     // Interpolate coordinates from CELL_CENTRE version
-    return std::make_shared<Coordinates>(this, options, location,
+    auto result = std::make_shared<Coordinates>(this, options, location,
         getCoordinates(CELL_CENTRE), force_interpolate_from_centre);
+    result->geometry(false, force_interpolate_from_centre);
+    return result;
   }
 }
 
