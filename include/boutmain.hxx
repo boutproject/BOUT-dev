@@ -71,8 +71,8 @@ protected:
 
 /// Global functions used by some legacy models
 template<class T>
-void bout_solve(T &var, const char *name) {
-  solver->add(var, name);
+void bout_solve(T &var, const char *name, const std::string& description="") {
+  solver->add(var, name, description);
 }
 
 /*!
