@@ -1547,12 +1547,17 @@ void Coordinates::setParallelTransform(Options* options) {
       }
       zShift.setLocation(location);
     } else {
+      if (location == CELL_YLOW and bout::build::use_metric_3d) {
+        throw BoutException("Cannot interpolate zShift to construct ShiftedMetric when "
+                            "using 3d metrics. You must provide zShift_CELL_YLOW in the "
+                            "grid file.");
+      }
       Field2D zShift_centre;
       if (localmesh->get(zShift_centre, "zShift", 0.0, false)) {
         // No zShift variable. Try qinty in BOUT grid files
         if (localmesh->get(zShift_centre, "qinty", 0.0, false)) {
           // Failed to find either variable, cannot use ShiftedMetric
-          throw BoutException("Could not read zShift"+suffix+" from grid file");
+          throw BoutException("Could not read zShift from grid file");
         }
       }
 
