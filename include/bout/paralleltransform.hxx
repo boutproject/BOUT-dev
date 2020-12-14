@@ -77,6 +77,17 @@ public:
     return fromFieldAligned(f, toString(region));
   }
 
+  /// Field2D are axisymmetric, so transformation to or from field-aligned coordinates is
+  /// a null operation.
+  virtual const Field2D toFieldAligned(const Field2D &f,
+                                       const std::string& UNUSED(region) = "RGN_ALL") {
+    return f;
+  }
+  virtual const Field2D fromFieldAligned(const Field2D &f,
+                                         const std::string& UNUSED(region) = "RGN_ALL") {
+    return f;
+  }
+
   virtual bool canToFromFieldAligned() = 0;
 
   struct PositionsAndWeights {
