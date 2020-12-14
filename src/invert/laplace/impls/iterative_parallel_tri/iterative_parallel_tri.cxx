@@ -421,22 +421,27 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   std::size_t current_level = 0;
   bool down = true;
 
-  auto error_abs = Array<BoutReal>(nmode);
-  auto error_abs_old = Array<BoutReal>(nmode);
-  auto error_rel = Array<BoutReal>(nmode);
-  auto error_rel_old = Array<BoutReal>(nmode);
+  auto errornorm = Array<BoutReal>(nmode);
+  auto errornorm_old = Array<BoutReal>(nmode);
   constexpr BoutReal initial_error = 1e6;
-  error_abs = initial_error;
-  error_abs_old = initial_error;
-  error_rel = initial_error;
-  error_rel_old = initial_error;
+  errornorm = initial_error;
+  errornorm_old = initial_error;
   std::fill(std::begin(converged), std::end(converged), false);
 
   /// SCOREP_USER_REGION_END(initwhileloop);
   /// SCOREP_USER_REGION_DEFINE(whileloop);
   /// SCOREP_USER_REGION_BEGIN(whileloop, "while loop",///SCOREP_USER_REGION_TYPE_COMMON);
 
-  while (true) {
+  const auto all = [](const Array<bool>& a) {
+    return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
+  };
+
+  // Check for convergence before loop to skip work with cvode
+  levels[0].calculate_residual(*this);
+  levels[0].calculate_total_residual(*this, errornorm, converged);
+  bool execute_loop = not all(converged);
+
+  while (execute_loop) {
 
     levels[current_level].gauss_seidel_red_black(*this);
 
@@ -465,8 +470,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       if (cyclecount < 3 or cyclecount > cycle_eta) {
         for (int kz = 0; kz < nmode; kz++) {
           if (!converged[kz]) {
-            error_abs_old[kz] = error_abs[kz];
-            error_rel_old[kz] = error_rel[kz];
+            errornorm_old[kz] = errornorm[kz];
           }
         }
       }
@@ -476,23 +480,18 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       if (cyclecount < 3 or cyclecount > cycle_eta - 5 or not predict_exit) {
         // Calculate the total residual. This also marks modes as converged, so the
         // algorithm cannot exit in cycles where this is not called.
-        levels[0].calculate_total_residual(*this, error_abs, error_rel, converged,
-                                           bcmplx);
+        levels[0].calculate_total_residual(*this, errornorm, converged);
 
-        // Based the error reduction per V-cycle, error_xxx/error_xxx_old,
+        // Based the error reduction per V-cycle, errornorm/errornorm_old,
         // predict when the slowest converging mode converges.
         if (cyclecount < 3 and predict_exit) {
           cycle_eta = 0;
           for (int kz = 0; kz < nmode; kz++) {
-            const BoutReal ratio_abs = error_abs[kz] / error_abs_old[kz];
-            const int eta_abs =
-                std::ceil(std::log(atol / error_abs[kz]) / std::log(ratio_abs));
-            cycle_eta = (cycle_eta > eta_abs) ? cycle_eta : eta_abs;
+            const BoutReal ratio = errornorm[kz] / errornorm_old[kz];
+            const int eta =
+                std::ceil(std::log(1.0 / errornorm[kz]) / std::log(ratio));
+            cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
 
-            const BoutReal ratio_rel = error_rel[kz] / error_rel_old[kz];
-            const int eta_rel =
-                std::ceil(std::log(rtol / error_rel[kz]) / std::log(ratio_rel));
-            cycle_eta = (cycle_eta > eta_rel) ? cycle_eta : eta_rel;
           }
         }
       }
@@ -505,10 +504,6 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     ++count;
     ++subcount;
     /// SCOREP_USER_REGION_END(increment);
-
-    const auto all = [](const Array<bool>& a) {
-      return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
-    };
 
     // Force at least max_cycle iterations at each level
     // Do not skip with tolerence to minimize comms
@@ -808,49 +803,6 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const LaplaceIPT& l) {
   }
 }
 
-namespace {
-// Synchonize reduced coefficients with neighbours
-void synchronise_reduced_coefficients(const Matrix<dcomplex>& sendvec,
-                                      LaplaceIPT::Level& level, bool first_x, bool last_x,
-                                      int jy) {
-
-  const auto nmode = std::get<1>(sendvec.shape());
-  const auto size = nmode * std::get<0>(sendvec.shape());
-
-  auto recvecin = Matrix<dcomplex>(3, nmode);
-  auto recvecout = Matrix<dcomplex>(3, nmode);
-
-  MPI_Comm comm = BoutComm::get();
-
-  // Communicate in
-  if (not first_x) {
-    MPI_Sendrecv(std::begin(sendvec), size, MPI_DOUBLE_COMPLEX, level.proc_in, 1,
-                 std::begin(recvecin), size, MPI_DOUBLE_COMPLEX, level.proc_in, 0, comm,
-                 MPI_STATUS_IGNORE);
-  }
-
-  // Communicate out
-  if (not last_x) {
-    MPI_Sendrecv(std::begin(sendvec), size, MPI_DOUBLE_COMPLEX, level.proc_out, 0,
-                 std::begin(recvecout), size, MPI_DOUBLE_COMPLEX, level.proc_out, 1, comm,
-                 MPI_STATUS_IGNORE);
-  }
-
-  for (int kz = 0; kz < nmode; kz++) {
-    if (not first_x) {
-      level.ar(jy, 0, kz) = recvecin(0, kz);
-      level.br(jy, 0, kz) = recvecin(1, kz);
-      level.cr(jy, 0, kz) = recvecin(2, kz);
-    }
-    if (not last_x) {
-      level.ar(jy, 3, kz) = recvecout(0, kz);
-      level.br(jy, 3, kz) = recvecout(1, kz);
-      level.cr(jy, 3, kz) = recvecout(2, kz);
-    }
-  }
-}
-} // namespace
-
 // Initialization routine for coarser grids. Initialization depends on the grid
 // one step finer, lup.
 LaplaceIPT::Level::Level(const LaplaceIPT& l, const Level& lup,
@@ -916,7 +868,9 @@ LaplaceIPT::Level::Level(const LaplaceIPT& l, const Level& lup,
   rr.reallocate(4, l.nmode);
   brinv.reallocate(l.ny, 4, l.nmode);
 
-  auto sendvec = Matrix<dcomplex>(3, l.nmode);
+  auto sendvec = Array<dcomplex>(3 * l.nmode);
+  auto recvecin = Array<dcomplex>(3 * l.nmode);
+  auto recvecout = Array<dcomplex>(3 * l.nmode);
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (l.localmesh->firstX()) {
@@ -959,14 +913,43 @@ LaplaceIPT::Level::Level(const LaplaceIPT& l, const Level& lup,
 
     // Need to communicate my index 1 to this level's neighbours
     // Index 2 if last proc.
-    const int index = l.localmesh->lastX() ? 1 : 2;
-    sendvec(0, kz) = ar(l.jy, index, kz);
-    sendvec(1, kz) = br(l.jy, index, kz);
-    sendvec(2, kz) = cr(l.jy, index, kz);
+    if (not l.localmesh->lastX()) {
+      sendvec[kz] = ar(l.jy, 1, kz);
+      sendvec[kz + l.nmode] = br(l.jy, 1, kz);
+      sendvec[kz + 2 * l.nmode] = cr(l.jy, 1, kz);
+    } else {
+      sendvec[kz] = ar(l.jy, 2, kz);
+      sendvec[kz + l.nmode] = br(l.jy, 2, kz);
+      sendvec[kz + 2 * l.nmode] = cr(l.jy, 2, kz);
+    }
   }
 
-  synchronise_reduced_coefficients(sendvec, *this, l.localmesh->firstX(),
-                                   l.localmesh->lastX(), l.jy);
+  MPI_Comm comm = BoutComm::get();
+
+  // Communicate in
+  if (not l.localmesh->firstX()) {
+    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvecin[0],
+                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
+  }
+
+  // Communicate out
+  if (not l.localmesh->lastX()) {
+    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvecout[0],
+                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
+  }
+
+  for (int kz = 0; kz < l.nmode; kz++) {
+    if (not l.localmesh->firstX()) {
+      ar(l.jy, 0, kz) = recvecin[kz];
+      br(l.jy, 0, kz) = recvecin[kz + l.nmode];
+      cr(l.jy, 0, kz) = recvecin[kz + 2 * l.nmode];
+    }
+    if (not l.localmesh->lastX()) {
+      ar(l.jy, 3, kz) = recvecout[kz];
+      br(l.jy, 3, kz) = recvecout[kz + l.nmode];
+      cr(l.jy, 3, kz) = recvecout[kz + 2 * l.nmode];
+    }
+  }
 }
 
 // Init routine for finest level
@@ -998,7 +981,9 @@ LaplaceIPT::Level::Level(LaplaceIPT& l)
   auto tmp = Array<dcomplex>(l.ncx);
 
   // Communication arrays
-  auto sendvec = Matrix<dcomplex>(3, l.nmode);
+  auto sendvec = Array<dcomplex>(3 * l.nmode);
+  auto recvecin = Array<dcomplex>(3 * l.nmode);
+  auto recvecout = Array<dcomplex>(3 * l.nmode);
 
   for (int kz = 0; kz < l.nmode; kz++) {
 
@@ -1112,15 +1097,40 @@ LaplaceIPT::Level::Level(LaplaceIPT& l)
     brinv(l.jy, 1, kz) = 1.0;
     brinv(l.jy, 2, kz) = 1.0;
 
-    sendvec(0, kz) = ar(l.jy, 1, kz);
-    sendvec(1, kz) = br(l.jy, 1, kz);
-    sendvec(2, kz) = cr(l.jy, 1, kz);
+    sendvec[kz] = ar(l.jy, 1, kz);
+    sendvec[kz + l.nmode] = br(l.jy, 1, kz);
+    sendvec[kz + 2 * l.nmode] = cr(l.jy, 1, kz);
 
     /// SCOREP_USER_REGION_END(coefs);
   } // end of kz loop
 
-  synchronise_reduced_coefficients(sendvec, *this, l.localmesh->firstX(),
-                                   l.localmesh->lastX(), l.jy);
+  // Synchonize reduced coefficients with neighbours
+  MPI_Comm comm = BoutComm::get();
+
+  // Communicate in
+  if (not l.localmesh->firstX()) {
+    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvecin[0],
+                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
+  }
+
+  // Communicate out
+  if (not l.localmesh->lastX()) {
+    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvecout[0],
+                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
+  }
+
+  for (int kz = 0; kz < l.nmode; kz++) {
+    if (not l.localmesh->firstX()) {
+      ar(l.jy, 0, kz) = recvecin[kz];
+      br(l.jy, 0, kz) = recvecin[kz + l.nmode];
+      cr(l.jy, 0, kz) = recvecin[kz + 2 * l.nmode];
+    }
+    if (not l.localmesh->lastX()) {
+      ar(l.jy, 3, kz) = recvecout[kz];
+      br(l.jy, 3, kz) = recvecout[kz + l.nmode];
+      cr(l.jy, 3, kz) = recvecout[kz + 2 * l.nmode];
+    }
+  }
 }
 
 // Init routine for finest level information that cannot be cached
@@ -1194,10 +1204,8 @@ void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex>& bcmplx) 
  * NB This calculation assumes we are using the finest grid, level 0.
  */
 void LaplaceIPT::Level::calculate_total_residual(const LaplaceIPT& l,
-                                                 Array<BoutReal>& error_abs,
-                                                 Array<BoutReal>& error_rel,
-                                                 Array<bool>& converged,
-                                                 const Matrix<dcomplex>& bcmplx) {
+                                                 Array<BoutReal>& errornorm,
+                                                 Array<bool>& converged) {
 
   SCOREP0();
 
@@ -1206,48 +1214,31 @@ void LaplaceIPT::Level::calculate_total_residual(const LaplaceIPT& l,
         "LaplaceIPT error: calculate_total_residual can only be called on level 0");
   }
 
-  // Communication arrays:
-  // residual in (0, :)
-  // solution in (1, :)
-  auto total = Matrix<BoutReal>(2, l.nmode);    // global summed residual
-  auto subtotal = Matrix<BoutReal>(2, l.nmode); // local contribution to residual
+  // Communication arrays
+  auto subtotal = Array<BoutReal>(l.nmode); // local contribution to residual
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      total(0, kz) = 0.0;
-      total(1, kz) = 0.0;
+      errornorm[kz] = 0.0;
 
-      subtotal(0, kz) = pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2);
-      // TODO This approximation will increase iteration count. The alternatives are:
-      // + reconstructing the solution and calculating properly
-      // + multiply approximation by (interior points/2) - this can be done
-      //   at runtime by changing rtol
-      // Strictly this should be all contributions to the solution, but this
-      // under-approximation saves work.
-      //
-      // subtotal(1, kz) = pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2);
+      BoutReal w = pow( l.rtol*sqrt(pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)) + l.atol , 2);
+      subtotal[kz] = ( pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2) ) / w;
       if (l.localmesh->lastX()) {
-        subtotal(0, kz) +=
-            pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2);
-        // subtotal(1, kz) += pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2);
-      }
-      // Replace xloc calculation with a once-calculated norm of the RHS
-      subtotal(1, kz) = 0.0;
-      for (int i = 0; i < l.ncx; i++) {
-        subtotal(1, kz) += pow(bcmplx(kz, i).real(), 2) + pow(bcmplx(kz, i).imag(), 2);
+        w = pow( l.rtol*sqrt(pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2)) + l.atol , 2);
+        subtotal[kz] +=
+            ( pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2) ) / w;
       }
     }
   }
 
   // Communication needed to ensure processors break on same iteration
-  MPI_Allreduce(subtotal.begin(), total.begin(), 2 * l.nmode, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(subtotal.begin(), errornorm.begin(), l.nmode, MPI_DOUBLE, MPI_SUM,
                 BoutComm::get());
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      error_abs[kz] = sqrt(total(0, kz));
-      error_rel[kz] = error_abs[kz] / sqrt(total(1, kz));
-      if (error_abs[kz] < l.atol or error_rel[kz] < l.rtol) {
+      errornorm[kz] = sqrt(errornorm[kz]/BoutReal(l.ncx));
+      if (errornorm[kz] < 1.0) {
         converged[kz] = true;
       }
     }
