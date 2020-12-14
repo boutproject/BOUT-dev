@@ -418,7 +418,7 @@ Differential operators in field-aligned coordinates
 These operators are valid for either `\left(x,y,z\right)` or
 `\left(x,\eta,z\right)` field-aligned coordinates defined
 above. Unless explicitly stated, in the sections that follow `y` will
-be used to indicate the parallel coordinate (`y` or `eta`).
+be used to indicate the parallel coordinate (`y` or `\eta`).
 
 The derivative of a scalar field `f` along the *unperturbed*
 magnetic field `{\boldsymbol{b}}_0` is given by
