@@ -658,6 +658,12 @@ class Mesh {
 
     auto found = coords_map.find(location);
     if (found != coords_map.end()) {
+#if CHECK > 0
+      if (found->second == nullptr) {
+        throw BoutException("Coordinates pointer at {} is nullptr. Probably means "
+                            "Coordinates are being constructed.", toString(location));
+      }
+#endif
       // True branch most common, returns immediately
       return found->second;
     }
