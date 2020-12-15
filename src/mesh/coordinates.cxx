@@ -156,7 +156,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
   Field3D result;
   Field3D f = f_;
   ParallelTransform* pt_f;
-  if (f.getCoordinates() == nullptr) {
+  if (f_.getLocation() == location and pt_ != nullptr) {
     pt_f = pt_;
   } else {
     pt_f = &f.getCoordinates()->getParallelTransform();
@@ -172,7 +172,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
     auto f_aligned = pt_f->toFieldAligned(f, "RGN_NOX");
     result = interp_to(f_aligned, location, "RGN_NOBNDRY");
     ParallelTransform* pt_result;
-    if (result.getCoordinates() == nullptr) {
+    if (pt_ != nullptr) {
       pt_result = pt_;
     } else {
       pt_result = &result.getCoordinates()->getParallelTransform();
@@ -635,12 +635,11 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::FieldMetric& f),
   Coordinates::FieldMetric result;
 #if BOUT_USE_METRIC_3D
   if (location == CELL_YLOW) {
-    auto f_aligned = f.getCoordinates() == nullptr ? pt->toFieldAligned(f, "RGN_NOX")
-                                                   : toFieldAligned(f, "RGN_NOX");
+    auto f_aligned = f.getLocation() == location ? pt->toFieldAligned(f, "RGN_NOX")
+                                                 : toFieldAligned(f, "RGN_NOX");
     result = interp_to(f_aligned, location, "RGN_NOBNDRY");
-    result = result.getCoordinates() == nullptr
-                 ? pt->fromFieldAligned(result, "RGN_NOBNDRY")
-                 : fromFieldAligned(result, "RGN_NOBNDRY");
+    result = pt != nullptr ? pt->fromFieldAligned(result, "RGN_NOBNDRY")
+                           : fromFieldAligned(result, "RGN_NOBNDRY");
   } else
 #endif
   {
