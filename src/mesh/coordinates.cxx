@@ -1549,8 +1549,8 @@ void Coordinates::setParallelTransform(Options* options) {
     } else {
       if (location == CELL_YLOW and bout::build::use_metric_3d) {
         throw BoutException("Cannot interpolate zShift to construct ShiftedMetric when "
-                            "using 3d metrics. You must provide zShift_CELL_YLOW in the "
-                            "grid file.");
+                            "using 3d metrics. You must provide zShift_ylow in the grid "
+                            "file.");
       }
       Field2D zShift_centre;
       if (localmesh->get(zShift_centre, "zShift", 0.0, false)) {
