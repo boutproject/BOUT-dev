@@ -214,14 +214,14 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   };
 
   if (transform_from_field_aligned) {
+#if CHECK == 0
     auto coords = result.getCoordinates();
-    if (coords == nullptr) {
-      // Should not lead to issues. If called from the coordinates
-      // constructor, then this is expected, and the result will be
-      // transformed. Otherwise, if the field is used untransformed,
-      // the inconsistency will be detected.
-      output_warn.write("Skipping parallel transformation - coordinates not set!\n");
-    } else {
+    if (coords != nullptr) {
+#else
+    Coordinates* coords = nullptr;
+    try {
+      coords = result.getCoordinates();
+#endif
       if (coords->getParallelTransform().canToFromFieldAligned()) {
         // Transform from field aligned coordinates, to be compatible with
         // older BOUT++ inputs. This is not a particularly "nice" solution.
@@ -229,6 +229,17 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
       } else {
         result.setDirectionY(YDirectionType::Standard);
       }
+#if CHECK == 0
+    } else
+#else
+    } catch (BoutException&)
+#endif
+    {
+      // Should not lead to issues. If called from the coordinates
+      // constructor, then this is expected, and the result will be
+      // transformed. Otherwise, if the field is used untransformed,
+      // the inconsistency will be detected.
+      output_warn.write("Skipping parallel transformation - coordinates not set!\n");
     }
   }
 
