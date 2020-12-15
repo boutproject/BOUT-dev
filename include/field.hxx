@@ -206,26 +206,26 @@ inline void areFieldsCompatibleThrowing(const Field& field1, const Field& field2
   if (field1.getLocation() != field2.getLocation()) {
     throw BoutException("Error in {:s}:{:d}\nFields at different position:"
 			"`{:s}` at {:s}, `{:s}` at {:s}", file, line,
-			field1_name, toString((field1).getLocation()),
-			field2_name, toString((field2).getLocation()));
+			field1_name, toString(field1.getLocation()),
+			field2_name, toString(field2.getLocation()));
   }
   if (field1.fieldCoordinates.get() != field2.fieldCoordinates.get()) {
     throw BoutException("Error in {:s}:{:d}\nFields have different coordinates:"
 			"`{:s}` at {:p}, `{:s}` at {:p}", file, line,
-			field1_name, static_cast<void*>((field1).getCoordinates()),
-			field2_name, static_cast<void*>((field2).getCoordinates()));
+			field1_name, static_cast<void*>(field1.fieldCoordinates.get()),
+			field2_name, static_cast<void*>(field2.fieldCoordinates.get()));
   }
   if (field1.getMesh() != field2.getMesh()) {
     throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:"
 			"`{:s}` at {:p}, `{:s}` at {:p}", file, line,
-			field1_name, static_cast<void*>((field1).getMesh()),
-			field2_name, static_cast<void*>((field2).getMesh()));
+			field1_name, static_cast<void*>(field1.getMesh()),
+			field2_name, static_cast<void*>(field2.getMesh()));
   }
   if (!areDirectionsCompatible(field1.getDirections(), field2.getDirections())) {
     throw BoutException("Error in {:s}:{:d}\nFields at different directions:"
 			"`{:s}` at {:s}, `{:s}` at {:s}", file, line,
-			field1_name, toString((field1).getDirections()),
-			field2_name, toString((field2).getDirections()));
+			field1_name, toString(field1.getDirections()),
+			field2_name, toString(field2.getDirections()));
   }
 }
 
