@@ -168,7 +168,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
       f.setDirectionY(YDirectionType::Standard);
     }
   }
-  if (location == CELL_YLOW) {
+  if (location == CELL_YLOW and f.getLocation() != CELL_YLOW) {
     auto f_aligned = pt_f->toFieldAligned(f, "RGN_NOX");
     result = interp_to(f_aligned, location, "RGN_NOBNDRY");
     ParallelTransform* pt_result;
