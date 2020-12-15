@@ -667,6 +667,7 @@ class Mesh {
     // (circular dependency between Mesh and Coordinates)
     auto inserted = coords_map.emplace(location, nullptr);
     inserted.first->second = createDefaultCoordinates(location);
+    inserted.first->second->geometry(false);
     return inserted.first->second;
   }
 

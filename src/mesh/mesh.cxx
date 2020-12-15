@@ -434,13 +434,11 @@ std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC locat
   if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
     auto result = std::make_shared<Coordinates>(this, options);
-    result->geometry();
     return result;
   } else {
     // Interpolate coordinates from CELL_CENTRE version
     auto result = std::make_shared<Coordinates>(this, options, location,
         getCoordinates(CELL_CENTRE), force_interpolate_from_centre);
-    result->geometry(false, force_interpolate_from_centre);
     return result;
   }
 }
@@ -626,6 +624,7 @@ void Mesh::recalculateStaggeredCoordinates() {
     }
 
     *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
+    coords_map[location]->geometry(false, true);
   }
 }
 
