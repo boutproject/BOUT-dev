@@ -209,11 +209,20 @@ bool Field3D::requiresTwistShift(bool twist_shift_enabled) {
   // We need to communicate in the coordinates constructor in that
   // case a Field3D, but coordinates isn't valid yet. As such we
   // disable twist-shift in that case.
+#if CHECK == 0
   if (getCoordinates() == nullptr) {
     return false;
   }
   return getCoordinates()->getParallelTransform().requiresTwistShift(twist_shift_enabled,
       getDirectionY());
+#else
+  try {
+    return getCoordinates()->getParallelTransform().requiresTwistShift(twist_shift_enabled,
+        getDirectionY());
+  } catch (BoutException) {
+    return false;
+  }
+#endif
 }
 
 // Not in header because we need to access fieldmesh

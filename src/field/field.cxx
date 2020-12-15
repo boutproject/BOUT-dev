@@ -77,14 +77,6 @@ Field::Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in
     : fieldmesh(localmesh == nullptr ? bout::globals::mesh : localmesh),
       location(bout::normaliseLocation(location_in, fieldmesh)),
       directions(directions_in) {
-
-  // Need to check for nullptr again, because the fieldmesh might still be
-  // nullptr if the global mesh hasn't been initialized yet
-  if (fieldmesh != nullptr) {
-    // sets fieldCoordinates by getting Coordinates for our location from
-    // fieldmesh
-    getCoordinates();
-  }
 }
 
 void Field::setLocation(CELL_LOC new_location) {
@@ -93,9 +85,6 @@ void Field::setLocation(CELL_LOC new_location) {
   location = bout::normaliseLocation(new_location, getMesh());
 
   fieldCoordinates = nullptr;
-  // Sets correct fieldCoordinates pointer and ensures Coordinates object is
-  // initialized for this Field's location
-  getCoordinates();
 }
 
 CELL_LOC Field::getLocation() const {
