@@ -404,18 +404,24 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowRead) {
 
   Field2D expected_xlow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
-        return (nx - index.x()) + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
+        return (nx - index.x() + 0.5) + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
       },
       &mesh_from_options);
 
   mesh_from_options.communicate(expected_xlow);
 
   EXPECT_TRUE(IsFieldEqual(coords->g11, expected_xlow + 5.));
+  EXPECT_TRUE(coords->g11.getLocation() == CELL_XLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g22, expected_xlow + 4.));
+  EXPECT_TRUE(coords->g22.getLocation() == CELL_XLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g33, expected_xlow + 3.));
+  EXPECT_TRUE(coords->g33.getLocation() == CELL_XLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g12, expected_xlow + 2.));
+  EXPECT_TRUE(coords->g12.getLocation() == CELL_XLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g13, expected_xlow + 1.));
+  EXPECT_TRUE(coords->g13.getLocation() == CELL_XLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g23, expected_xlow));
+  EXPECT_TRUE(coords->g23.getLocation() == CELL_XLOW);
 }
 
 TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
@@ -425,22 +431,28 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
   // make the mesh have boundaries to avoid NaNs in guard cells after interpolating
   mesh_from_options.createBoundaries();
 
-  auto coords = mesh_from_options.getCoordinates(CELL_XLOW);
+  auto coords = mesh_from_options.getCoordinates(CELL_YLOW);
 
   Field2D expected_ylow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
-        return index.x() + (TWOPI * index.y() - 0.5) + (TWOPI * index.z() / nz) + 3;
+        return index.x() + (TWOPI * (index.y() - 0.5)) + (TWOPI * index.z() / nz) + 3;
       },
       &mesh_from_options);
 
   mesh_from_options.communicate(expected_ylow);
 
   EXPECT_TRUE(IsFieldEqual(coords->g11, expected_ylow + 5., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(coords->g11.getLocation() == CELL_YLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g22, expected_ylow + 4., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(coords->g22.getLocation() == CELL_YLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g33, expected_ylow + 3., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(coords->g33.getLocation() == CELL_YLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g12, expected_ylow + 2., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(coords->g12.getLocation() == CELL_YLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g13, expected_ylow + 1., "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(coords->g13.getLocation() == CELL_YLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g23, expected_ylow, "RGN_NOBNDRY", this_tolerance));
+  EXPECT_TRUE(coords->g23.getLocation() == CELL_YLOW);
 }
 
 TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
@@ -466,18 +478,24 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
 
   Field2D expected_ylow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
-        return index.x() + (TWOPI * (ny - index.y())) + (TWOPI * index.z() / nz) + 3;
+        return index.x() + (TWOPI * (ny - index.y() + 0.5)) + (TWOPI * index.z() / nz) + 3;
       },
       &mesh_from_options);
 
   mesh_from_options.communicate(expected_ylow);
 
   EXPECT_TRUE(IsFieldEqual(coords->g11, expected_ylow + 5., "RGN_ALL", this_tolerance));
+  EXPECT_TRUE(coords->g11.getLocation() == CELL_YLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g22, expected_ylow + 4., "RGN_ALL", this_tolerance));
+  EXPECT_TRUE(coords->g22.getLocation() == CELL_YLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g33, expected_ylow + 3., "RGN_ALL", this_tolerance));
+  EXPECT_TRUE(coords->g33.getLocation() == CELL_YLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g12, expected_ylow + 2., "RGN_ALL", this_tolerance));
+  EXPECT_TRUE(coords->g12.getLocation() == CELL_YLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g13, expected_ylow + 1., "RGN_ALL", this_tolerance));
+  EXPECT_TRUE(coords->g13.getLocation() == CELL_YLOW);
   EXPECT_TRUE(IsFieldEqual(coords->g23, expected_ylow, "RGN_ALL", this_tolerance));
+  EXPECT_TRUE(coords->g23.getLocation() == CELL_YLOW);
 }
 
 TEST_F(GridFromOptionsTest, CoordinatesZlowRead) {
