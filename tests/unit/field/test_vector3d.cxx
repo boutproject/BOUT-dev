@@ -54,8 +54,19 @@ protected:
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
     mesh_staggered->StaggerGrids = true;
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(std::make_shared<Coordinates>(
+        mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+        Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
+        Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
+        Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}));
+    // No call to Coordinates::geometry() needed here
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(std::make_shared<Coordinates>(
+        mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+        Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
+        Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
+        Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}),
+        CELL_XLOW);
+    // No call to Coordinates::geometry() needed here
     mesh_staggered->createDefaultRegions();
   }
 

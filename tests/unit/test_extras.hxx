@@ -444,10 +444,6 @@ public:
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
     mesh_staggered->StaggerGrids = true;
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
     mesh_staggered->createDefaultRegions();
 
     test_coords_staggered = std::make_shared<Coordinates>(
@@ -463,6 +459,11 @@ public:
     // No call to Coordinates::geometry() needed here
     test_coords_staggered->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(test_coords_staggered);
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(test_coords_staggered, CELL_XLOW);
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(test_coords_staggered, CELL_YLOW);
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(test_coords_staggered, CELL_ZLOW);
   }
 
   ~FakeMeshFixture() override {

@@ -113,7 +113,12 @@ TEST_F(Field3DTest, CopyCheckFieldmesh) {
   int test_nz = Field3DTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
-  fieldmesh.setCoordinates(nullptr);
+  auto myCoords = std::make_shared<Coordinates>(
+        bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
+        Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+        Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
+  fieldmesh.setCoordinates(myCoords);
   fieldmesh.createDefaultRegions();
 
   Field3D field{0.0, &fieldmesh};
