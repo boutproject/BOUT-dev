@@ -330,7 +330,7 @@ private:
       output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n", hthe0/rho_s);
     }
     
-    if (stagger) {
+    if (mesh->StaggerGrids) {
       ////////////////////////////////////////////////////////
       // SHIFTED GRIDS LOCATION
 
@@ -496,8 +496,8 @@ private:
     if (! (estatic || ZeroElMass)) {
       // Create a solver for the electromagnetic potential
       aparSolver = Laplacian::create(&options["aparSolver"],
-                                     stagger ? CELL_YLOW : CELL_CENTRE);
-      if (stagger) {
+                                     mesh->StaggerGrids ? CELL_YLOW : CELL_CENTRE);
+      if (mesh->StaggerGrids) {
         acoef = (-0.5 * beta_p / fmei) * interp_to(Ni0, CELL_YLOW);
       } else {
         acoef = (-0.5 * beta_p / fmei) * Ni0;
@@ -579,7 +579,7 @@ private:
     
     ////////////////////////////////////////////////////////
     // Update non-linear coefficients on the mesh
-    if (stagger) {
+    if (mesh->StaggerGrids) {
       nu      = nu_hat * interp_to(Nit / pow(Tet,1.5), CELL_YLOW);
     } else {
       nu      = nu_hat * Nit / pow(Tet,1.5);
@@ -606,7 +606,7 @@ private:
       mesh->communicate(jpar);
       jpar.applyBoundary();
       
-      if (!stagger) {
+      if (!mesh->StaggerGrids) {
         Ve = Vi - jpar/Ni0;
       } else {
         Ve = Vi - jpar/interp_to(Ni0, CELL_YLOW);
@@ -615,7 +615,7 @@ private:
     } else {
     
       Ve = Ajpar + Apar;
-      if (!stagger) {
+      if (!mesh->StaggerGrids) {
         jpar = Ni0*(Vi - Ve);
       } else {
         jpar = interp_to(Ni0, CELL_YLOW)*(Vi - Ve);
@@ -628,57 +628,72 @@ private:
     ddt(Ni) = 0.0;
     if (evolve_ni) {
       TRACE("Density equation");
-      
-      if (ni_ni1_phi0)
+
+      if (ni_ni1_phi0) {
         ddt(Ni) -= vE_Grad(Ni, phi0);
-      
-      if (ni_ni0_phi1) 
+      }
+
+      if (ni_ni0_phi1) {
         ddt(Ni) -= vE_Grad(Ni0, phi);
-      
-      if (ni_ni1_phi1)
+      }
+
+      if (ni_ni1_phi1) {
         ddt(Ni) -= vE_Grad(Ni, phi);
-      
-      if (ni_nit_phit)
+      }
+
+      if (ni_nit_phit) {
         ddt(Ni) -= vE_Grad(Nit, phi0 + phi) - vE_Grad(Ni0, phi0);
-      
-      if (ni_vi1_ni0)
+      }
+
+      if (ni_vi1_ni0) {
         ddt(Ni) -= Vpar_Grad_par(Vi, Ni0);
-      
-      if (ni_vi0_ni1)
+      }
+
+      if (ni_vi0_ni1) {
         ddt(Ni) -= Vpar_Grad_par(Vi0, Ni);
-      
-      if (ni_vi1_ni1)
+      }
+
+      if (ni_vi1_ni1) {
         ddt(Ni) -= Vpar_Grad_par(Vi, Ni);
-      
-      if (ni_vit_nit)
+      }
+
+      if (ni_vit_nit) {
         ddt(Ni) -= Vpar_Grad_par(Vit, Nit) - Vpar_Grad_par(Vi0, Ni0);
-      
+      }
+
       if (ni_jpar1) {
         ddt(Ni) += Div_par(jpar, CELL_CENTRE);
       }
-      
-      if (ni_pe1)
-        ddt(Ni) += 2.0*V_dot_Grad(b0xcv, pe);
-      
-      if (ni_ni0_curv_phi1)
-        ddt(Ni) -= 2.0*Ni0*V_dot_Grad(b0xcv, phi);
-    
-      if (ni_ni1_curv_phi0)
-        ddt(Ni) -= 2.0*Ni*V_dot_Grad(b0xcv, phi0);
-    
-      if (ni_ni1_curv_phi1)
-        ddt(Ni) -= 2.0*Ni*V_dot_Grad(b0xcv, phi);
 
-      if (ni_nit_curv_phit)
+      if (ni_pe1) {
+        ddt(Ni) += 2.0*V_dot_Grad(b0xcv, pe);
+      }
+
+      if (ni_ni0_curv_phi1) {
+        ddt(Ni) -= 2.0*Ni0*V_dot_Grad(b0xcv, phi);
+      }
+
+      if (ni_ni1_curv_phi0) {
+        ddt(Ni) -= 2.0*Ni*V_dot_Grad(b0xcv, phi0);
+      }
+
+      if (ni_ni1_curv_phi1) {
+        ddt(Ni) -= 2.0*Ni*V_dot_Grad(b0xcv, phi);
+      }
+
+      if (ni_nit_curv_phit) {
         ddt(Ni) -= 2.0*Nit*V_dot_Grad(b0xcv, phi+phi0) - 2.0*Ni0*V_dot_Grad(b0xcv, phi0);
-    
-      if (ni_ni1)
+      }
+
+      if (ni_ni1) {
         ddt(Ni) += mu_i * Delp2(Ni);
-      
+      }
+
       //ddt(Ni) -= Ni0*Div_par(Vi) + Ni*Div_par(Vi0) + Ni*Div_par(Vi);
-      
-      if (lowPass_z > 0)
+
+      if (lowPass_z > 0) {
         ddt(Ni) = lowPass(ddt(Ni), lowPass_z);
+      }
     }
 
     ////////////////////////////////////////////////////////
@@ -687,42 +702,54 @@ private:
     ddt(Vi) = 0.0;
     if (evolve_vi) {
       TRACE("Ion velocity equation");
-      
-      if (vi_vi0_phi1)
+
+      if (vi_vi0_phi1) {
         ddt(Vi) -= vE_Grad(Vi0, phi);
-      
-      if (vi_vi1_phi0)
+      }
+
+      if (vi_vi1_phi0) {
         ddt(Vi) -= vE_Grad(Vi, phi0);
+      }
 
-      if (vi_vi1_phi1)
+      if (vi_vi1_phi1) {
         ddt(Vi) -= vE_Grad(Vi, phi);
-    
-      if (vi_vit_phit)
+      }
+
+      if (vi_vit_phit) {
         ddt(Vi) -= vE_Grad(Vit, phi+phi0) - vE_Grad(Vi0, phi+phi0);
-    
-      if (vi_vi1_vi0)
+      }
+
+      if (vi_vi1_vi0) {
         ddt(Vi) -= Vpar_Grad_par(Vi0, Vi);
+      }
 
-      if (vi_vi0_vi1)
+      if (vi_vi0_vi1) {
         ddt(Vi) -= Vpar_Grad_par(Vi, Vi0);
-    
-      if (vi_vi1_vi1)
+      }
+
+      if (vi_vi1_vi1) {
         ddt(Vi) -= Vpar_Grad_par(Vi, Vi);
-      
-      if (vi_vit_vit)
+      }
+
+      if (vi_vit_vit) {
         ddt(Vi) -= Vpar_Grad_par(Vit, Vit) - Vpar_Grad_par(Vi0, Vi0);
-      
-      if (vi_pei1)
+      }
+
+      if (vi_pei1) {
         ddt(Vi) -= Grad_par(pei)/Ni0;
+      }
 
-      if (vi_peit)
+      if (vi_peit) {
         ddt(Vi) -= Grad_par(pei)/Nit;
-      
-      if (vi_vi1)
-        ddt(Vi) -= mu_i*Delp2(Vi);
+      }
 
-      if (lowPass_z > 0)
+      if (vi_vi1) {
+        ddt(Vi) -= mu_i*Delp2(Vi);
+      }
+
+      if (lowPass_z > 0) {
         ddt(Vi) = lowPass(ddt(Vi), lowPass_z);
+      }
     }
   
     ////////////////////////////////////////////////////////
@@ -731,14 +758,17 @@ private:
     ddt(Te) = 0.0;
     if (evolve_te) {
       TRACE("Electron temperature equation");
-      
-      if (te_te1_phi0)
+
+      if (te_te1_phi0) {
         ddt(Te) -= vE_Grad(Te, phi0);
-      if (te_te0_phi1)
+      }
+      if (te_te0_phi1) {
         ddt(Te) -= vE_Grad(Te0, phi);
-      if (te_te1_phi1)
+      }
+      if (te_te1_phi1) {
         ddt(Te) -= vE_Grad(Te, phi);
-    
+      }
+
       /*
         ddt(Te) -= vE_Grad(Te0, phi) + vE_Grad(Te, phi0) + vE_Grad(Te, phi);
         ddt(Te) -= Vpar_Grad_par(Ve, Te0) + Vpar_Grad_par(Ve0, Te) + Vpar_Grad_par(Ve, Te);
@@ -747,8 +777,9 @@ private:
         ddt(Te) += (0.6666667/Ni0)*Div_par_K_Grad_par(kapa_Te, Te);
         
       */
-      if (lowPass_z > 0)
+      if (lowPass_z > 0) {
         ddt(Te) = lowPass(ddt(Te), lowPass_z);
+      }
     }
     
     ////////////////////////////////////////////////////////
@@ -757,14 +788,17 @@ private:
     ddt(Ti) = 0.0;
     if (evolve_ti) {
       TRACE("Ion temperature equation");
-      
-      if (ti_ti1_phi0)
+
+      if (ti_ti1_phi0) {
         ddt(Ti) -= vE_Grad(Ti, phi0);
-      if (ti_ti0_phi1)
+      }
+      if (ti_ti0_phi1) {
         ddt(Ti) -= vE_Grad(Ti0, phi);
-      if (ti_ti1_phi1)
+      }
+      if (ti_ti1_phi1) {
         ddt(Ti) -= vE_Grad(Ti, phi);
-      
+      }
+
       /*
         ddt(Ti) -= vE_Grad(Ti0, phi) + vE_Grad(Ti, phi0) + vE_Grad(Ti, phi);
         ddt(Ti) -= Vpar_Grad_par(Vi, Ti0) + Vpar_Grad_par(Vi0, Ti) + Vpar_Grad_par(Vi, Ti);
@@ -772,9 +806,10 @@ private:
         ddt(Ti) -= 3.333*Ti0*V_dot_Grad(b0xcv, Ti);
         ddt(Ti) += (0.6666667/Ni0)*Div_par_K_Grad_par(kapa_Ti, Ti);
       */
-      
-      if (lowPass_z > 0)
+
+      if (lowPass_z > 0) {
         ddt(Ti) = lowPass(ddt(Ti), lowPass_z);
+      }
     }
   
     ////////////////////////////////////////////////////////
@@ -783,25 +818,31 @@ private:
     ddt(rho) = 0.0;
     if (evolve_rho) {
       TRACE("Vorticity equation");
-      
-      if (rho_rho0_phi1)
+
+      if (rho_rho0_phi1) {
         ddt(rho) -= vE_Grad(rho0, phi);
-      
-      if (rho_rho1_phi0)
+      }
+
+      if (rho_rho1_phi0) {
         ddt(rho) -= vE_Grad(rho, phi0);
-      
-      if (rho_rho1_phi1)
+      }
+
+      if (rho_rho1_phi1) {
         ddt(rho) -= vE_Grad(rho, phi);
-      
-      if (rho_vi1_rho0)
+      }
+
+      if (rho_vi1_rho0) {
         ddt(rho) -= Vpar_Grad_par(Vi, rho0);
-      
-      if (rho_vi0_rho1)
+      }
+
+      if (rho_vi0_rho1) {
         ddt(rho) -= Vpar_Grad_par(Vi0, rho);
-      
-      if (rho_vi1_rho1)
+      }
+
+      if (rho_vi1_rho1) {
         ddt(rho) -= Vpar_Grad_par(Vi, rho);
-      
+      }
+
       if (rho_pei1) {
         if (curv_upwind) {
           ddt(rho) += 2.0*coord->Bxy*V_dot_Grad(b0xcv, pei);  // Use upwinding
@@ -813,12 +854,14 @@ private:
       if (rho_jpar1) {
         ddt(rho) += SQ(coord->Bxy)*Div_par(jpar, CELL_CENTRE);
       }
-      
-      if (rho_rho1)
+
+      if (rho_rho1) {
         ddt(rho) += mu_i * Delp2(rho);
-      
-      if (lowPass_z > 0)
+      }
+
+      if (lowPass_z > 0) {
         ddt(rho) = lowPass(ddt(rho), lowPass_z);
+      }
     }
   
     ////////////////////////////////////////////////////////
@@ -837,14 +880,15 @@ private:
         ddt(Ajpar) -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni, CELL_YLOW);
       }
       
-      if (stagger) {
+      if (mesh->StaggerGrids) {
         ddt(Ajpar) += 0.51*nu*jpar/interp_to(Ni0, CELL_YLOW);
       } else {
         ddt(Ajpar) += 0.51*nu*jpar/Ni0;
       }
-      
-      if(lowPass_z > 0)
+
+      if (lowPass_z > 0) {
         ddt(Ajpar) = lowPass(ddt(Ajpar), lowPass_z);
+      }
     }
     
     ////////////////////////////////////////////////////////
@@ -852,32 +896,42 @@ private:
     
     switch(iTe_dc) {
     case 1: { // subtacting out toroidal averages for all fields
-      if (evolve_ni)
+      if (evolve_ni) {
         ddt(Ni) -= DC(ddt(Ni));
-      if (evolve_rho)
+      }
+      if (evolve_rho) {
         ddt(rho) -= DC(ddt(rho));
-      if (evolve_te)
+      }
+      if (evolve_te) {
         ddt(Te) -= DC(ddt(Te));
-      if (evolve_ti)
+      }
+      if (evolve_ti) {
         ddt(Ti) -= DC(ddt(Ti));
-      if (evolve_ajpar)
+      }
+      if (evolve_ajpar) {
         ddt(Ajpar) -= DC(ddt(Ajpar));
+      }
       break;
     }
     case 2: { // not subtacting out toroidal averages for any field
       break;
     }
     case 4: { // using toroidal averages in right-hand sides, e.g., axisymmetric mode
-      if (evolve_ni)
+      if (evolve_ni) {
         ddt(Ni) = DC(ddt(Ni));
-      if (evolve_rho)
+      }
+      if (evolve_rho) {
         ddt(rho) = DC(ddt(rho));
-      if (evolve_te)
+      }
+      if (evolve_te) {
         ddt(Te) = DC(ddt(Te));
-      if (evolve_ti)
+      }
+      if (evolve_ti) {
         ddt(Ti) = DC(ddt(Ti));
-      if (evolve_ajpar)
+      }
+      if (evolve_ajpar) {
         ddt(Ajpar) = DC(ddt(Ajpar));
+      }
       break;
     }
     default: {

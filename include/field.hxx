@@ -330,11 +330,13 @@ inline void checkPositive(const T& f, const std::string& name="field", const std
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
-template<typename T>
+/// Convert \p f to field-aligned space in \p region (default: whole domain)
+template <typename T>
 inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field<T>::value, "toFieldAligned only works on Fields");
   return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
 }
+
 template<typename T>
 [[deprecated("Please use toFieldAligned(const T& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
@@ -342,11 +344,13 @@ inline T toFieldAligned(const T& f, REGION region) {
   return toFieldAligned(f, toString(region));
 }
 
-template<typename T>
+/// Convert \p f from field-aligned space in \p region (default: whole domain)
+template <typename T>
 inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field<T>::value, "fromFieldAligned only works on Fields");
   return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
 }
+
 template<typename T>
 [[deprecated("Please use fromFieldAligned(const T& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
@@ -354,8 +358,18 @@ inline T fromFieldAligned(const T& f, REGION region) {
   return fromFieldAligned(f, toString(region));
 }
 
-template<typename T, typename = bout::utils::EnableIfField<T>>
-inline BoutReal min(const T& f, bool allpe = false, const std::string& rgn = "RGN_NOBNDRY") {
+/// Minimum of \p f, excluding the boundary/guard cells by default
+/// (can be changed with \p rgn argument).
+///
+/// By default this is only on the local processor, but setting \p
+/// allpe true does a collective Allreduce over all processors.
+///
+/// @param[in] f      Input field
+/// @param[in] allpe  Minimum over all processors?
+/// @param[in] rgn    The region to calculate the result over
+template <typename T, typename = bout::utils::EnableIfField<T>>
+inline BoutReal min(const T& f, bool allpe = false,
+                    const std::string& rgn = "RGN_NOBNDRY") {
   AUTO_TRACE();
 
   checkData(f);
@@ -364,12 +378,12 @@ inline BoutReal min(const T& f, bool allpe = false, const std::string& rgn = "RG
   BoutReal result = f[*region.cbegin()];
 
   BOUT_FOR_OMP(i, region, parallel for reduction(min:result)) {
-    if(f[i] < result) {
+    if (f[i] < result) {
       result = f[i];
     }
   }
 
-  if(allpe) {
+  if (allpe) {
     // MPI reduce
     BoutReal localresult = result;
     MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
@@ -377,6 +391,7 @@ inline BoutReal min(const T& f, bool allpe = false, const std::string& rgn = "RG
 
   return result;
 }
+
 template<typename T, typename = bout::utils::EnableIfField<T>>
 [[deprecated("Please use Field3D min(const Field3D& f, bool allpe, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
@@ -430,8 +445,18 @@ inline BoutReal getUniform(const T& f, bool allpe = false,
   return f[*f.getRegion(region).begin()];
 }
 
-template<typename T, typename = bout::utils::EnableIfField<T>>
-inline BoutReal max(const T& f, bool allpe = false, const std::string& rgn = "RGN_NOBNDRY") {
+/// Maximum of \p r, excluding the boundary/guard cells by default
+/// (can be changed with \p rgn argument).
+///
+/// By default this is only on the local processor, but setting \p
+/// allpe to true does a collective Allreduce over all processors.
+///
+/// @param[in] f      Input field
+/// @param[in] allpe  Maximum over all processors?
+/// @param[in] rgn    The region to calculate the result over
+template <typename T, typename = bout::utils::EnableIfField<T>>
+inline BoutReal max(const T& f, bool allpe = false,
+                    const std::string& rgn = "RGN_NOBNDRY") {
   AUTO_TRACE();
 
   checkData(f);
@@ -440,12 +465,12 @@ inline BoutReal max(const T& f, bool allpe = false, const std::string& rgn = "RG
   BoutReal result = f[*region.cbegin()];
 
   BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
-    if(f[i] > result) {
+    if (f[i] > result) {
       result = f[i];
     }
   }
 
-  if(allpe) {
+  if (allpe) {
     // MPI reduce
     BoutReal localresult = result;
     MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
@@ -453,6 +478,7 @@ inline BoutReal max(const T& f, bool allpe = false, const std::string& rgn = "RG
 
   return result;
 }
+
 template<typename T, typename = bout::utils::EnableIfField<T>>
 [[deprecated("Please use Field3D max(const Field3D& f, bool allpe, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
@@ -460,9 +486,18 @@ inline BoutReal max(const T& f, bool allpe, REGION rgn) {
   return max(f, allpe, toString(rgn));
 }
 
-template<typename T, typename = bout::utils::EnableIfField<T>>
-inline BoutReal mean(const T &f, bool allpe = false,
-    const std::string& rgn = "RGN_NOBNDRY") {
+/// Mean of \p f, excluding the boundary/guard cells by default (can
+/// be changed with \p rgn argument).
+///
+/// By default this is only on the local processor, but setting \p
+/// allpe to true does a collective Allreduce over all processors.
+///
+/// @param[in] f      Input field
+/// @param[in] allpe  Mean over all processors?
+/// @param[in] rgn    The region to calculate the result over
+template <typename T, typename = bout::utils::EnableIfField<T>>
+inline BoutReal mean(const T& f, bool allpe = false,
+                     const std::string& rgn = "RGN_NOBNDRY") {
   AUTO_TRACE();
 
   checkData(f);
@@ -476,7 +511,7 @@ inline BoutReal mean(const T &f, bool allpe = false,
     count += 1;
   }
 
-  if(allpe) {
+  if (allpe) {
     // MPI reduce
     BoutReal localresult = result;
     MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get());
@@ -486,6 +521,7 @@ inline BoutReal mean(const T &f, bool allpe = false,
 
   return result / static_cast<BoutReal>(count);
 }
+
 template<typename T, typename = bout::utils::EnableIfField<T>>
 [[deprecated("Please use Field3D mean(const Field3D& f, bool allpe, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
