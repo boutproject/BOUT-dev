@@ -219,7 +219,7 @@ bool Field3D::requiresTwistShift(bool twist_shift_enabled) {
   try {
     return getCoordinates()->getParallelTransform().requiresTwistShift(twist_shift_enabled,
         getDirectionY());
-  } catch (BoutException) {
+  } catch (BoutException&) {
     return false;
   }
 #endif
