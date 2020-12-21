@@ -327,6 +327,8 @@ which uses ``{arg}`` as the input value. We could then call this function:
     result = [arg = x*2](mycosh)
 
 
+.. _sec-recursive-functions:
+
 Recursive functions
 ~~~~~~~~~~~~~~~~~~~
 
