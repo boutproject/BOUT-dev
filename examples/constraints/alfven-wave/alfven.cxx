@@ -31,9 +31,7 @@ private:
   std::unique_ptr<Laplacian> phiSolver{nullptr}; // Old Laplacian in X-Z
   std::unique_ptr<LaplaceXZ> newSolver{nullptr}; // New Laplacian in X-Z
 protected:
-  
-  int init(bool restarting) {
-    
+  int init(bool) {
     // Normalisation
     auto opt = Options::root()["alfven"];
     Tnorm = opt["Tnorm"].withDefault(100);  // Reference temperature [eV]
@@ -151,7 +149,7 @@ protected:
    * 
    * ddt(f) = Result of the inversion
    */
-  int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  int precon(BoutReal, BoutReal, BoutReal) {
     if(newXZsolver) {
       ddt(phi) = newSolver->solve(ddt(phi) - ddt(Vort), 0.0);
     }else {
@@ -197,9 +195,10 @@ protected:
     }
     
     BoutReal sbp = 1.0; // Sign of Bp
-    if(min(Bpxy, true) < 0.0)
+    if (min(Bpxy, true) < 0.0) {
       sbp = -1.0;
-    
+    }
+
     // Calculate metric components
     
     coord->g11 = SQ(Rxy*Bpxy);

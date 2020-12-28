@@ -35,7 +35,7 @@ struct Durations {
 
 class Arithmetic : public PhysicsModel {
 protected:
-  int init(bool restarting) {
+  int init(bool) {
 
     Field3D a = 1.0;
     Field3D b = 2.0;
@@ -92,7 +92,7 @@ protected:
     SOLVE_FOR(n);
     return 0;
   }
-  
+
   int rhs(BoutReal) {
     ddt(n) = 0;
     return 0;

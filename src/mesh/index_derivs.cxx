@@ -20,6 +20,8 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include "bout/traits.hxx"
 #include <bout/index_derivs.hxx>
 #include <bout/mesh.hxx>
@@ -410,7 +412,7 @@ REGISTER_FLUX_DERIVATIVE_STAGGERED(FDDX_U2_stag, "U2", 2, DERIV::Flux) {
 /// into the standard stencil based approach.
 // /////////////////////////////////////////////////////////////////////////////////
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 class FFTDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
@@ -563,7 +565,8 @@ constexpr metaData SplitFluxDerivativeType::meta;
 
 produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),
                         WRAP_ENUM(DIRECTION, YOrthogonal), WRAP_ENUM(DIRECTION, Z)>,
-                    Set<WRAP_ENUM(STAGGER, None)>,
+                    Set<WRAP_ENUM(STAGGER, None), WRAP_ENUM(STAGGER, C2L),
+                        WRAP_ENUM(STAGGER, L2C)>,
                     Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
                     Set<SplitFluxDerivativeType>>
     registerSplitDerivative(registerMethod{});

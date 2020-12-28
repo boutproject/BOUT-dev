@@ -198,7 +198,7 @@ class BoutOptions(object):
                 return key_parts[1] in self[key_parts[0]]
             return False
 
-        return key in self.keys()
+        return key in self._keys or key in self._sections
 
     __marker = object()
 
@@ -354,6 +354,25 @@ class BoutOptions(object):
 
     def __len__(self):
         return len(self._sections) + len(self._keys)
+
+    def __eq__(self, other):
+        """Test if this BoutOptions is the same as another one."""
+        if not isinstance(other, BoutOptions):
+            return False
+        if self is other:
+            # other is a reference to the same object
+            return True
+        if len(self._sections) != len(other._sections):
+            return False
+        if len(self._keys) != len(other._keys):
+            return False
+        for secname, section in self._sections.items():
+            if secname not in other or section != other[secname]:
+                return False
+        for key, value in self._keys.items():
+            if key not in other or value != other[key]:
+                return False
+        return True
 
     def __iter__(self):
         """Iterates over all keys. First values, then sections
@@ -527,6 +546,7 @@ class BoutOptionsFile(BoutOptions):
     ):
         BoutOptions.__init__(self, name)
         self.filename = filename
+        self.gridfilename = gridfilename
         # Open the file
         with open(filename, "r") as f:
             # Go through each line in the file
@@ -607,99 +627,7 @@ class BoutOptionsFile(BoutOptions):
                         section._comment_whitespace[value_name] = comment_whitespace
 
         try:
-            # define arrays of x, y, z to be used for substitutions
-            gridfile = None
-            nzfromfile = None
-            if gridfilename:
-                if nx is not None or ny is not None:
-                    raise ValueError(
-                        "nx or ny given as inputs even though "
-                        "gridfilename was given explicitly, "
-                        "don't know which parameters to choose"
-                    )
-                with DataFile(gridfilename) as gridfile:
-                    self.nx = float(gridfile["nx"])
-                    self.ny = float(gridfile["ny"])
-                    try:
-                        nzfromfile = gridfile["MZ"]
-                    except KeyError:
-                        pass
-            elif nx or ny:
-                if nx is None:
-                    raise ValueError(
-                        "nx not specified. If either nx or ny are given, then both must be."
-                    )
-                if ny is None:
-                    raise ValueError(
-                        "ny not specified. If either nx or ny are given, then both must be."
-                    )
-                self.nx = nx
-                self.ny = ny
-            else:
-                try:
-                    self.nx = self["mesh"].evaluate_scalar("nx")
-                    self.ny = self["mesh"].evaluate_scalar("ny")
-                except KeyError:
-                    try:
-                        # get nx, ny, nz from output files
-                        from boutdata.collect import findFiles
-
-                        file_list = findFiles(
-                            path=os.path.dirname("."), prefix="BOUT.dmp"
-                        )
-                        with DataFile(file_list[0]) as f:
-                            self.nx = f["nx"]
-                            self.ny = f["ny"]
-                            nzfromfile = f["MZ"]
-                    except (IOError, KeyError):
-                        try:
-                            gridfilename = self["mesh"]["file"]
-                        except KeyError:
-                            gridfilename = self["grid"]
-                        with DataFile(gridfilename) as gridfile:
-                            self.nx = float(gridfile["nx"])
-                            self.ny = float(gridfile["ny"])
-                            try:
-                                nzfromfile = float(gridfile["MZ"])
-                            except KeyError:
-                                pass
-            if nz is not None:
-                self.nz = nz
-            else:
-                try:
-                    self.nz = self["mesh"].evaluate_scalar("nz")
-                except KeyError:
-                    try:
-                        self.nz = self.evaluate_scalar("mz")
-                    except KeyError:
-                        if nzfromfile is not None:
-                            self.nz = nzfromfile
-            mxg = self._keys.get("MXG", 2)
-            myg = self._keys.get("MYG", 2)
-
-            # make self.x, self.y, self.z three dimensional now so
-            # that expressions broadcast together properly.
-            self.x = numpy.linspace(
-                (0.5 - mxg) / (self.nx - 2 * mxg),
-                1.0 - (0.5 - mxg) / (self.nx - 2 * mxg),
-                self.nx,
-            )[:, numpy.newaxis, numpy.newaxis]
-            self.y = (
-                2.0
-                * numpy.pi
-                * numpy.linspace(
-                    (0.5 - myg) / self.ny,
-                    1.0 - (0.5 - myg) / self.ny,
-                    self.ny + 2 * myg,
-                )[numpy.newaxis, :, numpy.newaxis]
-            )
-            self.z = (
-                2.0
-                * numpy.pi
-                * numpy.linspace(0.5 / self.nz, 1.0 - 0.5 / self.nz, self.nz)[
-                    numpy.newaxis, numpy.newaxis, :
-                ]
-            )
+            self.recalculate_xyz(nx=nx, ny=ny, nz=nz)
         except Exception as e:
             alwayswarn(
                 "While building x, y, z coordinate arrays, an "
@@ -707,6 +635,104 @@ class BoutOptionsFile(BoutOptions):
                 + str(e)
                 + "\nEvaluating non-scalar options not available"
             )
+
+    def recalculate_xyz(self, *,  nx=None, ny=None, nz=None):
+        """
+        Recalculate the x, y avd z arrays used to evaluate expressions
+        """
+        # define arrays of x, y, z to be used for substitutions
+        gridfile = None
+        nzfromfile = None
+        if self.gridfilename:
+            if nx is not None or ny is not None:
+                raise ValueError(
+                    "nx or ny given as inputs even though "
+                    "gridfilename was given explicitly, "
+                    "don't know which parameters to choose"
+                )
+            with DataFile(self.gridfilename) as gridfile:
+                self.nx = float(gridfile["nx"])
+                self.ny = float(gridfile["ny"])
+                try:
+                    nzfromfile = gridfile["MZ"]
+                except KeyError:
+                    pass
+        elif nx or ny:
+            if nx is None:
+                raise ValueError(
+                    "nx not specified. If either nx or ny are given, then both must be."
+                )
+            if ny is None:
+                raise ValueError(
+                    "ny not specified. If either nx or ny are given, then both must be."
+                )
+            self.nx = nx
+            self.ny = ny
+        else:
+            try:
+                self.nx = self["mesh"].evaluate_scalar("nx")
+                self.ny = self["mesh"].evaluate_scalar("ny")
+            except KeyError:
+                try:
+                    # get nx, ny, nz from output files
+                    from boutdata.collect import findFiles
+
+                    file_list = findFiles(
+                        path=os.path.dirname("."), prefix="BOUT.dmp"
+                    )
+                    with DataFile(file_list[0]) as f:
+                        self.nx = f["nx"]
+                        self.ny = f["ny"]
+                        nzfromfile = f["MZ"]
+                except (IOError, KeyError):
+                    try:
+                        gridfilename = self["mesh"]["file"]
+                    except KeyError:
+                        gridfilename = self["grid"]
+                    with DataFile(gridfilename) as gridfile:
+                        self.nx = float(gridfile["nx"])
+                        self.ny = float(gridfile["ny"])
+                        try:
+                            nzfromfile = float(gridfile["MZ"])
+                        except KeyError:
+                            pass
+        if nz is not None:
+            self.nz = nz
+        else:
+            try:
+                self.nz = self["mesh"].evaluate_scalar("nz")
+            except KeyError:
+                try:
+                    self.nz = self.evaluate_scalar("mz")
+                except KeyError:
+                    if nzfromfile is not None:
+                        self.nz = nzfromfile
+        mxg = self._keys.get("MXG", 2)
+        myg = self._keys.get("MYG", 2)
+
+        # make self.x, self.y, self.z three dimensional now so
+        # that expressions broadcast together properly.
+        self.x = numpy.linspace(
+            (0.5 - mxg) / (self.nx - 2 * mxg),
+            1.0 - (0.5 - mxg) / (self.nx - 2 * mxg),
+            self.nx,
+        )[:, numpy.newaxis, numpy.newaxis]
+        self.y = (
+            2.0
+            * numpy.pi
+            * numpy.linspace(
+                (0.5 - myg) / self.ny,
+                1.0 - (0.5 - myg) / self.ny,
+                self.ny + 2 * myg,
+            )[numpy.newaxis, :, numpy.newaxis]
+        )
+        self.z = (
+            2.0
+            * numpy.pi
+            * numpy.linspace(0.5 / self.nz, 1.0 - 0.5 / self.nz, self.nz)[
+                numpy.newaxis, numpy.newaxis, :
+            ]
+        )
 
     def evaluate(self, name):
         """Evaluate (recursively) expressions

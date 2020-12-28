@@ -1,0 +1,43 @@
+"""Functions for getting the config used for compiling BOUT++
+
+"""
+
+_yesno = {'"yes"': True, '"no"': False}
+
+config = {
+    "cc": "@MPICXX@",
+    "cxx": "@MPICXX@",
+    "ld": "@MPICXX@",
+    "checks": "@BOUT_CHECK_LEVEL@",
+    "cflags": "@CONFIG_CFLAGS@",
+    "libs": "@CONFIG_LDFLAGS@",
+    "version": "@BOUT_VERSION@",
+    "git": "@BOUT_REVISION@",
+    "idlpath": "@IDLCONFIGPATH@",
+    "pythonpath": "@PYTHONCONFIGPATH@",
+    "has_netcdf": "@BOUT_HAS_NETCDF@",
+    "has_pnetcdf": "@BOUT_HAS_PNETCDF@",
+    "has_hdf5": "@BOUT_HAS_HDF5@",
+    "has_pvode": "@BOUT_HAS_PVODE@",
+    "has_cvode": "@BOUT_HAS_CVODE@",
+    "has_ida": "@BOUT_HAS_IDA@",
+    "has_lapack": "@BOUT_HAS_LAPACK@",
+    "has_petsc": "@BOUT_HAS_PETSC@",
+    "has_slepc": "@BOUT_HAS_SLEPC@",
+    "has_mumps": "no",
+    "has_arkode": "@BOUT_HAS_ARKODE@",
+    "has_openmp": "@BOUT_USE_OPENMP@",
+    "has_nls": "@BOUT_HAS_GETTEXT@",
+    "has_fftw": "@BOUT_HAS_FFTW@",
+    "petsc_has_sundials": "@PETSC_HAS_SUNDIALS@",
+}
+
+
+@property
+def has():
+    """Get a dict of the enabled features"""
+    _has = {}
+    for k in config:
+        if k.startswith("has_"):
+            _has[k[4:]] = _yesno[config[k]]
+    return _has

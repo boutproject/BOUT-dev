@@ -30,6 +30,8 @@
 #ifndef __PETSC_INTERFACE_H__
 #define __PETSC_INTERFACE_H__
 
+#include "bout/build_config.hxx"
+
 #include <algorithm>
 #include <memory>
 #include <type_traits>
@@ -44,7 +46,7 @@
 #include <bout_types.hxx>
 #include <boutcomm.hxx>
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 template <class T>
 class GlobalIndexer;
 

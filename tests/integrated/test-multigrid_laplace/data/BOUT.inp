@@ -1,5 +1,3 @@
-dump_format = "nc"
-
 [mesh]
 nx = 100
 nz = 128

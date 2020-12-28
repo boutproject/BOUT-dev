@@ -25,18 +25,11 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 const char DEFAULT_DIR[] = "data";
 
-// Value passed at compile time
-// Used for MD5SUM, BOUT_LOCALE_PATH, and REVISION
-#define BUILDFLAG1_(x) #x
-#define BUILDFLAG(x) BUILDFLAG1_(x)
-
 #define GLOBALORIGIN
-
-#define INDIRECT1_BOUTMAIN(a) #a
-#define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
-#define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
 
 #include "boundary_factory.hxx"
 #include "boutcomm.hxx"
@@ -72,6 +65,15 @@ const char DEFAULT_DIR[] = "data";
 
 #include <sys/stat.h>
 
+// Value passed at compile time
+// Used for MD5SUM, BOUT_LOCALE_PATH, and REVISION
+#define BUILDFLAG1_(x) #x
+#define BUILDFLAG(x) BUILDFLAG1_(x)
+
+#define INDIRECT1_BOUTMAIN(a) #a
+#define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
+#define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
+
 // Define S_ISDIR if not defined by system headers (that is, MSVC)
 // Taken from https://github.com/curl/curl/blob/e59540139a398dc70fde6aec487b19c5085105af/lib/curl_setup.h#L748-L751
 #if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
@@ -86,7 +88,7 @@ inline auto getpid() -> int { return GetCurrentProcessId(); }
 #include <unistd.h>
 #endif
 
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
 #include <fenv.h>
 #endif
 
@@ -99,6 +101,11 @@ bool user_requested_exit = false;
 void bout_signal_handler(int sig);   // Handles signals
 std::string time_to_hms(BoutReal t); // Converts to h:mm:ss.s format
 char get_spin();                     // Produces a spinning bar
+
+// Return the string "enabled" or "disabled"
+namespace {
+constexpr auto is_enabled(bool enabled) { return enabled ? "enabled" : "disabled"; }
+} // namespace
 
 /*!
   Initialise BOUT++
@@ -195,10 +202,10 @@ int BoutInitialise(int& argc, char**& argv) {
 namespace bout {
 namespace experimental {
 void setupSignalHandler(SignalHandler signal_handler) {
-#ifdef SIGHANDLE
+#if BOUT_USE_SIGNAL
   std::signal(SIGSEGV, signal_handler);
 #endif
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
   std::signal(SIGFPE, signal_handler);
   feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
@@ -243,6 +250,20 @@ void setupGetText() {
 #endif // BOUT_HAS_GETTEXT
 }
 
+template <class T>
+void printAvailableImplementations(const T& factory) {
+  for (const auto& implementation : factory.listAvailable()) {
+    std::cout << implementation << "\n";
+  }
+  auto unavailable = factory.listUnavailableReasons();
+  if (not unavailable.empty()) {
+    std::cout << fmt::format("\nThe following {}s are currently unavailable:\n", T::type_name);
+    for (const auto& implementation : unavailable) {
+      std::cout << implementation << "\n";
+    }
+  }
+}
+
 auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
   /// NB: "restart" and "append" are now caught by options
   /// Check for help flag separately
@@ -256,74 +277,69 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
                    argv[0]);
       output.write(
           _("\n"
-            "  -d <data directory>\tLook in <data directory> for input/output files\n"
-            "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
+            "  -d <data directory>\t\tLook in <data directory> for input/output files\n"
+            "  -f <options filename>\t\tUse OPTIONS given in <options filename>\n"
             "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
             "  -l, --log <log filename>\tPrint log to <log filename>\n"
-            "  -v, --verbose\t\tIncrease verbosity\n"
-            "  -q, --quiet\t\tDecrease verbosity\n"));
-#ifdef LOGCOLOR
-      output.write(_("  -c, --color\t\tColor output using bout-log-color\n"));
+            "  -v, --verbose\t\t\tIncrease verbosity\n"
+            "  -q, --quiet\t\t\tDecrease verbosity\n"));
+#if BOUT_USE_COLOR
+      output.write(_("  -c, --color\t\t\tColor output using bout-log-color\n"));
 #endif
       output.write(
-          _("  -h, --help\t\tThis message\n"
-            "  restart [append]\tRestart the simulation. If append is specified, "
+          _("  --print-config\t\tPrint the compile-time configuration\n"
+            "  --list-solvers\t\tList the available time solvers\n"
+            "  --list-laplacians\t\tList the available Laplacian inversion solvers\n"
+            "  --list-laplacexz\t\tList the available LaplaceXZ inversion solvers\n"
+            "  --list-invertpars\t\tList the available InvertPar solvers\n"
+            "  --list-rkschemes\t\tList the available Runge-Kutta schemes\n"
+            "  --list-meshes\t\t\tList the available Meshes\n"
+            "  --list-xzinterpolations\tList the available XZInterpolations\n"
+            "  --list-zinterpolations\tList the available ZInterpolations\n"
+            "  -h, --help\t\t\tThis message\n"
+            "  restart [append]\t\tRestart the simulation. If append is specified, "
             "append to the existing output files, otherwise overwrite them\n"
-            "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
+            "  VAR=VALUE\t\t\tSpecify a VALUE for input parameter VAR\n"
             "\nFor all possible input parameters, see the user manual and/or the "
             "physics model source (e.g. {:s}.cxx)\n"),
           argv[0]);
 
       std::exit(EXIT_SUCCESS);
     }
+    if (current_arg == "--print-config") {
+      printCompileTimeOptions();
+      std::exit(EXIT_SUCCESS);
+    }
     if (current_arg == "--list-solvers") {
-      for (const auto &solver : SolverFactory::getInstance().listAvailable()) {
-        std::cout << solver << "\n";
-      }
+      printAvailableImplementations(SolverFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-laplacians") {
-      for (const auto &laplacian : LaplaceFactory::getInstance().listAvailable()) {
-        std::cout << laplacian << "\n";
-      }
+      printAvailableImplementations(LaplaceFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-laplacexzs") {
-      for (const auto &laplacexz : LaplaceXZFactory::getInstance().listAvailable()) {
-        std::cout << laplacexz << "\n";
-      }
+      printAvailableImplementations(LaplaceXZFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-invertpars") {
-      for (const auto &invertpar : InvertParFactory::getInstance().listAvailable()) {
-        std::cout << invertpar << "\n";
-      }
+      printAvailableImplementations(InvertParFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-rkschemes") {
-      for (const auto &rkscheme : RKSchemeFactory::getInstance().listAvailable()) {
-        std::cout << rkscheme << "\n";
-      }
+      printAvailableImplementations(RKSchemeFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-meshes") {
-      for (const auto &mesh : MeshFactory::getInstance().listAvailable()) {
-        std::cout << mesh << "\n";
-      }
+      printAvailableImplementations(MeshFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-xzinterpolations") {
-      for (const auto& interpolation :
-           XZInterpolationFactory::getInstance().listAvailable()) {
-        std::cout << interpolation << "\n";
-      }
+      printAvailableImplementations(XZInterpolationFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-zinterpolations") {
-      for (const auto& interpolation :
-           ZInterpolationFactory::getInstance().listAvailable()) {
-        std::cout << interpolation << "\n";
-      }
+      printAvailableImplementations(ZInterpolationFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
   }
@@ -450,22 +466,18 @@ void printStartupHeader(int MYPE, int NPES) {
 void printCompileTimeOptions() {
   output_info.write(_("Compile-time options:\n"));
 
-#if CHECK > 0
-  output_info.write(_("\tChecking enabled, level {:d}\n"), CHECK);
-#else
-  output_info.write(_("\tChecking disabled\n"));
-#endif
+  using namespace bout::build;
 
-#ifdef SIGHANDLE
-  output_info.write(_("\tSignal handling enabled\n"));
-#else
-  output_info.write(_("\tSignal handling disabled\n"));
-#endif
+  output_info.write(_("\tRuntime error checking {}"), is_enabled(check_level > 0));
+  if (check_level > 0) {
+    output_info.write(_(", level {}"), check_level);
+  }
+  output_info.write("\n");
 
 #ifdef NCDF
   output_info.write(_("\tnetCDF support enabled\n"));
 #else
-#ifdef NCDF4
+#if BOUT_HAS_NETCDF
   output_info.write(_("\tnetCDF4 support enabled\n"));
 #else
   output_info.write(_("\tnetCDF support disabled\n"));
@@ -478,20 +490,33 @@ void printCompileTimeOptions() {
   output_info.write(_("\tParallel NetCDF support disabled\n"));
 #endif
 
-#ifdef _OPENMP
-  output_info.write(_("\tOpenMP parallelisation enabled, using {:d} threads\n"),
-                    omp_get_max_threads());
-#else
-  output_info.write(_("\tOpenMP parallelisation disabled\n"));
-#endif
-
 #ifdef METRIC3D
   output_info.write("\tRUNNING IN 3D-METRIC MODE\n");
 #endif
 
-#ifdef BOUT_FPE
-  output_info.write("\tFloatingPointExceptions enabled\n");
+  output_info.write(_("\tFFT support {}\n"), is_enabled(has_fftw));
+  output_info.write(_("\tNatural language support {}\n"), is_enabled(has_gettext));
+  output_info.write(_("\tHDF5 support {}\n"), is_enabled(has_hdf5));
+  output_info.write(_("\tLAPACK support {}\n"), is_enabled(has_lapack));
+  output_info.write(_("\tNetCDF support {}\n"), is_enabled(has_netcdf));
+  output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
+  output_info.write(_("\tPretty function name support {}\n"),
+                    is_enabled(has_pretty_function));
+  output_info.write(_("\tPVODE support {}\n"), is_enabled(has_pvode));
+  output_info.write(_("\tScore-P support {}\n"), is_enabled(has_scorep));
+  output_info.write(_("\tSLEPc support {}\n"), is_enabled(has_slepc));
+  output_info.write(_("\tSUNDIALS support {}\n"), is_enabled(has_sundials));
+  output_info.write(_("\tBacktrace in exceptions {}\n"), is_enabled(use_backtrace));
+  output_info.write(_("\tColour in logs {}\n"), is_enabled(use_color));
+  output_info.write(_("\tOpenMP parallelisation {}"), is_enabled(use_openmp));
+#ifdef _OPENMP
+  output_info.write(_(", using {} threads"), omp_get_max_threads());
 #endif
+  output_info.write("\n");
+  output_info.write(_("\tExtra debug output {}\n"), is_enabled(use_output_debug));
+  output_info.write(_("\tFloating-point exceptions {}\n"), is_enabled(use_sigfpe));
+  output_info.write(_("\tSignal handling support {}\n"), is_enabled(use_signal));
+  output_info.write(_("\tField name tracking {}\n"), is_enabled(use_track));
 
   // The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
   // which could cause problems (e.g. terminate strings).
@@ -507,7 +532,7 @@ void printCommandLineArguments(const std::vector<std::string>& original_argv) {
 }
 
 bool setupBoutLogColor(bool color_output, int MYPE) {
-#ifdef LOGCOLOR
+#if BOUT_USE_COLOR
   if (color_output && (MYPE == 0)) {
     // Color stdout by piping through bout-log-color script
     // Only done on processor 0, since this is the only processor which writes to stdout
@@ -541,7 +566,7 @@ bool setupBoutLogColor(bool color_output, int MYPE) {
     }
     return success;
   }
-#endif // LOGCOLOR
+#endif // BOUT_USE_COLOR
   return false;
 }
 
@@ -567,7 +592,7 @@ void setupOutput(const std::string& data_dir, const std::string& log_file, int v
   output_progress.enable(verbosity > 2);
   output_info.enable(verbosity > 3);
   output_verbose.enable(verbosity > 4);
-  // Only actually enabled if also compiled with DEBUG
+  // Only actually enabled if also compiled with ENABLE_OUTPUT_DEBUG
   output_debug.enable(verbosity > 5);
 
   // The backward-compatible output object same as output_progress
@@ -598,8 +623,8 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
                         .withDefault(false);
 
   // Get file extensions
-  const auto dump_ext = options["dump_format"].withDefault(std::string{"nc"});
-
+  const auto default_dump_format = bout::build::has_netcdf ? "nc" : "h5";
+  const auto dump_ext = options["dump_format"].withDefault(default_dump_format);
   output_progress << "Setting up output (dump) file\n";
 
   auto dump_file = Datafile(&(options["output"]), &mesh);
@@ -618,6 +643,27 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
 
   // Save mesh configuration into output file
   mesh.outputVars(dump_file);
+
+  // Add compile-time options
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_fftw), "has_fftw");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_gettext), "has_gettext");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_hdf5), "has_hdf5");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_lapack), "has_lapack");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_netcdf), "has_netcdf");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_petsc), "has_petsc");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_pretty_function),
+                    "has_pretty_function");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_pvode), "has_pvode");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_scorep), "has_scorep");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_slepc), "has_slepc");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_sundials), "has_sundials");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_backtrace), "use_backtrace");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_color), "use_color");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_openmp), "use_openmp");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_output_debug), "use_output_debug");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_sigfpe), "use_sigfpe");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_signal), "use_signal");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_track), "use_track");
 
   return dump_file;
 }

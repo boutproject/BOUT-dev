@@ -4,10 +4,17 @@
  *************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 #include <initialprofiles.hxx>
 #include <invert_laplace.hxx>
 #include <boutexception.hxx>
+
+class Laplace_dae : public PhysicsModel {
+protected:
+  int init(bool UNUSED(restarting)) override;
+  int rhs(BoutReal UNUSED(time)) override;
+};
+
 
 Field3D U, Apar;   // Evolving variables
 
@@ -17,6 +24,8 @@ Field3D phibdry; // Used for calculating error in the boundary
 
 bool constraint;
 
+using bout::globals::mesh;
+
 std::unique_ptr<Laplacian> phiSolver{nullptr}; ///< Inverts a Laplacian to get phi from U
 
 // Preconditioner
@@ -24,26 +33,23 @@ int precon_phi(BoutReal t, BoutReal cj, BoutReal delta);
 int jacobian(BoutReal t); // Jacobian-vector multiply
 int jacobian_constrain(BoutReal t); // Jacobian-vector multiply
 
-int physics_init(bool UNUSED(restarting)) {
+int Laplace_dae::init(bool UNUSED(restarting)) {
   // Give the solver two RHS functions
   
   // Get options
-  auto globalOptions = Options::root();
-  auto options = globalOptions["dae"];
+  auto& globalOptions = Options::root();
+  auto& options = globalOptions["dae"];
   constraint = options["constraint"].withDefault(true);
 
   // Create a solver for the Laplacian
   phiSolver = Laplacian::create();
   
-  // Just solving one variable, U
   SOLVE_FOR2(U, Apar);
   
   if(constraint) {
     phi = phiSolver->solve(U);
     // Add phi equation as a constraint
-    if (!bout_constrain(phi, ddt(phi), "phi"))
-      throw BoutException("Solver does not support constraints");
-    
+    solver->constraint(phi, ddt(phi), "phi");
     // Set preconditioner
     solver->setPrecon(precon_phi);
     
@@ -66,7 +72,7 @@ int physics_init(bool UNUSED(restarting)) {
   return 0;
 }
 
-int physics_run(BoutReal UNUSED(time)) {
+int Laplace_dae::rhs(BoutReal UNUSED(time)) {
 
   if(constraint) {
     mesh->communicate(Apar, phi);
@@ -99,8 +105,9 @@ int physics_run(BoutReal UNUSED(time)) {
   output << "phi " << max(phi) << endl;
   
   for(int y=0;y<5;y++) {
-    for(int x=0;x<5;x++)
+    for (int x = 0; x < 5; x++) {
       output << phi(x,y,64) << ", ";
+    }
     output << endl;
   }
   
@@ -179,3 +186,6 @@ int jacobian_constrain(BoutReal UNUSED(t)) {
 
   return 0;
 }
+
+
+BOUTMAIN(Laplace_dae)

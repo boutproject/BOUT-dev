@@ -251,8 +251,9 @@ private:
 
         int globaly = mesh->getGlobalYIndex(i.y());
 
-        if (mgx > xgrid_num || (globaly <= int(Jysep) - 2) || (globaly > int(Jysep2) + 2))
+        if (mgx > xgrid_num || (globaly <= int(Jysep) - 2) || (globaly > int(Jysep2) + 2)) {
           mgx = xgrid_num;
+        }
         BoutReal rlx = mgx - n0_center;
         BoutReal temp = exp(rlx / n0_width);
         BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
@@ -262,8 +263,9 @@ private:
       for (auto i : result) {
         BoutReal mgx = mesh->GlobalX(i.x());
         BoutReal xgrid_num = Grid_NXlimit / Grid_NX;
-        if (mgx > xgrid_num)
+        if (mgx > xgrid_num) {
           mgx = xgrid_num;
+        }
         BoutReal rlx = mgx - n0_center;
         BoutReal temp = exp(rlx / n0_width);
         BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
@@ -615,13 +617,15 @@ protected:
       Dphi0 = -D_min - 0.5 * D_0 * (1.0 - tanh(D_s * (x - x0)));
     }
 
-    if (sign < 0) // change flow direction
+    if (sign < 0) { // change flow direction
       Dphi0 *= -1;
+    }
 
     V0 = -Rxy * Bpxy * Dphi0 / B0;
 
-    if (simple_rmp)
+    if (simple_rmp) {
       include_rmp = true;
+    }
 
     if (include_rmp) {
       // Including external field coils.
@@ -640,10 +644,11 @@ protected:
           rmp_vac_mask = options["rmp_vac_mask"].withDefault(true);
           // Divide n by the size of the domain
           int zperiod = globalOptions["zperiod"].withDefault(1);
-          if ((rmp_n % zperiod) != 0)
+          if ((rmp_n % zperiod) != 0) {
             output_warn.write(
                 "     ***WARNING: rmp_n ({:d}) not a multiple of zperiod ({:d})\n", rmp_n,
                 zperiod);
+          }
 
           output.write("\tMagnetic perturbation: n = {:d}, m = {:d}, magnitude {:e} Tm\n",
                        rmp_n, rmp_m, rmp_factor);
@@ -651,8 +656,8 @@ protected:
           rmp_Psi0 = 0.0;
           if (mesh->lastX()) {
             // Set the outer boundary
-            for (int jx = mesh->LocalNx - 4; jx < mesh->LocalNx; jx++)
-              for (int jy = 0; jy < mesh->LocalNy; jy++)
+            for (int jx = mesh->LocalNx - 4; jx < mesh->LocalNx; jx++) {
+              for (int jy = 0; jy < mesh->LocalNy; jy++) {
                 for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
                   BoutReal angle = rmp_m * pol_angle(jx, jy)
@@ -667,6 +672,8 @@ protected:
                     rmp_Psi0(jx, jy, jz) *= exp(-gx * gx);
                   }
                 }
+              }
+            }
           }
 
           // Now have a simple model for Psi due to coils at the outer boundary
@@ -690,15 +697,18 @@ protected:
       }
     }
 
-    if (!include_curvature)
+    if (!include_curvature) {
       b0xcv = 0.0;
+    }
 
-    if (!include_jpar0)
+    if (!include_jpar0) {
       J0 = 0.0;
+    }
 
     if (noshear) {
-      if (include_curvature)
+      if (include_curvature) {
         b0xcv.z += I * b0xcv.x;
+      }
       I = 0.0;
     }
 
@@ -711,18 +721,21 @@ protected:
 
     } else {
       // Dimits style, using local coordinate system
-      if (include_curvature)
+      if (include_curvature) {
         b0xcv.z += I * b0xcv.x;
+      }
       I = 0.0; // I disappears from metric
     }
 
     //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
 
-    if (mesh->get(Bbar, "bmag")) // Typical magnetic field
+    if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
       Bbar = 1.0;
-    if (mesh->get(Lbar, "rmag")) // Typical length scale
+    }
+    if (mesh->get(Lbar, "rmag")) { // Typical length scale
       Lbar = 1.0;
+    }
 
     Va = sqrt(Bbar * Bbar / (MU0 * density * Mi));
 
@@ -743,8 +756,9 @@ protected:
       output.write("Upara2 = {:e}     Omega_i = {:e}\n", Upara2, omega_i);
     }
 
-    if (eHall)
+    if (eHall) {
       output.write("                delta_i = {:e}   AA = {:e} \n", delta_i, AA);
+    }
 
     if (vac_lund > 0.0) {
       output.write("        Vacuum  Tau_R = {:e} s   eta = {:e} Ohm m\n", vac_lund * Tbar,
@@ -964,8 +978,9 @@ protected:
       } else {
         SAVE_ONCE(rmp_Psi);
       }
-    } else
+    } else {
       rmp_Psi = 0.0;
+    }
 
     /**************** CALCULATE METRICS ******************/
 
@@ -1056,11 +1071,12 @@ protected:
 
     // Diamagnetic phi0
     if (diamag_phi0) {
-      if (constn0)
+      if (constn0) {
         phi0 = -0.5 * dnorm * P0 / B0;
-      else
+      } else {
         // Stationary equilibrium plasma. ExB velocity balances diamagnetic drift
         phi0 = -0.5 * dnorm * P0 / B0 / N0;
+      }
       SAVE_ONCE(phi0);
     }
 
@@ -1219,8 +1235,9 @@ protected:
         }
 
         // Set to zero in the core
-        if (rmp_vac_mask)
+        if (rmp_vac_mask) {
           rmp_Psi *= vac_mask;
+        }
       } else {
         // Set to zero in the core region
         if (rmp_vac_mask) {
@@ -1296,8 +1313,9 @@ protected:
     if (!evolve_jpar) {
       // Get J from Psi
       Jpar = Delp2(Psi);
-      if (include_rmp)
+      if (include_rmp) {
         Jpar += Delp2(rmp_Psi);
+      }
 
       Jpar.applyBoundary();
       mesh->communicate(Jpar);
@@ -1306,14 +1324,18 @@ protected:
         // Zero j in boundary regions. Prevents vorticity drive
         // at the boundary
 
-        for (int i = 0; i < jpar_bndry_width; i++)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = 0; i < jpar_bndry_width; i++) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
-              if (mesh->firstX())
+              if (mesh->firstX()) {
                 Jpar(i, j, k) = 0.0;
-              if (mesh->lastX())
+              }
+              if (mesh->lastX()) {
                 Jpar(mesh->LocalNx - 1 - i, j, k) = 0.0;
+              }
             }
+          }
+        }
       }
 
       // Smooth j in x
@@ -1335,14 +1357,18 @@ protected:
         // Zero jpar2 in boundary regions. Prevents vorticity drive
         // at the boundary
 
-        for (int i = 0; i < jpar_bndry_width; i++)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = 0; i < jpar_bndry_width; i++) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
-              if (mesh->firstX())
+              if (mesh->firstX()) {
                 Jpar2(i, j, k) = 0.0;
-              if (mesh->lastX())
+              }
+              if (mesh->lastX()) {
                 Jpar2(mesh->LocalNx - 1 - i, j, k) = 0.0;
+              }
             }
+          }
+        }
       }
     }
 
@@ -1425,11 +1451,13 @@ protected:
                        + bracket(interp_to(P0, loc), Psi, bm_mag));
       }
 
-      if (diamag_phi0)
+      if (diamag_phi0) {
         ddt(Psi) -= bracket(interp_to(phi0, loc), Psi, bm_exb); // Equilibrium flow
+      }
 
-      if (withflow) // net flow
+      if (withflow) { // net flow
         ddt(Psi) -= V_dot_Grad(V0net, Psi);
+      }
 
       if (diamag_grad_t) {
         // grad_par(T_e) correction
@@ -1486,22 +1514,26 @@ protected:
       ddt(U) -= SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
     }
 
-    if (withflow && K_H_term) // K_H_term
+    if (withflow && K_H_term) { // K_H_term
       ddt(U) -= b0xGrad_dot_Grad(phi, U0);
+    }
 
-    if (diamag_phi0)
+    if (diamag_phi0) {
       ddt(U) -= b0xGrad_dot_Grad(phi0, U); // Equilibrium flow
+    }
 
-    if (withflow) // net flow
+    if (withflow) { // net flow
       ddt(U) -= V_dot_Grad(V0net, U);
+    }
 
     if (nonlinear) {
       ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
     }
 
     // Viscosity terms
-    if (viscos_par > 0.0)
+    if (viscos_par > 0.0) {
       ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
+    }
 
     // xqx: parallel hyper-viscous diffusion for vorticity
     if (diffusion_u4 > 0.0) {
@@ -1512,8 +1544,9 @@ protected:
       ddt(U) -= diffusion_u4 * D2DY2(tmpU2);
     }
 
-    if (viscos_perp > 0.0)
+    if (viscos_perp > 0.0) {
       ddt(U) += viscos_perp * Delp2(U); // Perpendicular viscosity
+    }
 
     // Hyper-viscosity
     if (hyperviscos > 0.0) {
@@ -1604,19 +1637,23 @@ protected:
     if (evolve_pressure) {
       ddt(P) -= b0xGrad_dot_Grad(phi, P0);
 
-      if (diamag_phi0)
+      if (diamag_phi0) {
         ddt(P) -= b0xGrad_dot_Grad(phi0, P); // Equilibrium flow
+      }
 
-      if (withflow) // net flow
+      if (withflow) { // net flow
         ddt(P) -= V_dot_Grad(V0net, P);
+      }
 
-      if (nonlinear)
+      if (nonlinear) {
         ddt(P) -= bracket(phi, P, bm_exb) * B0; // Advection
+      }
     }
 
     // Parallel diffusion terms
-    if (diffusion_par > 0.0)
+    if (diffusion_par > 0.0) {
       ddt(P) += diffusion_par * Grad2_par2(P); // Parallel diffusion
+    }
 
     // xqx: parallel hyper-viscous diffusion for pressure
     if (diffusion_p4 > 0.0) {
@@ -1657,8 +1694,9 @@ protected:
       // ddt(Vpar) = -0.5*Grad_parP(P + P0, loc);
       ddt(Vpar) = -0.5 * (Grad_par(P, loc) + Grad_par(P0, loc));
 
-      if (nonlinear)
+      if (nonlinear) {
         ddt(Vpar) -= bracket(interp_to(phi, loc), Vpar, bm_exb) * B0; // Advection
+      }
     }
 
     if (filter_z) {
@@ -1666,8 +1704,9 @@ protected:
 
       if (evolve_jpar) {
         ddt(Jpar) = filter(ddt(Jpar), filter_z_mode);
-      } else
+      } else {
         ddt(Psi) = filter(ddt(Psi), filter_z_mode);
+      }
 
       ddt(U) = filter(ddt(U), filter_z_mode);
       ddt(P) = filter(ddt(P), filter_z_mode);
@@ -1677,8 +1716,9 @@ protected:
       // Low-pass filter, keeping n up to low_pass_z
       if (evolve_jpar) {
         ddt(Jpar) = lowPass(ddt(Jpar), low_pass_z, zonal_field);
-      } else
+      } else {
         ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
+      }
 
       ddt(U) = lowPass(ddt(U), low_pass_z, zonal_flow);
       ddt(P) = lowPass(ddt(P), low_pass_z, zonal_bkgd);
@@ -1686,14 +1726,17 @@ protected:
 
     if (damp_width > 0) {
       for (int i = 0; i < damp_width; i++) {
-        for (int j = 0; j < mesh->LocalNy; j++)
+        for (int j = 0; j < mesh->LocalNy; j++) {
           for (int k = 0; k < mesh->LocalNz; k++) {
-            if (mesh->firstX())
+            if (mesh->firstX()) {
               ddt(U)(i, j, k) -= U(i, j, k) / damp_t_const;
-            if (mesh->lastX())
+            }
+            if (mesh->lastX()) {
               ddt(U)(mesh->LocalNx - 1 - i, j, k) -=
                   U(mesh->LocalNx - 1 - i, j, k) / damp_t_const;
+            }
           }
+        }
       }
     }
 
@@ -1722,18 +1765,22 @@ protected:
     if (jpar_bndry_width > 0) {
       // Boundary in jpar
       if (mesh->firstX()) {
-        for (int i = jpar_bndry_width; i >= 0; i--)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = jpar_bndry_width; i >= 0; i--) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
               Jrhs(i, j, k) = 0.5 * Jrhs(i + 1, j, k);
             }
+          }
+        }
       }
       if (mesh->lastX()) {
-        for (int i = mesh->LocalNx - jpar_bndry_width - 1; i < mesh->LocalNx; i++)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = mesh->LocalNx - jpar_bndry_width - 1; i < mesh->LocalNx; i++) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
               Jrhs(i, j, k) = 0.5 * Jrhs(i - 1, j, k);
             }
+          }
+        }
       }
     }
 
@@ -1744,8 +1791,9 @@ protected:
 
     // Second matrix, solving Alfven wave dynamics
     static std::unique_ptr<InvertPar> invU{nullptr};
-    if (!invU)
-      invU = InvertPar::Create();
+    if (!invU) {
+      invU = InvertPar::create();
+    }
 
     invU->setCoefA(1.);
     invU->setCoefB(-SQ(gamma) * B0 * B0);

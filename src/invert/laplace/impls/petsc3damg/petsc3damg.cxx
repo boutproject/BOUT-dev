@@ -23,7 +23,9 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-#ifdef BOUT_HAS_PETSC
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_PETSC
 
 #include "petsc3damg.hxx"
 
@@ -42,7 +44,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
   indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh,
 						   getStencil(localmesh, lowerY, upperY))),
-  operator3D(indexer), kspInitialised(false)
+  operator3D(indexer), kspInitialised(false),
+  lib(opt==nullptr ? &(Options::root()["laplace"]) : opt)
 {
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
@@ -255,6 +258,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   BOUT_FOR(i, indexer->getRegionUpperY()) {
     solution.yup()[i] = solution[i];
   }
+
+  checkData(solution);
+
   return solution;
 }
 
@@ -451,7 +457,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     PCSetType(pc, pctype.c_str());
     PCGAMGSetSymGraph(pc, PETSC_TRUE);
   }
-  KSPSetFromOptions(ksp);
+  lib.setOptionsFromInputFile(ksp);
 
   updateRequired = false;
 }

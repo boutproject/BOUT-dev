@@ -39,7 +39,7 @@ do
 	    TESTS=1
 	    ;;
         t) ### Set target to build
-            MAIN_TARGET="$OPTARG"
+            MAIN_TARGET="$MAIN_TARGET $OPTARG"
             ;;
         5) ### Run the update to version 5 script
             UPDATE_SCRIPT=1
@@ -102,6 +102,7 @@ export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
 for target in ${MAIN_TARGET[@]}
 do
     make_exit=0
+    echo "make $target"
     time make $target || make_exit=$?
     if [[ $make_exit -gt 0 ]]; then
 	make clean > /dev/null
@@ -115,11 +116,6 @@ do
 	exit $make_exit
     fi
 done
-
-if [[ ${TESTS} == 1 ]]
-then
-    time make build-check
-fi
 
 if [[ ${UNIT} == 1 ]]
 then

@@ -23,6 +23,8 @@
 * 
 **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <globals.hxx>
 #include <bout/solver.hxx>
 #include <difops.hxx>
@@ -293,18 +295,22 @@ const Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D &f, CELL_LOC outloc)
 }
 
 const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f, CELL_LOC outloc) {
+  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
 const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, CELL_LOC outloc) {
+  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
 const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, CELL_LOC outloc) {
+  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
 const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC outloc) {
+  if (outloc == CELL_DEFAULT) outloc = f.getLocation();
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
@@ -420,7 +426,7 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A, CELL_LOC ou
 
   ASSERT1(result.getLocation() == outloc);
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
   return result;
@@ -457,7 +463,7 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A, CELL_LOC ou
 
   result /= (metric->J*sqrt(metric->g_22));
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
 
@@ -489,8 +495,8 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
 
   result /= (metric->J*sqrt(metric->g_22));
-  
-#ifdef TRACK
+
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+p.name+","+A.name+")";
 #endif
   
@@ -529,7 +535,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 
   result /=  (metric->J*sqrt(metric->g_22));
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
 

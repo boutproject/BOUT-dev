@@ -36,6 +36,8 @@
 #ifndef __BOUT_H__
 #define __BOUT_H__
 
+#include "bout/build_config.hxx"
+
 #include "boutcomm.hxx"
 #include "datafile.hxx"
 #include "difops.hxx" // Differential operators
@@ -53,13 +55,6 @@
 #include "bout/mesh.hxx"
 #include "bout/solver.hxx"
 #include "bout/version.hxx"
-
-#ifndef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
-// Include using statement by default in user code.
-// Macro allows us to include bout.hxx or physicsmodel.hxx without the using
-// statement in library code.
-using namespace bout::globals;
-#endif // BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 // BOUT++ main functions
 
@@ -172,19 +167,9 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
 } // namespace bout
 
 /*!
- * Run the given solver. This function is only used
- * for old-style physics models with standalone C functions
- * The main() function in boutmain.hxx calls this function
- * to set up the RHS function and add bout_monitor.
- *
- */
-int bout_run(Solver* solver, rhsfunc physics_run);
-
-/*!
  * Monitor class for output. Called by the solver every output timestep.
  *
- * This is added to the solver in bout_run (for C-style models)
- * or in bout/physicsmodel.hxx
+ * This is added to the solver in bout/physicsmodel.hxx
  */
 class BoutMonitor : public Monitor {
 public:

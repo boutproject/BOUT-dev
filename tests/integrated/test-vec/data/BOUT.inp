@@ -3,8 +3,6 @@
 nout = 1         # Number of output timesteps
 timestep = 1e-10 # Time between outputs
 
-dump_format="nc" # Write NetCDF format files
-
 # Setting the z coordinate
 ZMIN = 0.0
 ZMAX = 1.0 # dz = 2*pi(ZMAX - ZMIN)/(MZ - 1)

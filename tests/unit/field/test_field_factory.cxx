@@ -479,6 +479,23 @@ TYPED_TEST(FieldFactoryCreationTest, CreateMaxX) {
   EXPECT_TRUE(IsFieldEqual(output, 4.));
 }
 
+TYPED_TEST(FieldFactoryCreationTest, CreateClampX) {
+  // Check that the first argument is within low and high limits
+  // Also check that each input can be an expression
+  
+  auto output = this->create("clamp(1 + 1, 1, 3)");
+
+  EXPECT_TRUE(IsFieldEqual(output, 2.));
+
+  output = this->create("clamp(-1, 2 - 1, 3)");
+
+  EXPECT_TRUE(IsFieldEqual(output, 1.));
+  
+  output = this->create("clamp(5, 1, 6 / 2)");
+
+  EXPECT_TRUE(IsFieldEqual(output, 3.));
+}
+
 TYPED_TEST(FieldFactoryCreationTest, CreatePowX) {
   auto output = this->create("power(x, 2)");
 
@@ -718,6 +735,12 @@ TEST_F(FieldFactoryTest, MinArgs) {
 
 TEST_F(FieldFactoryTest, MaxArgs) {
   EXPECT_THROW(factory.parse("max()"), ParseException);
+}
+
+TEST_F(FieldFactoryTest, ClampArgs) {
+  EXPECT_THROW(factory.parse("clamp()"), ParseException);
+  EXPECT_THROW(factory.parse("clamp(1)"), ParseException);
+  EXPECT_THROW(factory.parse("clamp(1,2)"), ParseException);
 }
 
 TEST_F(FieldFactoryTest, PowerArgs) {

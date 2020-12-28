@@ -1,3 +1,5 @@
+#include "bout/build_config.hxx"
+
 #include "gtest/gtest.h"
 
 #include "dcomplex.hxx"
@@ -10,7 +12,7 @@
 #include <iostream>
 #include <numeric>
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 class FFTTest : public ::testing::TestWithParam<int> {
 public:
   FFTTest()

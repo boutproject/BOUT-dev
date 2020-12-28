@@ -19,6 +19,7 @@
 using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
+using bout::globals::mesh;
 
 #define ITERATOR_TEST_BLOCK(NAME, ...)                                                   \
   {                                                                                      \
@@ -69,31 +70,16 @@ int main(int argc, char **argv) {
 		      result = DDX(a);
 		      );
 
-  ITERATOR_TEST_BLOCK(
-		      "DDX C2",
-		      result = DDX(a, CELL_DEFAULT, DIFF_C2);
-		      );
+  ITERATOR_TEST_BLOCK("DDX C2", result = DDX(a, CELL_DEFAULT, "DIFF_C2"););
 
-  ITERATOR_TEST_BLOCK(
-		      "DDX C4",
-		      result = DDX(a, CELL_DEFAULT, DIFF_C4);
-		      );
-  
-  ITERATOR_TEST_BLOCK(
-		      "DDX S2",
-		      result = DDX(a, CELL_DEFAULT, DIFF_S2);
-		      );
+  ITERATOR_TEST_BLOCK("DDX C4", result = DDX(a, CELL_DEFAULT, "DIFF_C4"););
 
-  ITERATOR_TEST_BLOCK(
-		      "DDX W2",
-		      result = DDX(a, CELL_DEFAULT, DIFF_W2);
-		      );
+  ITERATOR_TEST_BLOCK("DDX S2", result = DDX(a, CELL_DEFAULT, "DIFF_S2"););
 
-  ITERATOR_TEST_BLOCK(
-		      "DDX W3",
-		      result = DDX(a, CELL_DEFAULT, DIFF_W3);
-		      );
-  
+  ITERATOR_TEST_BLOCK("DDX W2", result = DDX(a, CELL_DEFAULT, "DIFF_W2"););
+
+  ITERATOR_TEST_BLOCK("DDX W3", result = DDX(a, CELL_DEFAULT, "DIFF_W3"););
+
   if (profileMode) {
      int nthreads = 0;
 #ifdef _OPENMP

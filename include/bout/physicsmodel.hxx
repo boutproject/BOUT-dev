@@ -45,6 +45,8 @@ class PhysicsModel;
 #include "utils.hxx"
 #include "bout/macro_for_each.hxx"
 
+class Mesh;
+
 /*!
   Base class for physics models
  */
@@ -57,6 +59,9 @@ public:
   
   virtual ~PhysicsModel() = default;
   
+  Mesh* mesh{nullptr};
+  Datafile& dump;
+
   /*!
    * Initialse the model, calling the init() and postInit() methods
    *
@@ -237,10 +242,10 @@ protected:
    * To evolve the state, the solver will set \p var, and the user-supplied
    * rhs() function should calculate ddt(var).
    */
-  void bout_solve(Field2D &var, const char *name);
-  void bout_solve(Field3D &var, const char *name);
-  void bout_solve(Vector2D &var, const char *name);
-  void bout_solve(Vector3D &var, const char *name);
+  void bout_solve(Field2D &var, const char *name, const std::string& description="");
+  void bout_solve(Field3D &var, const char *name, const std::string& description="");
+  void bout_solve(Vector2D &var, const char *name, const std::string& description="");
+  void bout_solve(Vector3D &var, const char *name, const std::string& description="");
 
   /// Stores the state for restarting
   Datafile restart; 
@@ -306,10 +311,12 @@ private:
 #define BOUTMAIN(ModelClass)                                       \
   int main(int argc, char** argv) {                                \
     int init_err = BoutInitialise(argc, argv);                     \
-    if (init_err < 0)                                              \
+    if (init_err < 0) {                                            \
       return 0;                                                    \
-    else if (init_err > 0)                                         \
+    }                                                              \
+    if (init_err > 0) {                                            \
       return init_err;                                             \
+    }                                                              \
     try {                                                          \
       auto model = bout::utils::make_unique<ModelClass>();         \
       auto solver = Solver::create();                              \

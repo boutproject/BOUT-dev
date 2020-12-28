@@ -4,6 +4,9 @@
 # Run the test, compare results against the benchmark
 #
 
+# requires: netcdf
+# cores: 2
+
 from __future__ import print_function
 from __future__ import division
 nproc = 2       # Number of processors to run on
