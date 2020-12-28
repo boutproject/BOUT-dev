@@ -29,6 +29,10 @@ For (sometimes) more useful error messages, there is the
 ``--enable-track`` option. This keeps track of the names of variables
 and includes these in error messages.
 
+To get a backtrace, you can set the environment variable
+``BOUT_SHOW_BACKTRACE`` in order for the exception to include the
+backtrace.
+
 To enable optimization, configure with ``--enable-optimize=3``.
 This will try to set appropriate flags, but may not set the best ones.
 This should work well for gcc. Similar to checks, different levels can
