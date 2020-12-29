@@ -382,9 +382,16 @@ class FakeGridDataSource : public GridDataSource {
   bool get(Mesh*, BoutReal&, const std::string&, BoutReal = 0.0) override {
     return false;
   }
-  bool get(Mesh*, Field2D&, const std::string&, BoutReal = 0.0) override { return false; }
-  bool get(Mesh*, Field3D&, const std::string&, BoutReal = 0.0) override { return false; }
-  bool get(Mesh*, FieldPerp&, const std::string&, BoutReal = 0.0) override {
+  bool get(Mesh*, Field2D&, const std::string&, BoutReal = 0.0,
+           CELL_LOC = CELL_DEFAULT) override {
+    return false;
+  }
+  bool get(Mesh*, Field3D&, const std::string&, BoutReal = 0.0,
+           CELL_LOC = CELL_DEFAULT) override {
+    return false;
+  }
+  bool get(Mesh*, FieldPerp&, const std::string&, BoutReal = 0.0,
+           CELL_LOC = CELL_DEFAULT) override {
     return false;
   }
 

@@ -160,8 +160,7 @@ int getAtLoc(Mesh* mesh, Field2D &var, const std::string& name,
     const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
 
   checkStaggeredGet(mesh, name, suffix);
-  int result = mesh->get(var, name+suffix, default_value);
-  var.setLocation(location);
+  int result = mesh->get(var, name+suffix, default_value, location);
 
   return result;
 }
@@ -922,7 +921,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
     bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
-    if (localmesh->get(d2x, "d2x"+suffix)) {
+    if (localmesh->get(d2x, "d2x"+suffix, 0.0, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
       d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
@@ -937,7 +936,7 @@ int Coordinates::geometry(bool recalculate_staggered,
       d1_dx = -d2x / (dx * dx);
     }
 
-    if (localmesh->get(d2y, "d2y"+suffix)) {
+    if (localmesh->get(d2y, "d2y"+suffix, 0.0, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
       d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
@@ -1185,14 +1184,13 @@ void Coordinates::setParallelTransform(Options* options) {
     if (localmesh->sourceHasVar("dx"+suffix)) {
       // Grid file has variables at this location, so should be able to read
       checkStaggeredGet(localmesh, "zShift", suffix);
-      if (localmesh->get(zShift, "zShift"+suffix)) {
+      if (localmesh->get(zShift, "zShift"+suffix, 0.0, location)) {
         // No zShift variable. Try qinty in BOUT grid files
-        if (localmesh->get(zShift, "qinty"+suffix)) {
+        if (localmesh->get(zShift, "qinty"+suffix, 0.0, location)) {
           // Failed to find either variable, cannot use ShiftedMetric
           throw BoutException("Could not read zShift"+suffix+" from grid file");
         }
       }
-      zShift.setLocation(location);
     } else {
       Field2D zShift_centre;
       if (localmesh->get(zShift_centre, "zShift")) {
