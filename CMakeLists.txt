@@ -689,7 +689,7 @@ target_compile_definitions(bout++
 function(bout_add_integrated_test TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
   set(oneValueArgs EXECUTABLE_NAME)
-  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES)
+  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES TESTARGS)
   cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   foreach (REQUIREMENT IN LISTS BOUT_TEST_OPTIONS_REQUIRES)
@@ -722,13 +722,13 @@ function(bout_add_integrated_test TESTNAME)
 
   # Set the actual test command
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
-    add_test(NAME ${TESTNAME} COMMAND ./runtest)
+    add_test(NAME ${TESTNAME} COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS})
     set_tests_properties(${TESTNAME} PROPERTIES
       ENVIRONMENT PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
       )
     bout_copy_file(runtest)
   else()
-    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
+    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME} ${BOUT_TEST_OPTIONS_TESTARGS})
   endif()
 
   # Copy the input file if needed
