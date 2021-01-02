@@ -455,21 +455,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
   // Set the run ID
   run_restart_from = run_id; // Restarting from the previous run ID
-
-  if (MYPE == 0) {
-    std::random_device rd;
-    auto seed_data = std::array<int, std::mt19937::state_size> {};
-    std::generate(std::begin(seed_data), std::end(seed_data), std::ref(rd));
-    std::seed_seq seq(std::begin(seed_data), std::end(seed_data));
-    std::mt19937 generator(seq);
-    uuids::uuid_random_generator gen{generator};
-
-    run_id = uuids::to_string(gen()); // Different each time the simulation is run
-  }
-
-  // All ranks have same run_id
-  // Standard representation of UUID is always 36 characters
-  MPI_Bcast(const_cast<char*>(run_id.data()), 36, MPI_CHAR, 0, BoutComm::get());
+  run_id = createRunId();
 
   // Put the run ID into the options tree
   // Forcing in case the value has been previously set
@@ -541,6 +527,29 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   }
 
   return status;
+}
+
+std::string Solver::createRunId() {
+
+  std::string result;
+  result.resize(36);
+
+  if (MYPE == 0) {
+    std::random_device rd;
+    auto seed_data = std::array<int, std::mt19937::state_size> {};
+    std::generate(std::begin(seed_data), std::end(seed_data), std::ref(rd));
+    std::seed_seq seq(std::begin(seed_data), std::end(seed_data));
+    std::mt19937 generator(seq);
+    uuids::uuid_random_generator gen{generator};
+
+    result = uuids::to_string(gen()); // Different each time the simulation is run
+  }
+
+  // All ranks have same run_id
+  // Standard representation of UUID is always 36 characters
+  MPI_Bcast(const_cast<char*>(result.data()), 36, MPI_CHAR, 0, BoutComm::get());
+
+  return result;
 }
 
 /**************************************************************************
