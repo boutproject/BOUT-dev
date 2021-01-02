@@ -1353,6 +1353,20 @@ bool Datafile::write() {
       }
     }
 
+    // Vectors of integers
+    for(const auto& var : int_vec_arr) {
+      if (not var.description.empty()) {
+        file->setAttribute(var.name, "description", var.description);
+      }
+    }
+
+    // String variables
+    for (const auto& var : string_arr) {
+      if (not var.description.empty()) {
+        file->setAttribute(var.name, "description", var.description);
+      }
+    }
+
     // BoutReal variables
     for(const auto& var : BoutReal_arr) {
       if (not var.description.empty()) {
