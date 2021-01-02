@@ -551,7 +551,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       const bool is_dd = levels[max_level].is_diagonally_dominant(*this);
 
       bool global_is_dd;
-      MPI_Allreduce(&is_dd, &global_is_dd, 1, MPI::BOOL, MPI_LAND, BoutComm::get());
+      MPI_Allreduce(&is_dd, &global_is_dd, 1, MPI_C_BOOL, MPI_LAND, BoutComm::get());
 
       if (global_is_dd) {
         throw BoutException("LaplaceIPT error: Not converged within maxits={:d} "
