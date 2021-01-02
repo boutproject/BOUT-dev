@@ -101,7 +101,7 @@ void Solver::setModel(PhysicsModel *m) {
  * Add fields
  **************************************************************************/
 
-void Solver::add(Field2D& v, const std::string& name) {
+void Solver::add(Field2D& v, const std::string& name, const std::string& description) {
   TRACE("Adding 2D field: Solver::add({:s})", name);
 
 #if CHECK > 0
@@ -122,6 +122,7 @@ void Solver::add(Field2D& v, const std::string& name) {
   d.F_var = &ddt(v);
   d.location = v.getLocation();
   d.name = name;
+  d.description = description;
 
 #if BOUT_USE_TRACK
   v.name = name;
@@ -158,7 +159,7 @@ void Solver::add(Field2D& v, const std::string& name) {
   f2d.emplace_back(std::move(d));
 }
 
-void Solver::add(Field3D& v, const std::string& name) {
+void Solver::add(Field3D& v, const std::string& name, const std::string& description) {
   TRACE("Adding 3D field: Solver::add({:s})", name);
 
   Mesh* mesh = v.getMesh();
@@ -186,6 +187,7 @@ void Solver::add(Field3D& v, const std::string& name) {
   d.F_var = &ddt(v);
   d.location = v.getLocation();
   d.name = name;
+  d.description = description;
 
 #if BOUT_USE_TRACK
   v.name = name;
@@ -217,7 +219,7 @@ void Solver::add(Field3D& v, const std::string& name) {
   f3d.emplace_back(std::move(d));
 }
 
-void Solver::add(Vector2D& v, const std::string& name) {
+void Solver::add(Vector2D& v, const std::string& name, const std::string& description) {
   TRACE("Adding 2D vector: Solver::add({:s})", name);
 
   if (varAdded(name))
@@ -236,6 +238,7 @@ void Solver::add(Vector2D& v, const std::string& name) {
   d.F_var = &ddt(v);
   d.covariant = v.covariant;
   d.name = name;
+  d.description = description;
 
   /// NOTE: No initial_profile call, because this will be done for each
   ///       component individually.
@@ -256,7 +259,7 @@ void Solver::add(Vector2D& v, const std::string& name) {
   v2d.emplace_back(std::move(d));
 }
 
-void Solver::add(Vector3D& v, const std::string& name) {
+void Solver::add(Vector3D& v, const std::string& name, const std::string& description) {
   TRACE("Adding 3D vector: Solver::add({:s})", name);
 
   if (varAdded(name))
@@ -275,6 +278,7 @@ void Solver::add(Vector3D& v, const std::string& name) {
   d.F_var = &ddt(v);
   d.covariant = v.covariant;
   d.name = name;
+  d.description = description;
 
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
@@ -585,15 +589,31 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
   // Add 2D and 3D evolving fields to output file
   for(const auto& f : f2d) {
     // Add to dump file (appending)
-    outputfile.add(*(f.var), f.name.c_str(), save_repeat);
+    outputfile.add(*(f.var), f.name.c_str(), save_repeat, f.description);
   }  
   for(const auto& f : f3d) {
     // Add to dump file (appending)
-    outputfile.add(*(f.var), f.name.c_str(), save_repeat);
+    outputfile.add(*(f.var), f.name.c_str(), save_repeat, f.description);
     
     if(mms) {
       // Add an error variable
       outputfile.add(*(f.MMS_err), ("E_" + f.name).c_str(), save_repeat);
+    }
+  }
+
+  if (save_repeat) {
+    // Do not save if save_repeat=false so we avoid adding diagnostic variables to restart
+    // files, otherwise they might cause errors if the solver type is changed before
+    // restarting
+
+    // Add solver diagnostics to output file
+    for (const auto &d : diagnostic_int) {
+      // Add to dump file (appending)
+      outputfile.add(*(d.var), d.name.c_str(), save_repeat, d.description);
+    }
+    for (const auto &d : diagnostic_BoutReal) {
+      // Add to dump file (appending)
+      outputfile.add(*(d.var), d.name.c_str(), save_repeat, d.description);
     }
   }
 }

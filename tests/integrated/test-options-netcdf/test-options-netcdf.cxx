@@ -40,6 +40,7 @@ int main(int argc, char** argv) {
   Options fields;
   fields["f2d"] = Field2D(1.0);
   fields["f3d"] = Field3D(2.0);
+  fields["fperp"] = FieldPerp(3.0);
   OptionsNetCDF("fields.nc").write(fields);
 
   ///////////////////////////
@@ -49,10 +50,12 @@ int main(int argc, char** argv) {
 
   auto f2d = fields_in["f2d"].as<Field2D>(bout::globals::mesh);
   auto f3d = fields_in["f3d"].as<Field3D>(bout::globals::mesh);
+  auto fperp = fields_in["fperp"].as<FieldPerp>(bout::globals::mesh);
 
   Options fields2;
   fields2["f2d"] = f2d;
   fields2["f3d"] = f3d;
+  fields2["fperp"] = fperp;
   
   // Write out again
   OptionsNetCDF("fields2.nc").write(fields2);

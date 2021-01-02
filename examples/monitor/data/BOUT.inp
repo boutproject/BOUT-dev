@@ -12,6 +12,8 @@ dx = 1.
 dy = 1.
 
 [solver]
+# Set this to true to enable 'my_timestep_monitor'
+monitor_timestep = false
 
 [f]
 

@@ -688,7 +688,7 @@ def showdata(vars, titles=[], legendlabels=[], surf=[], polar=[], tslice=0, t_ar
                      print('Save failed: Check ffmpeg path')
                      raise
         elif movietype == 'gif':
-            anim.save(movie+'.gif',writer = 'imagemagick', fps=fps, dpi=dpi)
+            anim.save(movie,writer = 'imagemagick', fps=fps, dpi=dpi)
         else:
             raise ValueError("Unrecognized file type for movie. Supported types are .mp4 and .gif")
 

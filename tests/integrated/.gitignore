@@ -37,3 +37,8 @@ BOUT.settings
 /test-stopCheck/test_stopCheck
 /test-yupdown/test_yupdown
 /test-coordinates-initialization/test-coordinates-initialization
+/test-griddata-yboundary-guards/data-*/*.nc
+/test-griddata-yboundary-guards/test_griddata
+/test-snb/test_snb
+/test-twistshift-staggered/test-twistshift
+/test-twistshift/test-twistshift

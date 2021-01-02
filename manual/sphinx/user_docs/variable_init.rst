@@ -164,6 +164,10 @@ expressions.
    +------------------------------------------+------------------------------------------------------+
    | ``min(x,y,...)``                         | Minimum (variable arguments)                         |
    +------------------------------------------+------------------------------------------------------+
+   | ``clamp(value, low, high)``              | If value < low, return low;                          |
+   |                                          | If value > high, return high;                        |
+   |                                          | otherwise return value                               |
+   +------------------------------------------+------------------------------------------------------+
    | ``mixmode(x)``                           | A mixture of Fourier modes                           |
    +------------------------------------------+------------------------------------------------------+
    | ``mixmode(x, seed)``                     | seed determines random phase (default 0.5)           |
@@ -322,6 +326,8 @@ which uses ``{arg}`` as the input value. We could then call this function:
                 
     result = [arg = x*2](mycosh)
 
+
+.. _sec-recursive-functions:
 
 Recursive functions
 ~~~~~~~~~~~~~~~~~~~

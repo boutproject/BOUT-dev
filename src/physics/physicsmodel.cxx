@@ -73,21 +73,25 @@ int PhysicsModel::runJacobian(BoutReal t) {
   return (*this.*userjacobian)(t);
 }
 
-void PhysicsModel::bout_solve(Field2D &var, const char *name) {
+void PhysicsModel::bout_solve(Field2D &var, const char *name,
+                              const std::string& description) {
   // Add to solver
-  solver->add(var, name);
+  solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Field3D &var, const char *name) {
-  solver->add(var, name);
+void PhysicsModel::bout_solve(Field3D &var, const char *name,
+                              const std::string& description) {
+  solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector2D &var, const char *name) {
-  solver->add(var, name);
+void PhysicsModel::bout_solve(Vector2D &var, const char *name,
+                              const std::string& description) {
+  solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector3D &var, const char *name) {
-  solver->add(var, name);
+void PhysicsModel::bout_solve(Vector3D &var, const char *name,
+                              const std::string& description) {
+  solver->add(var, name, description);
 }
 
 int PhysicsModel::postInit(bool restarting) {

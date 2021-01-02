@@ -131,8 +131,9 @@ private:
 
     if (nu_perp < 1.e-10) {
       mui_hat = (3. / 10.) * nuiix / wci;
-    } else
+    } else {
       mui_hat = nu_perp;
+    }
 
     if (estatic) {
       beta_p = 1.e-29;

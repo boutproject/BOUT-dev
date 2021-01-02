@@ -41,6 +41,7 @@ inc_dirs="${numpyheader%/*/*} $inc_dirs"
 # Main file
 cat <<EOF
 # distutils: language=c++
+# distutils: language_level=3
 # distutils: include_dirs = $inc_dirs
 # distutils: libraries = $libs
 # distutils: library_dirs = $lib_dirs
@@ -671,6 +672,8 @@ cdef extern from "helper.h":
     void c_laplacian_solve(c.Laplacian *, c.Field3D *, c.Field3D*)
     c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
     void c_mesh_normalise(c.Mesh* , double)
+    void c_set_dz(c.Coordinates*, double)
+    double c_get_dz(c.Coordinates*)
     c.Datafile * c_get_global_datafile()
 
 cdef class Mesh:
@@ -826,7 +829,6 @@ cdef class Coordinates:
     cdef c.Coordinates * cobj
     cdef c.bool isSelfOwned
     cdef public Field2D dx, dy
-    cdef public double dz
     cdef public Field2D J
     cdef public Field2D Bxy
     cdef public Field2D g11, g22, g33, g12, g13, g23
@@ -848,11 +850,20 @@ for f in "dx" "dy" "J" "Bxy" "g11" "g22" "g33" "g12" "g13" "g23" "g_11" "g_22" "
 do
     echo "        self.${f} = f2dFromPtr(&self.cobj.${f})"
 done
-for f in "dz"
-do
-    echo "        self.${f} = self.cobj.${f}"
-done
 cat <<"EOF"
+    cdef getDz(self):
+        return c_get_dz(self.cobj)
+
+    cdef setDz(self, val):
+        c_set_dz(self.cobj, <double> val)
+
+    @property
+    def dz(self):
+        return self.getDz()
+
+    @dz.setter
+    def dz(self, val):
+        self.setDz(val)
 
     def __dealloc__(self):
         self.__mydealloc__()

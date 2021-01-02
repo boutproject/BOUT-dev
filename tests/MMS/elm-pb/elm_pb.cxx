@@ -16,6 +16,7 @@
 #include <interpolation.hxx>
 #include <derivs.hxx>
 #include <sourcex.hxx>
+#include <bout/physicsmodel.hxx>
 #include <bout/constants.hxx>
 #include <msg_stack.hxx>
 #include <utils.hxx>

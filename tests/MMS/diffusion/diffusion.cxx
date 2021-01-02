@@ -1,11 +1,18 @@
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 #include <initialprofiles.hxx>
 #include <derivs.hxx>
 #include <cmath>
 #include "mathematica.h"
 #include <bout/constants.hxx>
 #include <unused.hxx>
+
+class Diffusion : public PhysicsModel {
+protected:
+  int init(bool UNUSED(restarting)) override;
+  int rhs(BoutReal t) override;
+};
+
 
 using bout::globals::mesh;
 
@@ -27,7 +34,7 @@ BoutReal Lx, Ly, Lz;
 
 Coordinates *coord;
 ErrorMonitor error_monitor;
-int physics_init(bool UNUSED(restarting)) {
+int Diffusion::init(bool UNUSED(restarting)) {
   // Get the options
   Options *meshoptions = Options::getRoot()->getSection("mesh");
 
@@ -97,7 +104,7 @@ int physics_init(bool UNUSED(restarting)) {
   return 0;
 }
 
-int physics_run(BoutReal t) {
+int Diffusion::rhs(BoutReal t) {
   mesh->communicate(N); // Communicate guard cells
 
   //update time-dependent boundary conditions
@@ -194,3 +201,6 @@ int ErrorMonitor::call(Solver *UNUSED(solver), BoutReal simtime, int UNUSED(iter
   return 0;
 }
 
+
+
+BOUTMAIN(Diffusion)
