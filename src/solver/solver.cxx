@@ -599,8 +599,16 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
   outputfile.addOnce(iteration, "hist_hi");
 
   // Add run information
-  outputfile.addOnce(run_id, "run_id");
-  outputfile.addOnce(run_restart_from, "run_restart_from");
+  bool save_repeat_run_id = (*options)["save_repeat_run_id"]
+                                .doc("Write run_id and run_restart_from at every output "
+                                     "timestep, to make it easier to concatenate output "
+                                     "data sets in time")
+                                .withDefault(false);
+  outputfile.add(run_id, "run_id", save_repeat_run_id, "UUID for this simulation");
+  outputfile.add(run_restart_from, "run_restart_from", save_repeat_run_id,
+                 "run_id of the simulation this one was restarted from."
+                 "'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' means the run is not a restart, "
+                 "or the previous run did not have a run_id.");
 
   // Add 2D and 3D evolving fields to output file
   for(const auto& f : f2d) {
