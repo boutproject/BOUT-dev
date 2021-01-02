@@ -139,12 +139,13 @@ int Mesh::get(bool &bval, const std::string &name, bool def) {
   return !success;
 }
 
-int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
+int Mesh::get(Field2D &var, const std::string &name, BoutReal def, CELL_LOC location) {
   TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);
 
-  if (source == nullptr or !source->get(this, var, name, def)) {
+  if (source == nullptr or !source->get(this, var, name, def, location)) {
     // set val to default in source==nullptr too:
     var = def;
+    var.setLocation(location);
     return 1;
   }
 
@@ -157,12 +158,14 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
   return 0;
 }
 
-int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communicate) {
+int Mesh::get(Field3D &var, const std::string &name, BoutReal def,
+              bool communicate, CELL_LOC location) {
   TRACE("Loading 3D field: Mesh::get(Field3D, {:s})", name);
 
-  if (source == nullptr or !source->get(this, var, name, def)) {
+  if (source == nullptr or !source->get(this, var, name, def, location)) {
     // set val to default in source==nullptr too:
     var = def;
+    var.setLocation(location);
     return 1;
   }
 
@@ -178,12 +181,13 @@ int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communic
 }
 
 int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
-    bool UNUSED(communicate)) {
+    bool UNUSED(communicate), CELL_LOC location) {
   TRACE("Loading FieldPerp: Mesh::get(FieldPerp, {:s})", name);
 
-  if (source == nullptr or !source->get(this, var, name, def)) {
+  if (source == nullptr or !source->get(this, var, name, def, location)) {
     // set val to default in source==nullptr too:
     var = def;
+    var.setLocation(location);
     return 1;
   }
 
