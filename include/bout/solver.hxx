@@ -42,6 +42,7 @@
 #include "options.hxx"
 #include "unused.hxx"
 #include "bout/monitor.hxx"
+#include "bout/sys/uuid.h"
 
 #include <memory>
 
@@ -410,10 +411,11 @@ protected:
   int iteration{0};
 
   /// Randomly generated run ID
-  int run_id {1};  // 0 = unknown restart, 1 = not restarted
+  /// Initialise with 36 characters so the allocated array is the right size
+  /// Use 'z' because it is not a valid hex character, so this is an invalid UUID
+  std::string run_id = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
   /// The run from which this was restarted.
-  /// Set to zero if no restart
-  int run_restart_from {1};
+  std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
 
   /// Run the user's RHS function
   int run_rhs(BoutReal t);

@@ -453,16 +453,23 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
 
-  // Set the run ID to a random number
+  // Set the run ID
   run_restart_from = run_id; // Restarting from the previous run ID
 
   if (MYPE == 0) {
-    srand(static_cast<unsigned int>(time(nullptr)));
-    do {
-      run_id = rand(); // Different each time the simulation is run
-    } while((run_id == 0) || (run_id == 1)); // Ensure that run_id != 0 or 1
+    std::random_device rd;
+    auto seed_data = std::array<int, std::mt19937::state_size> {};
+    std::generate(std::begin(seed_data), std::end(seed_data), std::ref(rd));
+    std::seed_seq seq(std::begin(seed_data), std::end(seed_data));
+    std::mt19937 generator(seq);
+    uuids::uuid_random_generator gen{generator};
+
+    run_id = uuids::to_string(gen()); // Different each time the simulation is run
   }
-  MPI_Bcast(&run_id, 1, MPI_INT, 0, BoutComm::get()); // All ranks have same run_id
+
+  // All ranks have same run_id
+  // Standard representation of UUID is always 36 characters
+  MPI_Bcast(const_cast<char*>(run_id.data()), 36, MPI_CHAR, 0, BoutComm::get());
 
   // Put the run ID into the options tree
   // Forcing in case the value has been previously set
@@ -471,9 +478,9 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
   /// Run the solver
   output_info.write(_("Running simulation\n\n"));
-  output_info.write("Run ID: {:d}\n", run_id);
-  if (run_restart_from != 0) {
-    output_info.write("Restarting from ID: {:d}\n", run_restart_from);
+  output_info.write("Run ID: {:s}\n", run_id);
+  if (run_restart_from != "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz") {
+    output_info.write("Restarting from ID: {:s}\n", run_restart_from);
   }
 
   time_t start_time = time(nullptr);
