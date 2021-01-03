@@ -62,6 +62,14 @@ with DataFile(os.path.join(restartdir, 'BOUT.restart.0.nc'), create=True) as bas
     base_restart.write('fperp_lower', testvars['fperp_lower'])
     base_restart.write('fperp_upper', testvars['fperp_upper'])
 
+    # make run_id an array of characters because NetCDF doesn't like generic strings
+    run_id = numpy.array(list('36 character run_id test string ****'), dtype='S1')
+    run_id = BoutArray(run_id, attributes = {'bout_type': 'string'})
+    base_restart.write('run_id', run_id)
+    run_restart_from = numpy.array(list('36 character run_restart_from string'), dtype='S1')
+    run_restart_from = BoutArray(run_id, attributes = {'bout_type': 'string'})
+    base_restart.write('run_restart_from', run_restart_from)
+
 success = True
 
 # Note: expect this to fail for 16 processors, because when there are 2
