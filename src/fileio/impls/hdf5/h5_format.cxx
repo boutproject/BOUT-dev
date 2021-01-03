@@ -264,9 +264,7 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
     nd = 0;
   } else if (datatype == "vector" or datatype == "string" or datatype == "FieldX") {
     nd = 1;
-  } else if (datatype == "Field2D") {
-    nd = 2;
-  } else if (datatype == "FieldPerp") {
+  } else if (datatype == "Field2D" or datatype == "FieldPerp") {
     nd = 2;
   } else if (datatype == "Field3D") {
     nd = 3;
