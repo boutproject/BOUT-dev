@@ -270,8 +270,8 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
     nd = 2;
   } else if (datatype == "Field3D") {
     nd = 3;
-  } else throw {
-    BoutException("Unrecognized datatype '"+datatype+"'");
+  } else {
+    throw BoutException("Unrecognized datatype '"+datatype+"'");
   }
 
   if (repeat) {
