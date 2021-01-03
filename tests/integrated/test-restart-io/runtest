@@ -13,6 +13,7 @@ from boututils.run_wrapper import build_and_log, shell, launch_safe
 import numpy
 import os
 from sys import exit
+import uuid
 
 nx = 8
 ny = 16
@@ -63,11 +64,16 @@ with DataFile(os.path.join(restartdir, 'BOUT.restart.0.nc'), create=True) as bas
     base_restart.write('fperp_upper', testvars['fperp_upper'])
 
     # make run_id an array of characters because NetCDF doesn't like generic strings
-    run_id = numpy.array(list('36 character run_id test string ****'), dtype='S1')
+    run_id_string = '36 character run_id test string ****'
+    run_id = numpy.array(list(run_id_string), dtype='S1')
     run_id = BoutArray(run_id, attributes = {'bout_type': 'string'})
     base_restart.write('run_id', run_id)
-    run_restart_from = numpy.array(list('36 character run_restart_from string'), dtype='S1')
-    run_restart_from = BoutArray(run_id, attributes = {'bout_type': 'string'})
+    run_restart_from = numpy.array(
+        list('36 character run_restart_from string'), dtype='S1'
+    )
+    run_restart_from = BoutArray(
+        run_restart_from, attributes = {'bout_type': 'string'}
+    )
     base_restart.write('run_restart_from', run_restart_from)
 
 success = True
@@ -124,6 +130,22 @@ for nproc in [1, 2, 4]:
                 if not yindex_result == yindex_test:
                     success = False
                     print('Fail: yindex_global of '+name+' evolving version is '+str(yindex_result)+' should be '+str(yindex_test))
+
+    # check the run_id
+    run_id = collect('run_id', path='data', info=False)
+    # check run_id can be converted to a valid UUID
+    try:
+        uuid.UUID(run_id.tobytes().decode())
+    except ValueError:
+        success = False
+        print('run_id=' + str(run_id) + ' is not a valid UUID')
+    run_restart_from = collect('run_restart_from', path='data', info=False)
+    if not run_restart_from.tobytes().decode() == run_id_string:
+        success = False
+        print(
+            'incorrect run_restart_from=' + run_restart_from.tobytes().decode()
+            + '. Expected ' + run_id_string
+        )
 
 if success:
     print('=> All restart I/O tests passed')
