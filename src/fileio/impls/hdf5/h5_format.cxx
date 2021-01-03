@@ -258,13 +258,19 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
   }
 
   int nd = 0;
-  if (datatype == "scalar") nd = 0;
-  else if (datatype == "vector") nd = 1;
-  else if (datatype == "FieldX") nd = 1;
-  else if (datatype == "Field2D") nd = 2;
-  else if (datatype == "FieldPerp") nd = 2;
-  else if (datatype == "Field3D") nd = 3;
-  else throw BoutException("Unrecognized datatype '"+datatype+"'");
+  if (datatype == "scalar") {
+    nd = 0;
+  } else if (datatype == "vector" or datatype == "string" or datatype == "FieldX") {
+    nd = 1;
+  } else if (datatype == "Field2D") {
+    nd = 2;
+  } else if (datatype == "FieldPerp") {
+    nd = 2;
+  } else if (datatype == "Field3D") {
+    nd = 3;
+  } else {
+    throw BoutException("Unrecognized datatype '"+datatype+"'");
+  }
 
   if (repeat) {
     // add time dimension
@@ -398,7 +404,7 @@ bool H5Format::addVarIntVec(const std::string &name, bool repeat, size_t size) {
 }
 
 bool H5Format::addVarString(const std::string &name, bool repeat, size_t size) {
-  return addVar(name, repeat, H5T_C_S1, "vector", size);
+  return addVar(name, repeat, H5T_C_S1, "string", size);
 }
 
 bool H5Format::addVarBoutReal(const std::string &name, bool repeat) {
