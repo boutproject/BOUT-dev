@@ -439,22 +439,34 @@ make a note of what configure printed out.
 Python configuration
 ~~~~~~~~~~~~~~~~~~~~
 
-To use Python, you will need the NumPy and SciPy libraries. On Debian or
-Ubuntu these can be installed with::
+To use Python, you will need the dependencies of the `boututils
+<https://github.com/boutproject/boututils>`__ and `boutdata
+<https://github.com/boutproject/boutdata>`__ libraries. The simplest way to get these is
+to install the packages, plus additional developer dependencies, with pip::
 
-    $ sudo apt-get install python-scipy
+    $ pip install --user boutdata setuptools_scm
 
-which should then add all the other dependencies like NumPy. To test if
-everything is installed, run::
+or conda::
 
-    $ python -c "import scipy"
+    $ conda install boutdata setuptools_scm
 
-If not, see the SciPy website https://www.scipy.org for instructions on
-installing.
+You can also install all the packages directly (see the documentation in the `boututils
+<https://github.com/boutproject/boututils>`__ and `boutdata
+<https://github.com/boutproject/boutdata>`__ repos for the most up to date list)
+using pip::
 
-To do this, the path to ``tools/pylib`` should be added to the
-``PYTHONPATH`` environment variable. Instructions for doing this are
-printed at the end of the configure script, for example::
+    $ pip install --user numpy scipy matplotlib sympy netCDF4 h5py future importlib-metadata setuptools_scm
+
+or conda::
+
+    $ conda install numpy scipy matplotlib sympy netcdf4 h5py future importlib-metadata setuptools_scm
+
+They may also be available from your Linux system's package manager.
+
+To use the versions of ``boututils`` and ``boutdata`` provided by BOUT++,  the path to
+``tools/pylib`` should be added to the ``PYTHONPATH`` environment variable. This is not
+necessary if you have installed the ``boututils`` and ``boutdata`` packages.  Instructions
+for doing this are printed at the end of the configure script, for example::
 
     Make sure that the tools/pylib directory is in your PYTHONPATH
     e.g. by adding to your ~/.bashrc file
@@ -465,8 +477,14 @@ To test if this command has worked, try running::
 
     $ python -c "import boutdata"
 
-If this doesn’t produce any error messages then Python is configured
-correctly.
+If this doesn’t produce any error messages then Python is configured correctly.
+
+Note that ``boututils`` and ``boutdata`` are provided by BOUT++ as submodules, so versions
+compatible with the checked out version of BOUT++ are downloaded into the
+``externalpackages`` directory. These are the versions used by the tests run by ``make
+check`` even if you have installed ``boututils`` and ``boutdata`` on your system, so you
+do need the 'developer' dependencies of the packages (e.g. ``setuptools_scm``).
+
 
 .. _sec-config-idl:
 
