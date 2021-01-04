@@ -7188,6 +7188,7 @@ fi
          { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Legacy NetCDF support enabled" >&5
 $as_echo "$as_me:  -> Legacy NetCDF support enabled" >&6;}
          NCPATH="found"
+         BOUT_HAS_NETCDF=yes
          BOUT_HAS_LEGACY_NETCDF=yes
 
 fi

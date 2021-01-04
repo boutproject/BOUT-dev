@@ -40,7 +40,7 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
 #else
     }
 
-#if BOUT_HAS_NETCDF
+#if BOUT_HAS_NETCDF && !BOUT_HAS_LEGACY_NETCDF
     return bout::utils::make_unique<Ncxx4>(mesh_in);
 #else
 
