@@ -40,6 +40,9 @@
   will need to be updated to either use `bout::globals::mesh` or
   `Field::getMesh()` in free
   functions. [\#2042](https://github.com/boutproject/BOUT-dev/pull/2042)
+- `PhysicsModel` expects the options `datadir` and `dump_format` to
+  have been set; this is only a problem if you don't call
+  `BoutInitialise`. [\#2062](https://github.com/boutproject/BOUT-dev/pull/2062)
 
 
 ## [v4.3.1](https://github.com/boutproject/BOUT-dev/tree/v4.3.1) (2020-03-27)
