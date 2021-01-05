@@ -444,7 +444,7 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
   // make the mesh have boundaries to avoid NaNs in guard cells after interpolating
   mesh_from_options.createBoundaries();
 
-  auto coords = mesh_from_options.getCoordinates(CELL_YLOW);
+  auto *coords = mesh_from_options.getCoordinates(CELL_YLOW);
 
   Field2D expected_ylow = makeField<Field2D>(
       [](Field2D::ind_type& index) {

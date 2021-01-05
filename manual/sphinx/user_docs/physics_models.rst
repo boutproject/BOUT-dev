@@ -360,6 +360,13 @@ data files. These will be automatically read and written depending on
 input options (see :ref:`sec-options`). Input options based on these
 names are also used to initialise the variables.
 
+You can add a description of the variable which will be saved as an
+attribute in the output files by adding a third argument to
+``bout_solve()`` e.g.::
+
+    bout_solve(rho, "density", "electron density");
+    bout_solve(B, "B", "total magnetic field strength");
+
 If the name of the variable in the output file is the same as the
 variable name, you can use a shorthand macro. In this case, we could use
 this shorthand for ``v`` and ``B``::
@@ -820,17 +827,23 @@ values to file. For example::
       Field2D Ni0;
       ...
       GRID_LOAD(Ni0);
-      dump.add(Ni0, "Ni0", 0);
+      dump.add(Ni0, "Ni0", false);
 
-where the ’0’ at the end means the variable should only be written to
-file once at the start of the simulation. For convenience there are
+where the ’false’ at the end means the variable should only be written
+to file once at the start of the simulation. For convenience there are
 some macros e.g.::
 
       SAVE_ONCE(Ni0);
 
 is equivalent to::
 
-      dump.add(Ni0, "Ni0", 0);
+      dump.add(Ni0, "Ni0", false);
+
+Optionally, you can add a description to document what the variable
+represents, which will be saved as an attribute of the variable in the
+output file, e.g.::
+
+      dump.add(Ni0, "Ni0", false, "background density profile");
 
 (see `Datafile::add`). In some situations you might also want to write
 some data to a different file. To do this, create a `Datafile` object::
@@ -869,7 +882,7 @@ in ``init``, you then:
        // Not evolving. Every time the file is written, this will be overwritten
        mydata.add(variable, "name");
        // Evolving. Will output a sequence of values
-       mydata.add(variable2, "name2", 1);
+       mydata.add(variable2, "name2", true);
 
 Whenever you want to write values to the file, for example in
 ``rhs`` or a monitor, just call::

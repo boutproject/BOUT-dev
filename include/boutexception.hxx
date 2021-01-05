@@ -21,7 +21,7 @@ void BoutParallelThrowRhsFail(int status, const char* message);
 
 class BoutException : public std::exception {
 public:
-  BoutException(std::string msg) : message(std::move(msg)) { makeBacktrace(); }
+  BoutException(std::string msg);
 
   template <class S, class... Args>
   BoutException(const S& format, const Args&... args)
@@ -53,7 +53,6 @@ protected:
   int trace_size;
   char** messages;
 #endif
-  std::string backtrace_message{};
 
   void makeBacktrace();
 };

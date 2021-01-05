@@ -45,11 +45,14 @@ Note that the order of the defintion within a section isn't important,
 variables can be used before they are defined. All variables are first
 read, and only processed if they are used.
     
-All expressions are calculated in floating point and then converted to
-an integer. The conversion is done by rounding to the nearest integer,
-but throws an error if the floating point value is not within 1e-3 of
-an integer. This is to minimise unexpected behaviour. If you want to
-round any result to an integer, use the ``round`` function:
+Expressions are always calculated in floating point; When expressions
+are used to set integer quantities (such as the number of grid
+points), the expressions are calculated in floating point and then
+converted to an integer. The conversion is done by rounding to the
+nearest integer, but throws an error if the floating point value is
+not within 1e-3 of an integer. This is to minimise unexpected
+behaviour. If you want to round any result to the nearest integer, use
+the ``round`` function:
 
 .. code-block:: cfg
 
@@ -90,14 +93,16 @@ initialisation, common trigonometric and mathematical functions can be
 used. In the above example, some variables depend on each other, for
 example ``dy`` depends on ``L`` and ``ny``. The order in which these
 variables are defined doesn’t matter, so ``L`` could be defined below
-``dy``, but circular dependencies are not allowed. If the variables are
-defined in the same section (as ``dy`` and ``L``) then no section prefix
-is required. To refer to a variable in a different section, prefix the
-variable with the section name e.g. “``mesh:dx``”.
+``dy``, but circular dependencies are not allowed (by default; see
+section :ref:`sec-recursive-functions`). If the variables are defined
+in the same section (as ``dy`` and ``L``) or a parent section, then no
+section prefix is required. To refer to a variable in a different
+section, prefix the variable with the section name, for example,
+``section:variable`` or ``mesh:dx``.
 
 More complex meshes can be created by supplying an input grid file to
 describe the grid points, geometry, and starting profiles. Currently
-BOUT++ supports either NetCDF, HDF5 format binary files. During startup,
+BOUT++ supports NetCDF and HDF5 format binary files. During startup,
 BOUT++ looks in the grid file for the following variables. If any are
 not found, a warning will be printed and the default values used.
 
@@ -330,11 +335,10 @@ Two representations are now supported for 3D variables:
 From EFIT files
 ---------------
 
-An IDL code called “Hypnotoad” has been developed to create BOUT++ input
-files from R-Z equilibria. This can read EFIT ’g’ files, find flux
-surfaces, and calculate metric coefficients. The code is in
-``tools/tokamak_grids/gridgen``, and has its own manual under the
-``doc`` subdirectory.
+A separate tool (in python) called `Hypnotoad <https://github.com/boutproject/hypnotoad>`_
+has been developed to create BOUT++ input files from R-Z equilibria. This can read EFIT ’g’
+(geqdsk) files, find flux surfaces, and calculate metric
+coefficients. 
 
 From ELITE and GATO files
 -------------------------
@@ -365,11 +369,13 @@ generate shifted circle (large aspect ratio) Grad-Shafranov equilibria.
 Zoidberg grid generator
 -----------------------
 
-The Zoidberg grid generator creates inputs for the Flux Coordinate Independent (FCI)
-parallel transform (section :ref:`sec-parallel-transforms`). The domain is
-divided into a set of 2D grids in the X-Z coordinates, and the magnetic field is followed 
-along the Y coordinate from each 2D grid to where it either intersects the forward
-and backward grid, or hits a boundary.
+The `Zoidberg <https://github.com/boutproject/zoidberg>`_ grid
+generator creates inputs for the Flux Coordinate Independent (FCI)
+parallel transform (section :ref:`sec-parallel-transforms`). The
+domain is divided into a set of 2D grids in the X-Z coordinates, and
+the magnetic field is followed along the Y coordinate from each 2D
+grid to where it either intersects the forward and backward grid, or
+hits a boundary.
 
 The simplest code which creates an output file is::
 

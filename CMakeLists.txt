@@ -178,6 +178,8 @@ set(BOUT_SOURCES
   ./src/invert/lapack_routines.cxx
   ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx
   ./src/invert/laplace/impls/cyclic/cyclic_laplace.hxx
+  ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.cxx
+  ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.hxx
   ./src/invert/laplace/impls/multigrid/multigrid_alg.cxx
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.cxx
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.hxx
@@ -699,7 +701,7 @@ target_compile_definitions(bout++
 function(bout_add_integrated_test TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
   set(oneValueArgs EXECUTABLE_NAME)
-  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES CONFLICTS)
+  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES CONFLICTS TESTARGS)
   cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   foreach (REQUIREMENT IN LISTS BOUT_TEST_OPTIONS_REQUIRES)
@@ -739,13 +741,13 @@ function(bout_add_integrated_test TESTNAME)
 
   # Set the actual test command
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
-    add_test(NAME ${TESTNAME} COMMAND ./runtest)
+    add_test(NAME ${TESTNAME} COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS})
     set_tests_properties(${TESTNAME} PROPERTIES
       ENVIRONMENT PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
       )
     bout_copy_file(runtest)
   else()
-    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
+    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME} ${BOUT_TEST_OPTIONS_TESTARGS})
   endif()
 
   # Copy the input file if needed
