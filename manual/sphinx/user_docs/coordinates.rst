@@ -286,7 +286,7 @@ reference location:
 
 The `\texttt{ShiftAngle}` is then defined as the change in
 `\texttt{zShift}` between `y=0` and `y=2\pi`: It is the change in the
-`Z` coordinate after one poloidal circuit in `Y`.
+`z` coordinate after one poloidal circuit in `y`.
 
 Note that `\texttt{zShift}` can be related to the integrated shear `I`:
 
