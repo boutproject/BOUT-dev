@@ -7,8 +7,15 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 #include <invert_parderiv.hxx>
+
+class Test_precon : public PhysicsModel {
+protected:
+  int init(bool UNUSED(restarting)) override;
+  int rhs(BoutReal UNUSED(t)) override;
+};
+
 
 int precon(BoutReal t, BoutReal cj, BoutReal delta); // Preconditioner
 int jacobian(BoutReal t); // Jacobian-vector multiply
@@ -17,7 +24,7 @@ Field3D u, v; // Evolving variables
 
 std::unique_ptr<InvertPar> inv{nullptr}; // Parallel inversion class
 
-int physics_init(bool UNUSED(restarting)) {
+int Test_precon::init(bool UNUSED(restarting)) {
   // Set variables to evolve
   SOLVE_FOR2(u,v);
   
@@ -28,13 +35,13 @@ int physics_init(bool UNUSED(restarting)) {
   solver->setJacobian(jacobian);
   
   // Initialise parallel inversion class
-  inv = InvertPar::Create();
+  inv = InvertPar::create();
   inv->setCoefA(1.0);
   
   return 0;
 }
 
-int physics_run(BoutReal UNUSED(t)) {
+int Test_precon::rhs(BoutReal UNUSED(t)) {
   u.getMesh()->communicate(u, v);
 
   ddt(u) = Grad_par(v);
@@ -107,3 +114,6 @@ int jacobian(BoutReal UNUSED(t)) {
   return 0;
 }
 
+
+
+BOUTMAIN(Test_precon)

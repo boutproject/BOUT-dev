@@ -28,6 +28,7 @@ include(CMakeDependentOption)
 option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+include(BOUT++functions)
 
 option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" ON)
 # Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
@@ -177,6 +178,8 @@ set(BOUT_SOURCES
   ./src/invert/lapack_routines.cxx
   ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx
   ./src/invert/laplace/impls/cyclic/cyclic_laplace.hxx
+  ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.cxx
+  ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.hxx
   ./src/invert/laplace/impls/multigrid/multigrid_alg.cxx
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.cxx
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.hxx
@@ -189,12 +192,10 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/petsc/petsc_laplace.hxx
   ./src/invert/laplace/impls/petsc3damg/petsc3damg.cxx
   ./src/invert/laplace/impls/petsc3damg/petsc3damg.hxx
- ./src/invert/laplace/impls/serial_band/serial_band.cxx
+  ./src/invert/laplace/impls/serial_band/serial_band.cxx
   ./src/invert/laplace/impls/serial_band/serial_band.hxx
   ./src/invert/laplace/impls/serial_tri/serial_tri.cxx
   ./src/invert/laplace/impls/serial_tri/serial_tri.hxx
-  ./src/invert/laplace/impls/shoot/shoot_laplace.cxx
-  ./src/invert/laplace/impls/shoot/shoot_laplace.hxx
   ./src/invert/laplace/impls/spt/spt.cxx
   ./src/invert/laplace/impls/spt/spt.hxx
   ./src/invert/laplace/invert_laplace.cxx
@@ -495,9 +496,24 @@ message(STATUS "PVODE support: ${BOUT_USE_PVODE}")
 set(BOUT_HAS_PVODE ${BOUT_USE_PVODE})
 
 option(BOUT_USE_NETCDF "Enable support for NetCDF output" ON)
+option(BOUT_DOWNLOAD_NETCDF_CXX4 "Download and build netCDF-cxx4" OFF)
 if (BOUT_USE_NETCDF)
-  find_package(NetCDF REQUIRED)
-  target_link_libraries(bout++ PUBLIC NetCDF::NetCDF_CXX)
+  if (BOUT_DOWNLOAD_NETCDF_CXX4)
+    include(FetchContent)
+    FetchContent_Declare(
+      netcdf-cxx4
+      GIT_REPOSITORY https://github.com/ZedThree/netcdf-cxx4
+      GIT_TAG        "ad3e50953190615cb69dcc8a4652f9a88a8499cf"
+      )
+    # Don't build the netcdf tests, they have lots of warnings
+    set(NCXX_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    # Use our own FindnetCDF module which uses nc-config
+    find_package(netCDF REQUIRED)
+    FetchContent_MakeAvailable(netcdf-cxx4)
+  else()
+    find_package(netCDFCxx REQUIRED)
+  endif()
+  target_link_libraries(bout++ PUBLIC netCDF::netcdf-cxx4)
 endif()
 message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
@@ -591,6 +607,14 @@ check_cxx_source_compiles("int main() { const char* name = __PRETTY_FUNCTION__; 
   HAS_PRETTY_FUNCTION)
 set(BOUT_HAS_PRETTY_FUNCTION ${HAS_PRETTY_FUNCTION})
 
+# Locations of the various Python modules, including the generated boutconfig module
+set(BOUT_PYTHONPATH "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib:${CMAKE_CURRENT_SOURCE_DIR}/tools/pylib")
+# Variables for boutconfig module -- note that these will contain
+# generator expressions and CMake targets, and not generally be very
+# useful
+get_target_property(BOUT_LIBS bout++ INTERFACE_LINK_LIBRARIES)
+get_target_property(BOUT_CFLAGS bout++ INTERFACE_INCLUDE_DIRECTORIES)
+
 # We want to compile the actual flags used into the library so we can
 # see them at runtime. This needs a few steps:
 
@@ -639,14 +663,6 @@ target_compile_definitions(bout++
 ##################################################
 # Tests
 
-# Copy FILENAME from source directory to build directory
-macro(bout_test_copy_file FILENAME)
-  configure_file(
-      ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
-      ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}
-      COPYONLY)
-endmacro()
-
 # Add a new integrated test. By default, the executable is named like
 # the first source, stripped of its file extension.
 #
@@ -673,7 +689,7 @@ endmacro()
 function(bout_add_integrated_test TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
   set(oneValueArgs EXECUTABLE_NAME)
-  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES)
+  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES TESTARGS)
   cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   foreach (REQUIREMENT IN LISTS BOUT_TEST_OPTIONS_REQUIRES)
@@ -706,21 +722,24 @@ function(bout_add_integrated_test TESTNAME)
 
   # Set the actual test command
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
-    add_test(NAME ${TESTNAME} COMMAND ./runtest)
-    bout_test_copy_file(runtest)
+    add_test(NAME ${TESTNAME} COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS})
+    set_tests_properties(${TESTNAME} PROPERTIES
+      ENVIRONMENT PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
+      )
+    bout_copy_file(runtest)
   else()
-    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
+    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME} ${BOUT_TEST_OPTIONS_TESTARGS})
   endif()
 
   # Copy the input file if needed
   if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
-    bout_test_copy_file(data/BOUT.inp)
+    bout_copy_file(data/BOUT.inp)
   endif()
 
   # Copy any other needed files
   if (BOUT_TEST_OPTIONS_EXTRA_FILES)
     foreach (FILE ${BOUT_TEST_OPTIONS_EXTRA_FILES})
-      bout_test_copy_file("${FILE}")
+      bout_copy_file("${FILE}")
     endforeach()
   endif()
 
@@ -758,6 +777,11 @@ if(PACKAGE_TESTS)
   # Run all the tests
   add_custom_target(check)
   add_dependencies(check check-unit-tests check-integrated-tests)
+endif()
+
+option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
+if(BOUT_BUILD_EXAMPLES)
+  add_subdirectory(examples)
 endif()
 
 ##################################################
@@ -803,6 +827,7 @@ install(EXPORT bout++Targets
 configure_package_config_file(bout++Config.cmake.in bout++Config.cmake
   INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
   )
+
 install(
   FILES
       "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
@@ -817,6 +842,15 @@ install(
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSUNDIALS.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ResolveCompilerPaths.cmake"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
+  )
+
+configure_package_config_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib/boutconfig/__init__.py
+  INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
+  )
+
+install(
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/boutconfig"
   )
 
 export(EXPORT bout++Targets
@@ -858,7 +892,7 @@ message("
    Make sure that the tools/pylib directory is in your PYTHONPATH
    e.g. by adding to your ~/.bashrc file
 
-       export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH
+       export PYTHONPATH=${BOUT_PYTHONPATH}:\$PYTHONPATH
 
 *** Now run `cmake --build .` to compile BOUT++ ***
 ")

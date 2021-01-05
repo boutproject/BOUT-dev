@@ -35,28 +35,19 @@ bool DataFormat::setLocalOrigin(int x, int y, int z, int UNUSED(offset_x),
   return setGlobalOrigin(x + mesh->OffsetX, y + mesh->OffsetY, z + mesh->OffsetZ);
 }
 
-void DataFormat::writeFieldAttributes(const std::string& name, const Field& f) {
+void DataFormat::writeFieldAttributes(const std::string& name, const Field& f, bool shiftOutput) {
+  // If shiftOutput is true, the data will be written in field-aligned form
+  auto direction_y = shiftOutput ? YDirectionType::Aligned : f.getDirectionY();
+
   setAttribute(name, "cell_location", toString(f.getLocation()));
-  setAttribute(name, "direction_y", toString(f.getDirectionY()));
+  setAttribute(name, "direction_y", toString(direction_y));
   setAttribute(name, "direction_z", toString(f.getDirectionZ()));
 }
 
-void DataFormat::writeFieldAttributes(const std::string& name, const FieldPerp& f) {
-  writeFieldAttributes(name, static_cast<const Field&>(f));
+void DataFormat::writeFieldAttributes(const std::string& name, const FieldPerp& f, bool shiftOutput) {
+  writeFieldAttributes(name, static_cast<const Field&>(f), shiftOutput);
 
-  auto& fieldmesh = *f.getMesh();
-  const int yindex = f.getIndex();
-  const int start = fieldmesh.hasBndryLowerY() ? 0 : fieldmesh.ystart;
-  const int end = fieldmesh.hasBndryUpperY() ? fieldmesh.LocalNy : fieldmesh.yend + 1;
-
-  // Only use the global y index if it's either an interior (grid)
-  // point, or a boundary point. Otherwise, use -1 to indicate a guard
-  // cell or an invalid value. The actual FieldPerp value is still
-  // written to file
-  const int global_yindex =
-      (yindex >= start and yindex < end) ? fieldmesh.getGlobalYIndex(yindex) : -1;
-
-  setAttribute(name, "yindex_global", global_yindex);
+  setAttribute(name, "yindex_global", f.getGlobalIndex());
 }
 
 void DataFormat::readFieldAttributes(const std::string& name, Field& f) {
@@ -83,18 +74,9 @@ void DataFormat::readFieldAttributes(const std::string& name, FieldPerp& f) {
   // Note: don't use DataFormat::mesh variable, because it may be null if the DataFormat
   // is part of a GridFromFile, which is created before the Mesh.
   if (getAttribute(name, "yindex_global", yindex_global)) {
-
-    auto& fieldmesh = *f.getMesh();
-    const int start = fieldmesh.hasBndryLowerY() ? 0 : fieldmesh.ystart;
-    const int end = fieldmesh.hasBndryUpperY() ? fieldmesh.LocalNy : fieldmesh.yend + 1;
-
-    // Only use the global y index if it's either an interior (grid)
-    // point, or a boundary point. Otherwise, use -1 to indicate a
-    // guard cell or an invalid value. This may mean that `f` does not
-    // get allocated
-    const int yindex_local = fieldmesh.getLocalYIndex(yindex_global);
-    const int yindex = (yindex_local >= start and yindex_local < end) ? yindex_local : -1;
-    f.setIndex(yindex);
+    // If yindex_global is a guard cell or otherwise invalid value, f
+    // may not get allocated
+    f.setIndexFromGlobal(yindex_global);
   } else {
     // "yindex_global" wasn't present, so this might be an older
     // file. We use the no-boundary form here, such that we get a

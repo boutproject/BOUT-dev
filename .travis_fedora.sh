@@ -21,8 +21,9 @@ then
     test . != ".$2" && mpi="$2" || mpi=openmpi
     test . != ".$3" && version="$3" || version=latest
     time $cmd pull registry.fedoraproject.org/fedora:$version
-    time $cmd create --name mobydick registry.fedoraproject.org/fedora:$version \
-	 /tmp/BOUT-dev/.travis_fedora.sh $mpi
+    time $cmd create --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
+         --name mobydick registry.fedoraproject.org/fedora:$version \
+	     /tmp/BOUT-dev/.travis_fedora.sh $mpi
     time $cmd cp ${TRAVIS_BUILD_DIR} mobydick:/tmp
     time $cmd start -a mobydick
     exit 0

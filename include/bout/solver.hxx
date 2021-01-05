@@ -125,6 +125,8 @@ public:
 template <typename DerivedType>
 using RegisterSolver = RegisterInFactory<Solver, DerivedType, SolverFactory>;
 
+using RegisterUnavailableSolver = RegisterUnavailableInFactory<Solver, SolverFactory>;
+
 ///////////////////////////////////////////////////////////////////
 
 /*!
@@ -262,10 +264,10 @@ public:
 
   /// Add a variable to be solved. This must be done in the
   /// initialisation stage, before the simulation starts.
-  virtual void add(Field2D& v, const std::string& name);
-  virtual void add(Field3D& v, const std::string& name);
-  virtual void add(Vector2D& v, const std::string& name);
-  virtual void add(Vector3D& v, const std::string& name);
+  virtual void add(Field2D& v, const std::string& name, const std::string& description = "");
+  virtual void add(Field3D& v, const std::string& name, const std::string& description = "");
+  virtual void add(Vector2D& v, const std::string& name, const std::string& description = "");
+  virtual void add(Vector3D& v, const std::string& name, const std::string& description = "");
 
   /// Returns true if constraints available
   virtual bool constraints() { return has_constraints; }
@@ -376,6 +378,7 @@ protected:
     bool covariant{false};               /// For vectors
     bool evolve_bndry{false};            /// Are the boundary regions being evolved?
     std::string name;                    /// Name of the variable
+    std::string description{""};         /// Description of what the variable is
   };
 
   /// Does \p var represent field \p name?
@@ -406,6 +409,26 @@ protected:
   std::vector<VarStr<Field3D>> f3d;
   std::vector<VarStr<Vector2D>> v2d;
   std::vector<VarStr<Vector3D>> v3d;
+
+  /// Vectors of diagnostic variables to save
+  std::vector<VarStr<int>> diagnostic_int;
+  std::vector<VarStr<BoutReal>> diagnostic_BoutReal;
+  void add_int_diagnostic(int &i, const std::string &name,
+                          const std::string &description = "") {
+    VarStr<int> v;
+    v.var = &i;
+    v.name = name;
+    v.description = description;
+    diagnostic_int.emplace_back(std::move(v));
+  };
+  void add_BoutReal_diagnostic(BoutReal &r, const std::string &name,
+                               const std::string &description = "") {
+    VarStr<BoutReal> v;
+    v.var = &r;
+    v.name = name;
+    v.description = description;
+    diagnostic_BoutReal.emplace_back(std::move(v));
+  };
 
   /// Can this solver handle constraints? Set to true if so.
   bool has_constraints{false};

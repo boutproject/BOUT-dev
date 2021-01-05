@@ -315,7 +315,7 @@ def build_and_log(test):
     match = re.search("add_test.(.*) ", contents)
     if match is None:
         raise RuntimeError("Using CMake, but could not determine test name")
-    test_name = match.group(1)
+    test_name = match.group(1).split()[0]
 
     # Now we need to find the build directory. It'll be the first
     # parent containing CMakeCache.txt

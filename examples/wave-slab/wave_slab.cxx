@@ -28,9 +28,10 @@ public:
     if(ShiftXderivs) {
       // No integrated shear in metric
       I = 0.0;
-    }else
+    } else {
       mesh->get(I,    "sinty");
-    
+    }
+
     coords->g11 = pow(Rxy*Bpxy,2.0);
     coords->g22 = 1.0 / pow(hthe,2.0);
     coords->g33 = pow(I,2.0)*coords->g11 + pow(coords->Bxy,2.0)/coords->g11;
