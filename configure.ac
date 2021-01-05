@@ -556,6 +556,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
         CXXFLAGS="$save_CXXFLAGS"
+        BOUT_HAS_NETCDF=yes
         BOUT_HAS_LEGACY_NETCDF=yes
        ])
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
