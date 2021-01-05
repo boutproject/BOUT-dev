@@ -382,9 +382,16 @@ class FakeGridDataSource : public GridDataSource {
   bool get(Mesh*, BoutReal&, const std::string&, BoutReal = 0.0) override {
     return false;
   }
-  bool get(Mesh*, Field2D&, const std::string&, BoutReal = 0.0) override { return false; }
-  bool get(Mesh*, Field3D&, const std::string&, BoutReal = 0.0) override { return false; }
-  bool get(Mesh*, FieldPerp&, const std::string&, BoutReal = 0.0) override {
+  bool get(Mesh*, Field2D&, const std::string&, BoutReal = 0.0,
+           CELL_LOC = CELL_DEFAULT) override {
+    return false;
+  }
+  bool get(Mesh*, Field3D&, const std::string&, BoutReal = 0.0,
+           CELL_LOC = CELL_DEFAULT) override {
+    return false;
+  }
+  bool get(Mesh*, FieldPerp&, const std::string&, BoutReal = 0.0,
+           CELL_LOC = CELL_DEFAULT) override {
     return false;
   }
 
@@ -423,8 +430,8 @@ public:
         bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
-        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
-        false);
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
+    // No call to Coordinates::geometry() needed here
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
     static_cast<FakeMesh*>(bout::globals::mesh)->setGridDataSource(
         new FakeGridDataSource());
@@ -452,7 +459,8 @@ public:
         Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
         Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
         Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
-        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered}, false);
+        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered});
+    // No call to Coordinates::geometry() needed here
     test_coords_staggered->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
   }

@@ -168,7 +168,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
       f.setDirectionY(YDirectionType::Standard);
     }
   }
-  if (location == CELL_YLOW) {
+  if (location == CELL_YLOW and f.getLocation() != CELL_YLOW) {
     auto f_aligned = pt_f->toFieldAligned(f, "RGN_NOX");
     result = interp_to(f_aligned, location, "RGN_NOBNDRY");
     ParallelTransform* pt_result;
@@ -315,8 +315,7 @@ int getAtLoc(Mesh* mesh, Coordinates::FieldMetric& var, const std::string& name,
              const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
 
   checkStaggeredGet(mesh, name, suffix);
-  int result = mesh->get(var, name + suffix, default_value, false);
-  var.setLocation(location);
+  int result = mesh->get(var, name+suffix, default_value, false, location);
 
   return result;
 }
@@ -371,20 +370,14 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric g23, FieldMetric g_11, FieldMetric g_22,
                          FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
                          FieldMetric g_23, FieldMetric ShiftTorsion,
-                         FieldMetric IntShiftTorsion, bool calculate_geometry)
+                         FieldMetric IntShiftTorsion)
     : dx(std::move(dx)), dy(std::move(dy)), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
       g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
       g13(std::move(g13)), g23(std::move(g23)), g_11(std::move(g_11)),
       g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
       g_13(std::move(g_13)), g_23(std::move(g_23)), ShiftTorsion(std::move(ShiftTorsion)),
       IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE) {
-  if (calculate_geometry) {
-    if (geometry()) {
-      throw BoutException("Differential geometry failed\n");
-    }
-  }
-}
+      location(CELL_CENTRE) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
@@ -454,7 +447,12 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   auto getUnaligned = [this](auto& field, const std::string& name,
                              BoutReal default_value) {
     localmesh->get(field, name, default_value, false);
-    return maybeFromFieldAligned(field);
+    if (field.getDirectionY() == YDirectionType::Aligned
+        and transform->canToFromFieldAligned()) {
+      return transform->fromFieldAligned(field);
+    } else {
+      return field.setDirectionY(YDirectionType::Standard);
+    }
   };
 
   auto getUnalignedAtLocation = [this, extrapolate_x, extrapolate_y,
@@ -599,12 +597,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   // Check Bxy
   bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
   bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
-
-  //////////////////////////////////////////////////////
-  /// Calculate Christoffel symbols. Needs communication
-  if (geometry()) {
-    throw BoutException("Differential geometry failed\n");
-  }
 
   if (mesh->get(ShiftTorsion, "ShiftTorsion", 0.0, false)) {
     output_warn.write(
@@ -1029,12 +1021,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
   ShiftTorsion =
       interpolateAndNeumann(coords_in->ShiftTorsion, location, transform.get());
-
-  //////////////////////////////////////////////////////
-  /// Calculate Christoffel symbols. Needs communication
-  if (geometry(false, force_interpolate_from_centre)) {
-    throw BoutException("Differential geometry failed while constructing staggered Coordinates");
-  }
 }
 
 void Coordinates::outputVars(Datafile& file) {
@@ -1240,7 +1226,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
     bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
-    if (localmesh->get(d2x, "d2x" + suffix, 0.0, false)) {
+    if (localmesh->get(d2x, "d2x"+suffix, 0.0, false, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
       d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
@@ -1257,10 +1243,10 @@ int Coordinates::geometry(bool recalculate_staggered,
       d1_dx = -d2x / (dx * dx);
     }
 
-    if (localmesh->get(d2y, "d2y" + suffix, 0.0, false)) {
+    if (localmesh->get(d2y, "d2y"+suffix, 0.0, false, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-      d1_dy = indexDDY(1. / dy); // d/di(1/dy)
+      d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
 
       communicate(d1_dy);
       d1_dy =
@@ -1312,7 +1298,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2y, "d2y", 0.0, false)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-      d1_dy = indexDDY(1. / dy); // d/di(1/dy)
+      d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
 
       communicate(d1_dy);
       d1_dy =
@@ -1551,21 +1537,25 @@ void Coordinates::setParallelTransform(Options* options) {
     if (localmesh->sourceHasVar("dx"+suffix)) {
       // Grid file has variables at this location, so should be able to read
       checkStaggeredGet(localmesh, "zShift", suffix);
-      if (localmesh->get(zShift, "zShift" + suffix, 0.0, false)) {
+      if (localmesh->get(zShift, "zShift"+suffix, 0.0, false, location)) {
         // No zShift variable. Try qinty in BOUT grid files
-        if (localmesh->get(zShift, "qinty" + suffix, 0.0, false)) {
+        if (localmesh->get(zShift, "qinty"+suffix, 0.0, false, location)) {
           // Failed to find either variable, cannot use ShiftedMetric
           throw BoutException("Could not read zShift"+suffix+" from grid file");
         }
       }
-      zShift.setLocation(location);
     } else {
+      if (location == CELL_YLOW and bout::build::use_metric_3d) {
+        throw BoutException("Cannot interpolate zShift to construct ShiftedMetric when "
+                            "using 3d metrics. You must provide zShift_ylow in the grid "
+                            "file.");
+      }
       Field2D zShift_centre;
       if (localmesh->get(zShift_centre, "zShift", 0.0, false)) {
         // No zShift variable. Try qinty in BOUT grid files
         if (localmesh->get(zShift_centre, "qinty", 0.0, false)) {
           // Failed to find either variable, cannot use ShiftedMetric
-          throw BoutException("Could not read zShift"+suffix+" from grid file");
+          throw BoutException("Could not read zShift from grid file");
         }
       }
 
@@ -1636,7 +1626,7 @@ Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
 
 Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) {
-  return indexDDY(f, outloc, method, region) / dy;
+  return bout::derivatives::index::DDY(f, outloc, method, region) / dy;
 };
 
 Coordinates::FieldMetric Coordinates::DDZ(const Field2D& f, CELL_LOC loc,
@@ -2020,55 +2010,4 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
 #else
   throw BoutException("Coordinates::Laplace_perpXY for 3D metric not implemented");
 #endif
-}
-
-Coordinates::FieldMetric Coordinates::indexDDY(const Field2D& f, CELL_LOC outloc,
-                                                     const std::string& method,
-                                                     const std::string& region) {
-#if BOUT_USE_METRIC_3D
-  if (!f.hasParallelSlices()) {
-    const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
-    const Field3D f_aligned = is_unaligned ? transform->toFieldAligned(f, "RGN_NOX") : f;
-    Field3D result = bout::derivatives::index::DDY(f_aligned, outloc, method, region);
-    return (is_unaligned ? maybeFromFieldAligned(result, region) : result);
-  }
-#endif
-  return bout::derivatives::index::DDY(f, outloc, method, region);
-}
-
-Field3D Coordinates::indexDDY(const Field3D& f, CELL_LOC outloc,
-                              const std::string& method, const std::string& region) {
-#if BOUT_USE_METRIC_3D
-  if (!f.hasParallelSlices()) {
-    const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
-    Field3D f_aligned;
-    if (transform->canToFromFieldAligned()) {
-      f_aligned = is_unaligned ? transform->toFieldAligned(f, "RGN_NOX") : f;
-    } else {
-      Field3D f_parallel = f;
-      transform->calcParallelSlices(f_parallel);
-      return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
-    }
-    Field3D result = bout::derivatives::index::DDY(f_aligned, outloc, method, region);
-    return (is_unaligned ? maybeFromFieldAligned(result, region) : result);
-  }
-#endif
-  return bout::derivatives::index::DDY(f, outloc, method, region);
-}
-
-Field3D Coordinates::maybeFromFieldAligned(const Field3D& f, const std::string& region) {
-  ASSERT1(location == f.getLocation());
-  ASSERT1(localmesh == f.getMesh());
-  if (f.getDirectionY() == YDirectionType::Standard) {
-    return f;
-  }
-  if (this->getParallelTransform().canToFromFieldAligned()) {
-    return this->getParallelTransform().fromFieldAligned(f, region);
-  }
-  return copy(f).setDirectionY(YDirectionType::Standard);
-}
-
-Field2D Coordinates::maybeFromFieldAligned(const Field2D& f,
-                                           const std::string& UNUSED(region)) {
-  return f;
 }

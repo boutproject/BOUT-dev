@@ -75,8 +75,7 @@ public:
               FieldMetric Bxy, FieldMetric g11, FieldMetric g22, FieldMetric g33,
               FieldMetric g12, FieldMetric g13, FieldMetric g23, FieldMetric g_11,
               FieldMetric g_22, FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
-              FieldMetric g_23, FieldMetric ShiftTorsion, FieldMetric IntShiftTorsion,
-              bool calculate_geometry = true);
+              FieldMetric g_23, FieldMetric ShiftTorsion, FieldMetric IntShiftTorsion);
 
   Coordinates& operator=(Coordinates&&) = default;
 

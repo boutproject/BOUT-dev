@@ -7,9 +7,7 @@ if (NOT TARGET bout++::bout++)
 endif()
 
 bout_add_example(advdiff2 
-  SOURCES globals.cxx
-          globals.hxx
-          header.hxx
+  SOURCES header.hxx
           init.cxx
-          run.cxx
+          rhs.cxx
   EXTRA_FILES slab.grd.nc)
