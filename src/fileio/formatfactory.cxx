@@ -88,15 +88,11 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
   const char *ncdf_match[] = {"cdl", "nc", "ncdf"};
   if(matchString(s, 3, ncdf_match) != -1) {
     output.write("\tUsing NetCDF4 format for file '{:s}'\n", filename);
-    return bout::utils::make_unique<Ncxx4>();
-  }
-#endif
-
 #if BOUT_HAS_LEGACY_NETCDF
-  const char *ncdf_match[] = {"cdl", "nc", "ncdf"};
-  if(matchString(s, 3, ncdf_match) != -1) {
-    output.write("\tUsing NetCDF format for file '{:s}'\n", filename);
     return bout::utils::make_unique<NcFormat>();
+#else
+    return bout::utils::make_unique<Ncxx4>();
+#endif
   }
 #endif
 
