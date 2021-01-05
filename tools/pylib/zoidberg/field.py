@@ -1,11 +1,21 @@
 from builtins import object
 
 import numpy as np
+import sys
+
 
 try:
     from . import boundary
 except ImportError:
     import boundary
+
+
+if sys.version_info >= (3, 0):
+    pickle_read_mode = "rb"
+    pickle_write_mode = "wb"
+else:
+    pickle_read_mode = "r"
+    pickle_write_mode = "w"
 
 
 class MagneticField(object):
@@ -1305,7 +1315,6 @@ class W7X_vacuum(MagneticField):
     def field_values(r, phi, z, configuration=0, plot_poincare=False):
         from osa import Client
         import os.path
-        import sys
         import pickle
         import matplotlib.pyplot as plt
 
@@ -1329,14 +1338,10 @@ class W7X_vacuum(MagneticField):
         )
 
         if(os.path.isfile(fname)):
-            if sys.version_info >= (3, 0):
-                print ("Saved field found, loading from: ", fname)
-                with open(fname, "rb") as f:
-                    Br, Bphi, Bz = pickle.load(f)
-            else:
-                print ("Saved field found, loading from: ", fname)
-                with open(fname, 'r') as f:
-                    Br, Bphi, Bz = pickle.load(f) ## error here means you pickled with v3+ re-do.
+            print ("Saved field found, loading from: ", fname)
+            with open(fname, pickle_read_mode) as f:
+                Br, Bphi, Bz = pickle.load(f)
+
         else:
             print ("No saved field found -- (re)calculating (must be on IPP network for this to work...)")
             print ("Calculating field for Wendelstein 7-X; nx = ",nx," ny = ",ny," nz = ", nz )
@@ -1367,14 +1372,8 @@ class W7X_vacuum(MagneticField):
             Bphi = -Bx*np.sin(phi) + By*np.cos(phi)
         
             ## Save so we don't have to do this every time.
-            if sys.version_info >= (3, 0):
-                f = open(fname, "wb")
+            with open(fname, pickle_write_mode) as f:
                 pickle.dump([Br,Bphi,Bz],f)
-                f.close()
-            else:
-                f = open(fname, 'w')
-                pickle.dump([Br,Bphi,Bz],f)
-                f.close()
             
         if(plot_poincare):
             ## Poincare plot as done on the web services
@@ -1419,7 +1418,6 @@ class W7X_vacuum(MagneticField):
     def plasma_field(r, phi, z, wout_file='wout.nc'):
         from osa import Client
         import os.path
-        import sys
         import pickle
         
         cl = Client('http://esb.ipp-hgw.mpg.de:8280/services/Extender?wsdl')
@@ -1443,16 +1441,9 @@ class W7X_vacuum(MagneticField):
         )
 
         if(os.path.isfile(fname)):
-            if sys.version_info >= (3, 0):
-                print ("Saved field found, loading from: ", fname)
-                f = open(fname, "rb")
+            print ("Saved field found, loading from: ", fname)
+            with open(fname, pickle_read_mode) as f:
                 Br, Bphi, Bz = pickle.load(f)
-                f.close
-            else:
-                print ("Saved field found, loading from: ", fname)
-                f = open(fname, 'r')
-                Br, Bphi, Bz = pickle.load(f) ## error here means you pickled with v3+ re-do.
-                f.close
         else:
             print ("No saved plasma field found -- (re)calculating (must be on IPP network for this to work...)")
             print ("Calculating plasma field for Wendelstein 7-X; nx = ",nx," ny = ",ny," nz = ", nz )
@@ -1477,14 +1468,8 @@ class W7X_vacuum(MagneticField):
             Bz = np.ndarray.reshape(np.asarray(plasmafield.x3), (nx,ny,nz))
         
             ## Save so we don't have to do this every time.
-            if sys.version_info >= (3, 0):
-                f = open(fname, "wb")
+            with open(fname, pickle_write_mode) as f:
                 pickle.dump([Br,Bphi,Bz],f)
-                f.close()
-            else:
-                f = open(fname, 'w')
-                pickle.dump([Br,Bphi,Bz],f)
-                f.close()
             
         return  Br, Bphi, Bz
     
