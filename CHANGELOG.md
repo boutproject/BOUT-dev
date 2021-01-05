@@ -43,6 +43,12 @@
 - The `LaplaceShoot` Laplacian implementation was removed. There are
   very few cases, if any, where this implementation actually
   works. [\#2177](https://github.com/boutproject/BOUT-dev/pull/2177)
+- `dz` is now a `Field2D`, and `Coordinates::zlength()` also returns a
+  `Field2D`. In most cases, wrapping these in a call to `getUniform`
+  in order to get a `BoutReal` will do the correct thing. If checks
+  are enabled, `getUniform` will throw an exception if its argument is
+  not uniform (that is, that all values are identical).
+  [\#2025](https://github.com/boutproject/BOUT-dev/pull/2025)
 
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)
