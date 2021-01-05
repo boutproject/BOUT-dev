@@ -10,7 +10,7 @@ jobs:
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
     env:
-      BOUT_TEST_TIMEOUT: "5m"
+      BOUT_TEST_TIMEOUT: "6m"
       PETSC_DIR: /usr/lib/petscdir/3.7.7/x86_64-linux-gnu-real
       PETSC_ARCH: ""
       SLEPC_DIR: /usr/lib/slepcdir/3.7.4/x86_64-linux-gnu-real
