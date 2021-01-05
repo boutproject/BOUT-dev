@@ -1304,15 +1304,16 @@ class W7X_vacuum(MagneticField):
             
         # return points, br_interp, bphi_interp, bz_interp
 
-    ################## Vacuum field service ########################
-    # This uses the webservices field line tracer to get           #
-    # the vacuum magnetic field given 3d arrrays for R, phi, and Z #
-    # http://webservices.ipp-hgw.mpg.de/docs/fieldlinetracer.html  #
-    # Only works on IPP network                                    #
-    # Contact brendan.shanahan@ipp.mpg.de for questions            #
-    ################################################################
-
     def field_values(r, phi, z, configuration=0, plot_poincare=False):
+        """This uses the webservices field line tracer to get the vacuum
+        magnetic field given 3d arrrays for R, phi, and Z. Only works
+        on IPP network
+
+        http://webservices.ipp-hgw.mpg.de/docs/fieldlinetracer.html
+
+        Contact brendan.shanahan@ipp.mpg.de for questions
+
+        """
         from osa import Client
         import os.path
         import pickle
@@ -1405,17 +1406,16 @@ class W7X_vacuum(MagneticField):
             
         return  Br, Bphi, Bz
 
-
-    ################## Plasma field service ########################
-    # This uses EXTENDER via the webservices to get                #
-    # the magnetic field from the plasma given 3d arrrays          #
-    # for R, phi, and Z                                            #
-    # http://webservices.ipp-hgw.mpg.de/docs/extender.html         #
-    # Only works on IPP network                                    #
-    # Contact brendan.shanahan@ipp.mpg.de for questions            #
-    ################################################################
-
     def plasma_field(r, phi, z, wout_file='wout.nc'):
+        """This uses EXTENDER via the IPP webservices to get the magnetic
+        field from the plasma given 3d arrrays for R, phi, and Z. Only
+        works on IPP network
+
+        http://webservices.ipp-hgw.mpg.de/docs/extender.html
+
+        Contact brendan.shanahan@ipp.mpg.de for questions
+
+        """
         from osa import Client
         import os.path
         import pickle
