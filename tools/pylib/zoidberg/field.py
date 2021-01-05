@@ -191,7 +191,7 @@ class MagneticField(object):
             if np.amin(np.abs(By)) < 1e-8:
                 # Very small By
                 print(x,z,ycoord, By)
-                # raise ValueError("Small By")
+                raise ValueError("Small By ({}) at (x={}, y={}, z={})".format(By, x, ycoord, z))
 
             R_By = Rmaj / By
             # Rate of change of x location [m] with y angle [radians]
@@ -312,7 +312,7 @@ class CurvedSlab(MagneticField):
         return np.full(x.shape, self.Rmaj)
 
 try:
-    from sympy import Symbol, atan2, cos, sin, log, pi, sqrt, lambdify, Piecewise, Sum, gamma, And, factorial, symbols, Add, symarray, diff
+    from sympy import Symbol, atan2, cos, sin, log, pi, sqrt, lambdify, Piecewise, Sum, gamma, And, factorial, diff
 
     class StraightStellarator(MagneticField):
         """A "rotating ellipse" stellarator without curvature
@@ -543,18 +543,18 @@ try:
             self.Byf = lambdify((self.R, self.phi, self.Z), By, "numpy")
             self.Bzf = lambdify((self.R, self.phi, self.Z), Bz, "numpy")
 
-        def Bxfunc(self, x, z, y):
+        def Bxfunc(self, x, z, phi):
             
-            return self.Bxf(x, y, z)/self.Byf(self.R_0, 0, 0)*self.B_0
+            return self.Bxf(x, phi, z)/self.Byf(self.R_0, 0, 0)*self.B_0
         
-        def Byfunc(self, x, z, y):
+        def Byfunc(self, x, z, phi):
 
 
-            return self.Byf(x, y, z)/self.Byf(self.R_0, 0, 0)*self.B_0
+            return self.Byf(x, phi, z)/self.Byf(self.R_0, 0, 0)*self.B_0
 
-        def Bzfunc(self, x, z, y):
+        def Bzfunc(self, x, z, phi):
 
-            return self.Bzf(x, y, z)/self.Byf(self.R_0, 0, 0)*self.B_0
+            return self.Bzf(x, phi, z)/self.Byf(self.R_0, 0, 0)*self.B_0
 
         def Sfunc(self, x, z, y):
             """
@@ -570,7 +570,7 @@ try:
             """
             return self.Sf(x,y,z)
 
-        def Rfunc(self, x, z, y):
+        def Rfunc(self, x, z, phi):
             """
             Parameters
             ----------
@@ -1250,8 +1250,8 @@ class GEQDSK(MagneticField):
         return self.p_spl(psinorm)
 
 class W7X_vacuum(MagneticField):
-    def __init__(self,nx=128,ny=32,nz=128,x_range=[4.05,6.55],z_range=[-1.35,1,35], phimax=2.*np.pi, configuration=0, plot_poincare=False,include_plasma_field=False, wout_file='wout_w7x.0972_0926_0880_0852_+0000_+0000.01.00jh.nc'):
-        from scipy.interpolate import griddata, RegularGridInterpolator
+    def __init__(self,nx=128,ny=32,nz=128,x_range=(4.05,6.55),z_range=(-1.35,1,35), phimax=2.*np.pi, configuration=0, plot_poincare=False,include_plasma_field=False, wout_file='wout_w7x.0972_0926_0880_0852_+0000_+0000.01.00jh.nc'):
+        from scipy.interpolate import RegularGridInterpolator
         import numpy as np
         ## create 1D arrays of cylindrical coordinates
         r = np.linspace(x_range[0],x_range[-1],nx)
@@ -1315,23 +1315,28 @@ class W7X_vacuum(MagneticField):
         ny = phi.shape[1]
         nz = z.shape[2]
         
-        ### create (standardized) file name for saving/loading magnetic field.
-        fname = "B.w7x."+str(nx)+"."+str(ny)+"."+str(nz)\
-            +"."+"{:.2f}".format(r[0,0,0])  +"-"+"{:.2f}".format(r[-1,0,0])\
-            +"."+"{:.2f}".format(phi[0,0,0])+"-"+"{:.2f}".format(phi[0,-1,0])\
-            +"."+"{:.2f}".format(z[0,0,0])  +"-"+"{:.2f}".format(z[0,0,-1])+".dat"
+        # create (standardized) file name for saving/loading magnetic field.
+        fname = "B.w7x.{}.{}.{}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.dat".format(
+            nx,
+            ny,
+            nz,
+            r[0, 0, 0],
+            r[-1, 0, 0],
+            phi[0, 0, 0],
+            phi[0, -1, 0],
+            z[0, 0, 0],
+            z[0, 0, -1],
+        )
 
         if(os.path.isfile(fname)):
             if sys.version_info >= (3, 0):
                 print ("Saved field found, loading from: ", fname)
-                f = open(fname, "rb")
-                Br, Bphi, Bz = pickle.load(f)
-                f.close
+                with open(fname, "rb") as f:
+                    Br, Bphi, Bz = pickle.load(f)
             else:
                 print ("Saved field found, loading from: ", fname)
-                f = open(fname, 'r')
-                Br, Bphi, Bz = pickle.load(f) ## error here means you pickled with v3+ re-do.
-                f.close
+                with open(fname, 'r') as f:
+                    Br, Bphi, Bz = pickle.load(f) ## error here means you pickled with v3+ re-do.
         else:
             print ("No saved field found -- (re)calculating (must be on IPP network for this to work...)")
             print ("Calculating field for Wendelstein 7-X; nx = ",nx," ny = ",ny," nz = ", nz )
@@ -1416,28 +1421,26 @@ class W7X_vacuum(MagneticField):
         import os.path
         import sys
         import pickle
-        import matplotlib.pyplot as plt
-        from boututils.datafile import DataFile
         
         cl = Client('http://esb.ipp-hgw.mpg.de:8280/services/Extender?wsdl')
-        # print (os.path.isfile(wout_file))
-        # if not (os.path.isfile(wout_file)):
-            #vmecURL = 'http://svvmec1.ipp-hgw.mpg.de:8080/vmecrest/v1/run/test42/wout.nc'
         vmecURL = "http://svvmec1.ipp-hgw.mpg.de:8080/vmecrest/v1/w7x_ref_1/wout.nc"
-        # else:
-        #     f = DataFile(wout_file)
-        #     wout = f
-        #     f.close()
 
         nx = r.shape[0]
         ny = phi.shape[1]
         nz = z.shape[2]
 
-        ### create (standardized) file name for saving/loading magnetic field.
-        fname = "B.w7x_plasma_field."+str(nx)+"."+str(ny)+"."+str(nz)\
-            +"."+"{:.2f}".format(r[0,0,0])  +"-"+"{:.2f}".format(r[-1,0,0])\
-            +"."+"{:.2f}".format(phi[0,0,0])+"-"+"{:.2f}".format(phi[0,-1,0])\
-            +"."+"{:.2f}".format(z[0,0,0])  +"-"+"{:.2f}".format(z[0,0,-1])+".dat"    
+        # create (standardized) file name for saving/loading magnetic field.
+        fname = "B.w7x_plasma_field.{}.{}.{}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.dat".format(
+            nx,
+            ny,
+            nz,
+            r[0, 0, 0],
+            r[-1, 0, 0],
+            phi[0, 0, 0],
+            phi[0, -1, 0],
+            z[0, 0, 0],
+            z[0, 0, -1],
+        )
 
         if(os.path.isfile(fname)):
             if sys.version_info >= (3, 0):
@@ -1487,10 +1490,6 @@ class W7X_vacuum(MagneticField):
     
     def magnetic_axis(self, phi_axis=0,configuration=0):
         from osa import Client
-        import os.path
-        import sys
-        import pickle
-        import matplotlib.pyplot as plt
         
         tracer = Client('http://esb.ipp-hgw.mpg.de:8280/services/FieldLineProxy?wsdl')
         
@@ -1530,7 +1529,7 @@ class W7X_vacuum(MagneticField):
         return x
 
 class W7X_VMEC(MagneticField):
-    def __init__(self,nx=512,ny=32,nz=512,x_range=[4.05,6.55],z_range=[-1.35,1,35], phi_range=[0,2*np.pi], vmec_id='w7x_ref_171'):
+    def __init__(self,nx=512,ny=32,nz=512,x_range=(4.05,6.55),z_range=(-1.35,1,35), phi_range=(0,2*np.pi), vmec_id='w7x_ref_171'):
         from scipy.interpolate import RegularGridInterpolator
         self.nx = nx
         self.ny = ny
@@ -1557,7 +1556,7 @@ class W7X_VMEC(MagneticField):
         self.bz_interp   = RegularGridInterpolator(points, Bz_vmec, bounds_error=False, fill_value=0.0)
         self.bphi_interp = RegularGridInterpolator(points, By_vmec, bounds_error=False, fill_value=1.0)
 
-    def field_values(r,phi,z, vmec_id='w7x_ref_171'):
+    def field_values(self, r,phi,z, vmec_id='w7x_ref_171'):
         from osa import Client
         vmec = Client('http://esb:8280/services/vmec_v5?wsdl')
 
