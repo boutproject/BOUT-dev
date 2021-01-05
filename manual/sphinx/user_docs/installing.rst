@@ -397,24 +397,24 @@ Python configuration
 To use Python, you will need the dependencies of the `boututils
 <https://github.com/boutproject/boututils>`__ and `boutdata
 <https://github.com/boutproject/boutdata>`__ libraries. The simplest way to get these is
-to install the packages, plus additional developer dependencies, with pip::
+to install the packages with pip::
 
-    $ pip install --user boutdata setuptools_scm
+    $ pip install --user boutdata
 
 or conda::
 
-    $ conda install boutdata setuptools_scm
+    $ conda install boutdata
 
 You can also install all the packages directly (see the documentation in the `boututils
 <https://github.com/boutproject/boututils>`__ and `boutdata
 <https://github.com/boutproject/boutdata>`__ repos for the most up to date list)
 using pip::
 
-    $ pip install --user numpy scipy matplotlib sympy netCDF4 h5py future importlib-metadata setuptools_scm
+    $ pip install --user numpy scipy matplotlib sympy netCDF4 h5py future importlib-metadata
 
 or conda::
 
-    $ conda install numpy scipy matplotlib sympy netcdf4 h5py future importlib-metadata setuptools_scm
+    $ conda install numpy scipy matplotlib sympy netcdf4 h5py future importlib-metadata
 
 They may also be available from your Linux system's package manager.
 
@@ -437,8 +437,7 @@ If this doesn’t produce any error messages then Python is configured correctly
 Note that ``boututils`` and ``boutdata`` are provided by BOUT++ as submodules, so versions
 compatible with the checked out version of BOUT++ are downloaded into the
 ``externalpackages`` directory. These are the versions used by the tests run by ``make
-check`` even if you have installed ``boututils`` and ``boutdata`` on your system, so you
-do need the 'developer' dependencies of the packages (e.g. ``setuptools_scm``).
+check`` even if you have installed ``boututils`` and ``boutdata`` on your system.
 
 
 .. _sec-config-idl:
