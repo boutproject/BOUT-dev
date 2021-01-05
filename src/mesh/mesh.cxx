@@ -438,13 +438,11 @@ std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC locat
 
   if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
-    auto result = std::make_shared<Coordinates>(this, options);
-    return result;
+    return std::make_shared<Coordinates>(this, options);
   } else {
     // Interpolate coordinates from CELL_CENTRE version
-    auto result = std::make_shared<Coordinates>(this, options, location,
+    return std::make_shared<Coordinates>(this, options, location,
         getCoordinates(CELL_CENTRE), force_interpolate_from_centre);
-    return result;
   }
 }
 
