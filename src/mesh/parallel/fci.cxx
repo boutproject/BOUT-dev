@@ -169,6 +169,11 @@ FCIMap::FCIMap(Mesh& mesh, Field2D dy, Options& options, int offset_, BoundaryRe
         zt_prime[i] += ncz;
     }
 
+    if (xt_prime[i] >= 0.0) {
+      // Not a boundary
+      continue;
+    }
+
     //----------------------------------------
     // Boundary stuff
     //
@@ -176,55 +181,51 @@ FCIMap::FCIMap(Mesh& mesh, Field2D dy, Options& options, int offset_, BoundaryRe
     // indices (forward/backward_xt_prime and forward/backward_zt_prime)
     // are set to -1
 
-    if (xt_prime[i] < 0.0) {
-      // Hit a boundary
+    boundary_mask(x, y, z) = true;
 
-      boundary_mask(x, y, z) = true;
+    // Need to specify the index of the boundary intersection, but
+    // this may not be defined in general.
+    // We do however have the real-space (R,Z) coordinates. Here we extrapolate,
+    // using the change in R and Z to calculate the change in (x,z) indices
+    //
+    // ( dR ) = ( dR/dx  dR/dz ) ( dx )
+    // ( dZ )   ( dZ/dx  dZ/dz ) ( dz )
+    //
+    // where (dR,dZ) is the change in (R,Z) along the field,
+    // (dx,dz) is the change in (x,z) index along the field,
+    // and the gradients dR/dx etc. are evaluated at (x,y,z)
 
-      // Need to specify the index of the boundary intersection, but
-      // this may not be defined in general.
-      // We do however have the real-space (R,Z) coordinates. Here we extrapolate,
-      // using the change in R and Z to calculate the change in (x,z) indices
-      //
-      // ( dR ) = ( dR/dx  dR/dz ) ( dx )
-      // ( dZ )   ( dZ/dx  dZ/dz ) ( dz )
-      //
-      // where (dR,dZ) is the change in (R,Z) along the field,
-      // (dx,dz) is the change in (x,z) index along the field,
-      // and the gradients dR/dx etc. are evaluated at (x,y,z)
+    const BoutReal dR_dx = 0.5 * (R[i.xp()] - R[i.xm()]);
+    const BoutReal dZ_dx = 0.5 * (Z[i.xp()] - Z[i.xm()]);
 
-      const BoutReal dR_dx = 0.5 * (R[i.xp()] - R[i.xm()]);
-      const BoutReal dZ_dx = 0.5 * (Z[i.xp()] - Z[i.xm()]);
+    BoutReal dR_dz, dZ_dz;
+    // Handle the edge cases in Z
+    if (z == 0) {
+      dR_dz = R[i.zp()] - R[i];
+      dZ_dz = Z[i.zp()] - Z[i];
 
-      BoutReal dR_dz, dZ_dz;
-      // Handle the edge cases in Z
-      if (z == 0) {
-        dR_dz = R[i.zp()] - R[i];
-        dZ_dz = Z[i.zp()] - Z[i];
+    } else if (z == map_mesh.LocalNz - 1) {
+      dR_dz = R[i] - R[i.zm()];
+      dZ_dz = Z[i] - Z[i.zm()];
 
-      } else if (z == map_mesh.LocalNz - 1) {
-        dR_dz = R[i] - R[i.zm()];
-        dZ_dz = Z[i] - Z[i.zm()];
-
-      } else {
-        dR_dz = 0.5 * (R[i.zp()] - R[i.zm()]);
-        dZ_dz = 0.5 * (Z[i.zp()] - Z[i.zm()]);
-      }
-
-      const BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
-
-      const BoutReal dR = R_prime[i] - R[i];
-      const BoutReal dZ = Z_prime[i] - Z[i];
-
-      // Invert 2x2 matrix to get change in index
-      const BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
-      const BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
-      boundary->add_point(x, y, z, x + dx, y + 0.5 * offset,
-                          z + dz,      // Intersection point in local index space
-                          0.5 * dy[i], // Distance to intersection
-                          PI           // Right-angle intersection
-      );
+    } else {
+      dR_dz = 0.5 * (R[i.zp()] - R[i.zm()]);
+      dZ_dz = 0.5 * (Z[i.zp()] - Z[i.zm()]);
     }
+
+    const BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
+
+    const BoutReal dR = R_prime[i] - R[i];
+    const BoutReal dZ = Z_prime[i] - Z[i];
+
+    // Invert 2x2 matrix to get change in index
+    const BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
+    const BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
+    boundary->add_point(x, y, z, x + dx, y + 0.5 * offset,
+                        z + dz,      // Intersection point in local index space
+                        0.5 * dy[i], // Distance to intersection
+                        PI           // Right-angle intersection
+    );
   }
 
   interp->setMask(boundary_mask);
