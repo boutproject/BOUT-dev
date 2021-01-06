@@ -151,7 +151,7 @@ FCIMap::FCIMap(Mesh& mesh, Field2D dy, Options& options, int offset_, BoundaryRe
     interp->calcWeights(xt_prime, zt_prime);
   }
 
-  int ncz = map_mesh.LocalNz;
+  const int ncz = map_mesh.LocalNz;
 
   for (int x = map_mesh.xstart; x <= map_mesh.xend; x++) {
     for (int y = map_mesh.ystart; y <= map_mesh.yend; y++) {
@@ -191,8 +191,8 @@ FCIMap::FCIMap(Mesh& mesh, Field2D dy, Options& options, int offset_, BoundaryRe
           // (dx,dz) is the change in (x,z) index along the field,
           // and the gradients dR/dx etc. are evaluated at (x,y,z)
 
-          BoutReal dR_dx = 0.5 * (R(x + 1, y, z) - R(x - 1, y, z));
-          BoutReal dZ_dx = 0.5 * (Z(x + 1, y, z) - Z(x - 1, y, z));
+          const BoutReal dR_dx = 0.5 * (R(x + 1, y, z) - R(x - 1, y, z));
+          const BoutReal dZ_dx = 0.5 * (Z(x + 1, y, z) - Z(x - 1, y, z));
 
           BoutReal dR_dz, dZ_dz;
           // Handle the edge cases in Z
@@ -209,14 +209,14 @@ FCIMap::FCIMap(Mesh& mesh, Field2D dy, Options& options, int offset_, BoundaryRe
             dZ_dz = 0.5 * (Z(x, y, z + 1) - Z(x, y, z - 1));
           }
 
-          BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
+          const BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
 
-          BoutReal dR = R_prime(x, y, z) - R(x, y, z);
-          BoutReal dZ = Z_prime(x, y, z) - Z(x, y, z);
+          const BoutReal dR = R_prime(x, y, z) - R(x, y, z);
+          const BoutReal dZ = Z_prime(x, y, z) - Z(x, y, z);
 
           // Invert 2x2 matrix to get change in index
-          BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
-          BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
+          const BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
+          const BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
           boundary->add_point(x, y, z,
                               x + dx, y + 0.5*offset, z + dz,  // Intersection point in local index space
                               0.5*dy(x,y), // Distance to intersection
