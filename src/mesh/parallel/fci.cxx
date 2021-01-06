@@ -156,10 +156,6 @@ FCIMap::FCIMap(Mesh& mesh, Field2D dy, Options& options, int offset_, BoundaryRe
   // Serial loop because call to BoundaryRegionPar::addPoint
   // (probably?) can't be done in parallel
   BOUT_FOR_SERIAL(i, xt_prime.getRegion("RGN_NOBNDRY")) {
-    const int x = i.x();
-    const int y = i.y();
-    const int z = i.z();
-
     // z is periodic, so make sure the z-index wraps around
     if (zperiodic) {
       zt_prime[i] = zt_prime[i]
@@ -173,6 +169,10 @@ FCIMap::FCIMap(Mesh& mesh, Field2D dy, Options& options, int offset_, BoundaryRe
       // Not a boundary
       continue;
     }
+
+    const auto x = i.x();
+    const auto y = i.y();
+    const auto z = i.z();
 
     //----------------------------------------
     // Boundary stuff
@@ -195,22 +195,28 @@ FCIMap::FCIMap(Mesh& mesh, Field2D dy, Options& options, int offset_, BoundaryRe
     // (dx,dz) is the change in (x,z) index along the field,
     // and the gradients dR/dx etc. are evaluated at (x,y,z)
 
-    const BoutReal dR_dx = 0.5 * (R[i.xp()] - R[i.xm()]);
-    const BoutReal dZ_dx = 0.5 * (Z[i.xp()] - Z[i.xm()]);
+    // Cache the offsets
+    const auto i_xp = i.xp();
+    const auto i_xm = i.xm();
+    const auto i_zp = i.zp();
+    const auto i_zm = i.zm();
+
+    const BoutReal dR_dx = 0.5 * (R[i_xp] - R[i_xm]);
+    const BoutReal dZ_dx = 0.5 * (Z[i_xp] - Z[i_xm]);
 
     BoutReal dR_dz, dZ_dz;
     // Handle the edge cases in Z
     if (z == 0) {
-      dR_dz = R[i.zp()] - R[i];
-      dZ_dz = Z[i.zp()] - Z[i];
+      dR_dz = R[i_zp] - R[i];
+      dZ_dz = Z[i_zp] - Z[i];
 
     } else if (z == map_mesh.LocalNz - 1) {
-      dR_dz = R[i] - R[i.zm()];
-      dZ_dz = Z[i] - Z[i.zm()];
+      dR_dz = R[i] - R[i_zm];
+      dZ_dz = Z[i] - Z[i_zm];
 
     } else {
-      dR_dz = 0.5 * (R[i.zp()] - R[i.zm()]);
-      dZ_dz = 0.5 * (Z[i.zp()] - Z[i.zm()]);
+      dR_dz = 0.5 * (R[i_zp] - R[i_zm]);
+      dZ_dz = 0.5 * (Z[i_zp] - Z[i_zm]);
     }
 
     const BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
