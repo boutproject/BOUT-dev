@@ -2,7 +2,7 @@
 
 # Note: This test requires NCDF4, whereas on Travis NCDF is used
 #requires: netcdf
-#requires: not travis or fedora
+#requires: not travis or fedora or legacy_netcdf
 
 from boututils.datafile import DataFile
 from boututils.run_wrapper import build_and_log, shell, launch
