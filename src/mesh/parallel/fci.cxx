@@ -153,77 +153,77 @@ FCIMap::FCIMap(Mesh& mesh, Field2D dy, Options& options, int offset_, BoundaryRe
 
   const int ncz = map_mesh.LocalNz;
 
-  for (int x = map_mesh.xstart; x <= map_mesh.xend; x++) {
-    for (int y = map_mesh.ystart; y <= map_mesh.yend; y++) {
-      for (int z = 0; z < ncz; z++) {
+  // Serial loop because call to BoundaryRegionPar::addPoint
+  // (probably?) can't be done in parallel
+  BOUT_FOR_SERIAL(i, xt_prime.getRegion("RGN_NOBNDRY")) {
+    const int x = i.x();
+    const int y = i.y();
+    const int z = i.z();
 
-        // z is periodic, so make sure the z-index wraps around
-        if (zperiodic) {
-          zt_prime(x, y, z) =
-              zt_prime(x, y, z) -
-              ncz * (static_cast<int>(zt_prime(x, y, z) / static_cast<BoutReal>(ncz)));
+    // z is periodic, so make sure the z-index wraps around
+    if (zperiodic) {
+      zt_prime[i] = zt_prime[i]
+                    - ncz * (static_cast<int>(zt_prime[i] / static_cast<BoutReal>(ncz)));
 
-          if (zt_prime(x, y, z) < 0.0)
-            zt_prime(x, y, z) += ncz;
-        }
+      if (zt_prime[i] < 0.0)
+        zt_prime[i] += ncz;
+    }
 
-        //----------------------------------------
-        // Boundary stuff
-        //
-        // If a field line leaves the domain, then the forward or backward
-        // indices (forward/backward_xt_prime and forward/backward_zt_prime)
-        // are set to -1
+    //----------------------------------------
+    // Boundary stuff
+    //
+    // If a field line leaves the domain, then the forward or backward
+    // indices (forward/backward_xt_prime and forward/backward_zt_prime)
+    // are set to -1
 
-        if (xt_prime(x, y, z) < 0.0) {
-          // Hit a boundary
+    if (xt_prime[i] < 0.0) {
+      // Hit a boundary
 
-          boundary_mask(x, y, z) = true;
+      boundary_mask(x, y, z) = true;
 
-          // Need to specify the index of the boundary intersection, but
-          // this may not be defined in general.
-          // We do however have the real-space (R,Z) coordinates. Here we extrapolate,
-          // using the change in R and Z to calculate the change in (x,z) indices
-          //
-          // ( dR ) = ( dR/dx  dR/dz ) ( dx )
-          // ( dZ )   ( dZ/dx  dZ/dz ) ( dz )
-          //
-          // where (dR,dZ) is the change in (R,Z) along the field,
-          // (dx,dz) is the change in (x,z) index along the field,
-          // and the gradients dR/dx etc. are evaluated at (x,y,z)
+      // Need to specify the index of the boundary intersection, but
+      // this may not be defined in general.
+      // We do however have the real-space (R,Z) coordinates. Here we extrapolate,
+      // using the change in R and Z to calculate the change in (x,z) indices
+      //
+      // ( dR ) = ( dR/dx  dR/dz ) ( dx )
+      // ( dZ )   ( dZ/dx  dZ/dz ) ( dz )
+      //
+      // where (dR,dZ) is the change in (R,Z) along the field,
+      // (dx,dz) is the change in (x,z) index along the field,
+      // and the gradients dR/dx etc. are evaluated at (x,y,z)
 
-          const BoutReal dR_dx = 0.5 * (R(x + 1, y, z) - R(x - 1, y, z));
-          const BoutReal dZ_dx = 0.5 * (Z(x + 1, y, z) - Z(x - 1, y, z));
+      const BoutReal dR_dx = 0.5 * (R[i.xp()] - R[i.xm()]);
+      const BoutReal dZ_dx = 0.5 * (Z[i.xp()] - Z[i.xm()]);
 
-          BoutReal dR_dz, dZ_dz;
-          // Handle the edge cases in Z
-          if (z == 0) {
-            dR_dz = R(x, y, z + 1) - R(x, y, z);
-            dZ_dz = Z(x, y, z + 1) - Z(x, y, z);
+      BoutReal dR_dz, dZ_dz;
+      // Handle the edge cases in Z
+      if (z == 0) {
+        dR_dz = R[i.zp()] - R[i];
+        dZ_dz = Z[i.zp()] - Z[i];
 
-          } else if (z == map_mesh.LocalNz - 1) {
-            dR_dz = R(x, y, z) - R(x, y, z - 1);
-            dZ_dz = Z(x, y, z) - Z(x, y, z - 1);
+      } else if (z == map_mesh.LocalNz - 1) {
+        dR_dz = R[i] - R[i.zm()];
+        dZ_dz = Z[i] - Z[i.zm()];
 
-          } else {
-            dR_dz = 0.5 * (R(x, y, z + 1) - R(x, y, z - 1));
-            dZ_dz = 0.5 * (Z(x, y, z + 1) - Z(x, y, z - 1));
-          }
-
-          const BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
-
-          const BoutReal dR = R_prime(x, y, z) - R(x, y, z);
-          const BoutReal dZ = Z_prime(x, y, z) - Z(x, y, z);
-
-          // Invert 2x2 matrix to get change in index
-          const BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
-          const BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
-          boundary->add_point(x, y, z,
-                              x + dx, y + 0.5*offset, z + dz,  // Intersection point in local index space
-                              0.5*dy(x,y), // Distance to intersection
-                              PI   // Right-angle intersection
-                              );
-        }
+      } else {
+        dR_dz = 0.5 * (R[i.zp()] - R[i.zm()]);
+        dZ_dz = 0.5 * (Z[i.zp()] - Z[i.zm()]);
       }
+
+      const BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
+
+      const BoutReal dR = R_prime[i] - R[i];
+      const BoutReal dZ = Z_prime[i] - Z[i];
+
+      // Invert 2x2 matrix to get change in index
+      const BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
+      const BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
+      boundary->add_point(x, y, z, x + dx, y + 0.5 * offset,
+                          z + dz,      // Intersection point in local index space
+                          0.5 * dy[i], // Distance to intersection
+                          PI           // Right-angle intersection
+      );
     }
   }
 
