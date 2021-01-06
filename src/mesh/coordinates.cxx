@@ -1224,8 +1224,8 @@ void Coordinates::setParallelTransform(Options* options) {
 
     // Flux Coordinate Independent method
     const bool fci_zperiodic = (*ptoptions)["z_periodic"].withDefault(true);
-    transform = bout::utils::make_unique<FCITransform>(*localmesh, fci_zperiodic,
-                                                       ptoptions);
+    transform =
+        bout::utils::make_unique<FCITransform>(*localmesh, dy, fci_zperiodic, ptoptions);
 
   } else {
     throw BoutException(_("Unrecognised paralleltransform option.\n"

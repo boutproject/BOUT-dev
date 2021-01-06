@@ -47,7 +47,7 @@
 
 #include <string>
 
-FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* boundary,
+FCIMap::FCIMap(Mesh& mesh, Field2D dy, Options& options, int offset_, BoundaryRegionPar* boundary,
                bool zperiodic)
     : map_mesh(mesh), offset(offset_), boundary_mask(map_mesh),
       corner_boundary_mask(map_mesh) {
@@ -153,8 +153,6 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
 
   int ncz = map_mesh.LocalNz;
 
-  Coordinates &coord = *(map_mesh.getCoordinates());
-
   for (int x = map_mesh.xstart; x <= map_mesh.xend; x++) {
     for (int y = map_mesh.ystart; y <= map_mesh.yend; y++) {
       for (int z = 0; z < ncz; z++) {
@@ -221,7 +219,7 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
           BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
           boundary->add_point(x, y, z,
                               x + dx, y + 0.5*offset, z + dz,  // Intersection point in local index space
-                              0.5*coord.dy(x,y), // Distance to intersection
+                              0.5*dy(x,y), // Distance to intersection
                               PI   // Right-angle intersection
                               );
         }
