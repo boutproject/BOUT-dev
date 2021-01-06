@@ -65,12 +65,6 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
   interp_corner = XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh);
   interp_corner->setYOffset(offset);
 
-  // Index arrays contain guard cells in order to get subscripts right
-  // x-index of bottom-left grid point
-  auto i_corner = Tensor<int>(map_mesh.LocalNx, map_mesh.LocalNy, map_mesh.LocalNz);
-  // z-index of bottom-left grid point
-  auto k_corner = Tensor<int>(map_mesh.LocalNx, map_mesh.LocalNy, map_mesh.LocalNz);
-
   // Index-space coordinates of forward/backward points
   Field3D xt_prime{&map_mesh}, zt_prime{&map_mesh};
 
@@ -159,17 +153,11 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
 
   int ncz = map_mesh.LocalNz;
 
-  BoutReal t_x, t_z;
-
   Coordinates &coord = *(map_mesh.getCoordinates());
 
   for (int x = map_mesh.xstart; x <= map_mesh.xend; x++) {
     for (int y = map_mesh.ystart; y <= map_mesh.yend; y++) {
       for (int z = 0; z < ncz; z++) {
-
-        // The integer part of xt_prime, zt_prime are the indices of the cell
-        // containing the field line end-point
-        i_corner(x, y, z) = static_cast<int>(floor(xt_prime(x, y, z)));
 
         // z is periodic, so make sure the z-index wraps around
         if (zperiodic) {
@@ -179,26 +167,6 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
 
           if (zt_prime(x, y, z) < 0.0)
             zt_prime(x, y, z) += ncz;
-        }
-
-        k_corner(x, y, z) = static_cast<int>(floor(zt_prime(x, y, z)));
-
-        // t_x, t_z are the normalised coordinates \in [0,1) within the cell
-        // calculated by taking the remainder of the floating point index
-        t_x = xt_prime(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
-        t_z = zt_prime(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
-
-        // Check that t_x and t_z are in range
-        if ((t_x < 0.0) || (t_x > 1.0)) {
-          throw BoutException(
-              "t_x={:e} out of range at ({:d},{:d},{:d}) (xt_prime={:e}, i_corner={:d})",
-              t_x, x, y, z, xt_prime(x, y, z), i_corner(x, y, z));
-        }
-
-        if ((t_z < 0.0) || (t_z > 1.0)) {
-          throw BoutException(
-              "t_z={:e} out of range at ({:d},{:d},{:d}) (zt_prime={:e}, k_corner={:d})",
-              t_z, x, y, z, zt_prime(x, y, z), k_corner(x, y, z));
         }
 
         //----------------------------------------
@@ -253,7 +221,7 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
           BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
           boundary->add_point(x, y, z,
                               x + dx, y + 0.5*offset, z + dz,  // Intersection point in local index space
-                              0.5*coord.dy(x,y), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
+                              0.5*coord.dy(x,y), // Distance to intersection
                               PI   // Right-angle intersection
                               );
         }
