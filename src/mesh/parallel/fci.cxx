@@ -161,8 +161,9 @@ FCIMap::FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset_, Bou
       zt_prime[i] = zt_prime[i]
                     - ncz * (static_cast<int>(zt_prime[i] / static_cast<BoutReal>(ncz)));
 
-      if (zt_prime[i] < 0.0)
+      if (zt_prime[i] < 0.0) {
         zt_prime[i] += ncz;
+      }
     }
 
     if (xt_prime[i] >= 0.0) {
