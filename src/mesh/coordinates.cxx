@@ -22,6 +22,17 @@
 
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
+template <typename T, typename... Ts>
+// Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
+// don't try to calculate parallel slices as Coordinates are not constructed yet
+void communicate(T& t, Ts&... ts) {
+  FieldGroup g(t, ts...);
+  auto h = t.getMesh()->sendY(g);
+  t.getMesh()->wait(h);
+  h = t.getMesh()->sendX(g);
+  t.getMesh()->wait(h);
+}
+
 /// Interpolate a Field2D to a new CELL_LOC with interp_to.
 /// Communicates to set internal guard cells.
 /// Boundary guard cells are set by extrapolating from the grid, like
@@ -41,12 +52,7 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
   // communicate f. We will sort out result's boundary guard cells below, but
   // not f's so we don't want to change f.
   result.allocate();
-  // Use sendY()/sendX() and wait() instead of communicate() to ensure we don't
-  // try to calculate parallel slices as Coordinates are not constructed yet.
-  auto h = localmesh->sendY(result);
-  localmesh->wait(h);
-  h = localmesh->sendX(result);
-  localmesh->wait(h);
+  communicate(result);
 
   // Extrapolate into boundaries (if requested) so that differential geometry
   // terms can be interpolated if necessary
@@ -195,12 +201,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
   // communicate f. We will sort out result's boundary guard cells below, but
   // not f's so we don't want to change f.
   result.allocate();
-  // Use sendY()/sendX() and wait() instead of communicate() to ensure we don't
-  // try to calculate parallel slices as Coordinates are not constructed yet.
-  auto h = localmesh->sendY(result);
-  localmesh->wait(h);
-  h = localmesh->sendX(result);
-  localmesh->wait(h);
+  communicate(result);
 
   // Extrapolate into boundaries (if requested) so that differential geometry
   // terms can be interpolated if necessary
@@ -360,17 +361,6 @@ std::string getLocationSuffix(CELL_LOC location) {
     }
   }
 }
-
-template <typename T, typename... Ts>
-void communicate(T& t, Ts&... ts) {
-  FieldGroup g(t, ts...);
-  // emulate full communicate
-  auto h = t.getMesh()->sendY(g);
-  t.getMesh()->wait(h);
-  h = t.getMesh()->sendX(g);
-  t.getMesh()->wait(h);
-}
-
 } // anonymous namespace
 
 Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric dz,
