@@ -541,13 +541,6 @@ void Mesh::createDefaultRegions(){
       (getRegion3D("RGN_NOBNDRY") + getRegion3D("RGN_XGUARDS") +
         getRegion3D("RGN_YGUARDS") + getRegion3D("RGN_ZGUARDS")).unique());
 
-  addRegion3D("RGN_UPPER_Y_THIN",
-              Region<Ind3D>(xstart, xend, yend + 1, yend + 1, 0, LocalNz - 1, LocalNy,
-                            LocalNz, maxregionblocksize));
-  addRegion3D("RGN_LOWER_Y_THIN",
-              Region<Ind3D>(xstart, xend, ystart + 1, ystart + 1, 0, LocalNz - 1, LocalNy,
-                            LocalNz, maxregionblocksize));
-
   //2D regions
   addRegion2D("RGN_ALL", Region<Ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1,
                                        maxregionblocksize));
@@ -575,11 +568,6 @@ void Mesh::createDefaultRegions(){
   addRegion2D("RGN_NOCORNERS",
       (getRegion2D("RGN_NOBNDRY") + getRegion2D("RGN_XGUARDS") +
         getRegion2D("RGN_YGUARDS") + getRegion2D("RGN_ZGUARDS")).unique());
-
-  addRegion2D("RGN_UPPER_Y_THIN", Region<Ind2D>(xstart, xend, yend + 1, yend + 1, 0, -1,
-                                                LocalNy, 1, maxregionblocksize));
-  addRegion2D("RGN_LOWER_Y_THIN", Region<Ind2D>(xstart, xend, ystart + 1, ystart + 1, 0,
-                                                -1, LocalNy, 1, maxregionblocksize));
 
   // Perp regions
   addRegionPerp("RGN_ALL", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
