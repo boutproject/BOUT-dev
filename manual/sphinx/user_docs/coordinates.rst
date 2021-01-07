@@ -418,7 +418,15 @@ Differential operators in field-aligned coordinates
 These operators are valid for either `\left(x,y,z\right)` or
 `\left(x,\eta,z\right)` field-aligned coordinates defined
 above. Unless explicitly stated, in the sections that follow `y` will
-be used to indicate the parallel coordinate (`y` or `\eta`).
+be used to indicate the parallel coordinate (`y` or `\eta`). In a few
+places the sign of `B_\text{pol}` may appear, depending on whether `y`
+or `eta` is used for the parallel coordinate, so we define
+
+.. math::
+    \sigma_y = \begin{cases}
+        \sigma_{B\theta} & \text{if using }(x,y,z)
+        +1 & \text{if using }(x,\eta,z)
+    \end{cases}
 
 The derivative of a scalar field `f` along the *unperturbed*
 magnetic field `{\boldsymbol{b}}_0` is given by
@@ -427,7 +435,7 @@ magnetic field `{\boldsymbol{b}}_0` is given by
 
    \begin{aligned}
    \partial^0_{||}f \equiv {\boldsymbol{b}}_0 \cdot\nabla f =
-   \frac{1}{JB}{\frac{\partial f}{\partial y}} = \frac{{B_{\text{pol}}}}{B{h_\theta}}{\frac{\partial f}{\partial y}}\end{aligned}
+   \frac{1}{JB}{\frac{\partial f}{\partial y}} = \frac{\sigma_y|{B_{\text{pol}}}|}{B{h_\theta}}{\frac{\partial f}{\partial y}}\end{aligned}
 
 Note that J could be positive or negative. The parallel divergence is given by
 
@@ -446,7 +454,7 @@ the Laplacian operator is given by
        \frac{\partial^2}{\partial y^2}\left|\nabla y\right|^2 +
        \frac{\partial^2}{\partial z^2}\left|\nabla z\right|^2 \nonumber \\
        &-2\frac{\partial^2}{\partial x\partial z}I\left(R{B_{\text{pol}}}\right)^2 -
-       2\frac{\partial^2}{\partial y\partial z}\frac{\nu}{h_\theta^2}\\
+       2\frac{\partial^2}{\partial y\partial z}\frac{\sigma_y\nu}{h_\theta^2}\\
        &+\frac{\partial}{\partial x}\nabla^2x + \frac{\partial}{\partial
    y}\nabla^2y + \frac{\partial}{\partial z}\nabla^2z \nonumber\end{aligned}
 
@@ -464,7 +472,7 @@ Using equation :eq:`eq:laplace_expand` for
 
    \begin{aligned}
    \nabla^2z = -\frac{{B_{\text{pol}}}}{h_\theta}\left[\frac{\partial}{\partial x}\left(IR^2{B_{\text{pol}}}
-   h_\theta\right) + \frac{\partial}{\partial y}\left(\frac{\nu}{{B_{\text{pol}}}h_\theta}\right)\right]\end{aligned}
+   h_\theta\right) + \sigma_y \frac{\partial}{\partial y}\left(\frac{\nu}{{B_{\text{pol}}}h_\theta}\right)\right]\end{aligned}
 
 Neglecting some parallel derivative terms, the perpendicular Laplacian
 can be written:
@@ -516,14 +524,14 @@ Components of the magnetic field in field-aligned coordinates:
 .. math::
 
    \begin{aligned}
-   B^y = \frac{{B_{\text{pol}}}}{{h_\theta}} \qquad B^x = B^z = 0\end{aligned}
+   B^y = \frac{\sigma_y{|B_{\text{pol}}|}}{{h_\theta}} \qquad B^x = B^z = 0\end{aligned}
 
 and
 
 .. math::
 
    \begin{aligned}
-   B_x = {\sigma_{B\theta}}{B_{\text{tor}}}I R \qquad B_y = \frac{B^2{h_\theta}}{{B_{\text{pol}}}} \qquad B_z = {\sigma_{B\theta}}{B_{\text{tor}}}R\end{aligned}
+   B_x = {\sigma_{B\theta}}{B_{\text{tor}}}I R \qquad B_y = \sigma_y\frac{B^2{h_\theta}}{{|B_{\text{pol}}|}} \qquad B_z = {\sigma_{B\theta}}{B_{\text{tor}}}R\end{aligned}
 
 Calculate current `{\boldsymbol{J}}= \frac{1}{\mu}{\nabla\times
 {\boldsymbol{B}} }`
@@ -539,7 +547,7 @@ since `{B_{\text{tor}}}R` is a flux-surface quantity, and
 .. math::
 
    \begin{aligned}
-   \left({\nabla\times {\boldsymbol{B}} }\right)^y =& -{\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) \\
+   \left({\nabla\times {\boldsymbol{B}} }\right)^y =& -{\sigma_y\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) \\
        \left({\nabla\times {\boldsymbol{B}} }\right)^z =&
        \frac{{B_{\text{pol}}}}{{h_\theta}}\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) -
        {\sigma_{B\theta}}{\frac{\partial }{\partial y}}\left({B_{\text{tor}}}I R\right)\right]\end{aligned}
@@ -563,8 +571,8 @@ From these, calculate covariant components:
        \frac{IR^2{B_{\text{pol}}}}{{h_\theta}}\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}
        R{\frac{\partial \nu}{\partial x}}\right] \nonumber\\
    %
-   \left({\nabla\times {\boldsymbol{B}} }\right)_y =& -{\sigma_{B\theta}}\frac{B^2{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) +
-       {\sigma_{B\theta}}{B_{\text{tor}}}R\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}R{\frac{\partial \nu}{\partial x}}\right]
+   \left({\nabla\times {\boldsymbol{B}} }\right)_y =& -{\sigma_y\sigma_{B\theta}}\frac{B^2{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) +
+       {\sigma_y\sigma_{B\theta}}{B_{\text{tor}}}R\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}R{\frac{\partial \nu}{\partial x}}\right]
        \\
    %
    \left({\nabla\times {\boldsymbol{B}} }\right)_z =& -{B_{\text{tor}}}R{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) +
@@ -653,24 +661,28 @@ Parallel current
 .. math::
 
    \begin{aligned}
-   J_{||} = {\boldsymbol{b}}\cdot{\boldsymbol{J}}\qquad b^y = \frac{{B_{\text{pol}}}}{B{h_\theta}}\end{aligned}
+   J_{||} = {\boldsymbol{b}}\cdot{\boldsymbol{J}}\qquad b^y = \sigma_y\frac{{|B_{\text{pol}}|}}{B{h_\theta}}\end{aligned}
 
 and from equation :eq:`eq:curlb_y`:
 
 .. math::
 
    \begin{aligned}
-   J_y = \frac{{\sigma_{B\theta}}}{\mu_0}\left\{-\frac{B^2{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) + {B_{\text{tor}}}
-   R\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) - {\sigma_{B\theta}}{B_{\text{tor}}}R{\frac{\partial \nu}{\partial x}}\right]\right\}\end{aligned}
+   J_y = \frac{{\sigma_y\sigma_{B\theta}}}{\mu_0}\left\{-\frac{B^2{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) + {B_{\text{tor}}}
+   R\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}R{\frac{\partial \nu}{\partial x}}\right]\right\}\end{aligned}
 
 since `J_{||} = b^yJ_y`,
 
 .. math::
 
    \begin{aligned}
-   \mu_0 J_{||} ={\sigma_{B\theta}}\frac{{B_{\text{pol}}}{B_{\text{tor}}}
+   \mu_0 J_{||} =\frac{{B_{\text{pol}}}{B_{\text{tor}}}
    R}{B{h_\theta}}\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}R{\frac{\partial \nu}{\partial x}}\right] -
-   {\sigma_{B\theta}}B{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right)\end{aligned}
+   B{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right)\end{aligned}
+
+Note, this does not depend on our coordinate choices, so does not
+depend on `\sigma_y` or `\sigma_\text{B\theta}`, as it should not
+since `\mu_0 J_\parallel` is a scalar quantity.
 
 Curvature
 ---------
