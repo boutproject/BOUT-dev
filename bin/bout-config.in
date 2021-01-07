@@ -29,6 +29,7 @@ idlpath="@IDLCONFIGPATH@"
 pythonpath="@PYTHONCONFIGPATH@"
 
 has_netcdf="@BOUT_HAS_NETCDF@"
+has_legacy_netcdf="@BOUT_HAS_LEGACY_NETCDF@"
 has_pnetcdf="@BOUT_HAS_PNETCDF@"
 has_hdf5="@BOUT_HAS_HDF5@"
 has_pvode="@BOUT_HAS_PVODE@"
@@ -70,6 +71,7 @@ Available values for OPTION include:
   --python       Python path
 
   --has-netcdf  NetCDF file support
+  --has-legacy-netcdf  Legacy NetCDF file support
   --has-pnetcdf Parallel NetCDF file support
   --has-hdf5    HDF5 file support
   --has-pvode   PVODE solver support
@@ -107,6 +109,7 @@ all()
         echo "  --python      -> $pythonpath"
         echo
         echo "  --has-netcdf  -> $has_netcdf"
+        echo "  --has-legacy-netcdf  -> $has_legacy_netcdf"
         echo "  --has-pnetcdf -> $has_pnetcdf"
         echo "  --has-hdf5    -> $has_hdf5"
         echo "  --has-pvode   -> $has_pvode"
@@ -192,6 +195,10 @@ while test $# -gt 0; do
 
     --has-netcdf)
         echo $has_netcdf
+        ;;
+
+    --has-legacy-netcdf)
+        echo $has_legacy_netcdf
         ;;
 
     --has-pnetcdf)

@@ -4,6 +4,7 @@
 # Run the test, compare results against the benchmark
 #
 # requires: netcdf
+# requires: not legacy_netcdf
 # cores: 4
 
 from boutconfig import isMetric3D

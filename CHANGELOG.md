@@ -49,6 +49,9 @@
   are enabled, `getUniform` will throw an exception if its argument is
   not uniform (that is, that all values are identical).
   [\#2025](https://github.com/boutproject/BOUT-dev/pull/2025)
+- `PhysicsModel` expects the options `datadir` and `dump_format` to
+  have been set; this is only a problem if you don't call
+  `BoutInitialise`. [\#2062](https://github.com/boutproject/BOUT-dev/pull/2062)
 
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)

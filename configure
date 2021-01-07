@@ -6812,6 +6812,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
         CXXFLAGS="$save_CXXFLAGS"
+        BOUT_HAS_NETCDF=yes
         BOUT_HAS_LEGACY_NETCDF=yes
 
 fi
@@ -7225,6 +7226,7 @@ fi
          { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Legacy NetCDF support enabled" >&5
 $as_echo "$as_me:  -> Legacy NetCDF support enabled" >&6;}
          NCPATH="found"
+         BOUT_HAS_NETCDF=yes
          BOUT_HAS_LEGACY_NETCDF=yes
 
 fi
