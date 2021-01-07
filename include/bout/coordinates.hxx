@@ -306,22 +306,6 @@ private:
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
-
-  /// Alternative implementation for `fromFieldAligned` that can be
-  /// called before the `Coordinates` constructor is finished
-  Field3D maybeFromFieldAligned(const Field3D& f, const std::string& region = "RGN_ALL");
-
-  Field2D maybeFromFieldAligned(const Field2D& f,
-                                const std::string& UNUSED(region) = "RGN_ALL");
-
-  /// A wrapper for index:DDY derivative that is able to tranform
-  /// fields before the constructor is finished.
-  FieldMetric indexDDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                       const std::string& method = "DEFAULT",
-                       const std::string& region = "RGN_NOBNDRY");
-  Field3D indexDDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-                   const std::string& method = "DEFAULT",
-                   const std::string& region = "RGN_NOBNDRY");
 };
 
 /*
