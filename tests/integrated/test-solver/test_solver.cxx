@@ -62,6 +62,8 @@ int main(int argc, char** argv) {
 
   root["output"]["enabled"] = false;
   root["restart"]["enabled"] = false;
+  root["datadir"] = "data";
+  root["dump_format"] = "nc";
 
   // Set the command-line arguments
   SlepcLib::setArgs(argc, argv);

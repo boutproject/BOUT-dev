@@ -27,4 +27,7 @@
 #cmakedefine01 BOUT_USE_SIGNAL
 #cmakedefine01 BOUT_USE_TRACK
 
+// CMake build does not support legacy interface
+#define BOUT_HAS_LEGACY_NETCDF 0
+
 #endif // BOUT_BUILD_CONFIG_HXX
