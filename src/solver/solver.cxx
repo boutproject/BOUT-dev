@@ -719,7 +719,7 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
           throw BoutException(_("Monitor signalled to quit (return code {})"), ret);
       }
     }
-  } catch (const BoutException &e) {
+  } catch (const BoutException& e) {
     for (const auto& it : monitors) {
       it->cleanup();
     }

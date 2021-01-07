@@ -48,12 +48,12 @@
 *******************************************************************************/
 
 Coordinates::FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc,
-                                        const std::string& method) {
+                                  const std::string& method) {
   return var.getCoordinates(outloc)->Grad_par(var, outloc, method);
 }
 
 Coordinates::FieldMetric Grad_par(const Field2D& var, const std::string& method,
-                                        CELL_LOC outloc) {
+                                  CELL_LOC outloc) {
   return var.getCoordinates(outloc)->Grad_par(var, outloc, method);
 }
 
@@ -191,12 +191,12 @@ Field3D Grad_parP(const Field3D& apar, const Field3D& f) {
 *******************************************************************************/
 
 Coordinates::FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                                             CELL_LOC outloc, const std::string& method) {
+                                       CELL_LOC outloc, const std::string& method) {
   return f.getCoordinates(outloc)->Vpar_Grad_par(v, f, outloc, method);
 }
 
 Coordinates::FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                                             const std::string& method, CELL_LOC outloc) {
+                                       const std::string& method, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Vpar_Grad_par(v, f, outloc, method);
 }
 
@@ -215,12 +215,12 @@ Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, const std::string& met
 * parallel divergence operator B \partial_{||} (F/B)
 *******************************************************************************/
 Coordinates::FieldMetric Div_par(const Field2D& f, CELL_LOC outloc,
-                                       const std::string& method) {
+                                 const std::string& method) {
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
 Coordinates::FieldMetric Div_par(const Field2D& f, const std::string& method,
-                                       CELL_LOC outloc) {
+                                 CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
@@ -309,7 +309,7 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, const std::string& meth
 *******************************************************************************/
 
 Coordinates::FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc,
-                                          const std::string& method) {
+                                    const std::string& method) {
   return f.getCoordinates(outloc)->Grad2_par2(f, outloc, method);
 }
 
@@ -323,7 +323,7 @@ Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, const std::string& method)
 *******************************************************************************/
 
 Coordinates::FieldMetric Div_par_K_Grad_par(BoutReal kY, const Field2D& f,
-                                                  CELL_LOC outloc) {
+                                            CELL_LOC outloc) {
   return kY*Grad2_par2(f, outloc);
 }
 
@@ -332,7 +332,7 @@ Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D& f, CELL_LOC outloc) {
 }
 
 Coordinates::FieldMetric Div_par_K_Grad_par(const Field2D& kY, const Field2D& f,
-                                                  CELL_LOC outloc) {
+                                            CELL_LOC outloc) {
   if (outloc == CELL_DEFAULT) outloc = f.getLocation();
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
@@ -377,8 +377,8 @@ FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 *******************************************************************************/
 
 Coordinates::FieldMetric Laplace_perp(const Field2D& f, CELL_LOC outloc,
-                                            const std::string& dfdy_boundary_condition,
-                                            const std::string& dfdy_region) {
+                                      const std::string& dfdy_boundary_condition,
+                                      const std::string& dfdy_region) {
   return Laplace(f, outloc, dfdy_boundary_condition, dfdy_region)
          - Laplace_par(f, outloc);
 }
@@ -412,8 +412,8 @@ Field3D Laplace_par(const Field3D& f, CELL_LOC outloc) {
 *******************************************************************************/
 
 Coordinates::FieldMetric Laplace(const Field2D& f, CELL_LOC outloc,
-                                       const std::string& dfdy_boundary_condition,
-                                       const std::string& dfdy_region) {
+                                 const std::string& dfdy_boundary_condition,
+                                 const std::string& dfdy_region) {
   return f.getCoordinates(outloc)->Laplace(f, outloc, dfdy_boundary_condition,
                                            dfdy_region);
 }
@@ -441,7 +441,7 @@ Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) {
 *******************************************************************************/
 
 Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
-                                                CELL_LOC outloc) {
+                                          CELL_LOC outloc) {
 
   TRACE("b0xGrad_dot_Grad( Field2D , Field2D )");
 
@@ -589,8 +589,8 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) 
  *******************************************************************************/
 
 Coordinates::FieldMetric bracket(const Field2D& f, const Field2D& g,
-                                       BRACKET_METHOD method, CELL_LOC outloc,
-                                       Solver* UNUSED(solver)) {
+                                 BRACKET_METHOD method, CELL_LOC outloc,
+                                 Solver* UNUSED(solver)) {
   TRACE("bracket(Field2D, Field2D)");
 
   ASSERT1_FIELDS_COMPATIBLE(f, g);
@@ -622,7 +622,7 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
   }
   ASSERT1(outloc == g.getLocation());
 
-  MAYBE_UNUSED(Mesh *mesh) = f.getMesh();
+  MAYBE_UNUSED(Mesh * mesh) = f.getMesh();
 
   Field3D result{emptyFrom(f).setLocation(outloc)};
 

@@ -47,8 +47,9 @@
 
 #include <string>
 
-FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* inner_boundary,
-	       BoundaryRegionPar* outer_boundary, bool zperiodic)
+FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_,
+               BoundaryRegionPar* inner_boundary, BoundaryRegionPar* outer_boundary,
+               bool zperiodic)
     : map_mesh(mesh), offset(offset_), boundary_mask(map_mesh),
       corner_boundary_mask(map_mesh) {
 
@@ -269,7 +270,7 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* inn
                              z), // sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
               PI                 // Right-angle intersection
           );
-        } else if (xt_prime(x, y, z) >= map_mesh.xend+1) {
+        } else if (xt_prime(x, y, z) >= map_mesh.xend + 1) {
           // Hit an outer boundary
           // Set to false to not skip this point
           boundary_mask(x, y, z) = false;

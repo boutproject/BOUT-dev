@@ -139,8 +139,8 @@ int Mesh::get(bool &bval, const std::string &name, bool def) {
   return !success;
 }
 
-int Mesh::get(Field2D &var, const std::string &name, BoutReal def,
-              bool communicate, CELL_LOC location) {
+int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communicate,
+              CELL_LOC location) {
   TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);
 
   if (source == nullptr or !source->get(this, var, name, def, location)) {

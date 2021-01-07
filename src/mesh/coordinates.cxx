@@ -315,7 +315,7 @@ int getAtLoc(Mesh* mesh, Coordinates::FieldMetric& var, const std::string& name,
              const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
 
   checkStaggeredGet(mesh, name, suffix);
-  int result = mesh->get(var, name+suffix, default_value, false, location);
+  int result = mesh->get(var, name + suffix, default_value, false, location);
 
   return result;
 }
@@ -326,7 +326,8 @@ int getAtLocAndFillGuards(Mesh* mesh, Coordinates::FieldMetric& var,
                           bool extrapolate_y, bool no_extra_interpolate,
                           ParallelTransform* pt) {
   auto ret = getAtLoc(mesh, var, name, suffix, location, default_value);
-  var = interpolateAndExtrapolate(var, location, extrapolate_x, extrapolate_y, no_extra_interpolate, pt);
+  var = interpolateAndExtrapolate(var, location, extrapolate_x, extrapolate_y,
+                                  no_extra_interpolate, pt);
   return ret;
 }
 
@@ -342,8 +343,8 @@ std::string getLocationSuffix(CELL_LOC location) {
       return "_ylow";
     }
   case CELL_ZLOW: {
-      // in 2D metric, same as CELL_CENTRE
-      return bout::build::use_metric_3d ? "_zlow" : "";
+    // in 2D metric, same as CELL_CENTRE
+    return bout::build::use_metric_3d ? "_zlow" : "";
     }
   default: {
       throw BoutException("Incorrect location passed to "
@@ -745,8 +746,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     dz = interpolateAndExtrapolate(dz, location, extrapolate_x, extrapolate_y, false,
                                    transform.get());
 
-    getAtLocAndFillGuards(mesh, dx, "dx", suffix, location, 1.0, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
+    getAtLocAndFillGuards(mesh, dx, "dx", suffix, location, 1.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
 
     if (mesh->periodicX) {
       communicate(dx);
@@ -1226,7 +1227,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
     bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
-    if (localmesh->get(d2x, "d2x"+suffix, 0.0, false, location)) {
+    if (localmesh->get(d2x, "d2x" + suffix, 0.0, false, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
       d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
@@ -1243,7 +1244,7 @@ int Coordinates::geometry(bool recalculate_staggered,
       d1_dx = -d2x / (dx * dx);
     }
 
-    if (localmesh->get(d2y, "d2y"+suffix, 0.0, false, location)) {
+    if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
       d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
@@ -1537,9 +1538,9 @@ void Coordinates::setParallelTransform(Options* options) {
     if (localmesh->sourceHasVar("dx"+suffix)) {
       // Grid file has variables at this location, so should be able to read
       checkStaggeredGet(localmesh, "zShift", suffix);
-      if (localmesh->get(zShift, "zShift"+suffix, 0.0, false, location)) {
+      if (localmesh->get(zShift, "zShift" + suffix, 0.0, false, location)) {
         // No zShift variable. Try qinty in BOUT grid files
-        if (localmesh->get(zShift, "qinty"+suffix, 0.0, false, location)) {
+        if (localmesh->get(zShift, "qinty" + suffix, 0.0, false, location)) {
           // Failed to find either variable, cannot use ShiftedMetric
           throw BoutException("Could not read zShift"+suffix+" from grid file");
         }
@@ -1598,8 +1599,8 @@ void Coordinates::setParallelTransform(Options* options) {
  *******************************************************************************/
 
 Coordinates::FieldMetric Coordinates::DDX(const Field2D& f, CELL_LOC loc,
-                                                const std::string& method,
-                                                const std::string& region) {
+                                          const std::string& method,
+                                          const std::string& region) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   return bout::derivatives::index::DDX(f, loc, method, region) / dx;
 }
@@ -1618,8 +1619,8 @@ Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& m
 };
 
 Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
-                                                const std::string& method,
-                                                const std::string& region) {
+                                          const std::string& method,
+                                          const std::string& region) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
@@ -1630,8 +1631,8 @@ Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& m
 };
 
 Coordinates::FieldMetric Coordinates::DDZ(const Field2D& f, CELL_LOC loc,
-                                                const std::string& UNUSED(method),
-                                                const std::string& UNUSED(region)) {
+                                          const std::string& UNUSED(method),
+                                          const std::string& UNUSED(region)) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   ASSERT1(f.getMesh() == localmesh);
   if (loc == CELL_DEFAULT) {
@@ -1648,8 +1649,8 @@ Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& m
 // Parallel gradient
 
 Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
-                                                     MAYBE_UNUSED(CELL_LOC outloc),
-                                                     const std::string& UNUSED(method)) {
+                                               MAYBE_UNUSED(CELL_LOC outloc),
+                                               const std::string& UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
   ASSERT1(location == outloc
           || (outloc == CELL_DEFAULT && location == var.getLocation()));
@@ -1669,10 +1670,9 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
 // Vpar_Grad_par
 // vparallel times the parallel derivative along unperturbed B-field
 
-Coordinates::FieldMetric
-Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                           MAYBE_UNUSED(CELL_LOC outloc),
-                           const std::string& UNUSED(method)) {
+Coordinates::FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                                                    MAYBE_UNUSED(CELL_LOC outloc),
+                                                    const std::string& UNUSED(method)) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
   return VDDY(v, f) / sqrt(g_22);
 }
@@ -1687,7 +1687,7 @@ Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC 
 // Parallel divergence
 
 Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
-                                                    const std::string& method) {
+                                              const std::string& method) {
   TRACE("Coordinates::Div_par( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
@@ -1728,7 +1728,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
 // Note: For parallel Laplacian use Laplace_par
 
 Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outloc,
-                                                       const std::string& method) {
+                                                 const std::string& method) {
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
@@ -1769,7 +1769,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
 Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
-                                                  bool UNUSED(useFFT)) {
+                                            bool UNUSED(useFFT)) {
   TRACE("Coordinates::Delp2( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
@@ -1903,8 +1903,7 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
   return result;
 }
 
-Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f,
-                                                        CELL_LOC outloc) {
+Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
   return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * DDY(f, outloc) / J;
 }
@@ -1916,10 +1915,9 @@ Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
 
 // Full Laplacian operator on scalar field
 
-Coordinates::FieldMetric
-Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
-                     const std::string& dfdy_boundary_conditions,
-                     const std::string& dfdy_dy_region) {
+Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
+                                              const std::string& dfdy_boundary_conditions,
+                                              const std::string& dfdy_dy_region) {
   TRACE("Coordinates::Laplace( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 

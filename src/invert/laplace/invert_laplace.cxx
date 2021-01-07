@@ -746,7 +746,6 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
 }
 #endif
 
-
 /**********************************************************************************
  *                              LEGACY INTERFACE
  *

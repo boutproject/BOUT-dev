@@ -67,7 +67,7 @@ Vector2D Grad(const Field2D& f, CELL_LOC outloc, const std::string& method) {
   return result;
 }
 
-Vector3D Grad(const Field3D &f, CELL_LOC outloc, const std::string& method) {
+Vector3D Grad(const Field3D& f, CELL_LOC outloc, const std::string& method) {
   TRACE("Grad( Field3D )");
   SCOREP0();
   CELL_LOC outloc_x, outloc_y, outloc_z;
@@ -96,7 +96,7 @@ Vector3D Grad(const Field3D &f, CELL_LOC outloc, const std::string& method) {
   return result;
 }
 
-Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc, const std::string& method) {
+Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc, const std::string& method) {
   TRACE("Grad_perp( Field3D )");
   SCOREP0();
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
@@ -118,7 +118,7 @@ Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc, const std::string& method)
   return result;
 }
 
-Vector2D Grad_perp(const Field2D &f, CELL_LOC outloc, const std::string& method) {
+Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc, const std::string& method) {
   AUTO_TRACE();
   SCOREP0();
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
@@ -189,7 +189,7 @@ Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method) {
 
   auto vcnJy = vcn.y.getCoordinates()->J * vcn.y;
   if (v.y.hasParallelSlices()) {
-    // If v.y has parallel slices then we are using ShiftedMetric (with 
+    // If v.y has parallel slices then we are using ShiftedMetric (with
     // mesh:calcParallelSlices_on_communicate=true) or FCI, so we should calculate
     // parallel slices for vcnJy in order to calculate the parallel derivative DDY
     vcnJy.calcParallelSlices();
@@ -263,7 +263,7 @@ Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
  * Curl operators
  **************************************************************************/
 
-Vector2D Curl(const Vector2D &v) {
+Vector2D Curl(const Vector2D& v) {
 
   TRACE("Curl( Vector2D )");
 
@@ -291,7 +291,7 @@ Vector2D Curl(const Vector2D &v) {
   return result;
 }
 
-Vector3D Curl(const Vector3D &v) {
+Vector3D Curl(const Vector3D& v) {
   TRACE("Curl( Vector3D )");
   SCOREP0();
   ASSERT1(v.getLocation() != CELL_VSHIFT);
@@ -333,7 +333,7 @@ Coordinates::FieldMetric V_dot_Grad(const Vector2D& v, const Field2D& f) {
   return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
-Field3D V_dot_Grad(const Vector2D &v, const Field3D &f) {
+Field3D V_dot_Grad(const Vector2D& v, const Field3D& f) {
   TRACE("V_dot_Grad( Vector2D , Field3D )");
   SCOREP0();
 
@@ -344,7 +344,7 @@ Field3D V_dot_Grad(const Vector2D &v, const Field3D &f) {
   return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
-Field3D V_dot_Grad(const Vector3D &v, const Field2D &f) {
+Field3D V_dot_Grad(const Vector3D& v, const Field2D& f) {
   TRACE("V_dot_Grad( Vector3D , Field2D )");
   SCOREP0();
 
@@ -355,7 +355,7 @@ Field3D V_dot_Grad(const Vector3D &v, const Field2D &f) {
   return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
-Field3D V_dot_Grad(const Vector3D &v, const Field3D &f) {
+Field3D V_dot_Grad(const Vector3D& v, const Field3D& f) {
   TRACE("V_dot_Grad( Vector3D , Field3D )");
   SCOREP0();
 
@@ -440,15 +440,15 @@ R V_dot_Grad(const T &v, const F &a) {
 }
 
 // Implement vector-vector operation in terms of templated routine above
-Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a) {
+Vector2D V_dot_Grad(const Vector2D& v, const Vector2D& a) {
   return V_dot_Grad<Vector2D, Vector2D>(v, a);
 }
-Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a) {
+Vector3D V_dot_Grad(const Vector2D& v, const Vector3D& a) {
   return V_dot_Grad<Vector2D, Vector3D>(v, a);
 }
-Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a) {
+Vector3D V_dot_Grad(const Vector3D& v, const Vector2D& a) {
   return V_dot_Grad<Vector3D, Vector2D>(v, a);
 }
-Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a) {
+Vector3D V_dot_Grad(const Vector3D& v, const Vector3D& a) {
   return V_dot_Grad<Vector3D, Vector3D>(v, a);
 }

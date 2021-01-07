@@ -138,9 +138,7 @@ public:
 
   /// Return if the metrics are 3D
   // needs to be static for old gcc
-  static constexpr bool is3D() {
-    return bout::build::use_metric_3d;
-  }
+  static constexpr bool is3D() { return bout::build::use_metric_3d; }
 
   ///////////////////////////////////////////////////////////
   // Parallel transforms
@@ -196,18 +194,18 @@ public:
 #endif
 
   FieldMetric DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                        const std::string& method = "DEFAULT",
-                        const std::string& region = "RGN_NOBNDRY");
+                  const std::string& method = "DEFAULT",
+                  const std::string& region = "RGN_NOBNDRY");
   DERIV_FUNC_REGION_ENUM_TO_STRING(DDX, FieldMetric, Field2D);
 
   FieldMetric DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                        const std::string& method = "DEFAULT",
-                        const std::string& region = "RGN_NOBNDRY");
+                  const std::string& method = "DEFAULT",
+                  const std::string& region = "RGN_NOBNDRY");
   DERIV_FUNC_REGION_ENUM_TO_STRING(DDY, FieldMetric, Field2D);
 
   FieldMetric DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                        const std::string& method = "DEFAULT",
-                        const std::string& region = "RGN_NOBNDRY");
+                  const std::string& method = "DEFAULT",
+                  const std::string& region = "RGN_NOBNDRY");
   DERIV_FUNC_REGION_ENUM_TO_STRING(DDZ, FieldMetric, Field2D);
 
   Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
@@ -224,7 +222,7 @@ public:
 
   /// Gradient along magnetic field  b.Grad(f)
   FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
-                             const std::string& method = "DEFAULT");
+                       const std::string& method = "DEFAULT");
   GRAD_FUNC_REGION_ENUM_TO_STRING(Grad_par, FieldMetric, Field2D);
 
   Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
@@ -233,12 +231,11 @@ public:
 
   /// Advection along magnetic field V*b.Grad(f)
   FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                                  CELL_LOC outloc = CELL_DEFAULT,
-                                  const std::string& method = "DEFAULT");
-  [[deprecated(
-      "Please use Coordinates::Vpar_Grad_par(const Field2D& v, "
-      "const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, "
-      "const std::string& method = \"DEFAULT\") instead")]] inline FieldMetric
+                            CELL_LOC outloc = CELL_DEFAULT,
+                            const std::string& method = "DEFAULT");
+  [[deprecated("Please use Coordinates::Vpar_Grad_par(const Field2D& v, "
+               "const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, "
+               "const std::string& method = \"DEFAULT\") instead")]] inline FieldMetric
   Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
     return Vpar_Grad_par(v, f, outloc, toString(method));
   }
@@ -255,7 +252,7 @@ public:
 
   /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
   FieldMetric Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                            const std::string& method = "DEFAULT");
+                      const std::string& method = "DEFAULT");
   GRAD_FUNC_REGION_ENUM_TO_STRING(Div_par, FieldMetric, Field2D);
 
   Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
@@ -264,7 +261,7 @@ public:
 
   // Second derivative along magnetic field
   FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                               const std::string& method = "DEFAULT");
+                         const std::string& method = "DEFAULT");
   GRAD_FUNC_REGION_ENUM_TO_STRING(Grad2_par2, FieldMetric, Field2D);
 
   Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
@@ -277,8 +274,7 @@ public:
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code
   // since it makes use of the same coefficients and FFT routines
-  FieldMetric Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                          bool useFFT = true);
+  FieldMetric Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
   Field3D Delp2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
   FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
 
@@ -289,8 +285,8 @@ public:
   
   // Full Laplacian operator on scalar field
   FieldMetric Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                            const std::string& dfdy_boundary_conditions = "free_o3",
-                            const std::string& dfdy_dy_region = "");
+                      const std::string& dfdy_boundary_conditions = "free_o3",
+                      const std::string& dfdy_dy_region = "");
   Field3D Laplace(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& dfdy_boundary_conditions = "free_o3",
                   const std::string& dfdy_dy_region = "");

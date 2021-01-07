@@ -24,19 +24,19 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
 #include "serial_band.hxx"
+#include "bout/build_config.hxx"
 
 #if not BOUT_USE_METRIC_3D
 
-#include <globals.hxx>
-#include <bout/mesh.hxx>
-#include <fft.hxx>
-#include <utils.hxx>
-#include <boutexception.hxx>
-#include <lapack_routines.hxx>
 #include <bout/constants.hxx>
+#include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
+#include <boutexception.hxx>
+#include <fft.hxx>
+#include <globals.hxx>
+#include <lapack_routines.hxx>
+#include <utils.hxx>
 
 #include <output.hxx>
 

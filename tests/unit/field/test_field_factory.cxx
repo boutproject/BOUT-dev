@@ -575,9 +575,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   localmesh.createDefaultRegions();
   localmesh.setCoordinates(std::make_shared<Coordinates>(
       &localmesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}));
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}));
   // No call to Coordinates::geometry() needed here
 
   localmesh.getCoordinates()->setParallelTransform(

@@ -42,13 +42,14 @@
 #ifndef __INV_PAR_CR_H__
 #define __INV_PAR_CR_H__
 
-#include "bout/build_config.hxx"
 #include "invert_parderiv.hxx"
+#include "bout/build_config.hxx"
 
 #if BOUT_USE_METRIC_3D
 
 namespace {
-RegisterUnavailableInvertPar registerinvertparcyclic{PARDERIVCYCLIC, "BOUT++ was configured with 3D metrics"};
+RegisterUnavailableInvertPar registerinvertparcyclic{
+    PARDERIVCYCLIC, "BOUT++ was configured with 3D metrics"};
 }
 
 #else

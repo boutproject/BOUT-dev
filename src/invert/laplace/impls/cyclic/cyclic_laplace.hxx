@@ -31,12 +31,12 @@ class LaplaceCyclic;
 #ifndef __LAP_CYCLIC_H__
 #define __LAP_CYCLIC_H__
 
-#include "bout/build_config.hxx"
 #include "invert_laplace.hxx"
+#include "bout/build_config.hxx"
 
 #if BOUT_USE_METRIC_3D
 
-namespace{
+namespace {
 RegisterUnavailableLaplace registerlaplacecycle(LAPLACE_CYCLIC,
                                                 "BOUT++ was configured with 3D metrics");
 }

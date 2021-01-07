@@ -1,5 +1,5 @@
-#include "bout/build_config.hxx"
 #include "laplacexz-cyclic.hxx"
+#include "bout/build_config.hxx"
 
 #if not BOUT_USE_METRIC_3D
 

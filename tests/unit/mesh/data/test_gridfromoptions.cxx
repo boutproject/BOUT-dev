@@ -64,9 +64,9 @@ public:
         &mesh_from_options);
     expected_metric =
 #if BOUT_USE_METRIC_3D
-      expected_3d;
+        expected_3d;
 #else
-      expected_2d;
+        expected_2d;
 #endif
   }
 
@@ -377,12 +377,11 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowInterp) {
 
   auto coords = mesh_from_options.getCoordinates(CELL_XLOW);
 
-  Coordinates::FieldMetric expected_xlow =
-      makeField<Coordinates::FieldMetric>(
-          [](Coordinates::FieldMetric::ind_type& index) {
-            return index.x() - 0.5 + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
-          },
-          &mesh_from_options);
+  Coordinates::FieldMetric expected_xlow = makeField<Coordinates::FieldMetric>(
+      [](Coordinates::FieldMetric::ind_type& index) {
+        return index.x() - 0.5 + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
+      },
+      &mesh_from_options);
 
   mesh_from_options.communicate(expected_xlow);
 

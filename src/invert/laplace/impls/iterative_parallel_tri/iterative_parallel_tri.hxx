@@ -29,12 +29,12 @@ class LaplaceIPT;
 #ifndef __IPT_H__
 #define __IPT_H__
 
-#include "bout/build_config.hxx"
 #include "invert_laplace.hxx"
+#include "bout/build_config.hxx"
 
 #if BOUT_USE_METRIC_3D
 
-namespace{
+namespace {
 RegisterUnavailableLaplace registerlaplaceipt(LAPLACE_IPT,
                                               "BOUT++ was configured with 3D metrics");
 }

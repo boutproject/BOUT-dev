@@ -79,11 +79,11 @@ public:
 
   /// Field2D are axisymmetric, so transformation to or from field-aligned coordinates is
   /// a null operation.
-  virtual const Field2D toFieldAligned(const Field2D &f,
+  virtual const Field2D toFieldAligned(const Field2D& f,
                                        const std::string& UNUSED(region) = "RGN_ALL") {
     return f;
   }
-  virtual const Field2D fromFieldAligned(const Field2D &f,
+  virtual const Field2D fromFieldAligned(const Field2D& f,
                                          const std::string& UNUSED(region) = "RGN_ALL") {
     return f;
   }

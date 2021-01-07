@@ -43,7 +43,8 @@ int main(int argc, char** argv) {
 
   output.write("First solve\n");
 
-  Field3D rhs = FieldFactory::get()->create3D("rhs", Options::getRoot(), bout::globals::mesh);
+  Field3D rhs =
+      FieldFactory::get()->create3D("rhs", Options::getRoot(), bout::globals::mesh);
   Field3D x = inv->solve(rhs, 0.0);
 
   SAVE_ONCE2(rhs, x);
@@ -52,7 +53,8 @@ int main(int argc, char** argv) {
 
   inv->setCoefs(Field3D(2.0),Field3D(0.1));
 
-  Field3D rhs2 = FieldFactory::get()->create3D("rhs", Options::getRoot(), bout::globals::mesh);
+  Field3D rhs2 =
+      FieldFactory::get()->create3D("rhs", Options::getRoot(), bout::globals::mesh);
   Field3D x2 = inv->solve(rhs2, 0.0);
   SAVE_ONCE2(rhs2, x2);
 

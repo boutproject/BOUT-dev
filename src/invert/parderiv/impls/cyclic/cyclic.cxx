@@ -35,8 +35,8 @@
  *
  ************************************************************************/
 
-#include "bout/build_config.hxx"
 #include "cyclic.hxx"
+#include "bout/build_config.hxx"
 
 #if not BOUT_USE_METRIC_3D
 
@@ -183,15 +183,15 @@ const Field3D InvertParCR::solve(const Field3D &f) {
       bout::globals::mpi->MPI_Comm_rank(surf.communicator(), &rank);
       bout::globals::mpi->MPI_Comm_size(surf.communicator(), &np);
 
-      if(rank == 0) {
-        for(int k=0; k<nsys; k++) {
+      if (rank == 0) {
+        for (int k = 0; k < nsys; k++) {
           BoutReal kwave = k * 2.0 * PI / zlength; // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
           a(k, 0) *= phase;
         }
       }
-      if(rank == np-1) {
-        for(int k=0; k<nsys; k++) {
+      if (rank == np - 1) {
+        for (int k = 0; k < nsys; k++) {
           BoutReal kwave = k * 2.0 * PI / zlength; // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , sin(kwave*ts));
           c(k, localmesh->LocalNy - 2 * localmesh->ystart - 1) *= phase;
