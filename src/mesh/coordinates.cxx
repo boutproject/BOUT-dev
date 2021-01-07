@@ -41,6 +41,8 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
   // communicate f. We will sort out result's boundary guard cells below, but
   // not f's so we don't want to change f.
   result.allocate();
+  // Use sendY()/sendX() and wait() instead of communicate() to ensure we don't
+  // try to calculate parallel slices as Coordinates are not constructed yet.
   auto h = localmesh->sendY(result);
   localmesh->wait(h);
   h = localmesh->sendX(result);
@@ -157,8 +159,12 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
   Field3D f = f_;
   ParallelTransform* pt_f;
   if (f.getCoordinates() == nullptr) {
+    // if input f is member of the Coordinates we are currently constructing, it will not
+    // have Coordinates and needs to use the passed-in ParallelTransform
     pt_f = pt_;
   } else {
+    // if input f is from Coordinates at a different location, it will have its own
+    // Coordinates, and we should use its ParallelTransform
     pt_f = &f.getCoordinates()->getParallelTransform();
   }
   if (f.getDirectionY() != YDirectionType::Standard) {
@@ -189,6 +195,8 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
   // communicate f. We will sort out result's boundary guard cells below, but
   // not f's so we don't want to change f.
   result.allocate();
+  // Use sendY()/sendX() and wait() instead of communicate() to ensure we don't
+  // try to calculate parallel slices as Coordinates are not constructed yet.
   auto h = localmesh->sendY(result);
   localmesh->wait(h);
   h = localmesh->sendX(result);
