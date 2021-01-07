@@ -700,18 +700,16 @@ Re-arranging, this becomes:
    {\boldsymbol{b}}\times{\boldsymbol{\kappa}} = \nabla\times{\boldsymbol{b}}-
    {\boldsymbol{b}}\left({\boldsymbol{b}}\cdot\left(\nabla\times{\boldsymbol{b}}\right)\right)\end{aligned}
 
-Components of `\nabla\times{\boldsymbol{b}}` are:
+Components of `\nabla\times{\boldsymbol{b}}` are [#curvature]_:
 
 .. math::
 
    \begin{aligned}
-   \left(\nabla\times{\boldsymbol{b}}\right)^x =& {\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}
-   R}{B}\right) \\ \left(\nabla\times{\boldsymbol{b}}\right)^y =&
-       -{\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}R}{B}\right) \\
-       \left(\nabla\times{\boldsymbol{b}}\right)^z =&
-       \frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) - {\sigma_{B\theta}}\frac{{B_{\text{pol}}}{B_{\text{tor}}}
-       R}{{h_\theta}B}{\frac{\partial \nu}{\partial x}} - {\sigma_{B\theta}}I\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}
-       R}{B}\right) \\\end{aligned}
+   \left(\nabla\times{\boldsymbol{b}}\right)^x =& {\sigma_y}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}
+   R}{B}\right) \\ 
+   \left(\nabla\times{\boldsymbol{b}}\right)^y =& -{\sigma_y}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}R}{B}\right) \\
+   \left(\nabla\times{\boldsymbol{b}}\right)^z =& \frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) - \frac{{B_{\text{pol}}}{B_{\text{tor}}} R}{{h_\theta}B}{\frac{\partial \nu}{\partial x}} - {\sigma_y}I\frac{{|B_{\text{pol}}|}}{{h_\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}} R}{B}\right) \\
+   \end{aligned}
 
 giving:
 
@@ -720,8 +718,8 @@ giving:
 
    \begin{aligned}
    {\boldsymbol{\kappa}} =& -\frac{{B_{\text{pol}}}}{B h_\theta}\left[{\frac{\partial }{\partial x}}\left(\frac{B
-   h_\theta}{{B_{\text{pol}}}}\right) - {\sigma_{B\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}I R}{B}\right)\right]\nabla x \nonumber
-   \\ &+ {\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{B h_\theta}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}R}{B}\right)\nabla z
+   h_\theta}{{B_{\text{pol}}}}\right) - {\sigma_y\sigma_{B\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}I R}{B}\right)\right]\nabla x \nonumber
+   \\ &+ {\sigma_y}\frac{{B_{\text{pol}}}}{B h_\theta}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}R}{B}\right)\nabla z
    \end{aligned}
 
 .. math::
@@ -729,29 +727,29 @@ giving:
    \begin{aligned}
    {\boldsymbol{b}}\cdot\left(\nabla\times{\boldsymbol{b}}\right) = -{\sigma_{B\theta}}B{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}R}{B}\right) +
    {\sigma_{B\theta}}\frac{{B_{\text{tor}}}{B_{\text{pol}}}R}{B{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) -
-   \frac{{B_{\text{pol}}}{B_{\text{tor}}}^2R^2}{{h_\theta}B^2}{\frac{\partial \nu}{\partial x}}\end{aligned}
+   \sigma_{B\theta}\frac{{B_{\text{pol}}}{B_{\text{tor}}}^2R^2}{{h_\theta}B^2}{\frac{\partial \nu}{\partial x}}\end{aligned}
 
 therefore,
 
 .. math::
 
    \begin{aligned}
-   \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x =& {\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}
-   R}{B}\right) = -{\sigma_{B\theta}}\frac{{B_{\text{pol}}}{B_{\text{tor}}}R}{{h_\theta}B^2}{\frac{\partial B}{\partial y}} \\
-   \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^y =& \frac{{B_{\text{pol}}}^2{B_{\text{tor}}}^2
-   R^2}{B^3{h_\theta}^2}{\frac{\partial \nu}{\partial x}} - {\sigma_{B\theta}}\frac{{B_{\text{pol}}}^2{B_{\text{tor}}}
+   \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x =& {\sigma_y}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}
+   R}{B}\right) = -{\sigma_y}\frac{{B_{\text{pol}}}{B_{\text{tor}}}R}{{h_\theta}B^2}{\frac{\partial B}{\partial y}} \\
+   \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^y =& \sigma_y\frac{{B_{\text{pol}}}^2{B_{\text{tor}}}^2
+   R^2}{B^3{h_\theta}^2}{\frac{\partial \nu}{\partial x}} - {\sigma_y}\frac{{B_{\text{pol}}}^2{B_{\text{tor}}}
    R}{B^2{h_\theta}^2}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) \\
    \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^z =&
-   \frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) - {\sigma_{B\theta}}\frac{{B_{\text{pol}}}{B_{\text{tor}}}
-   R}{{h_\theta}B}{\frac{\partial \nu}{\partial x}} - I\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x\end{aligned}
+   \frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) - \frac{{B_{\text{pol}}}{B_{\text{tor}}}
+   R}{{h_\theta}B}{\frac{\partial \nu}{\partial x}} - \sigma_{B\theta} I\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x\end{aligned}
 
 Using equation :eq:`eq:xbalance`:
 
 .. math::
 
    \begin{aligned}
-   B{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) + \frac{B{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial B}{\partial x}} - {\sigma_{B\theta}}{B_{\text{tor}}}
-   R{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}{h_\theta}}{R{B_{\text{pol}}}}\right) + \frac{\mu_0{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial P}{\partial x}} =
+   \sigma_{B\theta}B{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) + \sigma_{B\theta}\frac{B{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial B}{\partial x}} - {\sigma_{B\theta}}{B_{\text{tor}}}
+   R{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}{h_\theta}}{R{B_{\text{pol}}}}\right) + \sigma_{B\theta}\frac{\mu_0{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial P}{\partial x}} =
    0\end{aligned}
 
 we can re-write the above components as:
@@ -759,10 +757,24 @@ we can re-write the above components as:
 .. math::
 
    \begin{aligned}
-   \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^y =& {\sigma_{B\theta}}\frac{{B_{\text{pol}}}{B_{\text{tor}}}
+   \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^y =& {\sigma_y}\frac{{B_{\text{pol}}}{B_{\text{tor}}}
    R}{B^2{h_\theta}}\left[\frac{\mu_0}{B}{\frac{\partial P}{\partial x}} + {\frac{\partial B}{\partial x}}\right] \\
    \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^z =& -\frac{\mu_0}{B}{\frac{\partial P}{\partial x}} - {\frac{\partial B}{\partial x}} -
-   I\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x\end{aligned}
+   \sigma_{B\theta}I\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x\end{aligned}
+
+.. [#curvature] Note on signs: `\nabla\times\boldsymbol{b}` should
+                flip sign if we the magnetic field direction (i.e.
+                `B_\text{pol}\rightarrow -B_\text{pol}` and
+                `B_\text{tor} \rightarrow -B_\text{tor}`). Under this
+                flip, the `x`-coordinate stays the same and the
+                `z`-coordinate flips sign. The `y`-coordinate stays
+                the same, or the `eta`-coordinate flips sign.
+                Therefore the x-component of `\nabla\times\boldsymbol{b}` 
+                should flip sign, the `z`-component should not flip
+                sign (product of two sign flips), and the
+                `y`-component should flip sign if '`y`' is `y` and not
+                flip sign if '`y`' is `\eta`.
+
 
 Curvature from `{\boldsymbol{b}}\times{\boldsymbol{\kappa}}`
 ------------------------
