@@ -239,6 +239,6 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   }
 
   return fromFieldAligned(result, "RGN_NOBNDRY");
-};
+}
 
 #endif // BOUT_USE_METRIC_3D
