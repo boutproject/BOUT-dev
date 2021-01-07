@@ -136,10 +136,6 @@ public:
   int calcContravariant(const std::string& region = "RGN_ALL");
   int jacobian(); ///< Calculate J and Bxy
 
-  /// Return if the metrics are 3D
-  // needs to be static for old gcc
-  static constexpr bool is3D() { return bout::build::use_metric_3d; }
-
   ///////////////////////////////////////////////////////////
   // Parallel transforms
   ///////////////////////////////////////////////////////////
