@@ -977,7 +977,7 @@ Therefore, in terms of unit vectors:
 
    \begin{aligned}
    \nabla\times{\boldsymbol{b}}=
-   \frac{1}{R{h_\theta}}{\frac{\partial }{\partial \theta}}\left(\frac{R{B_{\text{tor}}}}{B}\right){\hat{{\boldsymbol{e}}}}_\psi -
+   \frac{\sigma_{B\theta}}{R{h_\theta}}{\frac{\partial }{\partial \theta}}\left(\frac{R{B_{\text{tor}}}}{B}\right){\hat{{\boldsymbol{e}}}}_\psi -
    {B_{\text{pol}}}{\frac{\partial }{\partial \psi}}\left(\frac{R{B_{\text{tor}}}}{B}\right){\hat{{\boldsymbol{e}}}}_\theta + \frac{{B_{\text{pol}}}
    R}{{h_\theta}}{\frac{\partial }{\partial \psi}}\left(\frac{{h_\theta}{B_{\text{pol}}}}{B}\right){\hat{{\boldsymbol{e}}}}_\phi\end{aligned}
 
