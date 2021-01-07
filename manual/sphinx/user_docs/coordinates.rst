@@ -776,7 +776,7 @@ we can re-write the above components as:
                 flip sign if '`y`' is `\eta`.
 
 
-Curvature from `{\boldsymbol{b}}\times{\boldsymbol{\kappa}}`
+Curvature from `{\nabla\times\left(\frac{\boldsymbol{b}}{B}\right)}`
 ------------------------
 
 The vector `{\boldsymbol{b}}\times{\boldsymbol{\kappa}}` is an
@@ -796,39 +796,41 @@ operator in curvilinear coordinates (see appendix):
    \begin{aligned}
    \nabla\times\left(\frac{{\boldsymbol{b}}}{B}\right) =&
        \frac{{B_{\text{pol}}}}{{h_\theta}}\left[\left({\frac{\partial }{\partial x}}\left(\frac{{h_\theta}}{{B_{\text{pol}}}}\right) -
-       {\frac{\partial }{\partial y}}\left(\frac{{\sigma_{B\theta}}{B_{\text{tor}}}IR}{B^2}\right)\right){\boldsymbol{e}}_z \right.  \\ &+
-       {\frac{\partial }{\partial y}}\left(\frac{{\sigma_{B\theta}}{B_{\text{tor}}}R}{B^2}\right){\boldsymbol{e}}_x \\ &+
-       \left.{\frac{\partial }{\partial x}}\left(\frac{{\sigma_{B\theta}}{B_{\text{tor}}}R}{B^2}\right){\boldsymbol{e}}_y\right]\end{aligned}
+       \sigma_y{\frac{\partial }{\partial y}}\left(\frac{{\sigma_{B\theta}}{B_{\text{tor}}}IR}{B^2}\right)\right){\boldsymbol{e}}_z \right.  \\ &+
+       \sigma_y{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}R}{B^2}\right){\boldsymbol{e}}_x \\ &-
+       \sigma_y\left.{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}R}{B^2}\right){\boldsymbol{e}}_y\right]\end{aligned}
 
 This can be simplified using
 
 .. math::
 
    \begin{aligned}
-   {\frac{\partial }{\partial y}}\left(\frac{{\sigma_{B\theta}}{B_{\text{tor}}}IR}{B^2}\right) = I{\sigma_{B\theta}}{B_{\text{tor}}}
-   R{\frac{\partial }{\partial y}}\left(\frac{1}{B^2}\right) + \frac{{B_{\text{tor}}}R}{B^2}{\frac{\partial \nu}{\partial x}}\end{aligned}
+   {\sigma_y\frac{\partial }{\partial y}}\left(\frac{{\sigma_{B\theta}}{B_{\text{tor}}}IR}{B^2}\right) = I{\sigma_{B\theta}}{B_{\text{tor}}}
+   R{\sigma_y\frac{\partial }{\partial y}}\left(\frac{1}{B^2}\right) + \frac{{B_{\text{tor}}}R}{B^2}{\frac{\partial \nu}{\partial x}}\end{aligned}
 
 to give
 
 .. math::
 
    \begin{aligned}
-     \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x =& -{\sigma_{B\theta}}\frac{{B_{\text{pol}}}{B_{\text{tor}}}R}{{h_\theta}B^2}{\frac{\partial B}{\partial y}} \\
-       \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^y =& -{\sigma_{B\theta}}\frac{B{B_{\text{pol}}}}{2{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}
-   R}{B^2}\right) \\ \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^z =&
-       \frac{B{B_{\text{pol}}}}{2{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{{h_\theta}}{{B_{\text{pol}}}}\right) - \frac{{B_{\text{pol}}}{B_{\text{tor}}}
-       R}{2{h_\theta}B}{\frac{\partial \nu}{\partial x}} - I\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\cdot\nabla\right)^x\end{aligned}
+     {\frac{B}{2}\left(\nabla\times\frac{\boldsymbol{b}}{B}\right)^x} =& {-{\sigma_y}\frac{{B_{\text{pol}}}{B_{\text{tor}}}R}{{h_\theta}B^2}{\frac{\partial B}{\partial y}}} \\
+     {\frac{B}{2}\left(\nabla\times\frac{\boldsymbol{b}}{B}\right)^y} =& {-{\sigma_y}\frac{B{B_{\text{pol}}}}{2{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}
+   R}{B^2}\right)} \\
+     {\frac{B}{2}\left(\nabla\times\frac{\boldsymbol{b}}{B}\right)^z} =&
+       {\frac{B{B_{\text{pol}}}}{2{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{{h_\theta}}{{B_{\text{pol}}}}\right) - \frac{{B_{\text{pol}}}{B_{\text{tor}}}
+       R}{2{h_\theta}B}{\frac{\partial \nu}{\partial x}} - I\frac{B}{2}\left(\nabla\times\frac{\boldsymbol{b}}{B}\right)^x}
+   \end{aligned}
 
 The first and second terms in
-`\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\cdot\nabla\right)^z`
+`\frac{B}{2}\left(\nabla\times\frac{\boldsymbol{b}}{B}\right)^z`
 almost cancel, so by expanding out `\nu` a better expression is
 
 .. math::
 
    \begin{aligned}
-   \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^z = \frac{{B_{\text{pol}}}^3}{2{h_\theta}
+   \frac{B}{2}\left(\nabla\times\frac{\boldsymbol{b}}{B}\right)^z = \frac{{B_{\text{pol}}}^3}{2{h_\theta}
    B}{\frac{\partial }{\partial x}}\left(\frac{{h_\theta}}{{B_{\text{pol}}}}\right) - \frac{{B_{\text{tor}}}
-   R}{2B}{\frac{\partial }{\partial x}}\left(\frac{{h_\theta}}{{B_{\text{pol}}}}\right)\end{aligned}
+   R}{2B}{\frac{\partial }{\partial x}}\left(\frac{{B_\text{tor}}}{R}\right)\end{aligned}
 
 Curvature of a single line
 --------------------------
