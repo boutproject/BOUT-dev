@@ -467,8 +467,6 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
           }
           {
             // x+1/2, z-1/2
-            // J =  0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
-            // g13 = 0.5*(coords->gxz(x,y,z) + coords->gxz(x+1,y,z));
             const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zminus));
 
             const BoutReal val =
@@ -549,28 +547,6 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
             c -= val;
           }
         }
-
-        ///////////// OLDER CODE /////////////////
-        // Note that because metrics are constant in Z many terms cancel
-
-        // // Wrap around z-1 and z+1 indices
-        // // int zminus = (z - 1 + (localmesh->LocalNz)) % (localmesh->LocalNz);
-        // // int zplus = (z + 1) % (localmesh->LocalNz);
-
-        // // Metrics on z+1/2 boundary
-        // Acoef = 0.5*(A(x,y,z) + A(x,y,z+1));
-
-        // val = Acoef * coords->gzz(x,y,z) / (coords->dz(x,y,z)*coords->dz(x,y,z));
-        // zp = val;
-        // c -= val;
-
-        // // Metrics on z-1/2 boundary
-        // Acoef = 0.5*(A(x,y,z) + A(x,y,z-1));
-
-        // val = Acoef * coords->gzz(x,y,z) / (coords->dz(x,y,z)*coords->dz(x,y,z));
-        // zm = val;
-        // c -= val;
-        //////////////////////////////////////////
 
         // B term
         c += B(x,y,z);
