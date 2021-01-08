@@ -420,7 +420,7 @@ These operators are valid for either `\left(x,y,z\right)` or
 above. Unless explicitly stated, in the sections that follow `y` will
 be used to indicate the parallel coordinate (`y` or `\eta`). In a few
 places the sign of `B_\text{pol}` may appear, depending on whether `y`
-or `eta` is used for the parallel coordinate, so we define
+or `\eta` is used for the parallel coordinate, so we define
 
 .. math::
     \sigma_y = \begin{cases}
@@ -763,12 +763,12 @@ we can re-write the above components as:
    \sigma_{B\theta}I\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x\end{aligned}
 
 .. [#curvature] Note on signs: `\nabla\times\boldsymbol{b}` should
-                flip sign if we the magnetic field direction (i.e.
+                flip sign if we flip the magnetic field direction (i.e.
                 `B_\text{pol}\rightarrow -B_\text{pol}` and
                 `B_\text{tor} \rightarrow -B_\text{tor}`). Under this
                 flip, the `x`-coordinate stays the same and the
                 `z`-coordinate flips sign. The `y`-coordinate stays
-                the same, or the `eta`-coordinate flips sign.
+                the same, or the `\eta`-coordinate flips sign.
                 Therefore the x-component of `\nabla\times\boldsymbol{b}` 
                 should flip sign, the `z`-component should not flip
                 sign (product of two sign flips), and the
