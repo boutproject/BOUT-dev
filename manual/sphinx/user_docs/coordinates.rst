@@ -1762,7 +1762,7 @@ The perpendicular gradients in Laplacian inversion
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In the Laplacian inversion BOUT++ currently neglects the parallel
-`y` derivatives if `g_{xy}` and `g_{yz}` are non-zero,
+`y` derivatives even if `g_{xy}` and `g_{yz}` are non-zero,
 thus
 
 .. math::
