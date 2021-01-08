@@ -1600,8 +1600,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D& f) {
     }
   }
 #else
-  throw BoutException(
-      "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+  throw BoutException("Applying boundary condition 'neumann_4thorder' to Field2D not "
+                      "compatible with 3D metrics in all cases.");
 #endif
 }
 
@@ -1887,8 +1887,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       }
     }
 #else
-      throw BoutException(
-          "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+    throw BoutException("Applying boundary condition 'neumann' to Field2D "
+                        "not compatible with 3D metrics in all cases.");
 #endif
   }
 
@@ -2223,8 +2223,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       }
     }
 #else
-      throw BoutException(
-          "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+    throw BoutException("Applying boundary condition 'neumann_O4' to Field2D not "
+                        "compatible with 3D metrics in all cases.");
 #endif
   }
 
@@ -2397,8 +2397,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
           * sqrt(metric->g_22(bndry->x, bndry->y)
                  / metric->g_22(bndry->x - bndry->bx, bndry->y - bndry->by));
 #else
-      throw BoutException(
-          "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+    throw BoutException("Applying boundary condition 'neumannpar' to Field2D not "
+                        "compatible with 3D metrics in all cases.");
 #endif
   }
 
@@ -2549,8 +2549,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       } while (!bndry->isDone());
     }
 #else
-      throw BoutException(
-          "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+    throw BoutException("Applying boundary condition 'zerolaplace' to Field2D not "
+                        "compatible with 3D metrics in all cases.");
 #endif
   }
 
@@ -2653,8 +2653,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       } while (!bndry->isDone());
     }
 #else
-      throw BoutException(
-          "Applying boundary to Field2D not compatible with 3D metrics in all cases.");
+    throw BoutException("Applying boundary condition 'zerolaplace2' to Field2D not "
+                        "compatible with 3D metrics in all cases.");
 #endif
   }
 
