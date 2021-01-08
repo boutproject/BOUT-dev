@@ -1260,7 +1260,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2z, "d2z" + suffix, 0.0, false)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
-      d1_dz = bout::derivatives::index::DDZ(1. / dz); // d/di(1/dy)
+      d1_dz = bout::derivatives::index::DDZ(1. / dz);
       communicate(d1_dz);
       d1_dz =
           interpolateAndExtrapolate(d1_dz, location, true, true, true, transform.get());
@@ -1310,7 +1310,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2z, "d2z", 0.0, false)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
-      d1_dz = bout::derivatives::index::DDZ(1. / dz); // d/di(1/dy)
+      d1_dz = bout::derivatives::index::DDZ(1. / dz);
 
       communicate(d1_dz);
       d1_dz =
