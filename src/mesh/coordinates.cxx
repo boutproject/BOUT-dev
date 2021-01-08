@@ -1728,7 +1728,8 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
   auto invSg = 1.0 / sqrt(g_22);
-  communicate(invSg);
+  // Communicate to get parallel slices
+  localmesh->communicate(invSg);
   auto result = DDY(invSg, outloc, method) * DDY(f, outloc, method) * invSg
                 + D2DY2(f, outloc, method) / g_22;
 
@@ -1744,7 +1745,8 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
   ASSERT1(location == outloc);
 
   auto invSg = 1.0 / sqrt(g_22);
-  communicate(invSg);
+  // Communicate to get parallel slices
+  localmesh->communicate(invSg);
   auto sg = DDY(invSg, outloc, method) * invSg;
 
   Field3D result = ::DDY(f, outloc, method);
