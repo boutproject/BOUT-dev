@@ -35,8 +35,8 @@ coordinate.  If the poloidal magnetic field `B_{pol}` is positive
 then `\psi` increases with radius; if `B_{pol}` is negative then
 `\psi` decreases with radius. To keep the coordinate system
 right-handed, we define a new toroidal coordinate `\zeta` which is
-defined as `\zeta = \sigma_{B\theta}\phi`, where the sign of the
-poloidal magnetic field is `\sigma_{B\theta} \equiv {B_{\text{pol}}}/
+defined as `\zeta = \sigma_{B\text{pol}}\phi`, where the sign of the
+poloidal magnetic field is `\sigma_{B\text{pol}} \equiv {B_{\text{pol}}}/
 \left|{B_{\text{pol}}}\right|`. If `B_{pol} > 0` then `\zeta` is
 anti-clockwise looking down from above the tokamak, and if `B_{pol} <
 0` then `\zeta` is clockwise. This coordinate system `\left(\psi,
@@ -122,7 +122,7 @@ The field-aligned coordinates `\left(x,y,z\right)` are defined by:
    :label: eq:coordtransform
 
    \begin{aligned}
-   x = {\sigma_{B\theta}}\left(\psi - \psi_0\right) \qquad y = \theta \qquad z = \sigma_{B\theta}
+   x = {\sigma_{B\text{pol}}}\left(\psi - \psi_0\right) \qquad y = \theta \qquad z = \sigma_{B\text{pol}}
    \left(\phi - \int_{\theta_0}^{\theta}\nu\left(\psi,\theta\right)d\theta\right)
    \end{aligned}
 
@@ -136,17 +136,17 @@ if `B_{pol} < 0`.
 This coordinate system is right-handed if `B_{pol}>0`, and left-handed if `B_{pol}<0`.
 The Jacobian of this coordinate system, `J_{xyz} = {h_\theta} / {B_{\text{pol}}}`, can
 therefore be positive or negative. This therefore differs from the Jacobian for the
-orthogonal system above: `J_{xyz} = \sigma_{B\theta} J_{\psi\theta\zeta}`.
+orthogonal system above: `J_{xyz} = \sigma_{B\text{pol}} J_{\psi\theta\zeta}`.
 
 The reciprocal basis vectors are
 
 .. math::
 
    \begin{aligned}
-   \nabla x = {\sigma_{B\theta}}\nabla \psi \qquad
+   \nabla x = {\sigma_{B\text{pol}}}\nabla \psi \qquad
    \nabla y = \nabla \theta \qquad
-   \nabla z = \nabla\zeta - \sigma_{B\theta}\left[\int_{\theta_0}^\theta{\frac{\partial \nu\left(\psi,\theta\right)}{\partial \psi}} d\theta\right] \nabla\psi
-   - \sigma_{B\theta}\nu\left(\psi, \theta\right)\nabla\theta
+   \nabla z = \nabla\zeta - \sigma_{B\text{pol}}\left[\int_{\theta_0}^\theta{\frac{\partial \nu\left(\psi,\theta\right)}{\partial \psi}} d\theta\right] \nabla\psi
+   - \sigma_{B\text{pol}}\nu\left(\psi, \theta\right)\nabla\theta
    \end{aligned}
   
 The term in square brackets is the integrated local shear:
@@ -162,16 +162,16 @@ The basis vectors are:
 .. math::
    
    \begin{aligned}
-   \boldsymbol{e}_x =& J_{xyz}\left(\nabla y \times \nabla z\right) = {\sigma_{B\theta}} {\boldsymbol{e}}_\psi + I{\boldsymbol{e}}_\zeta \\
+   \boldsymbol{e}_x =& J_{xyz}\left(\nabla y \times \nabla z\right) = {\sigma_{B\text{pol}}} {\boldsymbol{e}}_\psi + I{\boldsymbol{e}}_\zeta \\
    \boldsymbol{e}_y =& J_{xyz}\left(\nabla z \times \nabla x\right) = {\boldsymbol{e}}_\theta + \nu{\boldsymbol{e}}_\phi \\
    \boldsymbol{e}_z =& J_{xyz}\left(\nabla x \times \nabla y\right) = {\boldsymbol{e}}_\zeta
    \end{aligned}
  
 where `{\boldsymbol{e}}_\phi =
-{\sigma_{B\theta}}{\boldsymbol{e}}_\zeta` is always anticlockwise when
+{\sigma_{B\text{pol}}}{\boldsymbol{e}}_\zeta` is always anticlockwise when
 seen from above the tokamak looking down. The direction of
 `{\boldsymbol{e}}_\zeta` depends on the sign of the poloidal field
-`\sigma_{B\theta}`. Note that `J_{xyz} = \sigma_{B\theta} J_{\psi\theta\zeta}`, and
+`\sigma_{B\text{pol}}`. Note that `J_{xyz} = \sigma_{B\text{pol}} J_{\psi\theta\zeta}`, and
 can be either positive or negative.
 
 Magnetic field
@@ -203,7 +203,7 @@ and the covariant components calculated using `g_{ij}` as
 .. math::
 
    \begin{aligned}
-   B_x = {\sigma_{B\theta}}{B_{\text{tor}}}I R \qquad B_y = \frac{B^2 {h_\theta}}{{B_{\text{pol}}}} \qquad B_z = {\sigma_{B\theta}}{B_{\text{tor}}}R\end{aligned}
+   B_x = {\sigma_{B\text{pol}}}{B_{\text{tor}}}I R \qquad B_y = \frac{B^2 {h_\theta}}{{B_{\text{pol}}}} \qquad B_z = {\sigma_{B\text{pol}}}{B_{\text{tor}}}R\end{aligned}
 
 The unit vector in the direction of equilibrium `{\boldsymbol{B}}` is
 therefore
@@ -234,8 +234,8 @@ given by:
    g^{ij} \equiv {\boldsymbol{e}}^i \cdot{\boldsymbol{e}}^j \equiv \nabla u^i \cdot \nabla u^j = \left(%
    \begin{array}{ccc}
    \left(R{B_{\text{pol}}}\right)^2 & 0 & -I\left(R{B_{\text{pol}}}\right)^2 \\
-   0 & 1 / {h_\theta}^2 & -{\sigma_{B\theta}}\nu / {h_\theta}^2 \\
-   -I\left(R{B_{\text{pol}}}\right)^2 & -{\sigma_{B\theta}}\nu / {h_\theta}^2 & I^2\left(R{B_{\text{pol}}}\right)^2 + B^2 /
+   0 & 1 / {h_\theta}^2 & -{\sigma_{B\text{pol}}}\nu / {h_\theta}^2 \\
+   -I\left(R{B_{\text{pol}}}\right)^2 & -{\sigma_{B\text{pol}}}\nu / {h_\theta}^2 & I^2\left(R{B_{\text{pol}}}\right)^2 + B^2 /
    \left(R{B_{\text{pol}}}\right)^2
    \end{array}
    %
@@ -248,9 +248,9 @@ and the covariant metric tensor:
    \begin{aligned}
    g_{ij} \equiv {\boldsymbol{e}}_i \cdot{\boldsymbol{e}}_j = \left(%
    \begin{array}{ccc}
-   I^2 R^2 + 1 / {\left({R{B_{\text{pol}}}}\right)^2}& {\sigma_{B\theta}}{B_{\text{tor}}}{h_\theta}I R / {B_{\text{pol}}}& I R^2 \\
-   {\sigma_{B\theta}}{B_{\text{tor}}}{h_\theta}I R / {B_{\text{pol}}}& B^2{h_\theta}^2 / {B_{\text{pol}}}^2 & {\sigma_{B\theta}}{B_{\text{tor}}}{h_\theta}R / {B_{\text{pol}}}\\
-   I R^2 & {\sigma_{B\theta}}{B_{\text{tor}}}{h_\theta}R / {B_{\text{pol}}}& R^2
+   I^2 R^2 + 1 / {\left({R{B_{\text{pol}}}}\right)^2}& {\sigma_{B\text{pol}}}{B_{\text{tor}}}{h_\theta}I R / {B_{\text{pol}}}& I R^2 \\
+   {\sigma_{B\text{pol}}}{B_{\text{tor}}}{h_\theta}I R / {B_{\text{pol}}}& B^2{h_\theta}^2 / {B_{\text{pol}}}^2 & {\sigma_{B\text{pol}}}{B_{\text{tor}}}{h_\theta}R / {B_{\text{pol}}}\\
+   I R^2 & {\sigma_{B\text{pol}}}{B_{\text{tor}}}{h_\theta}R / {B_{\text{pol}}}& R^2
    \end{array}
    %
     \right)\end{aligned}
@@ -262,9 +262,9 @@ or equivalently:
    \begin{aligned}
    g_{ij} = \left(%
    \begin{array}{ccc}
-   I^2 R^2 + 1 / {\left({R{B_{\text{pol}}}}\right)^2}& {\sigma_{B\theta}} I \nu R^2 & I R^2 \\
-   {\sigma_{B\theta}} I \nu R^2 & J_{xyz}^2B^2 & {\sigma_{B\theta}} \nu R^2 \\
-   I R^2 & {\sigma_{B\theta}}\nu R^2 & R^2
+   I^2 R^2 + 1 / {\left({R{B_{\text{pol}}}}\right)^2}& {\sigma_{B\text{pol}}} I \nu R^2 & I R^2 \\
+   {\sigma_{B\text{pol}}} I \nu R^2 & J_{xyz}^2B^2 & {\sigma_{B\text{pol}}} \nu R^2 \\
+   I R^2 & {\sigma_{B\text{pol}}}\nu R^2 & R^2
    \end{array}
    %
    \right)\end{aligned}
@@ -280,8 +280,8 @@ reference location:
 
    \begin{aligned}
    \texttt{zShift}\left(x, y\right) &= \int_{y = 0}^{y}\frac{{\boldsymbol{B}}\cdot\nabla z}{{\boldsymbol{B}}\cdot\nabla y} dy \\
-   &= \int_{\theta = 0}^{\theta}\frac{{\sigma_{B\theta}}{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R} d\theta \\
-   &= {\sigma_{B\theta}} \int_{\theta = 0}^{\theta} \nu d\theta
+   &= \int_{\theta = 0}^{\theta}\frac{{\sigma_{B\text{pol}}}{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R} d\theta \\
+   &= {\sigma_{B\text{pol}}} \int_{\theta = 0}^{\theta} \nu d\theta
    \end{aligned}
 
 The `\texttt{ShiftAngle}` is then defined as the change in
@@ -311,7 +311,7 @@ This `\left(x,\eta,z\right)` coordinate system is defined by:
    :label: eq:coordtransform2
 
    \begin{aligned}
-   x = {\sigma_{B\theta}}\left(\psi - \psi_0\right) \qquad \eta = {\sigma_{B\theta}}\theta \qquad z = \sigma_{B\theta}
+   x = {\sigma_{B\text{pol}}}\left(\psi - \psi_0\right) \qquad \eta = {\sigma_{B\text{pol}}}\theta \qquad z = \sigma_{B\text{pol}}
    \left(\phi - \int_{\theta_0}^{\theta}\nu\left(\psi,\theta\right)d\theta\right)
    \end{aligned}
 
@@ -344,9 +344,9 @@ The reciprocal basis vectors are
 .. math::
    
    \begin{aligned}
-   \nabla x =& {\sigma_{B\theta}} \nabla \psi \\
-   \nabla \eta =& {\sigma_{B\theta}} \nabla \theta \\
-   \nabla z =& \nabla \zeta - {\sigma_{B\theta}} I \nabla \psi - {\sigma_{B\theta}}\nu\nabla\theta
+   \nabla x =& {\sigma_{B\text{pol}}} \nabla \psi \\
+   \nabla \eta =& {\sigma_{B\text{pol}}} \nabla \theta \\
+   \nabla z =& \nabla \zeta - {\sigma_{B\text{pol}}} I \nabla \psi - {\sigma_{B\text{pol}}}\nu\nabla\theta
    \end{aligned}
 
 and basis vectors
@@ -354,8 +354,8 @@ and basis vectors
 .. math::
    
    \begin{aligned}
-   \boldsymbol{e}_x =& J_{x\eta z}\left(\nabla y \times \nabla z\right) = {\sigma_{B\theta}} {\boldsymbol{e}}_\psi + I{\boldsymbol{e}}_\zeta \\
-   \boldsymbol{e}_\eta =& J_{x\eta z}\left(\nabla z \times \nabla x\right) = {\sigma_{B\theta}} {\boldsymbol{e}}_\theta + \nu{\boldsymbol{e}}_\zeta \\
+   \boldsymbol{e}_x =& J_{x\eta z}\left(\nabla y \times \nabla z\right) = {\sigma_{B\text{pol}}} {\boldsymbol{e}}_\psi + I{\boldsymbol{e}}_\zeta \\
+   \boldsymbol{e}_\eta =& J_{x\eta z}\left(\nabla z \times \nabla x\right) = {\sigma_{B\text{pol}}} {\boldsymbol{e}}_\theta + \nu{\boldsymbol{e}}_\zeta \\
    \boldsymbol{e}_z =& J_{x\eta z}\left(\nabla x \times \nabla y\right) = {\boldsymbol{e}}_\zeta
    \end{aligned}
 
@@ -397,7 +397,7 @@ change if the sign of the `\eta` coordinate is reversed:
 
    \begin{aligned}
    \texttt{zShift}\left(x, \eta\right) = \int_{\eta = 0}^{\eta}\frac{{\boldsymbol{B}}\cdot\nabla z}{{\boldsymbol{B}}\cdot\nabla \eta} d\eta =
-   \int_{\theta = 0}^{{\sigma_{B\theta}}\theta}\frac{{\sigma_{B\theta}}{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R} d\theta
+   \int_{\theta = 0}^{{\sigma_{B\text{pol}}}\theta}\frac{{\sigma_{B\text{pol}}}{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R} d\theta
    \end{aligned}
 
 The `\texttt{ShiftAngle}` quantity is related to `\texttt{zShift}`: It
@@ -406,7 +406,7 @@ therefore does change sign if the `\eta` direction is reversed.
 
 The differences from the previous `\left(x,y,z\right)` coordinate
 system are that `g_{xy}`, `g_{yz}`, `g^{yz}`, `J` and
-`\texttt{ShiftAngle}` are multiplied by `{\sigma_{B\theta}}` to obtain
+`\texttt{ShiftAngle}` are multiplied by `{\sigma_{B\text{pol}}}` to obtain
 their equivalents in the `\left(x,\eta,z\right)` coordinate system. If
 `B_{pol} < 0` so the poloidal magnetic field is anticlockwise in the
 right-hand R-Z plane, then the `\eta` direction changes.
@@ -424,7 +424,7 @@ or `\eta` is used for the parallel coordinate, so we define
 
 .. math::
     \sigma_y = \begin{cases}
-        \sigma_{B\theta} & \text{if using }(x,y,z) \\
+        \sigma_{B\text{pol}} & \text{if using }(x,y,z) \\
         +1 & \text{if using }(x,\eta,z)
     \end{cases}
 
@@ -531,7 +531,7 @@ and
 .. math::
 
    \begin{aligned}
-   B_x = {\sigma_{B\theta}}{B_{\text{tor}}}I R \qquad B_y = \sigma_y\frac{B^2{h_\theta}}{{|B_{\text{pol}}|}} \qquad B_z = {\sigma_{B\theta}}{B_{\text{tor}}}R\end{aligned}
+   B_x = {\sigma_{B\text{pol}}}{B_{\text{tor}}}I R \qquad B_y = \sigma_y\frac{B^2{h_\theta}}{{|B_{\text{pol}}|}} \qquad B_z = {\sigma_{B\text{pol}}}{B_{\text{tor}}}R\end{aligned}
 
 Calculate current `{\boldsymbol{J}}= \frac{1}{\mu}{\nabla\times
 {\boldsymbol{B}} }`
@@ -547,10 +547,10 @@ since `{B_{\text{tor}}}R` is a flux-surface quantity, and
 .. math::
 
    \begin{aligned}
-   \left({\nabla\times {\boldsymbol{B}} }\right)^y =& -{\sigma_y\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) \\
+   \left({\nabla\times {\boldsymbol{B}} }\right)^y =& -{\sigma_y\sigma_{B\text{pol}}}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) \\
        \left({\nabla\times {\boldsymbol{B}} }\right)^z =&
        \frac{{B_{\text{pol}}}}{{h_\theta}}\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) -
-       {\sigma_{B\theta}}{\frac{\partial }{\partial y}}\left({B_{\text{tor}}}I R\right)\right]\end{aligned}
+       {\sigma_{B\text{pol}}}{\frac{\partial }{\partial y}}\left({B_{\text{tor}}}I R\right)\right]\end{aligned}
 
 The second term can be simplified, again using
 `{B_{\text{tor}}}R` constant on flux-surfaces:
@@ -558,7 +558,7 @@ The second term can be simplified, again using
 .. math::
 
    \begin{aligned}
-   {\frac{\partial }{\partial y}}\left({B_{\text{tor}}}I R\right) = {\sigma_{B\theta}}{B_{\text{tor}}}R{\frac{\partial \nu}{\partial x}} \qquad \nu =
+   {\frac{\partial }{\partial y}}\left({B_{\text{tor}}}I R\right) = {\sigma_{B\text{pol}}}{B_{\text{tor}}}R{\frac{\partial \nu}{\partial x}} \qquad \nu =
    \frac{{h_\theta}{B_{\text{tor}}}}{R{B_{\text{pol}}}}\end{aligned}
 
 From these, calculate covariant components:
@@ -571,8 +571,8 @@ From these, calculate covariant components:
        \frac{IR^2{B_{\text{pol}}}}{{h_\theta}}\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}
        R{\frac{\partial \nu}{\partial x}}\right] \nonumber\\
    %
-   \left({\nabla\times {\boldsymbol{B}} }\right)_y =& -{\sigma_y\sigma_{B\theta}}\frac{B^2{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) +
-       {\sigma_y\sigma_{B\theta}}{B_{\text{tor}}}R\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}R{\frac{\partial \nu}{\partial x}}\right]
+   \left({\nabla\times {\boldsymbol{B}} }\right)_y =& -{\sigma_y\sigma_{B\text{pol}}}\frac{B^2{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) +
+       {\sigma_y\sigma_{B\text{pol}}}{B_{\text{tor}}}R\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}R{\frac{\partial \nu}{\partial x}}\right]
        \\
    %
    \left({\nabla\times {\boldsymbol{B}} }\right)_z =& -{B_{\text{tor}}}R{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) +
@@ -668,7 +668,7 @@ and from equation :eq:`eq:curlb_y`:
 .. math::
 
    \begin{aligned}
-   J_y = \frac{{\sigma_y\sigma_{B\theta}}}{\mu_0}\left\{-\frac{B^2{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) + {B_{\text{tor}}}
+   J_y = \frac{{\sigma_y\sigma_{B\text{pol}}}}{\mu_0}\left\{-\frac{B^2{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) + {B_{\text{tor}}}
    R\left[{\frac{\partial }{\partial x}}\left(\frac{B^2{h_\theta}}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}R{\frac{\partial \nu}{\partial x}}\right]\right\}\end{aligned}
 
 since `J_{||} = b^yJ_y`,
@@ -681,7 +681,7 @@ since `J_{||} = b^yJ_y`,
    B{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right)\end{aligned}
 
 Note, this does not depend on our coordinate choices, so does not
-depend on `\sigma_y` or `\sigma_\text{B\theta}`, as it should not
+depend on `\sigma_y` or `\sigma_{B\text{pol}}`, as it should not
 since `\mu_0 J_\parallel` is a scalar quantity.
 
 Curvature
@@ -718,16 +718,16 @@ giving:
 
    \begin{aligned}
    {\boldsymbol{\kappa}} =& -\frac{{B_{\text{pol}}}}{B h_\theta}\left[{\frac{\partial }{\partial x}}\left(\frac{B
-   h_\theta}{{B_{\text{pol}}}}\right) - {\sigma_y\sigma_{B\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}I R}{B}\right)\right]\nabla x \nonumber
+   h_\theta}{{B_{\text{pol}}}}\right) - {\sigma_y\sigma_{B\text{pol}}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}I R}{B}\right)\right]\nabla x \nonumber
    \\ &+ {\sigma_y}\frac{{B_{\text{pol}}}}{B h_\theta}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}R}{B}\right)\nabla z
    \end{aligned}
 
 .. math::
 
    \begin{aligned}
-   {\boldsymbol{b}}\cdot\left(\nabla\times{\boldsymbol{b}}\right) = -{\sigma_{B\theta}}B{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}R}{B}\right) +
-   {\sigma_{B\theta}}\frac{{B_{\text{tor}}}{B_{\text{pol}}}R}{B{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) -
-   \sigma_{B\theta}\frac{{B_{\text{pol}}}{B_{\text{tor}}}^2R^2}{{h_\theta}B^2}{\frac{\partial \nu}{\partial x}}\end{aligned}
+   {\boldsymbol{b}}\cdot\left(\nabla\times{\boldsymbol{b}}\right) = -{\sigma_{B\text{pol}}}B{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}R}{B}\right) +
+   {\sigma_{B\text{pol}}}\frac{{B_{\text{tor}}}{B_{\text{pol}}}R}{B{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) -
+   \sigma_{B\text{pol}}\frac{{B_{\text{pol}}}{B_{\text{tor}}}^2R^2}{{h_\theta}B^2}{\frac{\partial \nu}{\partial x}}\end{aligned}
 
 therefore,
 
@@ -741,15 +741,15 @@ therefore,
    R}{B^2{h_\theta}^2}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) \\
    \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^z =&
    \frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) - \frac{{B_{\text{pol}}}{B_{\text{tor}}}
-   R}{{h_\theta}B}{\frac{\partial \nu}{\partial x}} - \sigma_{B\theta} I\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x\end{aligned}
+   R}{{h_\theta}B}{\frac{\partial \nu}{\partial x}} - \sigma_{B\text{pol}} I\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x\end{aligned}
 
 Using equation :eq:`eq:xbalance`:
 
 .. math::
 
    \begin{aligned}
-   \sigma_{B\theta}B{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) + \sigma_{B\theta}\frac{B{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial B}{\partial x}} - {\sigma_{B\theta}}{B_{\text{tor}}}
-   R{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}{h_\theta}}{R{B_{\text{pol}}}}\right) + \sigma_{B\theta}\frac{\mu_0{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial P}{\partial x}} =
+   \sigma_{B\text{pol}}B{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) + \sigma_{B\text{pol}}\frac{B{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial B}{\partial x}} - {\sigma_{B\text{pol}}}{B_{\text{tor}}}
+   R{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}{h_\theta}}{R{B_{\text{pol}}}}\right) + \sigma_{B\text{pol}}\frac{\mu_0{h_\theta}}{{B_{\text{pol}}}}{\frac{\partial P}{\partial x}} =
    0\end{aligned}
 
 we can re-write the above components as:
@@ -760,7 +760,7 @@ we can re-write the above components as:
    \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^y =& {\sigma_y}\frac{{B_{\text{pol}}}{B_{\text{tor}}}
    R}{B^2{h_\theta}}\left[\frac{\mu_0}{B}{\frac{\partial P}{\partial x}} + {\frac{\partial B}{\partial x}}\right] \\
    \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^z =& -\frac{\mu_0}{B}{\frac{\partial P}{\partial x}} - {\frac{\partial B}{\partial x}} -
-   \sigma_{B\theta}I\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x\end{aligned}
+   \sigma_{B\text{pol}}I\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x\end{aligned}
 
 .. [#curvature] Note on signs: `\nabla\times\boldsymbol{b}` should
                 flip sign if we flip the magnetic field direction (i.e.
@@ -796,7 +796,7 @@ operator in curvilinear coordinates (see appendix):
    \begin{aligned}
    \nabla\times\left(\frac{{\boldsymbol{b}}}{B}\right) =&
        \frac{{B_{\text{pol}}}}{{h_\theta}}\left[\left({\frac{\partial }{\partial x}}\left(\frac{{h_\theta}}{{B_{\text{pol}}}}\right) -
-       \sigma_y{\frac{\partial }{\partial y}}\left(\frac{{\sigma_{B\theta}}{B_{\text{tor}}}IR}{B^2}\right)\right){\boldsymbol{e}}_z \right.  \\ &+
+       \sigma_y{\frac{\partial }{\partial y}}\left(\frac{{\sigma_{B\text{pol}}}{B_{\text{tor}}}IR}{B^2}\right)\right){\boldsymbol{e}}_z \right.  \\ &+
        \sigma_y{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}R}{B^2}\right){\boldsymbol{e}}_x \\ &-
        \sigma_y\left.{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}R}{B^2}\right){\boldsymbol{e}}_y\right]\end{aligned}
 
@@ -805,7 +805,7 @@ This can be simplified using
 .. math::
 
    \begin{aligned}
-   {\sigma_y\frac{\partial }{\partial y}}\left(\frac{{\sigma_{B\theta}}{B_{\text{tor}}}IR}{B^2}\right) = I{\sigma_{B\theta}}{B_{\text{tor}}}
+   {\sigma_y\frac{\partial }{\partial y}}\left(\frac{{\sigma_{B\text{pol}}}{B_{\text{tor}}}IR}{B^2}\right) = I{\sigma_{B\text{pol}}}{B_{\text{tor}}}
    R{\sigma_y\frac{\partial }{\partial y}}\left(\frac{1}{B^2}\right) + \frac{{B_{\text{tor}}}R}{B^2}{\frac{\partial \nu}{\partial x}}\end{aligned}
 
 to give
@@ -900,7 +900,7 @@ An alternative is to use
 .. math::
 
    \begin{aligned}
-   {\boldsymbol{b}}\times \nabla\phi = \frac{{\sigma_{B\theta}}}{BR^2}\nabla\psi\end{aligned}
+   {\boldsymbol{b}}\times \nabla\phi = \frac{{\sigma_{B\text{pol}}}}{BR^2}\nabla\psi\end{aligned}
 
 and that the tangent vector `{\boldsymbol{T}} =
 {\boldsymbol{b}}`. This gives
@@ -909,7 +909,7 @@ and that the tangent vector `{\boldsymbol{T}} =
    :label: eq:flinenablapsi
 
    \begin{aligned}
-   \nabla\psi = {\sigma_{B\theta}}BR\left[\frac{dR}{ds}{\boldsymbol{Z}} - \frac{dZ}{ds}{\boldsymbol{R}}\right]
+   \nabla\psi = {\sigma_{B\text{pol}}}BR\left[\frac{dR}{ds}{\boldsymbol{Z}} - \frac{dZ}{ds}{\boldsymbol{R}}\right]
    \end{aligned}
 
 and so because
@@ -919,7 +919,7 @@ and so because
    :label: eq:flinekappsi
 
    \begin{aligned}
-   {\boldsymbol{\kappa}}\cdot\nabla\psi = {\sigma_{B\theta}}BR\left[ \left( \frac{{B_{\text{tor}}}^2}{RB^2} -
+   {\boldsymbol{\kappa}}\cdot\nabla\psi = {\sigma_{B\text{pol}}}BR\left[ \left( \frac{{B_{\text{tor}}}^2}{RB^2} -
    {\frac{d^2 R}{d s^2}}\right){\frac{d Z}{d s}} + {\frac{d^2 Z}{d s^2}}\frac{dR}{ds} \right]
    \end{aligned}
 
@@ -941,7 +941,7 @@ The components in field-aligned coordinates can then be calculated:
 .. math::
 
    \begin{aligned}
-   \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x =& {\sigma_{B\theta}}\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)\cdot\nabla\psi \\ =&
+   \left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)^x =& {\sigma_{B\text{pol}}}\left({\boldsymbol{b}}\times{\boldsymbol{\kappa}}\right)\cdot\nabla\psi \\ =&
        \frac{R{B_{\text{pol}}}^2}{B}\left(2{\frac{d R}{d s}}{\frac{d \phi}{d s}} + R{\frac{d^2 \phi}{d s^2}}\right) -
        R{B_{\text{tor}}}\left({\frac{d R}{d s}}{\frac{d^2 R}{d s^2}} + {\frac{d Z}{d s}}{\frac{d^2 Z}{d s^2}}\right) +
        \frac{{B_{\text{tor}}}^3}{B^2}{\frac{d R}{d s}}\end{aligned}
@@ -977,7 +977,7 @@ Therefore, in terms of unit vectors:
 
    \begin{aligned}
    \nabla\times{\boldsymbol{b}}=
-   \frac{\sigma_{B\theta}}{R{h_\theta}}{\frac{\partial }{\partial \theta}}\left(\frac{R{B_{\text{tor}}}}{B}\right){\hat{{\boldsymbol{e}}}}_\psi -
+   \frac{\sigma_{B\text{pol}}}{R{h_\theta}}{\frac{\partial }{\partial \theta}}\left(\frac{R{B_{\text{tor}}}}{B}\right){\hat{{\boldsymbol{e}}}}_\psi -
    {B_{\text{pol}}}{\frac{\partial }{\partial \psi}}\left(\frac{R{B_{\text{tor}}}}{B}\right){\hat{{\boldsymbol{e}}}}_\theta + \frac{{B_{\text{pol}}}
    R}{{h_\theta}}{\frac{\partial }{\partial \psi}}\left(\frac{{h_\theta}{B_{\text{pol}}}}{B}\right){\hat{{\boldsymbol{e}}}}_\phi\end{aligned}
 
@@ -1181,36 +1181,36 @@ psi derivative of h
 
 From the expression for curvature (equation :eq:`eq:curvature`),
 and using
-`\nabla x \cdot \nabla \psi = {\sigma_{B\theta}}\left(R{B_{\text{pol}}}\right)^2`
+`\nabla x \cdot \nabla \psi = {\sigma_{B\text{pol}}}\left(R{B_{\text{pol}}}\right)^2`
 and
 `\nabla z\cdot\nabla \psi = -I \left(R{B_{\text{pol}}}\right)^2`
 
 .. math::
 
    \begin{aligned}
-   {\boldsymbol{\kappa}}\cdot\nabla\psi =& -{\sigma_{B\theta}}
+   {\boldsymbol{\kappa}}\cdot\nabla\psi =& -{\sigma_{B\text{pol}}}
        \frac{{B_{\text{pol}}}}{B{h_\theta}}{\left({R{B_{\text{pol}}}}\right)^2}\left[{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) -
-       {\sigma_y\sigma_{B\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}IR}{B}\right)\right] \\ &- \sigma_yI{\left({R{B_{\text{pol}}}}\right)^2}
+       {\sigma_y\sigma_{B\text{pol}}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}IR}{B}\right)\right] \\ &- \sigma_yI{\left({R{B_{\text{pol}}}}\right)^2}
            \frac{{B_{\text{pol}}}}{B{h_\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}R}{B}\right)\end{aligned}
 
 The second and third terms partly cancel, and using
-`\sigma_y\sigma_{B\theta}{\frac{\partial I}{\partial y}} = 
+`\sigma_y\sigma_{B\text{pol}}{\frac{\partial I}{\partial y}} = 
 {\frac{\partial \nu}{\partial x}}`
 
 .. math::
 
    \begin{aligned}
      \frac{{\boldsymbol{\kappa}}\cdot\nabla\psi}{{\left({R{B_{\text{pol}}}}\right)^2}} =&
-       -{\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{B{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) +
-       {\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{B{h_\theta}}\frac{{B_{\text{tor}}}R}{B}{\frac{\partial \nu}{\partial x}} \\ =&
-       -{\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{B{h_\theta}}\left[{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) - \frac{{B_{\text{tor}}}
+       -{\sigma_{B\text{pol}}}\frac{{B_{\text{pol}}}}{B{h_\theta}}{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) +
+       {\sigma_{B\text{pol}}}\frac{{B_{\text{pol}}}}{B{h_\theta}}\frac{{B_{\text{tor}}}R}{B}{\frac{\partial \nu}{\partial x}} \\ =&
+       -{\sigma_{B\text{pol}}}\frac{{B_{\text{pol}}}}{B{h_\theta}}\left[{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) - \frac{{B_{\text{tor}}}
        R}{B}{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}{h_\theta}}{{B_{\text{pol}}}R}\right)\right] \\ =&
-               -{\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{B{h_\theta}}\left[{h_\theta}{\frac{\partial }{\partial x}}\left(\frac{B}{{B_{\text{pol}}}}\right) -
+               -{\sigma_{B\text{pol}}}\frac{{B_{\text{pol}}}}{B{h_\theta}}\left[{h_\theta}{\frac{\partial }{\partial x}}\left(\frac{B}{{B_{\text{pol}}}}\right) -
                {h_\theta}\frac{{B_{\text{tor}}}R}{B}{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}}{{B_{\text{pol}}}R}\right) +
            \frac{B^2}{B{B_{\text{pol}}}}{\frac{\partial {h_\theta}}{\partial x}} -
-       \frac{{B_{\text{tor}}}^2}{B{B_{\text{pol}}}}{\frac{\partial {h_\theta}}{\partial x}}\right] \\ =& -{\sigma_{B\theta}}
+       \frac{{B_{\text{tor}}}^2}{B{B_{\text{pol}}}}{\frac{\partial {h_\theta}}{\partial x}}\right] \\ =& -{\sigma_{B\text{pol}}}
            \frac{{B_{\text{pol}}^2}}{B^2{h_\theta}}{\frac{\partial {h_\theta}}{\partial x}} -
-           {\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{B^2}\left[B{\frac{\partial }{\partial x}}\left(\frac{B}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}
+           {\sigma_{B\text{pol}}}\frac{{B_{\text{pol}}}}{B^2}\left[B{\frac{\partial }{\partial x}}\left(\frac{B}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}
            R{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}}{{B_{\text{pol}}}R}\right)\right]\end{aligned}
 
 Writing
@@ -1232,7 +1232,7 @@ this simplifies to give
 
    \begin{aligned}
    \frac{{\boldsymbol{\kappa}}\cdot\nabla\psi}{{\left({R{B_{\text{pol}}}}\right)^2}} =
-   -{\sigma_{B\theta}}\frac{{B_{\text{pol}}}^2}{B^2{h_\theta}}{\frac{\partial {h_\theta}}{\partial x}} - {\sigma_{B\theta}}\frac{{B_{\text{tor}}}^2}{B^2
+   -{\sigma_{B\text{pol}}}\frac{{B_{\text{pol}}}^2}{B^2{h_\theta}}{\frac{\partial {h_\theta}}{\partial x}} - {\sigma_{B\text{pol}}}\frac{{B_{\text{tor}}}^2}{B^2
    R}{\frac{\partial R}{\partial x}}
    \end{aligned}
 
@@ -1251,7 +1251,7 @@ Using :eq:`eq:flinenablapsi`,
 .. math::
 
    \begin{aligned}
-   \nabla\psi \cdot \nabla R = -{\sigma_{B\theta}}B R\frac{dZ}{ds}\end{aligned}
+   \nabla\psi \cdot \nabla R = -{\sigma_{B\text{pol}}}B R\frac{dZ}{ds}\end{aligned}
 
 and so
 
@@ -1715,7 +1715,7 @@ Further on
 
    \begin{aligned}
        {\boldsymbol{B}}=&B{\boldsymbol{b}}\\ {\boldsymbol{b}}=&\frac{{\boldsymbol{B}}}{B}
-       =\frac{J^{-1}{\boldsymbol{e}}_y}{\sqrt{J^{-2}g_{yy}}} =\frac{\sigma_{B\theta}{\boldsymbol{e}}_y}{\sqrt{g_{yy}}}\end{aligned}
+       =\frac{J^{-1}{\boldsymbol{e}}_y}{\sqrt{J^{-2}g_{yy}}} =\frac{\sigma_{B\text{pol}}{\boldsymbol{e}}_y}{\sqrt{g_{yy}}}\end{aligned}
 
 The parallel and perpendicular gradients
 ----------------------------------------
@@ -1963,7 +1963,7 @@ found in incompressible fluid flow
    \begin{aligned}
        {\boldsymbol{v}}_E =& -\frac{\nabla\phi\times{\boldsymbol{b}}}{B}\\
                 %
-                =&-\frac{\nabla\phi\times{\sigma_{B\theta}\boldsymbol{e}}_y}{
+                =&-\frac{\nabla\phi\times{\sigma_{B\text{pol}}\boldsymbol{e}}_y}{
    \sqrt{g_{yy}J^{-2}}\sqrt{g_{yy}}}\\
                 %
                 =&-\frac{J}{g_{yy}}\nabla\phi\times{\boldsymbol{e}}_y\\
