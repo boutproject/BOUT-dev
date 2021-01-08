@@ -27,18 +27,18 @@ plane. `\phi` is the toroidal angle (also `0` to `2\pi`) going
 anti-clockwise from the top of the tokamak.
 
 We define the poloidal magnetic field `B_{pol}` as the component of
-the magnetic field in the `\theta` direction, and the toroidal field `B_{tor}`
+the magnetic field in the `\theta` direction, and the toroidal field `B_\text{tor}`
 as the component of the magnetic field in the `\phi` direction.
 
 We now introduce the poloidal flux `\psi` as the new radial
-coordinate.  If the poloidal magnetic field `B_{pol}` is positive
-then `\psi` increases with radius; if `B_{pol}` is negative then
+coordinate.  If the poloidal magnetic field `B_\text{pol}` is positive
+then `\psi` increases with radius; if `B_\text{pol}` is negative then
 `\psi` decreases with radius. To keep the coordinate system
 right-handed, we define a new toroidal coordinate `\zeta` which is
 defined as `\zeta = \sigma_{B\text{pol}}\phi`, where the sign of the
 poloidal magnetic field is `\sigma_{B\text{pol}} \equiv {B_{\text{pol}}}/
-\left|{B_{\text{pol}}}\right|`. If `B_{pol} > 0` then `\zeta` is
-anti-clockwise looking down from above the tokamak, and if `B_{pol} <
+\left|{B_{\text{pol}}}\right|`. If `B_\text{pol} > 0` then `\zeta` is
+anti-clockwise looking down from above the tokamak, and if `B_\text{pol} <
 0` then `\zeta` is clockwise. This coordinate system `\left(\psi,
 \theta, \zeta\right)` is orthogonal and right-handed.
 
