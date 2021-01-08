@@ -1707,7 +1707,7 @@ We have
 
    \begin{aligned}
        B{\overset{\text{def}}{=}}& \sqrt{{\boldsymbol{B}}\cdot{\boldsymbol{B}}} = \sqrt{J^{-1}{\boldsymbol{e}}_y\cdot
-   J^{-1}{\boldsymbol{e}}_y} = \sqrt{J^{-2}g_{yy}} = J^{-1}\sqrt{g_{yy}}\end{aligned}
+   J^{-1}{\boldsymbol{e}}_y} = \sqrt{J^{-2}g_{yy}}\end{aligned}
 
 Further on
 
@@ -1715,7 +1715,7 @@ Further on
 
    \begin{aligned}
        {\boldsymbol{B}}=&B{\boldsymbol{b}}\\ {\boldsymbol{b}}=&\frac{{\boldsymbol{B}}}{B}
-       =\frac{J^{-1}{\boldsymbol{e}}_y}{J^{-1}\sqrt{g_{yy}}} =\frac{{\boldsymbol{e}}_y}{\sqrt{g_{yy}}}\end{aligned}
+       =\frac{J^{-1}{\boldsymbol{e}}_y}{\sqrt{J^{-2}g_{yy}}} =\frac{\sigma_{B\theta}{\boldsymbol{e}}_y}{\sqrt{g_{yy}}}\end{aligned}
 
 The parallel and perpendicular gradients
 ----------------------------------------
