@@ -1963,8 +1963,8 @@ found in incompressible fluid flow
    \begin{aligned}
        {\boldsymbol{v}}_E =& -\frac{\nabla\phi\times{\boldsymbol{b}}}{B}\\
                 %
-                =&-\frac{\nabla\phi\times{\boldsymbol{e}}_y}{
-   \sqrt{g_{yy}}J^{-1}\sqrt{g_{yy}}}\\
+                =&-\frac{\nabla\phi\times{\sigma_{B\theta}\boldsymbol{e}}_y}{
+   \sqrt{g_{yy}J^{-2}}\sqrt{g_{yy}}}\\
                 %
                 =&-\frac{J}{g_{yy}}\nabla\phi\times{\boldsymbol{e}}_y\\
                 %
@@ -1985,10 +1985,10 @@ found in incompressible fluid flow
    g_{yy}{\boldsymbol{e}}^y\times{\boldsymbol{e}}^z\partial_z + g_{yz}{\boldsymbol{e}}^z\times{\boldsymbol{e}}^z\partial_z
    \right) \phi\\
                 %
-                =&\frac{J}{g_{yy}} \left( - g_{yy}{\boldsymbol{e}}^y\times{\boldsymbol{e}}^x\partial_x +
+                =&\frac{J}{g_{yy}} \left( - g_{yy}{\boldsymbol{e}}^x\times{\boldsymbol{e}}^y\partial_x +
    g_{yz}{\boldsymbol{e}}^z\times{\boldsymbol{e}}^x\partial_x \right.  \\ &\quad +
-   g_{yx}{\boldsymbol{e}}^x\times{\boldsymbol{e}}^y\partial_y - g_{yz}{\boldsymbol{e}}^z\times{\boldsymbol{e}}^y\partial_y
-   \\ &\quad \left.  - g_{yx}{\boldsymbol{e}}^x\times{\boldsymbol{e}}^z\partial_z +
+   g_{yx}{\boldsymbol{e}}^x\times{\boldsymbol{e}}^y\partial_y - g_{yz}{\boldsymbol{e}}^y\times{\boldsymbol{e}}^z\partial_y
+   \\ &\quad \left.  - g_{yx}{\boldsymbol{e}}^z\times{\boldsymbol{e}}^x\partial_z +
    g_{yy}{\boldsymbol{e}}^y\times{\boldsymbol{e}}^z\partial_z \right) \phi\\
                 %
                 =&\frac{1}{g_{yy}} \left( - g_{yy}{\boldsymbol{e}}_z\partial_x +
@@ -2047,7 +2047,7 @@ The pure solenoidal advection is thus
 The brackets operator in BOUT++
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Notice that the (phi,f)@ operators in BOUT++ returns
+Notice that the `\mathtt{(phi,f)}` operators in BOUT++ returns
 `-\frac{\nabla\phi\times{\boldsymbol{b}}}{B}\cdot\nabla f`
 rather than
 `-\nabla\phi\times{\boldsymbol{b}}\cdot\nabla f`.
@@ -2094,7 +2094,7 @@ velocity can be written as
    \frac{1}{B}{\boldsymbol{b}}\cdot\nabla\times\nabla\phi
    \end{aligned}
 
-The second term on the right is identically zero (curl of a nablaient).
+The second term on the right is identically zero (curl of a gradient).
 The first term on the right can be expanded as
 
 .. math::
@@ -2120,7 +2120,7 @@ this becomes:
      \nabla\cdot\left(\frac{1}{B}{\boldsymbol{b}}\times\nabla\phi\right) =
      &-{\boldsymbol{b}}\times\nabla\left(\frac{1}{B}\right)\cdot\nabla\phi \\ &+
      \frac{1}{B}{\boldsymbol{b}}\times{\boldsymbol{\kappa}}\cdot\nabla\phi \\ &+
-     \left[{\boldsymbol{b}}\cdot\left(\nabla\times{\boldsymbol{b}}\right)\right]{\boldsymbol{b}}\cdot\nabla\phi\end{aligned}
+     \frac{1}{B}\left[{\boldsymbol{b}}\cdot\left(\nabla\times{\boldsymbol{b}}\right)\right]{\boldsymbol{b}}\cdot\nabla\phi\end{aligned}
 
 Alternatively, equation :eq:`eq:exb1` can be expanded as
 
@@ -2131,7 +2131,7 @@ Alternatively, equation :eq:`eq:exb1` can be expanded as
        -B{\boldsymbol{b}}\times\nabla\left(\frac{1}{B^2}\right)\cdot\nabla\phi +
        \frac{1}{B^2}\nabla\times{\boldsymbol{B}}\cdot\nabla\phi \\ =&
        -B{\boldsymbol{b}}\times\nabla\left(\frac{1}{B^2}\right)\cdot\nabla\phi +
-       \frac{1}{B^2}{\boldsymbol{J}}\cdot\nabla\phi\end{aligned}
+       \frac{1}{B^2}{\mu_0\boldsymbol{J}}\cdot\nabla\phi\end{aligned}
 
 .. math::
 
