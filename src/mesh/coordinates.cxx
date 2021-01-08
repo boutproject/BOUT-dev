@@ -1773,7 +1773,7 @@ Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
   return result;
 }
 
-Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, MAYBE_UNUSED(bool useFFT)) {
+Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
   TRACE("Coordinates::Delp2( Field3D )");
 
   if (outloc == CELL_DEFAULT) {
