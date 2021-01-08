@@ -43,15 +43,20 @@
 - The `LaplaceShoot` Laplacian implementation was removed. There are
   very few cases, if any, where this implementation actually
   works. [\#2177](https://github.com/boutproject/BOUT-dev/pull/2177)
+- `PhysicsModel` expects the options `datadir` and `dump_format` to
+  have been set; this is only a problem if you don't call
+  `BoutInitialise`. [\#2062](https://github.com/boutproject/BOUT-dev/pull/2062)
 - `dz` is now a `Field2D`, and `Coordinates::zlength()` also returns a
   `Field2D`. In most cases, wrapping these in a call to `getUniform`
   in order to get a `BoutReal` will do the correct thing. If checks
   are enabled, `getUniform` will throw an exception if its argument is
   not uniform (that is, that all values are identical).
   [\#2025](https://github.com/boutproject/BOUT-dev/pull/2025)
-- `PhysicsModel` expects the options `datadir` and `dump_format` to
-  have been set; this is only a problem if you don't call
-  `BoutInitialise`. [\#2062](https://github.com/boutproject/BOUT-dev/pull/2062)
+- The parallel boundaries `BNDRY_PAR_FWD` and `BNDRY_PAR_BKWD` have
+  been expanded to distinguish between the inner and outer boundaries
+  in x; the enums have been replaced with `BNDRY_PAR_*_XIN`, and
+  `BNDRY_PAR_*_XOUT` for both `FWD` and
+  `BKWD`. [\#2025](https://github.com/boutproject/BOUT-dev/pull/2025)
 
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)
