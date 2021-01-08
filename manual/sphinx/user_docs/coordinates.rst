@@ -991,7 +991,7 @@ using local derivatives (implemented using DCT).
 .. math::
 
    \begin{aligned}
-   {B_{\text{pol}}}= \frac{\left|\nabla\psi\right|}{R} = \frac{1}{R}\sqrt{\left({\frac{\partial \psi}{\partial R}}\right)^2 +
+   {|B_{\text{pol}}|}= \frac{\left|\nabla\psi\right|}{R} = \frac{1}{R}\sqrt{\left({\frac{\partial \psi}{\partial R}}\right)^2 +
    \left({\frac{\partial \psi}{\partial R}}\right)^2}\end{aligned}
 
 Using
@@ -1070,7 +1070,7 @@ From the definition
 Parallel derivative of the B field
 ----------------------------------
 
-To get the parallel nablaients of the `B` field components, start
+To get the parallel gradients of the `B` field components, start
 with
 
 .. math::
@@ -1183,18 +1183,18 @@ From the expression for curvature (equation :eq:`eq:curvature`),
 and using
 `\nabla x \cdot \nabla \psi = {\sigma_{B\theta}}\left(R{B_{\text{pol}}}\right)^2`
 and
-`\nabla z\cdot\nabla \psi = -{\sigma_{B\theta}}I \left(R{B_{\text{pol}}}\right)^2`
+`\nabla z\cdot\nabla \psi = -I \left(R{B_{\text{pol}}}\right)^2`
 
 .. math::
 
    \begin{aligned}
    {\boldsymbol{\kappa}}\cdot\nabla\psi =& -{\sigma_{B\theta}}
        \frac{{B_{\text{pol}}}}{B{h_\theta}}{\left({R{B_{\text{pol}}}}\right)^2}\left[{\frac{\partial }{\partial x}}\left(\frac{B{h_\theta}}{{B_{\text{pol}}}}\right) -
-       {\sigma_{B\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}IR}{B}\right)\right] \\ &- I{\left({R{B_{\text{pol}}}}\right)^2}
+       {\sigma_y\sigma_{B\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}IR}{B}\right)\right] \\ &- \sigma_yI{\left({R{B_{\text{pol}}}}\right)^2}
            \frac{{B_{\text{pol}}}}{B{h_\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}R}{B}\right)\end{aligned}
 
 The second and third terms partly cancel, and using
-`{\frac{\partial I}{\partial y}} = {\sigma_{B\theta}}
+`\sigma_y\sigma_{B\theta}{\frac{\partial I}{\partial y}} = 
 {\frac{\partial \nu}{\partial x}}`
 
 .. math::
@@ -1209,7 +1209,7 @@ The second and third terms partly cancel, and using
                {h_\theta}\frac{{B_{\text{tor}}}R}{B}{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}}{{B_{\text{pol}}}R}\right) +
            \frac{B^2}{B{B_{\text{pol}}}}{\frac{\partial {h_\theta}}{\partial x}} -
        \frac{{B_{\text{tor}}}^2}{B{B_{\text{pol}}}}{\frac{\partial {h_\theta}}{\partial x}}\right] \\ =& -{\sigma_{B\theta}}
-           \frac{{B_{\text{pol}}}}{B^2{h_\theta}}{\frac{\partial {h_\theta}}{\partial x}} -
+           \frac{{B_{\text{pol}}^2}}{B^2{h_\theta}}{\frac{\partial {h_\theta}}{\partial x}} -
            {\sigma_{B\theta}}\frac{{B_{\text{pol}}}}{B^2}\left[B{\frac{\partial }{\partial x}}\left(\frac{B}{{B_{\text{pol}}}}\right) - {B_{\text{tor}}}
            R{\frac{\partial }{\partial x}}\left(\frac{{B_{\text{tor}}}}{{B_{\text{pol}}}R}\right)\right]\end{aligned}
 
