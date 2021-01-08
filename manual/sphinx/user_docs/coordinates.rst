@@ -424,7 +424,7 @@ or `eta` is used for the parallel coordinate, so we define
 
 .. math::
     \sigma_y = \begin{cases}
-        \sigma_{B\theta} & \text{if using }(x,y,z)
+        \sigma_{B\theta} & \text{if using }(x,y,z) \\
         +1 & \text{if using }(x,\eta,z)
     \end{cases}
 
