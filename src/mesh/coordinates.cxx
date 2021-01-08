@@ -1017,9 +1017,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                                   true, true, false, transform.get());
     }
   }
-
-  ShiftTorsion =
-      interpolateAndNeumann(coords_in->ShiftTorsion, location, transform.get());
 }
 
 void Coordinates::outputVars(Datafile& file) {
