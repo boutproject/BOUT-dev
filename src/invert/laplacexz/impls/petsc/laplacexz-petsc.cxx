@@ -391,8 +391,9 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
       for(int z=0; z < localmesh->LocalNz; z++) {
         // stencil entries
-        PetscScalar c, xm, xp, zm, zp, xpzp, xpzm, xmzp, xmzm;
-        PetscScalar zpxp, zpxm, zmxp, zmxm;
+        PetscScalar c, xm, xp, zm, zp;
+        // Diagonal entries
+        PetscScalar xpzp{0.0}, xpzm{0.0}, xmzp{0.0}, xmzm{0.0};
 
         // XX component
         {
@@ -450,109 +451,154 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         }
 
         // XZ components
-
+        // (1/J) d/dx ( A * J * g13 d/dz )
         {
-          // x+1/2, z+1/2
-          // TODOL Should they have a z dependency?
+          //
+          // x+1/2
+          //
+          //     --o------x--
+          //       |      |        z
+          //       |   c  -> flux  ^
+          //       |      |        |
+          //     --o------x--       -> x
+          //
+          //   Taking derivative in z (between corners marked x)
+          //   so metrics at (x+1/2,z)
+
+          // Metrics
           const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x + 1, y, z));
           const BoutReal g13 = 0.5 * (coords->g13(x, y, z) + coords->g13(x + 1, y, z));
-          const BoutReal fourdz = 2 * (coords->dz(x, y, z) + coords->dz(x + 1, y, zplus));
-          {
-            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zplus));
+          const BoutReal dz = 0.5 * (coords->dz(x, y, z) + coords->dz(x + 1, y, z));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x + 1, y, z));
 
-            const BoutReal val =
-                Acoef * J * g13 / (coords->J(x, y, z) * fourdz * coords->dx(x, y, z));
-            xpzp = val;
-            c -= val;
-          }
-          {
-            // x+1/2, z-1/2
-            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zminus));
+          const BoutReal val =
+              Acoef * J * g13 / (coords->J(x, y, z) * dz * coords->dx(x, y, z));
 
-            const BoutReal val =
-                -Acoef * J * g13 / (coords->J(x, y, z) * fourdz * coords->dx(x, y, z));
-            xpzm = val;
-            c -= val;
-          }
+          // This val coefficient is multiplied by the (x+1/2,z+1/2) corner
+          // and (x+1/2,z-1/2) corner
+
+          // (x+1/2,z+1/2)
+          //xp += 0.25 * val;  Note cancels
+          xpzp += 0.25 * val;
+          zp += 0.25 * val;
+          //c += 0.25 * val;   Note cancels
+
+          // (x+1/2,z-1/2)
+          //xp -= 0.25 * val;  Note cancels
+          xpzm -= 0.25 * val;
+          zm -= 0.25 * val;
+          //c -= 0.25 * val;   Note cancels
         }
         {
-          // x-1/2, z+1/2
+          //
+          // x-1/2
+          //
+          //     --x------o--
+          //       |      |        z
+          //  flux ->  c  |        ^
+          //       |      |        |
+          //     --x------o--       -> x
+          //
+          //   Taking derivative in z (between corners marked x)
+          //   so metrics at (x-1/2,z)
+
           const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x - 1, y, z));
           const BoutReal g13 = 0.5 * (coords->g13(x, y, z) + coords->g13(x - 1, y, z));
-          const BoutReal fourdz = 2 * (coords->dz(x, y, z) + coords->dz(x - 1, y, z));
-          {
-            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zplus));
+          const BoutReal dz = 0.5 * (coords->dz(x, y, z) + coords->dz(x - 1, y, z));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x - 1, y, z));
 
-            const BoutReal val =
-                -Acoef * J * g13 / (coords->J(x, y, z) * fourdz * coords->dx(x, y, z));
-            xmzp = val;
-            c -= val;
-          }
-          {
-            // x-1/2, z-1/2
-            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zminus));
+          const BoutReal val =
+              -Acoef * J * g13 / (coords->J(x, y, z) * dz * coords->dx(x, y, z));
 
-            const BoutReal val =
-                Acoef * J * g13 / (coords->J(x, y, z) * fourdz * coords->dx(x, y, z));
-            xmzm = val;
-            c -= val;
-          }
+          // (x+1/2,z+1/2)
+          xpzp += 0.25 * val;
+          zp += 0.25 * val;
+
+          // (x+1/2,z-1/2)
+          xpzm -= 0.25 * val;
+          zm -= 0.25 * val;
         }
 
+        // ZX components
+        // (1/J) d/dz ( A * J * g13 d/dx )
         {
-          // ZX components
-          // z+1/2, x+1/2
+          // z+1/2
+          //
+          //         flux
+          //           ^
+          //     --x---|--x--
+          //       |      |        z
+          //       |   c  |        ^
+          //       |      |        |
+          //     --o------o--       -> x
+          //
+          //   Taking derivative in x (between corners marked x)
+          //   so metrics at (x,z+1/2)
+
           const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x, y, zplus));
           const BoutReal g13 = 0.5 * (coords->g13(x, y, z) + coords->g13(x, y, zplus));
-          const BoutReal dz = 0.5 * (coords->dz(x, y, z) + coords->dz(x, y, zplus));
+          const BoutReal dx = 0.5 * (coords->dx(x, y, z) + coords->dx(x, y, zplus));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zplus));
 
-          {
-            const BoutReal dx = 2.0 * (coords->dx(x, y, z) + coords->dx(x + 1, y, z));
-            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x + 1, y, z));
+          const BoutReal val =
+              Acoef * J * g13 / (coords->J(x, y, z) * dx * coords->dz(x, y, z));
 
-            const BoutReal val = Acoef * J * g13 / (coords->J(x, y, z) * dx * dz);
-            zpxp = val;
-            c -= val;
-          }
-          {
-            // z+1/2, x-1/2
-            const BoutReal dx = 2.0 * (coords->dx(x, y, z) + coords->dx(x - 1, y, z));
-            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x - 1, y, z));
+          // (x+1/2,z+1/2)
+          //zp += 0.25 * val;  Note cancels
+          xpzp += 0.25 * val;
+          xp += 0.25 * val;
+          //c += 0.25 * val;   Note cancels
 
-            const BoutReal val = -Acoef * J * g13 / (coords->J(x, y, z) * dx * dz);
-            zpxm = val;
-            c -= val;
-          }
+          // (x-1/2,z+1/2)
+          //zp -= 0.25 * val;  Note cancels
+          //c -= 0.25 * val;   Note cancels
+          xm -= 0.25 * val;
+          xmzp -= 0.25 * val;
         }
         {
-          // z-1/2, x+1/2
+          // z-1/2
+          //
+          //     --o------o--
+          //       |      |        z
+          //       |   c  |        ^
+          //       |   ^  |        |
+          //     --x---|--x--       -> x
+          //          flux
+          //
+          //   Taking derivative in x (between corners marked x)
+          //   so metrics at (x,z-1/2)
+
           const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x, y, zminus));
           const BoutReal g13 = 0.5 * (coords->g13(x, y, z) + coords->g13(x, y, zminus));
-          const BoutReal dz = 0.5 * (coords->dz(x, y, z) + coords->dz(x, y, zminus));
-          {
-            const BoutReal dx = 2.0 * (coords->dx(x, y, z) + coords->dx(x + 1, y, z));
-            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x + 1, y, z));
+          const BoutReal dx = 0.5 * (coords->dx(x, y, z) + coords->dx(x, y, zminus));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zminus));
 
-            const BoutReal val = -Acoef * J * g13 / (coords->J(x, y, z) * dx * dz);
-            zmxp = val;
-            c -= val;
-          }
-          {
-            // z-1/2, x-1/2
-            const BoutReal dx = 2.0 * (coords->dx(x, y, z) + coords->dx(x - 1, y, z));
-            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x - 1, y, z));
+          const BoutReal val =
+              -Acoef * J * g13 / (coords->J(x, y, z) * dx * coords->dz(x, y, z));
 
-            const BoutReal val = Acoef * J * g13 / (coords->J(x, y, z) * dx * dz);
-            zmxm = val;
-            c -= val;
-          }
+          // (x+1/2,z-1/2)
+          xpzm += 0.25 * val;
+          xp += 0.25 * val;
+
+          // (x-1/2,z+1/2)
+          xm -= 0.25 * val;
+          xmzm -= 0.25 * val;
         }
 
         // B term
         c += B(x,y,z);
 
         /////////////////////////////////////////////////
-        // Now have a 5-point stencil for the Laplacian
+        // Now have a 9-point stencil for the Laplacian
+        //
+        // o------o------o------o
+        // | xmzp |  zp  | xpzp |
+        // o------o------o------o
+        // |  xm  |  c   |  xp  |
+        // o------o------o------o
+        // | xmzm |  zm  | xpzm |
+        // o------o------o------o
+        //
 
         // Set the centre (diagonal)
         MatSetValues(it.MatA, 1, &row, 1, &row, &c, INSERT_VALUES);
@@ -570,15 +616,16 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         if(z == localmesh->LocalNz-1) {
           col -= localmesh->LocalNz;  // Wrap around
         }
+
         MatSetValues(it.MatA, 1, &row, 1, &col, &zp, INSERT_VALUES);
 
-        int xzcol = col + (localmesh->LocalNz); // X+1
-        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &xpzp, INSERT_VALUES);
-        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &zpxp, INSERT_VALUES);
+        // X + 1, Z + 1
+        const int xpzp_col = col + localmesh->LocalNz;
+        MatSetValues(it.MatA, 1, &row, 1, &xpzp_col, &xpzp, INSERT_VALUES);
 
-        xzcol = col - (localmesh->LocalNz); // X-1
-        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &xmzp, INSERT_VALUES);
-        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &zpxm, INSERT_VALUES);
+        // X - 1, Z + 1
+        const int xmzp_col = col - localmesh->LocalNz;
+        MatSetValues(it.MatA, 1, &row, 1, &xmzp_col, &xmzp, INSERT_VALUES);
 
         // Z - 1
         col = row - 1;
@@ -587,13 +634,13 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         }
         MatSetValues(it.MatA, 1, &row, 1, &col, &zm, INSERT_VALUES);
 
-        xzcol = col + (localmesh->LocalNz); // X+1
-        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &xpzm, INSERT_VALUES);
-        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &zmxp, INSERT_VALUES);
+        // X + 1, Z - 1
+        const int xpzm_col = col + localmesh->LocalNz;
+        MatSetValues(it.MatA, 1, &row, 1, &xpzm_col, &xpzm, INSERT_VALUES);
 
-        xzcol = col - (localmesh->LocalNz); // X-1
-        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &xmzm, INSERT_VALUES);
-        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &zmxm, INSERT_VALUES);
+        // X - 1, Z - 1
+        const int xmzm_col = col - localmesh->LocalNz;
+        MatSetValues(it.MatA, 1, &row, 1, &xmzm_col, &xmzm, INSERT_VALUES);
 
         row++;
       }
