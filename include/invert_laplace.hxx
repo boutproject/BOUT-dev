@@ -57,6 +57,7 @@ constexpr auto LAPLACE_BAND = "band";
 constexpr auto LAPLACE_PETSC = "petsc";
 constexpr auto LAPLACE_PETSCAMG = "petscamg";
 constexpr auto LAPLACE_PETSC3DAMG = "petsc3damg";
+constexpr auto LAPLACE_HYPRE3D = "hypre3d";
 constexpr auto LAPLACE_CYCLIC = "cyclic";
 constexpr auto LAPLACE_SHOOT = "shoot";
 constexpr auto LAPLACE_MULTIGRID = "multigrid";
