@@ -244,7 +244,6 @@ FCIMap::FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset_,
   }
 
   interp->setMask(boundary_mask);
-  interp->calcWeights(abs(xt_prime), zt_prime);
 }
 
 Field3D FCIMap::integrate(Field3D &f) const {
