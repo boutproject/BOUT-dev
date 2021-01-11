@@ -44,8 +44,9 @@ class FCIMap {
 
 public:
   FCIMap() = delete;
-  FCIMap(Mesh& mesh, Options& options, int offset, BoundaryRegionPar* inner_boundary,
-         BoundaryRegionPar* outer_boundary, bool zperiodic);
+  FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset,
+         BoundaryRegionPar* inner_boundary, BoundaryRegionPar* outer_boundary,
+         bool zperiodic);
 
   // The mesh this map was created on
   Mesh& map_mesh;
@@ -71,7 +72,7 @@ public:
 class FCITransform : public ParallelTransform {
 public:
   FCITransform() = delete;
-  FCITransform(Mesh& mesh, bool zperiodic = true, Options* opt = nullptr)
+  FCITransform(Mesh& mesh, const Field2D& dy, bool zperiodic = true, Options* opt = nullptr)
       : ParallelTransform(mesh, opt) {
 
     // check the coordinate system used for the grid data source
@@ -94,9 +95,9 @@ public:
 
     field_line_maps.reserve(mesh.ystart * 2);
     for (int offset = 1; offset < mesh.ystart + 1; ++offset) {
-      field_line_maps.emplace_back(mesh, options, offset, forward_boundary_xin,
+      field_line_maps.emplace_back(mesh, dy, options, offset, forward_boundary_xin,
                                    forward_boundary_xout, zperiodic);
-      field_line_maps.emplace_back(mesh, options, -offset, backward_boundary_xin,
+      field_line_maps.emplace_back(mesh, dy, options, -offset, backward_boundary_xin,
                                    backward_boundary_xout, zperiodic);
     }
   }

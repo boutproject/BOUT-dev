@@ -250,7 +250,6 @@ if __name__ == "__main__":
         print("Please wait, scanning modules ...")
         x=boutmodules(["boutcore",
                        "boutdata",
-                       "bout_runners",
                        "boututils",
                        "post_bout",
                        "zoidberg"])
@@ -292,3 +291,4 @@ if __name__ == "__main__":
         print("Creating failed. To rerun and overwrite the file without asking run:")
         print("%s %s %s %s -f"%(sys.argv[0],mod,fun,name))
         raise
+
