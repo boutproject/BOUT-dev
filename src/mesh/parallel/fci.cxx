@@ -47,9 +47,9 @@
 
 #include <string>
 
-FCIMap::FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset_,
-               BoundaryRegionPar* inner_boundary, BoundaryRegionPar* outer_boundary,
-               bool zperiodic)
+FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
+               int offset_, BoundaryRegionPar* inner_boundary,
+               BoundaryRegionPar* outer_boundary, bool zperiodic)
     : map_mesh(mesh), offset(offset_), boundary_mask(map_mesh),
       corner_boundary_mask(map_mesh) {
 

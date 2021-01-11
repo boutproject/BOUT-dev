@@ -44,7 +44,7 @@ class FCIMap {
 
 public:
   FCIMap() = delete;
-  FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset,
+  FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options, int offset,
          BoundaryRegionPar* inner_boundary, BoundaryRegionPar* outer_boundary,
          bool zperiodic);
 
@@ -72,7 +72,8 @@ public:
 class FCITransform : public ParallelTransform {
 public:
   FCITransform() = delete;
-  FCITransform(Mesh& mesh, const Field2D& dy, bool zperiodic = true, Options* opt = nullptr)
+  FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool zperiodic = true,
+               Options* opt = nullptr)
       : ParallelTransform(mesh, opt) {
 
     // check the coordinate system used for the grid data source
