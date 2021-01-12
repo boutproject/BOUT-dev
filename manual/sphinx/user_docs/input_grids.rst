@@ -100,9 +100,9 @@ e.g. “``section:variable``”.
 
 More complex meshes can be created by supplying an input grid file to
 describe the grid points, geometry, and starting profiles. Currently
-BOUT++ supports NetCDF and HDF5 format binary files. During startup,
-BOUT++ looks in the grid file for the following variables. If any are
-not found, a warning will be printed and the default values used.
+BOUT++ supports NetCDF format binary files. During startup, BOUT++
+looks in the grid file for the following variables. If any are not
+found, a warning will be printed and the default values used.
 
 -  X and Y grid sizes (integers) ``nx`` and ``ny`` **REQUIRED**
 

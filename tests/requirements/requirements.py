@@ -17,7 +17,7 @@ class Requirements(object):
 
     #requires not make
 
-    #requires not (travis and hdf5)
+    #requires not (travis and netcdf)
 
     The individual requirements (netcdf, make, travis, etc.)
     are gathered from the bout-config scipt, or from executable
