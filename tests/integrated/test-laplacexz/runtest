@@ -9,18 +9,13 @@
 # Run the test, compare results against the benchmark
 #
 
-from __future__ import print_function
-try:
-  from builtins import str
-except:
-  pass
 
 tol = 1e-10                  # Absolute tolerance
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun, build_and_log
+from boututils.run_wrapper import shell, launch_safe, getmpirun, build_and_log
 from boutdata.collect import collect
 import numpy as np
-from sys import stdout, exit
+from sys import exit
 
 MPIRUN = getmpirun()
 
