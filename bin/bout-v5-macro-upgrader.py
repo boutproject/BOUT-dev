@@ -9,7 +9,8 @@ import textwrap
 # List of macros, their replacements and what header to find them
 # in. Each element should be a dict with "old", "new" and "headers"
 # keys, with "old" and "new" values being strings, and "headers" being a
-# list of strings
+# list of strings. "new" can also be None if the macro has been removed, which
+# will cause an error to be printed if the macro is found.
 MACRO_REPLACEMENTS = [
     {
         "old": "REVISION",
@@ -297,6 +298,13 @@ def apply_fixes(replacements, source):
     modified = copy.deepcopy(source)
 
     for replacement in replacements:
+        if replacement["new"] is None:
+            print(
+                "'%s' has been removed, please delete from your code"
+                % replacement["old"]
+            )
+            continue
+
         modified = fix_include_version_header(
             replacement["old"], replacement["headers"], modified
         )
