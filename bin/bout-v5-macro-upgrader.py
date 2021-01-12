@@ -64,8 +64,8 @@ MACRO_REPLACEMENTS = [
     },
     {
         "old": "HAS_HDF5",
-        "new": "BOUT_HAS_HDF5",
-        "headers": "bout/build_config.hxx",
+        "new": None,
+        "headers": [],
         "macro": True,
         "always_defined": True,
     },
@@ -141,8 +141,8 @@ MACRO_REPLACEMENTS = [
     },
     {
         "old": "HDF5",
-        "new": "BOUT_HAS_HDF5",
-        "headers": "bout/build_config.hxx",
+        "new": None,
+        "headers": [],
         "macro": True,
         "always_defined": True,
     },
