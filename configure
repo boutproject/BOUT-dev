@@ -643,6 +643,7 @@ BOUT_HAS_PVODE
 BOUT_HAS_PRETTY_FUNCTION
 BOUT_HAS_PNETCDF
 BOUT_HAS_PETSC
+BOUT_HAS_LEGACY_NETCDF
 BOUT_HAS_NETCDF
 BOUT_HAS_LAPACK
 BOUT_HAS_IDA
@@ -6631,6 +6632,8 @@ fi
 
 NCCONF="" # Configuration script
 
+BOUT_HAS_NETCDF=no
+BOUT_HAS_LEGACY_NETCDF=no
 if test "x$with_netcdf" != "xno"; then :
 
   ##########################################
@@ -6784,7 +6787,9 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
-        CXXFLAGS="$save_CXXFLAGS -DNCDF"
+        CXXFLAGS="$save_CXXFLAGS"
+        BOUT_HAS_NETCDF=yes
+        BOUT_HAS_LEGACY_NETCDF=yes
 
 fi
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
@@ -7197,7 +7202,8 @@ fi
          { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Legacy NetCDF support enabled" >&5
 $as_echo "$as_me:  -> Legacy NetCDF support enabled" >&6;}
          NCPATH="found"
-         CXXFLAGS="$CXXFLAGS -DNCDF"
+         BOUT_HAS_NETCDF=yes
+         BOUT_HAS_LEGACY_NETCDF=yes
 
 fi
 
@@ -16368,6 +16374,18 @@ fi
 
 
 
+if test "x$BOUT_HAS_LEGACY_NETCDF" = "xyes"; then :
+
+$as_echo "#define BOUT_HAS_LEGACY_NETCDF 1" >>confdefs.h
+
+else
+
+$as_echo "#define BOUT_HAS_LEGACY_NETCDF 0" >>confdefs.h
+
+fi
+
+
+
 if test "x$BOUT_HAS_PETSC" = "xyes"; then :
 
 $as_echo "#define BOUT_HAS_PETSC 1" >>confdefs.h
@@ -18047,8 +18065,8 @@ $as_echo "$as_me:   CVODE support           : $BOUT_HAS_CVODE" >&6;}
 $as_echo "$as_me:   ARKODE support          : $BOUT_HAS_ARKODE" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   FFTW support            : $BOUT_HAS_FFTW" >&5
 $as_echo "$as_me:   FFTW support            : $BOUT_HAS_FFTW" >&6;}
-{ $as_echo "$as_me:${as_lineno-$LINENO}:   NetCDF support          : $BOUT_HAS_NETCDF" >&5
-$as_echo "$as_me:   NetCDF support          : $BOUT_HAS_NETCDF" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   NetCDF support          : $BOUT_HAS_NETCDF (legacy: $BOUT_HAS_LEGACY_NETCDF)" >&5
+$as_echo "$as_me:   NetCDF support          : $BOUT_HAS_NETCDF (legacy: $BOUT_HAS_LEGACY_NETCDF)" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   Parallel-NetCDF support : $BOUT_HAS_PNETCDF" >&5
 $as_echo "$as_me:   Parallel-NetCDF support : $BOUT_HAS_PNETCDF" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   HDF5 support            : $BOUT_HAS_HDF5 (parallel: $BOUT_HAS_PHDF5)" >&5

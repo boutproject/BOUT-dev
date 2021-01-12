@@ -35,7 +35,7 @@
 
 #include "bout/build_config.hxx"
 
-#if !BOUT_HAS_NETCDF
+#if !BOUT_HAS_NETCDF || BOUT_HAS_LEGACY_NETCDF
 
 #include "../emptyformat.hxx"
 using Ncxx4 = EmptyFormat;
