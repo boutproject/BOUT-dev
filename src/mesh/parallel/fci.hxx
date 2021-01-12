@@ -115,10 +115,10 @@ public:
   }
 
   const Field3D fromFieldAligned(const Field3D &UNUSED(f), const std::string& UNUSED(region) = "RGN_ALL") override {
-    throw BoutException("FCI method cannot transform into field aligned grid");
+    throw BoutException("FCI method cannot transform from field aligned grid");
   }
   const FieldPerp fromFieldAligned(const FieldPerp &UNUSED(f), const std::string& UNUSED(region) = "RGN_ALL") override {
-    throw BoutException("FCI method cannot transform into field aligned grid");
+    throw BoutException("FCI method cannot transform from field aligned grid");
   }
 
   bool canToFromFieldAligned() override { return false; }
