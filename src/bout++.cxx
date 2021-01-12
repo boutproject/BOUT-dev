@@ -474,16 +474,6 @@ void printCompileTimeOptions() {
   }
   output_info.write("\n");
 
-#ifdef NCDF
-  output_info.write(_("\tnetCDF support enabled\n"));
-#else
-#if BOUT_HAS_NETCDF
-  output_info.write(_("\tnetCDF4 support enabled\n"));
-#else
-  output_info.write(_("\tnetCDF support disabled\n"));
-#endif
-#endif
-
 #ifdef PNCDF
   output_info.write(_("\tParallel NetCDF support enabled\n"));
 #else
@@ -498,7 +488,10 @@ void printCompileTimeOptions() {
   output_info.write(_("\tNatural language support {}\n"), is_enabled(has_gettext));
   output_info.write(_("\tHDF5 support {}\n"), is_enabled(has_hdf5));
   output_info.write(_("\tLAPACK support {}\n"), is_enabled(has_lapack));
-  output_info.write(_("\tNetCDF support {}\n"), is_enabled(has_netcdf));
+  // Horrible nested ternary to set this at compile time
+  constexpr auto netcdf_flavour =
+      has_netcdf ? (has_legacy_netcdf ? " (Legacy)" : " (NetCDF4)") : "";
+  output_info.write(_("\tNetCDF support {}{}\n"), is_enabled(has_netcdf), netcdf_flavour);
   output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
   output_info.write(_("\tPretty function name support {}\n"),
                     is_enabled(has_pretty_function));
@@ -623,8 +616,10 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
                         .withDefault(false);
 
   // Get file extensions
-  const auto default_dump_format = bout::build::has_netcdf ? "nc" : "h5";
-  const auto dump_ext = options["dump_format"].withDefault(default_dump_format);
+  constexpr auto default_dump_format = bout::build::has_netcdf ? "nc" : "h5";
+  const auto dump_ext = options["dump_format"]
+                            .doc("File extension for output files")
+                            .withDefault(default_dump_format);
   output_progress << "Setting up output (dump) file\n";
 
   auto dump_file = Datafile(&(options["output"]), &mesh);
@@ -650,6 +645,8 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   dump_file.addOnce(const_cast<bool&>(bout::build::has_hdf5), "has_hdf5");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_lapack), "has_lapack");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_netcdf), "has_netcdf");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_legacy_netcdf),
+                    "has_legacy_netcdf");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_petsc), "has_petsc");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_pretty_function),
                     "has_pretty_function");

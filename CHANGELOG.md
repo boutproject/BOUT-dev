@@ -43,6 +43,9 @@
 - The `LaplaceShoot` Laplacian implementation was removed. There are
   very few cases, if any, where this implementation actually
   works. [\#2177](https://github.com/boutproject/BOUT-dev/pull/2177)
+- `PhysicsModel` expects the options `datadir` and `dump_format` to
+  have been set; this is only a problem if you don't call
+  `BoutInitialise`. [\#2062](https://github.com/boutproject/BOUT-dev/pull/2062)
 
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)

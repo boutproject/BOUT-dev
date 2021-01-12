@@ -302,7 +302,7 @@ TEST_F(PrintStartupTest, CompileTimeOptions) {
 
   EXPECT_TRUE(IsSubString(buffer.str(), _("Compile-time options:\n")));
   EXPECT_TRUE(IsSubString(buffer.str(), _("Signal")));
-  EXPECT_TRUE(IsSubString(buffer.str(), "netCDF"));
+  EXPECT_TRUE(IsSubString(buffer.str(), "NetCDF"));
   EXPECT_TRUE(IsSubString(buffer.str(), "OpenMP"));
   EXPECT_TRUE(IsSubString(buffer.str(), _("Compiled with flags")));
 }

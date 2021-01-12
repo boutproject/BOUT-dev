@@ -24,7 +24,7 @@
 
 #include "ncxx4.hxx"
 
-#if BOUT_HAS_NETCDF
+#if BOUT_HAS_NETCDF && !BOUT_HAS_LEGACY_NETCDF
 
 #include <bout/mesh.hxx>
 #include <globals.hxx>
@@ -613,7 +613,7 @@ bool Ncxx4::read(char *data, const char *name, int n) {
     return false;
   }
 
-  std::vector<size_t> start = {1};
+  std::vector<size_t> start = {0};
   std::vector<size_t> counts = {size_t(n)};
 
   var.getVar(start, counts, data);
@@ -1416,5 +1416,5 @@ std::vector<NcDim> Ncxx4::getRecDimVec(int nd) {
   return vec;
 }
 
-#endif // NCDF
+#endif // BOUT_HAS_NETCDF
 
