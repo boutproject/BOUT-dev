@@ -7,3 +7,9 @@
 [submodule "mpark.variant"]
 	path = externalpackages/mpark.variant
 	url = https://github.com/mpark/variant.git
+[submodule "externalpackages/boututils"]
+	path = externalpackages/boututils
+	url = https://github.com/boutproject/boututils.git
+[submodule "externalpackages/boutdata"]
+	path = externalpackages/boutdata
+	url = https://github.com/boutproject/boutdata.git
