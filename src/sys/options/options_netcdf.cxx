@@ -5,9 +5,9 @@
 #include "options_netcdf.hxx"
 
 #include <exception>
+#include <iostream>
 #include <netcdf>
 #include <vector>
-#include <iostream>
 
 using namespace netCDF;
 
@@ -43,15 +43,15 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
   for (const auto& varpair : group.getVars()) {
     const auto& var_name = varpair.first; // Name of the variable
     const auto& var = varpair.second;     // The NcVar object
-    
-    auto var_type = var.getType(); // Variable type 
+
+    auto var_type = var.getType();  // Variable type
     auto ndims = var.getDimCount(); // Number of dimensions
-    auto dims = var.getDims(); // Vector of dimensions
-    
+    auto dims = var.getDims();      // Vector of dimensions
+
     switch (ndims) {
     case 0: {
       // Scalar variables
-      
+
       if (var_type == ncDouble) {
         double value;
         var.getVar(&value);
@@ -107,9 +107,9 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
 
     // Get variable attributes
     for (const auto& attpair : var.getAtts()) {
-      const auto &att_name = attpair.first;   // Attribute name
-      const auto &att = attpair.second;   // NcVarAtt object
-      
+      const auto& att_name = attpair.first; // Attribute name
+      const auto& att = attpair.second;     // NcVarAtt object
+
       auto att_type = att.getType(); // Type of the attribute
 
       if (att_type == ncInt) {
@@ -159,7 +159,7 @@ Options OptionsNetCDF::read() {
   return result;
 }
 
-} // bout
+} // namespace bout
 
 namespace {
 
@@ -310,7 +310,7 @@ void NcPutVarVisitor::operator()<std::string>(const std::string& value) {
   const char* cstr = value.c_str();
   var.putVar(&cstr);
 }
-  
+
 /// In addition to writing the data, set the "cell_location" attribute
 template <>
 void NcPutVarVisitor::operator()<Field2D>(const Field2D& value) {
@@ -321,7 +321,7 @@ void NcPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   var.putAtt("direction_y", toString(value.getDirectionY()));
   var.putAtt("direction_z", toString(value.getDirectionZ()));
 }
-  
+
 /// In addition to writing the data, set the "cell_location" attribute
 template <>
 void NcPutVarVisitor::operator()<Field3D>(const Field3D& value) {
@@ -390,6 +390,7 @@ struct NcPutAttVisitor {
   void operator()(const T& UNUSED(value)) {
     // Default is to ignore if unhandled
   }
+
 private:
   NcVar& var;
   std::string name;
@@ -417,7 +418,7 @@ template <>
 void NcPutAttVisitor::operator()(const std::string& value) {
   var.putAtt(name, value);
 }
-  
+
 void writeGroup(const Options& options, NcGroup group) {
 
   for (const auto& childpair : options.getChildren()) {
@@ -459,7 +460,8 @@ void writeGroup(const Options& options, NcGroup group) {
         if (var.isNull()) {
           // Variable doesn't exist yet
           // Create variable
-          // Temporary NcType as a workaround for bug in NetCDF 4.4.0 and NetCDF-CXX4 4.2.0
+          // Temporary NcType as a workaround for bug in NetCDF 4.4.0 and
+          // NetCDF-CXX4 4.2.0
           var = group.addVar(name, NcType{group, nctype.getId()}, dims);
           if (!time_dim.isNull()) {
             // Time evolving variable, so we'll need to keep track of its time index
@@ -542,14 +544,14 @@ void writeGroup(const Options& options, NcGroup group) {
         }
 
         // Write attributes
-        for (const auto& it: child.attributes) {
+        for (const auto& it : child.attributes) {
           const std::string& att_name = it.first;
           const auto& att = it.second;
 
           bout::utils::visit(NcPutAttVisitor(var, att_name), att);
         }
 
-      } catch (const std::exception &e) {
+      } catch (const std::exception& e) {
         throw BoutException("Error while writing value '{:s}' : {:s}", name, e.what());
       }
     }
@@ -688,6 +690,6 @@ void OptionsNetCDF::write(const Options& options) {
   file_mode = FileMode::append;
 }
 
-} // bout
+} // namespace bout
 
 #endif // BOUT_HAS_NETCDF
