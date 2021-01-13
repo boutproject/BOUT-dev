@@ -57,8 +57,7 @@ std::string getRestartFilename(Options& options, int rank) {
 
 PhysicsModel::PhysicsModel()
     : mesh(bout::globals::mesh), dump(bout::globals::dump),
-      restart_file(bout::getRestartFilename(Options::root(), BoutComm::rank()),
-                   bout::OptionsNetCDF::FileMode::append),
+      restart_file(bout::getRestartFilename(Options::root(), BoutComm::rank())),
       modelMonitor(this) {}
 
 void PhysicsModel::initialise(Solver* s) {

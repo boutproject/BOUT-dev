@@ -679,6 +679,13 @@ void OptionsNetCDF::write(const Options& options) {
   }
 
   writeGroup(options, dataFile);
+
+  // Not a terribly pleasant hack: the first time we call this
+  // function we might want to overwrite the existing file, but the
+  // second time, we definitely don't! An alternative would be to keep
+  // the NcFile object itself hanging about as a member variable, but
+  // then we start needing to worry about flushing the file etc.
+  file_mode = FileMode::append;
 }
 
 } // bout
