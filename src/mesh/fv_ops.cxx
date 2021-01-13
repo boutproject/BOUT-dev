@@ -185,7 +185,6 @@ namespace FV {
     }
 
     // Z flux
-    // Easier since all metrics constant in Z
 
     for (int i = mesh->xstart; i <= mesh->xend; i++) {
       for (int j = mesh->ystart; j <= mesh->yend; j++) {
