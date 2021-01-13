@@ -231,6 +231,11 @@ protected:
   /// File to write the restart-state to
   bout::OptionsNetCDF restart_file;
 
+  /// State for outputs
+  Options output_options;
+
+  bout::OptionsNetCDF output_file;
+
   /*!
    * Specify a constrained variable \p var, which will be
    * adjusted to make \p F_var equal to zero.

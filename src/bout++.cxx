@@ -665,6 +665,30 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   return dump_file;
 }
 
+void addBuildFlagsToOptions(Options& options) {
+  output_progress << "Setting up output (experimental output) file\n";
+
+  options["BOUT_VERSION"] = bout::version::as_double;
+  options["has_fftw"] = bout::build::has_fftw;
+  options["has_gettext"] = bout::build::has_gettext;
+  options["has_hdf5"] = bout::build::has_hdf5;
+  options["has_lapack"] = bout::build::has_lapack;
+  options["has_netcdf"] = bout::build::has_netcdf;
+  options["has_petsc"] = bout::build::has_petsc;
+  options["has_pretty_function"] = bout::build::has_pretty_function;
+  options["has_pvode"] = bout::build::has_pvode;
+  options["has_scorep"] = bout::build::has_scorep;
+  options["has_slepc"] = bout::build::has_slepc;
+  options["has_sundials"] = bout::build::has_sundials;
+  options["use_backtrace"] = bout::build::use_backtrace;
+  options["use_color"] = bout::build::use_color;
+  options["use_openmp"] = bout::build::use_openmp;
+  options["use_output_debug"] = bout::build::use_output_debug;
+  options["use_sigfpe"] = bout::build::use_sigfpe;
+  options["use_signal"] = bout::build::use_signal;
+  options["use_track"] = bout::build::use_track;
+}
+
 void writeSettingsFile(Options& options, const std::string& data_dir,
                        const std::string& settings_file) {
   OptionsReader::getInstance()->write(&options, "{}/{}", data_dir, settings_file);

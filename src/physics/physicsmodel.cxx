@@ -53,11 +53,22 @@ std::string getRestartFilename(Options& options, int rank) {
   return fmt::format("{}/BOUT.restart.{}.nc", bout::getRestartDirectoryName(options),
                      rank);
 }
+
+std::string getOutputFilename(Options& options, int rank) {
+  return fmt::format("{}/BOUT.dmp.experimental.{}.nc",
+                     options["datadir"].withDefault<std::string>("data"), rank);
+}
 } // namespace bout
 
 PhysicsModel::PhysicsModel()
     : mesh(bout::globals::mesh), dump(bout::globals::dump),
       restart_file(bout::getRestartFilename(Options::root(), BoutComm::rank())),
+      output_file(bout::getOutputFilename(Options::root(), BoutComm::rank()),
+                  Options::root()["append"]
+                          .doc("Add output data to existing (dump) files?")
+                          .withDefault(false)
+                      ? bout::OptionsNetCDF::FileMode::append
+                      : bout::OptionsNetCDF::FileMode::replace),
       modelMonitor(this) {}
 
 void PhysicsModel::initialise(Solver* s) {
@@ -69,6 +80,9 @@ void PhysicsModel::initialise(Solver* s) {
   // Set the protected variable, so user code can
   // call the solver functions
   solver = s;
+
+  bout::experimental::addBuildFlagsToOptions(output_options);
+  mesh->outputVars(output_options);
 
   // Restart option
   const bool restarting = Options::root()["restart"].withDefault(false);
@@ -168,11 +182,26 @@ int PhysicsModel::postInit(bool restarting) {
   return 0;
 }
 
-int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime, int iter,
-                                            int nout) {
+int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
+                                            int iteration, int nout) {
+  // Restart file variables
   solver->outputVars(model->restart_options, false);
   model->restart_file.write(model->restart_options);
 
+  // Main output file variables
+  // t_array for backwards compatibility? needed?
+  model->output_options["t_array"].force(simtime);
+  model->output_options["t_array"].attributes["time_dimension"] = "t";
+
+  model->output_options["t"].force(simtime);
+  model->output_options["t"].attributes["time_dimension"] = "t";
+
+  model->output_options["iteration"].force(iteration);
+  model->output_options["iteration"].attributes["time_dimension"] = "t";
+
+  solver->outputVars(model->output_options, true);
+  model->output_file.write(model->output_options);
+
   // Call user output monitor
-  return model->outputMonitor(simtime, iter, nout);
+  return model->outputMonitor(simtime, iteration, nout);
 }
