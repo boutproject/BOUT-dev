@@ -238,4 +238,29 @@ TEST_F(OptionsNetCDFTest, FieldPerpWriteCellCentre) {
   EXPECT_EQ(data["fperp"].attributes["yindex_global"].as<int>(), 2);
 }
 
+TEST_F(OptionsNetCDFTest, VerifyTimesteps) {
+  {
+    Options options;
+    options["thing1"] = 1.0;
+    options["thing1"].attributes["time_dimension"] = "t";
+
+    OptionsNetCDF(filename).write(options);
+  }
+
+  EXPECT_NO_THROW(OptionsNetCDF(filename).verifyTimesteps());
+
+  {
+    Options options;
+    options["thing1"] = 2.0;
+    options["thing1"].attributes["time_dimension"] = "t";
+
+    options["thing2"] = 3.0;
+    options["thing2"].attributes["time_dimension"] = "t";
+
+    OptionsNetCDF(filename, OptionsNetCDF::FileMode::append).write(options);
+  }
+
+  EXPECT_THROW(OptionsNetCDF(filename).verifyTimesteps(), BoutException);
+}
+
 #endif // BOUT_HAS_NETCDF

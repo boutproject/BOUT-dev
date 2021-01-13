@@ -65,14 +65,13 @@ public:
   /// Write options to file
   void write(const Options &options);
 
+  /// Check that all variables with the same time dimension have the
+  /// same size in that dimension. Throws BoutException if there are
+  /// any differences, otherwise is silent
+  void verifyTimesteps() const;
 private:
   std::string filename;
   FileMode file_mode;
-
-  /// NetCDF doesn't seem to keep track of the current index
-  /// for each variable. This map keeps track of the current
-  /// index being written for each time dimension
-  std::map<int, size_t> time_index;
 };
 
 }
