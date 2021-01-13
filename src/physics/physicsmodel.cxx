@@ -58,7 +58,7 @@ std::string getRestartFilename(Options& options, int rank) {
 PhysicsModel::PhysicsModel()
     : mesh(bout::globals::mesh), dump(bout::globals::dump),
       restart_file(bout::getRestartFilename(Options::root(), BoutComm::rank()),
-                   bout::experimental::OptionsNetCDF::FileMode::append),
+                   bout::OptionsNetCDF::FileMode::append),
       modelMonitor(this) {}
 
 void PhysicsModel::initialise(Solver* s) {
@@ -145,8 +145,6 @@ void PhysicsModel::bout_solve(Vector3D &var, const char *name,
 
 int PhysicsModel::postInit(bool restarting) {
   TRACE("PhysicsModel::postInit");
-
-  using namespace bout::experimental;
 
   if (restarting) {
     solver->readEvolvingVariablesFromOptions(restart_options);

@@ -4,7 +4,7 @@
 #include "options_netcdf.hxx"
 #include "optionsreader.hxx"
 
-using bout::experimental::OptionsNetCDF;
+using bout::OptionsNetCDF;
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);

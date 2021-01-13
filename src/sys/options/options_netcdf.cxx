@@ -143,9 +143,7 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
 }
 } // namespace
 
-
 namespace bout {
-namespace experimental {
 
 Options OptionsNetCDF::read() {
   // Open file
@@ -161,7 +159,6 @@ Options OptionsNetCDF::read() {
   return result;
 }
 
-} // experimental
 } // bout
 
 namespace {
@@ -642,7 +639,6 @@ std::vector<TimeDimensionError> verifyTimesteps(const NcGroup& group) {
 } // namespace
 
 namespace bout {
-namespace experimental {
 
 void OptionsNetCDF::verifyTimesteps() const {
   NcFile dataFile(filename, NcFile::read);
@@ -685,7 +681,6 @@ void OptionsNetCDF::write(const Options& options) {
   writeGroup(options, dataFile);
 }
 
-} // experimental
 } // bout
 
 #endif // BOUT_HAS_NETCDF

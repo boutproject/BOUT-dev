@@ -229,7 +229,7 @@ protected:
   Options restart_options;
 
   /// File to write the restart-state to
-  bout::experimental::OptionsNetCDF restart_file;
+  bout::OptionsNetCDF restart_file;
 
   /*!
    * Specify a constrained variable \p var, which will be

@@ -14,7 +14,6 @@
 #include "options.hxx"
 
 namespace bout {
-namespace experimental {
 
 class OptionsNetCDF {
 public:
@@ -37,7 +36,6 @@ public:
 };
 
 }
-}
 
 #else
 
@@ -46,7 +44,6 @@ public:
 #include "options.hxx"
 
 namespace bout {
-namespace experimental {
 
 class OptionsNetCDF {
 public:
@@ -74,8 +71,7 @@ private:
   FileMode file_mode;
 };
 
-}
-}
+} // namespace bout
 
 #endif
 

@@ -11,7 +11,7 @@
 #include "test_extras.hxx"
 #include "options_netcdf.hxx"
 
-using bout::experimental::OptionsNetCDF;
+using bout::OptionsNetCDF;
 
 #include <cstdio>
 
