@@ -58,7 +58,8 @@ implementations are listed in table :numref:`tab-laplacetypes`.
    | `pdd                   | Parallel Diagnonally Dominant algorithm. Experimental        |                                          |
    | <sec-pdd_>`__          |                                                              |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
-   | shoot                  | Shooting method. Experimental                                |                                          |
+   | `ipt                   | Iterative parallel tridiagonal solver. Parallel only, but    |                                          |
+   | <sec-ipt_>`__          | automatically falls back to Thomas algorithm for NXPE=1.     |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
 
 Usage of the laplacian inversion
@@ -798,7 +799,7 @@ Naulin solver
 ~~~~~~~~~~~~~
 
 This scheme was introduced for BOUT++ by Michael Løiten in the `CELMA code
-<https://github.com/CELMA-project/CELMA>`_ and the iterative algoritm is detailed in
+<https://github.com/CELMA-project/CELMA>`_ and the iterative algorithm is detailed in
 his thesis [Løiten2017]_.
 
 The iteration can be under-relaxed (see ``naulin_laplace.cxx`` for more details of the
@@ -824,6 +825,32 @@ output files to help in choosing this value. With ``<i>`` being the number of th
 
 .. [Løiten2017] Michael Løiten, "Global numerical modeling of magnetized plasma
    in a linear device", 2017, https://celma-project.github.io/.
+
+.. _sec-ipt:
+
+Iterative Parallel Tridiagonal solver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This solver uses a hybrid of multigrid and the Thomas algorithm to invert
+tridiagonal matrices in parallel.
+The complexity of the algorithm is ``O(nx)`` work and ``O(log(NXPE))``
+communications.
+
+The Laplacian is second-order, so to invert it we need two boundary conditions,
+one at each end of the domain.
+If we only have one processor, that processor knows both boundary conditions,
+and we can invert the Laplacian locally using the Thomas algorithm.
+When the domain is subdivided between two or more processors, we can no longer
+use the Thomas algorithm, as processors do not know the solution at the
+subdomain boundaries.
+
+In this hybrid approach, we reduce the original system of equations to a
+smaller system for solution at the boundaries of each processor's subdomain.
+We solve this system in parallel using multigrid.
+Once the boundary values are known, each processor can find the solution on its
+subdomain using the Thomas algorithm.
+
+
 
 .. _sec-LaplaceXY:
 
