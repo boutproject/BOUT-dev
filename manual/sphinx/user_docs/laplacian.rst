@@ -850,7 +850,19 @@ We solve this system in parallel using multigrid.
 Once the boundary values are known, each processor can find the solution on its
 subdomain using the Thomas algorithm.
 
+**Parameters.**
 
+* Select this solver with ``type = ipt``
+* ``rtol`` and ``atol`` are the relative and absolute error tolerances to determine when the residual has converged. The goal of setting these is to minimize the runtime by minimizing the number of iterations required to meet the tolerance. Intuitively one would expect tightening tolerances is bad, as doing so requires more iterations. This is true, but also *loosening* the tolerances too far can lead to very slowly converging calculations. Generally, as one scans from large to small tolerances, we start with very slow calculations, then meet some threshold in tolerance where the runtime drops sharply, then see runtime slowly increase again as tolerances tighten further. The run time for all tolerances below this threshold are similar though, and generally it is best to err on the side of tighter tolerances.
+* ``maxits`` is the maximum number of iterations allowed before the job fails.
+* ``max_cycle`` is the number of pre and post smoothing operations applied on each multigrid level. The optimal value appears to be ``max_cycle = 1``.
+* ``max_level`` sets the number of multigrid levels. The optimal value is usually the largest possible value ``max_level = log2(NXPE) - 2`` (see "constraints" below), but sometimes one or two levels less than this can be faster.
+* ``predict_exit``.  Multigrid convergence rates are very robust. When ``predict_exit = true``, we calculate the convergence rate from early iterations and predict the iteration at which the algorithm will have converged. This allows us to skip convergence checks at most iterations (these are expensive as they require global communication). Whether this is advantageous is problem-dependent: it is probably useful at low ``Z`` resolution but not at higher ``Z`` resolution. This is because the algorithm skips work associated with ``kz`` modes which have converged; but if we do not check convergence, we do not know which modes we can skip. Therefore at higher ``Z`` resolution we find that reduced communication costs are offset by increased work. ``predict_exit`` defaults to ``false``.
+
+**Constraints.** This method requires that:
+
+* ``NXPE`` is a power of 2. 
+* ``NXPE > 2^(max_levels+1)``
 
 .. _sec-LaplaceXY:
 
