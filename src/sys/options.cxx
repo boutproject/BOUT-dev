@@ -45,8 +45,36 @@ Options::Options(const char* value) {
 }
 
 Options::Options(std::initializer_list<std::pair<std::string, Options>> values) {
+  // Yes, this looks bad, but bear with me...  The _only_ way to
+  // construct a nested initializer_list is inside-out, from the
+  // bottom of the tree structure. Unfortunately, this is very much
+  // not how you would want to construct the tree of options, as we
+  // don't have the parent section's name as we construct each
+  // child. Therefore, when we _do_ construct the parent, we'll need
+  // to recursively step down the tree, prepending the parent's name
+  // to each child. Rather than have a private member to do that, we
+  // use a lambda. And to make that lambda recursive, we need to have
+  // a nested lambda.
+  auto append_section_name = [](auto& children, const std::string& section_name) {
+    auto append_impl = [](auto& children, const std::string& section_name, auto& append_ref) mutable -> void {
+      for (auto& child : children) {
+        child.second.full_name = fmt::format("{}:{}", section_name, child.second.full_name);
+        if (child.second.is_section) {
+          append_ref(child.second.children, section_name, append_ref);
+        }
+      }
+    };
+    append_impl(children, section_name, append_impl);
+  };
+
   for (auto& value : values) {
     (*this)[value.first] = value.second;
+    // value.second was constructed from the "bare" `Options<T>(T)` so
+    // doesn't have `full_name` set. This clobbers
+    // `(*this)[value.first].full_name` in the copy constructor, so we
+    // need to explicitly set it again
+    (*this)[value.first].full_name = value.first;
+    append_section_name((*this)[value.first].children, value.first);
   }
 }
 
