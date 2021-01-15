@@ -643,3 +643,33 @@ std::map<std::string, const Options *> Options::subsections() const {
   }
   return sections;
 }
+
+namespace {
+void toString(const Options& value, std::string& fout) {
+  std::string section_name = value.str();
+
+  if (not section_name.empty()) {
+    fout += fmt::format("[{}]\n", section_name);
+  }
+
+  for (const auto& child : value.getChildren()) {
+    if (child.second.isValue()) {
+      const auto value = bout::utils::variantToString(child.second.value);
+      // Convert empty strings to ""
+      const std::string as_str = value.empty() ? "\"\"" : value;
+      fout += fmt::format("{} = {}\n", child.first, as_str);
+    }
+  }
+
+  for (const auto& subsection : value.subsections()) {
+    fout += "\n";
+    toString(*subsection.second, fout);
+  }
+}
+} // namespace
+
+std::string toString(const Options& value) {
+  std::string ss;
+  toString(value, ss);
+  return ss;
+}

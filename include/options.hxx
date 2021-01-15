@@ -51,6 +51,7 @@ class Options;
 #include "fieldperp.hxx"
 
 #include <map>
+#include <ostream>
 #include <string>
 #include <sstream>
 #include <iomanip>
@@ -739,6 +740,14 @@ template <> bool Options::as<bool>(const bool& similar_to) const;
 template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const;
 template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
 template <> FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
+
+/// Convert \p value to string
+std::string toString(const Options& value);
+
+/// Output a stringified \p value to a stream
+inline std::ostream& operator<<(std::ostream& out, const Options& value) {
+  return out << toString(value);
+}
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \

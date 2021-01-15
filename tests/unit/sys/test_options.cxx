@@ -429,9 +429,9 @@ TEST_F(OptionsTest, CheckUsed) {
 
   // Check keys are all in buffer
   EXPECT_TRUE(IsSubString(buffer.str(), "key1"));
-  EXPECT_TRUE(IsSubString(buffer.str(), "key2"));
+  EXPECT_TRUE(IsSubString(buffer.str(), "section1:key2"));
   EXPECT_TRUE(IsSubString(buffer.str(), "key3"));
-  EXPECT_TRUE(IsSubString(buffer.str(), "key4"));
+  EXPECT_TRUE(IsSubString(buffer.str(), "section1:key4"));
 
   // Clear buffer
   buffer.str("");
@@ -1132,3 +1132,26 @@ TEST_F(OptionsTest, InitialiseTree) {
   EXPECT_EQ(option["section2"]["value5"].as<int>(), 3);
 }
 
+TEST_F(OptionsTest, ToString) {
+  Options option{{"section1", {{"value1", 42}, {"value2", "hello"}}},
+                 {"section2",
+                  {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}}};
+
+  // It's plausible this test is fragile if the internal storage
+  // changes the order -- at time of writing (Jan 2020) it's
+  // lexographical rather than insertion order
+  std::string expected = R"(
+[section1]
+value1 = 42
+value2 = hello
+
+[section2]
+value5 = 3
+
+[section2:subsection1]
+value3 = true
+value4 = 3.2
+)";
+
+  EXPECT_EQ(toString(option), expected);
+}
