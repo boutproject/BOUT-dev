@@ -93,7 +93,7 @@ Options &Options::operator[](const std::string &name) {
   }
 
   // Find and return if already exists
-  auto it = children.find(lowercase(name));
+  auto it = children.find(name);
   if (it != children.end()) {
     return it->second;
   }
@@ -105,7 +105,7 @@ Options &Options::operator[](const std::string &name) {
   }
 
   // emplace returns a pair with iterator first, boolean (insert yes/no) second
-  auto pair_it = children.emplace(lowercase(name), Options{this, secname});
+  auto pair_it = children.emplace(name, Options{this, secname});
 
   return pair_it.first->second;
 }
@@ -128,7 +128,7 @@ const Options &Options::operator[](const std::string &name) const {
   }
 
   // Find and return if already exists
-  auto it = children.find(lowercase(name));
+  auto it = children.find(name);
   if (it == children.end()) {
     // Doesn't exist
     throw BoutException(_("Option {:s}:{:s} does not exist"), full_name, name);
@@ -177,7 +177,7 @@ bool Options::isSection(const std::string& name) const {
   }
 
   // Is there a child section?
-  auto it = children.find(lowercase(name));
+  auto it = children.find(name);
   if (it == children.end()) {
     return false;
   } else {

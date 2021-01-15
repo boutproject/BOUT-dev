@@ -575,7 +575,7 @@ public:
     // Note using operator[] here would result in exception if key does not exist
     if (!is_section)
       return false;
-    auto it = children.find(lowercase(key));
+    auto it = children.find(key);
     if (it == children.end())
       return false;
     return it->second.isSet();

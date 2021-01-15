@@ -176,7 +176,7 @@ string OptionINI::getNextLine(ifstream &fin) {
   string line;
 
   getline(fin, line);
-  line = lowercasequote(trim(trimComments(line))); // lowercase except for inside quotes
+  line = trim(trimComments(line));
 
   return line;
 }

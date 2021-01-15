@@ -46,6 +46,10 @@
 - `PhysicsModel` expects the options `datadir` and `dump_format` to
   have been set; this is only a problem if you don't call
   `BoutInitialise`. [\#2062](https://github.com/boutproject/BOUT-dev/pull/2062)
+- Having any unused options remaining after the first call to the
+  physics model `rhs` is now an error. Set
+  `input:error_on_unused_options = false` for old behaviour
+- Input options are now case sensitive
 
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)
