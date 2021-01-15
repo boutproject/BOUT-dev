@@ -491,14 +491,37 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
                                    .doc("Write initial state as time point 0?")
                                    .withDefault(!restart || !append);
 
+  // Run RHS once to ensure all variables set
+  if (run_rhs(simtime)) {
+    throw BoutException("Physics RHS call failed\n");
+  }
+
+  const bool error_on_unused_options =
+      globaloptions["input"]["error_on_unused_options"]
+          .doc(
+              "Error if there are any unused options before starting the main simulation")
+          .withDefault(true);
+
+  const bool validate_input =
+      globaloptions["input"]["validate"]
+          .doc(
+              "Check for unused options and stop")
+          .withDefault(false);
+
+  if (error_on_unused_options) {
+    Options unused = globaloptions.getUnused();
+    if (not unused.getChildren().empty()) {
+      throw BoutException("There were unused options:\n{:s}", toString(unused));
+    }
+  }
+
+  if (validate_input) {
+    return 0;
+  }
+
   if (dump_on_restart) {
 
     /// Write initial state as time-point 0
-
-    // Run RHS once to ensure all variables set
-    if (run_rhs(simtime)) {
-      throw BoutException("Physics RHS call failed\n");
-    }
 
     // Call monitors so initial values are written to output dump files
     if (call_monitors(simtime, -1, NOUT)) {

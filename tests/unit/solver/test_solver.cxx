@@ -868,6 +868,7 @@ TEST_F(SolverTest, BasicSolve) {
 
   EXPECT_CALL(model, rhs(0)).Times(1);
 
+  Options::cleanup();
   EXPECT_NO_THROW(solver.solve());
 
   EXPECT_TRUE(solver.init_called);
@@ -904,6 +905,7 @@ TEST_F(SolverTest, SolveBadRun) {
 
   EXPECT_CALL(model, rhs(0)).Times(1);
 
+  Options::cleanup();
   EXPECT_EQ(solver.solve(), -1);
 
   EXPECT_TRUE(solver.init_called);
@@ -924,6 +926,7 @@ TEST_F(SolverTest, SolveThrowRun) {
 
   EXPECT_CALL(model, rhs(0)).Times(1);
 
+  Options::cleanup();
   EXPECT_THROW(solver.solve(), BoutException);
 
   EXPECT_TRUE(solver.init_called);
@@ -951,6 +954,7 @@ TEST_F(SolverTest, SolveFixDefaultTimestep) {
 
   EXPECT_CALL(model, rhs(0)).Times(1);
 
+  Options::cleanup();
   EXPECT_NO_THROW(solver.solve(100, 1.));
 
   EXPECT_TRUE(solver.init_called);
@@ -1004,6 +1008,7 @@ TEST_F(SolverTest, SolveFixDefaultTimestepSmaller) {
 
   EXPECT_CALL(model, rhs(0)).Times(1);
 
+  Options::cleanup();
   EXPECT_NO_THROW(solver.solve(100, 0.01));
 
   EXPECT_TRUE(solver.init_called);
@@ -1032,6 +1037,7 @@ TEST_F(SolverTest, SolveFixDefaultTimestepLarger) {
 
   EXPECT_CALL(model, rhs(0)).Times(1);
 
+  Options::cleanup();
   EXPECT_NO_THROW(solver.solve(100, 1.));
 
   EXPECT_TRUE(solver.init_called);
