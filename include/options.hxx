@@ -662,6 +662,13 @@ public:
     return *this;
   }
   
+  friend bool operator==(const Options& lhs, const Options& rhs) {
+    if (lhs.is_value and rhs.is_value) {
+      return lhs.value == rhs.value;
+    }
+    return lhs.children == rhs.children;
+  }
+
  private:
   
   /// The source label given to default values

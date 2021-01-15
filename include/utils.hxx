@@ -215,6 +215,11 @@ private:
   Array<T> data;
 };
 
+template <typename T>
+bool operator==(const Matrix<T>& lhs, const Matrix<T>& rhs) {
+  return std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
 /// Helper class for 3D arrays
 ///
 /// Allows bounds checking through `operator()` with CHECK > 1
@@ -313,6 +318,10 @@ private:
   Array<T> data;
 };
 
+template <typename T>
+bool operator==(const Tensor<T>& lhs, const Tensor<T>& rhs) {
+  return std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
 
 /**************************************************************************
  * Matrix routines
