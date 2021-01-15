@@ -429,9 +429,9 @@ TEST_F(OptionsTest, CheckUsed) {
 
   // Check keys are all in buffer
   EXPECT_TRUE(IsSubString(buffer.str(), "key1"));
-  EXPECT_TRUE(IsSubString(buffer.str(), "section1:key2"));
+  EXPECT_TRUE(IsSubString(buffer.str(), "key2"));
   EXPECT_TRUE(IsSubString(buffer.str(), "key3"));
-  EXPECT_TRUE(IsSubString(buffer.str(), "section1:key4"));
+  EXPECT_TRUE(IsSubString(buffer.str(), "key4"));
 
   // Clear buffer
   buffer.str("");
@@ -446,9 +446,9 @@ TEST_F(OptionsTest, CheckUsed) {
 
   // Check only key3, key4 are in buffer
   EXPECT_FALSE(IsSubString(buffer.str(), "key1"));
-  EXPECT_FALSE(IsSubString(buffer.str(), "section1:key2"));
+  EXPECT_FALSE(IsSubString(buffer.str(), "key2"));
   EXPECT_TRUE(IsSubString(buffer.str(), "key3"));
-  EXPECT_TRUE(IsSubString(buffer.str(), "section1:key4"));
+  EXPECT_TRUE(IsSubString(buffer.str(), "key4"));
 
   // Clear buffer
   buffer.str("");
@@ -1154,4 +1154,27 @@ value4 = 3.2
 )";
 
   EXPECT_EQ(toString(option), expected);
+}
+
+TEST_F(OptionsTest, GetUnused) {
+  Options option{{"section1", {{"value1", 42}, {"value2", "hello"}}},
+                 {"section2",
+                  {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}}};
+
+  MAYBE_UNUSED(auto value1) = option["section1"]["value1"].as<int>();
+  MAYBE_UNUSED(auto value3) = option["section2"]["subsection1"]["value3"].as<bool>();
+
+  Options expected_unused{
+      {"section1", {{"value2", "hello"}}},
+      {"section2", {{"subsection1", {{"value4", 3.2}}}, {"value5", 3}}}};
+
+  EXPECT_EQ(option.getUnused(), expected_unused);
+
+  MAYBE_UNUSED(auto value2) = option["section1"]["value2"].as<std::string>();
+  MAYBE_UNUSED(auto value4) = option["section2"]["subsection1"]["value4"].as<double>();
+  MAYBE_UNUSED(auto value5) = option["section2"]["value5"].as<int>();
+
+  Options expected_empty{};
+
+  EXPECT_EQ(option.getUnused(), expected_empty);
 }

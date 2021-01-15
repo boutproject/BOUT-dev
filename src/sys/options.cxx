@@ -590,34 +590,63 @@ bool Options::operator<(const char* other) const {
   return as<std::string>() < std::string(other);
 }
 
-void Options::printUnused() const {
-  bool allused = true;
-  // Check if any options are unused
-  for (const auto &it : children) {
-    if (it.second.is_value && !it.second.value_used) {
-      allused = false;
-      break;
-    }
+Options Options::getUnused() const {
+  // Copy this object, and then we're going to chuck out everything
+  // that has been used. This turns out to be easier than copying just
+  // the unused options into an empty instance
+  Options unused = *this;
+
+  if (unused.is_value) {
+    // We don't have a nice way to "clear" the value, so if it was
+    // used, mark it as no longer a value: if it has been used, this
+    // does nothing
+    unused.is_value = not unused.value_used;
+    return unused;
   }
-  if (allused) {
-    output_info << _("All options used\n");
-  } else {
-    output_info << _("Unused options:\n");
-    for (const auto &it : children) {
-      if (it.second.is_value && !it.second.value_used) {
-        output_info << "\t" << full_name << ":" << it.first << " = "
-                    << bout::utils::variantToString(it.second.value);
-        if (it.second.attributes.count("source"))
-          output_info << " (" << bout::utils::variantToString(it.second.attributes.at("source")) << ")";
-        output_info << endl;
+
+  // This loop modifies the map in the loop, so we need to manually
+  // manage the iterator
+  for (auto it = unused.children.begin(); it != unused.children.end();) {
+    if (it->second.is_value and it->second.value_used) {
+      it = unused.children.erase(it);
+      continue;
+    }
+
+    if (it->second.is_section) {
+      // Recurse down and replace this section by its "unused" version
+      it->second = it->second.getUnused();
+      // If all of its children have been used, then we can remove it
+      // as well
+      if (it->second.children.empty()) {
+        it = unused.children.erase(it);
+        continue;
       }
     }
+
+    ++it;
   }
-  for (const auto &it : children) {
-    if (it.second.is_section) {
-      it.second.printUnused();
-    }
+
+  if (unused.children.empty()) {
+    // If all the children have been used, we don't want to print a
+    // section name any more
+    unused.full_name.clear();
   }
+
+  return unused;
+}
+
+void Options::printUnused() const {
+  Options unused = getUnused();
+
+  // Two cases: single value, or a section.  If it's a single value,
+  // we can check it directly. If it's a section, we can see if it has
+  // any children
+  if ((unused.is_value and unused.value_used) or unused.children.empty()) {
+    output_info << _("All options used\n");
+    return;
+  }
+
+  output_info << _("Unused options:\n") << unused;
 }
 
 void Options::cleanCache() { FieldFactory::get()->cleanCache(); }

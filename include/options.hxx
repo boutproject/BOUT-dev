@@ -615,6 +615,10 @@ public:
     }
   }
 
+  /// Return a new Options instance which contains all the values
+  /// _not_ used from this instance
+  Options getUnused() const;
+
   /// Print the options which haven't been used
   void printUnused() const;
 
