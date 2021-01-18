@@ -1052,3 +1052,25 @@ TEST_F(OptionsTest, FuzzyFind) {
   EXPECT_EQ(first_CAPS_match->name, "section2:value_5");
   EXPECT_EQ(first_CAPS_match->distance, 1);
 }
+
+TEST_F(OptionsTest, GetFlattenedKeys) {
+  Options option{
+      {"value1", 21},
+      {"section1", {{"value1", 42}, {"value2", "hello"}}},
+      {"section2",
+       {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value_5", 3}}}};
+
+  auto flat_keys = option.getFlattenedKeys();
+
+  std::vector<std::string> expected_keys{"value1",
+                                         "section1:value1",
+                                         "section1:value2",
+                                         "section2:subsection1:value3",
+                                         "section2:subsection1:value4",
+                                         "section2:value_5"};
+
+  std::sort(flat_keys.begin(), flat_keys.end());
+  std::sort(expected_keys.begin(), expected_keys.end());
+
+  EXPECT_EQ(flat_keys, expected_keys);
+}

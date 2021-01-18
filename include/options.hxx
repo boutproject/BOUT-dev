@@ -677,6 +677,10 @@ public:
     return children;
   }
 
+  /// Return a vector of all the full names of all the keys below this
+  /// in the tree (not gauranteed to be sorted)
+  std::vector<std::string> getFlattenedKeys() const;
+
   bool isValue() const {
     return is_value;
   }

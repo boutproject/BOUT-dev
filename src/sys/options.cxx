@@ -720,6 +720,27 @@ std::map<std::string, const Options *> Options::subsections() const {
   return sections;
 }
 
+std::vector<std::string> Options::getFlattenedKeys() const {
+  std::vector<std::string> flattened_names;
+
+  if (is_value and not full_name.empty()) {
+    flattened_names.push_back(full_name);
+  }
+
+  for (const auto& child : children) {
+    if (child.second.is_value) {
+      flattened_names.push_back(child.second.full_name);
+    }
+    if (child.second.is_section) {
+      const auto child_names = child.second.getFlattenedKeys();
+      flattened_names.insert(flattened_names.end(), child_names.begin(),
+                             child_names.end());
+    }
+  }
+
+  return flattened_names;
+}
+
 namespace {
 void toString(const Options& value, std::string& fout) {
   std::string section_name = value.str();
