@@ -119,7 +119,7 @@ not found, a warning will be printed and the default values used.
 
 -  Z shift for interpolation between the base and field-aligned grids, see
    :ref:`sec-parallel-transforms`. The shifts must be provided in the gridfile
-   in a field ``zShift[nx][ny]``. If not found, ``zShift`` is set to zero.
+   in a field ``zShift(nx, ny)``. If not found, ``zShift`` is set to zero.
 
 The remaining quantities determine the topology of the grid. These are
 based on tokamak single/double-null configurations, but can be adapted
@@ -761,4 +761,3 @@ with the following formula:
 
 where :math:`R_0` is the major radius, :math:`a` is the minor radius,
 :math:`\epsilon` is the elongation (``elong``), :math:`\delta` the triangularity (``triang``), and :math:`b` the indentation (``indent``).
-
