@@ -669,6 +669,19 @@ TEST(StringUtilitiesTest, StringTrimComments) {
   EXPECT_EQ("space  ", trimComments(input, "#"));
 }
 
+TEST(StringUtilitiesTest, EditDistance) {
+  EXPECT_EQ(editDistance("hello", "hllo"), 1);              // deletion
+  EXPECT_EQ(editDistance("hello", "helloo"), 1);            // insertion
+  EXPECT_EQ(editDistance("hello", "hullo"), 1);             // substitution
+  EXPECT_EQ(editDistance("hello", "hlelo"), 1);             // transposition
+  EXPECT_EQ(editDistance("hello", "hluoo"), 3);             // multiple edits
+  EXPECT_EQ(editDistance("hello_world", "helloworld"), 1);  // insertion non-letter
+  EXPECT_EQ(editDistance("Hello World", "hello world"), 2); // two substitutions
+  EXPECT_EQ(editDistance("hello world", "Hello World"), 2); // transitive
+  // Following might be affected by encoding, so should be at least two
+  EXPECT_GE(editDistance("très tôt", "tres tot"), 2);       // non-ASCII
+}
+
 namespace {
 using function_typedef = int(*)(char, int, double);
 int function_pointer(double, char) {return 0;};

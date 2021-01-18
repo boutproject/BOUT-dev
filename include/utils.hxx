@@ -591,6 +591,15 @@ std::string trimRight(const std::string &s, const std::string &c=" \t\r");
  */
 std::string trimComments(const std::string &s, const std::string &c="#;");
 
+/// Returns the "edit distance" between two strings: how many
+/// insertions, deletions, substitutions and transpositions are needed
+/// to transform \p str1 into \p str2
+///
+/// Implemented using the "optimal string alignment distance" from
+/// Wikipedia:
+/// https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance#Optimal_string_alignment_distance
+std::string::size_type editDistance(const std::string& str1, const std::string& str2);
+
 /// the bout_vsnprintf macro:
 /// The first argument is an char * buffer of length len.
 /// It needs to have been allocated with new[], as it may be
