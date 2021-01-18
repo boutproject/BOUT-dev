@@ -852,7 +852,7 @@ subdomain using the Thomas algorithm.
 
 **Parameters.**
 
-* Select this solver with ``type = ipt``
+* ``type = ipt`` selects this solver.
 * ``rtol`` and ``atol`` are the relative and absolute error tolerances to determine when the residual has converged. The goal of setting these is to minimize the runtime by minimizing the number of iterations required to meet the tolerance. Intuitively one would expect tightening tolerances is bad, as doing so requires more iterations. This is true, but also *loosening* the tolerances too far can lead to very slowly converging calculations. Generally, as one scans from large to small tolerances, we start with very slow calculations, then meet some threshold in tolerance where the runtime drops sharply, then see runtime slowly increase again as tolerances tighten further. The run time for all tolerances below this threshold are similar though, and generally it is best to err on the side of tighter tolerances.
 * ``maxits`` is the maximum number of iterations allowed before the job fails.
 * ``max_cycle`` is the number of pre and post smoothing operations applied on each multigrid level. The optimal value appears to be ``max_cycle = 1``.
