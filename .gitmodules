@@ -16,3 +16,6 @@
 [submodule "externalpackages/boututils"]
 	path = externalpackages/boututils
 	url = https://github.com/boutproject/boututils.git
+[submodule "externalpackages/zoidberg"]
+	path = externalpackages/zoidberg
+	url = https://github.com/boutproject/zoidberg.git
