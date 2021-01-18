@@ -52,6 +52,7 @@ class Options;
 
 #include <map>
 #include <ostream>
+#include <set>
 #include <string>
 #include <sstream>
 #include <iomanip>
@@ -281,6 +282,32 @@ public:
   /// is not a child, then a BoutException will be thrown
   const Options& operator[](const std::string &name) const;
   const Options& operator[](const char *name) const { return (*this)[std::string(name)]; }
+
+  /// Return type of `Options::fuzzyFind`
+  struct FuzzyMatch {
+    /// Full name (including parent sections) of possible match
+    std::string name;
+    /// Edit distance from original search term
+    std::string::size_type distance;
+    /// Comparison operator so this works in a std::multiset
+    friend bool operator<(const FuzzyMatch& lhs, const FuzzyMatch& rhs) {
+      return lhs.distance < rhs.distance;
+    }
+  };
+
+  /// Find approximate matches for \p name throughout the whole
+  /// tree. \p distance controls the similarity of results
+  ///
+  /// Returns a set of possible matches ordered by similarity to \p
+  /// name. A \p distance of 1 means: a single insertion, deletion,
+  /// substitution, or transposition; that the case differs, for
+  /// example, "key" and "KEY" match with distance 1; or that an
+  /// unqualified name matches a fully-qualified name, for example
+  /// "key" matches "section:key" with distance 1. Note that
+  /// "first:second:key" will not (closely) match "third:fourth:key",
+  /// but "key" will match both.
+  std::multiset<FuzzyMatch> fuzzyFind(const std::string& name,
+                                      std::string::size_type distance = 4) const;
 
   /// Assignment from any type T
   /// Note: Using this makes this object a value.

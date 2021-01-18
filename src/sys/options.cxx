@@ -137,6 +137,53 @@ const Options &Options::operator[](const std::string &name) const {
   return it->second;
 }
 
+std::multiset<Options::FuzzyMatch>
+Options::fuzzyFind(const std::string& name, std::string::size_type distance) const {
+  std::multiset<Options::FuzzyMatch> matches;
+
+  // Add option.full_name to matches if possible_match is within
+  // distance of name, including a possible extra_cost. Returns true
+  // if it was a fuzzy match
+  auto insert_if_match = [&](const Options& option, const std::string& possible_match,
+                             std::string::size_type extra_cost = 0) -> bool {
+    if (not option.is_value) {
+      // Don't match section names
+      return false;
+    }
+    if ((name != possible_match) and (lowercase(name) == lowercase(possible_match))) {
+      // Differs only in case: pretty good match
+      matches.insert({possible_match, 1 + extra_cost});
+      return true;
+    }
+    const auto fuzzy_distance = editDistance(name, possible_match) + extra_cost;
+    if (fuzzy_distance <= distance) {
+      // Insert the full_name with parent sections, not the possible_match
+      matches.insert({option.full_name, fuzzy_distance});
+      return true;
+    }
+    return false;
+  };
+
+  insert_if_match(*this, full_name);
+
+  for (const auto& child : children) {
+    // Check against fully-qualified name
+    if (not insert_if_match(child.second, child.second.full_name)) {
+      // Try again without parent sections, but make it cost a little bit more.
+      // Could make it cost more per wrong section by counting ":" in full_name
+      insert_if_match(child.second, child.second.name(), 1);
+    }
+
+    if (child.second.is_section) {
+      // Recurse down the tree
+      auto child_matches = child.second.fuzzyFind(name, distance);
+      matches.insert(child_matches.begin(), child_matches.end());
+    }
+  }
+
+  return matches;
+}
+
 Options& Options::operator=(const Options& other) {
   // Note: Here can't do copy-and-swap because pointers to parents are stored
 
