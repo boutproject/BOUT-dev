@@ -511,7 +511,36 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   if (error_on_unused_options) {
     Options unused = globaloptions.getUnused();
     if (not unused.getChildren().empty()) {
-      throw BoutException("There were unused options:\n{:s}", toString(unused));
+
+      // Construct a string with all the fuzzy matches for each unused option
+      const auto keys = unused.getFlattenedKeys();
+      std::string possible_misspellings;
+      for (const auto& key : keys) {
+        auto fuzzy_matches = globaloptions.fuzzyFind(key);
+        // Remove exact matches, not helpful for unknown options!
+        bout::utils::erase_if(
+            fuzzy_matches,
+            [](const Options::FuzzyMatch& match) -> bool { return match.distance == 0; });
+        // TODO: also remove other unused options, and those from default source
+        if (fuzzy_matches.empty()) {
+          continue;
+        }
+        possible_misspellings += fmt::format("\nPlausible alternatives to '{}':\n", key);
+        for (const auto& match : fuzzy_matches) {
+          possible_misspellings += fmt::format("\t{}\n", match.name);
+        }
+      }
+
+      // Only display the possible matches if we actually have some to show
+      const std::string additional_info =
+          possible_misspellings.empty()
+              ? ""
+              : fmt::format(
+                  "It's possible you've mistyped some options.\nHave you tried running "
+                  "'bin/bout-v5-input-file-upgrader.py' on your input file?\n{}",
+                  possible_misspellings);
+      throw BoutException("There were unused options:\n{:s}\n{}", toString(unused),
+                          additional_info);
     }
   }
 
