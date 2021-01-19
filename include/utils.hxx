@@ -38,12 +38,13 @@
 #include "msg_stack.hxx"
 #include "unused.hxx"
 
-#include <string>
-#include <list>
+#include <algorithm>
 #include <cmath>
 #include <ctime>
-#include <algorithm>
+#include <list>
 #include <memory>
+#include <set>
+#include <string>
 
 #ifdef _MSC_VER
 // finite is not actually standard C++, it's a BSD extention for C
@@ -121,6 +122,27 @@ struct function_traits<R (*)(Args...)> {
   template <size_t i>
   using arg_t = typename arg<i>::type;
 };
+
+#ifndef __cpp_lib_erase_if
+/// Erases all elements from \p c that satisfy the predicate \p pred
+/// from the container. Implementation of C++20's std::erase_if, taken
+/// from https://en.cppreference.com/w/cpp/container/multiset/erase_if
+template <class Key, class Compare, class Alloc, class Pred>
+typename std::multiset<Key, Compare, Alloc>::size_type
+erase_if(std::multiset<Key, Compare, Alloc>& c, Pred pred) {
+  auto old_size = c.size();
+  for (auto i = c.begin(), last = c.end(); i != last;) {
+    if (pred(*i)) {
+      i = c.erase(i);
+    } else {
+      ++i;
+    }
+  }
+  return old_size - c.size();
+}
+#else
+using std::erase_if;
+#endif
 } // namespace utils
 } // namespace bout
 
