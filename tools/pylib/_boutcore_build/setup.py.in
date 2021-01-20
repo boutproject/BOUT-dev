@@ -10,9 +10,13 @@ os.environ["CC"] = "$(bout-config --cc)"
 # different to the python compiler, LDSHARED might need to be set. In
 # that case it might be required to check the linking commands, and
 # add the apropriate flags.
-#os.environ["LDSHARED"]  = "$(bout-config --ld)"
+# os.environ["LDSHARED"] = "$(bout-config --ld)"
 
 setup(
-    ext_modules = cythonize("boutcore.pyx")
+    ext_modules=cythonize(
+        "boutcore.pyx",
+        language_level=3,
+        compiler_directives=dict(binding=True, embedsignature=True),
+    )
 )
 EOF
