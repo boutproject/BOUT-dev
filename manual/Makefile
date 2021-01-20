@@ -20,15 +20,15 @@ sphinx-pdf: doxygen
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b latex sphinx/ build/
 	cd build && latexmk -pdf BOUT -interaction=batchmode
 	test -e BOUT.pdf || ln -s build/BOUT.pdf .
-	@echo "Documentation is available in $(pwd)/BOUT.pdf"
+	@echo "Documentation is available in $$(pwd)/BOUT.pdf"
 
 sphinx-html: doxygen
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b html sphinx/ html/
-	@echo "Documentation available in file://$(pwd)/html/index.html"
+	@echo "Documentation available in file://$$(pwd)/html/index.html"
 
 sphinx-man: doxygen
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b man sphinx/ man/
-	@echo "Documentation available in $(pwd)/man/bout.1"
+	@echo "Documentation available in $$(pwd)/man/bout.1"
 
 # Run doxygen, ignore if it fails (leading '-')
 doxygen:

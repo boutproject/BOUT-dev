@@ -4,7 +4,7 @@ from Cython.Build import cythonize
 import os
 
 os.environ["CXX"] = "$(bout-config --cxx)"
-os.environ["CC"]  = "$(bout-config --cc)"
+os.environ["CC"] = "$(bout-config --cc)"
 # Setting LDSHARED sets the linker. However, setting it might drop
 # flags - thus it is not set by default. If $(bout-config --cxx) is
 # different to the python compiler, LDSHARED might need to be set. In
