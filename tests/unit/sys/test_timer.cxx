@@ -253,7 +253,7 @@ TEST(TimerTest, ListAllInfo) {
   std::cout.rdbuf(old_cout_rdbuf);
 
   using namespace ::testing;
-  EXPECT_THAT(cout_capture.str(), HasSubstr("Timer name         |"));
+  EXPECT_THAT(cout_capture.str(), HasSubstr("Timer name |"));
   EXPECT_THAT(cout_capture.str(), ContainsRegex("one *| 0\\.\\d+ | 1    | 0\\.\\d+"));
   EXPECT_THAT(cout_capture.str(), ContainsRegex("two *| 0 * | 2    | 0\\.\\d+"));
 }
