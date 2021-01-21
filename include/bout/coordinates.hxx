@@ -302,6 +302,9 @@ private:
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
+#if BOUT_USE_METRIC_3D
+  Field3D maybeFromFieldAligned(const Field3D&, const std::string&);
+#endif
 };
 
 /*
