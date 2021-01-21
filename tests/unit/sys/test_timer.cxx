@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "bout/sys/timer.hxx"
 
@@ -167,6 +168,39 @@ TEST(TimerTest, ResetTimeLabelOutOfScope) {
               bout::testing::TimerTolerance);
 }
 
+TEST(TimerTest, GetTotalTime) {
+  const auto start = Timer::clock_type::now();
+  Timer timer{"GetTotalTime test"};
+
+  std::this_thread::sleep_for(bout::testing::sleep_length);
+
+  timer.resetTime();
+
+  std::this_thread::sleep_for(bout::testing::sleep_length);
+
+  const auto end = Timer::clock_type::now();
+  const Timer::seconds elapsed = end - start;
+
+  EXPECT_NEAR(timer.getTotalTime(), elapsed.count(), bout::testing::TimerTolerance);
+}
+
+TEST(TimerTest, GetTotalTimeFromLabel) {
+  const auto start = Timer::clock_type::now();
+  Timer timer{"GetTotalTimeFromLabel test"};
+
+  std::this_thread::sleep_for(bout::testing::sleep_length);
+
+  timer.resetTime();
+
+  std::this_thread::sleep_for(bout::testing::sleep_length);
+
+  const auto end = Timer::clock_type::now();
+  const Timer::seconds elapsed = end - start;
+
+  EXPECT_NEAR(Timer::getTotalTime("GetTotalTimeFromLabel test"), elapsed.count(),
+              bout::testing::TimerTolerance);
+}
+
 TEST(TimerTest, Cleanup) {
   {
     Timer timer{"Cleanup test"};
@@ -189,4 +223,37 @@ TEST(TimerTest, Cleanup) {
 
   EXPECT_NEAR(Timer::getTime("Cleanup test"), elapsed.count(),
               bout::testing::TimerTolerance);
+}
+
+TEST(TimerTest, ListAllInfo) {
+  Timer::cleanup();
+
+  {
+    Timer time1{"one"};
+    std::this_thread::sleep_for(bout::testing::sleep_length);
+    {
+      Timer time2{"two"};
+      std::this_thread::sleep_for(bout::testing::sleep_length);
+    }
+    {
+      Timer time2{"two"};
+      std::this_thread::sleep_for(bout::testing::sleep_length);
+    }
+    Timer time_long{"18 characters long"};
+  }
+
+  Timer::resetTime("two");
+
+  std::streambuf* old_cout_rdbuf(std::cout.rdbuf());
+  std::stringstream cout_capture;
+  std::cout.rdbuf(cout_capture.rdbuf());
+
+  Timer::printTimeReport();
+
+  std::cout.rdbuf(old_cout_rdbuf);
+
+  using namespace ::testing;
+  EXPECT_THAT(cout_capture.str(), HasSubstr("Timer name |"));
+  EXPECT_THAT(cout_capture.str(), ContainsRegex("one *| 0\\.\\d+ | 1    | 0\\.\\d+"));
+  EXPECT_THAT(cout_capture.str(), ContainsRegex("two *| 0 * | 2    | 0\\.\\d+"));
 }

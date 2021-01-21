@@ -594,6 +594,12 @@ int BoutFinalise(bool write_settings) {
     }
   }
 
+  if (Options::root()["time_report:show"].withDefault(false)) {
+    output.write("\nTimer report \n\n");
+    Timer::printTimeReport();
+    output.write("\n");
+  }
+
   // Delete the mesh
   delete bout::globals::mesh;
 
