@@ -98,7 +98,7 @@ void Timer::printTimeReport() {
           << std::string(max_width, '-') << "\n";
   for (const auto& kv : sorted_info) {
     output << std::left << std::setw(max_width) << kv.first << separator
-           << kv.second.total_time.count() << separator << << kv.second.hits
+           << kv.second.total_time.count() << separator << kv.second.hits
            << separator << kv.second.total_time.count() / kv.second.hits
            << "\n";
   }
