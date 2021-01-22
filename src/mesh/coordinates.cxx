@@ -1617,32 +1617,16 @@ Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
                                           const std::string& method,
                                           const std::string& region) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
-#if BOUT_USE_METRIC_3D
-  if (!f.hasParallelSlices()) {
-    const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
-    const Field3D f_aligned = is_unaligned ? transform->toFieldAligned(f, "RGN_NOX") : f;
-    Field3D result = bout::derivatives::index::DDY(f_aligned, loc, method, region);
-    return (is_unaligned ? maybeFromFieldAligned(result, region) : result);
-  }
-#endif
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
 
 Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) {
 #if BOUT_USE_METRIC_3D
-  if (!f.hasParallelSlices()) {
-    const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
-    Field3D f_aligned;
-    if (transform->canToFromFieldAligned()) {
-      f_aligned = is_unaligned ? transform->toFieldAligned(f, "RGN_NOX") : f;
-    } else {
-      Field3D f_parallel = f;
-      transform->calcParallelSlices(f_parallel);
-      return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
-    }
-    Field3D result = bout::derivatives::index::DDY(f_aligned, outloc, method, region);
-    return (is_unaligned ? maybeFromFieldAligned(result, region) : result);
+  if (! f.hasParallelSlices() and ! transform->canToFromFieldAligned()) {
+    Field3D f_parallel = f;
+    transform->calcParallelSlices(f_parallel);
+    return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
   }
 #endif
   return bout::derivatives::index::DDY(f, outloc, method, region) / dy;
@@ -2029,17 +2013,3 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
   throw BoutException("Coordinates::Laplace_perpXY for 3D metric not implemented");
 #endif
 }
-
-#if BOUT_USE_METRIC_3D
-Field3D Coordinates::maybeFromFieldAligned(const Field3D& f, const std::string& region) {
-  ASSERT1(location == f.getLocation());
-  ASSERT1(localmesh == f.getMesh());
-  if (f.getDirectionY() == YDirectionType::Standard) {
-    return f;
-  }
-  if (this->getParallelTransform().canToFromFieldAligned()) {
-    return this->getParallelTransform().fromFieldAligned(f, region);
-  }
-  return copy(f).setDirectionY(YDirectionType::Standard);
-}
-#endif
