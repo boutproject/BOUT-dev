@@ -1,0 +1,110 @@
+compilers:
+- compiler:
+    spec: clang@6.0.0
+    paths:
+      cc: /usr/tcetmp/bin/clang-archer++
+      cxx:
+      f77:
+      fc:
+    flags: {}
+    operating_system: rhel7
+    target: ppc64le
+    modules: []
+    environment:
+      unset: []
+    extra_rpaths: []
+- compiler:
+    spec: clang@9.0.0
+    paths:
+      cc: /usr/tcetmp/bin/clang-gpu
+      cxx: /usr/tcetmp/bin/clang++-gpu
+      f77: /usr/tcetmp/bin/gfortran
+      fc: /usr/bin/fc
+    flags: {}
+    operating_system: rhel7
+    target: ppc64le
+    modules: []
+    environment: {}
+    extra_rpaths: []
+- compiler:
+    spec: gcc@4.8.5
+    paths:
+      cc: /usr/bin/gcc
+      cxx: /usr/bin/g++
+      f77: /usr/bin/gfortran
+      fc: /usr/bin/gfortran
+    flags: {}
+    operating_system: rhel7
+    target: ppc64le
+    modules: []
+    environment: {}
+    extra_rpaths: []
+- compiler:
+    spec: gcc@4.9.3
+    paths:
+      cc: /usr/tce/packages/gcc/gcc-4.9.3/bin/gcc
+      cxx: /usr/tce/packages/gcc/gcc-4.9.3/bin/g++
+      f77: /usr/tce/packages/gcc/gcc-4.9.3/bin/gfortran
+      fc: /usr/tcetmp/bin/gfortran
+      mpicc: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-4.9.3/bin/mpicc
+      mpiCC: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-4.9.3/bin/mpiCC    
+    flags: {}
+    operating_system: rhel7
+    target: ppc64le
+    modules: []
+    environment: {}
+    extra_rpaths: []
+- compiler:
+    spec: gcc@8.3.1
+    paths:
+      cc: /usr/tce/packages/gcc/gcc-8.3.1/bin/gcc
+      cxx: /usr/tce/packages/gcc/gcc-8.3.1/bin/g++
+      f77: /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
+      fc: /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
+    flags: {}
+    operating_system: rhel7
+    target: ppc64le
+    modules: []
+    environment: {}
+    extra_rpaths: []
+- compiler:
+    spec: pgi@19.10
+    paths:
+      cc: /usr/tcetmp/bin/pgcc
+      cxx: /usr/tcetmp/bin/pgc++
+      f77: /usr/tcetmp/bin/pgfortran
+      fc: /usr/tcetmp/bin/pgfortran
+    flags: {}
+    operating_system: rhel7
+    target: ppc64le
+    modules: []
+    environment: {}
+    extra_rpaths: []
+- compiler:
+    spec: xl@16.1
+    paths:
+      cc: /usr/tce/packages/xl/xl-2020.03.18/bin/xlc
+      cxx: /usr/tce/packages/xl/xl-2020.03.18/bin/xlC
+      f77: /usr/tce/packages/xl/xl-2020.03.18/bin/f77
+      fc: /usr/bin/fc
+    flags:
+      fflags: -qzerosize
+    operating_system: rhel7
+    target: ppc64le
+    modules: []
+    environment: {}
+    extra_rpaths: []
+- compiler:
+    spec: xl_r@16.1
+    paths:
+      cc: /usr/bin/xlc_r
+      cxx: /usr/bin/xlc++_r
+      f77: /usr/tce/packages/xl/xl-2020.03.18/bin/f77
+      fc: /usr/bin/fc
+    flags:
+      fflags: -qzerosize
+    operating_system: rhel7
+    target: ppc64le
+    modules: []
+    environment: {}
+    extra_rpaths: []
