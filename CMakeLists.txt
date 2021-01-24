@@ -36,7 +36,9 @@ include(cmake/SetupCompilers.cmake)
 
 # Override default
 option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" ON)
-option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" On)
+option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" OFF)
+option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF)
+option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF)
 
 # Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
 # Update submodules as needed
@@ -628,9 +630,13 @@ if(PACKAGE_TESTS)
   add_dependencies(check_bout check-unit-tests check-integrated-tests)
 endif()
 
-add_subdirectory(examples/laplacexy/simple-hypre)
+if(BOUT_HAS_HYPRE)
+   add_subdirectory(examples/laplacexy/simple-hypre)
+endif ()
+
 add_subdirectory(examples/laplacexy/simple)
 add_subdirectory(examples/hasegawa-wakatani-3d)
+add_subdirectory(examples/elm-pb)
 
 ##################################################
 # Generate the build config header

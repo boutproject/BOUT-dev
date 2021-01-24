@@ -7,13 +7,14 @@ if(ENABLE_MPI)
 endif ()
 
 
-option(BOUT_ENABLE_OPENMP "Enable OpenMP support" OFF)
+option(BOUT_ENABLE_OPENMP "Enable OpenMP support" ${ENABLE_OPENMP})
 set(BOUT_OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
 set_property(CACHE BOUT_OPENMP_SCHEDULE PROPERTY STRINGS static dynamic guided auto)
 
 if (BOUT_ENABLE_OPENMP)
   find_package(OpenMP REQUIRED)
   set(HAVE_OPENMP TRUE)
+# Note BOUT_USE_OPENMP is reconciled in cmake/SetupBOUTThirdParty.cmake
 endif ()
 
 # Set specific options for CUDA if enabled
@@ -26,7 +27,7 @@ if(ENABLE_CUDA)
    endif ()
 
 # TODO Ensure openmp flags are not enabled twice!
-   if (ENABLE_OPENMP)
+   if (BOUT_ENABLE_OPENMP)
    # CMAKE_CUDA_FLAGS does not pass OpenMP_CXX_FLAGS to the host compiler by default
       set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler ${OpenMP_CXX_FLAGS}")
    endif ()

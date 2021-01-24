@@ -1,0 +1,19 @@
+# This is a Spack Environment file.
+#
+# It describes a set of packages to be installed, along with
+# configuration settings.
+spack:
+  definitions:
+  - compilers: [gcc@8.3.1]
+  - mpis: [spectrum-mpi@rolling-release%gcc@8.3.1]
+  - packages: [petsc@3.13.0 +fftw +metis +superlu-dist +mpi +hypre ^hdf5@1.10.6 +cxx+hl+mpi+pic+shared
+        ^metis +real64 ^fftw, netcdf-cxx4@4.3.1 ^hdf5@1.10.6 +cxx+hl+mpi+pic+shared,
+      sundials@5.1.0, py-netcdf4@1.4.2 ^hdf5@1.10.6 +cxx+hl+mpi+pic+shared ^netcdf-c@4.7.4,
+      py-sympy@1.4, py-scipy@1.4.1]
+  specs:
+  - matrix:
+    - [$packages]
+    - [$^mpis]
+    - [$%compilers]
+  view: true
+  concretization: together
