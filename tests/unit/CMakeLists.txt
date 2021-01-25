@@ -1,4 +1,4 @@
-bout_update_submodules()
+#bout_update_submodules()
 add_subdirectory("${PROJECT_SOURCE_DIR}/externalpackages/googletest"
   "externalpackages/googletest")
 
@@ -30,7 +30,6 @@ set(serial_tests_source
   ./include/bout/test_assert.cxx
   ./include/bout/test_deriv_store.cxx
   ./include/bout/test_generic_factory.cxx
-  ./include/bout/test_hypre_interface.cxx
   ./include/bout/test_macro_for_each.cxx
   ./include/bout/test_monitor.cxx
   ./include/bout/test_petsc_indexer.cxx
@@ -72,6 +71,10 @@ set(serial_tests_source
   ./test_extras.cxx
   ./test_extras.hxx
   ./src/test_bout++.cxx)
+
+if(BOUT_HAS_HYPRE)
+   list(APPEND ${serial_tests_source} ./include/bout/test_hypre_interface.cxx)
+endif ()
 
 add_executable(serial_tests ${serial_tests_source})
 target_include_directories(serial_tests PUBLIC bout++
