@@ -20,7 +20,11 @@
 #include <math.h>
 
 #include <bout.hxx>
+
+#if BOUT_HAS_HYPRE    
 #include <bout/invert/laplacexy2_hypre.hxx>
+#endif
+
 #include <field_factory.hxx>
 
 CELL_LOC loc = CELL_CENTRE;
@@ -172,10 +176,12 @@ private:
   bool zonal_bkgd;
 
   bool split_n0; // Solve the n=0 component of potential
- 
+
+#if BOUT_HAS_HYPRE    
+  std::unique_ptr< LaplaceXY2Hypre> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
+#else 
   std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
-  
-  //  std::unique_ptr< LaplaceXY2Hypre> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
+#endif
 
   Field2D phi2D;        // Axisymmetric phi
   
@@ -497,9 +503,11 @@ protected:
     
     if (split_n0) {
       // Create an XY solver for n=0 component
+#if BOUT_HAS_HYPRE          
+	laplacexy = bout::utils::make_unique< LaplaceXY2Hypre>(mesh);
+#else
   	laplacexy = bout::utils::make_unique<LaplaceXY>(mesh);
-      
-	//      laplacexy = bout::utils::make_unique< LaplaceXY2Hypre>(mesh);
+#endif
       // Set coefficients for Boussinesq solve
       laplacexy->setCoefs(1.0, 0.0);
       phi2D = 0.0; // Starting guess
