@@ -37,8 +37,10 @@ struct FieldAccessor {
     f2d_G1= &f.getCoordinates()->G1(0,0);
     f2d_G3= &f.getCoordinates()->G3(0,0);
     f2d_g11= &f.getCoordinates()->g11(0,0);
+    f2d_g12= &f.getCoordinates()->g12(0,0);
     f2d_g13= &f.getCoordinates()->g13(0,0);
     f2d_g22= &f.getCoordinates()->g22(0,0);
+    f2d_g23= &f.getCoordinates()->g23(0,0);
     f2d_g33= &f.getCoordinates()->g33(0,0);
  //---------------------------------------
 
@@ -61,10 +63,10 @@ struct FieldAccessor {
 	}
   }
 
-    BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D &d) {
+    BoutReal& __host__ __device__ operator[](const Ind3D &d) {
     return data[d.ind];
   }
-  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D &d) const {
+  const BoutReal& __host__ __device__ operator[](const Ind3D &d) const {
     return data[d.ind];
   }
   
@@ -87,8 +89,10 @@ struct FieldAccessor {
  BoutReal* f2d_G1 = nullptr;
  BoutReal* f2d_G3 = nullptr;
  BoutReal* f2d_g11 = nullptr;
+ BoutReal* f2d_g12 = nullptr;
  BoutReal* f2d_g13 = nullptr;
  BoutReal* f2d_g22 = nullptr;
+ BoutReal* f2d_g23 = nullptr;
  BoutReal* f2d_g33 = nullptr;
 
  BoutReal* f_yup = nullptr;
