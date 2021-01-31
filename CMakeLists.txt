@@ -103,6 +103,7 @@ set(BOUT_HEADERS
   ./include/bout/rvec.hxx
   ./include/bout/scorepwrapper.hxx
   ./include/bout/single_index_ops.hxx
+  ./include/bout/field2D_accessor.hxx
   ./include/bout/slepclib.hxx
   ./include/bout/snb.hxx
   ./include/bout/solver.hxx

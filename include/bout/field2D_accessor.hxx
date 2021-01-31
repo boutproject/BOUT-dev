@@ -1,8 +1,8 @@
 // GPU version Field-Accessor, updated by Dr. Yining Qin, Oct.27, 2020
 
 #pragma once
-#ifndef FIELD_ACCESSOR_H__
-#define FIELD_ACCESSOR_H__
+#ifndef FIELD2D_ACCESSOR_H__
+#define FIELD2D_ACCESSOR_H__
 
 #include "../bout_types.hxx"
 #include "../field3d.hxx"
@@ -11,17 +11,16 @@
 
 
 template<CELL_LOC location = CELL_CENTRE>
-struct FieldAccessor {
-  explicit FieldAccessor(Field3D &f) {
+struct Field2DAccessor {
+  explicit Field2DAccessor(Field2D &f) {
     ASSERT0(f.getLocation() == location);
     coords = f.getCoordinates();
     
     ASSERT0(f.isAllocated());
   
-    data = &f(0,0,0);
-
-    //----- Field 3d data -> array for GPU    
-    f_data = f(0,0);
+    data = &f(0,0);
+    //----- Field 2d data -> array for GPU    
+    f_data = &f(0,0);
 
     // Field size for GPU 
     f_nx = f.getNx();
@@ -47,14 +46,8 @@ struct FieldAccessor {
   if (f.hasParallelSlices()) {
       yup = &f.yup();
       ydown = &f.ydown();
-     
-    //----- Field3D data -> array for GPU
-     f_yup =  static_cast<BoutReal*>(f.yup()(0,0));
-     f_ydown =  static_cast<BoutReal*>(f.ydown()(0,0));
-     // ddt() array data for GPU
-     f_ddt =  static_cast<BoutReal*>(f.timeDeriv()->operator()(0,0));
-
-    // set field region index for GPU
+    
+     // set field region index for GPU
      // auto indices = f.getRegion("RGN_NOBNDRY").getIndices(); //set index of region
      // Ind3D *ob_i = &(indices[0]);
      //---------------------
@@ -63,17 +56,17 @@ struct FieldAccessor {
 	}
   }
 
-    BoutReal& __host__ __device__ operator[](const Ind3D &d) {
+    BoutReal& __host__ __device__ operator[](const Ind2D &d) {
     return data[d.ind];
   }
-  const BoutReal& __host__ __device__ operator[](const Ind3D &d) const {
+  const BoutReal& __host__ __device__ operator[](const Ind2D &d) const {
     return data[d.ind];
   }
   
 
- Field3D   *yup {nullptr};
+ Field2D   *yup {nullptr};
 
- Field3D   *ydown {nullptr};
+ Field2D   *ydown {nullptr};
 
  Coordinates*  coords {nullptr};
 
@@ -101,7 +94,7 @@ struct FieldAccessor {
 
  BoutReal* f_ddt = nullptr;
 
- int* ind_3D_index = nullptr;
+ int* ind_2D_index = nullptr;
   
  int f_nx =0;
  int f_ny =0;
