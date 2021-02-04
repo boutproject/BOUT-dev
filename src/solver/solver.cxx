@@ -527,7 +527,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
         }
         possible_misspellings += fmt::format("\nPlausible alternatives to '{}':\n", key);
         for (const auto& match : fuzzy_matches) {
-          possible_misspellings += fmt::format("\t{}\n", match.name);
+          possible_misspellings += fmt::format("\t{}\n", match.match.str());
         }
       }
 

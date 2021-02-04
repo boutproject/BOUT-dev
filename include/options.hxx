@@ -285,8 +285,8 @@ public:
 
   /// Return type of `Options::fuzzyFind`
   struct FuzzyMatch {
-    /// Full name (including parent sections) of possible match
-    std::string name;
+    /// The matching option
+    const Options& match;
     /// Edit distance from original search term
     std::string::size_type distance;
     /// Comparison operator so this works in a std::multiset

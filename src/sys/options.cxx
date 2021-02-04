@@ -152,13 +152,13 @@ Options::fuzzyFind(const std::string& name, std::string::size_type distance) con
     }
     if ((name != possible_match) and (lowercase(name) == lowercase(possible_match))) {
       // Differs only in case: pretty good match
-      matches.insert({possible_match, 1 + extra_cost});
+      matches.insert({option, 1 + extra_cost});
       return true;
     }
     const auto fuzzy_distance = editDistance(name, possible_match) + extra_cost;
     if (fuzzy_distance <= distance) {
       // Insert the full_name with parent sections, not the possible_match
-      matches.insert({option.full_name, fuzzy_distance});
+      matches.insert({option, fuzzy_distance});
       return true;
     }
     return false;

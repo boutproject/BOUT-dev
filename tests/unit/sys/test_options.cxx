@@ -1034,22 +1034,22 @@ TEST_F(OptionsTest, FuzzyFind) {
   auto fuzzy_matches = option.fuzzyFind("value1");
   EXPECT_EQ(fuzzy_matches.size(), 6);
   auto first_match = fuzzy_matches.begin();
-  EXPECT_EQ(first_match->name, "value1");
+  EXPECT_EQ(first_match->match.str(), "value1");
   EXPECT_EQ(first_match->distance, 0);
   auto second_match = ++first_match;
-  EXPECT_EQ(second_match->name, "section1:value1");
+  EXPECT_EQ(second_match->match.str(), "section1:value1");
   EXPECT_EQ(second_match->distance, 1);
 
   auto fuzzy_section_matches = option.fuzzyFind("section1:subsection2:value__3");
   EXPECT_EQ(fuzzy_section_matches.size(), 1);
   auto first_section_match = fuzzy_section_matches.begin();
-  EXPECT_EQ(first_section_match->name, "section2:subsection1:value3");
+  EXPECT_EQ(first_section_match->match.str(), "section2:subsection1:value3");
   EXPECT_EQ(first_section_match->distance, 4);
 
   auto fuzzy_CAPS_matches = option.fuzzyFind("section2:VALUE_5");
   EXPECT_EQ(fuzzy_CAPS_matches.size(), 1);
   auto first_CAPS_match = fuzzy_CAPS_matches.begin();
-  EXPECT_EQ(first_CAPS_match->name, "section2:value_5");
+  EXPECT_EQ(first_CAPS_match->match.str(), "section2:value_5");
   EXPECT_EQ(first_CAPS_match->distance, 1);
 }
 
