@@ -596,16 +596,16 @@ void setRunStartInfo(Options& options) {
 
   // Note: have to force value, since may already be set if a previously
   // output BOUT.settings file was used as input
-  runinfo["version"].force(bout::version::full, "");
-  runinfo["revision"].force(bout::version::revision, "");
+  runinfo["version"].force(bout::version::full, "Output");
+  runinfo["revision"].force(bout::version::revision, "Output");
 
   time_t start_time = time(nullptr);
-  runinfo["started"].force(ctime(&start_time), "");
+  runinfo["started"].force(ctime(&start_time), "Output");
 }
 
 void setRunFinishInfo(Options& options) {
   time_t end_time = time(nullptr);
-  options["run"]["finished"].force(ctime(&end_time), "");
+  options["run"]["finished"].force(ctime(&end_time), "Output");
 }
 
 Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir) {
