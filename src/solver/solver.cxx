@@ -529,20 +529,26 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   return status;
 }
 
-std::string Solver::createRunId() {
+std::string Solver::createRunId() const {
 
   std::string result;
   result.resize(36);
 
   if (MYPE == 0) {
-    std::random_device rd;
-    auto seed_data = std::array<int, std::mt19937::state_size> {};
-    std::generate(std::begin(seed_data), std::end(seed_data), std::ref(rd));
-    std::seed_seq seq(std::begin(seed_data), std::end(seed_data));
-    std::mt19937 generator(seq);
-    uuids::uuid_random_generator gen{generator};
+    // Generate a unique ID for this run
+    if (bout::build::has_uuid_system_generator) {
+      uuids::uuid_system_generator gen{};
+      result = uuids::to_string(gen());
+    } else {
+      std::random_device rd;
+      auto seed_data = std::array<int, std::mt19937::state_size> {};
+      std::generate(std::begin(seed_data), std::end(seed_data), std::ref(rd));
+      std::seed_seq seq(std::begin(seed_data), std::end(seed_data));
+      std::mt19937 generator(seq);
+      uuids::uuid_random_generator gen{generator};
 
-    result = uuids::to_string(gen()); // Different each time the simulation is run
+      result = uuids::to_string(gen());
+    }
   }
 
   // All ranks have same run_id
