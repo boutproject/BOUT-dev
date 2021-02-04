@@ -523,7 +523,10 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
         // - options set internally by the library and not meant as user inputs
         bout::utils::erase_if(
             fuzzy_matches, [](const Options::FuzzyMatch& match) -> bool {
-              const auto source = match.match.attributes.at("source").as<std::string>();
+              const auto source =
+                  match.match.hasAttribute("source")
+                      ? match.match.attributes.at("source").as<std::string>()
+                      : "";
               const bool internal_source = (source == "Solver") or (source == "Output");
 
               return match.distance == 0 or (not match.match.valueUsed())
