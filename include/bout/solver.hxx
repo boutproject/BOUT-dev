@@ -447,8 +447,8 @@ protected:
   std::string run_id = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
   /// The run from which this was restarted.
   std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
-  /// Generate a random UUID and broadcast it to all processors
-  std::string createRunId();
+  /// Generate a random UUID (version 4) and broadcast it to all processors
+  std::string createRunId() const;
 
   /// Run the user's RHS function
   int run_rhs(BoutReal t);
