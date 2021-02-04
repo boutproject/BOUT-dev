@@ -1,0 +1,51 @@
+name: clang-tidy-review
+
+on: [pull_request]
+
+jobs:
+  review:
+    runs-on: ubuntu-20.04
+    env:
+      PETSC_DIR: /usr/lib/petscdir/3.7.7/x86_64-linux-gnu-real
+      PETSC_ARCH: ""
+      SLEPC_DIR: /usr/lib/slepcdir/3.7.4/x86_64-linux-gnu-real
+      SLEPC_ARCH: ""
+    steps:
+      - name: Install dependencies
+        run: sudo apt update &&
+             sudo apt install -y
+                 libfftw3-dev
+                 libnetcdf-dev
+                 libnetcdf-c++4-dev
+                 netcdf-bin
+                 openmpi-bin
+                 libopenmpi-dev
+                 petsc-dev
+                 slepc-dev
+                 liblapack-dev
+                 libparpack2-dev
+                 libsundials-dev
+
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Create compile_commands.json
+        run: |
+          cmake --version
+          cmake . -B build -DBUILD_SHARED_LIBS=ON \
+                           -DBOUT_ENABLE_OPENMP=ON \
+                           -DBOUT_USE_PETSC=ON \
+                           -DBOUT_USE_SLEPC=ON \
+                           -DBOUT_USE_SUNDIALS=ON \
+                           -DBOUT_BUILD_EXAMPLES=ON \
+                           -DCMAKE_EXPORT_COMPILE_COMMANDS=On
+
+      - name: Run clang-tidy
+        uses: ZedThree/clang-tidy-review@v0.4.0
+        id: review
+        with:
+          build_dir: build
+          apt_packages: "libfftw3-dev,libnetcdf-c++4-dev,libopenmpi-dev,petsc-dev,slepc-dev,liblapack-dev,libparpack2-dev,libsundials-dev"
+          clang_tidy_checks: '-*,performance-*,readability-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,mpi-*,misc-*,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers'
+

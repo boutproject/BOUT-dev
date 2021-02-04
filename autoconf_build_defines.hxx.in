@@ -15,14 +15,14 @@
 /* NLS support */
 #undef BOUT_HAS_GETTEXT
 
-/* HDF5 support */
-#undef BOUT_HAS_HDF5
-
 /* IDA support */
 #undef BOUT_HAS_IDA
 
 /* LAPACK support */
 #undef BOUT_HAS_LAPACK
+
+/* NETCDF support */
+#undef BOUT_HAS_LEGACY_NETCDF
 
 /* NETCDF support */
 #undef BOUT_HAS_NETCDF

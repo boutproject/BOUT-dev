@@ -2,7 +2,7 @@
 
 # Note: This test requires NCDF4, whereas on Travis NCDF is used
 #requires: netcdf
-#requires: not travis or fedora
+#requires: not legacy_netcdf
 
 from boututils.datafile import DataFile
 from boututils.run_wrapper import build_and_log, shell, launch
@@ -42,7 +42,7 @@ with DataFile("test-out.nc") as f:
     assert result["string"] == "hello"
 
 print("Checking saved settings.ini")
-    
+
 # Check the settings.ini file, coming from BOUT.inp
 # which is converted to NetCDF, read in, then written again
 settings = BoutOptionsFile("settings.ini")
@@ -55,15 +55,19 @@ print("Checking saved fields.nc")
 with DataFile("fields.nc") as f:
     assert f["f2d"].shape == (5,6)  # Field2D
     assert f["f3d"].shape == (5,6,2) # Field3D
+    assert f["fperp"].shape == (5, 2)  # FieldPerp
     assert np.allclose(f["f2d"], 1.0)
     assert np.allclose(f["f3d"], 2.0)
+    assert np.allclose(f["fperp"], 3.0)
 
 print("Checking saved fields2.nc")
 
 with DataFile("fields2.nc") as f:
     assert f["f2d"].shape == (5,6)  # Field2D
     assert f["f3d"].shape == (5,6,2) # Field3D
+    assert f["fperp"].shape == (5, 2)  # FieldPerp
     assert np.allclose(f["f2d"], 1.0)
     assert np.allclose(f["f3d"], 2.0)
+    assert np.allclose(f["fperp"], 3.0)
     
 print(" => Passed")

@@ -73,21 +73,25 @@ int PhysicsModel::runJacobian(BoutReal t) {
   return (*this.*userjacobian)(t);
 }
 
-void PhysicsModel::bout_solve(Field2D &var, const char *name) {
+void PhysicsModel::bout_solve(Field2D &var, const char *name,
+                              const std::string& description) {
   // Add to solver
-  solver->add(var, name);
+  solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Field3D &var, const char *name) {
-  solver->add(var, name);
+void PhysicsModel::bout_solve(Field3D &var, const char *name,
+                              const std::string& description) {
+  solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector2D &var, const char *name) {
-  solver->add(var, name);
+void PhysicsModel::bout_solve(Vector2D &var, const char *name,
+                              const std::string& description) {
+  solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector3D &var, const char *name) {
-  solver->add(var, name);
+void PhysicsModel::bout_solve(Vector3D &var, const char *name,
+                              const std::string& description) {
+  solver->add(var, name, description);
 }
 
 int PhysicsModel::postInit(bool restarting) {
@@ -97,23 +101,17 @@ int PhysicsModel::postInit(bool restarting) {
   // Second argument specifies no time history
   solver->outputVars(restart, false);
 
-  std::string restart_dir;  ///< Directory for restart files
-  std::string dump_ext, restart_ext;  ///< Dump, Restart file extension
-  
-  Options *options = Options::getRoot();
-  if (options->isSet("restartdir")) {
-    // Solver-specific restart directory
-    options->get("restartdir", restart_dir, "data");
-  } else {
-    // Use the root data directory
-    options->get("datadir", restart_dir, "data");
-  }
-  /// Get restart file extension
-  const auto default_dump_format = bout::build::has_netcdf ? "nc" : "h5";
-  options->get("dump_format", dump_ext, default_dump_format);
-  options->get("restart_format", restart_ext, dump_ext);
+  auto& options = Options::root();
 
-  std::string filename = restart_dir + "/BOUT.restart."+restart_ext;
+  const std::string restart_dir = options["restartdir"]
+                                      .doc("Directory for restart files")
+                                      .withDefault(options["datadir"]);
+
+  const std::string restart_ext = options["restart_format"]
+                                      .doc("Restart file extension")
+                                      .withDefault(options["dump_format"]);
+
+  const std::string filename = restart_dir + "/BOUT.restart." + restart_ext;
   if (restarting) {
     output.write("Loading restart file: {:s}\n", filename);
 

@@ -8,7 +8,6 @@
 
 #include "impls/netcdf4/ncxx4.hxx"
 #include "impls/netcdf/nc_format.hxx"
-#include "impls/hdf5/h5_format.hxx"
 #include "impls/pnetcdf/pnetcdf.hxx"
 
 #include <boutexception.hxx>
@@ -40,22 +39,17 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
 #else
     }
 
-#if BOUT_HAS_NETCDF
+#if BOUT_HAS_NETCDF && !BOUT_HAS_LEGACY_NETCDF
     return bout::utils::make_unique<Ncxx4>(mesh_in);
 #else
 
-#ifdef NCDF
+#if BOUT_HAS_LEGACY_NETCDF
     return bout::utils::make_unique<NcFormat>(mesh_in);
-#else
-
-#if BOUT_HAS_HDF5
-    return bout::utils::make_unique<H5Format>(mesh_in);
 #else
 
 #error No file format available; aborting.
 
-#endif // HDF5
-#endif // NCDF
+#endif // BOUT_HAS_LEGACY_NETCDF
 #endif // BOUT_HAS_NETCDF
 #endif // PNCDF
     throw BoutException("Parallel I/O disabled, no serial library found");
@@ -88,26 +82,10 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
   const char *ncdf_match[] = {"cdl", "nc", "ncdf"};
   if(matchString(s, 3, ncdf_match) != -1) {
     output.write("\tUsing NetCDF4 format for file '{:s}'\n", filename);
-    return bout::utils::make_unique<Ncxx4>();
-  }
-#endif
-
-#ifdef NCDF
-  const char *ncdf_match[] = {"cdl", "nc", "ncdf"};
-  if(matchString(s, 3, ncdf_match) != -1) {
-    output.write("\tUsing NetCDF format for file '{:s}'\n", filename);
+#if BOUT_HAS_LEGACY_NETCDF
     return bout::utils::make_unique<NcFormat>();
-  }
-#endif
-
-#if BOUT_HAS_HDF5
-  const char *hdf5_match[] = {"h5","hdf","hdf5"};
-  if(matchString(s, 3, hdf5_match) != -1) {
-    output.write("\tUsing HDF5 format for file '{:s}'\n", filename);
-#ifdef PHDF5
-    return bout::utils::make_unique<H5Format>(parallel);
 #else
-    return bout::utils::make_unique<H5Format>();
+    return bout::utils::make_unique<Ncxx4>();
 #endif
   }
 #endif

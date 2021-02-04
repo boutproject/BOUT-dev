@@ -4,7 +4,7 @@ BOUT++ options
 ==============
 
 The inputs to BOUT++ are a text file containing options, command-line options,
-and for complex grids a binary grid file in NetCDF or HDF5 format. Generating input
+and for complex grids a binary grid file in NetCDF format. Generating input
 grids for tokamaks is described in :ref:`sec-gridgen`. The grid file
 describes the size and topology of the X-Y domain, metric tensor
 components and usually some initial profiles. The option file specifies
@@ -254,12 +254,23 @@ of the input file (see :ref:`sec-gridgen` for more information):
 .. code-block:: cfg
 
     [mesh]
-    nx = 16  # Number of points in X
+    nx = 20  # Number of points in X
     ny = 16  # Number of points in Y
     nz = 32  # Number of points in Z
 
+Due to historical reasons, ``nx`` is defined differently to ``ny`` and ``nz``:
+
+- ``nx`` is the number of points in X **including** the boundaries
+- ``ny`` and ``nz`` are the number of points in Y and Z **not including** the
+  boundaries
+
+The default number of boundary points in X is 2, so taking into account the
+boundary at each end of the domain, ``nx`` usually means "the number of interior
+grid points in X plus four". In the example above, both X and Y have 16 interior
+grid points.
+
 It is recommended, but not necessary, that this be :math:`\texttt{nz}
-= 2^n`, i.e.  :math:`1,2,4,8,\ldots`. This is because FFTs are usually
+= 2^n`, that is :math:`1,2,4,8,\ldots`. This is because FFTs are usually
 slightly faster with power-of-two length arrays, and FFTs are used
 quite frequently in many models.
 
@@ -317,6 +328,34 @@ given, ``NXPE`` takes precedence and ``NYPE`` is ignored):
 .. code-block:: cfg
 
     NYPE = 1  # Set number of Y processors
+
+When choosing ``NXPE`` or ``NYPE``, they must also obey some constraints:
+
+- ``NXPE`` must be a factor of the number of grid points in the x-direction
+
+  - That is, ``(nx - 4) / NXPE`` must be an integer, assuming the usual two
+    boundary points
+
+- ``NYPE`` must be a factor of the number of grid points in the y-direction
+
+  - That is, ``ny / NYPE`` must be an integer
+
+- For more general topologies, the number of points per processor ``ny / NYPE``
+  must also be a factor of the number of points in each region. For example, in
+  the usual tokamak topologies:
+
+  - in single-null there are two divertor leg and one core regions
+  - in double-null there are four divertor leg, one inner core and one outer
+    core regions
+
+Please note that here "core" means "core and adjacent SOL". See
+:ref:`sec-bout-topology` for a more detailed explanation of these regions.
+
+When BOUT++ automatically chooses ``NXPE`` and ``NYPE`` it finds all valid pairs
+which give ``total number of processors == NPES = NXPE * NYPE`` and also satisfy
+the constraints above. It then chooses the pair that makes the grid on each
+processor as close to square as possible (technically it chooses the pair that
+minimises ``abs(sqrt(NPES * (nx - 4) / ny) - NXPE)``).
 
 If you need to specify complex input values, e.g. numerical values
 from experiment, you may want to use a grid file. The grid file to use
@@ -398,20 +437,10 @@ may be useful anyway. See :ref:`sec-output` for more details.
 Input and Output
 ----------------
 
-The format of the output (dump) files can be controlled, if support for
-more than one output format has been configured, by setting the
-top-level option **dump\_format** to one of the recognised file
-extensions: ‘nc’ for NetCDF; ‘hdf5’, ‘hdf’ or ‘h5’ for HDF5. For example
-to select HDF5 instead of the default NetCDF format put
-
-.. code-block:: cfg
-
-    dump_format = hdf5
-
-before any section headers. The output (dump) files with time-history
-are controlled by settings in a section called “output”. Restart files
-contain a single time-slice, and are controlled by a section called
-“restart”. The options available are listed in table :numref:`tab-outputopts`.
+The output (dump) files with time-history are controlled by settings
+in a section called “output”. Restart files contain a single
+time-slice, and are controlled by a section called “restart”. The
+options available are listed in table :numref:`tab-outputopts`.
 
 .. _tab-outputopts:
 .. table:: Output file options

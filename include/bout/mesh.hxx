@@ -192,7 +192,7 @@ class Mesh {
   /// @param[in] def    The default value if not found
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(Field2D &var, const std::string &name, BoutReal def=0.0);
+  int get(Field2D &var, const std::string &name, BoutReal def=0.0, CELL_LOC location=CELL_DEFAULT);
 
   /// Get a Field3D from the input source
   ///
@@ -202,7 +202,7 @@ class Mesh {
   /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(Field3D &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
+  int get(Field3D &var, const std::string &name, BoutReal def=0.0, bool communicate=true, CELL_LOC location=CELL_DEFAULT);
 
   /// Get a FieldPerp from the input source
   ///
@@ -212,7 +212,7 @@ class Mesh {
   /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(FieldPerp &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
+  int get(FieldPerp &var, const std::string &name, BoutReal def=0.0, bool communicate=true, CELL_LOC location=CELL_DEFAULT);
 
   /// Get a Vector2D from the input source.
   /// If \p var is covariant then this gets three

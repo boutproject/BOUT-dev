@@ -250,6 +250,20 @@ void setupGetText() {
 #endif // BOUT_HAS_GETTEXT
 }
 
+template <class T>
+void printAvailableImplementations(const T& factory) {
+  for (const auto& implementation : factory.listAvailable()) {
+    std::cout << implementation << "\n";
+  }
+  auto unavailable = factory.listUnavailableReasons();
+  if (not unavailable.empty()) {
+    std::cout << fmt::format("\nThe following {}s are currently unavailable:\n", T::type_name);
+    for (const auto& implementation : unavailable) {
+      std::cout << implementation << "\n";
+    }
+  }
+}
+
 auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
   /// NB: "restart" and "append" are now caught by options
   /// Check for help flag separately
@@ -297,53 +311,35 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-solvers") {
-      for (const auto &solver : SolverFactory::getInstance().listAvailable()) {
-        std::cout << solver << "\n";
-      }
+      printAvailableImplementations(SolverFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-laplacians") {
-      for (const auto &laplacian : LaplaceFactory::getInstance().listAvailable()) {
-        std::cout << laplacian << "\n";
-      }
+      printAvailableImplementations(LaplaceFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-laplacexzs") {
-      for (const auto &laplacexz : LaplaceXZFactory::getInstance().listAvailable()) {
-        std::cout << laplacexz << "\n";
-      }
+      printAvailableImplementations(LaplaceXZFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-invertpars") {
-      for (const auto &invertpar : InvertParFactory::getInstance().listAvailable()) {
-        std::cout << invertpar << "\n";
-      }
+      printAvailableImplementations(InvertParFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-rkschemes") {
-      for (const auto &rkscheme : RKSchemeFactory::getInstance().listAvailable()) {
-        std::cout << rkscheme << "\n";
-      }
+      printAvailableImplementations(RKSchemeFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-meshes") {
-      for (const auto &mesh : MeshFactory::getInstance().listAvailable()) {
-        std::cout << mesh << "\n";
-      }
+      printAvailableImplementations(MeshFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-xzinterpolations") {
-      for (const auto& interpolation :
-           XZInterpolationFactory::getInstance().listAvailable()) {
-        std::cout << interpolation << "\n";
-      }
+      printAvailableImplementations(XZInterpolationFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-zinterpolations") {
-      for (const auto& interpolation :
-           ZInterpolationFactory::getInstance().listAvailable()) {
-        std::cout << interpolation << "\n";
-      }
+      printAvailableImplementations(ZInterpolationFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
   }
@@ -478,16 +474,6 @@ void printCompileTimeOptions() {
   }
   output_info.write("\n");
 
-#ifdef NCDF
-  output_info.write(_("\tnetCDF support enabled\n"));
-#else
-#if BOUT_HAS_NETCDF
-  output_info.write(_("\tnetCDF4 support enabled\n"));
-#else
-  output_info.write(_("\tnetCDF support disabled\n"));
-#endif
-#endif
-
 #ifdef PNCDF
   output_info.write(_("\tParallel NetCDF support enabled\n"));
 #else
@@ -500,9 +486,11 @@ void printCompileTimeOptions() {
 
   output_info.write(_("\tFFT support {}\n"), is_enabled(has_fftw));
   output_info.write(_("\tNatural language support {}\n"), is_enabled(has_gettext));
-  output_info.write(_("\tHDF5 support {}\n"), is_enabled(has_hdf5));
   output_info.write(_("\tLAPACK support {}\n"), is_enabled(has_lapack));
-  output_info.write(_("\tNetCDF support {}\n"), is_enabled(has_netcdf));
+  // Horrible nested ternary to set this at compile time
+  constexpr auto netcdf_flavour =
+      has_netcdf ? (has_legacy_netcdf ? " (Legacy)" : " (NetCDF4)") : "";
+  output_info.write(_("\tNetCDF support {}{}\n"), is_enabled(has_netcdf), netcdf_flavour);
   output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
   output_info.write(_("\tPretty function name support {}\n"),
                     is_enabled(has_pretty_function));
@@ -627,8 +615,10 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
                         .withDefault(false);
 
   // Get file extensions
-  const auto default_dump_format = bout::build::has_netcdf ? "nc" : "h5";
-  const auto dump_ext = options["dump_format"].withDefault(default_dump_format);
+  constexpr auto default_dump_format = bout::build::has_netcdf ? "nc" : "h5";
+  const auto dump_ext = options["dump_format"]
+                            .doc("File extension for output files")
+                            .withDefault(default_dump_format);
   output_progress << "Setting up output (dump) file\n";
 
   auto dump_file = Datafile(&(options["output"]), &mesh);
@@ -651,9 +641,10 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   // Add compile-time options
   dump_file.addOnce(const_cast<bool&>(bout::build::has_fftw), "has_fftw");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_gettext), "has_gettext");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_hdf5), "has_hdf5");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_lapack), "has_lapack");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_netcdf), "has_netcdf");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_legacy_netcdf),
+                    "has_legacy_netcdf");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_petsc), "has_petsc");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_pretty_function),
                     "has_pretty_function");
