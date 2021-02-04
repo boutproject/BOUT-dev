@@ -546,7 +546,8 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
           possible_misspellings.empty()
               ? ""
               : fmt::format(
-                  "It's possible you've mistyped some options.\nHave you tried running "
+                  "It's possible you've mistyped some options. BOUT++ input arguments "
+                  "are now case-sensitive.\nHave you tried running "
                   "'bin/bout-v5-input-file-upgrader.py' on your input file?\n{}",
                   possible_misspellings);
       throw BoutException("There were unused options:\n{:s}\n{}", toString(unused),
