@@ -636,6 +636,7 @@ BOUT_USE_OPENMP
 BOUT_USE_OUTPUT_DEBUG
 BOUT_USE_COLOR
 BOUT_USE_BACKTRACE
+BOUT_HAS_UUID_SYSTEM_GENERATOR
 BOUT_HAS_SUNDIALS
 BOUT_HAS_SLEPC
 BOUT_HAS_SCOREP
@@ -810,6 +811,7 @@ with_pvode
 with_arkode
 with_scorep
 with_system_mpark
+with_system_uuid
 enable_warnings
 enable_checks
 enable_signal
@@ -1505,6 +1507,7 @@ Optional Packages:
   --with-scorep           Enable support for scorep based instrumentation
   --with-system-mpark     Use mpark.variant already installed rather then the
                           bundled one
+  --with-system-uuid      Use libuuid to generate UUIDs
   --with-openmp-schedule=static/dynamic/guided/auto
                           Set OpenMP schedule (default: static)
   --with-gcov=GCOV        use given GCOV for coverage (GCOV=gcov).
@@ -2652,6 +2655,13 @@ else
   with_system_mpark=auto
 fi
 
+
+# Check whether --with-system_uuid was given.
+if test "${with_system_uuid+set}" = set; then :
+  withval=$with_system_uuid;
+else
+  with_system_uuid=auto
+fi
 
 
 # Check whether --enable-warnings was given.
@@ -10571,6 +10581,273 @@ fi
   OWN_MPARK=yes
 
 fi
+
+#############################################################
+# Check for libuuid
+#############################################################
+
+if test ".$with_system_uuid" = "no"; then :
+
+  BOUT_HAS_UUID_SYSTEM_GENERATOR=no
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for system UUID generator" >&5
+$as_echo_n "checking for system UUID generator... " >&6; }
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid/uuid.h" >&5
+$as_echo_n "checking for uuid/uuid.h... " >&6; }
+
+  save_CPPFLAGS=$CPPFLAGS
+  BACH_found=no
+
+  if test ."$with_system_uuid" != .yes; then :
+  extra_prefix="$with_system_uuid"
+else
+  extra_prefix=""
+fi
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <uuid/uuid.h>
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  BACH_found=yes
+
+
+        break
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  if test $BACH_found != yes; then :
+
+    for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local
+    do
+      for path in $search_prefix $search_prefix/include
+      do
+        if test -d $path; then :
+
+          CPPFLAGS="$save_CPPFLAGS -I$path"
+
+
+          cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+              #include <uuid/uuid.h>
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  BACH_found=yes
+             EXTRA_INCS="$EXTRA_INCS -I$path"
+
+
+             break
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+      done
+      if test .$BACH_found = .yes; then :
+  break;
+fi
+    done
+
+fi
+
+  if test $BACH_found = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    CPPFLAGS=$save_CPPFLAGS
+
+fi
+  if test .$BACH_found = .yes; then :
+
+  save_LIBS=$LIBS
+  save_LDFLAGS=$LDFLAGS
+  save_CPPFLAGS=$CPPFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libuuid" >&5
+$as_echo_n "checking for libuuid... " >&6; }
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  BACL_found=no
+
+  # Try with no extra libraries first
+  if test ."$with_system_uuid" = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$with_system_uuid"
+fi
+  LIBS="$save_LIBS $EXTRA_LIBS"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    extern "C"
+    char uuid_generate();
+
+int
+main ()
+{
+return uuid_generate();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  LIBS=$save_LIBS
+
+  # Now try with explicitly linking library
+  if test $BACL_found != yes; then :
+
+    LIBS="$save_LIBS $EXTRA_LIBS -luuid"
+    if test ."$with_system_uuid" = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$with_system_uuid"
+fi
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      extern "C"
+      char uuid_generate();
+
+int
+main ()
+{
+return uuid_generate();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes
+     EXTRA_LIBS="$EXTRA_LIBS -luuid"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+  if test $BACL_found != yes; then :
+
+    for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+      for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu
+      do
+        if test -d $path; then :
+
+          LIBS="$save_LIBS $EXTRA_LIBS -luuid"
+          LDFLAGS="$save_LDFLAGS -L$path"
+
+
+          cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+            extern "C"
+            char uuid_generate();
+
+int
+main ()
+{
+return uuid_generate();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes
+           EXTRA_LIBS="$EXTRA_LIBS -L$path -luuid"
+
+
+           break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+      done
+      if test .$BACL_found = .yes; then :
+  break;
+fi
+    done
+
+fi
+
+   if test $BACL_found = yes; then :
+
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+
+   if test $BACL_found = yes; then :
+  BOUT_HAS_UUID_SYSTEM_GENERATOR=yes
+else
+  BOUT_HAS_UUID_SYSTEM_GENERATOR=no
+fi
+
+   LIBS=$save_LIBS
+   LDFLAGS=$save_LDFLAGS
+   CPPFLAGS=$save_CPPFLAGS
+   ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+else
+  BOUT_HAS_UUID_SYSTEM_GENERATOR=no
+fi
+
+  if test "$with_system_uuid" = "yes"; then :
+
+   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "*** System UUID generator not found, but explicitly requested
+See \`config.log' for more details" "$LINENO" 5; }
+
+fi
+
+fi
+
 #############################################################
 # Download + Build PVODE '98
 #############################################################
@@ -14969,6 +15246,18 @@ $as_echo "#define BOUT_HAS_SUNDIALS 1" >>confdefs.h
 else
 
 $as_echo "#define BOUT_HAS_SUNDIALS 0" >>confdefs.h
+
+fi
+
+
+
+if test "x$BOUT_HAS_UUID_SYSTEM_GENERATOR" = "xyes"; then :
+
+$as_echo "#define BOUT_HAS_UUID_SYSTEM_GENERATOR 1" >>confdefs.h
+
+else
+
+$as_echo "#define BOUT_HAS_UUID_SYSTEM_GENERATOR 0" >>confdefs.h
 
 fi
 

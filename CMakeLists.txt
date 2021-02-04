@@ -591,6 +591,19 @@ if (BOUT_USE_SCOREP)
 endif()
 set(BOUT_HAS_SCOREP ${BOUT_USE_SCOREP})
 
+option(BOUT_USE_UUID_SYSTEM_GENERATOR "Enable support for using a system UUID generator" ON)
+if (BOUT_USE_UUID_SYSTEM_GENERATOR)
+  find_package(Libuuid QUIET)
+  if (Libuuid_FOUND)
+    target_link_libraries(bout++
+      PUBLIC Libuuid::libuuid)
+  else()
+    message(STATUS "libuuid not found, using fallback UUID generator")
+  endif()
+endif()
+message(STATUS "UUID_SYSTEM_GENERATOR: ${BOUT_USE_UUID_SYSTEM_GENERATOR}")
+set(BOUT_HAS_UUID_SYSTEM_GENERATOR ${BOUT_USE_UUID_SYSTEM_GENERATOR})
+
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("int main() { const char* name = __PRETTY_FUNCTION__; }"
   HAS_PRETTY_FUNCTION)
