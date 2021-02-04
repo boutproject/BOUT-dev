@@ -34,6 +34,7 @@
 #include "bout/assert.hxx"
 #include "bout/region.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/sys/uuid.h"
 
 #include <cmath>
 #include <cstring>
