@@ -33,6 +33,7 @@
 #include "bout/region.hxx"
 #include "bout/solverfactory.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/sys/uuid.h"
 
 #include <cmath>
 #include <cstring>

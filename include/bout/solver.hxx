@@ -42,7 +42,6 @@
 #include "options.hxx"
 #include "unused.hxx"
 #include "bout/monitor.hxx"
-#include "bout/sys/uuid.h"
 
 #include <memory>
 
