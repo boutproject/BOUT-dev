@@ -10592,8 +10592,6 @@ if test ".$with_system_uuid" = "no"; then :
 
 else
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for system UUID generator" >&5
-$as_echo_n "checking for system UUID generator... " >&6; }
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid/uuid.h" >&5
 $as_echo_n "checking for uuid/uuid.h... " >&6; }
@@ -16870,6 +16868,8 @@ $as_echo "$as_me:   Scorep support          : $BOUT_HAS_SCOREP" >&6;}
 $as_echo "$as_me:   OpenMP support          : $BOUT_USE_OPENMP (schedule: $OPENMP_SCHEDULE)" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   Natural language support: $BOUT_HAS_GETTEXT (path: $localedir)" >&5
 $as_echo "$as_me:   Natural language support: $BOUT_HAS_GETTEXT (path: $localedir)" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   System UUID generator   : $BOUT_HAS_UUID_SYSTEM_GENERATOR" >&5
+$as_echo "$as_me:   System UUID generator   : $BOUT_HAS_UUID_SYSTEM_GENERATOR" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
 $as_echo "$as_me: " >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   Enable backtrace        : $BOUT_USE_BACKTRACE" >&5

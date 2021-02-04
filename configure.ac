@@ -1122,7 +1122,6 @@ AS_IF([test "$SYSTEM_HAS_MPARK" = "yes"], [
 AS_IF([test ".$with_system_uuid" = "no"], [
   BOUT_HAS_UUID_SYSTEM_GENERATOR=no
 ], [
-  AC_MSG_CHECKING([for system UUID generator])
   BOUT_ADDPATH_CHECK_HEADER(uuid/uuid.h,
    BOUT_ADDPATH_CHECK_LIB(uuid, uuid_generate,
        BOUT_HAS_UUID_SYSTEM_GENERATOR=yes,
@@ -1393,6 +1392,7 @@ AC_MSG_NOTICE([  Lapack support          : $BOUT_HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $BOUT_HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $BOUT_USE_OPENMP (schedule: $OPENMP_SCHEDULE)])
 AC_MSG_NOTICE([  Natural language support: $BOUT_HAS_GETTEXT (path: $localedir)])
+AC_MSG_NOTICE([  System UUID generator   : $BOUT_HAS_UUID_SYSTEM_GENERATOR])
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([  Enable backtrace        : $BOUT_USE_BACKTRACE])
 AC_MSG_NOTICE([  Enable color logs       : $BOUT_USE_COLOR])

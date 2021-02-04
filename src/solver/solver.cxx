@@ -555,19 +555,18 @@ std::string Solver::createRunId() const {
 
   if (MYPE == 0) {
     // Generate a unique ID for this run
-    if (bout::build::has_uuid_system_generator) {
-      uuids::uuid_system_generator gen{};
-      result = uuids::to_string(gen());
-    } else {
-      std::random_device rd;
-      auto seed_data = std::array<int, std::mt19937::state_size>{};
-      std::generate(std::begin(seed_data), std::end(seed_data), std::ref(rd));
-      std::seed_seq seq(std::begin(seed_data), std::end(seed_data));
-      std::mt19937 generator(seq);
-      uuids::uuid_random_generator gen{generator};
+#if BOUT_HAS_UUID_SYSTEM_GENERATOR
+    uuids::uuid_system_generator gen{};
+#else
+    std::random_device rd;
+    auto seed_data = std::array<int, std::mt19937::state_size>{};
+    std::generate(std::begin(seed_data), std::end(seed_data), std::ref(rd));
+    std::seed_seq seq(std::begin(seed_data), std::end(seed_data));
+    std::mt19937 generator(seq);
+    uuids::uuid_random_generator gen{generator};
+#endif
 
-      result = uuids::to_string(gen());
-    }
+    result = uuids::to_string(gen());
   }
 
   // All ranks have same run_id
