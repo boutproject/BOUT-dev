@@ -9,7 +9,6 @@
 #cmakedefine01 BOUT_HAS_CVODE
 #cmakedefine01 BOUT_HAS_FFTW
 #cmakedefine01 BOUT_HAS_GETTEXT
-#cmakedefine01 BOUT_HAS_HDF5
 #cmakedefine01 BOUT_HAS_IDA
 #cmakedefine01 BOUT_HAS_LAPACK
 #cmakedefine01 BOUT_HAS_NETCDF

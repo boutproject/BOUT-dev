@@ -62,9 +62,7 @@ BOUT++ needs the following:
 
 * A C++14 compiler
 * MPI
-* Either NetCDF or HDF5
-
-Note that some of the tests require NetCDF rather than HDF5
+* NetCDF
 
 BOUT++ has the following optional dependencies:
 

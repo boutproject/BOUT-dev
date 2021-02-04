@@ -869,9 +869,7 @@ in ``init``, you then:
    name; actual opening of the file happens later when the data is
    written. If you are not using parallel I/O, the processor number is
    also inserted into the file name before the last “.”, so mydata.nc”
-   becomes “mydata.0.nc”, “mydata.1.nc” etc. The file format used
-   depends on the extension, so “.nc” will open NetCDF, and “.hdf5” or
-   “.h5” an HDF5 file.
+   becomes “mydata.0.nc”, “mydata.1.nc” etc.
 
    (see e.g. src/fileio/datafile.cxx line 139, which calls
    src/fileio/dataformat.cxx line 23, which then calls the file format

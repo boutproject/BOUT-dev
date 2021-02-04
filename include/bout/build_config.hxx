@@ -14,7 +14,6 @@ constexpr auto openmp_schedule = STRINGIFY(BOUT_OPENMP_SCHEDULE);
 
 constexpr auto has_fftw = static_cast<bool>(BOUT_HAS_FFTW);
 constexpr auto has_gettext = static_cast<bool>(BOUT_HAS_GETTEXT);
-constexpr auto has_hdf5 = static_cast<bool>(BOUT_HAS_HDF5);
 constexpr auto has_lapack = static_cast<bool>(BOUT_HAS_LAPACK);
 constexpr auto has_legacy_netcdf = static_cast<bool>(BOUT_HAS_LEGACY_NETCDF);
 constexpr auto has_netcdf = static_cast<bool>(BOUT_HAS_NETCDF);
