@@ -643,8 +643,11 @@ public:
   }
 
   /// Return a new Options instance which contains all the values
-  /// _not_ used from this instance
-  Options getUnused() const;
+  /// _not_ used from this instance. If an option has a "source"
+  /// attribute in \p exclude_sources it is counted as having been
+  /// used and so won't be included in the returned value. By default,
+  /// this is just "Output".
+  Options getUnused(const std::vector<std::string>& exclude_sources = {"Output"} ) const;
 
   /// Print the options which haven't been used
   void printUnused() const;

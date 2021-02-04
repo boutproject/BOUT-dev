@@ -4,6 +4,7 @@
 #include <output.hxx>
 #include <utils.hxx>
 
+#include <algorithm>
 #include <iomanip>
 #include <sstream>
 
@@ -637,13 +638,27 @@ bool Options::operator<(const char* other) const {
   return as<std::string>() < std::string(other);
 }
 
-Options Options::getUnused() const {
+Options Options::getUnused(const std::vector<std::string>& exclude_sources) const {
+  // Check if the option should count as having been used due to its source
+  const auto has_excluded_source = [&exclude_sources](const Options& option) -> bool {
+    if (not option.hasAttribute("source")) {
+      return false;
+    }
+    const auto source = option.attributes.at("source").as<std::string>();
+    return std::find(exclude_sources.begin(), exclude_sources.end(), source)
+           != exclude_sources.end();
+  };
+
   // Copy this object, and then we're going to chuck out everything
   // that has been used. This turns out to be easier than copying just
   // the unused options into an empty instance
   Options unused = *this;
 
   if (unused.is_value) {
+    // If this is from an excluded source, count it as being used
+    if (has_excluded_source(unused)) {
+      unused.value_used = true;
+    }
     // We don't have a nice way to "clear" the value, so if it was
     // used, mark it as no longer a value: if it has been used, this
     // does nothing
@@ -654,7 +669,10 @@ Options Options::getUnused() const {
   // This loop modifies the map in the loop, so we need to manually
   // manage the iterator
   for (auto it = unused.children.begin(); it != unused.children.end();) {
-    if (it->second.is_value and it->second.value_used) {
+    // Remove the child if it's been used or if it's from a source we
+    // should count as having been used
+    if (it->second.is_value
+        and (it->second.value_used or has_excluded_source(it->second))) {
       it = unused.children.erase(it);
       continue;
     }

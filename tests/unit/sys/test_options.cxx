@@ -1007,12 +1007,15 @@ TEST_F(OptionsTest, GetUnused) {
                  {"section2",
                   {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}}};
 
+  // This shouldn't count as unused
+  option["section2"]["value5"].attributes["source"] = "Output";
+
   MAYBE_UNUSED(auto value1) = option["section1"]["value1"].as<int>();
   MAYBE_UNUSED(auto value3) = option["section2"]["subsection1"]["value3"].as<bool>();
 
   Options expected_unused{
       {"section1", {{"value2", "hello"}}},
-      {"section2", {{"subsection1", {{"value4", 3.2}}}, {"value5", 3}}}};
+      {"section2", {{"subsection1", {{"value4", 3.2}}}}}};
 
   EXPECT_EQ(option.getUnused(), expected_unused);
 
