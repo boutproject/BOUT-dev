@@ -502,13 +502,11 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
               "Error if there are any unused options before starting the main simulation")
           .withDefault(true);
 
-  const bool validate_input =
-      globaloptions["input"]["validate"]
-          .doc(
-              "Check for unused options and stop")
-          .withDefault(false);
+  const bool validate_input = globaloptions["input"]["validate"]
+                                  .doc("Check for unused options and stop")
+                                  .withDefault(false);
 
-  if (error_on_unused_options) {
+  if (error_on_unused_options or validate_input) {
     Options unused = globaloptions.getUnused();
     if (not unused.getChildren().empty()) {
 
@@ -536,7 +534,8 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
         if (fuzzy_matches.empty()) {
           continue;
         }
-        possible_misspellings += fmt::format("\nUnused option '{}', did you mean:\n", key);
+        possible_misspellings +=
+            fmt::format("\nUnused option '{}', did you mean:\n", key);
         for (const auto& match : fuzzy_matches) {
           possible_misspellings += fmt::format("\t{}\n", match.match.str());
         }
