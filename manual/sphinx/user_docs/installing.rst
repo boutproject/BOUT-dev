@@ -71,10 +71,10 @@ then run::
 
 This should give a terminal in a "boutuser" home directory, in which
 there is "BOUT-next", containing BOUT++ configured and compiled with
-NetCDF, HDF5, SUNDIALS, PETSc and SLEPc. Python 3 is also installed,
-with ipython, NumPy, Scipy and Matplotlib libaries. To plot to screen
-an X11 display is needed. Alternatively a shared directory can be
-created to pass files between the docker image and host. The following
+NetCDF, SUNDIALS, PETSc and SLEPc. Python 3 is also installed, with
+ipython, NumPy, Scipy and Matplotlib libaries. To plot to screen an
+X11 display is needed. Alternatively a shared directory can be created
+to pass files between the docker image and host. The following
 commands both enable X11 and create a shared directory::
 
     $ mkdir shared
@@ -253,8 +253,7 @@ directory with the ``–with-fftw=`` option e.g::
 Configure should now find FFTW, and search for the NetCDF library. If
 configure finishes successfully, then skip to the next section, but if
 you see a message ``NetCDF support disabled`` then configure couldn’t
-find the NetCDF library. Unless you have another file format (like HDF5) installed, this
-will be followed by a message
+find the NetCDF library. This will be followed by a message
 ``ERROR: At least one file format must be supported``. Check that you have
 NetCDF installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
 
@@ -274,7 +273,6 @@ configuration::
       ARKODE support: yes
       NetCDF support: yes
       Parallel-NetCDF support: no
-      HDF5 support: yes (parallel: no)
 
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.

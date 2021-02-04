@@ -166,8 +166,6 @@ set(BOUT_SOURCES
   ./src/fileio/formatfactory.cxx
   ./src/fileio/formatfactory.hxx
   ./src/fileio/impls/emptyformat.hxx
-  ./src/fileio/impls/hdf5/h5_format.cxx
-  ./src/fileio/impls/hdf5/h5_format.hxx
   ./src/fileio/impls/netcdf/nc_format.cxx
   ./src/fileio/impls/netcdf/nc_format.hxx
   ./src/fileio/impls/netcdf4/ncxx4.cxx
@@ -518,15 +516,6 @@ endif()
 message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
 
-option(BOUT_USE_HDF5 "Enable support for HDF5 output" OFF)
-if (BOUT_USE_HDF5)
-  find_package(HDF5 REQUIRED COMPONENTS CXX)
-  target_link_libraries(bout++ PUBLIC "${HDF5_CXX_LIBRARIES}")
-  target_include_directories(bout++ PUBLIC "${HDF5_CXX_INCLUDE_DIRS}")
-endif()
-message(STATUS "HDF5 support: ${BOUT_USE_HDF5}")
-set(BOUT_HAS_HDF5 ${BOUT_USE_HDF5})
-
 option(BOUT_USE_FFTW "Enable support for FFTW" ON)
 if (BOUT_USE_FFTW)
   find_package(FFTW REQUIRED)
@@ -873,7 +862,6 @@ message("
    SLEPc support            : ${BOUT_HAS_SLEPC}
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
    NetCDF support           : ${BOUT_HAS_NETCDF}
-   HDF5 support             : ${BOUT_HAS_HDF5}
    FFTW support             : ${BOUT_HAS_FFTW}
    LAPACK support           : ${BOUT_HAS_LAPACK}
    OpenMP support           : ${BOUT_USE_OPENMP}
