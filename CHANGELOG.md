@@ -51,7 +51,9 @@
 - Having any unused options remaining after the first call to the
   physics model `rhs` is now an error. Set
   `input:error_on_unused_options = false` for old behaviour
+  [\#2210](https://github.com/boutproject/BOUT-dev/pull/2210)
 - Input options are now case sensitive
+  [\#2210](https://github.com/boutproject/BOUT-dev/pull/2210)
 
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)
