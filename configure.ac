@@ -63,8 +63,6 @@ AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
 AC_ARG_WITH(system_mpark, [AS_HELP_STRING([--with-system-mpark],
         [Use mpark.variant already installed rather then the bundled one])],,[with_system_mpark=auto])
 
-dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
-
 AC_ARG_ENABLE(warnings,     [AS_HELP_STRING([--disable-warnings],
         [Disable compiler warnings])],,[])
 AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
@@ -634,35 +632,6 @@ AS_IF([test "x$PNCPATH" = "x"], [
 
   file_formats="$file_formats Parallel-NetCDF"
   AC_MSG_NOTICE([Parallel-NetCDF support enabled])
-])
-
-#############################################################
-# HDF5 library
-#############################################################
-
-BOUT_HAS_HDF5="no"
-AX_LIB_HDF5([serial])
-AS_IF([test "$with_hdf5" = "yes"], [
-  AC_MSG_NOTICE([Found HDF5])
-  EXTRA_INCS="$EXTRA_INCS $HDF5_CPPFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $HDF5_LDFLAGS $HDF5_LIBS"
-  BOUT_HAS_HDF5="yes"
-  file_formats="$file_formats HDF5"
-  ], [
-  AC_MSG_NOTICE([Serial HDF5 support disabled])
-])
-
-BOUT_HAS_PHDF5="no"
-AX_LIB_PARALLELHDF5()
-AS_IF([test "$with_parallelhdf5" = "yes"], [
-  AC_MSG_NOTICE([Found parallel HDF5])
-  CXXFLAGS="$CXXFLAGS -DPHDF5"
-  EXTRA_INCS="$EXTRA_INCS $PARALLELHDF5_CPPFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $PARALLELHDF5_LDFLAGS $PARALLELHDF5_LIBS"
-  BOUT_HAS_PHDF5="yes"
-  file_formats="$file_formats Parallel HDF5"
-  ], [
-  AC_MSG_NOTICE([Parallel HDF5 support disabled])
 ])
 
 #############################################################
@@ -1343,7 +1312,6 @@ BOUT_DEFINE_SUBST(BOUT_HAS_ARKODE, [ARKODE support])
 BOUT_DEFINE_SUBST(BOUT_HAS_CVODE, [CVODE support])
 BOUT_DEFINE_SUBST(BOUT_HAS_FFTW, [FFTW support])
 BOUT_DEFINE_SUBST(BOUT_HAS_GETTEXT, [NLS support])
-BOUT_DEFINE_SUBST(BOUT_HAS_HDF5, [HDF5 support])
 BOUT_DEFINE_SUBST(BOUT_HAS_IDA, [IDA support])
 BOUT_DEFINE_SUBST(BOUT_HAS_LAPACK, [LAPACK support])
 BOUT_DEFINE_SUBST(BOUT_HAS_NETCDF, [NETCDF support])
@@ -1397,7 +1365,6 @@ AC_MSG_NOTICE([  ARKODE support          : $BOUT_HAS_ARKODE])
 AC_MSG_NOTICE([  FFTW support            : $BOUT_HAS_FFTW])
 AC_MSG_NOTICE([  NetCDF support          : $BOUT_HAS_NETCDF (legacy: $BOUT_HAS_LEGACY_NETCDF)])
 AC_MSG_NOTICE([  Parallel-NetCDF support : $BOUT_HAS_PNETCDF])
-AC_MSG_NOTICE([  HDF5 support            : $BOUT_HAS_HDF5 (parallel: $BOUT_HAS_PHDF5)])
 AC_MSG_NOTICE([  Lapack support          : $BOUT_HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $BOUT_HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $BOUT_USE_OPENMP (schedule: $OPENMP_SCHEDULE)])

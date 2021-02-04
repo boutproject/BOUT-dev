@@ -144,7 +144,7 @@ some requirements such as SciPy; see section
 :ref:`sec-python-requirements` for details.
 
 To print a list of variables in the output files, one way is to use the ``DataFile``
-class. This is a wrapper around the various NetCDF and HDF5 libraries for python:
+class. This is a wrapper around the various NetCDF libraries for python:
 
 .. code-block:: pycon
 

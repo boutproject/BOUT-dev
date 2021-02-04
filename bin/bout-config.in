@@ -31,7 +31,6 @@ pythonpath="@PYTHONCONFIGPATH@"
 has_netcdf="@BOUT_HAS_NETCDF@"
 has_legacy_netcdf="@BOUT_HAS_LEGACY_NETCDF@"
 has_pnetcdf="@BOUT_HAS_PNETCDF@"
-has_hdf5="@BOUT_HAS_HDF5@"
 has_pvode="@BOUT_HAS_PVODE@"
 has_cvode="@BOUT_HAS_CVODE@"
 has_ida="@BOUT_HAS_IDA@"
@@ -71,7 +70,6 @@ Available values for OPTION include:
   --has-netcdf  NetCDF file support
   --has-legacy-netcdf  Legacy NetCDF file support
   --has-pnetcdf Parallel NetCDF file support
-  --has-hdf5    HDF5 file support
   --has-pvode   PVODE solver support
   --has-cvode   SUNDIALS CVODE solver support
   --has-ida     SUNDIALS IDA solver support
@@ -107,7 +105,6 @@ all()
         echo "  --has-netcdf  -> $has_netcdf"
         echo "  --has-legacy-netcdf  -> $has_legacy_netcdf"
         echo "  --has-pnetcdf -> $has_pnetcdf"
-        echo "  --has-hdf5    -> $has_hdf5"
         echo "  --has-pvode   -> $has_pvode"
         echo "  --has-cvode   -> $has_cvode"
         echo "  --has-ida     -> $has_ida"
@@ -198,10 +195,6 @@ while test $# -gt 0; do
 
     --has-pnetcdf)
         echo $has_pnetcdf
-        ;;
-
-    --has-hdf5)
-        echo $has_hdf5
         ;;
 
     --has-pvode)
