@@ -517,15 +517,23 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
       std::string possible_misspellings;
       for (const auto& key : keys) {
         auto fuzzy_matches = globaloptions.fuzzyFind(key);
-        // Remove exact matches, not helpful for unknown options!
+        // Remove unacceptable matches, including:
+        // - exact matches
+        // - other unused options
+        // - options set internally by the library and not meant as user inputs
         bout::utils::erase_if(
-            fuzzy_matches,
-            [](const Options::FuzzyMatch& match) -> bool { return match.distance == 0; });
+            fuzzy_matches, [](const Options::FuzzyMatch& match) -> bool {
+              const auto source = match.match.attributes.at("source").as<std::string>();
+              const bool internal_source = (source == "Solver") or (source == "Output");
+
+              return match.distance == 0 or (not match.match.valueUsed())
+                     or internal_source;
+            });
         // TODO: also remove other unused options, and those from default source
         if (fuzzy_matches.empty()) {
           continue;
         }
-        possible_misspellings += fmt::format("\nPlausible alternatives to '{}':\n", key);
+        possible_misspellings += fmt::format("\nUnused option '{}', did you mean:\n", key);
         for (const auto& match : fuzzy_matches) {
           possible_misspellings += fmt::format("\t{}\n", match.match.str());
         }
