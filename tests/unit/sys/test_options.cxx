@@ -979,9 +979,10 @@ TEST_F(OptionsTest, InitialiseTree) {
 }
 
 TEST_F(OptionsTest, ToString) {
-  Options option{{"section1", {{"value1", 42}, {"value2", "hello"}}},
-                 {"section2",
-                  {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}}};
+  Options option{
+      {"section1", {{"value1", 42}, {"value2", "hello"}}},
+      {"section2", {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}},
+      {"section3", {{"subsection2", {{"value6", 12}}}}}};
 
   // It's plausible this test is fragile if the internal storage
   // changes the order -- at time of writing (Jan 2020) it's
@@ -997,6 +998,9 @@ value5 = 3
 [section2:subsection1]
 value3 = true
 value4 = 3.2
+
+[section3:subsection2]
+value6 = 12
 )";
 
   EXPECT_EQ(toString(option), expected);

@@ -759,32 +759,31 @@ std::vector<std::string> Options::getFlattenedKeys() const {
   return flattened_names;
 }
 
-namespace {
-void toString(const Options& value, std::string& fout) {
-  std::string section_name = value.str();
+std::string toString(const Options& value) {
 
-  if (not section_name.empty()) {
-    fout += fmt::format("[{}]\n", section_name);
-  }
+  std::string result;
 
+  // Get all the child values first
   for (const auto& child : value.getChildren()) {
     if (child.second.isValue()) {
       const auto value = bout::utils::variantToString(child.second.value);
       // Convert empty strings to ""
       const std::string as_str = value.empty() ? "\"\"" : value;
-      fout += fmt::format("{} = {}\n", child.first, as_str);
+      result += fmt::format("{} = {}\n", child.first, as_str);
     }
   }
 
-  for (const auto& subsection : value.subsections()) {
-    fout += "\n";
-    toString(*subsection.second, fout);
+  // Only print section headers if the section has a name and it has
+  // non-section children
+  const std::string section_name = value.str();
+  if (not(section_name.empty() or result.empty())) {
+    result = fmt::format("\n[{}]\n{}", section_name, result);
   }
-}
-} // namespace
 
-std::string toString(const Options& value) {
-  std::string ss;
-  toString(value, ss);
-  return ss;
+  // Now descend the tree, accumulating subsections
+  for (const auto& subsection : value.subsections()) {
+    result += toString(*subsection.second);
+  }
+
+  return result;
 }
