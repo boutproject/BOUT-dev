@@ -21,6 +21,10 @@
 // SOFTWARE.
 
 #pragma once
+#ifndef BOUT_UUID_H
+#define BOUT_UUID_H
+
+#include "bout/build_config.hxx"
 
 #include <cstring>
 #include <string>
@@ -45,7 +49,7 @@
 #define NOMINMAX
 #endif
 
-#ifdef UUID_SYSTEM_GENERATOR
+#ifdef BOUT_HAS_UUID_SYSTEM_GENERATOR
 #include <objbase.h>
 #endif
 
@@ -56,13 +60,13 @@
 
 #elif defined(__linux__) || defined(__unix__)
 
-#ifdef UUID_SYSTEM_GENERATOR
+#ifdef BOUT_HAS_UUID_SYSTEM_GENERATOR
 #include <uuid/uuid.h>
 #endif
 
 #elif defined(__APPLE__)
 
-#ifdef UUID_SYSTEM_GENERATOR
+#ifdef BOUT_HAS_UUID_SYSTEM_GENERATOR
 #include <CoreFoundation/CFUUID.h>
 #endif
 
@@ -652,7 +656,7 @@ namespace uuids
    // uuid generators
    // --------------------------------------------------------------------------------------------------------------------------
 
-#ifdef UUID_SYSTEM_GENERATOR
+#ifdef BOUT_HAS_UUID_SYSTEM_GENERATOR
    class uuid_system_generator
    {
    public:
@@ -966,3 +970,5 @@ namespace std
       }
    };
 }
+
+#endif // BOUT_UUID_H

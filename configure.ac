@@ -64,6 +64,8 @@ AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
         [Enable support for scorep based instrumentation])],,[with_scorep=no])
 AC_ARG_WITH(system_mpark, [AS_HELP_STRING([--with-system-mpark],
         [Use mpark.variant already installed rather then the bundled one])],,[with_system_mpark=auto])
+AC_ARG_WITH(system_uuid,  [AS_HELP_STRING([--with-system-uuid],
+        [Use libuuid to generate UUIDs])],,[with_system_uuid=auto])
 
 dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 
@@ -1180,6 +1182,27 @@ AS_IF([test "$SYSTEM_HAS_MPARK" = "yes"], [
   MPARK_INCLUDE="-I$MPARK_VARIANT_INCLUDE_PATH"
   OWN_MPARK=yes
 ])
+
+#############################################################
+# Check for libuuid
+#############################################################
+
+AS_IF([test ".$with_system_uuid" = "no"], [
+  BOUT_HAS_UUID_SYSTEM_GENERATOR=no
+], [
+  AC_MSG_CHECKING([for system UUID generator])
+  BOUT_ADDPATH_CHECK_HEADER(uuid/uuid.h,
+   BOUT_ADDPATH_CHECK_LIB(uuid, uuid_generate,
+       BOUT_HAS_UUID_SYSTEM_GENERATOR=yes,
+       BOUT_HAS_UUID_SYSTEM_GENERATOR=no,
+       [$with_system_uuid]),
+   BOUT_HAS_UUID_SYSTEM_GENERATOR=no,
+   [$with_system_uuid])
+  AS_IF([test "$with_system_uuid" = "yes"], [
+   AC_MSG_FAILURE([*** System UUID generator not found, but explicitly requested])
+  ])
+])
+
 #############################################################
 # Download + Build PVODE '98
 #############################################################
@@ -1372,6 +1395,7 @@ AC_SUBST(HAS_MUMPS)
 AC_SUBST(HAS_LAPACK)
 AC_SUBST(HAS_PETSC)
 AC_SUBST(HAS_SLEPC)
+AC_SUBST(BOUT_HAS_UUID_SYSTEM_GENERATOR)
 AC_SUBST(PETSC_HAS_SUNDIALS)
 AC_SUBST(PETSC_MAKE_INCLUDE)
 AC_SUBST(PETSC_DIR)
