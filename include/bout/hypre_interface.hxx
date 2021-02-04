@@ -675,16 +675,18 @@ public:
   HYPRE_ParCSRMatrix getParallel() { return parallel_matrix; }
   const HYPRE_ParCSRMatrix& getParallel() const { return parallel_matrix; }
 
-  //y = alpha*A*x + beta*y
+  // y = alpha*A*x + beta*y
+  // Note result is returned in 'y' argument
   void computeAxpby(double alpha, HypreVector<T> &x, double beta, HypreVector<T> &y)
   {
-    HYPRE_IJMatrixMatvec(alpha, x.getParallel(), beta, y.getParallel());
+    HYPRE_ParCSRMatrixMatvec(alpha, parallel_matrix, x.getParallel(), beta, y.getParallel());
   }
 
-  //y = A*x
+  // y = A*x
+  // Note result is returned in 'y' argument
   void computeAx(HypreVector<T> &x, HypreVector<T> &y)
   {
-    HYPRE_IJMatrixMatvec(1.0, x.getParallel(), 0.0, y.getParallel());
+    HYPRE_ParCSRMatrixMatvec(1.0, parallel_matrix, x.getParallel(), 0.0, y.getParallel());
   }
 
 };
