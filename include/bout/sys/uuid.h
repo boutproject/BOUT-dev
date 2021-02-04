@@ -271,18 +271,16 @@ static std::atomic_short clock_sequence{clock_dis(clock_gen)};
 // UUID format https://tools.ietf.org/html/rfc4122
 // --------------------------------------------------------------------------------------------------------------------------
 
+// clang-format off
 // --------------------------------------------------------------------------------------------------------------------------
-// Field	                     NDR Data Type	   Octet #	Note
+// Field                      NDR Data Type	   Octet #	 Note
 // --------------------------------------------------------------------------------------------------------------------------
-// time_low	                  unsigned long	   0 - 3	   The low field of the
-// timestamp.
-// time_mid	                  unsigned short	   4 - 5	   The middle field of
-// the timestamp. time_hi_and_version	      unsigned short	   6 - 7	   The
-// high field of the timestamp multiplexed with the version number.
-// clock_seq_hi_and_reserved	unsigned small	   8	      The high field of the clock
-// sequence multiplexed with the variant. clock_seq_low	            unsigned small 9
-// The low field of the clock sequence. node	                     character
-// 10 - 15	The spatially unique node identifier.
+// time_low                   unsigned long	   0 - 3      The low field of the timestamp.
+// time_mid                   unsigned short   4 - 5      The middle field of the timestamp.
+// time_hi_and_version        unsigned short   6 - 7      The high field of the timestamp multiplexed with the version number.
+// clock_seq_hi_and_reserved  unsigned small   8          The high field of the clock sequence multiplexed with the variant.
+// clock_seq_low              unsigned small   9          The low field of the clock sequence.
+// node                       character        10 - 15    The spatially unique node identifier.
 // --------------------------------------------------------------------------------------------------------------------------
 // 0                   1                   2                   3
 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -295,6 +293,7 @@ static std::atomic_short clock_sequence{clock_dis(clock_gen)};
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 // |                         node (2-5)                            |
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// clang-format on
 
 // --------------------------------------------------------------------------------------------------------------------------
 // enumerations
