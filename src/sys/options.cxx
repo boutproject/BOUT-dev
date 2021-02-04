@@ -668,27 +668,27 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
 
   // This loop modifies the map in the loop, so we need to manually
   // manage the iterator
-  for (auto it = unused.children.begin(); it != unused.children.end();) {
+  for (auto child = unused.children.begin(); child != unused.children.end();) {
     // Remove the child if it's been used or if it's from a source we
     // should count as having been used
-    if (it->second.is_value
-        and (it->second.value_used or has_excluded_source(it->second))) {
-      it = unused.children.erase(it);
+    if (child->second.is_value
+        and (child->second.value_used or has_excluded_source(child->second))) {
+      child = unused.children.erase(child);
       continue;
     }
 
-    if (it->second.is_section) {
+    if (child->second.is_section) {
       // Recurse down and replace this section by its "unused" version
-      it->second = it->second.getUnused();
+      child->second = child->second.getUnused();
       // If all of its children have been used, then we can remove it
       // as well
-      if (it->second.children.empty()) {
-        it = unused.children.erase(it);
+      if (child->second.children.empty()) {
+        child = unused.children.erase(child);
         continue;
       }
     }
 
-    ++it;
+    ++child;
   }
 
   if (unused.children.empty()) {
