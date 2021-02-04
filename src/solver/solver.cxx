@@ -572,7 +572,7 @@ std::string Solver::createRunId() const {
 
   // All ranks have same run_id
   // Standard representation of UUID is always 36 characters
-  MPI_Bcast(const_cast<char*>(result.data()), 36, MPI_CHAR, 0, BoutComm::get());
+  MPI_Bcast(&result[0], 36, MPI_CHAR, 0, BoutComm::get());
 
   return result;
 }
