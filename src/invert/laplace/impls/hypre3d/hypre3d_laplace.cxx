@@ -94,8 +94,8 @@ LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in) 
 
   // Get Tolerances for iterative solver
   rtol = (*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5);
-  atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-5);
-  dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e6);
+  atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-8);
+  //dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e6);
   maxits = (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000);
 
   // Set up boundary conditions in operator
@@ -383,7 +383,9 @@ void LaplaceHypre3d::updateMatrix3D() {
   linearSystem.setupAMG(&operator3D);
 
   // Set the relative and absolute tolerances
-  //linearSystem.setTolerances(rtol, atol, dtol, maxits); // not implemented yet!
+  linearSystem.setRelTol(rtol);
+  linearSystem.setAbsTol(atol);
+  linearSystem.setMaxIter(maxits); // not implemented yet!
 
   updateRequired = false;
 }
