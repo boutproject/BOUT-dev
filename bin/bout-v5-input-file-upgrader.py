@@ -21,6 +21,8 @@ REPLACEMENTS = [
     {"old": "interpolation", "new": "mesh:paralleltransform:xzinterpolation"},
     {"old": "fft:fft_measure", "new": "fft:fft_measurement_flag",
         "type": bool, "values": {False: "estimate", True: "measure"}}
+    {"old": "TIMESTEP", "new": "timestep"},
+    {"old": "NOUT", "new": "nout"},
 ]
 
 for section, derivative in itertools.product(

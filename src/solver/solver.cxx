@@ -440,35 +440,36 @@ void Solver::constraint(Vector3D& v, Vector3D& C_v, std::string name) {
  * Solver main loop: Initialise, run, and finish
  **************************************************************************/
 
-int Solver::solve(int NOUT, BoutReal TIMESTEP) {
-  
+int Solver::solve(int nout, BoutReal timestep) {
+
   Options& globaloptions = Options::root(); // Default from global options
-  
-  if (NOUT < 0) {
+
+  if (nout < 0) {
     /// Get options
-    NOUT = globaloptions["NOUT"].doc("Number of output steps").withDefault(1);
-    TIMESTEP = globaloptions["TIMESTEP"].doc("Output time step size").withDefault(1.0);
-    
+    nout = globaloptions["nout"].doc("Number of output steps").withDefault(1);
+    timestep = globaloptions["timestep"].doc("Output time step size").withDefault(1.0);
+
     // Check specific solver options, which override global options
-    NOUT = (*options)["NOUT"]
+    nout = (*options)["nout"]
                .doc("Number of output steps. Overrides global setting.")
-               .withDefault(NOUT);
-    TIMESTEP = (*options)["output_step"]
-                   .doc("Output time step size. Overrides global TIMESTEP setting.")
-                   .withDefault(TIMESTEP);
+               .withDefault(nout);
+    timestep = (*options)["output_step"]
+                   .doc("Output time step size. Overrides global 'timestep' setting.")
+                   .withDefault(timestep);
   }
 
-  finaliseMonitorPeriods(NOUT, TIMESTEP);
+  finaliseMonitorPeriods(nout, timestep);
 
-  output_progress.write(_("Solver running for {:d} outputs with output timestep of {:e}\n"),
-                        NOUT, TIMESTEP);
+  output_progress.write(
+      _("Solver running for {:d} outputs with output timestep of {:e}\n"), nout,
+      timestep);
   if (default_monitor_period > 1)
     output_progress.write(
         _("Solver running for {:d} outputs with monitor timestep of {:e}\n"),
-        NOUT / default_monitor_period, TIMESTEP * default_monitor_period);
+        nout / default_monitor_period, timestep * default_monitor_period);
 
   // Initialise
-  if (init(NOUT, TIMESTEP)) {
+  if (init(nout, timestep)) {
     throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
 
@@ -564,7 +565,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     /// Write initial state as time-point 0
 
     // Call monitors so initial values are written to output dump files
-    if (call_monitors(simtime, -1, NOUT)) {
+    if (call_monitors(simtime, -1, nout)) {
       throw BoutException("Initial monitor call failed!");
     }
   }

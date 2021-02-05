@@ -288,9 +288,9 @@ public:
   /// to determine the number of steps and the output timestep.
   /// If nout and dt are specified here then the options are not used
   ///
-  /// @param[in] nout   Number of output timesteps
-  /// @param[in] dt     The time between outputs
-  int solve(int nout = -1, BoutReal dt = 0.0);
+  /// @param[in] nout     Number of output timesteps to run for
+  /// @param[in] timestep The time between outputs
+  int solve(int nout = -1, BoutReal timestep = 0.0);
 
   /// Initialise the solver
   /// NOTE: nout and tstep should be passed to run, not init.
