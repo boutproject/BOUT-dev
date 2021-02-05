@@ -149,7 +149,7 @@ void Solver::add(Field2D& v, const std::string& name, const std::string& descrip
   }
   
   // Check if the boundary regions should be evolved
-  // First get option from section "All"
+  // First get option from section "all"
   // then use that as default for specific section
   d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
   d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
@@ -208,7 +208,7 @@ void Solver::add(Field3D& v, const std::string& name, const std::string& descrip
   }
   
   // Check if the boundary regions should be evolved
-  // First get option from section "All"
+  // First get option from section "all"
   // then use that as default for specific section
   d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
   d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
