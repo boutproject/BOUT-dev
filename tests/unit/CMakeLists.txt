@@ -7,7 +7,7 @@ if(NOT TARGET gtest)
 endif()
 
 add_definitions(-DGTEST_HAS_PTHREAD=0)
-set(gtest_disable_othreads ON)
+set(gtest_disable_pthreads ON)
 mark_as_advanced(
   BUILD_GMOCK BUILD_GTEST BUILD_SHARED_LIBS
   gmock_build_tests gtest_build_samples gtest_build_tests
@@ -77,6 +77,11 @@ if(BOUT_HAS_HYPRE)
 endif ()
 
 add_executable(serial_tests ${serial_tests_source})
+
+#if(BOUT_HAS_HYPRE)
+#   target_compile_definitions(serial_tests PUBLIC "BOUT_HAS_HYPRE")
+#endif ()
+
 target_include_directories(serial_tests PUBLIC bout++
    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../../include>

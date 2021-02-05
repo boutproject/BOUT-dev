@@ -25,6 +25,7 @@ PetscLib::PetscLib(Options* opt) {
       output << "Initialising PETSc\n";
       PETSC_COMM_WORLD = BoutComm::getInstance()->getComm();
       PetscInitialize(pargc,pargv,PETSC_NULL,help);
+      PetscPopSignalHandler();
       //PetscPopSignalHandler(); // use this to turn off Petsc signal handling i.e. allow dump core
 
       PetscLogEventRegister("Total BOUT++",0,&USER_EVENT);
