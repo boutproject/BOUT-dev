@@ -163,22 +163,31 @@ int BoutInitialise(int& argc, char**& argv) {
     printCompileTimeOptions();
     printCommandLineArguments(args.original_argv);
 
-    // Load settings file
-    OptionsReader* reader = OptionsReader::getInstance();
-    reader->read(Options::getRoot(), "{}/{}", args.data_dir, args.opt_file);
-
-    // Get options override from command-line
-    reader->parseCommandLine(Options::getRoot(), argc, argv);
-
     // Override options set from short option from the command-line
+    // FIXME: we could drop this and immediately reading them back out
+    // if we instead just rename the option from the command line and
+    // set OptionsReader::parseCommandLine deal with it. But then we
+    // need to pass a vector as it's not good to add new stuff to argv
     Options::root()["datadir"].force(args.data_dir);
     Options::root()["optionfile"].force(args.opt_file);
     Options::root()["settingsfile"].force(args.set_file);
 
+    // Get the variables back out so they count as having been used
+    const auto datadir = Options::root()["datadir"].as<std::string>();
+    const auto optionfile = Options::root()["optionfile"].as<std::string>();
+    const auto settingsfile = Options::root()["settingsfile"].as<std::string>();
+
+    // Load settings file
+    OptionsReader* reader = OptionsReader::getInstance();
+    reader->read(Options::getRoot(), "{}/{}", datadir, optionfile);
+
+    // Get options override from command-line
+    reader->parseCommandLine(Options::getRoot(), argc, argv);
+
     setRunStartInfo(Options::root());
 
     if (MYPE == 0) {
-      writeSettingsFile(Options::root(), args.data_dir, args.set_file);
+      writeSettingsFile(Options::root(), datadir, settingsfile);
     }
 
     bout::globals::mpi = new MpiWrapper();
