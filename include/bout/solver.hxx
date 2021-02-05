@@ -350,6 +350,13 @@ public:
     pargv = &v;
   }
 
+  /// Generate a random UUID (version 4) and broadcast it to all processors
+  std::string createRunID() const;
+  /// A unique identifier for this run
+  std::string getRunID() const { return run_id; }
+  /// The run from which this was restarted.
+  std::string getRunRestartFrom() const { return run_restart_from; }
+
 protected:
   /// Number of command-line arguments
   static int* pargc;
@@ -440,15 +447,6 @@ protected:
   /// Current iteration (output time-step) number
   int iteration{0};
 
-  /// Randomly generated run ID
-  /// Initialise with 36 characters so the allocated array is the right size
-  /// Use 'z' because it is not a valid hex character, so this is an invalid UUID
-  std::string run_id = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
-  /// The run from which this was restarted.
-  std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
-  /// Generate a random UUID (version 4) and broadcast it to all processors
-  std::string createRunId() const;
-
   /// Run the user's RHS function
   int run_rhs(BoutReal t);
   /// Calculate only the convective parts
@@ -500,6 +498,13 @@ protected:
   auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }
 
 private:
+  /// Randomly generated run ID
+  /// Initialise with 36 characters so the allocated array is the right size
+  /// Use 'z' because it is not a valid hex character, so this is an invalid UUID
+  std::string run_id = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
+  /// The run from which this was restarted.
+  std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
+
   /// Number of calls to the RHS function
   int rhs_ncalls{0};
   /// Number of calls to the explicit (convective) RHS function

@@ -475,7 +475,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
   // Set the run ID
   run_restart_from = run_id; // Restarting from the previous run ID
-  run_id = createRunId();
+  run_id = createRunID();
 
   // Put the run ID into the options tree
   // Forcing in case the value has been previously set
@@ -549,7 +549,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   return status;
 }
 
-std::string Solver::createRunId() const {
+std::string Solver::createRunID() const {
 
   std::string result;
   result.resize(36);
