@@ -350,8 +350,6 @@ public:
     pargv = &v;
   }
 
-  /// Generate a random UUID (version 4) and broadcast it to all processors
-  std::string createRunID() const;
   /// A unique identifier for this run
   std::string getRunID() const { return run_id; }
   /// The run from which this was restarted.
@@ -498,6 +496,8 @@ protected:
   auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }
 
 private:
+  /// Generate a random UUID (version 4) and broadcast it to all processors
+  std::string createRunID() const;
   /// Randomly generated run ID
   /// Initialise with 36 characters so the allocated array is the right size
   /// Use 'z' because it is not a valid hex character, so this is an invalid UUID
