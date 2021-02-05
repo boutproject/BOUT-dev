@@ -405,10 +405,21 @@ public:
     int hasBraces = 0;
     size_t index = 0;
     size_t size = 0;
-    if (std::is_same<CharT, char>::value)
+#if __cpp_if_constexpr >= 201606L
+    if constexpr (std::is_same<CharT, char>::value) {
       size = strlen(str);
-    else
+    } else {
       size = wcslen(str);
+    }
+#else
+    if (std::is_same<CharT, char>::value) {
+      size = strlen(str);
+    } else {
+      // This will presumably fail, but you'll get an error message
+      // Try compiling with C++17
+      size = strlen(str);
+    }
+#endif
 
     if (str == nullptr || size == 0)
       return false;
