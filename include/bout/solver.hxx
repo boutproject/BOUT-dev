@@ -350,10 +350,10 @@ public:
     pargv = &v;
   }
 
-  /// A unique identifier for this run
-  std::string getRunID() const { return run_id; }
-  /// The run from which this was restarted.
-  std::string getRunRestartFrom() const { return run_restart_from; }
+  /// A unique identifier for this run. Throws if the identifier hasn't been set yet.
+  std::string getRunID() const;
+  /// The run from which this was restarted. Throws if the identifier hasn't been set yet.
+  std::string getRunRestartFrom() const;
 
 protected:
   /// Number of command-line arguments
@@ -498,10 +498,14 @@ protected:
 private:
   /// Generate a random UUID (version 4) and broadcast it to all processors
   std::string createRunID() const;
+
+  /// Default value for `run_id`. Use 'z' because it is not a valid
+  /// hex character, so this is an invalid UUID
+  static constexpr auto default_run_id = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
+
   /// Randomly generated run ID
   /// Initialise with 36 characters so the allocated array is the right size
-  /// Use 'z' because it is not a valid hex character, so this is an invalid UUID
-  std::string run_id = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
+  std::string run_id = default_run_id;
   /// The run from which this was restarted.
   std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
 
