@@ -3,6 +3,7 @@
 import argparse
 import copy
 import difflib
+import itertools
 import textwrap
 import warnings
 
@@ -21,6 +22,16 @@ REPLACEMENTS = [
     {"old": "fft:fft_measure", "new": "fft:fft_measurement_flag",
         "type": bool, "values": {False: "estimate", True: "measure"}}
 ]
+
+for section, derivative in itertools.product(
+    ["ddx", "ddy", "ddz", "diff"], ["First", "Second", "Fourth", "Flux", "Upwind"]
+):
+    REPLACEMENTS.append(
+        {
+            "old": f"mesh:{section}:{derivative}",
+            "new": f"mesh:{section}:{derivative.lower()}",
+        }
+    )
 
 
 def parse_bool(bool_expression):
