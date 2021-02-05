@@ -546,13 +546,30 @@ int Solver::solve(int nout, BoutReal timestep) {
       const std::string additional_info =
           possible_misspellings.empty()
               ? ""
-              : fmt::format(
-                  "It's possible you've mistyped some options. BOUT++ input arguments "
-                  "are now case-sensitive.\nHave you tried running "
-                  "'bin/bout-v5-input-file-upgrader.py' on your input file?\n{}",
-                  possible_misspellings);
-      throw BoutException("There were unused options:\n{:s}\n{}", toString(unused),
-                          additional_info);
+              : fmt::format("Suggested alternatives:\n{}", possible_misspellings);
+
+      // Raw string to help with the formatting of the message, and a
+      // separate variable so clang-format doesn't barf on the
+      // exception
+      const std::string unused_message = _(R"""(
+There were unused input options:
+-----
+{}
+-----
+It's possible you've mistyped some options. BOUT++ input arguments are
+now case-sensitive, and some have changed name. You can try running
+
+    <BOUT++ directory>/bin/bout-v5-input-file-upgrader.py {}/{}
+
+to automatically fix the most common issues. If these options above
+are sometimes used depending on other options, or you're sure this is
+not a mistake, you can set 'input:error_on_unused_options=false' to
+turn off this check for unused options.
+{})""");
+
+      throw BoutException(unused_message, toString(unused),
+                          globaloptions["datadir"].as<std::string>(),
+                          globaloptions["optionfile"].as<std::string>(), additional_info);
     }
   }
 
