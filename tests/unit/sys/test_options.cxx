@@ -1032,6 +1032,18 @@ TEST_F(OptionsTest, GetUnused) {
   EXPECT_EQ(option.getUnused(), expected_empty);
 }
 
+TEST_F(OptionsTest, SetConditionallyUsed) {
+  Options option{{"section1", {{"value1", 42}, {"value2", "hello"}}},
+                 {"section2",
+                  {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}}};
+
+  option.setConditionallyUsed();
+
+  Options expected_empty{};
+
+  EXPECT_EQ(option.getUnused(), expected_empty);
+}
+
 TEST_F(OptionsTest, FuzzyFind) {
   Options option{{"value1", 21},
                  {"section1", {{"value1", 42}, {"value2", "hello"}, {"not this", 1}}},

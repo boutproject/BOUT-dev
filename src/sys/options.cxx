@@ -10,6 +10,11 @@
 
 /// The source label given to default values
 const std::string Options::DEFAULT_SOURCE{_("default")};
+
+/// Name of the attribute to indicate an Option should always count as
+/// having been used
+constexpr auto conditionally_used_attribute = "conditionally used";
+
 Options *Options::root_instance{nullptr};
 
 Options &Options::root() {
@@ -649,6 +654,13 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
            != exclude_sources.end();
   };
 
+  const auto conditionally_used = [](const Options& option) -> bool {
+    if (not option.hasAttribute(conditionally_used_attribute)) {
+      return false;
+    }
+    return option.attributes.at(conditionally_used_attribute).as<bool>();
+  };
+
   // Copy this object, and then we're going to chuck out everything
   // that has been used. This turns out to be easier than copying just
   // the unused options into an empty instance
@@ -656,7 +668,7 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
 
   if (unused.is_value) {
     // If this is from an excluded source, count it as being used
-    if (has_excluded_source(unused)) {
+    if (has_excluded_source(unused) or conditionally_used(unused)) {
       unused.value_used = true;
     }
     // We don't have a nice way to "clear" the value, so if it was
@@ -672,7 +684,8 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
     // Remove the child if it's been used or if it's from a source we
     // should count as having been used
     if (child->second.is_value
-        and (child->second.value_used or has_excluded_source(child->second))) {
+        and (child->second.value_used or has_excluded_source(child->second)
+             or conditionally_used(child->second))) {
       child = unused.children.erase(child);
       continue;
     }
@@ -712,6 +725,13 @@ void Options::printUnused() const {
   }
 
   output_info << _("Unused options:\n") << unused;
+}
+
+void Options::setConditionallyUsed() {
+  attributes[conditionally_used_attribute] = true;
+  for (auto& child : children) {
+    child.second.setConditionallyUsed();
+  }
 }
 
 void Options::cleanCache() { FieldFactory::get()->cleanCache(); }

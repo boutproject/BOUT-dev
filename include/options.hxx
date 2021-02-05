@@ -652,6 +652,12 @@ public:
   /// Print the options which haven't been used
   void printUnused() const;
 
+  /// Set the attribute "conditionally used" to be true for \p options
+  /// and all its children/sections, causing `Options::getUnused` to
+  /// assume those options have been used. This is useful to ignore
+  /// options when checking for typos etc.
+  void setConditionallyUsed();
+
   /// clean the cache of parsed options
   static void cleanCache();
   

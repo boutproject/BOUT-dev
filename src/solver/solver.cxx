@@ -562,14 +562,24 @@ now case-sensitive, and some have changed name. You can try running
     <BOUT++ directory>/bin/bout-v5-input-file-upgrader.py {}/{}
 
 to automatically fix the most common issues. If these options above
-are sometimes used depending on other options, or you're sure this is
+are sometimes used depending on other options, you can call
+`Options::setConditionallyUsed()`, for example:
+
+    Options::root()["{}"].setConditionallyUsed();
+
+to mark a section or value as depending on other values, and so ignore
+it in this check. Alternatively, if you're sure the above inputs are
 not a mistake, you can set 'input:error_on_unused_options=false' to
-turn off this check for unused options.
+turn off this check for unused options. You can always set
+'input:validate=true' to check inputs without running the full
+simulation.
+
 {})""");
 
       throw BoutException(unused_message, toString(unused),
                           globaloptions["datadir"].as<std::string>(),
-                          globaloptions["optionfile"].as<std::string>(), additional_info);
+                          globaloptions["optionfile"].as<std::string>(),
+                          unused.getChildren().begin()->first, additional_info);
     }
   }
 
