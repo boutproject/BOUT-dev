@@ -629,10 +629,6 @@ class Mesh {
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend, zstart, zend;
   
-  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
-  /// cell centred (default).
-  bool StaggerGrids{false};
-  
   /// Include integrated shear (if shifting X)
   bool IncIntShear{false};
 
@@ -939,11 +935,6 @@ class Mesh {
   // REGION RELATED ROUTINES
   ///////////////////////////////////////////////////////////
 
-  // The maxregionblocksize to use when creating the default regions.
-  // Can be set in the input file and the global default is set by,
-  // MAXREGIONBLOCKSIZE in include/bout/region.hxx
-  int maxregionblocksize;
-  
   /// Get the named region from the region_map for the data iterator
   ///
   /// Throws if region_name not found
@@ -1030,6 +1021,15 @@ protected:
   MpiWrapper* mpi = nullptr;
 
 public:
+  // The maxregionblocksize to use when creating the default regions.
+  // Can be set in the input file and the global default is set by,
+  // MAXREGIONBLOCKSIZE in include/bout/region.hxx
+  int maxregionblocksize;
+
+  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
+  /// cell centred (default).
+  bool StaggerGrids{false};
+
   // Switch for communication of corner guard and boundary cells
   const bool include_corner_cells;
 

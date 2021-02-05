@@ -19,10 +19,23 @@ REPLACEMENTS = [
     {"old": "mesh:paralleltransform", "new": "mesh:paralleltransform:type"},
     {"old": "fci", "new": "mesh:paralleltransform"},
     {"old": "interpolation", "new": "mesh:paralleltransform:xzinterpolation"},
-    {"old": "fft:fft_measure", "new": "fft:fft_measurement_flag",
-        "type": bool, "values": {False: "estimate", True: "measure"}}
+    {
+        "old": "fft:fft_measure",
+        "new": "fft:fft_measurement_flag",
+        "type": bool,
+        "values": {False: "estimate", True: "measure"},
+    },
     {"old": "TIMESTEP", "new": "timestep"},
     {"old": "NOUT", "new": "nout"},
+    # The following haven't been changed, but are frequently spelt with the wrong case
+    {"old": "mxg", "new": "MXG"},
+    {"old": "myg", "new": "MYG"},
+    {"old": "nxpe", "new": "NXPE"},
+    {"old": "nype", "new": "NYPE"},
+    {"old": "mesh:StaggerGrids", "new": "mesh:staggergrids"},
+    {"old": "zmin", "new": "ZMIN"},
+    {"old": "zmax", "new": "ZMAX"},
+    {"old": "zperiod", "new": "ZPERIOD"},
 ]
 
 for section, derivative in itertools.product(
