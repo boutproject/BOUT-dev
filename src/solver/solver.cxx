@@ -558,6 +558,23 @@ std::string Solver::createRunID() const {
   return result;
 }
 
+std::string Solver::getRunID() const {
+  AUTO_TRACE();
+  if (run_id == default_run_id) {
+    throw BoutException("run_id not set!");
+  }
+  return run_id;
+}
+
+std::string Solver::getRunRestartFrom() const {
+  AUTO_TRACE();
+  // Check against run_id, because this might not be a restarted run
+  if (run_id == default_run_id) {
+    throw BoutException("run_restart_from not set!");
+  }
+  return run_restart_from;
+}
+
 /**************************************************************************
  * Initialisation
  **************************************************************************/
