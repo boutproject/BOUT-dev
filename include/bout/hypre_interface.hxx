@@ -835,6 +835,15 @@ public:
 
     solve_err = checkHypreError(HYPRE_ParCSRGMRESSolve(solver, A->getParallel(), b->getParallel(), x->getParallel()));
 
+    if (solve_err) {
+      // Aaron Fisher warns that it is possible that the error code is non-zero even
+      // though the solve was successful. If this occurs, we might want to make this a
+      // warning, or otherwise investigate further.
+      char* error_cstr;
+      HYPRE_DescribeError(solve_err, error_cstr);
+      throw BoutException("Hypre solve failed with error code {:d}: {:s}",
+                          solve_err, error_cstr);
+    }
     return solve_err;
   }
 
