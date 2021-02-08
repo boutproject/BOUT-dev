@@ -113,6 +113,9 @@ struct CommandLineArgs {
   std::string log_file{"BOUT.log"};      ///< File name for the log file
   /// The original set of command line arguments
   std::vector<std::string> original_argv;
+  /// The "canonicalised" command line arguments, with single-letter
+  /// arguments expanded
+  std::vector<std::string> argv;
 };
 
 /// Parse the "fixed" command line arguments, like --help and -d

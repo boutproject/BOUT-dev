@@ -53,7 +53,7 @@
 BoutMesh::BoutMesh(GridDataSource *s, Options *opt) : Mesh(s, opt) {
   OPTION(options, symmetricGlobalX, true);
   if (!options->isSet("symmetricGlobalY")) {
-    std::string optionfile = Options::root()["optionfile"].withDefault("");
+    std::string optionfile = Options::root()["optionfile"].withDefault("BOUT.inp");
     output_warn << "WARNING: The default of this option has changed in release 4.1.\n\
 If you want the old setting, you have to specify mesh:symmetricGlobalY=false in "
                 << optionfile << "\n";

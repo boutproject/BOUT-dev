@@ -163,26 +163,19 @@ int BoutInitialise(int& argc, char**& argv) {
     printCompileTimeOptions();
     printCommandLineArguments(args.original_argv);
 
-    // Override options set from short option from the command-line
-    // FIXME: we could drop this and immediately reading them back out
-    // if we instead just rename the option from the command line and
-    // set OptionsReader::parseCommandLine deal with it. But then we
-    // need to pass a vector as it's not good to add new stuff to argv
-    Options::root()["datadir"].force(args.data_dir);
-    Options::root()["optionfile"].force(args.opt_file);
-    Options::root()["settingsfile"].force(args.set_file);
-
-    // Get the variables back out so they count as having been used
-    const auto datadir = Options::root()["datadir"].as<std::string>();
-    const auto optionfile = Options::root()["optionfile"].as<std::string>();
-    const auto settingsfile = Options::root()["settingsfile"].as<std::string>();
-
     // Load settings file
     OptionsReader* reader = OptionsReader::getInstance();
-    reader->read(Options::getRoot(), "{}/{}", datadir, optionfile);
+    reader->read(Options::getRoot(), "{}/{}", args.data_dir, args.opt_file);
 
     // Get options override from command-line
-    reader->parseCommandLine(Options::getRoot(), argc, argv);
+    reader->parseCommandLine(Options::getRoot(), args.argv);
+
+    // Get the variables back out so they count as having been used
+    // when checking for unused options. They normally _do_ get used,
+    // but it's possible that only happens in BoutFinalise, which is
+    // too late for that check.
+    const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
+    const auto settingsfile = Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
 
     setRunStartInfo(Options::root());
 
@@ -354,10 +347,13 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
   }
 
   CommandLineArgs args;
-
   args.original_argv.reserve(argc);
   std::copy(argv, argv + argc, std::back_inserter(args.original_argv));
+  args.argv = args.original_argv;
 
+  // Parse single-letter and non-Options arguments, expanding the
+  // single-letter arguments into their canonical names, and removing
+  // the non-Options arguments
   for (int i = 1; i < argc; i++) {
     if (string(argv[i]) == "-d") {
       // Set data directory
@@ -366,9 +362,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       }
 
       args.data_dir = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
+      args.argv[i - 1] = "datadir=";
 
     } else if (string(argv[i]) == "-f") {
       // Set options file
@@ -377,9 +371,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       }
 
       args.opt_file = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
+      args.argv[i - 1] = "optionfile=";
 
     } else if (string(argv[i]) == "-o") {
       // Set options file
@@ -388,39 +380,36 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       }
 
       args.set_file = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
+      args.argv[i - 1] = "settingsfile=";
 
     } else if ((string(argv[i]) == "-l") || (string(argv[i]) == "--log")) {
+      // Set log file
       if (i + 1 >= argc) {
         throw BoutException(_("Usage is {:s} -l <log filename>\n"), argv[0]);
       }
 
       args.log_file = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
+      args.argv[i - 1] = "logfile=";
 
     } else if ((string(argv[i]) == "-v") || (string(argv[i]) == "--verbose")) {
       args.verbosity++;
-
-      argv[i][0] = 0;
+      args.argv[i] = "";
 
     } else if ((string(argv[i]) == "-q") || (string(argv[i]) == "--quiet")) {
       args.verbosity--;
-
-      argv[i][0] = 0;
+      args.argv[i] = "";
 
     } else if ((string(argv[i]) == "-c") || (string(argv[i]) == "--color")) {
       // Add color to the output by piping through bout-log-color
       // This is done after checking all command-line inputs
       // in case -c is set multiple times
       args.color_output = true;
-
-      argv[i][0] = 0;
+      args.argv[i] = "";
     }
   }
+
+  // Remove empty values from canonicalised arguments
+  bout::utils::erase(args.argv, "");
 
   if (args.set_file == args.opt_file) {
     throw BoutException(
