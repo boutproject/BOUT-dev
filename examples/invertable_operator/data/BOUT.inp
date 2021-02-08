@@ -1,4 +1,4 @@
-NOUT=0
+NOUT = 0
 
 [mesh]
 nx = 20
@@ -15,7 +15,7 @@ outer_boundary_flags = 0
 
 [all]
 bndry_all = none
-function = 0.
+function = 0.0
 
 [n]
 scale = 1.0

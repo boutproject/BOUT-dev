@@ -1,4 +1,4 @@
-timestep = 2.
+timestep = 2.0
 nout = 5
 
 MZ = 1
@@ -8,19 +8,17 @@ MZ = 1
 nx = 12
 ny = 8
 
-dx = 1.
-dy = 1.
-
-[solver]
+dx = 1.0
+dy = 1.0
 
 [n]
 
-scale = 1.
+scale = 1.0
 function = gauss(x-0.5, 0.3) * gauss(y-0.5,0.3)
 
 [T]
-scale=1
-function=0
+scale = 1
+function = 0
 
 [Probes]
 file = "PROBES.dmp"

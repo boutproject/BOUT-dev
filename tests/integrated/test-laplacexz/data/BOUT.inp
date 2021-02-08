@@ -15,10 +15,9 @@ type = petscamg   # Use PETSc implementation
 
 ksptype = gmres   # Linear iterative method
 
-pctype  = lu   # Preconditioner. Direct "lu" or "ilu"; iterative "jacobi", "sor"
+pctype = lu   # Preconditioner. Direct "lu" or "ilu"; iterative "jacobi", "sor"
 
 # Set package to perform factorisation for direct solves
 # "petsc" built-in solver only serial
 # "superlu", "superlu_dist", "mumps", "cusparse"
 factor_package = superlu_dist
-

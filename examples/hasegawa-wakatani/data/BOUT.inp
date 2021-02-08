@@ -2,7 +2,7 @@
 # Hasegawa-Wakatani test case
 #
 
-timestep = 1.   # Output timestep
+timestep = 1.0   # Output timestep
 nout = 200      # Number of output steps
 
 myg = 0  # No need for Y communications
@@ -14,7 +14,7 @@ ny = 1
 nz = 256  # Periodic, so no guard cells in Z
 
 dx = 0.2
-dy = 1.
+dy = 1.0
 dz = 0.2
 
 [laplace]
@@ -29,15 +29,15 @@ timestep = 0.001
 
 alpha = 1.0    # Adiabaticity (~ conductivity)
 kappa = 0.5    # Density gradient drive
-Dvort = 1e-4   # Vorticity diffusion
-Dn    = 1e-4   # Density diffusion
+Dvort = 0.0001   # Vorticity diffusion
+Dn = 0.0001   # Density diffusion
 
 modified = true
 
 bracket = 2  # 0 = std, 1 = simple, 2 = arakawa
 
 [All]
-scale = 0.
+scale = 0.0
 
 bndry_all = dirichlet_o2
 
@@ -45,5 +45,3 @@ bndry_all = dirichlet_o2
 
 scale = 0.1  # Fluctuation amplitude
 function = mixmode(2*pi*x) * mixmode(z) # Fluctuation function
-
-
