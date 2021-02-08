@@ -11,7 +11,7 @@
 # settings used by the core code
 
 NOUT = 10         # number of time-steps
-TIMESTEP = 1e-2    # time between outputs
+TIMESTEP = 0.01    # time between outputs
 
 ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false   # use twist-shift condition?
@@ -30,7 +30,7 @@ dump_format = "nc" # Output format. nc = NetCDF
 
 [mesh:ddx]
 
-first = C2  
+first = C2
 second = C2
 upwind = U1
 
@@ -51,8 +51,8 @@ upwind = U1
 
 [solver]
 
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+ATOL = 1e-10 # absolute tolerance
+RTOL = 1e-05  # relative tolerance
 
 ##################################################
 # settings for 2fluid
@@ -61,11 +61,11 @@ RTOL = 1.0e-5  # relative tolerance
 
 AA = 2.0
 ZZ = 1.0
- 
+
 estatic = true   # if true, electrostatic (Apar = 0)
 ZeroElMass = false # Use Ohms law without electron inertia
 Zeff = 2.0        # Z effective
-nu_perp = 1.0e-20
+nu_perp = 1e-20
 
 ShearFactor = 0.0
 
@@ -92,4 +92,4 @@ function = gauss(x) * gauss(y)
 bndry_all = neumann # Zero-gradient on all boundaries
 
 [V]
-scale = 1.0e0 # initial perturbation for V
+scale = 1.0 # initial perturbation for V

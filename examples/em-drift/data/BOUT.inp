@@ -4,7 +4,7 @@
 # settings used by the core code
 
 NOUT = 30       # number of time-steps
-TIMESTEP = 1e1   # time between outputs
+TIMESTEP = 10.0   # time between outputs
 
 TwistShift = false  # use twist-shift condition?
 
@@ -17,7 +17,7 @@ MYG = 2
 
 grid = "uedge.grd_beta.nc"
 
-output_format="nc"
+output_format = "nc"
 
 ##################################################
 # derivative methods
@@ -46,8 +46,8 @@ upwind = W3
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-12 # absolute tolerance
-RTOL = 1.0e-7  # relative tolerance
+ATOL = 1e-12 # absolute tolerance
+RTOL = 1e-07  # relative tolerance
 
 ##################################################
 # settings for 2fluid
@@ -61,11 +61,11 @@ estatic = false   # if true, electrostatic (Apar = 0)
 ZeroElMass = true # Use Ohms law without electron inertia
 AparInEpar = false
 Zeff = 128.0        # Z effective
-nu_perp = 1.0e-20
+nu_perp = 1e-20
 
 ShearFactor = 0.0
 
-nu_factor = 5.18718e-4
+nu_factor = 0.000518718
 #nu_factor = 1e-3
 
 [phiSolver]
@@ -88,7 +88,7 @@ scale = 0.0 # default size of initial perturbations
 bndry_all = neumann # Zero gradient
 
 [Ni]
-scale = 1.0e-8 # only perturbing Ni
+scale = 1e-08 # only perturbing Ni
 
 function = sin(y) * sin(z)
 

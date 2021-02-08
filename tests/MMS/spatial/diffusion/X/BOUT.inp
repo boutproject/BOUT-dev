@@ -7,7 +7,7 @@ timestep = 10 #Time between outputs
 # Number of points in z
 MZ = 1
 zmin = 0.0
-zmax = 0.15915494309189533577# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*pi*1.59 = 1
+zmax = 0.15915494309189535# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*pi*1.59 = 1
 
 #number of guard cells
 MYG = 0
@@ -16,8 +16,8 @@ MXG = 1
 [output]
 floats = false #false -> output in doubles
 
-[mesh]  
-ixseps1 = -1     
+[mesh]
+ixseps1 = -1
 ixseps2 = -1             # Set x location of separatrix 2
 
 #nx = internals gridpoints + guardcells
@@ -26,13 +26,13 @@ nx = 4
 #ny = internal gridpoints
 ny = 1
 
-Lx = 1. 
-Ly = 1.
+Lx = 1.0
+Ly = 1.0
 
-dump_format="nc"     # Write NetCDF format files
+dump_format = "nc"     # Write NetCDF format files
 
 #grid points are distributed symmetrically
-symmetricGlobalX = true 
+symmetricGlobalX = true
 
 ##################################################
 [mesh:ddx]   # Methods used for perp (x) derivative terms
@@ -57,15 +57,15 @@ upwind = W3
 flux = SPLIT
 
 
-[solver] 
+[solver]
 
 type = pvode
 
 mms = true
 mms_initialise = false
 
-atol = 1.0e-15 # absolute tolerance
-rtol = 1.0e-8  # relative tolerance
+atol = 1e-15 # absolute tolerance
+rtol = 1e-08  # relative tolerance
 mxstep = 100000000
 
 [cyto]
@@ -74,7 +74,7 @@ Dy = -1 # No Y conduction
 Dz = -1 # No Z conduction
 
 [all]
-scale = 1.0 
+scale = 1.0
 
 [n]
 scale = 0.0
@@ -82,13 +82,10 @@ function = 0  # Initial condition
 
 solution = 0.9*x + 0.2*sin(5.0*x^2) + 0.9
 
-ddx     = 2.0*x*cos(5.0*x^2) + 0.9
+ddx = 2.0*x*cos(5.0*x^2) + 0.9
 
-ddy     = 0
+ddy = 0
 
-source   = 20.0*x^2*sin(5.0*x^2) - 2.0*cos(5.0*x^2)
+source = 20.0*x^2*sin(5.0*x^2) - 2.0*cos(5.0*x^2)
 
 bndry_all = dirichlet_o4(N:solution)
-
-################################
-

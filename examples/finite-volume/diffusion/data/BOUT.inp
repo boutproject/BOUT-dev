@@ -2,7 +2,7 @@
 NOUT = 10
 timestep = 1
 
-MXG=0
+MXG = 0
 
 [mesh]
 
@@ -18,5 +18,3 @@ k = 1 + 0.1*sin(y) # Diffusivity
 [f]
 
 function = cos(y)
-
-

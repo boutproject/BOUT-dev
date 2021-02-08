@@ -23,11 +23,9 @@ ne0 = 1 + 0.1*(0.5 - x)
 [drift]
 nu = 0.1
 
-[solver]
-
 
 [vort]
-scale = 1e-3
+scale = 0.001
 function = sin(y-z)
 
 [ne]
