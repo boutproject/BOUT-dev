@@ -27,10 +27,8 @@ REPLACEMENTS = [
     },
     {"old": "TIMESTEP", "new": "timestep"},
     {"old": "NOUT", "new": "nout"},
-    {
-        "old": "All:bndry_all",
-        "new": "all:bndry_all",
-    },  # This was inconsistent in the library
+    # This was inconsistent in the library
+    {"old": "All", "new": "all"},
     # The following haven't been changed, but are frequently spelt with the wrong case
     {"old": "mxg", "new": "MXG"},
     {"old": "myg", "new": "MYG"},
