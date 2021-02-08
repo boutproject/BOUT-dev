@@ -760,4 +760,22 @@ TEST(StdLibBackPorts, EraseIf) {
 
   EXPECT_EQ(data, expected);
 }
+
+TEST(StdLibBackPorts, EraseVector) {
+  std::vector<int> data{1, 2, 3, 3, 3, 3, 4, 5, 6};
+  bout::utils::erase(data, 3);
+  std::vector<int> expected{1, 2, 4, 5, 6};
+  EXPECT_EQ(data, expected);
+}
+
+TEST(StdLibBackPorts, EraseIfVector) {
+  std::vector<int> data{3, 3, 4, 5, 5, 6, 6, 7, 2, 1, 0};
+  auto divisible_by_3 = [](auto const& x) { return (x % 3) == 0; };
+
+  bout::utils::erase_if(data, divisible_by_3);
+
+  std::vector<int> expected{4, 5, 5, 7, 2, 1};
+
+  EXPECT_EQ(data, expected);
+}
 #endif

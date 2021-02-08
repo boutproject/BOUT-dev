@@ -127,6 +127,7 @@ struct function_traits<R (*)(Args...)> {
 /// Erases all elements from \p c that satisfy the predicate \p pred
 /// from the container. Implementation of C++20's std::erase_if, taken
 /// from https://en.cppreference.com/w/cpp/container/multiset/erase_if
+/// CC-BY-SA
 template <class Key, class Compare, class Alloc, class Pred>
 typename std::multiset<Key, Compare, Alloc>::size_type
 erase_if(std::multiset<Key, Compare, Alloc>& c, Pred pred) {
@@ -139,6 +140,32 @@ erase_if(std::multiset<Key, Compare, Alloc>& c, Pred pred) {
     }
   }
   return old_size - c.size();
+}
+
+
+/// Erases all elements from \p c that compare equal to \p value
+/// from the container. Implementation of C++20's std::erase_if, taken
+/// from https://en.cppreference.com/w/cpp/container/multiset/erase_if
+/// CC-BY-SA
+template <class T, class Alloc, class U>
+typename std::vector<T, Alloc>::size_type erase(std::vector<T, Alloc>& c,
+                                                const U& value) {
+  auto it = std::remove(c.begin(), c.end(), value);
+  auto r = std::distance(it, c.end());
+  c.erase(it, c.end());
+  return r;
+}
+
+/// Erases all elements from \p c that satisfy the predicate \p pred
+/// from the container. Implementation of C++20's std::erase_if, taken
+/// from https://en.cppreference.com/w/cpp/container/multiset/erase_if
+/// CC-BY-SA
+template <class T, class Alloc, class Pred>
+typename std::vector<T, Alloc>::size_type erase_if(std::vector<T, Alloc>& c, Pred pred) {
+  auto it = std::remove_if(c.begin(), c.end(), pred);
+  auto r = std::distance(it, c.end());
+  c.erase(it, c.end());
+  return r;
 }
 #else
 using std::erase_if;
