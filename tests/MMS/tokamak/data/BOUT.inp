@@ -1,5 +1,5 @@
-NOUT = 1
-TIMESTEP = 0.1
+nout = 1
+timestep = 0.1
 
 MZ = 16
 

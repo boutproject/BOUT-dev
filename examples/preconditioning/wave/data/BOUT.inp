@@ -7,7 +7,7 @@
 #
 #
 
-NOUT = 10
+nout = 10
 
 timestep = 10
 
@@ -33,7 +33,7 @@ rightprec = false     # Use Right preconditioner (default left)
 diagnose = true       # Print additional diagnostics
 start_timestep = 10
 
-[All]
+[all]
 # Boundary options
 # 0 - constant
 # 1 - Gaussian

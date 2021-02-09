@@ -4,8 +4,8 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 40          # number of time-steps
-TIMESTEP = 1       # time between outputs
+nout = 40          # number of time-steps
+timestep = 1       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 1.55  # wall time limit (in hours)
 
@@ -19,7 +19,7 @@ restart_format = "nc"   # Restart file format
 
 [mesh]
 
-StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
+staggergrids = false    # Use staggered grids (EXPERIMENTAL)
 
 [mesh:paralleltransform]
 
@@ -68,7 +68,7 @@ group_nonblock = false  # Use non-blocking group operations?
 
 [fft]
 
-fft_measure = true  # If using FFTW, perform tests to determine fastest method
+fft_measurement_flag = measure  # If using FFTW, perform tests to determine fastest method
 
 ##################################################
 # Solver settings
@@ -240,7 +240,7 @@ outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # boundary conditions

@@ -3,8 +3,8 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 30       # number of time-steps
-TIMESTEP = 10.0   # time between outputs
+nout = 30       # number of time-steps
+timestep = 10.0   # time between outputs
 
 TwistShift = false  # use twist-shift condition?
 
@@ -82,7 +82,7 @@ outer_boundary_flags = 0
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 bndry_all = neumann # Zero gradient

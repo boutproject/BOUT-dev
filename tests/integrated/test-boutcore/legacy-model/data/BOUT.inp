@@ -1,8 +1,8 @@
 nout = 10
 timestep = 0.1
 
-mxg = 2
-myg = 2
+MXG = 2
+MYG = 2
 
 [mesh]
 staggerGrids = True

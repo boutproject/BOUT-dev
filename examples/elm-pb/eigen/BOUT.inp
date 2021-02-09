@@ -4,8 +4,8 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 1          # number of time-steps
-TIMESTEP = 0.1       # time between outputs
+nout = 1          # number of time-steps
+timestep = 0.1       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
@@ -44,7 +44,7 @@ group_nonblock = false  # Use non-blocking group operations?
 
 [fft]
 
-fft_measure = true  # If using FFTW, perform tests to determine fastest method
+fft_measurement_flag = measure  # If using FFTW, perform tests to determine fastest method
 
 ##################################################
 # derivative methods
@@ -249,7 +249,7 @@ apar_flags = 769
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = gauss(x - 0.5, 0.1) * gauss(y - pi, 0.3*pi) * sin(z)
 

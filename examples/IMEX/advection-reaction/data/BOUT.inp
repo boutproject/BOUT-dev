@@ -3,8 +3,8 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 100     # number of time-steps
-TIMESTEP = 0.01   # time between outputs
+nout = 100     # number of time-steps
+timestep = 0.01   # time between outputs
 
 MZ = 64     # number of points in z direction (2^n)
 
@@ -74,7 +74,7 @@ rate = 0.0  # Reaction rate
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = sin(2*pi*x) * sin(z)
 # boundary conditions

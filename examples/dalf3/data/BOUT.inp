@@ -3,8 +3,8 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 100          # number of time-steps
-TIMESTEP = 10.0       # time between outputs
+nout = 100          # number of time-steps
+timestep = 10.0       # time between outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true   # use twist-shift condition?
@@ -24,7 +24,7 @@ restart_format = "nc"   # Restart file format
 
 [mesh]
 
-StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
+staggergrids = false    # Use staggered grids (EXPERIMENTAL)
 
 ##################################################
 # derivative methods
@@ -107,7 +107,7 @@ outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 
 split_n0 = true # Split into n=0 and n != 0
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = gauss(x - 0.5, 0.1) * gauss(y - pi, 0.3*pi) * sin(z)
 

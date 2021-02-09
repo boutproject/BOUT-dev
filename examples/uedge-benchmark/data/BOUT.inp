@@ -3,8 +3,8 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 400       # number of time-steps
-TIMESTEP = 1000.0   # time between outputs
+nout = 400       # number of time-steps
+timestep = 1000.0   # time between outputs
 
 ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false  # use twist-shift condition?
@@ -79,7 +79,7 @@ chi_perp = 0.6
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = gauss(x - 0.5, 0.5) * sin(y) * mixmode(z)
 

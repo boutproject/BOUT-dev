@@ -3,8 +3,8 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 400       # number of time-steps
-TIMESTEP = 2	 # time between outputs
+nout = 400       # number of time-steps
+timestep = 2	 # time between outputs
 
 MZ = 32     # number of points in z direction (2^n + 1)
 ZPERIOD = 5  # Number of periods
@@ -14,7 +14,7 @@ non_uniform = true
 [mesh]
 # Simple mesh for linear device
 
-StaggerGrids = true  # Enable staggered grids
+staggergrids = true  # Enable staggered grids
 
 nx = 54        # Number of radial grid points, including guards
 ny = 32        # Number of parallel (Y) grid points
@@ -129,7 +129,7 @@ filter_z_mode = 1  # Keep this Z harmonic
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = mixmode(x)*mixmode(y)*mixmode(z)
 

@@ -5,7 +5,7 @@
 timestep = 1.0   # Output timestep
 nout = 200      # Number of output steps
 
-myg = 0  # No need for Y communications
+MYG = 0  # No need for Y communications
 
 [mesh]
 
@@ -36,7 +36,7 @@ modified = true
 
 bracket = 2  # 0 = std, 1 = simple, 2 = arakawa
 
-[All]
+[all]
 scale = 0.0
 
 bndry_all = dirichlet_o2

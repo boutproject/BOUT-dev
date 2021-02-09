@@ -2,11 +2,11 @@ timestep = 1.0
 nout = 10
 
 MZ = 32
-zmin = 0
-zmax = 8
+ZMIN = 0
+ZMAX = 8
 
-mxg = 2
-myg = 1  # No need for Y communications
+MXG = 2
+MYG = 1  # No need for Y communications
 
 [mesh]
 
@@ -24,7 +24,7 @@ timestep = 0.001
 
 D = 0.1
 
-[All]
+[all]
 scale = 0.0
 
 bndry_all = dirichlet

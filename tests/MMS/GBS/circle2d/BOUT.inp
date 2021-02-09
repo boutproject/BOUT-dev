@@ -7,8 +7,8 @@
 
 # settings used by the core code
 
-NOUT = 100    # number of time-steps
-TIMESTEP = 100 # time between outputs
+nout = 100    # number of time-steps
+timestep = 100 # time between outputs
 MXG = 2
 MYG = 0      # No y derivatives, so no guard cells needed in y
 
@@ -85,7 +85,7 @@ AA = 2     # Ion atomic mass
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 bndry_all = neumann # Zero-gradient on all boundaries

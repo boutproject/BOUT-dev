@@ -6,8 +6,8 @@ timestep = 1 #Time between outputs
 
 # Number of points in z
 MZ = 1
-zmin = 0.0
-zmax = 1.0
+ZMIN = 0.0
+ZMAX = 1.0
 
 #number of guard cells
 MYG = 1

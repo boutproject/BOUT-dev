@@ -16,7 +16,7 @@ floats = false #false -> output in doubles
 
 [mesh]
 
-StaggerGrids = true
+staggergrids = true
 
 ixseps1 = -1
 ixseps2 = -1             # Set x location of separatrix 2

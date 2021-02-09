@@ -32,8 +32,8 @@
 
 # settings used by the core code
 
-NOUT = 100          # number of time-steps
-TIMESTEP = 1.0     # time between outputs, normalised to 1/Omega_ci
+nout = 100          # number of time-steps
+timestep = 1.0     # time between outputs, normalised to 1/Omega_ci
 
 ZPERIOD = 1
 
@@ -138,7 +138,7 @@ AA = 40    # Ion atomic mass
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 bndry_all = neumann # Zero-gradient on all boundaries

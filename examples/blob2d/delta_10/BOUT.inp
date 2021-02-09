@@ -9,8 +9,8 @@
 
 # settings used by the core code
 
-NOUT = 100      # number of time-steps
-TIMESTEP = 100.0  # time between outputs [1/wci]
+nout = 100      # number of time-steps
+timestep = 100.0  # time between outputs [1/wci]
 
 
 MXG = 2      # Number of X guard cells
@@ -105,7 +105,7 @@ R_c = 1.5  # Radius of curvature (m)
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 bndry_all = neumann # Zero-gradient on all boundaries

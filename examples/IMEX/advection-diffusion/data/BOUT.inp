@@ -3,12 +3,12 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 50     # number of time-steps
-TIMESTEP = 0.01  # time between outputs
+nout = 50     # number of time-steps
+timestep = 0.01  # time between outputs
 
 periodicX = true   # Make domain periodic in X
 
-myg = 0
+MYG = 0
 
 [mesh]
 

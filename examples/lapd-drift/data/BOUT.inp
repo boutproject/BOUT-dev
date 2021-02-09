@@ -3,8 +3,8 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 400       # number of time-steps
-TIMESTEP = 2.0	   # time between outputs
+nout = 400       # number of time-steps
+timestep = 2.0	   # time between outputs
 
 archive = 500
 
@@ -24,7 +24,7 @@ grid = "uedge.grd.nc"
 dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 
 [mesh]
-StaggerGrids = true
+staggergrids = true
 
 ##################################################
 # derivative methods
@@ -119,7 +119,7 @@ apar_flags = 0 # flags for apar inversion
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # Form of initial perturbation

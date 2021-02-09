@@ -5,8 +5,8 @@
 
 # settings used by the core code
 
-NOUT = 50    # number of time-steps
-TIMESTEP = 100.0  # time between outputs
+nout = 50    # number of time-steps
+timestep = 100.0  # time between outputs
 
 MXG = 2
 MYG = 0      # No y derivatives, so no guard cells needed in y
@@ -94,7 +94,7 @@ R_c = 1.5  # Radius of curvature (m)
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 bndry_all = neumann # Zero-gradient on all boundaries

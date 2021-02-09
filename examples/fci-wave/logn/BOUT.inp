@@ -6,8 +6,8 @@ timestep = 0.1
 
 grid = "tokamak.fci.nc"
 
-myg = 1
-nxpe = 1
+MYG = 1
+NXPE = 1
 
 [mesh:paralleltransform]
 

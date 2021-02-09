@@ -1,8 +1,8 @@
 nout = 10
 timestep = 0.1
 
-mxg = 1
-myg = 0
+MXG = 1
+MYG = 0
 
 [mesh]
 n = 5

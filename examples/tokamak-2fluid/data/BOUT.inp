@@ -5,8 +5,8 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 200     # number of time-steps
-TIMESTEP = 10.0   # time between outputs
+nout = 200     # number of time-steps
+timestep = 10.0   # time between outputs
 
 TwistShift = false  # use twist-shift condition?
 
@@ -24,7 +24,7 @@ grid = "data/uedge.grd.nc"
 dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
 
 [mesh]
-StaggerGrids = true
+staggergrids = true
 
 ##################################################
 # derivative methods
@@ -110,7 +110,7 @@ outer_boundary_flags = 0
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = gauss(y, 0.1) * sin(z)
 

@@ -10,8 +10,8 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 50        # number of time-steps
-TIMESTEP = 100.0   # time between outputs
+nout = 50        # number of time-steps
+timestep = 100.0   # time between outputs
 
 ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false   # use twist-shift condition?
@@ -88,7 +88,7 @@ ShearFactor = 0.0
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 
 # boundary conditions (see boundary.h for values)
 # 0 = none applied

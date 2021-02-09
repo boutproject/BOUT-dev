@@ -6,9 +6,9 @@ restart = false
 #nxpe = 4
 
 MZ = 256                 # Number of Z points
-zmin = 0
-zmax = 15.91549431       # 15.915*2pi = 100.  z is in fractions of 2pi
-myg = 0                  # No need for Y communications
+ZMIN = 0
+ZMAX = 15.91549431       # 15.915*2pi = 100.  z is in fractions of 2pi
+MYG = 0                  # No need for Y communications
 
 [ddz]
 first = c2               # c2 (default), c4, w2, w3
@@ -52,7 +52,7 @@ bracket = 2              # 0 = std, 1 = simple, 2 = arakawa
 #F_wid = 10000
 
 
-[All]
+[all]
 scale = 0.0
 function = mixmode(x) * mixmode(z)
 

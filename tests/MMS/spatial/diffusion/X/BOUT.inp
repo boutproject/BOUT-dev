@@ -6,8 +6,8 @@ timestep = 10 #Time between outputs
 
 # Number of points in z
 MZ = 1
-zmin = 0.0
-zmax = 0.15915494309189535# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*pi*1.59 = 1
+ZMIN = 0.0
+ZMAX = 0.15915494309189535# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*pi*1.59 = 1
 
 #number of guard cells
 MYG = 0

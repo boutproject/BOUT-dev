@@ -5,8 +5,8 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 200     # number of time-steps
-TIMESTEP = 1.0   # time between outputs
+nout = 200     # number of time-steps
+timestep = 1.0   # time between outputs
 
 TwistShift = true  # use twist-shift condition?
 
@@ -115,7 +115,7 @@ apar_flags = 0 # flags for apar inversion
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # boundary conditions
