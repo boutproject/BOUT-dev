@@ -150,8 +150,7 @@ def fix_replacements(replacements, options_file):
 
 
 def apply_fixes(replacements, options_file):
-    """Apply all fixes in this module
-    """
+    """Apply all fixes in this module"""
 
     modified = copy.deepcopy(options_file)
 
@@ -161,9 +160,7 @@ def apply_fixes(replacements, options_file):
 
 
 def yes_or_no(question):
-    """Convert user input from yes/no variations to True/False
-
-    """
+    """Convert user input from yes/no variations to True/False"""
     while True:
         reply = input(question + " [y/N] ").lower().strip()
         if not reply or reply[0] == "n":
@@ -173,8 +170,7 @@ def yes_or_no(question):
 
 
 def create_patch(filename, original, modified):
-    """Create a unified diff between original and modified
-    """
+    """Create a unified diff between original and modified"""
 
     patch = "\n".join(
         difflib.unified_diff(
