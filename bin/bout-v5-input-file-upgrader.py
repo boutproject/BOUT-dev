@@ -24,9 +24,11 @@ def case_sensitive_init(self, name="root", parent=None):
 # Monky-patch BoutOptions to make sure it's case sensitive
 BoutOptions.__init__ = case_sensitive_init
 
+
+# This should be a list of dicts, each containing "old", "new" and optionally "new_values".
 # The values of "old"/"new" keys should be the old/new names of input file values or
-# sections. The value of "values" is a dict containing replacements for values of the
-# option. "type" optionally specifies the type of the old value of the option; for
+# sections. The value of "new_values" is a dict containing replacements for values of the
+# option. "old_type" optionally specifies the type of the old value of the option; for
 # example this is needed for special handling of boolean values.
 REPLACEMENTS = [
     {"old": "mesh:paralleltransform", "new": "mesh:paralleltransform:type"},
@@ -35,8 +37,8 @@ REPLACEMENTS = [
     {
         "old": "fft:fft_measure",
         "new": "fft:fft_measurement_flag",
-        "type": bool,
-        "values": {False: "estimate", True: "measure"},
+        "old_type": bool,
+        "new_values": {False: "estimate", True: "measure"},
     },
     {"old": "TIMESTEP", "new": "timestep"},
     {"old": "NOUT", "new": "nout"},
@@ -97,21 +99,23 @@ def fix_replacements(replacements, options_file):
                 "\n\t{1}".format(options_file.filename, e.args[0], **replacement)
             ) from e
         else:
-            if "type" in replacement:
+            if "old_type" in replacement:
                 # Special handling for certain types, replicating what BOUT++ does
-                if replacement["type"] is bool:
+                if replacement["old_type"] is bool:
                     # The original value must be something that BOUT++ recognises as a
                     # bool.
-                    # replacement["values"] must contain both True and False keys.
+                    # replacement["new_values"] must contain both True and False keys.
                     old_value = parse_bool(options_file[replacement["new"]])
-                    options_file[replacement["new"]] = replacement["values"][old_value]
+                    options_file[replacement["new"]] = replacement["new_values"][
+                        old_value
+                    ]
                 else:
                     raise ValueError(
                         f"Error in REPLACEMENTS: type {replacement['type']} is not handled"
                     )
             else:
                 # Option values are just a string
-                if "values" in replacement:
+                if "new_values" in replacement:
                     old_value = options_file[replacement["new"]]
                     try:
                         old_value = old_value.lower()
@@ -120,7 +124,7 @@ def fix_replacements(replacements, options_file):
                         pass
 
                     try:
-                        options_file[replacement["new"]] = replacement["values"][
+                        options_file[replacement["new"]] = replacement["new_values"][
                             old_value
                         ]
                     except KeyError:
