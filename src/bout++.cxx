@@ -763,15 +763,28 @@ int BoutFinalise(bool write_settings) {
  * Called each timestep by the solver
  **************************************************************************/
 
+BoutMonitor::BoutMonitor(BoutReal timestep) : BoutMonitor(timestep, Options::root()) {}
+
+BoutMonitor::BoutMonitor(BoutReal timestep, Options& options)
+    : Monitor(timestep),
+      wall_limit(options["wall_limit"]
+                     .doc(_("Wall time limit in hours. By default (< 0), no limit"))
+                     .withDefault(-1.0)
+                 * 60. * 60.),
+      stop_check(options["stopCheck"]
+                     .doc(_("Check if a file exists, and exit if it does."))
+                     .withDefault(false)),
+      stop_check_name(
+          fmt::format("{}/{}", Options::root()["datadir"].withDefault(DEFAULT_DIR),
+                      options["stopCheckName"]
+                          .doc(_("Name of file whose existence triggers a stop"))
+                          .withDefault("BOUT.stop"))) {
+  // Add wall clock time etc to dump file
+  run_data.outputVars(bout::globals::dump);
+}
+
 int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
-
-  // Data used for timing
-  static bool first_time = true;
-  static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
-
-  static bool stopCheck;            // Check for file, exit if exists?
-  static std::string stopCheckName; // File checked, whose existence triggers a stop
 
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
@@ -784,7 +797,7 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   run_data.ncalls_e = solver->resetRHSCounter_e();
   run_data.ncalls_i = solver->resetRHSCounter_i();
 
-  bool output_split = solver->splitOperator();
+  const bool output_split = solver->splitOperator();
   run_data.wtime_rhs = Timer::resetTime("rhs");
   run_data.wtime_invert = Timer::resetTime("invert");
   // Time spent communicating (part of RHS)
@@ -796,34 +809,16 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
 
   output_progress.print("\r"); // Only goes to screen
 
+  // First time the monitor has been called
+  static bool first_time = true;
   if (first_time) {
-    /// First time the monitor has been called
 
-    /// Get some options
-    auto& options = Options::root();
-    wall_limit = options["wall_limit"]
-                     .doc(_("Wall time limit in hours. By default (< 0), no limit"))
-                     .withDefault(-1.0);
-    wall_limit *= 60.0 * 60.0; // Convert from hours to seconds
-
-    stopCheck = options["stopCheck"]
-                    .doc(_("Check if a file exists, and exit if it does."))
-                    .withDefault(false);
-    if (stopCheck) {
-      stopCheckName = options["stopCheckName"]
-                          .doc(_("Name of file whose existence triggers a stop"))
-                          .withDefault("BOUT.stop");
-      // Now add data directory to start of name to ensure we look in a run specific location
-      std::string data_dir = Options::root()["datadir"].withDefault(DEFAULT_DIR);
-      stopCheckName = data_dir + "/" + stopCheckName;
-    }
-
-    /// Record the starting time
+    // Record the starting time
     mpi_start_time = bout::globals::mpi->MPI_Wtime() - run_data.wtime;
 
     first_time = false;
 
-    /// Print the column header for timing info
+    // Print the column header for timing info
     if (!output_split) {
       output_progress.write(_("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm "
                               "   I/O   SOLVER\n\n"));
@@ -863,10 +858,10 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   }
 
   // Check if the user has created the stop file and if so trigger an exit
-  if (stopCheck) {
-    std::ifstream f(stopCheckName);
+  if (stop_check) {
+    std::ifstream f(stop_check_name);
     if (f.good()) {
-      output << "\nFile " << stopCheckName << " exists -- triggering exit." << endl;
+      output.write("\nFiles {} exists -- triggering exit\n", stop_check_name);
       user_requested_exit = true;
     }
   }

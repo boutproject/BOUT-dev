@@ -176,14 +176,20 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
  */
 class BoutMonitor : public Monitor {
 public:
-  BoutMonitor(BoutReal timestep = -1) : Monitor(timestep) {
-    // Add wall clock time etc to dump file
-    run_data.outputVars(bout::globals::dump);
-  }
+  BoutMonitor(BoutReal timestep = -1);
+  BoutMonitor(BoutReal timestep, Options& options);
 
 private:
   int call(Solver* solver, BoutReal t, int iter, int NOUT) override;
   RunMetrics run_data;
+  /// Wall time limit in seconds
+  BoutReal wall_limit;
+  /// Starting time
+  BoutReal mpi_start_time;
+  /// Stop if file `stop_check_name` exists
+  bool stop_check;
+  /// Filename for `stop_check`
+  std::string stop_check_name;
 };
 
 /*!
