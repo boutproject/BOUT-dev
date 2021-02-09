@@ -465,9 +465,9 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
   /// Run the solver
   output_info.write(_("Running simulation\n\n"));
-  output_info.write("Run ID: {:s}\n", run_id);
+  output_info.write("Run ID: %s\n", run_id.c_str());
   if (run_restart_from != default_run_id) {
-    output_info.write("Restarting from ID: {:s}\n", run_restart_from);
+    output_info.write("Restarting from ID: %s\n", run_restart_from.c_str());
   }
 
   time_t start_time = time(nullptr);
