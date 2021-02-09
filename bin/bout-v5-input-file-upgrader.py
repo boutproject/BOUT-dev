@@ -49,11 +49,15 @@ REPLACEMENTS = [
     {"old": "myg", "new": "MYG"},
     {"old": "nxpe", "new": "NXPE"},
     {"old": "nype", "new": "NYPE"},
+    {"old": "mesh:NX", "new": "mesh:nx"},
+    {"old": "mesh:NY", "new": "mesh:ny"},
+    {"old": "mesh:shiftangle", "new": "mesh:ShiftAngle"},
+    {"old": "mesh:shiftAngle", "new": "mesh:ShiftAngle"},
     {"old": "mesh:StaggerGrids", "new": "mesh:staggergrids"},
     {"old": "TwistShift", "new": "twistshift"},
     {"old": "zmin", "new": "ZMIN"},
     {"old": "zmax", "new": "ZMAX"},
-    {"old": "zperiod", "new": "ZPERIOD"},
+    {"old": "ZPERIOD", "new": "zperiod"},
 ]
 
 for section, derivative in itertools.product(
