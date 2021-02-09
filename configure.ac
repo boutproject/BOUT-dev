@@ -62,6 +62,8 @@ AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
         [Enable support for scorep based instrumentation])],,[with_scorep=no])
 AC_ARG_WITH(system_mpark, [AS_HELP_STRING([--with-system-mpark],
         [Use mpark.variant already installed rather then the bundled one])],,[with_system_mpark=auto])
+AC_ARG_WITH(system_uuid,  [AS_HELP_STRING([--with-system-uuid],
+        [Use libuuid to generate UUIDs])],,[with_system_uuid=auto])
 
 AC_ARG_ENABLE(warnings,     [AS_HELP_STRING([--disable-warnings],
         [Disable compiler warnings])],,[])
@@ -1112,6 +1114,26 @@ AS_IF([test "$SYSTEM_HAS_MPARK" = "yes"], [
   MPARK_INCLUDE="-I$MPARK_VARIANT_INCLUDE_PATH"
   OWN_MPARK=yes
 ])
+
+#############################################################
+# Check for libuuid
+#############################################################
+
+AS_IF([test ".$with_system_uuid" = "no"], [
+  BOUT_HAS_UUID_SYSTEM_GENERATOR=no
+], [
+  BOUT_ADDPATH_CHECK_HEADER(uuid/uuid.h,
+   BOUT_ADDPATH_CHECK_LIB(uuid, uuid_generate,
+       BOUT_HAS_UUID_SYSTEM_GENERATOR=yes,
+       BOUT_HAS_UUID_SYSTEM_GENERATOR=no,
+       [$with_system_uuid]),
+   BOUT_HAS_UUID_SYSTEM_GENERATOR=no,
+   [$with_system_uuid])
+  AS_IF([test "$with_system_uuid" = "yes"], [
+   AC_MSG_FAILURE([*** System UUID generator not found, but explicitly requested])
+  ])
+])
+
 #############################################################
 # Download + Build PVODE '98
 #############################################################
@@ -1323,6 +1345,7 @@ BOUT_DEFINE_SUBST(BOUT_HAS_PVODE, [PVODE support])
 BOUT_DEFINE_SUBST(BOUT_HAS_SCOREP, [Score-P support])
 BOUT_DEFINE_SUBST(BOUT_HAS_SLEPC, [SLEPc support])
 BOUT_DEFINE_SUBST(BOUT_HAS_SUNDIALS, [SUNDIALS support])
+BOUT_DEFINE_SUBST(BOUT_HAS_UUID_SYSTEM_GENERATOR, [Use libuuid for UUID generation])
 BOUT_DEFINE_SUBST(BOUT_USE_BACKTRACE, [Enable backtrace in exceptions])
 BOUT_DEFINE_SUBST(BOUT_USE_COLOR, [Enable color logs option])
 BOUT_DEFINE_SUBST(BOUT_USE_OUTPUT_DEBUG, [Enabled extra debug output])
@@ -1369,6 +1392,7 @@ AC_MSG_NOTICE([  Lapack support          : $BOUT_HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $BOUT_HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $BOUT_USE_OPENMP (schedule: $OPENMP_SCHEDULE)])
 AC_MSG_NOTICE([  Natural language support: $BOUT_HAS_GETTEXT (path: $localedir)])
+AC_MSG_NOTICE([  System UUID generator   : $BOUT_HAS_UUID_SYSTEM_GENERATOR])
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([  Enable backtrace        : $BOUT_USE_BACKTRACE])
 AC_MSG_NOTICE([  Enable color logs       : $BOUT_USE_COLOR])
