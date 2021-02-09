@@ -147,9 +147,9 @@ public:
     HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
     vsize = jupper - jlower + 1;
 
-    HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector);
-    HYPRE_IJVectorSetObjectType(hypre_vector, HYPRE_PARCSR);
-    HYPRE_IJVectorInitialize(hypre_vector);
+    checkHypreError(HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector));
+    checkHypreError(HYPRE_IJVectorSetObjectType(hypre_vector, HYPRE_PARCSR));
+    checkHypreError(HYPRE_IJVectorInitialize(hypre_vector));
 
     location = f.getLocation();
     initialised = true;
@@ -168,9 +168,9 @@ public:
     HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
     vsize = jupper - jlower + 1;
     
-    HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector);
-    HYPRE_IJVectorSetObjectType(hypre_vector, HYPRE_PARCSR);
-    HYPRE_IJVectorInitialize(hypre_vector);
+    checkHypreError(HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector));
+    checkHypreError(HYPRE_IJVectorSetObjectType(hypre_vector, HYPRE_PARCSR));
+    checkHypreError(HYPRE_IJVectorInitialize(hypre_vector));
     initialised = true;
     location = CELL_LOC::centre;
     HypreMalloc(I, vsize*sizeof(HYPRE_BigInt)); 
@@ -179,18 +179,18 @@ public:
 
   void assemble() {
     writeCacheToHypre();
-    HYPRE_IJVectorAssemble(hypre_vector);
-    HYPRE_IJVectorGetObject(hypre_vector, reinterpret_cast<void**>(&parallel_vector));
+    checkHypreError(HYPRE_IJVectorAssemble(hypre_vector));
+    checkHypreError(HYPRE_IJVectorGetObject(hypre_vector, reinterpret_cast<void**>(&parallel_vector)));
   }
 
   void writeCacheToHypre()
   {
-    HYPRE_IJVectorSetValues(hypre_vector, vsize, I, V);
+    checkHypreError(HYPRE_IJVectorSetValues(hypre_vector, vsize, I, V));
   }
 
   void readCacheFromHypre()
   {
-    HYPRE_IJVectorGetValues(hypre_vector, vsize, I, V);
+    checkHypreError(HYPRE_IJVectorGetValues(hypre_vector, vsize, I, V));
   }
 
   T toField() {
@@ -329,7 +329,7 @@ class HypreMatrix {
       if (*matrix == nullptr) {
         return;
       }
-      HYPRE_IJMatrixDestroy(*matrix);
+      checkHypreError(HYPRE_IJMatrixDestroy(*matrix));
     }
   };
 
@@ -405,9 +405,9 @@ public:
       (*V)[i].reserve(10);
     }
 
-    HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &*hypre_matrix);
-    HYPRE_IJMatrixSetObjectType(*hypre_matrix, HYPRE_PARCSR);
-    HYPRE_IJMatrixInitialize(*hypre_matrix);
+    checkHypreError(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &*hypre_matrix));
+    checkHypreError(HYPRE_IJMatrixSetObjectType(*hypre_matrix, HYPRE_PARCSR));
+    checkHypreError(HYPRE_IJMatrixInitialize(*hypre_matrix));
     // TODO: redirect printf into BoutException using freopen
     // Second argument here is meaningless
     // HYPRE_IJMatrixSetPrintLevel(hypre_matrix, 0);
@@ -628,13 +628,11 @@ public:
         entry ++;
       }
     }
-    HYPRE_IJMatrixSetValues(*hypre_matrix, num_rows, num_cols, rawI, cols, vals);
-    HYPRE_IJMatrixAssemble(*hypre_matrix);
-    HYPRE_IJMatrixGetObject(*hypre_matrix, reinterpret_cast<void**>(&parallel_matrix));
+    checkHypreError(HYPRE_IJMatrixSetValues(*hypre_matrix, num_rows, num_cols, rawI, cols, vals));
+    checkHypreError(HYPRE_IJMatrixAssemble(*hypre_matrix));
+    checkHypreError(HYPRE_IJMatrixGetObject(*hypre_matrix, reinterpret_cast<void**>(&parallel_matrix)));
     assembled = true;
 
-    char errorString[2048];
-    HYPRE_DescribeError(hypre_error_flag,&errorString[0]);
     HypreFree(rawI);
     HypreFree(num_cols);
     HypreFree(cols);
@@ -679,14 +677,14 @@ public:
   // Note result is returned in 'y' argument
   void computeAxpby(double alpha, HypreVector<T> &x, double beta, HypreVector<T> &y)
   {
-    HYPRE_ParCSRMatrixMatvec(alpha, parallel_matrix, x.getParallel(), beta, y.getParallel());
+    checkHypreError(HYPRE_ParCSRMatrixMatvec(alpha, parallel_matrix, x.getParallel(), beta, y.getParallel()));
   }
 
   // y = A*x
   // Note result is returned in 'y' argument
   void computeAx(HypreVector<T> &x, HypreVector<T> &y)
   {
-    HYPRE_ParCSRMatrixMatvec(1.0, parallel_matrix, x.getParallel(), 0.0, y.getParallel());
+    checkHypreError(HYPRE_ParCSRMatrixMatvec(1.0, parallel_matrix, x.getParallel(), 0.0, y.getParallel()));
   }
 
 };
@@ -751,30 +749,30 @@ public:
 
   void setRelTol(double tol)
   {
-    HYPRE_ParCSRGMRESSetTol(solver, tol);
+    checkHypreError(HYPRE_ParCSRGMRESSetTol(solver, tol));
   }
 
   void setAbsTol(double tol)
   {
-    HYPRE_ParCSRGMRESSetAbsoluteTol(solver, tol);
+    checkHypreError(HYPRE_ParCSRGMRESSetAbsoluteTol(solver, tol));
   }
 
   void setMaxIter(int max_iter)
   {
-    HYPRE_ParCSRGMRESSetMaxIter(solver, max_iter);
+    checkHypreError(HYPRE_ParCSRGMRESSetMaxIter(solver, max_iter));
   }
 
   double getFinalRelResNorm()
   {
     HYPRE_Real resnorm;
-    HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm(solver, &resnorm);
+    checkHypreError(HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm(solver, &resnorm));
     return resnorm;
   }
 
   int getNumItersTaken()
   {
     HYPRE_Int iters;
-    HYPRE_ParCSRGMRESGetNumIterations(solver, &iters);
+    checkHypreError(HYPRE_ParCSRGMRESGetNumIterations(solver, &iters));
     return iters;
   }
 
@@ -835,15 +833,6 @@ public:
 
     solve_err = checkHypreError(HYPRE_ParCSRGMRESSolve(solver, A->getParallel(), b->getParallel(), x->getParallel()));
 
-    if (solve_err) {
-      // Aaron Fisher warns that it is possible that the error code is non-zero even
-      // though the solve was successful. If this occurs, we might want to make this a
-      // warning, or otherwise investigate further.
-      char* error_cstr;
-      HYPRE_DescribeError(solve_err, error_cstr);
-      throw BoutException("Hypre solve failed with error code {:d}: {:s}",
-                          solve_err, error_cstr);
-    }
     return solve_err;
   }
 
