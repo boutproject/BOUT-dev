@@ -1242,7 +1242,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-      d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
+      d1_dy = DDY(1. / dy); // d/di(1/dy)
 
       communicate(d1_dy);
       d1_dy =
@@ -1294,7 +1294,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2y, "d2y", 0.0, false)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-      d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
+      d1_dy = DDY(1. / dy); // d/di(1/dy)
 
       communicate(d1_dy);
       d1_dy =
@@ -1622,6 +1622,13 @@ Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
 
 Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) {
+#if BOUT_USE_METRIC_3D
+  if (! f.hasParallelSlices() and ! transform->canToFromFieldAligned()) {
+    Field3D f_parallel = f;
+    transform->calcParallelSlices(f_parallel);
+    return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
+  }
+#endif
   return bout::derivatives::index::DDY(f, outloc, method, region) / dy;
 };
 
