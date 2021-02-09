@@ -42,6 +42,9 @@ REPLACEMENTS = [
     },
     {"old": "TIMESTEP", "new": "timestep"},
     {"old": "NOUT", "new": "nout"},
+    {"old": "ddx", "new": "mesh:ddx"},
+    {"old": "ddy", "new": "mesh:ddy"},
+    {"old": "ddz", "new": "mesh:ddz"},
     # This was inconsistent in the library
     {"old": "All", "new": "all"},
     # The following haven't been changed, but are frequently spelt with the wrong case

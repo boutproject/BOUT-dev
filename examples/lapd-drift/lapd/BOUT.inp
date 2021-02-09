@@ -52,19 +52,19 @@ ixseps2 = 10000
 ##################################################
 # derivative methods
 
-[ddx]
+[mesh:ddx]
 
 first = C4    # C4 = 4th order central, C2 = 2nd order central
 second = C4
 upwind = W3   # U1 = 1st order upwind, W3 = 3rd order WENO
 
-[ddy]
+[mesh:ddy]
 
 first = C4
 second = C4
 upwind = W3
 
-[ddz]
+[mesh:ddz]
 
 first = C4
 second = C4

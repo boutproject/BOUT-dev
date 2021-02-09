@@ -35,21 +35,21 @@ dump_format = "nc"     # Write NetCDF format files
 symmetricGlobalX = true
 symmetricGlobalY = true
 ##################################################
-[ddx]   # Methods used for perp (x) derivative terms
+[mesh:ddx]   # Methods used for perp (x) derivative terms
 
 first = C2
 second = C2
 upwind = W3
 flux = SPLIT
 
-[ddy]   # Methods used for parallel (y) derivative terms
+[mesh:ddy]   # Methods used for parallel (y) derivative terms
 
 first = C2
 second = C2
 upwind = W3
 flux = SPLIT
 
-[ddz]   # Methods used for perp (z) derivative terms
+[mesh:ddz]   # Methods used for perp (z) derivative terms
 
 first = C2 # Change to FFT to see convergence properties of FFT calculated derivatives
 second = C2
