@@ -83,6 +83,21 @@ def parse_bool(bool_expression):
         )
 
 
+def already_fixed(replacement, options_file):
+    """Check if the options_file already has already had this particular fix applied"""
+    # The old key is there and the new one isn't, then it's definitely not fixed
+    if replacement["old"] in options_file and replacement["new"] not in options_file:
+        return False
+    # If the new isn't there, there's nothing to fix
+    if replacement["new"] not in options_file:
+        return True
+    # If we don't need to fix values, we're done
+    if "new_values" not in replacement:
+        return True
+    # Check if the current value is acceptable
+    return options_file[replacement["new"]] in replacement["new_values"].values()
+
+
 def fix_replacements(replacements, options_file):
     """Change the names of options in options_file according to the list
     of dicts replacements
@@ -90,6 +105,8 @@ def fix_replacements(replacements, options_file):
     """
     for replacement in replacements:
         try:
+            if already_fixed(replacement, options_file):
+                continue
             options_file.rename(replacement["old"], replacement["new"])
         except KeyError:
             pass
