@@ -27,6 +27,7 @@ import warnings
 
 try:
     import matplotlib.pyplot as plt
+
     plotting_available = True
 except ImportError:
     warnings.warn("Couldn't import matplotlib, plotting not available.")
@@ -79,14 +80,14 @@ class PoloidalGrid(object):
 
         if axis is None:
             fig = plt.figure()
-            axis = fig.add_subplot(1,1,1)
+            axis = fig.add_subplot(1, 1, 1)
 
-        axis.plot(self.R, self.Z, 'k-')
-        axis.plot(self.R.T, self.Z.T, 'k-')
+        axis.plot(self.R, self.Z, "k-")
+        axis.plot(self.R.T, self.Z.T, "k-")
 
         if show:
             plt.show()
-            
+
         return axis
 
 
@@ -131,25 +132,29 @@ class RectangularPoloidalGrid(PoloidalGrid):
 
         self.Lx = Lx
         self.Lz = Lz
-        
+
         self.Rcentre = Rcentre
         self.Zcentre = Zcentre
-        
+
         # Some useful derived quantities
         # Note: index at the middle of the domain is (nx - 1)/2
         #       e.g. nx=5 :  0 1 | 2 | 3 4
-        self.dR = self.Lx/(self.nx-2*MXG)
-        self.dZ = self.Lz/self.nz
-        self.Rmin = self.Rcentre - self.dR * (self.nx-1.0)/2.0
-        self.Zmin = self.Zcentre - self.dZ * (self.nz-1.0)/2.0
+        self.dR = self.Lx / (self.nx - 2 * MXG)
+        self.dZ = self.Lz / self.nz
+        self.Rmin = self.Rcentre - self.dR * (self.nx - 1.0) / 2.0
+        self.Zmin = self.Zcentre - self.dZ * (self.nz - 1.0) / 2.0
 
         # Generate 2D arrays
         # Using getCoordinate to ensure consistency
-        xind, zind = np.meshgrid(np.arange(nx), np.arange(nz), indexing='ij')
+        xind, zind = np.meshgrid(np.arange(nx), np.arange(nz), indexing="ij")
         self.R, self.Z = self.getCoordinate(xind, zind)
-        
+
     def __repr__(self):
-        return "RectangularPoloidalGrid({0},{1},{2},{3},Rcentre={4},Zcentre={5})".format(self.nx, self.nz, self.Lx, self.Lz, self.Rcentre, self.Zcentre)
+        return (
+            "RectangularPoloidalGrid({0},{1},{2},{3},Rcentre={4},Zcentre={5})".format(
+                self.nx, self.nz, self.Lx, self.Lz, self.Rcentre, self.Zcentre
+            )
+        )
 
     def getCoordinate(self, xind, zind, dx=0, dz=0):
         """Get coordinates (R,Z) at given (xind,zind) index
@@ -177,17 +182,17 @@ class RectangularPoloidalGrid(PoloidalGrid):
         # Make sure dx and dz are integers
         dx = int(dx)
         dz = int(dz)
-        
+
         assert xind.shape == zind.shape
         assert dx >= 0
         assert dz >= 0
-        
+
         shape = xind.shape
-        
+
         if dx + dz > 2:
             # Second derivatives and mixed derivatives all zero
             return np.zeros(shape), np.zeros(shape)
-        
+
         if dx == 1:
             # dR/dx, dZ/dx
             return np.full(shape, self.dR), np.zeros(shape)
@@ -195,7 +200,7 @@ class RectangularPoloidalGrid(PoloidalGrid):
             # dR/dz, dZ/dz
             return np.zeros(shape), np.full(shape, self.dZ)
         # Return (R,Z) location
-        return self.Rmin + xind*self.dR,  self.Zmin + zind*self.dZ
+        return self.Rmin + xind * self.dR, self.Zmin + zind * self.dZ
 
     def findIndex(self, R, Z):
         """Finds the (x,z) index corresponding to the given (R,Z) coordinate
@@ -215,17 +220,17 @@ class RectangularPoloidalGrid(PoloidalGrid):
         # Make sure inputs are NumPy arrays
         R = np.asfarray(R)
         Z = np.asfarray(Z)
-        
+
         # Check that they have the same shape
         assert R.shape == Z.shape
 
-        xind = (R - self.Rmin)/self.dR
-        zind = (Z - self.Zmin)/self.dZ
+        xind = (R - self.Rmin) / self.dR
+        zind = (Z - self.Zmin) / self.dZ
 
         # Note: These indices may be outside the domain,
         # but this is handled in BOUT++, and useful for periodic
         # domains.
-        
+
         return xind, zind
 
     def metric(self):
@@ -241,10 +246,16 @@ class RectangularPoloidalGrid(PoloidalGrid):
             - **gxx, gxz, gzz**: Covariant components
             - **g_xx, g_xz, g_zz**: Contravariant components
         """
-        return {"dx": self.dR, "dz": self.dZ,  # Grid spacing
-                "gxx": 1.0,  "g_xx": 1.0,
-                "gxz": 0.0,  "g_xz": 0.0,
-                "gzz": 1.0,  "g_zz": 1.0}
+        return {
+            "dx": self.dR,
+            "dz": self.dZ,  # Grid spacing
+            "gxx": 1.0,
+            "g_xx": 1.0,
+            "gxz": 0.0,
+            "g_xz": 0.0,
+            "gzz": 1.0,
+            "g_zz": 1.0,
+        }
 
 
 class StructuredPoloidalGrid(PoloidalGrid):
@@ -268,33 +279,34 @@ class StructuredPoloidalGrid(PoloidalGrid):
                   modified afterwards
 
     """
+
     def __init__(self, R, Z):
-        
+
         assert R.shape == Z.shape
-        
+
         self.R = R
         self.Z = Z
-        
+
         # Create a KDTree for quick lookup of nearest points
         n = R.size
-        data = np.concatenate( (R.reshape((n,1)), Z.reshape((n,1)) ), axis=1)
+        data = np.concatenate((R.reshape((n, 1)), Z.reshape((n, 1))), axis=1)
         self.tree = KDTree(data)
-        
+
         # Create splines for quick interpolation of coordinates
-        nx,nz = R.shape
+        nx, nz = R.shape
 
         self.nx = nx
         self.nz = nz
-        
+
         xinds = np.arange(nx)
-        zinds = np.arange(nz+1)
+        zinds = np.arange(nz + 1)
         # Repeat the final point in y since periodic in y
-        R_ext = np.concatenate((R, np.reshape(R[:,0], (nx, 1))), axis=1)
-        Z_ext = np.concatenate((Z, np.reshape(Z[:,0], (nx, 1))), axis=1)
-        
+        R_ext = np.concatenate((R, np.reshape(R[:, 0], (nx, 1))), axis=1)
+        Z_ext = np.concatenate((Z, np.reshape(Z[:, 0], (nx, 1))), axis=1)
+
         self._spl_r = RectBivariateSpline(xinds, zinds, R_ext)
         self._spl_z = RectBivariateSpline(xinds, zinds, Z_ext)
-        
+
     def __repr__(self):
         return "StructuredPoloidalGrid()"
 
@@ -317,18 +329,18 @@ class StructuredPoloidalGrid(PoloidalGrid):
             indices if dx,dz != 0
 
         """
-        nx,nz = self.R.shape
-        if (np.amin(xind) < 0) or (np.amax(xind) > nx-1):
+        nx, nz = self.R.shape
+        if (np.amin(xind) < 0) or (np.amax(xind) > nx - 1):
             raise ValueError("x index out of range")
-            
+
         # Periodic in y
         zind = np.remainder(zind, nz)
-        
+
         R = self._spl_r(xind, zind, dx=dx, dy=dz, grid=False)
         Z = self._spl_z(xind, zind, dx=dx, dy=dz, grid=False)
-        
-        return R,Z
-        
+
+        return R, Z
+
     def findIndex(self, R, Z, tol=1e-10, show=False):
         """Finds the (x, z) index corresponding to the given (R, Z) coordinate
 
@@ -349,40 +361,41 @@ class StructuredPoloidalGrid(PoloidalGrid):
         # Make sure inputs are NumPy arrays
         R = np.asfarray(R)
         Z = np.asfarray(Z)
-        
+
         # Check that they have the same shape
         assert R.shape == Z.shape
-        
+
         input_shape = R.shape  # So output has same shape as input
-        
+
         # Get distance and index into flattened data
         # Note ind can be an integer, or an array of ints
         # with the same number of elements as the input (R,Z) arrays
         n = R.size
-        position = np.concatenate( (R.reshape((n,1)), Z.reshape((n,1))), axis=1)
-        
+        position = np.concatenate((R.reshape((n, 1)), Z.reshape((n, 1))), axis=1)
+
         R = R.reshape((n,))
         Z = Z.reshape((n,))
-        
+
         dists, ind = self.tree.query(position)
-        
+
         # Calculate (x,y) index
-        nx,nz = self.R.shape
+        nx, nz = self.R.shape
         xind = np.floor_divide(ind, nz)
-        zind = ind - xind*nz
-        
+        zind = ind - xind * nz
+
         # Convert indices to float
         xind = np.asfarray(xind)
         zind = np.asfarray(zind)
-        
+
         # Create a mask for the positions
         mask = np.ones(xind.shape)
-        mask[ np.logical_or((xind < 0.5), (xind > (nx-1.5))) ] = 0.0 # Set to zero if near the boundary 
-        
-        
+        mask[
+            np.logical_or((xind < 0.5), (xind > (nx - 1.5)))
+        ] = 0.0  # Set to zero if near the boundary
+
         if show and plotting_available:
-            plt.plot(self.R, self.Z, '.')
-            plt.plot(R, Z, 'x')
+            plt.plot(self.R, self.Z, ".")
+            plt.plot(R, Z, "x")
 
         cnt = 0
         underrelax = 1
@@ -390,15 +403,15 @@ class StructuredPoloidalGrid(PoloidalGrid):
         while True:
             # Use Newton iteration to find the index
             # dR, dZ are the distance away from the desired point
-            Rpos,Zpos = self.getCoordinate(xind, zind)
+            Rpos, Zpos = self.getCoordinate(xind, zind)
             if show and plotting_available:
-                plt.plot(Rpos, Zpos, 'o')
+                plt.plot(Rpos, Zpos, "o")
             dR = Rpos - R
             dZ = Zpos - Z
-            
+
             # Check if close enough
             # Note: only check the points which are not in the boundary
-            val = np.amax(mask*(dR**2 + dZ**2))
+            val = np.amax(mask * (dR ** 2 + dZ ** 2))
             if val < tol:
                 break
             cnt += 1
@@ -410,42 +423,41 @@ class StructuredPoloidalGrid(PoloidalGrid):
                 underrelax = 2.5
             if cnt == 10000:
                 underrelax = 3
-            
+
             # Calculate derivatives
             dRdx, dZdx = self.getCoordinate(xind, zind, dx=1)
             dRdz, dZdz = self.getCoordinate(xind, zind, dz=1)
-        
+
             # Invert 2x2 matrix to get change in coordinates
             #
-            # (x) -=  ( dR/dx   dR/dz )^-1  (dR) 
-            # (y)     ( dZ/dx   dZ/dz )     (dz) 
+            # (x) -=  ( dR/dx   dR/dz )^-1  (dR)
+            # (y)     ( dZ/dx   dZ/dz )     (dz)
             #
             #
-            # (x) -=  ( dZ/dz  -dR/dz ) (dR) 
+            # (x) -=  ( dZ/dz  -dR/dz ) (dR)
             # (y)     (-dZ/dx   dR/dx ) (dZ) / (dR/dx*dZ/dy - dR/dy*dZ/dx)
-            determinant = dRdx*dZdz - dRdz*dZdx
-            
-            xind -= mask * ((dZdz*dR - dRdz*dZ) / determinant / underrelax)
-            zind -= mask * ((dRdx*dZ - dZdx*dR) / determinant / underrelax)
+            determinant = dRdx * dZdz - dRdz * dZdx
 
-            
+            xind -= mask * ((dZdz * dR - dRdz * dZ) / determinant / underrelax)
+            zind -= mask * ((dRdx * dZ - dZdx * dR) / determinant / underrelax)
+
             # Re-check for boundary
             in_boundary = xind < 0.5
-            mask[ in_boundary ] = 0.0 # Set to zero if near the boundary 
-            xind[ in_boundary ] = 0.0
-            out_boundary = xind > (nx-1.5)
-            mask[ out_boundary ] = 0.0 # Set to zero if near the boundary 
-            xind[ out_boundary ] = nx-1
+            mask[in_boundary] = 0.0  # Set to zero if near the boundary
+            xind[in_boundary] = 0.0
+            out_boundary = xind > (nx - 1.5)
+            mask[out_boundary] = 0.0  # Set to zero if near the boundary
+            xind[out_boundary] = nx - 1
 
         if show and plotting_available:
             plt.show()
-            
+
         # Set xind to -1 if in the inner boundary, nx if in outer boundary
         in_boundary = xind < 0.5
-        xind[ in_boundary ] = -1
-        out_boundary = xind > (nx-1.5)
-        xind[ out_boundary ] = nx
-        
+        xind[in_boundary] = -1
+        out_boundary = xind > (nx - 1.5)
+        xind[out_boundary] = nx
+
         return xind.reshape(input_shape), zind.reshape(input_shape)
 
     def metric(self):
@@ -461,12 +473,12 @@ class StructuredPoloidalGrid(PoloidalGrid):
 
         """
 
-        dx = 1.0 / float(self.nx-1)      # x from 0 to 1 
-        dz = 2.*np.pi / float(self.nz)   # z from 0 to 2pi
-        
+        dx = 1.0 / float(self.nx - 1)  # x from 0 to 1
+        dz = 2.0 * np.pi / float(self.nz)  # z from 0 to 2pi
+
         # Get arrays of indices
-        xind, zind = np.meshgrid(np.arange(self.nx), np.arange(self.nz), indexing='ij')
-        
+        xind, zind = np.meshgrid(np.arange(self.nx), np.arange(self.nz), indexing="ij")
+
         # Calculate the gradient along each coordinate
         dRdx, dZdx = self.getCoordinate(xind, zind, dx=1)
         dRdx /= dx
@@ -474,24 +486,30 @@ class StructuredPoloidalGrid(PoloidalGrid):
         dRdz, dZdz = self.getCoordinate(xind, zind, dz=1)
         dRdz /= dz
         dZdz /= dz
-        
-        g_xx = dRdx**2 + dZdx**2
-        g_xz = dRdx*dRdz + dZdx*dZdz
-        g_zz = dRdz**2 + dZdz**2
-        
+
+        g_xx = dRdx ** 2 + dZdx ** 2
+        g_xz = dRdx * dRdz + dZdx * dZdz
+        g_zz = dRdz ** 2 + dZdz ** 2
+
         # Calculate metric by inverting
         # ( gxx   gxz ) = ( g_xx   g_xz )^-1
         # ( gxz   gzz )   ( g_xz   g_zz )
-        
-        determinant = g_xx*g_zz - g_xz**2
+
+        determinant = g_xx * g_zz - g_xz ** 2
         gxx = g_zz / determinant
         gzz = g_xx / determinant
         gxz = -g_xz / determinant
-    
-        return {"dx": dx, "dz": dz,  # Grid spacing
-                "gxx": gxx,  "g_xx": g_xx,
-                "gxz": gxz,  "g_xz": g_xz,
-                "gzz": gzz,  "g_zz": g_zz}
+
+        return {
+            "dx": dx,
+            "dz": dz,  # Grid spacing
+            "gxx": gxx,
+            "g_xx": g_xx,
+            "gxz": gxz,
+            "g_xz": g_xz,
+            "gzz": gzz,
+            "g_zz": g_zz,
+        }
 
 
 def grid_annulus(inner, outer, nx, nz, show=True, return_coords=False):
@@ -524,17 +542,17 @@ def grid_annulus(inner, outer, nx, nz, show=True, return_coords=False):
 
     assert nx >= 2
     assert nz > 1
-    
+
     R = zeros((nx, nz))
     Z = zeros((nx, nz))
-    
+
     # Generate angle values, which should now be equally spaced
     # in distance along inner and outer boundaries
-    thetavals = linspace(0, 2*pi, nz, endpoint=False)
-    
+    thetavals = linspace(0, 2 * pi, nz, endpoint=False)
+
     # Radial coordinate
     xvals = linspace(0, 1.0, nx, endpoint=True)
-    
+
     innerR = inner.Rvalue(thetavals)
     innerZ = inner.Zvalue(thetavals)
 
@@ -542,24 +560,34 @@ def grid_annulus(inner, outer, nx, nz, show=True, return_coords=False):
     outerZ = outer.Zvalue(thetavals)
     for i, x in enumerate(xvals):
         # Get the R and Z coordinates of this line
-        R[i,:] = x*outerR + (1.-x)*innerR
-        Z[i,:] = x*outerZ + (1.-x)*innerZ
-        
+        R[i, :] = x * outerR + (1.0 - x) * innerR
+        Z[i, :] = x * outerZ + (1.0 - x) * innerZ
+
     if show and plotting_available:
-        plt.plot(inner.R, inner.Z, '-o')
-        plt.plot(outer.R, outer.Z, '-o')
-        
-        plt.plot(R, Z, 'x')
-        
+        plt.plot(inner.R, inner.Z, "-o")
+        plt.plot(outer.R, outer.Z, "-o")
+
+        plt.plot(R, Z, "x")
+
         plt.show()
 
     if return_coords:
         return R, Z
-    return StructuredPoloidalGrid(R,Z)
+    return StructuredPoloidalGrid(R, Z)
 
 
-def grid_elliptic(inner, outer, nx, nz, show=False, tol=1e-10, align=True,
-                  restrict_size=20, restrict_factor=2, return_coords=False):
+def grid_elliptic(
+    inner,
+    outer,
+    nx,
+    nz,
+    show=False,
+    tol=1e-10,
+    align=True,
+    restrict_size=20,
+    restrict_factor=2,
+    return_coords=False,
+):
     """Create a structured grid between inner and outer boundaries using
     elliptic method
 
@@ -627,14 +655,14 @@ def grid_elliptic(inner, outer, nx, nz, show=False, tol=1e-10, align=True,
     https://en.wikipedia.org/wiki/Principles_of_grid_generation
 
     """
-    
+
     assert nx >= 2
     assert nz > 1
-    
-    # Generate angle values (y coordinate), 
+
+    # Generate angle values (y coordinate),
     # which should now be equally spaced
     # in distance along inner and outer boundaries
-    thetavals = linspace(0, 2*pi, nz, endpoint=False)
+    thetavals = linspace(0, 2 * pi, nz, endpoint=False)
 
     # Radial coordinate
     xvals = linspace(0, 1.0, nx, endpoint=True)
@@ -643,168 +671,184 @@ def grid_elliptic(inner, outer, nx, nz, show=False, tol=1e-10, align=True,
         # Align inner and outer boundaries
         # Easiest way is to roll both boundaries
         # so that index 0 is on the outboard midplane
-        
-        ind = np.argmax( inner.R )
-        inner = rzline.RZline( np.roll(inner.R, -ind), np.roll(inner.Z, -ind) )
-        ind = np.argmax( outer.R )
-        outer = rzline.RZline( np.roll(outer.R, -ind), np.roll(outer.Z, -ind) )
-    
+
+        ind = np.argmax(inner.R)
+        inner = rzline.RZline(np.roll(inner.R, -ind), np.roll(inner.Z, -ind))
+        ind = np.argmax(outer.R)
+        outer = rzline.RZline(np.roll(outer.R, -ind), np.roll(outer.Z, -ind))
+
     if (nx > restrict_size) or (nz > restrict_size):
         # Create a coarse grid first to get a starting guess
         # Only restrict the dimensions which exceed restrict_size
         # Note that this might result in multiple levels of resolution
-        
+
         nx_r = nx
         if nx > restrict_size:
             nx_r = int(nx / restrict_factor)
-            
+
         nz_r = nz
         if nz > restrict_size:
             nz_r = int(nz / restrict_factor)
 
         # Create the coarse mesh
-        R_r, Z_r = grid_elliptic(inner, outer, nx_r, nz_r, align=False, 
-                                 tol=tol, restrict_size=restrict_size, restrict_factor=restrict_factor, return_coords=True)
+        R_r, Z_r = grid_elliptic(
+            inner,
+            outer,
+            nx_r,
+            nz_r,
+            align=False,
+            tol=tol,
+            restrict_size=restrict_size,
+            restrict_factor=restrict_factor,
+            return_coords=True,
+        )
 
         # Note: Lower case x,z are indices
-        z_r = linspace(0, 2*pi, nz_r+1, endpoint=True) # Add on the final point duplicating the first
+        z_r = linspace(
+            0, 2 * pi, nz_r + 1, endpoint=True
+        )  # Add on the final point duplicating the first
         x_r = linspace(0, 1.0, nx_r, endpoint=True)
-        
+
         # Note: Upper case R,Z are real-space locations
-        R_r = np.concatenate((R_r, np.reshape(R_r[:,0], (nx_r, 1))), axis=1)
-        Z_r = np.concatenate((Z_r, np.reshape(Z_r[:,0], (nx_r, 1))), axis=1)
-        
+        R_r = np.concatenate((R_r, np.reshape(R_r[:, 0], (nx_r, 1))), axis=1)
+        Z_r = np.concatenate((Z_r, np.reshape(Z_r[:, 0], (nx_r, 1))), axis=1)
+
         # Now interpolate
         spl = RectBivariateSpline(x_r, z_r, R_r)
         R = spl(xvals, thetavals, grid=True)
         spl = RectBivariateSpline(x_r, z_r, Z_r)
         Z = spl(xvals, thetavals, grid=True)
-        
+
         # Make sure that the inner and outer boundaries are on the
         # inner and outer RZline, not interpolated
-        R[0,:] = inner.Rvalue(thetavals)
-        Z[0,:] = inner.Zvalue(thetavals)
-        
-        R[-1,:] = outer.Rvalue(thetavals)
-        Z[-1,:] = outer.Zvalue(thetavals)
-        
+        R[0, :] = inner.Rvalue(thetavals)
+        Z[0, :] = inner.Zvalue(thetavals)
+
+        R[-1, :] = outer.Rvalue(thetavals)
+        Z[-1, :] = outer.Zvalue(thetavals)
+
     else:
         # Interpolate coordinates of inner and outer boundary
         Rinner = inner.Rvalue(thetavals)
         Zinner = inner.Zvalue(thetavals)
-        
+
         Router = outer.Rvalue(thetavals)
         Zouter = outer.Zvalue(thetavals)
-        
+
         # Interpolate in x between inner and outer
         # to get starting guess for a grid
         R = zeros((nx, nz))
         Z = zeros((nx, nz))
         for i in range(nx):
-            R[i,:] = xvals[i]*Router + (1.-xvals[i])*Rinner
-            Z[i,:] = xvals[i]*Zouter + (1.-xvals[i])*Zinner
-    
+            R[i, :] = xvals[i] * Router + (1.0 - xvals[i]) * Rinner
+            Z[i, :] = xvals[i] * Zouter + (1.0 - xvals[i]) * Zinner
+
     dx = xvals[1] - xvals[0]
     dz = thetavals[1] - thetavals[0]
 
     if show and plotting_available:
         # Markers on original points on inner and outer boundaries
-        plt.plot(inner.R, inner.Z, '-o')
-        plt.plot(outer.R, outer.Z, '-o')
-        
+        plt.plot(inner.R, inner.Z, "-o")
+        plt.plot(outer.R, outer.Z, "-o")
+
         # Black lines through inner and outer boundaries
-        r,z = inner.position(np.linspace(0,2*np.pi, 100))
-        plt.plot(r,z, 'k')
-        r,z = outer.position(np.linspace(0,2*np.pi, 100))
-        plt.plot(r,z, 'k')
+        r, z = inner.position(np.linspace(0, 2 * np.pi, 100))
+        plt.plot(r, z, "k")
+        r, z = outer.position(np.linspace(0, 2 * np.pi, 100))
+        plt.plot(r, z, "k")
 
         # Red dots to mark the inner and outer boundaries
-        plt.plot(R[0,:], Z[0,:], 'ro')
-        plt.plot(R[-1,:], Z[-1,:], 'ro')
-        
+        plt.plot(R[0, :], Z[0, :], "ro")
+        plt.plot(R[-1, :], Z[-1, :], "ro")
+
     # Start solver loop
     while True:
         # Calculate coefficients, which exclude boundary points
         # Note that the domain is periodic in y so roll arrays
-        
-        R_xm = R[:-2,:]   # R(x-1,z)
-        R_xp = R[2:, :]   # R(x+1,z)
-        R_zm = np.roll(R, 1, axis=1) # R(x, z-1)
-        R_zp = np.roll(R,-1, axis=1) # R(x, z+1)
-        R_xmzm = R_zm[:-2,:] # R(x-1, z-1)
-        R_xpzm = R_zm[2:,:]  # R(x+1, z-1)
-        R_xmzp = R_zp[:-2,:] # R(x-1, z+1)
-        R_xpzp = R_zp[2:,:]  # R(x+1, z+1)
-        R_zm = R_zm[1:-1,:]  # Now chop off x boundaries
-        R_zp = R_zp[1:-1,:]  # This is done to minimise number of rolls
-        
-        Z_xm = Z[:-2,:]
+
+        R_xm = R[:-2, :]  # R(x-1,z)
+        R_xp = R[2:, :]  # R(x+1,z)
+        R_zm = np.roll(R, 1, axis=1)  # R(x, z-1)
+        R_zp = np.roll(R, -1, axis=1)  # R(x, z+1)
+        R_xmzm = R_zm[:-2, :]  # R(x-1, z-1)
+        R_xpzm = R_zm[2:, :]  # R(x+1, z-1)
+        R_xmzp = R_zp[:-2, :]  # R(x-1, z+1)
+        R_xpzp = R_zp[2:, :]  # R(x+1, z+1)
+        R_zm = R_zm[1:-1, :]  # Now chop off x boundaries
+        R_zp = R_zp[1:-1, :]  # This is done to minimise number of rolls
+
+        Z_xm = Z[:-2, :]
         Z_xp = Z[2:, :]
         Z_zm = np.roll(Z, 1, axis=1)
-        Z_zp = np.roll(Z,-1, axis=1)
-        Z_xmzm = Z_zm[:-2,:] 
-        Z_xpzm = Z_zm[2:,:]
-        Z_xmzp = Z_zp[:-2,:]
-        Z_xpzp = Z_zp[2:,:]
-        Z_zm = Z_zm[1:-1,:]
-        Z_zp = Z_zp[1:-1,:]
-        
-        dRdz = (R_zp - R_zm)/(2.*dz)
-        dRdx = (R_xp - R_xm)/(2.*dx)
-        
-        dZdz = (Z_zp - Z_zm)/(2.*dz)
-        dZdx = (Z_xp - Z_xm)/(2.*dx)
-        
-        a = dRdz**2 + dZdz**2
-        b = dRdz*dRdx + dZdx*dZdz
-        c = dRdx**2 + dZdx**2
-        
+        Z_zp = np.roll(Z, -1, axis=1)
+        Z_xmzm = Z_zm[:-2, :]
+        Z_xpzm = Z_zm[2:, :]
+        Z_xmzp = Z_zp[:-2, :]
+        Z_xpzp = Z_zp[2:, :]
+        Z_zm = Z_zm[1:-1, :]
+        Z_zp = Z_zp[1:-1, :]
+
+        dRdz = (R_zp - R_zm) / (2.0 * dz)
+        dRdx = (R_xp - R_xm) / (2.0 * dx)
+
+        dZdz = (Z_zp - Z_zm) / (2.0 * dz)
+        dZdx = (Z_xp - Z_xm) / (2.0 * dx)
+
+        a = dRdz ** 2 + dZdz ** 2
+        b = dRdz * dRdx + dZdx * dZdz
+        c = dRdx ** 2 + dZdx ** 2
+
         # Now solve a*R_xx - 2*b*R_xz + c*R_zz = 0
         # For now using Jacobi update
-    
-        a_dx2 = a/dx**2
-        b_dxdz = b/(2.*dx*dz)
-        c_dz2 = c/dz**2
-        inv_diag = 1./(2*a/dx**2 + 2*c/dz**2)
-        
+
+        a_dx2 = a / dx ** 2
+        b_dxdz = b / (2.0 * dx * dz)
+        c_dz2 = c / dz ** 2
+        inv_diag = 1.0 / (2 * a / dx ** 2 + 2 * c / dz ** 2)
+
         Rold = R.copy()
         Zold = Z.copy()
-        
-        R[1:-1,:] = ( a_dx2*(R_xm + R_xp) - b_dxdz*(R_xpzp - R_xmzp - R_xpzm + R_xmzm) + c_dz2*(R_zm + R_zp) ) * inv_diag
-        
-        Z[1:-1,:] = ( a_dx2*(Z_xm + Z_xp) - b_dxdz*(Z_xpzp - Z_xmzp - Z_xpzm + Z_xmzm) + c_dz2*(Z_zm + Z_zp) ) * inv_diag
-        
 
-        maxchange_sq = np.amax((R-Rold)**2 + (Z-Zold)**2)
-        
+        R[1:-1, :] = (
+            a_dx2 * (R_xm + R_xp)
+            - b_dxdz * (R_xpzp - R_xmzp - R_xpzm + R_xmzm)
+            + c_dz2 * (R_zm + R_zp)
+        ) * inv_diag
+
+        Z[1:-1, :] = (
+            a_dx2 * (Z_xm + Z_xp)
+            - b_dxdz * (Z_xpzp - Z_xmzp - Z_xpzm + Z_xmzm)
+            + c_dz2 * (Z_zm + Z_zp)
+        ) * inv_diag
+
+        maxchange_sq = np.amax((R - Rold) ** 2 + (Z - Zold) ** 2)
+
         if maxchange_sq < tol:
             break
 
     if show and plotting_available:
-        plt.plot(R,Z)
+        plt.plot(R, Z)
         plt.plot(np.transpose(R), np.transpose(Z))
         plt.show()
-        
+
     if return_coords:
         return R, Z
-    return StructuredPoloidalGrid(R,Z)
+    return StructuredPoloidalGrid(R, Z)
+
 
 if __name__ == "__main__":
-    
+
     import rzline
-    
-    #inner = circle(R0=1.5, r=1.0, n=100)
-    #outer = circle(R0=1.0, r=2.0, n=100)
+
+    # inner = circle(R0=1.5, r=1.0, n=100)
+    # outer = circle(R0=1.0, r=2.0, n=100)
 
     inner = rzline.shaped_line(R0=3.0, a=0.5, elong=1.0, triang=0.0, indent=1.0, n=50)
     outer = rzline.shaped_line(R0=2.8, a=1.5, elong=1.0, triang=0.0, indent=0.2, n=50)
-    #outer = shaped_line(R0=3.0, a=1.0, elong=1.0, triang=0.0, indent=1.0, n=50)
-    
+    # outer = shaped_line(R0=3.0, a=1.0, elong=1.0, triang=0.0, indent=1.0, n=50)
+
     grid = grid_elliptic(inner, outer, 100, 100, show=True)
-    
-    #grid.findIndex(2.0, 1.5)
-    x,z = grid.findIndex([2.0,1.9], [1.5,2.0])
-    print(x,z)
-    
-    
-    
+
+    # grid.findIndex(2.0, 1.5)
+    x, z = grid.findIndex([2.0, 1.9], [1.5, 2.0])
+    print(x, z)

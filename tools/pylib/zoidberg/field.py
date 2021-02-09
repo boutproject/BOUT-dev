@@ -54,7 +54,7 @@ class MagneticField(object):
 
     """
 
-    boundary = boundary.NoBoundary() # An optional Boundary object
+    boundary = boundary.NoBoundary()  # An optional Boundary object
     attributes = {}
 
     def Bxfunc(self, x, z, phi):
@@ -157,7 +157,11 @@ class MagneticField(object):
             The magnitude of the magnetic field
 
         """
-        return np.sqrt( self.Bxfunc(x,z,phi)**2 + self.Byfunc(x,z,phi)**2 + self.Bzfunc(x,z,phi)**2 )
+        return np.sqrt(
+            self.Bxfunc(x, z, phi) ** 2
+            + self.Byfunc(x, z, phi) ** 2
+            + self.Bzfunc(x, z, phi) ** 2
+        )
 
     def field_direction(self, pos, ycoord, flatten=False):
         """Calculate the direction of the magnetic field
@@ -189,34 +193,36 @@ class MagneticField(object):
 
         if flatten:
             position = pos.reshape((-1, 2))
-            x = position[:,0]
-            z = position[:,1]
+            x = position[:, 0]
+            z = position[:, 1]
         else:
-            x,z = pos
+            x, z = pos
 
-        By = self.Byfunc(x,z,ycoord)
-        Rmaj = self.Rfunc(x,z,ycoord) # Major radius. None if Cartesian
+        By = self.Byfunc(x, z, ycoord)
+        Rmaj = self.Rfunc(x, z, ycoord)  # Major radius. None if Cartesian
 
         if Rmaj is not None:
             # In cylindrical coordinates
 
             if np.amin(np.abs(By)) < 1e-8:
                 # Very small By
-                print(x,z,ycoord, By)
-                raise ValueError("Small By ({}) at (x={}, y={}, z={})".format(By, x, ycoord, z))
+                print(x, z, ycoord, By)
+                raise ValueError(
+                    "Small By ({}) at (x={}, y={}, z={})".format(By, x, ycoord, z)
+                )
 
             R_By = Rmaj / By
             # Rate of change of x location [m] with y angle [radians]
-            dxdphi =  R_By * self.Bxfunc(x,z,ycoord)
+            dxdphi = R_By * self.Bxfunc(x, z, ycoord)
             # Rate of change of z location [m] with y angle [radians]
-            dzdphi =  R_By * self.Bzfunc(x,z,ycoord)
+            dzdphi = R_By * self.Bzfunc(x, z, ycoord)
         else:
             # In Cartesian coordinates
 
             # Rate of change of x location [m] with y angle [radians]
-            dxdphi =  self.Bxfunc(x,z,ycoord) / By
+            dxdphi = self.Bxfunc(x, z, ycoord) / By
             # Rate of change of z location [m] with y angle [radians]
-            dzdphi =  self.Bzfunc(x,z,ycoord) / By
+            dzdphi = self.Bzfunc(x, z, ycoord) / By
 
         if flatten:
             result = np.column_stack((dxdphi, dzdphi)).flatten()
@@ -245,6 +251,7 @@ class Slab(MagneticField):
         Rate of change of Bz with x
 
     """
+
     def __init__(self, By=1.0, Bz=0.1, xcentre=0.0, Bzprime=1.0):
 
         By = float(By)
@@ -264,7 +271,7 @@ class Slab(MagneticField):
         return np.full(x.shape, self.By)
 
     def Bzfunc(self, x, z, phi):
-        return self.Bz + (x - self.xcentre)*self.Bzprime
+        return self.Bz + (x - self.xcentre) * self.Bzprime
 
 
 class CurvedSlab(MagneticField):
@@ -291,6 +298,7 @@ class CurvedSlab(MagneticField):
         Major radius of the slab
 
     """
+
     def __init__(self, By=1.0, Bz=0.1, xcentre=0.0, Bzprime=1.0, Rmaj=1.0):
 
         By = float(By)
@@ -306,10 +314,10 @@ class CurvedSlab(MagneticField):
         self.Rmaj = Rmaj
 
         # Set poloidal magnetic field
-        #Bpx = self.Bp + (self.grid.xarray-self.grid.Lx/2.) * self.Bpprime
-        #self.Bpxy = np.resize(Bpx, (self.grid.nz, self.grid.ny, self.grid.nx))
-        #self.Bpxy = np.transpose(self.Bpxy, (2,1,0))
-        #self.Bxy = np.sqrt(self.Bpxy**2 + self.Bt**2)
+        # Bpx = self.Bp + (self.grid.xarray-self.grid.Lx/2.) * self.Bpprime
+        # self.Bpxy = np.resize(Bpx, (self.grid.nz, self.grid.ny, self.grid.nx))
+        # self.Bpxy = np.transpose(self.Bpxy, (2,1,0))
+        # self.Bxy = np.sqrt(self.Bpxy**2 + self.Bt**2)
 
     def Bxfunc(self, x, z, phi):
         return np.zeros(x.shape)
@@ -1480,9 +1488,19 @@ class W7X_vacuum(MagneticField):
         # we can get an interpolation function in 3D
         points = (r, phi, z)
 
-        self.br_interp = RegularGridInterpolator(
-            points, Bx, bounds_error=False, fill_value=0.0
-        )
+        try:
+            self.br_interp = RegularGridInterpolator(
+                points, Bx, bounds_error=False, fill_value=0.0
+            )
+        except:
+            print([i.shape for i in points], Bx.shape)
+            import matplotlib.pyplot as plt
+
+            for i in points:
+                plt.plot(i)
+            plt.show()
+            raise
+
         self.bz_interp = RegularGridInterpolator(
             points, Bz, bounds_error=False, fill_value=0.0
         )
