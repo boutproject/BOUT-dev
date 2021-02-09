@@ -7,10 +7,23 @@ import itertools
 import textwrap
 import warnings
 
-from boutdata.data import BoutOptionsFile
+from boutdata.data import BoutOptionsFile, BoutOptions
 from boututils.boutwarnings import AlwaysWarning
 
-# This should be a list of dicts, each containing "old", "new" and optionally "values".
+
+def case_sensitive_init(self, name="root", parent=None):
+    self._sections = dict()
+    self._keys = dict()
+    self._name = name
+    self._parent = parent
+    self.comments = dict()
+    self.inline_comments = dict()
+    self._comment_whitespace = dict()
+
+
+# Monky-patch BoutOptions to make sure it's case sensitive
+BoutOptions.__init__ = case_sensitive_init
+
 # The values of "old"/"new" keys should be the old/new names of input file values or
 # sections. The value of "values" is a dict containing replacements for values of the
 # option. "type" optionally specifies the type of the old value of the option; for
