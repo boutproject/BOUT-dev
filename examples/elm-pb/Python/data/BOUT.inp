@@ -38,7 +38,6 @@ group_nonblock = false  # Use non-blocking group operations?
 ##################################################
 # Laplacian inversion routines
 
-# max_mode = 16  # Maximum N to solve for
 
 ##################################################
 # FFTs
@@ -266,15 +265,6 @@ scale = 1e-05
 
 [P]  # pressure
 bndry_core = neumann
-#scale = 1.0e-5
 
 
-#bndry_core = neumann
-# zero laplacian
-#bndry_xin = zerolaplace
-#bndry_xout = zerolaplace
 
-# Zero gradient in the core
-#bndry_core = neumann
-
-#bndry_core = neumann

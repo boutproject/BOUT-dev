@@ -13,8 +13,6 @@ nxpe = 1
 
 type = fci
 
-#atol = 1e-6
-#rtol = 1e-3
 
 [fciwave]
 div_integrate = true  # Use area integration for divergence in density equation?
