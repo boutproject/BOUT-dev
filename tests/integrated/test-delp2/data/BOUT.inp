@@ -16,18 +16,9 @@ ny = 1
 dx = 0.2
 dy = 1.0
 
-[solver]
-#type=karniadakis
-timestep = 0.001
-
 [diffusion]
 
 D = 0.1
-
-[all]
-scale = 0.0
-
-bndry_all = dirichlet
 
 [n]
 

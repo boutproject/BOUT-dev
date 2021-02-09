@@ -7,7 +7,7 @@ grid = "slab.grd.nc"
 MZ = 64
 
 shiftInitial = true
-TwistShift = true
+twistshift = true
 
 [mesh]
 symmetricGlobalX = true

@@ -14,10 +14,10 @@ nout = 10         # number of time-steps
 timestep = 0.01    # time between outputs
 
 ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false   # use twist-shift condition?
+twistshift = false   # use twist-shift condition?
 
 MZ = 17     # number of points in z direction (2^n + 1)
-ZPERIOD = 10
+zperiod = 10
 
 MXG = 2
 MYG = 2

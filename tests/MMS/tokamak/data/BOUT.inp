@@ -10,7 +10,7 @@ ZMAX = 1
 
 grid = "grid.nc"
 
-TwistShift = true
+twistshift = true
 ShiftXderivs = true
 
 [mesh]

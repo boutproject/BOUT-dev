@@ -9,11 +9,11 @@ timestep = 1.0       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 0.45  # wall time limit (in hours)
 
-TwistShift = true   # use twist-shift condition?
+twistshift = true   # use twist-shift condition?
 non_uniform = true
 
 MZ = 16             # number of points in z direction (2^n + 1)
-ZPERIOD = 15        # Fraction of a torus to simulate
+zperiod = 15        # Fraction of a torus to simulate
 
 MXG = 2
 MYG = 2

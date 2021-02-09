@@ -5,7 +5,7 @@ nout = 0  # No timesteps
 
 MZ = 5    # Z size
 
-TwistShift = false
+twistshift = false
 Ballooning = false
 
 tol = 1e-10

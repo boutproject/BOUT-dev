@@ -8,12 +8,12 @@ nout = 1          # number of time-steps
 timestep = 0.001       # time between outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
-TwistShift = true   # use twist-shift condition?
+twistshift = true   # use twist-shift condition?
 ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
 TwistOrder = 0      # order of twist-shift interpolation
 
 MZ = 17             # number of points in z direction (2^n + 1)
-ZPERIOD = 1         # Fraction of a torus to simulate
+zperiod = 1         # Fraction of a torus to simulate
 
 NXPE = 1
 

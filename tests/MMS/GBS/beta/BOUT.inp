@@ -35,9 +35,9 @@
 nout = 100          # number of time-steps
 timestep = 1.0     # time between outputs, normalised to 1/Omega_ci
 
-ZPERIOD = 1
+zperiod = 1
 
-TwistShift = true
+twistshift = true
 
 [mesh]
 

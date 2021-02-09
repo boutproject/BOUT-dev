@@ -1,5 +1,5 @@
 ShiftWithoutTwist = true
-TwistShift = true
+twistshift = true
 
 [mesh]
 nx = 12

@@ -14,7 +14,7 @@ nout = 50       # number of time-steps
 timestep = 100.0   # time between outputs
 
 ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 64     # number of points in z direction (2^n + 1)
 ZMIN = 0.0
@@ -75,11 +75,6 @@ RTOL = 1e-05  # relative tolerance
 AA = 2.0
 ZZ = 1.0
 
-estatic = true   # if true, electrostatic (Apar = 0)
-ZeroElMass = false # Use Ohms law without electron inertia
-Zeff = 2.0        # Z effective
-nu_perp = 1e-20
-
 ShearFactor = 0.0
 
 ##################################################
@@ -102,18 +97,3 @@ bndry_all = neumann # Zero-gradient on all boundaries
 [Ni]
 scale = 0.0001 # only perturbing Ni
 function = sin(4*z)
-#scale = -1.0e-8
-
-[Vi]
-evolve = false
-
-[Te]
-evolve = false
-
-[Ti]
-evolve = false # Ti is a constant
-function = 1
-scale = 0.199
-
-[Ajpar]
-evolve = false

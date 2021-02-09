@@ -13,12 +13,12 @@
 nout = 200        # number of time-steps
 timestep = 0.1   # time between outputs
 
-TwistShift = false   # use twist-shift condition?
+twistshift = false   # use twist-shift condition?
 
 MZ = 32     # number of points in z direction (2^n)
 
 
-ZPERIOD = 1
+zperiod = 1
 ZMIN = -0.5
 ZMAX = 0.5
 

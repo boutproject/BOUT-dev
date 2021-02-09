@@ -15,7 +15,7 @@ MZ = 5    # Z size
 
 dump_format = "nc"  # NetCDF format
 
-TwistShift = true
+twistshift = true
 Ballooning = false
 
 [mesh] # Simple mesh for testing

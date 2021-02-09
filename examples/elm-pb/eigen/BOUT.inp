@@ -9,12 +9,12 @@ timestep = 0.1       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
-TwistShift = true   # use twist-shift condition?
+twistshift = true   # use twist-shift condition?
 ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
 TwistOrder = 0      # order of twist-shift interpolation
 
 MZ = 17             # number of points in z direction (2^n + 1)
-ZPERIOD = 15        # Fraction of a torus to simulate
+zperiod = 15        # Fraction of a torus to simulate
 
 grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 

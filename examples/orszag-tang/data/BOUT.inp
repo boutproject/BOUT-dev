@@ -8,7 +8,7 @@ nout = 30       # number of time-steps
 timestep = 0.02   # time between outputs
 
 ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 1     # number of points in z direction (2^n + 1)
 

@@ -10,5 +10,5 @@ grid = "test_io.grd.nc"
 
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
-TwistShift = false
+twistshift = false
 Ballooning = false

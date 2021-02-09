@@ -9,7 +9,7 @@ timestep = 1       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 1.55  # wall time limit (in hours)
 
-ZPERIOD = 15        # Fraction of a torus to simulate
+zperiod = 15        # Fraction of a torus to simulate
 MZ = 16             # Number of points in Z
 
 grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file

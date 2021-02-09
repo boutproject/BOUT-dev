@@ -7,7 +7,7 @@ nout = 400       # number of time-steps
 timestep = 1000.0   # time between outputs
 
 ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 ShiftOrder = 0
 TwistOrder = 0
 

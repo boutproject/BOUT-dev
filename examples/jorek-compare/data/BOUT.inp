@@ -6,11 +6,11 @@
 nout = 100     # number of time-steps
 timestep = 0.001  # time between outputs
 
-TwistShift = true  # use twist-shift condition?
+twistshift = true  # use twist-shift condition?
 
 MZ = 64     # number of points in z direction (2^n)
 
-ZPERIOD = 10 # Fraction of a torus
+zperiod = 10 # Fraction of a torus
 
 MXG = 2
 MYG = 2

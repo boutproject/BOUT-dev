@@ -6,7 +6,7 @@
 nout = 30       # number of time-steps
 timestep = 10.0   # time between outputs
 
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 33     # number of points in z direction (2^n + 1)
 ZMIN = 0.0

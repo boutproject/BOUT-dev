@@ -9,10 +9,10 @@ timestep = 2.0	   # time between outputs
 archive = 500
 
 ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 32     # number of points in z direction (2^n + 1)
-ZPERIOD = 5  # Number of periods
+zperiod = 5  # Number of periods
 
 non_uniform = true
 

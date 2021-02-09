@@ -9,10 +9,10 @@ timestep = 20.0	   # time between outputs
 archive = 500
 
 ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 513     # number of points in z direction (2^n + 1)
-ZPERIOD = 1  # Number of periods
+zperiod = 1  # Number of periods
 
 #ZMIN=0.0
 #ZMAX=2.e-2  # Non-integer period for comparison with BOUT-06

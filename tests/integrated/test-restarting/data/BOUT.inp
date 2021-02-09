@@ -10,8 +10,8 @@ ny = 1
 nz = 1
 
 [solver]
-rtol = 1e-14
-atol = 1e-18
+RTOL = 1e-14
+ATOL = 1e-18
 
 [f3d]
 function = 1

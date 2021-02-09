@@ -7,7 +7,7 @@ nout = 400       # number of time-steps
 timestep = 1	 # time between outputs
 
 MZ = 32     # number of points in z direction (2^n + 1)
-ZPERIOD = 5  # Number of periods
+zperiod = 5  # Number of periods
 
 non_uniform = true
 
