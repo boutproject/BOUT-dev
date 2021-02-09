@@ -377,7 +377,7 @@ the magnetic field is followed along the Y coordinate from each 2D
 grid to where it either intersects the forward and backward grid, or
 hits a boundary.
 
-The simplest code which creates an output file is::
+A simple code which creates an output file is::
 
    import zoidberg
 
@@ -387,8 +387,8 @@ The simplest code which creates an output file is::
    grid = zoidberg.grid.rectangular_grid(10,10,10)
    # Follow magnetic fields from each point
    maps = zoidberg.make_maps(grid, field)
-   # Write everything to file
-   zoidberg.write_maps(grid, field, maps, gridfile="grid.fci.nc")
+   # Write everything to file - with default option for gridfile and metric2d
+   zoidberg.write_maps(grid, field, maps, gridfile="grid.fci.nc", metric2d=True)
 
 As in the above code, creating an output file consists of the following steps:
 

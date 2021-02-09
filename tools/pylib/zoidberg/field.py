@@ -17,6 +17,8 @@ else:
     pickle_read_mode = "r"
     pickle_write_mode = "w"
 
+from .progress import update_progress
+
 
 class MagneticField(object):
     """Represents a magnetic field in either Cartesian or cylindrical
@@ -52,7 +54,7 @@ class MagneticField(object):
 
     """
 
-    boundary = boundary.NoBoundary() # An optional Boundary object
+    boundary = boundary.NoBoundary()  # An optional Boundary object
     attributes = {}
 
     def Bxfunc(self, x, z, phi):
@@ -155,7 +157,11 @@ class MagneticField(object):
             The magnitude of the magnetic field
 
         """
-        return np.sqrt( self.Bxfunc(x,z,phi)**2 + self.Byfunc(x,z,phi)**2 + self.Bzfunc(x,z,phi)**2 )
+        return np.sqrt(
+            self.Bxfunc(x, z, phi) ** 2
+            + self.Byfunc(x, z, phi) ** 2
+            + self.Bzfunc(x, z, phi) ** 2
+        )
 
     def field_direction(self, pos, ycoord, flatten=False):
         """Calculate the direction of the magnetic field
@@ -187,34 +193,36 @@ class MagneticField(object):
 
         if flatten:
             position = pos.reshape((-1, 2))
-            x = position[:,0]
-            z = position[:,1]
+            x = position[:, 0]
+            z = position[:, 1]
         else:
-            x,z = pos
+            x, z = pos
 
-        By = self.Byfunc(x,z,ycoord)
-        Rmaj = self.Rfunc(x,z,ycoord) # Major radius. None if Cartesian
+        By = self.Byfunc(x, z, ycoord)
+        Rmaj = self.Rfunc(x, z, ycoord)  # Major radius. None if Cartesian
 
         if Rmaj is not None:
             # In cylindrical coordinates
 
             if np.amin(np.abs(By)) < 1e-8:
                 # Very small By
-                print(x,z,ycoord, By)
-                raise ValueError("Small By ({}) at (x={}, y={}, z={})".format(By, x, ycoord, z))
+                print(x, z, ycoord, By)
+                raise ValueError(
+                    "Small By ({}) at (x={}, y={}, z={})".format(By, x, ycoord, z)
+                )
 
             R_By = Rmaj / By
             # Rate of change of x location [m] with y angle [radians]
-            dxdphi =  R_By * self.Bxfunc(x,z,ycoord)
+            dxdphi = R_By * self.Bxfunc(x, z, ycoord)
             # Rate of change of z location [m] with y angle [radians]
-            dzdphi =  R_By * self.Bzfunc(x,z,ycoord)
+            dzdphi = R_By * self.Bzfunc(x, z, ycoord)
         else:
             # In Cartesian coordinates
 
             # Rate of change of x location [m] with y angle [radians]
-            dxdphi =  self.Bxfunc(x,z,ycoord) / By
+            dxdphi = self.Bxfunc(x, z, ycoord) / By
             # Rate of change of z location [m] with y angle [radians]
-            dzdphi =  self.Bzfunc(x,z,ycoord) / By
+            dzdphi = self.Bzfunc(x, z, ycoord) / By
 
         if flatten:
             result = np.column_stack((dxdphi, dzdphi)).flatten()
@@ -243,6 +251,7 @@ class Slab(MagneticField):
         Rate of change of Bz with x
 
     """
+
     def __init__(self, By=1.0, Bz=0.1, xcentre=0.0, Bzprime=1.0):
 
         By = float(By)
@@ -262,7 +271,7 @@ class Slab(MagneticField):
         return np.full(x.shape, self.By)
 
     def Bzfunc(self, x, z, phi):
-        return self.Bz + (x - self.xcentre)*self.Bzprime
+        return self.Bz + (x - self.xcentre) * self.Bzprime
 
 
 class CurvedSlab(MagneticField):
@@ -289,6 +298,7 @@ class CurvedSlab(MagneticField):
         Major radius of the slab
 
     """
+
     def __init__(self, By=1.0, Bz=0.1, xcentre=0.0, Bzprime=1.0, Rmaj=1.0):
 
         By = float(By)
@@ -304,10 +314,10 @@ class CurvedSlab(MagneticField):
         self.Rmaj = Rmaj
 
         # Set poloidal magnetic field
-        #Bpx = self.Bp + (self.grid.xarray-self.grid.Lx/2.) * self.Bpprime
-        #self.Bpxy = np.resize(Bpx, (self.grid.nz, self.grid.ny, self.grid.nx))
-        #self.Bpxy = np.transpose(self.Bpxy, (2,1,0))
-        #self.Bxy = np.sqrt(self.Bpxy**2 + self.Bt**2)
+        # Bpx = self.Bp + (self.grid.xarray-self.grid.Lx/2.) * self.Bpprime
+        # self.Bpxy = np.resize(Bpx, (self.grid.nz, self.grid.ny, self.grid.nx))
+        # self.Bpxy = np.transpose(self.Bpxy, (2,1,0))
+        # self.Bxy = np.sqrt(self.Bpxy**2 + self.Bt**2)
 
     def Bxfunc(self, x, z, phi):
         return np.zeros(x.shape)
@@ -1428,6 +1438,17 @@ class W7X_vacuum(MagneticField):
         include_plasma_field=False,
         wout_file="wout_w7x.0972_0926_0880_0852_+0000_+0000.01.00jh.nc",
     ):
+        """
+        Get the field for W7X from the webservices.
+
+        Parameters
+        ----------
+        configuration : int
+            The id's are listed here:
+            http://webservices.ipp-hgw.mpg.de/docs/fieldlinetracer.html#MagneticConfig
+            While the description are at:
+            http://svvmec1.ipp-hgw.mpg.de:8080/vmecrest/v1/Coil_currents_1_AA_T_0011.pdf
+        """
         from scipy.interpolate import RegularGridInterpolator
         import numpy as np
 
@@ -1467,9 +1488,19 @@ class W7X_vacuum(MagneticField):
         # we can get an interpolation function in 3D
         points = (r, phi, z)
 
-        self.br_interp = RegularGridInterpolator(
-            points, Bx, bounds_error=False, fill_value=0.0
-        )
+        try:
+            self.br_interp = RegularGridInterpolator(
+                points, Bx, bounds_error=False, fill_value=0.0
+            )
+        except:
+            print([i.shape for i in points], Bx.shape)
+            import matplotlib.pyplot as plt
+
+            for i in points:
+                plt.plot(i)
+            plt.show()
+            raise
+
         self.bz_interp = RegularGridInterpolator(
             points, Bz, bounds_error=False, fill_value=0.0
         )
@@ -1538,26 +1569,44 @@ class W7X_vacuum(MagneticField):
             config = tracer.types.MagneticConfig()
             config.configIds = configuration
 
-            Br = np.zeros((nx, ny, nz))
-            Bphi = np.ones((nx, ny, nz))
-            Bz = np.zeros((nx, ny, nz))
+            tot = nx * ny * nz
+
+            Bx = np.zeros(tot)
+            By = np.zeros(tot)
+            Bz = np.zeros(tot)
             pos = tracer.types.Points3D()
 
-            pos.x1 = np.ndarray.flatten(
+            x1 = np.ndarray.flatten(
                 np.ones((nx, ny, nz)) * r * np.cos(phi)
             )  # x in Cartesian (real-space)
-            pos.x2 = np.ndarray.flatten(
+            x2 = np.ndarray.flatten(
                 np.ones((nx, ny, nz)) * r * np.sin(phi)
             )  # y in Cartesian (real-space)
-            pos.x3 = np.ndarray.flatten(z)  # z in Cartesian (real-space)
+            x3 = np.ndarray.flatten(z)  # z in Cartesian (real-space)
+            chunk = 100000
+            if tot > chunk * 2:
+                update_progress(0)
+            for i in range(0, tot, chunk):
+                end = i + chunk
+                end = min(end, tot)
+                slc = slice(i, end)
+                pos.x1 = x1[slc]
+                pos.x2 = x2[slc]
+                pos.x3 = x3[slc]
 
-            ## Call tracer service
-            res = tracer.service.magneticField(pos, config)
+                ## Call tracer service
+                res = tracer.service.magneticField(pos, config)
 
+                Bx[slc] = res.field.x1
+                By[slc] = res.field.x2
+                Bz[slc] = res.field.x3
+
+                if tot > chunk * 2:
+                    update_progress((i + 1) / tot)
             ## Reshape to 3d array
-            Bx = np.ndarray.reshape(np.asarray(res.field.x1), (nx, ny, nz))
-            By = np.ndarray.reshape(np.asarray(res.field.x2), (nx, ny, nz))
-            Bz = np.ndarray.reshape(np.asarray(res.field.x3), (nx, ny, nz))
+            Bx = Bx.reshape((nx, ny, nz))
+            By = By.reshape((nx, ny, nz))
+            Bz = Bz.reshape((nx, ny, nz))
 
             ## Convert to cylindrical coordinates
             Br = Bx * np.cos(phi) + By * np.sin(phi)

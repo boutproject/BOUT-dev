@@ -4,6 +4,7 @@
 
 from sys import stdout
 
+
 def update_progress(progress, barLength=10, ascii=False, **kwargs):
     """Displays or updates a console progress bar
 
@@ -24,9 +25,9 @@ def update_progress(progress, barLength=10, ascii=False, **kwargs):
     """
 
     if ascii:
-        cursor = '#'
+        cursor = "#"
     else:
-        cursor = u'█'
+        cursor = u"█"
 
     status = ""
     if isinstance(progress, int):
@@ -40,13 +41,14 @@ def update_progress(progress, barLength=10, ascii=False, **kwargs):
     if progress >= 1:
         progress = 1
         status = "Done...\r\n"
-    block = int(round(barLength*progress))
+    block = int(round(barLength * progress))
     text = u"\rPercent: [{prog:-<{len}}] {perc:6.2f}% {stat}".format(
-        len=barLength, prog=cursor*block, perc=progress*100, stat=status)
+        len=barLength, prog=cursor * block, perc=progress * 100, stat=status
+    )
 
     # Secret undocumented feature
-    if 'zoidberg' in kwargs:
-        if kwargs['zoidberg']:
+    if "zoidberg" in kwargs:
+        if kwargs["zoidberg"]:
             if barLength < 40:
                 barLength = 40
             if ascii:
@@ -56,21 +58,26 @@ def update_progress(progress, barLength=10, ascii=False, **kwargs):
                 face = u" (°,,,°) "
                 ink = u"█"
 
-            open_claw   = "(\/)"
+            open_claw = "(\/)"
             closed_claw = "(|)"
 
-            if int(progress*barLength) % 2:
-                left_claw  = open_claw
+            if int(progress * barLength) % 2:
+                left_claw = open_claw
                 right_claw = closed_claw
             else:
-                left_claw  = closed_claw
+                left_claw = closed_claw
                 right_claw = open_claw
 
-            zb = left_claw+face+right_claw
-            zb_middle = int(len(zb)/2)
-            start = int(round((barLength-zb_middle)*progress))
+            zb = left_claw + face + right_claw
+            zb_middle = int(len(zb) / 2)
+            start = int(round((barLength - zb_middle) * progress))
             text = u"\rProgress: [{start}{zb}{rest}] {perc:6.2f}% {stat}".format(
-                start=ink*start, zb=zb, perc=progress*100, rest='-'*(barLength-start-zb_middle), stat=status)
+                start=ink * start,
+                zb=zb,
+                perc=progress * 100,
+                rest="-" * (barLength - start - zb_middle),
+                stat=status,
+            )
 
     stdout.write(text)
     stdout.flush()
