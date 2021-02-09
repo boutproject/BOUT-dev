@@ -489,7 +489,7 @@ int BoutMesh::load() {
   /// Call topology to set layout of grid
   topology();
 
-  TwistShift = options["TwistShift"]
+  TwistShift = options["twistshift"]
                    .doc("Apply a Twist-Shift boundary using ShiftAngle?")
                    .withDefault(false);
 

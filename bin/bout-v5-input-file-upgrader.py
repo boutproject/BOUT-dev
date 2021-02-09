@@ -50,6 +50,7 @@ REPLACEMENTS = [
     {"old": "nxpe", "new": "NXPE"},
     {"old": "nype", "new": "NYPE"},
     {"old": "mesh:StaggerGrids", "new": "mesh:staggergrids"},
+    {"old": "TwistShift", "new": "twistshift"},
     {"old": "zmin", "new": "ZMIN"},
     {"old": "zmax", "new": "ZMAX"},
     {"old": "zperiod", "new": "ZPERIOD"},
