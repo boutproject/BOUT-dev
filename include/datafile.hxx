@@ -34,6 +34,7 @@ class Vector3D;
 
 #include <vector>
 #include <string>
+#include <cstring>
 #include <memory>
 
 /*!
@@ -103,10 +104,24 @@ class Datafile {
   bool can_write_strings() {
     // NetCDF DataFormat subclasses can read/write strings, but the HDF5 subclass is
     // buggy. If the DataFormat is not an H5Format, it can write strings correctly.
-    auto p = dynamic_cast<H5Format*>(file.get());
+#ifdef HDF5
+    // Extract the file extension
+    int len = strlen(filename);
+    int ind = len-1;  
+    while((ind != -1) && (filename[ind] != '.')) {
+      ind--;
+    }
+    const char *s = filename + ind+1;
 
-    // If p is not null, then file points to an H5Format object.
-    return (p == nullptr);
+    const char *hdf5_match[] = {"h5","hdf","hdf5"};
+    for(int i=0; i<len; i++) {
+      if(strcasecmp(s, hdf5_match[i]) == 0) {
+        return false;
+      }
+    }
+#endif
+
+    return true;
   }
 
  private:
