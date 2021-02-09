@@ -247,7 +247,7 @@ FieldGeneratorPtr ExpressionParser::parseString(const string& input) const {
 // Private functions
 
 FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo& lex) const {
-  string name = lowercase(lex.curident);
+  string name = lex.curident;
   lex.nextToken();
 
   // sum(symbol, count, expr)
