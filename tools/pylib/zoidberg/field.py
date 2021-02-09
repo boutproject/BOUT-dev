@@ -17,6 +17,8 @@ else:
     pickle_read_mode = "r"
     pickle_write_mode = "w"
 
+from .progress import update_progress
+
 
 class MagneticField(object):
     """Represents a magnetic field in either Cartesian or cylindrical
@@ -1538,26 +1540,44 @@ class W7X_vacuum(MagneticField):
             config = tracer.types.MagneticConfig()
             config.configIds = configuration
 
-            Br = np.zeros((nx, ny, nz))
-            Bphi = np.ones((nx, ny, nz))
-            Bz = np.zeros((nx, ny, nz))
+            tot = nx * ny * nz
+
+            Bx = np.zeros(tot)
+            By = np.zeros(tot)
+            Bz = np.zeros(tot)
             pos = tracer.types.Points3D()
 
-            pos.x1 = np.ndarray.flatten(
+            x1 = np.ndarray.flatten(
                 np.ones((nx, ny, nz)) * r * np.cos(phi)
             )  # x in Cartesian (real-space)
-            pos.x2 = np.ndarray.flatten(
+            x2 = np.ndarray.flatten(
                 np.ones((nx, ny, nz)) * r * np.sin(phi)
             )  # y in Cartesian (real-space)
-            pos.x3 = np.ndarray.flatten(z)  # z in Cartesian (real-space)
+            x3 = np.ndarray.flatten(z)  # z in Cartesian (real-space)
+            chunk = 100000
+            if tot > chunk * 2:
+                update_progress(0)
+            for i in range(0, tot, chunk):
+                end = i + chunk
+                end = min(end, tot)
+                slc = slice(i, end)
+                pos.x1 = x1[slc]
+                pos.x2 = x2[slc]
+                pos.x3 = x3[slc]
 
-            ## Call tracer service
-            res = tracer.service.magneticField(pos, config)
+                ## Call tracer service
+                res = tracer.service.magneticField(pos, config)
 
+                Bx[slc] = res.field.x1
+                By[slc] = res.field.x2
+                Bz[slc] = res.field.x3
+
+                if tot > chunk * 2:
+                    update_progress((i + 1) / tot)
             ## Reshape to 3d array
-            Bx = np.ndarray.reshape(np.asarray(res.field.x1), (nx, ny, nz))
-            By = np.ndarray.reshape(np.asarray(res.field.x2), (nx, ny, nz))
-            Bz = np.ndarray.reshape(np.asarray(res.field.x3), (nx, ny, nz))
+            Bx = Bx.reshape((nx, ny, nz))
+            By = By.reshape((nx, ny, nz))
+            Bz = Bz.reshape((nx, ny, nz))
 
             ## Convert to cylindrical coordinates
             Br = Bx * np.cos(phi) + By * np.sin(phi)
