@@ -38,7 +38,8 @@ def ask_modpath():
     writeable = []
     for modulepath in modpath.split(':'):
         if os.access(modulepath, os.W_OK):
-            writeable.append(modulepath)
+            if modulepath not in writeable:
+                writeable.append(modulepath)
 
     if writeable == []:
         raise RuntimeError(
@@ -76,7 +77,7 @@ def ask_bouttop():
 
 
 def create_mod(modulepath, name, top):
-    pathlib.Path.mkdir(modulepath+"/bout++", parents=True, exist_ok=True)
+    pathlib.Path(modulepath+"/bout++").mkdir(parents=True, exist_ok=True)
     filename = modulepath+"/bout++/"+name
     if 'LOADEDMODULES' in os.environ:
         prereq = []
