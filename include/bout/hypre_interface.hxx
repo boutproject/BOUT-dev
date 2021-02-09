@@ -707,13 +707,12 @@ private:
   MPI_Comm comm;
   HYPRE_Solver solver;
   HYPRE_Solver precon;
-  //bool pcg_setup;
   bool gmres_setup;
 public:
   HypreSystem(Mesh& mesh)
   {
     HYPRE_Init();
-# if 1
+#if 0
     hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
 #endif
 
@@ -741,7 +740,7 @@ public:
     HYPRE_BoomerAMGSetMaxLevels(precon, 20);
     HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
     HYPRE_BoomerAMGSetTol(precon, 0.0);
-
+    HYPRE_BoomerAMGSetPrintLevel(solver, 3);
 
     gmres_setup = false;
   }
@@ -752,30 +751,30 @@ public:
 
   void setRelTol(double tol)
   {
-    HYPRE_PCGSetTol(solver, tol);
+    HYPRE_ParCSRGMRESSetTol(solver, tol);
   }
 
   void setAbsTol(double tol)
   {
-    HYPRE_PCGSetAbsoluteTol(solver, tol);
+    HYPRE_ParCSRGMRESSetAbsoluteTol(solver, tol);
   }
 
   void setMaxIter(int max_iter)
   {
-    HYPRE_PCGSetMaxIter(solver, max_iter);
+    HYPRE_ParCSRGMRESSetMaxIter(solver, max_iter);
   }
 
   double getFinalRelResNorm()
   {
     HYPRE_Real resnorm;
-    HYPRE_PCGGetFinalRelativeResidualNorm(solver, &resnorm);
+    HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm(solver, &resnorm);
     return resnorm;
   }
 
   int getNumItersTaken()
   {
     HYPRE_Int iters;
-    HYPRE_PCGGetNumIterations(solver, &iters);
+    HYPRE_ParCSRGMRESGetNumIterations(solver, &iters);
     return iters;
   }
 
