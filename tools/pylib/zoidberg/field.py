@@ -1430,6 +1430,17 @@ class W7X_vacuum(MagneticField):
         include_plasma_field=False,
         wout_file="wout_w7x.0972_0926_0880_0852_+0000_+0000.01.00jh.nc",
     ):
+        """
+        Get the field for W7X from the webservices.
+
+        Parameters
+        ----------
+        configuration : int
+            The id's are listed here:
+            http://webservices.ipp-hgw.mpg.de/docs/fieldlinetracer.html#MagneticConfig
+            While the description are at:
+            http://svvmec1.ipp-hgw.mpg.de:8080/vmecrest/v1/Coil_currents_1_AA_T_0011.pdf
+        """
         from scipy.interpolate import RegularGridInterpolator
         import numpy as np
 
