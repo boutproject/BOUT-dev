@@ -486,7 +486,6 @@ void printCompileTimeOptions() {
 
   output_info.write(_("\tFFT support {}\n"), is_enabled(has_fftw));
   output_info.write(_("\tNatural language support {}\n"), is_enabled(has_gettext));
-  output_info.write(_("\tHDF5 support {}\n"), is_enabled(has_hdf5));
   output_info.write(_("\tLAPACK support {}\n"), is_enabled(has_lapack));
   // Horrible nested ternary to set this at compile time
   constexpr auto netcdf_flavour =
@@ -642,7 +641,6 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   // Add compile-time options
   dump_file.addOnce(const_cast<bool&>(bout::build::has_fftw), "has_fftw");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_gettext), "has_gettext");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_hdf5), "has_hdf5");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_lapack), "has_lapack");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_netcdf), "has_netcdf");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_legacy_netcdf),

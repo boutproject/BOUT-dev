@@ -4,7 +4,7 @@ BOUT++ options
 ==============
 
 The inputs to BOUT++ are a text file containing options, command-line options,
-and for complex grids a binary grid file in NetCDF or HDF5 format. Generating input
+and for complex grids a binary grid file in NetCDF format. Generating input
 grids for tokamaks is described in :ref:`sec-gridgen`. The grid file
 describes the size and topology of the X-Y domain, metric tensor
 components and usually some initial profiles. The option file specifies
@@ -437,20 +437,10 @@ may be useful anyway. See :ref:`sec-output` for more details.
 Input and Output
 ----------------
 
-The format of the output (dump) files can be controlled, if support for
-more than one output format has been configured, by setting the
-top-level option **dump\_format** to one of the recognised file
-extensions: ‘nc’ for NetCDF; ‘hdf5’, ‘hdf’ or ‘h5’ for HDF5. For example
-to select HDF5 instead of the default NetCDF format put
-
-.. code-block:: cfg
-
-    dump_format = hdf5
-
-before any section headers. The output (dump) files with time-history
-are controlled by settings in a section called “output”. Restart files
-contain a single time-slice, and are controlled by a section called
-“restart”. The options available are listed in table :numref:`tab-outputopts`.
+The output (dump) files with time-history are controlled by settings
+in a section called “output”. Restart files contain a single
+time-slice, and are controlled by a section called “restart”. The
+options available are listed in table :numref:`tab-outputopts`.
 
 .. _tab-outputopts:
 .. table:: Output file options

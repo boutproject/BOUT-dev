@@ -19,7 +19,6 @@ config = {
     "has_netcdf": "@BOUT_HAS_NETCDF@",
     "has_legacy_netcdf": "@BOUT_HAS_LEGACY_NETCDF@",
     "has_pnetcdf": "OFF",
-    "has_hdf5": "@BOUT_HAS_HDF5@",
     "has_pvode": "@BOUT_HAS_PVODE@",
     "has_cvode": "@BOUT_HAS_CVODE@",
     "has_ida": "@BOUT_HAS_IDA@",
