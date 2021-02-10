@@ -235,6 +235,8 @@ private:
       aparSolver = Laplacian::create(&globalOptions["aparSolver"]);
       acoef = (-0.5 * beta_p / fmei) * Ni0;
       aparSolver->setCoefA(acoef);
+    } else {
+      globalOptions["aparSolver"].setConditionallyUsed();
     }
     
     return 0;
