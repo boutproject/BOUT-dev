@@ -605,7 +605,8 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
   // Add run information
   if (outputfile.can_write_strings()) {
     // HDF5 string I/O is buggy, so skip writing run_id to dump files
-    bool save_repeat_run_id = (*options)["save_repeat_run_id"]
+    bool save_repeat_run_id = (!save_repeat) ? false :
+                              (*options)["save_repeat_run_id"]
                                   .doc("Write run_id and run_restart_from at every "
                                        "output timestep, to make it easier to "
                                        "concatenate output data sets in time")
