@@ -694,7 +694,7 @@ int BoutFinalise(bool write_settings) {
       setRunFinishInfo(options);
 
       const auto data_dir = options["datadir"].withDefault(std::string{DEFAULT_DIR});
-      const auto set_file = options["settingsfile"].withDefault("");
+      const auto set_file = options["settingsfile"].withDefault("BOUT.settings");
 
       if (BoutComm::rank() == 0) {
         writeSettingsFile(options, data_dir, set_file);
