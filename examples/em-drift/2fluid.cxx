@@ -228,11 +228,11 @@ private:
     SAVE_ONCE(Te_x, Ti_x, Ni_x, rho_s, wci, zeff, AA);
     
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create(&options["phiSolver"]);
+    phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
 
     if (! (estatic || ZeroElMass)) {
       // Create a solver for the electromagnetic potential
-      aparSolver = Laplacian::create(&options["aparSolver"]);
+      aparSolver = Laplacian::create(&globalOptions["aparSolver"]);
       acoef = (-0.5 * beta_p / fmei) * Ni0;
       aparSolver->setCoefA(acoef);
     }
