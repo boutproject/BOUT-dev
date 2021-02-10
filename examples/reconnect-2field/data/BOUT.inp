@@ -8,8 +8,6 @@ wall_limit = 4  # wall time limit (in hours)
 
 twistshift = true   # use twist-shift condition?
 
-ShiftInitial = true
-
 MZ = 64             # number of points in z direction (2^n)
 zperiod = 1        # Fraction of a torus to simulate
 

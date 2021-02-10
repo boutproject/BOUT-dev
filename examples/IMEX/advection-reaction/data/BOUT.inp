@@ -41,22 +41,9 @@ upwind = W3
 flux = U1
 
 ##################################################
-# Laplacian inversion settings
-
-[laplace]
-all_terms = false
-laplace_nonuniform = true
-filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
-
-##################################################
 # Solver settings
 
 [solver]
-
-# mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
-mxstep = 50000
 
 type = karniadakis
 timestep = 0.0001
@@ -70,23 +57,6 @@ rate = 0.0  # Reaction rate
 
 ##################################################
 # settings for individual variables
-# The section "All" defines default settings for all variables
-# These can be overridden for individual variables in
-# a section of that name.
-
-[all]
-scale = 0.0 # default size of initial perturbations
-function = sin(2*pi*x) * sin(z)
-# boundary conditions
-# -------------------
-# dirichlet    - Zero value
-# neumann      - Zero gradient
-# zerolaplace  - Laplacian = 0, decaying solution
-# constlaplace - Laplacian = const, decaying solution
-#
-# relax( )   - Make boundary condition relaxing
-
-bndry_all = dirichlet # Default zero value
 
 [U]
 scale = 1.0
@@ -94,3 +64,4 @@ function = sin(4*pi*x) * sin(3*z)
 
 [phi]
 scale = 1.0
+function = sin(2*pi*x) * sin(z)

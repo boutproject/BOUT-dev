@@ -6,7 +6,6 @@
 
 nout = 40          # number of time-steps
 timestep = 1       # time between outputs
-archive = 20        # Archive restart files after this number of outputs
 wall_limit = 1.55  # wall time limit (in hours)
 
 zperiod = 15        # Fraction of a torus to simulate
@@ -51,12 +50,6 @@ upwind = W3
 # implementation. Do not affect result.
 [output]
 shiftOutput = true
-
-[comms]
-
-async = false           # Use asyncronous sends?
-pre_post = false        # Post receives as early as possible
-group_nonblock = false  # Use non-blocking group operations?
 
 ##################################################
 # Laplacian inversion routines
@@ -149,10 +142,6 @@ zonal_bkgd = true    # keep this zonal harmonic?
 
 ## Jpar smoothing
 smooth_j_x = true   # Filter Jpar in the X direction
-lowpass_j_z = 16   # Remove high-k modes. Specifies maximum harmonic to keep
-
-## mask in x boundaries
-mask_j_x = true
 
 ## Magnetic perturbations
 include_rmp = false # Read RMP data from grid file
@@ -274,8 +263,8 @@ bndry_xout = zerolaplace
 bndry_xin = zerolaplace
 bndry_xout = zerolaplace
 
-bndry_yin = free_o3
-bndry_yout = free_o3
+bndry_yup = free_o3
+bndry_ydown = free_o3
 
 [J]    # parallel current
 

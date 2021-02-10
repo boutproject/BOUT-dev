@@ -6,8 +6,6 @@
 nout = 400       # number of time-steps
 timestep = 20.0	   # time between outputs
 
-archive = 500
-
 ShiftXderivs = false # use shifted radial derivatives?
 twistshift = false  # use twist-shift condition?
 
@@ -21,8 +19,6 @@ MXG = 2
 MYG = 2
 
 grid = "uedge.grd.pdb"
-
-dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 
 #StaggerGrids = true
 
@@ -113,8 +109,7 @@ filter_z_mode = 1  # Keep this Z harmonic
 # 32 - Don't use previous solution to start iterations
 #      (iterative methods only)
 
-phi_flags = 9  # inversion flags for phi
-apar_flags = 0 # flags for apar inversion
+# phi_flags = 9  # inversion flags for phi
 
 ##################################################
 # settings for individual variables

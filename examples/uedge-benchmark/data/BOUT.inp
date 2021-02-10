@@ -6,10 +6,7 @@
 nout = 400       # number of time-steps
 timestep = 1000.0   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
 twistshift = false  # use twist-shift condition?
-ShiftOrder = 0
-TwistOrder = 0
 
 MZ = 2     # number of points in z direction (2^n + 1)
 ZMIN = 0.0
@@ -19,11 +16,6 @@ MXG = 2
 MYG = 2
 
 grid = "uedge.grd_Up_Ni_Tei_2d.nc"
-
-dump_format = "nc"  # NetCDF format
-
-[comms]
-async = false
 
 ##################################################
 # derivative methods
@@ -63,13 +55,6 @@ RTOL = 1e-05  # relative tolerance
 
 AA = 2.0
 ZZ = 1.0
-
-estatic = false   # if true, electrostatic (Apar = 0)
-ZeroElMass = FALSE # Use Ohms law without electron inertia
-Zeff = 2.0        # Z effective
-nu_perp = 1e-20
-
-ShearFactor = 0.0
 
 chi_perp = 0.6
 

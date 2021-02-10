@@ -17,8 +17,6 @@ MYG = 2
 
 grid = "uedge.grd_beta.nc"
 
-output_format = "nc"
-
 ##################################################
 # derivative methods
 
@@ -91,15 +89,6 @@ bndry_all = neumann # Zero gradient
 scale = 1e-08 # only perturbing Ni
 
 function = sin(y) * sin(z)
-
-[Vi]
-evolve = false
-
-[Te]
-evolve = false
-
-[Ti]
-evolve = false
 
 [jpar]
 bndry_all = neumann # Zero gradient

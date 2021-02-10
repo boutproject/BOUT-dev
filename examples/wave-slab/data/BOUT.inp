@@ -6,7 +6,6 @@ grid = "slab.grd.nc"
 
 MZ = 64
 
-shiftInitial = true
 twistshift = true
 
 [mesh]

@@ -13,10 +13,7 @@ timestep = 10
 
 MZ = 5    # Z size
 
-dump_format = "nc"  # NetCDF format
-
 twistshift = true
-Ballooning = false
 
 [mesh] # Simple mesh for testing
 nx = 5

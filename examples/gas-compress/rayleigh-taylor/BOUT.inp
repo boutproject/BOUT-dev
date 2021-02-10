@@ -7,7 +7,6 @@
 nout = 200       # number of time-steps
 timestep = 0.1   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
 twistshift = false  # use twist-shift condition?
 
 MZ = 129     # number of points in z direction

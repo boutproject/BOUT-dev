@@ -17,10 +17,6 @@ MYG = 2
 
 grid = "d3d_119919.nc"
 
-#twistshift_pf = true # Grid has twist-shift in PF region
-
-dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
-
 [mesh]
 staggergrids = false # Use staggered grids (EXPERIMENTAL)
 

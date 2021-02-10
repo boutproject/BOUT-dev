@@ -17,14 +17,6 @@ dx = 0.2
 dy = 1.0
 dz = 0.2
 
-[laplace]
-
-flags = 0   # Flags for Laplacian inversion
-
-[solver]
-#type=karniadakis
-timestep = 0.001
-
 [hw]
 
 alpha = 1.0    # Adiabaticity (~ conductivity)

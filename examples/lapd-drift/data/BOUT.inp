@@ -6,9 +6,6 @@
 nout = 400       # number of time-steps
 timestep = 2.0	   # time between outputs
 
-archive = 500
-
-ShiftXderivs = false # use shifted radial derivatives?
 twistshift = false  # use twist-shift condition?
 
 MZ = 32     # number of points in z direction (2^n + 1)

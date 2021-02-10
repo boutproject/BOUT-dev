@@ -35,35 +35,18 @@ outer_boundary_flags = 0 # Dirichlet
 
 [solver]
 type = pvode
-timestep = 1e-08    # Suggested init timestep for numerical methods
 mxstep = 100000000       # max steps before result is deemed not to converge
 #ATOL =   1e-12          # Absolute tolerance
 #RTOL =   1e-5           # Relative tolerance
 
 [esel]
-#test_laplacian = true
+test_laplacian = false
 zeta = 0.00215
 D = 0.00197
-chi = 0.00461
 mu = 0.0388
 bracket = 2              # 0 = std, 1 = simple, 2 = arakawa
-#F_switch = 0             # 0 = off, 1 = F*D, F*sigma, 2 = F*D, (1/F)*sigma
-#F_amp = 1.0
-#F_wid = 10000
 
-
-[all]
-scale = 0.0
-function = mixmode(x) * mixmode(z)
-
-[n]
-scale = 1.0
-function = 15*sqrt(2*pi)*gauss(150*x,15)
-
-bndry_xin = dirichlet_o2(1.0)
-bndry_xout = neumann_o2
-
-[T]
+[N]
 scale = 1.0
 function = 15*sqrt(2*pi)*gauss(150*x,15)
 
