@@ -51,7 +51,7 @@ upwind = W3
 
 [laplace]
 all_terms = false
-laplace_nonuniform = true
+nonuniform = true
 filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 
 ##################################################

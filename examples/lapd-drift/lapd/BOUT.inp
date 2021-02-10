@@ -73,7 +73,7 @@ upwind = W3
 [laplace]
 
 all_terms = true
-laplace_nonuniform = true
+nonuniform = true
 inner_boundary_flags = 1 # INVERT_DC_GRAD
 outer_boundary_flags = 2 # INVERT_AC_GRAD
 

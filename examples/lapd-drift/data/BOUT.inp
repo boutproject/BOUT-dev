@@ -53,7 +53,7 @@ upwind = W3
 [laplace]
 
 all_terms = true
-laplace_nonuniform = true
+nonuniform = true
 
 ##################################################
 # Solver settings

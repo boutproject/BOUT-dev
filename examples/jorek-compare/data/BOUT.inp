@@ -53,7 +53,7 @@ flux = U1
 
 [laplace]
 all_terms = false
-laplace_nonuniform = false
+nonuniform = false
 filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP

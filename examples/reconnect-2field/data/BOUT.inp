@@ -69,7 +69,7 @@ group_nonblock = false  # Use non-blocking group operations?
 
 # max_mode = 16  # Maximum N to solve for
 all_terms = false
-laplace_nonuniform = false
+nonuniform = false
 filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 
 ##################################################
