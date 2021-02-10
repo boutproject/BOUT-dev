@@ -800,6 +800,22 @@ inline std::ostream& operator<<(std::ostream& out, const Options& value) {
   return out << toString(value);
 }
 
+namespace bout {
+/// Check if the global Options contains any unused keys and throw an
+/// exception if so. This check can be skipped by setting
+/// `input:error_on_unused_options=false` in the global Options.
+void checkForUnusedOptions();
+/// Check if the given \p options contains any unused keys and throw
+/// an exception if so.
+///
+/// The error message contains helpful suggestions on possible
+/// misspellings, and how to automatically fix most common errors with
+/// library options. The \p data_dir and \p option_file arguments are
+/// used to customise the error message for the actual input file used
+void checkForUnusedOptions(const Options& options, const std::string& data_dir,
+                           const std::string& option_file);
+}
+
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \
   pointer(options)->get(#var, var, def)

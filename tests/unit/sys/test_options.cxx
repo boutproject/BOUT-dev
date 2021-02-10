@@ -1093,3 +1093,26 @@ TEST_F(OptionsTest, GetFlattenedKeys) {
 
   EXPECT_EQ(flat_keys, expected_keys);
 }
+
+TEST_F(OptionsTest, CheckForUnusedOptions) {
+  Options option{{"section1", {{"value1", 42}, {"value2", "hello"}}},
+                 {"section2",
+                  {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}}};
+
+  // This shouldn't count as unused
+  option["section2"]["value5"].attributes["source"] = "Output";
+
+  MAYBE_UNUSED(auto value1) = option["section1"]["value1"].as<int>();
+  MAYBE_UNUSED(auto value3) = option["section2"]["subsection1"]["value3"].as<bool>();
+
+  EXPECT_THROW(bout::checkForUnusedOptions(option, "data", "BOUT.inp"), BoutException);
+}
+
+TEST_F(OptionsTest, CheckForUnusedOptionsGlobalRoot) {
+  Options::root()["unused"] = 42;
+
+  EXPECT_THROW(bout::checkForUnusedOptions(), BoutException);
+
+  Options::root()["input"]["error_on_unused_options"] = false;
+  EXPECT_NO_THROW(bout::checkForUnusedOptions());
+}

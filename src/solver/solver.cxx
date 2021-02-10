@@ -481,11 +481,11 @@ int Solver::solve(int nout, BoutReal timestep) {
 
   Timer timer("run"); // Start timer
 
-  const bool restart = globaloptions["restart"]
-               .doc("Load state from restart files?")
-               .withDefault(false);
+  const bool restart =
+      globaloptions["restart"].doc("Load state from restart files?").withDefault(false);
 
-  const bool append = globaloptions["append"]
+  const bool append =
+      globaloptions["append"]
           .doc("Add new outputs to the end of existing files? If false, overwrite files.")
           .withDefault(false);
   const bool dump_on_restart = globaloptions["dump_on_restart"]
@@ -497,92 +497,11 @@ int Solver::solve(int nout, BoutReal timestep) {
     throw BoutException("Physics RHS call failed\n");
   }
 
-  const bool error_on_unused_options =
-      globaloptions["input"]["error_on_unused_options"]
-          .doc(
-              "Error if there are any unused options before starting the main simulation")
-          .withDefault(true);
-
+  // Check for unused/mistyped options
   const bool validate_input = globaloptions["input"]["validate"]
                                   .doc("Check for unused options and stop")
                                   .withDefault(false);
-
-  if (error_on_unused_options or validate_input) {
-    Options unused = globaloptions.getUnused();
-    if (not unused.getChildren().empty()) {
-
-      // Construct a string with all the fuzzy matches for each unused option
-      const auto keys = unused.getFlattenedKeys();
-      std::string possible_misspellings;
-      for (const auto& key : keys) {
-        auto fuzzy_matches = globaloptions.fuzzyFind(key);
-        // Remove unacceptable matches, including:
-        // - exact matches
-        // - other unused options
-        // - options set internally by the library and not meant as user inputs
-        bout::utils::erase_if(
-            fuzzy_matches, [](const Options::FuzzyMatch& match) -> bool {
-              const auto source =
-                  match.match.hasAttribute("source")
-                      ? match.match.attributes.at("source").as<std::string>()
-                      : "";
-              const bool internal_source = (source == "Solver") or (source == "Output");
-
-              return match.distance == 0 or (not match.match.valueUsed())
-                     or internal_source;
-            });
-
-        if (fuzzy_matches.empty()) {
-          continue;
-        }
-        possible_misspellings +=
-            fmt::format("\nUnused option '{}', did you mean:\n", key);
-        for (const auto& match : fuzzy_matches) {
-          possible_misspellings += fmt::format("\t{}\n", match.match.str());
-        }
-      }
-
-      // Only display the possible matches if we actually have some to show
-      const std::string additional_info =
-          possible_misspellings.empty()
-              ? ""
-              : fmt::format("Suggested alternatives:\n{}", possible_misspellings);
-
-      // Raw string to help with the formatting of the message, and a
-      // separate variable so clang-format doesn't barf on the
-      // exception
-      const std::string unused_message = _(R"""(
-There were unused input options:
------
-{}
------
-It's possible you've mistyped some options. BOUT++ input arguments are
-now case-sensitive, and some have changed name. You can try running
-
-    <BOUT++ directory>/bin/bout-v5-input-file-upgrader.py {}/{}
-
-to automatically fix the most common issues. If these options above
-are sometimes used depending on other options, you can call
-`Options::setConditionallyUsed()`, for example:
-
-    Options::root()["{}"].setConditionallyUsed();
-
-to mark a section or value as depending on other values, and so ignore
-it in this check. Alternatively, if you're sure the above inputs are
-not a mistake, you can set 'input:error_on_unused_options=false' to
-turn off this check for unused options. You can always set
-'input:validate=true' to check inputs without running the full
-simulation.
-
-{})""");
-
-      throw BoutException(unused_message, toString(unused),
-                          globaloptions["datadir"].as<std::string>(),
-                          globaloptions["optionfile"].as<std::string>(),
-                          unused.getChildren().begin()->first, additional_info);
-    }
-  }
-
+  bout::checkForUnusedOptions();
   if (validate_input) {
     return 0;
   }
