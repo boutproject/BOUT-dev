@@ -117,8 +117,9 @@ int PhysicsModel::postInit(bool restarting) {
   // Second argument specifies no time history
   // Open and close the restart file first so that it knows it's filename - needed so
   // can_write_strings() works and we can skip writing run_id for HDF5 files.
-  if (!restart.openr("%s",filename.c_str()))
+  if (!restart.openr("%s",filename.c_str())) {
     throw BoutException("Error: Could not open restart file %s\n", filename.c_str());
+  }
   restart.close();
   solver->outputVars(restart, false);
 
