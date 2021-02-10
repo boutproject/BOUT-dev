@@ -124,7 +124,7 @@ public:
 
 protected:
   /// This will be called to resolve any unknown symbols
-  virtual FieldGeneratorPtr resolve(std::string& UNUSED(name)) const { return nullptr; }
+  virtual FieldGeneratorPtr resolve(const std::string& UNUSED(name)) const { return nullptr; }
 
   /// Parses a given string into a tree of FieldGenerator objects
   FieldGeneratorPtr parseString(const std::string& input) const;

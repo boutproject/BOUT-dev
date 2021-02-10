@@ -101,7 +101,7 @@ public:
 protected:
   /// These functions called by the parser to resolve unknown symbols.
   /// This is used to enable options to be referred to in expressions.
-  FieldGeneratorPtr resolve(std::string& name) const override;
+  FieldGeneratorPtr resolve(const std::string& name) const override;
 
 private:
   /// The default mesh for create functions.

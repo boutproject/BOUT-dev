@@ -318,7 +318,7 @@ const Options* FieldFactory::findOption(const Options* opt, const std::string& n
   return result;
 }
 
-FieldGeneratorPtr FieldFactory::resolve(std::string& name) const {
+FieldGeneratorPtr FieldFactory::resolve(const std::string& name) const {
   if (options != nullptr) {
     // Check if in cache
     std::string key;
