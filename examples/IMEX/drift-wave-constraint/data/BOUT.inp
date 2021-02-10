@@ -19,6 +19,8 @@ dy = Ly / ny
 dz = Lz / nz
 
 ne0 = 1 + 0.1*(0.5 - x)
+[solver]
+type = imexbdf2
 
 [drift]
 nu = 0.1
