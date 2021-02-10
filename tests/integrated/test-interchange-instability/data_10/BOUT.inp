@@ -102,7 +102,6 @@ bndry_all = neumann # Zero-gradient on all boundaries
 [Ni]
 scale = 0.0001 # only perturbing Ni
 function = sin(4*z)
-#scale = -1.0e-8
 
 [Vi]
 evolve = false
