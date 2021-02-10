@@ -86,8 +86,8 @@ private:
 
     /*************** READ OPTIONS *************************/
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["2fluid"];
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["2fluid"];
 
     AA = options["AA"].withDefault(2.0);
     ZZ = options["ZZ"].withDefault(1.0);

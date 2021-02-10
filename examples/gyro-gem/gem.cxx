@@ -158,8 +158,8 @@ class GEM : public PhysicsModel {
     //////////////////////////////////
     // Read options
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["gem"];
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["gem"];
 
     adiabatic_electrons = options["adiabatic_electrons"].withDefault(false);
     small_rho_e = options["small_rho_e"].withDefault(true);
