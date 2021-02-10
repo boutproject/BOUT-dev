@@ -114,7 +114,7 @@ class Datafile {
     const char *s = filename + ind+1;
 
     const char *hdf5_match[] = {"h5","hdf","hdf5"};
-    for(int i=0; i<len; i++) {
+    for(int i=0; i<3; i++) {
       if(strcasecmp(s, hdf5_match[i]) == 0) {
         return false;
       }
