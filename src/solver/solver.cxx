@@ -33,6 +33,7 @@
 #include "bout/region.hxx"
 #include "bout/solverfactory.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/sys/uuid.h"
 
 #include <cmath>
 #include <cstring>
@@ -453,8 +454,21 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
 
+  // Set the run ID
+  run_restart_from = run_id; // Restarting from the previous run ID
+  run_id = createRunID();
+
+  // Put the run ID into the options tree
+  // Forcing in case the value has been previously set
+  Options::root()["run"]["run_id"].force(run_id, "Solver");
+  Options::root()["run"]["run_restart_from"].force(run_restart_from, "Solver");
+
   /// Run the solver
   output_info.write(_("Running simulation\n\n"));
+  output_info.write("Run ID: %s\n", run_id.c_str());
+  if (run_restart_from != default_run_id) {
+    output_info.write("Restarting from ID: %s\n", run_restart_from.c_str());
+  }
 
   time_t start_time = time(nullptr);
   output_progress.write(_("\nRun started at  : %s\n"), toString(start_time).c_str());
@@ -516,6 +530,51 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   return status;
 }
 
+std::string Solver::createRunID() const {
+
+  std::string result;
+  result.resize(36);
+
+  if (MYPE == 0) {
+    // Generate a unique ID for this run
+#if BOUT_HAS_UUID_SYSTEM_GENERATOR
+    uuids::uuid_system_generator gen{};
+#else
+    std::random_device rd;
+    auto seed_data = std::array<int, std::mt19937::state_size>{};
+    std::generate(std::begin(seed_data), std::end(seed_data), std::ref(rd));
+    std::seed_seq seq(std::begin(seed_data), std::end(seed_data));
+    std::mt19937 generator(seq);
+    uuids::uuid_random_generator gen{generator};
+#endif
+
+    result = uuids::to_string(gen());
+  }
+
+  // All ranks have same run_id
+  // Standard representation of UUID is always 36 characters
+  MPI_Bcast(&result[0], 36, MPI_CHAR, 0, BoutComm::get());
+
+  return result;
+}
+
+std::string Solver::getRunID() const {
+  AUTO_TRACE();
+  if (run_id == default_run_id) {
+    throw BoutException("run_id not set!");
+  }
+  return run_id;
+}
+
+std::string Solver::getRunRestartFrom() const {
+  AUTO_TRACE();
+  // Check against run_id, because this might not be a restarted run
+  if (run_id == default_run_id) {
+    throw BoutException("run_restart_from not set!");
+  }
+  return run_restart_from;
+}
+
 /**************************************************************************
  * Initialisation
  **************************************************************************/
@@ -542,6 +601,22 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
   /// Add basic variables to the file
   outputfile.addOnce(simtime,  "tt");
   outputfile.addOnce(iteration, "hist_hi");
+
+  // Add run information
+  if (outputfile.can_write_strings()) {
+    // HDF5 string I/O is buggy, so skip writing run_id to dump files
+    bool save_repeat_run_id = (!save_repeat) ? false :
+                              (*options)["save_repeat_run_id"]
+                                  .doc("Write run_id and run_restart_from at every "
+                                       "output timestep, to make it easier to "
+                                       "concatenate output data sets in time")
+                                  .withDefault(false);
+    outputfile.add(run_id, "run_id", save_repeat_run_id, "UUID for this simulation");
+    outputfile.add(run_restart_from, "run_restart_from", save_repeat_run_id,
+                   "run_id of the simulation this one was restarted from."
+                   "'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' means the run is not a "
+                   "restart, or the previous run did not have a run_id.");
+  }
 
   // Add 2D and 3D evolving fields to output file
   for(const auto& f : f2d) {

@@ -4,7 +4,6 @@
 # Run the test, compare results against the benchmark
 #
 
-#requires: all_tests
 #Requires: hdf5
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe

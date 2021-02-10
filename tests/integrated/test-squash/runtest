@@ -6,8 +6,10 @@ import time
 import numpy as np
 from boututils.run_wrapper import launch_safe, shell_safe
 
-#requires: all_tests
-#requires: netcdf
+# requires: all_tests
+# requires: netcdf
+
+IGNORED_VARS_PATTERN = re.compile("(wtime|ncalls|run_id|run_restart_from).*")
 
 
 class timer(object):
@@ -53,7 +55,7 @@ def verify(f1, f2):
                 raise RuntimeError("shape mismatch in ", v, d1[v], d2[v])
             if v in ["MXSUB", "MYSUB", "NXPE", "NYPE", "iteration","wall_time"]:
                 continue
-            if v.startswith("wtime") or v.startswith("ncalls"):
+            if IGNORED_VARS_PATTERN.match(v):
                 continue
             if not np.allclose(d1[v], d2[v], equal_nan=True):
                 err = ""

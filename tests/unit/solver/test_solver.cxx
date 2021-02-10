@@ -7,6 +7,7 @@
 #include "test_fakesolver.hxx"
 #include "bout/solver.hxx"
 #include "bout/solverfactory.hxx"
+#include "bout/sys/uuid.h"
 
 #include <algorithm>
 #include <string>
@@ -845,6 +846,34 @@ TEST_F(SolverTest, BasicSolve) {
 
   EXPECT_TRUE(solver.init_called);
   EXPECT_TRUE(solver.run_called);
+}
+
+TEST_F(SolverTest, GetRunID) {
+  Options options;
+  FakeSolver solver{&options};
+
+  Options::root()["dump_on_restart"] = false;
+
+  EXPECT_THROW(solver.getRunID(), BoutException);
+  solver.solve();
+
+  EXPECT_NO_THROW(solver.getRunID());
+  EXPECT_TRUE(uuids::uuid::is_valid_uuid(solver.getRunID()));
+}
+
+TEST_F(SolverTest, GetRunRestartFrom) {
+  Options options;
+  FakeSolver solver{&options};
+
+  Options::root()["dump_on_restart"] = false;
+
+  EXPECT_THROW(solver.getRunRestartFrom(), BoutException);
+  solver.solve();
+
+  EXPECT_NO_THROW(solver.getRunRestartFrom());
+  // It would be valid if this was a restart
+  // But hard to check that case without mocking DataFile
+  EXPECT_FALSE(uuids::uuid::is_valid_uuid(solver.getRunRestartFrom()));
 }
 
 TEST_F(SolverTest, SolveBadInit) {

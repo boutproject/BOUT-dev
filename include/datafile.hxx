@@ -18,6 +18,7 @@ class Datafile;
 #include "bout/macro_for_each.hxx"
 
 #include "dataformat.hxx"
+#include "../src/fileio/impls/hdf5/h5_format.hxx"
 #include "bout/format.hxx"
 
 #include <cstdarg>
@@ -33,6 +34,7 @@ class Vector3D;
 
 #include <vector>
 #include <string>
+#include <cstring>
 #include <memory>
 
 /*!
@@ -98,6 +100,29 @@ class Datafile {
   void setAttribute(const std::string &varname, const std::string &attrname, const std::string &text);
   void setAttribute(const std::string &varname, const std::string &attrname, int value);
   void setAttribute(const std::string &varname, const std::string &attrname, BoutReal value);
+
+  bool can_write_strings() {
+    // NetCDF DataFormat subclasses can read/write strings, but the HDF5 subclass is
+    // buggy. If the DataFormat is not an H5Format, it can write strings correctly.
+#ifdef HDF5
+    // Extract the file extension
+    int len = strlen(filename);
+    int ind = len-1;  
+    while((ind != -1) && (filename[ind] != '.')) {
+      ind--;
+    }
+    const char *s = filename + ind+1;
+
+    const char *hdf5_match[] = {"h5","hdf","hdf5"};
+    for(int i=0; i<3; i++) {
+      if(strcasecmp(s, hdf5_match[i]) == 0) {
+        return false;
+      }
+    }
+#endif
+
+    return true;
+  }
 
  private:
   Mesh* mesh;
