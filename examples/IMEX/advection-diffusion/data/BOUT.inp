@@ -58,7 +58,7 @@ adapt_period = 5  # Internal steps between accuracy checks
 
 [imex]
 
-vx = 2.0    # Advection velocity in X
+Vx = 2.0    # Advection velocity in X
 Dz = 1.0    # Diffusion coefficient in Z
 
 # Settings for evolving variable

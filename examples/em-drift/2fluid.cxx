@@ -96,7 +96,7 @@ private:
     ZeroElMass = options["ZeroElMass"].withDefault(false);
     AparInEpar = options["AparInEpar"].withDefault(true);
 
-    zeff = options["zeff"].withDefault(1.0);
+    zeff = options["Zeff"].withDefault(1.0);
     nu_perp = options["nu_perp"].withDefault(0.0);
     ShearFactor = options["ShearFactor"].withDefault(1.0);
     nu_factor = options["nu_factor"].withDefault(1.0);
