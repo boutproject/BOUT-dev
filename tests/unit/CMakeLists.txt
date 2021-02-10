@@ -73,7 +73,7 @@ set(serial_tests_source
   ./src/test_bout++.cxx)
 
 if(BOUT_HAS_HYPRE)
-   list(APPEND ${serial_tests_source} ./include/bout/test_hypre_interface.cxx)
+   list(APPEND serial_tests_source ./include/bout/test_hypre_interface.cxx)
 endif ()
 
 add_executable(serial_tests ${serial_tests_source})

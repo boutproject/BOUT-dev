@@ -10,6 +10,16 @@
 #include "../field2d.hxx"
 
 
+#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
+#define BOUT_HOST_DEVICE __host__ __device__
+#define BOUT_HOST __host__
+#define BOUT_DEVICE __device__
+#else
+#define BOUT_HOST_DEVICE
+#define BOUT_HOST
+#define BOUT_DEVICE
+#endif
+
 template<CELL_LOC location = CELL_CENTRE>
 struct FieldAccessor {
   explicit FieldAccessor(Field3D &f) {
@@ -63,10 +73,10 @@ struct FieldAccessor {
 	}
   }
 
-    BoutReal& __host__ __device__ operator[](const Ind3D &d) {
+    BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D &d) {
     return data[d.ind];
   }
-  const BoutReal& __host__ __device__ operator[](const Ind3D &d) const {
+  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D &d) const {
     return data[d.ind];
   }
   

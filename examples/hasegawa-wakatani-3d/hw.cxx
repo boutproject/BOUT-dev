@@ -25,8 +25,14 @@
 #include <smoothing.hxx>
 #include <invert_laplace.hxx>
 #include <derivs.hxx>
+
+#if BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
+#endif
+
+#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
 #include <cuda_profiler_api.h>
+#endif
 
 class HW3D : public PhysicsModel {
 public:
@@ -69,11 +75,12 @@ public:
     auto phi_acc = FieldAccessor<>(phi);
     auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n); 
    
+#if BOUT_HAS_RAJA
 //  RAJA GPU code ----------- start
     auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
     Ind3D *ob_i = &(indices)[0];
 
-#if 1
+
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
       int i = ob_i[id].ind;
       BoutReal div_current = alpha * Div_par_Grad_par_g(phi_minus_n_acc, i);

@@ -21,13 +21,29 @@
 #include <memory>
 
 namespace bout {
-#if 1   //HYPRE with Cuda enabled : todo use appropriate flag
+#if 0   //HYPRE with Cuda enabled : todo use appropriate flag
 #define HypreMalloc(P, SIZE)  cudaMallocManaged(P, SIZE)
 #define HypreFree(P)  cudaFree(P)
 #else
-#define HypreMalloc(P, SIZE)  malloc(P, SIZE)
+#define HypreMalloc(P, SIZE) P = static_cast<decltype(P)>(malloc(SIZE))
 #define HypreFree(P)  free(P)
 #endif
+
+
+namespace {
+int checkHypreError(int error) {
+  if (error) {
+    // Aaron Fisher warns that it is possible that the error code is non-zero even
+    // though a solve was successful. If this occurs, we might want to make this a
+    // warning, or otherwise investigate further.
+    char error_cstr[2048];
+    HYPRE_DescribeError(error, &error_cstr[0]);
+    throw BoutException("A Hypre call failed with error code {:d}: {:s}",
+                        error, &error_cstr[0]);
+  }
+  return error;
+}
+}
 
 
 template <class T>
@@ -64,7 +80,7 @@ public:
       return;
     }
     // Also destroys parallel_vector
-    HYPRE_IJVectorDestroy(hypre_vector);
+    checkHypreError(HYPRE_IJVectorDestroy(hypre_vector));
     HypreFree(I);  
     HypreFree(V);
   }
@@ -113,7 +129,14 @@ public:
     return *this;
   }
   
-  /// Construct from a field, copying over the field values
+  HypreVector<T>& operator=(const T& f) {
+    ASSERT0(indexConverter); // Needs to have an index set
+    HypreVector<T> result(f, indexConverter);
+    *this = std::move(result);
+    return *this;
+  }
+
+/// Construct from a field, copying over the field values
   explicit HypreVector(const T& f, IndexerPtr<T> indConverter)
       : indexConverter(indConverter) {
     ASSERT1(indConverter->getMesh() == f.getMesh());
@@ -130,16 +153,9 @@ public:
 
     location = f.getLocation();
     initialised = true;
-    HypreMalloc(&I, vsize*sizeof(HYPRE_BigInt)); 
-    HypreMalloc(&V, vsize*sizeof(HYPRE_Complex));
+    HypreMalloc(I, vsize*sizeof(HYPRE_BigInt)); 
+    HypreMalloc(V, vsize*sizeof(HYPRE_Complex));
     importValuesFromField(f);
-  }
-
-  HypreVector<T>& operator=(const T& f) {
-    ASSERT0(indexConverter); // Needs to have an index set
-    HypreVector<T> result(f, indexConverter);
-    *this = std::move(result);
-    return *this;
   }
 
   /// Construct a vector with given index set, but don't set any values
@@ -157,8 +173,8 @@ public:
     HYPRE_IJVectorInitialize(hypre_vector);
     initialised = true;
     location = CELL_LOC::centre;
-    HypreMalloc(&I, vsize*sizeof(HYPRE_BigInt)); 
-    HypreMalloc(&V, vsize*sizeof(HYPRE_Complex));
+    HypreMalloc(I, vsize*sizeof(HYPRE_BigInt)); 
+    HypreMalloc(V, vsize*sizeof(HYPRE_Complex));
   }
 
   void assemble() {
@@ -594,15 +610,15 @@ public:
     HYPRE_BigInt *rawI;
     HYPRE_Complex *vals;
 
-    HypreMalloc(&num_cols, num_rows*sizeof(HYPRE_BigInt)); 
+    HypreMalloc(num_cols, num_rows*sizeof(HYPRE_BigInt)); 
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
       num_cols[i] = (*J)[i].size();;
       num_entries += (*J)[i].size();
     }
 
-    HypreMalloc(&rawI, num_rows*sizeof(HYPRE_BigInt));
-    HypreMalloc(&cols, num_entries*sizeof(HYPRE_BigInt)); 
-    HypreMalloc(&vals, num_entries*sizeof(HYPRE_Complex));
+    HypreMalloc(rawI, num_rows*sizeof(HYPRE_BigInt));
+    HypreMalloc(cols, num_entries*sizeof(HYPRE_BigInt)); 
+    HypreMalloc(vals, num_entries*sizeof(HYPRE_Complex));
     HYPRE_BigInt entry = 0;
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
       rawI[i] = (*I)[i];
@@ -689,7 +705,8 @@ private:
   MPI_Comm comm;
   HYPRE_Solver solver;
   HYPRE_Solver precon;
-  bool pcg_setup;
+  //bool pcg_setup;
+  bool gmres_setup;
 public:
   HypreSystem(Mesh& mesh)
   {
@@ -699,11 +716,19 @@ public:
 #endif
 
     comm = std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
+#if 0
     HYPRE_ParCSRPCGCreate(comm, &solver);
     HYPRE_PCGSetTol(solver, 1e-7);
     HYPRE_PCGSetAbsoluteTol(solver, 0.0);
     HYPRE_PCGSetMaxIter(solver, 200);
+#else
+   HYPRE_ParCSRGMRESCreate(comm, &solver);
 
+   /* set the GMRES paramaters */
+   HYPRE_GMRESSetKDim(solver, 5);
+   HYPRE_GMRESSetMaxIter(solver, 200);
+   HYPRE_GMRESSetTol(solver, 1.0e-07);
+#endif
     HYPRE_BoomerAMGCreate(&precon);
     HYPRE_BoomerAMGSetOldDefault(precon);
     HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation
@@ -716,7 +741,7 @@ public:
     HYPRE_BoomerAMGSetTol(precon, 0.0);
 
 
-    pcg_setup = false;
+    gmres_setup = false;
   }
 
   ~HypreSystem() {
@@ -756,10 +781,12 @@ public:
     A=A_;
   }
 
-  void setupAMG(HypreMatrix<T>* P_) {
+  int setupAMG(HypreMatrix<T>* P_) {
     P = P_;
-    HYPRE_ParCSRPCGSetPrecond(solver, HYPRE_BoomerAMGSolve, HYPRE_BoomerAMGSetup, precon);
-    HYPRE_BoomerAMGSetup(precon, P->getParallel(), nullptr, nullptr);    
+    checkHypreError(HYPRE_ParCSRGMRESSetPrecond(solver, HYPRE_BoomerAMGSolve, HYPRE_BoomerAMGSetup, precon));
+    int setup_err = checkHypreError(HYPRE_BoomerAMGSetup(precon, P->getParallel(), nullptr, nullptr));
+
+    return setup_err;
   }
 
   void setSolutionVector(HypreVector<T>* x_) {
@@ -800,12 +827,13 @@ public:
     ASSERT2(A != nullptr);
     ASSERT2(x != nullptr);
     ASSERT2(b != nullptr);
-    if (!pcg_setup) {
-      HYPRE_ParCSRPCGSetup(solver, A->getParallel(), b->getParallel(), x->getParallel());
-      pcg_setup = true;
+    if (!gmres_setup) {
+      checkHypreError(HYPRE_ParCSRGMRESSetup(solver, A->getParallel(), b->getParallel(), x->getParallel()));
+      gmres_setup = true;
     }
 
-    solve_err = HYPRE_ParCSRPCGSolve(solver, A->getParallel(), b->getParallel(), x->getParallel());
+    solve_err = checkHypreError(HYPRE_ParCSRGMRESSolve(solver, A->getParallel(), b->getParallel(), x->getParallel()));
+
     return solve_err;
   }
 
