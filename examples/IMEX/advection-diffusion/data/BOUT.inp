@@ -4,11 +4,20 @@
 # settings used by the core code
 
 NOUT = 50     # number of time-steps
-TIMESTEP = 1e-2  # time between outputs
+TIMESTEP = 0.01  # time between outputs
 
 periodicX = true   # Make domain periodic in X
 
 myg = 0
+
+[mesh]
+
+nx = 132
+ny = 1
+nz = 128
+
+dx = 1 / nx
+dz = 1 / (nz-4)
 
 ##################################################
 # derivative methods
@@ -34,22 +43,13 @@ second = C4
 upwind = W3
 flux = U1
 
-[mesh]
-
-nx = 132
-ny = 1
-nz = 128
-
-dx = 1 / nx
-dz = 1 / (nz-4)
-
 ##################################################
 # Solver settings
 
 [solver]
 
 type = splitrk
-timestep = 1e-4   # Internal timestep
+timestep = 0.0001   # Internal timestep
 nstages = 9       # Stages in RKL steps for diffusive component
 adapt_period = 5  # Internal steps between accuracy checks
 
@@ -65,5 +65,3 @@ Dz = 1.0    # Diffusion coefficient in Z
 [U]
 zs = z / (2π)
 function = exp(-((x-0.5)/0.1)^2 - ((zs-0.5)/0.1)^2)
-
-

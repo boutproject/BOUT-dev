@@ -1,7 +1,7 @@
 
 MZ = 100
-MXG=1
-MYG=1
+MXG = 1
+MYG = 1
 
 [mesh]
 nx = 100
@@ -9,7 +9,7 @@ ny = 100
 
 [performance]
 NUM_LOOPS = 100
-profileMode = false 
+profileMode = false
 includeHeader = true
 do2D3D = true#false
 do3D3D = false

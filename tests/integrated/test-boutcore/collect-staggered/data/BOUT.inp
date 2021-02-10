@@ -2,14 +2,14 @@ nout = 10
 timestep = 0.1
 
 [mesh]
-staggerGrids=True
-n=1
-nx=n+2*mxg
-ny=16
-nz=n
-mxg=0
-myg=2
-dy=2*pi/ny
+staggerGrids = True
+n = 1
+nx = n+2*mxg
+ny = 16
+nz = n
+mxg = 0
+myg = 2
+dy = 2*pi/ny
 
 [solver]
 rtol = 1e-14

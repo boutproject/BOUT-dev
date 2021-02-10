@@ -20,7 +20,7 @@ MYG = 0      # No y derivatives, so no guard cells needed in y
 
 nx = 260    # Note: 4 guard cells
 ny = 1
-nz = 256 
+nz = 256
 
 dx = 0.3      # Grid spacing [rho_s]
 dz = 0.3
@@ -30,7 +30,7 @@ dz = 0.3
 
 [mesh:ddx]
 
-first = C2  
+first = C2
 second = C2
 upwind = W3
 
@@ -51,8 +51,8 @@ upwind = W3
 
 [solver]
 
-ATOL = 1.0e-10  # absolute tolerance
-RTOL = 1.0e-5   # relative tolerance
+ATOL = 1e-10  # absolute tolerance
+RTOL = 1e-05   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 ###################################################
@@ -66,14 +66,14 @@ pctype = user  # Preconditioning type
 fourth_order = true  # 4th order or 2nd order
 
 flags = 0  # inversion flags for phi
-             # 0  = Zero value
-	     # 10 = Zero gradient AC inner & outer
-	     # 15 = Zero gradient AC and DC 
-	     # 768 = Zero laplace inner & outer 
+# 0  = Zero value
+# 10 = Zero gradient AC inner & outer
+# 15 = Zero gradient AC and DC
+# 768 = Zero laplace inner & outer
 
 [phiSolver:precon]  # Preconditioner (if pctype=user)
-filter     = 0.     # Must not filter solution
-flags      = 49152  # set_rhs i.e. identity matrix in boundaries
+filter = 0.0     # Must not filter solution
+flags = 49152  # set_rhs i.e. identity matrix in boundaries
 
 ###################################################
 # Electrostatic potential solver (Boussinesq)
@@ -89,16 +89,16 @@ flags = 0
 
 Te0 = 5    # Electron Temperature (eV)
 
-n0 = 2e18  # Background plasma density (m^-3)
+n0 = 2e+18  # Background plasma density (m^-3)
 
-compressible = false  # Compressibility? 
+compressible = false  # Compressibility?
 
 boussinesq = true  # Boussinesq approximation (no perturbed n in vorticity)
 
-D_vort = 1e-6  # Viscosity
-D_n = 1e-6    # Diffusion
-  
-R_c = 1.5  # Radius of curvature (m) 
+D_vort = 1e-06  # Viscosity
+D_n = 1e-06    # Diffusion
+
+R_c = 1.5  # Radius of curvature (m)
 
 # settings for individual variables
 # The section "All" defines default settings for all variables
@@ -117,5 +117,3 @@ height = 0.5
 width = 0.05
 
 function = 1 + height * exp(-((x-0.25)/width)^2 - ((z/(2*pi) - 0.5)/width)^2)
-
-

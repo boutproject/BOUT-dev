@@ -1,4 +1,4 @@
-timestep = 1.
+timestep = 1.0
 nout = 10
 
 MZ = 32
@@ -14,7 +14,7 @@ nx = 36
 ny = 1
 
 dx = 0.2
-dy = 1.
+dy = 1.0
 
 [solver]
 #type=karniadakis
@@ -22,10 +22,10 @@ timestep = 0.001
 
 [diffusion]
 
-D = 1.e-1
+D = 0.1
 
 [All]
-scale = 0.
+scale = 0.0
 
 bndry_all = dirichlet
 

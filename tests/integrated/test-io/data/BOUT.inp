@@ -13,4 +13,4 @@ grid = "test_io.grd.nc"
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
 [output]
-floats=true
+floats = true

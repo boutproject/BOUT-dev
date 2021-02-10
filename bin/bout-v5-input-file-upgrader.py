@@ -88,8 +88,7 @@ def fix_replacements(replacements, options_file):
 
 
 def apply_fixes(replacements, options_file):
-    """Apply all fixes in this module
-    """
+    """Apply all fixes in this module"""
 
     modified = copy.deepcopy(options_file)
 
@@ -99,9 +98,7 @@ def apply_fixes(replacements, options_file):
 
 
 def yes_or_no(question):
-    """Convert user input from yes/no variations to True/False
-
-    """
+    """Convert user input from yes/no variations to True/False"""
     while True:
         reply = input(question + " [y/N] ").lower().strip()
         if not reply or reply[0] == "n":
@@ -111,8 +108,7 @@ def yes_or_no(question):
 
 
 def create_patch(filename, original, modified):
-    """Create a unified diff between original and modified
-    """
+    """Create a unified diff between original and modified"""
 
     patch = "\n".join(
         difflib.unified_diff(
@@ -203,6 +199,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Automatically accept the canonical patch",
     )
+    parser.add_argument(
+        "--canonical-only",
+        "-k",
+        action="store_true",
+        help="Only check/fix canonicalisation",
+    )
 
     args = parser.parse_args()
 
@@ -233,6 +235,9 @@ if __name__ == "__main__":
             # Re-read input file
             if applied_patch:
                 original_source = str(original)
+
+        if args.canonical_only:
+            continue
 
         try:
             modified = apply_fixes(REPLACEMENTS, original)

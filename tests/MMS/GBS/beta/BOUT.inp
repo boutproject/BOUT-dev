@@ -1,7 +1,7 @@
 # settings file for BOUT++
 #
 # Simulation of BETA simple toroidal device
-# 
+#
 # The geometry is set up as a curved slab:
 # X   -- Radial coordinate, increasing in major radius
 # Y   -- Parallel coordinate, increasing in toroidal direction
@@ -10,25 +10,25 @@
 # The domain is periodic in both Y (toroidal) and Z (vertical) directions
 # Sinks of particles and energy are placed at either side in X (radial)
 # and a source is localised in X, constant in Z.
-# 
+#
 # A small vertical magnetic field is imposed by introducing a
 # Z shift between one end of Y and the other. The angle of this shift
 # is ShiftAngle, currently set to 0.1* 2*pi. This shifts a magnetic
 # field-line 1/10th of the way along Z for each toroidal transit.
-# 
+#
 # Radial boundary conditions are potential phi = 0
 # and zero gradient (Neumann) on all other fields
-# 
+#
 # Quantities are normalised as follows, using variables stored
 # in the output BOUT.dmp.*.nc files. These can be read using collect()
-# 
+#
 # Time        -  1/Omega_ci  [s]
 # Length      -  rho_s       [m]
 # B field     -  Bnorm       [T]
 # Density     -  Nnorm       [m^-3]
 # Temperature -  Tnorm       [eV]
-# 
-# 
+#
+#
 
 # settings used by the core code
 
@@ -48,21 +48,21 @@ nz = 128  # Vertical grid points
 # Set machine parameters
 
 Rmaj = 0.45   # Major radius of middle of X [m]
-Lx   = 0.05   # Width of domain in X [m]
-Lz   = 0.10   # Height of domain in Z [m]
+Lx = 0.05   # Width of domain in X [m]
+Lz = 0.1   # Height of domain in Z [m]
 
 Btor = 0.022  # Toroidal field [T]
 
 #############################
 # Set metric components using machine parameters
 
-Rxy  = Lz / (2*pi)  # Sets the Z metric
+Rxy = Lz / (2*pi)  # Sets the Z metric
 Btxy = 0.0  # Used for Z component of field
 Bpxy = Btor # Used for Y component of field
-Bxy  = Btor # Total magnetic field
+Bxy = Btor # Total magnetic field
 
 hthe = Rmaj # Sets the Y metric component
-dy   = 2*pi/ny # Full toroidal angle
+dy = 2*pi/ny # Full toroidal angle
 
 dr = Lx / (nx - 4)   # Radial grid spacing [m]
 dx = dr * Bpxy * Rxy # Radial grid spacing [Wb]
@@ -73,7 +73,7 @@ sinty = 0  # Integrated magnetic shear
 logB = -log(Rmaj + (x-0.5)*Lx)  # x here between 0 and 1
 
 # Shift in Z after a single toroidal turn
-ShiftAngle = 0.1 * 2.*pi 
+ShiftAngle = 0.1 * 2.*pi
 
 zshift = ShiftAngle * z / (2*pi)
 
@@ -82,7 +82,7 @@ zshift = ShiftAngle * z / (2*pi)
 
 [mesh:ddx]
 
-first = C2  
+first = C2
 second = C2
 upwind = W3
 
@@ -103,8 +103,8 @@ upwind = W3
 
 [solver]
 
-ATOL = 1.0e-10  # absolute tolerance
-RTOL = 1.0e-5   # relative tolerance
+ATOL = 1e-10  # absolute tolerance
+RTOL = 1e-05   # relative tolerance
 mxstep = 1000000  # Maximum internal steps per output
 
 
@@ -113,8 +113,8 @@ mxstep = 1000000  # Maximum internal steps per output
 
 [GBS]
 
-ionvis  = false # Ion Viscosity
-Ti      = 10    # Ion temperature for viscosity calculation
+ionvis = false # Ion Viscosity
+Ti = 10    # Ion temperature for viscosity calculation
 
 elecvis = false # Electron viscosity
 resistivity = true
@@ -129,9 +129,9 @@ startprofiles = false # Start from profiles in input file
 
 # Normalisation parameters
 Tnorm = 5     # Electron Temperature (eV)
-Nnorm = 1e17  # Background plasma density (m^-3)
+Nnorm = 1e+17  # Background plasma density (m^-3)
 Bnorm = 0.022 # Magnetic field [T]
-AA    = 40    # Ion atomic mass
+AA = 40    # Ion atomic mass
 
 # settings for individual variables
 # The section "All" defines default settings for all variables
@@ -145,11 +145,11 @@ bndry_all = neumann # Zero-gradient on all boundaries
 
 [Ne]  # Density
 evolve = true
-D = 1e-3 # Numerical diffusion
+D = 0.001 # Numerical diffusion
 
 # Initial profile with small initial perturbations
 # These have a mix of mode numbers in X-Z, and a dominant single harmonic in Y (toroidal)
-scale = 1.0 
+scale = 1.0
 function = 0.1+exp(-((x-0.5)/0.1)^2) + 0.001*ballooning(mixmode(z-0.1*x)*exp(-0.01*(y-pi)^2))*exp(-((x-0.5)/0.2)^2)
 
 # Particle source [Normalised]. Saved as "Sn" in output
@@ -158,7 +158,7 @@ source = 1e2*exp(-((x-0.5)/0.1)^2)  - 1e2*(H(x - 0.9) + H(0.1 - x))
 
 [Te]
 evolve = true
-D = 1e-3
+D = 0.001
 
 # Start with a Gaussian profile in temperature
 scale = 1
@@ -170,15 +170,14 @@ source = 2e2*exp(-((x-0.5)/0.1)^2)   - 1e2*(H(x - 0.9) + H(0.1 - x))
 
 [Vort]
 evolve = true
-D = 1e-3
+D = 0.001
 
 function = 0
 
 [Ve]
 evolve = true
-D = 1e-3
+D = 0.001
 
 [Vi]
 evolve = true
-D = 1e-3
-
+D = 0.001

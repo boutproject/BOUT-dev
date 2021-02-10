@@ -8,11 +8,11 @@ myg = 1  # No guard cells in Y
 input = sin(z)
 solution = -sin(z)
 
-[mesh:ddz]
-
-second = c2
-
 [mesh]
 
 nx = 1
 ny = 1
+
+[mesh:ddz]
+
+second = c2
