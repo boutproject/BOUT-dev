@@ -18,6 +18,7 @@ int GasCompress::init(bool restarting) {
   auto& options = Options::root()["gas"];
   gamma_ratio = options["gamma"].withDefault(0.1);
   include_viscosity = options["include_viscosity"].withDefault(false);
+  nu = options["viscosity"].withDefault(0.0);
   
   BoutReal v0_multiply = options["v0_multiply"].withDefault(1.0);
   V0 *= v0_multiply;
