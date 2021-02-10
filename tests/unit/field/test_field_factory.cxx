@@ -430,7 +430,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateSqrtX) {
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreateHeavisideXPi) {
-  auto output = this->create("h(x - pi)");
+  auto output = this->create("H(x - pi)");
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {

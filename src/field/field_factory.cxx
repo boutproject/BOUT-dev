@@ -126,7 +126,7 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   addGenerator("gauss", std::make_shared<FieldGaussian>(nullptr, nullptr));
   addGenerator("abs", std::make_shared<FieldGenOneArg<fabs>>(nullptr, "abs"));
   addGenerator("sqrt", std::make_shared<FieldGenOneArg<sqrt>>(nullptr, "sqrt"));
-  addGenerator("h", std::make_shared<FieldHeaviside>(nullptr));
+  addGenerator("H", std::make_shared<FieldHeaviside>(nullptr));
   addGenerator("erf", std::make_shared<FieldGenOneArg<erf>>(nullptr, "erf"));
   addGenerator("fmod", std::make_shared<FieldGenTwoArg<fmod>>(nullptr, nullptr));
 
