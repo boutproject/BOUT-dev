@@ -165,6 +165,10 @@ int BoutInitialise(int& argc, char**& argv) {
 
     // Load settings file
     OptionsReader* reader = OptionsReader::getInstance();
+    // Ideally we'd use the long options for `datadir` and
+    // `optionfile` here, but we'd need to call parseCommandLine
+    // _first_ in order to do that and set the source, etc., but we
+    // need to call that _second_ in order to override the input file
     reader->read(Options::getRoot(), "{}/{}", args.data_dir, args.opt_file);
 
     // Get options override from command-line
@@ -175,7 +179,11 @@ int BoutInitialise(int& argc, char**& argv) {
     // but it's possible that only happens in BoutFinalise, which is
     // too late for that check.
     const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
-    const auto settingsfile = Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
+    MAYBE_UNUSED()
+    const auto optionfile =
+        Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
+    const auto settingsfile =
+        Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
 
     setRunStartInfo(Options::root());
 
