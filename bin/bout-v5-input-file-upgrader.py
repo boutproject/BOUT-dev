@@ -58,6 +58,8 @@ REPLACEMENTS = [
     {"old": "mesh:shiftangle", "new": "mesh:ShiftAngle"},
     {"old": "mesh:shiftAngle", "new": "mesh:ShiftAngle"},
     {"old": "mesh:StaggerGrids", "new": "mesh:staggergrids"},
+    {"old": "output:shiftoutput", "new": "output:shiftOutput"},
+    {"old": "output:ShiftOutput", "new": "output:shiftOutput"},
     {"old": "TwistShift", "new": "twistshift"},
     {"old": "zmin", "new": "ZMIN"},
     {"old": "zmax", "new": "ZMAX"},

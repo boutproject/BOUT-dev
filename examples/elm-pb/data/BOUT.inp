@@ -50,7 +50,7 @@ upwind = W3
 # Fastest setting depends on machine and MPI
 # implementation. Do not affect result.
 [output]
-ShiftOutput = true
+shiftOutput = true
 
 [comms]
 
