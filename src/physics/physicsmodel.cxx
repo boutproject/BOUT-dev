@@ -119,7 +119,7 @@ int PhysicsModel::postInit(bool restarting) {
   // can_write_strings() works and we can skip writing run_id for HDF5 files.
   if (!restart.openr("%s",filename.c_str()))
     throw BoutException("Error: Could not open restart file %s\n", filename.c_str());
-  restart.close()
+  restart.close();
   solver->outputVars(restart, false);
 
   if (restarting) {
