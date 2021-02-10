@@ -622,7 +622,8 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
   outputfile.addOnce(iteration, "hist_hi");
 
   // Add run information
-  bool save_repeat_run_id = (*options)["save_repeat_run_id"]
+  bool save_repeat_run_id = (!save_repeat) ? false :
+                            (*options)["save_repeat_run_id"]
                                 .doc("Write run_id and run_restart_from at every output "
                                      "timestep, to make it easier to concatenate output "
                                      "data sets in time")
