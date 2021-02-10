@@ -531,7 +531,7 @@ int Solver::solve(int nout, BoutReal timestep) {
               return match.distance == 0 or (not match.match.valueUsed())
                      or internal_source;
             });
-        // TODO: also remove other unused options, and those from default source
+
         if (fuzzy_matches.empty()) {
           continue;
         }
