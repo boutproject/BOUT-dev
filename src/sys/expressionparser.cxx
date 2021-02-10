@@ -25,7 +25,9 @@
 #include <bout/sys/expressionparser.hxx>
 
 #include <utility>
-#include <utils.hxx> // for lowercase
+
+#include "bout/sys/gettext.hxx"
+#include "utils.hxx"
 
 using std::list;
 using std::string;
@@ -264,17 +266,54 @@ ExpressionParser::fuzzyFind(std::string name, std::string::size_type max_distanc
 }
 
 FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo& lex) const {
+  // Make a nice error message if we couldn't find the identifier
+  const auto generatorNotFoundErrorMessage = [&](const std::string& name) -> std::string {
+    const std::string message_template = _(
+        R"""(Couldn't find generator '{}'. BOUT++ expressions are now case-sensitive, so you
+may need to change your input file.
+{})""");
+
+    // Start position of the current identifier: by this point, we've either
+    // moved one character past the token, or we're still at the start
+    const auto start =
+        std::max(std::stringstream::off_type{0},
+                 lex.ss.tellg() - std::stringstream::pos_type(lex.curident.length() + 1));
+
+    // Try to put a nice little '^~~~~' underlining the problem
+    // identifier. NOTE: this will be longer than required for multibyte UTF-8
+    // characters, but will still point to the start of the identifier
+    const std::string problem_bit =
+        fmt::format("  {0}\n  {1: >{2}}{3:~^{4}}", lex.ss.str(), "^", start, "",
+                    lex.curident.length() - 1);
+
+    auto possible_matches = fuzzyFind(name);
+    // Remove exact matches -- not helpful
+    bout::utils::erase_if(possible_matches,
+                          [](const auto& match) -> bool { return match.distance == 0; });
+
+    // No matches, just point out the error
+    if (possible_matches.empty()) {
+      return fmt::format(message_template, name, problem_bit);
+    }
+
+    // Give the first suggestion as a possible alternative
+    std::string error_message = fmt::format(message_template, name, problem_bit);
+    error_message += fmt::format(_("\n  {1: ^{2}}{0}\n  Did you mean '{0}'?"),
+                                 possible_matches.begin()->name, "", start);
+    return error_message;
+  };
+
   string name = lex.curident;
   lex.nextToken();
 
   // sum(symbol, count, expr)
-  // e.g. sum(i, 10, {i}^2) -> 0 + 1^2 + 2^2 + 3^2 + ... + 9^2 
+  // e.g. sum(i, 10, {i}^2) -> 0 + 1^2 + 2^2 + 3^2 + ... + 9^2
   if (name == "sum") {
     if (lex.curtok != '(') {
       throw ParseException("Expecting '(' after 'sum' in 'sum(symbol, count, expr)'");
     }
     lex.nextToken();
-    
+
     if ((lex.curtok != -2) && (lex.curtok != -3)) {
       throw ParseException("Expecting symbol in 'sum(symbol, count, expr)'");
     }
@@ -282,17 +321,19 @@ FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo& lex) const {
     lex.nextToken();
 
     if (lex.curtok != ',') {
-      throw ParseException("Expecting , after symbol {:s} in 'sum(symbol, count, expr)'", sym);
+      throw ParseException("Expecting , after symbol {:s} in 'sum(symbol, count, expr)'",
+                           sym);
     }
     lex.nextToken();
-    
+
     auto countexpr = parseExpression(lex);
 
     if (lex.curtok != ',') {
-      throw ParseException("Expecting , after count expression in 'sum(symbol, count, expr)'");
+      throw ParseException(
+          "Expecting , after count expression in 'sum(symbol, count, expr)'");
     }
     lex.nextToken();
-    
+
     auto expr = parseExpression(lex);
 
     if (lex.curtok != ')') {
@@ -301,13 +342,14 @@ FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo& lex) const {
     lex.nextToken();
     return std::make_shared<FieldSum>(sym, countexpr, expr);
   }
-  
+
   if (lex.curtok == '(') {
     // Argument list. Find if a generator or function
 
     auto it = gen.find(name);
-    if (it == gen.end())
-      throw ParseException("Couldn't find generator '{:s}'", name);
+    if (it == gen.end()) {
+      throw ParseException(generatorNotFoundErrorMessage(name));
+    }
 
     // Parse arguments (if any)
     list<FieldGeneratorPtr> args;
@@ -342,8 +384,9 @@ FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo& lex) const {
     if (it == gen.end()) {
       // Not in internal map. Try to resolve
       FieldGeneratorPtr g = resolve(name);
-      if (g == nullptr)
-        throw ParseException("Couldn't find generator '{:s}'", name);
+      if (g == nullptr) {
+        throw ParseException(generatorNotFoundErrorMessage(name));
+      }
       return g;
     }
     list<FieldGeneratorPtr> args;
