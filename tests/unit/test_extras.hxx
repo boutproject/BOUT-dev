@@ -471,6 +471,8 @@ public:
     mesh_staggered = nullptr;
     delete bout::globals::mpi;
     bout::globals::mpi = nullptr;
+
+    Options::cleanup();
   }
 
   static constexpr int nx = 3;

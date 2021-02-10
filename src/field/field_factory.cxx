@@ -391,6 +391,23 @@ FieldGeneratorPtr FieldFactory::resolve(const std::string& name) const {
   return nullptr;
 }
 
+std::multiset<ExpressionParser::FuzzyMatch>
+FieldFactory::fuzzyFind(std::string name, std::string::size_type max_distance) const {
+  // First use parent fuzzyFind to check the list of generators
+  auto matches = ExpressionParser::fuzzyFind(name, max_distance);
+
+  if (options == nullptr) {
+    return matches;
+  }
+
+  // Now we can also search the options for likely candidates too
+  for (const auto& match : options->fuzzyFind(name, max_distance)) {
+    matches.insert({match.match.str(), match.distance});
+  }
+
+  return matches;
+}
+
 FieldGeneratorPtr FieldFactory::parse(const std::string& input, const Options* opt) const {
 
   // Check if in the cache

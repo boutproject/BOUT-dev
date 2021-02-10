@@ -594,6 +594,15 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   EXPECT_EQ(output.getNz(), nz);
 }
 
+// Subclass FieldFactory in order to expose the protected methods for
+// testing
+class FieldFactoryExposer : public FieldFactory {
+public:
+  FieldFactoryExposer(Mesh* mesh, Options* opt = nullptr) : FieldFactory(mesh, opt) {}
+  using FieldFactory::resolve;
+  using FieldFactory::fuzzyFind;
+};
+
 // The following tests still use the FieldFactory, but don't need to
 // be typed and make take longer as they check that exceptions get
 // thrown. Doing these twice will slow down the test unnecessarily
@@ -606,7 +615,7 @@ public:
   WithQuietOutput quiet_info{output_info}, quiet{output}, quiet_error{output_error};
   WithQuietOutput quiet_warn{output_warn};
 
-  FieldFactory factory;
+  FieldFactoryExposer factory;
 };
 
 TEST_F(FieldFactoryTest, RequireMesh) {
@@ -794,6 +803,43 @@ TEST_F(FieldFactoryTest, Recursion) {
   EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 6)), 8);
   EXPECT_THROW(gen->generate(Context().set("n", 7)), BoutException); // Max recursion exceeded
 }
+
+TEST_F(FieldFactoryTest, ResolveGlobalOptions) {
+  Options::root()["f"] = "1 + 1";
+  Options::root()["g"] = "f + f";
+
+  auto g = factory.resolve("g");
+
+  EXPECT_EQ(g->generate({}), 4);
+}
+
+TEST_F(FieldFactoryTest, ResolveLocalOptions) {
+  // Some global options to check we don't pick up these
+  Options::root()["f"] = "1 + 1";
+  Options::root()["g"] = "f + f";
+
+  Options options;
+  options["f"] = "2 + 2";
+  options["g"] = "f * f";
+
+  FieldFactoryExposer factory_local(mesh, &options);
+  auto g = factory_local.resolve("g");
+
+  EXPECT_EQ(g->generate({}), 16);
+}
+
+TEST_F(FieldFactoryTest, FuzzyFind) {
+  Options::root()["moxmide"] = "f + f";
+
+  // Find a default generator and something from the options
+  auto matches = factory.fuzzyFind("mixmide");
+  EXPECT_EQ(matches.size(), 2);
+
+  // Check case difference from the options
+  auto CAPS_matches = factory.fuzzyFind("MOXMIDE");
+  EXPECT_EQ(CAPS_matches.size(), 1);
+}
+
 // A mock ParallelTransform to test transform_from_field_aligned
 // property of FieldFactory. For now, the transform just returns the
 // negative of the input. Ideally, this will get moved to GoogleMock

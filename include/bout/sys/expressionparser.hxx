@@ -36,6 +36,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -126,6 +127,29 @@ protected:
   /// This will be called to resolve any unknown symbols
   virtual FieldGeneratorPtr resolve(const std::string& UNUSED(name)) const { return nullptr; }
 
+  /// A result that's almost what we were looking for. Return type of
+  /// `ExpressionParser::fuzzyFind`
+  struct FuzzyMatch {
+    /// Name of the match
+    std::string name;
+    /// Edit distance from original search term
+    std::string::size_type distance;
+    /// Comparison operator so this works in a std::multiset
+    friend bool operator<(const FuzzyMatch& lhs, const FuzzyMatch& rhs) {
+      return (lhs.distance < rhs.distance) and (lhs.name < rhs.name);
+    }
+  };
+
+  /// Find approximate matches for \p name in the known generators. \p
+  /// max_distance controls the similarity of results.
+  ///
+  /// Returns a set of possible matches ordered by similarity to \p
+  /// name. A \p distance of 1 means: a single insertion, deletion,
+  /// substitution, or transposition; that the case differs, for
+  /// example, "key" and "KEY" match with distance 1
+  virtual std::multiset<FuzzyMatch>
+  fuzzyFind(std::string name, std::string::size_type max_distance = 2) const;
+
   /// Parses a given string into a tree of FieldGenerator objects
   FieldGeneratorPtr parseString(const std::string& input) const;
 
@@ -145,7 +169,7 @@ private:
 
     /// Current token. -1 for number, -2 for symbol, -3 for {string}, 0 for "end of input"
     signed char curtok = 0;
-    double curval; ///< Value if a number
+    double curval;              ///< Value if a number
     std::string curident;       ///< Identifier, variable or function name
     signed char LastChar;       ///< The last character read from the string
     std::stringstream ss;       ///< Used to read values from the input string

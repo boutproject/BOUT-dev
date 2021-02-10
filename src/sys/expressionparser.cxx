@@ -246,6 +246,23 @@ FieldGeneratorPtr ExpressionParser::parseString(const string& input) const {
 //////////////////////////////////////////////////////////
 // Private functions
 
+std::multiset<ExpressionParser::FuzzyMatch>
+ExpressionParser::fuzzyFind(std::string name, std::string::size_type max_distance) const {
+  std::multiset<ExpressionParser::FuzzyMatch> matches;
+  for (const auto& key : gen) {
+    if ((key.first != name) and (lowercase(key.first) == lowercase(name))) {
+      // Differs only in case: pretty good match
+      matches.insert({key.first, 1});
+      continue;
+    }
+    const auto fuzzy_distance = editDistance(key.first, name);
+    if (fuzzy_distance <= max_distance) {
+      matches.insert({key.first, fuzzy_distance});
+    }
+  }
+  return matches;
+}
+
 FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo& lex) const {
   string name = lex.curident;
   lex.nextToken();
