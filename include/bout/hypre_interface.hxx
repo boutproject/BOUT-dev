@@ -21,8 +21,8 @@
 #include <memory>
 
 namespace bout {
-#if 0   //HYPRE with Cuda enabled : todo use appropriate flag
-#define HypreMalloc(P, SIZE)  cudaMallocManaged(P, SIZE)
+#ifdef BOUT_USE_CUDA   //HYPRE with Cuda enabled 
+#define HypreMalloc(P, SIZE)  cudaMallocManaged(&P, SIZE)
 #define HypreFree(P)  cudaFree(P)
 #else
 #define HypreMalloc(P, SIZE) P = static_cast<decltype(P)>(malloc(SIZE))
@@ -38,8 +38,14 @@ int checkHypreError(int error) {
     // warning, or otherwise investigate further.
     char error_cstr[2048];
     HYPRE_DescribeError(error, &error_cstr[0]);
-    throw BoutException("A Hypre call failed with error code {:d}: {:s}",
+    if(error > 1)
+      throw BoutException("A Hypre call failed with error code {:d}: {:s}",
                         error, &error_cstr[0]);
+    else if(error == 1) {
+       printf("Hypre returns %d %s\n",error,&error_cstr[0]);
+       HYPRE_ClearAllErrors();
+    }  
+
   }
   return error;
 }
@@ -711,30 +717,24 @@ public:
   HypreSystem(Mesh& mesh)
   {
     HYPRE_Init();
-# if 1
+#ifdef BOUT_USE_CUDA
     hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
 #endif
 
     comm = std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
-#if 0
-    HYPRE_ParCSRPCGCreate(comm, &solver);
-    HYPRE_PCGSetTol(solver, 1e-7);
-    HYPRE_PCGSetAbsoluteTol(solver, 0.0);
-    HYPRE_PCGSetMaxIter(solver, 200);
-#else
-   HYPRE_ParCSRGMRESCreate(comm, &solver);
 
-   /* set the GMRES paramaters */
-   HYPRE_GMRESSetKDim(solver, 5);
-   HYPRE_GMRESSetMaxIter(solver, 200);
-   HYPRE_GMRESSetTol(solver, 1.0e-07);
-#endif
+    HYPRE_ParCSRGMRESCreate(comm, &solver);
+    /* set the GMRES paramaters */
+    HYPRE_GMRESSetKDim(solver, 5);
+    HYPRE_GMRESSetMaxIter(solver, 200);
+    HYPRE_GMRESSetTol(solver, 1.0e-07);
+
     HYPRE_BoomerAMGCreate(&precon);
     HYPRE_BoomerAMGSetOldDefault(precon);
-    HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation
-    HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
-    HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU 
-    HYPRE_BoomerAMGSetInterpType(precon, 3); // must be 3 or 15 for GPU 
+    //HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation
+    //HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
+    //HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU 
+    //HYPRE_BoomerAMGSetInterpType(precon, 3); // must be 3 or 15 for GPU 
     HYPRE_BoomerAMGSetNumSweeps(precon, 1);
     HYPRE_BoomerAMGSetMaxLevels(precon, 20);
     HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
@@ -833,6 +833,8 @@ public:
     }
 
     solve_err = checkHypreError(HYPRE_ParCSRGMRESSolve(solver, A->getParallel(), b->getParallel(), x->getParallel()));
+
+    printf("solve_err = %d\n",solve_err);
 
     return solve_err;
   }

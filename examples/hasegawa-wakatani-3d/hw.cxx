@@ -75,7 +75,7 @@ public:
     auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n); 
    
 #ifdef BOUT_HAS_RAJA
-//  RAJA GPU code ----------- start
+//  RAJA code ----------- start
     auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
     Ind3D *ob_i = &(indices)[0];
 
@@ -97,7 +97,7 @@ public:
 		
 	  });
 
-//  RAJA GPU code ----------- end
+//  RAJA code ----------- end
 #else
 // -- CPU code ------------- start
     //printf("BOUT not using RAJA\n"); 
