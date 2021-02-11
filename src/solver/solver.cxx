@@ -480,8 +480,8 @@ int Solver::solve(int nout, BoutReal timestep) {
 
   // Put the run ID into the options tree
   // Forcing in case the value has been previously set
-  Options::root()["run"]["run_id"].force(run_id, "Solver");
-  Options::root()["run"]["run_restart_from"].force(run_restart_from, "Solver");
+  Options::root()["run"]["run_id"].force(run_id, "Output");
+  Options::root()["run"]["run_restart_from"].force(run_restart_from, "Output");
 
   /// Run the solver
   output_info.write(_("Running simulation\n\n"));
