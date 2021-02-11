@@ -66,6 +66,7 @@ public:
     Options::root()["another_vectorx"]["function"] = "8.0";
     Options::root()["another_vectory"]["function"] = "9.0";
     Options::root()["another_vectorz"]["function"] = "10.0";
+    Options::root()["input"]["error_on_unused_options"] = false;
   }
   virtual ~SolverTest() { Options::cleanup(); }
 
@@ -880,9 +881,15 @@ TEST_F(SolverTest, GetRunID) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
-
   EXPECT_THROW(solver.getRunID(), BoutException);
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(1);
   solver.solve();
 
   EXPECT_NO_THROW(solver.getRunID());
@@ -893,9 +900,15 @@ TEST_F(SolverTest, GetRunRestartFrom) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
-
   EXPECT_THROW(solver.getRunRestartFrom(), BoutException);
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(1);
   solver.solve();
 
   EXPECT_NO_THROW(solver.getRunRestartFrom());
