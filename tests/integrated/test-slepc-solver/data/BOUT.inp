@@ -15,4 +15,4 @@ dy = 1
 
 [solver]
 type = "slepc"
-neig = 1
+nEig = 1
