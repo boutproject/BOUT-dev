@@ -399,7 +399,6 @@ class StructuredPoloidalGrid(PoloidalGrid):
 
         cnt = 0
         underrelax = 1
-        print()
         while True:
             # Use Newton iteration to find the index
             # dR, dZ are the distance away from the desired point
