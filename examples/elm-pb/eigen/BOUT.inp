@@ -35,11 +35,6 @@ pre_post = false        # Post receives as early as possible
 group_nonblock = false  # Use non-blocking group operations?
 
 ##################################################
-# Laplacian inversion routines
-
-# max_mode = 16  # Maximum N to solve for
-
-##################################################
 # FFTs
 
 [fft]

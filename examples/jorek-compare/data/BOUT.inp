@@ -47,6 +47,8 @@ second = C4
 upwind = W3
 flux = U1
 
+##################################################
+# Laplacian inversion settings
 [laplace]
 all_terms = false
 nonuniform = false
@@ -144,10 +146,6 @@ bndry_sol = dirichlet
 
 
 
-#bndry_xin = zerolaplace
-#bndry_xout = zerolaplace
-#bndry_xin = constlaplace
-#bndry_xout = zerolaplace
 
 [phi]
 # X boundaries set by flags

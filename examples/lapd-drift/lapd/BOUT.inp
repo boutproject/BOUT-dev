@@ -70,6 +70,8 @@ first = C4
 second = C4
 upwind = W3
 
+##################################################
+# Laplacian inversion settings
 [laplace]
 
 all_terms = true

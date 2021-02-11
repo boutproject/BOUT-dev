@@ -273,6 +273,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Automatically accept the canonical patch",
     )
+    parser.add_argument(
+        "--canonical-only",
+        "-k",
+        action="store_true",
+        help="Only check/fix canonicalisation",
+    )
 
     args = parser.parse_args()
 
@@ -303,6 +309,9 @@ if __name__ == "__main__":
             # Re-read input file
             if applied_patch:
                 original_source = str(original)
+
+        if args.canonical_only:
+            continue
 
         try:
             modified = apply_fixes(REPLACEMENTS, original)

@@ -54,7 +54,6 @@ shiftOutput = true
 ##################################################
 # Laplacian inversion routines
 
-# max_mode = 16  # Maximum N to solve for
 
 ##################################################
 # FFTs

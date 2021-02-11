@@ -49,12 +49,6 @@ first = C4
 second = C4
 upwind = W3
 
-##################################################
-# Laplacian inversion settings
-
-#all_terms = true
-#laplace_nonuniform = true
-#low_mem=true
 
 ##################################################
 # Solver settings
