@@ -17,7 +17,7 @@ function = 1. + .1*mixmode(x, 10.)*mixmode(y, 11.)*mixmode(z, 12.)
 [C2]
 #function = 0.
 function = .1*mixmode(x, 13.)*mixmode(y, 14.)*mixmode(z, 15.)
-bndry_par_all = parallel_neumann
+# bndry_par_all = parallel_neumann
 
 [A]
 function = 0.0
@@ -58,16 +58,16 @@ g_13 = 0.0
 g_23 = Bt*hthe*Rxy/Bp
 
 # zShift = \int_{theta0}^{theta} {nu dtheta}
-arctanarg = (r - 1)*tan(theta/2.)/sqrt(1. - r^2)
-zShift = r^2*(r*sin(theta)/((r^2 - 1)*(r*cos(theta) - 1.)) - 2.*atan(arctanarg)/(1. - r^2)^1.5)
+# arctanarg = (r - 1)*tan(theta/2.)/sqrt(1. - r^2)
+# zShift = r^2*(r*sin(theta)/((r^2 - 1)*(r*cos(theta) - 1.)) - 2.*atan(arctanarg)/(1. - r^2)^1.5)
 ShiftAngle = r^2 * 2.*pi/(1. - r^2)^1.5
 
 [mesh:paralleltransform]
+type = identity
+# type = shiftedinterp
 
-type = shiftedinterp
-
-[mesh:paralleltransform:zinterpolation]
-type = hermitespline
+# [mesh:paralleltransform:zinterpolation]
+# type = hermitespline
 
 #################################################################################
 [laplace]
