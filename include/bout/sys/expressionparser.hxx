@@ -148,7 +148,7 @@ protected:
   /// substitution, or transposition; that the case differs, for
   /// example, "key" and "KEY" match with distance 1
   virtual std::multiset<FuzzyMatch>
-  fuzzyFind(std::string name, std::string::size_type max_distance = 2) const;
+  fuzzyFind(const std::string& name, std::string::size_type max_distance = 2) const;
 
   /// Parses a given string into a tree of FieldGenerator objects
   FieldGeneratorPtr parseString(const std::string& input) const;

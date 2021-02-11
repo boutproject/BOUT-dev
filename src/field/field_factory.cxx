@@ -392,7 +392,7 @@ FieldGeneratorPtr FieldFactory::resolve(const std::string& name) const {
 }
 
 std::multiset<ExpressionParser::FuzzyMatch>
-FieldFactory::fuzzyFind(std::string name, std::string::size_type max_distance) const {
+FieldFactory::fuzzyFind(const std::string& name, std::string::size_type max_distance) const {
   // First use parent fuzzyFind to check the list of generators
   auto matches = ExpressionParser::fuzzyFind(name, max_distance);
 
