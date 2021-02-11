@@ -16,7 +16,7 @@ doPlot = False
 nzs = np.logspace(start, mmax, num=mmax-start+1, base=2)
 for nz in nzs:
     boutcore.setOption("meshz:nz", "%d" % nz, force=True)
-    boutcore.setOption("meshz:dz", "2*Pi/%d" % nz, force=True)
+    boutcore.setOption("meshz:dz", "2*pi/%d" % nz, force=True)
     mesh = boutcore.Mesh(section="meshz")
     f = boutcore.create3D("sin(z)", mesh)
     sim = boutcore.DDZ(f)

@@ -6,11 +6,11 @@ MYG = 1
 
 [mesh]
 n = 1
-nx = n+2*mxg
+nx = n+2*MXG
 ny = n
 nz = n
-mxg = 0
-myg = 0
+MXG = 0
+MYG = 0
 dy = 1/n/2/pi
 
 [solver]

@@ -30,8 +30,8 @@ prec = 0.2
 
 
 def genMesh(nx, ny, nz, **kwargs):
-    bc.setOption("mesh:mxg", str(2 if nx > 1 else 0), force=True)
-    bc.setOption("mesh:myg", str(2 if ny > 1 else 0), force=True)
+    bc.setOption("mesh:MXG", str(2 if nx > 1 else 0), force=True)
+    bc.setOption("mesh:MYG", str(2 if ny > 1 else 0), force=True)
     bc.setOption("mesh:nx", str(nx + 4 if nx > 1 else nx), force=True)
     bc.setOption("mesh:ny", str(ny), force=True)
     bc.setOption("mz", str(nz), force=True)
