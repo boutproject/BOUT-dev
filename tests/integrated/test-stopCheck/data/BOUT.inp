@@ -8,8 +8,8 @@ nout = 10  # No timesteps
 
 MZ = 8    # Z size
 
+dump_format = "nc"  # NetCDF format. Alternative is "pdb"
+
 [mesh]
 nx = 10
 ny = 3
-
-dump_format = "nc"  # NetCDF format. Alternative is "pdb"

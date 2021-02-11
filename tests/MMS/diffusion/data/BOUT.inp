@@ -13,6 +13,8 @@ ZMAX = 0.15915494309189535# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*
 MYG = 1  #noy comm for now
 MXG = 1
 
+dump_format = "nc"     # Write NetCDF format files
+
 [output]
 floats = false #false -> output in doubles
 
@@ -28,8 +30,6 @@ ny = 1
 
 Lx = 1.0
 Ly = 1.0
-
-dump_format = "nc"     # Write NetCDF format files
 
 #grid points are distributed symmetrically
 symmetricGlobalX = true

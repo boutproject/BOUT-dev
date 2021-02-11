@@ -46,6 +46,7 @@ REPLACEMENTS = [
     {"old": "ddy", "new": "mesh:ddy"},
     {"old": "ddz", "new": "mesh:ddz"},
     {"old": "laplace:laplace_nonuniform", "new": "laplace:nonuniform"},
+    {"old": "mesh:dump_format", "new": "dump_format"},
     {"old": "solver:ATOL", "new": "solver:atol"},
     {"old": "solver:RTOL", "new": "solver:rtol"},
     # This was inconsistent in the library

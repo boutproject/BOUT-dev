@@ -70,7 +70,7 @@ bndry_yup = dirichlet_o2(f:solution)
 
 [g]
 solution = y^2 + sin(y) + cos(t)*cos(0.1*y^2)
-ddy = -0.2*y*sin(0.1*y^2)*cos(t) + 2*y + cos(y)
+# ddy = -0.2*y*sin(0.1*y^2)*cos(t) + 2*y + cos(y)
 source = -0.5*sin(t)*sin(0.5*y) - sin(t)*cos(0.1*y^2) + sin(y) - 1
 
 bndry_all = dirichlet_o2(g:solution)
