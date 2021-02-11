@@ -67,8 +67,8 @@ outer_boundary_flags = 0
 mms = true
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-12 # absolute tolerance
-RTOL = 1e-08  # relative tolerance
+atol = 1e-12 # absolute tolerance
+rtol = 1e-08  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
 use_jacobian = false  # Use user-supplied Jacobian

@@ -64,8 +64,8 @@ outer_boundary_flags = 0  # outer boundary inversion flags
 #mukeep = 6
 #mlkeep = 6
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 ##################################################
 # settings for 2fluid

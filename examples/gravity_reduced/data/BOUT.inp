@@ -66,8 +66,8 @@ upwind = W3
 #mukeep = 6
 #mlkeep = 6
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 #type=karniadakis
 #timestep = 1e-3

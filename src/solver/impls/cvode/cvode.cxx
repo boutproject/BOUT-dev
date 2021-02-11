@@ -225,8 +225,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       throw BoutException("CVodeSetStabLimDet failed\n");
   }
 
-  const auto abstol = (*options)["ATOL"].doc("Absolute tolerance").withDefault(1.0e-12);
-  const auto reltol = (*options)["RTOL"].doc("Relative tolerance").withDefault(1.0e-5);
+  const auto abstol = (*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12);
+  const auto reltol = (*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5);
   const auto use_vector_abstol = (*options)["use_vector_abstol"].withDefault(false);
   if (use_vector_abstol) {
     std::vector<BoutReal> f2dtols;

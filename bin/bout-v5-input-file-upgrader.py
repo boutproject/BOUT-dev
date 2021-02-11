@@ -46,6 +46,8 @@ REPLACEMENTS = [
     {"old": "ddy", "new": "mesh:ddy"},
     {"old": "ddz", "new": "mesh:ddz"},
     {"old": "laplace:laplace_nonuniform", "new": "laplace:nonuniform"},
+    {"old": "solver:ATOL", "new": "solver:atol"},
+    {"old": "solver:RTOL", "new": "solver:rtol"},
     # This was inconsistent in the library
     {"old": "All", "new": "all"},
     # The following haven't been changed, but are frequently spelt with the wrong case

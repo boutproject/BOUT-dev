@@ -207,8 +207,8 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   }
 
   BoutReal abstol, reltol;
-  options->get("ATOL", abstol, 1.0e-12);
-  options->get("RTOL", reltol, 1.0e-5);
+  options->get("atol", abstol, 1.0e-12);
+  options->get("rtol", reltol, 1.0e-5);
 
   // Set default absolute/relative tolerances
   ierr = TSSetTolerances(ts, abstol, nullptr, reltol, nullptr);CHKERRQ(ierr);

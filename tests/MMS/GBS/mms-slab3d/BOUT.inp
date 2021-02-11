@@ -70,8 +70,8 @@ floats = false # -> Output in double precision
 
 #type = pvode
 
-ATOL = 1e-12  # absolute tolerance
-RTOL = 1e-08   # relative tolerance
+atol = 1e-12  # absolute tolerance
+rtol = 1e-08   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 mms = true      # Test using Method of Manufactured Solutions

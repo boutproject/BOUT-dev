@@ -68,8 +68,8 @@ outer_boundary_flags = 0
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-12 # absolute tolerance
-RTOL = 1e-07  # relative tolerance
+atol = 1e-12 # absolute tolerance
+rtol = 1e-07  # relative tolerance
 mxstep = 5000
 
 ##################################################

@@ -45,8 +45,8 @@ upwind = U1
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
 mxstep = 5000 # Maximum number of internal steps
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 ##################################################
 # settings for uedge model

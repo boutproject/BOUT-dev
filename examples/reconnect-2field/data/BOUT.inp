@@ -83,8 +83,8 @@ fft_measurement_flag = measure  # If using FFTW, perform tests to determine fast
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-08 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-08 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
 use_jacobian = false  # Use user-supplied Jacobian
