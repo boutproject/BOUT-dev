@@ -31,8 +31,8 @@ function = 0.0
 [mesh:paralleltransform]
 type = shiftedinterp
 
-[mesh:paralleltransform:xzinterpolation]
-type = hermitesplineonlyz
+[mesh:paralleltransform:zinterpolation]
+type = hermitespline
 
 #################################################################################
 [laplace]

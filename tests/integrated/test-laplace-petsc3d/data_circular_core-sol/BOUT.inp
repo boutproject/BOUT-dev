@@ -69,8 +69,8 @@ ShiftAngle = r^2 * 2.*pi/(1. - r^2)^1.5
 
 type = shiftedinterp
 
-[mesh:paralleltransform:xzinterpolation]
-type = hermitesplineonlyz
+[mesh:paralleltransform:zinterpolation]
+type = hermitespline
 
 #################################################################################
 [laplace]
