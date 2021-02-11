@@ -15,7 +15,6 @@
 ///// This version uses indexed operators
 ///// which reduce the number of loops over the domain
 /////
-////  GPU processing is enabled if BOUT_ENABLE_CUDA is defined
 /////  Profiling markers and ranges are set if USE_NVTX is defined
 /////  Baesed on Ben Duddson, Steven Glenn code, Yining Qin update 0521-2020
 
@@ -26,7 +25,7 @@
 #include <invert_laplace.hxx>
 #include <derivs.hxx>
 
-#if BOUT_HAS_RAJA
+#ifdef BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
 #endif
 
@@ -75,12 +74,12 @@ public:
     auto phi_acc = FieldAccessor<>(phi);
     auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n); 
    
-#if BOUT_HAS_RAJA
+#ifdef BOUT_HAS_RAJA
 //  RAJA GPU code ----------- start
     auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
     Ind3D *ob_i = &(indices)[0];
 
-
+    //printf("BOUT using RAJA\n");
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
       int i = ob_i[id].ind;
       BoutReal div_current = alpha * Div_par_Grad_par_g(phi_minus_n_acc, i);
@@ -101,7 +100,7 @@ public:
 //  RAJA GPU code ----------- end
 #else
 // -- CPU code ------------- start
-    
+    //printf("BOUT not using RAJA\n"); 
     BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
       
       BoutReal div_current = alpha * Div_par_Grad_par(phi_minus_n_acc, i);

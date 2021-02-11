@@ -30,7 +30,11 @@ if(BOUT_USE_CUDA)
    set_source_files_properties(${hw_sources} PROPERTIES LANGUAGE CUDA )
    message(STATUS "hw needs CUDA LIBRARY DIR: ${BOUT_CUDA_LIB_DIR}") 
    target_include_directories(hw PUBLIC ${BOUT_CUDA_LIB_DIR}/../include ) 
+   target_compile_definitions(hw PUBLIC "BOUT_USE_CUDA")
 endif ()
 
+if(BOUT_HAS_RAJA)
+   target_compile_definitions(hw PUBLIC "BOUT_HAS_RAJA")
+endif ()
 
 message(STATUS "hw_depends: ${hw_depends}")

@@ -32,7 +32,7 @@
 #include <smoothing.hxx>
 #include <invert_laplace.hxx>
 #include <derivs.hxx>
-#if BOUT_HAS_RAJA
+#ifdef BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
 #endif
 
@@ -1515,7 +1515,7 @@ public:
       //printf("...relax_j_vac is False.....\n");
 		
 
-#if BOUT_HAS_RAJA// defined(GPU)
+#ifdef BOUT_HAS_RAJA
       //auto start = std::chrono::steady_clock::now();   
 
 	auto Psi_acc = FieldAccessor<>(Psi);
@@ -1600,7 +1600,7 @@ public:
 
 	
       //start = std::chrono::steady_clock::now();   
-#if BOUT_HAS_RAJA //defined(GPU)
+#ifdef BOUT_HAS_RAJA 
 
 	
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
@@ -1664,7 +1664,7 @@ public:
       	auto U_acc = FieldAccessor<>(U);
 	auto indices = U.getRegion("RGN_NOBNDRY").getIndices();
 	Ind3D *ob_i = &(indices)[0];
-#if BOUT_HAS_RAJA // defined(GPU) 	
+#ifdef BOUT_HAS_RAJA 	
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
 		int i = ob_i[id].ind;
@@ -1691,7 +1691,7 @@ public:
     }
 
      start = std::chrono::steady_clock::now();  
-#if BOUT_HAS_RAJA //defined(GPU) 
+#ifdef BOUT_HAS_RAJA //defined(GPU) 
 	Field2D x=   b0xcv.x;
 	Field2D y=   b0xcv.y;
 	Field2D z=   b0xcv.z;
@@ -1728,7 +1728,7 @@ public:
 if (!nogradparj) {
       //printf("...............!nogradparj...\n");
       // Parallel current term
-#if BOUT_HAS_RAJA //defined(GPU)      
+#ifdef BOUT_HAS_RAJA //defined(GPU)      
     
      auto Jpar_acc = FieldAccessor<>(Jpar);
      RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
@@ -1784,7 +1784,7 @@ auto phi0_acc = Field2DAccessor<>(phi0);
     if (nonlinear) {
       //printf("...............nonlinear...\n");
 
-#if BOUT_HAS_RAJA // defined(GPU) 
+#ifdef BOUT_HAS_RAJA 
 	auto B0_2D_acc =Field2DAccessor<>(B0);   
          RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 
@@ -1812,7 +1812,7 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
     //  printf("...............diffusion_u4...\n");
 
      start = std::chrono::steady_clock::now();   
-#if BOUT_HAS_RAJA //defined(GPU) 
+#ifdef BOUT_HAS_RAJA //defined(GPU) 
 	auto tmpU= U;
 	auto tmpU_acc =  FieldAccessor<>(tmpU); 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
@@ -1946,7 +1946,7 @@ if (evolve_pressure) {
 
 
 	start = std::chrono::steady_clock::now();
-  #if  BOUT_HAS_RAJA
+  #ifdef  BOUT_HAS_RAJA
         auto P_acc = FieldAccessor<>(P);   //P is field 3D
 	auto phi_acc = FieldAccessor<>(phi);
         auto P0_acc = Field2DAccessor<>(P0);
@@ -2001,7 +2001,7 @@ if (evolve_pressure) {
       if (nonlinear){
      // printf(".........nonlinear .................\n");
 
-#if BOUT_HAS_RAJA // defined(GPU)
+#ifdef BOUT_HAS_RAJA 
 	 auto phi_acc = FieldAccessor<>(phi);
          auto B0_2D_acc =Field2DAccessor<>(B0);
          RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
@@ -2098,7 +2098,7 @@ if (evolve_pressure) {
         ddt(Jpar) = filter(ddt(Jpar), filter_z_mode);
       } else
 
-#if  BOUT_HAS_RAJA // defined(GPU)
+#ifdef  BOUT_HAS_RAJA 
 
         indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
         Ind3D *ob_i = &(indices)[0];
@@ -2145,7 +2145,7 @@ if (evolve_pressure) {
       } else
 
 
-#if BOUT_HAS_RAJA //defined(GPU)
+#ifdef BOUT_HAS_RAJA //defined(GPU)
 	  indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
         Ind3D *ob_i = &(indices)[0];
         auto P_acc = FieldAccessor<>(P);   //P is field 3D

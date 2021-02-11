@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 #include "RAJA/RAJA.hpp"
 
-#include "bout/sys/ForAll.h"
+//#include "bout/sys/ForAll.h"
 
 TEST(RajaTest, SimpleForall) {
 //

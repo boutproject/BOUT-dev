@@ -38,6 +38,7 @@ if (BOUT_USE_CUDA)
    set_target_properties(bout++ PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
    set_target_properties(bout++ PROPERTIES POSITION_INDEPENDENT_CODE ON)
    set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CUDA)
+   target_compile_definitions(bout++ PUBLIC "BOUT_USE_CUDA")
 endif ()   
 
 # UMPIRE
@@ -64,6 +65,7 @@ if (ENABLE_RAJA)
   target_include_directories(bout++ PUBLIC ${RAJA_PATH}/include)
   target_link_libraries(bout++ PUBLIC RAJA)
   set(BOUT_HAS_RAJA ON)
+  target_compile_definitions(bout++ PUBLIC "BOUT_HAS_RAJA")
 endif ()
 
 
