@@ -41,7 +41,7 @@ for nype in [1,2]:
     shell("rm data/BOUT.dmp.*.nc")
 
     print("   %d processor (%d x %d)...." % (nproc, nxpe, nype))
-    s, out = launch_safe(cmd+" nxpe="+str(nxpe), nproc=nproc, pipe=True)
+    s, out = launch_safe(cmd+" NXPE="+str(nxpe), nproc=nproc, pipe=True)
     with open("run.log."+str(nproc), "w") as f:
       f.write(out)
 

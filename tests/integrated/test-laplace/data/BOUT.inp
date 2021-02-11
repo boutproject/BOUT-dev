@@ -3,8 +3,6 @@
 # Generates a set of fields and writes them to output file
 #
 
-nout = 0  # No timesteps
-
 MZ = 32    # Z size
 
 grid = "test_laplace.grd.nc"

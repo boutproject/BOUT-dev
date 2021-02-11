@@ -4,8 +4,6 @@
 # the results on varying numbers of processors
 #
 
-nout = 0  # No timesteps
-
 MZ = 8    # Z size
 
 grid = "cyclone_68x32.nc"
@@ -13,7 +11,6 @@ grid = "cyclone_68x32.nc"
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
 twistshift = true
-Ballooning = false
 
 [mesh]
 symmetricGlobalX = false

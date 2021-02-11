@@ -1,8 +1,5 @@
 # Test initial conditions in a "slab" grid
 
-# No timesteps
-nout = 0
-
 # Z size
 MZ = 4
 
@@ -52,7 +49,6 @@ function = atan(y,x)
 function = ballooning(x)
 
 [ballooning_n]
-n = 5
 function = ballooning(x,5)
 
 [cos]

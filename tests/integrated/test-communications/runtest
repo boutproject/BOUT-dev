@@ -23,7 +23,7 @@ nype = 6 # need at least 6 to include all regions
 
 # With nxpe=3, both separatrices are on processor boundaries
 nxpe = 3
-command = './test-communications nxpe='+str(nxpe)
+command = './test-communications NXPE='+str(nxpe)
 
 build_and_log('Communications Test')
 
@@ -173,7 +173,7 @@ test(f[:, -1], [108, 109, 110, 111], 0, region, 'upper y')
 
 # With nxpe=2, neither separatrix is on a processor boundary
 nxpe = 2
-command = './test-communications nxpe='+str(nxpe)
+command = './test-communications NXPE='+str(nxpe)
 
 # remove old outputs
 shell('rm data/BOUT.dmp.*')
@@ -272,7 +272,7 @@ test(f[:, -1], [107, 108, 109, 110, 111], 0, region, 'upper y')
 ####################################################
 
 nxpe = 1
-command = './test-communications nxpe='+str(nxpe)
+command = './test-communications NXPE='+str(nxpe)
 
 # remove old outputs
 shell('rm data/BOUT.dmp.*')
@@ -336,7 +336,7 @@ nype = 1
 ####################################################
 
 nxpe = 3
-command = './test-communications -d data_limiter nxpe='+str(nxpe)
+command = './test-communications -d data_limiter NXPE='+str(nxpe)
 
 # remove old outputs
 shell('rm data_limiter/BOUT.dmp.*')
@@ -372,7 +372,7 @@ test(f[:, -1], [28, 29, 30, 31], 0, region, 'upper y')
 ####################################################
 
 nxpe = 2
-command = './test-communications -d data_limiter nxpe='+str(nxpe)
+command = './test-communications -d data_limiter NXPE='+str(nxpe)
 
 # remove old outputs
 shell('rm data_limiter/BOUT.dmp.*')
@@ -401,7 +401,7 @@ test(f[:, -1], [27, 28, 29, 30, 31], 0, region, 'upper y')
 ####################################################
 
 nxpe = 1
-command = './test-communications -d data_limiter nxpe='+str(nxpe)
+command = './test-communications -d data_limiter NXPE='+str(nxpe)
 
 # remove old outputs
 shell('rm data_limiter/BOUT.dmp.*')

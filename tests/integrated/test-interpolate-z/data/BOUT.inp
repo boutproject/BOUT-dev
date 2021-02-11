@@ -3,8 +3,6 @@
 # Generates a set of fields and writes them to output file
 #
 
-nout = 0  # No timesteps
-
 MZ = 4   # Z size
 NXPE = 1
 
@@ -12,11 +10,11 @@ ZMAX = 1
 MXG = 2
 MYG = 0
 
+periodicX = false
 # grid = "test_interpolate.grd.nc"
 
 [mesh]
 symmetricGlobalX = false
-periodicX = false
 dx = 0.3926990816 # 2pi / 16
 nx = 8
 ny = 1
@@ -24,7 +22,7 @@ ny = 1
 [mesh:ddz]
 first = "FFT"
 
-[xzinterpolation]
+[zinterpolation]
 type = "hermitespline"
 
 [a]

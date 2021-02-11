@@ -40,7 +40,7 @@ for nproc in [1,2,4]:
   if nproc > 2:
     nxpe = 2
   
-  cmd = "./test_gyro nxpe=" + str(nxpe)
+  cmd = "./test_gyro NXPE=" + str(nxpe)
   
   shell("rm data/BOUT.dmp.*.nc")
 
