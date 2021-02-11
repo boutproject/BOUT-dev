@@ -9,7 +9,7 @@ nz = 32
 dy = 2*Pi/ny
 # use zshift that is periodic in y, because otherwise we need to make the input
 # functions periodic in field-aligned coordinates, not just in y and z
-zshift = exp(sin(y))
+zShift = exp(sin(y))
 ShiftAngle = 0.0
 
 [mesh:paralleltransform]

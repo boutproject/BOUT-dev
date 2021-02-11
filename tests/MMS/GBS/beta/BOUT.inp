@@ -75,7 +75,7 @@ logB = -log(Rmaj + (x-0.5)*Lx)  # x here between 0 and 1
 # Shift in Z after a single toroidal turn
 ShiftAngle = 0.1 * 2.*pi
 
-zshift = ShiftAngle * z / (2*pi)
+zShift = ShiftAngle * z / (2*pi)
 
 ##################################################
 # derivative methods
