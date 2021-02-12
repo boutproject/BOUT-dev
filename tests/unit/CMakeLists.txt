@@ -75,6 +75,6 @@ add_executable(serial_tests
 
 target_include_directories(serial_tests PUBLIC .)
 target_link_libraries(serial_tests gtest gmock bout++::bout++)
-add_test(NAME serial_tests COMMAND serial_tests)
+add_test(NAME serial_tests COMMAND serial_tests --gtest_brief=1)
 set_target_properties(serial_tests PROPERTIES FOLDER tests/unit)
 add_dependencies(build-check-unit-tests serial_tests)
