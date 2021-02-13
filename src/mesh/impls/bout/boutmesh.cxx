@@ -3102,4 +3102,33 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(ny_inner, "ny_inner", false);
 
   getCoordinates()->outputVars(file);
+
+  // Try and save some provenance tracking info that new enough versions of
+  // hypnotoad provide in the grid file.
+  // Note with current Datafile/DataFormat implementation, must not write an
+  // empty string because it ends up as a null char* pointer, which causes a
+  // segfault.
+  if (this->get(grid_id, "grid_id") == 0 && grid_id != "") {
+    file.add(grid_id, "grid_id", false);
+  }
+  if (this->get(hypnotoad_version, "hypnotoad_version") == 0
+      && hypnotoad_version != "") {
+
+    file.add(hypnotoad_version, "hypnotoad_version", false);
+  }
+  if (this->get(hypnotoad_git_hash, "hypnotoad_git_hash") == 0
+      && hypnotoad_git_hash != "") {
+
+    file.add(hypnotoad_git_hash, "hypnotoad_git_hash", false);
+  }
+  if (this->get(hypnotoad_git_diff, "hypnotoad_git_diff") == 0
+      && hypnotoad_git_diff != "") {
+
+    file.add(hypnotoad_git_diff, "hypnotoad_git_diff", false);
+  }
+  if (this->get(hypnotoad_geqdsk_filename, "hypnotoad_geqdsk_filename") == 0
+      && hypnotoad_geqdsk_filename != "") {
+
+    file.add(hypnotoad_geqdsk_filename, "hypnotoad_geqdsk_filename", false);
+  }
 }
