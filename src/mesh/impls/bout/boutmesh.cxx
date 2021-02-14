@@ -2671,26 +2671,26 @@ void BoutMesh::outputVars(Datafile &file) {
   // empty string because it ends up as a null char* pointer, which causes a
   // segfault.
   if (file.can_write_strings()) {
-    if (this->get(grid_id, "grid_id") == 0 && grid_id != "") {
+    if (this->get(grid_id, "grid_id") == 0 and not grid_id.empty()) {
       file.add(grid_id, "grid_id", false);
     }
     if (this->get(hypnotoad_version, "hypnotoad_version") == 0
-        && hypnotoad_version != "") {
+        and not hypnotoad_version.empty()) {
 
       file.add(hypnotoad_version, "hypnotoad_version", false);
     }
     if (this->get(hypnotoad_git_hash, "hypnotoad_git_hash") == 0
-        && hypnotoad_git_hash != "") {
+        and not hypnotoad_git_hash.empty()) {
 
       file.add(hypnotoad_git_hash, "hypnotoad_git_hash", false);
     }
     if (this->get(hypnotoad_git_diff, "hypnotoad_git_diff") == 0
-        && hypnotoad_git_diff != "") {
+        and not hypnotoad_git_diff.empty()) {
 
       file.add(hypnotoad_git_diff, "hypnotoad_git_diff", false);
     }
     if (this->get(hypnotoad_geqdsk_filename, "hypnotoad_geqdsk_filename") == 0
-        && hypnotoad_geqdsk_filename != "") {
+        and not hypnotoad_geqdsk_filename.empty()) {
 
       file.add(hypnotoad_geqdsk_filename, "hypnotoad_geqdsk_filename", false);
     }
