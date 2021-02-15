@@ -52,6 +52,7 @@
 #include "impls/spt/spt.hxx"
 #include "impls/petsc/petsc_laplace.hxx"
 #include "impls/petsc3damg/petsc3damg.hxx"
+#include "impls/hypre3d/hypre3d_laplace.hxx"
 #include "impls/cyclic/cyclic_laplace.hxx"
 #include "impls/shoot/shoot_laplace.hxx"
 #include "impls/multigrid/multigrid_laplace.hxx"

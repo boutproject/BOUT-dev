@@ -185,6 +185,7 @@ set(BOUT_HEADERS
   ./src/invert/laplace/impls/serial_tri/serial_tri.hxx
   ./src/invert/laplace/impls/shoot/shoot_laplace.hxx
   ./src/invert/laplace/impls/spt/spt.hxx
+  ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
   ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.hxx
   ./src/invert/parderiv/impls/cyclic/cyclic.hxx
@@ -256,6 +257,7 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/serial_tri/serial_tri.cxx
   ./src/invert/laplace/impls/shoot/shoot_laplace.cxx
   ./src/invert/laplace/impls/spt/spt.cxx
+  ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.cxx
   ./src/invert/laplace/invert_laplace.cxx
   ./src/invert/laplacexy/laplacexy.cxx
   ./src/invert/laplacexy2/laplacexy2.cxx
@@ -631,13 +633,13 @@ if(PACKAGE_TESTS)
   add_dependencies(check_bout check-unit-tests check-integrated-tests)
 endif()
 
-if(BOUT_HAS_HYPRE)
-   add_subdirectory(examples/laplacexy/simple-hypre)
-endif ()
+#if(BOUT_HAS_HYPRE)
+#   add_subdirectory(examples/laplacexy/simple-hypre)
+#endif ()
 
-add_subdirectory(examples/laplacexy/simple)
-add_subdirectory(examples/hasegawa-wakatani-3d)
-add_subdirectory(examples/elm-pb)
+#add_subdirectory(examples/laplacexy/simple)
+#add_subdirectory(examples/hasegawa-wakatani-3d)
+#add_subdirectory(examples/elm-pb)
 
 ##################################################
 # Generate the build config header
