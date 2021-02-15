@@ -386,6 +386,11 @@ public:
             std::vector<BoutReal> w = {})
         : petscMatrix(matrix), petscRow(row), petscCol(col), positions(p), weights(w) {
       ASSERT2(positions.size() == weights.size());
+#if CHECK > 2
+      for (const auto val : weights) {
+        ASSERT3(finite(val));
+      }
+#endif
       if (positions.size() == 0) {
         positions = {col};
         weights = {1.0};
