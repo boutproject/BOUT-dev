@@ -171,8 +171,12 @@ public:
         value = 0.;
       }
     }
-    Element& operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
+    Element& operator=(Element& other) {
+      ASSERT3(finite(static_cast<BoutReal>(other)));
+      return *this = static_cast<BoutReal>(other);
+    }
     Element& operator=(BoutReal val) {
+      ASSERT3(finite(val));
       value = val;
       int status;
       BOUT_OMP(critical)
@@ -183,7 +187,9 @@ public:
       return *this;
     }
     Element& operator+=(BoutReal val) {
+      ASSERT3(finite(val));
       value += val;
+      ASSERT3(finite(value));
       int status;
       BOUT_OMP(critical)
       status = VecSetValue(*petscVector, petscIndex, val, ADD_VALUES);
@@ -393,17 +399,23 @@ public:
         value = 0.;
       }
     }
-    Element& operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
+    Element& operator=(Element& other) {
+      ASSERT3(finite(static_cast<BoutReal>(other)));
+      return *this = static_cast<BoutReal>(other);
+    }
     Element& operator=(BoutReal val) {
+      ASSERT3(finite(val));
       value = val;
       setValues(val, INSERT_VALUES);
       return *this;
     }
     Element& operator+=(BoutReal val) {
+      ASSERT3(finite(val));
       auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
       if (columnPosition != positions.end()) {
         int i = std::distance(positions.begin(), columnPosition);
         value += weights[i] * val;
+        ASSERT3(finite(value));
       }
       setValues(val, ADD_VALUES);
       return *this;
