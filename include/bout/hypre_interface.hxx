@@ -731,10 +731,12 @@ public:
 
     HYPRE_BoomerAMGCreate(&precon);
     HYPRE_BoomerAMGSetOldDefault(precon);
-    //HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation
-    //HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
-    //HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU 
-    //HYPRE_BoomerAMGSetInterpType(precon, 3); // must be 3 or 15 for GPU 
+#ifdef BOUT_USE_CUDA
+    HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation
+    HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
+    HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU 
+    HYPRE_BoomerAMGSetInterpType(precon, 3); // must be 3 or 15 for GPU 
+#endif
     HYPRE_BoomerAMGSetNumSweeps(precon, 1);
     HYPRE_BoomerAMGSetMaxLevels(precon, 20);
     HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
