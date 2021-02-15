@@ -1488,19 +1488,9 @@ class W7X_vacuum(MagneticField):
         # we can get an interpolation function in 3D
         points = (r, phi, z)
 
-        try:
-            self.br_interp = RegularGridInterpolator(
-                points, Bx, bounds_error=False, fill_value=0.0
-            )
-        except:
-            print([i.shape for i in points], Bx.shape)
-            import matplotlib.pyplot as plt
-
-            for i in points:
-                plt.plot(i)
-            plt.show()
-            raise
-
+        self.br_interp = RegularGridInterpolator(
+            points, Bx, bounds_error=False, fill_value=0.0
+        )
         self.bz_interp = RegularGridInterpolator(
             points, Bz, bounds_error=False, fill_value=0.0
         )
@@ -1525,6 +1515,7 @@ class W7X_vacuum(MagneticField):
         """
         from osa import Client
         import os.path
+        import xarray as xr
         import pickle
         import matplotlib.pyplot as plt
 
@@ -1535,7 +1526,22 @@ class W7X_vacuum(MagneticField):
         nz = z.shape[2]
 
         # create (standardized) file name for saving/loading magnetic field.
-        fname = "B.w7x.{}.{}.{}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.dat".format(
+        fname_old = (
+            "B.w7x.{}.{}.{}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.dat".format(
+                nx,
+                ny,
+                nz,
+                r[0, 0, 0],
+                r[-1, 0, 0],
+                phi[0, 0, 0],
+                phi[0, -1, 0],
+                z[0, 0, 0],
+                z[0, 0, -1],
+            )
+        )
+
+        fname = "B.w7x.{}.{}.{}.{}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.nc".format(
+            configuration,
             nx,
             ny,
             nz,
@@ -1549,8 +1555,22 @@ class W7X_vacuum(MagneticField):
 
         if os.path.isfile(fname):
             print("Saved field found, loading from: ", fname)
-            with open(fname, pickle_read_mode) as f:
+            ds = xr.open_dataset(fname)
+            Br = ds["Br"].values
+            Bphi = ds["Bphi"].values
+            Bz = ds["Bz"].values
+            del ds
+
+        elif os.path.isfile(fname_old):
+            print("Saved field found, loading from: ", fname_old)
+            with open(fname_old, pickle_read_mode) as f:
                 Br, Bphi, Bz = pickle.load(f)
+            ds = xr.Dataset()
+            ds["Br"] = ("x", "y", "z"), Br
+            ds["Bz"] = ("x", "y", "z"), Bz
+            ds["Bphi"] = ("x", "y", "z"), Bphi
+            ds.to_netcdf(fname)
+            del ds
 
         else:
             print(
@@ -1612,9 +1632,15 @@ class W7X_vacuum(MagneticField):
             Br = Bx * np.cos(phi) + By * np.sin(phi)
             Bphi = -Bx * np.sin(phi) + By * np.cos(phi)
 
+            del Bx
+            del By
+
             ## Save so we don't have to do this every time.
-            with open(fname, pickle_write_mode) as f:
-                pickle.dump([Br, Bphi, Bz], f)
+            ds = xr.Dataset()
+            ds["Br"] = ("x", "y", "z"), Br
+            ds["Bz"] = ("x", "y", "z"), Bz
+            ds["Bphi"] = ("x", "y", "z"), Bphi
+            ds.to_netcdf(fname)
 
         if plot_poincare:
             ## Poincare plot as done on the web services
