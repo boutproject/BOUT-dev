@@ -97,6 +97,13 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
     h10(x, y, z) = t_z * (1. - t_z) * (1. - t_z);
     h11(x, y, z) = (t_z * t_z * t_z) - (t_z * t_z);
   }
+
+#if CHECK > 2
+  bout::checkFinite(h00, "h00", "RGN_NOY");
+  bout::checkFinite(h01, "h01", "RGN_NOY");
+  bout::checkFinite(h10, "h10", "RGN_NOY");
+  bout::checkFinite(h11, "h11", "RGN_NOY");
+#endif
 }
 
 /*!
