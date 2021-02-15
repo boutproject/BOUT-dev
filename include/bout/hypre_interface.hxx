@@ -738,7 +738,7 @@ public:
     HYPRE_BoomerAMGSetMaxLevels(precon, 20);
     HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
     HYPRE_BoomerAMGSetTol(precon, 0.0);
-    HYPRE_BoomerAMGSetPrintLevel(solver, 3);
+    //HYPRE_BoomerAMGSetPrintLevel(solver, 3);
 
     gmres_setup = false;
   }
