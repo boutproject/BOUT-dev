@@ -1,4 +1,5 @@
 #!/bin/sh
+# requires boutcore
 set -ex
 python3 test.py > out.log
 msg="We can print to the log from python 🎉"
