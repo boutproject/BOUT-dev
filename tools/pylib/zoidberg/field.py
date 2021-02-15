@@ -1615,7 +1615,16 @@ class W7X_vacuum(MagneticField):
                 pos.x3 = x3[slc]
 
                 ## Call tracer service
-                res = tracer.service.magneticField(pos, config)
+                redo = 2
+                while redo:
+                    try:
+                        res = tracer.service.magneticField(pos, config)
+                    except:
+                        redo -= 1
+                        if redo == 0:
+                            raise
+                    else:
+                        break
 
                 Bx[slc] = res.field.x1
                 By[slc] = res.field.x2
