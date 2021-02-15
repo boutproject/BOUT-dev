@@ -28,6 +28,7 @@ set(serial_tests_source
   ./field/test_where.cxx
   ./include/bout/test_array.cxx
   ./include/bout/test_assert.cxx
+  ./include/bout/test_bout_enum_class.cxx
   ./include/bout/test_deriv_store.cxx
   ./include/bout/test_generic_factory.cxx
   ./include/bout/test_macro_for_each.cxx
@@ -37,11 +38,15 @@ set(serial_tests_source
   ./include/bout/test_petsc_setters.cxx
   ./include/bout/test_petsc_vector.cxx
   ./include/bout/test_region.cxx
+  # ./include/bout/test_single_index_ops.cxx
+  ./include/bout/test_stencil.cxx
   ./include/bout/test_template_combinations.cxx
+  ./include/bout/test_traits.cxx
   ./include/test_cyclic_reduction.cxx
   ./include/test_derivs.cxx
   ./include/test_mask.cxx
   ./invert/test_fft.cxx
+  ./invert/laplace/test_laplace_petsc3damg.cxx
   ./mesh/data/test_gridfromoptions.cxx
   ./mesh/parallel/test_shiftedmetric.cxx
   ./mesh/test_boundary_factory.cxx
@@ -74,6 +79,7 @@ set(serial_tests_source
 
 if(BOUT_HAS_HYPRE)
    list(APPEND serial_tests_source ./include/bout/test_hypre_interface.cxx)
+   list(APPEND serial_tests_source ./invert/laplace/test_laplace_hypre3d.cxx)
 endif ()
 
 add_executable(serial_tests ${serial_tests_source})
