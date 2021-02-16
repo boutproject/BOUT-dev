@@ -37,19 +37,20 @@ ZInterpolation::ZInterpolation(int y_offset, Mesh* mesh, Region<Ind3D> region_in
     auto mask_region = Region<Ind3D>(0, -1, 0, -1, 0, 0, ny, nz);
     if (y_offset > 0) {
       for (auto it = localmesh->iterateBndryUpperY(); not it.isDone(); it.next()) {
-        mask_region.getUnion(Region<Ind3D>(it.ind, it.ind, localmesh->yend - y_offset + 1,
-                                           localmesh->yend, localmesh->zstart,
-                                           localmesh->zend, ny, nz));
+        mask_region += Region<Ind3D>(it.ind, it.ind, localmesh->yend - y_offset + 1,
+                                     localmesh->yend, localmesh->zstart, localmesh->zend,
+                                     ny, nz);
       }
     }
     else if (y_offset < 0) {
       for (auto it = localmesh->iterateBndryLowerY(); not it.isDone(); it.next()) {
-        mask_region.getUnion(Region<Ind3D>(it.ind, it.ind,
-                                           localmesh->ystart, localmesh->ystart - y_offset - 1,
-                                           localmesh->zstart, localmesh->zend,
-                                           ny, nz));
+        mask_region += Region<Ind3D>(it.ind, it.ind,
+                                     localmesh->ystart, localmesh->ystart - y_offset - 1,
+                                     localmesh->zstart, localmesh->zend, ny, nz);
       }
     }
+
+    mask_region.unique();
 
     region.mask(mask_region);
   }
