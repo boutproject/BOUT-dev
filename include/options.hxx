@@ -45,6 +45,7 @@ class Options;
 #include "utils.hxx"
 #include "bout/sys/variant.hxx"
 #include "bout/sys/type_name.hxx"
+#include "bout/traits.hxx"
 #include "bout/deprecated.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
@@ -796,7 +797,11 @@ template <> FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
 std::string toString(const Options& value);
 
 /// Output a stringified \p value to a stream
-inline std::ostream& operator<<(std::ostream& out, const Options& value) {
+///
+/// This is templated to avoid implict casting: anything is
+/// convertible to an `Options`, and we want _exactly_ `Options`
+template <class T, typename = bout::utils::EnableIfOptions<T>>
+inline std::ostream& operator<<(std::ostream& out, const T& value) {
   return out << toString(value);
 }
 
