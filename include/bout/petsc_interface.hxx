@@ -383,7 +383,7 @@ public:
         value = 0.;
       }
     }
-    Element& operator=(Element& other) {
+    Element& operator=(const Element& other) {
       ASSERT3(finite(static_cast<BoutReal>(other)));
       return *this = static_cast<BoutReal>(other);
     }
@@ -616,7 +616,7 @@ public:
         value = 0.;
       }
     }
-    Element& operator=(Element& other) {
+    Element& operator=(const Element& other) {
       ASSERT3(finite(static_cast<BoutReal>(other)));
       return *this = static_cast<BoutReal>(other);
     }
