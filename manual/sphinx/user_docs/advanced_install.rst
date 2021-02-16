@@ -254,11 +254,11 @@ Finally example configurations for BOUT++, where you should replace <...> by app
 
 * for an optimized build (some experimentation with optimisation flags would be welcome, please share the results if you do!)::
 
-    ./configure --enable-optimize=3 --enable-checks=no --without-hdf5 --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
+    ./configure --enable-optimize=3 --enable-checks=no --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
 
 * for a debugging build::
 
-    ./configure --enable-debug --without-hdf5 --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
+    ./configure --enable-debug --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
 
 Ubgl
 ~~~~
@@ -271,37 +271,22 @@ Ubgl
 File formats
 ------------
 
-BOUT++ can currently use two different file formats: NetCDF-4_, and
-HDF5_ and experimental support for parallel flavours of both. NetCDF
-is a widely used format and so has many more tools for viewing and
-manipulating files. HDF5 is another widely used format. If you have
-multiple libraries installed then BOUT++ can use them simultaneously,
-for example reading in grid files in NetCDF format, but writing output
-data in HDF5 format.
+BOUT++ can currently use the NetCDF-4_ file format, with experimental
+support for the parallel flavour. NetCDF is a widely used format and
+has many tools for viewing and manipulating files.
 
 .. _NetCDF-4: https://www.unidata.ucar.edu/software/netcdf/
-.. _HDF5: https://www.hdfgroup.org/HDF5/
 
-BOUT++ will try to use NetCDF by default. It will look for
-``ncxx4-config`` or ``nc-config`` in your ``$PATH``. If it cannot find
-the libraries, or finds a different version than the one you want, you
-can point it at the correct version using::
+BOUT++ will look for ``ncxx4-config`` or ``nc-config`` in your
+``$PATH``. If it cannot find the libraries, or finds a different
+version than the one you want, you can point it at the correct version
+using::
 
    ./configure --with-netcdf=/path/to/ncxx4-config
 
 where ``/path/to/ncxx4-config`` is the location of the
 ``ncxx4-config`` tool (``nc-config`` will also work, but
 ``ncxx4-config`` is preferred).
-
-To use HDF5, you will need to explicitly enable it::
-
-   ./configure --with-hdf5
-
-BOUT++ will look for ``h5cc`` in your ``$PATH``. Similar to NetCDF,
-you can pass the location of the particular version you wish to use
-with::
-
-   ./configure --with-hdf5=/path/to/h5cc
 
 
 .. _sec-netcdf-from-source:

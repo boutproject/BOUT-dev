@@ -21,8 +21,8 @@ nx = 16
 ny = 16
 nz = 16
 # Puts the boundaries half a step outside the last gridpoints
-symmetricGlobalY=true
-symmetricGlobalX=true
+symmetricGlobalY = true
+symmetricGlobalX = true
 # Points 0 <= x < ixseps1 are inside separatrix, ixseps1 <= x < ngx outside
 # --------Non-periodic----------
 ixseps1 = -1
@@ -35,19 +35,19 @@ ixseps2 = -1
 ###############################################################################
 # Methods used for the radial (x) derivative terms
 [ddx]
-first  = C2 # d/dx (f)
+first = C2 # d/dx (f)
 second = C2 # d^2/dx^2 (f)
 upwind = U1 # u*d/dx (f)
 
 # Methods used for the axial (y) derivative terms
 [ddy]
-first  = C2 # d/dy (f)
+first = C2 # d/dy (f)
 second = C2 # d^2/dy^2 (f)
 upwind = U1 # u*d/dy (f)
 
 # Methods used for the azimuthal (z) derivative terms
 [ddz]
-first  = FFT # d/dz (f)
+first = FFT # d/dz (f)
 second = FTT # d^2/dz^2 (f)
 ###############################################################################
 
@@ -57,10 +57,10 @@ second = FTT # d^2/dz^2 (f)
 [solver]
 # The solver advances the system in time
 type = pvode             # Which solver to use (cvode should be same as pvode)
-mms  = false             # false by default
+mms = false             # false by default
 
-atol = 1.0e-10 # absolute tolerance
-rtol = 1.0e-5  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 # cvode, pvode and rk4 options
 # NOTE: If this is set too high, the computer MIGHT interpret it as 0
@@ -78,12 +78,11 @@ floats = false # floats = false => output in double
 # Settings for the variables
 ###############################################################################
 [n]
-scale    = 1.0
+scale = 1.0
 function = 0.0
 
 # Boundaries
-bndry_xin   = dirichlet_o4(0.0)
-bndry_xout  = dirichlet_o4(0.0)
-bndry_yup   = dirichlet_o4(0.0)
+bndry_xin = dirichlet_o4(0.0)
+bndry_xout = dirichlet_o4(0.0)
+bndry_yup = dirichlet_o4(0.0)
 bndry_ydown = dirichlet_o4(0.0)
-###############################################################################

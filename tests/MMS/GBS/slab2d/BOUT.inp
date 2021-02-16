@@ -30,7 +30,7 @@ Bxy = 0.35
 Btxy = 0.0
 hthe = 1.0
 
-dx = 3.87747e-3 # 8 * rho_s * Rxy * Bxy
+dx = 0.00387747 # 8 * rho_s * Rxy * Bxy
 dy = 1.0
 
 
@@ -39,7 +39,7 @@ dy = 1.0
 
 [mesh:ddx]
 
-first = C2  
+first = C2
 second = C2
 upwind = W3
 
@@ -64,8 +64,8 @@ type = pvode
 #type = rk4
 timestep = 1
 
-ATOL = 1.0e-10  # absolute tolerance
-RTOL = 1.0e-5   # relative tolerance
+ATOL = 1e-10  # absolute tolerance
+RTOL = 1e-05   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 
@@ -74,8 +74,8 @@ mxstep = 10000  # Maximum internal steps per output
 
 [GBS]
 
-ionvis  = false # Ion Viscosity
-Ti      = 10    # Ion temperature for viscosity cslculation
+ionvis = false # Ion Viscosity
+Ti = 10    # Ion temperature for viscosity cslculation
 elecvis = false # Electron viscosity
 resistivity = true
 
@@ -85,9 +85,9 @@ startprofiles = false # Start from profiles in input file
 
 # Normalisation paarameters
 Tnorm = 5     # Electron Temperature (eV)
-Nnorm = 2e18  # Background plasma density (m^-3)
+Nnorm = 2e+18  # Background plasma density (m^-3)
 Bnorm = 0.35  # Magnetic field [T]
-AA    = 2     # Ion atomic mass
+AA = 2     # Ion atomic mass
 
 # Cs=1.547399e+04, rho_s=9.232080e-04, Omega_ci=1.676111e+07
 
@@ -104,7 +104,7 @@ bndry_all = neumann # Zero-gradient on all boundaries
 
 [Ne]  # Density
 evolve = true
-D = 1e-3 # Numerical diffusion
+D = 0.001 # Numerical diffusion
 
 scale = 1.0 # size of perturbation
 function = 0.1 + 0.01*sin(8*pi*x - 9*z)
@@ -113,7 +113,7 @@ source = (2.*exp(-(4*x^2)) - 1) / 1e-2
 
 [Te]
 evolve = true
-D = 1e-3
+D = 0.001
 
 scale = 1.0
 function = 0.1 + 0.01*(sin(8*pi*x - 9*z)+sin(7*z)+0.5*sin(3*z - 2*pi*x))
@@ -121,7 +121,7 @@ source = (2.*exp(-(4*x^2)) - 1) / 1e-2
 
 [Vort]
 evolve = true
-D = 1e-3
+D = 0.001
 
 function = 0
 
@@ -132,4 +132,3 @@ D = 10
 [Vi]
 evolve = false
 D = 10
-

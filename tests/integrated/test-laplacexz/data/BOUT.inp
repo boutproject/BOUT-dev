@@ -22,21 +22,9 @@ atol=1e-11
 
 ksptype = gmres   # Linear iterative method
 
-pctype  = hypre   # Preconditioner. Direct "lu" or "ilu"; iterative "jacobi", "sor"
+pctype = lu   # Preconditioner. Direct "lu" or "ilu"; iterative "jacobi", "sor"
 
 # Set package to perform factorisation for direct solves
 # "petsc" built-in solver only serial
 # "superlu", "superlu_dist", "mumps", "cusparse"
 factor_package = superlu_dist
-
-inner_boundary_flags = 0
-outer_boundary_flags = 0
-
-[f]
-bndry_all = dirichlet(0.0)
-[g]
-bndry_all = dirichlet(0.0)
-[f2]
-bndry_all = dirichlet(0.0)
-
-

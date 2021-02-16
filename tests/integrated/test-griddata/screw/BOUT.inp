@@ -10,7 +10,7 @@ nz = 16
 rwidth = 0.4
 
 Rxy = 0.1 + rwidth*x  # Radius from axis     [m]
-L   = 10              # Length of the device [m]
+L = 10              # Length of the device [m]
 
 dy = L/ny
 hthe = 1.0

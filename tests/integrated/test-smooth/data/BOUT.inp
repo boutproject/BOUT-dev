@@ -17,4 +17,4 @@ symmetricGlobalX = false
 symmetricGlobalY = false
 
 [output]
-floats=true
+floats = true

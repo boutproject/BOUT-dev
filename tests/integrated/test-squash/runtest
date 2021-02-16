@@ -13,7 +13,7 @@ import re
 # requires: netcdf
 # cores: 4
 
-IGNORED_VARS_PATTERN = re.compile("(wtime|ncalls|arkode|cvode).*")
+IGNORED_VARS_PATTERN = re.compile("(wtime|ncalls|arkode|cvode|run_id|run_restart_from).*")
 
 
 class timer(object):

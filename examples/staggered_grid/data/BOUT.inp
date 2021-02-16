@@ -1,6 +1,6 @@
 
 nout = 10
-timestep = 1.
+timestep = 1.0
 
 MZ = 1
 
@@ -16,7 +16,7 @@ first = c2
 flux = u1
 
 [all]
-scale = 1.
+scale = 1.0
 
 bndry_all = neumann
 
@@ -24,4 +24,4 @@ bndry_all = neumann
 function = gauss(y - pi)
 
 [v]
-function = 0.
+function = 0.0

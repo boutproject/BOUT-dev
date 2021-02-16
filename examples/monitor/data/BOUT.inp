@@ -1,4 +1,4 @@
-timestep = 1.
+timestep = 1.0
 nout = 10
 
 MZ = 1
@@ -8,8 +8,8 @@ MZ = 1
 nx = 12
 ny = 8
 
-dx = 1.
-dy = 1.
+dx = 1.0
+dy = 1.0
 
 [solver]
 # Set this to true to enable 'my_timestep_monitor'
@@ -17,6 +17,5 @@ monitor_timestep = false
 
 [f]
 
-scale = 1.
+scale = 1.0
 function = gauss(x-0.5, 0.3) * gauss(y-0.5,0.3)
-

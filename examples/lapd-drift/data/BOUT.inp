@@ -4,7 +4,7 @@
 # settings used by the core code
 
 NOUT = 400       # number of time-steps
-TIMESTEP = 2.	   # time between outputs
+TIMESTEP = 2.0	   # time between outputs
 
 archive = 500
 
@@ -19,11 +19,9 @@ non_uniform = true
 MXG = 2
 MYG = 2
 
-grid="uedge.grd.nc"
+grid = "uedge.grd.nc"
 
 dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
-
-non_uniform = true
 
 [mesh]
 StaggerGrids = true
@@ -64,8 +62,8 @@ laplace_nonuniform = true
 type = pvode
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+ATOL = 1e-10 # absolute tolerance
+RTOL = 1e-05  # relative tolerance
 mxstep = 50000
 
 ##################################################
@@ -75,23 +73,23 @@ mxstep = 50000
 
 AA = 4.0
 ZZ = 1.0
- 
+
 estatic = true    # if true, electrostatic (Apar = 0)
 ZeroElMass = false  # Use Ohms law without electron inertia
 zeff = 1.0        # Z effective
-nu_perp = 1.0e-20
+nu_perp = 1e-20
 
-nuIonNeutral = 2.e-3 # Ion-neutral collision rate, normalised to wci
+nuIonNeutral = 0.002 # Ion-neutral collision rate, normalised to wci
 
-ni_perpdiff = 2.e-3
-rho_perpdiff = 2.e-3
-te_perpdiff = 2.e-3
+ni_perpdiff = 0.002
+rho_perpdiff = 0.002
+te_perpdiff = 0.002
 
 nonlinear = true
 
 ShearFactor = 0.0
 
-arakawa = false     # Use Arakawa scheme for ExB advection   
+arakawa = false     # Use Arakawa scheme for ExB advection
 bout_exb = true   # Use the BOUT-06 subset of ExB terms
 
 remove_tor_av_ni = true
@@ -156,7 +154,7 @@ ni_ni1_phi0 = false
 # Nonlinear Terms
 ni_ni1_phi1 = true
 
-scale = 1.0e-8 # only perturbing Ni
+scale = 1e-08 # only perturbing Ni
 
 # Section for only the rho equation
 # Contains switches for terms
@@ -178,7 +176,7 @@ rho_rho1_phi1 = true
 rho_ve2t = false
 
 
-scale = -1.0e-8
+scale = -1e-08
 
 
 # Section for only the Ajpar equation
@@ -217,4 +215,3 @@ te_te1_phi0 = false
 te_te1_phi1 = false
 te_ajpar_te = false
 te_nu_tet = false
-

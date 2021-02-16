@@ -183,9 +183,8 @@ There are several modules available for reading NetCDF files, so to
 provide a consistent interface, file access is wrapped into a class
 DataFile. This provides a simple interface for reading and writing files
 from any of the following modules: ``netCDF4``;
-``Scientific.IO.NetCDF``; and ``scipy.io.netcdf``. The DataFile class
-also provides allows access to HDF5 files through the same interface,
-using the ``h5py`` module. To open a file using DataFile:
+``Scientific.IO.NetCDF``; and ``scipy.io.netcdf``. To open a file
+using DataFile:
 
 .. code-block:: python
 
@@ -195,16 +194,6 @@ using the ``h5py`` module. To open a file using DataFile:
     var = f.read("variable") # Read a variable from the file
     f.close()                # Close the file
 
-or similarly for an HDF5 file
-
-.. code-block:: python
-
-    from boututils.datafile import DataFile
-
-    f = DataFile("file.hdf5")  # Open the file
-    var = f.read("variable")   # Read a variable from the file
-    f.close()                  # Close the file
-
 A more robust way to read from DataFiles is to use the context manager
 syntax:
 
@@ -212,7 +201,7 @@ syntax:
 
     from boututils.datafile import DataFile
 
-    with DataFile("file.hdf5") as f: # Open the file
+    with DataFile("file.nc") as f: # Open the file
         var = f.read("variable")     # Read a variable from the file
 
 This way the DataFile is automatically closed at the end of the ``with``
@@ -403,8 +392,7 @@ several optional keywords with ``[min,max]`` ranges:
 Summary of IDL file routines
 ----------------------------
 
-Functions file\_ can currently only read/write NetCDF files. HDF5 is not
-supported yet.
+Functions file\_ can currently only read/write NetCDF files.
 
 Open a NetCDF file:
 

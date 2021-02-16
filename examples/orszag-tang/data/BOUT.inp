@@ -14,7 +14,7 @@ MZ = 1     # number of points in z direction (2^n + 1)
 
 periodicX = true  # periodic in X
 
-grid="data/otv.grd.nc"
+grid = "data/otv.grd.nc"
 
 ##################################################
 # derivative methods
@@ -43,18 +43,13 @@ upwind = U1
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+ATOL = 1e-10 # absolute tolerance
+RTOL = 1e-05  # relative tolerance
 mxstep = 5000  # Maximum number of internal steps
 
 ##################################################
 # settings for mhd code
 
-[mhd]
-
 
 [All]
 scale = 0.0 # default size of initial perturbations
-
-# Domain is periodic in x and y, so no boundary conditions
-

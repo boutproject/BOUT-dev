@@ -864,7 +864,7 @@ cdef class Laplacian:
 
     Compute the Laplacian inversion of objects.
 
-    Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\perp x + ex\\nabla_x x + ez\\nabla_z x + a x = b
+    Equation solved is: d\\\\nabla^2_\\\\perp x + (1/c1)\\\\nabla_perp c2\\\\cdot\\\\nabla_\\\\perp x + ex\\\\nabla_x x + ez\\\\nabla_z x + a x = b
     """
     cdef unique_ptr[c.Laplacian] cobj
     cdef c.bool isSelfOwned
@@ -1327,7 +1327,7 @@ done
 cat <<EOF
 def Laplace(Field3D a):
     """
-    Compute the full Laplacian \\nabla^2(a)
+    Compute the full Laplacian \\\\nabla^2(a)
 
     Parameters
     ----------
@@ -1358,7 +1358,7 @@ def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
 
     Returns
     -------
-    float
+    Field3D
         the scalar product of the perpendicular gradient contributions
     """
     checkInit()

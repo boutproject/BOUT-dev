@@ -102,9 +102,9 @@ section, prefix the variable with the section name, for example,
 
 More complex meshes can be created by supplying an input grid file to
 describe the grid points, geometry, and starting profiles. Currently
-BOUT++ supports NetCDF and HDF5 format binary files. During startup,
-BOUT++ looks in the grid file for the following variables. If any are
-not found, a warning will be printed and the default values used.
+BOUT++ supports NetCDF format binary files. During startup, BOUT++
+looks in the grid file for the following variables. If any are not
+found, a warning will be printed and the default values used.
 
 -  X and Y grid sizes (integers) ``nx`` and ``ny`` **REQUIRED**
 
@@ -127,8 +127,8 @@ not found, a warning will be printed and the default values used.
    non-aligned coordinates (see :ref:`sec-field-aligned-coordinates`). Parallel
    differential operators are calculated using a shift to field-aligned
    values when ``paralleltransform:type = shifted`` (or ``shiftedinterp``).
-   The shifts must be provided in the gridfile in a field ``zshift(nx,ny)``.
-   If not found, ``zshift`` is set to zero.
+   The shifts must be provided in the gridfile in a field ``zShift(nx,ny)``.
+   If not found, ``zShift`` is set to zero.
 
 The remaining quantities determine the topology of the grid. These are
 based on tokamak single/double-null configurations, but can be adapted

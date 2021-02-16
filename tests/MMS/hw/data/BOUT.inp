@@ -33,14 +33,14 @@ type = pvode
 mms = true
 
 atol = 1e-15
-rtol = 1e-7
+rtol = 1e-07
 
 [hw]
 
 alpha = 1.0
 kappa = 0.5
 Dvort = 1.0
-Dn    = 1.0
+Dn = 1.0
 
 modified = false
 
@@ -53,7 +53,7 @@ scale = 1.0
 
 solution = 0.9*xl + 0.2*sin(5.0*xl^2 - 2*zl)*cos(10*t) + 0.9
 
-source   = 0.9*x - 1.0*(0.5*x - sin(3.0*x^2 - 3*z)*cos(7*t))*sin(pi*x) - 1.0*(-20.0*x^2*sin(5.0*x^2 - 2*z) + 2.0*cos(5.0*x^2 - 2*z))*cos(10*t) + 0.4*(pi*(0.5*x - sin(3.0*x^2 - 3*z)*cos(7*t))*cos(pi*x) + (-6.0*x*cos(7*t)*cos(3.0*x^2 - 3*z) + 0.5)*sin(pi*x))*cos(10*t)*cos(5.0*x^2 - 2*z) + 3*(2.0*x*cos(10*t)*cos(5.0*x^2 - 2*z) + 0.9)*sin(pi*x)*cos(7*t)*cos(3.0*x^2 - 3*z) - 2.0*sin(10*t)*sin(5.0*x^2 - 2*z) + 1.5*sin(pi*x)*cos(7*t)*cos(3.0*x^2 - 3*z) + 1.0*sin(5.0*x^2 - 2*z)*cos(10*t) + 0.9
+source = 0.9*x - 1.0*(0.5*x - sin(3.0*x^2 - 3*z)*cos(7*t))*sin(pi*x) - 1.0*(-20.0*x^2*sin(5.0*x^2 - 2*z) + 2.0*cos(5.0*x^2 - 2*z))*cos(10*t) + 0.4*(pi*(0.5*x - sin(3.0*x^2 - 3*z)*cos(7*t))*cos(pi*x) + (-6.0*x*cos(7*t)*cos(3.0*x^2 - 3*z) + 0.5)*sin(pi*x))*cos(10*t)*cos(5.0*x^2 - 2*z) + 3*(2.0*x*cos(10*t)*cos(5.0*x^2 - 2*z) + 0.9)*sin(pi*x)*cos(7*t)*cos(3.0*x^2 - 3*z) - 2.0*sin(10*t)*sin(5.0*x^2 - 2*z) + 1.5*sin(pi*x)*cos(7*t)*cos(3.0*x^2 - 3*z) + 1.0*sin(5.0*x^2 - 2*z)*cos(10*t) + 0.9
 
 bndry_all = dirichlet_o2(n:solution)
 
@@ -61,7 +61,7 @@ bndry_all = dirichlet_o2(n:solution)
 
 solution = 0.7*xl + 0.2*sin(2.0*xl^2 - 3*zl)*cos(7*t) + 0.9
 
-source   = 0.9*x - 1.0*(0.5*x - sin(3.0*x^2 - 3*z)*cos(7*t))*sin(pi*x) - 1.0*(-3.2*x^2*sin(2.0*x^2 - 3*z) + 0.8*cos(2.0*x^2 - 3*z))*cos(7*t) + 0.6*(pi*(0.5*x - sin(3.0*x^2 - 3*z)*cos(7*t))*cos(pi*x) + (-6.0*x*cos(7*t)*cos(3.0*x^2 - 3*z) + 0.5)*sin(pi*x))*cos(7*t)*cos(2.0*x^2 - 3*z) + 3*(0.8*x*cos(7*t)*cos(2.0*x^2 - 3*z) + 0.7)*sin(pi*x)*cos(7*t)*cos(3.0*x^2 - 3*z) - 1.4*sin(7*t)*sin(2.0*x^2 - 3*z) + 1.8*sin(2.0*x^2 - 3*z)*cos(7*t) + 0.2*sin(5.0*x^2 - 2*z)*cos(10*t) + 0.9
+source = 0.9*x - 1.0*(0.5*x - sin(3.0*x^2 - 3*z)*cos(7*t))*sin(pi*x) - 1.0*(-3.2*x^2*sin(2.0*x^2 - 3*z) + 0.8*cos(2.0*x^2 - 3*z))*cos(7*t) + 0.6*(pi*(0.5*x - sin(3.0*x^2 - 3*z)*cos(7*t))*cos(pi*x) + (-6.0*x*cos(7*t)*cos(3.0*x^2 - 3*z) + 0.5)*sin(pi*x))*cos(7*t)*cos(2.0*x^2 - 3*z) + 3*(0.8*x*cos(7*t)*cos(2.0*x^2 - 3*z) + 0.7)*sin(pi*x)*cos(7*t)*cos(3.0*x^2 - 3*z) - 1.4*sin(7*t)*sin(2.0*x^2 - 3*z) + 1.8*sin(2.0*x^2 - 3*z)*cos(7*t) + 0.2*sin(5.0*x^2 - 2*z)*cos(10*t) + 0.9
 
 bndry_all = dirichlet_o2(vort:solution)
 
@@ -69,4 +69,4 @@ bndry_all = dirichlet_o2(vort:solution)
 
 solution = (0.5*x - sin(3.0*x^2 - 3*z)*cos(7*t))*sin(pi*x)
 
-source   = -(pi^2)*(0.5*x - sin(3.0*x^2 - 3*z)*cos(7*t))*sin(pi*x) - 2*pi*(6.0*x*cos(7*t)*cos(3.0*x^2 - 3*z) - 0.5)*cos(pi*x) - 0.7*x + (36.0*x^2*sin(3.0*x^2 - 3*z) - 6.0*cos(3.0*x^2 - 3*z))*sin(pi*x)*cos(7*t) + 9*sin(pi*x)*sin(3.0*x^2 - 3*z)*cos(7*t) - 0.2*sin(2.0*x^2 - 3*z)*cos(7*t) - 0.9
+source = -(pi^2)*(0.5*x - sin(3.0*x^2 - 3*z)*cos(7*t))*sin(pi*x) - 2*pi*(6.0*x*cos(7*t)*cos(3.0*x^2 - 3*z) - 0.5)*cos(pi*x) - 0.7*x + (36.0*x^2*sin(3.0*x^2 - 3*z) - 6.0*cos(3.0*x^2 - 3*z))*sin(pi*x)*cos(7*t) + 9*sin(pi*x)*sin(3.0*x^2 - 3*z)*cos(7*t) - 0.2*sin(2.0*x^2 - 3*z)*cos(7*t) - 0.9

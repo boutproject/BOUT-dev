@@ -166,8 +166,6 @@ set(BOUT_SOURCES
   ./src/fileio/formatfactory.cxx
   ./src/fileio/formatfactory.hxx
   ./src/fileio/impls/emptyformat.hxx
-  ./src/fileio/impls/hdf5/h5_format.cxx
-  ./src/fileio/impls/hdf5/h5_format.hxx
   ./src/fileio/impls/netcdf/nc_format.cxx
   ./src/fileio/impls/netcdf/nc_format.hxx
   ./src/fileio/impls/netcdf4/ncxx4.cxx
@@ -526,15 +524,6 @@ endif()
 message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
 
-option(BOUT_USE_HDF5 "Enable support for HDF5 output" OFF)
-if (BOUT_USE_HDF5)
-  find_package(HDF5 REQUIRED COMPONENTS CXX)
-  target_link_libraries(bout++ PUBLIC "${HDF5_CXX_LIBRARIES}")
-  target_include_directories(bout++ PUBLIC "${HDF5_CXX_INCLUDE_DIRS}")
-endif()
-message(STATUS "HDF5 support: ${BOUT_USE_HDF5}")
-set(BOUT_HAS_HDF5 ${BOUT_USE_HDF5})
-
 option(BOUT_USE_FFTW "Enable support for FFTW" ON)
 if (BOUT_USE_FFTW)
   find_package(FFTW REQUIRED)
@@ -609,6 +598,20 @@ if (BOUT_USE_SCOREP)
 ")
 endif()
 set(BOUT_HAS_SCOREP ${BOUT_USE_SCOREP})
+
+option(BOUT_USE_UUID_SYSTEM_GENERATOR "Enable support for using a system UUID generator" ON)
+if (BOUT_USE_UUID_SYSTEM_GENERATOR)
+  find_package(Libuuid QUIET)
+  if (Libuuid_FOUND)
+    target_link_libraries(bout++
+      PUBLIC Libuuid::libuuid)
+  else()
+    message(STATUS "libuuid not found, using fallback UUID generator")
+    set(BOUT_USE_UUID_SYSTEM_GENERATOR FALSE)
+  endif()
+endif()
+message(STATUS "UUID_SYSTEM_GENERATOR: ${BOUT_USE_UUID_SYSTEM_GENERATOR}")
+set(BOUT_HAS_UUID_SYSTEM_GENERATOR ${BOUT_USE_UUID_SYSTEM_GENERATOR})
 
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("int main() { const char* name = __PRETTY_FUNCTION__; }"
@@ -892,12 +895,12 @@ message("
    SLEPc support            : ${BOUT_HAS_SLEPC}
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
    NetCDF support           : ${BOUT_HAS_NETCDF}
-   HDF5 support             : ${BOUT_HAS_HDF5}
    FFTW support             : ${BOUT_HAS_FFTW}
    LAPACK support           : ${BOUT_HAS_LAPACK}
    OpenMP support           : ${BOUT_USE_OPENMP}
    Natural language support : ${BOUT_HAS_GETTEXT}
    ScoreP support           : ${BOUT_HAS_SCOREP}
+   System UUID generator    : ${BOUT_HAS_UUID_SYSTEM_GENERATOR}
    Extra debug output       : ${BOUT_USE_OUTPUT_DEBUG}
    Runtime error check level: ${BOUT_CHECK_LEVEL}
    Signal handling          : ${BOUT_USE_SIGNAL}
