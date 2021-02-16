@@ -34,4 +34,4 @@ jobs:
 
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: "[skip CI] Apply black changes"
+        commit_message: "[skip ci] Apply black changes"
