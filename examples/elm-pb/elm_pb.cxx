@@ -6,8 +6,9 @@
  * This version uses indexed operators
  * which reduce the number of loops over the domain
  * GPU processing is enabled if BOUT_ENABLE_CUDA is defined
+ * GPU version Hypre solver is enable if BOUT_HAS_HYPRE is defined
  * Profiling markers and ranges are set if USE_NVTX is defined
- * Based on example original code,  Yining Qin update GPU RAJA code since 1117-2020
+ * Based on model code,  Yining Qin update GPU RAJA code since 1117-2020
  *******************************************************************************/
 
 
@@ -196,7 +197,7 @@ public:
   bool split_n0; // Solve the n=0 component of potential
 //  std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
   
-  #if BOUT_HAS_HYPRE
+  #if 0    //BOUT_HAS_HYPRE
     std::unique_ptr< LaplaceXY2Hypre> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
   #else
     std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
@@ -250,6 +251,8 @@ public:
   // Metric coefficients
   Field2D Rxy, Bpxy, Btxy, B0, hthe;
   Field2D I; // Shear factor
+
+  Field2D g_22;
 
   const BoutReal MU0 = 4.0e-7 * PI;
   const BoutReal Mi = 2.0 * 1.6726e-27; // Ion mass
@@ -534,7 +537,7 @@ public:
       //phi2D.setBoundary("phi");
     
         // Create an XY solver for n=0 component
-  #if BOUT_HAS_HYPRE
+  #if 0  // BOUT_HAS_HYPRE
           laplacexy = bout::utils::make_unique< LaplaceXY2Hypre>(mesh);
   #else
           laplacexy = bout::utils::make_unique<LaplaceXY>(mesh);
@@ -1037,7 +1040,9 @@ public:
     metric->g_13 = I * Rxy * Rxy;
     metric->g_23 = Btxy * hthe * Rxy / Bpxy;
 
+    g_22=  metric->g_22; // Field2d object to read metric parameters
     metric->geometry(); // Calculate quantities from metric tensor
+
 
     // Set B field vector
 
@@ -1187,7 +1192,7 @@ public:
 
       //printf("Grad_parP run");
     
-    if (nonlinear) {
+   if (nonlinear) {
       result -= bracket(interp_to(Psi, loc), f, bm_mag) * B0;
 
       if (include_rmp) {
@@ -1511,13 +1516,17 @@ public:
       //printf("...relax_j_vac is False.....\n");
 		
 
-#if 1// defined(GPU)
+#if 1 // defined(GPU)
       //auto start = std::chrono::steady_clock::now();   
 
 	auto Psi_acc = FieldAccessor<>(Psi);
       	auto phi_acc = FieldAccessor<>(phi);
 	auto Jpar_acc = FieldAccessor<>(Jpar);
        	auto eta_acc = FieldAccessor<>(eta);
+	auto hthe_acc = Field2DAccessor<>(hthe);
+ 
+	auto g_22_acc = Field2DAccessor<>(g_22);
+
 	auto indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
 	Ind3D *ob_i = &(indices)[0];
 	
@@ -1529,11 +1538,12 @@ public:
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
 	int i = ob_i[id].ind;
-	BoutReal p1 =  Grad_parP_g(phi_acc,i);
+	BoutReal p1 =  Grad_parP_g(phi_acc,g_22_acc, i);
 	BoutReal p2 =   FIELD_DATA(eta_acc)[i] * FIELD_DATA(Jpar_acc)[i];
-	DDT(Psi_acc)[i] = -p1 + p2;
+	DDT(Psi_acc)[i] = -p1 + p2  ;
 
- 	 });
+	 });
+	
 
 
 #else
@@ -1557,7 +1567,8 @@ public:
       { // printf("...diamagi_phi0 is True...\n");
 
     //  start = std::chrono::steady_clock::now();   
-#if 0 //defined(GPU)
+#if 0  //defined(GPU)
+// too much time for this gpu code, need to change.
       
          auto phi0_2D_acc =Field2DAccessor<>(phi0);
 	
@@ -1597,7 +1608,7 @@ public:
 	
       //start = std::chrono::steady_clock::now();   
 #if 1 //defined(GPU)
-
+// no problem for this function
 	
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
@@ -1661,6 +1672,8 @@ public:
 	auto indices = U.getRegion("RGN_NOBNDRY").getIndices();
 	Ind3D *ob_i = &(indices)[0];
 #if 1 // defined(GPU) 	
+// good
+
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
 		int i = ob_i[id].ind;
@@ -1687,7 +1700,9 @@ public:
     }
 
      start = std::chrono::steady_clock::now();  
-#if 1 //defined(GPU) 
+#if 0 //defined(GPU)
+// issue, psi
+//
 	Field2D x=   b0xcv.x;
 	Field2D y=   b0xcv.y;
 	Field2D z=   b0xcv.z;
@@ -1727,11 +1742,13 @@ if (!nogradparj) {
 #if 1 //defined(GPU)      
     
      auto Jpar_acc = FieldAccessor<>(Jpar);
-     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
+     auto g_22_acc = Field2DAccessor<>(g_22);
+    
+	 RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 
                  int i = ob_i[id].ind;
                  BoutReal p1 = SQ_g(U_acc,B0_acc,i);
-                 BoutReal p2 = Grad_parP_g(Jpar_acc,i);
+                 BoutReal p2 = Grad_parP_g(Jpar_acc,g_22_acc,i);
                  DDT(U_acc)[i] -= p1*p2;
 
           });
@@ -1754,8 +1771,8 @@ end = std::chrono::steady_clock::now();
     
     if (diamag_phi0){
       //printf("..............diamag_phi0...\n");
-#if 0 //defined(GPU)
-  
+#if 1  //defined(GPU)
+ // no problem 
     
 auto phi0_acc = Field2DAccessor<>(phi0);
      RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
@@ -1780,15 +1797,14 @@ auto phi0_acc = Field2DAccessor<>(phi0);
     if (nonlinear) {
       //printf("...............nonlinear...\n");
 
-#if 1 // defined(GPU) 
+#if 0  // defined(GPU) 
+// issue! is not the bracket, but B0_2D_acc, check it later
 	auto B0_2D_acc =Field2DAccessor<>(B0);   
          RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-
-                 int i = ob_i[id].ind;
-        
- 	BoutReal f1 = FIELD2D_3DINDEX_DATA(U_acc,B0_2D_acc,i);
+         int i = ob_i[id].ind;
+ 	 BoutReal f1 = FIELD2D_3DINDEX_DATA(U_acc,B0_2D_acc,i);
          BoutReal p1 = bracket_g(Psi_acc,U_acc,i);
-                 DDT(U_acc)[i] -= p1 * f1;
+                 DDT(U_acc)[i] -= p1; // * f1;
 
           });
 	
@@ -1808,7 +1824,8 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
     //  printf("...............diffusion_u4...\n");
 
      start = std::chrono::steady_clock::now();   
-#if 1 //defined(GPU) 
+#if 0 //defined(GPU)
+//problem, delay the speed and wrong result! 
 	auto tmpU= U;
 	auto tmpU_acc =  FieldAccessor<>(tmpU); 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
@@ -1942,8 +1959,10 @@ if (evolve_pressure) {
 
 
 	start = std::chrono::steady_clock::now();
-  #if  defined(GPU)
-        auto P_acc = FieldAccessor<>(P);   //P is field 3D
+  #if 0  //  defined(GPU)
+ // too slow, but b0xGrad_dot_Grad_g does work; 
+    
+   auto P_acc = FieldAccessor<>(P);   //P is field 3D
 	auto phi_acc = FieldAccessor<>(phi);
         auto P0_acc = Field2DAccessor<>(P0);
 	
@@ -1970,6 +1989,8 @@ if (evolve_pressure) {
      // printf(".........diamag_phi0 .................\n");
       
       #if 0 //defined(GPU)
+      // problem: slow and wrong result	
+      		 auto P_acc = FieldAccessor<>(P);   //P is field 3D
 		auto phi0_acc = Field2DAccessor<>(phi0); 
         	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
                   int i = ob_i[id].ind;
@@ -1997,9 +2018,11 @@ if (evolve_pressure) {
       if (nonlinear){
      // printf(".........nonlinear .................\n");
 
-#if 1 // defined(GPU)
+#if 1  // defined(GPU)
+// no problme, reference for previous one
 	 auto phi_acc = FieldAccessor<>(phi);
          auto B0_2D_acc =Field2DAccessor<>(B0);
+	 auto P_acc = FieldAccessor<>(P);   //P is field 3D
          RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 
                  int i = ob_i[id].ind;
@@ -2094,8 +2117,9 @@ if (evolve_pressure) {
         ddt(Jpar) = filter(ddt(Jpar), filter_z_mode);
       } else
 
-#if  1 // defined(GPU)
-
+#if  0 // defined(GPU)
+// problem , need to discuss
+//
         indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
         Ind3D *ob_i = &(indices)[0];
         auto P_acc = FieldAccessor<>(P);   //P is field 3D
@@ -2141,8 +2165,10 @@ if (evolve_pressure) {
       } else
 
 
-#if 1 //defined(GPU)
-	  indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
+#if 0 //defined(GPU)
+// problem, need to discuss
+//
+	indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
         Ind3D *ob_i = &(indices)[0];
         auto P_acc = FieldAccessor<>(P);   //P is field 3D
 	auto Psi_acc = FieldAccessor<>(Psi);

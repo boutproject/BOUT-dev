@@ -376,9 +376,7 @@ BOUT_HOST_DEVICE inline BoutReal Div_par_Grad_par_g(const FieldAccessor<location
 
 // use raw pointer to field data 
   BoutReal* f_a = f.f_data;
-  //auto dx = f.f2d_dx;
-    BoutReal* dy = f.f2d_dy;
-  //auto dz = f.f2d_dz;
+  BoutReal* dy = f.f2d_dy;
   BoutReal* J = f.f2d_J;
   BoutReal* g22 = f.f2d_g22;
   int  nz = f.f_nz;
@@ -386,17 +384,11 @@ BOUT_HOST_DEVICE inline BoutReal Div_par_Grad_par_g(const FieldAccessor<location
   // Use the raw pointers to yup/ydown fields. 
   BoutReal* yup = f.f_yup;
   BoutReal* ydown = f.f_ydown;
-  
-  // Index offsets
-  //auto iyp = i.yp();
-  //auto iym = i.ym();
-  //const int  ind_2d = i.ind / nz;  // index for Field2D data (has no z-dependence)
-  //int  iyp_2d = iyp.ind / nz; // Map3Dto2Da: index for metrics(Field2D) data (has no z-dependence)
-  //int  iym_2d = iym.ind / nz; // Map3Dto2Da: index for metrics(Field2D) data (has no z-dependence)
- 
+   
   int iyp = i_yp(i,nz); // auto iyp = i.yp();
   int iym = i_ym(i,nz); // auto iym = i.ym():
-  int  ind_2d = i / nz;  // index for Field2D data (has no z-dependence)
+  int ind_2d = i / nz;  // index for Field2D data (has no z-dependence)
+
   int  iyp_2d = iyp/ nz;
   int  iym_2d = iym/nz;
 
@@ -586,9 +578,9 @@ return result;
 }
 
 template<CELL_LOC location>
-BOUT_HOST_DEVICE inline BoutReal Grad_parP_g(const FieldAccessor<location> &f3d, const int i) {
+BOUT_HOST_DEVICE inline BoutReal Grad_parP_g(const FieldAccessor<location> &f3d,const Field2DAccessor<location> &f2d, const int i) {
 
-BoutReal result =  Grad_par_g(f3d,i);
+BoutReal result =  Grad_par_g(f3d,f2d,i);
 
    //if (nonlinear) {
    //   result -= bracket(interp_to(Psi, loc), f, bm_mag) * B0;
@@ -605,14 +597,16 @@ return result;
 
 
 template<CELL_LOC location>
-BOUT_HOST_DEVICE inline BoutReal Grad_par_g(const FieldAccessor<location> &f3d, const int i) {
+BOUT_HOST_DEVICE inline BoutReal Grad_par_g(const FieldAccessor<location> &f3d,const Field2DAccessor<location> &f2d, const int i) {
 
-BoutReal* g22 = f3d.f2d_g22;
+BoutReal* f2d_a = f2d.f_data;
+
 int  nz = f3d.f_nz;
 int  ind_2d = i / nz;  // index for Field2D data (has no z-dependence)
+BoutReal g_22 = f2d_a[ind_2d];
 
 BoutReal ddy = DDY_g(f3d,i);
-BoutReal result = ddy / sqrt(g22[ind_2d]); 
+BoutReal result =  ddy / sqrt(g_22); 
 return result;
 //return ::DDY(var, outloc, method) / sqrt(g_22); // original operator
 }
