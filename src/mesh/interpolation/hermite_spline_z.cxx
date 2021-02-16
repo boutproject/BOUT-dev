@@ -61,8 +61,8 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
   const int ncz = localmesh->LocalNz;
 
   // Calculate weights for all points if y_offset==0 in case they are needed, otherwise
-  // only calculate weights for 'region'
-  const auto& local_region = (y_offset == 0) ? delta_z.getRegion("RGN_ALL") : region;
+  // only calculate weights for RGN_NOY, which should be a superset of 'region'
+  const auto& local_region = (y_offset == 0) ? delta_z.getRegion("RGN_ALL") : delta_z.getRegion("RGN_NOY");
 
   BOUT_FOR(i, local_region) {
     const int x = i.x();
