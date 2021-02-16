@@ -124,6 +124,12 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
  */
 std::vector<ParallelTransform::PositionsAndWeights>
 ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) const {
+  ASSERT3(i >= 0);
+  ASSERT3(i <= localmesh->LocalNx);
+  ASSERT3(j >= localmesh->ystart);
+  ASSERT3(j <= localmesh->yend);
+  ASSERT3(k >= 0);
+  ASSERT3(k <= localmesh->LocalNz);
 
   const int ncz = localmesh->LocalNz;
   const auto corner = k_corner[(i*localmesh->LocalNy + j)*ncz + k];
