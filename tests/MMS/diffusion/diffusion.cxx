@@ -81,13 +81,14 @@ int Diffusion::init(bool UNUSED(restarting)) {
   // Tell BOUT++ to solve N
   SOLVE_FOR(N);
 
+  BoutReal dz = getUniform(coord->dz);
   //Set initial condition to MS at t = 0.
   for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
     for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
         output.write("Initial condition at {:d},{:d},{:d}\n", xi, yj, zk);
         N(xi, yj, zk) = MS(0., mesh->GlobalX(xi) * Lx, mesh->GlobalY(yj) * Ly,
-                           coord->dz(xi, yj, zk) * zk);
+                           dz * zk);
       }
     }
   }
@@ -146,12 +147,13 @@ void solution(Field3D &f, BoutReal t, BoutReal UNUSED(D)) {
   int by = (mesh->LocalNy - (mesh->yend - mesh->ystart + 1)) / 2;
   BoutReal x,y,z;
 
+  BoutReal dz = getUniform(coord->dz);
   for (int xi = mesh->xstart - bx; xi < mesh->xend + bx + 1; xi++){
     for (int yj = mesh->ystart - by; yj < mesh->yend + by + 1; yj++){
       x = mesh->GlobalX(xi);
       y = mesh->GlobalY(yj);//GlobalY not fixed yet
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        z = coord->dz(xi, yj, zk) * zk;
+        z = dz * zk;
         output.write("Solution at {:d},{:d},{:d}\n", xi, yj, zk);
         f(xi, yj, zk) = MS(t,x,y,z);
       }
