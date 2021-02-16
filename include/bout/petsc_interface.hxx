@@ -107,14 +107,14 @@ public:
 
     bndryCandidate = mask(allCandidate, getRegionNobndry());
 
-    regionInnerX = getUnion(bndryCandidate, indices.getRegion("RGN_INNER_X"));
-    regionOuterX = getUnion(bndryCandidate, indices.getRegion("RGN_OUTER_X"));
+    regionInnerX = getIntersection(bndryCandidate, indices.getRegion("RGN_INNER_X"));
+    regionOuterX = getIntersection(bndryCandidate, indices.getRegion("RGN_OUTER_X"));
     if (std::is_same<T, FieldPerp>::value) {
       regionLowerY = Region<ind_type>({});
       regionUpperY = Region<ind_type>({});
     } else {
-      regionLowerY = getUnion(bndryCandidate, indices.getRegion("RGN_LOWER_Y"));
-      regionUpperY = getUnion(bndryCandidate, indices.getRegion("RGN_UPPER_Y"));
+      regionLowerY = getIntersection(bndryCandidate, indices.getRegion("RGN_LOWER_Y"));
+      regionUpperY = getIntersection(bndryCandidate, indices.getRegion("RGN_UPPER_Y"));
     }
     regionBndry = regionLowerY + regionInnerX + regionOuterX + regionUpperY;
     regionAll = getRegionNobndry() + regionBndry;
