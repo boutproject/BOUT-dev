@@ -1,10 +1,10 @@
 name: black
 
-on:
-  pull_request:
-  push:
-    branches:
-      - "test"
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   black:
