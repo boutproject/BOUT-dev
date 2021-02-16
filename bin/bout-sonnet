@@ -11,25 +11,25 @@ from boutdata.griddata import bout2sonnet
 # Check command line arguments
 
 import sys
-nargs = len(sys.argv) # Number of arguments
+
+nargs = len(sys.argv)  # Number of arguments
 
 if (nargs < 2) or (nargs > 3):
     print("Useage:")
-    print("  "+ sys.argv[0]+" <input file> [ <output file> ]")
+    print("  " + sys.argv[0] + " <input file> [ <output file> ]")
     print("Input file is a BOUT++ grid file")
     print("Output is (optionally) a Sonnet output file")
     raise SystemExit
 elif nargs == 2:
     # Only specified input file
     infile = sys.argv[1]
-    
+
     # Add ".sonnet" to the end of the name
-    outfile = infile+".sonnet"
+    outfile = infile + ".sonnet"
 else:
     infile = sys.argv[1]
     outfile = sys.argv[2]
-    
+
 with open(outfile, "wt") as f:
     bout2sonnet(infile, f)
     print("=> Output written to '%s'" % outfile)
-

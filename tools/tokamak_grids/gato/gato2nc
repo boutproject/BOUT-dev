@@ -59,8 +59,8 @@ f = open(infile)
 # First line contains the date
 date = f.readline()
 if not date:
-   print("ERROR: Cannot read from input file")
-   raise SystemExit
+    print("ERROR: Cannot read from input file")
+    raise SystemExit
 
 print("Date: " + date)
 
@@ -74,12 +74,14 @@ def file_tokens(fp):
     toklist = []
     while True:
         line = fp.readline()
-        if not line: break
+        if not line:
+            break
         # Match numbers in the line using regular expression
-        pattern = r'[+-]?\d*[\.]?\d+(?:[Ee][+-]?\d+)?'
+        pattern = r"[+-]?\d*[\.]?\d+(?:[Ee][+-]?\d+)?"
         toklist = re.findall(pattern, line)
         for tok in toklist:
             yield tok
+
 
 token = file_tokens(f)
 
@@ -108,8 +110,8 @@ if (npsi < 1) or (ntheta < 1):
 
 try:
     rcnt = float(next(token))
-    xma  = float(next(token))
-    zma  = float(next(token))
+    xma = float(next(token))
+    zma = float(next(token))
     btor = float(next(token))
 except:
     print("ERROR: Couldn't read normalisation factors")
@@ -119,13 +121,14 @@ print("rcnt = %e, xma = %e, zma = %e, btor = %e" % (rcnt, xma, zma, btor))
 
 try:
     curtot = float(next(token))
-    eaxe   = float(next(token))
-    dnorm  = float(next(token))
+    eaxe = float(next(token))
+    dnorm = float(next(token))
 except:
     print("ERROR: Couldn't read normalisation factors")
     raise SystemExit
 
 print("curtot = %e, eaxe = %e, dnorm = %e\n" % (curtot, eaxe, dnorm))
+
 
 def read_array(n, name="Unknown"):
     data = np.zeros([n])
@@ -133,25 +136,27 @@ def read_array(n, name="Unknown"):
         for i in np.arange(n):
             data[i] = float(next(token))
     except:
-        print("ERROR: Failed reading array '"+name+"' of size ", n)
+        print("ERROR: Failed reading array '" + name + "' of size ", n)
         raise SystemExit
     return data
+
 
 def read_2d(nx, ny, name="Unknown"):
     data = np.zeros([nx, ny])
     print("Reading 2D variable " + name)
     for i in np.arange(nx):
-        data[i,:] = read_array(ny, name+"["+str(i)+"]")
+        data[i, :] = read_array(ny, name + "[" + str(i) + "]")
     return data
+
 
 # Read 1D arrays
 psiflux = read_array(npsi, "psiflux")
-fnorm   = read_array(npsi, "fnorm")
+fnorm = read_array(npsi, "fnorm")
 ffpnorm = read_array(npsi, "ffpnorm")
-ponly   = read_array(npsi, "ponly")
-pponly  = read_array(npsi, "pponly")
-qsf     = read_array(npsi, "qsf")
-d       = read_array(npsi, "d")
+ponly = read_array(npsi, "ponly")
+pponly = read_array(npsi, "pponly")
+qsf = read_array(npsi, "qsf")
+d = read_array(npsi, "d")
 
 dpdz = read_array(ntheta, "dpdz")
 dpdr = read_array(ntheta, "dpdr")
@@ -174,27 +179,27 @@ ny = ntheta
 if isym == 1:
     # Fill in values for up-down symmetric case
     print("Grid is up-down symmetric. Reflecting grid about midplane")
-    ny = tsize = 2*(ntheta - 1) + 1
+    ny = tsize = 2 * (ntheta - 1) + 1
 
-    def reflect(data, mapfunc = lambda x:x):
-        """ Reflect a variable about midplane
+    def reflect(data, mapfunc=lambda x: x):
+        """Reflect a variable about midplane
         Optionally supply a mapping function"""
         data2 = np.zeros([tsize, npsi])
         # Copy the original data
         for i in np.arange(ntheta):
-            data2[i,:] = data[i,:]
+            data2[i, :] = data[i, :]
         # Now fill in the remainder
         for i in np.arange(ntheta, tsize):
             t0 = tsize - 1 - i
-            data2[i,:] = mapfunc(data[t0,:])
+            data2[i, :] = mapfunc(data[t0, :])
         return data2
 
     xnorm = reflect(xnorm)
-    znorm = reflect(znorm, lambda x: 2.*zma - x) # Reflect about zma
+    znorm = reflect(znorm, lambda x: 2.0 * zma - x)  # Reflect about zma
     if Br != None:
-        Br = reflect(Br, lambda x:-x) # Br reverses
+        Br = reflect(Br, lambda x: -x)  # Br reverses
     if Bz != None:
-        Bz = reflect(Bz) # Bz remains the same
+        Bz = reflect(Bz)  # Bz remains the same
     theta = tsize
 
 # Make sure we have Br, Bz and Bpol
@@ -204,13 +209,13 @@ if (Br == None) or (Bz == None):
     # Use dpsi = 2*PI*R*Bp dx (for now)
     Bpol = None
 else:
-    Bpol = np.sqrt(Br**2 + Bz**2)
+    Bpol = np.sqrt(Br ** 2 + Bz ** 2)
 
 # Calculate toroidal field
 Btor = old_div(fnorm, xnorm)
 
 # Output file
-print("Writing data to '"+outfile+"'")
+print("Writing data to '" + outfile + "'")
 of = DataFile()
 of.open(outfile, create=True)
 
@@ -218,12 +223,12 @@ of.write("nx", npsi)
 of.write("ny", ny)
 
 # Write 1D flux functions
-mu0 = 4.e-7*np.pi
+mu0 = 4.0e-7 * np.pi
 of.write("psi", psiflux)
 of.write("f", fnorm)
 of.write("ffprime", ffpnorm)
-of.write("mu0p", ponly*mu0)
-of.write("mu0pprime", pponly*mu0)
+of.write("mu0p", ponly * mu0)
+of.write("mu0pprime", pponly * mu0)
 of.write("qsafe", qsf)
 of.write("Ni", d)
 
@@ -232,9 +237,9 @@ of.write("Rxy", np.transpose(xnorm))
 of.write("Zxy", np.transpose(znorm))
 
 # Write 2D field components
-#of.write("Br", np.transpose(Br))
-#of.write("Bz", np.transpose(Bz))
-#of.write("Bpol", np.transpose(Bpol))
+# of.write("Br", np.transpose(Br))
+# of.write("Bz", np.transpose(Bz))
+# of.write("Bpol", np.transpose(Bpol))
 of.write("Btor", np.transpose(Btor))
 
 of.close()
