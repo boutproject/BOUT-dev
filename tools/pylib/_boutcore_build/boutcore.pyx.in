@@ -965,14 +965,6 @@ done
 
 cat <<"EOF"
 
-    def __dealloc__(self):
-        self.__boutcore_dealloc()
-
-    def __boutcore_dealloc(self):
-        if self.cobj and self.isSelfOwned:
-            del self.cobj
-            self.cobj = NULL
-
 cdef class FieldFactory:
     cdef c.FieldFactory * cobj
     def __init__(self):
