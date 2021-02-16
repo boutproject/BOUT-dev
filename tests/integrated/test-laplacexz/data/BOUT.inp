@@ -22,7 +22,7 @@ atol=1e-11
 
 ksptype = gmres   # Linear iterative method
 
-pctype = lu   # Preconditioner. Direct "lu" or "ilu"; iterative "jacobi", "sor"
+pctype = hypre   # Preconditioner. Direct "lu" or "ilu"; iterative "jacobi", "sor"
 
 # Set package to perform factorisation for direct solves
 # "petsc" built-in solver only serial
