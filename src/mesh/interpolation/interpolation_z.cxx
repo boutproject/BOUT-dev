@@ -34,7 +34,7 @@ ZInterpolation::ZInterpolation(int y_offset, Mesh* mesh, Region<Ind3D> region_in
 
     const int ny = localmesh->LocalNy;
     const int nz = localmesh->LocalNz;
-    auto mask_region = Region<Ind3D>(0, 0, 0, 0, 0, 0, ny, nz);
+    auto mask_region = Region<Ind3D>(0, -1, 0, -1, 0, 0, ny, nz);
     if (y_offset > 0) {
       for (auto it = localmesh->iterateBndryUpperY(); not it.isDone(); it.next()) {
         mask_region.getUnion(Region<Ind3D>(it.ind, it.ind, localmesh->yend - y_offset + 1,
