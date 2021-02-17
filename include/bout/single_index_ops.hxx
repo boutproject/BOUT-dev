@@ -378,7 +378,7 @@ BOUT_HOST_DEVICE inline BoutReal Div_par_Grad_par_g(const FieldAccessor<location
   BoutReal* f_a = f.f_data;
   BoutReal* dy = f.f2d_dy;
   BoutReal* J = f.f2d_J;
-  BoutReal* g22 = f.f2d_g22;
+  BoutReal* g_22 = f.f2d_g_22;
   int  nz = f.f_nz;
  
   // Use the raw pointers to yup/ydown fields. 
@@ -393,9 +393,9 @@ BOUT_HOST_DEVICE inline BoutReal Div_par_Grad_par_g(const FieldAccessor<location
   int  iym_2d = iym/nz;
 
   BoutReal gradient_upper = 2.*(yup[iyp] - f_a[i]) / (dy[ind_2d] + dy[iyp_2d]); // metric->dy[i] is dy
-  BoutReal flux_upper = gradient_upper * (J[ind_2d] + J[iyp_2d]) / (g22[ind_2d] + g22[iyp_2d]); //metric->g22[i]
+  BoutReal flux_upper = gradient_upper * (J[ind_2d] + J[iyp_2d]) / (g_22[ind_2d] + g_22[iyp_2d]); //metric->g_22[i]
   BoutReal gradient_lower = 2.*(f_a[i] - ydown[iym]) / (dy[ind_2d] + dy[iyp_2d]);
-  BoutReal flux_lower = gradient_lower * (J[ind_2d] + J[iym_2d]) / (g22[ind_2d] + g22[iym_2d]);
+  BoutReal flux_lower = gradient_lower * (J[ind_2d] + J[iym_2d]) / (g_22[ind_2d] + g_22[iym_2d]);
 
   BoutReal output =  (flux_upper - flux_lower) / (dy[ind_2d] * J[ind_2d]);
   return output;
@@ -482,9 +482,9 @@ BOUT_HOST_DEVICE  BoutReal b0xGrad_dot_Grad_3D2D_g(const FieldAccessor<location>
   int  ind_2d = i / nz;  // index for Field2D data (has no z-dependence)
 
   BoutReal* J = f3d.f2d_J;   
-   BoutReal* g_23 = f2d.f2d_g23;
-   BoutReal* g_12 = f2d.f2d_g12;
-   BoutReal* g_22 = f2d.f2d_g22;
+   BoutReal* g_23 = f3d.f2d_g_23;
+   BoutReal* g_12 = f3d.f2d_g_12;
+   BoutReal* g_22 = f3d.f2d_g_22;
 
   // Calculate phi derivatives
    BoutReal dpdx = DDX_g(f3d,  i);
@@ -511,8 +511,12 @@ BOUT_HOST_DEVICE  BoutReal b0xGrad_dot_Grad_3D2D_g(const FieldAccessor<location>
    BoutReal result = p1;
    result /= p2;
 
-   return result;
+if ((result < -1) || (result >1)){result = 0.0;}
+   (isinf(result) == 1) ? (result = 0.0): result = result;
+   (isnan(result) == 1) ? (result = 0.0): result = result;
 
+
+   return result;
 
 
 }
@@ -530,12 +534,12 @@ int  ind_2d = i / nz;  // index for Field2D data (has no z-dependence)
    BoutReal dpdy = DDY_g(f2d,  ind_2d);
    
    BoutReal* J = f2d.f2d_J;   
-   BoutReal* g_23 = f2d.f2d_g23;
-   BoutReal* g_12 = f2d.f2d_g12;
-   BoutReal* g_22 = f2d.f2d_g22;
+   BoutReal* g_23 = f2d.f2d_g_23;
+   BoutReal* g_12 = f2d.f2d_g_12;
+   BoutReal* g_22 = f2d.f2d_g_22;
 
   // Calculate advection velocity
-   BoutReal vx = g_23[ind_2d] * dpdy;
+   BoutReal vx = -g_23[ind_2d] * dpdy;
    BoutReal vy = g_23[ind_2d] * dpdx;
    BoutReal vz = g_12[ind_2d] * dpdy - g_22[ind_2d] * dpdx;
 // VDDX,VDDY,VDDZ
@@ -554,14 +558,12 @@ int  ind_2d = i / nz;  // index for Field2D data (has no z-dependence)
 
    BoutReal result = p1;
    result /= p2;
-   if ((result < -1) || (result >1)){result = 0.0;}
+
+if ((result < -1) || (result >1)){result = 0.0;}
    (isinf(result) == 1) ? (result = 0.0): result = result;
    (isnan(result) == 1) ? (result = 0.0): result = result;
-   
-   return result*0.001;
 
-
-
+   return result;
 }
 
 template<CELL_LOC location>

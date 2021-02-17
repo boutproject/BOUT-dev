@@ -252,7 +252,7 @@ public:
   Field2D Rxy, Bpxy, Btxy, B0, hthe;
   Field2D I; // Shear factor
 
-  Field2D g_22;
+  Field2D g_22,mesh2D;
 
   const BoutReal MU0 = 4.0e-7 * PI;
   const BoutReal Mi = 2.0 * 1.6726e-27; // Ion mass
@@ -1040,6 +1040,8 @@ public:
     metric->g_13 = I * Rxy * Rxy;
     metric->g_23 = Btxy * hthe * Rxy / Bpxy;
 
+   // auto mesh_acc = FieldAccessor<mesh>;
+
     g_22=  metric->g_22; // Field2d object to read metric parameters
     metric->geometry(); // Calculate quantities from metric tensor
 
@@ -1671,8 +1673,8 @@ public:
       	auto U_acc = FieldAccessor<>(U);
 	auto indices = U.getRegion("RGN_NOBNDRY").getIndices();
 	Ind3D *ob_i = &(indices)[0];
-#if 1 // defined(GPU) 	
-// good
+#if 0 // defined(GPU) 	
+// problem , need to solve, very slow
 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
@@ -1804,7 +1806,7 @@ auto phi0_acc = Field2DAccessor<>(phi0);
          int i = ob_i[id].ind;
  	 BoutReal f1 = FIELD2D_3DINDEX_DATA(U_acc,B0_2D_acc,i);
          BoutReal p1 = bracket_g(Psi_acc,U_acc,i);
-                 DDT(U_acc)[i] -= p1; // * f1;
+                 DDT(U_acc)[i] -= p1 * f1;
 
           });
 	
