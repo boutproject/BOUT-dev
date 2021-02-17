@@ -5,8 +5,8 @@
 # Tests a range of different schemes
 #
 
-#requires: all_tests
-#cores: 4
+# requires: all_tests
+# cores: 4
 
 from __future__ import division
 from __future__ import print_function
@@ -22,11 +22,19 @@ from numpy import array, log, pi
 import argparse
 import pickle
 
-parser = argparse.ArgumentParser(description="Check the error scaling of bracket operators")
-parser.add_argument("-p", "--plot", action="store_true",
-                    help="Plot graphs of the errors")
-parser.add_argument("-n", "--no-show", action="store_false", dest="show",
-                    help="Don't show the plots, just save to file")
+parser = argparse.ArgumentParser(
+    description="Check the error scaling of bracket operators"
+)
+parser.add_argument(
+    "-p", "--plot", action="store_true", help="Plot graphs of the errors"
+)
+parser.add_argument(
+    "-n",
+    "--no-show",
+    action="store_false",
+    dest="show",
+    help="Don't show the plots, just save to file",
+)
 
 cli_args = parser.parse_args()
 
@@ -36,16 +44,66 @@ build_and_log("MMS steady-state advection test")
 options = [
     ("method=2", "Arakawa", "-^", 2),
     ("method=4", "Arakawa-old", "-.", 2),
-    ("method=1 mesh:ddx:upwind=u1 mesh:ddz:upwind=u1", "SIMPLE: 1st order upwind", "-o", 1),
-    ("method=1 mesh:ddx:upwind=u2 mesh:ddz:upwind=u2", "SIMPLE: 2nd order upwind", "-^", 2),
-    ("method=1 mesh:ddx:upwind=u3 mesh:ddz:upwind=u3", "SIMPLE: 3rd order upwind", "-v", 3),
-    ("method=1 mesh:ddx:upwind=c2 mesh:ddz:upwind=c2", "SIMPLE: 2nd order central", "-x", 2),
-    ("method=1 mesh:ddx:upwind=c4 mesh:ddz:upwind=c4", "SIMPLE: 4th order central", "-+", 4),
-    ("method=0 mesh:ddx:upwind=u1 mesh:ddz:upwind=u1", "STD: 1st order upwind", "-o", 1),
-    ("method=0 mesh:ddx:upwind=u2 mesh:ddz:upwind=u2", "STD: 2nd order upwind", "-^", 2),
-    ("method=0 mesh:ddx:upwind=u3 mesh:ddz:upwind=u3", "STD: 3rd order upwind", "-v", 3),
-    ("method=0 mesh:ddx:upwind=c2 mesh:ddz:upwind=c2", "STD: 2nd order central", "-x", 2),
-    ("method=0 mesh:ddx:upwind=c4 mesh:ddz:upwind=c4", "STD: 4th order central", "-+", 4),
+    (
+        "method=1 mesh:ddx:upwind=u1 mesh:ddz:upwind=u1",
+        "SIMPLE: 1st order upwind",
+        "-o",
+        1,
+    ),
+    (
+        "method=1 mesh:ddx:upwind=u2 mesh:ddz:upwind=u2",
+        "SIMPLE: 2nd order upwind",
+        "-^",
+        2,
+    ),
+    (
+        "method=1 mesh:ddx:upwind=u3 mesh:ddz:upwind=u3",
+        "SIMPLE: 3rd order upwind",
+        "-v",
+        3,
+    ),
+    (
+        "method=1 mesh:ddx:upwind=c2 mesh:ddz:upwind=c2",
+        "SIMPLE: 2nd order central",
+        "-x",
+        2,
+    ),
+    (
+        "method=1 mesh:ddx:upwind=c4 mesh:ddz:upwind=c4",
+        "SIMPLE: 4th order central",
+        "-+",
+        4,
+    ),
+    (
+        "method=0 mesh:ddx:upwind=u1 mesh:ddz:upwind=u1",
+        "STD: 1st order upwind",
+        "-o",
+        1,
+    ),
+    (
+        "method=0 mesh:ddx:upwind=u2 mesh:ddz:upwind=u2",
+        "STD: 2nd order upwind",
+        "-^",
+        2,
+    ),
+    (
+        "method=0 mesh:ddx:upwind=u3 mesh:ddz:upwind=u3",
+        "STD: 3rd order upwind",
+        "-v",
+        3,
+    ),
+    (
+        "method=0 mesh:ddx:upwind=c2 mesh:ddz:upwind=c2",
+        "STD: 2nd order central",
+        "-x",
+        2,
+    ),
+    (
+        "method=0 mesh:ddx:upwind=c4 mesh:ddz:upwind=c4",
+        "STD: 4th order central",
+        "-+",
+        4,
+    ),
     # NOTE: WENO3 seems to have two different regimes, one < 3, one >
     # 3, so it's possible to make it pass by judicious choice of grid
     # sizes, which is suspicious. It does seem to work correctly in
@@ -76,19 +134,23 @@ for opts, label, sym, exp_ord in options:
         shell("rm data/BOUT.dmp.*.nc")
 
         # Set the X and Z mesh size
-        dx = 2.*pi / (nx)
-        args = opts + " mesh:nx="+str(nx+4)+" mesh:dx="+str(dx)+" MZ="+str(nx)
+        dx = 2.0 * pi / (nx)
+        args = (
+            opts + " mesh:nx=" + str(nx + 4) + " mesh:dx=" + str(dx) + " MZ=" + str(nx)
+        )
         print("  Running with " + args)
-        cmd = "./advection "+args
+        cmd = "./advection " + args
         s, out = launch_safe(cmd, nproc=nproc, mthread=mthread, pipe=True)
 
-        with open("run.log."+str(nx), "w") as f:
+        with open("run.log." + str(nx), "w") as f:
             f.write(out)
 
-        l2 = collect("l_2", tind=-1, xguards=False,
-                     yguards=False, info=False, path="data")
-        linf = collect("l_inf", tind=-1, xguards=False,
-                       yguards=False, info=False, path="data")
+        l2 = collect(
+            "l_2", tind=-1, xguards=False, yguards=False, info=False, path="data"
+        )
+        linf = collect(
+            "l_inf", tind=-1, xguards=False, yguards=False, info=False, path="data"
+        )
 
         error_2.append(l2)
         error_inf.append(linf)
@@ -98,7 +160,7 @@ for opts, label, sym, exp_ord in options:
     err_2_all.append((error_2, label, sym))
     err_inf_all.append((error_inf, label, sym))
 
-    dx = 1. / array(nxlist)
+    dx = 1.0 / array(nxlist)
 
     order = check_scaling.get_order(dx, error_2)
     print("Convergence order = {:f} ({:f} at small spacing)".format(*order))
@@ -112,21 +174,23 @@ for opts, label, sym, exp_ord in options:
     # plot errors
     if cli_args.plot:
         import matplotlib.pyplot as plt
+
         plt.figure()
 
-        plt.plot(dx, error_2, '-o', label=r'$l^2$')
-        plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
+        plt.plot(dx, error_2, "-o", label=r"$l^2$")
+        plt.plot(dx, error_inf, "-x", label=r"$l^\infty$")
 
-        plt.plot(dx, error_2[-1]*(dx/dx[-1])**order,
-                 '--', label="Order %.1f" % (order))
+        plt.plot(
+            dx, error_2[-1] * (dx / dx[-1]) ** order, "--", label="Order %.1f" % (order)
+        )
 
         plt.legend(loc="upper left")
         plt.grid()
 
-        plt.yscale('log')
-        plt.xscale('log')
+        plt.yscale("log")
+        plt.xscale("log")
 
-        plt.xlabel(r'Mesh spacing $\delta x$')
+        plt.xlabel(r"Mesh spacing $\delta x$")
         plt.ylabel("Error norm")
 
         if cli_args.show:
@@ -142,6 +206,7 @@ with open("advection.pkl", "wb") as output:
 # Plot all errors
 if cli_args.plot:
     import matplotlib.pyplot as plt
+
     # Plot all results for comparison
     plt.figure()
     for e, label, sym in err_2_all:
@@ -149,11 +214,11 @@ if cli_args.plot:
 
     plt.legend(loc="upper left")
     plt.grid()
-    plt.yscale('log')
-    plt.xscale('log')
+    plt.yscale("log")
+    plt.xscale("log")
 
-    plt.xlabel(r'Mesh spacing $\delta x$')
-    plt.ylabel(r'$l_2$ error norm')
+    plt.xlabel(r"Mesh spacing $\delta x$")
+    plt.ylabel(r"$l_2$ error norm")
     plt.savefig("advection_norm_l2.png")
     if cli_args.show:
         plt.show()
@@ -167,11 +232,11 @@ if cli_args.plot:
 
     plt.legend(loc="upper left")
     plt.grid()
-    plt.yscale('log')
-    plt.xscale('log')
+    plt.yscale("log")
+    plt.xscale("log")
 
-    plt.xlabel(r'Mesh spacing $\delta x$')
-    plt.ylabel(r'$l_\infty$ error norm')
+    plt.xlabel(r"Mesh spacing $\delta x$")
+    plt.ylabel(r"$l_\infty$ error norm")
     plt.savefig("advection_norm_linf.png")
     if cli_args.show:
         plt.show()

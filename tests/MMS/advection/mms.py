@@ -5,21 +5,21 @@ from boutdata.mms import *
 
 from math import pi
 
-Lx = 2*pi
-Lz = 2*pi
+Lx = 2 * pi
+Lz = 2 * pi
 
-ZMAX = Lz / (2*pi)
+ZMAX = Lz / (2 * pi)
 
-metric = Metric() # Identity metric
+metric = Metric()  # Identity metric
 
 # Define solution in terms of input x,y,z
 
-g = sin(6*x**2 - z)   # Constant drive for advection
+g = sin(6 * x ** 2 - z)  # Constant drive for advection
 
-f = cos(4*x**2 + z) + sin(t)*sin(3*x + 2*z)
+f = cos(4 * x ** 2 + z) + sin(t) * sin(3 * x + 2 * z)
 
 # Turn solution into real x and z coordinates
-replace = [ (x, metric.x / Lx), (z, metric.z / ZMAX) ]
+replace = [(x, metric.x / Lx), (z, metric.z / ZMAX)]
 
 f = f.subs(replace)
 g = g.subs(replace)
@@ -35,18 +35,18 @@ S = diff(f, t) - dfdt
 dfdx = diff(f, metric.x)
 
 # Substitute back to get input x and z coordinates
-replace = [ (metric.x, x * Lx), (metric.z, z * ZMAX) ]
+replace = [(metric.x, x * Lx), (metric.z, z * ZMAX)]
 
-g    = g.subs(replace)
-f    = f.subs(replace)
+g = g.subs(replace)
+f = f.subs(replace)
 dfdt = dfdt.subs(replace)
-S    = S.subs(replace)
+S = S.subs(replace)
 dfdx = dfdx.subs(replace)
 
 print("[g]")
-print("solution = "+exprToStr(g))
+print("solution = " + exprToStr(g))
 
 print("\n[f]")
-print("solution = "+exprToStr(f))
-print("\nddx = "+exprToStr(dfdx))
-print("\nsource = "+exprToStr(S))
+print("solution = " + exprToStr(f))
+print("\nddx = " + exprToStr(dfdx))
+print("\nsource = " + exprToStr(S))

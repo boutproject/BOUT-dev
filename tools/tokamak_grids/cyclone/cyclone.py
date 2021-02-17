@@ -12,104 +12,110 @@ from boututils.datafile import DataFile
 
 ######################################################
 
-nx = 68 # Number of radial grid points
-ny = 32 # Number of poloidal (parallel) grid points
+nx = 68  # Number of radial grid points
+ny = 32  # Number of poloidal (parallel) grid points
 
 varyBp = False
 
-output = "cyclone_"+str(nx)+"x"+str(ny)+".nc"
+output = "cyclone_" + str(nx) + "x" + str(ny) + ".nc"
 
 ######################################################
 
-Ni = 1.   # Ion density in 10^20 m^-3
-Ti = 1000 # Temperature in eV (Te = Ti)
+Ni = 1.0  # Ion density in 10^20 m^-3
+Ti = 1000  # Temperature in eV (Te = Ti)
 Rmaj = 4  # Major radius [meters]
-q = 1.4   # Safety factor q = r*Bt/(R*Bp)
-s = 0.776 # Magnetic shear s = (r/q) dq/dr
-eta_i = 3.114   # Ratio of density to temp. length scales eta = L_n / L_T
+q = 1.4  # Safety factor q = r*Bt/(R*Bp)
+s = 0.776  # Magnetic shear s = (r/q) dq/dr
+eta_i = 3.114  # Ratio of density to temp. length scales eta = L_n / L_T
 epsilon = 0.18  # Inverse aspect ratio epsilon = r / R
-Rnorm = 6.92    # Ratio of major radius to L_T  Rnorm  = R / L_T
-rho_norm = 0.01 # Normalised ion gyro-radius rho_norm = rho_i / L_T
-r_wid = 100     # Radial extent, normalised to gyro-radius r_wid = dr / rho_i
+Rnorm = 6.92  # Ratio of major radius to L_T  Rnorm  = R / L_T
+rho_norm = 0.01  # Normalised ion gyro-radius rho_norm = rho_i / L_T
+r_wid = 100  # Radial extent, normalised to gyro-radius r_wid = dr / rho_i
 
-Mi = 2.*1.67262158e-27   # Ion mass [kg]. Deuterium
+Mi = 2.0 * 1.67262158e-27  # Ion mass [kg]. Deuterium
 
 ######################################################
+
 
 def eps_integral(eps, theta=None):
     if theta == None:
-        theta = 2.*pi
-    return (quad(lambda t: 1./((1. - eps*cos(t))**2), 0., theta))[0]
+        theta = 2.0 * pi
+    return (quad(lambda t: 1.0 / ((1.0 - eps * cos(t)) ** 2), 0.0, theta))[0]
+
 
 rminor = Rmaj * epsilon  # Minor radius [m]
-L_T = Rmaj / Rnorm       # Temp. length scale [m]
-L_n = eta_i * L_T        # Density length scale [m]
-rho_i = rho_norm * L_T   # Ion Larmor radius [m]
-Bt0 = sqrt(2.*Ti*Mi / 1.602e-19)/rho_i # Toroidal field from rho_i [T]
-Bp = rminor * Bt0 * eps_integral(epsilon)/ (2.*pi * q * Rmaj) # Poloidal field [T]
+L_T = Rmaj / Rnorm  # Temp. length scale [m]
+L_n = eta_i * L_T  # Density length scale [m]
+rho_i = rho_norm * L_T  # Ion Larmor radius [m]
+Bt0 = sqrt(2.0 * Ti * Mi / 1.602e-19) / rho_i  # Toroidal field from rho_i [T]
+Bp = rminor * Bt0 * eps_integral(epsilon) / (2.0 * pi * q * Rmaj)  # Poloidal field [T]
 
-dr = r_wid * rho_i       # Width of domain [m]
+dr = r_wid * rho_i  # Width of domain [m]
 
-theta = 2.*pi * arange(0,float(ny)) / float(ny)
+theta = 2.0 * pi * arange(0, float(ny)) / float(ny)
 
 Rxy = zeros([nx, ny])
 Zxy = Rxy.copy()
 for i in range(ny):
-    Rxy[:,i] = Rmaj - rminor*cos(theta[i])
-    Zxy[:,i] = rminor * sin(theta[i])
+    Rxy[:, i] = Rmaj - rminor * cos(theta[i])
+    Zxy[:, i] = rminor * sin(theta[i])
 
-dy = zeros([nx,ny]) + 2.*pi / float(ny)
-hthe = zeros([nx,ny]) + rminor
+dy = zeros([nx, ny]) + 2.0 * pi / float(ny)
+hthe = zeros([nx, ny]) + rminor
 
 Btxy = Bt0 * Rmaj / Rxy
 
-print("Toroidal field varies from "+str(Bt0*Rmaj/(Rmaj + rminor)) + \
-    " to "+str(Bt0*Rmaj/(Rmaj - rminor)))
+print(
+    "Toroidal field varies from "
+    + str(Bt0 * Rmaj / (Rmaj + rminor))
+    + " to "
+    + str(Bt0 * Rmaj / (Rmaj - rminor))
+)
 
 # Minor radius offset
-drprof = dr*((arange(nx)/float(nx-1)) - 0.5)
+drprof = dr * ((arange(nx) / float(nx - 1)) - 0.5)
 
 # q profile
-qprof = q + (s*q/rminor) * drprof
+qprof = q + (s * q / rminor) * drprof
 
-print("q varies from "+str(min(qprof))+" to "+str(max(qprof)))
+print("q varies from " + str(min(qprof)) + " to " + str(max(qprof)))
 
-ShiftAngle = qprof * 2.*pi
+ShiftAngle = qprof * 2.0 * pi
 
-Bpxy = zeros([nx,ny])
+Bpxy = zeros([nx, ny])
 if varyBp:
     # Vary Bp to get shear
     for y in range(ny):
-        Bpxy[:,y] = Bp * q / qprof
-    print("Poloidal field varies from "+str(amin(Bpxy))+" to "+str(amax(Bpxy)))
+        Bpxy[:, y] = Bp * q / qprof
+    print("Poloidal field varies from " + str(amin(Bpxy)) + " to " + str(amax(Bpxy)))
 else:
     # Constant Bp, but shift angle varies
     Bpxy += Bp
 
-dx = Bp * (dr/float(nx-1)) * Rxy
+dx = Bp * (dr / float(nx - 1)) * Rxy
 
-Bxy = sqrt(Btxy**2 + Bpxy**2)
+Bxy = sqrt(Btxy ** 2 + Bpxy ** 2)
 
 zShift = zeros([nx, ny])
 qint = eps_integral(epsilon)
 
-for i in range(1,ny):
-    zShift[:,i] = ShiftAngle * eps_integral(epsilon, theta=theta[i]) / qint
+for i in range(1, ny):
+    zShift[:, i] = ShiftAngle * eps_integral(epsilon, theta=theta[i]) / qint
 
 # Make zShift = 0 on outboard midplane (for plotting mainly)
-y0 = int(ny/2)
-zs0 = zShift[:,y0]
+y0 = int(ny / 2)
+zs0 = zShift[:, y0]
 for i in range(ny):
-    zShift[:,i] -= zs0
+    zShift[:, i] -= zs0
 
 Ni0 = zeros([nx, ny])
 Ti0 = Ni0
 for i in range(ny):
-    Ni0[:,i] = Ni * exp(-drprof / L_n)
-    Ti0[:,i] = Ti * exp(-drprof / L_T)
+    Ni0[:, i] = Ni * exp(-drprof / L_n)
+    Ti0[:, i] = Ti * exp(-drprof / L_T)
 Te0 = Ti0
 
-pressure = Ni0 * (Ti0 + Te0) * 1.602e-19*1.0e20 # In Pascals
+pressure = Ni0 * (Ti0 + Te0) * 1.602e-19 * 1.0e20  # In Pascals
 
 Jpar0 = zeros([nx, ny])
 
@@ -128,10 +134,10 @@ logB = zeros([nx, ny])
 
 for x in range(nx):
     for y in range(ny):
-        rpos = (float(x)/float(nx-1) - 0.5) * dr
-        R = Rmaj - (rminor + rpos)*cos(theta[y])
+        rpos = (float(x) / float(nx - 1) - 0.5) * dr
+        R = Rmaj - (rminor + rpos) * cos(theta[y])
         Bt = Bt0 * Rmaj / R
-        logB[x,y] = log(sqrt(Bt**2 + Bp**2))
+        logB[x, y] = log(sqrt(Bt ** 2 + Bp ** 2))
 
 ######################################################
 # Topology: Just in the core
@@ -139,13 +145,13 @@ for x in range(nx):
 ixseps1 = nx
 ixseps2 = nx
 jyseps1_1 = -1
-jyseps1_2 = int(ny/2)
+jyseps1_2 = int(ny / 2)
 jyseps2_1 = jyseps1_2
-jyseps2_2 = ny-1
+jyseps2_2 = ny - 1
 ny_inner = jyseps1_2
 
 # Only one region
-yup_xsplit   = [nx]
+yup_xsplit = [nx]
 ydown_xsplit = [nx]
 yup_xin = [0]
 yup_xout = [-1]
@@ -156,7 +162,7 @@ npol = [ny]
 
 ######################################################
 
-print("Writing grid to file "+output)
+print("Writing grid to file " + output)
 
 of = DataFile()
 of.open(output, create=True)
