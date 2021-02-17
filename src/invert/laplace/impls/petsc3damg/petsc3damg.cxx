@@ -178,6 +178,7 @@ LaplacePetsc3dAmg::~LaplacePetsc3dAmg() {
 
 
 Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
+  AUTO_TRACE();
   // If necessary, update the values in the matrix operator and initialise
   // the Krylov solver
   if (updateRequired) updateMatrix3D();
