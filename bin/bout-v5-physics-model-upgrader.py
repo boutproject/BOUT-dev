@@ -46,9 +46,7 @@ SPLIT_OPERATOR_RE = re.compile(
 
 
 def has_split_operator(source):
-    """Return the names of the split operator functions if set, otherwise False
-
-    """
+    """Return the names of the split operator functions if set, otherwise False"""
 
     match = SPLIT_OPERATOR_RE.search(source)
     if not match:
@@ -58,15 +56,12 @@ def has_split_operator(source):
 
 
 def is_legacy_model(source):
-    """Return true if the source is a legacy physics model
-
-    """
+    """Return true if the source is a legacy physics model"""
     return LEGACY_MODEL_INCLUDE_RE.search(source) is not None
 
 
 def find_last_include(source_lines):
-    """Return the line number after the last #include (or 0 if no includes)
-    """
+    """Return the line number after the last #include (or 0 if no includes)"""
     for number, line in enumerate(reversed(source_lines)):
         if line.startswith("#include"):
             return len(source_lines) - number
@@ -171,8 +166,7 @@ def fix_bout_constrain(source, error_on_warning):
 
 
 def convert_legacy_model(source, name, error_on_warning):
-    """Convert a legacy physics model to a PhysicsModel
-    """
+    """Convert a legacy physics model to a PhysicsModel"""
 
     if not is_legacy_model(source):
         return source
@@ -227,9 +221,7 @@ def convert_legacy_model(source, name, error_on_warning):
 
 
 def yes_or_no(question):
-    """Convert user input from yes/no variations to True/False
-
-    """
+    """Convert user input from yes/no variations to True/False"""
     while True:
         reply = input(question + " [y/N] ").lower().strip()
         if not reply or reply[0] == "n":
@@ -239,8 +231,7 @@ def yes_or_no(question):
 
 
 def create_patch(filename, original, modified):
-    """Create a unified diff between original and modified
-    """
+    """Create a unified diff between original and modified"""
 
     patch = "\n".join(
         difflib.unified_diff(
