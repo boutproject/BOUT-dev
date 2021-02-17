@@ -208,6 +208,6 @@ cdef extern from "helper.h":
 
 cdef extern from "output.hxx":
     cppclass ConditionalOutput:
-        void write(const char * fmt, const char * str)
+        void write(const char * str)
     ConditionalOutput output_info
 EOF

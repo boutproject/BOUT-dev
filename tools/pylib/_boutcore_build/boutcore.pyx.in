@@ -1780,7 +1780,7 @@ def print(*args, sep=' ', end='\n'):
 
 cdef _print(value):
     cdef c.string str_=value.encode('utf-8')
-    c.output_info.write("{:s}", str_.c_str())
+    c.output_info.write(str_.c_str())
 
 EOF
 
