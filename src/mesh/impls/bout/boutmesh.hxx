@@ -348,4 +348,22 @@ namespace {
 RegisterMesh<BoutMesh> registermeshbout{"bout"};
 }
 
+namespace bout {
+/// Result of `bout::checkMesh`: bool + reason for failure
+///
+/// This would be nicer as std::optional
+struct CheckMeshResult {
+  bool success;
+  std::string reason;
+};
+
+/// Check that \p total_processors can be decomposed into \p
+/// num_y_processors in Y for the given `BoutMesh` topology parameters
+CheckMeshResult checkBoutMeshYDecomposition(int total_processors, int num_y_processors,
+                                            int num_local_y_points, int ny,
+                                            int num_y_guards, int jyseps1_1,
+                                            int jyseps2_1, int jyseps1_2, int jyseps2_2,
+                                            int ny_inner);
+}
+
 #endif // __BOUTMESH_H__

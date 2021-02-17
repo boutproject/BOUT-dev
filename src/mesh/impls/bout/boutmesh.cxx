@@ -86,6 +86,82 @@ BoutMesh::~BoutMesh() {
     MPI_Comm_free(&comm_outer);
 }
 
+namespace bout {
+CheckMeshResult checkBoutMeshYDecomposition(int total_processors, int num_y_processors,
+                                            int num_local_y_points, int ny,
+                                            int num_y_guards, int jyseps1_1,
+                                            int jyseps2_1, int jyseps1_2, int jyseps2_2,
+                                            int ny_inner) {
+
+  // Check size of Y mesh if we've got multiple processors
+  if (num_local_y_points < num_y_guards and total_processors != 1) {
+    return {false,
+            fmt::format(_("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"), ny,
+                        num_y_processors, num_local_y_points, num_y_guards)};
+  }
+  // Check branch cuts
+  if ((jyseps1_1 + 1) % num_local_y_points != 0) {
+    return {false, fmt::format(_("\t -> Leg region jyseps1_1+1 ({:d}) must be a "
+                                 "multiple of MYSUB ({:d})\n"),
+                               jyseps1_1 + 1, num_local_y_points)};
+  }
+
+  if (jyseps2_1 != jyseps1_2) {
+    // Double Null
+
+    if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
+      return {
+          false,
+          fmt::format(_("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                        "be a multiple of MYSUB ({:d})\n"),
+                      jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
+    }
+
+    if ((jyseps2_2 - jyseps1_2) % num_local_y_points != 0) {
+      return {
+          false,
+          fmt::format(_("\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
+                        "be a multiple of MYSUB ({:d})\n"),
+                      jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, num_local_y_points)};
+    }
+
+    // Check upper legs
+    if ((ny_inner - jyseps2_1 - 1) % num_local_y_points != 0) {
+      return {
+          false,
+          fmt::format(_("\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
+                        "be a multiple of MYSUB ({:d})\n"),
+                      ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, num_local_y_points)};
+    }
+    if ((jyseps1_2 - ny_inner + 1) % num_local_y_points != 0) {
+      return {
+          false,
+          fmt::format(_("\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
+                        "be a multiple of MYSUB ({:d})\n"),
+                      jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
+    }
+  } else {
+    // Single Null
+    if ((jyseps2_2 - jyseps1_1) % num_local_y_points != 0) {
+      return {
+          false,
+          fmt::format(_("\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                        "be a multiple of MYSUB ({:d})\n"),
+                      jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, num_local_y_points)};
+    }
+  }
+
+  if ((ny - jyseps2_2 - 1) % num_local_y_points != 0) {
+    return {false, fmt::format(
+                       _("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+                         "multiple of MYSUB ({:d})\n"),
+                       ny, jyseps2_2, ny - jyseps2_2 - 1, num_local_y_points)};
+  }
+
+  return {true, ""};
+}
+} // namespace bout
+
 int BoutMesh::load() {
   TRACE("BoutMesh::load()");
 
@@ -251,66 +327,14 @@ int BoutMesh::load() {
       NXPE = NPES / NYPE;
     }
 
-    int ysub = ny / NYPE;
+    auto result =
+        bout::checkBoutMeshYDecomposition(NPES, NYPE, ny / NYPE, ny, MYG, jyseps1_1,
+                                          jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
 
-    // Check size of Y mesh
-    if (ysub < MYG) {
-      throw BoutException("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n", ny,
-                          NYPE, ysub, MYG);
-    }
-    // Check branch cuts
-    if ((jyseps1_1 + 1) % ysub != 0) {
-      throw BoutException(
-          "\t -> Leg region jyseps1_1+1 ({:d}) must be a multiple of MYSUB ({:d})\n",
-          jyseps1_1 + 1, ysub);
+    if (not result.success) {
+      throw BoutException(result.reason);
     }
 
-    if (jyseps2_1 != jyseps1_2) {
-      // Double Null
-
-      if ((jyseps2_1 - jyseps1_1) % ysub != 0) {
-        throw BoutException(
-            "\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
-            "be a multiple of MYSUB ({:d})\n",
-            jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, ysub);
-      }
-
-      if ((jyseps2_2 - jyseps1_2) % ysub != 0) {
-        throw BoutException(
-            "\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
-            "be a multiple of MYSUB ({:d})\n",
-            jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, ysub);
-      }
-
-      // Check upper legs
-      if ((ny_inner - jyseps2_1 - 1) % ysub != 0) {
-        throw BoutException(
-            "\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
-            "be a multiple of MYSUB ({:d})\n",
-            ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, ysub);
-      }
-      if ((jyseps1_2 - ny_inner + 1) % ysub != 0) {
-        throw BoutException(
-            "\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
-            "be a multiple of MYSUB ({:d})\n",
-            jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, ysub);
-      }
-    } else {
-      // Single Null
-      if ((jyseps2_2 - jyseps1_1) % ysub != 0) {
-        throw BoutException(
-            "\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
-            "be a multiple of MYSUB ({:d})\n",
-            jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, ysub);
-      }
-    }
-
-    if ((ny - jyseps2_2 - 1) % ysub != 0) {
-      throw BoutException(
-          "\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
-          "multiple of MYSUB ({:d})\n",
-          ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
-    }
   } else {
     // Choose NXPE
 
@@ -333,66 +357,15 @@ int BoutMesh::load() {
         const int nyp = NPES / i;
         const int ysub = ny / nyp;
 
-        // Check size of Y mesh if we've got multiple processors
-        if (ysub < MYG and NPES != 1) {
-          output_info.write(_("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"), ny, nyp,
-                            ysub, MYG);
-          continue;
-        }
-        // Check branch cuts
-        if ((jyseps1_1 + 1) % ysub != 0) {
-          output_info.write(
-			    _("\t -> Leg region jyseps1_1+1 ({:d}) must be a multiple of MYSUB ({:d})\n"),
-              jyseps1_1 + 1, ysub);
+        auto result =
+            bout::checkBoutMeshYDecomposition(NPES, nyp, ysub, ny, MYG, jyseps1_1,
+                                              jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
+
+        if (not result.success) {
+          output_info.write(result.reason);
           continue;
         }
 
-        if (jyseps2_1 != jyseps1_2) {
-          // Double Null
-
-          if ((jyseps2_1 - jyseps1_1) % ysub != 0) {
-            output_info.write(_("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
-				"be a multiple of MYSUB ({:d})\n"),
-                              jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, ysub);
-            continue;
-          }
-
-          if ((jyseps2_2 - jyseps1_2) % ysub != 0) {
-            output_info.write(_("\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
-				"be a multiple of MYSUB ({:d})\n"),
-                              jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, ysub);
-            continue;
-          }
-
-          // Check upper legs
-          if ((ny_inner - jyseps2_1 - 1) % ysub != 0) {
-            output_info.write(_("\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
-                              "be a multiple of MYSUB ({:d})\n"),
-                              ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, ysub);
-            continue;
-          }
-          if ((jyseps1_2 - ny_inner + 1) % ysub != 0) {
-            output_info.write(_("\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
-				"be a multiple of MYSUB ({:d})\n"),
-                              jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, ysub);
-            continue;
-          }
-        } else {
-          // Single Null
-          if ((jyseps2_2 - jyseps1_1) % ysub != 0) {
-            output_info.write(_("\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
-				"be a multiple of MYSUB ({:d})\n"),
-                              jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, ysub);
-            continue;
-          }
-        }
-
-        if ((ny - jyseps2_2 - 1) % ysub != 0) {
-          output_info.write(_("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
-			      "multiple of MYSUB ({:d})\n"),
-                            ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
-          continue;
-        }
         output_info.write(_("\t -> Good value\n"));
         // Found an acceptable value
         if ((NXPE < 1) || (fabs(ideal - i) < fabs(ideal - NXPE))) {

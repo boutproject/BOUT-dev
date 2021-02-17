@@ -14,24 +14,60 @@ TEST(BoutMeshTest, NullOptionsCheck) {
   EXPECT_NO_THROW(BoutMesh mesh(new FakeGridDataSource, nullptr));
 }
 
-// Not a great test as it's not specific to the thing we want to test,
-// and also takes a whopping ~300ms!
-TEST(BoutMeshTest, SingleCoreDecomposition) {
-  WithQuietOutput debug{output_debug};
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-  WithQuietOutput progress{output_progress};
+TEST(BoutMeshTest, SingleCoreYDecomposition) {
+  const int total_processors = 1;
+  const int num_y_processors = 1;
+  const int ny = 1;
+  const int num_local_y_points = ny / num_y_processors;
+  const int num_y_guards = 1;
+  const int jyseps1_1 = -1;
+  const int jyseps2_1 = ny / 2;
+  const int jyseps1_2 = ny / 2;
+  const int jyseps2_2 = ny - 1;
+  const int ny_inner = ny / 2;
 
-  Options options{};
-  options["ny"] = 1;
-  options["nx"] = 4;
-  options["nz"] = 1;
-  options["MXG"] = 1;
-  options["MYG"] = 0;
+  auto result = bout::checkBoutMeshYDecomposition(
+      total_processors, num_y_processors, num_local_y_points, ny, num_y_guards, jyseps1_1,
+      jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
 
-  bout::globals::mpi = new MpiWrapper();
-  BoutMesh mesh{new GridFromOptions{&options}, &options};
-  EXPECT_NO_THROW(mesh.load());
-  delete bout::globals::mpi;
-  bout::globals::mpi = nullptr;
+  EXPECT_TRUE(result.success);
+}
+
+TEST(BoutMeshTest, BadTwoCoreYDecomposition) {
+  const int total_processors = 2;
+  const int num_y_processors = 2;
+  const int ny = 1;
+  const int num_local_y_points = ny / num_y_processors;
+  const int num_y_guards = 1;
+  const int jyseps1_1 = -1;
+  const int jyseps2_1 = ny / 2;
+  const int jyseps1_2 = ny / 2;
+  const int jyseps2_2 = ny - 1;
+  const int ny_inner = ny / 2;
+
+  auto result = bout::checkBoutMeshYDecomposition(
+      total_processors, num_y_processors, num_local_y_points, ny, num_y_guards, jyseps1_1,
+      jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
+
+  EXPECT_FALSE(result.success);
+  EXPECT_FALSE(result.reason.empty());
+}
+
+TEST(BoutMeshTest, TwoCoreYDecomposition) {
+  const int total_processors = 2;
+  const int num_y_processors = 2;
+  const int ny = 2;
+  const int num_local_y_points = ny / num_y_processors;
+  const int num_y_guards = 1;
+  const int jyseps1_1 = -1;
+  const int jyseps2_1 = ny / 2;
+  const int jyseps1_2 = ny / 2;
+  const int jyseps2_2 = ny - 1;
+  const int ny_inner = ny / 2;
+
+  auto result = bout::checkBoutMeshYDecomposition(
+      total_processors, num_y_processors, num_local_y_points, ny, num_y_guards, jyseps1_1,
+      jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
+
+  EXPECT_TRUE(result.success);
 }
