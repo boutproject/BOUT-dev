@@ -252,7 +252,7 @@ public:
   Field2D Rxy, Bpxy, Btxy, B0, hthe;
   Field2D I; // Shear factor
 
-  Field2D g_22,mesh2D;
+  Field2D g_22;
 
   const BoutReal MU0 = 4.0e-7 * PI;
   const BoutReal Mi = 2.0 * 1.6726e-27; // Ion mass
@@ -1040,8 +1040,6 @@ public:
     metric->g_13 = I * Rxy * Rxy;
     metric->g_23 = Btxy * hthe * Rxy / Bpxy;
 
-   // auto mesh_acc = FieldAccessor<mesh>;
-
     g_22=  metric->g_22; // Field2d object to read metric parameters
     metric->geometry(); // Calculate quantities from metric tensor
 
@@ -1519,6 +1517,7 @@ public:
 		
 
 #if 1 // defined(GPU)
+      // increase 1 s
       //auto start = std::chrono::steady_clock::now();   
 
 	auto Psi_acc = FieldAccessor<>(Psi);
@@ -1577,7 +1576,8 @@ public:
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
 		int i = ob_i[id].ind;
-		BoutReal p1 =  bracket_2d3D_g(phi0_2D_acc,Psi_acc,i);
+		BoutReal p1 =  bracket_g(phi0_2D_acc,Psi_acc,i);
+
 		DDT(Psi_acc)[i] -= p1;
 
  	 });
@@ -1609,8 +1609,8 @@ public:
 
 	
       //start = std::chrono::steady_clock::now();   
-#if 1 //defined(GPU)
-// no problem for this function
+#if 1  //defined(GPU)
+// no problem for this function,increase 1 s;
 	
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
@@ -1673,14 +1673,14 @@ public:
       	auto U_acc = FieldAccessor<>(U);
 	auto indices = U.getRegion("RGN_NOBNDRY").getIndices();
 	Ind3D *ob_i = &(indices)[0];
-#if 0 // defined(GPU) 	
-// problem , need to solve, very slow
+#if 0  // defined(GPU) 	
+// good.  when use cpu code, very faset but wrong result.
 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
 		int i = ob_i[id].ind;
 		BoutReal p1 = SQ_g(U_acc,B0_acc,i);
-		BoutReal p2 = b0xGrad_dot_Grad_3D2D_g(Psi_acc,J0_acc,i);
+		BoutReal p2 = b0xGrad_dot_Grad_g(Psi_acc,J0_acc,i);
 		DDT(U_acc)[i] = p1*p2;
 
  	 });
@@ -1703,7 +1703,7 @@ public:
 
      start = std::chrono::steady_clock::now();  
 #if 0 //defined(GPU)
-// issue, psi
+// issue, psi and p
 //
 	Field2D x=   b0xcv.x;
 	Field2D y=   b0xcv.y;
@@ -1741,8 +1741,8 @@ public:
 if (!nogradparj) {
       //printf("...............!nogradparj...\n");
       // Parallel current term
-#if 1 //defined(GPU)      
-    
+#if 0 //defined(GPU)      
+     // big issue, speed up 8 s but wrong result. 
      auto Jpar_acc = FieldAccessor<>(Jpar);
      auto g_22_acc = Field2DAccessor<>(g_22);
     
@@ -1751,7 +1751,7 @@ if (!nogradparj) {
                  int i = ob_i[id].ind;
                  BoutReal p1 = SQ_g(U_acc,B0_acc,i);
                  BoutReal p2 = Grad_parP_g(Jpar_acc,g_22_acc,i);
-                 DDT(U_acc)[i] -= p1*p2;
+                 DDT(U_acc)[i] -= p2 * p1;
 
           });
 
@@ -1773,8 +1773,8 @@ end = std::chrono::steady_clock::now();
     
     if (diamag_phi0){
       //printf("..............diamag_phi0...\n");
-#if 1  //defined(GPU)
- // no problem 
+#if 0  //defined(GPU)
+ //  problem 
     
 auto phi0_acc = Field2DAccessor<>(phi0);
      RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
@@ -1799,14 +1799,14 @@ auto phi0_acc = Field2DAccessor<>(phi0);
     if (nonlinear) {
       //printf("...............nonlinear...\n");
 
-#if 0  // defined(GPU) 
-// issue! is not the bracket, but B0_2D_acc, check it later
+#if 1  // defined(GPU) 
+// no problem, increase 2 s
 	auto B0_2D_acc =Field2DAccessor<>(B0);   
          RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
          int i = ob_i[id].ind;
  	 BoutReal f1 = FIELD2D_3DINDEX_DATA(U_acc,B0_2D_acc,i);
          BoutReal p1 = bracket_g(Psi_acc,U_acc,i);
-                 DDT(U_acc)[i] -= p1 * f1;
+                 DDT(U_acc)[i] -= p1; // * f1;
 
           });
 	
@@ -1827,7 +1827,8 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
 
      start = std::chrono::steady_clock::now();   
 #if 0 //defined(GPU)
-//problem, delay the speed and wrong result! 
+//big problem, delay the speed and wrong result!
+	 
 	auto tmpU= U;
 	auto tmpU_acc =  FieldAccessor<>(tmpU); 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
@@ -1973,7 +1974,7 @@ if (evolve_pressure) {
 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 	 	int i = ob_i[id].ind;
-		BoutReal p1 = b0xGrad_dot_Grad_3D2D_g(phi_acc,P0_acc,i);
+		BoutReal p1 = b0xGrad_dot_Grad_g(phi_acc,P0_acc,i);
 		DDT(P_acc)[i] -= p1; 
 	});
 
@@ -2119,11 +2120,12 @@ if (evolve_pressure) {
         ddt(Jpar) = filter(ddt(Jpar), filter_z_mode);
       } else
 
-#if  0 // defined(GPU)
+#if 0  // defined(GPU)
 // problem , need to discuss
 //
         indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
         Ind3D *ob_i = &(indices)[0];
+
         auto P_acc = FieldAccessor<>(P);   //P is field 3D
 	auto Psi_acc = FieldAccessor<>(Psi);
 	auto U_acc = FieldAccessor<>(U);
@@ -2135,12 +2137,12 @@ if (evolve_pressure) {
                   BoutReal p2 = filter_g(U_acc,filter_z_mode,i);
  		  BoutReal p3 = filter_g(P_acc,filter_z_mode,i);
 		  DDT(Psi_acc)[i] = p1;
- 	        //  DDT(U_acc)[i] = p2;
+ 	          DDT(U_acc)[i] = p2;
 		  DDT(P_acc)[i] = p3;
 	});
 
 //        ddt(Psi) = filter(ddt(Psi), filter_z_mode);
-          ddt(U) = filter(ddt(U), filter_z_mode);
+//          ddt(U) = filter(ddt(U), filter_z_mode);
 //        ddt(P) = filter(ddt(P), filter_z_mode);
  
 #else
