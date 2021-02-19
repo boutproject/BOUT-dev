@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-# requires: not metric_3d
-
 #
 # Run the test, compare results against the benchmark
 #
 
+# requires: not metric_3d
 # Requires: netcdf
 # Cores: 4
 
