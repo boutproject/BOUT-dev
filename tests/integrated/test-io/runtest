@@ -65,6 +65,7 @@ for v in vars:
 # Executable name
 test_exe = "./test_io"
 
+
 def check_output():
     success = True
     for v in vars:
@@ -77,12 +78,15 @@ def check_output():
 
         # Compare benchmark and output
         if np.shape(bmk[v]) != np.shape(result):
-            if (isMetric3D() and v.startswith('v2d')
-                and bmk[v].shape == result.shape[:-1]):
-                result = result[...,0]
+            if (
+                isMetric3D()
+                and v.startswith("v2d")
+                and bmk[v].shape == result.shape[:-1]
+            ):
+                result = result[..., 0]
             else:
                 print("Fail, wrong shape")
-                print(v,bmk[v].shape, result.shape)
+                print(v, bmk[v].shape, result.shape)
                 success = False
                 continue
 
@@ -99,7 +103,7 @@ def check_output():
                 success = False
                 continue
 
-        if (isMetric3D() and v.startswith('v2d')):
+        if isMetric3D() and v.startswith("v2d"):
             # Vector2Ds are based on Field3Ds for 3D metrics
             bmk[v].attributes["bout_type"] = "Field3D_t"
             bmk[v].attributes["direction_z"] = "Standard"

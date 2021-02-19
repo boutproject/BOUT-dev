@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
+
 ##################################################
 #            BOUT++ data package
 #
@@ -15,41 +16,42 @@ import os
 
 try:
 
-    boutpath = os.environ['BOUT_TOP']
-    pylibpath = boutpath+'/tools/pylib'
-    boutdatapath = pylibpath+'/boutdata'
-    boututilpath = pylibpath+'/boututils'
-    allpath = [boutpath,pylibpath,boutdatapath,boututilpath]
+    boutpath = os.environ["BOUT_TOP"]
+    pylibpath = boutpath + "/tools/pylib"
+    boutdatapath = pylibpath + "/boutdata"
+    boututilpath = pylibpath + "/boututils"
+    allpath = [boutpath, pylibpath, boutdatapath, boututilpath]
     [sys.path.append(elem) for elem in allpath]
     print(sys.path)
-        
+
     # sys.path.append('/home/cryosphere/BOUT/tools/pylib')
     # sys.path.append('/home/cryosphere/BOUT/tools/pylib/boutdata')
     # sys.path.append('/home/cryosphere/BOUT/tools/pylib/boututils')
-    
-    print('in post_bout/__init__.py')
-    
-    import matplotlib 
-    matplotlib.use('pdf') #savemovie must be called as a diff. sesssion
-    
+
+    print("in post_bout/__init__.py")
+
+    import matplotlib
+
+    matplotlib.use("pdf")  # savemovie must be called as a diff. sesssion
+
     import gobject
     import numpy as np
 except ImportError:
     print("can't find the modules I need, you fail")
-    sys.exit() #no point in going on
-      
-      
-#import some bout specific modules
+    sys.exit()  # no point in going on
+
+
+# import some bout specific modules
 try:
     import boutdata
     import boututils
 except:
     print("can't find bout related modules, you fail")
-         
-#import some home-brewed modules
-         
-         
-#create some aliases
+
+# import some home-brewed modules
+
+
+# create some aliases
 
 
 try:
@@ -58,7 +60,7 @@ except:
     print("Sorry, no read_grid")
 
 try:
-    from .read_inp import parse_inp, read_inp, read_log,metadata
+    from .read_inp import parse_inp, read_inp, read_log, metadata
 except:
     print("Sorry no parse_inp")
 
@@ -78,7 +80,7 @@ except:
     print("Sorry, no basic_info")
 
 try:
-    from .pb_corral import corral,LinRes,subset
+    from .pb_corral import corral, LinRes, subset
 except:
     print("No corral")
 
@@ -88,7 +90,7 @@ except:
     print("No ListDict")
 
 try:
-    #from rotate_mp import rotate
+    # from rotate_mp import rotate
     from rotate2 import rotate
 except:
     print("No rotate")

@@ -18,8 +18,12 @@ REPLACEMENTS = [
     {"old": "mesh:paralleltransform", "new": "mesh:paralleltransform:type"},
     {"old": "fci", "new": "mesh:paralleltransform"},
     {"old": "interpolation", "new": "mesh:paralleltransform:xzinterpolation"},
-    {"old": "fft:fft_measure", "new": "fft:fft_measurement_flag",
-        "type": bool, "values": {False: "estimate", True: "measure"}}
+    {
+        "old": "fft:fft_measure",
+        "new": "fft:fft_measurement_flag",
+        "type": bool,
+        "values": {False: "estimate", True: "measure"},
+    },
 ]
 
 

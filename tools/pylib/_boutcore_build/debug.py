@@ -3,6 +3,7 @@
 print("Trying import")
 import debug
 import sys
+
 print(sys.argv)
 print("Trying init")
 debug.blas()

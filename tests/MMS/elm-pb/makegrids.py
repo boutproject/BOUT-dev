@@ -24,17 +24,17 @@ from math import pi
 shape = SimpleTokamak()
 
 ## Add equilibrium profiles
-MU0 = 4.0e-7*pi
+MU0 = 4.0e-7 * pi
 
-J0 = 1 - x - sin(x*pi)**2 * cos(y)   # Parallel current
-P0 = 2 + cos(x*pi)   # Pressure pedestal
-bxcvz = -(1./shape.Rxy)**2*cos(y)  # Curvature
+J0 = 1 - x - sin(x * pi) ** 2 * cos(y)  # Parallel current
+P0 = 2 + cos(x * pi)  # Pressure pedestal
+bxcvz = -((1.0 / shape.Rxy) ** 2) * cos(y)  # Curvature
 
 # Normalisation
-Lbar = 1.
-Bbar = 1.
-J0 = - J0 * shape.Bxy / (MU0 * Lbar)  # Turn into A/m^2
-P0 = P0 * Bbar**2 / (2.0*MU0)  # Pascals
+Lbar = 1.0
+Bbar = 1.0
+J0 = -J0 * shape.Bxy / (MU0 * Lbar)  # Turn into A/m^2
+P0 = P0 * Bbar ** 2 / (2.0 * MU0)  # Pascals
 
 shape.add(P0, "pressure")
 shape.add(J0, "Jpar0")
@@ -50,13 +50,16 @@ for nx in nxlist:
     else:
         print("Creating grid file '%s'" % filename)
         f = DataFile(filename, create=True)
-        shape.write(nx,nx, f)
+        shape.write(nx, nx, f)
         f.close()
 
     # Generate BOUT.inp file
 
     directory = "grid%d" % nx
     shell("mkdir " + directory)
-    shell("cp data/BOUT.inp "+directory)
+    shell("cp data/BOUT.inp " + directory)
     shell("sed -i 's/MZ = 17/MZ = %d/g' %s/BOUT.inp" % (nx, directory))
-    shell("sed -i 's/grid = \"grid16.nc\"/grid = \"%s\"/g' %s/BOUT.inp" % (filename, directory))
+    shell(
+        'sed -i \'s/grid = "grid16.nc"/grid = "%s"/g\' %s/BOUT.inp'
+        % (filename, directory)
+    )

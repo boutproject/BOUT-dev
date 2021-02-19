@@ -8,9 +8,9 @@ from boututils.run_wrapper import shell
 
 selflocation = os.path.realpath(__file__)
 selflocation = os.path.dirname(selflocation)
-status, out = shell(selflocation+"/../../bin/bout-config --metric-type", pipe=True)
+status, out = shell(selflocation + "/../../bin/bout-config --metric-type", pipe=True)
 
 if "3D" in out:
-   exit(0)  # True
+    exit(0)  # True
 
-exit(1) # False
+exit(1)  # False

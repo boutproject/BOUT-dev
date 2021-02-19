@@ -34,9 +34,11 @@ class Requirements(object):
 
         # Get list of files in subdirectory, excluding common temporaries,
         # hidden files, and python .py and .pyc files
-        requirements_list = [x for x in os.listdir(path)
-                             if not (("#" in x) or ("~" in x)
-                                     or (x[0] == ".") or (".py" in x))]
+        requirements_list = [
+            x
+            for x in os.listdir(path)
+            if not (("#" in x) or ("~" in x) or (x[0] == ".") or (".py" in x))
+        ]
         if verbose:
             print("======= Requirement checks ========")
 
@@ -46,7 +48,7 @@ class Requirements(object):
             status, out = shell(os.path.join(path, requirement), pipe=True)
             self.add(requirement, (status == 0))
 
-        with open(selflocation+"/../../bin/bout-config") as configfile:
+        with open(selflocation + "/../../bin/bout-config") as configfile:
             config = configfile.read()
             matches = re.findall("^has_(.*)=(.*)", config, re.MULTILINE)
             for match in matches:
@@ -56,8 +58,9 @@ class Requirements(object):
                 try:
                     value = yesno[value]
                 except KeyError:
-                    print("Error parsing "+match +
-                          " - %s is not \"yes\"/\"no\"" % match[1])
+                    print(
+                        "Error parsing " + match + ' - %s is not "yes"/"no"' % match[1]
+                    )
                 else:
                     self.add(key, value)
 
@@ -72,8 +75,7 @@ class Requirements(object):
             contents = filein.read()
 
             # Find all lines starting with '#requires' or '#Requires:'
-            match = re.findall(
-                "^\s*\#\s?[Rr]equires:?(.*)", contents, re.MULTILINE)
+            match = re.findall("^\s*\#\s?[Rr]equires:?(.*)", contents, re.MULTILINE)
             # Iterate over all expressions to evaluate
             for expr in match:
                 try:
@@ -100,7 +102,8 @@ class Requirements(object):
             old = self._requirements[requirement]
             if old != value and override is False:
                 raise RuntimeError(
-                    "Overwriting %s with %s in key %s" % (value, old, requirement))
+                    "Overwriting %s with %s in key %s" % (value, old, requirement)
+                )
         self._requirements[requirement] = value
         if self._verbose:
             print("{0} => {1}".format(requirement, value))
