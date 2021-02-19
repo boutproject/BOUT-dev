@@ -160,7 +160,8 @@ public:
     throw BoutException("LaplaceHypre3d cannot solve for FieldPerp");
   }
 
-private:
+//private:
+  public:
 
   // (Re)compute the values of the matrix representing the Laplacian operator
   void updateMatrix3D();

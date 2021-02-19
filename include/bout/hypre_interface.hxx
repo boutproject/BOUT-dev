@@ -153,6 +153,13 @@ public:
     HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
     vsize = jupper - jlower + 1;
 
+    HYPRE_ExecutionPolicy default_exec_policy = HYPRE_EXEC_HOST;
+    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
+    hypre_HandleMemoryLocation(hypre_handle())    = memory_location;
+#ifdef BOUT_USE_CUDA
+    hypre_HandleDefaultExecPolicy(hypre_handle()) = default_exec_policy;
+#endif
+
     checkHypreError(HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector));
     checkHypreError(HYPRE_IJVectorSetObjectType(hypre_vector, HYPRE_PARCSR));
     checkHypreError(HYPRE_IJVectorInitialize(hypre_vector));
@@ -174,6 +181,13 @@ public:
     HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
     vsize = jupper - jlower + 1;
     
+    HYPRE_ExecutionPolicy default_exec_policy = HYPRE_EXEC_HOST;
+    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
+    hypre_HandleMemoryLocation(hypre_handle())    = memory_location;
+#ifdef BOUT_USE_CUDA
+    hypre_HandleDefaultExecPolicy(hypre_handle()) = default_exec_policy;
+#endif
+
     checkHypreError(HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector));
     checkHypreError(HYPRE_IJVectorSetObjectType(hypre_vector, HYPRE_PARCSR));
     checkHypreError(HYPRE_IJVectorInitialize(hypre_vector));
@@ -716,8 +730,11 @@ public:
   HypreSystem(Mesh& mesh)
   {
     HYPRE_Init();
+    HYPRE_ExecutionPolicy default_exec_policy = HYPRE_EXEC_HOST;
+    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
+    hypre_HandleMemoryLocation(hypre_handle())    = memory_location;
 #ifdef BOUT_USE_CUDA
-    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
+    hypre_HandleDefaultExecPolicy(hypre_handle()) = default_exec_policy;
 #endif
 
     comm = std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
@@ -740,13 +757,13 @@ public:
     HYPRE_BoomerAMGSetMaxLevels(precon, 20);
     HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
     HYPRE_BoomerAMGSetTol(precon, 0.0);
-    HYPRE_BoomerAMGSetPrintLevel(solver, 3);
+    //HYPRE_BoomerAMGSetPrintLevel(solver, 3);
 
     gmres_setup = false;
   }
 
   ~HypreSystem() {
-    HYPRE_Finalize();
+    //HYPRE_Finalize();
   }
 
   void setRelTol(double tol)

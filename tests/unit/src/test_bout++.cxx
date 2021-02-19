@@ -315,7 +315,7 @@ TEST_F(PrintStartupTest, CommandLineArguments) {
     EXPECT_TRUE(IsSubString(buffer.str(), arg));
   }
 }
-
+#undef BOUT_USE_SIGNAL
 #if BOUT_USE_SIGNAL
 
 #if BOUT_USE_SIGFPE
