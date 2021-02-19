@@ -52,6 +52,15 @@ struct FieldAccessor {
     f2d_g22= &f.getCoordinates()->g22(0,0);
     f2d_g23= &f.getCoordinates()->g23(0,0);
     f2d_g33= &f.getCoordinates()->g33(0,0);
+ 
+    f2d_g_11= &f.getCoordinates()->g_11(0,0);
+    f2d_g_12= &f.getCoordinates()->g_12(0,0);
+    f2d_g_13= &f.getCoordinates()->g_13(0,0);
+    f2d_g_22= &f.getCoordinates()->g_22(0,0);
+    f2d_g_23= &f.getCoordinates()->g_23(0,0);
+    f2d_g_33= &f.getCoordinates()->g_33(0,0);
+ 
+  
  //---------------------------------------
 
   if (f.hasParallelSlices()) {
@@ -73,10 +82,10 @@ struct FieldAccessor {
 	}
   }
 
-    BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D &d) {
+    BoutReal& __host__ __device__ operator[](const Ind3D &d) {
     return data[d.ind];
   }
-  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D &d) const {
+  const BoutReal& __host__ __device__ operator[](const Ind3D &d) const {
     return data[d.ind];
   }
   
@@ -104,6 +113,19 @@ struct FieldAccessor {
  BoutReal* f2d_g22 = nullptr;
  BoutReal* f2d_g23 = nullptr;
  BoutReal* f2d_g33 = nullptr;
+
+ BoutReal* f2d_g_11 = nullptr;
+ BoutReal* f2d_g_12 = nullptr;
+ BoutReal* f2d_g_13 = nullptr;
+ BoutReal* f2d_g_22 = nullptr;
+ BoutReal* f2d_g_23 = nullptr;
+ BoutReal* f2d_g_33 = nullptr;
+
+
+
+
+
+
 
  BoutReal* f_yup = nullptr;
  BoutReal* f_ydown = nullptr;
