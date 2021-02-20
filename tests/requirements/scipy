@@ -5,7 +5,8 @@
 from sys import exit
 
 try:
-   import scipy
-   exit(0)
+    import scipy
+
+    exit(0)
 except ImportError:
-   exit(1)
+    exit(1)

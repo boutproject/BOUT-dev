@@ -11,17 +11,15 @@ from builtins import str
 
 import numpy as np
 
-#Requires: boutcore
-#requires: not make
+# Requires: boutcore
+# requires: not make
 
 import boutcore as bc
 
 bc.init("-q -q -q")
 
 
-funcs = [
-    ['sin(z)', 'sin(4*x)', '4*cos(z)*cos(4*x)']
-]
+funcs = [["sin(z)", "sin(4*x)", "4*cos(z)*cos(4*x)"]]
 
 # List of NX values to use
 nlist = [8, 16, 32]
@@ -45,19 +43,16 @@ def genMesh(nx, ny, nz, **kwargs):
 
 
 errlist = ""
-brackets = [["ARAKAWA", 2, {}],
-            ["STD", 1, {"mesh:ddx:upwind": "U1",
-                        "mesh:ddz:upwind": "U1"}
-             ],
-            ["STD", 2, {"mesh:ddx:upwind": "C2",
-                        "mesh:ddz:upwind": "C2"}
-             ],
-            # Weno convergence order is currently under discusision:
-            # https://github.com/boutproject/BOUT-dev/issues/1049
-            # ["STD", 3 , {"mesh:ddx:upwind":"W3",
-            #              "mesh:ddz:upwind":"W3"}
-            #  ]
-            ]
+brackets = [
+    ["ARAKAWA", 2, {}],
+    ["STD", 1, {"mesh:ddx:upwind": "U1", "mesh:ddz:upwind": "U1"}],
+    ["STD", 2, {"mesh:ddx:upwind": "C2", "mesh:ddz:upwind": "C2"}],
+    # Weno convergence order is currently under discusision:
+    # https://github.com/boutproject/BOUT-dev/issues/1049
+    # ["STD", 3 , {"mesh:ddx:upwind":"W3",
+    #              "mesh:ddz:upwind":"W3"}
+    #  ]
+]
 for in1, in2, outfunc in funcs:
     for name, order, args in brackets:
         errors = []
@@ -67,19 +62,24 @@ for in1, in2, outfunc in funcs:
             inf2 = bc.create3D(in2, mesh)
             inf = bc.bracket(inf1, inf2, method=name)
             outf = bc.create3D(outfunc, mesh)
-            err = (inf-outf)
+            err = inf - outf
             slize = [slice(2, -2), 0, slice(None)]
             err = err[slize]
-            err = np.sqrt(np.mean(err**2))
+            err = np.sqrt(np.mean(err ** 2))
             errors.append(err)
-        errc = np.log(errors[-2]/errors[-1])
-        difc = np.log(nlist[-1]/nlist[-2])
-        conv = errc/difc
-        if order-prec < conv < order+prec:
+        errc = np.log(errors[-2] / errors[-1])
+        difc = np.log(nlist[-1] / nlist[-2])
+        conv = errc / difc
+        if order - prec < conv < order + prec:
             pass
         else:
             err = "{%s,%s} -> %s failed (conv: %f - expected: %f)\n" % (
-                in1, in2, outfunc, conv, order)
+                in1,
+                in2,
+                outfunc,
+                conv,
+                order,
+            )
             errlist += err
 
 if errlist:

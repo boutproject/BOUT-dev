@@ -12,7 +12,7 @@ dens = boutcore.create3D("0")
 
 def rhs(time):
     n_ddt = dens.ddt()
-    n_ddt[:, :, :] = dens*0
+    n_ddt[:, :, :] = dens * 0
     n_ddt += 1
 
 
