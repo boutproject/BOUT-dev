@@ -61,8 +61,8 @@ needed to make the solver available.
    +---------------+-----------------------------------------+--------------------+
    | imexbdf2      | IMEX-BDF2 scheme                        | –with-petsc        |
    +---------------+-----------------------------------------+--------------------+
-
-|
+   | beuler / snes | Backward Euler with SNES solvers        | --with-petsc       |
+   +---------------+-----------------------------------------+--------------------+
 
 Each solver can have its own settings which work in slightly different
 ways, but some common settings and which solvers they are used in are
@@ -74,16 +74,19 @@ given in table :numref:`tab-solveropts`.
    +------------------+--------------------------------------------+-------------------------------------+
    | Option           | Description                                | Solvers used                        |
    +==================+============================================+=====================================+
-   | atol             | Absolute tolerance                         | rk4, pvode, cvode, ida, imexbdf2    |
+   | atol             | Absolute tolerance                         | rk4, pvode, cvode, ida, imexbdf2,   |
+   |                  |                                            | beuler                              |
    +------------------+--------------------------------------------+-------------------------------------+
-   | rtol             | Relative tolerance                         | rk4, pvode, cvode, ida, imexbdf2    |
+   | rtol             | Relative tolerance                         | rk4, pvode, cvode, ida, imexbdf2,   |
+   |                  |                                            | beuler                              |
    +------------------+--------------------------------------------+-------------------------------------+
    | mxstep           | Maximum internal steps                     | rk4, imexbdf2                       |
    |                  | per output step                            |                                     |
    +------------------+--------------------------------------------+-------------------------------------+
    | max\_timestep    | Maximum timestep                           | rk4, cvode                          |
    +------------------+--------------------------------------------+-------------------------------------+
-   | timestep         | Starting timestep                          | rk4, karniadakis, euler, imexbdf2   |
+   | timestep         | Starting timestep                          | rk4, karniadakis, euler, imexbdf2,  |
+   |                  |                                            | beuler                              |
    +------------------+--------------------------------------------+-------------------------------------+
    | adaptive         | Adapt timestep? (Y/N)                      | rk4, imexbdf2                       |
    +------------------+--------------------------------------------+-------------------------------------+
@@ -95,12 +98,14 @@ given in table :numref:`tab-solveropts`.
    +------------------+--------------------------------------------+-------------------------------------+
    | maxl             | Maximum number of linear iterations        | cvode, imexbdf2                     |
    +------------------+--------------------------------------------+-------------------------------------+
+   | max_nonlinear_it | Maximum number of nonlinear iterations     | imexbdf2, beuler                    |
+   +------------------+--------------------------------------------+-------------------------------------+
    | use\_jacobian    | Use user-supplied Jacobian? (Y/N)          | cvode                               |
    +------------------+--------------------------------------------+-------------------------------------+
    | adams\_moulton   | Use Adams-Moulton method                   | cvode                               |
    |                  | rather than BDF                            |                                     |
    +------------------+--------------------------------------------+-------------------------------------+
-   | diagnose         | Collect and print additional diagnostics   | cvode, imexbdf2                     |
+   | diagnose         | Collect and print additional diagnostics   | cvode, imexbdf2, beuler             |
    +------------------+--------------------------------------------+-------------------------------------+
 
 |
@@ -332,8 +337,39 @@ And the adaptive timestepping options:
 | adapt_period        | 1         | Number of internal steps between tolerance checks  |
 +---------------------+-----------+----------------------------------------------------+
 
+Backward Euler - SNES
+---------------------
 
-   
+The `beuler` or `snes` solver type (either name can be used) is
+intended mainly for solving steady-state problems, so integrates in
+time using a stable but low accuracy method (Backward Euler). It uses
+PETSc's SNES solvers to solve the nonlinear system at each timestep,
+and adjusts the internal timestep to keep the number of SNES
+iterations within a given range.
+
++---------------------+-----------+----------------------------------------------------+
+| Option              | Default   |Description                                         |
++=====================+===========+====================================================+
+| max_nonlinear_it    | 50        | If exceeded, solve restarts with timestep / 2      |
++---------------------+-----------+----------------------------------------------------+
+| upper_its           | 80% max   | If exceeded, next timestep reduced by 10%          |
++---------------------+-----------+----------------------------------------------------+
+| lower_its           | 50% max   | If under this, next timestep increased by 10%      |
++---------------------+-----------+----------------------------------------------------+
+
+The predictor is linear extrapolation from the last two timesteps. It seems to be
+effective, but can be disabled by setting `predictor = false`.
+
+The `SNES type
+<https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESType.html>`_
+can be set through PETSc command-line options, or in the BOUT++
+options as setting `snes_type`. Good choices for unpreconditioned
+problems seem to be `anderson
+<https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESANDERSON.html#SNESANDERSON>`_
+(the default) and `qn
+<https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESQN.html#SNESQN>`_
+(quasinewton).
+
 ODE integration
 ---------------
 
