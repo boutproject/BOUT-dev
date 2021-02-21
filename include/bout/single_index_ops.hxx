@@ -18,6 +18,7 @@
 #define BOUT_DEVICE
 #endif
 
+
 #ifdef BOUT_HAS_RAJA
 //--  RAJA CUDA settings--------------------------------------------------------start
 #ifdef BOUT_USE_CUDA
@@ -27,9 +28,7 @@ using EXEC_POL = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
 using EXEC_POL = RAJA::loop_exec;
 #endif  // defined(BOUT_ENABLE_CUDA)
 ////-----------CUDA settings------------------------------------------------------end
-
-#endif //BOUT_HAS_RAJA
-
+#endif
 template<CELL_LOC location>
 BOUT_HOST_DEVICE inline BoutReal* DDT( const FieldAccessor<location> &f){
 
@@ -196,7 +195,6 @@ BOUT_HOST_DEVICE inline BoutReal DDX_g(const Field2DAccessor<location> &f, const
    //int nx = f.f_nx;
    int ny = f.f_ny;
    int nz = f.f_nz;
-
    int ind_2d = i / nz;  // nz =1 for field2d
 
    int ixp = i_xp(i,ny,nz);
@@ -431,266 +429,6 @@ inline BoutReal Div_par_Grad_par(const FieldAccessor<location> &f, const Specifi
 
   return (flux_upper - flux_lower) / (dy * J);
 }
-
-template<CELL_LOC location>
-BOUT_HOST_DEVICE inline BoutReal b0xGrad_dot_Grad_g(const FieldAccessor<location> &f3d, const Field2DAccessor<location> &f2d, const int i) {
-
-
-return 0.0001;
-
-}
-
-
-template<CELL_LOC location>
-BOUT_HOST_DEVICE inline BoutReal VDDX_g(const Field2DAccessor<location> &f2d, const FieldAccessor<location> &f3d, const int i) {
- 
- return 0.0001;
-}
-
-
-template<CELL_LOC location>
-BOUT_HOST_DEVICE inline BoutReal VDDY_g(const Field2DAccessor<location> &f2d, const FieldAccessor<location> &f3d, const int i) {
-  
-
-return 0.0001;
-
-}
-
-template<CELL_LOC location>
-BOUT_HOST_DEVICE inline BoutReal VDDZ_g(const Field2DAccessor<location> &f2d, const FieldAccessor<location> &f3d, const int i) {
- 
-
-return 0.0001;
- 
-}
-
-
-template<CELL_LOC location>
-BOUT_HOST_DEVICE  BoutReal SQ_g(const FieldAccessor<location> &f3d,const Field2DAccessor<location> &f2d,const int i) {
-
- int  nz = f3d.f_nz;
- int  ind_2d = i / nz;  // index for Field2D data (has no z-dependence)
-
- //BoutReal* f3d_a = f3d.f_data;
- BoutReal* f2d_a = f2d.f_data;
- return f2d_a[ind_2d] * f2d_a[ind_2d];
-
-}
-
-
-template<CELL_LOC location>
-BOUT_HOST_DEVICE  BoutReal b0xGrad_dot_Grad_3D2D_g(const FieldAccessor<location> &f3d,const Field2DAccessor<location> &f2d,const int i) {
-
-  
-  int  nz = f3d.f_nz;
-  int  ind_2d = i / nz;  // index for Field2D data (has no z-dependence)
-
-  BoutReal* J = f3d.f2d_J;   
-   BoutReal* g_23 = f2d.f2d_g23;
-   BoutReal* g_12 = f2d.f2d_g12;
-   BoutReal* g_22 = f2d.f2d_g22;
-
-  // Calculate phi derivatives
-   BoutReal dpdx = DDX_g(f3d,  i);
-   BoutReal dpdy = DDY_g(f3d,  i);
-   BoutReal dpdz = DDZ_g(f3d,  i);
-   
- 
-  // Calculate advection velocity
-   BoutReal vx = g_22[ind_2d] * dpdz -  g_23[ind_2d] * dpdy;
-   BoutReal vy = g_23[ind_2d] * dpdx -  g_12[ind_2d] * dpdz;
-  
-  // VDDX,VDDY
-   BoutReal* f3d_a = f3d.f_data;
-   BoutReal* dx = f2d.f2d_dx;
-   BoutReal* dy = f2d.f2d_dy;
-   
-   BoutReal vddx = f3d_a[i] / dx[ind_2d];  // VDDX()
-   BoutReal vddy = f3d_a[i] / dy[ind_2d];  // VDDY()
-
- // result 
-   BoutReal p1 = vddx + vddy;
-   BoutReal p2 = J[ind_2d] * sqrt(g_22[ind_2d]);
-
-   BoutReal result = p1;
-   result /= p2;
-
-   return result;
-
-
-
-}
-
-
-template<CELL_LOC location>
-BOUT_HOST_DEVICE  BoutReal b0xGrad_dot_Grad_g(const Field2DAccessor<location> &f2d, const FieldAccessor<location> &f3d, const int i) {
-  
-int  nz = f3d.f_nz;
-int  ind_2d = i / nz;  // index for Field2D data (has no z-dependence)
-
-
-  // Calculate phi derivatives
-   BoutReal dpdx = DDX_g(f2d,  ind_2d);
-   BoutReal dpdy = DDY_g(f2d,  ind_2d);
-   
-   BoutReal* J = f2d.f2d_J;   
-   BoutReal* g_23 = f2d.f2d_g23;
-   BoutReal* g_12 = f2d.f2d_g12;
-   BoutReal* g_22 = f2d.f2d_g22;
-
-  // Calculate advection velocity
-   BoutReal vx = g_23[ind_2d] * dpdy;
-   BoutReal vy = g_23[ind_2d] * dpdx;
-   BoutReal vz = g_12[ind_2d] * dpdy - g_22[ind_2d] * dpdx;
-// VDDX,VDDY,VDDZ
-   BoutReal* f2d_a = f2d.f_data;
-   BoutReal* dx = f3d.f2d_dx;
-   BoutReal* dy = f3d.f2d_dy;
-   BoutReal dz = f3d.f2d_dz;
-   
-   BoutReal vddx = f2d_a[ind_2d] / dx[i];  // VDDX()
-   BoutReal vddy = f2d_a[ind_2d] / dy[i];  // VDDY()
-   BoutReal vddz = f2d_a[ind_2d] / dz;          // VDDZ()
-
- // result 
-   BoutReal p1 = vddx + vddy + vddz;
-   BoutReal p2 = J[ind_2d] * sqrt(g_22[ind_2d]);
-
-   BoutReal result = p1;
-   result /= p2;
-   if ((result < -1) || (result >1)){result = 0.0;}
-   (isinf(result) == 1) ? (result = 0.0): result = result;
-   (isnan(result) == 1) ? (result = 0.0): result = result;
-   
-   return result*0.001;
-
-
-
-}
-
-template<CELL_LOC location>
-BOUT_HOST_DEVICE inline BoutReal D2DY2_g(const FieldAccessor<location> &f3d, const int i) {
-
-int  nz = f3d.f_nz;
-int  ind_2d = i / nz;  // index for Field2D data (has no z-dependence)
-
-BoutReal* f3d_a = f3d.f_data;
-BoutReal* dy = f3d.f2d_dy;
-BoutReal result = f3d_a[i] / (dy[ind_2d]* dy[ind_2d]);
-return result;
-
-}
-
-template<CELL_LOC location>
-BOUT_HOST_DEVICE inline BoutReal Grad_parP_g(const FieldAccessor<location> &f3d, const int i) {
-
-BoutReal result =  Grad_par_g(f3d,i);
-
-   //if (nonlinear) {
-   //   result -= bracket(interp_to(Psi, loc), f, bm_mag) * B0;
-
-     // if (include_rmp) {
-      //  result -= bracket(interp_to(rmp_Psi, loc), f, bm_mag) * B0;
-     // }
-   // }
-
-
-return result;
-}
-
-
-
-template<CELL_LOC location>
-BOUT_HOST_DEVICE inline BoutReal Grad_par_g(const FieldAccessor<location> &f3d, const int i) {
-
-BoutReal* g22 = f3d.f2d_g22;
-int  nz = f3d.f_nz;
-int  ind_2d = i / nz;  // index for Field2D data (has no z-dependence)
-
-BoutReal ddy = DDY_g(f3d,i);
-BoutReal result = ddy / sqrt(g22[ind_2d]); 
-return result;
-//return ::DDY(var, outloc, method) / sqrt(g_22); // original operator
-}
-
-
-template<CELL_LOC location>
-BOUT_HOST_DEVICE inline BoutReal* Grad_g(const FieldAccessor<location> &f3d, const int i) {
-
-
-BoutReal ddx = DDX_g(f3d,  i);
-BoutReal ddy = DDY_g(f3d,  i);
-BoutReal ddz = DDZ_g(f3d,  i);
-
-BoutReal result[2] ;
-
-result[0] = ddx;
-result[1] = ddy;
-result[2] = ddz;
-
-return result;
-
-}
-
-
-template<CELL_LOC location>
-BOUT_HOST_DEVICE inline BoutReal filter_g(const FieldAccessor<location> &f3d, const int N0,const int i) {
-
-int ncx = f3d.f_nx;
-int ncy = f3d.f_ny;
-int ncz = f3d.f_nz;
-
- /// Convenience functions for converting to (x, y, z)
- //  int x() const { return (ind / nz) / ny; }
- //    int y() const { return (ind / nz) % ny; }
- //      int z() const { return (ind % nz); }
- //
- //int z()
-int  ind_z = i % ncz;  // index for Z data
-
-BoutReal* f3d_a = f3d.f_data;
-//BoutReal re = f3d_a[i];
-
-      //for (int jz = 0; jz <= ncz / 2; jz++) {
-        //if (jz != N0) {
-          // Zero this component
-          //           f[jz] = 0.0;
-          //                   }
-          //                         }
-     if  (( ind_z >= 0) && (ind_z <= ncz/2) && (ind_z != N0)  )
-         {f3d_a[i] = 0.0;}
-
-return f3d_a[i];
-
-
-}
-
-
-template<CELL_LOC location>
-BOUT_HOST_DEVICE inline BoutReal lowPass_g(const FieldAccessor<location> &f3d, const int zmax, const bool keep_zonal, const int i) {
-
-int ncx = f3d.f_nx;
-int ncy = f3d.f_ny;
-int ncz = f3d.f_nz;
-int  ind_z = i % ncz;  // index for Z data
-
-BoutReal* f3d_a = f3d.f_data;
-BoutReal re =  f3d_a[i];
-
-  if (((zmax >= ncz / 2) || (zmax < 0)) && keep_zonal) {
- 
-         re =  f3d_a[i];;
-   
-  } else {
-     if  ((ind_z >= 0) && (ind_z <= ncz/2) )      
-	re = 0.0;
-	if (!keep_zonal){f3d_a[0]=0.0;}
-	
-    }
-return re;
-
-}
-
 
 
 template<CELL_LOC location>

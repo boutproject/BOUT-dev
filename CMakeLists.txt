@@ -81,6 +81,7 @@ set(BOUT_HEADERS
   ./include/bout/globalindexer.hxx
   ./include/bout/griddata.hxx
   ./include/bout/hypre_interface.hxx
+  ./include/bout/hyprelib.hxx
   ./include/bout/index_derivs.hxx
   ./include/bout/index_derivs_interface.hxx
   ./include/bout/invert/laplacexy2_hypre.hxx
@@ -325,6 +326,7 @@ set(BOUT_SOURCES
   ./src/sys/derivs.cxx
   ./src/sys/expressionparser.cxx
   ./src/sys/generator_context.cxx
+  ./src/sys/hyprelib.cxx
   ./src/sys/msg_stack.cxx
   ./src/sys/options.cxx
   ./src/sys/options/options_ini.cxx
@@ -633,13 +635,13 @@ if(PACKAGE_TESTS)
   add_dependencies(check_bout check-unit-tests check-integrated-tests)
 endif()
 
-#if(BOUT_HAS_HYPRE)
-#   add_subdirectory(examples/laplacexy/simple-hypre)
-#endif ()
+if(BOUT_HAS_HYPRE)
+   add_subdirectory(examples/laplacexy/simple-hypre)
+endif ()
 
-#add_subdirectory(examples/laplacexy/simple)
-#add_subdirectory(examples/hasegawa-wakatani-3d)
-#add_subdirectory(examples/elm-pb)
+add_subdirectory(examples/laplacexy/simple)
+add_subdirectory(examples/hasegawa-wakatani-3d)
+add_subdirectory(examples/elm-pb)
 
 ##################################################
 # Generate the build config header

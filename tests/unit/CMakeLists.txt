@@ -38,7 +38,7 @@ set(serial_tests_source
   ./include/bout/test_petsc_setters.cxx
   ./include/bout/test_petsc_vector.cxx
   ./include/bout/test_region.cxx
-  # ./include/bout/test_single_index_ops.cxx
+  #./include/bout/test_single_index_ops.cxx
   ./include/bout/test_stencil.cxx
   ./include/bout/test_template_combinations.cxx
   ./include/bout/test_traits.cxx

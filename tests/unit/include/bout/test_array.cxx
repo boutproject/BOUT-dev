@@ -240,7 +240,7 @@ TEST_F(ArrayTest, Assignment) {
   EXPECT_FALSE(b.unique());
 }
 
-#if CHECK > 2
+#if CHECK > 2 && !defined BOUT_USE_CUDA
 TEST_F(ArrayTest, OutOfBoundsThrow) {
   Array<double> a(34);
   EXPECT_NO_THROW(a[33] = 1.0);

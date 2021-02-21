@@ -153,11 +153,14 @@ public:
     HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
     vsize = jupper - jlower + 1;
 
-    HYPRE_ExecutionPolicy default_exec_policy = HYPRE_EXEC_HOST;
+#ifdef BOUT_USE_CUDA
+    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
     HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
     hypre_HandleMemoryLocation(hypre_handle())    = memory_location;
-#ifdef BOUT_USE_CUDA
-    hypre_HandleDefaultExecPolicy(hypre_handle()) = default_exec_policy;
+#else
+    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_HOST;
+    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_HOST;
+    hypre_HandleMemoryLocation(hypre_handle())    = memory_location;
 #endif
 
     checkHypreError(HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector));
@@ -180,12 +183,14 @@ public:
     HYPRE_BigInt jlower = indConverter->getGlobalStart();
     HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
     vsize = jupper - jlower + 1;
-    
-    HYPRE_ExecutionPolicy default_exec_policy = HYPRE_EXEC_HOST;
+#ifdef BOUT_USE_CUDA
+    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
     HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
     hypre_HandleMemoryLocation(hypre_handle())    = memory_location;
-#ifdef BOUT_USE_CUDA
-    hypre_HandleDefaultExecPolicy(hypre_handle()) = default_exec_policy;
+#else
+    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_HOST;
+    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_HOST;
+    hypre_HandleMemoryLocation(hypre_handle())    = memory_location;
 #endif
 
     checkHypreError(HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector));
@@ -729,29 +734,32 @@ private:
 public:
   HypreSystem(Mesh& mesh)
   {
-    HYPRE_Init();
-    HYPRE_ExecutionPolicy default_exec_policy = HYPRE_EXEC_HOST;
+    //HYPRE_Init(); // Now handled by hyprelib
+#ifdef BOUT_USE_CUDA
+    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
     HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
     hypre_HandleMemoryLocation(hypre_handle())    = memory_location;
-#ifdef BOUT_USE_CUDA
-    hypre_HandleDefaultExecPolicy(hypre_handle()) = default_exec_policy;
+#else
+    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_HOST;
+    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_HOST;
+    hypre_HandleMemoryLocation(hypre_handle())    = memory_location;
 #endif
 
     comm = std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
 
     HYPRE_ParCSRGMRESCreate(comm, &solver);
-    /* set the GMRES paramaters */
-    HYPRE_GMRESSetKDim(solver, 5);
+    /* set the GMRES parameters */
+    //HYPRE_GMRESSetKDim(solver, 5);
     HYPRE_GMRESSetMaxIter(solver, 200);
-    HYPRE_GMRESSetTol(solver, 1.0e-07);
+    HYPRE_GMRESSetTol(solver, 1.0e-7);
 
     HYPRE_BoomerAMGCreate(&precon);
     HYPRE_BoomerAMGSetOldDefault(precon);
 #ifdef BOUT_USE_CUDA
-    HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation
+    HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation // 7 throws error code 256 did not converge
     HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
-    HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU 
-    HYPRE_BoomerAMGSetInterpType(precon, 3); // must be 3 or 15 for GPU 
+    //HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU // for GMRES causes solver_err = 1 Generic Error and non-convergence
+    HYPRE_BoomerAMGSetInterpType(precon, 15); // must be 3 or 15 for GPU 
 #endif
     HYPRE_BoomerAMGSetNumSweeps(precon, 1);
     HYPRE_BoomerAMGSetMaxLevels(precon, 20);
@@ -763,7 +771,7 @@ public:
   }
 
   ~HypreSystem() {
-    //HYPRE_Finalize();
+    //HYPRE_Finalize(); // now handled by hyprelib
   }
 
   void setRelTol(double tol)

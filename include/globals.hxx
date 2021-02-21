@@ -29,6 +29,7 @@
 
 #include "datafile.hxx"
 #include "bout/macro_for_each.hxx"
+#include "bout/hyprelib.hxx"
 
 class Mesh;
 class MpiWrapper;
@@ -45,6 +46,7 @@ namespace globals {
 
 SETTING( Mesh *mesh, nullptr); ///< The mesh object
 SETTING(MpiWrapper* mpi, nullptr); ///< The MPI wrapper object
+SETTING(HypreLib* hyprelib,nullptr);
 
 /// Define for reading a variable from the grid
 #define GRID_LOAD1(var) mesh->get(var, #var)

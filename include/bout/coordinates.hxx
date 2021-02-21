@@ -87,7 +87,7 @@ public:
   BoutReal zlength() const { return dz * nz; } ///< Length of the Z domain. Used for FFTs
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
-  bool non_uniform = true;
+  bool non_uniform;
   Field2D d1_dx, d1_dy;  ///< 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
   
   Field2D J; ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz

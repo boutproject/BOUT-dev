@@ -42,6 +42,7 @@ const char DEFAULT_DIR[] = "data";
 #include "msg_stack.hxx"
 #include "optionsreader.hxx"
 #include "output.hxx"
+#include "bout/hyprelib.hxx"
 #include "bout/invert/laplacexz.hxx"
 #include "bout/mpi_wrapper.hxx"
 #include "bout/openmpwrap.hxx"
@@ -190,6 +191,8 @@ int BoutInitialise(int& argc, char**& argv) {
 
     bout::globals::dump =
         setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);
+    //after MPI 
+    bout::globals::hyprelib = new HypreLib();
 
   } catch (const BoutException& e) {
     output_error.write(_("Error encountered during initialisation: {:s}\n"), e.what());
@@ -764,6 +767,9 @@ int BoutFinalise(bool write_settings) {
 
   // Call PetscFinalize if not already called
   PetscLib::cleanup();
+
+  // Call HYPER_Finalize if not already called
+  HypreLib::cleanup();
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();

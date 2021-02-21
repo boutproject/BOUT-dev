@@ -125,7 +125,6 @@ public:
     auto param = GetParam();
     forward = ForwardOperator(std::get<0>(param), std::get<1>(param),
 			      std::get<2>(param), std::get<3>(param));
-    //solver.create(getOptions(GetParam()), CELL_CENTRE, mesh);
   }
 
   ~LaplaceHypre3dTest() {
@@ -155,16 +154,14 @@ private:
   }
 
 };
-#if 0
+
 INSTANTIATE_TEST_SUITE_P(LaplaceHypre3d, LaplaceHypre3dTest,
 			 testing::Values(std::make_tuple(false, false, false, false),
 					 std::make_tuple(false, false, false, true),
 					 std::make_tuple(false, false, true, false),
 					 std::make_tuple(false, true, false, false),
 					 std::make_tuple(true, false, false, false)));
-#endif
-INSTANTIATE_TEST_SUITE_P(LaplaceHypre3d, LaplaceHypre3dTest,
-			 testing::Values(std::make_tuple(false, false, false, false)));
+
 
 TEST_P(LaplaceHypre3dTest, TestMatrixConstruction3D){
   bout::HypreMatrix<Field3D> &matrix = solver.getMatrix3D();
