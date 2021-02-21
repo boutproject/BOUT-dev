@@ -258,7 +258,11 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
     // Simulation might fail, e.g. negative densities
     // if timestep too large
     output.write("WARNING: BoutException thrown: {}\n", e.what());
-    return -1;
+
+    // Tell SNES that the input was out of domain
+    SNESSetFunctionDomainError(snes);
+    // Note: Returning non-zero error here leaves vectors in locked state
+    return 0;
   }
 
   // Copy derivatives back
