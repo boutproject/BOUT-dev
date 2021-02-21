@@ -30,7 +30,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   TRACE("Initialising SNES solver");
 
   /// Call the generic initialisation first
-  if (Solver::init(nout, tstep)) {
+  if (Solver::init(nout, tstep) != 0) {
     return 1;
   }
 
@@ -233,7 +233,7 @@ int SNESSolver::run() {
 
     /// Call the monitor function
 
-    if (call_monitors(simtime, s, nsteps)) {
+    if (call_monitors(simtime, s, nsteps) != 0) {
       break; // User signalled to quit
     }
   }
