@@ -213,7 +213,7 @@ class Field2D : public Field, public FieldData {
    * significantly reduce performance.
    */
  BOUT_HOST_DEVICE inline BoutReal& operator()(int jx, int jy) {
-#if CHECK > 2
+#if CHECK > 2 && !defined(BOUT_USE_CUDA)
     if(!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
     
@@ -226,7 +226,7 @@ class Field2D : public Field, public FieldData {
     return data[jx*ny + jy];
   }
  BOUT_HOST_DEVICE inline const BoutReal& operator()(int jx, int jy) const {
-#if CHECK > 2
+#if CHECK > 2 && !defined(BOUT_USE_CUDA)
     if(!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
     
