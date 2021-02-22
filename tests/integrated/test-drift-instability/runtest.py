@@ -73,9 +73,9 @@ for zeff in zlist:
         mthread=nthreads,
         pipe=True,
     )
-    f = open("run.log." + str(zeff), "w")
-    f.write(out)
-    f.close()
+
+    with open(f"run.log.{zeff}", "w") as f:
+        f.write(out)
 
     # Collect data
     Ni = collect("Ni", path="data", xind=2, yind=20, info=False)
