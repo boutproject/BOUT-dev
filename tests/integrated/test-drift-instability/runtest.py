@@ -30,7 +30,7 @@ nthreads = 1
 
 build_and_log("resistive drift instability test")
 
-zlist = [2, 32, 256]  # Just test a few
+zlist = [32, 256]  # Just test a few
 
 # Values from revision c4f7ec92786b333a5502c5256b5e602ba867090f
 # 26th Oct 2011
