@@ -213,7 +213,7 @@ for zeff in zlist:
         "%)",
     )
 
-    if omegadiff != None:
+    if omegadiff is not None:
         if isnan(omegadiff) or (omegadiff > omega_tol) or (gammadiff > gamma_tol):
             code = 1  # Failed test
             print("  => FAILED")
