@@ -79,10 +79,8 @@ for zeff in zlist:
 
     # Collect data
     Ni = collect("Ni", path="data", xind=2, yind=20, info=False)
-    phi = collect("phi", path="data", xind=2, yind=20, info=False)
 
     zmax = collect("ZMAX", path="data", info=False)
-    rho_s = collect("rho_s", path="data", info=False)
     wci = collect("wci", path="data", info=False)
     t_array = collect("t_array", path="data", info=False)
 
@@ -96,9 +94,7 @@ for zeff in zlist:
     lbNorm = lZeta * (
         grid["Bpxy"][0, ny // 2] / grid["Bxy"][0, ny // 2]
     )  # binormal coord range [cm]
-    zPerp = lbNorm * np.arange(nz) / (nz - 1)  # binormal coordinate [cm]
 
-    cLight = 3e10  # speed of light [cm/s]
     vTe = 4.2e7 * np.sqrt(grid["Te_x"])  # electron thermal speed [cm/s]
     kperp = 2 * np.pi / lbNorm  # binormal wavenumber, [cm-1]
     wce = 1.76e7 * 1e4 * grid["bmag"]  # electron cyclotron frequency, [rad/s]
@@ -124,10 +120,6 @@ for zeff in zlist:
     kpar = 2 * np.pi / (1e2 * lpar)  # cm-1
     spar = (kpar / kperp) ** 2 * wci * wce / (0.51 * nuei)  # [1/s]
     sparn = spar / wstar
-
-    wpe = 5.64e4 * np.sqrt(1e14 * grid["Ni_x"])  # electron plasma frequency, [rad/s]
-    mu = (cLight * kperp / wpe) ** 2
-    sperp = (0.51 * nuei) * mu  # [1/s]
 
     ##### Analyse data
 
