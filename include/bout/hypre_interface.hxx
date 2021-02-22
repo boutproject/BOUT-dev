@@ -286,15 +286,19 @@ public:
     }
 
     Element& operator=(const Element& other) {
+      ASSERT3(finite(static_cast<BoutReal>(other)));
       return *this = static_cast<BoutReal>(other);
     }
     Element& operator=(BoutReal value_) {
+      ASSERT3(finite(value_));
       value = value_;
       vector->V[vec_i] = value_;
       return *this;
     }
     Element& operator+=(BoutReal value_) {
+      ASSERT3(finite(value_));
       value += value_;
+      ASSERT3(finite(value));
       vector->V[vec_i] += value_;
       return *this;
     }
@@ -458,6 +462,11 @@ public:
             std::vector<BoutReal> weights_ = {})
         : hypre_matrix(matrix_.get()), row(row_), column(column_), positions(positions_),
           weights(weights_) {
+#if CHECK > 2
+      for (const auto val : weights) {
+        ASSERT3(finite(val));
+      }
+#endif
       ASSERT2(positions.size() == weights.size());
       if (positions.empty()) {
         positions = {column};
@@ -467,14 +476,20 @@ public:
       value = matrix->getVal(row, column);
     }
     Element& operator=(const Element& other) {
+      AUTO_TRACE();
+      ASSERT3(finite(static_cast<BoutReal>(other)));
       return *this = static_cast<BoutReal>(other);
     }
     Element& operator=(BoutReal value_) {
+      AUTO_TRACE();
+      ASSERT3(finite(value_));
       value = value_;
       setValues(value);
       return *this;
     }
     Element& operator+=(BoutReal value_) {
+      AUTO_TRACE();
+      ASSERT3(finite(value_));
       auto column_position = std::find(cbegin(positions), cend(positions), column);
       if (column_position != cend(positions)) {
         const auto i = std::distance(cbegin(positions), column_position);
@@ -488,6 +503,7 @@ public:
 
   private:
     void setValues(BoutReal value_) {
+      TRACE("HypreMatrix setting values at ({}, {})", row, column);
       ASSERT3(!positions.empty());
       std::vector<HYPRE_Complex> values;
       std::transform(
