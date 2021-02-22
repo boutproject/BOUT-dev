@@ -191,26 +191,10 @@ for zeff in zlist:
         gammadiff = None
 
     print(
-        "  Normalised omega = ",
-        omega,
-        " analytic = ",
-        wr,
-        " original = ",
-        origr,
-        " (",
-        100.0 * omegadiff,
-        "%)",
+        f"  Normalised omega = {omega} analytic = {wr} original = {origr} ({100.0 * omegadiff}%)"
     )
     print(
-        "  Normalised gamma = ",
-        gamma,
-        " analytic = ",
-        wi,
-        " original = ",
-        origi,
-        " (",
-        100.0 * gammadiff,
-        "%)",
+        f"  Normalised gamma = {gamma} analytic = {wi} original = {origi} ({100.0 * gammadiff}%)",
     )
 
     if omegadiff is not None:
