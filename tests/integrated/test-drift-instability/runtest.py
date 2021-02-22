@@ -53,8 +53,15 @@ gamma_orig = {
 # Import the grid file
 grid = file_import("uedge.grd_std.cdl")
 
-code = 0  # Return code
-for zeff in zlist:
+
+def run_zeff_case(zeff):
+    """Run a single Zeff case"""
+
+    if zeff not in omega_orig:
+        raise ValueError(
+            f"Zeff value ({zeff}) not in benchmark values. Available values: {list(omega_orig.keys())}"
+        )
+
     # Create the input file, setting Zeff
     timestep = 5e3
     if zeff < 128:
@@ -89,7 +96,7 @@ for zeff in zlist:
     ny = dims[2]
     nz = dims[3]
 
-    ##### Calculate geometric and physical quantities
+    # Calculate geometric and physical quantities
     lZeta = 1e2 * zmax * 2 * np.pi * grid["R0"]  # toroidal range [cm]
     lbNorm = lZeta * (
         grid["Bpxy"][0, ny // 2] / grid["Bxy"][0, ny // 2]
@@ -121,7 +128,7 @@ for zeff in zlist:
     spar = (kpar / kperp) ** 2 * wci * wce / (0.51 * nuei)  # [1/s]
     sparn = spar / wstar
 
-    ##### Analyse data
+    # Analyse data
 
     nt0 = 15  # Skip initial part of the curve (transients)
 
@@ -170,17 +177,11 @@ for zeff in zlist:
     wr = 0.5 * np.sqrt(t)
     wi = sparn / np.sqrt(t) - 0.5 * sparn
 
-    try:
-        origr = omega_orig[zeff]
-        origi = gamma_orig[zeff]
+    origr = omega_orig[zeff]
+    origi = gamma_orig[zeff]
 
-        omegadiff = abs(omega - origr) / origr
-        gammadiff = abs(gamma - origi) / origi
-    except:
-        origr = None
-        origi = None
-        omegadiff = None
-        gammadiff = None
+    omegadiff = abs(omega - origr) / origr
+    gammadiff = abs(gamma - origi) / origi
 
     print(
         f"  Normalised omega = {omega} analytic = {wr} original = {origr} ({100.0 * omegadiff}%)"
@@ -189,13 +190,20 @@ for zeff in zlist:
         f"  Normalised gamma = {gamma} analytic = {wi} original = {origi} ({100.0 * gammadiff}%)",
     )
 
-    if omegadiff is not None:
-        if isnan(omegadiff) or (omegadiff > omega_tol) or (gammadiff > gamma_tol):
-            code = 1  # Failed test
-            print("  => FAILED")
-        else:
-            print("  => PASSED")
-    else:
-        print("  => No original to compare against")
+    if isnan(omegadiff) or (omegadiff > omega_tol) or (gammadiff > gamma_tol):
+        print("  => FAILED")
+        return False
 
-exit(code)
+    print("  => PASSED")
+    return True
+
+
+if __name__ == "__main__":
+
+    return_code = 0
+    for zeff in zlist:
+        success = run_zeff_case(zeff)
+        if not success:
+            return_code = 1
+
+    exit(return_code)
