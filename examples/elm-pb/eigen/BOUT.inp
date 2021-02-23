@@ -79,7 +79,7 @@ tol = 0.0001
 selfSolve = false
 
 [solver:advance]
-type = karniadakis
+type = splitrk
 timestep = 0.01
 
 

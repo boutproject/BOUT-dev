@@ -43,8 +43,6 @@ needed to make the solver available.
    +---------------+-----------------------------------------+--------------------+
    | rkgeneric     | Generic Runge Kutta explicit methods    | Always available   |
    +---------------+-----------------------------------------+--------------------+
-   | karniadakis   | Karniadakis explicit method             | Always available   |
-   +---------------+-----------------------------------------+--------------------+
    | rk3ssp        | 3rd-order Strong Stability Preserving   | Always available   |
    +---------------+-----------------------------------------+--------------------+
    | splitrk       | Split RK3-SSP and RK-Legendre           | Always available   |
@@ -85,8 +83,7 @@ given in table :numref:`tab-solveropts`.
    +------------------+--------------------------------------------+-------------------------------------+
    | max\_timestep    | Maximum timestep                           | rk4, cvode                          |
    +------------------+--------------------------------------------+-------------------------------------+
-   | timestep         | Starting timestep                          | rk4, karniadakis, euler, imexbdf2,  |
-   |                  |                                            | beuler                              |
+   | timestep         | Starting timestep                          | rk4, euler, imexbdf2, beuler        |
    +------------------+--------------------------------------------+-------------------------------------+
    | adaptive         | Adapt timestep? (Y/N)                      | rk4, imexbdf2                       |
    +------------------+--------------------------------------------+-------------------------------------+

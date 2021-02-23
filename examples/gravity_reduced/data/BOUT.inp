@@ -69,7 +69,7 @@ upwind = W3
 ATOL = 1e-10 # absolute tolerance
 RTOL = 1e-05  # relative tolerance
 
-#type=karniadakis
+#type=splitrk
 #timestep = 1e-3
 
 ##################################################
