@@ -25,7 +25,7 @@ pkg=BOUT-dev
 
 build_dir=${build_prefix}/${pkg}
 install_dir=${install_prefix}/${pkg}
-source_dir=${source_prefix} 
+source_dir=${source_prefix}
 
 echo 'Build in ' ${build_dir}
 echo 'Install in ' ${install_dir}

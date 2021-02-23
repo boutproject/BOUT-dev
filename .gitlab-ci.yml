@@ -1,0 +1,47 @@
+#*************************************************************************
+# Base class for fields
+#
+#*************************************************************************
+# Copyright 2010
+#
+# This file is part of BOUT++.
+#
+# BOUT++ is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BOUT++ is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
+#
+#*************************************************************************/
+
+# We define the following GitLab pipeline variables:
+#
+# GIT_SUBMODULE_STRATEGY:
+# Tells Gitlab to recursively update the submodules when cloning umpire
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+stages:
+  - lassen_builds
+
+# These are also templates (.name) that define project specific build commands.
+build_on_lassen:
+  stage: lassen_builds
+  variables:
+  tags:
+    - shell
+    - lassen
+  script:
+    - export CMAKE_CONFIG="tests/gitlab/ppc64le-gcc.cmake"
+    - . ./tests/gitlab/setup-lassen-gpu.sh
+    - lalloc 1 -W 30 tests/gitlab/config-bout-gpu.sh
+    - cd build/ppc64le-gcc/BOUT-dev
+    - cmake --build . -j
