@@ -10,6 +10,7 @@ from boututils.calculus import deriv
 from boututils.linear_regression import linear_regression
 
 from boutdata.collect import collect
+import argparse
 import numpy as np
 from sys import exit
 from math import isnan
@@ -200,8 +201,20 @@ def run_zeff_case(zeff):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser("Run drift-instability test")
+    parser.add_argument(
+        "-Z",
+        "--Zeff-list",
+        help=f"List of Zeff values to test, valid values are {list(gamma_orig.keys())}",
+        type=int,
+        nargs="+",
+        default=zlist,
+    )
+
+    args = parser.parse_args()
+
     return_code = 0
-    for zeff in zlist:
+    for zeff in args.Zeff_list:
         success = run_zeff_case(zeff)
         if not success:
             return_code = 1
