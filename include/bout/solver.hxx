@@ -84,7 +84,6 @@ constexpr auto SOLVERPVODE = "pvode";
 constexpr auto SOLVERIDA = "ida";
 constexpr auto SOLVERPETSC = "petsc";
 constexpr auto SOLVERSLEPC = "slepc";
-constexpr auto SOLVERKARNIADAKIS = "karniadakis";
 constexpr auto SOLVERRK4 = "rk4";
 constexpr auto SOLVEREULER = "euler";
 constexpr auto SOLVERRK3SSP = "rk3ssp";

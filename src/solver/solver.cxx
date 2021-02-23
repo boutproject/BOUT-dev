@@ -48,7 +48,6 @@
 #include "impls/euler/euler.hxx"
 #include "impls/ida/ida.hxx"
 #include "impls/imex-bdf2/imex-bdf2.hxx"
-#include "impls/karniadakis/karniadakis.hxx"
 #include "impls/petsc/petsc.hxx"
 #include "impls/power/power.hxx"
 #include "impls/pvode/pvode.hxx"

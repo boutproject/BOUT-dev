@@ -251,8 +251,6 @@ set(BOUT_SOURCES
   ./src/solver/impls/ida/ida.hxx
   ./src/solver/impls/imex-bdf2/imex-bdf2.cxx
   ./src/solver/impls/imex-bdf2/imex-bdf2.hxx
-  ./src/solver/impls/karniadakis/karniadakis.cxx
-  ./src/solver/impls/karniadakis/karniadakis.hxx
   ./src/solver/impls/petsc/petsc.cxx
   ./src/solver/impls/petsc/petsc.hxx
   ./src/solver/impls/power/power.cxx

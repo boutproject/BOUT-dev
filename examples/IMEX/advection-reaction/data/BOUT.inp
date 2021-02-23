@@ -45,7 +45,7 @@ flux = U1
 
 [solver]
 
-type = karniadakis
+type = splitrk
 timestep = 0.0001
 
 ##################################################

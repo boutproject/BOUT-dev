@@ -59,7 +59,7 @@ atol = 1e-10 # absolute tolerance
 rtol = 1e-05  # relative tolerance
 mxstep = 50000
 
-#type=karniadakis
+#type=splitrk
 #timestep=1e-4
 use_precon = true
 

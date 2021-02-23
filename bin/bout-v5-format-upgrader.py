@@ -23,9 +23,7 @@ format_replacements = {
 
 
 def fix_format_replacement(format_replacement, source):
-    """Replace printf format with fmt format
-
-    """
+    """Replace printf format with fmt format"""
     return re.sub(
         r"%([0-9]*\.?[0-9]*){}".format(format_replacement[0]),
         r"{{:\1{}}}".format(format_replacement[1]),
@@ -34,9 +32,7 @@ def fix_format_replacement(format_replacement, source):
 
 
 def fix_trivial_format(source):
-    """Reduce trivial formatting of strings to just the string
-
-    """
+    """Reduce trivial formatting of strings to just the string"""
 
     def trivial_replace(match):
         if match.group(2):
@@ -60,9 +56,7 @@ def fix_trivial_format(source):
 
 
 def fix_string_c_str(source):
-    """Fix formats that use {:s} where the replacement is using std::string::c_str
-
-    """
+    """Fix formats that use {:s} where the replacement is using std::string::c_str"""
     return re.sub(
         r"""
         (".*{:s}[^;]*?",)       # A format string containing {:s}
@@ -75,9 +69,7 @@ def fix_string_c_str(source):
 
 
 def fix_trace(source):
-    """Fix TRACE macros where fix_string_c_str has failed for some reason
-
-    """
+    """Fix TRACE macros where fix_string_c_str has failed for some reason"""
     return re.sub(
         r"""
         (TRACE\(".*{:s}.*",)
@@ -90,10 +82,7 @@ def fix_trace(source):
 
 
 def fix_toString_c_str(source):
-    """Fix formats that call toString where the replacement is using std::string::c_str
-
-
-    """
+    """Fix formats that call toString where the replacement is using std::string::c_str"""
     return re.sub(
         r"""
         (".*{:s}[^;]*?",.*?)         # A format string containing {:s}
@@ -130,9 +119,7 @@ def apply_fixes(format_replacements, source):
 
 
 def yes_or_no(question):
-    """Convert user input from yes/no variations to True/False
-
-    """
+    """Convert user input from yes/no variations to True/False"""
     while True:
         reply = input(question + " [y/N] ").lower().strip()
         if not reply or reply[0] == "n":
@@ -142,8 +129,7 @@ def yes_or_no(question):
 
 
 def create_patch(filename, original, modified):
-    """Create a unified diff between original and modified
-    """
+    """Create a unified diff between original and modified"""
 
     patch = "\n".join(
         difflib.unified_diff(

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# 
+#
 # Run the test, check it completed successfully
 #
 
@@ -8,10 +8,11 @@
 # Cores: 4
 
 from __future__ import print_function
+
 try:
-  from builtins import str
+    from builtins import str
 except:
-  pass
+    pass
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 from sys import stdout, exit
@@ -37,24 +38,22 @@ flags = [f + " test_location=" + l for f in flags for l in locations]
 regions = ["", " mesh:ixseps1=0 mesh:ixseps2=0"]
 flags = [f + r for f in flags for r in regions]
 
-code = 0 # Return code
-for nproc in [1,2,4]:
+code = 0  # Return code
+for nproc in [1, 2, 4]:
     cmd = "./test_invpar"
 
     print("   %d processors...." % (nproc))
     r = 0
     for f in flags:
-        stdout.write("\tflags '"+f+"' ... ")
+        stdout.write("\tflags '" + f + "' ... ")
 
         shell("rm data/BOUT.dmp.* 2> err.log")
 
         # Run the case
-        s, out = launch_safe(
-            cmd+" "+f, nproc=nproc, mthread=1, pipe=True
-        )
+        s, out = launch_safe(cmd + " " + f, nproc=nproc, mthread=1, pipe=True)
 
-        with open("run.log."+str(nproc)+"."+str(r), "w") as outfile:
-          outfile.write(out)
+        with open("run.log." + str(nproc) + "." + str(r), "w") as outfile:
+            outfile.write(out)
 
         r = r + 1
 

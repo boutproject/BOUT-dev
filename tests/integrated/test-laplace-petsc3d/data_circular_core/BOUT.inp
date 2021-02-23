@@ -63,8 +63,7 @@ g_23 = Bt*hthe*Rxy/Bp
 ShiftAngle = r^2 * 2.*pi/(1. - r^2)^1.5
 
 [mesh:paralleltransform]
-type = identity
-# type = shiftedinterp
+type = shiftedinterp
 
 # [mesh:paralleltransform:zinterpolation]
 # type = hermitespline

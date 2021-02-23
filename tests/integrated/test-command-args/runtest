@@ -31,70 +31,101 @@ class TestCommandLineArgs(unittest.TestCase):
             launch_safe(self.command, pipe=True, nproc=1, mthread=1)
         with open("stderr.log") as f:
             contents = f.read()
-            self.assertIn('"data" does not exist', contents,
-                          msg="FAIL: Error message not printed when missing input directory")
+            self.assertIn(
+                '"data" does not exist',
+                contents,
+                msg="FAIL: Error message not printed when missing input directory",
+            )
 
     def testHelpArgument(self):
         self.makeDirAndCopyInput("data")
         _, out = launch_safe(self.command + " --help", pipe=True, nproc=1, mthread=1)
         # Not a great test!
-        self.assertNotIn("Writing options", out,
-                         msg="FAIL: Attempting to write options")
+        self.assertNotIn(
+            "Writing options", out, msg="FAIL: Attempting to write options"
+        )
 
     def testNoArgumentsDefaultDirectory(self):
         self.makeDirAndCopyInput("data")
         launch_safe(self.command, pipe=True, nproc=1, mthread=1)
-        self.assertTrue(os.path.exists("data/BOUT.settings"),
-                        msg="FAIL: No BOUT.settings file in data directory")
-        self.assertTrue(os.path.exists("data/BOUT.log.0"),
-                        msg="FAIL: No BOUT.log.0 file in data directory")
+        self.assertTrue(
+            os.path.exists("data/BOUT.settings"),
+            msg="FAIL: No BOUT.settings file in data directory",
+        )
+        self.assertTrue(
+            os.path.exists("data/BOUT.log.0"),
+            msg="FAIL: No BOUT.log.0 file in data directory",
+        )
 
     def testShortLogArgument(self):
         self.makeDirAndCopyInput("data")
         launch_safe(self.command + " -l different.log", pipe=True, nproc=1, mthread=1)
-        self.assertFalse(os.path.exists("data/BOUT.log.0"),
-                         msg="FAIL: BOUT.log.0 file in data directory")
-        self.assertTrue(os.path.exists("data/different.log.0"),
-                        msg="FAIL: no different.log.0 file in data directory")
+        self.assertFalse(
+            os.path.exists("data/BOUT.log.0"),
+            msg="FAIL: BOUT.log.0 file in data directory",
+        )
+        self.assertTrue(
+            os.path.exists("data/different.log.0"),
+            msg="FAIL: no different.log.0 file in data directory",
+        )
 
     def testLongLogArgument(self):
         self.makeDirAndCopyInput("data")
         launch_safe(self.command + " --log log", pipe=True, nproc=1, mthread=1)
-        self.assertFalse(os.path.exists("data/BOUT.log.0"),
-                         msg="FAIL: BOUT.log.0 file in data directory")
-        self.assertTrue(os.path.exists("data/log.0"),
-                        msg="FAIL: no log.0 file in data directory")
+        self.assertFalse(
+            os.path.exists("data/BOUT.log.0"),
+            msg="FAIL: BOUT.log.0 file in data directory",
+        )
+        self.assertTrue(
+            os.path.exists("data/log.0"), msg="FAIL: no log.0 file in data directory"
+        )
 
     def testDirectoryArgument(self):
         self.makeDirAndCopyInput("test")
         launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)
-        self.assertTrue(os.path.exists("test/BOUT.settings"),
-                        msg="FAIL: No BOUT.settings file in test directory")
-        self.assertTrue(os.path.exists("test/BOUT.log.0"),
-                        msg="FAIL: No BOUT.log.0 file in data directory")
+        self.assertTrue(
+            os.path.exists("test/BOUT.settings"),
+            msg="FAIL: No BOUT.settings file in test directory",
+        )
+        self.assertTrue(
+            os.path.exists("test/BOUT.log.0"),
+            msg="FAIL: No BOUT.log.0 file in data directory",
+        )
 
     def testDirectoryArgumentNonExistentDirectory(self):
         with self.assertRaises(RuntimeError):
-            launch_safe(self.command + " -d non_existent", pipe=True, nproc=1, mthread=1)
+            launch_safe(
+                self.command + " -d non_existent", pipe=True, nproc=1, mthread=1
+            )
         with open("stderr.log") as f:
             contents = f.read()
-            self.assertIn('"non_existent" does not exist', contents,
-                          msg="FAIL: Error message not printed when missing input directory")
+            self.assertIn(
+                '"non_existent" does not exist',
+                contents,
+                msg="FAIL: Error message not printed when missing input directory",
+            )
 
     def testDirectoryArgumentNonDirectory(self):
         with self.assertRaises(RuntimeError):
             launch_safe(self.command + " -d runtest", pipe=True, nproc=1, mthread=1)
         with open("stderr.log") as f:
             contents = f.read()
-            self.assertIn('"runtest" is not a directory', contents,
-                          msg="FAIL: Error message not printed when missing input directory")
+            self.assertIn(
+                '"runtest" is not a directory',
+                contents,
+                msg="FAIL: Error message not printed when missing input directory",
+            )
 
     def testDirectoryArgumentOldSettingsFile(self):
         self.makeDirAndCopyInput("test")
         launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)
         shutil.copytree("test", "test_copy")
-        launch_safe(self.command +
-                   " -d test_copy -f BOUT.settings -o testsettings", pipe=True, nproc=1, mthread=1)
+        launch_safe(
+            self.command + " -d test_copy -f BOUT.settings -o testsettings",
+            pipe=True,
+            nproc=1,
+            mthread=1,
+        )
 
         with open("test_copy/testsettings") as f:
             contents = f.readlines()
@@ -106,29 +137,47 @@ class TestCommandLineArgs(unittest.TestCase):
                     datadir = line.split()[2]
                     break
 
-            self.assertIn("test_copy", datadir,
-                          msg="FAIL: datadir from command line clobbered by BOUT.settings")
+            self.assertIn(
+                "test_copy",
+                datadir,
+                msg="FAIL: datadir from command line clobbered by BOUT.settings",
+            )
 
     def testShortOptionsAreUsed(self):
         self.makeDirAndCopyInput("test")
         launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)
         shutil.copytree("test", "test_copy")
-        launch_safe(self.command +
-                   " -d test_copy -f BOUT.settings -o testsettings", pipe=True, nproc=1, mthread=1)
+        launch_safe(
+            self.command + " -d test_copy -f BOUT.settings -o testsettings",
+            pipe=True,
+            nproc=1,
+            mthread=1,
+        )
 
         with open("test_copy/testsettings") as f:
             contents = f.read()
             matches = re.findall("not used.*Command line", contents)
-            self.assertEqual(matches, [],
-                             msg="FAIL: command line options not used")
+            self.assertEqual(matches, [], msg="FAIL: command line options not used")
 
     def testCommandLineOptionsArePrinted(self):
         self.makeDirAndCopyInput("test")
         launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)
         shutil.copytree("test", "test_copy")
-        extra_options = ["-d", "test_copy", "-f", "BOUT.settings", "-o",
-                         "testsettings", "-l", "bout.log", "--foo_flag", "some:option=value"]
-        _, out = launch_safe(self.command + " " + " ".join(extra_options), pipe=True, nproc=1, mthread=1)
+        extra_options = [
+            "-d",
+            "test_copy",
+            "-f",
+            "BOUT.settings",
+            "-o",
+            "testsettings",
+            "-l",
+            "bout.log",
+            "--foo_flag",
+            "some:option=value",
+        ]
+        _, out = launch_safe(
+            self.command + " " + " ".join(extra_options), pipe=True, nproc=1, mthread=1
+        )
 
         command_line_options = None
         for line in out.splitlines():
@@ -136,8 +185,11 @@ class TestCommandLineArgs(unittest.TestCase):
                 command_line_options = line
 
         for option in extra_options:
-            self.assertIn(option, command_line_options,
-                          msg="FAIL: option {} not printed out".format(option))
+            self.assertIn(
+                option,
+                command_line_options,
+                msg="FAIL: option {} not printed out".format(option),
+            )
 
 
 if __name__ == "__main__":
