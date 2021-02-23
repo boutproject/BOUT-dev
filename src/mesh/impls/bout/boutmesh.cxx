@@ -88,10 +88,11 @@ BoutMesh::~BoutMesh() {
 
 namespace bout {
 CheckMeshResult checkBoutMeshYDecomposition(int total_processors, int num_y_processors,
-                                            int num_local_y_points, int ny,
-                                            int num_y_guards, int jyseps1_1,
+                                            int ny, int num_y_guards, int jyseps1_1,
                                             int jyseps2_1, int jyseps1_2, int jyseps2_2,
                                             int ny_inner) {
+
+  const int num_local_y_points = ny / num_y_processors;
 
   // Check size of Y mesh if we've got multiple processors
   if (num_local_y_points < num_y_guards and total_processors != 1) {
@@ -327,9 +328,8 @@ int BoutMesh::load() {
       NXPE = NPES / NYPE;
     }
 
-    auto result =
-        bout::checkBoutMeshYDecomposition(NPES, NYPE, ny / NYPE, ny, MYG, jyseps1_1,
-                                          jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
+    auto result = bout::checkBoutMeshYDecomposition(
+        NPES, NYPE, ny, MYG, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
 
     if (not result.success) {
       throw BoutException(result.reason);
@@ -355,11 +355,9 @@ int BoutMesh::load() {
         output_info.write(_("\tCandidate value: {:d}\n"), i);
 
         const int nyp = NPES / i;
-        const int ysub = ny / nyp;
 
-        auto result =
-            bout::checkBoutMeshYDecomposition(NPES, nyp, ysub, ny, MYG, jyseps1_1,
-                                              jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
+        auto result = bout::checkBoutMeshYDecomposition(
+            NPES, nyp, ny, MYG, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
 
         if (not result.success) {
           output_info.write(result.reason);
