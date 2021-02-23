@@ -37,7 +37,7 @@ selfSolve = false
 timestep = 0.01
 
 [solver:advance]
-type = karniadakis
+type = splitrk
 timestep = 0.001
 
 [f]

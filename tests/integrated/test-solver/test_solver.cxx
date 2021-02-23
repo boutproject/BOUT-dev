@@ -101,9 +101,6 @@ int main(int argc, char** argv) {
   root["imexbdf2"]["adaptive"] = true;
   root["imexbdf2"]["adaptRtol"] = 1.e-5;
 
-  root["karniadakis"]["nout"] = 100;
-  root["karniadakis"]["timestep"] = end / (NOUT * 10000);
-
   root["petsc"]["nout"] = 10000;
   root["petsc"]["output_step"] = end / 10000;
 

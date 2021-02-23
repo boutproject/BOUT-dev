@@ -58,7 +58,7 @@ ATOL = 1e-10 # absolute tolerance
 RTOL = 1e-05  # relative tolerance
 mxstep = 50000
 
-type = karniadakis
+type = splitrk
 timestep = 0.0001
 
 ##################################################

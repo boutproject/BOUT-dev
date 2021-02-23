@@ -17,7 +17,7 @@ dx = 0.2
 dy = 1.0
 
 [solver]
-#type=karniadakis
+#type=splitrk
 timestep = 0.001
 
 [diffusion]

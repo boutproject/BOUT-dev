@@ -47,7 +47,11 @@
   have been set; this is only a problem if you don't call
   `BoutInitialise`. [\#2062](https://github.com/boutproject/BOUT-dev/pull/2062)
 - Support for reading/writing HDF5 files has been removed ahead of completely
-  refactoring the I/O systems. [\#2208](https://github.com/boutproject/BOUT-dev/pull/2208)
+  refactoring the I/O
+  systems. [\#2208](https://github.com/boutproject/BOUT-dev/pull/2208)
+- Removed the Karniadakis time solver. Other choices for split-operator schemes
+  are: `splitrk` (built-in), `imexbdf2` (requires PETSc), and `arkode` (requires
+  SUNDIALS) [\#2241](https://github.com/boutproject/BOUT-dev/pull/2241)
 
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)
