@@ -70,7 +70,7 @@ def run_zeff_case(zeff):
         timestep = 1e3
 
     # Delete old output files
-    shell("rm data/BOUT.dmp.*.nc")
+    shell("rm -f data/BOUT.dmp.*.nc")
 
     print("Running drift instability test, zeff = ", zeff)
 
