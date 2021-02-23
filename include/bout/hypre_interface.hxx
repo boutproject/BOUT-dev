@@ -495,7 +495,7 @@ public:
         const auto i = std::distance(cbegin(positions), column_position);
         value += weights[i] * value_;
       }
-      setValues(value);
+      addValues(value_);
       return *this;
     }
 
@@ -513,6 +513,21 @@ public:
       //BOUT_OMP(critical)
       for (HYPRE_BigInt i = 0; i < positions.size(); ++i) {
         matrix->setVal(row, positions[i], values[i]);
+      }
+
+    }
+
+    void addValues(BoutReal value_) {
+      TRACE("HypreMatrix setting values at ({}, {})", row, column);
+      ASSERT3(!positions.empty());
+      std::vector<HYPRE_Complex> values;
+      std::transform(
+          weights.begin(), weights.end(), std::back_inserter(values),
+          [&value_](BoutReal weight) -> HYPRE_Complex { return weight * value_; });
+      HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>(positions.size());
+      //BOUT_OMP(critical)
+      for (HYPRE_BigInt i = 0; i < positions.size(); ++i) {
+        matrix->addVal(row, positions[i], values[i]);
       }
 
     }
@@ -564,6 +579,38 @@ public:
     for(HYPRE_BigInt col_ind = 0; col_ind < (*J)[i].size(); ++col_ind) {
       if ((*J)[i][col_ind] == column) {
         (*V)[i][col_ind] = value;
+        value_set  = true;
+        break;
+      }
+    }
+
+    if (!value_set)
+    {
+      (*V)[i].push_back(value);
+      (*J)[i].push_back(column);
+    }
+  }
+
+  void addVal(const ind_type& row, const ind_type& column, BoutReal value) {
+    const HYPRE_BigInt global_row = index_converter->getGlobal(row);
+    const HYPRE_BigInt global_column = index_converter->getGlobal(column);
+#if CHECKLEVEL >= 1
+    if (global_row < 0 or global_column < 0) {
+      throw BoutException(
+          "Invalid HypreMatrix element at row = ({}, {}, {}), column = ({}, {}, {})",
+          row.x(), row.y(), row.z(), column.x(), column.y(), column.z());
+    }
+#endif
+    return addVal(global_row, global_column, value);
+  }
+
+  void addVal(const HYPRE_BigInt row, const HYPRE_BigInt column, BoutReal value) {
+    HYPRE_BigInt i = row - ilower;
+    ASSERT2(i >= 0 && i < num_rows);
+    bool value_set = false;
+    for(HYPRE_BigInt col_ind = 0; col_ind < (*J)[i].size(); ++col_ind) {
+      if ((*J)[i][col_ind] == column) {
+        (*V)[i][col_ind] += value;
         value_set  = true;
         break;
       }
