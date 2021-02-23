@@ -33,7 +33,6 @@
 #include <iterator>
 #include <memory>
 #include <numeric>
-#include <optional>
 #include <random>
 #include <sstream>
 #include <string>
