@@ -204,8 +204,10 @@ protected:
            int pe_xind, int pe_yind);
 
   /// Very basic initialisation, only suitable for testing
-  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg)
-      : nx(input_nx), ny(input_ny), nz(input_nz), MXG(mxg), MYG(myg), MZG(0) {}
+  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int input_npes)
+      : nx(input_nx), ny(input_ny), nz(input_nz), NPES(input_npes), ixseps1(nx),
+        ixseps2(nx), jyseps1_1(-1), jyseps2_1(ny / 2), jyseps1_2(jyseps2_1),
+        jyseps2_2(ny - 1), ny_inner(jyseps2_1), MXG(mxg), MYG(myg), MZG(0) {}
 
   /// For debugging purposes (when creating fake parallel meshes), make
   /// the send and receive buffers share memory. This allows for
@@ -241,6 +243,11 @@ protected:
   /// Version of `setYDecompositionindices` that returns the values
   /// used, useful for testing
   DecompositionIndices setYDecompositionIndices(DecompositionIndices indices);
+
+  /// Choose NXPE (or NYPE) based on user input
+  void chooseProcessorSplit(Options& options);
+  /// Find a value for NXPE
+  void findProcessorSplit();
 
 private:
   std::string gridname;

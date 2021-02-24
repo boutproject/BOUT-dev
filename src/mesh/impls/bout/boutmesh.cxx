@@ -224,6 +224,93 @@ CheckMeshResult checkBoutMeshYDecomposition(int total_processors, int num_y_proc
 }
 } // namespace bout
 
+void BoutMesh::chooseProcessorSplit(Options& options) {
+  // Possible issues:
+  // - can set both NXPE and NYPE, but only NXPE is used
+  // - can set NXPE > nx
+  // - can set NYPE > ny (if only one processor)
+
+  if (options.isSet("NXPE")) {
+    NXPE = options["NXPE"]
+               .doc("Decomposition in the radial direction. If not given then calculated "
+                    "automatically.")
+               .withDefault(1);
+    if ((NPES % NXPE) != 0) {
+      throw BoutException(
+          _("Number of processors ({:d}) not divisible by NPs in x direction ({:d})\n"),
+          NPES, NXPE);
+    }
+
+    NYPE = NPES / NXPE;
+  } else {
+    // NXPE not set, but NYPE is
+    NYPE = options["NYPE"]
+               .doc("Decomposition in the parallel direction. Can be given instead of "
+                    "NXPE. If neither is given, then calculated automatically.")
+               .withDefault(1);
+    if ((NPES % NYPE) != 0) {
+      throw BoutException(
+          _("Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"),
+          NPES, NYPE);
+    }
+
+    NXPE = NPES / NYPE;
+  }
+
+  auto result = bout::checkBoutMeshYDecomposition(
+      NPES, NYPE, ny, MYG, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
+
+  if (not result.success) {
+    throw BoutException(result.reason);
+  }
+}
+
+void BoutMesh::findProcessorSplit() {
+  MX = nx - 2 * MXG;
+
+  NXPE = -1; // Best option
+
+  // Results in square domains
+  const BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny));
+
+  output_info.write(_("Finding value for NXPE (ideal = {:f})\n"), ideal);
+
+  for (int i = 1; i <= NPES; i++) { // Loop over all possibilities
+    if ((NPES % i == 0) &&          // Processors divide equally
+        (MX % i == 0) &&            // Mesh in X divides equally
+        (ny % (NPES / i) == 0)) {   // Mesh in Y divides equally
+
+      output_info.write(_("\tCandidate value: {:d}\n"), i);
+
+      const int nyp = NPES / i;
+
+      auto result = bout::checkBoutMeshYDecomposition(
+          NPES, nyp, ny, MYG, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
+
+      if (not result.success) {
+        output_info.write(result.reason);
+        continue;
+      }
+
+      output_info.write(_("\t -> Good value\n"));
+      // Found an acceptable value
+      if ((NXPE < 1) || (fabs(ideal - i) < fabs(ideal - NXPE))) {
+        NXPE = i; // Keep value nearest to the ideal
+      }
+    }
+  }
+
+  if (NXPE < 1)
+    throw BoutException(_("Could not find a valid value for NXPE. Try a different "
+                          "number of processors."));
+
+  NYPE = NPES / NXPE;
+
+  output_progress.write(_("\tDomain split (NXPE={:d}, NYPE={:d}) into domains "
+                          "(localNx={:d}, localNy={:d})\n"),
+                        NXPE, NYPE, MX / NXPE, ny / NYPE);
+}
+
 int BoutMesh::load() {
   TRACE("BoutMesh::load()");
 
@@ -323,87 +410,10 @@ int BoutMesh::load() {
   // For now don't parallelise z
   NZPE = 1;
 
-  if (options.isSet("NXPE") or options.isSet("NYPE")) {    // Specified NXPE
-    if (options.isSet("NXPE")) {
-      NXPE = options["NXPE"]
-                 .doc("Decomposition in the radial direction. If not given then calculated "
-                      "automatically.")
-                 .withDefault(1);
-      if ((NPES % NXPE) != 0) {
-        throw BoutException(
-            _("Number of processors ({:d}) not divisible by NPs in x direction ({:d})\n"),
-            NPES, NXPE);
-      }
-
-      NYPE = NPES / NXPE;
-    } else {
-      // NXPE not set, but NYPE is
-      NYPE = options["NYPE"]
-                 .doc("Decomposition in the parallel direction. Can be given instead of "
-                      "NXPE. If neither is given, then calculated automatically.")
-                 .withDefault(1);
-      if ((NPES % NYPE) != 0) {
-        throw BoutException(
-            _("Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"),
-            NPES, NYPE);
-      }
-
-      NXPE = NPES / NYPE;
-    }
-
-    auto result = bout::checkBoutMeshYDecomposition(
-        NPES, NYPE, ny, MYG, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
-
-    if (not result.success) {
-      throw BoutException(result.reason);
-    }
-
+  if (options.isSet("NXPE") or options.isSet("NYPE")) {
+    chooseProcessorSplit(options);
   } else {
-    // Choose NXPE
-
-    MX = nx - 2 * MXG;
-
-    NXPE = -1; // Best option
-    
-    // Results in square domains
-    const BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny));
-
-    output_info.write(_("Finding value for NXPE (ideal = {:f})\n"), ideal);
-
-    for (int i = 1; i <= NPES; i++) { // Loop over all possibilities
-      if ((NPES % i == 0) &&          // Processors divide equally
-          (MX % i == 0) &&            // Mesh in X divides equally
-          (ny % (NPES / i) == 0)) {   // Mesh in Y divides equally
-
-        output_info.write(_("\tCandidate value: {:d}\n"), i);
-
-        const int nyp = NPES / i;
-
-        auto result = bout::checkBoutMeshYDecomposition(
-            NPES, nyp, ny, MYG, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
-
-        if (not result.success) {
-          output_info.write(result.reason);
-          continue;
-        }
-
-        output_info.write(_("\t -> Good value\n"));
-        // Found an acceptable value
-        if ((NXPE < 1) || (fabs(ideal - i) < fabs(ideal - NXPE))) {
-          NXPE = i; // Keep value nearest to the ideal
-        }
-      }
-    }
-
-    if (NXPE < 1)
-      throw BoutException(_("Could not find a valid value for NXPE. Try a different "
-                            "number of processors."));
-
-    NYPE = NPES / NXPE;
-
-    output_progress.write(
-        _("\tDomain split (NXPE={:d}, NYPE={:d}) into domains (localNx={:d}, localNy={:d})\n"),
-        NXPE, NYPE, MX / NXPE, ny / NYPE);
+    findProcessorSplit();
   }
 
   /// Get X and Y processor indices

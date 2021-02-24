@@ -12,10 +12,13 @@
 
 class BoutMeshExposer : public BoutMesh {
 public:
-  BoutMeshExposer(int input_nx, int input_ny, int input_nz, int mxg, int myg)
-      : BoutMesh(input_nx, input_ny, input_nz, mxg, myg) {}
+  BoutMeshExposer(int input_nx, int input_ny, int input_nz, int mxg, int myg,
+                  int input_npes = 1)
+      : BoutMesh(input_nx, input_ny, input_nz, mxg, myg, input_npes) {}
   // Make protected methods public for testing
+  using BoutMesh::chooseProcessorSplit;
   using BoutMesh::DecompositionIndices;
+  using BoutMesh::findProcessorSplit;
   using BoutMesh::setYDecompositionIndices;
 };
 
@@ -181,11 +184,12 @@ struct BoutMeshDecompositionTest
 INSTANTIATE_TEST_SUITE_P(
     GoodDecompositions, BoutMeshDecompositionTest,
     ::testing::Values(
-      DecompositionTestParameters{1, 1, 1, 1, {-1, 0, 0, 0, 0}, "", "OnePoint"},
-      DecompositionTestParameters{1, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPoints"},
-      DecompositionTestParameters{2, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCores"},
-      DecompositionTestParameters{2, 2, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCoresNYPE2"}
-      ),
+        DecompositionTestParameters{1, 1, 1, 1, {-1, 0, 0, 0, 0}, "", "OnePoint"},
+        DecompositionTestParameters{1, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPoints"},
+        DecompositionTestParameters{
+            2, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCores"},
+        DecompositionTestParameters{
+            2, 2, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCoresNYPE2"}),
     DecompositionTestParametersToString);
 
 TEST_P(BoutMeshDecompositionTest, SingleCoreYDecomposition) {
@@ -245,4 +249,67 @@ TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
 
   EXPECT_FALSE(result.success);
   EXPECT_THAT(result.reason, HasSubstr(params.expected_message));
+}
+
+TEST(BoutMeshTest, ChooseProcessorSplitBadNXPE) {
+  WithQuietOutput info{output_info};
+  Options options{{"NXPE", 3}};
+
+  BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST(BoutMeshTest, ChooseProcessorSplitBadNYPE) {
+  WithQuietOutput info{output_info};
+  Options options{{"NYPE", 7}};
+
+  BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST(BoutMeshTest, ChooseProcessorSplitNXPE) {
+  WithQuietOutput info{output_info};
+  Options options{{"NXPE", 4}};
+
+  BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
+
+  EXPECT_NO_THROW(mesh.chooseProcessorSplit(options));
+
+  EXPECT_EQ(mesh.getNXPE(), 4);
+  EXPECT_EQ(mesh.getNYPE(), 2);
+}
+
+TEST(BoutMeshTest, ChooseProcessorSplitBadNXPENotEnoughGuards) {
+  WithQuietOutput info{output_info};
+  Options options{{"NXPE", 4}};
+
+  BoutMeshExposer mesh(1, 24, 1, 1, 13, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST(BoutMeshTest, ChooseProcessorSplitNYPE) {
+  WithQuietOutput info{output_info};
+  Options options{{"NYPE", 4}};
+
+  BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
+
+  EXPECT_NO_THROW(mesh.chooseProcessorSplit(options));
+
+  EXPECT_EQ(mesh.getNXPE(), 2);
+  EXPECT_EQ(mesh.getNYPE(), 4);
+}
+
+// TODO: Parameterise this test
+TEST(BoutMeshTest, FindProcessorSplit1x24x1x8) {
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh(1, 24, 1, 0, 0, 8);
+
+  EXPECT_NO_THROW(mesh.findProcessorSplit());
+
+  EXPECT_EQ(mesh.getNXPE(), 1);
+  EXPECT_EQ(mesh.getNYPE(), 8);
 }
