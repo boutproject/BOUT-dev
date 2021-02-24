@@ -1,5 +1,5 @@
-#include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include "../src/mesh/impls/bout/boutmesh.hxx"
 #include "options.hxx"
@@ -50,7 +50,7 @@ TEST(BoutMeshTest, NullOptionsCheck) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesCoreOnly) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected {-1, 7, 15, 23, 12};
+  const BoutMeshExposer::DecompositionIndices expected{-1, 7, 15, 23, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -62,7 +62,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesCoreOnly) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesSingleNull) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected {3, 7, 7, 19, 12};
+  const BoutMeshExposer::DecompositionIndices expected{3, 7, 7, 19, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -74,7 +74,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesSingleNull) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesDoubleNull) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected {3, 7, 15, 19, 12};
+  const BoutMeshExposer::DecompositionIndices expected{3, 7, 15, 19, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -86,7 +86,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesDoubleNull) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesJyseps11Low) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected {-1, 7, 15, 19, 12};
+  const BoutMeshExposer::DecompositionIndices expected{-1, 7, 15, 19, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -96,7 +96,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesJyseps11Low) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesJyseps21Low) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected {3, 4, 15, 19, 12};
+  const BoutMeshExposer::DecompositionIndices expected{3, 4, 15, 19, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -106,7 +106,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesJyseps21Low) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesJyseps12Low) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected {3, 7, 7, 19, 12};
+  const BoutMeshExposer::DecompositionIndices expected{3, 7, 7, 19, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -116,7 +116,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesJyseps12Low) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22High) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected {3, 7, 15, 23, 12};
+  const BoutMeshExposer::DecompositionIndices expected{3, 7, 15, 23, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -126,7 +126,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22High) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22Low) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected {3, 7, 15, 15, 12};
+  const BoutMeshExposer::DecompositionIndices expected{3, 7, 15, 15, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -137,10 +137,9 @@ TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22Low) {
 TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22LowInconsistent) {
   WithQuietOutput warn{output_warn};
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
-  
+
   EXPECT_THROW(mesh.setYDecompositionIndices({3, 7, 32, 8, 12}), BoutException);
 }
-
 
 struct DecompositionTestParameters {
   int total_processors;
