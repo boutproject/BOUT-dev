@@ -202,12 +202,45 @@ class BoutMesh : public Mesh {
 protected:
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
            int pe_xind, int pe_yind);
+
+  /// Very basic initialisation, only suitable for testing
+  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg)
+      : nx(input_nx), ny(input_ny), nz(input_nz), MXG(mxg), MYG(myg), MZG(0) {}
+
   /// For debugging purposes (when creating fake parallel meshes), make
   /// the send and receive buffers share memory. This allows for
   /// communications to be faked between meshes as though they were on
   /// different processors.
   void overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
 			   BoutMesh* xout);
+
+  /// Set the various y-decomposition indices, enforcing the following invariants:
+  ///
+  /// - `jyseps1_1` >= -1
+  /// - `jyseps2_1` >= `jyseps1_1`
+  /// - `jyseps1_2` >= `jyseps2_1`
+  /// - `jyseps2_2` >= `jyseps1_2`
+  /// - `jyseps2_2` < `ny`
+  ///
+  /// Inputs inconsistent with these invariants will be set to the
+  /// minimum acceptable value.
+  ///
+  /// Also sets `numberOfXPoints` consistently (0, 1, or 2).
+  void setYDecompositionIndices(int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
+                                int jyseps2_2_, int ny_inner_);
+
+  /// Structure for `setYDecompositionIndices` input/output values
+  struct DecompositionIndices {
+    int jyseps1_1;
+    int jyseps2_1;
+    int jyseps1_2;
+    int jyseps2_2;
+    int ny_inner;
+  };
+
+  /// Version of `setYDecompositionindices` that returns the values
+  /// used, useful for testing
+  DecompositionIndices setYDecompositionIndices(DecompositionIndices indices);
 
 private:
   std::string gridname;
@@ -317,14 +350,18 @@ private:
   //////////////////////////////////////////////////
   // X communicator
 
-  MPI_Comm comm_x; ///< Communicator containing all processors in X
+  /// Communicator containing all processors in X
+  MPI_Comm comm_x{MPI_COMM_NULL};
 
   //////////////////////////////////////////////////
   // Surface communications
 
-  /// Communicators in Y. Inside both separatrices; between separatrices;
-  /// and outside both separatrices
-  MPI_Comm comm_inner, comm_middle, comm_outer;
+  /// Communicator in Y inside both separatrices
+  MPI_Comm comm_inner{MPI_COMM_NULL};
+  /// Communicator in Y between separatrices
+  MPI_Comm comm_middle{MPI_COMM_NULL};
+  /// Communicator in Y outside both separatrices
+  MPI_Comm comm_outer{MPI_COMM_NULL};
 
   //////////////////////////////////////////////////
   // Communication routines

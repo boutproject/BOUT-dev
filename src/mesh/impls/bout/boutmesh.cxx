@@ -86,6 +86,67 @@ BoutMesh::~BoutMesh() {
     MPI_Comm_free(&comm_outer);
 }
 
+BoutMesh::DecompositionIndices
+BoutMesh::setYDecompositionIndices(BoutMesh::DecompositionIndices indices) {
+  setYDecompositionIndices(indices.jyseps1_1, indices.jyseps2_1, indices.jyseps1_2,
+                           indices.jyseps2_2, indices.ny_inner);
+
+  return {jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner};
+}
+
+void BoutMesh::setYDecompositionIndices(int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
+                                        int jyseps2_2_, int ny_inner_) {
+  // Set member variables
+  this->jyseps1_1 = jyseps1_1_;
+  this->jyseps2_1 = jyseps2_1_;
+  this->jyseps1_2 = jyseps1_2_;
+  this->jyseps2_2 = jyseps2_2_;
+  this->ny_inner = ny_inner_;
+
+  // Check inputs
+  if (jyseps1_1 < -1) {
+    output_warn.write("\tWARNING: jyseps1_1 ({:d}) must be >= -1. Setting to -1\n",
+                      jyseps1_1);
+    jyseps1_1 = -1;
+  }
+
+  if (jyseps2_1 < jyseps1_1) {
+    output_warn.write(
+        "\tWARNING: jyseps2_1 ({:d}) must be >= jyseps1_1 ({:d}). Setting to {:d}\n",
+        jyseps2_1, jyseps1_1, jyseps1_1 + 1);
+    jyseps2_1 = jyseps1_1 + 1;
+  }
+  if (jyseps1_2 < jyseps2_1) {
+    output_warn.write(
+        "\tWARNING: jyseps1_2 ({:d}) must be >= jyseps2_1 ({:d}). Setting to {:d}\n",
+        jyseps1_2, jyseps2_1, jyseps2_1);
+    jyseps1_2 = jyseps2_1;
+  }
+  if (jyseps2_2 >= ny) {
+    output_warn.write(
+        "\tWARNING: jyseps2_2 ({:d}) must be < ny ({:d}). Setting to {:d}\n", jyseps2_2,
+        ny, ny - 1);
+    jyseps2_2 = ny - 1;
+  }
+  if (jyseps2_2 < jyseps1_2) {
+    if (jyseps1_2 >= ny) {
+      throw BoutException("jyseps1_2 ({:d}) must be < ny ({:d}).", jyseps1_2, ny);
+    }
+    output_warn.write(
+        "\tWARNING: jyseps2_2 ({:d}) must be >= jyseps1_2 ({:d}). Setting to {:d}\n",
+        jyseps2_2, jyseps1_2, jyseps1_2);
+    jyseps2_2 = jyseps1_2;
+  }
+
+  if (jyseps1_1 < 0 and jyseps2_2 >= ny - 1) {
+    numberOfXPoints = 0;
+  } else if (jyseps2_1 == jyseps1_2) {
+    numberOfXPoints = 1;
+  } else {
+    numberOfXPoints = 2;
+  }
+}
+
 namespace bout {
 CheckMeshResult checkBoutMeshYDecomposition(int total_processors, int num_y_processors,
                                             int ny, int num_y_guards, int jyseps1_1,
@@ -256,49 +317,11 @@ int BoutMesh::load() {
   GlobalNyNoBoundaries = ny;
   GlobalNzNoBoundaries = nz;
 
-  /// Check inputs
-  if (jyseps1_1 < -1) {
-    output_warn.write("\tWARNING: jyseps1_1 ({:d}) must be >= -1. Setting to -1\n",
-                      jyseps1_1);
-    jyseps1_1 = -1;
-  }
-
-  if (jyseps2_1 < jyseps1_1) {
-    output_warn.write(
-        "\tWARNING: jyseps2_1 ({:d}) must be >= jyseps1_1 ({:d}). Setting to {:d}\n", jyseps2_1,
-        jyseps1_1, jyseps1_1 + 1);
-    jyseps2_1 = jyseps1_1 + 1;
-  }
-  if (jyseps1_2 < jyseps2_1) {
-    output_warn.write(
-        "\tWARNING: jyseps1_2 ({:d}) must be >= jyseps2_1 ({:d}). Setting to {:d}\n", jyseps1_2,
-        jyseps2_1, jyseps2_1);
-    jyseps1_2 = jyseps2_1;
-  }
-  if (jyseps2_2 >= ny) {
-    output_warn.write("\tWARNING: jyseps2_2 ({:d}) must be < ny ({:d}). Setting to {:d}\n",
-                      jyseps2_2, ny, ny - 1);
-    jyseps2_2 = ny - 1;
-  }
-  if (jyseps2_2 < jyseps1_2) {
-    if (jyseps1_2 >= ny) {
-      throw BoutException("jyseps1_2 ({:d}) must be < ny ({:d}).", jyseps1_2, ny);
-    }
-    output_warn.write("\tWARNING: jyseps2_2 ({:d}) must be >= jyseps1_2 ({:d}). Setting to {:d}\n",
-                      jyseps2_2, jyseps1_2, jyseps1_2);
-    jyseps2_2 = jyseps1_2;
-  }
+  // Check inputs
+  setYDecompositionIndices(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
 
   // For now don't parallelise z
   NZPE = 1;
-
-  if (jyseps1_1 < 0 and jyseps2_2 >= ny - 1) {
-    numberOfXPoints = 0;
-  } else if (jyseps2_1 == jyseps1_2) {
-    numberOfXPoints = 1;
-  } else {
-    numberOfXPoints = 2;
-  }
 
   if (options.isSet("NXPE") or options.isSet("NYPE")) {    // Specified NXPE
     if (options.isSet("NXPE")) {

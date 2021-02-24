@@ -10,12 +10,134 @@
 
 #include <ostream>
 
+class BoutMeshExposer : public BoutMesh {
+public:
+  BoutMeshExposer(int input_nx, int input_ny, int input_nz, int mxg, int myg)
+      : BoutMesh(input_nx, input_ny, input_nz, mxg, myg) {}
+  // Make protected methods public for testing
+  using BoutMesh::DecompositionIndices;
+  using BoutMesh::setYDecompositionIndices;
+};
+
+bool operator==(const BoutMeshExposer::DecompositionIndices& lhs,
+                const BoutMeshExposer::DecompositionIndices& rhs) {
+  return (lhs.jyseps1_1 == rhs.jyseps1_1) and (lhs.jyseps2_1 == rhs.jyseps2_1)
+         and (lhs.jyseps1_2 == rhs.jyseps1_2) and (lhs.jyseps2_2 == rhs.jyseps2_2)
+         and (lhs.ny_inner == rhs.ny_inner);
+}
+
+std::ostream& operator<<(std::ostream& out,
+                         const BoutMeshExposer::DecompositionIndices& value) {
+  return out << fmt::format("BoutMesh::DecompositionIndices{{"
+                            "jyseps1_1 = {}, "
+                            "jyseps2_1 = {}, "
+                            "jyseps1_2 = {}, "
+                            "jyseps2_2 = {}, "
+                            "ny_inner = {}"
+                            "}}",
+                            value.jyseps1_1, value.jyseps2_1, value.jyseps1_2,
+                            value.jyseps2_2, value.ny_inner);
+}
 TEST(BoutMeshTest, NullOptionsCheck) {
   WithQuietOutput info{output_info};
   WithQuietOutput warn{output_warn};
 
   EXPECT_NO_THROW(BoutMesh mesh(new FakeGridDataSource, nullptr));
 }
+
+TEST(BoutMeshTest, SetYDecompositionIndicesCoreOnly) {
+  WithQuietOutput warn{output_warn};
+  const BoutMeshExposer::DecompositionIndices expected {-1, 7, 15, 23, 12};
+
+  BoutMeshExposer mesh(1, 24, 1, 1, 1);
+
+  // Should return set indices unchanged
+  const auto actual_indices = mesh.setYDecompositionIndices(expected);
+  EXPECT_EQ(actual_indices, expected);
+  EXPECT_EQ(mesh.numberOfXPoints, 0);
+}
+
+TEST(BoutMeshTest, SetYDecompositionIndicesSingleNull) {
+  WithQuietOutput warn{output_warn};
+  const BoutMeshExposer::DecompositionIndices expected {3, 7, 7, 19, 12};
+
+  BoutMeshExposer mesh(1, 24, 1, 1, 1);
+
+  // Should return set indices unchanged
+  const auto actual_indices = mesh.setYDecompositionIndices(expected);
+  EXPECT_EQ(actual_indices, expected);
+  EXPECT_EQ(mesh.numberOfXPoints, 1);
+}
+
+TEST(BoutMeshTest, SetYDecompositionIndicesDoubleNull) {
+  WithQuietOutput warn{output_warn};
+  const BoutMeshExposer::DecompositionIndices expected {3, 7, 15, 19, 12};
+
+  BoutMeshExposer mesh(1, 24, 1, 1, 1);
+
+  // Should return set indices unchanged
+  const auto actual_indices = mesh.setYDecompositionIndices(expected);
+  EXPECT_EQ(actual_indices, expected);
+  EXPECT_EQ(mesh.numberOfXPoints, 2);
+}
+
+TEST(BoutMeshTest, SetYDecompositionIndicesJyseps11Low) {
+  WithQuietOutput warn{output_warn};
+  const BoutMeshExposer::DecompositionIndices expected {-1, 7, 15, 19, 12};
+
+  BoutMeshExposer mesh(1, 24, 1, 1, 1);
+
+  const auto actual_indices = mesh.setYDecompositionIndices({-12, 7, 15, 19, 12});
+  EXPECT_EQ(actual_indices, expected);
+}
+
+TEST(BoutMeshTest, SetYDecompositionIndicesJyseps21Low) {
+  WithQuietOutput warn{output_warn};
+  const BoutMeshExposer::DecompositionIndices expected {3, 4, 15, 19, 12};
+
+  BoutMeshExposer mesh(1, 24, 1, 1, 1);
+
+  const auto actual_indices = mesh.setYDecompositionIndices({3, 1, 15, 19, 12});
+  EXPECT_EQ(actual_indices, expected);
+}
+
+TEST(BoutMeshTest, SetYDecompositionIndicesJyseps12Low) {
+  WithQuietOutput warn{output_warn};
+  const BoutMeshExposer::DecompositionIndices expected {3, 7, 7, 19, 12};
+
+  BoutMeshExposer mesh(1, 24, 1, 1, 1);
+
+  const auto actual_indices = mesh.setYDecompositionIndices({3, 7, 5, 19, 12});
+  EXPECT_EQ(actual_indices, expected);
+}
+
+TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22High) {
+  WithQuietOutput warn{output_warn};
+  const BoutMeshExposer::DecompositionIndices expected {3, 7, 15, 23, 12};
+
+  BoutMeshExposer mesh(1, 24, 1, 1, 1);
+
+  const auto actual_indices = mesh.setYDecompositionIndices({3, 7, 15, 32, 12});
+  EXPECT_EQ(actual_indices, expected);
+}
+
+TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22Low) {
+  WithQuietOutput warn{output_warn};
+  const BoutMeshExposer::DecompositionIndices expected {3, 7, 15, 15, 12};
+
+  BoutMeshExposer mesh(1, 24, 1, 1, 1);
+
+  const auto actual_indices = mesh.setYDecompositionIndices({3, 7, 15, 8, 12});
+  EXPECT_EQ(actual_indices, expected);
+}
+
+TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22LowInconsistent) {
+  WithQuietOutput warn{output_warn};
+  BoutMeshExposer mesh(1, 24, 1, 1, 1);
+  
+  EXPECT_THROW(mesh.setYDecompositionIndices({3, 7, 32, 8, 12}), BoutException);
+}
+
 
 struct DecompositionTestParameters {
   int total_processors;
@@ -127,3 +249,4 @@ TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
   EXPECT_FALSE(result.success);
   EXPECT_THAT(result.reason, HasSubstr(params.expected_message));
 }
+
