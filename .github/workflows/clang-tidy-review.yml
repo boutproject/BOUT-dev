@@ -42,12 +42,12 @@ jobs:
                            -DCMAKE_EXPORT_COMPILE_COMMANDS=On
 
       - name: Run clang-tidy
-        uses: ZedThree/clang-tidy-review@v0.5.0
+        uses: ZedThree/clang-tidy-review@v0.6.0
         id: review
         with:
           build_dir: build
           apt_packages: "libfftw3-dev,libnetcdf-c++4-dev,libopenmpi-dev,petsc-dev,slepc-dev,liblapack-dev,libparpack2-dev,libsundials-dev,uuid-dev"
-          clang_tidy_checks: '-*,performance-*,readability-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,mpi-*,misc-*,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-misc-non-private-member-variables-in-classes'
+          clang_tidy_checks: '-*,performance-*,readability-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,mpi-*,misc-*,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-misc-non-private-member-variables-in-classes,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-type-vararg'
           # Googletest triggers a _lot_ of clang-tidy warnings, so ignore all
           # the unit tests until they're fixed or ignored upstream
           exclude: "tests/unit/*cxx"
