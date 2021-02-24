@@ -238,6 +238,13 @@ private:
 
   int MXG, MYG, MZG; // Boundary sizes
 
+  // Grid file provenance tracking info
+  std::string grid_id = "";
+  std::string hypnotoad_version = "";
+  std::string hypnotoad_git_hash = "";
+  std::string hypnotoad_git_diff = "";
+  std::string hypnotoad_geqdsk_filename = "";
+
   void default_connections();
   void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);
   void add_target(int ypos, int xge, int xlt);
