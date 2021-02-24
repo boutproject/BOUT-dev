@@ -42,7 +42,7 @@ jobs:
                            -DCMAKE_EXPORT_COMPILE_COMMANDS=On
 
       - name: Run clang-tidy
-        uses: ZedThree/clang-tidy-review@v0.5.0
+        uses: ZedThree/clang-tidy-review@v0.6.0
         id: review
         with:
           build_dir: build
