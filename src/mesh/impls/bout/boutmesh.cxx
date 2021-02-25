@@ -1604,12 +1604,7 @@ comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
  * can be implemented later (maybe)
  ****************************************************************/
 
-/// Returns the processor number, given X and Y processor indices.
-/*!
- * If out of range returns -1 (no processor)
- */
-
-int BoutMesh::PROC_NUM(int xind, int yind) {
+int BoutMesh::PROC_NUM(int xind, int yind) const {
   if ((xind >= NXPE) || (xind < 0))
     return -1;
   if ((yind >= NYPE) || (yind < 0))

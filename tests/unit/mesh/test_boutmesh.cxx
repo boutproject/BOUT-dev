@@ -19,6 +19,7 @@ public:
   using BoutMesh::chooseProcessorSplit;
   using BoutMesh::DecompositionIndices;
   using BoutMesh::findProcessorSplit;
+  using BoutMesh::PROC_NUM;
   using BoutMesh::setYDecompositionIndices;
 };
 
@@ -400,4 +401,56 @@ TEST_P(BadBoutMeshFindProcessorTest, FindProcessor) {
   mesh.setYDecompositionIndices(params.indices);
 
   EXPECT_THROW(mesh.findProcessorSplit(), BoutException);
+}
+
+struct ProcNumParameters {
+  int nxpe;
+  int xind;
+  int yind;
+  int expected_result;
+};
+
+std::ostream& operator<<(std::ostream& out, const ProcNumParameters& value) {
+  return out << fmt::format("NXPE = {}, processor index = ({}, {}), expected_result = {}",
+                            value.nxpe, value.xind, value.yind, value.expected_result);
+}
+
+struct BoutMeshProcNumTest : public testing::TestWithParam<ProcNumParameters> {
+  virtual ~BoutMeshProcNumTest() = default;
+};
+
+// Square domain with 4 processors:
+//     +-+-+
+//     |0|1|
+//     +-+-+
+//     |2|3|
+//     +-+-+
+INSTANTIATE_TEST_SUITE_P(
+    Square, BoutMeshProcNumTest,
+    ::testing::Values(ProcNumParameters{2, -8, 1, -1}, ProcNumParameters{2, 1, -8, -1},
+                      ProcNumParameters{2, 0, 0, 0}, ProcNumParameters{2, 1, 0, 1},
+                      ProcNumParameters{2, 0, 1, 2}, ProcNumParameters{2, 1, 1, 3},
+                      ProcNumParameters{2, 2, 1, -1}, ProcNumParameters{2, 1, 2, -1}));
+
+// Rectangular domain with 4 processors:
+//     +-+-+-+-+
+//     |0|1|2|3|
+//     +-+-+-+-+
+INSTANTIATE_TEST_SUITE_P(
+    Rectangle, BoutMeshProcNumTest,
+    ::testing::Values(ProcNumParameters{4, -8, 1, -1}, ProcNumParameters{4, 1, -8, -1},
+                      ProcNumParameters{4, 0, 0, 0}, ProcNumParameters{4, 1, 0, 1},
+                      ProcNumParameters{4, 2, 0, 2}, ProcNumParameters{4, 3, 0, 3},
+                      ProcNumParameters{4, 2, 1, -1}, ProcNumParameters{4, 1, 2, -1}));
+
+TEST_P(BoutMeshProcNumTest, ProcNum) {
+  WithQuietOutput info{output_info};
+  BoutMeshExposer mesh(4, 4, 1, 1, 1, 4);
+
+  const auto params = GetParam();
+  Options options{{"NXPE", params.nxpe}};
+  mesh.chooseProcessorSplit(options);
+
+  const int result = mesh.PROC_NUM(params.xind, params.yind);
+  EXPECT_EQ(result, params.expected_result);
 }

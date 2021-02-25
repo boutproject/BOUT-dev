@@ -277,13 +277,20 @@ private:
 
   std::vector<BoutReal> ShiftAngle; ///< Angle for twist-shift location
 
+protected:
+  // These are protected so we can make them public in the test suite
+  // for testing
+
   // Processor number, local <-> global translation
-  int PROC_NUM(int xind, int yind); // (PE_XIND, PE_YIND) -> MYPE
+  /// Returns the processor number, given X (\p xind) and Y (\p yind)
+  /// processor indices. Returns -1 if out of range (no processor)
+  int PROC_NUM(int xind, int yind) const;
   int YGLOBAL(int yloc, int yproc) const;
   int YLOCAL(int yglo, int yproc) const;
   int YPROC(int yind);
   int XPROC(int xind);
 
+private:
   // Twist-shift switches
   bool TS_up_in, TS_up_out, TS_down_in, TS_down_out;
 
