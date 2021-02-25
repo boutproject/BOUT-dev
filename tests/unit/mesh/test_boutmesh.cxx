@@ -301,14 +301,103 @@ TEST(BoutMeshTest, ChooseProcessorSplitNYPE) {
   EXPECT_EQ(mesh.getNYPE(), 4);
 }
 
-// TODO: Parameterise this test
-TEST(BoutMeshTest, FindProcessorSplit1x24x1x8) {
+struct FindProcessorParameters {
+  int total_processors;
+  int nx;
+  int ny;
+  int num_x_guards;
+  int num_y_guards;
+  BoutMeshExposer::DecompositionIndices indices;
+  int expected_nxpe;
+  int expected_nype;
+};
+
+std::ostream& operator<<(std::ostream& out, const FindProcessorParameters& value) {
+  return out << fmt::format(
+             "FindProcessorParameters{{"
+             "total_processors = {}, "
+             "nx = {}, "
+             "ny = {}, "
+             "num_x_guards = {}, "
+             "num_y_guards = {}, "
+             "jyseps1_1 = {}, "
+             "jyseps2_1 = {}, "
+             "jyseps1_2 = {}, "
+             "jyseps2_2 = {}, "
+             "ny_inner = {}, "
+             "expected_nxpe = {},"
+             "expected_nype = {} }}",
+             value.total_processors, value.nx, value.ny, value.num_x_guards,
+             value.num_y_guards, value.indices.jyseps1_1, value.indices.jyseps2_1,
+             value.indices.jyseps1_2, value.indices.jyseps2_2, value.indices.ny_inner,
+             value.expected_nxpe, value.expected_nype);
+}
+
+struct BoutMeshFindProcessorTest
+    : public testing::TestWithParam<FindProcessorParameters> {
+  virtual ~BoutMeshFindProcessorTest() = default;
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    GoodDecompositions, BoutMeshFindProcessorTest,
+    ::testing::Values(
+        FindProcessorParameters{8, 1, 24, 0, 0, {-1, 12, 12, 23, 12}, 1, 8},
+        FindProcessorParameters{12, 1, 24, 0, 0, {-1, 12, 12, 23, 12}, 1, 12},
+        FindProcessorParameters{24, 1, 24, 0, 0, {-1, 12, 12, 23, 12}, 1, 24},
+        FindProcessorParameters{8, 32, 24, 0, 0, {-1, 12, 12, 23, 12}, 4, 2},
+        FindProcessorParameters{12, 32, 24, 0, 0, {-1, 12, 12, 23, 12}, 4, 3},
+        FindProcessorParameters{24, 32, 24, 0, 0, {-1, 12, 12, 23, 12}, 4, 6},
+        FindProcessorParameters{8, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 1, 8},
+        FindProcessorParameters{16, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 2, 8},
+        FindProcessorParameters{32, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 4, 8},
+        FindProcessorParameters{64, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 8, 8},
+        FindProcessorParameters{256, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 16, 16},
+        FindProcessorParameters{8192, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 128, 64}));
+
+TEST_P(BoutMeshFindProcessorTest, FindProcessor) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput progress{output_progress};
   WithQuietOutput warn{output_warn};
 
-  BoutMeshExposer mesh(1, 24, 1, 0, 0, 8);
+  const auto params = GetParam();
+
+  BoutMeshExposer mesh(params.nx, params.ny, 1, params.num_x_guards, params.num_y_guards,
+                       params.total_processors);
+
+  mesh.setYDecompositionIndices(params.indices);
 
   EXPECT_NO_THROW(mesh.findProcessorSplit());
 
-  EXPECT_EQ(mesh.getNXPE(), 1);
-  EXPECT_EQ(mesh.getNYPE(), 8);
+  EXPECT_EQ(mesh.getNXPE(), params.expected_nxpe);
+  EXPECT_EQ(mesh.getNYPE(), params.expected_nype);
+}
+
+using BadBoutMeshFindProcessorTest = BoutMeshFindProcessorTest;
+
+INSTANTIATE_TEST_SUITE_P(
+    BadDecompositions, BadBoutMeshFindProcessorTest,
+    ::testing::Values(
+        FindProcessorParameters{9, 1, 24, 0, 0, {-1, 12, 12, 23, 12}, 1, 8},
+        FindProcessorParameters{25, 1, 24, 0, 0, {-1, 12, 12, 23, 12}, 1, 24},
+        FindProcessorParameters{9, 32, 24, 0, 0, {-1, 12, 12, 23, 12}, 4, 2},
+        FindProcessorParameters{13, 32, 24, 0, 0, {-1, 12, 12, 23, 12}, 4, 3},
+        FindProcessorParameters{23, 32, 24, 0, 0, {-1, 12, 12, 23, 12}, 4, 6},
+        FindProcessorParameters{7, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 1, 8},
+        FindProcessorParameters{24, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 2, 8},
+        FindProcessorParameters{8192, 132, 128, 2, 4, {15, 47, 79, 111, 64}, 16, 16},
+        FindProcessorParameters{16384, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 128, 64}));
+
+TEST_P(BadBoutMeshFindProcessorTest, FindProcessor) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput progress{output_progress};
+  WithQuietOutput warn{output_warn};
+
+  const auto params = GetParam();
+
+  BoutMeshExposer mesh(params.nx, params.ny, 1, params.num_x_guards, params.num_y_guards,
+                       params.total_processors);
+
+  mesh.setYDecompositionIndices(params.indices);
+
+  EXPECT_THROW(mesh.findProcessorSplit(), BoutException);
 }
