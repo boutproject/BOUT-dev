@@ -14,7 +14,11 @@ else
     echo "$arch and $compiler"
 fi
 
-env_prefix=/g/g91/bernede1/Projects/BOUT-dev
+env_prefix=${ENV_PREFIX:-""}
+if [[ -z ${env_prefix} ]]
+then
+    env_prefix="$(pwd)"
+fi
 
 build_base_dir=${env_prefix}
 build_prefix=${build_base_dir}/build/${arch}-${compiler}/
