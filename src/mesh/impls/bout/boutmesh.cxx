@@ -1675,8 +1675,9 @@ int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal; }
 int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const { return zglobal; }
 
 int BoutMesh::YPROC(int yind) const {
-  if ((yind < 0) || (yind > ny))
+  if ((yind < 0) || (yind >= ny)) {
     return -1;
+  }
   return yind / MYSUB;
 }
 
