@@ -15,15 +15,21 @@ public:
   BoutMeshExposer(int input_nx, int input_ny, int input_nz, int mxg, int myg,
                   int input_npes = 1)
       : BoutMesh(input_nx, input_ny, input_nz, mxg, myg, input_npes) {}
-  BoutMeshExposer(int nx, int ny, int nz, int nxpe, int nype, int pe_xind, int pe_yind)
-      : BoutMesh((nxpe * (nx - 2)) + 2, nype * ny, nz, 1, 1, nxpe, nype, pe_xind,
-                 pe_yind) {}
+  BoutMeshExposer(int nx, int ny, int nz, int nxpe, int nype, int pe_xind, int pe_yind,
+                  bool create_topology = true)
+      : BoutMesh((nxpe * (nx - 2)) + 2, nype * ny, nz, 1, 1, nxpe, nype, pe_xind, pe_yind,
+                 create_topology) {}
   // Make protected methods public for testing
+  using BoutMesh::add_target;
+  using BoutMesh::addBoundaryRegions;
   using BoutMesh::chooseProcessorSplit;
   using BoutMesh::DecompositionIndices;
+  using BoutMesh::default_connections;
   using BoutMesh::findProcessorSplit;
   using BoutMesh::PROC_NUM;
+  using BoutMesh::set_connection;
   using BoutMesh::setYDecompositionIndices;
+  using BoutMesh::topology;
   using BoutMesh::XPROC;
   using BoutMesh::YPROC;
 };
@@ -1225,4 +1231,100 @@ TEST(BoutMeshTest, LastY) {
   EXPECT_TRUE(mesh12.lastY());
   BoutMeshExposer mesh22(5, 3, 4, 3, 3, 2, 2);
   EXPECT_TRUE(mesh22.lastY());
+}
+
+TEST(BoutMeshTest, DefaultConnectionsSingleNull1x1) {
+  WithQuietOutput info{output_info};
+  // 5x3x1 grid on 1 processor, 1 boundary point. Boundaries should be
+  // simple 1D rectangles, with 4 boundaries on this processor
+  BoutMeshExposer mesh00(5, 3, 1, 1, 1, 0, 0, false);
+
+  mesh00.default_connections();
+
+  mesh00.createDefaultRegions();
+  mesh00.addBoundaryRegions();
+
+  EXPECT_EQ( mesh00.getRegion("RGN_LOWER_INNER_Y").size(), 5);
+  EXPECT_EQ( mesh00.getRegion("RGN_LOWER_OUTER_Y").size(), 0);
+  EXPECT_EQ( mesh00.getRegion("RGN_LOWER_Y").size(), 5);
+
+  EXPECT_EQ( mesh00.getRegion("RGN_UPPER_INNER_Y").size(), 0);
+  EXPECT_EQ( mesh00.getRegion("RGN_UPPER_OUTER_Y").size(), 5);
+  EXPECT_EQ( mesh00.getRegion("RGN_UPPER_Y").size(), 5);
+
+  EXPECT_EQ( mesh00.getRegion("RGN_INNER_X").size(), 3);
+  EXPECT_EQ( mesh00.getRegion("RGN_OUTER_X").size(), 3);
+}
+
+TEST(BoutMeshTest, DefaultConnectionsSingleNull2x2) {
+  WithQuietOutput info{output_info};
+  // 5x3x1 grid on 4 processors, 1 boundary point. Boundaries should
+  // be simple 1D rectangles, with 2 boundaries on each processor
+  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0, false);
+  mesh00.default_connections();
+
+  mesh00.createDefaultRegions();
+  mesh00.addBoundaryRegions();
+
+  EXPECT_EQ(mesh00.getRegion("RGN_LOWER_INNER_Y").size(), 4);
+  EXPECT_EQ(mesh00.getRegion("RGN_LOWER_OUTER_Y").size(), 0);
+  EXPECT_EQ(mesh00.getRegion("RGN_LOWER_Y").size(), 4);
+
+  EXPECT_EQ(mesh00.getRegion("RGN_UPPER_INNER_Y").size(), 0);
+  EXPECT_EQ(mesh00.getRegion("RGN_UPPER_OUTER_Y").size(), 0);
+  EXPECT_EQ(mesh00.getRegion("RGN_UPPER_Y").size(), 0);
+
+  EXPECT_EQ(mesh00.getRegion("RGN_INNER_X").size(), 3);
+  EXPECT_EQ(mesh00.getRegion("RGN_OUTER_X").size(), 0);
+
+  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1, false);
+  mesh01.default_connections();
+
+  mesh01.createDefaultRegions();
+  mesh01.addBoundaryRegions();
+
+  EXPECT_EQ(mesh01.getRegion("RGN_LOWER_INNER_Y").size(), 0);
+  EXPECT_EQ(mesh01.getRegion("RGN_LOWER_OUTER_Y").size(), 0);
+  EXPECT_EQ(mesh01.getRegion("RGN_LOWER_Y").size(), 0);
+
+  EXPECT_EQ(mesh01.getRegion("RGN_UPPER_INNER_Y").size(), 0);
+  EXPECT_EQ(mesh01.getRegion("RGN_UPPER_OUTER_Y").size(), 4);
+  EXPECT_EQ(mesh01.getRegion("RGN_UPPER_Y").size(), 4);
+
+  EXPECT_EQ(mesh01.getRegion("RGN_INNER_X").size(), 3);
+  EXPECT_EQ(mesh01.getRegion("RGN_OUTER_X").size(), 0);
+
+  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0, false);
+  mesh10.default_connections();
+
+  mesh10.createDefaultRegions();
+  mesh10.addBoundaryRegions();
+
+  EXPECT_EQ(mesh10.getRegion("RGN_LOWER_INNER_Y").size(), 4);
+  EXPECT_EQ(mesh10.getRegion("RGN_LOWER_OUTER_Y").size(), 0);
+  EXPECT_EQ(mesh10.getRegion("RGN_LOWER_Y").size(), 4);
+
+  EXPECT_EQ(mesh10.getRegion("RGN_UPPER_INNER_Y").size(), 0);
+  EXPECT_EQ(mesh10.getRegion("RGN_UPPER_OUTER_Y").size(), 0);
+  EXPECT_EQ(mesh10.getRegion("RGN_UPPER_Y").size(), 0);
+
+  EXPECT_EQ(mesh10.getRegion("RGN_INNER_X").size(), 0);
+  EXPECT_EQ(mesh10.getRegion("RGN_OUTER_X").size(), 3);
+
+  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1, false);
+  mesh11.default_connections();
+
+  mesh11.createDefaultRegions();
+  mesh11.addBoundaryRegions();
+
+  EXPECT_EQ(mesh11.getRegion("RGN_LOWER_INNER_Y").size(), 0);
+  EXPECT_EQ(mesh11.getRegion("RGN_LOWER_OUTER_Y").size(), 0);
+  EXPECT_EQ(mesh11.getRegion("RGN_LOWER_Y").size(), 0);
+
+  EXPECT_EQ(mesh11.getRegion("RGN_UPPER_INNER_Y").size(), 0);
+  EXPECT_EQ(mesh11.getRegion("RGN_UPPER_OUTER_Y").size(), 4);
+  EXPECT_EQ(mesh11.getRegion("RGN_UPPER_Y").size(), 4);
+
+  EXPECT_EQ(mesh11.getRegion("RGN_INNER_X").size(), 0);
+  EXPECT_EQ(mesh11.getRegion("RGN_OUTER_X").size(), 3);
 }

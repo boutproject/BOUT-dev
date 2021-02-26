@@ -200,8 +200,13 @@ class BoutMesh : public Mesh {
   int getLocalZIndexNoBoundaries(int zglobal) const override;
 
 protected:
+  /// A constructor used when making fake meshes for testing. This
+  /// will make a mesh which thinks it corresponds to the subdomain on
+  /// one processor, even though it's actually being run in serial.
+  ///
+  /// Pass \p create_topology = false to not set up topology, regions etc.
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind);
+           int pe_xind, int pe_yind, bool create_topology = true);
 
   /// Very basic initialisation, only suitable for testing
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int input_npes)
@@ -319,6 +324,10 @@ private:
   std::string hypnotoad_git_diff = "";
   std::string hypnotoad_geqdsk_filename = "";
 
+protected:
+  // These are protected so we can make them public in the test suite
+  // for testing
+
   void default_connections();
   void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);
   void add_target(int ypos, int xge, int xlt);
@@ -326,6 +335,7 @@ private:
 
   void addBoundaryRegions(); ///< Adds 2D and 3D regions for boundaries
 
+private:
   std::vector<BoundaryRegion*> boundary;        // Vector of boundary regions
   std::vector<BoundaryRegionPar*> par_boundary; // Vector of parallel boundary regions
 

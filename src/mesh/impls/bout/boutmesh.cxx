@@ -1687,11 +1687,8 @@ int BoutMesh::XPROC(int xind) const { return (xind >= MXG) ? (xind - MXG) / MXSU
  *                     TESTING UTILITIES
  ****************************************************************/
 
-/// A constructor used when making fake meshes for testing. This
-/// will make a mesh which thinks it corresponds to the subdomain on
-/// one processor, even though it's actually being run in serial.
 BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
-                   int nype, int pe_xind, int pe_yind)
+                   int nype, int pe_xind, int pe_yind, bool create_topology)
     : nx(input_nx), ny(input_ny), nz(input_nz), MXG(mxg), MYG(myg), MZG(0) {
   maxregionblocksize = MAXREGIONBLOCKSIZE;
   symmetricGlobalX = true;
@@ -1776,6 +1773,10 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   xend = MXG + MXSUB - 1;
   ystart = MYG;
   yend = MYG + MYSUB - 1;
+
+  if (not create_topology) {
+    return;
+  }
 
   // Call topology to set layout of grid
   topology();
