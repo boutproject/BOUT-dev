@@ -365,6 +365,9 @@ public:
                   getRegionPerp("RGN_INNER_X") + getRegionPerp("RGN_OUTER_X"));
   }
 
+  // Make this public so we can test it
+  using Mesh::msg_len;
+
 private:
   std::vector<BoundaryRegion *> boundaries;
 };

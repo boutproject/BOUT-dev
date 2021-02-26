@@ -256,3 +256,19 @@ TEST_F(MeshTest, GetField3DNoSourceWithDefault) {
   EXPECT_NE(localmesh.get(field3d_value, "no_source", default_value), 0);
   EXPECT_TRUE(IsFieldEqual(field3d_value, default_value));
 }
+
+TEST_F(MeshTest, MsgLen) {
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(nullptr);
+
+  Field3D f3D_1(0., &localmesh);
+  Field3D f3D_2(0., &localmesh);
+  Field2D f2D_1(0., &localmesh);
+  Field2D f2D_2(0., &localmesh);
+
+  std::vector<FieldData*> var_list {&f3D_1, &f2D_1, &f3D_2, &f2D_2};
+
+  const int len = localmesh.msg_len(var_list, 0, nx, 0, ny);
+
+  EXPECT_EQ(len, 2 * (nx * ny * nz) + 2 * (nx * ny));
+}
