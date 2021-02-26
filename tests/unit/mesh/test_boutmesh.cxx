@@ -15,12 +15,17 @@ public:
   BoutMeshExposer(int input_nx, int input_ny, int input_nz, int mxg, int myg,
                   int input_npes = 1)
       : BoutMesh(input_nx, input_ny, input_nz, mxg, myg, input_npes) {}
+  BoutMeshExposer(int nx, int ny, int nz, int nxpe, int nype, int pe_xind, int pe_yind)
+      : BoutMesh((nxpe * (nx - 2)) + 2, nype * ny, nz, 1, 1, nxpe, nype, pe_xind,
+                 pe_yind) {}
   // Make protected methods public for testing
   using BoutMesh::chooseProcessorSplit;
   using BoutMesh::DecompositionIndices;
   using BoutMesh::findProcessorSplit;
   using BoutMesh::PROC_NUM;
   using BoutMesh::setYDecompositionIndices;
+  using BoutMesh::XPROC;
+  using BoutMesh::YPROC;
 };
 
 bool operator==(const BoutMeshExposer::DecompositionIndices& lhs,
@@ -453,4 +458,41 @@ TEST_P(BoutMeshProcNumTest, ProcNum) {
 
   const int result = mesh.PROC_NUM(params.xind, params.yind);
   EXPECT_EQ(result, params.expected_result);
+}
+
+TEST(BoutMeshTest, YProc) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+  BoutMeshExposer mesh(5, 3, 1, 2, 2, 0, 0);
+
+  // YPROC is defined over the range (0, ny=6)
+  EXPECT_EQ(mesh.YPROC(-4), -1);
+  EXPECT_EQ(mesh.YPROC(0), 0);
+  EXPECT_EQ(mesh.YPROC(1), 0);
+  EXPECT_EQ(mesh.YPROC(2), 0);
+  EXPECT_EQ(mesh.YPROC(3), 1);
+  EXPECT_EQ(mesh.YPROC(4), 1);
+  EXPECT_EQ(mesh.YPROC(5), 1);
+  EXPECT_EQ(mesh.YPROC(6), -1);
+  EXPECT_EQ(mesh.YPROC(7), -1);
+}
+
+TEST(BoutMeshTest, XProc) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+  BoutMeshExposer mesh(5, 3, 1, 2, 2, 0, 0);
+
+  EXPECT_EQ(mesh.XPROC(-4), 0);
+  EXPECT_EQ(mesh.XPROC(0), 0);
+  EXPECT_EQ(mesh.XPROC(1), 0);
+  EXPECT_EQ(mesh.XPROC(2), 0);
+  EXPECT_EQ(mesh.XPROC(3), 0);
+  EXPECT_EQ(mesh.XPROC(4), 1);
+  EXPECT_EQ(mesh.XPROC(5), 1);
+  EXPECT_EQ(mesh.XPROC(6), 1);
+  // BoutMesh::XPROC doesn't have an upper-bound, but also is only
+  // used in one function which itself is only (optionally) used in
+  // one example, so probably fine
 }
