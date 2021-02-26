@@ -1130,3 +1130,99 @@ TEST(BoutMeshTest, GetLocalZIndexNoBoundaries) {
   EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(3), 3);
   EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(4), 4);
 }
+
+TEST(BoutMeshTest, FirstX) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh00(5, 3, 4, 3, 3, 0, 0);
+  EXPECT_TRUE(mesh00.firstX());
+  BoutMeshExposer mesh10(5, 3, 4, 3, 3, 1, 0);
+  EXPECT_FALSE(mesh10.firstX());
+  BoutMeshExposer mesh20(5, 3, 4, 3, 3, 2, 0);
+  EXPECT_FALSE(mesh20.firstX());
+  BoutMeshExposer mesh01(5, 3, 4, 3, 3, 0, 1);
+  EXPECT_TRUE(mesh01.firstX());
+  BoutMeshExposer mesh11(5, 3, 4, 3, 3, 1, 1);
+  EXPECT_FALSE(mesh11.firstX());
+  BoutMeshExposer mesh21(5, 3, 4, 3, 3, 2, 1);
+  EXPECT_FALSE(mesh21.firstX());
+  BoutMeshExposer mesh02(5, 3, 4, 3, 3, 0, 2);
+  EXPECT_TRUE(mesh02.firstX());
+  BoutMeshExposer mesh12(5, 3, 4, 3, 3, 1, 2);
+  EXPECT_FALSE(mesh12.firstX());
+  BoutMeshExposer mesh22(5, 3, 4, 3, 3, 2, 2);
+  EXPECT_FALSE(mesh22.firstX());
+}
+
+TEST(BoutMeshTest, LastX) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh00(5, 3, 4, 3, 3, 0, 0);
+  EXPECT_FALSE(mesh00.lastX());
+  BoutMeshExposer mesh10(5, 3, 4, 3, 3, 1, 0);
+  EXPECT_FALSE(mesh10.lastX());
+  BoutMeshExposer mesh20(5, 3, 4, 3, 3, 2, 0);
+  EXPECT_TRUE(mesh20.lastX());
+  BoutMeshExposer mesh01(5, 3, 4, 3, 3, 0, 1);
+  EXPECT_FALSE(mesh01.lastX());
+  BoutMeshExposer mesh11(5, 3, 4, 3, 3, 1, 1);
+  EXPECT_FALSE(mesh11.lastX());
+  BoutMeshExposer mesh21(5, 3, 4, 3, 3, 2, 1);
+  EXPECT_TRUE(mesh21.lastX());
+  BoutMeshExposer mesh02(5, 3, 4, 3, 3, 0, 2);
+  EXPECT_FALSE(mesh02.lastX());
+  BoutMeshExposer mesh12(5, 3, 4, 3, 3, 1, 2);
+  EXPECT_FALSE(mesh12.lastX());
+  BoutMeshExposer mesh22(5, 3, 4, 3, 3, 2, 2);
+  EXPECT_TRUE(mesh22.lastX());
+}
+
+TEST(BoutMeshTest, FirstY) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh00(5, 3, 4, 3, 3, 0, 0);
+  EXPECT_TRUE(mesh00.firstY());
+  BoutMeshExposer mesh10(5, 3, 4, 3, 3, 1, 0);
+  EXPECT_TRUE(mesh10.firstY());
+  BoutMeshExposer mesh20(5, 3, 4, 3, 3, 2, 0);
+  EXPECT_TRUE(mesh20.firstY());
+  BoutMeshExposer mesh01(5, 3, 4, 3, 3, 0, 1);
+  EXPECT_FALSE(mesh01.firstY());
+  BoutMeshExposer mesh11(5, 3, 4, 3, 3, 1, 1);
+  EXPECT_FALSE(mesh11.firstY());
+  BoutMeshExposer mesh21(5, 3, 4, 3, 3, 2, 1);
+  EXPECT_FALSE(mesh21.firstY());
+  BoutMeshExposer mesh02(5, 3, 4, 3, 3, 0, 2);
+  EXPECT_FALSE(mesh02.firstY());
+  BoutMeshExposer mesh12(5, 3, 4, 3, 3, 1, 2);
+  EXPECT_FALSE(mesh12.firstY());
+  BoutMeshExposer mesh22(5, 3, 4, 3, 3, 2, 2);
+  EXPECT_FALSE(mesh22.firstY());
+}
+
+TEST(BoutMeshTest, LastY) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh00(5, 3, 4, 3, 3, 0, 0);
+  EXPECT_FALSE(mesh00.lastY());
+  BoutMeshExposer mesh10(5, 3, 4, 3, 3, 1, 0);
+  EXPECT_FALSE(mesh10.lastY());
+  BoutMeshExposer mesh20(5, 3, 4, 3, 3, 2, 0);
+  EXPECT_FALSE(mesh20.lastY());
+  BoutMeshExposer mesh01(5, 3, 4, 3, 3, 0, 1);
+  EXPECT_FALSE(mesh01.lastY());
+  BoutMeshExposer mesh11(5, 3, 4, 3, 3, 1, 1);
+  EXPECT_FALSE(mesh11.lastY());
+  BoutMeshExposer mesh21(5, 3, 4, 3, 3, 2, 1);
+  EXPECT_FALSE(mesh21.lastY());
+  BoutMeshExposer mesh02(5, 3, 4, 3, 3, 0, 2);
+  EXPECT_TRUE(mesh02.lastY());
+  BoutMeshExposer mesh12(5, 3, 4, 3, 3, 1, 2);
+  EXPECT_TRUE(mesh12.lastY());
+  BoutMeshExposer mesh22(5, 3, 4, 3, 3, 2, 2);
+  EXPECT_TRUE(mesh22.lastY());
+}
