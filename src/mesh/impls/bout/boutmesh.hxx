@@ -288,9 +288,9 @@ protected:
   int YGLOBAL(int yloc, int yproc) const;
   int YLOCAL(int yglo, int yproc) const;
   /// Return the Y processor number given a global Y index
-  int YPROC(int yind);
+  int YPROC(int yind) const;
   /// Return the X processor number given a global X index
-  int XPROC(int xind);
+  int XPROC(int xind) const;
 
 private:
   // Twist-shift switches

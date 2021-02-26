@@ -1674,13 +1674,13 @@ int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal; }
 
 int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const { return zglobal; }
 
-int BoutMesh::YPROC(int yind) {
+int BoutMesh::YPROC(int yind) const {
   if ((yind < 0) || (yind > ny))
     return -1;
   return yind / MYSUB;
 }
 
-int BoutMesh::XPROC(int xind) { return (xind >= MXG) ? (xind - MXG) / MXSUB : 0; }
+int BoutMesh::XPROC(int xind) const { return (xind >= MXG) ? (xind - MXG) / MXSUB : 0; }
 
 /****************************************************************
  *                     TESTING UTILITIES
