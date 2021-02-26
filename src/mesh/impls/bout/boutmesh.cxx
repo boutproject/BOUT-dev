@@ -1619,12 +1619,8 @@ int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal &xglo) const {
   return static_cast<int>(xglo);
 }
 
-/// Returns a global X index given a local index.
-/// Global index includes boundary cells, local index includes boundary or guard cells.
 int BoutMesh::getGlobalXIndex(int xlocal) const { return xlocal + PE_XIND * MXSUB; }
 
-/// Returns a global X index given a local index.
-/// Global index excludes boundary cells, local index includes boundary or guard cells.
 int BoutMesh::getGlobalXIndexNoBoundaries(int xlocal) const {
   return xlocal + PE_XIND * MXSUB - MXG;
 }
@@ -1635,14 +1631,11 @@ int BoutMesh::getLocalXIndexNoBoundaries(int xglobal) const {
   return xglobal - PE_XIND * MXSUB + MXG;
 }
 
-/// Returns the global Y index given a local index
 int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal &yglo) const {
   yglo = yloc + PE_YIND * MYSUB - MYG;
   return static_cast<int>(yglo);
 }
 
-/// Returns a global Y index given a local index.
-/// Global index includes boundary cells, local index includes boundary or guard cells.
 int BoutMesh::getGlobalYIndex(int ylocal) const {
   int yglobal =  ylocal + PE_YIND * MYSUB;
   if (jyseps1_2 > jyseps2_1 and PE_YIND*MYSUB + 2*MYG + 1 > ny_inner) {
@@ -1652,8 +1645,6 @@ int BoutMesh::getGlobalYIndex(int ylocal) const {
   return yglobal;
 }
 
-/// Returns a global Y index given a local index.
-/// Global index excludes boundary cells, local index includes boundary or guard cells.
 int BoutMesh::getGlobalYIndexNoBoundaries(int ylocal) const {
   return ylocal + PE_YIND * MYSUB - MYG;
 }
@@ -1671,32 +1662,24 @@ int BoutMesh::getLocalYIndexNoBoundaries(int yglobal) const {
   return yglobal - PE_YIND * MYSUB + MYG;
 }
 
-/// Global Y index given local index and processor
 int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB - MYG; }
 
 int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - yproc * MYSUB + MYG; }
 
-/// Returns a global Z index given a local index.
-/// Global index includes boundary cells, local index includes boundary or guard cells.
 int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal; }
 
-/// Returns a global Z index given a local index.
-/// Global index excludes boundary cells, local index includes boundary or guard cells.
-/// Note: at the moment z-direction is always periodic, so has zero boundary cells
 int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const { return zlocal; }
 
 int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal; }
 
 int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const { return zglobal; }
 
-/// Return the Y processor number given a global Y index
 int BoutMesh::YPROC(int yind) {
   if ((yind < 0) || (yind > ny))
     return -1;
   return yind / MYSUB;
 }
 
-/// Return the X processor number given a global X index
 int BoutMesh::XPROC(int xind) { return (xind >= MXG) ? (xind - MXG) / MXSUB : 0; }
 
 /****************************************************************

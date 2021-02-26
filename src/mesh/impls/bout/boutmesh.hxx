@@ -287,7 +287,9 @@ protected:
   int PROC_NUM(int xind, int yind) const;
   int YGLOBAL(int yloc, int yproc) const;
   int YLOCAL(int yglo, int yproc) const;
+  /// Return the Y processor number given a global Y index
   int YPROC(int yind);
+  /// Return the X processor number given a global X index
   int XPROC(int xind);
 
 private:
