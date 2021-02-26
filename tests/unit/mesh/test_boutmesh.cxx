@@ -496,3 +496,637 @@ TEST(BoutMeshTest, XProc) {
   // used in one function which itself is only (optionally) used in
   // one example, so probably fine
 }
+
+TEST(BoutMeshTest, GetGlobalXIndex) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  // Boundaries are included in the global index
+
+  // |<--  1st X-proc -->|
+  //             |<--  2nd X-proc -->|
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- Global indices
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- 1st X-processor
+  // +---+---+---+---+---+---+---+---+
+  // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd X-processor
+  // +---+---+---+---+---+---+---+---+
+
+  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  EXPECT_EQ(mesh00.getGlobalXIndex(0), 0);
+  EXPECT_EQ(mesh00.getGlobalXIndex(1), 1);
+  EXPECT_EQ(mesh00.getGlobalXIndex(2), 2);
+  EXPECT_EQ(mesh00.getGlobalXIndex(3), 3);
+  EXPECT_EQ(mesh00.getGlobalXIndex(4), 4);
+
+  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.getGlobalXIndex(0), 0);
+  EXPECT_EQ(mesh01.getGlobalXIndex(1), 1);
+  EXPECT_EQ(mesh01.getGlobalXIndex(2), 2);
+  EXPECT_EQ(mesh01.getGlobalXIndex(3), 3);
+  EXPECT_EQ(mesh01.getGlobalXIndex(4), 4);
+
+  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  EXPECT_EQ(mesh10.getGlobalXIndex(0), 3);
+  EXPECT_EQ(mesh10.getGlobalXIndex(1), 4);
+  EXPECT_EQ(mesh10.getGlobalXIndex(2), 5);
+  EXPECT_EQ(mesh10.getGlobalXIndex(3), 6);
+  EXPECT_EQ(mesh10.getGlobalXIndex(4), 7);
+
+  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  EXPECT_EQ(mesh11.getGlobalXIndex(0), 3);
+  EXPECT_EQ(mesh11.getGlobalXIndex(1), 4);
+  EXPECT_EQ(mesh11.getGlobalXIndex(2), 5);
+  EXPECT_EQ(mesh11.getGlobalXIndex(3), 6);
+  EXPECT_EQ(mesh11.getGlobalXIndex(4), 7);
+}
+
+TEST(BoutMeshTest, GetGlobalXIndexNoBoundaries) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  // Global indices start counting from the first non-boundary point
+
+  // |<--  1st X-proc -->|
+  //             |<--  2nd X-proc -->|
+  // +---+---+---+---+---+---+---+---+
+  // |-1*| 0 | 1 | 2 | 3 | 4 | 5 | 6*| <- Global indices
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- 1st X-processor
+  // +---+---+---+---+---+---+---+---+
+  // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd X-processor
+  // +---+---+---+---+---+---+---+---+
+
+  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  EXPECT_EQ(mesh00.getGlobalXIndexNoBoundaries(0), -1);
+  EXPECT_EQ(mesh00.getGlobalXIndexNoBoundaries(1), 0);
+  EXPECT_EQ(mesh00.getGlobalXIndexNoBoundaries(2), 1);
+  EXPECT_EQ(mesh00.getGlobalXIndexNoBoundaries(3), 2);
+  EXPECT_EQ(mesh00.getGlobalXIndexNoBoundaries(4), 3);
+
+  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.getGlobalXIndexNoBoundaries(0), -1);
+  EXPECT_EQ(mesh01.getGlobalXIndexNoBoundaries(1), 0);
+  EXPECT_EQ(mesh01.getGlobalXIndexNoBoundaries(2), 1);
+  EXPECT_EQ(mesh01.getGlobalXIndexNoBoundaries(3), 2);
+  EXPECT_EQ(mesh01.getGlobalXIndexNoBoundaries(4), 3);
+
+  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  EXPECT_EQ(mesh10.getGlobalXIndexNoBoundaries(0), 2);
+  EXPECT_EQ(mesh10.getGlobalXIndexNoBoundaries(1), 3);
+  EXPECT_EQ(mesh10.getGlobalXIndexNoBoundaries(2), 4);
+  EXPECT_EQ(mesh10.getGlobalXIndexNoBoundaries(3), 5);
+  EXPECT_EQ(mesh10.getGlobalXIndexNoBoundaries(4), 6);
+
+  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  EXPECT_EQ(mesh11.getGlobalXIndexNoBoundaries(0), 2);
+  EXPECT_EQ(mesh11.getGlobalXIndexNoBoundaries(1), 3);
+  EXPECT_EQ(mesh11.getGlobalXIndexNoBoundaries(2), 4);
+  EXPECT_EQ(mesh11.getGlobalXIndexNoBoundaries(3), 5);
+  EXPECT_EQ(mesh11.getGlobalXIndexNoBoundaries(4), 6);
+}
+
+TEST(BoutMeshTest, GetLocalXIndex) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  // Boundaries are included in the local index
+
+  // |<--  1st X-proc -->|
+  //             |<--  2nd X-proc -->|
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- Global indices
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- 1st X-processor
+  // +---+---+---+---+---+---+---+---+
+  // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd X-processor
+  // +---+---+---+---+---+---+---+---+
+
+  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  EXPECT_EQ(mesh00.getLocalXIndex(0), 0);
+  EXPECT_EQ(mesh00.getLocalXIndex(1), 1);
+  EXPECT_EQ(mesh00.getLocalXIndex(2), 2);
+  EXPECT_EQ(mesh00.getLocalXIndex(3), 3);
+  EXPECT_EQ(mesh00.getLocalXIndex(4), 4);
+
+  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.getLocalXIndex(0), 0);
+  EXPECT_EQ(mesh01.getLocalXIndex(1), 1);
+  EXPECT_EQ(mesh01.getLocalXIndex(2), 2);
+  EXPECT_EQ(mesh01.getLocalXIndex(3), 3);
+  EXPECT_EQ(mesh01.getLocalXIndex(4), 4);
+
+  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  EXPECT_EQ(mesh10.getLocalXIndex(3), 0);
+  EXPECT_EQ(mesh10.getLocalXIndex(4), 1);
+  EXPECT_EQ(mesh10.getLocalXIndex(5), 2);
+  EXPECT_EQ(mesh10.getLocalXIndex(6), 3);
+  EXPECT_EQ(mesh10.getLocalXIndex(7), 4);
+
+  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  EXPECT_EQ(mesh11.getLocalXIndex(3), 0);
+  EXPECT_EQ(mesh11.getLocalXIndex(4), 1);
+  EXPECT_EQ(mesh11.getLocalXIndex(5), 2);
+  EXPECT_EQ(mesh11.getLocalXIndex(6), 3);
+  EXPECT_EQ(mesh11.getLocalXIndex(7), 4);
+}
+
+TEST(BoutMeshTest, GetLocalXIndexNoBoundaries) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  // Local indices start counting from the first non-boundary point
+
+  // |<--  1st X-proc -->|
+  //             |<--  2nd X-proc -->|
+  // +---+---+---+---+---+---+---+---+
+  // |-1*| 0 | 1 | 2 | 3 | 4 | 5 | 6*| <- Global indices
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- 1st X-processor
+  // +---+---+---+---+---+---+---+---+
+  // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd X-processor
+  // +---+---+---+---+---+---+---+---+
+
+  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  EXPECT_EQ(mesh00.getLocalXIndexNoBoundaries(-1), 0);
+  EXPECT_EQ(mesh00.getLocalXIndexNoBoundaries(0), 1);
+  EXPECT_EQ(mesh00.getLocalXIndexNoBoundaries(1), 2);
+  EXPECT_EQ(mesh00.getLocalXIndexNoBoundaries(2), 3);
+  EXPECT_EQ(mesh00.getLocalXIndexNoBoundaries(3), 4);
+
+  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.getLocalXIndexNoBoundaries(-1), 0);
+  EXPECT_EQ(mesh01.getLocalXIndexNoBoundaries(0), 1);
+  EXPECT_EQ(mesh01.getLocalXIndexNoBoundaries(1), 2);
+  EXPECT_EQ(mesh01.getLocalXIndexNoBoundaries(2), 3);
+  EXPECT_EQ(mesh01.getLocalXIndexNoBoundaries(3), 4);
+
+  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  EXPECT_EQ(mesh10.getLocalXIndexNoBoundaries(2), 0);
+  EXPECT_EQ(mesh10.getLocalXIndexNoBoundaries(3), 1);
+  EXPECT_EQ(mesh10.getLocalXIndexNoBoundaries(4), 2);
+  EXPECT_EQ(mesh10.getLocalXIndexNoBoundaries(5), 3);
+  EXPECT_EQ(mesh10.getLocalXIndexNoBoundaries(6), 4);
+
+  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  EXPECT_EQ(mesh11.getLocalXIndexNoBoundaries(2), 0);
+  EXPECT_EQ(mesh11.getLocalXIndexNoBoundaries(3), 1);
+  EXPECT_EQ(mesh11.getLocalXIndexNoBoundaries(4), 2);
+  EXPECT_EQ(mesh11.getLocalXIndexNoBoundaries(5), 3);
+  EXPECT_EQ(mesh11.getLocalXIndexNoBoundaries(6), 4);
+}
+
+TEST(BoutMeshTest, GetGlobalYIndexSingleNull) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  // Boundaries are included in the global index
+
+  // |<--  1st Y-proc -->|
+  //             |<--  2nd Y-proc -->|
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- Global indices
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- 1st Y-processor
+  // +---+---+---+---+---+---+---+---+
+  // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Y-processor
+  // +---+---+---+---+---+---+---+---+
+
+  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  EXPECT_EQ(mesh00.getGlobalYIndex(0), 0);
+  EXPECT_EQ(mesh00.getGlobalYIndex(1), 1);
+  EXPECT_EQ(mesh00.getGlobalYIndex(2), 2);
+  EXPECT_EQ(mesh00.getGlobalYIndex(3), 3);
+  EXPECT_EQ(mesh00.getGlobalYIndex(4), 4);
+
+  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.getGlobalYIndex(0), 3);
+  EXPECT_EQ(mesh01.getGlobalYIndex(1), 4);
+  EXPECT_EQ(mesh01.getGlobalYIndex(2), 5);
+  EXPECT_EQ(mesh01.getGlobalYIndex(3), 6);
+  EXPECT_EQ(mesh01.getGlobalYIndex(4), 7);
+
+  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  EXPECT_EQ(mesh10.getGlobalYIndex(0), 0);
+  EXPECT_EQ(mesh10.getGlobalYIndex(1), 1);
+  EXPECT_EQ(mesh10.getGlobalYIndex(2), 2);
+  EXPECT_EQ(mesh10.getGlobalYIndex(3), 3);
+  EXPECT_EQ(mesh10.getGlobalYIndex(4), 4);
+
+  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  EXPECT_EQ(mesh11.getGlobalYIndex(0), 3);
+  EXPECT_EQ(mesh11.getGlobalYIndex(1), 4);
+  EXPECT_EQ(mesh11.getGlobalYIndex(2), 5);
+  EXPECT_EQ(mesh11.getGlobalYIndex(3), 6);
+  EXPECT_EQ(mesh11.getGlobalYIndex(4), 7);
+}
+
+TEST(BoutMeshTest, GetGlobalYIndexDoubleNull) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  // Boundaries are included in the global index
+  // Double-null, so extra boundary in middle of domain
+
+  // |<--  1st Y-proc -->|
+  //                     |<--  2nd Y-proc -->|
+  // +---+---+---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | <- Global indices
+  // +---+---+---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | <- 1st Y-processor
+  // +---+---+---+---+---+---+---+---+---+---+
+  // |-5 |-4 |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Y-processor
+  // +---+---+---+---+---+---+---+---+---+---+
+
+  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  mesh00.setYDecompositionIndices({-1, 2, 5, 5, 4});
+  EXPECT_EQ(mesh00.getGlobalYIndex(0), 0);
+  EXPECT_EQ(mesh00.getGlobalYIndex(1), 1);
+  EXPECT_EQ(mesh00.getGlobalYIndex(2), 2);
+  EXPECT_EQ(mesh00.getGlobalYIndex(3), 3);
+  EXPECT_EQ(mesh00.getGlobalYIndex(4), 4);
+
+  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  mesh01.setYDecompositionIndices({-1, 2, 5, 5, 4});
+  EXPECT_EQ(mesh01.getGlobalYIndex(0), 5);
+  EXPECT_EQ(mesh01.getGlobalYIndex(1), 6);
+  EXPECT_EQ(mesh01.getGlobalYIndex(2), 7);
+  EXPECT_EQ(mesh01.getGlobalYIndex(3), 8);
+  EXPECT_EQ(mesh01.getGlobalYIndex(4), 9);
+
+  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  mesh10.setYDecompositionIndices({-1, 2, 5, 5, 4});
+  EXPECT_EQ(mesh10.getGlobalYIndex(0), 0);
+  EXPECT_EQ(mesh10.getGlobalYIndex(1), 1);
+  EXPECT_EQ(mesh10.getGlobalYIndex(2), 2);
+  EXPECT_EQ(mesh10.getGlobalYIndex(3), 3);
+  EXPECT_EQ(mesh10.getGlobalYIndex(4), 4);
+
+  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  mesh11.setYDecompositionIndices({-1, 2, 5, 5, 4});
+  EXPECT_EQ(mesh11.getGlobalYIndex(0), 5);
+  EXPECT_EQ(mesh11.getGlobalYIndex(1), 6);
+  EXPECT_EQ(mesh11.getGlobalYIndex(2), 7);
+  EXPECT_EQ(mesh11.getGlobalYIndex(3), 8);
+  EXPECT_EQ(mesh11.getGlobalYIndex(4), 9);
+}
+
+TEST(BoutMeshTest, GetGlobalYIndexNoBoundaries) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  // Global indices start counting from the first non-boundary point
+
+  // |<--  1st Y-proc -->|
+  //             |<--  2nd Y-proc -->|
+  // +---+---+---+---+---+---+---+---+
+  // |-1*| 0 | 1 | 2 | 3 | 4 | 5 | 6*| <- Global indices
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- 1st Y-processor
+  // +---+---+---+---+---+---+---+---+
+  // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Y-processor
+  // +---+---+---+---+---+---+---+---+
+
+  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  EXPECT_EQ(mesh00.getGlobalYIndexNoBoundaries(0), -1);
+  EXPECT_EQ(mesh00.getGlobalYIndexNoBoundaries(1), 0);
+  EXPECT_EQ(mesh00.getGlobalYIndexNoBoundaries(2), 1);
+  EXPECT_EQ(mesh00.getGlobalYIndexNoBoundaries(3), 2);
+  EXPECT_EQ(mesh00.getGlobalYIndexNoBoundaries(4), 3);
+
+  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.getGlobalYIndexNoBoundaries(0), 2);
+  EXPECT_EQ(mesh01.getGlobalYIndexNoBoundaries(1), 3);
+  EXPECT_EQ(mesh01.getGlobalYIndexNoBoundaries(2), 4);
+  EXPECT_EQ(mesh01.getGlobalYIndexNoBoundaries(3), 5);
+  EXPECT_EQ(mesh01.getGlobalYIndexNoBoundaries(4), 6);
+
+  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  EXPECT_EQ(mesh10.getGlobalYIndexNoBoundaries(0), -1);
+  EXPECT_EQ(mesh10.getGlobalYIndexNoBoundaries(1), 0);
+  EXPECT_EQ(mesh10.getGlobalYIndexNoBoundaries(2), 1);
+  EXPECT_EQ(mesh10.getGlobalYIndexNoBoundaries(3), 2);
+  EXPECT_EQ(mesh10.getGlobalYIndexNoBoundaries(4), 3);
+
+  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  EXPECT_EQ(mesh11.getGlobalYIndexNoBoundaries(0), 2);
+  EXPECT_EQ(mesh11.getGlobalYIndexNoBoundaries(1), 3);
+  EXPECT_EQ(mesh11.getGlobalYIndexNoBoundaries(2), 4);
+  EXPECT_EQ(mesh11.getGlobalYIndexNoBoundaries(3), 5);
+  EXPECT_EQ(mesh11.getGlobalYIndexNoBoundaries(4), 6);
+}
+
+TEST(BoutMeshTest, GetLocalYIndexSingleNull) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  // Boundaries are included in the local index
+
+  // |<--  1st Y-proc -->|
+  //             |<--  2nd Y-proc -->|
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- Global indices
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- 1st Y-processor
+  // +---+---+---+---+---+---+---+---+
+  // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Y-processor
+  // +---+---+---+---+---+---+---+---+
+
+  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  EXPECT_EQ(mesh00.getLocalYIndex(0), 0);
+  EXPECT_EQ(mesh00.getLocalYIndex(1), 1);
+  EXPECT_EQ(mesh00.getLocalYIndex(2), 2);
+  EXPECT_EQ(mesh00.getLocalYIndex(3), 3);
+  EXPECT_EQ(mesh00.getLocalYIndex(4), 4);
+
+  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.getLocalYIndex(3), 0);
+  EXPECT_EQ(mesh01.getLocalYIndex(4), 1);
+  EXPECT_EQ(mesh01.getLocalYIndex(5), 2);
+  EXPECT_EQ(mesh01.getLocalYIndex(6), 3);
+  EXPECT_EQ(mesh01.getLocalYIndex(7), 4);
+
+  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  EXPECT_EQ(mesh10.getLocalYIndex(0), 0);
+  EXPECT_EQ(mesh10.getLocalYIndex(1), 1);
+  EXPECT_EQ(mesh10.getLocalYIndex(2), 2);
+  EXPECT_EQ(mesh10.getLocalYIndex(3), 3);
+  EXPECT_EQ(mesh10.getLocalYIndex(4), 4);
+
+  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  EXPECT_EQ(mesh11.getLocalYIndex(3), 0);
+  EXPECT_EQ(mesh11.getLocalYIndex(4), 1);
+  EXPECT_EQ(mesh11.getLocalYIndex(5), 2);
+  EXPECT_EQ(mesh11.getLocalYIndex(6), 3);
+  EXPECT_EQ(mesh11.getLocalYIndex(7), 4);
+}
+
+TEST(BoutMeshTest, GetLocalYIndexDoubleNull) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  // Boundaries are included in the global index
+  // Double-null, so extra boundary in middle of domain
+
+  // |<--  1st Y-proc -->|
+  //                     |<--  2nd Y-proc -->|
+  // +---+---+---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | <- Global indices
+  // +---+---+---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | <- 1st Y-processor
+  // +---+---+---+---+---+---+---+---+---+---+
+  // |-5 |-4 |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Y-processor
+  // +---+---+---+---+---+---+---+---+---+---+
+
+  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  mesh00.setYDecompositionIndices({-1, 2, 5, 5, 4});
+  EXPECT_EQ(mesh00.getLocalYIndex(0), 0);
+  EXPECT_EQ(mesh00.getLocalYIndex(1), 1);
+  EXPECT_EQ(mesh00.getLocalYIndex(2), 2);
+  EXPECT_EQ(mesh00.getLocalYIndex(3), 3);
+  EXPECT_EQ(mesh00.getLocalYIndex(4), 4);
+
+  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  mesh01.setYDecompositionIndices({-1, 2, 5, 5, 4});
+  EXPECT_EQ(mesh01.getLocalYIndex(5), 0);
+  EXPECT_EQ(mesh01.getLocalYIndex(6), 1);
+  EXPECT_EQ(mesh01.getLocalYIndex(7), 2);
+  EXPECT_EQ(mesh01.getLocalYIndex(8), 3);
+  EXPECT_EQ(mesh01.getLocalYIndex(9), 4);
+
+  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  mesh10.setYDecompositionIndices({-1, 2, 5, 5, 4});
+  EXPECT_EQ(mesh10.getLocalYIndex(0), 0);
+  EXPECT_EQ(mesh10.getLocalYIndex(1), 1);
+  EXPECT_EQ(mesh10.getLocalYIndex(2), 2);
+  EXPECT_EQ(mesh10.getLocalYIndex(3), 3);
+  EXPECT_EQ(mesh10.getLocalYIndex(4), 4);
+
+  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  mesh11.setYDecompositionIndices({-1, 2, 5, 5, 4});
+  EXPECT_EQ(mesh11.getLocalYIndex(5), 0);
+  EXPECT_EQ(mesh11.getLocalYIndex(6), 1);
+  EXPECT_EQ(mesh11.getLocalYIndex(7), 2);
+  EXPECT_EQ(mesh11.getLocalYIndex(8), 3);
+  EXPECT_EQ(mesh11.getLocalYIndex(9), 4);
+}
+
+TEST(BoutMeshTest, GetLocalYIndexNoBoundaries) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  // Local indices start counting from the first non-boundary point
+
+  // |<--  1st Y-proc -->|
+  //             |<--  2nd Y-proc -->|
+  // +---+---+---+---+---+---+---+---+
+  // |-1*| 0 | 1 | 2 | 3 | 4 | 5 | 6*| <- Global indices
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- 1st Y-processor
+  // +---+---+---+---+---+---+---+---+
+  // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Y-processor
+  // +---+---+---+---+---+---+---+---+
+
+  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  EXPECT_EQ(mesh00.getLocalYIndexNoBoundaries(-1), 0);
+  EXPECT_EQ(mesh00.getLocalYIndexNoBoundaries(0), 1);
+  EXPECT_EQ(mesh00.getLocalYIndexNoBoundaries(1), 2);
+  EXPECT_EQ(mesh00.getLocalYIndexNoBoundaries(2), 3);
+  EXPECT_EQ(mesh00.getLocalYIndexNoBoundaries(3), 4);
+
+  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.getLocalYIndexNoBoundaries(2), 0);
+  EXPECT_EQ(mesh01.getLocalYIndexNoBoundaries(3), 1);
+  EXPECT_EQ(mesh01.getLocalYIndexNoBoundaries(4), 2);
+  EXPECT_EQ(mesh01.getLocalYIndexNoBoundaries(5), 3);
+  EXPECT_EQ(mesh01.getLocalYIndexNoBoundaries(6), 4);
+
+  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  EXPECT_EQ(mesh10.getLocalYIndexNoBoundaries(-1), 0);
+  EXPECT_EQ(mesh10.getLocalYIndexNoBoundaries(0), 1);
+  EXPECT_EQ(mesh10.getLocalYIndexNoBoundaries(1), 2);
+  EXPECT_EQ(mesh10.getLocalYIndexNoBoundaries(2), 3);
+  EXPECT_EQ(mesh10.getLocalYIndexNoBoundaries(3), 4);
+
+  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  EXPECT_EQ(mesh11.getLocalYIndexNoBoundaries(2), 0);
+  EXPECT_EQ(mesh11.getLocalYIndexNoBoundaries(3), 1);
+  EXPECT_EQ(mesh11.getLocalYIndexNoBoundaries(4), 2);
+  EXPECT_EQ(mesh11.getLocalYIndexNoBoundaries(5), 3);
+  EXPECT_EQ(mesh11.getLocalYIndexNoBoundaries(6), 4);
+}
+
+TEST(BoutMeshTest, GetGlobalZIndex) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  // Boundaries are included in the global index
+
+  // No parallelisation in Z, so function is just the identity
+
+  BoutMeshExposer mesh00(5, 3, 4, 2, 2, 0, 0);
+  EXPECT_EQ(mesh00.getGlobalZIndex(0), 0);
+  EXPECT_EQ(mesh00.getGlobalZIndex(1), 1);
+  EXPECT_EQ(mesh00.getGlobalZIndex(2), 2);
+  EXPECT_EQ(mesh00.getGlobalZIndex(3), 3);
+  EXPECT_EQ(mesh00.getGlobalZIndex(4), 4);
+
+  BoutMeshExposer mesh01(5, 3, 4, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.getGlobalZIndex(0), 0);
+  EXPECT_EQ(mesh01.getGlobalZIndex(1), 1);
+  EXPECT_EQ(mesh01.getGlobalZIndex(2), 2);
+  EXPECT_EQ(mesh01.getGlobalZIndex(3), 3);
+  EXPECT_EQ(mesh01.getGlobalZIndex(4), 4);
+
+  BoutMeshExposer mesh10(5, 3, 4, 2, 2, 1, 0);
+  EXPECT_EQ(mesh10.getGlobalZIndex(0), 0);
+  EXPECT_EQ(mesh10.getGlobalZIndex(1), 1);
+  EXPECT_EQ(mesh10.getGlobalZIndex(2), 2);
+  EXPECT_EQ(mesh10.getGlobalZIndex(3), 3);
+  EXPECT_EQ(mesh10.getGlobalZIndex(4), 4);
+
+  BoutMeshExposer mesh11(5, 3, 4, 2, 2, 1, 1);
+  EXPECT_EQ(mesh11.getGlobalZIndex(0), 0);
+  EXPECT_EQ(mesh11.getGlobalZIndex(1), 1);
+  EXPECT_EQ(mesh11.getGlobalZIndex(2), 2);
+  EXPECT_EQ(mesh11.getGlobalZIndex(3), 3);
+  EXPECT_EQ(mesh11.getGlobalZIndex(4), 4);
+}
+
+TEST(BoutMeshTest, GetGlobalZIndexNoBoundaries) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  BoutMeshExposer mesh00(5, 3, 4, 2, 2, 0, 0);
+  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(0), 0);
+  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(1), 1);
+  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(2), 2);
+  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(3), 3);
+  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(4), 4);
+
+  BoutMeshExposer mesh01(5, 3, 4, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(0), 0);
+  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(1), 1);
+  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(2), 2);
+  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(3), 3);
+  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(4), 4);
+
+  BoutMeshExposer mesh10(5, 3, 4, 2, 2, 1, 0);
+  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(0), 0);
+  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(1), 1);
+  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(2), 2);
+  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(3), 3);
+  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(4), 4);
+
+  BoutMeshExposer mesh11(5, 3, 4, 2, 2, 1, 1);
+  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(0), 0);
+  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(1), 1);
+  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(2), 2);
+  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(3), 3);
+  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(4), 4);
+}
+
+TEST(BoutMeshTest, GetLocalZIndex) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  // Boundaries are included in the local index
+
+  // |<--  1st Z-proc -->|
+  //             |<--  2nd Z-proc -->|
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- Global indices
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- 1st Z-processor
+  // +---+---+---+---+---+---+---+---+
+  // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Z-processor
+  // +---+---+---+---+---+---+---+---+
+
+  BoutMeshExposer mesh00(5, 3, 4, 2, 2, 0, 0);
+  EXPECT_EQ(mesh00.getLocalZIndex(0), 0);
+  EXPECT_EQ(mesh00.getLocalZIndex(1), 1);
+  EXPECT_EQ(mesh00.getLocalZIndex(2), 2);
+  EXPECT_EQ(mesh00.getLocalZIndex(3), 3);
+  EXPECT_EQ(mesh00.getLocalZIndex(4), 4);
+
+  BoutMeshExposer mesh01(5, 3, 4, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.getLocalZIndex(0), 0);
+  EXPECT_EQ(mesh01.getLocalZIndex(1), 1);
+  EXPECT_EQ(mesh01.getLocalZIndex(2), 2);
+  EXPECT_EQ(mesh01.getLocalZIndex(3), 3);
+  EXPECT_EQ(mesh01.getLocalZIndex(4), 4);
+
+  BoutMeshExposer mesh10(5, 3, 4, 2, 2, 1, 0);
+  EXPECT_EQ(mesh10.getLocalZIndex(0), 0);
+  EXPECT_EQ(mesh10.getLocalZIndex(1), 1);
+  EXPECT_EQ(mesh10.getLocalZIndex(2), 2);
+  EXPECT_EQ(mesh10.getLocalZIndex(3), 3);
+  EXPECT_EQ(mesh10.getLocalZIndex(4), 4);
+
+  BoutMeshExposer mesh11(5, 3, 4, 2, 2, 1, 1);
+  EXPECT_EQ(mesh11.getLocalZIndex(0), 0);
+  EXPECT_EQ(mesh11.getLocalZIndex(1), 1);
+  EXPECT_EQ(mesh11.getLocalZIndex(2), 2);
+  EXPECT_EQ(mesh11.getLocalZIndex(3), 3);
+  EXPECT_EQ(mesh11.getLocalZIndex(4), 4);
+}
+
+TEST(BoutMeshTest, GetLocalZIndexNoBoundaries) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  // 2x2 processors, 3x3x1 (not including guards) on each processor
+
+  // Local indices start counting from the first non-boundary point
+
+  // |<--  1st Z-proc -->|
+  //             |<--  2nd Z-proc -->|
+  // +---+---+---+---+---+---+---+---+
+  // |-1*| 0 | 1 | 2 | 3 | 4 | 5 | 6*| <- Global indices
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- 1st Z-processor
+  // +---+---+---+---+---+---+---+---+
+  // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Z-processor
+  // +---+---+---+---+---+---+---+---+
+
+  BoutMeshExposer mesh00(5, 3, 4, 2, 2, 0, 0);
+  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(0), 0);
+  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(1), 1);
+  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(2), 2);
+  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(3), 3);
+  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(4), 4);
+
+  BoutMeshExposer mesh01(5, 3, 4, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(0), 0);
+  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(1), 1);
+  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(2), 2);
+  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(3), 3);
+  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(4), 4);
+
+  BoutMeshExposer mesh10(5, 3, 4, 2, 2, 1, 0);
+  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(0), 0);
+  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(1), 1);
+  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(2), 2);
+  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(3), 3);
+  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(4), 4);
+
+  BoutMeshExposer mesh11(5, 3, 4, 2, 2, 1, 1);
+  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(0), 0);
+  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(1), 1);
+  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(2), 2);
+  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(3), 3);
+  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(4), 4);
+}
