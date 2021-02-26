@@ -40,17 +40,17 @@ build_on_lassen:
     - shell
     - lassen
   script:
-    - echo "--- Build BOUT-dev ---"
+    - echo -e "--- Build BOUT-dev ---"
     - export CMAKE_CONFIG="tests/gitlab/ppc64le-gcc.cmake"
     - . ./tests/gitlab/setup-lassen-gpu.sh
     - lalloc 1 -W 10 -qpdebug tests/gitlab/config-bout-gpu.sh
     - cd build/ppc64le-gcc/BOUT-dev
     - lalloc 1 -W 10 -qpdebug cmake --build . -j
-    - echo "--- Examples: Hasegawa Wakatani 3d ---"
+    - echo -e "--- Examples: Hasegawa Wakatani 3d ---"
     - cd examples/hasegawa-wakatani-3d/
     - ./hw -d ${CI_PROJECT_DIR}/examples/hasegawa-wakatani-3d/data
     - lalloc 1 -W 30 -qpdebug mpiexec -n 4 ./hw -d ${CI_PROJECT_DIR}/BOUT-dev/examples/hasegawa-wakatani-3d/data
-    - echo "--- Examples: Laplace XY, simple hypre ---"
+    - echo -e "--- Examples: Laplace XY, simple hypre ---"
     - cd examples/laplacexy/simple-hypre
     - ./test_laplacexy_hypre -d ${CI_PROJECT_DIR}/examples/laplacexy/simple-hypre/data/
     - lalloc 1 -W 30 -qpdebug mpiexec -n 4 ./test_laplacexy_hypre -d ${CI_PROJECT_DIR}/BOUT-dev/examples/laplacexy/simple-hypre/
