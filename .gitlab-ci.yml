@@ -44,13 +44,13 @@ build_on_lassen:
     - export CMAKE_CONFIG="tests/gitlab/ppc64le-gcc.cmake"
     - . ./tests/gitlab/setup-lassen-gpu.sh
     - lalloc 1 -W 10 -qpdebug tests/gitlab/config-bout-gpu.sh
-    - cd build/ppc64le-gcc/BOUT-dev
+    - cd ${CI_PROJECT_DIR}/build/ppc64le-gcc/BOUT-dev
     - lalloc 1 -W 10 -qpdebug cmake --build . -j
     - echo "--- Examples Hasegawa Wakatani 3d ---"
-    - cd examples/hasegawa-wakatani-3d/
+    - cd ${CI_PROJECT_DIR}/build/ppc64le-gcc/BOUT-dev/examples/hasegawa-wakatani-3d/
     - lalloc 1 -W 30 ./hw -d ${CI_PROJECT_DIR}/examples/hasegawa-wakatani-3d/data
     - lalloc 1 -W 30 -qpdebug mpiexec -n 4 ./hw -d ${CI_PROJECT_DIR}/examples/hasegawa-wakatani-3d/data
     - echo "--- Examples Laplace XY, simple hypre ---"
-    - cd examples/laplacexy/simple-hypre
-    - lalloc 1 -W 30 ./test_laplacexy_hypre -d ${CI_PROJECT_DIR}/examples/laplacexy/simple-hypre/data/
-    - lalloc 1 -W 30 -qpdebug mpiexec -n 4 ./test_laplacexy_hypre -d ${CI_PROJECT_DIR}/examples/laplacexy/simple-hypre/
+    - cd ${CI_PROJECT_DIR}/build/ppc64le-gcc/BOUT-dev/examples/laplacexy/simple-hypre
+    - lalloc 1 -W 30 ./test_laplacexy_hypre -d ${CI_PROJECT_DIR}/examples/laplacexy/simple-hypre/data
+    - lalloc 1 -W 30 -qpdebug mpiexec -n 4 ./test_laplacexy_hypre -d ${CI_PROJECT_DIR}/examples/laplacexy/simple-hypre/data
