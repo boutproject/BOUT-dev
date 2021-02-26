@@ -33,20 +33,16 @@
 #include <smoothing.hxx>
 #include <invert_laplace.hxx>
 #include <derivs.hxx>
-
-#ifdef BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
-#endif
-
-#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
 #include <cuda_profiler_api.h>
-#endif
 
 #if BOUT_HAS_HYPRE
 #include <bout/invert/laplacexy2_hypre.hxx>
 #endif
 
 #include <field_factory.hxx>
+
+//#define GPU
 
 
 CELL_LOC loc = CELL_CENTRE;
@@ -201,7 +197,7 @@ public:
   bool split_n0; // Solve the n=0 component of potential
 //  std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
   
-  #if BOUT_HAS_HYPRE
+  #if 0    //BOUT_HAS_HYPRE
     std::unique_ptr< LaplaceXY2Hypre> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
   #else
     std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
@@ -256,7 +252,6 @@ public:
   Field2D Rxy, Bpxy, Btxy, B0, hthe;
   Field2D I; // Shear factor
 
-  Field2D g_22;
 
   const BoutReal MU0 = 4.0e-7 * PI;
   const BoutReal Mi = 2.0 * 1.6726e-27; // Ion mass
@@ -541,7 +536,7 @@ public:
       //phi2D.setBoundary("phi");
     
         // Create an XY solver for n=0 component
-  #if BOUT_HAS_HYPRE
+  #if 0  // BOUT_HAS_HYPRE
           laplacexy = bout::utils::make_unique< LaplaceXY2Hypre>(mesh);
   #else
           laplacexy = bout::utils::make_unique<LaplaceXY>(mesh);
@@ -1044,7 +1039,6 @@ public:
     metric->g_13 = I * Rxy * Rxy;
     metric->g_23 = Btxy * hthe * Rxy / Bpxy;
 
-    g_22=  metric->g_22; // Field2d object to read metric parameters
     metric->geometry(); // Calculate quantities from metric tensor
 
 
@@ -1196,7 +1190,7 @@ public:
 
       //printf("Grad_parP run");
     
-    if (nonlinear) {
+   if (nonlinear) {
       result -= bracket(interp_to(Psi, loc), f, bm_mag) * B0;
 
       if (include_rmp) {
@@ -1520,7 +1514,8 @@ public:
       //printf("...relax_j_vac is False.....\n");
 		
 
-#ifdef BOUT_HAS_RAJA
+#if 1 // defined(GPU)
+      // increase 1 s
       //auto start = std::chrono::steady_clock::now();   
 
 	auto Psi_acc = FieldAccessor<>(Psi);
@@ -1529,7 +1524,7 @@ public:
        	auto eta_acc = FieldAccessor<>(eta);
 	auto hthe_acc = Field2DAccessor<>(hthe);
  
-	auto g_22_acc = Field2DAccessor<>(g_22);
+	auto g_22_acc = Field2DAccessor<>(metric->g_22);
 
 	auto indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
 	Ind3D *ob_i = &(indices)[0];
@@ -1542,13 +1537,14 @@ public:
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
 	int i = ob_i[id].ind;
-
 	BoutReal p1 =  Grad_parP_g(phi_acc,g_22_acc, i);
 	BoutReal p2 =   FIELD_DATA(eta_acc)[i] * FIELD_DATA(Jpar_acc)[i];
 	DDT(Psi_acc)[i] = -p1 + p2  ;
 
 	 });
 	
+
+
 #else
       ddt(Psi) = -Grad_parP(phi, loc) + eta * Jpar;
 #endif
@@ -1578,8 +1574,8 @@ public:
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
 		int i = ob_i[id].ind;
-
 		BoutReal p1 =  bracket_g(phi0_2D_acc,Psi_acc,i);
+
 		DDT(Psi_acc)[i] -= p1;
 
  	 });
@@ -1611,8 +1607,9 @@ public:
 
 	
       //start = std::chrono::steady_clock::now();   
-#ifdef BOUT_HAS_RAJA 
-
+#if 1  //defined(GPU)
+// no problem for this function,increase 1 s;
+	
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
 		int i = ob_i[id].ind;
@@ -1674,15 +1671,15 @@ public:
       	auto U_acc = FieldAccessor<>(U);
 	auto indices = U.getRegion("RGN_NOBNDRY").getIndices();
 	Ind3D *ob_i = &(indices)[0];
-
-#if 0  // defined(GPU) 	
-// good.  when use cpu code, very faset but wrong result.
+#ifdef BOUT_HAS_RAJA  // defined(GPU) 	
 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
+ 
 		int i = ob_i[id].ind;
 		BoutReal p1 = SQ_g(U_acc,B0_acc,i);
 		BoutReal p2 = b0xGrad_dot_Grad_g(Psi_acc,J0_acc,i);
 		DDT(U_acc)[i] = p1*p2;
+
  	 });
 
 #else
@@ -1702,7 +1699,6 @@ public:
     }
 
      start = std::chrono::steady_clock::now();  
-
 #if 0 //defined(GPU)
 // issue, psi and p
 //
@@ -1725,6 +1721,7 @@ public:
 
  	 });
 
+
 #else 
    	ddt(U) += b0xcv * Grad(P); // curvature term
 		
@@ -1741,11 +1738,9 @@ public:
 if (!nogradparj) {
       //printf("...............!nogradparj...\n");
       // Parallel current term
-
-#if 0 //defined(GPU)      
-     // big issue, speed up 8 s but wrong result. 
+#ifdef BOUT_HAS_RAJA      
      auto Jpar_acc = FieldAccessor<>(Jpar);
-     auto g_22_acc = Field2DAccessor<>(g_22);
+     auto g_22_acc = Field2DAccessor<>(metric->g_22);
     
 	 RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 
@@ -1753,6 +1748,7 @@ if (!nogradparj) {
                  BoutReal p1 = SQ_g(U_acc,B0_acc,i);
                  BoutReal p2 = Grad_parP_g(Jpar_acc,g_22_acc,i);
                  DDT(U_acc)[i] -= p2 * p1;
+
           });
 
 #else
@@ -1773,9 +1769,8 @@ end = std::chrono::steady_clock::now();
     
     if (diamag_phi0){
       //printf("..............diamag_phi0...\n");
-
 #if 0  //defined(GPU)
- //  problem 
+ //  problem,very slow, why? 
     
 auto phi0_acc = Field2DAccessor<>(phi0);
      RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
@@ -1800,16 +1795,15 @@ auto phi0_acc = Field2DAccessor<>(phi0);
     if (nonlinear) {
       //printf("...............nonlinear...\n");
 
-
 #ifdef BOUT_HAS_RAJA 
-// no problem, increase 2 s
 	auto B0_2D_acc =Field2DAccessor<>(B0);   
          RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-      int i = ob_i[id].ind;
- 	   BoutReal f1 = FIELD2D_3DINDEX_DATA(U_acc,B0_2D_acc,i);
-      BoutReal p1 = bracket_g(Psi_acc,U_acc,i);
-      DDT(U_acc)[i] -= p1; // * f1;
-    });
+         int i = ob_i[id].ind;
+ 	 BoutReal f1 = FIELD2D_3DINDEX_DATA(U_acc,B0_2D_acc,i);
+         BoutReal p1 = bracket_g(Psi_acc,U_acc,i);
+                 DDT(U_acc)[i] -= p1; // * f1;
+
+          });
 	
 #else
 ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
@@ -1827,21 +1821,18 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
     //  printf("...............diffusion_u4...\n");
 
      start = std::chrono::steady_clock::now();   
-
-#if 0 //defined(GPU)
-//big problem, delay the speed and wrong result!
-	 
-	auto tmpU= U;
-	auto tmpU_acc =  FieldAccessor<>(tmpU); 
+#if 0 //def BOUT_HAS_RAJA
+// no problem but no speed up
+    
+      tmpU2 = D2DY2(U);
+      mesh->communicate(tmpU2);
+      tmpU2.applyBoundary();
+      // tmpU2.applyBoundary("neumann");
+ 
+	auto tmpU2_acc =  FieldAccessor<>(tmpU2); 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
                  int i = ob_i[id].ind;
-                 BoutReal p1 = D2DY2_g(tmpU_acc,i);
-                 DDT(tmpU_acc)[i] = p1;
-          });
-
-	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-                 int i = ob_i[id].ind;
-                 BoutReal p1 = D2DY2_g(tmpU_acc,i);
+                 BoutReal p1 = D2DY2_g(tmpU2_acc,i);
                  DDT(U_acc)[i] -=  diffusion_u4 * p1;
           });
 
@@ -1912,8 +1903,13 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
       bracketPhiP0 = bracket(B0 * phi, Pi0, bm_exb);
       bracketPhiP0.applyBoundary();
       mesh->communicate(bracketPhiP0);
+#ifdef BOUT_HAS_RAJA
 
       ddt(U) -= 0.5 * Upara2 * bracket(Pi, Dperp2Phi0, bm_exb) / B0;
+#else
+      ddt(U) -= 0.5 * Upara2 * bracket(Pi, Dperp2Phi0, bm_exb) / B0;
+#endif
+
       ddt(U) -= 0.5 * Upara2 * bracket(Pi0, Dperp2Phi, bm_exb) / B0;
       Field3D B0phi = B0 * phi;
       mesh->communicate(B0phi);
@@ -1964,7 +1960,6 @@ if (evolve_pressure) {
 
 
 	start = std::chrono::steady_clock::now();
-
   #if 0  //  defined(GPU)
  // too slow, but b0xGrad_dot_Grad_g does work; 
     
@@ -1977,7 +1972,6 @@ if (evolve_pressure) {
 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 	 	int i = ob_i[id].ind;
-
 		BoutReal p1 = b0xGrad_dot_Grad_g(phi_acc,P0_acc,i);
 		DDT(P_acc)[i] -= p1; 
 	});
@@ -2014,37 +2008,40 @@ if (evolve_pressure) {
        time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
    //    std::cout << "The  diamag_phi0 of ddt(P) since start is "<< time_taken.count()<<" nano seconds.\n";
 
-   if (withflow) {// net flow
+      if (withflow) {// net flow
       printf(".........withflow .................\n");
-      ddt(P) -= V_dot_Grad(V0net, P);
+        ddt(P) -= V_dot_Grad(V0net, P);
 	}
-   if (nonlinear){
+      if (nonlinear){
      // printf(".........nonlinear .................\n");
 
+#ifdef BOUT_HAS_RAJA
 
-#ifdef BOUT_HAS_RAJA 
 // no problme, reference for previous one
-	 auto phi_acc = FieldAccessor<>(phi);
-    auto B0_2D_acc =Field2DAccessor<>(B0);
-	 auto P_acc = FieldAccessor<>(P);   //P is field 3D
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 
-       int i = ob_i[id].ind;
+	 auto phi_acc = FieldAccessor<>(phi);
+         auto B0_2D_acc =Field2DAccessor<>(B0);
+	 auto P_acc = FieldAccessor<>(P);   //P is field 3D
+         RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
+
+                 int i = ob_i[id].ind;
 		 BoutReal f1 = FIELD2D_3DINDEX_DATA(phi_acc,B0_2D_acc,i);
-       BoutReal p1 = bracket_g(phi_acc,P_acc,i);
-       DDT(phi_acc)[i] -= p1 * f1;
-    });
+                 BoutReal p1 = bracket_g(phi_acc,P_acc,i);
+                 DDT(phi_acc)[i] -= p1 * f1;
+
+
+          });
 
      
 
 #else
-    ddt(P) -= bracket(phi, P, bm_exb) * B0; // Advection
+  ddt(P) -= bracket(phi, P, bm_exb) * B0; // Advection
 #endif
 
+    	}
 
-  } // if nonlinear
 
-} // if evolve pressure
+	}
 
        
 
@@ -2119,7 +2116,6 @@ if (evolve_pressure) {
         ddt(Jpar) = filter(ddt(Jpar), filter_z_mode);
       } else
 
-
 #if 0  // defined(GPU)
 // problem , need to discuss
 //
@@ -2137,13 +2133,11 @@ if (evolve_pressure) {
                   BoutReal p2 = filter_g(U_acc,filter_z_mode,i);
  		  BoutReal p3 = filter_g(P_acc,filter_z_mode,i);
 		  DDT(Psi_acc)[i] = p1;
-
- 	     DDT(U_acc)[i] = p2;
+ 	          DDT(U_acc)[i] = p2;
 		  DDT(P_acc)[i] = p3;
 	});
 
 //        ddt(Psi) = filter(ddt(Psi), filter_z_mode);
-
 //          ddt(U) = filter(ddt(U), filter_z_mode);
 //        ddt(P) = filter(ddt(P), filter_z_mode);
  
@@ -2160,6 +2154,8 @@ if (evolve_pressure) {
        time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
  //      std::cout << "The  filter_z of ddt(P) since start is "<< time_taken.count()<<" nano seconds.\n";
 
+
+
 	start = std::chrono::steady_clock::now();
     if (low_pass_z > 0) {
  //printf(".........low_pass_z  .................\n");
@@ -2167,7 +2163,6 @@ if (evolve_pressure) {
       if (evolve_jpar) {
         ddt(Jpar) = lowPass(ddt(Jpar), low_pass_z, zonal_field);
       } else
-
 
 
 #if 0 //defined(GPU)
