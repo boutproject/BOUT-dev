@@ -391,8 +391,8 @@ void LaplaceHypre3d::updateMatrix3D() {
 }
 
 OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
-						     RangeIterator lowerYBound,
-						     RangeIterator upperYBound) {
+						  const RangeIterator &lowerYBound,
+						  const RangeIterator &upperYBound) {
   OperatorStencil<Ind3D> stencil;
 
   // Get the pattern used for interpolation. This is assumed to be the
@@ -439,7 +439,7 @@ OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
   // If there is a lower y-boundary then create a part of the stencil
   // for cells immediately adjacent to it.
   if (lowerYBound.max() - lowerYBound.min() > 0) {
-    stencil.add([index = localmesh->ystart, &lowerYBound](Ind3D ind) -> bool {
+    stencil.add([index = localmesh->ystart, lowerYBound](Ind3D ind) -> bool {
 		  return index == ind.y() && lowerYBound.intersects(ind.x()); },
       lowerEdgeStencilVector);
   }
@@ -447,7 +447,7 @@ OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
   // If there is an upper y-boundary then create a part of the stencil
   // for cells immediately adjacent to it.
   if (upperYBound.max() - upperYBound.min() > 0) {
-    stencil.add([index = localmesh->yend, &upperYBound](Ind3D ind) -> bool {
+    stencil.add([index = localmesh->yend, upperYBound](Ind3D ind) -> bool {
 		  return index == ind.y() && upperYBound.intersects(ind.x()); },
       upperEdgeStencilVector);
   }

@@ -286,15 +286,19 @@ public:
     }
 
     Element& operator=(const Element& other) {
+      ASSERT3(finite(static_cast<BoutReal>(other)));
       return *this = static_cast<BoutReal>(other);
     }
     Element& operator=(BoutReal value_) {
+      ASSERT3(finite(value_));
       value = value_;
       vector->V[vec_i] = value_;
       return *this;
     }
     Element& operator+=(BoutReal value_) {
+      ASSERT3(finite(value_));
       value += value_;
+      ASSERT3(finite(value));
       vector->V[vec_i] += value_;
       return *this;
     }
@@ -458,6 +462,11 @@ public:
             std::vector<BoutReal> weights_ = {})
         : hypre_matrix(matrix_.get()), row(row_), column(column_), positions(positions_),
           weights(weights_) {
+#if CHECK > 2
+      for (const auto val : weights) {
+        ASSERT3(finite(val));
+      }
+#endif
       ASSERT2(positions.size() == weights.size());
       if (positions.empty()) {
         positions = {column};
@@ -467,20 +476,26 @@ public:
       value = matrix->getVal(row, column);
     }
     Element& operator=(const Element& other) {
+      AUTO_TRACE();
+      ASSERT3(finite(static_cast<BoutReal>(other)));
       return *this = static_cast<BoutReal>(other);
     }
     Element& operator=(BoutReal value_) {
+      AUTO_TRACE();
+      ASSERT3(finite(value_));
       value = value_;
       setValues(value);
       return *this;
     }
     Element& operator+=(BoutReal value_) {
+      AUTO_TRACE();
+      ASSERT3(finite(value_));
       auto column_position = std::find(cbegin(positions), cend(positions), column);
       if (column_position != cend(positions)) {
         const auto i = std::distance(cbegin(positions), column_position);
         value += weights[i] * value_;
       }
-      setValues(value);
+      addValues(value_);
       return *this;
     }
 
@@ -488,6 +503,7 @@ public:
 
   private:
     void setValues(BoutReal value_) {
+      TRACE("HypreMatrix setting values at ({}, {})", row, column);
       ASSERT3(!positions.empty());
       std::vector<HYPRE_Complex> values;
       std::transform(
@@ -497,6 +513,21 @@ public:
       //BOUT_OMP(critical)
       for (HYPRE_BigInt i = 0; i < positions.size(); ++i) {
         matrix->setVal(row, positions[i], values[i]);
+      }
+
+    }
+
+    void addValues(BoutReal value_) {
+      TRACE("HypreMatrix setting values at ({}, {})", row, column);
+      ASSERT3(!positions.empty());
+      std::vector<HYPRE_Complex> values;
+      std::transform(
+          weights.begin(), weights.end(), std::back_inserter(values),
+          [&value_](BoutReal weight) -> HYPRE_Complex { return weight * value_; });
+      HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>(positions.size());
+      //BOUT_OMP(critical)
+      for (HYPRE_BigInt i = 0; i < positions.size(); ++i) {
+        matrix->addVal(row, positions[i], values[i]);
       }
 
     }
@@ -548,6 +579,38 @@ public:
     for(HYPRE_BigInt col_ind = 0; col_ind < (*J)[i].size(); ++col_ind) {
       if ((*J)[i][col_ind] == column) {
         (*V)[i][col_ind] = value;
+        value_set  = true;
+        break;
+      }
+    }
+
+    if (!value_set)
+    {
+      (*V)[i].push_back(value);
+      (*J)[i].push_back(column);
+    }
+  }
+
+  void addVal(const ind_type& row, const ind_type& column, BoutReal value) {
+    const HYPRE_BigInt global_row = index_converter->getGlobal(row);
+    const HYPRE_BigInt global_column = index_converter->getGlobal(column);
+#if CHECKLEVEL >= 1
+    if (global_row < 0 or global_column < 0) {
+      throw BoutException(
+          "Invalid HypreMatrix element at row = ({}, {}, {}), column = ({}, {}, {})",
+          row.x(), row.y(), row.z(), column.x(), column.y(), column.z());
+    }
+#endif
+    return addVal(global_row, global_column, value);
+  }
+
+  void addVal(const HYPRE_BigInt row, const HYPRE_BigInt column, BoutReal value) {
+    HYPRE_BigInt i = row - ilower;
+    ASSERT2(i >= 0 && i < num_rows);
+    bool value_set = false;
+    for(HYPRE_BigInt col_ind = 0; col_ind < (*J)[i].size(); ++col_ind) {
+      if ((*J)[i][col_ind] == column) {
+        (*V)[i][col_ind] += value;
         value_set  = true;
         break;
       }

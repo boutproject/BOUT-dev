@@ -171,8 +171,12 @@ public:
         value = 0.;
       }
     }
-    Element& operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
+    Element& operator=(const Element& other) {
+      ASSERT3(finite(static_cast<BoutReal>(other)));
+      return *this = static_cast<BoutReal>(other);
+    }
     Element& operator=(BoutReal val) {
+      ASSERT3(finite(val));
       value = val;
       int status;
       BOUT_OMP(critical)
@@ -183,7 +187,9 @@ public:
       return *this;
     }
     Element& operator+=(BoutReal val) {
+      ASSERT3(finite(val));
       value += val;
+      ASSERT3(finite(value));
       int status;
       BOUT_OMP(critical)
       status = VecSetValue(*petscVector, petscIndex, val, ADD_VALUES);
@@ -380,6 +386,11 @@ public:
             std::vector<BoutReal> w = {})
         : petscMatrix(matrix), petscRow(row), petscCol(col), positions(p), weights(w) {
       ASSERT2(positions.size() == weights.size());
+#if CHECK > 2
+      for (const auto val : weights) {
+        ASSERT3(finite(val));
+      }
+#endif
       if (positions.size() == 0) {
         positions = {col};
         weights = {1.0};
@@ -393,17 +404,26 @@ public:
         value = 0.;
       }
     }
-    Element& operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
+    Element& operator=(const Element& other) {
+      AUTO_TRACE();
+      ASSERT3(finite(static_cast<BoutReal>(other)));
+      return *this = static_cast<BoutReal>(other);
+    }
     Element& operator=(BoutReal val) {
+      AUTO_TRACE();
+      ASSERT3(finite(val));
       value = val;
       setValues(val, INSERT_VALUES);
       return *this;
     }
     Element& operator+=(BoutReal val) {
+      AUTO_TRACE();
+      ASSERT3(finite(val));
       auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
       if (columnPosition != positions.end()) {
         int i = std::distance(positions.begin(), columnPosition);
         value += weights[i] * val;
+        ASSERT3(finite(value));
       }
       setValues(val, ADD_VALUES);
       return *this;
@@ -412,10 +432,12 @@ public:
 
   private:
     void setValues(BoutReal val, InsertMode mode) {
+      TRACE("PetscMatrix setting values at ({}, {})", petscRow, petscCol);
       ASSERT3(positions.size() > 0);
       std::vector<PetscScalar> values;
       std::transform(weights.begin(), weights.end(), std::back_inserter(values),
                      [&val](BoutReal weight) -> PetscScalar { return weight * val; });
+
       int status;
       BOUT_OMP(critical)
       status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
@@ -495,7 +517,7 @@ public:
     BOUT_OMP(critical)
     status = MatGetValues(*get(), 1, &global1, 1, &global2, &value);
     if (status != 0) {
-      throw BoutException("Error when setting elements of a PETSc matrix.");
+      throw BoutException("Error when getting elements of a PETSc matrix.");
     }
     return value;
   }
