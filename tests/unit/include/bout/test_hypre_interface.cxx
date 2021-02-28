@@ -270,7 +270,7 @@ TYPED_TEST(HypreMatrixTest, SetAddGetValue) {
   EXPECT_EQ(actual, value);
 
   BoutReal second_value = 37.;
-  matrix.addVal(idx, idx, second_value)
+  matrix.addVal(idx, idx, second_value);
   actual = matrix.getVal(idx, idx);
   EXPECT_EQ(actual, value + second_value);
 }
