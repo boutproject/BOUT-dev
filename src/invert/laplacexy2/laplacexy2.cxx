@@ -379,7 +379,40 @@ const Field2D LaplaceXY2::solve(const Field2D &rhs, const Field2D &x0) {
   }
 
   // Convert result into a Field2D
-  return xs.toField();
+  auto result = xs.toField();
+
+  // Set boundary cells past the first one
+  ////////////////////////////////////////
+
+  // Inner X boundary
+  if (localmesh->firstX()) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      for (int x = localmesh->xstart - 2; x >= 0; x--)
+        result(x, y) = result(localmesh->xstart-1, y);
+    }
+  }
+
+  // Outer X boundary
+  if (localmesh->lastX()) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      for (int x = localmesh->xend + 2; x < localmesh->LocalNx; x++)
+        result(x, y) = result(localmesh->xend + 1, y);
+    }
+  }
+
+  // Lower Y boundary
+  for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+    for (int y = localmesh->ystart - 2; y >= 0; y--)
+      result(it.ind, y) = result(it.ind, localmesh->ystart - 1);
+  }
+
+  // Upper Y boundary
+  for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+    for (int y = localmesh->yend + 2; y < localmesh->LocalNy; y++)
+      result(it.ind, y) = result(it.ind, localmesh->yend + 1);
+  }
+
+  return result;
 }
 
 
