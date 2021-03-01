@@ -294,6 +294,37 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
   std::chrono::duration<double> formfield_dur = formfield-start;  //AARON
   std::cout << "*****Form field time:  " << formfield_dur.count() << std::endl;  
 
+  // Set boundary cells past the first one
+  ////////////////////////////////////////
+
+  // Inner X boundary
+  if (localmesh->firstX()) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      for (int x = localmesh->xstart - 2; x >= 0; x--)
+        sol(x, y) = sol(localmesh->xstart-1, y);
+    }
+  }
+
+  // Outer X boundary
+  if (localmesh->lastX()) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      for (int x = localmesh->xend + 2; x < localmesh->LocalNx; x++)
+        sol(x, y) = sol(localmesh->xend + 1, y);
+    }
+  }
+
+  // Lower Y boundary
+  for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+    for (int y = localmesh->ystart - 2; y >= 0; y--)
+      sol(it.ind, y) = sol(it.ind, localmesh->ystart - 1);
+  }
+
+  // Upper Y boundary
+  for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+    for (int y = localmesh->yend + 2; y < localmesh->LocalNy; y++)
+      sol(it.ind, y) = sol(it.ind, localmesh->yend + 1);
+  }
+
   return sol;
 }
 
