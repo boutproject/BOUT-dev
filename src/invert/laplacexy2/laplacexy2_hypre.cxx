@@ -1,7 +1,6 @@
-
-#ifdef BOUT_HAS_HYPRE
-
 #include <bout/invert/laplacexy2_hypre.hxx>
+
+#if BOUT_HAS_HYPRE
 
 #include <bout/assert.hxx>
 
