@@ -49,7 +49,7 @@ upwind = W3
 # Fastest setting depends on machine and MPI
 # implementation. Do not affect result.
 [output]
-shiftOutput = true
+shiftoutput = true
 
 ##################################################
 # Laplacian inversion routines

@@ -1,4 +1,5 @@
+
 [mesh]
-nx=6
-ny=2
-nz=1
+nx = 6
+ny = 2
+nz = 1
