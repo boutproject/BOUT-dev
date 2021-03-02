@@ -33,7 +33,9 @@
 #ifndef LAPLACE_XY2_HYPRE_H
 #define LAPLACE_XY2_HYPRE_H
 
-#ifndef BOUT_HAS_HYPRE
+#include <bout/build_defines.hxx>
+
+#if not BOUT_HAS_HYPRE
 // If no Hypre
 
 #warning LaplaceXY requires Hypre. No LaplaceXY available
