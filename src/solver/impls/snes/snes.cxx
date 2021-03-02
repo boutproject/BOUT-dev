@@ -134,7 +134,7 @@ int SNESSolver::run() {
   TRACE("SNESSolver::run()");
   // Set initial guess at the solution from variables
   {
-    BoutReal* xdata;
+    BoutReal* xdata = nullptr;
     int ierr = VecGetArray(snes_x, &xdata);
     CHKERRQ(ierr); // NOLINT
     save_vars(xdata);
@@ -145,7 +145,7 @@ int SNESSolver::run() {
   for (int s = 0; s < nsteps; s++) {
     BoutReal target = simtime + out_timestep;
 
-    bool looping;
+    bool looping = true;
     do {
       // Copy the state (snes_x) into initial values (x0)
       VecCopy(snes_x, x0);
@@ -222,7 +222,7 @@ int SNESSolver::run() {
 
     // Put the result into variables
     {
-      const BoutReal* xdata;
+      const BoutReal* xdata = nullptr;
       int ierr = VecGetArrayRead(snes_x, &xdata);
       CHKERRQ(ierr); // NOLINT
       load_vars(const_cast<BoutReal*>(xdata));
@@ -244,7 +244,7 @@ int SNESSolver::run() {
 // f = rhs
 PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
   // Get data from PETSc into BOUT++ fields
-  const BoutReal* xdata;
+  const BoutReal* xdata = nullptr;
   int ierr = VecGetArrayRead(x, &xdata);
   CHKERRQ(ierr); // NOLINT
   load_vars(const_cast<BoutReal*>(xdata));
@@ -266,7 +266,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
   }
 
   // Copy derivatives back
-  BoutReal* fdata;
+  BoutReal* fdata = nullptr;
   ierr = VecGetArray(f, &fdata);
   CHKERRQ(ierr); // NOLINT
   save_derivs(fdata);
