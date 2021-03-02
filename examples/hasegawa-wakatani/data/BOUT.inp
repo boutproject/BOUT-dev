@@ -22,7 +22,7 @@ dz = 0.2
 flags = 0   # Flags for Laplacian inversion
 
 [solver]
-#type=karniadakis
+#type=splitrk
 timestep = 0.001
 
 [hw]

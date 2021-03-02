@@ -621,3 +621,61 @@ NetCDF files.
 
     u = bread(f, "U")  # Finally read the variable
 
+.. _sec-reproducibility:
+
+Reproducibility and provenance tracking
+=======================================
+
+To help with reproducibility of simulations and provenance tracking of
+data, BOUT++ saves some metadata into output files.
+
+.. table:: Provenance tracking metadata attributes
+
+   +---------------------------------------------------------------------------+
+   | File attributes                                                           |
+   +=============================+=============================================+
+   | `BOUT_REVISION`             | Git hash of the BOUT++ version that the     |
+   |                             | code was compiled with.                     |
+   +-----------------------------+---------------------------------------------+
+
+.. table:: Provenance tracking metadata variables
+
+   +---------------------------------------------------------------------------+
+   | Variables                                                                 |
+   +=============================+=============================================+
+   | `run_id`                    | Unique identifier (UUID) for a run          |
+   +-----------------------------+---------------------------------------------+
+   | `run_restart_from`          | If the run was restarted, the `run_id` of   |
+   |                             | the run it was restarted from.              |
+   |                             | `"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"` if |
+   |                             | the run was not restarted, or the previous  |
+   |                             | run had no `run_id`                         |
+   +-----------------------------+---------------------------------------------+
+
+.. table:: Provenance tracking grid metadata variables
+
+   +-----------------------------+---------------------------------------------+
+   | Grid-related                | These variables are created if a grid file  |
+   | variables                   | was used for the run, and if the grid file  |
+   |                             | was created with a new enough version of    |
+   |                             | hypnotoad                                   |
+   +=============================+=============================================+
+   | `grid_id`                   | Unique identifier (UUID) for the grid file  |
+   +-----------------------------+---------------------------------------------+
+   | `hypnotoad_version`         | Version number of hypnotoad used to create  |
+   |                             | the grid file                               |
+   +-----------------------------+---------------------------------------------+
+   | `hypnotoad_git_hash`        | Git hash of the version of hypnotoad used   |
+   |                             | to create the grid file (only present if    |
+   |                             | hypnotoad is used from a git repo rather    |
+   |                             | installed as a package).                    |
+   +-----------------------------+---------------------------------------------+
+   | `hypnotoad_git_diff`        | Git diff of the version of hypnotoad used   |
+   |                             | to create the grid file (only present if    |
+   |                             | hypnotoad is used from a git repo rather    |
+   |                             | installed as a package and the code was     |
+   |                             | changed since the latest commit)            |
+   +-----------------------------+---------------------------------------------+
+   | `hypnotoad_geqdsk_filename` | Name of the geqdsk file used to create the  |
+   |                             | grid (if a geqdsk file was used)            |
+   +-----------------------------+---------------------------------------------+

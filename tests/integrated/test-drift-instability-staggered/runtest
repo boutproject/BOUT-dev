@@ -1,4 +1,1 @@
-#!/bin/sh
-#requires: not metric_3d
-#requires: netcdf
-./runtest.py staggered
+../test-drift-instability/runtest
