@@ -84,10 +84,6 @@ endif ()
 
 add_executable(serial_tests ${serial_tests_source})
 
-#if(BOUT_HAS_HYPRE)
-#   target_compile_definitions(serial_tests PUBLIC "BOUT_HAS_HYPRE")
-#endif ()
-
 target_include_directories(serial_tests PUBLIC bout++
    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../../include>

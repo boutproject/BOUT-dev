@@ -363,9 +363,9 @@ set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 # Optional dependencies
 include(cmake/SetupBOUTThirdParty.cmake)
 
-if(BOUT_HAS_HYPRE)
-   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
-endif ()
+#if(BOUT_HAS_HYPRE)
+#   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
+#endif ()
 
 ##################################################
 # Components of the version number
@@ -560,6 +560,14 @@ function(bout_add_integrated_test TESTNAME)
   target_link_libraries(${TESTNAME} bout++)
   target_include_directories(${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
+  if(BOUT_USE_CUDA)
+     set_source_files_properties(${BOUT_TEST_OPTIONS_SOURCES} PROPERTIES LANGUAGE CUDA )
+     target_include_directories(${TESTNAME} PUBLIC ${BOUT_CUDA_LIB_DIR}/../include ) 
+    if(BOUT_HAS_HYPRE)
+     target_compile_definitions(${TESTNAME} PUBLIC "HYPRE_USING_CUDA;HYPRE_USING_UNIFIED_MEMORY")
+    endif ()
+  endif ()
+
   # Set the name of the executable. We either take it as an option,
   # or use the first source file, stripping the file suffix
   if (BOUT_TEST_OPTIONS_EXECUTABLE_NAME)
@@ -639,9 +647,11 @@ if(BOUT_HAS_HYPRE)
    add_subdirectory(examples/laplacexy/simple-hypre)
 endif ()
 
-#add_subdirectory(examples/laplacexy/simple)
+add_subdirectory(examples/laplacexy/simple)
 add_subdirectory(examples/hasegawa-wakatani-3d)
 add_subdirectory(examples/elm-pb)
+add_subdirectory(tests/integrated/test-laplace-petsc3d)
+add_subdirectory(tests/integrated/test-laplace-hypre3d)
 
 ##################################################
 # Generate the build config header

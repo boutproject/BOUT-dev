@@ -248,7 +248,7 @@ public:
     }
 
     ASSERT2(vec_i == vsize);
-    writeCacheToHypre();
+    //writeCacheToHypre(); // redundant assemble already performs writeCacheToHypre
     assemble();
     have_indices = true;
   }
@@ -793,11 +793,11 @@ private:
   MPI_Comm comm;
   HYPRE_Solver solver;
   HYPRE_Solver precon;
-  bool gmres_setup;
+  bool solver_setup;
 public:
   HypreSystem(Mesh& mesh)
   {
-    //HYPRE_Init(); // Now handled by hyprelib
+    HYPRE_Init(); // each processor inits Hypre ; still need to work in interaction with hyprelib init/finalize
 #ifdef BOUT_USE_CUDA
     hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
     HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
@@ -812,7 +812,7 @@ public:
 
     HYPRE_ParCSRGMRESCreate(comm, &solver);
     /* set the GMRES parameters */
-    //HYPRE_GMRESSetKDim(solver, 5);
+    //HYPRE_GMRESSetKDim(solver, 5); // commented out to let Hypre pick default
     HYPRE_GMRESSetMaxIter(solver, 200);
     HYPRE_GMRESSetTol(solver, 1.0e-7);
 
@@ -821,20 +821,20 @@ public:
 #ifdef BOUT_USE_CUDA
     HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation // 7 throws error code 256 did not converge
     HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
-    //HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU // for GMRES causes solver_err = 1 Generic Error and non-convergence
+    //HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU // currently causes solver_err = 1 Generic Error and non-convergence
     HYPRE_BoomerAMGSetInterpType(precon, 15); // must be 3 or 15 for GPU 
 #endif
     HYPRE_BoomerAMGSetNumSweeps(precon, 1);
     HYPRE_BoomerAMGSetMaxLevels(precon, 20);
     HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
     HYPRE_BoomerAMGSetTol(precon, 0.0);
-    //HYPRE_BoomerAMGSetPrintLevel(solver, 3);
+    //HYPRE_BoomerAMGSetPrintLevel(precon, 3); // turn is on for extensive Hypre diagnostics
 
-    gmres_setup = false;
+    solver_setup = false;
   }
 
   ~HypreSystem() {
-    //HYPRE_Finalize(); // now handled by hyprelib
+    //HYPRE_Finalize(); // now handled by hyprelib 
   }
 
   void setRelTol(double tol)
@@ -916,14 +916,14 @@ public:
     ASSERT2(A != nullptr);
     ASSERT2(x != nullptr);
     ASSERT2(b != nullptr);
-    if (!gmres_setup) {
+    if (!solver_setup) {
       checkHypreError(HYPRE_ParCSRGMRESSetup(solver, A->getParallel(), b->getParallel(), x->getParallel()));
-      gmres_setup = true;
+      solver_setup = true;
     }
 
     solve_err = checkHypreError(HYPRE_ParCSRGMRESSolve(solver, A->getParallel(), b->getParallel(), x->getParallel()));
 
-    printf("solve_err = %d\n",solve_err);
+    //printf("solve_err = %d\n",solve_err);
 
     return solve_err;
   }
