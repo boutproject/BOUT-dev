@@ -66,11 +66,11 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
   // Vectors
   ierr = VecCreate(BoutComm::get(), &snes_x);
-  CHKERRQ(ierr);
+  CHKERRQ(ierr); // NOLINT
   ierr = VecSetSizes(snes_x, nlocal, PETSC_DECIDE);
-  CHKERRQ(ierr);
+  CHKERRQ(ierr); // NOLINT
   ierr = VecSetFromOptions(snes_x);
-  CHKERRQ(ierr);
+  CHKERRQ(ierr); // NOLINT
 
   VecDuplicate(snes_x, &snes_f);
   VecDuplicate(snes_x, &x0);
@@ -136,10 +136,10 @@ int SNESSolver::run() {
   {
     BoutReal* xdata;
     int ierr = VecGetArray(snes_x, &xdata);
-    CHKERRQ(ierr);
+    CHKERRQ(ierr); // NOLINT
     save_vars(xdata);
     ierr = VecRestoreArray(snes_x, &xdata);
-    CHKERRQ(ierr);
+    CHKERRQ(ierr); // NOLINT
   }
 
   for (int s = 0; s < nsteps; s++) {
@@ -224,10 +224,10 @@ int SNESSolver::run() {
     {
       const BoutReal* xdata;
       int ierr = VecGetArrayRead(snes_x, &xdata);
-      CHKERRQ(ierr);
+      CHKERRQ(ierr); // NOLINT
       load_vars(const_cast<BoutReal*>(xdata));
       ierr = VecRestoreArrayRead(snes_x, &xdata);
-      CHKERRQ(ierr);
+      CHKERRQ(ierr); // NOLINT
     }
     run_rhs(simtime); // Run RHS to calculate auxilliary variables
 
@@ -246,10 +246,10 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
   // Get data from PETSc into BOUT++ fields
   const BoutReal* xdata;
   int ierr = VecGetArrayRead(x, &xdata);
-  CHKERRQ(ierr);
+  CHKERRQ(ierr); // NOLINT
   load_vars(const_cast<BoutReal*>(xdata));
   ierr = VecRestoreArrayRead(x, &xdata);
-  CHKERRQ(ierr);
+  CHKERRQ(ierr); // NOLINT
 
   try {
     // Call RHS function
@@ -268,10 +268,10 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
   // Copy derivatives back
   BoutReal* fdata;
   ierr = VecGetArray(f, &fdata);
-  CHKERRQ(ierr);
+  CHKERRQ(ierr); // NOLINT
   save_derivs(fdata);
   ierr = VecRestoreArray(f, &fdata);
-  CHKERRQ(ierr);
+  CHKERRQ(ierr); // NOLINT
 
   // Backward Euler
   // Set fdata = xdata - x0 - Δt*fdata
