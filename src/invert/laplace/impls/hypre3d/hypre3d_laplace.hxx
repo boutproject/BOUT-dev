@@ -195,8 +195,6 @@ public:
   int meshx, meshz, size, localN; // Mesh sizes, total size, no of points on this processor
 
   Options *opts;              // Laplace Section Options Object
-  std::string ksptype; ///< KSP solver type
-  std::string pctype;  ///< Preconditioner type
 
   // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
   // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
