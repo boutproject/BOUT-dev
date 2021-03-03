@@ -281,6 +281,63 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
 
   x->importValuesFromField(x0);
   b->importValuesFromField(rhs);
+
+  // Set boundary values
+  //////////////////////
+
+  if (localmesh->firstX()) {
+    if (x_inner_dirichlet) {
+      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+        auto index = index2d(localmesh, localmesh->xstart - 1, y);
+
+        (*b)(index) = 0.5 * (x0[index] + x0[index.xp()]);
+      }
+    } else {
+      // Inner X boundary (Neumann)
+      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+        auto index = index2d(localmesh, localmesh->xstart - 1, y);
+
+        (*b)(index) = 0.0; // x0[index] - x0[index.xp()];
+      }
+    }
+  }
+
+  // Outer X boundary (Dirichlet)
+  if (localmesh->lastX()) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      auto index = index2d(localmesh, localmesh->xend + 1, y);
+
+      (*b)(index) = 0.5 * (x0[index.xm()] + x0[index]);
+    }
+  }
+
+  if (y_bndry_dirichlet) {
+    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      auto index = index2d(localmesh, it.ind, localmesh->ystart - 1);
+
+      (*b)(index) = 0.5 * (x0[index] + x0[index.yp()]);
+    }
+
+    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      auto index = index2d(localmesh, it.ind, localmesh->yend + 1);
+
+      (*b)(index) = 0.5 * (x0[index] + x0[index.xm()]);
+    }
+  } else {
+    // Y boundaries Neumann
+    for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      auto index = index2d(localmesh, it.ind, localmesh->ystart - 1);
+
+      (*b)(index) = 0.0;
+    }
+
+    for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      auto index = index2d(localmesh, it.ind, localmesh->yend + 1);
+
+      (*b)(index) = 0.0;
+    }
+  }
+
   x->assemble();
   b->assemble();
 
