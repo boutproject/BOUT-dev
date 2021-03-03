@@ -170,72 +170,50 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
   }
 
   // X boundaries
-  if (localmesh->firstX()) {
-    if (x_inner_dirichlet) {
+  if (x_inner_dirichlet) {
+    // Dirichlet on inner X boundary
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionInnerX()) {
+      (*M)(i, i.xp()) = 0.5;
+      (*M)(i, i) = 0.5;
+    }
 
-      // Dirichlet on inner X boundary
-      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-        auto index = index2d(localmesh, localmesh->xstart, y);
-        auto ind_xm = index.xm();
-        (*M)(ind_xm, index) = 0.5;
-        (*M)(ind_xm, ind_xm) = 0.5;
-      }
-
-    } else {
-
-      // Neumann on inner X boundary
-      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-        auto index = index2d(localmesh, localmesh->xstart, y);
-        auto ind_xm = index.xm();
-        HYPRE_BigInt I = indexConverter->getGlobal(index);
-        HYPRE_BigInt XM = indexConverter->getGlobal(ind_xm);       
-        (*M)(ind_xm, index) = 1.0;
-        (*M)(ind_xm, ind_xm) = -1.0;
-      }
+  } else {
+    // Neumann on inner X boundary
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionInnerX()) {
+      (*M)(i, i.xp()) = 1.0;
+      (*M)(i, i) = -1.0;
     }
   }
-  if (localmesh->lastX()) {
-    // Dirichlet on outer X boundary
-
-    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-      auto index = index2d(localmesh, localmesh->xend, y);      
-      auto ind_xp = index.xp();
-      (*M)(ind_xp, ind_xp) = 0.5;
-      (*M)(ind_xp, index) = 0.5;   
-    }
+  // Dirichlet on outer X boundary
+  BOUT_FOR_SERIAL(i, indexConverter->getRegionOuterX()) {
+    (*M)(i, i) = 0.5;
+    (*M)(i, i.xm()) = 0.5;
   }
 
   if (y_bndry_dirichlet) {
     // Dirichlet on Y boundaries 
-    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-      auto index = index2d(localmesh, it.ind, localmesh->ystart);
-      auto ind_ym = index.ym();
-      (*M)(ind_ym, ind_ym) = 0.5;
-      (*M)(ind_ym, index) = 0.5;       
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionLowerY()) {
+      (*M)(i, i) = 0.5;
+      (*M)(i, i.yp()) = 0.5;
     }
 
-    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-      auto index = index2d(localmesh, it.ind, localmesh->yend);
-      auto ind_yp = index.yp();
-      (*M)(ind_yp, ind_yp) = 0.5;
-      (*M)(ind_yp, index) = 0.5;
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionUpperY()) {
+      (*M)(i, i) = 0.5;
+      (*M)(i, i.ym()) = 0.5;
     }
   } else {
     // Neumann on Y boundaries   
-    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-      auto index = index2d(localmesh, it.ind, localmesh->ystart);
-      auto ind_ym = index.ym();
-      (*M)(ind_ym, ind_ym) = -1.0;
-      (*M)(ind_ym, index) = 1.0;    
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionLowerY()) {
+      (*M)(i, i) = -1.0;
+      (*M)(i, i.yp()) = 1.0;
     }
 
-    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-      auto index = index2d(localmesh, it.ind, localmesh->yend);
-      auto ind_yp = index.yp();
-      (*M)(ind_yp, ind_yp) = 1.0;
-      (*M)(ind_yp, index) = -1.0;   
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionUpperY()) {
+      (*M)(i, i) = 1.0;
+      (*M)(i, i.ym()) = -1.0;
     }
   }
+
   auto end = std::chrono::system_clock::now();  //AARON
   if (print_timing) {
     auto dur = end-start;  //AARON
@@ -285,56 +263,38 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
   // Set boundary values
   //////////////////////
 
-  if (localmesh->firstX()) {
-    if (x_inner_dirichlet) {
-      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-        auto index = index2d(localmesh, localmesh->xstart - 1, y);
-
-        (*b)(index) = 0.5 * (x0[index] + x0[index.xp()]);
-      }
-    } else {
-      // Inner X boundary (Neumann)
-      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-        auto index = index2d(localmesh, localmesh->xstart - 1, y);
-
-        (*b)(index) = 0.0; // x0[index] - x0[index.xp()];
-      }
+  if (x_inner_dirichlet) {
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionInnerX()) {
+      (*b)(i) = 0.5 * (x0[i] + x0[i.xp()]);
+    }
+  } else {
+    // Inner X boundary (Neumann)
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionInnerX()) {
+      (*b)(i) = 0.0;
     }
   }
 
   // Outer X boundary (Dirichlet)
-  if (localmesh->lastX()) {
-    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-      auto index = index2d(localmesh, localmesh->xend + 1, y);
-
-      (*b)(index) = 0.5 * (x0[index.xm()] + x0[index]);
-    }
+  BOUT_FOR_SERIAL(i, indexConverter->getRegionOuterX()) {
+    (*b)(i) = 0.5 * (x0[i.xm()] + x0[i]);
   }
 
   if (y_bndry_dirichlet) {
-    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-      auto index = index2d(localmesh, it.ind, localmesh->ystart - 1);
-
-      (*b)(index) = 0.5 * (x0[index] + x0[index.yp()]);
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionLowerY()) {
+      (*b)(i) = 0.5 * (x0[i] + x0[i.yp()]);
     }
 
-    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-      auto index = index2d(localmesh, it.ind, localmesh->yend + 1);
-
-      (*b)(index) = 0.5 * (x0[index] + x0[index.xm()]);
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionUpperY()) {
+      (*b)(i) = 0.5 * (x0[i] + x0[i.ym()]);
     }
   } else {
     // Y boundaries Neumann
-    for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-      auto index = index2d(localmesh, it.ind, localmesh->ystart - 1);
-
-      (*b)(index) = 0.0;
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionLowerY()) {
+      (*b)(i) = 0.0;
     }
 
-    for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-      auto index = index2d(localmesh, it.ind, localmesh->yend + 1);
-
-      (*b)(index) = 0.0;
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionUpperY()) {
+      (*b)(i) = 0.0;
     }
   }
 
