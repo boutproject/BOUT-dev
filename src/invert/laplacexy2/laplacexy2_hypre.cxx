@@ -69,6 +69,10 @@ LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
                          .doc("Include Y derivatives in operator to invert?")
                          .withDefault<bool>(true);
 
+  print_timing = (*opt)["print_timing"]
+                       .doc("Print extra timing information for LaplaceXY2Hypre")
+                       .withDefault(false);
+
   ///////////////////////////////////////////////////
   // Set the default coefficients
   Field2D one(1., localmesh);
@@ -98,7 +102,9 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
 
 
   // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
-  output << "setting up matrix..." << endl;
+  if (print_timing) {
+    output << "setting up matrix..." << endl;
+  }
   auto start = std::chrono::system_clock::now();  //AARON
   for (auto& index : indexConverter->getRegionNobndry()) {
     // Index offsets
@@ -231,23 +237,29 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
     }
   }
   auto end = std::chrono::system_clock::now();  //AARON
-  std::chrono::duration<double> dur = end-start;  //AARON
-  output << "*****Matrix set time:  " << dur.count() << endl;
+  if (print_timing) {
+    auto dur = end-start;  //AARON
+    output << "*****Matrix set time:  " << dur.count() << endl;
+  }
 
   start = std::chrono::system_clock::now();
   // Assemble Matrix
   M->assemble();
 
-  end = std::chrono::system_clock::now();  //AARON
-  dur = end-start;  //AARON
-  output << "*****Matrix asm time:  " << dur.count() << endl;
+  if (print_timing) {
+    end = std::chrono::system_clock::now();  //AARON
+    auto dur = end-start;  //AARON
+    output << "*****Matrix asm time:  " << dur.count() << endl;
+  }
 
   start = std::chrono::system_clock::now();
   linearSystem->setupAMG(M);
 
-  end = std::chrono::system_clock::now();  //AARON
-  dur = end-start;  //AARON
-  output << "*****Matrix prec time:  " << dur.count() << endl;
+  if (print_timing) {
+    end = std::chrono::system_clock::now();  //AARON
+    auto dur = end-start;  //AARON
+    output << "*****Matrix prec time:  " << dur.count() << endl;
+  }
 }
 
 LaplaceXY2Hypre::~LaplaceXY2Hypre() {
@@ -273,16 +285,20 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
   b->assemble();
 
   auto form_vec = std::chrono::system_clock::now();  //AARON  
-  std::chrono::duration<double> formvec_dur = form_vec-start;  //AARON
-  output << "*****Form Vectors time:  " << formvec_dur.count() << endl;
+  if (print_timing) {
+    std::chrono::duration<double> formvec_dur = form_vec-start;  //AARON
+    output << "*****Form Vectors time:  " << formvec_dur.count() << endl;
+  }
 
   // Solve the system
   start = std::chrono::system_clock::now();  //AARON
   linearSystem->solve();
 
   auto slv = std::chrono::system_clock::now();  //AARON
-  std::chrono::duration<double> slv_dur = slv-start;  //AARON
-  output << "*****BoomerAMG solve time:  " << slv_dur.count() << endl;
+  if (print_timing) {
+    std::chrono::duration<double> slv_dur = slv-start;  //AARON
+    output << "*****BoomerAMG solve time:  " << slv_dur.count() << endl;
+  }
 
   // Convert result into a Field2D
   start = std::chrono::system_clock::now();  //AARON  
@@ -291,8 +307,10 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
   //x->exportValuesToField(sol);
 
   auto formfield = std::chrono::system_clock::now();  //AARON
-  std::chrono::duration<double> formfield_dur = formfield-start;  //AARON
-  output << "*****Form field time:  " << formfield_dur.count() << endl;
+  if (print_timing) {
+    std::chrono::duration<double> formfield_dur = formfield-start;  //AARON
+    output << "*****Form field time:  " << formfield_dur.count() << endl;
+  }
 
   // Set boundary cells past the first one
   ////////////////////////////////////////

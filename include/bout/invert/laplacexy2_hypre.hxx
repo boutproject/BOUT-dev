@@ -133,6 +133,8 @@ private:
   bool x_outer_dirichlet; // Dirichlet on outer X boundary?
   bool y_bndry_dirichlet; // Dirichlet on Y boundary?
 
+  bool print_timing;
+
   // Location of the rhs and solution
   CELL_LOC location;
 
