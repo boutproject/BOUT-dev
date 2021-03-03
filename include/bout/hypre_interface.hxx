@@ -821,10 +821,16 @@ public:
 
     comm = std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
 
+    auto print_level = options["hypre_print_level"]
+                         .doc("Verbosity for Hypre solver. Integer from 0 (silent) to 4 "
+                              "(most verbose).")
+                         .withDefault(0);
+
     if (solver_type == HYPRE_SOLVER_TYPE::gmres) {
       HYPRE_ParCSRGMRESCreate(comm, &solver);
       /* set the GMRES parameters */
       //HYPRE_GMRESSetKDim(solver, 5); // commented out to let Hypre pick default
+      HYPRE_ParCSRGMRESSetPrintLevel(solver, print_level);
     } else {
       throw BoutException("Unsupported hypre_solver_type {}", solver_type);
     }
@@ -848,12 +854,7 @@ public:
     HYPRE_BoomerAMGSetMaxLevels(precon, 20);
     HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
     HYPRE_BoomerAMGSetTol(precon, 0.0);
-    HYPRE_BoomerAMGSetPrintLevel(
-      precon,
-      options["hypre_print_level"]
-      .doc("Verbosity for Hypre solver. Integer from 0 (silent) to 4 (most verbose).")
-      .withDefault(0)
-    );
+    HYPRE_BoomerAMGSetPrintLevel(precon, print_level);
 
     solver_setup = false;
   }
