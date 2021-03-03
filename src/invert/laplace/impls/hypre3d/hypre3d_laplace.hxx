@@ -196,11 +196,6 @@ public:
 
   Options *opts;              // Laplace Section Options Object
 
-  // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
-  // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
-  BoutReal rtol, atol, dtol;
-  int maxits; // Maximum number of iterations in solver.
-
   RangeIterator lowerY, upperY;
 
   IndexerPtr<Field3D> indexer;

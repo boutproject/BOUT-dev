@@ -41,10 +41,11 @@
 LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
+  opts(opt == nullptr ? Options::getRoot()->getSection("laplace") : opt),
   lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
   indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh,
 						   getStencil(localmesh, lowerY, upperY))),
-  operator3D(indexer), solution(indexer), rhs(indexer), linearSystem(*localmesh)
+  operator3D(indexer), solution(indexer), rhs(indexer), linearSystem(*localmesh, *opts)
 {
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
@@ -59,13 +60,6 @@ LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in) 
   linearSystem.setMatrix(&operator3D);
   linearSystem.setRHSVector(&rhs);
   linearSystem.setSolutionVector(&solution);
-
-  // Get Options in Laplace Section
-  if (!opt) {
-    opts = Options::getRoot()->getSection("laplace");
-  } else {
-    opts=opt;
-  }
 
   // Get y boundary flags
   lower_boundary_flags = (*opts)["lower_boundary_flags"].withDefault(0);
@@ -91,12 +85,6 @@ LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in) 
   if(localmesh->periodicX) {
     throw BoutException("LaplaceHypre3d does not work with periodicity in the x direction (localmesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
   }
-
-  // Get Tolerances for iterative solver
-  rtol = (*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5);
-  atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-8);
-  //dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e6);
-  maxits = (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000);
 
   // Set up boundary conditions in operator
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
@@ -381,11 +369,6 @@ void LaplaceHypre3d::updateMatrix3D() {
   }
   operator3D.assemble();
   linearSystem.setupAMG(&operator3D);
-
-  // Set the relative and absolute tolerances
-  linearSystem.setRelTol(rtol);
-  linearSystem.setAbsTol(atol);
-  linearSystem.setMaxIter(maxits); // not implemented yet!
 
   updateRequired = false;
 }

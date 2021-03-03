@@ -43,7 +43,7 @@ LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
 
   indexConverter = std::make_shared<GlobalIndexer<Field2D>>(localmesh, squareStencil<Field2D::ind_type>(localmesh));
 
-  linearSystem = new bout::HypreSystem<Field2D>(*localmesh);
+  linearSystem = new bout::HypreSystem<Field2D>(*localmesh, *opt);
   M = new bout::HypreMatrix<Field2D>(indexConverter);
   x = new bout::HypreVector<Field2D>(indexConverter);
   b = new bout::HypreVector<Field2D>(indexConverter);
