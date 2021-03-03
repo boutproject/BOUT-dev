@@ -98,7 +98,7 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
 
 
   // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
-  std::cout << "setting up matrix..." << std::endl;
+  //std::cout << "setting up matrix..." << std::endl;
   auto start = std::chrono::system_clock::now();  //AARON
   for (auto& index : indexConverter->getRegionNobndry()) {
     // Index offsets
@@ -274,7 +274,7 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
 
   auto form_vec = std::chrono::system_clock::now();  //AARON  
   std::chrono::duration<double> formvec_dur = form_vec-start;  //AARON
-  std::cout << "*****Form Vectors time:  " << formvec_dur.count() << std::endl;
+  //std::cout << "*****Form Vectors time:  " << formvec_dur.count() << std::endl;
 
   // Solve the system
   start = std::chrono::system_clock::now();  //AARON
@@ -282,7 +282,7 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
 
   auto slv = std::chrono::system_clock::now();  //AARON
   std::chrono::duration<double> slv_dur = slv-start;  //AARON
-  std::cout << "*****BoomerAMG solve time:  " << slv_dur.count() << std::endl;
+  //std::cout << "*****BoomerAMG solve time:  " << slv_dur.count() << std::endl;
 
   // Convert result into a Field2D
   start = std::chrono::system_clock::now();  //AARON  
@@ -292,11 +292,11 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
 
   auto formfield = std::chrono::system_clock::now();  //AARON
   std::chrono::duration<double> formfield_dur = formfield-start;  //AARON
-  std::cout << "*****Form field time:  " << formfield_dur.count() << std::endl;  
+  //std::cout << "*****Form field time:  " << formfield_dur.count() << std::endl;  
 
   // Set boundary cells past the first one
   ////////////////////////////////////////
-
+#if 1
   // Inner X boundary
   if (localmesh->firstX()) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
@@ -324,7 +324,7 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
     for (int y = localmesh->yend + 2; y < localmesh->LocalNy; y++)
       sol(it.ind, y) = sol(it.ind, localmesh->yend + 1);
   }
-
+#endif
   return sol;
 }
 

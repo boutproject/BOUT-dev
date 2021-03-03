@@ -707,6 +707,7 @@ public:
     HypreMalloc(rawI, num_rows*sizeof(HYPRE_BigInt));
     HypreMalloc(cols, num_entries*sizeof(HYPRE_BigInt)); 
     HypreMalloc(vals, num_entries*sizeof(HYPRE_Complex));
+    printf("num_rows %d num_entries %d\n",num_rows,num_entries);
     HYPRE_BigInt entry = 0;
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
       rawI[i] = (*I)[i];
@@ -797,7 +798,7 @@ private:
 public:
   HypreSystem(Mesh& mesh)
   {
-    HYPRE_Init(); // each processor inits Hypre ; still need to work in interaction with hyprelib init/finalize
+    HYPRE_Init(); // each processor inits Hypre
 #ifdef BOUT_USE_CUDA
     hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
     HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
@@ -809,70 +810,116 @@ public:
 #endif
 
     comm = std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
-
+#if 1
     HYPRE_ParCSRGMRESCreate(comm, &solver);
     /* set the GMRES parameters */
-    //HYPRE_GMRESSetKDim(solver, 5); // commented out to let Hypre pick default
+    //HYPRE_GMRESSetKDim(solver, 30); // comment out to let Hypre pick default
     HYPRE_GMRESSetMaxIter(solver, 200);
     HYPRE_GMRESSetTol(solver, 1.0e-7);
 
     HYPRE_BoomerAMGCreate(&precon);
     HYPRE_BoomerAMGSetOldDefault(precon);
+#if 0
 #ifdef BOUT_USE_CUDA
     HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation // 7 throws error code 256 did not converge
     HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
     //HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU // currently causes solver_err = 1 Generic Error and non-convergence
     HYPRE_BoomerAMGSetInterpType(precon, 15); // must be 3 or 15 for GPU 
 #endif
+#endif
+    HYPRE_BoomerAMGSetNumSweeps(precon, 1);
+    HYPRE_BoomerAMGSetMaxLevels(precon, 30);
+    HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
+    HYPRE_BoomerAMGSetTol(precon, 0.0);
+    //HYPRE_BoomerAMGSetMaxIter(precon, 30);
+    HYPRE_BoomerAMGSetMaxIter(precon, 2);
+    HYPRE_BoomerAMGSetPrintLevel(precon, 3); // turn this on for extensive Hypre diagnostics
+#else
+    HYPRE_ParCSRPCGCreate(comm, &solver);
+    HYPRE_PCGSetTol(solver, 1e-7);
+    HYPRE_PCGSetMaxIter(solver, 200);
+
+    HYPRE_BoomerAMGCreate(&precon);
+    HYPRE_BoomerAMGSetOldDefault(precon);
+    HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation
+    HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
+    //HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU 
+    HYPRE_BoomerAMGSetInterpType(precon, 3); // must be 3 or 15 for GPU 
     HYPRE_BoomerAMGSetNumSweeps(precon, 1);
     HYPRE_BoomerAMGSetMaxLevels(precon, 20);
     HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
     HYPRE_BoomerAMGSetTol(precon, 0.0);
-    //HYPRE_BoomerAMGSetPrintLevel(precon, 3); // turn is on for extensive Hypre diagnostics
-
+    //HYPRE_BoomerAMGSetPrintLevel(precon, 3); // turn this on for extensive Hypre diagnostics
+    
+#endif
     solver_setup = false;
   }
 
   ~HypreSystem() {
-    //HYPRE_Finalize(); // now handled by hyprelib 
+    HYPRE_Finalize(); // now handled by hyprelib 
   }
 
   void setRelTol(double tol)
   {
+#if 1
     checkHypreError(HYPRE_ParCSRGMRESSetTol(solver, tol));
+#else
+    checkHypreError(HYPRE_ParCSRPCGSetTol(solver, tol));
+#endif
   }
 
   void setAbsTol(double tol)
   {
+#if 1
     checkHypreError(HYPRE_ParCSRGMRESSetAbsoluteTol(solver, tol));
+#else
+    checkHypreError(HYPRE_ParCSRPCGSetAbsoluteTol(solver, tol));
+#endif
   }
 
-  void setMaxIter(int max_iter)
+void setMaxIter(int max_iter)
   {
+#if 1
     checkHypreError(HYPRE_ParCSRGMRESSetMaxIter(solver, max_iter));
+#else
+    checkHypreError(HYPRE_ParCSRPCGSetMaxIter(solver, max_iter));
+#endif
   }
 
   double getFinalRelResNorm()
   {
     HYPRE_Real resnorm;
+#if 1
     checkHypreError(HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm(solver, &resnorm));
+#else
+    checkHypreError(HYPRE_ParCSRPCGGetFinalRelativeResidualNorm(solver, &resnorm));
+#endif
     return resnorm;
   }
 
   int getNumItersTaken()
   {
     HYPRE_Int iters;
+#if 1
     checkHypreError(HYPRE_ParCSRGMRESGetNumIterations(solver, &iters));
+#else 
+    checkHypreError(HYPRE_ParCSRPCGGetNumIterations(solver, &iters));
+#endif
     return iters;
   }
-
+ 
+  
   void setMatrix(HypreMatrix<T>* A_) {
     A=A_;
   }
 
   int setupAMG(HypreMatrix<T>* P_) {
     P = P_;
+#if 1
     checkHypreError(HYPRE_ParCSRGMRESSetPrecond(solver, HYPRE_BoomerAMGSolve, HYPRE_BoomerAMGSetup, precon));
+#else
+    checkHypreError(HYPRE_ParCSRPCGSetPrecond(solver, HYPRE_BoomerAMGSolve, HYPRE_BoomerAMGSetup, precon));
+#endif
     int setup_err = checkHypreError(HYPRE_BoomerAMGSetup(precon, P->getParallel(), nullptr, nullptr));
 
     return setup_err;
@@ -917,17 +964,22 @@ public:
     ASSERT2(x != nullptr);
     ASSERT2(b != nullptr);
     if (!solver_setup) {
+#if 1
       checkHypreError(HYPRE_ParCSRGMRESSetup(solver, A->getParallel(), b->getParallel(), x->getParallel()));
+#else
+      checkHypreError(HYPRE_ParCSRPCGSetup(solver, A->getParallel(), b->getParallel(), x->getParallel()));
+#endif
       solver_setup = true;
     }
-
+#if 1
     solve_err = checkHypreError(HYPRE_ParCSRGMRESSolve(solver, A->getParallel(), b->getParallel(), x->getParallel()));
-
+#else
+    solve_err = checkHypreError(HYPRE_ParCSRPCGSolve(solver, A->getParallel(), b->getParallel(), x->getParallel()));
+#endif
     //printf("solve_err = %d\n",solve_err);
 
     return solve_err;
   }
-
 
 };
 

@@ -19,7 +19,7 @@ HypreLib::HypreLib() {
       // Initialise Hypre
 
       output << "Initialising Hypre\n";
-      HYPRE_Init();
+      //HYPRE_Init();
 
     }
 
@@ -33,7 +33,7 @@ HypreLib::~HypreLib() {
     count--;
     if(count == 0) {
       output << "Finalising Hypre\n";
-      HYPRE_Finalize();
+      //HYPRE_Finalize();
     }
   }
 }
@@ -43,7 +43,7 @@ void HypreLib::cleanup() {
   {
     if(count > 0) {
       output << "Finalising Hypre. Warning: Instances of HypreLib still exist.\n";
-      HYPRE_Finalize();
+      //HYPRE_Finalize();
 
       count = 0; // ensure that finalise is not called again later
     }
