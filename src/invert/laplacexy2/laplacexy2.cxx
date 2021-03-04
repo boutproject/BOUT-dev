@@ -1,5 +1,6 @@
+#include "bout/build_defines.hxx"
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 #include <petscksp.h>
 
