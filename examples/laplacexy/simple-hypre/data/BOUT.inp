@@ -22,6 +22,17 @@ ksptype = gmres   # Iterative solver type
 pctype  = jacobi  # Preconditioner. "jacobi", "bjacobi" and "sor" usually good
                   # On one processor"lu" uses direct solver
 
+atol = 1e-12		# type: BoutReal, doc: Relative tolerance for Hypre solver
+core_bndry_dirichlet = false		# type: bool
+hypre_print_level = 3		# type: int, doc: Verbosity for Hypre solver. Integer from 0 (silent) to 4 (most verbose).
+hypre_solver_type = gmres		# type: 17HYPRE_SOLVER_TYPE, doc: Type of solver to use when solving Hypre system. Possible values are: gmres
+include_y_derivs = true		# type: bool, doc: Include Y derivatives in operator to invert?
+ksptype = gmres		# not used , from: /g/g0/holger/workspace/BOUT-dev/examples/laplacexy/simple-hypre/data//BOUT.inp
+maxits = 2	# type: int, doc: Maximum iterations for Hypre solver
+print_timing = true		# type: bool, doc: Print extra timing information for LaplaceXY2Hypre
+rtol = 1e-05		# type: BoutReal, doc: Relative tolerance for Hypre solver
+y_bndry_dirichlet = false		# type: bool
+
 # Function to be inverted
 rhs = sin(2*pi*x)*sin(y)
 

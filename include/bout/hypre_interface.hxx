@@ -46,7 +46,7 @@ int checkHypreError(int error) {
       throw BoutException("A Hypre call failed with error code {:d}: {:s}",
                         error, &error_cstr[0]);
     else if(error == 1) {
-       printf("Hypre returns %d %s\n",error,&error_cstr[0]);
+       //printf("Hypre returns %d %s\n",error,&error_cstr[0]);
        HYPRE_ClearAllErrors();
     }  
 
@@ -173,6 +173,7 @@ public:
 
     location = f.getLocation();
     initialised = true;
+    //printf("vsize %d\n",vsize);
     HypreMalloc(I, vsize*sizeof(HYPRE_BigInt)); 
     HypreMalloc(V, vsize*sizeof(HYPRE_Complex));
     importValuesFromField(f);
@@ -202,6 +203,7 @@ public:
     checkHypreError(HYPRE_IJVectorInitialize(hypre_vector));
     initialised = true;
     location = CELL_LOC::centre;
+    //printf("vsize %d\n",vsize);
     HypreMalloc(I, vsize*sizeof(HYPRE_BigInt)); 
     HypreMalloc(V, vsize*sizeof(HYPRE_Complex));
   }
@@ -711,7 +713,7 @@ public:
     HypreMalloc(rawI, num_rows*sizeof(HYPRE_BigInt));
     HypreMalloc(cols, num_entries*sizeof(HYPRE_BigInt)); 
     HypreMalloc(vals, num_entries*sizeof(HYPRE_Complex));
-    printf("num_rows %d num_entries %d\n",num_rows,num_entries);
+    //printf("num_rows %d num_entries %d\n",num_rows,num_entries);
     HYPRE_BigInt entry = 0;
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
       rawI[i] = (*I)[i];
@@ -811,6 +813,12 @@ public:
                   .withDefault(HYPRE_SOLVER_TYPE::gmres);
 
 #ifdef BOUT_USE_CUDA
+#if 0 // just verifying round-robin selection of GPU
+    int deviceNum,devices;
+    cudaGetDevice(&deviceNum);
+    cudaGetDeviceCount(&devices);
+    printf("Device %d of %d\n",deviceNum,devices);
+#endif
     hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
     HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
     hypre_HandleMemoryLocation(hypre_handle())    = memory_location;
@@ -824,7 +832,7 @@ public:
 
     if (solver_type == HYPRE_SOLVER_TYPE::gmres) {
       HYPRE_ParCSRGMRESCreate(comm, &solver);
-      /* set the GMRES parameters */
+      /* set the GMRES specific parameters */
       //HYPRE_GMRESSetKDim(solver, 5); // commented out to let Hypre pick default
     } else {
       throw BoutException("Unsupported hypre_solver_type {}", solver_type);
@@ -839,13 +847,16 @@ public:
 
     HYPRE_BoomerAMGCreate(&precon);
     HYPRE_BoomerAMGSetOldDefault(precon);
+#if 0  // Let Hypre pick 
 #ifdef BOUT_USE_CUDA
     HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation // 7 throws error code 256 did not converge
     HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
-    //HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU // currently causes solver_err = 1 Generic Error and non-convergence
+    HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU // currently causes solver_err = 1 Generic Error and non-convergence
     HYPRE_BoomerAMGSetInterpType(precon, 15); // must be 3 or 15 for GPU 
 #endif
-    HYPRE_BoomerAMGSetNumSweeps(precon, 1);
+#endif
+    HYPRE_BoomerAMGSetNumSweeps(precon, 4);
+    HYPRE_BoomerAMGSetMaxIter(precon,3);
     HYPRE_BoomerAMGSetMaxLevels(precon, 30);
     HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
     HYPRE_BoomerAMGSetTol(precon, 0.0);
@@ -860,7 +871,7 @@ public:
   }
 
   ~HypreSystem() {
-    HYPRE_Finalize(); 
+    //HYPRE_Finalize(); // finalizing mid-stream e.g.  before tests unwind causes all sorts of memory related issues; so defer to hyprelib for finalization 
   }
 
   void setRelTol(double tol)
