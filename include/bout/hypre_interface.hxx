@@ -826,13 +826,18 @@ public:
                               "(most verbose).")
                          .withDefault(0);
 
-    if (solver_type == HYPRE_SOLVER_TYPE::gmres) {
-      HYPRE_ParCSRGMRESCreate(comm, &solver);
-      /* set the GMRES parameters */
-      //HYPRE_GMRESSetKDim(solver, 5); // commented out to let Hypre pick default
-      HYPRE_ParCSRGMRESSetPrintLevel(solver, print_level);
-    } else {
-      throw BoutException("Unsupported hypre_solver_type {}", solver_type);
+    switch (solver_type) {
+      case HYPRE_SOLVER_TYPE::gmres: {
+        HYPRE_ParCSRGMRESCreate(comm, &solver);
+        /* set the GMRES parameters */
+        //HYPRE_GMRESSetKDim(solver, 5); // commented out to let Hypre pick default
+        HYPRE_ParCSRGMRESSetPrintLevel(solver, print_level);
+
+        break;
+      }
+      default: {
+        throw BoutException("Unsupported hypre_solver_type {}", solver_type);
+      }
     }
 
     setRelTol(options["rtol"].doc("Relative tolerance for Hypre solver")
@@ -865,38 +870,42 @@ public:
 
   void setRelTol(double tol)
   {
-    if (solver_type == HYPRE_SOLVER_TYPE::gmres) {
-      checkHypreError(HYPRE_ParCSRGMRESSetTol(solver, tol));
-    } else {
-      throw BoutException("Unsupported hypre_solver_type {}", solver_type);
+    switch (solver_type) {
+      case HYPRE_SOLVER_TYPE::gmres: {
+        checkHypreError(HYPRE_ParCSRGMRESSetTol(solver, tol));
+        break;
+      }
     }
   }
 
   void setAbsTol(double tol)
   {
-    if (solver_type == HYPRE_SOLVER_TYPE::gmres) {
-      checkHypreError(HYPRE_ParCSRGMRESSetAbsoluteTol(solver, tol));
-    } else {
-      throw BoutException("Unsupported hypre_solver_type {}", solver_type);
+    switch (solver_type) {
+      case HYPRE_SOLVER_TYPE::gmres: {
+        checkHypreError(HYPRE_ParCSRGMRESSetAbsoluteTol(solver, tol));
+        break;
+      }
     }
   }
 
   void setMaxIter(int max_iter)
   {
-    if (solver_type == HYPRE_SOLVER_TYPE::gmres) {
-      checkHypreError(HYPRE_ParCSRGMRESSetMaxIter(solver, max_iter));
-    } else {
-      throw BoutException("Unsupported hypre_solver_type {}", solver_type);
+    switch (solver_type) {
+      case HYPRE_SOLVER_TYPE::gmres: {
+        checkHypreError(HYPRE_ParCSRGMRESSetMaxIter(solver, max_iter));
+        break;
+      }
     }
   }
 
   double getFinalRelResNorm()
   {
     HYPRE_Real resnorm;
-    if (solver_type == HYPRE_SOLVER_TYPE::gmres) {
-      checkHypreError(HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm(solver, &resnorm));
-    } else {
-      throw BoutException("Unsupported hypre_solver_type {}", solver_type);
+    switch (solver_type) {
+      case HYPRE_SOLVER_TYPE::gmres: {
+        checkHypreError(HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm(solver, &resnorm));
+        break;
+      }
     }
     return resnorm;
   }
@@ -904,10 +913,11 @@ public:
   int getNumItersTaken()
   {
     HYPRE_Int iters;
-    if (solver_type == HYPRE_SOLVER_TYPE::gmres) {
-      checkHypreError(HYPRE_ParCSRGMRESGetNumIterations(solver, &iters));
-    } else {
-      throw BoutException("Unsupported hypre_solver_type {}", solver_type);
+    switch (solver_type) {
+      case HYPRE_SOLVER_TYPE::gmres: {
+        checkHypreError(HYPRE_ParCSRGMRESGetNumIterations(solver, &iters));
+        break;
+      }
     }
     return iters;
   }
@@ -918,10 +928,11 @@ public:
 
   int setupAMG(HypreMatrix<T>* P_) {
     P = P_;
-    if (solver_type == HYPRE_SOLVER_TYPE::gmres) {
-      checkHypreError(HYPRE_ParCSRGMRESSetPrecond(solver, HYPRE_BoomerAMGSolve, HYPRE_BoomerAMGSetup, precon));
-    } else {
-      throw BoutException("Unsupported hypre_solver_type {}", solver_type);
+    switch (solver_type) {
+      case HYPRE_SOLVER_TYPE::gmres: {
+        checkHypreError(HYPRE_ParCSRGMRESSetPrecond(solver, HYPRE_BoomerAMGSolve, HYPRE_BoomerAMGSetup, precon));
+        break;
+      }
     }
     int setup_err = checkHypreError(HYPRE_BoomerAMGSetup(precon, P->getParallel(), nullptr, nullptr));
 
@@ -966,16 +977,18 @@ public:
     ASSERT2(A != nullptr);
     ASSERT2(x != nullptr);
     ASSERT2(b != nullptr);
-    if (solver_type == HYPRE_SOLVER_TYPE::gmres) {
-      if (!solver_setup) {
-        checkHypreError(HYPRE_ParCSRGMRESSetup(solver, A->getParallel(), b->getParallel(), x->getParallel()));
-        solver_setup = true;
+
+    switch (solver_type) {
+      case HYPRE_SOLVER_TYPE::gmres: {
+        if (!solver_setup) {
+          checkHypreError(HYPRE_ParCSRGMRESSetup(solver, A->getParallel(), b->getParallel(), x->getParallel()));
+          solver_setup = true;
+        }
+
+        solve_err = checkHypreError(HYPRE_ParCSRGMRESSolve(solver, A->getParallel(), b->getParallel(), x->getParallel()));
+
+        break;
       }
-
-      solve_err = checkHypreError(HYPRE_ParCSRGMRESSolve(solver, A->getParallel(), b->getParallel(), x->getParallel()));
-
-    } else {
-      throw BoutException("Unsupported hypre_solver_type {}", solver_type);
     }
 
     return solve_err;
