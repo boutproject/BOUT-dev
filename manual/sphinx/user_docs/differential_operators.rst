@@ -430,7 +430,7 @@ is the background *equilibrium* magnetic field.
 |                  | derivatives. The `Laplacian` solver performs the   |
 |                  | inverse operation                                  |
 +------------------+----------------------------------------------------+
-| ``bracket``     | Poisson brackets. The Arakawa option, neglects the |
+| ``bracket``      | Poisson brackets. The Arakawa option, neglects the |
 |                  | parallel :math:`y` derivatives if :math:`g_{xy}`   |
 |                  | and :math:`g_{yz}` are non-zero                    |
 +------------------+----------------------------------------------------+
