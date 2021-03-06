@@ -85,7 +85,7 @@ set(BOUT_HEADERS
   ./include/bout/index_derivs.hxx
   ./include/bout/index_derivs_interface.hxx
   ./include/bout/invert/laplacexy2_hypre.hxx
-  ./include/bout/invert/laplacexy2.hxx
+  #./include/bout/invert/laplacexy2.hxx
   ./include/bout/invert/laplacexy.hxx
   ./include/bout/invert/laplacexz.hxx
   ./include/bout/invertable_operator.hxx
@@ -261,7 +261,7 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.cxx
   ./src/invert/laplace/invert_laplace.cxx
   ./src/invert/laplacexy/laplacexy.cxx
-  ./src/invert/laplacexy2/laplacexy2.cxx
+  #./src/invert/laplacexy2/laplacexy2.cxx
   ./src/invert/laplacexy2/laplacexy2_hypre.cxx 
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
   ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.cxx
@@ -652,6 +652,7 @@ add_subdirectory(examples/hasegawa-wakatani-3d)
 add_subdirectory(examples/elm-pb)
 add_subdirectory(tests/integrated/test-laplace-petsc3d)
 add_subdirectory(tests/integrated/test-laplace-hypre3d)
+add_subdirectory(tests/integrated/test-laplacexy2-hypre)
 
 ##################################################
 # Generate the build config header
