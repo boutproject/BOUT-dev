@@ -217,6 +217,22 @@ Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
     BOUT_FOR(i, indexer->getRegionUpperY()) {
       result.yup()[i] = result[i];
     }
+    for (int b = 1; b < localmesh->ystart; b++) {
+      BOUT_FOR(i, indexer->getRegionLowerY()) {
+        result.ydown(b)[i.ym(b)] = result[i];
+      }
+      BOUT_FOR(i, indexer->getRegionUpperY()) {
+        result.yup(b)[i.yp(b)] = result[i];
+      }
+    }
+  }
+  for (int b = 1; b < localmesh->xstart; b++) {
+    BOUT_FOR(i, indexer->getRegionInnerX()) {
+      result[i.xm(b)] = result[i];
+    }
+    BOUT_FOR(i, indexer->getRegionOuterX()) {
+      result[i.xp(b)] = result[i];
+    }
   }
 
   return result;
