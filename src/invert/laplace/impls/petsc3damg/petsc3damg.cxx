@@ -253,11 +253,29 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   // Create field from result
   Field3D solution = guess.toField();
   localmesh->communicate(solution);
-  BOUT_FOR(i, indexer->getRegionLowerY()) {
-    solution.ydown()[i] = solution[i];
+  if (solution.hasParallelSlices()) {
+    BOUT_FOR(i, indexer->getRegionLowerY()) {
+      solution.ydown()[i] = solution[i];
+    }
+    BOUT_FOR(i, indexer->getRegionUpperY()) {
+      solution.yup()[i] = solution[i];
+    }
+    for (int b = 1; b < localmesh->ystart; b++) {
+      BOUT_FOR(i, indexer->getRegionLowerY()) {
+        solution.ydown(b)[i.ym(b)] = solution[i];
+      }
+      BOUT_FOR(i, indexer->getRegionUpperY()) {
+        solution.yup(b)[i.yp(b)] = solution[i];
+      }
+    }
   }
-  BOUT_FOR(i, indexer->getRegionUpperY()) {
-    solution.yup()[i] = solution[i];
+  for (int b = 1; b < localmesh->xstart; b++) {
+    BOUT_FOR(i, indexer->getRegionInnerX()) {
+      solution[i.xm(b)] = solution[i];
+    }
+    BOUT_FOR(i, indexer->getRegionOuterX()) {
+      solution[i.xp(b)] = solution[i];
+    }
   }
   return solution;
 }
