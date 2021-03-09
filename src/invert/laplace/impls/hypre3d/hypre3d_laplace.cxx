@@ -142,6 +142,12 @@ LaplaceHypre3d::~LaplaceHypre3d() {
 
 
 Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
+
+  // Timing reported in the log files. Includes any matrix construction.
+  // The timing for just the solve phase can be retreived from the "hypresolve"
+  // timer if desired.
+  Timer timer("invert");
+
   // If necessary, update the values in the matrix operator
   if (updateRequired) {
     updateMatrix3D();
