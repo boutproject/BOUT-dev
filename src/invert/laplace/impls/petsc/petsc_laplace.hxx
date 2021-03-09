@@ -61,7 +61,9 @@ RegisterLaplace<LaplacePetsc> registerlaplacepetsc(LAPLACE_PETSC);
 
 class LaplacePetsc : public Laplacian {
 public:
-  LaplacePetsc(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplacePetsc(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+               Mesh *mesh_in = nullptr, Solver *solver = nullptr,
+               Datafile *dump = nullptr);
   ~LaplacePetsc() {
     KSPDestroy( &ksp );
     VecDestroy( &xs );

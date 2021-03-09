@@ -146,7 +146,8 @@
 
 #include "naulin_laplace.hxx"
 
-LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
+LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in,
+                             Solver *solver, Datafile *dump)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
       delp2solver(nullptr), naulinsolver_mean_its(0.), ncalls(0) {
 

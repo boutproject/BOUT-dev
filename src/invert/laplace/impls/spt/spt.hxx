@@ -70,7 +70,9 @@ RegisterLaplace<LaplaceSPT> registerlaplacespt(LAPLACE_SPT);
  */
 class LaplaceSPT : public Laplacian {
 public:
-  LaplaceSPT(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplaceSPT(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE,
+             Mesh *mesh_in = nullptr, Solver *solver = nullptr,
+             Datafile *dump = nullptr);
   ~LaplaceSPT();
   
   using Laplacian::setCoefA;

@@ -50,6 +50,9 @@ class Laplacian;
 #include "dcomplex.hxx"
 #include "options.hxx"
 
+class Solver;
+class Datafile;
+
 constexpr auto LAPLACE_SPT = "spt";
 constexpr auto LAPLACE_PDD = "pdd";
 constexpr auto LAPLACE_TRI = "tri";
@@ -132,7 +135,8 @@ constexpr int INVERT_KX_ZERO = 16;
 class LaplaceFactory
     : public Factory<
           Laplacian, LaplaceFactory,
-          std::function<std::unique_ptr<Laplacian>(Options*, CELL_LOC, Mesh*)>> {
+          std::function<std::unique_ptr<Laplacian>(Options*, CELL_LOC, Mesh*, Solver*,
+                                                   Datafile*)>> {
 public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
@@ -140,9 +144,10 @@ public:
   static constexpr auto default_type = LAPLACE_CYCLIC;
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
-                    Mesh* mesh = nullptr) {
+                    Mesh* mesh = nullptr, Solver* solver = nullptr,
+                    Datafile* dump = nullptr) {
     options = optionsOrDefaultSection(options);
-    return Factory::create(getType(options), options, loc, mesh);
+    return Factory::create(getType(options), options, loc, mesh, solver, dump);
   }
 };
 
@@ -160,8 +165,9 @@ public:
   RegisterLaplace(const std::string& name) {
     LaplaceFactory::getInstance().add(
         name,
-        [](Options* options, CELL_LOC loc, Mesh* mesh) -> std::unique_ptr<Laplacian> {
-          return std::make_unique<DerivedType>(options, loc, mesh);
+        [](Options* options, CELL_LOC loc, Mesh* mesh, Solver* solver, Datafile* dump)
+        -> std::unique_ptr<Laplacian> {
+          return std::make_unique<DerivedType>(options, loc, mesh, solver, dump);
         });
   }
 };
@@ -169,7 +175,8 @@ public:
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
-  Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
+  Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE,
+            Mesh* mesh_in = nullptr, Solver *solver = nullptr, Datafile *dump = nullptr);
   virtual ~Laplacian() = default;
 
   /// Set coefficients for inversion. Re-builds matrices if necessary
@@ -260,8 +267,10 @@ public:
    */
   static std::unique_ptr<Laplacian> create(Options* opts = nullptr,
                                            const CELL_LOC location = CELL_CENTRE,
-                                           Mesh* mesh_in = nullptr) {
-    return LaplaceFactory::getInstance().create(opts, location, mesh_in);
+                                           Mesh* mesh_in = nullptr,
+                                           Solver* solver = nullptr,
+                                           Datafile* dump = nullptr) {
+    return LaplaceFactory::getInstance().create(opts, location, mesh_in, solver, dump);
   }
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
 

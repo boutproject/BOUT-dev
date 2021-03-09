@@ -38,7 +38,8 @@
 #include <bout/hypre_interface.hxx>
 #include <bout/operatorstencil.hxx>
 
-LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
+LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in,
+                               Solver *solver, Datafile *dump) :
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
   opts(opt == nullptr ? Options::getRoot()->getSection("laplace") : opt),
