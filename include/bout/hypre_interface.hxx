@@ -152,16 +152,6 @@ public:
     HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
     vsize = jupper - jlower + 1;
 
-#ifdef BOUT_USE_CUDA
-    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
-    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
-    hypre_HandleMemoryLocation(hypre_handle()) = memory_location;
-#else
-    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_HOST;
-    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_HOST;
-    hypre_HandleMemoryLocation(hypre_handle()) = memory_location;
-#endif
-
     checkHypreError(HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector));
     checkHypreError(HYPRE_IJVectorSetObjectType(hypre_vector, HYPRE_PARCSR));
     checkHypreError(HYPRE_IJVectorInitialize(hypre_vector));
@@ -183,15 +173,6 @@ public:
     HYPRE_BigInt jlower = indConverter->getGlobalStart();
     HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
     vsize = jupper - jlower + 1;
-#ifdef BOUT_USE_CUDA
-    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
-    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
-    hypre_HandleMemoryLocation(hypre_handle()) = memory_location;
-#else
-    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_HOST;
-    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_HOST;
-    hypre_HandleMemoryLocation(hypre_handle()) = memory_location;
-#endif
 
     checkHypreError(HYPRE_IJVectorCreate(comm, jlower, jupper, &hypre_vector));
     checkHypreError(HYPRE_IJVectorSetObjectType(hypre_vector, HYPRE_PARCSR));
@@ -800,28 +781,12 @@ private:
 
 public:
   HypreSystem(Mesh& mesh, Options& options) {
-    HYPRE_Init();
+    //HYPRE_Init(); //handled by HypreLib
 
     solver_type = options["hypre_solver_type"]
                       .doc("Type of solver to use when solving Hypre system. Possible "
                            "values are: gmres, bicgstab")
                       .withDefault(HYPRE_SOLVER_TYPE::gmres);
-
-#ifdef BOUT_USE_CUDA
-#if 0 // just verifying round-robin selection of GPU
-    int deviceNum,devices;
-    cudaGetDevice(&deviceNum);
-    cudaGetDeviceCount(&devices);
-    printf("Device %d of %d\n",deviceNum,devices);
-#endif
-    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
-    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
-    hypre_HandleMemoryLocation(hypre_handle()) = memory_location;
-#else
-    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_HOST;
-    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_HOST;
-    hypre_HandleMemoryLocation(hypre_handle()) = memory_location;
-#endif
 
     comm = std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
 

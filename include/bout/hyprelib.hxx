@@ -69,15 +69,8 @@ public:
    */
   explicit HypreLib();
   
-  /*!
-   * Calls PetscFinalize when all HypreLib instances are destroyed
-   */ 
   ~HypreLib();
   
-  /*!
-   * Force cleanup. This will call PetscFinalize, printing a warning
-   * if any instances of HypreLib still exist
-   */ 
   static void cleanup(); 
 private:
   static int count; ///< How many instances?

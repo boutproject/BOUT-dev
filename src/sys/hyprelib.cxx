@@ -15,10 +15,17 @@ int HypreLib::count = 0;
 HypreLib::HypreLib() {
   BOUT_OMP(critical(HypreLib))
   {
-    if(count == 0) {
-      output << "Initialising Hypre\n";
-      HYPRE_Init();  // HypreSystem instance also initializes outside of this class; so we get one per rank; for now we're just tracking count from one HypreLib instance created by BOUT system; later revisit design of this class so HypreSystem uses it instead.
-    }
+    output << "Initialising Hypre\n";
+    HYPRE_Init();  
+#ifdef BOUT_USE_CUDA
+    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
+    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
+    hypre_HandleMemoryLocation(hypre_handle()) = memory_location;
+#else
+    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_HOST;
+    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_HOST;
+    hypre_HandleMemoryLocation(hypre_handle()) = memory_location;
+#endif
   }
   count++;
 }
@@ -40,7 +47,7 @@ void HypreLib::cleanup() {
     if(count > 0) {
       output << "Finalising Hypre. Warning: Instances of HypreLib still exist.\n";
       HYPRE_Finalize();
-      count = 0; // ensure that finalise is not called again later
+      count = 0; // ensure that finalize is not called again later
     }
   }
 }
