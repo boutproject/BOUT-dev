@@ -39,6 +39,7 @@ class LaplaceHypre3d;
 #include <options.hxx>
 #include <invert_laplace.hxx>
 #include <boutexception.hxx>
+#include <bout/monitor.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/hypre_interface.hxx>
 
@@ -204,6 +205,33 @@ public:
   bout::HypreVector<Field3D> solution;
   bout::HypreVector<Field3D> rhs;
   bout::HypreSystem<Field3D> linearSystem;
+
+  // used to save some statistics
+  int n_solves = 0;
+  int cumulative_iterations = 0;
+  BoutReal average_iterations = 0.0;
+  class Hypre3dMonitor : public Monitor {
+  public:
+    Hypre3dMonitor(LaplaceHypre3d &laplace_in) : laplace(laplace_in) {}
+
+    int call(Solver*, BoutReal, int, int) override {
+      if (laplace.n_solves == 0) {
+        laplace.average_iterations = 0.0;
+        return 0;
+      }
+
+      // Calculate average and reset counters
+      laplace.average_iterations = static_cast<BoutReal>(laplace.cumulative_iterations)
+                                   / static_cast<BoutReal>(laplace.n_solves);
+
+      output_info << endl << "Hypre3d average iterations: " << laplace.average_iterations << endl;
+
+      return 0;
+    }
+  private:
+    LaplaceHypre3d &laplace;
+  };
+  Hypre3dMonitor monitor;
 
   bool use_precon;  // Switch for preconditioning
   bool rightprec;   // Right preconditioning

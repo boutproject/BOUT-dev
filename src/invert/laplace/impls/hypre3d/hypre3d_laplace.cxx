@@ -30,10 +30,12 @@
 #include "hypre3d_laplace.hxx"
 
 #include <bout/mesh.hxx>
+#include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <bout/assert.hxx>
 #include <utils.hxx>
+#include <datafile.hxx>
 #include <derivs.hxx>
 #include <bout/hypre_interface.hxx>
 #include <bout/operatorstencil.hxx>
@@ -46,7 +48,8 @@ LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in,
   lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
   indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh,
 						   getStencil(localmesh, lowerY, upperY))),
-  operator3D(indexer), solution(indexer), rhs(indexer), linearSystem(*localmesh, *opts)
+  operator3D(indexer), solution(indexer), rhs(indexer), linearSystem(*localmesh, *opts),
+  monitor(*this)
 {
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
@@ -135,6 +138,16 @@ LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in,
       operator3D(i, i.ym()) = 0.5;
     }
   }
+
+  // Set up output
+  if (solver == nullptr or dump == nullptr) {
+    output_warn << "Warning: Need to pass both a Solver and a Datafile to "
+                   "Laplacian::create() to get iteration counts in the output." << endl;
+  } else {
+    solver->addMonitor(&monitor);
+    auto name = opt->name();
+    dump->addRepeat(average_iterations, name + "_average_iterations");
+  }
 }
 
 
@@ -207,6 +220,10 @@ Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
   { Timer timer("hypresolve");
     linearSystem.solve();
   }
+
+  // Increment counters
+  n_solves++;
+  cumulative_iterations += linearSystem.getNumItersTaken();
 
   // Create field from solution
   Field3D result = solution.toField();
