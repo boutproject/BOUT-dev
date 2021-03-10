@@ -1,7 +1,4 @@
-#*************************************************************************
-# Base class for fields
-#
-#*************************************************************************
+##########################################################################
 # Copyright 2010
 #
 # This file is part of BOUT++.
@@ -19,12 +16,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
 #
-#*************************************************************************/
+##########################################################################
 
 # We define the following GitLab pipeline variables:
 #
 # GIT_SUBMODULE_STRATEGY:
-# Tells Gitlab to recursively update the submodules when cloning umpire
+# Tells Gitlab to recursively update the submodules when cloning the project
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
