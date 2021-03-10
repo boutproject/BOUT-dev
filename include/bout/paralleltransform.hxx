@@ -224,7 +224,7 @@ public:
   const FieldPerp fromFieldAligned(const FieldPerp& f,
                                    const std::string& region = "RGN_ALL") override;
 
-  virtual std::vector<PositionsAndWeights>
+  std::vector<PositionsAndWeights>
   getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
                               int UNUSED(yoffset)) override {
     throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented"
