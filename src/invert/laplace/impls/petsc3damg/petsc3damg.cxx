@@ -179,6 +179,12 @@ LaplacePetsc3dAmg::~LaplacePetsc3dAmg() {
 
 Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   AUTO_TRACE();
+
+  // Timing reported in the log files. Includes any matrix construction.
+  // The timing for just the solve phase can be retrieved from the "petscsolve"
+  // timer if desired.
+  Timer timer("invert");
+
   // If necessary, update the values in the matrix operator and initialise
   // the Krylov solver
   if (updateRequired) updateMatrix3D();
