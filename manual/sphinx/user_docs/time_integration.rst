@@ -816,11 +816,13 @@ PhysicsModel::
 
 and put in your `PhysicsModel::init` code::
 
-      solver->addMonitor(my_output_monitor);
+      solver->addMonitor(&my_output_monitor);
 
-If you want to later remove a monitor, you can do so with::
+Note that the solver only stores a pointer to the `Monitor`, so you must make sure
+the object is persistent, e.g. a member of a `PhysicsModel` class, not a local
+variable in a constructor. If you want to later remove a monitor, you can do so with::
 
-      solver->removeMonitor(my_output_monitor);
+      solver->removeMonitor(&my_output_monitor);
 
 A simple example using this monitor is::
 
@@ -839,7 +841,7 @@ A simple example using this monitor is::
     MyOutputMonitor my_monitor;
 
     int init(bool restarting) {
-      solver->addMonitor(my_monitor);
+      solver->addMonitor(&my_monitor);
     }
 
 See the monitor example (``examples/monitor``) for full code.
