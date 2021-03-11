@@ -48,6 +48,7 @@
 // Implementations:
 #include "impls/cyclic/cyclic_laplace.hxx"
 #include "impls/iterative_parallel_tri/iterative_parallel_tri.hxx"
+#include "impls/1d_multigrid/1d_multigrid.hxx"
 #include "impls/multigrid/multigrid_laplace.hxx"
 #include "impls/naulin/naulin_laplace.hxx"
 #include "impls/pdd/pdd.hxx"
