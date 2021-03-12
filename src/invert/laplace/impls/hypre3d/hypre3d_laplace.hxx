@@ -224,7 +224,7 @@ public:
       laplace.average_iterations = static_cast<BoutReal>(laplace.cumulative_iterations)
                                    / static_cast<BoutReal>(laplace.n_solves);
 
-      output_info << endl << "Hypre3d average iterations: " << laplace.average_iterations << endl;
+      output_info.write("\nHypre3d average iterations: {}\n", laplace.average_iterations);
 
       return 0;
     }
