@@ -214,20 +214,7 @@ public:
   public:
     Hypre3dMonitor(LaplaceHypre3d &laplace_in) : laplace(laplace_in) {}
 
-    int call(Solver*, BoutReal, int, int) override {
-      if (laplace.n_solves == 0) {
-        laplace.average_iterations = 0.0;
-        return 0;
-      }
-
-      // Calculate average and reset counters
-      laplace.average_iterations = static_cast<BoutReal>(laplace.cumulative_iterations)
-                                   / static_cast<BoutReal>(laplace.n_solves);
-
-      output_info.write("\nHypre3d average iterations: {}\n", laplace.average_iterations);
-
-      return 0;
-    }
+    int call(Solver*, BoutReal, int, int) override;
   private:
     LaplaceHypre3d &laplace;
   };

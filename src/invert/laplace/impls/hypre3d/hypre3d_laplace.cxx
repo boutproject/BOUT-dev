@@ -515,4 +515,19 @@ OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
   return stencil;
 }
 
+int LaplaceHypre3d::Hypre3dMonitor::call(Solver*, BoutReal, int, int) {
+  if (laplace.n_solves == 0) {
+    laplace.average_iterations = 0.0;
+    return 0;
+  }
+
+  // Calculate average and reset counters
+  laplace.average_iterations = static_cast<BoutReal>(laplace.cumulative_iterations)
+                               / static_cast<BoutReal>(laplace.n_solves);
+
+  output_info.write("\nHypre3d average iterations: {}\n", laplace.average_iterations);
+
+  return 0;
+}
+
 #endif // BOUT_HAS_HYPRE
