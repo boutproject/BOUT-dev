@@ -40,7 +40,9 @@ RegisterLaplace<LaplaceSerialBand> registerlaplaceserialband(LAPLACE_BAND);
 
 class LaplaceSerialBand : public Laplacian {
 public:
-  LaplaceSerialBand(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplaceSerialBand(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE,
+                    Mesh *mesh_in = nullptr, Solver *solver = nullptr,
+                    Datafile *dump = nullptr);
   ~LaplaceSerialBand(){};
   
   using Laplacian::setCoefA;

@@ -48,7 +48,9 @@ RegisterLaplace<LaplaceCyclic> registerlaplacecycle(LAPLACE_CYCLIC);
  */
 class LaplaceCyclic : public Laplacian {
 public:
-  LaplaceCyclic(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplaceCyclic(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+                Mesh *mesh_in = nullptr, Solver *solver = nullptr,
+                Datafile *dump = nullptr);
   ~LaplaceCyclic();
   
   using Laplacian::setCoefA;

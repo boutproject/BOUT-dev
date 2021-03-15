@@ -38,7 +38,8 @@
 
 BoutReal soltime=0.0,settime=0.0;
 
-LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
+LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_in,
+                                   Solver *solver, Datafile *dump) :
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0) {
 

@@ -37,7 +37,8 @@
 #include <fft.hxx>
 #include <bout/constants.hxx>
 
-LaplaceShoot::LaplaceShoot(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
+LaplaceShoot::LaplaceShoot(Options *opt, const CELL_LOC loc, Mesh *mesh_in,
+                           Solver *solver, Datafile *dump)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   throw BoutException("LaplaceShoot is a test implementation and does not currently work. Please select a different implementation.");
 
