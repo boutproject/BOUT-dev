@@ -55,6 +55,27 @@ TEST_F(MeshTest, GetRegionPerpFromMesh) {
   EXPECT_THROW(localmesh.getRegionPerp("SOME_MADE_UP_REGION_NAME"), BoutException);
 }
 
+TEST_F(MeshTest, HasRegion3D) {
+  localmesh.createDefaultRegions();
+  EXPECT_TRUE(localmesh.hasRegion3D("RGN_ALL"));
+  EXPECT_TRUE(localmesh.hasRegion3D("RGN_NOBNDRY"));
+  EXPECT_FALSE(localmesh.hasRegion3D("SOME_MADE_UP_REGION_NAME"));
+}
+
+TEST_F(MeshTest, HasRegion2D) {
+  localmesh.createDefaultRegions();
+  EXPECT_TRUE(localmesh.hasRegion2D("RGN_ALL"));
+  EXPECT_TRUE(localmesh.hasRegion2D("RGN_NOBNDRY"));
+  EXPECT_FALSE(localmesh.hasRegion2D("SOME_MADE_UP_REGION_NAME"));
+}
+
+TEST_F(MeshTest, HasRegionPMesh) {
+  localmesh.createDefaultRegions();
+  EXPECT_TRUE(localmesh.hasRegionPerp("RGN_ALL"));
+  EXPECT_TRUE(localmesh.hasRegionPerp("RGN_NOBNDRY"));
+  EXPECT_FALSE(localmesh.hasRegionPerp("SOME_MADE_UP_REGION_NAME"));
+}
+
 TEST_F(MeshTest, GetRegionTemplatedFromMesh) {
   using namespace ::testing;
   localmesh.createDefaultRegions();
