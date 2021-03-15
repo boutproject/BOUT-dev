@@ -1391,8 +1391,10 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
     auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
     auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
 
-    // Loop over all y indices
-    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
+    // Loop over y indices
+    // Note: should not include y-guard or y-boundary points here as that would
+    // use values from corner cells in dx, which may not be initialised.
+    for (int jy = localmesh->ystart; jy <= localmesh->yend; jy++) {
 
       // Take forward FFT
 
