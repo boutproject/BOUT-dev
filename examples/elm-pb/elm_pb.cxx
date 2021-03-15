@@ -88,6 +88,9 @@ public:
   Field3D tmpU2; // Grad2_par2new of Parallel vorticity
   Field3D tmpA2; // Grad2_par2new of Parallel vector potential
 
+  // For Laplace diagnostics
+  Field3D Ucheck_2d, Ucheck3d;
+
   // Constraint
   Field3D C_phi;
 
@@ -887,6 +890,8 @@ public:
       output.write("   drop K-H term\n");
     }
 
+    SAVE_REPEAT(Ucheck_2d, Ucheck_3d);
+
     Field2D Te;
     Te = P0 / (2.0 * density * 1.602e-19); // Temperature in eV
 
@@ -1345,6 +1350,8 @@ public:
         } else {
           phi = phiSolver->solve(U);
         }
+        Ucheck_2d = Delp2(phi);
+        Ucheck_3d = Laplace_perp(phi);
 
         if (diamag) {
           phi -= 0.5 * dnorm * P / B0;
