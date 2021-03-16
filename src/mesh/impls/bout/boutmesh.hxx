@@ -297,6 +297,20 @@ protected:
   /// Return the X processor number given a global X index
   int XPROC(int xind) const;
 
+  /// Communication parameters calculated by topology
+  struct ConnectionInfo {
+    bool TS_up_in, TS_up_out, TS_down_in, TS_down_out;
+    int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
+    int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
+    int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
+  };
+
+  ConnectionInfo getConnectionInfo() const {
+    return {TS_up_in,      TS_up_out,     TS_down_in,   TS_down_out,
+            UDATA_INDEST,  UDATA_OUTDEST, UDATA_XSPLIT, DDATA_INDEST,
+            DDATA_OUTDEST, DDATA_XSPLIT,  IDATA_DEST,   ODATA_DEST};
+  }
+
 private:
   // Twist-shift switches
   bool TS_up_in, TS_up_out, TS_down_in, TS_down_out;

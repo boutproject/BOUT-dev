@@ -26,6 +26,7 @@ public:
   using BoutMesh::DecompositionIndices;
   using BoutMesh::default_connections;
   using BoutMesh::findProcessorSplit;
+  using BoutMesh::getConnectionInfo;
   using BoutMesh::PROC_NUM;
   using BoutMesh::set_connection;
   using BoutMesh::setYDecompositionIndices;
@@ -1241,6 +1242,16 @@ TEST(BoutMeshTest, DefaultConnectionsSingleNull1x1) {
 
   mesh00.default_connections();
 
+  auto connection00 = mesh00.getConnectionInfo();
+  EXPECT_EQ(connection00.DDATA_XSPLIT, 0);
+  EXPECT_EQ(connection00.UDATA_XSPLIT, 0);
+  EXPECT_EQ(connection00.DDATA_INDEST, -1);
+  EXPECT_EQ(connection00.UDATA_INDEST, -1);
+  EXPECT_EQ(connection00.DDATA_OUTDEST, -1);
+  EXPECT_EQ(connection00.UDATA_OUTDEST, -1);
+  EXPECT_EQ(connection00.IDATA_DEST, -1);
+  EXPECT_EQ(connection00.ODATA_DEST, -1);
+
   mesh00.createDefaultRegions();
   mesh00.addBoundaryRegions();
 
@@ -1257,11 +1268,34 @@ TEST(BoutMeshTest, DefaultConnectionsSingleNull1x1) {
 }
 
 TEST(BoutMeshTest, DefaultConnectionsSingleNull2x2) {
+  // This test checks both default_connections and the Region
+  // creation, as these are quite tightly linked.
+
   WithQuietOutput info{output_info};
   // 5x3x1 grid on 4 processors, 1 boundary point. Boundaries should
-  // be simple 1D rectangles, with 2 boundaries on each processor
+  // be simple 1D rectangles, with 2 boundaries on each processor.
+
+  // +---+---+  ^
+  // | 0 | 1 |  | DDATA_OUTDEST
+  // +---+---+
+  // | 2 | 3 |  | UDATA_OUTDEST
+  // +---+---+  v
+  // <--
+  // IDATA_DEST
+  //       -->
+  // ODATA_DEST
   BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0, false);
   mesh00.default_connections();
+
+  auto connection00 = mesh00.getConnectionInfo();
+  EXPECT_EQ(connection00.DDATA_XSPLIT, 0);
+  EXPECT_EQ(connection00.UDATA_XSPLIT, 0);
+  EXPECT_EQ(connection00.DDATA_INDEST, -1);
+  EXPECT_EQ(connection00.UDATA_INDEST, -1);
+  EXPECT_EQ(connection00.DDATA_OUTDEST, -1);
+  EXPECT_EQ(connection00.UDATA_OUTDEST, 2);
+  EXPECT_EQ(connection00.IDATA_DEST, -1);
+  EXPECT_EQ(connection00.ODATA_DEST, 1);
 
   mesh00.createDefaultRegions();
   mesh00.addBoundaryRegions();
@@ -1280,6 +1314,16 @@ TEST(BoutMeshTest, DefaultConnectionsSingleNull2x2) {
   BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1, false);
   mesh01.default_connections();
 
+  auto connection01 = mesh01.getConnectionInfo();
+  EXPECT_EQ(connection01.DDATA_XSPLIT, 0);
+  EXPECT_EQ(connection01.UDATA_XSPLIT, 0);
+  EXPECT_EQ(connection01.DDATA_INDEST, -1);
+  EXPECT_EQ(connection01.UDATA_INDEST, -1);
+  EXPECT_EQ(connection01.DDATA_OUTDEST, 0);
+  EXPECT_EQ(connection01.UDATA_OUTDEST, -1);
+  EXPECT_EQ(connection01.IDATA_DEST, -1);
+  EXPECT_EQ(connection01.ODATA_DEST, 3);
+
   mesh01.createDefaultRegions();
   mesh01.addBoundaryRegions();
 
@@ -1296,6 +1340,16 @@ TEST(BoutMeshTest, DefaultConnectionsSingleNull2x2) {
 
   BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0, false);
   mesh10.default_connections();
+
+  auto connection10 = mesh10.getConnectionInfo();
+  EXPECT_EQ(connection10.DDATA_XSPLIT, 0);
+  EXPECT_EQ(connection10.UDATA_XSPLIT, 0);
+  EXPECT_EQ(connection10.DDATA_INDEST, -1);
+  EXPECT_EQ(connection10.UDATA_INDEST, -1);
+  EXPECT_EQ(connection10.DDATA_OUTDEST, -1);
+  EXPECT_EQ(connection10.UDATA_OUTDEST, 3);
+  EXPECT_EQ(connection10.IDATA_DEST, 0);
+  EXPECT_EQ(connection10.ODATA_DEST, -1);
 
   mesh10.createDefaultRegions();
   mesh10.addBoundaryRegions();
@@ -1314,6 +1368,16 @@ TEST(BoutMeshTest, DefaultConnectionsSingleNull2x2) {
   BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1, false);
   mesh11.default_connections();
 
+  auto connection11 = mesh11.getConnectionInfo();
+  EXPECT_EQ(connection11.DDATA_XSPLIT, 0);
+  EXPECT_EQ(connection11.UDATA_XSPLIT, 0);
+  EXPECT_EQ(connection11.DDATA_INDEST, -1);
+  EXPECT_EQ(connection11.UDATA_INDEST, -1);
+  EXPECT_EQ(connection11.DDATA_OUTDEST, 1);
+  EXPECT_EQ(connection11.UDATA_OUTDEST, -1);
+  EXPECT_EQ(connection11.IDATA_DEST, 2);
+  EXPECT_EQ(connection11.ODATA_DEST, -1);
+
   mesh11.createDefaultRegions();
   mesh11.addBoundaryRegions();
 
@@ -1327,4 +1391,135 @@ TEST(BoutMeshTest, DefaultConnectionsSingleNull2x2) {
 
   EXPECT_EQ(mesh11.getRegion("RGN_INNER_X").size(), 0);
   EXPECT_EQ(mesh11.getRegion("RGN_OUTER_X").size(), 3);
+}
+
+TEST(BoutMeshTest, DefaultConnectionsSingleNullPeriodicX2x2) {
+  // This test checks both default_connections and the Region
+  // creation, as these are quite tightly linked.
+
+  WithQuietOutput info{output_info};
+  // 5x3x1 grid on 4 processors, 1 boundary point. Boundaries should
+  // be simple 1D rectangles, with 2 boundaries on each processor.
+  // Periodic in X, so {I,O}DATA_DEST wrap around, and no boundaries in X
+
+  // +---+---+  ^
+  // | 0 | 1 |  | DDATA_OUTDEST
+  // +---+---+
+  // | 2 | 3 |  | UDATA_OUTDEST
+  // +---+---+  v
+  // <--
+  // IDATA_DEST
+  //       -->
+  // ODATA_DEST
+  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0, false);
+  mesh00.periodicX = true;
+  mesh00.default_connections();
+
+  auto connection00 = mesh00.getConnectionInfo();
+  EXPECT_EQ(connection00.DDATA_XSPLIT, 0);
+  EXPECT_EQ(connection00.UDATA_XSPLIT, 0);
+  EXPECT_EQ(connection00.DDATA_INDEST, -1);
+  EXPECT_EQ(connection00.UDATA_INDEST, -1);
+  EXPECT_EQ(connection00.DDATA_OUTDEST, -1);
+  EXPECT_EQ(connection00.UDATA_OUTDEST, 2);
+  EXPECT_EQ(connection00.IDATA_DEST, 1);
+  EXPECT_EQ(connection00.ODATA_DEST, 1);
+
+  mesh00.createDefaultRegions();
+  mesh00.addBoundaryRegions();
+
+  EXPECT_EQ(mesh00.getRegion("RGN_LOWER_INNER_Y").size(), 4);
+  EXPECT_EQ(mesh00.getRegion("RGN_LOWER_OUTER_Y").size(), 0);
+  EXPECT_EQ(mesh00.getRegion("RGN_LOWER_Y").size(), 4);
+
+  EXPECT_EQ(mesh00.getRegion("RGN_UPPER_INNER_Y").size(), 0);
+  EXPECT_EQ(mesh00.getRegion("RGN_UPPER_OUTER_Y").size(), 0);
+  EXPECT_EQ(mesh00.getRegion("RGN_UPPER_Y").size(), 0);
+
+  EXPECT_EQ(mesh00.getRegion("RGN_INNER_X").size(), 0);
+  EXPECT_EQ(mesh00.getRegion("RGN_OUTER_X").size(), 0);
+
+  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1, false);
+  mesh01.periodicX = true;
+  mesh01.default_connections();
+
+  auto connection01 = mesh01.getConnectionInfo();
+  EXPECT_EQ(connection01.DDATA_XSPLIT, 0);
+  EXPECT_EQ(connection01.UDATA_XSPLIT, 0);
+  EXPECT_EQ(connection01.DDATA_INDEST, -1);
+  EXPECT_EQ(connection01.UDATA_INDEST, -1);
+  EXPECT_EQ(connection01.DDATA_OUTDEST, 0);
+  EXPECT_EQ(connection01.UDATA_OUTDEST, -1);
+  EXPECT_EQ(connection01.IDATA_DEST, 3);
+  EXPECT_EQ(connection01.ODATA_DEST, 3);
+
+  mesh01.createDefaultRegions();
+  mesh01.addBoundaryRegions();
+
+  EXPECT_EQ(mesh01.getRegion("RGN_LOWER_INNER_Y").size(), 0);
+  EXPECT_EQ(mesh01.getRegion("RGN_LOWER_OUTER_Y").size(), 0);
+  EXPECT_EQ(mesh01.getRegion("RGN_LOWER_Y").size(), 0);
+
+  EXPECT_EQ(mesh01.getRegion("RGN_UPPER_INNER_Y").size(), 0);
+  EXPECT_EQ(mesh01.getRegion("RGN_UPPER_OUTER_Y").size(), 4);
+  EXPECT_EQ(mesh01.getRegion("RGN_UPPER_Y").size(), 4);
+
+  EXPECT_EQ(mesh01.getRegion("RGN_INNER_X").size(), 0);
+  EXPECT_EQ(mesh01.getRegion("RGN_OUTER_X").size(), 0);
+
+  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0, false);
+  mesh10.periodicX = true;
+  mesh10.default_connections();
+
+  auto connection10 = mesh10.getConnectionInfo();
+  EXPECT_EQ(connection10.DDATA_XSPLIT, 0);
+  EXPECT_EQ(connection10.UDATA_XSPLIT, 0);
+  EXPECT_EQ(connection10.DDATA_INDEST, -1);
+  EXPECT_EQ(connection10.UDATA_INDEST, -1);
+  EXPECT_EQ(connection10.DDATA_OUTDEST, -1);
+  EXPECT_EQ(connection10.UDATA_OUTDEST, 3);
+  EXPECT_EQ(connection10.IDATA_DEST, 0);
+  EXPECT_EQ(connection10.ODATA_DEST, 0);
+
+  mesh10.createDefaultRegions();
+  mesh10.addBoundaryRegions();
+
+  EXPECT_EQ(mesh10.getRegion("RGN_LOWER_INNER_Y").size(), 4);
+  EXPECT_EQ(mesh10.getRegion("RGN_LOWER_OUTER_Y").size(), 0);
+  EXPECT_EQ(mesh10.getRegion("RGN_LOWER_Y").size(), 4);
+
+  EXPECT_EQ(mesh10.getRegion("RGN_UPPER_INNER_Y").size(), 0);
+  EXPECT_EQ(mesh10.getRegion("RGN_UPPER_OUTER_Y").size(), 0);
+  EXPECT_EQ(mesh10.getRegion("RGN_UPPER_Y").size(), 0);
+
+  EXPECT_EQ(mesh10.getRegion("RGN_INNER_X").size(), 0);
+  EXPECT_EQ(mesh10.getRegion("RGN_OUTER_X").size(), 0);
+
+  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1, false);
+  mesh11.periodicX = true;
+  mesh11.default_connections();
+
+  auto connection11 = mesh11.getConnectionInfo();
+  EXPECT_EQ(connection11.DDATA_XSPLIT, 0);
+  EXPECT_EQ(connection11.UDATA_XSPLIT, 0);
+  EXPECT_EQ(connection11.DDATA_INDEST, -1);
+  EXPECT_EQ(connection11.UDATA_INDEST, -1);
+  EXPECT_EQ(connection11.DDATA_OUTDEST, 1);
+  EXPECT_EQ(connection11.UDATA_OUTDEST, -1);
+  EXPECT_EQ(connection11.IDATA_DEST, 2);
+  EXPECT_EQ(connection11.ODATA_DEST, 2);
+
+  mesh11.createDefaultRegions();
+  mesh11.addBoundaryRegions();
+
+  EXPECT_EQ(mesh11.getRegion("RGN_LOWER_INNER_Y").size(), 0);
+  EXPECT_EQ(mesh11.getRegion("RGN_LOWER_OUTER_Y").size(), 0);
+  EXPECT_EQ(mesh11.getRegion("RGN_LOWER_Y").size(), 0);
+
+  EXPECT_EQ(mesh11.getRegion("RGN_UPPER_INNER_Y").size(), 0);
+  EXPECT_EQ(mesh11.getRegion("RGN_UPPER_OUTER_Y").size(), 4);
+  EXPECT_EQ(mesh11.getRegion("RGN_UPPER_Y").size(), 4);
+
+  EXPECT_EQ(mesh11.getRegion("RGN_INNER_X").size(), 0);
+  EXPECT_EQ(mesh11.getRegion("RGN_OUTER_X").size(), 0);
 }
