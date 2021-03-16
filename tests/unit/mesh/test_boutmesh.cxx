@@ -23,7 +23,7 @@ public:
   using BoutMesh::add_target;
   using BoutMesh::addBoundaryRegions;
   using BoutMesh::chooseProcessorSplit;
-  using BoutMesh::DecompositionIndices;
+  using BoutMesh::YDecompositionIndices;
   using BoutMesh::default_connections;
   using BoutMesh::findProcessorSplit;
   using BoutMesh::getConnectionInfo;
@@ -35,15 +35,15 @@ public:
   using BoutMesh::YPROC;
 };
 
-bool operator==(const BoutMeshExposer::DecompositionIndices& lhs,
-                const BoutMeshExposer::DecompositionIndices& rhs) {
+bool operator==(const BoutMeshExposer::YDecompositionIndices& lhs,
+                const BoutMeshExposer::YDecompositionIndices& rhs) {
   return (lhs.jyseps1_1 == rhs.jyseps1_1) and (lhs.jyseps2_1 == rhs.jyseps2_1)
          and (lhs.jyseps1_2 == rhs.jyseps1_2) and (lhs.jyseps2_2 == rhs.jyseps2_2)
          and (lhs.ny_inner == rhs.ny_inner);
 }
 
 std::ostream& operator<<(std::ostream& out,
-                         const BoutMeshExposer::DecompositionIndices& value) {
+                         const BoutMeshExposer::YDecompositionIndices& value) {
   return out << fmt::format("BoutMesh::DecompositionIndices{{"
                             "jyseps1_1 = {}, "
                             "jyseps2_1 = {}, "
@@ -63,7 +63,7 @@ TEST(BoutMeshTest, NullOptionsCheck) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesCoreOnly) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected{-1, 7, 15, 23, 12};
+  const BoutMeshExposer::YDecompositionIndices expected{-1, 7, 15, 23, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -75,7 +75,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesCoreOnly) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesSingleNull) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected{3, 7, 7, 19, 12};
+  const BoutMeshExposer::YDecompositionIndices expected{3, 7, 7, 19, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -87,7 +87,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesSingleNull) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesDoubleNull) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected{3, 7, 15, 19, 12};
+  const BoutMeshExposer::YDecompositionIndices expected{3, 7, 15, 19, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -99,7 +99,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesDoubleNull) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesJyseps11Low) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected{-1, 7, 15, 19, 12};
+  const BoutMeshExposer::YDecompositionIndices expected{-1, 7, 15, 19, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -109,7 +109,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesJyseps11Low) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesJyseps21Low) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected{3, 4, 15, 19, 12};
+  const BoutMeshExposer::YDecompositionIndices expected{3, 4, 15, 19, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -119,7 +119,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesJyseps21Low) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesJyseps12Low) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected{3, 7, 7, 19, 12};
+  const BoutMeshExposer::YDecompositionIndices expected{3, 7, 7, 19, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -129,7 +129,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesJyseps12Low) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22High) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected{3, 7, 15, 23, 12};
+  const BoutMeshExposer::YDecompositionIndices expected{3, 7, 15, 23, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -139,7 +139,7 @@ TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22High) {
 
 TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22Low) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::DecompositionIndices expected{3, 7, 15, 15, 12};
+  const BoutMeshExposer::YDecompositionIndices expected{3, 7, 15, 15, 12};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
 
@@ -159,7 +159,7 @@ struct DecompositionTestParameters {
   int num_y_processors;
   int ny;
   int num_y_guards;
-  BoutMeshExposer::DecompositionIndices indices;
+  BoutMeshExposer::YDecompositionIndices indices;
   std::string expected_message; // Expect this fragment to be in the result.reason for bad
                                 // decompositions
   std::string name;
@@ -320,7 +320,7 @@ struct FindProcessorParameters {
   int ny;
   int num_x_guards;
   int num_y_guards;
-  BoutMeshExposer::DecompositionIndices indices;
+  BoutMeshExposer::YDecompositionIndices indices;
   int expected_nxpe;
   int expected_nype;
 };

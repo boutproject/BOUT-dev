@@ -86,8 +86,8 @@ BoutMesh::~BoutMesh() {
     MPI_Comm_free(&comm_outer);
 }
 
-BoutMesh::DecompositionIndices
-BoutMesh::setYDecompositionIndices(BoutMesh::DecompositionIndices indices) {
+BoutMesh::YDecompositionIndices
+BoutMesh::setYDecompositionIndices(BoutMesh::YDecompositionIndices indices) {
   setYDecompositionIndices(indices.jyseps1_1, indices.jyseps2_1, indices.jyseps1_2,
                            indices.jyseps2_2, indices.ny_inner);
 

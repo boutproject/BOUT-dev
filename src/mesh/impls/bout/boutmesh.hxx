@@ -237,7 +237,7 @@ protected:
                                 int jyseps2_2_, int ny_inner_);
 
   /// Structure for `setYDecompositionIndices` input/output values
-  struct DecompositionIndices {
+  struct YDecompositionIndices {
     int jyseps1_1;
     int jyseps2_1;
     int jyseps1_2;
@@ -247,7 +247,7 @@ protected:
 
   /// Version of `setYDecompositionindices` that returns the values
   /// used, useful for testing
-  DecompositionIndices setYDecompositionIndices(DecompositionIndices indices);
+  YDecompositionIndices setYDecompositionIndices(YDecompositionIndices indices);
 
   /// Choose NXPE (or NYPE) based on user input
   void chooseProcessorSplit(Options& options);
