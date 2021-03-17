@@ -1794,7 +1794,6 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
  *                       CONNECTIONS
  ****************************************************************/
 
-/// Connection initialisation: Set processors in a simple 2D grid
 void BoutMesh::default_connections() {
   DDATA_XSPLIT = UDATA_XSPLIT = 0;  // everything by default outside (arb. choice)
   DDATA_INDEST = UDATA_INDEST = -1; // since nothing inside
@@ -1817,11 +1816,6 @@ void BoutMesh::default_connections() {
   }
 }
 
-/// Add a topology connection
-/*!
- * Set ypos1 and ypos2 to be neighbours in the range xge <= x < xlt.
- * Optional argument ts sets whether to use twist-shift condition
- */
 void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
   int ype1, ype2; // the two Y processor indices
   int ypeup, ypedown;
@@ -1940,12 +1934,6 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
   }
 }
 
-/// Add a divertor target or limiter
-/*!
- * ypos is the y index which will become an upper target
- * ypos+1 will become a lower target.
- * Target created in the range xge <= x < xlt.
- */
 void BoutMesh::add_target(int ypos, int xge, int xlt) {
   if (xlt <= xge)
     return;

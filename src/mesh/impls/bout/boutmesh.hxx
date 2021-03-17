@@ -305,6 +305,7 @@ protected:
     int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
   };
 
+  /// Return the communication parameters as calculated by `topology`
   ConnectionInfo getConnectionInfo() const {
     return {TS_up_in,      TS_up_out,     TS_down_in,   TS_down_out,
             UDATA_INDEST,  UDATA_OUTDEST, UDATA_XSPLIT, DDATA_INDEST,
@@ -342,12 +343,26 @@ protected:
   // These are protected so we can make them public in the test suite
   // for testing
 
+  /// Connection initialisation: Set processors in a simple 2D grid
   void default_connections();
+  /// Add a topology connection
+  ///
+  /// Set \p ypos1 and \p ypos2 to be neighbours in the range \p xge <= x < \p xlt.
+  /// Optional argument \p ts sets whether to use twist-shift condition
   void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);
+  /// Add a divertor target or limiter
+  ///
+  /// \p ypos is the y index which will become an upper target.
+  /// `ypos+1` will become a lower target.
+  /// Target created in the range \p xge <= x < \p xlt.
   void add_target(int ypos, int xge, int xlt);
+  /// Create the communication connections between processors to set
+  /// the layout of the global grid. See the manual section on "BOUT++
+  /// Topology" for more information
   void topology();
 
-  void addBoundaryRegions(); ///< Adds 2D and 3D regions for boundaries
+  /// Adds 2D and 3D regions for boundaries
+  void addBoundaryRegions();
 
 private:
   std::vector<BoundaryRegion*> boundary;        // Vector of boundary regions
