@@ -254,6 +254,12 @@ protected:
   /// Find a value for NXPE
   void findProcessorSplit();
 
+  /// Set the two x-decomposition indices. No invariants are enforced
+  void setXDecompositionIndices(int ixseps1_, int ixseps2_) {
+    ixseps1 = ixseps1_;
+    ixseps2 = ixseps2_;
+  }
+
 private:
   std::string gridname;
   int nx, ny, nz; ///< Size of the grid in the input file

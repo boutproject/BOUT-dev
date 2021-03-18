@@ -29,6 +29,7 @@ public:
   using BoutMesh::getConnectionInfo;
   using BoutMesh::PROC_NUM;
   using BoutMesh::set_connection;
+  using BoutMesh::setXDecompositionIndices;
   using BoutMesh::setYDecompositionIndices;
   using BoutMesh::topology;
   using BoutMesh::XPROC;
