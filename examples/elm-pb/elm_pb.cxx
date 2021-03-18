@@ -1350,6 +1350,7 @@ public:
         } else {
           phi = phiSolver->solve(U);
         }
+        mesh->communicate(phi);
         Ucheck_2d = Delp2(phi);
         Ucheck_3d = Laplace_perp(phi);
 
