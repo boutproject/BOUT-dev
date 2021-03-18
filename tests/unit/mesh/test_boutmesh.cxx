@@ -45,7 +45,7 @@ bool operator==(const BoutMeshExposer::YDecompositionIndices& lhs,
 
 std::ostream& operator<<(std::ostream& out,
                          const BoutMeshExposer::YDecompositionIndices& value) {
-  return out << fmt::format("BoutMesh::DecompositionIndices{{"
+  return out << fmt::format("BoutMesh::YDecompositionIndices{{"
                             "jyseps1_1 = {}, "
                             "jyseps2_1 = {}, "
                             "jyseps1_2 = {}, "
@@ -62,90 +62,50 @@ TEST(BoutMeshTest, NullOptionsCheck) {
   EXPECT_NO_THROW(BoutMesh mesh(new FakeGridDataSource, nullptr));
 }
 
-TEST(BoutMeshTest, SetYDecompositionIndicesCoreOnly) {
-  WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::YDecompositionIndices expected{-1, 7, 15, 23, 12};
+struct SetYDecompositionTestParameters {
+  BoutMeshExposer::YDecompositionIndices input;
+  BoutMeshExposer::YDecompositionIndices expected;
+  int number_of_X_points;
+  std::string test_name;
+};
 
-  BoutMeshExposer mesh(1, 24, 1, 1, 1);
-
-  // Should return set indices unchanged
-  const auto actual_indices = mesh.setYDecompositionIndices(expected);
-  EXPECT_EQ(actual_indices, expected);
-  EXPECT_EQ(mesh.numberOfXPoints, 0);
+std::ostream& operator<<(std::ostream& out,
+                         const SetYDecompositionTestParameters& value) {
+  return out << "SetYDecompositionTestParameters{input=" << value.input
+             << ", expected=" << value.expected
+             << ", number_of_X_points=" << value.number_of_X_points << "}";
 }
 
-TEST(BoutMeshTest, SetYDecompositionIndicesSingleNull) {
-  WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::YDecompositionIndices expected{3, 7, 7, 19, 12};
-
-  BoutMeshExposer mesh(1, 24, 1, 1, 1);
-
-  // Should return set indices unchanged
-  const auto actual_indices = mesh.setYDecompositionIndices(expected);
-  EXPECT_EQ(actual_indices, expected);
-  EXPECT_EQ(mesh.numberOfXPoints, 1);
+std::string SetYDecompositionTestParametersToString(
+    const ::testing::TestParamInfo<SetYDecompositionTestParameters>& param) {
+  return param.param.test_name;
 }
 
-TEST(BoutMeshTest, SetYDecompositionIndicesDoubleNull) {
+struct BoutMeshSetYDecompositionTest : public ::testing::TestWithParam<SetYDecompositionTestParameters> {
+  virtual ~BoutMeshSetYDecompositionTest() = default;
+};
+
+INSTANTIATE_TEST_SUITE_P(GoodDecompositions, BoutMeshSetYDecompositionTest,
+                         ::testing::Values(
+                           SetYDecompositionTestParameters{{-1, 7, 15, 23, 12}, {-1, 7, 15, 23, 12}, 0, "CoreOnly"},
+                           SetYDecompositionTestParameters{{3, 7, 7, 19, 12}, {3, 7, 7, 19, 12}, 1, "SingleNull"},
+                           SetYDecompositionTestParameters{{3, 7, 15, 19, 12}, {3, 7, 15, 19, 12}, 2, "DoubleNull"},
+                           SetYDecompositionTestParameters{{-12, 7, 15, 19, 12}, {-1, 7, 15, 19, 12}, 2, "Jyseps11Low"},
+                           SetYDecompositionTestParameters{{3, 1, 15, 19, 12}, {3, 4, 15, 19, 12}, 2, "Jyseps21Low"},
+                           SetYDecompositionTestParameters{{3, 7, 5, 19, 12}, {3, 7, 7, 19, 12}, 1, "Jyseps12Low"},
+                           SetYDecompositionTestParameters{{3, 7, 15, 32, 12}, {3, 7, 15, 23, 12}, 2, "Jyseps22High"},
+                           SetYDecompositionTestParameters{{3, 7, 15, 8, 12}, {3, 7, 15, 15, 12}, 2, "Jyseps22Low"}
+                           ),
+                           SetYDecompositionTestParametersToString);
+
+TEST_P(BoutMeshSetYDecompositionTest, BasicTest) {
   WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::YDecompositionIndices expected{3, 7, 15, 19, 12};
+  const auto params = GetParam();
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1);
-
-  // Should return set indices unchanged
-  const auto actual_indices = mesh.setYDecompositionIndices(expected);
-  EXPECT_EQ(actual_indices, expected);
-  EXPECT_EQ(mesh.numberOfXPoints, 2);
-}
-
-TEST(BoutMeshTest, SetYDecompositionIndicesJyseps11Low) {
-  WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::YDecompositionIndices expected{-1, 7, 15, 19, 12};
-
-  BoutMeshExposer mesh(1, 24, 1, 1, 1);
-
-  const auto actual_indices = mesh.setYDecompositionIndices({-12, 7, 15, 19, 12});
-  EXPECT_EQ(actual_indices, expected);
-}
-
-TEST(BoutMeshTest, SetYDecompositionIndicesJyseps21Low) {
-  WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::YDecompositionIndices expected{3, 4, 15, 19, 12};
-
-  BoutMeshExposer mesh(1, 24, 1, 1, 1);
-
-  const auto actual_indices = mesh.setYDecompositionIndices({3, 1, 15, 19, 12});
-  EXPECT_EQ(actual_indices, expected);
-}
-
-TEST(BoutMeshTest, SetYDecompositionIndicesJyseps12Low) {
-  WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::YDecompositionIndices expected{3, 7, 7, 19, 12};
-
-  BoutMeshExposer mesh(1, 24, 1, 1, 1);
-
-  const auto actual_indices = mesh.setYDecompositionIndices({3, 7, 5, 19, 12});
-  EXPECT_EQ(actual_indices, expected);
-}
-
-TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22High) {
-  WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::YDecompositionIndices expected{3, 7, 15, 23, 12};
-
-  BoutMeshExposer mesh(1, 24, 1, 1, 1);
-
-  const auto actual_indices = mesh.setYDecompositionIndices({3, 7, 15, 32, 12});
-  EXPECT_EQ(actual_indices, expected);
-}
-
-TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22Low) {
-  WithQuietOutput warn{output_warn};
-  const BoutMeshExposer::YDecompositionIndices expected{3, 7, 15, 15, 12};
-
-  BoutMeshExposer mesh(1, 24, 1, 1, 1);
-
-  const auto actual_indices = mesh.setYDecompositionIndices({3, 7, 15, 8, 12});
-  EXPECT_EQ(actual_indices, expected);
+  const auto actual_indices = mesh.setYDecompositionIndices(params.input);
+  EXPECT_EQ(actual_indices, params.expected);
+  EXPECT_EQ(mesh.numberOfXPoints, params.number_of_X_points);
 }
 
 TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22LowInconsistent) {
