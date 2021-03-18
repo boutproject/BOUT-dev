@@ -89,7 +89,7 @@ public:
   Field3D tmpA2; // Grad2_par2new of Parallel vector potential
 
   // For Laplace diagnostics
-  Field3D Ucheck_2d, Ucheck3d;
+  Field3D Ucheck_2d, Ucheck_3d, phi_check;
 
   // Constraint
   Field3D C_phi;
@@ -890,7 +890,7 @@ public:
       output.write("   drop K-H term\n");
     }
 
-    SAVE_REPEAT(Ucheck_2d, Ucheck_3d);
+    SAVE_REPEAT(Ucheck_2d, Ucheck_3d, phi_check);
 
     Field2D Te;
     Te = P0 / (2.0 * density * 1.602e-19); // Temperature in eV
@@ -1353,6 +1353,8 @@ public:
         mesh->communicate(phi);
         Ucheck_2d = Delp2(phi);
         Ucheck_3d = Laplace_perp(phi);
+        phi_check = phi;
+        phi_check.allocate();
 
         if (diamag) {
           phi -= 0.5 * dnorm * P / B0;
