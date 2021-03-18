@@ -86,17 +86,17 @@ fft_measure = true # If using FFTW, perform tests to determine fastest method
 
 [mesh:ddx]
 
-first = C4 # order of first x derivatives
+#first = C4 # order of first x derivatives
 
-second = C4 # order of second x derivatives
+#second = C4 # order of second x derivatives
 
 upwind = W3 # order of upwinding method W3 = Weno3
 
 [mesh:ddy]
 
-first = C2
+#first = C2
 
-second = C2
+#second = C2
 
 upwind = C2
 
@@ -104,9 +104,9 @@ flux = C2
 
 [mesh:ddz]
 
-first = C4 # Z derivatives can be done using FFT
+#first = C4 # Z derivatives can be done using FFT
 
-second = C4
+#second = C4
 
 upwind = W3
 
