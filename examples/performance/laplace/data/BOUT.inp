@@ -8,16 +8,50 @@ dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
 nype = 1 # Set to 1 to ensure we only parallelize over x in scaling scan
 
+NXPE = 1
+
 [LaplaceTest]
-NUM_LOOPS = 1000
+NUM_LOOPS = 1
 
 [mesh]
 symmetricGlobalX = false
 symmetricGlobalY = false
 
 nx = 12
-ny = 16
+ny = 1 # 16
+MYG = 0
 
+# For cyclic
+###[laplace]
+###all_terms = false
+###include_yguards = false
+#
+# For IPT
 [laplace]
+type = ipt
+max_level = 1
+maxits = 100000
 all_terms = false
 include_yguards = false
+
+# For petsc3damg
+###[laplace]
+###type = petsc3damg
+###max_level = 1
+###maxits = 100000
+###all_terms = false
+###include_yguards = false
+
+###[laplace]
+###type = petsc
+###max_level = 1
+###maxits = 100000
+###all_terms = false
+###include_yguards = false
+
+###[laplace]
+###type = multigrid
+###multigridlevel = 7
+###maxits = 100000
+###all_terms = false
+###include_yguards = false

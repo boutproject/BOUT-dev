@@ -18,12 +18,13 @@ from numpy import sqrt, max, abs, mean, array, log, concatenate
 build_and_log("MMS test")
 
 # List of NX values to use
-nxlist = [16, 32, 64, 128, 256]
+#nxlist = [16, 32, 64, 128, 256]
+nxlist = [14, 30, 62, 126, 254]
 
 nout = 1
 timestep = 0.1
 
-nproc = 2
+nproc = 4
 
 error_2 = []  # The L2 error (RMS)
 error_inf = []  # The maximum error
