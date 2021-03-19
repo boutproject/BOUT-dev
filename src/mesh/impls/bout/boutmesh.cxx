@@ -87,7 +87,7 @@ BoutMesh::~BoutMesh() {
 }
 
 BoutMesh::YDecompositionIndices
-BoutMesh::setYDecompositionIndices(BoutMesh::YDecompositionIndices indices) {
+BoutMesh::setYDecompositionIndices(const BoutMesh::YDecompositionIndices& indices) {
   setYDecompositionIndices(indices.jyseps1_1, indices.jyseps2_1, indices.jyseps1_2,
                            indices.jyseps2_2, indices.ny_inner);
 
@@ -145,6 +145,11 @@ void BoutMesh::setYDecompositionIndices(int jyseps1_1_, int jyseps2_1_, int jyse
   } else {
     numberOfXPoints = 2;
   }
+}
+
+void BoutMesh::setXDecompositionIndices(const XDecompositionIndices& indices) {
+  ixseps1 = indices.ixseps1;
+  ixseps2 = indices.ixseps2;
 }
 
 namespace bout {

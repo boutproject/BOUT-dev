@@ -247,18 +247,20 @@ protected:
 
   /// Version of `setYDecompositionindices` that returns the values
   /// used, useful for testing
-  YDecompositionIndices setYDecompositionIndices(YDecompositionIndices indices);
+  YDecompositionIndices setYDecompositionIndices(const YDecompositionIndices& indices);
 
   /// Choose NXPE (or NYPE) based on user input
   void chooseProcessorSplit(Options& options);
   /// Find a value for NXPE
   void findProcessorSplit();
 
+  struct XDecompositionIndices {
+    int ixseps1;
+    int ixseps2;
+  };
+
   /// Set the two x-decomposition indices. No invariants are enforced
-  void setXDecompositionIndices(int ixseps1_, int ixseps2_) {
-    ixseps1 = ixseps1_;
-    ixseps2 = ixseps2_;
-  }
+  void setXDecompositionIndices(const XDecompositionIndices& indices);
 
 private:
   std::string gridname;

@@ -10,6 +10,11 @@
 
 #include <ostream>
 
+/// Forward declaration so we can construct a `BoutMeshExposer` from this
+struct BoutMeshParameters;
+
+/// Inherits from `BoutMesh` so that we can make some protected things
+/// public to aid testing
 class BoutMeshExposer : public BoutMesh {
 public:
   BoutMeshExposer(int input_nx, int input_ny, int input_nz, int mxg, int myg,
@@ -19,11 +24,11 @@ public:
                   bool create_topology = true)
       : BoutMesh((nxpe * (nx - 2)) + 2, nype * ny, nz, 1, 1, nxpe, nype, pe_xind, pe_yind,
                  create_topology) {}
+  BoutMeshExposer(const BoutMeshParameters& inputs);
   // Make protected methods public for testing
   using BoutMesh::add_target;
   using BoutMesh::addBoundaryRegions;
   using BoutMesh::chooseProcessorSplit;
-  using BoutMesh::YDecompositionIndices;
   using BoutMesh::default_connections;
   using BoutMesh::findProcessorSplit;
   using BoutMesh::getConnectionInfo;
@@ -32,10 +37,55 @@ public:
   using BoutMesh::setXDecompositionIndices;
   using BoutMesh::setYDecompositionIndices;
   using BoutMesh::topology;
+  using BoutMesh::XDecompositionIndices;
   using BoutMesh::XPROC;
+  using BoutMesh::YDecompositionIndices;
   using BoutMesh::YPROC;
 };
 
+/// Minimal parameters need to construct a grid useful for testing
+struct BoutMeshGridInfo {
+  int local_nx;                 // Does _not_ include guard cells
+  int local_ny;                 // Does _not_ include guard cells
+  int num_x_guards;
+  int num_y_guards;
+  int nxpe;
+  int nype;
+  int pe_xind;
+  int pe_yind;
+  // The below are constructed consistently with the above
+  int total_nx;                 // _Does_ include guard cells
+  int total_ny;                 // Does _not_ include guard cells
+  int total_processors;
+  BoutMeshGridInfo(int local_nx_, int local_ny_, int num_x_guards_, int num_y_guards_,
+                   int nxpe_, int nype_, int pe_xind_ = 0, int pe_yind_ = 0)
+      : local_nx(local_nx_), local_ny(local_ny_), num_x_guards(num_x_guards_),
+        num_y_guards(num_y_guards_), nxpe(nxpe_), nype(nype_), pe_xind(pe_xind_),
+        pe_yind(pe_yind_), total_nx((nxpe * local_nx) + (2 * num_x_guards)),
+        total_ny(nype * local_ny), total_processors(nxpe * nype) {}
+};
+
+/// Grid and topology information to make a `BoutMesh`
+struct BoutMeshParameters {
+  BoutMeshGridInfo grid;
+  BoutMeshExposer::XDecompositionIndices x_indices;
+  BoutMeshExposer::YDecompositionIndices y_indices;
+};
+
+/// Now we've got the definition of `BoutMeshParameters`, we can
+/// actually make a `BoutMeshExposer`
+BoutMeshExposer::BoutMeshExposer(const BoutMeshParameters& inputs)
+    : BoutMesh(inputs.grid.total_nx, inputs.grid.total_ny, 1, inputs.grid.num_x_guards,
+               inputs.grid.num_y_guards, inputs.grid.nxpe, inputs.grid.nype,
+               inputs.grid.pe_xind, inputs.grid.pe_yind, false) {
+  setXDecompositionIndices(inputs.x_indices);
+  setYDecompositionIndices(inputs.y_indices);
+  topology();
+  createDefaultRegions();
+  addBoundaryRegions();
+}
+
+/// Equality operator to help testing
 bool operator==(const BoutMeshExposer::YDecompositionIndices& lhs,
                 const BoutMeshExposer::YDecompositionIndices& rhs) {
   return (lhs.jyseps1_1 == rhs.jyseps1_1) and (lhs.jyseps2_1 == rhs.jyseps2_1)
@@ -43,6 +93,7 @@ bool operator==(const BoutMeshExposer::YDecompositionIndices& lhs,
          and (lhs.ny_inner == rhs.ny_inner);
 }
 
+/// Stream operator to print a nice message instead of bytes if a test fails
 std::ostream& operator<<(std::ostream& out,
                          const BoutMeshExposer::YDecompositionIndices& value) {
   return out << fmt::format("BoutMesh::YDecompositionIndices{{"
@@ -55,6 +106,99 @@ std::ostream& operator<<(std::ostream& out,
                             value.jyseps1_1, value.jyseps2_1, value.jyseps1_2,
                             value.jyseps2_2, value.ny_inner);
 }
+
+////////////////////////////////////////////////////////////
+// A bunch of functions for creating consistent configurations in
+// different topologies. We don't just return a `BoutMeshExposer`,
+// because we can reuse the `BoutMeshParameters` for other tests where
+// we don't want a full `Mesh` object
+BoutMeshParameters createCore(const BoutMeshGridInfo& grid) {
+  return {grid,
+          {grid.total_nx, grid.total_nx},
+          {-1, (grid.total_ny / 2) - 1, (grid.total_ny / 2) - 1, grid.total_ny - 1,
+           grid.total_ny / 2}};
+}
+
+BoutMeshParameters createSOL(const BoutMeshGridInfo& grid) {
+  return {grid,
+          {0, 0},
+          {-1, (grid.total_ny / 2) - 1, (grid.total_ny / 2) - 1, grid.total_ny - 1,
+           grid.total_ny / 2}};
+}
+
+BoutMeshParameters createLimiter(const BoutMeshGridInfo& grid) {
+  return {grid,
+          {grid.total_nx / 2, grid.total_nx},
+          {-1, (grid.total_ny / 2) - 1, (grid.total_ny / 2) - 1, grid.total_ny - 1,
+           grid.total_ny / 2}};
+}
+
+BoutMeshParameters createXPoint(const BoutMeshGridInfo& grid) {
+  if (grid.nype < 4) {
+    throw BoutException(
+        "createXPoint: Not enough processors for x-point topology (nype={}, needs 4)",
+        grid.nype);
+  }
+
+  return {grid,
+          {grid.total_nx / 2, grid.total_nx / 2},
+          {grid.local_ny - 1, grid.local_ny - 1, grid.total_ny - grid.local_ny - 1,
+           grid.total_ny - grid.local_ny - 1, 2 * grid.local_ny}};
+}
+
+BoutMeshParameters createSingleNull(const BoutMeshGridInfo& grid) {
+  if (grid.nype < 3) {
+    throw BoutException(
+        "createXPoint: Not enough processors for single-null topology (nype={}, needs 3)",
+        grid.nype);
+  }
+
+  return {grid,
+          {grid.total_nx / 2, grid.total_nx},
+          {grid.local_ny - 1, (grid.total_ny / 2) - 1, (grid.total_ny / 2) - 1,
+           grid.total_ny - grid.local_ny - 1, grid.total_ny / 2}};
+}
+
+BoutMeshParameters createDoubleNull(const BoutMeshGridInfo& grid) {
+  if (grid.nype < 6) {
+    throw BoutException("createDoubleNull: Not enough processors for double-null "
+                        "topology (nype={}, needs 6)",
+                        grid.nype);
+  }
+
+  const int ny_inner = 3 * grid.local_ny;
+  return {grid,
+          {grid.total_nx / 2, grid.total_nx / 2},
+          {grid.local_ny - 1, ny_inner - grid.local_ny - 1, ny_inner + grid.local_ny - 1,
+           grid.total_ny - grid.local_ny - 1, ny_inner}};
+}
+
+BoutMeshParameters createDisconnectedDoubleNull(const BoutMeshGridInfo& grid) {
+  if (grid.nype < 6) {
+    throw BoutException(
+        "createDisconnectedDoubleNull: Not enough processors for disconnected "
+        "double-null topology (nype={}, needs 6)",
+        grid.nype);
+  }
+
+  if ((grid.total_nx / 2) + 4 > grid.total_nx) {
+    throw BoutException(
+        "createDisconnectedDoubleNull: Not enough points in x-direction "
+        "(need ixseps2 = ((nxpe * (local_nx - 2)) + 2) / 2 + 4 = {} to "
+        "be less than total_nx = (nxpe * (local_nx - 2)) + 2 = {}; nxpe={}, local_nx={}",
+        (grid.total_nx / 2) + 4, grid.total_nx, grid.nxpe, grid.local_nx);
+  }
+
+  const int ny_inner = 3 * grid.local_ny;
+  return {grid,
+          {grid.total_nx / 2, grid.total_nx / 2 + 4},
+          {grid.local_ny - 1, ny_inner - grid.local_ny - 1, ny_inner + grid.local_ny - 1,
+           grid.total_ny - grid.local_ny - 1, ny_inner}};
+}
+
+////////////////////////////////////////////////////////////
+// Start of tests
+
 TEST(BoutMeshTest, NullOptionsCheck) {
   WithQuietOutput info{output_info};
   WithQuietOutput warn{output_warn};
@@ -81,22 +225,32 @@ std::string SetYDecompositionTestParametersToString(
   return param.param.test_name;
 }
 
-struct BoutMeshSetYDecompositionTest : public ::testing::TestWithParam<SetYDecompositionTestParameters> {
+struct BoutMeshSetYDecompositionTest
+    : public ::testing::TestWithParam<SetYDecompositionTestParameters> {
   virtual ~BoutMeshSetYDecompositionTest() = default;
 };
 
-INSTANTIATE_TEST_SUITE_P(GoodDecompositions, BoutMeshSetYDecompositionTest,
-                         ::testing::Values(
-                           SetYDecompositionTestParameters{{-1, 7, 15, 23, 12}, {-1, 7, 15, 23, 12}, 0, "CoreOnly"},
-                           SetYDecompositionTestParameters{{3, 7, 7, 19, 12}, {3, 7, 7, 19, 12}, 1, "SingleNull"},
-                           SetYDecompositionTestParameters{{3, 7, 15, 19, 12}, {3, 7, 15, 19, 12}, 2, "DoubleNull"},
-                           SetYDecompositionTestParameters{{-12, 7, 15, 19, 12}, {-1, 7, 15, 19, 12}, 2, "Jyseps11Low"},
-                           SetYDecompositionTestParameters{{3, 1, 15, 19, 12}, {3, 4, 15, 19, 12}, 2, "Jyseps21Low"},
-                           SetYDecompositionTestParameters{{3, 7, 5, 19, 12}, {3, 7, 7, 19, 12}, 1, "Jyseps12Low"},
-                           SetYDecompositionTestParameters{{3, 7, 15, 32, 12}, {3, 7, 15, 23, 12}, 2, "Jyseps22High"},
-                           SetYDecompositionTestParameters{{3, 7, 15, 8, 12}, {3, 7, 15, 15, 12}, 2, "Jyseps22Low"}
-                           ),
-                           SetYDecompositionTestParametersToString);
+INSTANTIATE_TEST_SUITE_P(
+    GoodDecompositions, BoutMeshSetYDecompositionTest,
+    ::testing::Values(SetYDecompositionTestParameters{{-1, 7, 15, 23, 12},
+                                                      {-1, 7, 15, 23, 12},
+                                                      0,
+                                                      "CoreOnly"},
+                      SetYDecompositionTestParameters{
+                          {3, 7, 7, 19, 12}, {3, 7, 7, 19, 12}, 1, "SingleNull"},
+                      SetYDecompositionTestParameters{
+                          {3, 7, 15, 19, 12}, {3, 7, 15, 19, 12}, 2, "DoubleNull"},
+                      SetYDecompositionTestParameters{
+                          {-12, 7, 15, 19, 12}, {-1, 7, 15, 19, 12}, 2, "Jyseps11Low"},
+                      SetYDecompositionTestParameters{
+                          {3, 1, 15, 19, 12}, {3, 4, 15, 19, 12}, 2, "Jyseps21Low"},
+                      SetYDecompositionTestParameters{
+                          {3, 7, 5, 19, 12}, {3, 7, 7, 19, 12}, 1, "Jyseps12Low"},
+                      SetYDecompositionTestParameters{
+                          {3, 7, 15, 32, 12}, {3, 7, 15, 23, 12}, 2, "Jyseps22High"},
+                      SetYDecompositionTestParameters{
+                          {3, 7, 15, 8, 12}, {3, 7, 15, 15, 12}, 2, "Jyseps22Low"}),
+    SetYDecompositionTestParametersToString);
 
 TEST_P(BoutMeshSetYDecompositionTest, BasicTest) {
   WithQuietOutput warn{output_warn};
@@ -125,6 +279,18 @@ struct DecompositionTestParameters {
                                 // decompositions
   std::string name;
 };
+
+DecompositionTestParameters
+makeDecompositionTestParameters(const BoutMeshParameters& inputs,
+                                const std::string& name) {
+  return {inputs.grid.total_processors,
+          inputs.grid.nype,
+          inputs.grid.total_ny,
+          inputs.grid.num_y_guards,
+          inputs.y_indices,
+          "",
+          name};
+}
 
 std::ostream& operator<<(std::ostream& out, const DecompositionTestParameters& value) {
   return out << fmt::format(
@@ -162,13 +328,24 @@ INSTANTIATE_TEST_SUITE_P(
         DecompositionTestParameters{
             2, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCores"},
         DecompositionTestParameters{
-            2, 2, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCoresNYPE2"}),
+            2, 2, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCoresNYPE2"},
+        // The following should basically all work by construction
+        makeDecompositionTestParameters(createCore({4, 4, 2, 2, 1, 1}), "Core"),
+        makeDecompositionTestParameters(createSOL({4, 4, 2, 2, 1, 1}), "SOL"),
+        makeDecompositionTestParameters(createLimiter({4, 4, 2, 2, 1, 1}), "Limiter"),
+        makeDecompositionTestParameters(createXPoint({4, 4, 2, 2, 1, 4}), "XPoint"),
+        makeDecompositionTestParameters(createSingleNull({4, 4, 2, 2, 1, 3}),
+                                        "SingleNull"),
+        makeDecompositionTestParameters(createDoubleNull({4, 4, 2, 2, 1, 6}),
+                                        "DoubleNull"),
+        makeDecompositionTestParameters(createDisconnectedDoubleNull({12, 4, 2, 2, 1, 6}),
+                                        "DisconnectedDoubleNull")),
     DecompositionTestParametersToString);
 
-TEST_P(BoutMeshDecompositionTest, SingleCoreYDecomposition) {
+TEST_P(BoutMeshDecompositionTest, CheckYDecomposition) {
   const auto params = GetParam();
   auto result = bout::checkBoutMeshYDecomposition(
-      params.total_processors, params.num_y_processors, params.ny, params.num_y_guards,
+      params.total_processors, params.num_y_processors, params.ny, 1,
       params.indices.jyseps1_1, params.indices.jyseps2_1, params.indices.jyseps1_2,
       params.indices.jyseps2_2, params.indices.ny_inner);
 
@@ -286,6 +463,17 @@ struct FindProcessorParameters {
   int expected_nype;
 };
 
+FindProcessorParameters makeFindProcessorParameters(const BoutMeshParameters& inputs) {
+  return {inputs.grid.total_processors,
+          inputs.grid.total_nx,
+          inputs.grid.total_ny,
+          inputs.grid.num_x_guards,
+          inputs.grid.num_x_guards,
+          inputs.y_indices,
+          inputs.grid.nxpe,
+          inputs.grid.nype};
+}
+
 std::ostream& operator<<(std::ostream& out, const FindProcessorParameters& value) {
   return out << fmt::format(
              "FindProcessorParameters{{"
@@ -326,7 +514,24 @@ INSTANTIATE_TEST_SUITE_P(
         FindProcessorParameters{32, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 4, 8},
         FindProcessorParameters{64, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 8, 8},
         FindProcessorParameters{256, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 16, 16},
-        FindProcessorParameters{8192, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 128, 64}));
+        FindProcessorParameters{8192, 132, 128, 2, 2, {15, 47, 79, 111, 64}, 128, 64},
+        // The following should work basically by construction
+        makeFindProcessorParameters(createCore({4, 4, 2, 2, 1, 1})),
+        makeFindProcessorParameters(createCore({4, 4, 2, 2, 2, 2})),
+        makeFindProcessorParameters(createCore({4, 4, 2, 2, 4, 4})),
+        makeFindProcessorParameters(createSOL({4, 4, 2, 2, 1, 1})),
+        makeFindProcessorParameters(createSOL({4, 4, 2, 2, 17, 13})),
+        makeFindProcessorParameters(createSOL({4, 4, 2, 2, 37, 67})),
+        makeFindProcessorParameters(createLimiter({4, 4, 2, 2, 1, 1})),
+        makeFindProcessorParameters(createLimiter({4, 4, 2, 2, 5, 6})),
+        makeFindProcessorParameters(createXPoint({4, 4, 2, 2, 1, 4})),
+        makeFindProcessorParameters(createXPoint({4, 4, 2, 2, 89, 32})),
+        makeFindProcessorParameters(createSingleNull({4, 4, 2, 2, 1, 3})),
+        makeFindProcessorParameters(createSingleNull({4, 4, 2, 2, 23, 31})),
+        makeFindProcessorParameters(createDoubleNull({4, 4, 2, 2, 1, 6})),
+        makeFindProcessorParameters(createDoubleNull({4, 4, 2, 2, 7, 7})),
+        makeFindProcessorParameters(createDisconnectedDoubleNull({12, 4, 2, 2, 1, 6})),
+        makeFindProcessorParameters(createDisconnectedDoubleNull({12, 4, 2, 2, 6, 66}))));
 
 TEST_P(BoutMeshFindProcessorTest, FindProcessor) {
   WithQuietOutput info{output_info};
@@ -1216,16 +1421,16 @@ TEST(BoutMeshTest, DefaultConnectionsSingleNull1x1) {
   mesh00.createDefaultRegions();
   mesh00.addBoundaryRegions();
 
-  EXPECT_EQ( mesh00.getRegion("RGN_LOWER_INNER_Y").size(), 5);
-  EXPECT_EQ( mesh00.getRegion("RGN_LOWER_OUTER_Y").size(), 0);
-  EXPECT_EQ( mesh00.getRegion("RGN_LOWER_Y").size(), 5);
+  EXPECT_EQ(mesh00.getRegion("RGN_LOWER_INNER_Y").size(), 5);
+  EXPECT_EQ(mesh00.getRegion("RGN_LOWER_OUTER_Y").size(), 0);
+  EXPECT_EQ(mesh00.getRegion("RGN_LOWER_Y").size(), 5);
 
-  EXPECT_EQ( mesh00.getRegion("RGN_UPPER_INNER_Y").size(), 0);
-  EXPECT_EQ( mesh00.getRegion("RGN_UPPER_OUTER_Y").size(), 5);
-  EXPECT_EQ( mesh00.getRegion("RGN_UPPER_Y").size(), 5);
+  EXPECT_EQ(mesh00.getRegion("RGN_UPPER_INNER_Y").size(), 0);
+  EXPECT_EQ(mesh00.getRegion("RGN_UPPER_OUTER_Y").size(), 5);
+  EXPECT_EQ(mesh00.getRegion("RGN_UPPER_Y").size(), 5);
 
-  EXPECT_EQ( mesh00.getRegion("RGN_INNER_X").size(), 3);
-  EXPECT_EQ( mesh00.getRegion("RGN_OUTER_X").size(), 3);
+  EXPECT_EQ(mesh00.getRegion("RGN_INNER_X").size(), 3);
+  EXPECT_EQ(mesh00.getRegion("RGN_OUTER_X").size(), 3);
 }
 
 TEST(BoutMeshTest, DefaultConnectionsSingleNull2x2) {
