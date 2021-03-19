@@ -625,9 +625,9 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
       for (int ix = 0; ix < nxlevel; ix+=2) {
-         xloc(ix, kz) = rr(ix, kz) 
-		      + ar(l.jy, ix, kz) * xloc(ix-1, kz)
-                      + cr(l.jy, ix, kz) * xloc(ix+1, kz);
+         xloc(ix, kz) = (rr(ix, kz) 
+		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                      - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
       }
     }
   }
@@ -636,9 +636,9 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
       for (int ix = 1; ix < nxlevel; ix+=2) {
-         xloc(ix, kz) = rr(ix, kz) 
-		      + ar(l.jy, ix, kz) * xloc(ix-1, kz)
-                      + cr(l.jy, ix, kz) * xloc(ix+1, kz);
+         xloc(ix, kz) = (rr(ix, kz) 
+		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                      - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
       }
     }
   }
@@ -1027,8 +1027,10 @@ void Laplace1DMG::Level::init(Laplace1DMG& l) {
   for (int kz = 0; kz < l.nmode; kz++) {
     for (int ix = l.localmesh->xstart; ix < l.localmesh->xend; ix++) {
 
-      ar(l.jy, ix, kz) = - l.avec(l.jy, kz, ix) / l.bvec(l.jy, kz, ix);
-      cr(l.jy, ix, kz) = - l.cvec(l.jy, kz, ix) / l.bvec(l.jy, kz, ix);
+      ar(l.jy, ix, kz) = l.avec(l.jy, kz, ix);
+      br(l.jy, ix, kz) = l.bvec(l.jy, kz, ix);
+      cr(l.jy, ix, kz) = l.cvec(l.jy, kz, ix);
+      brinv(l.jy, ix, kz) = 1.0/l.bvec(l.jy, kz, ix);
 
     }
   }
@@ -1120,22 +1122,15 @@ void Laplace1DMG::Level::calculate_residual(const Laplace1DMG& l) {
     return;
   }
 
-  // The residual should be calculated at index 1
-  //   + for all procs on level 0
-  //   + for all procs, except the last proc on other levels
-  // The residual should be calculated at index 2 on the last proc only on all levels
-  // To remove branching:
-  //   + we calculate something for indices that should be skipped - having a non-zero
-  //   value is "wrong", but the value is never used.
-  //   + we use index_start and index_end variable to index correctly depending on level
-  //   and whether the last processor
+  // TODO correct for all levels
+  const int nxlevel = l.localmesh->LocalNx;
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
-      residual(1, kz) = rr(1, kz) - ar(l.jy, 1, kz) * xloc(0, kz)
-                        - br(l.jy, 1, kz) * xloc(1, kz)
-                        - cr(l.jy, 1, kz) * xloc(index_end, kz);
-      residual(2, kz) = rr(2, kz) - ar(l.jy, 2, kz) * xloc(index_start, kz)
-                        - br(l.jy, 2, kz) * xloc(2, kz) - cr(l.jy, 2, kz) * xloc(3, kz);
+      for (int ix = 0; ix < l.nmode; kz++) {
+        residual(ix, kz) = rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                        - br(l.jy, ix, kz) * xloc(ix, kz)
+                        - cr(l.jy, ix, kz) * xloc(ix+1, kz);
+      }
     }
   }
 }
