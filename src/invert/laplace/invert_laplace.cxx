@@ -56,7 +56,6 @@
 #include "impls/petsc3damg/petsc3damg.hxx"
 #include "impls/serial_band/serial_band.hxx"
 #include "impls/serial_tri/serial_tri.hxx"
-#include "impls/shoot/shoot_laplace.hxx"
 #include "impls/spt/spt.hxx"
 
 /**********************************************************************************

@@ -9,8 +9,18 @@ class LaplaceXZpetsc;
 #ifndef __LAPLACEXZ_PETSC_H__
 #define __LAPLACEXZ_PETSC_H__
 
-#ifdef BOUT_HAS_PETSC
-#include <bout/invert/laplacexz.hxx>
+#include "bout/build_config.hxx"
+#include "bout/invert/laplacexz.hxx"
+
+#if not BOUT_HAS_PETSC
+
+namespace {
+RegisterUnavailableLaplaceXZ
+    registerlaplacexzpetsc("petsc", "BOUT++ was not configured with PETSc");
+}
+
+#else
+
 #include <bout/petsclib.hxx>
 
 namespace {

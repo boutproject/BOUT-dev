@@ -1,4 +1,4 @@
-# Test of the FieldFactory class 
+# Test of the FieldFactory class
 #
 # Generates a set of fields and writes them to output file
 #
@@ -7,11 +7,6 @@ NOUT = 0  # No timesteps
 
 MZ = 16    # Z size
 
-dump_format = "nc"  # NetCDF format. Alternative is "pdb"
-
 [mesh]
-nx=52
-ny=32
-
-
-
+nx = 52
+ny = 32

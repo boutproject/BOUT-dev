@@ -224,6 +224,13 @@ public:
   const FieldPerp fromFieldAligned(const FieldPerp& f,
                                    const std::string& region = "RGN_ALL") override;
 
+  std::vector<PositionsAndWeights>
+  getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
+                              int UNUSED(yoffset)) override {
+    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented"
+                        "for `type = shifted`. Try `type = shiftedinterp`");
+  }
+
   bool canToFromFieldAligned() override { return true; }
 
   /// Save zShift to the output
@@ -269,7 +276,7 @@ private:
   /// in the following order:
   ///     {+1, ..., +n, -1, ..., -n}
   /// slice[i] stores offset i+1
-  /// slice[2*i + 1] stores offset -(i+1)
+  /// slice[n + i] stores offset -(i+1)
   /// where i goes from 0 to (n-1), with n the number of y guard cells
   std::vector<ParallelSlicePhase> parallel_slice_phases;
 

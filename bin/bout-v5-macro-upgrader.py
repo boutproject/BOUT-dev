@@ -9,35 +9,179 @@ import textwrap
 # List of macros, their replacements and what header to find them
 # in. Each element should be a dict with "old", "new" and "headers"
 # keys, with "old" and "new" values being strings, and "headers" being a
-# list of strings
+# list of strings. "new" can also be None if the macro has been removed, which
+# will cause an error to be printed if the macro is found.
 MACRO_REPLACEMENTS = [
     {
         "old": "REVISION",
         "new": "bout::version::revision",
         "headers": ["bout/revision.hxx"],
+        "macro": False,
+        "always_defined": True,
     },
     {
         "old": "BOUT_VERSION_DOUBLE",
         "new": "bout::version::as_double",
         "headers": ["bout/version.hxx", "bout.hxx"],
+        "macro": False,
+        "always_defined": True,
     },
     {
         "old": "BOUT_VERSION_STRING",
         "new": "bout::version::full",
         "headers": ["bout/version.hxx", "bout.hxx"],
+        "macro": False,
+        "always_defined": True,
     },
     # Next one is not technically a macro, but near enough
     {
         "old": "BOUT_VERSION",
         "new": "bout::version::full",
         "headers": ["bout/version.hxx", "bout.hxx"],
+        "macro": False,
+        "always_defined": True,
+    },
+    {
+        "old": "BACKTRACE",
+        "new": "BOUT_USE_BACKTRACE",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_ARKODE",
+        "new": "BOUT_HAS_ARKODE",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_CVODE",
+        "new": "BOUT_HAS_CVODE",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_HDF5",
+        "new": None,
+        "headers": [],
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_IDA",
+        "new": "BOUT_HAS_IDA",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_LAPACK",
+        "new": "BOUT_HAS_LAPACK",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "LAPACK",
+        "new": "BOUT_HAS_LAPACK",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_NETCDF",
+        "new": "BOUT_HAS_NETCDF",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_PETSC",
+        "new": "BOUT_HAS_PETSC",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_PRETTY_FUNCTION",
+        "new": "BOUT_HAS_PRETTY_FUNCTION",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_PVODE",
+        "new": "BOUT_HAS_PVODE",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "TRACK",
+        "new": "BOUT_USE_TRACK",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "NCDF4",
+        "new": "BOUT_HAS_NETCDF",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "NCDF",
+        "new": "BOUT_HAS_LEGACY_NETCDF",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HDF5",
+        "new": None,
+        "headers": [],
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "DEBUG_ENABLED",
+        "new": "BOUT_USE_OUTPUT_DEBUG",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "BOUT_FPE",
+        "new": "BOUT_USE_SIGFPE",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "LOGCOLOR",
+        "new": "BOUT_USE_COLOR",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "OPENMP_SCHEDULE",
+        "new": "BOUT_OPENMP_SCHEDULE",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
     },
 ]
 
 
 def fix_include_version_header(old, headers, source):
-    """Make sure version.hxx header is included
-    """
+    """Make sure version.hxx header is included"""
+
+    if not isinstance(headers, list):
+        headers = [headers]
 
     # If header is already included, we can skip this fix
     for header in headers:
@@ -72,9 +216,7 @@ def fix_include_version_header(old, headers, source):
 
 
 def fix_ifdefs(old, source):
-    """Remove any code inside #ifdef/#ifndef blocks that would now not be compiled
-
-    """
+    """Remove any code inside #ifdef/#ifndef blocks that would now not be compiled"""
     source_lines = source.splitlines()
 
     # Something to keep track of nested sections
@@ -134,31 +276,45 @@ def fix_ifdefs(old, source):
     return "\n".join(modified_lines)
 
 
+def fix_always_defined_macros(old, new, source):
+    """Fix '#ifdef's that should become plain '#if'"""
+    new_source = re.sub(r"#ifdef\s+{}\b".format(old), r"#if {}".format(new), source)
+    return re.sub(r"#ifndef\s+{}\b".format(old), r"#if !{}".format(new), new_source)
+
+
 def fix_replacement(old, new, source):
-    """Straight replacements
-    """
-    return re.sub(r'([^"])\b{}\b([^"])'.format(old), r"\1{}\2".format(new), source)
+    """Straight replacements"""
+    return re.sub(r'([^"_])\b{}\b([^"_])'.format(old), r"\1{}\2".format(new), source)
 
 
 def apply_fixes(replacements, source):
-    """Apply all fixes in this module
-    """
+    """Apply all fixes in this module"""
     modified = copy.deepcopy(source)
 
     for replacement in replacements:
+        if replacement["new"] is None:
+            print(
+                "'%s' has been removed, please delete from your code"
+                % replacement["old"]
+            )
+            continue
+
         modified = fix_include_version_header(
             replacement["old"], replacement["headers"], modified
         )
-        modified = fix_ifdefs(replacement["old"], modified)
+        if replacement["macro"] and replacement["always_defined"]:
+            modified = fix_always_defined_macros(
+                replacement["old"], replacement["new"], modified
+            )
+        elif replacement["always_defined"]:
+            modified = fix_ifdefs(replacement["old"], modified)
         modified = fix_replacement(replacement["old"], replacement["new"], modified)
 
     return modified
 
 
 def yes_or_no(question):
-    """Convert user input from yes/no variations to True/False
-
-    """
+    """Convert user input from yes/no variations to True/False"""
     while True:
         reply = input(question + " [y/N] ").lower().strip()
         if not reply or reply[0] == "n":
@@ -168,8 +324,7 @@ def yes_or_no(question):
 
 
 def create_patch(filename, original, modified):
-    """Create a unified diff between original and modified
-    """
+    """Create a unified diff between original and modified"""
 
     patch = "\n".join(
         difflib.unified_diff(
@@ -194,12 +349,14 @@ if __name__ == "__main__":
             Please note that this is only slightly better than dumb text replacement. It
             will fix the following:
 
-            * replacement of macros with variables
+            * replacement of macros with variables or new names
             * inclusion of correct headers for new variables
             * removal of #if(n)def/#endif blocks that do simple checks for the old
-              macro, keeping the appriopriate part
+              macro, keeping the appriopriate part, if replaced by a variable
+            * change '#if(n)def' for '#if (!)' if the replacment is always defined
 
-            It will try not to replace quoted macro names.
+            It will try not to replace quoted macro names, but may
+            still replace them in strings or comments.
 
             Please check the diff output carefully!
             """

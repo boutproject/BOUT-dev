@@ -49,6 +49,7 @@ Before merging PR:
 - [ ] Change DOI in [`CITATION.cff`][citation] to new DOI
 - [ ] Change DOI in [`README.md`][README.md] to new DOI
 - [ ] Change date-released in [`CITATION.cff`][citation]
+- [ ] Check `abidiff` to see if `soname` needs bumping in `makefile`:
 - [ ] Change version number, removing prerelease tag in:
     - [ ]  [`configure.ac`][configure]: `AC_INIT`
     - [ ]  [`CITATION.cff`][citation]: `version`

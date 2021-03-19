@@ -1,5 +1,5 @@
 nout = 100
-timestep = 1e-1
+timestep = 0.1
 
 twistshift = true
 
@@ -17,7 +17,7 @@ dx = 1. / (nx-2.*MXG)
 dy = 2*pi / ny
 dz = 2*pi / nz
 
-g11 = 1.
+g11 = 1.0
 g22 = G^2 + eta^2
 g33 = 1 + HH^2 + I^2
 g13 = -I

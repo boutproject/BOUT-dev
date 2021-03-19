@@ -22,9 +22,9 @@ using namespace bout::globals;
 
 /// Test fixture to make sure the global mesh is our fake one
 class Vector2DTest : public ::testing::Test {
+  WithQuietOutput quiet{output_info};
 protected:
   Vector2DTest() {
-    WithQuietOutput quiet{output_info};
     // Delete any existing mesh
     if (mesh != nullptr) {
       // Delete boundary regions

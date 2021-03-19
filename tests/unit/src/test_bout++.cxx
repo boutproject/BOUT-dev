@@ -1,3 +1,5 @@
+#include "bout/build_config.hxx"
+
 #include "gtest/gtest.h"
 
 #include "bout.hxx"
@@ -300,7 +302,7 @@ TEST_F(PrintStartupTest, CompileTimeOptions) {
 
   EXPECT_TRUE(IsSubString(buffer.str(), _("Compile-time options:\n")));
   EXPECT_TRUE(IsSubString(buffer.str(), _("Signal")));
-  EXPECT_TRUE(IsSubString(buffer.str(), "netCDF"));
+  EXPECT_TRUE(IsSubString(buffer.str(), "NetCDF"));
   EXPECT_TRUE(IsSubString(buffer.str(), "OpenMP"));
   EXPECT_TRUE(IsSubString(buffer.str(), _("Compiled with flags")));
 }
@@ -314,9 +316,9 @@ TEST_F(PrintStartupTest, CommandLineArguments) {
   }
 }
 
-#ifdef SIGHANDLE
+#if BOUT_USE_SIGNAL
 
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
 #include <fenv.h>
 #endif
 
@@ -327,7 +329,7 @@ public:
     std::signal(SIGUSR1, SIG_DFL);
     std::signal(SIGFPE, SIG_DFL);
     std::signal(SIGSEGV, SIG_DFL);
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
     std::signal(SIGFPE, SIG_DFL);
     fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif

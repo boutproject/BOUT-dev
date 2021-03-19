@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     for(int i=0;i<n;i++) {
       T val = ((mype*n + i) % 4) - 2.;
       output << "\t" << i << " : " << val << " ?= " << x(s, i) << endl;
-      if(abs(val - x(s, i)) > tol) {
+      if(std::abs(val - x(s, i)) > tol) {
         passed = 0;
       }
     }
@@ -117,8 +117,8 @@ int main(int argc, char **argv) {
     output << "FAILED" << endl;
 
   // Write data to file
-  dump.write();
-  dump.close();
+  bout::globals::dump.write();
+  bout::globals::dump.close();
 
   MPI_Barrier(BoutComm::get());
 

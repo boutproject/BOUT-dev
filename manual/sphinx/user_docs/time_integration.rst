@@ -43,8 +43,6 @@ needed to make the solver available.
    +---------------+-----------------------------------------+--------------------+
    | rkgeneric     | Generic Runge Kutta explicit methods    | Always available   |
    +---------------+-----------------------------------------+--------------------+
-   | karniadakis   | Karniadakis explicit method             | Always available   |
-   +---------------+-----------------------------------------+--------------------+
    | rk3ssp        | 3rd-order Strong Stability Preserving   | Always available   |
    +---------------+-----------------------------------------+--------------------+
    | splitrk       | Split RK3-SSP and RK-Legendre           | Always available   |
@@ -83,7 +81,7 @@ given in table :numref:`tab-solveropts`.
    +------------------+--------------------------------------------+-------------------------------------+
    | max\_timestep    | Maximum timestep                           | rk4, cvode                          |
    +------------------+--------------------------------------------+-------------------------------------+
-   | timestep         | Starting timestep                          | rk4, karniadakis, euler, imexbdf2   |
+   | timestep         | Starting timestep                          | rk4, euler, imexbdf2                |
    +------------------+--------------------------------------------+-------------------------------------+
    | adaptive         | Adapt timestep? (Y/N)                      | rk4, imexbdf2                       |
    +------------------+--------------------------------------------+-------------------------------------+
@@ -818,11 +816,13 @@ PhysicsModel::
 
 and put in your `PhysicsModel::init` code::
 
-      solver->addMonitor(my_output_monitor);
+      solver->addMonitor(&my_output_monitor);
 
-If you want to later remove a monitor, you can do so with::
+Note that the solver only stores a pointer to the `Monitor`, so you must make sure
+the object is persistent, e.g. a member of a `PhysicsModel` class, not a local
+variable in a constructor. If you want to later remove a monitor, you can do so with::
 
-      solver->removeMonitor(my_output_monitor);
+      solver->removeMonitor(&my_output_monitor);
 
 A simple example using this monitor is::
 
@@ -841,7 +841,7 @@ A simple example using this monitor is::
     MyOutputMonitor my_monitor;
 
     int init(bool restarting) {
-      solver->addMonitor(my_monitor);
+      solver->addMonitor(&my_monitor);
     }
 
 See the monitor example (``examples/monitor``) for full code.

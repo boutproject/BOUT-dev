@@ -43,17 +43,28 @@
 #include <bout/scorepwrapper.hxx>
 
 LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
-    : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0), ipt_mean_its(0.), ncalls(0) {
+    : Laplacian(opt, loc, mesh_in),
+      rtol((*opt)["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
+      atol((*opt)["atol"].doc("Absolute tolerance").withDefault(1.e-20)),
+      maxits((*opt)["maxits"].doc("Maximum number of iterations").withDefault(100)),
+      max_level((*opt)["max_level"].doc("Maximum number of coarse grids").withDefault(0)),
+      max_cycle((*opt)["max_cycle"]
+                    .doc("Maximum number of iterations per coarse grid")
+                    .withDefault(1)),
+      predict_exit((*opt)["predict_exit"]
+                       .doc("Predict when convergence will be reached, and skip "
+                            "expensive convergence checks at earlier iterations")
+                       .withDefault(false)),
+      A(0.0, localmesh), C(1.0, localmesh), D(1.0, localmesh), nmode(maxmode + 1),
+      ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
+      bvec(ny, nmode, ncx), cvec(ny, nmode, ncx), upperGuardVector(ny, nmode, ncx),
+      lowerGuardVector(ny, nmode, ncx), minvb(nmode, ncx), al(ny, nmode), bl(ny, nmode),
+      au(ny, nmode), bu(ny, nmode), rl(nmode), ru(nmode), r1(ny, nmode), r2(ny, nmode),
+      first_call(ny), x0saved(ny, 4, nmode), converged(nmode), fine_error(4, nmode) {
+
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
-
-  OPTION(opt, rtol, 1.e-7);
-  OPTION(opt, atol, 1.e-20);
-  OPTION(opt, maxits, 100);
-  OPTION(opt, max_level, 3);
-  OPTION(opt, max_cycle, 3);
-  OPTION(opt, predict_exit, false);
 
   // Number of procs must be a factor of 2
   const int n = localmesh->NXPE;
@@ -65,46 +76,15 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
     throw BoutException("LaplaceIPT error: number of levels and processors must satisfy "
                         "NXPE > 2^(max_levels+1).");
   }
+  // Cannot use multigrid on 1 core
+  if (n == 1 and max_level != 0) {
+    throw BoutException("LaplaceIPT error: must have max_level=0 if using one processor. ");
+  }
 
   static int ipt_solver_count = 1;
   bout::globals::dump.addRepeat(
       ipt_mean_its, "ipt_solver" + std::to_string(ipt_solver_count) + "_mean_its");
   ++ipt_solver_count;
-
-  ncx = localmesh->LocalNx;
-  ny = localmesh->LocalNy;
-  nmode = maxmode + 1;
-
-  first_call = Array<bool>(ny);
-
-  x0saved = Tensor<dcomplex>(ny, 4, nmode);
-
-  levels = std::vector<Level>(max_level + 1);
-
-  converged = Array<bool>(nmode);
-
-  fine_error = Matrix<dcomplex>(4, nmode);
-
-  avec = Tensor<dcomplex>(ny, nmode, ncx);
-  bvec = Tensor<dcomplex>(ny, nmode, ncx);
-  cvec = Tensor<dcomplex>(ny, nmode, ncx);
-
-  // Arrays to construct global solution from halo values
-  minvb = Matrix<dcomplex>(nmode, ncx);                // Local M^{-1} f
-  lowerGuardVector = Tensor<dcomplex>(ny, nmode, ncx); // alpha
-  upperGuardVector = Tensor<dcomplex>(ny, nmode, ncx); // beta
-
-  // Coefficients of first and last interior rows
-  al = Matrix<dcomplex>(ny, nmode); // alpha^l
-  bl = Matrix<dcomplex>(ny, nmode); // beta^l
-  au = Matrix<dcomplex>(ny, nmode); // alpha^u
-  bu = Matrix<dcomplex>(ny, nmode); // beta^u
-  rl = Array<dcomplex>(nmode);      // r^l
-  ru = Array<dcomplex>(nmode);      // r^u
-
-  // Coefs used to compute rl from domain below
-  r1 = Matrix<dcomplex>(ny, nmode);
-  r2 = Matrix<dcomplex>(ny, nmode);
 
   resetSolver();
 }
@@ -113,7 +93,7 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
  * Reset the solver to its initial state
  */
 void LaplaceIPT::resetSolver() {
-  first_call = true;
+  std::fill(std::begin(first_call), std::end(first_call), true);
   x0saved = 0.0;
   resetMeanIterations();
 }
@@ -125,7 +105,17 @@ void LaplaceIPT::resetSolver() {
  * elements. Being diagonally dominant is sufficient (but not necessary) for
  * the Gauss-Seidel iteration to converge.
  */
-bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) {
+bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) const {
+
+  if (not included) {
+    return true;
+  }
+
+  if (not included) {
+    // Return true, as this contributes to an all_reduce over AND.  True here means that
+    // skipped procs do not affect the result.
+    return true;
+  }
 
   for (int kz = 0; kz < l.nmode; kz++) {
     // Check index 1 on all procs, except: the last proc only has index 1 if the
@@ -133,8 +123,9 @@ bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) {
     if (not l.localmesh->lastX() or l.max_level == 0) {
       if (std::fabs(ar(l.jy, 1, kz)) + std::fabs(cr(l.jy, 1, kz))
           > std::fabs(br(l.jy, 1, kz))) {
-        output << BoutComm::rank() << " jy=" << l.jy << ", kz=" << kz
-               << ", lower row not diagonally dominant" << endl;
+        output_error.write("Rank {}, jy={}, kz={}, lower row not diagonally dominant\n",
+                           BoutComm::rank(), l.jy, kz);
+        output_error.flush();
         return false;
       }
     }
@@ -142,8 +133,9 @@ bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) {
     if (l.localmesh->lastX()) {
       if (std::fabs(ar(l.jy, 2, kz)) + std::fabs(cr(l.jy, 2, kz))
           > std::fabs(br(l.jy, 2, kz))) {
-        output << BoutComm::rank() << " jy=" << l.jy << ", kz=" << kz
-               << ", upper row not diagonally dominant" << endl;
+        output_error.write("Rank {}, jy={}, kz={}, upper row not diagonally dominant\n",
+                           BoutComm::rank(), l.jy, kz);
+        output_error.flush();
         return false;
       }
     }
@@ -166,17 +158,18 @@ bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) {
  *     xloc(1) = rl(xs) + al(xs)*xloc(0) + bl(xs)*xloc(3)
  */
 void LaplaceIPT::Level::reconstruct_full_solution(const LaplaceIPT& l,
-                                                  Matrix<dcomplex>& xk1d) {
+                                                  Matrix<dcomplex>& xk1d) const {
   SCOREP0();
 
   Array<dcomplex> x_lower(l.nmode), x_upper(l.nmode);
 
   for (int kz = 0; kz < l.nmode; kz++) {
 
-    x_lower[kz] = xloc(0, kz);
     x_upper[kz] = xloc(3, kz);
 
-    if (not l.localmesh->firstX()) {
+    if (l.localmesh->firstX()) {
+      x_lower[kz] = xloc(0, kz);
+    } else {
       x_lower[kz] =
           (xloc(1, kz) - l.rl[kz] - l.bl(l.jy, kz) * xloc(3, kz)) / l.al(l.jy, kz);
     }
@@ -190,14 +183,19 @@ void LaplaceIPT::Level::reconstruct_full_solution(const LaplaceIPT& l,
   }
 }
 
-// TODO Move to Array
-/*
- * Returns true if all values of bool array are true, otherwise returns false.
- */
-bool LaplaceIPT::all(const Array<bool> a) {
+/// Calculate the transpose of \p m in the pre-allocated \p m_t
+namespace {
+void transpose(Matrix<dcomplex>& m_t, const Matrix<dcomplex>& m) {
   SCOREP0();
-  return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
+  const auto n1 = std::get<1>(m.shape());
+  const auto n2 = std::get<0>(m.shape());
+  for (int i1 = 0; i1 < n1; i1++) {
+    for (int i2 = 0; i2 < n2; i2++) {
+      m_t(i1, i2) = m(i2, i1);
+    }
+  }
 }
+} // namespace
 
 /*!
  * Solve Ax=b for x given b
@@ -237,8 +235,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   FieldPerp x{emptyFrom(b)};
 
   // Info for halo swaps
-  int xproc = localmesh->getXProcIndex();
-  int yproc = localmesh->getYProcIndex();
+  const int xproc = localmesh->getXProcIndex();
+  const int yproc = localmesh->getYProcIndex();
   nproc = localmesh->getNXPE();
   myproc = yproc * nproc + xproc;
   proc_in = myproc - 1;
@@ -246,40 +244,32 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   jy = b.getIndex();
 
-  int ncz = localmesh->LocalNz; // Number of local z points
+  const int ncz = localmesh->LocalNz; // Number of local z points
 
   xs = localmesh->xstart; // First interior point
   xe = localmesh->xend;   // Last interior point
 
-  BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
-
-  // Should we store coefficients?
-  store_coefficients = not(inner_boundary_flags & INVERT_AC_GRAD);
-  store_coefficients = store_coefficients && not(outer_boundary_flags & INVERT_AC_GRAD);
-  store_coefficients = store_coefficients && not(inner_boundary_flags & INVERT_SET);
-  store_coefficients = store_coefficients && not(outer_boundary_flags & INVERT_SET);
+  const BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
-  int inbndry = localmesh->xstart, outbndry = localmesh->xstart;
-
-  // If the flags to assign that only one guard cell should be used is set
-  if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
-    inbndry = outbndry = 1;
-  }
-  if (inner_boundary_flags & INVERT_BNDRY_ONE)
-    inbndry = 1;
-  if (outer_boundary_flags & INVERT_BNDRY_ONE)
-    outbndry = 1;
+  const bool both_use_one_guard =
+      isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2);
+  const int inbndry = (both_use_one_guard or isInnerBoundaryFlagSet(INVERT_BNDRY_ONE))
+                          ? 1
+                          : localmesh->xstart;
+  const int outbndry = (both_use_one_guard or isOuterBoundaryFlagSet(INVERT_BNDRY_ONE))
+                           ? 1
+                           : localmesh->xstart;
 
   /* Allocation for
-  * bk   = The fourier transformed of b, where b is one of the inputs in
-  *        LaplaceIPT::solve()
-  * bk1d = The 1d array of bk
-  * xk   = The fourier transformed of x, where x the output of
-  *        LaplaceIPT::solve()
-  * xk1d = The 1d array of xk
-  */
+   * bk   = The fourier transformed of b, where b is one of the inputs in
+   *        LaplaceIPT::solve()
+   * bk1d = The 1d array of bk
+   * xk   = The fourier transformed of x, where x the output of
+   *        LaplaceIPT::solve()
+   * xk1d = The 1d array of xk
+   */
   auto bk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto bk1d = Array<dcomplex>(ncx);
   auto xk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
@@ -290,40 +280,33 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   /// SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Coefficents in the tridiagonal solver matrix
-  * Following the notation in "Numerical recipes"
-  * avec is the lower diagonal of the matrix
-  * bvec is the diagonal of the matrix
-  * cvec is the upper diagonal of the matrix
-  * NOTE: Do not confuse avec, bvec and cvec with the A, C, and D coefficients
-  *       above
-  */
+   * Following the notation in "Numerical recipes"
+   * avec is the lower diagonal of the matrix
+   * bvec is the diagonal of the matrix
+   * cvec is the upper diagonal of the matrix
+   * NOTE: Do not confuse avec, bvec and cvec with the A, C, and D coefficients
+   *       above
+   */
   auto bcmplx = Matrix<dcomplex>(nmode, ncx);
 
   const bool invert_inner_boundary =
-      (inner_boundary_flags & INVERT_SET) && localmesh->firstX();
+      isInnerBoundaryFlagSet(INVERT_SET) and localmesh->firstX();
   const bool invert_outer_boundary =
-      (outer_boundary_flags & INVERT_SET) && localmesh->lastX();
+      isOuterBoundaryFlagSet(INVERT_SET) and localmesh->lastX();
 
   BOUT_OMP(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
     /* This for loop will set the bk (initialized by the constructor)
-    * bk is the z fourier modes of b in z
-    * If the INVERT_SET flag is set (meaning that x0 will be used to set the
-    * bounadry values),
-    */
+     * bk is the z fourier modes of b in z
+     * If the INVERT_SET flag is set (meaning that x0 will be used to set the
+     * boundary values),
+     */
     if ((invert_inner_boundary and (ix < inbndry))
         or (invert_outer_boundary and (ncx - ix - 1 < outbndry))) {
       // Use the values in x0 in the boundary
-
-      // x0 is the input
-      // bk is the output
       rfft(x0[ix], ncz, &bk(ix, 0));
-
     } else {
-      // b is the input
-      // bk is the output
       rfft(b[ix], ncz, &bk(ix, 0));
-      // rfft(x0[ix], ncz, &xk(ix, 0));
     }
   }
   /// SCOREP_USER_REGION_END(fftloop);
@@ -331,25 +314,25 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   /// SCOREP_USER_REGION_BEGIN(kzinit, "kz init",///SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Solve differential equation in x for each fourier mode, so transpose to make x the
-  * fastest moving index. Note that only the non-degenerate fourier modes are used (i.e.
-  * the offset and all the modes up to the Nyquist frequency), so we only copy up to
-  * `nmode` in the transpose.
-  */
+   * fastest moving index. Note that only the non-degenerate fourier modes are used (i.e.
+   * the offset and all the modes up to the Nyquist frequency), so we only copy up to
+   * `nmode` in the transpose.
+   */
   transpose(bcmplx, bk);
 
   /* Set the matrix A used in the inversion of Ax=b
-  * by calling tridagCoef and setting the BC
-  *
-  * Note that A, C and D in
-  *
-  * D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
-  *
-  * has nothing to do with
-  * avec - the lower diagonal of the tridiagonal matrix
-  * bvec - the main diagonal
-  * cvec - the upper diagonal
-  *
-  */
+   * by calling tridagCoef and setting the BC
+   *
+   * Note that A, C and D in
+   *
+   * D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
+   *
+   * has nothing to do with
+   * avec - the lower diagonal of the tridiagonal matrix
+   * bvec - the main diagonal
+   * cvec - the upper diagonal
+   *
+   */
   for (int kz = 0; kz < nmode; kz++) {
     // Note that this is called every time to deal with bcmplx and could mostly
     // be skipped when storing coefficients.
@@ -384,6 +367,13 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   /// SCOREP_USER_REGION_BEGIN(initlevels, "init
   /// levels",///SCOREP_USER_REGION_TYPE_COMMON);
 
+  // Should we store coefficients? True when matrix to be inverted is
+  // constant, allowing results to be cached and work skipped
+  const bool store_coefficients = not isInnerBoundaryFlagSet(INVERT_AC_GRAD)
+                                  and not isOuterBoundaryFlagSet(INVERT_AC_GRAD)
+                                  and not isInnerBoundaryFlagSet(INVERT_SET)
+                                  and not isOuterBoundaryFlagSet(INVERT_SET);
+
   // Initialize levels. Note that the finest grid (level 0) has a different
   // routine to coarse grids (which generally depend on the grid one step
   // finer than itself).
@@ -392,13 +382,14 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   // much of the information for each level may be stored. Data that cannot
   // be cached (e.g. the changing right-hand sides) is calculated in init_rhs
   // below.
+  levels.reserve(max_level + 1);
   if (first_call[jy] || not store_coefficients) {
 
-    levels[0].init(*this);
+    levels.emplace_back(*this);
 
     if (max_level > 0) {
-      for (int l = 1; l <= max_level; l++) {
-        levels[l].init(*this, levels[l - 1], l);
+      for (std::size_t l = 1; l < (static_cast<std::size_t>(max_level) + 1); ++l) {
+        levels.emplace_back(*this, levels[l - 1], l);
       }
     }
   }
@@ -427,27 +418,30 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   int subcount = 0;   // Count of iterations on a level
   int cyclecount = 0; // Number of multigrid cycles
   int cycle_eta = 0;  // Predicted finishing cycle
-  int current_level = 0;
+  std::size_t current_level = 0;
   bool down = true;
 
-  auto error_abs = Array<BoutReal>(nmode);
-  auto error_abs_old = Array<BoutReal>(nmode);
-  auto error_rel = Array<BoutReal>(nmode);
-  auto error_rel_old = Array<BoutReal>(nmode);
+  auto errornorm = Array<BoutReal>(nmode);
+  auto errornorm_old = Array<BoutReal>(nmode);
   constexpr BoutReal initial_error = 1e6;
-  error_abs = initial_error;
-  error_abs_old = initial_error;
-  error_rel = initial_error;
-  error_rel_old = initial_error;
-  for (int kz = 0; kz < nmode; kz++) {
-    converged[kz] = false;
-  }
+  errornorm = initial_error;
+  errornorm_old = initial_error;
+  std::fill(std::begin(converged), std::end(converged), false);
 
   /// SCOREP_USER_REGION_END(initwhileloop);
   /// SCOREP_USER_REGION_DEFINE(whileloop);
   /// SCOREP_USER_REGION_BEGIN(whileloop, "while loop",///SCOREP_USER_REGION_TYPE_COMMON);
 
-  while (true) {
+  const auto all = [](const Array<bool>& a) {
+    return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
+  };
+
+  // Check for convergence before loop to skip work with cvode
+  levels[0].calculate_residual(*this);
+  levels[0].calculate_total_residual(*this, errornorm, converged);
+  bool execute_loop = not all(converged);
+
+  while (execute_loop) {
 
     levels[current_level].gauss_seidel_red_black(*this);
 
@@ -476,8 +470,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       if (cyclecount < 3 or cyclecount > cycle_eta) {
         for (int kz = 0; kz < nmode; kz++) {
           if (!converged[kz]) {
-            error_abs_old[kz] = error_abs[kz];
-            error_rel_old[kz] = error_rel[kz];
+            errornorm_old[kz] = errornorm[kz];
           }
         }
       }
@@ -487,22 +480,18 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       if (cyclecount < 3 or cyclecount > cycle_eta - 5 or not predict_exit) {
         // Calculate the total residual. This also marks modes as converged, so the
         // algorithm cannot exit in cycles where this is not called.
-        levels[0].calculate_total_residual(*this, error_abs, error_rel, converged);
+        levels[0].calculate_total_residual(*this, errornorm, converged);
 
-        // Based the error reduction per V-cycle, error_xxx/error_xxx_old,
+        // Based the error reduction per V-cycle, errornorm/errornorm_old,
         // predict when the slowest converging mode converges.
         if (cyclecount < 3 and predict_exit) {
           cycle_eta = 0;
           for (int kz = 0; kz < nmode; kz++) {
-            const BoutReal ratio_abs = error_abs[kz] / error_abs_old[kz];
-            const int eta_abs =
-                std::ceil(std::log(atol / error_abs[kz]) / std::log(ratio_abs));
-            cycle_eta = (cycle_eta > eta_abs) ? cycle_eta : eta_abs;
+            const BoutReal ratio = errornorm[kz] / errornorm_old[kz];
+            const int eta =
+                std::ceil(std::log(1.0 / errornorm[kz]) / std::log(ratio));
+            cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
 
-            const BoutReal ratio_rel = error_rel[kz] / error_rel_old[kz];
-            const int eta_rel =
-                std::ceil(std::log(rtol / error_rel[kz]) / std::log(ratio_rel));
-            cycle_eta = (cycle_eta > eta_rel) ? cycle_eta : eta_rel;
           }
         }
       }
@@ -545,7 +534,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       subcount = 0;
 
       // If we are on the coarsest grid, stop trying to coarsen further
-      if (current_level == max_level) {
+      if (current_level == static_cast<std::size_t>(max_level)) {
         down = false;
       }
     } else {
@@ -559,31 +548,30 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       // If the coarsest multigrid iteration matrix is diagonally-dominant,
       // then convergence is guaranteed, so maxits is set too low.
       // Otherwise, the method may or may not converge.
-      bool is_dd = levels[max_level].is_diagonally_dominant(*this);
+      const bool is_dd = levels[max_level].is_diagonally_dominant(*this);
 
       bool global_is_dd;
-      MPI_Allreduce(&is_dd, &global_is_dd, 1, MPI::BOOL, MPI_LAND, BoutComm::get());
+      MPI_Allreduce(&is_dd, &global_is_dd, 1, MPI_C_BOOL, MPI_LAND, BoutComm::get());
 
       if (global_is_dd) {
         throw BoutException("LaplaceIPT error: Not converged within maxits={:d} "
                             "iterations. The coarsest grained iteration matrix is "
                             "diagonally dominant and convergence is guaranteed. Please "
-                            "increase maxits and retry.",
+                            "increase maxits, rtol, or atol and retry.",
                             maxits);
-      } else {
-        throw BoutException(
-            "LaplaceIPT error: Not converged within maxits={:d} iterations. The coarsest "
-            "iteration matrix is not diagonally dominant so there is no guarantee this "
-            "method will converge. Consider (1) increasing maxits; or (2) increasing the "
-            "number of levels (as grids become more diagonally dominant with "
-            "coarsening). Using more grids may require larger NXPE.",
-            maxits);
       }
+      throw BoutException(
+          "LaplaceIPT error: Not converged within maxits={:d} iterations. The coarsest "
+          "iteration matrix is not diagonally dominant so there is no guarantee this "
+          "method will converge. Consider (1) increasing maxits; or (2) increasing the "
+          "number of levels (as grids become more diagonally dominant with "
+          "coarsening). Using more grids may require larger NXPE.",
+          maxits);
     }
   }
-/// SCOREP_USER_REGION_END(whileloop);
-/// SCOREP_USER_REGION_DEFINE(afterloop);
-/// SCOREP_USER_REGION_BEGIN(afterloop, "after faff",///SCOREP_USER_REGION_TYPE_COMMON);
+  /// SCOREP_USER_REGION_END(whileloop);
+  /// SCOREP_USER_REGION_DEFINE(afterloop);
+  /// SCOREP_USER_REGION_BEGIN(afterloop, "after faff",///SCOREP_USER_REGION_TYPE_COMMON);
 
 #if CHECK > 2
   for (int ix = 0; ix < 4; ix++) {
@@ -618,7 +606,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       (ipt_mean_its * BoutReal(ncalls - 1) + BoutReal(count)) / BoutReal(ncalls);
 
   // If the global flag is set to INVERT_KX_ZERO
-  if (global_flags & INVERT_KX_ZERO) {
+  if (isGlobalFlagSet(INVERT_KX_ZERO)) {
     dcomplex offset(0.0);
     for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
       offset += xk1d(0, ix);
@@ -639,8 +627,9 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Done inversion, transform back
   for (int ix = 0; ix < ncx; ix++) {
 
-    if (global_flags & INVERT_ZERO_DC)
+    if (isGlobalFlagSet(INVERT_ZERO_DC)) {
       xk(ix, 0) = 0.0;
+    }
 
     irfft(&xk(ix, 0), ncz, x[ix]);
 
@@ -816,43 +805,27 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const LaplaceIPT& l) {
 
 // Initialization routine for coarser grids. Initialization depends on the grid
 // one step finer, lup.
-void LaplaceIPT::Level::init(const LaplaceIPT& l, const Level lup,
-                             const int current_level_in) {
+LaplaceIPT::Level::Level(const LaplaceIPT& l, const Level& lup,
+                         const std::size_t current_level_in)
+    : myproc(lup.myproc), current_level(current_level_in), index_start(0),
+      index_end(l.localmesh->lastX() ? 2 : 3), included_up(lup.included),
+      proc_in_up(lup.proc_in), proc_out_up(lup.proc_out) {
 
   SCOREP0();
-  current_level = current_level_in;
 
-  auto sendvec = Array<dcomplex>(3 * l.nmode);
-  auto recvecin = Array<dcomplex>(3 * l.nmode);
-  auto recvecout = Array<dcomplex>(3 * l.nmode);
+  // 2^current_level
+  const auto scale = 1 << current_level;
 
-  // indexing to remove branches in tight loops
-  if (l.localmesh->lastX()) {
-    index_end = 2;
-  } else {
-    index_end = 3;
-  }
-  index_start = 0;
-
-  myproc = lup.myproc;
   // Whether this proc is involved in the multigrid calculation
-  included = (myproc % int((pow(2, current_level))) == 0) or l.localmesh->lastX();
-
-  // Save some proc properties from the level above - this allows us to NOT pass the level
-  // above as an argument in some functions
-  // Whether this proc is involved in the calculation on the grid one level more refined
-  included_up = lup.included;
-  // This proc's neighbours on the level above
-  proc_in_up = lup.proc_in;
-  proc_out_up = lup.proc_out;
+  included = (myproc % scale == 0) or l.localmesh->lastX();
 
   if (not included) {
     return;
   }
 
   // Colouring of processor for Gauss-Seidel
-  red = ((myproc / int((pow(2, current_level)))) % 2 == 0);
-  black = ((myproc / int((pow(2, current_level)))) % 2 == 1);
+  red = ((myproc / scale) % 2 == 0);
+  black = ((myproc / scale) % 2 == 1);
 
   // The last processor is a special case. It is always included because of
   // the final grid point, which is treated explicitly. Otherwise it should
@@ -863,11 +836,11 @@ void LaplaceIPT::Level::init(const LaplaceIPT& l, const Level lup,
   }
 
   // My neighbouring procs
-  proc_in = myproc - int(pow(2, current_level));
+  proc_in = myproc - scale;
   if (l.localmesh->lastX()) {
     proc_in += 1;
   }
-  int p = myproc + int(pow(2, current_level));
+  const int p = myproc + scale;
   proc_out = (p < l.nproc - 1) ? p : l.nproc - 1;
 
   // Calculation variables
@@ -885,15 +858,19 @@ void LaplaceIPT::Level::init(const LaplaceIPT& l, const Level lup,
   // boundaries where these are the boundary points. Index 2 is used on the
   // final processor only to track its value at the last grid point xe. This
   // means we often have special cases of the equations for final processor.
-  xloc = Matrix<dcomplex>(4, l.nmode);
-  residual = Matrix<dcomplex>(4, l.nmode);
+  xloc.reallocate(4, l.nmode);
+  residual.reallocate(4, l.nmode);
 
   // Coefficients for the reduced iterations
-  ar = Tensor<dcomplex>(l.ny, 4, l.nmode);
-  br = Tensor<dcomplex>(l.ny, 4, l.nmode);
-  cr = Tensor<dcomplex>(l.ny, 4, l.nmode);
-  rr = Matrix<dcomplex>(4, l.nmode);
-  brinv = Tensor<dcomplex>(l.ny, 4, l.nmode);
+  ar.reallocate(l.ny, 4, l.nmode);
+  br.reallocate(l.ny, 4, l.nmode);
+  cr.reallocate(l.ny, 4, l.nmode);
+  rr.reallocate(4, l.nmode);
+  brinv.reallocate(l.ny, 4, l.nmode);
+
+  auto sendvec = Array<dcomplex>(3 * l.nmode);
+  auto recvecin = Array<dcomplex>(3 * l.nmode);
+  auto recvecout = Array<dcomplex>(3 * l.nmode);
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (l.localmesh->firstX()) {
@@ -976,48 +953,28 @@ void LaplaceIPT::Level::init(const LaplaceIPT& l, const Level lup,
 }
 
 // Init routine for finest level
-void LaplaceIPT::Level::init(LaplaceIPT& l) {
+LaplaceIPT::Level::Level(LaplaceIPT& l)
+    : myproc(l.myproc), proc_in(myproc - 1), proc_out(myproc + 1), included(true),
+      red(myproc % 2 == 0), black(myproc % 2 == 1), current_level(0), index_start(1),
+      index_end(l.localmesh->lastX() ? 2 : 3) {
 
   // Basic definitions for conventional multigrid
   SCOREP0();
-  int ny = l.localmesh->LocalNy;
-  current_level = 0;
 
-  // Processor information
-  myproc = l.myproc;     // unique id
-  proc_in = myproc - 1;  // in-neighbour
-  proc_out = myproc + 1; // out-neighbour
-  included = true;       // whether processor is included in this level's calculation
-  // Colouring of processor for Gauss-Seidel
-  red = (myproc % 2 == 0);
-  black = (myproc % 2 == 1);
-
-  // indexing to remove branching in tight loops
-  if (l.localmesh->lastX()) {
-    index_end = 2;
-  } else {
-    index_end = 3;
-  }
-  index_start = 1;
+  const int ny = l.localmesh->LocalNy;
 
   // Coefficients for the reduced iterations
-  ar = Tensor<dcomplex>(ny, 4, l.nmode);
-  br = Tensor<dcomplex>(ny, 4, l.nmode);
-  cr = Tensor<dcomplex>(ny, 4, l.nmode);
-  rr = Matrix<dcomplex>(4, l.nmode);
-  brinv = Tensor<dcomplex>(ny, 4, l.nmode);
+  ar.reallocate(ny, 4, l.nmode);
+  br.reallocate(ny, 4, l.nmode);
+  cr.reallocate(ny, 4, l.nmode);
+  rr.reallocate(4, l.nmode);
+  brinv.reallocate(ny, 4, l.nmode);
 
-  residual = Matrix<dcomplex>(4, l.nmode);
-
-  for (int kz = 0; kz < l.nmode; kz++) {
-    for (int ix = 0; ix < 4; ix++) {
-      residual(ix, kz) = 0.0;
-    }
-  }
-  // end basic definitions
+  residual.reallocate(4, l.nmode);
+  residual = 0.0;
 
   // Define sizes of local coefficients
-  xloc = Matrix<dcomplex>(4, l.nmode); // Reduced grid x values
+  xloc.reallocate(4, l.nmode); // Reduced grid x values
 
   // Work arrays
   auto evec = Array<dcomplex>(l.ncx);
@@ -1124,9 +1081,8 @@ void LaplaceIPT::Level::init(LaplaceIPT& l) {
       // auold are zero, and l.au = l.auold is already correct.
       if (not l.localmesh->lastX()) {
         ar(l.jy, 2, kz) = -l.au(l.jy, kz) / l.al(l.jy, kz);
-        cr(l.jy, 2, kz) =
-            -(l.bu(l.jy, kz)
-              + ar(l.jy, 2, kz) * l.bl(l.jy, kz)); // NB depends on previous line
+        // NB this depends on previous line
+        cr(l.jy, 2, kz) = -(l.bu(l.jy, kz) + ar(l.jy, 2, kz) * l.bl(l.jy, kz));
       }
 
       // Use BCs to replace x(xe+1) = -avec(xe+1) x(xe) / bvec(xe+1)
@@ -1178,7 +1134,7 @@ void LaplaceIPT::Level::init(LaplaceIPT& l) {
 }
 
 // Init routine for finest level information that cannot be cached
-void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex> bcmplx) {
+void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex>& bcmplx) {
 
   SCOREP0();
 
@@ -1247,9 +1203,8 @@ void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex> bcmplx) {
  * Sum and communicate total residual for the reduced system
  * NB This calculation assumes we are using the finest grid, level 0.
  */
-void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
-                                                 Array<BoutReal>& error_abs,
-                                                 Array<BoutReal>& error_rel,
+void LaplaceIPT::Level::calculate_total_residual(const LaplaceIPT& l,
+                                                 Array<BoutReal>& errornorm,
                                                  Array<bool>& converged) {
 
   SCOREP0();
@@ -1259,42 +1214,31 @@ void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
         "LaplaceIPT error: calculate_total_residual can only be called on level 0");
   }
 
-  // Communication arrays:
-  // residual in (0, :)
-  // solution in (1, :)
-  auto total = Matrix<BoutReal>(2, l.nmode);    // global summed residual
-  auto subtotal = Matrix<BoutReal>(2, l.nmode); // local contribution to residual
+  // Communication arrays
+  auto subtotal = Array<BoutReal>(l.nmode); // local contribution to residual
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      total(0, kz) = 0.0;
-      total(1, kz) = 0.0;
+      errornorm[kz] = 0.0;
 
-      subtotal(0, kz) = pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2);
-      // TODO This approximation will increase iteration count. The alternatives are:
-      // + reconstructing the solution and calculating properly
-      // + multiply approximation by (interior points/2) - this can be done
-      //   at runtime by changing rtol
-      // Strictly this should be all contributions to the solution, but this
-      // under-approximation saves work.
-      subtotal(1, kz) = pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2);
+      BoutReal w = pow( l.rtol*sqrt(pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)) + l.atol , 2);
+      subtotal[kz] = ( pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2) ) / w;
       if (l.localmesh->lastX()) {
-        subtotal(0, kz) +=
-            pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2);
-        subtotal(1, kz) += pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2);
+        w = pow( l.rtol*sqrt(pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2)) + l.atol , 2);
+        subtotal[kz] +=
+            ( pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2) ) / w;
       }
     }
   }
 
   // Communication needed to ensure processors break on same iteration
-  MPI_Allreduce(subtotal.begin(), total.begin(), 2 * l.nmode, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(subtotal.begin(), errornorm.begin(), l.nmode, MPI_DOUBLE, MPI_SUM,
                 BoutComm::get());
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      error_abs[kz] = sqrt(total(0, kz));
-      error_rel[kz] = error_abs[kz] / sqrt(total(1, kz));
-      if (error_abs[kz] < l.atol or error_rel[kz] < l.rtol) {
+      errornorm[kz] = sqrt(errornorm[kz]/BoutReal(l.ncx));
+      if (errornorm[kz] < 1.0) {
         converged[kz] = true;
       }
     }
@@ -1350,11 +1294,11 @@ void LaplaceIPT::Level::coarsen(const LaplaceIPT& l,
     if (not l.converged[kz]) {
       if (not l.localmesh->lastX()) {
         residual(1, kz) = 0.25 * fine_residual(0, kz) + 0.5 * fine_residual(1, kz)
-                            + 0.25 * fine_residual(3, kz);
+                          + 0.25 * fine_residual(3, kz);
       } else {
         // NB point(1,kz) on last proc only used on level=0
         residual(2, kz) = 0.25 * fine_residual(1, kz) + 0.5 * fine_residual(2, kz)
-                            + 0.25 * fine_residual(3, kz);
+                          + 0.25 * fine_residual(3, kz);
       }
 
       // Set initial guess for coarse grid levels to zero
@@ -1504,19 +1448,5 @@ void LaplaceIPT::Level::synchronize_reduced_field(const LaplaceIPT& l,
   if (not l.localmesh->lastX()) {
     MPI_Sendrecv(&field(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &field(3, 0),
                  l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
-  }
-}
-
-/*
- * Returns the transpose of a matrix
- */
-void LaplaceIPT::transpose(Matrix<dcomplex>& m_t, const Matrix<dcomplex>& m) {
-  SCOREP0();
-  const auto n1 = std::get<1>(m.shape());
-  const auto n2 = std::get<0>(m.shape());
-  for (int i1 = 0; i1 < n1; i1++) {
-    for (int i2 = 0; i2 < n2; i2++) {
-      m_t(i1, i2) = m(i2, i1);
-    }
   }
 }

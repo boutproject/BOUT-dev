@@ -4,7 +4,7 @@
 # settings used by the core code
 
 NOUT = 100     # number of time-steps
-TIMESTEP = 1e-2   # time between outputs
+TIMESTEP = 0.01   # time between outputs
 
 MZ = 65     # number of points in z direction (2^n + 1)
 
@@ -15,7 +15,7 @@ grid = "simple_xz.nc"
 
 dump_format = "nc" # Set extension for dump files (nc = NetCDF)
 
-NXPE = 1 
+NXPE = 1
 
 ##################################################
 # derivative methods
@@ -55,11 +55,11 @@ filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+ATOL = 1e-10 # absolute tolerance
+RTOL = 1e-05  # relative tolerance
 mxstep = 50000
 
-#type=karniadakis
+#type=splitrk
 #timestep=1e-4
 use_precon = true
 

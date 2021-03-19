@@ -36,6 +36,8 @@ int main(int argc, char **argv) {
   // Uniform distribution of BoutReals from 0 to 1
   std::uniform_real_distribution<BoutReal> distribution{0.0, 1.0};
 
+  using bout::globals::mesh;
+
   FieldFactory f(mesh);
 
   // Set up generators and solutions for three different analtyic functions
@@ -97,7 +99,7 @@ int main(int argc, char **argv) {
   SAVE_ONCE3(b, b_interp, b_solution);
   SAVE_ONCE3(c, c_interp, c_solution);
 
-  dump.write();
+  bout::globals::dump.write();
 
   BoutFinalise();
 

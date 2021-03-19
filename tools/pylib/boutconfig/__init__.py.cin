@@ -1,0 +1,44 @@
+"""Functions for getting the config used for compiling BOUT++
+
+"""
+# Created by cmake
+_yesno = {"TRUE": True, "ON": True, "FALSE": False, "OFF": False}
+_iyesno = {True: "yes", False: "no"}
+
+config = {
+    "cc": "@CMAKE_C_COMPILER@",
+    "cxx": "@CMAKE_CXX_COMPILER@",
+    "ld": "@CMAKE_CXX_COMPILER@",
+    "checks": "@BOUT_CHECK_LEVEL@",
+    "cflags": "@BOUT_CFLAGS@",
+    "libs": "@BOUT_LIBS@",
+    "version": "@BOUT_VERSION@",
+    "git": "@BOUT_REVISION@",
+    "idlpath": "@IDLCONFIGPATH@",
+    "pythonpath": "@BOUT_PYTHONPATH@",
+    "has_netcdf": "@BOUT_HAS_NETCDF@",
+    "has_legacy_netcdf": "@BOUT_HAS_LEGACY_NETCDF@",
+    "has_pnetcdf": "OFF",
+    "has_pvode": "@BOUT_HAS_PVODE@",
+    "has_cvode": "@BOUT_HAS_CVODE@",
+    "has_ida": "@BOUT_HAS_IDA@",
+    "has_lapack": "@BOUT_HAS_LAPACK@",
+    "has_petsc": "@BOUT_HAS_PETSC@",
+    "has_slepc": "@BOUT_HAS_SLEPC@",
+    "has_mumps": "OFF",
+    "has_arkode": "@BOUT_HAS_ARKODE@",
+    "has_openmp": "@BOUT_USE_OPENMP@",
+    "has_nls": "@BOUT_HAS_GETTEXT@",
+    "has_fftw": "@BOUT_HAS_FFTW@",
+    "petsc_has_sundials": "@PETSC_HAS_SUNDIALS@",
+}
+
+
+@property
+def has():
+    """Get a dict of the enabled features"""
+    _has = {}
+    for k in config:
+        if k.startswith("has_"):
+            _has[k[4:]] = _yesno[config[k]]
+    return _has

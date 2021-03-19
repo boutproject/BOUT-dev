@@ -23,41 +23,31 @@
 #ifndef __INTERP_Z_H__
 #define __INTERP_Z_H__
 
-#include "mask.hxx"
 #include "bout/generic_factory.hxx"
+#include "bout/paralleltransform.hxx"
+#include "bout/region.hxx"
 
 class ZInterpolation {
 protected:
   Mesh* localmesh{nullptr};
 
-  // 3D vector of points to skip (true -> skip this point)
-  BoutMask skip_mask;
+  Region<Ind3D> region;
 
 public:
-  explicit ZInterpolation(int y_offset = 0, Mesh* mesh = nullptr)
-      : ZInterpolation(BoutMask{mesh}, y_offset, mesh) {}
-  explicit ZInterpolation(BoutMask mask, int y_offset = 0, Mesh* mesh = nullptr)
-      : localmesh(mesh == nullptr ? bout::globals::mesh : mesh), skip_mask(mask),
-        y_offset(y_offset) {}
+  explicit ZInterpolation(int y_offset = 0, Mesh* mesh = nullptr,
+                          Region<Ind3D> region_in = {});
   virtual ~ZInterpolation() = default;
 
-  virtual void calcWeights(const Field3D& delta_z,
-                           const std::string& region = "RGN_NOBNDRY") = 0;
-  virtual void calcWeights(const Field3D& delta_z, const BoutMask& mask,
-                           const std::string& region = "RGN_NOBNDRY") = 0;
+  virtual void calcWeights(const Field3D& delta_z) = 0;
 
   virtual Field3D interpolate(const Field3D& f,
-                              const std::string& region = "RGN_NOBNDRY") const = 0;
+                              const std::string& region_str = "DEFAULT") const = 0;
   virtual Field3D interpolate(const Field3D& f, const Field3D& delta_z,
-                              const std::string& region = "RGN_NOBNDRY") = 0;
-  virtual Field3D interpolate(const Field3D& f, const Field3D& delta_z,
-                              const BoutMask& mask,
-                              const std::string& region = "RGN_NOBNDRY") = 0;
+                              const std::string& region_str = "DEFAULT") = 0;
 
-  void setMask(const BoutMask& mask) { skip_mask = mask; }
-
-  /// Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
-  void setYOffset(int offset) { y_offset = offset; }
+  void setRegion(Region<Ind3D> new_region) {
+    region = new_region;
+  }
 
   virtual std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYUpApproximation(int i, int j, int k) const {
@@ -74,14 +64,14 @@ public:
         "ZInterpolation::getWeightsForYApproximation not implemented in this subclass");
   }
 
-protected:
   // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
-  int y_offset;
+  const int y_offset;
 };
 
 class ZInterpolationFactory
     : public Factory<ZInterpolation, ZInterpolationFactory,
-                     std::function<std::unique_ptr<ZInterpolation>(Mesh*)>> {
+                     std::function<std::unique_ptr<ZInterpolation>(
+                         int, Mesh*, Region<Ind3D>)>> {
 public:
   static constexpr auto type_name = "ZInterpolation";
   static constexpr auto section_name = "zinterpolation";
@@ -89,8 +79,13 @@ public:
   static constexpr auto default_type = "hermitespline";
 
   using Factory::create;
-  ReturnType create(Mesh* mesh = nullptr) {
-    return Factory::create(getType(nullptr), mesh);
+  ReturnType create(Options* options, int y_offset = 0, Mesh* mesh = nullptr,
+                    Region<Ind3D> region_in = {}) {
+    return Factory::create(options, y_offset, mesh, region_in);
+  }
+  ReturnType create(int y_offset = 0, Mesh* mesh = nullptr,
+                    Region<Ind3D> region_in = {}) {
+    return Factory::create(getType(nullptr), y_offset, mesh, region_in);
   }
 
   static void ensureRegistered();
@@ -101,38 +96,34 @@ class RegisterZInterpolation {
 public:
   RegisterZInterpolation(const std::string& name) {
     ZInterpolationFactory::getInstance().add(
-        name, [](Mesh* mesh) -> std::unique_ptr<ZInterpolation> {
-          return std::make_unique<DerivedType>(mesh);
+        name,
+        [](int y_offset, Mesh* mesh, Region<Ind3D> region_in)
+            -> std::unique_ptr<ZInterpolation> {
+          return std::make_unique<DerivedType>(y_offset, mesh, region_in);
         });
   }
 };
 
 class ZHermiteSpline : public ZInterpolation {
 public:
-  explicit ZHermiteSpline(Mesh* mesh = nullptr)
-      : ZHermiteSpline(BoutMask{mesh}, 0, mesh) {}
-  explicit ZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr)
-      : ZHermiteSpline(BoutMask{mesh}, y_offset, mesh) {}
-  explicit ZHermiteSpline(BoutMask mask, int y_offset = 0, Mesh* mesh = nullptr);
+  explicit ZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr,
+                          Region<Ind3D> region_in = {});
 
-  void calcWeights(const Field3D& delta_z,
-                   const std::string& region = "RGN_NOBNDRY") override;
-  void calcWeights(const Field3D& delta_z, const BoutMask& mask,
-                   const std::string& region = "RGN_NOBNDRY") override;
+  void calcWeights(const Field3D& delta_z) override;
 
   // Use precalculated weights
   Field3D interpolate(const Field3D& f,
-                      const std::string& region = "RGN_NOBNDRY") const override;
+                      const std::string& region_str = "DEFAULT") const override;
   // Calculate weights and interpolate
   Field3D interpolate(const Field3D& f, const Field3D& delta_z,
-                      const std::string& region = "RGN_NOBNDRY") override;
-  Field3D interpolate(const Field3D& f, const Field3D& delta_z, const BoutMask& mask,
-                      const std::string& region = "RGN_NOBNDRY") override;
+                      const std::string& region_str = "DEFAULT") override;
   std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYApproximation(int i, int j, int k, int yoffset) const override;
 
 private:
-  Tensor<int> k_corner; // z-index of left grid point
+  const std::string fz_region;
+
+  Array<Ind3D> k_corner; // z-index of left grid point
 
   // Basis functions for cubic Hermite spline interpolation
   //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline

@@ -1630,8 +1630,11 @@ int BoutMesh::getGlobalXIndexNoBoundaries(int xlocal) const {
   return xlocal + PE_XIND * MXSUB - MXG;
 }
 
-/// Returns a local X index given a global index
-int BoutMesh::XLOCAL(int xglo) const { return xglo - PE_XIND * MXSUB; }
+int BoutMesh::getLocalXIndex(int xglobal) const { return xglobal - PE_XIND * MXSUB; }
+
+int BoutMesh::getLocalXIndexNoBoundaries(int xglobal) const {
+  return xglobal - PE_XIND * MXSUB + MXG;
+}
 
 /// Returns the global Y index given a local index
 int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal &yglo) const {
@@ -1656,11 +1659,21 @@ int BoutMesh::getGlobalYIndexNoBoundaries(int ylocal) const {
   return ylocal + PE_YIND * MYSUB - MYG;
 }
 
+int BoutMesh::getLocalYIndex(int yglobal) const {
+  int ylocal = yglobal - PE_YIND * MYSUB;
+  if (jyseps1_2 > jyseps2_1 and PE_YIND * MYSUB + 2 * MYG + 1 > ny_inner) {
+    // Double null, and we are past the upper target
+    ylocal -= 2 * MYG;
+  }
+  return ylocal;
+}
+
+int BoutMesh::getLocalYIndexNoBoundaries(int yglobal) const {
+  return yglobal - PE_YIND * MYSUB + MYG;
+}
+
 /// Global Y index given local index and processor
 int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB - MYG; }
-
-/// Returns a local Y index given a global index
-int BoutMesh::YLOCAL(int yglo) const { return yglo - PE_YIND * MYSUB + MYG; }
 
 int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - yproc * MYSUB + MYG; }
 
@@ -1672,6 +1685,10 @@ int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal; }
 /// Global index excludes boundary cells, local index includes boundary or guard cells.
 /// Note: at the moment z-direction is always periodic, so has zero boundary cells
 int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const { return zlocal; }
+
+int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal; }
+
+int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const { return zglobal; }
 
 /// Return the Y processor number given a global Y index
 int BoutMesh::YPROC(int yind) {
@@ -1873,8 +1890,8 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
 
   // Convert X coordinates into local indices
 
-  xge = XLOCAL(xge);
-  xlt = XLOCAL(xlt);
+  xge = getLocalXIndex(xge);
+  xlt = getLocalXIndex(xlt);
 
   if ((xge >= LocalNx) || (xlt <= 0)) {
     return; // Not in this x domain
@@ -1966,8 +1983,8 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
       ypedown, xge, xlt);
 
   // Convert X coordinates into local indices
-  xge = XLOCAL(xge);
-  xlt = XLOCAL(xlt);
+  xge = getLocalXIndex(xge);
+  xlt = getLocalXIndex(xlt);
   if ((xge >= LocalNx) || (xlt <= 0)) {
     return; // Not in this x domain
   }
@@ -2917,14 +2934,14 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
   Field3D result{emptyFrom(f)};
   if ((ixseps_inner > 0) && (ixseps_inner < nx - 1)) {
     if (XPROC(ixseps_inner) == PE_XIND) {
-      int x = XLOCAL(ixseps_inner);
+      int x = getLocalXIndex(ixseps_inner);
       for (int y = 0; y < LocalNy; y++)
         for (int z = 0; z < LocalNz; z++) {
           result(x, y, z) = 0.5 * (f(x, y, z) + f(x - 1, y, z));
         }
     }
     if (XPROC(ixseps_inner - 1) == PE_XIND) {
-      int x = XLOCAL(ixseps_inner - 1);
+      int x = getLocalXIndex(ixseps_inner - 1);
       for (int y = 0; y < LocalNy; y++)
         for (int z = 0; z < LocalNz; z++) {
           result(x, y, z) = 0.5 * (f(x, y, z) + f(x + 1, y, z));
@@ -2933,14 +2950,14 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
   }
   if ((ixseps_outer > 0) && (ixseps_outer < nx - 1) && (ixseps_outer != ixseps_inner)) {
     if (XPROC(ixseps_outer) == PE_XIND) {
-      int x = XLOCAL(ixseps_outer);
+      int x = getLocalXIndex(ixseps_outer);
       for (int y = 0; y < LocalNy; y++)
         for (int z = 0; z < LocalNz; z++) {
           result(x, y, z) = 0.5 * (f(x, y, z) + f(x - 1, y, z));
         }
     }
     if (XPROC(ixseps_outer - 1) == PE_XIND) {
-      int x = XLOCAL(ixseps_outer - 1);
+      int x = getLocalXIndex(ixseps_outer - 1);
       for (int y = 0; y < LocalNy; y++)
         for (int z = 0; z < LocalNz; z++) {
           result(x, y, z) = 0.5 * (f(x, y, z) + f(x + 1, y, z));
@@ -3085,4 +3102,33 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(ny_inner, "ny_inner", false);
 
   getCoordinates()->outputVars(file);
+
+  // Try and save some provenance tracking info that new enough versions of
+  // hypnotoad provide in the grid file.
+  // Note with current Datafile/DataFormat implementation, must not write an
+  // empty string because it ends up as a null char* pointer, which causes a
+  // segfault.
+  if (this->get(grid_id, "grid_id") == 0 and not grid_id.empty()) {
+    file.add(grid_id, "grid_id", false);
+  }
+  if (this->get(hypnotoad_version, "hypnotoad_version") == 0
+      and not hypnotoad_version.empty()) {
+
+    file.add(hypnotoad_version, "hypnotoad_version", false);
+  }
+  if (this->get(hypnotoad_git_hash, "hypnotoad_git_hash") == 0
+      and not hypnotoad_git_hash.empty()) {
+
+    file.add(hypnotoad_git_hash, "hypnotoad_git_hash", false);
+  }
+  if (this->get(hypnotoad_git_diff, "hypnotoad_git_diff") == 0
+      and not hypnotoad_git_diff.empty()) {
+
+    file.add(hypnotoad_git_diff, "hypnotoad_git_diff", false);
+  }
+  if (this->get(hypnotoad_geqdsk_filename, "hypnotoad_geqdsk_filename") == 0
+      and not hypnotoad_geqdsk_filename.empty()) {
+
+    file.add(hypnotoad_geqdsk_filename, "hypnotoad_geqdsk_filename", false);
+  }
 }

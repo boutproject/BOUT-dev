@@ -2,10 +2,11 @@
 
 from __future__ import print_function
 from __future__ import division
+
 try:
-  from builtins import str
+    from builtins import str
 except:
-  pass
+    pass
 
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
@@ -16,29 +17,29 @@ from sys import stdout, exit
 build_and_log("griddata test")
 
 for nproc in [1]:
-  stdout.write("Checking %d processors ... " % (nproc))
+    stdout.write("Checking %d processors ... " % (nproc))
 
-  shell("rm ./data*nc")
-  s, out = launch_safe("./test_griddata -d screw", nproc=nproc, pipe=True)
+    shell("rm ./data*nc")
+    s, out = launch_safe("./test_griddata -d screw", nproc=nproc, pipe=True)
 
-  with open("run.log."+str(nproc), "w") as f:
-    f.write(out)
+    with open("run.log." + str(nproc), "w") as f:
+        f.write(out)
 
-  prefix = "data"
-  Rxy = collect("Rxy", prefix=prefix, info=False)
-  Bpxy = collect("Bpxy", prefix=prefix, info=False)
-  dx = collect("dx", prefix=prefix, info=False)
-  
-  nx,ny = Rxy.shape
+    prefix = "data"
+    Rxy = collect("Rxy", prefix=prefix, info=False)
+    Bpxy = collect("Bpxy", prefix=prefix, info=False)
+    dx = collect("dx", prefix=prefix, info=False)
 
-  rwidth = 0.4
-  dr = float(rwidth) / nx
+    nx, ny = Rxy.shape
 
-  # Test value of dx
-  if np.max(np.abs(dx - dr * Bpxy * Rxy)) > 1e-7:
-    print("Failed: dx does not match")
-    exit(1)
+    rwidth = 0.4
+    dr = float(rwidth) / nx
 
-  print("Passed")
+    # Test value of dx
+    if np.max(np.abs(dx - dr * Bpxy * Rxy)) > 1e-7:
+        print("Failed: dx does not match")
+        exit(1)
+
+    print("Passed")
 
 exit(0)

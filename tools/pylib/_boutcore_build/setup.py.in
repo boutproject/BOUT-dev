@@ -4,17 +4,19 @@ from Cython.Build import cythonize
 import os
 
 os.environ["CXX"] = "$(bout-config --cxx)"
-os.environ["CC"]  = "$(bout-config --cc)"
+os.environ["CC"] = "$(bout-config --cc)"
 # Setting LDSHARED sets the linker. However, setting it might drop
 # flags - thus it is not set by default. If $(bout-config --cxx) is
 # different to the python compiler, LDSHARED might need to be set. In
 # that case it might be required to check the linking commands, and
 # add the apropriate flags.
-#os.environ["LDSHARED"]  = "$(bout-config --ld)"
+# os.environ["LDSHARED"] = "$(bout-config --ld)"
 
 setup(
-    ext_modules = cythonize("boutcore.pyx",
-                            language="c++",             # generate C++ code
-                            )
+    ext_modules=cythonize(
+        "boutcore.pyx",
+        language_level=3,
+        compiler_directives=dict(binding=True, embedsignature=True),
+    )
 )
 EOF

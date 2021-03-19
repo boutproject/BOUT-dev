@@ -40,7 +40,8 @@ inc_dirs="${numpyheader%/*/*} $inc_dirs"
 
 # Main file
 cat <<EOF
-# distutils: language=c++
+# cython: language=c++
+# cython: language_level=3
 # distutils: include_dirs = $inc_dirs
 # distutils: libraries = $libs
 # distutils: library_dirs = $lib_dirs
@@ -414,6 +415,20 @@ cat <<EOF
         """
         return ${fdd}FromObj(c_minus(self.cobj[0]))
 
+    def __pow__($ftype self, exponent, other):
+        """
+        other must be None
+
+        Returns
+        -------
+	$ftype
+            exponential of the field to the power of the exponential
+        """
+        if other is not None:
+            return NotImplemented
+
+        return ${fdd}FromObj(c.pow(self.cobj[0], float(exponent)))
+
     def isAllocated(self):
         """
         Check if the $ftype has its own datablock allocated
@@ -564,6 +579,7 @@ cat <<EOF
             return NotImplemented
         return self
 
+
 EOF
 
 done
@@ -598,9 +614,9 @@ cat <<EOF
             self.cobj.applyBoundary()
 
     def __dealloc__(self):
-        self.__mydealloc__()
+        self.__boutcore_dealloc()
 
-    def __mydealloc__(self):
+    def __boutcore_dealloc(self):
         if self.isSelfOwned and self.cobj!=NULL:
             del self.cobj
             self.cobj=NULL
@@ -647,9 +663,9 @@ EOF
                                       "' - not supported (yet?).")
 
     def __dealloc__(self):
-        self.__mydealloc__()
+        self.__boutcore_dealloc()
 
-    def __mydealloc__(self):
+    def __boutcore_dealloc(self):
         if self.isSelfOwned and self.cobj!=NULL:
             del self.cobj
             self.cobj=NULL
@@ -671,6 +687,8 @@ cdef extern from "helper.h":
     void c_laplacian_solve(c.Laplacian *, c.Field3D *, c.Field3D*)
     c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
     void c_mesh_normalise(c.Mesh* , double)
+    void c_set_dz(c.Coordinates*, double)
+    double c_get_dz(c.Coordinates*)
     c.Datafile * c_get_global_datafile()
 
 cdef class Mesh:
@@ -747,9 +765,9 @@ cdef class Mesh:
         return msh
 
     def __dealloc__(self):
-        self.__mydealloc__()
+        self.__boutcore_dealloc()
 
-    def __mydealloc__(self):
+    def __boutcore_dealloc(self):
         if self.cobj and not self.isGlobal:
             del self.cobj
             self.cobj = NULL
@@ -826,7 +844,6 @@ cdef class Coordinates:
     cdef c.Coordinates * cobj
     cdef c.bool isSelfOwned
     cdef public Field2D dx, dy
-    cdef public double dz
     cdef public Field2D J
     cdef public Field2D Bxy
     cdef public Field2D g11, g22, g33, g12, g13, g23
@@ -848,16 +865,25 @@ for f in "dx" "dy" "J" "Bxy" "g11" "g22" "g33" "g12" "g13" "g23" "g_11" "g_22" "
 do
     echo "        self.${f} = f2dFromPtr(&self.cobj.${f})"
 done
-for f in "dz"
-do
-    echo "        self.${f} = self.cobj.${f}"
-done
 cat <<"EOF"
+    cdef getDz(self):
+        return c_get_dz(self.cobj)
+
+    cdef setDz(self, val):
+        c_set_dz(self.cobj, <double> val)
+
+    @property
+    def dz(self):
+        return self.getDz()
+
+    @dz.setter
+    def dz(self, val):
+        self.setDz(val)
 
     def __dealloc__(self):
-        self.__mydealloc__()
+        self.__boutcore_dealloc()
 
-    def __mydealloc__(self):
+    def __boutcore_dealloc(self):
         if self.cobj and self.isSelfOwned:
             del self.cobj
             self.cobj = NULL
@@ -868,7 +894,7 @@ cdef class Laplacian:
 
     Compute the Laplacian inversion of objects.
 
-    Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\perp x + ex\\nabla_x x + ez\\nabla_z x + a x = b
+    Equation solved is: d\\\\nabla^2_\\\\perp x + (1/c1)\\\\nabla_perp c2\\\\cdot\\\\nabla_\\\\perp x + ex\\\\nabla_x x + ez\\\\nabla_z x + a x = b
     """
     cdef unique_ptr[c.Laplacian] cobj
     cdef c.bool isSelfOwned
@@ -945,9 +971,9 @@ cdef class FieldFactory:
         checkInit()
         cobj=< c.FieldFactory*>0
     def __dealloc__(self):
-        self.__mydealloc__()
+        self.__boutcore_dealloc()
 
-    def __mydealloc__(self):
+    def __boutcore_dealloc(self):
         if self.cobj != NULL:
             del self.cobj
             self.cobj = NULL
@@ -985,9 +1011,9 @@ cdef class PythonModelCallback:
         self.cobj = new c.PythonModelCallback(callback, <void*>method)
 
     def __dealloc__(self):
-        self.__mydealloc__()
+        self.__boutcore_dealloc()
 
-    def __mydealloc__(self):
+    def __boutcore_dealloc(self):
         if self.cobj:
             del self.cobj
             self.cobj = NULL
@@ -1058,17 +1084,46 @@ cdef class PhysicsModelBase(object):
         self.cmodel.set_init_func(self.callbackinit)
 
     def __dealloc__(self):
-        self.__mydealloc__()
+        if hasattr(self, '__boutcore_dealloc'):
+            self.__boutcore_dealloc()
+        else:
+            PhysicsModelBase.__boutcore_dealloc(self)
 
-    def __mydealloc__(self):
+    def __boutcore_dealloc(self):
         if self.cmodel != <c.PythonModel *> 0:
             self.cmodel.free()
             del self.cmodel
             del self.callback
             del self.callbackinit
+            self.cmodel = <c.PythonModel *> 0
 
 class PhysicsModel(PhysicsModelBase):
-    """The PhysicsModel base class for python"""
+    """
+    The PhysicsModel base class for python
+
+    To implement your own PhysicsModel derive from this class and
+    provide a rhs function which takes the self and the simulation
+    time as input, and the init function which takes self and whether
+    the simulation has been restarted as an argument.
+
+    A complete simulation could look something like this:
+
+    import boutcore as bc
+
+    bc.init("mesh:n=48")
+    class MyModel(bc.PhysicsModel):
+        def init(self,restart):
+            self.dens = bc.create3D("sin(x)")
+            self.solve_for(n=self.dens)
+
+        def rhs(self,time):
+            self.dens.ddt(bc.DDX(self.dens))
+
+
+    model = MyModel()
+    model.solve()
+    """
+
     def __init__(self):
         super(PhysicsModel,self).__init__()
         self._super_is_initialised=True
@@ -1115,8 +1170,8 @@ class PhysicsModel(PhysicsModelBase):
     def __dealloc__(self):
         super(PhysicsModel,self).__dealloc__()
 
-    def __mydealloc__(self):
-        super(PhysicsModel,self).__mydealloc__()
+    def __boutcore_dealloc(self):
+        super(PhysicsModel,self).__boutcore_dealloc()
 
 cdef extern from "bout.hxx":
     int BoutInitialise(int&, char **&) except +raise_bout_py_error
@@ -1197,7 +1252,13 @@ def finalise():
                   PythonModelCallback)
     for obj in objects:
         if isinstance(obj,ourClasses):
-            obj.__mydealloc__()
+            if hasattr(obj, '__boutcore_dealloc'):
+                obj.__boutcore_dealloc()
+            else:
+                for ourClass in ourClasses:
+                    if isinstance(obj, ourClass):
+                         ourClass.__boutcore_dealloc(obj)
+                         break
     del objects
     # Actually finalise
     if wasInit:
@@ -1245,7 +1306,7 @@ def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"
     if method.startswith("DIFF_"):
         method=method[5:]
     cdef c.string method_ = method.encode('ascii')
-    cdef benum.REGION region_=benum.resolve_region(region)
+    cdef c.string region_ = region.encode('ascii')
     return f3dFromObj(c.$DD($in2,outloc_,method_,region_))
 EOF
 }
@@ -1331,7 +1392,7 @@ done
 cat <<EOF
 def Laplace(Field3D a):
     """
-    Compute the full Laplacian \\nabla^2(a)
+    Compute the full Laplacian \\\\nabla^2(a)
 
     Parameters
     ----------
@@ -1362,7 +1423,7 @@ def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
 
     Returns
     -------
-    float
+    Field3D
         the scalar product of the perpendicular gradient contributions
     """
     checkInit()
@@ -1675,9 +1736,9 @@ cdef class Options:
             return ret_str
 
     def __dealloc__(self):
-        self.__mydealloc__()
+        self.__boutcore_dealloc()
 
-    def __mydealloc__(self):
+    def __boutcore_dealloc(self):
         if self.isSelfOwned and self.cobj!=NULL:
             del self.cobj
             self.cobj=NULL
@@ -1708,11 +1769,18 @@ cdef class Datafile:
 
 
     def __dealloc__(self):
-        self.__mydealloc__()
+        self.__boutcore_dealloc()
 
-    def __mydealloc__(self):
+    def __boutcore_dealloc(self):
         # is never self owned
         pass
+
+def print(*args, sep=' ', end='\n'):
+    _print(sep.join([str(a) for a in args])+end)
+
+cdef _print(value):
+    cdef c.string str_=value.encode('utf-8')
+    c.output_info.write(str_.c_str())
 
 EOF
 

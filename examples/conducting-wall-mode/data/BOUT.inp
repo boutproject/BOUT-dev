@@ -11,13 +11,13 @@ TwistShift = false  # use twist-shift condition?
 MZ = 17     # number of points in z direction (2^n + 1)
 #ZPERIOD = 1  # Number of periods
 
-ZMIN=0.0
-ZMAX=2.e-2  # Non-integer period for comparison with BOUT-06
+ZMIN = 0.0
+ZMAX = 0.02  # Non-integer period for comparison with BOUT-06
 
 MXG = 2
 MYG = 2
 
-grid="cwm_grid.nc"
+grid = "cwm_grid.nc"
 
 dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 
@@ -52,14 +52,17 @@ upwind = C4
 all_terms = true
 laplace_nonuniform = true
 
+inner_boundary_flags = 2 # INVERT_AC_GRAD
+outer_boundary_flags = 2 # INVERT_AC_GRAD
+
 ##################################################
 # Solver settings
 
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+ATOL = 1e-10 # absolute tolerance
+RTOL = 1e-05  # relative tolerance
 mxstep = 50000
 
 ##################################################
@@ -69,9 +72,9 @@ mxstep = 50000
 
 AA = 4.0
 ZZ = 1.0
- 
+
 zeff = 1.0        # Z effective
-nu_perp = 1.0e-20
+nu_perp = 1e-20
 
 ShearFactor = 0.0
 
@@ -79,10 +82,6 @@ bout_exb = true   # Use the BOUT-06 subset of ExB terms
 
 filter_z = true    # Filter in Z
 filter_z_mode = 1  # Keep this Z harmonic
-
-[laplace]
-inner_boundary_flags = 2 # INVERT_AC_GRAD
-outer_boundary_flags = 2 # INVERT_AC_GRAD
 
 ##################################################
 # settings for individual variables
@@ -106,11 +105,9 @@ bndry_all = relax(neumann)
 
 # Section for only the rho equation
 [rho]
-scale = -1.0e-8
+scale = -1e-08
 
 function = sin(y) * sin(z)
-
-[te]
 
 [phi]
 bndry_xin = none

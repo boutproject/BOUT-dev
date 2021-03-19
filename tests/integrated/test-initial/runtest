@@ -11,7 +11,9 @@ from scipy.special import erf
 import numpy as np
 import os
 
-#requires not make
+# requires not make
+# requires scipy
+# cores: 4
 
 ########################################
 # Implementations of BOUT++ functions
@@ -32,7 +34,7 @@ def genRand(seed):
     seed each time
     """
     # Make sure seed is
-    if(seed < 0.0):
+    if seed < 0.0:
         seed *= -1
 
     # Round the seed to get the number of iterations
@@ -41,11 +43,11 @@ def genRand(seed):
     # Start x between 0 and 1
     A = 0.01
     B = 1.23456789
-    x = (A + np.mod(seed, B)) / (B + 2.*A)
+    x = (A + np.mod(seed, B)) / (B + 2.0 * A)
 
     # Iterate logistic map
     for i in range(niter):
-        x = 3.99 * x * (1. - x)
+        x = 3.99 * x * (1.0 - x)
 
     return x
 
@@ -61,7 +63,7 @@ def gauss(x, width=1.0):
     """
     Normalised gaussian
     """
-    return np.exp(-x**2/(2*width**2)) / np.sqrt(2*np.pi)
+    return np.exp(-(x ** 2) / (2 * width ** 2)) / np.sqrt(2 * np.pi)
 
 
 def mixmode(x, seed=0.5):
@@ -70,9 +72,8 @@ def mixmode(x, seed=0.5):
     """
     result = 0.0
     for i in range(14):
-        phase = np.pi * (2.*genRand(seed + i) - 1.)
-        result += ((1./(1. + np.abs(i-4.))**2) *
-                   np.cos(i * x + phase))
+        phase = np.pi * (2.0 * genRand(seed + i) - 1.0)
+        result += (1.0 / (1.0 + np.abs(i - 4.0)) ** 2) * np.cos(i * x + phase)
     return result
 
 
@@ -87,8 +88,10 @@ def tanhhat(x, width, centre, steepness):
     """
     BOUT++ TanhHat function
     """
-    return 0.5*(np.tanh( steepness * (x - (centre - width/2.))) +
-                np.tanh(-steepness * (x - (centre + width/2.))))
+    return 0.5 * (
+        np.tanh(steepness * (x - (centre - width / 2.0)))
+        + np.tanh(-steepness * (x - (centre + width / 2.0)))
+    )
 
 
 def atan(x, y=None):
@@ -161,10 +164,10 @@ inputfile = os.path.join(datadir, "BOUT.inp")
 # Read the input file
 config = configparser.ConfigParser()
 with open(inputfile, "r") as f:
-    config.read_file(itertools.chain(['[global]'], f), source=inputfile)
+    config.read_file(itertools.chain(["[global]"], f), source=inputfile)
 
 # Find the variables that have a "function" option
-varlist = [key for key, values in config.items() if 'function' in values]
+varlist = [key for key, values in config.items() if "function" in values]
 
 # Remove the coordinate arrays
 for coord in ["var_x", "var_y", "var_z"]:
@@ -190,10 +193,14 @@ for nproc in nprocs:
 
     # Evaluate the functions
     for var in varlist:
-        function = config[var]['function']
+        function = config[var]["function"]
         function = function.replace("^", "**")
         if ":" in function:
-            print("{} contains reference to variable - not possible to resolve at this time".format(var))
+            print(
+                "{} contains reference to variable - not possible to resolve at this time".format(
+                    var
+                )
+            )
             continue
         try:
             analytic = eval(function)
@@ -201,26 +208,32 @@ for nproc in nprocs:
             print("{} not implemented, skipping".format(err.args[0]))
         else:
             data = collect(var, xguards=True, yguards=True, path=datadir, info=False)
-            E2 = np.sqrt(np.mean((analytic - data)**2))
+            E2 = np.sqrt(np.mean((analytic - data) ** 2))
             if E2 < tolerance:
                 success_string = "PASS"
             else:
-                if ( var == "mixmode" or var == "mixmode_seed" ) and E2 < 1e-3:
+                if (var == "mixmode" or var == "mixmode_seed") and E2 < 1e-3:
                     import platform
-                    arch=platform.machine()
-                    if arch=='i686':
+
+                    arch = platform.machine()
+                    if arch == "i686":
                         # This can happen due tue excess precision e.g. on X87 architecture
                         success_string = "WARNING"
                     else:
-                        print("This should only happen in i686 with an x87 math architecture.")
-                        print("We detected however an %s architecture."%arch)
+                        print(
+                            "This should only happen in i686 with an x87 math architecture."
+                        )
+                        print("We detected however an %s architecture." % arch)
                         success_string = "FAIL"
                         success = False
                 else:
                     success_string = "FAIL"
                     success = False
-            print("\tChecking {var:<12}: l-2: {err:.4e} ... {success}".format(var=var, err=E2,
-                                                                      success=success_string))
+            print(
+                "\tChecking {var:<12}: l-2: {err:.4e} ... {success}".format(
+                    var=var, err=E2, success=success_string
+                )
+            )
 
 if success:
     print(" => All tests passed")

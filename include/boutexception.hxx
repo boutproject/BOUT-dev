@@ -4,6 +4,8 @@ class BoutException;
 #ifndef __BOUT_EXCEPTION_H__
 #define __BOUT_EXCEPTION_H__
 
+#include "bout/build_config.hxx"
+
 #include <exception>
 #include <string>
 #include <utility>
@@ -19,7 +21,7 @@ void BoutParallelThrowRhsFail(int status, const char* message);
 
 class BoutException : public std::exception {
 public:
-  BoutException(std::string msg) : message(std::move(msg)) { makeBacktrace(); }
+  BoutException(std::string msg);
 
   template <class S, class... Args>
   BoutException(const S& format, const Args&... args)
@@ -40,13 +42,12 @@ public:
 
 protected:
   std::string message;
-#ifdef BACKTRACE
+#if BOUT_USE_BACKTRACE
   static constexpr unsigned int TRACE_MAX = 128;
   void* trace[TRACE_MAX];
   int trace_size;
   char** messages;
 #endif
-  std::string backtrace_message{};
 
   void makeBacktrace();
 };

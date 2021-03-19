@@ -23,7 +23,9 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-#ifdef BOUT_HAS_PETSC
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_PETSC
 
 #include "petsc3damg.hxx"
 
@@ -42,7 +44,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
   indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh,
 						   getStencil(localmesh, lowerY, upperY))),
-  operator3D(indexer), kspInitialised(false)
+  operator3D(indexer), kspInitialised(false),
+  lib(opt==nullptr ? &(Options::root()["laplace"]) : opt)
 {
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
@@ -175,6 +178,13 @@ LaplacePetsc3dAmg::~LaplacePetsc3dAmg() {
 
 
 Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
+  AUTO_TRACE();
+
+  // Timing reported in the log files. Includes any matrix construction.
+  // The timing for just the solve phase can be retrieved from the "petscsolve"
+  // timer if desired.
+  Timer timer("invert");
+
   // If necessary, update the values in the matrix operator and initialise
   // the Krylov solver
   if (updateRequired) updateMatrix3D();
@@ -249,12 +259,33 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   // Create field from result
   Field3D solution = guess.toField();
   localmesh->communicate(solution);
-  BOUT_FOR(i, indexer->getRegionLowerY()) {
-    solution.ydown()[i] = solution[i];
+  if (solution.hasParallelSlices()) {
+    BOUT_FOR(i, indexer->getRegionLowerY()) {
+      solution.ydown()[i] = solution[i];
+    }
+    BOUT_FOR(i, indexer->getRegionUpperY()) {
+      solution.yup()[i] = solution[i];
+    }
+    for (int b = 1; b < localmesh->ystart; b++) {
+      BOUT_FOR(i, indexer->getRegionLowerY()) {
+        solution.ydown(b)[i.ym(b)] = solution[i];
+      }
+      BOUT_FOR(i, indexer->getRegionUpperY()) {
+        solution.yup(b)[i.yp(b)] = solution[i];
+      }
+    }
   }
-  BOUT_FOR(i, indexer->getRegionUpperY()) {
-    solution.yup()[i] = solution[i];
+  for (int b = 1; b < localmesh->xstart; b++) {
+    BOUT_FOR(i, indexer->getRegionInnerX()) {
+      solution[i.xm(b)] = solution[i];
+    }
+    BOUT_FOR(i, indexer->getRegionOuterX()) {
+      solution[i.xp(b)] = solution[i];
+    }
   }
+
+  checkData(solution);
+
   return solution;
 }
 
@@ -451,14 +482,14 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     PCSetType(pc, pctype.c_str());
     PCGAMGSetSymGraph(pc, PETSC_TRUE);
   }
-  KSPSetFromOptions(ksp);
+  lib.setOptionsFromInputFile(ksp);
 
   updateRequired = false;
 }
 
 OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
-						     RangeIterator lowerYBound,
-						     RangeIterator upperYBound) {
+                                                     const RangeIterator& lowerYBound,
+                                                     const RangeIterator& upperYBound) {
   OperatorStencil<Ind3D> stencil;
 
   // Get the pattern used for interpolation. This is assumed to be the
@@ -505,7 +536,7 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
   // If there is a lower y-boundary then create a part of the stencil
   // for cells immediately adjacent to it.
   if (lowerYBound.max() - lowerYBound.min() > 0) {
-    stencil.add([index = localmesh->ystart, &lowerYBound](Ind3D ind) -> bool {
+    stencil.add([index = localmesh->ystart, lowerYBound](Ind3D ind) -> bool {
 		  return index == ind.y() && lowerYBound.intersects(ind.x()); },
       lowerEdgeStencilVector);
   }
@@ -513,7 +544,7 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
   // If there is an upper y-boundary then create a part of the stencil
   // for cells immediately adjacent to it.
   if (upperYBound.max() - upperYBound.min() > 0) {
-    stencil.add([index = localmesh->yend, &upperYBound](Ind3D ind) -> bool {
+    stencil.add([index = localmesh->yend, upperYBound](Ind3D ind) -> bool {
 		  return index == ind.y() && upperYBound.intersects(ind.x()); },
       upperEdgeStencilVector);
   }

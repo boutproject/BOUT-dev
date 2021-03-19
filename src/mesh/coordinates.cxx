@@ -160,8 +160,7 @@ int getAtLoc(Mesh* mesh, Field2D &var, const std::string& name,
     const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
 
   checkStaggeredGet(mesh, name, suffix);
-  int result = mesh->get(var, name+suffix, default_value);
-  var.setLocation(location);
+  int result = mesh->get(var, name+suffix, default_value, location);
 
   return result;
 }
@@ -922,7 +921,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
     bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
-    if (localmesh->get(d2x, "d2x"+suffix)) {
+    if (localmesh->get(d2x, "d2x"+suffix, 0.0, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
       d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
@@ -937,7 +936,7 @@ int Coordinates::geometry(bool recalculate_staggered,
       d1_dx = -d2x / (dx * dx);
     }
 
-    if (localmesh->get(d2y, "d2y"+suffix)) {
+    if (localmesh->get(d2y, "d2y"+suffix, 0.0, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
       d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
@@ -1185,14 +1184,13 @@ void Coordinates::setParallelTransform(Options* options) {
     if (localmesh->sourceHasVar("dx"+suffix)) {
       // Grid file has variables at this location, so should be able to read
       checkStaggeredGet(localmesh, "zShift", suffix);
-      if (localmesh->get(zShift, "zShift"+suffix)) {
+      if (localmesh->get(zShift, "zShift"+suffix, 0.0, location)) {
         // No zShift variable. Try qinty in BOUT grid files
-        if (localmesh->get(zShift, "qinty"+suffix)) {
+        if (localmesh->get(zShift, "qinty"+suffix, 0.0, location)) {
           // Failed to find either variable, cannot use ShiftedMetric
           throw BoutException("Could not read zShift"+suffix+" from grid file");
         }
       }
-      zShift.setLocation(location);
     } else {
       Field2D zShift_centre;
       if (localmesh->get(zShift_centre, "zShift")) {
@@ -1226,8 +1224,8 @@ void Coordinates::setParallelTransform(Options* options) {
 
     // Flux Coordinate Independent method
     const bool fci_zperiodic = (*ptoptions)["z_periodic"].withDefault(true);
-    transform = bout::utils::make_unique<FCITransform>(*localmesh, fci_zperiodic,
-                                                       ptoptions);
+    transform =
+        bout::utils::make_unique<FCITransform>(*localmesh, dy, fci_zperiodic, ptoptions);
 
   } else {
     throw BoutException(_("Unrecognised paralleltransform option.\n"
@@ -1333,8 +1331,10 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
   // Need to modify yup and ydown fields
   Field3D f_B = f / Bxy_floc;
   f_B.splitParallelSlices();
-  f_B.yup() = f.yup() / Bxy_floc;
-  f_B.ydown() = f.ydown() / Bxy_floc;
+  for (int i = 0; i < f.getMesh()->ystart; ++i) {
+    f_B.yup(i) = f.yup(i) / Bxy_floc;
+    f_B.ydown(i) = f.ydown(i) / Bxy_floc;
+  }
   return Bxy * Grad_par(f_B, outloc, method);
 }
 
@@ -1415,8 +1415,10 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
     auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
     auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
 
-    // Loop over all y indices
-    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
+    // Loop over y indices
+    // Note: should not include y-guard or y-boundary points here as that would
+    // use values from corner cells in dx, which may not be initialised.
+    for (int jy = localmesh->ystart; jy <= localmesh->yend; jy++) {
 
       // Take forward FFT
 

@@ -16,7 +16,7 @@ MXG = 0
 [output]
 floats = false #false -> output in doubles
 
-[mesh]  
+[mesh]
 ixseps1 = -1
 ixseps2 = -1
 
@@ -26,13 +26,13 @@ nx = 1
 #ny = internal gridpoints
 ny = 4
 
-Lx = 1. 
-Ly = 1.
+Lx = 1.0
+Ly = 1.0
 
-dump_format="nc"     # Write NetCDF format files
+dump_format = "nc"     # Write NetCDF format files
 
 #grid points are distributed symmetrically
-symmetricGlobalX = true 
+symmetricGlobalX = true
 symmetricGlobalY = true
 
 ##################################################
@@ -58,39 +58,36 @@ upwind = W3
 flux = SPLIT
 
 
-[solver] 
+[solver]
 
 type = pvode
 
 mms = true
 
-atol = 1.0e-15 # absolute tolerance
-rtol = 1.0e-7  # relative tolerance
+atol = 1e-15 # absolute tolerance
+rtol = 1e-07  # relative tolerance
 mxstep = 1000000000
 
 [cyto]
 Dx = -1 # No X conduction
-Dy =  1
+Dy = 1
 Dz = -1 # No Z conduction
 
 [all]
-scale = 1.0 
+scale = 1.0
 
-[N] 
+[N]
 
 xl = x * mesh:Lx           # In the range [0,Lx]
 yl = y * mesh:Ly / (2*pi)  # In the range [0,Ly]
 
 solution = 0.9*N:xl + 0.2*sin(5.0*N:xl^2 - 2*z) + sin(7*N:yl + 1.234)*cos(N:yl)*cos(10*z) + 0.9
 
-ddx     = 2.0*N:xl*cos(5.0*N:xl^2 - 2*z) + 0.9
+ddx = 2.0*N:xl*cos(5.0*N:xl^2 - 2*z) + 0.9
 
-ddy     = -sin(N:yl)*sin(7*N:yl + 1.234)*cos(10*z) + 7*cos(N:yl)*cos(10*z)*cos(7*N:yl + 1.234)
+ddy = -sin(N:yl)*sin(7*N:yl + 1.234)*cos(10*z) + 7*cos(N:yl)*cos(10*z)*cos(7*N:yl + 1.234)
 
-source   = 2.0*(7*sin(N:yl)*cos(7*N:yl + 1.234) + 25*sin(7*N:yl + 1.234)*cos(N:yl))*cos(10*z)
+source = 2.0*(7*sin(N:yl)*cos(7*N:yl + 1.234) + 25*sin(7*N:yl + 1.234)*cos(N:yl))*cos(10*z)
 
 bndry_all = dirichlet_o2(N:solution)
 bndry_ydown = neumann_o2(N:ddy)
-
-################################
-

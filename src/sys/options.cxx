@@ -39,6 +39,17 @@ Options::Options(const Options& other)
   }
 }
 
+template <>
+Options::Options(const char* value) {
+  assign<std::string>(value);
+}
+
+Options::Options(std::initializer_list<std::pair<std::string, Options>> values) {
+  for (auto& value : values) {
+    (*this)[value.first] = value.second;
+  }
+}
+
 Options &Options::operator[](const std::string &name) {
   // Mark this object as being a section
   is_section = true;
@@ -155,6 +166,13 @@ void Options::assign<>(Field2D val, std::string source) {
 }
 template <>
 void Options::assign<>(Field3D val, std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+template <>
+void Options::assign<>(FieldPerp val, std::string source) {
   value = std::move(val);
   attributes["source"] = std::move(source);
   value_used = false;
@@ -449,6 +467,88 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
     }
   }
   throw BoutException(_("Value for option {:s} cannot be converted to a Field2D"),
+                      full_name);
+}
+
+template <>
+FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
+  if (!is_value) {
+    throw BoutException("Option {:s} has no value", full_name);
+  }
+
+  // Mark value as used
+  value_used = true;
+
+  if (bout::utils::holds_alternative<FieldPerp>(value)) {
+    FieldPerp stored_value = bout::utils::get<FieldPerp>(value);
+
+    // Check that meta-data is consistent
+    ASSERT1_FIELDS_COMPATIBLE(stored_value, similar_to);
+
+    return stored_value;
+  }
+
+  try {
+    BoutReal scalar_value =
+        bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
+
+    // Get metadata from similar_to, fill field with scalar_value
+    return filledFrom(similar_to, scalar_value);
+  } catch (const std::bad_cast&) {
+
+    const CELL_LOC location = hasAttribute("cell_location")
+                                  ? CELL_LOCFromString(attributes.at("cell_location"))
+                                  : similar_to.getLocation();
+
+    // Convert from a string using FieldFactory
+    if (bout::utils::holds_alternative<std::string>(value)) {
+      return FieldFactory::get()->createPerp(bout::utils::get<std::string>(value), this,
+                                             similar_to.getMesh(), location);
+    } else if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
+      auto localmesh = similar_to.getMesh();
+      if (!localmesh) {
+        throw BoutException("mesh must be supplied when converting Matrix to FieldPerp");
+      }
+
+      // Get a reference, to try and avoid copying
+      const auto& matrix = bout::utils::get<Matrix<BoutReal>>(value);
+
+      // Check if the dimension sizes are the same as a FieldPerp
+      if (matrix.shape() == std::make_tuple(localmesh->LocalNx, localmesh->LocalNz)) {
+        const auto y_direction =
+            hasAttribute("direction_y")
+                ? YDirectionTypeFromString(attributes.at("direction_y"))
+                : similar_to.getDirectionY();
+        const auto z_direction =
+            hasAttribute("direction_z")
+                ? ZDirectionTypeFromString(attributes.at("direction_z"))
+                : similar_to.getDirectionZ();
+
+        auto result = FieldPerp(matrix.getData(), localmesh, location, -1,
+                                {y_direction, z_direction});
+
+        // Set the index after creating the field so as to not
+        // duplicate the code in `FieldPerp::setIndexFromGlobal`
+        if (hasAttribute("yindex_global")) {
+          result.setIndexFromGlobal(attributes.at("yindex_global"));
+        } else if (similar_to.getIndex() == -1) {
+          // If `yindex_global` attribute wasn't present (might be an
+          // older file), and `similar_to` doesn't have its index set
+          // (might not have been passed, so be default constructed),
+          // use the no-boundary form so that we get a default value
+          // on a grid cell
+          result.setIndex(localmesh->getLocalYIndexNoBoundaries(0));
+        } else {
+          result.setIndex(similar_to.getIndex());
+        }
+        return result;
+      }
+      // If dimension sizes not the same, may be able
+      // to select a region from it using Mesh e.g. if this
+      // is from the input grid file.
+    }
+  }
+  throw BoutException(_("Value for option {:s} cannot be converted to a Field3D"),
                       full_name);
 }
 

@@ -17,6 +17,7 @@ TEST(BoutMeshTest, NullOptionsCheck) {
 // Not a great test as it's not specific to the thing we want to test,
 // and also takes a whopping ~300ms!
 TEST(BoutMeshTest, SingleCoreDecomposition) {
+  WithQuietOutput debug{output_debug};
   WithQuietOutput info{output_info};
   WithQuietOutput warn{output_warn};
   WithQuietOutput progress{output_progress};

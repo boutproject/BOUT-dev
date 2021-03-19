@@ -10,9 +10,6 @@ zmin = 0
 zmax = 15.91549431       # 15.915*2pi = 100.  z is in fractions of 2pi
 myg = 0                  # No need for Y communications
 
-[ddx]
-#upwind = w3             # u1 (default), u4, w3 
-
 [ddz]
 first = c2               # c2 (default), c4, w2, w3
 #upwind = w3             # u1 (default), u4, w3
@@ -24,37 +21,37 @@ ny = 1
 Lx = 150
 dx = Lx/(nx-4)
 #dx = 0.29296875          # Cell spacing = Lx/nx
-dy = 1.0                   
+dy = 1.0
 
-[laplace] 
+[laplace]
 type = multigrid
 multigridlevel = 3
 solvertype = 0
-rtol = 1.e-7
+rtol = 1e-07
 
 global_flags = 0
 inner_boundary_flags = 0 # Dirichlet
 outer_boundary_flags = 0 # Dirichlet
 
 [solver]
-type=pvode
-timestep = 0.00000001    # Suggested init timestep for numerical methods
+type = pvode
+timestep = 1e-08    # Suggested init timestep for numerical methods
 mxstep = 100000000       # max steps before result is deemed not to converge
 #ATOL =   1e-12          # Absolute tolerance
 #RTOL =   1e-5           # Relative tolerance
 
 [esel]
 #test_laplacian = true
-zeta = 2.15e-3
-D = 1.97e-3
-chi = 4.61e-3
-mu = 3.88e-2
+zeta = 0.00215
+D = 0.00197
+chi = 0.00461
+mu = 0.0388
 bracket = 2              # 0 = std, 1 = simple, 2 = arakawa
 #F_switch = 0             # 0 = off, 1 = F*D, F*sigma, 2 = F*D, (1/F)*sigma
 #F_amp = 1.0
 #F_wid = 10000
 
-	
+
 [All]
 scale = 0.0
 function = mixmode(x) * mixmode(z)
@@ -74,13 +71,13 @@ bndry_xin = dirichlet_o2(1.0)
 bndry_xout = neumann_o2
 
 [vort]
-scale = 1.e-12
+scale = 1e-12
 function = (sin(x*2*pi+11)+4*sin(2*x*2*pi+22)+9*sin(3*x*2*pi+33)+16*sin(4*x*2*pi+44)+25*sin(5*x*2*pi+55)+36*sin(6*x*2*pi+66)+49*sin(7*x*2*pi+77))*(sin(z+10)+4*sin(2*z+20)+9*sin(3*z+30)+16*sin(4*z+40)+25*sin(5*z+50)+36*sin(6*z+60)+49*sin(7*z+70))
 
 bndry_xin = dirichlet_o2
 bndry_xout = dirichlet_o2
 
-[B]         # Magnetic field 
+[B]         # Magnetic field
 scale = 1.0
 function = 1.0/(1.0 + 0.694 + (2.15e-3)*150*x)  #1/(1+epsilon+zeta*x)
 
@@ -95,12 +92,3 @@ function = 0.5*(3.75e-3)*(1.0 + sinh(150*x-50)/cosh(150*x-50))
 [sigma_vort]  # Vorticity sink
 scale = 1.0
 function = 0.5*(1.29e-4)*(1.0 + sinh(150*x-50)/cosh(150*x-50))
-
-##################################################################
-#[S_n]       # Density source
-#scale = 1.0
-#function = 2.0*0.001*gauss(150*x, 1.414213562)
-
-#[S_T]       # Temperature source
-#scale = 1.0
-#function = 2.0*0.001*gauss(150*x, 1.414213562)

@@ -24,7 +24,9 @@
  * 
  **************************************************************************/
 
-#ifdef BOUT_HAS_PVODE
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_PVODE
 
 class PvodeSolver;
 

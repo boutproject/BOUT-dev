@@ -1,67 +1,81 @@
 #!/usr/bin/env python3
 
-# 
+#
 # Run the test, compare results against the benchmark
 #
 
-#requires: all_tests
-#requires: petsc
+# requires: all_tests
+# requires: petsc
+# cores: 4
 
 # Variables to compare
 from __future__ import print_function
 from builtins import str
-vars = [['max_error1',2.e-4],
-        ['max_error2',1.e-4],
-        ['max_error3',1.e-4],
-        ['max_error4',1.e-4],
-        ['max_error5',2.e-3],
-        ['max_error6',3.e-4],
-        ['max_error7',2.e-4],
-        ['max_error8',1.e-4]]
-#tol = 1e-4                  # Absolute (?) tolerance
+
+vars = [
+    ["max_error1", 2.0e-4],
+    ["max_error2", 1.0e-4],
+    ["max_error3", 1.0e-4],
+    ["max_error4", 1.0e-4],
+    ["max_error5", 2.0e-3],
+    ["max_error6", 3.0e-4],
+    ["max_error7", 2.0e-4],
+    ["max_error8", 1.0e-4],
+]
+# tol = 1e-4                  # Absolute (?) tolerance
 
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 from sys import stdout, exit
 
 
-build_and_log("PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)")
+build_and_log(
+    "PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)"
+)
 
-print("Running PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)")
+print(
+    "Running PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)"
+)
 success = True
 
-for nproc in [1,2,4]:
-  #  nxpe = 1
-  #  if nproc > 2:
-  #    nxpe = 2
-  for jy in [2,34,65,81,113]:
+for nproc in [1, 2, 4]:
+    #  nxpe = 1
+    #  if nproc > 2:
+    #    nxpe = 2
+    for jy in [2, 34, 65, 81, 113]:
 
-    cmd = "./test_petsc_laplace_MAST_grid grid=grids/grid_MAST_SOL_jyis{}.nc".format(jy)
+        cmd = (
+            "./test_petsc_laplace_MAST_grid grid=grids/grid_MAST_SOL_jyis{}.nc".format(
+                jy
+            )
+        )
 
-    shell("rm data/BOUT.dmp.*.nc")
+        shell("rm data/BOUT.dmp.*.nc")
 
-    print("   {} processors, grid_MAST_SOL_jyis{}".format(nproc, jy))
-    s, out = launch_safe(cmd, nproc=nproc, pipe=True)
-    f = open("run.log."+str(nproc), "w")
-    f.write(out)
-    f.close()
+        print("   {} processors, grid_MAST_SOL_jyis{}".format(nproc, jy))
+        s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+        f = open("run.log." + str(nproc), "w")
+        f.write(out)
+        f.close()
 
-    # Collect output data
-    for v in vars:
-      stdout.write("      Checking "+v[0]+" ... ")
-      error = collect(v[0], path="data", info=False)
-      if error <= 0:
-        print("Convergence error")
-        success = False
-      elif error > v[1]:
-        print("Fail, maximum error is = "+str(error))
-        success = False
-      else:
-        print("Pass")
+        # Collect output data
+        for v in vars:
+            stdout.write("      Checking " + v[0] + " ... ")
+            error = collect(v[0], path="data", info=False)
+            if error <= 0:
+                print("Convergence error")
+                success = False
+            elif error > v[1]:
+                print("Fail, maximum error is = " + str(error))
+                success = False
+            else:
+                print("Pass")
 
 if success:
-  print(" => All PETSc Laplacian inversion with non-identity metric (taken from grid for MAST SOL) tests passed")
-  exit(0)
+    print(
+        " => All PETSc Laplacian inversion with non-identity metric (taken from grid for MAST SOL) tests passed"
+    )
+    exit(0)
 else:
-  print(" => Some failed tests")
-  exit(1)
+    print(" => Some failed tests")
+    exit(1)

@@ -25,18 +25,19 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_PETSC
-
-class SNESSolver;
-
 #ifndef __SNES_SOLVER_H__
 #define __SNES_SOLVER_H__
+
+#include "bout/build_config.hxx"
+#include "bout/solver.hxx"
+
+#if BOUT_HAS_PETSC
+
+class SNESSolver;
 
 #include "mpi.h"
 
 #include <bout_types.hxx>
-#include <bout/solver.hxx>
-
 #include <bout/petsclib.hxx>
 
 #include <petsc.h>
@@ -74,6 +75,13 @@ class SNESSolver : public Solver {
   
 };
 
-#endif // __SNES_SOLVER_H__
+#else
+
+namespace {
+RegisterUnavailableSolver registerunavailablesnes("snes",
+                                                  "BOUT++ was not configured with PETSc");
+}
 
 #endif // BOUT_HAS_PETSC
+
+#endif // __SNES_SOLVER_H__
