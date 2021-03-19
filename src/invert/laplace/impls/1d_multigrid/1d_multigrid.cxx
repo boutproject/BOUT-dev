@@ -365,7 +365,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   /// SCOREP_USER_REGION_BEGIN(setsoln, "set level 0
   /// solution",///SCOREP_USER_REGION_TYPE_COMMON);
   // Set initial values with cached values
-  for (int ix = 0; ix < 4; ix++) {
+  for (int ix = 0; ix < ncx; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
       levels[0].xloc(ix, kz) = x0saved(jy, ix, kz);
     }
@@ -401,7 +401,8 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   while (true) {
 
-    levels[current_level].gauss_seidel_red_black(*this);
+    //levels[current_level].gauss_seidel_red_black(*this);
+    levels[current_level].gauss_seidel_red_black_local(*this);
 
     /// SCOREP_USER_REGION_DEFINE(l0rescalc);
     /// SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual
@@ -607,6 +608,57 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   /// SCOREP_USER_REGION_END(fftback);
   return x; // Result of the inversion
+}
+
+void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
+
+  SCOREP0();
+
+  if (not included) {
+    return;
+  }
+
+  // TODO correct for all levels
+  const int nxlevel = l.localmesh->LocalNx;
+
+  // Sweep over even x points
+  for (int kz = 0; kz < l.nmode; kz++) {
+    if (not l.converged[kz]) {
+      for (int ix = 0; ix < nxlevel; ix+=2) {
+         xloc(ix, kz) = rr(ix, kz) 
+		      + ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                      + cr(l.jy, ix, kz) * xloc(ix+1, kz);
+      }
+    }
+  }
+
+  // Sweep over odd x points
+  for (int kz = 0; kz < l.nmode; kz++) {
+    if (not l.converged[kz]) {
+      for (int ix = 1; ix < nxlevel; ix+=2) {
+         xloc(ix, kz) = rr(ix, kz) 
+		      + ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                      + cr(l.jy, ix, kz) * xloc(ix+1, kz);
+      }
+    }
+  }
+
+///  if (current_level == 0) {
+///    // Update boundaries to match interior points
+///    // Do this after communication
+///    for (int kz = 0; kz < l.nmode; kz++) {
+///      if (not l.converged[kz]) {
+///        if (l.localmesh->firstX()) {
+///          xloc(0, kz) =
+///              -l.cvec(l.jy, kz, l.xs - 1) * xloc(1, kz) / l.bvec(l.jy, kz, l.xs - 1);
+///        }
+///        if (l.localmesh->lastX()) {
+///          xloc(3, kz) =
+///              -l.avec(l.jy, kz, l.xe + 1) * xloc(2, kz) / l.bvec(l.jy, kz, l.xe + 1);
+///        }
+///      }
+///    }
+///  }
 }
 
 /*

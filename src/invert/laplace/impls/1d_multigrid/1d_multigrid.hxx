@@ -115,6 +115,7 @@ public:
     void calculate_total_residual(Laplace1DMG& lap, Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged);
     void coarsen(const Laplace1DMG& lap, const Matrix<dcomplex> &fine_residual);
     void gauss_seidel_red_black(const Laplace1DMG& lap);
+    void gauss_seidel_red_black_local(const Laplace1DMG& lap);
     void init(const Laplace1DMG &lap, const Level lup, const int current_level);
     void init(Laplace1DMG &lap);
     void init_rhs(Laplace1DMG &lap, const Matrix<dcomplex> bcmplx);
