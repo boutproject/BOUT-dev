@@ -347,20 +347,37 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
   }
   std::cout<<"ar\n";
-  for(int ix = 0; ix<ncx; ix++){
+  for(int ix = 0; ix<levels[0].nxloc; ix++){
 	  std::cout<<levels[0].ar(jy,ix,0)<<" ";
   }
   std::cout<<"\n";
   std::cout<<"br\n";
-  for(int ix = 0; ix<ncx; ix++){
+  for(int ix = 0; ix<levels[0].nxloc; ix++){
 	  std::cout<<levels[0].br(jy,ix,0)<<" ";
   }
   std::cout<<"\n";
   std::cout<<"cr\n";
-  for(int ix = 0; ix<ncx; ix++){
+  for(int ix = 0; ix<levels[0].nxloc; ix++){
 	  std::cout<<levels[0].cr(jy,ix,0)<<" ";
   }
-  std::cout<<"\n";
+  if(max_level>0){
+	  std::cout<<"\n";
+	  std::cout<<"1 ar\n";
+	  for(int ix = 0; ix<levels[1].nxloc; ix++){
+		  std::cout<<levels[1].ar(jy,ix,0)<<" ";
+	  }
+	  std::cout<<"\n";
+	  std::cout<<"1 br\n";
+	  for(int ix = 0; ix<levels[1].nxloc; ix++){
+		  std::cout<<levels[1].br(jy,ix,0)<<" ";
+	  }
+	  std::cout<<"\n";
+	  std::cout<<"1 cr\n";
+	  for(int ix = 0; ix<levels[1].nxloc; ix++){
+		  std::cout<<levels[1].cr(jy,ix,0)<<" ";
+	  }
+	  std::cout<<"\n";
+  }
 
   // Compute coefficients that depend on the right-hand side and which
   // therefore change every time.
@@ -426,16 +443,15 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   while (execute_loop) {
 
-	  std::cout<<jy<<": loop "<<count<<"\n";
-	  for(int ix = 0; ix<ncx; ix++){
+	  std::cout<<jy<<": before loop "<<count<<"\n";
+	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
 		  std::cout<<levels[current_level].xloc(ix,0)<<" ";
 	  }
 	  std::cout<<"\n";
-	  for(int ix = 0; ix<ncx; ix++){
+	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
 		  std::cout<<levels[current_level].residual(ix,0)<<" ";
 	  }
 	  std::cout<<"\n";
-	  std::cout<<"total weighted residual: "<<errornorm[0]<<"\n";
     //levels[current_level].gauss_seidel_red_black(*this);
     levels[current_level].gauss_seidel_red_black_local(*this);
 
@@ -490,6 +506,17 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
         }
       }
     }
+
+	  std::cout<<jy<<": after loop "<<count<<"\n";
+	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+		  std::cout<<levels[current_level].xloc(ix,0)<<" ";
+	  }
+	  std::cout<<"\n";
+	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+		  std::cout<<levels[current_level].residual(ix,0)<<" ";
+	  }
+	  std::cout<<"\n";
+	  std::cout<<"total weighted residual: "<<errornorm[0]<<"\n";
 
     /// SCOREP_USER_REGION_END(l0rescalc);
     /// SCOREP_USER_REGION_DEFINE(increment);
@@ -646,13 +673,10 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
     return;
   }
 
-  // TODO correct for all levels
-  const int nxlevel = l.localmesh->LocalNx;
-
   // Sweep over even x points
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
-      for (int ix = 0; ix < nxlevel; ix+=2) {
+      for (int ix = 0; ix < nxloc; ix+=2) {
          xloc(ix, kz) = (rr(ix, kz) 
 		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
                       - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
@@ -663,7 +687,7 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
   // Sweep over odd x points
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
-      for (int ix = 1; ix < nxlevel; ix+=2) {
+      for (int ix = 1; ix < nxloc; ix+=2) {
          xloc(ix, kz) = (rr(ix, kz) 
 		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
                       - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
@@ -859,6 +883,11 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
   // 2^current_level
   const auto scale = 1 << current_level;
 
+  // Number of local x points for this level
+  nxloc = l.ncx / scale;
+  if(l.localmesh->lastX()) nxloc += 1;
+  std::cout << "level " <<  current_level << ", nxloc " << nxloc << "\n";
+
   // Whether this proc is involved in the multigrid calculation
   included = (myproc % scale == 0) or l.localmesh->lastX();
 
@@ -901,98 +930,89 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
   // boundaries where these are the boundary points. Index 2 is used on the
   // final processor only to track its value at the last grid point xe. This
   // means we often have special cases of the equations for final processor.
-  xloc.reallocate(4, l.nmode);
-  residual.reallocate(4, l.nmode);
+  xloc.reallocate(nxloc, l.nmode);
+  residual.reallocate(nxloc, l.nmode);
 
   // Coefficients for the reduced iterations
-  ar.reallocate(l.ny, 4, l.nmode);
-  br.reallocate(l.ny, 4, l.nmode);
-  cr.reallocate(l.ny, 4, l.nmode);
-  rr.reallocate(4, l.nmode);
-  brinv.reallocate(l.ny, 4, l.nmode);
+  ar.reallocate(l.ny, nxloc, l.nmode);
+  br.reallocate(l.ny, nxloc, l.nmode);
+  cr.reallocate(l.ny, nxloc, l.nmode);
+  rr.reallocate(nxloc, l.nmode);
+  brinv.reallocate(l.ny, nxloc, l.nmode);
 
   auto sendvec = Array<dcomplex>(3 * l.nmode);
   auto recvecin = Array<dcomplex>(3 * l.nmode);
   auto recvecout = Array<dcomplex>(3 * l.nmode);
 
   for (int kz = 0; kz < l.nmode; kz++) {
-    if (l.localmesh->firstX()) {
-      ar(l.jy, 1, kz) = 0.5 * lup.ar(l.jy, 1, kz);
-      br(l.jy, 1, kz) = 0.5 * lup.br(l.jy, 1, kz) + 0.25 * lup.cr(l.jy, 1, kz)
-                        + 0.25 * lup.ar(l.jy, 3, kz) + 0.125 * lup.br(l.jy, 3, kz);
-      cr(l.jy, 1, kz) = 0.25 * lup.cr(l.jy, 1, kz) + 0.125 * lup.br(l.jy, 3, kz)
-                        + 0.25 * lup.cr(l.jy, 3, kz);
-    } else {
-      ar(l.jy, 1, kz) = 0.25 * lup.ar(l.jy, 0, kz) + 0.125 * lup.br(l.jy, 0, kz)
-                        + 0.25 * lup.ar(l.jy, 1, kz);
-      br(l.jy, 1, kz) = 0.125 * lup.br(l.jy, 0, kz) + 0.25 * lup.cr(l.jy, 0, kz)
-                        + 0.25 * lup.ar(l.jy, 1, kz) + 0.5 * lup.br(l.jy, 1, kz)
-                        + 0.25 * lup.cr(l.jy, 1, kz) + 0.25 * lup.ar(l.jy, 3, kz)
-                        + 0.125 * lup.br(l.jy, 3, kz);
-      cr(l.jy, 1, kz) = 0.25 * lup.cr(l.jy, 1, kz) + 0.125 * lup.br(l.jy, 3, kz)
-                        + 0.25 * lup.cr(l.jy, 3, kz);
-    }
-
-    // Last proc does calculation on index 2 as well as index 1.
-    // If current_level=1, the point to my left on the level above it my
-    // index 1. Otherwise, it is my index 0.
-    if (l.localmesh->lastX()) {
-      if (current_level == 1) {
-        ar(l.jy, 2, kz) = 0.25 * lup.ar(l.jy, 1, kz) + 0.125 * lup.br(l.jy, 1, kz)
-                          + 0.25 * lup.ar(l.jy, 2, kz);
-        br(l.jy, 2, kz) = 0.125 * lup.br(l.jy, 1, kz) + 0.25 * lup.cr(l.jy, 1, kz)
-                          + 0.25 * lup.ar(l.jy, 2, kz) + 0.5 * lup.br(l.jy, 2, kz);
-        cr(l.jy, 2, kz) = 0.5 * lup.cr(l.jy, 2, kz);
+    for (int ix = 1; ix < nxloc-1; ix++) {
+      // fine grid index
+      int ixf = 2*ix;
+      if (l.localmesh->firstX() and ix==1) {
+        ar(l.jy, 1, kz) = 0.5 * lup.ar(l.jy, 1, kz);
+        br(l.jy, 1, kz) = 0.5 * lup.br(l.jy, 1, kz) + 0.25 * lup.cr(l.jy, 1, kz)
+                        + 0.25 * lup.ar(l.jy, 2, kz) + 0.125 * lup.br(l.jy, 2, kz);
+        cr(l.jy, 1, kz) = 0.25 * lup.cr(l.jy, 1, kz) + 0.125 * lup.br(l.jy, 2, kz)
+                        + 0.25 * lup.cr(l.jy, 2, kz);
+      } else if (l.localmesh->lastX() and ix==nxloc-2){
+        ar(l.jy, ix, kz) = 0.25 * lup.ar(l.jy, ixf-1, kz) + 0.125 * lup.br(l.jy, ixf-1, kz)
+                          + 0.25 * lup.ar(l.jy, ixf, kz);
+        br(l.jy, ix, kz) = 0.125 * lup.br(l.jy, ixf-1, kz) + 0.25 * lup.cr(l.jy, ixf-1, kz)
+                          + 0.25 * lup.ar(l.jy, ixf, kz) + 0.5 * lup.br(l.jy, ixf, kz);
+        cr(l.jy, ix, kz) = 0.5 * lup.cr(l.jy, ixf, kz);
       } else {
-        ar(l.jy, 2, kz) = 0.25 * lup.ar(l.jy, 0, kz) + 0.125 * lup.br(l.jy, 0, kz)
-                          + 0.25 * lup.ar(l.jy, 2, kz);
-        br(l.jy, 2, kz) = 0.125 * lup.br(l.jy, 0, kz) + 0.25 * lup.cr(l.jy, 0, kz)
-                          + 0.25 * lup.ar(l.jy, 2, kz) + 0.5 * lup.br(l.jy, 2, kz);
-        cr(l.jy, 2, kz) = 0.5 * lup.cr(l.jy, 2, kz);
+        ar(l.jy, ix, kz) = 0.25 * lup.ar(l.jy, ixf-1, kz) + 0.125 * lup.br(l.jy, ixf-1, kz)
+                        + 0.25 * lup.ar(l.jy, ixf, kz);
+        br(l.jy, ix, kz) = 0.125 * lup.br(l.jy, ixf-1, kz) + 0.25 * lup.cr(l.jy, ixf-1, kz)
+                        + 0.25 * lup.ar(l.jy, ixf, kz) + 0.5 * lup.br(l.jy, ixf, kz)
+                        + 0.25 * lup.cr(l.jy, ixf, kz) + 0.25 * lup.ar(l.jy, ixf+1, kz)
+                        + 0.125 * lup.br(l.jy, ixf+1, kz);
+        cr(l.jy, ix, kz) = 0.25 * lup.cr(l.jy, ixf, kz) + 0.125 * lup.br(l.jy, ixf+1, kz)
+                        + 0.25 * lup.cr(l.jy, ixf+1, kz);
       }
-    }
-    brinv(l.jy, 1, kz) = 1.0 / br(l.jy, 1, kz);
-    brinv(l.jy, 2, kz) = 1.0 / br(l.jy, 2, kz);
-
-    // Need to communicate my index 1 to this level's neighbours
-    // Index 2 if last proc.
-    if (not l.localmesh->lastX()) {
-      sendvec[kz] = ar(l.jy, 1, kz);
-      sendvec[kz + l.nmode] = br(l.jy, 1, kz);
-      sendvec[kz + 2 * l.nmode] = cr(l.jy, 1, kz);
-    } else {
-      sendvec[kz] = ar(l.jy, 2, kz);
-      sendvec[kz + l.nmode] = br(l.jy, 2, kz);
-      sendvec[kz + 2 * l.nmode] = cr(l.jy, 2, kz);
+      brinv(l.jy, ix, kz) = 1.0 / br(l.jy, ix, kz);
     }
   }
 
-  MPI_Comm comm = BoutComm::get();
-
-  // Communicate in
-  if (not l.localmesh->firstX()) {
-    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvecin[0],
-                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
-  }
-
-  // Communicate out
-  if (not l.localmesh->lastX()) {
-    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvecout[0],
-                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
-  }
-
-  for (int kz = 0; kz < l.nmode; kz++) {
-    if (not l.localmesh->firstX()) {
-      ar(l.jy, 0, kz) = recvecin[kz];
-      br(l.jy, 0, kz) = recvecin[kz + l.nmode];
-      cr(l.jy, 0, kz) = recvecin[kz + 2 * l.nmode];
-    }
-    if (not l.localmesh->lastX()) {
-      ar(l.jy, 3, kz) = recvecout[kz];
-      br(l.jy, 3, kz) = recvecout[kz + l.nmode];
-      cr(l.jy, 3, kz) = recvecout[kz + 2 * l.nmode];
-    }
-  }
+//    // Need to communicate my index 1 to this level's neighbours
+//    // Index 2 if last proc.
+//    if (not l.localmesh->lastX()) {
+//      sendvec[kz] = ar(l.jy, 1, kz);
+//      sendvec[kz + l.nmode] = br(l.jy, 1, kz);
+//      sendvec[kz + 2 * l.nmode] = cr(l.jy, 1, kz);
+//    } else {
+//      sendvec[kz] = ar(l.jy, 2, kz);
+//      sendvec[kz + l.nmode] = br(l.jy, 2, kz);
+//      sendvec[kz + 2 * l.nmode] = cr(l.jy, 2, kz);
+//    }
+//  }
+//
+//  MPI_Comm comm = BoutComm::get();
+//
+//  // Communicate in
+//  if (not l.localmesh->firstX()) {
+//    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvecin[0],
+//                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
+//  }
+//
+//  // Communicate out
+//  if (not l.localmesh->lastX()) {
+//    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvecout[0],
+//                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
+//  }
+//
+//  for (int kz = 0; kz < l.nmode; kz++) {
+//    if (not l.localmesh->firstX()) {
+//      ar(l.jy, 0, kz) = recvecin[kz];
+//      br(l.jy, 0, kz) = recvecin[kz + l.nmode];
+//      cr(l.jy, 0, kz) = recvecin[kz + 2 * l.nmode];
+//    }
+//    if (not l.localmesh->lastX()) {
+//      ar(l.jy, 3, kz) = recvecout[kz];
+//      br(l.jy, 3, kz) = recvecout[kz + l.nmode];
+//      cr(l.jy, 3, kz) = recvecout[kz + 2 * l.nmode];
+//    }
+//  }
 }
 
 // Init routine for finest level
@@ -1006,6 +1026,7 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
   SCOREP0();
 
   const int ny = l.localmesh->LocalNy;
+  nxloc = l.localmesh->LocalNx;
 
   // Coefficients for the reduced iterations
   ar.reallocate(ny, l.ncx, l.nmode);
@@ -1022,7 +1043,7 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
 
 
   for (int kz = 0; kz < l.nmode; kz++) {
-    for (int ix = 0; ix < l.ncx; ix++) {
+    for (int ix = 0; ix < nxloc; ix++) {
       residual(ix, kz) = 0.0;
     }
   }
@@ -1030,7 +1051,7 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
 
 
   for (int kz = 0; kz < l.nmode; kz++) {
-    for (int ix = l.localmesh->xstart; ix < l.localmesh->xend; ix++) {
+    for (int ix = 0; ix < nxloc; ix++) {
 
       ar(l.jy, ix, kz) = l.avec(l.jy, kz, ix);
       br(l.jy, ix, kz) = l.bvec(l.jy, kz, ix);
@@ -1121,7 +1142,7 @@ void Laplace1DMG::Level::calculate_residual(const Laplace1DMG& l) {
   const int nxlevel = l.localmesh->LocalNx;
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
-      for (int ix = l.localmesh->xstart; ix < l.localmesh->xend; ix++) {
+      for (int ix = 1; ix < nxloc-1; ix++) {
 //	std::cout << ix << " " << l.jy << " " << kz << "\n";
 //	std::cout << rr(ix, kz) << "\n";
 //	std::cout << ar(l.jy, ix, kz) << "\n";
@@ -1210,72 +1231,83 @@ void Laplace1DMG::Level::update_solution(const Laplace1DMG& l) {
 void Laplace1DMG::Level::refine(const Laplace1DMG& l, Matrix<dcomplex>& fine_error) {
 
   SCOREP0();
-  Array<dcomplex> sendvec(l.nmode), recvecin(l.nmode), recvecout(l.nmode);
-  MPI_Request rreqin, rreqout;
 
-  // Included processors send their contribution to procs that are included on
-  // the level above.
-  // Special case: last proc sends if on level > 1, but NOT on level 1
-  if (included and (not l.localmesh->lastX() or current_level > 1)) {
     for (int kz = 0; kz < l.nmode; kz++) {
       if (not l.converged[kz]) {
-        fine_error(1, kz) = xloc(1, kz);
-        sendvec[kz] = xloc(1, kz);
-        if (l.localmesh->lastX()) {
-          fine_error(2, kz) = xloc(2, kz);
+        for (int ix = 1; ix < nxloc-1; ix++) {
+          fine_error(ix, kz) = 0.5*xloc(ix-1,kz) 
+		               + xloc(1, kz);
+	                       + 0.5*xloc(ix+1,kz);
         }
       }
     }
 
-    if (not l.localmesh->lastX()) {
-      MPI_Send(&sendvec[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out_up, 0, BoutComm::get());
-    }
-    if (not l.localmesh->firstX()) {
-      MPI_Send(&sendvec[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_in_up, 1, BoutComm::get());
-    }
-  }
-
-  // Receive if proc is included on the level above, but not this level.
-  // Special case: last proc receives if on level 1
-  if ((included_up and not included) or (l.localmesh->lastX() and current_level == 1)) {
-    if (not l.localmesh->firstX()) {
-      MPI_Irecv(&recvecin[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_in_up, 0, BoutComm::get(),
-                &rreqin);
-    }
-    if (not l.localmesh->lastX()) {
-      MPI_Irecv(&recvecout[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out_up, 1,
-                BoutComm::get(), &rreqout);
-    }
-
-    for (int kz = 0; kz < l.nmode; kz++) {
-      fine_error(1, kz) = 0.0;
-    }
-
-    if (not l.localmesh->firstX()) {
-      MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz < l.nmode; kz++) {
-        if (not l.converged[kz]) {
-          fine_error(1, kz) += 0.5 * recvecin[kz];
-        }
-      }
-    }
-    if (not l.localmesh->lastX()) {
-      MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz < l.nmode; kz++) {
-        if (not l.converged[kz]) {
-          fine_error(1, kz) += 0.5 * recvecout[kz];
-        }
-      }
-    }
-  }
-  // Special case where we need to fill (1,kz) on final proc
-  if (l.localmesh->lastX() and current_level == 1) {
-    for (int kz = 0; kz < l.nmode; kz++) {
-      if (not l.converged[kz]) {
-        fine_error(1, kz) += 0.5 * xloc(2, kz);
-      }
-    }
-  }
+//  Array<dcomplex> sendvec(l.nmode), recvecin(l.nmode), recvecout(l.nmode);
+//  MPI_Request rreqin, rreqout;
+//
+//  // Included processors send their contribution to procs that are included on
+//  // the level above.
+//  // Special case: last proc sends if on level > 1, but NOT on level 1
+//  if (included and (not l.localmesh->lastX() or current_level > 1)) {
+//    for (int kz = 0; kz < l.nmode; kz++) {
+//      if (not l.converged[kz]) {
+//        fine_error(1, kz) = xloc(1, kz);
+//        sendvec[kz] = xloc(1, kz);
+//        if (l.localmesh->lastX()) {
+//          fine_error(2, kz) = xloc(2, kz);
+//        }
+//      }
+//    }
+//
+//    if (not l.localmesh->lastX()) {
+//      MPI_Send(&sendvec[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out_up, 0, BoutComm::get());
+//    }
+//    if (not l.localmesh->firstX()) {
+//      MPI_Send(&sendvec[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_in_up, 1, BoutComm::get());
+//    }
+//  }
+//
+//  // Receive if proc is included on the level above, but not this level.
+//  // Special case: last proc receives if on level 1
+//  if ((included_up and not included) or (l.localmesh->lastX() and current_level == 1)) {
+//    if (not l.localmesh->firstX()) {
+//      MPI_Irecv(&recvecin[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_in_up, 0, BoutComm::get(),
+//                &rreqin);
+//    }
+//    if (not l.localmesh->lastX()) {
+//      MPI_Irecv(&recvecout[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out_up, 1,
+//                BoutComm::get(), &rreqout);
+//    }
+//
+//    for (int kz = 0; kz < l.nmode; kz++) {
+//      fine_error(1, kz) = 0.0;
+//    }
+//
+//    if (not l.localmesh->firstX()) {
+//      MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
+//      for (int kz = 0; kz < l.nmode; kz++) {
+//        if (not l.converged[kz]) {
+//          fine_error(1, kz) += 0.5 * recvecin[kz];
+//        }
+//      }
+//    }
+//    if (not l.localmesh->lastX()) {
+//      MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
+//      for (int kz = 0; kz < l.nmode; kz++) {
+//        if (not l.converged[kz]) {
+//          fine_error(1, kz) += 0.5 * recvecout[kz];
+//        }
+//      }
+//    }
+//  }
+//  // Special case where we need to fill (1,kz) on final proc
+//  if (l.localmesh->lastX() and current_level == 1) {
+//    for (int kz = 0; kz < l.nmode; kz++) {
+//      if (not l.converged[kz]) {
+//        fine_error(1, kz) += 0.5 * xloc(2, kz);
+//      }
+//    }
+//  }
 }
 
 /*

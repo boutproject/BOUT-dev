@@ -113,6 +113,8 @@ public:
     bool red, black;
     /// Current grid level being solved
     std::size_t current_level;
+    /// Size of grid on current level
+    int nxloc;
 
     // indexing to remove branches from tight loops
     int index_start;
