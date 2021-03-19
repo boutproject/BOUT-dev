@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
 
   // Currently hardcode solvers we don't want to test
   // Should be able to check which solvers aren't suitable
-  std::vector<std::string> eigen_solvers = {"power", "slepc", "snes"};
+  std::vector<std::string> eigen_solvers = {"power", "slepc", "snes", "beuler"};
 
   for (auto& eigen_solver : eigen_solvers) {
     if (SolverFactory::getInstance()->remove(eigen_solver)) {
