@@ -987,63 +987,11 @@ void Laplace1DMG::Level::init_rhs(Laplace1DMG& l, const Matrix<dcomplex> bcmplx)
 
   SCOREP0();
 
-  auto Rd = Array<dcomplex>(l.nmode);
-  auto Rsendup = Array<dcomplex>(l.nmode);
-  MPI_Request req;
-
   for (int kz = 0; kz < l.nmode; kz++) {
+    for (int ix = l.localmesh->xstart; ix < l.localmesh->xend; ix++) {
 
-    /// SCOREP_USER_REGION_DEFINE(invertforrhs);
-    /// SCOREP_USER_REGION_BEGIN(invertforrhs, "invert local matrices for
-    /// rhs",///SCOREP_USER_REGION_TYPE_COMMON);
+      rr(ix, kz) = bcmplx(kz, ix) / l.bvec(l.jy, kz, ix);
 
-    // Invert local matrices
-    // Calculate Minv*b
-    tridag(&l.avec(l.jy, kz, 0), &l.bvec(l.jy, kz, 0), &l.cvec(l.jy, kz, 0),
-           &bcmplx(kz, 0), &l.minvb(kz, 0), l.ncx);
-    // Now minvb is a constant vector throughout the iterations
-
-    /// SCOREP_USER_REGION_END(invertforrhs);
-    /// SCOREP_USER_REGION_DEFINE(coefsforrhs);
-    /// SCOREP_USER_REGION_BEGIN(coefsforrhs, "calculate coefs for
-    /// rhs",///SCOREP_USER_REGION_TYPE_COMMON);
-
-    l.rl[kz] = l.minvb(kz, l.xs);
-    l.ru[kz] = l.minvb(kz, l.xe);
-
-    // Boundary processor value to be overwritten when relevant
-    Rd[kz] = 0.0;
-
-    if (not l.localmesh->lastX()) {
-      // Send coefficients up
-      Rsendup[kz] = l.ru[kz];
-      if (std::fabs(l.al(l.jy, kz)) > 1e-14) {
-        Rsendup[kz] -= l.rl[kz] * l.au(l.jy, kz) / l.al(l.jy, kz);
-      }
-    }
-    /// SCOREP_USER_REGION_END(coefsforrhs);
-  } // end of kz loop
-
-  if (not l.localmesh->firstX()) {
-    MPI_Irecv(&Rd[0], l.nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, BoutComm::get(), &req);
-  }
-  if (not l.localmesh->lastX()) {
-    MPI_Send(&Rsendup[0], l.nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, BoutComm::get());
-  }
-  if (not l.localmesh->firstX()) {
-    MPI_Wait(&req, MPI_STATUS_IGNORE);
-  }
-
-  for (int kz = 0; kz < l.nmode; kz++) {
-    rr(1, kz) = l.r1(l.jy, kz) * Rd[kz] + l.r2(l.jy, kz) * l.rl[kz];
-
-    // Special case for multiple points on last proc
-    // Note that if the first proc is also the last proc, then both al and
-    // au are zero, and l.ru is already correct.
-    if (l.localmesh->lastX() and not l.localmesh->firstX()) {
-      rr(2, kz) = l.ru[kz] - l.au(l.jy, kz) * l.rl[kz] / l.al(l.jy, kz);
-    } else {
-      rr(2, kz) = l.ru[kz];
     }
   }
 }
