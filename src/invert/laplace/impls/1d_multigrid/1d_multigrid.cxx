@@ -51,24 +51,31 @@ Laplace1DMG::Laplace1DMG(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   OPTION(opt, rtol, 1.e-7);
   OPTION(opt, atol, 1.e-20);
   OPTION(opt, maxits, 100);
-  OPTION(opt, max_level, 3);
+  OPTION(opt, max_level, 100);
   OPTION(opt, max_cycle, 3);
   OPTION(opt, predict_exit, false);
 
-  // Number of procs must be a factor of 2
+  // Number of x grid points must be a power of 2
+  const int ngx = localmesh->GlobalNx;
+  if (!is_pow2(ngx)) {
+    throw BoutException("Laplace1DMG error: nx must be a power of 2");
+  }
+  // Number of procs must be a power of 2
   const int n = localmesh->NXPE;
   if (!is_pow2(n)) {
     throw BoutException("Laplace1DMG error: NXPE must be a power of 2");
   }
-  // Number of levels cannot must be such that nproc <= 2^(max_level-1)
-  if (n > 1 and n < pow(2, max_level + 1)) {
-    throw BoutException("Laplace1DMG error: number of levels and processors must satisfy "
-                        "NXPE > 2^(max_levels+1).");
-  }
+  // TODO number of levels must satisfy ncx > 2^(max_levels)
+  // but okay to pick the largest allowed level, so probably shouldn't throw error.
+///  // Number of levels cannot must be such that nproc <= 2^(max_level-1)
+///  if (n > 1 and n < pow(2, max_level + 1)) {
+///    throw BoutException("Laplace1DMG error: number of levels and processors must satisfy "
+///                        "NXPE > 2^(max_levels+1).");
+///  }
 
   static int ipt_solver_count = 1;
   bout::globals::dump.addRepeat(
-      ipt_mean_its, "ipt_solver" + std::to_string(ipt_solver_count) + "_mean_its");
+      ipt_mean_its, "1dmg_solver" + std::to_string(ipt_solver_count) + "_mean_its");
   ++ipt_solver_count;
 
   ncx = localmesh->LocalNx;
@@ -77,7 +84,7 @@ Laplace1DMG::Laplace1DMG(Options* opt, CELL_LOC loc, Mesh* mesh_in)
 
   first_call = Array<bool>(ny);
 
-  x0saved = Tensor<dcomplex>(ny, 4, nmode);
+  x0saved = Tensor<dcomplex>(ny, ncx, nmode);
 
   levels = std::vector<Level>(max_level + 1);
 
@@ -88,23 +95,6 @@ Laplace1DMG::Laplace1DMG(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   avec = Tensor<dcomplex>(ny, nmode, ncx);
   bvec = Tensor<dcomplex>(ny, nmode, ncx);
   cvec = Tensor<dcomplex>(ny, nmode, ncx);
-
-  // Arrays to construct global solution from halo values
-  minvb = Matrix<dcomplex>(nmode, ncx);                // Local M^{-1} f
-  lowerGuardVector = Tensor<dcomplex>(ny, nmode, ncx); // alpha
-  upperGuardVector = Tensor<dcomplex>(ny, nmode, ncx); // beta
-
-  // Coefficients of first and last interior rows
-  al = Matrix<dcomplex>(ny, nmode); // alpha^l
-  bl = Matrix<dcomplex>(ny, nmode); // beta^l
-  au = Matrix<dcomplex>(ny, nmode); // alpha^u
-  bu = Matrix<dcomplex>(ny, nmode); // beta^u
-  rl = Array<dcomplex>(nmode);      // r^l
-  ru = Array<dcomplex>(nmode);      // r^u
-
-  // Coefs used to compute rl from domain below
-  r1 = Matrix<dcomplex>(ny, nmode);
-  r2 = Matrix<dcomplex>(ny, nmode);
 
   resetSolver();
 }
@@ -150,44 +140,6 @@ bool Laplace1DMG::Level::is_diagonally_dominant(const Laplace1DMG& l) {
   }
   // Have checked all modes and all are diagonally dominant
   return true;
-}
-
-/*
- * Reconstruct the full solution from the subproblem and the halo cell values.
- * We call this at the end of the iteration when a processor has three correct
- * values: xk1d at its own xs (the first interior point), and the xs of its
- * nearest neighbours. These values are in xloc(0), xloc(1) and xloc(3), or
- * xloc(0), xloc(1) and xloc(2) for the final processor.
- * Reconstructing the solution uses the cached values from the local problem,
- * and so needs my upper neighbour's xs point (which we know) and my lower
- * neighbour's xe point (which we don't). We also calculate this point locally
- * by rearranging:
- * my_xk1d(xs) = rl(xs) + al(xs)*lower_xk1d(xe) + bl(xs)*upper_xk1d(xs)
- *     xloc(1) = rl(xs) + al(xs)*xloc(0) + bl(xs)*xloc(3)
- */
-void Laplace1DMG::Level::reconstruct_full_solution(const Laplace1DMG& l,
-                                                  Matrix<dcomplex>& xk1d) {
-  SCOREP0();
-
-  Array<dcomplex> x_lower(l.nmode), x_upper(l.nmode);
-
-  for (int kz = 0; kz < l.nmode; kz++) {
-
-    x_lower[kz] = xloc(0, kz);
-    x_upper[kz] = xloc(3, kz);
-
-    if (not l.localmesh->firstX()) {
-      x_lower[kz] =
-          (xloc(1, kz) - l.rl[kz] - l.bl(l.jy, kz) * xloc(3, kz)) / l.al(l.jy, kz);
-    }
-  }
-
-  for (int kz = 0; kz < l.nmode; kz++) {
-    for (int i = 0; i < l.ncx; i++) {
-      xk1d(kz, i) = l.minvb(kz, i) + l.upperGuardVector(l.jy, kz, i) * x_upper[kz]
-                    + l.lowerGuardVector(l.jy, kz, i) * x_lower[kz];
-    }
-  }
 }
 
 // TODO Move to Array
@@ -992,6 +944,7 @@ void Laplace1DMG::Level::init(Laplace1DMG& l) {
   red = (myproc % 2 == 0);
   black = (myproc % 2 == 1);
 
+  // TODO amend this:
   // indexing to remove branching in tight loops
   if (l.localmesh->lastX()) {
     index_end = 2;
@@ -1000,179 +953,31 @@ void Laplace1DMG::Level::init(Laplace1DMG& l) {
   }
   index_start = 1;
 
-  // Coefficients for the reduced iterations
-  ar = Tensor<dcomplex>(ny, 4, l.nmode);
-  br = Tensor<dcomplex>(ny, 4, l.nmode);
-  cr = Tensor<dcomplex>(ny, 4, l.nmode);
-  rr = Matrix<dcomplex>(4, l.nmode);
-  brinv = Tensor<dcomplex>(ny, 4, l.nmode);
+  // Coefficients for the GS iterations
+  ar = Tensor<dcomplex>(ny, l.ncx, l.nmode);
+  br = Tensor<dcomplex>(ny, l.ncx, l.nmode);
+  cr = Tensor<dcomplex>(ny, l.ncx, l.nmode);
+  rr = Matrix<dcomplex>(l.ncx, l.nmode);
+  brinv = Tensor<dcomplex>(ny, l.ncx, l.nmode);
 
-  residual = Matrix<dcomplex>(4, l.nmode);
+  residual = Matrix<dcomplex>(l.ncx, l.nmode);
 
   for (int kz = 0; kz < l.nmode; kz++) {
-    for (int ix = 0; ix < 4; ix++) {
+    for (int ix = 0; ix < l.ncx; ix++) {
       residual(ix, kz) = 0.0;
     }
   }
   // end basic definitions
 
   // Define sizes of local coefficients
-  xloc = Matrix<dcomplex>(4, l.nmode); // Reduced grid x values
-
-  // Work arrays
-  auto evec = Array<dcomplex>(l.ncx);
-  auto tmp = Array<dcomplex>(l.ncx);
-
-  // Communication arrays
-  auto sendvec = Array<dcomplex>(3 * l.nmode);
-  auto recvecin = Array<dcomplex>(3 * l.nmode);
-  auto recvecout = Array<dcomplex>(3 * l.nmode);
+  xloc = Matrix<dcomplex>(l.ncx+2, l.nmode); // Reduced grid x values
 
   for (int kz = 0; kz < l.nmode; kz++) {
+    for (int ix = l.localmesh->xstart; ix < l.localmesh->xend; ix++) {
 
-    /// SCOREP_USER_REGION_DEFINE(invert);
-    /// SCOREP_USER_REGION_BEGIN(invert, "invert local
-    /// matrices",///SCOREP_USER_REGION_TYPE_COMMON);
+      ar(l.jy, ix, kz) = - l.avec(l.jy, kz, ix) / l.bvec(l.jy, kz, ix);
+      cr(l.jy, ix, kz) = - l.cvec(l.jy, kz, ix) / l.bvec(l.jy, kz, ix);
 
-    // Invert local matrices to find upper/lower guard vectos.
-    // Note Minv*b is calculated in init_rhs.
-    //
-    // Upper interface
-    if (not l.localmesh->lastX()) {
-      // Need the xend-th element
-      for (int i = 0; i < l.ncx; i++) {
-        evec[i] = 0.0;
-      }
-      evec[l.xe + 1] = 1.0;
-      tridag(&l.avec(l.jy, kz, 0), &l.bvec(l.jy, kz, 0), &l.cvec(l.jy, kz, 0),
-             std::begin(evec), std::begin(tmp), l.ncx);
-      for (int i = 0; i < l.ncx; i++) {
-        l.upperGuardVector(l.jy, kz, i) = tmp[i];
-      }
-    } else {
-      for (int i = 0; i < l.ncx; i++) {
-        l.upperGuardVector(l.jy, kz, i) = 0.0;
-      }
-    }
-
-    // Lower interface
-    if (not l.localmesh->firstX()) {
-      for (int i = 0; i < l.ncx; i++) {
-        evec[i] = 0.0;
-      }
-      evec[l.xs - 1] = 1.0;
-      tridag(&l.avec(l.jy, kz, 0), &l.bvec(l.jy, kz, 0), &l.cvec(l.jy, kz, 0),
-             std::begin(evec), std::begin(tmp), l.ncx);
-      for (int i = 0; i < l.ncx; i++) {
-        l.lowerGuardVector(l.jy, kz, i) = tmp[i];
-      }
-    } else {
-      for (int i = 0; i < l.ncx; i++) {
-        l.lowerGuardVector(l.jy, kz, i) = 0.0;
-      }
-    }
-
-    /// SCOREP_USER_REGION_END(invert);
-    /// SCOREP_USER_REGION_DEFINE(coefs);
-    /// SCOREP_USER_REGION_BEGIN(coefs, "calculate
-    /// coefs",///SCOREP_USER_REGION_TYPE_COMMON);
-
-    l.bl(l.jy, kz) = l.upperGuardVector(l.jy, kz, l.xs);
-    l.al(l.jy, kz) = l.lowerGuardVector(l.jy, kz, l.xs);
-
-    l.bu(l.jy, kz) = l.upperGuardVector(l.jy, kz, l.xe);
-    l.au(l.jy, kz) = l.lowerGuardVector(l.jy, kz, l.xe);
-
-    // First compute coefficients that depend on the matrix to be inverted
-    // and which therefore might be constant throughout a run.
-
-    // Boundary processor values to be overwritten when relevant
-    MPI_Request req;
-    auto AdBd = Array<dcomplex>(2);  // A and B coefficients from proc down
-    auto ABtmp = Array<dcomplex>(2); // Send array for A and B coefs from proc down
-    AdBd[0] = 1.0;
-    AdBd[1] = 0.0;
-    if (not l.localmesh->firstX()) {
-      MPI_Irecv(&AdBd[0], 2, MPI_DOUBLE_COMPLEX, proc_in, 0, BoutComm::get(), &req);
-    }
-    if (not l.localmesh->lastX()) {
-      // Send coefficients up
-      ABtmp[0] = 0.0;
-      ABtmp[1] = l.bu(l.jy, kz);
-      if (std::fabs(l.al(l.jy, kz)) > 1e-14) {
-        ABtmp[0] = l.au(l.jy, kz) / l.al(l.jy, kz);
-        ABtmp[1] -= ABtmp[0] * l.bl(l.jy, kz);
-      }
-      // Send these
-      MPI_Send(&ABtmp[0], 2, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
-    }
-
-    if (not l.localmesh->firstX()) {
-      MPI_Wait(&req, MPI_STATUS_IGNORE);
-    }
-
-    const dcomplex Delta = 1.0 / (1.0 - l.al(l.jy, kz) * AdBd[1]);
-    ar(l.jy, 1, kz) = -Delta * l.al(l.jy, kz) * AdBd[0];
-    cr(l.jy, 1, kz) = -Delta * l.bl(l.jy, kz);
-
-    l.r1(l.jy, kz) = Delta * l.al(l.jy, kz);
-    l.r2(l.jy, kz) = Delta;
-
-    // lastX is a special case having two points on the level 0 grid
-    if (l.localmesh->lastX()) {
-      // Note that if the first proc is also the last proc, then both alold and
-      // auold are zero, and l.au = l.auold is already correct.
-      if (not l.localmesh->lastX()) {
-        ar(l.jy, 2, kz) = -l.au(l.jy, kz) / l.al(l.jy, kz);
-        cr(l.jy, 2, kz) =
-            -(l.bu(l.jy, kz)
-              + ar(l.jy, 2, kz) * l.bl(l.jy, kz)); // NB depends on previous line
-      }
-
-      // Use BCs to replace x(xe+1) = -avec(xe+1) x(xe) / bvec(xe+1)
-      //  => only bl changes
-      cr(l.jy, 1, kz) =
-          l.avec(l.jy, kz, l.xe + 1) * l.bl(l.jy, kz) / l.bvec(l.jy, kz, l.xe + 1);
-    }
-
-    // Now set coefficients for reduced iterations (shared by all levels)
-    br(l.jy, 1, kz) = 1.0;
-    br(l.jy, 2, kz) = 1.0;
-    brinv(l.jy, 1, kz) = 1.0;
-    brinv(l.jy, 2, kz) = 1.0;
-
-    sendvec[kz] = ar(l.jy, 1, kz);
-    sendvec[kz + l.nmode] = br(l.jy, 1, kz);
-    sendvec[kz + 2 * l.nmode] = cr(l.jy, 1, kz);
-
-    /// SCOREP_USER_REGION_END(coefs);
-  } // end of kz loop
-
-  // Synchonize reduced coefficients with neighbours
-  MPI_Comm comm = BoutComm::get();
-
-  // Communicate in
-  if (not l.localmesh->firstX()) {
-    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvecin[0],
-                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
-  }
-
-  // Communicate out
-  if (not l.localmesh->lastX()) {
-    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvecout[0],
-                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
-  }
-
-  for (int kz = 0; kz < l.nmode; kz++) {
-    if (not l.localmesh->firstX()) {
-      ar(l.jy, 0, kz) = recvecin[kz];
-      br(l.jy, 0, kz) = recvecin[kz + l.nmode];
-      cr(l.jy, 0, kz) = recvecin[kz + 2 * l.nmode];
-    }
-    if (not l.localmesh->lastX()) {
-      ar(l.jy, 3, kz) = recvecout[kz];
-      br(l.jy, 3, kz) = recvecout[kz + l.nmode];
-      cr(l.jy, 3, kz) = recvecout[kz + 2 * l.nmode];
     }
   }
 }
