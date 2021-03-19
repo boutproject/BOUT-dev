@@ -57,9 +57,9 @@ Laplace1DMG::Laplace1DMG(Options* opt, CELL_LOC loc, Mesh* mesh_in)
 
   // Number of x grid points must be a power of 2
   const int ngx = localmesh->GlobalNx;
-  if (!is_pow2(ngx)) {
-    throw BoutException("Laplace1DMG error: nx must be a power of 2");
-  }
+//  if (!is_pow2(ngx-2*mxg)) {
+//    throw BoutException("Laplace1DMG error: nx ({:d}) must be a power of 2", ngx-mxg);
+//  }
   // Number of procs must be a power of 2
   const int n = localmesh->NXPE;
   if (!is_pow2(n)) {
@@ -554,8 +554,6 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       x0saved(jy, ix, kz) = levels[0].xloc(ix, kz);
     }
   }
-
-  levels[0].reconstruct_full_solution(*this, xk1d);
 
 #if CHECK > 2
   for (int ix = 0; ix < ncx; ix++) {

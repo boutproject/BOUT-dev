@@ -26,8 +26,8 @@
 
 class Laplace1DMG;
 
-#ifndef __IPT_H__
-#define __IPT_H__
+#ifndef __1DMG_H__
+#define __1DMG_H__
 
 #include <invert_laplace.hxx>
 #include <dcomplex.hxx>
@@ -35,7 +35,7 @@ class Laplace1DMG;
 #include <utils.hxx>
 
 namespace {
-RegisterLaplace<Laplace1DMG> registerlaplaceipt(LAPLACE_IPT);
+RegisterLaplace<Laplace1DMG> registerlaplace1dmg(LAPLACE_1DMG);
 }
 
 class Laplace1DMG : public Laplacian {
@@ -120,7 +120,6 @@ public:
     void init(Laplace1DMG &lap);
     void init_rhs(Laplace1DMG &lap, const Matrix<dcomplex> bcmplx);
     bool is_diagonally_dominant(const Laplace1DMG &lap);
-    void reconstruct_full_solution(const Laplace1DMG &lap, Matrix<dcomplex> &xk1d);
     void refine(const Laplace1DMG &lap, Matrix<dcomplex> &fine_error);
     void synchronize_reduced_field(const Laplace1DMG &lap, Matrix<dcomplex> &field);
     void update_solution(const Laplace1DMG& lap);
@@ -209,4 +208,4 @@ private:
 
 };
 
-#endif // __IPT_H__
+#endif // __1DMG_H__
