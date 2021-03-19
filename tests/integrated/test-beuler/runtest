@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+# requires: petsc
+
 from boututils.run_wrapper import shell_safe, launch_safe
 
 from sys import exit
 
 nthreads = 1
 nproc = 1
-
 
 print("Making solver test")
 shell_safe("make > make.log")
