@@ -334,7 +334,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   // much of the information for each level may be stored. Data that cannot
   // be cached (e.g. the changing right-hand sides) is calculated in init_rhs
   // below.
-  //std::cout<<jy<<" "<<first_call[jy]<<" "<<store_coefficients<<"\n";
+  std::cout<<jy<<" "<<first_call[jy]<<" "<<store_coefficients<<"\n";
   levels.reserve(max_level + 1);
   if (first_call[jy] || not store_coefficients) {
 
@@ -346,10 +346,30 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
   }
+  std::cout<<"ar\n";
+  for(int ix = 0; ix<ncx; ix++){
+	  std::cout<<levels[0].ar(jy,ix,0)<<" ";
+  }
+  std::cout<<"\n";
+  std::cout<<"br\n";
+  for(int ix = 0; ix<ncx; ix++){
+	  std::cout<<levels[0].br(jy,ix,0)<<" ";
+  }
+  std::cout<<"\n";
+  std::cout<<"cr\n";
+  for(int ix = 0; ix<ncx; ix++){
+	  std::cout<<levels[0].cr(jy,ix,0)<<" ";
+  }
+  std::cout<<"\n";
 
   // Compute coefficients that depend on the right-hand side and which
   // therefore change every time.
   levels[0].init_rhs(*this, bcmplx);
+  std::cout<<"rr\n";
+  for(int ix = 0; ix<ncx; ix++){
+	  std::cout<<levels[0].rr(ix,0)<<" ";
+  }
+  std::cout<<"\n";
 
 //  std::cout<<"x0saved\n";
 //  for(int ix = 0; ix<ncx; ix++){
@@ -401,16 +421,21 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   // Check for convergence before loop to skip work with cvode
   levels[0].calculate_residual(*this);
-  //levels[0].calculate_total_residual(*this, errornorm, converged);
+  levels[0].calculate_total_residual(*this, errornorm, converged);
   bool execute_loop = not all(converged);
 
   while (execute_loop) {
 
-//	  std::cout<<"loop "<<count<<"\n";
-//	  for(int ix = 0; ix<ncx; ix++){
-//		  std::cout<<levels[current_level].xloc(ix,0)<<" ";
-//	  }
-//	  std::cout<<"\n";
+	  std::cout<<jy<<": loop "<<count<<"\n";
+	  for(int ix = 0; ix<ncx; ix++){
+		  std::cout<<levels[current_level].xloc(ix,0)<<" ";
+	  }
+	  std::cout<<"\n";
+	  for(int ix = 0; ix<ncx; ix++){
+		  std::cout<<levels[current_level].residual(ix,0)<<" ";
+	  }
+	  std::cout<<"\n";
+	  std::cout<<"total weighted residual: "<<errornorm[0]<<"\n";
     //levels[current_level].gauss_seidel_red_black(*this);
     levels[current_level].gauss_seidel_red_black_local(*this);
 
@@ -646,22 +671,22 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
     }
   }
 
-///  if (current_level == 0) {
-///    // Update boundaries to match interior points
-///    // Do this after communication
-///    for (int kz = 0; kz < l.nmode; kz++) {
-///      if (not l.converged[kz]) {
-///        if (l.localmesh->firstX()) {
-///          xloc(0, kz) =
-///              -l.cvec(l.jy, kz, l.xs - 1) * xloc(1, kz) / l.bvec(l.jy, kz, l.xs - 1);
-///        }
-///        if (l.localmesh->lastX()) {
-///          xloc(3, kz) =
-///              -l.avec(l.jy, kz, l.xe + 1) * xloc(2, kz) / l.bvec(l.jy, kz, l.xe + 1);
-///        }
-///      }
-///    }
-///  }
+  if (current_level == 0) {
+    // Update boundaries to match interior points
+    // Do this after communication
+    for (int kz = 0; kz < l.nmode; kz++) {
+      if (not l.converged[kz]) {
+        if (l.localmesh->firstX()) {
+          xloc(l.xs-1, kz) =
+              -l.cvec(l.jy, kz, l.xs - 1) * xloc(l.xs, kz) / l.bvec(l.jy, kz, l.xs - 1);
+        }
+        if (l.localmesh->lastX()) {
+          xloc(l.xe+1, kz) =
+              -l.avec(l.jy, kz, l.xe + 1) * xloc(l.xe, kz) / l.bvec(l.jy, kz, l.xe + 1);
+        }
+      }
+    }
+  }
 }
 
 /*
@@ -1021,9 +1046,11 @@ void Laplace1DMG::Level::init_rhs(Laplace1DMG& l, const Matrix<dcomplex>& bcmplx
 
   SCOREP0();
 
+  std::cout<<"init rhs\n";
   //std::cout << l.ncx << "\n";
   for (int kz = 0; kz < l.nmode; kz++) {
-    for (int ix = l.localmesh->xstart; ix < l.localmesh->xend; ix++) {
+    //for (int ix = l.localmesh->xstart; ix < l.localmesh->xend; ix++) {
+    for (int ix = 0; ix < l.ncx; ix++) {
       //std::cout << ix << " " << kz << "\n";
       //std::cout << bcmplx(kz,ix) << "\n";
 
