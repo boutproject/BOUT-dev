@@ -838,7 +838,7 @@ public:
     solver_type = options["hypre_solver_type"]
                       .doc("Type of solver to use when solving Hypre system. Possible "
                            "values are: gmres, bicgstab, pcg")
-                      .withDefault(HYPRE_SOLVER_TYPE::gmres);
+                      .withDefault(HYPRE_SOLVER_TYPE::bicgstab);
 
     comm = std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
 
