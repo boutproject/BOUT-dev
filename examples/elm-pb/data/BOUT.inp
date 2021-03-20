@@ -42,6 +42,14 @@ group_nonblock = false  # Use non-blocking group operations?
 # Laplacian inversion routines
 
 [laplace]
+type=hypre3d
+
+flags = 0   # Flags for Laplacian inversion
+
+rtol = 1.e-9
+atol = 1.e-14
+
+
 
 # max_mode = 16  # Maximum N to solve for
 
@@ -258,8 +266,13 @@ bndry_all = dirichlet_o2 # Default to zero-value
 
 [U]   # vorticity
 
-scale = 1.0e-5
-function = ballooning(gauss(x-0.5,0.1)*gauss(y-pi,0.6*pi)*sin(z),3)
+#CPU
+#scale = 1.0e-5
+#function = ballooning(gauss(x-0.5,0.1)*gauss(y-pi,0.6*pi)*sin(z),3)
+#
+#GPU
+scale = 1.0e-0
+function = ballooning(gauss(x-0.5,0.1)*gauss(y-pi,0.6*pi))
 
 [P]  # pressure
 bndry_core = neumann

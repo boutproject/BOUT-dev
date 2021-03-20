@@ -21,6 +21,14 @@ ixseps1 = nx
 ixseps2 = nx 
 
 [laplace]
+type=hypre3d
+
+flags = 0   # Flags for Laplacian inversion
+
+rtol = 1.e-9
+atol = 1.e-14
+
+
 
 flags = 0   # Flags for Laplacian inversion
 

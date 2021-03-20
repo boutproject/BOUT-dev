@@ -58,6 +58,7 @@
 #include "impls/snes/snes.hxx"
 #include "impls/split-rk/split-rk.hxx"
 
+
 // Static member variables
 
 int *Solver::pargc = nullptr;
@@ -439,7 +440,9 @@ void Solver::constraint(Vector3D& v, Vector3D& C_v, std::string name) {
 int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
   Options& globaloptions = Options::root(); // Default from global options
-  
+//#ifdef BOUT_HAS_CALIPER
+//  CALI_CXX_MARK_FUNCTION; 
+//#endif
   if (NOUT < 0) {
     /// Get options
     NOUT = globaloptions["NOUT"].doc("Number of output steps").withDefault(1);

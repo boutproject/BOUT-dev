@@ -27,6 +27,7 @@ set(ENABLE_OPENMP On CACHE STRING "Enable OpenMP")
 set(ENABLE_CUDA Off CACHE STRING "Enable CUDA")
 option(ENABLE_UMPIRE "Enable UMPIRE memory management" Off)
 option(ENABLE_RAJA "Enable RAJA" Off)
+option(ENABLE_CALIPER "Enable Caliper" Off)
 
 include_directories(${CMAKE_BINARY_DIR}/include)
 include(CMakeDependentOption)
