@@ -18,10 +18,15 @@
 #include "HYPRE_utilities.h"
 #include "_hypre_utilities.h"
 
+#ifdef BOUT_HAS_CALIPER
+#include <caliper/cali.h>
+#include <caliper/cali-manager.h>
+#endif
+
 #include <memory>
 
 // BOUT_ENUM_CLASS does not work inside namespaces
-BOUT_ENUM_CLASS(HYPRE_SOLVER_TYPE, gmres, bicgstab);
+BOUT_ENUM_CLASS(HYPRE_SOLVER_TYPE, gmres, bicgstab, pcg);
 
 namespace bout {
 #ifdef BOUT_USE_CUDA // HYPRE with Cuda enabled
@@ -31,6 +36,7 @@ namespace bout {
 #define HypreMalloc(P, SIZE) P = static_cast<decltype(P)>(malloc(SIZE))
 #define HypreFree(P) free(P)
 #endif
+
 
 namespace {
 int checkHypreError(int error) {
@@ -44,7 +50,7 @@ int checkHypreError(int error) {
       throw BoutException("A Hypre call failed with error code {:d}: {:s}", error,
                           &error_cstr[0]);
     else if (error == 1) {
-      // printf("Hypre returns %d %s\n",error,&error_cstr[0]);
+      printf("Hypre returns %d %s\n",error,&error_cstr[0]);
       HYPRE_ClearAllErrors();
     }
   }
@@ -158,7 +164,7 @@ public:
 
     location = f.getLocation();
     initialised = true;
-    // printf("vsize %d\n",vsize);
+    //printf("vsize %d\n",vsize);
     HypreMalloc(I, vsize * sizeof(HYPRE_BigInt));
     HypreMalloc(V, vsize * sizeof(HYPRE_Complex));
     importValuesFromField(f);
@@ -185,10 +191,16 @@ public:
   }
 
   void assemble() {
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_BEGIN("hype_interface:vectorAssemble");
+#endif
     writeCacheToHypre();
     checkHypreError(HYPRE_IJVectorAssemble(hypre_vector));
     checkHypreError(HYPRE_IJVectorGetObject(hypre_vector,
                                             reinterpret_cast<void**>(&parallel_vector)));
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_END("hype_interface:vectorAssemble");
+#endif
   }
 
   void writeCacheToHypre() {
@@ -200,6 +212,10 @@ public:
   }
 
   T toField() {
+ 
+#ifdef BOUT_HAS_CALIPER
+  CALI_CXX_MARK_FUNCTION;
+#endif
     T result(indexConverter->getMesh());
     result.allocate().setLocation(location);
 
@@ -218,6 +234,9 @@ public:
   }
 
   void importValuesFromField(const T& f) {
+#ifdef BOUT_HAS_CALIPER
+  CALI_CXX_MARK_FUNCTION;
+#endif
     int vec_i = 0;
     BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
       HYPRE_BigInt index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
@@ -487,6 +506,9 @@ public:
 
   private:
     void setValues(BoutReal value_) {
+#ifdef BOUT_HAS_CALIPER
+      CALI_CXX_MARK_FUNCTION;
+#endif
       TRACE("HypreMatrix setting values at ({}, {})", row, column);
       ASSERT3(!positions.empty());
       std::vector<HYPRE_Complex> values;
@@ -501,6 +523,9 @@ public:
     }
 
     void addValues(BoutReal value_) {
+#ifdef BOUT_HAS_CALIPER
+      CALI_CXX_MARK_FUNCTION;
+#endif
       TRACE("HypreMatrix setting values at ({}, {})", row, column);
       ASSERT3(!positions.empty());
       std::vector<HYPRE_Complex> values;
@@ -516,6 +541,9 @@ public:
   };
 
   BoutReal getVal(const ind_type& row, const ind_type& column) const {
+#ifdef BOUT_HAS_CALIPER
+      CALI_CXX_MARK_FUNCTION;
+#endif
     const HYPRE_BigInt global_row = index_converter->getGlobal(row);
     const HYPRE_BigInt global_column = index_converter->getGlobal(column);
 #if CHECKLEVEL >= 1
@@ -529,6 +557,9 @@ public:
   }
 
   BoutReal getVal(const HYPRE_BigInt row, const HYPRE_BigInt column) const {
+#ifdef BOUT_HAS_CALIPER
+      CALI_CXX_MARK_FUNCTION;
+#endif
     HYPRE_Complex value = 0.0;
     HYPRE_BigInt i = row - ilower;
     ASSERT2(i >= 0 && i < num_rows);
@@ -542,6 +573,9 @@ public:
   }
 
   void setVal(const ind_type& row, const ind_type& column, BoutReal value) {
+#ifdef BOUT_HAS_CALIPER
+      CALI_CXX_MARK_FUNCTION;
+#endif
     const HYPRE_BigInt global_row = index_converter->getGlobal(row);
     const HYPRE_BigInt global_column = index_converter->getGlobal(column);
 #if CHECKLEVEL >= 1
@@ -555,6 +589,9 @@ public:
   }
 
   void setVal(const HYPRE_BigInt row, const HYPRE_BigInt column, BoutReal value) {
+#ifdef BOUT_HAS_CALIPER
+      CALI_CXX_MARK_FUNCTION;
+#endif
     HYPRE_BigInt i = row - ilower;
     ASSERT2(i >= 0 && i < num_rows);
     bool value_set = false;
@@ -573,6 +610,9 @@ public:
   }
 
   void addVal(const ind_type& row, const ind_type& column, BoutReal value) {
+#ifdef BOUT_HAS_CALIPER
+      CALI_CXX_MARK_FUNCTION;
+#endif
     const HYPRE_BigInt global_row = index_converter->getGlobal(row);
     const HYPRE_BigInt global_column = index_converter->getGlobal(column);
 #if CHECKLEVEL >= 1
@@ -586,6 +626,9 @@ public:
   }
 
   void addVal(const HYPRE_BigInt row, const HYPRE_BigInt column, BoutReal value) {
+#ifdef BOUT_HAS_CALIPER
+      CALI_CXX_MARK_FUNCTION;
+#endif
     HYPRE_BigInt i = row - ilower;
     ASSERT2(i >= 0 && i < num_rows);
     bool value_set = false;
@@ -673,6 +716,9 @@ public:
   }
 
   void assemble() {
+#ifdef BOUT_HAS_CALIPER
+    CALI_CXX_MARK_FUNCTION;
+#endif
     HYPRE_BigInt num_entries = 0;
     HYPRE_BigInt* num_cols;
     HYPRE_BigInt* cols;
@@ -689,7 +735,7 @@ public:
     HypreMalloc(rawI, num_rows * sizeof(HYPRE_BigInt));
     HypreMalloc(cols, num_entries * sizeof(HYPRE_BigInt));
     HypreMalloc(vals, num_entries * sizeof(HYPRE_Complex));
-    // printf("num_rows %d num_entries %d\n",num_rows,num_entries);
+    //printf("num_rows %d num_entries %d\n",num_rows,num_entries);
     HYPRE_BigInt entry = 0;
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
       rawI[i] = (*I)[i];
@@ -749,6 +795,9 @@ public:
   // y = alpha*A*x + beta*y
   // Note result is returned in 'y' argument
   void computeAxpby(double alpha, HypreVector<T>& x, double beta, HypreVector<T>& y) {
+#ifdef BOUT_HAS_CALIPER
+    CALI_CXX_MARK_FUNCTION;
+#endif
     checkHypreError(HYPRE_ParCSRMatrixMatvec(alpha, parallel_matrix, x.getParallel(),
                                              beta, y.getParallel()));
   }
@@ -756,6 +805,9 @@ public:
   // y = A*x
   // Note result is returned in 'y' argument
   void computeAx(HypreVector<T>& x, HypreVector<T>& y) {
+#ifdef BOUT_HAS_CALIPER
+    CALI_CXX_MARK_FUNCTION;
+#endif
     checkHypreError(HYPRE_ParCSRMatrixMatvec(1.0, parallel_matrix, x.getParallel(), 0.0,
                                              y.getParallel()));
   }
@@ -785,7 +837,7 @@ public:
 
     solver_type = options["hypre_solver_type"]
                       .doc("Type of solver to use when solving Hypre system. Possible "
-                           "values are: gmres, bicgstab")
+                           "values are: gmres, bicgstab, pcg")
                       .withDefault(HYPRE_SOLVER_TYPE::gmres);
 
     comm = std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
@@ -810,6 +862,11 @@ public:
       HYPRE_ParCSRBiCGSTABSetPrintLevel(solver, print_level);
       break;
     }
+    case HYPRE_SOLVER_TYPE::pcg: {
+      HYPRE_ParCSRPCGCreate(comm, &solver);
+      HYPRE_ParCSRPCGSetPrintLevel(solver, print_level);
+      break;
+    }
     default: {
       throw BoutException("Unsupported hypre_solver_type {}", solver_type);
     }
@@ -818,26 +875,25 @@ public:
     setRelTol(
         options["rtol"].doc("Relative tolerance for Hypre solver").withDefault(1.0e-7));
     setAbsTol(
-        options["atol"].doc("Relative tolerance for Hypre solver").withDefault(1.0e-12));
+        options["atol"].doc("Absolute tolerance for Hypre solver").withDefault(1.0e-12));
     setMaxIter(
         options["maxits"].doc("Maximum iterations for Hypre solver").withDefault(10000));
 
     HYPRE_BoomerAMGCreate(&precon);
     HYPRE_BoomerAMGSetOldDefault(precon);
-#if 0 // Let Hypre pick
 #ifdef BOUT_USE_CUDA
-    HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation // 7 throws error code 256 did not converge
+    HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation // 7 is slower to converge
     HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
-    HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU // currently causes solver_err = 1 Generic Error and non-convergence
+    HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU 
     HYPRE_BoomerAMGSetInterpType(precon, 15); // must be 3 or 15 for GPU
 #endif
-#endif
-    HYPRE_BoomerAMGSetNumSweeps(precon, 4);
-    HYPRE_BoomerAMGSetMaxIter(precon, 3);
-    HYPRE_BoomerAMGSetMaxLevels(precon, 30);
+    HYPRE_BoomerAMGSetNumSweeps(precon, 1); 
+    HYPRE_BoomerAMGSetMaxIter(precon, 1); // Default is 20 cycles
+    HYPRE_BoomerAMGSetMaxLevels(precon, 20);
     HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
-    HYPRE_BoomerAMGSetTol(precon, 0.0);
+    HYPRE_BoomerAMGSetTol(precon,0.0); // default is 1e-7; care here as you can get Methon did not converge abort within Maximum number of cycles
     HYPRE_BoomerAMGSetPrintLevel(precon, print_level);
+    //HYPRE_BoomerAMGSetStrongThreshold(precon,0.2);
 
     solver_setup = false;
   }
@@ -857,6 +913,10 @@ public:
       checkHypreError(HYPRE_ParCSRBiCGSTABSetTol(solver, tol));
       break;
     }
+    case HYPRE_SOLVER_TYPE::pcg: {
+      checkHypreError(HYPRE_ParCSRPCGSetTol(solver, tol));
+      break;
+    }
     }
   }
 
@@ -868,6 +928,10 @@ public:
     }
     case HYPRE_SOLVER_TYPE::bicgstab: {
       checkHypreError(HYPRE_ParCSRBiCGSTABSetAbsoluteTol(solver, tol));
+      break;
+    }
+    case HYPRE_SOLVER_TYPE::pcg: {
+      checkHypreError(HYPRE_ParCSRPCGSetAbsoluteTol(solver, tol));
       break;
     }
     }
@@ -883,6 +947,10 @@ public:
       checkHypreError(HYPRE_ParCSRBiCGSTABSetMaxIter(solver, max_iter));
       break;
     }
+    case HYPRE_SOLVER_TYPE::pcg: {
+      checkHypreError(HYPRE_ParCSRPCGSetMaxIter(solver, max_iter));
+      break;
+    }
     }
   }
 
@@ -895,6 +963,10 @@ public:
     }
     case HYPRE_SOLVER_TYPE::bicgstab: {
       checkHypreError(HYPRE_ParCSRBiCGSTABGetFinalRelativeResidualNorm(solver, &resnorm));
+      break;
+    }
+    case HYPRE_SOLVER_TYPE::pcg: {
+      checkHypreError(HYPRE_ParCSRPCGGetFinalRelativeResidualNorm(solver, &resnorm));
       break;
     }
     }
@@ -912,6 +984,10 @@ public:
       checkHypreError(HYPRE_ParCSRBiCGSTABGetNumIterations(solver, &iters));
       break;
     }
+    case HYPRE_SOLVER_TYPE::pcg: {
+      checkHypreError(HYPRE_ParCSRPCGGetNumIterations(solver, &iters));
+      break;
+    }
     }
     return iters;
   }
@@ -919,6 +995,9 @@ public:
   void setMatrix(HypreMatrix<T>* A_) { A = A_; }
 
   int setupAMG(HypreMatrix<T>* P_) {
+#ifdef BOUT_HAS_CALIPER
+    CALI_CXX_MARK_FUNCTION;
+#endif
     P = P_;
     switch (solver_type) {
     case HYPRE_SOLVER_TYPE::gmres: {
@@ -929,6 +1008,11 @@ public:
     case HYPRE_SOLVER_TYPE::bicgstab: {
       checkHypreError(HYPRE_ParCSRBiCGSTABSetPrecond(solver, HYPRE_BoomerAMGSolve,
                                                      HYPRE_BoomerAMGSetup, precon));
+      break;
+    }
+    case HYPRE_SOLVER_TYPE::pcg: {
+      checkHypreError(HYPRE_ParCSRPCGSetPrecond(solver, HYPRE_BoomerAMGSolve,
+                                                  HYPRE_BoomerAMGSetup, precon));
       break;
     }
     }
@@ -959,6 +1043,9 @@ public:
   }
 
   int solve() {
+#ifdef BOUT_HAS_CALIPER
+    CALI_CXX_MARK_FUNCTION;
+#endif
     int solve_err;
     ASSERT2(A != nullptr);
     ASSERT2(x != nullptr);
@@ -983,6 +1070,18 @@ public:
       }
 
       solve_err = checkHypreError(HYPRE_ParCSRBiCGSTABSolve(
+          solver, A->getParallel(), b->getParallel(), x->getParallel()));
+      break;
+    }
+    case HYPRE_SOLVER_TYPE::pcg: {
+      if (!solver_setup) {
+        checkHypreError(HYPRE_ParCSRPCGSetup(solver, A->getParallel(), b->getParallel(),
+                                               x->getParallel()));
+        solver_setup = true;
+        //printf("PCG solver setup\n");
+      }
+
+      solve_err = checkHypreError(HYPRE_ParCSRPCGSolve(
           solver, A->getParallel(), b->getParallel(), x->getParallel()));
       break;
     }
