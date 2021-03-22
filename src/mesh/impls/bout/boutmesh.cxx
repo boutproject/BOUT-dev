@@ -2403,11 +2403,12 @@ bool BoutMesh::periodicY(int jx) const {
   return MYPE_IN_CORE and (getGlobalXIndex(jx) < ixseps_inner);
 }
 
-bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
+bool BoutMesh::periodicY(int jx, BoutReal& ts) const {
   ts = 0.;
-  if ((getGlobalXIndex(jx) < ixseps_inner) && MYPE_IN_CORE) {
-    if (TwistShift)
+  if (periodicY(jx)) {
+    if (TwistShift) {
       ts = ShiftAngle[jx];
+    }
     return true;
   }
   return false;
