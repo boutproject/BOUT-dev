@@ -106,18 +106,22 @@ public:
   void calcParallelSlices(Field3D &f) override;
   
   void integrateParallelSlices(Field3D &f) override;
-  
-  const Field3D toFieldAligned(const Field3D &UNUSED(f), const std::string& UNUSED(region) = "RGN_ALL") override {
+
+  Field3D toFieldAligned(const Field3D& UNUSED(f),
+                         const std::string& UNUSED(region) = "RGN_ALL") override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
-  const FieldPerp toFieldAligned(const FieldPerp &UNUSED(f), const std::string& UNUSED(region) = "RGN_ALL") override {
+  FieldPerp toFieldAligned(const FieldPerp& UNUSED(f),
+                           const std::string& UNUSED(region) = "RGN_ALL") override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 
-  const Field3D fromFieldAligned(const Field3D &UNUSED(f), const std::string& UNUSED(region) = "RGN_ALL") override {
+  Field3D fromFieldAligned(const Field3D& UNUSED(f),
+                           const std::string& UNUSED(region) = "RGN_ALL") override {
     throw BoutException("FCI method cannot transform from field aligned grid");
   }
-  const FieldPerp fromFieldAligned(const FieldPerp &UNUSED(f), const std::string& UNUSED(region) = "RGN_ALL") override {
+  FieldPerp fromFieldAligned(const FieldPerp& UNUSED(f),
+                             const std::string& UNUSED(region) = "RGN_ALL") override {
     throw BoutException("FCI method cannot transform from field aligned grid");
   }
 
