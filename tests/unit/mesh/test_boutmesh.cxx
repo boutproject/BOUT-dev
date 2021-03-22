@@ -83,6 +83,7 @@ BoutMeshExposer::BoutMeshExposer(const BoutMeshParameters& inputs, bool periodic
   periodicX = periodicX_;
   setXDecompositionIndices(inputs.x_indices);
   setYDecompositionIndices(inputs.y_indices);
+  setDerivedGridSizes();
   topology();
   createDefaultRegions();
   addBoundaryRegions();
@@ -1669,4 +1670,29 @@ TEST(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
     EXPECT_EQ(mesh05.getConnectionInfo(), expected11);
     checkRegionSizes(mesh05, {0, 0, 0}, {0, 14, 14}, {3, 3});
   }
+}
+
+TEST(BoutMeshTest, SetDerivedGridSizes) {
+  WithQuietOutput info{output_info};
+  BoutMeshGridInfo grid{12, 3, 1, 2, 3, 6, 2, 2};
+  BoutMeshExposer mesh(createDisconnectedDoubleNull(grid));
+
+  EXPECT_EQ(mesh.GlobalNx, grid.total_nx);
+  EXPECT_EQ(mesh.GlobalNy, grid.total_ny + 8);
+  EXPECT_EQ(mesh.GlobalNz, 1);
+
+  EXPECT_EQ(mesh.OffsetX, 2 * grid.local_nx);
+  EXPECT_EQ(mesh.OffsetY, 2 * grid.local_ny);
+  EXPECT_EQ(mesh.OffsetZ, 0);
+
+  EXPECT_EQ(mesh.LocalNx, grid.local_nx + 2);
+  EXPECT_EQ(mesh.LocalNy, grid.local_ny + 4);
+  EXPECT_EQ(mesh.LocalNz, 1);
+
+  EXPECT_EQ(mesh.xstart, 1);
+  EXPECT_EQ(mesh.xend, 12);
+  EXPECT_EQ(mesh.ystart, 2);
+  EXPECT_EQ(mesh.yend, 4);
+  EXPECT_EQ(mesh.zstart, 0);
+  EXPECT_EQ(mesh.zend, 0);
 }

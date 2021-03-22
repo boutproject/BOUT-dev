@@ -262,6 +262,16 @@ protected:
   /// Set the two x-decomposition indices. No invariants are enforced
   void setXDecompositionIndices(const XDecompositionIndices& indices);
 
+  /// Set the derived grid sizes like `LocalN*`, `GlobalN*`, `Offset*`, etc
+  ///
+  /// Requires the following to be set first:
+  ///
+  /// - nx, ny, nz
+  /// - MXG, MYG, MZG
+  /// - NXPE, NYPE, NZPE
+  /// - PE_XIND, PE_YIND
+  /// - jyseps1_2, jyseps2_1
+  void setDerivedGridSizes();
 private:
   std::string gridname;
   int nx, ny, nz; ///< Size of the grid in the input file

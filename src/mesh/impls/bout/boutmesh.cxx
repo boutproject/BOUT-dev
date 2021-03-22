@@ -316,6 +316,69 @@ void BoutMesh::findProcessorSplit() {
                         NXPE, NYPE, MX / NXPE, ny / NYPE);
 }
 
+void BoutMesh::setDerivedGridSizes() {
+  // Check that nx is large enough
+  if (nx <= 2 * MXG) {
+    throw BoutException(_("Error: nx must be greater than 2 times MXG (2 * {:d})"), MXG);
+  }
+
+  GlobalNx = nx;
+  GlobalNy = ny + 2 * MYG;
+  GlobalNz = nz;
+
+  // If we've got a second pair of diverator legs, we need an extra
+  // pair of boundary regions
+  if (jyseps1_2 != jyseps2_1) {
+    GlobalNy += 2 * MYG;
+  }
+
+  // Split MX points between NXPE processors
+  // MXG at each end needed for edge boundary regions
+  MX = nx - 2 * MXG;
+  MXSUB = MX / NXPE;
+  if ((MX % NXPE) != 0) {
+    throw BoutException(_("Cannot split {:d} X points equally between {:d} processors\n"),
+                        MX, NXPE);
+  }
+
+  // NOTE: No grid data reserved for Y boundary cells - copy from neighbours
+  MY = ny;
+  MYSUB = MY / NYPE;
+  if ((MY % NYPE) != 0) {
+    throw BoutException(
+        _("\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"), MY,
+        NYPE);
+  }
+
+  MZ = nz;
+  MZSUB = MZ / NZPE;
+  if ((MZ % NZPE) != 0) {
+    throw BoutException(
+        _("\tERROR: Cannot split {:d} Z points equally between {:d} processors\n"), MZ,
+        NZPE);
+  }
+
+  // Set global offsets
+  OffsetX = PE_XIND * MXSUB;
+  OffsetY = PE_YIND * MYSUB;
+  OffsetZ = 0;
+
+  // Number of grid cells on this processor is ng* = M*SUB + guard/boundary cells
+  LocalNx = MXSUB + 2 * MXG;
+  LocalNy = MYSUB + 2 * MYG;
+  LocalNz = MZSUB + 2 * MZG;
+
+  // Set local index ranges
+  xstart = MXG;
+  xend = MXG + MXSUB - 1;
+
+  ystart = MYG;
+  yend = MYG + MYSUB - 1;
+
+  zstart = MZG;
+  zend = MZG + MZSUB - 1;
+}
+
 int BoutMesh::load() {
   TRACE("BoutMesh::load()");
 
@@ -377,43 +440,23 @@ int BoutMesh::load() {
   MZG = 0;
   ASSERT0(MZG >= 0);
 
+  // For now don't parallelise z
+  NZPE = 1;
+
   output_info << _("\tGuard cells (x,y,z): ") << MXG << ", " << MYG << ", " << MZG
               << std::endl;
 
-  // Check that nx is large enough
-  if (nx <= 2 * MXG) {
-    throw BoutException(_("Error: nx must be greater than 2 times MXG (2 * {:d})"), MXG);
-  }
-
-  // Set global x- and z-grid sizes
-  GlobalNx = nx;
-  GlobalNz = nz;
-
   // separatrix location
-  Mesh::get(ixseps1, "ixseps1", GlobalNx);
-  Mesh::get(ixseps2, "ixseps2", GlobalNx);
+  Mesh::get(ixseps1, "ixseps1", nx);
+  Mesh::get(ixseps2, "ixseps2", nx);
   Mesh::get(jyseps1_1, "jyseps1_1", -1);
   Mesh::get(jyseps1_2, "jyseps1_2", ny / 2);
   Mesh::get(jyseps2_1, "jyseps2_1", jyseps1_2);
   Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
   Mesh::get(ny_inner, "ny_inner", jyseps2_1);
 
-  // Set global y-grid size
-  GlobalNy = ny + 2 * MYG;
-  if (jyseps1_2 != jyseps2_1) {
-    GlobalNy += 2*MYG;
-  }
-
-  // Set global grid sizes, excluding boundary points
-  GlobalNxNoBoundaries = nx - 2*MXG;
-  GlobalNyNoBoundaries = ny;
-  GlobalNzNoBoundaries = nz;
-
   // Check inputs
   setYDecompositionIndices(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
-
-  // For now don't parallelise z
-  NZPE = 1;
 
   if (options.isSet("NXPE") or options.isSet("NYPE")) {
     chooseProcessorSplit(options);
@@ -421,37 +464,12 @@ int BoutMesh::load() {
     findProcessorSplit();
   }
 
-  /// Get X and Y processor indices
+  // Get X and Y processor indices
   PE_YIND = MYPE / NXPE;
   PE_XIND = MYPE % NXPE;
 
-  // Work out other grid size quantities
-
-  /// MXG at each end needed for edge boundary regions
-  MX = nx - 2 * MXG;
-
-  /// Split MX points between NXPE processors
-  MXSUB = MX / NXPE;
-  if ((MX % NXPE) != 0) {
-    throw BoutException(_("Cannot split {:d} X points equally between {:d} processors\n"),
-                        MX, NXPE);
-  }
-
-  /// NOTE: No grid data reserved for Y boundary cells - copy from neighbours
-  MY = ny;
-  MYSUB = MY / NYPE;
-  if ((MY % NYPE) != 0) {
-    throw BoutException(
-        _("\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"), MY,
-        NYPE);
-  }
-
-  MZSUB = MZ / NZPE;
-  if ((MZ % NZPE) != 0) {
-    throw BoutException(
-        _("\tERROR: Cannot split {:d} Z points equally between {:d} processors\n"), MZ,
-        NZPE);
-  }
+  // Set the other grid sizes from nx, ny, nz
+  setDerivedGridSizes();
 
   /// Get mesh options
   OPTION(options, IncIntShear, false);
@@ -460,12 +478,6 @@ int BoutMesh::load() {
   async_send = options["async_send"]
                    .doc("Whether to use asyncronous MPI sends")
                    .withDefault(false);
-
-  // Set global offsets
-
-  OffsetX = PE_XIND * MXSUB;
-  OffsetY = PE_YIND * MYSUB;
-  OffsetZ = 0;
 
   if (options.isSet("zperiod")) {
     OPTION(options, zperiod, 1);
@@ -477,22 +489,6 @@ int BoutMesh::load() {
 
     zperiod = ROUND(1.0 / (ZMAX - ZMIN));
   }
-
-  /// Number of grid cells is ng* = M*SUB + guard/boundary cells
-  LocalNx = MXSUB + 2 * MXG;
-  LocalNy = MYSUB + 2 * MYG;
-  LocalNz = MZSUB + 2 * MZG;
-
-  // Set local index ranges
-
-  zstart = MZG;
-  zend = MZG + MZSUB - 1;
-
-  xstart = MXG;
-  xend = MXG + MXSUB - 1;
-
-  ystart = MYG;
-  yend = MYG + MYSUB - 1;
 
   ///////////////////// TOPOLOGY //////////////////////////
   /// Call topology to set layout of grid
@@ -1699,26 +1695,13 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   symmetricGlobalX = true;
   symmetricGlobalY = true;
 
-  comm_x = MPI_COMM_NULL;
-  comm_inner = MPI_COMM_NULL;
-  comm_middle = MPI_COMM_NULL;
-  comm_outer = MPI_COMM_NULL;
-
   PE_XIND = pe_xind;
   PE_YIND = pe_yind;
   NPES = nxpe * nype;
   MYPE = nxpe * pe_yind + pe_xind;
 
-  // Set global grid sizes
-  GlobalNx = nx;
-  GlobalNy = ny + 2 * MYG;
-  GlobalNz = nz;
-
-  if (2 * MXG >= nx)
-    throw BoutException(_("nx must be greater than 2*MXG"));
-
-  ixseps1 = GlobalNx;
-  ixseps2 = GlobalNx;
+  ixseps1 = nx;
+  ixseps2 = nx;
   jyseps1_1 = -1;
   jyseps1_2 = ny / 2;
   jyseps2_1 = jyseps1_2;
@@ -1730,54 +1713,15 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   NYPE = nype;
   NZPE = 1;
 
-  MX = nx - 2 * MXG;
-  MXSUB = MX / NXPE;
-  if ((MX % NXPE) != 0) {
-    throw BoutException(_("Cannot split {:d} X points equally between {:d} processors\n"),
-                        MX, NXPE);
-  }
-
-  /// NOTE: No grid data reserved for Y boundary cells - copy from neighbours
-  MY = ny;
-  MYSUB = MY / NYPE;
-  if ((MY % NYPE) != 0) {
-    throw BoutException(
-        _("\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"), MY,
-        NYPE);
-  }
-
-  MZ = nz;
-  MZSUB = MZ / NZPE;
-  if ((MZ % NZPE) != 0) {
-    throw BoutException(
-        _("\tERROR: Cannot split {:d} Z points equally between {:d} processors\n"), MZ,
-        NZPE);
-  }
+  // Set the other grid sizes from nx, ny, nz
+  setDerivedGridSizes();
 
   periodicX = false;
   async_send = false;
 
-  // Set global offsets
-  OffsetX = PE_XIND * MXSUB;
-  OffsetY = PE_YIND * MYSUB;
-  OffsetZ = 0;
-
   ZMIN = 0.0;
   ZMAX = 1.0;
   zperiod = 1.0;
-
-  /// Number of grid cells is ng* = M*SUB + guard/boundary cells
-  LocalNx = MXSUB + 2 * MXG;
-  LocalNy = MYSUB + 2 * MYG;
-  LocalNz = MZSUB + 2 * MZG;
-
-  // Set local index ranges
-  zstart = MZG;
-  zend = MZG + MZSUB - 1;
-  xstart = MXG;
-  xend = MXG + MXSUB - 1;
-  ystart = MYG;
-  yend = MYG + MYSUB - 1;
 
   if (not create_topology) {
     return;
