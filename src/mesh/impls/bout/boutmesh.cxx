@@ -2165,11 +2165,10 @@ void BoutMesh::topology() {
     add_target(ny_inner - 1, 0, nx);
   }
 
-  MYPE_IN_CORE = 0; // processor not in core
-  if ((ixseps_inner > 0) &&
-      (((PE_YIND * MYSUB > jyseps1_1) && (PE_YIND * MYSUB <= jyseps2_1)) ||
-       ((PE_YIND * MYSUB > jyseps1_2) && (PE_YIND * MYSUB <= jyseps2_2)))) {
-    MYPE_IN_CORE = 1; /* processor is in the core */
+  if ((ixseps_inner > 0)
+      && (((PE_YIND * MYSUB > jyseps1_1) && (PE_YIND * MYSUB <= jyseps2_1))
+          || ((PE_YIND * MYSUB > jyseps1_2) && (PE_YIND * MYSUB <= jyseps2_2)))) {
+    MYPE_IN_CORE = true; /* processor is in the core */
   }
 
   if (DDATA_XSPLIT > LocalNx) {
@@ -2180,7 +2179,7 @@ void BoutMesh::topology() {
   }
 
   // Print out settings
-  output_info.write("\tMYPE_IN_CORE = {:d}\n", MYPE_IN_CORE);
+  output_info.write("\tMYPE_IN_CORE = {}\n", MYPE_IN_CORE);
   output_info.write("\tDXS = {:d}, DIN = {:d}. DOUT = {:d}\n", DDATA_XSPLIT, DDATA_INDEST,
                     DDATA_OUTDEST);
   output_info.write("\tUXS = {:d}, UIN = {:d}. UOUT = {:d}\n", UDATA_XSPLIT, UDATA_INDEST,
@@ -2401,7 +2400,7 @@ int BoutMesh::unpack_data(const std::vector<FieldData *> &var_list, int xge, int
  ****************************************************************/
 
 bool BoutMesh::periodicY(int jx) const {
-  return (getGlobalXIndex(jx) < ixseps_inner) && MYPE_IN_CORE;
+  return MYPE_IN_CORE and (getGlobalXIndex(jx) < ixseps_inner);
 }
 
 bool BoutMesh::periodicY(int jx, BoutReal &ts) const {

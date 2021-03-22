@@ -299,7 +299,8 @@ private:
 
   int NZPE;
 
-  int MYPE_IN_CORE; // 1 if processor in core
+  /// Is this processor in the core region?
+  bool MYPE_IN_CORE{false};
 
   using Mesh::YGLOBAL;
   int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
