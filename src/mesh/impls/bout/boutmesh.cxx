@@ -2340,8 +2340,8 @@ int BoutMesh::pack_data(const std::vector<FieldData *> &var_list, int xge, int x
   for (const auto &var : var_list) {
     if (var->is3D()) {
       // 3D variable
-      ASSERT2(static_cast<Field3D *>(var)->isAllocated());
-      auto& var3d_ref = *static_cast<Field3D *>(var);
+      ASSERT2(dynamic_cast<Field3D*>(var)->isAllocated());
+      auto& var3d_ref = *dynamic_cast<Field3D*>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
           for (int jz = 0; jz < LocalNz; jz++, len++) {
@@ -2351,8 +2351,8 @@ int BoutMesh::pack_data(const std::vector<FieldData *> &var_list, int xge, int x
       }
     } else {
       // 2D variable
-      ASSERT2(static_cast<Field2D *>(var)->isAllocated());
-      auto& var2d_ref = *static_cast<Field2D *>(var);
+      ASSERT2(dynamic_cast<Field2D*>(var)->isAllocated());
+      auto& var2d_ref = *dynamic_cast<Field2D*>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
           buffer[len] = var2d_ref(jx, jy);
@@ -2373,7 +2373,7 @@ int BoutMesh::unpack_data(const std::vector<FieldData *> &var_list, int xge, int
   for (const auto &var : var_list) {
     if (var->is3D()) {
       // 3D variable
-      auto& var3d_ref = *static_cast<Field3D *>(var);
+      auto& var3d_ref = *dynamic_cast<Field3D*>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
           for (int jz = 0; jz < LocalNz; jz++, len++) {
@@ -2383,7 +2383,7 @@ int BoutMesh::unpack_data(const std::vector<FieldData *> &var_list, int xge, int
       }
     } else {
       // 2D variable
-      auto& var2d_ref = *static_cast<Field2D *>(var);
+      auto& var2d_ref = *dynamic_cast<Field2D*>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
           var2d_ref(jx, jy) = buffer[len];
