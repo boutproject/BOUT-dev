@@ -22,9 +22,10 @@ public:
                   int input_npes = 1)
       : BoutMesh(input_nx, input_ny, input_nz, mxg, myg, input_npes) {}
   BoutMeshExposer(int nx, int ny, int nz, int nxpe, int nype, int pe_xind, int pe_yind,
-                  bool create_topology = true)
+                  bool create_topology = true, bool symmetric_X = true,
+                  bool symmetric_Y = true)
       : BoutMesh((nxpe * (nx - 2)) + 2, nype * ny, nz, 1, 1, nxpe, nype, pe_xind, pe_yind,
-                 create_topology) {}
+                 create_topology, symmetric_X, symmetric_Y) {}
   BoutMeshExposer(const BoutMeshParameters& inputs, bool periodicX_ = false);
   // Make protected methods public for testing
   using BoutMesh::add_target;
@@ -38,6 +39,7 @@ public:
   using BoutMesh::getConnectionInfo;
   using BoutMesh::PROC_NUM;
   using BoutMesh::set_connection;
+  using BoutMesh::setShiftAngle;
   using BoutMesh::setXDecompositionIndices;
   using BoutMesh::setYDecompositionIndices;
   using BoutMesh::topology;
@@ -57,16 +59,20 @@ struct BoutMeshGridInfo {
   int nype;
   int pe_xind;
   int pe_yind;
+  bool symmetric_X;
+  bool symmetric_Y;
   // The below are constructed consistently with the above
   int total_nx; // _Does_ include guard cells
   int total_ny; // Does _not_ include guard cells
   int total_processors;
   BoutMeshGridInfo(int local_nx_, int local_ny_, int num_x_guards_, int num_y_guards_,
-                   int nxpe_, int nype_, int pe_xind_ = 0, int pe_yind_ = 0)
+                   int nxpe_, int nype_, int pe_xind_ = 0, int pe_yind_ = 0,
+                   bool symmetric_X_ = true, bool symmetric_Y_ = true)
       : local_nx(local_nx_), local_ny(local_ny_), num_x_guards(num_x_guards_),
         num_y_guards(num_y_guards_), nxpe(nxpe_), nype(nype_), pe_xind(pe_xind_),
-        pe_yind(pe_yind_), total_nx((nxpe * local_nx) + (2 * num_x_guards)),
-        total_ny(nype * local_ny), total_processors(nxpe * nype) {}
+        pe_yind(pe_yind_), symmetric_X(symmetric_X_), symmetric_Y(symmetric_Y_),
+        total_nx((nxpe * local_nx) + (2 * num_x_guards)), total_ny(nype * local_ny),
+        total_processors(nxpe * nype) {}
 };
 
 /// Grid and topology information to make a `BoutMesh`
@@ -81,7 +87,8 @@ struct BoutMeshParameters {
 BoutMeshExposer::BoutMeshExposer(const BoutMeshParameters& inputs, bool periodicX_)
     : BoutMesh(inputs.grid.total_nx, inputs.grid.total_ny, 1, inputs.grid.num_x_guards,
                inputs.grid.num_y_guards, inputs.grid.nxpe, inputs.grid.nype,
-               inputs.grid.pe_xind, inputs.grid.pe_yind, false) {
+               inputs.grid.pe_xind, inputs.grid.pe_yind, false, inputs.grid.symmetric_X,
+               inputs.grid.symmetric_Y) {
   periodicX = periodicX_;
   setXDecompositionIndices(inputs.x_indices);
   setYDecompositionIndices(inputs.y_indices);
@@ -803,6 +810,54 @@ TEST(BoutMeshTest, GetGlobalXIndexNoBoundaries) {
   EXPECT_EQ(mesh11.getGlobalXIndexNoBoundaries(4), 6);
 }
 
+TEST(BoutMeshTest, GlobalXIntSymmetricX) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh01(4, 3, 1, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.GlobalX(0), -0.125);
+  EXPECT_EQ(mesh01.GlobalX(1), 0.125);
+  EXPECT_EQ(mesh01.GlobalX(2), 0.375);
+  EXPECT_EQ(mesh01.GlobalX(3), 0.625);
+  EXPECT_EQ(mesh01.GlobalX(4), 0.875);
+}
+
+TEST(BoutMeshTest, GlobalXIntAsymmetricX) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh01(4, 3, 1, 2, 2, 0, 1, false, false);
+  EXPECT_EQ(mesh01.GlobalX(0), 0.);
+  EXPECT_EQ(mesh01.GlobalX(1), 0.25);
+  EXPECT_EQ(mesh01.GlobalX(2), 0.5);
+  EXPECT_EQ(mesh01.GlobalX(3), 0.75);
+  EXPECT_EQ(mesh01.GlobalX(4), 1.0);
+}
+
+TEST(BoutMeshTest, GlobalXRealSymmetricX) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh01(4, 3, 1, 2, 2, 0, 1);
+  EXPECT_EQ(mesh01.GlobalX(0.5), 0.);
+  EXPECT_EQ(mesh01.GlobalX(1.5), 0.25);
+  EXPECT_EQ(mesh01.GlobalX(2.5), 0.5);
+  EXPECT_EQ(mesh01.GlobalX(3.5), 0.75);
+  EXPECT_EQ(mesh01.GlobalX(4.5), 1.0);
+}
+
+TEST(BoutMeshTest, GlobalXRealAsymmetricX) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh01(4, 3, 1, 2, 2, 0, 1, false, false);
+  EXPECT_EQ(mesh01.GlobalX(0.5), 0.125);
+  EXPECT_EQ(mesh01.GlobalX(1.5), 0.375);
+  EXPECT_EQ(mesh01.GlobalX(2.5), 0.625);
+  EXPECT_EQ(mesh01.GlobalX(3.5), 0.875);
+  EXPECT_EQ(mesh01.GlobalX(4.5), 1.125);
+}
+
 TEST(BoutMeshTest, GetLocalXIndex) {
   WithQuietOutput info{output_info};
   WithQuietOutput warn{output_warn};
@@ -1179,6 +1234,142 @@ TEST(BoutMeshTest, GetLocalYIndexNoBoundaries) {
   EXPECT_EQ(mesh11.getLocalYIndexNoBoundaries(4), 2);
   EXPECT_EQ(mesh11.getLocalYIndexNoBoundaries(5), 3);
   EXPECT_EQ(mesh11.getLocalYIndexNoBoundaries(6), 4);
+}
+
+TEST(BoutMeshTest, GlobalYIntSymmetricY) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh_inner_pf(createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 0}));
+  EXPECT_EQ(mesh_inner_pf.GlobalY(0), -0.5625);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(1), -0.4375);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(2), -0.3125);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(3), -0.1875);
+
+  BoutMeshExposer mesh_inner_core(
+      createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 1}));
+  EXPECT_EQ(mesh_inner_core.GlobalY(0), -0.0625);
+  EXPECT_EQ(mesh_inner_core.GlobalY(1), 0.0625);
+  EXPECT_EQ(mesh_inner_core.GlobalY(2), 0.1875);
+  EXPECT_EQ(mesh_inner_core.GlobalY(3), 0.3125);
+
+  BoutMeshExposer mesh_outer_core(
+      createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 4}));
+  EXPECT_EQ(mesh_outer_core.GlobalY(0), 0.4375);
+  EXPECT_EQ(mesh_outer_core.GlobalY(1), 0.5625);
+  EXPECT_EQ(mesh_outer_core.GlobalY(2), 0.6875);
+  EXPECT_EQ(mesh_outer_core.GlobalY(3), 0.8125);
+
+  BoutMeshExposer mesh_outer_pf(createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 5}));
+  EXPECT_EQ(mesh_outer_pf.GlobalY(0), 0.9375);
+  EXPECT_EQ(mesh_outer_pf.GlobalY(1), 1.0625);
+  EXPECT_EQ(mesh_outer_pf.GlobalY(2), 1.1875);
+  EXPECT_EQ(mesh_outer_pf.GlobalY(3), 1.3125);
+}
+
+TEST(BoutMeshTest, GlobalYIntAsymmetricY) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  auto grid_inner_pf = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 0});
+  grid_inner_pf.grid.symmetric_Y = false;
+  BoutMeshExposer mesh_inner_pf(grid_inner_pf);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(0), 0);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(1), 0);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(2), 0);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(3), 0);
+
+  auto grid_inner_core = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 1});
+  grid_inner_core.grid.symmetric_Y = false;
+  BoutMeshExposer mesh_inner_core(grid_inner_core);
+  EXPECT_EQ(mesh_inner_core.GlobalY(0), -0.125);
+  EXPECT_EQ(mesh_inner_core.GlobalY(1), 0.0);
+  EXPECT_EQ(mesh_inner_core.GlobalY(2), 0.125);
+  EXPECT_EQ(mesh_inner_core.GlobalY(3), 0.25);
+
+  auto grid_outer_core = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 4});
+  grid_outer_core.grid.symmetric_Y = false;
+  BoutMeshExposer mesh_outer_core(grid_outer_core);
+  EXPECT_EQ(mesh_outer_core.GlobalY(0), 0.375);
+  EXPECT_EQ(mesh_outer_core.GlobalY(1), 0.5);
+  EXPECT_EQ(mesh_outer_core.GlobalY(2), 0.625);
+  EXPECT_EQ(mesh_outer_core.GlobalY(3), 0.75);
+
+  auto grid_outer_pf = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 5});
+  grid_outer_pf.grid.symmetric_Y = false;
+  BoutMeshExposer mesh_outer_pf(grid_outer_pf);
+  // EXPECT_EQ(mesh_outer_pf.GlobalY(0), 2.375); // Does this make sense?
+  EXPECT_EQ(mesh_outer_pf.GlobalY(1), 1);
+  EXPECT_EQ(mesh_outer_pf.GlobalY(2), 1);
+  EXPECT_EQ(mesh_outer_pf.GlobalY(3), 1);
+}
+
+TEST(BoutMeshTest, GlobalYRealSymmetricY) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh_inner_pf(createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 0}));
+  EXPECT_EQ(mesh_inner_pf.GlobalY(0.5), -0.5);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(1.5), -0.375);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(2.5), -0.25);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(3.5), -0.125);
+
+  BoutMeshExposer mesh_inner_core(
+      createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 1}));
+  EXPECT_EQ(mesh_inner_core.GlobalY(0.5), 0.0);
+  EXPECT_EQ(mesh_inner_core.GlobalY(1.5), 0.125);
+  EXPECT_EQ(mesh_inner_core.GlobalY(2.5), 0.25);
+  EXPECT_EQ(mesh_inner_core.GlobalY(3.5), 0.375);
+
+  BoutMeshExposer mesh_outer_core(
+      createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 4}));
+  EXPECT_EQ(mesh_outer_core.GlobalY(0.5), 0.5);
+  EXPECT_EQ(mesh_outer_core.GlobalY(1.5), 0.625);
+  EXPECT_EQ(mesh_outer_core.GlobalY(2.5), 0.75);
+  EXPECT_EQ(mesh_outer_core.GlobalY(3.5), 0.875);
+
+  BoutMeshExposer mesh_outer_pf(createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 5}));
+  EXPECT_EQ(mesh_outer_pf.GlobalY(0.5), 1.0);
+  EXPECT_EQ(mesh_outer_pf.GlobalY(1.5), 1.125);
+  EXPECT_EQ(mesh_outer_pf.GlobalY(2.5), 1.25);
+  EXPECT_EQ(mesh_outer_pf.GlobalY(3.5), 1.375);
+}
+
+TEST(BoutMeshTest, GlobalYRealAsymmetricY) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  auto grid_inner_pf = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 0});
+  grid_inner_pf.grid.symmetric_Y = false;
+  BoutMeshExposer mesh_inner_pf(grid_inner_pf);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(0.5), 0);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(1.5), 0);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(2.5), 0);
+  EXPECT_EQ(mesh_inner_pf.GlobalY(3.5), 0);
+
+  auto grid_inner_core = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 1});
+  grid_inner_core.grid.symmetric_Y = false;
+  BoutMeshExposer mesh_inner_core(grid_inner_core);
+  EXPECT_EQ(mesh_inner_core.GlobalY(0.5), -0.0625);
+  EXPECT_EQ(mesh_inner_core.GlobalY(1.5), 0.0625);
+  EXPECT_EQ(mesh_inner_core.GlobalY(2.5), 0.1875);
+  EXPECT_EQ(mesh_inner_core.GlobalY(3.5), 0.3125);
+
+  auto grid_outer_core = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 4});
+  grid_outer_core.grid.symmetric_Y = false;
+  BoutMeshExposer mesh_outer_core(grid_outer_core);
+  EXPECT_EQ(mesh_outer_core.GlobalY(0.5), 0.4375);
+  EXPECT_EQ(mesh_outer_core.GlobalY(1.5), 0.5625);
+  EXPECT_EQ(mesh_outer_core.GlobalY(2.5), 0.6875);
+  EXPECT_EQ(mesh_outer_core.GlobalY(3.5), 0.8125);
+
+  auto grid_outer_pf = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 5});
+  grid_outer_pf.grid.symmetric_Y = false;
+  BoutMeshExposer mesh_outer_pf(grid_outer_pf);
+  EXPECT_EQ(mesh_outer_pf.GlobalY(0.5), 1);
+  EXPECT_EQ(mesh_outer_pf.GlobalY(1.5), 1);
+  EXPECT_EQ(mesh_outer_pf.GlobalY(2.5), 1);
+  EXPECT_EQ(mesh_outer_pf.GlobalY(3.5), 1);
 }
 
 TEST(BoutMeshTest, GetGlobalZIndex) {
@@ -1827,4 +2018,83 @@ TEST(BoutMeshTest, CreateYBoundariesOuterLower) {
   auto boundaries = mesh.getBoundaries();
   EXPECT_EQ(boundaries.size(), 1);
   EXPECT_EQ(boundaries[0]->label, "lower_target");
+}
+
+TEST(BoutMestTest, PeriodicY) {
+  WithQuietOutput info{output_info};
+
+  BoutMeshExposer mesh00(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 0}));
+  EXPECT_FALSE(mesh00.periodicY(2));
+  EXPECT_FALSE(mesh00.periodicY(10));
+
+  BoutMeshExposer mesh01(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
+  EXPECT_TRUE(mesh01.periodicY(2));
+  EXPECT_FALSE(mesh01.periodicY(10));
+}
+
+TEST(BoutMestTest, PeriodicYWithShiftAngle) {
+  WithQuietOutput info{output_info};
+
+  const std::vector<BoutReal> shift_angle = {-1., 11., 10., 9., 8., 7., 6.,
+                                             5.,  4.,  3.,  2., 1., 0., -1.};
+
+  BoutMeshExposer mesh00(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 0}));
+  mesh00.setShiftAngle(shift_angle);
+  BoutReal twist_shift00;
+  EXPECT_FALSE(mesh00.periodicY(2, twist_shift00));
+  EXPECT_EQ(twist_shift00, 0.);
+  EXPECT_FALSE(mesh00.periodicY(10, twist_shift00));
+  EXPECT_EQ(twist_shift00, 0.);
+
+  BoutMeshExposer mesh01(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
+  mesh01.setShiftAngle(shift_angle);
+  BoutReal twist_shift01;
+  EXPECT_TRUE(mesh01.periodicY(2, twist_shift01));
+  EXPECT_EQ(twist_shift01, 10.);
+  EXPECT_FALSE(mesh01.periodicY(10, twist_shift01));
+  EXPECT_EQ(twist_shift01, 0.);
+}
+
+TEST(BoutMeshTest, NumberOfYBoundaries) {
+  WithQuietOutput info{output_info};
+
+  BoutMeshExposer mesh_SOL(createSOL({3, 3, 1, 1, 2, 2, 1, 1}));
+  EXPECT_EQ(mesh_SOL.numberOfYBoundaries(), 1);
+
+  BoutMeshExposer mesh_DND(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 0}));
+  EXPECT_EQ(mesh_DND.numberOfYBoundaries(), 2);
+}
+
+TEST(BoutMeshTest, HasBranchCutLower) {
+  WithQuietOutput info{output_info};
+
+  BoutMeshExposer mesh_SOL(createSOL({3, 3, 1, 1, 2, 2, 1, 1}));
+  EXPECT_EQ(mesh_SOL.hasBranchCutLower(2), std::make_pair(false, 0.));
+
+  const std::vector<BoutReal> shift_angle = {-1., 11., 10., 9., 8., 7., 6.,
+                                             5.,  4.,  3.,  2., 1., 0., -1.};
+  BoutMeshExposer mesh_DND01(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
+  mesh_DND01.setShiftAngle(shift_angle);
+  EXPECT_EQ(mesh_DND01.hasBranchCutLower(3), std::make_pair(true, 9.));
+
+  BoutMeshExposer mesh_DND04(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 4}));
+  mesh_DND04.setShiftAngle(shift_angle);
+  EXPECT_EQ(mesh_DND04.hasBranchCutLower(2), std::make_pair(false, 0.));
+}
+
+TEST(BoutMeshTest, HasBranchCutUpper) {
+  WithQuietOutput info{output_info};
+
+  BoutMeshExposer mesh_SOL(createSOL({3, 3, 1, 1, 2, 2, 1, 1}));
+  EXPECT_EQ(mesh_SOL.hasBranchCutUpper(2), std::make_pair(false, 0.));
+
+  const std::vector<BoutReal> shift_angle = {-1., 11., 10., 9., 8., 7., 6.,
+                                             5.,  4.,  3.,  2., 1., 0., -1.};
+  BoutMeshExposer mesh_DND01(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
+  mesh_DND01.setShiftAngle(shift_angle);
+  EXPECT_EQ(mesh_DND01.hasBranchCutUpper(3), std::make_pair(false, 0.));
+
+  BoutMeshExposer mesh_DND04(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 4}));
+  mesh_DND04.setShiftAngle(shift_angle);
+  EXPECT_EQ(mesh_DND04.hasBranchCutUpper(2), std::make_pair(true, 10.));
 }

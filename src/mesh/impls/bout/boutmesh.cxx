@@ -938,6 +938,15 @@ void BoutMesh::createYBoundaries() {
         new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, yboundary_xend, this));
 }
 
+void BoutMesh::setShiftAngle(const std::vector<BoutReal>& shift_angle) {
+  if (shift_angle.size() != static_cast<std::size_t>(LocalNx)) {
+    throw BoutException("shift_angle vector wrong size: got {}, expected {}",
+                        shift_angle.size(), LocalNx);
+  }
+  TwistShift = true;
+  ShiftAngle = shift_angle;
+}
+
 /****************************************************************
  *                 COMMUNICATIONS
  ****************************************************************/
@@ -1706,11 +1715,11 @@ int BoutMesh::XPROC(int xind) const { return (xind >= MXG) ? (xind - MXG) / MXSU
  ****************************************************************/
 
 BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
-                   int nype, int pe_xind, int pe_yind, bool create_topology)
-    : nx(input_nx), ny(input_ny), nz(input_nz), MXG(mxg), MYG(myg), MZG(0) {
+                   int nype, int pe_xind, int pe_yind, bool create_topology,
+                   bool symmetric_X, bool symmetric_Y)
+    : nx(input_nx), ny(input_ny), nz(input_nz), symmetricGlobalX(symmetric_X),
+      symmetricGlobalY(symmetric_Y), MXG(mxg), MYG(myg), MZG(0) {
   maxregionblocksize = MAXREGIONBLOCKSIZE;
-  symmetricGlobalX = true;
-  symmetricGlobalY = true;
 
   PE_XIND = pe_xind;
   PE_YIND = pe_yind;

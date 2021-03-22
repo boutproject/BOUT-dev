@@ -206,7 +206,8 @@ protected:
   ///
   /// Pass \p create_topology = false to not set up topology, regions etc.
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind, bool create_topology = true);
+           int pe_xind, int pe_yind, bool create_topology = true, bool symmetric_X = true,
+           bool symmetric_Y = true);
 
   /// Very basic initialisation, only suitable for testing
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int input_npes)
@@ -280,6 +281,9 @@ protected:
   void createXBoundaries();
   /// Create the boundary regions in Y
   void createYBoundaries();
+
+  /// Set the shift angle and enable twist shift. Should only be used for testing!
+  void setShiftAngle(const std::vector<BoutReal>& shift_angle);
 private:
   std::string gridname;
   int nx, ny, nz; ///< Size of the grid in the input file
