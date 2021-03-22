@@ -402,7 +402,7 @@ private:
   //////////////////////////////////////////////////
   // Communications
 
-  bool async_send; ///< Switch to asyncronous sends (ISend, not Send)
+  bool async_send{false}; ///< Switch to asyncronous sends (ISend, not Send)
 
   /// Communication handle
   /// Used to keep track of communications between send and receive

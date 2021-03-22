@@ -1825,7 +1825,6 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   setDerivedGridSizes();
 
   periodicX = false;
-  async_send = false;
 
   ZMIN = 0.0;
   ZMAX = 1.0;
