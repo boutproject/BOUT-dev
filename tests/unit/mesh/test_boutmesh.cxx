@@ -254,6 +254,28 @@ TEST(BoutMeshTest, NullOptionsCheck) {
   EXPECT_NO_THROW(BoutMesh mesh(new FakeGridDataSource, nullptr));
 }
 
+// Not a great test as it's not specific to the thing we want to test,
+// and can also take a whopping ~300ms!
+TEST(BoutMeshTest, SingleCoreDecomposition) {
+  WithQuietOutput debug{output_debug};
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  WithQuietOutput progress{output_progress};
+
+  Options options{};
+  options["ny"] = 1;
+  options["nx"] = 4;
+  options["nz"] = 1;
+  options["MXG"] = 1;
+  options["MYG"] = 0;
+
+  bout::globals::mpi = new MpiWrapper();
+  BoutMesh mesh{new GridFromOptions{&options}, &options};
+  EXPECT_NO_THROW(mesh.load());
+  delete bout::globals::mpi;
+  bout::globals::mpi = nullptr;
+}
+
 struct SetYDecompositionTestParameters {
   BoutMeshExposer::YDecompositionIndices input;
   BoutMeshExposer::YDecompositionIndices expected;
