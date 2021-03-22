@@ -1256,7 +1256,7 @@ int BoutMesh::wait(comm_handle handle) {
   int ind, len;
   MPI_Status status;
 
-  if (ch->var_list.size() == 0) {
+  if (ch->var_list.empty()) {
 
     // Just waiting for a single MPI request
     mpi->MPI_Wait(ch->request, &status);
