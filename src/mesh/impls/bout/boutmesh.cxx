@@ -520,6 +520,39 @@ int BoutMesh::load() {
   //////////////////////////////////////////////////////
   /// Communicator
 
+  createCommunicators();
+  output_debug << "Got communicators" << endl;
+
+  //////////////////////////////////////////////////////
+  // Boundary regions
+  createXBoundaries();
+  createYBoundaries();
+
+  if (!boundary.empty()) {
+    output_info << _("Boundary regions in this processor: ");
+    for (const auto &bndry : boundary) {
+      output_info << bndry->label << ", ";
+    }
+    output_info << endl;
+  } else {
+    output_info << _("No boundary regions in this processor") << endl;
+  }
+
+  output_info << _("Constructing default regions") << endl;
+  createDefaultRegions();
+
+  // Add boundary regions
+  addBoundaryRegions();
+
+  // Initialize default coordinates
+  getCoordinates();
+
+  output_info.write(_("\tdone\n"));
+
+  return 0;
+}
+
+void BoutMesh::createCommunicators() {
   MPI_Group group_world;
   MPI_Comm_group(BoutComm::get(), &group_world); // Get the entire group
 
@@ -839,36 +872,6 @@ int BoutMesh::load() {
   }
   MPI_Group_free(&group_world);
   // Now have communicators for all regions.
-
-  output_debug << "Got communicators" << endl;
-
-  //////////////////////////////////////////////////////
-  // Boundary regions
-  createXBoundaries();
-  createYBoundaries();
-
-  if (!boundary.empty()) {
-    output_info << _("Boundary regions in this processor: ");
-    for (const auto &bndry : boundary) {
-      output_info << bndry->label << ", ";
-    }
-    output_info << endl;
-  } else {
-    output_info << _("No boundary regions in this processor") << endl;
-  }
-  
-  output_info << _("Constructing default regions") << endl;
-  createDefaultRegions();
-
-  // Add boundary regions
-  addBoundaryRegions();
-
-  // Initialize default coordinates
-  getCoordinates();
-
-  output_info.write(_("\tdone\n"));
-
-  return 0;
 }
 
 void BoutMesh::createXBoundaries() {

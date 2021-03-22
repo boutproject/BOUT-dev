@@ -273,6 +273,9 @@ protected:
   /// - jyseps1_2, jyseps2_1
   void setDerivedGridSizes();
 
+  /// Create the various sub-communicators
+  void createCommunicators();
+
   /// Create the boundary regions in X
   void createXBoundaries();
   /// Create the boundary regions in Y
