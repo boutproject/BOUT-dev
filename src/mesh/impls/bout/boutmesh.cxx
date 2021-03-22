@@ -338,6 +338,11 @@ void BoutMesh::setDerivedGridSizes() {
     GlobalNy += 2 * MYG;
   }
 
+  // Set global grid sizes, excluding boundary points
+  GlobalNxNoBoundaries = nx - 2*MXG;
+  GlobalNyNoBoundaries = ny;
+  GlobalNzNoBoundaries = nz;
+
   // Split MX points between NXPE processors
   // MXG at each end needed for edge boundary regions
   MX = nx - 2 * MXG;

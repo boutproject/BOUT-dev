@@ -1896,6 +1896,10 @@ TEST(BoutMeshTest, SetDerivedGridSizes) {
   EXPECT_EQ(mesh.GlobalNy, grid.total_ny + 8);
   EXPECT_EQ(mesh.GlobalNz, 1);
 
+  EXPECT_EQ(mesh.GlobalNxNoBoundaries, grid.total_nx - 2);
+  EXPECT_EQ(mesh.GlobalNyNoBoundaries, grid.total_ny);
+  EXPECT_EQ(mesh.GlobalNzNoBoundaries, 1);
+
   EXPECT_EQ(mesh.OffsetX, 2 * grid.local_nx);
   EXPECT_EQ(mesh.OffsetY, 2 * grid.local_ny);
   EXPECT_EQ(mesh.OffsetZ, 0);
