@@ -407,15 +407,15 @@ int BoutMesh::load() {
   //////////////
   // Grid sizes
 
-  if (Mesh::get(nx, "nx")) {
+  if (Mesh::get(nx, "nx") != 0) {
     throw BoutException(_("Mesh must contain nx"));
   }
 
-  if (Mesh::get(ny, "ny")) {
+  if (Mesh::get(ny, "ny") != 0) {
     throw BoutException(_("Mesh must contain ny"));
   }
 
-  if (Mesh::get(nz, "nz")) {
+  if (Mesh::get(nz, "nz") != 0) {
     // No "nz" variable in the grid file. Instead read MZ from options
 
     OPTION(options, MZ, 64);
@@ -438,13 +438,13 @@ int BoutMesh::load() {
   // Get guard cell sizes
   // Try to read from grid file first, then if not found
   // get from options
-  if (Mesh::get(MXG, "MXG")) {
+  if (Mesh::get(MXG, "MXG") != 0) {
     // Error code returned
     MXG = options["MXG"].doc("Number of guard cells on each side in X").withDefault(2);
   }
   ASSERT0(MXG >= 0);
 
-  if (Mesh::get(MYG, "MYG")) {
+  if (Mesh::get(MYG, "MYG") != 0) {
     MYG = options["MYG"].doc("Number of guard cells on each side in Y").withDefault(2);
   }
   ASSERT0(MYG >= 0);
@@ -2292,37 +2292,41 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
   const int xlen = LocalNy * LocalNz * MXG * 5, ylen = LocalNx * LocalNz * MYG * 5;
 
   CommHandle* ch = get_handle(xlen, ylen);
-  if (yup) {
+  if (yup != nullptr) {
     CommHandle* other = (yup == this) ? ch : yup->get_handle(xlen, ylen);
     if (other->dmsg_sendbuff.unique()) {
       ch->umsg_recvbuff = other->dmsg_sendbuff;
     }
-    if (yup != this)
+    if (yup != this) {
       yup->free_handle(other);
+    }
   }
-  if (ydown) {
+  if (ydown != nullptr) {
     CommHandle* other = (ydown == this) ? ch : ydown->get_handle(xlen, ylen);
     if (other->umsg_sendbuff.unique()) {
       ch->dmsg_recvbuff = other->umsg_sendbuff;
     }
-    if (ydown != this)
+    if (ydown != this) {
       ydown->free_handle(other);
+    }
   }
-  if (xin) {
+  if (xin != nullptr) {
     CommHandle* other = (xin == this) ? ch : xin->get_handle(xlen, ylen);
     if (other->omsg_sendbuff.unique()) {
       ch->imsg_recvbuff = other->omsg_sendbuff;
     }
-    if (xin != this)
+    if (xin != this) {
       xin->free_handle(other);
+    }
   }
-  if (xout) {
+  if (xout != nullptr) {
     CommHandle* other = (xout == this) ? ch : xout->get_handle(xlen, ylen);
     if (other->imsg_sendbuff.unique()) {
       ch->omsg_recvbuff = other->imsg_sendbuff;
     }
-    if (xout != this)
+    if (xout != this) {
       xout->free_handle(other);
+    }
   }
   free_handle(ch);
 }
