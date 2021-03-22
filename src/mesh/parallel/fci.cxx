@@ -170,7 +170,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
       }
     }
 
-    if ((xt_prime[i] >= 0.0) or (xt_prime[i] <= map_mesh.xend)) {
+    if ((xt_prime[i] >= 0.0) and (xt_prime[i] <= map_mesh.xend)) {
       // Not a boundary
       continue;
     }
