@@ -566,14 +566,14 @@ int BoutMesh::load() {
 }
 
 void BoutMesh::createCommunicators() {
-  MPI_Group group_world;
+  MPI_Group group_world = nullptr;
   MPI_Comm_group(BoutComm::get(), &group_world); // Get the entire group
 
   //////////////////////////////////////////////////////
   /// Communicator in X
 
-  MPI_Group group;
-  MPI_Comm comm_tmp;
+  MPI_Group group = nullptr;
+  MPI_Comm comm_tmp = nullptr;
 
   int proc[3]; // Processor range
 
@@ -613,7 +613,8 @@ void BoutMesh::createCommunicators() {
   //////////////////////////////////////////////////////
   /// Communicators for Y gather/scatter
 
-  MPI_Group group_tmp1, group_tmp2;
+  MPI_Group group_tmp1 = nullptr;
+  MPI_Group group_tmp2 = nullptr;
 
   proc[2] = NXPE; // Stride in processor rank
 
@@ -1083,7 +1084,7 @@ comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle, bool disable_corn
 
   const bool with_corners = include_corner_cells and not disable_corners;
 
-  CommHandle* ch;
+  CommHandle* ch = nullptr;
   if (handle == nullptr) {
     /// Work out length of buffer needed
     int xlen = msg_len(g.get(), 0, MXG, 0, with_corners ? LocalNy : MYSUB);
@@ -1162,7 +1163,7 @@ comm_handle BoutMesh::sendY(FieldGroup &g, comm_handle handle) {
   /// Send data going up (y+1)
 
   int len = 0;
-  BoutReal *outbuff;
+  BoutReal* outbuff = nullptr;
 
   if (UDATA_INDEST != -1) { // If there is a destination for inner x data
     len = pack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB, MYSUB + MYG,
@@ -1403,7 +1404,7 @@ MPI_Request BoutMesh::sendToProc(int xproc, int yproc, BoutReal *buffer, int siz
                                  int tag) {
   Timer timer("comms");
 
-  MPI_Request request;
+  MPI_Request request = nullptr;
 
   mpi->MPI_Isend(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(xproc, yproc), tag,
                  BoutComm::get(), &request);
@@ -1875,10 +1876,6 @@ void BoutMesh::default_connections() {
 }
 
 void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
-  int ype1, ype2; // the two Y processor indices
-  int ypeup, ypedown;
-  int yind1, yind2;
-
   if (xlt <= xge) {
     return;
   }
@@ -1894,14 +1891,16 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
     return;
   }
 
-  ype1 = YPROC(ypos1);
-  ype2 = YPROC(ypos2);
+  const int ype1 = YPROC(ypos1);
+  const int ype2 = YPROC(ypos2);
 
   /* y index within processors */
-  yind1 = YLOCAL(ypos1, ype1);
-  yind2 = YLOCAL(ypos2, ype2);
+  const int yind1 = YLOCAL(ypos1, ype1);
+  const int yind2 = YLOCAL(ypos2, ype2);
 
   /* Check which boundary the connection is on */
+  int ypeup = 0;
+  int ypedown = 0;
   if ((yind1 == MYG) && (yind2 == MYSUB + MYG - 1)) {
     ypeup = ype2;   /* processor sending data up (+ve y) */
     ypedown = ype1; /* processor sending data down (-ve y) */
