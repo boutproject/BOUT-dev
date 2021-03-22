@@ -105,7 +105,7 @@ class BoutMesh : public Mesh {
   /// Return communicator containing all processors in X
   MPI_Comm getXcomm(int UNUSED(jy)) const override { return comm_x; }
   /// Return communicator containing all processors in Y
-  MPI_Comm getYcomm(int jx) const override;
+  MPI_Comm getYcomm(int xpos) const override;
 
   /// Is local X index \p jx periodic in Y?
   ///
@@ -138,7 +138,7 @@ class BoutMesh : public Mesh {
   ///                                 poloidal circuit if there is a branch cut
   std::pair<bool, BoutReal> hasBranchCutUpper(int jx) const override;
 
-  int ySize(int jx) const override; ///< The number of points in Y at fixed X index \p jx
+  int ySize(int xpos) const override; ///< The number of points in Y at fixed X index \p jx
 
   /////////////////////////////////////////////
   // Y communications
