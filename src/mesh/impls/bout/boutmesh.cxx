@@ -2827,7 +2827,7 @@ void BoutMesh::addBoundaryRegions() {
   addRegion2D("RGN_WITH_BNDRIES", bndry2d);
 }
 
-const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
+RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -2862,7 +2862,7 @@ const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
   return RangeIterator(xs, xe);
 }
 
-const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
+RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -2896,7 +2896,7 @@ const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
   return RangeIterator(xs, xe);
 }
 
-const RangeIterator BoutMesh::iterateBndryLowerY() const {
+RangeIterator BoutMesh::iterateBndryLowerY() const {
   int xs = 0;
   int xe = LocalNx - 1;
   if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart)) {
@@ -2925,7 +2925,7 @@ const RangeIterator BoutMesh::iterateBndryLowerY() const {
   return RangeIterator(xs, xe);
 }
 
-const RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
+RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -2959,7 +2959,7 @@ const RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
   return RangeIterator(xs, xe);
 }
 
-const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
+RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -2993,7 +2993,7 @@ const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
   return RangeIterator(xs, xe);
 }
 
-const RangeIterator BoutMesh::iterateBndryUpperY() const {
+RangeIterator BoutMesh::iterateBndryUpperY() const {
   int xs = 0;
   int xe = LocalNx - 1;
   if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart)) {
@@ -3031,7 +3031,7 @@ void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry) {
   par_boundary.push_back(bndry);
 }
 
-const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
+Field3D BoutMesh::smoothSeparatrix(const Field3D& f) {
   Field3D result{emptyFrom(f)};
   if ((ixseps_inner > 0) && (ixseps_inner < nx - 1)) {
     if (XPROC(ixseps_inner) == PE_XIND) {

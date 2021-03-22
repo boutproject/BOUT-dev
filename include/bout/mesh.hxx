@@ -515,14 +515,14 @@ class Mesh {
   // Boundary region iteration
 
   /// Iterate over the lower Y boundary
-  virtual const RangeIterator iterateBndryLowerY() const = 0;
+  virtual RangeIterator iterateBndryLowerY() const = 0;
 
   /// Iterate over the upper Y boundary
-  virtual const RangeIterator iterateBndryUpperY() const = 0;
-  virtual const RangeIterator iterateBndryLowerOuterY() const = 0;
-  virtual const RangeIterator iterateBndryLowerInnerY() const = 0;
-  virtual const RangeIterator iterateBndryUpperOuterY() const = 0;
-  virtual const RangeIterator iterateBndryUpperInnerY() const = 0;
+  virtual RangeIterator iterateBndryUpperY() const = 0;
+  virtual RangeIterator iterateBndryLowerOuterY() const = 0;
+  virtual RangeIterator iterateBndryLowerInnerY() const = 0;
+  virtual RangeIterator iterateBndryUpperOuterY() const = 0;
+  virtual RangeIterator iterateBndryUpperInnerY() const = 0;
   
   bool hasBndryLowerY(); ///< Is there a boundary on the lower guard cells in Y?
   bool hasBndryUpperY(); ///< Is there a boundary on the upper guard cells in Y?
@@ -542,7 +542,7 @@ class Mesh {
   virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
   
   /// Branch-cut special handling (experimental)
-  virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}
+  virtual Field3D smoothSeparatrix(const Field3D &f) {return f;}
   
   virtual BoutReal GlobalX(int jx) const = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0; ///< Continuous Y index (0 -> 1)

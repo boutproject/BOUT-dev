@@ -159,19 +159,19 @@ class BoutMesh : public Mesh {
   comm_handle irecvYInOutdest(BoutReal* buffer, int size, int tag) override;
 
   // Boundary iteration
-  const RangeIterator iterateBndryLowerY() const override;
-  const RangeIterator iterateBndryUpperY() const override;
-  const RangeIterator iterateBndryLowerInnerY() const override;
-  const RangeIterator iterateBndryLowerOuterY() const override;
-  const RangeIterator iterateBndryUpperInnerY() const override;
-  const RangeIterator iterateBndryUpperOuterY() const override;
+  RangeIterator iterateBndryLowerY() const override;
+  RangeIterator iterateBndryUpperY() const override;
+  RangeIterator iterateBndryLowerInnerY() const override;
+  RangeIterator iterateBndryLowerOuterY() const override;
+  RangeIterator iterateBndryUpperInnerY() const override;
+  RangeIterator iterateBndryUpperOuterY() const override;
 
   // Boundary regions
   std::vector<BoundaryRegion*> getBoundaries() override;
   std::vector<BoundaryRegionPar*> getBoundariesPar() override;
   void addBoundaryPar(BoundaryRegionPar* bndry) override;
 
-  const Field3D smoothSeparatrix(const Field3D& f) override;
+  Field3D smoothSeparatrix(const Field3D& f) override;
 
   int getNx() const { return nx; }
   int getNy() const { return ny; }
