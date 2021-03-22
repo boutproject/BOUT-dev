@@ -844,58 +844,8 @@ int BoutMesh::load() {
 
   //////////////////////////////////////////////////////
   // Boundary regions
-  if (!periodicX && (MXG > 0)) {
-    // Need boundaries in X if not periodic and have X guard cells
-    if (PE_XIND == 0) {
-      // Inner either core or PF
-
-      int yg = getGlobalYIndexNoBoundaries(MYG); // Get a global index in this processor
-
-      if (((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
-          ((yg > jyseps1_2) && (yg <= jyseps2_2))) {
-        // Core
-        boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
-      } else {
-        // PF region
-        boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
-      }
-    }
-    if (PE_XIND == (NXPE - 1)) {
-      // Outer SOL
-      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
-    }
-  }
-
-  if (MYG > 0) {
-    // Need boundaries in Y
-
-    // Alter x-limits so that y-boundary conditions set corner-boundary cells
-    // i.e. if there is an x-boundary, include corner cells. If
-    // include_corner_cells==false, this modification is disabled to match the behaviour
-    // of BOUT++ up to v4.
-    // Note that including the corner cells requires that the x-boundary conditions are
-    // applied before the y-boundary conditions. This is ensured here in the
-    // BOUT++-applied boundary conditions because the y-boundaries are added to the
-    // 'boundary' vector after the x-boundaries, but beware **THE ORDER IS IMPORTANT**
-    const int yboundary_xstart = (include_corner_cells and IDATA_DEST == -1) ? 0 : xstart;
-    const int yboundary_xend = (include_corner_cells and ODATA_DEST == -1) ? LocalNx - 1
-                                                                           : xend;
-
-    if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > yboundary_xstart))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", yboundary_xstart,
-                         UDATA_XSPLIT - 1, this));
-    if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= yboundary_xend))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT,
-                         yboundary_xend, this));
-
-    if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > yboundary_xstart))
-      boundary.push_back(
-          new BoundaryRegionYDown("lower_target", yboundary_xstart, DDATA_XSPLIT - 1,
-                                  this));
-    if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= yboundary_xend))
-      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT,
-                         yboundary_xend, this));
-  }
+  createXBoundaries();
+  createYBoundaries();
 
   if (!boundary.empty()) {
     output_info << _("Boundary regions in this processor: ");
@@ -919,6 +869,70 @@ int BoutMesh::load() {
   output_info.write(_("\tdone\n"));
 
   return 0;
+}
+
+void BoutMesh::createXBoundaries() {
+  // Need boundaries in X if not periodic and have X guard cells
+  if (periodicX) {
+    return;
+  }
+  if (MXG <= 0) {
+    return;
+  }
+
+  if (PE_XIND == 0) {
+    // Inner either core or PF
+
+    // Get a global index in this processor
+    const int yg = getGlobalYIndexNoBoundaries(MYG);
+
+    if (((yg > jyseps1_1) and (yg <= jyseps2_1))
+        or ((yg > jyseps1_2) and (yg <= jyseps2_2))) {
+      // Core
+      boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
+    } else {
+      // PF region
+      boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend, this));
+    }
+  }
+
+  if (PE_XIND == (NXPE - 1)) {
+    // Outer SOL
+    boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
+  }
+}
+
+void BoutMesh::createYBoundaries() {
+  if (MYG <= 0) {
+    return;
+  }
+  // Need boundaries in Y
+
+  // Alter x-limits so that y-boundary conditions set corner-boundary cells
+  // i.e. if there is an x-boundary, include corner cells. If
+  // include_corner_cells==false, this modification is disabled to match the behaviour
+  // of BOUT++ up to v4.
+  // Note that including the corner cells requires that the x-boundary conditions are
+  // applied before the y-boundary conditions. This is ensured here in the
+  // BOUT++-applied boundary conditions because the y-boundaries are added to the
+  // 'boundary' vector after the x-boundaries, but beware **THE ORDER IS IMPORTANT**
+  const int yboundary_xstart = (include_corner_cells and IDATA_DEST == -1) ? 0 : xstart;
+  const int yboundary_xend =
+      (include_corner_cells and ODATA_DEST == -1) ? LocalNx - 1 : xend;
+
+  if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > yboundary_xstart))
+    boundary.push_back(
+        new BoundaryRegionYUp("upper_target", yboundary_xstart, UDATA_XSPLIT - 1, this));
+  if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= yboundary_xend))
+    boundary.push_back(
+        new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, yboundary_xend, this));
+
+  if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > yboundary_xstart))
+    boundary.push_back(new BoundaryRegionYDown("lower_target", yboundary_xstart,
+                                               DDATA_XSPLIT - 1, this));
+  if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= yboundary_xend))
+    boundary.push_back(
+        new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, yboundary_xend, this));
 }
 
 /****************************************************************

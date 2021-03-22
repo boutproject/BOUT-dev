@@ -31,6 +31,8 @@ public:
   using BoutMesh::addBoundaryRegions;
   using BoutMesh::chooseProcessorSplit;
   using BoutMesh::ConnectionInfo;
+  using BoutMesh::createXBoundaries;
+  using BoutMesh::createYBoundaries;
   using BoutMesh::default_connections;
   using BoutMesh::findProcessorSplit;
   using BoutMesh::getConnectionInfo;
@@ -47,8 +49,8 @@ public:
 
 /// Minimal parameters need to construct a grid useful for testing
 struct BoutMeshGridInfo {
-  int local_nx;                 // Does _not_ include guard cells
-  int local_ny;                 // Does _not_ include guard cells
+  int local_nx; // Does _not_ include guard cells
+  int local_ny; // Does _not_ include guard cells
   int num_x_guards;
   int num_y_guards;
   int nxpe;
@@ -56,8 +58,8 @@ struct BoutMeshGridInfo {
   int pe_xind;
   int pe_yind;
   // The below are constructed consistently with the above
-  int total_nx;                 // _Does_ include guard cells
-  int total_ny;                 // Does _not_ include guard cells
+  int total_nx; // _Does_ include guard cells
+  int total_ny; // Does _not_ include guard cells
   int total_processors;
   BoutMeshGridInfo(int local_nx_, int local_ny_, int num_x_guards_, int num_y_guards_,
                    int nxpe_, int nype_, int pe_xind_ = 0, int pe_yind_ = 0)
@@ -1572,7 +1574,7 @@ TEST(BoutMeshTest, TopologySingleNull2x3) {
     SCOPED_TRACE("TopologySingleNull2x3, mesh01");
     BoutMeshExposer mesh01(createSingleNull({3, 3, 1, 1, 2, 3, 0, 1}));
     BoutMeshExposer::ConnectionInfo expected01{true, false, true, false, 2,  4,
-                                               4,     2,     0,     4,    -1, 3};
+                                               4,    2,     0,    4,     -1, 3};
     EXPECT_EQ(mesh01.getConnectionInfo(), expected01);
     checkRegionSizes(mesh01, {0, 0, 0}, {0, 0, 0}, {3, 0});
   }
@@ -1630,7 +1632,7 @@ TEST(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
     SCOPED_TRACE("TopologyDisconnectedDoubleNull1x6, mesh01"); // Inner core
     BoutMeshExposer mesh01(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
     BoutMeshExposer::ConnectionInfo expected01{false, false, true, false, 4,  2,
-                                               11,     4,     0,     7,    -1, -1};
+                                               11,    4,     0,    7,     -1, -1};
     EXPECT_EQ(mesh01.getConnectionInfo(), expected01);
     checkRegionSizes(mesh01, {0, 0, 0}, {0, 0, 0}, {3, 3});
   }
@@ -1639,7 +1641,7 @@ TEST(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
     SCOPED_TRACE("TopologyDisconnectedDoubleNull1x6, mesh02"); // Inner upper leg
     BoutMeshExposer mesh02(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 2}));
     BoutMeshExposer::ConnectionInfo expected01{false, false, false, false, -1, -1,
-                                               14,     3,     1,     11,     -1, -1};
+                                               14,    3,     1,     11,    -1, -1};
     EXPECT_EQ(mesh02.getConnectionInfo(), expected01);
     checkRegionSizes(mesh02, {0, 0, 0}, {14, 0, 14}, {3, 3});
   }
@@ -1647,8 +1649,8 @@ TEST(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
   {
     SCOPED_TRACE("TopologyDisconnectedDoubleNull1x6, mesh03"); // Outer upper leg
     BoutMeshExposer mesh03(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 3}));
-    BoutMeshExposer::ConnectionInfo expected10{false, false, false, false, 2, 4,
-                                               11,     -1,    -1,    14,     -1, -1};
+    BoutMeshExposer::ConnectionInfo expected10{false, false, false, false, 2,  4,
+                                               11,    -1,    -1,    14,    -1, -1};
     EXPECT_EQ(mesh03.getConnectionInfo(), expected10);
     checkRegionSizes(mesh03, {0, 14, 14}, {0, 0, 0}, {3, 3});
   }
@@ -1656,8 +1658,8 @@ TEST(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
   {
     SCOPED_TRACE("TopologyDisconnectedDoubleNull1x6, mesh04"); // Outer core
     BoutMeshExposer mesh04(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 4}));
-    BoutMeshExposer::ConnectionInfo expected11{true, false, false, false, 1, 5,
-                                               7,    1,     3,    11,     -1, -1};
+    BoutMeshExposer::ConnectionInfo expected11{true, false, false, false, 1,  5,
+                                               7,    1,     3,     11,    -1, -1};
     EXPECT_EQ(mesh04.getConnectionInfo(), expected11);
     checkRegionSizes(mesh04, {0, 0, 0}, {0, 0, 0}, {3, 3});
   }
@@ -1666,7 +1668,7 @@ TEST(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
     SCOPED_TRACE("TopologyDisconnectedDoubleNull1x6, mesh05"); // Outer lower leg
     BoutMeshExposer mesh05(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 5}));
     BoutMeshExposer::ConnectionInfo expected11{false, false, false, false, -1, -1,
-                                               0,     0,     4,     7,     -1,  -1};
+                                               0,     0,     4,     7,     -1, -1};
     EXPECT_EQ(mesh05.getConnectionInfo(), expected11);
     checkRegionSizes(mesh05, {0, 0, 0}, {0, 14, 14}, {3, 3});
   }
@@ -1695,4 +1697,134 @@ TEST(BoutMeshTest, SetDerivedGridSizes) {
   EXPECT_EQ(mesh.yend, 4);
   EXPECT_EQ(mesh.zstart, 0);
   EXPECT_EQ(mesh.zend, 0);
+}
+
+TEST(BoutMeshTest, CreateXBoundariesPeriodicX) {
+  WithQuietOutput info{output_info};
+  // Periodic in X, so no boundaries
+  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 3, 6, 1, 0}));
+  mesh.periodicX = true;
+  mesh.createXBoundaries();
+
+  auto boundaries = mesh.getBoundaries();
+  EXPECT_TRUE(boundaries.empty());
+}
+
+TEST(BoutMeshTest, CreateXBoundariesNoGuards) {
+  WithQuietOutput info{output_info};
+  // No guards in X, so no boundaries
+  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 0, 1, 3, 6, 1, 0}));
+  mesh.createXBoundaries();
+
+  auto boundaries = mesh.getBoundaries();
+  EXPECT_TRUE(boundaries.empty());
+}
+
+TEST(BoutMeshTest, CreateXBoundariesDoubleNullInsidePF) {
+  WithQuietOutput info{output_info};
+  // Three cores in X, inside core, one boundary
+  BoutMeshExposer mesh_inside(createDisconnectedDoubleNull({12, 3, 1, 1, 3, 6, 0, 0}));
+  mesh_inside.createXBoundaries();
+
+  auto boundaries_inside = mesh_inside.getBoundaries();
+  EXPECT_EQ(boundaries_inside.size(), 1);
+  EXPECT_EQ(boundaries_inside[0]->label, "pf");
+}
+
+TEST(BoutMeshTest, CreateXBoundariesDoubleNullMiddlePF) {
+  WithQuietOutput info{output_info};
+  // Three cores in X, middle core, so no boundaries
+  BoutMeshExposer mesh_middle(createDisconnectedDoubleNull({12, 3, 1, 1, 3, 6, 1, 0}));
+  mesh_middle.createXBoundaries();
+
+  auto boundaries_middle = mesh_middle.getBoundaries();
+  EXPECT_TRUE(boundaries_middle.empty());
+}
+
+TEST(BoutMeshTest, CreateXBoundariesDoubleNullOutsidePF) {
+  WithQuietOutput info{output_info};
+  // Three cores in X, outside core, one boundary
+  BoutMeshExposer mesh_inside(createDisconnectedDoubleNull({12, 3, 1, 1, 3, 6, 0, 0}));
+  mesh_inside.createXBoundaries();
+
+  auto boundaries_inside = mesh_inside.getBoundaries();
+  EXPECT_EQ(boundaries_inside.size(), 1);
+  EXPECT_EQ(boundaries_inside[0]->label, "pf");
+}
+
+TEST(BoutMeshTest, CreateXBoundariesDoubleNullInsideOutsideCore) {
+  WithQuietOutput info{output_info};
+  // One core in X, so we expect two boundaries
+  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
+  mesh.createXBoundaries();
+
+  auto boundaries = mesh.getBoundaries();
+  EXPECT_EQ(boundaries.size(), 2);
+  EXPECT_EQ(boundaries[0]->label, "core");
+  EXPECT_EQ(boundaries[1]->label, "sol");
+}
+
+TEST(BoutMeshTest, CreateYBoundariesNoGuards) {
+  WithQuietOutput info{output_info};
+
+  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 0, 1, 6, 0, 0}));
+  mesh.createYBoundaries();
+
+  auto boundaries = mesh.getBoundaries();
+  EXPECT_TRUE(boundaries.empty());
+}
+
+TEST(BoutMeshTest, CreateYBoundariesClosedFieldLines) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh(createCore({4, 4, 2, 2, 4, 4}));
+  mesh.createYBoundaries();
+
+  auto boundaries = mesh.getBoundaries();
+  EXPECT_TRUE(boundaries.empty());
+}
+
+TEST(BoutMeshTest, CreateYBoundariesInnerLower) {
+  WithQuietOutput info{output_info};
+
+  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 0}));
+  mesh.createYBoundaries();
+
+  auto boundaries = mesh.getBoundaries();
+  EXPECT_EQ(boundaries.size(), 1);
+  EXPECT_EQ(boundaries[0]->label, "lower_target");
+}
+
+TEST(BoutMeshTest, CreateYBoundariesInnerUpper) {
+  WithQuietOutput info{output_info};
+
+  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 2}));
+  mesh.createYBoundaries();
+
+  auto boundaries = mesh.getBoundaries();
+  EXPECT_EQ(boundaries.size(), 1);
+  EXPECT_EQ(boundaries[0]->label, "upper_target");
+}
+
+TEST(BoutMeshTest, CreateYBoundariesOuterUpper) {
+  WithQuietOutput info{output_info};
+
+  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 5}));
+  mesh.createYBoundaries();
+
+  auto boundaries = mesh.getBoundaries();
+  EXPECT_EQ(boundaries.size(), 1);
+  EXPECT_EQ(boundaries[0]->label, "upper_target");
+}
+
+TEST(BoutMeshTest, CreateYBoundariesOuterLower) {
+  WithQuietOutput info{output_info};
+
+  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 3}));
+  mesh.createYBoundaries();
+
+  auto boundaries = mesh.getBoundaries();
+  EXPECT_EQ(boundaries.size(), 1);
+  EXPECT_EQ(boundaries[0]->label, "lower_target");
 }

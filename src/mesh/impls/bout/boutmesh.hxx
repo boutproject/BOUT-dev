@@ -272,6 +272,11 @@ protected:
   /// - PE_XIND, PE_YIND
   /// - jyseps1_2, jyseps2_1
   void setDerivedGridSizes();
+
+  /// Create the boundary regions in X
+  void createXBoundaries();
+  /// Create the boundary regions in Y
+  void createYBoundaries();
 private:
   std::string gridname;
   int nx, ny, nz; ///< Size of the grid in the input file
