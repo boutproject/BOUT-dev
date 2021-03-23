@@ -7,9 +7,11 @@
 #include <bout/mesh.hxx>
 #include "unused.hxx"
 
-#include <list>
-#include <vector>
 #include <cmath>
+#include <list>
+#include <set>
+#include <string>
+#include <vector>
 
 /// Implementation of Mesh (mostly) compatible with BOUT
 ///
@@ -170,6 +172,7 @@ class BoutMesh : public Mesh {
   std::vector<BoundaryRegion*> getBoundaries() override;
   std::vector<BoundaryRegionPar*> getBoundariesPar() override;
   void addBoundaryPar(BoundaryRegionPar* bndry) override;
+  std::set<std::string> getPossibleBoundaries() const override;
 
   Field3D smoothSeparatrix(const Field3D& f) override;
 
@@ -208,6 +211,10 @@ protected:
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
            int pe_xind, int pe_yind, bool create_topology = true, bool symmetric_X = true,
            bool symmetric_Y = true);
+  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
+           int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y, bool periodic_X,
+           int ixseps1_, int ixseps2_, int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
+           int jyseps2_2_, int ny_inner_);
 
   /// Very basic initialisation, only suitable for testing
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int input_npes)
