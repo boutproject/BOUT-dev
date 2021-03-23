@@ -566,14 +566,14 @@ int BoutMesh::load() {
 }
 
 void BoutMesh::createCommunicators() {
-  MPI_Group group_world = nullptr;
+  MPI_Group group_world{};
   MPI_Comm_group(BoutComm::get(), &group_world); // Get the entire group
 
   //////////////////////////////////////////////////////
   /// Communicator in X
 
-  MPI_Group group = nullptr;
-  MPI_Comm comm_tmp = nullptr;
+  MPI_Group group{};
+  MPI_Comm comm_tmp{};
 
   int proc[3]; // Processor range
 
@@ -613,8 +613,8 @@ void BoutMesh::createCommunicators() {
   //////////////////////////////////////////////////////
   /// Communicators for Y gather/scatter
 
-  MPI_Group group_tmp1 = nullptr;
-  MPI_Group group_tmp2 = nullptr;
+  MPI_Group group_tmp1{};
+  MPI_Group group_tmp2{};
 
   proc[2] = NXPE; // Stride in processor rank
 
@@ -1404,7 +1404,7 @@ MPI_Request BoutMesh::sendToProc(int xproc, int yproc, BoutReal *buffer, int siz
                                  int tag) {
   Timer timer("comms");
 
-  MPI_Request request = nullptr;
+  MPI_Request request{};
 
   mpi->MPI_Isend(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(xproc, yproc), tag,
                  BoutComm::get(), &request);
