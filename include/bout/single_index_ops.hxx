@@ -200,6 +200,8 @@ BOUT_HOST_DEVICE inline BoutReal DDX_g(const Field2DAccessor<location> &f, const
    int ixp = i_xp(i,ny,nz);
    int ixm = i_xm(i,ny,nz);
 
+
+
   
     return 0.5 * (f_a[ixp] - f_a[ixm]) / dx[ind_2d];
 
@@ -232,15 +234,8 @@ BoutReal DDX(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
 
 template<CELL_LOC location>
 BOUT_HOST_DEVICE inline BoutReal DDY_g(const Field2DAccessor<location> &f, const int i) {
-   
  
-// use raw pointer to field data 
- // BoutReal* f_a = f.f_data;
-  //auto dx = f.f2d_dx;
     BoutReal* dy = f.f2d_dy;
-  //auto dz = f.f2d_dz;
-  //BoutReal* J = f.f2d_J;
-  //BoutReal* g22 = f.f2d_g22;
   int  nz = f.f_nz;
  
   // Use the raw pointers to yup/ydown fields. 
@@ -481,9 +476,10 @@ BOUT_HOST_DEVICE  BoutReal b0xGrad_dot_Grad_g(const FieldAccessor<location> &f3d
    BoutReal result = p1;
    result /= p2;
 
-if ((result < -1) || (result >1)){result = 0.0;}
-   (isinf(result) == 1) ? (result = 0.0): result = result;
-   (isnan(result) == 1) ? (result = 0.0): result = result;
+//check data
+//if ((result < -1) || (result >1)){result = 0.0;}
+//   (isinf(result) == 1) ? (result = 0.0): result = result;
+//   (isnan(result) == 1) ? (result = 0.0): result = result;
 
 
    return result;
@@ -518,8 +514,8 @@ int  ind_2d = i / nz;  // index for Field2D data (has no z-dependence)
    BoutReal* dy = f3d.f2d_dy;
    BoutReal dz = f3d.f2d_dz;
    
-   BoutReal vddx = f2d_a[ind_2d] / dx[i];  // VDDX()
-   BoutReal vddy = f2d_a[ind_2d] / dy[i];  // VDDY()
+   BoutReal vddx = f2d_a[ind_2d] / dx[ind_2d];  // VDDX()
+   BoutReal vddy = f2d_a[ind_2d] / dy[ind_2d];  // VDDY()
    BoutReal vddz = f2d_a[ind_2d] / dz;    // VDDZ()
 
  // result 
@@ -530,9 +526,9 @@ int  ind_2d = i / nz;  // index for Field2D data (has no z-dependence)
    result /= p2;
 
 //check data
-if ((result < -1) || (result >1)){result = 0.0;}
-   (isinf(result) == 1) ? (result = 0.0): result = result;
-   (isnan(result) == 1) ? (result = 0.0): result = result;
+//if ((result < -1) || (result >1)){result = 0.0;}
+//   (isinf(result) == 1) ? (result = 0.0): result = result;
+ //  (isnan(result) == 1) ? (result = 0.0): result = result;
 
    return  result; 
  
@@ -551,6 +547,8 @@ BoutReal result = f3d_a[i] / (dy[ind_2d]* dy[ind_2d]);
 //return result;
 
 }
+
+
 
 template<CELL_LOC location>
 BOUT_HOST_DEVICE inline BoutReal Grad_parP_g(const FieldAccessor<location> &f3d,const Field2DAccessor<location> &f2d, const int i) {

@@ -62,6 +62,9 @@ public:
   }
 
   int rhs(BoutReal UNUSED(time)) {
+
+
+//auto start = std::chrono::steady_clock::now();   
     // Solve for potential
     phi = phiSolver->solve(vort, phi);    
     Field3D phi_minus_n = phi - n;
@@ -73,8 +76,8 @@ public:
     auto vort_acc = FieldAccessor<>(vort);
     auto phi_acc = FieldAccessor<>(phi);
     auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n); 
-   
-#ifdef BOUT_HAS_RAJA
+
+#if 0 //def BOUT_HAS_RAJA
 //  RAJA code ----------- start
     auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
     Ind3D *ob_i = &(indices)[0];
@@ -118,6 +121,10 @@ public:
     }
 //--CPU code ---------------- end
 #endif
+//auto end = std::chrono::steady_clock::now();
+//auto  time_taken = std::chrono::duration_cast<std::chrono::nanoseconds     >(end-     start);
+//std::cout << "The operator since start is "<< time_taken.count()<<" nano      se     conds.\n";
+
     return 0;
   }  // end RHS
 }; // end class HW3D

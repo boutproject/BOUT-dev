@@ -197,7 +197,7 @@ public:
   bool split_n0; // Solve the n=0 component of potential
 //  std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
   
-  #if 0    //BOUT_HAS_HYPRE
+  #if 0//  BOUT_HAS_HYPRE
     std::unique_ptr< LaplaceXY2Hypre> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
   #else
     std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
@@ -536,7 +536,7 @@ public:
       //phi2D.setBoundary("phi");
     
         // Create an XY solver for n=0 component
-  #if 0  // BOUT_HAS_HYPRE
+  #if 0 // BOUT_HAS_HYPRE
           laplacexy = bout::utils::make_unique< LaplaceXY2Hypre>(mesh);
   #else
           laplacexy = bout::utils::make_unique<LaplaceXY>(mesh);
@@ -1207,13 +1207,16 @@ public:
 
 // rhs_s
  int rhs(BoutReal t) override {
-  
-//auto start = std::chrono::steady_clock::now();
-//auto end = std::chrono::steady_clock::now();
-//auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
+
+  //auto start = std::chrono::steady_clock::now();   
+  //auto end = std::chrono::steady_clock::now();
+  // auto time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
+  // std::cout << "The FieldAccessor preparing  since start is "<< time_taken.count()<<" nano seconds.\n";
 
 
-  // Perform communications
+
+
+// Perform communications
     mesh->communicate(comms);
 
     Coordinates* metric = mesh->getCoordinates();
@@ -1236,7 +1239,7 @@ public:
                        );
 
         // Normalised eta
-        eta /= MU0 * Va * Lbar;
+      eta /= MU0 * Va * Lbar;
       } else {
         // Use specified core and vacuum Lundquist numbers
         eta = core_resist + (vac_resist - core_resist) * vac_mask;
@@ -1467,6 +1470,7 @@ public:
       }
     }
 
+  auto start = std::chrono::steady_clock::now();   
     ////////////////////////////////////////////////////
     // Parallel electric field
 
@@ -1476,7 +1480,7 @@ public:
       // Jpar
       Field3D B0U = B0 * U;
       mesh->communicate(B0U);
-#if 0 
+#if defined(GPU) 
 //-GPU code start -------------------------------------------
       //Create accessors which enable fast access
        auto B0U_acc = FieldAccessor<>(B0U);
@@ -1488,13 +1492,12 @@ public:
 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 	 int i = ob_i[id].ind;
-	 BoutReal t1 = Div_par_Grad_par_g(B0U_acc, i);
+	 BoutReal t1 = Grad_parP_g(B0U_acc, i);
 	 BoutReal t2 =  Delp2_g (Jpar_acc, i);
          BoutReal f1 = FIELD2D_DATA(B0_2D_acc)[i];
-	 printf("f2d data: %5f",f1 );
          BoutReal f2 = FIELD_DATA(eta_acc)[i];
-	 BoutReal re = -t1  + f2 * t2; 
-	 DDT(Jpar_acc)[i] = 0.00001; 
+	 BoutReal re = -t1/f1  + f2 * t2; 
+	 DDT(Jpar_acc)[i] =re ; 
 	});
  
       //ddt(Jpar) = -Grad_parP(B0U, loc) / B0 + eta * Delp2(Jpar);
@@ -1514,7 +1517,7 @@ public:
       //printf("...relax_j_vac is False.....\n");
 		
 
-#if 1 // defined(GPU)
+#ifdef BOUT_HAS_RAJA // defined(GPU)
       // increase 1 s
       //auto start = std::chrono::steady_clock::now();   
 
@@ -1529,18 +1532,14 @@ public:
 	auto indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
 	Ind3D *ob_i = &(indices)[0];
 	
-       //	auto end = std::chrono::steady_clock::now();
-       //time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-       // auto time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
-       // std::cout << "The FieldAccessor preparing  since start is "<< time_taken.count()<<" nano seconds.\n";
-
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
 	int i = ob_i[id].ind;
-	BoutReal p1 =  Grad_parP_g(phi_acc,g_22_acc, i);
-	BoutReal p2 =   FIELD_DATA(eta_acc)[i] * FIELD_DATA(Jpar_acc)[i];
-	DDT(Psi_acc)[i] = -p1 + p2  ;
+	//BoutReal p1 =  Grad_parP_g(phi_acc,g_22_acc, i);
+	//BoutReal p2 =   eta_acc[ob_i[id]] * Jpar_acc[ob_i[id]];
+	//DDT(Psi_acc)[i] = -p1 + p2  ;
 
+	DDT(Psi_acc)[i] = -Grad_parP_g(phi_acc,g_22_acc, i) + eta_acc[ob_i[id]] * Jpar_acc[ob_i[id]];
 	 });
 	
 
@@ -1550,7 +1549,6 @@ public:
 #endif
      
 	 //end = std::chrono::steady_clock::now();
-       //time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
         //time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
        // std::cout << "The Grad_parP() since start is "<< time_taken.count()<<" nano seconds.\n";
 
@@ -1566,21 +1564,23 @@ public:
       { // printf("...diamagi_phi0 is True...\n");
 
     //  start = std::chrono::steady_clock::now();   
-#if 0  //defined(GPU)
-// too much time for this gpu code, need to change.
+
+#ifdef BOUT_HAS_RAJA  //defined(GPU)#if defined(GPU)
+// does work, speedup 
       
-         auto phi0_2D_acc =Field2DAccessor<>(phi0);
-	
+        auto phi0_2D_acc =Field2DAccessor<>(phi0);
+	auto dx_acc = Field2DAccessor<>(metric->dx);
+
+	auto dy_acc = Field2DAccessor<>(metric->dy);
+
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
 		int i = ob_i[id].ind;
 		BoutReal p1 =  bracket_g(phi0_2D_acc,Psi_acc,i);
-
 		DDT(Psi_acc)[i] -= p1;
 
  	 });
 
-	//ddt(Psi) -= bracket(interp_to(phi0, loc), Psi, bm_exb);
 #else
         ddt(Psi) -= bracket(interp_to(phi0, loc), Psi, bm_exb); // Equilibrium flow
 #endif
@@ -1607,7 +1607,7 @@ public:
 
 	
       //start = std::chrono::steady_clock::now();   
-#if 1  //defined(GPU)
+#ifdef BOUT_HAS_RAJA  //defined(GPU)
 // no problem for this function,increase 1 s;
 	
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
@@ -1663,7 +1663,7 @@ public:
     // Vorticity equation
 //printf("...............ddt(U) start...\n");
     
-      auto start = std::chrono::steady_clock::now();   
+      //auto start = std::chrono::steady_clock::now();   
 
         auto Psi_acc = FieldAccessor<>(Psi);
 	auto B0_acc = Field2DAccessor<>(B0);
@@ -1672,7 +1672,8 @@ public:
 	auto indices = U.getRegion("RGN_NOBNDRY").getIndices();
 	Ind3D *ob_i = &(indices)[0];
 #ifdef BOUT_HAS_RAJA  // defined(GPU) 	
-
+// Good and speedup
+//
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
 		int i = ob_i[id].ind;
@@ -1688,57 +1689,20 @@ public:
     // Grad j term
     ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi_loc, J0, CELL_CENTRE);
 #endif
-       auto end = std::chrono::steady_clock::now();
-       //auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-       auto time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
-     //  std::cout << "The first ddt(U) since start is "<< time_taken.count()<<" nano seconds.\n";
 
     if (include_rmp) {
       printf("...............include_rmp...\n");
       ddt(U) += SQ(B0) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
     }
-
-     start = std::chrono::steady_clock::now();  
-#if 0 //defined(GPU)
-// issue, psi and p
-//
-	Field2D x=   b0xcv.x;
-	Field2D y=   b0xcv.y;
-	Field2D z=   b0xcv.z;
- 	
-	auto x_acc = Field2DAccessor<>(x);	
-	auto y_acc = Field2DAccessor<>(y);
-        auto z_acc = Field2DAccessor<>(z);
-	auto P_acc = FieldAccessor<>(P);
-	
-	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-		int i = ob_i[id].ind;
-		BoutReal bx = FIELD2D_3DINDEX_DATA(U_acc,x_acc,i);
-		BoutReal by = FIELD2D_3DINDEX_DATA(U_acc,y_acc,i);
-		BoutReal bz = FIELD2D_3DINDEX_DATA(U_acc,z_acc,i);
-		BoutReal p = bx* Grad_g(P_acc,i)[0]+ by*Grad_g(P_acc,i)[1]+bz*Grad_g(P_acc,i)[2]; 
-		DDT(U_acc)[i] += p;
-
- 	 });
-
-
-#else 
+	// no need to covert to GPU
    	ddt(U) += b0xcv * Grad(P); // curvature term
 		
-#endif
-	end = std::chrono::steady_clock::now();
-       //auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-       time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
-       //std::cout << "The ddt(U) += b0xcv * Grad(P) since start is "<< time_taken.count()<<" nano seconds.\n";
-
-
-     start = std::chrono::steady_clock::now();   
-    
 
 if (!nogradparj) {
       //printf("...............!nogradparj...\n");
       // Parallel current term
-#ifdef BOUT_HAS_RAJA      
+#ifdef BOUT_HAS_RAJA 
+//does work and speed up     
      auto Jpar_acc = FieldAccessor<>(Jpar);
      auto g_22_acc = Field2DAccessor<>(metric->g_22);
     
@@ -1756,21 +1720,18 @@ if (!nogradparj) {
 #endif   
 	 }
 
-end = std::chrono::steady_clock::now();
-       //auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-       time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
-       //std::cout << "The !nogradparj since start is "<< time_taken.count()<<" nano seconds.\n";
 
 
     if (withflow && K_H_term) // K_H_term
       ddt(U) -= b0xGrad_dot_Grad(phi, U0);
 
-     start = std::chrono::steady_clock::now();   
+   //  start = std::chrono::steady_clock::now();   
     
     if (diamag_phi0){
       //printf("..............diamag_phi0...\n");
-#if 0  //defined(GPU)
- //  problem,very slow, why? 
+#ifdef BOUT_HAS_RAJA   // defined(GPU)
+ // works and  speedup 1 s 
+ // 
     
 auto phi0_acc = Field2DAccessor<>(phi0);
      RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
@@ -1782,9 +1743,10 @@ auto phi0_acc = Field2DAccessor<>(phi0);
   ddt(U) -= b0xGrad_dot_Grad(phi0, U); // Equilibrium flow
 #endif
       }
-    end = std::chrono::steady_clock::now();
+ 
+  // end = std::chrono::steady_clock::now();
        //auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-       time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
+     //  time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
      //  std::cout << "The diamag_phi0 since start is "<< time_taken.count()<<" nano seconds.\n";
 
 
@@ -1801,7 +1763,7 @@ auto phi0_acc = Field2DAccessor<>(phi0);
          int i = ob_i[id].ind;
  	 BoutReal f1 = FIELD2D_3DINDEX_DATA(U_acc,B0_2D_acc,i);
          BoutReal p1 = bracket_g(Psi_acc,U_acc,i);
-                 DDT(U_acc)[i] -= p1; // * f1;
+                 DDT(U_acc)[i] -= p1  * f1;
 
           });
 	
@@ -1820,9 +1782,9 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
     if (diffusion_u4 > 0.0) {
     //  printf("...............diffusion_u4...\n");
 
-     start = std::chrono::steady_clock::now();   
-#if 0 //def BOUT_HAS_RAJA
-// no problem but no speed up
+    // start = std::chrono::steady_clock::now();   
+#if defined(GPU) //BOUT_HAS_RAJA
+// works but no speed up
     
       tmpU2 = D2DY2(U);
       mesh->communicate(tmpU2);
@@ -1832,9 +1794,9 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
 	auto tmpU2_acc =  FieldAccessor<>(tmpU2); 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
                  int i = ob_i[id].ind;
-                 BoutReal p1 = D2DY2_g(tmpU2_acc,i);
+		 BoutReal p1 = D2DY2_g(tmpU2_acc,i);
                  DDT(U_acc)[i] -=  diffusion_u4 * p1;
-          });
+ });
 
 #else
       tmpU2 = D2DY2(U);
@@ -1844,9 +1806,10 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
       ddt(U) -= diffusion_u4 * D2DY2(tmpU2);
 #endif
     }
-    end = std::chrono::steady_clock::now();
+
+   // end = std::chrono::steady_clock::now();
        //auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-       time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
+     //  time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
   //     std::cout << "The diffusion_u4 since start is "<< time_taken.count()<<" nano seconds.\n";
 
 
@@ -1903,12 +1866,8 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
       bracketPhiP0 = bracket(B0 * phi, Pi0, bm_exb);
       bracketPhiP0.applyBoundary();
       mesh->communicate(bracketPhiP0);
-#ifdef BOUT_HAS_RAJA
 
       ddt(U) -= 0.5 * Upara2 * bracket(Pi, Dperp2Phi0, bm_exb) / B0;
-#else
-      ddt(U) -= 0.5 * Upara2 * bracket(Pi, Dperp2Phi0, bm_exb) / B0;
-#endif
 
       ddt(U) -= 0.5 * Upara2 * bracket(Pi0, Dperp2Phi, bm_exb) / B0;
       Field3D B0phi = B0 * phi;
@@ -1959,9 +1918,10 @@ if (evolve_pressure) {
       //printf("evolve_pressure .................\n");
 
 
-	start = std::chrono::steady_clock::now();
-  #if 0  //  defined(GPU)
- // too slow, but b0xGrad_dot_Grad_g does work; 
+#if defined(GPU)   //def BOUT_HAS_RAJA //  defined(GPU)
+//#ifdef BOUT_HAS_RAJA //  defined(GPU)
+
+ // no overall speed up.??? b0xGrad_dot_Grad_g does work and speedup; 
     
    auto P_acc = FieldAccessor<>(P);   //P is field 3D
 	auto phi_acc = FieldAccessor<>(phi);
@@ -1973,24 +1933,19 @@ if (evolve_pressure) {
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 	 	int i = ob_i[id].ind;
 		BoutReal p1 = b0xGrad_dot_Grad_g(phi_acc,P0_acc,i);
-		DDT(P_acc)[i] -= p1; 
+		DDT(P_acc)[i] -= p1 ; 
 	});
 
       #else
       ddt(P) -= b0xGrad_dot_Grad(phi, P0);
       #endif
-    end = std::chrono::steady_clock::now();
-       //auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-       time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
-       //std::cout << "The evolove_pressure of ddt(p) since start is "<< time_taken.count()<<" nano seconds.\n";
 
-     start = std::chrono::steady_clock::now();   
      
  if (diamag_phi0){
      // printf(".........diamag_phi0 .................\n");
       
-      #if 0 //defined(GPU)
-      // problem: slow and wrong result	
+      #ifdef BOUT_HAS_RAJA  //defined(GPU)
+      // speedup 1 s 	
       		 auto P_acc = FieldAccessor<>(P);   //P is field 3D
 		auto phi0_acc = Field2DAccessor<>(phi0); 
         	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
@@ -2003,10 +1958,6 @@ if (evolve_pressure) {
       #endif
 	}
 
-    end = std::chrono::steady_clock::now();
-       //auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-       time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
-   //    std::cout << "The  diamag_phi0 of ddt(P) since start is "<< time_taken.count()<<" nano seconds.\n";
 
       if (withflow) {// net flow
       printf(".........withflow .................\n");
@@ -2031,8 +1982,6 @@ if (evolve_pressure) {
 
 
           });
-
-     
 
 #else
   ddt(P) -= bracket(phi, P, bm_exb) * B0; // Advection
@@ -2106,7 +2055,7 @@ if (evolve_pressure) {
  //printf(".........ddt(P) END  .................\n\n");
 
 
-	start = std::chrono::steady_clock::now();
+//	start = std::chrono::steady_clock::now();
     if (filter_z) {
       // Filter out all except filter_z_mode
 
@@ -2116,8 +2065,8 @@ if (evolve_pressure) {
         ddt(Jpar) = filter(ddt(Jpar), filter_z_mode);
       } else
 
-#if 0  // defined(GPU)
-// problem , need to discuss
+#if  defined(GPU)
+// need to change fft
 //
         indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
         Ind3D *ob_i = &(indices)[0];
@@ -2137,9 +2086,6 @@ if (evolve_pressure) {
 		  DDT(P_acc)[i] = p3;
 	});
 
-//        ddt(Psi) = filter(ddt(Psi), filter_z_mode);
-//          ddt(U) = filter(ddt(U), filter_z_mode);
-//        ddt(P) = filter(ddt(P), filter_z_mode);
  
 #else
 	//printf("filter_z_mode is %5f \n",filter_z_mode);
@@ -2149,14 +2095,9 @@ if (evolve_pressure) {
     
 #endif
 }
-    end = std::chrono::steady_clock::now();
-       //auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-       time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
- //      std::cout << "The  filter_z of ddt(P) since start is "<< time_taken.count()<<" nano seconds.\n";
 
 
-
-	start = std::chrono::steady_clock::now();
+//	start = std::chrono::steady_clock::now();
     if (low_pass_z > 0) {
  //printf(".........low_pass_z  .................\n");
       // Low-pass filter, keeping n up to low_pass_z
@@ -2165,8 +2106,8 @@ if (evolve_pressure) {
       } else
 
 
-#if 0 //defined(GPU)
-// problem, need to discuss
+#if defined(GPU)
+// need to change fft
 //
 	indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
         Ind3D *ob_i = &(indices)[0];
@@ -2181,13 +2122,13 @@ if (evolve_pressure) {
                   BoutReal p2 = lowPass_g(U_acc,low_pass_z,zonal_flow,i);
                   BoutReal p3 = lowPass_g(P_acc,low_pass_z, zonal_bkgd,i);
                   DDT(Psi_acc)[i] = p1;
-              //    DDT(U_acc)[i] = p2;
+                  DDT(U_acc)[i] = p2;
                   DDT(P_acc)[i] = p3;
 	});
       
-       //ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
+      ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
       ddt(U) = lowPass(ddt(U), low_pass_z, zonal_flow);
-      //ddt(P) = lowPass(ddt(P), low_pass_z, zonal_bkgd);
+      ddt(P) = lowPass(ddt(P), low_pass_z, zonal_bkgd);
 
 
 #else
@@ -2198,12 +2139,6 @@ if (evolve_pressure) {
 #endif
 
     }
-
-    end = std::chrono::steady_clock::now();
-       //auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-       time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
-   //    std::cout << "The low_pass of ddt(P) since start is "<< time_taken.count()<<" nano seconds.\n";
-
 
 
     if (damp_width > 0) {
@@ -2222,8 +2157,18 @@ if (evolve_pressure) {
     }
 
     first_run = false;
+    
+  //  printf("rhs ends here....");
+     
+//auto end = std::chrono::steady_clock::now();
+//auto time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
+// std::cout << "The FieldAccessor preparing  since start is "<< time_taken.count()<<" nano seconds.\n";
 
-    return 0;
+
+
+//rhs_e 
+   return 0;
+
   }
 
   /*******************************************************************************
