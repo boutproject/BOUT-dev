@@ -41,10 +41,11 @@
 LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
+  opts(opt == nullptr ? Options::getRoot()->getSection("laplace") : opt),
   lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
   indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh,
 						   getStencil(localmesh, lowerY, upperY))),
-  operator3D(indexer), solution(indexer), rhs(indexer), linearSystem(*localmesh)
+  operator3D(indexer), solution(indexer), rhs(indexer), linearSystem(*localmesh, *opts)
 {
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
@@ -59,13 +60,6 @@ LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in) 
   linearSystem.setMatrix(&operator3D);
   linearSystem.setRHSVector(&rhs);
   linearSystem.setSolutionVector(&solution);
-
-  // Get Options in Laplace Section
-  if (!opt) {
-    opts = Options::getRoot()->getSection("laplace");
-  } else {
-    opts=opt;
-  }
 
   // Get y boundary flags
   lower_boundary_flags = (*opts)["lower_boundary_flags"].withDefault(0);
@@ -91,12 +85,6 @@ LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in) 
   if(localmesh->periodicX) {
     throw BoutException("LaplaceHypre3d does not work with periodicity in the x direction (localmesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
   }
-
-  // Get Tolerances for iterative solver
-  rtol = (*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5);
-  atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-8);
-  //dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e6);
-  maxits = (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000);
 
   // Set up boundary conditions in operator
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
@@ -146,6 +134,12 @@ LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in) 
       operator3D(i, i.ym()) = 0.5;
     }
   }
+  printf("LaplaceHypre3d instance\n");
+
+#ifdef BOUT_HAS_CALIPER
+  printf("LaplaceHypre3d is using caliper\n");
+#endif
+
 }
 
 
@@ -154,15 +148,30 @@ LaplaceHypre3d::~LaplaceHypre3d() {
 
 
 Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
+
+  // Timing reported in the log files. Includes any matrix construction.
+  // The timing for just the solve phase can be retreived from the "hypresolve"
+  // timer if desired.
+  Timer timer("invert");
+
   // If necessary, update the values in the matrix operator
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_BEGIN("LaplaceHypre3d_solve:updateMatrix3D");
+#endif
   if (updateRequired) {
     updateMatrix3D();
   }
 
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_END("LaplaceHypre3d_solve:updateMatrix3D");
+#endif
   auto b = b_in;
   // Make sure b has a unique copy of the data
   b.allocate();
 
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_BEGIN("LaplaceHypre3d_solve:AdjustBoundary");
+#endif
   // Adjust vectors to represent boundary conditions and check that
   // boundary cells are finite
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
@@ -209,16 +218,37 @@ Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
     }
   }
 
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_END("LaplaceHypre3d_solve:AdjustBoundary");
+#endif
+
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_BEGIN("LaplaceHypre3d_solve:vectorAssemble");
+#endif
+
   rhs.importValuesFromField(b);
   solution.importValuesFromField(x0);
   rhs.assemble();
   solution.assemble();
 
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_END("LaplaceHypre3d_solve:vectorAssemble");
+#endif
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_BEGIN("LaplaceHypre3d_solve:solve");
+#endif
   // Invoke solver
   { Timer timer("hypresolve");
     linearSystem.solve();
   }
+  //printf("NumIterations %d\n",linearSystem.getNumItersTaken());
 
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_END("LaplaceHypre3d_solve:solve");
+#endif
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_BEGIN("LaplaceHypre3d_solve:createField");
+#endif
   // Create field from solution
   Field3D result = solution.toField();
   localmesh->communicate(result);
@@ -229,8 +259,27 @@ Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
     BOUT_FOR(i, indexer->getRegionUpperY()) {
       result.yup()[i] = result[i];
     }
+    for (int b = 1; b < localmesh->ystart; b++) {
+      BOUT_FOR(i, indexer->getRegionLowerY()) {
+        result.ydown(b)[i.ym(b)] = result[i];
+      }
+      BOUT_FOR(i, indexer->getRegionUpperY()) {
+        result.yup(b)[i.yp(b)] = result[i];
+      }
+    }
+  }
+  for (int b = 1; b < localmesh->xstart; b++) {
+    BOUT_FOR(i, indexer->getRegionInnerX()) {
+      result[i.xm(b)] = result[i];
+    }
+    BOUT_FOR(i, indexer->getRegionOuterX()) {
+      result[i.xp(b)] = result[i];
+    }
   }
 
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_END("LaplaceHypre3d_solve:createField");
+#endif
   return result;
 }
 
@@ -382,17 +431,12 @@ void LaplaceHypre3d::updateMatrix3D() {
   operator3D.assemble();
   linearSystem.setupAMG(&operator3D);
 
-  // Set the relative and absolute tolerances
-  linearSystem.setRelTol(rtol);
-  linearSystem.setAbsTol(atol);
-  linearSystem.setMaxIter(maxits); // not implemented yet!
-
   updateRequired = false;
 }
 
 OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
-						     RangeIterator lowerYBound,
-						     RangeIterator upperYBound) {
+						  const RangeIterator &lowerYBound,
+						  const RangeIterator &upperYBound) {
   OperatorStencil<Ind3D> stencil;
 
   // Get the pattern used for interpolation. This is assumed to be the
@@ -439,7 +483,7 @@ OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
   // If there is a lower y-boundary then create a part of the stencil
   // for cells immediately adjacent to it.
   if (lowerYBound.max() - lowerYBound.min() > 0) {
-    stencil.add([index = localmesh->ystart, &lowerYBound](Ind3D ind) -> bool {
+    stencil.add([index = localmesh->ystart, lowerYBound](Ind3D ind) -> bool {
 		  return index == ind.y() && lowerYBound.intersects(ind.x()); },
       lowerEdgeStencilVector);
   }
@@ -447,7 +491,7 @@ OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
   // If there is an upper y-boundary then create a part of the stencil
   // for cells immediately adjacent to it.
   if (upperYBound.max() - upperYBound.min() > 0) {
-    stencil.add([index = localmesh->yend, &upperYBound](Ind3D ind) -> bool {
+    stencil.add([index = localmesh->yend, upperYBound](Ind3D ind) -> bool {
 		  return index == ind.y() && upperYBound.intersects(ind.x()); },
       upperEdgeStencilVector);
   }

@@ -27,6 +27,7 @@ set(ENABLE_OPENMP On CACHE STRING "Enable OpenMP")
 set(ENABLE_CUDA Off CACHE STRING "Enable CUDA")
 option(ENABLE_UMPIRE "Enable UMPIRE memory management" Off)
 option(ENABLE_RAJA "Enable RAJA" Off)
+option(ENABLE_CALIPER "Enable Caliper" Off)
 
 include_directories(${CMAKE_BINARY_DIR}/include)
 include(CMakeDependentOption)
@@ -85,7 +86,7 @@ set(BOUT_HEADERS
   ./include/bout/index_derivs.hxx
   ./include/bout/index_derivs_interface.hxx
   ./include/bout/invert/laplacexy2_hypre.hxx
-  ./include/bout/invert/laplacexy2.hxx
+  #./include/bout/invert/laplacexy2.hxx
   ./include/bout/invert/laplacexy.hxx
   ./include/bout/invert/laplacexz.hxx
   ./include/bout/invertable_operator.hxx
@@ -261,7 +262,7 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.cxx
   ./src/invert/laplace/invert_laplace.cxx
   ./src/invert/laplacexy/laplacexy.cxx
-  ./src/invert/laplacexy2/laplacexy2.cxx
+  #./src/invert/laplacexy2/laplacexy2.cxx
   ./src/invert/laplacexy2/laplacexy2_hypre.cxx 
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
   ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.cxx
@@ -363,9 +364,9 @@ set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 # Optional dependencies
 include(cmake/SetupBOUTThirdParty.cmake)
 
-if(BOUT_HAS_HYPRE)
-   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
-endif ()
+#if(BOUT_HAS_HYPRE)
+#   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
+#endif ()
 
 ##################################################
 # Components of the version number
@@ -560,6 +561,14 @@ function(bout_add_integrated_test TESTNAME)
   target_link_libraries(${TESTNAME} bout++)
   target_include_directories(${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
+  if(BOUT_USE_CUDA)
+     set_source_files_properties(${BOUT_TEST_OPTIONS_SOURCES} PROPERTIES LANGUAGE CUDA )
+     target_include_directories(${TESTNAME} PUBLIC ${BOUT_CUDA_LIB_DIR}/../include ) 
+    if(BOUT_HAS_HYPRE)
+     target_compile_definitions(${TESTNAME} PUBLIC "HYPRE_USING_CUDA;HYPRE_USING_UNIFIED_MEMORY")
+    endif ()
+  endif ()
+
   # Set the name of the executable. We either take it as an option,
   # or use the first source file, stripping the file suffix
   if (BOUT_TEST_OPTIONS_EXECUTABLE_NAME)
@@ -642,6 +651,9 @@ endif ()
 add_subdirectory(examples/laplacexy/simple)
 add_subdirectory(examples/hasegawa-wakatani-3d)
 add_subdirectory(examples/elm-pb)
+add_subdirectory(tests/integrated/test-laplace-petsc3d)
+add_subdirectory(tests/integrated/test-laplace-hypre3d)
+add_subdirectory(tests/integrated/test-laplacexy2-hypre)
 
 ##################################################
 # Generate the build config header

@@ -38,8 +38,19 @@ if (BOUT_USE_CUDA)
    set_target_properties(bout++ PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
    set_target_properties(bout++ PROPERTIES POSITION_INDEPENDENT_CODE ON)
    set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CUDA)
-   target_compile_definitions(bout++ PUBLIC "BOUT_USE_CUDA")
+   #target_compile_definitions(bout++ PUBLIC "BOUT_USE_CUDA") 
 endif ()   
+
+# Caliper
+set(BOUT_HAS_CALIPER OFF)
+if (ENABLE_CALIPER)
+  find_package(caliper REQUIRED)
+  list(APPEND BOUT_DEPENDS caliper)
+  set (BOUT_HAS_CALIPER ON)
+  target_compile_definitions(bout++ PUBLIC "BOUT_HAS_CALIPER")
+  target_include_directories(bout++ PUBLIC ${caliper_INCLUDE_DIR})
+  target_link_libraries(bout++ PUBLIC caliper)
+endif ()
 
 # UMPIRE
 set(BOUT_HAS_UMPIRE OFF)

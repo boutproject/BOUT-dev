@@ -173,8 +173,9 @@ public:
   // The interpolation done to get along-field values in y makes this
   // tricky. For now we will just assume that the footprint of cells
   // used for interpolation is the same everywhere.
-  static OperatorStencil<Ind3D> getStencil(Mesh* localmesh, RangeIterator lowerYBound,
-					   RangeIterator upperYBound);
+  static OperatorStencil<Ind3D> getStencil(Mesh* localmesh,
+                                           const RangeIterator &lowerYBound,
+                                           const RangeIterator &upperYBound);
   
   /* Ex and Ez
    * Additional 1st derivative terms to allow for solution field to be
@@ -194,13 +195,6 @@ public:
   int meshx, meshz, size, localN; // Mesh sizes, total size, no of points on this processor
 
   Options *opts;              // Laplace Section Options Object
-  std::string ksptype; ///< KSP solver type
-  std::string pctype;  ///< Preconditioner type
-
-  // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
-  // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
-  BoutReal rtol, atol, dtol;
-  int maxits; // Maximum number of iterations in solver.
 
   RangeIterator lowerY, upperY;
 

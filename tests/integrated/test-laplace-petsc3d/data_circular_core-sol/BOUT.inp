@@ -64,7 +64,8 @@ arctanarg = (r - 1)*tan(theta/2.)/sqrt(1. - r^2)
 zshift = r^2*(r*sin(theta)/((r^2 - 1)*(r*cos(theta) - 1.)) - 2.*atan(arctanarg)/(1. - r^2)^1.5)
 shiftangle = r^2 * 2.*pi/(1. - r^2)^1.5
 
-paralleltransform = shiftedinterp
+[mesh:paralleltransform]
+type = shiftedinterp
 
 [interpolation]
 type = hermitesplineonlyz

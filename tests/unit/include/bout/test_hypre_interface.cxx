@@ -243,6 +243,38 @@ TYPED_TEST(HypreMatrixTest, SetGetValue) {
   EXPECT_EQ(actual, value);
 }
 
+TYPED_TEST(HypreMatrixTest, AddGetValue) {
+  HypreMatrix<TypeParam> matrix(this->indexer);
+  const auto& region = this->field.getRegion("RGN_NOBNDRY");
+  auto i = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(*std::begin(region)));
+  auto idx = *std::begin(region);
+  BoutReal value = 23.;
+  BoutReal actual = -1.;
+
+  // addVal should work like setVal if the element does not already exist
+  matrix.addVal(idx, idx, value);
+  actual = matrix.getVal(idx, idx);
+  EXPECT_EQ(actual, value);
+}
+
+TYPED_TEST(HypreMatrixTest, SetAddGetValue) {
+  HypreMatrix<TypeParam> matrix(this->indexer);
+  const auto& region = this->field.getRegion("RGN_NOBNDRY");
+  auto i = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(*std::begin(region)));
+  auto idx = *std::begin(region);
+  BoutReal value = 23.;
+  BoutReal actual = -1.;
+
+  matrix.setVal(idx, idx, value);
+  actual = matrix.getVal(idx, idx);
+  EXPECT_EQ(actual, value);
+
+  BoutReal second_value = 37.;
+  matrix.addVal(idx, idx, second_value);
+  actual = matrix.getVal(idx, idx);
+  EXPECT_EQ(actual, value + second_value);
+}
+
 TYPED_TEST(HypreMatrixTest, SetElements) {
   HypreMatrix<TypeParam> matrix(this->indexer);
 

@@ -33,7 +33,9 @@
 #ifndef LAPLACE_XY2_HYPRE_H
 #define LAPLACE_XY2_HYPRE_H
 
-#ifndef BOUT_HAS_HYPRE
+#include <bout/build_defines.hxx>
+
+#if not BOUT_HAS_HYPRE
 // If no Hypre
 
 #warning LaplaceXY requires Hypre. No LaplaceXY available
@@ -131,6 +133,8 @@ private:
   bool x_outer_dirichlet; // Dirichlet on outer X boundary?
   bool y_bndry_dirichlet; // Dirichlet on Y boundary?
 
+  bool print_timing;
+
   // Location of the rhs and solution
   CELL_LOC location;
 
@@ -159,12 +163,12 @@ OperatorStencil<T> squareStencil(Mesh* localmesh) {
     offsets.insert(zero.xm().ym());
   }
   if (!std::is_same<T, Ind2D>::value) {
-    offsets.insert(zero.zp());
-    offsets.insert(zero.zm());
-    offsets.insert(zero.xp().zp());
-    offsets.insert(zero.xp().zm());
-    offsets.insert(zero.xm().zp());
-    offsets.insert(zero.xm().zm());
+    offsets.insert(zero.yp());
+    offsets.insert(zero.ym());
+    offsets.insert(zero.xp().yp());
+    offsets.insert(zero.xp().ym());
+    offsets.insert(zero.xm().yp());
+    offsets.insert(zero.xm().ym());
   }
   if (std::is_same<T, Ind3D>::value) {
     offsets.insert(zero.yp().zp());
