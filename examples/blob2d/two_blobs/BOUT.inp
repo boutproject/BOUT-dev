@@ -65,7 +65,6 @@ pctype = user  # Preconditioning type
 
 fourth_order = true  # 4th order or 2nd order
 
-global_flags = 0  # inversion flags for phi
 # 0  = Zero value
 # 10 = Zero gradient AC inner & outer
 # 15 = Zero gradient AC and DC
@@ -80,7 +79,6 @@ flags = 49152  # set_rhs i.e. identity matrix in boundaries
 
 [phiBoussinesq]
 # By default type is tri (serial) or spt (parallel)
-global_flags = 0
 
 ##################################################
 # general settings for the model

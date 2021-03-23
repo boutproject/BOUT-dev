@@ -13,9 +13,6 @@ NXPE = 1
 
 type = fci
 
-#atol = 1e-6
-#rtol = 1e-3
-
 [fciwave]
 
 expand_divergence = true

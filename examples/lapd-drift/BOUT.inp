@@ -109,7 +109,6 @@ filter_z_mode = 1  # Keep this Z harmonic
 # 32 - Don't use previous solution to start iterations
 #      (iterative methods only)
 
-# phi_flags = 9  # inversion flags for phi
 
 ##################################################
 # settings for individual variables
