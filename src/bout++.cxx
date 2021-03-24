@@ -869,7 +869,7 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   if (stop_check) {
     std::ifstream f(stop_check_name);
     if (f.good()) {
-      output.write("\nFiles {} exists -- triggering exit\n", stop_check_name);
+      output.write("\nStop file {} exists -- triggering exit\n", stop_check_name);
       user_requested_exit = true;
     }
   }
