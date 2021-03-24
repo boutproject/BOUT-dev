@@ -100,47 +100,6 @@ void Laplace1DMG::resetSolver() {
   resetMeanIterations();
 }
 
-/*
- * Check whether the reduced matrix on the coarsest level is diagonally
- * dominant, i.e. whether for every row the absolute value of the diagonal
- * element is greater-or-equal-to the sum of the absolute values of the other
- * elements. Being diagonally dominant is sufficient (but not necessary) for
- * the Gauss-Seidel iteration to converge.
- */
-bool Laplace1DMG::Level::is_diagonally_dominant(const Laplace1DMG& l) {
-  if (not included) {
-    // Return true, as this contributes to an all_reduce over AND.  True here means that
-    // skipped procs do not affect the result.
-    return true;
-  }
-
-  for (int kz = 0; kz < l.nmode; kz++) {
-    // Check index 1 on all procs, except: the last proc only has index 1 if the
-    // max_level == 0.
-    if (not l.localmesh->lastX() or l.max_level == 0) {
-      if (std::fabs(ar(l.jy, 1, kz)) + std::fabs(cr(l.jy, 1, kz))
-          > std::fabs(br(l.jy, 1, kz))) {
-        output_error.write("Rank {}, jy={}, kz={}, lower row not diagonally dominant\n",
-                           BoutComm::rank(), l.jy, kz);
-        output_error.flush();
-        return false;
-      }
-    }
-    // Check index 2 on final proc only.
-    if (l.localmesh->lastX()) {
-      if (std::fabs(ar(l.jy, 2, kz)) + std::fabs(cr(l.jy, 2, kz))
-          > std::fabs(br(l.jy, 2, kz))) {
-        output_error.write("Rank {}, jy={}, kz={}, upper row not diagonally dominant\n",
-                           BoutComm::rank(), l.jy, kz);
-        output_error.flush();
-        return false;
-      }
-    }
-  }
-  // Have checked all modes and all are diagonally dominant
-  return true;
-}
-
 // TODO Move to Array
 /*
  * Returns true if all values of bool array are true, otherwise returns false.
@@ -568,27 +527,20 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     // Throw error if we are performing too many iterations
     if (count > maxits) {
       // Maximum number of allowed iterations reached.
-      // If the coarsest multigrid iteration matrix is diagonally-dominant,
-      // then convergence is guaranteed, so maxits is set too low.
-      // Otherwise, the method may or may not converge.
-      const bool is_dd = levels[max_level].is_diagonally_dominant(*this);
-
-      bool global_is_dd;
-      MPI_Allreduce(&is_dd, &global_is_dd, 1, MPI::BOOL, MPI_LAND, BoutComm::get());
-
-      if (global_is_dd) {
-        throw BoutException("Laplace1DMG error: Not converged within maxits={:d} "
-                            "iterations. The coarsest grained iteration matrix is "
-                            "diagonally dominant and convergence is guaranteed. Please "
-                            "increase maxits, rtol, or atol and retry.",
-                            maxits);
-      }
       throw BoutException(
-          "Laplace1DMG error: Not converged within maxits={:d} iterations. The coarsest "
-          "iteration matrix is not diagonally dominant so there is no guarantee this "
-          "method will converge. Consider (1) increasing maxits; or (2) increasing the "
-          "number of levels (as grids become more diagonally dominant with "
-          "coarsening). Using more grids may require larger NXPE.",
+          "Laplace1DMG error: Not converged within maxits={:d} iterations. Sometimes multigrid does not converge. "
+          "Check the error norm reduction factor in this case. If it it is less than one, multigrid will converge "
+	 "given enough iterations. If so, increase maxits and rerun. "
+	 "Changing solver parameters can also increase convergence speed. "
+	 "Consider (1) increasing max_levels the number of levels multigrid uses. Usually, the more levels, "
+	 "the faster the convergence, though one or two levels fewer than the maximum allowed is sometimes faster; "
+	 "(2) changing max_cycle, the number of smoothing cycles per multigrid level. "
+	 "Usually values between 1 and 5 are good. This value is a compromise: "
+	 "higher values mean that a V-cycle reduces the error by a larger factor, "
+	 "but requires more iterations."
+	 "\n"
+	 "NB: in parallel, we are assuming the cost of the algorithm is determined by communication costs rather than work required. "
+	 "Therefore we assume cost is proportional to the iteration count, rather than the V-cycle count.",
           maxits);
     }
   }
