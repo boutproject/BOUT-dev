@@ -880,12 +880,14 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
   const auto scale = 1 << current_level;
 
   const auto nguards = l.ncx - (l.localmesh->xend - l.localmesh->xstart + 1);
+  const auto nguards_upper = l.ncx - l.localmesh->xend;
 
   // Number of local x points for this level
   nxloc = nguards + (l.ncx-nguards) / scale;
+  xe = nxloc - nguards_upper;
   //if(l.localmesh->lastX()) nxloc += 1;
   std::cout << "Initialize level " <<  current_level << ", nxloc " << nxloc << "\n";
-  std::cout << "l.ncx " <<  l.ncx << ", scale " << scale << "\n";
+  std::cout << "l.ncx " <<  l.ncx << ", scale " << scale << ", xe "<<xe<< "\n";
 
   // Whether this proc is involved in the multigrid calculation
   included = (myproc % scale == 0) or l.localmesh->lastX();
