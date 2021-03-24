@@ -598,7 +598,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
 // testing
 class FieldFactoryExposer : public FieldFactory {
 public:
-  FieldFactoryExposer(Mesh* mesh, Options* opt = nullptr) : FieldFactory(mesh, opt) {}
+  explicit FieldFactoryExposer(Mesh* mesh, Options* opt = nullptr) : FieldFactory(mesh, opt) {}
   using FieldFactory::resolve;
   using FieldFactory::fuzzyFind;
 };
