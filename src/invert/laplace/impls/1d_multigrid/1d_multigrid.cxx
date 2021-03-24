@@ -74,13 +74,12 @@ Laplace1DMG::Laplace1DMG(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   if (!is_pow2(n)) {
     throw BoutException("Laplace1DMG error: NXPE must be a power of 2");
   }
-  // TODO number of levels must satisfy ncx > 2^(max_levels)
-  // but okay to pick the largest allowed level, so probably shouldn't throw error.
-///  // Number of levels cannot must be such that nproc <= 2^(max_level-1)
-///  if (n > 1 and n < pow(2, max_level + 1)) {
-///    throw BoutException("Laplace1DMG error: number of levels and processors must satisfy "
-///                        "NXPE > 2^(max_levels+1).");
-///  }
+  // Number of levels cannot must be such that nproc <= 2^(max_level-1)
+  BoutReal lognx = log2(ngx-3);
+  if ( lognx <= max_level ) {
+    std::cout << "WARNING: Specified max_level "<<max_level<<" is too large. Setting max_level to largest allowable level "<<lognx-1<< ", which gives one interior point and two bounarary points on finest grid. This choice is sensible and often optimal.\n";
+    max_level = lognx - 1;
+  }
 
   static int ipt_solver_count = 1;
   bout::globals::dump.addRepeat(
