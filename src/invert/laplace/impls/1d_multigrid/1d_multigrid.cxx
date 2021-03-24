@@ -66,9 +66,11 @@ Laplace1DMG::Laplace1DMG(Options* opt, CELL_LOC loc, Mesh* mesh_in)
 
   // Number of x grid points must be a power of 2
   const int ngx = localmesh->GlobalNx;
-//  if (!is_pow2(ngx-2*mxg)) {
-//    throw BoutException("Laplace1DMG error: nx ({:d}) must be a power of 2", ngx-mxg);
-//  }
+  const int mxg = ngx - (localmesh->xend-localmesh->xstart-1);
+	  std::cout<<mxg<<"\n";
+  if (!is_pow2(ngx-mxg+2)) {
+    throw BoutException("Laplace1DMG error: finest gird (internal grid point + plus two boundary points =  {:d} must be a power of 2", ngx-mxg+2);
+  }
   // Number of procs must be a power of 2
   const int n = localmesh->NXPE;
   if (!is_pow2(n)) {
