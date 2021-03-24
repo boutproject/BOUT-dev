@@ -115,6 +115,8 @@ public:
     std::size_t current_level;
     /// Size of grid on current level
     int nxloc;
+    /// xend on current grid
+    int xe;
 
     // indexing to remove branches from tight loops
     int index_start;

@@ -256,23 +256,23 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
                  kz * kwaveFactor, global_flags, inner_boundary_flags,
                  outer_boundary_flags, &A, &C, &D);
 
-    // Patch up internal boundaries
-    if (not localmesh->lastX()) {
-      for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
-        avec(jy, kz, ix) = 0;
-        bvec(jy, kz, ix) = 1;
-        cvec(jy, kz, ix) = 0;
-        bcmplx(kz, ix) = 0;
-      }
-    }
-    if (not localmesh->firstX()) {
-      for (int ix = 0; ix < localmesh->xstart; ix++) {
-        avec(jy, kz, ix) = 0;
-        bvec(jy, kz, ix) = 1;
-        cvec(jy, kz, ix) = 0;
-        bcmplx(kz, ix) = 0;
-      }
-    }
+//    // Patch up internal boundaries
+//    if (not localmesh->lastX()) {
+//      for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
+//        avec(jy, kz, ix) = 0;
+//        bvec(jy, kz, ix) = 1;
+//        cvec(jy, kz, ix) = 0;
+//        bcmplx(kz, ix) = 0;
+//      }
+//    }
+//    if (not localmesh->firstX()) {
+//      for (int ix = 0; ix < localmesh->xstart; ix++) {
+//        avec(jy, kz, ix) = 0;
+//        bvec(jy, kz, ix) = 1;
+//        cvec(jy, kz, ix) = 0;
+//        bcmplx(kz, ix) = 0;
+//      }
+//    }
   }
   /// SCOREP_USER_REGION_END(kzinit);
   /// SCOREP_USER_REGION_DEFINE(initlevels);
@@ -294,7 +294,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   // much of the information for each level may be stored. Data that cannot
   // be cached (e.g. the changing right-hand sides) is calculated in init_rhs
   // below.
-  std::cout<<jy<<" "<<first_call[jy]<<" "<<store_coefficients<<"\n";
+  std::cout<<"jy "<<jy<<" "<<first_call[jy]<<" "<<store_coefficients<<"\n";
   levels.reserve(max_level + 1);
   if (first_call[jy] || not store_coefficients) {
 
@@ -309,21 +309,19 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   for(int lev=0; lev<=max_level; lev++){
 	  std::cout<<"\n";
-	  std::cout<<lev<<" ar\n";
+	  output.write("{} ar\n",lev);
 	  for(int ix = 0; ix<levels[lev].nxloc; ix++){
-		  std::cout<<levels[lev].ar(jy,ix,0)<<" ";
+		  output.write("{} ",levels[lev].ar(jy,ix,0).real());
 	  }
-	  std::cout<<"\n";
-	  std::cout<<lev<<" br\n";
+	  output.write("\n{} br\n",lev);
 	  for(int ix = 0; ix<levels[lev].nxloc; ix++){
-		  std::cout<<levels[lev].br(jy,ix,0)<<" ";
+		  output.write("{} ",levels[lev].br(jy,ix,0).real());
 	  }
-	  std::cout<<"\n";
-	  std::cout<<lev<<" cr\n";
+	  output.write("\n{} cr\n",lev);
 	  for(int ix = 0; ix<levels[lev].nxloc; ix++){
-		  std::cout<<levels[lev].cr(jy,ix,0)<<" ";
+		  output.write("{} ",levels[lev].cr(jy,ix,0).real());
 	  }
-	  std::cout<<"\n";
+	  output.write("\n");
   }
 
   // Compute coefficients that depend on the right-hand side and which
@@ -351,6 +349,12 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       levels[0].xloc(ix, kz) = x0saved(jy, ix, kz);
     }
   }
+
+  output.write("xloc initial\n");
+  for(int ix = 0; ix<ncx; ix++){
+    output.write("{} ",levels[0].xloc(ix,0).real());
+  }
+  output.write("\n");
   /// SCOREP_USER_REGION_END(setsoln);
   /// SCOREP_USER_REGION_DEFINE(initwhileloop);
   /// SCOREP_USER_REGION_BEGIN(initwhileloop, "init while
@@ -443,7 +447,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
         // algorithm cannot exit in cycles where this is not called.
         levels[0].calculate_total_residual(*this, errornorm, converged);
 
-        std::cout<<"cycle "<<cyclecount<<"\titeration "<<count<<"\ttotal weighted residual: "<<errornorm[0]<<"\treduction factor: "<<errornorm[0]/errornorm_old[0]<<"\n";
+        output.write("cycle {}\t iteration {}\t total weighted residual {}\t reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
 
         // Based the error reduction per V-cycle, errornorm/errornorm_old,
         // predict when the slowest converging mode converges.
@@ -549,7 +553,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 /// SCOREP_USER_REGION_BEGIN(afterloop, "after faff",///SCOREP_USER_REGION_TYPE_COMMON);
 
 #if CHECK > 2
-  for (int ix = 0; ix < 4; ix++) {
+  for (int ix = 0; ix < ncx; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
       if (!finite(levels[0].xloc(ix, kz).real())
           or !finite(levels[0].xloc(ix, kz).imag()))
@@ -559,7 +563,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 #endif
 
   // Cache solution
-  for (int ix = 0; ix < 4; ix++) {
+  for (int ix = 0; ix < ncx; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
       x0saved(jy, ix, kz) = levels[0].xloc(ix, kz);
     }
@@ -627,71 +631,82 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
     return;
   }
 
-  if( nxloc==4 ){
-    // Do direct solve
-    for (int kz = 0; kz < l.nmode; kz++) {
-      if (not l.converged[kz]) {
-	dcomplex a = br(l.jy,1,kz);
-	dcomplex b = cr(l.jy,1,kz);
-	dcomplex c = ar(l.jy,2,kz);
-	dcomplex d = br(l.jy,2,kz);
-	dcomplex det = a*d - b*c;
-        xloc(1, kz) = (d * rr(1, kz) - b * rr(2, kz)) / det;
-        xloc(2, kz) = (a * rr(2, kz) - c * rr(1, kz)) / det;
-      }
-    }
-    
-  } else {
+//  output.write("xloc before\n");
+//  for(int ix = 0; ix<nxloc; ix++){
+//    output.write("{} ",xloc(ix,0).real());
+//  }
+//  output.write("\n");
 
-    // Sweep over even x points
-    for (int kz = 0; kz < l.nmode; kz++) {
-      if (not l.converged[kz]) {
-        for (int ix = 2; ix < nxloc-1; ix+=2) {
-           xloc(ix, kz) = (rr(ix, kz) 
-		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
-                      - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
-        }
-      }
-    }
+  Array<dcomplex> sendvec(l.nmode), recvecin(l.nmode), recvecout(l.nmode);
+  MPI_Request rreqin, rreqout;
 
-    // Sweep over odd x points
-    for (int kz = 0; kz < l.nmode; kz++) {
-      if (not l.converged[kz]) {
-        for (int ix = 1; ix < nxloc-1; ix+=2) {
-           xloc(ix, kz) = (rr(ix, kz) 
-		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
-                      - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
-        }
-      }
-    }
-
-    // Apply on all levels?
-//    if (current_level == 0) {
-//      // Update boundaries to match interior points
-//      // Do this after communication
-//      for (int kz = 0; kz < l.nmode; kz++) {
-//        if (not l.converged[kz]) {
-//	  if(current_level!=0){
-//            if (l.localmesh->firstX()) {
-//              xloc(l.xs-1, kz) = 0.0;
-//	    }
-//            if (l.localmesh->lastX()) {
-//              xloc(l.xe+1, kz) = 0.0;
-//	    }
-//          } else {
-//            if (l.localmesh->firstX()) {
-//              xloc(l.xs-1, kz) =
-//                -l.cvec(l.jy, kz, l.xs - 1) * xloc(l.xs, kz) / l.bvec(l.jy, kz, l.xs - 1);
-//            }
-//            if (l.localmesh->lastX()) {
-//              xloc(l.xe+1, kz) =
-//                -l.avec(l.jy, kz, l.xe + 1) * xloc(l.xe, kz) / l.bvec(l.jy, kz, l.xe + 1);
-//	    }
-//	  }
-//        }
-//      }
-//    }
+  // Even pass: xloc starts in sync, so no comm before first loop,
+  // but post expect receive for after first loop: xs from above
+  if (not l.localmesh->firstX()) {
+      MPI_Irecv(&recvecin[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, BoutComm::get(), &rreqin);
   }
+  if (not l.localmesh->lastX()) {
+    MPI_Irecv(&recvecout[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(), &rreqout);
+  }
+
+  // Sweep over even x points
+  for (int kz = 0; kz < l.nmode; kz++) {
+    if (not l.converged[kz]) {
+      for (int ix = l.xs; ix < xe+2; ix+=2) {
+         xloc(ix, kz) = (rr(ix, kz) 
+		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                      - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
+      }
+    }
+  }
+
+//  output.write("xloc middle\n");
+//  for(int ix = 0; ix<nxloc; ix++){
+//    output.write("{} ",xloc(ix,0).real());
+//  }
+//  output.write("\n");
+
+  if (not l.localmesh->firstX()) {
+    // Send my xs down
+    MPI_Send(&xloc(l.xs, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, BoutComm::get());
+  }
+  if (not l.localmesh->lastX()) {
+    MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
+    for (int kz = 0; kz < l.nmode; kz++) {
+      if (not l.converged[kz]) {
+        xloc(xe+1, kz) = recvecout[kz];
+      }
+    }
+  }
+
+  // Sweep over odd x points
+  for (int kz = 0; kz < l.nmode; kz++) {
+    if (not l.converged[kz]) {
+      for (int ix = l.xs-1; ix < xe+2; ix+=2) {
+         xloc(ix, kz) = (rr(ix, kz) 
+		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                      - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
+      }
+    }
+  }
+  if (not l.localmesh->lastX()) {
+    MPI_Send(&xloc(xe, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
+  }
+  if (not l.localmesh->firstX()) {
+    // Receive and put data in arrays
+    MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
+    for (int kz = 0; kz < l.nmode; kz++) {
+      if (not l.converged[kz]) {
+        xloc(l.xs-1, kz) = recvecin[kz];
+      }
+    }
+  }
+
+//  output.write("xloc after\n");
+//  for(int ix = 0; ix<nxloc; ix++){
+//    output.write("{} ",xloc(ix,0).real());
+//  }
+//  output.write("\n");
 }
 
 /*
@@ -867,7 +882,7 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
   const auto nguards = l.ncx - (l.localmesh->xend - l.localmesh->xstart + 1);
 
   // Number of local x points for this level
-  nxloc = 4 + (l.ncx-4) / scale;
+  nxloc = nguards + (l.ncx-nguards) / scale;
   //if(l.localmesh->lastX()) nxloc += 1;
   std::cout << "Initialize level " <<  current_level << ", nxloc " << nxloc << "\n";
   std::cout << "l.ncx " <<  l.ncx << ", scale " << scale << "\n";
@@ -1015,9 +1030,12 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
   const auto nguards = l.ncx - (l.localmesh->xend - l.localmesh->xstart + 1);
 
   nxloc = l.ncx;
+  xe = l.localmesh->xend;
 
   std::cout << "Initialize level " <<  current_level << ", nxloc " << nxloc << "\n";
   std::cout << "l.ncx " <<  l.ncx << "\n";
+  std::cout << "l.xs " <<  l.xs << "\n";
+  std::cout << "xe " <<  xe << "\n";
   
   // Coefficients for the reduced iterations
   ar.reallocate(ny, l.ncx, l.nmode);
@@ -1040,28 +1058,6 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
   }
   // end basic definitions
 
-//  for (int kz = 0; kz < l.nmode; kz++) {
-//    for (int ix = 0; ix < nxloc-1; ix++) {
-//      // Need to offset, as ar always has one guard cell
-//      ar(l.jy, ix, kz) = l.avec(l.jy, kz, ix+l.xs-1);
-//      br(l.jy, ix, kz) = l.bvec(l.jy, kz, ix+l.xs-1);
-//      cr(l.jy, ix, kz) = l.cvec(l.jy, kz, ix+l.xs-1);
-//      brinv(l.jy, ix, kz) = 1.0/br(l.jy, ix, kz);
-//    }
-//    // Final grid point is special case: need to eliminate final row so that
-//    // there are 2^k+1 points in total
-//    int ix = nxloc-1; 
-//    ar(l.jy, ix, kz) = l.avec(l.jy, kz, ix+l.xs-1); // unchanged
-//    dcomplex b1 = l.bvec(l.jy, kz, ix+l.xs-1);
-//    dcomplex b2 = l.bvec(l.jy, kz, ix+l.xs);
-//    dcomplex c1 = l.cvec(l.jy, kz, ix+l.xs-1);
-//    dcomplex a2 = l.avec(l.jy, kz, ix+l.xs);
-//    std::cout << b1 << " " <<b2<<" "<<a2<<" "<<c1<<"\n";
-//    br(l.jy, ix, kz) = (b1 - c1*a2)/b2;
-//    cr(l.jy, ix, kz) = 0.0;
-//    brinv(l.jy, ix, kz) = 1.0/br(l.jy, ix, kz);
-//  }
-
   for (int kz = 0; kz < l.nmode; kz++) {
     for (int ix = 0; ix < l.ncx; ix++) {
       // Need to offset, as ar always has one guard cell
@@ -1071,6 +1067,7 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
       brinv(l.jy, ix, kz) = 1.0/br(l.jy, ix, kz);
     }
 
+    std::cout << "lastX "<<l.localmesh->lastX()<<"\n";
     if( l.localmesh->lastX() ){
       // Final grid point is special case: need to eliminate final row so that
       // there are 2^k+1 points in total
@@ -1106,6 +1103,11 @@ void Laplace1DMG::Level::init_rhs(Laplace1DMG& l, const Matrix<dcomplex>& bcmplx
 
     }
   }
+  output.write("rr \n");
+  for(int ix = 0; ix<l.ncx; ix++){
+    output.write("{} ",rr(ix,0).real());
+  }
+  output.write("\n");
 }
 
 /*
@@ -1143,7 +1145,9 @@ void Laplace1DMG::Level::calculate_total_residual(const Laplace1DMG& l,
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      errornorm[kz] = sqrt(errornorm[kz]/BoutReal(l.ncx));
+	    output.write("\nncx {}\n",l.ncx);
+	    output.write("\nGlobal nx {}\n",l.localmesh->GlobalNx);
+      errornorm[kz] = sqrt(errornorm[kz]/BoutReal(l.localmesh->GlobalNx));
       if (errornorm[kz] < 1.0) {
         converged[kz] = true;
       }
@@ -1174,6 +1178,12 @@ void Laplace1DMG::Level::calculate_residual(const Laplace1DMG& l) {
       }
     }
   }
+
+  output.write("residual\n");
+  for(int ix = 2; ix<nxloc-2; ix++){
+    output.write("{} ",residual(ix,0).real());
+  }
+  output.write("\n");
 }
 
 /*
