@@ -66,10 +66,10 @@ Laplace1DMG::Laplace1DMG(Options* opt, CELL_LOC loc, Mesh* mesh_in)
 
   // Number of x grid points must be a power of 2
   const int ngx = localmesh->GlobalNx;
-  const int mxg = ngx - (localmesh->xend-localmesh->xstart-1);
+  const int mxg = ngx - (localmesh->xend-localmesh->xstart+1);
 	  std::cout<<mxg<<"\n";
-  if (!is_pow2(ngx-mxg+2)) {
-    throw BoutException("Laplace1DMG error: finest gird (internal grid point + plus two boundary points =  {:d} must be a power of 2", ngx-mxg+2);
+  if (!is_pow2(ngx-mxg)) {
+    throw BoutException("Laplace1DMG error: internal grid points ({:d}) must be a power of 2", ngx-mxg);
   }
   // Number of procs must be a power of 2
   const int n = localmesh->NXPE;
@@ -864,6 +864,8 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
   // 2^current_level
   const auto scale = 1 << current_level;
 
+  const auto nguards = l.ncx - (l.localmesh->xend - l.localmesh->xstart + 1);
+
   // Number of local x points for this level
   nxloc = 4 + (l.ncx-4) / scale;
   //if(l.localmesh->lastX()) nxloc += 1;
@@ -1009,10 +1011,14 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
   SCOREP0();
 
   const int ny = l.localmesh->LocalNy;
-  nxloc = l.localmesh->LocalNx;
+
+  const auto nguards = l.ncx - (l.localmesh->xend - l.localmesh->xstart + 1);
+
+  nxloc = l.ncx;
+
   std::cout << "Initialize level " <<  current_level << ", nxloc " << nxloc << "\n";
   std::cout << "l.ncx " <<  l.ncx << "\n";
-
+  
   // Coefficients for the reduced iterations
   ar.reallocate(ny, l.ncx, l.nmode);
   br.reallocate(ny, l.ncx, l.nmode);
@@ -1028,21 +1034,57 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
 
 
   for (int kz = 0; kz < l.nmode; kz++) {
-    for (int ix = 0; ix < nxloc; ix++) {
+    for (int ix = 0; ix < l.ncx; ix++) {
       residual(ix, kz) = 0.0;
     }
   }
   // end basic definitions
 
+//  for (int kz = 0; kz < l.nmode; kz++) {
+//    for (int ix = 0; ix < nxloc-1; ix++) {
+//      // Need to offset, as ar always has one guard cell
+//      ar(l.jy, ix, kz) = l.avec(l.jy, kz, ix+l.xs-1);
+//      br(l.jy, ix, kz) = l.bvec(l.jy, kz, ix+l.xs-1);
+//      cr(l.jy, ix, kz) = l.cvec(l.jy, kz, ix+l.xs-1);
+//      brinv(l.jy, ix, kz) = 1.0/br(l.jy, ix, kz);
+//    }
+//    // Final grid point is special case: need to eliminate final row so that
+//    // there are 2^k+1 points in total
+//    int ix = nxloc-1; 
+//    ar(l.jy, ix, kz) = l.avec(l.jy, kz, ix+l.xs-1); // unchanged
+//    dcomplex b1 = l.bvec(l.jy, kz, ix+l.xs-1);
+//    dcomplex b2 = l.bvec(l.jy, kz, ix+l.xs);
+//    dcomplex c1 = l.cvec(l.jy, kz, ix+l.xs-1);
+//    dcomplex a2 = l.avec(l.jy, kz, ix+l.xs);
+//    std::cout << b1 << " " <<b2<<" "<<a2<<" "<<c1<<"\n";
+//    br(l.jy, ix, kz) = (b1 - c1*a2)/b2;
+//    cr(l.jy, ix, kz) = 0.0;
+//    brinv(l.jy, ix, kz) = 1.0/br(l.jy, ix, kz);
+//  }
 
   for (int kz = 0; kz < l.nmode; kz++) {
-    for (int ix = 0; ix < nxloc; ix++) {
-
+    for (int ix = 0; ix < l.ncx; ix++) {
+      // Need to offset, as ar always has one guard cell
       ar(l.jy, ix, kz) = l.avec(l.jy, kz, ix);
       br(l.jy, ix, kz) = l.bvec(l.jy, kz, ix);
       cr(l.jy, ix, kz) = l.cvec(l.jy, kz, ix);
-      brinv(l.jy, ix, kz) = 1.0/l.bvec(l.jy, kz, ix);
+      brinv(l.jy, ix, kz) = 1.0/br(l.jy, ix, kz);
+    }
 
+    if( l.localmesh->lastX() ){
+      // Final grid point is special case: need to eliminate final row so that
+      // there are 2^k+1 points in total
+      int ix = l.xe+1; 
+      dcomplex b1 = l.bvec(l.jy, kz, ix-1);
+      dcomplex b2 = l.bvec(l.jy, kz, ix);
+      dcomplex c1 = l.cvec(l.jy, kz, ix-1);
+      dcomplex a2 = l.avec(l.jy, kz, ix);
+      //std::cout << b1 << " " <<b2<<" "<<a2<<" "<<c1<<"\n";
+      // ar unchanged, use xe+1 row to eliminate cr dependence in xe row
+      // ar(l.jy, ix, kz) = l.avec(l.jy, kz, ix-1); // unchanged
+      br(l.jy, ix, kz) = (b1 - c1*a2)/b2;
+      cr(l.jy, ix, kz) = 0.0;
+      brinv(l.jy, ix, kz) = 1.0/br(l.jy, ix, kz);
     }
   }
 }
