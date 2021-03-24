@@ -1,9 +1,9 @@
 /**************************************************************************
  * Perpendicular Laplacian inversion. Parallel code using FFTs in z
- * and an iterative tridiagonal solver in x.
+ * and multigrid in x.
  *
  **************************************************************************
- * Copyright 2020 Joseph Parker
+ * Copyright 2021 Joseph Parker
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *
@@ -346,35 +346,22 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
   }
-  std::cout<<"ar\n";
-  for(int ix = 0; ix<levels[0].nxloc; ix++){
-	  std::cout<<levels[0].ar(jy,ix,0)<<" ";
-  }
-  std::cout<<"\n";
-  std::cout<<"br\n";
-  for(int ix = 0; ix<levels[0].nxloc; ix++){
-	  std::cout<<levels[0].br(jy,ix,0)<<" ";
-  }
-  std::cout<<"\n";
-  std::cout<<"cr\n";
-  for(int ix = 0; ix<levels[0].nxloc; ix++){
-	  std::cout<<levels[0].cr(jy,ix,0)<<" ";
-  }
-  if(max_level>0){
+
+  for(int lev=0; lev<=max_level; lev++){
 	  std::cout<<"\n";
-	  std::cout<<"1 ar\n";
-	  for(int ix = 0; ix<levels[1].nxloc; ix++){
-		  std::cout<<levels[1].ar(jy,ix,0)<<" ";
+	  std::cout<<lev<<" ar\n";
+	  for(int ix = 0; ix<levels[lev].nxloc; ix++){
+		  std::cout<<levels[lev].ar(jy,ix,0)<<" ";
 	  }
 	  std::cout<<"\n";
-	  std::cout<<"1 br\n";
-	  for(int ix = 0; ix<levels[1].nxloc; ix++){
-		  std::cout<<levels[1].br(jy,ix,0)<<" ";
+	  std::cout<<lev<<" br\n";
+	  for(int ix = 0; ix<levels[lev].nxloc; ix++){
+		  std::cout<<levels[lev].br(jy,ix,0)<<" ";
 	  }
 	  std::cout<<"\n";
-	  std::cout<<"1 cr\n";
-	  for(int ix = 0; ix<levels[1].nxloc; ix++){
-		  std::cout<<levels[1].cr(jy,ix,0)<<" ";
+	  std::cout<<lev<<" cr\n";
+	  for(int ix = 0; ix<levels[lev].nxloc; ix++){
+		  std::cout<<levels[lev].cr(jy,ix,0)<<" ";
 	  }
 	  std::cout<<"\n";
   }
@@ -382,11 +369,11 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Compute coefficients that depend on the right-hand side and which
   // therefore change every time.
   levels[0].init_rhs(*this, bcmplx);
-  std::cout<<"rr\n";
-  for(int ix = 0; ix<ncx; ix++){
-	  std::cout<<levels[0].rr(ix,0)<<" ";
-  }
-  std::cout<<"\n";
+//  std::cout<<"\nrr\n";
+//  for(int ix = 0; ix<ncx; ix++){
+//	  std::cout<<levels[0].rr(ix,0)<<" ";
+//  }
+//  std::cout<<"\n\n";
 
 //  std::cout<<"x0saved\n";
 //  for(int ix = 0; ix<ncx; ix++){
@@ -431,11 +418,6 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
   };
 
-//  for(int ix = 0; ix<ncx; ix++){
-//	  std::cout<<levels[current_level].xloc(ix,0)<<" ";
-//  }
-//  std::cout<<"\n";
-
   // Check for convergence before loop to skip work with cvode
   levels[0].calculate_residual(*this);
   levels[0].calculate_total_residual(*this, errornorm, converged);
@@ -443,17 +425,26 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   while (execute_loop) {
 
-	  std::cout<<jy<<": before loop "<<count<<"\n";
-	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
-		  std::cout<<levels[current_level].xloc(ix,0)<<" ";
-	  }
-	  std::cout<<"\n";
-	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
-		  std::cout<<levels[current_level].residual(ix,0)<<" ";
-	  }
-	  std::cout<<"\n";
+//	  std::cout<<jy<<": before loop "<<count<<"\nxloc\n";
+//	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+//		  std::cout<<levels[current_level].xloc(ix,0)<<" ";
+//	  }
+//	  std::cout<<"\nresidual\n";
+//	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+//		  std::cout<<levels[current_level].residual(ix,0)<<" ";
+//	  }
+//	  std::cout<<"\nrr\n";
+//	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+//		  std::cout<<levels[current_level].rr(ix,0)<<" ";
+//	  }
+//	  std::cout<<"\n\n";
     //levels[current_level].gauss_seidel_red_black(*this);
     levels[current_level].gauss_seidel_red_black_local(*this);
+//    std::cout<<jy<<": after smoothing "<<count<<"\nxloc\n";
+//    for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+//	  std::cout<<levels[current_level].xloc(ix,0)<<" ";
+//    }
+//    std::cout<<"\n";
 
     /// SCOREP_USER_REGION_DEFINE(l0rescalc);
     /// SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual
@@ -492,6 +483,8 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
         // algorithm cannot exit in cycles where this is not called.
         levels[0].calculate_total_residual(*this, errornorm, converged);
 
+        std::cout<<"cycle "<<cyclecount<<"\titeration "<<count<<"\ttotal weighted residual: "<<errornorm[0]<<"\treduction factor: "<<errornorm[0]/errornorm_old[0]<<"\n";
+
         // Based the error reduction per V-cycle, errornorm/errornorm_old,
         // predict when the slowest converging mode converges.
         if (cyclecount < 3 and predict_exit) {
@@ -507,17 +500,6 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
 
-	  std::cout<<jy<<": after loop "<<count<<"\n";
-	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
-		  std::cout<<levels[current_level].xloc(ix,0)<<" ";
-	  }
-	  std::cout<<"\n";
-	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
-		  std::cout<<levels[current_level].residual(ix,0)<<" ";
-	  }
-	  std::cout<<"\n";
-	  std::cout<<"total weighted residual: "<<errornorm[0]<<"\n";
-
     /// SCOREP_USER_REGION_END(l0rescalc);
     /// SCOREP_USER_REGION_DEFINE(increment);
     /// SCOREP_USER_REGION_BEGIN(increment, "increment
@@ -532,7 +514,26 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     } else if (all(converged) and current_level == 0) {
       break;
     } else if (not down) {
+//	  std::cout<<jy<<": before refine loop "<<count<<"\nxloc\n";
+//	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+//		  std::cout<<levels[current_level].xloc(ix,0)<<" ";
+//	  }
+//          //levels[current_level].calculate_residual(*this);
+//	  std::cout<<"\nresidual\n";
+//	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+//		  std::cout<<levels[current_level].residual(ix,0)<<" ";
+//	  }
+//	  std::cout<<"\nrr\n";
+//	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+//		  std::cout<<levels[current_level].rr(ix,0)<<" ";
+//	  }
+//          std::cout<<"\n";
       levels[current_level].refine(*this, fine_error);
+//	  std::cout<<"\nfine error\n";
+//	  for(int ix = 0; ix<levels[current_level-1].nxloc; ix++){
+//		  std::cout<<fine_error(ix,0)<<" ";
+//	  }
+//          std::cout<<"\n";
       --current_level;
       levels[current_level].update_solution(*this);
       levels[current_level].synchronize_reduced_field(*this, levels[current_level].xloc);
@@ -673,43 +674,70 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
     return;
   }
 
-  // Sweep over even x points
-  for (int kz = 0; kz < l.nmode; kz++) {
-    if (not l.converged[kz]) {
-      for (int ix = 0; ix < nxloc; ix+=2) {
-         xloc(ix, kz) = (rr(ix, kz) 
-		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
-                      - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
-      }
-    }
-  }
-
-  // Sweep over odd x points
-  for (int kz = 0; kz < l.nmode; kz++) {
-    if (not l.converged[kz]) {
-      for (int ix = 1; ix < nxloc; ix+=2) {
-         xloc(ix, kz) = (rr(ix, kz) 
-		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
-                      - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
-      }
-    }
-  }
-
-  if (current_level == 0) {
-    // Update boundaries to match interior points
-    // Do this after communication
+  if( nxloc==4 ){
+    // Do direct solve
     for (int kz = 0; kz < l.nmode; kz++) {
       if (not l.converged[kz]) {
-        if (l.localmesh->firstX()) {
-          xloc(l.xs-1, kz) =
-              -l.cvec(l.jy, kz, l.xs - 1) * xloc(l.xs, kz) / l.bvec(l.jy, kz, l.xs - 1);
-        }
-        if (l.localmesh->lastX()) {
-          xloc(l.xe+1, kz) =
-              -l.avec(l.jy, kz, l.xe + 1) * xloc(l.xe, kz) / l.bvec(l.jy, kz, l.xe + 1);
+	dcomplex a = br(l.jy,1,kz);
+	dcomplex b = cr(l.jy,1,kz);
+	dcomplex c = ar(l.jy,2,kz);
+	dcomplex d = br(l.jy,2,kz);
+	dcomplex det = a*d - b*c;
+        xloc(1, kz) = (d * rr(1, kz) - b * rr(2, kz)) / det;
+        xloc(2, kz) = (a * rr(2, kz) - c * rr(1, kz)) / det;
+      }
+    }
+    
+  } else {
+
+    // Sweep over even x points
+    for (int kz = 0; kz < l.nmode; kz++) {
+      if (not l.converged[kz]) {
+        for (int ix = 2; ix < nxloc-1; ix+=2) {
+           xloc(ix, kz) = (rr(ix, kz) 
+		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                      - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
         }
       }
     }
+
+    // Sweep over odd x points
+    for (int kz = 0; kz < l.nmode; kz++) {
+      if (not l.converged[kz]) {
+        for (int ix = 1; ix < nxloc-1; ix+=2) {
+           xloc(ix, kz) = (rr(ix, kz) 
+		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                      - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
+        }
+      }
+    }
+
+    // Apply on all levels?
+//    if (current_level == 0) {
+//      // Update boundaries to match interior points
+//      // Do this after communication
+//      for (int kz = 0; kz < l.nmode; kz++) {
+//        if (not l.converged[kz]) {
+//	  if(current_level!=0){
+//            if (l.localmesh->firstX()) {
+//              xloc(l.xs-1, kz) = 0.0;
+//	    }
+//            if (l.localmesh->lastX()) {
+//              xloc(l.xe+1, kz) = 0.0;
+//	    }
+//          } else {
+//            if (l.localmesh->firstX()) {
+//              xloc(l.xs-1, kz) =
+//                -l.cvec(l.jy, kz, l.xs - 1) * xloc(l.xs, kz) / l.bvec(l.jy, kz, l.xs - 1);
+//            }
+//            if (l.localmesh->lastX()) {
+//              xloc(l.xe+1, kz) =
+//                -l.avec(l.jy, kz, l.xe + 1) * xloc(l.xe, kz) / l.bvec(l.jy, kz, l.xe + 1);
+//	    }
+//	  }
+//        }
+//      }
+//    }
   }
 }
 
@@ -884,9 +912,10 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
   const auto scale = 1 << current_level;
 
   // Number of local x points for this level
-  nxloc = l.ncx / scale;
-  if(l.localmesh->lastX()) nxloc += 1;
-  std::cout << "level " <<  current_level << ", nxloc " << nxloc << "\n";
+  nxloc = 4 + (l.ncx-4) / scale;
+  //if(l.localmesh->lastX()) nxloc += 1;
+  std::cout << "Initialize level " <<  current_level << ", nxloc " << nxloc << "\n";
+  std::cout << "l.ncx " <<  l.ncx << ", scale " << scale << "\n";
 
   // Whether this proc is involved in the multigrid calculation
   included = (myproc % scale == 0) or l.localmesh->lastX();
@@ -947,7 +976,8 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
   for (int kz = 0; kz < l.nmode; kz++) {
     for (int ix = 1; ix < nxloc-1; ix++) {
       // fine grid index
-      int ixf = 2*ix;
+      //int ixf = 2*ix;
+      int ixf = 2*ix-1;
       if (l.localmesh->firstX() and ix==1) {
         ar(l.jy, 1, kz) = 0.5 * lup.ar(l.jy, 1, kz);
         br(l.jy, 1, kz) = 0.5 * lup.br(l.jy, 1, kz) + 0.25 * lup.cr(l.jy, 1, kz)
@@ -955,6 +985,7 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
         cr(l.jy, 1, kz) = 0.25 * lup.cr(l.jy, 1, kz) + 0.125 * lup.br(l.jy, 2, kz)
                         + 0.25 * lup.cr(l.jy, 2, kz);
       } else if (l.localmesh->lastX() and ix==nxloc-2){
+	//if(current_level==1) ixf = 2*ix-3; // account for level 0 being special grid
         ar(l.jy, ix, kz) = 0.25 * lup.ar(l.jy, ixf-1, kz) + 0.125 * lup.br(l.jy, ixf-1, kz)
                           + 0.25 * lup.ar(l.jy, ixf, kz);
         br(l.jy, ix, kz) = 0.125 * lup.br(l.jy, ixf-1, kz) + 0.25 * lup.cr(l.jy, ixf-1, kz)
@@ -1021,12 +1052,13 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
       red(myproc % 2 == 0), black(myproc % 2 == 1), current_level(0), index_start(1),
       index_end(l.localmesh->lastX() ? 2 : 3) {
 
-  std::cout<<"Initialize level 0\n";
   // Basic definitions for conventional multigrid
   SCOREP0();
 
   const int ny = l.localmesh->LocalNy;
   nxloc = l.localmesh->LocalNx;
+  std::cout << "Initialize level " <<  current_level << ", nxloc " << nxloc << "\n";
+  std::cout << "l.ncx " <<  l.ncx << "\n";
 
   // Coefficients for the reduced iterations
   ar.reallocate(ny, l.ncx, l.nmode);
@@ -1067,7 +1099,7 @@ void Laplace1DMG::Level::init_rhs(Laplace1DMG& l, const Matrix<dcomplex>& bcmplx
 
   SCOREP0();
 
-  std::cout<<"init rhs\n";
+  //std::cout<<"init rhs\n";
   //std::cout << l.ncx << "\n";
   for (int kz = 0; kz < l.nmode; kz++) {
     //for (int ix = l.localmesh->xstart; ix < l.localmesh->xend; ix++) {
@@ -1103,7 +1135,7 @@ void Laplace1DMG::Level::calculate_total_residual(const Laplace1DMG& l,
     if (!converged[kz]) {
       errornorm[kz] = 0.0;
       subtotal[kz] = 0.0;
-      for (int ix = l.localmesh->xstart; ix < l.localmesh->xend; ix++) {
+      for (int ix = 2; ix < nxloc-2; ix++) {
         BoutReal w = pow( l.rtol*sqrt(pow(xloc(ix, kz).real(), 2) + pow(xloc(ix, kz).imag(), 2)) + l.atol , 2);
         subtotal[kz] += ( pow(residual(ix, kz).real(), 2) + pow(residual(ix, kz).imag(), 2) ) / w;
       }
@@ -1138,19 +1170,9 @@ void Laplace1DMG::Level::calculate_residual(const Laplace1DMG& l) {
     return;
   }
 
-  // TODO correct for all levels
-  const int nxlevel = l.localmesh->LocalNx;
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
       for (int ix = 1; ix < nxloc-1; ix++) {
-//	std::cout << ix << " " << l.jy << " " << kz << "\n";
-//	std::cout << rr(ix, kz) << "\n";
-//	std::cout << ar(l.jy, ix, kz) << "\n";
-//	std::cout << br(l.jy, ix, kz) << "\n";
-//	std::cout << cr(l.jy, ix, kz) << "\n";
-//	std::cout << xloc(ix-1, kz) << "\n";
-//	std::cout << xloc(ix, kz) << "\n";
-//	std::cout << xloc(ix+1, kz) << "\n";
         residual(ix, kz) = rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-1, kz)
                         - br(l.jy, ix, kz) * xloc(ix, kz)
                         - cr(l.jy, ix, kz) * xloc(ix+1, kz);
@@ -1172,24 +1194,21 @@ void Laplace1DMG::Level::coarsen(const Laplace1DMG& l,
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
-      if (not l.localmesh->lastX()) {
-        residual(1, kz) = 0.25 * fine_residual(0, kz) + 0.5 * fine_residual(1, kz)
-                          + 0.25 * fine_residual(3, kz);
-      } else {
-        // NB point(1,kz) on last proc only used on level=0
-        residual(2, kz) = 0.25 * fine_residual(1, kz) + 0.5 * fine_residual(2, kz)
-                          + 0.25 * fine_residual(3, kz);
-      }
-
-      // Set initial guess for coarse grid levels to zero
-      for (int ix = 0; ix < 4; ix++) {
+      for (int ix = 1; ix < nxloc-1 ; ix++) {
+//        residual(ix, kz) = 0.25 * fine_residual(ix-1, kz) + 0.5 * fine_residual(ix, kz)
+//                          + 0.25 * fine_residual(ix+1, kz);
+//        // Set initial guess for coarse grid levels to zero
+//        xloc(ix, kz) = 0.0;
+//        // Set RHS equal to residual
+//        rr(ix, kz) = residual(ix, kz);
+        int ixf = 2*ix-1;
+	//if(current_level==1 and ix==nxloc-3) ixf = 2*ix-3;
+        residual(ix, kz) = 0.25 * fine_residual(ixf-1, kz) + 0.5 * fine_residual(ixf, kz)
+                          + 0.25 * fine_residual(ixf+1, kz);
+        // Set initial guess for coarse grid levels to zero
         xloc(ix, kz) = 0.0;
-      }
-
-      // Set RHS equal to residual
-      rr(1, kz) = residual(1, kz);
-      if (l.localmesh->lastX()) {
-        rr(2, kz) = residual(2, kz);
+        // Set RHS equal to residual
+        rr(ix, kz) = residual(ix, kz);
       }
     }
   }
@@ -1208,9 +1227,20 @@ void Laplace1DMG::Level::update_solution(const Laplace1DMG& l) {
     return;
   }
 
+//	  std::cout<<"\nl.fine_error\n";
+//	  for(int ix = 0; ix<nxloc; ix++){
+//		  std::cout<<l.fine_error(ix,0)<<" ";
+//	  }
+//          std::cout<<"\n";
+//	  std::cout<<"\nxloc\n";
+//	  for(int ix = 0; ix<nxloc; ix++){
+//		  std::cout<<xloc(ix,0)<<" ";
+//	  }
+//          std::cout<<"\n";
+
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
-      for (int ix = 1; ix < 3; ix++) {
+      for (int ix = 0; ix < nxloc; ix++) {
         xloc(ix, kz) += l.fine_error(ix, kz);
       }
     }
@@ -1234,11 +1264,24 @@ void Laplace1DMG::Level::refine(const Laplace1DMG& l, Matrix<dcomplex>& fine_err
 
     for (int kz = 0; kz < l.nmode; kz++) {
       if (not l.converged[kz]) {
+//        for (int ix = 1; ix < nxloc-1; ix++) {
+//	  int ixf = 2*ix;
+//          fine_error(ixf-1, kz) = 0.5*(xloc(ix-1,kz) + xloc(ix,kz));
+//          fine_error(ix, kz) = xloc(ix, kz);
+//        }
+        int ixf;
         for (int ix = 1; ix < nxloc-1; ix++) {
-          fine_error(ix, kz) = 0.5*xloc(ix-1,kz) 
-		               + xloc(1, kz);
-	                       + 0.5*xloc(ix+1,kz);
+	  ixf = 2*ix-1;
+          fine_error(ixf-1, kz) = 0.5*(xloc(ix-1,kz) + xloc(ix,kz));
+          fine_error(ixf, kz) = xloc(ix, kz);
         }
+	fine_error(0, kz) = 0.0;
+//	// Last point is special case
+//	// NB: on level 1, this overrides the fine_error(ixf+1) from the line above
+//	int ix = nxloc-3;
+//	ixf = 2*ix-2;
+//	if(current_level==1) ixf = 2*ix-3;
+//	fine_error(ixf, kz) = xloc(ix, kz);
       }
     }
 
