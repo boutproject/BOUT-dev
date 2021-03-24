@@ -493,11 +493,11 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 //	  }
 //          std::cout<<"\n";
       levels[current_level].refine(*this, fine_error);
-//	  std::cout<<"\nfine error\n";
-//	  for(int ix = 0; ix<levels[current_level-1].nxloc; ix++){
-//		  std::cout<<fine_error(ix,0)<<" ";
-//	  }
-//          std::cout<<"\n";
+	  output.write("\nfine error\n");
+	  for(int ix = 0; ix<levels[current_level-1].nxloc; ix++){
+		  output.write("{} ",fine_error(ix,0).real());
+	  }
+          output.write("\n");
       --current_level;
       levels[current_level].update_solution(*this);
       levels[current_level].synchronize_reduced_field(*this, levels[current_level].xloc);
@@ -1250,6 +1250,11 @@ void Laplace1DMG::Level::update_solution(const Laplace1DMG& l) {
       }
     }
   }
+  output.write("xloc after update\n");
+  for(int ix = 0; ix<nxloc; ix++){
+    output.write("{} ",xloc(ix,0).real());
+  }
+  output.write("\n");
 }
 
 /*
@@ -1378,16 +1383,21 @@ void Laplace1DMG::Level::synchronize_reduced_field(const Laplace1DMG& l,
 
   // Communicate in
   if (not l.localmesh->firstX()) {
-    MPI_Sendrecv(&field(send_in_index, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1,
-                 &field(0, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm,
+    MPI_Sendrecv(&field(l.xs, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1,
+                 &field(l.xs-1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm,
                  MPI_STATUS_IGNORE);
   }
 
   // Communicate out
   if (not l.localmesh->lastX()) {
-    MPI_Sendrecv(&field(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &field(3, 0),
+    MPI_Sendrecv(&field(xe, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &field(xe+1, 0),
                  l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
   }
+  output.write("xloc after update\n");
+  for(int ix = 0; ix<nxloc; ix++){
+    output.write("{} ",field(ix,0).real());
+  }
+  output.write("\n");
 }
 
 /*
