@@ -294,7 +294,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   // much of the information for each level may be stored. Data that cannot
   // be cached (e.g. the changing right-hand sides) is calculated in init_rhs
   // below.
-  std::cout<<"jy "<<jy<<" "<<first_call[jy]<<" "<<store_coefficients<<"\n";
+  //std::cout<<"jy "<<jy<<" "<<first_call[jy]<<" "<<store_coefficients<<"\n";
   levels.reserve(max_level + 1);
   if (first_call[jy] || not store_coefficients) {
 
@@ -891,6 +891,10 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
 
   // Whether this proc is involved in the multigrid calculation
   included = (myproc % scale == 0) or l.localmesh->lastX();
+
+  included = (nxloc > 4);
+
+  output.write("included {}\n",included);
 
   if (not included) {
     return;
