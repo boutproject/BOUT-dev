@@ -652,7 +652,7 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
   // Sweep over even x points
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
-      for (int ix = l.xs; ix < xe+2; ix+=2) {
+      for (int ix = l.xs+1; ix < xe+1; ix+=2) {
          xloc(ix, kz) = (rr(ix, kz) 
 		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
                       - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
@@ -660,11 +660,36 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
     }
   }
 
+  if (not l.localmesh->lastX()) {
+    MPI_Send(&xloc(xe, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
+  }
+  if (not l.localmesh->firstX()) {
+    // Receive and put data in arrays
+    MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
+    for (int kz = 0; kz < l.nmode; kz++) {
+      if (not l.converged[kz]) {
+        xloc(l.xs-1, kz) = recvecin[kz];
+      }
+    }
+  }
+
+
 //  output.write("xloc middle\n");
 //  for(int ix = 0; ix<nxloc; ix++){
 //    output.write("{} ",xloc(ix,0).real());
 //  }
 //  output.write("\n");
+
+  // Sweep over odd x points
+  for (int kz = 0; kz < l.nmode; kz++) {
+    if (not l.converged[kz]) {
+      for (int ix = l.xs; ix < xe+1; ix+=2) {
+         xloc(ix, kz) = (rr(ix, kz) 
+		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                      - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
+      }
+    }
+  }
 
   if (not l.localmesh->firstX()) {
     // Send my xs down
@@ -675,29 +700,6 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
     for (int kz = 0; kz < l.nmode; kz++) {
       if (not l.converged[kz]) {
         xloc(xe+1, kz) = recvecout[kz];
-      }
-    }
-  }
-
-  // Sweep over odd x points
-  for (int kz = 0; kz < l.nmode; kz++) {
-    if (not l.converged[kz]) {
-      for (int ix = l.xs-1; ix < xe+2; ix+=2) {
-         xloc(ix, kz) = (rr(ix, kz) 
-		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
-                      - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
-      }
-    }
-  }
-  if (not l.localmesh->lastX()) {
-    MPI_Send(&xloc(xe, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
-  }
-  if (not l.localmesh->firstX()) {
-    // Receive and put data in arrays
-    MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
-    for (int kz = 0; kz < l.nmode; kz++) {
-      if (not l.converged[kz]) {
-        xloc(l.xs-1, kz) = recvecin[kz];
       }
     }
   }
@@ -1073,20 +1075,19 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
       brinv(l.jy, ix, kz) = 1.0/br(l.jy, ix, kz);
     }
 
-    std::cout << "lastX "<<l.localmesh->lastX()<<"\n";
-    if( l.localmesh->lastX() ){
-      // Final grid point is special case: need to eliminate final row so that
+    std::cout << "firstX "<<l.localmesh->firstX()<<"\n";
+    if( l.localmesh->firstX() ){
+      // First grid point is special case: need to eliminate first row so that
       // there are 2^k+1 points in total
-      int ix = l.xe+1; 
+      int ix = l.xs; 
       dcomplex b1 = l.bvec(l.jy, kz, ix-1);
       dcomplex b2 = l.bvec(l.jy, kz, ix);
       dcomplex c1 = l.cvec(l.jy, kz, ix-1);
       dcomplex a2 = l.avec(l.jy, kz, ix);
       //std::cout << b1 << " " <<b2<<" "<<a2<<" "<<c1<<"\n";
-      // ar unchanged, use xe+1 row to eliminate cr dependence in xe row
-      // ar(l.jy, ix, kz) = l.avec(l.jy, kz, ix-1); // unchanged
-      br(l.jy, ix, kz) = (b1 - c1*a2)/b2;
-      cr(l.jy, ix, kz) = 0.0;
+      // cr unchanged, use xs-1 row to eliminate ar dependence in xs row
+      ar(l.jy, ix, kz) = 0.0;
+      br(l.jy, ix, kz) = (b2 - c1*a2)/b1;
       brinv(l.jy, ix, kz) = 1.0/br(l.jy, ix, kz);
     }
   }
