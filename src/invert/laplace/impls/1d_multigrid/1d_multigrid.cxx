@@ -981,7 +981,7 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
   // Current level, but offset such that the first level that has 1 point per
   // processor is level zero. This allows us to reuse the logic from the ipt
   // solver for treating the final processor (that has two points).
-  proc_level = current_level - log2(nGlobalInternal) + 1;
+  proc_level = current_level - log2(l.ncx-nguards);
 
   output.write("Initialize level {}, nxloc {}\n",current_level,nxloc);
   output.write("l.ncx {}, scale {}, xe {}, ninternal {}, nGlobalInternal {}, point_scale {}, proc_level {}\n",l.ncx,scale,xe,ninternal,nGlobalInternal,point_scale, proc_level);
@@ -1101,7 +1101,7 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
   xe = l.localmesh->xend;
   ninternal = l.ncx-nguards;
   const int nGlobalInternal = (l.localmesh->GlobalNx-nguards);
-  proc_level = 1 - log2(nGlobalInternal);
+  proc_level = - log2(l.ncx-nguards);
 
   std::cout << "Initialize level " <<  current_level << ", nxloc " << nxloc << "\n";
   std::cout << "l.ncx " <<  l.ncx << "\n";
