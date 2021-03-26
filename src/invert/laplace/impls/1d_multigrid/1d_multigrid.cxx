@@ -419,8 +419,12 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
     output.write("\n");
 
-    //levels[current_level].gauss_seidel_red_black(*this);
-    levels[current_level].gauss_seidel_red_black_local(*this);
+    if( levels[current_level].ninternal > 1 ){
+      levels[current_level].gauss_seidel_red_black_local(*this);
+    } else {
+      output.write("\nsmoothing with ipt routine\n");
+      levels[current_level].gauss_seidel_red_black(*this);
+    }
 
     output.write("after smoothing loop {}",count);
           output.write("\nxloc\n");
@@ -797,6 +801,8 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
 
   SCOREP0();
 
+  output.write("included {} red {} black {}\n", included, red, black);
+
   if (not included) {
     return;
   }
@@ -830,7 +836,7 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
       MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
       for (int kz = 0; kz < l.nmode; kz++) {
         if (not l.converged[kz]) {
-          xloc(0, kz) = recvecin[kz];
+          xloc(l.xs-1, kz) = recvecin[kz];
         }
       }
     }
@@ -838,7 +844,7 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
       MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
       for (int kz = 0; kz < l.nmode; kz++) {
         if (not l.converged[kz]) {
-          xloc(3, kz) = recvecout[kz];
+          xloc(xe+1, kz) = recvecout[kz];
         }
       }
     }
@@ -851,16 +857,17 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
       if (not l.converged[kz]) {
         // Due to extra point on final proc, indexing of last term is 2, not 3. To
         // remove branching, this is handled by l.index_end
-        xloc(1, kz) = (rr(1, kz) - ar(l.jy, 1, kz) * xloc(0, kz)
-                       - cr(l.jy, 1, kz) * xloc(index_end, kz))
-                      * brinv(l.jy, 1, kz);
+	int ix = l.xs;
+        xloc(ix, kz) = (rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                       - cr(l.jy, ix, kz) * xloc(ix+1, kz))
+                      * brinv(l.jy, ix, kz);
       }
     }
     // Send same data up and down
-    MPI_Send(&xloc(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1,
+    MPI_Send(&xloc(l.xs, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1,
              BoutComm::get()); // black never firstX
     if (not l.localmesh->lastX()) {
-      MPI_Send(&xloc(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
+      MPI_Send(&xloc(l.xs, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
     }
   }
 
@@ -881,14 +888,14 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
     MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
     for (int kz = 0; kz < l.nmode; kz++) {
       if (not l.converged[kz]) {
-        xloc(0, kz) = recvecin[kz];
+        xloc(l.xs-1, kz) = recvecin[kz];
       }
     }
     if (!l.localmesh->lastX()) {
       MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
       for (int kz = 0; kz < l.nmode; kz++) {
         if (not l.converged[kz]) {
-          xloc(3, kz) = recvecout[kz];
+          xloc(xe+1, kz) = recvecout[kz];
         }
       }
     }
@@ -898,9 +905,10 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
   if (red and not l.localmesh->lastX()) {
     for (int kz = 0; kz < l.nmode; kz++) {
       if (not l.converged[kz]) {
-        xloc(1, kz) =
-            (rr(1, kz) - ar(l.jy, 1, kz) * xloc(0, kz) - cr(l.jy, 1, kz) * xloc(3, kz))
-            * brinv(l.jy, 1, kz);
+	int ix = l.xs;
+        xloc(ix, kz) =
+            (rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-1, kz) - cr(l.jy, ix, kz) * xloc(ix+1, kz))
+            * brinv(l.jy, ix, kz);
       }
     }
   }
@@ -908,9 +916,10 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
     for (int kz = 0; kz < l.nmode; kz++) {
       if (not l.converged[kz]) {
         // index_start removes branches. On level 0, this is 1, otherwise 0
-        xloc(2, kz) = (rr(2, kz) - ar(l.jy, 2, kz) * xloc(index_start, kz)
-                       - cr(l.jy, 2, kz) * xloc(3, kz))
-                      * brinv(l.jy, 2, kz);
+	int ix = l.xs+1;
+        xloc(ix, kz) = (rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                       - cr(l.jy, ix, kz) * xloc(ix+1, kz))
+                      * brinv(l.jy, ix, kz);
       }
     }
   }
@@ -918,31 +927,31 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
   if (red or l.localmesh->lastX()) { // red, or last proc when not on level zero
     // Send same data up and down
     if (not l.localmesh->firstX() and not l.localmesh->lastX()) { // excludes last proc
-      MPI_Send(&xloc(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, BoutComm::get());
-    } else if (l.localmesh->lastX() and current_level != 0) { // last proc on level > 0
-      MPI_Send(&xloc(2, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, BoutComm::get());
+      MPI_Send(&xloc(l.xs, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, BoutComm::get());
+    } else if (l.localmesh->lastX() and proc_level != 0) { // last proc on level > 0
+      MPI_Send(&xloc(l.xs+1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, BoutComm::get());
     }
     if (not l.localmesh->lastX()) {
-      MPI_Send(&xloc(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
+      MPI_Send(&xloc(l.xs, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
     }
   }
 
-  if (current_level == 0) {
-    // Update boundaries to match interior points
-    // Do this after communication
-    for (int kz = 0; kz < l.nmode; kz++) {
-      if (not l.converged[kz]) {
-        if (l.localmesh->firstX()) {
-          xloc(0, kz) =
-              -l.cvec(l.jy, kz, l.xs - 1) * xloc(1, kz) / l.bvec(l.jy, kz, l.xs - 1);
-        }
-        if (l.localmesh->lastX()) {
-          xloc(3, kz) =
-              -l.avec(l.jy, kz, l.xe + 1) * xloc(2, kz) / l.bvec(l.jy, kz, l.xe + 1);
-        }
-      }
-    }
-  }
+//  if (current_level == 0) {
+//    // Update boundaries to match interior points
+//    // Do this after communication
+//    for (int kz = 0; kz < l.nmode; kz++) {
+//      if (not l.converged[kz]) {
+//        if (l.localmesh->firstX()) {
+//          xloc(0, kz) =
+//              -l.cvec(l.jy, kz, l.xs - 1) * xloc(1, kz) / l.bvec(l.jy, kz, l.xs - 1);
+//        }
+//        if (l.localmesh->lastX()) {
+//          xloc(3, kz) =
+//              -l.avec(l.jy, kz, l.xe + 1) * xloc(2, kz) / l.bvec(l.jy, kz, l.xe + 1);
+//        }
+//      }
+//    }
+//  }
 }
 
 // Initialization routine for coarser grids. Initialization depends on the grid
@@ -963,14 +972,19 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
 
   // Number of local x points for this level
   const int nGlobalInternal = (l.localmesh->GlobalNx-nguards);
-  const int ninternal = (l.ncx-nguards) / point_scale;
+  ninternal = (l.ncx-nguards) / point_scale;
   nxloc = nguards + (l.ncx-nguards) / point_scale;
   xe = nxloc - nguards_upper;
   //if(l.localmesh->lastX()) nxloc += 1;
-  const int scale = (1 > point_scale-log2(nGlobalInternal) ? 1 : (point_scale-log2(ninternal)));
+  const int scale = (1 > 2*point_scale/nGlobalInternal ? 1 : 2*point_scale/nGlobalInternal);
+
+  // Current level, but offset such that the first level that has 1 point per
+  // processor is level zero. This allows us to reuse the logic from the ipt
+  // solver for treating the final processor (that has two points).
+  proc_level = current_level - log2(nGlobalInternal) + 1;
 
   output.write("Initialize level {}, nxloc {}\n",current_level,nxloc);
-  output.write("l.ncx {}, scale {}, xe {}, ninternal {}, nGlobalInternal {}, point_scale {}\n",l.ncx,scale,xe,ninternal,nGlobalInternal,point_scale);
+  output.write("l.ncx {}, scale {}, xe {}, ninternal {}, nGlobalInternal {}, point_scale {}, proc_level {}\n",l.ncx,scale,xe,ninternal,nGlobalInternal,point_scale, proc_level);
 
 
 
@@ -990,18 +1004,20 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
   // The last processor is a special case. It is always included because of
   // the final grid point, which is treated explicitly. Otherwise it should
   // not be included in either the red or black work.
-  if (l.localmesh->lastX()) {
+  if (l.localmesh->lastX() and proc_level > 0) {
     red = true;
     black = false;
   }
 
   // My neighbouring procs
   proc_in = myproc - scale;
-  if (l.localmesh->lastX() and ninternal<=1) {
+  if (l.localmesh->lastX() and proc_level > 0) {
     proc_in += 1;
   }
   const int p = myproc + scale;
   proc_out = (p < l.nproc - 1) ? p : l.nproc - 1;
+
+  output.write("red {}, black {}, proc_in {}, proc_out {}\n",red,black,proc_in,proc_out);
 
   // Calculation variables
   // proc: |       p-1       |          p          |       p+1
@@ -1083,6 +1099,9 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
 
   nxloc = l.ncx;
   xe = l.localmesh->xend;
+  ninternal = l.ncx-nguards;
+  const int nGlobalInternal = (l.localmesh->GlobalNx-nguards);
+  proc_level = 1 - log2(nGlobalInternal);
 
   std::cout << "Initialize level " <<  current_level << ", nxloc " << nxloc << "\n";
   std::cout << "l.ncx " <<  l.ncx << "\n";
@@ -1491,11 +1510,11 @@ void Laplace1DMG::Level::synchronize_reduced_field(const Laplace1DMG& l,
 
   MPI_Comm comm = BoutComm::get();
   // Send index 1 to the proc below, unless last proc and not level zero, then send 2
-  const int send_in_index = (l.localmesh->lastX() and current_level != 0) ? 2 : 1;
+  const int send_in_index = (l.localmesh->lastX() and proc_level > 0) ? l.xs+1 : l.xs;
 
   // Communicate in
   if (not l.localmesh->firstX()) {
-    MPI_Sendrecv(&field(l.xs, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1,
+    MPI_Sendrecv(&field(send_in_index, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1,
                  &field(l.xs-1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm,
                  MPI_STATUS_IGNORE);
   }

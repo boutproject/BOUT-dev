@@ -117,6 +117,12 @@ public:
     int nxloc;
     /// xend on current grid
     int xe;
+    /// Number of internal x grid points = local points - guards 
+    int ninternal;
+
+    // Current level, but offset such that the first level that has 1 point per
+    // processor is level zero.
+    int proc_level;
 
     // indexing to remove branches from tight loops
     int index_start;
