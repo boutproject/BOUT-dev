@@ -1319,18 +1319,34 @@ void Laplace1DMG::Level::calculate_residual(const Laplace1DMG& l) {
 //  }
 //  output.write("\n");
 
-  for (int kz = 0; kz < l.nmode; kz++) {
-    if (not l.converged[kz]) {
-      for (int ix = 1; ix < nxloc-2; ix++) {
+  if(l.localmesh->lastX() and proc_level>0){
+    // on the last proc, data is in elements xs-1 and xs+1 only
+    for (int kz = 0; kz < l.nmode; kz++) {
+      if (not l.converged[kz]) {
+	int ix = l.xs-1;
         residual(ix, kz) = rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                        - br(l.jy, ix, kz) * xloc(ix, kz)
+                        - cr(l.jy, ix, kz) * xloc(ix+2, kz); // skip up two here
+	ix = l.xs-1;
+        residual(ix, kz) = rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-2, kz) // skip down two here
                         - br(l.jy, ix, kz) * xloc(ix, kz)
                         - cr(l.jy, ix, kz) * xloc(ix+1, kz);
       }
-      if( l.localmesh->lastX() ){
-	int ix = xe + 1;
-        residual(ix, kz) = rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-1, kz)
+    }
+  } else {
+    for (int kz = 0; kz < l.nmode; kz++) {
+      if (not l.converged[kz]) {
+        for (int ix = 1; ix < nxloc-2; ix++) {
+          residual(ix, kz) = rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-1, kz)
                         - br(l.jy, ix, kz) * xloc(ix, kz)
                         - cr(l.jy, ix, kz) * xloc(ix+1, kz);
+        }
+        if( l.localmesh->lastX() ){
+	  int ix = xe + 1;
+          residual(ix, kz) = rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-1, kz)
+                        - br(l.jy, ix, kz) * xloc(ix, kz)
+                        - cr(l.jy, ix, kz) * xloc(ix+1, kz);
+	}
       }
     }
   }
