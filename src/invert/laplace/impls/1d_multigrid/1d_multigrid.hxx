@@ -145,6 +145,7 @@ public:
     void gauss_seidel_red_black_local(const Laplace1DMG& lap);
     void init_rhs(Laplace1DMG& lap, const Matrix<dcomplex>& bcmplx);
     void refine(const Laplace1DMG& lap, Matrix<dcomplex>& fine_error);
+    void refine_local(const Laplace1DMG& lap, Matrix<dcomplex>& fine_error);
     void synchronize_reduced_field(const Laplace1DMG& lap, Matrix<dcomplex>& field);
     void update_solution(const Laplace1DMG& lap);
   };

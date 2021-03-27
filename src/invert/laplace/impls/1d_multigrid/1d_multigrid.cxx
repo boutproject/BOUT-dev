@@ -308,6 +308,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   }
 
   for(int lev=0; lev<=max_level; lev++){
+    if(levels[lev].included){
 	  std::cout<<"\n";
 	  output.write("{} ar\n",lev);
 	  for(int ix = 0; ix<levels[lev].nxloc; ix++){
@@ -322,6 +323,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 		  output.write("{} ",levels[lev].cr(jy,ix,0).real());
 	  }
 	  output.write("\n");
+    }
   }
 
   // Compute coefficients that depend on the right-hand side and which
@@ -401,23 +403,27 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   while (execute_loop) {
 
-	  output.write("before loop {}",count);
-          output.write("Current level {}\n",current_level);
-          output.write("\nxloc\n");
-	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
-            output.write("{} {}\n",levels[current_level].xloc(ix,0).real(),ix);
-	  }
-	  output.write("\n");
+    output.write("before loop {}",count);
+    output.write("Current level {}\n",current_level);
+    if(levels[current_level].included){
+      output.write("\nxloc\n");
+      for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+        output.write("{} {}\n",levels[current_level].xloc(ix,0).real(),ix);
+      }
+      output.write("\n");
 //	  std::cout<<"\nresidual\n";
 //	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
 //		  std::cout<<levels[current_level].residual(ix,0)<<" ";
 //	  }
-    output.write("before smoothing loop {}",count);
-    output.write("\nrr\n");
-    for(int ix = 0; ix<levels[current_level].nxloc; ix++){
-      output.write("{} {}\n",levels[current_level].rr(ix,0).real(),ix);
+      output.write("before smoothing loop {}",count);
+      output.write("\nrr\n");
+      for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+        output.write("{} {}\n",levels[current_level].rr(ix,0).real(),ix);
+      }
+      output.write("\n");
+    } else {
+      output.write("not included\n");
     }
-    output.write("\n");
 
     if( levels[current_level].ninternal > 1 ){
       levels[current_level].gauss_seidel_red_black_local(*this);
@@ -426,17 +432,14 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       levels[current_level].gauss_seidel_red_black(*this);
     }
 
-    output.write("after smoothing loop {}",count);
-          output.write("\nxloc\n");
-	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
-            output.write("{} {}\n",levels[current_level].xloc(ix,0).real(),ix);
-	  }
-	  output.write("\n");
-//    std::cout<<jy<<": after smoothing "<<count<<"\nxloc\n";
-//    for(int ix = 0; ix<levels[current_level].nxloc; ix++){
-//	  std::cout<<levels[current_level].xloc(ix,0)<<" ";
-//    }
-//    std::cout<<"\n";
+    if(levels[current_level].included){
+      output.write("after smoothing loop {}",count);
+      output.write("\nxloc\n");
+      for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+        output.write("{} {}\n",levels[current_level].xloc(ix,0).real(),ix);
+      }
+      output.write("\n");
+    }
 
     /// SCOREP_USER_REGION_DEFINE(l0rescalc);
     /// SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual
@@ -506,25 +509,16 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     } else if (all(converged) and current_level == 0) {
       break;
     } else if (not down) {
-//	  std::cout<<jy<<": before refine loop "<<count<<"\nxloc\n";
-//	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
-//		  std::cout<<levels[current_level].xloc(ix,0)<<" ";
-//	  }
-//          //levels[current_level].calculate_residual(*this);
-//	  std::cout<<"\nresidual\n";
-//	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
-//		  std::cout<<levels[current_level].residual(ix,0)<<" ";
-//	  }
-//	  std::cout<<"\nrr\n";
-//	  for(int ix = 0; ix<levels[current_level].nxloc; ix++){
-//		  std::cout<<levels[current_level].rr(ix,0)<<" ";
-//	  }
-//          std::cout<<"\n";
-      levels[current_level].refine(*this, fine_error);
+      if( levels[current_level].proc_level < 1 ){
+        levels[current_level].refine_local(*this, fine_error);
+      } else {
+        output.write("\nrefining with ipt routine\n");
+        levels[current_level].refine(*this, fine_error);
+      }
 
       output.write("after refine (get fine error), loop {}",count);
       output.write("\nfine_error\n");
-      for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+      for(int ix = 0; ix<levels[current_level-1].nxloc; ix++){
         output.write("{} {}\n",fine_error(ix,0).real(),ix);
       }
       output.write("\n");
@@ -547,12 +541,14 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       levels[current_level].synchronize_reduced_field(*this,
                                                       levels[current_level].residual);
 
-      output.write("residul before coarsening, loop {}",count);
-      output.write("\nresidual\n");
-      for(int ix = 0; ix<levels[current_level].nxloc; ix++){
-        output.write("{} {}\n",levels[current_level].residual(ix,0).real(),ix);
+      if(levels[current_level].included){
+        output.write("residul before coarsening, loop {}",count);
+        output.write("\nresidual\n");
+        for(int ix = 0; ix<levels[current_level].nxloc; ix++){
+          output.write("{} {}\n",levels[current_level].residual(ix,0).real(),ix);
+        }
+        output.write("\n");
       }
-      output.write("\n");
 
       ++current_level;
       levels[current_level].coarsen(*this, levels[current_level - 1].residual);
@@ -695,15 +691,15 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
       for (int ix = l.xs+1; ix < ixend; ix+=2) {
-//	 if(kz==0){
-//	   output.write("ix,xl,rr,ar,xloc-,cr,xloc+,brinv: {} {} {} {} {} {} {} {}\n",ix,xloc(ix,0).real(),rr(ix,0).real(),ar(l.jy,ix,0).real(),xloc(ix-1,0).real(),cr(l.jy,ix,0).real(),xloc(ix+1,0).real(),brinv(l.jy,ix,0).real());
-//	 }
+	 if(kz==0){
+	   output.write("ix,xl,rr,ar,xloc-,cr,xloc+,brinv: {} {} {} {} {} {} {} {}\n",ix,xloc(ix,0).real(),rr(ix,0).real(),ar(l.jy,ix,0).real(),xloc(ix-1,0).real(),cr(l.jy,ix,0).real(),xloc(ix+1,0).real(),brinv(l.jy,ix,0).real());
+	 }
          xloc(ix, kz) = (rr(ix, kz) 
 		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
                       - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
-//	 if(kz==0){
-//	   output.write("xl after: {}\n",xloc(ix,0).real());
-//	 }
+	 if(kz==0){
+	   output.write("xl after: {}\n",xloc(ix,0).real());
+	 }
       }
     }
   }
@@ -731,15 +727,15 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
       for (int ix = l.xs; ix < ixend; ix+=2) {
-//	 if(kz==0){
-//	   output.write("ix, xl,rr,ar,xloc-,cr,xloc+,brinv: {} {} {} {} {} {} {} {}\n",ix, xloc(ix,0).real(),rr(ix,0).real(),ar(l.jy,ix,0).real(),xloc(ix-1,0).real(),cr(l.jy,ix,0).real(),xloc(ix+1,0).real(),brinv(l.jy,ix,0).real());
-//	 }
+	 if(kz==0){
+	   output.write("B ix,xl,rr,ar,xloc-,cr,xloc+,brinv: {} {} {} {} {} {} {} {}\n",ix, xloc(ix,0).real(),rr(ix,0).real(),ar(l.jy,ix,0).real(),xloc(ix-1,0).real(),cr(l.jy,ix,0).real(),xloc(ix+1,0).real(),brinv(l.jy,ix,0).real());
+	 }
          xloc(ix, kz) = (rr(ix, kz) 
 		      - ar(l.jy, ix, kz) * xloc(ix-1, kz)
                       - cr(l.jy, ix, kz) * xloc(ix+1, kz))*brinv(l.jy, ix, kz);
-//	 if(kz==0){
-//	   output.write("xl after: {}\n",xloc(ix,0).real());
-//	 }
+	 if(kz==0){
+	   output.write("xl after: {}\n",xloc(ix,0).real());
+	 }
       }
     }
   }
@@ -858,9 +854,15 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
         // Due to extra point on final proc, indexing of last term is 2, not 3. To
         // remove branching, this is handled by l.index_end
 	int ix = l.xs;
+        if(kz==0){
+          output.write("ix,xl,rr,ar,xloc-,cr,xloc+,brinv: {} {} {} {} {} {} {} {}\n",ix,xloc(ix,0).real(),rr(ix,0).real(),ar(l.jy,ix,0).real(),xloc(ix-1,0).real(),cr(l.jy,ix,0).real(),xloc(ix+1,0).real(),brinv(l.jy,ix,0).real());
+        }
         xloc(ix, kz) = (rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-1, kz)
                        - cr(l.jy, ix, kz) * xloc(ix+1, kz))
                       * brinv(l.jy, ix, kz);
+        if(kz==0){
+          output.write("xloc after: {}\n",xloc(ix,0).real());
+        }
       }
     }
     // Send same data up and down
@@ -917,9 +919,16 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
       if (not l.converged[kz]) {
         // index_start removes branches. On level 0, this is 1, otherwise 0
 	int ix = l.xs+1;
-        xloc(ix, kz) = (rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-1, kz)
-                       - cr(l.jy, ix, kz) * xloc(ix+1, kz))
+        if(kz==0){
+          output.write("A ix,xl,rr,ar,xloc-,cr,xloc+,brinv: {} {} {} {} {} {} {} {}\n",ix,xloc(ix,0).real(),rr(ix,0).real(),ar(l.jy,ix,0).real(),xloc(index_start,0).real(),cr(l.jy,ix,0).real(),xloc(ix+1,0).real(),brinv(l.jy,ix,0).real());
+        }
+        xloc(ix, kz) = (rr(ix, kz) 
+		     - ar(l.jy, ix, kz) * xloc(index_start, kz)
+                     - cr(l.jy, ix, kz) * xloc(ix+1, kz))
                       * brinv(l.jy, ix, kz);
+        if(kz==0){
+          output.write("xloc after: {}\n",xloc(ix,0).real());
+        }
       }
     }
   }
@@ -958,8 +967,8 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
 // one step finer, lup.
 Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
                          const std::size_t current_level_in)
-    : myproc(lup.myproc), current_level(current_level_in), index_start(0),
-      index_end(l.localmesh->lastX() ? 2 : 3), included_up(lup.included),
+    : myproc(lup.myproc), current_level(current_level_in), index_start(l.xs),
+      index_end(l.xs+1), included_up(lup.included),
       proc_in_up(lup.proc_in), proc_out_up(lup.proc_out) {
 
   SCOREP0();
@@ -973,10 +982,11 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
   // Number of local x points for this level
   const int nGlobalInternal = (l.localmesh->GlobalNx-nguards);
   ninternal = (l.ncx-nguards) / point_scale;
-  nxloc = nguards + (l.ncx-nguards) / point_scale;
+  if( ninternal < 1 ) ninternal = 1;
+  nxloc = nguards + ninternal;
   xe = nxloc - nguards_upper;
   //if(l.localmesh->lastX()) nxloc += 1;
-  const int scale = (1 > 2*point_scale/nGlobalInternal ? 1 : 2*point_scale/nGlobalInternal);
+  const int scale = (1 > point_scale/(l.ncx-nguards) ? 1 : point_scale/(l.ncx-nguards));
 
   // Current level, but offset such that the first level that has 1 point per
   // processor is level zero. This allows us to reuse the logic from the ipt
@@ -1018,6 +1028,14 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
   proc_out = (p < l.nproc - 1) ? p : l.nproc - 1;
 
   output.write("red {}, black {}, proc_in {}, proc_out {}\n",red,black,proc_in,proc_out);
+
+  // Fix indexing on highest proc when only 1 point per proc
+  index_start = l.xs;
+  index_end = l.xs+1;
+  if (l.localmesh->lastX() and proc_level > 0) {
+    index_start -= 1;
+    index_end += 1;
+  }
 
   // Calculation variables
   // proc: |       p-1       |          p          |       p+1
@@ -1063,13 +1081,14 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
         cr(l.jy, 2, kz) = 0.25 * lup.cr(l.jy, 2, kz) + 0.125 * lup.br(l.jy, 3, kz)
                         + 0.25 * lup.cr(l.jy, 3, kz);
       } else if (l.localmesh->lastX() and ix==nxloc-2){
-	//if(current_level==1) ixf = 2*ix-3; // account for level 0 being special grid
+	if(proc_level>0) ixf = 2*ix-3; // account for level 0 being special grid
         ar(l.jy, ix, kz) = 0.25 * lup.ar(l.jy, ixf-1, kz) + 0.125 * lup.br(l.jy, ixf-1, kz)
                           + 0.25 * lup.ar(l.jy, ixf, kz);
         br(l.jy, ix, kz) = 0.125 * lup.br(l.jy, ixf-1, kz) + 0.25 * lup.cr(l.jy, ixf-1, kz)
                           + 0.25 * lup.ar(l.jy, ixf, kz) + 0.5 * lup.br(l.jy, ixf, kz);
         cr(l.jy, ix, kz) = 0.5 * lup.cr(l.jy, ixf, kz);
       } else {
+	if(l.localmesh->lastX() and proc_level>0) ixf = 2*ix-3; // account for level 0 being special grid
         ar(l.jy, ix, kz) = 0.25 * lup.ar(l.jy, ixf-1, kz) + 0.125 * lup.br(l.jy, ixf-1, kz)
                         + 0.25 * lup.ar(l.jy, ixf, kz);
         br(l.jy, ix, kz) = 0.125 * lup.br(l.jy, ixf-1, kz) + 0.25 * lup.cr(l.jy, ixf-1, kz)
@@ -1080,15 +1099,56 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
                         + 0.25 * lup.cr(l.jy, ixf+1, kz);
       }
       brinv(l.jy, ix, kz) = 1.0 / br(l.jy, ix, kz);
+    
+///      // Need to communicate my index 1 to this level's neighbours
+///      // Index 2 if last proc.
+///      if (not l.localmesh->lastX()) {
+///        sendvec[kz] = ar(l.jy, l.xs, kz);
+///        sendvec[kz + l.nmode] = br(l.jy, l.xs, kz);
+///        sendvec[kz + 2 * l.nmode] = cr(l.jy, l.xs, kz);
+///      } else {
+///        sendvec[kz] = ar(l.jy, xe, kz);
+///        sendvec[kz + l.nmode] = br(l.jy, xe, kz);
+///        sendvec[kz + 2 * l.nmode] = cr(l.jy, xe, kz);
+///      }
     }
   }
+
+///  MPI_Comm comm = BoutComm::get();
+///
+///  // Communicate in
+///  if (not l.localmesh->firstX()) {
+///    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvecin[0],
+///                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
+///  }
+///
+///  // Communicate out
+///  if (not l.localmesh->lastX()) {
+///    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvecout[0],
+///                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
+///  }
+///
+///  for (int kz = 0; kz < l.nmode; kz++) {
+///    if (not l.localmesh->firstX()) {
+///      ar(l.jy, l.xs-1, kz) = recvecin[kz];
+///      br(l.jy, l.xs-1, kz) = recvecin[kz + l.nmode];
+///      cr(l.jy, l.xs-1, kz) = recvecin[kz + 2 * l.nmode];
+///      brinv(l.jy, l.xs-1, kz) = 1.0 / br(l.jy, l.xs-1, kz);
+///    }
+///    if (not l.localmesh->lastX()) {
+///      ar(l.jy, xe+1, kz) = recvecout[kz];
+///      br(l.jy, xe+1, kz) = recvecout[kz + l.nmode];
+///      cr(l.jy, xe+1, kz) = recvecout[kz + 2 * l.nmode];
+///      brinv(l.jy, xe+1, kz) = 1.0 / br(l.jy, xe+1, kz);
+///    }
+///  }
 }
 
 // Init routine for finest level
 Laplace1DMG::Level::Level(Laplace1DMG& l)
     : myproc(l.myproc), proc_in(myproc - 1), proc_out(myproc + 1), included(true),
       red(myproc % 2 == 0), black(myproc % 2 == 1), current_level(0), index_start(1),
-      index_end(l.localmesh->lastX() ? 2 : 3) {
+      index_end(l.xs+1) {
 
   // Basic definitions for conventional multigrid
   SCOREP0();
@@ -1295,9 +1355,15 @@ void Laplace1DMG::Level::coarsen(const Laplace1DMG& l,
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
-      int ixend = xe + 1;
-      if(l.localmesh->lastX()) ixend = xe + 2;
-      for (int ix = l.xs; ix < ixend ; ix++) {
+      if(l.localmesh->lastX() and proc_level>0) {
+        residual(3, kz) = 0.25 * fine_residual(2, kz) + 0.5 * fine_residual(3, kz)
+                          + 0.25 * fine_residual(4, kz);
+
+      } else {
+        int ixend = xe + 1;
+        if(l.localmesh->lastX()) ixend = xe + 2;
+
+        for (int ix = l.xs; ix < ixend ; ix++) {
 //        int ixf = 2*ix-1;
 //	//if(current_level==1 and ix==nxloc-3) ixf = 2*ix-3;
 //        residual(ix, kz) = 0.25 * fine_residual(ixf-1, kz) + 0.5 * fine_residual(ixf, kz)
@@ -1307,9 +1373,11 @@ void Laplace1DMG::Level::coarsen(const Laplace1DMG& l,
 //        // Set RHS equal to residual
 //        rr(ix, kz) = residual(ix, kz);
 
-        int ixf = 2*ix-2;
-        residual(ix, kz) = 0.25 * fine_residual(ixf-1, kz) + 0.5 * fine_residual(ixf, kz)
+          int ixf = 2*ix-2;
+          residual(ix, kz) = 0.25 * fine_residual(ixf-1, kz) + 0.5 * fine_residual(ixf, kz)
                           + 0.25 * fine_residual(ixf+1, kz);
+	  output.write("ix {} ixf {}\n",ix,ixf);
+	}
       }
     }
   }
@@ -1398,6 +1466,79 @@ void Laplace1DMG::Level::update_solution(const Laplace1DMG& l) {
  *  level 1 to level 0. It only sends if refining from level 0 to level 1.
  */
 void Laplace1DMG::Level::refine(const Laplace1DMG& l, Matrix<dcomplex>& fine_error) {
+
+  SCOREP0();
+  Array<dcomplex> sendvec(l.nmode), recvecin(l.nmode), recvecout(l.nmode);
+  MPI_Request rreqin, rreqout;
+
+  // Included processors send their contribution to procs that are included on
+  // the level above.
+  // Special case: last proc sends if on level > 1, but NOT on level 1
+  if (included and (not l.localmesh->lastX() or proc_level > 1)) {
+    for (int kz = 0; kz < l.nmode; kz++) {
+      if (not l.converged[kz]) {
+        fine_error(l.xs, kz) = xloc(l.xs, kz);
+        sendvec[kz] = xloc(l.xs, kz);
+        if (l.localmesh->lastX()) {
+          fine_error(l.xs+1, kz) = xloc(l.xs+1, kz);
+        }
+      }
+    }
+
+    if (not l.localmesh->lastX()) {
+      MPI_Send(&sendvec[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out_up, 0, BoutComm::get());
+    }
+    if (not l.localmesh->firstX()) {
+      MPI_Send(&sendvec[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_in_up, 1, BoutComm::get());
+    }
+  }
+
+  // Receive if proc is included on the level above, but not this level.
+  // Special case: last proc receives if on level 1
+  if ((included_up and not included) or (l.localmesh->lastX() and proc_level == 1)) {
+    if (not l.localmesh->firstX()) {
+      MPI_Irecv(&recvecin[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_in_up, 0, BoutComm::get(),
+                &rreqin);
+    }
+    if (not l.localmesh->lastX()) {
+      MPI_Irecv(&recvecout[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out_up, 1,
+                BoutComm::get(), &rreqout);
+    }
+
+    for (int kz = 0; kz < l.nmode; kz++) {
+      fine_error(l.xs, kz) = 0.0;
+    }
+
+    if (not l.localmesh->firstX()) {
+      MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
+      for (int kz = 0; kz < l.nmode; kz++) {
+        if (not l.converged[kz]) {
+          fine_error(l.xs, kz) += 0.5 * recvecin[kz];
+        }
+      }
+    }
+    if (not l.localmesh->lastX()) {
+      MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
+      for (int kz = 0; kz < l.nmode; kz++) {
+        if (not l.converged[kz]) {
+          fine_error(l.xs, kz) += 0.5 * recvecout[kz];
+        }
+      }
+    }
+  }
+  // Special case where we need to fill (1,kz) on final proc
+  if (l.localmesh->lastX() and proc_level == 1) {
+    for (int kz = 0; kz < l.nmode; kz++) {
+      if (not l.converged[kz]) {
+        fine_error(l.xs-1, kz) = xloc(l.xs-1, kz);
+        fine_error(l.xs, kz) = 0.5 * (xloc(l.xs-1, kz)+xloc(l.xs+1, kz));
+        fine_error(l.xs+1, kz) = xloc(l.xs+1, kz);
+      }
+    }
+  }
+}
+
+void Laplace1DMG::Level::refine_local(const Laplace1DMG& l, Matrix<dcomplex>& fine_error) {
 
   SCOREP0();
 
