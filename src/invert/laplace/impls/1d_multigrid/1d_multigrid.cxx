@@ -1100,48 +1100,52 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
       }
       brinv(l.jy, ix, kz) = 1.0 / br(l.jy, ix, kz);
     
-///      // Need to communicate my index 1 to this level's neighbours
-///      // Index 2 if last proc.
-///      if (not l.localmesh->lastX()) {
-///        sendvec[kz] = ar(l.jy, l.xs, kz);
-///        sendvec[kz + l.nmode] = br(l.jy, l.xs, kz);
-///        sendvec[kz + 2 * l.nmode] = cr(l.jy, l.xs, kz);
-///      } else {
-///        sendvec[kz] = ar(l.jy, xe, kz);
-///        sendvec[kz + l.nmode] = br(l.jy, xe, kz);
-///        sendvec[kz + 2 * l.nmode] = cr(l.jy, xe, kz);
-///      }
+      if( proc_level > 0 ){
+      // Need to communicate my index 1 to this level's neighbours
+      // Index 2 if last proc.
+      if (not l.localmesh->lastX()) {
+        sendvec[kz] = ar(l.jy, l.xs, kz);
+        sendvec[kz + l.nmode] = br(l.jy, l.xs, kz);
+        sendvec[kz + 2 * l.nmode] = cr(l.jy, l.xs, kz);
+      } else {
+        sendvec[kz] = ar(l.jy, xe+1, kz);
+        sendvec[kz + l.nmode] = br(l.jy, xe+1, kz);
+        sendvec[kz + 2 * l.nmode] = cr(l.jy, xe+1, kz);
+      }
+      }
     }
   }
 
-///  MPI_Comm comm = BoutComm::get();
-///
-///  // Communicate in
-///  if (not l.localmesh->firstX()) {
-///    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvecin[0],
-///                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
-///  }
-///
-///  // Communicate out
-///  if (not l.localmesh->lastX()) {
-///    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvecout[0],
-///                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
-///  }
-///
-///  for (int kz = 0; kz < l.nmode; kz++) {
-///    if (not l.localmesh->firstX()) {
-///      ar(l.jy, l.xs-1, kz) = recvecin[kz];
-///      br(l.jy, l.xs-1, kz) = recvecin[kz + l.nmode];
-///      cr(l.jy, l.xs-1, kz) = recvecin[kz + 2 * l.nmode];
-///      brinv(l.jy, l.xs-1, kz) = 1.0 / br(l.jy, l.xs-1, kz);
-///    }
-///    if (not l.localmesh->lastX()) {
-///      ar(l.jy, xe+1, kz) = recvecout[kz];
-///      br(l.jy, xe+1, kz) = recvecout[kz + l.nmode];
-///      cr(l.jy, xe+1, kz) = recvecout[kz + 2 * l.nmode];
-///      brinv(l.jy, xe+1, kz) = 1.0 / br(l.jy, xe+1, kz);
-///    }
-///  }
+      if( proc_level > 0 ){
+  MPI_Comm comm = BoutComm::get();
+
+  // Communicate in
+  if (not l.localmesh->firstX()) {
+    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvecin[0],
+                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
+  }
+
+  // Communicate out
+  if (not l.localmesh->lastX()) {
+    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvecout[0],
+                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
+  }
+
+  for (int kz = 0; kz < l.nmode; kz++) {
+    if (not l.localmesh->firstX()) {
+      ar(l.jy, l.xs-1, kz) = recvecin[kz];
+      br(l.jy, l.xs-1, kz) = recvecin[kz + l.nmode];
+      cr(l.jy, l.xs-1, kz) = recvecin[kz + 2 * l.nmode];
+      brinv(l.jy, l.xs-1, kz) = 1.0 / br(l.jy, l.xs-1, kz);
+    }
+    if (not l.localmesh->lastX()) {
+      ar(l.jy, xe+1, kz) = recvecout[kz];
+      br(l.jy, xe+1, kz) = recvecout[kz + l.nmode];
+      cr(l.jy, xe+1, kz) = recvecout[kz + 2 * l.nmode];
+      brinv(l.jy, xe+1, kz) = 1.0 / br(l.jy, xe+1, kz);
+    }
+  }
+      }
 }
 
 // Init routine for finest level
@@ -1327,7 +1331,7 @@ void Laplace1DMG::Level::calculate_residual(const Laplace1DMG& l) {
         residual(ix, kz) = rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-1, kz)
                         - br(l.jy, ix, kz) * xloc(ix, kz)
                         - cr(l.jy, ix, kz) * xloc(ix+2, kz); // skip up two here
-	ix = l.xs-1;
+	ix = l.xs+1;
         residual(ix, kz) = rr(ix, kz) - ar(l.jy, ix, kz) * xloc(ix-2, kz) // skip down two here
                         - br(l.jy, ix, kz) * xloc(ix, kz)
                         - cr(l.jy, ix, kz) * xloc(ix+1, kz);
@@ -1371,8 +1375,13 @@ void Laplace1DMG::Level::coarsen(const Laplace1DMG& l,
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
-      if(l.localmesh->lastX() and proc_level>0) {
-        residual(3, kz) = 0.25 * fine_residual(2, kz) + 0.5 * fine_residual(3, kz)
+      if(l.localmesh->lastX() and proc_level==1) {
+        residual(3, kz) = 0.25 * fine_residual(2, kz)
+		          + 0.5 * fine_residual(3, kz)
+                          + 0.25 * fine_residual(4, kz);
+      } else if(l.localmesh->lastX() and proc_level>1) {
+        residual(3, kz) = 0.25 * fine_residual(1, kz)  // down 2
+		          + 0.5 * fine_residual(3, kz)
                           + 0.25 * fine_residual(4, kz);
 
       } else {
