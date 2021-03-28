@@ -666,11 +666,11 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
     return;
   }
 
-//  output.write("xloc before\n");
-//  for(int ix = 0; ix<nxloc; ix++){
-//    output.write("{} ",xloc(ix,0).real());
-//  }
-//  output.write("\n");
+  output.write("xloc before\n");
+  for(int ix = 0; ix<nxloc; ix++){
+    output.write("{} ",xloc(ix,0).real());
+  }
+  output.write("\n");
 
   Array<dcomplex> sendvec(l.nmode), recvecin(l.nmode), recvecout(l.nmode);
   MPI_Request rreqin, rreqout;
@@ -717,11 +717,11 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
     }
   }
 
-//  output.write("xloc middle\n");
-//  for(int ix = 0; ix<nxloc; ix++){
-//    output.write("{} ",xloc(ix,0).real());
-//  }
-//  output.write("\n");
+  output.write("xloc middle\n");
+  for(int ix = 0; ix<nxloc; ix++){
+    output.write("{} ",xloc(ix,0).real());
+  }
+  output.write("\n");
 
   // Sweep over odd x points
   for (int kz = 0; kz < l.nmode; kz++) {
@@ -753,11 +753,11 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
     }
   }
 
-//  output.write("xloc before  bcs\n");
-//  for(int ix = 0; ix<nxloc; ix++){
-//    output.write("{} ",xloc(ix,0).real());
-//  }
-//  output.write("\n");
+  output.write("xloc before  bcs\n");
+  for(int ix = 0; ix<nxloc; ix++){
+    output.write("{} ",xloc(ix,0).real());
+  }
+  output.write("\n");
 
   if(current_level==0){
     // apply boundary conditions
@@ -781,11 +781,11 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
     }
   }
 
-//  output.write("xloc after\n");
-//  for(int ix = 0; ix<nxloc; ix++){
-//    output.write("{} ",xloc(ix,0).real());
-//  }
-//  output.write("\n");
+  output.write("xloc after\n");
+  for(int ix = 0; ix<nxloc; ix++){
+    output.write("{} ",xloc(ix,0).real());
+  }
+  output.write("\n");
 }
 
 /*
@@ -1089,8 +1089,12 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
         cr(l.jy, ix, kz) = 0.5 * lup.cr(l.jy, ixf, kz);
       } else {
 	if(l.localmesh->lastX() and proc_level>0) ixf = 2*ix-3; // account for level 0 being special grid
+	if(ix==1) ixf = 1;
         ar(l.jy, ix, kz) = 0.25 * lup.ar(l.jy, ixf-1, kz) + 0.125 * lup.br(l.jy, ixf-1, kz)
                         + 0.25 * lup.ar(l.jy, ixf, kz);
+	 if(kz==0){
+	   output.write("C ix,ixf,ar,ar_up-,br_up-,ar_up: {} {} {} {} {} {}\n",ix,ixf,ar(l.jy, ix, kz).real(),lup.ar(l.jy, ixf-1, kz).real(),lup.br(l.jy, ixf-1, kz).real(),lup.ar(l.jy, ixf, kz).real());
+	 }
         br(l.jy, ix, kz) = 0.125 * lup.br(l.jy, ixf-1, kz) + 0.25 * lup.cr(l.jy, ixf-1, kz)
                         + 0.25 * lup.ar(l.jy, ixf, kz) + 0.5 * lup.br(l.jy, ixf, kz)
                         + 0.25 * lup.cr(l.jy, ixf, kz) + 0.25 * lup.ar(l.jy, ixf+1, kz)
