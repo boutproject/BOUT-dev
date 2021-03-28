@@ -102,8 +102,12 @@ obtain a copy of the latest version, run::
 
     $ git clone git://github.com/boutproject/BOUT-dev.git
 
-which will create a directory ``BOUT-dev`` containing the code. To get
-the latest changes later, go into the ``BOUT-dev`` directory and run::
+
+which will create a directory ``BOUT-dev`` containing the code::
+
+    $ cd BOUT-dev
+
+To get the latest changes later, go into the ``BOUT-dev`` directory and run::
 
     $ git pull
 
