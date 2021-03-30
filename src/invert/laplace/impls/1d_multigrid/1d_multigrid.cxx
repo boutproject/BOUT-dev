@@ -927,7 +927,7 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
                         + 0.25 * lup.ar(l.jy, 3, kz) + 0.125 * lup.br(l.jy, 3, kz);
         cr(l.jy, 2, kz) = 0.25 * lup.cr(l.jy, 2, kz) + 0.125 * lup.br(l.jy, 3, kz)
                         + 0.25 * lup.cr(l.jy, 3, kz);
-      } else if (l.localmesh->lastX() and ix==nxloc-2){
+      } else if (l.localmesh->lastX() and ix==nxloc-1){
 	if(proc_level>0) ixf = 2*ix-3; // account for level 0 being special grid
         ar(l.jy, ix, kz) = 0.25 * lup.ar(l.jy, ixf-1, kz) + 0.125 * lup.br(l.jy, ixf-1, kz)
                           + 0.25 * lup.ar(l.jy, ixf, kz);
@@ -1045,34 +1045,34 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
       brinv(l.jy, ix, kz) = 1.0/br(l.jy, ix, kz);
     }
 
-    if( l.localmesh->firstX() ){
-      // First grid point is special case: need to eliminate first row so that
-      // there are 2^k+1 points in total
-      int ix = l.xs; 
-      dcomplex b1 = l.bvec(l.jy, kz, ix-1);
-      dcomplex b2 = l.bvec(l.jy, kz, ix);
-      dcomplex c1 = l.cvec(l.jy, kz, ix-1);
-      dcomplex a2 = l.avec(l.jy, kz, ix);
-      //std::cout << b1 << " " <<b2<<" "<<a2<<" "<<c1<<"\n";
-      // cr unchanged, use xs-1 row to eliminate ar dependence in xs row
-      ar(l.jy, ix, kz) = 0.0;
-      br(l.jy, ix, kz) = (b2 - c1*a2)/b1;
-      brinv(l.jy, ix, kz) = 1.0/br(l.jy, ix, kz);
-    }
-
-    if( l.localmesh->firstX() ){
-      ar(l.jy, l.xs-2, kz) = 0.0;
-      br(l.jy, l.xs-2, kz) = 0.0;
-      cr(l.jy, l.xs-2, kz) = 0.0;
-      ar(l.jy, l.xs-1, kz) = 0.0;
-      br(l.jy, l.xs-1, kz) = 0.0;
-      cr(l.jy, l.xs-1, kz) = 0.0;
-    }
-    if( l.localmesh->lastX() ){
-      ar(l.jy, l.xe+2, kz) = 0.0;
-      br(l.jy, l.xe+2, kz) = 0.0;
-      cr(l.jy, l.xe+2, kz) = 0.0;
-    }
+///    if( l.localmesh->firstX() ){
+///      // First grid point is special case: need to eliminate first row so that
+///      // there are 2^k+1 points in total
+///      int ix = l.xs; 
+///      dcomplex b1 = l.bvec(l.jy, kz, ix-1);
+///      dcomplex b2 = l.bvec(l.jy, kz, ix);
+///      dcomplex c1 = l.cvec(l.jy, kz, ix-1);
+///      dcomplex a2 = l.avec(l.jy, kz, ix);
+///      //std::cout << b1 << " " <<b2<<" "<<a2<<" "<<c1<<"\n";
+///      // cr unchanged, use xs-1 row to eliminate ar dependence in xs row
+///      ar(l.jy, ix, kz) = 0.0;
+///      br(l.jy, ix, kz) = (b2 - c1*a2)/b1;
+///      brinv(l.jy, ix, kz) = 1.0/br(l.jy, ix, kz);
+///    }
+///
+///    if( l.localmesh->firstX() ){
+///      ar(l.jy, l.xs-2, kz) = 0.0;
+///      br(l.jy, l.xs-2, kz) = 0.0;
+///      cr(l.jy, l.xs-2, kz) = 0.0;
+///      ar(l.jy, l.xs-1, kz) = 0.0;
+///      br(l.jy, l.xs-1, kz) = 0.0;
+///      cr(l.jy, l.xs-1, kz) = 0.0;
+///    }
+///    if( l.localmesh->lastX() ){
+///      ar(l.jy, l.xe+2, kz) = 0.0;
+///      br(l.jy, l.xe+2, kz) = 0.0;
+///      cr(l.jy, l.xe+2, kz) = 0.0;
+///    }
   }
 }
 
