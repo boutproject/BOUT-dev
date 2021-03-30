@@ -504,6 +504,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   for (int ix = 0; ix < ncx; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
       x0saved(jy, ix, kz) = levels[0].xloc(ix, kz);
+      xk1d(kz, ix) = levels[0].xloc(ix, kz);
     }
   }
 
