@@ -638,18 +638,20 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
     if (l.localmesh->firstX()) {
       for (int kz = 0; kz < l.nmode; kz++) {
         if (not l.converged[kz]) {
-	  int ix = l.xs-1;
-          xloc(ix, kz) = (rr(ix, kz) 
+	  for(int ix = l.xs-1; ix >= 0; ix--){
+            xloc(ix, kz) = (rr(ix, kz) 
                       - l.cvec(l.jy, kz, ix) * xloc(ix+1, kz)) / l.bvec(l.jy, kz, ix);
+	  }
         }
       }
     }
     if (l.localmesh->lastX()) {
       for (int kz = 0; kz < l.nmode; kz++) {
         if (not l.converged[kz]) {
-	  int ix = xe+1;
-          xloc(ix, kz) = (rr(ix, kz) 
+	  for(int ix = xe+1; ix < nxloc; ix++){
+            xloc(ix, kz) = (rr(ix, kz) 
 		      - l.avec(l.jy, kz, ix) * xloc(ix-1, kz)) / l.bvec(l.jy, kz, ix);
+	  }
 	}
       }
     }
