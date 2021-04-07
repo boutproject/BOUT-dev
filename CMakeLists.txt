@@ -328,6 +328,58 @@ This warning is only important for BOUT++ developers and can otherwise be \
 safely ignored.")
 endif()
 
+##################################################
+# SYCL
+
+# An option to select a SYCL runtime, or none
+set(BOUT_SYCL_RUNTIME "NONE" CACHE STRING "SYCL runtime implementation")
+# Specify the values that SYCL_RUNTIME can have
+set_property(CACHE BOUT_SYCL_RUNTIME PROPERTY STRINGS NONE HIPSYCL COMPUTECPP DPCPP)
+
+if (NOT ${BOUT_SYCL_RUNTIME} STREQUAL "NONE")
+  # Based on C++17
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+  # Additional CMake scripts for SYCL
+  list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/sycl)
+
+  if (${BOUT_SYCL_RUNTIME} STREQUAL "HIPSYCL")
+
+    set(HIPSYCL_INSTALL_DIR "" CACHE STRING "HIPSYCL installation directory")
+
+    set(hipSYCL_DIR ${HIPSYCL_INSTALL_DIR}/lib/cmake)
+    find_package(hipSYCL CONFIG REQUIRED)
+    set(EXTRA_FLAGS -Wno-sign-compare -Wno-stringop-truncation)
+
+  elseif (${BOUT_SYCL_RUNTIME} STREQUAL "COMPUTECPP")
+
+    set(ComputeCpp_DIR "" CACHE STRING "ComputeCpp installation directory")
+
+    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+    set(COMPUTECPP_USER_FLAGS -O3 -fsycl-split-modules=20 -mllvm -inline-threshold=10000 -no-serial-memop)
+    find_package(ComputeCpp REQUIRED)
+
+  elseif (${BOUT_SYCL_RUNTIME} STREQUAL "DPCPP")
+
+    find_program(DPCPP_FOUND dpcpp REQUIRED)
+    set(CMAKE_CXX_COMPILER ${DPCPP_FOUND})
+    set(EXTRA_FLAGS -pedantic)
+
+  else ()
+
+    message(FATAL_ERROR "Invalid SYCL runtime. BOUT_SYCL_RUNTIME=NONE/HIPSYCL/COMPUTECPP/DPCPP")
+
+  endif ()
+
+  set(BOUT_HAS_SYCL ON)
+else ()
+  # SYCL disabled
+  set(BOUT_HAS_SYCL OFF)
+endif ()
+
+##################################################
+
 add_library(bout++
   ${BOUT_SOURCES}
   )
@@ -339,8 +391,10 @@ target_include_directories(bout++ PUBLIC
   $<INSTALL_INTERFACE:include>
   )
 
-target_compile_features(bout++ PUBLIC cxx_std_14)
+target_compile_features(bout++ PUBLIC cxx_std_17)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
+
+
 
 ##################################################
 # Components of the version number
