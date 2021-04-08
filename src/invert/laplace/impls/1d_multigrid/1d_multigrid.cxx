@@ -347,6 +347,11 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   errornorm_old = initial_error;
   std::fill(std::begin(converged), std::end(converged), false);
 
+///  output.write("Before loop, converged:\n");
+///  for (int kz = 0; kz < nmode; kz++) {
+///    output.write("{} ",converged[kz]);
+///  }
+
   /// SCOREP_USER_REGION_END(initwhileloop);
   /// SCOREP_USER_REGION_DEFINE(whileloop);
   /// SCOREP_USER_REGION_BEGIN(whileloop, "while loop",///SCOREP_USER_REGION_TYPE_COMMON);
@@ -358,6 +363,37 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Check for convergence before loop to skip work with cvode
   levels[0].calculate_residual(*this);
   levels[0].calculate_total_residual(*this, errornorm, converged);
+///  for (int kz = 0; kz < nmode; kz++) {
+///    errornorm_old[kz] = errornorm[kz];
+///  }
+///  output.write("After residual check, converged:\n");
+///  for (int kz = 0; kz < nmode; kz++) {
+///    output.write("{} ",converged[kz]);
+///  }
+///  output.write("\nAfter residual check, errornorm:\n");
+///  for (int kz = 0; kz < nmode; kz++) {
+///    output.write("{} ",errornorm[kz]);
+///  }
+///  output.write("\nxloc[4] before:\n");
+///  for (int ix = 0; ix < ncx; ix++) {
+///    output.write("{} ",levels[0].xloc(ix, 4).real());
+///  }
+  for (int lev = 0; lev < max_level+1 ; lev++){
+    output.write("Level {}\n",lev);
+    for (int ix = 0; ix < levels[lev].nxloc; ix++) {
+      output.write("{} ",levels[lev].ar(jy,ix, 0).real());
+    }
+    output.write("\n");
+    for (int ix = 0; ix < levels[lev].nxloc; ix++) {
+      output.write("{} ",levels[lev].br(jy,ix, 0).real());
+    }
+    output.write("\n");
+    for (int ix = 0; ix < levels[lev].nxloc; ix++) {
+      output.write("{} ",levels[lev].cr(jy,ix, 0).real());
+    }
+    output.write("\n");
+  }
+
   bool execute_loop = not all(converged);
 
   while (execute_loop) {
@@ -367,6 +403,10 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     } else {
       levels[current_level].gauss_seidel_red_black(*this);
     }
+///    output.write("\nAfter smoothing xloc[4] before:\n");
+///    for (int ix = 0; ix < ncx; ix++) {
+///      output.write("{} ",levels[0].xloc(ix, 4).real());
+///    }
 
     /// SCOREP_USER_REGION_DEFINE(l0rescalc);
     /// SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual
@@ -390,12 +430,10 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       // Keep the old error values if they are used in the
       // calculations in this cycle.
-      if (cyclecount < 3 or cyclecount > cycle_eta) {
-        for (int kz = 0; kz < nmode; kz++) {
-          if (!converged[kz]) {
+      for (int kz = 0; kz < nmode; kz++) {
+///          if (!converged[kz]) {
             errornorm_old[kz] = errornorm[kz];
-          }
-        }
+///          }
       }
 
       levels[0].calculate_residual(*this);
@@ -403,9 +441,41 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       if (cyclecount < 3 or cyclecount > cycle_eta - 5 or not predict_exit) {
         // Calculate the total residual. This also marks modes as converged, so the
         // algorithm cannot exit in cycles where this is not called.
+///        output.write("\nBefore residual check loop {}, errornorm:\n",cyclecount);
+///        for (int kz = 0; kz < nmode; kz++) {
+///          output.write("{} ",errornorm[kz]);
+///        }
+///        output.write("\nConverged loop {}:\n",cyclecount);
+///        for (int kz = 0; kz < nmode; kz++) {
+///          output.write("{} ",converged[kz]);
+///        }
         levels[0].calculate_total_residual(*this, errornorm, converged);
+///        output.write("\nAfter residual check loop {}, errornorm:\n",cyclecount);
+///        for (int kz = 0; kz < nmode; kz++) {
+///          output.write("{} ",errornorm[kz]);
+///        }
+///        output.write("\nConverged loop {}:\n",cyclecount);
+///        for (int kz = 0; kz < nmode; kz++) {
+///          output.write("{} ",converged[kz]);
+///        }
+        output.write("\nxloc, cycle {}:\n",cyclecount);
+        for (int ix = 0; ix < ncx; ix++) {
+          output.write("{} ",levels[0].xloc(ix,0).real());
+        }
+        output.write("\nxloc imag, cycle {}:\n",cyclecount);
+        for (int ix = 0; ix < ncx; ix++) {
+          output.write("{} ",levels[0].xloc(ix,0).imag());
+        }
+        output.write("\nResidual, cycle {}:\n",cyclecount);
+        for (int ix = 0; ix < ncx; ix++) {
+          output.write("{} ",levels[0].residual(ix,0).real());
+        }
+        output.write("\nResidual imag, cycle {}:\n",cyclecount);
+        for (int ix = 0; ix < ncx; ix++) {
+          output.write("{} ",levels[0].residual(ix,0).imag());
+        }
 
-        //output.write("cycle {}\t iteration {}\t total weighted residual {}\t reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
+        output.write("cycle {}\t iteration {}\t total weighted residual {}\t reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
 
         // Based the error reduction per V-cycle, errornorm/errornorm_old,
         // predict when the slowest converging mode converges.
@@ -434,7 +504,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     // Do not skip with tolerence to minimize comms
     if (subcount < max_cycle) {
     } else if (all(converged) and current_level == 0) {
-      output.write("Converged. cycles {} iterations {} total weighted residual {} final cycle reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
+      output.write("Converged. cycles {} iterations {} total weighted residual {} final cycle reduction factor {}\n",cyclecount, count, errornorm[1], errornorm[1]/errornorm_old[1]);
       break;
     } else if (not down) {
       if( levels[current_level].proc_level < 1 ){
@@ -475,7 +545,15 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
 
     // Throw error if we are performing too many iterations
-    if (count > maxits) {
+    if (count > maxits and current_level == 0) {
+        output.write("\nNot converged loop {}. Residual:\n",cyclecount);
+        for (int ix = 0; ix < ncx; ix++) {
+          output.write("{} ",levels[0].residual(ix,0).real());
+        }
+        output.write("\nNot converged loop {}. Errornorm:\n",cyclecount);
+        for (int kz = 0; kz < nmode; kz++) {
+          output.write("{} ",errornorm[kz]);
+        }
       // Maximum number of allowed iterations reached.
       throw BoutException(
           "Laplace1DMG error: Not converged within maxits={:d} iterations. Sometimes multigrid does not converge. "
@@ -1125,10 +1203,12 @@ void Laplace1DMG::Level::calculate_total_residual(const Laplace1DMG& l,
 
   // Communication arrays
   auto subtotal = Array<BoutReal>(l.nmode); // local contribution to residual
+  auto tmperrornorm = Array<BoutReal>(l.nmode); // local contribution to residual
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
       errornorm[kz] = 0.0;
+      tmperrornorm[kz] = 0.0;
       subtotal[kz] = 0.0;
       for (int ix = 2; ix < nxloc-2; ix++) {
         BoutReal w = pow( l.rtol*sqrt(pow(xloc(ix, kz).real(), 2) + pow(xloc(ix, kz).imag(), 2)) + l.atol , 2);
@@ -1138,12 +1218,12 @@ void Laplace1DMG::Level::calculate_total_residual(const Laplace1DMG& l,
   }
 
   // Communication needed to ensure processors break on same iteration
-  MPI_Allreduce(subtotal.begin(), errornorm.begin(), l.nmode, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(subtotal.begin(), tmperrornorm.begin(), l.nmode, MPI_DOUBLE, MPI_SUM,
                 BoutComm::get());
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      errornorm[kz] = sqrt(errornorm[kz]/BoutReal(l.localmesh->GlobalNx));
+      errornorm[kz] = sqrt(tmperrornorm[kz]/BoutReal(l.localmesh->GlobalNx));
       if (errornorm[kz] < 1.0) {
         converged[kz] = true;
       }
@@ -1388,73 +1468,6 @@ void Laplace1DMG::Level::refine_local(const Laplace1DMG& l, Matrix<dcomplex>& fi
 //	fine_error(ixf, kz) = xloc(ix, kz);
       }
     }
-
-//  Array<dcomplex> sendvec(l.nmode), recvecin(l.nmode), recvecout(l.nmode);
-//  MPI_Request rreqin, rreqout;
-//
-//  // Included processors send their contribution to procs that are included on
-//  // the level above.
-//  // Special case: last proc sends if on level > 1, but NOT on level 1
-//  if (included and (not l.localmesh->lastX() or current_level > 1)) {
-//    for (int kz = 0; kz < l.nmode; kz++) {
-//      if (not l.converged[kz]) {
-//        fine_error(1, kz) = xloc(1, kz);
-//        sendvec[kz] = xloc(1, kz);
-//        if (l.localmesh->lastX()) {
-//          fine_error(2, kz) = xloc(2, kz);
-//        }
-//      }
-//    }
-//
-//    if (not l.localmesh->lastX()) {
-//      MPI_Send(&sendvec[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out_up, 0, BoutComm::get());
-//    }
-//    if (not l.localmesh->firstX()) {
-//      MPI_Send(&sendvec[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_in_up, 1, BoutComm::get());
-//    }
-//  }
-//
-//  // Receive if proc is included on the level above, but not this level.
-//  // Special case: last proc receives if on level 1
-//  if ((included_up and not included) or (l.localmesh->lastX() and current_level == 1)) {
-//    if (not l.localmesh->firstX()) {
-//      MPI_Irecv(&recvecin[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_in_up, 0, BoutComm::get(),
-//                &rreqin);
-//    }
-//    if (not l.localmesh->lastX()) {
-//      MPI_Irecv(&recvecout[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out_up, 1,
-//                BoutComm::get(), &rreqout);
-//    }
-//
-//    for (int kz = 0; kz < l.nmode; kz++) {
-//      fine_error(1, kz) = 0.0;
-//    }
-//
-//    if (not l.localmesh->firstX()) {
-//      MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
-//      for (int kz = 0; kz < l.nmode; kz++) {
-//        if (not l.converged[kz]) {
-//          fine_error(1, kz) += 0.5 * recvecin[kz];
-//        }
-//      }
-//    }
-//    if (not l.localmesh->lastX()) {
-//      MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
-//      for (int kz = 0; kz < l.nmode; kz++) {
-//        if (not l.converged[kz]) {
-//          fine_error(1, kz) += 0.5 * recvecout[kz];
-//        }
-//      }
-//    }
-//  }
-//  // Special case where we need to fill (1,kz) on final proc
-//  if (l.localmesh->lastX() and current_level == 1) {
-//    for (int kz = 0; kz < l.nmode; kz++) {
-//      if (not l.converged[kz]) {
-//        fine_error(1, kz) += 0.5 * xloc(2, kz);
-//      }
-//    }
-//  }
 }
 
 /*
