@@ -104,7 +104,7 @@ if (${_ncxx4_version})
   string(REGEX REPLACE "netCDF-cxx4 \([0-9]+\)\.\([0-9]+\)\.\([0-9]+\)" "\\2" _netcdfcxx_version_minor "${_ncxx4_version}")
   string(REGEX REPLACE "netCDF-cxx4 \([0-9]+\)\.\([0-9]+\)\.\([0-9]+\)" "\\3" _netcdfcxx_version_patch "${_ncxx4_version}")
 
-  message("${_ncxx4_version}")
+  message(STATUS "Found netCDFCxx version ${_ncxx4_version}")
   set(netCDFCxx_VERSION "${_netcdf_version_major}.${_netcdf_version_minor}.${_netcdf_version_patch}${_netcdf_version_note}")
 
 else ()
