@@ -378,21 +378,21 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///  for (int ix = 0; ix < ncx; ix++) {
 ///    output.write("{} ",levels[0].xloc(ix, 4).real());
 ///  }
-  for (int lev = 0; lev < max_level+1 ; lev++){
-    output.write("Level {}\n",lev);
-    for (int ix = 0; ix < levels[lev].nxloc; ix++) {
-      output.write("{} ",levels[lev].ar(jy,ix, 0).real());
-    }
-    output.write("\n");
-    for (int ix = 0; ix < levels[lev].nxloc; ix++) {
-      output.write("{} ",levels[lev].br(jy,ix, 0).real());
-    }
-    output.write("\n");
-    for (int ix = 0; ix < levels[lev].nxloc; ix++) {
-      output.write("{} ",levels[lev].cr(jy,ix, 0).real());
-    }
-    output.write("\n");
-  }
+///  for (int lev = 0; lev < max_level+1 ; lev++){
+///    output.write("Level {}\n",lev);
+///    for (int ix = 0; ix < levels[lev].nxloc; ix++) {
+///      output.write("{} ",levels[lev].ar(jy,ix, 0).real());
+///    }
+///    output.write("\n");
+///    for (int ix = 0; ix < levels[lev].nxloc; ix++) {
+///      output.write("{} ",levels[lev].br(jy,ix, 0).real());
+///    }
+///    output.write("\n");
+///    for (int ix = 0; ix < levels[lev].nxloc; ix++) {
+///      output.write("{} ",levels[lev].cr(jy,ix, 0).real());
+///    }
+///    output.write("\n");
+///  }
 
   bool execute_loop = not all(converged);
 
@@ -458,24 +458,24 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///        for (int kz = 0; kz < nmode; kz++) {
 ///          output.write("{} ",converged[kz]);
 ///        }
-        output.write("\nxloc, cycle {}:\n",cyclecount);
-        for (int ix = 0; ix < ncx; ix++) {
-          output.write("{} ",levels[0].xloc(ix,0).real());
-        }
-        output.write("\nxloc imag, cycle {}:\n",cyclecount);
-        for (int ix = 0; ix < ncx; ix++) {
-          output.write("{} ",levels[0].xloc(ix,0).imag());
-        }
-        output.write("\nResidual, cycle {}:\n",cyclecount);
-        for (int ix = 0; ix < ncx; ix++) {
-          output.write("{} ",levels[0].residual(ix,0).real());
-        }
-        output.write("\nResidual imag, cycle {}:\n",cyclecount);
-        for (int ix = 0; ix < ncx; ix++) {
-          output.write("{} ",levels[0].residual(ix,0).imag());
-        }
+///        output.write("\nxloc, cycle {}:\n",cyclecount);
+///        for (int ix = 0; ix < ncx; ix++) {
+///          output.write("{} ",levels[0].xloc(ix,0).real());
+///        }
+///        output.write("\nxloc imag, cycle {}:\n",cyclecount);
+///        for (int ix = 0; ix < ncx; ix++) {
+///          output.write("{} ",levels[0].xloc(ix,0).imag());
+///        }
+///        output.write("\nResidual, cycle {}:\n",cyclecount);
+///        for (int ix = 0; ix < ncx; ix++) {
+///          output.write("{} ",levels[0].residual(ix,0).real());
+///        }
+///        output.write("\nResidual imag, cycle {}:\n",cyclecount);
+///        for (int ix = 0; ix < ncx; ix++) {
+///          output.write("{} ",levels[0].residual(ix,0).imag());
+///        }
 
-        output.write("cycle {}\t iteration {}\t total weighted residual {}\t reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
+///        output.write("cycle {}\t iteration {}\t total weighted residual {}\t reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
 
         // Based the error reduction per V-cycle, errornorm/errornorm_old,
         // predict when the slowest converging mode converges.
@@ -668,7 +668,7 @@ void Laplace1DMG::Level::gauss_seidel_red_black_local(const Laplace1DMG& l) {
     MPI_Irecv(&recvecout[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(), &rreqout);
   }
 
-  int ixend = xe + 2;
+  int ixend = xe + 1;
   //if( l.localmesh->lastX() ) ixend = xe + 2;
 
   // Sweep over even x points
@@ -1016,7 +1016,7 @@ void Laplace1DMG::Level::init(const Laplace1DMG& l, const Level& lup, std::size_
                         + 0.25 * lup.ar(l.jy, 3, kz) + 0.125 * lup.br(l.jy, 3, kz);
         cr(l.jy, 2, kz) = 0.25 * lup.cr(l.jy, 2, kz) + 0.125 * lup.br(l.jy, 3, kz)
                         + 0.25 * lup.cr(l.jy, 3, kz);
-      } else if (l.localmesh->lastX() and ix==nxloc-1){
+      } else if (l.localmesh->lastX() and ix==nxloc-2){
 	if(proc_level>0) ixf = 2*ix-3; // account for level 0 being special grid
         ar(l.jy, ix, kz) = 0.25 * lup.ar(l.jy, ixf-1, kz) + 0.125 * lup.br(l.jy, ixf-1, kz)
                           + 0.25 * lup.ar(l.jy, ixf, kz);
