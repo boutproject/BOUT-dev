@@ -84,7 +84,7 @@ public:
       Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector,
       Matrix<dcomplex> &xk1d);
 
-  void resetSolver();
+  void resetSolver() override;
 
   bool all(const Array<bool>);
 
@@ -143,6 +143,8 @@ public:
     void coarsen(const Laplace1DMG& lap, const Matrix<dcomplex>& fine_residual);
     void gauss_seidel_red_black(const Laplace1DMG& lap);
     void gauss_seidel_red_black_local(const Laplace1DMG& lap);
+    void init(const Laplace1DMG &lap, const Level &lup, std::size_t current_level);
+    void init(Laplace1DMG &lap);
     void init_rhs(Laplace1DMG& lap, const Matrix<dcomplex>& bcmplx);
     void refine(const Laplace1DMG& lap, Matrix<dcomplex>& fine_error);
     void refine_local(const Laplace1DMG& lap, Matrix<dcomplex>& fine_error);

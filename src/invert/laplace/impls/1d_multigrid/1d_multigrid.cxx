@@ -87,6 +87,15 @@ Laplace1DMG::Laplace1DMG(Options* opt, CELL_LOC loc, Mesh* mesh_in)
       ipt_mean_its, "1dmg_solver" + std::to_string(ipt_solver_count) + "_mean_its");
   ++ipt_solver_count;
 
+  // Initialize levels
+  levels.reserve(max_level + 1);
+  levels.emplace_back(*this);
+  if (max_level > 0) {
+    for (std::size_t l = 1; l < (static_cast<std::size_t>(max_level) + 1); ++l) {
+      levels.emplace_back(*this, levels[l - 1], l);
+    }
+  }
+
   resetSolver();
 }
 
@@ -293,14 +302,13 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   // much of the information for each level may be stored. Data that cannot
   // be cached (e.g. the changing right-hand sides) is calculated in init_rhs
   // below.
-  levels.reserve(max_level + 1);
   if (first_call[jy] || not store_coefficients) {
 
-    levels.emplace_back(*this);
+    levels[0].init(*this);
 
     if (max_level > 0) {
       for (std::size_t l = 1; l < (static_cast<std::size_t>(max_level) + 1); ++l) {
-        levels.emplace_back(*this, levels[l - 1], l);
+        levels[l].init(*this, levels[l - 1], l);
       }
     }
   }
@@ -908,6 +916,9 @@ Laplace1DMG::Level::Level(const Laplace1DMG& l, const Level& lup,
   cr.reallocate(l.ny, nxloc, l.nmode);
   rr.reallocate(nxloc, l.nmode);
   brinv.reallocate(l.ny, nxloc, l.nmode);
+}
+
+void Laplace1DMG::Level::init(const Laplace1DMG& l, const Level& lup, std::size_t current_level_in) {
 
   auto sendvec = Array<dcomplex>(3 * l.nmode);
   auto recvecin = Array<dcomplex>(3 * l.nmode);
@@ -1027,7 +1038,9 @@ Laplace1DMG::Level::Level(Laplace1DMG& l)
 
   // Define sizes of local coefficients
   xloc.reallocate(l.ncx, l.nmode); // Reduced grid x values
+}
 
+void Laplace1DMG::Level::init(Laplace1DMG& l) {
 
   for (int kz = 0; kz < l.nmode; kz++) {
     for (int ix = 0; ix < l.ncx; ix++) {

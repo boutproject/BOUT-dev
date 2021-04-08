@@ -234,6 +234,8 @@ public:
     f.setLocation(location);
     setCoefEz(f);
   }
+
+  virtual void resetSolver() {};
   
   virtual void setGlobalFlags(int f) { global_flags = f; }
   virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
