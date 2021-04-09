@@ -79,6 +79,8 @@ public:
 
   BoutReal getMeanIterations() const { return ipt_mean_its; }
   void resetMeanIterations() { ipt_mean_its = 0; }
+  BoutReal getMeanCycles() const { return ipt_mean_cycles; }
+  void resetMeanCycles() { ipt_mean_cycles = 0; }
 
   void get_initial_guess(const int jy, const int kz, Matrix<dcomplex> &r,
       Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector,
@@ -158,6 +160,9 @@ private:
   /// Solver tolerances
   BoutReal rtol, atol;
 
+  /// Maximum number of V cycles
+  int max_vcycles;
+
   /// Maximum number of iterations
   int maxits;
 
@@ -200,6 +205,9 @@ private:
 
   /// Mean number of iterations taken by the solver
   BoutReal ipt_mean_its{0.0};
+
+  /// Mean number of cycles taken by the solver
+  BoutReal ipt_mean_cycles{0.0};
 
   /// Counter for the number of times the solver has been called
   int ncalls{0};

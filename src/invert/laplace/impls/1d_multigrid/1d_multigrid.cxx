@@ -46,7 +46,8 @@ Laplace1DMG::Laplace1DMG(Options* opt, CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in),
       rtol((*opt)["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
       atol((*opt)["atol"].doc("Absolute tolerance").withDefault(1.e-20)),
-      maxits((*opt)["maxits"].doc("Maximum number of iterations").withDefault(100)),
+      maxits((*opt)["maxits"].doc("Maximum number of iterations").withDefault(10000000)),
+      max_vcycles((*opt)["max_vcycles"].doc("Maximum number of V cycles").withDefault(100)),
       max_level((*opt)["max_level"].doc("Maximum number of coarse grids").withDefault(0)),
       max_cycle((*opt)["max_cycle"]
                     .doc("Maximum number of iterations per coarse grid")
@@ -85,6 +86,8 @@ Laplace1DMG::Laplace1DMG(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   static int ipt_solver_count = 1;
   bout::globals::dump.addRepeat(
       ipt_mean_its, "1dmg_solver" + std::to_string(ipt_solver_count) + "_mean_its");
+  bout::globals::dump.addRepeat(
+      ipt_mean_cycles, "1dmg_solver" + std::to_string(ipt_solver_count) + "_mean_cycles");
   ++ipt_solver_count;
 
   // Info for halo swaps
@@ -118,6 +121,7 @@ void Laplace1DMG::resetSolver() {
   std::fill(std::begin(first_call), std::end(first_call), true);
   x0saved = 0.0;
   resetMeanIterations();
+  resetMeanCycles();
 }
 
 // TODO Move to Array
@@ -563,8 +567,8 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
 
     // Throw error if we are performing too many iterations
-    if (count > maxits and current_level == 0) {
-        output.write("\nNot converged loop {}. Residual:\n",cyclecount);
+    if ((count > maxits or cyclecount > max_vcycles) and current_level == 0) {
+        output.write("\nNot converged V cycles {} iterations {}. Residual:\n",cyclecount,count);
         for (int ix = 0; ix < ncx; ix++) {
           output.write("{} ",levels[0].residual(ix,1).real());
         }
@@ -574,7 +578,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
         }
       // Maximum number of allowed iterations reached.
       throw BoutException(
-          "Laplace1DMG error: Not converged within maxits={:d} iterations. Sometimes multigrid does not converge. "
+          "Laplace1DMG error: Not converged within {:d} cycles, {:d} iterations. Sometimes multigrid does not converge. "
           "Check the error norm reduction factor in this case. If it it is less than one, multigrid will converge "
 	 "given enough iterations. If so, increase maxits and rerun. "
 	 "Changing solver parameters can also increase convergence speed. "
@@ -587,7 +591,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 	 "\n"
 	 "NB: in parallel, we are assuming the cost of the algorithm is determined by communication costs rather than work required. "
 	 "Therefore we assume cost is proportional to the iteration count, rather than the V-cycle count.",
-          maxits);
+          max_vcycles,maxits);
     }
   }
 /// SCOREP_USER_REGION_END(whileloop);
@@ -624,6 +628,8 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   ++ncalls;
   ipt_mean_its =
       (ipt_mean_its * BoutReal(ncalls - 1) + BoutReal(count)) / BoutReal(ncalls);
+  ipt_mean_cycles =
+      (ipt_mean_cycles * BoutReal(ncalls - 1) + BoutReal(cyclecount)) / BoutReal(ncalls);
 
   // If the global flag is set to INVERT_KX_ZERO
   if (isGlobalFlagSet(INVERT_KX_ZERO)) {
