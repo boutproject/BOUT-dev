@@ -102,8 +102,12 @@ obtain a copy of the latest version, run::
 
     $ git clone git://github.com/boutproject/BOUT-dev.git
 
-which will create a directory ``BOUT-dev`` containing the code. To get
-the latest changes later, go into the ``BOUT-dev`` directory and run::
+
+which will create a directory ``BOUT-dev`` containing the code::
+
+    $ cd BOUT-dev
+
+To get the latest changes later, go into the ``BOUT-dev`` directory and run::
 
     $ git pull
 
@@ -123,8 +127,7 @@ The bare-minimum requirements for compiling and running BOUT++ are:
 #. A C++ compiler that supports C++14
 
 #. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <https://www.open-mpi.org/>`__),
-   MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
-   LAM (`www.lam-mpi.org/ <https://www.lam-mpi.org/>`__)
+   MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__)
    
 #. The NetCDF library (`https://www.unidata.ucar.edu/downloads/netcdf
    <https://www.unidata.ucar.edu/downloads/netcdf>`__)

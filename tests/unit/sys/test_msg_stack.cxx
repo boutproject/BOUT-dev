@@ -70,18 +70,6 @@ TEST(MsgStackTest, PushReturnTest) {
   }
 }
 
-TEST(MsgStackTest, SetPointTest) {
-  MsgStack msg_stack;
-
-  for (int i = 0; i < 6; i++) {
-    EXPECT_EQ(msg_stack.setPoint(), i);
-  }
-
-  auto dump = msg_stack.getDump();
-  auto expected_dump = "====== Back trace ======\n";
-  EXPECT_EQ(dump, expected_dump);
-}
-
 TEST(MsgStackTest, NoMessageTest) {
   MsgStack msg_stack;
   msg_stack.push();
