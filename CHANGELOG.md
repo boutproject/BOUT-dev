@@ -52,6 +52,11 @@
 - Removed the Karniadakis time solver. Other choices for split-operator schemes
   are: `splitrk` (built-in), `imexbdf2` (requires PETSc), and `arkode` (requires
   SUNDIALS) [\#2241](https://github.com/boutproject/BOUT-dev/pull/2241)
+- Input options are now required to be either a section or a value,
+  and not both. This requires renaming the `restart` section to
+  `restart_files`. `bin/bout-v5-input-file-upgrader.py` can
+  automatically make this
+  change. [\#2277](https://github.com/boutproject/BOUT-dev/pull/2277)
 
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)
