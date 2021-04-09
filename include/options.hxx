@@ -681,6 +681,7 @@ public:
     attributes["source"] = std::move(source);
     value_used = false;
     is_section = false;
+    children.clear();
   }
 
   template <typename T>
