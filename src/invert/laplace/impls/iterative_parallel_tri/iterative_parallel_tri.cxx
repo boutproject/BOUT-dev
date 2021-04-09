@@ -102,21 +102,21 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   xs = localmesh->xstart; // First interior point
   xe = localmesh->xend;   // Last interior point
 
-  output.write("Before levels reserve\n");
+  //output.write("Before levels reserve\n");
   // Initialize levels
   levels.reserve(max_level + 1);
-  output.write("Before emplace\n");
+  //output.write("Before emplace\n");
   levels.emplace_back(*this);
   if (max_level > 0) {
     for (std::size_t l = 1; l < (static_cast<std::size_t>(max_level) + 1); ++l) {
-      output.write("Before emplace level {}\n",l);
+      //output.write("Before emplace level {}\n",l);
       levels.emplace_back(*this, levels[l - 1], l);
     }
   }
-  output.write("After init levels");
+  //output.write("After init levels");
 
   resetSolver();
-  output.write("After reset solver");
+  //output.write("After reset solver");
 }
 
 /*
@@ -470,23 +470,23 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     errornorm_old[kz] = errornorm[kz];
   }
 
-  for (int lev = 0; lev < max_level+1 ; lev++){
-    output.write("Level {}\n",lev);
-    if( levels[lev].included ){
-      for (int ix = 0; ix < 4; ix++) {
-        output.write("{} ",levels[lev].ar(jy,ix, 0).real());
-      }
-      output.write("\n");
-      for (int ix = 0; ix < 4; ix++) {
-        output.write("{} ",levels[lev].br(jy,ix, 0).real());
-      }
-      output.write("\n");
-      for (int ix = 0; ix < 4; ix++) {
-        output.write("{} ",levels[lev].cr(jy,ix, 0).real());
-      }
-      output.write("\n");
-    }
-  }
+///  for (int lev = 0; lev < max_level+1 ; lev++){
+///    output.write("Level {}\n",lev);
+///    if( levels[lev].included ){
+///      for (int ix = 0; ix < 4; ix++) {
+///        output.write("{} ",levels[lev].ar(jy,ix, 0).real());
+///      }
+///      output.write("\n");
+///      for (int ix = 0; ix < 4; ix++) {
+///        output.write("{} ",levels[lev].br(jy,ix, 0).real());
+///      }
+///      output.write("\n");
+///      for (int ix = 0; ix < 4; ix++) {
+///        output.write("{} ",levels[lev].cr(jy,ix, 0).real());
+///      }
+///      output.write("\n");
+///    }
+///  }
 
   bool execute_loop = not all(converged);
 
@@ -544,25 +544,25 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///        for (int kz = 0; kz < nmode; kz++) {
 ///          output.write("{} ",converged[kz]);
 ///        }
-        output.write("\nxloc, cycle {}:\n",cyclecount);
-        for (int ix = 0; ix < 4; ix++) {
-          output.write("{} ",levels[0].xloc(ix,0).real());
-        }
+///        output.write("\nxloc, cycle {}:\n",cyclecount);
+///        for (int ix = 0; ix < 4; ix++) {
+///          output.write("{} ",levels[0].xloc(ix,0).real());
+///        }
 ///        output.write("\nxloc imag, cycle {}:\n",cyclecount);
 ///        for (int ix = 0; ix < ncx; ix++) {
 ///          output.write("{} ",levels[0].xloc(ix,0).imag());
 ///        }
-        output.write("\nResidual, cycle {}:\n",cyclecount);
-        for (int ix = 0; ix < 4; ix++) {
-          output.write("{} ",levels[0].residual(ix,0).real());
-        }
-	output.write("\n");
+///        output.write("\nResidual, cycle {}:\n",cyclecount);
+///        for (int ix = 0; ix < 4; ix++) {
+///          output.write("{} ",levels[0].residual(ix,0).real());
+///        }
+///	output.write("\n");
 ///        output.write("\nResidual imag, cycle {}:\n",cyclecount);
 ///        for (int ix = 0; ix < ncx; ix++) {
 ///          output.write("{} ",levels[0].residual(ix,0).imag());
 ///        }
 
-        output.write("cycle {}\t iteration {}\t total weighted residual {}\t reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
+        //output.write("cycle {}\t iteration {}\t total weighted residual {}\t reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
 
         // Based the error reduction per V-cycle, errornorm/errornorm_old,
         // predict when the slowest converging mode converges.
@@ -591,7 +591,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     // Do not skip with tolerence to minimize comms
     if (subcount < max_cycle) {
     } else if (all(converged) and current_level == 0) {
-      output.write("Converged. cycles {} iterations {} total weighted residual {} final cycle reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
+      //output.write("Converged. cycles {} iterations {} total weighted residual {} final cycle reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
       break;
     } else if (not down) {
       levels[current_level].refine(*this, fine_error);

@@ -109,7 +109,7 @@ Laplace1DMG::Laplace1DMG(Options* opt, CELL_LOC loc, Mesh* mesh_in)
       levels.emplace_back(*this, levels[l - 1], l);
     }
   }
-  output.write("After init levels");
+  //output.write("After init levels");
 
   resetSolver();
 }
@@ -309,19 +309,19 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   // below.
   if (first_call[jy] || not store_coefficients) {
 
-    output.write("Before init 0");
+    //output.write("Before init 0");
     levels[0].init(*this);
 
     if (max_level > 0) {
       for (std::size_t l = 1; l < (static_cast<std::size_t>(max_level) + 1); ++l) {
 
-        output.write("Before init {}",l);
+        //output.write("Before init {}",l);
         levels[l].init(*this, levels[l - 1], l);
       }
     }
   }
 
-  output.write("Before init rhs");
+  //output.write("Before init rhs");
   // Compute coefficients that depend on the right-hand side and which
   // therefore change every time.
   levels[0].init_rhs(*this, bcmplx);
@@ -372,9 +372,10 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Check for convergence before loop to skip work with cvode
   levels[0].calculate_residual(*this);
   levels[0].calculate_total_residual(*this, errornorm, converged);
-///  for (int kz = 0; kz < nmode; kz++) {
-///    errornorm_old[kz] = errornorm[kz];
-///  }
+  for (int kz = 0; kz < nmode; kz++) {
+    errornorm_old[kz] = errornorm[kz];
+  }
+
 ///  output.write("After residual check, converged:\n");
 ///  for (int kz = 0; kz < nmode; kz++) {
 ///    output.write("{} ",converged[kz]);
@@ -497,7 +498,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///          output.write("{} ",levels[0].residual(ix,0).imag());
 ///        }
 
-        output.write("cycle {}\t iteration {}\t total weighted residual {}\t reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
+        //output.write("cycle {}\t iteration {}\t total weighted residual {}\t reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
 
         // Based the error reduction per V-cycle, errornorm/errornorm_old,
         // predict when the slowest converging mode converges.
@@ -526,7 +527,7 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     // Do not skip with tolerence to minimize comms
     if (subcount < max_cycle) {
     } else if (all(converged) and current_level == 0) {
-      output.write("Converged. cycles {} iterations {} total weighted residual {} final cycle reduction factor {}\n",cyclecount, count, errornorm[1], errornorm[1]/errornorm_old[1]);
+      //output.write("Converged. cycles {} iterations {} total weighted residual {} final cycle reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
       break;
     } else if (not down) {
       if( levels[current_level].proc_level < 1 ){
