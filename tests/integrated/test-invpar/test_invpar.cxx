@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
   options.get("ccoef", ccoef, "0.0");
   options.get("dcoef", dcoef, "0.0");
   options.get("ecoef", ecoef, "0.0");
-  options.get("input", func, "sin(2*y)*(1. + 0.2*exp(cos(z)))");
+  options.get("input_field", func, "sin(2*y)*(1. + 0.2*exp(cos(z)))");
   auto location = CELL_LOCFromString(options["test_location"].withDefault("CELL_CENTRE"));
   BoutReal tol = options["tol"].withDefault(1e-10);
 
