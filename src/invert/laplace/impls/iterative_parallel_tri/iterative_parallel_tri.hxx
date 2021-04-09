@@ -128,6 +128,8 @@ public:
                                   Array<bool>& converged);
     void coarsen(const LaplaceIPT& lap, const Matrix<dcomplex>& fine_residual);
     void gauss_seidel_red_black(const LaplaceIPT& lap);
+    void init(const LaplaceIPT &lap, const Level &lup, std::size_t current_level);
+    void init(LaplaceIPT &lap);
     void init_rhs(LaplaceIPT& lap, const Matrix<dcomplex>& bcmplx);
     bool is_diagonally_dominant(const LaplaceIPT& lap) const;
     void reconstruct_full_solution(const LaplaceIPT& lap, Matrix<dcomplex>& xk1d) const;
