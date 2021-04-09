@@ -815,27 +815,27 @@ public:
 
   void checkInputGrid() override {}
 
-  const Field3D fromFieldAligned(const Field3D& f, const std::string&) override {
+  Field3D fromFieldAligned(const Field3D& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Aligned) {
       throw BoutException("Unaligned field passed to fromFieldAligned");
     }
     return -f;
   }
 
-  const FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
+  FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Aligned) {
       throw BoutException("Unaligned field passed to fromFieldAligned");
     }
     return -f;
   }
 
-  const Field3D toFieldAligned(const Field3D& f, const std::string&) override {
+  Field3D toFieldAligned(const Field3D& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Standard) {
       throw BoutException("Aligned field passed to toFieldAligned");
     }
     return -f;
   }
-  const FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override {
+  FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Standard) {
       throw BoutException("Aligned field passed to toFieldAligned");
     }
