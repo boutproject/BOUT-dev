@@ -74,17 +74,11 @@ public:
   /// Add a message to the stack. Returns a message id
   int push(std::string message);
   int push() { return push(""); }
-  [[deprecated("Please use `MsgStack::push()` instead")]] int push(std::nullptr_t) {
-    return push("");
-  }
 
   template <class S, class... Args>
   int push(const S& format, const Args&... args) {
     return push(fmt::format(format, args...));
   }
-
-  [[deprecated("Please use `MsgStack::push` with an empty message instead")]]
-  int setPoint(); ///< get a message point
 
   void pop();       ///< Remove the last message
   void pop(int id); ///< Remove all messages back to msg \p id
@@ -99,9 +93,6 @@ public:
   int push(const S&, const Args&...) {
     return 0;
   }
-
-  [[deprecated("Please use `MsgStack::push` with an empty message instead")]]
-  int setPoint() { return 0; }
 
   void pop() {}
   void pop(int UNUSED(id)) {}
@@ -142,8 +133,8 @@ GLOBAL MsgStack msg_stack;
 class MsgStackItem {
   /// Backfill for C++14: note this _wrong_ and only useful for our
   /// purposes here, that is, telling us if there has been an uncaught
-  /// exception
-  int uncaught_exceptions() {
+  /// exception, which is why this is a private method
+  static int uncaught_exceptions() {
 #if __cpp_lib_uncaught_exceptions >= 201411L
     // C++17 version
     return std::uncaught_exceptions();
