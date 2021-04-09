@@ -305,16 +305,19 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   // below.
   if (first_call[jy] || not store_coefficients) {
 
+    output.write("Before init 0");
     levels[0].init(*this);
 
     if (max_level > 0) {
       for (std::size_t l = 1; l < (static_cast<std::size_t>(max_level) + 1); ++l) {
 
+        output.write("Before init {}",l);
         levels[l].init(*this, levels[l - 1], l);
       }
     }
   }
 
+  output.write("Before init rhs");
   // Compute coefficients that depend on the right-hand side and which
   // therefore change every time.
   levels[0].init_rhs(*this, bcmplx);
@@ -1030,6 +1033,7 @@ void Laplace1DMG::Level::init(const Laplace1DMG& l, const Level& lup, std::size_
 
   for (int kz = 0; kz < l.nmode; kz++) {
     for (int ix = 1; ix < nxloc-1; ix++) {
+      //output.write("kz {} ix {} proc_level {}\n",kz,ix,proc_level);
       // fine grid index
       //int ixf = 2*ix;
       int ixf = 2*ix-2;
@@ -1049,10 +1053,15 @@ void Laplace1DMG::Level::init(const Laplace1DMG& l, const Level& lup, std::size_
         br(l.jy, ix, kz) = 0.125 * lup.br(l.jy, ixf-1, kz) + 0.25 * lup.cr(l.jy, ixf-1, kz)
                           + 0.25 * lup.ar(l.jy, ixf, kz) + 0.5 * lup.br(l.jy, ixf, kz);
         cr(l.jy, ix, kz) = 0.5 * lup.cr(l.jy, ixf, kz);
+      } else if (proc_level>0 and l.localmesh->lastX() and ix==nxloc-3){
+        ar(l.jy, ix, kz) = 0.0;
+        br(l.jy, ix, kz) = 0.0;
+        cr(l.jy, ix, kz) = 0.0;
       } else {
 	if(l.localmesh->lastX() and proc_level>0) ixf = 2*ix-3; // account for level 0 being special grid
-	//if(proc_level>0) ixf = 2*ix-3; // account for level 0 being special grid
+	if(proc_level>0 and ix > l.xs) ixf = 2*ix-3; // account for level 0 being special grid
 	if(ix==1) ixf = 1;
+        //output.write("ixf {}\n",ixf);
         ar(l.jy, ix, kz) = 0.25 * lup.ar(l.jy, ixf-1, kz) + 0.125 * lup.br(l.jy, ixf-1, kz)
                         + 0.25 * lup.ar(l.jy, ixf, kz);
         br(l.jy, ix, kz) = 0.125 * lup.br(l.jy, ixf-1, kz) + 0.25 * lup.cr(l.jy, ixf-1, kz)
@@ -1065,10 +1074,11 @@ void Laplace1DMG::Level::init(const Laplace1DMG& l, const Level& lup, std::size_
       brinv(l.jy, ix, kz) = 1.0 / br(l.jy, ix, kz);
     }
 
-    if( proc_level > 0 ){
+    if( proc_level >= 0 ){
       // Need to communicate my index 1 to this level's neighbours
       // Index 2 if last proc.
-      if (not l.localmesh->lastX()) {
+      //output.write("comm prep\n");
+      if (proc_level==0 or not l.localmesh->lastX()) {
         sendvec[kz] = ar(l.jy, l.xs, kz);
         sendvec[kz + l.nmode] = br(l.jy, l.xs, kz);
         sendvec[kz + 2 * l.nmode] = cr(l.jy, l.xs, kz);
@@ -1077,10 +1087,11 @@ void Laplace1DMG::Level::init(const Laplace1DMG& l, const Level& lup, std::size_
         sendvec[kz + l.nmode] = br(l.jy, xe+1, kz);
         sendvec[kz + 2 * l.nmode] = cr(l.jy, xe+1, kz);
       }
+      //output.write("end comm prep\n");
     }
   }
 
-  if( proc_level > 0 ){
+  if( proc_level >= 0 ){
     MPI_Comm comm = BoutComm::get();
 
     // Communicate in
