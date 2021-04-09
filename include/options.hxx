@@ -321,7 +321,7 @@ public:
   /// Overwrites any existing setting
   template<typename T>
   void force(T val, const std::string source = "") {
-    is_value = false; // Invalidates any existing setting
+    is_section = true; // Invalidates any existing setting
     assign(val, source);
   }
   
@@ -359,7 +359,7 @@ public:
   /// 
   template <typename T>
   T as(const T& UNUSED(similar_to) = {}) const {
-    if (!is_value) {
+    if (is_section) {
       throw BoutException("Option {:s} has no value", full_name);
     }
 
@@ -417,7 +417,7 @@ public:
     // Set the type
     attributes["type"] = bout::utils::typeName<T>();
     
-    if (!is_value) {
+    if (is_section) {
       // Option not found
       assign(def, DEFAULT_SOURCE);
       value_used = true; // Mark the option as used
@@ -449,9 +449,9 @@ public:
   Options& withDefault(const Options& def) {
     // if def is a section, then it does not make sense to try to use it as a default for
     // a value
-    ASSERT0(def.is_value);
+    ASSERT0(def.isValue());
 
-    if (!is_value) {
+    if (is_section) {
       // Option not found
       *this = def;
 
@@ -476,7 +476,7 @@ public:
   /// Get the value of this option. If not found,
   /// return the default value but do not set
   template <typename T> T withDefault(T def) const {
-    if (!is_value) {
+    if (is_section) {
       // Option not found
       output_info << _("\tOption ") << full_name << " = " << def << " (" << DEFAULT_SOURCE
                   << ")" << std::endl;
@@ -502,10 +502,10 @@ public:
     // Set the type
     attributes["type"] = bout::utils::typeName<T>();
 
-    if (!is_value) {
+    if (is_section) {
       // Option not found
       assign(def, "user_default");
-      is_value = true; // Prevent this default being replaced by setDefault()
+      is_section = false; // Prevent this default being replaced by setDefault()
       return def;
     }
 
@@ -645,14 +645,13 @@ public:
     return children;
   }
 
-  bool isValue() const {
-    return is_value;
-  }
+  /// Return true if this is a value
+  bool isValue() const { return not is_section; }
+  /// Return true if this is a section
   bool isSection(const std::string& name = "") const;
-  
+
   /// If the option value has been used anywhere
   bool valueUsed() const { return value_used; }
-
 
   /// Set a documentation string as an attribute "doc"
   /// Returns a reference to this, to allow chaining
@@ -671,12 +670,9 @@ public:
   Options *parent_instance {nullptr};
   std::string full_name; // full path name for logging only
 
-  /// An Option object can be a section and/or a value, or neither (empty)
-
-  bool is_section = false; ///< Is this Options object a section?
+  // An Option object can either be a section or a value, defaulting to a section
+  bool is_section = true; ///< Is this Options object a section?
   std::map<std::string, Options> children; ///< If a section then has children
-
-  bool is_value = false; ///< Is this Options object a value?
   mutable bool value_used = false; ///< Record whether this value is used
   
   template <typename T>
@@ -706,7 +702,7 @@ public:
     value = std::move(val);
     attributes["source"] = std::move(source);
     value_used = false;
-    is_value = true;
+    is_section = false;
   }
   
   /// Tests if two values are similar. 

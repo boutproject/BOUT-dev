@@ -29,8 +29,7 @@ void Options::cleanup() {
 Options::Options(const Options& other)
     : value(other.value), attributes(other.attributes),
       parent_instance(other.parent_instance), full_name(other.full_name),
-      is_section(other.is_section), children(other.children), is_value(other.is_value),
-      value_used(other.value_used) {
+      is_section(other.is_section), children(other.children), value_used(other.value_used) {
 
   // Ensure that this is the parent of all children,
   // otherwise will point to the original Options instance
@@ -117,7 +116,6 @@ Options& Options::operator=(const Options& other) {
   full_name = other.full_name;
   is_section = other.is_section;
   children = other.children;
-  is_value = other.is_value;
   value_used = other.value_used;
 
   // Ensure that this is the parent of all children,
@@ -129,8 +127,8 @@ Options& Options::operator=(const Options& other) {
 }
 
 bool Options::isSet() const {
-  // Check if no value
-  if (!is_value) {
+  // Only values can be set/unset
+  if (is_section) {
     return false;
   }
 
@@ -162,46 +160,46 @@ void Options::assign<>(Field2D val, std::string source) {
   value = std::move(val);
   attributes["source"] = std::move(source);
   value_used = false;
-  is_value = true;
+  is_section = false;
 }
 template <>
 void Options::assign<>(Field3D val, std::string source) {
   value = std::move(val);
   attributes["source"] = std::move(source);
   value_used = false;
-  is_value = true;
+  is_section = false;
 }
 template <>
 void Options::assign<>(FieldPerp val, std::string source) {
   value = std::move(val);
   attributes["source"] = std::move(source);
   value_used = false;
-  is_value = true;
+  is_section = false;
 }
 template <>
 void Options::assign<>(Array<BoutReal> val, std::string source) {
   value = std::move(val);
   attributes["source"] = std::move(source);
   value_used = false;
-  is_value = true;
+  is_section = false;
 }
 template <>
 void Options::assign<>(Matrix<BoutReal> val, std::string source) {
   value = std::move(val);
   attributes["source"] = std::move(source);
   value_used = false;
-  is_value = true;
+  is_section = false;
 }
 template <>
 void Options::assign<>(Tensor<BoutReal> val, std::string source) {
   value = std::move(val);
   attributes["source"] = std::move(source);
   value_used = false;
-  is_value = true;
+  is_section = false;
 }
 
 template <> std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
@@ -221,7 +219,7 @@ template <> std::string Options::as<std::string>(const std::string& UNUSED(simil
 }
 
 template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
@@ -275,7 +273,7 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
 }
 
 template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
@@ -317,7 +315,7 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) c
 }
 
 template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
   
@@ -357,7 +355,7 @@ template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
 }
 
 template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException("Option {:s} has no value", full_name);
   }
 
@@ -421,7 +419,7 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
 }
 
 template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException("Option {:s} has no value", full_name);
   }
   
@@ -472,7 +470,7 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
 
 template <>
 FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException("Option {:s} has no value", full_name);
   }
 
@@ -566,7 +564,7 @@ void Options::printUnused() const {
   bool allused = true;
   // Check if any options are unused
   for (const auto &it : children) {
-    if (it.second.is_value && !it.second.value_used) {
+    if (it.second.isValue() and not it.second.value_used) {
       allused = false;
       break;
     }
@@ -576,7 +574,7 @@ void Options::printUnused() const {
   } else {
     output_info << _("Unused options:\n");
     for (const auto &it : children) {
-      if (it.second.is_value && !it.second.value_used) {
+      if (it.second.isValue() and  not it.second.value_used) {
         output_info << "\t" << full_name << ":" << it.first << " = "
                     << bout::utils::variantToString(it.second.value);
         if (it.second.attributes.count("source"))
@@ -597,7 +595,7 @@ void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
 std::map<std::string, Options::OptionValue> Options::values() const {
   std::map<std::string, OptionValue> options;
   for (const auto& it : children) {
-    if (it.second.is_value) {
+    if (it.second.isValue()) {
       options.emplace(it.first, OptionValue { bout::utils::variantToString(it.second.value),
                                                bout::utils::variantToString(it.second.attributes.at("source")),
                                                it.second.value_used});
