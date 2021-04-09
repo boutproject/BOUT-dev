@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
   root["mesh"]["nz"] = 1;
 
   root["output"]["enabled"] = false;
-  root["restart"]["enabled"] = false;
+  root["restart_files"]["enabled"] = false;
   root["datadir"] = "data";
   root["dump_format"] = "nc";
 

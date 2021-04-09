@@ -24,6 +24,18 @@ REPLACEMENTS = [
         "type": bool,
         "values": {False: "estimate", True: "measure"},
     },
+    # 'restart' can be either a section or a value, so move all the
+    # section:values instead
+    {"old": "restart:parallel", "new": "restart_files:parallel"},
+    {"old": "restart:flush", "new": "restart_files:flush"},
+    {"old": "restart:guards", "new": "restart_files:guards"},
+    {"old": "restart:floats", "new": "restart_files:floats"},
+    {"old": "restart:openclose", "new": "restart_files:openclose"},
+    {"old": "restart:enabled", "new": "restart_files:enabled"},
+    {"old": "restart:init_missing", "new": "restart_files:init_missing"},
+    {"old": "restart:shiftOutput", "new": "restart_files:shiftOutput"},
+    {"old": "restart:shiftInput", "new": "restart_files:shiftInput"},
+    {"old": "restart:flushFrequency", "new": "restart_files:flushFrequency"},
 ]
 
 
