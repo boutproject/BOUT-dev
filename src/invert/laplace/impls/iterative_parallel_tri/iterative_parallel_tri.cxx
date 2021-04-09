@@ -78,7 +78,8 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   }
   // Cannot use multigrid on 1 core
   if (n == 1 and max_level != 0) {
-    throw BoutException("LaplaceIPT error: must have max_level=0 if using one processor. ");
+    output.write("WARNING: LaplaceIPT must have max_level=0 if using one processor. Setting max_level=0.");
+    max_level = 0;
   }
 
   static int ipt_solver_count = 1;
@@ -509,6 +510,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     // Do not skip with tolerence to minimize comms
     if (subcount < max_cycle) {
     } else if (all(converged) and current_level == 0) {
+      output.write("Converged. cycles {} iterations {} total weighted residual {} final cycle reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
       break;
     } else if (not down) {
       levels[current_level].refine(*this, fine_error);
@@ -943,11 +945,13 @@ LaplaceIPT::Level::Level(const LaplaceIPT& l, const Level& lup,
       ar(l.jy, 0, kz) = recvecin[kz];
       br(l.jy, 0, kz) = recvecin[kz + l.nmode];
       cr(l.jy, 0, kz) = recvecin[kz + 2 * l.nmode];
+      brinv(l.jy, 0, kz) = 1.0 / br(l.jy, 0, kz);
     }
     if (not l.localmesh->lastX()) {
       ar(l.jy, 3, kz) = recvecout[kz];
       br(l.jy, 3, kz) = recvecout[kz + l.nmode];
       cr(l.jy, 3, kz) = recvecout[kz + 2 * l.nmode];
+      brinv(l.jy, 3, kz) = 1.0 / br(l.jy, 3, kz);
     }
   }
 }
@@ -964,13 +968,20 @@ LaplaceIPT::Level::Level(LaplaceIPT& l)
   const int ny = l.localmesh->LocalNy;
 
   // Coefficients for the reduced iterations
-  ar.reallocate(ny, 4, l.nmode);
-  br.reallocate(ny, 4, l.nmode);
-  cr.reallocate(ny, 4, l.nmode);
-  rr.reallocate(4, l.nmode);
-  brinv.reallocate(ny, 4, l.nmode);
+///  ar.reallocate(ny, 4, l.nmode);
+///  br.reallocate(ny, 4, l.nmode);
+///  cr.reallocate(ny, 4, l.nmode);
+///  rr.reallocate(4, l.nmode);
+///  brinv.reallocate(ny, 4, l.nmode);
+///
+///  residual.reallocate(4, l.nmode);
+  ar = Tensor<dcomplex>(ny, 4, l.nmode);
+  br = Tensor<dcomplex>(ny, 4, l.nmode);
+  cr = Tensor<dcomplex>(ny, 4, l.nmode);
+  rr = Matrix<dcomplex>(4, l.nmode);
+  brinv = Tensor<dcomplex>(ny, 4, l.nmode);
 
-  residual.reallocate(4, l.nmode);
+  residual = Matrix<dcomplex>(4, l.nmode);
   residual = 0.0;
 
   // Define sizes of local coefficients
@@ -1237,7 +1248,8 @@ void LaplaceIPT::Level::calculate_total_residual(const LaplaceIPT& l,
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      errornorm[kz] = sqrt(errornorm[kz]/BoutReal(l.ncx));
+      //errornorm[kz] = sqrt(errornorm[kz]/BoutReal(l.ncx));
+      errornorm[kz] = sqrt(errornorm[kz]/BoutReal(l.localmesh->GlobalNx));
       if (errornorm[kz] < 1.0) {
         converged[kz] = true;
       }
