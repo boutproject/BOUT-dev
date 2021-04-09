@@ -383,34 +383,34 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///  for (int ix = 0; ix < ncx; ix++) {
 ///    output.write("{} ",levels[0].xloc(ix, 4).real());
 ///  }
-  for (int lev = 0; lev < max_level+1 ; lev++){
-    output.write("Level {}\n",lev);
-    if( levels[lev].included ){
-      for (int ix = 0; ix < levels[lev].nxloc; ix++) {
-        output.write("{} ",levels[lev].ar(jy,ix, 1).real());
-      }
-      output.write("\n");
-      for (int ix = 0; ix < levels[lev].nxloc; ix++) {
-        output.write("{} ",levels[lev].br(jy,ix, 1).real());
-      }
-      output.write("\n");
-      for (int ix = 0; ix < levels[lev].nxloc; ix++) {
-        output.write("{} ",levels[lev].cr(jy,ix, 1).real());
-      }
-      output.write("\n");
-    }
-  }
+///  for (int lev = 0; lev < max_level+1 ; lev++){
+///    output.write("Level {}\n",lev);
+///    if( levels[lev].included ){
+///      for (int ix = 0; ix < levels[lev].nxloc; ix++) {
+///        output.write("{} ",levels[lev].ar(jy,ix, 1).real());
+///      }
+///      output.write("\n");
+///      for (int ix = 0; ix < levels[lev].nxloc; ix++) {
+///        output.write("{} ",levels[lev].br(jy,ix, 1).real());
+///      }
+///      output.write("\n");
+///      for (int ix = 0; ix < levels[lev].nxloc; ix++) {
+///        output.write("{} ",levels[lev].cr(jy,ix, 1).real());
+///      }
+///      output.write("\n");
+///    }
+///  }
 
   bool execute_loop = not all(converged);
 
   while (execute_loop) {
 
-    if(levels[current_level].included){
-      output.write("\nxloc, cycle {}, loop {}, level {}:\n",cyclecount,count,current_level);
-      for (int ix = 0; ix < levels[current_level].nxloc; ix++) {
-        output.write("{} ",levels[current_level].xloc(ix,1).real());
-      }
-    }
+///    if(levels[current_level].included){
+///      output.write("\nxloc, cycle {}, loop {}, level {}:\n",cyclecount,count,current_level);
+///      for (int ix = 0; ix < levels[current_level].nxloc; ix++) {
+///        output.write("{} ",levels[current_level].xloc(ix,1).real());
+///      }
+///    }
 
     if( levels[current_level].ninternal > 1 ){
       //output.write("Before smoothing local loop {}\n",count);
@@ -419,12 +419,12 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       //output.write("Before smoothing nonlocal loop {}\n",count);
       levels[current_level].gauss_seidel_red_black(*this);
     }
-    if(levels[current_level].included){
-      output.write("\nAfter smoothing xloc loop {}:\n",count);
-      for (int ix = 0; ix < levels[current_level].nxloc; ix++) {
-        output.write("{} ",levels[current_level].xloc(ix, 1).real());
-      }
-    }
+///    if(levels[current_level].included){
+///      output.write("\nAfter smoothing xloc loop {}:\n",count);
+///      for (int ix = 0; ix < levels[current_level].nxloc; ix++) {
+///        output.write("{} ",levels[current_level].xloc(ix, 1).real());
+///      }
+///    }
 
     /// SCOREP_USER_REGION_DEFINE(l0rescalc);
     /// SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual
@@ -476,24 +476,24 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///        for (int kz = 0; kz < nmode; kz++) {
 ///          output.write("{} ",converged[kz]);
 ///        }
-        output.write("\nxloc, cycle {}:\n",cyclecount);
-        for (int ix = 0; ix < ncx; ix++) {
-          output.write("{} ",levels[0].xloc(ix,1).real());
-        }
+///        output.write("\nxloc, cycle {}:\n",cyclecount);
+///        for (int ix = 0; ix < ncx; ix++) {
+///          output.write("{} ",levels[0].xloc(ix,1).real());
+///        }
 ///        output.write("\nxloc imag, cycle {}:\n",cyclecount);
 ///        for (int ix = 0; ix < ncx; ix++) {
 ///          output.write("{} ",levels[0].xloc(ix,0).imag());
 ///        }
-        output.write("\nResidual, cycle {}:\n",cyclecount);
-        for (int ix = 0; ix < ncx; ix++) {
-          output.write("{} ",levels[0].residual(ix,1).real());
-        }
+///        output.write("\nResidual, cycle {}:\n",cyclecount);
+///        for (int ix = 0; ix < ncx; ix++) {
+///          output.write("{} ",levels[0].residual(ix,1).real());
+///        }
 ///        output.write("\nResidual imag, cycle {}:\n",cyclecount);
 ///        for (int ix = 0; ix < ncx; ix++) {
 ///          output.write("{} ",levels[0].residual(ix,0).imag());
 ///        }
 
-///        output.write("cycle {}\t iteration {}\t total weighted residual {}\t reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
+        output.write("cycle {}\t iteration {}\t total weighted residual {}\t reduction factor {}\n",cyclecount, count, errornorm[0], errornorm[0]/errornorm_old[0]);
 
         // Based the error reduction per V-cycle, errornorm/errornorm_old,
         // predict when the slowest converging mode converges.
