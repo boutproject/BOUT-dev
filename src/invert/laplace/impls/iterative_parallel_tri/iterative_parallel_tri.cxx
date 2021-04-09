@@ -46,7 +46,8 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in),
       rtol((*opt)["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
       atol((*opt)["atol"].doc("Absolute tolerance").withDefault(1.e-20)),
-      maxits((*opt)["maxits"].doc("Maximum number of iterations").withDefault(100)),
+      maxits((*opt)["maxits"].doc("Maximum number of iterations").withDefault(10000000)),
+      max_vcycles((*opt)["max_vcycles"].doc("Maximum number of V cycles").withDefault(100)),
       max_level((*opt)["max_level"].doc("Maximum number of coarse grids").withDefault(0)),
       max_cycle((*opt)["max_cycle"]
                     .doc("Maximum number of iterations per coarse grid")
@@ -85,6 +86,8 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   static int ipt_solver_count = 1;
   bout::globals::dump.addRepeat(
       ipt_mean_its, "ipt_solver" + std::to_string(ipt_solver_count) + "_mean_its");
+  bout::globals::dump.addRepeat(
+      ipt_mean_cycles, "ipt_solver" + std::to_string(ipt_solver_count) + "_mean_cycles");
   ++ipt_solver_count;
 
   resetSolver();
@@ -545,7 +548,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
 
     // Throw error if we are performing too many iterations
-    if (count > maxits) {
+    if ((count > maxits or cyclecount > max_vcycles) and current_level == 0) {
       // Maximum number of allowed iterations reached.
       // If the coarsest multigrid iteration matrix is diagonally-dominant,
       // then convergence is guaranteed, so maxits is set too low.
@@ -563,12 +566,12 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
                             maxits);
       }
       throw BoutException(
-          "LaplaceIPT error: Not converged within maxits={:d} iterations. The coarsest "
+          "LaplaceIPT error: Not converged within {:d} cycles, {:d} iterations. The coarsest "
           "iteration matrix is not diagonally dominant so there is no guarantee this "
           "method will converge. Consider (1) increasing maxits; or (2) increasing the "
           "number of levels (as grids become more diagonally dominant with "
           "coarsening). Using more grids may require larger NXPE.",
-          maxits);
+          max_vcycles,maxits);
     }
   }
   /// SCOREP_USER_REGION_END(whileloop);
@@ -606,6 +609,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   ++ncalls;
   ipt_mean_its =
       (ipt_mean_its * BoutReal(ncalls - 1) + BoutReal(count)) / BoutReal(ncalls);
+  ipt_mean_cycles =
+      (ipt_mean_cycles * BoutReal(ncalls - 1) + BoutReal(cyclecount)) / BoutReal(ncalls);
 
   // If the global flag is set to INVERT_KX_ZERO
   if (isGlobalFlagSet(INVERT_KX_ZERO)) {
