@@ -311,10 +311,10 @@ public:
   ///
   /// Note: Specialised versions for types stored in ValueType
   template<typename T>
-  void assign(T val, const std::string source="") {
+  void assign(T val, std::string source="") {
     std::stringstream ss;
     ss << val;
-    _set(ss.str(), source, false);
+    _set(ss.str(), std::move(source), false);
   }
   
   /// Force to a value
@@ -676,6 +676,14 @@ public:
   mutable bool value_used = false; ///< Record whether this value is used
   
   template <typename T>
+  void _set_no_check(T val, std::string source) {
+    value = std::move(val);
+    attributes["source"] = std::move(source);
+    value_used = false;
+    is_section = false;
+  }
+
+  template <typename T>
   void _set(T val, std::string source, bool force) {
     // If already set, and not time evolving then check for changing values
     // If a variable has a "time_dimension" attribute then it is assumed
@@ -699,10 +707,7 @@ public:
       }
     }
 
-    value = std::move(val);
-    attributes["source"] = std::move(source);
-    value_used = false;
-    is_section = false;
+    _set_no_check(val, std::move(source));
   }
   
   /// Tests if two values are similar. 
@@ -710,19 +715,19 @@ public:
 };
 
 // Specialised assign methods for types stored in ValueType
-template<> inline void Options::assign<>(bool val, const std::string source) { _set(val, source, false); }
-template<> inline void Options::assign<>(int val, const std::string source) { _set(val, source, false); }
-template<> inline void Options::assign<>(BoutReal val, const std::string source) { _set(val, source, false); }
-template<> inline void Options::assign<>(std::string val, const std::string source) { _set(val, source, false); }
+template<> inline void Options::assign<>(bool val, std::string source) { _set(val, std::move(source), false); }
+template<> inline void Options::assign<>(int val, std::string source) { _set(val, std::move(source), false); }
+template<> inline void Options::assign<>(BoutReal val, std::string source) { _set(val, std::move(source), false); }
+template<> inline void Options::assign<>(std::string val, std::string source) { _set(val, std::move(source), false); }
 // Note: const char* version needed to avoid conversion to bool
-template<> inline void Options::assign<>(const char *val, const std::string source) { _set(std::string(val), source, false);}
+template<> inline void Options::assign<>(const char *val, std::string source) { _set(std::string(val), source, false);}
 // Note: Field assignments don't check for previous assignment (always force)
-template<> void Options::assign<>(Field2D val, const std::string source);
-template<> void Options::assign<>(Field3D val, const std::string source);
-template<> void Options::assign<>(FieldPerp val, const std::string source);
-template<> void Options::assign<>(Array<BoutReal> val, const std::string source);
-template<> void Options::assign<>(Matrix<BoutReal> val, const std::string source);
-template<> void Options::assign<>(Tensor<BoutReal> val, const std::string source);
+template<> inline void Options::assign<>(Field2D val, std::string source) { _set_no_check(val, std::move(source)); }
+template<> inline void Options::assign<>(Field3D val, std::string source) { _set_no_check(val, std::move(source)); }
+template<> inline void Options::assign<>(FieldPerp val, std::string source) { _set_no_check(val, std::move(source)); }
+template<> inline void Options::assign<>(Array<BoutReal> val, std::string source) { _set_no_check(val, std::move(source)); }
+template<> inline void Options::assign<>(Matrix<BoutReal> val, std::string source) { _set_no_check(val, std::move(source)); }
+template<> inline void Options::assign<>(Tensor<BoutReal> val, std::string source) { _set_no_check(val, std::move(source)); }
 
 /// Specialised similar comparison methods
 template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }

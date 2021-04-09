@@ -155,49 +155,6 @@ bool Options::isSection(const std::string& name) const {
   }
 }
 
-template <>
-void Options::assign<>(Field2D val, std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_section = false;
-}
-template <>
-void Options::assign<>(Field3D val, std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_section = false;
-}
-template <>
-void Options::assign<>(FieldPerp val, std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_section = false;
-}
-template <>
-void Options::assign<>(Array<BoutReal> val, std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_section = false;
-}
-template <>
-void Options::assign<>(Matrix<BoutReal> val, std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_section = false;
-}
-template <>
-void Options::assign<>(Tensor<BoutReal> val, std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_section = false;
-}
-
 template <> std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
   if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
