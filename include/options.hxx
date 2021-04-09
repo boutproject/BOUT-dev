@@ -711,7 +711,7 @@ public:
       }
     }
 
-    _set_no_check(val, std::move(source));
+    _set_no_check(std::move(val), std::move(source));
   }
   
   /// Tests if two values are similar. 
@@ -722,16 +722,16 @@ public:
 template<> inline void Options::assign<>(bool val, std::string source) { _set(val, std::move(source), false); }
 template<> inline void Options::assign<>(int val, std::string source) { _set(val, std::move(source), false); }
 template<> inline void Options::assign<>(BoutReal val, std::string source) { _set(val, std::move(source), false); }
-template<> inline void Options::assign<>(std::string val, std::string source) { _set(val, std::move(source), false); }
+template<> inline void Options::assign<>(std::string val, std::string source) { _set(std::move(val), std::move(source), false); }
 // Note: const char* version needed to avoid conversion to bool
 template<> inline void Options::assign<>(const char *val, std::string source) { _set(std::string(val), source, false);}
 // Note: Field assignments don't check for previous assignment (always force)
-template<> inline void Options::assign<>(Field2D val, std::string source) { _set_no_check(val, std::move(source)); }
-template<> inline void Options::assign<>(Field3D val, std::string source) { _set_no_check(val, std::move(source)); }
-template<> inline void Options::assign<>(FieldPerp val, std::string source) { _set_no_check(val, std::move(source)); }
-template<> inline void Options::assign<>(Array<BoutReal> val, std::string source) { _set_no_check(val, std::move(source)); }
-template<> inline void Options::assign<>(Matrix<BoutReal> val, std::string source) { _set_no_check(val, std::move(source)); }
-template<> inline void Options::assign<>(Tensor<BoutReal> val, std::string source) { _set_no_check(val, std::move(source)); }
+template<> inline void Options::assign<>(Field2D val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
+template<> inline void Options::assign<>(Field3D val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
+template<> inline void Options::assign<>(FieldPerp val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
+template<> inline void Options::assign<>(Array<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
+template<> inline void Options::assign<>(Matrix<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
+template<> inline void Options::assign<>(Tensor<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
 
 /// Specialised similar comparison methods
 template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }
