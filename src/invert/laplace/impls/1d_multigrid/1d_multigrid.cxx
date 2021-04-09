@@ -385,27 +385,31 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///  }
   for (int lev = 0; lev < max_level+1 ; lev++){
     output.write("Level {}\n",lev);
-    for (int ix = 0; ix < levels[lev].nxloc; ix++) {
-      output.write("{} ",levels[lev].ar(jy,ix, 1).real());
+    if( levels[lev].included ){
+      for (int ix = 0; ix < levels[lev].nxloc; ix++) {
+        output.write("{} ",levels[lev].ar(jy,ix, 1).real());
+      }
+      output.write("\n");
+      for (int ix = 0; ix < levels[lev].nxloc; ix++) {
+        output.write("{} ",levels[lev].br(jy,ix, 1).real());
+      }
+      output.write("\n");
+      for (int ix = 0; ix < levels[lev].nxloc; ix++) {
+        output.write("{} ",levels[lev].cr(jy,ix, 1).real());
+      }
+      output.write("\n");
     }
-    output.write("\n");
-    for (int ix = 0; ix < levels[lev].nxloc; ix++) {
-      output.write("{} ",levels[lev].br(jy,ix, 1).real());
-    }
-    output.write("\n");
-    for (int ix = 0; ix < levels[lev].nxloc; ix++) {
-      output.write("{} ",levels[lev].cr(jy,ix, 1).real());
-    }
-    output.write("\n");
   }
 
   bool execute_loop = not all(converged);
 
   while (execute_loop) {
 
-    output.write("\nxloc, cycle {}, loop {}, level {}:\n",cyclecount,count,current_level);
-    for (int ix = 0; ix < levels[current_level].nxloc; ix++) {
-      output.write("{} ",levels[current_level].xloc(ix,1).real());
+    if(levels[current_level].included){
+      output.write("\nxloc, cycle {}, loop {}, level {}:\n",cyclecount,count,current_level);
+      for (int ix = 0; ix < levels[current_level].nxloc; ix++) {
+        output.write("{} ",levels[current_level].xloc(ix,1).real());
+      }
     }
 
     if( levels[current_level].ninternal > 1 ){
@@ -415,9 +419,11 @@ FieldPerp Laplace1DMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       //output.write("Before smoothing nonlocal loop {}\n",count);
       levels[current_level].gauss_seidel_red_black(*this);
     }
-    output.write("\nAfter smoothing xloc loop {}:\n",count);
-    for (int ix = 0; ix < levels[current_level].nxloc; ix++) {
-      output.write("{} ",levels[current_level].xloc(ix, 1).real());
+    if(levels[current_level].included){
+      output.write("\nAfter smoothing xloc loop {}:\n",count);
+      for (int ix = 0; ix < levels[current_level].nxloc; ix++) {
+        output.write("{} ",levels[current_level].xloc(ix, 1).real());
+      }
     }
 
     /// SCOREP_USER_REGION_DEFINE(l0rescalc);
@@ -832,10 +838,10 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
       MPI_Send(&xloc(l.xs, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
     }
   }
-  output.write("\nAfter black work xloc:\n");
-  for (int ix = 0; ix < nxloc; ix++) {
-    output.write("{} ",xloc(ix, 1).real());
-  }
+///  output.write("\nAfter black work xloc:\n");
+///  for (int ix = 0; ix < nxloc; ix++) {
+///    output.write("{} ",xloc(ix, 1).real());
+///  }
 
   // RED SWEEP
   //
@@ -866,10 +872,10 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
       }
     }
   }
-  output.write("\nAfter black comm xloc:\n");
-  for (int ix = 0; ix < nxloc; ix++) {
-    output.write("{} ",xloc(ix, 1).real());
-  }
+///  output.write("\nAfter black comm xloc:\n");
+///  for (int ix = 0; ix < nxloc; ix++) {
+///    output.write("{} ",xloc(ix, 1).real());
+///  }
 
   // Red processors do work and comms
   if (red and not l.localmesh->lastX()) {
@@ -894,10 +900,10 @@ void Laplace1DMG::Level::gauss_seidel_red_black(const Laplace1DMG& l) {
 ///      }
 ///    }
 ///  }
-  output.write("\nAfter lastX work xloc:\n");
-  for (int ix = 0; ix < nxloc; ix++) {
-    output.write("{} ",xloc(ix, 1).real());
-  }
+///  output.write("\nAfter lastX work xloc:\n");
+///  for (int ix = 0; ix < nxloc; ix++) {
+///    output.write("{} ",xloc(ix, 1).real());
+///  }
 
   // Red processors do work and comms
   if (red or l.localmesh->lastX()) { // red, or last proc when not on level zero
