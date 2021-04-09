@@ -677,11 +677,14 @@ public:
   
   template <typename T>
   void _set_no_check(T val, std::string source) {
+    if (not children.empty()) {
+      throw BoutException("Trying to assign value to Option '{}', but it's a non-empty section", full_name);
+    }
+
     value = std::move(val);
     attributes["source"] = std::move(source);
     value_used = false;
     is_section = false;
-    children.clear();
   }
 
   template <typename T>

@@ -50,14 +50,11 @@ TEST_F(OptionsTest, IsSectionIsValue) {
 
   EXPECT_NO_THROW(options["testkey"].as<int>());
 
-  // Now 'testkey' should be a section, not a value
-  options["testkey"]["subvalue"] = 4;
+  // Can't index a value
+  EXPECT_THROW(options["testkey"]["subvalue"], BoutException);
 
-  ASSERT_TRUE(options["testkey"].isSection());
-  ASSERT_FALSE(options["testkey"].isValue());
-  EXPECT_THROW(options["testkey"].as<int>(), BoutException);
-
-  EXPECT_NO_THROW(options["testkey"] = 2.);
+  // Can't assign a value to a non-empty section
+  EXPECT_THROW(options = 2., BoutException);
 
   options["subsection"]["testkey"] = 1.;
 

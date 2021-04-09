@@ -49,9 +49,15 @@ Options::Options(std::initializer_list<std::pair<std::string, Options>> values) 
   }
 }
 
-Options &Options::operator[](const std::string &name) {
-  // Mark this object as being a section
-  is_section = true;
+Options& Options::operator[](const std::string& name) {
+  TRACE("Options::operator[]");
+
+  if (isValue()) {
+    throw BoutException(
+        _("Trying to index Option '{0}' with '{1}', but '{0}' is a value, not a section.\n"
+          "This is likely the result of clashing input options, and you may have to rename one of them.\n"),
+        full_name, name);
+  }
 
   if (name.empty()) {
     return *this;
@@ -60,7 +66,7 @@ Options &Options::operator[](const std::string &name) {
   // If name is compound, e.g. "section:subsection", then split the name
   auto subsection_split = name.find(":");
   if (subsection_split != std::string::npos) {
-    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split+1)];
+    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split + 1)];
   }
 
   // Find and return if already exists
@@ -81,11 +87,14 @@ Options &Options::operator[](const std::string &name) {
   return pair_it.first->second;
 }
 
-const Options &Options::operator[](const std::string &name) const {
+const Options& Options::operator[](const std::string& name) const {
   TRACE("Options::operator[] const");
-  
-  if (!is_section) {
-    throw BoutException(_("Option {:s} is not a section"), full_name);
+
+  if (isValue()) {
+    throw BoutException(
+        _("Trying to index Option '{0}' with '{1}', but '{0}' is a value, not a section.\n"
+          "This is likely the result of clashing input options, and you may have to rename one of them.\n"),
+        full_name, name);
   }
 
   if (name.empty()) {
@@ -95,7 +104,7 @@ const Options &Options::operator[](const std::string &name) const {
   // If name is compound, e.g. "section:subsection", then split the name
   auto subsection_split = name.find(":");
   if (subsection_split != std::string::npos) {
-    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split+1)];
+    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split + 1)];
   }
 
   // Find and return if already exists
