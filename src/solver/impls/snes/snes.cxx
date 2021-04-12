@@ -204,7 +204,7 @@ int SNESSolver::run() {
       SNESGetIterationNumber(snes, &its);
 
       if (diagnose) {
-        output.write("SNES time: {}, timestep: {}, iterations: {}\n", simtime, timestep,
+        output.write("SNES time: %e, timestep: %e, iterations: %d\n", simtime, timestep,
                      its);
       }
 
@@ -256,7 +256,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
   } catch (BoutException& e) {
     // Simulation might fail, e.g. negative densities
     // if timestep too large
-    output.write("WARNING: BoutException thrown: {}\n", e.what());
+    output.write("WARNING: BoutException thrown: %s\n", e.what());
 
     // Tell SNES that the input was out of domain
     SNESSetFunctionDomainError(snes);
