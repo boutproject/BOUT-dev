@@ -1299,7 +1299,7 @@ we also get the mixed derivative
 .. math::
 
    \begin{aligned}
-   \frac{\partial}{\partial z\partial x} =& {\frac{\partial }{\partial z}}{\frac{\partial }{\partial \psi}} +
+   \frac{\partial^2}{\partial z\partial x} =& {\frac{\partial }{\partial z}}{\frac{\partial }{\partial \psi}} +
        {\frac{\partial I}{\partial z}}{\frac{\partial }{\partial z}} + I\frac{\partial^2}{\partial z^2} \nonumber \\ =&
        \frac{\partial^2}{\partial z\partial \psi} + I\frac{\partial^2}{\partial
        z^2}\end{aligned}
@@ -1574,9 +1574,9 @@ moved for a unit change in `u^i`. The unit vector
 `\hat{{\boldsymbol{e}}}_i = {\boldsymbol{e}}_i/h_i`.
 Definition of nabla operator:
 
-.. raw:: latex
+.. math::
 
-   \framebox{$\nabla\Phi$ of a function $\Phi$ is defined so that $d\Phi =
+   \text{$\nabla\Phi$ of a function $\Phi$ is defined so that $d\Phi =
    \nabla\Phi\cdot d{\mathbf{R}}$}
 
 From the chain rule,
@@ -2044,10 +2044,10 @@ The pure solenoidal advection is thus
        \cdot\}_{z,x} + g_{yz}\{\phi, \cdot\}_{x,y} \right)
 
 
-The brackets operator in BOUT++
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The bracket operator in BOUT++
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Notice that the `\mathtt{(phi,f)}` operators in BOUT++ returns
+Notice that the `\mathtt{bracket(phi,f)}` operators in BOUT++ returns
 `-\frac{\nabla\phi\times{\boldsymbol{b}}}{B}\cdot\nabla f`
 rather than
 `-\nabla\phi\times{\boldsymbol{b}}\cdot\nabla f`.
@@ -2071,7 +2071,7 @@ Divergence of ExB velocity
 .. math::
 
    \begin{aligned}
-   {\boldsymbol{v}}_{ExB} = \frac{{\boldsymbol{b}}\times\nabla\phi}{B}\end{aligned}
+   {\boldsymbol{v}}_{E\times B} = \frac{{\boldsymbol{b}}\times\nabla\phi}{B}\end{aligned}
 
 Using
 
@@ -2136,8 +2136,8 @@ Alternatively, equation :eq:`eq:exb1` can be expanded as
 .. math::
 
    \begin{aligned}
-   \nabla\cdot\left(n\frac{\mathbf{b}\times\nabla\phi}{B}\right) &=& \frac{1}{J}\frac{\partial}{\partial\psi}\left(Jn\frac{\partial\phi}{\partial z} \right) - \frac{1}{J}\frac{\partial}{\partial z}\left(Jn\frac{\partial\phi}{\partial\psi}\right)  \\
-                                                                 &+& \frac{1}{J}\frac{\partial}{\partial\psi}\left(Jn\frac{g^{\psi\psi}g^{yz}}{B^2}\frac{\partial\phi}{\partial y}\right) - \frac{1}{J}\frac{\partial}{\partial y}\left(Jn\frac{g^{\psi\psi}g^{yz}}{B^2}\frac{\partial\phi}{\partial\psi}\right)\end{aligned}
+   \nabla\cdot\left(n\frac{\mathbf{b}\times\nabla\phi}{B}\right) &= \frac{1}{J}\frac{\partial}{\partial\psi}\left(Jn\frac{\partial\phi}{\partial z} \right) - \frac{1}{J}\frac{\partial}{\partial z}\left(Jn\frac{\partial\phi}{\partial\psi}\right)  \\
+                                                                 & \quad + \frac{1}{J}\frac{\partial}{\partial\psi}\left(Jn\frac{g^{\psi\psi}g^{yz}}{B^2}\frac{\partial\phi}{\partial y}\right) - \frac{1}{J}\frac{\partial}{\partial y}\left(Jn\frac{g^{\psi\psi}g^{yz}}{B^2}\frac{\partial\phi}{\partial\psi}\right)\end{aligned}
 
 .. [haeseler] Haeseler, W. D.: Flux Coordinates and Magnetic Field Structure, Springer-Verlag, 1991, ISBN 3-540-52419-3
 
