@@ -355,7 +355,7 @@ iterations within a given range.
 +---------------------+-----------+----------------------------------------------------+
 
 The predictor is linear extrapolation from the last two timesteps. It seems to be
-effective, but can be disabled by setting `predictor = false`.
+effective, but can be disabled by setting ``predictor = false``.
 
 The `SNES type
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESType.html>`_

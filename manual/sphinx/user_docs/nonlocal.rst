@@ -116,7 +116,7 @@ needed a different ``Options&`` section can be given to the constructor::
 
 The options are listed in table :numref:`tab-snb-options`.
 
-.. _tab-snb-options
+.. _tab-snb-options:
 .. table:: SNB options
 
    +--------------+---------------------------------------------------+---------------+
