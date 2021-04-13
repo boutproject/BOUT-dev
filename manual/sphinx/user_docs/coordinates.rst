@@ -587,7 +587,7 @@ since `{B_{\text{tor}}}R` is a flux-surface quantity, and
 `{\boldsymbol{B}}` is axisymmetric.
 
 .. math::
-   :label: eq:curlB
+   :label: eq:curlB_fieldaligned
 
    \begin{aligned}
    \left({\nabla\times {\boldsymbol{B}} }\right)^y =& -{\sigma_y\sigma_{B\text{pol}}}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial x}}\left({B_{\text{tor}}}R\right) \\
@@ -758,7 +758,7 @@ Re-arranging, this becomes:
 Components of `\nabla\times{\boldsymbol{b}}` are [#curvature]_:
 
 .. math::
-   :label: eq:curlb
+   :label: eq:curlb_reducedmhd
 
    \begin{aligned}
    \left(\nabla\times{\boldsymbol{b}}\right)^x =& {\sigma_y}\frac{{B_{\text{pol}}}}{{h_\theta}}{\frac{\partial }{\partial y}}\left(\frac{{B_{\text{tor}}}
