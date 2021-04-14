@@ -328,11 +328,17 @@ template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
   
   } else if(bout::utils::holds_alternative<std::string>(value)) {
     auto strvalue = bout::utils::get<std::string>(value);
+
+    // case-insensitve check, so convert string to lower case
+    for (auto& c : strvalue) {
+      c = std::tolower(c);
+    }
   
-    auto c = static_cast<char>(toupper((strvalue)[0]));
-    if ((c == 'Y') || (c == 'T') || (c == '1')) {
+    if ((strvalue == "y") or (strvalue == "yes") or (strvalue == "t")
+        or (strvalue == "true") or (strvalue == "1")) {
       result = true;
-    } else if ((c == 'N') || (c == 'F') || (c == '0')) {
+    } else if ((strvalue == "n") or (strvalue == "no") or (strvalue == "f")
+        or (strvalue == "false") or (strvalue == "0")) {
       result = false;
     } else {
       throw BoutException(_("\tOption '{:s}': Boolean expected. Got '{:s}'\n"), full_name,

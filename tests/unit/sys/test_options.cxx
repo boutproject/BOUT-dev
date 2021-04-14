@@ -1132,3 +1132,60 @@ TEST_F(OptionsTest, InitialiseTree) {
   EXPECT_EQ(option["section2"]["value5"].as<int>(), 3);
 }
 
+class BoolTrueTestParametrized : public OptionsTest,
+                                public ::testing::WithParamInterface<std::string> {};
+
+TEST_P(BoolTrueTestParametrized, BoolTrueFromString) {
+  std::string testval = GetParam();
+  Options options;
+  options["bool_key"] = testval;
+  ASSERT_TRUE(options.isSet("bool_key"));
+  ASSERT_TRUE(options["bool_key"].as<bool>());
+}
+
+INSTANTIATE_TEST_CASE_P(
+    BoolTrueTests,
+    BoolTrueTestParametrized,
+    ::testing::Values(
+      "y", "Y", "yes", "Yes", "yeS", "t", "true", "T", "True", "tRuE", "1"
+    )
+);
+
+class BoolFalseTestParametrized : public OptionsTest,
+                                  public ::testing::WithParamInterface<std::string> {};
+
+TEST_P(BoolFalseTestParametrized, BoolFalseFromString) {
+  std::string testval = GetParam();
+  Options options;
+  options["bool_key"] = testval;
+  ASSERT_TRUE(options.isSet("bool_key"));
+  ASSERT_FALSE(options["bool_key"].as<bool>());
+}
+
+INSTANTIATE_TEST_CASE_P(
+    BoolFalseTests,
+    BoolFalseTestParametrized,
+    ::testing::Values(
+      "n", "N", "no", "No", "nO", "f", "false", "F", "False", "fAlSe", "0"
+    )
+);
+
+class BoolInvalidTestParametrized : public OptionsTest,
+                                  public ::testing::WithParamInterface<std::string> {};
+
+TEST_P(BoolInvalidTestParametrized, BoolInvalidFromString) {
+  std::string testval = GetParam();
+  Options options;
+  options["bool_key"] = testval;
+  ASSERT_TRUE(options.isSet("bool_key"));
+  EXPECT_THROW(options["bool_key"].as<bool>(), BoutException);
+}
+
+INSTANTIATE_TEST_CASE_P(
+    BoolInvalidTests,
+    BoolInvalidTestParametrized,
+    ::testing::Values(
+      "a", "B", "yellow", "Yogi", "test", "truelong", "Tim", "2", "not", "No bool",
+      "nOno", "falsebuttoolong", "-1"
+    )
+);
