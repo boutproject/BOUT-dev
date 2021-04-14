@@ -327,12 +327,8 @@ template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
     result = bout::utils::get<bool>(value);
   
   } else if(bout::utils::holds_alternative<std::string>(value)) {
-    auto strvalue = bout::utils::get<std::string>(value);
-
     // case-insensitve check, so convert string to lower case
-    for (auto& c : strvalue) {
-      c = std::tolower(c);
-    }
+    const auto strvalue = lowercase(bout::utils::get<std::string>(value));
   
     if ((strvalue == "y") or (strvalue == "yes") or (strvalue == "t")
         or (strvalue == "true") or (strvalue == "1")) {
