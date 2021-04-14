@@ -284,16 +284,6 @@ TEST_F(OptionsTest, GetBoolFromString) {
   options.get("bool_key2", value2, false, false);
 
   EXPECT_EQ(value2, true);
-
-  bool value3;
-  // Note we only test the first character so "not_a_bool" is treated as
-  // a bool that is false.
-  options.set("bool_key3", "A_bool_starts_with_T_or_N_or_Y_or_F_or_1_or_0", "code");
-  EXPECT_THROW(options.get("bool_key3", value3, false, false), BoutException);
-  // Surprise true
-  options.set("bool_key3", "yes_this_is_a_bool", "code2");
-  EXPECT_NO_THROW(options.get("bool_key3", value3, false, false));
-  EXPECT_EQ(value3, true);
 }
 
 TEST_F(OptionsTest, DefaultValueBool) {
