@@ -38,7 +38,7 @@ LEGACY_MODEL_INCLUDE_RE = re.compile(
     r'^#\s*include.*(<|")boutmain.hxx(>|")', re.MULTILINE
 )
 
-BOUT_SOLVE_RE = re.compile(r"bout_solve\(([^,)]+,\s*[^,)]+)\)", re.MULTILINE)
+BOUT_SOLVE_RE = re.compile(r"bout_solve\(([^,)]+,\s*[^,)]+(,\s*[^,)]+)?)\)", re.MULTILINE)
 
 SPLIT_OPERATOR_RE = re.compile(
     r"solver\s*->\s*setSplitOperator\(([a-zA-Z0-9_]+),\s*([a-zA-Z0-9_]+)\s*\)"
