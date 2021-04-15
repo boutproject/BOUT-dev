@@ -671,19 +671,6 @@ void writeSettingsFile(Options& options, const std::string& data_dir,
 } // namespace experimental
 } // namespace bout
 
-int bout_run(Solver* solver, rhsfunc physics_run) {
-
-  /// Set the RHS function
-  solver->setRHS(physics_run);
-
-  /// Add the monitor function
-  Monitor* bout_monitor = new BoutMonitor();
-  solver->addMonitor(bout_monitor, Solver::BACK);
-
-  /// Run the simulation
-  return solver->solve();
-}
-
 int BoutFinalise(bool write_settings) {
 
   // Output the settings, showing which options were used
