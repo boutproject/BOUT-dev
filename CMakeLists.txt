@@ -104,7 +104,6 @@ set(BOUT_SOURCES
   ./include/bout_types.hxx
   ./include/boutcomm.hxx
   ./include/boutexception.hxx
-  ./include/boutmain.hxx
   ./include/cyclic_reduction.hxx
   ./include/datafile.hxx
   ./include/dataformat.hxx
