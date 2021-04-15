@@ -18,30 +18,59 @@ protected:
 }};
 """
 
-PHYSICS_MODEL_RHS_SKELETON = "int {function}({arg_type}{time}) override;"
+PHYSICS_MODEL_RHS_SKELETON = "int {function}({arguments}){override};"
 
 BOUTMAIN = "\n\nBOUTMAIN({})\n"
 
 # Regular expression for a PhysicsModel
-PHYSICS_MODEL_RE = re.compile(r":\s*public\s*PhysicsModel")
+PHYSICS_MODEL_RE = re.compile(
+    r"""class\s+(?P<name>[a-zA-Z0-9_]+)\s*:   # Class name
+    \s*(?:public)?\s*PhysicsModel[\n\s]*{     # Inherits from PhysicsModel
+    """,
+    re.VERBOSE | re.MULTILINE,
+)
 
-# Regular expressions for a legacy physics model
-LEGACY_MODEL_RE_TEMPLATE = r"""int\s+{}\s*\({}
-    (\s+                           # Require spaces only if the argument is named
-    (?P<unused>UNUSED\()?          # Possible UNUSED macro
+FUNCTION_SIGNATURE_ARGUMENT_RE = r"""({arg_type}
+    \s+                            # Require spaces only if the argument is named
+    (?P<unused{arg_num}>UNUSED\()? # Possible UNUSED macro
     [a-zA-Z_0-9]*                  # Argument name
-    (?(unused)\))                  # If UNUSED macro was present, we need an extra closing bracket
+    (?(unused{arg_num})\))         # If UNUSED macro was present, we need an extra closing bracket
     )?
-    \)"""
+"""
+
+
+def create_function_signature_re(function_name, argument_types):
+    """Create a regular expression for a legacy physics model function"""
+
+    if not isinstance(argument_types, list):
+        argument_types = [argument_types]
+
+    arguments = r",\s*".join(
+        [
+            FUNCTION_SIGNATURE_ARGUMENT_RE.format(arg_type=argument, arg_num=num)
+            for num, argument in enumerate(argument_types)
+        ]
+    )
+
+    return fr"int\s+{function_name}\s*\({arguments}\)"
+
 
 LEGACY_MODEL_INCLUDE_RE = re.compile(
     r'^#\s*include.*(<|")boutmain.hxx(>|")', re.MULTILINE
 )
 
-BOUT_SOLVE_RE = re.compile(r"bout_solve\(([^,)]+,\s*[^,)]+(,\s*[^,)]+)?)\)", re.MULTILINE)
+BOUT_SOLVE_RE = re.compile(
+    r"bout_solve\(([^,)]+,\s*[^,)]+(,\s*[^,)]+)?)\)", re.MULTILINE
+)
+
+RHS_RE = re.compile(r"solver\s*->\s*setRHS\(\s*([a-zA-Z0-9_]+)\s*\)")
+
+PRECON_RE = re.compile(r"solver\s*->\s*setPrecon\(\s*([a-zA-Z0-9_]+)\s*\)")
+
+JACOBIAN_RE = re.compile(r"solver\s*->\s*setJacobian\(\s*([a-zA-Z0-9_]+)\s*\)")
 
 SPLIT_OPERATOR_RE = re.compile(
-    r"solver\s*->\s*setSplitOperator\(([a-zA-Z0-9_]+),\s*([a-zA-Z0-9_]+)\s*\)"
+    r"solver\s*->\s*setSplitOperator\(\s*([a-zA-Z0-9_]+),\s*([a-zA-Z0-9_]+)\s*\)"
 )
 
 
@@ -68,14 +97,19 @@ def find_last_include(source_lines):
     return 0
 
 
-def fix_model_operator(source, model_name, operator_name, operator_type, new_name):
+def fix_model_operator(
+    source, model_name, operator_name, operator_type, new_name, override
+):
     """Fix any definitions of the operator, and return the new declaration
 
     May modify source
     """
 
+    if not isinstance(operator_type, list):
+        operator_type = [operator_type]
+
     operator_re = re.compile(
-        LEGACY_MODEL_RE_TEMPLATE.format(operator_name, operator_type),
+        create_function_signature_re(operator_name, operator_type),
         re.VERBOSE | re.MULTILINE,
     )
 
@@ -88,26 +122,28 @@ def fix_model_operator(source, model_name, operator_name, operator_type, new_nam
 
     if len(matches) > 1:
         source = re.sub(
-            LEGACY_MODEL_RE_TEMPLATE.format(operator_name, operator_type) + r"\s*;",
+            create_function_signature_re(operator_name, operator_type) + r"\s*;",
             "",
             source,
             flags=re.VERBOSE | re.MULTILINE,
         )
 
-        arg_name = operator_re.search(source).group(1)
+        arg_names = operator_re.search(source).groups()[::2]
     else:
-        arg_name = matches[0].group(1)
+        arg_names = matches[0].groups()[::2]
 
     # Fix definition and any existing declarations
-    modified = operator_re.sub(
-        fr"int {model_name}::{new_name}({operator_type}\1)", source
-    )
+    arguments = ", ".join(arg_names)
+
+    modified = operator_re.sub(fr"int {model_name}::{new_name}({arguments})", source)
 
     # Create the declaration
     return (
         modified,
         PHYSICS_MODEL_RHS_SKELETON.format(
-            function=new_name, arg_type=operator_type, time=arg_name
+            function=new_name,
+            arguments=arguments,
+            override=" override" if override else "",
         ),
     )
 
@@ -165,6 +201,59 @@ def fix_bout_constrain(source, error_on_warning):
     return modified
 
 
+def convert_old_solver_api(source, name):
+    """Fix or remove old Solver API calls"""
+
+    source = BOUT_SOLVE_RE.sub(r"solver->add(\1)", source)
+
+    # Remove calls to Solver::setRHS
+    source = RHS_RE.sub("", source)
+
+    method_decls = []
+
+    precons = PRECON_RE.findall(source)
+    for precon in precons:
+        source, decl = fix_model_operator(
+            source,
+            name,
+            precon,
+            ["BoutReal", "BoutReal", "BoutReal"],
+            precon,
+            override=False,
+        )
+        if decl:
+            method_decls.append(decl)
+    source = PRECON_RE.sub(fr"setPrecon(&{name}::\1)", source)
+
+    jacobians = JACOBIAN_RE.findall(source)
+    for jacobian in jacobians:
+        source, decl = fix_model_operator(
+            source, name, jacobian, "BoutReal", jacobian, override=False
+        )
+        if decl:
+            method_decls.append(decl)
+    source = JACOBIAN_RE.sub(fr"setJacobian(&{name}::\1)", source)
+
+    if not method_decls:
+        return source
+
+    match = PHYSICS_MODEL_RE.search(source)
+    if match is None:
+        warnings.warn(
+            f"Could not find the '{name}' class to add"
+            "preconditioner and/or Jacobian declarations; is it defined"
+            "in another file? If so, you will need to fix it manually"
+        )
+        return source, False
+
+    last_line_of_class = source[: match.end() + 1].count("\n")
+    methods = "\n  ".join(method_decls)
+    source_lines = source.splitlines()
+    source_lines.insert(last_line_of_class, f"  {methods}")
+
+    return "\n".join(source_lines)
+
+
 def convert_legacy_model(source, name, error_on_warning):
     """Convert a legacy physics model to a PhysicsModel"""
 
@@ -173,14 +262,14 @@ def convert_legacy_model(source, name, error_on_warning):
 
     source = fix_bout_constrain(source, error_on_warning)
 
-    source = BOUT_SOLVE_RE.sub(r"solver->add(\1)", source)
-
     # Replace legacy header
     source = LEGACY_MODEL_INCLUDE_RE.sub(r"#include \1bout/physicsmodel.hxx\2", source)
 
     method_decls = []
 
-    source, decl = fix_model_operator(source, name, "physics_init", "bool", "init")
+    source, decl = fix_model_operator(
+        source, name, "physics_init", "bool", "init", override=True
+    )
     if decl:
         method_decls.append(decl)
 
@@ -191,19 +280,19 @@ def convert_legacy_model(source, name, error_on_warning):
         convective, diffusive = split_operators
         # Fix the free functions
         source, decl = fix_model_operator(
-            source, name, convective, "BoutReal", "convective"
+            source, name, convective, "BoutReal", "convective", override=True
         )
         if decl:
             method_decls.append(decl)
         source, decl = fix_model_operator(
-            source, name, diffusive, "BoutReal", "diffusive"
+            source, name, diffusive, "BoutReal", "diffusive", override=True
         )
         if decl:
             method_decls.append(decl)
     else:
         # Fix the rhs free function
         source, decl = fix_model_operator(
-            source, name, "physics_run", "BoutReal", "rhs"
+            source, name, "physics_run", "BoutReal", "rhs", override=True
         )
         if decl:
             method_decls.append(decl)
@@ -255,8 +344,10 @@ if __name__ == "__main__":
 
             This will do the bare minimum required to compile, and
             won't make global objects (like Field3Ds) members of the
-            new class, or free functions other than
-            `physics_init`/`physics_run` methods of the new class.
+            new class, or free functions (other than
+            `physics_init`/`physics_run`, preconditioners, and
+            Jacobians) methods of the new class. Comments may also be
+            left behind.
 
             By default, this will use the file name stripped of file
             extensions as the name of the new class. Use '--name=<new
@@ -273,7 +364,7 @@ if __name__ == "__main__":
         "--quiet", "-q", action="store_true", help="Don't print patches"
     )
     parser.add_argument(
-        "--patch-only", "-p", action="store_true", help="Print the patches and exist"
+        "--patch-only", "-p", action="store_true", help="Print the patches and exit"
     )
     parser.add_argument(
         "--name",
@@ -293,16 +384,15 @@ if __name__ == "__main__":
         with open(filename, "r") as f:
             contents = f.read()
 
-        if not is_legacy_model(contents):
-            if not args.quiet:
-                print("No changes to make to {}".format(filename))
-            continue
-
         original = copy.deepcopy(contents)
 
-        new_name = args.name or pathlib.Path(filename).stem.capitalize().replace(
-            " ", "_"
-        )
+        match = PHYSICS_MODEL_RE.search(original)
+        if match is not None:
+            new_name = match.group("name")
+        else:
+            new_name = args.name or pathlib.Path(filename).stem.capitalize().replace(
+                " ", "_"
+            )
 
         try:
             if re.match(r"^[0-9]+.*", new_name) and not args.force:
@@ -313,6 +403,8 @@ if __name__ == "__main__":
             modified = convert_legacy_model(
                 original, new_name, not (args.force or args.patch_only)
             )
+
+            modified = convert_old_solver_api(modified, new_name)
         except (RuntimeError, ValueError) as e:
             error_message = textwrap.indent(f"{e}", " ")
             print(
@@ -324,6 +416,11 @@ if __name__ == "__main__":
 
         if args.patch_only:
             print(patch)
+            continue
+
+        if not patch:
+            if not args.quiet:
+                print("No changes to make to {}".format(filename))
             continue
 
         if not args.quiet:
