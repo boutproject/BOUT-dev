@@ -193,7 +193,7 @@ public:
   /// Specify a preconditioner (optional)
   void setPrecon(PhysicsPrecon f) { prefunc = f; }
   /// Specify a Jacobian (optional)
-  virtual void setJacobian(Jacobian UNUSED(j)) {}
+  virtual void setJacobian(Jacobian jacobian) { user_jacobian = jacobian; }
   /// Split operator solves
   virtual void setSplitOperator(rhsfunc fC, rhsfunc fD);
 
@@ -422,6 +422,11 @@ protected:
   bool have_user_precon();
   int run_precon(BoutReal t, BoutReal gamma, BoutReal delta);
 
+  /// Do we have a user Jacobian?
+  bool hasUserJacobian();
+  /// Run the user Jacobian
+  int runJacobian(BoutReal time);
+
   // Loading data from BOUT++ to/from solver
   void load_vars(BoutReal* udata);
   void load_derivs(BoutReal* udata);
@@ -456,6 +461,8 @@ private:
   rhsfunc phys_run{nullptr};
   /// The user's preconditioner function
   PhysicsPrecon prefunc{nullptr};
+  /// The user's Jacobian function
+  Jacobian user_jacobian{nullptr};
   /// Is the physics model using separate convective (explicit) and
   /// diffusive (implicit) RHS functions?
   bool split_operator{false};
