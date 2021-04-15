@@ -425,7 +425,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
       throw BoutException("ARKSpgmr failed\n");
 #endif
 
-    if (!have_user_precon()) {
+    if (!hasPreconditioner()) {
       output.write("\tUsing BBD preconditioner\n");
 
       /// Get options
@@ -476,7 +476,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   /// Set Jacobian-vector multiplication function
 
   const auto use_jacobian = (*options)["use_jacobian"].withDefault(false);
-  if (use_jacobian and hasUserJacobian()) {
+  if (use_jacobian and hasJacobian()) {
     output.write("\tUsing user-supplied Jacobian function\n");
 
     if (ARKStepSetJacTimes(arkode_mem, nullptr, arkode_jac) != ARK_SUCCESS)
@@ -664,7 +664,7 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* uda
 
   const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
-  if (!have_user_precon()) {
+  if (!hasPreconditioner()) {
     // Identity (but should never happen)
     const int N = NV_LOCLENGTH_P(uvec);
     std::copy(rvec, rvec + N, zvec);
@@ -677,7 +677,7 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* uda
   // Load vector to be inverted into F_vars
   load_derivs(rvec);
 
-  run_precon(t, gamma, delta);
+  runPreconditioner(t, gamma, delta);
 
   // Save the solution from F_vars
   save_derivs(zvec);
@@ -693,7 +693,7 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* uda
 void ArkodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata) {
   TRACE("Running Jacobian: ArkodeSolver::jac({:e})", t);
 
-  if (not hasUserJacobian())
+  if (not hasJacobian())
     throw BoutException("No jacobian function supplied!\n");
 
   // Load state from ydate

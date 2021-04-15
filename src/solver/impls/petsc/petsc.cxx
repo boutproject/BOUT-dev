@@ -291,7 +291,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   // Matrix free Jacobian
 
-  if (use_jacobian and hasUserJacobian()) {
+  if (use_jacobian and hasJacobian()) {
     // Use a user-supplied Jacobian function
     ierr = MatCreateShell(comm, local_N, local_N, neq, neq, this, &Jmf); CHKERRQ(ierr);
     ierr = MatShellSetOperation(Jmf, MATOP_MULT, reinterpret_cast<void (*)()>(PhysicsJacobianApply)); CHKERRQ(ierr);
@@ -308,7 +308,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
 
-  if (use_precon and have_user_precon()) {
+  if (use_precon and hasPreconditioner()) {
 
 #if PETSC_VERSION_GE(3,5,0)
     ierr = SNESGetNPC(snes,&psnes);CHKERRQ(ierr);
@@ -580,7 +580,7 @@ PetscErrorCode PetscSolver::pre(PC UNUSED(pc), Vec x, Vec y) {
   VecRestoreArray(x, &data);
 
   // Call the preconditioner
-  run_precon(ts_time, 1./shift, 0.0);
+  runPreconditioner(ts_time, 1. / shift, 0.0);
 
   // Save the solution from time derivatives
   VecGetArray(y, &data);
