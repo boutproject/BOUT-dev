@@ -1434,6 +1434,26 @@ int Solver::run_precon(BoutReal t, BoutReal gamma, BoutReal delta) {
   return (*prefunc)(t, gamma, delta);
 }
 
+bool Solver::hasUserJacobian() {
+  if (model) {
+    return model->hasJacobian();
+  }
+
+  return user_jacobian != nullptr;
+}
+
+int Solver::runJacobian(BoutReal time) {
+  if (not hasUserJacobian()) {
+    return 1;
+  }
+
+  if (model) {
+    return model->runJacobian(time);
+  }
+
+  return (*user_jacobian)(time);
+}
+
 // Add source terms to time derivatives
 void Solver::add_mms_sources(BoutReal t) {
   if(!mms)

@@ -607,6 +607,37 @@ TEST_F(SolverTest, RunPreconditioner) {
   EXPECT_EQ(solver.runPreconShim(time, gamma, delta), expected);
 }
 
+TEST_F(SolverTest, HasJacobian) {
+  Jacobian jacobian = [](BoutReal time) -> int {
+    return static_cast<int>(time);
+  };
+
+  Options options;
+  FakeSolver solver{&options};
+
+  EXPECT_FALSE(solver.hasUserJacobian());
+
+  solver.setJacobian(jacobian);
+
+  EXPECT_TRUE(solver.hasUserJacobian());
+}
+
+TEST_F(SolverTest, RunJacobian) {
+  Jacobian jacobian = [](BoutReal time) -> int {
+    return static_cast<int>(time);
+  };
+
+  Options options;
+  FakeSolver solver{&options};
+
+  solver.setJacobian(jacobian);
+
+  constexpr auto time = 4.0;
+  constexpr auto expected = 4;
+
+  EXPECT_EQ(solver.runJacobian(time), expected);
+}
+
 TEST_F(SolverTest, AddMonitor) {
   Options options;
   FakeSolver solver{&options};

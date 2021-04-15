@@ -77,6 +77,8 @@ public:
   auto callTimestepMonitorsShim(BoutReal simtime, BoutReal lastdt) -> int {
     return call_timestep_monitors(simtime, lastdt);
   }
+  using Solver::hasUserJacobian;
+  using Solver::runJacobian;
 };
 
 #endif // FAKESOLVER_H
