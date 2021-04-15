@@ -39,12 +39,12 @@ private:
 
     // tell BOUT which variables to evolve
 
-    bout_solve(rho, "density");
-    bout_solve(p, "pressure");
+    solver->add(rho, "density");
+    solver->add(p, "pressure");
     v.covariant = true; // evolve covariant components
-    bout_solve(v, "v");
+    solver->add(v, "v");
     B.covariant = false; // evolve contravariant components
-    bout_solve(B, "B");
+    solver->add(B, "B");
 
     Coordinates *coord = mesh->getCoordinates();
     output.write("dx[0,0] = {:e}, dy[0,0] = {:e}, dz = {:e}\n", coord->dx(0, 0),

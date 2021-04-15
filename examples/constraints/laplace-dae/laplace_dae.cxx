@@ -10,6 +10,9 @@
 #include <boutexception.hxx>
 
 class Laplace_dae : public PhysicsModel {
+  int precon_phi(BoutReal UNUSED(t), BoutReal UNUSED(cj), BoutReal UNUSED(delta));
+  int jacobian_constrain(BoutReal UNUSED(t));
+  int jacobian(BoutReal UNUSED(t));
 protected:
   int init(bool UNUSED(restarting)) override;
   int rhs(BoutReal UNUSED(time)) override;
@@ -29,9 +32,9 @@ using bout::globals::mesh;
 std::unique_ptr<Laplacian> phiSolver{nullptr}; ///< Inverts a Laplacian to get phi from U
 
 // Preconditioner
-int precon_phi(BoutReal t, BoutReal cj, BoutReal delta);
-int jacobian(BoutReal t); // Jacobian-vector multiply
-int jacobian_constrain(BoutReal t); // Jacobian-vector multiply
+
+ // Jacobian-vector multiply
+ // Jacobian-vector multiply
 
 int Laplace_dae::init(bool UNUSED(restarting)) {
   // Give the solver two RHS functions
@@ -51,10 +54,10 @@ int Laplace_dae::init(bool UNUSED(restarting)) {
     // Add phi equation as a constraint
     solver->constraint(phi, ddt(phi), "phi");
     // Set preconditioner
-    solver->setPrecon(precon_phi);
+    setPrecon(&Laplace_dae::precon_phi);
     
     // Set Jacobian
-    solver->setJacobian(jacobian_constrain);
+    setJacobian(&Laplace_dae::jacobian_constrain);
     
     phibdry.setBoundary("phi");
   }else {
@@ -63,7 +66,7 @@ int Laplace_dae::init(bool UNUSED(restarting)) {
     phi.setBoundary("phi");
     
     // Set Jacobian
-    solver->setJacobian(jacobian);
+    setJacobian(&Laplace_dae::jacobian);
   }
   
   SAVE_REPEAT(jpar);
@@ -128,7 +131,7 @@ int Laplace_dae::rhs(BoutReal UNUSED(time)) {
  * o Return values should be in time derivatives
  *******************************************************************************/
 
-int precon_phi(BoutReal UNUSED(t), BoutReal UNUSED(cj), BoutReal UNUSED(delta)) {
+int Laplace_dae::precon_phi(BoutReal UNUSED(t), BoutReal UNUSED(cj), BoutReal UNUSED(delta)) {
   // Not preconditioning U or Apar equation
   
   ddt(phi) = phiSolver->solve(ddt(phi) - ddt(U));
@@ -149,7 +152,7 @@ int precon_phi(BoutReal UNUSED(t), BoutReal UNUSED(cj), BoutReal UNUSED(delta)) 
 
 
 /// Jacobian when solving phi in RHS
-int jacobian(BoutReal UNUSED(t)) {
+int Laplace_dae::jacobian(BoutReal UNUSED(t)) {
   Field3D Jphi = phiSolver->solve(ddt(U)); // Inversion makes this dense
   mesh->communicate(Jphi, ddt(Apar));
   Field3D Jjpar = Delp2(ddt(Apar));
@@ -163,7 +166,7 @@ int jacobian(BoutReal UNUSED(t)) {
 
 /// Jacobian when solving phi as a constraint.
 /// No inversion, only sparse Delp2 and Grad_par operators 
-int jacobian_constrain(BoutReal UNUSED(t)) {
+int Laplace_dae::jacobian_constrain(BoutReal UNUSED(t)) {
   
   mesh->communicate(ddt(Apar), ddt(phi));
   Field3D Jjpar = Delp2(ddt(Apar));

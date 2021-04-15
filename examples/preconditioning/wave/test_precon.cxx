@@ -11,14 +11,16 @@
 #include <invert_parderiv.hxx>
 
 class Test_precon : public PhysicsModel {
+  int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta));
+  int jacobian(BoutReal UNUSED(t));
 protected:
   int init(bool UNUSED(restarting)) override;
   int rhs(BoutReal UNUSED(t)) override;
 };
 
 
-int precon(BoutReal t, BoutReal cj, BoutReal delta); // Preconditioner
-int jacobian(BoutReal t); // Jacobian-vector multiply
+ // Preconditioner
+ // Jacobian-vector multiply
 
 Field3D u, v; // Evolving variables
 
@@ -29,10 +31,10 @@ int Test_precon::init(bool UNUSED(restarting)) {
   SOLVE_FOR2(u,v);
   
   // Give the solver the preconditioner function
-  solver->setPrecon(precon);
+  setPrecon(&Test_precon::precon);
   
   // Set Jacobian
-  solver->setJacobian(jacobian);
+  setJacobian(&Test_precon::jacobian);
   
   // Initialise parallel inversion class
   inv = InvertPar::create();
@@ -59,7 +61,7 @@ int Test_precon::rhs(BoutReal UNUSED(t)) {
  * o Return values should be in time derivatives
  * 
  *********************************************************/
-int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
+int Test_precon::precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
   auto* mesh = u.getMesh();
 
   // Communicate vector to be inverted
@@ -102,7 +104,7 @@ int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
  * enable by setting solver / use_jacobian = true in BOUT.inp
  *********************************************************/
 
-int jacobian(BoutReal UNUSED(t)) {
+int Test_precon::jacobian(BoutReal UNUSED(t)) {
   auto* mesh = u.getMesh();
 
   mesh->communicate(ddt(u), ddt(v));
