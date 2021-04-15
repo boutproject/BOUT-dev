@@ -83,10 +83,6 @@ public:
   PetscSolver(Options *opts = nullptr);
   ~PetscSolver();
 
-  // Can be called from physics initialisation to supply callbacks
-  void setPrecon(PhysicsPrecon f) { prefunc = f; }
-  void setJacobian(Jacobian j) override { jacfunc = j; }
-
   int init(int NOUT, BoutReal TIMESTEP) override;
 
   int run() override;
@@ -114,9 +110,6 @@ public:
   PetscLogEvent solver_event, loop_event, init_event;
 
 private:
-  PhysicsPrecon prefunc; ///< Preconditioner
-  Jacobian jacfunc;      ///< Jacobian - vector function
-
   BoutReal shift; ///< Shift (alpha) parameter from TS
   Vec state;
   BoutReal ts_time; ///< Internal PETSc timestepper time
