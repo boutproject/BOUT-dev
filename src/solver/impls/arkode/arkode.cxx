@@ -461,7 +461,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   /// Set Jacobian-vector multiplication function
 
   const auto use_jacobian = (*options)["use_jacobian"].withDefault(false);
-  if (use_jacobian && jacfunc) {
+  if (use_jacobian and hasUserJacobian()) {
     output.write("\tUsing user-supplied Jacobian function\n");
 
     if (ARKStepSetJacTimes(arkode_mem, nullptr, arkode_jac) != ARK_SUCCESS)
@@ -671,7 +671,7 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* uda
 void ArkodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata) {
   TRACE("Running Jacobian: ArkodeSolver::jac(%e)", t);
 
-  if (jacfunc == nullptr)
+  if (not hasUserJacobian())
     throw BoutException("No jacobian function supplied!\n");
 
   // Load state from ydate
@@ -681,7 +681,7 @@ void ArkodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* J
   load_derivs(vdata);
 
   // Call function
-  (*jacfunc)(t);
+  runJacobian(t);
 
   // Save Jv from vars
   save_derivs(Jvdata);
