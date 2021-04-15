@@ -64,19 +64,13 @@ public:
 
   // Shims for protected functions
   auto getMaxTimestepShim() const -> BoutReal { return max_dt; }
-  auto getLocalNShim() -> int { return getLocalN(); }
-  auto haveUserPreconShim() -> bool { return hasPreconditioner(); }
-  auto runPreconShim(BoutReal t, BoutReal gamma, BoutReal delta) -> int {
-    return runPreconditioner(t, gamma, delta);
-  }
-  auto globalIndexShim(int local_start) -> Field3D { return globalIndex(local_start); }
-  auto getMonitorsShim() const -> const std::list<Monitor*>& { return getMonitors(); }
-  auto callMonitorsShim(BoutReal simtime, int iter, int NOUT) -> int {
-    return call_monitors(simtime, iter, NOUT);
-  }
-  auto callTimestepMonitorsShim(BoutReal simtime, BoutReal lastdt) -> int {
-    return call_timestep_monitors(simtime, lastdt);
-  }
+  using Solver::getLocalN;
+  using Solver::hasPreconditioner;
+  using Solver::runPreconditioner;
+  using Solver::globalIndex;
+  using Solver::getMonitors;
+  using Solver::call_monitors;
+  using Solver::call_timestep_monitors;
   using Solver::hasJacobian;
   using Solver::runJacobian;
 };

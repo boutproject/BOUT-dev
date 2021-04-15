@@ -569,7 +569,7 @@ TEST_F(SolverTest, GetLocalN) {
       + (localmesh_nx_no_boundry * localmesh_ny_no_boundry * localmesh_nz)
       + (nx * ny * nz);
 
-  EXPECT_EQ(solver.getLocalNShim(), expected_total);
+  EXPECT_EQ(solver.getLocalN(), expected_total);
 }
 
 TEST_F(SolverTest, HavePreconditioner) {
@@ -581,11 +581,11 @@ TEST_F(SolverTest, HavePreconditioner) {
   Options options;
   FakeSolver solver{&options};
 
-  EXPECT_FALSE(solver.haveUserPreconShim());
+  EXPECT_FALSE(solver.hasPreconditioner());
 
   solver.setPrecon(preconditioner);
 
-  EXPECT_TRUE(solver.haveUserPreconShim());
+  EXPECT_TRUE(solver.hasPreconditioner());
 }
 
 TEST_F(SolverTest, RunPreconditioner) {
@@ -604,7 +604,7 @@ TEST_F(SolverTest, RunPreconditioner) {
   constexpr auto delta = 3.0;
   constexpr auto expected = time + gamma + delta;
 
-  EXPECT_EQ(solver.runPreconShim(time, gamma, delta), expected);
+  EXPECT_EQ(solver.runPreconditioner(time, gamma, delta), expected);
 }
 
 TEST_F(SolverTest, HasJacobian) {
@@ -650,7 +650,7 @@ TEST_F(SolverTest, AddMonitor) {
 
   EXPECT_THROW(monitor.setTimestepShim(20.0), BoutException);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 0, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 0, 0));
 
   EXPECT_EQ(monitor.last_called, 0);
 }
@@ -666,19 +666,19 @@ TEST_F(SolverTest, AddMonitorFront) {
   EXPECT_NO_THROW(solver.addMonitor(&monitor2, Solver::FRONT));
 
   // Everything's fine
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 0, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 0, 0));
 
   EXPECT_EQ(monitor1.last_called, 0);
   EXPECT_EQ(monitor2.last_called, 0);
 
   // One monitor signals to quit
-  EXPECT_THROW(solver.callMonitorsShim(5.0, 1, 0), BoutException);
+  EXPECT_THROW(solver.call_monitors(5.0, 1, 0), BoutException);
 
   EXPECT_EQ(monitor1.last_called, 0);
   EXPECT_EQ(monitor2.last_called, 1);
 
   // Last timestep
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 9, 10));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 9, 10));
 
   EXPECT_EQ(monitor1.last_called, 9);
   EXPECT_EQ(monitor2.last_called, 9);
@@ -697,19 +697,19 @@ TEST_F(SolverTest, AddMonitorBack) {
   EXPECT_NO_THROW(solver.addMonitor(&monitor2, Solver::BACK));
 
   // Everything's fine
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 0, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 0, 0));
 
   EXPECT_EQ(monitor1.last_called, 0);
   EXPECT_EQ(monitor2.last_called, 0);
 
   // One monitor signals to quit
-  EXPECT_THROW(solver.callMonitorsShim(5.0, 1, 0), BoutException);
+  EXPECT_THROW(solver.call_monitors(5.0, 1, 0), BoutException);
 
   EXPECT_EQ(monitor1.last_called, 1);
   EXPECT_EQ(monitor2.last_called, 0);
 
   // Last timestep
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 9, 10));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 9, 10));
 
   EXPECT_EQ(monitor1.last_called, 9);
   EXPECT_EQ(monitor2.last_called, 9);
@@ -733,7 +733,7 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_NO_THROW(solver.addMonitor(&larger_timestep));
   EXPECT_THROW(solver.addMonitor(&incompatible_timestep), BoutException);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, -1, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, -1, 0));
 
   EXPECT_EQ(default_timestep.last_called, -1);
   EXPECT_EQ(smaller_timestep.last_called, -1);
@@ -741,7 +741,7 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_EQ(larger_timestep.last_called, -1);
   EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 9, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 9, 0));
 
   EXPECT_EQ(default_timestep.last_called, 0);
   EXPECT_EQ(smaller_timestep.last_called, 0);
@@ -749,7 +749,7 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_EQ(larger_timestep.last_called, -1);
   EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 10, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 10, 0));
 
   EXPECT_EQ(default_timestep.last_called, 0);
   EXPECT_EQ(smaller_timestep.last_called, 0);
@@ -757,7 +757,7 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_EQ(larger_timestep.last_called, -1);
   EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 199, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 199, 0));
 
   EXPECT_EQ(default_timestep.last_called, 19);
   EXPECT_EQ(smaller_timestep.last_called, 19);
@@ -765,7 +765,7 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_EQ(larger_timestep.last_called, 0);
   EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 399, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 399, 0));
 
   EXPECT_EQ(default_timestep.last_called, 39);
   EXPECT_EQ(smaller_timestep.last_called, 39);
@@ -780,7 +780,7 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   FakeMonitor larger_postinit_timestep{4.};
   EXPECT_NO_THROW(solver.addMonitor(&larger_postinit_timestep, Solver::BACK));
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 399, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 399, 0));
 
   EXPECT_EQ(default_timestep.last_called, 39);
   EXPECT_EQ(smaller_timestep.last_called, 39);
@@ -802,11 +802,11 @@ TEST_F(SolverTest, RemoveMonitor) {
   solver.removeMonitor(&monitor1);
 
   std::list<Monitor*> expected{&monitor2};
-  EXPECT_EQ(solver.getMonitorsShim(), expected);
+  EXPECT_EQ(solver.getMonitors(), expected);
 
   // Removing same monitor again should be a no-op
   solver.removeMonitor(&monitor1);
-  EXPECT_EQ(solver.getMonitorsShim(), expected);
+  EXPECT_EQ(solver.getMonitors(), expected);
 }
 
 namespace {
@@ -826,9 +826,9 @@ TEST_F(SolverTest, AddTimestepMonitor) {
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor1));
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor2));
 
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., 1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., -1.), 1);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(-1., -1.), 2);
+  EXPECT_EQ(solver.call_timestep_monitors(1., 1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(1., -1.), 1);
+  EXPECT_EQ(solver.call_timestep_monitors(-1., -1.), 2);
 }
 
 TEST_F(SolverTest, RemoveTimestepMonitor) {
@@ -841,15 +841,15 @@ TEST_F(SolverTest, RemoveTimestepMonitor) {
 
   solver.removeTimestepMonitor(timestep_monitor1);
 
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., 1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., -1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(-1., -1.), 2);
+  EXPECT_EQ(solver.call_timestep_monitors(1., 1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(1., -1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(-1., -1.), 2);
 
   solver.removeTimestepMonitor(timestep_monitor1);
 
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., 1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., -1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(-1., -1.), 2);
+  EXPECT_EQ(solver.call_timestep_monitors(1., 1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(1., -1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(-1., -1.), 2);
 }
 
 TEST_F(SolverTest, DontCallTimestepMonitors) {
@@ -859,9 +859,9 @@ TEST_F(SolverTest, DontCallTimestepMonitors) {
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor1));
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor2));
 
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., 1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., -1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(-1., -1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(1., 1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(1., -1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(-1., -1.), 0);
 }
 
 TEST_F(SolverTest, BasicSolve) {
@@ -966,7 +966,7 @@ TEST_F(SolverTest, SolveFixDefaultTimestep) {
   EXPECT_TRUE(solver.init_called);
   EXPECT_TRUE(solver.run_called);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 99, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 99, 0));
 
   EXPECT_EQ(default_timestep.last_called, 0);
   EXPECT_EQ(smaller_timestep.last_called, 9);
@@ -1009,7 +1009,7 @@ TEST_F(SolverTest, SolveFixDefaultTimestepSmaller) {
   EXPECT_TRUE(solver.init_called);
   EXPECT_TRUE(solver.run_called);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 99, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 99, 0));
 
   EXPECT_EQ(default_timestep.last_called, 99);
   EXPECT_EQ(smaller_timestep.last_called, 9);
@@ -1032,7 +1032,7 @@ TEST_F(SolverTest, SolveFixDefaultTimestepLarger) {
   EXPECT_TRUE(solver.init_called);
   EXPECT_TRUE(solver.run_called);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 99, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 99, 0));
 
   EXPECT_EQ(default_timestep.last_called, 9);
   EXPECT_EQ(smaller_timestep.last_called, 99);
