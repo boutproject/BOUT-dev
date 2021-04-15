@@ -618,11 +618,11 @@ TEST_F(SolverTest, HasJacobian) {
   Options options;
   FakeSolver solver{&options};
 
-  EXPECT_FALSE(solver.hasUserJacobian());
+  EXPECT_FALSE(solver.hasJacobian());
 
   solver.setJacobian(jacobian);
 
-  EXPECT_TRUE(solver.hasUserJacobian());
+  EXPECT_TRUE(solver.hasJacobian());
 }
 
 TEST_F(SolverTest, RunJacobian) {
