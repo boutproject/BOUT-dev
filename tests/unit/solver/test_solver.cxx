@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "boutexception.hxx"
 #include "field2d.hxx"
@@ -36,6 +37,21 @@ public:
 
 private:
   BoutReal trigger_time{0.0};
+};
+
+class MockPhysicsModel : public PhysicsModel {
+public:
+  MockPhysicsModel() : PhysicsModel() {}
+  MOCK_METHOD(int, init, (bool restarting), (override));
+  // Mock postInit even though it's not pure virtual because it does
+  // stuff with files
+  MOCK_METHOD(int, postInit, (bool restarting), (override));
+  MOCK_METHOD(int, rhs, (BoutReal time), (override));
+  MOCK_METHOD(int, convective, (BoutReal t), (override));
+  MOCK_METHOD(int, diffusive, (BoutReal t), (override));
+  MOCK_METHOD(int, diffusive, (BoutReal t, bool linear), (override));
+  MOCK_METHOD(int, outputMonitor, (BoutReal simtime, int iter, int NOUT), (override));
+  MOCK_METHOD(int, timestepMonitor, (BoutReal simtime, BoutReal dt), (override));
 };
 
 } // namespace
@@ -144,6 +160,33 @@ TEST_F(SolverTest, BadCreateFromNameAndOptions) {
 
   Options options;
   EXPECT_THROW(Solver::create("bad_solver", &options), BoutException);
+}
+
+TEST_F(SolverTest, SetModel) {
+  Options options;
+  FakeSolver solver{&options};
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+
+  solver.setModel(&model);
+
+  // Can't set a second model
+  EXPECT_THROW(solver.setModel(&model), BoutException);
+}
+
+TEST_F(SolverTest, SetModelAfterInit) {
+  Options options;
+  FakeSolver solver{&options};
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(0);
+  EXPECT_CALL(model, postInit).Times(0);
+
+  solver.init(0, 0);
+
+  EXPECT_THROW(solver.setModel(&model), BoutException);
 }
 
 TEST_F(SolverTest, AddField2D) {
@@ -826,6 +869,12 @@ TEST_F(SolverTest, AddTimestepMonitor) {
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor1));
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor2));
 
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+  solver.setModel(&model);
+  EXPECT_CALL(model, timestepMonitor).Times(1);
+
   EXPECT_EQ(solver.call_timestep_monitors(1., 1.), 0);
   EXPECT_EQ(solver.call_timestep_monitors(1., -1.), 1);
   EXPECT_EQ(solver.call_timestep_monitors(-1., -1.), 2);
@@ -841,11 +890,19 @@ TEST_F(SolverTest, RemoveTimestepMonitor) {
 
   solver.removeTimestepMonitor(timestep_monitor1);
 
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+  solver.setModel(&model);
+  EXPECT_CALL(model, timestepMonitor).Times(2);
+
   EXPECT_EQ(solver.call_timestep_monitors(1., 1.), 0);
   EXPECT_EQ(solver.call_timestep_monitors(1., -1.), 0);
   EXPECT_EQ(solver.call_timestep_monitors(-1., -1.), 2);
 
   solver.removeTimestepMonitor(timestep_monitor1);
+
+  EXPECT_CALL(model, timestepMonitor).Times(2);
 
   EXPECT_EQ(solver.call_timestep_monitors(1., 1.), 0);
   EXPECT_EQ(solver.call_timestep_monitors(1., -1.), 0);
@@ -858,6 +915,12 @@ TEST_F(SolverTest, DontCallTimestepMonitors) {
 
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor1));
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor2));
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+  solver.setModel(&model);
+  EXPECT_CALL(model, timestepMonitor).Times(0);
 
   EXPECT_EQ(solver.call_timestep_monitors(1., 1.), 0);
   EXPECT_EQ(solver.call_timestep_monitors(1., -1.), 0);
