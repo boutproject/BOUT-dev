@@ -216,18 +216,6 @@ public:
   virtual void setModel(PhysicsModel* model);
 
   /////////////////////////////////////////////
-  // Old API
-
-  /// Set the RHS function
-  virtual void setRHS(rhsfunc f) { phys_run = f; }
-  /// Specify a preconditioner (optional)
-  void setPrecon(PhysicsPrecon f) { prefunc = f; }
-  /// Specify a Jacobian (optional)
-  virtual void setJacobian(Jacobian jacobian) { user_jacobian = jacobian; }
-  /// Split operator solves
-  virtual void setSplitOperator(rhsfunc fC, rhsfunc fD);
-
-  /////////////////////////////////////////////
   // Monitors
 
   // Alternative names so that Solver::BACK and Solver::FRONT can be used as names for
@@ -323,7 +311,7 @@ public:
   int resetRHSCounter_i();
 
   /// Test if this solver supports split operators (e.g. implicit/explicit)
-  bool splitOperator() { return split_operator; }
+  bool splitOperator();
 
   bool canReset{false};
 
@@ -476,12 +464,8 @@ protected:
 
   /// Do we have a user preconditioner?
   bool hasPreconditioner();
-  DEPRECATED(bool have_user_precon)() { return hasPreconditioner(); }
   /// Run the user preconditioner
   int runPreconditioner(BoutReal time, BoutReal gamma, BoutReal delta);
-  DEPRECATED(int run_precon)(BoutReal time, BoutReal gamma, BoutReal delta) {
-    return runPreconditioner(time, gamma, delta);
-  }
 
   /// Do we have a user Jacobian?
   bool hasJacobian();
@@ -530,20 +514,6 @@ private:
   BoutReal internal_timestep{-1};
   /// Physics model being evolved
   PhysicsModel* model{nullptr};
-
-  /// The user's RHS function
-  rhsfunc phys_run{nullptr};
-  /// The user's preconditioner function
-  PhysicsPrecon prefunc{nullptr};
-  /// The user's Jacobian function
-  Jacobian user_jacobian{nullptr};
-  /// Is the physics model using separate convective (explicit) and
-  /// diffusive (implicit) RHS functions?
-  bool split_operator{false};
-  /// Convective part (if split operator)
-  rhsfunc phys_conv{nullptr};
-  /// Diffusive part (if split operator)
-  rhsfunc phys_diff{nullptr};
 
   /// Should non-split physics models be treated as diffusive?
   bool is_nonsplit_model_diffusive{true};

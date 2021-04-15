@@ -1,5 +1,5 @@
-#include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include "boutexception.hxx"
 #include "field2d.hxx"
@@ -52,6 +52,19 @@ public:
   MOCK_METHOD(int, diffusive, (BoutReal t, bool linear), (override));
   MOCK_METHOD(int, outputMonitor, (BoutReal simtime, int iter, int NOUT), (override));
   MOCK_METHOD(int, timestepMonitor, (BoutReal simtime, BoutReal dt), (override));
+
+  int preconditioner(BoutReal time, BoutReal gamma, BoutReal delta) {
+    return static_cast<int>(time + gamma + delta);
+  }
+
+  int jacobian(BoutReal time) {
+    return static_cast<int>(time);
+  }
+
+  // Expose some protected methods to aid testing
+  using PhysicsModel::setPrecon;
+  using PhysicsModel::setJacobian;
+  using PhysicsModel::setSplitOperator;
 };
 
 } // namespace
@@ -531,10 +544,15 @@ TEST_F(SolverTest, SplitOperator) {
   Options options;
   FakeSolver solver{&options};
 
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+
+  solver.setModel(&model);
+
   EXPECT_FALSE(solver.splitOperator());
 
-  rhsfunc fake_rhs = [](BoutReal) -> int { return 0; };
-  solver.setSplitOperator(fake_rhs, fake_rhs);
+  model.setSplitOperator();
 
   EXPECT_TRUE(solver.splitOperator());
 }
@@ -616,31 +634,32 @@ TEST_F(SolverTest, GetLocalN) {
 }
 
 TEST_F(SolverTest, HavePreconditioner) {
-  PhysicsPrecon preconditioner = [](BoutReal time, BoutReal gamma,
-                                    BoutReal delta) -> int {
-    return static_cast<int>(time + gamma + delta);
-  };
-
   Options options;
   FakeSolver solver{&options};
 
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+
+  solver.setModel(&model);
+
   EXPECT_FALSE(solver.hasPreconditioner());
 
-  solver.setPrecon(preconditioner);
+  model.setPrecon(&MockPhysicsModel::preconditioner);
 
   EXPECT_TRUE(solver.hasPreconditioner());
 }
 
 TEST_F(SolverTest, RunPreconditioner) {
-  PhysicsPrecon preconditioner = [](BoutReal time, BoutReal gamma,
-                                    BoutReal delta) -> int {
-    return static_cast<int>(time + gamma + delta);
-  };
-
   Options options;
   FakeSolver solver{&options};
 
-  solver.setPrecon(preconditioner);
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+
+  solver.setModel(&model);
+  model.setPrecon(&MockPhysicsModel::preconditioner);
 
   constexpr auto time = 1.0;
   constexpr auto gamma = 2.0;
@@ -651,29 +670,31 @@ TEST_F(SolverTest, RunPreconditioner) {
 }
 
 TEST_F(SolverTest, HasJacobian) {
-  Jacobian jacobian = [](BoutReal time) -> int {
-    return static_cast<int>(time);
-  };
-
   Options options;
   FakeSolver solver{&options};
 
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+  solver.setModel(&model);
+
   EXPECT_FALSE(solver.hasJacobian());
 
-  solver.setJacobian(jacobian);
+  model.setJacobian(&MockPhysicsModel::jacobian);
 
   EXPECT_TRUE(solver.hasJacobian());
 }
 
 TEST_F(SolverTest, RunJacobian) {
-  Jacobian jacobian = [](BoutReal time) -> int {
-    return static_cast<int>(time);
-  };
-
   Options options;
   FakeSolver solver{&options};
 
-  solver.setJacobian(jacobian);
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+
+  solver.setModel(&model);
+  model.setJacobian(&MockPhysicsModel::jacobian);
 
   constexpr auto time = 4.0;
   constexpr auto expected = 4;
