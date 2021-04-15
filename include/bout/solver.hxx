@@ -419,11 +419,16 @@ protected:
   int call_timestep_monitors(BoutReal simtime, BoutReal lastdt);
 
   /// Do we have a user preconditioner?
-  bool have_user_precon();
-  int run_precon(BoutReal t, BoutReal gamma, BoutReal delta);
+  bool hasPreconditioner();
+  DEPRECATED(bool have_user_precon)() { return hasPreconditioner(); }
+  /// Run the user preconditioner
+  int runPreconditioner(BoutReal time, BoutReal gamma, BoutReal delta);
+  DEPRECATED(int run_precon)(BoutReal time, BoutReal gamma, BoutReal delta) {
+    return runPreconditioner(time, gamma, delta);
+  }
 
   /// Do we have a user Jacobian?
-  bool hasUserJacobian();
+  bool hasJacobian();
   /// Run the user Jacobian
   int runJacobian(BoutReal time);
 
