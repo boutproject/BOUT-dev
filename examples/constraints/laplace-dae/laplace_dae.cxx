@@ -35,8 +35,6 @@ protected:
   int rhs(BoutReal UNUSED(time)) override;
 };
 
-using bout::globals::mesh;
-
 int Laplace_dae::init(bool UNUSED(restarting)) {
   // Give the solver two RHS functions
 
