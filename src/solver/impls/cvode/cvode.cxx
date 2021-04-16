@@ -577,8 +577,9 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
 void CvodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata) {
   TRACE("Running Jacobian: CvodeSolver::jac({})", t);
 
-  if (not hasJacobian())
+  if (not hasJacobian()) {
     throw BoutException("No jacobian function supplied!\n");
+  }
 
   // Load state from ydate
   load_vars(ydata);

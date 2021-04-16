@@ -693,8 +693,9 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* uda
 void ArkodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata) {
   TRACE("Running Jacobian: ArkodeSolver::jac({:e})", t);
 
-  if (not hasJacobian())
+  if (not hasJacobian()) {
     throw BoutException("No jacobian function supplied!\n");
+  }
 
   // Load state from ydate
   load_vars(ydata);
