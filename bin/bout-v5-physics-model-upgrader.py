@@ -103,16 +103,34 @@ def fix_model_operator(
     """Fix any definitions of the operator, and return the new declaration
 
     May modify source
+
+    Parameters
+    ----------
+    source: str
+        Source code to fix
+    model_name: str
+        Name of the PhysicsModel class to create or add methods to
+    operator_name: str
+        Name of the free function to fix
+    operator_type: str, [str]
+        Function argument types
+    new_name: str
+        Name of the PhysicsModel method
+    override: bool
+        Is `new_name` overriding a virtual?
     """
 
+    # Make sure we have a list of types
     if not isinstance(operator_type, list):
         operator_type = [operator_type]
 
+    # Get a regex for the function signature
     operator_re = re.compile(
         create_function_signature_re(operator_name, operator_type),
         re.VERBOSE | re.MULTILINE,
     )
 
+    # Find any declarations of the free function
     matches = list(operator_re.finditer(source))
     if matches == []:
         warnings.warn(
@@ -120,6 +138,8 @@ def fix_model_operator(
         )
         return source, False
 
+    # If we found more than one, remove the first one as it's probably
+    # a declaration and not a definition
     if len(matches) > 1:
         source = re.sub(
             create_function_signature_re(operator_name, operator_type) + r"\s*;",
@@ -128,6 +148,8 @@ def fix_model_operator(
             flags=re.VERBOSE | re.MULTILINE,
         )
 
+        # Get the names of the function arguments. Every other group
+        # from the regex, as the other groups match the `UNUSED` macro
         arg_names = operator_re.search(source).groups()[::2]
     else:
         arg_names = matches[0].groups()[::2]
@@ -135,6 +157,7 @@ def fix_model_operator(
     # Fix definition and any existing declarations
     arguments = ", ".join(arg_names)
 
+    # Modify the definition: it's out-of-line so we need the qualified name
     modified = operator_re.sub(fr"int {model_name}::{new_name}({arguments})", source)
 
     # Create the declaration
@@ -157,6 +180,9 @@ def fix_bout_constrain(source, error_on_warning):
     if "bout_constrain" not in source:
         return source
 
+    # The bout_constrain free function returns False if the Solver
+    # doesn't have constraints, but the Solver::constraint method does
+    # the checking itself, so we don't need to repeat it
     modified = re.sub(
         r"""if\s*\(\s*(?:!|not)\s*                   # in a conditional, checking for false
             bout_constrain\(([^;]+,[^;]+,[^;]+)\)        # actual function call
@@ -171,6 +197,7 @@ def fix_bout_constrain(source, error_on_warning):
         flags=re.VERBOSE | re.MULTILINE,
     )
 
+    # The above might not fix everything, so best check if there are any uses left
     remaining_matches = list(re.finditer("bout_constrain", modified))
     if remaining_matches == []:
         # We fixed everything!
@@ -202,15 +229,28 @@ def fix_bout_constrain(source, error_on_warning):
 
 
 def convert_old_solver_api(source, name):
-    """Fix or remove old Solver API calls"""
+    """Fix or remove old Solver API calls
 
+    Parameters
+    ----------
+    source: str
+        The source code to modify
+    name: str
+        The PhysicsModel class name
+    """
+
+    # Fixing `bout_solve` is a straight replacement, easy
     source = BOUT_SOLVE_RE.sub(r"solver->add(\1)", source)
 
-    # Remove calls to Solver::setRHS
+    # Completely remove calls to Solver::setRHS
     source = RHS_RE.sub("", source)
 
+    # List of old free functions that now need declarations inside the
+    # class definition
     method_decls = []
 
+    # Fix uses of solver->setPrecon
+    # Get the name of any free functions passed as arguments to setPrecon
     precons = PRECON_RE.findall(source)
     for precon in precons:
         source, decl = fix_model_operator(
@@ -223,8 +263,10 @@ def convert_old_solver_api(source, name):
         )
         if decl:
             method_decls.append(decl)
+    # Almost a straight replacement, but it's now a member-function pointer
     source = PRECON_RE.sub(fr"setPrecon(&{name}::\1)", source)
 
+    # Fix uses of solver->setJacobian, basically the same as for setPrecon
     jacobians = JACOBIAN_RE.findall(source)
     for jacobian in jacobians:
         source, decl = fix_model_operator(
@@ -234,11 +276,14 @@ def convert_old_solver_api(source, name):
             method_decls.append(decl)
     source = JACOBIAN_RE.sub(fr"setJacobian(&{name}::\1)", source)
 
+    # If we didn't find any free functions that need to be made into
+    # methods, we're done
     if not method_decls:
         return source
 
-    match = PHYSICS_MODEL_RE.search(source)
-    if match is None:
+    # We need to find the class defintion
+    class_def = PHYSICS_MODEL_RE.search(source)
+    if class_def is None:
         warnings.warn(
             f"Could not find the '{name}' class to add"
             "preconditioner and/or Jacobian declarations; is it defined"
@@ -246,10 +291,16 @@ def convert_old_solver_api(source, name):
         )
         return source, False
 
-    last_line_of_class = source[: match.end() + 1].count("\n")
+    # The easiest place to stick the method declaration is on the line
+    # immediately following the open brace of the class def, and the
+    # easiest way to insert it is to split the source into a list,
+    # insert in the list, then join the list back into a string.
+    # The regex from above finds the offset in the source which we
+    # need to turn into a line number
+    first_line_of_class = source[: class_def.end() + 1].count("\n")
     methods = "\n  ".join(method_decls)
     source_lines = source.splitlines()
-    source_lines.insert(last_line_of_class, f"  {methods}")
+    source_lines.insert(first_line_of_class, f"  {methods}")
 
     return "\n".join(source_lines)
 
