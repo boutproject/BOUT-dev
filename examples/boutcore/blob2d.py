@@ -9,28 +9,14 @@
 #
 ###################################################################
 
-# from boutcore import *
-# init("-d mini -q -q -q")
-
-# class MyModel(PhysicsModel):
-#          def init(self,restart):
-#                      self.n=create3D("dens:function")
-#                              self.solve_for(dens=self.n)
-#                                  def rhs(self,time):
-#                                              self.n.ddt(DDX(self.n))
-
-#                                              model=MyModel()
-#                                              model.solve()
-
 import boutcore as bc
 from numpy import sqrt
 from boutcore import bracket, DDZ, Delp2, PhysicsModel
 import sys
-bc.init("-d blob".split(" ") + sys.argv[1:])
+import os
 
 
 class Blob2D(PhysicsModel):
-
     def init(self, restart):
         self.mesh = bc.Mesh.getGlobal()
         self.n = bc.Field3D.fromMesh(self.mesh)
@@ -51,7 +37,7 @@ class Blob2D(PhysicsModel):
         self.D_n = options.get("D_n", 0)
 
         # Radius of curvature [m]
-        self.R_c = options.get("R_c",   1.5)
+        self.R_c = options.get("R_c", 1.5)
         # Parallel connection length [m]
         self.L_par = options.get("L_par", 10)
 
@@ -67,16 +53,20 @@ class Blob2D(PhysicsModel):
         # Sheath closure
         self.sheath = options.get("sheath", True)
 
-        Omega_i = e * B0 / m_i           # Cyclotron Frequency
-        c_s = sqrt(e * Te0 / m_i)      # Bohm sound speed
-        self.rho_s = c_s / Omega_i          # Bohm gyro-radius
+        Omega_i = e * B0 / m_i  # Cyclotron Frequency
+        c_s = sqrt(e * Te0 / m_i)  # Bohm sound speed
+        self.rho_s = c_s / Omega_i  # Bohm gyro-radius
 
-        print("\n\n\t----------Parameters: ------------ \n\tOmega_i = %e /s,\n\t"
-              "c_s = %e m/s,\n\trho_s = %e m\n" % (Omega_i, c_s, self.rho_s))
+        print(
+            "\n\n\t----------Parameters: ------------ \n\tOmega_i = %e /s,\n\t"
+            "c_s = %e m/s,\n\trho_s = %e m\n" % (Omega_i, c_s, self.rho_s)
+        )
 
         # Calculate delta_*, blob size scaling
-        print("\tdelta_* = rho_s * (dn/n) * %e "
-              % (pow(self.L_par * self.L_par / (self.R_c * self.rho_s), 1. / 5)))
+        print(
+            "\tdelta_* = rho_s * (dn/n) * %e "
+            % (pow(self.L_par * self.L_par / (self.R_c * self.rho_s), 1.0 / 5))
+        )
 
         # /************ Create a solver for potential ********/
 
@@ -136,8 +126,9 @@ class Blob2D(PhysicsModel):
 
         if self.sheath:
             # Sheath closure
-            ddt_n += self.n * self.phi * \
-                (self.rho_s / self.L_par)  # - (n - 1)*(rho_s/L_par)
+            ddt_n += (
+                self.n * self.phi * (self.rho_s / self.L_par)
+            )  # - (n - 1)*(rho_s/L_par)
 
         # Vorticity evolution
         # /
@@ -154,7 +145,145 @@ class Blob2D(PhysicsModel):
         self.omega.ddt(ddt_omega)
 
 
-# Create an instance
-blob2d = Blob2D()
-# Start the simulation
-blob2d.solve()
+# Ensure the blob folder exists
+def ensure_blob():
+    if not os.path.isdir("blob"):
+        print("Setting up folder blob for simulation ...")
+        os.mkdir("blob")
+    if not os.path.exists("blob/BOUT.inp"):
+        with open("blob/BOUT.inp", "w") as f:
+            f.write(
+                """\
+# settings file for BOUT++
+#
+# Blob simulation in a 2D slab
+#
+# This case has blob size
+#
+# delta = 0.3*256 ~ 10 * delta_*
+
+
+# settings used by the core code
+
+NOUT = 50      # number of time-steps
+TIMESTEP = 50  # time between outputs [1/wci]
+
+
+MXG = 2      # Number of X guard cells
+MYG = 0      # No y derivatives, so no guard cells needed in y
+
+[mesh]
+
+nx = 260    # Note: 4 guard cells
+ny = 1
+nz = 256
+
+dx = 0.3      # Grid spacing [rho_s]
+dz = 0.3
+
+##################################################
+# derivative methods
+
+[mesh:ddx]
+
+first = C2
+second = C2
+upwind = W3
+
+[mesh:ddy]
+
+first = C2
+second = C2
+upwind = W3
+
+[mesh:ddz]
+
+first = FFT
+second = FFT
+upwind = W3
+
+###################################################
+# Time-integration solver
+
+[solver]
+
+ATOL = 1.0e-10  # absolute tolerance
+RTOL = 1.0e-5   # relative tolerance
+mxstep = 10000  # Maximum internal steps per output
+
+###################################################
+# Electrostatic potential solver
+# These options are used if boussinesq = false
+
+[phiSolver]
+type = petsc  # Needed if Boussinesq = false
+pctype = user  # Preconditioning type
+
+fourth_order = true  # 4th order or 2nd order
+
+flags = 0  # inversion flags for phi
+             # 0  = Zero value
+             # 10 = Zero gradient AC inner & outer
+             # 15 = Zero gradient AC and DC
+             # 768 = Zero laplace inner & outer
+
+[phiSolver:precon]  # Preconditioner (if pctype=user)
+filter     = 0.     # Must not filter solution
+flags      = 49152  # set_rhs i.e. identity matrix in boundaries
+
+###################################################
+# Electrostatic potential solver (Boussinesq)
+
+[phiBoussinesq]
+# By default type is tri (serial) or spt (parallel)
+flags = 0
+
+##################################################
+# general settings for the model
+
+[model]
+
+Te0 = 5    # Electron Temperature (eV)
+
+n0 = 2e18  # Background plasma density (m^-3)
+
+compressible = false  # Compressibility?
+
+boussinesq = true  # Boussinesq approximation (no perturbed n in vorticity)
+
+D_vort = 1e-6  # Viscosity
+D_n = 1e-6    # Diffusion
+
+R_c = 1.5  # Radius of curvature (m)
+
+# settings for individual variables
+# The section "All" defines default settings for all variables
+# These can be overridden for individual variables in
+# a section of that name.
+
+[All]
+scale = 0.0 # default size of initial perturbations
+
+bndry_all = neumann # Zero-gradient on all boundaries
+
+[n]  # Density
+scale = 1.0 # size of perturbation
+
+height = 0.5
+width = 0.05
+
+function = 1 + height * exp(-((x-0.25)/width)^2 - ((z/(2*pi) - 0.5)/width)^2)
+"""
+            )
+
+
+if __name__ == "__main__":
+    if "--create" in sys.argv:
+        sys.argv.remove("--create")
+        ensure_blob()
+    bc.init("-d blob".split(" ") + sys.argv[1:])
+
+    # Create an instance
+    blob2d = Blob2D()
+    # Start the simulation
+    blob2d.solve()
