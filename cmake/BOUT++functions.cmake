@@ -84,8 +84,8 @@ function(bout_add_example EXAMPLENAME)
 endfunction()
 
 
-# Add a new integrated test. By default, the executable is named like
-# the first source, stripped of its file extension.
+# Add a new integrated or MMS test. By default, the executable is
+# named like the first source, stripped of its file extension.
 #
 # Required arguments:
 #
@@ -107,7 +107,7 @@ endfunction()
 # - EXECUTABLE_NAME: name of the executable, if different from the
 #   first source name
 
-function(bout_add_integrated_test TESTNAME)
+function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
   set(oneValueArgs EXECUTABLE_NAME)
   set(multiValueArgs SOURCES EXTRA_FILES REQUIRES TESTARGS)
@@ -167,7 +167,17 @@ function(bout_add_integrated_test TESTNAME)
   set_target_properties(${TESTNAME} PROPERTIES FOLDER tests/integrated)
 
   # Add the test to the build-check-integrated-tests target
-  add_dependencies(build-check-integrated-tests ${TESTNAME})
+  add_dependencies(${BUILD_CHECK_TARGET} ${TESTNAME})
+endfunction()
+
+# Add a new integrated test. See `bout_add_integrated_or_mms_test` for arguments
+function(bout_add_integrated_test TESTNAME)
+  bout_add_integrated_or_mms_test(build-check-integrated-tests ${TESTNAME} ${ARGV})
+endfunction()
+
+# Add a new MMS test. See `bout_add_integrated_or_mms_test` for arguments
+function(bout_add_mms_test TESTNAME)
+  bout_add_integrated_or_mms_test(build-check-mms-tests ${TESTNAME} ${ARGV})
 endfunction()
 
 # Add an alias for an imported target

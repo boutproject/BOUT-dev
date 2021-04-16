@@ -672,13 +672,15 @@ if(PACKAGE_TESTS)
   # Tests need to add themselves as dependencies to these targets
   add_custom_target(build-check-unit-tests)
   add_custom_target(build-check-integrated-tests)
+  add_custom_target(build-check-mms-tests)
 
   # Build all the tests
   add_custom_target(build-check)
-  add_dependencies(build-check build-check-unit-tests build-check-integrated-tests)
+  add_dependencies(build-check build-check-unit-tests build-check-integrated-tests build-check-mms-tests)
 
   add_subdirectory(tests/unit EXCLUDE_FROM_ALL)
   add_subdirectory(tests/integrated EXCLUDE_FROM_ALL)
+  add_subdirectory(tests/MMS EXCLUDE_FROM_ALL)
 
   # Targets for running the tests
   add_custom_target(check-unit-tests
@@ -689,9 +691,13 @@ if(PACKAGE_TESTS)
     COMMAND ctest -R "test-" --output-on-failure)
   add_dependencies(check-integrated-tests build-check-integrated-tests)
 
+  add_custom_target(check-mms-tests
+    COMMAND ctest -R "MMS-" --output-on-failure)
+  add_dependencies(check-mms-tests build-check-mms-tests)
+
   # Run all the tests
   add_custom_target(check)
-  add_dependencies(check check-unit-tests check-integrated-tests)
+  add_dependencies(check check-unit-tests check-integrated-tests check-mms-tests)
 endif()
 
 option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
