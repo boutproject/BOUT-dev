@@ -56,7 +56,7 @@ def run_mms(options,exit=True):
             shell("rm -f data/BOUT.dmp.*.nc")
 
             # Command to run
-            cmd = "./advection "+args
+            cmd = "../advection " + args
             # Launch using MPI
             start_time_ = time.time()
             
