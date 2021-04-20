@@ -51,8 +51,7 @@ public:
 
   ReturnType create(Mesh* mesh = nullptr, Options* options = nullptr,
                     CELL_LOC loc = CELL_CENTRE) {
-    options = optionsOrDefaultSection(options);
-    return Factory::create(getType(options), mesh, options, loc);
+    return Factory::create(getType(options), mesh, optionsOrDefaultSection(options), loc);
   }
 
   static void ensureRegistered();

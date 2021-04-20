@@ -63,6 +63,11 @@
 - Removed the Karniadakis time solver. Other choices for split-operator schemes
   are: `splitrk` (built-in), `imexbdf2` (requires PETSc), and `arkode` (requires
   SUNDIALS) [\#2241](https://github.com/boutproject/BOUT-dev/pull/2241)
+- Conversion of Option to bool is now stricter.  Previously, only tested
+  (case-insensitively) if first character was 'n', 'f', '0', 'y', 't', or '1'.
+  Now only allow (still case-insensitively but checking full strings) 'n',
+  'no', 'f', 'false', '0', 'y', 'yes', 't', 'true', or '1'.
+  [\#2282](https://github.com/boutproject/BOUT-dev/pull/2282)
 
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)

@@ -120,7 +120,7 @@ protected:
     // Field2D Vort2D = DC(Vort); // n=0 component
     // phi2D = laplacexy->solve(Vort2D, phi2D);
 
-    // Calculate phi from potential
+    // Calculate phi from vorticity
     if (split_n0) {
       // Split into axisymmetric and non-axisymmetric components
       Field2D Vort2D = DC(Vort); // n=0 component

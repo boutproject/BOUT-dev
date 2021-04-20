@@ -959,7 +959,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
       for(int z=0; z < localmesh->LocalNz; z++) {
         PetscScalar val;
         VecGetValues(xs, 1, &ind, &val );
-	for(int x=0; x<localmesh->xstart; ++x){
+	for (int x = localmesh->xstart - 1; x >= 0; --x){
 	  result(x,y,z) = val;
 	}
         ind++;
@@ -980,7 +980,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
       for(int z=0; z < localmesh->LocalNz; z++) {
         PetscScalar val;
         VecGetValues(xs, 1, &ind, &val );
-	for(int x=localmesh->xend+1; x<localmesh->LocalNx; ++x){
+ 	for(int x=localmesh->xend+1; x<localmesh->LocalNx; ++x){
 	  result(x,y,z) = val;
 	}
         ind++;
