@@ -34,8 +34,6 @@
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 
-#include "bout/deprecated.hxx"
-
 /// Gradient of scalar field \p f, returning a covariant vector
 ///
 /// All locations supported
@@ -87,17 +85,8 @@ const Field2D Div(const Vector2D& v, const Field2D& f, CELL_LOC outloc = CELL_DE
                   const std::string& method = "DEFAULT");
 const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT");
-DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
-                                    const std::string& method,
-                                    CELL_LOC outloc = CELL_DEFAULT)) {
-  return Div(v, f, outloc, method);
-}
 inline const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
                          DIFF_METHOD method = DIFF_DEFAULT) {
-  return Div(v, f, outloc, toString(method));
-}
-DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
-                                    DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT)) {
   return Div(v, f, outloc, toString(method));
 }
 
