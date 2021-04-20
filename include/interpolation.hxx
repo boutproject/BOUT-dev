@@ -197,18 +197,5 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
   }
   return result;
 }
-template<typename T>
-[[deprecated("Please use interp_to(const T& var, CELL_LOC loc, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-const T interp_to(const T& var, CELL_LOC loc, REGION region) {
-  return interp_to(var, loc, toString(region));
-}
-
-/// Print out the cell location (for debugging)
-[[deprecated("Please use `output << toString(var.getLocation())` instead")]]
-void printLocation(const Field3D& var);
-
-[[deprecated("Please use `toString(loc)` instead")]]
-const char* strLocation(CELL_LOC loc);
 
 #endif // __INTERP_H__
