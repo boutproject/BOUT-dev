@@ -818,8 +818,8 @@ TEST_F(FieldPerpTest, CheckData) {
   field(0, 0) = BoutNaN;
 
   EXPECT_NO_THROW(checkData(field));
-  EXPECT_NO_THROW(checkData(field, RGN_NOX));
-  EXPECT_THROW(checkData(field, RGN_ALL), BoutException);
+  EXPECT_NO_THROW(checkData(field, "RGN_NOX"));
+  EXPECT_THROW(checkData(field, "RGN_ALL"), BoutException);
 }
 
 TEST_F(FieldPerpTest, InvalidateGuards) {

@@ -820,8 +820,8 @@ TEST_F(Field2DTest, CheckData) {
   field(0, 0) = std::nan("");
 
   EXPECT_NO_THROW(checkData(field));
-  EXPECT_NO_THROW(checkData(field, RGN_NOBNDRY));
-  EXPECT_THROW(checkData(field, RGN_ALL), BoutException);
+  EXPECT_NO_THROW(checkData(field, "RGN_NOBNDRY"));
+  EXPECT_THROW(checkData(field, "RGN_ALL"), BoutException);
 
 }
 
