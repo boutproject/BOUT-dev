@@ -594,18 +594,6 @@ void Options::printUnused() const {
 
 void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
 
-std::map<std::string, Options::OptionValue> Options::values() const {
-  std::map<std::string, OptionValue> options;
-  for (const auto& it : children) {
-    if (it.second.is_value) {
-      options.emplace(it.first, OptionValue { bout::utils::variantToString(it.second.value),
-                                               bout::utils::variantToString(it.second.attributes.at("source")),
-                                               it.second.value_used});
-    }
-  }
-  return options;
-}
-
 std::map<std::string, const Options *> Options::subsections() const {
   std::map<std::string, const Options *> sections;
   for (const auto &it : children) {
