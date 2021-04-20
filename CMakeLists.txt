@@ -217,6 +217,13 @@ set(BOUT_SOURCES
   ./src/mesh/impls/bout/boutmesh.cxx
   ./src/mesh/impls/bout/boutmesh.hxx
   ./src/mesh/index_derivs.cxx
+  ./src/mesh/index_derivs/index_derivs_fft.cxx
+  ./src/mesh/index_derivs/index_derivs_first_order.cxx
+  ./src/mesh/index_derivs/index_derivs_flux.cxx
+  ./src/mesh/index_derivs/index_derivs_fourth_order.cxx
+  ./src/mesh/index_derivs/index_derivs_second_order.cxx
+  ./src/mesh/index_derivs/index_derivs_staggered.cxx
+  ./src/mesh/index_derivs/index_derivs_upwind.cxx
   ./src/mesh/interpolation_xz.cxx
   ./src/mesh/interpolation/bilinear_xz.cxx
   ./src/mesh/interpolation/hermite_spline_xz.cxx

@@ -73,6 +73,8 @@ inline std::ostream& operator<<(std::ostream& out, const metaData& meta) {
   return out;
 }
 
+std::tuple<BoutReal, BoutReal> vUpDown(BoutReal v);
+
 /// Here we define a helper class that provides a means to use a supplied
 /// stencil using functor to calculate a derivative over the entire field.
 /// Note we currently have a different interface for some of the derivative types
