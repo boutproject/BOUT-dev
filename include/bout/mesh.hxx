@@ -45,7 +45,6 @@ class Mesh;
 
 #include "mpi.h"
 
-#include <bout/deprecated.hxx>
 #include <bout/deriv_store.hxx>
 #include <bout/index_derivs_interface.hxx>
 #include <bout/mpi_wrapper.hxx>
@@ -346,32 +345,6 @@ class Mesh {
 
   // non-local communications
 
-  /// Low-level communication routine
-  /// Send a buffer of data from this processor to another
-  /// This must be matched by a corresponding call to
-  /// receiveFromProc on the receiving processor
-  ///
-  /// @param[in] xproc  X index of processor to send to
-  /// @param[in] yproc  Y index of processor to send to
-  /// @param[in] buffer A buffer of data to send
-  /// @param[in] size   The length of \p buffer
-  /// @param[in] tag    A label, must be the same at receive
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual MPI_Request sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
-
-  /// Low-level communication routine
-  /// Receive a buffer of data from another processor
-  /// Must be matched by corresponding sendToProc call
-  /// on the sending processor
-  ///
-  /// @param[in] xproc X index of sending processor
-  /// @param[in] yproc Y index of sending processor
-  /// @param[inout] buffer  The buffer to fill with data. Must already be allocated of length \p size
-  /// @param[in] size  The length of \p buffer
-  /// @param[in] tag   A label, must be the same as send
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual comm_handle receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
-  
   virtual int getNXPE() = 0; ///< The number of processors in the X direction
   virtual int getNYPE() = 0; ///< The number of processors in the Y direction
   virtual int getXProcIndex() = 0; ///< This processor's index in X direction
@@ -464,54 +437,6 @@ class Mesh {
   [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int DownXSplitIndex() = 0; ///< If the lower Y guard cells are split in two, return the X index where the split occurs
 
-  /// Send data
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual int sendYOutIndest(BoutReal *buffer, int size, int tag) = 0;
-
-  ///
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual int sendYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
-
-  ///
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual int sendYInIndest(BoutReal *buffer, int size, int tag) = 0;
-
-  ///
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual int sendYInOutdest(BoutReal *buffer, int size, int tag) = 0;
-
-  /// Non-blocking receive. Must be followed by a call to wait()
-  ///
-  /// @param[out] buffer  A buffer of length \p size which must already be allocated
-  /// @param[in] size The number of BoutReals expected
-  /// @param[in] tag  The tag number of the expected message
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual comm_handle irecvYOutIndest(BoutReal *buffer, int size, int tag) = 0;
-
-  /// Non-blocking receive. Must be followed by a call to wait()
-  ///
-  /// @param[out] buffer  A buffer of length \p size which must already be allocated
-  /// @param[in] size The number of BoutReals expected
-  /// @param[in] tag  The tag number of the expected message
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual comm_handle irecvYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
-
-  /// Non-blocking receive. Must be followed by a call to wait()
-  ///
-  /// @param[out] buffer  A buffer of length \p size which must already be allocated
-  /// @param[in] size The number of BoutReals expected
-  /// @param[in] tag  The tag number of the expected message
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag) = 0;
-
-  /// Non-blocking receive. Must be followed by a call to wait()
-  ///
-  /// @param[out] buffer  A buffer of length \p size which must already be allocated
-  /// @param[in] size The number of BoutReals expected
-  /// @param[in] tag  The tag number of the expected message
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag) = 0;
-  
   // Boundary region iteration
 
   /// Iterate over the lower Y boundary
@@ -556,24 +481,6 @@ class Mesh {
   int GlobalNxNoBoundaries, GlobalNyNoBoundaries, GlobalNzNoBoundaries;
   int OffsetX, OffsetY, OffsetZ;    ///< Offset of this mesh within the global array
                                     ///< so startx on this processor is OffsetX in global
-  
-  /// Returns the global X index given a local index
-  /// If the local index includes the boundary cells, then so does the global.
-  [[deprecated("Use getGlobalXIndex instead")]]
-  int XGLOBAL(int xloc) const { return getGlobalXIndex(xloc); }
-  /// Returns the global Y index given a local index
-  /// The local index must include the boundary, the global index does not.
-  [[deprecated("Use getGlobalYIndex or getGlobalYIndexNoBoundaries instead")]]
-  int YGLOBAL(int yloc) const { return getGlobalYIndexNoBoundaries(yloc); }
-
-  /// Returns the local X index given a global index
-  /// If the global index includes the boundary cells, then so does the local.
-  [[deprecated("Use getLocalXIndex or getLocalXIndexNoBoundaries instead")]]
-  int XLOCAL(int xglo) const { return getLocalXIndex(xglo); };
-  /// Returns the local Y index given a global index
-  /// If the global index includes the boundary cells, then so does the local.
-  [[deprecated("Use getLocalYIndex or getLocalYIndexNoBoundaries instead")]]
-  int YLOCAL(int yglo) const { return getLocalYIndexNoBoundaries(yglo); };
 
   /// Returns a global X index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
@@ -740,200 +647,6 @@ class Mesh {
   /// the location of a second input field (velocity) is consistent.
   STAGGER getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_LOC outloc,
                      const CELL_LOC allowedloc) const;
-
-  // All of these derivative routines should probably be moved out of mesh to become
-  // free functions. As an intermediate step the member routines could just call the
-  // free functions.
-
-  ////// STANDARD OPERATORS
-
-  ////////////// X DERIVATIVE /////////////////
-  template <typename T>
-  DEPRECATED(T indexDDX(const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                        const std::string& method = "DEFAULT",
-                        REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::DDX(f, outloc, method, region);
-  }
-
-  template <typename T>
-  DEPRECATED(T indexD2DX2(const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                          const std::string& method = "DEFAULT",
-                          REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::D2DX2(f, outloc, method, region);
-  }
-
-  template <typename T>
-  DEPRECATED(T indexD4DX4(const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                          const std::string& method = "DEFAULT",
-                          REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::D4DX4(f, outloc, method, region);
-  }
-
-  ////////////// Y DERIVATIVE /////////////////
-
-  template <typename T>
-  DEPRECATED(T indexDDY(const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                        const std::string& method = "DEFAULT",
-                        REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::DDY(f, outloc, method, region);
-  }
-
-  template <typename T>
-  DEPRECATED(T indexD2DY2(const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                          const std::string& method = "DEFAULT",
-                          REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::D2DY2(f, outloc, method, region);
-  }
-
-  template <typename T>
-  DEPRECATED(T indexD4DY4(const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                          const std::string& method = "DEFAULT",
-                          REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::D4DY4(f, outloc, method, region);
-  }
-
-  ////////////// Z DERIVATIVE /////////////////
-  template <typename T>
-  DEPRECATED(T indexDDZ(const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                        const std::string& method = "DEFAULT",
-                        REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::DDZ(f, outloc, method, region);
-  }
-
-  template <typename T>
-  DEPRECATED(T indexD2DZ2(const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                          const std::string& method = "DEFAULT",
-                          REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::D2DZ2(f, outloc, method, region);
-  }
-
-  template <typename T>
-  DEPRECATED(T indexD4DZ4(const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                          const std::string& method = "DEFAULT",
-                          REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::D4DZ4(f, outloc, method, region);
-  }
-
-  ////// ADVECTION AND FLUX OPERATORS
-
-  /// Advection operator in index space in [] direction
-  ///
-  /// \f[
-  ///   v \frac{d}{di} f
-  /// \f]
-  ///
-  /// @param[in] v  The velocity in the Y direction
-  /// @param[in] f  The field being advected
-  /// @param[in] outloc The cell location where the result is desired. The default is the
-  /// same as \p f
-  /// @param[in] method  The differencing method to use
-  /// @param[in] region  The region of the grid for which the result is calculated.
-
-  ////////////// X DERIVATIVE /////////////////
-
-  template <typename T>
-  DEPRECATED(T indexVDDX(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                         const std::string& method = "DEFAULT",
-                         REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::VDDX(vel, f, outloc, method, region);
-  }
-
-  template <typename T>
-  DEPRECATED(T indexFDDX(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                         const std::string& method = "DEFAULT",
-                         REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::FDDX(vel, f, outloc, method, region);
-  }
-
-  ////////////// Y DERIVATIVE /////////////////
-
-  template <typename T>
-  DEPRECATED(T indexVDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                         const std::string& method = "DEFAULT",
-                         REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::VDDY(vel, f, outloc, method, region);
-  }
-
-  template <typename T>
-  DEPRECATED(T indexFDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                         const std::string& method = "DEFAULT",
-                         REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::FDDY(vel, f, outloc, method, region);
-  }
-
-  ////////////// Z DERIVATIVE /////////////////
-
-  template <typename T>
-  DEPRECATED(T indexVDDZ(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                         const std::string& method = "DEFAULT",
-                         REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::VDDZ(vel, f, outloc, method, region);
-  }
-
-  template <typename T>
-  DEPRECATED(T indexFDDZ(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
-                         const std::string& method = "DEFAULT",
-                         REGION region = RGN_NOBNDRY) const) {
-    AUTO_TRACE();
-    return bout::derivatives::index::FDDZ(vel, f, outloc, method, region);
-  }
-
-  [[deprecated("Please use free function toFieldAligned instead")]]
-  const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
-    return ::toFieldAligned(f, toString(region));
-  }
-
-  [[deprecated("Please use free function fromFieldAligned instead")]]
-  const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
-    return ::fromFieldAligned(f, toString(region));
-  }
-
-  [[deprecated("Please use free function toFieldAligned instead")]]
-  const Field2D toFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
-    return ::toFieldAligned(f, toString(region));
-  }
-
-  [[deprecated("Please use free function fromFieldAligned instead")]]
-  const Field2D fromFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
-    return ::fromFieldAligned(f, toString(region));
-  }
-
-  [[deprecated("Please use "
-      "Coordinates::getParallelTransform().canToFromFieldAligned instead")]]
-  bool canToFromFieldAligned() {
-    return getCoordinates()->getParallelTransform().canToFromFieldAligned();
-  }
-
-  [[deprecated("Please use Coordinates::setParallelTransform instead")]]
-  void setParallelTransform(std::unique_ptr<ParallelTransform> pt) {
-    getCoordinates()->setParallelTransform(std::move(pt));
-  }
-
-  [[deprecated("This call is now unnecessary")]]
-  void setParallelTransform() {
-    // The ParallelTransform is set from options in the Coordinates
-    // constructor, so this method doesn't need to do anything
-  }
-
-  [[deprecated("Please use Coordinates::getParallelTransform instead")]]
-  ParallelTransform& getParallelTransform() {
-    return getCoordinates()->getParallelTransform();
-  }
-
 
   ///////////////////////////////////////////////////////////
   // REGION RELATED ROUTINES
