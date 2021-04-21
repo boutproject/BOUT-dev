@@ -41,8 +41,6 @@
 #include <bout/template_combinations.hxx>
 
 #include <bout_types.hxx>
-#include <fft.hxx>
-#include <interpolation.hxx>
 #include <msg_stack.hxx>
 #include <stencils.hxx>
 #include <unused.hxx>
