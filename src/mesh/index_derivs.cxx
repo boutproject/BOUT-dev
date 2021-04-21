@@ -67,10 +67,6 @@ STAGGER Mesh::getStagger(const CELL_LOC vloc, MAYBE_UNUSED(const CELL_LOC inloc)
   return getStagger(vloc, outloc, allowedStaggerLoc);
 }
 
-std::tuple<BoutReal, BoutReal> vUpDown(BoutReal v) {
-  return std::tuple<BoutReal, BoutReal>{0.5 * (v + fabs(v)), 0.5 * (v - fabs(v))};
-}
-
 ////////////////////// FIRST DERIVATIVES /////////////////////
 
 /// central, 2nd order

@@ -7,6 +7,12 @@
 #include "fft.hxx"
 #include "interpolation.hxx"
 
+namespace {
+std::tuple<BoutReal, BoutReal> vUpDown(BoutReal v) {
+  return std::tuple<BoutReal, BoutReal>{0.5 * (v + fabs(v)), 0.5 * (v - fabs(v))};
+}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 /// Upwind non-staggered methods
 ///
