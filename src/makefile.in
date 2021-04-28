@@ -38,7 +38,7 @@ include $(BOUT_TOP)/make.config
 # directories are finished and further to make sure we actually know
 # whether the file needs to be rebuild - which we can only know for
 # certain if all directories are finished
-bout++-time.o: $(BOUT_LIB_PATH)/.last.o.file .dummy
+bout++-time.o: $(BOUT_LIB_PATH)/.last.o.file | $(DIRS) bout++.o
 
 # The recipie could be removed, as it only catches the case of
 # out-of-date make.config

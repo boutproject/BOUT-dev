@@ -141,6 +141,7 @@ set(BOUT_SOURCES
   ./include/vector3d.hxx
   ./include/where.hxx
   ./src/bout++.cxx
+  ./src/bout++-time.cxx
   ./src/field/field.cxx
   ./src/field/field2d.cxx
   ./src/field/field3d.cxx
