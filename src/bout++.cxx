@@ -53,6 +53,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/sys/timer.hxx"
 #include "bout/version.hxx"
 #include "fmt/format.h"
+#include "bout++-time.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -454,7 +455,7 @@ void printStartupHeader(int MYPE, int NPES) {
 #ifdef MD5SUM
   output_progress.write("MD5 checksum: {:s}\n", BUILDFLAG(MD5SUM));
 #endif
-  output_progress.write(_("Code compiled on {:s} at {:s}\n\n"), __DATE__, __TIME__);
+  output_progress.write(_("Code compiled on {:s} at {:s}\n\n"), boutcompiletime, boutcompiledate);
   output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
   output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
