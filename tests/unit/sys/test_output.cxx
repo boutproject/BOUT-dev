@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "boutexception.hxx"
 #include "output.hxx"
+#include "output_bout_types.hxx"
 
 #include <cstdio>
 #include <string>
@@ -293,4 +294,22 @@ TEST_F(OutputTest, DummyJustPrint) {
 
   EXPECT_EQ("", test_buffer.str());
   EXPECT_EQ("", buffer.str());
+}
+
+TEST_F(OutputTest, FormatInd3Ddefault) {
+  Ind3D ind(11, 2, 3);
+
+  Output local_output;
+  local_output.write("{}", ind);
+
+  EXPECT_EQ(buffer.str(), "(1, 1, 2)");
+}
+
+TEST_F(OutputTest, FormatInd3Di) {
+  Ind3D ind(11, 2, 3);
+
+  Output local_output;
+  local_output.write("{:i}", ind);
+
+  EXPECT_EQ(buffer.str(), "(11)");
 }
