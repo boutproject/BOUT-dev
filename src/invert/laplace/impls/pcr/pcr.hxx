@@ -82,8 +82,6 @@ public:
   BoutReal getMeanCycles() const { return ipt_mean_cycles; }
   void resetMeanCycles() { ipt_mean_cycles = 0; }
 
-  void resetSolver() override;
-
   class Level {
 
   public:
