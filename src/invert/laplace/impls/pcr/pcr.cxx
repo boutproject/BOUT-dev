@@ -483,6 +483,7 @@ void LaplacePCR :: setup(int n, int np_world, int rank_world)
 void LaplacePCR :: cr_pcr_solver(Tensor<dcomplex> &a_mpi, Tensor<dcomplex> &b_mpi, Tensor<dcomplex> &c_mpi, Matrix<dcomplex> &r_mpi, Matrix<dcomplex> &x_mpi, int jy)
 {
 
+  output.write("nmode {}\n",nmode);
   int nxloc = localmesh->xend-localmesh->xstart+1;
   a.reallocate(nmode, nxloc+2);
   b.reallocate(nmode, nxloc+2);
@@ -499,13 +500,11 @@ void LaplacePCR :: cr_pcr_solver(Tensor<dcomplex> &a_mpi, Tensor<dcomplex> &b_mp
     r(kz,0) = 0;
     x(kz,0) = 0;
     for(int ix=xs; ix<localmesh->xend+1; ix++){
-      //output.write("{} {}\n",kz,ix);
       a(kz,ix-xs+1) = a_mpi(jy,kz,ix);
       b(kz,ix-xs+1) = b_mpi(jy,kz,ix);
       c(kz,ix-xs+1) = c_mpi(jy,kz,ix);
       r(kz,ix-xs+1) = r_mpi(kz,ix);
       x(kz,ix-xs+1) = x_mpi(kz,ix);
-      //output.write("end {} {}\n",kz,ix);
     }
     a(kz,nxloc+1) = 0;
     b(kz,nxloc+1) = 1;
@@ -514,60 +513,61 @@ void LaplacePCR :: cr_pcr_solver(Tensor<dcomplex> &a_mpi, Tensor<dcomplex> &b_mp
     x(kz,nxloc+1) = 0;
   }
 
-  output.write("data\n");
-  for(int kz=0;kz<nmode;kz++){
-    for(int ix=0;ix<nxloc+2;ix++){
-      output.write("{} ",a(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<nxloc+2;ix++){
-      output.write("{} ",b(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<nxloc+2;ix++){
-      output.write("{} ",c(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<nxloc+2;ix++){
-      output.write("{} ",r(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<nxloc+2;ix++){
-      output.write("{} ",x(kz,ix).real());
-    }
-    output.write("\n");
-  }
+///  output.write("data\n");
+///  for(int kz=0;kz<nmode;kz++){
+///    for(int ix=0;ix<nxloc+2;ix++){
+///      output.write("{} ",a(kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<nxloc+2;ix++){
+///      output.write("{} ",b(kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<nxloc+2;ix++){
+///      output.write("{} ",c(kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<nxloc+2;ix++){
+///      output.write("{} ",r(kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<nxloc+2;ix++){
+///      output.write("{} ",x(kz,ix).real());
+///    }
+///    output.write("\n");
+///  }
 
   cr_forward_multiple_row(a,b,c,r,x);
 
   output.write("after forward\n");
-  for(int kz=0;kz<nmode;kz++){
-    for(int ix=0;ix<nxloc+2;ix++){
-      output.write("{} ",a(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<nxloc+2;ix++){
-      output.write("{} ",b(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<nxloc+2;ix++){
-      output.write("{} ",c(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<nxloc+2;ix++){
-      output.write("{} ",r(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<nxloc+2;ix++){
-      output.write("{} ",x(kz,ix).real());
-    }
-    output.write("\n");
-  }
+///  for(int kz=0;kz<nmode;kz++){
+///    for(int ix=0;ix<nxloc+2;ix++){
+///      output.write("{} ",a(kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<nxloc+2;ix++){
+///      output.write("{} ",b(kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<nxloc+2;ix++){
+///      output.write("{} ",c(kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<nxloc+2;ix++){
+///      output.write("{} ",r(kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<nxloc+2;ix++){
+///      output.write("{} ",x(kz,ix).real());
+///    }
+///    output.write("\n");
+///  }
 //
     pcr_forward_single_row(a,b,c,r,x);     // Including 2x2 solver
 
     output.write("after forward single row\n");
   for(int kz=0;kz<nmode;kz++){
+    output.write("kz {}\n",kz);
     for(int ix=0;ix<nxloc+2;ix++){
       output.write("{} ",a(kz,ix).real());
     }
@@ -589,11 +589,12 @@ void LaplacePCR :: cr_pcr_solver(Tensor<dcomplex> &a_mpi, Tensor<dcomplex> &b_mp
     }
     output.write("\n");
   }
-//
+/////
     cr_backward_multiple_row(a,b,c,r,x);
 
   output.write("after backward multiple row\n");
   for(int kz=0;kz<nmode;kz++){
+    output.write("kz {}\n",kz);
     for(int ix=0;ix<nxloc+2;ix++){
       output.write("{} ",a(kz,ix).real());
     }
@@ -616,12 +617,12 @@ void LaplacePCR :: cr_pcr_solver(Tensor<dcomplex> &a_mpi, Tensor<dcomplex> &b_mp
     output.write("\n");
   }
 
-///    output.write("after backwars multple row\n");
     for(int kz=0; kz<nmode; kz++){
       for(int ix=xs; ix<localmesh->xend+1; ix++){
         x_mpi(kz,ix) = x(kz,ix-xs+1);
       }
     }
+    output.write("end\n");
 }
 
 /** 
@@ -770,27 +771,31 @@ void LaplacePCR :: cr_backward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex>
 
     MPI_Status status;
     MPI_Request request[2];
+    dcomplex recvvec[nmode];
+    dcomplex sendvec[nmode];
 
     nlevel    = log2(n_mpi);
     dist_row = n_mpi/2;
 
     /// Each rank requires a solution on last row of previous rank.
     if(myrank>0) {
-        Array<dcomplex> recvvec(nmode);
-        MPI_Irecv(&recvvec, nmode, MPI_DOUBLE_COMPLEX, myrank-1, 100, MPI_COMM_WORLD, request);
-        for(int kz=0; kz<nmode; kz++){
-	  x(kz,0) = recvvec[kz];
-	}
+	output.write("before irecv, myrank {}\n",myrank);
+        MPI_Irecv(recvvec, nmode, MPI_DOUBLE_COMPLEX, myrank-1, 100, MPI_COMM_WORLD, request);
     }
     if(myrank<nprocs-1) {
-        Array<dcomplex> sendvec(nmode);
+	output.write("before isend\n");
         for(int kz=0; kz<nmode; kz++){
 	  sendvec[kz] = x(kz,n_mpi);
 	}
-        MPI_Isend(&sendvec, nmode, MPI_DOUBLE_COMPLEX, myrank+1, 100, MPI_COMM_WORLD, request+1);
+        MPI_Isend(sendvec, nmode, MPI_DOUBLE_COMPLEX, myrank+1, 100, MPI_COMM_WORLD, request+1);
     }
     if(myrank>0) {
+	output.write("before wait\n");
         MPI_Wait(request, &status);
+        for(int kz=0; kz<nmode; kz++){
+	  x(kz,0) = recvvec[kz];
+	}
+	output.write("after wait\n");
     }
     for(l=nlevel-1;l>=0;l--) {
         dist2_row = dist_row * 2;
@@ -805,8 +810,11 @@ void LaplacePCR :: cr_backward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex>
         dist_row = dist_row / 2;
     }
     if(myrank<nprocs-1) {
+	output.write("before wait\n");
         MPI_Wait(request+1, &status);
+	output.write("after wait\n");
     }
+    output.write("end part 3\n");
 }
 
 ////** 
