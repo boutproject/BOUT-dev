@@ -682,7 +682,7 @@ class SmoothedMagneticField(MagneticField):
     """
 
     def __init__(self, field, grid, xboundary=None, zboundary=None):
-        """"""
+        """ """
 
         self.field = field
         self.grid = grid
