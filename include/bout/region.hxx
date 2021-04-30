@@ -643,8 +643,7 @@ public:
     return *this; // To allow command chaining
   };
 
-  /// Returns a new region including only indices contained in both
-  /// this region and the other.
+  /// Returns a modified region including only indices that are also in the region.
   Region<T> getIntersection(const Region<T>& otherRegion) {
     // Get other indices and sort as we're going to be searching through
     // this vector so if it's sorted we can be more efficient
