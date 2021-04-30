@@ -62,6 +62,7 @@ constexpr auto LAPLACE_MULTIGRID = "multigrid";
 constexpr auto LAPLACE_NAULIN = "naulin";
 constexpr auto LAPLACE_IPT = "ipt";
 constexpr auto LAPLACE_1DMG = "1dmg";
+constexpr auto LAPLACE_PCR = "pcr";
 
 // Inversion flags for each boundary
 /// Zero-gradient for DC (constant in Z) component. Default is zero value
