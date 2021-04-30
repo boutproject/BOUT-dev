@@ -451,7 +451,7 @@ const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
   if (found == end(regionMap3D)) {
     throw BoutException(_("Couldn't find region {:s} in regionMap3D"), region_name);
   }
-  return found->second;
+  return region3D[found->second];
 }
 
 const Region<Ind2D>& Mesh::getRegion2D(const std::string& region_name) const {
@@ -487,7 +487,21 @@ void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
     throw BoutException(_("Trying to add an already existing region {:s} to regionMap3D"),
                         region_name);
   }
-  regionMap3D[region_name] = region;
+
+  int id = -1;
+  for (size_t i = 0; i < region3D.size(); ++i) {
+    if (region3D[i] == region) {
+      id = i;
+      break;
+    }
+  }
+  if (id == -1) {
+    id = region3D.size();
+    region3D.push_back(region);
+  }
+
+  regionMap3D[region_name] = id;
+
   output_verbose.write(_("Registered region 3D {:s}"),region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }

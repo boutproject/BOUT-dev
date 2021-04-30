@@ -546,6 +546,18 @@ public:
     indices = getRegionIndices();
   };
 
+  bool operator==(const Region<T>& other) {
+    if (this->size() != other.size()) {
+      return false;
+    }
+    for (auto i1 = this->begin(), i2 = other.begin(); i1 != this->end(); ++i1, ++i2) {
+      if (i1 != i2) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /// Destructor
   ~Region() = default;
 
@@ -908,5 +920,10 @@ template<typename T>
 unsigned int size(const Region<T> &region){
   return region.size();
 }
+
+// template<typename T>
+class RegionID {
+  int value;
+};
 
 #endif /* __REGION_H__ */
