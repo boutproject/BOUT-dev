@@ -1061,5 +1061,5 @@ message("
 
        export PYTHONPATH=${BOUT_PYTHONPATH}:\$PYTHONPATH
 
-*** Now run `cmake --build .` to compile BOUT++ ***
+*** Now run `cmake --build ${CMAKE_BINARY_DIR}` to compile BOUT++ ***
 ")
