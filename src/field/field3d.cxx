@@ -868,3 +868,14 @@ std::ostream& operator<<(std::ostream &out, const Field3D &value) {
   out << toString(value);
   return out;
 }
+
+const Region<Ind3D>& Field3D::getDefaultRegion(const std::string& region_name) const {
+  if (regionID != -1) {
+    return fieldmesh->getRegion(regionID);
+  }
+  return fieldmesh->getRegion(region_name);
+}
+
+void Field3D::setRegion(const std::string& region_name) {
+  regionID = fieldmesh->getRegionID(region_name);
+}

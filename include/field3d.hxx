@@ -320,6 +320,12 @@ class Field3D : public Field, public FieldData {
   /// 
   const Region<Ind3D>& getRegion(REGION region) const;  
   const Region<Ind3D>& getRegion(const std::string &region_name) const;
+  /// Use region provided by the default, and if none is set, use the provided one
+  const Region<Ind3D>& getDefaultRegion(const std::string& region_name) const;
+  void setRegion(const std::string& region_name);
+  void resetRegion() { regionID = -1; };
+  void setRegion(int id) { regionID = id; };
+  int getRegionID() const { return regionID; };
 
   /// Return a Region<Ind2D> reference to use to iterate over the x- and
   /// y-indices of this field
@@ -532,6 +538,9 @@ private:
 
   /// Fields containing values along Y
   std::vector<Field3D> yup_fields{}, ydown_fields{};
+
+  /// RegionID over which the field is valid
+  int regionID{-1};
 };
 
 // Non-member overloaded operators

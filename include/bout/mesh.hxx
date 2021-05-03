@@ -1043,8 +1043,8 @@ public:
   const bool include_corner_cells;
 
   int getCommonRegion(int, int);
-  int getRegionID(const std::string& region);
-  const Region<Ind3D>& getRegion(int RegionID) { return region3D[RegionID]; }
+  int getRegionID(const std::string& region) const;
+  const Region<Ind3D>& getRegion(int RegionID) const { return region3D[RegionID]; }
 
 private:
 
