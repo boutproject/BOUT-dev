@@ -787,6 +787,14 @@ if(BOUT_BUILD_EXAMPLES)
 endif()
 
 ##################################################
+# Documentation
+
+option(BOUT_BUILD_DOCS "Build the documentation" ON)
+if (BOUT_BUILD_DOCS)
+  add_subdirectory(manual)
+endif()
+
+##################################################
 # Generate the build config header
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_defines.hxx")
