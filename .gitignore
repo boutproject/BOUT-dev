@@ -57,3 +57,15 @@ src/fmt/format.cxx
 /include/bout/version.hxx
 /include/bout/build_defines.hxx
 /tools/pylib/boutconfig/__init__.py
+/tests/integrated/test-communications/test-communications
+/tests/integrated/test-interpolate-z/test_interpolate
+/tests/integrated/test-options-netcdf/fields.nc
+/tests/integrated/test-options-netcdf/fields2.nc
+/tests/integrated/test-options-netcdf/settings.ini
+/tests/integrated/test-options-netcdf/settings.nc
+/tests/integrated/test-options-netcdf/test-options-netcdf
+/tests/integrated/test-options-netcdf/test-out.ini
+/tests/integrated/test-options-netcdf/test-out.nc
+/tests/integrated/test-options-netcdf/test.nc
+/tests/integrated/test-options-netcdf/time.nc
+/tests/integrated/test-yupdown-weights/test_yupdown_weights

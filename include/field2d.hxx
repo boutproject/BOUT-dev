@@ -182,6 +182,9 @@ class Field2D : public Field, public FieldData {
   /// Return a Region<Ind2D> reference to use to iterate over this field
   const Region<Ind2D>& getRegion(REGION region) const;  
   const Region<Ind2D>& getRegion(const std::string &region_name) const;
+  const Region<Ind2D>& getDefaultRegion(const std::string& region_name) const {
+    return getRegion(region_name);
+  }
 
   Region<Ind2D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
   Region<Ind2D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
