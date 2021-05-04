@@ -9,7 +9,6 @@
 #cmakedefine01 BOUT_HAS_CVODE
 #cmakedefine01 BOUT_HAS_FFTW
 #cmakedefine01 BOUT_HAS_GETTEXT
-#cmakedefine01 BOUT_HAS_HDF5
 #cmakedefine01 BOUT_HAS_IDA
 #cmakedefine01 BOUT_HAS_LAPACK
 #cmakedefine01 BOUT_HAS_NETCDF
@@ -19,6 +18,7 @@
 #cmakedefine01 BOUT_HAS_SCOREP
 #cmakedefine01 BOUT_HAS_SLEPC
 #cmakedefine01 BOUT_HAS_SUNDIALS
+#cmakedefine01 BOUT_HAS_UUID_SYSTEM_GENERATOR
 #cmakedefine01 BOUT_USE_BACKTRACE
 #cmakedefine01 BOUT_USE_COLOR
 #cmakedefine01 BOUT_USE_OPENMP
@@ -26,5 +26,8 @@
 #cmakedefine01 BOUT_USE_SIGFPE
 #cmakedefine01 BOUT_USE_SIGNAL
 #cmakedefine01 BOUT_USE_TRACK
+
+// CMake build does not support legacy interface
+#define BOUT_HAS_LEGACY_NETCDF 0
 
 #endif // BOUT_BUILD_CONFIG_HXX

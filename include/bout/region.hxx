@@ -645,7 +645,7 @@ public:
 
   /// Returns a new region including only indices contained in both
   /// this region and the other.
-  Region<T> getUnion(const Region<T>& otherRegion) {
+  Region<T> getIntersection(const Region<T>& otherRegion) {
     // Get other indices and sort as we're going to be searching through
     // this vector so if it's sorted we can be more efficient
     auto otherIndices = otherRegion.getIndices();
@@ -899,11 +899,11 @@ Region<T> mask(const Region<T> &region, const Region<T> &mask) {
   return result.mask(mask);
 }
 
-/// Return the union of two regions
+/// Return the intersection of two regions
 template <typename T>
-Region<T> getUnion(const Region<T>& region, const Region<T>& otherRegion) {
+Region<T> getIntersection(const Region<T>& region, const Region<T>& otherRegion) {
   auto result = region;
-  return result.getUnion(otherRegion);
+  return result.getIntersection(otherRegion);
 }
 
 /// Return a new region with combined indices from two Regions

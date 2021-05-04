@@ -167,8 +167,6 @@ set(BOUT_SOURCES
   ./src/fileio/formatfactory.cxx
   ./src/fileio/formatfactory.hxx
   ./src/fileio/impls/emptyformat.hxx
-  ./src/fileio/impls/hdf5/h5_format.cxx
-  ./src/fileio/impls/hdf5/h5_format.hxx
   ./src/fileio/impls/netcdf/nc_format.cxx
   ./src/fileio/impls/netcdf/nc_format.hxx
   ./src/fileio/impls/netcdf4/ncxx4.cxx
@@ -179,6 +177,8 @@ set(BOUT_SOURCES
   ./src/invert/lapack_routines.cxx
   ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx
   ./src/invert/laplace/impls/cyclic/cyclic_laplace.hxx
+  ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.cxx
+  ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.hxx
   ./src/invert/laplace/impls/multigrid/multigrid_alg.cxx
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.cxx
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.hxx
@@ -252,8 +252,6 @@ set(BOUT_SOURCES
   ./src/solver/impls/ida/ida.hxx
   ./src/solver/impls/imex-bdf2/imex-bdf2.cxx
   ./src/solver/impls/imex-bdf2/imex-bdf2.hxx
-  ./src/solver/impls/karniadakis/karniadakis.cxx
-  ./src/solver/impls/karniadakis/karniadakis.hxx
   ./src/solver/impls/petsc/petsc.cxx
   ./src/solver/impls/petsc/petsc.hxx
   ./src/solver/impls/power/power.cxx
@@ -517,15 +515,6 @@ endif()
 message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
 
-option(BOUT_USE_HDF5 "Enable support for HDF5 output" OFF)
-if (BOUT_USE_HDF5)
-  find_package(HDF5 REQUIRED COMPONENTS CXX)
-  target_link_libraries(bout++ PUBLIC "${HDF5_CXX_LIBRARIES}")
-  target_include_directories(bout++ PUBLIC "${HDF5_CXX_INCLUDE_DIRS}")
-endif()
-message(STATUS "HDF5 support: ${BOUT_USE_HDF5}")
-set(BOUT_HAS_HDF5 ${BOUT_USE_HDF5})
-
 option(BOUT_USE_FFTW "Enable support for FFTW" ON)
 if (BOUT_USE_FFTW)
   find_package(FFTW REQUIRED)
@@ -600,6 +589,20 @@ if (BOUT_USE_SCOREP)
 ")
 endif()
 set(BOUT_HAS_SCOREP ${BOUT_USE_SCOREP})
+
+option(BOUT_USE_UUID_SYSTEM_GENERATOR "Enable support for using a system UUID generator" ON)
+if (BOUT_USE_UUID_SYSTEM_GENERATOR)
+  find_package(Libuuid QUIET)
+  if (Libuuid_FOUND)
+    target_link_libraries(bout++
+      PUBLIC Libuuid::libuuid)
+  else()
+    message(STATUS "libuuid not found, using fallback UUID generator")
+    set(BOUT_USE_UUID_SYSTEM_GENERATOR FALSE)
+  endif()
+endif()
+message(STATUS "UUID_SYSTEM_GENERATOR: ${BOUT_USE_UUID_SYSTEM_GENERATOR}")
+set(BOUT_HAS_UUID_SYSTEM_GENERATOR ${BOUT_USE_UUID_SYSTEM_GENERATOR})
 
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("int main() { const char* name = __PRETTY_FUNCTION__; }"
@@ -688,7 +691,7 @@ target_compile_definitions(bout++
 function(bout_add_integrated_test TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
   set(oneValueArgs EXECUTABLE_NAME)
-  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES)
+  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES TESTARGS)
   cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   foreach (REQUIREMENT IN LISTS BOUT_TEST_OPTIONS_REQUIRES)
@@ -721,10 +724,13 @@ function(bout_add_integrated_test TESTNAME)
 
   # Set the actual test command
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
-    add_test(NAME ${TESTNAME} COMMAND ./runtest)
+    add_test(NAME ${TESTNAME} COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS})
+    set_tests_properties(${TESTNAME} PROPERTIES
+      ENVIRONMENT PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
+      )
     bout_copy_file(runtest)
   else()
-    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
+    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME} ${BOUT_TEST_OPTIONS_TESTARGS})
   endif()
 
   # Copy the input file if needed
@@ -869,12 +875,12 @@ message("
    SLEPc support            : ${BOUT_HAS_SLEPC}
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
    NetCDF support           : ${BOUT_HAS_NETCDF}
-   HDF5 support             : ${BOUT_HAS_HDF5}
    FFTW support             : ${BOUT_HAS_FFTW}
    LAPACK support           : ${BOUT_HAS_LAPACK}
    OpenMP support           : ${BOUT_USE_OPENMP}
    Natural language support : ${BOUT_HAS_GETTEXT}
    ScoreP support           : ${BOUT_HAS_SCOREP}
+   System UUID generator    : ${BOUT_HAS_UUID_SYSTEM_GENERATOR}
    Extra debug output       : ${BOUT_USE_OUTPUT_DEBUG}
    Runtime error check level: ${BOUT_CHECK_LEVEL}
    Signal handling          : ${BOUT_USE_SIGNAL}

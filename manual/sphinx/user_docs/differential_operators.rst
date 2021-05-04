@@ -236,7 +236,7 @@ register a stencil using kernel in a single step. For example:
 
 
 Will define the `DDX_C2` functor and register it with the derivative
-store using key ``"C2"` for all three directions and both fields with
+store using key ``"C2"`` for all three directions and both fields with
 no staggering.
 
 
@@ -430,7 +430,7 @@ is the background *equilibrium* magnetic field.
 |                  | derivatives. The `Laplacian` solver performs the   |
 |                  | inverse operation                                  |
 +------------------+----------------------------------------------------+
-| ``brackets``     | Poisson brackets. The Arakawa option, neglects the |
+| ``bracket``      | Poisson brackets. The Arakawa option, neglects the |
 |                  | parallel :math:`y` derivatives if :math:`g_{xy}`   |
 |                  | and :math:`g_{yz}` are non-zero                    |
 +------------------+----------------------------------------------------+
@@ -491,7 +491,7 @@ and so the :math:`\nabla y` term cancels out:
 The bracket operators
 ---------------------
 
-The bracket operator ``brackets(phi, f, method)`` aims to
+The bracket operator ``bracket(phi, f, method)`` aims to
 differentiate equations on the form
 
 .. math::

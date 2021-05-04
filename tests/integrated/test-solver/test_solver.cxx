@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
 
   // Currently hardcode solvers we don't want to test
   // Should be able to check which solvers aren't suitable
-  std::vector<std::string> eigen_solvers = {"power", "slepc", "snes"};
+  std::vector<std::string> eigen_solvers = {"power", "slepc", "snes", "beuler"};
 
   for (auto& eigen_solver : eigen_solvers) {
     if (SolverFactory::getInstance().remove(eigen_solver)) {
@@ -62,6 +62,8 @@ int main(int argc, char** argv) {
 
   root["output"]["enabled"] = false;
   root["restart"]["enabled"] = false;
+  root["datadir"] = "data";
+  root["dump_format"] = "nc";
 
   // Set the command-line arguments
   SlepcLib::setArgs(argc, argv);
@@ -98,9 +100,6 @@ int main(int argc, char** argv) {
 
   root["imexbdf2"]["adaptive"] = true;
   root["imexbdf2"]["adaptRtol"] = 1.e-5;
-
-  root["karniadakis"]["nout"] = 100;
-  root["karniadakis"]["timestep"] = end / (NOUT * 10000);
 
   root["petsc"]["nout"] = 10000;
   root["petsc"]["output_step"] = end / 10000;

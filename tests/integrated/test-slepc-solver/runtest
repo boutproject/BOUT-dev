@@ -11,12 +11,12 @@ build_and_log("SLEPc eigen solver test")
 print("Running SLEPc eigen solver test")
 status, out = launch_safe("./test-slepc-solver", nproc=1, pipe=True, verbose=True)
 
-with open("run.log", 'w') as f:
+with open("run.log", "w") as f:
     f.write(out)
 
 eigenvalues = collect("t_array", path="data", info=False)
 
-expected_eigenvalues = [0., 1.]
+expected_eigenvalues = [0.0, 1.0]
 
 if isclose(expected_eigenvalues, eigenvalues).all():
     print(" => SLEPc test passed")

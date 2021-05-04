@@ -114,6 +114,25 @@ constexpr auto& SUNLinSol_SPGMR = SUNSPGMR;
 CvodeSolver::CvodeSolver(Options* opts) : Solver(opts) {
   has_constraints = false; // This solver doesn't have constraints
   canReset = true;
+
+  // Add diagnostics to output
+  // Needs to be in constructor not init() because init() is called after
+  // Solver::outputVars()
+  add_int_diagnostic(nsteps, "cvode_nsteps", "Cumulative number of internal steps");
+  add_int_diagnostic(nfevals, "cvode_nfevals", "No. of calls to r.h.s.  function");
+  add_int_diagnostic(nniters, "cvode_nniters", "No. of nonlinear solver iterations");
+  add_int_diagnostic(npevals, "cvode_npevals", "No. of preconditioner solves");
+  add_int_diagnostic(nliters, "cvode_nliters", "No. of linear iterations");
+  add_BoutReal_diagnostic(last_step, "cvode_last_step",
+                          "Step size used for the last step before each output");
+  add_int_diagnostic(last_order, "cvode_last_order",
+                     "Order used during the last step before each output");
+  add_int_diagnostic(num_fails, "cvode_num_fails",
+                     "No. of local error test failures that have occurred");
+  add_int_diagnostic(nonlin_fails, "cvode_nonlin_fails",
+                     "No. of nonlinear convergence failures");
+  add_int_diagnostic(stab_lims, "cvode_stab_lims",
+                     "No. of order reductions due to stability limit detection");
 }
 
 CvodeSolver::~CvodeSolver() {
@@ -385,16 +404,39 @@ int CvodeSolver::run() {
       throw BoutException("SUNDIALS CVODE timestep failed\n");
     }
 
+    // Get additional diagnostics
+    long int temp_long_int;
+    CVodeGetNumSteps(cvode_mem, &temp_long_int);
+    nsteps = int(temp_long_int);
+    CVodeGetNumRhsEvals(cvode_mem, &temp_long_int);
+    nfevals = int(temp_long_int);
+    CVodeGetNumNonlinSolvIters(cvode_mem, &temp_long_int);
+    nniters = int(temp_long_int);
+    CVSpilsGetNumPrecSolves(cvode_mem, &temp_long_int);
+    npevals = int(temp_long_int);
+    CVSpilsGetNumLinIters(cvode_mem, &temp_long_int);
+    nliters = int(temp_long_int);
+
+    // Last step size
+    CVodeGetLastStep(cvode_mem, &last_step);
+
+    // Order used in last step
+    CVodeGetLastOrder(cvode_mem, &last_order);
+
+    // Local error test failures
+    CVodeGetNumErrTestFails(cvode_mem, &temp_long_int);
+    num_fails = int(temp_long_int);
+
+    // Number of nonlinear convergence failures
+    CVodeGetNumNonlinSolvConvFails(cvode_mem, &temp_long_int);
+    nonlin_fails = int(temp_long_int);
+
+    // Stability limit order reductions
+    CVodeGetNumStabLimOrderReds(cvode_mem, &temp_long_int);
+    stab_lims = int(temp_long_int);
+
     if (diagnose) {
       // Print additional diagnostics
-      long int nsteps, nfevals, nniters, npevals, nliters;
-
-      CVodeGetNumSteps(cvode_mem, &nsteps);
-      CVodeGetNumRhsEvals(cvode_mem, &nfevals);
-      CVodeGetNumNonlinSolvIters(cvode_mem, &nniters);
-      CVSpilsGetNumPrecSolves(cvode_mem, &npevals);
-      CVSpilsGetNumLinIters(cvode_mem, &nliters);
-
       output.write(
           "\nCVODE: nsteps {:d}, nfevals {:d}, nniters {:d}, npevals {:d}, nliters {:d}\n",
           nsteps, nfevals, nniters, npevals, nliters);
@@ -406,30 +448,10 @@ int CvodeSolver::run() {
       output.write("    -> Preconditioner evaluations per Newton: {:e}\n",
                    static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
 
-      // Last step size
-      BoutReal last_step;
-      CVodeGetLastStep(cvode_mem, &last_step);
-
-      // Order used in last step
-      int last_order;
-      CVodeGetLastOrder(cvode_mem, &last_order);
-
       output.write("    -> Last step size: {:e}, order: {:d}\n", last_step, last_order);
-
-      // Local error test failures
-      long int num_fails;
-      CVodeGetNumErrTestFails(cvode_mem, &num_fails);
-
-      // Number of nonlinear convergence failures
-      long int nonlin_fails;
-      CVodeGetNumNonlinSolvConvFails(cvode_mem, &nonlin_fails);
 
       output.write("    -> Local error fails: {:d}, nonlinear convergence fails: {:d}\n",
                    num_fails, nonlin_fails);
-
-      // Stability limit order reductions
-      long int stab_lims;
-      CVodeGetNumStabLimOrderReds(cvode_mem, &stab_lims);
 
       output.write("    -> Stability limit order reductions: {:d}\n", stab_lims);
     }

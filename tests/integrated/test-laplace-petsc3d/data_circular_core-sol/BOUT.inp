@@ -1,3 +1,4 @@
+
 [f]
 #function = 0.
 function = mixmode(x, 1.)*mixmode(y, 2.)*mixmode(z, 3.)
@@ -20,7 +21,7 @@ function = .1*mixmode(x, 13.)*mixmode(y, 14.)*mixmode(z, 15.)
 bndry_par_all = parallel_neumann
 
 [A]
-function = 0.
+function = 0.0
 
 #################################################################################
 [mesh]
@@ -31,7 +32,7 @@ nz = 32
 ixseps1 = nx/2
 
 # circular, large-aspect-ratio geometry
-eps = .1
+eps = 0.1
 r = eps*(.95 + .1*x)
 theta = y-pi
 Rxy = 1. + r*cos(theta)
@@ -49,14 +50,14 @@ dz = 2.*pi/nz
 g11 = (Rxy*Bp)^2
 g22 = 1./hthe^2
 g33 = (Bxy/(Rxy*Bp))^2
-g12 = 0.
-g13 = 0.
+g12 = 0.0
+g13 = 0.0
 g23 = -nu/hthe^2
 g_11 = 1./(Rxy*Bp)^2
 g_22 = (Bxy*hthe/Bp)^2
 g_33 = Rxy^2
-g_12 = 0.
-g_13 = 0.
+g_12 = 0.0
+g_13 = 0.0
 g_23 = Bt*hthe*Rxy/Bp
 
 # zShift = \int_{theta0}^{theta} {nu dtheta}
@@ -64,7 +65,8 @@ arctanarg = (r - 1)*tan(theta/2.)/sqrt(1. - r^2)
 zshift = r^2*(r*sin(theta)/((r^2 - 1)*(r*cos(theta) - 1.)) - 2.*atan(arctanarg)/(1. - r^2)^1.5)
 shiftangle = r^2 * 2.*pi/(1. - r^2)^1.5
 
-paralleltransform = shiftedinterp
+[mesh:paralleltransform]
+type = shiftedinterp
 
 [interpolation]
 type = hermitesplineonlyz
@@ -72,8 +74,8 @@ type = hermitesplineonlyz
 #################################################################################
 [laplace]
 type = petsc3damg
-rtol = 1.e-10
-atol = 1.e-13
+rtol = 1e-10
+atol = 1e-13
 
 [laplace:petsc]
 mg_levels_ksp_max_it = 3

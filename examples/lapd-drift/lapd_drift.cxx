@@ -356,30 +356,34 @@ protected:
     if (evolve_rho) {
       SOLVE_FOR(rho);
       comms.add(rho);
-    } else
+    } else {
       initial_profile("rho", rho);
-    
+    }
+
     if (evolve_ni) {
       SOLVE_FOR(ni);
       comms.add(ni);
-    } else
+    } else {
       initial_profile("ni", ni);
-    
+    }
+
     if (evolve_ajpar) {
       SOLVE_FOR(ajpar);
       comms.add(ajpar);
     } else {
       initial_profile("ajpar", ajpar);
-      if (ZeroElMass)
+      if (ZeroElMass) {
         dump.add(ajpar, "ajpar", 1); // output calculated Ajpar
+      }
     }
     
     if (evolve_te) {
       SOLVE_FOR(te);
       comms.add(te);
-    } else
+    } else {
       initial_profile("te", te);
-    
+    }
+
     // Set boundary conditions on jpar and VEt
     jpar.setBoundary("jpar");
     VEt.setBoundary("VEt");
@@ -759,8 +763,8 @@ protected:
       result.allocate();
       
       int ncz = mesh->LocalNz;
-      for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
-        for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
+      for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+        for (int jy = mesh->ystart; jy <= mesh->yend; jy++) {
           for(int jz=0;jz<ncz;jz++) {
             int jzp = (jz + 1) % ncz;
             int jzm = (jz - 1 + ncz) % ncz;
@@ -787,7 +791,9 @@ protected:
             
             result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;
           }
-      
+        }
+      }
+
     }else if(bout_exb) {
       // Use a subset of terms for comparison to BOUT-06
       result = VDDX(DDZ(p), f);
@@ -820,8 +826,8 @@ protected:
       result.allocate();
       
       int ncz = mesh->LocalNz;
-      for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
-        for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
+      for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+        for (int jy = mesh->ystart; jy <= mesh->yend; jy++) {
           for(int jz=0;jz<ncz;jz++) {
             int jzp = (jz + 1) % ncz;
             int jzm = (jz - 1 + ncz) % ncz;
@@ -848,7 +854,9 @@ protected:
             
             result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;
           }
-      
+        }
+      }
+
     }else if(bout_exb) {
       // Use a subset of terms for comparison to BOUT-06
       result = VDDX(DDZ(p), f) + VDDZ(-DDX(p), f);

@@ -2,7 +2,7 @@
 
 MXG = 0
 
-Ne = 5e26  # Electron density, m^-3
+Ne = 5e+26  # Electron density, m^-3
 
 # Electron temperature, eV
 # These values fitted from data in temperature.csv by script fit_temperature.py
@@ -10,11 +10,11 @@ Ne = 5e26  # Electron density, m^-3
 Tmin = 194.128366   # Minimum temperature, on right of domain
 Tmax = 943.775872   # Maximum temperature, on left
 
-mid = 2.22729804e-04   # Middle of the tanh profile [m]
-wwid = 2.79208361e-04  # Distance over which the tanh width varies
+mid = 0.000222729804   # Middle of the tanh profile [m]
+wwid = 0.000279208361  # Distance over which the tanh width varies
 w0 = 8.45148657e-05    # Width of the tanh profile
-w1 = -2.73392710e-01   # 1st order variation of tanh width
-w2 = -1.92344478e+03   # 2nd order variation of tanh width
+w1 = -0.27339271   # 1st order variation of tanh width
+w2 = -1923.44478   # 2nd order variation of tanh width
 
 width = w0 + ((ypos - mid)*w1 + (ypos - mid)^2 * w2) * exp(-((ypos - mid)/wwid)^2)
 width_clip = 1e-10 + H(width) * width # Ensure that width is positive
@@ -29,7 +29,7 @@ nx = 1
 ny = 256  # Along magnetic field
 nz = 1
 
-length = 6e-4 # in meters
+length = 0.0006 # in meters
 dy = length / ny # Grid spacing
 
 # Set boundaries

@@ -8,10 +8,11 @@
 # Cores: 4
 
 from __future__ import print_function
+
 try:
-  from builtins import str
+    from builtins import str
 except:
-  pass
+    pass
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 from sys import stdout, exit
@@ -21,21 +22,21 @@ build_and_log("Cyclic Reduction test")
 
 flags = ["", "nsys=2", "nsys=5 periodic", "nsys=7 n=10"]
 
-code = 0 # Return code
-for nproc in [1,2,4]:
+code = 0  # Return code
+for nproc in [1, 2, 4]:
     cmd = "./test_cyclic"
 
     print("   %d processors...." % (nproc))
     r = 0
     for f in flags:
-        stdout.write("\tflags '"+f+"' ... ")
+        stdout.write("\tflags '" + f + "' ... ")
 
         shell("rm data/BOUT.dmp.* 2> err.log")
 
         # Run the case
-        s, out = launch_safe(cmd+" "+f, nproc=nproc, mthread=1, pipe=True)
-        with open("run.log."+str(nproc)+"."+str(r), "w") as f:
-          f.write(out)
+        s, out = launch_safe(cmd + " " + f, nproc=nproc, mthread=1, pipe=True)
+        with open("run.log." + str(nproc) + "." + str(r), "w") as f:
+            f.write(out)
 
         r = r + 1
 

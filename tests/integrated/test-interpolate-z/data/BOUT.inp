@@ -1,4 +1,4 @@
-# Test of the FieldFactory class 
+# Test of the FieldFactory class
 #
 # Generates a set of fields and writes them to output file
 #
@@ -6,7 +6,7 @@
 NOUT = 0  # No timesteps
 
 MZ = 4   # Z size
-NXPE=1
+NXPE = 1
 
 ZMAX = 1
 MXG = 2
@@ -35,4 +35,3 @@ solution = exp(cos(2*z))
 
 [c]
 solution = gauss(x-0.5,0.2)*gauss(y)*sin(z)
-

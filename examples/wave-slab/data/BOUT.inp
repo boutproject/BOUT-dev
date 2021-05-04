@@ -2,7 +2,7 @@
 NOUT = 50
 TIMESTEP = 0.2
 
-grid="slab.grd.nc"
+grid = "slab.grd.nc"
 
 MZ = 64
 

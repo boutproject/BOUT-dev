@@ -72,6 +72,7 @@ A `Field` has meta-data members, which give:
       - ``directions.z`` is ``ZDirectionType::Standard`` by default, but can be
         ``ZDirectionType::Average`` if the `Field` represents a quantity that
         is averaged or constant in the z-direction (i.e. is a `Field2D`).
+
 The meta-data members are written to the output files as attributes of the variables.
 
 To create a new `Field` with meta-data, plus ``Mesh`` and ``Coordinates``

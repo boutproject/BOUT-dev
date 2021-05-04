@@ -8,7 +8,7 @@ timestep = 0.1  #Time between outputs
 # Number of points in z
 MZ = 1
 zmin = 0.0
-zmax = 0.15915494309189533577# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*pi*1.59 = 1
+zmax = 0.15915494309189535# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*pi*1.59 = 1
 
 #number of guard cells
 MYG = 1  #noy comm for now
@@ -16,10 +16,10 @@ MYG = 1  #noy comm for now
 [output]
 floats = false #false -> output in doubles
 
-[mesh]  
+[mesh]
 StaggerGrids = true
 
-ixseps1 = -1     
+ixseps1 = -1
 ixseps2 = -1             # Set x location of separatrix 2
 
 #nx = internals gridpoints + guardcells
@@ -28,13 +28,13 @@ nx = 8
 #ny = internal gridpoints
 ny = 1
 
-Lx = 1. 
-Ly = 1.
+Lx = 1.0
+Ly = 1.0
 
-dump_format="nc"     # Write NetCDF format files
+dump_format = "nc"     # Write NetCDF format files
 
 #grid points are distributed symmetrically
-symmetricGlobalX = true 
+symmetricGlobalX = true
 
 ##################################################
 [mesh:ddx]   # Methods used for perp (x) derivative terms
@@ -58,27 +58,24 @@ second = C2
 upwind = U1
 flux = SPLIT
 
-[solver] 
+[solver]
 
 type = pvode
 
-atol = 1.0e-15 # absolute tolerance
-rtol = 1.0e-7  # relative tolerance
+atol = 1e-15 # absolute tolerance
+rtol = 1e-07  # relative tolerance
 mxstep = 100000000
 
 [all]
 
-scale = 1.0 
+scale = 1.0
 
-[f] 
+[f]
 
 bndry_all = neumann # Should be ignored
 bndry_xin = neumann_o2
 
-[g] 
+[g]
 
 bndry_all = dirichlet_o2
 bndry_xin = neumann  # Should have no effect
-
-################################
-

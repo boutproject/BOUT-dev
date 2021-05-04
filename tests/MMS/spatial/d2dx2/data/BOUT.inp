@@ -8,15 +8,15 @@ myg = 1  # No guard cells in Y
 input = sin(0.5*pi*x)
 solution = -sin(0.5*pi*x) * 0.25*pi*pi
 
-[mesh:ddx]
-
-second = c2
-
 [mesh]
 
 nx = 8
 dx = 0.16666666666666666 # 1 / (nx - 2)
 ny = 1
+
+[mesh:ddx]
+
+second = c2
 
 [bndry]
 # This sets the boundary conditions applied to "input"

@@ -71,10 +71,10 @@ then run::
 
 This should give a terminal in a "boutuser" home directory, in which
 there is "BOUT-next", containing BOUT++ configured and compiled with
-NetCDF, HDF5, SUNDIALS, PETSc and SLEPc. Python 3 is also installed,
-with ipython, NumPy, Scipy and Matplotlib libaries. To plot to screen
-an X11 display is needed. Alternatively a shared directory can be
-created to pass files between the docker image and host. The following
+NetCDF, SUNDIALS, PETSc and SLEPc. Python 3 is also installed, with
+ipython, NumPy, Scipy and Matplotlib libaries. To plot to screen an
+X11 display is needed. Alternatively a shared directory can be created
+to pass files between the docker image and host. The following
 commands both enable X11 and create a shared directory::
 
     $ mkdir shared
@@ -102,8 +102,12 @@ obtain a copy of the latest version, run::
 
     $ git clone git://github.com/boutproject/BOUT-dev.git
 
-which will create a directory ``BOUT-dev`` containing the code. To get
-the latest changes later, go into the ``BOUT-dev`` directory and run::
+
+which will create a directory ``BOUT-dev`` containing the code::
+
+    $ cd BOUT-dev
+
+To get the latest changes later, go into the ``BOUT-dev`` directory and run::
 
     $ git pull
 
@@ -123,8 +127,7 @@ The bare-minimum requirements for compiling and running BOUT++ are:
 #. A C++ compiler that supports C++14
 
 #. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <https://www.open-mpi.org/>`__),
-   MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
-   LAM (`www.lam-mpi.org/ <https://www.lam-mpi.org/>`__)
+   MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__)
    
 #. The NetCDF library (`https://www.unidata.ucar.edu/downloads/netcdf
    <https://www.unidata.ucar.edu/downloads/netcdf>`__)
@@ -253,8 +256,7 @@ directory with the ``–with-fftw=`` option e.g::
 Configure should now find FFTW, and search for the NetCDF library. If
 configure finishes successfully, then skip to the next section, but if
 you see a message ``NetCDF support disabled`` then configure couldn’t
-find the NetCDF library. Unless you have another file format (like HDF5) installed, this
-will be followed by a message
+find the NetCDF library. This will be followed by a message
 ``ERROR: At least one file format must be supported``. Check that you have
 NetCDF installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
 
@@ -274,7 +276,6 @@ configuration::
       ARKODE support: yes
       NetCDF support: yes
       Parallel-NetCDF support: no
-      HDF5 support: yes (parallel: no)
 
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.
@@ -344,7 +345,7 @@ directory. The equivalent of ``make distclean`` with CMake is to just
 delete the entire build directory and reconfigure.
 
 Bundled Dependencies
-^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~
 
 BOUT++ bundles some dependencies, currently `mpark.variant
 <https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
@@ -362,7 +363,7 @@ time as your project, therefore there is no option to use an external
 installation for that.
 
 Using CMake with your physics model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can write a CMake configuration file (``CMakeLists.txt``) for your
 physics model in only four lines:
@@ -439,22 +440,34 @@ make a note of what configure printed out.
 Python configuration
 ~~~~~~~~~~~~~~~~~~~~
 
-To use Python, you will need the NumPy and SciPy libraries. On Debian or
-Ubuntu these can be installed with::
+To use Python, you will need the dependencies of the `boututils
+<https://github.com/boutproject/boututils>`__ and `boutdata
+<https://github.com/boutproject/boutdata>`__ libraries. The simplest way to get these is
+to install the packages with pip::
 
-    $ sudo apt-get install python-scipy
+    $ pip install --user boutdata
 
-which should then add all the other dependencies like NumPy. To test if
-everything is installed, run::
+or conda::
 
-    $ python -c "import scipy"
+    $ conda install boutdata
 
-If not, see the SciPy website https://www.scipy.org for instructions on
-installing.
+You can also install all the packages directly (see the documentation in the `boututils
+<https://github.com/boutproject/boututils>`__ and `boutdata
+<https://github.com/boutproject/boutdata>`__ repos for the most up to date list)
+using pip::
 
-To do this, the path to ``tools/pylib`` should be added to the
-``PYTHONPATH`` environment variable. Instructions for doing this are
-printed at the end of the configure script, for example::
+    $ pip install --user numpy scipy matplotlib sympy netCDF4 h5py future importlib-metadata
+
+or conda::
+
+    $ conda install numpy scipy matplotlib sympy netcdf4 h5py future importlib-metadata
+
+They may also be available from your Linux system's package manager.
+
+To use the versions of ``boututils`` and ``boutdata`` provided by BOUT++,  the path to
+``tools/pylib`` should be added to the ``PYTHONPATH`` environment variable. This is not
+necessary if you have installed the ``boututils`` and ``boutdata`` packages.  Instructions
+for doing this are printed at the end of the configure script, for example::
 
     Make sure that the tools/pylib directory is in your PYTHONPATH
     e.g. by adding to your ~/.bashrc file
@@ -465,8 +478,13 @@ To test if this command has worked, try running::
 
     $ python -c "import boutdata"
 
-If this doesn’t produce any error messages then Python is configured
-correctly.
+If this doesn’t produce any error messages then Python is configured correctly.
+
+Note that ``boututils`` and ``boutdata`` are provided by BOUT++ as submodules, so versions
+compatible with the checked out version of BOUT++ are downloaded into the
+``externalpackages`` directory. These are the versions used by the tests run by ``make
+check`` even if you have installed ``boututils`` and ``boutdata`` on your system.
+
 
 .. _sec-config-idl:
 
@@ -567,10 +585,10 @@ installation of BOUT++. Unless you want to use some experimental
 features of BOUT++, skip to section [sec-running] to start running the
 code.
 
+.. _sec-install-bout:
+
 Installing BOUT++ (experimental)
 --------------------------------
-
-.. _sec-install-bout:
 
 Most BOUT++ users install and develop their own copies in their home directory,
 so do not need to install BOUT++ to a system directory.

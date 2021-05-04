@@ -5,7 +5,7 @@ mxg = 1
 
 
 solution = sin(pi*x)
-input    = -pi^2*sin(pi*x)
+input = -pi^2*sin(pi*x)
 
 [mesh]
 
@@ -19,5 +19,3 @@ Lx = 1.0
 [laplace]
 
 flags = 0
-
-

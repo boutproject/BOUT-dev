@@ -11,7 +11,7 @@ MXG = 1
 MYG = 1      # No y derivatives, so no guard cells needed in y
 
 MZ = 256     # number of points in z direction (2^n)
-ZMAX = 1e-3   # Chosen so dx*nx = ZMAX * 2*pi * Rxy
+ZMAX = 0.001   # Chosen so dx*nx = ZMAX * 2*pi * Rxy
 
 [mesh]
 
@@ -25,25 +25,22 @@ ixseps2 = -1
 
 Rxy = 1.5    # Major radius
 
-bxcvz = 100. # 1./R^2
+bxcvz = 100.0 # 1./R^2
 
 Bpxy = 0.35  # Magnetic field
 Bxy = 0.35
 Btxy = 0.0
 hthe = 1.0
 
-dx = 2e-5
+dx = 2e-05
 dy = 1.0
-
-[output]
-floats = false # -> Output in double precision
 
 ##################################################
 # derivative methods
 
 [mesh:ddx]
 
-first = C2  
+first = C2
 second = C2
 upwind = W3
 
@@ -59,6 +56,9 @@ first = C2
 second = C2
 upwind = W3
 
+[output]
+floats = false # -> Output in double precision
+
 ###################################################
 # Time-integration solver
 
@@ -66,8 +66,8 @@ upwind = W3
 
 type = pvode
 
-ATOL = 1.0e-12  # absolute tolerance
-RTOL = 1.0e-8   # relative tolerance
+ATOL = 1e-12  # absolute tolerance
+RTOL = 1e-08   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 mms = true      # Test using Method of Manufactured Solutions
@@ -77,8 +77,8 @@ mms = true      # Test using Method of Manufactured Solutions
 
 [GBS]
 
-ionvis  = false # Ion Viscosity
-Ti      = 10    # Ion temperature for viscosity calculation
+ionvis = false # Ion Viscosity
+Ti = 10    # Ion temperature for viscosity calculation
 elecvis = false # Electron viscosity
 resistivity = true
 
@@ -88,9 +88,9 @@ startprofiles = false # Start from profiles in input file
 
 # Normalisation paarameters
 Tnorm = 5     # Electron Temperature (eV)
-Nnorm = 2e18  # Background plasma density (m^-3)
+Nnorm = 2e+18  # Background plasma density (m^-3)
 Bnorm = 0.35  # Magnetic field [T]
-AA    = 2     # Ion atomic mass
+AA = 2     # Ion atomic mass
 
 # Cs=1.547399e+04, rho_s=9.232080e-04, Omega_ci=1.676111e+07
 
@@ -107,43 +107,43 @@ bndry_all = neumann # Zero-gradient on all boundaries
 
 [Ne]  # Density
 evolve = true
-D = -1e-3 # Numerical diffusion
+D = -0.001 # Numerical diffusion
 
 solution = 0.9*x + 0.2*sin(5.0*x^2 - 5.0*z)*cos(t) + 0.9
 
-ddx     = 0.000233054326622971*x*cos(t)*cos(5.0*x^2 - 5.0*z) + 0.000104874446980337
+ddx = 0.000233054326622971*x*cos(t)*cos(5.0*x^2 - 5.0*z) + 0.000104874446980337
 
-ddy     = 0
+ddy = 0
 
-source   = 1000.0*(-0.000116527163311486*sin(2.0*pi*x)*cos(t - 1.0*x + 1.0*z) + 0.000233054326622971*pi*sin(t - 1.0*x + 1.0*z)*cos(2.0*pi*x))*cos(t)*cos(5.0*x^2 - 5.0*z) + 0.170462593187088*(0.5*cos(t)*cos(3.0*x^2 - 4.0*z) + 1)*cos(t)*cos(5.0*x^2 - 5.0*z) + 1000.0*(0.000233054326622971*x*cos(t)*cos(5.0*x^2 - 5.0*z) + 0.000104874446980337)*sin(2.0*pi*x)*cos(t - 1.0*x + 1.0*z) + 0.170462593187088*(0.9*x + 0.2*sin(5.0*x^2 - 5.0*z)*cos(t) + 0.9)*sin(2.0*pi*x)*cos(t - 1.0*x + 1.0*z) - 0.340925186374175*(0.9*x + 0.2*sin(5.0*x^2 - 5.0*z)*cos(t) + 0.9)*sin(3.0*x^2 - 4.0*z)*cos(t) - 0.2*sin(t)*sin(5.0*x^2 - 5.0*z)
+source = 1000.0*(-0.000116527163311486*sin(2.0*pi*x)*cos(t - 1.0*x + 1.0*z) + 0.000233054326622971*pi*sin(t - 1.0*x + 1.0*z)*cos(2.0*pi*x))*cos(t)*cos(5.0*x^2 - 5.0*z) + 0.170462593187088*(0.5*cos(t)*cos(3.0*x^2 - 4.0*z) + 1)*cos(t)*cos(5.0*x^2 - 5.0*z) + 1000.0*(0.000233054326622971*x*cos(t)*cos(5.0*x^2 - 5.0*z) + 0.000104874446980337)*sin(2.0*pi*x)*cos(t - 1.0*x + 1.0*z) + 0.170462593187088*(0.9*x + 0.2*sin(5.0*x^2 - 5.0*z)*cos(t) + 0.9)*sin(2.0*pi*x)*cos(t - 1.0*x + 1.0*z) - 0.340925186374175*(0.9*x + 0.2*sin(5.0*x^2 - 5.0*z)*cos(t) + 0.9)*sin(3.0*x^2 - 4.0*z)*cos(t) - 0.2*sin(t)*sin(5.0*x^2 - 5.0*z)
 
 bndry_all = dirichlet_o2(Ne:solution)
 
 [Te]
 evolve = true
-D = -1e-3
+D = -0.001
 
 solution = 0.5*cos(t)*cos(3.0*x^2 - 4.0*z) + 1
 
-ddx     = -0.000349581489934457*x*sin(3.0*x^2 - 4.0*z)*cos(t)
+ddx = -0.000349581489934457*x*sin(3.0*x^2 - 4.0*z)*cos(t)
 
-ddy     = 0
+ddy = 0
 
-source   = -0.349581489934457*x*sin(2.0*pi*x)*sin(3.0*x^2 - 4.0*z)*cos(t)*cos(t - 1.0*x + 1.0*z) - 2000.0*(-0.000116527163311486*sin(2.0*pi*x)*cos(t - 1.0*x + 1.0*z) + 0.000233054326622971*pi*sin(t - 1.0*x + 1.0*z)*cos(2.0*pi*x))*sin(3.0*x^2 - 4.0*z)*cos(t) - (0.666666666666667*cos(t)*cos(3.0*x^2 - 4.0*z) + 1.33333333333333)*(-0.0852312965935438*(0.5*cos(t)*cos(3.0*x^2 - 4.0*z) + 1)*cos(t)*cos(5.0*x^2 - 5.0*z)/(0.9*x + 0.2*sin(5.0*x^2 - 5.0*z)*cos(t) + 0.9) - 0.0852312965935438*sin(2.0*pi*x)*cos(t - 1.0*x + 1.0*z) + 0.596619076154807*sin(3.0*x^2 - 4.0*z)*cos(t)) - 0.5*sin(t)*cos(3.0*x^2 - 4.0*z)
+source = -0.349581489934457*x*sin(2.0*pi*x)*sin(3.0*x^2 - 4.0*z)*cos(t)*cos(t - 1.0*x + 1.0*z) - 2000.0*(-0.000116527163311486*sin(2.0*pi*x)*cos(t - 1.0*x + 1.0*z) + 0.000233054326622971*pi*sin(t - 1.0*x + 1.0*z)*cos(2.0*pi*x))*sin(3.0*x^2 - 4.0*z)*cos(t) - (0.666666666666667*cos(t)*cos(3.0*x^2 - 4.0*z) + 1.33333333333333)*(-0.0852312965935438*(0.5*cos(t)*cos(3.0*x^2 - 4.0*z) + 1)*cos(t)*cos(5.0*x^2 - 5.0*z)/(0.9*x + 0.2*sin(5.0*x^2 - 5.0*z)*cos(t) + 0.9) - 0.0852312965935438*sin(2.0*pi*x)*cos(t - 1.0*x + 1.0*z) + 0.596619076154807*sin(3.0*x^2 - 4.0*z)*cos(t)) - 0.5*sin(t)*cos(3.0*x^2 - 4.0*z)
 
 bndry_all = dirichlet_o2(Te:solution)
 
 [Vort]
 evolve = true
-D = -1e-3
+D = -0.001
 
 solution = sin(2*t)*cos(1.0*x - 1.0*z)
 
-ddx     = -0.000116527163311486*sin(2*t)*sin(1.0*x - 1.0*z)
+ddx = -0.000116527163311486*sin(2*t)*sin(1.0*x - 1.0*z)
 
-ddy     = 0
+ddy = 0
 
-source   = -1000.0*(-0.000116527163311486*sin(2.0*pi*x)*cos(t - 1.0*x + 1.0*z) + 0.000233054326622971*pi*sin(t - 1.0*x + 1.0*z)*cos(2.0*pi*x))*sin(2*t)*sin(1.0*x - 1.0*z) - (-0.170462593187088*(0.5*cos(t)*cos(3.0*x^2 - 4.0*z) + 1)*cos(t)*cos(5.0*x^2 - 5.0*z) + 0.340925186374175*(0.9*x + 0.2*sin(5.0*x^2 - 5.0*z)*cos(t) + 0.9)*sin(3.0*x^2 - 4.0*z)*cos(t))/(0.9*x + 0.2*sin(5.0*x^2 - 5.0*z)*cos(t) + 0.9) - 0.116527163311486*sin(2*t)*sin(2.0*pi*x)*sin(1.0*x - 1.0*z)*cos(t - 1.0*x + 1.0*z) + 2*cos(2*t)*cos(1.0*x - 1.0*z)
+source = -1000.0*(-0.000116527163311486*sin(2.0*pi*x)*cos(t - 1.0*x + 1.0*z) + 0.000233054326622971*pi*sin(t - 1.0*x + 1.0*z)*cos(2.0*pi*x))*sin(2*t)*sin(1.0*x - 1.0*z) - (-0.170462593187088*(0.5*cos(t)*cos(3.0*x^2 - 4.0*z) + 1)*cos(t)*cos(5.0*x^2 - 5.0*z) + 0.340925186374175*(0.9*x + 0.2*sin(5.0*x^2 - 5.0*z)*cos(t) + 0.9)*sin(3.0*x^2 - 4.0*z)*cos(t))/(0.9*x + 0.2*sin(5.0*x^2 - 5.0*z)*cos(t) + 0.9) - 0.116527163311486*sin(2*t)*sin(2.0*pi*x)*sin(1.0*x - 1.0*z)*cos(t - 1.0*x + 1.0*z) + 2*cos(2*t)*cos(1.0*x - 1.0*z)
 
 bndry_all = dirichlet_o2(Vort:solution)
 
@@ -158,6 +158,6 @@ D = 10
 [phi]
 solution = sin(2.0*pi*x)*sin(z - x + t)
 
-source   = -sin(2*t)*cos(x - z) - 0.14338303298093*pi^2*sin(2.0*pi*x)*sin(t - 1.0*x + 1.0*z) - 0.414651520883205*sin(2.0*pi*x)*sin(t - 1.0*x + 1.0*z) - 0.14338303298093*pi*cos(2.0*pi*x)*cos(t - x + z)
+source = -sin(2*t)*cos(x - z) - 0.14338303298093*pi^2*sin(2.0*pi*x)*sin(t - 1.0*x + 1.0*z) - 0.414651520883205*sin(2.0*pi*x)*sin(t - 1.0*x + 1.0*z) - 0.14338303298093*pi*cos(2.0*pi*x)*cos(t - x + z)
 
 bndry_all = none

@@ -27,17 +27,6 @@ restart_format = "nc"   # Restart file format
 StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
 
 ##################################################
-# Communications
-# Fastest setting depends on machine and MPI
-# implementation. Do not affect result.
-
-[comms]
-
-async = false           # Use asyncronous sends?
-pre_post = false        # Post receives as early as possible
-group_nonblock = false  # Use non-blocking group operations?
-
-##################################################
 # derivative methods
 
 [mesh:ddx]
@@ -59,13 +48,24 @@ second = C4
 upwind = W3
 
 ##################################################
+# Communications
+# Fastest setting depends on machine and MPI
+# implementation. Do not affect result.
+
+[comms]
+
+async = false           # Use asyncronous sends?
+pre_post = false        # Post receives as early as possible
+group_nonblock = false  # Use non-blocking group operations?
+
+##################################################
 # Solver settings
 
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-8 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+ATOL = 1e-08 # absolute tolerance
+RTOL = 1e-05  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
 use_jacobian = false  # Use user-supplied Jacobian
@@ -126,16 +126,12 @@ bndry_all = neumann
 
 [Vort]   # vorticity
 
-scale = 1.0e-5
-
-[Ajpar]  # beta*apar + mu*jpar
+scale = 1e-05
 
 [Vpar]   # Parallel velocity
 
 bndry_pf = dirichlet
 bndry_sol = dirichlet
-
-[Pe]    # Electron pressure
 
 ########### Auxilliary variables
 
@@ -143,9 +139,6 @@ bndry_sol = dirichlet
 bndry_xin = none   # Radial boundaries specified in inversion
 bndry_xout = none
 
-[jpar]
-
 [phi]
 bndry_xin = none   # Radial boundaries specified in inversion
 bndry_xout = none
-

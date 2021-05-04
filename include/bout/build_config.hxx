@@ -14,13 +14,15 @@ constexpr auto openmp_schedule = STRINGIFY(BOUT_OPENMP_SCHEDULE);
 
 constexpr auto has_fftw = static_cast<bool>(BOUT_HAS_FFTW);
 constexpr auto has_gettext = static_cast<bool>(BOUT_HAS_GETTEXT);
-constexpr auto has_hdf5 = static_cast<bool>(BOUT_HAS_HDF5);
 constexpr auto has_lapack = static_cast<bool>(BOUT_HAS_LAPACK);
+constexpr auto has_legacy_netcdf = static_cast<bool>(BOUT_HAS_LEGACY_NETCDF);
 constexpr auto has_netcdf = static_cast<bool>(BOUT_HAS_NETCDF);
 constexpr auto has_petsc = static_cast<bool>(BOUT_HAS_PETSC);
 constexpr auto has_pretty_function = static_cast<bool>(BOUT_HAS_PRETTY_FUNCTION);
 constexpr auto has_pvode = static_cast<bool>(BOUT_HAS_PVODE);
 constexpr auto has_scorep = static_cast<bool>(BOUT_HAS_SCOREP);
+constexpr auto has_uuid_system_generator =
+    static_cast<bool>(BOUT_HAS_UUID_SYSTEM_GENERATOR);
 constexpr auto has_slepc = static_cast<bool>(BOUT_HAS_SLEPC);
 constexpr auto has_sundials = static_cast<bool>(BOUT_HAS_SUNDIALS);
 constexpr auto use_backtrace = static_cast<bool>(BOUT_USE_BACKTRACE);

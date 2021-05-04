@@ -62,8 +62,8 @@ AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
         [Enable support for scorep based instrumentation])],,[with_scorep=no])
 AC_ARG_WITH(system_mpark, [AS_HELP_STRING([--with-system-mpark],
         [Use mpark.variant already installed rather then the bundled one])],,[with_system_mpark=auto])
-
-dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
+AC_ARG_WITH(system_uuid,  [AS_HELP_STRING([--with-system-uuid],
+        [Use libuuid to generate UUIDs])],,[with_system_uuid=auto])
 
 AC_ARG_ENABLE(warnings,     [AS_HELP_STRING([--disable-warnings],
         [Disable compiler warnings])],,[])
@@ -488,6 +488,8 @@ BOUT_HAS_FFTW="no"
 
 NCCONF="" # Configuration script
 
+BOUT_HAS_NETCDF=no
+BOUT_HAS_LEGACY_NETCDF=no
 AS_IF([test "x$with_netcdf" != "xno"],
 [
   ##########################################
@@ -553,7 +555,9 @@ AS_IF([test "x$with_netcdf" != "xno"],
         AC_LANG_POP([C++])
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
-        CXXFLAGS="$save_CXXFLAGS -DNCDF"
+        CXXFLAGS="$save_CXXFLAGS"
+        BOUT_HAS_NETCDF=yes
+        BOUT_HAS_LEGACY_NETCDF=yes
        ])
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 
@@ -574,7 +578,8 @@ AS_IF([test "x$with_netcdf" != "xno"],
          file_formats="$file_formats netCDF"
          AC_MSG_NOTICE([ -> Legacy NetCDF support enabled])
          NCPATH="found"
-         CXXFLAGS="$CXXFLAGS -DNCDF"
+         BOUT_HAS_NETCDF=yes
+         BOUT_HAS_LEGACY_NETCDF=yes
         ], [])
   ])
 
@@ -629,35 +634,6 @@ AS_IF([test "x$PNCPATH" = "x"], [
 
   file_formats="$file_formats Parallel-NetCDF"
   AC_MSG_NOTICE([Parallel-NetCDF support enabled])
-])
-
-#############################################################
-# HDF5 library
-#############################################################
-
-BOUT_HAS_HDF5="no"
-AX_LIB_HDF5([serial])
-AS_IF([test "$with_hdf5" = "yes"], [
-  AC_MSG_NOTICE([Found HDF5])
-  EXTRA_INCS="$EXTRA_INCS $HDF5_CPPFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $HDF5_LDFLAGS $HDF5_LIBS"
-  BOUT_HAS_HDF5="yes"
-  file_formats="$file_formats HDF5"
-  ], [
-  AC_MSG_NOTICE([Serial HDF5 support disabled])
-])
-
-BOUT_HAS_PHDF5="no"
-AX_LIB_PARALLELHDF5()
-AS_IF([test "$with_parallelhdf5" = "yes"], [
-  AC_MSG_NOTICE([Found parallel HDF5])
-  CXXFLAGS="$CXXFLAGS -DPHDF5"
-  EXTRA_INCS="$EXTRA_INCS $PARALLELHDF5_CPPFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $PARALLELHDF5_LDFLAGS $PARALLELHDF5_LIBS"
-  BOUT_HAS_PHDF5="yes"
-  file_formats="$file_formats Parallel HDF5"
-  ], [
-  AC_MSG_NOTICE([Parallel HDF5 support disabled])
 ])
 
 #############################################################
@@ -1138,6 +1114,26 @@ AS_IF([test "$SYSTEM_HAS_MPARK" = "yes"], [
   MPARK_INCLUDE="-I$MPARK_VARIANT_INCLUDE_PATH"
   OWN_MPARK=yes
 ])
+
+#############################################################
+# Check for libuuid
+#############################################################
+
+AS_IF([test ".$with_system_uuid" = "no"], [
+  BOUT_HAS_UUID_SYSTEM_GENERATOR=no
+], [
+  BOUT_ADDPATH_CHECK_HEADER(uuid/uuid.h,
+   BOUT_ADDPATH_CHECK_LIB(uuid, uuid_generate,
+       BOUT_HAS_UUID_SYSTEM_GENERATOR=yes,
+       BOUT_HAS_UUID_SYSTEM_GENERATOR=no,
+       [$with_system_uuid]),
+   BOUT_HAS_UUID_SYSTEM_GENERATOR=no,
+   [$with_system_uuid])
+  AS_IF([test "$with_system_uuid" = "yes"], [
+   AC_MSG_FAILURE([*** System UUID generator not found, but explicitly requested])
+  ])
+])
+
 #############################################################
 # Download + Build PVODE '98
 #############################################################
@@ -1338,10 +1334,10 @@ BOUT_DEFINE_SUBST(BOUT_HAS_ARKODE, [ARKODE support])
 BOUT_DEFINE_SUBST(BOUT_HAS_CVODE, [CVODE support])
 BOUT_DEFINE_SUBST(BOUT_HAS_FFTW, [FFTW support])
 BOUT_DEFINE_SUBST(BOUT_HAS_GETTEXT, [NLS support])
-BOUT_DEFINE_SUBST(BOUT_HAS_HDF5, [HDF5 support])
 BOUT_DEFINE_SUBST(BOUT_HAS_IDA, [IDA support])
 BOUT_DEFINE_SUBST(BOUT_HAS_LAPACK, [LAPACK support])
 BOUT_DEFINE_SUBST(BOUT_HAS_NETCDF, [NETCDF support])
+BOUT_DEFINE_SUBST(BOUT_HAS_LEGACY_NETCDF, [NETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PETSC, [PETSc support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PNETCDF, [PNETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PRETTY_FUNCTION, [Compiler PRETTYFUNCTION support])
@@ -1349,6 +1345,7 @@ BOUT_DEFINE_SUBST(BOUT_HAS_PVODE, [PVODE support])
 BOUT_DEFINE_SUBST(BOUT_HAS_SCOREP, [Score-P support])
 BOUT_DEFINE_SUBST(BOUT_HAS_SLEPC, [SLEPc support])
 BOUT_DEFINE_SUBST(BOUT_HAS_SUNDIALS, [SUNDIALS support])
+BOUT_DEFINE_SUBST(BOUT_HAS_UUID_SYSTEM_GENERATOR, [Use libuuid for UUID generation])
 BOUT_DEFINE_SUBST(BOUT_USE_BACKTRACE, [Enable backtrace in exceptions])
 BOUT_DEFINE_SUBST(BOUT_USE_COLOR, [Enable color logs option])
 BOUT_DEFINE_SUBST(BOUT_USE_OUTPUT_DEBUG, [Enabled extra debug output])
@@ -1389,13 +1386,13 @@ AC_MSG_NOTICE([  IDA support             : $BOUT_HAS_IDA])
 AC_MSG_NOTICE([  CVODE support           : $BOUT_HAS_CVODE])
 AC_MSG_NOTICE([  ARKODE support          : $BOUT_HAS_ARKODE])
 AC_MSG_NOTICE([  FFTW support            : $BOUT_HAS_FFTW])
-AC_MSG_NOTICE([  NetCDF support          : $BOUT_HAS_NETCDF])
+AC_MSG_NOTICE([  NetCDF support          : $BOUT_HAS_NETCDF (legacy: $BOUT_HAS_LEGACY_NETCDF)])
 AC_MSG_NOTICE([  Parallel-NetCDF support : $BOUT_HAS_PNETCDF])
-AC_MSG_NOTICE([  HDF5 support            : $BOUT_HAS_HDF5 (parallel: $BOUT_HAS_PHDF5)])
 AC_MSG_NOTICE([  Lapack support          : $BOUT_HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $BOUT_HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $BOUT_USE_OPENMP (schedule: $OPENMP_SCHEDULE)])
 AC_MSG_NOTICE([  Natural language support: $BOUT_HAS_GETTEXT (path: $localedir)])
+AC_MSG_NOTICE([  System UUID generator   : $BOUT_HAS_UUID_SYSTEM_GENERATOR])
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([  Enable backtrace        : $BOUT_USE_BACKTRACE])
 AC_MSG_NOTICE([  Enable color logs       : $BOUT_USE_COLOR])
