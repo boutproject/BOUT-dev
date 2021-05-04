@@ -69,6 +69,8 @@ AC_ARG_ENABLE(warnings,     [AS_HELP_STRING([--disable-warnings],
         [Disable compiler warnings])],,[])
 AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
         [Set run-time checking level])],,[])
+AC_ARG_ENABLE(msgstack,     [AS_HELP_STRING([--enable-msgstack=no/yes],
+        [Enable MstStack for backtrace. Default based on check level.])],,[enable_msgstack=maybe])
 AC_ARG_ENABLE(signal,       [AS_HELP_STRING([--disable-signal],
         [Disable SEGFAULT handling])],,[])
 AC_ARG_ENABLE(color,        [AS_HELP_STRING([--disable-color],
@@ -318,16 +320,31 @@ AS_IF([test "x$enable_checks" != "xno" && test "x$enable_checks" != "x0"], [
     [1], [AC_MSG_NOTICE([ -> Level 1 (Basic checking)])
           CXXFLAGS="$CXXFLAGS -DCHECK=1"
           BOUT_CHECK_LEVEL=1],
-    [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking + stack tracing)])
+    [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking)])
           enable_output_debug=yes
           CXXFLAGS="$CXXFLAGS -DCHECK=3"
           BOUT_CHECK_LEVEL=3],
-    [AC_MSG_NOTICE([ -> Level 2 (Basic checking + stack tracing)])
+    [AC_MSG_NOTICE([ -> Level 2 (Enhanced checking)])
      CXXFLAGS="$CXXFLAGS -DCHECK=2"
      BOUT_CHECK_LEVEL=2])
 ], [
   AC_MSG_NOTICE([Run-time checking disabled])
 ])
+
+BOUT_MSGSTACK_LEVEL=$CHECK
+AS_IF([test "x$enable_msgstack = xyes ], [
+  BOUT_MSGSTACK_LEVEL=2
+], [
+  AS_IF([test "x$enable_msgstack = xno ], [
+    BOUT_MSGSTACK_LEVEL=0
+  ], [])
+])
+AS_IF([test $BOUT_MSGSTACK_LEVEL -lt 2 ], [
+  AC_MSG_NOTICE([Stack tracing enabled])
+], [
+  AC_MSG_NOTICE([Stack tracing disabled])
+])
+CXXFLAGS="$CXXFLAGS -DBOUT_MSGSTACK_LEVEL=$BOUT_MSGSTACK_LEVEL"
 
 BOUT_USE_SIGNAL=no
 AS_IF([test "x$enable_signal" != "xno"], [
@@ -1367,6 +1384,7 @@ AC_DEFINE_UNQUOTED([BOUT_METRIC_TYPE], $BOUT_METRIC_TYPE, [Type of the metric fi
 BOUT_METRIC_3D=$(test $BOUT_METRIC_TYPE != 3D ; echo $?)
 AC_DEFINE_UNQUOTED([BOUT_USE_METRIC_3D], $BOUT_METRIC_3D, [Is the metric field 3D])
 AC_SUBST(BOUT_METRIC_TYPE)
+BOUT_DEFINE_SUBST(BOUT_MSGSTACK_LEVEL, [Enable MsgStack for traces])
 
 AC_SUBST(PETSC_HAS_SUNDIALS)
 AC_SUBST(PETSC_MAKE_INCLUDE)
