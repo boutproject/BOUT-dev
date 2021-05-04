@@ -434,6 +434,15 @@ message(STATUS "Runtime checking level: CHECK=${CHECK}")
 target_compile_definitions(bout++ PUBLIC "CHECK=${CHECK}")
 set(BOUT_CHECK_LEVEL ${CHECK})
 
+set(BOUT_MSGSTACK_LEVEL ${CHECK} "Set the Mesagestack level")
+set_property(CACHE BOUT_MSGSTACK_LEVEL PROPERTY STRINGS ${CHECK_LEVELS})
+if (NOT BOUT_MSGSTACK_LEVEL IN_LIST CHECK_LEVELS)
+  message(FATAL_ERROR "BOUT_MSGSTACK_LEVEL must be one of ${CHECK_LEVELS}")
+endif()
+message(STATUS "Runtime checking level: BOUT_MSGSTACK_LEVEL=${BOUT_MSGSTACK_LEVEL}")
+target_compile_definitions(bout++ PUBLIC "BOUT_MSGSTACK_LEVEL=${BOUT_MSGSTACK_LEVEL}")
+
+
 cmake_dependent_option(BOUT_ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF
   "CHECK LESS 3" ON)
 message(STATUS "Extra debug output: BOUT_USE_OUTPUT_DEBUG=${BOUT_ENABLE_OUTPUT_DEBUG}")
