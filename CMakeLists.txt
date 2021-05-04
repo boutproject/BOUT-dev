@@ -712,6 +712,14 @@ if(BOUT_BUILD_EXAMPLES)
 endif()
 
 ##################################################
+# Documentation
+
+option(BOUT_BUILD_DOCS "Build the documentation" ON)
+if (BOUT_BUILD_DOCS)
+  add_subdirectory(manual)
+endif()
+
+##################################################
 # Installation
 
 include(GNUInstallDirs)
