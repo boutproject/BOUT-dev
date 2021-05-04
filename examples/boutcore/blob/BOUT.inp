@@ -117,5 +117,3 @@ height = 0.5
 width = 0.05
 
 function = 1 + height * exp(-((x-0.25)/width)^2 - ((z/(2*pi) - 0.5)/width)^2)
-
-
