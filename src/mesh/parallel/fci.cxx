@@ -336,6 +336,7 @@ void FCITransform::calcParallelSlices(Field3D& f) {
   // Interpolate f onto yup and ydown fields
   for (const auto& map : field_line_maps) {
     f.ynext(map.offset) = map.interpolate(f);
+    f.ynext(map.offset).setRegion(fmt::format("RGN_YPAR_{:+d}", map.offset));
   }
 }
 
