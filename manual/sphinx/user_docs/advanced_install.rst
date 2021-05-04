@@ -185,7 +185,7 @@ to enable AVX512 vectorization.
 Marconi with gnu compilers
 **************************
 
-It is also possible to configure on Marconi using gnu compilers, which may give better performance. A set of modules which work as of 30/9/2020 is
+It is also possible to configure on Marconi using gnu compilers, which may give better performance. A set of modules which work as of 4/5/2021 is
 
 .. code-block:: bash
 
@@ -200,7 +200,7 @@ It is also possible to configure on Marconi using gnu compilers, which may give 
 
 Then download source code for hdf5-1.12.0 (hdf5 is available in a module on
 Marconi, but has issues linking OpenMPI), netCDF-c-4.7.4, netCDF-cxx4-4.3.1,
-and FFTW-3.3.8. Optionally also SUNDIALS-5.1.0 or PETSc-3.13.0. Configure and
+and FFTW-3.3.9. Optionally also SUNDIALS-5.7.0 or PETSc-3.15.0. Configure and
 compile all of the downloaded packages. Make sure to install netCDF and
 netCDF-cxx4 into the same directory (this is assumed by netCDF's linking
 strategy, and makes netCDF configuration simpler).
@@ -213,29 +213,25 @@ The following configuration commands have been used successfully:
     make
     make install
 
-* netCDF-4.7.4::
+* netCDF-4.7.4 (note: using cmake to build gave errors in ``make test`` while the autotools build with ``configure`` passed all tests in ``make check``; netCDF-4.8.0 failed to link to hdf5-1.12.0 and failed tests with both cmake and autotools)::
 
-    mkdir build
-    cd build
-    cmake -DCMAKE_INSTALL_PREFIX=/directory/to/install/netcdf -DCMAKE_BUILD_TYPE=Release ..
+    CPPFLAGS="-I<prefix for hdf5>/include" LDFLAGS="-L<prefix for hdf5>/lib/" ./configure --prefix=/directory/to/install/netcdf
     make
     make install
 
-* netCDF-cxx4-4.3.1::
+* netCDF-cxx4-4.3.1 (note: cmake build works, but installs to a ``lib64`` subdirectory, while autotools installs to ``lib``, so easier to use autotools to match netCDF)::
 
-    mkdir build
-    cd build
-    cmake -DCMAKE_INSTALL_PREFIX=/directory/to/install/netcdf -DCMAKE_BUILD_TYPE=Release ..
+    CPPFLAGS="-I<prefix for hdf5>/include -I<prefix for netcdf>/include" LDFLAGS="-L<prefix for hdf5>/lib/ -L<prefix for netcdf>/lib/" ./configure --prefix=<prefix for netcdf>
     make
     make install
 
-* FFTW-3.3.8::
+* FFTW-3.3.9::
 
     ./configure --prefix /directory/to/install/fftw --enable-shared --enable-sse2 --enable-avx --enable-avx2 --enable-avx512 --enable-avx-128-fma
     make
     make install
 
-* SUNDIALS-5.1.0::
+* SUNDIALS-5.7.0::
 
     mkdir build
     cd build
@@ -243,7 +239,7 @@ The following configuration commands have been used successfully:
     make
     make install
 
-* PETSc-3.13.0::
+* PETSc-3.15.0::
 
     unset PETSC_DIR
     ./configure COPTFLAGS="-O3" CXXOPTFLAGS="-O3" FOPTFLAGS="-O3" --with-batch --known-mpi-shared-libraries=1 --with-mpi-dir=$OPENMPI_HOME --download-fblaslapack --known-64-bit-blas-indices=0 --download-hypre --with-debugging=0 --prefix=/directory/to/install/petsc
