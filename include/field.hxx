@@ -164,6 +164,7 @@ public:
     swap(first.location, second.location);
     swap(first.directions, second.directions);
   }
+
 protected:
   Mesh* fieldmesh{nullptr};
   mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};

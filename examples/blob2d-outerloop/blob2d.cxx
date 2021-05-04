@@ -10,6 +10,8 @@
 #include <derivs.hxx>            // To use DDZ()
 #include <invert_laplace.hxx>    // Laplacian inversion
 
+#include "bout/single_index_ops.hxx" // Operators at a single index
+
 /// 2D drift-reduced model, mainly used for blob studies
 ///
 ///
@@ -135,33 +137,47 @@ protected:
 
     mesh->communicate(phi);
 
-    // Density Evolution
-    /////////////////////////////////////////////////////////////////////////////
+    // Create data accessors for fast inner loop
+    auto n_acc = FieldAccessor<>(n);
+    auto omega_acc = FieldAccessor<>(omega);
+    auto phi_acc = FieldAccessor<>(phi);
+    
+    // Allocate arrays to store the time derivatives
+    ddt(n).allocate();
+    ddt(omega).allocate();
+    // Iterate over the mesh except boundaries because derivatives are needed
+    BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
 
-    ddt(n) = -bracket(phi, n, BRACKET_ARAKAWA) // ExB term
-             + 2 * DDZ(n) * (rho_s / R_c)     // Curvature term
-             + D_n * Delp2(n);                // Diffusion term
-    if (compressible) {
-      ddt(n) -= 2 * n * DDZ(phi) * (rho_s / R_c); // ExB Compression term
+      // Density Evolution
+      /////////////////////////////////////////////////////////////////////////////
+
+      ddt(n)[i] = -bracket(phi_acc, n_acc, i)             // ExB term
+                  + 2 * DDZ(n_acc, i) * (rho_s / R_c) // Curvature term
+                  + D_n * Delp2(n_acc, i);            // Diffusion term
+      
+      // Vorticity evolution
+      /////////////////////////////////////////////////////////////////////////////
+
+      ddt(omega)[i] = -bracket(phi_acc, omega_acc, i)                // ExB term
+                   + 2 * DDZ(n_acc, i) * (rho_s / R_c) / n_acc[i] // Curvature term
+                   + D_vort * Delp2(omega_acc, i) / n_acc[i]      // Viscous diffusion term
+          ;
     }
 
+    if (compressible) {
+      BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
+        ddt(n)[i] -= 2 * n_acc[i] * DDZ(phi_acc, i) * (rho_s / R_c); // ExB Compression term
+      }
+    }
+    
     if (sheath) {
       // Sheath closure
-      ddt(n) += n * phi * (rho_s / L_par);
+      BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
+        ddt(n)[i] += n_acc[i] * phi_acc[i] * (rho_s / L_par);
+        ddt(omega)[i] += phi_acc[i] * (rho_s / L_par);
+      }
     }
-
-    // Vorticity evolution
-    /////////////////////////////////////////////////////////////////////////////
-
-    ddt(omega) = -bracket(phi, omega, BRACKET_ARAKAWA) // ExB term
-                 + 2 * DDZ(n) * (rho_s / R_c) / n     // Curvature term
-                 + D_vort * Delp2(omega) / n          // Viscous diffusion term
-        ;
-
-    if (sheath) {
-      ddt(omega) += phi * (rho_s / L_par);
-    }
-
+    
     return 0;
   }
 };
