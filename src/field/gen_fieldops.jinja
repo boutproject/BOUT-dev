@@ -8,6 +8,17 @@
   checkData({{lhs.name}});
   checkData({{rhs.name}});
 
+  {% if out == "Field3D" %}
+    {% if lhs == rhs == "Field3D" %}
+      {{out.name}}.setRegion({{lhs.name}}.getMesh()->getCommonRegion({{lhs.name}}.getRegionID(),
+                                                                     {{rhs.name}}.getRegionID()));
+    {% elif lhs == "Field3D" %}
+      {{out.name}}.setRegion({{lhs.name}}.getRegionID());
+    {% elif rhs == "Field3D" %}
+      {{out.name}}.setRegion({{rhs.name}}.getRegionID());
+    {% endif %}
+  {% endif %}
+
   {% if (out == "Field3D") and ((lhs == "Field2D") or (rhs =="Field2D")) %}
     Mesh *localmesh = {{lhs.name if lhs.field_type != "BoutReal" else rhs.name}}.getMesh();
 
@@ -41,11 +52,11 @@
 	}
   {% elif (operator == "/") and (rhs == "BoutReal") %}
       const auto tmp = 1.0 / {{rhs.index}};
-      {{region_loop}}({{index_var}}, {{out.name}}.getRegion({{region_name}})) {
+      {{region_loop}}({{index_var}}, {{out.name}}.getDefaultRegion({{region_name}})) {
          {{out.index}} = {{lhs.index}} * tmp;
       }
   {% else %}
-    {{region_loop}}({{index_var}}, {{out.name}}.getRegion({{region_name}})) {
+    {{region_loop}}({{index_var}}, {{out.name}}.getDefaultRegion({{region_name}})) {
 	    {{out.index}} = {{lhs.index}} {{operator}} {{rhs.index}};
 	}
   {% endif %}
@@ -72,6 +83,11 @@
     {% endif %}
     checkData(*this);
     checkData({{rhs.name}});
+
+    {% if lhs == rhs == "Field3D" %}
+      regionID = fieldmesh->getCommonRegion(regionID, {{rhs.name}}.regionID);
+    {% endif %}
+
 
   {% if (lhs == "Field3D") and (rhs =="Field2D") %}
     {{region_loop}}({{index_var}}, {{rhs.name}}.getRegion({{region_name}})) {

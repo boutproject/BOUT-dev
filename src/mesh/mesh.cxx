@@ -451,6 +451,14 @@ const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
   if (found == end(regionMap3D)) {
     throw BoutException(_("Couldn't find region {:s} in regionMap3D"), region_name);
   }
+  return region3D[found->second];
+}
+
+int Mesh::getRegionID(const std::string& region_name) const {
+  const auto found = regionMap3D.find(region_name);
+  if (found == end(regionMap3D)) {
+    throw BoutException(_("Couldn't find region {:s} in regionMap3D"), region_name);
+  }
   return found->second;
 }
 
@@ -487,7 +495,21 @@ void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
     throw BoutException(_("Trying to add an already existing region {:s} to regionMap3D"),
                         region_name);
   }
-  regionMap3D[region_name] = region;
+
+  int id = -1;
+  for (size_t i = 0; i < region3D.size(); ++i) {
+    if (region3D[i] == region) {
+      id = i;
+      break;
+    }
+  }
+  if (id == -1) {
+    id = region3D.size();
+    region3D.push_back(region);
+  }
+
+  regionMap3D[region_name] = id;
+
   output_verbose.write(_("Registered region 3D {:s}"),region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }
@@ -623,3 +645,30 @@ constexpr decltype(MeshFactory::type_name) MeshFactory::type_name;
 constexpr decltype(MeshFactory::section_name) MeshFactory::section_name;
 constexpr decltype(MeshFactory::option_name) MeshFactory::option_name;
 constexpr decltype(MeshFactory::default_type) MeshFactory::default_type;
+
+int Mesh::getCommonRegion(int lhs, int rhs) {
+  if (lhs == rhs) {
+    return lhs;
+  }
+  int low = std::min(lhs, rhs);
+  int high = std::max(lhs, rhs);
+  if (low == -1) {
+    return high;
+  }
+  if (not region3Dintersect.count(low)) {
+    region3Dintersect[low] = {};
+  }
+  if (region3Dintersect[low].count(high)) {
+    return region3Dintersect[low][high];
+  }
+  auto common = getIntersection(region3D[low], region3D[high]);
+  for (size_t i = 0; i < region3D.size(); ++i) {
+    if (common == region3D[i]) {
+      region3Dintersect[low][high] = i;
+      return i;
+    }
+  }
+  region3D.push_back(common);
+  region3Dintersect[low][high] = region3D.size() - 1;
+  return region3D.size() - 1;
+}
