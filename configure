@@ -5784,16 +5784,15 @@ fi
 fi
 if test $BOUT_MSGSTACK_LEVEL -lt 2 ; then :
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Stack tracing enabled" >&5
-$as_echo "$as_me: Stack tracing enabled" >&6;}
-
-else
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: Stack tracing disabled" >&5
 $as_echo "$as_me: Stack tracing disabled" >&6;}
 
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Stack tracing enabled" >&5
+$as_echo "$as_me: Stack tracing enabled" >&6;}
+
 fi
-CXXFLAGS="$CXXFLAGS -DBOUT_MSGSTACK_LEVEL=$BOUT_MSGSTACK_LEVEL"
 
 BOUT_USE_SIGNAL=no
 if test "x$enable_signal" != "xno"; then :
@@ -15744,16 +15743,10 @@ fi
 
 
 
-if test "x$BOUT_MSGSTACK_LEVEL" = "xyes"; then :
 
-$as_echo "#define BOUT_MSGSTACK_LEVEL 1" >>confdefs.h
-
-else
-
-$as_echo "#define BOUT_MSGSTACK_LEVEL 0" >>confdefs.h
-
-fi
-
+cat >>confdefs.h <<_ACEOF
+#define BOUT_MSGSTACK_LEVEL $BOUT_MSGSTACK_LEVEL
+_ACEOF
 
 
 
