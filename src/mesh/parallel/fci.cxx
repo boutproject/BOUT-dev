@@ -133,14 +133,13 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
 
       xt_prime_corner[i] = -1.0;
       zt_prime_corner[i] = -1.0;
-      continue;
+    } else {
+      xt_prime_corner[i] =
+          0.25 * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
+
+      zt_prime_corner[i] =
+          0.25 * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
     }
-
-    xt_prime_corner[i] =
-        0.25 * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
-
-    zt_prime_corner[i] =
-        0.25 * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
   }
 
   interp_corner->setMask(corner_boundary_mask);
@@ -170,7 +169,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
       }
     }
 
-    if ((xt_prime[i] >= 0.0) and (xt_prime[i] <= map_mesh.xend)) {
+    if ((xt_prime[i] >= map_mesh.xstart) and (xt_prime[i] <= map_mesh.xend)) {
       // Not a boundary
       continue;
     }
