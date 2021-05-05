@@ -18,11 +18,14 @@ struct fmt::formatter<SpecificInd<N>> {
   // Parses format specifications of the form ['c' | 'i'].
   constexpr auto parse(format_parse_context& ctx) {
     auto it = ctx.begin(), end = ctx.end();
-    if (it != end && (*it == 'c' || *it == 'i')) presentation = *it++;
+    if (it != end && (*it == 'c' || *it == 'i')) {
+      presentation = *it++;
+    }
 
     // Check if reached the end of the range:
-    if (it != end && *it != '}')
+    if (it != end && *it != '}') {
       throw format_error("invalid format");
+    }
 
     // Return an iterator past the end of the parsed range:
     return it;
@@ -31,16 +34,19 @@ struct fmt::formatter<SpecificInd<N>> {
   // Formats the point p using the parsed format specification (presentation)
   // stored in this formatter.
   template <typename FormatContext>
-  auto format(const Ind3D& ind, FormatContext& ctx) {
+  auto format(const SpecificInd<N>& ind, FormatContext& ctx) {
     // ctx.out() is an output iterator to write to.
     if (presentation == 'c') {
-      return format_to(ctx.out(),
-                       "({}, {}, {})",
-                       ind.x(), ind.y(), ind.z());
+      switch (N) {
+      case IND_TYPE::IND_2D:
+        return format_to(ctx.out(), "({}, {})", ind.x(), ind.y());
+      case IND_TYPE::IND_3D:
+        return format_to(ctx.out(), "({}, {}, {})", ind.x(), ind.y(), ind.z());
+      case IND_TYPE::IND_PERP:
+        return format_to(ctx.out(), "({}, {})", ind.x(), ind.z());
+      }
     }
-    return format_to(ctx.out(),
-                     "({})",
-                     ind.ind);
+    return format_to(ctx.out(), "({})", ind.ind);
   }
 };
 

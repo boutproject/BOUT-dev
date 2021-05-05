@@ -305,6 +305,15 @@ TEST_F(OutputTest, FormatInd3Ddefault) {
   EXPECT_EQ(buffer.str(), "(1, 1, 2)");
 }
 
+TEST_F(OutputTest, FormatInd3Dc) {
+  Ind3D ind(11, 2, 3);
+
+  Output local_output;
+  local_output.write("{:c}", ind);
+
+  EXPECT_EQ(buffer.str(), "(1, 1, 2)");
+}
+
 TEST_F(OutputTest, FormatInd3Di) {
   Ind3D ind(11, 2, 3);
 
@@ -312,4 +321,58 @@ TEST_F(OutputTest, FormatInd3Di) {
   local_output.write("{:i}", ind);
 
   EXPECT_EQ(buffer.str(), "(11)");
+}
+
+TEST_F(OutputTest, FormatInd2Ddefault) {
+  Ind2D ind(13, 3, 1);
+
+  Output local_output;
+  local_output.write("{}", ind);
+
+  EXPECT_EQ(buffer.str(), "(4, 1)");
+}
+
+TEST_F(OutputTest, FormatInd2Dc) {
+  Ind2D ind(13, 3, 1);
+
+  Output local_output;
+  local_output.write("{:c}", ind);
+
+  EXPECT_EQ(buffer.str(), "(4, 1)");
+}
+
+TEST_F(OutputTest, FormatInd2Di) {
+  Ind2D ind(13, 3, 1);
+
+  Output local_output;
+  local_output.write("{:i}", ind);
+
+  EXPECT_EQ(buffer.str(), "(13)");
+}
+
+TEST_F(OutputTest, FormatIndPerpdefault) {
+  IndPerp ind(15, 1, 4);
+
+  Output local_output;
+  local_output.write("{}", ind);
+
+  EXPECT_EQ(buffer.str(), "(3, 3)");
+}
+
+TEST_F(OutputTest, FormatIndPerpc) {
+  IndPerp ind(15, 1, 4);
+
+  Output local_output;
+  local_output.write("{:c}", ind);
+
+  EXPECT_EQ(buffer.str(), "(3, 3)");
+}
+
+TEST_F(OutputTest, FormatIndPerpi) {
+  IndPerp ind(15, 1, 4);
+
+  Output local_output;
+  local_output.write("{:i}", ind);
+
+  EXPECT_EQ(buffer.str(), "(15)");
 }
