@@ -323,6 +323,13 @@ TEST_F(OutputTest, FormatInd3Di) {
   EXPECT_EQ(buffer.str(), "(11)");
 }
 
+TEST_F(OutputTest, FormatInd3DInvalid) {
+  Ind3D ind(11, 2, 3);
+
+  Output local_output;
+  EXPECT_THROW(local_output.write("{:b}", ind), fmt::format_error);
+}
+
 TEST_F(OutputTest, FormatInd2Ddefault) {
   Ind2D ind(13, 3, 1);
 
