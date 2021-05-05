@@ -285,6 +285,14 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     CVodeSetMaxOrd(cvode_mem, mxorder);
   }
 
+  const auto max_nonlinear_iterations = (*options)["max_nonlinear_iterations"]
+    .doc("Maximum number of nonlinear iterations allowed by CVODE before reducing "
+         "timestep. CVODE default (used if this option is negative) is 3.")
+    .withDefault(-1);
+  if (max_nonlinear_iterations > 0) {
+    CVodeSetMaxNonlinIters(cvode_mem, max_nonlinear_iterations);
+  }
+
   /// Newton method can include Preconditioners and Jacobian function
   if (!func_iter) {
     output_info.write("\tUsing Newton iteration\n");
