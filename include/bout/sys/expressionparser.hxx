@@ -64,12 +64,11 @@ public:
     return nullptr;
   }
 
-  /// Note: This will be removed in a future version. Implementations should
-  /// override the Context version of this function.
-  DEPRECATED(virtual double generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t)) {
+  [[deprecated("This will be removed in a future version. Implementations should override the Context version of this function.")]]
+  virtual double generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
     return generate(bout::generator::Context().set("x", x, "y", y, "z", z, "t", t));
   }
-  
+
   /// Generate a value at the given coordinates (x,y,z,t)
   /// This should be deterministic, always returning the same value given the same inputs
   ///

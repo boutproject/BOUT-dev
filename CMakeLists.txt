@@ -59,7 +59,6 @@ set(BOUT_SOURCES
   ./include/bout/assert.hxx
   ./include/bout/constants.hxx
   ./include/bout/coordinates.hxx
-  ./include/bout/deprecated.hxx
   ./include/bout/deriv_store.hxx
   ./include/bout/expr.hxx
   ./include/bout/field_visitor.hxx

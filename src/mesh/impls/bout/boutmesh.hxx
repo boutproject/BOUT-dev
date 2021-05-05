@@ -56,11 +56,6 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // non-local communications
 
-  MPI_Request sendToProc(int xproc, int yproc, BoutReal* buffer, int size,
-                         int tag) override;
-  comm_handle receiveFromProc(int xproc, int yproc, BoutReal* buffer, int size,
-                              int tag) override;
-
   int getNXPE() override;       ///< The number of processors in the X direction
   int getNYPE() override;       ///< The number of processors in the Y direction
   int getXProcIndex() override; ///< This processor's index in X direction
@@ -149,14 +144,6 @@ class BoutMesh : public Mesh {
   bool lastY(int xpos) const override;
   int UpXSplitIndex() override;
   int DownXSplitIndex() override;
-  int sendYOutIndest(BoutReal* buffer, int size, int tag) override;
-  int sendYOutOutdest(BoutReal* buffer, int size, int tag) override;
-  int sendYInIndest(BoutReal* buffer, int size, int tag) override;
-  int sendYInOutdest(BoutReal* buffer, int size, int tag) override;
-  comm_handle irecvYOutIndest(BoutReal* buffer, int size, int tag) override;
-  comm_handle irecvYOutOutdest(BoutReal* buffer, int size, int tag) override;
-  comm_handle irecvYInIndest(BoutReal* buffer, int size, int tag) override;
-  comm_handle irecvYInOutdest(BoutReal* buffer, int size, int tag) override;
 
   // Boundary iteration
   const RangeIterator iterateBndryLowerY() const override;
@@ -226,7 +213,6 @@ private:
 
   int MYPE_IN_CORE; // 1 if processor in core
 
-  using Mesh::YGLOBAL;
   int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
   int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
 

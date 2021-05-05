@@ -179,11 +179,6 @@ const Vector3D cross(const Vector2D & lhs, const Vector3D &rhs);
  * |v| = sqrt( v dot v )
  */
 const Field2D abs(const Vector2D& v, const std::string& region = "RGN_ALL");
-[[deprecated("Please use Vector2D abs(const Vector2D& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline const Field2D abs(const Vector2D &v, REGION region) {
-  return abs(v, toString(region));
-}
 
 /// Transform to and from field-aligned coordinates
 inline Vector2D toFieldAligned(Vector2D v, const std::string& UNUSED(region) = "RGN_ALL") {
