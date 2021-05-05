@@ -321,6 +321,10 @@ target_compile_definitions(bout++
 target_compile_features(bout++ PUBLIC cxx_std_11)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
+# Various sanitizers, including coverage and address sanitizer
+include(cmake/Sanitizers.cmake)
+enable_sanitizers(bout++)
+
 cmake_dependent_option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF
   "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/mpark.variant/CMakeLists.txt" ON)
 
