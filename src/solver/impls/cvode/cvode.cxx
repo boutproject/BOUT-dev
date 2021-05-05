@@ -302,6 +302,12 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
          "to be applied is set by the positivity_constraint option in the subsection for "
          "each variable")
     .withDefault(false);
+#if not (SUNDIALS_VERSION_MAJOR >= 3 and SUNDIALS_VERSION_MINOR >= 2)
+  if (apply_positivity_constraints) {
+    throw BoutException("The apply_positivity_constraints option is only available with "
+                        "SUNDIALS>=3.2.0");
+  }
+#else
   if (apply_positivity_constraints) {
     std::vector<BoutReal> f2d_constraints;
     f2d_constraints.reserve(f2d.size());
@@ -362,6 +368,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
     N_VDestroy_Parallel(constraints_vec);
   }
+#endif
 
   /// Newton method can include Preconditioners and Jacobian function
   if (!func_iter) {
