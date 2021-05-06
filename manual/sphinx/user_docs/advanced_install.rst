@@ -297,7 +297,7 @@ Draco
     
     hdf5() {
         cd $BUILD
-        wget -c https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-${HDF5VER}/src/hdf5-${HDF5VER}.tar.bz2
+        wget --delete -c https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-${HDF5VER}/src/hdf5-${HDF5VER}.tar.bz2
         tar -xvf hdf5-*bz2
         cd hdf5-${HDF5VER}
         ./configure --prefix $PREFIX --enable-build-mode=production
@@ -307,7 +307,7 @@ Draco
     
     netcdf() {
         cd $BUILD
-        wget -c https://github.com/Unidata/netcdf-c/archive/v$NCVER/netcdf-$NCVER.tar.gz
+        wget --delete -c https://github.com/Unidata/netcdf-c/archive/v$NCVER/netcdf-$NCVER.tar.gz
         tar -xf netcdf-$NCVER.tar.gz
         cd netcdf-c-$NCVER
         CPPFLAGS="-I$PREFIX/include" LDFLAGS="-L$PREFIX/lib/" ./configure --prefix=$PREFIX
@@ -317,7 +317,7 @@ Draco
     
     nccxx() {
         cd $BUILD
-        wget -c ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-cxx4-$NCCXXVER.tar.gz
+        wget --delete -c ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-cxx4-$NCCXXVER.tar.gz
         tar -xf netcdf-cxx4-$NCCXXVER.tar.gz
         cd netcdf-cxx4-$NCCXXVER
         CPPFLAGS="-I$PREFIX/include" LDFLAGS="-L$PREFIX/lib/" ./configure --prefix=$PREFIX
@@ -327,7 +327,7 @@ Draco
     
     fftw() {
         cd $BUILD
-        wget -c http://www.fftw.org/fftw-$FFTWVER.tar.gz
+        wget --delete -c http://www.fftw.org/fftw-$FFTWVER.tar.gz
         tar -xf fftw-$FFTWVER.tar.gz
         cd fftw-$FFTWVER
         ./configure --prefix $PREFIX --enable-shared --enable-sse2 --enable-avx --enable-avx2 --enable-avx512 --enable-avx-128-fma
@@ -337,7 +337,7 @@ Draco
     
     sundials() {
         cd $BUILD
-        wget -c --delete https://github.com/LLNL/sundials/archive/v$SUNVER/sundials-$SUNVER.tar.gz
+        wget --delete -c https://github.com/LLNL/sundials/archive/v$SUNVER/sundials-$SUNVER.tar.gz
         tar -xvf sundials-$SUNVER.tar.gz
         cd sundials-$SUNVER
         mkdir -p build
@@ -349,7 +349,7 @@ Draco
     
     petsc() {
         cd $BUILD
-        wget -c https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-$PETSCVER.tar.gz
+        wget --delete -c https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-$PETSCVER.tar.gz
         tar -xf petsc-$PETSCVER.tar.gz
         cd petsc-$PETSCVER
         unset PETSC_DIR
