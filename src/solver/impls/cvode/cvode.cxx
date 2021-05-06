@@ -314,53 +314,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   }
 #else
   if (apply_positivity_constraints) {
-    std::vector<BoutReal> f2d_constraints;
-    f2d_constraints.reserve(f2d.size());
-    std::transform(begin(f2d), end(f2d), std::back_inserter(f2d_constraints),
-                   [](const VarStr<Field2D>& f2) {
-                     auto f2_options = Options::root()[f2.name];
-                     const auto value = f2_options["positivity_constraint"]
-                                        .doc(fmt::format(
-                                             "Constraint to apply to {} if "
-                                             "solver:apply_positivity_constraint=true. "
-                                             "Possible values are: none (default), "
-                                             "positive, non_negative, negative, or "
-                                             "non_positive.", f2.name))
-                                        .withDefault(positivity_constraint::none);
-                     switch (value) {
-                       case positivity_constraint::none: return 0.0;
-                       case positivity_constraint::positive: return 2.0;
-                       case positivity_constraint::non_negative: return 1.0;
-                       case positivity_constraint::negative: return -2.0;
-                       case positivity_constraint::non_positive: return -1.0;
-                       default: throw BoutException("Incorrect value for "
-                                                    "positivity_constraint");
-                     }
-                   });
-
-    std::vector<BoutReal> f3d_constraints;
-    f3d_constraints.reserve(f3d.size());
-    std::transform(begin(f3d), end(f3d), std::back_inserter(f3d_constraints),
-                   [](const VarStr<Field3D>& f3) {
-                     auto f3_options = Options::root()[f3.name];
-                     const auto value = f3_options["positivity_constraint"]
-                                        .doc(fmt::format(
-                                             "Constraint to apply to {} if "
-                                             "solver:apply_positivity_constraint=true. "
-                                             "Possible values are: none (default), "
-                                             "positive, non_negative, negative, or "
-                                             "non_positive.", f3.name))
-                                        .withDefault(positivity_constraint::none);
-                     switch (value) {
-                       case positivity_constraint::none: return 0.0;
-                       case positivity_constraint::positive: return 2.0;
-                       case positivity_constraint::non_negative: return 1.0;
-                       case positivity_constraint::negative: return -2.0;
-                       case positivity_constraint::non_positive: return -1.0;
-                       default: throw BoutException("Incorrect value for "
-                                                    "positivity_constraint");
-                     }
-                   });
+    auto f2d_constraints = create_constraints(f2d);
+    auto f3d_constraints = create_constraints(f3d);
 
     N_Vector constraints_vec = N_VNew_Parallel(BoutComm::get(), local_N, neq);
     if (constraints_vec == nullptr)
@@ -470,6 +425,37 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
   return 0;
 }
+
+template<class FieldType>
+std::vector<BoutReal> CvodeSolver::create_constraints(
+    const std::vector<VarStr<FieldType>>& fields) {
+
+  std::vector<BoutReal> constraints;
+  constraints.reserve(fields.size());
+  std::transform(begin(fields), end(fields), std::back_inserter(constraints),
+                 [](const VarStr<FieldType>& f) {
+                   auto f_options = Options::root()[f.name];
+                   const auto value = f_options["positivity_constraint"]
+                                      .doc(fmt::format(
+                                           "Constraint to apply to {} if "
+                                           "solver:apply_positivity_constraint=true. "
+                                           "Possible values are: none (default), "
+                                           "positive, non_negative, negative, or "
+                                           "non_positive.", f.name))
+                                      .withDefault(positivity_constraint::none);
+                   switch (value) {
+                     case positivity_constraint::none: return 0.0;
+                     case positivity_constraint::positive: return 2.0;
+                     case positivity_constraint::non_negative: return 1.0;
+                     case positivity_constraint::negative: return -2.0;
+                     case positivity_constraint::non_positive: return -1.0;
+                     default: throw BoutException("Incorrect value for "
+                                                  "positivity_constraint");
+                   }
+                 });
+  return constraints;
+}
+
 
 /**************************************************************************
  * Run - Advance time
