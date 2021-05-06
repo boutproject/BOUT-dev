@@ -166,7 +166,7 @@ public:
   }
 protected:
   Mesh* fieldmesh{nullptr};
-  mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};
+  mutable std::weak_ptr<Coordinates> fieldCoordinates{};
 
   /// Location of the variable in the cell
   CELL_LOC location{CELL_CENTRE};

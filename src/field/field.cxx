@@ -91,7 +91,7 @@ void Field::setLocation(CELL_LOC new_location) {
 
   location = bout::normaliseLocation(new_location, getMesh());
 
-  fieldCoordinates = nullptr;
+  fieldCoordinates.reset();
   // Sets correct fieldCoordinates pointer and ensures Coordinates object is
   // initialized for this Field's location
   getCoordinates();
@@ -102,13 +102,13 @@ CELL_LOC Field::getLocation() const {
   return location;
 }
 
-Coordinates *Field::getCoordinates() const {
-  if (fieldCoordinates) {
-    return fieldCoordinates.get();
-  } else {
-    fieldCoordinates = getMesh()->getCoordinatesSmart(getLocation());
-    return fieldCoordinates.get();
+Coordinates* Field::getCoordinates() const {
+  auto fieldCoordinates_shared = fieldCoordinates.lock();
+  if (fieldCoordinates_shared) {
+    return fieldCoordinates_shared.get();
   }
+  fieldCoordinates = getMesh()->getCoordinatesSmart(getLocation());
+  return fieldCoordinates.lock().get();
 }
 
 Coordinates *Field::getCoordinates(CELL_LOC loc) const {
