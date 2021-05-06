@@ -1,4 +1,4 @@
-# BUOT++ Documentation
+# BOUT++ Documentation
 
 find_package(Doxygen)
 
