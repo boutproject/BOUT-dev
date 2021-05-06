@@ -68,7 +68,7 @@ AC_ARG_WITH(system_uuid,  [AS_HELP_STRING([--with-system-uuid],
 AC_ARG_ENABLE(warnings,     [AS_HELP_STRING([--disable-warnings],
         [Disable compiler warnings])],,[])
 AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
-        [Set run-time checking level])],,[])
+        [Set run-time checking level])],,[enable_checks=default])
 AC_ARG_ENABLE(msgstack,     [AS_HELP_STRING([--enable-msgstack=no/yes],
         [Enable MstStack for backtrace. Default based on check level.])],,[enable_msgstack=maybe])
 AC_ARG_ENABLE(signal,       [AS_HELP_STRING([--disable-signal],
@@ -272,9 +272,10 @@ AS_IF([test "x$enable_warnings" != "xno"], [
 ])
 
 OPT_FLAGS=""
+enable_checks_def=2
 AS_IF([test "$enable_debug" != ""], [
   AC_MSG_NOTICE([Enabling all debug options])
-  enable_checks="3"
+  enable_checks_def=3
   # use -Og with available, otherwise fall back to -O0
   OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
 ], [
@@ -286,14 +287,15 @@ AS_IF([test "$enable_debug" != ""], [
     ["fast" | "4"],
         [AC_MSG_NOTICE([Enabling level 4 optimisations])
          OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
-         DISABLE_CHECK=probably],
+         enable_checks_def=0],
     ["3"],
         [AC_MSG_NOTICE([Enabling level 3 optimisations])
          OPT_FLAGS="-O3 -march=native -funroll-loops"
-         DISABLE_CHECK=probably],
+	 enable_checks_def=0],
     ["2"],
         [AC_MSG_NOTICE([Enabling level 2 optimisations])
-         OPT_FLAGS="-O2 -march=native"],
+         OPT_FLAGS="-O2 -march=native"
+	 enable_checks_def=1],
     ["1" | "0"],
         [AC_MSG_NOTICE([Enabling level $enable_optimize optimisations])
          OPT_FLAGS="-O$enable_optimize"],
@@ -309,8 +311,8 @@ AX_APPEND_COMPILE_FLAGS([ dnl
 ], [CXXFLAGS], [$extra_compiler_flags_test])
 
 # Disable checks if optimization > 2 is used
-AS_IF([test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"], [
-  enable_checks=no
+AS_IF([test "x$enable_checks" = "xdefault" ], [
+  enable_checks=$enable_checks_def
 ])
 
 BOUT_CHECK_LEVEL=0
