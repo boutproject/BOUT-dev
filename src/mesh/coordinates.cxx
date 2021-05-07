@@ -1626,6 +1626,7 @@ Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& m
   if (! f.hasParallelSlices() and ! transform->canToFromFieldAligned()) {
     Field3D f_parallel = f;
     transform->calcParallelSlices(f_parallel);
+    f_parallel.applyParallelBoundary("parallel_neumann");
     return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
   }
 #endif
