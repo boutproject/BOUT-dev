@@ -26,7 +26,7 @@ include $(BOUT_TOP)/make.config
 
 # Rebuild bout++-time to get the correct time of the build - but only if
 # any other file was rebuild
-bout++-time.o: $(BOUT_LIB_PATH)/.last.o.file | $(DIRS)
+bout++-time.o: $(BOUT_LIB_PATH)/.last.o.file | $(DIRS) bout++.o
 
 # The recipie could be removed, as it only catches the case of
 # out-of-date make.config
