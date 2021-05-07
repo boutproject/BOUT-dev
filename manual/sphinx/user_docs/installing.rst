@@ -345,7 +345,7 @@ directory. The equivalent of ``make distclean`` with CMake is to just
 delete the entire build directory and reconfigure.
 
 Bundled Dependencies
-^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~
 
 BOUT++ bundles some dependencies, currently `mpark.variant
 <https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
@@ -363,7 +363,7 @@ time as your project, therefore there is no option to use an external
 installation for that.
 
 Using CMake with your physics model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can write a CMake configuration file (``CMakeLists.txt``) for your
 physics model in only four lines:
@@ -585,10 +585,10 @@ installation of BOUT++. Unless you want to use some experimental
 features of BOUT++, skip to section [sec-running] to start running the
 code.
 
+.. _sec-install-bout:
+
 Installing BOUT++ (experimental)
 --------------------------------
-
-.. _sec-install-bout:
 
 Most BOUT++ users install and develop their own copies in their home directory,
 so do not need to install BOUT++ to a system directory.
