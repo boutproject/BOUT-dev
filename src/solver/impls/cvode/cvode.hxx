@@ -104,11 +104,13 @@ private:
 
   bool cvode_initialised = false;
 
-  void set_abstol_values(BoutReal* abstolvec_data, std::vector<BoutReal>& f2dtols,
-                         std::vector<BoutReal>& f3dtols);
-  void loop_abstol_values_op(Ind2D i2d, BoutReal* abstolvec_data, int& p,
-                             std::vector<BoutReal>& f2dtols,
-                             std::vector<BoutReal>& f3dtols, bool bndry);
+  void set_vector_option_values(BoutReal* option_data, std::vector<BoutReal>& f2dtols,
+                                std::vector<BoutReal>& f3dtols);
+  void loop_vector_option_values_op(Ind2D i2d, BoutReal* option_data, int& p,
+                                    std::vector<BoutReal>& f2dtols,
+                                    std::vector<BoutReal>& f3dtols, bool bndry);
+  template<class FieldType>
+  std::vector<BoutReal> create_constraints(const std::vector<VarStr<FieldType>>& fields);
 #if SUNDIALS_VERSION_MAJOR >= 3
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
