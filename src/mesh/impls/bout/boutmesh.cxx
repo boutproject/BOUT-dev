@@ -545,6 +545,16 @@ int BoutMesh::load() {
   createXBoundaries();
   createYBoundaries();
 
+  auto possible_boundaries = getPossibleBoundaries();
+  if (possible_boundaries.empty()) {
+    output_info.write(_("No boundary regions; domain is periodic\n"));
+  } else {
+    output_info.write(_("Possible boundary regions are: "));
+    for (const auto& boundary : possible_boundaries) {
+      output_info.write("{}, ", boundary);
+    }
+  }
+
   if (!boundary.empty()) {
     output_info << _("Boundary regions in this processor: ");
     for (const auto &bndry : boundary) {
