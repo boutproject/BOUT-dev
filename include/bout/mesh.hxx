@@ -76,6 +76,9 @@ class Mesh;
 #include <list>
 #include <memory>
 #include <map>
+#include <set>
+#include <string>
+
 
 class MeshFactory : public Factory<
   Mesh, MeshFactory,
@@ -532,6 +535,9 @@ class Mesh {
   /// Return a vector containing all the boundary regions on this processor
   virtual std::vector<BoundaryRegion*> getBoundaries() = 0;
 
+  /// Get the set of all possible boundaries in this configuration
+  virtual std::set<std::string> getPossibleBoundaries() const { return {}; }
+
   /// Add a boundary region to this processor
   virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
 
@@ -942,7 +948,7 @@ class Mesh {
   // The maxregionblocksize to use when creating the default regions.
   // Can be set in the input file and the global default is set by,
   // MAXREGIONBLOCKSIZE in include/bout/region.hxx
-  int maxregionblocksize;
+  int maxregionblocksize{MAXREGIONBLOCKSIZE};
   
   /// Get the named region from the region_map for the data iterator
   ///

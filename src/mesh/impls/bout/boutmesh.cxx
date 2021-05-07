@@ -47,6 +47,10 @@
 #include <output.hxx>
 #include <utils.hxx>
 
+#include <algorithm>
+#include <iterator>
+#include <set>
+
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
@@ -541,6 +545,16 @@ int BoutMesh::load() {
   createXBoundaries();
   createYBoundaries();
 
+  auto possible_boundaries = getPossibleBoundaries();
+  if (possible_boundaries.empty()) {
+    output_info.write(_("No boundary regions; domain is periodic\n"));
+  } else {
+    output_info.write(_("Possible boundary regions are: "));
+    for (const auto& boundary : possible_boundaries) {
+      output_info.write("{}, ", boundary);
+    }
+  }
+
   if (!boundary.empty()) {
     output_info << _("Boundary regions in this processor: ");
     for (const auto &bndry : boundary) {
@@ -973,6 +987,53 @@ void BoutMesh::createYBoundaries() {
     boundary.push_back(
         new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, yboundary_xend, this));
   }
+}
+
+std::set<std::string> BoutMesh::getPossibleBoundaries() const {
+  // Result set: set so it automatically takes care of duplicates
+  std::set<std::string> all_boundaries{};
+
+  // Lambda that modifies `all_boundaries`
+  const auto get_boundaries_on_different_rank = [mesh = this, &all_boundaries](
+                                                    int x_rank, int y_rank) {
+    // Don't try to check boundaries on unphysical processors
+    if (x_rank < 0 or x_rank >= mesh->NXPE) {
+      return;
+    }
+    if (y_rank < 0 or y_rank >= mesh->NYPE) {
+      return;
+    }
+
+    // Make a copy of this mesh, EXCEPT we change the (X, Y) rank of the processor
+    BoutMesh mesh_copy{mesh->GlobalNx, mesh->GlobalNyNoBoundaries, mesh->GlobalNz,
+                       mesh->MXG, mesh->MYG, mesh->NXPE, mesh->NYPE, x_rank, y_rank,
+                       mesh->symmetricGlobalX, mesh->symmetricGlobalY, mesh->periodicX,
+                       mesh->ixseps1, mesh->ixseps2, mesh->jyseps1_1, mesh->jyseps2_1,
+                       mesh->jyseps1_2, mesh->jyseps2_2, mesh->ny_inner};
+    // We need to create the boundaries
+    mesh_copy.createXBoundaries();
+    mesh_copy.createYBoundaries();
+
+    // Get the boundaries and shove their names into the set
+    auto boundaries = mesh_copy.getBoundaries();
+    std::transform(boundaries.begin(), boundaries.end(),
+                   std::inserter(all_boundaries, all_boundaries.begin()),
+                   [](BoundaryRegionBase* boundary) { return boundary->label; });
+  };
+
+  // This is sufficient to get the SOL boundary, if it exists
+  get_boundaries_on_different_rank(NXPE - 1, 0);
+
+  // Now we need to work out which Y rank at each of the possible
+  // targets and branch cuts. This makes sure we get a processor on
+  // each possible boundary. We only need to do this at PE_XIND==0, as
+  // the other X boundary is covered by the case above
+  for (const auto& y_index :
+       {0, jyseps1_1, jyseps1_2, ny_inner - 1, ny_inner, jyseps2_1, jyseps2_2, ny - 1}) {
+    get_boundaries_on_different_rank(0, YPROC(y_index));
+  }
+
+  return all_boundaries;
 }
 
 void BoutMesh::setShiftAngle(const std::vector<BoutReal>& shift_angle) {
@@ -1846,6 +1907,23 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   addBoundaryRegions();
 }
 
+BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
+                   int nype, int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y,
+                   bool periodicX_, int ixseps1_, int ixseps2_, int jyseps1_1_,
+                   int jyseps2_1_, int jyseps1_2_, int jyseps2_2_, int ny_inner_)
+    : nx(input_nx), ny(input_ny), nz(input_nz), NPES(nxpe * nype),
+      MYPE(nxpe * pe_yind + pe_xind), PE_YIND(pe_yind), NYPE(nype), NZPE(1),
+      ixseps1(ixseps1_), ixseps2(ixseps2_), symmetricGlobalX(symmetric_X),
+      symmetricGlobalY(symmetric_Y), MXG(mxg), MYG(myg), MZG(0) {
+  NXPE = nxpe;
+  PE_XIND = pe_xind;
+  periodicX = periodicX_;
+  setYDecompositionIndices(jyseps1_1_, jyseps2_1_, jyseps1_2_, jyseps2_2_, ny_inner_);
+  setDerivedGridSizes();
+  topology();
+  createDefaultRegions();
+  addBoundaryRegions();
+}
 /****************************************************************
  *                       CONNECTIONS
  ****************************************************************/

@@ -87,16 +87,11 @@ struct BoutMeshParameters {
 BoutMeshExposer::BoutMeshExposer(const BoutMeshParameters& inputs, bool periodicX_)
     : BoutMesh(inputs.grid.total_nx, inputs.grid.total_ny, 1, inputs.grid.num_x_guards,
                inputs.grid.num_y_guards, inputs.grid.nxpe, inputs.grid.nype,
-               inputs.grid.pe_xind, inputs.grid.pe_yind, false, inputs.grid.symmetric_X,
-               inputs.grid.symmetric_Y) {
-  periodicX = periodicX_;
-  setXDecompositionIndices(inputs.x_indices);
-  setYDecompositionIndices(inputs.y_indices);
-  setDerivedGridSizes();
-  topology();
-  createDefaultRegions();
-  addBoundaryRegions();
-}
+               inputs.grid.pe_xind, inputs.grid.pe_yind, inputs.grid.symmetric_X,
+               inputs.grid.symmetric_Y, periodicX_, inputs.x_indices.ixseps1,
+               inputs.x_indices.ixseps2, inputs.y_indices.jyseps1_1,
+               inputs.y_indices.jyseps2_1, inputs.y_indices.jyseps1_2,
+               inputs.y_indices.jyseps2_2, inputs.y_indices.ny_inner) {}
 
 /// Equality operator to help testing
 bool operator==(const BoutMeshExposer::YDecompositionIndices& lhs,
@@ -2123,4 +2118,41 @@ TEST(BoutMeshTest, HasBranchCutUpper) {
   BoutMeshExposer mesh_DND04(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 4}));
   mesh_DND04.setShiftAngle(shift_angle);
   EXPECT_EQ(mesh_DND04.hasBranchCutUpper(2), std::make_pair(true, 10.));
+}
+
+TEST(BoutMeshTest, GetPossibleBoundariesCore) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh_core_1x1(createCore({12, 3, 1, 1, 1, 1, 0, 0}));
+  BoutMeshExposer mesh_core_32x64(createCore({12, 3, 1, 1, 32, 64, 7, 4}));
+
+  std::set<std::string> boundaries{"core", "sol"};
+
+  EXPECT_EQ(mesh_core_1x1.getPossibleBoundaries(), boundaries);
+  EXPECT_EQ(mesh_core_32x64.getPossibleBoundaries(), boundaries);
+}
+
+TEST(BoutMeshTest, GetPossibleBoundariesCorePeriodicX) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh_core_1x1(createCore({12, 3, 1, 1, 1, 1, 0, 0}), true);
+  BoutMeshExposer mesh_core_32x64(createCore({12, 3, 1, 1, 32, 64, 7, 4}), true);
+
+  EXPECT_TRUE(mesh_core_1x1.getPossibleBoundaries().empty());
+  EXPECT_TRUE(mesh_core_32x64.getPossibleBoundaries().empty());
+}
+
+TEST(BoutMeshTest, GetPossibleBoundariesDND) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  BoutMeshExposer mesh_DND_1x6(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
+  BoutMeshExposer mesh_DND_32x64(createDisconnectedDoubleNull({12, 3, 1, 1, 32, 64, 0, 4}));
+
+  std::set<std::string> boundaries{"core", "pf", "sol", "upper_target", "lower_target"};
+
+  EXPECT_EQ(mesh_DND_1x6.getPossibleBoundaries(), boundaries);
+  EXPECT_EQ(mesh_DND_32x64.getPossibleBoundaries(), boundaries);
 }
