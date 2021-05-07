@@ -155,4 +155,26 @@ public:
 
 };
 
+class BoundaryOpPar_const : public BoundaryOpPar {
+public:
+  BoundaryOpPar_const() : BoundaryOpPar(nullptr, 0.) {}
+  BoundaryOpPar_const(BoundaryRegionPar *region) :
+    BoundaryOpPar(region, 0.) {}
+  BoundaryOpPar_const(BoundaryRegionPar *region, std::shared_ptr<FieldGenerator>  value) :
+    BoundaryOpPar(region, value) {}
+  BoundaryOpPar_const(BoundaryRegionPar *region, Field3D* value) :
+    BoundaryOpPar(region, value) {}
+  BoundaryOpPar_const(BoundaryRegionPar *region, BoutReal value) :
+    BoundaryOpPar(region, value) {}
+
+  using BoundaryOpPar::clone;
+  BoundaryOpPar* clone(BoundaryRegionPar *region, const std::list<std::string> &args) override;
+  BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) override;
+
+  using BoundaryOpPar::apply;
+  void apply(Field3D &f) override {return apply(f, 0);}
+  void apply(Field3D &f, BoutReal t) override;
+
+};
+
 #endif // __PAR_BNDRY_OP_H__

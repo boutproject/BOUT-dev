@@ -45,6 +45,7 @@ BoundaryFactory::BoundaryFactory() {
   add(new BoundaryOpPar_dirichlet_O3(), "parallel_dirichlet_O3");
   add(new BoundaryOpPar_dirichlet_interp(), "parallel_dirichlet_interp");
   add(new BoundaryOpPar_neumann(), "parallel_neumann");
+  add(new BoundaryOpPar_const(), "parallel_const");
 }
 
 BoundaryFactory::~BoundaryFactory() {

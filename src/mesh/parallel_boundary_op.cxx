@@ -240,3 +240,24 @@ void BoundaryOpPar_neumann::apply(Field3D &f, BoutReal t) {
   }
 
 }
+
+// const value into the boundary
+BoundaryOpPar* BoundaryOpPar_const::clone(BoundaryRegionPar *region, const std::list<std::string> &args) {
+  return new BoundaryOpPar_const(region);
+}
+
+BoundaryOpPar* BoundaryOpPar_const::clone(BoundaryRegionPar *region, Field3D *f) {
+  return new BoundaryOpPar_const(region, f);
+}
+
+void BoundaryOpPar_const::apply(Field3D &f, BoutReal t) {
+  Field3D& f_next = f.ynext(bndry->dir);
+  f_next.allocate(); // Ensure unique before modifying
+
+  for (bndry->first(); !bndry->isDone(); bndry->next()) {
+    int x = bndry->x; int y = bndry->y; int z = bndry->z;
+    printf("setting %d %d(%+d) %d %e\n", x,y,bndry->dir,z,f(x, y, z));
+    f_next(x, y+bndry->dir, z) = f(x, y, z);
+  }
+
+}
