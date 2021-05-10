@@ -535,6 +535,7 @@ or just::
 
 Names including sections, subsections, etc. can be specified using ``":"`` as a
 separator, e.g.::
+
     options["mysection:mysubsection:myswitch"] = true;
 
 To get options, they can be assigned to a variable::

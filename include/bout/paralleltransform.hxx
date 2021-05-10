@@ -224,6 +224,13 @@ public:
   const FieldPerp fromFieldAligned(const FieldPerp& f,
                                    const std::string& region = "RGN_ALL") override;
 
+  std::vector<PositionsAndWeights>
+  getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
+                              int UNUSED(yoffset)) override {
+    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented"
+                        "for `type = shifted`. Try `type = shiftedinterp`");
+  }
+
   bool canToFromFieldAligned() override { return true; }
 
   /// Save zShift to the output

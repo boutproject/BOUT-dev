@@ -54,11 +54,6 @@ int MsgStack::push(std::string message) {
   return position++;
 }
 
-int MsgStack::setPoint() {
-  // Create an empty message
-  return push();
-}
-
 void MsgStack::pop() {
   if (position <= 0) {
     return;

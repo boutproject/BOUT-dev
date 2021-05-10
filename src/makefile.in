@@ -3,7 +3,7 @@ BOUT_TOP	= ..
 
 DIRS			= field fileio invert mesh physics solver sys fmt
 
-SOURCEC		= bout++.cxx
+SOURCEC		= bout++.cxx bout++-time.cxx
 SOURCEH		= bout.hxx
 CXXFLAGS       += -DMD5SUM=$(CHECKSUM) -DBOUT_REVISION="$(BOUT_REVISION)"
 TARGET	       ?= lib
@@ -38,7 +38,7 @@ include $(BOUT_TOP)/make.config
 # directories are finished and further to make sure we actually know
 # whether the file needs to be rebuild - which we can only know for
 # certain if all directories are finished
-bout++.o: $(BOUT_LIB_PATH)/.last.o.file .dummy
+bout++-time.o: $(BOUT_LIB_PATH)/.last.o.file | $(DIRS) bout++.o
 
 # The recipie could be removed, as it only catches the case of
 # out-of-date make.config
@@ -55,7 +55,7 @@ libfast: .libfast
 
 .libfast: @LIB_TO_BUILD@
 
-$(BOUT_LIB_PATH)/libbout++.a: bout++.o
+$(BOUT_LIB_PATH)/libbout++.a: bout++-time.o
 	@echo "Recreating libbout++.a"
 	@rm -f $(LIB_A)
 	@$(AR) $(ARFLAGS) $(LIB_A) $(shell find $(BOUT_TOP)/src -name \*.o -type f -print 2> /dev/null) || rm -f $(LIB_A)
@@ -63,7 +63,7 @@ $(BOUT_LIB_PATH)/libbout++.a: bout++.o
 	@#$(RANLIB) $(LIB)
 	@@STATIC_EXTRA@
 
-$(BOUT_LIB_PATH)/libbout++.so: bout++.o
+$(BOUT_LIB_PATH)/libbout++.so: bout++-time.o
 	@echo "Creating libbout++.so"
 	@echo $(BOUT_FLAGS) | grep -qi pic || (echo "not compiled with PIC support - reconfigure with --enable-shared" ;exit 1)
 	@$(RM) $(BOUT_LIB_PATH)/*.so*
@@ -90,7 +90,7 @@ all: lib end_message
 # Only needed for legacy build script
 ifneq ("$(TARGET)","libfast")
 # This to make sure build time is always printed correctly
-.PHONY: bout++.cxx
+.PHONY: bout++-time.cxx
 endif
 
 checksum:
