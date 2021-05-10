@@ -19,3 +19,7 @@ add_custom_target(sphinx-pdf
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Generating PDF documentation with Sphinx in ${BOUT_SPHINX_BUILD}"
 )
+
+set_target_properties(sphinx-html sphinx-pdf PROPERTIES
+  ENVIRONMENT PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
+)
