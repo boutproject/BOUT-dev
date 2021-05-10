@@ -162,15 +162,15 @@ void BoutMesh::setXDecompositionIndices(const XDecompositionIndices& indices) {
 }
 
 namespace bout {
-CheckMeshResult checkBoutMeshYDecomposition(int total_processors, int num_y_processors,
-                                            int ny, int num_y_guards, int jyseps1_1,
+CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
+                                            int num_y_guards, int jyseps1_1,
                                             int jyseps2_1, int jyseps1_2, int jyseps2_2,
                                             int ny_inner) {
 
   const int num_local_y_points = ny / num_y_processors;
 
-  // Check size of Y mesh if we've got multiple processors
-  if (num_local_y_points < num_y_guards and total_processors != 1) {
+  // Check size of Y mesh if we've got multiple processors in Y
+  if (num_local_y_points < num_y_guards and num_y_processors != 1) {
     return {false,
             fmt::format(_("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"), ny,
                         num_y_processors, num_local_y_points, num_y_guards)};
@@ -271,8 +271,8 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
     NXPE = NPES / NYPE;
   }
 
-  auto result = bout::checkBoutMeshYDecomposition(
-      NPES, NYPE, ny, MYG, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
+  auto result = bout::checkBoutMeshYDecomposition(NYPE, ny, MYG, jyseps1_1, jyseps2_1,
+                                                  jyseps1_2, jyseps2_2, ny_inner);
 
   if (not result.success) {
     throw BoutException(result.reason);
@@ -298,8 +298,8 @@ void BoutMesh::findProcessorSplit() {
 
       const int nyp = NPES / i;
 
-      auto result = bout::checkBoutMeshYDecomposition(
-          NPES, nyp, ny, MYG, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
+      auto result = bout::checkBoutMeshYDecomposition(nyp, ny, MYG, jyseps1_1, jyseps2_1,
+                                                      jyseps1_2, jyseps2_2, ny_inner);
 
       if (not result.success) {
         output_info.write(result.reason);

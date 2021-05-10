@@ -410,9 +410,9 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(BoutMeshDecompositionTest, CheckYDecomposition) {
   const auto params = GetParam();
   auto result = bout::checkBoutMeshYDecomposition(
-      params.total_processors, params.num_y_processors, params.ny, 1,
-      params.indices.jyseps1_1, params.indices.jyseps2_1, params.indices.jyseps1_2,
-      params.indices.jyseps2_2, params.indices.ny_inner);
+      params.num_y_processors, params.ny, 1, params.indices.jyseps1_1,
+      params.indices.jyseps2_1, params.indices.jyseps1_2, params.indices.jyseps2_2,
+      params.indices.ny_inner);
 
   EXPECT_TRUE(result.success);
   EXPECT_TRUE(result.reason.empty());
@@ -456,9 +456,9 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
   const auto params = GetParam();
   auto result = bout::checkBoutMeshYDecomposition(
-      params.total_processors, params.num_y_processors, params.ny, params.num_y_guards,
-      params.indices.jyseps1_1, params.indices.jyseps2_1, params.indices.jyseps1_2,
-      params.indices.jyseps2_2, params.indices.ny_inner);
+      params.num_y_processors, params.ny, params.num_y_guards, params.indices.jyseps1_1,
+      params.indices.jyseps2_1, params.indices.jyseps1_2, params.indices.jyseps2_2,
+      params.indices.ny_inner);
 
   using ::testing::HasSubstr;
 
