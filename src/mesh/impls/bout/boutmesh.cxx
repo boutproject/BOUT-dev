@@ -106,11 +106,11 @@ BoutMesh::setYDecompositionIndices(const BoutMesh::YDecompositionIndices& indice
 void BoutMesh::setYDecompositionIndices(int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
                                         int jyseps2_2_, int ny_inner_) {
   // Set member variables
-  this->jyseps1_1 = jyseps1_1_;
-  this->jyseps2_1 = jyseps2_1_;
-  this->jyseps1_2 = jyseps1_2_;
-  this->jyseps2_2 = jyseps2_2_;
-  this->ny_inner = ny_inner_;
+  jyseps1_1 = jyseps1_1_;
+  jyseps2_1 = jyseps2_1_;
+  jyseps1_2 = jyseps1_2_;
+  jyseps2_2 = jyseps2_2_;
+  ny_inner = ny_inner_;
 
   // Check inputs
   if (jyseps1_1 < -1) {
