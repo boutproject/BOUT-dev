@@ -1663,7 +1663,7 @@ void checkRegionSizes(const BoutMeshExposer& mesh, std::array<int, 3> rgn_lower_
   EXPECT_EQ(mesh.getRegion("RGN_OUTER_X").size(), rgn_x[1]);
 }
 
-// These next few tests chec both default_connections and the Region
+// These next few tests check both default_connections and the Region
 // creation, as these are quite tightly linked.
 
 TEST(BoutMeshTest, DefaultConnectionsCore1x1) {

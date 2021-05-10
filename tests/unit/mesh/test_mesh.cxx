@@ -69,7 +69,7 @@ TEST_F(MeshTest, HasRegion2D) {
   EXPECT_FALSE(localmesh.hasRegion2D("SOME_MADE_UP_REGION_NAME"));
 }
 
-TEST_F(MeshTest, HasRegionPMesh) {
+TEST_F(MeshTest, HasRegionPerp) {
   localmesh.createDefaultRegions();
   EXPECT_TRUE(localmesh.hasRegionPerp("RGN_ALL"));
   EXPECT_TRUE(localmesh.hasRegionPerp("RGN_NOBNDRY"));
