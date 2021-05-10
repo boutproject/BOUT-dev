@@ -23,3 +23,6 @@ add_custom_target(sphinx-pdf
 set_target_properties(sphinx-html sphinx-pdf PROPERTIES
   ENVIRONMENT PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
 )
+
+add_custom_target(docs)
+add_dependencies(docs sphinx-html)
