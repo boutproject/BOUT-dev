@@ -14,7 +14,7 @@ add_custom_target(sphinx-html
 )
 
 add_custom_target(sphinx-pdf
-  COMMAND ${SPHINX_EXECUTABLE} -b pdf ${BOUT_SPHINX_SOURCE} ${BOUT_SPHINX_BUILD}
+  COMMAND ${SPHINX_EXECUTABLE} -M latexpdf ${BOUT_SPHINX_SOURCE} ${BOUT_SPHINX_BUILD}
   COMMAND ${CMAKE_COMMAND} -E echo "Generated PDF docs in file://${BOUT_SPHINX_BUILD}"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Generating PDF documentation with Sphinx in ${BOUT_SPHINX_BUILD}"
