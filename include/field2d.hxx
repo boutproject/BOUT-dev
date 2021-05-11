@@ -37,8 +37,6 @@ class Field3D; //#include "field3d.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 
-#include "bout/field_visitor.hxx"
-
 #include "bout/array.hxx"
 #include "bout/region.hxx"
 #include "utils.hxx"
@@ -251,9 +249,6 @@ class Field2D : public Field {
   Field2D & operator/=(BoutReal rhs);       ///< In-place division. Copy-on-write used if data is shared
 
   // FieldData virtual functions
-
-  /// Visitor pattern support
-  void accept(FieldVisitor &v) override {v.accept(*this);}
 
   bool is3D() const override { return false; }
 

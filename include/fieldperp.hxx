@@ -278,7 +278,6 @@ class FieldPerp : public Field {
    */
   int getNz() const override {return nz;};
 
-  void accept(FieldVisitor& v) override { v.accept(*this); }
   bool is3D() const override { return false; }
 
 private:

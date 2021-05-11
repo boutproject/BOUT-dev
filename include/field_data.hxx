@@ -48,8 +48,6 @@ class BoundaryOpPar;
 
 #include "bout/sys/expressionparser.hxx"
 
-class FieldVisitor;
-
 /// Interface used to access data in field classes
 /*!
   Used by communicator, solver and (soon) datafile classes
@@ -60,9 +58,6 @@ public:
   FieldData() = default;
   virtual ~FieldData();
 
-  // Visitor pattern support
-  virtual void accept(FieldVisitor &v) = 0;
-  
   // Defines interface which must be implemented
   /// True if variable is 3D
   virtual bool is3D() const = 0;
@@ -94,8 +89,6 @@ protected:
 
   std::map <BndryLoc,FieldGeneratorPtr> bndry_generator;
 };
-
-#include "bout/field_visitor.hxx"
 
 #endif
 

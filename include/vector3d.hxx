@@ -180,9 +180,6 @@ class Vector3D : public FieldData {
   // Get variable cell location
   CELL_LOC getLocation() const;
 
-  /// Visitor pattern support
-  void accept(FieldVisitor &v) override;
-
   // FieldData virtual functions
   bool is3D() const override { return true; }
   int elementSize() const override { return 3; }

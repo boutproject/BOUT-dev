@@ -629,16 +629,6 @@ Vector3D fromFieldAligned(const Vector3D& v, const std::string& region) {
   return result;
 }
 
-/***************************************************************
- *               FieldData VIRTUAL FUNCTIONS
- ***************************************************************/
-
-////////////////////////////////////////////////////////////
-// Visitor pattern support
-void Vector3D::accept(FieldVisitor &v) {
-  v.accept(*this);
-}
-
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Vector3D::applyBoundary(bool init)

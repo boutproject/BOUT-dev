@@ -38,8 +38,6 @@ class Mesh;  // #include "bout/mesh.hxx"
 
 #include "bout/assert.hxx"
 
-#include "bout/field_visitor.hxx"
-
 #include "utils.hxx"
 
 #include <vector>
@@ -458,9 +456,6 @@ class Field3D : public Field {
   // FieldData virtual functions
   bool is3D() const override { return true; }
 
-  /// Visitor pattern support
-  void accept(FieldVisitor &v) override { v.accept(*this); }
-  
 #if CHECK > 0
   void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else

@@ -32,7 +32,6 @@ public:
   FieldSubClass(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
       : Field(localmesh, location_in, directions_in) {}
 
-  void accept(MAYBE_UNUSED(FieldVisitor& v)) override {}
   bool is3D() const override { return false; }
 };
 } // namespace

@@ -478,17 +478,6 @@ const Field2D abs(const Vector2D &v, const std::string& region) {
   return sqrt(v*v, region);
 }
 
-/***************************************************************
- *               FieldData VIRTUAL FUNCTIONS
- ***************************************************************/
-
-////////////////////////////////////////////////////////////
-// Visitor pattern support
-
-void Vector2D::accept(FieldVisitor &v) {
-  v.accept(*this);
-}
-
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Vector2D::applyBoundary(bool init)
