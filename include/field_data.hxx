@@ -56,6 +56,10 @@ class BoundaryOpPar;
 class FieldData {
 public:
   FieldData() = default;
+  FieldData(const FieldData& other);
+  FieldData(FieldData&& other) = default;
+  FieldData& operator=(const FieldData& other);
+  FieldData& operator=(FieldData&& other) = default;
   virtual ~FieldData();
 
   // Defines interface which must be implemented

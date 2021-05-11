@@ -7,12 +7,21 @@
 #include <field_factory.hxx>
 #include "unused.hxx"
 
+FieldData::FieldData(const FieldData& other) {
+  copyBoundary(other);
+}
+
 FieldData::~FieldData() {
   if(!boundaryIsCopy) {
     // Delete the boundary operations
     for(const auto& bndry : bndry_op)
       delete bndry;
   }
+}
+
+FieldData& FieldData::operator=(const FieldData& other) {
+  copyBoundary(other);
+  return *this;
 }
 
 void FieldData::setBoundary(const std::string &name) {
