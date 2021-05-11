@@ -280,7 +280,6 @@ class FieldPerp : public Field {
 
   void accept(FieldVisitor& v) override { v.accept(*this); }
   bool is3D() const override { return false; }
-  int BoutRealSize() const override { return 1; }
 
 private:
   /// The Y index at which this FieldPerp is defined

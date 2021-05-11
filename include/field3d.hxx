@@ -454,10 +454,9 @@ class Field3D : public Field {
   Field3D & operator/=(const Field2D &rhs);
   Field3D & operator/=(BoutReal rhs);
   ///@}
-  
+
   // FieldData virtual functions
-  bool is3D() const override     { return true; }         // Field is 3D
-  int  BoutRealSize() const override { return 1; }
+  bool is3D() const override { return true; }
 
   /// Visitor pattern support
   void accept(FieldVisitor &v) override { v.accept(*this); }

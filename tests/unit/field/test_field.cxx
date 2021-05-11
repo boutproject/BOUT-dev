@@ -34,7 +34,6 @@ public:
 
   void accept(MAYBE_UNUSED(FieldVisitor& v)) override {}
   bool is3D() const override { return false; }
-  int BoutRealSize() const override { return 1; }
 };
 } // namespace
 

@@ -141,8 +141,8 @@ public:
   void accept(FieldVisitor &v) override;
   
   // FieldData virtual functions
-  bool is3D() const override     { return false; }
-  int  BoutRealSize() const override { return 3; }
+  bool is3D() const override { return false; }
+  int BoutRealSize() const override { return 3; }
 
   /// Apply boundary condition to all fields
   void applyBoundary(bool init=false) override;

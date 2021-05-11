@@ -64,8 +64,10 @@ public:
   virtual void accept(FieldVisitor &v) = 0;
   
   // Defines interface which must be implemented
-  virtual bool is3D() const = 0;   ///< True if variable is 3D
-  virtual int BoutRealSize() const { return 0; } ///< Number of BoutReals (not implemented if not BoutReal)
+  /// True if variable is 3D
+  virtual bool is3D() const = 0;
+  /// Number of BoutReals in one element
+  virtual int BoutRealSize() const { return 1; }
 
   virtual void doneComms() { }; // Notifies that communications done
   

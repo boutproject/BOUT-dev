@@ -255,8 +255,7 @@ class Field2D : public Field {
   /// Visitor pattern support
   void accept(FieldVisitor &v) override {v.accept(*this);}
 
-  bool is3D() const override    { return false; }        // Field is 2D
-  int  BoutRealSize() const override { return 1; }
+  bool is3D() const override { return false; }
 
 #if CHECK > 0
   void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
