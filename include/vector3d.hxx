@@ -54,20 +54,14 @@ class Vector2D; //#include "vector2d.hxx"
 class Vector3D : public FieldData {
  public:
   /*!
-   * Constructor. Just sets covariant = true and deriv = NULL
-   *
-   * Does not initialise any of the fields
-   */
-  Vector3D(Mesh * fieldmesh = nullptr);
-  
-  /*!
    * Copy constructor. After this the components (x,y,z)
    * will refer to the same data as f.(x,y,z)
    */
   Vector3D(const Vector3D &f);
 
   /// Many-argument constructor for fully specifying the initialisation of a Vector3D
-  Vector3D(Mesh* localmesh, bool covariant, CELL_LOC location);
+  Vector3D(Mesh* localmesh = nullptr, bool covariant = true,
+           CELL_LOC location = CELL_LOC::centre);
 
   /*!
    * Destructor. If the time derivative has been
@@ -228,7 +222,7 @@ Vector3D fromFieldAligned(const Vector3D& v, const std::string& region = "RGN_AL
 
 /// Create new Vector3D with same attributes as the argument, but uninitialised components
 inline Vector3D emptyFrom(const Vector3D& v) {
-  auto result = Vector3D(v.x.getMesh(), v.covariant, v.getLocation());
+  auto result = Vector3D(v.getMesh(), v.covariant, v.getLocation());
   result.x = emptyFrom(v.x);
   result.y = emptyFrom(v.y);
   result.z = emptyFrom(v.z);
@@ -238,7 +232,7 @@ inline Vector3D emptyFrom(const Vector3D& v) {
 
 /// Create new Vector3D with same attributes as the argument, and zero-initialised components
 inline Vector3D zeroFrom(const Vector3D& v) {
-  auto result = Vector3D(v.x.getMesh(), v.covariant, v.getLocation());
+  auto result = Vector3D(v.getMesh(), v.covariant, v.getLocation());
   result.x = zeroFrom(v.x);
   result.y = zeroFrom(v.y);
   result.z = zeroFrom(v.z);

@@ -36,16 +36,16 @@
 #include <bout/scorepwrapper.hxx>
 #include <interpolation.hxx>
 
-Vector2D::Vector2D(Mesh* localmesh)
-    : FieldData(localmesh), x(localmesh), y(localmesh), z(localmesh) {}
-
 Vector2D::Vector2D(const Vector2D& f)
     : FieldData(f), x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
       location(f.getLocation()) {}
 
 Vector2D::Vector2D(Mesh* localmesh, bool covariant, CELL_LOC location)
-    : x(localmesh), y(localmesh), z(localmesh), covariant(covariant) {
-  setLocation(location);
+    : FieldData(localmesh), x(getMesh()), y(getMesh()), z(getMesh()),
+      covariant(covariant) {
+  if (getMesh() != nullptr) {
+    setLocation(location);
+  }
 }
 
 Vector2D::~Vector2D() {
@@ -64,7 +64,7 @@ Vector2D::~Vector2D() {
 void Vector2D::toCovariant() {
   SCOREP0();  
   if(!covariant) {
-    Mesh *localmesh = x.getMesh();
+    Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
       Coordinates *metric_x, *metric_y, *metric_z;
@@ -114,7 +114,7 @@ void Vector2D::toContravariant() {
   SCOREP0();
   if(covariant) {
     // multiply by g^{ij}
-    Mesh *localmesh = x.getMesh();
+    Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
       Coordinates *metric_x, *metric_y, *metric_z;
@@ -165,7 +165,7 @@ void Vector2D::toContravariant() {
 
 Vector2D* Vector2D::timeDeriv() {
   if (deriv == nullptr) {
-    deriv = new Vector2D(x.getMesh());
+    deriv = new Vector2D(getMesh());
 
     // Check if the components have a time-derivative
     // Need to make sure that ddt(v.x) = ddt(v).x
@@ -321,7 +321,7 @@ const Vector2D Vector2D::operator-(const Vector2D &rhs) const {
 }
 
 const Vector3D Vector2D::operator-(const Vector3D &rhs) const {
-  Vector3D result(x.getMesh());
+  Vector3D result(getMesh());
   result = *this;
   result -= rhs;
   return result;
@@ -342,7 +342,7 @@ const Vector2D Vector2D::operator*(const Field2D &rhs) const {
 }
 
 const Vector3D Vector2D::operator*(const Field3D &rhs) const {
-  Vector3D result(x.getMesh());
+  Vector3D result(getMesh());
   result = *this;
   result *= rhs;
   return result;
@@ -363,7 +363,7 @@ const Vector2D Vector2D::operator/(const Field2D &rhs) const {
 }
 
 const Vector3D Vector2D::operator/(const Field3D &rhs) const {
-  Vector3D result(x.getMesh());
+  Vector3D result(getMesh());
   result = *this;
   result /= rhs;
   return result;
@@ -374,7 +374,7 @@ const Vector3D Vector2D::operator/(const Field3D &rhs) const {
 const Field2D Vector2D::operator*(const Vector2D &rhs) const {
   ASSERT2(location == rhs.getLocation());
 
-  Mesh *localmesh = x.getMesh();
+  Mesh* localmesh = getMesh();
   Field2D result{emptyFrom(x)};
 
   if(rhs.covariant ^ covariant) {
@@ -430,7 +430,7 @@ void Vector2D::setLocation(CELL_LOC loc) {
     loc = CELL_CENTRE;
   }
 
-  if (x.getMesh()->StaggerGrids) {
+  if (getMesh()->StaggerGrids) {
     if (loc == CELL_VSHIFT) {
       x.setLocation(CELL_XLOW);
       y.setLocation(CELL_YLOW);

@@ -212,7 +212,7 @@ TEST_F(Vector3DTest, SetLocationVSHIFT) {
 TEST_F(Vector3DTest, SetLocationDEFAULT) {
   Vector3D vector;
   CELL_LOC targetLoc = CELL_CENTRE;
-  vector.x.getMesh()->StaggerGrids = true;
+  vector.getMesh()->StaggerGrids = true;
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
   EXPECT_NO_THROW(vector.setLocation(CELL_DEFAULT));
   EXPECT_EQ(vector.getLocation(), targetLoc);

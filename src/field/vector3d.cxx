@@ -37,16 +37,16 @@
 #include <bout/scorepwrapper.hxx>
 #include <interpolation.hxx>
 
-Vector3D::Vector3D(Mesh* localmesh)
-    : FieldData(localmesh), x(localmesh), y(localmesh), z(localmesh) {}
-
 Vector3D::Vector3D(const Vector3D& f)
     : FieldData(f), x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
       location(f.getLocation()) {}
 
 Vector3D::Vector3D(Mesh* localmesh, bool covariant, CELL_LOC location)
-    : x(localmesh), y(localmesh), z(localmesh), covariant(covariant) {
-  setLocation(location);
+    : FieldData(localmesh), x(getMesh()), y(getMesh()), z(getMesh()),
+      covariant(covariant) {
+  if (getMesh() != nullptr) {
+    setLocation(location);
+  }
 }
 
 Vector3D::~Vector3D() {
@@ -65,7 +65,7 @@ Vector3D::~Vector3D() {
 void Vector3D::toCovariant() {
   SCOREP0();  
   if(!covariant) {
-    Mesh *localmesh = x.getMesh();
+    Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
       Coordinates *metric_x, *metric_y, *metric_z;
@@ -115,7 +115,7 @@ void Vector3D::toContravariant() {
   SCOREP0();
   if(covariant) {
     // multiply by g^{ij}
-    Mesh *localmesh = x.getMesh();
+    Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
       Coordinates *metric_x, *metric_y, *metric_z;
@@ -166,7 +166,7 @@ void Vector3D::toContravariant() {
 
 Vector3D* Vector3D::timeDeriv() {
   if (deriv == nullptr) {
-    deriv = new Vector3D(x.getMesh());
+    deriv = new Vector3D(getMesh());
 
     // Check if the components have a time-derivative
     // Need to make sure that ddt(v.x) = ddt(v).x
@@ -371,9 +371,9 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
 
 #define CROSS(v0, v1, v2)                                               \
                                                                         \
-  const v0 cross(const v1 &lhs, const v2 &rhs) {                        \
+  const v0 cross(const v1& lhs, const v2& rhs) {                        \
     ASSERT1(lhs.getLocation() == rhs.getLocation());                    \
-    Mesh *localmesh = lhs.x.getMesh();                                  \
+    Mesh* localmesh = lhs.getMesh();                                    \
     v0 result(localmesh);                                               \
                                                                         \
     /* Make sure both vector components are covariant */                \
@@ -382,7 +382,7 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
     v1 lco = lhs;                                                       \
     lco.toCovariant();                                                  \
                                                                         \
-    Coordinates *metric = localmesh->getCoordinates(lhs.getLocation());    \
+    Coordinates* metric = localmesh->getCoordinates(lhs.getLocation()); \
                                                                         \
     /* calculate contravariant components of cross-product */           \
     result.x = (lco.y * rco.z - lco.z * rco.y) / metric->J;             \
@@ -391,8 +391,7 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
     result.covariant = false;                                           \
                                                                         \
     return result;                                                      \
-  }                                                                     \
-
+  }
 
 CROSS(Vector3D, Vector3D, Vector3D)
 CROSS(Vector3D, Vector3D, Vector2D)
@@ -474,7 +473,7 @@ const Vector3D Vector3D::operator/(const Field3D &rhs) const {
 ////////////////// DOT PRODUCT ///////////////////
 
 const Field3D Vector3D::operator*(const Vector3D &rhs) const {
-  Mesh* mesh = x.getMesh();
+  Mesh* mesh = getMesh();
 
   Field3D result{emptyFrom(x)};
   ASSERT2(location == rhs.getLocation())
@@ -560,7 +559,7 @@ void Vector3D::setLocation(CELL_LOC loc) {
     loc = CELL_CENTRE;
   }
 
-  if (x.getMesh()->StaggerGrids) {
+  if (getMesh()->StaggerGrids) {
     if (loc == CELL_VSHIFT) {
       x.setLocation(CELL_XLOW);
       y.setLocation(CELL_YLOW);
