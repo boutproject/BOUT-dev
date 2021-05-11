@@ -42,6 +42,7 @@ class FieldData;
 //#include "boundary_op.hxx"
 class BoundaryOp;
 class BoundaryOpPar;
+class Mesh;
 
 #include "boundary_region.hxx"
 #include "parallel_boundary_region.hxx"
@@ -61,6 +62,8 @@ public:
   FieldData& operator=(const FieldData& other);
   FieldData& operator=(FieldData&& other) = default;
   virtual ~FieldData();
+
+  FieldData(Mesh* localmesh) : fieldmesh(localmesh) {}
 
   // Defines interface which must be implemented
   /// True if variable is 3D
@@ -83,7 +86,11 @@ public:
   
   FieldGeneratorPtr getBndryGenerator(BndryLoc location);
 
+  Mesh* getMesh() const;
+
 protected:
+  /// Grid information, etc.
+  Mesh* fieldmesh{nullptr};
   std::vector<BoundaryOp *> bndry_op; ///< Boundary conditions
   bool boundaryIsCopy{false};         ///< True if bndry_op is a copy
   bool boundaryIsSet{false};          ///< Set to true when setBoundary called

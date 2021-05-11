@@ -73,7 +73,7 @@ CELL_LOC normaliseLocation(CELL_LOC location, Mesh* mesh) {
 } // namespace bout
 
 Field::Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
-    : fieldmesh(localmesh == nullptr ? bout::globals::mesh : localmesh),
+    : FieldData(localmesh == nullptr ? bout::globals::mesh : localmesh),
       location(bout::normaliseLocation(location_in, fieldmesh)),
       directions(directions_in) {
 

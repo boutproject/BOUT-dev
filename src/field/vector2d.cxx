@@ -36,17 +36,17 @@
 #include <bout/scorepwrapper.hxx>
 #include <interpolation.hxx>
 
-Vector2D::Vector2D(Mesh* localmesh) : x(localmesh), y(localmesh), z(localmesh) {}
+Vector2D::Vector2D(Mesh* localmesh)
+    : FieldData(localmesh), x(localmesh), y(localmesh), z(localmesh) {}
 
-Vector2D::Vector2D(const Vector2D &f)
-    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
+Vector2D::Vector2D(const Vector2D& f)
+    : FieldData(f), x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
       location(f.getLocation()) {}
 
 Vector2D::Vector2D(Mesh* localmesh, bool covariant, CELL_LOC location)
-  : x(localmesh), y(localmesh), z(localmesh), covariant(covariant) {
-
-    setLocation(location);
-  }
+    : x(localmesh), y(localmesh), z(localmesh), covariant(covariant) {
+  setLocation(location);
+}
 
 Vector2D::~Vector2D() {
   if (deriv != nullptr) {

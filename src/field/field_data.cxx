@@ -9,6 +9,7 @@
 
 FieldData::FieldData(const FieldData& other) {
   copyBoundary(other);
+  fieldmesh = other.fieldmesh;
 }
 
 FieldData::~FieldData() {
@@ -21,6 +22,7 @@ FieldData::~FieldData() {
 
 FieldData& FieldData::operator=(const FieldData& other) {
   copyBoundary(other);
+  fieldmesh = other.fieldmesh;
   return *this;
 }
 
@@ -80,4 +82,17 @@ FieldGeneratorPtr FieldData::getBndryGenerator(BndryLoc location) {
     return nullptr;
 
   return it->second;
+}
+
+Mesh* FieldData::getMesh() const {
+  if (fieldmesh) {
+    return fieldmesh;
+  } else {
+    // Don't set fieldmesh=mesh here, so that fieldmesh==nullptr until
+    // allocate() is called in one of the derived classes. fieldmesh==nullptr
+    // indicates that some initialization that would be done in the
+    // constructor if fieldmesh was a valid Mesh object still needs to be
+    // done.
+    return bout::globals::mesh;
+  }
 }

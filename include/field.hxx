@@ -123,19 +123,6 @@ public:
   bool bndry_xin{true}, bndry_xout{true}, bndry_yup{true}, bndry_ydown{true};
 #endif
 
-  Mesh* getMesh() const {
-    if (fieldmesh) {
-      return fieldmesh;
-    } else {
-      // Don't set fieldmesh=mesh here, so that fieldmesh==nullptr until
-      // allocate() is called in one of the derived classes. fieldmesh==nullptr
-      // indicates that some initialization that would be done in the
-      // constructor if fieldmesh was a valid Mesh object still needs to be
-      // done.
-      return bout::globals::mesh;
-    }
-  }
-
   /// Returns a pointer to the coordinates object at this field's
   /// location from the mesh this field is on.
   Coordinates* getCoordinates() const;
@@ -167,7 +154,6 @@ public:
     swap(first.directions, second.directions);
   }
 protected:
-  Mesh* fieldmesh{nullptr};
   mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};
 
   /// Location of the variable in the cell
