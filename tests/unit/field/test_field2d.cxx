@@ -39,7 +39,7 @@ TEST_F(Field2DTest, Is3D) {
 TEST_F(Field2DTest, BoutRealSize) {
   Field2D field;
 
-  EXPECT_EQ(field.BoutRealSize(), 1);
+  EXPECT_EQ(field.elementSize(), 1);
 }
 
 TEST_F(Field2DTest, Allocate) {

@@ -185,7 +185,7 @@ class Vector3D : public FieldData {
 
   // FieldData virtual functions
   bool is3D() const override { return true; }
-  int BoutRealSize() const override { return 3; }
+  int elementSize() const override { return 3; }
 
   void applyBoundary(bool init=false) override;
   void applyBoundary(const std::string &condition) {

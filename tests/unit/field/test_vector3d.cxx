@@ -113,7 +113,7 @@ TEST_F(Vector3DTest, Is3D) {
 TEST_F(Vector3DTest, BoutRealSize) {
   Vector3D vector;
 
-  EXPECT_EQ(vector.BoutRealSize(), 3);
+  EXPECT_EQ(vector.elementSize(), 3);
 }
 
 TEST_F(Vector3DTest, TimeDeriv) {
