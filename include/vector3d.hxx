@@ -184,10 +184,7 @@ class Vector3D : public FieldData {
   void accept(FieldVisitor &v) override;
   
   // FieldData virtual functions
-  
-  bool isReal() const override   { return true; }
   bool is3D() const override     { return true; }
-  int  byteSize() const override { return 3*sizeof(BoutReal); }
   int  BoutRealSize() const override { return 3; }
   
   void applyBoundary(bool init=false) override;

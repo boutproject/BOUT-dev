@@ -33,9 +33,7 @@ public:
       : Field(localmesh, location_in, directions_in) {}
 
   void accept(MAYBE_UNUSED(FieldVisitor& v)) override {}
-  bool isReal() const override { return true; }
   bool is3D() const override { return false; }
-  int byteSize() const override { return sizeof(BoutReal); }
   int BoutRealSize() const override { return 1; }
 };
 } // namespace

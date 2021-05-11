@@ -254,10 +254,8 @@ class Field2D : public Field {
 
   /// Visitor pattern support
   void accept(FieldVisitor &v) override {v.accept(*this);}
-  
-  bool isReal() const override  { return true; }         // Consists of BoutReal values
+
   bool is3D() const override    { return false; }        // Field is 2D
-  int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
   int  BoutRealSize() const override { return 1; }
 
 #if CHECK > 0

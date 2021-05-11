@@ -456,10 +456,7 @@ class Field3D : public Field {
   ///@}
   
   // FieldData virtual functions
-  
-  bool isReal() const override   { return true; }         // Consists of BoutReal values
   bool is3D() const override     { return true; }         // Field is 3D
-  int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
   int  BoutRealSize() const override { return 1; }
 
   /// Visitor pattern support

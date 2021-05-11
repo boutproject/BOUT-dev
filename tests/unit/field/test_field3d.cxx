@@ -32,22 +32,10 @@ using namespace bout::globals;
 // Reuse the "standard" fixture for FakeMesh
 using Field3DTest = FakeMeshFixture;
 
-TEST_F(Field3DTest, IsReal) {
-  Field3D field;
-
-  EXPECT_TRUE(field.isReal());
-}
-
 TEST_F(Field3DTest, Is3D) {
   Field3D field;
 
   EXPECT_TRUE(field.is3D());
-}
-
-TEST_F(Field3DTest, ByteSize) {
-  Field3D field;
-
-  EXPECT_EQ(field.byteSize(), sizeof(BoutReal));
 }
 
 TEST_F(Field3DTest, BoutRealSize) {
