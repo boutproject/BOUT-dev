@@ -102,8 +102,12 @@ obtain a copy of the latest version, run::
 
     $ git clone git://github.com/boutproject/BOUT-dev.git
 
-which will create a directory ``BOUT-dev`` containing the code. To get
-the latest changes later, go into the ``BOUT-dev`` directory and run::
+
+which will create a directory ``BOUT-dev`` containing the code::
+
+    $ cd BOUT-dev
+
+To get the latest changes later, go into the ``BOUT-dev`` directory and run::
 
     $ git pull
 
@@ -123,8 +127,7 @@ The bare-minimum requirements for compiling and running BOUT++ are:
 #. A C++ compiler that supports C++14
 
 #. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <https://www.open-mpi.org/>`__),
-   MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
-   LAM (`www.lam-mpi.org/ <https://www.lam-mpi.org/>`__)
+   MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__)
    
 #. The NetCDF library (`https://www.unidata.ucar.edu/downloads/netcdf
    <https://www.unidata.ucar.edu/downloads/netcdf>`__)
@@ -342,7 +345,7 @@ directory. The equivalent of ``make distclean`` with CMake is to just
 delete the entire build directory and reconfigure.
 
 Bundled Dependencies
-^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~
 
 BOUT++ bundles some dependencies, currently `mpark.variant
 <https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
@@ -360,7 +363,7 @@ time as your project, therefore there is no option to use an external
 installation for that.
 
 Using CMake with your physics model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can write a CMake configuration file (``CMakeLists.txt``) for your
 physics model in only four lines:
@@ -582,10 +585,10 @@ installation of BOUT++. Unless you want to use some experimental
 features of BOUT++, skip to section [sec-running] to start running the
 code.
 
+.. _sec-install-bout:
+
 Installing BOUT++ (experimental)
 --------------------------------
-
-.. _sec-install-bout:
 
 Most BOUT++ users install and develop their own copies in their home directory,
 so do not need to install BOUT++ to a system directory.
