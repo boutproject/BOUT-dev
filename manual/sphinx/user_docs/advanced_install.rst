@@ -452,6 +452,12 @@ Use the ``--with-sundials`` option to configure BOUT++ with SUNDIALS::
 SUNDIALS will allow you to select at run-time which solver to use. See
 :ref:`sec-timeoptions` for more details on how to do this.
 
+Notes:
+
+* If compiling SUNDIALS, make sure that it is configured with MPI (``MPI_ENABLE=ON``)
+* If you install SUNDIALS to a non-standard (system) directory, you will probably have
+  to add the ``lib`` directory to the ``LD_LIBRARY_PATH`` environment variable.
+
 .. _sec-PETSc-install:
 
 PETSc
