@@ -160,7 +160,7 @@ class Mesh;  // #include "bout/mesh.hxx"
       f.yup()(0,1,0) // ok
 
  */
-class Field3D : public Field, public FieldData {
+class Field3D : public Field {
  public:
   using ind_type = Ind3D;
   

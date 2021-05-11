@@ -35,6 +35,8 @@ class Field;
 #include <cstdio>
 #include <memory>
 
+#include "field_data.hxx"
+
 #include "bout/region.hxx"
 #include "bout_types.hxx"
 #include "boutcomm.hxx"
@@ -61,7 +63,7 @@ class Coordinates;
  *
  * Defines the virtual function SetStencil, used by differencing methods
  */
-class Field {
+class Field : public FieldData {
 public:
   Field() = default;
   Field(const Field& other) = default;

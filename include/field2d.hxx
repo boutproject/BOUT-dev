@@ -51,7 +51,7 @@ class Field3D; //#include "field3d.hxx"
  * Handles data for axisymmetric quantities. Essentially the same
  * as the Field3D class.
  */
-class Field2D : public Field, public FieldData {
+class Field2D : public Field {
  public:
   using ind_type = Ind2D;    
   /*!
