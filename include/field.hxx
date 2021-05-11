@@ -154,7 +154,7 @@ public:
     swap(first.directions, second.directions);
   }
 protected:
-  mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};
+  mutable std::weak_ptr<Coordinates> fieldCoordinates{};
 
   /// Location of the variable in the cell
   CELL_LOC location{CELL_CENTRE};
