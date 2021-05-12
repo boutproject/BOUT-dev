@@ -75,6 +75,10 @@ FieldData::~FieldData() {
 }
 
 FieldData& FieldData::operator=(const FieldData& other) {
+  if (this == &other) {
+    return *this;
+  }
+
   // Note we don't copy the boundaries here!
   fieldmesh = other.fieldmesh;
   location = other.location;
