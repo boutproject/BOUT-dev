@@ -82,7 +82,7 @@ FieldData& FieldData::operator=(const FieldData& other) {
   return *this;
 }
 
-FieldData& FieldData::operator=(FieldData&& other) {
+FieldData& FieldData::operator=(FieldData&& other) noexcept {
   // Note we don't copy the boundaries here!
   fieldmesh = std::move(other.fieldmesh);
   location = std::move(other.location);
