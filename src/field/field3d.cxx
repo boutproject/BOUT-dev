@@ -270,9 +270,6 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 Field3D& Field3D::operator=(Field3D&& rhs) {
   TRACE("Field3D: Assignment from Field3D");
 
-  // Move base slice
-  Field::operator=(std::move(rhs));
-
   // Move parallel slices or delete existing ones.
   yup_fields = std::move(rhs.yup_fields);
   ydown_fields = std::move(rhs.ydown_fields);
@@ -283,6 +280,9 @@ Field3D& Field3D::operator=(Field3D&& rhs) {
   nz = rhs.nz;
 
   data = std::move(rhs.data);
+
+  // Move base slice last
+  Field::operator=(std::move(rhs));
 
   return *this;
 }
