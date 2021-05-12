@@ -133,8 +133,8 @@ public:
     swap(first.name, second.name);
     swap(first.directions, second.directions);
   }
-protected:
 
+private:
   /// Labels for the type of coordinate system this field is defined over
   DirectionTypes directions{YDirectionType::Standard, ZDirectionType::Standard};
 };

@@ -127,7 +127,7 @@ class Field2D : public Field {
     // Field3D or FieldPerp - there is no difference between orthogonal and field-aligned
     // coordinates for Field2D, so should always have YDirectionType::Standard.
     ASSERT1(d == YDirectionType::Standard);
-    directions.y = d;
+    Field::setDirectionY(d);
     return *this;
   }
 
