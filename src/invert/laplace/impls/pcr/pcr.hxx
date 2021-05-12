@@ -77,60 +77,6 @@ public:
   FieldPerp solve(const FieldPerp& b) override { return solve(b, b); }
   FieldPerp solve(const FieldPerp& b, const FieldPerp& x0) override;
 
-  BoutReal getMeanIterations() const { return ipt_mean_its; }
-  void resetMeanIterations() { ipt_mean_its = 0; }
-  BoutReal getMeanCycles() const { return ipt_mean_cycles; }
-  void resetMeanCycles() { ipt_mean_cycles = 0; }
-
-  class Level {
-
-  public:
-    // Constructor for zeroth level; needs to modify \p lap
-    Level(LaplacePCR& lap);
-    // Constructor for all other levels; uses the previous level \p lup
-    Level(const LaplacePCR& lap, const Level& lup, std::size_t current_level);
-
-    Matrix<dcomplex> xloc;
-    Matrix<dcomplex> residual;
-    Tensor<dcomplex> ar, br, cr, brinv;
-    Matrix<dcomplex> rr;
-
-    /// Unique ID
-    int myproc;
-    /// In-neighbour
-    int proc_in;
-    /// Out-neighbour
-    int proc_out;
-    /// Whether this processor is included in this grid level's calculation
-    bool included;
-
-    // indexing to remove branches from tight loops
-    int index_start;
-    int index_end;
-
-    // Save some proc properties from the level above - this allows us
-    // to NOT pass the level above as an argument in some functions
-
-    /// Whether this processor is involved in the calculation on the grid one level more
-    /// refined
-    bool included_up;
-    /// This processor's neighbours on the level above
-    int proc_in_up, proc_out_up;
-
-    void calculate_residual(const LaplacePCR& lap);
-    void calculate_total_residual(const LaplacePCR& lap, Array<BoutReal>& error,
-                                  Array<bool>& converged);
-    void coarsen(const LaplacePCR& lap, const Matrix<dcomplex>& fine_residual);
-    void gauss_seidel_red_black(const LaplacePCR& lap);
-    void init(const LaplacePCR &lap, const Level &lup, std::size_t current_level);
-    void init(LaplacePCR &lap);
-    void init_rhs(LaplacePCR& lap, const Matrix<dcomplex>& bcmplx);
-    bool is_diagonally_dominant(const LaplacePCR& lap) const;
-    void reconstruct_full_solution(const LaplacePCR& lap, Matrix<dcomplex>& xk1d) const;
-    void refine(const LaplacePCR& lap, Matrix<dcomplex>& fine_error);
-    void synchronize_reduced_field(const LaplacePCR& lap, Matrix<dcomplex>& field);
-    void update_solution(const LaplacePCR& lap);
-  };
         void setup(int n, int np_world, int rank_world);
         void cr_solver    (double *a_mpi, double *b_mpi, double *c_mpi, double *r_mpi, double *x_mpi);
         //void cr_pcr_solver(double *a_mpi, double *b_mpi, double *c_mpi, double *r_mpi, double *x_mpi);
@@ -179,9 +125,6 @@ private:
 
   /// Number of local x, y points
   int ncx, ny;
-
-  /// Information about the grids
-  std::vector<Level> levels;
 
   /// Current y index
   int jy;

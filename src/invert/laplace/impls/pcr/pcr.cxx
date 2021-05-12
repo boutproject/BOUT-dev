@@ -1,6 +1,6 @@
 /**************************************************************************
  * Perpendicular Laplacian inversion. Parallel code using FFTs in z
- * and an iterative tridiagonal solver in x.
+ * and parallel cyclic reduction in x.
  *
  **************************************************************************
  * Copyright 2020 Joseph Parker
@@ -66,6 +66,12 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
     throw BoutException("LaplacePCR error: NXPE must be a power of 2");
   }
 
+  // Cannot be run in serial
+  if(localmesh->firstX() && localmesh->lastX())
+    throw BoutException("Error: PCR method only works for NXPE > 1. Suggest using cyclic solver for NXPE = 1.\n");
+
+  setup(localmesh->GlobalNx-4, localmesh->getNXPE(), localmesh->getXProcIndex());
+
 }
 
 /// Calculate the transpose of \p m in the pre-allocated \p m_t
@@ -102,8 +108,6 @@ void transpose(Matrix<dcomplex>& m_t, const Matrix<dcomplex>& m) {
  *
  * \return          The inverted variable.
  */
-// FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0, const FieldPerp&
-// b0) {
 FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   SCOREP0();
@@ -116,12 +120,6 @@ FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0) {
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
   TRACE("LaplacePCR::solve(const, const)");
-
-  // Check that this solver may be used:
-  // Cannot be run in serial
-  if(localmesh->firstX() && localmesh->lastX())
-    throw BoutException("Error: PCR method only works for NXPE > 1. Suggest using cyclic solver for NXPE = 1.\n");
-
 
   FieldPerp x{emptyFrom(b)};
 
@@ -210,6 +208,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0) {
    * `nmode` in the transpose.
    */
   transpose(bcmplx, bk);
+  TRACE("LaplacePCR::after first transpose");
 
   /* Set the matrix A used in the inversion of Ax=b
    * by calling tridagCoef and setting the BC
@@ -265,16 +264,6 @@ FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0) {
                                   and not isInnerBoundaryFlagSet(INVERT_SET)
                                   and not isOuterBoundaryFlagSet(INVERT_SET);
 
-  // Initialize levels. Note that the finest grid (level 0) has a different
-  // routine to coarse grids (which generally depend on the grid one step
-  // finer than itself).
-  //
-
-  const auto all = [](const Array<bool>& a) {
-    return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
-  };
-
-  setup(localmesh->GlobalNx-4, localmesh->getNXPE(), localmesh->getXProcIndex());
 ///  output.write("before\n");
 ///  for(int kz=0;kz<nmode;kz++){
 ///    for(int ix=0;ix<localmesh->LocalNx;ix++){
@@ -308,7 +297,10 @@ FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
   }
 
+  // Perform the parallel triadiagonal solver
+  // Note the API switches sub and super diagonals
   cr_pcr_solver(cvec,bvec,avec,bcmplx,xk1d,jy);
+  TRACE("LaplacePCR::after solve");
 
   // apply boundary conditions
   if (localmesh->firstX()) {
