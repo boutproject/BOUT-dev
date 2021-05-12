@@ -44,7 +44,7 @@ Vector2D::Vector2D(Mesh* localmesh, bool covariant, CELL_LOC location)
     : FieldData(localmesh), x(getMesh()), y(getMesh()), z(getMesh()),
       covariant(covariant) {
   if (getMesh() != nullptr) {
-    setLocation(location);
+    Vector2D::setLocation(location);
   }
 }
 

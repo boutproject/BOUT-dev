@@ -45,7 +45,7 @@ Vector3D::Vector3D(Mesh* localmesh, bool covariant, CELL_LOC location)
     : FieldData(localmesh), x(getMesh()), y(getMesh()), z(getMesh()),
       covariant(covariant) {
   if (getMesh() != nullptr) {
-    setLocation(location);
+    Vector3D::setLocation(location);
   }
 }
 

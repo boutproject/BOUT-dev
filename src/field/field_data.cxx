@@ -198,7 +198,7 @@ Coordinates* FieldData::getCoordinates() const {
   if (fieldCoordinates_shared) {
     return fieldCoordinates_shared.get();
   }
-  fieldCoordinates = getMesh()->getCoordinatesSmart(getLocation());
+  fieldCoordinates = getMesh()->getCoordinatesSmart(FieldData::getLocation());
   return fieldCoordinates.lock().get();
 }
 
