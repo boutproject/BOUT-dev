@@ -225,7 +225,7 @@ class Field3D : public Field {
   int getNz() const override {return nz;};
 
   // these methods return Field3D to allow method chaining
-  Field3D& setLocation(CELL_LOC new_location) {
+  Field3D& setLocation(CELL_LOC new_location) override {
     Field::setLocation(new_location);
     return *this;
   }

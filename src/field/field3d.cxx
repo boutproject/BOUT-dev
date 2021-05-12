@@ -72,9 +72,6 @@ Field3D::Field3D(const Field3D& f)
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
-
-  location = f.location;
-  fieldCoordinates = f.fieldCoordinates;
 }
 
 Field3D::Field3D(const Field2D& f) : Field(f) {
@@ -253,11 +250,12 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
   TRACE("Field3D: Assignment from Field3D");
 
+  // Copy base slice
+  Field::operator=(rhs);
+
   // Copy parallel slices or delete existing ones.
   yup_fields = rhs.yup_fields;
   ydown_fields = rhs.ydown_fields;
-
-  copyFieldMembers(rhs);
 
   // Copy the data and data sizes
   nx = rhs.nx;
@@ -272,13 +270,14 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 Field3D& Field3D::operator=(Field3D&& rhs) {
   TRACE("Field3D: Assignment from Field3D");
 
-  // Copy parallel slices or delete existing ones.
+  // Move base slice
+  Field::operator=(std::move(rhs));
+
+  // Move parallel slices or delete existing ones.
   yup_fields = std::move(rhs.yup_fields);
   ydown_fields = std::move(rhs.ydown_fields);
 
-  copyFieldMembers(rhs);
-
-  // Copy the data and data sizes
+  // Move the data and data sizes
   nx = rhs.nx;
   ny = rhs.ny;
   nz = rhs.nz;

@@ -52,7 +52,6 @@ class Field;
 #include "unused.hxx"
 
 class Mesh;
-class Coordinates;
 
 #if BOUT_USE_TRACK
 #include <string>
@@ -74,15 +73,6 @@ public:
 
   Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in);
 
-  /// Set variable location for staggered grids to @param new_location
-  ///
-  /// Throws BoutException if new_location is not `CELL_CENTRE` and
-  /// staggered grids are turned off and checks are on. If checks are
-  /// off, silently sets location to ``CELL_CENTRE`` instead.
-  void setLocation(CELL_LOC new_location);
-  /// Get variable location
-  CELL_LOC getLocation() const;
-
   /// Getters for DIRECTION types
   DirectionTypes getDirections() const {
     return directions;
@@ -95,6 +85,7 @@ public:
   }
 
   /// Setters for *DirectionType
+  void setDirections(DirectionTypes directions_in) { directions = directions_in; }
   void setDirectionY(YDirectionType y_type) {
     directions.y = y_type;
   }
@@ -123,15 +114,6 @@ public:
   bool bndry_xin{true}, bndry_xout{true}, bndry_yup{true}, bndry_ydown{true};
 #endif
 
-  /// Returns a pointer to the coordinates object at this field's
-  /// location from the mesh this field is on.
-  Coordinates* getCoordinates() const;
-
-  /// Returns a pointer to the coordinates object at the requested
-  /// location from the mesh this field is on. If location is CELL_DEFAULT
-  /// then return coordinates at field location
-  Coordinates* getCoordinates(CELL_LOC loc) const;
-
   /*!
    * Return the number of nx points
    */
@@ -147,26 +129,11 @@ public:
 
   friend void swap(Field& first, Field& second) noexcept {
     using std::swap;
+    swap(static_cast<FieldData&>(first), static_cast<FieldData&>(second));
     swap(first.name, second.name);
-    swap(first.fieldmesh, second.fieldmesh);
-    swap(first.fieldCoordinates, second.fieldCoordinates);
-    swap(first.location, second.location);
     swap(first.directions, second.directions);
   }
 protected:
-  mutable std::weak_ptr<Coordinates> fieldCoordinates{};
-
-  /// Location of the variable in the cell
-  CELL_LOC location{CELL_CENTRE};
-
-  /// Copy the members from another Field
-  void copyFieldMembers(const Field& f) {
-    name = f.name;
-    fieldmesh = f.fieldmesh;
-    fieldCoordinates = f.fieldCoordinates;
-    location = f.location;
-    directions = f.directions;
-  }
 
   /// Labels for the type of coordinate system this field is defined over
   DirectionTypes directions{YDirectionType::Standard, ZDirectionType::Standard};

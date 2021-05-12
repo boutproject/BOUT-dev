@@ -423,7 +423,7 @@ CELL_LOC Vector2D::getLocation() const {
   return location;
 }
 
-void Vector2D::setLocation(CELL_LOC loc) {
+Vector2D& Vector2D::setLocation(CELL_LOC loc) {
   SCOREP0();  
   TRACE("Vector2D::setLocation");
   if (loc == CELL_DEFAULT) {
@@ -451,6 +451,8 @@ void Vector2D::setLocation(CELL_LOC loc) {
   }
 
   location = loc;
+
+  return *this;
 }
 
 /***************************************************************

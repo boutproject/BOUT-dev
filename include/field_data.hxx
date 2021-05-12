@@ -42,6 +42,7 @@ class FieldData;
 //#include "boundary_op.hxx"
 class BoundaryOp;
 class BoundaryOpPar;
+class Coordinates;
 class Mesh;
 
 #include "boundary_region.hxx"
@@ -63,7 +64,16 @@ public:
   FieldData& operator=(FieldData&& other) = default;
   virtual ~FieldData();
 
-  FieldData(Mesh* localmesh) : fieldmesh(localmesh) {}
+  FieldData(Mesh* localmesh, CELL_LOC location_in = CELL_LOC::centre);
+
+  /// Set variable location for staggered grids to @param new_location
+  ///
+  /// Throws BoutException if new_location is not `CELL_CENTRE` and
+  /// staggered grids are turned off and checks are on. If checks are
+  /// off, silently sets location to ``CELL_CENTRE`` instead.
+  virtual FieldData& setLocation(CELL_LOC new_location);
+  /// Get variable location
+  virtual CELL_LOC getLocation() const;
 
   // Defines interface which must be implemented
   /// True if variable is 3D
@@ -86,10 +96,27 @@ public:
   
   FieldGeneratorPtr getBndryGenerator(BndryLoc location);
 
+  /// Returns a pointer to the `Mesh` object used by this field
   Mesh* getMesh() const;
 
+  /// Returns a pointer to the `Coordinates` object at this field's
+  /// location from the mesh this field is on.
+  Coordinates* getCoordinates() const;
+
+  /// Returns a pointer to the `Coordinates` object at the requested
+  /// location from the mesh this field is on. If \p loc is `CELL_DEFAULT`
+  /// then return coordinates at field location
+  Coordinates* getCoordinates(CELL_LOC loc) const;
+
+  friend void swap(FieldData& first, FieldData& second) noexcept {
+    using std::swap;
+    swap(first.fieldmesh, second.fieldmesh);
+    swap(first.fieldCoordinates, second.fieldCoordinates);
+    swap(first.location, second.location);
+  }
+
 protected:
-  /// Grid information, etc.
+  /// Grid information, etc. Owned by the simulation or global object
   Mesh* fieldmesh{nullptr};
   std::vector<BoundaryOp *> bndry_op; ///< Boundary conditions
   bool boundaryIsCopy{false};         ///< True if bndry_op is a copy
@@ -99,7 +126,12 @@ protected:
   std::vector<BoundaryOpPar *> bndry_op_par; ///< Boundary conditions
 
   std::map <BndryLoc,FieldGeneratorPtr> bndry_generator;
+
+private:
+  /// `Coordinates` used by this field, owned by `fieldmesh`
+  mutable std::weak_ptr<Coordinates> fieldCoordinates{};
+  /// Location of the variable in the cell
+  CELL_LOC location{CELL_CENTRE};
 };
 
 #endif
-

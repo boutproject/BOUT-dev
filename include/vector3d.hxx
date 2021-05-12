@@ -166,13 +166,11 @@ class Vector3D : public FieldData {
   const Field3D operator*(const Vector3D &rhs) const; // Dot product
   const Field3D operator*(const Vector2D &rhs) const;
 
-  /*!
-   * Set variable cell location
-   */ 
-  void setLocation(CELL_LOC loc); 
+  /// Set component locations consistently
+  Vector3D& setLocation(CELL_LOC loc) override;
 
-  // Get variable cell location
-  CELL_LOC getLocation() const;
+  /// Get component location
+  CELL_LOC getLocation() const override;
 
   // FieldData virtual functions
   bool is3D() const override { return true; }

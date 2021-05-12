@@ -552,7 +552,7 @@ CELL_LOC Vector3D::getLocation() const {
   return location;
 }
 
-void Vector3D::setLocation(CELL_LOC loc) {
+Vector3D& Vector3D::setLocation(CELL_LOC loc) {
   SCOREP0();  
   TRACE("Vector3D::setLocation");
   if (loc == CELL_DEFAULT) {
@@ -580,6 +580,8 @@ void Vector3D::setLocation(CELL_LOC loc) {
   }
 
   location = loc;
+
+  return *this;
 }
 
 /***************************************************************

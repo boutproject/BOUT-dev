@@ -144,7 +144,7 @@ class FieldPerp : public Field {
   FieldPerp& setIndexFromGlobal(int y_global);
 
   // these methods return FieldPerp to allow method chaining
-  FieldPerp& setLocation(CELL_LOC new_location) {
+  FieldPerp& setLocation(CELL_LOC new_location) override {
     Field::setLocation(new_location);
     return *this;
   }
@@ -279,6 +279,17 @@ class FieldPerp : public Field {
   int getNz() const override {return nz;};
 
   bool is3D() const override { return false; }
+
+  friend void swap(FieldPerp& first, FieldPerp& second) {
+    using std::swap;
+
+    swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
+    swap(first.nx, second.nx);
+    swap(first.nz, second.nz);
+    swap(first.yindex, second.yindex);
+    swap(first.data, second.data);
+  }
 
 private:
   /// The Y index at which this FieldPerp is defined

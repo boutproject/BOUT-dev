@@ -129,13 +129,11 @@ public:
   const Field2D operator*(const Vector2D &rhs) const; ///< Dot product
   const Field3D operator*(const Vector3D &rhs) const; ///< Dot product
 
-   /*!
-   * Set variable cell location
-   */ 
-  void setLocation(CELL_LOC loc); 
+  /// Set component locations consistently
+  Vector2D& setLocation(CELL_LOC loc) override;
 
-  // Get variable cell location
-  CELL_LOC getLocation() const;
+  /// Get component location
+  CELL_LOC getLocation() const override;
 
   // FieldData virtual functions
   bool is3D() const override { return false; }

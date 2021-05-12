@@ -48,8 +48,7 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in,
-      DirectionTypes directions_in)
+Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
     : Field(localmesh, location_in, directions_in) {
 
   if (fieldmesh) {
@@ -73,9 +72,6 @@ Field2D::Field2D(const Field2D& f) : Field(f), data(f.data) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
-
-  location = f.location;
-  fieldCoordinates = f.fieldCoordinates;
 }
 
 Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field2D(localmesh) {
@@ -150,11 +146,7 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
 
   TRACE("Field2D: Assignment from Field2D");
 
-#if BOUT_USE_TRACK
-  name = rhs.name;
-#endif
-
-  copyFieldMembers(rhs);
+  Field::operator=(rhs);
 
   // Copy the data and data sizes
   nx = rhs.nx;

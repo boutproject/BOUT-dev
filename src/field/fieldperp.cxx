@@ -80,13 +80,13 @@ FieldPerp& FieldPerp::allocate() {
  *                         ASSIGNMENT 
  ***************************************************************/
 
-FieldPerp &FieldPerp::operator=(const FieldPerp &rhs) {
+FieldPerp& FieldPerp::operator=(const FieldPerp& rhs) {
   /// Check for self-assignment
   if (this == &rhs) {
     return (*this); // skip this assignment
   }
 
-  copyFieldMembers(rhs);
+  Field::operator=(rhs);
 
   nx = rhs.nx;
   nz = rhs.nz;
