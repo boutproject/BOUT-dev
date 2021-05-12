@@ -34,6 +34,7 @@ class Field;
 #include <cmath>
 #include <cstdio>
 #include <memory>
+#include <string>
 
 #include "field_data.hxx"
 
@@ -53,9 +54,6 @@ class Field;
 
 class Mesh;
 
-#if BOUT_USE_TRACK
-#include <string>
-#endif
 /// Base class for scalar fields
 class Field : public FieldData {
 public:
