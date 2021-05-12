@@ -160,7 +160,7 @@ FieldGeneratorPtr FieldData::getBndryGenerator(BndryLoc location) {
 }
 
 Mesh* FieldData::getMesh() const {
-  if (fieldmesh) {
+  if (fieldmesh != nullptr) {
     return fieldmesh;
   }
   // Don't set fieldmesh=mesh here, so that fieldmesh==nullptr until
