@@ -148,7 +148,7 @@ class FieldPerp : public Field {
     Field::setLocation(new_location);
     return *this;
   }
-  FieldPerp& setDirectionY(YDirectionType d) {
+  FieldPerp& setDirectionY(YDirectionType d) override {
     Field::setDirectionY(d);
     return *this;
   }

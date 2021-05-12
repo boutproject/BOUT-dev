@@ -229,7 +229,7 @@ class Field3D : public Field {
     Field::setLocation(new_location);
     return *this;
   }
-  Field3D& setDirectionY(YDirectionType d) {
+  Field3D& setDirectionY(YDirectionType d) override {
     Field::setDirectionY(d);
     return *this;
   }

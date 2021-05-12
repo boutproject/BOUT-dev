@@ -85,12 +85,17 @@ public:
   }
 
   /// Setters for *DirectionType
-  void setDirections(DirectionTypes directions_in) { directions = directions_in; }
-  void setDirectionY(YDirectionType y_type) {
-    directions.y = y_type;
+  virtual Field& setDirections(DirectionTypes directions_in) {
+    directions = directions_in;
+    return *this;
   }
-  void setDirectionZ(ZDirectionType z_type) {
+  virtual Field& setDirectionY(YDirectionType y_type) {
+    directions.y = y_type;
+    return *this;
+  }
+  virtual Field& setDirectionZ(ZDirectionType z_type) {
     directions.z = z_type;
+    return *this;
   }
 
   std::string name;

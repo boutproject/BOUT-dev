@@ -118,11 +118,11 @@ class Field2D : public Field {
   int getNz() const override {return 1;};
 
   // these methods return Field2D to allow method chaining
-  Field2D& setLocation(CELL_LOC new_location) {
+  Field2D& setLocation(CELL_LOC new_location) override {
     Field::setLocation(new_location);
     return *this;
   }
-  Field2D& setDirectionY(YDirectionType d) {
+  Field2D& setDirectionY(YDirectionType d) override {
     // This method included in case it is wanted in a templated function also dealing with
     // Field3D or FieldPerp - there is no difference between orthogonal and field-aligned
     // coordinates for Field2D, so should always have YDirectionType::Standard.
