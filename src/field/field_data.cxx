@@ -89,7 +89,7 @@ void FieldData::setBoundary(const std::string &name) {
   
   output_info << "Setting boundary for variable " << name << endl;
   /// Loop over the mesh boundary regions
-  for(const auto& reg : bout::globals::mesh->getBoundaries()) {
+  for(const auto& reg : fieldmesh->getBoundaries()) {
     auto* op = dynamic_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
     if (op != nullptr)
       bndry_op.push_back(op);
@@ -97,9 +97,9 @@ void FieldData::setBoundary(const std::string &name) {
   }
 
   /// Get the mesh boundary regions
-  std::vector<BoundaryRegionPar*> par_reg = bout::globals::mesh->getBoundariesPar();
+  std::vector<BoundaryRegionPar*> par_reg = fieldmesh->getBoundariesPar();
   /// Loop over the mesh parallel boundary regions
-  for(const auto& reg : bout::globals::mesh->getBoundariesPar()) {
+  for(const auto& reg : fieldmesh->getBoundariesPar()) {
     auto* op = dynamic_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
     if (op != nullptr)
       bndry_op_par.push_back(op);
@@ -125,7 +125,7 @@ void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
 
 void FieldData::addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location) {
   if(location == BNDRY_ALL){
-    for(const auto& reg : bout::globals::mesh->getBoundaries()) {
+    for(const auto& reg : fieldmesh->getBoundaries()) {
       bndry_generator[reg->location] = gen;
     }
   } else {
