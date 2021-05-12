@@ -58,7 +58,7 @@ public:
   FieldData(const FieldData& other);
   FieldData(FieldData&& other) = default;
   FieldData& operator=(const FieldData& other);
-  FieldData& operator=(FieldData&& other) = default;
+  FieldData& operator=(FieldData&& other);
   virtual ~FieldData();
 
   FieldData(Mesh* localmesh, CELL_LOC location_in = CELL_LOC::centre);

@@ -76,10 +76,18 @@ FieldData::~FieldData() {
 }
 
 FieldData& FieldData::operator=(const FieldData& other) {
-  copyBoundary(other);
+  // Note we don't copy the boundaries here!
   fieldmesh = other.fieldmesh;
   location = other.location;
   fieldCoordinates = other.fieldCoordinates;
+  return *this;
+}
+
+FieldData& FieldData::operator=(FieldData&& other) {
+  // Note we don't copy the boundaries here!
+  fieldmesh = std::move(other.fieldmesh);
+  location = std::move(other.location);
+  fieldCoordinates = std::move(other.fieldCoordinates);
   return *this;
 }
 
