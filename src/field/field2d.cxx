@@ -158,6 +158,26 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
   return *this;
 }
 
+Field2D& Field2D::operator=(Field2D&& rhs) {
+  // Check for self-assignment
+  if (this == &rhs)
+    return (*this); // skip this assignment
+
+  TRACE("Field2D: Move assignment from Field2D");
+
+  // Move the data and data sizes
+  nx = rhs.nx;
+  ny = rhs.ny;
+
+  // Move reference to data
+  data = std::move(rhs.data);
+
+  // Move base slice last
+  Field::operator=(std::move(rhs));
+
+  return *this;
+}
+
 Field2D &Field2D::operator=(const BoutReal rhs) {
 #if BOUT_USE_TRACK
   name = "<r2D>";
