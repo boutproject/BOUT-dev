@@ -13,7 +13,7 @@
  alpha = a3 / b1
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010,2021 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *
@@ -58,26 +58,39 @@ template <class T> class CyclicReduce {
 public:
   CyclicReduce() = default;
 
-  CyclicReduce(MPI_Comm c, int size) : comm(c), N(size) {
-    MPI_Comm_size(c, &nprocs);
-    MPI_Comm_rank(c, &myproc);
+  CyclicReduce(MPI_Comm c, int size, int ngather=0) : comm(c), ngatherprocs(ngather), N(size) {
+    setup(c, size, ngather);
   }
 
   /// Set parameters
+  /// This can be called after creation, to reset the solver
+  ///
   /// @param[in] c  The communicator of all processors involved in the solve
   /// @param[in] size  The number of rows on this processor
-  void setup(MPI_Comm c, int size) {
+  /// @param[in] gather  The number of processors to gather onto. If 0, use all processors
+  void setup(MPI_Comm c, int size, int ngather=0) {
     comm = c;
 
     int np, myp;
     MPI_Comm_size(c, &np);
     MPI_Comm_rank(c, &myp);
-    if ((size != N) || (np != nprocs) || (myp != myproc))
+
+    if (ngather == 0) {
+      ngather = np; // Use all processors
+    }
+
+    if ((size != N) || (np != nprocs) || (myp != myproc) || (ngather != ngatherprocs)) {
       Nsys = 0; // Need to re-size
+    }
+
     N = size;
     periodic = false;
     nprocs = np;
     myproc = myp;
+
+    ngatherprocs = ngather;
+    ASSERT1(ngatherprocs > 0);
+    ASSERT1(ngatherprocs <= nprocs);
   }
 
   ~CyclicReduce() = default;
@@ -117,7 +130,7 @@ public:
     int nsys = std::get<0>(a.shape());
 
     // Make sure correct memory arrays allocated
-    allocMemory(nprocs, nsys, N);
+    allocMemory(nsys);
 
     // Fill coefficient array
     BOUT_OMP(parallel for)
@@ -190,13 +203,14 @@ public:
 
     ///////////////////////////////////////
     // Gather all interface equations onto single processor
-    // NOTE: Need to replace with divide-and-conquer at some point
+    // NOTE: Cyclic reduction would do this in multiple stages,
+    //       but here we just gather onto ngatherprocs processors
     //
-    // There are Nsys sets of equations to gather, and nprocs processors
+    // There are Nsys sets of equations to gather, and ngatherprocs processors
     // which can be used. Each processor therefore sends interface equations
     // to several different processors for gathering
     //
-    // e.g. 3 processors (nproc=3), 4 sets of equations (Nsys=4):
+    // e.g. 3 processors (nprocs=3 and ngatherprocs=3), 4 sets of equations (Nsys=4):
     //
     // PE 0: [1a 2a 3a 4a]  PE 1: [1b 2b 3b 4b]  PE 2: [1c 2c 3c 4c]
     //
@@ -207,14 +221,19 @@ public:
     //
     // Here PE 0 would have myns=2, PE 1 and 2 would have myns=1
 
-    int ns = Nsys / nprocs;      // Number of systems to assign to all processors
-    int nsextra = Nsys % nprocs; // Number of processors with 1 extra
+    int ns = Nsys / ngatherprocs;      // Number of systems to assign to all gathering processors
+    int nsextra = Nsys % ngatherprocs; // Number of processors with 1 extra
 
-    auto* req = new MPI_Request[nprocs];
+    // Receive requests
 
     if (myns > 0) {
-      // Post receives from all other processors
-      req[myproc] = MPI_REQUEST_NULL;
+      // If gathering systems onto this processor
+      // post receives from all other processors
+
+      all_req.resize(nprocs); // One communicator per processor
+      all_buffer.reallocate(nprocs, myns * 8); // Storage for systems from each processor
+
+      all_req[myproc] = MPI_REQUEST_NULL;
       for (int p = 0; p < nprocs; p++) { // Loop over processor
         // 2 interface equations per processor
         // myns systems to solve
@@ -231,27 +250,48 @@ public:
 #ifdef DIAGNOSE
           output << "Expecting to receive " << len << " from " << p << endl;
 #endif
-          MPI_Irecv(&recvbuffer(p, 0), len,
+          MPI_Irecv(&all_buffer(p, 0), len,
                     MPI_BYTE, // Just sending raw data, unknown type
                     p,        // Destination processor
                     p,        // Identifier
                     comm,     // Communicator
-                    &req[p]); // Request
+                    &all_req[p]); // Request
         }
       }
     }
 
-    // Send data
-    int s0 = 0;
-    for (int p = 0; p < nprocs; p++) { // Loop over processor
-      int nsp = ns;
-      if (p < nsextra)
-        nsp++;
+    // Send data to the processors which are gathering
+
+    gather_req.resize(ngatherprocs);   // One request per gathering processor
+    gather_proc.resize(ngatherprocs);  // Processor number
+    gather_sys_offset.resize(ngatherprocs);  // Index of the first system gathered
+    gather_nsys.resize(ngatherprocs);  // Number of systems
+
+    // Interval between gathering processors
+    BoutReal pinterval = static_cast<BoutReal>(nprocs) / ngatherprocs;
+
+    int s0 = 0;  // System number
+
+    // Loop over gathering processors
+    for (int i = 0; i < ngatherprocs; i++) {
+
+      int p = i; // Gathering onto all processors
+      if (ngatherprocs != nprocs) {
+        // Gathering onto only some
+        p = static_cast<int>( pinterval * i );
+      }
+
+      int nsp = ns; // Number of systems to send to this processor
+      if (i < nsextra)
+        nsp++; // Some processors get an extra system
+
+      gather_proc[i] = p;
+      gather_sys_offset[i] = s0;
+      gather_nsys[i] = nsp;
+
       if ((p != myproc) && (nsp > 0)) {
 #ifdef DIAGNOSE
         output << "Sending to " << p << endl;
-        for (int i = 0; i < 8; i++)
-          output << "value " << i << " : " << myif(s0, i) << endl;
 #endif
         MPI_Send(&myif(s0, 0),        // Data pointer
                  8 * nsp * sizeof(T), // Number
@@ -260,15 +300,18 @@ public:
                  myproc,              // Message identifier
                  comm);               // Communicator
       }
+
       s0 += nsp;
     }
 
     if (myns > 0) {
+      // If this processor is gathering systems
+
       // Wait for data
       int p;
       do {
         MPI_Status stat;
-        MPI_Waitany(nprocs, req, &p, &stat);
+        MPI_Waitany(nprocs, all_req.data(), &p, &stat);
         if (p != MPI_UNDEFINED) {
 // p is the processor number. Copy data
 #ifdef DIAGNOSE
@@ -278,11 +321,11 @@ public:
           for (int i = 0; i < myns; i++)
             for (int j = 0; j < 8; j++) {
 #ifdef DIAGNOSE
-              output << "Value " << j << " : " << recvbuffer(p, 8 * i + j) << endl;
+              output << "Value " << j << " : " << all_buffer(p, 8 * i + j) << endl;
 #endif
-              ifcs(i, 8 * p + j) = recvbuffer(p, 8 * i + j);
+              ifcs(i, 8 * p + j) = all_buffer(p, 8 * i + j);
             }
-          req[p] = MPI_REQUEST_NULL;
+          all_req[p] = MPI_REQUEST_NULL;
         }
       } while (p != MPI_UNDEFINED);
 
@@ -342,11 +385,15 @@ public:
       ///////////////////////////////////////
       // Scatter back solution
 
+      // Allocate buffer space. Note assumes 0th processor has most systems
+      gather_buffer.reallocate(ngatherprocs, 2 * gather_nsys[0]);
+
       // Post receives
-      for (int p = 0; p < nprocs; p++) { // Loop over processor
-        int nsp = ns;
-        if (p < nsextra)
-          nsp++;
+      // Loop over gathering processors
+      for (int i = 0; i < ngatherprocs; i++) {
+        int p = gather_proc[i]; // Processor number
+        int nsp = gather_nsys[i]; // Number of systems
+
         int len = 2 * nsp * sizeof(T); // 2 values per system
 
         if (p == myproc) {
@@ -356,19 +403,20 @@ public:
             x1[sys0 + i] = ifx(i, 2 * p);
             xn[sys0 + i] = ifx(i, 2 * p + 1);
           }
-          req[p] = MPI_REQUEST_NULL;
+          gather_req[i] = MPI_REQUEST_NULL;
         } else if (nsp > 0) {
 #ifdef DIAGNOSE
           output << "Expecting receive from " << p << " of size " << len << endl;
 #endif
-          MPI_Irecv(&recvbuffer(p, 0), len,
+          MPI_Irecv(&gather_buffer(i, 0), len,
                     MPI_BYTE, // Just sending raw data, unknown type
                     p,        // Destination processor
                     p,        // Identifier
                     comm,     // Communicator
-                    &req[p]); // Request
-        } else
-          req[p] = MPI_REQUEST_NULL;
+                    &gather_req[p]); // Request
+        } else {
+          gather_req[i] = MPI_REQUEST_NULL;
+        }
       }
 
       if (myns > 0) {
@@ -392,48 +440,50 @@ public:
       }
 
       // Wait for data
-      int fromproc;
-      int nsp;
+      int fromind;
       do {
         MPI_Status stat;
-        MPI_Waitany(nprocs, req, &fromproc, &stat);
+        MPI_Waitany(ngatherprocs, gather_req.data(), &fromind, &stat);
 
-        if (fromproc != MPI_UNDEFINED) {
-          // fromproc is the processor number. Copy data
+        if (fromind != MPI_UNDEFINED) {
+          // Copy data
 
-          int s0 = fromproc * ns;
-          if (fromproc > nsextra) {
-            s0 += nsextra;
-          } else
-            s0 += fromproc;
+          int fromproc = gather_proc[fromind]; // From processor
+          int s0 = gather_sys_offset[fromind]; // System index start
+          int nsp = gather_nsys[fromind];      // Number of systems
 
-          nsp = ns;
-          if (fromproc < nsextra)
-            nsp++;
-	  
 	  BOUT_OMP(parallel for)
           for (int i = 0; i < nsp; i++) {
-            x1[s0 + i] = recvbuffer(fromproc, 2 * i);
-            xn[s0 + i] = recvbuffer(fromproc, 2 * i + 1);
+            x1[s0 + i] = gather_buffer(fromind, 2 * i);
+            xn[s0 + i] = gather_buffer(fromind, 2 * i + 1);
 #ifdef DIAGNOSE
             output << "Received x1,xn[" << s0 + i << "] = " << x1[s0 + i] << ", "
                    << xn[s0 + i] << " from " << fromproc << endl;
 #endif
           }
-          req[fromproc] = MPI_REQUEST_NULL;
+          gather_req[fromproc] = MPI_REQUEST_NULL;
         }
-      } while (fromproc != MPI_UNDEFINED);
+      } while (fromind != MPI_UNDEFINED);
     }
 
     ///////////////////////////////////////
     // Solve local equations
     back_solve(Nsys, N, coefs, x1, xn, x);
-    delete[] req;
   }
 
 private:
   MPI_Comm comm;             ///< Communicator
   int nprocs{0}, myproc{-1}; ///< Number of processors and ID of my processor
+
+  int ngatherprocs{0};  ///< Number of processors to gather onto
+  std::vector<MPI_Request> gather_req; ///< Comms with gathering processors
+  std::vector<int> gather_proc;  ///< The processor number
+  std::vector<int> gather_sys_offset; ///< Index of the first system gathered
+  std::vector<int> gather_nsys;       ///< Number of systems gathered
+  Matrix<T> gather_buffer; ///< Buffer for receiving from gathering processors
+
+  std::vector<MPI_Request> all_req; ///< Requests for comms with all processors
+  Matrix<T> all_buffer; ///< Buffer for receiving from all other processors
 
   int N{0};    ///< Total size of the problem
   int Nsys{0}; ///< Number of independent systems to solve
@@ -445,7 +495,6 @@ private:
   Matrix<T> coefs; ///< Starting coefficients, rhs [Nsys, {3*coef,rhs}*N]
   Matrix<T> myif;  ///< Interface equations for this processor
 
-  Matrix<T> recvbuffer; ///< Buffer for receiving from other processors
   Matrix<T> ifcs;       ///< Coefficients for interface solve
   Matrix<T> if2x2;      ///< 2x2 interface equations on this processor
   Matrix<T> ifx;        ///< Solution of interface equations
@@ -453,41 +502,60 @@ private:
   Array<T> x1, xn;      ///< Interface solutions for back-solving
 
   /// Allocate memory arrays
-  /// @param[in] np   Number of processors
   /// @param[in] nsys  Number of independent systems to solve
-  /// @param[in] n     Size of each system of equations
-  void allocMemory(int np, int nsys, int n) {
-    if ((nsys == Nsys) && (n == N) && (np == nprocs))
+  void allocMemory(int nsys) {
+    if (nsys == Nsys)
       return; // No need to allocate memory
 
-    nprocs = np;
     Nsys = nsys;
-    N = n;
 
     // Work out how many systems are going to be solved on this processor
-    int ns = nsys / nprocs;      // Number of systems to assign to all processors
-    int nsextra = nsys % nprocs; // Number of processors with 1 extra
+    int ns = nsys / ngatherprocs;      // Number of systems to assign to all processors
+    int nsextra = nsys % ngatherprocs; // Number of processors with 1 extra
 
-    myns = ns;          // Number of systems to gather onto this processor
-    sys0 = ns * myproc; // Starting system number
-    if (myproc < nsextra) {
-      myns++;
-      sys0 += myproc;
+    if (ngatherprocs == nprocs) {
+      // Gathering onto all processors (This is the default)
+
+      myns = ns;          // Number of systems to gather onto this processor
+      sys0 = ns * myproc; // Starting system number
+      if (myproc < nsextra) {
+        myns++;
+        sys0 += myproc;
+      } else {
+        sys0 += nsextra;
+      }
     } else {
-      sys0 += nsextra;
+      // Gathering onto only a few processors
+
+      myns = 0; // Default to not gathering onto this processor
+
+      // Interval between processors
+      BoutReal pinterval = static_cast<BoutReal>(nprocs) / ngatherprocs;
+      ASSERT1(pinterval > 1.0);
+
+      // Calculate which processors these are
+      for (int i = 0; i < ngatherprocs; i++) {
+        int proc = static_cast<int>( pinterval * i );
+
+        if (proc == myproc) {
+          // This processor is receiving
+
+          myns = ns;     // Number of systems to gather onto this processor
+          sys0 = ns * i; // Starting system number
+
+          if (i < nsextra) {
+            // Receiving an extra system
+            myns++;
+            sys0 += i;
+          } else {
+            sys0 += nsextra;
+          }
+        }
+      }
     }
 
     coefs.reallocate(Nsys, 4 * N);
     myif.reallocate(Nsys, 8);
-
-    // Note: The recvbuffer is used to receive data in both stages of the solve:
-    //  1. In the gather step, this processor will receive myns interface equations
-    //     from each processor.
-    //  2. In the scatter step, this processor receives the solved interface values
-    //     from each processor. The number of systems of equations received will
-    //     vary from myns to myns+1 (if myproc >= nsextra).
-    // The size of the array reserved is therefore (myns+1)
-    recvbuffer.reallocate(nprocs, (myns + 1) * 8);
 
     // Some interface systems to be solved on this processor
     // Note that the interface equations are organised by system (myns as first argument)

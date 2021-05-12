@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
 
   int nsys;
   int n;
-  Options *options = Options::getRoot();
+  Options& options = Options::root();
   OPTION(options, n, 5);
   OPTION(options, nsys, 1);
   BoutReal tol;
@@ -29,12 +29,15 @@ int main(int argc, char **argv) {
   bool periodic;
   OPTION(options, periodic, false);
 
-  // Create a cyclic reduction object, operating on Ts
-  auto* cr = new CyclicReduce<T>(BoutComm::get(), n);
-
   int mype, npe;
   MPI_Comm_rank(BoutComm::get(), &mype);
   MPI_Comm_size(BoutComm::get(), &npe);
+
+  int ngather =
+      options["ngather"].doc("The number of processors to gather onto").withDefault(npe);
+
+  // Create a cyclic reduction object, operating on Ts
+  auto* cr = new CyclicReduce<T>(BoutComm::get(), n, ngather);
 
   a.reallocate(nsys, n);
   b.reallocate(nsys, n);
