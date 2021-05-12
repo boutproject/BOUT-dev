@@ -26,8 +26,8 @@
 
 class Field;
 
-#ifndef __FIELD_H__
-#define __FIELD_H__
+#ifndef FIELD_H
+#define FIELD_H
 
 #include "bout/build_config.hxx"
 
@@ -699,4 +699,4 @@ inline T floor(const T& var, BoutReal f, REGION rgn) {
 
 #undef FIELD_FUNC
 
-#endif /* __FIELD_H__ */
+#endif /* FIELD_H */

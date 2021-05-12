@@ -27,8 +27,8 @@
 class FieldData;
 
 #pragma once
-#ifndef __FIELD_DATA_H__
-#define __FIELD_DATA_H__
+#ifndef FIELD_DATA_H
+#define FIELD_DATA_H
 
 #include "bout_types.hxx"
 #include "unused.hxx"
