@@ -56,12 +56,7 @@ class Mesh;
 #if BOUT_USE_TRACK
 #include <string>
 #endif
-
-/*!
- * \brief Base class for fields
- *
- * Defines the virtual function SetStencil, used by differencing methods
- */
+/// Base class for scalar fields
 class Field : public FieldData {
 public:
   Field() = default;

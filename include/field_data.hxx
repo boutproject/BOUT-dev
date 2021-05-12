@@ -50,11 +50,8 @@ class Mesh;
 
 #include "bout/sys/expressionparser.hxx"
 
-/// Interface used to access data in field classes
-/*!
-  Used by communicator, solver and (soon) datafile classes
-  to access internal data in a general way
-*/
+/// Base class for both scalar and vector fields, holds common
+/// information about the grid, coordinates, and boundaries
 class FieldData {
 public:
   FieldData() = default;
