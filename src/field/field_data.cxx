@@ -87,9 +87,15 @@ void FieldData::setBoundary(const std::string &name) {
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
+  // It's plausible `fieldmesh` hasn't actually been set yet. This
+  // seems most likely to happen if the field was declared as a
+  // global. A different fix would be to move the call to
+  // `setBoundary` to after the field initialisation in `Solver::add`
+  Mesh* mesh = getMesh();
+
   output_info << "Setting boundary for variable " << name << endl;
   /// Loop over the mesh boundary regions
-  for(const auto& reg : fieldmesh->getBoundaries()) {
+  for(const auto& reg : mesh->getBoundaries()) {
     auto* op = dynamic_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
     if (op != nullptr)
       bndry_op.push_back(op);
@@ -97,9 +103,9 @@ void FieldData::setBoundary(const std::string &name) {
   }
 
   /// Get the mesh boundary regions
-  std::vector<BoundaryRegionPar*> par_reg = fieldmesh->getBoundariesPar();
+  std::vector<BoundaryRegionPar*> par_reg = mesh->getBoundariesPar();
   /// Loop over the mesh parallel boundary regions
-  for(const auto& reg : fieldmesh->getBoundariesPar()) {
+  for(const auto& reg : mesh->getBoundariesPar()) {
     auto* op = dynamic_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
     if (op != nullptr)
       bndry_op_par.push_back(op);
@@ -119,13 +125,18 @@ void FieldData::copyBoundary(const FieldData &f) {
 
 //JMAD
 void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
-  /// NOTE: This will allocate memory, which may never be free'd
   addBndryGenerator(std::make_shared<FieldFunction>(userfunc), location);
 }
 
 void FieldData::addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location) {
-  if(location == BNDRY_ALL){
-    for(const auto& reg : fieldmesh->getBoundaries()) {
+  // It's plausible `fieldmesh` hasn't actually been set yet. This
+  // seems most likely to happen if the field was declared as a
+  // global. A different fix would be to move the call to
+  // `setBoundary` to after the field initialisation in `Solver::add`
+  Mesh* mesh = getMesh();
+
+  if (location == BNDRY_ALL) {
+    for (const auto& reg : mesh->getBoundaries()) {
       bndry_generator[reg->location] = gen;
     }
   } else {
