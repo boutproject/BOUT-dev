@@ -860,3 +860,19 @@ std::ostream& operator<<(std::ostream &out, const Field3D &value) {
   out << toString(value);
   return out;
 }
+
+void swap(Field3D& first, Field3D& second) noexcept {
+  using std::swap;
+
+  // Swap base class members
+  swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
+  swap(first.data, second.data);
+  swap(first.background, second.background);
+  swap(first.nx, second.nx);
+  swap(first.ny, second.ny);
+  swap(first.nz, second.nz);
+  swap(first.deriv, second.deriv);
+  swap(first.yup_fields, second.yup_fields);
+  swap(first.ydown_fields, second.ydown_fields);
+}

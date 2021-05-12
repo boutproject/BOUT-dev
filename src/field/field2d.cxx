@@ -367,3 +367,15 @@ std::ostream& operator<<(std::ostream &out, const Field2D &value) {
   out << toString(value);
   return out;
 }
+
+void swap(Field2D& first, Field2D& second) noexcept {
+  using std::swap;
+
+  // Swap base class members
+  swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
+  swap(first.data, second.data);
+  swap(first.nx, second.nx);
+  swap(first.ny, second.ny);
+  swap(first.deriv, second.deriv);
+}

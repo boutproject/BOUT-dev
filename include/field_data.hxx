@@ -108,12 +108,7 @@ public:
   /// then return coordinates at field location
   Coordinates* getCoordinates(CELL_LOC loc) const;
 
-  friend void swap(FieldData& first, FieldData& second) noexcept {
-    using std::swap;
-    swap(first.fieldmesh, second.fieldmesh);
-    swap(first.fieldCoordinates, second.fieldCoordinates);
-    swap(first.location, second.location);
-  }
+  friend void swap(FieldData& first, FieldData& second) noexcept;
 
 protected:
   /// Grid information, etc. Owned by the simulation or global object

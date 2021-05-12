@@ -280,16 +280,7 @@ class FieldPerp : public Field {
 
   bool is3D() const override { return false; }
 
-  friend void swap(FieldPerp& first, FieldPerp& second) {
-    using std::swap;
-
-    swap(static_cast<Field&>(first), static_cast<Field&>(second));
-
-    swap(first.nx, second.nx);
-    swap(first.nz, second.nz);
-    swap(first.yindex, second.yindex);
-    swap(first.data, second.data);
-  }
+  friend void swap(FieldPerp& first, FieldPerp& second) noexcept;
 
 private:
   /// The Y index at which this FieldPerp is defined

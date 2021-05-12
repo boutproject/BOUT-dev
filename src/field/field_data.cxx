@@ -187,3 +187,15 @@ Coordinates* FieldData::getCoordinates(CELL_LOC loc) const {
   }
   return getMesh()->getCoordinates(loc);
 }
+
+void swap(FieldData& first, FieldData& second) noexcept {
+  using std::swap;
+  swap(first.fieldmesh, second.fieldmesh);
+  swap(first.fieldCoordinates, second.fieldCoordinates);
+  swap(first.location, second.location);
+  swap(first.bndry_op, second.bndry_op);
+  swap(first.boundaryIsCopy, second.boundaryIsCopy);
+  swap(first.boundaryIsSet, second.boundaryIsSet);
+  swap(first.bndry_op_par, second.bndry_op_par);
+  swap(first.bndry_generator, second.bndry_generator);
+}

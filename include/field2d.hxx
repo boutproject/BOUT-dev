@@ -268,22 +268,7 @@ class Field2D : public Field {
   void applyTDerivBoundary() override;
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
 
-  friend void swap(Field2D& first, Field2D& second) noexcept {
-    using std::swap;
-
-    // Swap base class members
-    swap(static_cast<Field&>(first), static_cast<Field&>(second));
-
-    swap(first.data, second.data);
-    swap(first.nx, second.nx);
-    swap(first.ny, second.ny);
-    swap(first.deriv, second.deriv);
-    swap(first.bndry_op, second.bndry_op);
-    swap(first.boundaryIsCopy, second.boundaryIsCopy);
-    swap(first.boundaryIsSet, second.boundaryIsSet);
-    swap(first.bndry_op_par, second.bndry_op_par);
-    swap(first.bndry_generator, second.bndry_generator);
-  }
+  friend void swap(Field2D& first, Field2D& second) noexcept;
 
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null

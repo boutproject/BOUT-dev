@@ -486,26 +486,7 @@ class Field3D : public Field {
   void applyParallelBoundary(const std::string &region, const std::string &condition);
   void applyParallelBoundary(const std::string &region, const std::string &condition, Field3D *f);
 
-  friend void swap(Field3D& first, Field3D& second) noexcept {
-    using std::swap;
-
-    // Swap base class members
-    swap(static_cast<Field&>(first), static_cast<Field&>(second));
-
-    swap(first.data, second.data);
-    swap(first.background, second.background);
-    swap(first.nx, second.nx);
-    swap(first.ny, second.ny);
-    swap(first.nz, second.nz);
-    swap(first.deriv, second.deriv);
-    swap(first.yup_fields, second.yup_fields);
-    swap(first.ydown_fields, second.ydown_fields);
-    swap(first.bndry_op, second.bndry_op);
-    swap(first.boundaryIsCopy, second.boundaryIsCopy);
-    swap(first.boundaryIsSet, second.boundaryIsSet);
-    swap(first.bndry_op_par, second.bndry_op_par);
-    swap(first.bndry_generator, second.bndry_generator);
-  }
+  friend void swap(Field3D& first, Field3D& second) noexcept;
   
 private:
   /// Boundary - add a 2D field
