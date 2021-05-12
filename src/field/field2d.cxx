@@ -178,31 +178,35 @@ void Field2D::applyBoundary(bool init) {
 
 #if CHECK > 0
   if (init) {
-
-    if(!boundaryIsSet)
-      output_warn << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
+    if (not isBoundarySet()) {
+      output_warn << "WARNING: Call to Field2D::applyBoundary(), but no boundary set\n";
+    }
   }
 #endif
 
   checkData(*this);
 
-  for(const auto& bndry : bndry_op)
-    if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+  for (const auto& bndry : getBoundaryOps()) {
+    // Always apply to the values when initialising
+    // fields, otherwise apply only if wanted
+    if (!bndry->apply_to_ddt || init) {
       bndry->apply(*this);
+    }
+  }
 }
 
 void Field2D::applyBoundary(BoutReal time) {
   TRACE("Field2D::applyBoundary(time)");
 
 #if CHECK > 0
-  if (!boundaryIsSet) {
+  if (not isBoundarySet()) {
     output_warn << "WARNING: Call to Field2D::applyBoundary(time), but no boundary set\n";
   }
 #endif
 
   checkData(*this);
 
-  for (const auto& bndry : bndry_op) {
+  for (const auto& bndry : getBoundaryOps()) {
     bndry->apply(*this, time);
   }
 }
@@ -290,8 +294,9 @@ void Field2D::applyTDerivBoundary() {
   ASSERT1(deriv != nullptr);
   checkData(*deriv);
 
-  for(const auto& bndry : bndry_op)
+  for (const auto& bndry : getBoundaryOps()) {
     bndry->apply_ddt(*this);
+  }
 }
 
 void Field2D::setBoundaryTo(const Field2D &f2d) {

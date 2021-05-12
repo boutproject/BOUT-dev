@@ -108,11 +108,21 @@ public:
   /// then return coordinates at field location
   Coordinates* getCoordinates(CELL_LOC loc) const;
 
+  /// Has `setBoundary` been called?
+  bool isBoundarySet() const { return boundaryIsSet; }
+
+  /// Get boundary conditions
+  std::vector<BoundaryOp*> getBoundaryOps() const { return bndry_op; }
+  /// Get parallel boundary conditions
+  std::vector<BoundaryOpPar*> getBoundaryOpPars() const { return bndry_op_par; }
+
   friend void swap(FieldData& first, FieldData& second) noexcept;
 
 protected:
   /// Grid information, etc. Owned by the simulation or global object
   Mesh* fieldmesh{nullptr};
+
+private:
   std::vector<BoundaryOp *> bndry_op; ///< Boundary conditions
   bool boundaryIsCopy{false};         ///< True if bndry_op is a copy
   bool boundaryIsSet{false};          ///< Set to true when setBoundary called
@@ -122,7 +132,6 @@ protected:
 
   std::map <BndryLoc,FieldGeneratorPtr> bndry_generator;
 
-private:
   /// `Coordinates` used by this field, owned by `fieldmesh`
   mutable std::weak_ptr<Coordinates> fieldCoordinates{};
   /// Location of the variable in the cell

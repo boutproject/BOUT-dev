@@ -357,9 +357,9 @@ void Field3D::applyBoundary(bool init) {
 
 #if CHECK > 0
   if (init) {
-
-    if(!boundaryIsSet)
-      output_warn << "WARNING: Call to Field3D::applyBoundary(), but no boundary set" << endl;
+    if (not isBoundarySet()) {
+      output_warn << "WARNING: Call to Field3D::applyBoundary(), but no boundary set\n";
+    }
   }
 #endif
 
@@ -367,25 +367,30 @@ void Field3D::applyBoundary(bool init) {
 
   if (background != nullptr) {
     // Apply boundary to the total of this and background
-    
+
     Field3D tot = *this + (*background);
     tot.copyBoundary(*this);
     tot.applyBoundary(init);
     *this = tot - (*background);
   } else {
     // Apply boundary to this field
-    for(const auto& bndry : bndry_op)
-      if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+    for (const auto& bndry : getBoundaryOps()) {
+      // Always apply to the values when initialising
+      // fields, otherwise apply only if wanted
+      if (!bndry->apply_to_ddt || init) {
         bndry->apply(*this);
+      }
+    }
   }
 }
 
 void Field3D::applyBoundary(BoutReal t) {
   TRACE("Field3D::applyBoundary()");
-  
+
 #if CHECK > 0
-  if(!boundaryIsSet)
-    output_warn << "WARNING: Call to Field3D::applyBoundary(t), but no boundary set." << endl;
+  if (not isBoundarySet()) {
+    output_warn << "WARNING: Call to Field3D::applyBoundary(t), but no boundary set.\n";
+  }
 #endif
 
   checkData(*this);
@@ -397,10 +402,11 @@ void Field3D::applyBoundary(BoutReal t) {
     tot.copyBoundary(*this);
     tot.applyBoundary(t);
     *this = tot - (*background);
-  }else {
+  } else {
     // Apply boundary to this field
-    for(const auto& bndry : bndry_op)
-      bndry->apply(*this,t);
+    for (const auto& bndry : getBoundaryOps()) {
+      bndry->apply(*this, t);
+    }
   }
 }
 
@@ -459,16 +465,17 @@ void Field3D::applyBoundary(const std::string &region, const std::string &condit
 
 void Field3D::applyTDerivBoundary() {
   TRACE("Field3D::applyTDerivBoundary()");
-  
+
   checkData(*this);
   ASSERT1(deriv != nullptr);
   checkData(*deriv);
 
   if (background != nullptr)
     *this += *background;
-    
-  for(const auto& bndry : bndry_op)
+
+  for (const auto& bndry : getBoundaryOps()) {
     bndry->apply_ddt(*this);
+  }
 
   if (background != nullptr)
     *this -= *background;
@@ -508,7 +515,7 @@ void Field3D::applyParallelBoundary() {
     *this = tot - (*background);
   } else {
     // Apply boundary to this field
-    for(const auto& bndry : bndry_op_par) {
+    for (const auto& bndry : getBoundaryOpPars()) {
       bndry->apply(*this);
     }
   }
@@ -527,7 +534,7 @@ void Field3D::applyParallelBoundary(BoutReal t) {
     *this = tot - (*background);
   } else {
     // Apply boundary to this field
-    for(const auto& bndry : bndry_op_par) {
+    for (const auto& bndry : getBoundaryOpPars()) {
       bndry->apply(*this, t);
     }
   }

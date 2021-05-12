@@ -482,16 +482,18 @@ const Field2D abs(const Vector2D &v, const std::string& region) {
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
-void Vector2D::applyBoundary(bool init)
-{
-  for(const auto& bndry : bndry_op)
-    if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+void Vector2D::applyBoundary(bool init) {
+  for (const auto& bndry : getBoundaryOps()) {
+    // Always apply to the values when initialising fields, otherwise
+    // apply only if wanted
+    if (!bndry->apply_to_ddt || init) {
       bndry->apply(*this);
+    }
+  }
 }
 
-void Vector2D::applyTDerivBoundary()
-{
-  for(const auto& bndry : bndry_op)
+void Vector2D::applyTDerivBoundary() {
+  for (const auto& bndry : getBoundaryOps()) {
     bndry->apply_ddt(*this);
+  }
 }
-
