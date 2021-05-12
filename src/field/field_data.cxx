@@ -34,16 +34,15 @@ CELL_LOC normaliseLocation(CELL_LOC location, Mesh* mesh) {
           "Field: CELL_VSHIFT cell location only makes sense for vectors");
     }
     return location;
-  } else {
-#if CHECK > 0
-    if (location != CELL_CENTRE) {
-      throw BoutException("Field: Trying to set off-centre location on "
-                          "non-staggered grid\n"
-                          "         Did you mean to enable staggered grids?");
-    }
-#endif
-    return CELL_CENTRE;
   }
+#if CHECK > 0
+  if (location != CELL_CENTRE) {
+    throw BoutException("Field: Trying to set off-centre location on "
+                        "non-staggered grid\n"
+                        "         Did you mean to enable staggered grids?");
+  }
+#endif
+  return CELL_CENTRE;
 }
 } // namespace bout
 
@@ -163,14 +162,13 @@ FieldGeneratorPtr FieldData::getBndryGenerator(BndryLoc location) {
 Mesh* FieldData::getMesh() const {
   if (fieldmesh) {
     return fieldmesh;
-  } else {
-    // Don't set fieldmesh=mesh here, so that fieldmesh==nullptr until
-    // allocate() is called in one of the derived classes. fieldmesh==nullptr
-    // indicates that some initialization that would be done in the
-    // constructor if fieldmesh was a valid Mesh object still needs to be
-    // done.
-    return bout::globals::mesh;
   }
+  // Don't set fieldmesh=mesh here, so that fieldmesh==nullptr until
+  // allocate() is called in one of the derived classes. fieldmesh==nullptr
+  // indicates that some initialization that would be done in the
+  // constructor if fieldmesh was a valid Mesh object still needs to be
+  // done.
+  return bout::globals::mesh;
 }
 
 FieldData& FieldData::setLocation(CELL_LOC new_location) {
