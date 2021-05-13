@@ -158,10 +158,11 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
   return *this;
 }
 
-Field2D& Field2D::operator=(Field2D&& rhs) {
+Field2D& Field2D::operator=(Field2D&& rhs) noexcept {
   // Check for self-assignment
-  if (this == &rhs)
+  if (this == &rhs) {
     return (*this); // skip this assignment
+  }
 
   TRACE("Field2D: Move assignment from Field2D");
 
