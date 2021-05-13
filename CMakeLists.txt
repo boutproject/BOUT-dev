@@ -341,6 +341,10 @@ target_include_directories(bout++ PUBLIC
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
+# Various sanitizers, including coverage and address sanitizer
+include(cmake/Sanitizers.cmake)
+enable_sanitizers(bout++)
+
 ##################################################
 # Components of the version number
 # Pre-release identifier (BOUT_VERSION_TAG) set above
@@ -815,6 +819,7 @@ message("
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
    Backtrace enabled        : ${BOUT_USE_BACKTRACE}
+   Sanitizers enabled       : ${BOUT_USE_SANITIZERS}
 
    === Python ===
 
