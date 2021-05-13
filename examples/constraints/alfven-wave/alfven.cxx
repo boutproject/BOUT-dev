@@ -72,8 +72,8 @@ protected:
     phi = 0.0;
     
     // Specify the preconditioner function
-    setPrecon( (preconfunc) &Alfven::precon );
-    
+    setPrecon(&Alfven::precon);
+
     // Create an XZ solver
     newXZsolver = opt["newXZsolver"].withDefault(false);
     if(newXZsolver) {

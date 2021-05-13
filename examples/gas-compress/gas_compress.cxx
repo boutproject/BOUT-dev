@@ -28,9 +28,9 @@ int GasCompress::init(bool restarting) {
   
   // Set evolving variables
   
-  bout_solve(N, "density");
-  bout_solve(P, "pressure");
-  bout_solve(V, "v");
+  solver->add(N, "density", "description");
+  solver->add(P, "pressure");
+  solver->add(V, "v");
   
   if(!restarting) {
     // Set variables to these values (+ the initial perturbation)
