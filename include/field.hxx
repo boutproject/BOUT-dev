@@ -26,14 +26,17 @@
 
 class Field;
 
-#ifndef __FIELD_H__
-#define __FIELD_H__
+#ifndef FIELD_H
+#define FIELD_H
 
 #include "bout/build_config.hxx"
 
 #include <cmath>
 #include <cstdio>
 #include <memory>
+#include <string>
+
+#include "field_data.hxx"
 
 #include "bout/region.hxx"
 #include "bout_types.hxx"
@@ -50,18 +53,9 @@ class Field;
 #include "unused.hxx"
 
 class Mesh;
-class Coordinates;
 
-#if BOUT_USE_TRACK
-#include <string>
-#endif
-
-/*!
- * \brief Base class for fields
- *
- * Defines the virtual function SetStencil, used by differencing methods
- */
-class Field {
+/// Base class for scalar fields
+class Field : public FieldData {
 public:
   Field() = default;
   Field(const Field& other) = default;
@@ -71,15 +65,6 @@ public:
   virtual ~Field() = default;
 
   Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in);
-
-  /// Set variable location for staggered grids to @param new_location
-  ///
-  /// Throws BoutException if new_location is not `CELL_CENTRE` and
-  /// staggered grids are turned off and checks are on. If checks are
-  /// off, silently sets location to ``CELL_CENTRE`` instead.
-  void setLocation(CELL_LOC new_location);
-  /// Get variable location
-  CELL_LOC getLocation() const;
 
   /// Getters for DIRECTION types
   DirectionTypes getDirections() const {
@@ -93,11 +78,17 @@ public:
   }
 
   /// Setters for *DirectionType
-  void setDirectionY(YDirectionType y_type) {
-    directions.y = y_type;
+  virtual Field& setDirections(DirectionTypes directions_in) {
+    directions = directions_in;
+    return *this;
   }
-  void setDirectionZ(ZDirectionType z_type) {
+  virtual Field& setDirectionY(YDirectionType y_type) {
+    directions.y = y_type;
+    return *this;
+  }
+  virtual Field& setDirectionZ(ZDirectionType z_type) {
     directions.z = z_type;
+    return *this;
   }
 
   std::string name;
@@ -121,28 +112,6 @@ public:
   bool bndry_xin{true}, bndry_xout{true}, bndry_yup{true}, bndry_ydown{true};
 #endif
 
-  Mesh* getMesh() const {
-    if (fieldmesh) {
-      return fieldmesh;
-    } else {
-      // Don't set fieldmesh=mesh here, so that fieldmesh==nullptr until
-      // allocate() is called in one of the derived classes. fieldmesh==nullptr
-      // indicates that some initialization that would be done in the
-      // constructor if fieldmesh was a valid Mesh object still needs to be
-      // done.
-      return bout::globals::mesh;
-    }
-  }
-
-  /// Returns a pointer to the coordinates object at this field's
-  /// location from the mesh this field is on.
-  Coordinates* getCoordinates() const;
-
-  /// Returns a pointer to the coordinates object at the requested
-  /// location from the mesh this field is on. If location is CELL_DEFAULT
-  /// then return coordinates at field location
-  Coordinates* getCoordinates(CELL_LOC loc) const;
-
   /*!
    * Return the number of nx points
    */
@@ -158,28 +127,12 @@ public:
 
   friend void swap(Field& first, Field& second) noexcept {
     using std::swap;
+    swap(static_cast<FieldData&>(first), static_cast<FieldData&>(second));
     swap(first.name, second.name);
-    swap(first.fieldmesh, second.fieldmesh);
-    swap(first.fieldCoordinates, second.fieldCoordinates);
-    swap(first.location, second.location);
     swap(first.directions, second.directions);
   }
-protected:
-  Mesh* fieldmesh{nullptr};
-  mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};
 
-  /// Location of the variable in the cell
-  CELL_LOC location{CELL_CENTRE};
-
-  /// Copy the members from another Field
-  void copyFieldMembers(const Field& f) {
-    name = f.name;
-    fieldmesh = f.fieldmesh;
-    fieldCoordinates = f.fieldCoordinates;
-    location = f.location;
-    directions = f.directions;
-  }
-
+private:
   /// Labels for the type of coordinate system this field is defined over
   DirectionTypes directions{YDirectionType::Standard, ZDirectionType::Standard};
 };
@@ -746,4 +699,4 @@ inline T floor(const T& var, BoutReal f, REGION rgn) {
 
 #undef FIELD_FUNC
 
-#endif /* __FIELD_H__ */
+#endif /* FIELD_H */

@@ -62,7 +62,6 @@ set(BOUT_SOURCES
   ./include/bout/deprecated.hxx
   ./include/bout/deriv_store.hxx
   ./include/bout/expr.hxx
-  ./include/bout/field_visitor.hxx
   ./include/bout/fieldgroup.hxx
   ./include/bout/format.hxx
   ./include/bout/fv_ops.hxx
