@@ -1399,21 +1399,44 @@ bool Solver::varAdded(const std::string& name) {
          || contains(v3d, name);
 }
 
-bool Solver::have_user_precon() {
-  if(model)
+bool Solver::hasPreconditioner() {
+  if (model != nullptr) {
     return model->hasPrecon();
+  }
 
   return prefunc != nullptr;
 }
 
-int Solver::run_precon(BoutReal t, BoutReal gamma, BoutReal delta) {
-  if(!have_user_precon())
+int Solver::runPreconditioner(BoutReal t, BoutReal gamma, BoutReal delta) {
+  if (not hasPreconditioner()) {
     return 1;
+  }
 
-  if(model)
+  if (model != nullptr) {
     return model->runPrecon(t, gamma, delta);
-  
+  }
+
   return (*prefunc)(t, gamma, delta);
+}
+
+bool Solver::hasJacobian() {
+  if (model != nullptr) {
+    return model->hasJacobian();
+  }
+
+  return user_jacobian != nullptr;
+}
+
+int Solver::runJacobian(BoutReal time) {
+  if (not hasJacobian()) {
+    return 1;
+  }
+
+  if (model != nullptr) {
+    return model->runJacobian(time);
+  }
+
+  return (*user_jacobian)(time);
 }
 
 // Add source terms to time derivatives
