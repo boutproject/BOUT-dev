@@ -221,9 +221,6 @@ public:
     //
     // Here PE 0 would have myns=2, PE 1 and 2 would have myns=1
 
-    int ns = Nsys / ngatherprocs;      // Number of systems to assign to all gathering processors
-    int nsextra = Nsys % ngatherprocs; // Number of processors with 1 extra
-
     // Receive requests
 
     if (myns > 0) {
@@ -270,38 +267,42 @@ public:
     // Interval between gathering processors
     BoutReal pinterval = static_cast<BoutReal>(nprocs) / ngatherprocs;
 
-    int s0 = 0;  // System number
+    {
+      int ns = Nsys / ngatherprocs;      // Number of systems to assign to all gathering processors
+      int nsextra = Nsys % ngatherprocs; // Number of processors with 1 extra
+      int s0 = 0;  // Starting system number
 
-    // Loop over gathering processors
-    for (int i = 0; i < ngatherprocs; i++) {
+      // Loop over gathering processors
+      for (int i = 0; i < ngatherprocs; i++) {
 
-      int p = i; // Gathering onto all processors
-      if (ngatherprocs != nprocs) {
-        // Gathering onto only some
-        p = static_cast<int>( pinterval * i );
-      }
+        int p = i; // Gathering onto all processors
+        if (ngatherprocs != nprocs) {
+          // Gathering onto only some
+          p = static_cast<int>( pinterval * i );
+        }
 
-      int nsp = ns; // Number of systems to send to this processor
-      if (i < nsextra)
-        nsp++; // Some processors get an extra system
+        int nsp = ns; // Number of systems to send to this processor
+        if (i < nsextra)
+          nsp++; // Some processors get an extra system
 
-      gather_proc[i] = p;
-      gather_sys_offset[i] = s0;
-      gather_nsys[i] = nsp;
+        gather_proc[i] = p;
+        gather_sys_offset[i] = s0;
+        gather_nsys[i] = nsp;
 
-      if ((p != myproc) && (nsp > 0)) {
+        if ((p != myproc) && (nsp > 0)) {
 #ifdef DIAGNOSE
-        output << "Sending to " << p << endl;
+          output << "Sending to " << p << endl;
 #endif
-        MPI_Send(&myif(s0, 0),        // Data pointer
-                 8 * nsp * sizeof(T), // Number
-                 MPI_BYTE,            // Type
-                 p,                   // Destination
-                 myproc,              // Message identifier
-                 comm);               // Communicator
-      }
+          MPI_Send(&myif(s0, 0),        // Data pointer
+                   8 * nsp * sizeof(T), // Number
+                   MPI_BYTE,            // Type
+                   p,                   // Destination
+                   myproc,              // Message identifier
+                   comm);               // Communicator
+        }
 
-      s0 += nsp;
+        s0 += nsp;
+      }
     }
 
     if (myns > 0) {
@@ -409,11 +410,11 @@ public:
           output << "Expecting receive from " << p << " of size " << len << endl;
 #endif
           MPI_Irecv(&gather_buffer(i, 0), len,
-                    MPI_BYTE, // Just sending raw data, unknown type
-                    p,        // Destination processor
+                    MPI_BYTE, // Just receiving raw data, unknown type
+                    p,        // Origin processor
                     p,        // Identifier
                     comm,     // Communicator
-                    &gather_req[p]); // Request
+                    &gather_req[i]); // Request
         } else {
           gather_req[i] = MPI_REQUEST_NULL;
         }
@@ -448,7 +449,6 @@ public:
         if (fromind != MPI_UNDEFINED) {
           // Copy data
 
-          int fromproc = gather_proc[fromind]; // From processor
           int s0 = gather_sys_offset[fromind]; // System index start
           int nsp = gather_nsys[fromind];      // Number of systems
 
@@ -458,10 +458,10 @@ public:
             xn[s0 + i] = gather_buffer(fromind, 2 * i + 1);
 #ifdef DIAGNOSE
             output << "Received x1,xn[" << s0 + i << "] = " << x1[s0 + i] << ", "
-                   << xn[s0 + i] << " from " << fromproc << endl;
+                   << xn[s0 + i] << " from " << gather_proc[fromind] << endl;
 #endif
           }
-          gather_req[fromproc] = MPI_REQUEST_NULL;
+          gather_req[fromind] = MPI_REQUEST_NULL;
         }
       } while (fromind != MPI_UNDEFINED);
     }

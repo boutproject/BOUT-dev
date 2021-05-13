@@ -55,10 +55,11 @@ LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
 
   OPTION(opt, dst, false);
 
-  if(dst) {
+  if (dst) {
     nmode = localmesh->LocalNz-2;
-  }else
+  } else {
     nmode = maxmode+1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
+  }
 
   // Note nmode == nsys of cyclic_reduction
 
@@ -81,8 +82,13 @@ LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   xcmplx.reallocate(nmode, n);
   bcmplx.reallocate(nmode, n);
 
+  int ngather =
+      (*opt)["ngather"]
+          .doc("Number of processors in X to gather onto. Default (0) is all processors")
+          .withDefault(0);
+
   // Create a cyclic reduction object, operating on dcomplex values
-  cr = new CyclicReduce<dcomplex>(localmesh->getXcomm(), n);
+  cr = new CyclicReduce<dcomplex>(localmesh->getXcomm(), n, ngather);
   cr->setPeriodic(localmesh->periodicX);
 }
 
