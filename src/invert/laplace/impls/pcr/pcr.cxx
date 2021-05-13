@@ -67,8 +67,9 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   }
 
   // Cannot be run in serial
-  if(localmesh->firstX() && localmesh->lastX())
+  if(localmesh->firstX() && localmesh->lastX()) {
     throw BoutException("Error: PCR method only works for NXPE > 1. Suggest using cyclic solver for NXPE = 1.\n");
+  }
 
   // Number of x points must be a power of 2
   if (!is_pow2(localmesh->GlobalNx-4)) {
@@ -767,11 +768,11 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
     int nlevel;
     int ip, in, dist_rank, dist2_rank;
     int myrank_level, nprocs_level;
-    auto alpha = Array<dcomplex>(nmode);
-    auto gamma = Array<dcomplex>(nmode);
-    auto sbuf = Array<dcomplex>(4*nmode);
-    auto rbuf0 = Array<dcomplex>(4*nmode);
-    auto rbuf1 = Array<dcomplex>(4*nmode);
+    Array<dcomplex> alpha(nmode);
+    Array<dcomplex> gamma(nmode);
+    Array<dcomplex> sbuf(4*nmode);
+    Array<dcomplex> rbuf0(4*nmode);
+    Array<dcomplex> rbuf1(4*nmode);
     dcomplex det;
 
     MPI_Status status;
