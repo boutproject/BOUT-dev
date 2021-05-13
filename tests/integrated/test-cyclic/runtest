@@ -20,8 +20,14 @@ from sys import stdout, exit
 
 build_and_log("Cyclic Reduction test")
 
-flags = ["", "nsys=2", "nsys=5 periodic", "nsys=7 n=10",
-         "ngather=1", "nsys=7 n=10 ngather=1"]
+flags = [
+    "",
+    "nsys=2",
+    "nsys=5 periodic",
+    "nsys=7 n=10",
+    "ngather=1",
+    "nsys=7 n=10 ngather=1",
+]
 
 code = 0  # Return code
 for nproc in [1, 2, 4]:
