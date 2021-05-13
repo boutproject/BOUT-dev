@@ -60,8 +60,6 @@ public:
   ArkodeSolver(Options* opts = nullptr);
   ~ArkodeSolver();
 
-  void setJacobian(Jacobian j) override { jacfunc = j; }
-
   BoutReal getCurrentTimestep() override { return hcur; }
 
   int init(int nout, BoutReal tstep) override;
@@ -82,7 +80,6 @@ private:
   BoutReal TIMESTEP; // Time between outputs
   BoutReal hcur;     // Current internal timestep
 
-  Jacobian jacfunc{nullptr}; // Jacobian - vector function
   bool diagnose{false};      // Output additional diagnostics
 
   N_Vector uvec{nullptr};    // Values
