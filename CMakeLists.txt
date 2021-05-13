@@ -892,6 +892,7 @@ message("
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
    Backtrace enabled        : ${BOUT_USE_BACKTRACE}
+   Sanitizers enabled       : ${BOUT_USE_SANITIZERS}
 
    === Python ===
 
