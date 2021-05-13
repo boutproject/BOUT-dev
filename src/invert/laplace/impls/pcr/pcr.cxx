@@ -776,7 +776,7 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
     dcomplex det;
 
     MPI_Status status;
-    MPI_Request request[4];
+    Array<MPI_Request> request(4);
     MPI_Comm comm = BoutComm::get();
 
     nlevel      = log2(nprocs);
@@ -804,62 +804,62 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
 
         if((myrank_level+1)%2 == 0) {
             if(myrank+dist_rank<nprocs) {
-                MPI_Irecv(&rbuf1[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 202, comm, request);
-                MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 203, comm, request+1);
+                MPI_Irecv(&rbuf1[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 202, comm, &request[0]);
+                MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 203, comm, &request[1]);
             }
             if(myrank-dist_rank>=0) {
-                MPI_Irecv(&rbuf0[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 200, comm, request+2);
-                MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 201, comm, request+3);
+                MPI_Irecv(&rbuf0[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 200, comm, &request[2]);
+                MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 201, comm, &request[3]);
             }
             if(myrank+dist_rank<nprocs) {
-                MPI_Wait(request, &status);
+                MPI_Wait(&request[0], &status);
 	        for(int kz=0;kz<nmode;kz++){
                   a(kz,n_mpi+1) = rbuf1[0+4*kz];
                   b(kz,n_mpi+1) = rbuf1[1+4*kz];
                   c(kz,n_mpi+1) = rbuf1[2+4*kz];
                   r(kz,n_mpi+1) = rbuf1[3+4*kz];
 		}
-                MPI_Wait(request+1, &status);
+                MPI_Wait(&request[1], &status);
             }
             if(myrank-dist_rank>=0) {
-                MPI_Wait(request+2, &status);
+                MPI_Wait(&request[2], &status);
 	        for(int kz=0;kz<nmode;kz++){
                   a(kz,0) = rbuf0[0+4*kz];
                   b(kz,0) = rbuf0[1+4*kz];
                   c(kz,0) = rbuf0[2+4*kz];
                   r(kz,0) = rbuf0[3+4*kz];
 		}
-                MPI_Wait(request+3, &status);
+                MPI_Wait(&request[3], &status);
             }
         }
         else if((myrank_level+1)%2 == 1) {
             if(myrank+dist_rank<nprocs) {
-                MPI_Irecv(&rbuf1[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 201, comm, request);
-                MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 200, comm, request+1);
+                MPI_Irecv(&rbuf1[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 201, comm, &request[0]);
+                MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 200, comm, &request[1]);
             }
             if(myrank-dist_rank>=0) {
-                MPI_Irecv(&rbuf0[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 203, comm, request+2);
-                MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 202, comm, request+3);
+                MPI_Irecv(&rbuf0[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 203, comm, &request[2]);
+                MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 202, comm, &request[3]);
             }
             if(myrank+dist_rank<nprocs) {
-                MPI_Wait(request, &status);
+                MPI_Wait(&request[0], &status);
 	        for(int kz=0;kz<nmode;kz++){
                   a(kz,n_mpi+1) = rbuf1[0+4*kz];
                   b(kz,n_mpi+1) = rbuf1[1+4*kz];
                   c(kz,n_mpi+1) = rbuf1[2+4*kz];
                   r(kz,n_mpi+1) = rbuf1[3+4*kz];
 		}
-                MPI_Wait(request+1, &status);
+                MPI_Wait(&request[1], &status);
             }
             if(myrank-dist_rank>=0) {
-                MPI_Wait(request+2, &status);
+                MPI_Wait(&request[2], &status);
 	        for(int kz=0;kz<nmode;kz++){
                   a(kz,0) = rbuf0[0+4*kz];
                   b(kz,0) = rbuf0[1+4*kz];
                   c(kz,0) = rbuf0[2+4*kz];
                   r(kz,0) = rbuf0[3+4*kz];
 		}
-                MPI_Wait(request+3, &status);
+                MPI_Wait(&request[3], &status);
             }
         }
 
@@ -906,10 +906,10 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
       sbuf[3+4*kz] = r(kz,n_mpi);
     }
     if(myrank<nhprocs) {
-        MPI_Irecv(&rbuf1[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+nhprocs, 300, comm, request);
-        MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+nhprocs, 301, comm, request+1);
+        MPI_Irecv(&rbuf1[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+nhprocs, 300, comm, &request[0]);
+        MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+nhprocs, 301, comm, &request[1]);
 
-        MPI_Wait(request, &status);
+        MPI_Wait(&request[0], &status);
         for(int kz=0;kz<nmode;kz++){
           a(kz,n_mpi+1) = rbuf1[0+4*kz];
           b(kz,n_mpi+1) = rbuf1[1+4*kz];
@@ -925,14 +925,14 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
           x(kz,i) = (r(kz,i)*b(kz,in) - r(kz,in)*c(kz,i))/det;
           x(kz,in) = (r(kz,in)*b(kz,i) - r(kz,i)*a(kz,in))/det;
 	}
-        MPI_Wait(request+1, &status);
+        MPI_Wait(&request[1], &status);
 
     }
     else if(myrank>=nhprocs) {
-        MPI_Irecv(&rbuf0[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-nhprocs, 301, comm, request+2);
-        MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-nhprocs, 300, comm, request+3);
+        MPI_Irecv(&rbuf0[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-nhprocs, 301, comm, &request[2]);
+        MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-nhprocs, 300, comm, &request[3]);
 
-        MPI_Wait(request+2, &status);
+        MPI_Wait(&request[2], &status);
         for(int kz=0;kz<nmode;kz++){
           a(kz,0) = rbuf0[0+4*kz];
           b(kz,0) = rbuf0[1+4*kz];
@@ -948,6 +948,6 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
           x(kz,ip) = (r(kz,ip)*b(kz,i) - r(kz,i)*c(kz,ip))/det;
           x(kz,i) = (r(kz,i)*b(kz,ip) - r(kz,ip)*a(kz,i))/det;
 	}
-        MPI_Wait(request+3, &status);
+        MPI_Wait(&request[3], &status);
     }
 }
