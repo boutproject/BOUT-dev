@@ -107,7 +107,7 @@ private:
         /// Local private pointer for solution vector x
         Matrix<dcomplex> x;
 
-        void cr_forward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex> &b,Matrix<dcomplex> &c,Matrix<dcomplex> &r,Matrix<dcomplex> &x);
+        void cr_forward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex> &b,Matrix<dcomplex> &c,Matrix<dcomplex> &r);
         void cr_backward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex> &b,Matrix<dcomplex> &c,Matrix<dcomplex> &r,Matrix<dcomplex> &x);
         void cr_forward_single_row();
         void cr_backward_single_row();
@@ -132,41 +132,6 @@ private:
   /// Lower-, on- and upper-diagonal terms of the operator matrix
   Tensor<dcomplex> avec, bvec, cvec;
 
-  /// Coefficients for recovering the full global solution from guard
-  /// cells
-  Tensor<dcomplex> upperGuardVector; // alpha
-  Tensor<dcomplex> lowerGuardVector; // beta
-  /// Local $M^{-1} f$
-  Matrix<dcomplex> minvb;
-  /// Coefficients of first and last interior rows
-  /// $\alpha^l$
-  Matrix<dcomplex> al;
-  /// $\beta^l$
-  Matrix<dcomplex> bl;
-  /// $\alpha^u$
-  Matrix<dcomplex> au;
-  /// $\beta^u$
-  Matrix<dcomplex> bu;
-  /// $r^l$
-  Array<dcomplex> rl;
-  /// $r^u$
-  Array<dcomplex> ru;
-  /// Coefficients used to compute $r^l$ from domain below
-  Matrix<dcomplex> r1, r2;
-
-  /// Flag to state whether this is the first time the solver is called
-  /// on the point (jy,kz).
-  Array<bool> first_call;
-
-  /// Save previous x in Fourier space
-  Tensor<dcomplex> x0saved;
-
-  /// Mean number of iterations taken by the solver
-  BoutReal ipt_mean_its{0.0};
-
-  /// Mean number of cycles taken by the solver
-  BoutReal ipt_mean_cycles{0.0};
-
   /// Counter for the number of times the solver has been called
   int ncalls{0};
 
@@ -178,12 +143,6 @@ private:
 
   /// Shorthand for localmesh->NXPE
   int nproc;
-
-  /// Array recording whether a kz mode is converged
-  Array<bool> converged;
-
-  /// Error interpolated onto the grid one finer than current grid
-  Matrix<dcomplex> fine_error;
 
   /// First and last interior points xstart, xend
   int xs, xe;

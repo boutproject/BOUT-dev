@@ -60,7 +60,7 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   C.setLocation(location);
   D.setLocation(location);
 
-  // Number of procs must be a factor of 2
+  // Number of procs must be a power of 2
   const int n = localmesh->NXPE;
   if (!is_pow2(n)) {
     throw BoutException("LaplacePCR error: NXPE must be a power of 2");
@@ -69,6 +69,11 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   // Cannot be run in serial
   if(localmesh->firstX() && localmesh->lastX())
     throw BoutException("Error: PCR method only works for NXPE > 1. Suggest using cyclic solver for NXPE = 1.\n");
+
+  // Number of x points must be a power of 2
+  if (!is_pow2(localmesh->GlobalNx-4)) {
+    throw BoutException("LaplacePCR error: GlobalNx must be a power of 2");
+  }
 
   setup(localmesh->GlobalNx-4, localmesh->getNXPE(), localmesh->getXProcIndex());
 
@@ -159,10 +164,10 @@ FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0) {
    *        LaplacePCR::solve()
    * xk1d = The 1d array of xk
    */
-  auto bk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
+  auto bk = Matrix<dcomplex>(ncx, nmode);
   auto bk1d = Array<dcomplex>(ncx);
-  auto xk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
-  auto xk1d = Matrix<dcomplex>(ncz / 2 + 1, ncx);
+  auto xk = Matrix<dcomplex>(ncx, nmode);
+  auto xk1d = Matrix<dcomplex>(nmode, ncx);
 
   /// SCOREP_USER_REGION_END(initvars);
   /// SCOREP_USER_REGION_DEFINE(fftloop);
@@ -207,8 +212,9 @@ FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0) {
    * the offset and all the modes up to the Nyquist frequency), so we only copy up to
    * `nmode` in the transpose.
    */
+  //output.write("Before transpose\n");
+  //output.write("ncx {}, nmode {}, ncz {}, ncz / 2 + 1 {}, xe-xs+1 {}  \n",ncx,nmode,ncz,ncz / 2 + 1,xe-xs+1);
   transpose(bcmplx, bk);
-  TRACE("LaplacePCR::after first transpose");
 
   /* Set the matrix A used in the inversion of Ax=b
    * by calling tridagCoef and setting the BC
@@ -223,6 +229,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0) {
    * cvec - the upper diagonal
    *
    */
+  //output.write("Before coefs\n");
   for (int kz = 0; kz < nmode; kz++) {
     // Note that this is called every time to deal with bcmplx and could mostly
     // be skipped when storing coefficients.
@@ -256,13 +263,6 @@ FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0) {
   /// SCOREP_USER_REGION_DEFINE(initlevels);
   /// SCOREP_USER_REGION_BEGIN(initlevels, "init
   /// levels",///SCOREP_USER_REGION_TYPE_COMMON);
-
-  // Should we store coefficients? True when matrix to be inverted is
-  // constant, allowing results to be cached and work skipped
-  const bool store_coefficients = not isInnerBoundaryFlagSet(INVERT_AC_GRAD)
-                                  and not isOuterBoundaryFlagSet(INVERT_AC_GRAD)
-                                  and not isInnerBoundaryFlagSet(INVERT_SET)
-                                  and not isOuterBoundaryFlagSet(INVERT_SET);
 
 ///  output.write("before\n");
 ///  for(int kz=0;kz<nmode;kz++){
@@ -299,9 +299,10 @@ FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   // Perform the parallel triadiagonal solver
   // Note the API switches sub and super diagonals
+  //output.write("Before solve\n");
   cr_pcr_solver(cvec,bvec,avec,bcmplx,xk1d,jy);
-  TRACE("LaplacePCR::after solve");
 
+  //output.write("Before bcs\n");
   // apply boundary conditions
   if (localmesh->firstX()) {
     for (int kz = 0; kz < nmode; kz++) {
@@ -320,6 +321,27 @@ FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
   }
 
+///  output.write("after\n");
+///  for(int kz=0;kz<nmode;kz++){
+///    for(int ix=0;ix<localmesh->LocalNx;ix++){
+///      output.write("{} ",avec(jy,kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<localmesh->LocalNx;ix++){
+///      output.write("{} ",bvec(jy,kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<localmesh->LocalNx;ix++){
+///      output.write("{} ",cvec(jy,kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<localmesh->LocalNx;ix++){
+///      output.write("{} ",bcmplx(kz,ix).real());
+///    }
+///    output.write("\n");
+///  }
+
+  //output.write("After bcs\n");
 
 #if CHECK > 2
   for (int ix = 0; ix < ncx; ix++) {
@@ -344,6 +366,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   // Store the solution xk for the current fourier mode in a 2D array
   transpose(xk, xk1d);
+  //output.write("After transpose 2\n");
 
   /// SCOREP_USER_REGION_END(afterloop);
 
@@ -364,6 +387,8 @@ FieldPerp LaplacePCR::solve(const FieldPerp& b, const FieldPerp& x0) {
         throw BoutException("Non-finite at {:d}, {:d}, {:d}", ix, jy, kz);
 #endif
   }
+
+  //output.write("end\n");
 
   /// SCOREP_USER_REGION_END(fftback);
   return x; // Result of the inversion
@@ -402,7 +427,6 @@ void LaplacePCR :: cr_pcr_solver(Tensor<dcomplex> &a_mpi, Tensor<dcomplex> &b_mp
   x.reallocate(nmode, nxloc+2);
 
   int xs = localmesh->xstart;
-  int xe = localmesh->xend;
   for(int kz=0; kz<nmode; kz++){
     a(kz,0) = 0;
     b(kz,0) = 1;
@@ -423,7 +447,7 @@ void LaplacePCR :: cr_pcr_solver(Tensor<dcomplex> &a_mpi, Tensor<dcomplex> &b_mp
     x(kz,nxloc+1) = 0;
   }
 
-///  output.write("data\n");
+  output.write("data\n");
 ///  for(int kz=0;kz<nmode;kz++){
 ///    for(int ix=0;ix<nxloc+2;ix++){
 ///      output.write("{} ",a(kz,ix).real());
@@ -447,9 +471,9 @@ void LaplacePCR :: cr_pcr_solver(Tensor<dcomplex> &a_mpi, Tensor<dcomplex> &b_mp
 ///    output.write("\n");
 ///  }
 
-  cr_forward_multiple_row(a,b,c,r,x);
+  cr_forward_multiple_row(a,b,c,r);
 
-  //output.write("after forward\n");
+  output.write("after forward\n");
 ///  for(int kz=0;kz<nmode;kz++){
 ///    for(int ix=0;ix<nxloc+2;ix++){
 ///      output.write("{} ",a(kz,ix).real());
@@ -475,7 +499,7 @@ void LaplacePCR :: cr_pcr_solver(Tensor<dcomplex> &a_mpi, Tensor<dcomplex> &b_mp
 //
     pcr_forward_single_row(a,b,c,r,x);     // Including 2x2 solver
 
-    //output.write("after forward single row\n");
+    output.write("after forward single row\n");
 ///  for(int kz=0;kz<nmode;kz++){
 ///    output.write("kz {}\n",kz);
 ///    for(int ix=0;ix<nxloc+2;ix++){
@@ -502,7 +526,7 @@ void LaplacePCR :: cr_pcr_solver(Tensor<dcomplex> &a_mpi, Tensor<dcomplex> &b_mp
 /////
     cr_backward_multiple_row(a,b,c,r,x);
 
-///  output.write("after backward multiple row\n");
+  output.write("after backward multiple row\n");
 ///  for(int kz=0;kz<nmode;kz++){
 ///    output.write("kz {}\n",kz);
 ///    for(int ix=0;ix<nxloc+2;ix++){
@@ -532,27 +556,29 @@ void LaplacePCR :: cr_pcr_solver(Tensor<dcomplex> &a_mpi, Tensor<dcomplex> &b_mp
         x_mpi(kz,ix) = x(kz,ix-xs+1);
       }
     }
-///    output.write("end\n");
+    output.write("end\n");
 }
 
 /** 
  * @brief   Forward elimination of CR until a single row per MPI process remains.
  * @details After a single row per MPI process remains, PCR or CR between a single row is performed.
 */
-void LaplacePCR :: cr_forward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex> &b,Matrix<dcomplex> &c,Matrix<dcomplex> &r,Matrix<dcomplex> &x)
+void LaplacePCR :: cr_forward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex> &b,Matrix<dcomplex> &c,Matrix<dcomplex> &r)
 {
     MPI_Comm comm = BoutComm::get();
     int i, l;
     int nlevel;
     int ip, in, start, dist_row, dist2_row;
-    dcomplex alpha[nmode], gamma[nmode];
-    dcomplex sbuf[4*nmode], rbuf[4*nmode];
+    Array<dcomplex> alpha(nmode);
+    Array<dcomplex> gamma(nmode);
+    Array<dcomplex> sbuf(4*nmode);
+    Array<dcomplex> rbuf(4*nmode);
 
     MPI_Status status, status1;
-    MPI_Request request[2];
+    Array<MPI_Request> request(2);
 
-  int nxloc = localmesh->xend-localmesh->xstart+1;
-///  output.write("start\n");
+   //int nxloc = localmesh->xend-localmesh->xstart+1;
+  output.write("start\n");
 ///  for(int kz=0;kz<nmode;kz++){
 ///    for(int ix=0;ix<nxloc+2;ix++){
 ///      output.write("{} ",a(kz,ix).real());
@@ -588,27 +614,29 @@ void LaplacePCR :: cr_forward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex> 
         /// Data exchange is performed using MPI send/recv for each succesive reduction
         if(myrank<nprocs-1) {
           //output.write("before Irecv\n");
-          MPI_Irecv(rbuf, 4*nmode, MPI_DOUBLE_COMPLEX, myrank+1, 0, comm, &request[0]);
+          MPI_Irecv(&rbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+1, 0, comm, &request[0]);
           //output.write("after Irecv\n");
         }
         if(myrank>0) {
             //output.write("filling sbuf\n");
             for(int kz=0; kz<nmode; kz++){
-              //output.write("kz {}\n",kz);
+              //output.write("myrank {}, kz {}\n",myrank, kz);
               sbuf[0+4*kz] = a(kz,dist_row);
               sbuf[1+4*kz] = b(kz,dist_row);
               sbuf[2+4*kz] = c(kz,dist_row);
               sbuf[3+4*kz] = r(kz,dist_row);
 	    }
             //output.write("before isend\n");
-            MPI_Isend(sbuf, 4*nmode, MPI_DOUBLE_COMPLEX, myrank-1, 0, comm, &request[1]);
+            MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-1, 0, comm, &request[1]);
         }
         if(myrank<nprocs-1) {
             //output.write("before wait\n");
-            MPI_Wait(request, &status1);
+            MPI_Wait(&request[0], &status1);
             //output.write("after wait\n");
             for(int kz=0; kz<nmode; kz++){
-              //output.write("kz {} ",kz);
+	      //output.write("myrank {}, kz {}\n",myrank, kz);
+              //output.write("a {}\n",a(kz,n_mpi+1).real());
+              //output.write("rbuf {}\n",rbuf[0+4*kz].real());
               a(kz,n_mpi+1) = rbuf[0+4*kz];
               b(kz,n_mpi+1) = rbuf[1+4*kz];
               c(kz,n_mpi+1) = rbuf[2+4*kz];
@@ -641,7 +669,8 @@ void LaplacePCR :: cr_forward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex> 
         dist_row *= 2;
         
         if(myrank>0) {
-            MPI_Wait(request+1, &status);
+            //MPI_Wait(request+1, &status);
+            MPI_Wait(&request[1], &status);
         }
     }
 
@@ -678,11 +707,12 @@ void LaplacePCR :: cr_backward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex>
     int i, l;
     int nlevel;
     int ip, in, dist_row, dist2_row;
+    MPI_Comm comm = BoutComm::get();
 
     MPI_Status status;
     MPI_Request request[2];
-    dcomplex recvvec[nmode];
-    dcomplex sendvec[nmode];
+    auto recvvec = Array<dcomplex>(nmode);
+    auto sendvec = Array<dcomplex>(nmode);
 
     nlevel    = log2(n_mpi);
     dist_row = n_mpi/2;
@@ -690,14 +720,14 @@ void LaplacePCR :: cr_backward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex>
     /// Each rank requires a solution on last row of previous rank.
     if(myrank>0) {
 	//output.write("before irecv, myrank {}\n",myrank);
-        MPI_Irecv(recvvec, nmode, MPI_DOUBLE_COMPLEX, myrank-1, 100, MPI_COMM_WORLD, request);
+        MPI_Irecv(&recvvec[0], nmode, MPI_DOUBLE_COMPLEX, myrank-1, 100, comm, request);
     }
     if(myrank<nprocs-1) {
 	//output.write("before isend\n");
         for(int kz=0; kz<nmode; kz++){
 	  sendvec[kz] = x(kz,n_mpi);
 	}
-        MPI_Isend(sendvec, nmode, MPI_DOUBLE_COMPLEX, myrank+1, 100, MPI_COMM_WORLD, request+1);
+        MPI_Isend(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, myrank+1, 100, comm, request+1);
     }
     if(myrank>0) {
 	//output.write("before wait\n");
@@ -737,12 +767,16 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
     int nlevel;
     int ip, in, dist_rank, dist2_rank;
     int myrank_level, nprocs_level;
-    dcomplex alpha[nmode], gamma[nmode];
+    auto alpha = Array<dcomplex>(nmode);
+    auto gamma = Array<dcomplex>(nmode);
+    auto sbuf = Array<dcomplex>(4*nmode);
+    auto rbuf0 = Array<dcomplex>(4*nmode);
+    auto rbuf1 = Array<dcomplex>(4*nmode);
     dcomplex det;
-    dcomplex sbuf[4*nmode], rbuf0[4*nmode], rbuf1[4*nmode];
 
     MPI_Status status;
     MPI_Request request[4];
+    MPI_Comm comm = BoutComm::get();
 
     nlevel      = log2(nprocs);
     nhprocs     = nprocs/2;
@@ -769,12 +803,12 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
 
         if((myrank_level+1)%2 == 0) {
             if(myrank+dist_rank<nprocs) {
-                MPI_Irecv(rbuf1, 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 202, MPI_COMM_WORLD, request);
-                MPI_Isend(sbuf, 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 203, MPI_COMM_WORLD, request+1);
+                MPI_Irecv(&rbuf1[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 202, comm, request);
+                MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 203, comm, request+1);
             }
             if(myrank-dist_rank>=0) {
-                MPI_Irecv(rbuf0, 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 200, MPI_COMM_WORLD, request+2);
-                MPI_Isend(sbuf, 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 201, MPI_COMM_WORLD, request+3);
+                MPI_Irecv(&rbuf0[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 200, comm, request+2);
+                MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 201, comm, request+3);
             }
             if(myrank+dist_rank<nprocs) {
                 MPI_Wait(request, &status);
@@ -799,12 +833,12 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
         }
         else if((myrank_level+1)%2 == 1) {
             if(myrank+dist_rank<nprocs) {
-                MPI_Irecv(rbuf1, 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 201, MPI_COMM_WORLD, request);
-                MPI_Isend(sbuf, 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 200, MPI_COMM_WORLD, request+1);
+                MPI_Irecv(&rbuf1[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 201, comm, request);
+                MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+dist_rank, 200, comm, request+1);
             }
             if(myrank-dist_rank>=0) {
-                MPI_Irecv(rbuf0, 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 203, MPI_COMM_WORLD, request+2);
-                MPI_Isend(sbuf, 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 202, MPI_COMM_WORLD, request+3);
+                MPI_Irecv(&rbuf0[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 203, comm, request+2);
+                MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-dist_rank, 202, comm, request+3);
             }
             if(myrank+dist_rank<nprocs) {
                 MPI_Wait(request, &status);
@@ -871,8 +905,8 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
       sbuf[3+4*kz] = r(kz,n_mpi);
     }
     if(myrank<nhprocs) {
-        MPI_Irecv(rbuf1, 4*nmode, MPI_DOUBLE_COMPLEX, myrank+nhprocs, 300, MPI_COMM_WORLD, request);
-        MPI_Isend(sbuf, 4*nmode, MPI_DOUBLE_COMPLEX, myrank+nhprocs, 301, MPI_COMM_WORLD, request+1);
+        MPI_Irecv(&rbuf1[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+nhprocs, 300, comm, request);
+        MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank+nhprocs, 301, comm, request+1);
 
         MPI_Wait(request, &status);
         for(int kz=0;kz<nmode;kz++){
@@ -894,8 +928,8 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
 
     }
     else if(myrank>=nhprocs) {
-        MPI_Irecv(rbuf0, 4*nmode, MPI_DOUBLE_COMPLEX, myrank-nhprocs, 301, MPI_COMM_WORLD, request+2);
-        MPI_Isend(sbuf, 4*nmode, MPI_DOUBLE_COMPLEX, myrank-nhprocs, 300, MPI_COMM_WORLD, request+3);
+        MPI_Irecv(&rbuf0[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-nhprocs, 301, comm, request+2);
+        MPI_Isend(&sbuf[0], 4*nmode, MPI_DOUBLE_COMPLEX, myrank-nhprocs, 300, comm, request+3);
 
         MPI_Wait(request+2, &status);
         for(int kz=0;kz<nmode;kz++){
