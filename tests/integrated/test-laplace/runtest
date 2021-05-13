@@ -52,9 +52,9 @@ for v in vars:
 print("Running Laplacian inversion test")
 success = True
 
-for nproc, nxpe, ngather in [(1,1,1), (2,1,1), (2,2,2), (4,2,1), (4,4,2)]:
+for nproc, nxpe, ngather in [(1, 1, 1), (2, 1, 1), (2, 2, 2), (4, 2, 1), (4, 4, 2)]:
 
-    cmd = "./test_laplace nxpe=" + str(nxpe)+ " laplace:ngather=" + str(ngather)
+    cmd = "./test_laplace nxpe=" + str(nxpe) + " laplace:ngather=" + str(ngather)
 
     shell("rm data/BOUT.dmp.*.nc")
 

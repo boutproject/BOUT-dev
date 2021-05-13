@@ -43,22 +43,24 @@
 //#define DIAGNOSE 1
 
 #include "mpi.h"
-#include "utils.hxx"
 #include "msg_stack.hxx"
+#include "utils.hxx"
 #include <lapack_routines.hxx>
 
-#include "bout/assert.hxx"
 #include "boutexception.hxx"
+#include "bout/assert.hxx"
 
 #include "output.hxx"
 
 #include "bout/openmpwrap.hxx"
 
-template <class T> class CyclicReduce {
+template <class T>
+class CyclicReduce {
 public:
   CyclicReduce() = default;
 
-  CyclicReduce(MPI_Comm c, int size, int ngather=0) : comm(c), ngatherprocs(ngather), N(size) {
+  CyclicReduce(MPI_Comm c, int size, int ngather = 0)
+      : comm(c), ngatherprocs(ngather), N(size) {
     setup(c, size, ngather);
   }
 
@@ -68,7 +70,7 @@ public:
   /// @param[in] c  The communicator of all processors involved in the solve
   /// @param[in] size  The number of rows on this processor
   /// @param[in] gather  The number of processors to gather onto. If 0, use all processors
-  void setup(MPI_Comm c, int size, int ngather=0) {
+  void setup(MPI_Comm c, int size, int ngather = 0) {
     comm = c;
 
     int np, myp;
@@ -99,7 +101,7 @@ public:
   /// By default not periodic
   void setPeriodic(bool p = true) { periodic = p; }
 
-  void setCoefs(const Array<T> &a, const Array<T> &b, const Array<T> &c) {
+  void setCoefs(const Array<T>& a, const Array<T>& b, const Array<T>& c) {
     ASSERT2(a.size() == b.size());
     ASSERT2(a.size() == c.size());
     ASSERT2(a.size() == N);
@@ -108,7 +110,7 @@ public:
     Matrix<T> bMatrix(1, N);
     Matrix<T> cMatrix(1, N);
 
-    BOUT_OMP(parallel for)    
+    BOUT_OMP(parallel for)
     for (int i = 0; i < N; ++i) {
       aMatrix(0, i) = a[i];
       bMatrix(0, i) = b[i];
@@ -148,7 +150,7 @@ public:
   ///
   /// @param[in] rhs Array storing Values of the rhs for a single system
   /// @param[out] x  Array storing the result for a single system
-  void solve(const Array<T> &rhs, Array<T> &x) {
+  void solve(const Array<T>& rhs, Array<T>& x) {
     ASSERT2(rhs.size() == x.size());
     ASSERT2(rhs.size() == N);
 
@@ -175,7 +177,7 @@ public:
   ///
   /// @param[in] rhs Matrix storing Values of the rhs for each system
   /// @param[out] x  Matrix storing the result for each system
-  void solve(const Matrix<T> &rhs, Matrix<T> &x) {
+  void solve(const Matrix<T>& rhs, Matrix<T>& x) {
     TRACE("CyclicReduce::solve");
     ASSERT2(static_cast<int>(std::get<0>(rhs.shape())) == Nsys);
     ASSERT2(static_cast<int>(std::get<0>(x.shape())) == Nsys);
@@ -227,7 +229,7 @@ public:
       // If gathering systems onto this processor
       // post receives from all other processors
 
-      all_req.resize(nprocs); // One communicator per processor
+      all_req.resize(nprocs);                  // One communicator per processor
       all_buffer.reallocate(nprocs, myns * 8); // Storage for systems from each processor
 
       all_req[myproc] = MPI_REQUEST_NULL;
@@ -239,7 +241,7 @@ public:
 
         if (p == myproc) {
           // Just copy the data
-	  BOUT_OMP(parallel for)
+          BOUT_OMP(parallel for)
           for (int i = 0; i < myns; i++)
             for (int j = 0; j < 8; j++)
               ifcs(i, 8 * p + j) = myif(sys0 + i, j);
@@ -248,10 +250,10 @@ public:
           output << "Expecting to receive " << len << " from " << p << endl;
 #endif
           MPI_Irecv(&all_buffer(p, 0), len,
-                    MPI_BYTE, // Just sending raw data, unknown type
-                    p,        // Destination processor
-                    p,        // Identifier
-                    comm,     // Communicator
+                    MPI_BYTE,     // Just sending raw data, unknown type
+                    p,            // Destination processor
+                    p,            // Identifier
+                    comm,         // Communicator
                     &all_req[p]); // Request
         }
       }
@@ -259,18 +261,19 @@ public:
 
     // Send data to the processors which are gathering
 
-    gather_req.resize(ngatherprocs);   // One request per gathering processor
-    gather_proc.resize(ngatherprocs);  // Processor number
-    gather_sys_offset.resize(ngatherprocs);  // Index of the first system gathered
-    gather_nsys.resize(ngatherprocs);  // Number of systems
+    gather_req.resize(ngatherprocs);        // One request per gathering processor
+    gather_proc.resize(ngatherprocs);       // Processor number
+    gather_sys_offset.resize(ngatherprocs); // Index of the first system gathered
+    gather_nsys.resize(ngatherprocs);       // Number of systems
 
     // Interval between gathering processors
     BoutReal pinterval = static_cast<BoutReal>(nprocs) / ngatherprocs;
 
     {
-      int ns = Nsys / ngatherprocs;      // Number of systems to assign to all gathering processors
+      int ns =
+          Nsys / ngatherprocs; // Number of systems to assign to all gathering processors
       int nsextra = Nsys % ngatherprocs; // Number of processors with 1 extra
-      int s0 = 0;  // Starting system number
+      int s0 = 0;                        // Starting system number
 
       // Loop over gathering processors
       for (int i = 0; i < ngatherprocs; i++) {
@@ -278,7 +281,7 @@ public:
         int p = i; // Gathering onto all processors
         if (ngatherprocs != nprocs) {
           // Gathering onto only some
-          p = static_cast<int>( pinterval * i );
+          p = static_cast<int>(pinterval * i);
         }
 
         int nsp = ns; // Number of systems to send to this processor
@@ -318,7 +321,7 @@ public:
 #ifdef DIAGNOSE
           output << "Copying received data from " << p << endl;
 #endif
-	  BOUT_OMP(parallel for)
+          BOUT_OMP(parallel for)
           for (int i = 0; i < myns; i++)
             for (int j = 0; j < 8; j++) {
 #ifdef DIAGNOSE
@@ -348,7 +351,7 @@ public:
       if2x2.ensureUnique();
       x1.ensureUnique();
       xn.ensureUnique();
-      
+
       BOUT_OMP(parallel for)
       for (int i = 0; i < myns; ++i) {
         //  (a  b) (x1) = (b1)
@@ -392,14 +395,14 @@ public:
       // Post receives
       // Loop over gathering processors
       for (int i = 0; i < ngatherprocs; i++) {
-        int p = gather_proc[i]; // Processor number
+        int p = gather_proc[i];   // Processor number
         int nsp = gather_nsys[i]; // Number of systems
 
         int len = 2 * nsp * sizeof(T); // 2 values per system
 
         if (p == myproc) {
           // Just copy the data
-	  BOUT_OMP(parallel for)	  
+          BOUT_OMP(parallel for)
           for (int i = 0; i < myns; i++) {
             x1[sys0 + i] = ifx(i, 2 * p);
             xn[sys0 + i] = ifx(i, 2 * p + 1);
@@ -410,10 +413,10 @@ public:
           output << "Expecting receive from " << p << " of size " << len << endl;
 #endif
           MPI_Irecv(&gather_buffer(i, 0), len,
-                    MPI_BYTE, // Just receiving raw data, unknown type
-                    p,        // Origin processor
-                    p,        // Identifier
-                    comm,     // Communicator
+                    MPI_BYTE,        // Just receiving raw data, unknown type
+                    p,               // Origin processor
+                    p,               // Identifier
+                    comm,            // Communicator
                     &gather_req[i]); // Request
         } else {
           gather_req[i] = MPI_REQUEST_NULL;
@@ -424,7 +427,7 @@ public:
         // Send data
         for (int p = 0; p < nprocs; p++) { // Loop over processor
           if (p != myproc) {
-	    BOUT_OMP(parallel for)	    
+            BOUT_OMP(parallel for)
             for (int i = 0; i < myns; i++) {
               ifp[2 * i] = ifx(i, 2 * p);
               ifp[2 * i + 1] = ifx(i, 2 * p + 1);
@@ -452,7 +455,7 @@ public:
           int s0 = gather_sys_offset[fromind]; // System index start
           int nsp = gather_nsys[fromind];      // Number of systems
 
-	  BOUT_OMP(parallel for)
+          BOUT_OMP(parallel for)
           for (int i = 0; i < nsp; i++) {
             x1[s0 + i] = gather_buffer(fromind, 2 * i);
             xn[s0 + i] = gather_buffer(fromind, 2 * i + 1);
@@ -475,15 +478,15 @@ private:
   MPI_Comm comm;             ///< Communicator
   int nprocs{0}, myproc{-1}; ///< Number of processors and ID of my processor
 
-  int ngatherprocs{0};  ///< Number of processors to gather onto
+  int ngatherprocs{0};                 ///< Number of processors to gather onto
   std::vector<MPI_Request> gather_req; ///< Comms with gathering processors
-  std::vector<int> gather_proc;  ///< The processor number
-  std::vector<int> gather_sys_offset; ///< Index of the first system gathered
-  std::vector<int> gather_nsys;       ///< Number of systems gathered
-  Matrix<T> gather_buffer; ///< Buffer for receiving from gathering processors
+  std::vector<int> gather_proc;        ///< The processor number
+  std::vector<int> gather_sys_offset;  ///< Index of the first system gathered
+  std::vector<int> gather_nsys;        ///< Number of systems gathered
+  Matrix<T> gather_buffer;             ///< Buffer for receiving from gathering processors
 
   std::vector<MPI_Request> all_req; ///< Requests for comms with all processors
-  Matrix<T> all_buffer; ///< Buffer for receiving from all other processors
+  Matrix<T> all_buffer;             ///< Buffer for receiving from all other processors
 
   int N{0};    ///< Total size of the problem
   int Nsys{0}; ///< Number of independent systems to solve
@@ -495,11 +498,11 @@ private:
   Matrix<T> coefs; ///< Starting coefficients, rhs [Nsys, {3*coef,rhs}*N]
   Matrix<T> myif;  ///< Interface equations for this processor
 
-  Matrix<T> ifcs;       ///< Coefficients for interface solve
-  Matrix<T> if2x2;      ///< 2x2 interface equations on this processor
-  Matrix<T> ifx;        ///< Solution of interface equations
-  Array<T> ifp;         ///< Interface equations returned to processor p
-  Array<T> x1, xn;      ///< Interface solutions for back-solving
+  Matrix<T> ifcs;  ///< Coefficients for interface solve
+  Matrix<T> if2x2; ///< 2x2 interface equations on this processor
+  Matrix<T> ifx;   ///< Solution of interface equations
+  Array<T> ifp;    ///< Interface equations returned to processor p
+  Array<T> x1, xn; ///< Interface solutions for back-solving
 
   /// Allocate memory arrays
   /// @param[in] nsys  Number of independent systems to solve
@@ -535,7 +538,7 @@ private:
 
       // Calculate which processors these are
       for (int i = 0; i < ngatherprocs; i++) {
-        int proc = static_cast<int>( pinterval * i );
+        int proc = static_cast<int>(pinterval * i);
 
         if (proc == myproc) {
           // This processor is receiving
@@ -584,12 +587,12 @@ private:
   /// (      a3 b3 c3            )   =>  (   A2 B2 C2)
   /// (              ...         )
   /// (                  an bn cn)
-  void reduce(int ns, int nloc, Matrix<T> &co, Matrix<T> &ifc) {
+  void reduce(int ns, int nloc, Matrix<T>& co, Matrix<T>& ifc) {
 #ifdef DIAGNOSE
     if (nloc < 2)
       throw BoutException("CyclicReduce::reduce nloc < 2");
 #endif
-    
+
     BOUT_OMP(parallel for)
     for (int j = 0; j < ns; j++) {
       // Calculate upper interface equation
@@ -662,20 +665,20 @@ private:
                   const Array<T>& xn, Matrix<T>& xa) {
 
     xa.ensureUnique(); // Going to be modified, so call this outside parallel region
-    
+
     // Tridiagonal system, solve using serial Thomas algorithm
     // xa -- Result for each system
     // co -- Coefficients & rhs for each system
     BOUT_OMP(parallel for)
     for (int i = 0; i < ns; i++) { // Loop over systems
-      Array<T> gam(nloc); // Thread-local array
+      Array<T> gam(nloc);          // Thread-local array
       T bet = 1.0;
       xa(i, 0) = x1[i]; // Already know the first
       gam[1] = 0.;
       for (int j = 1; j < nloc - 1; j++) {
         bet = co(i, 4 * j + 1) - co(i, 4 * j) * gam[j]; // bet = b[j]-a[j]*gam[j]
-        xa(i, j) = (co(i, 4 * j + 3) - co(i, 4 * j) * xa(i, j - 1)) /
-                   bet;                      // x[j] = (r[j]-a[j]*x[j-1])/bet;
+        xa(i, j) = (co(i, 4 * j + 3) - co(i, 4 * j) * xa(i, j - 1))
+                   / bet;                    // x[j] = (r[j]-a[j]*x[j-1])/bet;
         gam[j + 1] = co(i, 4 * j + 2) / bet; // gam[j+1] = c[j]/bet
       }
       xa(i, nloc - 1) = xn[i]; // Know the last value
