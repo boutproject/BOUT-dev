@@ -285,8 +285,9 @@ public:
         }
 
         int nsp = ns; // Number of systems to send to this processor
-        if (i < nsextra)
+        if (i < nsextra) {
           nsp++; // Some processors get an extra system
+        }
 
         gather_proc[i] = p;
         gather_sys_offset[i] = s0;
@@ -444,7 +445,7 @@ public:
       }
 
       // Wait for data
-      int fromind;
+      int fromind{MPI_UNDEFINED};
       do {
         MPI_Status stat;
         MPI_Waitany(ngatherprocs, gather_req.data(), &fromind, &stat);
@@ -490,8 +491,8 @@ private:
 
   int N{0};    ///< Total size of the problem
   int Nsys{0}; ///< Number of independent systems to solve
-  int myns;    ///< Number of systems for interface solve on this processor
-  int sys0;    ///< Starting system index for interface solve
+  int myns{0}; ///< Number of systems for interface solve on this processor
+  int sys0{0}; ///< Starting system index for interface solve
 
   bool periodic{false}; ///< Is the domain periodic?
 

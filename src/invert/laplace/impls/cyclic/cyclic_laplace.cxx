@@ -93,13 +93,8 @@ LaplaceCyclic::LaplaceCyclic(Options* opt, const CELL_LOC loc, Mesh* mesh_in)
           .withDefault(0);
 
   // Create a cyclic reduction object, operating on dcomplex values
-  cr = new CyclicReduce<dcomplex>(localmesh->getXcomm(), n, ngather);
+  cr = std::make_unique<CyclicReduce<dcomplex>>(localmesh->getXcomm(), n, ngather);
   cr->setPeriodic(localmesh->periodicX);
-}
-
-LaplaceCyclic::~LaplaceCyclic() {
-  // Delete tridiagonal solver
-  delete cr;
 }
 
 FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
@@ -334,9 +329,10 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
         // Take DST in Z direction and put result in k1d
 
-        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX())
+        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
+             && localmesh->firstX())
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && (outer_boundary_flags & INVERT_SET) && localmesh->lastX())) {
+                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
           // Use the values in x0 in the boundary
           DST(x0(ix, iy) + 1, localmesh->LocalNz - 2, std::begin(k1d));
         } else {
@@ -416,9 +412,10 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
         // Take FFT in Z direction, apply shift, and put result in k1d
 
-        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX())
+        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
+             && localmesh->firstX())
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && (outer_boundary_flags & INVERT_SET) && localmesh->lastX())) {
+                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
           // Use the values in x0 in the boundary
           rfft(x0(ix, iy), localmesh->LocalNz, std::begin(k1d));
         } else {
