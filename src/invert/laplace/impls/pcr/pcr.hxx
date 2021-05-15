@@ -125,10 +125,11 @@ private:
         void cr_forward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex> &b,Matrix<dcomplex> &c,Matrix<dcomplex> &r);
         void cr_backward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex> &b,Matrix<dcomplex> &c,Matrix<dcomplex> &r,Matrix<dcomplex> &x);
         void apply_boundary_conditions(const Matrix<dcomplex> &a,const Matrix<dcomplex> &b,const Matrix<dcomplex> &c,const Matrix<dcomplex> &r,Matrix<dcomplex> &x);
-        void eliminate_boundary_rows(const Matrix<dcomplex> &a,Matrix<dcomplex> &b,const Matrix<dcomplex> &c,const Matrix<dcomplex> &r);
+        void eliminate_boundary_rows(Matrix<dcomplex> &a,Matrix<dcomplex> &b,Matrix<dcomplex> &c,const Matrix<dcomplex> &r);
         void cr_forward_single_row();
         void cr_backward_single_row();
         void pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &b,Matrix<dcomplex> &c,Matrix<dcomplex> &r,Matrix<dcomplex> &x);
+        void verify_solution(const Matrix<dcomplex> &a_ver, const Matrix<dcomplex> &b_ver, const Matrix<dcomplex> &c_ver, const Matrix<dcomplex> &r_ver, const Matrix<dcomplex> &x_sol);
 
         //void pThomas_forward_multiple_row();
         //void pcr_double_row_substitution();

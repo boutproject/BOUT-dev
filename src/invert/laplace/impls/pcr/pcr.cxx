@@ -660,7 +660,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
   auto xcmplx3D = Matrix<dcomplex>(nsys, nx);
   auto bcmplx3D = Matrix<dcomplex>(nsys, nx);
 
-  output.write("LaplaceCyclic::solve before coefs\n");
+///  output.write("LaplaceCyclic::solve before coefs\n");
   if (dst) {
     output.write("LaplaceCyclic::solve in DST\n");
     BOUT_OMP(parallel) {
@@ -719,26 +719,26 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
     //cr->solve(bcmplx3D, xcmplx3D);
   // Perform the parallel triadiagonal solver
   // Note the API switches sub and super diagonals
-  output.write("LaplaceCyclic::solve before solve\n");
-  output.write("coefs before\n");
-  for(int kz=0;kz<nsys;kz++){
-    for(int ix=0;ix<localmesh->LocalNx;ix++){
-      output.write("{} ",a3D(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<localmesh->LocalNx;ix++){
-      output.write("{} ",b3D(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<localmesh->LocalNx;ix++){
-      output.write("{} ",c3D(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<localmesh->LocalNx;ix++){
-      output.write("{} ",bcmplx3D(kz,ix).real());
-    }
-    output.write("\n");
-  }
+///  output.write("LaplaceCyclic::solve before solve\n");
+///  output.write("coefs before\n");
+///  for(int kz=0;kz<nsys;kz++){
+///    for(int ix=0;ix<localmesh->LocalNx;ix++){
+///      output.write("{} ",a3D(kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<localmesh->LocalNx;ix++){
+///      output.write("{} ",b3D(kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<localmesh->LocalNx;ix++){
+///      output.write("{} ",c3D(kz,ix).real());
+///    }
+///    output.write("\n");
+///    for(int ix=0;ix<localmesh->LocalNx;ix++){
+///      output.write("{} ",bcmplx3D(kz,ix).real());
+///    }
+///    output.write("\n");
+///  }
   cr_pcr_solver(c3D,b3D,a3D,bcmplx3D,xcmplx3D);
 
     // FFT back to real space
@@ -798,7 +798,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
           bcmplx3D((iy - ys) * nmode + kz, ix - xs) = k1d[kz];
       }
 
-      output.write("LaplaceCyclic::solve after ffts\n");
+///      output.write("LaplaceCyclic::solve after ffts\n");
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
@@ -822,26 +822,26 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
     // Solve tridiagonal systems
     //cr->setCoefs(a3D, b3D, c3D);
     //cr->solve(bcmplx3D, xcmplx3D);
-    output.write("LaplaceCyclic::solve before solve\n");
-  output.write("coefs before\na3D ");
-  for(int kz=0;kz<nsys;kz++){
-    for(int ix=0;ix<nx;ix++){
-      output.write("{} ",a3D(kz,ix).real());
-    }
-    output.write("\nb3D ");
-    for(int ix=0;ix<nx;ix++){
-      output.write("{} ",b3D(kz,ix).real());
-    }
-    output.write("\nc3D ");
-    for(int ix=0;ix<nx;ix++){
-      output.write("{} ",c3D(kz,ix).real());
-    }
-    output.write("\nbcmplx3D ");
-    for(int ix=0;ix<nx;ix++){
-      output.write("{} ",bcmplx3D(kz,ix).real());
-    }
-    output.write("\n");
-  }
+///    output.write("LaplaceCyclic::solve before solve\n");
+///  output.write("coefs before\na3D ");
+///  for(int kz=0;kz<nsys;kz++){
+///    for(int ix=0;ix<nx;ix++){
+///      output.write("{} ",a3D(kz,ix).real());
+///    }
+///    output.write("\nb3D ");
+///    for(int ix=0;ix<nx;ix++){
+///      output.write("{} ",b3D(kz,ix).real());
+///    }
+///    output.write("\nc3D ");
+///    for(int ix=0;ix<nx;ix++){
+///      output.write("{} ",c3D(kz,ix).real());
+///    }
+///    output.write("\nbcmplx3D ");
+///    for(int ix=0;ix<nx;ix++){
+///      output.write("{} ",bcmplx3D(kz,ix).real());
+///    }
+///    output.write("\n");
+///  }
     cr_pcr_solver(c3D,b3D,a3D,bcmplx3D,xcmplx3D);
     output.write("xcmplx3D ");
   for(int kz=0;kz<nsys;kz++){
@@ -850,6 +850,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
     }
     output.write("\n");
   }
+    verify_solution(a3D,b3D,c3D,bcmplx3D,xcmplx3D);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -897,7 +898,7 @@ void LaplacePCR :: setup(int n, int np_world, int rank_world)
     nprocs = np_world;
     myrank = rank_world;
     n_mpi = n / nprocs;
-    output.write("n_mpi {}\n",n_mpi);
+    //output.write("n_mpi {}\n",n_mpi);
 }
 /** 
  * @brief   CR-PCR solver: cr_forward_multiple + pcr_forward_single + cr_backward_multiple
@@ -910,19 +911,32 @@ void LaplacePCR :: setup(int n, int np_world, int rank_world)
 void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mpi, Matrix<dcomplex> &c_mpi, Matrix<dcomplex> &r_mpi, Matrix<dcomplex> &x_mpi)
 {
 
-  // Handle boundary points so that the PCR algorithm works with arrays of
-  // the same size on each rank.
-  // Note: c_mpi and a_mpi swapped in this call so that apply bcs routine
-  // looks like BOUT notation
-  eliminate_boundary_rows(c_mpi, b_mpi, a_mpi, r_mpi);
-
-  //output.write("nmode {}\n",nmode);
+  output.write("PCR start\n");
   // xs used in pcr is ALWAYS xstart (ie NOT including boundary points)
   // xs in Laplace does include boundary points
   const int xstart = localmesh->xstart;
   const int xend = localmesh->xend;
   const int nx = xend-xstart+1; // number of interior points
-  output.write("nx {}, xs {}, xe {}, xstart {}, xend {}\n",nx,xs,xe,xstart,xend);
+  const int n_all = xe-xs+1; // number of interior points
+
+  // Handle boundary points so that the PCR algorithm works with arrays of
+  // the same size on each rank.
+  Matrix<dcomplex> a_cpy(nsys, nx+2);
+  Matrix<dcomplex> b_cpy(nsys, nx+2);
+  Matrix<dcomplex> c_cpy(nsys, nx+2);
+  for(int kz=0; kz<nsys; kz++){
+    for(int ix=0; ix<n_all; ix++){
+      //output.write("kz {} ix {}\n",kz,ix);
+      //a_cpy(kz,ix) = a_mpi(kz,ix);
+      b_cpy(kz,ix) = b_mpi(kz,ix);
+      //c_cpy(kz,ix) = c_mpi(kz,ix);
+    }
+  }
+  output.write("n_mpi {}, nx {}, xs {}, xe {}, xstart {}, xend {}\n",n_mpi, nx,xs,xe,xstart,xend);
+  // Note: c_mpi and a_mpi swapped in this call so that apply bcs routine
+  // looks like BOUT notation
+  eliminate_boundary_rows(c_mpi, b_cpy, a_mpi, r_mpi);
+
   //nsys = nmode * ny;  // Number of systems of equations to solve
   aa.reallocate(nsys, nx+2);
   bb.reallocate(nsys, nx+2);
@@ -942,10 +956,11 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
       // don't want to copy them.
       // xs = xstart if a proc has no boundary points
       // xs = 0 if a proc has boundary points
-      aa(kz,ix+1) = a_mpi(kz,ix+xstart-xs);
-      bb(kz,ix+1) = b_mpi(kz,ix+xstart-xs);
-      cc(kz,ix+1) = c_mpi(kz,ix+xstart-xs);
-      r(kz,ix+1) = r_mpi(kz,ix+xstart-xs);
+      //output.write("ind {}\n", ix+xstart-xs);
+      aa(kz,ix+1) = a_mpi(kz,ix+xstart-xs) / b_cpy(kz,ix+xstart-xs);
+      bb(kz,ix+1) = 1.0; //b_cpy(kz,ix+xstart-xs);
+      cc(kz,ix+1) = c_mpi(kz,ix+xstart-xs) / b_cpy(kz,ix+xstart-xs);
+      r(kz,ix+1) = r_mpi(kz,ix+xstart-xs) / b_cpy(kz,ix+xstart-xs);
       x(kz,ix+1) = x_mpi(kz,ix+xstart-xs);
     }
     aa(kz,nx+1) = 0;
@@ -981,7 +996,7 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
 
   cr_forward_multiple_row(aa,bb,cc,r);
 
-  output.write("after forward\n");
+  //output.write("after forward\n");
 ///  for(int kz=0;kz<nmode;kz++){
 ///    for(int ix=0;ix<nxloc+2;ix++){
 ///      output.write("{} ",a(kz,ix).real());
@@ -1007,7 +1022,7 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
 //
     pcr_forward_single_row(aa,bb,cc,r,x);     // Including 2x2 solver
 
-    output.write("after forward single row\n");
+    //output.write("after forward single row\n");
 ///  for(int kz=0;kz<nmode;kz++){
 ///    output.write("kz {}\n",kz);
 ///    for(int ix=0;ix<nxloc+2;ix++){
@@ -1034,7 +1049,7 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
 /////
     cr_backward_multiple_row(aa,bb,cc,r,x);
 
-  output.write("after backward multiple row\n");
+  //output.write("after backward multiple row\n");
 ///  for(int kz=0;kz<nmode;kz++){
 ///    output.write("kz {}\n",kz);
 ///    for(int ix=0;ix<nxloc+2;ix++){
@@ -1069,35 +1084,39 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
     // looks like BOUT notation
     apply_boundary_conditions(c_mpi, b_mpi, a_mpi, r_mpi, x_mpi);
 
+    //verify_solution(aa,bb,cc,r,x_mpi);
+
 }
 
 /** 
  * Apply the boundary conditions on the first and last X processors
 */
-void LaplacePCR :: eliminate_boundary_rows(const Matrix<dcomplex> &a, Matrix<dcomplex> &b, const Matrix<dcomplex> &c, const Matrix<dcomplex> &r) {
+void LaplacePCR :: eliminate_boundary_rows(Matrix<dcomplex> &a, Matrix<dcomplex> &b, Matrix<dcomplex> &c, const Matrix<dcomplex> &r) {
 
   // TODO Probably need corresponding changes in r
   // eliminate boundary rows - this is necessary to ensure we solve a square
   // system of interior rows
-  output.write("Before eliminate bdy rows\n");
+  //output.write("Before eliminate bdy rows\n");
   if (localmesh->firstX()) {
-    output.write("In bcs firstX\n");
+    //output.write("In bcs firstX\n");
     // x index is first interior row
     const int xstart = localmesh->xstart;
     for (int kz = 0; kz < nsys; kz++) {
       b(kz,xstart) = b(kz,xstart) - c(kz, xstart-1) * a(kz,xstart) / b(kz, xstart-1);
+      //a(kz,xstart) = 0.0;
     }
   }
   if (localmesh->lastX()) {
-    output.write("In bcs lastX\n");
+    //output.write("In bcs lastX\n");
     int n = xe - xs + 1; // actual length of array
     int xind = n - localmesh->xstart - 1;
     for (int kz = 0; kz < nsys; kz++) {
       // x index is last interior row
       b(kz,xind) = b(kz,xind) - c(kz, xind) * a(kz,xind+1) / b(kz, xind+1);
+      //c(kz,xind) = 0.0;
     }
   }
-  output.write("After eliminate bdy rows\n");
+  //output.write("After eliminate bdy rows\n");
 }
 
 /** 
@@ -1105,10 +1124,10 @@ void LaplacePCR :: eliminate_boundary_rows(const Matrix<dcomplex> &a, Matrix<dco
 */
 void LaplacePCR :: apply_boundary_conditions(const Matrix<dcomplex> &a, const Matrix<dcomplex> &b, const Matrix<dcomplex> &c, const Matrix<dcomplex> &r,Matrix<dcomplex> &x) {
 
-  output.write("Before bcs\n");
+  //output.write("Before bcs\n");
   // apply boundary conditions
   if (localmesh->firstX()) {
-    output.write("In bcs firstX\n");
+    //output.write("In bcs firstX\n");
     for (int kz = 0; kz < nsys; kz++) {
       for(int ix = localmesh->xstart-1; ix >= 0; ix--){
 	x(kz,ix) = (r(kz, ix) - c(kz, ix) * x(kz,ix+1)) / b(kz, ix);
@@ -1116,7 +1135,7 @@ void LaplacePCR :: apply_boundary_conditions(const Matrix<dcomplex> &a, const Ma
     }
   }
   if (localmesh->lastX()) {
-    output.write("In bcs lastX\n");
+    //output.write("In bcs lastX\n");
     int n = xe - xs + 1; // actual length of array
     for (int kz = 0; kz < nsys; kz++) {
       for(int ix = n - localmesh->xstart; ix < n; ix++){
@@ -1124,7 +1143,7 @@ void LaplacePCR :: apply_boundary_conditions(const Matrix<dcomplex> &a, const Ma
       }
     }
   }
-  output.write("After bcs\n");
+  //output.write("After bcs\n");
 }
 
 /** 
@@ -1146,7 +1165,7 @@ void LaplacePCR :: cr_forward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex> 
     Array<MPI_Request> request(2);
 
    //int nxloc = localmesh->xend-localmesh->xstart+1;
-  output.write("start\n");
+  //output.write("start\n");
 ///  for(int kz=0;kz<nmode;kz++){
 ///    for(int ix=0;ix<nxloc+2;ix++){
 ///      output.write("{} ",a(kz,ix).real());
@@ -1242,7 +1261,7 @@ void LaplacePCR :: cr_forward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex> 
         }
     }
 
-  output.write("after loops\n");
+  //output.write("after loops\n");
 ///  for(int kz=0;kz<nsys;kz++){
 ///    for(int ix=0;ix<nxloc+2;ix++){
 ///      output.write("{} ",a(kz,ix).real());
@@ -1516,5 +1535,100 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
           x(kz,i) = (r(kz,i)*b(kz,ip) - r(kz,ip)*a(kz,i))/det;
 	}
         MPI_Wait(&request[3], &status);
+    }
+}
+
+/** 
+ * @brief   Solution check
+ * @param   *a_ver Coefficients of a with original values
+ * @param   *b_ver Coefficients of b with original values
+ * @param   *c_ver Coefficients of c with original values
+ * @param   *r_ver RHS vector with original values
+ * @param   *x_sol Solution vector
+*/
+void LaplacePCR :: verify_solution(const Matrix<dcomplex> &a_ver, const Matrix<dcomplex> &b_ver, const Matrix<dcomplex> &c_ver, const Matrix<dcomplex> &r_ver, const Matrix<dcomplex> &x_sol)
+{
+    output.write("Verify solution\n");
+    const int xstart = localmesh->xstart;
+    const int xend = localmesh->xend;
+    const int nx = xe - xs + 1;  // Number of X points on this processor,
+                                 // including boundaries but not guard cells
+    const int myrank = localmesh->getXProcIndex();
+    const int nprocs = localmesh->getNXPE();
+    int i;
+    Matrix<dcomplex> y_ver(nsys, nx+2);
+    Matrix<dcomplex> error(nsys, nx+2);
+
+    MPI_Status status;
+    Array<MPI_Request> request(4);
+    Array<dcomplex> sbufup(nsys);
+    Array<dcomplex> sbufdown(nsys);
+    Array<dcomplex> rbufup(nsys);
+    Array<dcomplex> rbufdown(nsys);
+
+    //nsys = nmode * ny;  // Number of systems of equations to solve
+    Matrix<dcomplex> x_ver(nsys, nx+2);
+
+    for(int kz=0; kz<nsys; kz++){
+      for(int ix=0; ix<nx; ix++){
+        x_ver(kz,ix+1) = x_sol(kz,ix);
+      }
+    }
+    output.write("after data copy\n");
+
+    if(myrank>0) {
+      //output.write("in myrank > 0 \n");
+      MPI_Irecv(&rbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank-1, 901, MPI_COMM_WORLD, &request[1]);
+      for(int kz=0;kz<nsys;kz++){
+        sbufdown[kz] = x_ver(kz,1);
+      }
+      MPI_Isend(&sbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank-1, 900, MPI_COMM_WORLD, &request[0]);
+      //output.write("in myrank > 0 :: end\n");
+    }
+    if(myrank<nprocs-1) {
+      //output.write("in myrank < nproc - 1 :: start\n");
+      MPI_Irecv(&rbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank+1, 900, MPI_COMM_WORLD, &request[3]);
+      for(int kz=0;kz<nsys;kz++){
+        sbufup[kz] = x_ver(kz,nx);
+      }
+      MPI_Isend(&sbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank+1, 901, MPI_COMM_WORLD, &request[2]);
+      //output.write("in myrank < nproc - 1 :: end\n");
+    }
+
+    if(myrank>0) {
+        //output.write("in myrank > 0 :: before waits\n");
+        MPI_Wait(&request[0], &status);
+        MPI_Wait(&request[1], &status);
+        for(int kz=0;kz<nsys;kz++){
+          x_ver(kz,0) = rbufdown[kz];
+        }
+        //output.write("in myrank > 0 :: after waits\n");
+    }
+    if(myrank<nprocs-1) {
+        //output.write("in myrank < nproc - 1 :: before waits\n");
+        MPI_Wait(&request[2], &status);
+        MPI_Wait(&request[3], &status);
+        for(int kz=0;kz<nsys;kz++){
+          x_ver(kz,nx+1) = rbufup[kz];
+        }
+        //output.write("in myrank < nproc - 1 :: after waits\n");
+    }
+    
+    for(int kz=0;kz<nsys;kz++){
+      for(i=0;i<nx;i++) {
+        //output.write("kz {}, i {}\n",kz,i);
+        //output.write("myrank = {}\n",myrank);
+        //output.write("a={}\n",a_ver(kz,i).real());
+        //output.write("b={}\n",b_ver(kz,i).real());
+        //output.write("c={}\n",c_ver(kz,i).real());
+        //output.write("x={}\n",x(kz,i-1).real());
+        //output.write("x={}\n",x(kz,i).real());
+        //output.write("x={}\n",x(kz,i+1).real());
+        //output.write("r={}\n",r_ver(kz,i).real());
+        y_ver(kz,i) = a_ver(kz,i)*x_ver(kz,i)+b_ver(kz,i)*x_ver(kz,i+1)+c_ver(kz,i)*x_ver(kz,i+2);
+        error(kz,i) = y_ver(kz,i) - r_ver(kz,i);
+        //output.write("y={}\n",y_ver(kz,i).real());
+        output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, x={}, x+ = {}\n",error(kz,i).real(),r_ver(kz,i).real(),y_ver(kz,i).real(),kz,i,a_ver(kz,i).real(),b_ver(kz,i).real(),c_ver(kz,i).real(),x_ver(kz,i).real(),x_ver(kz,i+1).real(),x_ver(kz,i+2).real());
+      }
     }
 }
