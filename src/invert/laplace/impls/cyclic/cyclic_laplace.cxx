@@ -361,9 +361,34 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       }
     }
 
+  output.write("coefs before\n");
+  for(int kz=0;kz<nsys;kz++){
+    for(int ix=0;ix<nx;ix++){
+      output.write("{} ",a3D(kz,ix).real());
+    }
+    output.write("\n");
+    for(int ix=0;ix<nx;ix++){
+      output.write("{} ",b3D(kz,ix).real());
+    }
+    output.write("\n");
+    for(int ix=0;ix<nx;ix++){
+      output.write("{} ",c3D(kz,ix).real());
+    }
+    output.write("\n");
+    for(int ix=0;ix<nx;ix++){
+      output.write("{} ",bcmplx3D(kz,ix).real());
+    }
+    output.write("\n");
+  }
     // Solve tridiagonal systems
     cr->setCoefs(a3D, b3D, c3D);
     cr->solve(bcmplx3D, xcmplx3D);
+  for(int kz=0;kz<nsys;kz++){
+    for(int ix=0;ix<nx;ix++){
+      output.write("{} ",xcmplx3D(kz,ix).real());
+    }
+    output.write("\n");
+  }
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -439,9 +464,37 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       }
     }
 
+///  output.write("coefs before\n");
+///  for(int kz=0;kz<nsys;kz++){
+///    for(int ix=0;ix<nx;ix++){
+///      output.write("{} ",a3D(kz,ix).real());
+///    }
+///    output.write("\nb3D ");
+///    for(int ix=0;ix<nx;ix++){
+///      output.write("{} ",b3D(kz,ix).real());
+///    }
+///    output.write("\nc3D ");
+///    for(int ix=0;ix<nx;ix++){
+///      output.write("{} ",c3D(kz,ix).real());
+///    }
+///    output.write("\nbcmplx3D ");
+///    for(int ix=0;ix<nx;ix++){
+///      output.write("{} ",bcmplx3D(kz,ix).real());
+///    }
+///    output.write("\n");
+///  }
+
     // Solve tridiagonal systems
     cr->setCoefs(a3D, b3D, c3D);
     cr->solve(bcmplx3D, xcmplx3D);
+    output.write("xcmplx3D ");
+    for(int kz=0;kz<nsys;kz++){
+      for(int ix=0;ix<nx;ix++){
+        output.write("{} ",xcmplx3D(kz,ix).real());
+      }
+      output.write("\n");
+    }
+    verify_solution(a3D,b3D,c3D,bcmplx3D,xcmplx3D,nsys);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -475,4 +528,81 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   checkData(x);
 
   return x;
+}
+
+void LaplaceCyclic :: verify_solution(const Matrix<dcomplex> &a_ver, const Matrix<dcomplex> &b_ver, const Matrix<dcomplex> &c_ver, const Matrix<dcomplex> &r_ver, const Matrix<dcomplex> &x_sol, const int nsys)
+{
+    const int xstart = localmesh->xstart;
+    const int xend = localmesh->xend;
+    const int nx = xe - xs + 1;  // Number of X points on this processor,
+                                 // including boundaries but not guard cells
+    const int myrank = localmesh->getXProcIndex();
+    const int nprocs = localmesh->getNXPE();
+    int i;
+    Matrix<dcomplex> y_ver(nsys, nx+2);
+    Matrix<dcomplex> error(nsys, nx+2);
+
+    MPI_Status status;
+    Array<MPI_Request> request(4);
+    Array<dcomplex> sbufup(nsys);
+    Array<dcomplex> sbufdown(nsys);
+    Array<dcomplex> rbufup(nsys);
+    Array<dcomplex> rbufdown(nsys);
+
+    //nsys = nmode * ny;  // Number of systems of equations to solve
+    Matrix<dcomplex> x_ver(nsys, nx+2);
+
+    for(int kz=0; kz<nsys; kz++){
+      for(int ix=0; ix<nx; ix++){
+        x_ver(kz,ix+1) = x_sol(kz,ix);
+      }
+    }
+
+    if(myrank>0) {
+      MPI_Irecv(&rbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank-1, 901, MPI_COMM_WORLD, &request[1]);
+      for(int kz=0;kz<nsys;kz++){
+        sbufdown[kz] = x_ver(kz,1);
+      }
+      MPI_Isend(&sbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank-1, 900, MPI_COMM_WORLD, &request[0]);
+    }
+    if(myrank<nprocs-1) {
+      MPI_Irecv(&rbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank+1, 900, MPI_COMM_WORLD, &request[3]);
+      for(int kz=0;kz<nsys;kz++){
+        sbufup[kz] = x_ver(kz,nx);
+      }
+      MPI_Isend(&sbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank+1, 901, MPI_COMM_WORLD, &request[2]);
+    }
+
+    if(myrank>0) {
+        MPI_Wait(&request[0], &status);
+        MPI_Wait(&request[1], &status);
+        for(int kz=0;kz<nsys;kz++){
+          x_ver(kz,0) = rbufdown[kz];
+        }
+    }
+    if(myrank<nprocs-1) {
+        MPI_Wait(&request[2], &status);
+        MPI_Wait(&request[3], &status);
+        for(int kz=0;kz<nsys;kz++){
+          x_ver(kz,nx+1) = rbufup[kz];
+        }
+    }
+    
+    for(int kz=0;kz<nsys;kz++){
+      for(i=0;i<nx;i++) {
+///        output.write("kz {}, i {}\n",kz,i);
+///        output.write("myrank = {}\n",myrank);
+///        output.write("a={}\n",a_ver(kz,i).real());
+///        output.write("b={}\n",b_ver(kz,i).real());
+///        output.write("c={}\n",c_ver(kz,i).real());
+///        output.write("x={}\n",x(kz,i).real());
+///        output.write("x={}\n",x(kz,i+1).real());
+///        output.write("x={}\n",x(kz,i+2).real());
+///        output.write("r={}\n",r_ver(kz,i).real());
+        y_ver(kz,i) = a_ver(kz,i)*x_ver(kz,i)+b_ver(kz,i)*x_ver(kz,i+1)+c_ver(kz,i)*x_ver(kz,i+2);
+        error(kz,i) = y_ver(kz,i) - r_ver(kz,i);
+        //output.write("y={}\n",y_ver(kz,i).real());
+        output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, x={}, x+ = {}\n",error(kz,i).real(),r_ver(kz,i).real(),y_ver(kz,i).real(),kz,i,a_ver(kz,i).real(),b_ver(kz,i).real(),c_ver(kz,i).real(),x_ver(kz,i).real(),x_ver(kz,i+1).real(),x_ver(kz,i+2).real());
+      }
+    }
 }
