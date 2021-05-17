@@ -14,24 +14,3 @@ MYG = 1
 [solver]
 rtol = 1e-14
 atol = 1e-18
-
-[f3d]
-function = 1
-
-[f2d]
-function = 1
-
-
-[mesh2]
-nx = 5
-ny = 5
-nz = 4
-
-[meshz]
-nx = 1
-ny = 1
-nz = n
-n = 2
-dz = 2*Pi/nz
-MXG = 0
-MYG = 0
