@@ -110,24 +110,6 @@ auto IsFieldEqual(const T& field, BoutReal reference,
   return ::testing::AssertionSuccess();
 }
 
-/// Disable a ConditionalOutput during a scope; reenable it on
-/// exit. You must give the variable a name!
-///
-///     {
-///       WithQuietoutput quiet{output};
-///       // output disabled during this scope
-///     }
-///     // output now enabled
-class WithQuietOutput {
-public:
-  explicit WithQuietOutput(ConditionalOutput& output_in) : output(output_in) {
-    output.disable();
-  }
-
-  ~WithQuietOutput() { output.enable(); }
-  ConditionalOutput& output;
-};
-
 class Options;
 
 /// FakeMesh has just enough information to create fields
