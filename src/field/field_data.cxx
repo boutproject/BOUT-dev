@@ -94,19 +94,53 @@ FieldData& FieldData::operator=(FieldData&& other) noexcept {
   return *this;
 }
 
-void FieldData::setBoundary(const std::string &name) {
+namespace {
+// Mark all the boundary condition input parameters as being
+// "conditionally used".
+//
+// We now (soft) error if there are any unused input parameters, but
+// because the set of boundary regions can be different on different
+// processors, we might not "use" (that is, read the value of) the
+// corresponding input parameters on the other processors!
+//
+// This function is a bit of a workaround for the above: essentially
+// marks all possible boundary condition inputs as having been used on
+// each processor. This way, we should still catch invalid inputs and
+// misspellings (for example, `bdry_oll`) while still allowing valid
+// boundaries on other processors.
+void markBoundariesAsConditionallyUsed(const Mesh* mesh, Options& field_section) {
+  // These are the "dynamic" boundaries that depend on the particular grid
+  for (const auto& possible_boundary : mesh->getPossibleBoundaries()) {
+    field_section["bndry_" + possible_boundary].setConditionallyUsed();
+  }
+
+  // These aren't currently handled by
+  // `Mesh::getPossibleboundaries`. Potential fix: make `BndryLoc` a
+  // `BOUT_ENUM_CLASS` for easy conversion to `string`, and then also
+  // add `region->location` to possible boundaries
+  using namespace std::string_literals;
+  for (const auto& standard_boundary :
+       {"xin"s, "xout"s, "ydown"s, "yup"s, "par_yup"s, "par_ydown"s, "all"s}) {
+    field_section["bndry_" + standard_boundary].setConditionallyUsed();
+  }
+}
+} // namespace
+
+void FieldData::setBoundary(const std::string& name) {
   /// Get the boundary factory (singleton)
-  BoundaryFactory *bfact = BoundaryFactory::getInstance();
-  
+  BoundaryFactory* bfact = BoundaryFactory::getInstance();
+
   // It's plausible `fieldmesh` hasn't actually been set yet. This
   // seems most likely to happen if the field was declared as a
   // global. A different fix would be to move the call to
   // `setBoundary` to after the field initialisation in `Solver::add`
   Mesh* mesh = getMesh();
 
+  markBoundariesAsConditionallyUsed(mesh, Options::root()[name]);
+
   output_info << "Setting boundary for variable " << name << endl;
   /// Loop over the mesh boundary regions
-  for(const auto& reg : mesh->getBoundaries()) {
+  for (const auto& reg : mesh->getBoundaries()) {
     auto* op = dynamic_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
     if (op != nullptr)
       bndry_op.push_back(op);
@@ -116,7 +150,7 @@ void FieldData::setBoundary(const std::string &name) {
   /// Get the mesh boundary regions
   std::vector<BoundaryRegionPar*> par_reg = mesh->getBoundariesPar();
   /// Loop over the mesh parallel boundary regions
-  for(const auto& reg : mesh->getBoundariesPar()) {
+  for (const auto& reg : mesh->getBoundariesPar()) {
     auto* op = dynamic_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
     if (op != nullptr)
       bndry_op_par.push_back(op);
