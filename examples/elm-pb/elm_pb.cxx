@@ -1055,14 +1055,14 @@ protected:
       solver->constraint(phi, C_phi, "phi");
       
       // Set preconditioner
-      setPrecon( (preconfunc) &ELMpb::precon_phi );
+      setPrecon(&ELMpb::precon_phi);
 
     } else {
       // Phi solved in RHS (explicitly)
       SAVE_REPEAT(phi);
 
       // Set preconditioner
-      setPrecon( (preconfunc) &ELMpb::precon );
+      setPrecon(&ELMpb::precon);
 
       // Set Jacobian
       setJacobian( (jacobianfunc) &ELMpb::jacobian );

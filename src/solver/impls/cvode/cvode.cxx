@@ -356,7 +356,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
         throw BoutException("CVSpgmr failed\n");
 #endif
 
-      if (!have_user_precon()) {
+      if (!hasPreconditioner()) {
         output_info.write("\tUsing BBD preconditioner\n");
 
         /// Get options
@@ -403,7 +403,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
     /// Set Jacobian-vector multiplication function
     const auto use_jacobian = (*options)["use_jacobian"].withDefault(false);
-    if ((use_jacobian) && (jacfunc != nullptr)) {
+    if (use_jacobian and hasJacobian()) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
 
       if (CVSpilsSetJacTimes(cvode_mem, nullptr, cvode_jac) != CV_SUCCESS)
@@ -623,7 +623,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
 
   int N = NV_LOCLENGTH_P(uvec);
 
-  if (!have_user_precon()) {
+  if (!hasPreconditioner()) {
     // Identity (but should never happen)
     for (int i = 0; i < N; i++)
       zvec[i] = rvec[i];
@@ -636,7 +636,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
   // Load vector to be inverted into F_vars
   load_derivs(rvec);
 
-  run_precon(t, gamma, delta);
+  runPreconditioner(t, gamma, delta);
 
   // Save the solution from F_vars
   save_derivs(zvec);
@@ -652,8 +652,9 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
 void CvodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata) {
   TRACE("Running Jacobian: CvodeSolver::jac({})", t);
 
-  if (jacfunc == nullptr)
+  if (not hasJacobian()) {
     throw BoutException("No jacobian function supplied!\n");
+  }
 
   // Load state from ydate
   load_vars(ydata);
@@ -662,7 +663,7 @@ void CvodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jv
   load_derivs(vdata);
 
   // Call function
-  (*jacfunc)(t);
+  runJacobian(t);
 
   // Save Jv from vars
   save_derivs(Jvdata);

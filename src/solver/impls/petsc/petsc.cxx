@@ -67,9 +67,6 @@ PetscSolver::PetscSolver(Options *opts) : Solver(opts) {
   initialised = false;
   bout_snes_time = .0;
 
-  prefunc = nullptr;
-  jacfunc = nullptr;
-
   output_flag = PETSC_FALSE;
 }
 
@@ -294,12 +291,12 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   // Matrix free Jacobian
 
-  if(use_jacobian && (jacfunc != nullptr)) {
+  if (use_jacobian and hasJacobian()) {
     // Use a user-supplied Jacobian function
     ierr = MatCreateShell(comm, local_N, local_N, neq, neq, this, &Jmf); CHKERRQ(ierr);
     ierr = MatShellSetOperation(Jmf, MATOP_MULT, reinterpret_cast<void (*)()>(PhysicsJacobianApply)); CHKERRQ(ierr);
     ierr = TSSetIJacobian(ts, Jmf, Jmf, solver_ijacobian, this); CHKERRQ(ierr);
-  }else {
+  } else {
     // Use finite difference approximation
     ierr = MatCreateSNESMF(snes,&Jmf);CHKERRQ(ierr);
     ierr = SNESSetJacobian(snes,Jmf,Jmf,MatMFFDComputeJacobian,this);CHKERRQ(ierr);
@@ -311,7 +308,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
 
-  if(use_precon && (prefunc != nullptr)) {
+  if (use_precon and hasPreconditioner()) {
 
 #if PETSC_VERSION_GE(3,5,0)
     ierr = SNESGetNPC(snes,&psnes);CHKERRQ(ierr);
@@ -343,7 +340,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     // Use right preconditioner
     ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
 
-  }else {
+  } else {
     // Default to no preconditioner
     ierr = PCSetType(pc,PCNONE);CHKERRQ(ierr);
   }
@@ -583,7 +580,7 @@ PetscErrorCode PetscSolver::pre(PC UNUSED(pc), Vec x, Vec y) {
   VecRestoreArray(x, &data);
 
   // Call the preconditioner
-  (*prefunc)(ts_time, 1./shift, 0.0);
+  runPreconditioner(ts_time, 1. / shift, 0.0);
 
   // Save the solution from time derivatives
   VecGetArray(y, &data);
@@ -619,7 +616,7 @@ PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
   VecRestoreArray(x, &data);
 
   // Call the Jacobian function
-  (*jacfunc)(ts_time);
+  runJacobian(ts_time);
 
   // Save the solution from time derivatives
   VecGetArray(y, &data);
