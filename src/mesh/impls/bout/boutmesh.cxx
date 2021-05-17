@@ -992,6 +992,8 @@ void BoutMesh::createYBoundaries() {
 std::set<std::string> BoutMesh::getPossibleBoundaries() const {
   // Result set: set so it automatically takes care of duplicates
   std::set<std::string> all_boundaries{};
+  WithQuietOutput quiet_info(output_info);
+  WithQuietOutput quiet_warn(output_warn);
 
   // Lambda that modifies `all_boundaries`
   const auto get_boundaries_on_different_rank = [mesh = this, &all_boundaries](
