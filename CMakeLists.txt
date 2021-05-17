@@ -853,7 +853,7 @@ install(
       "${CMAKE_CURRENT_BINARY_DIR}/bout++ConfigVersion.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CorrectWindowsPaths.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindFFTW.cmake"
-      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindNetCDF.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindnetCDF.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPackageMultipass.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPETSc.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindScoreP.cmake"
