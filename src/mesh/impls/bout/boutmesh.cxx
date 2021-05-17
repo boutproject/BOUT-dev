@@ -1009,7 +1009,7 @@ std::set<std::string> BoutMesh::getPossibleBoundaries() const {
                        mesh->MXG, mesh->MYG, mesh->NXPE, mesh->NYPE, x_rank, y_rank,
                        mesh->symmetricGlobalX, mesh->symmetricGlobalY, mesh->periodicX,
                        mesh->ixseps1, mesh->ixseps2, mesh->jyseps1_1, mesh->jyseps2_1,
-                       mesh->jyseps1_2, mesh->jyseps2_2, mesh->ny_inner};
+                       mesh->jyseps1_2, mesh->jyseps2_2, mesh->ny_inner, false};
     // We need to create the boundaries
     mesh_copy.createXBoundaries();
     mesh_copy.createYBoundaries();
@@ -1910,7 +1910,8 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
 BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
                    int nype, int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y,
                    bool periodicX_, int ixseps1_, int ixseps2_, int jyseps1_1_,
-                   int jyseps2_1_, int jyseps1_2_, int jyseps2_2_, int ny_inner_)
+                   int jyseps2_1_, int jyseps1_2_, int jyseps2_2_, int ny_inner_,
+                   bool create_regions)
     : nx(input_nx), ny(input_ny), nz(input_nz), NPES(nxpe * nype),
       MYPE(nxpe * pe_yind + pe_xind), PE_YIND(pe_yind), NYPE(nype), NZPE(1),
       ixseps1(ixseps1_), ixseps2(ixseps2_), symmetricGlobalX(symmetric_X),
@@ -1921,8 +1922,10 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   setYDecompositionIndices(jyseps1_1_, jyseps2_1_, jyseps1_2_, jyseps2_2_, ny_inner_);
   setDerivedGridSizes();
   topology();
-  createDefaultRegions();
-  addBoundaryRegions();
+  if (create_regions) {
+    createDefaultRegions();
+    addBoundaryRegions();
+  }
 }
 /****************************************************************
  *                       CONNECTIONS
