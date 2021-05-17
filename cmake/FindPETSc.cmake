@@ -344,19 +344,23 @@ int main(int argc,char *argv[]) {
   set (PETSC_INCLUDES ${petsc_includes_needed} CACHE STRING "PETSc include path" FORCE)
   set (PETSC_LIBRARIES ${PETSC_LIBRARIES_ALL} CACHE STRING "PETSc libraries" FORCE)
   set (PETSC_COMPILER ${petsc_cc} CACHE FILEPATH "PETSc compiler" FORCE)
-  # Note that we have forced values for all these choices.  If you
-  # change these, you are telling the system to trust you that they
-  # work.  It is likely that you will end up with a broken build.
-  mark_as_advanced (PETSC_INCLUDES PETSC_LIBRARIES PETSC_COMPILER PETSC_DEFINITIONS PETSC_MPIEXEC PETSC_EXECUTABLE_RUNS)
 endif ()
 
-if (NOT PETSC_INCLUDES)
-  include(FindPkgConfig)
-  pkg_search_module(PkgPETSC PETSc>3.4.0 petsc>3.4.0)
-  set (PETSC_LIBRARIES ${PkgPETSC_LINK_LIBRARIES} CACHE STRING "PETSc libraries" FORCE)
-  set (PETSC_INCLUDES ${PkgPETSC_INCLUDE_DIRS} CACHE STRING "PETSc include path" FORCE)
-  set (PETSC_EXECUTABLE_RUNS "not-needed")
+if (NOT PETSC_INCLUDES AND NOT TARGET PETSc::PETSc)
+  find_package(PkgConfig)
+  if (PkgConfig_FOUND)
+    pkg_search_module(PkgPETSC PETSc>3.4.0 petsc>3.4.0)
+    set (PETSC_LIBRARIES ${PkgPETSC_LINK_LIBRARIES} CACHE STRING "PETSc libraries" FORCE)
+    set (PETSC_INCLUDES ${PkgPETSC_INCLUDE_DIRS} CACHE STRING "PETSc include path" FORCE)
+    set (PETSC_EXECUTABLE_RUNS "YES" CACHE BOOL
+        "Can the system successfully run a PETSc executable?  This variable can be manually set to \"YES\" to force CMake to accept a given PETSc configuration, but this will almost always result in a broken build.  If you change PETSC_DIR, PETSC_ARCH, or PETSC_CURRENT you would have to reset this variable." FORCE)
+  endif()
 endif()
+
+# Note that we have forced values for all these choices.  If you
+# change these, you are telling the system to trust you that they
+# work.  It is likely that you will end up with a broken build.
+mark_as_advanced (PETSC_INCLUDES PETSC_LIBRARIES PETSC_COMPILER PETSC_DEFINITIONS PETSC_MPIEXEC PETSC_EXECUTABLE_RUNS)
 
 include (FindPackageHandleStandardArgs)
 find_package_handle_standard_args (PETSc
