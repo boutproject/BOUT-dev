@@ -16,8 +16,6 @@ public:
 
 int VecTest::init(bool UNUSED(restarting)) {
   TRACE("Halt in VecTest::init");
-  // Ignore "unused" boundary options on other processors
-  Options::root()["n"].setConditionallyUsed();
   SOLVE_FOR(n);
   return 0;
 }
