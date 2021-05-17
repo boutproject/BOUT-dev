@@ -113,9 +113,6 @@ int main(int argc, char** argv) {
   laplace_solver->setCoefC2(C2);
   laplace_solver->setCoefD(D);
 
-  // This is not great, but until we sort out ignoring boundaries,
-  // just ignore errors in the `f` section
-  Options::root()["f"].setConditionallyUsed();
   bout::checkForUnusedOptions();
 
   ///////////////////////////////////////////////////////////////////////////////////////
