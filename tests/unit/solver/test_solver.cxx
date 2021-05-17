@@ -950,18 +950,6 @@ TEST_F(SolverTest, DontCallTimestepMonitors) {
   EXPECT_EQ(solver.call_timestep_monitors(-1., -1.), 0);
 }
 
-TEST_F(SolverTest, SetModel) {
-  Options options;
-  FakeSolver solver{&options};
-
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init(false)).Times(1);
-  EXPECT_CALL(model, postInit(false)).Times(1);
-  solver.setModel(&model);
-
-  EXPECT_THROW(solver.setModel(nullptr), BoutException);
-}
-
 TEST_F(SolverTest, BasicSolve) {
   Options options;
   FakeSolver solver{&options};
