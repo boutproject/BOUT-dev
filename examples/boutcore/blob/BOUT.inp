@@ -12,10 +12,6 @@
 nout = 50      # number of time-steps
 timestep = 50  # time between outputs [1/wci]
 
-
-MXG = 2      # Number of X guard cells
-MYG = 0      # No y derivatives, so no guard cells needed in y
-
 [mesh]
 
 nx = 260    # Note: 4 guard cells
@@ -24,6 +20,10 @@ nz = 256
 
 dx = 0.3      # Grid spacing [rho_s]
 dz = 0.3
+
+
+MXG = 2      # Number of X guard cells
+MYG = 0      # No y derivatives, so no guard cells needed in y
 
 ##################################################
 # derivative methods
