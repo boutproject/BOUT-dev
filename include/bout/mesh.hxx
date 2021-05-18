@@ -1057,7 +1057,7 @@ private:
   //Internal region related information
   std::map<std::string, int> regionMap3D;
   std::vector<Region<Ind3D>> region3D;
-  std::map<int, std::map<int, int>> region3Dintersect;
+  std::vector<int> region3Dintersect;
   std::map<std::string, Region<Ind2D>> regionMap2D;
   std::map<std::string, Region<IndPerp>> regionMapPerp;
   Array<int> indexLookup3Dto2D;

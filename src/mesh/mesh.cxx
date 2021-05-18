@@ -651,20 +651,33 @@ int Mesh::getCommonRegion(int lhs, int rhs) {
   if (low == -1) {
     return high;
   }
-  if (not region3Dintersect.count(low)) {
-    region3Dintersect[low] = {};
+  /* Memory layout of indices
+   * left is lower index, bottom is higher index
+   *    0  1  2  3
+   * 0
+   * 1  0
+   * 2  1  2
+   * 3  3  4  5
+   * 4  6  7  8  9
+   *
+   * As we only need half of the square, the indices do not depend on
+   * the total number of elements.
+   */
+  const size_t pos = (high * (high - 1)) /2 + low;
+  if (region3Dintersect.size() <= pos) {
+    region3Dintersect.resize(pos+1, -1);
   }
-  if (region3Dintersect[low].count(high)) {
-    return region3Dintersect[low][high];
+  if (region3Dintersect[pos] != -1){
+    return region3Dintersect[pos];
   }
   auto common = getIntersection(region3D[low], region3D[high]);
   for (size_t i = 0; i < region3D.size(); ++i) {
     if (common == region3D[i]) {
-      region3Dintersect[low][high] = i;
+      region3Dintersect[pos] = i;
       return i;
     }
   }
   region3D.push_back(common);
-  region3Dintersect[low][high] = region3D.size() - 1;
+  region3Dintersect[pos] = region3D.size() - 1;
   return region3D.size() - 1;
 }
