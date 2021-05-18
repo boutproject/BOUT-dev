@@ -13,17 +13,16 @@ using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
 
-#define TIMEIT(elapsed, ...)                                                             \
-  {                                                                                      \
-    SteadyClock start = steady_clock::now();                                             \
-    {                                                                                    \
-      __VA_ARGS__ ;                                                                      \
-    }                                                                                    \
-    Duration diff = steady_clock::now() - start;                                         \
-    elapsed.min = diff > elapsed.min ? elapsed.min : diff;                               \
-    elapsed.max = diff < elapsed.max ? elapsed.max : diff;                               \
-    elapsed.count++;                                                                     \
-    elapsed.avg = elapsed.avg * (1 - 1. / elapsed.count) + diff / elapsed.count;         \
+#define TIMEIT(elapsed, ...)                                                     \
+  {                                                                              \
+    SteadyClock start = steady_clock::now();                                     \
+    { __VA_ARGS__; }                                                             \
+    Duration diff = steady_clock::now() - start;                                 \
+    diff *= 1000 * 1000;                                                         \
+    elapsed.min = diff > elapsed.min ? elapsed.min : diff;                       \
+    elapsed.max = diff < elapsed.max ? elapsed.max : diff;                       \
+    elapsed.count++;                                                             \
+    elapsed.avg = elapsed.avg * (1 - 1. / elapsed.count) + diff / elapsed.count; \
   }
 
 struct Durations {
@@ -40,6 +39,8 @@ protected:
     Field3D a = 1.0;
     Field3D b = 2.0;
     Field3D c = 3.0;
+    a.setRegion("RGN_ALL");
+    b.setRegion("RGN_NOBNDRY");
 
     Field3D result1, result2, result3, result4;
 
@@ -50,7 +51,7 @@ protected:
     Durations elapsed1 = dur_init, elapsed2 = dur_init, elapsed3 = dur_init,
               elapsed4 = dur_init;
 
-    for (int ik = 0; ik < 1e2; ++ik) {
+    for (int ik = 0; ik < 1e3; ++ik) {
       TIMEIT(elapsed1, result1 = 2. * a + b * c;);
 
       // Using C loops
@@ -78,12 +79,13 @@ protected:
     }
 
     output.enable();
-    output << "TIMING\n======\n";
+    output << "TIMING      |    minimum |       mean |    maximum\n"
+           << "----------- | ---------- | ---------- | ----------\n";
     //#define PRINT(str,elapsed)   output << str << elapsed.min.count()<<
     //elapsed.avg.count()<< elapsed.max.count() << endl;
-#define PRINT(str, elapsed)                                                              \
-  output.write("{:s} {:8.3g} {:8.3g} {:8.3g}\n", str, elapsed.min.count(), elapsed.avg.count(),  \
-               elapsed.max.count())
+#define PRINT(str, elapsed)                                          \
+  output.write("{:s} | {:7.3f} us | {:7.3f} us | {:7.3f} us\n", str, \
+               elapsed.min.count(), elapsed.avg.count(), elapsed.max.count())
     PRINT("Fields:    ", elapsed1);
     PRINT("C loop:    ", elapsed2);
     PRINT("Templates: ", elapsed3);
