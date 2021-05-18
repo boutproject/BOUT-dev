@@ -509,6 +509,7 @@ void printCompileTimeOptions() {
   output_info.write(_("\tFloating-point exceptions {}\n"), is_enabled(use_sigfpe));
   output_info.write(_("\tSignal handling support {}\n"), is_enabled(use_signal));
   output_info.write(_("\tField name tracking {}\n"), is_enabled(use_track));
+  output_info.write(_("\tMessage stack {}\n"), is_enabled(use_msgstack));
 
   // The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
   // which could cause problems (e.g. terminate strings).
@@ -659,6 +660,7 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   dump_file.addOnce(const_cast<bool&>(bout::build::use_sigfpe), "use_sigfpe");
   dump_file.addOnce(const_cast<bool&>(bout::build::use_signal), "use_signal");
   dump_file.addOnce(const_cast<bool&>(bout::build::use_track), "use_track");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_msgstack), "use_msgstack");
 
   return dump_file;
 }

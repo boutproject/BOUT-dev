@@ -629,7 +629,7 @@ PETSC_ARCH
 PETSC_DIR
 PETSC_MAKE_INCLUDE
 PETSC_HAS_SUNDIALS
-BOUT_MSGSTACK_LEVEL
+BOUT_USE_MSGSTACK
 BOUT_USE_TRACK
 BOUT_USE_SIGNAL
 BOUT_USE_SIGFPE
@@ -5768,21 +5768,21 @@ $as_echo "$as_me: Run-time checking disabled" >&6;}
 
 fi
 
-BOUT_MSGSTACK_LEVEL=$BOUT_CHECK_LEVEL
+BOUT_USE_MSGSTACK=$(test $BOUT_CHECK_LEVEL -gt 1 && echo yes || echo no)
 if test "x$enable_msgstack" = "xyes" ; then :
 
-  BOUT_MSGSTACK_LEVEL=2
+  BOUT_USE_MSGSTACK=yes
 
 else
 
   if test "x$enable_msgstack" = "xno" ; then :
 
-    BOUT_MSGSTACK_LEVEL=0
+    BOUT_USE_MSGSTACK=no
 
 fi
 
 fi
-if test $BOUT_MSGSTACK_LEVEL -lt 2 ; then :
+if test $BOUT_USE_MSGSTACK = no ; then :
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: Stack tracing disabled" >&5
 $as_echo "$as_me: Stack tracing disabled" >&6;}
@@ -15743,10 +15743,16 @@ fi
 
 
 
+if test "x$BOUT_USE_MSGSTACK" = "xyes"; then :
 
-cat >>confdefs.h <<_ACEOF
-#define BOUT_MSGSTACK_LEVEL $BOUT_MSGSTACK_LEVEL
-_ACEOF
+$as_echo "#define BOUT_USE_MSGSTACK 1" >>confdefs.h
+
+else
+
+$as_echo "#define BOUT_USE_MSGSTACK 0" >>confdefs.h
+
+fi
+
 
 
 

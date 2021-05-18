@@ -329,15 +329,15 @@ AS_IF([test "x$enable_checks" != "xno" && test "x$enable_checks" != "x0"], [
   AC_MSG_NOTICE([Run-time checking disabled])
 ])
 
-BOUT_MSGSTACK_LEVEL=$BOUT_CHECK_LEVEL
+BOUT_USE_MSGSTACK=$(test $BOUT_CHECK_LEVEL -gt 1 && echo yes || echo no)
 AS_IF([test "x$enable_msgstack" = "xyes" ], [
-  BOUT_MSGSTACK_LEVEL=2
+  BOUT_USE_MSGSTACK=yes
 ], [
   AS_IF([test "x$enable_msgstack" = "xno" ], [
-    BOUT_MSGSTACK_LEVEL=0
+    BOUT_USE_MSGSTACK=no
   ], [])
 ])
-AS_IF([test $BOUT_MSGSTACK_LEVEL -lt 2 ], [
+AS_IF([test $BOUT_USE_MSGSTACK = no ], [
   AC_MSG_NOTICE([Stack tracing disabled])
 ], [
   AC_MSG_NOTICE([Stack tracing enabled])
@@ -1369,8 +1369,7 @@ BOUT_DEFINE_SUBST(BOUT_USE_OPENMP, [Enable OpenMP])
 BOUT_DEFINE_SUBST(BOUT_USE_SIGFPE, [Enable floating point exceptions])
 BOUT_DEFINE_SUBST(BOUT_USE_SIGNAL, [Enable signal handlers])
 BOUT_DEFINE_SUBST(BOUT_USE_TRACK, [Enable field name tracking])
-AC_SUBST(BOUT_MSGSTACK_LEVEL)
-AC_DEFINE_UNQUOTED(BOUT_MSGSTACK_LEVEL, [$BOUT_MSGSTACK_LEVEL], [Enable MsgStack for traces])
+BOUT_DEFINE_SUBST(BOUT_USE_MSGSTACK, [Enable MsgStack for traces])
 
 AC_SUBST(PETSC_HAS_SUNDIALS)
 AC_SUBST(PETSC_MAKE_INCLUDE)
