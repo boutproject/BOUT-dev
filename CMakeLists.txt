@@ -802,7 +802,15 @@ install(TARGETS bout++
   )
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-# The installed version of bout-config needs renaming when we install it
+# The various helper scripts
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/"
+  USE_SOURCE_PERMISSIONS
+  DESTINATION "${CMAKE_INSTALL_BINDIR}")
+
+# The installed version of bout-config needs renaming when we install
+# it. Note this MUST be done after the installation of bin/, to make
+# sure we clobber any versions of bout-config hanging around from an
+# autotools build
 install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/bin/bout-config-install"
   DESTINATION "${CMAKE_INSTALL_BINDIR}"
   RENAME "bout-config"
@@ -824,6 +832,8 @@ install(EXPORT bout++Targets
 configure_package_config_file(bout++Config.cmake.in bout++Config.cmake
   INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
   )
+
+# CMake configuration files
 install(
   FILES
       "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
