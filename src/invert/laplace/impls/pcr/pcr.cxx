@@ -88,7 +88,7 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   }
 
   // Number of x points must be a power of 2
-  if (!is_pow2(localmesh->GlobalNx-4)) {
+  if (!is_pow2(localmesh->GlobalNxNoBoundaries)) {
     throw BoutException("LaplacePCR error: GlobalNx must be a power of 2");
   }
 
