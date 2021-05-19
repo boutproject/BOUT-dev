@@ -1058,9 +1058,7 @@ void LaplacePCR :: verify_solution(const Matrix<dcomplex> &a_ver, const Matrix<d
       for(int i=0;i<nx;i++) {
         y_ver(kz,i) = a_ver(kz,i)*x_ver(kz,i)+b_ver(kz,i)*x_ver(kz,i+1)+c_ver(kz,i)*x_ver(kz,i+2);
         error(kz,i) = y_ver(kz,i) - r_ver(kz,i);
-	if(abs(error(kz,i)) > max_error){
-	  max_error = abs(error(kz,i));
-	}
+	max_error = std::max(max_error, std::abs(error(kz, i)));
         output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, x={}, x+ = {}\n",error(kz,i).real(),r_ver(kz,i).real(),y_ver(kz,i).real(),kz,i,a_ver(kz,i).real(),b_ver(kz,i).real(),c_ver(kz,i).real(),x_ver(kz,i).real(),x_ver(kz,i+1).real(),x_ver(kz,i+2).real());
       }
     }
