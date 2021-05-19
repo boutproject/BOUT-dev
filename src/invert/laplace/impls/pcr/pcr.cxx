@@ -131,7 +131,7 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   xcmplx.reallocate(nmode, n);
   bcmplx.reallocate(nmode, n);
 
-  setup(localmesh->GlobalNx - 4, localmesh->getNXPE(), localmesh->getXProcIndex());
+  setup(localmesh->GlobalNxNoBoundaries, localmesh->getNXPE(), localmesh->getXProcIndex());
 }
 
 FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
