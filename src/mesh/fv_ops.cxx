@@ -166,6 +166,11 @@ namespace FV {
           yzresult(i, j, k) = fout / (dyc(i, j, k) * Jc(i, j, k));
 
           // Calculate flux between j and j-1
+	  coef =
+              0.5
+              * (g_23c(i, j, k) / SQ(Jc(i, j, k) * Bxyc(i, j, k))
+                 + g_23down(i, j - 1, k) / SQ(Jdown(i, j - 1, k) * Bxydown(i, j - 1, k)));
+
           dfdz =
               0.5
               * (fc(i, j, kp) - fc(i, j, km) + fdown(i, j - 1, kp) - fdown(i, j - 1, km))
