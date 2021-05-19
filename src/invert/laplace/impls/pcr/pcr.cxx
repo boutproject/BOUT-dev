@@ -1088,36 +1088,33 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
 }
 
 /** 
- * Apply the boundary conditions on the first and last X processors
+ * Eliminate boundary rows - perform row elimination to uncouple the first and
+ * last interior rows from their respective boundary rows. This is necessary
+ * to ensure we pass a square system of interior rows to the PCR library.
 */
 void LaplacePCR :: eliminate_boundary_rows(Matrix<dcomplex> &a, Matrix<dcomplex> &b, Matrix<dcomplex> &c, Matrix<dcomplex> &r) {
 
-  // TODO Probably need corresponding changes in r
-  // eliminate boundary rows - this is necessary to ensure we solve a square
-  // system of interior rows
-  //output.write("Before eliminate bdy rows\n");
   if (localmesh->firstX()) {
-    //output.write("In bcs firstX\n");
     // x index is first interior row
     const int xstart = localmesh->xstart;
     for (int kz = 0; kz < nsys; kz++) {
       b(kz,xstart) = b(kz,xstart) - c(kz, xstart-1) * a(kz,xstart) / b(kz, xstart-1);
-      //r(kz,xstart) = r(kz,xstart) - a(kz, xstart-1) * r(kz,xstart) / b(kz, xstart-1);
-      //a(kz,xstart) = 0.0;
+      r(kz,xstart) = r(kz,xstart) - r(kz, xstart-1) * a(kz,xstart) / b(kz, xstart-1);
+      // Row elimination would set a to zero, but value is unused:
+      // a(kz,xstart) = 0.0;
     }
   }
   if (localmesh->lastX()) {
-    //output.write("In bcs lastX\n");
     int n = xe - xs + 1; // actual length of array
     int xind = n - localmesh->xstart - 1;
     for (int kz = 0; kz < nsys; kz++) {
       // x index is last interior row
       b(kz,xind) = b(kz,xind) - c(kz, xind) * a(kz,xind+1) / b(kz, xind+1);
-      //r(kz,xind) = r(kz,xind) - r(kz, xind) * c(kz,xind+1) / b(kz, xind+1);
-      //c(kz,xind) = 0.0;
+      r(kz,xind) = r(kz,xind) - c(kz, xind) * r(kz,xind+1) / b(kz, xind+1);
+      // Row elimination would set c to zero, but value is unused:
+      // c(kz,xind) = 0.0;
     }
   }
-  //output.write("After eliminate bdy rows\n");
 }
 
 /** 
