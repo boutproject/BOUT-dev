@@ -282,16 +282,16 @@ public:
                               int UNUSED(tag)) override {
     return nullptr;
   }
-  const RangeIterator iterateBndryLowerY() const override {
+  RangeIterator iterateBndryLowerY() const override {
     return RangeIterator(xstart, xend);
   }
-  const RangeIterator iterateBndryUpperY() const override {
+  RangeIterator iterateBndryUpperY() const override {
     return RangeIterator(xstart, xend);
   }
-  const RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
   void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
   std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
   std::vector<BoundaryRegionPar*> getBoundariesPar() override {
@@ -364,6 +364,9 @@ public:
     addRegionPerp("RGN_BNDRY",
                   getRegionPerp("RGN_INNER_X") + getRegionPerp("RGN_OUTER_X"));
   }
+
+  // Make this public so we can test it
+  using Mesh::msg_len;
 
 private:
   std::vector<BoundaryRegion *> boundaries;

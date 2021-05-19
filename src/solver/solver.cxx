@@ -91,9 +91,6 @@ void Solver::setModel(PhysicsModel *m) {
   // Initialise them model, which specifies which variables to evolve
   m->initialise(this);
   
-  // Check if the model is split operator
-  split_operator = m->splitOperator();
-  
   model = m;
 }
 
@@ -834,6 +831,9 @@ int Solver::resetRHSCounter_e() {
   rhs_ncalls_e = 0;
   return t;
 }
+
+bool Solver::splitOperator() { return model->splitOperator(); }
+
 /////////////////////////////////////////////////////
 
 void Solver::addTimestepMonitor(TimestepMonitorFunc f) {
@@ -855,12 +855,7 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
   }
 
   // Call physics model monitor
-  if (model != nullptr) {
-    const int ret = model->runTimestepMonitor(simtime, lastdt);
-    if (ret)
-      return ret;
-  }
-  return 0;
+  return model->runTimestepMonitor(simtime, lastdt);
 }
 
 /**************************************************************************
@@ -1226,51 +1221,37 @@ Field3D Solver::globalIndex(int localStart) {
  * Running user-supplied functions
  **************************************************************************/
 
-void Solver::setSplitOperator(rhsfunc fC, rhsfunc fD) {
-  split_operator = true;
-  phys_conv = fC;
-  phys_diff = fD;
-}
-
 int Solver::run_rhs(BoutReal t) {
   int status;
-  
+
   Timer timer("rhs");
-  
-  if(split_operator) {
+
+  if (model->splitOperator()) {
     // Run both parts
-    
+
     int nv = getLocalN();
     // Create two temporary arrays for system state
     Array<BoutReal> tmp(nv);
     Array<BoutReal> tmp2(nv);
-    
+
     save_vars(tmp.begin()); // Copy variables into tmp
     pre_rhs(t);
-    if(model) {
-      status = model->runConvective(t);
-    }else 
-      status = (*phys_conv)(t);
+    status = model->runConvective(t);
     post_rhs(t); // Check variables, apply boundary conditions
-    
-    load_vars(tmp.begin()); // Reset variables
+
+    load_vars(tmp.begin());   // Reset variables
     save_derivs(tmp.begin()); // Save time derivatives
     pre_rhs(t);
-    if(model) {
-      status = model->runDiffusive(t, false);
-    }else
-      status = (*phys_diff)(t);
+    status = model->runDiffusive(t, false);
     post_rhs(t);
     save_derivs(tmp2.begin()); // Save time derivatives
-    for(BoutReal *t = tmp.begin(), *t2 = tmp2.begin(); t != tmp.end(); ++t, ++t2)
+    for (BoutReal *t = tmp.begin(), *t2 = tmp2.begin(); t != tmp.end(); ++t, ++t2) {
       *t += *t2;
+    }
     load_derivs(tmp.begin()); // Put back time-derivatives
-  }else {
+  } else {
     pre_rhs(t);
-    if(model) {
-      status = model->runRHS(t);
-    }else
-      status = (*phys_run)(t);
+    status = model->runRHS(t);
     post_rhs(t);
   }
 
@@ -1289,18 +1270,11 @@ int Solver::run_convective(BoutReal t) {
 
   Timer timer("rhs");
   pre_rhs(t);
-  if (split_operator) {
-    if (model) {
-      status = model->runConvective(t);
-    } else
-      status = (*phys_conv)(t);
+  if (model->splitOperator()) {
+    status = model->runConvective(t);
   } else if (!is_nonsplit_model_diffusive) {
     // Return total
-    if (model) {
-      status = model->runRHS(t);
-    } else {
-      status = (*phys_run)(t);
-    }
+    status = model->runRHS(t);
   } else {
     // Zero if not split
     for (const auto& f : f3d)
@@ -1324,20 +1298,13 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
 
   Timer timer("rhs");
   pre_rhs(t);
-  if (split_operator) {
+  if (model->splitOperator()) {
 
-    if (model) {
-      status = model->runDiffusive(t, linear);
-    } else {
-      status = (*phys_diff)(t);
-    }
+    status = model->runDiffusive(t, linear);
     post_rhs(t);
   } else if (is_nonsplit_model_diffusive) {
     // Return total
-    if (model) {
-      status = model->runRHS(t);
-    } else
-      status = (*phys_run)(t);
+    status = model->runRHS(t);
   } else {
     // Zero if not split
     for (const auto& f : f3d)
@@ -1417,22 +1384,14 @@ bool Solver::varAdded(const std::string& name) {
          || contains(v3d, name);
 }
 
-bool Solver::have_user_precon() {
-  if(model)
-    return model->hasPrecon();
+bool Solver::hasPreconditioner() { return model->hasPrecon(); }
 
-  return prefunc != nullptr;
+int Solver::runPreconditioner(BoutReal t, BoutReal gamma, BoutReal delta) {
+  return model->runPrecon(t, gamma, delta);
 }
 
-int Solver::run_precon(BoutReal t, BoutReal gamma, BoutReal delta) {
-  if(!have_user_precon())
-    return 1;
-
-  if(model)
-    return model->runPrecon(t, gamma, delta);
-  
-  return (*prefunc)(t, gamma, delta);
-}
+bool Solver::hasJacobian() { return model->hasJacobian(); }
+int Solver::runJacobian(BoutReal time) { return model->runJacobian(time); }
 
 // Add source terms to time derivatives
 void Solver::add_mms_sources(BoutReal t) {

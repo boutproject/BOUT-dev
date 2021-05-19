@@ -2658,11 +2658,10 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 #endif
   }
 
-  void BoundaryZeroLaplace2::apply(Field3D & f) {
+  void BoundaryDivCurl::apply(Vector3D& var) {
 #if not(BOUT_USE_METRIC_3D)
-    Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
-    int ncz = mesh->LocalNz;
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == var.getMesh());
 
     ASSERT0(ncz % 2 == 0); // Allocation assumes even number
 
