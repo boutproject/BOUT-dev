@@ -48,9 +48,9 @@
 // Implementations:
 #include "impls/cyclic/cyclic_laplace.hxx"
 #include "impls/iterative_parallel_tri/iterative_parallel_tri.hxx"
-#include "impls/pcr/pcr.hxx"
 #include "impls/multigrid/multigrid_laplace.hxx"
 #include "impls/naulin/naulin_laplace.hxx"
+#include "impls/pcr/pcr.hxx"
 #include "impls/pdd/pdd.hxx"
 #include "impls/petsc/petsc_laplace.hxx"
 #include "impls/petsc3damg/petsc3damg.hxx"
