@@ -1004,7 +1004,6 @@ void LaplacePCR :: verify_solution(const Matrix<dcomplex> &a_ver, const Matrix<d
                                  // including boundaries but not guard cells
     const int myrank = localmesh->getXProcIndex();
     const int nprocs = localmesh->getNXPE();
-    int i;
     Matrix<dcomplex> y_ver(nsys, nx+2);
     Matrix<dcomplex> error(nsys, nx+2);
 
@@ -1056,7 +1055,7 @@ void LaplacePCR :: verify_solution(const Matrix<dcomplex> &a_ver, const Matrix<d
     
     BoutReal max_error = 0.0;
     for(int kz=0;kz<nsys;kz++){
-      for(i=0;i<nx;i++) {
+      for(int i=0;i<nx;i++) {
         y_ver(kz,i) = a_ver(kz,i)*x_ver(kz,i)+b_ver(kz,i)*x_ver(kz,i+1)+c_ver(kz,i)*x_ver(kz,i+2);
         error(kz,i) = y_ver(kz,i) - r_ver(kz,i);
 	if(abs(error(kz,i)) > max_error){
