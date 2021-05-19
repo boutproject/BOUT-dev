@@ -87,11 +87,6 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
     throw BoutException("LaplacePCR error: NYPE must equal 1");
   }
 
-  // Cannot be run in serial
-  if(localmesh->firstX() && localmesh->lastX()) {
-    throw BoutException("Error: PCR method only works for NXPE > 1. Suggest using cyclic solver for NXPE = 1.\n");
-  }
-
   // Number of x points must be a power of 2
   if (!is_pow2(localmesh->GlobalNx-4)) {
     throw BoutException("LaplacePCR error: GlobalNx must be a power of 2");
@@ -598,7 +593,7 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
   cr_forward_multiple_row(aa,bb,cc,r);
   pcr_forward_single_row(aa,bb,cc,r,x);     // Including 2x2 solver
   cr_backward_multiple_row(aa,bb,cc,r,x);
-  // End parallel cyclic reduction
+  // End of PCR
 
   // Copy solution back to bout format - this is correct on interior rows, but
   // not boundary rows
@@ -683,75 +678,37 @@ void LaplacePCR :: cr_forward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex> 
     MPI_Status status, status1;
     Array<MPI_Request> request(2);
 
-   //int nxloc = localmesh->xend-localmesh->xstart+1;
-  //output.write("start\n");
-///  for(int kz=0;kz<nmode;kz++){
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",a(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",b(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",c(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",r(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",x(kz,ix).real());
-///    }
-///    output.write("\n");
-///  }
-
     /// Variable nlevel is used to indicates when single row remains.
     nlevel    = log2(n_mpi);
     dist_row  = 1;
     dist2_row = 2;
     
     for(l=0;l<nlevel;l++) {
-        //output.write("level {}, n_mpi {}, nlevel {}\n",l,n_mpi,nlevel);
-        //output.write("myrank {}, nprocs {}\n",myrank,nprocs);
+        output.write("level {}, n_mpi {}, nlevel {}\n",l,n_mpi,nlevel);
+        output.write("myrank {}, nprocs {}\n",myrank,nprocs);
         start = dist2_row;
         /// Data exchange is performed using MPI send/recv for each succesive reduction
         if(myrank<nprocs-1) {
-          //output.write("before Irecv\n");
           MPI_Irecv(&rbuf[0], 4*nsys, MPI_DOUBLE_COMPLEX, myrank+1, 0, comm, &request[0]);
-          //output.write("after Irecv\n");
         }
         if(myrank>0) {
-            //output.write("filling sbuf\n");
             for(int kz=0; kz<nsys; kz++){
-              //output.write("myrank {}, kz {}\n",myrank, kz);
               sbuf[0+4*kz] = a(kz,dist_row);
               sbuf[1+4*kz] = b(kz,dist_row);
               sbuf[2+4*kz] = c(kz,dist_row);
               sbuf[3+4*kz] = r(kz,dist_row);
 	    }
-            //output.write("before isend\n");
             MPI_Isend(&sbuf[0], 4*nsys, MPI_DOUBLE_COMPLEX, myrank-1, 0, comm, &request[1]);
         }
         if(myrank<nprocs-1) {
-            //output.write("before wait\n");
             MPI_Wait(&request[0], &status1);
-            //output.write("after wait\n");
             for(int kz=0; kz<nsys; kz++){
-	      //output.write("myrank {}, kz {}\n",myrank, kz);
-              //output.write("a {}\n",a(kz,n_mpi+1).real());
-              //output.write("rbuf {}\n",rbuf[0+4*kz].real());
               a(kz,n_mpi+1) = rbuf[0+4*kz];
               b(kz,n_mpi+1) = rbuf[1+4*kz];
               c(kz,n_mpi+1) = rbuf[2+4*kz];
               r(kz,n_mpi+1) = rbuf[3+4*kz];
 	    }
         }
-
-        //output.write("after sends\n");
-
 
         /// Odd rows of remained rows are reduced to even rows of remained rows in each reduction step.
         /// Index in of global last row is out of range, but we treat it as a = c = r = 0 and b = 1 in main function.
@@ -769,40 +726,14 @@ void LaplacePCR :: cr_forward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex> 
 	    }
 
         }
-        //output.write("after loop\n");
         /// As reduction continues, the indices of required coefficients doubles.
         dist2_row *= 2;
         dist_row *= 2;
         
         if(myrank>0) {
-            //MPI_Wait(request+1, &status);
             MPI_Wait(&request[1], &status);
         }
     }
-
-  //output.write("after loops\n");
-///  for(int kz=0;kz<nsys;kz++){
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",a(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",b(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",c(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",r(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",x(kz,ix).real());
-///    }
-///    output.write("\n");
-///  }
 }
 
 /** 
@@ -825,23 +756,19 @@ void LaplacePCR :: cr_backward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex>
 
     /// Each rank requires a solution on last row of previous rank.
     if(myrank>0) {
-	//output.write("before irecv, myrank {}\n",myrank);
         MPI_Irecv(&recvvec[0], nsys, MPI_DOUBLE_COMPLEX, myrank-1, 100, comm, request);
     }
     if(myrank<nprocs-1) {
-	//output.write("before isend\n");
         for(int kz=0; kz<nsys; kz++){
 	  sendvec[kz] = x(kz,n_mpi);
 	}
         MPI_Isend(&sendvec[0], nsys, MPI_DOUBLE_COMPLEX, myrank+1, 100, comm, request+1);
     }
     if(myrank>0) {
-	//output.write("before wait\n");
         MPI_Wait(request, &status);
         for(int kz=0; kz<nsys; kz++){
 	  x(kz,0) = recvvec[kz];
 	}
-	//output.write("after wait\n");
     }
     for(l=nlevel-1;l>=0;l--) {
         dist2_row = dist_row * 2;
@@ -856,11 +783,8 @@ void LaplacePCR :: cr_backward_multiple_row(Matrix<dcomplex> &a,Matrix<dcomplex>
         dist_row = dist_row / 2;
     }
     if(myrank<nprocs-1) {
-	//output.write("before wait\n");
         MPI_Wait(request+1, &status);
-	//output.write("after wait\n");
     }
-    //output.write("end part 3\n");
 }
 
 /** 
@@ -1034,6 +958,10 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
 
     }
     else if(myrank>=nhprocs) {
+
+      // nhprocs=0 if and only if NXPE=1. This check skips communication and
+      // allows the serial case to work:
+      if(nhprocs>0){
         MPI_Irecv(&rbuf0[0], 4*nsys, MPI_DOUBLE_COMPLEX, myrank-nhprocs, 301, comm, &request[2]);
         MPI_Isend(&sbuf[0], 4*nsys, MPI_DOUBLE_COMPLEX, myrank-nhprocs, 300, comm, &request[3]);
 
@@ -1044,16 +972,20 @@ void LaplacePCR :: pcr_forward_single_row(Matrix<dcomplex> &a,Matrix<dcomplex> &
           c(kz,0) = rbuf0[2+4*kz];
           r(kz,0) = rbuf0[3+4*kz];
 	}
+      }
 
-        ip = 0;
-        i = n_mpi;
+      ip = 0;
+      i = n_mpi;
 
-        for(int kz=0;kz<nsys;kz++){
-          det = b(kz,ip)*b(kz,i) - c(kz,ip)*a(kz,i);
-          x(kz,ip) = (r(kz,ip)*b(kz,i) - r(kz,i)*c(kz,ip))/det;
-          x(kz,i) = (r(kz,i)*b(kz,ip) - r(kz,ip)*a(kz,i))/det;
-	}
+      for(int kz=0;kz<nsys;kz++){
+        det = b(kz,ip)*b(kz,i) - c(kz,ip)*a(kz,i);
+        x(kz,ip) = (r(kz,ip)*b(kz,i) - r(kz,i)*c(kz,ip))/det;
+        x(kz,i) = (r(kz,i)*b(kz,ip) - r(kz,ip)*a(kz,i))/det;
+      }
+
+      if(nhprocs>0){
         MPI_Wait(&request[3], &status);
+      }
     }
 }
 
