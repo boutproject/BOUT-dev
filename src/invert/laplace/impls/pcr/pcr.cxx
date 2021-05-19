@@ -956,11 +956,10 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
       // don't want to copy them.
       // xs = xstart if a proc has no boundary points
       // xs = 0 if a proc has boundary points
-      //output.write("ind {}\n", ix+xstart-xs);
-      aa(kz,ix+1) = a_mpi(kz,ix+xstart-xs) / b_cpy(kz,ix+xstart-xs);
-      bb(kz,ix+1) = 1.0; //b_cpy(kz,ix+xstart-xs);
-      cc(kz,ix+1) = c_mpi(kz,ix+xstart-xs) / b_cpy(kz,ix+xstart-xs);
-      r(kz,ix+1) = r_mpi(kz,ix+xstart-xs) / b_cpy(kz,ix+xstart-xs);
+      aa(kz,ix+1) = c_mpi(kz,ix+xstart-xs);
+      bb(kz,ix+1) = b_cpy(kz,ix+xstart-xs);
+      cc(kz,ix+1) = a_mpi(kz,ix+xstart-xs);
+      r(kz,ix+1) = r_mpi(kz,ix+xstart-xs);
       x(kz,ix+1) = x_mpi(kz,ix+xstart-xs);
     }
     aa(kz,nx+1) = 0;
@@ -1614,6 +1613,7 @@ void LaplacePCR :: verify_solution(const Matrix<dcomplex> &a_ver, const Matrix<d
         //output.write("in myrank < nproc - 1 :: after waits\n");
     }
     
+    BoutReal max_error = 0.0;
     for(int kz=0;kz<nsys;kz++){
       for(i=0;i<nx;i++) {
         //output.write("kz {}, i {}\n",kz,i);
@@ -1627,8 +1627,12 @@ void LaplacePCR :: verify_solution(const Matrix<dcomplex> &a_ver, const Matrix<d
         //output.write("r={}\n",r_ver(kz,i).real());
         y_ver(kz,i) = a_ver(kz,i)*x_ver(kz,i)+b_ver(kz,i)*x_ver(kz,i+1)+c_ver(kz,i)*x_ver(kz,i+2);
         error(kz,i) = y_ver(kz,i) - r_ver(kz,i);
+	if(abs(error(kz,i)) > max_error){
+	  max_error = abs(error(kz,i));
+	}
         //output.write("y={}\n",y_ver(kz,i).real());
         output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, x={}, x+ = {}\n",error(kz,i).real(),r_ver(kz,i).real(),y_ver(kz,i).real(),kz,i,a_ver(kz,i).real(),b_ver(kz,i).real(),c_ver(kz,i).real(),x_ver(kz,i).real(),x_ver(kz,i+1).real(),x_ver(kz,i+2).real());
       }
     }
+    output.write("max abs error {}\n", max_error);
 }
