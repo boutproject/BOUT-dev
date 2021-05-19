@@ -955,121 +955,22 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
     x(kz,nx+1) = 0;
   }
 
-  //output.write("data\n");
-///  for(int kz=0;kz<nmode;kz++){
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",a(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",b(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",c(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",r(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",x(kz,ix).real());
-///    }
-///    output.write("\n");
-///  }
-
+  // Perform parallel cyclic reduction
   cr_forward_multiple_row(aa,bb,cc,r);
+  pcr_forward_single_row(aa,bb,cc,r,x);     // Including 2x2 solver
+  cr_backward_multiple_row(aa,bb,cc,r,x);
+  // End parallel cyclic reduction
 
-  //output.write("after forward\n");
-///  for(int kz=0;kz<nmode;kz++){
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",a(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",b(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",c(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",r(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",x(kz,ix).real());
-///    }
-///    output.write("\n");
-///  }
-//
-    pcr_forward_single_row(aa,bb,cc,r,x);     // Including 2x2 solver
-
-    //output.write("after forward single row\n");
-///  for(int kz=0;kz<nmode;kz++){
-///    output.write("kz {}\n",kz);
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",a(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",b(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",c(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",r(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",x(kz,ix).real());
-///    }
-///    output.write("\n");
-///  }
-/////
-    cr_backward_multiple_row(aa,bb,cc,r,x);
-
-  //output.write("after backward multiple row\n");
-///  for(int kz=0;kz<nmode;kz++){
-///    output.write("kz {}\n",kz);
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",a(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",b(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",c(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",r(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<nxloc+2;ix++){
-///      output.write("{} ",x(kz,ix).real());
-///    }
-///    output.write("\n");
-///  }
-
-    for(int kz=0; kz<nsys; kz++){
-      for(int ix=0; ix<nx; ix++){
-        x_mpi(kz,ix+xstart-xs) = x(kz,ix+1);
-      }
+  // Copy solution back to bout format - this is correct on interior rows, but
+  // not boundary rows
+  for(int kz=0; kz<nsys; kz++){
+    for(int ix=0; ix<nx; ix++){
+      x_mpi(kz,ix+xstart-xs) = x(kz,ix+1);
     }
+  }
 
-    // Note: c_mpi and a_mpi swapped in this call so that apply bcs routine
-    // looks like BOUT notation
-    apply_boundary_conditions(a_mpi, b_mpi, c_mpi, r_mpi, x_mpi);
-
-    //verify_solution(aa,bb,cc,r,x_mpi);
+  // Ensure solution is also correct on boundary rows
+  apply_boundary_conditions(a_mpi, b_mpi, c_mpi, r_mpi, x_mpi);
 
 }
 
@@ -1108,10 +1009,7 @@ void LaplacePCR :: eliminate_boundary_rows(const Matrix<dcomplex> &a, Matrix<dco
 */
 void LaplacePCR :: apply_boundary_conditions(const Matrix<dcomplex> &a, const Matrix<dcomplex> &b, const Matrix<dcomplex> &c, const Matrix<dcomplex> &r,Matrix<dcomplex> &x) {
 
-  //output.write("Before bcs\n");
-  // apply boundary conditions
   if (localmesh->firstX()) {
-    //output.write("In bcs firstX\n");
     for (int kz = 0; kz < nsys; kz++) {
       for(int ix = localmesh->xstart-1; ix >= 0; ix--){
 	x(kz,ix) = (r(kz, ix) - c(kz, ix) * x(kz,ix+1)) / b(kz, ix);
@@ -1119,7 +1017,6 @@ void LaplacePCR :: apply_boundary_conditions(const Matrix<dcomplex> &a, const Ma
     }
   }
   if (localmesh->lastX()) {
-    //output.write("In bcs lastX\n");
     int n = xe - xs + 1; // actual length of array
     for (int kz = 0; kz < nsys; kz++) {
       for(int ix = n - localmesh->xstart; ix < n; ix++){
@@ -1127,7 +1024,6 @@ void LaplacePCR :: apply_boundary_conditions(const Matrix<dcomplex> &a, const Ma
       }
     }
   }
-  //output.write("After bcs\n");
 }
 
 /** 
