@@ -197,7 +197,7 @@ int IdaSolver::init(int nout, BoutReal tstep) {
 
   const auto use_precon = (*options)["use_precon"].withDefault(false);
   if (use_precon) {
-    if (!have_user_precon()) {
+    if (!hasPreconditioner()) {
       output.write("\tUsing BBD preconditioner\n");
       /// Get options
       // Compute band_width_default from actually added fields, to allow for multiple Mesh
@@ -329,7 +329,7 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
 
   const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
-  if (!have_user_precon()) {
+  if (!hasPreconditioner()) {
     // Identity (but should never happen)
     const int N = NV_LOCLENGTH_P(id);
     std::copy(rvec, rvec + N, zvec);
@@ -342,7 +342,7 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
   // Load vector to be inverted into F_vars
   load_derivs(rvec);
 
-  run_precon(t, cj, delta);
+  runPreconditioner(t, cj, delta);
 
   // Save the solution from F_vars
   save_derivs(zvec);
