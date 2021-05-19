@@ -507,7 +507,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     // Solve tridiagonal systems
     //cr->setCoefs(a, b, c);
     //cr->solve(bcmplx, xcmplx);
-  cr_pcr_solver(c,b,a,bcmplx,xcmplx);
+  cr_pcr_solver(a,b,c,bcmplx,xcmplx);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -573,7 +573,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     // Solve tridiagonal systems
     //cr->setCoefs(a, b, c);
     //cr->solve(bcmplx, xcmplx);
-    cr_pcr_solver(c,b,a,bcmplx,xcmplx);
+    cr_pcr_solver(a,b,c,bcmplx,xcmplx);
 
     // FFT back to real space
     BOUT_OMP(parallel)
@@ -739,7 +739,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
 ///    }
 ///    output.write("\n");
 ///  }
-  cr_pcr_solver(c3D,b3D,a3D,bcmplx3D,xcmplx3D);
+  cr_pcr_solver(a3D,b3D,c3D,bcmplx3D,xcmplx3D);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -842,7 +842,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
 ///    }
 ///    output.write("\n");
 ///  }
-    cr_pcr_solver(c3D,b3D,a3D,bcmplx3D,xcmplx3D);
+    cr_pcr_solver(a3D,b3D,c3D,bcmplx3D,xcmplx3D);
 ///    output.write("xcmplx3D ");
 ///  for(int kz=0;kz<nsys;kz++){
 ///    for(int ix=0;ix<nx;ix++){
@@ -908,7 +908,7 @@ void LaplacePCR :: setup(int n, int np_world, int rank_world)
  * @param   r_mpi (input) RHS vector, which is assigned to local private pointer r
  * @param   x_mpi (output) Solution vector, which is assigned to local private pointer x
 */
-void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mpi, Matrix<dcomplex> &c_mpi, Matrix<dcomplex> &r_mpi, Matrix<dcomplex> &x_mpi)
+void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &c_mpi, Matrix<dcomplex> &b_mpi, Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &r_mpi, Matrix<dcomplex> &x_mpi)
 {
 
   output.write("PCR start\n");
@@ -1103,7 +1103,7 @@ void LaplacePCR :: eliminate_boundary_rows(Matrix<dcomplex> &a, Matrix<dcomplex>
     const int xstart = localmesh->xstart;
     for (int kz = 0; kz < nsys; kz++) {
       b(kz,xstart) = b(kz,xstart) - a(kz, xstart-1) * c(kz,xstart) / b(kz, xstart-1);
-      r(kz,xstart) = r(kz,xstart) - a(kz, xstart-1) * r(kz,xstart) / b(kz, xstart-1);
+      //r(kz,xstart) = r(kz,xstart) - a(kz, xstart-1) * r(kz,xstart) / b(kz, xstart-1);
       //a(kz,xstart) = 0.0;
     }
   }
@@ -1114,7 +1114,7 @@ void LaplacePCR :: eliminate_boundary_rows(Matrix<dcomplex> &a, Matrix<dcomplex>
     for (int kz = 0; kz < nsys; kz++) {
       // x index is last interior row
       b(kz,xind) = b(kz,xind) - a(kz, xind) * c(kz,xind+1) / b(kz, xind+1);
-      r(kz,xind) = r(kz,xind) - r(kz, xind) * c(kz,xind+1) / b(kz, xind+1);
+      //r(kz,xind) = r(kz,xind) - r(kz, xind) * c(kz,xind+1) / b(kz, xind+1);
       //c(kz,xind) = 0.0;
     }
   }
