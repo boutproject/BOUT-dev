@@ -101,9 +101,10 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
 
   if (dst) {
     nmode = localmesh->LocalNz - 2;
-  } else
-    nmode =
-        maxmode + 1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
+  } else {
+    nmode = maxmode + 1; // Number of Z modes. maxmode set in
+                         // invert_laplace.cxx from options
+  }
 
   // Note nmode == nsys of cyclic_reduction
 
