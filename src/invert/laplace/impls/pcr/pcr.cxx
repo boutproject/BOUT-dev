@@ -3,7 +3,7 @@
  * and parallel cyclic reduction in x.
  *
  **************************************************************************
- * Copyright 2020 Joseph Parker
+ * Copyright 2021 Joseph Parker
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *
@@ -124,7 +124,6 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
 }
 
 FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
-  output.write("LaplacePCR::solve(const FieldPerp, const FieldPerp)");
   ASSERT1(localmesh == rhs.getMesh() && localmesh == x0.getMesh());
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
@@ -192,7 +191,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     // Solve tridiagonal systems
     //cr->setCoefs(a, b, c);
     //cr->solve(bcmplx, xcmplx);
-  cr_pcr_solver(a,b,c,bcmplx,xcmplx);
+    cr_pcr_solver(a,b,c,bcmplx,xcmplx);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -292,8 +291,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 }
 
 Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
-  TRACE("LaplaceCyclic::solve(Field3D, Field3D)");
-  output.write("LaplaceCyclic::solve(Field3D, Field3D)");
+  TRACE("LaplacePCR::solve(Field3D, Field3D)");
 
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
@@ -345,9 +343,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
   auto xcmplx3D = Matrix<dcomplex>(nsys, nx);
   auto bcmplx3D = Matrix<dcomplex>(nsys, nx);
 
-///  output.write("LaplaceCyclic::solve before coefs\n");
   if (dst) {
-    output.write("LaplaceCyclic::solve in DST\n");
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
       auto k1d =
@@ -402,29 +398,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
     // Solve tridiagonal systems
     //cr->setCoefs(a3D, b3D, c3D);
     //cr->solve(bcmplx3D, xcmplx3D);
-  // Perform the parallel triadiagonal solver
-  // Note the API switches sub and super diagonals
-///  output.write("LaplaceCyclic::solve before solve\n");
-///  output.write("coefs before\n");
-///  for(int kz=0;kz<nsys;kz++){
-///    for(int ix=0;ix<localmesh->LocalNx;ix++){
-///      output.write("{} ",a3D(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<localmesh->LocalNx;ix++){
-///      output.write("{} ",b3D(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<localmesh->LocalNx;ix++){
-///      output.write("{} ",c3D(kz,ix).real());
-///    }
-///    output.write("\n");
-///    for(int ix=0;ix<localmesh->LocalNx;ix++){
-///      output.write("{} ",bcmplx3D(kz,ix).real());
-///    }
-///    output.write("\n");
-///  }
-  cr_pcr_solver(a3D,b3D,c3D,bcmplx3D,xcmplx3D);
+    cr_pcr_solver(a3D,b3D,c3D,bcmplx3D,xcmplx3D);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -452,7 +426,6 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
       }
     }
   } else {
-    output.write("LaplaceCyclic::solve in NOT DST\n");
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(localmesh->LocalNz / 2 +
@@ -483,8 +456,6 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
           bcmplx3D((iy - ys) * nmode + kz, ix - xs) = k1d[kz];
       }
 
-///      output.write("LaplaceCyclic::solve after ffts\n");
-
       // Get elements of the tridiagonal matrix
       // including boundary conditions
       BOUT_OMP(for nowait)
@@ -494,7 +465,6 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
         int kz = ind % nmode;
 
         BoutReal kwave = kz * 2.0 * PI / (coords->zlength()); // wave number is 1/[rad]
-        //output.write("LaplaceCyclic::solve before tridag\n");
         tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
@@ -507,35 +477,8 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
     // Solve tridiagonal systems
     //cr->setCoefs(a3D, b3D, c3D);
     //cr->solve(bcmplx3D, xcmplx3D);
-///    output.write("LaplaceCyclic::solve before solve\n");
-///  output.write("coefs before\na3D ");
-///  for(int kz=0;kz<nsys;kz++){
-///    for(int ix=0;ix<nx;ix++){
-///      output.write("{} ",a3D(kz,ix).real());
-///    }
-///    output.write("\nb3D ");
-///    for(int ix=0;ix<nx;ix++){
-///      output.write("{} ",b3D(kz,ix).real());
-///    }
-///    output.write("\nc3D ");
-///    for(int ix=0;ix<nx;ix++){
-///      output.write("{} ",c3D(kz,ix).real());
-///    }
-///    output.write("\nbcmplx3D ");
-///    for(int ix=0;ix<nx;ix++){
-///      output.write("{} ",bcmplx3D(kz,ix).real());
-///    }
-///    output.write("\n");
-///  }
     cr_pcr_solver(a3D,b3D,c3D,bcmplx3D,xcmplx3D);
-///    output.write("xcmplx3D ");
-///  for(int kz=0;kz<nsys;kz++){
-///    for(int ix=0;ix<nx;ix++){
-///      output.write("{} ",xcmplx3D(kz,ix).real());
-///    }
-///    output.write("\n");
-///  }
-    verify_solution(a3D,b3D,c3D,bcmplx3D,xcmplx3D);
+    //verify_solution(a3D,b3D,c3D,bcmplx3D,xcmplx3D);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -1135,64 +1078,45 @@ void LaplacePCR :: verify_solution(const Matrix<dcomplex> &a_ver, const Matrix<d
         x_ver(kz,ix+1) = x_sol(kz,ix);
       }
     }
-    output.write("after data copy\n");
 
     if(myrank>0) {
-      //output.write("in myrank > 0 \n");
       MPI_Irecv(&rbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank-1, 901, MPI_COMM_WORLD, &request[1]);
       for(int kz=0;kz<nsys;kz++){
         sbufdown[kz] = x_ver(kz,1);
       }
       MPI_Isend(&sbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank-1, 900, MPI_COMM_WORLD, &request[0]);
-      //output.write("in myrank > 0 :: end\n");
     }
     if(myrank<nprocs-1) {
-      //output.write("in myrank < nproc - 1 :: start\n");
       MPI_Irecv(&rbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank+1, 900, MPI_COMM_WORLD, &request[3]);
       for(int kz=0;kz<nsys;kz++){
         sbufup[kz] = x_ver(kz,nx);
       }
       MPI_Isend(&sbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank+1, 901, MPI_COMM_WORLD, &request[2]);
-      //output.write("in myrank < nproc - 1 :: end\n");
     }
 
     if(myrank>0) {
-        //output.write("in myrank > 0 :: before waits\n");
         MPI_Wait(&request[0], &status);
         MPI_Wait(&request[1], &status);
         for(int kz=0;kz<nsys;kz++){
           x_ver(kz,0) = rbufdown[kz];
         }
-        //output.write("in myrank > 0 :: after waits\n");
     }
     if(myrank<nprocs-1) {
-        //output.write("in myrank < nproc - 1 :: before waits\n");
         MPI_Wait(&request[2], &status);
         MPI_Wait(&request[3], &status);
         for(int kz=0;kz<nsys;kz++){
           x_ver(kz,nx+1) = rbufup[kz];
         }
-        //output.write("in myrank < nproc - 1 :: after waits\n");
     }
     
     BoutReal max_error = 0.0;
     for(int kz=0;kz<nsys;kz++){
       for(i=0;i<nx;i++) {
-        //output.write("kz {}, i {}\n",kz,i);
-        //output.write("myrank = {}\n",myrank);
-        //output.write("a={}\n",a_ver(kz,i).real());
-        //output.write("b={}\n",b_ver(kz,i).real());
-        //output.write("c={}\n",c_ver(kz,i).real());
-        //output.write("x={}\n",x(kz,i-1).real());
-        //output.write("x={}\n",x(kz,i).real());
-        //output.write("x={}\n",x(kz,i+1).real());
-        //output.write("r={}\n",r_ver(kz,i).real());
         y_ver(kz,i) = a_ver(kz,i)*x_ver(kz,i)+b_ver(kz,i)*x_ver(kz,i+1)+c_ver(kz,i)*x_ver(kz,i+2);
         error(kz,i) = y_ver(kz,i) - r_ver(kz,i);
 	if(abs(error(kz,i)) > max_error){
 	  max_error = abs(error(kz,i));
 	}
-        //output.write("y={}\n",y_ver(kz,i).real());
         output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, x={}, x+ = {}\n",error(kz,i).real(),r_ver(kz,i).real(),y_ver(kz,i).real(),kz,i,a_ver(kz,i).real(),b_ver(kz,i).real(),c_ver(kz,i).real(),x_ver(kz,i).real(),x_ver(kz,i+1).real(),x_ver(kz,i+2).real());
       }
     }

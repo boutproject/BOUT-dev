@@ -361,34 +361,9 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       }
     }
 
-  output.write("coefs before\n");
-  for(int kz=0;kz<nsys;kz++){
-    for(int ix=0;ix<nx;ix++){
-      output.write("{} ",a3D(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<nx;ix++){
-      output.write("{} ",b3D(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<nx;ix++){
-      output.write("{} ",c3D(kz,ix).real());
-    }
-    output.write("\n");
-    for(int ix=0;ix<nx;ix++){
-      output.write("{} ",bcmplx3D(kz,ix).real());
-    }
-    output.write("\n");
-  }
     // Solve tridiagonal systems
     cr->setCoefs(a3D, b3D, c3D);
     cr->solve(bcmplx3D, xcmplx3D);
-  for(int kz=0;kz<nsys;kz++){
-    for(int ix=0;ix<nx;ix++){
-      output.write("{} ",xcmplx3D(kz,ix).real());
-    }
-    output.write("\n");
-  }
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -464,37 +439,10 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       }
     }
 
-///  output.write("coefs before\n");
-///  for(int kz=0;kz<nsys;kz++){
-///    for(int ix=0;ix<nx;ix++){
-///      output.write("{} ",a3D(kz,ix).real());
-///    }
-///    output.write("\nb3D ");
-///    for(int ix=0;ix<nx;ix++){
-///      output.write("{} ",b3D(kz,ix).real());
-///    }
-///    output.write("\nc3D ");
-///    for(int ix=0;ix<nx;ix++){
-///      output.write("{} ",c3D(kz,ix).real());
-///    }
-///    output.write("\nbcmplx3D ");
-///    for(int ix=0;ix<nx;ix++){
-///      output.write("{} ",bcmplx3D(kz,ix).real());
-///    }
-///    output.write("\n");
-///  }
-
     // Solve tridiagonal systems
     cr->setCoefs(a3D, b3D, c3D);
     cr->solve(bcmplx3D, xcmplx3D);
-    output.write("xcmplx3D ");
-    for(int kz=0;kz<nsys;kz++){
-      for(int ix=0;ix<nx;ix++){
-        output.write("{} ",xcmplx3D(kz,ix).real());
-      }
-      output.write("\n");
-    }
-    verify_solution(a3D,b3D,c3D,bcmplx3D,xcmplx3D,nsys);
+    //verify_solution(a3D,b3D,c3D,bcmplx3D,xcmplx3D,nsys);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -532,8 +480,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
 void LaplaceCyclic :: verify_solution(const Matrix<dcomplex> &a_ver, const Matrix<dcomplex> &b_ver, const Matrix<dcomplex> &c_ver, const Matrix<dcomplex> &r_ver, const Matrix<dcomplex> &x_sol, const int nsys)
 {
-    const int xstart = localmesh->xstart;
-    const int xend = localmesh->xend;
+    output.write("Verify solution\n");
     const int nx = xe - xs + 1;  // Number of X points on this processor,
                                  // including boundaries but not guard cells
     const int myrank = localmesh->getXProcIndex();
@@ -588,21 +535,16 @@ void LaplaceCyclic :: verify_solution(const Matrix<dcomplex> &a_ver, const Matri
         }
     }
     
+    BoutReal max_error = 0.0;
     for(int kz=0;kz<nsys;kz++){
       for(i=0;i<nx;i++) {
-///        output.write("kz {}, i {}\n",kz,i);
-///        output.write("myrank = {}\n",myrank);
-///        output.write("a={}\n",a_ver(kz,i).real());
-///        output.write("b={}\n",b_ver(kz,i).real());
-///        output.write("c={}\n",c_ver(kz,i).real());
-///        output.write("x={}\n",x(kz,i).real());
-///        output.write("x={}\n",x(kz,i+1).real());
-///        output.write("x={}\n",x(kz,i+2).real());
-///        output.write("r={}\n",r_ver(kz,i).real());
         y_ver(kz,i) = a_ver(kz,i)*x_ver(kz,i)+b_ver(kz,i)*x_ver(kz,i+1)+c_ver(kz,i)*x_ver(kz,i+2);
         error(kz,i) = y_ver(kz,i) - r_ver(kz,i);
-        //output.write("y={}\n",y_ver(kz,i).real());
+	if(abs(error(kz,i)) > max_error){
+	  max_error = abs(error(kz,i));
+	}
         output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, x={}, x+ = {}\n",error(kz,i).real(),r_ver(kz,i).real(),y_ver(kz,i).real(),kz,i,a_ver(kz,i).real(),b_ver(kz,i).real(),c_ver(kz,i).real(),x_ver(kz,i).real(),x_ver(kz,i+1).real(),x_ver(kz,i+2).real());
       }
     }
+    output.write("max abs error {}\n", max_error);
 }
