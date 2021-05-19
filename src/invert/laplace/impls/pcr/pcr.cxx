@@ -22,6 +22,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
+ * This solver incorporates code from the repo:
+ * https://github.com/jihoonakang/parallel_tdma_cpp
+ * by Ji-Hoon Kang (jhkang@kisti.re.kr), Korea Institute of Science and
+ * Technology Information
+ *
+ * If using this solver, please cite
+ * @misc{kang2019ptdma,
+ *  title  = {Parallel tri-diagonal matrix solver using cyclic reduction (CR), parallel CR (PCR), and Thomas+PCR hybrid algorithm},
+ *  author = {Kang, Ji-Hoon},
+ *  url    = https://github.com/jihoonakang/parallel_tdma_cpp},
+ *  year   = {2019}
+ * }
+ *
  **************************************************************************/
 
 #include "pcr.hxx"
