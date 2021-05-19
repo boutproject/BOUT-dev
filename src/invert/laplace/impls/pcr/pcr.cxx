@@ -131,7 +131,9 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   xcmplx.reallocate(nmode, n);
   bcmplx.reallocate(nmode, n);
 
-  setup(localmesh->GlobalNxNoBoundaries, localmesh->getNXPE(), localmesh->getXProcIndex());
+  nprocs = localmesh->getNXPE();
+  myrank = localmesh->getXProcIndex();
+  n_mpi = localmesh->GlobalNxNoBoundaries / nprocs;
 }
 
 FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
@@ -523,17 +525,6 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
   return x;
 }
 
-/**
- * @brief   Initialize local private variables from global input parameters.
- * @param   n Size of global array
- * @param   np_world Number of MPI process
- * @param   rank_world rank ID in MPI_COMM_WORLD
- */
-void LaplacePCR ::setup(int n, int np_world, int rank_world) {
-  nprocs = np_world;
-  myrank = rank_world;
-  n_mpi = n / nprocs;
-}
 /**
  * @brief   CR-PCR solver: cr_forward_multiple + pcr_forward_single + cr_backward_multiple
  * @param   a_mpi (input) Lower off-diagonal coeff., which is assigned to local private

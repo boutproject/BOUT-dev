@@ -89,7 +89,6 @@ public:
   Field3D solve(const Field3D& b) override { return solve(b, b); }
   Field3D solve(const Field3D& b, const Field3D& x0) override;
 
-  void setup(int n, int np_world, int rank_world);
   void cr_solver(double* a_mpi, double* b_mpi, double* c_mpi, double* r_mpi,
                  double* x_mpi);
   // void cr_pcr_solver(double *a_mpi, double *b_mpi, double *c_mpi, double *r_mpi, double
