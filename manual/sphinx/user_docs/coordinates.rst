@@ -848,7 +848,7 @@ approximation of
    \frac{B}{2}\nabla\times\left(\frac{{\boldsymbol{b}}}{B}\right) \simeq {\boldsymbol{b}}\times{\boldsymbol{\kappa}}\end{aligned}
 
 so can just derive from the original expression. Using the
-contravariant components of `{\boldsymbol{b}}`, and the curl
+covariant components `{b_i}` of `{\boldsymbol{b}}`, and the curl
 operator in curvilinear coordinates (see appendix):
 
 .. math::
