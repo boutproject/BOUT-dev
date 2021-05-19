@@ -843,13 +843,13 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
 ///    output.write("\n");
 ///  }
     cr_pcr_solver(c3D,b3D,a3D,bcmplx3D,xcmplx3D);
-    output.write("xcmplx3D ");
-  for(int kz=0;kz<nsys;kz++){
-    for(int ix=0;ix<nx;ix++){
-      output.write("{} ",xcmplx3D(kz,ix).real());
-    }
-    output.write("\n");
-  }
+///    output.write("xcmplx3D ");
+///  for(int kz=0;kz<nsys;kz++){
+///    for(int ix=0;ix<nx;ix++){
+///      output.write("{} ",xcmplx3D(kz,ix).real());
+///    }
+///    output.write("\n");
+///  }
     verify_solution(a3D,b3D,c3D,bcmplx3D,xcmplx3D);
 
     // FFT back to real space
@@ -1081,6 +1081,7 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
 
     // Note: c_mpi and a_mpi swapped in this call so that apply bcs routine
     // looks like BOUT notation
+    //apply_boundary_conditions(c_mpi, b_mpi, a_mpi, r_mpi, x_mpi);
     apply_boundary_conditions(c_mpi, b_mpi, a_mpi, r_mpi, x_mpi);
 
     //verify_solution(aa,bb,cc,r,x_mpi);
@@ -1090,7 +1091,7 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
 /** 
  * Apply the boundary conditions on the first and last X processors
 */
-void LaplacePCR :: eliminate_boundary_rows(Matrix<dcomplex> &a, Matrix<dcomplex> &b, Matrix<dcomplex> &c, const Matrix<dcomplex> &r) {
+void LaplacePCR :: eliminate_boundary_rows(Matrix<dcomplex> &a, Matrix<dcomplex> &b, Matrix<dcomplex> &c, Matrix<dcomplex> &r) {
 
   // TODO Probably need corresponding changes in r
   // eliminate boundary rows - this is necessary to ensure we solve a square
@@ -1102,6 +1103,7 @@ void LaplacePCR :: eliminate_boundary_rows(Matrix<dcomplex> &a, Matrix<dcomplex>
     const int xstart = localmesh->xstart;
     for (int kz = 0; kz < nsys; kz++) {
       b(kz,xstart) = b(kz,xstart) - a(kz, xstart-1) * c(kz,xstart) / b(kz, xstart-1);
+      r(kz,xstart) = r(kz,xstart) - a(kz, xstart-1) * r(kz,xstart) / b(kz, xstart-1);
       //a(kz,xstart) = 0.0;
     }
   }
@@ -1112,6 +1114,7 @@ void LaplacePCR :: eliminate_boundary_rows(Matrix<dcomplex> &a, Matrix<dcomplex>
     for (int kz = 0; kz < nsys; kz++) {
       // x index is last interior row
       b(kz,xind) = b(kz,xind) - a(kz, xind) * c(kz,xind+1) / b(kz, xind+1);
+      r(kz,xind) = r(kz,xind) - r(kz, xind) * c(kz,xind+1) / b(kz, xind+1);
       //c(kz,xind) = 0.0;
     }
   }
