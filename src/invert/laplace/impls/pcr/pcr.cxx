@@ -1092,7 +1092,7 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
  * last interior rows from their respective boundary rows. This is necessary
  * to ensure we pass a square system of interior rows to the PCR library.
 */
-void LaplacePCR :: eliminate_boundary_rows(Matrix<dcomplex> &a, Matrix<dcomplex> &b, Matrix<dcomplex> &c, Matrix<dcomplex> &r) {
+void LaplacePCR :: eliminate_boundary_rows(const Matrix<dcomplex> &a, Matrix<dcomplex> &b, const Matrix<dcomplex> &c, Matrix<dcomplex> &r) {
 
   if (localmesh->firstX()) {
     // x index is first interior row
