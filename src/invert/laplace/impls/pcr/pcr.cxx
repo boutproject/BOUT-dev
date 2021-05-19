@@ -908,7 +908,7 @@ void LaplacePCR :: setup(int n, int np_world, int rank_world)
  * @param   r_mpi (input) RHS vector, which is assigned to local private pointer r
  * @param   x_mpi (output) Solution vector, which is assigned to local private pointer x
 */
-void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &c_mpi, Matrix<dcomplex> &b_mpi, Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &r_mpi, Matrix<dcomplex> &x_mpi)
+void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mpi, Matrix<dcomplex> &c_mpi, Matrix<dcomplex> &r_mpi, Matrix<dcomplex> &x_mpi)
 {
 
   output.write("PCR start\n");
@@ -935,7 +935,7 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &c_mpi, Matrix<dcomplex> &b_mp
   output.write("n_mpi {}, nx {}, xs {}, xe {}, xstart {}, xend {}\n",n_mpi, nx,xs,xe,xstart,xend);
   // Note: c_mpi and a_mpi swapped in this call so that apply bcs routine
   // looks like BOUT notation
-  eliminate_boundary_rows(a_mpi, b_cpy, c_mpi, r_mpi);
+  eliminate_boundary_rows(c_mpi, b_cpy, a_mpi, r_mpi);
 
   //nsys = nmode * ny;  // Number of systems of equations to solve
   aa.reallocate(nsys, nx+2);
@@ -956,9 +956,9 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &c_mpi, Matrix<dcomplex> &b_mp
       // don't want to copy them.
       // xs = xstart if a proc has no boundary points
       // xs = 0 if a proc has boundary points
-      aa(kz,ix+1) = c_mpi(kz,ix+xstart-xs);
+      aa(kz,ix+1) = a_mpi(kz,ix+xstart-xs);
       bb(kz,ix+1) = b_cpy(kz,ix+xstart-xs);
-      cc(kz,ix+1) = a_mpi(kz,ix+xstart-xs);
+      cc(kz,ix+1) = c_mpi(kz,ix+xstart-xs);
       r(kz,ix+1) = r_mpi(kz,ix+xstart-xs);
       x(kz,ix+1) = x_mpi(kz,ix+xstart-xs);
     }
@@ -1082,7 +1082,7 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &c_mpi, Matrix<dcomplex> &b_mp
     // Note: c_mpi and a_mpi swapped in this call so that apply bcs routine
     // looks like BOUT notation
     //apply_boundary_conditions(c_mpi, b_mpi, a_mpi, r_mpi, x_mpi);
-    apply_boundary_conditions(c_mpi, b_mpi, a_mpi, r_mpi, x_mpi);
+    apply_boundary_conditions(a_mpi, b_mpi, c_mpi, r_mpi, x_mpi);
 
     //verify_solution(aa,bb,cc,r,x_mpi);
 
