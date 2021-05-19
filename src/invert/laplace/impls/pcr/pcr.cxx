@@ -911,8 +911,6 @@ void LaplacePCR :: setup(int n, int np_world, int rank_world)
 void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mpi, Matrix<dcomplex> &c_mpi, Matrix<dcomplex> &r_mpi, Matrix<dcomplex> &x_mpi)
 {
 
-  // xs used in pcr is ALWAYS xstart (ie NOT including boundary points)
-  // xs in Laplace does include boundary points
   const int xstart = localmesh->xstart;
   const int xend = localmesh->xend;
   const int nx = xend-xstart+1; // number of interior points
@@ -920,21 +918,10 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
 
   // Handle boundary points so that the PCR algorithm works with arrays of
   // the same size on each rank.
-  Matrix<dcomplex> a_cpy(nsys, nx+2);
-  Matrix<dcomplex> b_cpy(nsys, nx+2);
-  Matrix<dcomplex> c_cpy(nsys, nx+2);
-  for(int kz=0; kz<nsys; kz++){
-    for(int ix=0; ix<n_all; ix++){
-      //output.write("kz {} ix {}\n",kz,ix);
-      //a_cpy(kz,ix) = a_mpi(kz,ix);
-      b_cpy(kz,ix) = b_mpi(kz,ix);
-      //c_cpy(kz,ix) = c_mpi(kz,ix);
-    }
-  }
-  output.write("n_mpi {}, nx {}, xs {}, xe {}, xstart {}, xend {}\n",n_mpi, nx,xs,xe,xstart,xend);
-  // Note: c_mpi and a_mpi swapped in this call so that apply bcs routine
-  // looks like BOUT notation
-  eliminate_boundary_rows(a_mpi, b_cpy, c_mpi, r_mpi);
+  // Note that this modifies the coefficients of b and r in the first and last
+  // interior rows. We can continue to use b_mpi and r_mpi arrays directly as
+  // their original values are no longer required.
+  eliminate_boundary_rows(a_mpi, b_mpi, c_mpi, r_mpi);
 
   //nsys = nmode * ny;  // Number of systems of equations to solve
   aa.reallocate(nsys, nx+2);
@@ -956,7 +943,7 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
       // xs = xstart if a proc has no boundary points
       // xs = 0 if a proc has boundary points
       aa(kz,ix+1) = a_mpi(kz,ix+xstart-xs);
-      bb(kz,ix+1) = b_cpy(kz,ix+xstart-xs);
+      bb(kz,ix+1) = b_mpi(kz,ix+xstart-xs);
       cc(kz,ix+1) = c_mpi(kz,ix+xstart-xs);
       r(kz,ix+1) = r_mpi(kz,ix+xstart-xs);
       x(kz,ix+1) = x_mpi(kz,ix+xstart-xs);
@@ -1080,7 +1067,6 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
 
     // Note: c_mpi and a_mpi swapped in this call so that apply bcs routine
     // looks like BOUT notation
-    //apply_boundary_conditions(c_mpi, b_mpi, a_mpi, r_mpi, x_mpi);
     apply_boundary_conditions(a_mpi, b_mpi, c_mpi, r_mpi, x_mpi);
 
     //verify_solution(aa,bb,cc,r,x_mpi);
