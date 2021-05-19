@@ -935,7 +935,7 @@ void LaplacePCR :: cr_pcr_solver(Matrix<dcomplex> &a_mpi, Matrix<dcomplex> &b_mp
   output.write("n_mpi {}, nx {}, xs {}, xe {}, xstart {}, xend {}\n",n_mpi, nx,xs,xe,xstart,xend);
   // Note: c_mpi and a_mpi swapped in this call so that apply bcs routine
   // looks like BOUT notation
-  eliminate_boundary_rows(c_mpi, b_cpy, a_mpi, r_mpi);
+  eliminate_boundary_rows(a_mpi, b_cpy, c_mpi, r_mpi);
 
   //nsys = nmode * ny;  // Number of systems of equations to solve
   aa.reallocate(nsys, nx+2);
@@ -1101,7 +1101,7 @@ void LaplacePCR :: eliminate_boundary_rows(Matrix<dcomplex> &a, Matrix<dcomplex>
     // x index is first interior row
     const int xstart = localmesh->xstart;
     for (int kz = 0; kz < nsys; kz++) {
-      b(kz,xstart) = b(kz,xstart) - c(kz, xstart-1) * a(kz,xstart) / b(kz, xstart-1);
+      b(kz,xstart) = b(kz,xstart) - a(kz, xstart-1) * c(kz,xstart) / b(kz, xstart-1);
       //a(kz,xstart) = 0.0;
     }
   }
@@ -1111,7 +1111,7 @@ void LaplacePCR :: eliminate_boundary_rows(Matrix<dcomplex> &a, Matrix<dcomplex>
     int xind = n - localmesh->xstart - 1;
     for (int kz = 0; kz < nsys; kz++) {
       // x index is last interior row
-      b(kz,xind) = b(kz,xind) - c(kz, xind) * a(kz,xind+1) / b(kz, xind+1);
+      b(kz,xind) = b(kz,xind) - a(kz, xind) * c(kz,xind+1) / b(kz, xind+1);
       //c(kz,xind) = 0.0;
     }
   }
