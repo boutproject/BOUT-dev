@@ -486,8 +486,10 @@ void LaplaceCyclic ::verify_solution(const Matrix<dcomplex>& a_ver,
   output.write("Verify solution\n");
   const int nx = xe - xs + 1; // Number of X points on this processor,
                               // including boundaries but not guard cells
-  const int myrank = localmesh->getXProcIndex();
+  const int xproc = localmesh->getXProcIndex();
+  const int yproc = localmesh->getYProcIndex();
   const int nprocs = localmesh->getNXPE();
+  const int myrank = yproc * nprocs + xproc;
   Matrix<dcomplex> y_ver(nsys, nx + 2);
   Matrix<dcomplex> error(nsys, nx + 2);
 
@@ -507,7 +509,7 @@ void LaplaceCyclic ::verify_solution(const Matrix<dcomplex>& a_ver,
     }
   }
 
-  if (myrank > 0) {
+  if (xproc > 0) {
     MPI_Irecv(&rbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 901, MPI_COMM_WORLD,
               &request[1]);
     for (int kz = 0; kz < nsys; kz++) {
@@ -516,7 +518,7 @@ void LaplaceCyclic ::verify_solution(const Matrix<dcomplex>& a_ver,
     MPI_Isend(&sbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 900, MPI_COMM_WORLD,
               &request[0]);
   }
-  if (myrank < nprocs - 1) {
+  if (xproc < nprocs - 1) {
     MPI_Irecv(&rbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 900, MPI_COMM_WORLD,
               &request[3]);
     for (int kz = 0; kz < nsys; kz++) {
@@ -526,14 +528,14 @@ void LaplaceCyclic ::verify_solution(const Matrix<dcomplex>& a_ver,
               &request[2]);
   }
 
-  if (myrank > 0) {
+  if (xproc > 0) {
     MPI_Wait(&request[0], &status);
     MPI_Wait(&request[1], &status);
     for (int kz = 0; kz < nsys; kz++) {
       x_ver(kz, 0) = rbufdown[kz];
     }
   }
-  if (myrank < nprocs - 1) {
+  if (xproc < nprocs - 1) {
     MPI_Wait(&request[2], &status);
     MPI_Wait(&request[3], &status);
     for (int kz = 0; kz < nsys; kz++) {

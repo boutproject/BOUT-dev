@@ -115,6 +115,9 @@ private:
   /// MPI process ID
   int myrank;
 
+  /// MPI process x ID
+  int xproc;
+
   /// Local private pointer for coefficient maxtix a
   Matrix<dcomplex> a, aa;
   /// Local private pointer for coefficient maxtix b
