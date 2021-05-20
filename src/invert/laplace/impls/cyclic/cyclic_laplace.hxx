@@ -97,7 +97,7 @@ public:
   Field3D solve(const Field3D &b, const Field3D &x0) override;
   void verify_solution(const Matrix<dcomplex>& a_ver, const Matrix<dcomplex>& b_ver,
                        const Matrix<dcomplex>& c_ver, const Matrix<dcomplex>& r_ver,
-                       const Matrix<dcomplex>& x_sol, const int nsys);
+                       const Matrix<dcomplex>& x_sol, int nsys);
 
 private:
   Field2D Acoef, C1coef, C2coef, Dcoef;

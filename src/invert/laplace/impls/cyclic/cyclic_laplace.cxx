@@ -482,7 +482,7 @@ void LaplaceCyclic ::verify_solution(const Matrix<dcomplex>& a_ver,
                                      const Matrix<dcomplex>& b_ver,
                                      const Matrix<dcomplex>& c_ver,
                                      const Matrix<dcomplex>& r_ver,
-                                     const Matrix<dcomplex>& x_sol, const int nsys) {
+                                     const Matrix<dcomplex>& x_sol, int nsys) {
   output.write("Verify solution\n");
   const int nx = xe - xs + 1; // Number of X points on this processor,
                               // including boundaries but not guard cells
