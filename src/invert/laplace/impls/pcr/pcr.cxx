@@ -126,8 +126,8 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
 
   xproc = localmesh->getXProcIndex(); // Local rank in x proc space
   const int yproc = localmesh->getYProcIndex();
-  nprocs = localmesh->getNXPE(); // Number of processors in x
-  myrank = yproc * nprocs + xproc; // Global rank for communication
+  nprocs = localmesh->getNXPE();                    // Number of processors in x
+  myrank = yproc * nprocs + xproc;                  // Global rank for communication
   n_mpi = localmesh->GlobalNxNoBoundaries / nprocs; // Number of internal x
                                                     // grid points per proc
 }
