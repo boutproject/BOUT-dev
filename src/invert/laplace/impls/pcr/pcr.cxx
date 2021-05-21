@@ -686,26 +686,24 @@ void LaplacePCR ::apply_boundary_conditions(const Matrix<dcomplex>& a,
 void LaplacePCR ::cr_forward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                                           Matrix<dcomplex>& c, Matrix<dcomplex>& r) {
   MPI_Comm comm = BoutComm::get();
-  int i, l;
-  int nlevel;
-  int ip, in, start, dist_row, dist2_row;
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
   Array<dcomplex> sbuf(4 * nsys);
   Array<dcomplex> rbuf(4 * nsys);
 
-  MPI_Status status, status1;
+  MPI_Status status;
+  MPI_Status status1;
   Array<MPI_Request> request(2);
 
   /// Variable nlevel is used to indicates when single row remains.
-  nlevel = log2(n_mpi);
-  dist_row = 1;
-  dist2_row = 2;
+  const int nlevel = log2(n_mpi);
+  int dist_row = 1;
+  int dist2_row = 2;
 
-  for (l = 0; l < nlevel; l++) {
+  for (int l = 0; l < nlevel; l++) {
     // output.write("level {}, n_mpi {}, nlevel {}\n", l, n_mpi, nlevel);
     // output.write("myrank {}, xproc {}, nprocs {}\n", myrank, xproc, nprocs);
-    start = dist2_row;
+    const int start = dist2_row;
     /// Data exchange is performed using MPI send/recv for each succesive reduction
     if (xproc < nprocs - 1) {
       MPI_Irecv(&rbuf[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 0, comm, &request[0]);
@@ -732,9 +730,9 @@ void LaplacePCR ::cr_forward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>&
     /// Odd rows of remained rows are reduced to even rows of remained rows in each
     /// reduction step. Index in of global last row is out of range, but we treat it as a
     /// = c = r = 0 and b = 1 in main function.
-    for (i = start; i <= n_mpi; i += dist2_row) {
-      ip = i - dist_row;
-      in = min(i + dist_row, n_mpi + 1);
+    for (int i = start; i <= n_mpi; i += dist2_row) {
+      const int ip = i - dist_row;
+      const int in = min(i + dist_row, n_mpi + 1);
       for (int kz = 0; kz < nsys; kz++) {
         alpha[kz] = -a(kz, i) / b(kz, ip);
         gamma[kz] = -c(kz, i) / b(kz, in);
@@ -762,9 +760,6 @@ void LaplacePCR ::cr_forward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>&
 void LaplacePCR ::cr_backward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                                            Matrix<dcomplex>& c, Matrix<dcomplex>& r,
                                            Matrix<dcomplex>& x) {
-  int i, l;
-  int nlevel;
-  int ip, in, dist_row, dist2_row;
   MPI_Comm comm = BoutComm::get();
 
   MPI_Status status;
@@ -772,8 +767,8 @@ void LaplacePCR ::cr_backward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>
   auto recvvec = Array<dcomplex>(nsys);
   auto sendvec = Array<dcomplex>(nsys);
 
-  nlevel = log2(n_mpi);
-  dist_row = n_mpi / 2;
+  const int nlevel = log2(n_mpi);
+  int dist_row = n_mpi / 2;
 
   /// Each rank requires a solution on last row of previous rank.
   if (xproc > 0) {
@@ -791,11 +786,11 @@ void LaplacePCR ::cr_backward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>
       x(kz, 0) = recvvec[kz];
     }
   }
-  for (l = nlevel - 1; l >= 0; l--) {
-    dist2_row = dist_row * 2;
-    for (i = n_mpi - dist_row; i >= 0; i -= dist2_row) {
-      ip = i - dist_row;
-      in = i + dist_row;
+  for (int l = nlevel - 1; l >= 0; l--) {
+    const int dist2_row = dist_row * 2;
+    for (int i = n_mpi - dist_row; i >= 0; i -= dist2_row) {
+      const int ip = i - dist_row;
+      const int in = i + dist_row;
       for (int kz = 0; kz < nsys; kz++) {
         x(kz, i) = r(kz, i) - c(kz, i) * x(kz, in) - a(kz, i) * x(kz, ip);
         x(kz, i) = x(kz, i) / b(kz, i);
@@ -816,34 +811,29 @@ void LaplacePCR ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& 
                                          Matrix<dcomplex>& c, Matrix<dcomplex>& r,
                                          Matrix<dcomplex>& x) {
 
-  int i, l, nhprocs;
-  int nlevel;
-  int ip, in, dist_rank, dist2_rank;
-  int myrank_level, nprocs_level;
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
   Array<dcomplex> sbuf(4 * nsys);
   Array<dcomplex> rbuf0(4 * nsys);
   Array<dcomplex> rbuf1(4 * nsys);
-  dcomplex det;
 
   MPI_Status status;
   Array<MPI_Request> request(4);
   MPI_Comm comm = BoutComm::get();
 
-  nlevel = log2(nprocs);
-  nhprocs = nprocs / 2;
-  dist_rank = 1;
-  dist2_rank = 2;
+  const int nlevel = log2(nprocs);
+  const int nhprocs = nprocs / 2;
+  int dist_rank = 1;
+  int dist2_rank = 2;
 
   /// Parallel cyclic reduction continues until 2x2 matrix are made between a pair of
   /// rank, (myrank, myrank+nhprocs).
-  for (l = 0; l < nlevel - 1; l++) {
+  for (int l = 0; l < nlevel - 1; l++) {
 
     /// Rank is newly calculated in each level to find communication pair.
     /// Nprocs is also newly calculated as myrank is changed.
-    myrank_level = xproc / dist_rank;
-    nprocs_level = nprocs / dist_rank;
+    const int myrank_level = xproc / dist_rank;
+    const int nprocs_level = nprocs / dist_rank;
 
     /// All rows exchange data for reduction and perform reduction successively.
     /// Coefficients are updated for every rows.
@@ -922,9 +912,9 @@ void LaplacePCR ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& 
       }
     }
 
-    i = n_mpi;
-    ip = 0;
-    in = i + 1;
+    const int i = n_mpi;
+    const int ip = 0;
+    const int in = i + 1;
     if (myrank_level == 0) {
       for (int kz = 0; kz < nsys; kz++) {
         alpha[kz] = 0.0;
@@ -977,11 +967,11 @@ void LaplacePCR ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& 
       r(kz, n_mpi + 1) = rbuf1[3 + 4 * kz];
     }
 
-    i = n_mpi;
-    in = n_mpi + 1;
+    const int i = n_mpi;
+    const int in = n_mpi + 1;
 
     for (int kz = 0; kz < nsys; kz++) {
-      det = b(kz, i) * b(kz, in) - c(kz, i) * a(kz, in);
+      const dcomplex det = b(kz, i) * b(kz, in) - c(kz, i) * a(kz, in);
       x(kz, i) = (r(kz, i) * b(kz, in) - r(kz, in) * c(kz, i)) / det;
       x(kz, in) = (r(kz, in) * b(kz, i) - r(kz, i) * a(kz, in)) / det;
     }
@@ -1006,11 +996,11 @@ void LaplacePCR ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& 
       }
     }
 
-    ip = 0;
-    i = n_mpi;
+    const int ip = 0;
+    const int i = n_mpi;
 
     for (int kz = 0; kz < nsys; kz++) {
-      det = b(kz, ip) * b(kz, i) - c(kz, ip) * a(kz, i);
+      const dcomplex det = b(kz, ip) * b(kz, i) - c(kz, ip) * a(kz, i);
       x(kz, ip) = (r(kz, ip) * b(kz, i) - r(kz, i) * c(kz, ip)) / det;
       x(kz, i) = (r(kz, i) * b(kz, ip) - r(kz, ip) * a(kz, i)) / det;
     }
