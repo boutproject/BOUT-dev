@@ -582,18 +582,39 @@ endif()
 message(STATUS "SLEPc support: ${BOUT_USE_SLEPC}")
 set(BOUT_HAS_SLEPC ${BOUT_USE_SLEPC})
 
-option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF)
+option(BOUT_DOWNLOAD_SUNDIALS "Download and build SUNDIALS" OFF)
+# Force BOUT_USE_SUNDIALS if we're downloading it!
+cmake_dependent_option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF
+  "NOT BOUT_DOWNLOAD_SUNDIALS" ON)
 if (BOUT_USE_SUNDIALS)
-  find_package(SUNDIALS REQUIRED)
+  if (BOUT_DOWNLOAD_SUNDIALS)
+    message(STATUS "Downloading and configuring SUNDIALS")
+    include(FetchContent)
+    FetchContent_Declare(
+      sundials
+      GIT_REPOSITORY https://github.com/ZedThree/sundials
+      GIT_TAG        "4f3bb8281c7b27343bcb95386ebbb665fb6196a5"
+      )
+    set(EXAMPLES_ENABLE_C OFF CACHE BOOL "" FORCE)
+    set(EXAMPLES_INSTALL OFF CACHE BOOL "" FORCE)
+    set(ENABLE_MPI ON CACHE BOOL "" FORCE)
+    set(ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
+    set(BUILD_STATIC_LIBS OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(sundials)
+    message(STATUS "SUNDIALS done configuring")
+  else()
+    find_package(SUNDIALS REQUIRED)
+  endif()
+  target_link_libraries(bout++ PUBLIC SUNDIALS::nvecparallel)
+  target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
+  target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
+  target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
+  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${SUNDIALS_cvode_LIBRARY} ${SUNDIALS_ida_LIBRARY} ${SUNDIALS_arkode_LIBRARY} ${SUNDIALS_nvecparallel_LIBRARY}")
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_CVODE"
     PUBLIC "BOUT_HAS_IDA"
     PUBLIC "BOUT_HAS_ARKODE"
     PUBLIC "BOUT_HAS_SUNDIALS")
-  target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
-  target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
-  target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
-  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${SUNDIALS_cvode_LIBRARY} ${SUNDIALS_ida_LIBRARY} ${SUNDIALS_arkode_LIBRARY} ${SUNDIALS_nvecparallel_LIBRARY}")
 endif()
 message(STATUS "SUNDIALS support: ${BOUT_USE_SUNDIALS}")
 set(BOUT_HAS_SUNDIALS ${BOUT_USE_SUNDIALS})
