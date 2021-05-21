@@ -160,7 +160,7 @@ private:
 
   /// Number of systems to solve = number of unfiltered Fourier modes times number of y
   /// points
-  int nsys;
+  int nsys{};
 
   /// Number of local x, y points
   int ncx, ny;
@@ -194,7 +194,7 @@ private:
     return (outer_boundary_flags & flag) != 0;
   }
 
-  bool dst;
+  bool dst{false};
 };
 
 #endif // BOUT_PCR_H
