@@ -203,8 +203,6 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     }
 
     // Solve tridiagonal systems
-    // cr->setCoefs(a, b, c);
-    // cr->solve(bcmplx, xcmplx);
     cr_pcr_solver(a, b, c, bcmplx, xcmplx);
 
     // FFT back to real space
@@ -272,8 +270,6 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     }
 
     // Solve tridiagonal systems
-    // cr->setCoefs(a, b, c);
-    // cr->solve(bcmplx, xcmplx);
     cr_pcr_solver(a, b, c, bcmplx, xcmplx);
 
     // FFT back to real space
@@ -420,8 +416,6 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
     }
 
     // Solve tridiagonal systems
-    // cr->setCoefs(a3D, b3D, c3D);
-    // cr->solve(bcmplx3D, xcmplx3D);
     cr_pcr_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
 
     // FFT back to real space
@@ -502,10 +496,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
     }
 
     // Solve tridiagonal systems
-    // cr->setCoefs(a3D, b3D, c3D);
-    // cr->solve(bcmplx3D, xcmplx3D);
     cr_pcr_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
-    // verify_solution(a3D,b3D,c3D,bcmplx3D,xcmplx3D);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -517,7 +508,6 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
 
       BOUT_OMP(for nowait)
       for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
-        // ind = (ix - xs)*(ye - ys + 1) + (iy - ys)
         int ix = xs + ind / ny;
         int iy = ys + ind % ny;
 
@@ -702,8 +692,6 @@ void LaplacePCR ::cr_forward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>&
   int dist2_row = 2;
 
   for (int l = 0; l < nlevel; l++) {
-    // output.write("level {}, n_mpi {}, nlevel {}\n", l, n_mpi, nlevel);
-    // output.write("myrank {}, xproc {}, nprocs {}\n", myrank, xproc, nprocs);
     const int start = dist2_row;
     /// Data exchange is performed using MPI send/recv for each succesive reduction
     if (xproc < nprocs - 1) {

@@ -148,13 +148,6 @@ private:
                        const Matrix<dcomplex>& c_ver, const Matrix<dcomplex>& r_ver,
                        const Matrix<dcomplex>& x_sol) const;
 
-  // void pThomas_forward_multiple_row();
-  // void pcr_double_row_substitution();
-
-  /// The coefficents in
-  /// $D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b$
-  ///  Field2D A, C, D;
-
   /// Number of unfiltered Fourier modes
   int nmode;
 
@@ -164,9 +157,6 @@ private:
 
   /// Number of local x, y points
   int ncx, ny;
-
-  /// Current y index
-  ///  int jy;
 
   /// Lower-, on- and upper-diagonal terms of the operator matrix
   Tensor<dcomplex> avec, bvec, cvec;
