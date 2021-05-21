@@ -174,15 +174,6 @@ private:
   /// Counter for the number of times the solver has been called
   int ncalls{0};
 
-  /// Neighbouring processors in the in and out directions
-  int proc_in, proc_out;
-
-  /// This processor's unique ID
-  int myproc;
-
-  /// Shorthand for localmesh->NXPE
-  int nproc;
-
   /// First and last interior points xstart, xend
   int xs, xe;
 
