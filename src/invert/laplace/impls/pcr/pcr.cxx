@@ -145,14 +145,17 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
   // Get the width of the boundary
 
   // If the flags to assign that only one guard cell should be used is set
-  int inbndry = localmesh->xstart, outbndry = localmesh->xstart;
-  if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
+  int inbndry = localmesh->xstart;
+  int outbndry = localmesh->xstart;
+  if (((global_flags & INVERT_BOTH_BNDRY_ONE) != 0) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if (inner_boundary_flags & INVERT_BNDRY_ONE)
+  if ((inner_boundary_flags & INVERT_BNDRY_ONE) != 0) {
     inbndry = 1;
-  if (outer_boundary_flags & INVERT_BNDRY_ONE)
+  }
+  if ((outer_boundary_flags & INVERT_BNDRY_ONE) != 0) {
     outbndry = 1;
+  }
 
   if (dst) {
     BOUT_OMP(parallel) {
@@ -166,9 +169,10 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       for (int ix = xs; ix <= xe; ix++) {
         // Take DST in Z direction and put result in k1d
 
-        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX())
+        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
+             && localmesh->firstX())
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && (outer_boundary_flags & INVERT_SET) && localmesh->lastX())) {
+                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
           // Use the values in x0 in the boundary
           DST(x0[ix] + 1, localmesh->LocalNz - 2, std::begin(k1d));
         } else {
@@ -176,8 +180,9 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
         }
 
         // Copy into array, transposing so kz is first index
-        for (int kz = 0; kz < nmode; kz++)
+        for (int kz = 0; kz < nmode; kz++) {
           bcmplx(kz, ix - xs) = k1d[kz];
+        }
       }
 
       // Get elements of the tridiagonal matrix
@@ -210,11 +215,13 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
       BOUT_OMP(for nowait)
       for (int ix = xs; ix <= xe; ix++) {
-        for (int kz = 0; kz < nmode; kz++)
+        for (int kz = 0; kz < nmode; kz++) {
           k1d[kz] = xcmplx(kz, ix - xs);
+        }
 
-        for (int kz = nmode; kz < (localmesh->LocalNz); kz++)
+        for (int kz = nmode; kz < (localmesh->LocalNz); kz++) {
           k1d[kz] = 0.0; // Filtering out all higher harmonics
+        }
 
         DST_rev(std::begin(k1d), localmesh->LocalNz - 2, x[ix] + 1);
 
@@ -234,9 +241,10 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       for (int ix = xs; ix <= xe; ix++) {
         // Take FFT in Z direction, apply shift, and put result in k1d
 
-        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX())
+        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
+             && localmesh->firstX())
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && (outer_boundary_flags & INVERT_SET) && localmesh->lastX())) {
+                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
           // Use the values in x0 in the boundary
           rfft(x0[ix], localmesh->LocalNz, std::begin(k1d));
         } else {
@@ -244,8 +252,9 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
         }
 
         // Copy into array, transposing so kz is first index
-        for (int kz = 0; kz < nmode; kz++)
+        for (int kz = 0; kz < nmode; kz++) {
           bcmplx(kz, ix - xs) = k1d[kz];
+        }
       }
 
       // Get elements of the tridiagonal matrix
@@ -273,7 +282,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
                                  + 1); // ZFFT routine expects input of this length
 
-      const bool zero_DC = global_flags & INVERT_ZERO_DC;
+      const bool zero_DC = (global_flags & INVERT_ZERO_DC) != 0;
 
       BOUT_OMP(for nowait)
       for (int ix = xs; ix <= xe; ix++) {
@@ -281,11 +290,13 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
           k1d[0] = 0.;
         }
 
-        for (int kz = zero_DC; kz < nmode; kz++)
+        for (int kz = static_cast<int>(zero_DC); kz < nmode; kz++) {
           k1d[kz] = xcmplx(kz, ix - xs);
+        }
 
-        for (int kz = nmode; kz < (localmesh->LocalNz) / 2 + 1; kz++)
+        for (int kz = nmode; kz < (localmesh->LocalNz) / 2 + 1; kz++) {
           k1d[kz] = 0.0; // Filtering out all higher harmonics
+        }
 
         irfft(std::begin(k1d), localmesh->LocalNz, x[ix]);
       }
@@ -311,23 +322,28 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
   // Get the width of the boundary
 
   // If the flags to assign that only one guard cell should be used is set
-  int inbndry = localmesh->xstart, outbndry = localmesh->xstart;
-  if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
+  int inbndry = localmesh->xstart;
+  int outbndry = localmesh->xstart;
+  if (((global_flags & INVERT_BOTH_BNDRY_ONE) != 0) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if (inner_boundary_flags & INVERT_BNDRY_ONE)
+  if ((inner_boundary_flags & INVERT_BNDRY_ONE) != 0) {
     inbndry = 1;
-  if (outer_boundary_flags & INVERT_BNDRY_ONE)
+  }
+  if ((outer_boundary_flags & INVERT_BNDRY_ONE) != 0) {
     outbndry = 1;
+  }
 
   int nx = xe - xs + 1; // Number of X points on this processor
 
   // Get range of Y indices
-  int ys = localmesh->ystart, ye = localmesh->yend;
+  int ys = localmesh->ystart;
+  int ye = localmesh->yend;
 
   if (localmesh->hasBndryLowerY()) {
-    if (include_yguards)
+    if (include_yguards) {
       ys = 0; // Mesh contains a lower boundary and we are solving in the guard cells
+    }
 
     ys += extra_yguards_lower;
   }
@@ -366,9 +382,10 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
 
         // Take DST in Z direction and put result in k1d
 
-        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX())
+        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
+             && localmesh->firstX())
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && (outer_boundary_flags & INVERT_SET) && localmesh->lastX())) {
+                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
           // Use the values in x0 in the boundary
           DST(x0(ix, iy) + 1, localmesh->LocalNz - 2, std::begin(k1d));
         } else {
@@ -423,8 +440,9 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
           k1d[kz] = xcmplx3D((iy - ys) * nmode + kz, ix - xs);
         }
 
-        for (int kz = nmode; kz < localmesh->LocalNz; kz++)
+        for (int kz = nmode; kz < localmesh->LocalNz; kz++) {
           k1d[kz] = 0.0; // Filtering out all higher harmonics
+        }
 
         DST_rev(std::begin(k1d), localmesh->LocalNz - 2, &x(ix, iy, 1));
 
@@ -449,9 +467,10 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
 
         // Take FFT in Z direction, apply shift, and put result in k1d
 
-        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX())
+        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
+             && localmesh->firstX())
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && (outer_boundary_flags & INVERT_SET) && localmesh->lastX())) {
+                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
           // Use the values in x0 in the boundary
           rfft(x0(ix, iy), localmesh->LocalNz, std::begin(k1d));
         } else {
@@ -459,8 +478,9 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
         }
 
         // Copy into array, transposing so kz is first index
-        for (int kz = 0; kz < nmode; kz++)
+        for (int kz = 0; kz < nmode; kz++) {
           bcmplx3D((iy - ys) * nmode + kz, ix - xs) = k1d[kz];
+        }
       }
 
       // Get elements of the tridiagonal matrix
@@ -493,7 +513,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
                                  + 1); // ZFFT routine expects input of this length
 
-      const bool zero_DC = global_flags & INVERT_ZERO_DC;
+      const bool zero_DC = (global_flags & INVERT_ZERO_DC) != 0;
 
       BOUT_OMP(for nowait)
       for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
@@ -505,11 +525,13 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
           k1d[0] = 0.;
         }
 
-        for (int kz = zero_DC; kz < nmode; kz++)
+        for (int kz = static_cast<int>(zero_DC); kz < nmode; kz++) {
           k1d[kz] = xcmplx3D((iy - ys) * nmode + kz, ix - xs);
+        }
 
-        for (int kz = nmode; kz < localmesh->LocalNz / 2 + 1; kz++)
+        for (int kz = nmode; kz < localmesh->LocalNz / 2 + 1; kz++) {
           k1d[kz] = 0.0; // Filtering out all higher harmonics
+        }
 
         irfft(std::begin(k1d), localmesh->LocalNz, x(ix, iy));
       }
