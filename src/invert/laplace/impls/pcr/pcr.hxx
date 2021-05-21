@@ -84,10 +84,10 @@ public:
 
   using Laplacian::solve;
   FieldPerp solve(const FieldPerp& b) override { return solve(b, b); }
-  FieldPerp solve(const FieldPerp& b, const FieldPerp& x0) override;
+  FieldPerp solve(const FieldPerp& rhs, const FieldPerp& x0) override;
 
   Field3D solve(const Field3D& b) override { return solve(b, b); }
-  Field3D solve(const Field3D& b, const Field3D& x0) override;
+  Field3D solve(const Field3D& rhs, const Field3D& x0) override;
 
   void cr_solver(double* a_mpi, double* b_mpi, double* c_mpi, double* r_mpi,
                  double* x_mpi);
