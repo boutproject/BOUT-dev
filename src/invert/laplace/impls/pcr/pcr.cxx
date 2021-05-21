@@ -684,7 +684,8 @@ void LaplacePCR ::apply_boundary_conditions(const Matrix<dcomplex>& a,
  * performed.
  */
 void LaplacePCR ::cr_forward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
-                                          Matrix<dcomplex>& c, Matrix<dcomplex>& r) {
+                                          Matrix<dcomplex>& c,
+                                          Matrix<dcomplex>& r) const {
   MPI_Comm comm = BoutComm::get();
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
@@ -759,7 +760,7 @@ void LaplacePCR ::cr_forward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>&
  */
 void LaplacePCR ::cr_backward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                                            Matrix<dcomplex>& c, Matrix<dcomplex>& r,
-                                           Matrix<dcomplex>& x) {
+                                           Matrix<dcomplex>& x) const {
   MPI_Comm comm = BoutComm::get();
 
   MPI_Status status;
@@ -809,7 +810,7 @@ void LaplacePCR ::cr_backward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>
  */
 void LaplacePCR ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                                          Matrix<dcomplex>& c, Matrix<dcomplex>& r,
-                                         Matrix<dcomplex>& x) {
+                                         Matrix<dcomplex>& x) const {
 
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
@@ -1023,7 +1024,7 @@ void LaplacePCR ::verify_solution(const Matrix<dcomplex>& a_ver,
                                   const Matrix<dcomplex>& b_ver,
                                   const Matrix<dcomplex>& c_ver,
                                   const Matrix<dcomplex>& r_ver,
-                                  const Matrix<dcomplex>& x_sol) {
+                                  const Matrix<dcomplex>& x_sol) const {
   output.write("Verify solution\n");
   const int nx = xe - xs + 1; // Number of X points on this processor,
                               // including boundaries but not guard cells
