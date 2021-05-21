@@ -26,8 +26,8 @@
 
 class LaplacePCR;
 
-#ifndef __PCR_H__
-#define __PCR_H__
+#ifndef BOUT_PCR_H
+#define BOUT_PCR_H
 
 #include <dcomplex.hxx>
 #include <invert_laplace.hxx>
@@ -197,4 +197,4 @@ private:
   bool dst;
 };
 
-#endif // __PCR_H__
+#endif // BOUT_PCR_H
