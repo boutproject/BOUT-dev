@@ -33,18 +33,18 @@
  *
  */
 
-#include <globals.hxx>
-#include <boutexception.hxx>
-#include <bout/mesh.hxx>
-#include <utils.hxx>
-#include <fft.hxx>
-#include <bout/sys/timer.hxx>
 #include <bout/constants.hxx>
+#include <bout/mesh.hxx>
+#include <bout/sys/timer.hxx>
+#include <boutexception.hxx>
+#include <fft.hxx>
+#include <globals.hxx>
 #include <output.hxx>
+#include <utils.hxx>
 
 #include "cyclic_laplace.hxx"
 
-LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
+LaplaceCyclic::LaplaceCyclic(Options* opt, const CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(1.0), Dcoef(1.0) {
   Acoef.setLocation(location);
   C1coef.setLocation(location);
@@ -55,25 +55,31 @@ LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
 
   OPTION(opt, dst, false);
 
-  if(dst) {
-    nmode = localmesh->LocalNz-2;
-  }else
-    nmode = maxmode+1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
+  if (dst) {
+    nmode = localmesh->LocalNz - 2;
+  } else {
+    nmode =
+        maxmode + 1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
+  }
 
   // Note nmode == nsys of cyclic_reduction
 
   // Allocate arrays
 
   xs = localmesh->xstart; // Starting X index
-  if(localmesh->firstX() && !localmesh->periodicX){ // Only want to include guard cells at boundaries (unless periodic in x)
-	  xs = 0;
+  if (localmesh->firstX()
+      && !localmesh->periodicX) { // Only want to include guard cells at boundaries
+                                  // (unless periodic in x)
+    xs = 0;
   }
-  xe = localmesh->xend;   // Last X index
-  if(localmesh->lastX() && !localmesh->periodicX){ // Only want to include guard cells at boundaries (unless periodic in x)
-	  xe = localmesh->LocalNx-1;
+  xe = localmesh->xend; // Last X index
+  if (localmesh->lastX()
+      && !localmesh->periodicX) { // Only want to include guard cells at boundaries
+                                  // (unless periodic in x)
+    xe = localmesh->LocalNx - 1;
   }
-  int n = xe - xs + 1;  // Number of X points on this processor,
-                        // including boundaries but not guard cells
+  int n = xe - xs + 1; // Number of X points on this processor,
+                       // including boundaries but not guard cells
 
   a.reallocate(nmode, n);
   b.reallocate(nmode, n);
@@ -81,14 +87,14 @@ LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   xcmplx.reallocate(nmode, n);
   bcmplx.reallocate(nmode, n);
 
-  // Create a cyclic reduction object, operating on dcomplex values
-  cr = new CyclicReduce<dcomplex>(localmesh->getXcomm(), n);
-  cr->setPeriodic(localmesh->periodicX);
-}
+  int ngather =
+      (*opt)["ngather"]
+          .doc("Number of processors in X to gather onto. Default (0) is all processors")
+          .withDefault(0);
 
-LaplaceCyclic::~LaplaceCyclic() {
-  // Delete tridiagonal solver
-  delete cr;
+  // Create a cyclic reduction object, operating on dcomplex values
+  cr = std::make_unique<CyclicReduce<dcomplex>>(localmesh->getXcomm(), n, ngather);
+  cr->setPeriodic(localmesh->periodicX);
 }
 
 FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
@@ -98,26 +104,26 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
   FieldPerp x{emptyFrom(rhs)}; // Result
 
-  int jy = rhs.getIndex();  // Get the Y index
+  int jy = rhs.getIndex(); // Get the Y index
   x.setIndex(jy);
 
   // Get the width of the boundary
 
   // If the flags to assign that only one guard cell should be used is set
-  int inbndry = localmesh->xstart, outbndry=localmesh->xstart;
-  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2))  {
+  int inbndry = localmesh->xstart, outbndry = localmesh->xstart;
+  if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if(inner_boundary_flags & INVERT_BNDRY_ONE)
+  if (inner_boundary_flags & INVERT_BNDRY_ONE)
     inbndry = 1;
-  if(outer_boundary_flags & INVERT_BNDRY_ONE)
+  if (outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
 
-  if(dst) {
+  if (dst) {
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
-      auto k1d =
-          Array<dcomplex>(localmesh->LocalNz); // ZFFT routine expects input of this length
+      auto k1d = Array<dcomplex>(
+          localmesh->LocalNz); // ZFFT routine expects input of this length
 
       // Loop over X indices, including boundaries but not guard cells. (unless periodic
       // in x)
@@ -125,9 +131,9 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       for (int ix = xs; ix <= xe; ix++) {
         // Take DST in Z direction and put result in k1d
 
-        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX()) ||
-            ((localmesh->LocalNx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET) &&
-             localmesh->lastX())) {
+        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX())
+            || ((localmesh->LocalNx - ix - 1 < outbndry)
+                && (outer_boundary_flags & INVERT_SET) && localmesh->lastX())) {
           // Use the values in x0 in the boundary
           DST(x0[ix] + 1, localmesh->LocalNz - 2, std::begin(k1d));
         } else {
@@ -163,8 +169,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     // FFT back to real space
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
-      auto k1d =
-          Array<dcomplex>(localmesh->LocalNz); // ZFFT routine expects input of this length
+      auto k1d = Array<dcomplex>(
+          localmesh->LocalNz); // ZFFT routine expects input of this length
 
       BOUT_OMP(for nowait)
       for (int ix = xs; ix <= xe; ix++) {
@@ -180,12 +186,11 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
         x(ix, localmesh->LocalNz - 1) = -x(ix, localmesh->LocalNz - 3);
       }
     }
-  }else {
-    BOUT_OMP(parallel)
-    {
+  } else {
+    BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 +
-                                 1); // ZFFT routine expects input of this length
+      auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
+                                 + 1); // ZFFT routine expects input of this length
 
       // Loop over X indices, including boundaries but not guard cells (unless periodic in
       // x)
@@ -193,9 +198,9 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       for (int ix = xs; ix <= xe; ix++) {
         // Take FFT in Z direction, apply shift, and put result in k1d
 
-        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX()) ||
-            ((localmesh->LocalNx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET) &&
-             localmesh->lastX())) {
+        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX())
+            || ((localmesh->LocalNx - ix - 1 < outbndry)
+                && (outer_boundary_flags & INVERT_SET) && localmesh->lastX())) {
           // Use the values in x0 in the boundary
           rfft(x0[ix], localmesh->LocalNz, std::begin(k1d));
         } else {
@@ -226,11 +231,10 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     cr->solve(bcmplx, xcmplx);
 
     // FFT back to real space
-    BOUT_OMP(parallel)
-    {
+    BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 +
-                                 1); // ZFFT routine expects input of this length
+      auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
+                                 + 1); // ZFFT routine expects input of this length
 
       const bool zero_DC = global_flags & INVERT_ZERO_DC;
 
@@ -292,8 +296,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   }
   if (localmesh->hasBndryUpperY()) {
     if (include_yguards)
-      ye = localmesh->LocalNy -
-           1; // Contains upper boundary and we are solving in the guard cells
+      ye = localmesh->LocalNy
+           - 1; // Contains upper boundary and we are solving in the guard cells
 
     ye -= extra_yguards_upper;
   }
@@ -312,8 +316,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   if (dst) {
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
-      auto k1d =
-          Array<dcomplex>(localmesh->LocalNz); // ZFFT routine expects input of this length
+      auto k1d = Array<dcomplex>(
+          localmesh->LocalNz); // ZFFT routine expects input of this length
 
       // Loop over X and Y indices, including boundaries but not guard cells.
       // (unless periodic in x)
@@ -325,9 +329,10 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
         // Take DST in Z direction and put result in k1d
 
-        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX()) ||
-            ((localmesh->LocalNx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET) &&
-             localmesh->lastX())) {
+        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
+             && localmesh->firstX())
+            || ((localmesh->LocalNx - ix - 1 < outbndry)
+                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
           // Use the values in x0 in the boundary
           DST(x0(ix, iy) + 1, localmesh->LocalNz - 2, std::begin(k1d));
         } else {
@@ -368,8 +373,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     // FFT back to real space
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
-      auto k1d =
-          Array<dcomplex>(localmesh->LocalNz); // ZFFT routine expects input of this length
+      auto k1d = Array<dcomplex>(
+          localmesh->LocalNz); // ZFFT routine expects input of this length
 
       BOUT_OMP(for nowait)
       for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
@@ -393,8 +398,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   } else {
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>(localmesh->LocalNz / 2 +
-                                 1); // ZFFT routine expects input of this length
+      auto k1d = Array<dcomplex>(localmesh->LocalNz / 2
+                                 + 1); // ZFFT routine expects input of this length
 
       // Loop over X and Y indices, including boundaries but not guard cells
       // (unless periodic in x)
@@ -407,9 +412,10 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
         // Take FFT in Z direction, apply shift, and put result in k1d
 
-        if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX()) ||
-            ((localmesh->LocalNx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET) &&
-             localmesh->lastX())) {
+        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
+             && localmesh->firstX())
+            || ((localmesh->LocalNx - ix - 1 < outbndry)
+                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
           // Use the values in x0 in the boundary
           rfft(x0(ix, iy), localmesh->LocalNz, std::begin(k1d));
         } else {
@@ -446,8 +452,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     // FFT back to real space
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 +
-                                 1); // ZFFT routine expects input of this length
+      auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
+                                 + 1); // ZFFT routine expects input of this length
 
       const bool zero_DC = global_flags & INVERT_ZERO_DC;
 
