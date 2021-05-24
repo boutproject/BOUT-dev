@@ -108,6 +108,10 @@ endfunction()
 # - EXTRA_FILES: any extra files that are required to run the test
 #
 # - REQUIRES: list of variables that must be truthy to enable test
+#   (note: use `CONFLICTS` to negate the variable, rather than `NOT
+#   VARIABLE`)
+#
+# - CONFLICTS: list of variables that must be falsey to enable test
 #
 # - EXECUTABLE_NAME: name of the executable, if different from the
 #   first source name
@@ -117,12 +121,19 @@ endfunction()
 function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
   set(oneValueArgs EXECUTABLE_NAME)
-  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES TESTARGS EXTRA_DEPENDS)
+  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES CONFLICTS TESTARGS EXTRA_DEPENDS)
   cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   foreach (REQUIREMENT IN LISTS BOUT_TEST_OPTIONS_REQUIRES)
     if (NOT ${REQUIREMENT})
       message(STATUS "Not building test ${TESTNAME}, requirement not met: ${REQUIREMENT}")
+      return()
+    endif()
+  endforeach()
+
+  foreach (CONFLICT IN LISTS BOUT_TEST_OPTIONS_CONFLICTS)
+    if (${CONFLICT})
+      message(STATUS "Not building test ${TESTNAME}, conflicts with: ${CONFLICT}")
       return()
     endif()
   endforeach()
