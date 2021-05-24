@@ -143,7 +143,7 @@ set(BOUT_SOURCES
   ./include/vector3d.hxx
   ./include/where.hxx
   ./src/bout++.cxx
-  ./src/bout++-time.cxx
+  ./src/bout++-time.hxx
   ./src/field/field.cxx
   ./src/field/field2d.cxx
   ./src/field/field3d.cxx
@@ -327,8 +327,17 @@ This warning is only important for BOUT++ developers and can otherwise be \
 safely ignored.")
 endif()
 
+# Ensure that the compile date/time is up-to-date when any of the sources change
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
+  COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
+  DEPENDS ${BOUT_SOURCES}
+  MAIN_DEPENDENCY "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
+  )
+
 add_library(bout++
   ${BOUT_SOURCES}
+  ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
   )
 add_library(bout++::bout++ ALIAS bout++)
 target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
