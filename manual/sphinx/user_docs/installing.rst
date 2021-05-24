@@ -344,6 +344,18 @@ it's wise to delete the ``CMakeCache.txt`` file in the build
 directory. The equivalent of ``make distclean`` with CMake is to just
 delete the entire build directory and reconfigure.
 
+Downloading Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you don't have some dependencies installed, CMake can be used to download,
+configure and compile them alongside BOUT++.
+
+For NetCDF, use ``-DBOUT_DOWNLOAD_NETCDF_CXX4=ON``
+
+For SUNDIALS, use ``-DBOUT_DOWNLOAD_SUNDIALS=ON``. If using ``ccmake`` this option
+may not appear initially. This automatically sets ``BOUT_USE_SUNDIALS=ON``, and
+configures SUNDIALS to use MPI.
+
 Bundled Dependencies
 ^^^^^^^^^^^^^^^^^^^^
 
