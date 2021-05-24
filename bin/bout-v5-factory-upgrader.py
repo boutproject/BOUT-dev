@@ -173,9 +173,7 @@ def fix_deletions(variables, source):
 
 
 def fix_create_method(factory, source):
-    """Fix change of name of factory `create` method
-
-    """
+    """Fix change of name of factory `create` method"""
 
     if "old_create_method" not in factory:
         return source
@@ -199,9 +197,7 @@ def fix_create_method(factory, source):
 
 
 def yes_or_no(question):
-    """Convert user input from yes/no variations to True/False
-
-    """
+    """Convert user input from yes/no variations to True/False"""
     while True:
         reply = input(question + " [y/N] ").lower().strip()
         if not reply or reply[0] == "n":
@@ -236,8 +232,7 @@ def apply_fixes(factories, source, all_declarations=False):
 
 
 def create_patch(filename, original, modified):
-    """Create a unified diff between original and modified
-    """
+    """Create a unified diff between original and modified"""
 
     patch = "\n".join(
         difflib.unified_diff(

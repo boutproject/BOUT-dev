@@ -103,6 +103,7 @@ int main(int argc, char **argv) {
 
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
 
+  bout::checkForUnusedOptions();
   BoutFinalise();
   return 0;
 }

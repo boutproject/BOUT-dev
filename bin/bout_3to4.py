@@ -6,25 +6,57 @@ import fileinput
 import sys
 
 nonmembers = {
-    'DC': ['DC', 1],
-    'slice': ['sliceXZ', 2],
+    "DC": ["DC", 1],
+    "slice": ["sliceXZ", 2],
 }
 
 coordinates = [
     "outputVars",
-    "dx", "dy", "dz",
+    "dx",
+    "dy",
+    "dz",
     "zlength",
     "non_uniform",
-    "d1_dx", "d1_dy",
-    "J", "Bxy",
-    "g11", "g22", "g33", "g12", "g13", "g23",
-    "g_11", "g_22", "g_33", "g_12", "g_13", "g_23",
-    "G1_11", "G1_22", "G1_33", "G1_12", "G1_13",
-    "G2_11", "G2_22", "G2_33", "G2_12", "G2_23",
-    "G3_11", "G3_22", "G3_33", "G3_13", "G3_23",
-    "G1", "G2", "G3",
-    "ShiftTorsion", "IntShiftTorsion",
-    "geometry", "calcCovariant", "calcContravariant", "jacobian"
+    "d1_dx",
+    "d1_dy",
+    "J",
+    "Bxy",
+    "g11",
+    "g22",
+    "g33",
+    "g12",
+    "g13",
+    "g23",
+    "g_11",
+    "g_22",
+    "g_33",
+    "g_12",
+    "g_13",
+    "g_23",
+    "G1_11",
+    "G1_22",
+    "G1_33",
+    "G1_12",
+    "G1_13",
+    "G2_11",
+    "G2_22",
+    "G2_33",
+    "G2_12",
+    "G2_23",
+    "G3_11",
+    "G3_22",
+    "G3_33",
+    "G3_13",
+    "G3_23",
+    "G1",
+    "G2",
+    "G3",
+    "ShiftTorsion",
+    "IntShiftTorsion",
+    "geometry",
+    "calcCovariant",
+    "calcContravariant",
+    "jacobian",
 ]
 
 local_mesh = [
@@ -35,16 +67,20 @@ local_mesh = [
 warnings = [
     (r"\^", "Use pow(a,b) instead of a^b"),
     (r"\.max\(", "Use max(a) instead of a.max()"),
-    ("ngz", ("ngz is changed to LocalNz in v4."
-             " The extra point in z has been removed."
-             " Change ngz -> LocalNz, and ensure that"
-             " the number of points are correct")
-    )
+    (
+        "ngz",
+        (
+            "ngz is changed to LocalNz in v4."
+            " The extra point in z has been removed."
+            " Change ngz -> LocalNz, and ensure that"
+            " the number of points are correct"
+        ),
+    ),
 ]
 
+
 def fix_nonmembers(line_text, filename, line_num, replace=False):
-    """Replace member functions with nonmembers
-    """
+    """Replace member functions with nonmembers"""
 
     old_line_text = line_text
 
@@ -58,8 +94,11 @@ def fix_nonmembers(line_text, filename, line_num, replace=False):
             line_text = re.sub(pattern, replacement, line_text)
             if not replace:
                 name_num = "{name}:{num}:".format(name=filename, num=line_num)
-                print("{name_num}{line}".format(name_num=name_num, line=old_line_text), end='')
-                print(" "*len(name_num) + line_text)
+                print(
+                    "{name_num}{line}".format(name_num=name_num, line=old_line_text),
+                    end="",
+                )
+                print(" " * len(name_num) + line_text)
     if replace:
         return line_text
 
@@ -83,15 +122,16 @@ def fix_subscripts(line_text, filename, line_num, replace=False):
         line_text = re.sub(pattern, replacement, line_text)
         if not replace:
             name_num = "{name}:{num}:".format(name=filename, num=line_num)
-            print("{name_num}{line}".format(name_num=name_num, line=old_line_text), end='')
-            print(" "*len(name_num) + line_text)
+            print(
+                "{name_num}{line}".format(name_num=name_num, line=old_line_text), end=""
+            )
+            print(" " * len(name_num) + line_text)
     if replace:
         return line_text
 
 
 def fix_coordinates(line_text, filename, line_num, replace=False):
-    """Fix variables that have moved from mesh to coordinates
-    """
+    """Fix variables that have moved from mesh to coordinates"""
 
     old_line_text = line_text
 
@@ -99,18 +139,22 @@ def fix_coordinates(line_text, filename, line_num, replace=False):
         pattern = re.compile("mesh->{}".format(var))
         matches = re.findall(pattern, line_text)
         for match in matches:
-            line_text = re.sub(pattern, "mesh->coordinates()->{}".format(var), line_text)
+            line_text = re.sub(
+                pattern, "mesh->coordinates()->{}".format(var), line_text
+            )
             if not replace:
                 name_num = "{name}:{num}:".format(name=filename, num=line_num)
-                print("{name_num}{line}".format(name_num=name_num, line=old_line_text), end='')
-                print(" "*len(name_num) + line_text)
+                print(
+                    "{name_num}{line}".format(name_num=name_num, line=old_line_text),
+                    end="",
+                )
+                print(" " * len(name_num) + line_text)
     if replace:
         return line_text
 
 
 def fix_local_mesh_size(line_text, filename, line_num, replace=False):
-    """Replaces ng@ with LocalNg@, where @ is in {x,y,z}
-    """
+    """Replaces ng@ with LocalNg@, where @ is in {x,y,z}"""
 
     old_line_text = line_text
 
@@ -121,15 +165,17 @@ def fix_local_mesh_size(line_text, filename, line_num, replace=False):
             line_text = re.sub(pattern, lm[1], line_text)
             if not replace:
                 name_num = "{name}:{num}:".format(name=filename, num=line_num)
-                print("{name_num}{line}".format(name_num=name_num, line=old_line_text), end='')
-                print(" "*len(name_num) + line_text)
+                print(
+                    "{name_num}{line}".format(name_num=name_num, line=old_line_text),
+                    end="",
+                )
+                print(" " * len(name_num) + line_text)
     if replace:
         return line_text
 
 
 def throw_warnings(line_text, filename, line_num):
-    """Throws a warning for ^, .max() and ngz
-    """
+    """Throws a warning for ^, .max() and ngz"""
 
     for warn in warnings:
         pattern = re.compile(warn[0])
@@ -138,12 +184,17 @@ def throw_warnings(line_text, filename, line_num):
             name_num = "{name}:{num}:".format(name=filename, num=line_num)
             # stdout is redirected to the file if --replace is given,
             # therefore use stderr
-            sys.stderr.write("{name_num}{line}".format(name_num=name_num, line=line_text))
+            sys.stderr.write(
+                "{name_num}{line}".format(name_num=name_num, line=line_text)
+            )
             # Coloring with \033[91m, end coloring with \033[0m\n
-            sys.stderr.write(" "*len(name_num) + "\033[91m!!!WARNING: {}\033[0m\n\n".format(warn[1]))
+            sys.stderr.write(
+                " " * len(name_num)
+                + "\033[91m!!!WARNING: {}\033[0m\n\n".format(warn[1])
+            )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     epilog = """
     Currently bout_3to4 can detect the following transformations are needed:
@@ -156,13 +207,15 @@ if __name__ == '__main__':
     to the correct scopes
     """
 
-    parser = argparse.ArgumentParser(description="A little helper for upgrading from BOUT++ version 3 to version 4",
-                                     formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     epilog=epilog)
-    parser.add_argument("-r", "--replace", action="store_true",
-                        help="Actually make the fix")
-    parser.add_argument("files", nargs='+',
-                        help="Files to process")
+    parser = argparse.ArgumentParser(
+        description="A little helper for upgrading from BOUT++ version 3 to version 4",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=epilog,
+    )
+    parser.add_argument(
+        "-r", "--replace", action="store_true", help="Actually make the fix"
+    )
+    parser.add_argument("files", nargs="+", help="Files to process")
 
     args = parser.parse_args()
 
@@ -188,4 +241,4 @@ if __name__ == '__main__':
 
         # If we're doing a replacement, then we need to print all lines, without a newline
         if args.replace:
-            print(line, end='')
+            print(line, end="")

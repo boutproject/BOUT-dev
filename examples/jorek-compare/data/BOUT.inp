@@ -3,26 +3,22 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 100     # number of time-steps
-TIMESTEP = 1e-3  # time between outputs
+nout = 100     # number of time-steps
+timestep = 0.001  # time between outputs
 
-TwistShift = true  # use twist-shift condition?
+twistshift = true  # use twist-shift condition?
 
 MZ = 64     # number of points in z direction (2^n)
 
-ZPERIOD = 10 # Fraction of a torus
+zperiod = 10 # Fraction of a torus
 
 MXG = 2
 MYG = 2
 
-grid="d3d_119919.nc"
-
-#twistshift_pf = true # Grid has twist-shift in PF region
-
-dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
+grid = "d3d_119919.nc"
 
 [mesh]
-StaggerGrids = false # Use staggered grids (EXPERIMENTAL)
+staggergrids = false # Use staggered grids (EXPERIMENTAL)
 
 [mesh:paralleltransform]
 type = shifted # Use shifted metric method
@@ -53,24 +49,25 @@ flux = U1
 
 ##################################################
 # Laplacian inversion settings
-
 [laplace]
 all_terms = false
-laplace_nonuniform = false
+nonuniform = false
 filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
+inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
+outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 
 ##################################################
 # Solver settings
 
 [solver]
-type=petsc
+type = petsc
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 mxstep = 50000
 
-#type=karniadakis
+#type=splitrk
 #timestep=5e-5
 
 ##################################################
@@ -80,26 +77,26 @@ mxstep = 50000
 
 D_perp = 10   # Density perpendicular diffusion [m^2/s]
 
-chi_eperp = 1e-7
-chi_iperp = 2.5e-6
+chi_eperp = 1e-07
+chi_iperp = 2.5e-06
 
-chi_epar = 30  # Electron parallel diffusion 
+chi_epar = 30  # Electron parallel diffusion
 chi_ipar = 5   # Ion parallel diffusion
 
-eta = 1.0   # Resistivity relative to Spitzer. 
-            # Comment-out to use value from grid file
+eta = 1.0   # Resistivity relative to Spitzer.
+# Comment-out to use value from grid file
 
-hyperresist = 1e-2
+hyperresist = 0.01
 
 Wei = 0.0   # Electron-ion energy exchange relative to collisional
 
 ohmic_heating = false # Include Ohmic heating in Te equation
 
-viscos_perp = 1e-5  # Perpendicular viscosity
+viscos_perp = 1e-05  # Perpendicular viscosity
 viscos_coll = 0.0   # Collisional viscosity
-viscos_par = 1e-5   # Parallel viscosity
+viscos_par = 1e-05   # Parallel viscosity
 
-jpar_bndry_width=4  # Decaying jpar in boundary region
+jpar_bndry_width = 4  # Decaying jpar in boundary region
 
 full_bfield = false
 flux_method = false  # Use flux methods for fluid quantities
@@ -116,17 +113,13 @@ parallel_lc = true  # Use LtoC and CtoL differencing
 
 bracket_method = 2  # 0 = std, 1=simplified, 2 = arakawa, 3 = ctu
 
-[laplace]
-inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
-outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
-
 ##################################################
 # settings for individual variables
 # The section "All" defines default settings for all variables
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # boundary conditions
@@ -142,7 +135,7 @@ bndry_all = neumann # Default zero value
 
 [rho]
 
-scale=1.e-3
+scale = 0.001
 
 function = exp(-((x - 0.4) / 0.25)^2) * exp(-((y/(2*pi) - 0.5)/0.6)^2) * sin(z)
 
@@ -151,25 +144,10 @@ function = exp(-((x - 0.4) / 0.25)^2) * exp(-((y/(2*pi) - 0.5)/0.6)^2) * sin(z)
 bndry_pf = dirichlet
 bndry_sol = dirichlet
 
-[Te]
 
 
-[Ti]
-
-
-[u] # Vorticity
-
-#bndry_xin = zerolaplace
-#bndry_xout = zerolaplace
-
-[Apar]
-#bndry_xin = constlaplace
-#bndry_xout = zerolaplace
-
-[Jpar]
 
 [phi]
 # X boundaries set by flags
 bndry_xin = none
 bndry_xout = none
-

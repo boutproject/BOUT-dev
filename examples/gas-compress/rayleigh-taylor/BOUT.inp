@@ -4,20 +4,19 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 200       # number of time-steps
-TIMESTEP = 1.0e-1   # time between outputs
+nout = 200       # number of time-steps
+timestep = 0.1   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 129     # number of points in z direction
 ZMIN = 0.0
-ZMAX = 0.0318310  # 0.2 NOTE: Length of y is 1 and this *2pi is Z length
+ZMAX = 0.031831  # 0.2 NOTE: Length of y is 1 and this *2pi is Z length
 
 MXG = 0
 MYG = 2
 
-grid="rt.grd.nc"
+grid = "rt.grd.nc"
 
 ##################################################
 # derivative methods
@@ -46,8 +45,8 @@ upwind = U1
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 ##################################################
 # settings for gas_compress
@@ -55,11 +54,11 @@ RTOL = 1.0e-5  # relative tolerance
 [gas]
 
 include_viscosity = true
-viscosity = 5e-4
+viscosity = 0.0005
 
 sub_initial = true
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # Boundary conditions
@@ -69,16 +68,15 @@ scale = 0.0 # default size of initial perturbations
 # most variables free at boundaries
 bndry_all = free_o3
 
-[v] 
+[v]
 
 bndry_all = dirichlet
 
 [vy] # evolving contravariant components
-scale = 1.0e-3 # initial velocity perturbation
+scale = 0.001 # initial velocity perturbation
 
 function = exp(-((y-pi)/0.2)^2)*sin(z)
 
 # zero velocity into boundaries
 bndry_yup = dirichlet
 bndry_ydown = dirichlet
-

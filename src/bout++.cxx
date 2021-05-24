@@ -53,6 +53,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/sys/timer.hxx"
 #include "bout/version.hxx"
 #include "fmt/format.h"
+#include "bout++-time.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -165,20 +166,30 @@ int BoutInitialise(int& argc, char**& argv) {
 
     // Load settings file
     OptionsReader* reader = OptionsReader::getInstance();
+    // Ideally we'd use the long options for `datadir` and
+    // `optionfile` here, but we'd need to call parseCommandLine
+    // _first_ in order to do that and set the source, etc., but we
+    // need to call that _second_ in order to override the input file
     reader->read(Options::getRoot(), "{}/{}", args.data_dir, args.opt_file);
 
     // Get options override from command-line
-    reader->parseCommandLine(Options::getRoot(), argc, argv);
+    reader->parseCommandLine(Options::getRoot(), args.argv);
 
-    // Override options set from short option from the command-line
-    Options::root()["datadir"].force(args.data_dir);
-    Options::root()["optionfile"].force(args.opt_file);
-    Options::root()["settingsfile"].force(args.set_file);
+    // Get the variables back out so they count as having been used
+    // when checking for unused options. They normally _do_ get used,
+    // but it's possible that only happens in BoutFinalise, which is
+    // too late for that check.
+    const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
+    MAYBE_UNUSED()
+    const auto optionfile =
+        Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
+    const auto settingsfile =
+        Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
 
     setRunStartInfo(Options::root());
 
     if (MYPE == 0) {
-      writeSettingsFile(Options::root(), args.data_dir, args.set_file);
+      writeSettingsFile(Options::root(), datadir, settingsfile);
     }
 
     bout::globals::mpi = new MpiWrapper();
@@ -345,10 +356,13 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
   }
 
   CommandLineArgs args;
-
   args.original_argv.reserve(argc);
   std::copy(argv, argv + argc, std::back_inserter(args.original_argv));
+  args.argv = args.original_argv;
 
+  // Parse single-letter and non-Options arguments, expanding the
+  // single-letter arguments into their canonical names, and removing
+  // the non-Options arguments
   for (int i = 1; i < argc; i++) {
     if (string(argv[i]) == "-d") {
       // Set data directory
@@ -357,9 +371,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       }
 
       args.data_dir = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
+      args.argv[i - 1] = "datadir=";
 
     } else if (string(argv[i]) == "-f") {
       // Set options file
@@ -368,9 +380,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       }
 
       args.opt_file = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
+      args.argv[i - 1] = "optionfile=";
 
     } else if (string(argv[i]) == "-o") {
       // Set options file
@@ -379,39 +389,36 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       }
 
       args.set_file = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
+      args.argv[i - 1] = "settingsfile=";
 
     } else if ((string(argv[i]) == "-l") || (string(argv[i]) == "--log")) {
+      // Set log file
       if (i + 1 >= argc) {
         throw BoutException(_("Usage is {:s} -l <log filename>\n"), argv[0]);
       }
 
       args.log_file = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
+      args.argv[i - 1] = "logfile=";
 
     } else if ((string(argv[i]) == "-v") || (string(argv[i]) == "--verbose")) {
       args.verbosity++;
-
-      argv[i][0] = 0;
+      args.argv[i] = "";
 
     } else if ((string(argv[i]) == "-q") || (string(argv[i]) == "--quiet")) {
       args.verbosity--;
-
-      argv[i][0] = 0;
+      args.argv[i] = "";
 
     } else if ((string(argv[i]) == "-c") || (string(argv[i]) == "--color")) {
       // Add color to the output by piping through bout-log-color
       // This is done after checking all command-line inputs
       // in case -c is set multiple times
       args.color_output = true;
-
-      argv[i][0] = 0;
+      args.argv[i] = "";
     }
   }
+
+  // Remove empty values from canonicalised arguments
+  bout::utils::erase(args.argv, "");
 
   if (args.set_file == args.opt_file) {
     throw BoutException(
@@ -454,7 +461,7 @@ void printStartupHeader(int MYPE, int NPES) {
 #ifdef MD5SUM
   output_progress.write("MD5 checksum: {:s}\n", BUILDFLAG(MD5SUM));
 #endif
-  output_progress.write(_("Code compiled on {:s} at {:s}\n\n"), __DATE__, __TIME__);
+  output_progress.write(_("Code compiled on {:s} at {:s}\n\n"), boutcompiledate, boutcompiletime);
   output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
   output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
@@ -486,7 +493,6 @@ void printCompileTimeOptions() {
 
   output_info.write(_("\tFFT support {}\n"), is_enabled(has_fftw));
   output_info.write(_("\tNatural language support {}\n"), is_enabled(has_gettext));
-  output_info.write(_("\tHDF5 support {}\n"), is_enabled(has_hdf5));
   output_info.write(_("\tLAPACK support {}\n"), is_enabled(has_lapack));
   // Horrible nested ternary to set this at compile time
   constexpr auto netcdf_flavour =
@@ -597,16 +603,16 @@ void setRunStartInfo(Options& options) {
 
   // Note: have to force value, since may already be set if a previously
   // output BOUT.settings file was used as input
-  runinfo["version"].force(bout::version::full, "");
-  runinfo["revision"].force(bout::version::revision, "");
+  runinfo["version"].force(bout::version::full, "Output");
+  runinfo["revision"].force(bout::version::revision, "Output");
 
   time_t start_time = time(nullptr);
-  runinfo["started"].force(ctime(&start_time), "");
+  runinfo["started"].force(ctime(&start_time), "Output");
 }
 
 void setRunFinishInfo(Options& options) {
   time_t end_time = time(nullptr);
-  options["run"]["finished"].force(ctime(&end_time), "");
+  options["run"]["finished"].force(ctime(&end_time), "Output");
 }
 
 Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir) {
@@ -642,7 +648,6 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   // Add compile-time options
   dump_file.addOnce(const_cast<bool&>(bout::build::has_fftw), "has_fftw");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_gettext), "has_gettext");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_hdf5), "has_hdf5");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_lapack), "has_lapack");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_netcdf), "has_netcdf");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_legacy_netcdf),
@@ -697,19 +702,6 @@ void writeSettingsFile(Options& options, const std::string& data_dir,
 } // namespace experimental
 } // namespace bout
 
-int bout_run(Solver* solver, rhsfunc physics_run) {
-
-  /// Set the RHS function
-  solver->setRHS(physics_run);
-
-  /// Add the monitor function
-  Monitor* bout_monitor = new BoutMonitor();
-  solver->addMonitor(bout_monitor, Solver::BACK);
-
-  /// Run the simulation
-  return solver->solve();
-}
-
 int BoutFinalise(bool write_settings) {
 
   // Output the settings, showing which options were used
@@ -722,7 +714,7 @@ int BoutFinalise(bool write_settings) {
       setRunFinishInfo(options);
 
       const auto data_dir = options["datadir"].withDefault(std::string{DEFAULT_DIR});
-      const auto set_file = options["settingsfile"].withDefault("");
+      const auto set_file = options["settingsfile"].withDefault("BOUT.settings");
 
       if (BoutComm::rank() == 0) {
         writeSettingsFile(options, data_dir, set_file);
@@ -791,15 +783,28 @@ int BoutFinalise(bool write_settings) {
  * Called each timestep by the solver
  **************************************************************************/
 
+BoutMonitor::BoutMonitor(BoutReal timestep) : BoutMonitor(timestep, Options::root()) {}
+
+BoutMonitor::BoutMonitor(BoutReal timestep, Options& options)
+    : Monitor(timestep),
+      wall_limit(options["wall_limit"]
+                     .doc(_("Wall time limit in hours. By default (< 0), no limit"))
+                     .withDefault(-1.0)
+                 * 60. * 60.),
+      stop_check(options["stopCheck"]
+                     .doc(_("Check if a file exists, and exit if it does."))
+                     .withDefault(false)),
+      stop_check_name(
+          fmt::format("{}/{}", Options::root()["datadir"].withDefault(DEFAULT_DIR),
+                      options["stopCheckName"]
+                          .doc(_("Name of file whose existence triggers a stop"))
+                          .withDefault("BOUT.stop"))) {
+  // Add wall clock time etc to dump file
+  run_data.outputVars(bout::globals::dump);
+}
+
 int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
-
-  // Data used for timing
-  static bool first_time = true;
-  static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
-
-  static bool stopCheck;            // Check for file, exit if exists?
-  static std::string stopCheckName; // File checked, whose existence triggers a stop
 
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
@@ -812,7 +817,7 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   run_data.ncalls_e = solver->resetRHSCounter_e();
   run_data.ncalls_i = solver->resetRHSCounter_i();
 
-  bool output_split = solver->splitOperator();
+  const bool output_split = solver->splitOperator();
   run_data.wtime_rhs = Timer::resetTime("rhs");
   run_data.wtime_invert = Timer::resetTime("invert");
   // Time spent communicating (part of RHS)
@@ -824,34 +829,16 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
 
   output_progress.print("\r"); // Only goes to screen
 
+  // First time the monitor has been called
+  static bool first_time = true;
   if (first_time) {
-    /// First time the monitor has been called
 
-    /// Get some options
-    auto& options = Options::root();
-    wall_limit = options["wall_limit"]
-                     .doc(_("Wall time limit in hours. By default (< 0), no limit"))
-                     .withDefault(-1.0);
-    wall_limit *= 60.0 * 60.0; // Convert from hours to seconds
-
-    stopCheck = options["stopCheck"]
-                    .doc(_("Check if a file exists, and exit if it does."))
-                    .withDefault(false);
-    if (stopCheck) {
-      stopCheckName = options["stopCheckName"]
-                          .doc(_("Name of file whose existence triggers a stop"))
-                          .withDefault("BOUT.stop");
-      // Now add data directory to start of name to ensure we look in a run specific location
-      std::string data_dir = Options::root()["datadir"].withDefault(DEFAULT_DIR);
-      stopCheckName = data_dir + "/" + stopCheckName;
-    }
-
-    /// Record the starting time
+    // Record the starting time
     mpi_start_time = bout::globals::mpi->MPI_Wtime() - run_data.wtime;
 
     first_time = false;
 
-    /// Print the column header for timing info
+    // Print the column header for timing info
     if (!output_split) {
       output_progress.write(_("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm "
                               "   I/O   SOLVER\n\n"));
@@ -891,10 +878,10 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   }
 
   // Check if the user has created the stop file and if so trigger an exit
-  if (stopCheck) {
-    std::ifstream f(stopCheckName);
+  if (stop_check) {
+    std::ifstream f(stop_check_name);
     if (f.good()) {
-      output << "\nFile " << stopCheckName << " exists -- triggering exit." << endl;
+      output.write("\nStop file {} exists -- triggering exit\n", stop_check_name);
       user_requested_exit = true;
     }
   }

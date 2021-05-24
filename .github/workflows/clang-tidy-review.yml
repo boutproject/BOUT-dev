@@ -18,8 +18,6 @@ jobs:
                  libnetcdf-dev
                  libnetcdf-c++4-dev
                  netcdf-bin
-                 hdf5-tools
-                 libhdf5-mpi-dev
                  openmpi-bin
                  libopenmpi-dev
                  petsc-dev
@@ -39,16 +37,18 @@ jobs:
                            -DBOUT_ENABLE_OPENMP=ON \
                            -DBOUT_USE_PETSC=ON \
                            -DBOUT_USE_SLEPC=ON \
-                           -DBOUT_USE_HDF5=ON \
                            -DBOUT_USE_SUNDIALS=ON \
                            -DBOUT_BUILD_EXAMPLES=ON \
+                           -DBOUT_BUILD_DOCS=OFF \
                            -DCMAKE_EXPORT_COMPILE_COMMANDS=On
 
       - name: Run clang-tidy
-        uses: ZedThree/clang-tidy-review@v0.4.0
+        uses: ZedThree/clang-tidy-review@v0.6.1
         id: review
         with:
           build_dir: build
-          apt_packages: "libfftw3-dev,libnetcdf-c++4-dev,libhdf5-mpi-dev,libopenmpi-dev,petsc-dev,slepc-dev,liblapack-dev,libparpack2-dev,libsundials-dev"
-          clang_tidy_checks: '-*,performance-*,readability-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,mpi-*,misc-*,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers'
-
+          apt_packages: "libfftw3-dev,libnetcdf-c++4-dev,libopenmpi-dev,petsc-dev,slepc-dev,liblapack-dev,libparpack2-dev,libsundials-dev,uuid-dev"
+          clang_tidy_checks: '-*,performance-*,readability-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,mpi-*,misc-*,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-misc-non-private-member-variables-in-classes,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-type-vararg'
+          # Googletest triggers a _lot_ of clang-tidy warnings, so ignore all
+          # the unit tests until they're fixed or ignored upstream
+          exclude: "tests/unit/*cxx"

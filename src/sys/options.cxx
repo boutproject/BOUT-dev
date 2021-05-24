@@ -4,11 +4,17 @@
 #include <output.hxx>
 #include <utils.hxx>
 
+#include <algorithm>
 #include <iomanip>
 #include <sstream>
 
 /// The source label given to default values
 const std::string Options::DEFAULT_SOURCE{_("default")};
+
+/// Name of the attribute to indicate an Option should always count as
+/// having been used
+constexpr auto conditionally_used_attribute = "conditionally used";
+
 Options *Options::root_instance{nullptr};
 
 Options &Options::root() {
@@ -45,8 +51,36 @@ Options::Options(const char* value) {
 }
 
 Options::Options(std::initializer_list<std::pair<std::string, Options>> values) {
+  // Yes, this looks bad, but bear with me...  The _only_ way to
+  // construct a nested initializer_list is inside-out, from the
+  // bottom of the tree structure. Unfortunately, this is very much
+  // not how you would want to construct the tree of options, as we
+  // don't have the parent section's name as we construct each
+  // child. Therefore, when we _do_ construct the parent, we'll need
+  // to recursively step down the tree, prepending the parent's name
+  // to each child. Rather than have a private member to do that, we
+  // use a lambda. And to make that lambda recursive, we need to have
+  // a nested lambda.
+  auto append_section_name = [](auto& children, const std::string& section_name) {
+    auto append_impl = [](auto& children, const std::string& section_name, auto& append_ref) mutable -> void {
+      for (auto& child : children) {
+        child.second.full_name = fmt::format("{}:{}", section_name, child.second.full_name);
+        if (child.second.is_section) {
+          append_ref(child.second.children, section_name, append_ref);
+        }
+      }
+    };
+    append_impl(children, section_name, append_impl);
+  };
+
   for (auto& value : values) {
     (*this)[value.first] = value.second;
+    // value.second was constructed from the "bare" `Options<T>(T)` so
+    // doesn't have `full_name` set. This clobbers
+    // `(*this)[value.first].full_name` in the copy constructor, so we
+    // need to explicitly set it again
+    (*this)[value.first].full_name = value.first;
+    append_section_name((*this)[value.first].children, value.first);
   }
 }
 
@@ -65,7 +99,7 @@ Options &Options::operator[](const std::string &name) {
   }
 
   // Find and return if already exists
-  auto it = children.find(lowercase(name));
+  auto it = children.find(name);
   if (it != children.end()) {
     return it->second;
   }
@@ -77,7 +111,7 @@ Options &Options::operator[](const std::string &name) {
   }
 
   // emplace returns a pair with iterator first, boolean (insert yes/no) second
-  auto pair_it = children.emplace(lowercase(name), Options{this, secname});
+  auto pair_it = children.emplace(name, Options{this, secname});
 
   return pair_it.first->second;
 }
@@ -100,13 +134,60 @@ const Options &Options::operator[](const std::string &name) const {
   }
 
   // Find and return if already exists
-  auto it = children.find(lowercase(name));
+  auto it = children.find(name);
   if (it == children.end()) {
     // Doesn't exist
     throw BoutException(_("Option {:s}:{:s} does not exist"), full_name, name);
   }
 
   return it->second;
+}
+
+std::multiset<Options::FuzzyMatch>
+Options::fuzzyFind(const std::string& name, std::string::size_type distance) const {
+  std::multiset<Options::FuzzyMatch> matches;
+
+  // Add option.full_name to matches if possible_match is within
+  // distance of name, including a possible extra_cost. Returns true
+  // if it was a fuzzy match
+  auto insert_if_match = [&](const Options& option, const std::string& possible_match,
+                             std::string::size_type extra_cost = 0) -> bool {
+    if (not option.is_value) {
+      // Don't match section names
+      return false;
+    }
+    if ((name != possible_match) and (lowercase(name) == lowercase(possible_match))) {
+      // Differs only in case: pretty good match
+      matches.insert({option, 1 + extra_cost});
+      return true;
+    }
+    const auto fuzzy_distance = editDistance(name, possible_match) + extra_cost;
+    if (fuzzy_distance <= distance) {
+      // Insert the full_name with parent sections, not the possible_match
+      matches.insert({option, fuzzy_distance});
+      return true;
+    }
+    return false;
+  };
+
+  insert_if_match(*this, full_name);
+
+  for (const auto& child : children) {
+    // Check against fully-qualified name
+    if (not insert_if_match(child.second, child.second.full_name)) {
+      // Try again without parent sections, but make it cost a little bit more.
+      // Could make it cost more per wrong section by counting ":" in full_name
+      insert_if_match(child.second, child.second.name(), 1);
+    }
+
+    if (child.second.is_section) {
+      // Recurse down the tree
+      auto child_matches = child.second.fuzzyFind(name, distance);
+      matches.insert(child_matches.begin(), child_matches.end());
+    }
+  }
+
+  return matches;
 }
 
 Options& Options::operator=(const Options& other) {
@@ -149,7 +230,7 @@ bool Options::isSection(const std::string& name) const {
   }
 
   // Is there a child section?
-  auto it = children.find(lowercase(name));
+  auto it = children.find(name);
   if (it == children.end()) {
     return false;
   } else {
@@ -327,12 +408,14 @@ template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
     result = bout::utils::get<bool>(value);
   
   } else if(bout::utils::holds_alternative<std::string>(value)) {
-    auto strvalue = bout::utils::get<std::string>(value);
+    // case-insensitve check, so convert string to lower case
+    const auto strvalue = lowercase(bout::utils::get<std::string>(value));
   
-    auto c = static_cast<char>(toupper((strvalue)[0]));
-    if ((c == 'Y') || (c == 'T') || (c == '1')) {
+    if ((strvalue == "y") or (strvalue == "yes") or (strvalue == "t")
+        or (strvalue == "true") or (strvalue == "1")) {
       result = true;
-    } else if ((c == 'N') || (c == 'F') || (c == '0')) {
+    } else if ((strvalue == "n") or (strvalue == "no") or (strvalue == "f")
+        or (strvalue == "false") or (strvalue == "0")) {
       result = false;
     } else {
       throw BoutException(_("\tOption '{:s}': Boolean expected. Got '{:s}'\n"), full_name,
@@ -562,33 +645,100 @@ bool Options::operator<(const char* other) const {
   return as<std::string>() < std::string(other);
 }
 
-void Options::printUnused() const {
-  bool allused = true;
-  // Check if any options are unused
-  for (const auto &it : children) {
-    if (it.second.is_value && !it.second.value_used) {
-      allused = false;
-      break;
+Options Options::getUnused(const std::vector<std::string>& exclude_sources) const {
+  // Check if the option should count as having been used due to its source
+  const auto has_excluded_source = [&exclude_sources](const Options& option) -> bool {
+    if (not option.hasAttribute("source")) {
+      return false;
     }
+    const auto source = option.attributes.at("source").as<std::string>();
+    return std::find(exclude_sources.begin(), exclude_sources.end(), source)
+           != exclude_sources.end();
+  };
+
+  const auto conditionally_used = [](const Options& option) -> bool {
+    if (not option.hasAttribute(conditionally_used_attribute)) {
+      return false;
+    }
+    return option.attributes.at(conditionally_used_attribute).as<bool>();
+  };
+
+  // Copy this object, and then we're going to chuck out everything
+  // that has been used. This turns out to be easier than copying just
+  // the unused options into an empty instance
+  Options unused = *this;
+
+  if (unused.is_value) {
+    // If this is from an excluded source, count it as being used
+    if (has_excluded_source(unused) or conditionally_used(unused)) {
+      unused.value_used = true;
+    }
+    // We don't have a nice way to "clear" the value, so if it was
+    // used, mark it as no longer a value: if it has been used, this
+    // does nothing
+    unused.is_value = not unused.value_used;
+    return unused;
   }
-  if (allused) {
-    output_info << _("All options used\n");
-  } else {
-    output_info << _("Unused options:\n");
-    for (const auto &it : children) {
-      if (it.second.is_value && !it.second.value_used) {
-        output_info << "\t" << full_name << ":" << it.first << " = "
-                    << bout::utils::variantToString(it.second.value);
-        if (it.second.attributes.count("source"))
-          output_info << " (" << bout::utils::variantToString(it.second.attributes.at("source")) << ")";
-        output_info << endl;
+
+  // This loop modifies the map in the loop, so we need to manually
+  // manage the iterator
+  for (auto child = unused.children.begin(); child != unused.children.end();) {
+    // Remove the child if it's been used or if it's from a source we
+    // should count as having been used
+    if (child->second.is_value
+        and (child->second.value_used or has_excluded_source(child->second)
+             or conditionally_used(child->second))) {
+      child = unused.children.erase(child);
+      continue;
+    }
+
+    if (child->second.is_section) {
+      // Recurse down and replace this section by its "unused" version
+      child->second = child->second.getUnused();
+      // If all of its children have been used, then we can remove it
+      // as well
+      if (child->second.children.empty()) {
+        child = unused.children.erase(child);
+        continue;
       }
     }
-  }
-  for (const auto &it : children) {
-    if (it.second.is_section) {
-      it.second.printUnused();
+
+    // What is it doing here?!
+    if (not (child->second.is_value or child->second.is_section)) {
+      child = unused.children.erase(child);
+      continue;
     }
+
+    ++child;
+  }
+
+  if (unused.children.empty()) {
+    // If all the children have been used, we don't want to print a
+    // section name any more
+    unused.full_name.clear();
+  }
+
+  return unused;
+}
+
+void Options::printUnused() const {
+  Options unused = getUnused();
+
+  // Two cases: single value, or a section.  If it's a single value,
+  // we can check it directly. If it's a section, we can see if it has
+  // any children
+  if ((unused.is_value and unused.value_used) or unused.children.empty()) {
+    output_info << _("All options used\n");
+    return;
+  }
+
+  output_info << _("Unused options:\n") << unused;
+}
+
+void Options::setConditionallyUsed() {
+  attributes[conditionally_used_attribute] = true;
+  for (auto& child : children) {
+    child.second.setConditionallyUsed();
   }
 }
 
@@ -615,3 +765,141 @@ std::map<std::string, const Options *> Options::subsections() const {
   }
   return sections;
 }
+
+std::vector<std::string> Options::getFlattenedKeys() const {
+  std::vector<std::string> flattened_names;
+
+  if (is_value and not full_name.empty()) {
+    flattened_names.push_back(full_name);
+  }
+
+  for (const auto& child : children) {
+    if (child.second.is_value) {
+      flattened_names.push_back(child.second.full_name);
+    }
+    if (child.second.is_section) {
+      const auto child_names = child.second.getFlattenedKeys();
+      flattened_names.insert(flattened_names.end(), child_names.begin(),
+                             child_names.end());
+    }
+  }
+
+  return flattened_names;
+}
+
+std::string toString(const Options& value) {
+
+  std::string result;
+
+  // Get all the child values first
+  for (const auto& child : value.getChildren()) {
+    if (child.second.isValue()) {
+      const auto value = bout::utils::variantToString(child.second.value);
+      // Convert empty strings to ""
+      const std::string as_str = value.empty() ? "\"\"" : value;
+      result += fmt::format("{} = {}\n", child.first, as_str);
+    }
+  }
+
+  // Only print section headers if the section has a name and it has
+  // non-section children
+  const std::string section_name = value.str();
+  if (not(section_name.empty() or result.empty())) {
+    result = fmt::format("\n[{}]\n{}", section_name, result);
+  }
+
+  // Now descend the tree, accumulating subsections
+  for (const auto& subsection : value.subsections()) {
+    result += toString(*subsection.second);
+  }
+
+  return result;
+}
+
+namespace bout {
+void checkForUnusedOptions() {
+  auto& options = Options::root();
+  const bool error_on_unused_options =
+      options["input"]["error_on_unused_options"]
+          .doc(
+              "Error if there are any unused options before starting the main simulation")
+          .withDefault(true);
+
+  if (not error_on_unused_options) {
+    return;
+  }
+  checkForUnusedOptions(options, options["datadir"].withDefault("data"),
+                        options["optionfile"].withDefault("BOUT.inp"));
+}
+
+void checkForUnusedOptions(const Options& options, const std::string& data_dir,
+                           const std::string& option_file) {
+  Options unused = options.getUnused();
+  if (not unused.getChildren().empty()) {
+
+    // Construct a string with all the fuzzy matches for each unused option
+    const auto keys = unused.getFlattenedKeys();
+    std::string possible_misspellings;
+    for (const auto& key : keys) {
+      auto fuzzy_matches = options.fuzzyFind(key);
+      // Remove unacceptable matches, including:
+      // - exact matches
+      // - other unused options
+      // - options set internally by the library and not meant as user inputs
+      bout::utils::erase_if(fuzzy_matches, [](const Options::FuzzyMatch& match) -> bool {
+        const auto source = match.match.hasAttribute("source")
+                                ? match.match.attributes.at("source").as<std::string>()
+                                : "";
+        const bool internal_source = (source == "Solver") or (source == "Output");
+
+        return match.distance == 0 or (not match.match.valueUsed()) or internal_source;
+      });
+
+      if (fuzzy_matches.empty()) {
+        continue;
+      }
+      possible_misspellings += fmt::format("\nUnused option '{}', did you mean:\n", key);
+      for (const auto& match : fuzzy_matches) {
+        possible_misspellings += fmt::format("\t{}\n", match.match.str());
+      }
+    }
+
+    // Only display the possible matches if we actually have some to show
+    const std::string additional_info =
+        possible_misspellings.empty()
+            ? ""
+            : fmt::format("Suggested alternatives:\n{}", possible_misspellings);
+
+    // Raw string to help with the formatting of the message, and a
+    // separate variable so clang-format doesn't barf on the
+    // exception
+    const std::string unused_message = _(R"""(
+There were unused input options:
+-----
+{}
+-----
+It's possible you've mistyped some options. BOUT++ input arguments are
+now case-sensitive, and some have changed name. You can try running
+
+    <BOUT++ directory>/bin/bout-v5-input-file-upgrader.py {}/{}
+
+to automatically fix the most common issues. If these options above
+are sometimes used depending on other options, you can call
+`Options::setConditionallyUsed()`, for example:
+
+    Options::root()["{}"].setConditionallyUsed();
+
+to mark a section or value as depending on other values, and so ignore
+it in this check. Alternatively, if you're sure the above inputs are
+not a mistake, you can set 'input:error_on_unused_options=false' to
+turn off this check for unused options. You can always set
+'input:validate=true' to check inputs without running the full
+simulation.
+
+{})""");
+
+    throw BoutException(unused_message, toString(unused), data_dir, option_file,
+                        unused.getChildren().begin()->first, additional_info);
+  }
+}
+} // namespace bout

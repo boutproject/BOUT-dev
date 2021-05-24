@@ -2731,7 +2731,7 @@ void BoundaryDivCurl::apply(Vector2D& UNUSED(f)) {
 
 void BoundaryDivCurl::apply(Vector3D& var) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh == var.x.getMesh());
+  ASSERT1(mesh == var.getMesh());
 
   int jx, jy, jz, jzp, jzm;
   BoutReal tmp;

@@ -58,7 +58,7 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   max_timestep = (*options)["max_timestep"].doc("Maximum timestep").withDefault(tstep);
   timestep = (*options)["timestep"].doc("Starting timestep").withDefault(max_timestep);
   mxstep = (*options)["mxstep"].doc("Maximum number of steps between outputs").withDefault(500);
-  adaptive = (*options)["adaptive"].doc("Adapt internal timestep using ATOL and RTOL.").withDefault(true);
+  adaptive = (*options)["adaptive"].doc("Adapt internal timestep using 'atol' and 'rtol'.").withDefault(true);
 
   // Allocate memory
   f0.reallocate(nlocal); // Input

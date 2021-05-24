@@ -34,6 +34,7 @@
 #include "bout/assert.hxx"
 #include "bout/region.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/sys/uuid.h"
 
 #include <cmath>
 #include <cstring>
@@ -47,7 +48,6 @@
 #include "impls/euler/euler.hxx"
 #include "impls/ida/ida.hxx"
 #include "impls/imex-bdf2/imex-bdf2.hxx"
-#include "impls/karniadakis/karniadakis.hxx"
 #include "impls/petsc/petsc.hxx"
 #include "impls/power/power.hxx"
 #include "impls/pvode/pvode.hxx"
@@ -90,9 +90,6 @@ void Solver::setModel(PhysicsModel *m) {
   
   // Initialise them model, which specifies which variables to evolve
   m->initialise(this);
-  
-  // Check if the model is split operator
-  split_operator = m->splitOperator();
   
   model = m;
 }
@@ -149,7 +146,7 @@ void Solver::add(Field2D& v, const std::string& name, const std::string& descrip
   }
   
   // Check if the boundary regions should be evolved
-  // First get option from section "All"
+  // First get option from section "all"
   // then use that as default for specific section
   d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
   d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
@@ -208,7 +205,7 @@ void Solver::add(Field3D& v, const std::string& name, const std::string& descrip
   }
   
   // Check if the boundary regions should be evolved
-  // First get option from section "All"
+  // First get option from section "all"
   // then use that as default for specific section
   d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
   d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
@@ -440,68 +437,91 @@ void Solver::constraint(Vector3D& v, Vector3D& C_v, std::string name) {
  * Solver main loop: Initialise, run, and finish
  **************************************************************************/
 
-int Solver::solve(int NOUT, BoutReal TIMESTEP) {
-  
+int Solver::solve(int nout, BoutReal timestep) {
+
   Options& globaloptions = Options::root(); // Default from global options
-  
-  if (NOUT < 0) {
+
+  if (nout < 0) {
     /// Get options
-    NOUT = globaloptions["NOUT"].doc("Number of output steps").withDefault(1);
-    TIMESTEP = globaloptions["TIMESTEP"].doc("Output time step size").withDefault(1.0);
-    
+    nout = globaloptions["nout"].doc("Number of output steps").withDefault(1);
+    timestep = globaloptions["timestep"].doc("Output time step size").withDefault(1.0);
+
     // Check specific solver options, which override global options
-    NOUT = (*options)["NOUT"]
+    nout = (*options)["nout"]
                .doc("Number of output steps. Overrides global setting.")
-               .withDefault(NOUT);
-    TIMESTEP = (*options)["output_step"]
-                   .doc("Output time step size. Overrides global TIMESTEP setting.")
-                   .withDefault(TIMESTEP);
+               .withDefault(nout);
+    timestep = (*options)["output_step"]
+                   .doc("Output time step size. Overrides global 'timestep' setting.")
+                   .withDefault(timestep);
   }
 
-  finaliseMonitorPeriods(NOUT, TIMESTEP);
+  finaliseMonitorPeriods(nout, timestep);
 
-  output_progress.write(_("Solver running for {:d} outputs with output timestep of {:e}\n"),
-                        NOUT, TIMESTEP);
+  output_progress.write(
+      _("Solver running for {:d} outputs with output timestep of {:e}\n"), nout,
+      timestep);
   if (default_monitor_period > 1)
     output_progress.write(
         _("Solver running for {:d} outputs with monitor timestep of {:e}\n"),
-        NOUT / default_monitor_period, TIMESTEP * default_monitor_period);
+        nout / default_monitor_period, timestep * default_monitor_period);
 
   // Initialise
-  if (init(NOUT, TIMESTEP)) {
+  if (init(nout, timestep)) {
     throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
 
+  // Set the run ID
+  run_restart_from = run_id; // Restarting from the previous run ID
+  run_id = createRunID();
+
+  // Put the run ID into the options tree
+  // Forcing in case the value has been previously set
+  Options::root()["run"]["run_id"].force(run_id, "Output");
+  Options::root()["run"]["run_restart_from"].force(run_restart_from, "Output");
+
   /// Run the solver
   output_info.write(_("Running simulation\n\n"));
+  output_info.write("Run ID: {:s}\n", run_id);
+  if (run_restart_from != default_run_id) {
+    output_info.write("Restarting from ID: {:s}\n", run_restart_from);
+  }
 
   time_t start_time = time(nullptr);
   output_progress.write(_("\nRun started at  : {:s}\n"), toString(start_time));
 
   Timer timer("run"); // Start timer
 
-  const bool restart = globaloptions["restart"]
-               .doc("Load state from restart files?")
-               .withDefault(false);
+  const bool restart =
+      globaloptions["restart"].doc("Load state from restart files?").withDefault(false);
 
-  const bool append = globaloptions["append"]
+  const bool append =
+      globaloptions["append"]
           .doc("Add new outputs to the end of existing files? If false, overwrite files.")
           .withDefault(false);
   const bool dump_on_restart = globaloptions["dump_on_restart"]
                                    .doc("Write initial state as time point 0?")
                                    .withDefault(!restart || !append);
 
+  // Run RHS once to ensure all variables set
+  if (run_rhs(simtime)) {
+    throw BoutException("Physics RHS call failed\n");
+  }
+
+  // Check for unused/mistyped options
+  const bool validate_input = globaloptions["input"]["validate"]
+                                  .doc("Check for unused options and stop")
+                                  .withDefault(false);
+  bout::checkForUnusedOptions();
+  if (validate_input) {
+    return 0;
+  }
+
   if (dump_on_restart) {
 
     /// Write initial state as time-point 0
 
-    // Run RHS once to ensure all variables set
-    if (run_rhs(simtime)) {
-      throw BoutException("Physics RHS call failed\n");
-    }
-
     // Call monitors so initial values are written to output dump files
-    if (call_monitors(simtime, -1, NOUT)) {
+    if (call_monitors(simtime, -1, nout)) {
       throw BoutException("Initial monitor call failed!");
     }
   }
@@ -535,6 +555,51 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   return status;
 }
 
+std::string Solver::createRunID() const {
+
+  std::string result;
+  result.resize(36);
+
+  if (MYPE == 0) {
+    // Generate a unique ID for this run
+#if BOUT_HAS_UUID_SYSTEM_GENERATOR
+    uuids::uuid_system_generator gen{};
+#else
+    std::random_device rd;
+    auto seed_data = std::array<int, std::mt19937::state_size>{};
+    std::generate(std::begin(seed_data), std::end(seed_data), std::ref(rd));
+    std::seed_seq seq(std::begin(seed_data), std::end(seed_data));
+    std::mt19937 generator(seq);
+    uuids::uuid_random_generator gen{generator};
+#endif
+
+    result = uuids::to_string(gen());
+  }
+
+  // All ranks have same run_id
+  // Standard representation of UUID is always 36 characters
+  MPI_Bcast(&result[0], 36, MPI_CHAR, 0, BoutComm::get());
+
+  return result;
+}
+
+std::string Solver::getRunID() const {
+  AUTO_TRACE();
+  if (run_id == default_run_id) {
+    throw BoutException("run_id not set!");
+  }
+  return run_id;
+}
+
+std::string Solver::getRunRestartFrom() const {
+  AUTO_TRACE();
+  // Check against run_id, because this might not be a restarted run
+  if (run_id == default_run_id) {
+    throw BoutException("run_restart_from not set!");
+  }
+  return run_restart_from;
+}
+
 /**************************************************************************
  * Initialisation
  **************************************************************************/
@@ -561,6 +626,19 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
   /// Add basic variables to the file
   outputfile.addOnce(simtime,  "tt");
   outputfile.addOnce(iteration, "hist_hi");
+
+  // Add run information
+  bool save_repeat_run_id = (!save_repeat) ? false :
+                            (*options)["save_repeat_run_id"]
+                                .doc("Write run_id and run_restart_from at every output "
+                                     "timestep, to make it easier to concatenate output "
+                                     "data sets in time")
+                                .withDefault(false);
+  outputfile.add(run_id, "run_id", save_repeat_run_id, "UUID for this simulation");
+  outputfile.add(run_restart_from, "run_restart_from", save_repeat_run_id,
+                 "run_id of the simulation this one was restarted from."
+                 "'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' means the run is not a restart, "
+                 "or the previous run did not have a run_id.");
 
   // Add 2D and 3D evolving fields to output file
   for(const auto& f : f2d) {
@@ -804,6 +882,9 @@ int Solver::resetRHSCounter_e() {
   rhs_ncalls_e = 0;
   return t;
 }
+
+bool Solver::splitOperator() { return model->splitOperator(); }
+
 /////////////////////////////////////////////////////
 
 void Solver::addTimestepMonitor(TimestepMonitorFunc f) {
@@ -825,12 +906,7 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
   }
 
   // Call physics model monitor
-  if (model != nullptr) {
-    const int ret = model->runTimestepMonitor(simtime, lastdt);
-    if (ret)
-      return ret;
-  }
-  return 0;
+  return model->runTimestepMonitor(simtime, lastdt);
 }
 
 /**************************************************************************
@@ -1196,51 +1272,37 @@ Field3D Solver::globalIndex(int localStart) {
  * Running user-supplied functions
  **************************************************************************/
 
-void Solver::setSplitOperator(rhsfunc fC, rhsfunc fD) {
-  split_operator = true;
-  phys_conv = fC;
-  phys_diff = fD;
-}
-
 int Solver::run_rhs(BoutReal t) {
   int status;
-  
+
   Timer timer("rhs");
-  
-  if(split_operator) {
+
+  if (model->splitOperator()) {
     // Run both parts
-    
+
     int nv = getLocalN();
     // Create two temporary arrays for system state
     Array<BoutReal> tmp(nv);
     Array<BoutReal> tmp2(nv);
-    
+
     save_vars(tmp.begin()); // Copy variables into tmp
     pre_rhs(t);
-    if(model) {
-      status = model->runConvective(t);
-    }else 
-      status = (*phys_conv)(t);
+    status = model->runConvective(t);
     post_rhs(t); // Check variables, apply boundary conditions
-    
-    load_vars(tmp.begin()); // Reset variables
+
+    load_vars(tmp.begin());   // Reset variables
     save_derivs(tmp.begin()); // Save time derivatives
     pre_rhs(t);
-    if(model) {
-      status = model->runDiffusive(t, false);
-    }else
-      status = (*phys_diff)(t);
+    status = model->runDiffusive(t, false);
     post_rhs(t);
     save_derivs(tmp2.begin()); // Save time derivatives
-    for(BoutReal *t = tmp.begin(), *t2 = tmp2.begin(); t != tmp.end(); ++t, ++t2)
+    for (BoutReal *t = tmp.begin(), *t2 = tmp2.begin(); t != tmp.end(); ++t, ++t2) {
       *t += *t2;
+    }
     load_derivs(tmp.begin()); // Put back time-derivatives
-  }else {
+  } else {
     pre_rhs(t);
-    if(model) {
-      status = model->runRHS(t);
-    }else
-      status = (*phys_run)(t);
+    status = model->runRHS(t);
     post_rhs(t);
   }
 
@@ -1259,18 +1321,11 @@ int Solver::run_convective(BoutReal t) {
 
   Timer timer("rhs");
   pre_rhs(t);
-  if (split_operator) {
-    if (model) {
-      status = model->runConvective(t);
-    } else
-      status = (*phys_conv)(t);
+  if (model->splitOperator()) {
+    status = model->runConvective(t);
   } else if (!is_nonsplit_model_diffusive) {
     // Return total
-    if (model) {
-      status = model->runRHS(t);
-    } else {
-      status = (*phys_run)(t);
-    }
+    status = model->runRHS(t);
   } else {
     // Zero if not split
     for (const auto& f : f3d)
@@ -1294,20 +1349,13 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
 
   Timer timer("rhs");
   pre_rhs(t);
-  if (split_operator) {
+  if (model->splitOperator()) {
 
-    if (model) {
-      status = model->runDiffusive(t, linear);
-    } else {
-      status = (*phys_diff)(t);
-    }
+    status = model->runDiffusive(t, linear);
     post_rhs(t);
   } else if (is_nonsplit_model_diffusive) {
     // Return total
-    if (model) {
-      status = model->runRHS(t);
-    } else
-      status = (*phys_run)(t);
+    status = model->runRHS(t);
   } else {
     // Zero if not split
     for (const auto& f : f3d)
@@ -1387,22 +1435,14 @@ bool Solver::varAdded(const std::string& name) {
          || contains(v3d, name);
 }
 
-bool Solver::have_user_precon() {
-  if(model)
-    return model->hasPrecon();
+bool Solver::hasPreconditioner() { return model->hasPrecon(); }
 
-  return prefunc != nullptr;
+int Solver::runPreconditioner(BoutReal t, BoutReal gamma, BoutReal delta) {
+  return model->runPrecon(t, gamma, delta);
 }
 
-int Solver::run_precon(BoutReal t, BoutReal gamma, BoutReal delta) {
-  if(!have_user_precon())
-    return 1;
-
-  if(model)
-    return model->runPrecon(t, gamma, delta);
-  
-  return (*prefunc)(t, gamma, delta);
-}
+bool Solver::hasJacobian() { return model->hasJacobian(); }
+int Solver::runJacobian(BoutReal time) { return model->runJacobian(time); }
 
 // Add source terms to time derivatives
 void Solver::add_mms_sources(BoutReal t) {

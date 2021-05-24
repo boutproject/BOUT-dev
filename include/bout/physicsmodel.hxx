@@ -46,6 +46,8 @@ class PhysicsModel;
 #include "utils.hxx"
 #include "bout/macro_for_each.hxx"
 
+#include <type_traits>
+
 class Mesh;
 
 /*!
@@ -55,6 +57,13 @@ class PhysicsModel {
 public:
   using preconfunc = int (PhysicsModel::*)(BoutReal t, BoutReal gamma, BoutReal delta);
   using jacobianfunc = int (PhysicsModel::*)(BoutReal t);
+
+  template <class Model, typename = typename std::enable_if_t<
+                             std::is_base_of<PhysicsModel, Model>::value>>
+  using ModelPreconFunc = int (Model::*)(BoutReal t, BoutReal gamma, BoutReal delta);
+  template <class Model, typename = typename std::enable_if_t<
+                             std::is_base_of<PhysicsModel, Model>::value>>
+  using ModelJacobianFunc = int (Model::*)(BoutReal t);
 
   PhysicsModel();
   
@@ -200,10 +209,18 @@ protected:
   void setSplitOperator(bool split=true) {splitop = split;}
 
   /// Specify a preconditioner function
-  void setPrecon(preconfunc pset) {userprecon = pset;}
+  void setPrecon(preconfunc pset) { userprecon = pset; }
+  template <class Model>
+  void setPrecon(ModelPreconFunc<Model> preconditioner) {
+    userprecon = static_cast<preconfunc>(preconditioner);
+  }
 
   /// Specify a Jacobian-vector multiply function
-  void setJacobian(jacobianfunc jset) {userjacobian = jset;}
+  void setJacobian(jacobianfunc jset) { userjacobian = jset; }
+  template <class Model>
+  void setJacobian(ModelJacobianFunc<Model> jacobian) {
+    userjacobian = static_cast<jacobianfunc>(jacobian);
+  }
 
   /// This is set by a call to initialise, and can be used by models to specify evolving variables
   Solver* solver{nullptr};

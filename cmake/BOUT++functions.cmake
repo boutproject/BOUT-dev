@@ -32,7 +32,7 @@ function(bout_add_model MODEL)
   target_link_libraries(${MODEL} bout++::bout++)
   target_include_directories(${MODEL} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 endfunction()
-  
+
 
 # Build a BOUT++ example
 #
@@ -84,6 +84,118 @@ function(bout_add_example EXAMPLENAME)
 endfunction()
 
 
+# Add a new integrated or MMS test. By default, the executable is
+# named like the first source, stripped of its file extension. If no
+# sources are given, then you probably at least want to set
+# USE_RUNTEST
+#
+# Required arguments:
+#
+# - BUILD_CHECK_TARGET: the specific build-check target that should
+#   depend on this test
+#
+# - TESTNAME: name of the test
+#
+# Optional arguments:
+#
+# - SOURCES: list of source files
+#
+# - USE_RUNTEST: if given, the test uses `./runtest` as the test
+#   command, otherwise it uses the executable
+#
+# - USE_DATA_BOUT_INP: if given, copy `data/BOUT.inp`
+#
+# - EXTRA_FILES: any extra files that are required to run the test
+#
+# - REQUIRES: list of variables that must be truthy to enable test
+#
+# - EXECUTABLE_NAME: name of the executable, if different from the
+#   first source name
+#
+# - EXTRA_DEPENDS: list of other targets that this test depends on
+#
+function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
+  set(options USE_RUNTEST USE_DATA_BOUT_INP)
+  set(oneValueArgs EXECUTABLE_NAME)
+  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES TESTARGS EXTRA_DEPENDS)
+  cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  foreach (REQUIREMENT IN LISTS BOUT_TEST_OPTIONS_REQUIRES)
+    if (NOT ${REQUIREMENT})
+      message(STATUS "Not building test ${TESTNAME}, requirement not met: ${REQUIREMENT}")
+      return()
+    endif()
+  endforeach()
+
+  if (BOUT_TEST_OPTIONS_SOURCES)
+    # We've got some sources, so compile them into an executable and
+    # link against BOUT++
+    add_executable(${TESTNAME} ${BOUT_TEST_OPTIONS_SOURCES})
+    target_link_libraries(${TESTNAME} bout++)
+    target_include_directories(${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+    set_target_properties(${TESTNAME} PROPERTIES FOLDER tests/integrated)
+
+    # Set the name of the executable. We either take it as an option,
+    # or use the first source file, stripping the file suffix
+    if (BOUT_TEST_OPTIONS_EXECUTABLE_NAME)
+      set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_OPTIONS_EXECUTABLE_NAME})
+    else()
+      # If more than one source file, just get the first one
+      list(LENGTH ${BOUT_TEST_OPTIONS_SOURCES} BOUT_SOURCES_LENGTH)
+      if (BOUT_SOURCES_LENGTH GREATER 0)
+        list(GET ${BOUT_TEST_OPTIONS_SOURCES} 0 BOUT_TEST_FIRST_SOURCE)
+      else()
+        set(BOUT_TEST_FIRST_SOURCE ${BOUT_TEST_OPTIONS_SOURCES})
+      endif()
+      # Strip the directory and file extension from the source file
+      get_filename_component(BOUT_TEST_EXECUTABLE_NAME ${BOUT_TEST_FIRST_SOURCE} NAME_WE)
+      set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_EXECUTABLE_NAME})
+    endif()
+
+    # Add the test to the build-check-integrated-tests target
+    add_dependencies(${BUILD_CHECK_TARGET} ${TESTNAME})
+  else()
+    add_custom_target(${TESTNAME})
+  endif()
+
+  if (BOUT_TEST_OPTIONS_EXTRA_DEPENDS)
+    add_dependencies(${TESTNAME} ${BOUT_TEST_OPTIONS_EXTRA_DEPENDS})
+  endif()
+
+  # Set the actual test command
+  if (BOUT_TEST_OPTIONS_USE_RUNTEST)
+    add_test(NAME ${TESTNAME} COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS})
+    set_tests_properties(${TESTNAME} PROPERTIES
+      ENVIRONMENT PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
+      )
+    bout_copy_file(runtest)
+  else()
+    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME} ${BOUT_TEST_OPTIONS_TESTARGS})
+  endif()
+
+  # Copy the input file if needed
+  if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
+    bout_copy_file(data/BOUT.inp)
+  endif()
+
+  # Copy any other needed files
+  if (BOUT_TEST_OPTIONS_EXTRA_FILES)
+    foreach (FILE ${BOUT_TEST_OPTIONS_EXTRA_FILES})
+      bout_copy_file("${FILE}")
+    endforeach()
+  endif()
+endfunction()
+
+# Add a new integrated test. See `bout_add_integrated_or_mms_test` for arguments
+function(bout_add_integrated_test TESTNAME)
+  bout_add_integrated_or_mms_test(build-check-integrated-tests ${TESTNAME} ${ARGV})
+endfunction()
+
+# Add a new MMS test. See `bout_add_integrated_or_mms_test` for arguments
+function(bout_add_mms_test TESTNAME)
+  bout_add_integrated_or_mms_test(build-check-mms-tests ${TESTNAME} ${ARGV})
+endfunction()
+
 # Add an alias for an imported target
 # Workaround for CMAke < 3.18
 # Taken from https://github.com/conan-io/conan/issues/2125#issuecomment-351176653
@@ -104,7 +216,7 @@ function(bout_inspect_netcdf_config VAR NX_CONFIG ARG)
     OUTPUT_VARIABLE NX_CONFIG_OUTPUT
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
-  if(EXISTS "${NX_CONFIG_OUTPUT}")
+  if (NX_CONFIG_OUTPUT)
     set(${VAR} ${NX_CONFIG_OUTPUT} PARENT_SCOPE)
   endif()
 endfunction()

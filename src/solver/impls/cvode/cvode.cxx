@@ -37,8 +37,11 @@
 #include "options.hxx"
 #include "output.hxx"
 #include "unused.hxx"
+#include "bout/bout_enum_class.hxx"
 #include "bout/mesh.hxx"
 #include "utils.hxx"
+
+#include "fmt/core.h"
 
 #include <cvode/cvode.h>
 
@@ -69,6 +72,9 @@ using CVODEINT = bout::utils::function_traits<CVLocalFn>::arg_t<0>;
 using CVODEINT = sunindextype;
 #endif
 #endif
+
+BOUT_ENUM_CLASS(positivity_constraint, none, positive, non_negative, negative,
+                non_positive);
 
 static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 static int cvode_bbd_rhs(CVODEINT Nlocal, BoutReal t, N_Vector u, N_Vector du,
@@ -225,8 +231,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       throw BoutException("CVodeSetStabLimDet failed\n");
   }
 
-  const auto abstol = (*options)["ATOL"].doc("Absolute tolerance").withDefault(1.0e-12);
-  const auto reltol = (*options)["RTOL"].doc("Relative tolerance").withDefault(1.0e-5);
+  const auto abstol = (*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12);
+  const auto reltol = (*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5);
   const auto use_vector_abstol = (*options)["use_vector_abstol"].withDefault(false);
   if (use_vector_abstol) {
     std::vector<BoutReal> f2dtols;
@@ -254,7 +260,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     if (abstolvec == nullptr)
       throw BoutException("SUNDIALS memory allocation (abstol vector) failed\n");
 
-    set_abstol_values(NV_DATA_P(abstolvec), f2dtols, f3dtols);
+    set_vector_option_values(NV_DATA_P(abstolvec), f2dtols, f3dtols);
 
     if (CVodeSVtolerances(cvode_mem, reltol, abstolvec) < 0)
       throw BoutException("CVodeSVtolerances failed\n");
@@ -288,6 +294,44 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     CVodeSetMaxOrd(cvode_mem, mxorder);
   }
 
+  const auto max_nonlinear_iterations = (*options)["max_nonlinear_iterations"]
+    .doc("Maximum number of nonlinear iterations allowed by CVODE before reducing "
+         "timestep. CVODE default (used if this option is negative) is 3.")
+    .withDefault(-1);
+  if (max_nonlinear_iterations > 0) {
+    CVodeSetMaxNonlinIters(cvode_mem, max_nonlinear_iterations);
+  }
+
+  const auto apply_positivity_constraints = (*options)["apply_positivity_constraints"]
+    .doc("Use CVODE function CVodeSetConstraints to constrain variables - the constraint "
+         "to be applied is set by the positivity_constraint option in the subsection for "
+         "each variable")
+    .withDefault(false);
+#if not (SUNDIALS_VERSION_MAJOR >= 3 and SUNDIALS_VERSION_MINOR >= 2)
+  if (apply_positivity_constraints) {
+    throw BoutException("The apply_positivity_constraints option is only available with "
+                        "SUNDIALS>=3.2.0");
+  }
+#else
+  if (apply_positivity_constraints) {
+    auto f2d_constraints = create_constraints(f2d);
+    auto f3d_constraints = create_constraints(f3d);
+
+    N_Vector constraints_vec = N_VNew_Parallel(BoutComm::get(), local_N, neq);
+    if (constraints_vec == nullptr)
+      throw BoutException("SUNDIALS memory allocation (positivity constraints vector) "
+                          "failed\n");
+
+    set_vector_option_values(NV_DATA_P(constraints_vec), f2d_constraints,
+                             f3d_constraints);
+
+    if (CVodeSetConstraints(cvode_mem, constraints_vec) < 0)
+      throw BoutException("CVodeSetConstraints failed\n");
+
+    N_VDestroy_Parallel(constraints_vec);
+  }
+#endif
+
   /// Newton method can include Preconditioners and Jacobian function
   if (!func_iter) {
     output_info.write("\tUsing Newton iteration\n");
@@ -312,7 +356,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
         throw BoutException("CVSpgmr failed\n");
 #endif
 
-      if (!have_user_precon()) {
+      if (!hasPreconditioner()) {
         output_info.write("\tUsing BBD preconditioner\n");
 
         /// Get options
@@ -359,7 +403,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
     /// Set Jacobian-vector multiplication function
     const auto use_jacobian = (*options)["use_jacobian"].withDefault(false);
-    if ((use_jacobian) && (jacfunc != nullptr)) {
+    if (use_jacobian and hasJacobian()) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
 
       if (CVSpilsSetJacTimes(cvode_mem, nullptr, cvode_jac) != CV_SUCCESS)
@@ -381,6 +425,37 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
   return 0;
 }
+
+template<class FieldType>
+std::vector<BoutReal> CvodeSolver::create_constraints(
+    const std::vector<VarStr<FieldType>>& fields) {
+
+  std::vector<BoutReal> constraints;
+  constraints.reserve(fields.size());
+  std::transform(begin(fields), end(fields), std::back_inserter(constraints),
+                 [](const VarStr<FieldType>& f) {
+                   auto f_options = Options::root()[f.name];
+                   const auto value = f_options["positivity_constraint"]
+                                      .doc(fmt::format(
+                                           "Constraint to apply to {} if "
+                                           "solver:apply_positivity_constraint=true. "
+                                           "Possible values are: none (default), "
+                                           "positive, non_negative, negative, or "
+                                           "non_positive.", f.name))
+                                      .withDefault(positivity_constraint::none);
+                   switch (value) {
+                     case positivity_constraint::none: return 0.0;
+                     case positivity_constraint::positive: return 2.0;
+                     case positivity_constraint::non_negative: return 1.0;
+                     case positivity_constraint::negative: return -2.0;
+                     case positivity_constraint::non_positive: return -1.0;
+                     default: throw BoutException("Incorrect value for "
+                                                  "positivity_constraint");
+                   }
+                 });
+  return constraints;
+}
+
 
 /**************************************************************************
  * Run - Advance time
@@ -548,7 +623,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
 
   int N = NV_LOCLENGTH_P(uvec);
 
-  if (!have_user_precon()) {
+  if (!hasPreconditioner()) {
     // Identity (but should never happen)
     for (int i = 0; i < N; i++)
       zvec[i] = rvec[i];
@@ -561,7 +636,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
   // Load vector to be inverted into F_vars
   load_derivs(rvec);
 
-  run_precon(t, gamma, delta);
+  runPreconditioner(t, gamma, delta);
 
   // Save the solution from F_vars
   save_derivs(zvec);
@@ -577,8 +652,9 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
 void CvodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata) {
   TRACE("Running Jacobian: CvodeSolver::jac({})", t);
 
-  if (jacfunc == nullptr)
+  if (not hasJacobian()) {
     throw BoutException("No jacobian function supplied!\n");
+  }
 
   // Load state from ydate
   load_vars(ydata);
@@ -587,7 +663,7 @@ void CvodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jv
   load_derivs(vdata);
 
   // Call function
-  (*jacfunc)(t);
+  runJacobian(t);
 
   // Save Jv from vars
   save_derivs(Jvdata);
@@ -650,33 +726,34 @@ static int cvode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector U
 }
 
 /**************************************************************************
- * vector abstol functions
+ * CVODE vector option functions
  **************************************************************************/
 
-void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data,
-                                    std::vector<BoutReal>& f2dtols,
-                                    std::vector<BoutReal>& f3dtols) {
-  int p = 0; // Counter for location in abstolvec_data array
+void CvodeSolver::set_vector_option_values(BoutReal* option_data,
+                                           std::vector<BoutReal>& f2dtols,
+                                           std::vector<BoutReal>& f3dtols) {
+  int p = 0; // Counter for location in option_data array
 
   // All boundaries
   for (const auto& i2d : bout::globals::mesh->getRegion2D("RGN_BNDRY")) {
-    loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, true);
+    loop_vector_option_values_op(i2d, option_data, p, f2dtols, f3dtols, true);
   }
   // Bulk of points
   for (const auto& i2d : bout::globals::mesh->getRegion2D("RGN_NOBNDRY")) {
-    loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, false);
+    loop_vector_option_values_op(i2d, option_data, p, f2dtols, f3dtols, false);
   }
 }
 
-void CvodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d), BoutReal* abstolvec_data,
-                                        int& p, std::vector<BoutReal>& f2dtols,
-                                        std::vector<BoutReal>& f3dtols, bool bndry) {
+void CvodeSolver::loop_vector_option_values_op(Ind2D UNUSED(i2d), BoutReal* option_data,
+                                               int& p, std::vector<BoutReal>& f2dtols,
+                                               std::vector<BoutReal>& f3dtols, bool bndry)
+{
   // Loop over 2D variables
   for (std::vector<BoutReal>::size_type i = 0; i < f2dtols.size(); i++) {
     if (bndry && !f2d[i].evolve_bndry) {
       continue;
     }
-    abstolvec_data[p] = f2dtols[i];
+    option_data[p] = f2dtols[i];
     p++;
   }
 
@@ -686,7 +763,7 @@ void CvodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d), BoutReal* abstolvec_d
       if (bndry && !f3d[i].evolve_bndry) {
         continue;
       }
-      abstolvec_data[p] = f3dtols[i];
+      option_data[p] = f3dtols[i];
       p++;
     }
   }

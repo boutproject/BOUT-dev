@@ -159,11 +159,11 @@ protected:
     /*************** READ OPTIONS *************************/
     // Read some parameters
     
-    auto globalOptions = Options::root();
+    auto& globalOptions = Options::root();
     
     time_step = globalOptions["TIMESTEP"].withDefault(1.0);
 
-    auto options = globalOptions["2fluid"];
+    auto& options = globalOptions["2fluid"];
     AA = options["AA"].withDefault(4.0); // <=> AA = options["AA"].withDefault(1.0);
     ZZ = options["ZZ"].withDefault(1.0);
 
@@ -198,7 +198,7 @@ protected:
 
     // Set default values for terms in each equation
     // Allows default to be overridden in BOUT.inp file
-    auto option_rho = globalOptions["rho"];
+    auto& option_rho = globalOptions["rho"];
     evolve_rho = option_rho["evolve_rho"].withDefault(true);
     rho_jpar1 = option_rho["rho_jpar1"].withDefault(false);
     rho_nuin_rho1 = option_rho["rho_nuin_rho1"].withDefault(false);
@@ -210,7 +210,7 @@ protected:
     rho_ve2t = option_rho["rho_ve2t"].withDefault(false);
     rho_diff = option_rho["rho_diff"].withDefault(false);
 
-    auto option_ni = globalOptions["ni"];
+    auto& option_ni = globalOptions["ni"];
     evolve_ni = option_ni["evolve_ni"].withDefault(true);
     ni_jpar1 = option_ni["ni_jpar1"].withDefault(false);
     ni_ni0_phi1 = option_ni["ni_ni0_phi1"].withDefault(false);
@@ -219,7 +219,7 @@ protected:
     ni_src_ni0 = option_ni["ni_src_ni0"].withDefault(false);
     ni_diff = option_ni["ni_diff"].withDefault(false);
 
-    auto option_ajpar = globalOptions["ajpar"];
+    auto& option_ajpar = globalOptions["ajpar"];
     evolve_ajpar = option_ajpar["evolve_ajpar"].withDefault(true);
     ajpar_phi1 = option_ajpar["ajpar_phi1"].withDefault(false);
     ajpar_jpar1 = option_ajpar["ajpar_jpar1"].withDefault(false);
@@ -229,7 +229,7 @@ protected:
     ajpar_ajpar1_phi1 = option_ajpar["ajpar_ajpar1_phi1"].withDefault(false);
     ajpar_ve1_ve1 = option_ajpar["ajpar_ve1_ve1"].withDefault(false);
 
-    auto option_te = globalOptions["te"];
+    auto& option_te = globalOptions["te"];
     evolve_te = option_te["evolve_te"].withDefault(true);
     te_te1_phi0 = option_te["te_te1_phi0"].withDefault(false);
     te_te0_phi1 = option_te["te_te0_phi1"].withDefault(false);
@@ -427,7 +427,7 @@ protected:
     
     return 0;
   }
-  // End of physics_init()
+
   //////////////////////////////////////
   
 
@@ -725,7 +725,7 @@ protected:
     
     return 0;
   }
-  //End of physics_run
+
   /////////////////////////////////////////////////////////////////
   
   

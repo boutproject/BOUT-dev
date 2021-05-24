@@ -62,7 +62,6 @@ set(BOUT_SOURCES
   ./include/bout/deprecated.hxx
   ./include/bout/deriv_store.hxx
   ./include/bout/expr.hxx
-  ./include/bout/field_visitor.hxx
   ./include/bout/fieldgroup.hxx
   ./include/bout/format.hxx
   ./include/bout/fv_ops.hxx
@@ -104,7 +103,6 @@ set(BOUT_SOURCES
   ./include/bout_types.hxx
   ./include/boutcomm.hxx
   ./include/boutexception.hxx
-  ./include/boutmain.hxx
   ./include/cyclic_reduction.hxx
   ./include/datafile.hxx
   ./include/dataformat.hxx
@@ -145,6 +143,7 @@ set(BOUT_SOURCES
   ./include/vector3d.hxx
   ./include/where.hxx
   ./src/bout++.cxx
+  ./src/bout++-time.cxx
   ./src/field/field.cxx
   ./src/field/field2d.cxx
   ./src/field/field3d.cxx
@@ -166,8 +165,6 @@ set(BOUT_SOURCES
   ./src/fileio/formatfactory.cxx
   ./src/fileio/formatfactory.hxx
   ./src/fileio/impls/emptyformat.hxx
-  ./src/fileio/impls/hdf5/h5_format.cxx
-  ./src/fileio/impls/hdf5/h5_format.hxx
   ./src/fileio/impls/netcdf/nc_format.cxx
   ./src/fileio/impls/netcdf/nc_format.hxx
   ./src/fileio/impls/netcdf4/ncxx4.cxx
@@ -253,8 +250,6 @@ set(BOUT_SOURCES
   ./src/solver/impls/ida/ida.hxx
   ./src/solver/impls/imex-bdf2/imex-bdf2.cxx
   ./src/solver/impls/imex-bdf2/imex-bdf2.hxx
-  ./src/solver/impls/karniadakis/karniadakis.cxx
-  ./src/solver/impls/karniadakis/karniadakis.hxx
   ./src/solver/impls/petsc/petsc.cxx
   ./src/solver/impls/petsc/petsc.hxx
   ./src/solver/impls/power/power.cxx
@@ -345,6 +340,10 @@ target_include_directories(bout++ PUBLIC
 
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
+
+# Various sanitizers, including coverage and address sanitizer
+include(cmake/Sanitizers.cmake)
+enable_sanitizers(bout++)
 
 ##################################################
 # Components of the version number
@@ -518,15 +517,6 @@ endif()
 message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
 
-option(BOUT_USE_HDF5 "Enable support for HDF5 output" OFF)
-if (BOUT_USE_HDF5)
-  find_package(HDF5 REQUIRED COMPONENTS CXX)
-  target_link_libraries(bout++ PUBLIC "${HDF5_CXX_LIBRARIES}")
-  target_include_directories(bout++ PUBLIC "${HDF5_CXX_INCLUDE_DIRS}")
-endif()
-message(STATUS "HDF5 support: ${BOUT_USE_HDF5}")
-set(BOUT_HAS_HDF5 ${BOUT_USE_HDF5})
-
 option(BOUT_USE_FFTW "Enable support for FFTW" ON)
 if (BOUT_USE_FFTW)
   find_package(FFTW REQUIRED)
@@ -602,6 +592,20 @@ if (BOUT_USE_SCOREP)
 endif()
 set(BOUT_HAS_SCOREP ${BOUT_USE_SCOREP})
 
+option(BOUT_USE_UUID_SYSTEM_GENERATOR "Enable support for using a system UUID generator" ON)
+if (BOUT_USE_UUID_SYSTEM_GENERATOR)
+  find_package(Libuuid QUIET)
+  if (Libuuid_FOUND)
+    target_link_libraries(bout++
+      PUBLIC Libuuid::libuuid)
+  else()
+    message(STATUS "libuuid not found, using fallback UUID generator")
+    set(BOUT_USE_UUID_SYSTEM_GENERATOR FALSE)
+  endif()
+endif()
+message(STATUS "UUID_SYSTEM_GENERATOR: ${BOUT_USE_UUID_SYSTEM_GENERATOR}")
+set(BOUT_HAS_UUID_SYSTEM_GENERATOR ${BOUT_USE_UUID_SYSTEM_GENERATOR})
+
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("int main() { const char* name = __PRETTY_FUNCTION__; }"
   HAS_PRETTY_FUNCTION)
@@ -663,93 +667,8 @@ target_compile_definitions(bout++
 ##################################################
 # Tests
 
-# Add a new integrated test. By default, the executable is named like
-# the first source, stripped of its file extension.
-#
-# Required arguments:
-#
-# - TESTNAME: name of the test
-#
-# - SOURCES: list of source files
-#
-# Optional arguments:
-#
-# - USE_RUNTEST: if given, the test uses `./runtest` as the test
-#   command, otherwise it uses the executable
-#
-# - USE_DATA_BOUT_INP: if given, copy `data/BOUT.inp`
-#
-# - EXTRA_FILES: any extra files that are required to run the test
-#
-# - REQUIRES: list of variables that must be truthy to enable test
-#
-# - EXECUTABLE_NAME: name of the executable, if different from the
-#   first source name
-
-function(bout_add_integrated_test TESTNAME)
-  set(options USE_RUNTEST USE_DATA_BOUT_INP)
-  set(oneValueArgs EXECUTABLE_NAME)
-  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES TESTARGS)
-  cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-  foreach (REQUIREMENT IN LISTS BOUT_TEST_OPTIONS_REQUIRES)
-    if (NOT ${REQUIREMENT})
-      message(STATUS "Not building test ${TESTNAME}, requirement not met: ${REQUIREMENT}")
-      return()
-    endif()
-  endforeach()
-
-  add_executable(${TESTNAME} ${BOUT_TEST_OPTIONS_SOURCES})
-  target_link_libraries(${TESTNAME} bout++)
-  target_include_directories(${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-
-  # Set the name of the executable. We either take it as an option,
-  # or use the first source file, stripping the file suffix
-  if (BOUT_TEST_OPTIONS_EXECUTABLE_NAME)
-    set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_OPTIONS_EXECUTABLE_NAME})
-  else()
-    # If more than one source file, just get the first one
-    list(LENGTH ${BOUT_TEST_OPTIONS_SOURCES} BOUT_SOURCES_LENGTH)
-    if (BOUT_SOURCES_LENGTH GREATER 0)
-      list(GET ${BOUT_TEST_OPTIONS_SOURCES} 0 BOUT_TEST_FIRST_SOURCE)
-    else()
-      set(BOUT_TEST_FIRST_SOURCE ${BOUT_TEST_OPTIONS_SOURCES})
-    endif()
-    # Strip the directory and file extension from the source file
-    get_filename_component(BOUT_TEST_EXECUTABLE_NAME ${BOUT_TEST_FIRST_SOURCE} NAME_WE)
-    set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_EXECUTABLE_NAME})
-  endif()
-
-  # Set the actual test command
-  if (BOUT_TEST_OPTIONS_USE_RUNTEST)
-    add_test(NAME ${TESTNAME} COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS})
-    set_tests_properties(${TESTNAME} PROPERTIES
-      ENVIRONMENT PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
-      )
-    bout_copy_file(runtest)
-  else()
-    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME} ${BOUT_TEST_OPTIONS_TESTARGS})
-  endif()
-
-  # Copy the input file if needed
-  if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
-    bout_copy_file(data/BOUT.inp)
-  endif()
-
-  # Copy any other needed files
-  if (BOUT_TEST_OPTIONS_EXTRA_FILES)
-    foreach (FILE ${BOUT_TEST_OPTIONS_EXTRA_FILES})
-      bout_copy_file("${FILE}")
-    endforeach()
-  endif()
-
-  set_target_properties(${TESTNAME} PROPERTIES FOLDER tests/integrated)
-
-  # Add the test to the build-check-integrated-tests target
-  add_dependencies(build-check-integrated-tests ${TESTNAME})
-endfunction()
-
 option(PACKAGE_TESTS "Build the tests" ON)
+option(BOUT_RUN_ALL_TESTS "Run all of the tests (this can be slow!)" OFF)
 if(PACKAGE_TESTS)
   enable_testing()
 
@@ -757,13 +676,15 @@ if(PACKAGE_TESTS)
   # Tests need to add themselves as dependencies to these targets
   add_custom_target(build-check-unit-tests)
   add_custom_target(build-check-integrated-tests)
+  add_custom_target(build-check-mms-tests)
 
   # Build all the tests
   add_custom_target(build-check)
-  add_dependencies(build-check build-check-unit-tests build-check-integrated-tests)
+  add_dependencies(build-check build-check-unit-tests build-check-integrated-tests build-check-mms-tests)
 
   add_subdirectory(tests/unit EXCLUDE_FROM_ALL)
   add_subdirectory(tests/integrated EXCLUDE_FROM_ALL)
+  add_subdirectory(tests/MMS EXCLUDE_FROM_ALL)
 
   # Targets for running the tests
   add_custom_target(check-unit-tests
@@ -774,14 +695,26 @@ if(PACKAGE_TESTS)
     COMMAND ctest -R "test-" --output-on-failure)
   add_dependencies(check-integrated-tests build-check-integrated-tests)
 
+  add_custom_target(check-mms-tests
+    COMMAND ctest -R "MMS-" --output-on-failure)
+  add_dependencies(check-mms-tests build-check-mms-tests)
+
   # Run all the tests
   add_custom_target(check)
-  add_dependencies(check check-unit-tests check-integrated-tests)
+  add_dependencies(check check-unit-tests check-integrated-tests check-mms-tests)
 endif()
 
 option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
 if(BOUT_BUILD_EXAMPLES)
   add_subdirectory(examples)
+endif()
+
+##################################################
+# Documentation
+
+option(BOUT_BUILD_DOCS "Build the documentation" OFF)
+if (BOUT_BUILD_DOCS)
+  add_subdirectory(manual EXCLUDE_FROM_ALL)
 endif()
 
 ##################################################
@@ -873,12 +806,12 @@ message("
    SLEPc support            : ${BOUT_HAS_SLEPC}
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
    NetCDF support           : ${BOUT_HAS_NETCDF}
-   HDF5 support             : ${BOUT_HAS_HDF5}
    FFTW support             : ${BOUT_HAS_FFTW}
    LAPACK support           : ${BOUT_HAS_LAPACK}
    OpenMP support           : ${BOUT_USE_OPENMP}
    Natural language support : ${BOUT_HAS_GETTEXT}
    ScoreP support           : ${BOUT_HAS_SCOREP}
+   System UUID generator    : ${BOUT_HAS_UUID_SYSTEM_GENERATOR}
    Extra debug output       : ${BOUT_USE_OUTPUT_DEBUG}
    Runtime error check level: ${BOUT_CHECK_LEVEL}
    Signal handling          : ${BOUT_USE_SIGNAL}
@@ -886,6 +819,7 @@ message("
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
    Backtrace enabled        : ${BOUT_USE_BACKTRACE}
+   Sanitizers enabled       : ${BOUT_USE_SANITIZERS}
 
    === Python ===
 

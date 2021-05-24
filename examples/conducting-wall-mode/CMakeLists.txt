@@ -6,4 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-bout_add_example(conducting-wall-mode SOURCES cwm.cxx)
+bout_add_example(conducting-wall-mode
+  SOURCES cwm.cxx
+  EXTRA_FILES cwm_grid.nc)

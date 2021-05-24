@@ -42,21 +42,23 @@ int main(int argc, char** argv) {
 
   auto* mesh = f.getMesh();
 
+  auto guess = zeroFrom(rhs);
+
   // Copy boundary values into boundary cells
   for (auto it = mesh->iterateBndryLowerY(); !it.isDone(); it.next()) {
     int x = it.ind;
     int y = mesh->ystart - 1;
     if (x == mesh->xstart) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-	f(x-1, y, z) = 0.5*(f(x-1, y - 1, z) + f(x-1, y, z));
+	guess(x-1, y, z) = 0.5*(f(x-1, y - 1, z) + f(x-1, y, z));
       }
     }
     for (int z = mesh->zstart; z <= mesh->zend; z++) {
-      f(x, y, z) = 0.5*(f(x, y, z) + f(x, y + 1, z));
+      guess(x, y, z) = 0.5*(f(x, y, z) + f(x, y + 1, z));
     }
     if (x == mesh->xend) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-	f(x+1, y, z) = 0.5*(f(x+1, y - 1, z) + f(x+1, y, z));
+	guess(x+1, y, z) = 0.5*(f(x+1, y - 1, z) + f(x+1, y, z));
       }
     }
   }
@@ -65,15 +67,15 @@ int main(int argc, char** argv) {
     int y = mesh->yend + 1;
     if (x == mesh->xstart) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-	f(x-1, y, z) = 0.5*(f(x-1, y - 1, z) + f(x-1, y, z));
+	guess(x-1, y, z) = 0.5*(f(x-1, y - 1, z) + f(x-1, y, z));
       }
     }
     for (int z = mesh->zstart; z <= mesh->zend; z++) {
-      f(x, y, z) = 0.5*(f(x, y - 1, z) + f(x, y, z));
+      guess(x, y, z) = 0.5*(f(x, y - 1, z) + f(x, y, z));
     }
     if (x == mesh->xend) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-	f(x+1, y, z) = 0.5*(f(x+1, y - 1, z) + f(x+1, y, z));
+	guess(x+1, y, z) = 0.5*(f(x+1, y - 1, z) + f(x+1, y, z));
       }
     }
   }
@@ -81,7 +83,7 @@ int main(int argc, char** argv) {
     int x = mesh->xstart - 1;
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-        f(x, y, z) = 0.5*(f(x, y, z) + f(x + 1, y, z));
+        guess(x, y, z) = 0.5*(f(x, y, z) + f(x + 1, y, z));
       }
     }
   }
@@ -89,7 +91,7 @@ int main(int argc, char** argv) {
     int x = mesh->xend + 1;
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-        f(x, y, z) = 0.5*(f(x - 1, y, z) + f(x, y, z));
+        guess(x, y, z) = 0.5*(f(x - 1, y, z) + f(x, y, z));
       }
     }
   }
@@ -111,10 +113,12 @@ int main(int argc, char** argv) {
   laplace_solver->setCoefC2(C2);
   laplace_solver->setCoefD(D);
 
+  bout::checkForUnusedOptions();
+
   ///////////////////////////////////////////////////////////////////////////////////////
   // Solve
   ///////////////////////////////////////////////////////////////////////////////////////
-  f = laplace_solver->solve(rhs, f);
+  f = laplace_solver->solve(rhs, guess);
 
   ///////////////////////////////////////////////////////////////////////////////////////
   // Calculate error

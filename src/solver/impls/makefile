@@ -6,7 +6,7 @@ DIRS		= arkode \
 	petsc \
 	snes imex-bdf2 \
 	power slepc adams_bashforth \
-	karniadakis rk4 euler rk3-ssp rkgeneric split-rk
+	rk4 euler rk3-ssp rkgeneric split-rk
 
 TARGET		= lib
 

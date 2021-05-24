@@ -5,8 +5,8 @@
 
 # settings used by the core code
 
-NOUT = 50    # number of time-steps
-TIMESTEP = 1e2  # time between outputs
+nout = 50    # number of time-steps
+timestep = 100.0  # time between outputs
 
 MXG = 2
 MYG = 0      # No y derivatives, so no guard cells needed in y
@@ -25,7 +25,7 @@ dz = 2.0
 
 [mesh:ddx]
 
-first = C2  
+first = C2
 second = C2
 upwind = W3
 
@@ -46,8 +46,8 @@ upwind = W3
 
 [solver]
 
-ATOL = 1.0e-10  # absolute tolerance
-RTOL = 1.0e-5   # relative tolerance
+atol = 1e-10  # absolute tolerance
+rtol = 1e-05   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 ###################################################
@@ -55,7 +55,7 @@ mxstep = 10000  # Maximum internal steps per output
 # These options are used if boussinesq = false
 
 [phiSolver]
-type   = petsc  # Needed if Boussinesq = false
+type = petsc  # Needed if Boussinesq = false
 ksptype = gmres # Linear iterative method
 pctype = lu # Preconditioner. Direct "lu" or "ilu"; iterative "jacobi", "sor"
 
@@ -69,7 +69,7 @@ factor_package = superlu_dist
 
 [phiBoussinesq]
 type = petsc
-inner_boundary_flags=2
+inner_boundary_flags = 2
 
 ##################################################
 # general settings for the model
@@ -78,23 +78,23 @@ inner_boundary_flags=2
 
 Te0 = 5    # Electron Temperature (eV)
 
-n0 = 2e18  # Background plasma density (m^-3)
+n0 = 2e+18  # Background plasma density (m^-3)
 
-compressible = false  # Compressibility? 
+compressible = false  # Compressibility?
 
 boussinesq = true  # Boussinesq approximation (no perturbed n in vorticity)
 
 D_vort = 0  # Viscosity
 D_n = 0     # Diffusion
-  
-R_c = 1.5  # Radius of curvature (m) 
+
+R_c = 1.5  # Radius of curvature (m)
 
 # settings for individual variables
 # The section "All" defines default settings for all variables
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 bndry_all = neumann # Zero-gradient on all boundaries
@@ -103,5 +103,3 @@ bndry_all = neumann # Zero-gradient on all boundaries
 scale = 1.0 # size of perturbation
 
 function = 1 + 0.27*gauss(x-0.25, 0.08333)*gauss(z-pi,0.52)
-
-

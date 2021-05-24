@@ -1,10 +1,6 @@
+
 [f]
-#function = 0.
 function = mixmode(x, 1.)*mixmode(y, 2.)*mixmode(z, 3.)
-bndry_xin = none
-bndry_xout = none
-bndry_ydown = dirichlet
-bndry_yup = dirichlet
 
 [rhs]
 function = mixmode(x, 4.)*mixmode(y, 5.)*mixmode(z, 6.)
@@ -22,7 +18,7 @@ function = 1. + .1*mixmode(x, 10.)*mixmode(y, 11.)*mixmode(z, 12.)
 function = .1*mixmode(x, 13.)*mixmode(y, 14.)*mixmode(z, 15.)
 
 [A]
-function = 0.
+function = 0.0
 
 #################################################################################
 [mesh]
@@ -36,19 +32,19 @@ dz = 1./nz
 
 #g22 = 1.
 #g_22 = 1.
-g22 = .8
+g22 = 0.8
 g_22 = 1.25
 
-g11 = 1.
-g33 = 1.
-g12 = 0.
-g13 = 0.
-g23 = 0.
-g_11 = 1.
-g_33 = 1.
-g_12 = 0.
-g_13 = 0.
-g_23 = 0.
+g11 = 1.0
+g33 = 1.0
+g12 = 0.0
+g13 = 0.0
+g23 = 0.0
+g_11 = 1.0
+g_33 = 1.0
+g_12 = 0.0
+g_13 = 0.0
+g_23 = 0.0
 
 ixseps1 = -1
 ixseps2 = 0
@@ -56,8 +52,8 @@ ixseps2 = 0
 #################################################################################
 [laplace]
 type = petsc3damg
-rtol = 1.e-8
-atol = 1.e-12
+rtol = 1e-08
+atol = 1e-12
 
 [laplace:petsc]
 mg_levels_ksp_max_it = 3

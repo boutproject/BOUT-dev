@@ -6,6 +6,7 @@
 
 import argparse
 from sys import exit
+
 try:
     import argcomplete
 except ImportError:
@@ -13,8 +14,7 @@ except ImportError:
 import boutdata.squashoutput as squash
 
 # Parse command line arguments
-parser = argparse.ArgumentParser(
-    squash.__doc__ + "\n\n" + squash.squashoutput.__doc__)
+parser = argparse.ArgumentParser(squash.__doc__ + "\n\n" + squash.squashoutput.__doc__)
 
 
 def str_to_bool(string):
@@ -25,23 +25,22 @@ def int_or_none(string):
     try:
         return int(string)
     except ValueError:
-        if string.lower() == 'none' or string.lower() == 'n':
+        if string.lower() == "none" or string.lower() == "n":
             return None
         else:
             raise
 
-parser.add_argument("datadir", nargs='?', default=".")
+
+parser.add_argument("datadir", nargs="?", default=".")
 parser.add_argument("--outputname", default="BOUT.dmp.nc")
-parser.add_argument("--tind", type=int_or_none, nargs='*', default=[None])
-parser.add_argument("--xind", type=int_or_none, nargs='*', default=[None])
-parser.add_argument("--yind", type=int_or_none, nargs='*', default=[None])
-parser.add_argument("--zind", type=int_or_none, nargs='*', default=[None])
-parser.add_argument("-s", "--singleprecision",
-                    action="store_true", default=False)
+parser.add_argument("--tind", type=int_or_none, nargs="*", default=[None])
+parser.add_argument("--xind", type=int_or_none, nargs="*", default=[None])
+parser.add_argument("--yind", type=int_or_none, nargs="*", default=[None])
+parser.add_argument("--zind", type=int_or_none, nargs="*", default=[None])
+parser.add_argument("-s", "--singleprecision", action="store_true", default=False)
 parser.add_argument("-c", "--compress", action="store_true", default=False)
 parser.add_argument("-l", "--complevel", type=int_or_none, default=None)
-parser.add_argument("-i", "--least-significant-digit",
-                    type=int_or_none, default=None)
+parser.add_argument("-i", "--least-significant-digit", type=int_or_none, default=None)
 parser.add_argument("-q", "--quiet", action="store_true", default=False)
 parser.add_argument("-a", "--append", action="store_true", default=False)
 parser.add_argument("-d", "--delete", action="store_true", default=False)

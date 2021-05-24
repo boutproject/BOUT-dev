@@ -46,6 +46,23 @@
 - `PhysicsModel` expects the options `datadir` and `dump_format` to
   have been set; this is only a problem if you don't call
   `BoutInitialise`. [\#2062](https://github.com/boutproject/BOUT-dev/pull/2062)
+- Support for reading/writing HDF5 files has been removed ahead of
+  completely refactoring the I/O
+  systems. [\#2208](https://github.com/boutproject/BOUT-dev/pull/2208)
+- Removed the Karniadakis time solver. Other choices for split-operator schemes
+  are: `splitrk` (built-in), `imexbdf2` (requires PETSc), and `arkode` (requires
+  SUNDIALS) [\#2241](https://github.com/boutproject/BOUT-dev/pull/2241)
+- Conversion of Option to bool is now stricter.  Previously, only tested
+  (case-insensitively) if first character was 'n', 'f', '0', 'y', 't', or '1'.
+  Now only allow (still case-insensitively but checking full strings) 'n',
+  'no', 'f', 'false', '0', 'y', 'yes', 't', 'true', or '1'.
+  [\#2282](https://github.com/boutproject/BOUT-dev/pull/2282)
+- Having any unused options remaining after the first call to the physics model
+  `rhs` is now an error. Set `input:error_on_unused_options = false` for old
+  behaviour [\#2210](https://github.com/boutproject/BOUT-dev/pull/2210)
+- Input options are now case sensitive. Run `bin/bout-v5-input-file-upgrader.py`
+  to automatically fix the most common library options
+  [\#2210](https://github.com/boutproject/BOUT-dev/pull/2210)
 
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)

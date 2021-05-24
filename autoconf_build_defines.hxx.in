@@ -15,9 +15,6 @@
 /* NLS support */
 #undef BOUT_HAS_GETTEXT
 
-/* HDF5 support */
-#undef BOUT_HAS_HDF5
-
 /* IDA support */
 #undef BOUT_HAS_IDA
 
@@ -50,6 +47,9 @@
 
 /* SUNDIALS support */
 #undef BOUT_HAS_SUNDIALS
+
+/* Use libuuid for UUID generation */
+#undef BOUT_HAS_UUID_SYSTEM_GENERATOR
 
 /* OpenMP schedule */
 #undef BOUT_OPENMP_SCHEDULE

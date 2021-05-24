@@ -45,12 +45,15 @@ class Options;
 #include "utils.hxx"
 #include "bout/sys/variant.hxx"
 #include "bout/sys/type_name.hxx"
+#include "bout/traits.hxx"
 #include "bout/deprecated.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "fieldperp.hxx"
 
 #include <map>
+#include <ostream>
+#include <set>
 #include <string>
 #include <sstream>
 #include <iomanip>
@@ -280,6 +283,32 @@ public:
   /// is not a child, then a BoutException will be thrown
   const Options& operator[](const std::string &name) const;
   const Options& operator[](const char *name) const { return (*this)[std::string(name)]; }
+
+  /// Return type of `Options::fuzzyFind`
+  struct FuzzyMatch {
+    /// The matching option
+    const Options& match;
+    /// Edit distance from original search term
+    std::string::size_type distance;
+    /// Comparison operator so this works in a std::multiset
+    friend bool operator<(const FuzzyMatch& lhs, const FuzzyMatch& rhs) {
+      return lhs.distance < rhs.distance;
+    }
+  };
+
+  /// Find approximate matches for \p name throughout the whole
+  /// tree. \p distance controls the similarity of results
+  ///
+  /// Returns a set of possible matches ordered by similarity to \p
+  /// name. A \p distance of 1 means: a single insertion, deletion,
+  /// substitution, or transposition; that the case differs, for
+  /// example, "key" and "KEY" match with distance 1; or that an
+  /// unqualified name matches a fully-qualified name, for example
+  /// "key" matches "section:key" with distance 1. Note that
+  /// "first:second:key" will not (closely) match "third:fourth:key",
+  /// but "key" will match both.
+  std::multiset<FuzzyMatch> fuzzyFind(const std::string& name,
+                                      std::string::size_type distance = 4) const;
 
   /// Assignment from any type T
   /// Note: Using this makes this object a value.
@@ -574,7 +603,7 @@ public:
     // Note using operator[] here would result in exception if key does not exist
     if (!is_section)
       return false;
-    auto it = children.find(lowercase(key));
+    auto it = children.find(key);
     if (it == children.end())
       return false;
     return it->second.isSet();
@@ -614,8 +643,21 @@ public:
     }
   }
 
+  /// Return a new Options instance which contains all the values
+  /// _not_ used from this instance. If an option has a "source"
+  /// attribute in \p exclude_sources it is counted as having been
+  /// used and so won't be included in the returned value. By default,
+  /// this is just "Output".
+  Options getUnused(const std::vector<std::string>& exclude_sources = {"Output"} ) const;
+
   /// Print the options which haven't been used
   void printUnused() const;
+
+  /// Set the attribute "conditionally used" to be true for \p options
+  /// and all its children/sections, causing `Options::getUnused` to
+  /// assume those options have been used. This is useful to ignore
+  /// options when checking for typos etc.
+  void setConditionallyUsed();
 
   /// clean the cache of parsed options
   static void cleanCache();
@@ -645,6 +687,10 @@ public:
     return children;
   }
 
+  /// Return a vector of all the full names of all the keys below this
+  /// in the tree (not gauranteed to be sorted)
+  std::vector<std::string> getFlattenedKeys() const;
+
   bool isValue() const {
     return is_value;
   }
@@ -661,6 +707,13 @@ public:
     return *this;
   }
   
+  friend bool operator==(const Options& lhs, const Options& rhs) {
+    if (lhs.is_value and rhs.is_value) {
+      return lhs.value == rhs.value;
+    }
+    return lhs.children == rhs.children;
+  }
+
  private:
   
   /// The source label given to default values
@@ -739,6 +792,34 @@ template <> bool Options::as<bool>(const bool& similar_to) const;
 template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const;
 template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
 template <> FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
+
+/// Convert \p value to string
+std::string toString(const Options& value);
+
+/// Output a stringified \p value to a stream
+///
+/// This is templated to avoid implict casting: anything is
+/// convertible to an `Options`, and we want _exactly_ `Options`
+template <class T, typename = bout::utils::EnableIfOptions<T>>
+inline std::ostream& operator<<(std::ostream& out, const T& value) {
+  return out << toString(value);
+}
+
+namespace bout {
+/// Check if the global Options contains any unused keys and throw an
+/// exception if so. This check can be skipped by setting
+/// `input:error_on_unused_options=false` in the global Options.
+void checkForUnusedOptions();
+/// Check if the given \p options contains any unused keys and throw
+/// an exception if so.
+///
+/// The error message contains helpful suggestions on possible
+/// misspellings, and how to automatically fix most common errors with
+/// library options. The \p data_dir and \p option_file arguments are
+/// used to customise the error message for the actual input file used
+void checkForUnusedOptions(const Options& options, const std::string& data_dir,
+                           const std::string& option_file);
+}
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \

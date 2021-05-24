@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
 
   bout::globals::dump.write();
 
+  bout::checkForUnusedOptions();
   BoutFinalise();
 
   return 0;
