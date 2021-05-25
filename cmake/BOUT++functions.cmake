@@ -107,11 +107,11 @@ endfunction()
 #
 # - EXTRA_FILES: any extra files that are required to run the test
 #
-# - REQUIRES: list of variables that must be truthy to enable test
+# - REQUIRES: list of variables that must be true to enable test
 #   (note: use `CONFLICTS` to negate the variable, rather than `NOT
 #   VARIABLE`)
 #
-# - CONFLICTS: list of variables that must be falsey to enable test
+# - CONFLICTS: list of variables that must be false to enable test
 #
 # - EXECUTABLE_NAME: name of the executable, if different from the
 #   first source name
