@@ -678,7 +678,6 @@ void addBuildFlagsToOptions(Options& options) {
   options["BOUT_VERSION"] = bout::version::as_double;
   options["has_fftw"] = bout::build::has_fftw;
   options["has_gettext"] = bout::build::has_gettext;
-  options["has_hdf5"] = bout::build::has_hdf5;
   options["has_lapack"] = bout::build::has_lapack;
   options["has_netcdf"] = bout::build::has_netcdf;
   options["has_petsc"] = bout::build::has_petsc;
