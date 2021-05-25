@@ -279,7 +279,7 @@ protected:
   };
 
   /// write restarts and pass outputMonitor method inside a Monitor subclass
-  PhysicsModelMonitor modelMonitor;
+  PhysicsModelMonitor modelMonitor{this};
 private:
   /// Split operator model?
   bool splitop{false};

@@ -69,7 +69,6 @@ PhysicsModel::PhysicsModel()
                           .withDefault(false)
                       ? bout::OptionsNetCDF::FileMode::append
                       : bout::OptionsNetCDF::FileMode::replace),
-      modelMonitor(this) {}
 
 void PhysicsModel::initialise(Solver* s) {
   if (initialised) {
