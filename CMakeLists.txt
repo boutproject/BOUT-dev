@@ -562,7 +562,7 @@ if (BOUT_USE_PETSC)
     find_package(PETSc REQUIRED)
     target_link_libraries(bout++ PUBLIC PETSc::PETSc)
     string(JOIN " " CONFIG_PETSC_LIBRARIES ${PETSC_LIBRARIES})
-    set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${CONFIG_PETSC_LIBRARIES}")
+    set(CONFIG_LDFLAGS "${CONFIG_PETSC_LIBRARIES} ${CONFIG_LDFLAGS}")
   endif()
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_PETSC")
