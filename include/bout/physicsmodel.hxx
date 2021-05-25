@@ -248,6 +248,9 @@ protected:
   /// File to write the restart-state to
   bout::OptionsNetCDF restart_file;
 
+  void writeRestartFile();
+  void writeOutputFile();
+
   /// State for outputs
   Options output_options;
 
@@ -289,6 +292,10 @@ private:
   jacobianfunc userjacobian{nullptr};
   /// True if model already initialised
   bool initialised{false};
+  /// Should we write output files
+  bool output_enabled{true};
+  /// Should we write restart files
+  bool restart_enabled{true};
 };
 
 /*!

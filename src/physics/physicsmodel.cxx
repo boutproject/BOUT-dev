@@ -69,6 +69,12 @@ PhysicsModel::PhysicsModel()
                           .withDefault(false)
                       ? bout::OptionsNetCDF::FileMode::append
                       : bout::OptionsNetCDF::FileMode::replace),
+      output_enabled(Options::root()["output"]["enabled"]
+                                             .doc("Write output files")
+                                             .withDefault(true)),
+      restart_enabled(Options::root()["restart_files"]["enabled"]
+                          .doc("Write restart files")
+                          .withDefault(true)) {}
 
 void PhysicsModel::initialise(Solver* s) {
   if (initialised) {
@@ -162,8 +168,6 @@ int PhysicsModel::postInit(bool restarting) {
     solver->readEvolvingVariablesFromOptions(restart_options);
   }
 
-  const bool restart_enabled = Options::root()["restart_files"]["enabled"].withDefault(true);
-
   if (restart_enabled) {
     solver->outputVars(restart_options, false);
     bout::globals::mesh->outputVars(restart_options);
@@ -181,11 +185,23 @@ int PhysicsModel::postInit(bool restarting) {
   return 0;
 }
 
+void PhysicsModel::writeRestartFile() {
+  if (restart_enabled) {
+    restart_file.write(restart_options);
+  }
+}
+
+void PhysicsModel::writeOutputFile() {
+  if (output_enabled) {
+    output_file.write(output_options);
+  }
+}
+
 int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
                                             int iteration, int nout) {
   // Restart file variables
   solver->outputVars(model->restart_options, false);
-  model->restart_file.write(model->restart_options);
+  model->writeRestartFile();
 
   // Main output file variables
   // t_array for backwards compatibility? needed?
@@ -199,7 +215,7 @@ int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
   model->output_options["iteration"].attributes["time_dimension"] = "t";
 
   solver->outputVars(model->output_options, true);
-  model->output_file.write(model->output_options);
+  model->writeOutputFile();
 
   // Call user output monitor
   return model->outputMonitor(simtime, iteration, nout);
