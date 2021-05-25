@@ -26,6 +26,7 @@
 #cmakedefine01 BOUT_USE_SIGFPE
 #cmakedefine01 BOUT_USE_SIGNAL
 #cmakedefine01 BOUT_USE_TRACK
+#cmakedefine01 BOUT_USE_MSGSTACK
 
 // CMake build does not support legacy interface
 #define BOUT_HAS_LEGACY_NETCDF 0

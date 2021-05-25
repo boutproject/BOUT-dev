@@ -69,6 +69,8 @@ AC_ARG_ENABLE(warnings,     [AS_HELP_STRING([--disable-warnings],
         [Disable compiler warnings])],,[])
 AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
         [Set run-time checking level])],,[enable_checks=default])
+AC_ARG_ENABLE(msgstack,     [AS_HELP_STRING([--enable-msgstack=no/yes],
+        [Enable MstStack for backtrace. Default based on check level.])],,[enable_msgstack=maybe])
 AC_ARG_ENABLE(signal,       [AS_HELP_STRING([--disable-signal],
         [Disable SEGFAULT handling])],,[])
 AC_ARG_ENABLE(color,        [AS_HELP_STRING([--disable-color],
@@ -318,15 +320,29 @@ AS_IF([test "x$enable_checks" != "xno" && test "x$enable_checks" != "x0"], [
     [1], [AC_MSG_NOTICE([ -> Level 1 (Basic checking)])
           CXXFLAGS="$CXXFLAGS -DCHECK=1"
           BOUT_CHECK_LEVEL=1],
-    [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking + stack tracing)])
+    [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking)])
           enable_output_debug=yes
           CXXFLAGS="$CXXFLAGS -DCHECK=3"
           BOUT_CHECK_LEVEL=3],
-    [AC_MSG_NOTICE([ -> Level 2 (Basic checking + stack tracing)])
+    [AC_MSG_NOTICE([ -> Level 2 (Enhanced checking)])
      CXXFLAGS="$CXXFLAGS -DCHECK=2"
      BOUT_CHECK_LEVEL=2])
 ], [
   AC_MSG_NOTICE([Run-time checking disabled])
+])
+
+BOUT_USE_MSGSTACK=$(test $BOUT_CHECK_LEVEL -gt 1 && echo yes || echo no)
+AS_IF([test "x$enable_msgstack" = "xyes" ], [
+  BOUT_USE_MSGSTACK=yes
+], [
+  AS_IF([test "x$enable_msgstack" = "xno" ], [
+    BOUT_USE_MSGSTACK=no
+  ], [])
+])
+AS_IF([test $BOUT_USE_MSGSTACK = no ], [
+  AC_MSG_NOTICE([Stack tracing disabled])
+], [
+  AC_MSG_NOTICE([Stack tracing enabled])
 ])
 
 BOUT_USE_SIGNAL=no
@@ -1355,6 +1371,7 @@ BOUT_DEFINE_SUBST(BOUT_USE_OPENMP, [Enable OpenMP])
 BOUT_DEFINE_SUBST(BOUT_USE_SIGFPE, [Enable floating point exceptions])
 BOUT_DEFINE_SUBST(BOUT_USE_SIGNAL, [Enable signal handlers])
 BOUT_DEFINE_SUBST(BOUT_USE_TRACK, [Enable field name tracking])
+BOUT_DEFINE_SUBST(BOUT_USE_MSGSTACK, [Enable MsgStack for traces])
 
 AC_SUBST(PETSC_HAS_SUNDIALS)
 AC_SUBST(PETSC_MAKE_INCLUDE)
