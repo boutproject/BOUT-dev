@@ -442,6 +442,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     // Solve tridiagonal systems
     cr->setCoefs(a3D, b3D, c3D);
     cr->solve(bcmplx3D, xcmplx3D);
+    // verify_solution(a3D,b3D,c3D,bcmplx3D,xcmplx3D,nsys);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -475,4 +476,86 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   checkData(x);
 
   return x;
+}
+
+void LaplaceCyclic ::verify_solution(const Matrix<dcomplex>& a_ver,
+                                     const Matrix<dcomplex>& b_ver,
+                                     const Matrix<dcomplex>& c_ver,
+                                     const Matrix<dcomplex>& r_ver,
+                                     const Matrix<dcomplex>& x_sol, const int nsys) {
+  output.write("Verify solution\n");
+  const int nx = xe - xs + 1; // Number of X points on this processor,
+                              // including boundaries but not guard cells
+  const int xproc = localmesh->getXProcIndex();
+  const int yproc = localmesh->getYProcIndex();
+  const int nprocs = localmesh->getNXPE();
+  const int myrank = yproc * nprocs + xproc;
+  Matrix<dcomplex> y_ver(nsys, nx + 2);
+  Matrix<dcomplex> error(nsys, nx + 2);
+
+  MPI_Status status;
+  Array<MPI_Request> request(4);
+  Array<dcomplex> sbufup(nsys);
+  Array<dcomplex> sbufdown(nsys);
+  Array<dcomplex> rbufup(nsys);
+  Array<dcomplex> rbufdown(nsys);
+
+  // nsys = nmode * ny;  // Number of systems of equations to solve
+  Matrix<dcomplex> x_ver(nsys, nx + 2);
+
+  for (int kz = 0; kz < nsys; kz++) {
+    for (int ix = 0; ix < nx; ix++) {
+      x_ver(kz, ix + 1) = x_sol(kz, ix);
+    }
+  }
+
+  if (xproc > 0) {
+    MPI_Irecv(&rbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 901, MPI_COMM_WORLD,
+              &request[1]);
+    for (int kz = 0; kz < nsys; kz++) {
+      sbufdown[kz] = x_ver(kz, 1);
+    }
+    MPI_Isend(&sbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 900, MPI_COMM_WORLD,
+              &request[0]);
+  }
+  if (xproc < nprocs - 1) {
+    MPI_Irecv(&rbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 900, MPI_COMM_WORLD,
+              &request[3]);
+    for (int kz = 0; kz < nsys; kz++) {
+      sbufup[kz] = x_ver(kz, nx);
+    }
+    MPI_Isend(&sbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 901, MPI_COMM_WORLD,
+              &request[2]);
+  }
+
+  if (xproc > 0) {
+    MPI_Wait(&request[0], &status);
+    MPI_Wait(&request[1], &status);
+    for (int kz = 0; kz < nsys; kz++) {
+      x_ver(kz, 0) = rbufdown[kz];
+    }
+  }
+  if (xproc < nprocs - 1) {
+    MPI_Wait(&request[2], &status);
+    MPI_Wait(&request[3], &status);
+    for (int kz = 0; kz < nsys; kz++) {
+      x_ver(kz, nx + 1) = rbufup[kz];
+    }
+  }
+
+  BoutReal max_error = 0.0;
+  for (int kz = 0; kz < nsys; kz++) {
+    for (int i = 0; i < nx; i++) {
+      y_ver(kz, i) = a_ver(kz, i) * x_ver(kz, i) + b_ver(kz, i) * x_ver(kz, i + 1)
+                     + c_ver(kz, i) * x_ver(kz, i + 2);
+      error(kz, i) = y_ver(kz, i) - r_ver(kz, i);
+      max_error = std::max(max_error, std::abs(error(kz, i)));
+      output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, "
+                   "x={}, x+ = {}\n",
+                   error(kz, i).real(), r_ver(kz, i).real(), y_ver(kz, i).real(), kz, i,
+                   a_ver(kz, i).real(), b_ver(kz, i).real(), c_ver(kz, i).real(),
+                   x_ver(kz, i).real(), x_ver(kz, i + 1).real(), x_ver(kz, i + 2).real());
+    }
+  }
+  output.write("max abs error {}\n", max_error);
 }

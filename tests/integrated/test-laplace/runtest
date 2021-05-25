@@ -52,34 +52,35 @@ for v in vars:
 print("Running Laplacian inversion test")
 success = True
 
-for nproc in [1, 2, 4]:
-    nxpe = 1
-    if nproc > 2:
-        nxpe = 2
+for solver in ["cyclic", "pcr"]:
+    for nproc in [1, 2, 4]:
+        nxpe = 1
+        if nproc > 2:
+            nxpe = 2
 
-    cmd = "./test_laplace nxpe=" + str(nxpe)
+        cmd = "./test_laplace nxpe=" + str(nxpe) + " laplace:type=" + solver
 
-    shell("rm data/BOUT.dmp.*.nc")
+        shell("rm data/BOUT.dmp.*.nc")
 
-    print("   %d processors (nxpe = %d)...." % (nproc, nxpe))
-    s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
-    with open("run.log." + str(nproc), "w") as f:
-        f.write(out)
+        print("   %s solver with %d processors (nxpe = %d)...." % (solver, nproc, nxpe))
+        s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
+        with open("run.log." + str(nproc), "w") as f:
+            f.write(out)
 
-    # Collect output data
-    for v in vars:
-        stdout.write("      Checking variable " + v + " ... ")
-        result = collect(v, path="data", info=False)
-        # Compare benchmark and output
-        if np.shape(bmk[v]) != np.shape(result):
-            print("Fail, wrong shape")
-            success = False
-        diff = np.max(np.abs(bmk[v] - result))
-        if diff > tol:
-            print("Fail, maximum difference = " + str(diff))
-            success = False
-        else:
-            print("Pass")
+        # Collect output data
+        for v in vars:
+            stdout.write("      Checking variable " + v + " ... ")
+            result = collect(v, path="data", info=False)
+            # Compare benchmark and output
+            if np.shape(bmk[v]) != np.shape(result):
+                print("Fail, wrong shape")
+                success = False
+            diff = np.max(np.abs(bmk[v] - result))
+            if diff > tol:
+                print("Fail, maximum difference = " + str(diff))
+                success = False
+            else:
+                print("Pass")
 
 if success:
     print(" => All Laplacian inversion tests passed")
