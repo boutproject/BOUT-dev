@@ -83,6 +83,12 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
         var.getVar(value.begin());
         result[var_name] = value;
         result[var_name].attributes["source"] = filename;
+      } else if ((var_type == ncString) or (var_type == ncChar)) {
+        std::string value;
+        value.resize(dims[0].getSize());
+        var.getVar(&(value[0]));
+        result[var_name] = value;
+        result[var_name].attributes["source"] = filename;
       }
       break;
     }
