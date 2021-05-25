@@ -676,6 +676,24 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
   output_options["tt"].force(simtime, "Solver");
   output_options["hist_hi"].force(iteration, "Solver");
 
+  const bool save_repeat_run_id =
+      (!save_repeat) ? false
+                     : (*options)["save_repeat_run_id"]
+                           .doc("Write run_id and run_restart_from at every output "
+                                "timestep, to make it easier to concatenate output "
+                                "data sets in time")
+                           .withDefault(false);
+  output_options["run_id"].doc("UUID for this simulation").force(run_id, "Solver");
+  output_options["run_restart_from"]
+      .doc("run_id of the simulation this one was restarted from."
+           "'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' means the run is not a restart, "
+           "or the previous run did not have a run_id.")
+      .force(run_restart_from, "Solver");
+  if (save_repeat_run_id) {
+    output_options["run_id"].attributes["time_dimension"] = "t";
+    output_options["run_restart_from"].attributes["time_dimension"] = "t";
+  }
+
   // Add 2D and 3D evolving fields to output file
   for (const auto& f : f2d) {
     // Add to dump file (appending)
@@ -702,6 +720,8 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
 }
 
 void Solver::readEvolvingVariablesFromOptions(Options& options) {
+  run_id = options["run_id"].withDefault(default_run_id);
+
   for (auto& f : f2d) {
     *(f.var) = options[f.name].as<Field2D>();
   }
