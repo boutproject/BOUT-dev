@@ -13,28 +13,26 @@ The output should look something like:
 c is inf
 Error encountered
 ====== Exception path ======
-[bt] #11 ./build/backtrace() [0x42ee5e]
-_start at ??:?
-[bt] #10 /lib64/libc.so.6(__libc_start_main+0xf3) [0x7f7d8bfc11a3]
-__libc_start_main at ??:?
-[bt] #9 ./build/backtrace() [0x42f08f]
-main at /path/to/BOUT++/include/boutmain.hxx:91 (discriminator 9)
-[bt] #8 /path/to/BOUT++/build/libbout++.so(_ZN6Solver8setModelEP12PhysicsModel+0xb5) [0x7f7d8d1ce121]
-Solver::setModel(PhysicsModel*) at /path/to/BOUT++/build/../src/solver/solver.cxx:92
-[bt] #7 /path/to/BOUT++/build/libbout++.so(_ZN12PhysicsModel10initialiseEP6Solver+0xbe) [0x7f7d8d1d6bf6]
-PhysicsModel::initialise(Solver*) at /path/to/BOUT++/build/../include/bout/physicsmodel.hxx:79 (discriminator 5)
-[bt] #6 ./build/backtrace() [0x433ceb]
-LegacyModel::init(bool) at /path/to/BOUT++/include/boutmain.hxx:63
-[bt] #5 ./build/backtrace() [0x42f2f6]
-physics_init(bool) at /path/to/BOUT++/examples/backtrace/backtrace.cxx:28
-[bt] #4 ./build/backtrace() [0x42f2dd]
-f3() at /path/to/BOUT++/examples/backtrace/backtrace.cxx:22
-[bt] #3 ./build/backtrace() [0x42f2cc]
-f2(int) at /path/to/BOUT++/examples/backtrace/backtrace.cxx:18
-[bt] #2 ./build/backtrace() [0x42f294]
-f1() at /path/to/BOUT++/examples/backtrace/backtrace.cxx:14 (discriminator 2)
-[bt] #1 ./build/backtrace(_ZN13BoutExceptionC1IA19_cJEEERKT_DpRKT0_+0x37) [0x4343c5]
-BoutException::BoutException<char [19]>(char const (&) [19]) at /path/to/BOUT++/include/boutexception.hxx:26 (discriminator 2)
+[bt] #10 ./backtrace() [0x40a27e]
+_start at /home/abuild/rpmbuild/BUILD/glibc-2.33/csu/../sysdeps/x86_64/start.S:122
+[bt] #9 /lib64/libc.so.6(__libc_start_main+0xd5) [0x7fecbfa28b25]
+__libc_start_main at /usr/src/debug/glibc-2.33-4.1.x86_64/csu/../csu/libc-start.c:332
+[bt] #8 ./backtrace() [0x40a467]
+main at /path/to/BOUT-dev/build/../examples/backtrace/backtrace.cxx:32 (discriminator 9)
+[bt] #7 /path/to/BOUT-dev/build/libbout++.so(_ZN6Solver8setModelEP12PhysicsModel+0xb5) [0x7fecc0ca2e93]
+Solver::setModel(PhysicsModel*) at /path/to/BOUT-dev/build/../src/solver/solver.cxx:94
+[bt] #6 /path/to/BOUT-dev/build/libbout++.so(_ZN12PhysicsModel10initialiseEP6Solver+0xc0) [0x7fecc0cad594]
+PhysicsModel::initialise(Solver*) at /path/to/BOUT-dev/build/../include/bout/physicsmodel.hxx:93 (discriminator 5)
+[bt] #5 ./backtrace() [0x40a986]
+Backtrace::init(bool) at /path/to/BOUT-dev/build/../examples/backtrace/backtrace.cxx:27
+[bt] #4 ./backtrace() [0x40a3cf]
+f3() at /path/to/BOUT-dev/build/../examples/backtrace/backtrace.cxx:19
+[bt] #3 ./backtrace() [0x40a3be]
+f2(int) at /path/to/BOUT-dev/build/../examples/backtrace/backtrace.cxx:15
+[bt] #2 ./backtrace() [0x40a386]
+f1() at /path/to/BOUT-dev/build/../examples/backtrace/backtrace.cxx:13 (discriminator 2)
+[bt] #1 ./backtrace(_ZN13BoutExceptionC1IA19_cJEEERKT_DpRKT0_+0xba) [0x40ae16]
+BoutException::BoutException<char [19]>(char const (&) [19]) at /path/to/BOUT-dev/build/../include/bout/../boutexception.hxx:28 (discriminator 2)
 ====== Back trace ======
 
 ====== Exception thrown ======

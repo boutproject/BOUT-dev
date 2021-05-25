@@ -37,8 +37,6 @@ class Field3D; //#include "field3d.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 
-#include "bout/field_visitor.hxx"
-
 #include "bout/array.hxx"
 #include "bout/region.hxx"
 #include "utils.hxx"
@@ -51,7 +49,7 @@ class Field3D; //#include "field3d.hxx"
  * Handles data for axisymmetric quantities. Essentially the same
  * as the Field3D class.
  */
-class Field2D : public Field, public FieldData {
+class Field2D : public Field {
  public:
   using ind_type = Ind2D;    
   /*!
@@ -120,16 +118,16 @@ class Field2D : public Field, public FieldData {
   int getNz() const override {return 1;};
 
   // these methods return Field2D to allow method chaining
-  Field2D& setLocation(CELL_LOC new_location) {
+  Field2D& setLocation(CELL_LOC new_location) override {
     Field::setLocation(new_location);
     return *this;
   }
-  Field2D& setDirectionY(YDirectionType d) {
+  Field2D& setDirectionY(YDirectionType d) override {
     // This method included in case it is wanted in a templated function also dealing with
     // Field3D or FieldPerp - there is no difference between orthogonal and field-aligned
     // coordinates for Field2D, so should always have YDirectionType::Standard.
     ASSERT1(d == YDirectionType::Standard);
-    directions.y = d;
+    Field::setDirectionY(d);
     return *this;
   }
 
@@ -168,7 +166,8 @@ class Field2D : public Field, public FieldData {
    * call .allocate() after assignment, or use the copy()
    * function.
    */
-  Field2D & operator=(const Field2D &rhs);
+  Field2D& operator=(const Field2D& rhs);
+  Field2D& operator=(Field2D&& rhs) noexcept;
 
   /*!
    * Allocates data if not already allocated, then
@@ -252,13 +251,7 @@ class Field2D : public Field, public FieldData {
 
   // FieldData virtual functions
 
-  /// Visitor pattern support
-  void accept(FieldVisitor &v) override {v.accept(*this);}
-  
-  bool isReal() const override  { return true; }         // Consists of BoutReal values
-  bool is3D() const override    { return false; }        // Field is 2D
-  int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
-  int  BoutRealSize() const override { return 1; }
+  bool is3D() const override { return false; }
 
 #if CHECK > 0
   void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
@@ -276,22 +269,7 @@ class Field2D : public Field, public FieldData {
   void applyTDerivBoundary() override;
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
 
-  friend void swap(Field2D& first, Field2D& second) noexcept {
-    using std::swap;
-
-    // Swap base class members
-    swap(static_cast<Field&>(first), static_cast<Field&>(second));
-
-    swap(first.data, second.data);
-    swap(first.nx, second.nx);
-    swap(first.ny, second.ny);
-    swap(first.deriv, second.deriv);
-    swap(first.bndry_op, second.bndry_op);
-    swap(first.boundaryIsCopy, second.boundaryIsCopy);
-    swap(first.boundaryIsSet, second.boundaryIsSet);
-    swap(first.bndry_op_par, second.bndry_op_par);
-    swap(first.bndry_generator, second.bndry_generator);
-  }
+  friend void swap(Field2D& first, Field2D& second) noexcept;
 
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null

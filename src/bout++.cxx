@@ -53,6 +53,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/sys/timer.hxx"
 #include "bout/version.hxx"
 #include "fmt/format.h"
+#include "bout++-time.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -454,7 +455,7 @@ void printStartupHeader(int MYPE, int NPES) {
 #ifdef MD5SUM
   output_progress.write("MD5 checksum: {:s}\n", BUILDFLAG(MD5SUM));
 #endif
-  output_progress.write(_("Code compiled on {:s} at {:s}\n\n"), __DATE__, __TIME__);
+  output_progress.write(_("Code compiled on {:s} at {:s}\n\n"), boutcompiledate, boutcompiletime);
   output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
   output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
@@ -672,19 +673,6 @@ void writeSettingsFile(Options& options, const std::string& data_dir,
 
 } // namespace experimental
 } // namespace bout
-
-int bout_run(Solver* solver, rhsfunc physics_run) {
-
-  /// Set the RHS function
-  solver->setRHS(physics_run);
-
-  /// Add the monitor function
-  Monitor* bout_monitor = new BoutMonitor();
-  solver->addMonitor(bout_monitor, Solver::BACK);
-
-  /// Run the simulation
-  return solver->solve();
-}
 
 int BoutFinalise(bool write_settings) {
 

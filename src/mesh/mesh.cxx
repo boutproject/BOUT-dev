@@ -360,9 +360,9 @@ int Mesh::msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int
   /// Loop over variables
   for(const auto& var : var_list) {
     if(var->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * LocalNz * var->BoutRealSize();
+      len += (xlt - xge) * (ylt - yge) * LocalNz * var->elementSize();
     } else {
-      len += (xlt - xge) * (ylt - yge) * var->BoutRealSize();
+      len += (xlt - xge) * (ylt - yge) * var->elementSize();
     }
   }
 

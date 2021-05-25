@@ -62,7 +62,6 @@ set(BOUT_SOURCES
   ./include/bout/deprecated.hxx
   ./include/bout/deriv_store.hxx
   ./include/bout/expr.hxx
-  ./include/bout/field_visitor.hxx
   ./include/bout/fieldgroup.hxx
   ./include/bout/format.hxx
   ./include/bout/fv_ops.hxx
@@ -92,6 +91,7 @@ set(BOUT_SOURCES
   ./include/bout/solver.hxx
   ./include/bout/surfaceiter.hxx
   ./include/bout/operatorstencil.hxx
+  ./include/bout/output_bout_types.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
@@ -104,7 +104,6 @@ set(BOUT_SOURCES
   ./include/bout_types.hxx
   ./include/boutcomm.hxx
   ./include/boutexception.hxx
-  ./include/boutmain.hxx
   ./include/cyclic_reduction.hxx
   ./include/datafile.hxx
   ./include/dataformat.hxx
@@ -145,6 +144,7 @@ set(BOUT_SOURCES
   ./include/vector3d.hxx
   ./include/where.hxx
   ./src/bout++.cxx
+  ./src/bout++-time.hxx
   ./src/field/field.cxx
   ./src/field/field2d.cxx
   ./src/field/field3d.cxx
@@ -328,8 +328,17 @@ This warning is only important for BOUT++ developers and can otherwise be \
 safely ignored.")
 endif()
 
+# Ensure that the compile date/time is up-to-date when any of the sources change
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
+  COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
+  DEPENDS ${BOUT_SOURCES}
+  MAIN_DEPENDENCY "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
+  )
+
 add_library(bout++
   ${BOUT_SOURCES}
+  ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
   )
 add_library(bout++::bout++ ALIAS bout++)
 target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
@@ -341,6 +350,10 @@ target_include_directories(bout++ PUBLIC
 
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
+
+# Various sanitizers, including coverage and address sanitizer
+include(cmake/Sanitizers.cmake)
+enable_sanitizers(bout++)
 
 ##################################################
 # Components of the version number
@@ -561,9 +574,30 @@ endif()
 message(STATUS "SLEPc support: ${BOUT_USE_SLEPC}")
 set(BOUT_HAS_SLEPC ${BOUT_USE_SLEPC})
 
-option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF)
+option(BOUT_DOWNLOAD_SUNDIALS "Download and build SUNDIALS" OFF)
+# Force BOUT_USE_SUNDIALS if we're downloading it!
+cmake_dependent_option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF
+  "NOT BOUT_DOWNLOAD_SUNDIALS" ON)
 if (BOUT_USE_SUNDIALS)
-  find_package(SUNDIALS REQUIRED)
+  if (BOUT_DOWNLOAD_SUNDIALS)
+    message(STATUS "Downloading and configuring SUNDIALS")
+    include(FetchContent)
+    FetchContent_Declare(
+      sundials
+      GIT_REPOSITORY https://github.com/ZedThree/sundials
+      GIT_TAG        "4f3bb8281c7b27343bcb95386ebbb665fb6196a5"
+      )
+    set(EXAMPLES_ENABLE_C OFF CACHE BOOL "" FORCE)
+    set(EXAMPLES_INSTALL OFF CACHE BOOL "" FORCE)
+    set(ENABLE_MPI ON CACHE BOOL "" FORCE)
+    set(ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
+    set(BUILD_STATIC_LIBS OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(sundials)
+    message(STATUS "SUNDIALS done configuring")
+  else()
+    find_package(SUNDIALS REQUIRED)
+  endif()
+  target_link_libraries(bout++ PUBLIC SUNDIALS::nvecparallel)
   target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
   target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
   target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
@@ -673,93 +707,8 @@ target_compile_definitions(bout++
 ##################################################
 # Tests
 
-# Add a new integrated test. By default, the executable is named like
-# the first source, stripped of its file extension.
-#
-# Required arguments:
-#
-# - TESTNAME: name of the test
-#
-# - SOURCES: list of source files
-#
-# Optional arguments:
-#
-# - USE_RUNTEST: if given, the test uses `./runtest` as the test
-#   command, otherwise it uses the executable
-#
-# - USE_DATA_BOUT_INP: if given, copy `data/BOUT.inp`
-#
-# - EXTRA_FILES: any extra files that are required to run the test
-#
-# - REQUIRES: list of variables that must be truthy to enable test
-#
-# - EXECUTABLE_NAME: name of the executable, if different from the
-#   first source name
-
-function(bout_add_integrated_test TESTNAME)
-  set(options USE_RUNTEST USE_DATA_BOUT_INP)
-  set(oneValueArgs EXECUTABLE_NAME)
-  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES TESTARGS)
-  cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-  foreach (REQUIREMENT IN LISTS BOUT_TEST_OPTIONS_REQUIRES)
-    if (NOT ${REQUIREMENT})
-      message(STATUS "Not building test ${TESTNAME}, requirement not met: ${REQUIREMENT}")
-      return()
-    endif()
-  endforeach()
-
-  add_executable(${TESTNAME} ${BOUT_TEST_OPTIONS_SOURCES})
-  target_link_libraries(${TESTNAME} bout++)
-  target_include_directories(${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-
-  # Set the name of the executable. We either take it as an option,
-  # or use the first source file, stripping the file suffix
-  if (BOUT_TEST_OPTIONS_EXECUTABLE_NAME)
-    set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_OPTIONS_EXECUTABLE_NAME})
-  else()
-    # If more than one source file, just get the first one
-    list(LENGTH ${BOUT_TEST_OPTIONS_SOURCES} BOUT_SOURCES_LENGTH)
-    if (BOUT_SOURCES_LENGTH GREATER 0)
-      list(GET ${BOUT_TEST_OPTIONS_SOURCES} 0 BOUT_TEST_FIRST_SOURCE)
-    else()
-      set(BOUT_TEST_FIRST_SOURCE ${BOUT_TEST_OPTIONS_SOURCES})
-    endif()
-    # Strip the directory and file extension from the source file
-    get_filename_component(BOUT_TEST_EXECUTABLE_NAME ${BOUT_TEST_FIRST_SOURCE} NAME_WE)
-    set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_EXECUTABLE_NAME})
-  endif()
-
-  # Set the actual test command
-  if (BOUT_TEST_OPTIONS_USE_RUNTEST)
-    add_test(NAME ${TESTNAME} COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS})
-    set_tests_properties(${TESTNAME} PROPERTIES
-      ENVIRONMENT PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
-      )
-    bout_copy_file(runtest)
-  else()
-    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME} ${BOUT_TEST_OPTIONS_TESTARGS})
-  endif()
-
-  # Copy the input file if needed
-  if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
-    bout_copy_file(data/BOUT.inp)
-  endif()
-
-  # Copy any other needed files
-  if (BOUT_TEST_OPTIONS_EXTRA_FILES)
-    foreach (FILE ${BOUT_TEST_OPTIONS_EXTRA_FILES})
-      bout_copy_file("${FILE}")
-    endforeach()
-  endif()
-
-  set_target_properties(${TESTNAME} PROPERTIES FOLDER tests/integrated)
-
-  # Add the test to the build-check-integrated-tests target
-  add_dependencies(build-check-integrated-tests ${TESTNAME})
-endfunction()
-
 option(PACKAGE_TESTS "Build the tests" ON)
+option(BOUT_RUN_ALL_TESTS "Run all of the tests (this can be slow!)" OFF)
 if(PACKAGE_TESTS)
   enable_testing()
 
@@ -767,13 +716,15 @@ if(PACKAGE_TESTS)
   # Tests need to add themselves as dependencies to these targets
   add_custom_target(build-check-unit-tests)
   add_custom_target(build-check-integrated-tests)
+  add_custom_target(build-check-mms-tests)
 
   # Build all the tests
   add_custom_target(build-check)
-  add_dependencies(build-check build-check-unit-tests build-check-integrated-tests)
+  add_dependencies(build-check build-check-unit-tests build-check-integrated-tests build-check-mms-tests)
 
   add_subdirectory(tests/unit EXCLUDE_FROM_ALL)
   add_subdirectory(tests/integrated EXCLUDE_FROM_ALL)
+  add_subdirectory(tests/MMS EXCLUDE_FROM_ALL)
 
   # Targets for running the tests
   add_custom_target(check-unit-tests
@@ -784,14 +735,26 @@ if(PACKAGE_TESTS)
     COMMAND ctest -R "test-" --output-on-failure)
   add_dependencies(check-integrated-tests build-check-integrated-tests)
 
+  add_custom_target(check-mms-tests
+    COMMAND ctest -R "MMS-" --output-on-failure)
+  add_dependencies(check-mms-tests build-check-mms-tests)
+
   # Run all the tests
   add_custom_target(check)
-  add_dependencies(check check-unit-tests check-integrated-tests)
+  add_dependencies(check check-unit-tests check-integrated-tests check-mms-tests)
 endif()
 
 option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
 if(BOUT_BUILD_EXAMPLES)
   add_subdirectory(examples)
+endif()
+
+##################################################
+# Documentation
+
+option(BOUT_BUILD_DOCS "Build the documentation" OFF)
+if (BOUT_BUILD_DOCS)
+  add_subdirectory(manual EXCLUDE_FROM_ALL)
 endif()
 
 ##################################################
@@ -896,6 +859,7 @@ message("
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
    Backtrace enabled        : ${BOUT_USE_BACKTRACE}
+   Sanitizers enabled       : ${BOUT_USE_SANITIZERS}
 
    === Python ===
 

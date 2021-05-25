@@ -2499,6 +2499,8 @@ fi
 # Check whether --enable-checks was given.
 if test "${enable_checks+set}" = set; then :
   enableval=$enable_checks;
+else
+  enable_checks=default
 fi
 
 # Check whether --enable-msgstack was given.
@@ -5606,11 +5608,12 @@ $as_echo "$as_me: Compiler warnings disabled" >&6;}
 fi
 
 OPT_FLAGS=""
+enable_checks_def=2
 if test "$enable_debug" != ""; then :
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling all debug options" >&5
 $as_echo "$as_me: Enabling all debug options" >&6;}
-  enable_checks="3"
+  enable_checks_def=3
   # use -Og with available, otherwise fall back to -O0
   OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
 
@@ -5627,16 +5630,17 @@ $as_echo "$as_me: Enabling default optimisations" >&6;}
     { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling level 4 optimisations" >&5
 $as_echo "$as_me: Enabling level 4 optimisations" >&6;}
          OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
-         DISABLE_CHECK=probably ;; #(
+         enable_checks_def=0 ;; #(
   "3") :
     { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling level 3 optimisations" >&5
 $as_echo "$as_me: Enabling level 3 optimisations" >&6;}
          OPT_FLAGS="-O3 -march=native -funroll-loops"
-         DISABLE_CHECK=probably ;; #(
+         enable_checks_def=0 ;; #(
   "2") :
     { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling level 2 optimisations" >&5
 $as_echo "$as_me: Enabling level 2 optimisations" >&6;}
-         OPT_FLAGS="-O2 -march=native" ;; #(
+         OPT_FLAGS="-O2 -march=native"
+         enable_checks_def=1 ;; #(
   "1" | "0") :
     { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling level $enable_optimize optimisations" >&5
 $as_echo "$as_me: Enabling level $enable_optimize optimisations" >&6;}
@@ -5731,9 +5735,9 @@ done
 
 
 # Disable checks if optimization > 2 is used
-if test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"; then :
+if test "x$enable_checks" = "xdefault" ; then :
 
-  enable_checks=no
+  enable_checks=$enable_checks_def
 
 fi
 
@@ -8302,7 +8306,7 @@ fi
   BOUT_HAS_PETSC="yes"
 
   EXTRA_INCS="$EXTRA_INCS $PETSC_CFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $PETSC_LIBS"
+  EXTRA_LIBS="$PETSC_LIBS $EXTRA_LIBS"
 
 fi
 

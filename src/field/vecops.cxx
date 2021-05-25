@@ -152,7 +152,7 @@ const Field2D Div(const Vector2D& v, CELL_LOC outloc, const std::string& method)
 
   ASSERT1(outloc != CELL_VSHIFT);
 
-  Mesh *localmesh = v.x.getMesh();
+  Mesh* localmesh = v.getMesh();
 
   Coordinates *metric = localmesh->getCoordinates(outloc);
 
@@ -178,7 +178,7 @@ const Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method)
   // This also catches the combination of v at VSHIFT and outloc at DEFAULT
   ASSERT1(outloc != CELL_VSHIFT);
 
-  Mesh *localmesh = v.x.getMesh();
+  Mesh* localmesh = v.getMesh();
 
   Coordinates *metric = localmesh->getCoordinates(outloc);
 
@@ -258,7 +258,7 @@ const Vector2D Curl(const Vector2D &v) {
   TRACE("Curl( Vector2D )");
 
   ASSERT1(v.getLocation() != CELL_VSHIFT);
-  Mesh *localmesh = v.x.getMesh();
+  Mesh* localmesh = v.getMesh();
   auto metric = v.x.getCoordinates();
 
   // Get covariant components of v
@@ -286,7 +286,7 @@ const Vector3D Curl(const Vector3D &v) {
   SCOREP0();
   ASSERT1(v.getLocation() != CELL_VSHIFT);
 
-  Mesh *localmesh = v.x.getMesh();
+  Mesh* localmesh = v.getMesh();
   auto metric = v.x.getCoordinates();
 
   // Get covariant components of v
@@ -369,7 +369,7 @@ R V_dot_Grad(const T &v, const F &a) {
   // the following form of declaring result we ignore the const
   // qualifier here but keep it on the return type in the function
   // signature.
-  auto result = R{v.x.getMesh()};
+  auto result = R{v.getMesh()};
 
   auto metric = v.x.getCoordinates();
 
