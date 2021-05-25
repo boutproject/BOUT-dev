@@ -14,7 +14,7 @@ import re
 # cores: 4
 
 IGNORED_VARS_PATTERN = re.compile(
-    "(wtime|ncalls|arkode|cvode|run_id|run_restart_from).*"
+    "(wtime|ncalls|arkode|cvode|run_id|run_restart_from|M.?SUB|N.?PE|iteration|wall_time|has_legacy_netcdf).*"
 )
 
 
@@ -50,19 +50,19 @@ def verify(f1, f2):
         d1 = DataFile(f1)
         d2 = DataFile(f2)
         for v in d1.keys():
-            if d1[v].shape != d2[v].shape:
-                raise RuntimeError("shape mismatch in ", v, d1[v], d2[v])
-            if v in ["MXSUB", "MYSUB", "NXPE", "NYPE", "iteration", "wall_time"]:
-                continue
             if IGNORED_VARS_PATTERN.match(v):
                 continue
+            if d1[v].shape != d2[v].shape:
+                raise RuntimeError(
+                    "shape mismatch in '{}': {} vs {}".format(v, d1[v], d2[v])
+                )
             if not np.allclose(d1[v], d2[v], equal_nan=True):
                 err = ""
                 dimensions = [range(x) for x in d1[v].shape]
                 for i in itertools.product(*dimensions):
                     if d1[v][i] != d2[v][i]:
                         err += "{}: {} != {}\n".format(i, d1[v][i], d2[v][i])
-                raise RuntimeError("data mismatch in ", v, err, d1[v], d2[v])
+                raise RuntimeError("data mismatch in '{}': {}".format(v, err))
 
 
 parser = argparse.ArgumentParser(description="Test the bout-squashoutput wrapper")
