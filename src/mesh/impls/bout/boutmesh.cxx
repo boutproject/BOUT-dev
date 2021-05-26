@@ -1488,13 +1488,13 @@ comm_handle BoutMesh::receiveFromProc(int xproc, int yproc, BoutReal *buffer, in
   return static_cast<comm_handle>(ch);
 }
 
-int BoutMesh::getNXPE() { return NXPE; }
+int BoutMesh::getNXPE() const { return NXPE; }
 
-int BoutMesh::getNYPE() { return NYPE; }
+int BoutMesh::getNYPE() const { return NYPE; }
 
-int BoutMesh::getXProcIndex() { return PE_XIND; }
+int BoutMesh::getXProcIndex() const { return PE_XIND; }
 
-int BoutMesh::getYProcIndex() { return PE_YIND; }
+int BoutMesh::getYProcIndex() const { return PE_YIND; }
 
 /****************************************************************
  *                 X COMMUNICATIONS
