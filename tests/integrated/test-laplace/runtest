@@ -52,7 +52,7 @@ for v in vars:
 print("Running Laplacian inversion test")
 success = True
 
-for solver in ["cyclic", "pcr"]:
+for solver in ["pcr", "cyclic", "pcr_or_cyclic"]:
     for nproc in [1, 2, 4]:
         nxpe = 1
         if nproc > 2:

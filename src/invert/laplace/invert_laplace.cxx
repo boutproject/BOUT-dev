@@ -57,6 +57,7 @@
 #include "impls/serial_band/serial_band.hxx"
 #include "impls/serial_tri/serial_tri.hxx"
 #include "impls/spt/spt.hxx"
+#include "impls/pcr_or_cyclic/pcr_or_cyclic.hxx"
 
 /**********************************************************************************
  *                         INITIALISATION AND CREATION

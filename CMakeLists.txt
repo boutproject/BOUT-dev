@@ -186,6 +186,8 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/naulin/naulin_laplace.hxx
   ./src/invert/laplace/impls/pcr/pcr.cxx
   ./src/invert/laplace/impls/pcr/pcr.hxx
+  ./src/invert/laplace/impls/pcr_or_cyclic/pcr_or_cyclic.cxx
+  ./src/invert/laplace/impls/pcr_or_cyclic/pcr_or_cyclic.hxx
   ./src/invert/laplace/impls/pdd/pdd.cxx
   ./src/invert/laplace/impls/pdd/pdd.hxx
   ./src/invert/laplace/impls/petsc/petsc_laplace.cxx
