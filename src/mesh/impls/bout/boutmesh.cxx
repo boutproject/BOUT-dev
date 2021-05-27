@@ -3353,4 +3353,16 @@ void BoutMesh::outputVars(Options& output_options) {
   output_options["ny_inner"].force(ny_inner, "BoutMesh");
 
   getCoordinates()->outputVars(output_options);
+
+  // Try and save some provenance tracking info that new enough versions of
+  // hypnotoad provide in the grid file.
+  using namespace std::literals;
+  for (const auto& hypnotoad_var :
+       {"grid_id"s, "hypnotoad_version"s, "hypnotoad_git_hash"s, "hypnotoad_git_diff"s,
+        "hypnotoad_geqdsk_filename"s}) {
+    std::string temp;
+    if (this->get(temp, hypnotoad_var) == 0) {
+      output_options[hypnotoad_var].force(temp, "BoutMesh");
+    }
+  }
 }
