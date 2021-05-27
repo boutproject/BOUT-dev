@@ -605,6 +605,13 @@ std::string Solver::getRunRestartFrom() const {
   return run_restart_from;
 }
 
+void Solver::writeToModelOutputFile(const Options& options) {
+  if (model == nullptr) {
+    return;
+  }
+  model->writeOutputFile(options);
+}
+
 /**************************************************************************
  * Initialisation
  **************************************************************************/

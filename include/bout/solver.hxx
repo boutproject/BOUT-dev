@@ -347,6 +347,9 @@ public:
   /// The run from which this was restarted. Throws if the identifier hasn't been set yet.
   std::string getRunRestartFrom() const;
 
+  /// Write \p options to the model's output file
+  void writeToModelOutputFile(const Options& options);
+
 protected:
   /// Number of command-line arguments
   static int* pargc;

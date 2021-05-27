@@ -192,8 +192,12 @@ void PhysicsModel::writeRestartFile() {
 }
 
 void PhysicsModel::writeOutputFile() {
+  writeOutputFile(output_options);
+}
+
+void PhysicsModel::writeOutputFile(const Options& options) {
   if (output_enabled) {
-    output_file.write(output_options);
+    output_file.write(options);
   }
 }
 

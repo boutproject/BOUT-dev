@@ -142,6 +142,9 @@ public:
 
   int runTimestepMonitor(BoutReal simtime, BoutReal dt) {return timestepMonitor(simtime, dt);}
   
+  /// Write \p options to `output_file`
+  void writeOutputFile(const Options& options);
+
 protected:
   
   // The init and rhs functions are implemented by user code to specify problem

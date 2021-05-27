@@ -863,6 +863,9 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
 
   /// Write dump file
   bout::globals::dump.write();
+  Options run_data_output;
+  run_data.outputVars(run_data_output);
+  solver->writeToModelOutputFile(run_data_output);
 
   if (wall_limit > 0.0) {
     // Check if enough time left
@@ -986,6 +989,33 @@ void RunMetrics::outputVars(Datafile& file) {
   file.add(wtime_per_rhs, "wtime_per_rhs", true);
   file.add(wtime_per_rhs_e, "wtime_per_rhs_e", true);
   file.add(wtime_per_rhs_i, "wtime_per_rhs_i", true);
+}
+
+void RunMetrics::outputVars(Options& output_options) {
+  output_options["wall_time"].force(t_elapsed, "Output");
+  output_options["wall_time"].attributes["time_dimension"] = "t";
+  output_options["wtime"].force(wtime, "Output");
+  output_options["wtime"].attributes["time_dimension"] = "t";
+  output_options["ncalls"].force(ncalls, "Output");
+  output_options["ncalls"].attributes["time_dimension"] = "t";
+  output_options["ncalls_e"].force(ncalls_e, "Output");
+  output_options["ncalls_e"].attributes["time_dimension"] = "t";
+  output_options["ncalls_i"].force(ncalls_i, "Output");
+  output_options["ncalls_i"].attributes["time_dimension"] = "t";
+  output_options["wtime_rhs"].force(wtime_rhs, "Output");
+  output_options["wtime_rhs"].attributes["time_dimension"] = "t";
+  output_options["wtime_invert"].force(wtime_invert, "Output");
+  output_options["wtime_invert"].attributes["time_dimension"] = "t";
+  output_options["wtime_comms"].force(wtime_comms, "Output");
+  output_options["wtime_comms"].attributes["time_dimension"] = "t";
+  output_options["wtime_io"].force(wtime_io, "Output");
+  output_options["wtime_io"].attributes["time_dimension"] = "t";
+  output_options["wtime_per_rhs"].force(wtime_per_rhs, "Output");
+  output_options["wtime_per_rhs"].attributes["time_dimension"] = "t";
+  output_options["wtime_per_rhs_e"].force(wtime_per_rhs_e, "Output");
+  output_options["wtime_per_rhs_e"].attributes["time_dimension"] = "t";
+  output_options["wtime_per_rhs_i"].force(wtime_per_rhs_i, "Output");
+  output_options["wtime_per_rhs_i"].attributes["time_dimension"] = "t";
 }
 
 void RunMetrics::calculateDerivedMetrics() {
