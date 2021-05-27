@@ -4,6 +4,8 @@
 
 #include "options_netcdf.hxx"
 
+#include "bout/sys/timer.hxx"
+
 #include <exception>
 #include <iostream>
 #include <netcdf>
@@ -152,6 +154,8 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
 namespace bout {
 
 Options OptionsNetCDF::read() {
+  Timer timer("io");
+
   // Open file
   NcFile dataFile(filename, NcFile::read);
 
@@ -670,6 +674,8 @@ void OptionsNetCDF::verifyTimesteps() const {
 
 /// Write options to file
 void OptionsNetCDF::write(const Options& options) {
+  Timer timer("io");
+
   // Check the file mode to use
   auto ncmode = NcFile::replace;
   if (file_mode == FileMode::append) {
