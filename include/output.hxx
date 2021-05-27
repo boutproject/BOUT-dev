@@ -271,12 +271,20 @@ template <typename T> ConditionalOutput &operator<<(ConditionalOutput &out, cons
 ///     // output now enabled
 class WithQuietOutput {
 public:
-  explicit WithQuietOutput(ConditionalOutput& output_in) : output(output_in) {
+  explicit WithQuietOutput(ConditionalOutput& output_in)
+      : output(output_in), was_enabled(output.isEnabled()) {
     output.disable();
   }
 
-  ~WithQuietOutput() { output.enable(); }
+  ~WithQuietOutput() {
+    if (was_enabled) {
+      output.enable();
+    }
+  }
   ConditionalOutput& output;
+
+private:
+  bool was_enabled;
 };
 
 /// To allow statements like "output.write(...)" or "output << ..."
