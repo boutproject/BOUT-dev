@@ -245,6 +245,41 @@ bool Options::isSection(const std::string& name) const {
   }
 }
 
+template <>
+void Options::assign<>(Field2D val, std::string source) {
+  attributes["cell_location"] = toString(val.getLocation());
+  attributes["direction_y"] = toString(val.getDirectionY());
+  attributes["direction_z"] = toString(val.getDirectionZ());
+  _set_no_check(std::move(val), std::move(source));
+}
+template <>
+void Options::assign<>(Field3D val, std::string source) {
+  attributes["cell_location"] = toString(val.getLocation());
+  attributes["direction_y"] = toString(val.getDirectionY());
+  attributes["direction_z"] = toString(val.getDirectionZ());
+  _set_no_check(std::move(val), std::move(source));
+}
+template <>
+void Options::assign<>(FieldPerp val, std::string source) {
+  attributes["cell_location"] = toString(val.getLocation());
+  attributes["direction_y"] = toString(val.getDirectionY());
+  attributes["direction_z"] = toString(val.getDirectionZ());
+  attributes["yindex_global"] = val.getGlobalIndex();
+  _set_no_check(std::move(val), std::move(source));
+}
+template <>
+void Options::assign<>(Array<BoutReal> val, std::string source) {
+  _set_no_check(std::move(val), std::move(source));
+}
+template <>
+void Options::assign<>(Matrix<BoutReal> val, std::string source) {
+  _set_no_check(std::move(val), std::move(source));
+}
+template <>
+void Options::assign<>(Tensor<BoutReal> val, std::string source) {
+  _set_no_check(std::move(val), std::move(source));
+}
+
 template <> std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
   if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);

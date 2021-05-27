@@ -326,10 +326,6 @@ template <>
 void NcPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(&value(0, 0));
-  // Set cell location attribute
-  var.putAtt("cell_location", toString(value.getLocation()));
-  var.putAtt("direction_y", toString(value.getDirectionY()));
-  var.putAtt("direction_z", toString(value.getDirectionZ()));
 }
 
 /// In addition to writing the data, set the "cell_location" attribute
@@ -337,23 +333,12 @@ template <>
 void NcPutVarVisitor::operator()<Field3D>(const Field3D& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(&value(0, 0, 0));
-
-  // Set cell location attribute
-  var.putAtt("cell_location", toString(value.getLocation()));
-  var.putAtt("direction_y", toString(value.getDirectionY()));
-  var.putAtt("direction_z", toString(value.getDirectionZ()));
 }
 
 template <>
 void NcPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(&value(0, 0));
-
-  // Set cell location attribute
-  var.putAtt("cell_location", toString(value.getLocation()));
-  var.putAtt("direction_y", toString(value.getDirectionY()));
-  var.putAtt("direction_z", toString(value.getDirectionZ()));
-  var.putAtt("yindex_global", ncInt, value.getGlobalIndex());
 }
 
 /// Visit a variant type, and put the data into a NcVar

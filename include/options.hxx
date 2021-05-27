@@ -779,12 +779,12 @@ template<> inline void Options::assign<>(std::string val, std::string source) { 
 // Note: const char* version needed to avoid conversion to bool
 template<> inline void Options::assign<>(const char *val, std::string source) { _set(std::string(val), source, false);}
 // Note: Field assignments don't check for previous assignment (always force)
-template<> inline void Options::assign<>(Field2D val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(Field3D val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(FieldPerp val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(Array<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(Matrix<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(Tensor<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
+template<> void Options::assign<>(Field2D val, std::string source);
+template<> void Options::assign<>(Field3D val, std::string source);
+template<> void Options::assign<>(FieldPerp val, std::string source);
+template<> void Options::assign<>(Array<BoutReal> val, std::string source);
+template<> void Options::assign<>(Matrix<BoutReal> val, std::string source);
+template<> void Options::assign<>(Tensor<BoutReal> val, std::string source);
 
 /// Specialised similar comparison methods
 template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }
