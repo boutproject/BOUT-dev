@@ -169,6 +169,7 @@ int PhysicsModel::postInit(bool restarting) {
   }
 
   if (restart_enabled) {
+    restartVars(restart_options);
     solver->outputVars(restart_options, false);
     bout::globals::mesh->outputVars(restart_options);
 
@@ -181,6 +182,8 @@ int PhysicsModel::postInit(bool restarting) {
   // Add monitor to the solver which calls restart.write() and
   // PhysicsModel::outputMonitor()
   solver->addMonitor(&modelMonitor);
+
+  outputVars(output_options);
 
   return 0;
 }
@@ -205,6 +208,7 @@ int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
                                             int iteration, int nout) {
   // Restart file variables
   solver->outputVars(model->restart_options, false);
+  model->restartVars(model->restart_options);
   model->writeRestartFile();
 
   // Main output file variables

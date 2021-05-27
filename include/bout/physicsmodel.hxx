@@ -177,6 +177,11 @@ protected:
    */
   virtual int rhs(BoutReal UNUSED(t)) {return 1;}
 
+  /// Output additional variables other than the evolving variables
+  virtual void outputVars(MAYBE_UNUSED(Options& options)) {}
+  /// Add additional variables other than the evolving variables to the restart files
+  virtual void restartVars(MAYBE_UNUSED(Options& restart)) {}
+
   /* 
      If split operator is set to true, then
      convective() and diffusive() are called instead of rhs()

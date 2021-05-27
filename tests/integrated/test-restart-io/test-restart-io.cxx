@@ -4,18 +4,11 @@ class TestRestartIO : public PhysicsModel {
   int init(bool restarting) override {
     solver->add(f3d, "f3d");
     solver->add(f2d, "f2d");
-    dump.addRepeat(fperp_lower, "fperp_lower");
-    dump.addRepeat(fperp_upper, "fperp_upper");
 
     if (restarting) {
       fperp_lower = restart_options["fperp_lower"].as<FieldPerp>();
       fperp_upper = restart_options["fperp_upper"].as<FieldPerp>();
     }
-
-    dump.addOnce(f3d, "f3d_once");
-    dump.addOnce(f2d, "f2d_once");
-    dump.addOnce(fperp_lower, "fperp_lower_once");
-    dump.addOnce(fperp_upper, "fperp_upper_once");
 
     return 0;
   }
@@ -26,11 +19,21 @@ class TestRestartIO : public PhysicsModel {
     return 0;
   }
 
-  int postInit(bool restarting) override {
-    restart_options["fperp_lower"] = fperp_lower;
-    restart_options["fperp_upper"] = fperp_upper;
+  void outputVars(Options& options) override {
+    options["fperp_lower"] = fperp_lower;
+    options["fperp_lower"].attributes["time_dimension"] = "t";
+    options["fperp_upper"] = fperp_upper;
+    options["fperp_upper"].attributes["time_dimension"] = "t";
 
-    return PhysicsModel::postInit(restarting);
+    options["f3d_once"] = f3d;
+    options["f2d_once"] = f2d;
+    options["fperp_lower_once"] = fperp_lower;
+    options["fperp_upper_once"] = fperp_upper;
+  }
+
+  void restartVars(Options& restart) override {
+    restart["fperp_lower"] = fperp_lower;
+    restart["fperp_upper"] = fperp_upper;
   }
 
   Field3D f3d;
