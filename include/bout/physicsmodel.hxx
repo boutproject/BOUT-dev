@@ -145,6 +145,9 @@ public:
   /// Write \p options to `output_file`
   void writeOutputFile(const Options& options);
 
+  /// Finish the output for this timestep, verifying all evolving
+  /// variables have the correct length
+  void finishOutputTimestep() const;
 protected:
   
   // The init and rhs functions are implemented by user code to specify problem

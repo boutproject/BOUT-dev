@@ -204,6 +204,12 @@ void PhysicsModel::writeOutputFile(const Options& options) {
   }
 }
 
+void PhysicsModel::finishOutputTimestep() const {
+  if (output_enabled) {
+    output_file.verifyTimesteps();
+  }
+}
+
 int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
                                             int iteration, int nout) {
   // Restart file variables
