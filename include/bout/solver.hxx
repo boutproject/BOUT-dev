@@ -506,6 +506,8 @@ private:
   std::string run_id = default_run_id;
   /// The run from which this was restarted.
   std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
+  /// Save `run_id` and `run_restart_from` every output
+  bool save_repeat_run_id{false};
 
   /// Number of calls to the RHS function
   int rhs_ncalls{0};

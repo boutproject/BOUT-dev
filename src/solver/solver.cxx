@@ -70,6 +70,11 @@ char ***Solver::pargv = nullptr;
 Solver::Solver(Options* opts)
     : options(opts == nullptr ? &Options::root()["solver"] : opts),
       monitor_timestep((*options)["monitor_timestep"].withDefault(false)),
+      save_repeat_run_id((*options)["save_repeat_run_id"]
+                             .doc("Write run_id and run_restart_from at every output "
+                                  "timestep, to make it easier to concatenate output "
+                                  "data sets in time")
+                             .withDefault(false)),
       is_nonsplit_model_diffusive(
           (*options)["is_nonsplit_model_diffusive"]
               .doc("If not a split operator, treat RHS as diffusive?")
@@ -628,13 +633,7 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
   outputfile.addOnce(iteration, "hist_hi");
 
   // Add run information
-  bool save_repeat_run_id = (!save_repeat) ? false :
-                            (*options)["save_repeat_run_id"]
-                                .doc("Write run_id and run_restart_from at every output "
-                                     "timestep, to make it easier to concatenate output "
-                                     "data sets in time")
-                                .withDefault(false);
-  outputfile.add(run_id, "run_id", save_repeat_run_id, "UUID for this simulation");
+  outputfile.add(run_id, "run_id", save_repeat and save_repeat_run_id, "UUID for this simulation");
   outputfile.add(run_restart_from, "run_restart_from", save_repeat_run_id,
                  "run_id of the simulation this one was restarted from."
                  "'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' means the run is not a restart, "
@@ -676,20 +675,13 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
   output_options["tt"].force(simtime, "Solver");
   output_options["hist_hi"].force(iteration, "Solver");
 
-  const bool save_repeat_run_id =
-      (!save_repeat) ? false
-                     : (*options)["save_repeat_run_id"]
-                           .doc("Write run_id and run_restart_from at every output "
-                                "timestep, to make it easier to concatenate output "
-                                "data sets in time")
-                           .withDefault(false);
   output_options["run_id"].doc("UUID for this simulation").force(run_id, "Solver");
   output_options["run_restart_from"]
       .doc("run_id of the simulation this one was restarted from."
            "'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' means the run is not a restart, "
            "or the previous run did not have a run_id.")
       .force(run_restart_from, "Solver");
-  if (save_repeat_run_id) {
+  if (save_repeat and save_repeat_run_id) {
     output_options["run_id"].attributes["time_dimension"] = "t";
     output_options["run_restart_from"].attributes["time_dimension"] = "t";
   }
