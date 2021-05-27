@@ -23,6 +23,10 @@ public:
   };
   
   OptionsNetCDF(const std::string &filename, FileMode mode = FileMode::replace) {}
+  OptionsNetCDF(const OptionsNetCDF&) = default;
+  OptionsNetCDF(OptionsNetCDF&&) = default;
+  OptionsNetCDF& operator=(const OptionsNetCDF&) = default;
+  OptionsNetCDF& operator=(OptionsNetCDF&&) = default;
 
   /// Read options from file
   Options read() {
@@ -55,6 +59,10 @@ public:
   OptionsNetCDF() {}
   explicit OptionsNetCDF(std::string filename, FileMode mode = FileMode::replace)
       : filename(std::move(filename)), file_mode(mode) {}
+  OptionsNetCDF(const OptionsNetCDF&) = default;
+  OptionsNetCDF(OptionsNetCDF&&) = default;
+  OptionsNetCDF& operator=(const OptionsNetCDF&) = default;
+  OptionsNetCDF& operator=(OptionsNetCDF&&) = default;
 
   /// Read options from file
   Options read();
@@ -68,7 +76,7 @@ public:
   void verifyTimesteps() const;
 private:
   std::string filename;
-  FileMode file_mode;
+  FileMode file_mode{FileMode::replace};
 };
 
 } // namespace bout
