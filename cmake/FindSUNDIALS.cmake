@@ -31,6 +31,11 @@
 
 include(FindPackageHandleStandardArgs)
 
+find_package(SUNDIALS CONFIG QUIET)
+if (SUNDIALS_FOUND)
+  return()
+endif()
+
 find_path(SUNDIALS_INCLUDE_DIR
   sundials_config.h
   HINTS
@@ -121,8 +126,8 @@ find_package_handle_standard_args(SUNDIALS
 mark_as_advanced(SUNDIALS_LIBRARIES SUNDIALS_INCLUDE_DIR SUNDIALS_INCLUDE_DIRS)
 
 if (SUNDIALS_FOUND AND NOT TARGET SUNDIALS::SUNDIALS)
-  add_library(SUNDIALS::NVecParallel UNKNOWN IMPORTED)
-  set_target_properties(SUNDIALS::NVecParallel PROPERTIES
+  add_library(SUNDIALS::nvecparallel UNKNOWN IMPORTED)
+  set_target_properties(SUNDIALS::nvecparallel PROPERTIES
     IMPORTED_LOCATION "${SUNDIALS_nvecparallel_LIBRARY}"
     INTERFACE_INCLUDE_DIRECTORIES "${SUNDIALS_INCLUDE_DIRS}")
 
@@ -131,6 +136,6 @@ if (SUNDIALS_FOUND AND NOT TARGET SUNDIALS::SUNDIALS)
     set_target_properties(SUNDIALS::${LIB} PROPERTIES
       IMPORTED_LOCATION "${SUNDIALS_${LIB}_LIBRARY}"
       INTERFACE_INCLUDE_DIRECTORIES "${SUNDIALS_INCLUDE_DIRS}"
-      INTERFACE_LINK_LIBRARIES SUNDIALS::NVecParallel)
+      INTERFACE_LINK_LIBRARIES SUNDIALS::nvecparallel)
   endforeach()
 endif()

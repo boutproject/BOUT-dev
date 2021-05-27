@@ -70,7 +70,7 @@ public:
   MsgStack() = default;
   ~MsgStack() { clear(); }
 
-#if CHECK > 1
+#if BOUT_USE_MSGSTACK
   /// Add a message to the stack. Returns a message id
   int push(std::string message);
   int push() { return push(""); }
@@ -188,7 +188,7 @@ private:
  *
  * } // Scope ends, message popped
  */
-#if CHECK > 0
+#if BOUT_USE_MSGSTACK
 
 /* Would like to have something like TRACE(message, ...) so that we can directly refer
    to the (required) first argument, which is the main message string. However because
