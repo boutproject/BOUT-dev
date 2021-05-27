@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+set -ex
+
 cmake --version
 cmake . -B build $@ -DCMAKE_INSTALL_PREFIX=$(pwd)/installed
 cmake --build build --target build-check -j 2
