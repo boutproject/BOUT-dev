@@ -8,6 +8,27 @@ macro(bout_copy_file FILENAME)
       COPYONLY)
 endmacro()
 
+# Handle the REQUIRES and CONFLICTS arguments for models, examples,
+# and tests. Returns from those functions if REQUIRES are not met, or
+# if CONFLICTS are true
+macro(bout_handle_requires_conflicts TYPENAME TYPEVAR)
+  set(multiValueArgs REQUIRES CONFLICTS)
+  cmake_parse_arguments(BOUT_HANDLE_OPTIONS "" "" "${multiValueArgs}" ${ARGN})
+
+  foreach (REQUIREMENT IN LISTS BOUT_HANDLE_OPTIONS_REQUIRES)
+    if (NOT ${REQUIREMENT})
+      message(STATUS "Not building ${TYPENAME} ${TYPEVAR}, requirement not met: ${REQUIREMENT}")
+      return()
+    endif()
+  endforeach()
+
+  foreach (CONFLICT IN LISTS BOUT_HANDLE_OPTIONS_CONFLICTS)
+    if (${CONFLICT})
+      message(STATUS "Not building ${TYPENAME} ${TYPEVAR}, conflicts with: ${CONFLICT}")
+      return()
+    endif()
+  endforeach()
+endmacro()
 
 # Build a BOUT++ physics model
 #
@@ -17,8 +38,18 @@ endmacro()
 # Arguments:
 # - MODEL: Name of the executable
 # - SOURCES: List of source files to compile
+# - REQUIRES: list of variables that must be true to build model
+#   (note: use `CONFLICTS` to negate the variable, rather than `NOT
+#   VARIABLE`)
+# - CONFLICTS: list of variables that must be false to enable test
 function(bout_add_model MODEL)
-  cmake_parse_arguments(BOUT_MODEL_OPTIONS "" "" "SOURCES" ${ARGN})
+  set(multiValueArgs SOURCES REQUIRES CONFLICTS)
+  cmake_parse_arguments(BOUT_MODEL_OPTIONS "" "" "${multiValueArgs}" ${ARGN})
+
+  bout_handle_requires_conflicts("model" MODEL
+    REQUIRES ${BOUT_MODEL_OPTIONS_REQUIRES}
+    CONFLICTS ${BOUT_MODEL_OPTIONS_CONFLICTS}
+    )
 
   if (NOT BOUT_MODEL_OPTIONS_SOURCES)
     message(FATAL_ERROR "Required argument SOURCES missing from 'bout_add_model'")
@@ -46,9 +77,18 @@ endfunction()
 # - SOURCES: List of source files to compile
 # - DATA_DIRS: List of data directories to copy (default: 'data')
 # - EXTRA_FILES: List of other files to copy
+# - REQUIRES: list of variables that must be true to build example
+#   (note: use `CONFLICTS` to negate the variable, rather than `NOT
+#   VARIABLE`)
+# - CONFLICTS: list of variables that must be false to enable test
 function(bout_add_example EXAMPLENAME)
-  set(multiValueArgs SOURCES DATA_DIRS EXTRA_FILES)
+  set(multiValueArgs SOURCES REQUIRES CONFLICTS DATA_DIRS EXTRA_FILES)
   cmake_parse_arguments(BOUT_EXAMPLE_OPTIONS "" "" "${multiValueArgs}" ${ARGN})
+
+  bout_handle_requires_conflicts("example" ${EXAMPLENAME}
+    REQUIRES ${BOUT_EXAMPLE_OPTIONS_REQUIRES}
+    CONFLICTS ${BOUT_EXAMPLE_OPTIONS_CONFLICTS}
+    )
 
   bout_add_model(${EXAMPLENAME} SOURCES ${BOUT_EXAMPLE_OPTIONS_SOURCES})
 
@@ -107,11 +147,11 @@ endfunction()
 #
 # - EXTRA_FILES: any extra files that are required to run the test
 #
-# - REQUIRES: list of variables that must be truthy to enable test
+# - REQUIRES: list of variables that must be true to enable test
 #   (note: use `CONFLICTS` to negate the variable, rather than `NOT
 #   VARIABLE`)
 #
-# - CONFLICTS: list of variables that must be falsey to enable test
+# - CONFLICTS: list of variables that must be false to enable test
 #
 # - EXECUTABLE_NAME: name of the executable, if different from the
 #   first source name
@@ -124,19 +164,10 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
   set(multiValueArgs SOURCES EXTRA_FILES REQUIRES CONFLICTS TESTARGS EXTRA_DEPENDS)
   cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-  foreach (REQUIREMENT IN LISTS BOUT_TEST_OPTIONS_REQUIRES)
-    if (NOT ${REQUIREMENT})
-      message(STATUS "Not building test ${TESTNAME}, requirement not met: ${REQUIREMENT}")
-      return()
-    endif()
-  endforeach()
-
-  foreach (CONFLICT IN LISTS BOUT_TEST_OPTIONS_CONFLICTS)
-    if (${CONFLICT})
-      message(STATUS "Not building test ${TESTNAME}, conflicts with: ${CONFLICT}")
-      return()
-    endif()
-  endforeach()
+  bout_handle_requires_conflicts("test" ${TESTNAME}
+    REQUIRES ${BOUT_TEST_OPTIONS_REQUIRES}
+    CONFLICTS ${BOUT_TEST_OPTIONS_CONFLICTS}
+    )
 
   if (BOUT_TEST_OPTIONS_SOURCES)
     # We've got some sources, so compile them into an executable and

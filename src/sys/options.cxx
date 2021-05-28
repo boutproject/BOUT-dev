@@ -35,8 +35,7 @@ void Options::cleanup() {
 Options::Options(const Options& other)
     : value(other.value), attributes(other.attributes),
       parent_instance(other.parent_instance), full_name(other.full_name),
-      is_section(other.is_section), children(other.children), is_value(other.is_value),
-      value_used(other.value_used) {
+      is_section(other.is_section), children(other.children), value_used(other.value_used) {
 
   // Ensure that this is the parent of all children,
   // otherwise will point to the original Options instance
@@ -84,9 +83,15 @@ Options::Options(std::initializer_list<std::pair<std::string, Options>> values) 
   }
 }
 
-Options &Options::operator[](const std::string &name) {
-  // Mark this object as being a section
-  is_section = true;
+Options& Options::operator[](const std::string& name) {
+  TRACE("Options::operator[]");
+
+  if (isValue()) {
+    throw BoutException(
+        _("Trying to index Option '{0}' with '{1}', but '{0}' is a value, not a section.\n"
+          "This is likely the result of clashing input options, and you may have to rename one of them.\n"),
+        full_name, name);
+  }
 
   if (name.empty()) {
     return *this;
@@ -95,7 +100,7 @@ Options &Options::operator[](const std::string &name) {
   // If name is compound, e.g. "section:subsection", then split the name
   auto subsection_split = name.find(":");
   if (subsection_split != std::string::npos) {
-    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split+1)];
+    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split + 1)];
   }
 
   // Find and return if already exists
@@ -116,11 +121,14 @@ Options &Options::operator[](const std::string &name) {
   return pair_it.first->second;
 }
 
-const Options &Options::operator[](const std::string &name) const {
+const Options& Options::operator[](const std::string& name) const {
   TRACE("Options::operator[] const");
-  
-  if (!is_section) {
-    throw BoutException(_("Option {:s} is not a section"), full_name);
+
+  if (isValue()) {
+    throw BoutException(
+        _("Trying to index Option '{0}' with '{1}', but '{0}' is a value, not a section.\n"
+          "This is likely the result of clashing input options, and you may have to rename one of them.\n"),
+        full_name, name);
   }
 
   if (name.empty()) {
@@ -130,7 +138,7 @@ const Options &Options::operator[](const std::string &name) const {
   // If name is compound, e.g. "section:subsection", then split the name
   auto subsection_split = name.find(":");
   if (subsection_split != std::string::npos) {
-    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split+1)];
+    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split + 1)];
   }
 
   // Find and return if already exists
@@ -152,7 +160,7 @@ Options::fuzzyFind(const std::string& name, std::string::size_type distance) con
   // if it was a fuzzy match
   auto insert_if_match = [&](const Options& option, const std::string& possible_match,
                              std::string::size_type extra_cost = 0) -> bool {
-    if (not option.is_value) {
+    if (not option.isValue()) {
       // Don't match section names
       return false;
     }
@@ -198,7 +206,6 @@ Options& Options::operator=(const Options& other) {
   full_name = other.full_name;
   is_section = other.is_section;
   children = other.children;
-  is_value = other.is_value;
   value_used = other.value_used;
 
   // Ensure that this is the parent of all children,
@@ -210,8 +217,8 @@ Options& Options::operator=(const Options& other) {
 }
 
 bool Options::isSet() const {
-  // Check if no value
-  if (!is_value) {
+  // Only values can be set/unset
+  if (is_section) {
     return false;
   }
 
@@ -238,51 +245,8 @@ bool Options::isSection(const std::string& name) const {
   }
 }
 
-template <>
-void Options::assign<>(Field2D val, std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_value = true;
-}
-template <>
-void Options::assign<>(Field3D val, std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_value = true;
-}
-template <>
-void Options::assign<>(FieldPerp val, std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_value = true;
-}
-template <>
-void Options::assign<>(Array<BoutReal> val, std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_value = true;
-}
-template <>
-void Options::assign<>(Matrix<BoutReal> val, std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_value = true;
-}
-template <>
-void Options::assign<>(Tensor<BoutReal> val, std::string source) {
-  value = std::move(val);
-  attributes["source"] = std::move(source);
-  value_used = false;
-  is_value = true;
-}
-
 template <> std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
@@ -302,7 +266,7 @@ template <> std::string Options::as<std::string>(const std::string& UNUSED(simil
 }
 
 template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
@@ -356,7 +320,7 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
 }
 
 template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
@@ -398,7 +362,7 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) c
 }
 
 template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
   
@@ -440,7 +404,7 @@ template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
 }
 
 template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException("Option {:s} has no value", full_name);
   }
 
@@ -504,7 +468,7 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
 }
 
 template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException("Option {:s} has no value", full_name);
   }
   
@@ -555,7 +519,7 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
 
 template <>
 FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
-  if (!is_value) {
+  if (is_section) {
     throw BoutException("Option {:s} has no value", full_name);
   }
 
@@ -668,7 +632,7 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
   // the unused options into an empty instance
   Options unused = *this;
 
-  if (unused.is_value) {
+  if (unused.isValue()) {
     // If this is from an excluded source, count it as being used
     if (has_excluded_source(unused) or conditionally_used(unused)) {
       unused.value_used = true;
@@ -676,7 +640,7 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
     // We don't have a nice way to "clear" the value, so if it was
     // used, mark it as no longer a value: if it has been used, this
     // does nothing
-    unused.is_value = not unused.value_used;
+    unused.is_section = unused.value_used;
     return unused;
   }
 
@@ -685,7 +649,7 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
   for (auto child = unused.children.begin(); child != unused.children.end();) {
     // Remove the child if it's been used or if it's from a source we
     // should count as having been used
-    if (child->second.is_value
+    if (child->second.isValue()
         and (child->second.value_used or has_excluded_source(child->second)
              or conditionally_used(child->second))) {
       child = unused.children.erase(child);
@@ -701,12 +665,6 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
         child = unused.children.erase(child);
         continue;
       }
-    }
-
-    // What is it doing here?!
-    if (not (child->second.is_value or child->second.is_section)) {
-      child = unused.children.erase(child);
-      continue;
     }
 
     ++child;
@@ -727,7 +685,7 @@ void Options::printUnused() const {
   // Two cases: single value, or a section.  If it's a single value,
   // we can check it directly. If it's a section, we can see if it has
   // any children
-  if ((unused.is_value and unused.value_used) or unused.children.empty()) {
+  if ((unused.isValue() and unused.value_used) or unused.children.empty()) {
     output_info << _("All options used\n");
     return;
   }
@@ -747,7 +705,7 @@ void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
 std::map<std::string, Options::OptionValue> Options::values() const {
   std::map<std::string, OptionValue> options;
   for (const auto& it : children) {
-    if (it.second.is_value) {
+    if (it.second.isValue()) {
       options.emplace(it.first, OptionValue { bout::utils::variantToString(it.second.value),
                                                bout::utils::variantToString(it.second.attributes.at("source")),
                                                it.second.value_used});
@@ -769,12 +727,12 @@ std::map<std::string, const Options *> Options::subsections() const {
 std::vector<std::string> Options::getFlattenedKeys() const {
   std::vector<std::string> flattened_names;
 
-  if (is_value and not full_name.empty()) {
+  if (isValue() and not full_name.empty()) {
     flattened_names.push_back(full_name);
   }
 
   for (const auto& child : children) {
-    if (child.second.is_value) {
+    if (child.second.isValue()) {
       flattened_names.push_back(child.second.full_name);
     }
     if (child.second.is_section) {

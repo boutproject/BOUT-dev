@@ -33,7 +33,7 @@ TEST_F(OptionsTest, IsSetDefault) {
   ASSERT_FALSE(options.isSet("default_value"));
 }
 
-TEST_F(OptionsTest, IsSection) {
+TEST_F(OptionsTest, IsSectionIsValue) {
   Options options;
 
   // make sure options is initialized as a section
@@ -43,6 +43,18 @@ TEST_F(OptionsTest, IsSection) {
   ASSERT_FALSE(options["testkey"].isSection());
   ASSERT_TRUE(options.isSection(""));
   ASSERT_FALSE(options.isSection("subsection"));
+
+  ASSERT_FALSE(options.isValue());
+  ASSERT_TRUE(options["testkey"].isValue());
+  ASSERT_FALSE(options["subsection"].isValue());
+
+  EXPECT_NO_THROW(options["testkey"].as<int>());
+
+  // Can't index a value
+  EXPECT_THROW(options["testkey"]["subvalue"], BoutException);
+
+  // Can't assign a value to a non-empty section
+  EXPECT_THROW(options = 2., BoutException);
 
   options["subsection"]["testkey"] = 1.;
 
@@ -309,6 +321,14 @@ TEST_F(OptionsTest, SingletonTest) {
   EXPECT_EQ(root, second);
 }
 
+TEST_F(OptionsTest, ValueUsed) {
+  Options options;
+  options["key1"] = 1;
+  EXPECT_FALSE(options["key1"].valueUsed());
+  MAYBE_UNUSED(const int value) = options["key1"];
+  EXPECT_TRUE(options["key1"].valueUsed());
+}
+
 TEST_F(OptionsTest, CheckUsed) {
   // stdout redirection code from https://stackoverflow.com/a/4043813/2043465
 
@@ -423,6 +443,32 @@ TEST_F(OptionsTest, SetSameOptionTwice) {
 
 /// New interface
 
+TEST_F(OptionsTest, NewGetEmptySection) {
+  Options options;
+  Options& new_section = options[""];
+
+  EXPECT_EQ(&new_section, &options);
+  EXPECT_TRUE(new_section.isSection());
+}
+
+TEST_F(OptionsTest, NewMakeNewSection) {
+  Options options;
+  Options& new_section = options["section1"];
+
+  EXPECT_NE(&new_section, &options);
+  EXPECT_EQ(&new_section.parent(), &options);
+  EXPECT_EQ(new_section.str(), "section1");
+  EXPECT_TRUE(new_section.isSection());
+}
+
+TEST_F(OptionsTest, NewGetExistingSection) {
+  Options options;
+  Options& new_section = options["section1"];
+  Options& old_section = options["section1"];
+
+  EXPECT_EQ(&new_section, &old_section);
+  EXPECT_TRUE(new_section.isSection());
+}
 
 TEST_F(OptionsTest, NewIsSet) {
   Options options;
@@ -604,6 +650,7 @@ TEST_F(OptionsTest, AssignSection) {
   option2 = option1;
 
   EXPECT_EQ(option2["key"].as<int>(), 42);
+  EXPECT_TRUE(option2["key"].isValue());
 }
 
 TEST_F(OptionsTest, AssignSectionReplace) {

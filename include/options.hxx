@@ -340,17 +340,17 @@ public:
   ///
   /// Note: Specialised versions for types stored in ValueType
   template<typename T>
-  void assign(T val, const std::string source="") {
+  void assign(T val, std::string source="") {
     std::stringstream ss;
     ss << val;
-    _set(ss.str(), source, false);
+    _set(ss.str(), std::move(source), false);
   }
   
   /// Force to a value
   /// Overwrites any existing setting
   template<typename T>
   void force(T val, const std::string source = "") {
-    is_value = false; // Invalidates any existing setting
+    is_section = true; // Invalidates any existing setting
     assign(val, source);
   }
   
@@ -388,7 +388,7 @@ public:
   /// Attributes override properties of the \p similar_to argument.
   template <typename T>
   T as(const T& UNUSED(similar_to) = {}) const {
-    if (!is_value) {
+    if (is_section) {
       throw BoutException("Option {:s} has no value", full_name);
     }
 
@@ -446,7 +446,7 @@ public:
     // Set the type
     attributes["type"] = bout::utils::typeName<T>();
     
-    if (!is_value) {
+    if (is_section) {
       // Option not found
       assign(def, DEFAULT_SOURCE);
       value_used = true; // Mark the option as used
@@ -478,9 +478,9 @@ public:
   Options& withDefault(const Options& def) {
     // if def is a section, then it does not make sense to try to use it as a default for
     // a value
-    ASSERT0(def.is_value);
+    ASSERT0(def.isValue());
 
-    if (!is_value) {
+    if (is_section) {
       // Option not found
       *this = def;
 
@@ -505,7 +505,7 @@ public:
   /// Get the value of this option. If not found,
   /// return the default value but do not set
   template <typename T> T withDefault(T def) const {
-    if (!is_value) {
+    if (is_section) {
       // Option not found
       output_info << _("\tOption ") << full_name << " = " << def << " (" << DEFAULT_SOURCE
                   << ")" << std::endl;
@@ -531,10 +531,10 @@ public:
     // Set the type
     attributes["type"] = bout::utils::typeName<T>();
 
-    if (!is_value) {
+    if (is_section) {
       // Option not found
       assign(def, "user_default");
-      is_value = true; // Prevent this default being replaced by setDefault()
+      is_section = false; // Prevent this default being replaced by setDefault()
       return def;
     }
 
@@ -691,14 +691,13 @@ public:
   /// in the tree (not gauranteed to be sorted)
   std::vector<std::string> getFlattenedKeys() const;
 
-  bool isValue() const {
-    return is_value;
-  }
+  /// Return true if this is a value
+  bool isValue() const { return not is_section; }
+  /// Return true if this is a section
   bool isSection(const std::string& name = "") const;
-  
+
   /// If the option value has been used anywhere
   bool valueUsed() const { return value_used; }
-
 
   /// Set a documentation string as an attribute "doc"
   /// Returns a reference to this, to allow chaining
@@ -708,7 +707,7 @@ public:
   }
   
   friend bool operator==(const Options& lhs, const Options& rhs) {
-    if (lhs.is_value and rhs.is_value) {
+    if (lhs.isValue() and rhs.isValue()) {
       return lhs.value == rhs.value;
     }
     return lhs.children == rhs.children;
@@ -724,14 +723,23 @@ public:
   Options *parent_instance {nullptr};
   std::string full_name; // full path name for logging only
 
-  /// An Option object can be a section and/or a value, or neither (empty)
-
-  bool is_section = false; ///< Is this Options object a section?
+  // An Option object can either be a section or a value, defaulting to a section
+  bool is_section = true; ///< Is this Options object a section?
   std::map<std::string, Options> children; ///< If a section then has children
-
-  bool is_value = false; ///< Is this Options object a value?
   mutable bool value_used = false; ///< Record whether this value is used
   
+  template <typename T>
+  void _set_no_check(T val, std::string source) {
+    if (not children.empty()) {
+      throw BoutException("Trying to assign value to Option '{}', but it's a non-empty section", full_name);
+    }
+
+    value = std::move(val);
+    attributes["source"] = std::move(source);
+    value_used = false;
+    is_section = false;
+  }
+
   template <typename T>
   void _set(T val, std::string source, bool force) {
     // If already set, and not time evolving then check for changing values
@@ -756,10 +764,7 @@ public:
       }
     }
 
-    value = std::move(val);
-    attributes["source"] = std::move(source);
-    value_used = false;
-    is_value = true;
+    _set_no_check(std::move(val), std::move(source));
   }
   
   /// Tests if two values are similar. 
@@ -767,19 +772,19 @@ public:
 };
 
 // Specialised assign methods for types stored in ValueType
-template<> inline void Options::assign<>(bool val, const std::string source) { _set(val, source, false); }
-template<> inline void Options::assign<>(int val, const std::string source) { _set(val, source, false); }
-template<> inline void Options::assign<>(BoutReal val, const std::string source) { _set(val, source, false); }
-template<> inline void Options::assign<>(std::string val, const std::string source) { _set(val, source, false); }
+template<> inline void Options::assign<>(bool val, std::string source) { _set(val, std::move(source), false); }
+template<> inline void Options::assign<>(int val, std::string source) { _set(val, std::move(source), false); }
+template<> inline void Options::assign<>(BoutReal val, std::string source) { _set(val, std::move(source), false); }
+template<> inline void Options::assign<>(std::string val, std::string source) { _set(std::move(val), std::move(source), false); }
 // Note: const char* version needed to avoid conversion to bool
-template<> inline void Options::assign<>(const char *val, const std::string source) { _set(std::string(val), source, false);}
+template<> inline void Options::assign<>(const char *val, std::string source) { _set(std::string(val), source, false);}
 // Note: Field assignments don't check for previous assignment (always force)
-template<> void Options::assign<>(Field2D val, const std::string source);
-template<> void Options::assign<>(Field3D val, const std::string source);
-template<> void Options::assign<>(FieldPerp val, const std::string source);
-template<> void Options::assign<>(Array<BoutReal> val, const std::string source);
-template<> void Options::assign<>(Matrix<BoutReal> val, const std::string source);
-template<> void Options::assign<>(Tensor<BoutReal> val, const std::string source);
+template<> inline void Options::assign<>(Field2D val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
+template<> inline void Options::assign<>(Field3D val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
+template<> inline void Options::assign<>(FieldPerp val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
+template<> inline void Options::assign<>(Array<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
+template<> inline void Options::assign<>(Matrix<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
+template<> inline void Options::assign<>(Tensor<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
 
 /// Specialised similar comparison methods
 template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }

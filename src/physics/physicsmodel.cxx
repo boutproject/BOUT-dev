@@ -163,7 +163,7 @@ int PhysicsModel::postInit(bool restarting) {
     solver->readEvolvingVariablesFromOptions(restart_options);
   }
 
-  const bool restart_enabled = Options::root()["restart"]["enabled"].withDefault(true);
+  const bool restart_enabled = Options::root()["restart_files"]["enabled"].withDefault(true);
 
   if (restart_enabled) {
     solver->outputVars(restart_options, false);

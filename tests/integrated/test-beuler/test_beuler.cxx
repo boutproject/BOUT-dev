@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
   root["mesh"]["nz"] = 1;
 
   root["output"]["enabled"] = false;
-  root["restart"]["enabled"] = false;
+  root["restart_files"]["enabled"] = false;
 
   PetscLib::setArgs(argc, argv);
   Solver::setArgs(argc, argv);

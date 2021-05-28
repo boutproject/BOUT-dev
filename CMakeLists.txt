@@ -91,6 +91,7 @@ set(BOUT_SOURCES
   ./include/bout/solver.hxx
   ./include/bout/surfaceiter.hxx
   ./include/bout/operatorstencil.hxx
+  ./include/bout/output_bout_types.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
@@ -183,6 +184,8 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/multigrid/multigrid_solver.cxx
   ./src/invert/laplace/impls/naulin/naulin_laplace.cxx
   ./src/invert/laplace/impls/naulin/naulin_laplace.hxx
+  ./src/invert/laplace/impls/pcr/pcr.cxx
+  ./src/invert/laplace/impls/pcr/pcr.hxx
   ./src/invert/laplace/impls/pdd/pdd.cxx
   ./src/invert/laplace/impls/pdd/pdd.hxx
   ./src/invert/laplace/impls/petsc/petsc_laplace.cxx
@@ -346,12 +349,13 @@ target_include_directories(bout++ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
+set(BOUT_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}/lib")
 set_target_properties(bout++ PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
-  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
+  LIBRARY_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
+  ARCHIVE_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}")
 
 # Set some variables for the bout-config script
-set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L${CMAKE_BINARY_DIR}/lib -lbout++")
+set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
 set(BOUT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include")
 
@@ -421,6 +425,7 @@ else()
   bout_update_submodules()
   # Need to install fmt alongside BOUT++
   set(FMT_INSTALL ON CACHE BOOL "")
+  set(FMT_DEBUG_POSTFIX "" CACHE STRING "")
   add_subdirectory(externalpackages/fmt)
   if(NOT TARGET fmt::fmt)
     message(FATAL_ERROR "fmt not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
@@ -432,7 +437,7 @@ else()
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
   set(FMT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externalpackages/fmt/include")
   set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${FMT_INCLUDE_PATH}")
-  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -lfmtd")
+  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -lfmt")
 endif()
 target_link_libraries(bout++ PUBLIC fmt::fmt)
 
@@ -465,6 +470,15 @@ endif()
 message(STATUS "Runtime checking level: CHECK=${CHECK}")
 target_compile_definitions(bout++ PUBLIC "CHECK=${CHECK}")
 set(BOUT_CHECK_LEVEL ${CHECK})
+
+if (CHECK GREATER 1)
+  set(bout_use_msgstack_default ON)
+else()
+  set(bout_use_msgstack_default OFF)
+endif()
+set(BOUT_ENABLE_MSGSTACK ${bout_use_msgstack_default} CACHE BOOL "Enable debug message stack")
+message(STATUS "Message stack: BOUT_USE_MSGSTACK=${BOUT_ENABLE_MSGSTACK}")
+set(BOUT_USE_MSGSTACK ${BOUT_ENABLE_MSGSTACK})
 
 cmake_dependent_option(BOUT_ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF
   "CHECK LESS 3" ON)
@@ -583,7 +597,7 @@ if (BOUT_USE_PETSC)
     find_package(PETSc REQUIRED)
     target_link_libraries(bout++ PUBLIC PETSc::PETSc)
     string(JOIN " " CONFIG_PETSC_LIBRARIES ${PETSC_LIBRARIES})
-    set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${CONFIG_PETSC_LIBRARIES}")
+    set(CONFIG_LDFLAGS "${CONFIG_PETSC_LIBRARIES} ${CONFIG_LDFLAGS}")
   endif()
 endif()
 message(STATUS "PETSc support: ${BOUT_USE_PETSC}")
@@ -599,9 +613,30 @@ endif()
 message(STATUS "SLEPc support: ${BOUT_USE_SLEPC}")
 set(BOUT_HAS_SLEPC ${BOUT_USE_SLEPC})
 
-option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF)
+option(BOUT_DOWNLOAD_SUNDIALS "Download and build SUNDIALS" OFF)
+# Force BOUT_USE_SUNDIALS if we're downloading it!
+cmake_dependent_option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF
+  "NOT BOUT_DOWNLOAD_SUNDIALS" ON)
 if (BOUT_USE_SUNDIALS)
-  find_package(SUNDIALS REQUIRED)
+  if (BOUT_DOWNLOAD_SUNDIALS)
+    message(STATUS "Downloading and configuring SUNDIALS")
+    include(FetchContent)
+    FetchContent_Declare(
+      sundials
+      GIT_REPOSITORY https://github.com/ZedThree/sundials
+      GIT_TAG        "4f3bb8281c7b27343bcb95386ebbb665fb6196a5"
+      )
+    set(EXAMPLES_ENABLE_C OFF CACHE BOOL "" FORCE)
+    set(EXAMPLES_INSTALL OFF CACHE BOOL "" FORCE)
+    set(ENABLE_MPI ON CACHE BOOL "" FORCE)
+    set(ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
+    set(BUILD_STATIC_LIBS OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(sundials)
+    message(STATUS "SUNDIALS done configuring")
+  else()
+    find_package(SUNDIALS REQUIRED)
+  endif()
+  target_link_libraries(bout++ PUBLIC SUNDIALS::nvecparallel)
   target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
   target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
   target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
@@ -786,7 +821,7 @@ set(BOUT_HAS_PNETCDF OFF)
 # while for static builds we need the dependencies too
 if (BUILD_SHARED_LIBS)
   # Include rpath linker flag so user doesn't need to set LD_LIBRARY_PATH
-  set(CONFIG_LDFLAGS "${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${CMAKE_BINARY_DIR} -L${CMAKE_BINARY_DIR} -lbout++")
+  set(CONFIG_LDFLAGS "${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}\$BOUT_LIB_PATH -L\$BOUT_LIB_PATH -lbout++")
 else()
   set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS}")
 endif()

@@ -29,7 +29,7 @@ flags = [
     "ccoef=3 bcoef=0",
     "dcoef=3.5",
     "ecoef=-1",
-    "'input=ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'",
+    "'input_field=ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'",
 ]
 
 locations = ["CELL_CENTRE", "CELL_XLOW", "CELL_YLOW", "CELL_ZLOW"]
