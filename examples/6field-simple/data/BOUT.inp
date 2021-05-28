@@ -4,16 +4,16 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 100          # number of time-steps
-TIMESTEP = 1.0       # time between outputs
+nout = 100          # number of time-steps
+timestep = 1.0       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 0.45  # wall time limit (in hours)
 
-TwistShift = true   # use twist-shift condition?
+twistshift = true   # use twist-shift condition?
 non_uniform = true
 
 MZ = 16             # number of points in z direction (2^n + 1)
-ZPERIOD = 15        # Fraction of a torus to simulate
+zperiod = 15        # Fraction of a torus to simulate
 
 MXG = 2
 MYG = 2
@@ -24,7 +24,7 @@ dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
 restart_format = "nc"   # Restart file format
 
 [mesh]
-StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
+staggergrids = false    # Use staggered grids (EXPERIMENTAL)
 
 [mesh:paralleltransform]
 type = shifted # Use shifted metric method
@@ -75,7 +75,7 @@ nonuniform = true
 
 [fft]
 
-fft_measure = true  # If using FFTW, perform tests to determine fastest method
+fft_measurement_flag = measure  # If using FFTW, perform tests to determine fastest method
 
 ##################################################
 # Solver settings
@@ -83,8 +83,8 @@ fft_measure = true  # If using FFTW, perform tests to determine fastest method
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-08 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-08 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
 use_jacobian = false  # Use user-supplied Jacobian
@@ -245,7 +245,7 @@ outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # boundary conditions

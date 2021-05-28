@@ -279,6 +279,7 @@ int main(int argc, char** argv) {
 
   dump.write();
 
+  bout::checkForUnusedOptions();
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
 
   BoutFinalise();

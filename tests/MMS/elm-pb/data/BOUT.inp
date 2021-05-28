@@ -4,16 +4,16 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 1          # number of time-steps
-TIMESTEP = 0.001       # time between outputs
+nout = 1          # number of time-steps
+timestep = 0.001       # time between outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
-TwistShift = true   # use twist-shift condition?
+twistshift = true   # use twist-shift condition?
 ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
 TwistOrder = 0      # order of twist-shift interpolation
 
 MZ = 17             # number of points in z direction (2^n + 1)
-ZPERIOD = 1         # Fraction of a torus to simulate
+zperiod = 1         # Fraction of a torus to simulate
 
 NXPE = 1
 
@@ -67,8 +67,8 @@ outer_boundary_flags = 0
 mms = true
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-12 # absolute tolerance
-RTOL = 1e-08  # relative tolerance
+atol = 1e-12 # absolute tolerance
+rtol = 1e-08  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
 use_jacobian = false  # Use user-supplied Jacobian
@@ -148,7 +148,7 @@ phi_curv = true    # Include curvature*Grad(phi) in P equation
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 [phi]

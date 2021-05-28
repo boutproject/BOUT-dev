@@ -34,19 +34,19 @@ ixseps2 = -1
 # Methods options
 ###############################################################################
 # Methods used for the radial (x) derivative terms
-[ddx]
+[mesh:ddx]
 first = C2 # d/dx (f)
 second = C2 # d^2/dx^2 (f)
 upwind = U1 # u*d/dx (f)
 
 # Methods used for the axial (y) derivative terms
-[ddy]
+[mesh:ddy]
 first = C2 # d/dy (f)
 second = C2 # d^2/dy^2 (f)
 upwind = U1 # u*d/dy (f)
 
 # Methods used for the azimuthal (z) derivative terms
-[ddz]
+[mesh:ddz]
 first = FFT # d/dz (f)
 second = FTT # d^2/dz^2 (f)
 ###############################################################################

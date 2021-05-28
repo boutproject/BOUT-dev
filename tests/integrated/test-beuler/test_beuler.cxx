@@ -73,8 +73,8 @@ int main(int argc, char** argv) {
       bout::experimental::setupDumpFile(Options::root(), *bout::globals::mesh, ".");
 
   // Global options
-  root["NOUT"] = 20;
-  root["TIMESTEP"] = 1;
+  root["nout"] = 20;
+  root["timestep"] = 1;
 
   // Get specific options section for this solver. Can't just use default
   // "solver" section, as we run into problems when solvers use the same

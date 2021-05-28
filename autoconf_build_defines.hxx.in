@@ -60,6 +60,9 @@
 /* Enable color logs option */
 #undef BOUT_USE_COLOR
 
+/* Enable MsgStack for traces */
+#undef BOUT_USE_MSGSTACK
+
 /* Enable OpenMP */
 #undef BOUT_USE_OPENMP
 

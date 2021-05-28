@@ -57,8 +57,11 @@ TEST(ParseCommandLineArgs, DataDir) {
 
   auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
 
+  std::vector<std::string> expected_argv{"test", "datadir=", "test_data_directory"};
+
   EXPECT_EQ(args.data_dir, "test_data_directory");
   EXPECT_EQ(args.original_argv, v_args);
+  EXPECT_EQ(args.argv, expected_argv);
 }
 
 TEST(ParseCommandLineArgs, DataDirBad) {
@@ -78,8 +81,11 @@ TEST(ParseCommandLineArgs, OptionsFile) {
 
   auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
 
+  std::vector<std::string> expected_argv{"test", "optionfile=", "test_options_file"};
+
   EXPECT_EQ(args.opt_file, "test_options_file");
   EXPECT_EQ(args.original_argv, v_args);
+  EXPECT_EQ(args.argv, expected_argv);
 }
 
 TEST(ParseCommandLineArgs, OptionsFileBad) {
@@ -99,8 +105,11 @@ TEST(ParseCommandLineArgs, SettingsFile) {
 
   auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
 
+  std::vector<std::string> expected_argv{"test", "settingsfile=", "test_settings_file"};
+
   EXPECT_EQ(args.set_file, "test_settings_file");
   EXPECT_EQ(args.original_argv, v_args);
+  EXPECT_EQ(args.argv, expected_argv);
 }
 
 TEST(ParseCommandLineArgs, SettingsFileBad) {
@@ -173,6 +182,23 @@ TEST(ParseCommandLineArgs, VerbosityShortMultiple) {
   EXPECT_EQ(args.verbosity, 6);
   EXPECT_EQ(args.original_argv, v_args);
 }
+
+TEST(ParseCommandLineArgs, VerbosityWithDataDir) {
+  std::vector<std::string> v_args{"test", "-v", "-v", "-d", "test_data_directory"};
+  auto v_args_copy = v_args;
+  auto c_args = get_c_string_vector(v_args_copy);
+  char** argv = c_args.data();
+
+  auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
+
+  std::vector<std::string> expected_argv{"test", "datadir=", "test_data_directory"};
+
+  EXPECT_EQ(args.data_dir, "test_data_directory");
+  EXPECT_EQ(args.verbosity, 6);
+  EXPECT_EQ(args.original_argv, v_args);
+  EXPECT_EQ(args.argv, expected_argv);
+}
+
 
 TEST(ParseCommandLineArgs, VerbosityLong) {
   std::vector<std::string> v_args{"test", "--verbose"};
