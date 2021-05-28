@@ -150,12 +150,7 @@ jobs:
 
       - name: Build (CMake)
         if: ${{ contains(matrix.config.name, 'CMake') }}
-        run: |
-          cmake --version
-          cmake . -B build ${{ matrix.config.cmake_options }}
-          cmake --build build --target build-check -j 2
-          cd build
-          ctest --output-on-failure --timeout 300
+        run: ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
 
       - name: Capture coverage
         if: ${{ matrix.config.name == 'Coverage' }}
