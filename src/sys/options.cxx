@@ -667,12 +667,6 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
       }
     }
 
-    // What is it doing here?!
-    if (not (child->second.isValue() or child->second.is_section)) {
-      child = unused.children.erase(child);
-      continue;
-    }
-
     ++child;
   }
 
