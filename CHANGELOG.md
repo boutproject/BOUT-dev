@@ -63,6 +63,11 @@
 - Input options are now case sensitive. Run `bin/bout-v5-input-file-upgrader.py`
   to automatically fix the most common library options
   [\#2210](https://github.com/boutproject/BOUT-dev/pull/2210)
+- Input options are now required to be either a section or a value,
+  and not both. This requires renaming the `restart` section to
+  `restart_files`. `bin/bout-v5-input-file-upgrader.py` can
+  automatically make this
+  change. [\#2277](https://github.com/boutproject/BOUT-dev/pull/2277)
 
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)
