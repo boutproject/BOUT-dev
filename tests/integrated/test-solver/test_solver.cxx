@@ -86,8 +86,11 @@ int main(int argc, char** argv) {
   constexpr int NOUT = 100;
 
   // Global options
-  root["NOUT"] = NOUT;
-  root["TIMESTEP"] = end / NOUT;
+  root["nout"] = NOUT;
+  root["timestep"] = end / NOUT;
+
+  // Don't error just because we haven't used all the options yet
+  root["input"]["error_on_unused_options"] = false;
 
   // Solver-specific options
   root["euler"]["mxstep"] = 100000;
@@ -141,8 +144,8 @@ int main(int argc, char** argv) {
     } catch (BoutException& e) {
       // Don't let one bad solver stop us trying the rest
       output_test << " ERROR\n";
-      output_info << "Error encountered with solver " << name << "\n";
-      output_info << e.what() << endl;
+      output_test << "Error encountered with solver " << name << "\n";
+      output_test << e.what() << endl;
       errors[name] = 0.;
     }
   }

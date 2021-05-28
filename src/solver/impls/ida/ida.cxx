@@ -174,8 +174,8 @@ int IdaSolver::init(int nout, BoutReal tstep) {
   if (IDAInit(idamem, idares, simtime, uvec, duvec) < 0)
     throw BoutException("IDAInit failed\n");
 
-  const auto abstol = (*options)["ATOL"].withDefault(1.0e-12);
-  const auto reltol = (*options)["RTOL"].withDefault(1.0e-5);
+  const auto abstol = (*options)["atol"].withDefault(1.0e-12);
+  const auto reltol = (*options)["rtol"].withDefault(1.0e-5);
   if (IDASStolerances(idamem, reltol, abstol) < 0)
     throw BoutException("IDASStolerances failed\n");
 

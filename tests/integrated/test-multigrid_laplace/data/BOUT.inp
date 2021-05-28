@@ -31,7 +31,6 @@ rtol = 1e-10
 atol = 1e-10
 dtol = 1000000000000.0
 include_yguards = false
-maxits = 1000
 
 #############################################
 # input variables for tests

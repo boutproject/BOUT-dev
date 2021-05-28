@@ -3,15 +3,15 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 200       # number of time-steps
-TIMESTEP = 1e-05	   # time between outputs
+nout = 200       # number of time-steps
+timestep = 1e-05	   # time between outputs
 
 archive = 20
 
-TwistShift = true  # use twist-shift condition?
+twistshift = true  # use twist-shift condition?
 
 MZ = 32     # number of points in z direction (2^n)
-ZPERIOD = 10  # Number of periods
+zperiod = 10  # Number of periods
 
 MXG = 2
 MYG = 2
@@ -23,7 +23,7 @@ dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 periodicX = false  # Make domain periodic in X
 
 [mesh]
-StaggerGrids = false # Use staggered grids (EXPERIMENTAL)
+staggergrids = false # Use staggered grids (EXPERIMENTAL)
 
 [mesh:paralleltransform]
 type = shifted # Use shifted metric method
@@ -56,8 +56,8 @@ upwind = W3
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-12 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-12 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 mxstep = 50000
 type = splitrk
 timestep = 1e-06
@@ -97,7 +97,7 @@ fix_profiles = true
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # boundary conditions

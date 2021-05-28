@@ -325,11 +325,11 @@ struct DerivativeStore {
                                                    {DIRECTION::YOrthogonal, "ddy"},
                                                    {DIRECTION::Z, "ddz"}};
 
-    std::map<DERIV, std::string> derivTypes = {{DERIV::Standard, "First"},
-                                               {DERIV::StandardSecond, "Second"},
-                                               {DERIV::StandardFourth, "Fourth"},
-                                               {DERIV::Upwind, "Upwind"},
-                                               {DERIV::Flux, "Flux"}};
+    std::map<DERIV, std::string> derivTypes = {{DERIV::Standard, "first"},
+                                               {DERIV::StandardSecond, "second"},
+                                               {DERIV::StandardFourth, "fourth"},
+                                               {DERIV::Upwind, "upwind"},
+                                               {DERIV::Flux, "flux"}};
 
     for (const auto& direction : directions) {
       for (const auto& deriv : derivTypes) {

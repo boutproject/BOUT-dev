@@ -58,7 +58,7 @@ for solver in ["cyclic", "pcr"]:
         if nproc > 2:
             nxpe = 2
 
-        cmd = "./test_laplace nxpe=" + str(nxpe) + " laplace:type=" + solver
+        cmd = "./test_laplace NXPE=" + str(nxpe) + " laplace:type=" + solver
 
         shell("rm data/BOUT.dmp.*.nc")
 

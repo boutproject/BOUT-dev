@@ -108,7 +108,7 @@ given in table :numref:`tab-solveropts`.
 |
 
 The most commonly changed options are the absolute and relative solver
-tolerances, ``ATOL`` and ``RTOL`` which should be varied to check
+tolerances, ``atol`` and ``rtol`` which should be varied to check
 convergence.
 
 CVODE

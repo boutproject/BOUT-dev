@@ -261,6 +261,24 @@ template <typename T> ConditionalOutput &operator<<(ConditionalOutput &out, cons
   return out;
 }
 
+/// Disable a ConditionalOutput during a scope; reenable it on
+/// exit. You must give the variable a name!
+///
+///     {
+///       WithQuietoutput quiet{output};
+///       // output disabled during this scope
+///     }
+///     // output now enabled
+class WithQuietOutput {
+public:
+  explicit WithQuietOutput(ConditionalOutput& output_in) : output(output_in) {
+    output.disable();
+  }
+
+  ~WithQuietOutput() { output.enable(); }
+  ConditionalOutput& output;
+};
+
 /// To allow statements like "output.write(...)" or "output << ..."
 /// Output for debugging
 #ifdef BOUT_USE_OUTPUT_DEBUG

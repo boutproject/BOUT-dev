@@ -85,5 +85,6 @@ int main(int argc, char** argv) {
   bout::globals::dump.add(f, "f", true);
   bout::globals::dump.write();
 
+  bout::checkForUnusedOptions();
   BoutFinalise();
 }
