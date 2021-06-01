@@ -6,6 +6,8 @@
 
 #include "boutexception.hxx"
 #include "options.hxx"
+#include "output.hxx"
+#include "unused.hxx"
 
 #include <fmt/core.h>
 
@@ -15,6 +17,23 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+namespace bout{
+/// Base class for `ArgumentHelper` so we can store actual
+/// implementations in `Factory`
+struct ArgumentHelperBase {
+private:
+  WithQuietOutput info{output_info};
+};
+
+/// Specialise this for some class `T` in order to get help on the
+/// command line for `T`'s options
+template <class T>
+struct ArgumentHelper : public ArgumentHelperBase {
+  ArgumentHelper(MAYBE_UNUSED(Options& options)) {}
+};
+
+}
 
 /// Generic Factory, adapted from Modern C++ Design/Loki by A. Alexandrescu
 ///
@@ -69,6 +88,14 @@ class Factory {
 
   /// Known implementations that are unavailable, along with the reason
   std::map<std::string, std::string> unavailable_options;
+
+public:
+  using ArgumentHelperType = std::unique_ptr<bout::ArgumentHelperBase>;
+
+private:
+  using ArgumentHelperCreator = std::function<ArgumentHelperType(Options&)>;
+
+  std::map<std::string, ArgumentHelperCreator> argument_map;
 
 protected:
   // Type returned from the creation function
@@ -126,6 +153,15 @@ public:
     return unavailable_options.insert(std::make_pair(name, reason)).second;
   }
 
+  /// Add a new `ArgumentHelper` \p name to the factory
+  ///
+  /// @param[in] name     An identifier for this type
+  /// @param[in] creator  A function for creating this helper
+  /// @returns true if the helper was successfully added
+  virtual bool addHelp(const std::string& name, ArgumentHelperCreator creator) {
+    return argument_map.insert(std::make_pair(name, creator)).second;
+  }
+
   /// Remove a type \p name from the factory
   ///
   /// @param[in] name  The identifier for the type to be removed
@@ -137,6 +173,12 @@ public:
   /// @param[in] name  The identifier for the type to be removed
   /// @returns true if the type was successfully removed
   bool removeUnavailable(const std::string& name) { return unavailable_options.erase(name) == 1; }
+
+  /// Remove a type \p name from the factory
+  ///
+  /// @param[in] name  The identifier for the type to be removed
+  /// @returns true if the type was successfully removed
+  bool removeHelp(const std::string& name) { return type_map.erase(name) == 1; }
 
   /// Get the name of the type to create
   ///
@@ -201,6 +243,19 @@ public:
     return create(getType(options), args...);
   }
 
+  /// Return options consumed by \p name
+  std::string help(const std::string& name) const {
+    auto index = argument_map.find(name);
+    if (index == std::end(argument_map)) {
+      throw BoutException("Couldn't get help for '{}', unknown {}", name,
+                          DerivedFactory::type_name);
+    }
+
+    Options options;
+    index->second(options);
+    return toString(options);
+  }
+
   /// List available types that can be created
   ///
   /// @returns a vector of std::string
@@ -240,6 +295,10 @@ public:
                                       [](Options* options) -> std::unique_ptr<BaseType> {
                                         return std::make_unique<DerivedType>(options);
                                       });
+    DerivedFactory::getInstance().addHelp(
+        name, [](Options& options) -> typename DerivedFactory::ArgumentHelperType {
+          return std::make_unique<bout::ArgumentHelper<DerivedType>>(options);
+        });
   }
 };
 

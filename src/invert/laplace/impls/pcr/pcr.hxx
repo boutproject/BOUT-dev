@@ -34,6 +34,14 @@ class LaplacePCR;
 #include <options.hxx>
 #include <utils.hxx>
 
+namespace bout{
+template <>
+struct ArgumentHelper<LaplacePCR> : public ArgumentHelperBase {
+  ArgumentHelper(Options& options);
+  bool dst;
+};
+} // namespace bout
+
 namespace {
 RegisterLaplace<LaplacePCR> registerlaplacepcr(LAPLACE_PCR);
 }

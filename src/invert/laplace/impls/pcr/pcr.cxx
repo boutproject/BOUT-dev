@@ -61,6 +61,10 @@
 
 using namespace std;
 
+bout::ArgumentHelper<LaplacePCR>::ArgumentHelper(Options& options) {
+  dst = options["dst"].doc("Use DST instead of FFT").withDefault(false);
+}
+
 LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
       C2coef(1.0, localmesh), Dcoef(1.0, localmesh), nmode(maxmode + 1),

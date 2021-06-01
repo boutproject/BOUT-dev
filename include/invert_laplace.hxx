@@ -163,6 +163,10 @@ public:
         [](Options* options, CELL_LOC loc, Mesh* mesh) -> std::unique_ptr<Laplacian> {
           return std::make_unique<DerivedType>(options, loc, mesh);
         });
+    LaplaceFactory::getInstance().addHelp(
+        name, [](Options& options) -> typename LaplaceFactory::ArgumentHelperType {
+          return std::make_unique<bout::ArgumentHelper<DerivedType>>(options);
+        });
   }
 };
 

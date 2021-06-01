@@ -329,6 +329,10 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       printAvailableImplementations(LaplaceFactory::getInstance());
       std::exit(EXIT_SUCCESS);
     }
+    if (current_arg == "--help-laplacian") {
+      std::cout << LaplaceFactory::getInstance().help(argv[++i]) << std::endl;
+      std::exit(EXIT_SUCCESS);
+    }
     if (current_arg == "--list-laplacexzs") {
       printAvailableImplementations(LaplaceXZFactory::getInstance());
       std::exit(EXIT_SUCCESS);
