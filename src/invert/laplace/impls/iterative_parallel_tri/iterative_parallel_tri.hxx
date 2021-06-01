@@ -37,7 +37,7 @@ class LaplaceIPT;
 namespace bout {
 template <>
 struct ArgumentHelper<LaplaceIPT> : public ArgumentHelperBase {
-  ArgumentHelper(Options& options);
+  explicit ArgumentHelper(Options& options);
   /// Solver tolerances
   BoutReal rtol, atol;
   /// Maximum number of iterations

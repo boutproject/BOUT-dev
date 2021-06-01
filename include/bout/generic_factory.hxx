@@ -30,7 +30,7 @@ private:
 /// command line for `T`'s options
 template <class T>
 struct ArgumentHelper : public ArgumentHelperBase {
-  ArgumentHelper(Options& options MAYBE_UNUSED()) {}
+  explicit ArgumentHelper(Options& options MAYBE_UNUSED()) {}
 };
 
 }
