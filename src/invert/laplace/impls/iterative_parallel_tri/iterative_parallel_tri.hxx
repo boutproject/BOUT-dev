@@ -36,7 +36,7 @@ class LaplaceIPT;
 
 namespace bout {
 template <>
-struct ArgumentHelper<LaplaceIPT> : public ArgumentHelperBase {
+struct ArgumentHelper<LaplaceIPT> : public ArgumentHelper<Laplacian> {
   explicit ArgumentHelper(Options& options);
   /// Solver tolerances
   BoutReal rtol, atol;

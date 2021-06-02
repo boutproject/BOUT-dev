@@ -43,7 +43,8 @@
 #include <bout/scorepwrapper.hxx>
 
 bout::ArgumentHelper<LaplaceIPT>::ArgumentHelper(Options& options)
-    : rtol(options["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
+    : bout::ArgumentHelper<Laplacian>(options),
+      rtol(options["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
       atol(options["atol"].doc("Absolute tolerance").withDefault(1.e-20)),
       maxits(options["maxits"].doc("Maximum number of iterations").withDefault(100)),
       max_level(

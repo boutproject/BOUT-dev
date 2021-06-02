@@ -36,7 +36,7 @@ class LaplacePCR;
 
 namespace bout{
 template <>
-struct ArgumentHelper<LaplacePCR> : public ArgumentHelperBase {
+struct ArgumentHelper<LaplacePCR> : public ArgumentHelper<Laplacian> {
   explicit ArgumentHelper(Options& options);
   bool dst;
 };

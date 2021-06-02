@@ -172,6 +172,41 @@ public:
 
 using RegisterUnavailableLaplace = RegisterUnavailableInFactory<Laplacian, LaplaceFactory>;
 
+namespace bout{
+template <>
+struct ArgumentHelper<Laplacian> : public ArgumentHelperBase {
+  explicit ArgumentHelper(Options& options);
+  /// If true, use asyncronous send in parallel algorithms
+  bool async_send;
+  /// Fraction of Z modes to filter out
+  BoutReal filter;
+  /// The maximum Z mode to solve for
+  int maxmode;
+  /// If true, reduce the amount of memory used
+  bool low_mem;
+  /// applies to Delp2 operator and laplacian inversion
+  bool all_terms;
+  /// Non-uniform mesh correction
+  bool nonuniform;
+  /// solve in y-guard cells, default true.
+  bool include_yguards;
+  /// exclude some number of points at the lower boundary, useful for
+  /// staggered grids or when boundary conditions make inversion
+  /// redundant
+  int extra_yguards_lower;
+  /// exclude some number of points at the upper boundary, useful for
+  /// staggered grids or when boundary conditions make inversion
+  /// redundant
+  int extra_yguards_upper;
+  /// Default flags
+  int global_flags;
+  /// Flags to set inner boundary condition
+  int inner_boundary_flags;
+  /// Flags to set outer boundary condition
+  int outer_boundary_flags;
+};
+} // namespace bout
+
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
