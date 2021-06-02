@@ -144,6 +144,13 @@ iterations becomes large, this may be an indication that the system is
 poorly conditioned, and a preconditioner might help improve performance.
 See :ref:`sec-preconditioning`.
 
+CVODE can set constraints to keep some quantities positive, non-negative,
+negative or non-positive. These constraints can be activated by setting the
+option ``solver:apply_positivity_constraints=true``, and then in the section
+for a certain variable (e.g. ``[n]``), setting the option
+``positivity_constraint`` to one of ``positive``, ``non_negative``,
+``negative``, or ``non_positive``.
+
 IMEX-BDF2
 ---------
 
