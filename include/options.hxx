@@ -360,8 +360,10 @@ public:
 
   // Getting options
 
-  /// Cast operator, which allows this class to be
-  /// assigned to type T
+  /// Cast operator, which allows this class to be assigned to type
+  /// T. This is only allowed for types that are members of the
+  /// `ValueType` variant. For other types, please use
+  /// `Options::as<T>()`
   ///
   /// Example:
   ///
@@ -369,8 +371,12 @@ public:
   /// option["test"] = 2.0;
   /// int value = option["test"];
   ///
-  template <typename T> operator T() const { return as<T>(); }
-  
+  template <typename T, typename = typename std::enable_if_t<
+                            bout::utils::isVariantMember<T, ValueType>::value>>
+  operator T() const {
+    return as<T>();
+  }
+
   /// Get the value as a specified type
   /// If there is no value then an exception is thrown
   /// Note there are specialised versions of this template

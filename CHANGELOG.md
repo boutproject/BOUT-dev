@@ -68,6 +68,10 @@
   `restart_files`. `bin/bout-v5-input-file-upgrader.py` can
   automatically make this
   change. [\#2277](https://github.com/boutproject/BOUT-dev/pull/2277)
+- `Options` are now only implicitly-castable to types stored in the
+  internal variant. Other types now require a call to
+  `Options::as<T>()`
+  [\#2341](https://github.com/boutproject/BOUT-dev/pull/2341)
 
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)
