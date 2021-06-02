@@ -252,7 +252,7 @@ public:
     }
 
     Options options;
-    index->second(options);
+    index->second(options[DerivedFactory::section_name]);
     return toString(options);
   }
 
