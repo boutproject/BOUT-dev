@@ -663,8 +663,9 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
   BoutReal atol, rtol; // Tolerances for SNES solver
   options->get("atol", atol, 1e-16);
   options->get("rtol", rtol, 1e-10);
-  int max_nonlinear_it; // Maximum nonlinear (SNES) iterations
-  options->get("max_nonlinear_it", max_nonlinear_it, 5);
+  int max_nonlinear_it = (*options)["max_nonlinear_iterations"]
+                         .doc("Maximum number of nonlinear iterations per SNES solve")
+                         .withDefault(5);
   SNESSetTolerances(*snesIn,atol,rtol,PETSC_DEFAULT,max_nonlinear_it,PETSC_DEFAULT);
 
   /////////////////////////////////////////////////////

@@ -109,8 +109,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   BoutReal rtol =
       (*options)["rtol"].doc("Relative tolerance in SNES solve").withDefault(1e-10);
 
-  int maxits = (*options)["max_nonlinear_it"]
-                   .doc("Maximum number of iterations per SNES solve")
+  int maxits = (*options)["max_nonlinear_iterations"]
+                   .doc("Maximum number of nonlinear iterations per SNES solve")
                    .withDefault(50);
 
   upper_its = (*options)["upper_its"]
