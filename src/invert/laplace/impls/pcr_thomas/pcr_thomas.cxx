@@ -1053,10 +1053,10 @@ void LaplacePCR_THOMAS :: pcr_double_row_substitution(Matrix<dcomplex> &a, Matri
 
     /// Cyclic reduction until single row remains per MPI process.
     /// First row of next rank is sent to current rank at the row of n_mpi+1 for reduction.
-    if(myrank<nprocs-1) {
+    if(xproc<nprocs-1) {
         MPI_Irecv(&rbuf[0], 4*nsys, MPI_DOUBLE_COMPLEX, myrank+1, 0, comm, &request[0]);
     }
-    if(myrank>0) {
+    if(xproc>0) {
       for (int kz = 0; kz < nsys; kz++) {
         sbuf[0 + 4 * kz] = a(kz,1);
         sbuf[1 + 4 * kz] = b(kz,1);
@@ -1065,7 +1065,7 @@ void LaplacePCR_THOMAS :: pcr_double_row_substitution(Matrix<dcomplex> &a, Matri
       }
       MPI_Isend(&sbuf[0], 4*nsys, MPI_DOUBLE_COMPLEX, myrank-1, 0, comm, &request[1]);
     }
-    if(myrank<nprocs-1) {
+    if(xproc<nprocs-1) {
       MPI_Wait(&request[0], &status1);
       for (int kz = 0; kz < nsys; kz++) {
         a(kz,n_mpi+1) = rbuf[0 + 4 * kz];
@@ -1089,7 +1089,7 @@ void LaplacePCR_THOMAS :: pcr_double_row_substitution(Matrix<dcomplex> &a, Matri
       r(kz,i) += (alpha[kz] * r(kz,ip) + gamma[kz] * r(kz,in));
     }
     
-    if(myrank>0) {
+    if(xproc>0) {
         MPI_Wait(&request[1], &status);
     }
 
@@ -1097,16 +1097,16 @@ void LaplacePCR_THOMAS :: pcr_double_row_substitution(Matrix<dcomplex> &a, Matri
     pcr_forward_single_row(a, b, c, r, x);
 
     /// Solution of first row in each MPI rank.
-    if(myrank>0) {
+    if(xproc>0) {
         MPI_Irecv(&recvvec[0], nsys, MPI_DOUBLE_COMPLEX, myrank-1, 100, comm, &request[0]);
     }
-    if(myrank<nprocs-1) {
+    if(xproc<nprocs-1) {
       for (int kz = 0; kz < nsys; kz++) {
         sendvec[kz] = x(kz, n_mpi);
       }
       MPI_Isend(&sendvec[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 100, comm, &request[1]);
     }
-    if(myrank>0) {
+    if(xproc>0) {
       MPI_Wait(&request[0], &status);
       for (int kz = 0; kz < nsys; kz++) {
         x(kz, 0) = recvvec[kz];
@@ -1120,7 +1120,7 @@ void LaplacePCR_THOMAS :: pcr_double_row_substitution(Matrix<dcomplex> &a, Matri
       x(kz,1) = x(kz,1)/b(kz,1);
     }
 
-    if(myrank<nprocs-1) {
+    if(xproc<nprocs-1) {
         MPI_Wait(&request[1], &status);
     }
     /// Solution of other rows in each MPI rank.
