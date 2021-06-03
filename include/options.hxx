@@ -51,6 +51,8 @@ class Options;
 #include "field3d.hxx"
 #include "fieldperp.hxx"
 
+#include <fmt/core.h>
+
 #include <map>
 #include <ostream>
 #include <set>
@@ -831,6 +833,37 @@ void checkForUnusedOptions();
 void checkForUnusedOptions(const Options& options, const std::string& data_dir,
                            const std::string& option_file);
 }
+
+namespace bout {
+namespace details {
+/// Implementation of fmt::formatter<Options> in a non-template class
+/// so that we can put the function definitions in the .cxx file,
+/// avoiding lengthy recompilation if we change it
+struct OptionsFormatterBase {
+  /// Include the 'doc' attribute
+  bool docstrings{false};
+  /// If true, print variables as 'section:variable', rather than a
+  /// section header '[section]' and plain 'variable'
+  bool inline_section_names{false};
+
+  auto parse(fmt::format_parse_context& ctx)
+      -> fmt::format_parse_context::iterator;
+  auto format(const Options& options, fmt::format_context& ctx)
+      -> fmt::format_context::iterator;
+
+private:
+  /// Format string to passed down to subsections
+  std::string format_string;
+};
+} // namespace details
+} // namespace bout
+
+/// Format `Options` to string. Format string specification is:
+///
+/// - 'd': include 'doc' attribute
+/// - 'i': inline section names
+template <>
+struct fmt::formatter<Options> : public bout::details::OptionsFormatterBase {};
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \

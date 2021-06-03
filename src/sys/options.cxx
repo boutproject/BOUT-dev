@@ -4,6 +4,8 @@
 #include <output.hxx>
 #include <utils.hxx>
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
@@ -745,34 +747,81 @@ std::vector<std::string> Options::getFlattenedKeys() const {
   return flattened_names;
 }
 
-std::string toString(const Options& value) {
+fmt::format_parse_context::iterator
+bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
 
-  std::string result;
+  auto it = ctx.begin();
+  const auto end = ctx.end();
+  while (it != end and *it != '}') {
+    switch (*it) {
+    case 'd':
+      docstrings = true;
+      break;
+    case 'i':
+      inline_section_names = true;
+      break;
+    default:
+      throw fmt::format_error("invalid format");
+    }
+    ++it;
+  }
+
+  // Keep a copy of the format string (without the last '}') so we can
+  // pass it down to the subsections.
+  const auto size = std::distance(ctx.begin(), it);
+  format_string.reserve(size + 3);
+  format_string.assign("{:");
+  format_string.append(ctx.begin(), it);
+  format_string.push_back('}');
+
+  return it;
+}
+
+fmt::format_context::iterator
+bout::details::OptionsFormatterBase::format(const Options& options,
+                                            fmt::format_context& ctx) {
+  const auto children = options.getChildren();
+  const bool has_child_values =
+      std::any_of(children.begin(), children.end(),
+                  [](const auto& child) { return child.second.isValue(); });
+
+  // Only print section headers if the section has a name and it has
+  // non-section children
+  const std::string section_name = options.str();
+  if (not inline_section_names and not section_name.empty() and has_child_values) {
+    fmt::format_to(ctx.out(), "\n[{}]\n", section_name);
+  }
 
   // Get all the child values first
-  for (const auto& child : value.getChildren()) {
+  for (const auto& child : children) {
     if (child.second.isValue()) {
       const auto value = bout::utils::variantToString(child.second.value);
       // Convert empty strings to ""
       const std::string as_str = value.empty() ? "\"\"" : value;
-      result += fmt::format("{} = {}\n", child.first, as_str);
+      if (inline_section_names and not section_name.empty()) {
+        fmt::format_to(ctx.out(), "{}:", section_name);
+      }
+      fmt::format_to(ctx.out(), "{} = {}", child.first, as_str);
+
+      const bool has_doc = child.second.attributes.count("doc");
+      if (docstrings and has_doc) {
+        fmt::format_to(ctx.out(), "\t\t# {}",
+                       child.second.attributes.at("doc").as<std::string>());
+      }
+
+      fmt::format_to(ctx.out(), "\n");
     }
   }
 
-  // Only print section headers if the section has a name and it has
-  // non-section children
-  const std::string section_name = value.str();
-  if (not(section_name.empty() or result.empty())) {
-    result = fmt::format("\n[{}]\n{}", section_name, result);
-  }
-
   // Now descend the tree, accumulating subsections
-  for (const auto& subsection : value.subsections()) {
-    result += toString(*subsection.second);
+  for (const auto& subsection : options.subsections()) {
+    fmt::format_to(ctx.out(), format_string, *subsection.second);
   }
 
-  return result;
+  return ctx.out();
 }
+
+std::string toString(const Options& value) { return fmt::format("{}", value); }
 
 namespace bout {
 void checkForUnusedOptions() {
@@ -834,7 +883,7 @@ void checkForUnusedOptions(const Options& options, const std::string& data_dir,
     const std::string unused_message = _(R"""(
 There were unused input options:
 -----
-{}
+{:i}
 -----
 It's possible you've mistyped some options. BOUT++ input arguments are
 now case-sensitive, and some have changed name. You can try running
@@ -856,7 +905,7 @@ simulation.
 
 {})""");
 
-    throw BoutException(unused_message, toString(unused), data_dir, option_file,
+    throw BoutException(unused_message, unused, data_dir, option_file,
                         unused.getChildren().begin()->first, additional_info);
   }
 }
