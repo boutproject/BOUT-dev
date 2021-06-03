@@ -750,8 +750,8 @@ std::vector<std::string> Options::getFlattenedKeys() const {
 fmt::format_parse_context::iterator
 bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
 
-  auto it = ctx.begin();
-  const auto end = ctx.end();
+  const auto* it = ctx.begin();
+  const auto* end = ctx.end();
   while (it != end and *it != '}') {
     switch (*it) {
     case 'd':
@@ -801,9 +801,9 @@ bout::details::OptionsFormatterBase::format(const Options& options,
       fmt::format_to(ctx.out(), " = {}", as_str);
     }
 
-    const bool has_doc = options.attributes.count("doc");
-    const bool has_source = options.attributes.count("source");
-    const bool has_type = options.attributes.count("type");
+    const bool has_doc = options.attributes.count("doc") != 0u;
+    const bool has_source = options.attributes.count("source") != 0u;
+    const bool has_type = options.attributes.count("type") != 0u;
 
     std::vector<std::string> comments;
 

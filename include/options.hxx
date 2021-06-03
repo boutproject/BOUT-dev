@@ -840,6 +840,12 @@ namespace details {
 /// so that we can put the function definitions in the .cxx file,
 /// avoiding lengthy recompilation if we change it
 struct OptionsFormatterBase {
+  auto parse(fmt::format_parse_context& ctx)
+      -> fmt::format_parse_context::iterator;
+  auto format(const Options& options, fmt::format_context& ctx)
+      -> fmt::format_context::iterator;
+
+private:
   /// Include the 'doc' attribute, if present
   bool docstrings{false};
   /// If true, print variables as 'section:variable', rather than a
@@ -849,13 +855,6 @@ struct OptionsFormatterBase {
   bool key_only{false};
   /// Include the 'source' attribute, if present
   bool source{false};
-
-  auto parse(fmt::format_parse_context& ctx)
-      -> fmt::format_parse_context::iterator;
-  auto format(const Options& options, fmt::format_context& ctx)
-      -> fmt::format_context::iterator;
-
-private:
   /// Format string to passed down to subsections
   std::string format_string;
 };
