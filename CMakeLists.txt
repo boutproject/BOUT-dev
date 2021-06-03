@@ -91,6 +91,7 @@ set(BOUT_SOURCES
   ./include/bout/solver.hxx
   ./include/bout/surfaceiter.hxx
   ./include/bout/operatorstencil.hxx
+  ./include/bout/output_bout_types.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
@@ -143,7 +144,7 @@ set(BOUT_SOURCES
   ./include/vector3d.hxx
   ./include/where.hxx
   ./src/bout++.cxx
-  ./src/bout++-time.cxx
+  ./src/bout++-time.hxx
   ./src/field/field.cxx
   ./src/field/field2d.cxx
   ./src/field/field3d.cxx
@@ -183,6 +184,8 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/multigrid/multigrid_solver.cxx
   ./src/invert/laplace/impls/naulin/naulin_laplace.cxx
   ./src/invert/laplace/impls/naulin/naulin_laplace.hxx
+  ./src/invert/laplace/impls/pcr/pcr.cxx
+  ./src/invert/laplace/impls/pcr/pcr.hxx
   ./src/invert/laplace/impls/pdd/pdd.cxx
   ./src/invert/laplace/impls/pdd/pdd.hxx
   ./src/invert/laplace/impls/petsc/petsc_laplace.cxx
@@ -327,8 +330,17 @@ This warning is only important for BOUT++ developers and can otherwise be \
 safely ignored.")
 endif()
 
+# Ensure that the compile date/time is up-to-date when any of the sources change
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
+  COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
+  DEPENDS ${BOUT_SOURCES}
+  MAIN_DEPENDENCY "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
+  )
+
 add_library(bout++
   ${BOUT_SOURCES}
+  ${CMAKE_CURRENT_BINARY_DIR}/bout++-time.cxx
   )
 add_library(bout++::bout++ ALIAS bout++)
 target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
@@ -436,6 +448,15 @@ endif()
 message(STATUS "Runtime checking level: CHECK=${CHECK}")
 target_compile_definitions(bout++ PUBLIC "CHECK=${CHECK}")
 set(BOUT_CHECK_LEVEL ${CHECK})
+
+if (CHECK GREATER 1)
+  set(bout_use_msgstack_default ON)
+else()
+  set(bout_use_msgstack_default OFF)
+endif()
+set(BOUT_ENABLE_MSGSTACK ${bout_use_msgstack_default} CACHE BOOL "Enable debug message stack")
+message(STATUS "Message stack: BOUT_USE_MSGSTACK=${BOUT_ENABLE_MSGSTACK}")
+set(BOUT_USE_MSGSTACK ${BOUT_ENABLE_MSGSTACK})
 
 cmake_dependent_option(BOUT_ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF
   "CHECK LESS 3" ON)
@@ -563,9 +584,30 @@ endif()
 message(STATUS "SLEPc support: ${BOUT_USE_SLEPC}")
 set(BOUT_HAS_SLEPC ${BOUT_USE_SLEPC})
 
-option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF)
+option(BOUT_DOWNLOAD_SUNDIALS "Download and build SUNDIALS" OFF)
+# Force BOUT_USE_SUNDIALS if we're downloading it!
+cmake_dependent_option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF
+  "NOT BOUT_DOWNLOAD_SUNDIALS" ON)
 if (BOUT_USE_SUNDIALS)
-  find_package(SUNDIALS REQUIRED)
+  if (BOUT_DOWNLOAD_SUNDIALS)
+    message(STATUS "Downloading and configuring SUNDIALS")
+    include(FetchContent)
+    FetchContent_Declare(
+      sundials
+      GIT_REPOSITORY https://github.com/ZedThree/sundials
+      GIT_TAG        "4f3bb8281c7b27343bcb95386ebbb665fb6196a5"
+      )
+    set(EXAMPLES_ENABLE_C OFF CACHE BOOL "" FORCE)
+    set(EXAMPLES_INSTALL OFF CACHE BOOL "" FORCE)
+    set(ENABLE_MPI ON CACHE BOOL "" FORCE)
+    set(ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
+    set(BUILD_STATIC_LIBS OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(sundials)
+    message(STATUS "SUNDIALS done configuring")
+  else()
+    find_package(SUNDIALS REQUIRED)
+  endif()
+  target_link_libraries(bout++ PUBLIC SUNDIALS::nvecparallel)
   target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
   target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
   target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
