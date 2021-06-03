@@ -1086,13 +1086,13 @@ TEST_F(OptionsTest, FormatDocstrings) {
   std::string expected = R"(
 [section1]
 value1 = 42
-value2 = hello		# This says hello
+value2 = hello		# doc: This says hello
 
 [section2]
 value5 = 3
 
 [section2:subsection1]
-value3 = true		# This is a bool
+value3 = true		# doc: This is a bool
 value4 = 3.2
 
 [section3:subsection2]
@@ -1109,15 +1109,15 @@ TEST_F(OptionsTest, FormatDocstringsAndInline) {
       {"section3", {{"subsection2", {{"value6", 12}}}}}};
 
   option["section1:value2"].doc("This says hello");
-  option["section2:subsection1:value3"].doc("This is a bool");
+  option["section2:subsection1:value3"].doc("This is a bool").withDefault(true);
 
   // It's plausible this test is fragile if the internal storage
   // changes the order -- at time of writing (Jan 2020) it's
   // lexographical rather than insertion order
   std::string expected = R"(section1:value1 = 42
-section1:value2 = hello		# This says hello
+section1:value2 = hello		# doc: This says hello
 section2:value5 = 3
-section2:subsection1:value3 = true		# This is a bool
+section2:subsection1:value3 = true		# type: bool, doc: This is a bool
 section2:subsection1:value4 = 3.2
 section3:subsection2:value6 = 12
 )";
@@ -1125,6 +1125,33 @@ section3:subsection2:value6 = 12
   EXPECT_EQ(fmt::format("{:di}", option), expected);
   // Order of format spec shouldn't matter
   EXPECT_EQ(fmt::format("{:id}", option), expected);
+}
+
+TEST_F(OptionsTest, FormatDocstringsAndInlineKeysOnly) {
+  Options option{
+      {"section1", {{"value1", 42}, {"value2", "hello"}}},
+      {"section2", {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}},
+      {"section3", {{"subsection2", {{"value6", 12}}}}}};
+
+  option["section1:value2"].doc("This says hello");
+  option["section2:subsection1:value3"].doc("This is a bool").withDefault(true);
+  option["section2:subsection1:value3"].attributes["source"] = "a test";
+  option["section3:subsection2:value6"].attributes["source"] = "a test";
+
+  // It's plausible this test is fragile if the internal storage
+  // changes the order -- at time of writing (Jan 2020) it's
+  // lexographical rather than insertion order
+  std::string expected = R"(section1:value1
+section1:value2		# doc: This says hello
+section2:value5
+section2:subsection1:value3		# type: bool, doc: This is a bool, source: a test
+section2:subsection1:value4
+section3:subsection2:value6		# source: a test
+)";
+
+  EXPECT_EQ(fmt::format("{:ksdi}", option), expected);
+  // Order of format spec shouldn't matter
+  EXPECT_EQ(fmt::format("{:idsk}", option), expected);
 }
 
 TEST_F(OptionsTest, GetUnused) {

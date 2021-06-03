@@ -840,11 +840,15 @@ namespace details {
 /// so that we can put the function definitions in the .cxx file,
 /// avoiding lengthy recompilation if we change it
 struct OptionsFormatterBase {
-  /// Include the 'doc' attribute
+  /// Include the 'doc' attribute, if present
   bool docstrings{false};
   /// If true, print variables as 'section:variable', rather than a
   /// section header '[section]' and plain 'variable'
   bool inline_section_names{false};
+  /// Only include the key name, and not the value
+  bool key_only{false};
+  /// Include the 'source' attribute, if present
+  bool source{false};
 
   auto parse(fmt::format_parse_context& ctx)
       -> fmt::format_parse_context::iterator;
@@ -860,8 +864,10 @@ private:
 
 /// Format `Options` to string. Format string specification is:
 ///
-/// - 'd': include 'doc' attribute
+/// - 'd': include 'doc' attribute if present
 /// - 'i': inline section names
+/// - 'k': only print the key, not the value
+/// - 's': include 'source' attribute if present
 template <>
 struct fmt::formatter<Options> : public bout::details::OptionsFormatterBase {};
 

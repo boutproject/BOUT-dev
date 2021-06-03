@@ -760,6 +760,12 @@ bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
     case 'i':
       inline_section_names = true;
       break;
+    case 'k':
+      key_only = true;
+      break;
+    case 's':
+      source = true;
+      break;
     default:
       throw fmt::format_error("invalid format");
     }
@@ -795,18 +801,46 @@ bout::details::OptionsFormatterBase::format(const Options& options,
   // Get all the child values first
   for (const auto& child : children) {
     if (child.second.isValue()) {
-      const auto value = bout::utils::variantToString(child.second.value);
-      // Convert empty strings to ""
-      const std::string as_str = value.empty() ? "\"\"" : value;
       if (inline_section_names and not section_name.empty()) {
         fmt::format_to(ctx.out(), "{}:", section_name);
       }
-      fmt::format_to(ctx.out(), "{} = {}", child.first, as_str);
+
+      fmt::format_to(ctx.out(), "{}", child.first);
+
+      if (not key_only) {
+        const auto value = bout::utils::variantToString(child.second.value);
+        // Convert empty strings to ""
+        const std::string as_str = value.empty() ? "\"\"" : value;
+        fmt::format_to(ctx.out(), " = {}", as_str);
+      }
 
       const bool has_doc = child.second.attributes.count("doc");
-      if (docstrings and has_doc) {
-        fmt::format_to(ctx.out(), "\t\t# {}",
-                       child.second.attributes.at("doc").as<std::string>());
+      const bool has_source = child.second.attributes.count("source");
+      const bool has_type = child.second.attributes.count("type");
+
+      std::vector<std::string> comments;
+
+      if (docstrings) {
+        if (has_type) {
+          comments.emplace_back(fmt::format(
+              "type: {}", child.second.attributes.at("type").as<std::string>()));
+        }
+
+        if (has_doc) {
+          comments.emplace_back(fmt::format(
+              "doc: {}", child.second.attributes.at("doc").as<std::string>()));
+        }
+      }
+
+      if (source and has_source) {
+        const auto source = child.second.attributes.at("source").as<std::string>();
+        if (not source.empty()) {
+          comments.emplace_back(fmt::format("source: {}", source));
+        }
+      }
+
+      if (not comments.empty()) {
+        fmt::format_to(ctx.out(), "\t\t# {}", fmt::join(comments, ", "));
       }
 
       fmt::format_to(ctx.out(), "\n");
