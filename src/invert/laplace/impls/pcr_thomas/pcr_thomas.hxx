@@ -97,6 +97,9 @@ public:
   void cr_pcr_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomplex>& b_mpi,
                      Matrix<dcomplex>& c_mpi, Matrix<dcomplex>& r_mpi,
                      Matrix<dcomplex>& x_mpi);
+  void pcr_thomas_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomplex>& b_mpi,
+                     Matrix<dcomplex>& c_mpi, Matrix<dcomplex>& r_mpi,
+                     Matrix<dcomplex>& x_mpi);
   void Thomas_pcr_solver(double* a_mpi, double* b_mpi, double* c_mpi, double* r_mpi,
                          double* x_mpi);
   void verify_solution(double* a_ver, double* b_ver, double* c_ver, double* r_ver,
@@ -144,6 +147,10 @@ private:
   void pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                               Matrix<dcomplex>& c, Matrix<dcomplex>& r,
                               Matrix<dcomplex>& x) const;
+  void pThomas_forward_multiple_row(Matrix<dcomplex> &a, Matrix<dcomplex> &b, Matrix<dcomplex> &c, Matrix<dcomplex> &r);
+  void pcr_double_row_substitution(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
+                              Matrix<dcomplex>& c, Matrix<dcomplex>& r,
+                              Matrix<dcomplex>& x);
   void verify_solution(const Matrix<dcomplex>& a_ver, const Matrix<dcomplex>& b_ver,
                        const Matrix<dcomplex>& c_ver, const Matrix<dcomplex>& r_ver,
                        const Matrix<dcomplex>& x_sol) const;

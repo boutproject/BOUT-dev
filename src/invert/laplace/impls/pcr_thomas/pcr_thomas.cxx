@@ -203,7 +203,7 @@ FieldPerp LaplacePCR_THOMAS::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     }
 
     // Solve tridiagonal systems
-    cr_pcr_solver(a, b, c, bcmplx, xcmplx);
+    pcr_thomas_solver(a, b, c, bcmplx, xcmplx);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -270,7 +270,7 @@ FieldPerp LaplacePCR_THOMAS::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     }
 
     // Solve tridiagonal systems
-    cr_pcr_solver(a, b, c, bcmplx, xcmplx);
+    pcr_thomas_solver(a, b, c, bcmplx, xcmplx);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -416,7 +416,7 @@ Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
     }
 
     // Solve tridiagonal systems
-    cr_pcr_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
+    pcr_thomas_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -496,7 +496,7 @@ Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
     }
 
     // Solve tridiagonal systems
-    cr_pcr_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
+    pcr_thomas_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -533,17 +533,15 @@ Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
   return x;
 }
 
-/**
- * @brief   CR-PCR solver: cr_forward_multiple + pcr_forward_single + cr_backward_multiple
- * @param   a_mpi (input) Lower off-diagonal coeff., which is assigned to local private
- * pointer a
+/** 
+ * @brief   Thomas-PCR solver: pThomas_forward_multiple + pcr_forward_double + pThomas_backward_multiple
+ * @param   a_mpi (input) Lower off-diagonal coeff., which is assigned to local private pointer a
  * @param   b_mpi (input) Diagonal coeff., which is assigned to local private pointer b
- * @param   c_mpi (input) Upper off-diagonal coeff.,, which is assigned to local private
- * pointer c
+ * @param   c_mpi (input) Upper off-diagonal coeff.,, which is assigned to local private pointer c
  * @param   r_mpi (input) RHS vector, which is assigned to local private pointer r
  * @param   x_mpi (output) Solution vector, which is assigned to local private pointer x
- */
-void LaplacePCR_THOMAS ::cr_pcr_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomplex>& b_mpi,
+*/
+void LaplacePCR_THOMAS ::pcr_thomas_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomplex>& b_mpi,
                                 Matrix<dcomplex>& c_mpi, Matrix<dcomplex>& r_mpi,
                                 Matrix<dcomplex>& x_mpi) {
 
@@ -590,11 +588,13 @@ void LaplacePCR_THOMAS ::cr_pcr_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomplex>
     x(kz, nx + 1) = 0;
   }
 
-  // Perform parallel cyclic reduction
-  cr_forward_multiple_row(aa, bb, cc, r);
-  pcr_forward_single_row(aa, bb, cc, r, x); // Including 2x2 solver
-  cr_backward_multiple_row(aa, bb, cc, r, x);
-  // End of PCR
+  // Perform parallel cyclic reduction + Thomas
+  //cr_forward_multiple_row(aa, bb, cc, r);
+  //pcr_forward_single_row(aa, bb, cc, r, x); // Including 2x2 solver
+  //cr_backward_multiple_row(aa, bb, cc, r, x);
+  pThomas_forward_multiple_row(aa, bb, cc, r);
+  pcr_double_row_substitution(aa, bb, cc, r, x);
+  // End of PCR_Thomas
 
   // Copy solution back to bout format - this is correct on interior rows, but
   // not boundary rows
@@ -998,6 +998,138 @@ void LaplacePCR_THOMAS ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcom
       MPI_Wait(&request[3], &status);
     }
   }
+}
+
+/** 
+ * @brief   First phase of hybrid Thomas and PCR algorithm
+ * @detail  Forward and backward elimination to remain two equations of first and last rows for each MPI processes
+*/
+void LaplacePCR_THOMAS :: pThomas_forward_multiple_row(Matrix<dcomplex> &a, Matrix<dcomplex> &b, Matrix<dcomplex> &c, Matrix<dcomplex> &r)
+{
+    int i;
+    dcomplex alpha, beta;
+
+    for (int kz = 0; kz < nsys; kz++) {
+      for(i=3;i<=n_mpi;i++) {
+        alpha = - a(kz,i) / b(kz,i-1);
+        a(kz,i)  = alpha * a(kz,i-1);
+        b(kz,i) += alpha * c(kz,i-1);
+        r(kz,i) += alpha * r(kz,i-1);
+      }
+      for(i=n_mpi-2;i>=1;i--) {
+        beta  = - c(kz,i) / b(kz,i+1);
+        c(kz,i)  = beta * c(kz,i+1);
+        r(kz,i) += beta * r(kz,i+1);
+        if(i==1) {
+            b(kz,1) += beta * a(kz,2);
+        }
+        else
+        {
+            a(kz,i) += beta * a(kz,i+1);
+        }
+      }
+    }
+}
+
+/** 
+ * @brief   PCR solver for two equations per each MPI process
+ * @detail  Forward CR to remain a single equation per each MPI process.
+ *          PCR solver for single row is, then, executed.
+ *          Substitution is also performed to obtain every solution.
+*/
+void LaplacePCR_THOMAS :: pcr_double_row_substitution(Matrix<dcomplex> &a, Matrix<dcomplex> &b, Matrix<dcomplex> &c, Matrix<dcomplex> &r, Matrix<dcomplex> &x)
+{
+    int i, ip, in;
+    Array<dcomplex> alpha(nsys);
+    Array<dcomplex> gamma(nsys);
+    Array<dcomplex> sbuf(4 * nsys);
+    Array<dcomplex> rbuf(4 * nsys);
+    auto recvvec = Array<dcomplex>(nsys);
+    auto sendvec = Array<dcomplex>(nsys);
+
+    MPI_Status status, status1;
+    Array<MPI_Request> request(2);
+    MPI_Comm comm = BoutComm::get();
+
+    /// Cyclic reduction until single row remains per MPI process.
+    /// First row of next rank is sent to current rank at the row of n_mpi+1 for reduction.
+    if(myrank<nprocs-1) {
+        MPI_Irecv(&rbuf[0], 4*nsys, MPI_DOUBLE_COMPLEX, myrank+1, 0, comm, &request[0]);
+    }
+    if(myrank>0) {
+      for (int kz = 0; kz < nsys; kz++) {
+        sbuf[0 + 4 * kz] = a(kz,1);
+        sbuf[1 + 4 * kz] = b(kz,1);
+        sbuf[2 + 4 * kz] = c(kz,1);
+        sbuf[3 + 4 * kz] = r(kz,1);
+      }
+      MPI_Isend(&sbuf[0], 4*nsys, MPI_DOUBLE_COMPLEX, myrank-1, 0, comm, &request[1]);
+    }
+    if(myrank<nprocs-1) {
+      MPI_Wait(&request[0], &status1);
+      for (int kz = 0; kz < nsys; kz++) {
+        a(kz,n_mpi+1) = rbuf[0 + 4 * kz];
+        b(kz,n_mpi+1) = rbuf[1 + 4 * kz];
+        c(kz,n_mpi+1) = rbuf[2 + 4 * kz];
+        r(kz,n_mpi+1) = rbuf[3 + 4 * kz];
+      }
+    }
+
+    /// Every first row are reduced to the last row (n_mpi) in each MPI rank.
+    i = n_mpi;
+    ip = 1;
+    in = i + 1;
+    for (int kz = 0; kz < nsys; kz++) {
+      alpha[kz] = -a(kz,i) / b(kz,ip);
+      gamma[kz] = -c(kz,i) / b(kz,in);
+
+      b(kz,i) += (alpha[kz] * c(kz,ip) + gamma[kz] * a(kz,in));
+      a(kz,i) = alpha[kz] * a(kz,ip);
+      c(kz,i) = gamma[kz] * c(kz,in);
+      r(kz,i) += (alpha[kz] * r(kz,ip) + gamma[kz] * r(kz,in));
+    }
+    
+    if(myrank>0) {
+        MPI_Wait(&request[1], &status);
+    }
+
+    /// Solution of last row in each MPI rank is obtained in pcr_forward_single_row().
+    pcr_forward_single_row(a, b, c, r, x);
+
+    /// Solution of first row in each MPI rank.
+    if(myrank>0) {
+        MPI_Irecv(&recvvec[0], nsys, MPI_DOUBLE_COMPLEX, myrank-1, 100, comm, &request[0]);
+    }
+    if(myrank<nprocs-1) {
+      for (int kz = 0; kz < nsys; kz++) {
+        sendvec[kz] = x(kz, n_mpi);
+      }
+      MPI_Isend(&sendvec[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 100, comm, &request[1]);
+    }
+    if(myrank>0) {
+      MPI_Wait(&request[0], &status);
+      for (int kz = 0; kz < nsys; kz++) {
+        x(kz, 0) = recvvec[kz];
+      }
+    }
+    i = 1;
+    ip = 0;
+    in = n_mpi;
+    for (int kz = 0; kz < nsys; kz++) {
+      x(kz,1) = r(kz,1)-c(kz,1)*x(kz,n_mpi)-a(kz,1)*x(kz,0);
+      x(kz,1) = x(kz,1)/b(kz,1);
+    }
+
+    if(myrank<nprocs-1) {
+        MPI_Wait(&request[1], &status);
+    }
+    /// Solution of other rows in each MPI rank.
+    for (int kz = 0; kz < nsys; kz++) {
+      for(int i=2;i<n_mpi;i++) {
+        x(kz,i) = r(kz,i)-c(kz,i)*x(kz,n_mpi)-a(kz,i)*x(kz,1);
+        x(kz,i) = x(kz,i)/b(kz,i);
+      }
+    }
 }
 
 /**
