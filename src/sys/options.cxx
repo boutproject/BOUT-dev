@@ -766,7 +766,7 @@ bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
       source = true;
       break;
     default:
-      throw fmt::format_error("invalid format");
+      throw fmt::format_error("invalid format for 'Options'");
     }
   });
 

@@ -7,6 +7,8 @@
 
 #include <string>
 
+#include <fmt/format.h>
+
 class OptionsTest : public FakeMeshFixture {
 public:
   virtual ~OptionsTest() = default;
@@ -1041,6 +1043,10 @@ value6 = 12
 )";
 
   EXPECT_EQ(toString(option), expected);
+}
+
+TEST_F(OptionsTest, InvalidFormat) {
+  EXPECT_THROW(fmt::format("{:nope}", Options{}), fmt::format_error);
 }
 
 TEST_F(OptionsTest, FormatValue) {
