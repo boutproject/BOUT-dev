@@ -51,6 +51,7 @@
 #include "impls/multigrid/multigrid_laplace.hxx"
 #include "impls/naulin/naulin_laplace.hxx"
 #include "impls/pcr/pcr.hxx"
+#include "impls/pcr_thomas/pcr_thomas.hxx"
 #include "impls/pdd/pdd.hxx"
 #include "impls/petsc/petsc_laplace.hxx"
 #include "impls/petsc3damg/petsc3damg.hxx"
