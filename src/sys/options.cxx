@@ -750,10 +750,9 @@ std::vector<std::string> Options::getFlattenedKeys() const {
 fmt::format_parse_context::iterator
 bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
 
-  const auto* it = ctx.begin();
-  const auto* end = ctx.end();
-  while (it != end and *it != '}') {
-    switch (*it) {
+  const auto* closing_brace = std::find(ctx.begin(), ctx.end(), '}');
+  std::for_each(ctx.begin(), closing_brace, [&](auto it) {
+    switch (it) {
     case 'd':
       docstrings = true;
       break;
@@ -769,18 +768,17 @@ bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
     default:
       throw fmt::format_error("invalid format");
     }
-    ++it;
-  }
+  });
 
   // Keep a copy of the format string (without the last '}') so we can
   // pass it down to the subsections.
-  const auto size = std::distance(ctx.begin(), it);
+  const auto size = std::distance(ctx.begin(), closing_brace);
   format_string.reserve(size + 3);
   format_string.assign("{:");
-  format_string.append(ctx.begin(), it);
+  format_string.append(ctx.begin(), closing_brace);
   format_string.push_back('}');
 
-  return it;
+  return closing_brace;
 }
 
 fmt::format_context::iterator
@@ -801,9 +799,9 @@ bout::details::OptionsFormatterBase::format(const Options& options,
       fmt::format_to(ctx.out(), " = {}", as_str);
     }
 
-    const bool has_doc = options.attributes.count("doc") != 0u;
-    const bool has_source = options.attributes.count("source") != 0u;
-    const bool has_type = options.attributes.count("type") != 0u;
+    const bool has_doc = options.attributes.count("doc") != 0U;
+    const bool has_source = options.attributes.count("source") != 0U;
+    const bool has_type = options.attributes.count("type") != 0U;
 
     std::vector<std::string> comments;
 
