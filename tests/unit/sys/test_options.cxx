@@ -1043,6 +1043,16 @@ value6 = 12
   EXPECT_EQ(toString(option), expected);
 }
 
+TEST_F(OptionsTest, FormatValue) {
+  Options options;
+  options["value1"].doc("This is a value").assign(4, "some test");
+  options["value1"].attributes["type"] = "int";
+
+  const std::string expected = "value1 = 4		# type: int, doc: This is a value, source: some test";
+
+  EXPECT_EQ(expected, fmt::format("{:ds}", options["value1"]));
+}
+
 TEST_F(OptionsTest, FormatDefault) {
   Options option{
       {"section1", {{"value1", 42}, {"value2", "hello"}}},

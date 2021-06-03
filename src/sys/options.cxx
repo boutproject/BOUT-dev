@@ -786,13 +786,58 @@ bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
 fmt::format_context::iterator
 bout::details::OptionsFormatterBase::format(const Options& options,
                                             fmt::format_context& ctx) {
+
+  if (options.isValue()) {
+    const std::string section_name = options.str();
+    const std::string name = (inline_section_names and not section_name.empty())
+                                 ? section_name
+                                 : options.name();
+    fmt::format_to(ctx.out(), "{}", name);
+
+    if (not key_only) {
+      const auto value = bout::utils::variantToString(options.value);
+      // Convert empty strings to ""
+      const std::string as_str = value.empty() ? "\"\"" : value;
+      fmt::format_to(ctx.out(), " = {}", as_str);
+    }
+
+    const bool has_doc = options.attributes.count("doc");
+    const bool has_source = options.attributes.count("source");
+    const bool has_type = options.attributes.count("type");
+
+    std::vector<std::string> comments;
+
+    if (docstrings) {
+      if (has_type) {
+        comments.emplace_back(
+            fmt::format("type: {}", options.attributes.at("type").as<std::string>()));
+      }
+
+      if (has_doc) {
+        comments.emplace_back(
+            fmt::format("doc: {}", options.attributes.at("doc").as<std::string>()));
+      }
+    }
+
+    if (source and has_source) {
+      const auto source = options.attributes.at("source").as<std::string>();
+      if (not source.empty()) {
+        comments.emplace_back(fmt::format("source: {}", source));
+      }
+    }
+
+    if (not comments.empty()) {
+      fmt::format_to(ctx.out(), "\t\t# {}", fmt::join(comments, ", "));
+    }
+    return ctx.out();
+  }
+
+  // Only print section headers if the section has a name and it has
+  // non-section children
   const auto children = options.getChildren();
   const bool has_child_values =
       std::any_of(children.begin(), children.end(),
                   [](const auto& child) { return child.second.isValue(); });
-
-  // Only print section headers if the section has a name and it has
-  // non-section children
   const std::string section_name = options.str();
   if (not inline_section_names and not section_name.empty() and has_child_values) {
     fmt::format_to(ctx.out(), "\n[{}]\n", section_name);
@@ -801,48 +846,7 @@ bout::details::OptionsFormatterBase::format(const Options& options,
   // Get all the child values first
   for (const auto& child : children) {
     if (child.second.isValue()) {
-      if (inline_section_names and not section_name.empty()) {
-        fmt::format_to(ctx.out(), "{}:", section_name);
-      }
-
-      fmt::format_to(ctx.out(), "{}", child.first);
-
-      if (not key_only) {
-        const auto value = bout::utils::variantToString(child.second.value);
-        // Convert empty strings to ""
-        const std::string as_str = value.empty() ? "\"\"" : value;
-        fmt::format_to(ctx.out(), " = {}", as_str);
-      }
-
-      const bool has_doc = child.second.attributes.count("doc");
-      const bool has_source = child.second.attributes.count("source");
-      const bool has_type = child.second.attributes.count("type");
-
-      std::vector<std::string> comments;
-
-      if (docstrings) {
-        if (has_type) {
-          comments.emplace_back(fmt::format(
-              "type: {}", child.second.attributes.at("type").as<std::string>()));
-        }
-
-        if (has_doc) {
-          comments.emplace_back(fmt::format(
-              "doc: {}", child.second.attributes.at("doc").as<std::string>()));
-        }
-      }
-
-      if (source and has_source) {
-        const auto source = child.second.attributes.at("source").as<std::string>();
-        if (not source.empty()) {
-          comments.emplace_back(fmt::format("source: {}", source));
-        }
-      }
-
-      if (not comments.empty()) {
-        fmt::format_to(ctx.out(), "\t\t# {}", fmt::join(comments, ", "));
-      }
-
+      fmt::format_to(ctx.out(), format_string, child.second);
       fmt::format_to(ctx.out(), "\n");
     }
   }
