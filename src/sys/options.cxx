@@ -905,7 +905,7 @@ void checkForUnusedOptions(const Options& options, const std::string& data_dir,
       }
       possible_misspellings += fmt::format("\nUnused option '{}', did you mean:\n", key);
       for (const auto& match : fuzzy_matches) {
-        possible_misspellings += fmt::format("\t{}\n", match.match.str());
+        possible_misspellings += fmt::format("\t{:idk}\n", match.match);
       }
     }
 
