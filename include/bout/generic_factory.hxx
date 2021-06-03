@@ -253,7 +253,7 @@ public:
 
     Options options;
     index->second(options[DerivedFactory::section_name]);
-    return toString(options);
+    return fmt::format("{:id}", options);
   }
 
   /// List available types that can be created
