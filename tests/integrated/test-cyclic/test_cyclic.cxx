@@ -107,22 +107,15 @@ int main(int argc, char **argv) {
   int allpassed;
   MPI_Allreduce(&passed, &allpassed, 1, MPI_INT, MPI_MIN, BoutComm::get());
 
-  // Saving state to file
-  SAVE_ONCE(allpassed);
-
   output << "******* Cyclic test case: ";
   if(allpassed) {
     output << "PASSED" << endl;
   }else
     output << "FAILED" << endl;
 
-  // Write data to file
-  bout::globals::dump.write();
-  bout::globals::dump.close();
-
   MPI_Barrier(BoutComm::get());
 
   bout::checkForUnusedOptions();
   BoutFinalise();
-  return 0;
+  return allpassed;
 }
