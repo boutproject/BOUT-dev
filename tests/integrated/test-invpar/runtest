@@ -43,19 +43,16 @@ for nproc in [1, 2, 4]:
     print("   %d processors...." % (nproc))
     r = 0
     for f in flags:
-        stdout.write("\tflags '" + f + "' ... ")
-
         shell("rm data/BOUT.dmp.* 2> err.log")
 
         # Run the case
-        s, out = launch(cmd + " -q -q -q " + f, nproc=nproc, mthread=1, pipe=True)
+        s, _ = launch(cmd + " -q -q -q " + f, nproc=nproc, mthread=1)
 
         code += s
 
         if s == 0:
             print("PASSED")
         else:
-            print(out)
             print("FAILED")
 
 
