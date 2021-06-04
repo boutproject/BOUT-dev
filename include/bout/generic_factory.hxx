@@ -247,8 +247,14 @@ public:
   std::string help(const std::string& name) const {
     auto index = argument_map.find(name);
     if (index == std::end(argument_map)) {
-      throw BoutException("Couldn't get help for '{}', unknown {}", name,
-                          DerivedFactory::type_name);
+      // List available options in error
+      std::string available;
+      for (auto i : listAvailable()) {
+        available += i + "\n";
+      }
+      throw BoutException(
+          "Couldn't get help for '{0:s}', unknown {1:s}.\nAvailable {1:s} are:\n{2:s}",
+          name, DerivedFactory::type_name, available);
     }
 
     Options options;
