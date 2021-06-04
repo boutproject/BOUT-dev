@@ -275,6 +275,26 @@ void printAvailableImplementations(const T& factory) {
   }
 }
 
+template <class T>
+void handleFactoryHelp(const T& factory, const std::string& name,
+                       const std::string& current_arg, int i, int argc, char** argv) {
+  const std::string list_arg = fmt::format("--list-{}", name);
+  const std::string help_arg = fmt::format("--help-{}", name);
+
+  if (current_arg == list_arg) {
+    printAvailableImplementations(factory);
+    std::exit(EXIT_SUCCESS);
+  }
+
+  if (current_arg == help_arg) {
+    if (i + 1 >= argc) {
+      throw BoutException(_("Usage is {} {} <name>\n"), argv[0], help_arg);
+    }
+    std::cout << factory.help(argv[++i]) << std::endl;
+    std::exit(EXIT_SUCCESS);
+  }
+}
+
 auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
   /// NB: "restart" and "append" are now caught by options
   /// Check for help flag separately
@@ -321,42 +341,21 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       printCompileTimeOptions();
       std::exit(EXIT_SUCCESS);
     }
-    if (current_arg == "--list-solvers") {
-      printAvailableImplementations(SolverFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-laplacians") {
-      printAvailableImplementations(LaplaceFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--help-laplacian") {
-      std::cout << LaplaceFactory::getInstance().help(argv[++i]) << std::endl;
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-laplacexzs") {
-      printAvailableImplementations(LaplaceXZFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-invertpars") {
-      printAvailableImplementations(InvertParFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-rkschemes") {
-      printAvailableImplementations(RKSchemeFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-meshes") {
-      printAvailableImplementations(MeshFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-xzinterpolations") {
-      printAvailableImplementations(XZInterpolationFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-zinterpolations") {
-      printAvailableImplementations(ZInterpolationFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
+    handleFactoryHelp(SolverFactory::getInstance(), "solvers", current_arg, i, argc,
+                      argv);
+    handleFactoryHelp(LaplaceFactory::getInstance(), "laplacians", current_arg, i, argc,
+                      argv);
+    handleFactoryHelp(LaplaceXZFactory::getInstance(), "laplacexzs", current_arg, i, argc,
+                      argv);
+    handleFactoryHelp(InvertParFactory::getInstance(), "invertpars", current_arg, i, argc,
+                      argv);
+    handleFactoryHelp(RKSchemeFactory::getInstance(), "rkschemes", current_arg, i, argc,
+                      argv);
+    handleFactoryHelp(MeshFactory::getInstance(), "meshes", current_arg, i, argc, argv);
+    handleFactoryHelp(XZInterpolationFactory::getInstance(), "xzinterpolations",
+                      current_arg, i, argc, argv);
+    handleFactoryHelp(ZInterpolationFactory::getInstance(), "zinterpolations",
+                      current_arg, i, argc, argv);
   }
 
   CommandLineArgs args;
