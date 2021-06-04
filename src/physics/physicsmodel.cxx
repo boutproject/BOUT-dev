@@ -39,39 +39,20 @@
 #include <string>
 
 namespace bout {
-/// Name of the directory for restart files
-std::string getRestartDirectoryName(Options& options) {
-  if (options["restartdir"].isSet()) {
-    // Solver-specific restart directory
-    return options["restartdir"].withDefault<std::string>("data");
-  }
-  // Use the root data directory
-  return options["datadir"].withDefault<std::string>("data");
-}
-
-std::string getRestartFilename(Options& options, int rank) {
-  return fmt::format("{}/BOUT.restart.{}.nc", bout::getRestartDirectoryName(options),
-                     rank);
-}
-
-std::string getOutputFilename(Options& options, int rank) {
-  return fmt::format("{}/BOUT.dmp.experimental.{}.nc",
-                     options["datadir"].withDefault<std::string>("data"), rank);
 }
 } // namespace bout
 
 PhysicsModel::PhysicsModel()
-    : mesh(bout::globals::mesh), dump(bout::globals::dump),
-      restart_file(bout::getRestartFilename(Options::root(), BoutComm::rank())),
-      output_file(bout::getOutputFilename(Options::root(), BoutComm::rank()),
+    : mesh(bout::globals::mesh), restart_file(bout::getRestartFilename(Options::root())),
+      output_file(bout::getOutputFilename(Options::root()),
                   Options::root()["append"]
                           .doc("Add output data to existing (dump) files?")
                           .withDefault(false)
                       ? bout::OptionsNetCDF::FileMode::append
                       : bout::OptionsNetCDF::FileMode::replace),
       output_enabled(Options::root()["output"]["enabled"]
-                                             .doc("Write output files")
-                                             .withDefault(true)),
+                         .doc("Write output files")
+                         .withDefault(true)),
       restart_enabled(Options::root()["restart_files"]["enabled"]
                           .doc("Write restart files")
                           .withDefault(true)) {}

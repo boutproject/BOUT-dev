@@ -44,6 +44,7 @@
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "globals.hxx"
+#include "options_netcdf.hxx"
 #include "output.hxx"
 #include "smoothing.hxx" // Smoothing functions
 #include "sourcex.hxx"   // source and mask functions

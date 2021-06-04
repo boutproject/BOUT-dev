@@ -83,4 +83,19 @@ private:
 
 #endif
 
+namespace bout {
+/// Name of the directory for restart files
+std::string getRestartDirectoryName(Options& options);
+/// Name of the restart file on this rank
+std::string getRestartFilename(Options& options);
+/// Name of the restart file on \p rank
+std::string getRestartFilename(Options& options, int rank);
+/// Name of the main output file on this rank
+std::string getOutputFilename(Options& options);
+/// Name of the main output file on \p rank
+std::string getOutputFilename(Options& options, int rank);
+/// Write `Options::root()` to the main output file
+void writeDefaultOutputFile();
+} // namespace bout
+
 #endif //  __OPTIONS_NETCDF_H__

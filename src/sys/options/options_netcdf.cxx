@@ -687,6 +687,37 @@ void OptionsNetCDF::write(const Options& options) {
   file_mode = FileMode::append;
 }
 
+std::string getRestartDirectoryName(Options& options) {
+  if (options["restartdir"].isSet()) {
+    // Solver-specific restart directory
+    return options["restartdir"].withDefault<std::string>("data");
+  }
+  // Use the root data directory
+  return options["datadir"].withDefault<std::string>("data");
+}
+
+std::string getRestartFilename(Options& options) {
+  return getRestartFilename(options, BoutComm::rank());
+}
+
+std::string getRestartFilename(Options& options, int rank) {
+  return fmt::format("{}/BOUT.restart.{}.nc", bout::getRestartDirectoryName(options),
+                     rank);
+}
+
+std::string getOutputFilename(Options& options) {
+  return getOutputFilename(options, BoutComm::rank());
+}
+
+std::string getOutputFilename(Options& options, int rank) {
+  return fmt::format("{}/BOUT.dmp.{}.nc",
+                     options["datadir"].withDefault<std::string>("data"), rank);
+}
+
+void writeDefaultOutputFile() {
+  OptionsNetCDF(getOutputFilename(Options::root())).write(Options::root());
+}
+
 } // namespace bout
 
 #endif // BOUT_HAS_NETCDF
