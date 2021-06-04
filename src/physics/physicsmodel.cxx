@@ -39,6 +39,19 @@
 #include <string>
 
 namespace bout {
+void DataFileFacade::add(ValueType value, const std::string& name, bool save_repeat) {
+  data.emplace_back(name, value, save_repeat);
+}
+
+bool DataFileFacade::write() {
+  for (const auto& thing : data) {
+    Options::root()[thing.name].value = bout::utils::visit(bout::OptionsConversionVisitor{}, thing.value);
+    if (thing.repeat) {
+      Options::root()[thing.name].attributes["time_dimension"] = "t";
+    }
+  }
+  writeDefaultOutputFile();
+  return true;
 }
 } // namespace bout
 
@@ -167,6 +180,24 @@ int PhysicsModel::postInit(bool restarting) {
   outputVars(output_options);
 
   return 0;
+}
+
+void PhysicsModel::outputVars(Options& options) {
+  for (const auto& thing : dump.getData()) {
+    options[thing.name].value = bout::utils::visit(bout::OptionsConversionVisitor{}, thing.value);
+    if (thing.repeat) {
+      options[thing.name].attributes["time_dimension"] = "t";
+    }
+  }
+}
+
+void PhysicsModel::restartVars(Options& options) {
+  for (const auto& thing : dump.getData()) {
+    options[thing.name].value = bout::utils::visit(bout::OptionsConversionVisitor{}, thing.value);
+    if (thing.repeat) {
+      options[thing.name].attributes["time_dimension"] = "t";
+    }
+  }
 }
 
 void PhysicsModel::writeRestartFile() {

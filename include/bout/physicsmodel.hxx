@@ -45,10 +45,65 @@ class PhysicsModel;
 #include "unused.hxx"
 #include "utils.hxx"
 #include "bout/macro_for_each.hxx"
+#include "bout/sys/variant.hxx"
 
+#include <vector>
 #include <type_traits>
 
 class Mesh;
+
+namespace bout {
+/// Stop-gap shim for `DataFile`: allows PhysicsModels to still save
+/// outputs using the old `DataFile` interface without upgrading to
+/// the new `OptionsNetCDF`.
+///
+/// Stores pointers to objects in a vector, using a variant, which can
+/// then be pushed into an `Options` and written to file using the
+/// default implementaion of `PhysicsModel::outputVars`
+class DataFileFacade {
+public:
+  /// This is `Options::ValueType` but using pointers rather than values
+  using ValueType = bout::utils::variant<bool*, int*, BoutReal*, std::string*, Field2D*,
+                                         Field3D*, FieldPerp*, Array<BoutReal>*,
+                                         Matrix<BoutReal>*, Tensor<BoutReal>*>;
+
+  template <class T>
+  void addRepeat(T& value, std::string name) { add(&value, name, true); }
+  template <class T>
+  void addOnce(T& value, std::string name) { add(&value, name, false); }
+  template <class T>
+  void add(T& value, const std::string& name, bool save_repeat = false) { add(&value, name, save_repeat); }
+
+  void addRepeat(ValueType value, std::string name) { add(value, name, true); }
+  void addOnce(ValueType value, std::string name) { add(value, name, false); }
+  void add(ValueType value, const std::string& name, bool save_repeat = false);
+
+  /// Write stored data to file immediately
+  bool write();
+
+private:
+  /// Helper struct to save enough information so that we can save an
+  /// object to file later
+  struct StoredValue {
+    StoredValue(std::string name_, ValueType value_, bool repeat_)
+        : name(std::move(name_)), value(std::move(value_)), repeat(repeat_) {}
+    std::string name;
+    ValueType value;
+    bool repeat;
+  };
+  std::vector<StoredValue> data;
+
+public:
+  const std::vector<StoredValue>& getData() { return data; }
+};
+
+struct OptionsConversionVisitor {
+  template <class T>
+  Options::ValueType operator()(T* value) {
+    return *value;
+  }
+};
+} // namespace bout
 
 /*!
   Base class for physics models
@@ -70,7 +125,7 @@ public:
   virtual ~PhysicsModel() = default;
   
   Mesh* mesh{nullptr};
-  Datafile& dump;
+  bout::DataFileFacade dump{};
 
   /*!
    * Initialse the model, calling the init() and postInit() methods
@@ -181,9 +236,9 @@ protected:
   virtual int rhs(BoutReal UNUSED(t)) {return 1;}
 
   /// Output additional variables other than the evolving variables
-  virtual void outputVars(MAYBE_UNUSED(Options& options)) {}
+  virtual void outputVars(Options& options);
   /// Add additional variables other than the evolving variables to the restart files
-  virtual void restartVars(MAYBE_UNUSED(Options& restart)) {}
+  virtual void restartVars(Options& options);
 
   /* 
      If split operator is set to true, then
