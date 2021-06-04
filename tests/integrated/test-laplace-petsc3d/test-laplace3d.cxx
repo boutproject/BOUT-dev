@@ -127,8 +127,13 @@ int main(int argc, char** argv) {
   Field3D error = rhs_check - rhs;
   BoutReal error_max = max(abs(error), true);
 
-  SAVE_ONCE(f, rhs, rhs_check, error, error_max);
-  bout::globals::dump.write();
+  Options::root()["f"] = f;
+  Options::root()["rhs"] = rhs;
+  Options::root()["rhs_check"] = rhs_check;
+  Options::root()["error"] = error;
+  Options::root()["error_max"] = error_max;
+
+  bout::writeDefaultOutputFile();
 
   laplace_solver.reset(nullptr);
   BoutFinalise();

@@ -24,11 +24,12 @@ int main(int argc, char** argv) {
 
   mesh->communicate(test_aligned);
 
-  Field3D check = FieldFactory::get()->create3D("check", nullptr, nullptr, CELL_YLOW);
+  Options::root()["check"] = FieldFactory::get()->create3D("check", nullptr, nullptr, CELL_YLOW);
 
-  SAVE_ONCE(test, test_aligned, check);
+  Options::root()["test"] = test;
+  Options::root()["test_aligned"] = test_aligned;
 
-  bout::globals::dump.write();
+  bout::writeDefaultOutputFile();
 
   BoutFinalise();
 }

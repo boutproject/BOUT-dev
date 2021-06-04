@@ -63,8 +63,9 @@ int main(int argc, char** argv) {
   // Calculate d/dy using Hermite spline weights
   Field3D ddy2 = DDY_weights(var);
   
-  SAVE_ONCE2(ddy, ddy2);
-  bout::globals::dump.write();
+  Options::root()["ddy"] = ddy;
+  Options::root()["ddy2"] = ddy2;
+  bout::writeDefaultOutputFile();
 
   BoutFinalise();
 

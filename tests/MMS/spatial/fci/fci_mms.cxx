@@ -15,16 +15,20 @@ int main(int argc, char** argv) {
 
   Field3D result{Grad_par(input)};
   Field3D error{result - solution};
-  BoutReal l_2{sqrt(mean(SQ(error), true, "RGN_NOBNDRY"))};
-  BoutReal l_inf{max(abs(error), true, "RGN_NOBNDRY")};
+  Options::root()["l_2"] = sqrt(mean(SQ(error), true, "RGN_NOBNDRY"));
+  Options::root()["l_inf"] = max(abs(error), true, "RGN_NOBNDRY");
 
-  SAVE_ONCE6(input, solution, result, error, l_2, l_inf);
+  Options::root()["result"] = result;
+  Options::root()["error"] = error;
+  Options::root()["input"] = input;
+  Options::root()["solution"] = solution;
 
   for (int slice = 1; slice < mesh->ystart; ++slice) {
-    SAVE_ONCE2(input.ynext(-slice), input.ynext(slice));
+    Options::root()[fmt::format("input.ynext(-{})", slice)] = input.ynext(-slice);
+    Options::root()[fmt::format("input.ynext({})", slice)] = input.ynext(slice);
   }
 
-  bout::globals::dump.write();
+  bout::writeDefaultOutputFile();
 
   BoutFinalise();
 }
