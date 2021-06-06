@@ -121,6 +121,9 @@ if (PETSC_DIR AND NOT PETSC_ARCH)
   set (petscconf "NOTFOUND" CACHE INTERNAL "Scratch variable" FORCE)
 endif (PETSC_DIR AND NOT PETSC_ARCH)
 
+
+#message (STATUS "PETSC_ARCH ${PETSC_ARCH}")
+
 set (petsc_slaves LIBRARIES_SYS LIBRARIES_VEC LIBRARIES_MAT LIBRARIES_DM LIBRARIES_KSP LIBRARIES_SNES LIBRARIES_TS
   INCLUDE_DIR INCLUDE_CONF)
 include (FindPackageMultipass)
@@ -142,7 +145,6 @@ elseif (EXISTS "${PETSC_DIR}/bmake/${PETSC_ARCH}/petscconf.h") # <= 2.3.3
 elseif (PETSC_DIR)
   message (SEND_ERROR "The pair PETSC_DIR=${PETSC_DIR} PETSC_ARCH=${PETSC_ARCH} do not specify a valid PETSc installation")
 endif ()
-
 if (petsc_conf_rules AND petsc_conf_variables AND NOT petsc_config_current)
   petsc_get_version()
 
@@ -206,7 +208,7 @@ show :
 
   include (CorrectWindowsPaths)
   convert_cygwin_path(petsc_lib_dir)
-  message (STATUS "petsc_lib_dir ${petsc_lib_dir}")
+  #message (STATUS "petsc_lib_dir ${petsc_lib_dir}")
 
   macro (PETSC_FIND_LIBRARY suffix name)
     set (PETSC_LIBRARY_${suffix} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE) # Clear any stale value, if we got here, we need to find it again
@@ -282,6 +284,7 @@ int main(int argc,char *argv[]) {
   return 0;
 }
 ")
+set(CMAKE_REQUIRED_LINK_OPTIONS "-Wl,-rpath,${PETSC_DIR}/lib")
     multipass_source_runs ("${includes}" "${libraries}" "${_PETSC_TEST_SOURCE}" ${runs} "${PETSC_LANGUAGE_BINDINGS}")
     if (${${runs}})
       set (PETSC_EXECUTABLE_RUNS "YES" CACHE BOOL
@@ -308,6 +311,8 @@ int main(int argc,char *argv[]) {
   endif()
   set (petsc_mpi_include_dirs "${MPI_${PETSC_LANGUAGE_BINDINGS}_INCLUDE_DIRS}")
   #set (petsc_additional_libraries "MPI::MPI_${PETSC_LANGUAGE_BINDINGS}${petsc_openmp_library}")
+
+  set(petsc_mpi_include_dirs "/usr/common/software/sles15_cgpu/openmpi/4.0.3/gcc/include") 
 
   petsc_test_runs ("${petsc_includes_minimal};${petsc_mpi_include_dirs}"
     "${PETSC_LIBRARIES_TS};${petsc_additional_libraries}"

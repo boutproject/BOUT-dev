@@ -364,9 +364,6 @@ set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 # Optional dependencies
 include(cmake/SetupBOUTThirdParty.cmake)
 
-#if(BOUT_HAS_HYPRE)
-#   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_HYPRE")
-#endif ()
 
 ##################################################
 # Components of the version number
@@ -562,6 +559,10 @@ function(bout_add_integrated_test TESTNAME)
   target_include_directories(${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
   if(BOUT_USE_CUDA)
+     # more apropo for CUDA 11 and updated cmake
+     #     if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+     #  set(CMAKE_CUDA_ARCHITECTURES 70)
+     #endif()
      set_source_files_properties(${BOUT_TEST_OPTIONS_SOURCES} PROPERTIES LANGUAGE CUDA )
      target_include_directories(${TESTNAME} PUBLIC ${BOUT_CUDA_LIB_DIR}/../include ) 
     if(BOUT_HAS_HYPRE)
@@ -651,6 +652,7 @@ endif ()
 add_subdirectory(examples/laplacexy/simple)
 add_subdirectory(examples/hasegawa-wakatani-3d)
 add_subdirectory(examples/elm-pb)
+# eventually go back and turn on all the integrated tests
 add_subdirectory(tests/integrated/test-laplace-petsc3d)
 add_subdirectory(tests/integrated/test-laplace-hypre3d)
 add_subdirectory(tests/integrated/test-laplacexy2-hypre)

@@ -882,7 +882,10 @@ public:
     HYPRE_BoomerAMGCreate(&precon);
     HYPRE_BoomerAMGSetOldDefault(precon);
 #ifdef BOUT_USE_CUDA
-    HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation // 7 is slower to converge
+    //HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation // 7 is slower to converge
+    HYPRE_BoomerAMGSetCycleRelaxType(precon,18,1);
+    HYPRE_BoomerAMGSetCycleRelaxType(precon,18,2);
+    HYPRE_BoomerAMGSetCycleRelaxType(precon,9,3);
     HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
     HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU 
     HYPRE_BoomerAMGSetInterpType(precon, 15); // must be 3 or 15 for GPU
@@ -891,7 +894,7 @@ public:
     HYPRE_BoomerAMGSetMaxIter(precon, 1); // Default is 20 cycles
     HYPRE_BoomerAMGSetMaxLevels(precon, 20);
     HYPRE_BoomerAMGSetKeepTranspose(precon, 1);
-    HYPRE_BoomerAMGSetTol(precon,0.0); // default is 1e-7; care here as you can get Methon did not converge abort within Maximum number of cycles
+    HYPRE_BoomerAMGSetTol(precon,0.0); // default is 1e-7; care here as you can get Method did not converge abort within Maximum number of cycles
     HYPRE_BoomerAMGSetPrintLevel(precon, print_level);
     //HYPRE_BoomerAMGSetStrongThreshold(precon,0.2);
 
