@@ -1140,10 +1140,7 @@ protected:
     SOLVE_FOR(Te);
     SOLVE_FOR(Psi);
 
-    dump.add(Jpar, "jpar", 1);
-
-    dump.add(P, "P", 1);
-    dump.add(Vepar, "Vepar", 1);
+    SAVE_REPEAT(Jpar, P, Vepar);
 
     if (parallel_lagrange) {
       // Evolving the distortion of the flux surfaces (Ideal-MHD only!)
@@ -1157,11 +1154,7 @@ protected:
 
     if (parallel_project) {
       // Add Xi to the dump file
-      dump.add(Xip_x, "Xip_x", 1);
-      dump.add(Xip_z, "Xip_z", 1);
-
-      dump.add(Xim_x, "Xim_x", 1);
-      dump.add(Xim_z, "Xim_z", 1);
+      SAVE_REPEAT(Xip_x, Xip_z, Xim_x, Xim_z);
     }
 
     if (compress0) {
@@ -1178,7 +1171,7 @@ protected:
 
     } else {
       // Phi solved in RHS (explicitly)
-      dump.add(phi, "phi", 1);
+      SAVE_REPEAT(phi);
     }
 
     // Diamagnetic phi0
@@ -1195,11 +1188,11 @@ protected:
 
     // Add some equilibrium quantities and normalisations
     // everything needed to recover physical units
-    SAVE_ONCE2(J0, P0);
-    SAVE_ONCE4(density, Lbar, Bbar, Tbar);
-    SAVE_ONCE3(Tibar, Tebar, Nbar);
-    SAVE_ONCE2(Va, B0);
-    SAVE_ONCE3(Ti0, Te0, N0);
+    SAVE_ONCE(J0, P0);
+    SAVE_ONCE(density, Lbar, Bbar, Tbar);
+    SAVE_ONCE(Tibar, Tebar, Nbar);
+    SAVE_ONCE(Va, B0);
+    SAVE_ONCE(Ti0, Te0, N0);
 
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create(&options["phiSolver"]);
