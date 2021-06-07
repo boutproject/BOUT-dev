@@ -633,6 +633,9 @@ protected:
     diffusion_u4 = options["diffusion_u4"]
                        .doc("parallel hyper-viscous diffusion for vorticity")
                        .withDefault(-1.0);
+    diffusion_v4 = options["diffusion_v4"]
+                       .doc("4th order Parallel ion velocity diffusion (< 0 = none)")
+                       .withDefault(-1.0);
 
     // heating factor in pressure
     heating_P = options["heating_P"].doc("heating power in pressure").withDefault(-1.0);
