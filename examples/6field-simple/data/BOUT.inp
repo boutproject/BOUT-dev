@@ -228,15 +228,11 @@ phi_curv = true    # Include curvature*Grad(phi) in P equation
 # gamma = 1.6666
 
 [phiSolver]
-#inner_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-#outer_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
+inner_boundary_flags = 4   # INVERT_AC_LAP
 outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 
 [aparSolver]
-#inner_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-#outer_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
+inner_boundary_flags = 4 # INVERT_AC_LAP
 outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 
 ##################################################
