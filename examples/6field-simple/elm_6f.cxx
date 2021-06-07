@@ -814,31 +814,31 @@ protected:
       dump.add(diffusion_par, "diffusion_par", 0);
     }
 
-    // M: 4th order diffusion of p
+    // 4th order diffusion of p
     if (diffusion_n4 > 0.0) {
       output.write("    diffusion_n4: {:e}\n", diffusion_n4);
       dump.add(diffusion_n4, "diffusion_n4", 0);
     }
 
-    // M: 4th order diffusion of Ti
+    // 4th order diffusion of Ti
     if (diffusion_ti4 > 0.0) {
       output.write("    diffusion_ti4: {:e}\n", diffusion_ti4);
       dump.add(diffusion_ti4, "diffusion_ti4", 0);
     }
 
-    // M: 4th order diffusion of Te
+    // 4th order diffusion of Te
     if (diffusion_te4 > 0.0) {
       output.write("    diffusion_te4: {:e}\n", diffusion_te4);
       dump.add(diffusion_te4, "diffusion_te4", 0);
     }
 
-    // M: 4th order diffusion of Vipar
+    // 4th order diffusion of Vipar
     if (diffusion_v4 > 0.0) {
       output.write("    diffusion_v4: {:e}\n", diffusion_v4);
       dump.add(diffusion_v4, "diffusion_v4", 0);
     }
 
-    // xqx: parallel hyper-viscous diffusion for vorticity
+    // parallel hyper-viscous diffusion for vorticity
     if (diffusion_u4 > 0.0) {
       output.write("    diffusion_u4: {:e}\n", diffusion_u4);
       dump.add(diffusion_u4, "diffusion_u4", 0);
@@ -1097,22 +1097,13 @@ protected:
     /**************** SET EVOLVING VARIABLES *************/
 
     // Tell BOUT which variables to evolve
-    SOLVE_FOR(U);
-    SOLVE_FOR(Ni);
-    SOLVE_FOR(Ti);
-    SOLVE_FOR(Te);
-    SOLVE_FOR(Psi);
+    SOLVE_FOR(U, Ni, Ti, Te, Psi);
 
     SAVE_REPEAT(Jpar, P, Vepar);
 
     if (parallel_lagrange) {
       // Evolving the distortion of the flux surfaces (Ideal-MHD only!)
-
-      solver->add(Xip_x, "Xip_x");
-      solver->add(Xip_z, "Xip_z");
-
-      solver->add(Xim_x, "Xim_x");
-      solver->add(Xim_z, "Xim_z");
+      SOLVE_FOR(Xip_x, Xip_z, Xim_x, Xim_z);
     }
 
     if (parallel_project) {
@@ -1129,7 +1120,6 @@ protected:
 
     if (phi_constraint) {
       // Implicit Phi solve using IDA
-
       solver->constraint(phi, C_phi, "phi");
 
     } else {
@@ -1599,7 +1589,7 @@ protected:
         ddt(Vipar) -= bracket(B0 * phi, Vipar, bm_exb);
       }
 
-      // xqx: parallel hyper-viscous diffusion for vector potential
+      // parallel hyper-viscous diffusion for vector potential
       if (diffusion_v4 > 0.0) {
         tmpVp2 = Grad2_par2new(Vipar);
         mesh->communicate(tmpVp2);
