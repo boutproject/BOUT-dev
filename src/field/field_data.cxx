@@ -137,6 +137,7 @@ void FieldData::setBoundary(const std::string& name) {
   Mesh* mesh = getMesh();
 
   markBoundariesAsConditionallyUsed(mesh, Options::root()[name]);
+  markBoundariesAsConditionallyUsed(mesh, Options::root()["all"]);
 
   output_info << "Setting boundary for variable " << name << endl;
   /// Loop over the mesh boundary regions
