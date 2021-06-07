@@ -1158,9 +1158,9 @@ protected:
     SAVE_ONCE(Ti0, Te0, N0);
 
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create(&options["phiSolver"]);
+    phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
 
-    aparSolver = Laplacian::create(&options["aparSolver"]);
+    aparSolver = Laplacian::create(&globalOptions["aparSolver"]);
 
     /////////////// CHECK VACUUM ///////////////////////
     // In vacuum region, initial vorticity should equal zero
