@@ -1339,19 +1339,14 @@ protected:
         eta_spitzer = 0.51 * 1.03e-4 * Zi * LnLambda
                       * pow(Te_tmp * Tebar, -1.5); // eta in Ohm-m. ln(Lambda) = 20
         eta_spitzer /= SI::mu0 * Va * Lbar;
-        // eta_spitzer.applyBoundary();
-        // mesh->communicate(eta_spitzer);
       } else {
         eta = core_resist + (vac_resist - core_resist) * vac_mask;
       }
 
       nu_e = 2.91e-6 * LnLambda * (N_tmp * Nbar * density / 1.e6)
              * pow(Te_tmp * Tebar, -1.5); // nu_e in 1/S.
-      // nu_e.applyBoundary();
-      // mesh->communicate(nu_e);
 
       if (diffusion_par > 0.0) {
-        // xqx addition, begin
         // Use Spitzer thermal conductivities
 
         nu_i = 4.80e-8 * (Zi * Zi * Zi * Zi / sqrt(AA)) * LnLambda
@@ -1372,12 +1367,8 @@ protected:
 
         kappa_par_i *= kappa_par_i_fl / (kappa_par_i + kappa_par_i_fl);
         kappa_par_i *= Tipara1 * N_tmp;
-        // kappa_par_i.applyBoundary();
-        // mesh->communicate(kappa_par_i);
         kappa_par_e *= kappa_par_e_fl / (kappa_par_e + kappa_par_e_fl);
         kappa_par_e *= Tepara1 * N_tmp * Zi;
-        // kappa_par_e.applyBoundary();
-        // mesh->communicate(kappa_par_e);
       }
     }
 
@@ -1418,7 +1409,6 @@ protected:
       }
     }
 
-    // xqx begin
     // Get Delp2(J) from J
     Jpar2 = -Delp2(Jpar);
 
@@ -1486,12 +1476,9 @@ protected:
 
       if (nonlinear) {
         ddt(U) -= bracket(B0 * phi, U, bm_exb); // Advection
-        /*if (compress0)
-        //ddt(U) -= Vipar*Grad_par(U);
-        ddt(U) -= Vpar_Grad_par(Vipar, U);*/
       }
 
-      // xqx: parallel hyper-viscous diffusion for vector potential
+      // parallel hyper-viscous diffusion for vector potential
       if (diffusion_u4 > 0.0) {
         tmpA2 = Grad2_par2new(Psi);
         mesh->communicate(tmpA2);
@@ -1513,7 +1500,8 @@ protected:
 
         ddt(U) += hyper_mu_x * coord->g11 * D2DX2(U);
 
-        if (first_run) { // Print out maximum values of viscosity used on this processor
+        if (first_run) {
+          // Print out maximum values of viscosity used on this processor
           output.write("   Hyper-viscosity values:\n");
           output.write("      Max mu_x = {:e}, Max_DC mu_x = {:e}\n", max(hyper_mu_x),
                        max(DC(hyper_mu_x)));
@@ -1553,7 +1541,7 @@ protected:
         ddt(Ni) -= N0 * B0 * Grad_parP(Vipar / B0, CELL_CENTRE);
       }
 
-      // M: 4th order Parallel diffusion terms
+      // 4th order Parallel diffusion terms
       if (diffusion_n4 > 0.0) {
         tmpN2 = Grad2_par2new(Ni);
         mesh->communicate(tmpN2);
@@ -1588,7 +1576,7 @@ protected:
         ddt(Ti) += Grad_par(kappa_par_i, CELL_CENTRE) * Grad_par(Ti, CELL_YLOW) / N0;
       }
 
-      // M: 4th order Parallel diffusion terms
+      // 4th order Parallel diffusion terms
       if (diffusion_ti4 > 0.0) {
         tmpTi2 = Grad2_par2new(Ti);
         mesh->communicate(tmpTi2);
