@@ -6,7 +6,6 @@
 
 nout = 100          # number of time-steps
 timestep = 1.0       # time between outputs
-archive = 20        # Archive restart files after this number of outputs
 wall_limit = 0.45  # wall time limit (in hours)
 
 twistshift = true   # use twist-shift condition?
@@ -51,22 +50,10 @@ second = C4
 upwind = W3
 
 ##################################################
-# Communications
-# Fastest setting depends on machine and MPI
-# implementation. Do not affect result.
-
-[comms]
-
-async = false           # Use asyncronous sends?
-pre_post = false        # Post receives as early as possible
-group_nonblock = false  # Use non-blocking group operations?
-
-##################################################
 # Laplacian inversion routines
 
 [laplace]
 
-laplace_nonuniform = true
 nonuniform = true
 # max_mode = 16  # Maximum N to solve for
 
@@ -87,12 +74,8 @@ atol = 1e-08 # absolute tolerance
 rtol = 1e-05  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
-use_jacobian = false  # Use user-supplied Jacobian
 
-#pvode_
 mxstep = 10000   # Number of internal steps between outputs
-adams_moulton = false # Use Adams-Moulton method (default is BDF)
-func_iter = false     # Functional iteration (default is Newton)
 
 ##################################################
 # settings for high-beta reduced MHD
@@ -118,7 +101,6 @@ Zi = 1                 # ion charge number
 nonlinear = false     # include non-linear terms?
 
 diamag = true          # Include diamagnetic effects?
-diamag_grad_t = false  # Include Grad_par(Te) term in Psi equation
 diamag_phi0 = true     # Balance ExB against Vd for stationary equilibrium
 
 compress0 = true       # open the ion velocity equation
@@ -151,7 +133,6 @@ include_jpar0 = true     # determines whether to include jpar0 terms
 include_curvature = true # include curvature drive term?
 
 AA = 2.0          # ion mass in units of proton mass
-parallel_lr_diff = false #parallel differencing method
 
 #######################################################################
 # BRACKET_METHOD flags:
@@ -162,7 +143,7 @@ parallel_lr_diff = false #parallel differencing method
 bracket_method_exb = 2   #differencing schemes for ExB
 bracket_method_mag = 2   #differencing schemes for magnetic flutter
 #######################################################################
-filter_nl = 1        # Switch of nonlinear fliter
+filter_nl = -1        # Switch of nonlinear fliter
 
 noshear = false        # zero all shear
 
@@ -179,10 +160,6 @@ zonal_bkgd = false    # remove this zonal harmonic?
 
 ## Jpar smoothing
 smooth_j_x = true   # Filter Jpar in the X direction
-lowpass_j_z = 16   # Remove high-k modes. Specifies maximum harmonic to keep
-
-## mask in x boundaries
-mask_j_x = true
 
 ## Vacuum region control
 
@@ -202,18 +179,18 @@ hp_length = 0.3    #   heat length in percentage of nx (< 0 = none)
 
 ## sink rate in pressure
 
-sink_vP = -1   #   sink rate in pressure (< 0 = none)
+sink_vp = -1   #   sink rate in pressure (< 0 = none)
 sp_width = 0.04     #   sink width, in percentage of nx (< 0 = none)
 sp_length = 0.15    #   sink length in percentage of nx (< 0 = none)
 
 
 ## left edge sink rate in vorticity
-sink_Ul = -10.0        #   left edge sink rate in vorticity (< 0 = none)
+sink_Ul = -10.0      #   left edge sink rate in vorticity (< 0 = none)
 su_widthl = 0.06     #   left edge sink width, in percentage of nx (< 0 = none)
 su_lengthl = 0.1     #   left edge sink length in percentage of nx (< 0 = none)
 
 ## right edge sink rate in vorticity
-sink_Ur = -10.0        #   right edge sink rate in vorticity (< 0 = none)
+sink_Ur = -10.0      #   right edge sink rate in vorticity (< 0 = none)
 su_widthr = 0.06     #   right edge sink width, in percentage of nx (< 0 = none)
 su_lengthr = 0.1     #   right edge sink length in percentage of nx (< 0 = none)
 
