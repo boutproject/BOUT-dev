@@ -903,37 +903,23 @@ protected:
     Pi0 = N0 * Ti0;
     Pe0 = Ne0 * Te0;
 
-    nu_e.setLocation(CELL_YLOW);
     nu_e.setBoundary("kappa");
     if (spitzer_resist) {
-      eta_spitzer.setLocation(CELL_YLOW);
       eta_spitzer.setBoundary("kappa");
     }
     if (diffusion_par > 0.0) {
-      nu_i.setLocation(CELL_YLOW);
       nu_i.setBoundary("kappa");
-      vth_i.setLocation(CELL_YLOW);
-      vth_e.setLocation(CELL_YLOW);
       vth_i.setBoundary("kappa");
       vth_e.setBoundary("kappa");
-      kappa_par_i.setLocation(CELL_YLOW);
-      kappa_par_e.setLocation(CELL_YLOW);
       kappa_par_i.setBoundary("kappa");
       kappa_par_e.setBoundary("kappa");
-      kappa_perp_i.setLocation(CELL_YLOW);
-      kappa_perp_e.setLocation(CELL_YLOW);
       kappa_perp_i.setBoundary("kappa");
       kappa_perp_e.setBoundary("kappa");
     }
 
     if (compress0) {
-      eta_i0.setLocation(CELL_CENTRE);
       eta_i0.setBoundary("Ti");
-      pi_ci.setLocation(CELL_CENTRE);
       pi_ci.setBoundary("Ti");
-
-      // dump.add(eta_i0, "eta_i0", 1);
-      // dump.add(pi_ci, "pi_ci", 1);
     }
 
     BoutReal pnorm = max(P0, true); // Maximum over all processors
@@ -1105,32 +1091,6 @@ protected:
     V0eff.y = -(Btxy / (B0 * B0)) * (Vp0 * Btxy - Vt0 * Bpxy) / hthe;
     V0eff.z = (Bpxy / (B0 * B0)) * (Vp0 * Btxy - Vt0 * Bpxy) / Rxy;
 
-    /**************** SET VARIABLE LOCATIONS *************/
-
-    P.setLocation(CELL_CENTRE);
-    U.setLocation(CELL_CENTRE);
-    phi.setLocation(CELL_CENTRE);
-    Psi.setLocation(CELL_YLOW);
-    if (emass) {
-      Ajpar.setLocation(CELL_YLOW);
-    }
-    Jpar.setLocation(CELL_YLOW);
-
-    Ni.setLocation(CELL_YLOW);
-    Ti.setLocation(CELL_CENTRE);
-    Te.setLocation(CELL_CENTRE);
-
-    Vipar.setLocation(CELL_YLOW);
-    Vepar.setLocation(CELL_YLOW);
-    Pi.setLocation(CELL_CENTRE);
-    Pe.setLocation(CELL_CENTRE);
-
-    N_tmp.setLocation(CELL_CENTRE);
-    if (nonlinear) {
-      Ti_tmp.setLocation(CELL_CENTRE);
-      Te_tmp.setLocation(CELL_CENTRE);
-    }
-
     Pe.setBoundary("P");
     Pi.setBoundary("P");
 
@@ -1205,7 +1165,6 @@ protected:
     /////////////// CHECK VACUUM ///////////////////////
     // In vacuum region, initial vorticity should equal zero
 
-    ubyn.setLocation(CELL_CENTRE);
     ubyn.setBoundary("U");
 
     if (!restarting) {
@@ -1444,9 +1403,9 @@ protected:
       ddt(Psi) = 0.0;
 
       if (spitzer_resist) {
-        ddt(Psi) = -Grad_parP(B0 * phi, CELL_CENTRE) / B0 - eta_spitzer * Jpar;
+        ddt(Psi) = -Grad_parP(B0 * phi) / B0 - eta_spitzer * Jpar;
       } else {
-        ddt(Psi) = -Grad_parP(B0 * phi, CELL_CENTRE) / B0 - eta * Jpar;
+        ddt(Psi) = -Grad_parP(B0 * phi) / B0 - eta * Jpar;
       }
 
       if (diamag) {
@@ -1471,7 +1430,7 @@ protected:
 
       ddt(U) += 2.0 * Upara1 * b0xcv * Grad(P); // curvature term
 
-      ddt(U) += SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
+      ddt(U) += SQ(B0) * Grad_parP(Jpar); // b dot grad j
 
       if (diamag) {
         ddt(U) -= bracket(B0 * phi0, U, bm_exb); // Equilibrium flow
@@ -1541,7 +1500,7 @@ protected:
       }
 
       if (compress0) {
-        ddt(Ni) -= N0 * B0 * Grad_parP(Vipar / B0, CELL_CENTRE);
+        ddt(Ni) -= N0 * B0 * Grad_parP(Vipar / B0);
       }
 
       // 4th order Parallel diffusion terms
@@ -1571,12 +1530,12 @@ protected:
       }
 
       if (compress0) {
-        ddt(Ti) -= 2.0 / 3.0 * Ti0 * B0 * Grad_parP(Vipar / B0, CELL_CENTRE);
+        ddt(Ti) -= 2.0 / 3.0 * Ti0 * B0 * Grad_parP(Vipar / B0);
       }
 
       if (diffusion_par > 0.0) {
         ddt(Ti) += kappa_par_i * Grad2_par2(Ti) / N0; // Parallel diffusion
-        ddt(Ti) += Grad_par(kappa_par_i, CELL_CENTRE) * Grad_par(Ti, CELL_YLOW) / N0;
+        ddt(Ti) += Grad_par(kappa_par_i) * Grad_par(Ti) / N0;
       }
 
       // 4th order Parallel diffusion terms
@@ -1607,12 +1566,12 @@ protected:
       }
 
       if (compress0) {
-        ddt(Te) -= 2.0 / 3.0 * Te0 * B0 * Grad_parP(Vepar / B0, CELL_CENTRE);
+        ddt(Te) -= 2.0 / 3.0 * Te0 * B0 * Grad_parP(Vepar / B0);
       }
 
       if (diffusion_par > 0.0) {
         ddt(Te) += kappa_par_e * Grad2_par2(Te) / N0; // Parallel diffusion
-        ddt(Te) += Grad_par(kappa_par_e, CELL_CENTRE) * Grad_par(Te, CELL_YLOW) / N0;
+        ddt(Te) += Grad_par(kappa_par_e) * Grad_par(Te) / N0;
       }
 
       if (diffusion_te4 > 0.0) {
@@ -1629,7 +1588,7 @@ protected:
 
       ddt(Vipar) = 0.0;
 
-      ddt(Vipar) -= Vipara * Grad_parP(P, CELL_YLOW) / N0;
+      ddt(Vipar) -= Vipara * Grad_parP(P) / N0;
       ddt(Vipar) += Vipara * bracket(Psi, P0, bm_mag) * B0 / N0;
 
       if (diamag) {
