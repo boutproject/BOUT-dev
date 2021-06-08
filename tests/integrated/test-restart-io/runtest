@@ -159,21 +159,18 @@ for nproc in [1, 2, 4]:
                     )
 
     # check the run_id
-    run_id = collect("run_id", path="data", info=False)
+    run_id = str(collect("run_id", path="data", info=False))
     # check run_id can be converted to a valid UUID
     try:
-        uuid.UUID(run_id.tobytes().decode())
+        uuid.UUID(run_id)
     except ValueError:
         success = False
-        print("run_id=" + str(run_id) + " is not a valid UUID")
-    run_restart_from = collect("run_restart_from", path="data", info=False)
-    if not run_restart_from.tobytes().decode() == run_id_string:
+        print(f"run_id='{run_id}' is not a valid UUID")
+    run_restart_from = str(collect("run_restart_from", path="data", info=False))
+    if not run_restart_from == run_id_string:
         success = False
         print(
-            "incorrect run_restart_from="
-            + run_restart_from.tobytes().decode()
-            + ". Expected "
-            + run_id_string
+            f"incorrect run_restart_from='{run_restart_from}'. Expected '{run_id_string}'"
         )
 
 if success:
