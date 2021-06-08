@@ -6,8 +6,8 @@ class TestRestartIO : public PhysicsModel {
     solver->add(f2d, "f2d");
 
     if (restarting) {
-      fperp_lower = restart_options["fperp_lower"].as<FieldPerp>();
-      fperp_upper = restart_options["fperp_upper"].as<FieldPerp>();
+      fperp_lower = readFromRestartFile("fperp_lower").as<FieldPerp>();
+      fperp_upper = readFromRestartFile("fperp_upper").as<FieldPerp>();
     }
 
     return 0;

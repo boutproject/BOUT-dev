@@ -308,19 +308,15 @@ protected:
   void bout_solve(Vector2D &var, const char *name, const std::string& description="");
   void bout_solve(Vector3D &var, const char *name, const std::string& description="");
 
-  /// Stores the state for restarting
-  Options restart_options;
+  /// Helper function for reading from restart_options
+  Options& readFromRestartFile(const std::string& name) {
+    return restart_options[name];
+  }
 
-  /// File to write the restart-state to
-  bout::OptionsNetCDF restart_file;
-
+  /// Write the restart file to disk now
   void writeRestartFile();
+  /// Write the output file to disk now
   void writeOutputFile();
-
-  /// State for outputs
-  Options output_options;
-
-  bout::OptionsNetCDF output_file;
 
   /*!
    * Specify a constrained variable \p var, which will be
@@ -349,7 +345,16 @@ protected:
 
   /// write restarts and pass outputMonitor method inside a Monitor subclass
   PhysicsModelMonitor modelMonitor{this};
+
 private:
+  /// Stores the state for restarting
+  Options restart_options;
+  /// File to write the restart-state to
+  bout::OptionsNetCDF restart_file;
+  /// State for outputs
+  Options output_options;
+  /// File to write the outputs to
+  bout::OptionsNetCDF output_file;
   /// Split operator model?
   bool splitop{false};
   /// Pointer to user-supplied preconditioner function
