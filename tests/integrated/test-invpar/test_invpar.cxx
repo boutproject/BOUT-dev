@@ -11,25 +11,12 @@
 
 using bout::globals::mesh;
 
-int main(int argc, char **argv) {
-
-  // Initialise BOUT++, setting up mesh
-  BoutInitialise(argc, argv);
-
-  FieldFactory f(mesh);
-
-  // Get options
-  Options &options = Options::root();
-  std::string acoef, bcoef, ccoef, dcoef, ecoef, func;
-  options.get("acoef", acoef, "1.0");
-  options.get("bcoef", bcoef, "-1.0");
-  options.get("ccoef", ccoef, "0.0");
-  options.get("dcoef", dcoef, "0.0");
-  options.get("ecoef", ecoef, "0.0");
-  options.get("input_field", func, "sin(2*y)*(1. + 0.2*exp(cos(z)))");
-  auto location = CELL_LOCFromString(options["test_location"].withDefault("CELL_CENTRE"));
-  BoutReal tol = options["tol"].withDefault(1e-10);
-
+int test(const std::string& acoef, const std::string& bcoef, const std::string& ccoef,
+         const std::string& dcoef, const std::string& ecoef, const std::string& func,
+         BoutReal tol, FieldFactory& f, CELL_LOC location) {
+  output_error.write(
+      "acoef={:s} bcoef={:s} ccoef={:s} dcoef={:s} ecoef{:s} with {:s} at {:s} ...",
+      acoef, bcoef, ccoef, dcoef, ecoef, func, toString(location));
   auto inv = InvertPar::create(nullptr, location, mesh);
 
   Field2D A = f.create2D(acoef, nullptr, nullptr, location);
@@ -52,7 +39,7 @@ int main(int argc, char **argv) {
 	  + D*D2DZ2(result) + E*DDY(result);
 
   // Check the result
-  int passed = 1;
+  bool success{true};
   int local_ystart = mesh->ystart;
   if (location == CELL_YLOW) {
     // Point at mesh->ystart in 'result' is set by the Neumann boundary condition, so may
@@ -65,30 +52,65 @@ int main(int argc, char **argv) {
                    input(mesh->xstart, y, z), result(mesh->xstart, y, z),
                    deriv(mesh->xstart, y, z));
       if (std::abs(input(mesh->xstart, y, z) - deriv(mesh->xstart, y, z)) > tol) {
-        passed = 0;
+        success = false;
       }
     }
   }
+  if (success) {
+    output_error.write(" success\n");
+  } else {
+    output_error.write(" failure\n");
+  }
+  return success;
+}
 
-  int allpassed;
-  MPI_Allreduce(&passed, &allpassed, 1, MPI_INT, MPI_MIN, BoutComm::get());
+int main(int argc, char** argv) {
+
+  // Initialise BOUT++, setting up mesh
+  BoutInitialise(argc, argv);
+
+  FieldFactory f(mesh);
+
+  // Get options
+  Options& options = Options::root();
+
+  BoutReal tol = options["tol"].withDefault(1e-10);
+
+  bool success{true};
+  int i = 0;
+  while (true) {
+    if (not options.isSet(fmt::format("{}_{}", "acoef", i))) {
+      break;
+    }
+    const std::string acoef = options[fmt::format("{}_{}", "acoef", i)].as<std::string>();
+    const std::string bcoef =
+        options[fmt::format("{}_{}", "bcoef", i)].withDefault("-1.0");
+    const std::string ccoef =
+        options[fmt::format("{}_{}", "ccoef", i)].withDefault("0.0");
+    const std::string dcoef =
+        options[fmt::format("{}_{}", "dcoef", i)].withDefault("0.0");
+    const std::string ecoef =
+        options[fmt::format("{}_{}", "ecoef", i)].withDefault("0.0");
+    const std::string func = options[fmt::format("{}_{}", "input_field", i)].withDefault(
+        "sin(2*y)*(1. + 0.2*exp(cos(z)))");
+
+    for (auto location : {CELL_CENTRE, CELL_YLOW, CELL_XLOW, CELL_ZLOW}) {
+      success &= test(acoef, bcoef, ccoef, dcoef, ecoef, func, tol, f, location);
+    }
+    i += 1;
+  }
+  bool allsuccess{true};
+  MPI_Allreduce(&success, &allsuccess, 1, MPI_C_BOOL, MPI_LAND, BoutComm::get());
 
   output << "******* Parallel inversion test case: ";
-  if (allpassed) {
+  if (allsuccess) {
     output << "PASSED" << endl;
   } else {
     output << "FAILED" << endl;
   }
 
-  // Saving state to file
-  SAVE_ONCE(allpassed);
-
-  // Write data to file
-  bout::globals::dump.write();
-  bout::globals::dump.close();
-
   MPI_Barrier(BoutComm::get());
 
   BoutFinalise();
-  return 0;
+  return !allsuccess;
 }
