@@ -121,7 +121,11 @@ public:
   using ModelJacobianFunc = int (Model::*)(BoutReal t);
 
   PhysicsModel();
-  
+  PhysicsModel(Mesh* mesh_, const bout::OptionsNetCDF& output_, bool output_enabled_,
+               const bout::OptionsNetCDF& restart_, bool restart_enabled_)
+      : mesh(mesh_), output_file(output_), output_enabled(output_enabled_),
+        restart_file(restart_), restart_enabled(restart_enabled_) {}
+
   virtual ~PhysicsModel() = default;
   
   Mesh* mesh{nullptr};
@@ -347,14 +351,18 @@ protected:
   PhysicsModelMonitor modelMonitor{this};
 
 private:
-  /// Stores the state for restarting
-  Options restart_options;
-  /// File to write the restart-state to
-  bout::OptionsNetCDF restart_file;
   /// State for outputs
   Options output_options;
   /// File to write the outputs to
   bout::OptionsNetCDF output_file;
+  /// Should we write output files
+  bool output_enabled{true};
+  /// Stores the state for restarting
+  Options restart_options;
+  /// File to write the restart-state to
+  bout::OptionsNetCDF restart_file;
+  /// Should we write restart files
+  bool restart_enabled{true};
   /// Split operator model?
   bool splitop{false};
   /// Pointer to user-supplied preconditioner function
@@ -363,10 +371,6 @@ private:
   jacobianfunc userjacobian{nullptr};
   /// True if model already initialised
   bool initialised{false};
-  /// Should we write output files
-  bool output_enabled{true};
-  /// Should we write restart files
-  bool restart_enabled{true};
 };
 
 /*!

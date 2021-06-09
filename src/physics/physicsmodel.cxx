@@ -56,7 +56,7 @@ bool DataFileFacade::write() {
 } // namespace bout
 
 PhysicsModel::PhysicsModel()
-    : mesh(bout::globals::mesh), restart_file(bout::getRestartFilename(Options::root())),
+    : mesh(bout::globals::mesh),
       output_file(bout::getOutputFilename(Options::root()),
                   Options::root()["append"]
                           .doc("Add output data to existing (dump) files?")
@@ -66,6 +66,7 @@ PhysicsModel::PhysicsModel()
       output_enabled(Options::root()["output"]["enabled"]
                          .doc("Write output files")
                          .withDefault(true)),
+      restart_file(bout::getRestartFilename(Options::root())),
       restart_enabled(Options::root()["restart_files"]["enabled"]
                           .doc("Write restart files")
                           .withDefault(true)) {}
