@@ -10,5 +10,3 @@ nout = 0  # No timesteps
 MZ = 1    # Z size
 
 grid = "test_delp2.grd.nc"
-
-dump_format = "nc"  # NetCDF format. Alternative is "pdb"

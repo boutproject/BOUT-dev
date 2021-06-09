@@ -7,8 +7,6 @@ nout = 0  # No timesteps
 
 MZ = 32    # Z size
 
-dump_format = "nc"  # NetCDF format
-
 MYG = 0  # No guard cells in Y
 
 

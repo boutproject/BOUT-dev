@@ -11,9 +11,6 @@ MZ = 1 # Number of points in z
 #number of guard cells
 MXG = 0
 
-[output]
-floats = false #false -> output in doubles
-
 [mesh]
 
 staggergrids = true

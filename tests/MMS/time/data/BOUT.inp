@@ -8,9 +8,6 @@ MYG = 1
 
 MZ = 1
 
-[output]
-floats = false
-
 [mesh]
 
 # Only one point in X and Y

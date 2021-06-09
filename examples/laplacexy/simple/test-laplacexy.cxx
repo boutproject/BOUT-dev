@@ -18,9 +18,10 @@ int main(int argc, char** argv) {
   
   x = laplacexy.solve(rhs, x);
 
-  Options::root()["rhs"] = rhs;
-  Options::root()["x"] = x;
-  bout::writeDefaultOutputFile();
+  Options dump;
+  dump["rhs"] = rhs;
+  dump["x"] = x;
+  bout::writeDefaultOutputFile(dump);
 
   BoutFinalise();
   return 0;

@@ -13,11 +13,6 @@ ZMAX = 1.0
 MYG = 1
 MXG = 1
 
-dump_format = "nc"     # Write NetCDF format files
-
-[output]
-floats = false #false -> output in doubles
-
 [mesh]
 ixseps1 = -1
 ixseps2 = -1             # Set x location of separatrix 2

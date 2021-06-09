@@ -8,16 +8,11 @@ MZ = 8    # Z size
 
 grid = "cyclone_68x32.nc"
 
-dump_format = "nc"  # NetCDF format. Alternative is "pdb"
-
 twistshift = true
 
 [mesh]
 symmetricGlobalX = false
 symmetricGlobalY = false
-
-[output]
-floats = true
 
 [laplace]
 all_terms = false

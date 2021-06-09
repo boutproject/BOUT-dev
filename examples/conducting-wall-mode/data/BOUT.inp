@@ -19,8 +19,6 @@ MYG = 2
 
 grid = "cwm_grid.nc"
 
-dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
-
 non_uniform = true
 
 ##################################################

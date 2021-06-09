@@ -5,8 +5,6 @@ nout = 0  # No timesteps
 
 MZ = 32    # Z size
 
-dump_format = "nc"  # NetCDF format
-
 MYG = 0  # No guard cells in Y
 
 ccoef = sin(x) * gauss(x-0.5) * (1.0 + 0.5*cos(z))

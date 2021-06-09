@@ -96,6 +96,25 @@ for section, derivative in itertools.product(
         }
     )
 
+DELETED = ["dump_format"]
+
+for section, value in itertools.product(
+    ["output", "restart"],
+    [
+        "floats",
+        # Following are not yet implemented in OptionsNetCDF. Not yet
+        # clear if they need to be, or can be safely removed
+        # "shiftoutput",
+        # "shiftinput",
+        # "flushfrequency",
+        # "parallel",
+        # "guards",
+        # "openclose",
+        # "init_missing",
+    ],
+):
+    DELETED.append(f"{section}:{value}")
+
 
 def parse_bool(bool_expression):
     try:
@@ -180,12 +199,24 @@ def fix_replacements(replacements, options_file):
                         pass
 
 
-def apply_fixes(replacements, options_file):
+def remove_deleted(deleted, options_file):
+    """Remove each key that appears in 'deleted' from 'options_file'"""
+
+    for key in deleted:
+        # Better would be options_file.pop(key, None), but there's a
+        # bug in current implementation
+        if key in options_file:
+            del options_file[key]
+
+
+def apply_fixes(replacements, deleted, options_file):
     """Apply all fixes in this module"""
 
     modified = copy.deepcopy(options_file)
 
     fix_replacements(replacements, modified)
+
+    remove_deleted(deleted, modified)
 
     return modified
 
@@ -333,7 +364,7 @@ if __name__ == "__main__":
             continue
 
         try:
-            modified = apply_fixes(REPLACEMENTS, original)
+            modified = apply_fixes(REPLACEMENTS, DELETED, original)
         except RuntimeError as e:
             print(e)
             continue

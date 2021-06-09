@@ -17,8 +17,6 @@ MYG = 2
 
 grid = "uedge.grd_Te_10.nc"
 
-dump_format = "nc"
-
 ##################################################
 # derivative methods
 

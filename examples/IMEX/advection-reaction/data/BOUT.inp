@@ -10,8 +10,6 @@ MZ = 64     # number of points in z direction (2^n)
 
 grid = "simple_xz.nc"
 
-dump_format = "nc" # Set extension for dump files (nc = NetCDF)
-
 NXPE = 1
 
 periodicX = true   # Make domain periodic in X

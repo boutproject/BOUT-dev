@@ -6,6 +6,4 @@ MZ = 5    # Z size
 
 grid = "test_io.grd.nc"
 
-dump_format = "nc"  # NetCDF format. Alternative is "pdb"
-
 twistshift = false

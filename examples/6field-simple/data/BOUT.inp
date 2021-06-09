@@ -19,8 +19,6 @@ MXG = 2
 MYG = 2
 
 grid = "cbm18_dens8.grid_nx68ny64.nc"
-
-dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
 restart_format = "nc"   # Restart file format
 
 [mesh]

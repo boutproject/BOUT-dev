@@ -28,8 +28,6 @@ MYG = 2
 
 grid = "slab_grid.nc"
 
-dump_format = "nc" # Output format. nc = NetCDF
-
 non_uniform = false
 
 [mesh]
