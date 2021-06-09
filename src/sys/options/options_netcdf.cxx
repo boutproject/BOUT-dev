@@ -4,7 +4,10 @@
 
 #include "options_netcdf.hxx"
 
+#include "bout.hxx"
 #include "bout/sys/timer.hxx"
+#include "globals.hxx"
+#include "bout/mesh.hxx"
 
 #include <exception>
 #include <iostream>
@@ -715,7 +718,13 @@ std::string getOutputFilename(Options& options, int rank) {
 }
 
 void writeDefaultOutputFile() {
-  OptionsNetCDF(getOutputFilename(Options::root())).write(Options::root());
+  writeDefaultOutputFile(Options::root());
+}
+
+void writeDefaultOutputFile(Options& options) {
+  bout::experimental::addBuildFlagsToOptions(options);
+  bout::globals::mesh->outputVars(options);
+  OptionsNetCDF(getOutputFilename(Options::root())).write(options);
 }
 
 } // namespace bout

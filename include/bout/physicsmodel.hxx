@@ -98,9 +98,15 @@ public:
 };
 
 struct OptionsConversionVisitor {
+private:
+  Options& options;
+  std::string name;
+public:
+  OptionsConversionVisitor(Options& options_, std::string name_)
+      : options(options_), name(std::move(name_)) {}
   template <class T>
-  Options::ValueType operator()(T* value) {
-    return *value;
+  void operator()(T* value) {
+    options[name] = *value;
   }
 };
 } // namespace bout
@@ -130,6 +136,7 @@ public:
   
   Mesh* mesh{nullptr};
   bout::DataFileFacade dump{};
+  bout::DataFileFacade restart{};
 
   /*!
    * Initialse the model, calling the init() and postInit() methods

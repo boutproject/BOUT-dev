@@ -44,10 +44,11 @@ void DataFileFacade::add(ValueType value, const std::string& name, bool save_rep
 }
 
 bool DataFileFacade::write() {
-  for (const auto& thing : data) {
-    Options::root()[thing.name].value = bout::utils::visit(bout::OptionsConversionVisitor{}, thing.value);
-    if (thing.repeat) {
-      Options::root()[thing.name].attributes["time_dimension"] = "t";
+  for (const auto& item : data) {
+    bout::utils::visit(bout::OptionsConversionVisitor{Options::root(), item.name},
+                       item.value);
+    if (item.repeat) {
+      Options::root()[item.name].attributes["time_dimension"] = "t";
     }
   }
   writeDefaultOutputFile();
@@ -178,25 +179,23 @@ int PhysicsModel::postInit(bool restarting) {
   // PhysicsModel::outputMonitor()
   solver->addMonitor(&modelMonitor);
 
-  outputVars(output_options);
-
   return 0;
 }
 
 void PhysicsModel::outputVars(Options& options) {
-  for (const auto& thing : dump.getData()) {
-    options[thing.name].value = bout::utils::visit(bout::OptionsConversionVisitor{}, thing.value);
-    if (thing.repeat) {
-      options[thing.name].attributes["time_dimension"] = "t";
+  for (const auto& item : dump.getData()) {
+    bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
+    if (item.repeat) {
+      options[item.name].attributes["time_dimension"] = "t";
     }
   }
 }
 
 void PhysicsModel::restartVars(Options& options) {
-  for (const auto& thing : dump.getData()) {
-    options[thing.name].value = bout::utils::visit(bout::OptionsConversionVisitor{}, thing.value);
-    if (thing.repeat) {
-      options[thing.name].attributes["time_dimension"] = "t";
+  for (const auto& item : restart.getData()) {
+    bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
+    if (item.repeat) {
+      options[item.name].attributes["time_dimension"] = "t";
     }
   }
 }
@@ -242,6 +241,7 @@ int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
   model->output_options["iteration"].attributes["time_dimension"] = "t";
 
   solver->outputVars(model->output_options, true);
+  model->outputVars(model->output_options);
   model->writeOutputFile();
 
   // Call user output monitor

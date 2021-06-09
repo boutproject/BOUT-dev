@@ -96,6 +96,8 @@ std::string getOutputFilename(Options& options);
 std::string getOutputFilename(Options& options, int rank);
 /// Write `Options::root()` to the main output file
 void writeDefaultOutputFile();
+/// Write \p options to the main output file
+void writeDefaultOutputFile(Options& options);
 } // namespace bout
 
 #endif //  __OPTIONS_NETCDF_H__
