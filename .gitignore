@@ -55,3 +55,5 @@ src/fmt/format.cxx
 /include/bout/build_config.hxx
 /include/bout/revision.hxx
 /include/bout/version.hxx
+/include/bout/build_defines.hxx
+/tools/pylib/boutconfig/__init__.py

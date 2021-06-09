@@ -546,6 +546,18 @@ public:
     indices = getRegionIndices();
   };
 
+  bool operator==(const Region<T>& other) {
+    if (this->size() != other.size()) {
+      return false;
+    }
+    for (auto i1 = this->begin(), i2 = other.begin(); i1 != this->end(); ++i1, ++i2) {
+      if (i1 != i2) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /// Destructor
   ~Region() = default;
 
@@ -643,8 +655,7 @@ public:
     return *this; // To allow command chaining
   };
 
-  /// Returns a new region including only indices contained in both
-  /// this region and the other.
+  /// Returns a modified region including only indices that are also in the region.
   Region<T> getIntersection(const Region<T>& otherRegion) {
     // Get other indices and sort as we're going to be searching through
     // this vector so if it's sorted we can be more efficient
@@ -937,5 +948,10 @@ template<typename T>
 unsigned int size(const Region<T> &region){
   return region.size();
 }
+
+// template<typename T>
+class RegionID {
+  int value;
+};
 
 #endif /* __REGION_H__ */
