@@ -748,9 +748,9 @@ target_compile_definitions(bout++
 ##################################################
 # Tests
 
-option(PACKAGE_TESTS "Build the tests" ON)
+option(BOUT_TESTS "Build the tests" ON)
 option(BOUT_RUN_ALL_TESTS "Run all of the tests (this can be slow!)" OFF)
-if(PACKAGE_TESTS)
+if(BOUT_TESTS)
   enable_testing()
 
   # Targets for just building the tests
