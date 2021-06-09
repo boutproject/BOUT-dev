@@ -199,9 +199,6 @@ int BoutInitialise(int& argc, char**& argv) {
     // Load from sources. Required for Field initialisation
     bout::globals::mesh->load();
 
-    bout::globals::dump =
-        setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);
-
   } catch (const BoutException& e) {
     output_error.write(_("Error encountered during initialisation: {:s}\n"), e.what());
     throw;
@@ -799,10 +796,7 @@ BoutMonitor::BoutMonitor(BoutReal timestep, Options& options)
           fmt::format("{}/{}", Options::root()["datadir"].withDefault(DEFAULT_DIR),
                       options["stopCheckName"]
                           .doc(_("Name of file whose existence triggers a stop"))
-                          .withDefault("BOUT.stop"))) {
-  // Add wall clock time etc to dump file
-  run_data.outputVars(bout::globals::dump);
-}
+                          .withDefault("BOUT.stop"))) {}
 
 int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
@@ -861,8 +855,7 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
       " ETA {:s}",
       time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1)));
 
-  /// Write dump file
-  bout::globals::dump.write();
+  // Write dump file
   Options run_data_output;
   run_data.outputVars(run_data_output);
   solver->writeToModelOutputFile(run_data_output);
