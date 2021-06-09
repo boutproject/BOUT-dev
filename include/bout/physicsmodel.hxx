@@ -410,7 +410,6 @@ private:
       solver->setModel(model.get());                               \
       auto bout_monitor = bout::utils::make_unique<BoutMonitor>(); \
       solver->addMonitor(bout_monitor.get(), Solver::BACK);        \
-      solver->outputVars(bout::globals::dump);                     \
       solver->solve();                                             \
     } catch (const BoutException& e) {                             \
       output << "Error encountered\n";                             \
