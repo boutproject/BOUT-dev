@@ -47,11 +47,7 @@ int main(int argc, char** argv) {
   Field3D absolute_error1;
   BoutReal max_error1; //Output of test
 
-  using bout::globals::dump;
   using bout::globals::mesh;
-
-  dump.add(mesh->getCoordinates()->G1,"G1");
-  dump.add(mesh->getCoordinates()->G3,"G3");
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 1: zero-value Dirichlet boundaries
@@ -92,15 +88,16 @@ int main(int argc, char** argv) {
   output<<endl<<"Test 1: zero Dirichlet"<<endl;
   output<<"Magnitude of maximum absolute error is "<<max_error1<<endl;
 
-  dump.add(a1,"a1");
-  dump.add(b1,"b1");
-  dump.add(c1,"c1");
-  dump.add(d1,"d1");
-  dump.add(f1,"f1");
-  dump.add(sol1,"sol1");
-  dump.add(bcheck1,"bcheck1");
-  dump.add(absolute_error1,"absolute_error1");
-  dump.add(max_error1,"max_error1");
+  Options dump;
+  dump["a1"] = a1;
+  dump["b1"] = b1;
+  dump["c1"] = c1;
+  dump["d1"] = d1;
+  dump["f1"] = f1;
+  dump["sol1"] = sol1;
+  dump["bcheck1"] = bcheck1;
+  dump["absolute_error1"] = absolute_error1;
+  dump["max_error1"] = max_error1;
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   Field3D f2,a2,b2,c2,d2,sol2,bcheck2;
@@ -139,15 +136,15 @@ int main(int argc, char** argv) {
   output<<endl<<"Test 2: zero Neumann"<<endl;
   output<<"Magnitude of maximum absolute error is "<<max_error2<<endl;
 
-  dump.add(a2,"a2");
-  dump.add(b2,"b2");
-  dump.add(c2,"c2");
-  dump.add(d2,"d2");
-  dump.add(f2,"f2");
-  dump.add(sol2,"sol2");
-  dump.add(bcheck2,"bcheck2");
-  dump.add(absolute_error2,"absolute_error2");
-  dump.add(max_error2,"max_error2");
+  dump["a2"] = a2;
+  dump["b2"] = b2;
+  dump["c2"] = c2;
+  dump["d2"] = d2;
+  dump["f2"] = f2;
+  dump["sol2"] = sol2;
+  dump["bcheck2"] = bcheck2;
+  dump["absolute_error2"] = absolute_error2;
+  dump["max_error2"] = max_error2;
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   Field3D f3,a3,b3,c3,d3,sol3,bcheck3;
@@ -195,15 +192,15 @@ int main(int argc, char** argv) {
   output<<endl<<"Test 3: set Dirichlet"<<endl;
   output<<"Magnitude of maximum absolute error is "<<max_error3<<endl;
 
-  dump.add(a3,"a3");
-  dump.add(b3,"b3");
-  dump.add(c3,"c3");
-  dump.add(d3,"d3");
-  dump.add(f3,"f3");
-  dump.add(sol3,"sol3");
-  dump.add(bcheck3,"bcheck3");
-  dump.add(absolute_error3,"absolute_error3");
-  dump.add(max_error3,"max_error3");
+  dump["a3"] = a3;
+  dump["b3"] = b3;
+  dump["c3"] = c3;
+  dump["d3"] = d3;
+  dump["f3"] = f3;
+  dump["sol3"] = sol3;
+  dump["bcheck3"] = bcheck3;
+  dump["absolute_error3"] = absolute_error3;
+  dump["max_error3"] = max_error3;
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   Field3D f4,a4,b4,c4,d4,sol4,bcheck4;
@@ -255,20 +252,20 @@ int main(int argc, char** argv) {
   output<<endl<<"Test 4: set Neumann"<<endl;
   output<<"Magnitude of maximum absolute error is "<<max_error4<<endl;
 
-  dump.add(a4,"a4");
-  dump.add(b4,"b4");
-  dump.add(c4,"c4");
-  dump.add(d4,"d4");
-  dump.add(f4,"f4");
-  dump.add(sol4,"sol4");
-  dump.add(bcheck4,"bcheck4");
-  dump.add(absolute_error4,"absolute_error4");
-  dump.add(max_error4,"max_error4");
+  dump["a4"] = a4;
+  dump["b4"] = b4;
+  dump["c4"] = c4;
+  dump["d4"] = d4;
+  dump["f4"] = f4;
+  dump["sol4"] = sol4;
+  dump["bcheck4"] = bcheck4;
+  dump["absolute_error4"] = absolute_error4;
+  dump["max_error4"] = max_error4;
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   output << "\nFinished running test.\n\n";
 
-  dump.write();
+  bout::writeDefaultOutputFile(dump);
 
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
 

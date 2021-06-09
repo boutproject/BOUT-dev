@@ -48,10 +48,11 @@ int main(int argc, char** argv) {
   ddy_check = fromFieldAligned(ddy_check, "RGN_NOBNDRY");
   mesh->communicate(ddy_check);
 
-  Options::root()["ddy"] = ddy;
-  Options::root()["ddy2"] = ddy2;
-  Options::root()["ddy_check"] = ddy_check;
-  bout::writeDefaultOutputFile();
+  Options dump;
+  dump["ddy"] = ddy;
+  dump["ddy2"] = ddy2;
+  dump["ddy_check"] = ddy_check;
+  bout::writeDefaultOutputFile(dump);
 
   bout::checkForUnusedOptions();
   BoutFinalise();

@@ -4,20 +4,16 @@
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
-  auto& options = Options::root();
-  Datafile df(options.getSection("output"));
-  df.add(const_cast<BoutReal&>(bout::version::as_double), "BOUT_VERSION", false);
-
-  bout::globals::mesh->outputVars(df);
-
   Field2D Rxy, Bpxy;
   bout::globals::mesh->get(Rxy, "Rxy");
   bout::globals::mesh->get(Bpxy, "Bpxy");
 
-  df.add(Rxy, "Rxy");
-  df.add(Bpxy, "Bpxy");
-
-  df.write("data.{:s}", options["dump_format"].as<std::string>());
+  Options dump;
+  dump["Rxy"] = Rxy;
+  dump["Bpxy"] = Bpxy;
+  bout::experimental::addBuildFlagsToOptions(dump);
+  bout::globals::mesh->outputVars(dump);
+  bout::OptionsNetCDF("data.nc").write(dump);
   
   BoutFinalise();
   return 0;

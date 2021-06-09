@@ -15,20 +15,23 @@ int main(int argc, char** argv) {
 
   Field3D result{Grad_par(input)};
   Field3D error{result - solution};
-  Options::root()["l_2"] = sqrt(mean(SQ(error), true, "RGN_NOBNDRY"));
-  Options::root()["l_inf"] = max(abs(error), true, "RGN_NOBNDRY");
 
-  Options::root()["result"] = result;
-  Options::root()["error"] = error;
-  Options::root()["input"] = input;
-  Options::root()["solution"] = solution;
+  Options dump;
+
+  dump["l_2"] = sqrt(mean(SQ(error), true, "RGN_NOBNDRY"));
+  dump["l_inf"] = max(abs(error), true, "RGN_NOBNDRY");
+
+  dump["result"] = result;
+  dump["error"] = error;
+  dump["input"] = input;
+  dump["solution"] = solution;
 
   for (int slice = 1; slice < mesh->ystart; ++slice) {
-    Options::root()[fmt::format("input.ynext(-{})", slice)] = input.ynext(-slice);
-    Options::root()[fmt::format("input.ynext({})", slice)] = input.ynext(slice);
+    dump[fmt::format("input.ynext(-{})", slice)] = input.ynext(-slice);
+    dump[fmt::format("input.ynext({})", slice)] = input.ynext(slice);
   }
 
-  bout::writeDefaultOutputFile();
+  bout::writeDefaultOutputFile(dump);
 
   BoutFinalise();
 }

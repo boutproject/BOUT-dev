@@ -19,16 +19,18 @@ int main(int argc, char** argv) {
 
   input3d.calcParallelSlices();
 
-  Options::root()["input2d"] = input2d;
-  Options::root()["input3d"] = input3d;
+  Options dump;
+
+  dump["input2d"] = input2d;
+  dump["input3d"] = input3d;
 
   // Average in 3D
-  Options::root()["yavg2d"] = averageY(input2d);
-  Options::root()["yavg3d"] = averageY(input3d);
+  dump["yavg2d"] = averageY(input2d);
+  dump["yavg3d"] = averageY(input3d);
 
-  Options::root()["sm3d"] = smooth_y(input3d);
+  dump["sm3d"] = smooth_y(input3d);
 
-  bout::writeDefaultOutputFile();
+  bout::writeDefaultOutputFile(dump);
 
   bout::checkForUnusedOptions();
 

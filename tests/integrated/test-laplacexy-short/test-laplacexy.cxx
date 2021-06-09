@@ -84,19 +84,17 @@ int main(int argc, char** argv) {
     rhs_check = a*Delp2(sol, CELL_DEFAULT, false) + coords->g11*DDX(a)*DDX(sol) + b*sol;
   }
 
-  using bout::globals::dump;
-  dump.add(a, "a");
-  dump.add(b, "b");
-  dump.add(f, "f");
-  dump.add(sol, "sol");
-  dump.add(error, "error");
-  dump.add(absolute_error, "absolute_error");
-  dump.add(max_error, "max_error");
-  dump.add(rhs, "rhs");
-  dump.add(rhs_check, "rhs_check");
-
-  dump.write();
-  dump.close();
+  Options dump;
+  dump["a"] = a;
+  dump["b"] = b;
+  dump["f"] = f;
+  dump["sol"] = sol;
+  dump["error"] = error;
+  dump["absolute_error"] = absolute_error;
+  dump["max_error"] = max_error;
+  dump["rhs"] = rhs;
+  dump["rhs_check"] = rhs_check;
+  bout::writeDefaultOutputFile(dump);
 
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
 

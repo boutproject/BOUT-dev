@@ -75,18 +75,18 @@ build_and_log("Squash test")
 
 bout_squashoutput = args.executable + "/bout-squashoutput"
 
-# Run once to get normal data
+print("Run once to get normal data")
 timed_shell_safe("./squash -q -q -q nout=2")
 timed_shell_safe("mv data/BOUT.dmp.0.nc f1.nc")
 
-# Parallel test
+print("Parallel test")
 timed_shell_safe("rm -f f2.nc")
 timed_launch_safe("./squash -q -q -q nout=2", nproc=4, mthread=1)
 timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
 
 verify("f1.nc", "f2.nc")
 
-# Parallel and in two pieces
+print("Parallel and in two pieces")
 timed_shell_safe("rm -f f2.nc")
 timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
 timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
@@ -95,7 +95,7 @@ timed_shell_safe("{} -qdcal 9 data --outputname ../f2.nc".format(bout_squashoutp
 
 verify("f1.nc", "f2.nc")
 
-# Parallel and in two pieces without dump_on_restart
+print("Parallel and in two pieces without dump_on_restart")
 timed_shell_safe("rm -f f2.nc")
 timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
 timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
@@ -104,7 +104,7 @@ timed_shell_safe("{} -qdcal 9 data --outputname ../f2.nc".format(bout_squashoutp
 
 verify("f1.nc", "f2.nc")
 
-# Sequential test
+print("Sequential test")
 timed_shell_safe("rm -f f2.nc")
 timed_shell_safe("./squash -q -q -q nout=2")
 timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))

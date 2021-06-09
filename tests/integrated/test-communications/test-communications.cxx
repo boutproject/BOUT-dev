@@ -82,8 +82,10 @@ int main(int argc, char** argv) {
   // communicate f to fill guard cells
   mesh->communicate(f);
 
-  bout::globals::dump.add(f, "f", true);
-  bout::globals::dump.write();
+  Options dump;
+  dump["f"] = f;
+  dump["f"].attributes["time_dimension"] = "t";
+  bout::writeDefaultOutputFile(dump);
 
   bout::checkForUnusedOptions();
   BoutFinalise();
