@@ -599,12 +599,11 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
       output << "\t" << i << "\t: " << formatEig(eigr[i], eigi[i]) << " --> ";
       output << formatEig(reEigBout, imEigBout) << "\n";
       if (eigenValOnly) {
-        simtime = reEigBout;
-        bout::globals::dump.write();
-        iteration++;
-        simtime = imEigBout;
-        bout::globals::dump.write();
-        iteration++;
+        // Silence the default monitor
+        WithQuietOutput progress{output_progress};
+        // Call monitors so fields get written
+        call_monitors(reEigBout, iteration++, nout);
+        call_monitors(imEigBout, iteration++, nout);
       }
     }
   }
