@@ -210,6 +210,8 @@ public:
   
   /// Write \p options to `output_file`
   void writeOutputFile(const Options& options);
+  /// Write variables with \p time_dimension from \p options to `output_file`
+  void writeOutputFile(const Options& options, const std::string& time_dimension);
 
   /// Finish the output for this timestep, verifying all evolving
   /// variables have the correct length

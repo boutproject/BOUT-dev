@@ -73,6 +73,12 @@ public:
   using Solver::call_timestep_monitors;
   using Solver::hasJacobian;
   using Solver::runJacobian;
+  using Solver::MonitorInfo;
 };
+
+// Equality operator for tests
+inline bool operator==(const FakeSolver::MonitorInfo& lhs, const FakeSolver::MonitorInfo& rhs) {
+  return lhs.monitor == rhs.monitor and lhs.time_dimension == rhs.time_dimension;
+}
 
 #endif // FAKESOLVER_H

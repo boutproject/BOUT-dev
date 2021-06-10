@@ -884,7 +884,7 @@ TEST_F(SolverTest, RemoveMonitor) {
 
   solver.removeMonitor(&monitor1);
 
-  std::list<Monitor*> expected{&monitor2};
+  std::list<FakeSolver::MonitorInfo> expected{{&monitor2, ""}};
   EXPECT_EQ(solver.getMonitors(), expected);
 
   // Removing same monitor again should be a no-op

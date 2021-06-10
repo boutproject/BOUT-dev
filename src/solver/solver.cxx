@@ -738,7 +738,7 @@ BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
   const auto multiplier =
       static_cast<int>(std::round(internal_timestep / new_monitor->timestep));
   for (const auto& monitor : monitors) {
-    monitor->period *= multiplier;
+    monitor.monitor->period *= multiplier;
   }
 
   // Update default_monitor_frequency so that monitors with no
@@ -766,16 +766,21 @@ void Solver::finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep) {
       // update old monitors
       const auto multiplier =
           static_cast<int>(std::round(internal_timestep / output_timestep));
-      for (const auto& i : monitors) {
-        i->period = i->period * multiplier;
+      for (const auto& monitor : monitors) {
+        monitor.monitor->period *= multiplier;
       }
     }
   }
-  // Now set any monitors which still have the default timestep/period
-  for (const auto& i : monitors) {
-    if (i->timestep < 0) {
-      i->timestep = internal_timestep * default_monitor_period;
-      i->period = default_monitor_period;
+  int count = 0;
+  // Now set any monitors which still have the default
+  // timestep/period, and set the time_dimension for each monitor
+  for (auto& monitor : monitors) {
+    if (monitor.monitor->timestep < 0) {
+      monitor.monitor->timestep = internal_timestep * default_monitor_period;
+      monitor.monitor->period = default_monitor_period;
+      monitor.time_dimension = "t";
+    } else {
+      monitor.time_dimension = fmt::format("t{}", ++count);
     }
   }
 }
@@ -787,14 +792,14 @@ void Solver::addMonitor(Monitor* monitor, MonitorPosition pos) {
   monitor->is_added = true;
 
   if (pos == MonitorPosition::FRONT) {
-    monitors.push_front(monitor);
+    monitors.push_front({monitor, ""});
   } else {
-    monitors.push_back(monitor);
+    monitors.push_back({monitor, ""});
   }
 }
 
-void Solver::removeMonitor(Monitor * f) {
-  monitors.remove(f);
+void Solver::removeMonitor(Monitor* f) {
+  monitors.remove_if([&f](auto& monitor) { return monitor.monitor == f; });
 }
 
 extern bool user_requested_exit;
@@ -814,18 +819,21 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   try {
     // Call monitors
     for (const auto& monitor : monitors) {
-      if ((iter % monitor->period) == 0) {
+      if ((iter % monitor.monitor->period) == 0) {
         // Call each monitor one by one
-        int ret = monitor->call(this, simtime, iter / monitor->period - 1,
-                                NOUT / monitor->period);
-        if (ret)
+        if (monitor.monitor->call(this, simtime, iter / monitor.monitor->period - 1,
+                          NOUT / monitor.monitor->period)) {
           throw BoutException(_("Monitor signalled to quit"));
+        }
+        Options monitor_dump;
+        monitor.monitor->outputVars(monitor_dump, monitor.time_dimension);
+        model->writeOutputFile(monitor_dump, monitor.time_dimension);
       }
     }
     model->finishOutputTimestep();
   } catch (const BoutException&) {
-    for (const auto& it : monitors) {
-      it->cleanup();
+    for (const auto& monitor : monitors) {
+      monitor.monitor->cleanup();
     }
     output_error.write(_("Monitor signalled to quit\n"));
     throw;
@@ -836,8 +844,8 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
                                     BoutComm::get());
 
   if (iter == NOUT || abort) {
-    for (const auto& it : monitors) {
-      it->cleanup();
+    for (const auto& monitor : monitors) {
+      monitor.monitor->cleanup();
     }
   }
 

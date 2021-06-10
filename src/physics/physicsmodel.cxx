@@ -212,7 +212,13 @@ void PhysicsModel::writeOutputFile() {
 
 void PhysicsModel::writeOutputFile(const Options& options) {
   if (output_enabled) {
-    output_file.write(options);
+    output_file.write(options, "t");
+  }
+}
+
+void PhysicsModel::writeOutputFile(const Options& options, const std::string& time_dimension) {
+  if (output_enabled) {
+    output_file.write(options, time_dimension);
   }
 }
 
