@@ -9,14 +9,6 @@
 #include "initialprofiles.hxx"
 #include "bout/physicsmodel.hxx"
 
-#include <algorithm>
-#include <vector>
-
-void create_and_dump(Field3D& field, const char* name) {
-  initial_profile(name, field);
-  bout::globals::dump.add(field, name, false);
-}
-
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
