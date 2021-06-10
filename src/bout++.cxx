@@ -907,24 +907,6 @@ char get_spin() {
  * Functions for writing run information
  **************************************************************************/
 
-/*!
- * Adds variables to the output file, for post-processing
- */
-void RunMetrics::outputVars(Datafile& file) {
-  file.add(t_elapsed, "wall_time", true);
-  file.add(wtime, "wtime", true);
-  file.add(ncalls, "ncalls", true);
-  file.add(ncalls_e, "ncalls_e", true);
-  file.add(ncalls_i, "ncalls_i", true);
-  file.add(wtime_rhs, "wtime_rhs", true);
-  file.add(wtime_invert, "wtime_invert", true);
-  file.add(wtime_comms, "wtime_comms", true);
-  file.add(wtime_io, "wtime_io", true);
-  file.add(wtime_per_rhs, "wtime_per_rhs", true);
-  file.add(wtime_per_rhs_e, "wtime_per_rhs_e", true);
-  file.add(wtime_per_rhs_i, "wtime_per_rhs_i", true);
-}
-
 void RunMetrics::outputVars(Options& output_options) {
   output_options["wall_time"].assignRepeat(t_elapsed, "t", true, "Output");
   output_options["wtime"].assignRepeat(wtime, "t", true, "Output");

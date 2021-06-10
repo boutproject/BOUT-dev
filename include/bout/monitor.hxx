@@ -7,7 +7,6 @@
 
 #include <cmath>
 
-class Datafile;
 class Options;
 class Solver;
 
@@ -113,7 +112,6 @@ struct RunMetrics {
   /*!
    * Adds variables to the output file, for post-processing
    */
-  void outputVars(Datafile &file);
   void outputVars(Options& output_options);
 
   /*!
