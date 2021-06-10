@@ -3264,66 +3264,6 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
   return yglo / static_cast<BoutReal>(nycore);
 }
 
-void BoutMesh::outputVars(Datafile &file) {
-  file.add(zperiod, "zperiod", false);
-  file.add(MXSUB, "MXSUB", false);
-  file.add(MYSUB, "MYSUB", false);
-  file.add(MZSUB, "MZSUB", false);
-  file.add(PE_XIND, "PE_XIND", false);
-  file.add(PE_YIND, "PE_YIND", false);
-  file.add(MYPE, "MYPE", false);
-  file.add(MXG, "MXG", false);
-  file.add(MYG, "MYG", false);
-  file.add(MZG, "MZG", false);
-  file.add(nx, "nx", false);
-  file.add(ny, "ny", false);
-  file.add(nz, "nz", false);
-  file.add(MZ, "MZ", false);
-  file.add(NXPE, "NXPE", false);
-  file.add(NYPE, "NYPE", false);
-  file.add(NZPE, "NZPE", false);
-  file.add(ZMAX, "ZMAX", false);
-  file.add(ZMIN, "ZMIN", false);
-  file.add(ixseps1, "ixseps1", false);
-  file.add(ixseps2, "ixseps2", false);
-  file.add(jyseps1_1, "jyseps1_1", false);
-  file.add(jyseps1_2, "jyseps1_2", false);
-  file.add(jyseps2_1, "jyseps2_1", false);
-  file.add(jyseps2_2, "jyseps2_2", false);
-  file.add(ny_inner, "ny_inner", false);
-
-  getCoordinates()->outputVars(file);
-
-  // Try and save some provenance tracking info that new enough versions of
-  // hypnotoad provide in the grid file.
-  // Note with current Datafile/DataFormat implementation, must not write an
-  // empty string because it ends up as a null char* pointer, which causes a
-  // segfault.
-  if (this->get(grid_id, "grid_id") == 0 and not grid_id.empty()) {
-    file.add(grid_id, "grid_id", false);
-  }
-  if (this->get(hypnotoad_version, "hypnotoad_version") == 0
-      and not hypnotoad_version.empty()) {
-
-    file.add(hypnotoad_version, "hypnotoad_version", false);
-  }
-  if (this->get(hypnotoad_git_hash, "hypnotoad_git_hash") == 0
-      and not hypnotoad_git_hash.empty()) {
-
-    file.add(hypnotoad_git_hash, "hypnotoad_git_hash", false);
-  }
-  if (this->get(hypnotoad_git_diff, "hypnotoad_git_diff") == 0
-      and not hypnotoad_git_diff.empty()) {
-
-    file.add(hypnotoad_git_diff, "hypnotoad_git_diff", false);
-  }
-  if (this->get(hypnotoad_geqdsk_filename, "hypnotoad_geqdsk_filename") == 0
-      and not hypnotoad_geqdsk_filename.empty()) {
-
-    file.add(hypnotoad_geqdsk_filename, "hypnotoad_geqdsk_filename", false);
-  }
-}
-
 void BoutMesh::outputVars(Options& output_options) {
   output_options["zperiod"].force(zperiod, "BoutMesh");
   output_options["MXSUB"].force(MXSUB, "BoutMesh");

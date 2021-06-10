@@ -74,12 +74,7 @@ public:
 
   ~Coordinates() = default;
 
-  /*!
-   * Adds variables to the output file, for post-processing
-   * 
-   * Must be a better way so that Coordinates doesn't depend on Datafile
-   */
-  void outputVars(Datafile& file);
+  /// Add variables to \p output_options, for post-processing
   void outputVars(Options& output_options);
   
   Field2D dx, dy; ///< Mesh spacing in x and y

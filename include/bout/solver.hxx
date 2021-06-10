@@ -317,10 +317,8 @@ public:
 
   /// Add evolving variables to output (dump) file or restart file
   ///
-  /// @param[inout] outputfile   The file to add variable to
+  /// @param[inout] outputfile  The `Options` to add variable to
   /// @param[in] save_repeat    If true, add variables with time dimension
-  virtual void outputVars(Datafile& outputfile, bool save_repeat = true);
-
   virtual void outputVars(Options& outputfile, bool save_repeat = true);
 
   /// Copy evolving variables out of \p options

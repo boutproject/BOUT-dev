@@ -63,7 +63,6 @@ int main(int argc, char** argv) {
   root["output"]["enabled"] = false;
   root["restart_files"]["enabled"] = false;
   root["datadir"] = "data";
-  root["dump_format"] = "nc";
 
   // Set the command-line arguments
   SlepcLib::setArgs(argc, argv);
@@ -78,9 +77,6 @@ int main(int argc, char** argv) {
 
   bout::globals::mesh = Mesh::create();
   bout::globals::mesh->load();
-
-  bout::globals::dump =
-      bout::experimental::setupDumpFile(Options::root(), *bout::globals::mesh, ".");
 
   constexpr BoutReal end = PI / 2.;
   constexpr int NOUT = 100;

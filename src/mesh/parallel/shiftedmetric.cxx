@@ -39,12 +39,6 @@ void ShiftedMetric::checkInputGrid() {
     //       correct
 }
 
-void ShiftedMetric::outputVars(Datafile& file) {
-  const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
-
-  file.addOnce(zShift, "zShift" + loc_string);
-}
-
 void ShiftedMetric::outputVars(Options& output_options) {
   const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
 

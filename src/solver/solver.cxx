@@ -634,50 +634,6 @@ int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
   return 0;
 }
 
-void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
-  /// Add basic variables to the file
-  outputfile.addOnce(simtime,  "tt");
-  outputfile.addOnce(iteration, "hist_hi");
-
-  // Add run information
-  outputfile.add(run_id, "run_id", save_repeat and save_repeat_run_id, "UUID for this simulation");
-  outputfile.add(run_restart_from, "run_restart_from", save_repeat_run_id,
-                 "run_id of the simulation this one was restarted from."
-                 "'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' means the run is not a restart, "
-                 "or the previous run did not have a run_id.");
-
-  // Add 2D and 3D evolving fields to output file
-  for(const auto& f : f2d) {
-    // Add to dump file (appending)
-    outputfile.add(*(f.var), f.name.c_str(), save_repeat, f.description);
-  }  
-  for(const auto& f : f3d) {
-    // Add to dump file (appending)
-    outputfile.add(*(f.var), f.name.c_str(), save_repeat, f.description);
-    
-    if(mms) {
-      // Add an error variable
-      outputfile.add(*(f.MMS_err), ("E_" + f.name).c_str(), save_repeat);
-    }
-  }
-
-  if (save_repeat) {
-    // Do not save if save_repeat=false so we avoid adding diagnostic variables to restart
-    // files, otherwise they might cause errors if the solver type is changed before
-    // restarting
-
-    // Add solver diagnostics to output file
-    for (const auto &d : diagnostic_int) {
-      // Add to dump file (appending)
-      outputfile.add(*(d.var), d.name.c_str(), save_repeat, d.description);
-    }
-    for (const auto &d : diagnostic_BoutReal) {
-      // Add to dump file (appending)
-      outputfile.add(*(d.var), d.name.c_str(), save_repeat, d.description);
-    }
-  }
-}
-
 void Solver::outputVars(Options& output_options, bool save_repeat) {
   output_options["tt"].force(simtime, "Solver");
   output_options["hist_hi"].force(iteration, "Solver");

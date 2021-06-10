@@ -702,37 +702,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   setParallelTransform(options);
 }
 
-void Coordinates::outputVars(Datafile& file) {
-  const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
-
-  file.addOnce(dx, "dx" + loc_string);
-  file.addOnce(dy, "dy" + loc_string);
-  file.addOnce(dz, "dz" + loc_string);
-
-  file.addOnce(g11, "g11" + loc_string);
-  file.addOnce(g22, "g22" + loc_string);
-  file.addOnce(g33, "g33" + loc_string);
-  file.addOnce(g12, "g12" + loc_string);
-  file.addOnce(g13, "g13" + loc_string);
-  file.addOnce(g23, "g23" + loc_string);
-
-  file.addOnce(g_11, "g_11" + loc_string);
-  file.addOnce(g_22, "g_22" + loc_string);
-  file.addOnce(g_33, "g_33" + loc_string);
-  file.addOnce(g_12, "g_12" + loc_string);
-  file.addOnce(g_13, "g_13" + loc_string);
-  file.addOnce(g_23, "g_23" + loc_string);
-
-  file.addOnce(J, "J" + loc_string);
-  file.addOnce(Bxy, "Bxy" + loc_string);
-
-  file.addOnce(G1, "G1" + loc_string);
-  file.addOnce(G2, "G2" + loc_string);
-  file.addOnce(G3, "G3" + loc_string);
-
-  getParallelTransform().outputVars(file);
-}
-
 void Coordinates::outputVars(Options& output_options) {
   const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
 
