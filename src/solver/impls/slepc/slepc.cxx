@@ -703,10 +703,6 @@ void SlepcSolver::analyseResults() {
   MatCreateVecs(shellMat, &vecReal, &vecImag);
 #endif
 
-  // This allows us to set the simtime in bout++.cxx directly
-  // rather than calling the monitors which are noisy |--> Not very nice way to do this
-  extern BoutReal simtime;
-
   for (PetscInt iEig = 0; iEig < nEigFound; iEig++) {
     // Get slepc eigenvalue
     PetscScalar reEig, imEig;
@@ -732,25 +728,19 @@ void SlepcSolver::analyseResults() {
     // Write real part of eigen data
     // First dump real part to fields
     vecToFields(vecReal);
-    // Set the simtime to omega
-    simtime = reEigBout;
 
     // Run the rhs in order to calculate aux fields
     run_rhs(0.0);
 
-    // Write to file
-    bout::globals::dump.write();
-    iteration++;
+    // Silence the default monitor
+    WithQuietOutput progress{output_progress};
+    // Call monitors so fields get written
+    call_monitors(reEigBout, iteration++, nout);
 
     // Now write imaginary part of eigen data
     // First dump imag part to fields
     vecToFields(vecImag);
-    // Set the simtime to gamma
-    simtime = imEigBout;
-
-    // Write to file
-    bout::globals::dump.write();
-    iteration++;
+    call_monitors(imEigBout, iteration++, nout);
   }
 
   // Destroy vectors
