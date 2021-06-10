@@ -748,9 +748,14 @@ target_compile_definitions(bout++
 ##################################################
 # Tests
 
-option(PACKAGE_TESTS "Build the tests" ON)
+# Are we building BOUT++ directly, or as part of another project
+string(COMPARE EQUAL
+  "${PROJECT_NAME}" "${CMAKE_PROJECT_NAME}"
+  PROJECT_IS_TOP_LEVEL
+)
+option(BOUT_TESTS "Build the tests" ${PROJECT_IS_TOP_LEVEL})
 option(BOUT_RUN_ALL_TESTS "Run all of the tests (this can be slow!)" OFF)
-if(PACKAGE_TESTS)
+if(BOUT_TESTS)
   enable_testing()
 
   # Targets for just building the tests

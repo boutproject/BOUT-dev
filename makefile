@@ -51,20 +51,31 @@ check-integrated-tests-all: libfast
 		OMPI_MCA_rmaps_base_oversubscribe=yes ./test_suite --all
 
 
-check: check-unit-tests check-integrated-tests check-mms-tests
-check-all: check-unit-tests check-integrated-tests-all check-mms-tests-all
+check: build-check
+	+@cd tests; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} \
+		OMPI_MCA_rmaps_base_oversubscribe=yes ./test_suite
+check-all: build-check-all
+	+@cd tests; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} \
+		OMPI_MCA_rmaps_base_oversubscribe=yes ./test_suite --all
 
 build-check-unit-tests: libfast
 	@$(MAKE) --no-print-directory -C tests/unit
 
 build-check-mms-tests: libfast
 	$(MAKE) --no-print-directory -C tests/MMS
+build-check-mms-tests-all: libfast
+	$(MAKE) --no-print-directory -C tests/MMS all-all
 
 build-check-integrated-tests: libfast
 	$(MAKE) --no-print-directory -C tests/integrated
+build-check-integrated-tests-all: libfast
+	$(MAKE) --no-print-directory -C tests/integrated all-all
 
 
 build-check: build-check-integrated-tests build-check-mms-tests build-check-unit-tests
+build-check-all: build-check-integrated-tests-all build-check-mms-tests-all build-check-unit-tests
 
 # Build the .mo files needed for Natural Language Support (gettext)
 .PHONY: locale
