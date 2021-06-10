@@ -355,6 +355,19 @@ public:
     is_section = true; // Invalidates any existing setting
     assign(val, source);
   }
+
+  /// Assign a value that is expected to vary in time.
+  ///
+  /// Overwrites any existing setting, and ensures the "time_dimension"
+  /// attribute is set. If \p save_repeat is false, doesn't set
+  /// "time_dimension". This can be useful in some generic functions
+  template<typename T>
+  void assignRepeat(T val, std::string time_dimension="t", bool save_repeat=true, std::string source="") {
+    force(val, std::move(source));
+    if (save_repeat) {
+      attributes["time_dimension"] = std::move(time_dimension);
+    }
+  }
   
   /// Test if a key is set by the user.
   /// Values set via default values are ignored.

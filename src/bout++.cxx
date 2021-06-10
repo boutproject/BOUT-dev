@@ -926,30 +926,18 @@ void RunMetrics::outputVars(Datafile& file) {
 }
 
 void RunMetrics::outputVars(Options& output_options) {
-  output_options["wall_time"].force(t_elapsed, "Output");
-  output_options["wall_time"].attributes["time_dimension"] = "t";
-  output_options["wtime"].force(wtime, "Output");
-  output_options["wtime"].attributes["time_dimension"] = "t";
-  output_options["ncalls"].force(ncalls, "Output");
-  output_options["ncalls"].attributes["time_dimension"] = "t";
-  output_options["ncalls_e"].force(ncalls_e, "Output");
-  output_options["ncalls_e"].attributes["time_dimension"] = "t";
-  output_options["ncalls_i"].force(ncalls_i, "Output");
-  output_options["ncalls_i"].attributes["time_dimension"] = "t";
-  output_options["wtime_rhs"].force(wtime_rhs, "Output");
-  output_options["wtime_rhs"].attributes["time_dimension"] = "t";
-  output_options["wtime_invert"].force(wtime_invert, "Output");
-  output_options["wtime_invert"].attributes["time_dimension"] = "t";
-  output_options["wtime_comms"].force(wtime_comms, "Output");
-  output_options["wtime_comms"].attributes["time_dimension"] = "t";
-  output_options["wtime_io"].force(wtime_io, "Output");
-  output_options["wtime_io"].attributes["time_dimension"] = "t";
-  output_options["wtime_per_rhs"].force(wtime_per_rhs, "Output");
-  output_options["wtime_per_rhs"].attributes["time_dimension"] = "t";
-  output_options["wtime_per_rhs_e"].force(wtime_per_rhs_e, "Output");
-  output_options["wtime_per_rhs_e"].attributes["time_dimension"] = "t";
-  output_options["wtime_per_rhs_i"].force(wtime_per_rhs_i, "Output");
-  output_options["wtime_per_rhs_i"].attributes["time_dimension"] = "t";
+  output_options["wall_time"].assignRepeat(t_elapsed, "t", true, "Output");
+  output_options["wtime"].assignRepeat(wtime, "t", true, "Output");
+  output_options["ncalls"].assignRepeat(ncalls, "t", true, "Output");
+  output_options["ncalls_e"].assignRepeat(ncalls_e, "t", true, "Output");
+  output_options["ncalls_i"].assignRepeat(ncalls_i, "t", true, "Output");
+  output_options["wtime_rhs"].assignRepeat(wtime_rhs, "t", true, "Output");
+  output_options["wtime_invert"].assignRepeat(wtime_invert, "t", true, "Output");
+  output_options["wtime_comms"].assignRepeat(wtime_comms, "t", true, "Output");
+  output_options["wtime_io"].assignRepeat(wtime_io, "t", true, "Output");
+  output_options["wtime_per_rhs"].assignRepeat(wtime_per_rhs, "t", true, "Output");
+  output_options["wtime_per_rhs_e"].assignRepeat(wtime_per_rhs_e, "t", true, "Output");
+  output_options["wtime_per_rhs_i"].assignRepeat(wtime_per_rhs_i, "t", true, "Output");
 }
 
 void RunMetrics::calculateDerivedMetrics() {

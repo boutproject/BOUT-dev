@@ -548,6 +548,21 @@ TEST_F(OptionsTest, WithDefaultStringCaseSensitive) {
   EXPECT_NE(value, "hello");
 }
 
+TEST_F(OptionsTest, AssignRepeat) {
+  Options options;
+
+  options["int"].assignRepeat(67);
+  ASSERT_TRUE(options["int"].hasAttribute("time_dimension"));
+  EXPECT_EQ(options["int"].attributes["time_dimension"].as<std::string>(), "t");
+
+  options["double"].assignRepeat(76.0, "t2");
+  ASSERT_TRUE(options["double"].hasAttribute("time_dimension"));
+  EXPECT_EQ(options["double"].attributes["time_dimension"].as<std::string>(), "t2");
+
+  options["string"].assignRepeat("67", "t3", false);
+  ASSERT_FALSE(options["string"].hasAttribute("time_dimension"));
+}
+
 TEST_F(OptionsTest, OptionsMacroPointer) {
   Options options;
 

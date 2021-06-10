@@ -231,14 +231,9 @@ int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
 
   // Main output file variables
   // t_array for backwards compatibility? needed?
-  model->output_options["t_array"].force(simtime);
-  model->output_options["t_array"].attributes["time_dimension"] = "t";
-
-  model->output_options["t"].force(simtime);
-  model->output_options["t"].attributes["time_dimension"] = "t";
-
-  model->output_options["iteration"].force(iteration);
-  model->output_options["iteration"].attributes["time_dimension"] = "t";
+  model->output_options["t_array"].assignRepeat(simtime);
+  model->output_options["t"].assignRepeat(simtime);
+  model->output_options["iteration"].assignRepeat(iteration);
 
   solver->outputVars(model->output_options, true);
   model->outputVars(model->output_options);

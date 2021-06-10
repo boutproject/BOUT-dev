@@ -638,41 +638,29 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
   output_options["tt"].force(simtime, "Solver");
   output_options["hist_hi"].force(iteration, "Solver");
 
-  output_options["run_id"].doc("UUID for this simulation").force(run_id, "Solver");
+  output_options["run_id"]
+      .doc("UUID for this simulation")
+      .assignRepeat(run_id, "t", save_repeat and save_repeat_run_id, "Solver");
   output_options["run_restart_from"]
       .doc("run_id of the simulation this one was restarted from."
            "'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' means the run is not a restart, "
            "or the previous run did not have a run_id.")
-      .force(run_restart_from, "Solver");
-  if (save_repeat and save_repeat_run_id) {
-    output_options["run_id"].attributes["time_dimension"] = "t";
-    output_options["run_restart_from"].attributes["time_dimension"] = "t";
-  }
+      .assignRepeat(run_restart_from, "t", save_repeat and save_repeat_run_id, "Solver");
 
   // Add 2D and 3D evolving fields to output file
   for (const auto& f : f2d) {
     // Add to dump file (appending)
-    output_options[f.name].force(*(f.var), "Solver");
+    output_options[f.name].assignRepeat(*(f.var), "t", save_repeat, "Solver");
     output_options[f.name].attributes["description"] = f.description;
-    if (save_repeat) {
-      output_options[f.name].attributes["time_dimension"] = "t";
-    }
   }
   for (const auto& f : f3d) {
     // Add to dump file (appending)
-    output_options[f.name].force(*(f.var), "Solver");
+    output_options[f.name].assignRepeat(*(f.var), "t", save_repeat, "Solver");
     output_options[f.name].attributes["description"] = f.description;
-    if (save_repeat) {
-      output_options[f.name].attributes["time_dimension"] = "t";
-    }
-
     if (mms) {
       // Add an error variable
-      output_options["E_" + f.name].force(*(f.MMS_err), "Solver");
+      output_options["E_" + f.name].assignRepeat(*(f.MMS_err), "t", save_repeat, "Solver");
       output_options["E_" + f.name].attributes["description"] = f.description;
-      if (save_repeat) {
-        output_options["E_" + f.name].attributes["time_dimension"] = "t";
-      }
     }
   }
 
@@ -682,16 +670,12 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
     // restarting
 
     // Add solver diagnostics to output file
-    for (const auto &d : diagnostic_int) {
-      // Add to dump file (appending)
-      output_options[d.name].force(*(d.var), "Solver");
-      output_options[d.name].attributes["time_dimension"] = "t";
+    for (const auto& d : diagnostic_int) {
+      output_options[d.name].assignRepeat(*(d.var), "t", true, "Solver");
       output_options[d.name].attributes["description"] = d.description;
     }
-    for (const auto &d : diagnostic_BoutReal) {
-      // Add to dump file (appending)
-      output_options[d.name].force(*(d.var), "Solver");
-      output_options[d.name].attributes["time_dimension"] = "t";
+    for (const auto& d : diagnostic_BoutReal) {
+      output_options[d.name].assignRepeat(*(d.var), "t", true, "Solver");
       output_options[d.name].attributes["description"] = d.description;
     }
   }

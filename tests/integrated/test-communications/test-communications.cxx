@@ -83,8 +83,7 @@ int main(int argc, char** argv) {
   mesh->communicate(f);
 
   Options dump;
-  dump["f"] = f;
-  dump["f"].attributes["time_dimension"] = "t";
+  dump["f"].assignRepeat(f);
   bout::writeDefaultOutputFile(dump);
 
   bout::checkForUnusedOptions();

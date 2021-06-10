@@ -20,11 +20,8 @@ class TestRestartIO : public PhysicsModel {
   }
 
   void outputVars(Options& options) override {
-    options["fperp_lower"] = fperp_lower;
-    options["fperp_lower"].attributes["time_dimension"] = "t";
-    options["fperp_upper"] = fperp_upper;
-    options["fperp_upper"].attributes["time_dimension"] = "t";
-
+    options["fperp_lower"].assignRepeat(fperp_lower);
+    options["fperp_upper"].assignRepeat(fperp_upper);
     options["f3d_once"] = f3d;
     options["f2d_once"] = f2d;
     options["fperp_lower_once"] = fperp_lower;
