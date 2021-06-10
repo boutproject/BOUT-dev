@@ -613,62 +613,6 @@ void setRunFinishInfo(Options& options) {
   options["run"]["finished"].force(ctime(&end_time), "Output");
 }
 
-Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir) {
-  // Check if restarting
-  const bool append = options["append"]
-                        .doc("Add output data to existing (dump) files?")
-                        .withDefault(false);
-
-  // Get file extensions
-  constexpr auto default_dump_format = bout::build::has_netcdf ? "nc" : "h5";
-  const auto dump_ext = options["dump_format"]
-                            .doc("File extension for output files")
-                            .withDefault(default_dump_format);
-  output_progress << "Setting up output (dump) file\n";
-
-  auto dump_file = Datafile(&(options["output"]), &mesh);
-
-  if (append) {
-    dump_file.opena("{}/BOUT.dmp.{}", data_dir, dump_ext);
-  } else {
-    dump_file.openw("{}/BOUT.dmp.{}", data_dir, dump_ext);
-  }
-
-  // Add book-keeping variables to the output files
-  dump_file.add(const_cast<BoutReal&>(bout::version::as_double), "BOUT_VERSION", false);
-  // Appends the time of dumps into an array
-  dump_file.add(simtime, "t_array", true);
-  dump_file.add(iteration, "iteration", false);
-
-  // Save mesh configuration into output file
-  mesh.outputVars(dump_file);
-
-  // Add compile-time options
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_fftw), "has_fftw");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_gettext), "has_gettext");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_lapack), "has_lapack");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_netcdf), "has_netcdf");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_legacy_netcdf),
-                    "has_legacy_netcdf");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_petsc), "has_petsc");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_pretty_function),
-                    "has_pretty_function");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_pvode), "has_pvode");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_scorep), "has_scorep");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_slepc), "has_slepc");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_sundials), "has_sundials");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_backtrace), "use_backtrace");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_color), "use_color");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_openmp), "use_openmp");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_output_debug), "use_output_debug");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_sigfpe), "use_sigfpe");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_signal), "use_signal");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_track), "use_track");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_msgstack), "use_msgstack");
-
-  return dump_file;
-}
-
 void addBuildFlagsToOptions(Options& options) {
   output_progress << "Setting up output (experimental output) file\n";
 
@@ -730,9 +674,6 @@ int BoutFinalise(bool write_settings) {
 
   // Delete the mesh
   delete bout::globals::mesh;
-
-  // Close the output file
-  bout::globals::dump.close();
 
   // Make sure all processes have finished writing before exit
   bout::globals::mpi->MPI_Barrier(BoutComm::get());

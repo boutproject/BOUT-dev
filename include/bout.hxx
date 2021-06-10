@@ -164,10 +164,6 @@ void setRunFinishInfo(Options& options);
 void writeSettingsFile(Options& options, const std::string& data_dir,
                        const std::string& settings_file);
 
-/// Setup the output dump files from \p options using the \p
-/// mesh. Files are created in the \p data_dir directory
-Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir);
-
 /// Add the configure-time build options to \p options
 void addBuildFlagsToOptions(Options& options);
 } // namespace experimental
