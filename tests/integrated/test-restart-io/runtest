@@ -143,7 +143,9 @@ for nproc in [1, 2, 4]:
         for result_timeslice in result:
             if not numpy.all(testvar == result_timeslice):
                 success = False
-                print(f"{name} evolving version is different: {numpy.max(numpy.abs(testvar - result_timeslice))}")
+                print(
+                    f"{name} evolving version is different: {numpy.max(numpy.abs(testvar - result_timeslice))}"
+                )
             if name == "fperp_lower" or name == "fperp_upper":
                 yindex_result = result.attributes["yindex_global"]
                 yindex_test = testvar.attributes["yindex_global"]
