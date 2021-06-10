@@ -697,6 +697,7 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
   for (const auto& f : f2d) {
     // Add to dump file (appending)
     output_options[f.name].force(*(f.var), "Solver");
+    output_options[f.name].attributes["description"] = f.description;
     if (save_repeat) {
       output_options[f.name].attributes["time_dimension"] = "t";
     }
@@ -704,6 +705,7 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
   for (const auto& f : f3d) {
     // Add to dump file (appending)
     output_options[f.name].force(*(f.var), "Solver");
+    output_options[f.name].attributes["description"] = f.description;
     if (save_repeat) {
       output_options[f.name].attributes["time_dimension"] = "t";
     }
@@ -711,9 +713,30 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
     if (mms) {
       // Add an error variable
       output_options["E_" + f.name].force(*(f.MMS_err), "Solver");
+      output_options["E_" + f.name].attributes["description"] = f.description;
       if (save_repeat) {
         output_options["E_" + f.name].attributes["time_dimension"] = "t";
       }
+    }
+  }
+
+  if (save_repeat) {
+    // Do not save if save_repeat=false so we avoid adding diagnostic variables to restart
+    // files, otherwise they might cause errors if the solver type is changed before
+    // restarting
+
+    // Add solver diagnostics to output file
+    for (const auto &d : diagnostic_int) {
+      // Add to dump file (appending)
+      output_options[d.name].force(*(d.var), "Solver");
+      output_options[d.name].attributes["time_dimension"] = "t";
+      output_options[d.name].attributes["description"] = d.description;
+    }
+    for (const auto &d : diagnostic_BoutReal) {
+      // Add to dump file (appending)
+      output_options[d.name].force(*(d.var), "Solver");
+      output_options[d.name].attributes["time_dimension"] = "t";
+      output_options[d.name].attributes["description"] = d.description;
     }
   }
 }
