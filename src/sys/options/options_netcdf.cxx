@@ -417,7 +417,7 @@ void NcPutAttVisitor::operator()(const std::string& value) {
   var.putAtt(name, value);
 }
 
-void writeGroup(const Options& options, NcGroup group) {
+void writeGroup(const Options& options, NcGroup group, const std::string& time_dimension) {
 
   for (const auto& childpair : options.getChildren()) {
     const auto& name = childpair.first;
@@ -444,6 +444,13 @@ void writeGroup(const Options& options, NcGroup group) {
           // Has a time dimension
 
           const auto& time_name = bout::utils::get<std::string>(time_it->second);
+
+          // Only write time-varying values that match current time
+          // dimension being written
+          if (time_name != time_dimension) {
+            continue;
+          }
+
           time_dim = group.getDim(time_name, NcGroup::ParentsAndCurrent);
           if (time_dim.isNull()) {
             time_dim = group.addDim(time_name);
@@ -564,7 +571,7 @@ void writeGroup(const Options& options, NcGroup group) {
         subgroup = group.addGroup(name);
       }
 
-      writeGroup(child, subgroup);
+      writeGroup(child, subgroup, time_dimension);
     }
   }
 }
@@ -661,7 +668,7 @@ void OptionsNetCDF::verifyTimesteps() const {
 }
 
 /// Write options to file
-void OptionsNetCDF::write(const Options& options) {
+void OptionsNetCDF::write(const Options& options, const std::string& time_dim) {
   Timer timer("io");
 
   // Check the file mode to use
@@ -680,7 +687,7 @@ void OptionsNetCDF::write(const Options& options) {
     throw BoutException("Could not open NetCDF file '{:s}' for writing", filename);
   }
 
-  writeGroup(options, dataFile);
+  writeGroup(options, dataFile, time_dim);
 
   // Not a terribly pleasant hack: the first time we call this
   // function we might want to overwrite the existing file, but the

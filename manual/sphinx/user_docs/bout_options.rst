@@ -893,14 +893,11 @@ automatically set the ``"time_dimension"`` attribute::
   // Append data to file
   OptionsNetCDF("time.nc", OptionsNetCDF::FileMode::append).write(data);
 
-Some issues:
-
-* Currently all variables in the Options tree are written when passed
-  to ``OptionsNetCDF::write``. This means that the variables with
-  different time dimensions should be stored in different Options
-  trees, so they can be written at different times. One possibility is
-  to have an optional argument to write, so that only variables with
-  one specified time dimension are updated.
+.. note:: By default, `OptionsNetCDF::write` will only write variables
+          with a ``"time_dimension"`` of ``"t"``. You can write
+          variables with a different time dimension by passing it as
+          the second argument:
+          ``OptionsNetCDF(filename).write(options, "t2")`` for example.
 
 
 FFT

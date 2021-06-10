@@ -263,4 +263,38 @@ TEST_F(OptionsNetCDFTest, VerifyTimesteps) {
   EXPECT_THROW(OptionsNetCDF(filename).verifyTimesteps(), BoutException);
 }
 
+TEST_F(OptionsNetCDFTest, WriteTimeDimension) {
+  {
+    Options options;
+    options["thing1"].assignRepeat(1.0);       // default time dim
+    options["thing2"].assignRepeat(2.0, "t2"); // non-default
+
+    // Only write non-default time dim
+    OptionsNetCDF(filename).write(options, "t2");
+  }
+
+  Options data = OptionsNetCDF(filename).read();
+
+  EXPECT_FALSE(data.isSet("thing1"));
+  EXPECT_TRUE(data.isSet("thing2"));
+}
+
+TEST_F(OptionsNetCDFTest, WriteMultipleTimeDimensions) {
+  {
+    Options options;
+    options["thing1_t1"].assignRepeat(1.0); // default time dim
+    options["thing2_t1"].assignRepeat(1.0); // default time dim
+
+    options["thing3_t2"].assignRepeat(2.0, "t2"); // non-default
+    options["thing4_t2"].assignRepeat(2.0, "t2"); // non-default
+
+    // Write the non-default time dim twice
+    OptionsNetCDF(filename).write(options, "t2");
+    OptionsNetCDF(filename).write(options, "t2");
+    OptionsNetCDF(filename).write(options, "t");
+  }
+
+  EXPECT_NO_THROW(OptionsNetCDF(filename).verifyTimesteps());
+}
+
 #endif // BOUT_HAS_NETCDF

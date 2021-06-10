@@ -68,7 +68,8 @@ public:
   Options read();
 
   /// Write options to file
-  void write(const Options &options);
+  void write(const Options& options) { write(options, "t"); }
+  void write(const Options& options, const std::string& time_dim);
 
   /// Check that all variables with the same time dimension have the
   /// same size in that dimension. Throws BoutException if there are
