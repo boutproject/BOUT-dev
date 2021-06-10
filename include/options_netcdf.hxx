@@ -94,9 +94,11 @@ std::string getRestartFilename(Options& options, int rank);
 std::string getOutputFilename(Options& options);
 /// Name of the main output file on \p rank
 std::string getOutputFilename(Options& options, int rank);
-/// Write `Options::root()` to the main output file
+/// Write `Options::root()` to the main output file, overwriting any
+/// existing files
 void writeDefaultOutputFile();
-/// Write \p options to the main output file
+/// Write \p options to the main output file, overwriting any existing
+/// files
 void writeDefaultOutputFile(Options& options);
 } // namespace bout
 
