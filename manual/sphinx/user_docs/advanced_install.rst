@@ -72,12 +72,17 @@ source directory:
 .. code-block:: bash
 
     bin/bout-build-deps.sh
+    # or without any checks:
+    CHECK=no bin/bout-build-deps.sh
 
 Infos about options and further info can be obtained by running:
 
 .. code-block:: bash
 
     bin/bout-build-deps.sh --help
+
+If the script fails, it might be fixed by removing the folders that
+are used for compiling and installing, and start again.
 
 .. _sec-machine-specific:
 
