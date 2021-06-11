@@ -344,7 +344,13 @@ This warning is only important for BOUT++ developers and can otherwise be \
 safely ignored.")
 endif()
 
-add_subdirectory(tools/pylib/_boutcore_build)
+set(BOUT_ENABLE_PYTHON MAYBE CACHE STRING "Build the Python interface")
+if (BOUT_ENABLE_PYTHON OR BOUT_ENABLE_PYTHON STREQUAL "MAYBE")
+  add_subdirectory(tools/pylib/_boutcore_build)
+else()
+  set(BOUT_ENABLE_PYTHON OFF)
+endif()
+set(BOUT_USE_PYTHON ${BOUT_ENABLE_PYTHON})
 
 add_library(bout++
   ${BOUT_SOURCES}
