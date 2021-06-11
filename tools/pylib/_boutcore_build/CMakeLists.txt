@@ -1,4 +1,4 @@
-option(BOUT_PYTHON "Build the Python interface" MAYBE)
+set(BOUT_ENABLE_PYTHON MAYBE CACHE STRING "Build the Python interface")
 
 if (BOUT_PYTHON)
   find_package(Numpy)
