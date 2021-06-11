@@ -905,6 +905,7 @@ message("
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
    Backtrace enabled        : ${BOUT_USE_BACKTRACE}
+   Python API support       : ${BOUT_USE_PYTHON}
 
    === Python ===
 
