@@ -175,10 +175,10 @@ envmodule() {
             # All good
             found=$MODDIR
         elif test -e $MODDIR ; then
+            error $MODDIR exists but is not a writeable dir - please set \$MODDIR to something else
+        else
             found=$MODDIR
             msg=" create the folder and"
-        else
-            error $MODDIR is not a writeable dir
         fi
         echo -n "Do you want to$msg add $MODDIR to \$MODULEPATH to your .bashrc? [Y/n]"
         read ans
@@ -201,6 +201,7 @@ EOF
         of="$of~$i"
         ext="$ext~$i"
     fi
+    test -e $MODDIR/bout-dep || mkdir $MODDIR/bout-dep
     echo "#%Module 1.0
 #
 #  BOUT++ dependency module for use with 'environment-modules' package
@@ -221,12 +222,14 @@ unsetenv      PETSC_DIR
 unsetenv      PETSC_ARCH
 """ > $of
     test $of0 && diff $of0 $of -q && rm $of && of=$dup && ext=$ext0
-    test $reload && echo && echo "Re-login in or source ~/.bashrc again" && echo
+    test $reload && msg="
+Re-login in or source ~/.bashrc
+" || msg=
     cat <<EOF
 ####################################################################
 ###                  Summary and Info follows!                   ###
 ####################################################################
-
+$msg
 Activate the dependency module by runing
 
   module load $ext
