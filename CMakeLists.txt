@@ -16,6 +16,13 @@ project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
   VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
+set(ENABLE_OPENMP On CACHE STRING "Enable OpenMP")
+set(ENABLE_CUDA Off CACHE STRING "Enable CUDA")
+option(ENABLE_UMPIRE "Enable UMPIRE memory management" Off)
+option(ENABLE_RAJA "Enable RAJA" Off)
+option(ENABLE_CALIPER "Enable Caliper" Off)
+
+include_directories(${CMAKE_BINARY_DIR}/include)
 
 # This might not be entirely sensible, but helps CMake to find the
 # correct MPI, workaround for https://gitlab.kitware.com/cmake/cmake/issues/18895
@@ -28,6 +35,7 @@ include(CMakeDependentOption)
 option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+include(cmake/SetupCompilers.cmake)
 include(BOUT++functions)
 
 option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" ON)
@@ -362,6 +370,9 @@ set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BI
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
+# Optional dependencies
+include(cmake/SetupBOUTThirdParty.cmake)
+
 # Various sanitizers, including coverage and address sanitizer
 include(cmake/Sanitizers.cmake)
 enable_sanitizers(bout++)
@@ -394,52 +405,10 @@ configure_file(
 
 ##################################################
 
-cmake_dependent_option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF
-  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/mpark.variant/CMakeLists.txt" ON)
+option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" OFF)
+option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF)
+option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF)
 
-if(BOUT_USE_SYSTEM_MPARK_VARIANT)
-  message(STATUS "Using external mpark.variant")
-  find_package(mpark_variant REQUIRED)
-  get_target_property(MPARK_VARIANT_INCLUDE_PATH mpark_variant INTERFACE_INCLUDE_DIRECTORIES)
-else()
-  message(STATUS "Using mpark.variant submodule")
-  bout_update_submodules()
-  add_subdirectory(externalpackages/mpark.variant)
-  if(NOT TARGET mpark_variant)
-    message(FATAL_ERROR "mpark_variant not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
-  endif()
-  set(MPARK_VARIANT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externalpackages/mpark.variant/include")
-  set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${MPARK_VARIANT_INCLUDE_PATH}")
-endif()
-target_link_libraries(bout++ PUBLIC mpark_variant)
-
-cmake_dependent_option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF
-  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/fmt/CMakeLists.txt" ON)
-
-if(BOUT_USE_SYSTEM_FMT)
-  message(STATUS "Using external fmt")
-  find_package(fmt 6 REQUIRED)
-  get_target_property(FMT_INCLUDE_PATH fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
-else()
-  message(STATUS "Using fmt submodule")
-  bout_update_submodules()
-  # Need to install fmt alongside BOUT++
-  set(FMT_INSTALL ON CACHE BOOL "")
-  set(FMT_DEBUG_POSTFIX "" CACHE STRING "")
-  add_subdirectory(externalpackages/fmt)
-  if(NOT TARGET fmt::fmt)
-    message(FATAL_ERROR "fmt not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
-  endif()
-  # Build the library in <build dir>/lib: this makes updating the path
-  # for bout-config much easier
-  set_target_properties(fmt PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
-  set(FMT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externalpackages/fmt/include")
-  set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${FMT_INCLUDE_PATH}")
-  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -lfmt")
-endif()
-target_link_libraries(bout++ PUBLIC fmt::fmt)
 
 option(BOUT_ENABLE_WARNINGS "Enable compiler warnings" ON)
 if (BOUT_ENABLE_WARNINGS)
@@ -530,20 +499,6 @@ set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
 
 # Optional dependencies
 
-option(BOUT_USE_PVODE "Enable support for bundled PVODE" ON)
-if (BOUT_USE_PVODE)
-  add_subdirectory(externalpackages/PVODE)
-  target_link_libraries(bout++ PUBLIC pvode pvpre)
-  # Build the libraries in <build dir>/lib: this makes updating the
-  # path for bout-config much easier
-  set_target_properties(pvode pvpre PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
-  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -lpvode -lpvpre")
-endif()
-message(STATUS "PVODE support: ${BOUT_USE_PVODE}")
-set(BOUT_HAS_PVODE ${BOUT_USE_PVODE})
-
 option(BOUT_USE_NETCDF "Enable support for NetCDF output" ON)
 option(BOUT_DOWNLOAD_NETCDF_CXX4 "Download and build netCDF-cxx4" OFF)
 if (BOUT_USE_NETCDF)
@@ -612,41 +567,6 @@ if (BOUT_USE_SLEPC)
 endif()
 message(STATUS "SLEPc support: ${BOUT_USE_SLEPC}")
 set(BOUT_HAS_SLEPC ${BOUT_USE_SLEPC})
-
-option(BOUT_DOWNLOAD_SUNDIALS "Download and build SUNDIALS" OFF)
-# Force BOUT_USE_SUNDIALS if we're downloading it!
-cmake_dependent_option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF
-  "NOT BOUT_DOWNLOAD_SUNDIALS" ON)
-if (BOUT_USE_SUNDIALS)
-  if (BOUT_DOWNLOAD_SUNDIALS)
-    message(STATUS "Downloading and configuring SUNDIALS")
-    include(FetchContent)
-    FetchContent_Declare(
-      sundials
-      GIT_REPOSITORY https://github.com/ZedThree/sundials
-      GIT_TAG        "4f3bb8281c7b27343bcb95386ebbb665fb6196a5"
-      )
-    set(EXAMPLES_ENABLE_C OFF CACHE BOOL "" FORCE)
-    set(EXAMPLES_INSTALL OFF CACHE BOOL "" FORCE)
-    set(ENABLE_MPI ON CACHE BOOL "" FORCE)
-    set(ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
-    set(BUILD_STATIC_LIBS OFF CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(sundials)
-    message(STATUS "SUNDIALS done configuring")
-  else()
-    find_package(SUNDIALS REQUIRED)
-  endif()
-  target_link_libraries(bout++ PUBLIC SUNDIALS::nvecparallel)
-  target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
-  target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
-  target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
-  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${SUNDIALS_cvode_LIBRARY} ${SUNDIALS_ida_LIBRARY} ${SUNDIALS_arkode_LIBRARY} ${SUNDIALS_nvecparallel_LIBRARY}")
-endif()
-message(STATUS "SUNDIALS support: ${BOUT_USE_SUNDIALS}")
-set(BOUT_HAS_SUNDIALS ${BOUT_USE_SUNDIALS})
-set(BOUT_HAS_ARKODE ${BOUT_USE_SUNDIALS})
-set(BOUT_HAS_CVODE ${BOUT_USE_SUNDIALS})
-set(BOUT_HAS_IDA ${BOUT_USE_SUNDIALS})
 
 option(BOUT_USE_NLS "Enable Native Language Support" ON)
 if (BOUT_USE_NLS)
@@ -963,6 +883,9 @@ message("
    Floating point exceptions: ${BOUT_USE_SIGFPE}
    Backtrace enabled        : ${BOUT_USE_BACKTRACE}
    Sanitizers enabled       : ${BOUT_USE_SANITIZERS}
+   RAJA enabled             : ${BOUT_HAS_RAJA}
+   Umpire enabled           : ${BOUT_HAS_UMPIRE}
+   CUDA enabled             : ${BOUT_USE_CUDA}
 
    === Python ===
 
