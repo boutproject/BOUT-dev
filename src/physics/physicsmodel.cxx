@@ -38,7 +38,7 @@ PhysicsModel::PhysicsModel()
     : mesh(bout::globals::mesh), dump(bout::globals::dump), modelMonitor(this) {
 
   // Set up restart file
-  restart = Datafile(Options::getRoot()->getSection("restart"));
+  restart = Datafile(Options::getRoot()->getSection("restart_files"));
 }
 
 int PhysicsModel::runRHS(BoutReal time) {

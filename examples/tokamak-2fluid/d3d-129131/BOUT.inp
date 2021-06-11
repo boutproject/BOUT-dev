@@ -5,14 +5,14 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 200     # number of time-steps
-TIMESTEP = 1.0   # time between outputs
+nout = 200     # number of time-steps
+timestep = 1.0   # time between outputs
 
-TwistShift = true  # use twist-shift condition?
+twistshift = true  # use twist-shift condition?
 
 MZ = 64     # number of points in z direction (2^n)
 
-ZPERIOD = 20 # Fraction of a torus
+zperiod = 20 # Fraction of a torus
 
 MXG = 2
 MYG = 2
@@ -51,7 +51,7 @@ upwind = W3
 
 [laplace]
 all_terms = false
-laplace_nonuniform = true
+nonuniform = true
 filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 
 ##################################################
@@ -60,8 +60,8 @@ filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 mxstep = 50000
 
 ##################################################
@@ -115,7 +115,7 @@ apar_flags = 0 # flags for apar inversion
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # boundary conditions

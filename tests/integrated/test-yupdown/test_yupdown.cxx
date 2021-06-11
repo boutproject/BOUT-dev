@@ -51,6 +51,7 @@ int main(int argc, char** argv) {
   SAVE_ONCE3(ddy, ddy2, ddy_check);
   bout::globals::dump.write();
 
+  bout::checkForUnusedOptions();
   BoutFinalise();
 
   return 0;
