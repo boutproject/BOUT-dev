@@ -110,24 +110,6 @@ auto IsFieldEqual(const T& field, BoutReal reference,
   return ::testing::AssertionSuccess();
 }
 
-/// Disable a ConditionalOutput during a scope; reenable it on
-/// exit. You must give the variable a name!
-///
-///     {
-///       WithQuietoutput quiet{output};
-///       // output disabled during this scope
-///     }
-///     // output now enabled
-class WithQuietOutput {
-public:
-  explicit WithQuietOutput(ConditionalOutput& output_in) : output(output_in) {
-    output.disable();
-  }
-
-  ~WithQuietOutput() { output.enable(); }
-  ConditionalOutput& output;
-};
-
 class Options;
 
 /// FakeMesh has just enough information to create fields
@@ -282,16 +264,16 @@ public:
                               int UNUSED(tag)) override {
     return nullptr;
   }
-  const RangeIterator iterateBndryLowerY() const override {
+  RangeIterator iterateBndryLowerY() const override {
     return RangeIterator(xstart, xend);
   }
-  const RangeIterator iterateBndryUpperY() const override {
+  RangeIterator iterateBndryUpperY() const override {
     return RangeIterator(xstart, xend);
   }
-  const RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
   void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
   std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
   std::vector<BoundaryRegionPar*> getBoundariesPar() override {
@@ -364,6 +346,9 @@ public:
     addRegionPerp("RGN_BNDRY",
                   getRegionPerp("RGN_INNER_X") + getRegionPerp("RGN_OUTER_X"));
   }
+
+  // Make this public so we can test it
+  using Mesh::msg_len;
 
 private:
   std::vector<BoundaryRegion *> boundaries;
@@ -471,6 +456,8 @@ public:
     mesh_staggered = nullptr;
     delete bout::globals::mpi;
     bout::globals::mpi = nullptr;
+
+    Options::cleanup();
   }
 
   static constexpr int nx = 3;

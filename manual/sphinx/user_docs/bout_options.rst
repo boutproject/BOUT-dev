@@ -152,6 +152,73 @@ To escape multiple characters, ` (backquote) can be used:
 The character ``:`` cannot be part of an option or section name, and cannot be escaped,
 as it is always used to separate sections.
 
+Printing Options
+~~~~~~~~~~~~~~~~
+
+`Options` have an ``fmt::formatter`` which means they can be printed directly with
+`Output::write`, or converted to a ``std::string`` with ``fmt::format``::
+
+  // Print a value or section
+  output.write("{}", options["section"]);
+
+  // Convert to a string
+  std::string = fmt::format("{}", options["section"]);
+
+
+The format can be controlled through the following four format codes:
+
+* ``d``: includes the ``doc`` and/or ``type`` attribute, if they are present
+
+* ``i``: format the section name(s) inline, rather than as a ``[section]`` header
+
+* ``k``: only include the key, and not the value
+
+* ``s``: include the ``source`` attribute, if it's present
+
+Here are some examples of formatting the same `Options` object using different
+combinations of the format codes::
+
+  // Default format with no format codes
+  output.write("{}", options);
+
+  // Output is:
+
+  // [section1]
+  // value1 = 42
+  // value2 = hello
+  //
+  // [section2]
+  // value5 = 3
+  //
+  // [section2:subsection1]
+  // value3 = true
+  // value4 = 3.2
+
+  // Include the 'doc' and 'type' attributes
+  output.write("{:d}", options);
+
+  // [section1]
+  // value1 = 42
+  // value2 = hello		# doc: This says hello
+  //
+  // [section2]
+  // value5 = 3
+  //
+  // [section2:subsection1]
+  // value3 = true		# type: bool, doc: This is a bool
+  // value4 = 3.2
+
+  // Only keys, inline sections, and 'doc', 'type', and 'source' attributes.
+  // Note that order doesn't matter!
+  output.write("{:kids}", options);
+
+  // section1:value1
+  // section1:value2		# doc: This says hello
+  // section2:value5
+  // section2:subsection1:value3		# type: bool, doc: This is a bool, source: a test
+  // section2:subsection1:value4
+
+
 Command line options
 --------------------
 

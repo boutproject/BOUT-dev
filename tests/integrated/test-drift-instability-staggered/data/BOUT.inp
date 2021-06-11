@@ -10,11 +10,11 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 30       # number of time-steps
-TIMESTEP = 5000.0   # time between outputs
+nout = 30       # number of time-steps
+timestep = 5000.0   # time between outputs
 
 ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 33     # number of points in z direction (2^n + 1)
 ZMIN = 0.0
@@ -26,7 +26,7 @@ MYG = 2
 grid = "uedge.grd_std.cdl"
 
 [mesh]
-StaggerGrids = true
+staggergrids = true
 
 ##################################################
 # derivative methods
@@ -49,17 +49,26 @@ first = C4
 second = C2
 upwind = C2
 
-[laplace]
+[phisolver]
 include_yguards = true
 all_terms = false
+inner_boundary_flags = 0
+outer_boundary_flags = 0
+
+[aparsolver]
+include_yguards = true
+all_terms = false
+inner_boundary_flags = 0
+outer_boundary_flags = 0
+
 ##################################################
 # Solver settings
 
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-12 # absolute tolerance
-RTOL = 1e-07  # relative tolerance
+atol = 1e-12 # absolute tolerance
+rtol = 1e-07  # relative tolerance
 mxstep = 5000
 
 ##################################################
@@ -77,24 +86,13 @@ nu_perp = 1e-20
 
 ShearFactor = 0.0
 
-# field inversion flags: Add the following
-#  1 - Zero-gradient DC component on inner boundary
-#  2 - Zero-gradient AC component on inner boundary
-#  4 -      "        DC     "      " outer    "
-#  8 -      "        AC     "      " outer    "
-# 16 - Zero all DC components of the result
-# 32 - Don't use previous solution to start iterations
-#      (iterative methods only)
-phi_flags = 0  # inversion flags for phi
-apar_flags = 0 # flags for apar inversion
-
 ##################################################
 # settings for individual variables
 # The section "All" defines default settings for all variables
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 
 # boundary conditions
 # -------------------

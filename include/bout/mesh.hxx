@@ -76,6 +76,9 @@ class Mesh;
 #include <list>
 #include <memory>
 #include <map>
+#include <set>
+#include <string>
+
 
 class MeshFactory : public Factory<
   Mesh, MeshFactory,
@@ -515,14 +518,14 @@ class Mesh {
   // Boundary region iteration
 
   /// Iterate over the lower Y boundary
-  virtual const RangeIterator iterateBndryLowerY() const = 0;
+  virtual RangeIterator iterateBndryLowerY() const = 0;
 
   /// Iterate over the upper Y boundary
-  virtual const RangeIterator iterateBndryUpperY() const = 0;
-  virtual const RangeIterator iterateBndryLowerOuterY() const = 0;
-  virtual const RangeIterator iterateBndryLowerInnerY() const = 0;
-  virtual const RangeIterator iterateBndryUpperOuterY() const = 0;
-  virtual const RangeIterator iterateBndryUpperInnerY() const = 0;
+  virtual RangeIterator iterateBndryUpperY() const = 0;
+  virtual RangeIterator iterateBndryLowerOuterY() const = 0;
+  virtual RangeIterator iterateBndryLowerInnerY() const = 0;
+  virtual RangeIterator iterateBndryUpperOuterY() const = 0;
+  virtual RangeIterator iterateBndryUpperInnerY() const = 0;
   
   bool hasBndryLowerY(); ///< Is there a boundary on the lower guard cells in Y?
   bool hasBndryUpperY(); ///< Is there a boundary on the upper guard cells in Y?
@@ -531,6 +534,9 @@ class Mesh {
 
   /// Return a vector containing all the boundary regions on this processor
   virtual std::vector<BoundaryRegion*> getBoundaries() = 0;
+
+  /// Get the set of all possible boundaries in this configuration
+  virtual std::set<std::string> getPossibleBoundaries() const { return {}; }
 
   /// Add a boundary region to this processor
   virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
@@ -542,7 +548,7 @@ class Mesh {
   virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
   
   /// Branch-cut special handling (experimental)
-  virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}
+  virtual Field3D smoothSeparatrix(const Field3D &f) {return f;}
   
   virtual BoutReal GlobalX(int jx) const = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0; ///< Continuous Y index (0 -> 1)
@@ -628,10 +634,6 @@ class Mesh {
   
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend, zstart, zend;
-  
-  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
-  /// cell centred (default).
-  bool StaggerGrids{false};
   
   /// Include integrated shear (if shifting X)
   bool IncIntShear{false};
@@ -939,11 +941,6 @@ class Mesh {
   // REGION RELATED ROUTINES
   ///////////////////////////////////////////////////////////
 
-  // The maxregionblocksize to use when creating the default regions.
-  // Can be set in the input file and the global default is set by,
-  // MAXREGIONBLOCKSIZE in include/bout/region.hxx
-  int maxregionblocksize;
-  
   /// Get the named region from the region_map for the data iterator
   ///
   /// Throws if region_name not found
@@ -1030,6 +1027,15 @@ protected:
   MpiWrapper* mpi = nullptr;
 
 public:
+  // The maxregionblocksize to use when creating the default regions.
+  // Can be set in the input file and the global default is set by,
+  // MAXREGIONBLOCKSIZE in include/bout/region.hxx
+  int maxregionblocksize{MAXREGIONBLOCKSIZE};
+
+  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
+  /// cell centred (default).
+  bool StaggerGrids{false};
+
   // Switch for communication of corner guard and boundary cells
   const bool include_corner_cells;
 

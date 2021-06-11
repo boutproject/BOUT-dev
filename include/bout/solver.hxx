@@ -216,18 +216,6 @@ public:
   virtual void setModel(PhysicsModel* model);
 
   /////////////////////////////////////////////
-  // Old API
-
-  /// Set the RHS function
-  virtual void setRHS(rhsfunc f) { phys_run = f; }
-  /// Specify a preconditioner (optional)
-  void setPrecon(PhysicsPrecon f) { prefunc = f; }
-  /// Specify a Jacobian (optional)
-  virtual void setJacobian(Jacobian UNUSED(j)) {}
-  /// Split operator solves
-  virtual void setSplitOperator(rhsfunc fC, rhsfunc fD);
-
-  /////////////////////////////////////////////
   // Monitors
 
   // Alternative names so that Solver::BACK and Solver::FRONT can be used as names for
@@ -287,9 +275,9 @@ public:
   /// to determine the number of steps and the output timestep.
   /// If nout and dt are specified here then the options are not used
   ///
-  /// @param[in] nout   Number of output timesteps
-  /// @param[in] dt     The time between outputs
-  int solve(int nout = -1, BoutReal dt = 0.0);
+  /// @param[in] nout     Number of output timesteps to run for
+  /// @param[in] timestep The time between outputs
+  int solve(int nout = -1, BoutReal timestep = 0.0);
 
   /// Initialise the solver
   /// NOTE: nout and tstep should be passed to run, not init.
@@ -323,7 +311,7 @@ public:
   int resetRHSCounter_i();
 
   /// Test if this solver supports split operators (e.g. implicit/explicit)
-  bool splitOperator() { return split_operator; }
+  bool splitOperator();
 
   bool canReset{false};
 
@@ -475,8 +463,14 @@ protected:
   int call_timestep_monitors(BoutReal simtime, BoutReal lastdt);
 
   /// Do we have a user preconditioner?
-  bool have_user_precon();
-  int run_precon(BoutReal t, BoutReal gamma, BoutReal delta);
+  bool hasPreconditioner();
+  /// Run the user preconditioner
+  int runPreconditioner(BoutReal time, BoutReal gamma, BoutReal delta);
+
+  /// Do we have a user Jacobian?
+  bool hasJacobian();
+  /// Run the user Jacobian
+  int runJacobian(BoutReal time);
 
   // Loading data from BOUT++ to/from solver
   void load_vars(BoutReal* udata);
@@ -520,18 +514,6 @@ private:
   BoutReal internal_timestep{-1};
   /// Physics model being evolved
   PhysicsModel* model{nullptr};
-
-  /// The user's RHS function
-  rhsfunc phys_run{nullptr};
-  /// The user's preconditioner function
-  PhysicsPrecon prefunc{nullptr};
-  /// Is the physics model using separate convective (explicit) and
-  /// diffusive (implicit) RHS functions?
-  bool split_operator{false};
-  /// Convective part (if split operator)
-  rhsfunc phys_conv{nullptr};
-  /// Diffusive part (if split operator)
-  rhsfunc phys_diff{nullptr};
 
   /// Should non-split physics models be treated as diffusive?
   bool is_nonsplit_model_diffusive{true};

@@ -39,10 +39,11 @@ jobs:
                            -DBOUT_USE_SLEPC=ON \
                            -DBOUT_USE_SUNDIALS=ON \
                            -DBOUT_BUILD_EXAMPLES=ON \
+                           -DBOUT_BUILD_DOCS=OFF \
                            -DCMAKE_EXPORT_COMPILE_COMMANDS=On
 
       - name: Run clang-tidy
-        uses: ZedThree/clang-tidy-review@v0.6.0
+        uses: ZedThree/clang-tidy-review@v0.6.1
         id: review
         with:
           build_dir: build

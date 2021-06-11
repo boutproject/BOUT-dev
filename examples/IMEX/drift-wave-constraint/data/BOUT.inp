@@ -18,16 +18,18 @@ dx = Lx / (nx - 4)
 dy = Ly / ny
 dz = Lz / nz
 
-ne0 = 1 + 0.1*(0.5 - x)
+Ne0 = 1 + 0.1*(0.5 - x)
+
+[solver]
+type = imexbdf2
 
 [drift]
 nu = 0.1
 
-
-[vort]
+[Vort]
 scale = 0.001
 function = sin(y-z)
 
-[ne]
+[Ne]
 scale = 0
 function = 0

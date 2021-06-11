@@ -1,7 +1,7 @@
 
 MZ = 32
-myg = 1
-mxg = 1
+MYG = 1
+MXG = 1
 
 
 solution = sin(pi*x)

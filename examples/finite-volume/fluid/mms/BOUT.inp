@@ -2,7 +2,7 @@
 # MMS test of fluid model
 #
 
-NOUT = 100
+nout = 100
 timestep = 0.1
 
 MXG = 0

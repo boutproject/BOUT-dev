@@ -63,8 +63,8 @@ filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1.0e-10 # absolute tolerance
+rtol = 1.0e-5  # relative tolerance
 pvode_mxstep = 50000
 
 ##################################################
