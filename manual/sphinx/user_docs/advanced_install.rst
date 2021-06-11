@@ -62,6 +62,23 @@ It is possible to change flags for BOUT++ after running configure, by
 editing the ``make.config`` file. Note that this is not recommended,
 as e.g. PVODE will not be built with these flags.
 
+Install dependencies:
+---------------------
+
+BOUT++ provides a way to install some (optional) dependencies that are
+not always found on HPC systems. To do this, run from your BOUT++
+source directory:
+
+.. code-block:: bash
+
+    bin/bout-build-deps.sh
+
+Infos about options and further info can be obtained by running:
+
+.. code-block:: bash
+
+    bin/bout-build-deps.sh --help
+
 .. _sec-machine-specific:
 
 Machine-specific installation
@@ -227,7 +244,14 @@ Draco
     mkdir -p $HOME/bin ; test -e $HOME/bin/python3 || ln -s $(which python3.6) $HOME/bin/python3
     BUILD=/ptmp/$USER/bout-deps bin/bout-build-deps.sh
 
-and follow the instructions for configuring BOUT++
+and follow the instructions for configuring BOUT++. To enable openMP
+for a production run use:
+
+.. code-block:: bash
+
+    module load bout-dep
+    ./configure --with-netcdf=$BOUT_DEP --with-sundials=$BOUT_DEP --with-fftw=$BOUT_DEP --with-petsc=$BOUT_DEP --enable-optimize --enable-openmp
+
 
 File formats
 ------------
