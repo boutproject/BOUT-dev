@@ -36,7 +36,8 @@ if you want to set FFTW to an older version.
 
 For more options edit the script or use as a starting point for your
 own scripts.  Especially feel free to comment some sections towards
-the end of the file, to disable building some parts.
+the end of the file, to disable building some parts, search for
+"EDIT BELOW" to where to start.
 
 EOF
 
@@ -139,12 +140,71 @@ submod() {
 
 
 info() {
-set +x
-    echo "Put this in a file in your module path"
-    echo "#---------------------------"
+    set +x
+    cat <<EOF
+As an alternative to using environment module you can set the following variables directly:
+
+  export BOUT_DEP=$PREFIX
+  export LD_LIBRARY_PATH=$PREFIX/lib:\$LD_LIBRARY_PATH
+
+Run configure with:
+
+  ./configure --with-netcdf=\$BOUT_DEP --with-sundials=\$BOUT_DEP --with-fftw=\$BOUT_DEP --with-petsc=\$BOUT_DEP
+
+or
+
+  ./configure --with-netcdf=$BOUT_DEP --with-sundials=$BOUT_DEP --with-fftw=$BOUT_DEP --with-petsc=$BOUT_DEP
+
+EOF
+}
+
+envmodule() {
+    set +x
+    found=$(echo "$MODULEPATH": | while read -d : d ;
+    do
+        if test -w $d ; then
+            echo $d
+            break
+        fi
+    done)
+    reload=
+    if test ".$found" = . ; then
+        MODDIR=${MODDIR:-$HOME/.module} # Path to add to $MODULEPATH
+        msg=
+        if test -w $MODDIR && test -d $MODDIR ; then
+            # All good
+            found=$MODDIR
+        elif test -e $MODDIR ; then
+            found=$MODDIR
+            msg=" create the folder and"
+        else
+            error $MODDIR is not a writeable dir
+        fi
+        echo -n "Do you want to$msg add $MODDIR to \$MODULEPATH to your .bashrc? [Y/n]"
+        read ans
+        test -z "$ans" || test "$ans" = y || test "$ans" = Y || return
+        mkdir -p $MODDIR
+        cat <<EOF >> ~/.bashrc
+# Add local module path, added by $0
+MODULEPATH=\$MODULEPATH:$MODDIR
+EOF
+        found="$MODDIR"
+        reload=yes
+    fi
+    ext0=bout-dep/$(date +"%Y-%m-%d")
+    ext=$ext0
+    of="$found/$ext"
+    if test -e $of ; then
+        of0=$of
+        i=0
+        while test -e $of~$i ; do i=$((i+1)) ; done
+        of="$of~$i"
+        ext="$ext~$i"
+    fi
     echo "#%Module 1.0
 #
-#  BOUT++ module for use with 'environment-modules' package
+#  BOUT++ dependency module for use with 'environment-modules' package
+#
 
 
 # Only allow one bout-dep module to be loaded at a time
@@ -156,22 +216,51 @@ prereq $(echo $LOADEDMODULES | tr : \ )
 setenv        BOUT_DEP         $PREFIX
 prepend-path  PATH             $PREFIX/bin
 prepend-path  LD_LIBRARY_PATH  $PREFIX/lib
-"
-    echo "#---------------------------"
-    echo Run configure with:
-    echo ./configure --with-netcdf=\$BOUT_DEP --with-sundials=\$BOUT_DEP --with-fftw=\$BOUT_DEP --with-petsc=\$BOUT_DEP
+# Avoid potential conflicts
+unsetenv      PETSC_DIR
+unsetenv      PETSC_ARCH
+""" > $of
+    test $of0 && diff $of0 $of -q && rm $of && of=$dup && ext=$ext0
+    test $reload && echo && echo "Re-login in or source ~/.bashrc again" && echo
+    cat <<EOF
+####################################################################
+###                  Summary and Info follows!                   ###
+####################################################################
+
+Activate the dependency module by runing
+
+  module load $ext
+
+EOF
 }
 
-# Uncomment this if want to use it as a script to detect errors
-set -ex
 test ".$1" = . || help $@
 
+# - EDIT BELOW - EDITBELOW - editbelow - "EDIT BELOW" -
+# Feel free to edit below
+
+# Comment this if you want to ignore errors
+set -e
+# Comment this if you want to have less output
+set -x
+
+## Setup folders and links
 setup
+## Build and install hdf5
 hdf5
+## Build and install netcdf
 netcdf
+## Build and install C++ interface for netcdf
 nccxx
+## Build and install FFTW
 fftw
+## Build and install Sundials
 sundials
+## Build and install PETSc
 petsc
+## Download BOUT++ submodules
 submod
+## Create a moduleinfo
+envmodule
+## Print infos on how to proceed (assumes all other steps have been run)
 info
