@@ -20,6 +20,14 @@ FFTWFLAGS=${FFTWFLAGS:---enable-avx512 --enable-avx-128-fma}
 SUNFLAGS=${SUNFLAGS:-}
 PETSCFLAGS=${PETSCFLAGS:-}
 
+CHECK=${CHECK:-yes} # Run checks: 'yes' to run - 'no' to skip
+HDF5CHECK=${HDF5CHECK:-${CHECK}}
+NCCHECK=${NCCHECK:-${CHECK}}
+NCCXXCHECK=${NCCXXCHECK:-${CHECK}}
+FFTWCHECK=${FFTWCHECK:-${CHECK}}
+SUNCHECK=${SUNCHECK:-${CHECK}}
+PETSCCHECK=${PETSCCHECK:-${CHECK}}
+
 
 help() {
 echo The following options are available:
@@ -68,6 +76,9 @@ hdf5() {
     cd hdf5-${HDF5VER}
     ./configure --prefix $PREFIX --enable-build-mode=production $HDF5FLAGS
     make $MKFLAGS
+    if test $HDF5CHECK = yes ; then
+	make check
+    fi
     make install
 }
 
@@ -78,6 +89,9 @@ netcdf() {
     cd netcdf-c-$NCVER
     CPPFLAGS="-I$PREFIX/include" LDFLAGS="-L$PREFIX/lib/" ./configure --prefix=$PREFIX $NCFLAGS
     make $MKFLAGS
+    if test $NCCHECK = yes ; then
+	make check
+    fi
     make install
 }
 
@@ -88,6 +102,9 @@ nccxx() {
     cd netcdf-cxx4-$NCCXXVER
     CPPFLAGS="-I$PREFIX/include" LDFLAGS="-L$PREFIX/lib/" ./configure --prefix=$PREFIX $NCCXXFLAGS
     make $MKFLAGS
+    if test $NCCXXCHECK = yes ; then
+	make check
+    fi
     make install
 }
 
@@ -98,6 +115,9 @@ fftw() {
     cd fftw-$FFTWVER
     ./configure --prefix $PREFIX --enable-shared --enable-sse2 --enable-avx --enable-avx2  $FFTWFLAGS
     make $MKFLAGS
+    if test $FFTWCHECK = yes ; then
+	make check
+    fi
     make install
 }
 
@@ -110,6 +130,9 @@ sundials() {
     cd build
     cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PREFIX -DMPI_ENABLE=ON .. $SUNFLAGS
     make $MKFLAGS
+    if test $SUNCHECK = yes ; then
+	make test
+    fi
     make install
 }
 
@@ -130,6 +153,9 @@ petsc() {
     ./configure COPTFLAGS="-O3" CXXOPTFLAGS="-O3" FOPTFLAGS="-O3" --with-batch --known-mpi-shared-libraries=1 --with-mpi-dir=$OPENMPI_HOME --download-fblaslapack \
         --known-64-bit-blas-indices=0 --download-hypre --with-debugging=0 --prefix=$PREFIX $PETSCFLAGS
     make $MKFLAGS
+    if test $PETSCCHECK = yes ; then
+	make check
+    fi
     make install
 }
 
