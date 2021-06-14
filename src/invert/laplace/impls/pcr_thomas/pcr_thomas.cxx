@@ -830,21 +830,10 @@ void LaplacePCR_THOMAS ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcom
       sbuf[3 + 4 * kz] = r(kz, n_mpi);
     }
 
-    int tag_recv_in;
-    int tag_recv_out;
-    int tag_send_in;
-    int tag_send_out;
-    if ((myrank_level + 1) % 2 == 0) {
-      tag_recv_out = 202;
-      tag_send_out = 203;
-      tag_recv_in = 200;
-      tag_send_in = 201;
-    } else if ((myrank_level + 1) % 2 == 1) {
-      tag_recv_out = 201;
-      tag_send_out = 200;
-      tag_recv_in = 203;
-      tag_send_in = 202;
-    }
+    const int tag_recv_in = 200;
+    const int tag_recv_out = 201;
+    const int tag_send_in = 201;
+    const int tag_send_out = 200;
     
     if (xproc + dist_rank < nprocs) {
       MPI_Irecv(&rbuf1[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank + dist_rank, tag_recv_out, comm,
