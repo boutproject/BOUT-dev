@@ -589,9 +589,6 @@ void LaplacePCR_THOMAS ::pcr_thomas_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomp
   }
 
   // Perform parallel cyclic reduction + Thomas
-  //cr_forward_multiple_row(aa, bb, cc, r);
-  //pcr_forward_single_row(aa, bb, cc, r, x); // Including 2x2 solver
-  //cr_backward_multiple_row(aa, bb, cc, r, x);
   pThomas_forward_multiple_row(aa, bb, cc, r);
   pcr_double_row_substitution(aa, bb, cc, r, x);
   // End of PCR_Thomas
@@ -833,72 +830,53 @@ void LaplacePCR_THOMAS ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcom
       sbuf[3 + 4 * kz] = r(kz, n_mpi);
     }
 
+    int tag_recv_in;
+    int tag_recv_out;
+    int tag_send_in;
+    int tag_send_out;
     if ((myrank_level + 1) % 2 == 0) {
-      if (xproc + dist_rank < nprocs) {
-        MPI_Irecv(&rbuf1[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank + dist_rank, 202, comm,
-                  &request[0]);
-        MPI_Isend(&sbuf[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank + dist_rank, 203, comm,
-                  &request[1]);
-      }
-      if (xproc - dist_rank >= 0) {
-        MPI_Irecv(&rbuf0[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank - dist_rank, 200, comm,
-                  &request[2]);
-        MPI_Isend(&sbuf[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank - dist_rank, 201, comm,
-                  &request[3]);
-      }
-      if (xproc + dist_rank < nprocs) {
-        MPI_Wait(&request[0], &status);
-        for (int kz = 0; kz < nsys; kz++) {
-          a(kz, n_mpi + 1) = rbuf1[0 + 4 * kz];
-          b(kz, n_mpi + 1) = rbuf1[1 + 4 * kz];
-          c(kz, n_mpi + 1) = rbuf1[2 + 4 * kz];
-          r(kz, n_mpi + 1) = rbuf1[3 + 4 * kz];
-        }
-        MPI_Wait(&request[1], &status);
-      }
-      if (xproc - dist_rank >= 0) {
-        MPI_Wait(&request[2], &status);
-        for (int kz = 0; kz < nsys; kz++) {
-          a(kz, 0) = rbuf0[0 + 4 * kz];
-          b(kz, 0) = rbuf0[1 + 4 * kz];
-          c(kz, 0) = rbuf0[2 + 4 * kz];
-          r(kz, 0) = rbuf0[3 + 4 * kz];
-        }
-        MPI_Wait(&request[3], &status);
-      }
+      tag_recv_out = 202;
+      tag_send_out = 203;
+      tag_recv_in = 200;
+      tag_send_in = 201;
     } else if ((myrank_level + 1) % 2 == 1) {
-      if (xproc + dist_rank < nprocs) {
-        MPI_Irecv(&rbuf1[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank + dist_rank, 201, comm,
-                  &request[0]);
-        MPI_Isend(&sbuf[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank + dist_rank, 200, comm,
+      tag_recv_out = 201;
+      tag_send_out = 200;
+      tag_recv_in = 203;
+      tag_send_in = 202;
+    }
+    
+    if (xproc + dist_rank < nprocs) {
+      MPI_Irecv(&rbuf1[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank + dist_rank, tag_recv_out, comm,
+		  &request[0]);
+      MPI_Isend(&sbuf[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank + dist_rank, tag_send_out, comm,
                   &request[1]);
-      }
-      if (xproc - dist_rank >= 0) {
-        MPI_Irecv(&rbuf0[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank - dist_rank, 203, comm,
+    }
+    if (xproc - dist_rank >= 0) {
+      MPI_Irecv(&rbuf0[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank - dist_rank, tag_recv_in, comm,
                   &request[2]);
-        MPI_Isend(&sbuf[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank - dist_rank, 202, comm,
+      MPI_Isend(&sbuf[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank - dist_rank, tag_send_in, comm,
                   &request[3]);
+    }
+    if (xproc + dist_rank < nprocs) {
+      MPI_Wait(&request[0], &status);
+      for (int kz = 0; kz < nsys; kz++) {
+        a(kz, n_mpi + 1) = rbuf1[0 + 4 * kz];
+        b(kz, n_mpi + 1) = rbuf1[1 + 4 * kz];
+        c(kz, n_mpi + 1) = rbuf1[2 + 4 * kz];
+        r(kz, n_mpi + 1) = rbuf1[3 + 4 * kz];
       }
-      if (xproc + dist_rank < nprocs) {
-        MPI_Wait(&request[0], &status);
-        for (int kz = 0; kz < nsys; kz++) {
-          a(kz, n_mpi + 1) = rbuf1[0 + 4 * kz];
-          b(kz, n_mpi + 1) = rbuf1[1 + 4 * kz];
-          c(kz, n_mpi + 1) = rbuf1[2 + 4 * kz];
-          r(kz, n_mpi + 1) = rbuf1[3 + 4 * kz];
-        }
-        MPI_Wait(&request[1], &status);
+      MPI_Wait(&request[1], &status);
+    }
+    if (xproc - dist_rank >= 0) {
+      MPI_Wait(&request[2], &status);
+      for (int kz = 0; kz < nsys; kz++) {
+        a(kz, 0) = rbuf0[0 + 4 * kz];
+        b(kz, 0) = rbuf0[1 + 4 * kz];
+        c(kz, 0) = rbuf0[2 + 4 * kz];
+        r(kz, 0) = rbuf0[3 + 4 * kz];
       }
-      if (xproc - dist_rank >= 0) {
-        MPI_Wait(&request[2], &status);
-        for (int kz = 0; kz < nsys; kz++) {
-          a(kz, 0) = rbuf0[0 + 4 * kz];
-          b(kz, 0) = rbuf0[1 + 4 * kz];
-          c(kz, 0) = rbuf0[2 + 4 * kz];
-          r(kz, 0) = rbuf0[3 + 4 * kz];
-        }
-        MPI_Wait(&request[3], &status);
-      }
+      MPI_Wait(&request[3], &status);
     }
 
     const int i = n_mpi;
