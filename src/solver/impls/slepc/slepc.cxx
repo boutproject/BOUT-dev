@@ -44,9 +44,10 @@ namespace {
 /// Disable floating-point exceptions in a scope, reenable them on exit
 struct QuietFPE {
 #if BOUT_USE_SIGFPE
-  int flags;
   QuietFPE() : flags(fegetexcept()) { fedisableexcept(flags); }
   ~QuietFPE() { feenableexcept(flags); }
+private:
+  int flags;
 #endif
 };
 } // namespace
@@ -585,7 +586,7 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
   static int nConvPrev = 0;
 
   // Disable floating-point exceptions for the duration of this function
-  QuietFPE quiet_fpe{};
+  MAYBE_UNUSED(QuietFPE quiet_fpe{});
 
   // No output until after first iteration
   if (its < 1) {
