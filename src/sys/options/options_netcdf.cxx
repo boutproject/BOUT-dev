@@ -67,7 +67,7 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
         var.getVar(&value);
         result[var_name] = value;
         result[var_name].attributes["source"] = filename;
-      } else if (var_type == ncInt) {
+      } else if (var_type == ncInt or var_type == ncShort) {
         int value;
         var.getVar(&value);
         result[var_name] = value;
@@ -83,7 +83,7 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
       break;
     }
     case 1: {
-      if (var_type == ncDouble) {
+      if (var_type == ncDouble or var_type == ncFloat) {
         Array<double> value(dims[0].getSize());
         var.getVar(value.begin());
         result[var_name] = value;
@@ -98,7 +98,7 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
       break;
     }
     case 2: {
-      if (var_type == ncDouble) {
+      if (var_type == ncDouble or var_type == ncFloat) {
         Matrix<double> value(dims[0].getSize(), dims[1].getSize());
         var.getVar(value.begin());
         result[var_name] = value;
@@ -107,7 +107,7 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
       break;
     }
     case 3: {
-      if (var_type == ncDouble) {
+      if (var_type == ncDouble or var_type == ncFloat) {
         Tensor<double> value(dims[0].getSize(), dims[1].getSize(), dims[2].getSize());
         var.getVar(value.begin());
         result[var_name] = value;
