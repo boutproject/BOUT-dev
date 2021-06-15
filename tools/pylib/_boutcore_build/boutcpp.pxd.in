@@ -10,7 +10,7 @@ from libcpp.memory cimport unique_ptr
 from libcpp.string cimport string
 
 cimport resolve_enum as benum
-from bout_options_netcdf cimport Options, OptionsReader, OptionsNetCDF, writeDefaultOutputFile
+from bout_options cimport Options, OptionsReader, OptionsNetCDF, writeDefaultOutputFile
 
 cdef extern from "boutexception_helper.hxx":
      cdef void raise_bout_py_error()
