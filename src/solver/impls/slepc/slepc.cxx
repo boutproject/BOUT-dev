@@ -36,6 +36,20 @@
 
 #include <cstdlib>
 
+#if BOUT_USE_SIGFPE
+#include <fenv.h>
+#endif
+
+namespace {
+/// Disable floating-point exceptions in a scope, reenable them on exit
+struct QuietFPE {
+#if BOUT_USE_SIGFPE
+  QuietFPE() { fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW); }
+  ~QuietFPE() { feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW); }
+#endif
+};
+} // namespace
+
 std::string formatEig(BoutReal reEig, BoutReal imEig);
 
 // The callback function for the shell matrix-multiply operation
@@ -118,6 +132,8 @@ PetscErrorCode stBackTransformWrapper(ST st, PetscInt nEig, PetscScalar* eigr,
 
 // Helper function
 std::string formatEig(BoutReal reEig, BoutReal imEig) {
+  // Disable floating-point exceptions for the duration of this function
+  QuietFPE quiet_fpe{};
 
   const std::string rePad = (reEig < 0) ? "-" : " ";
   const std::string imPad = (imEig < 0) ? "-" : "+";
@@ -570,6 +586,9 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
                           PetscScalar eigi[], PetscReal errest[], PetscInt UNUSED(nest)) {
   static int nConvPrev = 0;
 
+  // Disable floating-point exceptions for the duration of this function
+  QuietFPE quiet_fpe{};
+
   // No output until after first iteration
   if (its < 1) {
     return;
@@ -580,23 +599,29 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
     first = false;
     iteration = 0;
   }
-  BoutReal reEigBout, imEigBout;
-  slepcToBout(eigr[nconv], eigi[nconv], reEigBout, imEigBout);
 
-  // This line more or less replicates the normal slepc output (when using -eps_monitor)
-  // but reports Bout eigenvalues rather than the Slepc values. Note we haven't changed
-  // error estimate.
-  output << " " << its << " nconv=" << nconv << "\t first unconverged value (error) "
-         << formatEig(reEigBout, imEigBout) << "\t (" << errest[nconv] << ")\n";
+  // Temporary eigenvalues, converted from the SLEPc eigenvalues
+  BoutReal reEigBout, imEigBout;
+
+  // Only report unconverged eigenvalues if we don't have all the requested ones
+  if (nconv < nEig) {
+    slepcToBout(eigr[nconv], eigi[nconv], reEigBout, imEigBout);
+
+    // This line more or less replicates the normal slepc output (when using -eps_monitor)
+    // but reports Bout eigenvalues rather than the Slepc values. Note we haven't changed
+    // error estimate.
+    output.write(" {} nconv={}\t first unconverged value (error) {}\t({})\n", its, nconv,
+                 formatEig(reEigBout, imEigBout), errest[nconv]);
+  }
 
   // The following can be quite noisy so may want to add a flag to disable/enable.
   const int newConv = nconv - nConvPrev;
   if (newConv > 0) {
-    output << "Found " << newConv << " new converged eigenvalues:\n";
+    output.write("Found {} new converged eigenvalues:\n", newConv);
     for (PetscInt i = nConvPrev; i < nconv; i++) {
       slepcToBout(eigr[i], eigi[i], reEigBout, imEigBout);
-      output << "\t" << i << "\t: " << formatEig(eigr[i], eigi[i]) << " --> ";
-      output << formatEig(reEigBout, imEigBout) << "\n";
+      output.write("\t{}\t: {} --> {}\n", i, formatEig(eigr[i], eigi[i]),
+                   formatEig(reEigBout, imEigBout));
       if (eigenValOnly) {
         // Silence the default monitor
         WithQuietOutput progress{output_progress};
@@ -614,6 +639,9 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
 // Convert a slepc eigenvalue to a BOUT one
 void SlepcSolver::slepcToBout(PetscScalar& reEigIn, PetscScalar& imEigIn,
                               BoutReal& reEigOut, BoutReal& imEigOut, bool force) {
+
+  // Disable floating-point exceptions for the duration of this function
+  QuietFPE quiet_fpe{};
 
   // If not stIsShell then the slepc eigenvalue is actually
   // Exp(-i*Eig_Bout*tstep) for ddtMode = false
