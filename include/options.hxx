@@ -734,6 +734,7 @@ public:
     return lhs.children == rhs.children;
   }
 
+  std::string getDefaultSource() const;
  private:
   
   /// The source label given to default values
