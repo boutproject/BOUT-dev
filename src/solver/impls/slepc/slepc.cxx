@@ -575,7 +575,6 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
     return;
   }
 
-  extern BoutReal simtime;
   static bool first = true;
   if (eigenValOnly && first) {
     first = false;
