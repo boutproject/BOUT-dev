@@ -10,6 +10,7 @@ from libcpp.memory cimport unique_ptr
 from libcpp.string cimport string
 
 cimport resolve_enum as benum
+from bout_options_netcdf cimport Options, OptionsReader, OptionsNetCDF, writeDefaultOutputFile
 
 cdef extern from "boutexception_helper.hxx":
      cdef void raise_bout_py_error()
@@ -128,25 +129,6 @@ cdef extern from "difops.hxx":
     Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, string)
     Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC)
     Field3D Delp2(Field3D)
-
-cdef extern from "options.hxx":
-    cppclass Options:
-        Options()
-        @staticmethod
-        Options * getRoot()
-        Options * getSection(string fu)
-        void set(string ,string,string, bool)
-        void get(string ,string& ,string)
-        void get(string ,double& ,double)
-        void get(string ,bool& ,bool)
-        void cleanCache()
-
-cdef extern from "optionsreader.hxx":
-    cppclass OptionsReader:
-        @staticmethod
-        OptionsReader *getInstance()
-        void read(Options *options, const char *file, ...);
-
 
 cdef extern from "derivs.hxx":
 EOF

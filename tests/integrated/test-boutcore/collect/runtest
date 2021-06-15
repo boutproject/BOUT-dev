@@ -13,10 +13,9 @@ f.setAll(np.array([[[1.0]]]))
 f2 = bc.Field3D.fromMesh(None)
 f2.setAll(np.array([[[2.0]]]))
 print(f.getAll())
-dump = bc.Datafile()  # get global :(
-dump.add(f3d=f, f2d=f2, save_repeat=True)
-dump.write()
 
+dump = bc.Options(f3d=f, f2d=f2)
+bc.writeDefaultOutputFile(dump)
 
 errorlist = ""
 n = collect("f2d", path="input", tind=-1, yguards=True)

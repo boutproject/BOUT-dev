@@ -74,10 +74,12 @@ foreach(file IN LISTS files)
 	WORKING_DIRECTORY ${src}/
 	COMMENT "Generating ${file}")
 endforeach()
-set(files "boutexception_helper.hxx" "boutexception_helper.cxx" "boutcore_openmpi_compat.hxx")
+
+set(boutcore_depends ${generated})
+
+set(files "boutexception_helper.hxx" "boutexception_helper.cxx" "boutcore_openmpi_compat.hxx" "bout_options.pxd")
 foreach(file IN LISTS files)
-  set(gen ${CMAKE_CURRENT_BINARY_DIR}/${file})
-  list(APPEND generated ${gen})
+  list(APPEND ${boutcore_depends} "${CMAKE_CURRENT_BINARY_DIR}/${file}")
   bout_copy_file("${file}")
 endforeach()
 
@@ -85,7 +87,7 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/boutcore.cpp
   COMMAND ${Python_EXECUTABLE} -m cython boutcore.pyx --cplus -3  -X binding=True -X embedsignature=True
   COMMENT "Cythonizing python interface"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${generated}
+  DEPENDS ${boutcore_depends}
   )
 
 add_library(boutcore_ SHARED

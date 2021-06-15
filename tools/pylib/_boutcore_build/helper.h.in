@@ -94,7 +94,6 @@ public:
     solver->setModel(this);
     bout_monitor = new BoutMonitor();
     solver->addMonitor(bout_monitor, Solver::BACK);
-    solver->outputVars(bout::globals::dump);
   };
   void free(){
     delete bout_monitor;

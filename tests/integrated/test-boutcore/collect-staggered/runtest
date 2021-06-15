@@ -9,10 +9,10 @@ bc.init("-q -q -q")
 fail = 0
 f = bc.create3D("sin(y)", outloc="YLOW")
 
-dump = bc.Datafile()  # get global :(
-dump.add(f3d_evolve=f, save_repeat=True)
-dump.add(f3d_once=f, save_repeat=False)
-dump.write()
+dump = bc.Options()
+dump["f3d_evolve"].assignRepeat(f)
+dump["f3d_once"] = f
+bc.writeDefaultOutputFile(dump)
 
 
 fc = bc.create3D("sin(y)", outloc="CENTRE")
