@@ -819,6 +819,9 @@ template <> bool Options::as<bool>(const bool& similar_to) const;
 template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const;
 template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
 template <> FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
+template <> Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) const;
+template <> Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_to) const;
+template <> Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_to) const;
 
 /// Convert \p value to string
 std::string toString(const Options& value);

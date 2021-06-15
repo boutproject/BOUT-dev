@@ -638,6 +638,120 @@ FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
                       full_name);
 }
 
+namespace {
+/// Visitor to convert an int, BoutReal or Array/Matrix/Tensor to the
+/// appropriate container
+template <class Container>
+struct ConvertContainer {
+  ConvertContainer(std::string error, Container similar_to_)
+      : error_message(std::move(error)), similar_to(std::move(similar_to_)) {}
+
+  Container operator()(int value) {
+    Container result(similar_to);
+    std::fill(std::begin(result), std::end(result), value);
+    return result;
+  }
+
+  Container operator()(BoutReal value) {
+    Container result(similar_to);
+    std::fill(std::begin(result), std::end(result), value);
+    return result;
+  }
+
+  Container operator()(const Container& value) { return value; }
+
+  template <class Other>
+  Container operator()(MAYBE_UNUSED(const Other& value)) {
+    throw BoutException(error_message);
+  }
+
+private:
+  std::string error_message;
+  Container similar_to;
+};
+} // namespace
+
+template <>
+Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) const {
+  if (is_section) {
+    throw BoutException(_("Option {:s} has no value"), full_name);
+  }
+
+  Array<BoutReal> result = bout::utils::visit(
+      ConvertContainer<Array<BoutReal>>{
+          fmt::format(
+              _("Value for option {:s} cannot be converted to an Array<BoutReal>"),
+              full_name),
+          similar_to},
+      value);
+
+  // Mark this option as used
+  value_used = true;
+
+  output_info << _("\tOption ") << full_name << " = Array<BoutReal>";
+  if (attributes.count("source")) {
+    // Specify the source of the setting
+    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
+  }
+  output_info << endl;
+
+  return result;
+}
+
+template <>
+Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_to) const {
+  if (is_section) {
+    throw BoutException(_("Option {:s} has no value"), full_name);
+  }
+
+  auto result = bout::utils::visit(
+      ConvertContainer<Matrix<BoutReal>>{
+          fmt::format(
+              _("Value for option {:s} cannot be converted to an Matrix<BoutReal>"),
+              full_name),
+          similar_to},
+      value);
+
+  // Mark this option as used
+  value_used = true;
+
+  output_info << _("\tOption ") << full_name << " = Matrix<BoutReal>";
+  if (attributes.count("source")) {
+    // Specify the source of the setting
+    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
+  }
+  output_info << endl;
+
+  return result;
+}
+
+template <>
+Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_to) const {
+  if (is_section) {
+    throw BoutException(_("Option {:s} has no value"), full_name);
+  }
+
+  auto result = bout::utils::visit(
+      ConvertContainer<Tensor<BoutReal>>{
+          fmt::format(
+              _("Value for option {:s} cannot be converted to an Tensor<BoutReal>"),
+              full_name),
+          similar_to},
+      value);
+
+  // Mark this option as used
+  value_used = true;
+
+  output_info << _("\tOption ") << full_name << " = Tensor<BoutReal>";
+  if (attributes.count("source")) {
+    // Specify the source of the setting
+    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
+  }
+  output_info << endl;
+
+  return result;
+}
+
 // Note: This is defined here rather than in the header
 // to avoid using as<string> before specialising it.
 bool Options::operator==(const char* other) const {
