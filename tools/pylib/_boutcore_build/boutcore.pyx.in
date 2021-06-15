@@ -1606,7 +1606,7 @@ def setOption(name, value, source="PyInterface", force=False):
         thrown. setting this to `True` avoids the exception.
     """
     checkInit()
-    root = Options.root()[name]
+    root = Options.root()
     root.set(name, value, source, force)
 
 cdef class Options:
@@ -1750,15 +1750,15 @@ cdef class Options:
             If a value is overwritten, an exception is
             thrown. setting this to `True` avoids the exception.
         """
-        cdef c.Options * opt=self.cobj
+        cdef c.Options* opt = self.cobj
         cdef c.string sec_
         for sec in name.split(":")[:-1]:
-            sec_=sec.encode('ascii')
-            opt=opt.getSection(sec_)
+            sec_ = sec.encode('ascii')
+            opt = opt.getSection(sec_)
         cdef c.string key = name.split(":")[-1].encode('ascii')
         cdef c.string value_ = value.encode('ascii')
         cdef c.string source_ = source.encode('ascii')
-        opt.set(key,value_, source_, force)
+        opt.set(key,value_, source_, <c.bool?> force)
         opt.cleanCache()
         return self
 
