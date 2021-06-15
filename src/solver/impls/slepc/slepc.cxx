@@ -44,8 +44,9 @@ namespace {
 /// Disable floating-point exceptions in a scope, reenable them on exit
 struct QuietFPE {
 #if BOUT_USE_SIGFPE
-  QuietFPE() { fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW); }
-  ~QuietFPE() { feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW); }
+  int flags;
+  QuietFPE() : flags(fegetexcept()) { fedisableexcept(flags); }
+  ~QuietFPE() { feenableexcept(flags); }
 #endif
 };
 } // namespace
@@ -132,9 +133,6 @@ PetscErrorCode stBackTransformWrapper(ST st, PetscInt nEig, PetscScalar* eigr,
 
 // Helper function
 std::string formatEig(BoutReal reEig, BoutReal imEig) {
-  // Disable floating-point exceptions for the duration of this function
-  QuietFPE quiet_fpe{};
-
   const std::string rePad = (reEig < 0) ? "-" : " ";
   const std::string imPad = (imEig < 0) ? "-" : "+";
 
@@ -639,10 +637,6 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
 // Convert a slepc eigenvalue to a BOUT one
 void SlepcSolver::slepcToBout(PetscScalar& reEigIn, PetscScalar& imEigIn,
                               BoutReal& reEigOut, BoutReal& imEigOut, bool force) {
-
-  // Disable floating-point exceptions for the duration of this function
-  QuietFPE quiet_fpe{};
-
   // If not stIsShell then the slepc eigenvalue is actually
   // Exp(-i*Eig_Bout*tstep) for ddtMode = false
   //-i*Eig_Bout for ddtMode = true
