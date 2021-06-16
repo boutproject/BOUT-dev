@@ -27,7 +27,6 @@
 #ifndef __GLOBALS_H__
 #define __GLOBALS_H__
 
-#include "datafile.hxx"
 #include "bout/macro_for_each.hxx"
 
 class Mesh;
@@ -82,9 +81,6 @@ SETTING(MpiWrapper* mpi, nullptr); ///< The MPI wrapper object
   { MACRO_FOR_EACH_FN(GRID_LOAD1, __VA_ARGS__) }
 
 ///////////////////////////////////////////////////////////////
-
-/// Dump file object
-GLOBAL Datafile dump;
 
 #undef GLOBAL
 #undef SETTING
