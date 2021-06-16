@@ -22,5 +22,3 @@ function = 0
 
 [probes]
 file = "PROBES.dmp"
-floats = true
-openclose = true # false if it should be fast
