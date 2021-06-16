@@ -1833,19 +1833,33 @@ int LaplaceXY::globalIndex(int x, int y) {
   return static_cast<int>(std::round(indexXY(x, y)));
 }
 
-void LaplaceXY::savePerformance(Datafile& output_file, Solver& solver,
-                                std::string name) {
+void LaplaceXY::savePerformance(Solver& solver, std::string name) {
   // set flag so that performance monitoring values are calculated
   save_performance = true;
 
   // add values to be saved to the output
-  if (name == "") {
-    name = default_prefix;
+  if (not name.empty()) {
+    default_prefix = name;
   }
-  output_file.addRepeat(output_average_iterations, name + "_average_iterations");
 
   // add monitor to reset counters/averages for new output timestep
   // monitor added to back of queue, so that values are reset after being saved
   solver.addMonitor(&monitor, Solver::BACK);
 }
+
+int LaplaceXY::LaplaceXYMonitor::call(Solver*, BoutReal, int, int) {
+  laplacexy.output_average_iterations = laplacexy.average_iterations;
+
+  laplacexy.n_calls = 0;
+  laplacexy.average_iterations = 0.;
+
+  return 0;
+}
+
+void LaplaceXY::LaplaceXYMonitor::outputVars(Options& output_options,
+                                             const std::string& time_dimension) {
+  output_options[fmt::format("{}_average_iterations", laplacexy.default_prefix)]
+      .assignRepeat(laplacexy.output_average_iterations, time_dimension);
+}
+
 #endif // BOUT_HAS_PETSC

@@ -133,6 +133,8 @@ public:
     void update_solution(const LaplaceIPT& lap);
   };
 
+  void outputVars(Options& options, const std::string& time_dimension) const override;
+
 private:
   /// Solver tolerances
   BoutReal rtol, atol;

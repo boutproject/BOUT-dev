@@ -30,6 +30,7 @@
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
 #include <cmath>
@@ -82,9 +83,7 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   }
 
   static int ipt_solver_count = 1;
-  bout::globals::dump.addRepeat(
-      ipt_mean_its, "ipt_solver" + std::to_string(ipt_solver_count) + "_mean_its");
-  ++ipt_solver_count;
+  setPerformanceName(fmt::format("{}{}", "ipt_solver", ++ipt_solver_count));
 
   resetSolver();
 }
@@ -1449,4 +1448,10 @@ void LaplaceIPT::Level::synchronize_reduced_field(const LaplaceIPT& l,
     MPI_Sendrecv(&field(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &field(3, 0),
                  l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
   }
+}
+
+void LaplaceIPT::outputVars(Options& output_options,
+                            const std::string& time_dimension) const {
+  output_options[fmt::format("{}_mean_its", getPerformanceName())].assignRepeat(
+      ipt_mean_its, time_dimension);
 }

@@ -275,6 +275,7 @@ int main(int argc, char** argv) {
 
   output << "\nFinished running test.\n\n";
 
+  invert.outputVars(dump, "t");
   bout::writeDefaultOutputFile(dump);
 
   bout::checkForUnusedOptions();

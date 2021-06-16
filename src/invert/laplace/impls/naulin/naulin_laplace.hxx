@@ -136,6 +136,9 @@ public:
 
   BoutReal getMeanIterations() const { return naulinsolver_mean_its; }
   void resetMeanIterations() { naulinsolver_mean_its = 0; }
+
+  void outputVars(Options& output_options, const std::string& time_dimension) const override;
+
 private:
   LaplaceNaulin(const LaplaceNaulin&);
   LaplaceNaulin& operator=(const LaplaceNaulin&);
