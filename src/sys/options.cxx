@@ -689,7 +689,7 @@ Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) 
   value_used = true;
 
   output_info << _("\tOption ") << full_name << " = Array<BoutReal>";
-  if (attributes.count("source")) {
+  if (hasAttribute("source")) {
     // Specify the source of the setting
     output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
   }
@@ -716,7 +716,7 @@ Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_t
   value_used = true;
 
   output_info << _("\tOption ") << full_name << " = Matrix<BoutReal>";
-  if (attributes.count("source")) {
+  if (hasAttribute("source")) {
     // Specify the source of the setting
     output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
   }
@@ -743,7 +743,7 @@ Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_t
   value_used = true;
 
   output_info << _("\tOption ") << full_name << " = Tensor<BoutReal>";
-  if (attributes.count("source")) {
+  if (hasAttribute("source")) {
     // Specify the source of the setting
     output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
   }
