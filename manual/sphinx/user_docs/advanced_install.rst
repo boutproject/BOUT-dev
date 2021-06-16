@@ -74,6 +74,9 @@ source directory:
     bin/bout-build-deps.sh
     # or without any checks:
     CHECK=no bin/bout-build-deps.sh
+    # or with openmp - not tested, maybe not good to add it to FFTW
+    PETSCFLAGS=--with-openmp FFTWFLAGS="--enable-avx512 --enable-avx-128-fma --with-openmp --enable-threads" bin/bout-build-deps.sh
+    # and add "--enable-openmp" to ./configure
 
 Infos about options and further info can be obtained by running:
 
