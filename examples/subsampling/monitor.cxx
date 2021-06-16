@@ -20,7 +20,9 @@ public:
                     Options::root()[section_name]["append"].withDefault(false)
                     ? bout::OptionsNetCDF::FileMode::append
                     : bout::OptionsNetCDF::FileMode::replace) {}
+
   int call(Solver*, BoutReal _time, int, int) override {
+    // This method writes all the diagnostics to a unique file
     Options output;
     output["t_array"].assignRepeat(_time);
     for (const auto& item: dump.getData()) {
@@ -33,8 +35,17 @@ public:
 
     return 0;
   }
+
+  void outputVars(Options& options, const std::string& time_dimension) override {
+    // This method writes all the diagnostics to the main output file
+    for (const auto& item: dump.getData()) {
+      bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
+      options[item.name].attributes["time_dimension"] = time_dimension;
+    }
+  }
+
   void add(BoutReal& data, const std::string& name) {
-    dump.add(data, name, true);
+    dump.addRepeat(data, name);
   }
 
 private:
@@ -71,9 +82,8 @@ protected:
     probes->add(n(mesh->xstart, mesh->ystart, 0), "n_up");
     probes->add(T(mesh->xstart, mesh->ystart, 0), "T_up");
 
-    // Add the corner value. T is already present in BOUT.dmp - but
-    // as it is a different file, this doesn't cause issues
-    slow->add(T(mesh->xstart, mesh->ystart, 0), "T");
+    // Add the corner value
+    slow->add(T(mesh->xstart, mesh->ystart, 0), "T_corner");
     return 0;
   }
 
