@@ -3,6 +3,7 @@
 #include "power.hxx"
 
 #include <boutcomm.hxx>
+#include <bout/sys/timer.hxx>
 #include <msg_stack.hxx>
 
 #include <cmath>
@@ -79,6 +80,7 @@ int PowerSolver::run() {
 }
 
 void PowerSolver::outputVars(Options& output_options, bool save_repeat) {
+  Timer time("io");
   // Include base class functionality
   this->Solver::outputVars(output_options, save_repeat);
 

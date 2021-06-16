@@ -3265,6 +3265,7 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
 }
 
 void BoutMesh::outputVars(Options& output_options) {
+  Timer time("io");
   output_options["zperiod"].force(zperiod, "BoutMesh");
   output_options["MXSUB"].force(MXSUB, "BoutMesh");
   output_options["MYSUB"].force(MYSUB, "BoutMesh");

@@ -10,10 +10,11 @@
 #include <bout/mesh.hxx>
 #include "bout/paralleltransform.hxx"
 #include <fft.hxx>
+#include <output.hxx>
+#include <bout/sys/timer.hxx>
 
 #include <cmath>
 
-#include <output.hxx>
 
 ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
     BoutReal zlength_in, Options* opt)
@@ -40,6 +41,7 @@ void ShiftedMetric::checkInputGrid() {
 }
 
 void ShiftedMetric::outputVars(Options& output_options) {
+  Timer time("io");
   const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
 
   output_options["zShift" + loc_string].force(zShift, "ShiftedMetric");

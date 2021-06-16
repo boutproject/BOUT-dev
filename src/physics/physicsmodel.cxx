@@ -33,6 +33,7 @@
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 #include <bout/mesh.hxx>
+#include <bout/sys/timer.hxx>
 
 #include <fmt/core.h>
 
@@ -183,6 +184,7 @@ int PhysicsModel::postInit(bool restarting) {
 }
 
 void PhysicsModel::outputVars(Options& options) {
+  Timer time("io");
   for (const auto& item : dump.getData()) {
     bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
     if (item.repeat) {
@@ -192,6 +194,7 @@ void PhysicsModel::outputVars(Options& options) {
 }
 
 void PhysicsModel::restartVars(Options& options) {
+  Timer time("io");
   for (const auto& item : restart.getData()) {
     bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
     if (item.repeat) {

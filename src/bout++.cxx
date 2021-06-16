@@ -908,6 +908,7 @@ char get_spin() {
  **************************************************************************/
 
 void RunMetrics::outputVars(Options& output_options) const {
+  Timer time("io");
   output_options["wall_time"].assignRepeat(t_elapsed, "t", true, "Output");
   output_options["wtime"].assignRepeat(wtime, "t", true, "Output");
   output_options["ncalls"].assignRepeat(ncalls, "t", true, "Output");

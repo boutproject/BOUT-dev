@@ -7,6 +7,7 @@
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/sys/timer.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>
 #include <utils.hxx>
@@ -703,6 +704,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 }
 
 void Coordinates::outputVars(Options& output_options) {
+  Timer time("io");
   const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
 
   output_options["dx" + loc_string].force(dx, "Coordinates");

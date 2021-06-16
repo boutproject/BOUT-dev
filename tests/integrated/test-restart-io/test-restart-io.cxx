@@ -1,4 +1,5 @@
 #include "bout/physicsmodel.hxx"
+#include "bout/sys/timer.hxx"
 
 class TestRestartIO : public PhysicsModel {
   int init(bool restarting) override {
@@ -20,6 +21,7 @@ class TestRestartIO : public PhysicsModel {
   }
 
   void outputVars(Options& options) override {
+    Timer time("io");
     options["fperp_lower"].assignRepeat(fperp_lower);
     options["fperp_upper"].assignRepeat(fperp_upper);
     options["f3d_once"] = f3d;
@@ -29,6 +31,7 @@ class TestRestartIO : public PhysicsModel {
   }
 
   void restartVars(Options& restart) override {
+    Timer time("io");
     restart["fperp_lower"] = fperp_lower;
     restart["fperp_upper"] = fperp_upper;
   }

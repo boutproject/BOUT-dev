@@ -636,6 +636,7 @@ int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
 }
 
 void Solver::outputVars(Options& output_options, bool save_repeat) {
+  Timer time("io");
   output_options["tt"].force(simtime, "Solver");
   output_options["hist_hi"].force(iteration, "Solver");
 
