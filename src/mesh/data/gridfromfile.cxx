@@ -477,7 +477,7 @@ bool GridFile::get(Mesh *UNUSED(m), std::vector<BoutReal> &var, const std::strin
   if (not data.isSet(name)) { return false;}
 
   const auto full_var = data[name].as<Array<BoutReal>>();
-  auto it = std::begin(full_var);
+  const auto* it = std::begin(full_var);
   std::advance(it, offset);
   std::copy_n(it, len, std::begin(var));
 
