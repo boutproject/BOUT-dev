@@ -40,6 +40,7 @@
 #include <cstring>
 #include <ctime>
 #include <numeric>
+#include <set>
 
 // Implementations:
 #include "impls/adams_bashforth/adams_bashforth.hxx"
@@ -817,6 +818,12 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
 
   ++iter;
   try {
+    // We need to write each time dimension a maximum of once per
+    // timestep. The set of unique time dimensions may be the same
+    // size or smaller than the set of monitors, so we need to keep
+    // track of the unique dimensions each timestep.
+    std::set<std::string> seen_time_dimensions;
+
     // Call monitors
     for (const auto& monitor : monitors) {
       if ((iter % monitor.monitor->period) == 0) {
@@ -826,11 +833,21 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
             != 0) {
           throw BoutException(_("Monitor signalled to quit"));
         }
+        // Write the monitor's diagnostics to the main output file
         Options monitor_dump;
         monitor.monitor->outputVars(monitor_dump, monitor.time_dimension);
         model->writeOutputFile(monitor_dump, monitor.time_dimension);
+        // This monitor's time dimension needs writing out
+        seen_time_dimensions.insert(monitor.time_dimension);
       }
     }
+    // Write all the unique time dimensions that were advanced this timestep
+    for (const auto& time_dimension : seen_time_dimensions) {
+      Options time_dump;
+      time_dump[time_dimension].assignRepeat(simtime, time_dimension);
+      model->writeOutputFile(time_dump, time_dimension);
+    }
+
     model->finishOutputTimestep();
   } catch (const BoutException&) {
     for (const auto& monitor : monitors) {
