@@ -54,7 +54,6 @@ class Mesh;
 #include "bout_types.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
-#include "datafile.hxx"
 #include "options.hxx"
 
 #include "fieldgroup.hxx"

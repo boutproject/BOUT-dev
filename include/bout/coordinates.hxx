@@ -34,7 +34,6 @@
 #define __COORDINATES_H__
 
 #include "bout/paralleltransform.hxx"
-#include "datafile.hxx"
 #include "utils.hxx"
 #include <bout_types.hxx>
 #include "field2d.hxx"

@@ -163,13 +163,6 @@ cdef extern from "bout/solver.hxx":
         void add(Field3D, char * name)
         void solve()
 
-cdef extern from "datafile.hxx":
-    cppclass Datafile:
-        void add(int &i, const char *name, bool save_repeat)
-        void add(double &i, const char *name, bool save_repeat)
-        void add(Field3D &i, const char *name, bool save_repeat)
-        void write()
-
 cdef extern from "bout/physicsmodel.hxx":
     cppclass PhysicsModel:
         int rhs(double t)

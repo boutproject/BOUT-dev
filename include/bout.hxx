@@ -39,7 +39,6 @@
 #include "bout/build_config.hxx"
 
 #include "boutcomm.hxx"
-#include "datafile.hxx"
 #include "difops.hxx" // Differential operators
 #include "field2d.hxx"
 #include "field3d.hxx"

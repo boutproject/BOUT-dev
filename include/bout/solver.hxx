@@ -40,7 +40,6 @@
 
 #include "bout_types.hxx"
 #include "boutexception.hxx"
-#include "datafile.hxx"
 #include "options.hxx"
 #include "unused.hxx"
 #include "bout/monitor.hxx"

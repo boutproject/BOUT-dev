@@ -34,7 +34,6 @@ const char DEFAULT_DIR[] = "data";
 #include "boundary_factory.hxx"
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
-#include "datafile.hxx"
 #include "interpolation_xz.hxx"
 #include "interpolation_z.hxx"
 #include "invert_laplace.hxx"
