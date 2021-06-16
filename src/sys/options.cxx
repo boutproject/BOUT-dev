@@ -13,7 +13,7 @@
 /// The source label given to default values
 const std::string Options::DEFAULT_SOURCE{_("default")};
 
-std::string Options::getDefaultSource() const { return DEFAULT_SOURCE; }
+std::string Options::getDefaultSource() { return DEFAULT_SOURCE; }
 
 /// Name of the attribute to indicate an Option should always count as
 /// having been used
