@@ -356,9 +356,6 @@ protected:
     PhysicsModel *model;
   };
 
-  /// write restarts and pass outputMonitor method inside a Monitor subclass
-  PhysicsModelMonitor modelMonitor{this};
-
 private:
   /// State for outputs
   Options output_options;
@@ -380,6 +377,8 @@ private:
   jacobianfunc userjacobian{nullptr};
   /// True if model already initialised
   bool initialised{false};
+  /// write restarts and pass outputMonitor method inside a Monitor subclass
+  PhysicsModelMonitor modelMonitor{this};
 };
 
 /*!
