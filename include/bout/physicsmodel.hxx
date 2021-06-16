@@ -68,14 +68,20 @@ public:
                                          Matrix<BoutReal>*, Tensor<BoutReal>*>;
 
   template <class T>
-  void addRepeat(T& value, std::string name) { add(&value, name, true); }
+  void addRepeat(T& value, std::string name) {
+    add(&value, std::move(name), true);
+  }
   template <class T>
-  void addOnce(T& value, std::string name) { add(&value, name, false); }
+  void addOnce(T& value, std::string name) {
+    add(&value, std::move(name), false);
+  }
   template <class T>
-  void add(T& value, const std::string& name, bool save_repeat = false) { add(&value, name, save_repeat); }
+  void add(T& value, const std::string& name, bool save_repeat = false) {
+    add(&value, std::move(name), save_repeat);
+  }
 
-  void addRepeat(ValueType value, std::string name) { add(value, name, true); }
-  void addOnce(ValueType value, std::string name) { add(value, name, false); }
+  void addRepeat(ValueType value, std::string name) { add(value, std::move(name), true); }
+  void addOnce(ValueType value, std::string name) { add(value, std::move(name), false); }
   void add(ValueType value, const std::string& name, bool save_repeat = false);
 
   /// Write stored data to file immediately
@@ -86,7 +92,7 @@ private:
   /// object to file later
   struct StoredValue {
     StoredValue(std::string name_, ValueType value_, bool repeat_)
-        : name(std::move(name_)), value(std::move(value_)), repeat(repeat_) {}
+        : name(std::move(name_)), value(value_), repeat(repeat_) {}
     std::string name;
     ValueType value;
     bool repeat;
