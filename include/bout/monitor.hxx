@@ -112,7 +112,7 @@ struct RunMetrics {
   /*!
    * Adds variables to the output file, for post-processing
    */
-  void outputVars(Options& output_options);
+  void outputVars(Options& output_options) const;
 
   /*!
    * Calculates derived metrics

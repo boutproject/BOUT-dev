@@ -907,7 +907,7 @@ char get_spin() {
  * Functions for writing run information
  **************************************************************************/
 
-void RunMetrics::outputVars(Options& output_options) {
+void RunMetrics::outputVars(Options& output_options) const {
   output_options["wall_time"].assignRepeat(t_elapsed, "t", true, "Output");
   output_options["wtime"].assignRepeat(wtime, "t", true, "Output");
   output_options["ncalls"].assignRepeat(ncalls, "t", true, "Output");
