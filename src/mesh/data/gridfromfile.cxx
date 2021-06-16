@@ -128,11 +128,12 @@ bool GridFile::get(Mesh *m, Field3D &var, const std::string &name, BoutReal def,
 }
 
 namespace {
+/// Visitor that returns the shape of its argument
 struct GetDimensions {
-  std::vector<int> operator()(bool) { return {1}; }
-  std::vector<int> operator()(int) { return {1}; }
-  std::vector<int> operator()(BoutReal) { return {1}; }
-  std::vector<int> operator()(const std::string&) { return {1}; }
+  std::vector<int> operator()(MAYBE_UNUSED(bool value)) { return {1}; }
+  std::vector<int> operator()(MAYBE_UNUSED(int value)) { return {1}; }
+  std::vector<int> operator()(MAYBE_UNUSED(BoutReal value)) { return {1}; }
+  std::vector<int> operator()(MAYBE_UNUSED(const std::string& value)) { return {1}; }
   std::vector<int> operator()(const Array<BoutReal>& array) { return {array.size()}; }
   std::vector<int> operator()(const Matrix<BoutReal>& array) {
     const auto shape = array.shape();
