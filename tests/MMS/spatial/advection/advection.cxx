@@ -3,7 +3,6 @@
 #include "field_factory.hxx"
 
 using bout::globals::mesh;
-using bout::globals::dump;
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
