@@ -822,7 +822,8 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
       if ((iter % monitor.monitor->period) == 0) {
         // Call each monitor one by one
         if (monitor.monitor->call(this, simtime, iter / monitor.monitor->period - 1,
-                          NOUT / monitor.monitor->period)) {
+                                  NOUT / monitor.monitor->period)
+            != 0) {
           throw BoutException(_("Monitor signalled to quit"));
         }
         Options monitor_dump;
