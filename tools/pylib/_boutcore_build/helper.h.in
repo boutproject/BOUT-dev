@@ -121,10 +121,6 @@ void throw_BoutException(std::string err){
   throw BoutException(err);
 }
 
-Datafile * c_get_global_datafile(){
-  return &bout::globals::dump;
-}
-
 double c_get_dz(Coordinates * coords) {
   return coords->dz;
 }
