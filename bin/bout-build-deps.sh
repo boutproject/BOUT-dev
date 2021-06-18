@@ -256,7 +256,7 @@ Re-login in or source ~/.bashrc
 ###                  Summary and Info follows!                   ###
 ####################################################################
 $msg
-Activate the dependency module by runing
+Activate the dependency module by running
 
   module load $ext
 
