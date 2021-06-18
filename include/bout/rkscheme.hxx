@@ -48,7 +48,7 @@ constexpr auto RKSCHEME_CASHKARP = "cashkarp";
 constexpr auto RKSCHEME_RK4 = "rk4";
 constexpr auto RKSCHEME_RKF34 = "rkf34";
 
-class RKSchemeFactory : public Factory<RKScheme, RKSchemeFactory> {
+class RKSchemeFactory : public Factory<RKScheme, RKSchemeFactory, Options*> {
 public:
   static constexpr auto type_name = "RKScheme";
   static constexpr auto section_name = "solver";
@@ -65,7 +65,7 @@ public:
 ///     RegisterRKScheme<MyRKScheme> registerrkschememine("myrkscheme");
 ///     }
 template <typename DerivedType>
-using RegisterRKScheme = RegisterInFactory<RKScheme, DerivedType, RKSchemeFactory>;
+using RegisterRKScheme = RKSchemeFactory::RegisterInFactory<DerivedType>;
 
 class RKScheme {
  public:
