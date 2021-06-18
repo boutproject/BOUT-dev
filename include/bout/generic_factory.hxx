@@ -64,7 +64,7 @@ struct ArgumentHelper : public ArgumentHelperBase {
 ///       static constexpr auto default_type = "derived_type";
 ///     };
 ///
-///     RegisterInFactory<Base, Derived, MyFactory> register("derived_type");
+///     RegisterInFactory<Base, Derived, MyFactory, Options*> register("derived_type");
 ///     auto foo = MyFactory::getInstance().create("derived_type");
 ///
 ///   In a .cxx file the static members should be declared:
@@ -80,9 +80,9 @@ struct ArgumentHelper : public ArgumentHelperBase {
 /// @tparam TypeCreator    The function signature for creating a new BaseType
 ///
 /// MIT Licence
-template <class BaseType, class DerivedFactory,
-          class TypeCreator = std::function<std::unique_ptr<BaseType>(Options*)>>
+template <class BaseType, class DerivedFactory, class... BaseArgs>
 class Factory {
+  using TypeCreator = std::function<std::unique_ptr<BaseType>(BaseArgs...)>;
   /// Storage of the creation functions
   std::map<std::string, TypeCreator> type_map;
 
@@ -282,46 +282,44 @@ public:
     }
     return unavailable;
   }
-};
 
-/// Helper class for adding new types to Factory
-///
-/// See Factory for example
-///
-/// Adapted from
-/// http://www.drdobbs.com/conversations-abstract-factory-template/184403786
-///
-/// @tparam BaseType       Which factory to add \p DerivedType to
-/// @tparam DerivedType    The new type to add to Factory<BaseType>
-template <class BaseType, class DerivedType, class DerivedFactory>
-class RegisterInFactory {
-public:
-  RegisterInFactory(const std::string& name) {
-    DerivedFactory::getInstance().add(name,
-                                      [](Options* options) -> std::unique_ptr<BaseType> {
-                                        return std::make_unique<DerivedType>(options);
-                                      });
-    DerivedFactory::getInstance().addHelp(
-        name, [](Options& options) -> typename DerivedFactory::ArgumentHelperType {
-          return std::make_unique<bout::ArgumentHelper<DerivedType>>(options);
-        });
-  }
-};
+  /// Helper class for adding new types to Factory
+  ///
+  /// See Factory for example
+  ///
+  /// Adapted from
+  /// http://www.drdobbs.com/conversations-abstract-factory-template/184403786
+  ///
+  /// @tparam BaseType       Which factory to add \p DerivedType to
+  /// @tparam DerivedType    The new type to add to Factory<BaseType>
+  template <class DerivedType>
+  struct RegisterInFactory {
+    RegisterInFactory(const std::string& name) {
+      DerivedFactory::getInstance().add(
+          name, [](BaseArgs&&... args) -> std::unique_ptr<BaseType> {
+            return std::make_unique<DerivedType>(std::forward<BaseArgs>(args)...);
+          });
+      DerivedFactory::getInstance().addHelp(
+          name, [](Options& options) -> typename DerivedFactory::ArgumentHelperType {
+            return std::make_unique<bout::ArgumentHelper<DerivedType>>(options);
+          });
+    }
+  };
 
-/// Helper class for adding new (unavailable) types to Factory
-///
-/// See Factory for example
-///
-/// Adapted from
-/// http://www.drdobbs.com/conversations-abstract-factory-template/184403786
-///
-/// @tparam BaseType       Which factory to add \p DerivedType to
-template <class BaseType, class DerivedFactory>
-class RegisterUnavailableInFactory {
-public:
-  RegisterUnavailableInFactory(const std::string& name, const std::string& reason) {
-    DerivedFactory::getInstance().addUnavailable(name, reason);
-  }
+  /// Helper class for adding new (unavailable) types to Factory
+  ///
+  /// See Factory for example
+  ///
+  /// Adapted from
+  /// http://www.drdobbs.com/conversations-abstract-factory-template/184403786
+  ///
+  /// @tparam BaseType       Which factory to add \p DerivedType to
+  class RegisterUnavailableInFactory {
+  public:
+    RegisterUnavailableInFactory(const std::string& name, const std::string& reason) {
+      DerivedFactory::getInstance().addUnavailable(name, reason);
+    }
+  };
 };
 
 #endif // __BOUT_GENERIC_FACTORY_H__

@@ -79,10 +79,7 @@ class Mesh;
 #include <set>
 #include <string>
 
-
-class MeshFactory : public Factory<
-  Mesh, MeshFactory,
-  std::function<std::unique_ptr<Mesh>(GridDataSource*, Options*)>> {
+class MeshFactory : public Factory<Mesh, MeshFactory, GridDataSource*, Options*> {
 public:
   static constexpr auto type_name = "Mesh";
   static constexpr auto section_name = "mesh";
@@ -93,15 +90,7 @@ public:
 };
 
 template <class DerivedType>
-class RegisterMesh {
-public:
-  RegisterMesh(const std::string& name) {
-    MeshFactory::getInstance().add(
-        name, [](GridDataSource* source, Options* options) -> std::unique_ptr<Mesh> {
-          return std::make_unique<DerivedType>(source, options);
-        });
-  }
-};
+using RegisterMesh = MeshFactory::RegisterInFactory<DerivedType>;
 
 /// Type used to return pointers to handles
 using comm_handle = void*;

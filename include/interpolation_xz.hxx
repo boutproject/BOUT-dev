@@ -228,8 +228,7 @@ public:
 };
 
 class XZInterpolationFactory
-    : public Factory<XZInterpolation, XZInterpolationFactory,
-                     std::function<std::unique_ptr<XZInterpolation>(Mesh*)>> {
+    : public Factory<XZInterpolation, XZInterpolationFactory, Mesh*> {
 public:
   static constexpr auto type_name = "XZInterpolation";
   static constexpr auto section_name = "xzinterpolation";
@@ -245,14 +244,6 @@ public:
 };
 
 template <class DerivedType>
-class RegisterXZInterpolation {
-public:
-  RegisterXZInterpolation(const std::string& name) {
-    XZInterpolationFactory::getInstance().add(
-        name, [](Mesh* mesh) -> std::unique_ptr<XZInterpolation> {
-          return std::make_unique<DerivedType>(mesh);
-        });
-  }
-};
+using RegisterXZInterpolation = XZInterpolationFactory::RegisterInFactory<DerivedType>;
 
 #endif // __INTERP_XZ_H__

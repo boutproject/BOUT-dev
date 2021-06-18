@@ -69,9 +69,7 @@ public:
 };
 
 class ZInterpolationFactory
-    : public Factory<ZInterpolation, ZInterpolationFactory,
-                     std::function<std::unique_ptr<ZInterpolation>(
-                         int, Mesh*, Region<Ind3D>)>> {
+    : public Factory<ZInterpolation, ZInterpolationFactory, int, Mesh*, Region<Ind3D>> {
 public:
   static constexpr auto type_name = "ZInterpolation";
   static constexpr auto section_name = "zinterpolation";
@@ -92,17 +90,7 @@ public:
 };
 
 template <class DerivedType>
-class RegisterZInterpolation {
-public:
-  RegisterZInterpolation(const std::string& name) {
-    ZInterpolationFactory::getInstance().add(
-        name,
-        [](int y_offset, Mesh* mesh, Region<Ind3D> region_in)
-            -> std::unique_ptr<ZInterpolation> {
-          return std::make_unique<DerivedType>(y_offset, mesh, region_in);
-        });
-  }
-};
+using RegisterZInterpolation = ZInterpolationFactory::RegisterInFactory<DerivedType>;
 
 class ZHermiteSpline : public ZInterpolation {
 public:

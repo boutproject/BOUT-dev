@@ -130,9 +130,7 @@ constexpr int INVERT_KX_ZERO = 16;
  */
 
 class LaplaceFactory
-    : public Factory<
-          Laplacian, LaplaceFactory,
-          std::function<std::unique_ptr<Laplacian>(Options*, CELL_LOC, Mesh*)>> {
+    : public Factory<Laplacian, LaplaceFactory, Options*, CELL_LOC, Mesh*> {
 public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
@@ -155,22 +153,9 @@ public:
 ///     RegisterLaplace<MyLaplace> registerlaplacemine("mylaplace");
 ///     }
 template <class DerivedType>
-class RegisterLaplace {
-public:
-  RegisterLaplace(const std::string& name) {
-    LaplaceFactory::getInstance().add(
-        name,
-        [](Options* options, CELL_LOC loc, Mesh* mesh) -> std::unique_ptr<Laplacian> {
-          return std::make_unique<DerivedType>(options, loc, mesh);
-        });
-    LaplaceFactory::getInstance().addHelp(
-        name, [](Options& options) -> typename LaplaceFactory::ArgumentHelperType {
-          return std::make_unique<bout::ArgumentHelper<DerivedType>>(options);
-        });
-  }
-};
+using RegisterLaplace = LaplaceFactory::RegisterInFactory<DerivedType>;
 
-using RegisterUnavailableLaplace = RegisterUnavailableInFactory<Laplacian, LaplaceFactory>;
+using RegisterUnavailableLaplace = LaplaceFactory::RegisterUnavailableInFactory;
 
 namespace bout{
 template <>
