@@ -19,18 +19,48 @@
 #include <vector>
 
 namespace bout{
+/// Return result of a precondition-checking function. If the
+/// precondition was met, `success` is `true` and `reason` is empty;
+/// otherwise `reason` contains the reason why the precondition failed
+struct PreconditionResult {
+  /// True if the precondition(s) were met
+  bool success{false};
+  /// Reason for failure
+  std::string reason;
+  /// Conversion to bool operator
+  constexpr operator bool() const { return success; }
+};
+
 /// Base class for `ArgumentHelper` so we can store actual
 /// implementations in `Factory`
 struct ArgumentHelperBase {
 private:
+  // We don't want output from `Options` when we construct an `ArgumentHelper`
   WithQuietOutput info{output_info};
 };
 
 /// Specialise this for some class `T` in order to get help on the
-/// command line for `T`'s options
+/// command line for `T`'s options. Both constructor and
+/// `checkPreconditions` need to be implemented, but you can
+/// copy-paste the version here if there are no preconditions.
+///
+/// The constructor should take exactly `Options&` as its sole
+/// argument, and `checkPreconditions` must take the same arguments as
+/// `T`'s constructor. Usually `T` is a derived class constructed by a
+/// `Factory`, in which case the arguments to `checkPreconditions`
+/// should be those of the base-class constructor that
+/// `Factory::create` uses.
 template <class T>
 struct ArgumentHelper : public ArgumentHelperBase {
+  /// Use input \p options so we can tell what `Options` `T` uses
   explicit ArgumentHelper(Options& options MAYBE_UNUSED()) {}
+  /// Check the preconditions for the associated type `T`. Default
+  /// implementation here can take any arguments and assumes there are
+  /// no preconditions
+  template <typename... Args>
+  static PreconditionResult checkPreconditions(MAYBE_UNUSED(Args&&... args)) {
+    return {true, ""};
+  };
 };
 
 }
@@ -82,20 +112,22 @@ struct ArgumentHelper : public ArgumentHelperBase {
 /// MIT Licence
 template <class BaseType, class DerivedFactory, class... BaseArgs>
 class Factory {
+public:
+  /// Function signature for creating derived types
   using TypeCreator = std::function<std::unique_ptr<BaseType>(BaseArgs...)>;
+  /// Function signature for creating argument helper types
+  using ArgumentHelperCreator = std::function<std::unique_ptr<bout::ArgumentHelperBase>(Options&)>;
+  /// Function signature for checking preconditions
+  using PreconditionChecker = std::function<bout::PreconditionResult(BaseArgs...)>;
+private:
   /// Storage of the creation functions
   std::map<std::string, TypeCreator> type_map;
-
   /// Known implementations that are unavailable, along with the reason
   std::map<std::string, std::string> unavailable_options;
-
-public:
-  using ArgumentHelperType = std::unique_ptr<bout::ArgumentHelperBase>;
-
-private:
-  using ArgumentHelperCreator = std::function<ArgumentHelperType(Options&)>;
-
+  /// Storage for the argument helper creation functions
   std::map<std::string, ArgumentHelperCreator> argument_map;
+  /// Storage for the precondition checker functions
+  std::map<std::string, PreconditionChecker> precondition_map;
 
 protected:
   // Type returned from the creation function
@@ -114,6 +146,27 @@ protected:
       options = &Options::root()[DerivedFactory::section_name];
     }
     return options;
+  }
+
+  void throwUnavailableError(const std::string& verb, const std::string& name) const {
+    // List available options in error
+    std::string available;
+    for (auto i : listAvailable()) {
+      available += i + "\n";
+    }
+
+    // Check if it _could_ be available
+    auto unavailable_index = unavailable_options.find(name);
+    if (unavailable_index != std::end(unavailable_options)) {
+      throw BoutException("Error when trying to {4} a {0:s}: '{1:s}' is not available "
+                          "because {2:s}\nAvailable {0:s}s are:\n{3:s}",
+                          DerivedFactory::type_name, unavailable_index->first,
+                          unavailable_index->second, available, verb);
+    }
+
+    throw BoutException("Error when trying to {3} a {0:s}: Could not find "
+                        "'{1:s}'\nAvailable {0:s}s are:\n{2:s}",
+                        DerivedFactory::type_name, name, available, verb);
   }
 
 public:
@@ -160,6 +213,10 @@ public:
   /// @returns true if the helper was successfully added
   virtual bool addHelp(const std::string& name, ArgumentHelperCreator creator) {
     return argument_map.insert(std::make_pair(name, creator)).second;
+  }
+
+  virtual bool addPrecondition(const std::string& name, PreconditionChecker check) {
+    return precondition_map.insert(std::make_pair(name, check)).second;
   }
 
   /// Remove a type \p name from the factory
@@ -210,28 +267,10 @@ public:
   template <typename... Args>
   ReturnType create(const std::string& name, Args&&... args) const {
     auto index = type_map.find(name);
-    if (index != std::end(type_map)) {
-      return index->second(std::forward<Args>(args)...);
+    if (index == std::end(type_map)) {
+      throwUnavailableError("create", name);
     }
-
-    // List available options in error
-    std::string available;
-    for (auto i : listAvailable()) {
-      available += i + "\n";
-    }
-
-    // Check if it _could_ be available
-    auto unavailable_index = unavailable_options.find(name);
-    if (unavailable_index != std::end(unavailable_options)) {
-      throw BoutException("Error when trying to create a {0:s}: '{1:s}' is not available "
-                          "because {2:s}\nAvailable {0:s}s are:\n{3:s}",
-                          DerivedFactory::type_name,
-                          unavailable_index->first, unavailable_index->second, available);
-    }
-
-    throw BoutException("Error when trying to create a {0:s}: Could not find "
-                        "'{1:s}'\nAvailable {0:s}s are:\n{2:s}",
-                        DerivedFactory::type_name, name, available);
+    return index->second(std::forward<Args>(args)...);
   }
 
   /// Create a new object of the type given in options["type"]
@@ -247,19 +286,26 @@ public:
   std::string help(const std::string& name) const {
     auto index = argument_map.find(name);
     if (index == std::end(argument_map)) {
-      // List available options in error
-      std::string available;
-      for (auto i : listAvailable()) {
-        available += i + "\n";
-      }
-      throw BoutException(
-          "Couldn't get help for '{0:s}', unknown {1:s}.\nAvailable {1:s} are:\n{2:s}",
-          name, DerivedFactory::type_name, available);
+      throwUnavailableError("get help for", name);
     }
 
     Options options;
     index->second(options[DerivedFactory::section_name]);
     return fmt::format("{:id}", options);
+  }
+
+  /// Return the precondition checker _function_ associated with \p name.
+  ///
+  /// Typical use might look like:
+  ///
+  ///     LaplaceFactory::getInstance()
+  ///         .checkPreconditions("pcr")(options, CELL_CENTRE, mesh);
+  PreconditionChecker checkPreconditions(const std::string& name) const {
+    auto index = precondition_map.find(name);
+    if (index == std::end(precondition_map)) {
+      throwUnavailableError("check preconditions of", name);
+    }
+    return index->second;
   }
 
   /// List available types that can be created
@@ -274,6 +320,7 @@ public:
     return available;
   }
 
+  /// List unavailable types and the reasons why they're not available
   std::vector<std::string> listUnavailableReasons() const {
     std::vector<std::string> unavailable;
     unavailable.reserve(type_map.size());
@@ -300,8 +347,13 @@ public:
             return std::make_unique<DerivedType>(std::forward<BaseArgs>(args)...);
           });
       DerivedFactory::getInstance().addHelp(
-          name, [](Options& options) -> typename DerivedFactory::ArgumentHelperType {
+          name, [](Options& options) -> std::unique_ptr<bout::ArgumentHelperBase> {
             return std::make_unique<bout::ArgumentHelper<DerivedType>>(options);
+          });
+      DerivedFactory::getInstance().addPrecondition(
+          name, [](BaseArgs&&... args) -> bout::PreconditionResult {
+            return bout::ArgumentHelper<DerivedType>::checkPreconditions(
+                std::forward<BaseArgs>(args)...);
           });
     }
   };
