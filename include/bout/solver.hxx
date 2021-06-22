@@ -98,7 +98,7 @@ enum class SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS
 /// A type to set where in the list monitors are added
 enum class MonitorPosition {BACK, FRONT};
 
-class SolverFactory : public Factory<Solver, SolverFactory> {
+class SolverFactory : public Factory<Solver, SolverFactory, Options*> {
 public:
   static constexpr auto type_name = "Solver";
   static constexpr auto section_name = "solver";
@@ -122,9 +122,9 @@ public:
 ///     RegisterSolver<MySolver> registersolvermine("mysolver");
 ///     }
 template <typename DerivedType>
-using RegisterSolver = RegisterInFactory<Solver, DerivedType, SolverFactory>;
+using RegisterSolver = SolverFactory::RegisterInFactory<DerivedType>;
 
-using RegisterUnavailableSolver = RegisterUnavailableInFactory<Solver, SolverFactory>;
+using RegisterUnavailableSolver = SolverFactory::RegisterUnavailableInFactory;
 
 ///////////////////////////////////////////////////////////////////
 

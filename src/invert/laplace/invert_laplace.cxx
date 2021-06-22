@@ -62,6 +62,69 @@
  *                         INITIALISATION AND CREATION
  **********************************************************************************/
 
+bout::ArgumentHelper<Laplacian>::ArgumentHelper(Options& options)
+    : async_send(options["async"].doc("Use asyncronous MPI send?").withDefault(true)),
+      filter(options["filter"]
+                 .doc("Fraction of Z modes to filter out. Between 0 and 1")
+                 .withDefault(0.0)),
+      // NOTE: Default value requires `Mesh::LocalNz`
+      maxmode(options["maxmode"]
+                  .doc("The maximum Z mode to solve for. Default is based on filter and "
+                       "mesh size")
+                  .withDefault(999.)),
+      low_mem(options["low_mem"]
+                  .doc("If true, reduce the amount of memory used")
+                  .withDefault(false)),
+      all_terms(
+          options["all_terms"].doc("Include first derivative terms?").withDefault(true)),
+      // NOTE: The default value should be set from `Coordinates::non_uniform`
+      nonuniform(options["nonuniform"]
+                     .doc("Use non-uniform grid corrections? Default is the coordinates "
+                          "setting (top-level option 'non_uniform').")
+                     .withDefault(true)),
+      include_yguards(options["include_yguards"]
+                          .doc("Solve Laplacian in Y guard cells?")
+                          .withDefault(false)),
+      extra_yguards_lower(
+          options["extra_yguards_lower"]
+              .doc("Exclude some number of points at the lower boundary, useful for "
+                   "staggered grids or when boundary conditions make inversion redundant")
+              .withDefault(0)),
+      extra_yguards_upper(
+          options["extra_yguards_upper"]
+              .doc("Exclude some number of points at the upper boundary, useful for "
+                   "staggered grids or when boundary conditions make inversion redundant")
+              .withDefault(0)),
+      global_flags(options["global_flags"].doc("Default flags").withDefault(0)),
+      inner_boundary_flags(options["inner_boundary_flags"]
+                               .doc("Flags to set inner boundary condition")
+                               .withDefault(0)),
+      outer_boundary_flags(options["outer_boundary_flags"]
+                               .doc("Flags to set outer boundary condition")
+                               .withDefault(0)) {}
+
+LaplaceFactory::ReturnType LaplaceFactory::create(Options* options, CELL_LOC loc,
+                                                  Mesh* mesh) {
+  options = optionsOrDefaultSection(options);
+
+  // Use a lambda to replace `Factory::getDefaultType` as we need to
+  // pass the constructor arguments through to
+  // `checkPreconditions`. Note that we immediately call the lambda
+  const auto type = (*options)["type"].withDefault([&]() {
+    auto result = Factory::checkPreconditions(LAPLACE_PCR)(options, loc, mesh);
+    if (result) {
+      return LAPLACE_PCR;
+    }
+    output.write("Default Laplacian '{}' preconditions not met because {}\n"
+                 "Falling back to '{}'\n",
+                 LAPLACE_PCR, result.reason, LAPLACE_CYCLIC);
+    // Change the default type so we pick it up as a used option
+    return LAPLACE_CYCLIC;
+  }());
+
+  return Factory::create(type, options, loc, mesh);
+}
+
 /// Laplacian inversion initialisation. Called once at the start to get settings
 Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in)
     : location(loc), localmesh(mesh_in == nullptr ? bout::globals::mesh : mesh_in) {

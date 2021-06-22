@@ -130,20 +130,15 @@ constexpr int INVERT_KX_ZERO = 16;
  */
 
 class LaplaceFactory
-    : public Factory<
-          Laplacian, LaplaceFactory,
-          std::function<std::unique_ptr<Laplacian>(Options*, CELL_LOC, Mesh*)>> {
+    : public Factory<Laplacian, LaplaceFactory, Options*, CELL_LOC, Mesh*> {
 public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
   static constexpr auto option_name = "type";
-  static constexpr auto default_type = LAPLACE_CYCLIC;
+  static constexpr auto default_type = LAPLACE_PCR;
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
-                    Mesh* mesh = nullptr) {
-    options = optionsOrDefaultSection(options);
-    return Factory::create(getType(options), options, loc, mesh);
-  }
+                    Mesh* mesh = nullptr);
 };
 
 /// Simpler name for Factory registration helper class
@@ -155,18 +150,44 @@ public:
 ///     RegisterLaplace<MyLaplace> registerlaplacemine("mylaplace");
 ///     }
 template <class DerivedType>
-class RegisterLaplace {
-public:
-  RegisterLaplace(const std::string& name) {
-    LaplaceFactory::getInstance().add(
-        name,
-        [](Options* options, CELL_LOC loc, Mesh* mesh) -> std::unique_ptr<Laplacian> {
-          return std::make_unique<DerivedType>(options, loc, mesh);
-        });
-  }
-};
+using RegisterLaplace = LaplaceFactory::RegisterInFactory<DerivedType>;
 
-using RegisterUnavailableLaplace = RegisterUnavailableInFactory<Laplacian, LaplaceFactory>;
+using RegisterUnavailableLaplace = LaplaceFactory::RegisterUnavailableInFactory;
+
+namespace bout{
+template <>
+struct ArgumentHelper<Laplacian> : public ArgumentHelperBase {
+  explicit ArgumentHelper(Options& options);
+  /// If true, use asyncronous send in parallel algorithms
+  bool async_send;
+  /// Fraction of Z modes to filter out
+  BoutReal filter;
+  /// The maximum Z mode to solve for
+  int maxmode;
+  /// If true, reduce the amount of memory used
+  bool low_mem;
+  /// applies to Delp2 operator and laplacian inversion
+  bool all_terms;
+  /// Non-uniform mesh correction
+  bool nonuniform;
+  /// solve in y-guard cells, default true.
+  bool include_yguards;
+  /// exclude some number of points at the lower boundary, useful for
+  /// staggered grids or when boundary conditions make inversion
+  /// redundant
+  int extra_yguards_lower;
+  /// exclude some number of points at the upper boundary, useful for
+  /// staggered grids or when boundary conditions make inversion
+  /// redundant
+  int extra_yguards_upper;
+  /// Default flags
+  int global_flags;
+  /// Flags to set inner boundary condition
+  int inner_boundary_flags;
+  /// Flags to set outer boundary condition
+  int outer_boundary_flags;
+};
+} // namespace bout
 
 /// Base class for Laplacian inversion
 class Laplacian {

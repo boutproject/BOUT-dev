@@ -34,6 +34,25 @@ class LaplaceIPT;
 #include <options.hxx>
 #include <utils.hxx>
 
+namespace bout {
+template <>
+struct ArgumentHelper<LaplaceIPT> : public ArgumentHelper<Laplacian> {
+  explicit ArgumentHelper(Options& options);
+  static PreconditionResult checkPreconditions(Options* options, CELL_LOC location, Mesh* mesh);
+  /// Solver tolerances
+  BoutReal rtol, atol;
+  /// Maximum number of iterations
+  int maxits;
+  /// Maximum number of coarse grids
+  int max_level;
+  /// Maximum number of iterations per grid
+  int max_cycle;
+  /// Predict when convergence will be reached, and skip expensive convergence
+  /// checks at earlier iterations.
+  bool predict_exit;
+};
+} // namespace bout
+
 namespace {
 RegisterLaplace<LaplaceIPT> registerlaplaceipt(LAPLACE_IPT);
 }

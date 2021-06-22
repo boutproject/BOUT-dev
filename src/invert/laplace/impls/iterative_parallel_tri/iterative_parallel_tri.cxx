@@ -42,6 +42,44 @@
 
 #include <bout/scorepwrapper.hxx>
 
+namespace bout {
+ArgumentHelper<LaplaceIPT>::ArgumentHelper(Options& options)
+    : ArgumentHelper<Laplacian>(options),
+      rtol(options["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
+      atol(options["atol"].doc("Absolute tolerance").withDefault(1.e-20)),
+      maxits(options["maxits"].doc("Maximum number of iterations").withDefault(100)),
+      max_level(
+          options["max_level"].doc("Maximum number of coarse grids").withDefault(0)),
+      max_cycle(options["max_cycle"]
+                    .doc("Maximum number of iterations per coarse grid")
+                    .withDefault(1)),
+      predict_exit(options["predict_exit"]
+                       .doc("Predict when convergence will be reached, and skip "
+                            "expensive convergence checks at earlier iterations")
+                       .withDefault(false)) {}
+
+PreconditionResult ArgumentHelper<LaplaceIPT>::checkPreconditions(
+    Options* options, MAYBE_UNUSED(CELL_LOC location), Mesh* mesh) {
+  ArgumentHelper<LaplaceIPT> args(*options);
+  // Number of procs must be a factor of 2
+  const int n = mesh->NXPE;
+  if (!is_pow2(n)) {
+    return {false, "LaplaceIPT error: NXPE must be a power of 2"};
+  }
+  // Number of levels cannot must be such that nproc <= 2^(max_level-1)
+  if (n > 1 and n < pow(2, args.max_level + 1)) {
+    return {false, "LaplaceIPT error: number of levels and processors must satisfy "
+                   "NXPE > 2^(max_levels+1)."};
+  }
+  // Cannot use multigrid on 1 core
+  if (n == 1 and args.max_level != 0) {
+    return {false, "LaplaceIPT error: must have max_level=0 if using one processor. "};
+  }
+
+  return {true, ""};
+}
+} // namespace bout
+
 LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in),
       rtol((*opt)["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
