@@ -38,6 +38,7 @@ namespace bout {
 template <>
 struct ArgumentHelper<LaplaceIPT> : public ArgumentHelper<Laplacian> {
   explicit ArgumentHelper(Options& options);
+  static PreconditionResult checkPreconditions(Options* options, CELL_LOC location, Mesh* mesh);
   /// Solver tolerances
   BoutReal rtol, atol;
   /// Maximum number of iterations

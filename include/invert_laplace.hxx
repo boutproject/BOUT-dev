@@ -135,13 +135,10 @@ public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
   static constexpr auto option_name = "type";
-  static constexpr auto default_type = LAPLACE_CYCLIC;
+  static constexpr auto default_type = LAPLACE_PCR;
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
-                    Mesh* mesh = nullptr) {
-    options = optionsOrDefaultSection(options);
-    return Factory::create(getType(options), options, loc, mesh);
-  }
+                    Mesh* mesh = nullptr);
 };
 
 /// Simpler name for Factory registration helper class

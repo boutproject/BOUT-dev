@@ -34,10 +34,12 @@ class LaplacePCR;
 #include <options.hxx>
 #include <utils.hxx>
 
-namespace bout{
+namespace bout {
 template <>
 struct ArgumentHelper<LaplacePCR> : public ArgumentHelper<Laplacian> {
   explicit ArgumentHelper(Options& options);
+  static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
+                                               Mesh* mesh);
   bool dst;
 };
 } // namespace bout

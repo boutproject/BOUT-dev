@@ -61,9 +61,30 @@
 
 using namespace std;
 
-bout::ArgumentHelper<LaplacePCR>::ArgumentHelper(Options& options)
+namespace bout {
+ArgumentHelper<LaplacePCR>::ArgumentHelper(Options& options)
     : bout::ArgumentHelper<Laplacian>(options),
       dst(options["dst"].doc("Use DST instead of FFT").withDefault(false)) {}
+
+PreconditionResult ArgumentHelper<LaplacePCR>::checkPreconditions(
+    MAYBE_UNUSED(Options* options), MAYBE_UNUSED(CELL_LOC location), Mesh* mesh) {
+
+  Mesh* localmesh = (mesh == nullptr) ? bout::globals::mesh : mesh;
+
+  // Number of X procs must be a power of 2
+  const int nxpe = localmesh->getNXPE();
+  if (not is_pow2(nxpe)) {
+    return {false, fmt::format("NXPE ({}) must be a power of 2", nxpe)};
+  }
+
+  // Number of x points must be a power of 2
+  if (not is_pow2(localmesh->GlobalNxNoBoundaries)) {
+    return {false, fmt::format("GlobalNx ({}) must be a power of 2",
+                               localmesh->GlobalNxNoBoundaries)};
+  }
+  return {true, ""};
+}
+} // namespace bout
 
 LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0, localmesh), C1coef(1.0, localmesh),

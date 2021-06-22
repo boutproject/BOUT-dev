@@ -103,6 +103,28 @@ bout::ArgumentHelper<Laplacian>::ArgumentHelper(Options& options)
                                .doc("Flags to set outer boundary condition")
                                .withDefault(0)) {}
 
+LaplaceFactory::ReturnType LaplaceFactory::create(Options* options, CELL_LOC loc,
+                                                  Mesh* mesh) {
+  options = optionsOrDefaultSection(options);
+
+  // Use a lambda to replace `Factory::getDefaultType` as we need to
+  // pass the constructor arguments through to
+  // `checkPreconditions`. Note that we immediately call the lambda
+  const auto type = (*options)["type"].withDefault([&]() {
+    auto result = Factory::checkPreconditions(LAPLACE_PCR)(options, loc, mesh);
+    if (result) {
+      return LAPLACE_PCR;
+    }
+    output.write("Default Laplacian '{}' preconditions not met because {}\n"
+                 "Falling back to '{}'\n",
+                 LAPLACE_PCR, result.reason, LAPLACE_CYCLIC);
+    // Change the default type so we pick it up as a used option
+    return LAPLACE_CYCLIC;
+  }());
+
+  return Factory::create(type, options, loc, mesh);
+}
+
 /// Laplacian inversion initialisation. Called once at the start to get settings
 Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in)
     : location(loc), localmesh(mesh_in == nullptr ? bout::globals::mesh : mesh_in) {
