@@ -5,7 +5,7 @@ cdef extern from "{{enum.source}}":
 
 cdef extern from "{{enum.source}}" namespace "{{enum}}":
 {% for val in enum.vals %}
-        cdef {{enum}} {{val}}
+    cdef {{enum}} {{val}}
 {% endfor %}
 
 cdef inline {{enum}} resolve_{{enum.lower}}(str):
@@ -15,9 +15,9 @@ cdef inline {{enum}} resolve_{{enum.lower}}(str):
         "{{enum}}_{{val}}":<int>{{val}},
 {% endfor %}
 {% for key, val in enum.extra.items() %}
-       "{{key}}":<int>{{val}},
+        "{{key}}":<int>{{val}},
 {% endfor %}
-          }
+    }
     return <{{enum}}><int> opts[str]
 
 {% endfor %}

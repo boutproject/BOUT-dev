@@ -19,37 +19,37 @@ cdef extern from "boutexception_helper.hxx":
 {% for field in fields %}
 
 cdef extern from "helper.h":
-    void c_set_{{ field.fdd }}_all(c.{{ field.field_type }} * f, double * data)
-    void c_get_{{ field.fdd }}_all(c.{{ field.field_type }} * f, double * data)
-    void c_set_{{ field.fdd }}_all_(c.{{ field.field_type }} * f, double data)
-    void c_set_{{ field.fdd }}_from_{{ field.fdd }}(c.{{ field.field_type }} * f, c.{{ field.field_type }} * f)
+    void c_set_{{ field.fdd }}_all(c.{{ field.field_type }}* f, double* data)
+    void c_get_{{ field.fdd }}_all(c.{{ field.field_type }}* f, double* data)
+    void c_set_{{ field.fdd }}_all_(c.{{ field.field_type }}* f, double data)
+    void c_set_{{ field.fdd }}_from_{{ field.fdd }}(c.{{ field.field_type }}* f, c.{{ field.field_type }}* f)
 {% set indices=field.makelist('int $ds, int $de, int d$d') %}
-    void c_get_{{ field.fdd }}_part(c.{{ field.field_type }} * f, double * data, {{ indices }})
-    void c_set_{{ field.fdd }}_part(c.{{ field.field_type }} * f, double * data, {{ indices }})
-    void c_set_{{ field.fdd }}_part_(c.{{ field.field_type }} * f, double data, {{ indices }})
+    void c_get_{{ field.fdd }}_part(c.{{ field.field_type }}* f, double* data, {{ indices }})
+    void c_set_{{ field.fdd }}_part(c.{{ field.field_type }}* f, double* data, {{ indices }})
+    void c_set_{{ field.fdd }}_part_(c.{{ field.field_type }}* f, double data, {{ indices }})
 {% for name, op in ops %}
-    c.{{ field.field_type }} * f{{ name }}( c.{{ field.field_type }}*, c.{{ field.field_type }}*) except +raise_bout_py_error
-    c.{{ field.field_type }} * f{{ name }}( c.{{ field.field_type }}*, double) except +raise_bout_py_error
-    c.{{ field.field_type }} * f{{ name }}( double, c.{{ field.field_type }}*) except +raise_bout_py_error
+    c.{{ field.field_type }}* f{{ name }}( c.{{ field.field_type }}*, c.{{ field.field_type }}*) except +raise_bout_py_error
+    c.{{ field.field_type }}* f{{ name }}( c.{{ field.field_type }}*, double) except +raise_bout_py_error
+    c.{{ field.field_type }}* f{{ name }}( double, c.{{ field.field_type }}*) except +raise_bout_py_error
     void fi{{ name }}( c.{{ field.field_type }}*, c.{{ field.field_type }}*) except +raise_bout_py_error
     void fi{{ name }}( c.{{ field.field_type }}*, double) except +raise_bout_py_error
 {% if field.field_type == "Field3D" %}
-    c.Field3D * f{{ name }}( c.Field2D*, c.Field3D*) except +raise_bout_py_error
-    c.Field3D * f{{ name }}( c.Field3D*, c.Field2D*) except +raise_bout_py_error
+    c.Field3D * f{{ name }}(c.Field2D*, c.Field3D*) except +raise_bout_py_error
+    c.Field3D * f{{ name }}(c.Field3D*, c.Field2D*) except +raise_bout_py_error
     void fi{{ name }}( c.Field3D*, c.Field2D*) except +raise_bout_py_error
 {% endif %}
 {% endfor %}
-    c.{{ field.field_type }} c_minus( c.{{ field.field_type }} )
+    c.{{ field.field_type }} c_minus(c.{{ field.field_type }} )
 
 cdef {{ field.field_type }} {{ field.fdd }}FromObj(c.{{ field.field_type }} i):
     f={{ field.field_type }}()
-    f.cobj=new c.{{ field.field_type }}(<const c.{{ field.field_type }} & ?>i)
+    f.cobj=new c.{{ field.field_type }}(<const c.{{ field.field_type }}& ?>i)
     return f
 
-cdef {{ field.field_type }} {{ field.fdd }}FromPtr(c.{{ field.field_type }} * i):
+cdef {{ field.field_type }} {{ field.fdd }}FromPtr(c.{{ field.field_type }}* i):
     f={{ field.field_type }}()
-    f.cobj=i
-    f.isSelfOwned=False
+    f.cobj = i
+    f.isSelfOwned = False
     return f
 
 cdef class {{ field.field_type }}:
@@ -69,10 +69,10 @@ cdef class {{ field.field_type }}:
              The mesh of the {{ field.field_type }}. If None, use global mesh
         """
         checkInit()
-        {{ field.fdd }}={{ field.field_type }}()
+        {{ field.fdd }} = {{ field.field_type }}()
         if mesh is None:
             mesh=Mesh.getGlobal()
-        {{ field.fdd }}.cobj=new c.{{ field.field_type }}((<Mesh?>mesh).cobj)
+        {{ field.fdd }}.cobj = new c.{{ field.field_type }}((<Mesh?>mesh).cobj)
         return {{ field.fdd }}
     @classmethod
     def fromCollect(cls,name,tind=-1,mesh=None,ignoreDataType=False, **kwargs):
@@ -94,47 +94,47 @@ cdef class {{ field.field_type }}:
         from boutdata.collect import collect, dimensions
 
         if mesh is None:
-            mesh=Mesh.getGlobal()
-        f=cls.fromMesh(mesh)
+            mesh = Mesh.getGlobal()
+        f = cls.fromMesh(mesh)
         # Make it MPI aware
         cdef c.Mesh* mesh_ = (<Mesh?>mesh).cobj
-        nxpe=mesh_.getNXPE()
-        nype=mesh_.getNYPE()
+        nxpe = mesh_.getNXPE()
+        nype = mesh_.getNYPE()
         if (nxpe):
             if "xind" in kwargs.keys():
                 raise RuntimeError("Do not support xind slicing with MPI")
-            nxi=mesh_.getXProcIndex()
-            nxg=mesh_.xstart
-            nx=mesh_.LocalNx
-            nx_=nx-2*nxg
-            xstart=nx_*nxi
-            kwargs['xind']=[xstart,xstart+nx]
+            nxi = mesh_.getXProcIndex()
+            nxg = mesh_.xstart
+            nx = mesh_.LocalNx
+            nx_ = nx - 2 * nxg
+            xstart = nx_ * nxi
+            kwargs['xind'] = [xstart, xstart + nx]
         if (nype):
             if "yind" in kwargs.keys():
                 raise RuntimeError("Do not support yind slicing with MPI")
-            nyi=mesh_.getYProcIndex()
-            nyg=mesh_.ystart
-            ny=mesh_.LocalNy
-            ny_=ny-2*nyg
+            nyi = mesh_.getYProcIndex()
+            nyg = mesh_.ystart
+            ny = mesh_.LocalNy
+            ny_ = ny-2*nyg
             ystart=ny_*nyi
-            kwargs['yind']=[ystart,ystart+ny]
-        data=collect(name,yguards=True,tind=tind,**kwargs)
-        dims=dimensions(name,**{k:v for k,v in kwargs.items() if k in ['path','prefix']})
+            kwargs['yind'] = [ystart, ystart + ny]
+        data = collect(name, yguards=True, tind=tind, **kwargs)
+        dims = dimensions(name,**{k:v for k,v in kwargs.items() if k in ['path','prefix']})
         if dims[0] == 't':
-            data=data.reshape(data.shape[1:])
+            data = data.reshape(data.shape[1:])
         if len(data.shape) != {{ field.ndims }}:
             raise TypeError("Expected {{ field.ndims }}D data")
         try:
-            loc=data.attributes['cell_location']
+            loc = data.attributes['cell_location']
         except KeyError:
             pass
         else:
             f.setLocation(loc)
-        f.setAll(data,ignoreDataType=ignoreDataType)
+        f.setAll(data, ignoreDataType=ignoreDataType)
         return f
 
     @classmethod
-    def fromBoutOutputs(cls,outputs,name,tind=-1,mesh=None,ignoreDataType=False):
+    def fromBoutOutputs(cls, outputs, name, tind=-1, mesh=None, ignoreDataType=False):
         """
         Create a {{ field.field_type }} from reading in a datafile via collect.
 
@@ -154,36 +154,36 @@ cdef class {{ field.field_type }}:
         checkInit()
 
         if mesh is None:
-            mesh=Mesh.getGlobal()
-        f=cls.fromMesh(mesh)
+            mesh = Mesh.getGlobal()
+        f = cls.fromMesh(mesh)
         # Make it MPI aware
         cdef c.Mesh* mesh_ = (<Mesh?>mesh).cobj
-        nxpe=mesh_.getNXPE()
-        nype=mesh_.getNYPE()
+        nxpe = mesh_.getNXPE()
+        nype = mesh_.getNYPE()
         # save original _kwargs from outputs so we can restore them later
         orig_kwargs = copy.copy(outputs._kwargs)
         kwargs = outputs._kwargs
-        kwargs['xguards']=True
-        kwargs['yguards']=True
+        kwargs['xguards'] = True
+        kwargs['yguards'] = True
         if (nxpe):
             if "xind" in kwargs.keys():
                 raise RuntimeError("Do not support xind slicing with MPI")
-            nxi=mesh_.getXProcIndex()
-            nxg=mesh_.xstart
-            nx=mesh_.LocalNx
-            nx_=nx-2*nxg
-            xstart=nx_*nxi
-            kwargs['xind']=[xstart,xstart+nx]
+            nxi = mesh_.getXProcIndex()
+            nxg = mesh_.xstart
+            nx = mesh_.LocalNx
+            nx_ = nx-2 * nxg
+            xstart = nx_ * nxi
+            kwargs['xind'] = [xstart, xstart + nx]
         if (nype):
             if "yind" in kwargs.keys():
                 raise RuntimeError("Do not support yind slicing with MPI")
-            nyi=mesh_.getYProcIndex()
-            nyg=mesh_.ystart
-            ny=mesh_.LocalNy
+            nyi = mesh_.getYProcIndex()
+            nyg = mesh_.ystart
+            ny = mesh_.LocalNy
             ny_=ny-2*nyg
-            ystart=ny_*nyi
-            kwargs['yind']=[ystart,ystart+ny]
-        dims=outputs.dimensions[name]
+            ystart = ny_ * nyi
+            kwargs['yind'] = [ystart, ystart + ny]
+        dims = outputs.dimensions[name]
         if outputs._caching:
             # if BoutOutputs object is caching the arrays, let it collect all
             # time points, then slice here
@@ -191,38 +191,38 @@ cdef class {{ field.field_type }}:
                 # Use slice with one element here so shape of 'data' is as if
                 # we had passed argument 'tind=tind' to collect (with
                 # one-element t-dimension)
-                data=outputs[name][tind:tind+1]
+                data = outputs[name][tind: tind + 1]
             else:
-                data=outputs[name]
+                data = outputs[name]
         else:
             # otherwise only collect data for tind
-            kwargs['tind']=tind
-            data=outputs[name]
+            kwargs['tind'] = tind
+            data = outputs[name]
         # restore original _kwargs
-        outputs._kwargs=orig_kwargs
+        outputs._kwargs = orig_kwargs
         if dims[0] == 't':
             data=data.reshape(data.shape[1:])
         if len(data.shape) != {{ field.ndims }}:
             raise TypeError("Expected {{ field.ndims }}D data")
         try:
-            loc=data.attributes['cell_location']
+            loc = data.attributes["cell_location"]
         except KeyError:
             pass
         else:
             f.setLocation(loc)
-        f.setAll(data,ignoreDataType=ignoreDataType)
+        f.setAll(data, ignoreDataType=ignoreDataType)
         return f
 
     def __cinit__(self,{{ field.field_type }} obj=None):
-        self.cobj=NULL
+        self.cobj = NULL
         if obj:
-            self.cobj=obj.cobj
+            self.cobj = obj.cobj
         self.isSelfOwned=True
         #self.cobj = (<c.{{ field.field_type }} * ?> cobj_)
         #if self.cobj == NULL:
         #    raise MemoryError('Not enough memory, allocation failed.')
 
-    def set(self,data,ignoreDataType=False):
+    def set(self, data, ignoreDataType=False):
         """
         Set all data of the {{ field.field_type }}
 
@@ -233,9 +233,9 @@ cdef class {{ field.field_type }}:
         ignoreDataType : bool, optional
             Ignore if data is off different type to BoutReal
         """
-        return self.setAll(data,ignoreDataType)
+        return self.setAll(data, ignoreDataType)
 
-    def setAll(self,data,ignoreDataType=False):
+    def setAll(self, data, ignoreDataType=False):
         """
         Set all data of the {{ field.field_type }}
 
@@ -246,14 +246,14 @@ cdef class {{ field.field_type }}:
         ignoreDataType : bool, optional
             Ignore if data is off different type to BoutRealxx
         """
-        dims=[{{ field.makelist('self.cobj.getN$d()')}}]
-{% set zeros=field.makelist("0") %}
-{% set nxlist=field.makelist("n$d") %}
+        dims = [{{ field.makelist('self.cobj.getN$d()')}}]
+{% set zeros = field.makelist("0") %}
+{% set nxlist = field.makelist("n$d") %}
         if isinstance(data, (int, float)):
-            data=np.zeros(dims)+data
+            data = np.zeros(dims)+data
         if data.dtype != np.dtype('float64'):
             if ignoreDataType:
-                data=data.astype('float64')
+                data = data.astype('float64')
             else:
                 raise TypeError("expected float64 data, but got %s.\nThis can be ignored by adding ignoreDataType=True as argument"%data.dtype)
         dims_in=self._checkDims(dims,data.shape)
@@ -280,14 +280,14 @@ cdef class {{ field.field_type }}:
         array
             A {{ field.ndims }}D numpy array with the data of the {{ field.field_type }}
         """
-        nx=self.cobj.getNx()
-        ny=self.cobj.getNy()
-        nz=self.cobj.getNz()
+        nx = self.cobj.getNx()
+        ny = self.cobj.getNy()
+        nz = self.cobj.getNz()
         cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(np.zeros(({{ nxlist }})))
         c_get_{{ field.fdd }}_all(self.cobj,&data_[{{ zeros }}]);
         return data_
 
-    def setLocation(self,location):
+    def setLocation(self, location):
         """
         Set the location of the {{ field.field_type }}
         This does not do any modification of the data.
@@ -313,7 +313,7 @@ cdef class {{ field.field_type }}:
         cdef benum.CELL_LOC loc = self.cobj[0].getLocation()
         return _resolve_inv_cell_loc(<int> loc)
 
-    def ddt(self,val=None):
+    def ddt(self, val=None):
         """
         Get or set the time derivative
 
@@ -1155,16 +1155,16 @@ def checkInit():
 {% set DD=name.replace("d", d) -%}
 def {{ DD }}({% if flux %}Field3D velocity, {% endif %}Field3D field, outloc="CELL_DEFAULT", method="DIFF_DEFAULT"{% if region %}, region="RGN_NOBNDRY"{% endif %}):
     """
-    Compute the {{ "" if flux else ""}}derivative {{ DD }}
+    Compute the {{ "flux " if flux else ""}}derivative {{ DD }}
 
     Parameters
     ---------
-    field : Field3D
-        The Field3D object of which to calculate the derivative
 {% if flux %}
     velocity : Field3D
         The Field3D object of which the field is advected
 {% endif %}
+    field : Field3D
+        The Field3D object of which to calculate the derivative
     outloc : string
         The location where the derivative is expected. Defaults to the same as field.
     method : string
@@ -1192,16 +1192,17 @@ def {{ DD }}({% if flux %}Field3D velocity, {% endif %}Field3D field, outloc="CE
 
 {% for d in "XYZ" %}
     {%- for f in "DDd", "D2Dd2" -%}
-{{deriv(d, f) }}
+{{ deriv(d, f) }}
+
     {%- endfor -%}
     {%- for f in "VDDd", "FDDd" -%}
 {{deriv(d, f, flux=True) }}
+
     {%- endfor %}
 {% endfor %}
+{{ deriv("d", "Div_par", region=False) }}
 
-{% for DD in "Div_par", "Grad_par" %}
-{{ deriv("d", DD, region=False) }}
-{% endfor %}
+{{ deriv("d", "Grad_par", region=False) }}
 
 {{ deriv("d", "Vpar_Grad_par", region=False, flux=True) }}
 
