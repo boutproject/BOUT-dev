@@ -62,7 +62,6 @@ foreach(file IN LISTS files)
   #list(APPEND deps
   set(gen ${tar}/${file})
   list(APPEND generated ${gen})
-  #message(FATAL_ERROR "${gen} ${src}/${file}.jinja")
   add_custom_command(OUTPUT ${gen}
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${tar}
 	COMMAND ${Python_EXECUTABLE} generate.py ${file}.jinja ${gen}
