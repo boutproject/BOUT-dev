@@ -1,0 +1,154 @@
+#include <field3d.hxx>
+#include <globals.hxx>
+#include <derivs.hxx>
+#include <difops.hxx>
+#include <bout/mesh.hxx>
+#include <invert_laplace.hxx>
+{% for field in [field3d, field2d] %}
+
+void c_set_{{ field.fdd }}_all({{ field.field_type }} * f, const double * data){
+  int j=0;
+  f->allocate();
+  for (auto i : (*f)){
+    (*f)[i]=data[j++];
+  }
+}
+
+void c_set_{{ field.fdd }}_all_({{ field.field_type }} * f, const double data){
+  (*f)=data;
+}
+
+void c_get_{{ field.fdd }}_all(const {{ field.field_type }} * f, double * data){
+  int j=0;
+  for (auto i : (*f)){
+    data[j++]=(*f)[i];
+  }
+}
+
+int getNx( {{ field.field_type }} * a){
+  return a->getNx();
+}
+
+int getNy( {{ field.field_type }} * a){
+  return a->getNy();
+}
+
+int getNz( {{ field.field_type }} * a){
+  return a->getNz();
+}
+
+{% for name, op in ops %}
+{{ field.field_type }} * f{{ name }}({{ field.field_type }}* a, {{ field.field_type }}* b){
+  {{ field.field_type }} * r=new {{ field.field_type }}(*a);
+  *r {{ op }}= *b;
+  return r;
+}
+
+{{ field.field_type }} * f{{ name }}({{ field.field_type }}* a, double b){
+  {{ field.field_type }} * r=new {{ field.field_type }}(*a);
+  *r {{ op }}= b;
+  return r;
+}
+
+{{ field.field_type }} * f{{ name }}(double b,{{ field.field_type }}* a){
+  return new {{ field.field_type }}(b {{ op }} *a);
+}
+
+void fi{{ name }}({{ field.field_type }}* a, {{ field.field_type }}* b){
+  *a {{ op }}= *b;
+}
+
+void fi{{ name }}({{ field.field_type }}* a, double b){
+  *a {{ op }}= b;
+}
+
+{% if field.field_type == "Field3D" %}
+
+Field3D * f{{ name }}(Field3D* a, Field2D* b){
+  Field3D * r=new Field3D(*a);
+  *r {{ op }}= *b;
+  return r;
+}
+
+Field3D * f{{ name }}(Field2D*a,Field3D*b){
+  return new Field3D(*b {{ op }} *a);
+}
+
+void fi{{ name }}(Field3D*a,Field2D*b){
+  *a {{ op }}= *b;
+}
+{% endif %}
+{% endfor %}
+{% endfor %}
+void c_get_f3d_part(const Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz){
+  int j=0;
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      for (int z=zs;z!=ze;z+=dz){
+        data[j++]=(*f3d)(x,y,z);
+      }
+    }
+  }
+}
+
+void c_set_f3d_part(Field3D * f3d, const double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz){
+  f3d->allocate();
+  int j=0;
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      for (int z=zs;z!=ze;z+=dz){
+        (*f3d)(x,y,z)=data[j++];
+      }
+    }
+  }
+}
+void c_set_f3d_part_(Field3D * f3d, const double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz){
+  f3d->allocate();
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      for (int z=zs;z!=ze;z+=dz){
+        (*f3d)(x,y,z)=data;
+      }
+    }
+  }
+}
+
+void c_get_f2d_part(const Field2D * f2d, double * data,int xs,int xe, int dx,int ys,int ye, int dy){
+  int j=0;
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      data[j++]=(*f2d)(x,y);
+    }
+  }
+}
+
+void c_set_f2d_part(Field2D * f2d, const double * data,int xs,int xe, int dx,int ys,int ye, int dy){
+  f2d->allocate();
+  int j=0;
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      (*f2d)(x,y)=data[j++];
+    }
+  }
+}
+void c_set_f2d_part_(Field2D * f2d, const double data,int xs,int xe, int dx,int ys,int ye, int dy){
+  f2d->allocate();
+  for (int x=xs;x!=xe;x+=dx){
+    for (int y=ys;y!=ye;y+=dy){
+      (*f2d)(x,y)=data;
+    }
+  }
+}
+
+Mesh * c_get_global_mesh(){
+  return bout::globals::mesh;
+}
+
+void c_mesh_normalise(Mesh * msh, double norm){
+  //printf("%g\n",norm);
+  auto coord = msh->getCoordinates();
+  coord->dx/=norm;
+  coord->dy/=norm;
+  coord->dz/=norm;
+  coord->geometry();
+}

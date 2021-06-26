@@ -1,0 +1,23 @@
+{% for enum in enums %}
+cdef extern from "{{enum.source}}":
+    cpdef cppclass {{enum}}:
+        pass
+
+cdef extern from "{{enum.source}}" namespace "{{enum}}":
+{% for val in enum.vals %}
+        cdef {{enum}} {{val}}
+{% endfor %}
+
+cdef inline {{enum}} resolve_{{enum.lower}}(str):
+    opts={
+{% for val in enum.vals %}
+        "{{val}}":<int>{{val}},
+        "{{enum}}_{{val}}":<int>{{val}},
+{% endfor %}
+{% for key, val in enum.extra.items() %}
+       "{{key}}":<int>{{val}},
+{% endfor %}
+          }
+    return <{{enum}}><int> opts[str]
+
+{% endfor %}

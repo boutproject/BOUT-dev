@@ -1,0 +1,1599 @@
+# cython: language=c++
+# cython: language_level=3
+# cython: binding=True
+# distutils: sources = helper.cxx boutexception_helper.cxx
+
+cimport boutcpp as c
+import numpy as np
+cimport numpy as np
+import atexit
+cimport resolve_enum as benum
+from libc.stdlib cimport malloc, free
+import copy
+from libcpp.memory cimport unique_ptr
+from cython.operator import dereference as deref
+
+
+cdef extern from "boutexception_helper.hxx":
+     cdef void raise_bout_py_error()
+{% for field in fields %}
+
+cdef extern from "helper.h":
+    void c_set_{{ field.fdd }}_all(c.{{ field.field_type }} * f, double * data)
+    void c_get_{{ field.fdd }}_all(c.{{ field.field_type }} * f, double * data)
+    void c_set_{{ field.fdd }}_all_(c.{{ field.field_type }} * f, double data)
+    void c_set_{{ field.fdd }}_from_{{ field.fdd }}(c.{{ field.field_type }} * f, c.{{ field.field_type }} * f)
+{% set indices=field.makelist('int $ds, int $de, int d$d') %}
+    void c_get_{{ field.fdd }}_part(c.{{ field.field_type }} * f, double * data, {{ indices }})
+    void c_set_{{ field.fdd }}_part(c.{{ field.field_type }} * f, double * data, {{ indices }})
+    void c_set_{{ field.fdd }}_part_(c.{{ field.field_type }} * f, double data, {{ indices }})
+{% for name, op in ops %}
+    c.{{ field.field_type }} * f{{ name }}( c.{{ field.field_type }}*, c.{{ field.field_type }}*) except +raise_bout_py_error
+    c.{{ field.field_type }} * f{{ name }}( c.{{ field.field_type }}*, double) except +raise_bout_py_error
+    c.{{ field.field_type }} * f{{ name }}( double, c.{{ field.field_type }}*) except +raise_bout_py_error
+    void fi{{ name }}( c.{{ field.field_type }}*, c.{{ field.field_type }}*) except +raise_bout_py_error
+    void fi{{ name }}( c.{{ field.field_type }}*, double) except +raise_bout_py_error
+{% if field.field_type == "Field3D" %}
+    c.Field3D * f{{ name }}( c.Field2D*, c.Field3D*) except +raise_bout_py_error
+    c.Field3D * f{{ name }}( c.Field3D*, c.Field2D*) except +raise_bout_py_error
+    void fi{{ name }}( c.Field3D*, c.Field2D*) except +raise_bout_py_error
+{% endif %}
+{% endfor %}
+    c.{{ field.field_type }} c_minus( c.{{ field.field_type }} )
+
+cdef {{ field.field_type }} {{ field.fdd }}FromObj(c.{{ field.field_type }} i):
+    f={{ field.field_type }}()
+    f.cobj=new c.{{ field.field_type }}(<const c.{{ field.field_type }} & ?>i)
+    return f
+
+cdef {{ field.field_type }} {{ field.fdd }}FromPtr(c.{{ field.field_type }} * i):
+    f={{ field.field_type }}()
+    f.cobj=i
+    f.isSelfOwned=False
+    return f
+
+cdef class {{ field.field_type }}:
+    """
+    The {{ field.field_type }} class
+    """
+    cdef c.{{ field.field_type }} * cobj
+    cdef c.bool isSelfOwned
+    @classmethod
+    def fromMesh(cls,mesh=None):
+        """
+        Create a {{ field.field_type }}.
+
+        Parameters
+        ----------
+        mesh : Mesh, optional
+             The mesh of the {{ field.field_type }}. If None, use global mesh
+        """
+        checkInit()
+        {{ field.fdd }}={{ field.field_type }}()
+        if mesh is None:
+            mesh=Mesh.getGlobal()
+        {{ field.fdd }}.cobj=new c.{{ field.field_type }}((<Mesh?>mesh).cobj)
+        return {{ field.fdd }}
+    @classmethod
+    def fromCollect(cls,name,tind=-1,mesh=None,ignoreDataType=False, **kwargs):
+        """
+        Create a {{ field.field_type }} from reading in a datafile via collect.
+
+        Parameters
+        ----------
+        tind : int, optional
+            time slice to read
+        mesh : Mesh, optional
+            if not defined, use global mesh
+        ignoreDataType : bool, optional
+            Do not fail if data is not float64
+        **kwargs
+            remaining arguments are passed to collect
+        """
+        checkInit()
+        from boutdata.collect import collect, dimensions
+
+        if mesh is None:
+            mesh=Mesh.getGlobal()
+        f=cls.fromMesh(mesh)
+        # Make it MPI aware
+        cdef c.Mesh* mesh_ = (<Mesh?>mesh).cobj
+        nxpe=mesh_.getNXPE()
+        nype=mesh_.getNYPE()
+        if (nxpe):
+            if "xind" in kwargs.keys():
+                raise RuntimeError("Do not support xind slicing with MPI")
+            nxi=mesh_.getXProcIndex()
+            nxg=mesh_.xstart
+            nx=mesh_.LocalNx
+            nx_=nx-2*nxg
+            xstart=nx_*nxi
+            kwargs['xind']=[xstart,xstart+nx]
+        if (nype):
+            if "yind" in kwargs.keys():
+                raise RuntimeError("Do not support yind slicing with MPI")
+            nyi=mesh_.getYProcIndex()
+            nyg=mesh_.ystart
+            ny=mesh_.LocalNy
+            ny_=ny-2*nyg
+            ystart=ny_*nyi
+            kwargs['yind']=[ystart,ystart+ny]
+        data=collect(name,yguards=True,tind=tind,**kwargs)
+        dims=dimensions(name,**{k:v for k,v in kwargs.items() if k in ['path','prefix']})
+        if dims[0] == 't':
+            data=data.reshape(data.shape[1:])
+        if len(data.shape) != {{ field.ndims }}:
+            raise TypeError("Expected {{ field.ndims }}D data")
+        try:
+            loc=data.attributes['cell_location']
+        except KeyError:
+            pass
+        else:
+            f.setLocation(loc)
+        f.setAll(data,ignoreDataType=ignoreDataType)
+        return f
+
+    @classmethod
+    def fromBoutOutputs(cls,outputs,name,tind=-1,mesh=None,ignoreDataType=False):
+        """
+        Create a {{ field.field_type }} from reading in a datafile via collect.
+
+        Parameters
+        ----------
+        outputs : BoutOutputs
+            object to read from
+        tind : int, optional
+            time slice to read
+        mesh : Mesh, optional
+            if not defined, use global mesh
+        ignoreDataType : bool, optional
+            Do not fail if data is not float64
+        **kwargs
+            remaining arguments are passed to collect
+        """
+        checkInit()
+
+        if mesh is None:
+            mesh=Mesh.getGlobal()
+        f=cls.fromMesh(mesh)
+        # Make it MPI aware
+        cdef c.Mesh* mesh_ = (<Mesh?>mesh).cobj
+        nxpe=mesh_.getNXPE()
+        nype=mesh_.getNYPE()
+        # save original _kwargs from outputs so we can restore them later
+        orig_kwargs = copy.copy(outputs._kwargs)
+        kwargs = outputs._kwargs
+        kwargs['xguards']=True
+        kwargs['yguards']=True
+        if (nxpe):
+            if "xind" in kwargs.keys():
+                raise RuntimeError("Do not support xind slicing with MPI")
+            nxi=mesh_.getXProcIndex()
+            nxg=mesh_.xstart
+            nx=mesh_.LocalNx
+            nx_=nx-2*nxg
+            xstart=nx_*nxi
+            kwargs['xind']=[xstart,xstart+nx]
+        if (nype):
+            if "yind" in kwargs.keys():
+                raise RuntimeError("Do not support yind slicing with MPI")
+            nyi=mesh_.getYProcIndex()
+            nyg=mesh_.ystart
+            ny=mesh_.LocalNy
+            ny_=ny-2*nyg
+            ystart=ny_*nyi
+            kwargs['yind']=[ystart,ystart+ny]
+        dims=outputs.dimensions[name]
+        if outputs._caching:
+            # if BoutOutputs object is caching the arrays, let it collect all
+            # time points, then slice here
+            if dims[0] == 't':
+                # Use slice with one element here so shape of 'data' is as if
+                # we had passed argument 'tind=tind' to collect (with
+                # one-element t-dimension)
+                data=outputs[name][tind:tind+1]
+            else:
+                data=outputs[name]
+        else:
+            # otherwise only collect data for tind
+            kwargs['tind']=tind
+            data=outputs[name]
+        # restore original _kwargs
+        outputs._kwargs=orig_kwargs
+        if dims[0] == 't':
+            data=data.reshape(data.shape[1:])
+        if len(data.shape) != {{ field.ndims }}:
+            raise TypeError("Expected {{ field.ndims }}D data")
+        try:
+            loc=data.attributes['cell_location']
+        except KeyError:
+            pass
+        else:
+            f.setLocation(loc)
+        f.setAll(data,ignoreDataType=ignoreDataType)
+        return f
+
+    def __cinit__(self,{{ field.field_type }} obj=None):
+        self.cobj=NULL
+        if obj:
+            self.cobj=obj.cobj
+        self.isSelfOwned=True
+        #self.cobj = (<c.{{ field.field_type }} * ?> cobj_)
+        #if self.cobj == NULL:
+        #    raise MemoryError('Not enough memory, allocation failed.')
+
+    def set(self,data,ignoreDataType=False):
+        """
+        Set all data of the {{ field.field_type }}
+
+        Parameters
+        ----------
+        data : array_like
+            The data to be set
+        ignoreDataType : bool, optional
+            Ignore if data is off different type to BoutReal
+        """
+        return self.setAll(data,ignoreDataType)
+
+    def setAll(self,data,ignoreDataType=False):
+        """
+        Set all data of the {{ field.field_type }}
+
+        Parameters
+        ----------
+        data : array_like
+            The data to be set
+        ignoreDataType : bool, optional
+            Ignore if data is off different type to BoutRealxx
+        """
+        dims=[{{ field.makelist('self.cobj.getN$d()')}}]
+{% set zeros=field.makelist("0") %}
+{% set nxlist=field.makelist("n$d") %}
+        if isinstance(data, (int, float)):
+            data=np.zeros(dims)+data
+        if data.dtype != np.dtype('float64'):
+            if ignoreDataType:
+                data=data.astype('float64')
+            else:
+                raise TypeError("expected float64 data, but got %s.\nThis can be ignored by adding ignoreDataType=True as argument"%data.dtype)
+        dims_in=self._checkDims(dims,data.shape)
+        cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(data)
+        c_set_{{ field.fdd }}_all(self.cobj,&data_[{{ zeros }}])
+
+    def get(self):
+        """
+        Get all data of the {{ field.field_type }}
+
+        Returns
+        -------
+        array
+             A {{ field.ndims }}D numpy array with the data of the {{ field.field_type }}
+        """
+        return self.getAll()
+
+    def getAll(self):
+        """
+        Get all data of the {{ field.field_type }}
+
+        Returns
+        -------
+        array
+            A {{ field.ndims }}D numpy array with the data of the {{ field.field_type }}
+        """
+        nx=self.cobj.getNx()
+        ny=self.cobj.getNy()
+        nz=self.cobj.getNz()
+        cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(np.zeros(({{ nxlist }})))
+        c_get_{{ field.fdd }}_all(self.cobj,&data_[{{ zeros }}]);
+        return data_
+
+    def setLocation(self,location):
+        """
+        Set the location of the {{ field.field_type }}
+        This does not do any modification of the data.
+
+        Parameters
+        ----------
+        location : string
+             The location to be set, e.g. "YLOW" or "CELL_YLOW" are supported.
+        """
+        cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
+        self.cobj[0].setLocation(location_)
+        return self
+
+    def getLocation(self):
+        """
+        Get the location of the {{ field.field_type }}
+
+        Returns
+        -------
+        string
+            Representation of the field's location.
+        """
+        cdef benum.CELL_LOC loc = self.cobj[0].getLocation()
+        return _resolve_inv_cell_loc(<int> loc)
+
+    def ddt(self,val=None):
+        """
+        Get or set the time derivative
+
+        Parameters
+        ----------
+        val : {{ field.field_type }}, optional
+             If set, set the time derivative to val
+
+        Returns
+        -------
+        {{ field.field_type }}
+            The time derivative
+        """
+        if val:
+            c_set_{{ field.fdd }}_from_{{ field.fdd }}(&c.ddt(self.cobj[0]),(<{{ field.field_type }}?>val).cobj)
+        return {{ field.fdd }}FromPtr(&c.ddt(self.cobj[0]))
+
+    def __neg__(self):
+        """
+
+        Returns
+        -------
+        {{ field.field_type }}
+            negative of the Field
+        """
+        return {{ field.fdd }}FromObj(c_minus(self.cobj[0]))
+
+    def __pow__({{ field.field_type }} self, exponent, other):
+        """
+        other must be None
+
+        Returns
+        -------
+	{{ field.field_type }}
+            exponential of the field to the power of the exponential
+        """
+        if other is not None:
+            return NotImplemented
+
+        return {{ field.fdd }}FromObj(c.pow(self.cobj[0], float(exponent)))
+
+    def isAllocated(self):
+        """
+        Check if the {{ field.field_type }} has its own datablock allocated
+
+        Returns
+        -------
+        bool
+            whether the Field is allocated
+        """
+        return self.cobj.isAllocated()
+
+    def __getitem__(self,slices):
+        """
+        Get data from the {{ field.field_type }}
+        Supports full {{ field.ndims }}D slicing support.
+        Partially slicing is currently not supported.
+
+        Parameters
+        ----------
+        slices: tuple_like of slice
+            List of slice objects, which shall be returned. Must contain {{ field.ndims }} slice objects
+
+        Returns
+        -------
+        array
+            Numpy array of the requested data
+        """
+        if len(slices)!={{ field.ndims }}:
+            raise IndexError("This is a {{ field.ndims }}D object, but got %d slics"%len(slices))
+        inds=_resolve_slices(slices,
+                            [{{ field.makelist('self.cobj.getN$d()') }}])
+        dims=[]
+        for i in inds:
+            dims.append((i[1]-i[0])//i[2])
+        cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(np.zeros(dims))
+        c_get_{{ field.fdd }}_part(self.cobj,&data_[{{ zeros }}], {{ field.makelist('inds[$i][0],inds[$i][1],inds[$i][2]') }});
+        return data_
+
+    def __setitem__(self,slices,data_):
+        """
+        Parameters
+        ----------
+        slices: tuple_like, slice
+            slice objects of the data to be set. Must contain {{ field.ndims }} slice objects
+        data : array_like
+            Values to be set. Must be {{ field.ndims }}D and match the size of the slicing object.
+        """
+        if len(slices)!={{ field.ndims }}:
+            raise IndexError("This is a {{ field.ndims }}D object!")
+        dims=[]
+        import numbers
+        inds=_resolve_slices(slices,
+                            [{{ field.makelist('self.cobj.getN$d()') }}])
+        if isinstance(data_,{{ field.field_type }}):
+            # get all to get a numpy array
+            data_=data_[{{ field.makelist(':') }}]
+        elif isinstance(data_,numbers.Number):
+            c_set_{{ field.fdd }}_part_(self.cobj,<double>data_,{{ field.makelist('inds[$i][0],inds[$i][1],inds[$i][2]') }})
+            return
+        try:
+            dims_in=data_.shape
+        except:
+            raise TypeError("Expected a {{ field.field_type }} or a numpy array")
+        for i in inds:
+            dims.append((i[1]-i[0])//i[2])
+        dims_in=self._checkDims(dims,dims_in)
+        cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data__ = np.ascontiguousarray(data_)
+        c_set_{{ field.fdd }}_part(self.cobj,&data__[{{ field.makelist("0") }}],{{ field.makelist('inds[$i][0],inds[$i][1],inds[$i][2]') }});
+
+    def _checkDims(self,dims,dims_in):
+        if len(dims_in) > {{ field.ndims }}:
+            raise IndexError("This is a {{ field.ndims }}D object, but got %d dimensions"%len(dims_in))
+        if len(dims_in) < {{ field.ndims }}:
+            len_dims=len([1 for d in dims if d>1])
+            if len(dims_in) != len_dims:
+                raise IndexError("This is a {{ field.ndims }}D object, but got %d dimensions"%len(dims_in))
+            dims_in_new=[]
+            k=0
+            for i in range({{ field.ndims }}):
+                if (dims[i]==1):
+                    dims_in_new.append(1)
+                else:
+                    dims_in_new.append(dims_in[k])
+                    k+=1
+            dims_in=dims_in_new
+        for i in range({{ field.ndims }}):
+            if dims[i] != dims_in[i]:
+                raise IndexError("Expected %s but got %s."%(dims,dims_in))
+
+{% for name, op in ops %}
+    def __{{ name }}__(self,other):
+        fu={{ field.field_type }}()
+        import numbers
+        if isinstance(self,{{ field.field_type }}) and isinstance(other,{{ field.field_type }}):
+            fu.cobj=f{{ name }}((<{{ field.field_type }}?>self).cobj , (<{{ field.field_type }}?>other).cobj)
+        elif isinstance(self,{{ field.field_type }}) and isinstance(other, numbers.Number):
+            fu.cobj=f{{ name }}((<{{ field.field_type }}?>self).cobj , (<double?>float(other)))
+        elif isinstance(self,numbers.Number) and isinstance(other, {{ field.field_type }}):
+            fu.cobj=f{{ name }}(<double?>float(self),(<{{ field.field_type }}?>other).cobj)
+{% if field == field3d %}
+        elif isinstance(self,Field3D) and isinstance(other,Field2D):
+            fu.cobj=f{{ name }}((<Field3D?>self).cobj , (<Field2D?>other).cobj)
+{% endif %}
+        else:
+            print("{{ name }}",type(self),type(other),isinstance(self,numbers.Number))
+            return NotImplemented
+        return fu
+
+    def __r{{ name }}__(self,lhs):
+        fu={{ field.field_type }}()
+        if isinstance(lhs,float) or isinstance(lhs,int):
+            fu.cobj=f{{ name }}(<double?>float(lhs),(<{{ field.field_type }}?>self).cobj)
+{% if field == field3d %}
+        elif isinstance(lhs,Field2D):
+            fu.cobj=f{{ name }}((<Field2D?>lhs).cobj,(<Field3D?>self).cobj)
+{% endif %}
+        else:
+            return NotImplemented
+        return fu
+
+    def __i{{ name }}__(self,other):
+        if isinstance(other,{{ field.field_type }}):
+            fi{{ name }}((<{{ field.field_type }}?>self).cobj , (<{{ field.field_type }}?>other).cobj)
+        elif isinstance(other,float) or isinstance(other,int):
+            fi{{ name }}((<{{ field.field_type }}?>self).cobj , (<double?>float(other)))
+{% if field == field3d %}
+        elif isinstance(other,Field2D):
+            fi{{ name }}((<Field3D?>self).cobj , (<Field2D?>other).cobj)
+{% endif %}
+        else:
+            return NotImplemented
+        return self
+
+
+{% endfor %}
+    def applyBoundary(self, boundary=None, time=None):
+        """
+        Set the boundaries of a {{ field.field_type }}. Only one of both arguments
+        can be provided. If no value is provided, the default boundary
+        is applied.
+
+        Parameters
+        ----------
+        boundary : string, optional
+           The boundary to be set. Has to be a valid boundary type,
+           e.g. "neumann".
+        time : float, optional
+            The time to be used by the boundary, if time dependent
+            boundary conditions are used.
+        """
+        cdef c.string bndry
+        cdef double _time
+        if boundary is not None and time is not None:
+            raise RuntimeError("Can only pass one option at a time")
+        if time is not None:
+            _time = time
+            self.cobj.applyBoundary(_time)
+        elif boundary is not None:
+            tmp=boundary.encode('ascii')
+            bndry=tmp
+            self.cobj.applyBoundary(bndry)
+        else:
+            self.cobj.applyBoundary()
+
+    def __dealloc__(self):
+        self.__boutcore_dealloc()
+
+    def __boutcore_dealloc(self):
+        if self.isSelfOwned and self.cobj!=NULL:
+            del self.cobj
+            self.cobj=NULL
+{% endfor %}
+{% for vec in vecs %}
+cdef extern from "helper.h":
+    c.{{ vec.field }} c_mul_{{ vec }}_{{ vec }}(c.{{ vec }} *, c.{{ vec }} *) except +
+
+cdef class {{ vec }}:
+    """
+    {{ vec }} class
+
+    A vector of {{ vec.field }}
+    """
+    cdef c.{{ vec }} * cobj
+    cdef c.bool isSelfOwned
+{% for d in "xyz" %}
+    @property
+    def {{ d }}(self):
+        """
+        The {{ vec.field }} in {{ d }} direction
+        """
+        return {{ vec.fdd }}FromObj(self.cobj.{{ d }})
+
+{% endfor %}
+    def __mul__(self, rhs):
+        if isinstance(rhs, {{ vec }}) and isinstance(self,{{ vec }}):
+            return {{ vec.fdd }}FromObj(c_mul_{{ vec }}_{{ vec }}((<{{ vec }}?>self).cobj, (<{{ vec }}?>rhs).cobj))
+        else:
+            raise NotImplementedError("unexpected argument type '"+
+                                      str(type(self))+"' and '"+str(type(rhs))+
+                                      "' - not supported (yet?).")
+
+    def __dealloc__(self):
+        self.__boutcore_dealloc()
+
+    def __boutcore_dealloc(self):
+        if self.isSelfOwned and self.cobj!=NULL:
+            del self.cobj
+            self.cobj=NULL
+
+cdef {{ vec }} {{ vec.vdd }}FromObj(c.{{ vec }} i):
+    v={{ vec }}()
+    v.cobj = new c.{{ vec }}(<const c.{{ vec }} & ?> i)
+    v.isSelfOwned = True
+    return v
+{% endfor %}
+
+
+cdef extern from "helper.h":
+    c.Mesh * c_get_global_mesh()
+    void c_laplacian_solve(c.Laplacian *, c.Field3D *, c.Field3D*)
+    c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
+    void c_mesh_normalise(c.Mesh* , double)
+    void c_set_dz(c.Coordinates*, double)
+    double c_get_dz(c.Coordinates*)
+    c.Datafile * c_get_global_datafile()
+
+cdef class Mesh:
+    """
+    Mesh class
+
+    Contains information about geometry.
+    It contains also the coordinates and is responsible for taking deriavtives.
+    """
+    cdef c.Mesh * cobj;
+    cdef c.bool isGlobal
+    cdef double isNormalised
+    cdef FieldFactory factory
+    cdef Coordinates _coords
+    cdef options
+
+    def __init__(self, create=True, section=None, options=None):
+        """
+        Create a Mesh
+
+        Parameter
+        ---------
+        create : bool, optional
+            Create the underling C++ object. Disabled probably only
+            useful for internal usage. Use at own risk.
+        section : string, optional
+            The section of the options which to read. If not given,
+            default to the root section.
+        options : Options, optional
+            The Option which to use. Can be specified together with
+            section, in which case the subsection from the current
+            Options object is used. If nether section nor
+            options is given, the default section (mesh) from the
+            global Options object is used.
+        """
+        checkInit()
+        self.cobj=<c.Mesh*>0
+        cdef c.string tmp
+        cdef c.Options * opt = NULL
+        self.isGlobal=False
+        self.isNormalised=-1
+        self.factory = FieldFactory()
+        self._coords = None
+        if create:
+            if options:
+                opt = (<Options?>options).cobj
+                # Safe copy - to prevent GC
+                self.options = options
+            if section:
+                if opt == NULL:
+                    opt = c.Options.getRoot()
+                for sec in section.split(":"):
+                    tmp=sec.encode('ascii')
+                    opt=opt.getSection(tmp)
+            self.cobj = c.Mesh.create(opt)
+            if self.cobj == NULL:
+                raise MemoryError('Not enough memory, allocation failed.')
+            self.cobj.load()
+
+    @classmethod
+    def getGlobal(cls):
+        """
+        Get the global Mesh object
+
+        Returns
+        -------
+        Mesh
+            The global instance
+        """
+        checkInit()
+        msh = Mesh(create=False);
+        msh.cobj = c_get_global_mesh();
+        msh.isGlobal=True
+        return msh
+
+    def __dealloc__(self):
+        self.__boutcore_dealloc()
+
+    def __boutcore_dealloc(self):
+        if self.cobj and not self.isGlobal:
+            del self.cobj
+            self.cobj = NULL
+
+    cdef getFactory(self):
+        """
+        Get the FieldFactory of the mesh
+
+        Returns
+        -------
+        FieldFactory
+            The fieldfactory for the given mesh
+        """
+        if (<FieldFactory>self.factory).cobj == <c.FieldFactory*>0:
+            (<FieldFactory?>self.factory).cobj = new c.FieldFactory(self.cobj,<c.Options*>0)
+        return self.factory
+
+    def normalise(self,double norm):
+        """
+        Normalise the mesh.
+
+        Usefull if the Options are in SI units, but the simulation is written in Bohm units.
+        Calling it multiple times will not change the mesh, if the normalisation is always the same.
+
+        It calls mesh->dx/=norm etc. followed by a call to geometry().
+
+        Parameters
+        ----------
+        norm : float
+            The length with which to rescale
+        """
+        if self.isNormalised>0:
+            t=norm
+            norm=norm/self.isNormalised
+            self.isNormalised=t
+        c_mesh_normalise(self.cobj,norm)
+
+    def communicate(self,*args):
+        """
+        Communicate (MPI) the boundaries of the Field3Ds with neighbours
+
+        Parameters
+        ----------
+        args : Field3D
+            Abitrary number of fields
+        """
+        cdef c.FieldGroup * fg = new c.FieldGroup()
+        for f in args:
+            fg.add((<Field3D?> f).cobj[0])
+        self.cobj.communicate(fg[0])
+        del fg
+        return self
+
+    @property
+    def coordinates(self):
+        """
+        Get the Coordinates object of this mesh
+        """
+        if self._coords is None:
+            self._coords = coordsFromPtr(self.cobj.getCoordinates())
+        return self._coords
+
+cdef Coordinates coordsFromPtr(c.Coordinates * obj):
+    coords = Coordinates()
+    coords.cobj = obj
+    coords._setmembers()
+    coords.isSelfOwned = False
+    return coords
+
+cdef class Coordinates:
+    """
+    Contains information about geometry, such as metric tensors
+    """
+    cdef c.Coordinates * cobj
+    cdef c.bool isSelfOwned
+    cdef public Field2D dx, dy
+    cdef public Field2D J
+    cdef public Field2D Bxy
+    cdef public Field2D g11, g22, g33, g12, g13, g23
+    cdef public Field2D g_11, g_22, g_33, g_12, g_13, g_23
+    cdef public Field2D G1_11, G1_22, G1_33, G1_12, G1_13, G1_23
+    cdef public Field2D G2_11, G2_22, G2_33, G2_12, G2_13, G2_23
+    cdef public Field2D G3_11, G3_22, G3_33, G3_12, G3_13, G3_23
+    cdef public Field2D G1, G2, G3
+    cdef public Field2D ShiftTorsion
+    cdef public Field2D IntShiftTorsion
+
+    def __init__(self):
+        self.cobj = NULL
+        self.isSelfOwned = False
+
+    def _setmembers(self):
+{% for f in "dx", "dy", "J", "Bxy", "g11", "g22", "g33", "g12", "g13", "g23", "g_11", "g_22", "g_33", "g_12", "g_13", "g_23", "G1_11", "G1_22", "G1_33", "G1_12", "G1_13", "G1_23", "G2_11", "G2_22", "G2_33", "G2_12", "G2_13", "G2_23", "G3_11", "G3_22", "G3_33", "G3_12", "G3_13", "G3_23", "G1", "G2", "G3", "ShiftTorsion", "IntShiftTorsion" %}
+        self.{{f}} = f2dFromPtr(&self.cobj.{{f}})
+{% endfor %}
+    cdef getDz(self):
+        return c_get_dz(self.cobj)
+
+    cdef setDz(self, val):
+        c_set_dz(self.cobj, <double> val)
+
+    @property
+    def dz(self):
+        return self.getDz()
+
+    @dz.setter
+    def dz(self, val):
+        self.setDz(val)
+
+    def __dealloc__(self):
+        self.__boutcore_dealloc()
+
+    def __boutcore_dealloc(self):
+        if self.cobj and self.isSelfOwned:
+            del self.cobj
+            self.cobj = NULL
+
+cdef class Laplacian:
+    """
+    Laplacian inversion solver
+
+    Compute the Laplacian inversion of objects.
+
+    Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\perp x + ex\\nabla_x x + ez\\nabla_z x + a x = b
+    """
+    cdef unique_ptr[c.Laplacian] cobj
+    cdef c.bool isSelfOwned
+    def __init__(self,section=None):
+        """
+        Initialiase a Laplacian solver
+
+        Parameters
+        ----------
+        section : Options, optional
+            The section from the Option tree to take the options from
+        """
+        checkInit()
+        if section:
+           self.cobj = c.Laplacian.create((<Options?>section).cobj)
+        else:
+           self.cobj = c.Laplacian.create(NULL)
+        self.isSelfOwned = True
+    def solve(self,Field3D x, Field3D guess):
+        """
+        Calculate the Laplacian inversion
+
+        Parameters
+        ----------
+        x : Field3D
+            Field to be inverted
+        guess : Field3D
+            initial guess for the inversion
+
+
+        Returns
+        -------
+        Field3D
+            the inversion of x, where guess is a guess to start with
+        """
+        return f3dFromObj(deref(self.cobj).solve(x.cobj[0],guess.cobj[0]))
+
+    def setCoefs(self, **kwargs):
+        """
+        Set the coefficients for the Laplacian solver.
+        The coefficients A, C, C1, C2, D, Ex and Ez can be passed as keyword arguments
+        """
+{% set coeffs="A C C1 C2 D Ex Ez".split() %}
+{% for coeff in coeffs %}
+        if '{{ coeff }}' in kwargs:
+            self.setCoef{{ coeff}}(kwargs['{{ coeff }}'])
+{% endfor %}
+{% for coeff in coeffs %}
+
+    def setCoef{{ coeff }}(self,Field3D {{ coeff }}):
+        """
+        Set the '{{ coeff }}' coefficient of the Laplacian solver
+
+        Parameters
+        ----------
+        {{ coeff }} : Field3D
+            Field to set as coefficient
+        """
+        deref(self.cobj).setCoef{{ coeff }}({{ coeff }}.cobj[0])
+{% endfor %}
+
+cdef class FieldFactory:
+    cdef c.FieldFactory * cobj
+    def __init__(self):
+        checkInit()
+        cobj=< c.FieldFactory*>0
+    def __dealloc__(self):
+        self.__boutcore_dealloc()
+
+    def __boutcore_dealloc(self):
+        if self.cobj != NULL:
+            del self.cobj
+            self.cobj = NULL
+
+    # @classmethod
+    # def fromPtr(cls,FieldFactory * cobj_):
+    #     fu=cls()
+    #     fu.cobj=cobj_
+    #     return fu
+
+cdef void callback(void * parameter, void * method) with gil:
+    cdef double time = (<double*>parameter)[0]
+    cdef c.string str_
+    try:
+        (<object?>method)(time)
+    except BaseException, e:
+        str__="Exception in Python callback: type:%s\nInfo:%s %s\n"%(str(type(e)),str(e),str(e.args))
+        import traceback
+        str__ += traceback.format_exc()
+        str_=str__.encode('ascii')
+        c.throw_BoutException(str_)
+
+
+ctypedef void (*Method)(void *param)
+
+cdef class PythonModelCallback:
+    """Needed for callbacks from C++ to python"""
+    cdef c.PythonModelCallback * cobj
+
+    def __cinit__(self, method):
+        # 'callback' :: The pattern/converter method to fire a Python
+        #               object method from C typed infos
+        # 'method'   :: The effective method passed by the Python user
+        checkInit()
+        self.cobj = new c.PythonModelCallback(callback, <void*>method)
+
+    def __dealloc__(self):
+        self.__boutcore_dealloc()
+
+    def __boutcore_dealloc(self):
+        if self.cobj:
+            del self.cobj
+            self.cobj = NULL
+
+    cpdef void execute(self, parameter):
+        # 'parameter' :: The parameter to be passed to the 'method'
+        self.cobj.cy_execute(<void*>parameter)
+
+
+cdef class PhysicsModelBase(object):
+    """The PhysicsModelBase in python - better use the PhysicsModel class"""
+    cdef c.PythonModel * cmodel
+    cdef c.PythonModelCallback * callback
+    cdef c.PythonModelCallback * callbackinit
+    cdef c.bool _done_pyinit
+    def __init__(self):
+        checkInit()
+        self.cmodel  = new c.PythonModel()
+        self.callback= <c.PythonModelCallback*> 0
+        self.callbackinit= <c.PythonModelCallback*> 0
+        self._done_pyinit = False
+    def solve(self):
+        if self._done_pyinit == False:
+            self._done_pyinit = True
+            self.cmodel.pyinit()
+        import sys
+        sys.stdout.flush()
+        self.cmodel.solve()
+
+    def solve_for(self,**kwargs):
+        if self._done_pyinit == False:
+            self._done_pyinit = True
+            self.cmodel.pyinit()
+        cdef char * tmp
+        cdef c.Field3D * f3d
+        for key in kwargs:
+            t2=str.encode(key)
+            tmp=t2
+            f3d=(<Field3D?>kwargs[key]).cobj
+            self.cmodel.getSolver().add(f3d[0],tmp)
+
+    def setRhs(self,rhs):
+        """
+        set the rhs function to be called
+
+        Parameters
+        ----------
+        rhs : function
+            Must not be a method, and must accept an double (time) as argument
+        """
+        if self.callback != <c.PythonModelCallback*>0:
+            del self.callback
+        self.callback = new c.PythonModelCallback(callback, <void*> rhs)
+        self.cmodel.set_rhs_func(self.callback)
+
+    def setInit(self,init):
+        """
+        set the init function to be called
+
+        Parameters
+        ----------
+        init : function
+            Must not be a method, and must accept an bool (restart) as argument
+        """
+        if self.callbackinit != <c.PythonModelCallback*>0:
+            del self.callbackinit
+        self.callbackinit = new c.PythonModelCallback(callback, <void*> init)
+        self.cmodel.set_init_func(self.callbackinit)
+
+    def __dealloc__(self):
+        if hasattr(self, '__boutcore_dealloc'):
+            self.__boutcore_dealloc()
+        else:
+            PhysicsModelBase.__boutcore_dealloc(self)
+
+    def __boutcore_dealloc(self):
+        if self.cmodel != <c.PythonModel *> 0:
+            self.cmodel.free()
+            del self.cmodel
+            del self.callback
+            del self.callbackinit
+            self.cmodel = <c.PythonModel *> 0
+
+class PhysicsModel(PhysicsModelBase):
+    """
+    The PhysicsModel base class for python
+
+    To implement your own PhysicsModel derive from this class and
+    provide a rhs function which takes the self and the simulation
+    time as input, and the init function which takes self and whether
+    the simulation has been restarted as an argument.
+
+    A complete simulation could look something like this:
+
+    import boutcore as bc
+
+    bc.init("mesh:n=48")
+    class MyModel(bc.PhysicsModel):
+        def init(self,restart):
+            self.dens = bc.create3D("sin(x)")
+            self.solve_for(n=self.dens)
+
+        def rhs(self,time):
+            self.dens.ddt(bc.DDX(self.dens))
+
+
+    model = MyModel()
+    model.solve()
+    """
+
+    def __init__(self):
+        super(PhysicsModel,self).__init__()
+        self._super_is_initialised=True
+    def solve(self):
+        """
+        Call the solver.
+        This makes sure that self.init(restart) and self.rhs(time) are called from the solver.
+        """
+        try:
+            self._super_is_initialised
+        except:
+            raise RuntimeError("PhysicsModel is not initialized")
+        def _rhs(time):
+           self.rhs(time)
+        self.myrhs=_rhs
+        self.setRhs(self.myrhs)
+        def _init(restart):
+            self.init(restart)
+        self.myinit=_init
+        self.setInit(self.myinit)
+        super(PhysicsModel,self).solve()
+    def solve_for(self,*args,**kwargs):
+        """
+        Add Field3D's to be solved for.
+        Need to pass as name=field - where name is the name that is
+        used e.g. for the dump file and field is a Field3D
+
+        Parameters
+        ----------
+        kwargs : dictionary of Field2D or Field3D
+            Keys must be strings, and value of dict must be the Field3D which should be evolved.
+        """
+        try:
+            self._super_is_initialised
+        except:
+            raise RuntimeError("PhysicsModel is not initialized")
+        super(PhysicsModel,self).solve_for(*args,**kwargs)
+    def init(self,restart):
+        """
+        This can be overwritten to do model specific initialization
+        """
+        pass
+
+    def __dealloc__(self):
+        super(PhysicsModel,self).__dealloc__()
+
+    def __boutcore_dealloc(self):
+        super(PhysicsModel,self).__boutcore_dealloc()
+
+cdef extern from "bout.hxx":
+    int BoutInitialise(int&, char **&) except +raise_bout_py_error
+    void BoutFinalise()
+
+cdef extern from "boutcore_openmpi_compat.hxx":
+    void PyMPI_OPENMPI_dlopen_libmpi()
+    c.bool is_openmpi
+
+_isInit=False
+def init(args=[]):
+    """
+    Initialization function for the library.
+
+    Parameters
+    ----------
+    args : list of string or string, optional
+        It accepts ether a list of strings, or a string that is split at the spaces.
+        This is passed on to MPI and other libraries that BOUT++ initializes.
+    """
+    global _isInit
+    if _isInit:
+        raise RuntimeError("The BOUT++ library was already initialised - please call boutcore.init(args) only once")
+    try:
+        # python3 version
+        if isinstance(args, str):
+            args=args.split(" ")
+    except:
+        # fallback to python2
+        if isinstance(args, basestring):
+            args=args.split(" ")
+    args.insert(0,"boutcore")
+    cdef char **string_buf = <char **>malloc((len(args)+1) * sizeof(char*))
+    fu=[]
+    cdef char * tmp
+    for i in range(len(args)):
+        t2=str.encode(args[i])
+        tmp=t2
+        fu.append(tmp)
+        string_buf[i]=<char*>fu[i]
+    # terminate string_buf with a null pointer for OpenMPI, which requires this
+    # because it iterates through 'argv' with a loop 'for (p = argv; *p; ++p)'
+    string_buf[len(args)] = NULL
+    cdef int fuu=len(args)
+    if is_openmpi:
+        PyMPI_OPENMPI_dlopen_libmpi()
+    ret=BoutInitialise(fuu,string_buf)
+    free(string_buf)
+    if ret:
+        BoutFinalise()
+        raise RuntimeError("Failed to initialise the BOUT++ Library (Error code %d)"%ret)
+    else:
+        _isInit=True
+    atexit.register(finalise)
+
+def finalise():
+    """
+    Finalize BOUT++ and also MPI.
+    After this most objects and functions are not valid anymore.
+
+    Note that this deallocates the C++ objects, thus the python
+    objects might not work any more.
+    """
+    # Go through all living objects, find the ones from boutcore, so
+    # that we can free them.
+    # We cannot rely on python, as
+    #  * Python does not even garantee that they are freed
+    #  * MPI routines are invalid after finalise, and some destructors
+    #    include calls to MPI
+    # first set _isInit to False, so no further bc objects can be created
+    global _isInit
+    wasInit = _isInit
+    _isInit = False
+    import gc
+    objects = gc.get_objects()
+    ourClasses = (Coordinates, Field2D, Field3D, Mesh, Options,
+                  PhysicsModel, PhysicsModelBase, Vector2D, Vector3D,
+                  PythonModelCallback)
+    for obj in objects:
+        if isinstance(obj,ourClasses):
+            if hasattr(obj, '__boutcore_dealloc'):
+                obj.__boutcore_dealloc()
+            else:
+                for ourClass in ourClasses:
+                    if isinstance(obj, ourClass):
+                         ourClass.__boutcore_dealloc(obj)
+                         break
+    del objects
+    # Actually finalise
+    if wasInit:
+       BoutFinalise()
+
+def checkInit():
+    """
+    Assert that boutcore has been initialized
+    """
+    global _isInit
+    if not _isInit:
+       raise RuntimeError("The BOUT++ library was not initialised - please call boutcore.init(args) first")
+
+
+{% macro deriv(d, name, flux=False, region=True, ret=field3d) %}
+{% set DD=name.replace("d", d) -%}
+def {{ DD }}({% if flux %}Field3D velocity, {% endif %}Field3D field, outloc="CELL_DEFAULT", method="DIFF_DEFAULT"{% if region %}, region="RGN_NOBNDRY"{% endif %}):
+    """
+    Compute the {{ "" if flux else ""}}derivative {{ DD }}
+
+    Parameters
+    ---------
+    field : Field3D
+        The Field3D object of which to calculate the derivative
+{% if flux %}
+    velocity : Field3D
+        The Field3D object of which the field is advected
+{% endif %}
+    outloc : string
+        The location where the derivative is expected. Defaults to the same as field.
+    method : string
+        The method to calculate the derivative.
+{% if region %}
+    region : string
+        The region for which to calculate the derivative
+{% endif %}
+
+    Returns
+    -------
+    {{ ret }}
+        The computed {{ DD }} derivative
+    """
+    checkInit()
+    cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
+    if method.startswith("DIFF_"):
+        method=method[5:]
+    cdef c.string method_ = method.encode('ascii')
+{% if region %}
+    cdef c.string region_ = region.encode('ascii')
+{% endif %}
+    return {{ret.ddd}}FromObj(c.{{ DD }}({{ "velocity.cobj[0], " if flux else "" }}field.cobj[0],outloc_,method_{% if region %},region_{% endif %}))
+{% endmacro %}
+
+{% for d in "XYZ" %}
+    {%- for f in "DDd", "D2Dd2" -%}
+{{deriv(d, f) }}
+    {%- endfor -%}
+    {%- for f in "VDDd", "FDDd" -%}
+{{deriv(d, f, flux=True) }}
+    {%- endfor %}
+{% endfor %}
+
+{% for DD in "Div_par", "Grad_par" %}
+{{ deriv("d", DD, region=False) }}
+{% endfor %}
+
+{{ deriv("d", "Vpar_Grad_par", region=False, flux=True) }}
+
+{{ deriv("d", "Grad_perp", region=False, ret=vector3d) }}
+
+def Laplace(Field3D a):
+    """
+    Compute the full Laplacian \\nabla^2(a)
+
+    Parameters
+    ----------
+    a : Field3D
+        The Field3D object of which to calculate the derivative
+
+    Returns
+    -------
+    Field3D
+        The computed Laplacian
+    """
+    checkInit()
+    return f3dFromObj(c.Laplace(a.cobj[0]))
+
+def Delp2(Field3D a):
+#    """Delp2(Field3D a)"""
+    checkInit()
+    return f3dFromObj(c.Delp2(a.cobj[0]))
+
+def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
+    """
+    Parameters
+    ----------
+    a : Field3D
+        The left field of the multiplication
+    b : Field3D
+        The right field of the multiplication
+
+    Returns
+    -------
+    Field3D
+        the scalar product of the perpendicular gradient contributions
+    """
+    checkInit()
+    return f3dFromObj(c_Grad_perp_dot_Grad_perp(a.cobj[0],b.cobj[0]))
+
+def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
+    """
+    Calculate the poison bracket for Field3D a and Field3D b.
+
+    Parameters
+    ----------
+    a : Field3D
+        The left field in the bracket
+    b : Field3D
+        The right field in the bracket
+    method : string
+        The method to be used
+    outloc : string
+        The location of the calculated derivative
+
+    Returns
+    -------
+    Field3D
+        The bracket
+    """
+    checkInit()
+    cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
+    cdef benum.BRACKET_METHOD method_=benum.resolve_bracket_method(method)
+    return f3dFromObj(c.bracket(a.cobj[0],b.cobj[0],method_,outloc_))
+
+{% for fun in "sqrt", "exp", "sin", "cos", "log", "abs" %}
+def {{ fun }}(a):
+    """
+    Calculate {{ fun }} of a
+
+    Parameters
+    ----------
+    a : Field3D or Field2D
+         The field for which to calculate {{ fun }}
+
+    Returns
+    -------
+    Field3D or Field2D
+        {{ fun }} of a
+    """
+    if isinstance(a, Field3D):
+        return f3dFromObj(c.{{ fun }}((<Field3D?>a).cobj[0]))
+    elif isinstance(a, Field2D):
+        return f2dFromObj(c.{{ fun }}((<Field2D?>a).cobj[0]))
+    else:
+        raise NotImplementedError("In {{ fun }}: unexpected argument type '"+str(type(a))+"' - not supported (yet?).")
+
+{% endfor %}
+
+def pow(Field3D a, exponent):
+    """
+    Returns a**e where a is a Field3D and e is a number
+
+    Parameters
+    ----------
+    a : Field3D
+        The field for which to calculate the power
+    exponent : float
+        The exponent
+
+    Returns
+    -------
+    Field3D
+        The a**exponent
+    """
+    return f3dFromObj(c.pow(a.cobj[0],float(exponent)))
+
+def min(Field3D a):
+    """
+    Get the minimum
+
+    Parameters
+    ----------
+    a : Field3D
+        The field
+
+    Returns
+    -------
+    float
+        the minimum value of a
+    """
+    return c.min(a.cobj[0])
+
+def max(Field3D a):
+    """
+    Get the maximum
+
+    Parameters
+    ----------
+    a : Field3D
+        The field
+
+    Returns
+    -------
+    float
+        the maximum value of a
+    """
+    return c.max(a.cobj[0])
+
+def create3D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0):
+    """
+    Returns a Field3D from the fieldfactory
+    Parameters
+    ----------
+    string : string
+        Expression to create. This can contain references to the options
+    msh : Mesh
+        the Mesh to use, defaults to the global mesh.
+    outloc : string
+        the cell location of the returned field
+    time : float
+         is the time
+
+    Returns
+    -------
+    Field3D
+        the Field from the expression
+    """
+    checkInit()
+    cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
+    if msh is None:
+        msh=Mesh.getGlobal()
+    cdef FieldFactory fact=msh.getFactory()
+    cdef c.string str_=string.encode('ascii')
+    return f3dFromObj(
+        (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0
+                                           ,outloc_,time))
+
+def interp_to(Field3D f3d,location):
+    """
+    Interpolate a Field3D to a given location
+
+    Parameters
+    ----------
+    f3d : Field3D
+        The field to interpolate
+    location : string
+        The location to which to interploate
+
+    Returns
+    -------
+    Field3D
+        the interpolated field
+    """
+    checkInit()
+    cdef benum.CELL_LOC location_ = benum.resolve_cell_loc(location)
+    return f3dFromObj(c.interp_to(f3d.cobj[0],location_))
+
+
+def setOption(name, value, source="PyInterface", force=False):
+    """
+    Set an option in the global Options tree. Prefer
+    `Options.set` to avoid unexpected results if several Option
+    roots are avalaible.
+
+    Parameters
+    ----------
+    name : string
+        the name of the value to be set. Can be relative,
+        e.g. "mesh:ddx:first".
+    value : string
+        the value to be set
+    source : string
+        The source of the change. Useful for keeping
+        track of where what was set.
+    force : bool
+        If a value is overwritten, an exception is
+        thrown. setting this to `True` avoids the exception.
+    """
+    checkInit()
+    root=Options('')
+    root.set(name,value,source,force)
+
+cdef class Options:
+    """
+    The Options class
+    """
+    cdef c.Options * cobj
+    cdef c.bool isSelfOwned
+
+    def __init__(self,name=""):
+        """
+        Get a section from the global options tree
+
+        Parameters
+        ----------
+        name : string, optional
+            The name of the section. Can contain ':' to specify subsections.
+            Defaults to the root section ''.
+
+        Returns
+        -------
+        Options
+            The Options object
+        """
+        checkInit()
+        self.cobj = c.Options.getRoot()
+        cdef c.string sec_
+        for sec in name.split(":"):
+            sec_=sec.encode('ascii')
+            self.cobj=self.cobj.getSection(sec_)
+        self.isSelfOwned=False
+
+    @classmethod
+    def fromFile(cls, file):
+        """
+        Create a new Options object by reading a file
+
+        Parameters
+        ----------
+        file : string
+            The path of the file to read
+
+        Returns
+        -------
+        Options
+            The Options object
+        """
+        checkInit()
+        opt = Options("")
+        opt.cobj = new c.Options()
+        opt.isSelfOwned = True
+        cdef char * file_
+        file__=file.encode('ascii')
+        file_=file__
+        c.OptionsReader.getInstance().read(opt.cobj, "%s", file_)
+        return opt
+
+
+    def set(self,name,value,source="PyInterface", force=False):
+        """
+        Set an option
+
+        Parameters
+        ----------
+        name : string
+             the name of the value to be set. Can be relative,
+             e.g. "mesh:ddx:first".
+        value : string
+            the value to be set
+        source : string, optional
+            The source of the change. Useful for keeping
+            track of where what was set.
+        force : bool, optional
+            If a value is overwritten, an exception is
+            thrown. setting this to `True` avoids the exception.
+        """
+        cdef c.Options * opt=self.cobj
+        cdef c.string sec_
+        for sec in name.split(":")[:-1]:
+            sec_=sec.encode('ascii')
+            opt=opt.getSection(sec_)
+        cdef c.string key = name.split(":")[-1].encode('ascii')
+        cdef c.string value_ = value.encode('ascii')
+        cdef c.string source_ = source.encode('ascii')
+        opt.set(key,value_, source_, force)
+        opt.cleanCache()
+        return self
+
+    def get(self,name,default):
+        """
+        Get an option
+
+        Parameters
+        ----------
+        name : string
+             the name of the value to get. Can be relative,
+             e.g. "mesh:ddx:first".
+        default : bool or string or float
+            Depending on the type of the default, different things will be returned.
+            Supported types are bool, string or float
+        Returns
+        -------
+        bool or string or float
+            See default for the type.
+            The option that was read if available, otherwise default
+        """
+        cdef c.Options * opt=self.cobj
+        cdef c.string sec_
+        for sec in name.split(":")[:-1]:
+            sec_=sec.encode('ascii')
+            opt=opt.getSection(sec_)
+        cdef c.string key = name.split(":")[-1].encode('ascii')
+        import numbers
+
+        cdef double ret_real=0
+        cdef c.bool ret_bool=False
+        cdef c.string default_
+        cdef c.string ret_str
+
+        if isinstance(default,bool):
+            opt.get(key,ret_bool, <c.bool> default)
+            return ret_bool
+        elif isinstance(default,numbers.Number):
+            opt.get(key,ret_real,<double> default)
+            return ret_real
+        else:
+            default_= str(default).encode('ascii')
+            opt.get(key,ret_str, default_)
+            return ret_str
+
+    def __dealloc__(self):
+        self.__boutcore_dealloc()
+
+    def __boutcore_dealloc(self):
+        if self.isSelfOwned and self.cobj!=NULL:
+            del self.cobj
+            self.cobj=NULL
+
+cdef class Datafile:
+    cdef c.Datafile * cobj
+
+    def __init__(self):
+        self.cobj = c_get_global_datafile()
+
+    def add(self,save_repeat=False,**kwargs):
+        for key in kwargs:
+            self._add(kwargs[key],key,save_repeat)
+
+    def _add(self,data,name,save_repeat):
+        cdef char * tmp
+        cdef double * dbl
+        cdef c.Field3D * f3d
+        t2=str.encode(name)
+        tmp=t2
+        if isinstance(data,Field3D):
+            f3d=(<Field3D>data).cobj
+            self.cobj.add(f3d[0],tmp,<c.bool>save_repeat)
+        else:
+            raise TypeError("unsupported datatype")
+    def write(self):
+        self.cobj.write()
+
+
+    def __dealloc__(self):
+        self.__boutcore_dealloc()
+
+    def __boutcore_dealloc(self):
+        # is never self owned
+        pass
+
+def print(*args, sep=' ', end='\n'):
+    _print(sep.join([str(a) for a in args])+end)
+
+cdef _print(value):
+    cdef c.string str_=value.encode('utf-8')
+    c.output_info.write(str_.c_str())
+
+{% include "helper.py" %}
+
+{% include "resolve_enum_inv.pyx.jinja" %}

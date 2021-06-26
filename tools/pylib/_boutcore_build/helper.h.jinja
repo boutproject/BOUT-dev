@@ -1,0 +1,119 @@
+#include <field3d.hxx>
+#include <bout_types.hxx>
+
+{% for field in [field3d, field2d] %}
+void c_get_{{ field.fdd }}_all(const {{ field.field_type }} * f, double * data);
+void c_set_{{ field.fdd }}_all({{ field.field_type }} * f, const double * data);
+void c_set_{{ field.fdd }}_all_({{ field.field_type }} * f, double data);
+void c_set_{{ field.fdd }}_from_{{ field.fdd }}({{ field.field_type }} * lhs,const {{ field.field_type }} * rhs){
+  *lhs=*rhs;
+}
+
+{% for name, op in ops %}
+{{ field.field_type }} * f{{ name }}( {{ field.field_type }}*,{{ field.field_type }}*);
+{{ field.field_type }} * f{{ name }}( {{ field.field_type }}*,double);
+{{ field.field_type }} * f{{ name }}( double,{{ field.field_type }}*);
+void fi{{ name }}( {{ field.field_type }}*,{{ field.field_type }}*);
+void fi{{ name }}( {{ field.field_type }}*,double);
+{% if field.field_type == "Field3D" %}
+Field3D * f{{ name }}( Field3D*,Field2D*);
+Field3D * f{{ name }}( Field2D*,Field3D*);
+void fi{{ name }}( Field3D*,Field2D*);
+{% endif %}
+{% endfor %}
+{{ field.field_type }} c_minus({{ field.field_type }} a){return -a;};
+{% endfor %}
+{% for vec in vecs %}
+{{ vec.field }} c_mul_{{ vec }}_{{ vec }}(const {{ vec }} * a, const {{ vec }} * b){ return (*a) * (*b) ;};
+{% endfor %}
+
+void c_get_f3d_part(const Field3D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
+void c_set_f3d_part(Field3D * f, const double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
+void c_set_f3d_part_(Field3D * f, const double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
+void c_get_f2d_part(const Field2D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy);
+void c_set_f2d_part(Field2D * f, const double * data,int xs,int xe, int dx,int ys,int ye, int dy);
+void c_set_f2d_part_(Field2D * f, const double data,int xs,int xe, int dx,int ys,int ye, int dy);
+
+Mesh * c_get_global_mesh();
+
+Field3D c_Grad_perp_dot_Grad_perp(Field3D a, Field3D b){
+  return Grad_perp(a)*Grad_perp(b);
+}
+
+void c_mesh_normalise(Mesh * , double);
+
+
+class PythonModelCallback{
+ public:
+  typedef void (*Method)(void *param, void *user_data);
+  PythonModelCallback(Method method, void *user_data){
+    _method=method;
+    _user_data=user_data;
+  }
+  virtual ~PythonModelCallback(){};
+  void cy_execute(void *parameter){
+    _method(parameter, _user_data);
+  }
+ private:
+  Method _method; // cython function
+  void *_user_data; // actual function
+};
+
+class PythonModel: public PhysicsModel{
+protected:
+  int init(bool restarting) override{
+    long aligned_restarting = restarting;
+    if (_init){
+      _init->cy_execute(&aligned_restarting);
+    }
+    return 0;
+  };
+  int rhs(BoutReal t) override {
+    _rhs->cy_execute( &t);
+    return 0;
+  };
+public:
+  PythonModel():_init(nullptr), _rhs(nullptr){};
+  void pyinit(){
+    solver = Solver::create();
+    solver->setModel(this);
+    bout_monitor = new BoutMonitor();
+    solver->addMonitor(bout_monitor, Solver::BACK);
+    solver->outputVars(bout::globals::dump);
+  };
+  void free(){
+    delete bout_monitor;
+  };
+  void set_init_func(PythonModelCallback * __init){
+    _init=__init;
+  };
+  void set_rhs_func(PythonModelCallback * __rhs){
+    _rhs=__rhs;
+  };
+  void solve(){
+    solver->solve();
+  }
+  Solver * getSolver(){
+    return solver.get();
+  };
+private:
+  PythonModelCallback * _init;
+  PythonModelCallback * _rhs;
+  std::unique_ptr<Solver> solver{nullptr};
+  Monitor * bout_monitor;
+};
+
+void throw_BoutException(std::string err){
+  throw BoutException(err);
+}
+
+Datafile * c_get_global_datafile(){
+  return &bout::globals::dump;
+}
+
+double c_get_dz(Coordinates * coords) {
+  return coords->dz;
+}
+void c_set_dz(Coordinates * coords, double val) {
+  coords->dz = val;
+}
