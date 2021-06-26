@@ -6,7 +6,7 @@ submodules: sub_all
 
 mpark_submodule:
 	@echo "Downloading mpark.variant"
-	git submodule update --init --recursive $(PWD)/externalpackages/mpark.variant
+	git submodule update --init --recursive ./externalpackages/mpark.variant
 
 sub_all:
 	@for d in $$(ls externalpackages | grep -v PVODE) ; do echo "Downloading $$d" ; git submodule update --init --recursive ./externalpackages/$$d ; done
