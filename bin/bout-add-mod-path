@@ -48,7 +48,7 @@ def ask_modpath():
         )
 
     if len(writeable) == 1:
-        return modulepath[0]
+        return writeable[0]
 
     print("Several paths found to store module files. Please select one:")
     for index, directory in enumerate(writeable):
@@ -135,13 +135,11 @@ if __name__ == "__main__":
         "--modpath",
         "-m",
         action=writeable_dir,
-        nargs=1,
         help="The modulepath to install the bout++ module",
     )
     parser.add_argument(
         "--name",
         "-n",
-        nargs=1,
         help="""Can by any name by which you will be later able to recognise
                         this specific bout++ installation, e.g. `3d-metrics`. You can later
                         load the module with `module load bout++/name` e.g. `module load
@@ -150,7 +148,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--bout-top",
         "-t",
-        nargs=1,
         help="""bout-top is the root directory of the BOUT++ installation. Note that
                         it only works with in-source-builds.""",
     )
