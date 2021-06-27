@@ -156,16 +156,22 @@ cdef extern from "bout/solver.hxx":
         void add(Field3D, char * name)
         void solve()
 
+
 cdef extern from "datafile.hxx":
     cppclass Datafile:
+        Datafile(Options* opt, Mesh* mesh)
         void add(int &i, const char *name, bool save_repeat)
         void add(double &i, const char *name, bool save_repeat)
         void add(Field3D &i, const char *name, bool save_repeat)
+        bool openw(string filename)
         void write()
+
 
 cdef extern from "bout/physicsmodel.hxx":
     cppclass PhysicsModel:
         int rhs(double t)
+
+
 ctypedef void (*Method)(void *param, void *user_data)
 cdef extern from "helper.h":
     cppclass PythonModel(PhysicsModel):
@@ -180,6 +186,8 @@ cdef extern from "helper.h":
         PythonModelCallback(Method method, void * user_data)
         void cy_execute(void * parameter)
     void throw_BoutException(string)
+    void c_new_global_dump(Options *, Mesh *)
+
 
 cdef extern from "output.hxx":
     cppclass ConditionalOutput:

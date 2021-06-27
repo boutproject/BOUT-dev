@@ -9,9 +9,12 @@ cimport numpy as np
 import atexit
 cimport resolve_enum as benum
 from libc.stdlib cimport malloc, free
-import copy
 from libcpp.memory cimport unique_ptr
+from libcpp.string cimport string
 from cython.operator import dereference as deref
+import copy
+
+import sys
 
 
 cdef extern from "boutexception_helper.hxx":
@@ -249,6 +252,7 @@ cdef class {{ field.field_type }}:
         if isinstance(data, {{ field }}):
             c_set_{{ field.fdd }}_from_{{ field.fdd }}(self.cobj, (<{{ field }}?> data).cobj)
             return
+
         dims = [{{ field.makelist('self.cobj.getN$d()')}}]
 {% set zeros = field.makelist("0") %}
 {% set nxlist = field.makelist("n$d") %}
@@ -1565,13 +1569,24 @@ cdef class Options:
 
 cdef class Datafile:
     cdef c.Datafile * cobj
+    cdef c.bool isSelfOwned
 
     def __init__(self):
         self.cobj = c_get_global_datafile()
+        self.isSelfOwned = False
+
+    @classmethod
+    def new(cls, Options options, Mesh mesh, asGlobal=False):
+        if asGlobal:
+            c.c_new_global_dump((<Options?>options).cobj, (<Mesh?> mesh).cobj)
+            return Datafile()
+        ret = Datafile()
+        ret.cobj = new c.Datafile((<Options?>options).cobj, (<Mesh?> mesh).cobj)
+        ret.isSelfOwned = True
+        return ret
 
     def add(self,save_repeat=False,**kwargs):
-        for key in kwargs:
-            self._add(kwargs[key],key,save_repeat)
+        for key, var in kwargs.items():
             self._add(var, key, save_repeat)
 
     def _add(self, data, name, save_repeat):
@@ -1585,16 +1600,23 @@ cdef class Datafile:
             self.cobj.add(f3d[0], tmp, <c.bool> save_repeat)
         else:
             raise TypeError("unsupported datatype")
+
+    def openw(self, filename):
+        cdef string filename_
+        filename_ = filename.encode("ascii")
+        self.cobj.openw(filename_)
+
     def write(self):
         self.cobj.write()
-
 
     def __dealloc__(self):
         self.__boutcore_dealloc()
 
     def __boutcore_dealloc(self):
-        # is never self owned
-        pass
+        if self.isSelfOwned and self.cobj != NULL:
+            del self.cobj
+            self.cobj = NULL
+
 
 def print(*args, sep=' ', end='\n'):
     _print(sep.join([str(a) for a in args])+end)

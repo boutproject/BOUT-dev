@@ -114,6 +114,40 @@ Datafile * c_get_global_datafile(){
 double c_get_dz(Coordinates * coords) {
   return coords->dz;
 }
+
 void c_set_dz(Coordinates * coords, double val) {
   coords->dz = val;
+}
+
+void c_new_global_dump(Options * opt, Mesh * mesh) {
+  bout::globals::dump = Datafile(opt, mesh);
+
+  // Add book-keeping variables to the output files
+  bout::globals::dump.add(const_cast<BoutReal&>(bout::version::as_double), "BOUT_VERSION", false);
+
+  // Save mesh configuration into output file
+  mesh->outputVars(bout::globals::dump);
+
+  // Add compile-time options
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::has_fftw), "has_fftw");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::has_gettext), "has_gettext");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::has_lapack), "has_lapack");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::has_netcdf), "has_netcdf");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::has_legacy_netcdf),
+                    "has_legacy_netcdf");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::has_petsc), "has_petsc");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::has_pretty_function),
+                    "has_pretty_function");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::has_pvode), "has_pvode");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::has_scorep), "has_scorep");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::has_slepc), "has_slepc");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::has_sundials), "has_sundials");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::use_backtrace), "use_backtrace");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::use_color), "use_color");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::use_openmp), "use_openmp");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::use_output_debug), "use_output_debug");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::use_sigfpe), "use_sigfpe");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::use_signal), "use_signal");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::use_track), "use_track");
+  bout::globals::dump.addOnce(const_cast<bool&>(bout::build::use_msgstack), "use_msgstack");
 }
