@@ -5,13 +5,24 @@ MZ = 32
 ZMIN = 0
 ZMAX = 8
 
-MXG = 2
 MYG = 1  # No need for Y communications
 
 [mesh]
 
 nx = 36
 ny = 1
+
+MXG = 2
+
+dx = 0.2
+dy = 1.0
+
+[mesh2]
+
+nx = 34
+ny = 1
+
+MXG = 1
 
 dx = 0.2
 dy = 1.0
