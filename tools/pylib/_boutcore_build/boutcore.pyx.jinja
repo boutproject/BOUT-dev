@@ -526,6 +526,10 @@ cdef class {{ field.field_type }}:
         else:
             self.cobj.applyBoundary()
 
+    @property
+    def shape(self):
+        return {{ field.makelist('self.cobj.getN$d()') }}
+
     def __dealloc__(self):
         self.__boutcore_dealloc()
 
