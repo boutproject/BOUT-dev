@@ -23,7 +23,7 @@ for nproc in [1, 2, 4]:
 
     launch_safe(exefile, nproc=nproc, pipe=True)
 
-    ns = [collect("n", path=".", info=False, prefix=f"run{i}.dmp") for i in range(4)]
+    ns = [collect("n", path=".", info=False, prefix=f"run{i}.dmp") for i in range(2)]
 
     if n0s is None:
         n0s = ns

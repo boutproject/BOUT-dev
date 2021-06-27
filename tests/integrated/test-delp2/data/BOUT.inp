@@ -31,7 +31,14 @@ dy = 1.0
 
 D = 0.1
 
-[n]
+[n0]
+function = sin(x) * cos(z)
 
-scale = 0.1
+[n1]
 function = gauss(x-0.5, 0.2) * gauss(z - pi, 0.2*pi)
+
+[n2]
+function = sin(x) + sin(z)
+
+[n3]
+function = sin(x*z*3) * sin(z^2)
