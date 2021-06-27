@@ -1351,14 +1351,14 @@ def max(Field3D a):
     """
     return c.max(a.cobj[0])
 
-def create3D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0):
+def create3D(string, Mesh msh=None, outloc="CELL_DEFAULT", time=0, Mesh mesh=None):
     """
     Returns a Field3D from the fieldfactory
     Parameters
     ----------
     string : string
         Expression to create. This can contain references to the options
-    msh : Mesh
+    mesh : Mesh
         the Mesh to use, defaults to the global mesh.
     outloc : string
         the cell location of the returned field
@@ -1372,10 +1372,12 @@ def create3D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0):
     """
     checkInit()
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
+    if msh is None and mesh is None:
+        msh = Mesh.getGlobal()
     if msh is None:
-        msh=Mesh.getGlobal()
-    cdef FieldFactory fact=msh.getFactory()
-    cdef c.string str_=string.encode('ascii')
+        msh = mesh
+    cdef FieldFactory fact = msh.getFactory()
+    cdef c.string str_ = string.encode('ascii')
     return f3dFromObj(
         (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0
                                            ,outloc_,time))
