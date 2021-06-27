@@ -913,8 +913,8 @@ cdef class PhysicsModelBase(object):
     def __init__(self):
         checkInit()
         self.cmodel  = new c.PythonModel()
-        self.callback= <c.PythonModelCallback*> 0
-        self.callbackinit= <c.PythonModelCallback*> 0
+        self.callback = <c.PythonModelCallback*> 0
+        self.callbackinit = <c.PythonModelCallback*> 0
         self._done_pyinit = False
     def solve(self):
         if self._done_pyinit == False:
@@ -1096,10 +1096,10 @@ def init(args=[]):
     # terminate string_buf with a null pointer for OpenMPI, which requires this
     # because it iterates through 'argv' with a loop 'for (p = argv; *p; ++p)'
     string_buf[len(args)] = NULL
-    cdef int fuu=len(args)
+    cdef int fuu = len(args)
     if is_openmpi:
         PyMPI_OPENMPI_dlopen_libmpi()
-    ret=BoutInitialise(fuu,string_buf)
+    ret = BoutInitialise(fuu,string_buf)
     free(string_buf)
     if ret:
         BoutFinalise()
@@ -1271,8 +1271,8 @@ def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
         The bracket
     """
     checkInit()
-    cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
-    cdef benum.BRACKET_METHOD method_=benum.resolve_bracket_method(method)
+    cdef benum.CELL_LOC outloc_ = benum.resolve_cell_loc(outloc)
+    cdef benum.BRACKET_METHOD method_ = benum.resolve_bracket_method(method)
     return f3dFromObj(c.bracket(a.cobj[0],b.cobj[0],method_,outloc_))
 
 {% for fun in "sqrt", "exp", "sin", "cos", "log", "abs" %}
@@ -1568,16 +1568,17 @@ cdef class Datafile:
     def add(self,save_repeat=False,**kwargs):
         for key in kwargs:
             self._add(kwargs[key],key,save_repeat)
+            self._add(var, key, save_repeat)
 
-    def _add(self,data,name,save_repeat):
+    def _add(self, data, name, save_repeat):
         cdef char * tmp
         cdef double * dbl
         cdef c.Field3D * f3d
-        t2=str.encode(name)
-        tmp=t2
-        if isinstance(data,Field3D):
+        t2 = str.encode(name)
+        tmp = t2
+        if isinstance(data, Field3D):
             f3d=(<Field3D>data).cobj
-            self.cobj.add(f3d[0],tmp,<c.bool>save_repeat)
+            self.cobj.add(f3d[0], tmp, <c.bool> save_repeat)
         else:
             raise TypeError("unsupported datatype")
     def write(self):
