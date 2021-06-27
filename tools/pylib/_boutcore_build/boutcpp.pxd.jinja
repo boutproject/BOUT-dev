@@ -107,7 +107,7 @@ cdef extern from "difops.hxx":
     Field3D Laplace(Field3D)
     Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, string)
     Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC)
-    Field3D Delp2(Field3D)
+    Field3D Delp2(Field3D, benum.CELL_LOC, bool)
 
 cdef extern from "options.hxx":
     cppclass Options:

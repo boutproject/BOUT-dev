@@ -1228,10 +1228,12 @@ def Laplace(Field3D a):
     checkInit()
     return f3dFromObj(c.Laplace(a.cobj[0]))
 
-def Delp2(Field3D a):
+def Delp2(Field3D a, outloc="CELL_DEFAULT", useFFT=True):
 #    """Delp2(Field3D a)"""
     checkInit()
-    return f3dFromObj(c.Delp2(a.cobj[0]))
+    cdef benum.CELL_LOC outloc_ = benum.resolve_cell_loc(outloc)
+    cdef c.bool useFFT_ = <c.bool?> useFFT
+    return f3dFromObj(c.Delp2(a.cobj[0], outloc_, useFFT_))
 
 def Grad_perp_dot_Grad_perp(Field3D a, Field3D b):
     """
