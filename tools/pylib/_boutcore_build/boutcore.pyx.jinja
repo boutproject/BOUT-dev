@@ -246,6 +246,9 @@ cdef class {{ field.field_type }}:
         ignoreDataType : bool, optional
             Ignore if data is off different type to BoutRealxx
         """
+        if isinstance(data, {{ field }}):
+            c_set_{{ field.fdd }}_from_{{ field.fdd }}(self.cobj, (<{{ field }}?> data).cobj)
+            return
         dims = [{{ field.makelist('self.cobj.getN$d()')}}]
 {% set zeros = field.makelist("0") %}
 {% set nxlist = field.makelist("n$d") %}
