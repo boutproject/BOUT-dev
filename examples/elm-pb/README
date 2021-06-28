@@ -1,4 +1,4 @@
-When running elm-pb with default options, on hopper.nersc.gov, 
+1. When running elm-pb with default options, on hopper.nersc.gov, 
 for 30 min debug job, by using the following commend 
 >qsub bout_hopper_debug.pbs
 the result for linear growth rate is shown in plots:
@@ -18,3 +18,5 @@ For high resolution mesh nx=516, data/cbm18_8_y064_x516_090309.nc
 the growth rate is 0.186655 *Alfven time.
 
 The diference is 47%.
+
+2. Using plot script.
