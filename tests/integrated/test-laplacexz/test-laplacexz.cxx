@@ -13,6 +13,8 @@
 #include <bout/invert/laplacexz.hxx>
 #include <field_factory.hxx>
 
+using bout::globals::mesh;
+
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
@@ -37,7 +39,7 @@ int main(int argc, char** argv) {
   Field3D x2 = inv->solve(rhs2, 0.0);
   SAVE_ONCE2(rhs2, x2);
 
-  dump.write();
+  bout::globals::dump.write();
 
   BoutFinalise();
   return 0;
