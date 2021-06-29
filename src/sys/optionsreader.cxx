@@ -44,13 +44,20 @@ void OptionsReader::write(Options *options, const std::string& filename) {
 }
 
 void OptionsReader::parseCommandLine(Options* options, int argc, char** argv) {
+  return parseCommandLine(options, std::vector<std::string>(argv, argv + argc));
+}
+
+void OptionsReader::parseCommandLine(Options *options, const std::vector<std::string>& argv) {
+
   // A key/value pair, separated by a '=' or a switch
   // and sections separated with an '_' but don't start with a '-'
 
   std::string buffer;
 
+  const auto argc = argv.size();
+
   // Go through command-line arguments
-  for (int i = 1; i < argc; i++) {
+  for (auto i = std::vector<std::string>::size_type{1}; i < argc; i++) {
 
     // Reset the section
     options = Options::getRoot();

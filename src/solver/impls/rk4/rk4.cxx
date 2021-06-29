@@ -70,7 +70,7 @@ int RK4Solver::init(int nout, BoutReal tstep) {
   max_timestep = (*options)["max_timestep"].doc("Maximum timestep").withDefault(tstep);
   timestep = (*options)["timestep"].doc("Starting timestep").withDefault(max_timestep);
   mxstep = (*options)["mxstep"].doc("Maximum number of steps between outputs").withDefault(500);
-  adaptive = (*options)["adaptive"].doc("Adapt internal timestep using ATOL and RTOL.").withDefault(false);
+  adaptive = (*options)["adaptive"].doc("Adapt internal timestep using 'atol' and 'rtol'.").withDefault(false);
 
   return 0;
 }

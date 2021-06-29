@@ -146,7 +146,7 @@ void Solver::add(Field2D& v, const std::string& name, const std::string& descrip
   }
   
   // Check if the boundary regions should be evolved
-  // First get option from section "All"
+  // First get option from section "all"
   // then use that as default for specific section
   d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
   d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
@@ -205,7 +205,7 @@ void Solver::add(Field3D& v, const std::string& name, const std::string& descrip
   }
   
   // Check if the boundary regions should be evolved
-  // First get option from section "All"
+  // First get option from section "all"
   // then use that as default for specific section
   d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
   d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
@@ -437,35 +437,36 @@ void Solver::constraint(Vector3D& v, Vector3D& C_v, std::string name) {
  * Solver main loop: Initialise, run, and finish
  **************************************************************************/
 
-int Solver::solve(int NOUT, BoutReal TIMESTEP) {
-  
+int Solver::solve(int nout, BoutReal timestep) {
+
   Options& globaloptions = Options::root(); // Default from global options
-  
-  if (NOUT < 0) {
+
+  if (nout < 0) {
     /// Get options
-    NOUT = globaloptions["NOUT"].doc("Number of output steps").withDefault(1);
-    TIMESTEP = globaloptions["TIMESTEP"].doc("Output time step size").withDefault(1.0);
-    
+    nout = globaloptions["nout"].doc("Number of output steps").withDefault(1);
+    timestep = globaloptions["timestep"].doc("Output time step size").withDefault(1.0);
+
     // Check specific solver options, which override global options
-    NOUT = (*options)["NOUT"]
+    nout = (*options)["nout"]
                .doc("Number of output steps. Overrides global setting.")
-               .withDefault(NOUT);
-    TIMESTEP = (*options)["output_step"]
-                   .doc("Output time step size. Overrides global TIMESTEP setting.")
-                   .withDefault(TIMESTEP);
+               .withDefault(nout);
+    timestep = (*options)["output_step"]
+                   .doc("Output time step size. Overrides global 'timestep' setting.")
+                   .withDefault(timestep);
   }
 
-  finaliseMonitorPeriods(NOUT, TIMESTEP);
+  finaliseMonitorPeriods(nout, timestep);
 
-  output_progress.write(_("Solver running for {:d} outputs with output timestep of {:e}\n"),
-                        NOUT, TIMESTEP);
+  output_progress.write(
+      _("Solver running for {:d} outputs with output timestep of {:e}\n"), nout,
+      timestep);
   if (default_monitor_period > 1)
     output_progress.write(
         _("Solver running for {:d} outputs with monitor timestep of {:e}\n"),
-        NOUT / default_monitor_period, TIMESTEP * default_monitor_period);
+        nout / default_monitor_period, timestep * default_monitor_period);
 
   // Initialise
-  if (init(NOUT, TIMESTEP)) {
+  if (init(nout, timestep)) {
     throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
 
@@ -475,8 +476,8 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
   // Put the run ID into the options tree
   // Forcing in case the value has been previously set
-  Options::root()["run"]["run_id"].force(run_id, "Solver");
-  Options::root()["run"]["run_restart_from"].force(run_restart_from, "Solver");
+  Options::root()["run"]["run_id"].force(run_id, "Output");
+  Options::root()["run"]["run_restart_from"].force(run_restart_from, "Output");
 
   /// Run the solver
   output_info.write(_("Running simulation\n\n"));
@@ -490,28 +491,37 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
   Timer timer("run"); // Start timer
 
-  const bool restart = globaloptions["restart"]
-               .doc("Load state from restart files?")
-               .withDefault(false);
+  const bool restart =
+      globaloptions["restart"].doc("Load state from restart files?").withDefault(false);
 
-  const bool append = globaloptions["append"]
+  const bool append =
+      globaloptions["append"]
           .doc("Add new outputs to the end of existing files? If false, overwrite files.")
           .withDefault(false);
   const bool dump_on_restart = globaloptions["dump_on_restart"]
                                    .doc("Write initial state as time point 0?")
                                    .withDefault(!restart || !append);
 
+  // Run RHS once to ensure all variables set
+  if (run_rhs(simtime)) {
+    throw BoutException("Physics RHS call failed\n");
+  }
+
+  // Check for unused/mistyped options
+  const bool validate_input = globaloptions["input"]["validate"]
+                                  .doc("Check for unused options and stop")
+                                  .withDefault(false);
+  bout::checkForUnusedOptions();
+  if (validate_input) {
+    return 0;
+  }
+
   if (dump_on_restart) {
 
     /// Write initial state as time-point 0
 
-    // Run RHS once to ensure all variables set
-    if (run_rhs(simtime)) {
-      throw BoutException("Physics RHS call failed\n");
-    }
-
     // Call monitors so initial values are written to output dump files
-    if (call_monitors(simtime, -1, NOUT)) {
+    if (call_monitors(simtime, -1, nout)) {
       throw BoutException("Initial monitor call failed!");
     }
   }

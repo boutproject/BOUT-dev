@@ -5,8 +5,8 @@
 
 # settings used by the core code
 
-NOUT = 1    # number of time-steps
-TIMESTEP = 1 # time between outputs
+nout = 1    # number of time-steps
+timestep = 1 # time between outputs
 MXG = 2
 MYG = 1
 
@@ -70,8 +70,8 @@ floats = false # -> Output in double precision
 
 #type = pvode
 
-ATOL = 1e-12  # absolute tolerance
-RTOL = 1e-08   # relative tolerance
+atol = 1e-12  # absolute tolerance
+rtol = 1e-08   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 mms = true      # Test using Method of Manufactured Solutions
@@ -105,7 +105,7 @@ AA = 0.1     # Ion atomic mass
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 bndry_all = neumann # Zero-gradient on all boundaries

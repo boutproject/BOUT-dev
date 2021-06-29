@@ -182,6 +182,8 @@ int main(int argc, char** argv) {
     }
   }
 
+  bout::checkForUnusedOptions();
+
   BoutFinalise();
 
   output << "All tests passed\n";

@@ -3,13 +3,13 @@
 # Comparing shooting method against cyclic
 #
 
-NOUT = 0  # No timesteps
+nout = 0  # No timesteps
 
 MZ = 32    # Z size
 
 dump_format = "nc"  # NetCDF format
 
-myg = 0  # No guard cells in Y
+MYG = 0  # No guard cells in Y
 
 
 in = (1-gauss(x-0.5,0.2))*cos(z)

@@ -6,6 +6,7 @@
 #include "field3d.hxx"
 #include "test_extras.hxx"
 #include "test_fakesolver.hxx"
+#include "bout/physicsmodel.hxx"
 #include "bout/solver.hxx"
 #include "bout/sys/uuid.h"
 
@@ -82,6 +83,7 @@ public:
     Options::root()["another_vectorx"]["function"] = "8.0";
     Options::root()["another_vectory"]["function"] = "9.0";
     Options::root()["another_vectorz"]["function"] = "10.0";
+    Options::root()["input"]["error_on_unused_options"] = false;
   }
   virtual ~SolverTest() { Options::cleanup(); }
 
@@ -962,8 +964,14 @@ TEST_F(SolverTest, BasicSolve) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
 
+  EXPECT_CALL(model, rhs(0)).Times(1);
+
+  Options::cleanup();
   EXPECT_NO_THROW(solver.solve());
 
   EXPECT_TRUE(solver.init_called);
@@ -974,9 +982,15 @@ TEST_F(SolverTest, GetRunID) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
-
   EXPECT_THROW(solver.getRunID(), BoutException);
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(1);
   solver.solve();
 
   EXPECT_NO_THROW(solver.getRunID());
@@ -987,9 +1001,15 @@ TEST_F(SolverTest, GetRunRestartFrom) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
-
   EXPECT_THROW(solver.getRunRestartFrom(), BoutException);
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(1);
   solver.solve();
 
   EXPECT_NO_THROW(solver.getRunRestartFrom());
@@ -1003,7 +1023,12 @@ TEST_F(SolverTest, SolveBadInit) {
   options["fail_init"] = -1;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(0);
 
   EXPECT_THROW(solver.solve(), BoutException);
 
@@ -1016,8 +1041,14 @@ TEST_F(SolverTest, SolveBadRun) {
   options["fail_run"] = -1;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
 
+  EXPECT_CALL(model, rhs(0)).Times(1);
+
+  Options::cleanup();
   EXPECT_EQ(solver.solve(), -1);
 
   EXPECT_TRUE(solver.init_called);
@@ -1031,8 +1062,14 @@ TEST_F(SolverTest, SolveThrowRun) {
   options["throw_run"] = true;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
 
+  EXPECT_CALL(model, rhs(0)).Times(1);
+
+  Options::cleanup();
   EXPECT_THROW(solver.solve(), BoutException);
 
   EXPECT_TRUE(solver.init_called);
@@ -1042,8 +1079,6 @@ TEST_F(SolverTest, SolveThrowRun) {
 TEST_F(SolverTest, SolveFixDefaultTimestep) {
   Options options;
   FakeSolver solver{&options};
-
-  Options::root()["dump_on_restart"] = false;
 
   FakeMonitor default_timestep;
   FakeMonitor smaller_timestep{0.1};
@@ -1055,6 +1090,14 @@ TEST_F(SolverTest, SolveFixDefaultTimestep) {
   solver.addMonitor(&even_smaller_timestep);
   solver.addMonitor(&larger_timestep);
 
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(1);
+
+  Options::cleanup();
   EXPECT_NO_THROW(solver.solve(100, 1.));
 
   EXPECT_TRUE(solver.init_called);
@@ -1065,20 +1108,25 @@ TEST_F(SolverTest, SolveFixDefaultTimestep) {
   EXPECT_EQ(default_timestep.last_called, 0);
   EXPECT_EQ(smaller_timestep.last_called, 9);
   EXPECT_EQ(even_smaller_timestep.last_called, 99);
-  EXPECT_EQ(larger_timestep.last_called, called_sentinel);
+  EXPECT_EQ(larger_timestep.last_called, -1);
 }
 
 TEST_F(SolverTest, SolveFixDefaultTimestepBad) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
-
   FakeMonitor default_timestep;
   FakeMonitor smaller_timestep{0.1};
 
   solver.addMonitor(&default_timestep);
   solver.addMonitor(&smaller_timestep);
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(0);
 
   EXPECT_THROW(solver.solve(100, 3.142), BoutException);
 
@@ -1090,14 +1138,20 @@ TEST_F(SolverTest, SolveFixDefaultTimestepSmaller) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
-
   FakeMonitor default_timestep;
   FakeMonitor smaller_timestep{0.1};
 
   solver.addMonitor(&default_timestep);
   solver.addMonitor(&smaller_timestep);
 
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(1);
+
+  Options::cleanup();
   EXPECT_NO_THROW(solver.solve(100, 0.01));
 
   EXPECT_TRUE(solver.init_called);
@@ -1113,14 +1167,20 @@ TEST_F(SolverTest, SolveFixDefaultTimestepLarger) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
-
   FakeMonitor default_timestep;
   FakeMonitor smaller_timestep{0.1};
 
   solver.addMonitor(&default_timestep);
   solver.addMonitor(&smaller_timestep);
 
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(1);
+
+  Options::cleanup();
   EXPECT_NO_THROW(solver.solve(100, 1.));
 
   EXPECT_TRUE(solver.init_called);
@@ -1131,3 +1191,4 @@ TEST_F(SolverTest, SolveFixDefaultTimestepLarger) {
   EXPECT_EQ(default_timestep.last_called, 9);
   EXPECT_EQ(smaller_timestep.last_called, 99);
 }
+

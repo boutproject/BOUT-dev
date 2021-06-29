@@ -8,7 +8,7 @@ grid = "test-staggered.nc"
 
 [mesh]
 
-StaggerGrids = true
+staggergrids = true
 
 [mesh:ddy]
 

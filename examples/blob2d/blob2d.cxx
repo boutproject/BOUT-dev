@@ -95,12 +95,21 @@ protected:
 
     /************ Create a solver for potential ********/
 
+    Options& boussinesq_options = Options::root()["phiBoussinesq"];
+    Options& non_boussinesq_options = Options::root()["phiSolver"];
+
     if (boussinesq) {
-       // BOUT.inp section "phiBoussinesq"
-      phiSolver = Laplacian::create(Options::getRoot()->getSection("phiBoussinesq"));
+      // BOUT.inp section "phiBoussinesq"
+      phiSolver = Laplacian::create(&boussinesq_options);
+      // Mark other section as conditionally used so we don't get errors from unused
+      // options
+      non_boussinesq_options.setConditionallyUsed();
     } else {
       // BOUT.inp section "phiSolver"
-      phiSolver = Laplacian::create(Options::getRoot()->getSection("phiSolver")); 
+      phiSolver = Laplacian::create(&non_boussinesq_options);
+      // Mark other section as conditionally used so we don't get errors from unused
+      // options
+      boussinesq_options.setConditionallyUsed();
     }
     phi = 0.0; // Starting guess for first solve (if iterative)
 

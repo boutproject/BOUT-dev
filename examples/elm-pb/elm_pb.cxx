@@ -189,14 +189,12 @@ private:
 
   bool include_rmp;     // Include RMP coil perturbation
   bool simple_rmp;      // Just use a simple form for the perturbation
-  int rmp_n, rmp_m;     // toroidal and poloidal mode numbers
-  BoutReal rmp_polwid;  // Poloidal width (-ve -> full, fraction of 2pi)
-  BoutReal rmp_polpeak; // Peak poloidal location (fraction of 2pi)
+
   BoutReal rmp_factor;  // Multiply amplitude by this factor
   BoutReal rmp_ramp;    // Ramp-up time for RMP [s]. negative -> instant
   BoutReal rmp_freq; // Amplitude oscillation frequency [Hz] (negative -> no oscillation)
   BoutReal rmp_rotate; // Rotation rate [Hz]
-  bool rmp_vac_mask;   // Should a vacuum mask be applied?
+  bool rmp_vac_mask;
   Field3D rmp_Psi0; // Parallel vector potential from Resonant Magnetic Perturbation (RMP)
                     // coils
   Field3D rmp_Psi;  // Value used in calculations
@@ -629,23 +627,24 @@ protected:
       include_rmp = true;
     }
 
+    // toroidal and poloidal mode numbers
+    const int rmp_n = options["rmp_n"].doc("Simple RMP toroidal mode number").withDefault(3);
+    const int rmp_m = options["rmp_m"].doc("Simple RMP poloidal mode number").withDefault(9);
+    const int rmp_polwid = options["rmp_polwid"].doc("Poloidal width (-ve -> full, fraction of 2pi)").withDefault(-1.0);
+    const int rmp_polpeak = options["rmp_polpeak"].doc("Peak poloidal location (fraction of 2pi)").withDefault(0.5);
+    rmp_vac_mask = options["rmp_vac_mask"].doc("Should a vacuum mask be applied?").withDefault(true);
+    // Divide n by the size of the domain
+    const int zperiod = globalOptions["zperiod"].withDefault(1);
+
     if (include_rmp) {
       // Including external field coils.
       if (simple_rmp) {
         // Use a fairly simple form for the perturbation
-
         Field2D pol_angle;
         if (mesh->get(pol_angle, "pol_angle")) {
           output_warn.write("     ***WARNING: need poloidal angle for simple RMP\n");
           include_rmp = false;
         } else {
-          rmp_n = options["rmp_n"].doc("Simple RMP toroidal mode number").withDefault(3);
-          rmp_m = options["rmp_m"].doc("Simple RMP poloidal mode number").withDefault(9);
-          rmp_polwid = options["rmp_polwid"].withDefault(-1.0);
-          rmp_polpeak = options["rmp_polpeak"].withDefault(0.5);
-          rmp_vac_mask = options["rmp_vac_mask"].withDefault(true);
-          // Divide n by the size of the domain
-          int zperiod = globalOptions["zperiod"].withDefault(1);
           if ((rmp_n % zperiod) != 0) {
             output_warn.write(
                 "     ***WARNING: rmp_n ({:d}) not a multiple of zperiod ({:d})\n", rmp_n,
@@ -1095,9 +1094,9 @@ protected:
     }
 
     // Create a solver for the Laplacian
-    phiSolver = std::unique_ptr<Laplacian>(Laplacian::create(&options["phiSolver"]));
+    phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
 
-    aparSolver = std::unique_ptr<Laplacian>(Laplacian::create(&options["aparSolver"], loc));
+    aparSolver = Laplacian::create(&globalOptions["aparSolver"], loc);
 
     /////////////// CHECK VACUUM ///////////////////////
     // In vacuum region, initial vorticity should equal zero
