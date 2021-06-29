@@ -64,18 +64,18 @@ Datafile::Datafile(Options* opt, Mesh* mesh_in)
   OPTION(opt, openclose, true); // Open and close every write or read
   OPTION(opt, enabled, true);
   OPTION(opt, init_missing, false); // Initialise missing variables?
-  OPTION(opt, shiftOutput, false); // Do we want to write 3D fields in shifted space?
-  OPTION(opt, shiftInput, false); // Do we want to read 3D fields in shifted space?
-  OPTION(opt, flushFrequency, 1); // How frequently do we flush the file
+  OPTION(opt, shiftoutput, false); // Do we want to write 3D fields in shifted space?
+  OPTION(opt, shiftinput, false); // Do we want to read 3D fields in shifted space?
+  OPTION(opt, flushfrequency, 1); // How frequently do we flush the file
 }
 
 Datafile::Datafile(Datafile&& other) noexcept
     : mesh(other.mesh), parallel(other.parallel), flush(other.flush),
       guards(other.guards), floats(other.floats), openclose(other.openclose),
       Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), enabled(other.enabled),
-      init_missing(other.init_missing), shiftOutput(other.shiftOutput),
-      shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter),
-      flushFrequency(other.flushFrequency), file(std::move(other.file)),
+      init_missing(other.init_missing), shiftoutput(other.shiftoutput),
+      shiftinput(other.shiftinput), flushFrequencyCounter(other.flushFrequencyCounter),
+      flushfrequency(other.flushfrequency), file(std::move(other.file)),
       filename(std::move(other.filename)), writable(other.writable),
       appending(other.appending), first_time(other.first_time),
       int_arr(std::move(other.int_arr)), int_vec_arr(std::move(other.int_vec_arr)),
@@ -90,9 +90,9 @@ Datafile::Datafile(const Datafile& other)
     : mesh(other.mesh), parallel(other.parallel), flush(other.flush),
       guards(other.guards), floats(other.floats), openclose(other.openclose),
       Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), enabled(other.enabled),
-      init_missing(other.init_missing), shiftOutput(other.shiftOutput),
-      shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter),
-      flushFrequency(other.flushFrequency), file(nullptr), filename(other.filename),
+      init_missing(other.init_missing), shiftoutput(other.shiftoutput),
+      shiftinput(other.shiftinput), flushFrequencyCounter(other.flushFrequencyCounter),
+      flushfrequency(other.flushfrequency), file(nullptr), filename(other.filename),
       writable(other.writable), appending(other.appending), first_time(other.first_time),
       int_arr(other.int_arr), int_vec_arr(other.int_vec_arr),
       string_arr(other.string_arr), BoutReal_arr(other.BoutReal_arr),
@@ -108,10 +108,10 @@ Datafile& Datafile::operator=(Datafile &&rhs) noexcept {
   openclose    = rhs.openclose;
   enabled      = rhs.enabled;
   init_missing = rhs.init_missing;
-  shiftOutput  = rhs.shiftOutput;
-  shiftInput   = rhs.shiftInput;
+  shiftoutput  = rhs.shiftoutput;
+  shiftinput   = rhs.shiftinput;
   flushFrequencyCounter = 0;
-  flushFrequency = rhs.flushFrequency;
+  flushfrequency = rhs.flushfrequency;
   file         = std::move(rhs.file);
   filename     = std::move(rhs.filename);
   writable     = rhs.writable;
@@ -452,7 +452,7 @@ void Datafile::setLowPrecision() {
   file->setLowPrecision();
 }
 
-void Datafile::add(int &i, const char *name, bool save_repeat) {
+void Datafile::add(int &i, const char *name, bool save_repeat, const std::string &description) {
   TRACE("DataFile::add(int)");
   if (!enabled)
     return;
@@ -473,6 +473,7 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
   d.name = name;
   d.save_repeat = save_repeat;
   d.covar = false;
+  d.description = description;
   
   int_arr.push_back(d);
 
@@ -509,7 +510,7 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
   }
 }
 
-void Datafile::add(std::vector<int> &i, const char *name, bool save_repeat) {
+void Datafile::add(std::vector<int> &i, const char *name, bool save_repeat, const std::string &description) {
   TRACE("DataFile::add(std::vector<int>)");
   if (!enabled)
     return;
@@ -531,6 +532,7 @@ void Datafile::add(std::vector<int> &i, const char *name, bool save_repeat) {
   d.save_repeat = save_repeat;
   d.covar = false;
   d.size = i.size();
+  d.description = description;
 
   int_vec_arr.push_back(d);
 
@@ -567,7 +569,7 @@ void Datafile::add(std::vector<int> &i, const char *name, bool save_repeat) {
   }
 }
 
-void Datafile::add(std::string &s, const char *name, bool save_repeat) {
+void Datafile::add(std::string &s, const char *name, bool save_repeat, const std::string &description) {
   TRACE("DataFile::add(std::string)");
   if (!enabled) {
     return;
@@ -590,6 +592,7 @@ void Datafile::add(std::string &s, const char *name, bool save_repeat) {
   d.save_repeat = save_repeat;
   d.covar = false;
   d.size = s.size();
+  d.description = description;
 
   string_arr.push_back(d);
 
@@ -628,7 +631,7 @@ void Datafile::add(std::string &s, const char *name, bool save_repeat) {
   }
 }
 
-void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
+void Datafile::add(BoutReal &r, const char *name, bool save_repeat, const std::string &description) {
   TRACE("DataFile::add(BoutReal)");
   if (!enabled)
     return;
@@ -649,6 +652,7 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
   d.name = name;
   d.save_repeat = save_repeat;
   d.covar = false;
+  d.description = description;
   
   BoutReal_arr.push_back(d);
 
@@ -687,7 +691,7 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
   }
 }
 
-void Datafile::add(bool &b, const char *name, bool save_repeat) {
+void Datafile::add(bool &b, const char *name, bool save_repeat, const std::string &description) {
   TRACE("DataFile::add(bool)");
   if (!enabled)
     return;
@@ -708,6 +712,7 @@ void Datafile::add(bool &b, const char *name, bool save_repeat) {
   d.name = name;
   d.save_repeat = save_repeat;
   d.covar = false;
+  d.description = description;
 
   bool_arr.push_back(d);
 
@@ -744,7 +749,7 @@ void Datafile::add(bool &b, const char *name, bool save_repeat) {
   }
 }
 
-void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
+void Datafile::add(Field2D &f, const char *name, bool save_repeat, const std::string &description) {
   TRACE("DataFile::add(Field2D)");
   if (!enabled)
     return;
@@ -765,6 +770,7 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
   d.name = name;
   d.save_repeat = save_repeat;
   d.covar = false;
+  d.description = description;
   
   f2d_arr.push_back(d);
 
@@ -803,7 +809,7 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
   }
 }
 
-void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
+void Datafile::add(Field3D &f, const char *name, bool save_repeat, const std::string &description) {
   TRACE("DataFile::add(Field3D)");
   if (!enabled)
     return;
@@ -824,6 +830,7 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
   d.name = name;
   d.save_repeat = save_repeat;
   d.covar = false;
+  d.description = description;
   
   f3d_arr.push_back(d);
 
@@ -862,7 +869,7 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
   }
 }
 
-void Datafile::add(FieldPerp &f, const char *name, bool save_repeat) {
+void Datafile::add(FieldPerp &f, const char *name, bool save_repeat, const std::string &description) {
   AUTO_TRACE();
   if (!enabled)
     return;
@@ -883,6 +890,7 @@ void Datafile::add(FieldPerp &f, const char *name, bool save_repeat) {
   d.name = name;
   d.save_repeat = save_repeat;
   d.covar = false;
+  d.description = description;
 
   fperp_arr.push_back(d);
 
@@ -921,7 +929,7 @@ void Datafile::add(FieldPerp &f, const char *name, bool save_repeat) {
   }
 }
 
-void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
+void Datafile::add(Vector2D &f, const char *name, bool save_repeat, const std::string &description) {
   TRACE("DataFile::add(Vector2D)");
   if (!enabled)
     return;
@@ -942,6 +950,7 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
   d.name = name;
   d.save_repeat = save_repeat;
   d.covar = f.covariant;
+  d.description = description;
 
   v2d_arr.push_back(d);
 
@@ -987,7 +996,7 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
   }
 }
 
-void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
+void Datafile::add(Vector3D &f, const char *name, bool save_repeat, const std::string &description) {
   TRACE("DataFile::add(Vector3D)");
   if (!enabled)
     return;
@@ -1008,6 +1017,7 @@ void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
   d.name = name;
   d.save_repeat = save_repeat;
   d.covar = f.covariant;
+  d.description = description;
 
   v3d_arr.push_back(d);
 
@@ -1304,7 +1314,7 @@ bool Datafile::write() {
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
-  if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
+  if(openclose && (flushFrequencyCounter % flushfrequency == 0)) {
     // Open the file
     if(!file->openw(filename, BoutComm::rank(), appending)) {
       if (appending) {
@@ -1335,19 +1345,64 @@ bool Datafile::write() {
     // Set the field attributes from field meta-data.
     // Attributes must have been set for all fields before the first time
     // output is written, since this happens after the first rhs evaluation
+
+    // Integer variables
+    for(const auto& var : int_arr) {
+      if (not var.description.empty()) {
+        file->setAttribute(var.name, "description", var.description);
+      }
+    }
+
+    // Vectors of integers
+    for(const auto& var : int_vec_arr) {
+      if (not var.description.empty()) {
+        file->setAttribute(var.name, "description", var.description);
+      }
+    }
+
+    // String variables
+    for (const auto& var : string_arr) {
+      if (not var.description.empty()) {
+        file->setAttribute(var.name, "description", var.description);
+      }
+    }
+
+    // BoutReal variables
+    for(const auto& var : BoutReal_arr) {
+      if (not var.description.empty()) {
+        file->setAttribute(var.name, "description", var.description);
+      }
+    }
+
+    // bool variables
+    for(const auto& var : bool_arr) {
+      if (not var.description.empty()) {
+        file->setAttribute(var.name, "description", var.description);
+      }
+    }
+
     // 2D fields
     for (const auto& var : f2d_arr) {
       file->writeFieldAttributes(var.name, *var.ptr);
+      if (not var.description.empty()) {
+        file->setAttribute(var.name, "description", var.description);
+      }
     }
 
     // 3D fields
     for (const auto& var : f3d_arr) {
-      file->writeFieldAttributes(var.name, *var.ptr, shiftOutput);
+      file->writeFieldAttributes(var.name, *var.ptr, shiftoutput);
+      if (not var.description.empty()) {
+        file->setAttribute(var.name, "description", var.description);
+      }
     }
 
     // FieldPerps
     for (const auto& var : fperp_arr) {
-      file->writeFieldAttributes(var.name, *var.ptr, shiftOutput);
+      file->writeFieldAttributes(var.name, *var.ptr, shiftoutput);
+      if (not var.description.empty()) {
+        file->setAttribute(var.name, "description", var.description);
+      }
     }
 
     // 2D vectors
@@ -1357,15 +1412,21 @@ bool Datafile::write() {
       file->writeFieldAttributes(name+"x", v.x);
       file->writeFieldAttributes(name+"y", v.y);
       file->writeFieldAttributes(name+"z", v.z);
+      if (not var.description.empty()) {
+        file->setAttribute(var.name, "description", var.description);
+      }
     }
 
     // 3D vectors
     for(const auto& var : v3d_arr) {
       Vector3D v  = *(var.ptr);
       auto name = var.covar ? var.name + "_" : var.name;
-      file->writeFieldAttributes(name+"x", v.x, shiftOutput);
-      file->writeFieldAttributes(name+"y", v.y, shiftOutput);
-      file->writeFieldAttributes(name+"z", v.z, shiftOutput);
+      file->writeFieldAttributes(name+"x", v.x, shiftoutput);
+      file->writeFieldAttributes(name+"y", v.y, shiftoutput);
+      file->writeFieldAttributes(name+"z", v.z, shiftoutput);
+      if (not var.description.empty()) {
+        file->setAttribute(var.name, "description", var.description);
+      }
     }
   }
 
@@ -1456,7 +1517,7 @@ bool Datafile::write() {
     write_f3d(name+"z", &(v.z), var.save_repeat);
   }
   
-  if(openclose  && (flushFrequencyCounter+1 % flushFrequency == 0)){
+  if(openclose  && (flushFrequencyCounter+1 % flushfrequency == 0)){
     file->close();
   }
   flushFrequencyCounter++;
@@ -1494,7 +1555,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
-  if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
+  if(openclose && (flushFrequencyCounter % flushfrequency == 0)) {
     // Open the file
     if(!file->openw(filename, BoutComm::rank(), appending)) {
       if (appending) {
@@ -1532,7 +1593,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
-  if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
+  if(openclose && (flushFrequencyCounter % flushfrequency == 0)) {
     // Open the file
     if(!file->openw(filename, BoutComm::rank(), appending)) {
       if (appending) {
@@ -1570,7 +1631,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
-  if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
+  if(openclose && (flushFrequencyCounter % flushfrequency == 0)) {
     // Open the file
     if(!file->openw(filename, BoutComm::rank(), appending)) {
       if (appending) {
@@ -1679,7 +1740,7 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
   }
 
   
-  if (shiftInput) {
+  if (shiftinput) {
     // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
     *f = fromFieldAligned(*f, "RGN_ALL");
   }
@@ -1730,7 +1791,7 @@ bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repea
       }
     }
 
-    if (shiftInput) {
+    if (shiftinput) {
       // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
       *f = fromFieldAligned(*f, "RGN_ALL");
     }
@@ -1794,7 +1855,7 @@ bool Datafile::write_f3d(const std::string &name, Field3D *f, bool save_repeat) 
 
   //Deal with shifting the output
   Field3D f_out{emptyFrom(*f)};
-  if(shiftOutput and not (f->getDirectionY() == YDirectionType::Aligned)) {
+  if(shiftoutput and not (f->getDirectionY() == YDirectionType::Aligned)) {
     f_out = toFieldAligned(*f);
   }else {
     f_out = *f;
@@ -1817,7 +1878,7 @@ bool Datafile::write_fperp(const std::string &name, FieldPerp *f, bool save_repe
 
     //Deal with shifting the output
     FieldPerp f_out{emptyFrom(*f)};
-    if(shiftOutput and not (f->getDirectionY() == YDirectionType::Aligned)) {
+    if(shiftoutput and not (f->getDirectionY() == YDirectionType::Aligned)) {
       f_out = toFieldAligned(*f);
     }else {
       f_out = *f;

@@ -110,10 +110,7 @@ Field2D DDZ(const Field2D &f, CELL_LOC UNUSED(outloc), const std::string
 
 Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, const std::string &method,
     const std::string& region) {
-  Vector3D result(v.x.getMesh());
-
-  ASSERT2(v.x.getMesh()==v.y.getMesh());
-  ASSERT2(v.x.getMesh()==v.z.getMesh());
+  Vector3D result(v.getMesh());
   Coordinates *metric = v.x.getCoordinates(outloc);
 
   if(v.covariant){
@@ -139,7 +136,7 @@ Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, const std::string &method,
 
 Vector2D DDZ(const Vector2D &v, CELL_LOC UNUSED(outloc), const std::string
     &UNUSED(method), const std::string& UNUSED(region)) {
-  Vector2D result(v.x.getMesh());
+  Vector2D result(v.getMesh());
 
   result.covariant = v.covariant;
 

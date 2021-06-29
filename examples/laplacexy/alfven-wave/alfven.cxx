@@ -120,7 +120,7 @@ protected:
     // Field2D Vort2D = DC(Vort); // n=0 component
     // phi2D = laplacexy->solve(Vort2D, phi2D);
 
-    // Calculate phi from potential
+    // Calculate phi from vorticity
     if (split_n0) {
       // Split into axisymmetric and non-axisymmetric components
       Field2D Vort2D = DC(Vort); // n=0 component
@@ -196,8 +196,9 @@ protected:
     sinty = 0.0; // I disappears from metric for shifted coordinates
 
     BoutReal sbp = 1.0; // Sign of Bp
-    if (min(Bpxy, true) < 0.0)
+    if (min(Bpxy, true) < 0.0) {
       sbp = -1.0;
+    }
 
     coord->g11 = SQ(Rxy * Bpxy);
     coord->g22 = 1.0 / SQ(hthe);

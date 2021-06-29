@@ -62,13 +62,15 @@ AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
         [Enable support for scorep based instrumentation])],,[with_scorep=no])
 AC_ARG_WITH(system_mpark, [AS_HELP_STRING([--with-system-mpark],
         [Use mpark.variant already installed rather then the bundled one])],,[with_system_mpark=auto])
-
-dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
+AC_ARG_WITH(system_uuid,  [AS_HELP_STRING([--with-system-uuid],
+        [Use libuuid to generate UUIDs])],,[with_system_uuid=auto])
 
 AC_ARG_ENABLE(warnings,     [AS_HELP_STRING([--disable-warnings],
         [Disable compiler warnings])],,[])
 AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
-        [Set run-time checking level])],,[])
+        [Set run-time checking level])],,[enable_checks=default])
+AC_ARG_ENABLE(msgstack,     [AS_HELP_STRING([--enable-msgstack=no/yes],
+        [Enable MstStack for backtrace. Default based on check level.])],,[enable_msgstack=maybe])
 AC_ARG_ENABLE(signal,       [AS_HELP_STRING([--disable-signal],
         [Disable SEGFAULT handling])],,[])
 AC_ARG_ENABLE(color,        [AS_HELP_STRING([--disable-color],
@@ -268,9 +270,10 @@ AS_IF([test "x$enable_warnings" != "xno"], [
 ])
 
 OPT_FLAGS=""
+enable_checks_def=2
 AS_IF([test "$enable_debug" != ""], [
   AC_MSG_NOTICE([Enabling all debug options])
-  enable_checks="3"
+  enable_checks_def=3
   # use -Og with available, otherwise fall back to -O0
   OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
 ], [
@@ -282,14 +285,15 @@ AS_IF([test "$enable_debug" != ""], [
     ["fast" | "4"],
         [AC_MSG_NOTICE([Enabling level 4 optimisations])
          OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
-         DISABLE_CHECK=probably],
+         enable_checks_def=0],
     ["3"],
         [AC_MSG_NOTICE([Enabling level 3 optimisations])
          OPT_FLAGS="-O3 -march=native -funroll-loops"
-         DISABLE_CHECK=probably],
+         enable_checks_def=0],
     ["2"],
         [AC_MSG_NOTICE([Enabling level 2 optimisations])
-         OPT_FLAGS="-O2 -march=native"],
+         OPT_FLAGS="-O2 -march=native"
+         enable_checks_def=1],
     ["1" | "0"],
         [AC_MSG_NOTICE([Enabling level $enable_optimize optimisations])
          OPT_FLAGS="-O$enable_optimize"],
@@ -305,8 +309,8 @@ AX_APPEND_COMPILE_FLAGS([ dnl
 ], [CXXFLAGS], [$extra_compiler_flags_test])
 
 # Disable checks if optimization > 2 is used
-AS_IF([test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"], [
-  enable_checks=no
+AS_IF([test "x$enable_checks" = "xdefault" ], [
+  enable_checks=$enable_checks_def
 ])
 
 BOUT_CHECK_LEVEL=0
@@ -316,15 +320,29 @@ AS_IF([test "x$enable_checks" != "xno" && test "x$enable_checks" != "x0"], [
     [1], [AC_MSG_NOTICE([ -> Level 1 (Basic checking)])
           CXXFLAGS="$CXXFLAGS -DCHECK=1"
           BOUT_CHECK_LEVEL=1],
-    [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking + stack tracing)])
+    [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking)])
           enable_output_debug=yes
           CXXFLAGS="$CXXFLAGS -DCHECK=3"
           BOUT_CHECK_LEVEL=3],
-    [AC_MSG_NOTICE([ -> Level 2 (Basic checking + stack tracing)])
+    [AC_MSG_NOTICE([ -> Level 2 (Enhanced checking)])
      CXXFLAGS="$CXXFLAGS -DCHECK=2"
      BOUT_CHECK_LEVEL=2])
 ], [
   AC_MSG_NOTICE([Run-time checking disabled])
+])
+
+BOUT_USE_MSGSTACK=$(test $BOUT_CHECK_LEVEL -gt 1 && echo yes || echo no)
+AS_IF([test "x$enable_msgstack" = "xyes" ], [
+  BOUT_USE_MSGSTACK=yes
+], [
+  AS_IF([test "x$enable_msgstack" = "xno" ], [
+    BOUT_USE_MSGSTACK=no
+  ], [])
+])
+AS_IF([test $BOUT_USE_MSGSTACK = no ], [
+  AC_MSG_NOTICE([Stack tracing disabled])
+], [
+  AC_MSG_NOTICE([Stack tracing enabled])
 ])
 
 BOUT_USE_SIGNAL=no
@@ -488,6 +506,8 @@ BOUT_HAS_FFTW="no"
 
 NCCONF="" # Configuration script
 
+BOUT_HAS_NETCDF=no
+BOUT_HAS_LEGACY_NETCDF=no
 AS_IF([test "x$with_netcdf" != "xno"],
 [
   ##########################################
@@ -553,7 +573,9 @@ AS_IF([test "x$with_netcdf" != "xno"],
         AC_LANG_POP([C++])
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
-        CXXFLAGS="$save_CXXFLAGS -DNCDF"
+        CXXFLAGS="$save_CXXFLAGS"
+        BOUT_HAS_NETCDF=yes
+        BOUT_HAS_LEGACY_NETCDF=yes
        ])
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 
@@ -574,7 +596,8 @@ AS_IF([test "x$with_netcdf" != "xno"],
          file_formats="$file_formats netCDF"
          AC_MSG_NOTICE([ -> Legacy NetCDF support enabled])
          NCPATH="found"
-         CXXFLAGS="$CXXFLAGS -DNCDF"
+         BOUT_HAS_NETCDF=yes
+         BOUT_HAS_LEGACY_NETCDF=yes
         ], [])
   ])
 
@@ -629,35 +652,6 @@ AS_IF([test "x$PNCPATH" = "x"], [
 
   file_formats="$file_formats Parallel-NetCDF"
   AC_MSG_NOTICE([Parallel-NetCDF support enabled])
-])
-
-#############################################################
-# HDF5 library
-#############################################################
-
-BOUT_HAS_HDF5="no"
-AX_LIB_HDF5([serial])
-AS_IF([test "$with_hdf5" = "yes"], [
-  AC_MSG_NOTICE([Found HDF5])
-  EXTRA_INCS="$EXTRA_INCS $HDF5_CPPFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $HDF5_LDFLAGS $HDF5_LIBS"
-  BOUT_HAS_HDF5="yes"
-  file_formats="$file_formats HDF5"
-  ], [
-  AC_MSG_NOTICE([Serial HDF5 support disabled])
-])
-
-BOUT_HAS_PHDF5="no"
-AX_LIB_PARALLELHDF5()
-AS_IF([test "$with_parallelhdf5" = "yes"], [
-  AC_MSG_NOTICE([Found parallel HDF5])
-  CXXFLAGS="$CXXFLAGS -DPHDF5"
-  EXTRA_INCS="$EXTRA_INCS $PARALLELHDF5_CPPFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $PARALLELHDF5_LDFLAGS $PARALLELHDF5_LIBS"
-  BOUT_HAS_PHDF5="yes"
-  file_formats="$file_formats Parallel HDF5"
-  ], [
-  AC_MSG_NOTICE([Parallel HDF5 support disabled])
 ])
 
 #############################################################
@@ -848,7 +842,7 @@ PETSC_ERROR_MESSAGE])
   BOUT_HAS_PETSC="yes"
 
   EXTRA_INCS="$EXTRA_INCS $PETSC_CFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $PETSC_LIBS"
+  EXTRA_LIBS="$PETSC_LIBS $EXTRA_LIBS"
  ])
 ], [
   PETSC_MAKE_INCLUDE=
@@ -1138,6 +1132,26 @@ AS_IF([test "$SYSTEM_HAS_MPARK" = "yes"], [
   MPARK_INCLUDE="-I$MPARK_VARIANT_INCLUDE_PATH"
   OWN_MPARK=yes
 ])
+
+#############################################################
+# Check for libuuid
+#############################################################
+
+AS_IF([test ".$with_system_uuid" = "no"], [
+  BOUT_HAS_UUID_SYSTEM_GENERATOR=no
+], [
+  BOUT_ADDPATH_CHECK_HEADER(uuid/uuid.h,
+   BOUT_ADDPATH_CHECK_LIB(uuid, uuid_generate,
+       BOUT_HAS_UUID_SYSTEM_GENERATOR=yes,
+       BOUT_HAS_UUID_SYSTEM_GENERATOR=no,
+       [$with_system_uuid]),
+   BOUT_HAS_UUID_SYSTEM_GENERATOR=no,
+   [$with_system_uuid])
+  AS_IF([test "$with_system_uuid" = "yes"], [
+   AC_MSG_FAILURE([*** System UUID generator not found, but explicitly requested])
+  ])
+])
+
 #############################################################
 # Download + Build PVODE '98
 #############################################################
@@ -1338,10 +1352,10 @@ BOUT_DEFINE_SUBST(BOUT_HAS_ARKODE, [ARKODE support])
 BOUT_DEFINE_SUBST(BOUT_HAS_CVODE, [CVODE support])
 BOUT_DEFINE_SUBST(BOUT_HAS_FFTW, [FFTW support])
 BOUT_DEFINE_SUBST(BOUT_HAS_GETTEXT, [NLS support])
-BOUT_DEFINE_SUBST(BOUT_HAS_HDF5, [HDF5 support])
 BOUT_DEFINE_SUBST(BOUT_HAS_IDA, [IDA support])
 BOUT_DEFINE_SUBST(BOUT_HAS_LAPACK, [LAPACK support])
 BOUT_DEFINE_SUBST(BOUT_HAS_NETCDF, [NETCDF support])
+BOUT_DEFINE_SUBST(BOUT_HAS_LEGACY_NETCDF, [NETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PETSC, [PETSc support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PNETCDF, [PNETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PRETTY_FUNCTION, [Compiler PRETTYFUNCTION support])
@@ -1349,6 +1363,7 @@ BOUT_DEFINE_SUBST(BOUT_HAS_PVODE, [PVODE support])
 BOUT_DEFINE_SUBST(BOUT_HAS_SCOREP, [Score-P support])
 BOUT_DEFINE_SUBST(BOUT_HAS_SLEPC, [SLEPc support])
 BOUT_DEFINE_SUBST(BOUT_HAS_SUNDIALS, [SUNDIALS support])
+BOUT_DEFINE_SUBST(BOUT_HAS_UUID_SYSTEM_GENERATOR, [Use libuuid for UUID generation])
 BOUT_DEFINE_SUBST(BOUT_USE_BACKTRACE, [Enable backtrace in exceptions])
 BOUT_DEFINE_SUBST(BOUT_USE_COLOR, [Enable color logs option])
 BOUT_DEFINE_SUBST(BOUT_USE_OUTPUT_DEBUG, [Enabled extra debug output])
@@ -1356,6 +1371,7 @@ BOUT_DEFINE_SUBST(BOUT_USE_OPENMP, [Enable OpenMP])
 BOUT_DEFINE_SUBST(BOUT_USE_SIGFPE, [Enable floating point exceptions])
 BOUT_DEFINE_SUBST(BOUT_USE_SIGNAL, [Enable signal handlers])
 BOUT_DEFINE_SUBST(BOUT_USE_TRACK, [Enable field name tracking])
+BOUT_DEFINE_SUBST(BOUT_USE_MSGSTACK, [Enable MsgStack for traces])
 
 AC_SUBST(PETSC_HAS_SUNDIALS)
 AC_SUBST(PETSC_MAKE_INCLUDE)
@@ -1371,6 +1387,7 @@ AC_CONFIG_FILES([include/bout/version.hxx])
 AC_CONFIG_FILES([include/bout/revision.hxx])
 AC_CONFIG_FILES([bin/bout-config])
 AC_CONFIG_FILES([src/makefile])
+AC_CONFIG_FILES([tools/pylib/boutconfig/__init__.py])
 AC_OUTPUT
 chmod a+x bin/bout-config
 
@@ -1388,13 +1405,13 @@ AC_MSG_NOTICE([  IDA support             : $BOUT_HAS_IDA])
 AC_MSG_NOTICE([  CVODE support           : $BOUT_HAS_CVODE])
 AC_MSG_NOTICE([  ARKODE support          : $BOUT_HAS_ARKODE])
 AC_MSG_NOTICE([  FFTW support            : $BOUT_HAS_FFTW])
-AC_MSG_NOTICE([  NetCDF support          : $BOUT_HAS_NETCDF])
+AC_MSG_NOTICE([  NetCDF support          : $BOUT_HAS_NETCDF (legacy: $BOUT_HAS_LEGACY_NETCDF)])
 AC_MSG_NOTICE([  Parallel-NetCDF support : $BOUT_HAS_PNETCDF])
-AC_MSG_NOTICE([  HDF5 support            : $BOUT_HAS_HDF5 (parallel: $BOUT_HAS_PHDF5)])
 AC_MSG_NOTICE([  Lapack support          : $BOUT_HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $BOUT_HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $BOUT_USE_OPENMP (schedule: $OPENMP_SCHEDULE)])
 AC_MSG_NOTICE([  Natural language support: $BOUT_HAS_GETTEXT (path: $localedir)])
+AC_MSG_NOTICE([  System UUID generator   : $BOUT_HAS_UUID_SYSTEM_GENERATOR])
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([  Enable backtrace        : $BOUT_USE_BACKTRACE])
 AC_MSG_NOTICE([  Enable color logs       : $BOUT_USE_COLOR])

@@ -14,6 +14,7 @@ using bout::generator::Context;
 class ExpressionParserSubClass : public ExpressionParser {
 public:
   using ExpressionParser::parseString;
+  using ExpressionParser::fuzzyFind;
 };
 
 class ExpressionParserTest : public ::testing::Test {
@@ -661,4 +662,24 @@ TEST_F(ExpressionParserTest, SumExpr) {
 TEST_F(ExpressionParserTest, SumNestedScope) {
   auto fieldgen = parser.parseString("sum(i, 3, sum(i, 2*{i}, {i}+1))"); // => (0) + (1 + 2) + (1 + 2 + 3 + 4) = 13
   EXPECT_DOUBLE_EQ(fieldgen->generate({}), 13);
+}
+
+TEST_F(ExpressionParserTest, FuzzyFind) {
+  // We need some generators to lookup, but we don't care what they are
+  parser.addGenerator("increment", {});
+  parser.addGenerator("decrement", {});
+  parser.addGenerator("multiply", {});
+  parser.addGenerator("divide", {});
+
+  auto matches = parser.fuzzyFind("recrement");
+  EXPECT_EQ(matches.size(), 2);
+  auto first_match = matches.begin();
+  EXPECT_EQ(first_match->name, "decrement");
+  EXPECT_EQ(first_match->distance, 1);
+
+  auto CAPS_matches = parser.fuzzyFind("MULTIPLY");
+  EXPECT_EQ(CAPS_matches.size(), 1);
+  auto first_CAPS_match = CAPS_matches.begin();
+  EXPECT_EQ(first_CAPS_match->name, "multiply");
+  EXPECT_EQ(first_CAPS_match->distance, 1);
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-#requires: all_tests
+# requires: all_tests
 
 from boututils.run_wrapper import shell, shell_safe
 
@@ -22,5 +22,3 @@ if not np.allclose(a, 1.23):
 
 print("Passed")
 exit(0)
-
-

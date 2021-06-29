@@ -82,7 +82,7 @@ run, and produce a bunch of files in the ``data/`` subdirectory.
    if needed. In some cases the options used have documentation, with a brief
    explanation of how they are used. In most cases the type the option is used
    as (e.g. ``int``, ``BoutReal`` or ``bool``) is given.
-   
+
 -  ``BOUT.restart.*.nc`` are the restart files for the last time point.
    Currently each processor saves its own state in a separate file, but
    there is experimental support for parallel I/O. For the settings, see
@@ -110,8 +110,20 @@ To see some of the other command-line options try "-h"::
 
 and see the section on options (:ref:`sec-options`).
 
+There is also a python tool called |bout_runners|_ which can be used for executing ``BOUT++`` runs.
+In addition, this tool can be used to
+
+-  programmatically change parameters of a project in python
+
+-  keep track of all the metadata of the runs of the project
+
+-  automate the orchestration (including pre- and post-processing routines) of chains of runs locally or on a cluster
+
 To analyse the output of the simulation, cd into the ``data``
 subdirectory and start python or IDL (skip to :ref:`Using IDL <sec-intro-using-idl>` for IDL).
+
+.. |bout_runners| replace:: ``bout_runners``
+.. _bout_runners: https://pypi.org/project/bout-runners/
 
 Analysing the output using Python
 ---------------------------------
@@ -129,10 +141,10 @@ will first need to have set up python to use the BOUT++ libraries
 ``boutdata`` and ``boututils``; see section
 :ref:`sec-config-python` for how to do this. The analysis routines have
 some requirements such as SciPy; see section
-:ref:`sec-python-requirements` for details. 
+:ref:`sec-python-requirements` for details.
 
 To print a list of variables in the output files, one way is to use the ``DataFile``
-class. This is a wrapper around the various NetCDF and HDF5 libraries for python:
+class. This is a wrapper around the various NetCDF libraries for python:
 
 .. code-block:: pycon
 
@@ -221,7 +233,7 @@ and to make this a coloured contour plot
 
     IDL> showdata, T[*,*,0,*], /cont
 
-The equivalent commands in Python are as follows. 
+The equivalent commands in Python are as follows.
 
 .. _sec-run-nls:
 
@@ -744,3 +756,4 @@ then the BOUT++ restart will fail.
 **Note** It is a good idea to set ``nxpe`` in the ``BOUT.inp`` file to be consistent with
 what you set here. If it is inconsistent then the restart will fail, but the error message may
 not be particularly enlightening.
+

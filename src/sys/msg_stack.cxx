@@ -34,7 +34,7 @@
 #include <omp.h>
 #endif
 
-#if CHECK > 1
+#if BOUT_USE_MSGSTACK
 int MsgStack::push(std::string message) {
 
 #ifdef _OPENMP
@@ -52,11 +52,6 @@ int MsgStack::push(std::string message) {
   }
 
   return position++;
-}
-
-int MsgStack::setPoint() {
-  // Create an empty message
-  return push();
 }
 
 void MsgStack::pop() {

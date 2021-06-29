@@ -1,7 +1,5 @@
-nout = 0
-
-mxg = 1
-myg = 1
+MXG = 1
+MYG = 1
 
 [mesh]
 nx = 8

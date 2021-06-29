@@ -27,17 +27,24 @@
  **************************************************************************/
 class LaplacePetsc3dAmg;
 
-#include "bout/build_config.hxx"
-
 #ifndef __PETSC_LAPLACE_3DAMG_H__
 #define __PETSC_LAPLACE_3DAMG_H__
 
-#if BOUT_HAS_PETSC
+#include "bout/build_config.hxx"
+#include "invert_laplace.hxx"
+
+#if not BOUT_HAS_PETSC
+
+namespace {
+RegisterUnavailableLaplace registerlaplacepetsc3damg(LAPLACE_PETSC3DAMG,
+                                                     "BOUT++ was not configured with PETSc");
+}
+
+#else
 
 #include <globals.hxx>
 #include <output.hxx>
 #include <options.hxx>
-#include <invert_laplace.hxx>
 #include <boutexception.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/petsclib.hxx>
@@ -174,9 +181,10 @@ private:
   // The interpolation done to get along-field values in y makes this
   // tricky. For now we will just assume that the footprint of cells
   // used for interpolation is the same everywhere.
-  static OperatorStencil<Ind3D> getStencil(Mesh* localmesh, RangeIterator lowerYBound,
-					   RangeIterator upperYBound);
-  
+  static OperatorStencil<Ind3D> getStencil(Mesh* localmesh,
+                                           const RangeIterator& lowerYBound,
+                                           const RangeIterator& upperYBound);
+
   /* Ex and Ez
    * Additional 1st derivative terms to allow for solution field to be
    * components of a vector

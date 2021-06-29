@@ -4,6 +4,7 @@
 # Run the test, compare results against the benchmark
 #
 # requires: netcdf
+# requires: not legacy_netcdf
 # cores: 4
 
 from boututils.run_wrapper import build_and_log, shell, launch_safe
@@ -141,7 +142,7 @@ for nproc in [1, 2, 4]:
             else:
                 extra_args = ""
 
-            cmd = test_exe + extra_args
+            cmd = test_exe + " check_double_add=true" + extra_args
 
             # On some machines need to delete dmp files first
             # or data isn't written correctly

@@ -51,7 +51,7 @@ public:
 
   ReturnType create(Mesh* mesh = nullptr, Options* options = nullptr,
                     CELL_LOC loc = CELL_CENTRE) {
-    return Factory::create(getType(options), mesh, options, loc);
+    return Factory::create(getType(options), mesh, optionsOrDefaultSection(options), loc);
   }
 
   static void ensureRegistered();
@@ -67,6 +67,8 @@ public:
       });
   }
 };
+
+using RegisterUnavailableLaplaceXZ = RegisterUnavailableInFactory<LaplaceXZ, LaplaceXZFactory>;
 
 class LaplaceXZ {
 public:

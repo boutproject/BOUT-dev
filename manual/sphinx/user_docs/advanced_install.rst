@@ -29,6 +29,10 @@ For (sometimes) more useful error messages, there is the
 ``--enable-track`` option. This keeps track of the names of variables
 and includes these in error messages.
 
+To get a backtrace, you can set the environment variable
+``BOUT_SHOW_BACKTRACE`` in order for the exception to include the
+backtrace.
+
 To enable optimization, configure with ``--enable-optimize=3``.
 This will try to set appropriate flags, but may not set the best ones.
 This should work well for gcc. Similar to checks, different levels can
@@ -181,7 +185,7 @@ to enable AVX512 vectorization.
 Marconi with gnu compilers
 **************************
 
-It is also possible to configure on Marconi using gnu compilers, which may give better performance. A set of modules which work as of 30/9/2020 is
+It is also possible to configure on Marconi using gnu compilers, which may give better performance. A set of modules which work as of 4/5/2021 is
 
 .. code-block:: bash
 
@@ -196,7 +200,7 @@ It is also possible to configure on Marconi using gnu compilers, which may give 
 
 Then download source code for hdf5-1.12.0 (hdf5 is available in a module on
 Marconi, but has issues linking OpenMPI), netCDF-c-4.7.4, netCDF-cxx4-4.3.1,
-and FFTW-3.3.8. Optionally also SUNDIALS-5.1.0 or PETSc-3.13.0. Configure and
+and FFTW-3.3.9. Optionally also SUNDIALS-5.7.0 or PETSc-3.15.0. Configure and
 compile all of the downloaded packages. Make sure to install netCDF and
 netCDF-cxx4 into the same directory (this is assumed by netCDF's linking
 strategy, and makes netCDF configuration simpler).
@@ -209,29 +213,25 @@ The following configuration commands have been used successfully:
     make
     make install
 
-* netCDF-4.7.4::
+* netCDF-4.7.4 (note: using cmake to build gave errors in ``make test`` while the autotools build with ``configure`` passed all tests in ``make check``; netCDF-4.8.0 failed to link to hdf5-1.12.0 and failed tests with both cmake and autotools)::
 
-    mkdir build
-    cd build
-    cmake -DCMAKE_INSTALL_PREFIX=/directory/to/install/netcdf -DCMAKE_BUILD_TYPE=Release ..
+    CPPFLAGS="-I<prefix for hdf5>/include" LDFLAGS="-L<prefix for hdf5>/lib/" ./configure --prefix=/directory/to/install/netcdf
     make
     make install
 
-* netCDF-cxx4-4.3.1::
+* netCDF-cxx4-4.3.1 (note: cmake build works, but installs to a ``lib64`` subdirectory, while autotools installs to ``lib``, so easier to use autotools to match netCDF)::
 
-    mkdir build
-    cd build
-    cmake -DCMAKE_INSTALL_PREFIX=/directory/to/install/netcdf -DCMAKE_BUILD_TYPE=Release ..
+    CPPFLAGS="-I<prefix for hdf5>/include -I<prefix for netcdf>/include" LDFLAGS="-L<prefix for hdf5>/lib/ -L<prefix for netcdf>/lib/" ./configure --prefix=<prefix for netcdf>
     make
     make install
 
-* FFTW-3.3.8::
+* FFTW-3.3.9::
 
     ./configure --prefix /directory/to/install/fftw --enable-shared --enable-sse2 --enable-avx --enable-avx2 --enable-avx512 --enable-avx-128-fma
     make
     make install
 
-* SUNDIALS-5.1.0::
+* SUNDIALS-5.7.0::
 
     mkdir build
     cd build
@@ -239,7 +239,7 @@ The following configuration commands have been used successfully:
     make
     make install
 
-* PETSc-3.13.0::
+* PETSc-3.15.0::
 
     unset PETSC_DIR
     ./configure COPTFLAGS="-O3" CXXOPTFLAGS="-O3" FOPTFLAGS="-O3" --with-batch --known-mpi-shared-libraries=1 --with-mpi-dir=$OPENMPI_HOME --download-fblaslapack --known-64-bit-blas-indices=0 --download-hypre --with-debugging=0 --prefix=/directory/to/install/petsc
@@ -250,11 +250,11 @@ Finally example configurations for BOUT++, where you should replace <...> by app
 
 * for an optimized build (some experimentation with optimisation flags would be welcome, please share the results if you do!)::
 
-    ./configure --enable-optimize=3 --enable-checks=no --without-hdf5 --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
+    ./configure --enable-optimize=3 --enable-checks=no --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
 
 * for a debugging build::
 
-    ./configure --enable-debug --without-hdf5 --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
+    ./configure --enable-debug --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
 
 Ubgl
 ~~~~
@@ -267,37 +267,22 @@ Ubgl
 File formats
 ------------
 
-BOUT++ can currently use two different file formats: NetCDF-4_, and
-HDF5_ and experimental support for parallel flavours of both. NetCDF
-is a widely used format and so has many more tools for viewing and
-manipulating files. HDF5 is another widely used format. If you have
-multiple libraries installed then BOUT++ can use them simultaneously,
-for example reading in grid files in NetCDF format, but writing output
-data in HDF5 format.
+BOUT++ can currently use the NetCDF-4_ file format, with experimental
+support for the parallel flavour. NetCDF is a widely used format and
+has many tools for viewing and manipulating files.
 
 .. _NetCDF-4: https://www.unidata.ucar.edu/software/netcdf/
-.. _HDF5: https://www.hdfgroup.org/HDF5/
 
-BOUT++ will try to use NetCDF by default. It will look for
-``ncxx4-config`` or ``nc-config`` in your ``$PATH``. If it cannot find
-the libraries, or finds a different version than the one you want, you
-can point it at the correct version using::
+BOUT++ will look for ``ncxx4-config`` or ``nc-config`` in your
+``$PATH``. If it cannot find the libraries, or finds a different
+version than the one you want, you can point it at the correct version
+using::
 
    ./configure --with-netcdf=/path/to/ncxx4-config
 
 where ``/path/to/ncxx4-config`` is the location of the
 ``ncxx4-config`` tool (``nc-config`` will also work, but
 ``ncxx4-config`` is preferred).
-
-To use HDF5, you will need to explicitly enable it::
-
-   ./configure --with-hdf5
-
-BOUT++ will look for ``h5cc`` in your ``$PATH``. Similar to NetCDF,
-you can pass the location of the particular version you wish to use
-with::
-
-   ./configure --with-hdf5=/path/to/h5cc
 
 
 .. _sec-netcdf-from-source:
@@ -461,8 +446,10 @@ BOUT++ can use PETSc https://www.mcs.anl.gov/petsc/ for time-integration
 and for solving elliptic problems, such as inverting Poisson and
 Helmholtz equations.
 
-Currently, BOUT++ supports PETSc versions 3.7 - 3.13. To install PETSc
-version 3.13, use the following steps::
+Currently, BOUT++ supports PETSc versions 3.7 - 3.14. More recent versions may
+well work, but the PETSc API does sometimes change in backward-incompatible
+ways, so this is not guaranteed. To install PETSc version 3.13, use the
+following steps::
 
     $ cd ~
     $ wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.13.4.tar.gz

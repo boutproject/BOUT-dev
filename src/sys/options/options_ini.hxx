@@ -57,9 +57,6 @@ private:
   // Helper functions for reading
   void parse(const std::string &, std::string &, std::string &);
   std::string getNextLine(std::ifstream &fin);
-
-  // Helper functions for writing
-  void writeSection(const Options *options, std::ofstream &fout);
 };
 
 #endif // __OPTIONS_INI_H__

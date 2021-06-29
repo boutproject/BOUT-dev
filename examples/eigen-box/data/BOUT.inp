@@ -1,7 +1,7 @@
 # Eigenvalue test case
 
-NOUT = 1
-TIMESTEP = 0.2
+nout = 1
+timestep = 0.2
 
 MXG = 1
 MYG = 0
@@ -25,19 +25,19 @@ neig = 4
 
 mpd = 64
 
-useInitial=true
-maxit=10000
-tol=1.0e-4
+useInitial = true
+maxit = 10000
+tol = 0.0001
 
 userWhich = false
-targRe=6.2
-targIm=0
+targRe = 6.2
+targIm = 0
 
 selfSolve = false
 timestep = 0.01
 
 [solver:advance]
-type = karniadakis
+type = splitrk
 timestep = 0.001
 
 [f]

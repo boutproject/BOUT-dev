@@ -1,3 +1,4 @@
+#include "bout/build_config.hxx"
 /*!
  * \file nc_format.hxx
  *
@@ -33,7 +34,7 @@
  *
  */
 
-#ifndef NCDF
+#if !BOUT_HAS_LEGACY_NETCDF
 
 #include "../emptyformat.hxx"
 using NcFormat = EmptyFormat;
@@ -169,4 +170,4 @@ class NcFormat : public DataFormat {
 
 #endif // __NCFORMAT_H__
 
-#endif // NCDF
+#endif // BOUT_HAS_LEGACY_NETCDF

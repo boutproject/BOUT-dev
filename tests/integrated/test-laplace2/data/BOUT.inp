@@ -1,13 +1,13 @@
 # Test of Laplacian inversion code
 #
 
-NOUT = 0  # No timesteps
+nout = 0  # No timesteps
 
 MZ = 32    # Z size
 
 dump_format = "nc"  # NetCDF format
 
-myg = 0  # No guard cells in Y
+MYG = 0  # No guard cells in Y
 
 ccoef = sin(x) * gauss(x-0.5) * (1.0 + 0.5*cos(z))
 
@@ -19,7 +19,7 @@ nx = 40
 ny = 1
 
 dx = 0.1
-dy = 1.
+dy = 1.0
 
 [solver1]  # Options for the first Laplacian solver
 type = tri
@@ -31,8 +31,8 @@ flags = 0
 pctype = user      # Use another solver as preconditioner
 rightprec = true   # Switch right or left preconditioning
 
-[solver2:precon] # Options for the preconditioner 
-all_terms  = true
+[solver2:precon] # Options for the preconditioner
+all_terms = true
 nonuniform = true
-filter     = 0.     # Must not filter solution
-flags      = 49152  # set_rhs i.e. identity matrix in boundaries
+filter = 0.0     # Must not filter solution
+flags = 49152  # set_rhs i.e. identity matrix in boundaries

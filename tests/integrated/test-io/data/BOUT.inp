@@ -4,7 +4,7 @@
 # to a data file.
 #
 
-NOUT = 0  # No timesteps
+nout = 0  # No timesteps
 
 MZ = 4    # Z size
 
@@ -13,4 +13,4 @@ grid = "test_io.grd.nc"
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
 [output]
-floats=true
+floats = true

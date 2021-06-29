@@ -330,7 +330,7 @@ endif
 	@echo "  Compiling " $(@:.o=.cxx)
 	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@:.o=.cxx) -o $@
 ifeq ("$(TARGET)","libfast")
-	test "$@" = "bout++.o" || touch $(BOUT_TOP)/lib/.last.o.file
+	test "$@" = "bout++-time.o" || touch $(BOUT_TOP)/lib/.last.o.file
 endif
 
 ####################################################################
@@ -368,6 +368,8 @@ distclean:: clean clean-tests
 	-@$(RM) $(BOUT_TOP)/include/bout/revision.hxx
 	-@$(RM) $(BOUT_TOP)/include/bout/build_defines.hxx
 	@echo generated version headers cleaned
+	-@$(RM) $(BOUT_TOP)/tools/pylib/boutconfig/__init__.py
+	@echo generated Python boutconfig module cleaned
 
 clean-tests: clean-unit-tests clean-integrated-tests clean-mms-tests
 

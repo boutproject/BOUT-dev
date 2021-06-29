@@ -37,7 +37,7 @@ then
     cat /etc/os-release
     # Ignore weak depencies
     echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
-    time dnf -y install dnf-plugins-core {petsc,hdf5}-${mpi}-devel /usr/lib/rpm/redhat/redhat-hardened-cc1 python3-h5py
+    time dnf -y install dnf-plugins-core petsc-${mpi}-devel /usr/lib/rpm/redhat/redhat-hardened-cc1 python3-h5py
     # Allow to override packages - see #2073
     time dnf copr enable -y davidsch/fixes4bout || :
     time dnf -y upgrade
@@ -58,7 +58,6 @@ else
     cd BOUT-dev
     echo "starting configure"
     time ./configure --with-petsc --enable-shared || cat config.log
-    sed -e "s|-L/usr/lib64 ||g" -i make.config
     for f in tests/requirements/*[^y] ; do
 	echo -n "$f: "
 	$f && echo yes || echo no

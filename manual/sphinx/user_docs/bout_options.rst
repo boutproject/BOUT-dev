@@ -4,7 +4,7 @@ BOUT++ options
 ==============
 
 The inputs to BOUT++ are a text file containing options, command-line options,
-and for complex grids a binary grid file in NetCDF or HDF5 format. Generating input
+and for complex grids a binary grid file in NetCDF format. Generating input
 grids for tokamaks is described in :ref:`sec-gridgen`. The grid file
 describes the size and topology of the X-Y domain, metric tensor
 components and usually some initial profiles. The option file specifies
@@ -151,6 +151,73 @@ To escape multiple characters, ` (backquote) can be used:
 
 The character ``:`` cannot be part of an option or section name, and cannot be escaped,
 as it is always used to separate sections.
+
+Printing Options
+~~~~~~~~~~~~~~~~
+
+`Options` have an ``fmt::formatter`` which means they can be printed directly with
+`Output::write`, or converted to a ``std::string`` with ``fmt::format``::
+
+  // Print a value or section
+  output.write("{}", options["section"]);
+
+  // Convert to a string
+  std::string = fmt::format("{}", options["section"]);
+
+
+The format can be controlled through the following four format codes:
+
+* ``d``: includes the ``doc`` and/or ``type`` attribute, if they are present
+
+* ``i``: format the section name(s) inline, rather than as a ``[section]`` header
+
+* ``k``: only include the key, and not the value
+
+* ``s``: include the ``source`` attribute, if it's present
+
+Here are some examples of formatting the same `Options` object using different
+combinations of the format codes::
+
+  // Default format with no format codes
+  output.write("{}", options);
+
+  // Output is:
+
+  // [section1]
+  // value1 = 42
+  // value2 = hello
+  //
+  // [section2]
+  // value5 = 3
+  //
+  // [section2:subsection1]
+  // value3 = true
+  // value4 = 3.2
+
+  // Include the 'doc' and 'type' attributes
+  output.write("{:d}", options);
+
+  // [section1]
+  // value1 = 42
+  // value2 = hello		# doc: This says hello
+  //
+  // [section2]
+  // value5 = 3
+  //
+  // [section2:subsection1]
+  // value3 = true		# type: bool, doc: This is a bool
+  // value4 = 3.2
+
+  // Only keys, inline sections, and 'doc', 'type', and 'source' attributes.
+  // Note that order doesn't matter!
+  output.write("{:kids}", options);
+
+  // section1:value1
+  // section1:value2		# doc: This says hello
+  // section2:value5
+  // section2:subsection1:value3		# type: bool, doc: This is a bool, source: a test
+  // section2:subsection1:value4
+
 
 Command line options
 --------------------
@@ -437,20 +504,10 @@ may be useful anyway. See :ref:`sec-output` for more details.
 Input and Output
 ----------------
 
-The format of the output (dump) files can be controlled, if support for
-more than one output format has been configured, by setting the
-top-level option **dump\_format** to one of the recognised file
-extensions: ‘nc’ for NetCDF; ‘hdf5’, ‘hdf’ or ‘h5’ for HDF5. For example
-to select HDF5 instead of the default NetCDF format put
-
-.. code-block:: cfg
-
-    dump_format = hdf5
-
-before any section headers. The output (dump) files with time-history
-are controlled by settings in a section called “output”. Restart files
-contain a single time-slice, and are controlled by a section called
-“restart”. The options available are listed in table :numref:`tab-outputopts`.
+The output (dump) files with time-history are controlled by settings
+in a section called “output”. Restart files contain a single
+time-slice, and are controlled by a section called “restart”. The
+options available are listed in table :numref:`tab-outputopts`.
 
 .. _tab-outputopts:
 .. table:: Output file options
@@ -545,6 +602,7 @@ or just::
 
 Names including sections, subsections, etc. can be specified using ``":"`` as a
 separator, e.g.::
+
     options["mysection:mysubsection:myswitch"] = true;
 
 To get options, they can be assigned to a variable::

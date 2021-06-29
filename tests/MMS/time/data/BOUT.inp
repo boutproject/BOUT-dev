@@ -1,5 +1,5 @@
 
-NOUT = 1
+nout = 1
 timestep = 1
 
 # No guard cells in X or Y
@@ -25,5 +25,3 @@ mms = true
 
 solution = exp(t)
 source = 0
-
-

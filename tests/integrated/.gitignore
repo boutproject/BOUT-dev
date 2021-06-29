@@ -13,7 +13,6 @@ BOUT.settings
 /test-interchange-instability/2fluid
 /test-invpar/test_invpar
 /test-io/test_io
-/test-io_hdf5/test_io_hdf5
 /test-laplace/test_laplace
 /test-restarting/test_restarting
 /test-smooth/test_smooth
@@ -30,7 +29,6 @@ BOUT.settings
 /test-fci-slab/fci_slab
 /test-fieldgroupComm/test
 /test-interpolate/test_interpolate
-/test-io_hdf5/test_io
 /test-multigrid_laplace/test_multigrid_laplace
 /test-petsc_laplace/test_petsc_laplace
 /test-petsc_laplace_MAST-grid/test_petsc_laplace_MAST_grid
@@ -42,3 +40,15 @@ BOUT.settings
 /test-snb/test_snb
 /test-twistshift-staggered/test-twistshift
 /test-twistshift/test-twistshift
+/test-communications/test-communications
+/test-interpolate-z/test_interpolate
+/test-options-netcdf/fields.nc
+/test-options-netcdf/fields2.nc
+/test-options-netcdf/settings.ini
+/test-options-netcdf/settings.nc
+/test-options-netcdf/test-options-netcdf
+/test-options-netcdf/test-out.ini
+/test-options-netcdf/test-out.nc
+/test-options-netcdf/test.nc
+/test-options-netcdf/time.nc
+/test-yupdown-weights/test_yupdown_weights

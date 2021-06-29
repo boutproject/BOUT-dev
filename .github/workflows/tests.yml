@@ -10,7 +10,7 @@ jobs:
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
     env:
-      BOUT_TEST_TIMEOUT: "5m"
+      BOUT_TEST_TIMEOUT: "6m"
       PETSC_DIR: /usr/lib/petscdir/3.7.7/x86_64-linux-gnu-real
       PETSC_ARCH: ""
       SLEPC_DIR: /usr/lib/slepcdir/3.7.4/x86_64-linux-gnu-real
@@ -30,7 +30,6 @@ jobs:
             os: ubuntu-18.04
             configure_options: "--with-petsc
                                 --with-slepc
-                                --with-hdf5
                                 --with-sundials=/home/runner/local"
             script_flags: "-uim"
 
@@ -44,7 +43,6 @@ jobs:
                                 --disable-backtrace
                                 --with-petsc
                                 --with-slepc
-                                --with-hdf5
                                 --with-sundials=/home/runner/local"
             script_flags: "-uim -t shared -t python"
 
@@ -54,7 +52,6 @@ jobs:
                                 --enable-sigfpe
                                 --enable-debug
                                 --enable-track
-                                --with-hdf5
                                 --with-petsc
                                 --with-slepc
                                 --with-sundials=/home/runner/local"
@@ -66,7 +63,6 @@ jobs:
                                 --enable-openmp
                                 --with-petsc
                                 --with-slepc
-                                --with-hdf5
                                 --with-sundials=/home/runner/local"
             script_flags: "-uim"
             omp_num_threads: 2
@@ -77,8 +73,8 @@ jobs:
                             -DBOUT_ENABLE_OPENMP=ON
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
-                            -DBOUT_USE_HDF5=ON
                             -DBOUT_USE_SUNDIALS=ON
+                            -DBOUT_BUILD_DOCS=OFF
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
 
@@ -89,7 +85,6 @@ jobs:
                                 --enable-debug
                                 --enable-track
                                 --with-lapack
-                                --with-hdf5
                                 --with-petsc
                                 --with-slepc
                                 --with-sundials=/home/runner/local"
@@ -114,14 +109,12 @@ jobs:
                  libnetcdf-dev
                  libnetcdf-c++4-dev
                  netcdf-bin
-                 hdf5-tools
                  python3
                  python3-pip
                  python3-pytest
                  python3-numpy
                  python3-scipy
                  lcov
-                 libhdf5-mpi-dev
                  openmpi-bin
                  libopenmpi-dev
                  petsc-dev
@@ -157,12 +150,7 @@ jobs:
 
       - name: Build (CMake)
         if: ${{ contains(matrix.config.name, 'CMake') }}
-        run: |
-          cmake --version
-          cmake . -B build ${{ matrix.config.cmake_options }}
-          cmake --build build --target build-check -j 2
-          cd build
-          ctest --output-on-failure --timeout 300
+        run: ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
 
       - name: Capture coverage
         if: ${{ matrix.config.name == 'Coverage' }}

@@ -1,13 +1,13 @@
 /**************************************************************************
- * 
+ *
  * Finds the steady-state solution of a set of equations
  * using PETSc for the SNES interface
- * 
+ *
  **************************************************************************
- * Copyright 2015 B.D.Dudson
+ * Copyright 2015, 2021 B.D.Dudson
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -25,21 +25,20 @@
  *
  **************************************************************************/
 
+#ifndef __SNES_SOLVER_H__
+#define __SNES_SOLVER_H__
+
 #include "bout/build_config.hxx"
+#include "bout/solver.hxx"
 
 #if BOUT_HAS_PETSC
 
 class SNESSolver;
 
-#ifndef __SNES_SOLVER_H__
-#define __SNES_SOLVER_H__
-
 #include "mpi.h"
 
-#include <bout_types.hxx>
-#include <bout/solver.hxx>
-
 #include <bout/petsclib.hxx>
+#include <bout_types.hxx>
 
 #include <petsc.h>
 #include <petscsnes.h>
@@ -48,34 +47,57 @@ class SNESSolver;
 
 namespace {
 RegisterSolver<SNESSolver> registersolversnes("snes");
-}
+RegisterSolver<SNESSolver> registersolverbeuler("beuler");
+} // namespace
 
 /// Uses PETSc's SNES interface to find a steady state solution to a
-/// nonlinear ODE
+/// nonlinear ODE by integrating in time with Backward Euler
 class SNESSolver : public Solver {
- public:
-  SNESSolver(Options *opt = nullptr) : Solver(opt) {}
+public:
+  SNESSolver(Options* opt = nullptr) : Solver(opt) {}
   ~SNESSolver() {}
-  
+
   int init(int nout, BoutReal tstep) override;
-  
+
   int run() override;
-  
+
   PetscErrorCode snes_function(Vec x, Vec f); ///< Nonlinear function
- private:
-  int mxstep; ///< Maximum number of internal steps between outputs
-  
+private:
+  BoutReal timestep; ///< Internal timestep
+  BoutReal dt;       ///< Current timestep used in snes_function
+
+  int lower_its, upper_its; ///< Limits on iterations for timestep adjustment
+
+  BoutReal out_timestep; ///< Output timestep
+  int nsteps;            ///< Number of steps to take
+
+  bool diagnose; ///< Output additional diagnostics
+
   int nlocal; ///< Number of variables on local processor
-  int neq; ///< Number of variables in total
-  
-  PetscLib lib;     ///< Handles initialising, finalising PETSc
-  Vec      snes_f;  ///< Used by SNES to store function
-  Vec      snes_x;  ///< Result of SNES
-  SNES     snes;    ///< SNES context
-  Mat      Jmf;     ///< Matrix-free Jacobian
-  
+  int neq;    ///< Number of variables in total
+
+  PetscLib lib; ///< Handles initialising, finalising PETSc
+  Vec snes_f;   ///< Used by SNES to store function
+  Vec snes_x;   ///< Result of SNES
+  Vec x0;       ///< Solution at start of current timestep
+
+  bool predictor;       ///< Use linear predictor?
+  Vec x1;               ///< Previous solution
+  BoutReal time1{-1.0}; ///< Time of previous solution
+
+  SNES snes; ///< SNES context
+  Mat Jmf;   ///< Matrix-free Jacobian
 };
 
-#endif // __SNES_SOLVER_H__
+#else
+
+namespace {
+RegisterUnavailableSolver registerunavailablesnes("snes",
+                                                  "BOUT++ was not configured with PETSc");
+RegisterUnavailableSolver
+    registerunavailablebeuler("beuler", "BOUT++ was not configured with PETSc");
+}
 
 #endif // BOUT_HAS_PETSC
+
+#endif // __SNES_SOLVER_H__

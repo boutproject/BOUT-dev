@@ -25,10 +25,10 @@ equations appearing in a readable form.
 For example, the following set of equations for magnetohydrodynamics
 (MHD):
 
-![ddt_rho](http://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%20%5Crho%7D%7B%5Cpartial%20t%7D%20%3D%20-%5Cmathbf%7Bv%7D%5Ccdot%5Cnabla%5Crho%20-%20%5Crho%5Cnabla%5Ccdot%5Cmathbf%7Bv%7D)  
-![ddt_p](http://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%20p%7D%7B%5Cpartial%20t%7D%20%3D%20-%5Cmathbf%7Bv%7D%5Ccdot%5Cnabla%20p%20-%20%5Cgamma%20p%5Cnabla%5Ccdot%5Cmathbf%7Bv%7D)  
-![ddt_v](http://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%20%5Cmathbf%7Bv%7D%7D%7B%5Cpartial%20t%7D%20%3D%20-%5Cmathbf%7Bv%7D%5Ccdot%5Cnabla%5Cmathbf%7Bv%7D%20&plus;%20%5Cfrac%7B1%7D%7B%5Crho%7D%28-%5Cnabla%20p%20&plus;%20%28%5Cnabla%5Ctimes%5Cmathbf%7BB%7D%29%5Ctimes%5Cmathbf%7BB%7D%29)  
-![ddt_B](http://latex.codecogs.com/png.latex?%7B%7B%5Cfrac%7B%5Cpartial%20%5Cmathbf%7BB%7D%7D%7B%5Cpartial%20t%7D%7D%7D%20%3D%20%5Cnabla%5Ctimes%28%5Cmathbf%7Bv%7D%5Ctimes%5Cmathbf%7BB%7D%29)  
+![ddt_rho](http://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%20%5Crho%7D%7B%5Cpartial%20t%7D%20%3D%20-%5Cmathbf%7Bv%7D%5Ccdot%5Cnabla%5Crho%20-%20%5Crho%5Cnabla%5Ccdot%5Cmathbf%7Bv%7D)
+![ddt_p](http://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%20p%7D%7B%5Cpartial%20t%7D%20%3D%20-%5Cmathbf%7Bv%7D%5Ccdot%5Cnabla%20p%20-%20%5Cgamma%20p%5Cnabla%5Ccdot%5Cmathbf%7Bv%7D)
+![ddt_v](http://latex.codecogs.com/png.latex?%5Cfrac%7B%5Cpartial%20%5Cmathbf%7Bv%7D%7D%7B%5Cpartial%20t%7D%20%3D%20-%5Cmathbf%7Bv%7D%5Ccdot%5Cnabla%5Cmathbf%7Bv%7D%20&plus;%20%5Cfrac%7B1%7D%7B%5Crho%7D%28-%5Cnabla%20p%20&plus;%20%28%5Cnabla%5Ctimes%5Cmathbf%7BB%7D%29%5Ctimes%5Cmathbf%7BB%7D%29)
+![ddt_B](http://latex.codecogs.com/png.latex?%7B%7B%5Cfrac%7B%5Cpartial%20%5Cmathbf%7BB%7D%7D%7B%5Cpartial%20t%7D%7D%7D%20%3D%20%5Cnabla%5Ctimes%28%5Cmathbf%7Bv%7D%5Ctimes%5Cmathbf%7BB%7D%29)
 
 can be written simply as:
 
@@ -62,9 +62,7 @@ BOUT++ needs the following:
 
 * A C++14 compiler
 * MPI
-* Either NetCDF or HDF5
-
-Note that some of the tests require NetCDF rather than HDF5
+* NetCDF
 
 BOUT++ has the following optional dependencies:
 
@@ -138,7 +136,6 @@ This directory contains
 
     * **boutdata**        Routines to simplify accessing BOUT++ output
     * **boututils**       Some useful routines for accessing and plotting data
-    * **bout_runners**    A python wrapper to submit several runs at once (either on a normal computer, or through a PBS system)
     * **post_bout**       Routines for post processing in BOUT++
 
   * **slab**              IDL routine for grid generation of a slab
@@ -185,3 +182,4 @@ BOUT++ links by default with some GPL licensed libraries. Thus if you
 compile BOUT++ with any of them, BOUT++ will automatically be licensed
 as GPL. Thus if you want to use BOUT++ with GPL non-compatible code,
 make sure to compile without GPLed code.
+

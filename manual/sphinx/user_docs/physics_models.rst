@@ -360,6 +360,13 @@ data files. These will be automatically read and written depending on
 input options (see :ref:`sec-options`). Input options based on these
 names are also used to initialise the variables.
 
+You can add a description of the variable which will be saved as an
+attribute in the output files by adding a third argument to
+``bout_solve()`` e.g.::
+
+    bout_solve(rho, "density", "electron density");
+    bout_solve(B, "B", "total magnetic field strength");
+
 If the name of the variable in the output file is the same as the
 variable name, you can use a shorthand macro. In this case, we could use
 this shorthand for ``v`` and ``B``::
@@ -820,17 +827,23 @@ values to file. For example::
       Field2D Ni0;
       ...
       GRID_LOAD(Ni0);
-      dump.add(Ni0, "Ni0", 0);
+      dump.add(Ni0, "Ni0", false);
 
-where the ’0’ at the end means the variable should only be written to
-file once at the start of the simulation. For convenience there are
+where the ’false’ at the end means the variable should only be written
+to file once at the start of the simulation. For convenience there are
 some macros e.g.::
 
       SAVE_ONCE(Ni0);
 
 is equivalent to::
 
-      dump.add(Ni0, "Ni0", 0);
+      dump.add(Ni0, "Ni0", false);
+
+Optionally, you can add a description to document what the variable
+represents, which will be saved as an attribute of the variable in the
+output file, e.g.::
+
+      dump.add(Ni0, "Ni0", false, "background density profile");
 
 (see `Datafile::add`). In some situations you might also want to write
 some data to a different file. To do this, create a `Datafile` object::
@@ -856,9 +869,7 @@ in ``init``, you then:
    name; actual opening of the file happens later when the data is
    written. If you are not using parallel I/O, the processor number is
    also inserted into the file name before the last “.”, so mydata.nc”
-   becomes “mydata.0.nc”, “mydata.1.nc” etc. The file format used
-   depends on the extension, so “.nc” will open NetCDF, and “.hdf5” or
-   “.h5” an HDF5 file.
+   becomes “mydata.0.nc”, “mydata.1.nc” etc.
 
    (see e.g. src/fileio/datafile.cxx line 139, which calls
    src/fileio/dataformat.cxx line 23, which then calls the file format
@@ -869,7 +880,7 @@ in ``init``, you then:
        // Not evolving. Every time the file is written, this will be overwritten
        mydata.add(variable, "name");
        // Evolving. Will output a sequence of values
-       mydata.add(variable2, "name2", 1);
+       mydata.add(variable2, "name2", true);
 
 Whenever you want to write values to the file, for example in
 ``rhs`` or a monitor, just call::
@@ -985,11 +996,17 @@ Logging output
 Logging should be used to report simulation progress, record
 information, and warn about potential problems. BOUT++ includes a
 simple logging facility which supports both C printf and C++ iostream
-styles. For example::
+styles.  For example::
 
-   output.write("This is an integer: %d, and this a real: %e\n", 5, 2.0)
+   output.write("This is an integer: {}, and this a real: {}\n", 5, 2.0)
 
    output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << endl;
+
+
+Formatting in the ``output.write`` function is done using the `{fmt}
+library <https://fmt.dev>`_. By default this cannot format BOUT++
+types, but by including ``output_bout_types.hxx`` some BOUT++ types
+can be formatted.
 
 Messages sent to ``output`` on processor 0 will be printed to console
 and saved to ``BOUT.log.0``. Messages from all other processors will
