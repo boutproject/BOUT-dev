@@ -17,6 +17,8 @@ using bout::globals::mesh;
 
 using CoordinatesTest = FakeMeshFixture;
 
+const BoutReal default_dz{2 * 3.141592653589793 / 7};
+
 TEST_F(CoordinatesTest, ZLength) {
   Coordinates coords{
       mesh,         Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{1.0},
@@ -87,7 +89,7 @@ TEST_F(CoordinatesTest, DefaultConstructor) {
 
   EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
-  EXPECT_DOUBLE_EQ(coords.dz, 1.0);
+  EXPECT_DOUBLE_EQ(coords.dz, default_dz);
 
   EXPECT_TRUE(IsFieldEqual(coords.g11, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.g22, 1.0));
@@ -151,7 +153,7 @@ TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
   // Didn't specify grid spacing, so default to 1
   EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
-  EXPECT_DOUBLE_EQ(coords.dz, 1.0);
+  EXPECT_DOUBLE_EQ(coords.dz, default_dz);
 
   // Diagonal contravariant metric
   EXPECT_TRUE(IsFieldEqual(coords.g11, 2.0));
