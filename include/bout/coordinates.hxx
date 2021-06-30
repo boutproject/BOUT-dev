@@ -84,6 +84,9 @@ public:
   Field2D dx, dy; ///< Mesh spacing in x and y
   BoutReal dz; ///< Mesh spacing in Z
 
+  Field2D one_over_dx, one_over_dy; ///< Inverse mesh spacing in x and y
+  BoutReal one_over_dz;             ///< inverse mesh spacing in Z
+
   BoutReal zlength() const { return dz * nz; } ///< Length of the Z domain. Used for FFTs
 
   /// True if corrections for non-uniform mesh spacing should be included in operators

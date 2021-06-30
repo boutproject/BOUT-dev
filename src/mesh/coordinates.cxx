@@ -195,7 +195,8 @@ Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2
                          Field2D g_33, Field2D g_12, Field2D g_13, Field2D g_23,
                          Field2D ShiftTorsion, Field2D IntShiftTorsion,
                          bool calculate_geometry)
-    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
+    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), one_over_dx(1. / dx),
+      one_over_dy(1. / dy), one_over_dz(1. / dz), J(std::move(J)), Bxy(std::move(Bxy)),
       g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
       g13(std::move(g13)), g23(std::move(g23)), g_11(std::move(g_11)),
       g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
@@ -228,17 +229,19 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
   // smooth at all the boundaries.
 
-  const bool extrapolate_x = (*options)["extrapolate_x"].withDefault(not mesh->sourceHasXBoundaryGuards());
-  const bool extrapolate_y = (*options)["extrapolate_y"].withDefault(not mesh->sourceHasYBoundaryGuards());
+  const bool extrapolate_x =
+      (*options)["extrapolate_x"].withDefault(not mesh->sourceHasXBoundaryGuards());
+  const bool extrapolate_y =
+      (*options)["extrapolate_y"].withDefault(not mesh->sourceHasYBoundaryGuards());
 
   if (extrapolate_x) {
     output_warn.write(_("WARNING: extrapolating input mesh quantities into x-boundary "
-          "cells. Set option extrapolate_x=false to disable this.\n"));
+                        "cells. Set option extrapolate_x=false to disable this.\n"));
   }
 
   if (extrapolate_y) {
     output_warn.write(_("WARNING: extrapolating input mesh quantities into y-boundary "
-          "cells. Set option extrapolate_y=false to disable this.\n"));
+                        "cells. Set option extrapolate_y=false to disable this.\n"));
   }
 
   mesh->get(dx, "dx", 1.0);
@@ -248,8 +251,11 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     mesh->communicate(dx);
   }
 
+  one_over_dx = 1. / dx;
+
   mesh->get(dy, "dy", 1.0);
   dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y);
+  one_over_dy = 1. / dy;
 
   nz = mesh->LocalNz;
 
@@ -264,6 +270,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
     mesh->get(dz, "dz", default_dz);
   }
+  one_over_dz = 1. / dz;
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
   mesh->get(g11, "g11", 1.0);
@@ -297,7 +304,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
   /// Find covariant metric components
   auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
-  auto source_has_component = [&mesh] (const std::string& name) {
+  auto source_has_component = [&mesh](const std::string& name) {
     return mesh->sourceHasVar(name);
   };
   // Check if any of the components are present
@@ -407,7 +414,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
         "\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
     ShiftTorsion = 0.0;
   }
-  ShiftTorsion = interpolateAndExtrapolate(ShiftTorsion, location, extrapolate_x, extrapolate_y);
+  ShiftTorsion =
+      interpolateAndExtrapolate(ShiftTorsion, location, extrapolate_x, extrapolate_y);
 
   //////////////////////////////////////////////////////
 
@@ -416,7 +424,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion = 0.0;
     }
-    IntShiftTorsion = interpolateAndExtrapolate(IntShiftTorsion, location, extrapolate_x, extrapolate_y);
+    IntShiftTorsion = interpolateAndExtrapolate(IntShiftTorsion, location, extrapolate_x,
+                                                extrapolate_y);
   } else {
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
     IntShiftTorsion = 0.;
@@ -468,9 +477,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     if (mesh->periodicX) {
       mesh->communicate(dx);
     }
+    one_over_dx = 1. / dx;
 
     getAtLoc(mesh, dy, "dy", suffix, location, 1.0);
     dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y);
+    one_over_dy = 1. / dy;
+
+    one_over_dz = 1. / dz;
 
     // grid data source has staggered fields, so read instead of interpolating
     // Diagonal components of metric tensor g^{ij} (default to 1)
@@ -633,6 +646,10 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     dx = interpolateAndExtrapolate(coords_in->dx, location);
     dy = interpolateAndExtrapolate(coords_in->dy, location);
+
+    one_over_dx = 1. / dx;
+    one_over_dy = 1. / dy;
+    one_over_dz = 1. / dz;
 
     // Diagonal components of metric tensor g^{ij}
     g11 = interpolateAndExtrapolate(coords_in->g11, location);
@@ -1241,13 +1258,13 @@ void Coordinates::setParallelTransform(Options* options) {
 Field2D Coordinates::DDX(const Field2D& f, CELL_LOC loc, const std::string& method,
     const std::string& region) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
-  return bout::derivatives::index::DDX(f, loc, method, region) / dx;
+  return bout::derivatives::index::DDX(f, loc, method, region) * one_over_dx;
 }
 
 Field2D Coordinates::DDY(const Field2D& f, CELL_LOC loc, const std::string& method,
     const std::string& region) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
-  return bout::derivatives::index::DDY(f, loc, method, region) / dy;
+  return bout::derivatives::index::DDY(f, loc, method, region) * one_over_dy;
 }
 
 Field2D Coordinates::DDZ(MAYBE_UNUSED(const Field2D& f), CELL_LOC loc,

@@ -355,9 +355,9 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
     coef3 = 0.0; // This cancels out
   }
 
-  coef1 /= SQ(localcoords->dx(jx,jy));
-  coef3 /= 2.*localcoords->dx(jx,jy);
-  coef4 /= 2.*localcoords->dx(jx,jy);
+  coef1 *= SQ(localcoords->one_over_dx(jx,jy));
+  coef3 *= 2.*localcoords->one_over_dx(jx,jy);
+  coef4 *= 2.*localcoords->one_over_dx(jx,jy);
 
   a = dcomplex(coef1 - coef4,-kwave*coef3);
   b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,kwave*coef5);
