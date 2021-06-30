@@ -371,58 +371,66 @@ public:
   bool hasVar(const std::string& UNUSED(name)) override { return false; }
 
   bool get(Mesh*, std::string& sval, const std::string& name,
-           const std::string& = "") override {
+           const std::string& def = "") override {
     if (values[name].isSet()) {
       sval = values[name].as<std::string>();
       return true;
     }
+    sval = def;
     return false;
   }
-  bool get(Mesh*, int& ival, const std::string& name, int = 0) override {
+  bool get(Mesh*, int& ival, const std::string& name, int def = 0) override {
     if (values[name].isSet()) {
       ival = values[name].as<int>();
       return true;
     }
+    ival = def;
     return false;
   }
-  bool get(Mesh*, BoutReal& rval, const std::string& name, BoutReal = 0.0) override {
+  bool get(Mesh*, BoutReal& rval, const std::string& name, BoutReal def = 0.0) override {
     if (values[name].isSet()) {
       rval = values[name].as<BoutReal>();
       return true;
     }
+    rval = def;
     return false;
   }
-  bool get(Mesh* mesh, Field2D& fval, const std::string& name, BoutReal = 0.0,
+  bool get(Mesh* mesh, Field2D& fval, const std::string& name, BoutReal def = 0.0,
            CELL_LOC location = CELL_DEFAULT) override {
     if (values[name].isSet()) {
       fval = values[name].as(Field2D(0.0, mesh));
       return true;
     }
+    fval = def;
     return false;
   }
-  bool get(Mesh* mesh, Field3D& fval, const std::string& name, BoutReal = 0.0,
+  bool get(Mesh* mesh, Field3D& fval, const std::string& name, BoutReal def = 0.0,
            CELL_LOC location = CELL_DEFAULT) override {
     if (values[name].isSet()) {
       fval = values[name].as(Field3D(0.0, mesh));
       return true;
     }
+    fval = def;
     return false;
   }
-  bool get(Mesh* mesh, FieldPerp& fval, const std::string& name, BoutReal = 0.0,
+  bool get(Mesh* mesh, FieldPerp& fval, const std::string& name, BoutReal def = 0.0,
            CELL_LOC location = CELL_DEFAULT) override {
     if (values[name].isSet()) {
       fval = values[name].as(FieldPerp(0.0, mesh));
       return true;
     }
+    fval = def;
     return false;
   }
 
   bool get(Mesh*, std::vector<int>&, const std::string&, int, int = 0,
            Direction = GridDataSource::X) override {
+    throw BoutException("NI");
     return false;
   }
   bool get(Mesh*, std::vector<BoutReal>&, const std::string&, int, int = 0,
            Direction UNUSED(dir) = GridDataSource::X) override {
+    throw BoutException("NI");
     return false;
   }
 
