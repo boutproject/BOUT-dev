@@ -7,16 +7,13 @@
 #
 #
 
-NOUT = 10
+nout = 10
 
 timestep = 10
 
 MZ = 5    # Z size
 
-dump_format = "nc"  # NetCDF format
-
-TwistShift = true
-Ballooning = false
+twistshift = true
 
 [mesh] # Simple mesh for testing
 nx = 5
@@ -33,7 +30,7 @@ rightprec = false     # Use Right preconditioner (default left)
 diagnose = true       # Print additional diagnostics
 start_timestep = 10
 
-[All]
+[all]
 # Boundary options
 # 0 - constant
 # 1 - Gaussian

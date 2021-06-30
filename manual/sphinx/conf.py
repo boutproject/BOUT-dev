@@ -68,6 +68,7 @@ if has_breathe:
                                      project="BOUT++",
                                      rootpath='../doxygen/bout/xml',
                                      suffix='rst',
+                                     members=True,
                                      quiet=False)
     apidoc_args.rootpath = os.path.abspath(apidoc_args.rootpath)
     if not os.path.isdir(apidoc_args.destdir):
@@ -192,7 +193,7 @@ html_static_path = ['_static']
 
 
 def setup(app):
-    app.add_stylesheet('css/custom.css')
+    app.add_css_file('css/custom.css')
 
 
 # -- Options for HTMLHelp output ------------------------------------------

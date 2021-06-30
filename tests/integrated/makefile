@@ -4,21 +4,23 @@
 BOUT_TOP = ../..
 
 BUILD = $(shell PYTHONPATH=../../tools/pylib:$$PYTHONPATH ./test_suite_make --get-list)
-BUILDALL = $(shell PYTHONPATH=../../tools/pylib:$$PYTHONPATH ./test_suite_make --get-list --all)
+BUILD_ALL = $(shell PYTHONPATH=../../tools/pylib:$$PYTHONPATH ./test_suite_make --get-list --all)
 
 CHECKING = $(shell PYTHONPATH=../../tools/pylib:$$PYTHONPATH ./test_suite --get-list)
+CHECKING_ALL = $(shell PYTHONPATH=../../tools/pylib:$$PYTHONPATH ./test_suite --get-list --all)
 
 include $(BOUT_TOP)/make.config
 
 CHECKING_ = $(CHECKING:%=%_checking)
+CHECKING_ALL_ = $(CHECKING_ALL:%=%_checking)
 
 DIRS_CLEAN = $(BUILD)
 
-.PHONY: $(BUILDALL) $(CHECKING_) check
+.PHONY: $(BUILD_ALL) $(CHECKING_ALL) check
 
 all: $(BUILD)
 
-allall: $(BUILDALL)
+all-all: $(BUILD_ALL)
 
 buildncheck: all check
 
@@ -27,5 +29,5 @@ $(BUILDALL):
 
 check: $(CHECKING_)
 
-$(CHECKING_):
+$(CHECKING_ALL_):
 	@$(MAKE) --no-print-directory -C $(@:%_checking=%) runtest

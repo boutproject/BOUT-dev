@@ -5,8 +5,8 @@
  * using unsplit methods (the two parts are just combined),
  * but intended for testing split schemes
  *
- * Currently one of the RHS functions has to be called physics_run,
- * so here physics_run contains advection term only.
+ * `Split_operator::convective` contains the advective piece, while
+ * `Split_operator::diffusive` contains the reaction part.
  *
  * Grid file simple_xz.nc contains:
  * - nx = 68
@@ -36,9 +36,7 @@ protected:
     setSplitOperator(true);
 
     // Get options
-    auto globalOptions = Options::root();
-    auto options = globalOptions["split"];
-    rate = options["rate"].withDefault(1.0);
+    rate = Options::root()["split"]["rate"].withDefault(1.0);
 
     // Get phi settings from BOUT.inp
     phi.setBoundary("phi");

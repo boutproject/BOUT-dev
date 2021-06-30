@@ -1,5 +1,5 @@
 
-NOUT = 10
+nout = 10
 timestep = 1
 
 MXG = 0

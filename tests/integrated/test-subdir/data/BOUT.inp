@@ -3,16 +3,12 @@ MZ = 5
 nout = 1
 timestep = 1
 
-[MESH]
+[mesh]
 nx = 68
 ny = 64
 
 ixseps1 = -1
 ixseps2 = -1
-iyseps1_1 = -1
-iyseps1_2 = -1
-iyseps2_1 = -1
-iyseps2_2 = -1
 
-[All]
+[all]
 bndry_all = dirichlet(3)

@@ -105,28 +105,16 @@ TEST_F(Vector3DTest, ApplyBoundaryString) {
   EXPECT_DOUBLE_EQ(v.x(2,2,1), 0.0);
 }
 
-TEST_F(Vector3DTest, IsReal) {
-  Vector3D vector;
-
-  EXPECT_TRUE(vector.isReal());
-}
-
 TEST_F(Vector3DTest, Is3D) {
   Vector3D vector;
 
   EXPECT_TRUE(vector.is3D());
 }
 
-TEST_F(Vector3DTest, ByteSize) {
-  Vector3D vector;
-
-  EXPECT_EQ(vector.byteSize(), 3 * sizeof(BoutReal));
-}
-
 TEST_F(Vector3DTest, BoutRealSize) {
   Vector3D vector;
 
-  EXPECT_EQ(vector.BoutRealSize(), 3);
+  EXPECT_EQ(vector.elementSize(), 3);
 }
 
 TEST_F(Vector3DTest, TimeDeriv) {
@@ -225,7 +213,7 @@ TEST_F(Vector3DTest, SetLocationVSHIFT) {
 TEST_F(Vector3DTest, SetLocationDEFAULT) {
   Vector3D vector;
   CELL_LOC targetLoc = CELL_CENTRE;
-  vector.x.getMesh()->StaggerGrids = true;
+  vector.getMesh()->StaggerGrids = true;
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
   EXPECT_NO_THROW(vector.setLocation(CELL_DEFAULT));
   EXPECT_EQ(vector.getLocation(), targetLoc);

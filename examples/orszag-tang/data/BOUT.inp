@@ -4,11 +4,10 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 30       # number of time-steps
-TIMESTEP = 0.02   # time between outputs
+nout = 30       # number of time-steps
+timestep = 0.02   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 1     # number of points in z direction (2^n + 1)
 
@@ -43,13 +42,13 @@ upwind = U1
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 mxstep = 5000  # Maximum number of internal steps
 
 ##################################################
 # settings for mhd code
 
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations

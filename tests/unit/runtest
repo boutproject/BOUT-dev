@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+
+./serial_tests ${QUIET:---gtest_brief=1} ${GTEST_ARGS}
