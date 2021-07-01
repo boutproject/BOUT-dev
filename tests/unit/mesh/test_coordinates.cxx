@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "bout/coordinates.hxx"
+#include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include "output.hxx"
 
@@ -17,7 +18,7 @@ using bout::globals::mesh;
 
 using CoordinatesTest = FakeMeshFixture;
 
-const BoutReal default_dz{2 * 3.141592653589793 / 7};
+constexpr BoutReal default_dz{TWOPI / CoordinatesTest::nz};
 
 TEST_F(CoordinatesTest, ZLength) {
   Coordinates coords{
