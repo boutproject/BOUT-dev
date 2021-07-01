@@ -62,6 +62,7 @@ constexpr auto LAPLACE_MULTIGRID = "multigrid";
 constexpr auto LAPLACE_NAULIN = "naulin";
 constexpr auto LAPLACE_IPT = "ipt";
 constexpr auto LAPLACE_PCR = "pcr";
+constexpr auto LAPLACE_PCR_OR_CYCLIC = "pcr_or_cyclic";
 
 // Inversion flags for each boundary
 /// Zero-gradient for DC (constant in Z) component. Default is zero value
@@ -137,7 +138,7 @@ public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
   static constexpr auto option_name = "type";
-  static constexpr auto default_type = LAPLACE_CYCLIC;
+  static constexpr auto default_type = LAPLACE_PCR_OR_CYCLIC;
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
                     Mesh* mesh = nullptr) {

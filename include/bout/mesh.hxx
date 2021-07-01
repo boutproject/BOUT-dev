@@ -375,10 +375,10 @@ class Mesh {
   [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
   
-  virtual int getNXPE() = 0; ///< The number of processors in the X direction
-  virtual int getNYPE() = 0; ///< The number of processors in the Y direction
-  virtual int getXProcIndex() = 0; ///< This processor's index in X direction
-  virtual int getYProcIndex() = 0; ///< This processor's index in Y direction
+  virtual int getNXPE() const = 0; ///< The number of processors in the X direction
+  virtual int getNYPE() const = 0; ///< The number of processors in the Y direction
+  virtual int getXProcIndex() const = 0; ///< This processor's index in X direction
+  virtual int getYProcIndex() const = 0; ///< This processor's index in Y direction
   
   // X communications
   virtual bool firstX() const = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?

@@ -63,10 +63,10 @@ class BoutMesh : public Mesh {
   comm_handle receiveFromProc(int xproc, int yproc, BoutReal* buffer, int size,
                               int tag) override;
 
-  int getNXPE() override;       ///< The number of processors in the X direction
-  int getNYPE() override;       ///< The number of processors in the Y direction
-  int getXProcIndex() override; ///< This processor's index in X direction
-  int getYProcIndex() override; ///< This processor's index in Y direction
+  int getNXPE() const override;       ///< The number of processors in the X direction
+  int getNYPE() const override;       ///< The number of processors in the Y direction
+  int getXProcIndex() const override; ///< This processor's index in X direction
+  int getYProcIndex() const override; ///< This processor's index in Y direction
 
   /////////////////////////////////////////////
   // X communications
