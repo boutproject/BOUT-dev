@@ -425,12 +425,12 @@ public:
 
   bool get(Mesh*, std::vector<int>&, const std::string&, int, int = 0,
            Direction = GridDataSource::X) override {
-    throw BoutException("NI");
+    throw BoutException("Not Implemented");
     return false;
   }
   bool get(Mesh*, std::vector<BoutReal>&, const std::string&, int, int = 0,
            Direction UNUSED(dir) = GridDataSource::X) override {
-    throw BoutException("NI");
+    throw BoutException("Not Implemented");
     return false;
   }
 
