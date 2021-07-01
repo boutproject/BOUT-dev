@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "bout/coordinates.hxx"
+#include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include "output.hxx"
 
@@ -16,6 +17,8 @@ extern Mesh* mesh;
 using bout::globals::mesh;
 
 using CoordinatesTest = FakeMeshFixture;
+
+constexpr BoutReal default_dz{TWOPI / CoordinatesTest::nz};
 
 TEST_F(CoordinatesTest, ZLength) {
   Coordinates coords{
@@ -87,7 +90,7 @@ TEST_F(CoordinatesTest, DefaultConstructor) {
 
   EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
-  EXPECT_DOUBLE_EQ(coords.dz, 1.0);
+  EXPECT_DOUBLE_EQ(coords.dz, default_dz);
 
   EXPECT_TRUE(IsFieldEqual(coords.g11, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.g22, 1.0));
@@ -151,7 +154,7 @@ TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
   // Didn't specify grid spacing, so default to 1
   EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
-  EXPECT_DOUBLE_EQ(coords.dz, 1.0);
+  EXPECT_DOUBLE_EQ(coords.dz, default_dz);
 
   // Diagonal contravariant metric
   EXPECT_TRUE(IsFieldEqual(coords.g11, 2.0));
