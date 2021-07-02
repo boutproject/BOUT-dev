@@ -2,6 +2,7 @@
 
 #include "bout/build_config.hxx"
 #include "bout/coordinates.hxx"
+#include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include "output.hxx"
 
@@ -22,7 +23,7 @@ public:
   CoordinatesTest() : FakeMeshFixture() {}
 };
 
-const BoutReal default_dz{2 * 3.141592653589793 / 7};
+constexpr BoutReal default_dz{TWOPI / CoordinatesTest::nz};
 
 TEST_F(CoordinatesTest, ZLength) {
   Coordinates coords{mesh,
