@@ -195,7 +195,7 @@ TEST_F(CoordinatesTest, DefaultConstructor) {
 
   EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
-  EXPECT_DOUBLE_EQ(coords.dz, default_dz);
+  EXPECT_TRUE(IsFieldEqual(coords.dz, default_dz));
 
   EXPECT_TRUE(IsFieldEqual(coords.g11, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.g22, 1.0));
@@ -221,7 +221,7 @@ TEST_F(CoordinatesTest, ConstructWithMeshSpacing) {
 
   EXPECT_TRUE(IsFieldEqual(coords.dx, 2.0));
   EXPECT_TRUE(IsFieldEqual(coords.dy, 3.2));
-  EXPECT_DOUBLE_EQ(coords.dz, 42.);
+  EXPECT_TRUE(IsFieldEqual(coords.dz, 42.));
 
   EXPECT_TRUE(IsFieldEqual(coords.g11, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.g22, 1.0));
@@ -240,7 +240,8 @@ TEST_F(CoordinatesTest, SmallMeshSpacing) {
 
   output_info.disable();
   output_warn.disable();
-  EXPECT_THROW(Coordinates coords(mesh), BoutException);
+  Coordinates coords(mesh);
+  EXPECT_THROW(coords.geometry(), BoutException);
   output_warn.enable();
   output_info.enable();
 }
@@ -259,7 +260,7 @@ TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
   // Didn't specify grid spacing, so default to 1
   EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
-  EXPECT_DOUBLE_EQ(coords.dz, default_dz);
+  EXPECT_TRUE(IsFieldEqual(coords.dz, default_dz));
 
   // Diagonal contravariant metric
   EXPECT_TRUE(IsFieldEqual(coords.g11, 2.0));

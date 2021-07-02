@@ -361,7 +361,7 @@ private:
 class FakeGridDataSource : public GridDataSource {
 public:
   FakeGridDataSource() {}
-  
+
   /// Constructor setting values which can be fetched from this source
   FakeGridDataSource(Options& values) : values(values) {}
 
