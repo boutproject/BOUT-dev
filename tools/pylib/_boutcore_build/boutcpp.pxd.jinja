@@ -102,7 +102,6 @@ cdef extern from "invert_laplace.hxx":
 cdef extern from "difops.hxx":
     Field3D Div_par(Field3D, benum.CELL_LOC, string)
     Field3D Grad_par(Field3D, benum.CELL_LOC, string)
-    Vector3D Grad_perp(Field3D, benum.CELL_LOC, string)
     Field3D Laplace(Field3D)
     Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, string)
     Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC)
@@ -184,3 +183,10 @@ cdef extern from "output.hxx":
     cppclass ConditionalOutput:
         void write(const char * str)
     ConditionalOutput output_info
+
+cdef extern from "vecops.hxx":
+    Vector3D Grad(const Field3D& f, benum.CELL_LOC, string)
+    Vector3D Grad_perp(const Field3D& f, benum.CELL_LOC, string)
+
+cdef extern from "vector3d.hxx":
+    Vector3D cross(Vector3D, Vector3D)

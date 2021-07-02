@@ -1193,6 +1193,26 @@ def {{ DD }}({% if flux %}Field3D velocity, {% endif %}Field3D field, outloc="CE
 
 {{ deriv("d", "Grad_perp", region=False, ret=vector3d) }}
 
+{{ deriv("d", "Grad", region=False, ret=vector3d) }}
+
+def cross(Vector3D a, Vector3D b):
+    """
+    Compute the cross product of two vectors
+
+    Parameters
+    ----------
+    a, b : Vector3D
+        The two Vector3D objects of which to calculate the cross product
+
+    Returns
+    -------
+    Vector3D
+        The cross product
+    """
+    checkInit()
+    return v3dFromObj(c.cross(a.cobj[0], b.cobj[0]))
+
+
 def Laplace(Field3D a):
     """
     Compute the full Laplacian \\nabla^2(a)
