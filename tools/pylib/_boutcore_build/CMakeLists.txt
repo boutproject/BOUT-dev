@@ -65,7 +65,7 @@ foreach(file IN LISTS files)
   #message(FATAL_ERROR "${gen} ${src}/${file}.jinja")
   add_custom_command(OUTPUT ${gen}
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${tar}
-	COMMAND ${Python_EXECUTABLE} generate.py ${file}.jinja ${gen}
+	COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${tar}/..:\${PYTHONPATH} ${Python_EXECUTABLE} generate.py ${file}.jinja ${gen}
 	DEPENDS ${src}/${file}.jinja
 	DEPENDS ${src}/helper.py
 	DEPENDS ${src}/resolve_enum_inv.pyx.jinja
