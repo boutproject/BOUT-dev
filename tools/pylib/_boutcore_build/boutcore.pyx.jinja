@@ -1,62 +1,7 @@
-#!/bin/bash
-# parse bout-config to extract appropriate flags
-inc_dirs=
-flags=
-libs=
-lib_dirs=
-ldflags=
-if ! test ".$1" = ".--cmake" ; then
-    for fl in $(bout-config --cflags)
-    do
-	if test ".${fl:0:2}" == ".-I"
-	then
-            inc_dirs+=" ${fl:2}"
-	else
-            flags+=" $fl"
-	fi
-    done
-    for fl in $(bout-config --libs)
-    do
-	s=${fl:0:2}
-	if test ".$s" == ".-L"
-	then
-            lib_dirs+=" ${fl:2}"
-	elif test ".$s" == ".-l"
-	then
-            libs+=" ${fl:2}"
-	else
-            ldflags+=" $fl"
-	fi
-    done
-
-    # needed sometimes to add include dir
-    # We need the header files for numpy, which are (hopefully) somewhere
-    # in the python directories.
-    python_dirs=$($PY -c "import site; print('\n'.join(site.getsitepackages()))")
-    numpyheader=$(for d in $python_dirs
-		  do
-                      find $d|grep numpy/arrayobject.h
-		  done)
-    inc_dirs="${numpyheader%/*/*} $inc_dirs"
-fi
-
-# Main file
-cat <<EOF
 # cython: language=c++
 # cython: language_level=3
-# distutils: include_dirs = $inc_dirs
-# distutils: libraries = $libs
-# distutils: library_dirs = $lib_dirs
-# distutils: sources = helper.cxx boutexception_helper.cxx
-# distutils: extra_compile_args = $flags
-EOF
-if test ".${ldflags}" != "."
-then
-    echo "# distutils: extra_link_args = $ldflags"
-fi
-cat <<EOF
-
 # cython: binding=True
+# distutils: sources = helper.cxx boutexception_helper.cxx
 
 cimport boutcpp as c
 import numpy as np
@@ -71,83 +16,68 @@ from cython.operator import dereference as deref
 
 cdef extern from "boutexception_helper.hxx":
      cdef void raise_bout_py_error()
-EOF
-
-# Include list of fields, and some functions
-
-. common.sh
-
-for ftype in $fields
-do
-    setvars $ftype
-cat <<EOF
+{% for field in fields %}
 
 cdef extern from "helper.h":
-    void c_set_${fdd}_all(c.$ftype * f, double * data)
-    void c_get_${fdd}_all(c.$ftype * f, double * data)
-    void c_set_${fdd}_all_(c.$ftype * f, double data)
-    void c_set_${fdd}_from_${fdd}(c.$ftype * f, c.$ftype * f)
-EOF
-indices=$(makelist 'int ${d}s, int ${d}e, int d${d}')
-cat <<EOF
-    void c_get_${fdd}_part(c.${ftype} * f, double * data, $indices)
-    void c_set_${fdd}_part(c.${ftype} * f, double * data, $indices)
-    void c_set_${fdd}_part_(c.${ftype} * f, double data, $indices)
-EOF
-for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
-do
-    n=${f%:*}
-    echo "    c.$ftype * f$n( c.$ftype*, c.$ftype*) except +raise_bout_py_error"
-    echo "    c.$ftype * f$n( c.$ftype*, double) except +raise_bout_py_error"
-    echo "    c.$ftype * f$n( double, c.$ftype*) except +raise_bout_py_error"
-    echo "    void fi$n( c.$ftype*, c.$ftype*) except +raise_bout_py_error"
-    echo "    void fi$n( c.$ftype*, double) except +raise_bout_py_error"
-    if [ $ftype = "Field3D" ]; then
-        echo "    c.Field3D * f$n( c.Field2D*, c.Field3D*) except +raise_bout_py_error"
-        echo "    c.Field3D * f$n( c.Field3D*, c.Field2D*) except +raise_bout_py_error"
-        echo "    void fi$n( c.Field3D*, c.Field2D*) except +raise_bout_py_error"
-    fi
-done
-cat <<EOF
-    c.$ftype c_minus( c.$ftype )
+    void c_set_{{ field.fdd }}_all(c.{{ field.field_type }}* f, double* data)
+    void c_get_{{ field.fdd }}_all(c.{{ field.field_type }}* f, double* data)
+    void c_set_{{ field.fdd }}_all_(c.{{ field.field_type }}* f, double data)
+    void c_set_{{ field.fdd }}_from_{{ field.fdd }}(c.{{ field.field_type }}* f, c.{{ field.field_type }}* f)
+{% set indices=field.makelist('int $ds, int $de, int d$d') %}
+    void c_get_{{ field.fdd }}_part(c.{{ field.field_type }}* f, double* data, {{ indices }})
+    void c_set_{{ field.fdd }}_part(c.{{ field.field_type }}* f, double* data, {{ indices }})
+    void c_set_{{ field.fdd }}_part_(c.{{ field.field_type }}* f, double data, {{ indices }})
+{% for name, op in ops %}
+    c.{{ field.field_type }}* f{{ name }}( c.{{ field.field_type }}*, c.{{ field.field_type }}*) except +raise_bout_py_error
+    c.{{ field.field_type }}* f{{ name }}( c.{{ field.field_type }}*, double) except +raise_bout_py_error
+    c.{{ field.field_type }}* f{{ name }}( double, c.{{ field.field_type }}*) except +raise_bout_py_error
+    void fi{{ name }}( c.{{ field.field_type }}*, c.{{ field.field_type }}*) except +raise_bout_py_error
+    void fi{{ name }}( c.{{ field.field_type }}*, double) except +raise_bout_py_error
+{% if field.field_type == "Field3D" %}
+    c.Field3D * f{{ name }}(c.Field2D*, c.Field3D*) except +raise_bout_py_error
+    c.Field3D * f{{ name }}(c.Field3D*, c.Field2D*) except +raise_bout_py_error
+    void fi{{ name }}( c.Field3D*, c.Field2D*) except +raise_bout_py_error
+{% endif %}
+{% endfor %}
+    c.{{ field.field_type }} c_minus(c.{{ field.field_type }} )
 
-cdef $ftype ${fdd}FromObj(c.$ftype i):
-    f=$ftype()
-    f.cobj=new c.$ftype(<const c.$ftype & ?>i)
+cdef {{ field.field_type }} {{ field.fdd }}FromObj(c.{{ field.field_type }} i):
+    f={{ field.field_type }}()
+    f.cobj=new c.{{ field.field_type }}(<const c.{{ field.field_type }}& ?>i)
     return f
 
-cdef $ftype ${fdd}FromPtr(c.$ftype * i):
-    f=$ftype()
-    f.cobj=i
-    f.isSelfOwned=False
+cdef {{ field.field_type }} {{ field.fdd }}FromPtr(c.{{ field.field_type }}* i):
+    f={{ field.field_type }}()
+    f.cobj = i
+    f.isSelfOwned = False
     return f
 
-cdef class $ftype:
+cdef class {{ field.field_type }}:
     """
-    The $ftype class
+    The {{ field.field_type }} class
     """
-    cdef c.$ftype * cobj
+    cdef c.{{ field.field_type }} * cobj
     cdef c.bool isSelfOwned
     @classmethod
     def fromMesh(cls,mesh=None):
         """
-        Create a $ftype.
+        Create a {{ field.field_type }}.
 
         Parameters
         ----------
         mesh : Mesh, optional
-             The mesh of the $ftype. If None, use global mesh
+             The mesh of the {{ field.field_type }}. If None, use global mesh
         """
         checkInit()
-        $fdd=$ftype()
+        {{ field.fdd }} = {{ field.field_type }}()
         if mesh is None:
             mesh=Mesh.getGlobal()
-        $fdd.cobj=new c.$ftype((<Mesh?>mesh).cobj)
-        return $fdd
+        {{ field.fdd }}.cobj = new c.{{ field.field_type }}((<Mesh?>mesh).cobj)
+        return {{ field.fdd }}
     @classmethod
     def fromCollect(cls,name,tind=-1,mesh=None,ignoreDataType=False, **kwargs):
         """
-        Create a $ftype from reading in a datafile via collect.
+        Create a {{ field.field_type }} from reading in a datafile via collect.
 
         Parameters
         ----------
@@ -164,49 +94,49 @@ cdef class $ftype:
         from boutdata.collect import collect, dimensions
 
         if mesh is None:
-            mesh=Mesh.getGlobal()
-        f=cls.fromMesh(mesh)
+            mesh = Mesh.getGlobal()
+        f = cls.fromMesh(mesh)
         # Make it MPI aware
         cdef c.Mesh* mesh_ = (<Mesh?>mesh).cobj
-        nxpe=mesh_.getNXPE()
-        nype=mesh_.getNYPE()
+        nxpe = mesh_.getNXPE()
+        nype = mesh_.getNYPE()
         if (nxpe):
             if "xind" in kwargs.keys():
                 raise RuntimeError("Do not support xind slicing with MPI")
-            nxi=mesh_.getXProcIndex()
-            nxg=mesh_.xstart
-            nx=mesh_.LocalNx
-            nx_=nx-2*nxg
-            xstart=nx_*nxi
-            kwargs['xind']=[xstart,xstart+nx]
+            nxi = mesh_.getXProcIndex()
+            nxg = mesh_.xstart
+            nx = mesh_.LocalNx
+            nx_ = nx - 2 * nxg
+            xstart = nx_ * nxi
+            kwargs['xind'] = [xstart, xstart + nx]
         if (nype):
             if "yind" in kwargs.keys():
                 raise RuntimeError("Do not support yind slicing with MPI")
-            nyi=mesh_.getYProcIndex()
-            nyg=mesh_.ystart
-            ny=mesh_.LocalNy
-            ny_=ny-2*nyg
+            nyi = mesh_.getYProcIndex()
+            nyg = mesh_.ystart
+            ny = mesh_.LocalNy
+            ny_ = ny-2*nyg
             ystart=ny_*nyi
-            kwargs['yind']=[ystart,ystart+ny]
-        data=collect(name,yguards=True,tind=tind,**kwargs)
-        dims=dimensions(name,**{k:v for k,v in kwargs.items() if k in ['path','prefix']})
+            kwargs['yind'] = [ystart, ystart + ny]
+        data = collect(name, yguards=True, tind=tind, **kwargs)
+        dims = dimensions(name,**{k:v for k,v in kwargs.items() if k in ['path','prefix']})
         if dims[0] == 't':
-            data=data.reshape(data.shape[1:])
-        if len(data.shape) != ${ndim}:
-            raise TypeError("Expected ${ndim}D data")
+            data = data.reshape(data.shape[1:])
+        if len(data.shape) != {{ field.ndims }}:
+            raise TypeError("Expected {{ field.ndims }}D data")
         try:
-            loc=data.attributes['cell_location']
+            loc = data.attributes['cell_location']
         except KeyError:
             pass
         else:
             f.setLocation(loc)
-        f.setAll(data,ignoreDataType=ignoreDataType)
+        f.setAll(data, ignoreDataType=ignoreDataType)
         return f
 
     @classmethod
-    def fromBoutOutputs(cls,outputs,name,tind=-1,mesh=None,ignoreDataType=False):
+    def fromBoutOutputs(cls, outputs, name, tind=-1, mesh=None, ignoreDataType=False):
         """
-        Create a $ftype from reading in a datafile via collect.
+        Create a {{ field.field_type }} from reading in a datafile via collect.
 
         Parameters
         ----------
@@ -224,36 +154,36 @@ cdef class $ftype:
         checkInit()
 
         if mesh is None:
-            mesh=Mesh.getGlobal()
-        f=cls.fromMesh(mesh)
+            mesh = Mesh.getGlobal()
+        f = cls.fromMesh(mesh)
         # Make it MPI aware
         cdef c.Mesh* mesh_ = (<Mesh?>mesh).cobj
-        nxpe=mesh_.getNXPE()
-        nype=mesh_.getNYPE()
+        nxpe = mesh_.getNXPE()
+        nype = mesh_.getNYPE()
         # save original _kwargs from outputs so we can restore them later
         orig_kwargs = copy.copy(outputs._kwargs)
         kwargs = outputs._kwargs
-        kwargs['xguards']=True
-        kwargs['yguards']=True
+        kwargs['xguards'] = True
+        kwargs['yguards'] = True
         if (nxpe):
             if "xind" in kwargs.keys():
                 raise RuntimeError("Do not support xind slicing with MPI")
-            nxi=mesh_.getXProcIndex()
-            nxg=mesh_.xstart
-            nx=mesh_.LocalNx
-            nx_=nx-2*nxg
-            xstart=nx_*nxi
-            kwargs['xind']=[xstart,xstart+nx]
+            nxi = mesh_.getXProcIndex()
+            nxg = mesh_.xstart
+            nx = mesh_.LocalNx
+            nx_ = nx-2 * nxg
+            xstart = nx_ * nxi
+            kwargs['xind'] = [xstart, xstart + nx]
         if (nype):
             if "yind" in kwargs.keys():
                 raise RuntimeError("Do not support yind slicing with MPI")
-            nyi=mesh_.getYProcIndex()
-            nyg=mesh_.ystart
-            ny=mesh_.LocalNy
+            nyi = mesh_.getYProcIndex()
+            nyg = mesh_.ystart
+            ny = mesh_.LocalNy
             ny_=ny-2*nyg
-            ystart=ny_*nyi
-            kwargs['yind']=[ystart,ystart+ny]
-        dims=outputs.dimensions[name]
+            ystart = ny_ * nyi
+            kwargs['yind'] = [ystart, ystart + ny]
+        dims = outputs.dimensions[name]
         if outputs._caching:
             # if BoutOutputs object is caching the arrays, let it collect all
             # time points, then slice here
@@ -261,40 +191,40 @@ cdef class $ftype:
                 # Use slice with one element here so shape of 'data' is as if
                 # we had passed argument 'tind=tind' to collect (with
                 # one-element t-dimension)
-                data=outputs[name][tind:tind+1]
+                data = outputs[name][tind: tind + 1]
             else:
-                data=outputs[name]
+                data = outputs[name]
         else:
             # otherwise only collect data for tind
-            kwargs['tind']=tind
-            data=outputs[name]
+            kwargs['tind'] = tind
+            data = outputs[name]
         # restore original _kwargs
-        outputs._kwargs=orig_kwargs
+        outputs._kwargs = orig_kwargs
         if dims[0] == 't':
             data=data.reshape(data.shape[1:])
-        if len(data.shape) != ${ndim}:
-            raise TypeError("Expected ${ndim}D data")
+        if len(data.shape) != {{ field.ndims }}:
+            raise TypeError("Expected {{ field.ndims }}D data")
         try:
-            loc=data.attributes['cell_location']
+            loc = data.attributes["cell_location"]
         except KeyError:
             pass
         else:
             f.setLocation(loc)
-        f.setAll(data,ignoreDataType=ignoreDataType)
+        f.setAll(data, ignoreDataType=ignoreDataType)
         return f
 
-    def __cinit__(self,$ftype obj=None):
-        self.cobj=NULL
+    def __cinit__(self,{{ field.field_type }} obj=None):
+        self.cobj = NULL
         if obj:
-            self.cobj=obj.cobj
+            self.cobj = obj.cobj
         self.isSelfOwned=True
-        #self.cobj = (<c.$ftype * ?> cobj_)
+        #self.cobj = (<c.{{ field.field_type }} * ?> cobj_)
         #if self.cobj == NULL:
         #    raise MemoryError('Not enough memory, allocation failed.')
 
-    def set(self,data,ignoreDataType=False):
+    def set(self, data, ignoreDataType=False):
         """
-        Set all data of the $ftype
+        Set all data of the {{ field.field_type }}
 
         Parameters
         ----------
@@ -303,11 +233,11 @@ cdef class $ftype:
         ignoreDataType : bool, optional
             Ignore if data is off different type to BoutReal
         """
-        return self.setAll(data,ignoreDataType)
+        return self.setAll(data, ignoreDataType)
 
-    def setAll(self,data,ignoreDataType=False):
+    def setAll(self, data, ignoreDataType=False):
         """
-        Set all data of the $ftype
+        Set all data of the {{ field.field_type }}
 
         Parameters
         ----------
@@ -316,56 +246,50 @@ cdef class $ftype:
         ignoreDataType : bool, optional
             Ignore if data is off different type to BoutRealxx
         """
-EOF
-
-echo -n "        dims=["
-makelist 'self.cobj.getN$d()'
-echo "]"
-zeros=$(makelist "0")
-nxlist=$(makelist 'n$d')
-
-cat <<EOF
+        dims = [{{ field.makelist('self.cobj.getN$d()')}}]
+{% set zeros = field.makelist("0") %}
+{% set nxlist = field.makelist("n$d") %}
         if isinstance(data, (int, float)):
-            data=np.zeros(dims)+data
+            data = np.zeros(dims)+data
         if data.dtype != np.dtype('float64'):
             if ignoreDataType:
-                data=data.astype('float64')
+                data = data.astype('float64')
             else:
                 raise TypeError("expected float64 data, but got %s.\nThis can be ignored by adding ignoreDataType=True as argument"%data.dtype)
         dims_in=self._checkDims(dims,data.shape)
-        cdef np.ndarray[double, mode="c", ndim=$ndim] data_ = np.ascontiguousarray(data)
-        c_set_${fdd}_all(self.cobj,&data_[$zeros])
+        cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(data)
+        c_set_{{ field.fdd }}_all(self.cobj,&data_[{{ zeros }}])
 
     def get(self):
         """
-        Get all data of the $ftype
+        Get all data of the {{ field.field_type }}
 
         Returns
         -------
         array
-             A ${ndim}D numpy array with the data of the $ftype
+             A {{ field.ndims }}D numpy array with the data of the {{ field.field_type }}
         """
         return self.getAll()
 
     def getAll(self):
         """
-        Get all data of the $ftype
+        Get all data of the {{ field.field_type }}
 
         Returns
         -------
         array
-            A ${ndim}D numpy array with the data of the $ftype
+            A {{ field.ndims }}D numpy array with the data of the {{ field.field_type }}
         """
-        nx=self.cobj.getNx()
-        ny=self.cobj.getNy()
-        nz=self.cobj.getNz()
-        cdef np.ndarray[double, mode="c", ndim=$ndim] data_ = np.ascontiguousarray(np.zeros(($nxlist)))
-        c_get_${fdd}_all(self.cobj,&data_[$zeros]);
+        nx = self.cobj.getNx()
+        ny = self.cobj.getNy()
+        nz = self.cobj.getNz()
+        cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(np.zeros(({{ nxlist }})))
+        c_get_{{ field.fdd }}_all(self.cobj,&data_[{{ zeros }}]);
         return data_
 
-    def setLocation(self,location):
+    def setLocation(self, location):
         """
-        Set the location of the $ftype
+        Set the location of the {{ field.field_type }}
         This does not do any modification of the data.
 
         Parameters
@@ -379,7 +303,7 @@ cat <<EOF
 
     def getLocation(self):
         """
-        Get the location of the $ftype
+        Get the location of the {{ field.field_type }}
 
         Returns
         -------
@@ -389,51 +313,51 @@ cat <<EOF
         cdef benum.CELL_LOC loc = self.cobj[0].getLocation()
         return _resolve_inv_cell_loc(<int> loc)
 
-    def ddt(self,val=None):
+    def ddt(self, val=None):
         """
         Get or set the time derivative
 
         Parameters
         ----------
-        val : $ftype, optional
+        val : {{ field.field_type }}, optional
              If set, set the time derivative to val
 
         Returns
         -------
-        $ftype
+        {{ field.field_type }}
             The time derivative
         """
         if val:
-            c_set_${fdd}_from_${fdd}(&c.ddt(self.cobj[0]),(<$ftype?>val).cobj)
-        return ${fdd}FromPtr(&c.ddt(self.cobj[0]))
+            c_set_{{ field.fdd }}_from_{{ field.fdd }}(&c.ddt(self.cobj[0]),(<{{ field.field_type }}?>val).cobj)
+        return {{ field.fdd }}FromPtr(&c.ddt(self.cobj[0]))
 
     def __neg__(self):
         """
 
         Returns
         -------
-        $ftype
+        {{ field.field_type }}
             negative of the Field
         """
-        return ${fdd}FromObj(c_minus(self.cobj[0]))
+        return {{ field.fdd }}FromObj(c_minus(self.cobj[0]))
 
-    def __pow__($ftype self, exponent, other):
+    def __pow__({{ field.field_type }} self, exponent, other):
         """
         other must be None
 
         Returns
         -------
-	$ftype
+	{{ field.field_type }}
             exponential of the field to the power of the exponential
         """
         if other is not None:
             return NotImplemented
 
-        return ${fdd}FromObj(c.pow(self.cobj[0], float(exponent)))
+        return {{ field.fdd }}FromObj(c.pow(self.cobj[0], float(exponent)))
 
     def isAllocated(self):
         """
-        Check if the $ftype has its own datablock allocated
+        Check if the {{ field.field_type }} has its own datablock allocated
 
         Returns
         -------
@@ -444,29 +368,29 @@ cat <<EOF
 
     def __getitem__(self,slices):
         """
-        Get data from the $ftype
-        Supports full ${ndim}D slicing support.
+        Get data from the {{ field.field_type }}
+        Supports full {{ field.ndims }}D slicing support.
         Partially slicing is currently not supported.
 
         Parameters
         ----------
         slices: tuple_like of slice
-            List of slice objects, which shall be returned. Must contain ${ndim} slice objects
+            List of slice objects, which shall be returned. Must contain {{ field.ndims }} slice objects
 
         Returns
         -------
         array
             Numpy array of the requested data
         """
-        if len(slices)!=$ndim:
-            raise IndexError("This is a ${ndim}D object, but got %d slics"%len(slices))
+        if len(slices)!={{ field.ndims }}:
+            raise IndexError("This is a {{ field.ndims }}D object, but got %d slics"%len(slices))
         inds=_resolve_slices(slices,
-                            [$(makelist 'self.cobj.getN$d()')])
+                            [{{ field.makelist('self.cobj.getN$d()') }}])
         dims=[]
         for i in inds:
             dims.append((i[1]-i[0])//i[2])
-        cdef np.ndarray[double, mode="c", ndim=$ndim] data_ = np.ascontiguousarray(np.zeros(dims))
-        c_get_${fdd}_part(self.cobj,&data_[$zeros], $(makelist 'inds[$i][0],inds[$i][1],inds[$i][2]' ));
+        cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(np.zeros(dims))
+        c_get_{{ field.fdd }}_part(self.cobj,&data_[{{ zeros }}], {{ field.makelist('inds[$i][0],inds[$i][1],inds[$i][2]') }});
         return data_
 
     def __setitem__(self,slices,data_):
@@ -474,121 +398,101 @@ cat <<EOF
         Parameters
         ----------
         slices: tuple_like, slice
-            slice objects of the data to be set. Must contain $ndim slice objects
+            slice objects of the data to be set. Must contain {{ field.ndims }} slice objects
         data : array_like
-            Values to be set. Must be ${ndim}D and match the size of the slicing object.
+            Values to be set. Must be {{ field.ndims }}D and match the size of the slicing object.
         """
-        if len(slices)!=${ndim}:
-            raise IndexError("This is a ${ndim}D object!")
+        if len(slices)!={{ field.ndims }}:
+            raise IndexError("This is a {{ field.ndims }}D object!")
         dims=[]
         import numbers
         inds=_resolve_slices(slices,
-                            [$(makelist 'self.cobj.getN$d()')])
-        if isinstance(data_,${ftype}):
+                            [{{ field.makelist('self.cobj.getN$d()') }}])
+        if isinstance(data_,{{ field.field_type }}):
             # get all to get a numpy array
-            data_=data_[$(makelist ':')]
+            data_=data_[{{ field.makelist(':') }}]
         elif isinstance(data_,numbers.Number):
-            c_set_${fdd}_part_(self.cobj,<double>data_,$(makelist 'inds[$i][0],inds[$i][1],inds[$i][2]'))
+            c_set_{{ field.fdd }}_part_(self.cobj,<double>data_,{{ field.makelist('inds[$i][0],inds[$i][1],inds[$i][2]') }})
             return
         try:
             dims_in=data_.shape
         except:
-            raise TypeError("Expected a $ftype or a numpy array")
+            raise TypeError("Expected a {{ field.field_type }} or a numpy array")
         for i in inds:
             dims.append((i[1]-i[0])//i[2])
         dims_in=self._checkDims(dims,dims_in)
-        cdef np.ndarray[double, mode="c", ndim=$ndim] data__ = np.ascontiguousarray(data_)
-        c_set_${fdd}_part(self.cobj,&data__[$(makelist 0)],$(makelist 'inds[$i][0],inds[$i][1],inds[$i][2]'));
+        cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data__ = np.ascontiguousarray(data_)
+        c_set_{{ field.fdd }}_part(self.cobj,&data__[{{ field.makelist("0") }}],{{ field.makelist('inds[$i][0],inds[$i][1],inds[$i][2]') }});
 
     def _checkDims(self,dims,dims_in):
-        if len(dims_in) > $ndim:
-            raise IndexError("This is a ${ndim}D object, but got %d dimensions"%len(dims_in))
-        if len(dims_in) < $ndim:
+        if len(dims_in) > {{ field.ndims }}:
+            raise IndexError("This is a {{ field.ndims }}D object, but got %d dimensions"%len(dims_in))
+        if len(dims_in) < {{ field.ndims }}:
             len_dims=len([1 for d in dims if d>1])
             if len(dims_in) != len_dims:
-                raise IndexError("This is a ${ndim}D object, but got %d dimensions"%len(dims_in))
+                raise IndexError("This is a {{ field.ndims }}D object, but got %d dimensions"%len(dims_in))
             dims_in_new=[]
             k=0
-            for i in range($ndim):
+            for i in range({{ field.ndims }}):
                 if (dims[i]==1):
                     dims_in_new.append(1)
                 else:
                     dims_in_new.append(dims_in[k])
                     k+=1
             dims_in=dims_in_new
-        for i in range($ndim):
+        for i in range({{ field.ndims }}):
             if dims[i] != dims_in[i]:
                 raise IndexError("Expected %s but got %s."%(dims,dims_in))
 
-EOF
-for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
-do
-    n=${f%:*}
-    #o=${f#*:}
-    cat <<EOF
-    def __${n}__(self,other):
-        fu=$ftype()
+{% for name, op in ops %}
+    def __{{ name }}__(self,other):
+        fu={{ field.field_type }}()
         import numbers
-        if isinstance(self,$ftype) and isinstance(other,$ftype):
-            fu.cobj=f$n((<$ftype?>self).cobj , (<$ftype?>other).cobj)
-        elif isinstance(self,$ftype) and isinstance(other, numbers.Number):
-            fu.cobj=f$n((<$ftype?>self).cobj , (<double?>float(other)))
-        elif isinstance(self,numbers.Number) and isinstance(other, $ftype):
-            fu.cobj=f$n(<double?>float(self),(<$ftype?>other).cobj)
-EOF
-if [ $ftype = "Field3D" ]; then
-cat <<EOF
+        if isinstance(self,{{ field.field_type }}) and isinstance(other,{{ field.field_type }}):
+            fu.cobj=f{{ name }}((<{{ field.field_type }}?>self).cobj , (<{{ field.field_type }}?>other).cobj)
+        elif isinstance(self,{{ field.field_type }}) and isinstance(other, numbers.Number):
+            fu.cobj=f{{ name }}((<{{ field.field_type }}?>self).cobj , (<double?>float(other)))
+        elif isinstance(self,numbers.Number) and isinstance(other, {{ field.field_type }}):
+            fu.cobj=f{{ name }}(<double?>float(self),(<{{ field.field_type }}?>other).cobj)
+{% if field == field3d %}
         elif isinstance(self,Field3D) and isinstance(other,Field2D):
-            fu.cobj=f$n((<Field3D?>self).cobj , (<Field2D?>other).cobj)
-EOF
-fi
-cat <<EOF
+            fu.cobj=f{{ name }}((<Field3D?>self).cobj , (<Field2D?>other).cobj)
+{% endif %}
         else:
-            print("$n",type(self),type(other),isinstance(self,numbers.Number))
+            print("{{ name }}",type(self),type(other),isinstance(self,numbers.Number))
             return NotImplemented
         return fu
 
-    def __r${n}__(self,lhs):
-        fu=$ftype()
+    def __r{{ name }}__(self,lhs):
+        fu={{ field.field_type }}()
         if isinstance(lhs,float) or isinstance(lhs,int):
-            fu.cobj=f$n(<double?>float(lhs),(<$ftype?>self).cobj)
-EOF
-if [ $ftype = "Field3D" ]; then
-cat <<EOF
+            fu.cobj=f{{ name }}(<double?>float(lhs),(<{{ field.field_type }}?>self).cobj)
+{% if field == field3d %}
         elif isinstance(lhs,Field2D):
-            fu.cobj=f$n((<Field2D?>lhs).cobj,(<Field3D?>self).cobj)
-EOF
-fi
-cat <<EOF
+            fu.cobj=f{{ name }}((<Field2D?>lhs).cobj,(<Field3D?>self).cobj)
+{% endif %}
         else:
             return NotImplemented
         return fu
 
-    def __i${n}__(self,other):
-        if isinstance(other,$ftype):
-            fi$n((<$ftype?>self).cobj , (<$ftype?>other).cobj)
+    def __i{{ name }}__(self,other):
+        if isinstance(other,{{ field.field_type }}):
+            fi{{ name }}((<{{ field.field_type }}?>self).cobj , (<{{ field.field_type }}?>other).cobj)
         elif isinstance(other,float) or isinstance(other,int):
-            fi$n((<$ftype?>self).cobj , (<double?>float(other)))
-EOF
-if [ $ftype = "Field3D" ]; then
-cat <<EOF
+            fi{{ name }}((<{{ field.field_type }}?>self).cobj , (<double?>float(other)))
+{% if field == field3d %}
         elif isinstance(other,Field2D):
-            fi$n((<Field3D?>self).cobj , (<Field2D?>other).cobj)
-EOF
-fi
-cat <<EOF
+            fi{{ name }}((<Field3D?>self).cobj , (<Field2D?>other).cobj)
+{% endif %}
         else:
             return NotImplemented
         return self
 
 
-EOF
-
-done
-cat <<EOF
+{% endfor %}
     def applyBoundary(self, boundary=None, time=None):
         """
-        Set the boundaries of a $ftype. Only one of both arguments
+        Set the boundaries of a {{ field.field_type }}. Only one of both arguments
         can be provided. If no value is provided, the default boundary
         is applied.
 
@@ -622,43 +526,31 @@ cat <<EOF
         if self.isSelfOwned and self.cobj!=NULL:
             del self.cobj
             self.cobj=NULL
-EOF
-done
-
-
-for vec in $vecs
-do
-    setvars $vec
-    cat <<EOF
-
+{% endfor %}
+{% for vec in vecs %}
 cdef extern from "helper.h":
-    c.$field c_mul_${vec}_${vec}(c.$vec *, c.$vec *) except +
+    c.{{ vec.field }} c_mul_{{ vec }}_{{ vec }}(c.{{ vec }} *, c.{{ vec }} *) except +
 
-cdef class $vec:
+cdef class {{ vec }}:
     """
-    $vec class
+    {{ vec }} class
 
-    A vector of $field
+    A vector of {{ vec.field }}
     """
-    cdef c.$vec * cobj
+    cdef c.{{ vec }} * cobj
     cdef c.bool isSelfOwned
-EOF
-    for d in x y z
-    do
-        cat <<EOF
+{% for d in "xyz" %}
     @property
-    def $d(self):
+    def {{ d }}(self):
         """
-        The $field in $d direction
+        The {{ vec.field }} in {{ d }} direction
         """
-        return ${fdd}FromObj(self.cobj.$d)
+        return {{ vec.fdd }}FromObj(self.cobj.{{ d }})
 
-EOF
-    done
-    cat <<EOF
+{% endfor %}
     def __mul__(self, rhs):
-        if isinstance(rhs, $vec) and isinstance(self,$vec):
-            return ${fdd}FromObj(c_mul_${vec}_${vec}((<$vec?>self).cobj, (<$vec?>rhs).cobj))
+        if isinstance(rhs, {{ vec }}) and isinstance(self,{{ vec }}):
+            return {{ vec.fdd }}FromObj(c_mul_{{ vec }}_{{ vec }}((<{{ vec }}?>self).cobj, (<{{ vec }}?>rhs).cobj))
         else:
             raise NotImplementedError("unexpected argument type '"+
                                       str(type(self))+"' and '"+str(type(rhs))+
@@ -672,16 +564,12 @@ EOF
             del self.cobj
             self.cobj=NULL
 
-cdef $vec ${vdd}FromObj(c.$vec i):
-    v=$vec()
-    v.cobj = new c.$vec(<const c.$vec & ?> i)
+cdef {{ vec }} {{ vec.vdd }}FromObj(c.{{ vec }} i):
+    v={{ vec }}()
+    v.cobj = new c.{{ vec }}(<const c.{{ vec }} & ?> i)
     v.isSelfOwned = True
     return v
-EOF
-done
-
-
-cat <<EOF
+{% endfor %}
 
 
 cdef extern from "helper.h":
@@ -860,12 +748,9 @@ cdef class Coordinates:
         self.isSelfOwned = False
 
     def _setmembers(self):
-EOF
-for f in "dx" "dy" "dz" "J" "Bxy" "g11" "g22" "g33" "g12" "g13" "g23" "g_11" "g_22" "g_33" "g_12" "g_13" "g_23" "G1_11" "G1_22" "G1_33" "G1_12" "G1_13" "G1_23" "G2_11" "G2_22" "G2_33" "G2_12" "G2_13" "G2_23" "G3_11" "G3_22" "G3_33" "G3_12" "G3_13" "G3_23" "G1" "G2" "G3" "ShiftTorsion" "IntShiftTorsion"
-do
-    echo "        self.${f} = ${metric_fdd}FromPtr(&self.cobj.${f})"
-done
-cat <<"EOF"
+{% for f in "dx", "dy", "dz", "J", "Bxy", "g11", "g22", "g33", "g12", "g13", "g23", "g_11", "g_22", "g_33", "g_12", "g_13", "g_23", "G1_11", "G1_22", "G1_33", "G1_12", "G1_13", "G1_23", "G2_11", "G2_22", "G2_33", "G2_12", "G2_13", "G2_23", "G3_11", "G3_22", "G3_33", "G3_12", "G3_13", "G3_23", "G1", "G2", "G3", "ShiftTorsion", "IntShiftTorsion" %}
+        self.{{f}} = {{metric.fdd}}FromPtr(&self.cobj.{{f}})
+{% endfor %}
 
     def __dealloc__(self):
         self.__boutcore_dealloc()
@@ -881,7 +766,7 @@ cdef class Laplacian:
 
     Compute the Laplacian inversion of objects.
 
-    Equation solved is: d\\\\nabla^2_\\\\perp x + (1/c1)\\\\nabla_perp c2\\\\cdot\\\\nabla_\\\\perp x + ex\\\\nabla_x x + ez\\\\nabla_z x + a x = b
+    Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\perp x + ex\\nabla_x x + ez\\nabla_z x + a x = b
     """
     cdef unique_ptr[c.Laplacian] cobj
     cdef c.bool isSelfOwned
@@ -924,33 +809,24 @@ cdef class Laplacian:
         Set the coefficients for the Laplacian solver.
         The coefficients A, C, C1, C2, D, Ex and Ez can be passed as keyword arguments
         """
-EOF
-coeffs="A C C1 C2 D Ex Ez"
-for coeff in $coeffs
-do
-cat <<EOF
-        if '$coeff' in kwargs:
-            self.setCoef$coeff(kwargs['$coeff'])
-EOF
-done
-for coeff in $coeffs
-do
-    cat <<EOF
+{% set coeffs="A C C1 C2 D Ex Ez".split() %}
+{% for coeff in coeffs %}
+        if '{{ coeff }}' in kwargs:
+            self.setCoef{{ coeff}}(kwargs['{{ coeff }}'])
+{% endfor %}
+{% for coeff in coeffs %}
 
-    def setCoef$coeff(self,Field3D $coeff):
+    def setCoef{{ coeff }}(self,Field3D {{ coeff }}):
         """
-        Set the '$coeff' coefficient of the Laplacian solver
+        Set the '{{ coeff }}' coefficient of the Laplacian solver
 
         Parameters
         ----------
-        $coeff : Field3D
+        {{ coeff }} : Field3D
             Field to set as coefficient
         """
-        deref(self.cobj).setCoef$coeff($coeff.cobj[0])
-EOF
-done
-
-cat <<"EOF"
+        deref(self.cobj).setCoef{{ coeff }}({{ coeff }}.cobj[0])
+{% endfor %}
 
 cdef class FieldFactory:
     cdef c.FieldFactory * cobj
@@ -1259,127 +1135,67 @@ def checkInit():
     if not _isInit:
        raise RuntimeError("The BOUT++ library was not initialised - please call boutcore.init(args) first")
 
-EOF
 
-f_desc_f="field : Field3D
-        The Field3D object of which to calculate the derivative"
-f_desc_vf="field: Field3D
-        The Field3D object of which to calculate the derivative
-    velocity : Field3D
-        The Field3D object of which the field is advected"
-fun () {
-    cat <<EOF
-def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
+{% macro deriv(d, name, flux=False, region=True, ret=field3d) %}
+{% set DD=name.replace("d", d) -%}
+def {{ DD }}({% if flux %}Field3D velocity, {% endif %}Field3D field, outloc="CELL_DEFAULT", method="DIFF_DEFAULT"{% if region %}, region="RGN_NOBNDRY"{% endif %}):
     """
-    Compute the derivative $DD
+    Compute the {{ "flux " if flux else ""}}derivative {{ DD }}
 
     Parameters
     ---------
-    $f_desc
+{% if flux %}
+    velocity : Field3D
+        The Field3D object of which the field is advected
+{% endif %}
+    field : Field3D
+        The Field3D object of which to calculate the derivative
     outloc : string
         The location where the derivative is expected. Defaults to the same as field.
     method : string
         The method to calculate the derivative.
+{% if region %}
     region : string
         The region for which to calculate the derivative
+{% endif %}
 
     Returns
     -------
-    Field3D
-        The computed $DD derivative
+    {{ ret }}
+        The computed {{ DD }} derivative
     """
     checkInit()
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
     if method.startswith("DIFF_"):
         method=method[5:]
     cdef c.string method_ = method.encode('ascii')
+{% if region %}
     cdef c.string region_ = region.encode('ascii')
-    return f3dFromObj(c.$DD($in2,outloc_,method_,region_))
-EOF
-}
-for d in X Y Z
-do
-    for f in DDd D2Dd2 # VDDd FDDd
-    do
-        in1="Field3D field"
-        in2="field.cobj[0]"
-        DD=${f/d/$d}
-        f_desc="$f_desc_f"
-        fun
-    done
-    for f in VDDd FDDd
-    do
-        in1="Field3D velocity, Field3D field"
-        in2="velocity.cobj[0], field.cobj[0]"
-        DD=${f/d/$d}
-        f_desc="$f_desc_vf"
-        fun
-    done
-done
+{% endif %}
+    return {{ret.ddd}}FromObj(c.{{ DD }}({{ "velocity.cobj[0], " if flux else "" }}field.cobj[0],outloc_,method_{% if region %},region_{% endif %}))
+{% endmacro %}
 
-funbad () {
-    cat <<EOF
-def $DD($in1, outloc="CELL_DEFAULT", method="DIFF_DEFAULT", region="RGN_NOBNDRY"):
-    """
-    Compute the derivative $DD
+{% for d in "XYZ" %}
+    {%- for f in "DDd", "D2Dd2" -%}
+{{ deriv(d, f) }}
 
-    Parameters
-    ---------
-    $f_desc
-    outloc : string
-        The location where the derivative is expected. Defaults to the same as field.
-    method : string
-        The method to calculate the derivative.
-    region : string
-        The region for which to calculate the derivative
+    {%- endfor -%}
+    {%- for f in "VDDd", "FDDd" -%}
+{{deriv(d, f, flux=True) }}
 
-    Returns
-    -------
-    $ret
-        The computed $DD derivative
-    """
-    checkInit()
-    cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
-    if method.startswith("DIFF_"):
-        method=method[5:]
-    cdef c.string method_=method.encode('ascii')
-    return ${rdd}FromObj(c.$DD($in2,outloc_,method_))
-EOF
-}
+    {%- endfor %}
+{% endfor %}
+{{ deriv("d", "Div_par", region=False) }}
 
-for DD in Div_par Grad_par
-do
-    in1="Field3D field"
-    in2="field.cobj[0]"
-    ret=Field3D
-    rdd=f3d
-    f_desc="$f_desc_f"
-    funbad
-done
+{{ deriv("d", "Grad_par", region=False) }}
 
-for DD in Vpar_Grad_par
-do
-    in1="Field3D velocity, Field3D field"
-    in2="velocity.cobj[0], field.cobj[0]"
-    f_desc="$f_desc_vf"
-    ret=Field3D
-    rdd=f3d
-    funbad
-done
+{{ deriv("d", "Vpar_Grad_par", region=False, flux=True) }}
 
-for DD in Grad_perp
-do
-    in1="Field3D field"
-    in2="field.cobj[0]"
-    f_desc="$f_desc_f"
-    ret=Vector3D
-    rdd=v3d
-    funbad
-done
-cat <<EOF
+{{ deriv("d", "Grad_perp", region=False, ret=vector3d) }}
+
 def Laplace(Field3D a):
     """
-    Compute the full Laplacian \\\\nabla^2(a)
+    Compute the full Laplacian \\nabla^2(a)
 
     Parameters
     ----------
@@ -1441,34 +1257,29 @@ def bracket(Field3D a, Field3D b, method="BRACKET_STD", outloc="CELL_DEFAULT"):
     cdef benum.BRACKET_METHOD method_=benum.resolve_bracket_method(method)
     return f3dFromObj(c.bracket(a.cobj[0],b.cobj[0],method_,outloc_))
 
-EOF
-for fun in sqrt exp sin cos log abs
-do
-    cat <<EOF
-def $fun(a):
+{% for fun in "sqrt", "exp", "sin", "cos", "log", "abs" %}
+def {{ fun }}(a):
     """
-    Calculate $fun of a
+    Calculate {{ fun }} of a
 
     Parameters
     ----------
-    a : Field3D Field2D
-         The field for which to calculate $fun
+    a : Field3D or Field2D
+         The field for which to calculate {{ fun }}
 
     Returns
     -------
-    Field3D Field2D
-        $fun of a
+    Field3D or Field2D
+        {{ fun }} of a
     """
     if isinstance(a, Field3D):
-        return f3dFromObj(c.$fun((<Field3D?>a).cobj[0]))
+        return f3dFromObj(c.{{ fun }}((<Field3D?>a).cobj[0]))
     elif isinstance(a, Field2D):
-        return f2dFromObj(c.$fun((<Field2D?>a).cobj[0]))
+        return f2dFromObj(c.{{ fun }}((<Field2D?>a).cobj[0]))
     else:
-        raise NotImplementedError("In $fun: unexpected argument type '"+str(type(a))+"' - not supported (yet?).")
+        raise NotImplementedError("In {{ fun }}: unexpected argument type '"+str(type(a))+"' - not supported (yet?).")
 
-EOF
-done
-cat <<"EOF"
+{% endfor %}
 
 def pow(Field3D a, exponent):
     """
@@ -1769,8 +1580,6 @@ cdef _print(value):
     cdef c.string str_=value.encode('utf-8')
     c.output_info.write(str_.c_str())
 
-EOF
+{% include "helper.py" %}
 
-cat helper.py
-
-bash resolve_enum_inv.pyx.in
+{% include "resolve_enum_inv.pyx.jinja" %}

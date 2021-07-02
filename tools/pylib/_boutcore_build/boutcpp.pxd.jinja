@@ -1,8 +1,3 @@
-#!/bin/bash
-
-. common.sh
-
-cat <<EOF
 # distutils: language=c++
 
 from libcpp cimport bool
@@ -14,16 +9,12 @@ cimport resolve_enum as benum
 cdef extern from "boutexception_helper.hxx":
      cdef void raise_bout_py_error()
 
-EOF
-for ftype in $fields
-do
-    setvars $ftype
-cat <<EOF
+{% for field in fields %}
 
-cdef extern from "$fheader.hxx":
-    cppclass $ftype:
-        $ftype(Mesh * mesh);
-        $ftype(const $ftype &)
+cdef extern from "{{ field.header }}.hxx":
+    cppclass {{ field.field_type }}:
+        {{ field.field_type }}(Mesh * mesh);
+        {{ field.field_type }}(const {{ field.field_type }} &)
         double & operator()(int,int,int)
         int getNx()
         int getNy()
@@ -34,34 +25,23 @@ cdef extern from "$fheader.hxx":
         void applyBoundary(const string bndry)
         void applyBoundary()
         void applyBoundary(double t)
-EOF
-for f in sqrt exp log sin cos abs
-do
-    echo "    $ftype $f($ftype)"
-done
-cat <<EOF
-    double max($ftype)
-    double min($ftype)
-    $ftype pow($ftype,double)
-    $ftype & ddt($ftype)
-EOF
-done
-
-for vec in $vecs
-do
-    setvars $vec
-
-    cat <<EOF
-cdef extern from "$fheader.hxx":
-     cppclass $vec:
-         $vec()
-         $vec(const $vec &)
-         $field x
-         $field y
-         $field z
-EOF
-done
-cat <<EOF
+{% for fun in "sqrt", "exp", "log", "sin", "cos", "abs" %}
+    {{ field.field_type }} {{ fun }}({{ field.field_type }})
+{% endfor %}
+    double max({{ field.field_type }})
+    double min({{ field.field_type }})
+    {{ field.field_type }} pow({{ field.field_type }},double)
+    {{ field.field_type }} & ddt({{ field.field_type }})
+{% endfor %}
+{% for vec in vecs %}
+cdef extern from "{{ vec.header }}.hxx":
+     cppclass {{ vec }}:
+         {{ vec }}()
+         {{ vec }}(const {{ vec }} &)
+         {{ vec.field }} x
+         {{ vec.field }} y
+         {{ vec.field }} z
+{% endfor %}
 
 cdef extern from "bout/mesh.hxx":
     cppclass Mesh:
@@ -148,21 +128,16 @@ cdef extern from "optionsreader.hxx":
 
 
 cdef extern from "derivs.hxx":
-EOF
-for d in X Y Z
-do
-    for f in DDd D2Dd2 #VDDd FDDd
-    do
-        DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, benum.CELL_LOC, string, string) except +raise_bout_py_error"
-    done
-    for f in VDDd FDDd
-    do
-        DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, Field3D, benum.CELL_LOC, string, string) except +raise_bout_py_error"
-    done
-done
-cat <<EOF
+{% for d in "XYZ" %}
+{% for fun in "DDd", "D2Dd2" %}{# VDDd FDDd #}
+{% set DD = fun.replace('d', d) %}
+    Field3D {{ DD }}(Field3D, benum.CELL_LOC, string, string) except +raise_bout_py_error
+{% endfor %}
+{% for fun in "VDDd", "FDDd" %}
+{% set DD = fun.replace('d', d) %}
+    Field3D {{ DD }}(Field3D, Field3D, benum.CELL_LOC, string, string) except +raise_bout_py_error
+{% endfor %}
+{% endfor %}
 
 cdef extern from "interpolation.hxx":
     Field3D interp_to(Field3D, benum.CELL_LOC)
@@ -209,4 +184,3 @@ cdef extern from "output.hxx":
     cppclass ConditionalOutput:
         void write(const char * str)
     ConditionalOutput output_info
-EOF
