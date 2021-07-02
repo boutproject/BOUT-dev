@@ -357,41 +357,88 @@ private:
 /// FakeGridDataSource provides a non-null GridDataSource* source to use with FakeMesh, to
 /// allow testing of methods that use 'source' - in particular allowing
 /// source->hasXBoundaryGuards and source->hasXBoundaryGuards to be called.
+/// By passing in a set of values, the mesh->get routines can be used.
 class FakeGridDataSource : public GridDataSource {
+public:
+  FakeGridDataSource() {}
+  
+  /// Constructor setting values which can be fetched from this source
+  FakeGridDataSource(Options& values) : values(values) {}
+
+  /// Take an rvalue (e.g. initializer list), convert to lvalue and delegate constructor
+  FakeGridDataSource(Options&& values) : FakeGridDataSource(values) {}
+
   bool hasVar(const std::string& UNUSED(name)) override { return false; }
 
-  bool get(Mesh*, std::string&, const std::string&, const std::string& = "") override {
+  bool get(Mesh*, std::string& sval, const std::string& name,
+           const std::string& def = "") override {
+    if (values[name].isSet()) {
+      sval = values[name].as<std::string>();
+      return true;
+    }
+    sval = def;
     return false;
   }
-  bool get(Mesh*, int&, const std::string&, int = 0) override { return false; }
-  bool get(Mesh*, BoutReal&, const std::string&, BoutReal = 0.0) override {
+  bool get(Mesh*, int& ival, const std::string& name, int def = 0) override {
+    if (values[name].isSet()) {
+      ival = values[name].as<int>();
+      return true;
+    }
+    ival = def;
     return false;
   }
-  bool get(Mesh*, Field2D&, const std::string&, BoutReal = 0.0,
-           CELL_LOC = CELL_DEFAULT) override {
+  bool get(Mesh*, BoutReal& rval, const std::string& name, BoutReal def = 0.0) override {
+    if (values[name].isSet()) {
+      rval = values[name].as<BoutReal>();
+      return true;
+    }
+    rval = def;
     return false;
   }
-  bool get(Mesh*, Field3D&, const std::string&, BoutReal = 0.0,
-           CELL_LOC = CELL_DEFAULT) override {
+  bool get(Mesh* mesh, Field2D& fval, const std::string& name, BoutReal def = 0.0,
+           CELL_LOC location = CELL_DEFAULT) override {
+    if (values[name].isSet()) {
+      fval = values[name].as(Field2D(0.0, mesh));
+      return true;
+    }
+    fval = def;
     return false;
   }
-  bool get(Mesh*, FieldPerp&, const std::string&, BoutReal = 0.0,
-           CELL_LOC = CELL_DEFAULT) override {
+  bool get(Mesh* mesh, Field3D& fval, const std::string& name, BoutReal def = 0.0,
+           CELL_LOC location = CELL_DEFAULT) override {
+    if (values[name].isSet()) {
+      fval = values[name].as(Field3D(0.0, mesh));
+      return true;
+    }
+    fval = def;
+    return false;
+  }
+  bool get(Mesh* mesh, FieldPerp& fval, const std::string& name, BoutReal def = 0.0,
+           CELL_LOC location = CELL_DEFAULT) override {
+    if (values[name].isSet()) {
+      fval = values[name].as(FieldPerp(0.0, mesh));
+      return true;
+    }
+    fval = def;
     return false;
   }
 
   bool get(Mesh*, std::vector<int>&, const std::string&, int, int = 0,
            Direction = GridDataSource::X) override {
+    throw BoutException("NI");
     return false;
   }
   bool get(Mesh*, std::vector<BoutReal>&, const std::string&, int, int = 0,
            Direction UNUSED(dir) = GridDataSource::X) override {
+    throw BoutException("NI");
     return false;
   }
 
   bool hasXBoundaryGuards(Mesh* UNUSED(m)) override { return true; }
 
   bool hasYBoundaryGuards() override { return true; }
+private:
+  Options values; ///< Store values to be returned by get()
 };
 
 /// Test fixture to make sure the global mesh is our fake
