@@ -21,6 +21,23 @@ with:
 We expect that any new feature or function implemented in BOUT++ also
 has some corresponding tests, and *strongly* prefer unit tests.
 
+The tests can be run in parallel, with the autotools based workflow
+
+.. code-block:: console
+
+   $ make check -j 16
+
+will build and run all tests on up to 16 threads. With cmake first
+compile all test before running them in parallel
+
+.. code-block:: console
+
+   $ make build-check -j 16
+   $ ctest -j 8
+
+will build with up to 16 threads in parallel, and then run up to 8
+tests in parallel, which may use more or less then 16 threads.
+
 .. _sec-automated-testing:
 
 Automated tests and code coverage
