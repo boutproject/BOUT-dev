@@ -5,4 +5,5 @@ bout_add_integrated_test(test-communications
   EXTRA_FILES
     data_limiter/BOUT.inp
   REQUIRES BOUT_HAS_NETCDF
+  PROCESSORS 18
   )
