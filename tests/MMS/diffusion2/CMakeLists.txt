@@ -7,4 +7,5 @@ bout_add_mms_test(MMS-diffusion2
     Y/BOUT.inp
     Z/BOUT.inp
   REQUIRES BOUT_RUN_ALL_TESTS
+  PROCESSORS 2
   )

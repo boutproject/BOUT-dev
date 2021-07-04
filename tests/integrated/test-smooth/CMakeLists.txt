@@ -4,4 +4,5 @@ bout_add_integrated_test(test-smooth
   USE_DATA_BOUT_INP
   EXTRA_FILES test_smooth.nc data/benchmark.0.nc
   REQUIRES BOUT_HAS_NETCDF
+  PROCESSORS 4
   )

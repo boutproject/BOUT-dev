@@ -9,4 +9,5 @@ bout_add_integrated_test(test-petsc-laplace-MAST-grid
     grids/grid_MAST_SOL_jyis65.nc
     grids/grid_MAST_SOL_jyis81.nc
     grids/grid_MAST_SOL_jyis113.nc
+  PROCESSORS 4
   )

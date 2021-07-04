@@ -778,7 +778,7 @@ string(COMPARE EQUAL
   PROJECT_IS_TOP_LEVEL
 )
 option(BOUT_TESTS "Build the tests" ${PROJECT_IS_TOP_LEVEL})
-option(BOUT_RUN_ALL_TESTS "Run all of the tests (this can be slow!)" OFF)
+option(BOUT_ENABLE_ALL_TESTS "Enable running all of the tests, rather then the standard selection of fast tests" OFF)
 if(BOUT_TESTS)
   enable_testing()
 
