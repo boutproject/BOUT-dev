@@ -26,16 +26,17 @@ has some corresponding tests, and *strongly* prefer unit tests.
 Automated tests and code coverage
 ---------------------------------
 
-BOUT++ uses `Travis CI`_ to automatically run the test suite on every
-push to the GitHub repository, as well as on every submitted Pull
-Request. The Travis settings are in ``.travis.yml``. Pull requests
-that fail the tests will not be merged.
+BOUT++ uses `Github Actions`_ to automatically run the test suite on
+every push to the GitHub repository, as well as on every submitted
+Pull Request. The Github Actions settings are in
+``.github/workflows/``. Pull requests that fail the tests will not be
+merged.
 
 We also gather information from how well the unit tests cover the
 library using `CodeCov`_, the settings for which are stored in
 ``.codecov.yml``.
 
-.. _Travis CI: https://travis-ci.org/boutproject/BOUT-dev/
+.. _Github Actions: https://github.com/boutproject/BOUT-dev/actions
 .. _CodeCov: https://codecov.io/gh/boutproject/BOUT-dev
 
 
