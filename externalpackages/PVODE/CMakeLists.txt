@@ -49,12 +49,20 @@ add_library(pvpre
   precon/band.h
   )
 
+
+set_target_properties(pvode PROPERTIES
+  SOVERSION 1.0.0)
+
 target_include_directories(pvpre PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/pvode>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
 target_link_libraries(pvpre PUBLIC MPI::MPI_CXX)
+
+
+set_target_properties(pvpre PROPERTIES
+  SOVERSION 1.0.0)
 
 include(GNUInstallDirs)
 install(TARGETS pvode pvpre
