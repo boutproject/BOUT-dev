@@ -1532,16 +1532,29 @@ public:
 	auto indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
 	Ind3D *ob_i = &(indices)[0];
 	
+	Array<int> _ob_i_ind(indices.size());
+	
+	for(auto i = 0; i < indices.size(); i++) {
+		_ob_i_ind[i] = ob_i[i].ind;
+	}
+
+	printf("Starting RAJA Section 1\n");	
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
- 
-	int i = ob_i[id].ind;
+ 	int i = _ob_i_ind[id];
+	BoutReal p1 =  Grad_parP_g(phi_acc,g_22_acc, i);
+	BoutReal p2 =   eta_acc.data[i] * Jpar_acc.data[i];
+	DDT(Psi_acc)[i] = -p1 + p2  ;
+
+	DDT(Psi_acc)[i] = -Grad_parP_g(phi_acc,g_22_acc, i) + eta_acc.data[i] * Jpar_acc.data[i];
+
+	//int i = ob_i[id].ind;
 	//BoutReal p1 =  Grad_parP_g(phi_acc,g_22_acc, i);
 	//BoutReal p2 =   eta_acc[ob_i[id]] * Jpar_acc[ob_i[id]];
 	//DDT(Psi_acc)[i] = -p1 + p2  ;
 
-	DDT(Psi_acc)[i] = -Grad_parP_g(phi_acc,g_22_acc, i) + eta_acc[ob_i[id]] * Jpar_acc[ob_i[id]];
+	//DDT(Psi_acc)[i] = -Grad_parP_g(phi_acc,g_22_acc, i) + eta_acc[ob_i[id]] * Jpar_acc[ob_i[id]];
 	 });
-	
+	printf("Passed RAJA Section 1\n");
 
 
 #else
