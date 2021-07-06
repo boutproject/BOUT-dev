@@ -26,7 +26,7 @@ build:
     - libmpich-dev
     - libfftw3-dev
     - libnetcdf-dev
-    - libnetcdf-cxx-legacy-dev
+    - libnetcdf-c++4-dev
     - git
     - g++
     - make
