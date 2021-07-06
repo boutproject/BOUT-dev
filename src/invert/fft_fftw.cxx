@@ -69,18 +69,20 @@ void fft_init(Options* options) {
 }
 
 #if BOUT_HAS_FFTW
+namespace {
 unsigned int get_measurement_flag(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
   switch (fft_measurement_flag) {
-    case FFT_MEASUREMENT_FLAG::estimate:
-      return FFTW_ESTIMATE;
-    case FFT_MEASUREMENT_FLAG::measure:
-      return FFTW_MEASURE;
-    case FFT_MEASUREMENT_FLAG::exhaustive:
-      return FFTW_EXHAUSTIVE;
-    default:
-      throw BoutException("Error, unimplemented fft_measurement_flag");
+  case FFT_MEASUREMENT_FLAG::estimate:
+    return FFTW_ESTIMATE;
+  case FFT_MEASUREMENT_FLAG::measure:
+    return FFTW_MEASURE;
+  case FFT_MEASUREMENT_FLAG::exhaustive:
+    return FFTW_EXHAUSTIVE;
+  default:
+    throw BoutException("Error, unimplemented fft_measurement_flag");
   }
 }
+} // namespace
 #endif
 
 void fft_init(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
