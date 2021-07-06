@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 #
 # Generate input mesh for slab shear Alfven wave case
 # 
