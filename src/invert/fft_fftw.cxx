@@ -68,6 +68,7 @@ void fft_init(Options* options) {
   fft_init(fft_measurement_flag);
 }
 
+#if BOUT_HAS_FFTW
 unsigned int get_measurement_flag(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
   switch (fft_measurement_flag) {
     case FFT_MEASUREMENT_FLAG::estimate:
@@ -80,6 +81,7 @@ unsigned int get_measurement_flag(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
       throw BoutException("Error, unimplemented fft_measurement_flag");
   }
 }
+#endif
 
 void fft_init(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
   bout::fft::fft_measurement_flag = fft_measurement_flag;
