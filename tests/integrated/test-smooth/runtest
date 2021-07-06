@@ -8,14 +8,8 @@
 # Cores: 4
 
 # Variables to compare
-from __future__ import print_function
-
-try:
-    from builtins import str
-except:
-    pass
 vars = ["yavg2d", "yavg3d", "sm3d"]
-tol = 1e-10  # Absolute tolerance
+tol = 1e-7  # Absolute tolerance, benchmark values are floats
 
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect

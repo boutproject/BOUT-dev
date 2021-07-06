@@ -39,11 +39,11 @@
 #include "bout/build_config.hxx"
 
 #include "boutcomm.hxx"
-#include "datafile.hxx"
 #include "difops.hxx" // Differential operators
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "globals.hxx"
+#include "options_netcdf.hxx"
 #include "output.hxx"
 #include "smoothing.hxx" // Smoothing functions
 #include "sourcex.hxx"   // source and mask functions
@@ -163,9 +163,8 @@ void setRunFinishInfo(Options& options);
 void writeSettingsFile(Options& options, const std::string& data_dir,
                        const std::string& settings_file);
 
-/// Setup the output dump files from \p options using the \p
-/// mesh. Files are created in the \p data_dir directory
-Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir);
+/// Add the configure-time build options to \p options
+void addBuildFlagsToOptions(Options& options);
 } // namespace experimental
 } // namespace bout
 

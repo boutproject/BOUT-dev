@@ -6,7 +6,7 @@ path = "data"
 monitors = [
     ["PROBES", "T_up"],
     ["PROBES", "n_up"],
-    ["slow", "T"],
+    ["slow", "T_corner"],
 ]
 
 for pack in monitors:

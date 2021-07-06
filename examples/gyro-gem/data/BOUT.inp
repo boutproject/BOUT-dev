@@ -18,8 +18,6 @@ MYG = 2
 
 grid = "cyclone_68x32.nc"
 
-dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
-
 periodicX = false  # Make domain periodic in X
 
 [mesh]

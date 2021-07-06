@@ -7,8 +7,6 @@ timestep = 0.1  # Time between outputs
 
 MZ = 1          # Number of points in z
 
-dump_format = "nc"     # Write NetCDF format files
-
 grid = "conduct_grid.nc"
 
 

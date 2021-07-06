@@ -213,16 +213,16 @@ int main(int argc, char** argv) {
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
 
-  using bout::globals::dump;
-  dump.add(a1,"a1");
-  dump.add(b1,"b1");
-  dump.add(c1,"c1");
-  dump.add(d1,"d1");
-  dump.add(f1,"f1");
-  dump.add(sol1,"sol1");
-  dump.add(error1,"error1");
-  dump.add(absolute_error1,"absolute_error1");
-  dump.add(max_error1,"max_error1");
+  Options dump;
+  dump["a1"] = a1;
+  dump["b1"] = b1;
+  dump["c1"] = c1;
+  dump["d1"] = d1;
+  dump["f1"] = f1;
+  dump["sol1"] = sol1;
+  dump["error1"] = error1;
+  dump["absolute_error1"] = absolute_error1;
+  dump["max_error1"] = max_error1;
   
 //   dump.write();dump.close();MPI_Barrier(BoutComm::get());exit(17);return 1;
   
@@ -258,15 +258,15 @@ int main(int argc, char** argv) {
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
   
-  dump.add(a1,"a2");
-  dump.add(b1,"b2");
-  dump.add(c1,"c2");
-  dump.add(d1,"d2");
-  dump.add(f1,"f2");
-  dump.add(sol2,"sol2");
-  dump.add(error2,"error2");
-  dump.add(absolute_error2,"absolute_error2");
-  dump.add(max_error2,"max_error2");
+  dump["a2"] = a1;
+  dump["b2"] = b1;
+  dump["c2"] = c1;
+  dump["d2"] = d1;
+  dump["f2"] = f1;
+  dump["sol2"] = sol2;
+  dump["error2"] = error2;
+  dump["absolute_error2"] = absolute_error2;
+  dump["max_error2"] = max_error2;
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 3+4: Gaussian x-profiles, z-independent coefficients and compare with SPT method
@@ -319,15 +319,15 @@ int main(int argc, char** argv) {
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
   
-  dump.add(a3,"a3");
-  dump.add(b3,"b3");
-  dump.add(c3,"c3");
-  dump.add(d3,"d3");
-  dump.add(f1,"f3");
-  dump.add(sol3,"sol3");
-  dump.add(error3,"error3");
-  dump.add(absolute_error3,"absolute_error3");
-  dump.add(max_error3,"max_error3");
+  dump["a3"] = a3;
+  dump["b3"] = b3;
+  dump["c3"] = c3;
+  dump["d3"] = d3;
+  dump["f3"] = f1;
+  dump["sol3"] = sol3;
+  dump["error3"] = error3;
+  dump["absolute_error3"] = absolute_error3;
+  dump["max_error3"] = max_error3;
   
   Options* SPT_options;
   SPT_options = Options::getRoot()->getSection("SPT");
@@ -351,15 +351,15 @@ int main(int argc, char** argv) {
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
   
-  dump.add(a3,"a4");
-  dump.add(b3,"b4");
-  dump.add(c3,"c4");
-  dump.add(d3,"d4");
-  dump.add(f1,"f4");
-  dump.add(sol4,"sol4");
-  dump.add(error4,"error4");
-  dump.add(absolute_error4,"absolute_error4");
-  dump.add(max_error4,"max_error4");
+  dump["a4"] = a3;
+  dump["b4"] = b3;
+  dump["c4"] = c3;
+  dump["d4"] = d3;
+  dump["f4"] = f1;
+  dump["sol4"] = sol4;
+  dump["error4"] = error4;
+  dump["absolute_error4"] = absolute_error4;
+  dump["max_error4"] = max_error4;
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 5: Cosine x-profiles, 2nd order Krylov
@@ -521,15 +521,15 @@ int main(int argc, char** argv) {
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
 
-  dump.add(a5,"a5");
-  dump.add(b5,"b5");
-  dump.add(c5,"c5");
-  dump.add(d5,"d5");
-  dump.add(f5,"f5");
-  dump.add(sol5,"sol5");
-  dump.add(error5,"error5");
-  dump.add(absolute_error5,"absolute_error5");
-  dump.add(max_error5,"max_error5");
+  dump["a5"] = a5;
+  dump["b5"] = b5;
+  dump["c5"] = c5;
+  dump["d5"] = d5;
+  dump["f5"] = f5;
+  dump["sol5"] = sol5;
+  dump["error5"] = error5;
+  dump["absolute_error5"] = absolute_error5;
+  dump["max_error5"] = max_error5;
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 6: Cosine x-profiles, 4th order Krylov
@@ -563,15 +563,15 @@ int main(int argc, char** argv) {
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
   
-  dump.add(a5,"a6");
-  dump.add(b5,"b6");
-  dump.add(c5,"c6");
-  dump.add(d5,"d6");
-  dump.add(f5,"f6");
-  dump.add(sol6,"sol6");
-  dump.add(error6,"error6");
-  dump.add(absolute_error6,"absolute_error6");
-  dump.add(max_error6,"max_error6");
+  dump["a6"] = a5;
+  dump["b6"] = b5;
+  dump["c6"] = c5;
+  dump["d6"] = d5;
+  dump["f6"] = f5;
+  dump["sol6"] = sol6;
+  dump["error6"] = error6;
+  dump["absolute_error6"] = absolute_error6;
+  dump["max_error6"] = max_error6;
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 7+8: Gaussian x-profiles, z-independent coefficients and compare with SPT method
@@ -624,15 +624,15 @@ int main(int argc, char** argv) {
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
   
-  dump.add(a7,"a7");
-  dump.add(b7,"b7");
-  dump.add(c7,"c7");
-  dump.add(d7,"d7");
-  dump.add(f5,"f7");
-  dump.add(sol7,"sol7");
-  dump.add(error7,"error7");
-  dump.add(absolute_error7,"absolute_error7");
-  dump.add(max_error7,"max_error7");
+  dump["a7"] = a7;
+  dump["b7"] = b7;
+  dump["c7"] = c7;
+  dump["d7"] = d7;
+  dump["f7"] = f5;
+  dump["sol7"] = sol7;
+  dump["error7"] = error7;
+  dump["absolute_error7"] = absolute_error7;
+  dump["max_error7"] = max_error7;
 
   invert_SPT->setCoefA(a7);
   invert_SPT->setCoefC(c7);
@@ -651,20 +651,18 @@ int main(int argc, char** argv) {
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
   
-  dump.add(a7,"a8");
-  dump.add(b7,"b8");
-  dump.add(c7,"c8");
-  dump.add(d7,"d8");
-  dump.add(f5,"f8");
-  dump.add(sol8,"sol8");
-  dump.add(error8,"error8");
-  dump.add(absolute_error8,"absolute_error8");
-  dump.add(max_error8,"max_error8");
+  dump["a8"] = a7;
+  dump["b8"] = b7;
+  dump["c8"] = c7;
+  dump["d8"] = d7;
+  dump["f8"] = f5;
+  dump["sol8"] = sol8;
+  dump["error8"] = error8;
+  dump["absolute_error8"] = absolute_error8;
+  dump["max_error8"] = max_error8;
   
   // Write and close the output file
-  
-  dump.write();
-  dump.close();
+  bout::writeDefaultOutputFile(dump);
   
   output << "\nFinished running test. Triggering error to quit\n\n";
   

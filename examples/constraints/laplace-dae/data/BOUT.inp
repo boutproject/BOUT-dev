@@ -13,8 +13,6 @@ ZMAX = 1
 
 grid = "simple_xz.nc"
 
-dump_format = "nc" # Set extension for dump files (nc = NetCDF)
-
 NXPE = 1
 
 ##################################################

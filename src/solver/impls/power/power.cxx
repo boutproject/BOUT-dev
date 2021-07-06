@@ -3,6 +3,7 @@
 #include "power.hxx"
 
 #include <boutcomm.hxx>
+#include <bout/sys/timer.hxx>
 #include <msg_stack.hxx>
 
 #include <cmath>
@@ -76,6 +77,15 @@ int PowerSolver::run() {
   }
   
   return 0;
+}
+
+void PowerSolver::outputVars(Options& output_options, bool save_repeat) {
+  Timer time("io");
+  // Include base class functionality
+  this->Solver::outputVars(output_options, save_repeat);
+
+  // Save the eigenvalue to the output
+  output_options["eigenvalue"].assignRepeat(eigenvalue, "t", save_repeat, "Solver");
 }
 
 BoutReal PowerSolver::norm(Array<BoutReal> &state) {

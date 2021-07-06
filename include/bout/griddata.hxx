@@ -28,17 +28,12 @@ class GridDataSource;
 #ifndef __GRIDDATA_H__
 #define __GRIDDATA_H__
 
-#include "options.hxx"
-
 #include "bout_types.hxx"
-#include "dataformat.hxx"
-
 #include "mesh.hxx"
+#include "options.hxx"
 
 #include <field2d.hxx>
 #include <field3d.hxx>
-
-#include <list>
 
 /// Interface class to serve grid data
 /*!
@@ -96,8 +91,8 @@ public:
 class GridFile : public GridDataSource {
 public:
   GridFile() = delete;
-  GridFile(std::unique_ptr<DataFormat> format, std::string gridfilename);
-  ~GridFile() override;
+  GridFile(std::string gridfilename);
+  ~GridFile() = default;
 
   bool hasVar(const std::string &name) override;
 
@@ -126,7 +121,7 @@ public:
   bool hasYBoundaryGuards() override { return grid_yguards > 0; }
 
 private:
-  std::unique_ptr<DataFormat> file;
+  Options data;
   std::string filename;
   int grid_yguards{0};
   int ny_inner{0};

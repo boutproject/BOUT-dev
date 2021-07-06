@@ -40,11 +40,12 @@
 
 #warning LaplaceXY requires PETSc. No LaplaceXY available
 
-#include <bout/mesh.hxx>
-#include "bout/solver.hxx"
-#include "datafile.hxx"
-#include <options.hxx>
 #include <boutexception.hxx>
+
+class Field2D;
+class Mesh;
+class Options;
+class Solver;
 
 /*!
  * Create a dummy class so that code will compile
@@ -61,7 +62,7 @@ public:
   const Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
-  void savePerformance(Datafile&, Solver&, std::string) {
+  void savePerformance(Solver&, std::string) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
 };
@@ -83,9 +84,11 @@ public:
 #include <bout/mesh.hxx>
 #include <bout/petsclib.hxx>
 #include "bout/solver.hxx"
-#include "datafile.hxx"
 #include <cyclic_reduction.hxx>
 #include "utils.hxx"
+
+class Options;
+class Solver;
 
 class LaplaceXY {
 public:
@@ -133,8 +136,8 @@ public:
   /*!
    * If this method is called, save some performance monitoring information
    */
-  void savePerformance(Datafile& outputfile, Solver& solver,
-                       std::string name = "");
+  void savePerformance(Solver& solver, std::string name = "");
+
 private:
   
   PetscLib lib;     ///< Requires PETSc library
@@ -220,14 +223,8 @@ private:
   public:
     LaplaceXYMonitor(LaplaceXY& owner) : laplacexy(owner) {}
 
-    int call(Solver*, BoutReal, int, int) {
-      laplacexy.output_average_iterations = laplacexy.average_iterations;
-
-      laplacexy.n_calls = 0;
-      laplacexy.average_iterations = 0.;
-
-      return 0;
-    }
+    int call(Solver*, BoutReal, int, int) override;
+    void outputVars(Options& output_options, const std::string& time_dimension) override;
   private:
     // LaplaceXY object that this monitor belongs to
     LaplaceXY& laplacexy;

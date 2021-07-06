@@ -44,6 +44,7 @@
 #include <msg_stack.hxx>
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/solver.hxx>
 
 // Implementations:
 #include "impls/cyclic/cyclic_laplace.hxx"
@@ -70,6 +71,8 @@ Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in)
     // Use the default options
     options = Options::getRoot()->getSection("laplace");
   }
+
+  performance_name = options->name();
 
   output.write("Initialising Laplacian inversion routines\n");
 
@@ -722,6 +725,29 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
       }
     }
   }
+}
+
+void Laplacian::savePerformance(Solver& solver, const std::string& name) {
+  // add values to be saved to the output
+  if (not name.empty()) {
+    performance_name = name;
+  }
+
+  // add monitor to reset counters/averages for new output timestep
+  // monitor added to back of queue, so that values are reset after being saved
+  solver.addMonitor(&monitor, Solver::BACK);
+}
+
+int Laplacian::LaplacianMonitor::call(MAYBE_UNUSED(Solver* solver),
+                                      MAYBE_UNUSED(BoutReal time), MAYBE_UNUSED(int iter),
+                                      MAYBE_UNUSED(int nout)) {
+  // Nothing to do, values are always calculated
+  return 0;
+}
+
+void Laplacian::LaplacianMonitor::outputVars(Options& output_options,
+                                             const std::string& time_dimension) {
+  laplacian->outputVars(output_options, time_dimension);
 }
 
 /**********************************************************************************

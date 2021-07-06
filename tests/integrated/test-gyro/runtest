@@ -17,7 +17,7 @@ except:
 
 vars = ["pade1", "pade2"]
 
-tol = 1e-10  # Absolute tolerance
+tol = 1e-7  # Absolute tolerance, benchmark values are floats
 
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect

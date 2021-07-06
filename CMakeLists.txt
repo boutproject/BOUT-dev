@@ -107,8 +107,6 @@ set(BOUT_SOURCES
   ./include/boutcomm.hxx
   ./include/boutexception.hxx
   ./include/cyclic_reduction.hxx
-  ./include/datafile.hxx
-  ./include/dataformat.hxx
   ./include/dcomplex.hxx
   ./include/derivs.hxx
   ./include/difops.hxx
@@ -163,17 +161,6 @@ set(BOUT_SOURCES
   ./src/field/vector2d.cxx
   ./src/field/vector3d.cxx
   ./src/field/where.cxx
-  ./src/fileio/datafile.cxx
-  ./src/fileio/dataformat.cxx
-  ./src/fileio/formatfactory.cxx
-  ./src/fileio/formatfactory.hxx
-  ./src/fileio/impls/emptyformat.hxx
-  ./src/fileio/impls/netcdf/nc_format.cxx
-  ./src/fileio/impls/netcdf/nc_format.hxx
-  ./src/fileio/impls/netcdf4/ncxx4.cxx
-  ./src/fileio/impls/netcdf4/ncxx4.hxx
-  ./src/fileio/impls/pnetcdf/pnetcdf.cxx
-  ./src/fileio/impls/pnetcdf/pnetcdf.hxx
   ./src/invert/fft_fftw.cxx
   ./src/invert/lapack_routines.cxx
   ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx

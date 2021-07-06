@@ -15,8 +15,6 @@ MXG = 2
 MYG = 2
 
 grid = "slab_68x32.nc"  # Grid file
-
-dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
 restart_format = "nc"   # Restart file format
 
 ##################################################

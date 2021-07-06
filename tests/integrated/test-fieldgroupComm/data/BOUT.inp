@@ -1,7 +1,6 @@
 nout = 1  # No timesteps
 MZ = 9    # Z size
 zperiod = 10
-dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
 twistshift = true
 grid = "cyclone_68x32.nc"

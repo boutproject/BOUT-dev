@@ -30,9 +30,6 @@ mxstep = 10000  # Maximum internal steps per output
 
 mms = true  # -> Enable MMS testing
 
-[output]
-floats = false # -> Output in double precision
-
 [laplace]
 all_terms = true
 

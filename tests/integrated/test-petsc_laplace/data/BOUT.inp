@@ -1,6 +1,5 @@
 MZ = 129
 MYG = 0
-dump_format = "nc"
 
 [mesh]
 nx = 132

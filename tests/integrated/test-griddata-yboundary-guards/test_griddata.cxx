@@ -7,9 +7,9 @@ int main(int argc, char** argv) {
   Field2D test;
   bout::globals::mesh->get(test, "test");
 
-  bout::globals::dump.add(test, "test");
-
-  bout::globals::dump.write();
+  Options dump;
+  dump["test"] = test;
+  bout::writeDefaultOutputFile(dump);
 
   MPI_Barrier(BoutComm::get());
   

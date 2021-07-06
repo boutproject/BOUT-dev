@@ -4,28 +4,59 @@
 
 #include "options_netcdf.hxx"
 
+#include "bout.hxx"
+#include "bout/sys/timer.hxx"
+#include "globals.hxx"
+#include "bout/mesh.hxx"
+
 #include <exception>
+#include <iostream>
 #include <netcdf>
 #include <vector>
 
 using namespace netCDF;
 
 namespace {
+/// Name of the attribute used to track individual variable's time indices
+constexpr auto current_time_index_name = "current_time_index";
+
+/// NetCDF doesn't keep track of the current for each variable
+/// (although the underlying HDF5 file does!), so we need to do it
+/// ourselves. We'll use an attribute in the file to do so, which
+/// means we don't need to keep track of it in the code
+int getCurrentTimeIndex(const NcVar& var) {
+  const auto atts_map = var.getAtts();
+  const auto it = atts_map.find(current_time_index_name);
+  if (it == atts_map.end()) {
+    // Attribute doesn't exist, so let's start at zero. There
+    // are various ways this might break, for example, if the
+    // variable was added to the file by a different
+    // program. But note, that if we use the size of the time
+    // dimension here, this will increase every time we add a
+    // new variable! So zero is probably the only sensible
+    // choice for this
+    return 0;
+  }
+  int current_time_index;
+  it->second.getValues(&current_time_index);
+  return current_time_index;
+}
+
 void readGroup(const std::string& filename, const NcGroup& group, Options& result) {
 
   // Iterate over all variables
   for (const auto& varpair : group.getVars()) {
     const auto& var_name = varpair.first; // Name of the variable
     const auto& var = varpair.second;     // The NcVar object
-    
-    auto var_type = var.getType(); // Variable type 
+
+    auto var_type = var.getType();  // Variable type
     auto ndims = var.getDimCount(); // Number of dimensions
-    auto dims = var.getDims(); // Vector of dimensions
-    
+    auto dims = var.getDims();      // Vector of dimensions
+
     switch (ndims) {
     case 0: {
       // Scalar variables
-      
+
       if (var_type == ncDouble) {
         double value;
         var.getVar(&value);
@@ -36,7 +67,7 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
         var.getVar(&value);
         result[var_name] = value;
         result[var_name].attributes["source"] = filename;
-      } else if (var_type == ncInt) {
+      } else if (var_type == ncInt or var_type == ncShort) {
         int value;
         var.getVar(&value);
         result[var_name] = value;
@@ -52,16 +83,22 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
       break;
     }
     case 1: {
-      if (var_type == ncDouble) {
+      if (var_type == ncDouble or var_type == ncFloat) {
         Array<double> value(dims[0].getSize());
         var.getVar(value.begin());
+        result[var_name] = value;
+        result[var_name].attributes["source"] = filename;
+      } else if ((var_type == ncString) or (var_type == ncChar)) {
+        std::string value;
+        value.resize(dims[0].getSize());
+        var.getVar(&(value[0]));
         result[var_name] = value;
         result[var_name].attributes["source"] = filename;
       }
       break;
     }
     case 2: {
-      if (var_type == ncDouble) {
+      if (var_type == ncDouble or var_type == ncFloat) {
         Matrix<double> value(dims[0].getSize(), dims[1].getSize());
         var.getVar(value.begin());
         result[var_name] = value;
@@ -70,7 +107,7 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
       break;
     }
     case 3: {
-      if (var_type == ncDouble) {
+      if (var_type == ncDouble or var_type == ncFloat) {
         Tensor<double> value(dims[0].getSize(), dims[1].getSize(), dims[2].getSize());
         var.getVar(value.begin());
         result[var_name] = value;
@@ -81,9 +118,9 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
 
     // Get variable attributes
     for (const auto& attpair : var.getAtts()) {
-      const auto &att_name = attpair.first;   // Attribute name
-      const auto &att = attpair.second;   // NcVarAtt object
-      
+      const auto& att_name = attpair.first; // Attribute name
+      const auto& att = attpair.second;     // NcVarAtt object
+
       auto att_type = att.getType(); // Type of the attribute
 
       if (att_type == ncInt) {
@@ -117,11 +154,11 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
 }
 } // namespace
 
-
 namespace bout {
-namespace experimental {
 
 Options OptionsNetCDF::read() {
+  Timer timer("io");
+
   // Open file
   NcFile dataFile(filename, NcFile::read);
 
@@ -135,8 +172,7 @@ Options OptionsNetCDF::read() {
   return result;
 }
 
-} // experimental
-} // bout
+} // namespace bout
 
 namespace {
 
@@ -287,36 +323,25 @@ void NcPutVarVisitor::operator()<std::string>(const std::string& value) {
   const char* cstr = value.c_str();
   var.putVar(&cstr);
 }
-  
+
 /// In addition to writing the data, set the "cell_location" attribute
 template <>
 void NcPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(&value(0, 0));
-  // Set cell location attribute
-  var.putAtt("cell_location", toString(value.getLocation()));
 }
-  
+
 /// In addition to writing the data, set the "cell_location" attribute
 template <>
 void NcPutVarVisitor::operator()<Field3D>(const Field3D& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(&value(0, 0, 0));
-
-  // Set cell location attribute
-  var.putAtt("cell_location", toString(value.getLocation()));
 }
 
 template <>
 void NcPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(&value(0, 0));
-
-  // Set cell location attribute
-  var.putAtt("cell_location", toString(value.getLocation()));
-  var.putAtt("direction_y", toString(value.getDirectionY()));
-  var.putAtt("direction_z", toString(value.getDirectionZ()));
-  var.putAtt("yindex_global", ncInt, value.getGlobalIndex());
 }
 
 /// Visit a variant type, and put the data into a NcVar
@@ -363,6 +388,7 @@ struct NcPutAttVisitor {
   void operator()(const T& UNUSED(value)) {
     // Default is to ignore if unhandled
   }
+
 private:
   NcVar& var;
   std::string name;
@@ -390,9 +416,8 @@ template <>
 void NcPutAttVisitor::operator()(const std::string& value) {
   var.putAtt(name, value);
 }
-  
-void writeGroup(const Options& options, NcGroup group,
-                std::map<int, size_t>& time_index) {
+
+void writeGroup(const Options& options, NcGroup group, const std::string& time_dimension) {
 
   for (const auto& childpair : options.getChildren()) {
     const auto& name = childpair.first;
@@ -419,6 +444,13 @@ void writeGroup(const Options& options, NcGroup group,
           // Has a time dimension
 
           const auto& time_name = bout::utils::get<std::string>(time_it->second);
+
+          // Only write time-varying values that match current time
+          // dimension being written
+          if (time_name != time_dimension) {
+            continue;
+          }
+
           time_dim = group.getDim(time_name, NcGroup::ParentsAndCurrent);
           if (time_dim.isNull()) {
             time_dim = group.addDim(time_name);
@@ -433,8 +465,13 @@ void writeGroup(const Options& options, NcGroup group,
         if (var.isNull()) {
           // Variable doesn't exist yet
           // Create variable
-          // Temporary NcType as a workaround for bug in NetCDF 4.4.0 and NetCDF-CXX4 4.2.0
+          // Temporary NcType as a workaround for bug in NetCDF 4.4.0 and
+          // NetCDF-CXX4 4.2.0
           var = group.addVar(name, NcType{group, nctype.getId()}, dims);
+          if (!time_dim.isNull()) {
+            // Time evolving variable, so we'll need to keep track of its time index
+            var.putAtt(current_time_index_name, ncInt, 0);
+          }
         } else {
           // Variable does exist
 
@@ -488,21 +525,10 @@ void writeGroup(const Options& options, NcGroup group,
         } else {
           // Has a time index, so need the record index
 
-          // Get the index from the map storing the current index
-          // This is needed because NetCDF doesn't provide a way to get
-          // the size of this variable along an unlimited dimension.
-          // Instead the dimension is shared between variables.
-
-          auto time_index_it = time_index.find(time_dim.getId());
-          if (time_index_it == time_index.end()) {
-            // Haven't seen this index before
-            time_index[time_dim.getId()] = time_dim.getSize();
-          }
+          const int current_time_index = getCurrentTimeIndex(var);
 
           std::vector<size_t> start_index; ///< Starting index where data will be inserted
           std::vector<size_t> count_index; ///< Size of each dimension
-
-          
 
           // Dimensions, including time
           for (const auto& dim : dims) {
@@ -510,23 +536,27 @@ void writeGroup(const Options& options, NcGroup group,
             count_index.push_back(dim.getSize());
           }
           // Time dimension
-          start_index[0] = time_index[time_dim.getId()];
+          start_index[0] = current_time_index;
           count_index[0] = 1; // Writing one record
 
           // Put the data into the variable
           bout::utils::visit(NcPutVarCountVisitor(var, start_index, count_index),
                              child.value);
+
+          // We've just written a new time slice, so we need to update
+          // the attribute to track it
+          var.putAtt(current_time_index_name, ncInt, current_time_index + 1);
         }
 
         // Write attributes
-        for (const auto& it: child.attributes) {
+        for (const auto& it : child.attributes) {
           const std::string& att_name = it.first;
           const auto& att = it.second;
-          
+
           bout::utils::visit(NcPutAttVisitor(var, att_name), att);
         }
-        
-      } catch (const std::exception &e) {
+
+      } catch (const std::exception& e) {
         throw BoutException("Error while writing value '{:s}' : {:s}", name, e.what());
       }
     }
@@ -540,23 +570,115 @@ void writeGroup(const Options& options, NcGroup group,
         // Doesn't exist yet, so create it
         subgroup = group.addGroup(name);
       }
-      
-      writeGroup(child, subgroup, time_index);
+
+      writeGroup(child, subgroup, time_dimension);
     }
   }
+}
+
+/// Helper struct for returning errors from verifyTimesteps(NcGroup)
+struct TimeDimensionError {
+  std::string variable_name;
+  std::string time_name;
+  std::size_t expected_size;
+  std::size_t current_size;
+};
+
+std::vector<TimeDimensionError> verifyTimesteps(const NcGroup& group) {
+
+  // Map of dimension -> size
+  std::map<NcDim, std::size_t> seen_time_dimensions;
+  // Variables with mismatched dimension sizes. Note that this might
+  // be a little odd: if the first variable we come across has the
+  // "wrong" dimension size, we will actually list all the others as
+  // being wrong!
+  std::vector<TimeDimensionError> errors;
+
+  // For each variable, check its time dimension against what we've
+  // seen already. Note that this assumes a single time dimension per
+  // variable whose is in the attribute "time_dimension"
+  for (const auto& varpair : group.getVars()) {
+    const auto& var_name = varpair.first; // Name of the variable
+    const auto& var = varpair.second;     // The NcVar object
+
+    // Get the name of the time dimension from the attribute
+    const auto& attributes = var.getAtts();
+    const auto time_it = attributes.find("time_dimension");
+    if (time_it == attributes.end()) {
+      // No "time_dimension" attribute so presumably not a
+      // time-evolving variable
+      continue;
+    }
+
+    // Use the attribute value to get the actual dimension
+    std::string time_name;
+    time_it->second.getValues(time_name);
+    const auto time_dim = group.getDim(time_name, NcGroup::ParentsAndCurrent);
+
+    // Check if we've already seen this dimension
+    auto seen_it = seen_time_dimensions.find(time_dim);
+    if (seen_it == seen_time_dimensions.end()) {
+      // If we haven't, add it to the map with current time index
+      seen_time_dimensions[time_dim] = time_dim.getSize();
+      continue;
+    }
+
+    // If we have, check if the variable current time index matches time size
+    const auto current_time = static_cast<std::size_t>(getCurrentTimeIndex(var));
+    if (current_time == time_dim.getSize()) {
+      continue;
+    }
+    // If not, add to list of errors
+    errors.push_back({var_name, time_dim.getName(), time_dim.getSize(), current_time});
+  }
+
+  // Recurse down into subgroups, shoving any new errors into what
+  // we've already got. Don't bother reserving the new size, this
+  // shouldn't be big!
+  for (const auto& child : group.getGroups()) {
+    auto child_errors = verifyTimesteps(child.second);
+    errors.insert(errors.end(), child_errors.begin(), child_errors.end());
+  }
+
+  return errors;
 }
 
 } // namespace
 
 namespace bout {
-namespace experimental {
+
+void OptionsNetCDF::verifyTimesteps() const {
+  NcFile dataFile(filename, NcFile::read);
+  auto errors = ::verifyTimesteps(dataFile);
+
+  if (errors.empty()) {
+    // No errors
+    return;
+  }
+
+  std::string error_string = "";
+  for (const auto& error : errors) {
+    error_string += fmt::format(
+        "  variable: {}; dimension: {}; expected size: {}; actual size: {}\n",
+        error.variable_name, error.time_name, error.expected_size, error.current_size);
+  }
+  throw BoutException("ERROR: When checking timesteps in file '{}', some ({}) variables "
+                      "did not have the expected size(s):\n{}",
+                      filename, errors.size(), error_string);
+}
 
 /// Write options to file
-void OptionsNetCDF::write(const Options& options) {
+void OptionsNetCDF::write(const Options& options, const std::string& time_dim) {
+  Timer timer("io");
+
   // Check the file mode to use
   auto ncmode = NcFile::replace;
   if (file_mode == FileMode::append) {
-    ncmode = NcFile::write;
+    // NetCDF doesn't have a "read-write, create if exists" mode, so
+    // we need to check ourselves if the file already exists; if it
+    // doesn't, tell NetCDF to create it
+    std::ifstream file(filename);
+    ncmode = file.good() ? NcFile::FileMode::write : NcFile::FileMode::newFile;
   }
 
   NcFile dataFile(filename, ncmode);
@@ -565,10 +687,53 @@ void OptionsNetCDF::write(const Options& options) {
     throw BoutException("Could not open NetCDF file '{:s}' for writing", filename);
   }
 
-  writeGroup(options, dataFile, time_index);
+  writeGroup(options, dataFile, time_dim);
+
+  // Not a terribly pleasant hack: the first time we call this
+  // function we might want to overwrite the existing file, but the
+  // second time, we definitely don't! An alternative would be to keep
+  // the NcFile object itself hanging about as a member variable, but
+  // then we start needing to worry about flushing the file etc.
+  file_mode = FileMode::append;
 }
 
-} // experimental
-} // bout
+std::string getRestartDirectoryName(Options& options) {
+  if (options["restartdir"].isSet()) {
+    // Solver-specific restart directory
+    return options["restartdir"].withDefault<std::string>("data");
+  }
+  // Use the root data directory
+  return options["datadir"].withDefault<std::string>("data");
+}
+
+std::string getRestartFilename(Options& options) {
+  return getRestartFilename(options, BoutComm::rank());
+}
+
+std::string getRestartFilename(Options& options, int rank) {
+  return fmt::format("{}/BOUT.restart.{}.nc", bout::getRestartDirectoryName(options),
+                     rank);
+}
+
+std::string getOutputFilename(Options& options) {
+  return getOutputFilename(options, BoutComm::rank());
+}
+
+std::string getOutputFilename(Options& options, int rank) {
+  return fmt::format("{}/BOUT.dmp.{}.nc",
+                     options["datadir"].withDefault<std::string>("data"), rank);
+}
+
+void writeDefaultOutputFile() {
+  writeDefaultOutputFile(Options::root());
+}
+
+void writeDefaultOutputFile(Options& options) {
+  bout::experimental::addBuildFlagsToOptions(options);
+  bout::globals::mesh->outputVars(options);
+  OptionsNetCDF(getOutputFilename(Options::root())).write(options);
+}
+
+} // namespace bout
 
 #endif // BOUT_HAS_NETCDF

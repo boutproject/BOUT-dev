@@ -24,11 +24,11 @@ int main(int argc, char** argv) {
 
   mesh->communicate(test_aligned);
 
-  Field3D result = fromFieldAligned(test_aligned);
+  Options::root()["result"] = fromFieldAligned(test_aligned);
+  Options::root()["test"] = test;
+  Options::root()["test_aligned"] = test_aligned;
 
-  SAVE_ONCE(test, test_aligned, result);
-
-  bout::globals::dump.write();
+  bout::writeDefaultOutputFile();
 
   BoutFinalise();
 }
