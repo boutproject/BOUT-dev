@@ -6,6 +6,8 @@
 ############################################################
 # Slab inputs
 
+from numpy import linspace, ndarray, sqrt, arange, amin, amax, pi
+from boututils.datafile import DataFile
 
 # Size of the domain
 
@@ -27,8 +29,6 @@ ymid = 32  # Index of the midplane where X-Z mesh is orthogonal
 
 ############################################################
 
-from math import pi
-
 # Effective major radius
 R = Ltor / (2.*pi)
 
@@ -45,7 +45,6 @@ print("Magnetic shear: %e" % s)
 
 # Normalised x coordinate from 0 to 1
 
-from numpy import linspace, ndarray, sqrt, arange, amin, amax
 x = linspace(0,1, nx)
 
 # Set poloidal magnetic field
@@ -86,8 +85,6 @@ for x in range(nx):
 print("Safety factor varies between %e and %e" % (amin(TwistShift)/(2.*pi), amax(TwistShift)/(2.*pi)))
 ############################################################
 # Write grid file
-
-from boututils.datafile import DataFile
 
 with DataFile("slab.grd.nc", create=True) as d:
     
