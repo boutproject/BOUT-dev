@@ -37,6 +37,23 @@ sys.path.append("../../tools/pylib")
 on_readthedocs = os.environ.get("READTHEDOCS") == "True"
 
 if on_readthedocs:
+    from unittest.mock import MagicMock
+
+    class Mock(MagicMock):
+        __all__ = [
+            "foo",
+        ]
+
+        @classmethod
+        def __getattr__(cls, name):
+            return MagicMock()
+
+    MOCK_MODULES = [
+        "h5py",
+        "netCDF4",
+        "scipy",
+    ]
+    sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
     print(os.environ)
     print(sys.argv)
     python = sys.argv[0]

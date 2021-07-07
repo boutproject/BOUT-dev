@@ -74,9 +74,7 @@ Vectors are not exposed yet.
 Functions
 ---------
 
-.. automodule:: boutcore
-   :members:
-
+See the API documentation `boutcore package`_
 
 Examples
 --------
@@ -176,17 +174,3 @@ A real example - check derivative contributions:
               ExB[tind,:,:,:]=(-bracket(phi, vort, bm, "CELL_CENTRE")).getAll()
               par_adv[tind,:,:,:]=(- Vpar_Grad_par(U, vort)).getAll()
 
-
-
-Functions - undocumented
-------------------------
-
-.. automodule:: boutcore
-   :undoc-members:
-
-Functions - special and inherited
----------------------------------
-
-.. automodule:: boutcore
-   :special-members:
-   :inherited-members:

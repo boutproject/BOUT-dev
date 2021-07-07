@@ -247,10 +247,3 @@ boututils.watch module
     :members:
     :undoc-members:
 
-
-Module contents
----------------
-
-.. automodule:: boututils
-    :members:
-    :undoc-members:
