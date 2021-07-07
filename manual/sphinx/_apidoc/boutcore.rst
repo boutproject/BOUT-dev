@@ -1,6 +1,8 @@
 .. Use python as the default language for syntax highlighting in this file
 .. highlight:: python
 
+.. _boutcore_api:
+
 .. default-domain:: py
 
 boutcore package

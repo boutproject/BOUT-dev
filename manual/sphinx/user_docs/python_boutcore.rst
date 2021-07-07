@@ -74,7 +74,7 @@ Vectors are not exposed yet.
 Functions
 ---------
 
-See the API documentation `boutcore package`_
+See the API documentation :ref:`boutcore_api`
 
 Examples
 --------
