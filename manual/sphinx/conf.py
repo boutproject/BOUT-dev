@@ -55,6 +55,7 @@ if on_readthedocs:
         "enthought",
         "enthought.mayavi",
         "enthought.mayavi.scripts",
+        "enthought.tvtk",
         "scipy",
         "scipy.ndimage",
         "scipy.interpolate",
@@ -63,6 +64,7 @@ if on_readthedocs:
         "tvtk.tools",
         "tvtk.api",
         "scipy.ndimage.filters",
+        "scipy.ndimage.morphology",
         "scipy.spatial",
     ]
     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
