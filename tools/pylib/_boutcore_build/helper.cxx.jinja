@@ -1,24 +1,12 @@
-
-. common.sh
-
-cat <<EOF
 #include <field3d.hxx>
 #include <globals.hxx>
 #include <derivs.hxx>
 #include <difops.hxx>
 #include <bout/mesh.hxx>
 #include <invert_laplace.hxx>
-EOF
-for ftype in $fields
-do
-  if [ $ftype = "Field3D" ]; then fdd="f3d";
-  elif [ $ftype = "Field2D" ]; then fdd="f2d";
-  else
-    echo "Error, unimplemented ftype"; exit 1
-  fi
-cat <<EOF
+{% for field in [field3d, field2d] %}
 
-void c_set_${fdd}_all($ftype * f, const double * data){
+void c_set_{{ field.fdd }}_all({{ field.field_type }} * f, const double * data){
   int j=0;
   f->allocate();
   for (auto i : (*f)){
@@ -26,83 +14,72 @@ void c_set_${fdd}_all($ftype * f, const double * data){
   }
 }
 
-void c_set_${fdd}_all_($ftype * f, const double data){
+void c_set_{{ field.fdd }}_all_({{ field.field_type }} * f, const double data){
   (*f)=data;
 }
 
-void c_get_${fdd}_all(const $ftype * f, double * data){
+void c_get_{{ field.fdd }}_all(const {{ field.field_type }} * f, double * data){
   int j=0;
   for (auto i : (*f)){
     data[j++]=(*f)[i];
   }
 }
 
-int getNx( $ftype * a){
+int getNx( {{ field.field_type }} * a){
   return a->getNx();
 }
 
-int getNy( $ftype * a){
+int getNy( {{ field.field_type }} * a){
   return a->getNy();
 }
 
-int getNz( $ftype * a){
+int getNz( {{ field.field_type }} * a){
   return a->getNz();
 }
-EOF
 
-for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
-do
-    n=${f%:*}
-    o=${f#*:}
-    cat <<EOF
-
-$ftype * f$n($ftype*a,$ftype*b){
-  $ftype * r=new $ftype(*a);
-  *r $o= *b;
+{% for name, op in ops %}
+{{ field.field_type }} * f{{ name }}({{ field.field_type }}* a, {{ field.field_type }}* b){
+  {{ field.field_type }} * r=new {{ field.field_type }}(*a);
+  *r {{ op }}= *b;
   return r;
 }
 
-$ftype * f$n($ftype*a,double b){
-  $ftype * r=new $ftype(*a);
-  *r $o= b;
+{{ field.field_type }} * f{{ name }}({{ field.field_type }}* a, double b){
+  {{ field.field_type }} * r=new {{ field.field_type }}(*a);
+  *r {{ op }}= b;
   return r;
 }
 
-$ftype * f$n(double b,$ftype*a){
-  return new $ftype(b $o *a);
+{{ field.field_type }} * f{{ name }}(double b,{{ field.field_type }}* a){
+  return new {{ field.field_type }}(b {{ op }} *a);
 }
 
-void fi$n($ftype*a,$ftype*b){
-  *a $o= *b;
+void fi{{ name }}({{ field.field_type }}* a, {{ field.field_type }}* b){
+  *a {{ op }}= *b;
 }
 
-void fi$n($ftype*a,double b){
-  *a $o= b;
+void fi{{ name }}({{ field.field_type }}* a, double b){
+  *a {{ op }}= b;
 }
-EOF
-if [ $ftype = "Field3D" ]; then
-cat <<EOF
 
-Field3D * f$n(Field3D*a,Field2D*b){
+{% if field.field_type == "Field3D" %}
+
+Field3D * f{{ name }}(Field3D* a, Field2D* b){
   Field3D * r=new Field3D(*a);
-  *r $o= *b;
+  *r {{ op }}= *b;
   return r;
 }
 
-Field3D * f$n(Field2D*a,Field3D*b){
-  return new Field3D(*b $o *a);
+Field3D * f{{ name }}(Field2D*a,Field3D*b){
+  return new Field3D(*b {{ op }} *a);
 }
 
-void fi$n(Field3D*a,Field2D*b){
-  *a $o= *b;
+void fi{{ name }}(Field3D*a,Field2D*b){
+  *a {{ op }}= *b;
 }
-EOF
-fi
-done
-
-done
-cat <<EOF
-
+{% endif %}
+{% endfor %}
+{% endfor %}
 void c_get_f3d_part(const Field3D * f3d, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz){
   int j=0;
   for (int x=xs;x!=xe;x+=dx){
@@ -175,5 +152,3 @@ void c_mesh_normalise(Mesh * msh, double norm){
   coord->dz/=norm;
   coord->geometry();
 }
-
-EOF

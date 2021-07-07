@@ -87,7 +87,7 @@ jobs:
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_HDF5=ON
                             -DBOUT_USE_SUNDIALS=ON
-                            -DBOUT_ENABLE_PYTHON=OFF
+                            -DBOUT_ENABLE_PYTHON=ON
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
 
