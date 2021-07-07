@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "boutexception.hxx"
+#if not(BOUT_USE_METRIC_3D)
 #include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
@@ -49,7 +50,8 @@ protected:
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
         Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
-        Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}, false));
+        Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}));
+    // No call to Coordinates::geometry() needed here
 
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
@@ -740,3 +742,4 @@ TEST_F(Vector2DTest, AbsContra) {
 
   EXPECT_TRUE(IsFieldEqual(result, 24.819347291981714));
 }
+#endif

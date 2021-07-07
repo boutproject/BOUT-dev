@@ -223,6 +223,6 @@ private:
  *
  * } // Scope ends, message popped
  */
-#define AUTO_TRACE() TRACE(__thefunc__)
+#define AUTO_TRACE() TRACE(__thefunc__) // NOLINT
 
 #endif // __MSG_STACK_H__

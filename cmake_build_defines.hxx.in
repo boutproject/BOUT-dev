@@ -26,6 +26,8 @@
 #cmakedefine01 BOUT_USE_SIGFPE
 #cmakedefine01 BOUT_USE_SIGNAL
 #cmakedefine01 BOUT_USE_TRACK
+#cmakedefine BOUT_METRIC_TYPE @BOUT_METRIC_TYPE@
+#cmakedefine01 BOUT_USE_METRIC_3D
 #cmakedefine01 BOUT_USE_MSGSTACK
 
 // CMake build does not support legacy interface

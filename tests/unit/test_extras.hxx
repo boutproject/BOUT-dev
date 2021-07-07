@@ -361,7 +361,6 @@ private:
 class FakeGridDataSource : public GridDataSource {
 public:
   FakeGridDataSource() {}
-  
   /// Constructor setting values which can be fetched from this source
   FakeGridDataSource(Options& values) : values(values) {}
 
@@ -467,8 +466,8 @@ public:
         bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
-        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
-        false);
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
+    // No call to Coordinates::geometry() needed here
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
     static_cast<FakeMesh*>(bout::globals::mesh)->setGridDataSource(
         new FakeGridDataSource());
@@ -496,7 +495,8 @@ public:
         Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
         Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
         Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
-        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered}, false);
+        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered});
+    // No call to Coordinates::geometry() needed here
     test_coords_staggered->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
   }

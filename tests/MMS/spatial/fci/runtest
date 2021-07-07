@@ -9,6 +9,7 @@ from __future__ import print_function
 
 from boututils.run_wrapper import build_and_log, launch_safe
 from boutdata.collect import collect
+import boutconfig as conf
 
 from numpy import array, log, polyfit, linspace, arange
 
@@ -72,7 +73,9 @@ for nslice in nslices:
         grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=yperiodic)
         # Make and write maps
         maps = zb.make_maps(grid, field, nslice=nslice, quiet=True)
-        zb.write_maps(grid, field, maps, new_names=False, metric2d=True, quiet=True)
+        zb.write_maps(
+            grid, field, maps, new_names=False, metric2d=conf.isMetric2D(), quiet=True
+        )
 
         args = " MZ={} MYG={} mesh:paralleltransform:y_periodic={} mesh:ddy:first={}".format(
             n, nslice, yperiodic, method_orders[nslice]["name"]

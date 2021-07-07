@@ -7,12 +7,13 @@
 # requires: not legacy_netcdf
 # cores: 4
 
+from boutconfig import isMetric3D
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 from boututils.datafile import DataFile
+
 import numpy as np
 from sys import exit
-
 
 build_and_log("I/O test")
 
@@ -51,7 +52,6 @@ field_vars = [
 ]  # Field quantities, not scalars
 
 tol = 1e-10
-
 print("Reading benchmark data")
 bmk = {}
 for v in vars:
@@ -78,9 +78,17 @@ def check_output():
 
         # Compare benchmark and output
         if np.shape(bmk[v]) != np.shape(result):
-            print("Fail, wrong shape")
-            success = False
-            continue
+            if (
+                isMetric3D()
+                and v.startswith("v2d")
+                and bmk[v].shape == result.shape[:-1]
+            ):
+                result = result[..., 0]
+            else:
+                print("Fail, wrong shape")
+                print(v, bmk[v].shape, result.shape)
+                success = False
+                continue
 
         if result.dtype.kind not in np.typecodes["AllFloat"]:
             # Non-float types should be identical
@@ -94,6 +102,11 @@ def check_output():
                 print("Fail, maximum difference = " + str(diff))
                 success = False
                 continue
+
+        if isMetric3D() and v.startswith("v2d"):
+            # Vector2Ds are based on Field3Ds for 3D metrics
+            bmk[v].attributes["bout_type"] = "Field3D_t"
+            bmk[v].attributes["direction_z"] = "Standard"
 
         for attrname in bmk[v].attributes:
             bmkattr = bmk[v].attributes[attrname]

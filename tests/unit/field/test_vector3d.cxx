@@ -48,7 +48,8 @@ protected:
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
         Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
-        Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}, false));
+        Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}));
+    // No call to Coordinates::geometry() needed here
 
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);

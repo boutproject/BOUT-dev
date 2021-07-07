@@ -66,6 +66,9 @@ def make_maps(grid, magnetic_field, nslice=1, quiet=False, **kwargs):
     nx = pol.nx
     nz = pol.nz
 
+    # Get number of guard cells (default 2)
+    mxg = kwargs.get("MXG", 2)
+
     shape = (nx, ny, nz)
 
     # Coordinates of each grid point
@@ -73,6 +76,7 @@ def make_maps(grid, magnetic_field, nslice=1, quiet=False, **kwargs):
     Z = np.zeros(shape)
 
     for j in range(ny):
+
         pol, _ = grid.getPoloidalGrid(j)
         R[:, j, :] = pol.R
         Z[:, j, :] = pol.Z
@@ -111,15 +115,14 @@ def make_maps(grid, magnetic_field, nslice=1, quiet=False, **kwargs):
         parallel_slices.append(ParallelSlice(offset, *fields))
 
     # Total size of the progress bar
-    total_work = float((len(parallel_slices) - 1) * (ny - 1))
+    total_work = len(parallel_slices) * ny
 
     # TODO: if axisymmetric, don't loop, do one slice and copy
     # TODO: restart tracing for adjacent offsets
+    if (not quiet) and (ny > 1):
+        update_progress(0, **kwargs)
     for slice_index, parallel_slice in enumerate(parallel_slices):
         for j in range(ny):
-            if (not quiet) and (ny > 1):
-                update_progress(float(slice_index * j) / total_work, **kwargs)
-
             # Get this poloidal grid
             pol, ycoord = grid.getPoloidalGrid(j)
 
@@ -153,6 +156,9 @@ def make_maps(grid, magnetic_field, nslice=1, quiet=False, **kwargs):
 
             parallel_slice.xt_prime[:, j, :] = xind
             parallel_slice.zt_prime[:, j, :] = zind
+
+            if (not quiet) and (ny > 1):
+                update_progress((slice_index * ny + j + 1) / total_work, **kwargs)
 
     return maps
 
@@ -258,6 +264,9 @@ def write_maps(
         # Add Rxy, Bxy
         metric["Rxy"] = maps["R"][:, :, 0]
         metric["Bxy"] = Bmag[:, :, 0]
+    else:
+        metric["Rxy"] = maps["R"]
+        metric["Bxy"] = Bmag
 
     with bdata.DataFile(gridfile, write=True, create=True, format=format) as f:
         ixseps = nx + 1

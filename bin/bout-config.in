@@ -44,6 +44,8 @@ has_fftw="@BOUT_HAS_FFTW@"
 
 petsc_has_sundials="@PETSC_HAS_SUNDIALS@"
 
+metric_type="@BOUT_METRIC_TYPE@"
+
 usage()
 {
     cat <<EOF
@@ -79,6 +81,8 @@ Available values for OPTION include:
   --has-nls     Natural Language Support
 
   --petsc-has-sundials 
+
+  --metric-type
 EOF
 
     exit $1
@@ -116,6 +120,7 @@ all()
         echo
         echo "  --petsc-has-sundials -> $petsc_has_sundials"
         echo
+        echo "  --metric-type -> $metric_type"        
 }
 
 if test $# -eq 0; then
@@ -233,6 +238,9 @@ while test $# -gt 0; do
 	    echo $has_nls
 	    ;;
 
+    --metric-type)
+	    echo $metric_type
+	    ;;
     
     --petsc-version)
         # TODO: Remove in next release

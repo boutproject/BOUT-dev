@@ -41,12 +41,12 @@ public:
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
-        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}));
+    // No call to Coordinates::geometry() needed here
 
     auto coords = mesh->getCoordinates();
-    coords->setParallelTransform(
-        bout::utils::make_unique<ShiftedMetric>(*mesh, CELL_CENTRE, zShift,
-            coords->zlength()));
+    coords->setParallelTransform(bout::utils::make_unique<ShiftedMetric>(
+        *mesh, CELL_CENTRE, zShift, coords->zlength()(0, 0)));
 
     Field3D input_temp{mesh};
 

@@ -37,9 +37,11 @@ class Vector2D;
 #ifndef __VECTOR2D_H__
 #define __VECTOR2D_H__
 
-#include "field2d.hxx"
-class Field3D;  //#include "field3d.hxx"
+class Field2D;
+class Field3D;
 class Vector3D; //#include "vector3d.hxx"
+
+#include <bout/coordinates.hxx>
 
 /*!
  * A vector with three components (x,y,z) which only vary in 2D
@@ -55,7 +57,7 @@ public:
 
   ~Vector2D() override;
 
-  Field2D x, y, z; ///< components
+  Coordinates::FieldMetric x, y, z; ///< components
 
   bool covariant{true}; ///< true if the components are covariant (default)
 
@@ -126,7 +128,7 @@ public:
   const Vector2D operator/(const Field2D &rhs) const; ///< Divides all components by \p rhs
   const Vector3D operator/(const Field3D &rhs) const; ///< Divides all components by \p rhs
 
-  const Field2D operator*(const Vector2D &rhs) const; ///< Dot product
+  const Coordinates::FieldMetric operator*(const Vector2D& rhs) const; ///< Dot product
   const Field3D operator*(const Vector3D &rhs) const; ///< Dot product
 
   /// Set component locations consistently
@@ -170,10 +172,13 @@ const Vector3D cross(const Vector2D & lhs, const Vector3D &rhs);
  *
  * |v| = sqrt( v dot v )
  */
-const Field2D abs(const Vector2D& v, const std::string& region = "RGN_ALL");
-[[deprecated("Please use Vector2D abs(const Vector2D& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline const Field2D abs(const Vector2D &v, REGION region) {
+const Coordinates::FieldMetric abs(const Vector2D& v,
+                                   const std::string& region = "RGN_ALL");
+[[deprecated(
+    "Please use Vector2D abs(const Vector2D& f, "
+    "const std::string& region = \"RGN_ALL\") instead")]] inline const Coordinates::
+    FieldMetric
+    abs(const Vector2D& v, REGION region) {
   return abs(v, toString(region));
 }
 

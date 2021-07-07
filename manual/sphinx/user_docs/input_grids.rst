@@ -20,11 +20,12 @@ a simple mesh can be created using options.
     dx = 0.1  # X mesh spacing
     dy = 0.1  # Y mesh spacing
 
-The above options will create a :math:`260\times 256` mesh in X and Y
-(MZ option sets Z resolution), with mesh spacing of :math:`0.1` in both
-directions. By default the coordinate system is Cartesian (metric tensor
-is the identity matrix), but this can be changed by specifying the
-metric tensor components.
+The above options will create a :math:`256\times 256` mesh in X and Y,
+assuming there are 2 guard cells in X direction. The Z resolution can
+be specified with MZ. The mesh spacing is :math:`0.1` in both
+directions. By default the coordinate system is Cartesian (metric
+tensor is the identity matrix), but this can be changed by specifying
+the metric tensor components.
 
 Integer quantities such as ``nx`` can be numbers (like “260”), or
 expressions (like “256 + 2\*MXG”). 
@@ -40,8 +41,9 @@ boundary but ``z`` does not (since it is usually periodic):
     mxg = 2            
 
 
-Note that the variable ``nz`` can be used before its definition; all
-variables are first read, and then processed afterwards.
+Note that the order of the defintion within a section isn't important,
+variables can be used before they are defined. All variables are first
+read, and only processed if they are used.
     
 Expressions are always calculated in floating point; When expressions
 are used to set integer quantities (such as the number of grid
@@ -95,8 +97,8 @@ variables are defined doesn’t matter, so ``L`` could be defined below
 section :ref:`sec-recursive-functions`). If the variables are defined
 in the same section (as ``dy`` and ``L``) or a parent section, then no
 section prefix is required. To refer to a variable in a different
-section, prefix the variable with the section name
-e.g. “``section:variable``”.
+section, prefix the variable with the section name, for example,
+``section:variable`` or ``mesh:dx``.
 
 More complex meshes can be created by supplying an input grid file to
 describe the grid points, geometry, and starting profiles. Currently
@@ -106,20 +108,27 @@ found, a warning will be printed and the default values used.
 
 -  X and Y grid sizes (integers) ``nx`` and ``ny`` **REQUIRED**
 
--  Differencing quantities in 2D arrays ``dx[nx][ny]`` and
-   ``dy[nx][ny]``. If these are not found they will be set to 1.
+-  Differencing quantities in 2D/3D arrays ``dx(nx,ny[,nz])``,
+   ``dy(nx,ny[,nz])`` and ``dz(nx,ny[,nz])``. If these are not found
+   they will be set to 1. To allow variation in ``z`` direction, BOUT++
+   has to be configured ``--enable-metric-3d``, otherwise 2D fields are
+   used for the metric fields. Note that prior to BOUT++ version 5
+   ``dz`` was a constant.
 
--  Diagonal terms of the metric tensor :math:`g^{ij}` ``g11[nx][ny]``,
-   ``g22[nx][ny]``, and ``g33[nx][ny]``. If not found, these will be set
+-  Diagonal terms of the metric tensor :math:`g^{ij}` ``g11(nx,ny[,nz])``,
+   ``g22(nx,ny[,nz])``, and ``g33(nx,ny[,nz])``. If not found, these will be set
    to 1.
 
--  Off-diagonal metric tensor :math:`g^{ij}` elements ``g12[nx][ny]``,
-   ``g13[nx][ny]``, and ``g23[nx][ny]``. If not found, these will be set
+-  Off-diagonal metric tensor :math:`g^{ij}` elements ``g12(nx,ny[,nz])``,
+   ``g13(nx,ny[,nz])``, and ``g23(nx,ny[,nz])``. If not found, these will be set
    to 0.
 
--  Z shift for interpolation between the base and field-aligned grids, see
-   :ref:`sec-parallel-transforms`. The shifts must be provided in the gridfile
-   in a field ``zShift(nx, ny)``. If not found, ``zShift`` is set to zero.
+-  Z shift for interpolation between field-aligned coordinates and
+   non-aligned coordinates (see :ref:`sec-field-aligned-coordinates`). Parallel
+   differential operators are calculated using a shift to field-aligned
+   values when ``paralleltransform:type = shifted`` (or ``shiftedinterp``).
+   The shifts must be provided in the gridfile in a field ``zShift(nx,ny)``.
+   If not found, ``zShift`` is set to zero.
 
 The remaining quantities determine the topology of the grid. These are
 based on tokamak single/double-null configurations, but can be adapted
@@ -150,9 +159,8 @@ This section describes how to generate inputs for tokamak equilibria. If
 you’re not interested in tokamaks then you can skip to the next section.
 
 The directory ``tokamak_grids`` contains code to generate input grid
-files for tokamaks. These can be used by the ``2fluid`` and
-``highbeta_reduced`` modules, and are (mostly) compatible with inputs to
-the BOUT-06 code.
+files for tokamaks. These can be used by, for example, the ``2fluid`` and
+``highbeta_reduced`` modules.
 
 .. _sec-bout-topology:
 
@@ -428,7 +436,7 @@ the magnetic field is followed along the Y coordinate from each 2D
 grid to where it either intersects the forward and backward grid, or
 hits a boundary.
 
-The simplest code which creates an output file is::
+A simple code which creates an output file is::
 
    import zoidberg
 
@@ -438,8 +446,8 @@ The simplest code which creates an output file is::
    grid = zoidberg.grid.rectangular_grid(10,10,10)
    # Follow magnetic fields from each point
    maps = zoidberg.make_maps(grid, field)
-   # Write everything to file
-   zoidberg.write_maps(grid, field, maps, gridfile="grid.fci.nc")
+   # Write everything to file - with default option for gridfile and metric2d
+   zoidberg.write_maps(grid, field, maps, gridfile="grid.fci.nc", metric2d=True)
 
 As in the above code, creating an output file consists of the following steps:
 
