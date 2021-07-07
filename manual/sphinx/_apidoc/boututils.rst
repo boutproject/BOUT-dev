@@ -72,13 +72,6 @@ boututils.closest\_line module
     :members:
     :undoc-members:
 
-boututils.contour module
-------------------------
-
-.. automodule:: boututils.contour
-    :members:
-    :undoc-members:
-
 boututils.crosslines module
 ---------------------------
 
@@ -181,13 +174,6 @@ boututils.plotdata module
 -------------------------
 
 .. automodule:: boututils.plotdata
-    :members:
-    :undoc-members:
-
-boututils.plotpolslice module
------------------------------
-
-.. automodule:: boututils.plotpolslice
     :members:
     :undoc-members:
 
