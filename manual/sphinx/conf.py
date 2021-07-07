@@ -56,6 +56,7 @@ if on_readthedocs:
         "enthought.mayavi",
         "enthought.mayavi.scripts",
         "enthought.tvtk",
+        "enthought.tvtk.api",
         "scipy",
         "scipy.ndimage",
         "scipy.interpolate",
