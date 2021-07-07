@@ -51,13 +51,19 @@ if on_readthedocs:
     MOCK_MODULES = [
         "h5py",
         "netCDF4",
-        "scipy",
         "mayavi2",
+        "enthought",
+        "enthought.mayavi",
         "enthought.mayavi.scripts",
+        "scipy",
         "scipy.ndimage",
         "scipy.interpolate",
-        "tvtk",
         "scipy.integrate",
+        "tvtk",
+        "tvtk.tools",
+        "tvtk.api",
+        "scipy.ndimage.filters",
+        "scipy.spatial",
     ]
     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
     print(os.environ)
