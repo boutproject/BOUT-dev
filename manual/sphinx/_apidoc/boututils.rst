@@ -72,13 +72,6 @@ boututils.closest\_line module
     :members:
     :undoc-members:
 
-boututils.contour module
-------------------------
-
-.. automodule:: boututils.contour
-    :members:
-    :undoc-members:
-
 boututils.crosslines module
 ---------------------------
 
@@ -184,13 +177,6 @@ boututils.plotdata module
     :members:
     :undoc-members:
 
-boututils.plotpolslice module
------------------------------
-
-.. automodule:: boututils.plotpolslice
-    :members:
-    :undoc-members:
-
 boututils.radial\_grid module
 -----------------------------
 
@@ -247,10 +233,3 @@ boututils.watch module
     :members:
     :undoc-members:
 
-
-Module contents
----------------
-
-.. automodule:: boututils
-    :members:
-    :undoc-members:

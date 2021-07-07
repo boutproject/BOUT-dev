@@ -41,10 +41,10 @@
 
 #ifdef _OPENMP
 #include <omp.h>
-#endif
+#endif // _OPENMP
 #else
 #include <boutexception.hxx>
-#endif
+#endif // BOUT_HAS_FFTW
 
 namespace bout {
 namespace fft {
