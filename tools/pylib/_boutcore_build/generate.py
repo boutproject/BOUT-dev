@@ -2,6 +2,8 @@ import sys
 import os
 import jinja2
 
+from boutconfig import config as conf
+
 from scan_enums import enums
 
 
@@ -53,11 +55,11 @@ class Field(object):
 
 
 class Vector(object):
-    def __init__(self, vec_type, vdd, field, fdd, header):
+    def __init__(self, vec_type, vdd, field, header):
         self.vec_type = vec_type
         self.vdd = vdd
-        self.field = Field(field, [], fdd)
-        self.fdd = fdd
+        self.field = field
+        self.fdd = field.fdd
         self.ddd = vdd
         self.header = header
 
@@ -70,8 +72,11 @@ ops = [("add", "+"), ("mul", "*"), ("truediv", "/"), ("div", "/"), ("sub", "-")]
 field2d = Field("Field2D", ["x", "y"], "f2d")
 field3d = Field("Field3D", ["x", "y", "z"], "f3d")
 fieldperp = Field("FieldPerp", ["x", "z"], "fperp")
-vector3d = Vector("Vector3D", "v3d", "Field3D", "f3d", "vector3d")
-vector2d = Vector("Vector2D", "v2d", "Field2D", "f2d", "vector2d")
+
+metric = field3d if conf["metric_type"] == "3D" else field2d
+
+vector3d = Vector("Vector3D", "v3d", field3d, "vector3d")
+vector2d = Vector("Vector2D", "v2d", metric, "vector2d")
 vecs = [vector3d, vector2d]
 fields = [field3d, field2d]
 
@@ -95,6 +100,7 @@ if __name__ == "__main__":
             vector3d=vector3d,
             vector2d=vector2d,
             enums=enums,
+            metric_field=metric,
         )
         out.write(template.render(**args) + "\n")
 

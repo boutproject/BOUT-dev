@@ -24,11 +24,10 @@ all-all: $(BUILD_ALL)
 
 buildncheck: all check
 
-$(BUILD):
+$(BUILDALL):
 	@$(MAKE) --no-print-directory -C $@
 
 check: $(CHECKING_)
-	@echo $(CHECKING_)
 
 $(CHECKING_ALL_):
 	@$(MAKE) --no-print-directory -C $(@:%_checking=%) runtest

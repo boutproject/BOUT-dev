@@ -25,6 +25,10 @@
  **************************************************************************/
 
 #include "iterative_parallel_tri.hxx"
+#include "bout/build_config.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include "globals.hxx"
 
 #include <bout/constants.hxx>
@@ -249,7 +253,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   xs = localmesh->xstart; // First interior point
   xe = localmesh->xend;   // Last interior point
 
-  const BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
+  const BoutReal kwaveFactor = 2.0 * PI / getUniform(coords->zlength());
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
@@ -1450,3 +1454,5 @@ void LaplaceIPT::Level::synchronize_reduced_field(const LaplaceIPT& l,
                  l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
   }
 }
+
+#endif // BOUT_USE_METRIC_3D

@@ -149,7 +149,8 @@ int Mesh::get(bool &bval, const std::string &name, bool def) {
   return !success;
 }
 
-int Mesh::get(Field2D &var, const std::string &name, BoutReal def, CELL_LOC location) {
+int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communicate,
+              CELL_LOC location) {
   TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);
 
   if (source == nullptr or !source->get(this, var, name, def, location)) {
@@ -160,7 +161,9 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def, CELL_LOC loca
   }
 
   // Communicate to get guard cell data
-  Mesh::communicate(var);
+  if (communicate) {
+    Mesh::communicate(var);
+  }
 
   // Check that the data is valid
   checkData(var);
@@ -217,43 +220,43 @@ int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
  * Data get routines
  **************************************************************************/
 
-int Mesh::get(Vector2D &var, const std::string &name, BoutReal def) {
+int Mesh::get(Vector2D& var, const std::string& name, BoutReal def, bool communicate) {
   TRACE("Loading 2D vector: Mesh::get(Vector2D, {:s})", name);
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
-    get(var.x, name+"_x", def);
-    get(var.y, name+"_y", def);
-    get(var.z, name+"_z", def);
+    get(var.x, name + "_x", def, communicate);
+    get(var.y, name + "_y", def, communicate);
+    get(var.z, name + "_z", def, communicate);
 
   }else {
     output << _("\tReading contravariant vector ") << name << endl;
 
-    get(var.x, name+"x", def);
-    get(var.y, name+"y", def);
-    get(var.z, name+"z", def);
+    get(var.x, name + "x", def, communicate);
+    get(var.y, name + "y", def, communicate);
+    get(var.z, name + "z", def, communicate);
   }
 
   return 0;
 }
 
-int Mesh::get(Vector3D &var, const std::string &name, BoutReal def) {
+int Mesh::get(Vector3D& var, const std::string& name, BoutReal def, bool communicate) {
   TRACE("Loading 3D vector: Mesh::get(Vector3D, {:s})", name);
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
-    get(var.x, name+"_x", def);
-    get(var.y, name+"_y", def);
-    get(var.z, name+"_z", def);
+    get(var.x, name + "_x", def, communicate);
+    get(var.y, name + "_y", def, communicate);
+    get(var.z, name + "_z", def, communicate);
 
   }else {
     output << ("\tReading contravariant vector ") << name << endl;
 
-    get(var.x, name+"x", def);
-    get(var.y, name+"y", def);
-    get(var.z, name+"z", def);
+    get(var.x, name + "x", def, communicate);
+    get(var.y, name + "y", def, communicate);
+    get(var.z, name + "z", def, communicate);
   }
 
   return 0;
@@ -622,6 +625,7 @@ void Mesh::recalculateStaggeredCoordinates() {
     }
 
     *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
+    coords_map[location]->geometry(false, true);
   }
 }
 

@@ -376,7 +376,8 @@ target_include_directories(bout++ PUBLIC
 set(BOUT_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}/lib")
 set_target_properties(bout++ PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
-  ARCHIVE_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}")
+  ARCHIVE_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
+  SOVERSION 5.0.0)
 
 # Set some variables for the bout-config script
 set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
@@ -551,6 +552,14 @@ if (BOUT_ENABLE_OPENMP)
 endif()
 message(STATUS "Enable OpenMP: ${BOUT_ENABLE_OPENMP}")
 set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
+
+option(BOUT_ENABLE_METRIC_3D "Enable 3D metric support" OFF)
+if(BOUT_ENABLE_METRIC_3D)
+  set(BOUT_METRIC_TYPE "3D")
+else()
+  set(BOUT_METRIC_TYPE "2D")
+endif()
+set(BOUT_USE_METRIC_3D ${BOUT_ENABLE_METRIC_3D})
 
 # Optional dependencies
 
@@ -991,6 +1000,7 @@ message("
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
    Backtrace enabled        : ${BOUT_USE_BACKTRACE}
+   Metric type              : ${BOUT_METRIC_TYPE}
    Python API support       : ${BOUT_USE_PYTHON}
    Sanitizers enabled       : ${BOUT_USE_SANITIZERS}
 

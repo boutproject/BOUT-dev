@@ -39,6 +39,7 @@ config = {
     "has_nls": "@BOUT_HAS_GETTEXT@",
     "has_fftw": "@BOUT_HAS_FFTW@",
     "petsc_has_sundials": "@PETSC_HAS_SUNDIALS@",
+    "metric_type": "@BOUT_METRIC_TYPE@",
 }
 
 for k, v in config.items():
@@ -56,3 +57,13 @@ def has():
         if k.startswith("has_"):
             _has[k[4:]] = _yesno[config[k]]
     return _has
+
+
+def isMetric2D():
+    """Is the metric 2D?"""
+    return config["metric_type"] == "2D"
+
+
+def isMetric3D():
+    """Is the metric 3D?"""
+    return config["metric_type"] == "3D"

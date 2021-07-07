@@ -13,7 +13,7 @@ $(TOGEN): Makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/bin/bout-config ../boutco
 
 $(TOGEN): generate.py
 	@echo "  Generating $@"
-	@$(PY) generate.py $@.jinja $@
+	@PYTHONPATH=..:$$PYTHONPATH $(PY) generate.py $@.jinja $@
 
 # Setting LDSHARED sets the linker. However, setting it might drop
 # flags - thus it is not set by default. If mpic++ -std=c++14 is

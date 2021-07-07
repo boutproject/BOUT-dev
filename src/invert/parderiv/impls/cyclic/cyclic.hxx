@@ -43,6 +43,17 @@
 #define __INV_PAR_CR_H__
 
 #include "invert_parderiv.hxx"
+#include "bout/build_config.hxx"
+
+#if BOUT_USE_METRIC_3D
+
+namespace {
+RegisterUnavailableInvertPar registerinvertparcyclic{
+    PARDERIVCYCLIC, "BOUT++ was configured with 3D metrics"};
+}
+
+#else
+
 #include "dcomplex.hxx"
 #include <globals.hxx>
 #include "utils.hxx"
@@ -96,5 +107,7 @@ private:
 namespace {
 RegisterInvertPar<InvertParCR> registerinvertparcyclic{PARDERIVCYCLIC};
 }
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // __INV_PAR_CR_H__

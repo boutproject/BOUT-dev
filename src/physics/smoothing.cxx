@@ -32,14 +32,17 @@
 
 #include <cmath>
 
+#include "bout/build_config.hxx"
+
 #include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <smoothing.hxx>
 #include <bout_types.hxx>
 #include <msg_stack.hxx>
 
-#include <utils.hxx>
 #include <bout/constants.hxx>
+#include <bout/rvec.hxx>
+#include <utils.hxx>
 
 // Smooth using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D &f) {
@@ -320,11 +323,15 @@ BoutReal Average_XY(const Field2D &var) {
 }
 
 BoutReal Vol_Integral(const Field2D &var) {
+#if BOUT_USE_METRIC_3D
+  AUTO_TRACE();
+  throw BoutException("Vol_Intregral currently incompatible with 3D metrics");
+#else
   Mesh *mesh = var.getMesh();
   BoutReal Int_Glb;
   Coordinates *metric = var.getCoordinates();
 
-  Field2D result = metric->J * var * metric->dx * metric->dy;
+  auto result = metric->J * var * metric->dx * metric->dy;
 
   Int_Glb = Average_XY(result);
   Int_Glb *= static_cast<BoutReal>(
@@ -332,6 +339,7 @@ BoutReal Vol_Integral(const Field2D &var) {
                * (mesh->GlobalNy-mesh->numberOfYBoundaries()*2*mesh->ystart)) * PI * 2.;
 
   return Int_Glb;
+#endif
 }
 
 const Field3D smoothXY(const Field3D &f) {

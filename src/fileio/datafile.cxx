@@ -980,6 +980,18 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat, const std::s
 
     // Add variables to file
     auto dname = d.covar ? d.name + "_" : d.name;
+#if BOUT_USE_METRIC_3D
+    // Add variables to file
+    if (!file->addVarField3D(dname + "x", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
+    }
+    if (!file->addVarField3D(dname + "y", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
+    }
+    if (!file->addVarField3D(dname + "z", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
+    }
+#else
     if (!file->addVarField2D(dname + "x", save_repeat)) {
       throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
     }
@@ -989,6 +1001,7 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat, const std::s
     if (!file->addVarField2D(dname + "z", save_repeat)) {
       throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
     }
+#endif
 
     if(openclose) {
       file->close();
@@ -1266,6 +1279,19 @@ bool Datafile::read() {
   }
 
   // 2D vectors
+#if BOUT_USE_METRIC_3D
+  for (const auto& var : v2d_arr) {
+    if (var.covar) {
+      // Reading covariant vector
+      read_f3d(var.name + "_x", &(var.ptr->x), var.save_repeat);
+      read_f3d(var.name + "_y", &(var.ptr->y), var.save_repeat);
+      read_f3d(var.name + "_z", &(var.ptr->z), var.save_repeat);
+    } else {
+      read_f3d(var.name + "x", &(var.ptr->x), var.save_repeat);
+      read_f3d(var.name + "y", &(var.ptr->y), var.save_repeat);
+      read_f3d(var.name + "z", &(var.ptr->z), var.save_repeat);
+    }
+#else
   for(const auto& var : v2d_arr) {
     if(var.covar) {
       // Reading covariant vector
@@ -1277,7 +1303,7 @@ bool Datafile::read() {
       read_f2d(var.name + "y", &(var.ptr->y), var.save_repeat);
       read_f2d(var.name + "z", &(var.ptr->z), var.save_repeat);
     }
-
+#endif
     var.ptr->covariant = var.covar;
   }
 
@@ -1493,9 +1519,15 @@ bool Datafile::write() {
       v.toContravariant();
     }
 
+#if BOUT_USE_METRIC_3D
+    write_f3d(name + "x", &(v.x), var.save_repeat);
+    write_f3d(name + "y", &(v.y), var.save_repeat);
+    write_f3d(name + "z", &(v.z), var.save_repeat);
+#else
     write_f2d(name+"x", &(v.x), var.save_repeat);
     write_f2d(name+"y", &(v.y), var.save_repeat);
     write_f2d(name+"z", &(v.z), var.save_repeat);
+#endif
   }
 
   // 3D vectors

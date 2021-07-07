@@ -111,9 +111,3 @@ Datafile * c_get_global_datafile(){
   return &bout::globals::dump;
 }
 
-double c_get_dz(Coordinates * coords) {
-  return coords->dz;
-}
-void c_set_dz(Coordinates * coords, double val) {
-  coords->dz = val;
-}

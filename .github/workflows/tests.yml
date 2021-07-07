@@ -78,6 +78,19 @@ jobs:
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
 
+          - name: "CMake, shared, Ubuntu 20.04, 3D metrics"
+            os: ubuntu-20.04
+            cmake_options: "-DBUILD_SHARED_LIBS=ON
+                            -DBOUT_ENABLE_METRIC_3D=ON
+                            -DBOUT_ENABLE_OPENMP=ON
+                            -DBOUT_USE_PETSC=ON
+                            -DBOUT_USE_SLEPC=ON
+                            -DBOUT_USE_HDF5=ON
+                            -DBOUT_USE_SUNDIALS=ON
+                            -DBOUT_ENABLE_PYTHON=ON
+                            -DSUNDIALS_ROOT=/home/runner/local"
+            omp_num_threads: 2
+
           - name: "Coverage"
             os: ubuntu-18.04
             configure_options: "--enable-shared
