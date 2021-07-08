@@ -1,6 +1,10 @@
 /************************************************************************
- * Cyclic reduction for direct solution of a complex tridiagonal system
+ * Direct solution of a complex tridiagonal system in parallel
  *
+ * Algorithm from:
+ *  Travis  Austin,  Markus  Berndt,  and  David  Moulton.
+ *  A  memory efficient parallel tridiagonal solver.
+ *  Preprint LA-UR-03-4149, 2004
  *
  * (b0  c0      a0)
  * (a1  b1  c1    )
