@@ -118,6 +118,11 @@ private:
   /// MPI process x ID
   int xproc;
 
+  /// Number of inner boundary cells
+  int inbndry;
+  /// Number of outer boundary cells
+  int outbndry;
+
   /// Local private pointer for coefficient maxtix a
   Matrix<dcomplex> a, aa;
   /// Local private pointer for coefficient maxtix b
@@ -137,8 +142,8 @@ private:
   void apply_boundary_conditions(const Matrix<dcomplex>& a, const Matrix<dcomplex>& b,
                                  const Matrix<dcomplex>& c, const Matrix<dcomplex>& r,
                                  Matrix<dcomplex>& x);
-  void eliminate_boundary_rows(const Matrix<dcomplex>& a, Matrix<dcomplex>& b,
-                               const Matrix<dcomplex>& c, Matrix<dcomplex>& r);
+  void eliminate_boundary_rows(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
+                               Matrix<dcomplex>& c, Matrix<dcomplex>& r);
   void cr_forward_single_row();
   void cr_backward_single_row();
   void pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
