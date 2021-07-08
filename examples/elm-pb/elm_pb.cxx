@@ -40,10 +40,11 @@
 #include <bout/invert/laplacexy2_hypre.hxx>
 #endif
 
+#include <chrono>
+#include <iostream>
 #include <field_factory.hxx>
 
 //#define GPU
-
 
 CELL_LOC loc = CELL_CENTRE;
 
@@ -315,7 +316,7 @@ public:
 
     return result;
   }
-
+	
 // make private and protected funcitons and variables in public
 //
   int init(bool restarting) override {
@@ -1176,6 +1177,9 @@ public:
     }
     Jpar2.setBoundary("J");
 
+//#ifdef BOUT_HAS_RAJA
+//    printf("BOUT is using RAJA\n");
+//#endif
     return 0;
   }
 
@@ -1206,6 +1210,7 @@ public:
  
 
 // rhs_s
+
  int rhs(BoutReal t) override {
 
   //auto start = std::chrono::steady_clock::now();   
@@ -1480,6 +1485,7 @@ public:
       // Jpar
       Field3D B0U = B0 * U;
       mesh->communicate(B0U);
+
 #if defined(GPU) 
 //-GPU code start -------------------------------------------
       //Create accessors which enable fast access
@@ -1515,12 +1521,11 @@ public:
       
 //printf("...............ddt(Psi) start...\n");
       //printf("...relax_j_vac is False.....\n");
-		
-
+	
 #ifdef BOUT_HAS_RAJA // defined(GPU)
       // increase 1 s
       //auto start = std::chrono::steady_clock::now();   
-
+	//printf("Begin GPU code\n");
 	auto Psi_acc = FieldAccessor<>(Psi);
       	auto phi_acc = FieldAccessor<>(phi);
 	auto Jpar_acc = FieldAccessor<>(Jpar);
@@ -1533,17 +1538,13 @@ public:
 	Ind3D *ob_i = &(indices)[0];
 	
 	Array<int> _ob_i_ind(indices.size());
-	
+	//TODO: make this parallel copy
 	for(auto i = 0; i < indices.size(); i++) {
 		_ob_i_ind[i] = ob_i[i].ind;
 	}
-
-	printf("Starting RAJA Section 1\n");	
+	
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  	int i = _ob_i_ind[id];
-	BoutReal p1 =  Grad_parP_g(phi_acc,g_22_acc, i);
-	BoutReal p2 =   eta_acc.data[i] * Jpar_acc.data[i];
-	DDT(Psi_acc)[i] = -p1 + p2  ;
 
 	DDT(Psi_acc)[i] = -Grad_parP_g(phi_acc,g_22_acc, i) + eta_acc.data[i] * Jpar_acc.data[i];
 
@@ -1554,20 +1555,19 @@ public:
 
 	//DDT(Psi_acc)[i] = -Grad_parP_g(phi_acc,g_22_acc, i) + eta_acc[ob_i[id]] * Jpar_acc[ob_i[id]];
 	 });
-	printf("Passed RAJA Section 1\n");
 
 
 #else
       ddt(Psi) = -Grad_parP(phi, loc) + eta * Jpar;
 #endif
      
-	 //end = std::chrono::steady_clock::now();
+	//end = std::chrono::steady_clock::now();
         //time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
-       // std::cout << "The Grad_parP() since start is "<< time_taken.count()<<" nano seconds.\n";
+        //std::cout << "The Grad_parP() since start is "<< time_taken.count()<<" nano seconds.\n";
 
       if (eHall) {  //-false
         // electron parallel pressure
-      printf("...eHall...\n");
+      //printf("...eHall...\n");
         ddt(Psi) += 0.25 * delta_i
                     * (Grad_parP(P, loc)
                        + bracket(interp_to(P0, loc), Psi, bm_mag));
@@ -1581,14 +1581,14 @@ public:
 #ifdef BOUT_HAS_RAJA  //defined(GPU)#if defined(GPU)
 // does work, speedup 
       
-        auto phi0_2D_acc =Field2DAccessor<>(phi0);
+    auto phi0_2D_acc =Field2DAccessor<>(phi0);
 	auto dx_acc = Field2DAccessor<>(metric->dx);
 
 	auto dy_acc = Field2DAccessor<>(metric->dy);
-
+	
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
-		int i = ob_i[id].ind;
+		int i = _ob_i_ind[id];
 		BoutReal p1 =  bracket_g(phi0_2D_acc,Psi_acc,i);
 		DDT(Psi_acc)[i] -= p1;
 
@@ -1623,10 +1623,11 @@ public:
 #ifdef BOUT_HAS_RAJA  //defined(GPU)
 // no problem for this function,increase 1 s;
 	
+	const auto& _hyperresist = hyperresist;
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
-		int i = ob_i[id].ind;
-		BoutReal p1 =   FIELD_DATA(eta_acc)[i] * hyperresist;
+		int i = _ob_i_ind[id];
+		BoutReal p1 =   FIELD_DATA(eta_acc)[i] * _hyperresist;
 		BoutReal p2 =   Delp2_g(Jpar_acc,i);
 		DDT(Psi_acc)[i] -= p1*p2;
 
@@ -1644,13 +1645,13 @@ public:
 
       // electron Hyper-viscosity coefficient
       if (ehyperviscos > 0.0) {
-       printf("...ehyperviscos...\n"); 
+       //printf("...ehyperviscos...\n"); 
         ddt(Psi) -= eta * ehyperviscos * Delp2(Jpar2);
       }
 
       // xqx: parallel hyper-viscous diffusion for vector potential
       if (diffusion_a4 > 0.0) {
-       printf("...diffusion_a4...\n"); 
+       //printf("...diffusion_a4...\n"); 
         tmpA2 = D2DY2(Psi);
         mesh->communicate(tmpA2);
         tmpA2.applyBoundary();
@@ -1659,7 +1660,7 @@ public:
 
       // Vacuum solution
       if (relax_j_vac) {
-       printf("...relax_j_vac...\n"); 
+       //printf("...relax_j_vac...\n"); 
         // Calculate the J and Psi profile we're aiming for
         Field3D Jtarget = Jpar * (1.0 - vac_mask); // Zero in vacuum
 
@@ -1687,9 +1688,16 @@ public:
 #ifdef BOUT_HAS_RAJA  // defined(GPU) 	
 // Good and speedup
 //
+
+	Array<int> _ob_i_ind(indices.size());
+	//TODO: make this parallel copy
+	for(auto i = 0; i < indices.size(); i++) {
+		_ob_i_ind[i] = ob_i[i].ind;
+	}
+	
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
-		int i = ob_i[id].ind;
+		int i = _ob_i_ind[id];
 		BoutReal p1 = SQ_g(U_acc,B0_acc,i);
 		BoutReal p2 = b0xGrad_dot_Grad_g(Psi_acc,J0_acc,i);
 		DDT(U_acc)[i] = p1*p2;
@@ -1702,9 +1710,9 @@ public:
     // Grad j term
     ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi_loc, J0, CELL_CENTRE);
 #endif
-
+//
     if (include_rmp) {
-      printf("...............include_rmp...\n");
+      //printf("...............include_rmp...\n");
       ddt(U) += SQ(B0) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
     }
 	// no need to covert to GPU
@@ -1718,10 +1726,10 @@ if (!nogradparj) {
 //does work and speed up     
      auto Jpar_acc = FieldAccessor<>(Jpar);
      auto g_22_acc = Field2DAccessor<>(metric->g_22);
-    
+   	  
 	 RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 
-                 int i = ob_i[id].ind;
+                 int i = _ob_i_ind[id];
                  BoutReal p1 = SQ_g(U_acc,B0_acc,i);
                  BoutReal p2 = Grad_parP_g(Jpar_acc,g_22_acc,i);
                  DDT(U_acc)[i] -= p2 * p1;
@@ -1747,11 +1755,13 @@ if (!nogradparj) {
  // 
     
 auto phi0_acc = Field2DAccessor<>(phi0);
-     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-                 int i = ob_i[id].ind;
+     
+	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
+                 int i = _ob_i_ind[id];
                  BoutReal p1 = b0xGrad_dot_Grad_g(phi0_acc,U_acc,i);
                  DDT(U_acc)[i] -= p1;
           });
+
 #else
   ddt(U) -= b0xGrad_dot_Grad(phi0, U); // Equilibrium flow
 #endif
@@ -1764,7 +1774,7 @@ auto phi0_acc = Field2DAccessor<>(phi0);
 
 
     if (withflow) {// net flow
-      printf("...............withflow...\n");
+      //printf("...............withflow...\n");
       ddt(U) -= V_dot_Grad(V0net, U);
     }
     if (nonlinear) {
@@ -1772,8 +1782,9 @@ auto phi0_acc = Field2DAccessor<>(phi0);
 
 #ifdef BOUT_HAS_RAJA 
 	auto B0_2D_acc =Field2DAccessor<>(B0);   
-         RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-         int i = ob_i[id].ind;
+         
+	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
+         int i = _ob_i_ind[id];
  	 BoutReal f1 = FIELD2D_3DINDEX_DATA(U_acc,B0_2D_acc,i);
          BoutReal p1 = bracket_g(Psi_acc,U_acc,i);
                  DDT(U_acc)[i] -= p1  * f1;
@@ -1788,7 +1799,7 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
 
     // Viscosity terms
     if (viscos_par > 0.0){
-      printf("...............viscos_par...\n");
+      //printf("...............viscos_par...\n");
       ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
       }
     // xqx: parallel hyper-viscous diffusion for vorticity
@@ -1805,10 +1816,11 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
       // tmpU2.applyBoundary("neumann");
  
 	auto tmpU2_acc =  FieldAccessor<>(tmpU2); 
+	const auto _diffusion_u4 = diffusion_u4;
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-                 int i = ob_i[id].ind;
+                 int i = _ob_i_ind[id];
 		 BoutReal p1 = D2DY2_g(tmpU2_acc,i);
-                 DDT(U_acc)[i] -=  diffusion_u4 * p1;
+                 DDT(U_acc)[i] -=  _diffusion_u4 * p1;
  });
 
 #else
@@ -1827,13 +1839,13 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
 
 
     if (viscos_perp > 0.0){
-      printf("...............viscos_perp...\n");
+      //printf("...............viscos_perp...\n");
       ddt(U) += viscos_perp * Delp2(U); // Perpendicular viscosity
 	}
     // Hyper-viscosity
     if (hyperviscos > 0.0) {
       // Calculate coefficient.
-      printf("...............hyperviscos...\n");
+      //printf("...............hyperviscos...\n");
 
       hyper_mu_x = hyperviscos * metric->g_11 * SQ(metric->dx)
                    * abs(metric->g11 * D2DX2(U)) / (abs(U) + 1e-3);
@@ -1849,7 +1861,7 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
     }
 
     if (gyroviscous) {
-      printf("...............gyroviscous...\n");
+      //printf("...............gyroviscous...\n");
 
       Field3D Pi;
       Field2D Pi0;
@@ -1893,7 +1905,7 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
       ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhiP0) / B0;
 
       if (nonlinear) {
-      printf("...............nonlinear...\n");
+      //printf("...............nonlinear...\n");
         Field3D B0phi = B0 * phi;
         mesh->communicate(B0phi);
         bracketPhiP = bracket(B0phi, Pi, bm_exb);
@@ -1908,25 +1920,24 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
 
     // left edge sink terms
     if (sink_Ul > 0.0) {
-      printf("...............sink_Ul...\n");
+      //printf("...............sink_Ul...\n");
       ddt(U) -= sink_Ul * sink_tanhxl(P0, U, su_widthl, su_lengthl); // core sink
     }
 
     // right edge sink terms
     if (sink_Ur > 0.0) {
-      printf("...............sink_Ur...\n");
+      //printf("...............sink_Ur...\n");
       ddt(U) -= sink_Ur * sink_tanhxr(P0, U, su_widthr, su_lengthr); //  sol sink
     }
 
-//printf("...............ddt(U) end...\n\n");
+ //printf("...............ddt(U) end...\n\n");
     ////////////////////////////////////////////////////
     // Pressure equation
-//printf(".........ddt(P) start  .................\n");
+ //printf(".........ddt(P) start  .................\n");
 
 
     ddt(P) = 0.0;
 	
-
 if (evolve_pressure) {
       //printf("evolve_pressure .................\n");
 
@@ -1943,12 +1954,18 @@ if (evolve_pressure) {
 	auto indices = P.getRegion("RGN_NOBNDRY").getIndices();
         Ind3D *ob_i = &(indices)[0];       
 
+	Array<int> _ob_i_ind(indices.size());
+	
+	//TODO: make this parallel copy
+	for(auto i = 0; i < indices.size(); i++) {
+		_ob_i_ind[i] = ob_i[i].ind;
+	}
+
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-	 	int i = ob_i[id].ind;
+	 	int i = _ob_i_ind[id];
 		BoutReal p1 = b0xGrad_dot_Grad_g(phi_acc,P0_acc,i);
 		DDT(P_acc)[i] -= p1 ; 
 	});
-
       #else
       ddt(P) -= b0xGrad_dot_Grad(phi, P0);
       #endif
@@ -1961,8 +1978,19 @@ if (evolve_pressure) {
       // speedup 1 s 	
       		 auto P_acc = FieldAccessor<>(P);   //P is field 3D
 		auto phi0_acc = Field2DAccessor<>(phi0); 
-        	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-                  int i = ob_i[id].ind;
+        	
+		//Should this section be here?
+		//Ind3D *ob_i = &(indices)[0];       
+
+		//Array<int> _ob_i_ind(indices.size());
+		
+		//TODO: make this parallel copy
+		//for(auto i = 0; i < indices.size(); i++) {
+		//	_ob_i_ind[i] = ob_i[i].ind;
+		//}
+		//End should it be here?
+		RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
+                  int i = _ob_i_ind[id];
                   BoutReal p1 = b0xGrad_dot_Grad_g(phi0_acc,P_acc,i);
                   DDT(P_acc)[i] -= p1;
            });
@@ -1973,11 +2001,11 @@ if (evolve_pressure) {
 
 
       if (withflow) {// net flow
-      printf(".........withflow .................\n");
+      //printf(".........withflow .................\n");
         ddt(P) -= V_dot_Grad(V0net, P);
 	}
       if (nonlinear){
-     // printf(".........nonlinear .................\n");
+     //printf(".........nonlinear .................\n");
 
 #ifdef BOUT_HAS_RAJA
 
@@ -1986,16 +2014,15 @@ if (evolve_pressure) {
 	 auto phi_acc = FieldAccessor<>(phi);
          auto B0_2D_acc =Field2DAccessor<>(B0);
 	 auto P_acc = FieldAccessor<>(P);   //P is field 3D
-         RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
+	 RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 
-                 int i = ob_i[id].ind;
+                 int i = _ob_i_ind[id];
 		 BoutReal f1 = FIELD2D_3DINDEX_DATA(phi_acc,B0_2D_acc,i);
                  BoutReal p1 = bracket_g(phi_acc,P_acc,i);
                  DDT(phi_acc)[i] -= p1 * f1;
 
 
           });
-
 #else
   ddt(P) -= bracket(phi, P, bm_exb) * B0; // Advection
 #endif
@@ -2010,12 +2037,12 @@ if (evolve_pressure) {
        
     // Parallel diffusion terms
     if (diffusion_par > 0.0){
-      printf(".........diffusion_par .................\n");
+      //printf(".........diffusion_par .................\n");
       ddt(P) += diffusion_par * Grad2_par2(P); // Parallel diffusion
 		}
     // xqx: parallel hyper-viscous diffusion for pressure
     if (diffusion_p4 > 0.0) {
-      printf(".........diffusion_p4 .................\n");
+      //printf(".........diffusion_p4 .................\n");
       tmpP2 = D2DY2(P);
       mesh->communicate(tmpP2);
       tmpP2.applyBoundary();
@@ -2025,7 +2052,7 @@ if (evolve_pressure) {
     // heating source terms
     if (heating_P > 0.0) {
       BoutReal pnorm = P0(0, 0);
-      printf(".........hearing_P .................\n");
+      //printf(".........hearing_P .................\n");
       ddt(P) += heating_P * source_expx2(P0, 2. * hp_width, 0.5 * hp_length)
                 * (Tbar / pnorm); // heat source
       ddt(P) += (100. * source_tanhx(P0, hp_width, hp_length) + 0.01) * metric->g11
@@ -2034,27 +2061,26 @@ if (evolve_pressure) {
 
     // sink terms
     if (sink_P > 0.0) {
-      printf(".........sink_P .................\n");
+      //printf(".........sink_P .................\n");
       ddt(P) -= sink_P * sink_tanhxr(P0, P, sp_width, sp_length) * Tbar; // sink
     }
 
     ////////////////////////////////////////////////////
     // Compressional effects
-
     if (compress) {
-      printf(".........compress .................\n");
+      //printf(".........compress .................\n");
 
       // ddt(P) += beta*( - Grad_parP(Vpar, CELL_CENTRE) + Vpar*gradparB );
       ddt(P) -= beta * Div_par(Vpar, CELL_CENTRE);
 
       if (phi_curv) {
-      printf(".........phi_curv .................\n");
+      //printf(".........phi_curv .................\n");
         ddt(P) -= 2. * beta * b0xcv * Grad(phi);
       }
 
 //
       // Vpar equation
- 	printf(".........ddtVpar) Start  .................\n\n");
+ 	//printf(".........ddtVpar) Start  .................\n\n");
 
       // ddt(Vpar) = -0.5*Grad_parP(P + P0, loc);
       
@@ -2067,14 +2093,13 @@ if (evolve_pressure) {
 
  //printf(".........ddt(P) END  .................\n\n");
 
-
 //	start = std::chrono::steady_clock::now();
     if (filter_z) {
       // Filter out all except filter_z_mode
 
  //printf(".........filter_z  .................\n");
       if (evolve_jpar) {
-//	printf(".........filter_z  .................\n");
+ //printf(".........filter_z  .................\n");
         ddt(Jpar) = filter(ddt(Jpar), filter_z_mode);
       } else
 
@@ -2088,9 +2113,15 @@ if (evolve_pressure) {
 	auto Psi_acc = FieldAccessor<>(Psi);
 	auto U_acc = FieldAccessor<>(U);
 
-         
+        Array<int> _ob_i_ind(indices.size());
+	
+	//TODO: make this a parallel copy
+	for(auto i = 0; i < indices.size(); i++) {
+		_ob_i_ind[i] = ob_i[i].ind;
+	}
+
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-                  int i = ob_i[id].ind;
+                  int i = _ob_i_ind;
                   BoutReal p1 = filter_g(Psi_acc,filter_z_mode,i);
                   BoutReal p2 = filter_g(U_acc,filter_z_mode,i);
  		  BoutReal p3 = filter_g(P_acc,filter_z_mode,i);
@@ -2098,7 +2129,6 @@ if (evolve_pressure) {
  	          DDT(U_acc)[i] = p2;
 		  DDT(P_acc)[i] = p3;
 	});
-
  
 #else
 	//printf("filter_z_mode is %5f \n",filter_z_mode);
@@ -2108,7 +2138,6 @@ if (evolve_pressure) {
     
 #endif
 }
-
 
 //	start = std::chrono::steady_clock::now();
     if (low_pass_z > 0) {
@@ -2128,9 +2157,15 @@ if (evolve_pressure) {
 	auto Psi_acc = FieldAccessor<>(Psi);
 	auto U_acc = FieldAccessor<>(U);
 
-        
+        Array<int> _ob_i_ind(indices.size());
+	
+	//TODO: make this a parallel copy
+	for(auto i = 0; i < indices.size(); i++) {
+		_ob_i_ind[i] = ob_i[i].ind;
+	}
+
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-                  int i = ob_i[id].ind;
+                  int i = _ob_i_ind[id];
                   BoutReal p1 = lowPass_g(Psi_acc,low_pass_z,zonal_field,i);
                   BoutReal p2 = lowPass_g(U_acc,low_pass_z,zonal_flow,i);
                   BoutReal p3 = lowPass_g(P_acc,low_pass_z, zonal_bkgd,i);
@@ -2138,14 +2173,14 @@ if (evolve_pressure) {
                   DDT(U_acc)[i] = p2;
                   DDT(P_acc)[i] = p3;
 	});
-      
+
       ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
       ddt(U) = lowPass(ddt(U), low_pass_z, zonal_flow);
       ddt(P) = lowPass(ddt(P), low_pass_z, zonal_bkgd);
 
 
 #else
-//	printf("low_pass_z is %5f \n",filter_z_mode);
+ //printf("low_pass_z is %5f \n",filter_z_mode);
       ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
       ddt(U) = lowPass(ddt(U), low_pass_z, zonal_flow);
       ddt(P) = lowPass(ddt(P), low_pass_z, zonal_bkgd);
@@ -2153,10 +2188,9 @@ if (evolve_pressure) {
 
     }
 
-
     if (damp_width > 0) {
 	
- printf(".........damp_width.................\n\n");
+ //printf(".........damp_width.................\n\n");
       for (int i = 0; i < damp_width; i++) {
         for (int j = 0; j < mesh->LocalNy; j++)
           for (int k = 0; k < mesh->LocalNz; k++) {
@@ -2171,12 +2205,11 @@ if (evolve_pressure) {
 
     first_run = false;
     
-  //  printf("rhs ends here....");
+  //printf("rhs ends here....\n");
      
 //auto end = std::chrono::steady_clock::now();
 //auto time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
 // std::cout << "The FieldAccessor preparing  since start is "<< time_taken.count()<<" nano seconds.\n";
-
 
 
 //rhs_e 

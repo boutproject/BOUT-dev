@@ -77,25 +77,34 @@ public:
     auto phi_acc = FieldAccessor<>(phi);
     auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n); 
 
-#if 0 //def BOUT_HAS_RAJA
+#if 1 //def BOUT_HAS_RAJA
 //  RAJA code ----------- start
     auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
     Ind3D *ob_i = &(indices)[0];
-
+Array<int> testArray(indices.size());
+auto _ob_i_ind = testArray.begin();
+for(auto i = 0; i <  indices.size(); i++) {
+	_ob_i_ind[i] = ob_i[i].ind;
+}
     //printf("BOUT using RAJA\n");
+    auto _alpha = alpha;
+    auto _kappa = kappa;
+    auto _Dn = Dn;
+    auto _Dvort = Dvort;
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-      int i = ob_i[id].ind;
-      BoutReal div_current = alpha * Div_par_Grad_par_g(phi_minus_n_acc, i);
+      //int i = ob_i[id].ind;
+      int i = _ob_i_ind[id];
+	BoutReal div_current = _alpha * Div_par_Grad_par_g(phi_minus_n_acc, i);
 		DDT(n_acc)[i] =  - bracket_g(phi_acc, n_acc, i)
                 	    - div_current
-                	    - kappa * DDZ_g(phi_acc, i)
-                	    + Dn * Delp2_g(n_acc, i)
+                	    - _kappa * DDZ_g(phi_acc, i)
+                	    + _Dn * Delp2_g(n_acc, i)
 			;
 
 
 		DDT(vort_acc)[i] = - bracket_g(phi_acc, vort_acc, i)
 			      - div_current
-		              + Dvort * Delp2_g (vort_acc, i)
+		              + _Dvort * Delp2_g (vort_acc, i)
 			;
 		
 	  });
