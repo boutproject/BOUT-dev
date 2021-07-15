@@ -1,22 +1,6 @@
-from builtins import object
-
 import numpy as np
-import sys
 
-
-try:
-    from . import boundary
-except ImportError:
-    import boundary
-
-
-if sys.version_info >= (3, 0):
-    pickle_read_mode = "rb"
-    pickle_write_mode = "wb"
-else:
-    pickle_read_mode = "r"
-    pickle_write_mode = "w"
-
+from . import boundary
 from .progress import update_progress
 
 
@@ -1563,7 +1547,7 @@ class W7X_vacuum(MagneticField):
 
         elif os.path.isfile(fname_old):
             print("Saved field found, loading from: ", fname_old)
-            with open(fname_old, pickle_read_mode) as f:
+            with open(fname_old, "rb") as f:
                 Br, Bphi, Bz = pickle.load(f)
             with xr.Dataset() as ds:
                 ds["Br"] = ("x", "y", "z"), Br
@@ -1726,7 +1710,7 @@ class W7X_vacuum(MagneticField):
 
         if os.path.isfile(fname):
             print("Saved field found, loading from: ", fname)
-            with open(fname, pickle_read_mode) as f:
+            with open(fname, "rb") as f:
                 Br, Bphi, Bz = pickle.load(f)
         else:
             print(
@@ -1765,7 +1749,7 @@ class W7X_vacuum(MagneticField):
             Bz = np.ndarray.reshape(np.asarray(plasmafield.x3), (nx, ny, nz))
 
             ## Save so we don't have to do this every time.
-            with open(fname, pickle_write_mode) as f:
+            with open(fname, "wb") as f:
                 pickle.dump([Br, Bphi, Bz], f)
 
         return Br, Bphi, Bz
