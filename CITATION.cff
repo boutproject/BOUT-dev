@@ -6,7 +6,7 @@
 cff-version: 1.0.3-1
 message: If you use BOUT++ in your work, please cite it using the following metadata,
   or the two papers in the reference section
-title: BOUT++
+title: "BOUT++"
 authors:
   - family-names: Dudson
     given-names: Benjamin Daniel
@@ -126,6 +126,11 @@ authors:
   - family-names: Naylor
     given-names: Peter
 
+  - family-names: Riva
+    given-names: Fabio
+    orcid: https://orcid.org/0000-0002-0264-442X
+    affiliation: Culham Centre for Fusion Energy
+
   - family-names: Tiwari
     given-names: Sanat
 
@@ -149,11 +154,11 @@ authors:
 
   - family-names: Wang
     given-names: Zhanhui
-version: 4.3.0
-date-released: 2019-10-25
+version: 4.3.2
+date-released: 2020-10-19
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
-doi: 10.5281/zenodo.3518905
+doi: 10.5281/zenodo.4046792
 license: 'LGPL-3.0-or-later'
 references:
   - type: article

@@ -190,15 +190,15 @@ bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const std::string &name, Bou
  * Successfully reads Field2D or FieldPerp if the variable in the file is 0-D or 2-D.
  * Successfully reads Field3D if the variable in the file is 0-D, 2-D or 3-D.
  */
-bool GridFile::get(Mesh *m, Field2D &var, const std::string &name, BoutReal def) {
-  return getField(m, var, name, def);
+bool GridFile::get(Mesh *m, Field2D &var, const std::string &name, BoutReal def, CELL_LOC location) {
+  return getField(m, var, name, def, location);
 }
-bool GridFile::get(Mesh *m, Field3D &var, const std::string &name, BoutReal def) {
-  return getField(m, var, name, def);
+bool GridFile::get(Mesh *m, Field3D &var, const std::string &name, BoutReal def, CELL_LOC location) {
+  return getField(m, var, name, def, location);
 }
 
 template<typename T>
-bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) {
+bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def, CELL_LOC location) {
   static_assert(bout::utils::is_Field<T>::value,
                 "templated GridFile::get only works for Field2D, Field3D or FieldPerp");
 
@@ -215,6 +215,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
     // Variable not found
     output_warn.write("\tWARNING: Could not read '{:s}' from grid. Setting to {:e}\n", name, def);
     var = def;
+    var.setLocation(location);
     return false;
   }
   case 1: {
@@ -229,6 +230,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
       throw BoutException("Couldn't read 0D variable '{:s}'\n", name);
     }
     var = rval;
+    var.setLocation(location);
     return true;
   }
   case 2: {
@@ -240,6 +242,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
     if (bout::utils::is_Field2D<T>::value or bout::utils::is_FieldPerp<T>::value) {
       output_warn.write("WARNING: Variable '{:s}' should be 2D, but has {:d} dimensions. Ignored\n", name, size.size());
       var = def;
+      var.setLocation(location);
       return false;
     }
     break;
@@ -247,6 +250,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   default: {
     output_warn.write("WARNING: Variable '{:s}' should be 2D or 3D, but has {:d} dimensions. Ignored\n", name, size.size());
     var = def;
+    var.setLocation(location);
     return false;
   }
   };
@@ -333,6 +337,12 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
 
   // Now read data from file
   readField(m, name, ys, yd, ny_to_read, xs, xd, nx_to_read, size, var);
+
+  if (location != CELL_DEFAULT and var.getLocation() != location) {
+    throw BoutException("Incorrect location of field {:s} in grid file, expected {:s}, "
+                        "got {:s}.", name, toString(location),
+                        toString(var.getLocation()));
+  }
 
   if (var.isAllocated()) {
     // FieldPerps might not be allocated if they are not read on this processor
@@ -571,8 +581,8 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name,
   /// but don't do it yet as we don't assert that m == var.getMesh()
   /// Expect the assertion to be true, in which case we probably don't
   /// need to pass m as can just use var.getMesh()
-  BoutReal zlength = m->getCoordinates(var.getLocation())->zlength();
-  
+  BoutReal zlength = getUniform(m->getCoordinates(var.getLocation())->zlength());
+
   int zperiod = ROUND(TWOPI / zlength); /// Number of periods in 2pi
 
   // Print out which modes are going to be read in
@@ -702,7 +712,7 @@ bool GridFile::readgrid_perpvar_fft(Mesh *m, const std::string &name,
   /// but don't do it yet as we don't assert that m == var.getMesh()
   /// Expect the assertion to be true, in which case we probably don't
   /// need to pass m as can just use var.getMesh()
-  BoutReal zlength = m->getCoordinates(var.getLocation())->zlength();
+  BoutReal zlength = getUniform(m->getCoordinates(var.getLocation())->zlength());
 
   int zperiod = ROUND(TWOPI / zlength); /// Number of periods in 2pi
 

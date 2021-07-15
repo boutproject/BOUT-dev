@@ -24,19 +24,27 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_PETSC
-
-class PetscSolver;
-
 #ifndef __PETSC_SOLVER_H__
 #define __PETSC_SOLVER_H__
+
+#include "bout/build_config.hxx"
+#include "bout/solver.hxx"
+
+#if not BOUT_HAS_PETSC
+
+namespace {
+RegisterUnavailableSolver registerunavailablepetsc("petsc",
+                                                   "BOUT++ was not configured with PETSc");
+}
+
+#else
+
+class PetscSolver;
 
 #include <field2d.hxx>
 #include <field3d.hxx>
 #include <vector2d.hxx>
 #include <vector3d.hxx>
-
-#include <bout/solver.hxx>
 
 #include <petsc.h>
 // PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
@@ -84,10 +92,6 @@ public:
   PetscSolver(Options *opts = nullptr);
   ~PetscSolver();
 
-  // Can be called from physics initialisation to supply callbacks
-  void setPrecon(PhysicsPrecon f) { prefunc = f; }
-  void setJacobian(Jacobian j) override { jacfunc = j; }
-
   int init(int NOUT, BoutReal TIMESTEP) override;
 
   int run() override;
@@ -115,9 +119,6 @@ public:
   PetscLogEvent solver_event, loop_event, init_event;
 
 private:
-  PhysicsPrecon prefunc; ///< Preconditioner
-  Jacobian jacfunc;      ///< Jacobian - vector function
-
   BoutReal shift; ///< Shift (alpha) parameter from TS
   Vec state;
   BoutReal ts_time; ///< Internal PETSc timestepper time
@@ -147,6 +148,6 @@ private:
   bool adaptive; ///< Use adaptive timestepping
 };
 
-#endif // __PETSC_SOLVER_H__
-
 #endif // BOUT_HAS_PETSC
+
+#endif // __PETSC_SOLVER_H__

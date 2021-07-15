@@ -2,15 +2,10 @@
 #
 #
 
-NOUT = 0  # No timesteps
-
 MZ = 5    # Z size
 
 grid = "test_io.grd.nc"
 
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
-TwistShift = false
-Ballooning = false
-
-
+twistshift = false

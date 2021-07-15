@@ -1,9 +1,12 @@
+#include "bout/build_config.hxx"
+
 #include "gtest/gtest.h"
 
 #include "bout.hxx"
 #include "boutexception.hxx"
 #include "test_extras.hxx"
 #include "utils.hxx"
+#include "bout/version.hxx"
 
 #include <algorithm>
 #include <csignal>
@@ -54,8 +57,11 @@ TEST(ParseCommandLineArgs, DataDir) {
 
   auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
 
+  std::vector<std::string> expected_argv{"test", "datadir=", "test_data_directory"};
+
   EXPECT_EQ(args.data_dir, "test_data_directory");
   EXPECT_EQ(args.original_argv, v_args);
+  EXPECT_EQ(args.argv, expected_argv);
 }
 
 TEST(ParseCommandLineArgs, DataDirBad) {
@@ -75,8 +81,11 @@ TEST(ParseCommandLineArgs, OptionsFile) {
 
   auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
 
+  std::vector<std::string> expected_argv{"test", "optionfile=", "test_options_file"};
+
   EXPECT_EQ(args.opt_file, "test_options_file");
   EXPECT_EQ(args.original_argv, v_args);
+  EXPECT_EQ(args.argv, expected_argv);
 }
 
 TEST(ParseCommandLineArgs, OptionsFileBad) {
@@ -96,8 +105,11 @@ TEST(ParseCommandLineArgs, SettingsFile) {
 
   auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
 
+  std::vector<std::string> expected_argv{"test", "settingsfile=", "test_settings_file"};
+
   EXPECT_EQ(args.set_file, "test_settings_file");
   EXPECT_EQ(args.original_argv, v_args);
+  EXPECT_EQ(args.argv, expected_argv);
 }
 
 TEST(ParseCommandLineArgs, SettingsFileBad) {
@@ -170,6 +182,23 @@ TEST(ParseCommandLineArgs, VerbosityShortMultiple) {
   EXPECT_EQ(args.verbosity, 6);
   EXPECT_EQ(args.original_argv, v_args);
 }
+
+TEST(ParseCommandLineArgs, VerbosityWithDataDir) {
+  std::vector<std::string> v_args{"test", "-v", "-v", "-d", "test_data_directory"};
+  auto v_args_copy = v_args;
+  auto c_args = get_c_string_vector(v_args_copy);
+  char** argv = c_args.data();
+
+  auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
+
+  std::vector<std::string> expected_argv{"test", "datadir=", "test_data_directory"};
+
+  EXPECT_EQ(args.data_dir, "test_data_directory");
+  EXPECT_EQ(args.verbosity, 6);
+  EXPECT_EQ(args.original_argv, v_args);
+  EXPECT_EQ(args.argv, expected_argv);
+}
+
 
 TEST(ParseCommandLineArgs, VerbosityLong) {
   std::vector<std::string> v_args{"test", "--verbose"};
@@ -290,7 +319,7 @@ public:
 TEST_F(PrintStartupTest, Header) {
   bout::experimental::printStartupHeader(4, 8);
 
-  EXPECT_TRUE(IsSubString(buffer.str(), BOUT_VERSION_STRING));
+  EXPECT_TRUE(IsSubString(buffer.str(), bout::version::full));
   EXPECT_TRUE(IsSubString(buffer.str(), _("4 of 8")));
 }
 
@@ -299,7 +328,7 @@ TEST_F(PrintStartupTest, CompileTimeOptions) {
 
   EXPECT_TRUE(IsSubString(buffer.str(), _("Compile-time options:\n")));
   EXPECT_TRUE(IsSubString(buffer.str(), _("Signal")));
-  EXPECT_TRUE(IsSubString(buffer.str(), "netCDF"));
+  EXPECT_TRUE(IsSubString(buffer.str(), "NetCDF"));
   EXPECT_TRUE(IsSubString(buffer.str(), "OpenMP"));
   EXPECT_TRUE(IsSubString(buffer.str(), _("Compiled with flags")));
 }
@@ -313,9 +342,9 @@ TEST_F(PrintStartupTest, CommandLineArguments) {
   }
 }
 
-#ifdef SIGHANDLE
+#if BOUT_USE_SIGNAL
 
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
 #include <fenv.h>
 #endif
 
@@ -326,7 +355,7 @@ public:
     std::signal(SIGUSR1, SIG_DFL);
     std::signal(SIGFPE, SIG_DFL);
     std::signal(SIGSEGV, SIG_DFL);
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
     std::signal(SIGFPE, SIG_DFL);
     fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
@@ -353,7 +382,9 @@ TEST(BoutInitialiseFunctions, SetRunStartInfo) {
 
   ASSERT_TRUE(run_section.isSection());
   EXPECT_TRUE(run_section.isSet("version"));
+#ifdef REVISION
   EXPECT_TRUE(run_section.isSet("revision"));
+#endif
   EXPECT_TRUE(run_section.isSet("started"));
 }
 
@@ -394,5 +425,5 @@ TEST(BoutInitialiseFunctions, SavePIDtoFile) {
 
   std::remove(filename.c_str());
 
-  EXPECT_THROW(bout::experimental::savePIDtoFile("/", 2), BoutException);
+  EXPECT_THROW(bout::experimental::savePIDtoFile("/does/likely/not/exists", 2), BoutException);
 }

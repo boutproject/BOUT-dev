@@ -31,7 +31,18 @@ class LaplaceCyclic;
 #ifndef __LAP_CYCLIC_H__
 #define __LAP_CYCLIC_H__
 
-#include <invert_laplace.hxx>
+#include "invert_laplace.hxx"
+#include "bout/build_config.hxx"
+
+#if BOUT_USE_METRIC_3D
+
+namespace {
+RegisterUnavailableLaplace registerlaplacecycle(LAPLACE_CYCLIC,
+                                                "BOUT++ was configured with 3D metrics");
+}
+
+#else
+
 #include <cyclic_reduction.hxx>
 #include <dcomplex.hxx>
 #include <options.hxx>
@@ -95,6 +106,10 @@ public:
 
   Field3D solve(const Field3D &b) override {return solve(b,b);}
   Field3D solve(const Field3D &b, const Field3D &x0) override;
+  void verify_solution(const Matrix<dcomplex>& a_ver, const Matrix<dcomplex>& b_ver,
+                       const Matrix<dcomplex>& c_ver, const Matrix<dcomplex>& r_ver,
+                       const Matrix<dcomplex>& x_sol, int nsys);
+
 private:
   Field2D Acoef, C1coef, C2coef, Dcoef;
   
@@ -106,5 +121,7 @@ private:
   
   CyclicReduce<dcomplex> *cr; ///< Tridiagonal solver
 };
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // __SPT_H__

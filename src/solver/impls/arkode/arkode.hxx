@@ -29,10 +29,19 @@
 #ifndef __ARKODE_SOLVER_H__
 #define __ARKODE_SOLVER_H__
 
-#ifdef BOUT_HAS_ARKODE
+#include "bout/build_config.hxx"
+#include "bout/solver.hxx"
+
+#if not BOUT_HAS_ARKODE
+
+namespace {
+RegisterUnavailableSolver registerunavailablearkode("arkode",
+                                                    "BOUT++ was not configured with ARKODE/SUNDIALS");
+}
+
+#else
 
 #include "bout_types.hxx"
-#include "bout/solver.hxx"
 
 #include <sundials/sundials_config.h>
 #if SUNDIALS_VERSION_MAJOR >= 3
@@ -59,8 +68,6 @@ public:
   ArkodeSolver(Options* opts = nullptr);
   ~ArkodeSolver();
 
-  void setJacobian(Jacobian j) override { jacfunc = j; }
-
   BoutReal getCurrentTimestep() override { return hcur; }
 
   int init(int nout, BoutReal tstep) override;
@@ -81,7 +88,6 @@ private:
   BoutReal TIMESTEP; // Time between outputs
   BoutReal hcur;     // Current internal timestep
 
-  Jacobian jacfunc{nullptr}; // Jacobian - vector function
   bool diagnose{false};      // Output additional diagnostics
 
   N_Vector uvec{nullptr};    // Values
@@ -89,6 +95,14 @@ private:
 
   BoutReal pre_Wtime{0.0}; // Time in preconditioner
   int pre_ncalls{0};       // Number of calls to preconditioner
+
+  // Diagnostics from ARKODE
+  int nsteps{0};
+  int nfe_evals{0};
+  int nfi_evals{0};
+  int nniters{0};
+  int npevals{0};
+  int nliters{0};
 
   void set_abstol_values(BoutReal* abstolvec_data, std::vector<BoutReal>& f2dtols,
                          std::vector<BoutReal>& f3dtols);

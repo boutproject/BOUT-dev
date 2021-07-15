@@ -2,6 +2,8 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+#include "bout/build_config.hxx"
+
 #include "gtest/gtest.h"
 
 #include "bout/constants.hxx"
@@ -30,28 +32,16 @@ using namespace bout::globals;
 // Reuse the "standard" fixture for FakeMesh
 using Field3DTest = FakeMeshFixture;
 
-TEST_F(Field3DTest, IsReal) {
-  Field3D field;
-
-  EXPECT_TRUE(field.isReal());
-}
-
 TEST_F(Field3DTest, Is3D) {
   Field3D field;
 
   EXPECT_TRUE(field.is3D());
 }
 
-TEST_F(Field3DTest, ByteSize) {
-  Field3D field;
-
-  EXPECT_EQ(field.byteSize(), sizeof(BoutReal));
-}
-
 TEST_F(Field3DTest, BoutRealSize) {
   Field3D field;
 
-  EXPECT_EQ(field.BoutRealSize(), 1);
+  EXPECT_EQ(field.elementSize(), 1);
 }
 
 TEST_F(Field3DTest, Allocate) {
@@ -546,7 +536,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOX) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -595,7 +585,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOY) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -649,7 +639,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOZ) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -698,7 +688,7 @@ TEST_F(Field3DTest, IterateOverRGN_XGUARDS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -746,7 +736,7 @@ TEST_F(Field3DTest, IterateOverRGN_YGUARDS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -792,7 +782,7 @@ TEST_F(Field3DTest, IterateOverRGN_ZGUARDS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -844,7 +834,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOCORNERS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -2290,7 +2280,7 @@ TEST_F(Field3DTest, FillField) {
   EXPECT_TRUE(IsFieldEqual(f, g));
 }
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 namespace bout {
 namespace testing {
 

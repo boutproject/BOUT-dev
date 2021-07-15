@@ -25,12 +25,14 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <globals.hxx>
 #include <options.hxx>
 #include <fft.hxx>
 #include <unused.hxx>
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
 
@@ -50,7 +52,7 @@ namespace fft {
 /// Have we set fft_measure?
 bool fft_initialised{false};
 /// Should FFTW find an optimised plan by measuring various plans?
-bool fft_measure{false};
+FFT_MEASUREMENT_FLAG fft_measurement_flag{FFT_MEASUREMENT_FLAG::estimate};
 
 void fft_init(Options* options) {
   if (fft_initialised) {
@@ -59,13 +61,41 @@ void fft_init(Options* options) {
   if (options == nullptr) {
     options = Options::getRoot()->getSection("fft");
   }
-  fft_init((*options)["fft_measure"]
-               .doc("Perform speed measurements to optimise settings?")
-               .withDefault(false));
+  fft_measurement_flag = (*options)["fft_measurement_flag"]
+                    .doc("Level speed measurements to optimise FFT settings: [estimate], measure, exhaustive")
+                    .withDefault(FFT_MEASUREMENT_FLAG::estimate);
+
+  fft_init(fft_measurement_flag);
+}
+
+#if BOUT_HAS_FFTW
+namespace {
+unsigned int get_measurement_flag(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
+  switch (fft_measurement_flag) {
+  case FFT_MEASUREMENT_FLAG::estimate:
+    return FFTW_ESTIMATE;
+  case FFT_MEASUREMENT_FLAG::measure:
+    return FFTW_MEASURE;
+  case FFT_MEASUREMENT_FLAG::exhaustive:
+    return FFTW_EXHAUSTIVE;
+  default:
+    throw BoutException("Error, unimplemented fft_measurement_flag");
+  }
+}
+} // namespace
+#endif
+
+void fft_init(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
+  bout::fft::fft_measurement_flag = fft_measurement_flag;
+  fft_initialised = true;
 }
 
 void fft_init(bool fft_measure) {
-  bout::fft::fft_measure = fft_measure;
+  if (fft_measure) {
+    fft_measurement_flag = FFT_MEASUREMENT_FLAG::measure;
+  } else {
+    fft_measurement_flag = FFT_MEASUREMENT_FLAG::estimate;
+  }
   fft_initialised = true;
 }
 
@@ -76,7 +106,7 @@ void fft_init(bool fft_measure) {
 #ifndef _OPENMP
 // Serial code
 void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   // static variables initialized once
@@ -106,10 +136,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
      */
     fout = static_cast<fftw_complex*>(fftw_malloc(sizeof(fftw_complex) * (length/2 + 1)));
 
-    unsigned int flags = FFTW_ESTIMATE;
-    if (fft_measure) {
-      flags = FFTW_MEASURE;
-    }
+    auto flags = get_measurement_flag(fft_measurement_flag);
 
     /* fftw call
      * Plan a real-input/complex-output discrete Fourier transform (DFT)
@@ -139,7 +166,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
 }
 
 void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   // static variables initialized once
@@ -169,10 +196,7 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
     // Initialize the output of the fourier transformation
     fout = static_cast<double*>(fftw_malloc(sizeof(double) * length));
 
-    unsigned int flags = FFTW_ESTIMATE;
-    if (fft_measure) {
-      flags = FFTW_MEASURE;
-    }
+    auto flags = get_measurement_flag(fft_measurement_flag);
 
     /* fftw call
      * Plan a complex-input/real-output discrete Fourier transform (DFT)
@@ -203,9 +227,11 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
 #else
 // Parallel thread-safe version of rfft and irfft
 void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
+  // ensure we are not nested
+  ASSERT1(omp_get_active_level() < 2);
   static double *finall;
   static fftw_complex *foutall;
   static fftw_plan *p;
@@ -242,10 +268,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
           fftw_malloc(sizeof(fftw_complex) * (length / 2 + 1) * n_th));
       p = new fftw_plan[n_th]; //Never freed
 
-      unsigned int flags = FFTW_ESTIMATE;
-      if (fft_measure) {
-        flags = FFTW_MEASURE;
-      }
+      auto flags = get_measurement_flag(fft_measurement_flag);
 
       for(int i=0;i<n_th;i++)
         // fftw call
@@ -278,7 +301,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
 }
 
 void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   static fftw_complex *finall;
@@ -318,10 +341,7 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
 
       p = new fftw_plan[n_th]; // Never freed
 
-      unsigned int flags = FFTW_ESTIMATE;
-      if (fft_measure) {
-        flags = FFTW_MEASURE;
-      }
+      auto flags = get_measurement_flag(fft_measurement_flag);
 
       for (int i = 0; i < n_th; i++)
         p[i] = fftw_plan_dft_c2r_1d(length, finall + i * (length / 2 + 1),
@@ -354,7 +374,7 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
 //  Discrete sine transforms (B Shanahan)
 
 void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   static double *fin;
@@ -377,10 +397,7 @@ void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSE
     fin = static_cast<double *>(fftw_malloc(sizeof(double) * 2 * length));
     fout = static_cast<fftw_complex *>(fftw_malloc(sizeof(fftw_complex) * 2 * length));
 
-    unsigned int flags = FFTW_ESTIMATE;
-    if (fft_measure) {
-      flags = FFTW_MEASURE;
-    }
+    auto flags = get_measurement_flag(fft_measurement_flag);
 
     // fftw call
     // Plan a real-input/complex-output discrete Fourier transform (DFT)
@@ -412,7 +429,7 @@ void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSE
 }
 
 void DST_rev(MAYBE_UNUSED(dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   static fftw_complex *fin;
@@ -436,10 +453,7 @@ void DST_rev(MAYBE_UNUSED(dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(
         static_cast<fftw_complex *>(fftw_malloc(sizeof(fftw_complex) * 2 * (length - 1)));
     fout = static_cast<double *>(fftw_malloc(sizeof(double) * 2 * (length - 1)));
 
-    unsigned int flags = FFTW_ESTIMATE;
-    if (fft_measure) {
-      flags = FFTW_MEASURE;
-    }
+    auto flags = get_measurement_flag(fft_measurement_flag);
 
     p = fftw_plan_dft_c2r_1d(2*(length-1), fin, fout, flags);
 

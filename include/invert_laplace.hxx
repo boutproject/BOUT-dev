@@ -34,7 +34,9 @@ class Laplacian;
 #ifndef __LAPLACE_H__
 #define __LAPLACE_H__
 
-#ifdef BOUT_HAS_PETSC
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_PETSC
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 #endif
 
@@ -53,11 +55,13 @@ constexpr auto LAPLACE_PDD = "pdd";
 constexpr auto LAPLACE_TRI = "tri";
 constexpr auto LAPLACE_BAND = "band";
 constexpr auto LAPLACE_PETSC = "petsc";
-constexpr auto LAPLACE_MUMPS = "mumps";
+constexpr auto LAPLACE_PETSCAMG = "petscamg";
+constexpr auto LAPLACE_PETSC3DAMG = "petsc3damg";
 constexpr auto LAPLACE_CYCLIC = "cyclic";
-constexpr auto LAPLACE_SHOOT = "shoot";
 constexpr auto LAPLACE_MULTIGRID = "multigrid";
 constexpr auto LAPLACE_NAULIN = "naulin";
+constexpr auto LAPLACE_IPT = "ipt";
+constexpr auto LAPLACE_PCR = "pcr";
 
 // Inversion flags for each boundary
 /// Zero-gradient for DC (constant in Z) component. Default is zero value
@@ -161,6 +165,8 @@ public:
         });
   }
 };
+
+using RegisterUnavailableLaplace = RegisterUnavailableInFactory<Laplacian, LaplaceFactory>;
 
 /// Base class for Laplacian inversion
 class Laplacian {

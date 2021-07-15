@@ -38,6 +38,9 @@ implementations are listed in table :numref:`tab-laplacetypes`.
    | `petsc                 | Serial/parallel. Lots of methods, no Boussinesq              | PETSc (section :ref:`sec-PETSc-install`) |
    | <sec-petsc-laplace_>`__|                                                              |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | petsc3damg             | Serial/parallel. Solves full 3D operator (with               | PETSc (section :ref:`sec-PETSc-install`) |
+   |                        | y-derivatives) with algebraic multigrid.                     |                                          |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
    | multigrid              | Serial/parallel. Geometric multigrid, no Boussinesq          |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
    | `naulin                | Serial/parallel. Iterative treatment of non-Boussinesq terms |                                          |
@@ -52,12 +55,11 @@ implementations are listed in table :numref:`tab-laplacetypes`.
    | `spt                   | Parallel only (NXPE>1). Thomas algorithm.                    |                                          |
    | <sec-spt_>`__          |                                                              |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
-   | mumps                  | Serial/parallel. Direct solver                               | MUMPS (section :ref:`sec-mumps`)         |
-   +------------------------+--------------------------------------------------------------+------------------------------------------+
    | `pdd                   | Parallel Diagnonally Dominant algorithm. Experimental        |                                          |
    | <sec-pdd_>`__          |                                                              |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
-   | shoot                  | Shooting method. Experimental                                |                                          |
+   | `ipt                   | Iterative parallel tridiagonal solver. Parallel only, but    |                                          |
+   | <sec-ipt_>`__          | automatically falls back to Thomas algorithm for NXPE=1.     |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
 
 Usage of the laplacian inversion
@@ -797,7 +799,7 @@ Naulin solver
 ~~~~~~~~~~~~~
 
 This scheme was introduced for BOUT++ by Michael Løiten in the `CELMA code
-<https://github.com/CELMA-project/CELMA>`_ and the iterative algoritm is detailed in
+<https://github.com/CELMA-project/CELMA>`_ and the iterative algorithm is detailed in
 his thesis [Løiten2017]_.
 
 The iteration can be under-relaxed (see ``naulin_laplace.cxx`` for more details of the
@@ -823,6 +825,44 @@ output files to help in choosing this value. With ``<i>`` being the number of th
 
 .. [Løiten2017] Michael Løiten, "Global numerical modeling of magnetized plasma
    in a linear device", 2017, https://celma-project.github.io/.
+
+.. _sec-ipt:
+
+Iterative Parallel Tridiagonal solver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This solver uses a hybrid of multigrid and the Thomas algorithm to invert
+tridiagonal matrices in parallel.
+The complexity of the algorithm is ``O(nx)`` work and ``O(log(NXPE))``
+communications.
+
+The Laplacian is second-order, so to invert it we need two boundary conditions,
+one at each end of the domain.
+If we only have one processor, that processor knows both boundary conditions,
+and we can invert the Laplacian locally using the Thomas algorithm.
+When the domain is subdivided between two or more processors, we can no longer
+use the Thomas algorithm, as processors do not know the solution at the
+subdomain boundaries.
+
+In this hybrid approach, we reduce the original system of equations to a
+smaller system for solution at the boundaries of each processor's subdomain.
+We solve this system in parallel using multigrid.
+Once the boundary values are known, each processor can find the solution on its
+subdomain using the Thomas algorithm.
+
+**Parameters.**
+
+* ``type = ipt`` selects this solver.
+* ``rtol`` and ``atol`` are the relative and absolute error tolerances to determine when the residual has converged. The goal of setting these is to minimize the runtime by minimizing the number of iterations required to meet the tolerance. Intuitively we would expect tightening tolerances is bad, as doing so requires more iterations. This is true, but also *loosening* the tolerances too far can lead to very slowly convergence. Generally, as we scan from large to small tolerances, we start with very slow calculations, then meet some threshold in tolerance where the runtime drops sharply, then see runtime slowly increase again as tolerances tighten further. The run time for all tolerances below this threshold are similar though, and generally it is best to err on the side of tighter tolerances.
+* ``maxits`` is the maximum number of iterations allowed before the job fails.
+* ``max_cycle`` is the number of pre and post smoothing operations applied on each multigrid level. The optimal value appears to be ``max_cycle = 1``.
+* ``max_level`` sets the number of multigrid levels. The optimal value is usually the largest possible value ``max_level = log2(NXPE) - 2`` (see "constraints" below), but sometimes one or two levels less than this can be faster.
+* ``predict_exit``.  Multigrid convergence rates are very robust. When ``predict_exit = true``, we calculate the convergence rate from early iterations and predict the iteration at which the algorithm will have converged. This allows us to skip convergence checks at most iterations (these checks are expensive as they require global communication). Whether this is advantageous is problem-dependent: it is probably useful at low ``Z`` resolution but not at higher ``Z`` resolution. This is because the algorithm skips work associated with ``kz`` modes which have converged; but if we do not check convergence, we do not know which modes we can skip. Therefore at higher ``Z`` resolution we find that reduced communication costs are offset by increased work. ``predict_exit`` defaults to ``false``.
+
+**Constraints.** This method requires that:
+
+* ``NXPE`` is a power of 2. 
+* ``NXPE > 2^(max_levels+1)``
 
 .. _sec-LaplaceXY:
 
@@ -887,8 +927,33 @@ cell faces.
 
 Notes:
 
--  The ShiftXderivs option must be true for this to work, since it
-   assumes that :math:`g^{xz} = 0`
+-  The ``ShiftedMetric`` or ``FCITransform`` ParallelTransform must be used
+   (i.e. ``mesh:paralleltransform:type = shifted`` or
+   ``mesh:paralleltransform:type = fci``) for this to work, since it assumes that
+   :math:`g^{xz} = 0`
+-  Setting the option ``pctype = hypre`` seems to work well, if PETSc has been
+   compiled with the algebraic multigrid library hypre; this can be included by
+   passing the option ``--download-hypre`` to PETSc's ``configure`` script.
+-  ``LaplaceXY`` (with the default finite-volume discretisation) has a slightly
+   different convention for passing non-zero boundary values than the
+   ``Laplacian`` solvers. ``LaplaceXY`` uses the average of the last grid cell
+   and first boundary cell of the initial guess (second argument to
+   ``solve()``) as the value to impose for the boundary condition.
+
+An alternative discretization is available if the option ``finite_volume =
+false`` is set. Then a finite-difference discretization very close to the one used when
+calling ``A*Laplace_perp(f) + Grad_perp(A)*Grad_perp(f) + B*f`` is used. This also
+supports non-orthogonal grids with :math:`g^{xy} \neq 0`. The difference is that when
+:math:`g^{xy} \neq 0`, ``Laplace_perp`` calls ``D2DXDY(f)`` which applies a boundary
+condition to ``dfdy = DDY(f)`` before calculating ``DDX(dfdy)`` with a slightly different
+result than the way boundary conditions are applied in ``LaplaceXY``.
+
+-  The finite difference implementation of ``LaplaceXY`` passes non-zero values
+   for the boundary conditions in the same way as the ``Laplacian`` solvers.
+   The value in the first boundary cell of the initial guess (second argument
+   to ``solve()``) is used as the boundary value. (Note that this value is
+   imposed as a boundary condition on the returned solution at a location half
+   way between the last grid cell and first boundary cell.)
 
 .. _sec-LaplaceXZ:
 

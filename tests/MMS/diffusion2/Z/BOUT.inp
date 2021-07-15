@@ -6,18 +6,20 @@ timestep = 1 #Time between outputs
 
 # Number of points in z
 MZ = 1
-zmin = 0.0
-zmax = 1.0
+ZMIN = 0.0
+ZMAX = 1.0
 
 #number of guard cells
 MYG = 0  #noy comm for now
 MXG = 0
 
+dump_format = "nc"     # Write NetCDF format files
+
 [output]
 floats = false #false -> output in doubles
 
-[mesh]  
-ixseps1 = -1     
+[mesh]
+ixseps1 = -1
 ixseps2 = -1             # Set x location of separatrix 2
 
 #nx = internals gridpoints + guardcells
@@ -26,30 +28,28 @@ nx = 2
 #ny = internal gridpoints
 ny = 1
 
-Lx = 1. 
-Ly = 1.
-
-dump_format="nc"     # Write NetCDF format files
+Lx = 1.0
+Ly = 1.0
 
 #grid points are distributed symmetrically
-symmetricGlobalX = true 
-symmetricGlobalY = true 
+symmetricGlobalX = true
+symmetricGlobalY = true
 ##################################################
-[ddx]   # Methods used for perp (x) derivative terms
+[mesh:ddx]   # Methods used for perp (x) derivative terms
 
 first = C2
 second = C2
 upwind = W3
 flux = SPLIT
 
-[ddy]   # Methods used for parallel (y) derivative terms
+[mesh:ddy]   # Methods used for parallel (y) derivative terms
 
 first = C2
 second = C2
 upwind = W3
 flux = SPLIT
 
-[ddz]   # Methods used for perp (z) derivative terms
+[mesh:ddz]   # Methods used for perp (z) derivative terms
 
 first = C2 # Change to FFT to see convergence properties of FFT calculated derivatives
 second = C2
@@ -57,14 +57,14 @@ upwind = W3
 flux = SPLIT
 
 
-[solver] 
+[solver]
 
 type = pvode
 
 mms = true
 
-atol = 1.0e-15 # absolute tolerance
-rtol = 1.0e-7  # relative tolerance
+atol = 1e-15 # absolute tolerance
+rtol = 1e-07  # relative tolerance
 mxstep = 1000000
 
 [cyto]
@@ -73,27 +73,19 @@ Dy = -1 # No Y conduction
 Dz = 1 # No Z conduction
 
 [all]
-
-scale = 1.0 
-xs_opt = 0
-ys_opt = 0
-zs_opt = 0
-
+scale = 1.0
 
 [N]
 xl = x * mesh:Lx           # In the range [0,Lx]
 yl = y * mesh:Ly   # In the range [0,Ly]
- 
+
 solution = 0.9*N:xl + 0.2*sin(5.0*N:xl^2 - 2*z) + sin(7*N:yl + 1.234)*cos(N:yl)*cos(10*z) + 0.9
 
-ddx     = 2.0*N:xl*cos(5.0*N:xl^2 - 2*z) + 0.9
+ddx = 2.0*N:xl*cos(5.0*N:xl^2 - 2*z) + 0.9
 
-ddy     = -sin(N:yl)*sin(7*N:yl + 1.234)*cos(10*z) + 7*cos(N:yl)*cos(10*z)*cos(7*N:yl + 1.234)
+ddy = -sin(N:yl)*sin(7*N:yl + 1.234)*cos(10*z) + 7*cos(N:yl)*cos(10*z)*cos(7*N:yl + 1.234)
 
-source   = 0.8*sin(5.0*N:xl^2 - 2*z) + 100.0*sin(7*N:yl + 1.234)*cos(N:yl)*cos(10*z)
+source = 0.8*sin(5.0*N:xl^2 - 2*z) + 100.0*sin(7*N:yl + 1.234)*cos(N:yl)*cos(10*z)
 
 bndry_all = dirichlet_o2(N:solution)
 bndry_xin = neumann_o2(N:ddx)
-
-################################
-

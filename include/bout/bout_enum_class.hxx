@@ -53,12 +53,11 @@
 #define _ec_expand_10(_call, enumname, x, ...) \
   _call(enumname, x) _ec_expand_9(_call, enumname, __VA_ARGS__)
 
-#define BOUT_ENUM_CLASS_MAP_ARGS(mac, enumname, ...)                                   \
-  BOUT_GET_FOR_EACH_EXPANSION(__VA_ARGS__,                                             \
-                              _ec_expand_10, _ec_expand_9, _ec_expand_8, _ec_expand_7, \
-                              _ec_expand_6, _ec_expand_5, _ec_expand_4, _ec_expand_3,  \
-                              _ec_expand_2, _ec_expand_1)                              \
-  (mac, enumname, __VA_ARGS__)
+#define BOUT_ENUM_CLASS_MAP_ARGS(mac, enumname, ...)                                    \
+  BOUT_EXPAND(_GET_FOR_EACH_EXPANSION(                                                  \
+    __VA_ARGS__, _ec_expand_10, _ec_expand_9, _ec_expand_8, _ec_expand_7, _ec_expand_6, \
+    _ec_expand_5, _ec_expand_4, _ec_expand_3, _ec_expand_2, _ec_expand_1)               \
+  (mac, enumname, __VA_ARGS__))
 
 #define BOUT_ENUM_CLASS_STR(enumname, val) {enumname::val, lowercase(#val)},
 #define BOUT_STR_ENUM_CLASS(enumname, val) {lowercase(#val), enumname::val},
@@ -73,11 +72,11 @@ enum class enumname { __VA_ARGS__ };                                        \
 inline std::string toString(enumname e) {                                   \
   AUTO_TRACE();                                                             \
   const static std::map<enumname, std::string> toString_map = {             \
-    BOUT_ENUM_CLASS_MAP_ARGS(_ENUM_CLASS_STR, enumname, __VA_ARGS__)        \
+    BOUT_ENUM_CLASS_MAP_ARGS(BOUT_ENUM_CLASS_STR, enumname, __VA_ARGS__)    \
   };                                                                        \
   auto found = toString_map.find(e);                                        \
   if (found == toString_map.end()) {                                        \
-    throw BoutException("Did not find enum %d", static_cast<int>(e));       \
+    throw BoutException("Did not find enum {:d}", static_cast<int>(e));     \
   }                                                                         \
   return found->second;                                                     \
 }                                                                           \
@@ -85,11 +84,11 @@ inline std::string toString(enumname e) {                                   \
 inline enumname BOUT_MAKE_FROMSTRING_NAME(enumname)(const std::string& s) { \
   AUTO_TRACE();                                                             \
   const static std::map<std::string, enumname> fromString_map = {           \
-    BOUT_ENUM_CLASS_MAP_ARGS(_STR_ENUM_CLASS, enumname, __VA_ARGS__)        \
+    BOUT_ENUM_CLASS_MAP_ARGS(BOUT_STR_ENUM_CLASS, enumname, __VA_ARGS__)    \
   };                                                                        \
   auto found = fromString_map.find(s);                                      \
   if (found == fromString_map.end()) {                                      \
-    throw BoutException("Did not find enum %s", s.c_str());                 \
+    throw BoutException("Did not find enum {:s}", s);                       \
   }                                                                         \
   return found->second;                                                     \
 }                                                                           \

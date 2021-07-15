@@ -36,6 +36,8 @@
 #ifndef __SOLVER_H__
 #define __SOLVER_H__
 
+#include "bout/build_config.hxx"
+
 #include "bout_types.hxx"
 #include "boutexception.hxx"
 #include "datafile.hxx"
@@ -82,7 +84,6 @@ constexpr auto SOLVERPVODE = "pvode";
 constexpr auto SOLVERIDA = "ida";
 constexpr auto SOLVERPETSC = "petsc";
 constexpr auto SOLVERSLEPC = "slepc";
-constexpr auto SOLVERKARNIADAKIS = "karniadakis";
 constexpr auto SOLVERRK4 = "rk4";
 constexpr auto SOLVEREULER = "euler";
 constexpr auto SOLVERRK3SSP = "rk3ssp";
@@ -103,9 +104,9 @@ public:
   static constexpr auto section_name = "solver";
   static constexpr auto option_name = "type";
   static constexpr auto default_type =
-#if defined BOUT_HAS_CVODE
+#if BOUT_HAS_CVODE
       SOLVERCVODE;
-#elif defined BOUT_HAS_IDA
+#elif BOUT_HAS_IDA
       SOLVERIDA;
 #else
       SOLVERPVODE;
@@ -122,6 +123,8 @@ public:
 ///     }
 template <typename DerivedType>
 using RegisterSolver = RegisterInFactory<Solver, DerivedType, SolverFactory>;
+
+using RegisterUnavailableSolver = RegisterUnavailableInFactory<Solver, SolverFactory>;
 
 ///////////////////////////////////////////////////////////////////
 
@@ -213,18 +216,6 @@ public:
   virtual void setModel(PhysicsModel* model);
 
   /////////////////////////////////////////////
-  // Old API
-
-  /// Set the RHS function
-  virtual void setRHS(rhsfunc f) { phys_run = f; }
-  /// Specify a preconditioner (optional)
-  void setPrecon(PhysicsPrecon f) { prefunc = f; }
-  /// Specify a Jacobian (optional)
-  virtual void setJacobian(Jacobian UNUSED(j)) {}
-  /// Split operator solves
-  virtual void setSplitOperator(rhsfunc fC, rhsfunc fD);
-
-  /////////////////////////////////////////////
   // Monitors
 
   // Alternative names so that Solver::BACK and Solver::FRONT can be used as names for
@@ -260,10 +251,10 @@ public:
 
   /// Add a variable to be solved. This must be done in the
   /// initialisation stage, before the simulation starts.
-  virtual void add(Field2D& v, const std::string& name);
-  virtual void add(Field3D& v, const std::string& name);
-  virtual void add(Vector2D& v, const std::string& name);
-  virtual void add(Vector3D& v, const std::string& name);
+  virtual void add(Field2D& v, const std::string& name, const std::string& description = "");
+  virtual void add(Field3D& v, const std::string& name, const std::string& description = "");
+  virtual void add(Vector2D& v, const std::string& name, const std::string& description = "");
+  virtual void add(Vector3D& v, const std::string& name, const std::string& description = "");
 
   /// Returns true if constraints available
   virtual bool constraints() { return has_constraints; }
@@ -284,9 +275,9 @@ public:
   /// to determine the number of steps and the output timestep.
   /// If nout and dt are specified here then the options are not used
   ///
-  /// @param[in] nout   Number of output timesteps
-  /// @param[in] dt     The time between outputs
-  int solve(int nout = -1, BoutReal dt = 0.0);
+  /// @param[in] nout     Number of output timesteps to run for
+  /// @param[in] timestep The time between outputs
+  int solve(int nout = -1, BoutReal timestep = 0.0);
 
   /// Initialise the solver
   /// NOTE: nout and tstep should be passed to run, not init.
@@ -320,7 +311,7 @@ public:
   int resetRHSCounter_i();
 
   /// Test if this solver supports split operators (e.g. implicit/explicit)
-  bool splitOperator() { return split_operator; }
+  bool splitOperator();
 
   bool canReset{false};
 
@@ -345,6 +336,11 @@ public:
     pargc = &c;
     pargv = &v;
   }
+
+  /// A unique identifier for this run. Throws if the identifier hasn't been set yet.
+  std::string getRunID() const;
+  /// The run from which this was restarted. Throws if the identifier hasn't been set yet.
+  std::string getRunRestartFrom() const;
 
 protected:
   /// Number of command-line arguments
@@ -374,6 +370,7 @@ protected:
     bool covariant{false};               /// For vectors
     bool evolve_bndry{false};            /// Are the boundary regions being evolved?
     std::string name;                    /// Name of the variable
+    std::string description{""};         /// Description of what the variable is
   };
 
   /// Does \p var represent field \p name?
@@ -404,6 +401,26 @@ protected:
   std::vector<VarStr<Field3D>> f3d;
   std::vector<VarStr<Vector2D>> v2d;
   std::vector<VarStr<Vector3D>> v3d;
+
+  /// Vectors of diagnostic variables to save
+  std::vector<VarStr<int>> diagnostic_int;
+  std::vector<VarStr<BoutReal>> diagnostic_BoutReal;
+  void add_int_diagnostic(int &i, const std::string &name,
+                          const std::string &description = "") {
+    VarStr<int> v;
+    v.var = &i;
+    v.name = name;
+    v.description = description;
+    diagnostic_int.emplace_back(std::move(v));
+  };
+  void add_BoutReal_diagnostic(BoutReal &r, const std::string &name,
+                               const std::string &description = "") {
+    VarStr<BoutReal> v;
+    v.var = &r;
+    v.name = name;
+    v.description = description;
+    diagnostic_BoutReal.emplace_back(std::move(v));
+  };
 
   /// Can this solver handle constraints? Set to true if so.
   bool has_constraints{false};
@@ -446,8 +463,14 @@ protected:
   int call_timestep_monitors(BoutReal simtime, BoutReal lastdt);
 
   /// Do we have a user preconditioner?
-  bool have_user_precon();
-  int run_precon(BoutReal t, BoutReal gamma, BoutReal delta);
+  bool hasPreconditioner();
+  /// Run the user preconditioner
+  int runPreconditioner(BoutReal time, BoutReal gamma, BoutReal delta);
+
+  /// Do we have a user Jacobian?
+  bool hasJacobian();
+  /// Run the user Jacobian
+  int runJacobian(BoutReal time);
 
   // Loading data from BOUT++ to/from solver
   void load_vars(BoutReal* udata);
@@ -466,6 +489,19 @@ protected:
   auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }
 
 private:
+  /// Generate a random UUID (version 4) and broadcast it to all processors
+  std::string createRunID() const;
+
+  /// Default value for `run_id`. Use 'z' because it is not a valid
+  /// hex character, so this is an invalid UUID
+  static constexpr auto default_run_id = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
+
+  /// Randomly generated run ID
+  /// Initialise with 36 characters so the allocated array is the right size
+  std::string run_id = default_run_id;
+  /// The run from which this was restarted.
+  std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
+
   /// Number of calls to the RHS function
   int rhs_ncalls{0};
   /// Number of calls to the explicit (convective) RHS function
@@ -478,18 +514,6 @@ private:
   BoutReal internal_timestep{-1};
   /// Physics model being evolved
   PhysicsModel* model{nullptr};
-
-  /// The user's RHS function
-  rhsfunc phys_run{nullptr};
-  /// The user's preconditioner function
-  PhysicsPrecon prefunc{nullptr};
-  /// Is the physics model using separate convective (explicit) and
-  /// diffusive (implicit) RHS functions?
-  bool split_operator{false};
-  /// Convective part (if split operator)
-  rhsfunc phys_conv{nullptr};
-  /// Diffusive part (if split operator)
-  rhsfunc phys_diff{nullptr};
 
   /// Should non-split physics models be treated as diffusive?
   bool is_nonsplit_model_diffusive{true};

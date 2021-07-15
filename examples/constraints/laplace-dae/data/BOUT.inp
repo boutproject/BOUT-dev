@@ -3,8 +3,8 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 100     # number of time-steps
-TIMESTEP = 1e-2   # time between outputs
+nout = 100     # number of time-steps
+timestep = 0.01   # time between outputs
 
 MZ = 65     # number of points in z direction (2^n + 1)
 
@@ -15,7 +15,7 @@ grid = "simple_xz.nc"
 
 dump_format = "nc" # Set extension for dump files (nc = NetCDF)
 
-NXPE = 1 
+NXPE = 1
 
 ##################################################
 # derivative methods
@@ -46,7 +46,7 @@ flux = U1
 
 [laplace]
 all_terms = false
-laplace_nonuniform = true
+nonuniform = true
 filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 
 ##################################################
@@ -55,11 +55,11 @@ filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 mxstep = 50000
 
-#type=karniadakis
+#type=splitrk
 #timestep=1e-4
 use_precon = true
 
@@ -76,40 +76,15 @@ constraint = true
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
-
-# boundary conditions
-# -------------------
-# dirichlet    - Zero value
-# neumann      - Zero gradient
-# zerolaplace  - Laplacian = 0, decaying solution
-# constlaplace - Laplacian = const, decaying solution
-#
-# relax( )   - Make boundary condition relaxing
 
 bndry_all = dirichlet # Default zero value
 
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers
-
-xs_opt = 2
-ys_opt = 0
-zs_opt = 2
-
 [U]
-scale = 0.
-
-xs_mode = 2 # X mode number
-zs_mode = 3 # Z mode number
+scale = 1.0
+function = sin(4*pi*x) * sin(3*z)
 
 [phi]
-
-scale = 0.
-
-xs_mode = 1 # X mode number
-zs_mode = 1 # Z mode number
-
+scale = 1.0
+function = sin(2*pi*x) * sin(z)

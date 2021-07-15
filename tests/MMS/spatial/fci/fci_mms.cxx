@@ -5,7 +5,9 @@
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
-  Field3D input{FieldFactory::get()->create3D("input", Options::getRoot(), mesh)};
+  using bout::globals::mesh;
+
+  Field3D input{FieldFactory::get()->create3D("input_field", Options::getRoot(), mesh)};
   Field3D solution{FieldFactory::get()->create3D("solution", Options::getRoot(), mesh)};
 
   // Communicate to calculate parallel transform
@@ -22,7 +24,7 @@ int main(int argc, char** argv) {
     SAVE_ONCE2(input.ynext(-slice), input.ynext(slice));
   }
 
-  dump.write();
+  bout::globals::dump.write();
 
   BoutFinalise();
 }

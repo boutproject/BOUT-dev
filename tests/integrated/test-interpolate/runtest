@@ -19,9 +19,9 @@ nxlist = [16, 32, 64, 128]
 nproc = 1
 
 # Variables to compare
-varlist = ['a', 'b', 'c']
-markers = ['bo', 'r^', 'kx']
-labels = [r'$'+var+r'$' for var in varlist]
+varlist = ["a", "b", "c"]
+markers = ["bo", "r^", "kx"]
+labels = [r"$" + var + r"$" for var in varlist]
 
 methods = {
     "hermitespline": 3,
@@ -42,16 +42,19 @@ for method in methods:
     error_2 = {}
     error_inf = {}
     for var in varlist:
-        error_2[var] = []             # L2 error (RMS)
-        error_inf[var] = []           # Maximum error
+        error_2[var] = []  # L2 error (RMS)
+        error_inf[var] = []  # Maximum error
 
     for nx in nxlist:
-        dx = 1. / (nx)
+        dx = 1.0 / (nx)
 
-        args = " mesh:nx={nx4} mesh:dx={dx} MZ={nx} interpolation:type={method}".format(
-            nx4=nx + 4, dx=dx, nx=nx, method=method)
+        args = (
+            " mesh:nx={nx4} mesh:dx={dx} MZ={nx} xzinterpolation:type={method}".format(
+                nx4=nx + 4, dx=dx, nx=nx, method=method
+            )
+        )
 
-        cmd = "./test_interpolate"+args
+        cmd = "./test_interpolate" + args
 
         shell("rm data/BOUT.dmp.*.nc")
 
@@ -61,12 +64,14 @@ for method in methods:
 
         # Collect output data
         for var in varlist:
-            interp = collect(var+"_interp", path="data", xguards=False, info=False)
-            solution = collect(var+"_solution", path="data", xguards=False, info=False)
+            interp = collect(var + "_interp", path="data", xguards=False, info=False)
+            solution = collect(
+                var + "_solution", path="data", xguards=False, info=False
+            )
 
             E = interp - solution
 
-            l2 = float(sqrt(mean(E**2)))
+            l2 = float(sqrt(mean(E ** 2)))
             linf = float(max(abs(E)))
 
             error_2[var].append(l2)
@@ -74,7 +79,7 @@ for method in methods:
 
             print("{0:s} : l-2 {1:.8f} l-inf {2:.8f}".format(var, l2, linf))
 
-    dx = 1./array(nxlist)
+    dx = 1.0 / array(nxlist)
 
     for var in varlist:
         fit = polyfit(log(dx), log(error_2[var]), 1)
@@ -91,20 +96,21 @@ for method in methods:
     if False:
         try:
             import matplotlib.pyplot as plt
+
             # Plot errors
             plt.figure()
 
             for var, mark, label in zip(varlist, markers, labels):
-                plt.plot(dx, error_2[var], '-'+mark, label=label)
-                plt.plot(dx, error_inf[var], '--'+mark)
+                plt.plot(dx, error_2[var], "-" + mark, label=label)
+                plt.plot(dx, error_inf[var], "--" + mark)
 
             plt.legend(loc="upper left")
             plt.grid()
 
-            plt.yscale('log')
-            plt.xscale('log')
+            plt.yscale("log")
+            plt.xscale("log")
 
-            plt.xlabel(r'Mesh spacing $\delta x$')
+            plt.xlabel(r"Mesh spacing $\delta x$")
             plt.ylabel("Error norm")
             plt.title("Error scaling for {}".format(method))
 

@@ -30,40 +30,52 @@
 #include <cstdarg>
 #include <string>
 
-#if CHECK > 1
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+#if BOUT_USE_MSGSTACK
 int MsgStack::push(std::string message) {
-  BOUT_OMP(critical(MsgStack_push)) {
-    if (position >= stack.size()) {
-      stack.push_back(std::move(message));
-    } else {
-      stack[position] = message;
-    }
 
-    position++;
-  };
-  return position - 1;
-}
+#ifdef _OPENMP
+  // This is temporary fix: no messages from OMP regions if there's
+  // more than one thread
+  if (omp_get_num_threads() > 1) {
+    return position;
+  }
+#endif
 
-int MsgStack::setPoint() {
-  // Create an empty message
-  return push();
+  if (position >= stack.size()) {
+    stack.push_back(std::move(message));
+  } else {
+    stack[position] = message;
+  }
+
+  return position++;
 }
 
 void MsgStack::pop() {
-  if (position <= 0)
+  if (position <= 0) {
     return;
-  BOUT_OMP(atomic)
-  --position;
+  }
+  BOUT_OMP(single) {
+    --position;
+  }
 }
 
 void MsgStack::pop(int id) {
+#ifdef _OPENMP
+  if (omp_get_num_threads() > 1) {
+    return;
+  }
+#endif
+
   if (id < 0)
     id = 0;
 
-  BOUT_OMP(critical(MsgStack_pop)) {
-    if (id <= static_cast<int>(position))
+  if (id <= static_cast<int>(position)) {
       position = id;
-  };
+  }
 }
 
 void MsgStack::clear() {

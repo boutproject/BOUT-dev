@@ -1,5 +1,6 @@
+#include "bout/build_config.hxx"
 
-#ifdef NCDF4
+#if BOUT_HAS_NETCDF && !BOUT_HAS_LEGACY_NETCDF
 
 #include "options_netcdf.hxx"
 
@@ -184,6 +185,11 @@ NcType NcTypeVisitor::operator()<Field3D>(const Field3D& UNUSED(t)) {
   return operator()<BoutReal>(0.0);
 }
 
+template <>
+NcType NcTypeVisitor::operator()<FieldPerp>(const FieldPerp& UNUSED(t)) {
+  return operator()<BoutReal>(0.0);
+}
+
 /// Visit a variant type, returning dimensions
 struct NcDimVisitor {
   NcDimVisitor(NcGroup& group) : group(group) {}
@@ -247,6 +253,17 @@ std::vector<NcDim> NcDimVisitor::operator()<Field3D>(const Field3D& value) {
   return {xdim, ydim, zdim};
 }
 
+template <>
+std::vector<NcDim> NcDimVisitor::operator()<FieldPerp>(const FieldPerp& value) {
+  auto xdim = findDimension(group, "x", value.getNx());
+  ASSERT0(!xdim.isNull());
+
+  auto zdim = findDimension(group, "z", value.getNz());
+  ASSERT0(!zdim.isNull());
+
+  return {xdim, zdim};
+}
+
 /// Visit a variant type, and put the data into a NcVar
 struct NcPutVarVisitor {
   NcPutVarVisitor(NcVar& var) : var(var) {}
@@ -290,6 +307,18 @@ void NcPutVarVisitor::operator()<Field3D>(const Field3D& value) {
   var.putAtt("cell_location", toString(value.getLocation()));
 }
 
+template <>
+void NcPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
+  // Pointer to data. Assumed to be contiguous array
+  var.putVar(&value(0, 0));
+
+  // Set cell location attribute
+  var.putAtt("cell_location", toString(value.getLocation()));
+  var.putAtt("direction_y", toString(value.getDirectionY()));
+  var.putAtt("direction_z", toString(value.getDirectionZ()));
+  var.putAtt("yindex_global", ncInt, value.getGlobalIndex());
+}
+
 /// Visit a variant type, and put the data into a NcVar
 struct NcPutVarCountVisitor {
   NcPutVarCountVisitor(NcVar& var, const std::vector<size_t>& start,
@@ -320,6 +349,11 @@ template <>
 void NcPutVarCountVisitor::operator()<Field3D>(const Field3D& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(start, count, &value(0, 0, 0));
+}
+template <>
+void NcPutVarCountVisitor::operator()<FieldPerp>(const FieldPerp& value) {
+  // Pointer to data. Assumed to be contiguous array
+  var.putVar(start, count, &value(0, 0));
 }
 
 /// Visit a variant type, and put the data into an attributute
@@ -537,4 +571,4 @@ void OptionsNetCDF::write(const Options& options) {
 } // experimental
 } // bout
 
-#endif // NCDF4
+#endif // BOUT_HAS_NETCDF

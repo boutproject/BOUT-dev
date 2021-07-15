@@ -4,18 +4,26 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 #include "unused.hxx"
 
-Field3D N;
+class Test_stopcheck : public PhysicsModel {
+  Field3D N;
+protected:
+  int init(bool UNUSED(restarting)) override;
+  int rhs(BoutReal UNUSED(t)) override;
+};
 
-int physics_init(bool UNUSED(restarting)) {
+int Test_stopcheck::init(bool UNUSED(restarting)) {
   solver->add(N,"N");
   return 0;
 }
 
-int physics_run(BoutReal UNUSED(t)) {
-  mesh->communicate(N);
+int Test_stopcheck::rhs(BoutReal UNUSED(t)) {
+  bout::globals::mesh->communicate(N);
   ddt(N) = 0.;
   return 0;
 }
+
+
+BOUTMAIN(Test_stopcheck)

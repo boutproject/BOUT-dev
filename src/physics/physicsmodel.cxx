@@ -34,10 +34,11 @@
 
 #include <bout/mesh.hxx>
 
-PhysicsModel::PhysicsModel() : modelMonitor(this) {
+PhysicsModel::PhysicsModel()
+    : mesh(bout::globals::mesh), dump(bout::globals::dump), modelMonitor(this) {
 
   // Set up restart file
-  restart = Datafile(Options::getRoot()->getSection("restart"));
+  restart = Datafile(Options::getRoot()->getSection("restart_files"));
 }
 
 int PhysicsModel::runRHS(BoutReal time) {
@@ -72,21 +73,25 @@ int PhysicsModel::runJacobian(BoutReal t) {
   return (*this.*userjacobian)(t);
 }
 
-void PhysicsModel::bout_solve(Field2D &var, const char *name) {
+void PhysicsModel::bout_solve(Field2D &var, const char *name,
+                              const std::string& description) {
   // Add to solver
-  solver->add(var, name);
+  solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Field3D &var, const char *name) {
-  solver->add(var, name);
+void PhysicsModel::bout_solve(Field3D &var, const char *name,
+                              const std::string& description) {
+  solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector2D &var, const char *name) {
-  solver->add(var, name);
+void PhysicsModel::bout_solve(Vector2D &var, const char *name,
+                              const std::string& description) {
+  solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector3D &var, const char *name) {
-  solver->add(var, name);
+void PhysicsModel::bout_solve(Vector3D &var, const char *name,
+                              const std::string& description) {
+  solver->add(var, name, description);
 }
 
 int PhysicsModel::postInit(bool restarting) {
@@ -96,22 +101,17 @@ int PhysicsModel::postInit(bool restarting) {
   // Second argument specifies no time history
   solver->outputVars(restart, false);
 
-  std::string restart_dir;  ///< Directory for restart files
-  std::string dump_ext, restart_ext;  ///< Dump, Restart file extension
-  
-  Options *options = Options::getRoot();
-  if (options->isSet("restartdir")) {
-    // Solver-specific restart directory
-    options->get("restartdir", restart_dir, "data");
-  } else {
-    // Use the root data directory
-    options->get("datadir", restart_dir, "data");
-  }
-  /// Get restart file extension
-  options->get("dump_format", dump_ext, "nc");
-  options->get("restart_format", restart_ext, dump_ext);
+  auto& options = Options::root();
 
-  std::string filename = restart_dir + "/BOUT.restart."+restart_ext;
+  const std::string restart_dir = options["restartdir"]
+                                      .doc("Directory for restart files")
+                                      .withDefault(options["datadir"]);
+
+  const std::string restart_ext = options["restart_format"]
+                                      .doc("Restart file extension")
+                                      .withDefault(options["dump_format"]);
+
+  const std::string filename = restart_dir + "/BOUT.restart." + restart_ext;
   if (restarting) {
     output.write("Loading restart file: {:s}\n", filename);
 
@@ -128,11 +128,19 @@ int PhysicsModel::postInit(bool restarting) {
   // are not overwritten.
   bout::globals::mesh->outputVars(restart);
   // Version expected by collect routine
-  restart.addOnce(const_cast<BoutReal &>(BOUT_VERSION), "BOUT_VERSION");
+  restart.addOnce(const_cast<BoutReal &>(bout::version::as_double), "BOUT_VERSION");
 
   /// Open the restart file for writing
   if (!restart.openw(filename))
     throw BoutException("Error: Could not open restart file for writing\n");
+
+  if (restarting) {
+    // Write variables to the restart files so that the initial data is not lost if there is
+    // a crash before modelMonitor is called for the first time
+    if (!restart.write()) {
+      throw BoutException("Error: Failed to write initial data back to restart file");
+    }
+  }
 
   // Add monitor to the solver which calls restart.write() and
   // PhysicsModel::outputMonitor()

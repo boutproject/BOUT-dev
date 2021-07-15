@@ -31,11 +31,9 @@ private:
   std::unique_ptr<Laplacian> phiSolver{nullptr}; // Old Laplacian in X-Z
   std::unique_ptr<LaplaceXZ> newSolver{nullptr}; // New Laplacian in X-Z
 protected:
-  
-  int init(bool restarting) {
-    
+  int init(bool) {
     // Normalisation
-    auto opt = Options::root()["alfven"];
+    auto& opt = Options::root()["Alfven"];
     Tnorm = opt["Tnorm"].withDefault(100);  // Reference temperature [eV]
     Nnorm = opt["Nnorm"].withDefault(1e19); // Reference density [m^-3]
     Bnorm = opt["Bnorm"].withDefault(1.0);  // Reference magnetic field [T]
@@ -74,8 +72,8 @@ protected:
     phi = 0.0;
     
     // Specify the preconditioner function
-    setPrecon( (preconfunc) &Alfven::precon );
-    
+    setPrecon(&Alfven::precon);
+
     // Create an XZ solver
     newXZsolver = opt["newXZsolver"].withDefault(false);
     if(newXZsolver) {
@@ -151,7 +149,7 @@ protected:
    * 
    * ddt(f) = Result of the inversion
    */
-  int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  int precon(BoutReal, BoutReal, BoutReal) {
     if(newXZsolver) {
       ddt(phi) = newSolver->solve(ddt(phi) - ddt(Vort), 0.0);
     }else {
@@ -188,8 +186,8 @@ protected:
     coord->Bxy  /= Bnorm;
     
     // Check type of parallel transform
-    std::string ptstr;
-    Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
+                                       .withDefault("identity");
 
     if(lowercase(ptstr) == "shifted") {
       // Using shifted metric method
@@ -197,9 +195,10 @@ protected:
     }
     
     BoutReal sbp = 1.0; // Sign of Bp
-    if(min(Bpxy, true) < 0.0)
+    if (min(Bpxy, true) < 0.0) {
       sbp = -1.0;
-    
+    }
+
     // Calculate metric components
     
     coord->g11 = SQ(Rxy*Bpxy);

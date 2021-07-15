@@ -1,5 +1,5 @@
 nout = 100
-timestep = 1e-1
+timestep = 0.1
 
 twistshift = true
 
@@ -17,7 +17,7 @@ dx = 1. / (nx-2.*MXG)
 dy = 2*pi / ny
 dz = 2*pi / nz
 
-g11 = 1.
+g11 = 1.0
 g22 = G^2 + eta^2
 g33 = 1 + HH^2 + I^2
 g13 = -I
@@ -32,7 +32,7 @@ theta = y + 0.05*(0.5-x)*sin(y)
 
 zShift = 0.1*x*(y + (-0.05*x + 0.025)*sin(mesh:theta))
 nu = 0.1*x
-shiftangle = 2.*pi/10.*x
+ShiftAngle = 2.*pi/10.*x
 I = 0.1*y + 0.1*(-0.05*x + 0.025)*sin(mesh:theta)
 HH = 0.1*x
 
@@ -63,8 +63,3 @@ function = 0  # Initial condition
 solution = cos(-t + 0.1*x*(y + (-0.05*x + 0.025)*sin(mesh:theta)) + x + y + z + (-0.05*x + 0.025)*sin(mesh:theta))^2
 source = 8*sin(-t + 0.1*x*(y + (-0.05*x + 0.025)*sin(mesh:theta)) + x + y + z + (-0.05*x + 0.025)*sin(mesh:theta))*cos(-t + 0.1*x*(y + (-0.05*x + 0.025)*sin(mesh:theta)) + x + y + z + (-0.05*x + 0.025)*sin(mesh:theta))
 bndry_all = dirichlet_o2(f:solution)
-
-# a different approach:
-#solution = cos(-t + 0.1*mesh:theta*x + mesh:theta + x + z)^2
-#source = 8*sin(-t + 0.1*mesh:theta*x + mesh:theta + x + z)*cos(-t + 0.1*mesh:theta*x + mesh:theta + x + z)
-#bndry_all = dirichlet_o2(f:solution)

@@ -45,6 +45,10 @@ class PhysicsModel;
 #include "utils.hxx"
 #include "bout/macro_for_each.hxx"
 
+#include <type_traits>
+
+class Mesh;
+
 /*!
   Base class for physics models
  */
@@ -53,10 +57,20 @@ public:
   using preconfunc = int (PhysicsModel::*)(BoutReal t, BoutReal gamma, BoutReal delta);
   using jacobianfunc = int (PhysicsModel::*)(BoutReal t);
 
+  template <class Model, typename = typename std::enable_if_t<
+                             std::is_base_of<PhysicsModel, Model>::value>>
+  using ModelPreconFunc = int (Model::*)(BoutReal t, BoutReal gamma, BoutReal delta);
+  template <class Model, typename = typename std::enable_if_t<
+                             std::is_base_of<PhysicsModel, Model>::value>>
+  using ModelJacobianFunc = int (Model::*)(BoutReal t);
+
   PhysicsModel();
   
   virtual ~PhysicsModel() = default;
   
+  Mesh* mesh{nullptr};
+  Datafile& dump;
+
   /*!
    * Initialse the model, calling the init() and postInit() methods
    *
@@ -217,10 +231,18 @@ protected:
   void setSplitOperator(bool split=true) {splitop = split;}
 
   /// Specify a preconditioner function
-  void setPrecon(preconfunc pset) {userprecon = pset;}
+  void setPrecon(preconfunc pset) { userprecon = pset; }
+  template <class Model>
+  void setPrecon(ModelPreconFunc<Model> preconditioner) {
+    userprecon = static_cast<preconfunc>(preconditioner);
+  }
 
   /// Specify a Jacobian-vector multiply function
-  void setJacobian(jacobianfunc jset) {userjacobian = jset;}
+  void setJacobian(jacobianfunc jset) { userjacobian = jset; }
+  template <class Model>
+  void setJacobian(ModelJacobianFunc<Model> jacobian) {
+    userjacobian = static_cast<jacobianfunc>(jacobian);
+  }
 
   /// This is set by a call to initialise, and can be used by models to specify evolving variables
   Solver* solver{nullptr};
@@ -237,10 +259,10 @@ protected:
    * To evolve the state, the solver will set \p var, and the user-supplied
    * rhs() function should calculate ddt(var).
    */
-  void bout_solve(Field2D &var, const char *name);
-  void bout_solve(Field3D &var, const char *name);
-  void bout_solve(Vector2D &var, const char *name);
-  void bout_solve(Vector3D &var, const char *name);
+  void bout_solve(Field2D &var, const char *name, const std::string& description="");
+  void bout_solve(Field3D &var, const char *name, const std::string& description="");
+  void bout_solve(Vector2D &var, const char *name, const std::string& description="");
+  void bout_solve(Vector3D &var, const char *name, const std::string& description="");
 
   /// Stores the state for restarting
   Datafile restart; 
@@ -306,10 +328,12 @@ private:
 #define BOUTMAIN(ModelClass)                                       \
   int main(int argc, char** argv) {                                \
     int init_err = BoutInitialise(argc, argv);                     \
-    if (init_err < 0)                                              \
+    if (init_err < 0) {                                            \
       return 0;                                                    \
-    else if (init_err > 0)                                         \
+    }                                                              \
+    if (init_err > 0) {                                            \
       return init_err;                                             \
+    }                                                              \
     try {                                                          \
       auto model = bout::utils::make_unique<ModelClass>();         \
       auto solver = Solver::create();                              \

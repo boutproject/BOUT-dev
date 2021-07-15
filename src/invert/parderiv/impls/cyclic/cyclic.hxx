@@ -12,7 +12,10 @@
  * Known issues:
  * ------------
  *
- * 
+ * - For CELL_YLOW implementation, boundary conditions are only 1st order accurate.
+ *   Should be OK for preconditioners, which are allowed to be less accurate.
+ *   Only 1st-order accurate one-sided derivative is possible in a tri-diagonal matrix and
+ *   staggered mesh requires one-sided derivative as boundary condition.
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -40,13 +43,25 @@
 #define __INV_PAR_CR_H__
 
 #include "invert_parderiv.hxx"
+#include "bout/build_config.hxx"
+
+#if BOUT_USE_METRIC_3D
+
+namespace {
+RegisterUnavailableInvertPar registerinvertparcyclic{
+    PARDERIVCYCLIC, "BOUT++ was configured with 3D metrics"};
+}
+
+#else
+
 #include "dcomplex.hxx"
 #include <globals.hxx>
 #include "utils.hxx"
 
 class InvertParCR : public InvertPar {
 public:
-  InvertParCR(Options *opt, Mesh *mesh_in = bout::globals::mesh);
+  explicit InvertParCR(Options* opt, CELL_LOC location = CELL_CENTRE,
+                       Mesh* mesh_in = bout::globals::mesh);
 
   using InvertPar::solve;
   const Field3D solve(const Field3D &f) override;
@@ -54,31 +69,37 @@ public:
   using InvertPar::setCoefA;
   void setCoefA(const Field2D &f) override {
     ASSERT1(localmesh == f.getMesh());
+    ASSERT1(location == f.getLocation());
     A = f;
   }
   using InvertPar::setCoefB;
   void setCoefB(const Field2D &f) override {
     ASSERT1(localmesh == f.getMesh());
+    ASSERT1(location == f.getLocation());
     B = f;
   }
   using InvertPar::setCoefC;
   void setCoefC(const Field2D &f) override {
     ASSERT1(localmesh == f.getMesh());
+    ASSERT1(location == f.getLocation());
     C = f;
   }
   using InvertPar::setCoefD;
   void setCoefD(const Field2D &f) override {
     ASSERT1(localmesh == f.getMesh());
+    ASSERT1(location == f.getLocation());
     D = f;
   }
   using InvertPar::setCoefE;
   void setCoefE(const Field2D &f) override {
     ASSERT1(localmesh == f.getMesh());
+    ASSERT1(location == f.getLocation());
     E = f;
   }
 
 private:
-  Field2D A, B, C, D, E;
+  Field2D A{0.0}, B{0.0}, C{0.0}, D{0.0}, E{0.0};
+  Field2D sg; // Coefficient of DDY contribution to Grad2_par2
   
   int nsys;
 };
@@ -86,5 +107,7 @@ private:
 namespace {
 RegisterInvertPar<InvertParCR> registerinvertparcyclic{PARDERIVCYCLIC};
 }
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // __INV_PAR_CR_H__

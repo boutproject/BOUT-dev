@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "bout/mesh.hxx"
 #include "bout/region.hxx"
@@ -52,6 +53,44 @@ TEST_F(MeshTest, GetRegionPerpFromMesh) {
   EXPECT_NO_THROW(localmesh.getRegionPerp("RGN_ALL"));
   EXPECT_NO_THROW(localmesh.getRegionPerp("RGN_NOBNDRY"));
   EXPECT_THROW(localmesh.getRegionPerp("SOME_MADE_UP_REGION_NAME"), BoutException);
+}
+
+TEST_F(MeshTest, HasRegion3D) {
+  localmesh.createDefaultRegions();
+  EXPECT_TRUE(localmesh.hasRegion3D("RGN_ALL"));
+  EXPECT_TRUE(localmesh.hasRegion3D("RGN_NOBNDRY"));
+  EXPECT_FALSE(localmesh.hasRegion3D("SOME_MADE_UP_REGION_NAME"));
+}
+
+TEST_F(MeshTest, HasRegion2D) {
+  localmesh.createDefaultRegions();
+  EXPECT_TRUE(localmesh.hasRegion2D("RGN_ALL"));
+  EXPECT_TRUE(localmesh.hasRegion2D("RGN_NOBNDRY"));
+  EXPECT_FALSE(localmesh.hasRegion2D("SOME_MADE_UP_REGION_NAME"));
+}
+
+TEST_F(MeshTest, HasRegionPerp) {
+  localmesh.createDefaultRegions();
+  EXPECT_TRUE(localmesh.hasRegionPerp("RGN_ALL"));
+  EXPECT_TRUE(localmesh.hasRegionPerp("RGN_NOBNDRY"));
+  EXPECT_FALSE(localmesh.hasRegionPerp("SOME_MADE_UP_REGION_NAME"));
+}
+
+TEST_F(MeshTest, GetRegionTemplatedFromMesh) {
+  using namespace ::testing;
+  localmesh.createDefaultRegions();
+
+  const auto& region3d = localmesh.getRegion3D("RGN_ALL");
+  const auto& regionT_3d = localmesh.getRegion<Field3D>("RGN_ALL");
+  EXPECT_THAT(regionT_3d, ElementsAreArray(region3d));
+
+  const auto& region2d = localmesh.getRegion2D("RGN_ALL");
+  const auto& regionT_2d = localmesh.getRegion<Field2D>("RGN_ALL");
+  EXPECT_THAT(regionT_2d, ElementsAreArray(region2d));
+
+  const auto& regionPerp = localmesh.getRegionPerp("RGN_ALL");
+  const auto& regionT_Perp = localmesh.getRegion<FieldPerp>("RGN_ALL");
+  EXPECT_THAT(regionT_Perp, ElementsAreArray(regionPerp));
 }
 
 TEST_F(MeshTest, AddRegionToMesh) {
@@ -237,4 +276,20 @@ TEST_F(MeshTest, GetField3DNoSourceWithDefault) {
   constexpr BoutReal default_value = 4.2;
   EXPECT_NE(localmesh.get(field3d_value, "no_source", default_value), 0);
   EXPECT_TRUE(IsFieldEqual(field3d_value, default_value));
+}
+
+TEST_F(MeshTest, MsgLen) {
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(nullptr);
+
+  Field3D f3D_1(0., &localmesh);
+  Field3D f3D_2(0., &localmesh);
+  Field2D f2D_1(0., &localmesh);
+  Field2D f2D_2(0., &localmesh);
+
+  std::vector<FieldData*> var_list {&f3D_1, &f2D_1, &f3D_2, &f2D_2};
+
+  const int len = localmesh.msg_len(var_list, 0, nx, 0, ny);
+
+  EXPECT_EQ(len, 2 * (nx * ny * nz) + 2 * (nx * ny));
 }

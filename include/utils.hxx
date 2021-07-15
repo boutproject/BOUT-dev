@@ -38,12 +38,13 @@
 #include "msg_stack.hxx"
 #include "unused.hxx"
 
-#include <string>
-#include <list>
+#include <algorithm>
 #include <cmath>
 #include <ctime>
-#include <algorithm>
+#include <list>
 #include <memory>
+#include <set>
+#include <string>
 
 #ifdef _MSC_VER
 // finite is not actually standard C++, it's a BSD extention for C
@@ -121,6 +122,71 @@ struct function_traits<R (*)(Args...)> {
   template <size_t i>
   using arg_t = typename arg<i>::type;
 };
+
+#ifndef __cpp_lib_erase_if
+/// Erases all elements from \p c that satisfy the predicate \p pred
+/// from the container. Implementation of C++20's std::erase_if, taken
+/// from https://en.cppreference.com/w/cpp/container/multiset/erase_if
+/// CC-BY-SA
+template <class Key, class Compare, class Alloc, class Pred>
+typename std::multiset<Key, Compare, Alloc>::size_type
+erase_if(std::multiset<Key, Compare, Alloc>& c, Pred pred) {
+  auto old_size = c.size();
+  for (auto i = c.begin(), last = c.end(); i != last;) {
+    if (pred(*i)) {
+      i = c.erase(i);
+    } else {
+      ++i;
+    }
+  }
+  return old_size - c.size();
+}
+
+/// Erases all elements from \p c that satisfy the predicate \p pred
+/// from the container. Implementation of C++20's std::erase_if, taken
+/// from https://en.cppreference.com/w/cpp/container/set/erase_if
+/// CC-BY-SA
+template <class Key, class Compare, class Alloc, class Pred>
+typename std::set<Key, Compare, Alloc>::size_type
+erase_if(std::set<Key, Compare, Alloc>& c, Pred pred) {
+  auto old_size = c.size();
+  for (auto i = c.begin(), last = c.end(); i != last;) {
+    if (pred(*i)) {
+      i = c.erase(i);
+    } else {
+      ++i;
+    }
+  }
+  return old_size - c.size();
+}
+
+/// Erases all elements from \p c that compare equal to \p value
+/// from the container. Implementation of C++20's std::erase_if, taken
+/// from https://en.cppreference.com/w/cpp/container/vector/erase2
+/// CC-BY-SA
+template <class T, class Alloc, class U>
+typename std::vector<T, Alloc>::size_type erase(std::vector<T, Alloc>& c,
+                                                const U& value) {
+  auto it = std::remove(c.begin(), c.end(), value);
+  auto r = std::distance(it, c.end());
+  c.erase(it, c.end());
+  return r;
+}
+
+/// Erases all elements from \p c that satisfy the predicate \p pred
+/// from the container. Implementation of C++20's std::erase_if, taken
+/// from https://en.cppreference.com/w/cpp/container/vector/erase2
+/// CC-BY-SA
+template <class T, class Alloc, class Pred>
+typename std::vector<T, Alloc>::size_type erase_if(std::vector<T, Alloc>& c, Pred pred) {
+  auto it = std::remove_if(c.begin(), c.end(), pred);
+  auto r = std::distance(it, c.end());
+  c.erase(it, c.end());
+  return r;
+}
+#else
+using std::erase_if;
+#endif
 } // namespace utils
 } // namespace bout
 
@@ -214,6 +280,11 @@ private:
   /// Underlying 1D storage array
   Array<T> data;
 };
+
+template <typename T>
+bool operator==(const Matrix<T>& lhs, const Matrix<T>& rhs) {
+  return std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
 
 /// Helper class for 3D arrays
 ///
@@ -313,6 +384,10 @@ private:
   Array<T> data;
 };
 
+template <typename T>
+bool operator==(const Tensor<T>& lhs, const Tensor<T>& rhs) {
+  return std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
 
 /**************************************************************************
  * Matrix routines
@@ -497,6 +572,10 @@ inline std::string toString(const bool& val) {
   return "false";
 }
 
+inline std::string toString(const DirectionTypes& dir) {
+  return "{"+toString(dir.y)+", "+toString(dir.z)+"}";
+}
+
 /// Convert a time stamp to a string
 /// This uses std::localtime and std::put_time
 std::string toString(const time_t& time);
@@ -577,6 +656,15 @@ std::string trimRight(const std::string &s, const std::string &c=" \t\r");
  * @param[in] c   Collection of characters to remove
  */
 std::string trimComments(const std::string &s, const std::string &c="#;");
+
+/// Returns the "edit distance" between two strings: how many
+/// insertions, deletions, substitutions and transpositions are needed
+/// to transform \p str1 into \p str2
+///
+/// Implemented using the "optimal string alignment distance" from
+/// Wikipedia:
+/// https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance#Optimal_string_alignment_distance
+std::string::size_type editDistance(const std::string& str1, const std::string& str2);
 
 /// the bout_vsnprintf macro:
 /// The first argument is an char * buffer of length len.

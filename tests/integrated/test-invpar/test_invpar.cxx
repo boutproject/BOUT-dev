@@ -9,31 +9,21 @@
 #include <field_factory.hxx>
 #include <utils.hxx>
 
-int main(int argc, char **argv) {
+using bout::globals::mesh;
 
-  // Initialise BOUT++, setting up mesh
-  BoutInitialise(argc, argv);
+int test(const std::string& acoef, const std::string& bcoef, const std::string& ccoef,
+         const std::string& dcoef, const std::string& ecoef, const std::string& func,
+         BoutReal tol, FieldFactory& f, CELL_LOC location) {
+  output_error.write(
+      "acoef={:s} bcoef={:s} ccoef={:s} dcoef={:s} ecoef{:s} with {:s} at {:s} ...",
+      acoef, bcoef, ccoef, dcoef, ecoef, func, toString(location));
+  auto inv = InvertPar::create(nullptr, location, mesh);
 
-  auto inv = InvertPar::Create();
-  FieldFactory f(mesh);
-
-  // Get options
-  Options *options = Options::getRoot();
-  std::string acoef, bcoef, ccoef, dcoef, ecoef, func;
-  options->get("acoef", acoef, "1.0");
-  options->get("bcoef", bcoef, "-1.0");
-  options->get("ccoef", ccoef, "0.0");
-  options->get("dcoef", dcoef, "0.0");
-  options->get("ecoef", ecoef, "0.0");
-  options->get("input", func, "sin(2*y)");
-  BoutReal tol;
-  OPTION(options, tol, 1e-10);
-
-  Field2D A = f.create2D(acoef);
-  Field2D B = f.create2D(bcoef);
-  Field2D C = f.create2D(ccoef);
-  Field2D D = f.create2D(dcoef);
-  Field2D E = f.create2D(ecoef);
+  Field2D A = f.create2D(acoef, nullptr, nullptr, location);
+  Field2D B = f.create2D(bcoef, nullptr, nullptr, location);
+  Field2D C = f.create2D(ccoef, nullptr, nullptr, location);
+  Field2D D = f.create2D(dcoef, nullptr, nullptr, location);
+  Field2D E = f.create2D(ecoef, nullptr, nullptr, location);
 
   inv->setCoefA(A);
   inv->setCoefB(B);
@@ -41,7 +31,7 @@ int main(int argc, char **argv) {
   inv->setCoefD(D);
   inv->setCoefE(E);
 
-  Field3D input = f.create3D(func);
+  Field3D input = f.create3D(func, nullptr, nullptr, location);
   Field3D result = inv->solve(input);
   mesh->communicate(result);
 
@@ -49,35 +39,78 @@ int main(int argc, char **argv) {
 	  + D*D2DZ2(result) + E*DDY(result);
 
   // Check the result
-  int passed = 1;
-  for (int y = 2; y < mesh->LocalNy - 2; y++) {
+  bool success{true};
+  int local_ystart = mesh->ystart;
+  if (location == CELL_YLOW) {
+    // Point at mesh->ystart in 'result' is set by the Neumann boundary condition, so may
+    // not agree with 'deriv'
+    local_ystart = mesh->ystart + 1;
+  }
+  for (int y = local_ystart; y < mesh->yend; y++) {
     for (int z = 0; z < mesh->LocalNz; z++) {
-      output.write("result: [{:d},{:d}] : {:e}, {:e}, {:e}\n", y, z, input(2, y, z),
-                   result(2, y, z), deriv(2, y, z));
-      if (abs(input(2, y, z) - deriv(2, y, z)) > tol)
-        passed = 0;
+      output.write("result: [{:d},{:d}] : {:e}, {:e}, {:e}\n", y, z,
+                   input(mesh->xstart, y, z), result(mesh->xstart, y, z),
+                   deriv(mesh->xstart, y, z));
+      if (std::abs(input(mesh->xstart, y, z) - deriv(mesh->xstart, y, z)) > tol) {
+        success = false;
+      }
     }
   }
+  if (success) {
+    output_error.write(" success\n");
+  } else {
+    output_error.write(" failure\n");
+  }
+  return success;
+}
 
-  int allpassed;
-  MPI_Allreduce(&passed, &allpassed, 1, MPI_INT, MPI_MIN, BoutComm::get());
+int main(int argc, char** argv) {
+
+  // Initialise BOUT++, setting up mesh
+  BoutInitialise(argc, argv);
+
+  FieldFactory f(mesh);
+
+  // Get options
+  Options& options = Options::root();
+
+  BoutReal tol = options["tol"].withDefault(1e-10);
+
+  bool success{true};
+  int i = 0;
+  while (true) {
+    if (not options.isSet(fmt::format("{}_{}", "acoef", i))) {
+      break;
+    }
+    const std::string acoef = options[fmt::format("{}_{}", "acoef", i)].as<std::string>();
+    const std::string bcoef =
+        options[fmt::format("{}_{}", "bcoef", i)].withDefault("-1.0");
+    const std::string ccoef =
+        options[fmt::format("{}_{}", "ccoef", i)].withDefault("0.0");
+    const std::string dcoef =
+        options[fmt::format("{}_{}", "dcoef", i)].withDefault("0.0");
+    const std::string ecoef =
+        options[fmt::format("{}_{}", "ecoef", i)].withDefault("0.0");
+    const std::string func = options[fmt::format("{}_{}", "input_field", i)].withDefault(
+        "sin(2*y)*(1. + 0.2*exp(cos(z)))");
+
+    for (auto location : {CELL_CENTRE, CELL_YLOW, CELL_XLOW, CELL_ZLOW}) {
+      success &= test(acoef, bcoef, ccoef, dcoef, ecoef, func, tol, f, location);
+    }
+    i += 1;
+  }
+  bool allsuccess{true};
+  MPI_Allreduce(&success, &allsuccess, 1, MPI_C_BOOL, MPI_LAND, BoutComm::get());
 
   output << "******* Parallel inversion test case: ";
-  if (allpassed) {
+  if (allsuccess) {
     output << "PASSED" << endl;
   } else {
     output << "FAILED" << endl;
   }
 
-  // Saving state to file
-  SAVE_ONCE(allpassed);
-
-  // Write data to file
-  dump.write();
-  dump.close();
-
   MPI_Barrier(BoutComm::get());
 
   BoutFinalise();
-  return 0;
+  return !allsuccess;
 }

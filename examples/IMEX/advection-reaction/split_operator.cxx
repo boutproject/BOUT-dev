@@ -5,8 +5,8 @@
  * using unsplit methods (the two parts are just combined),
  * but intended for testing split schemes
  *
- * Currently one of the RHS functions has to be called physics_run,
- * so here physics_run contains advection term only.
+ * `Split_operator::convective` contains the advective piece, while
+ * `Split_operator::diffusive` contains the reaction part.
  *
  * Grid file simple_xz.nc contains:
  * - nx = 68
@@ -19,54 +19,54 @@
  *
  *************************************************************/
 
+#include <bout/physicsmodel.hxx>
 #include <bout.hxx>
-#include <boutmain.hxx>
 #include <initialprofiles.hxx>
 
-int reaction(BoutReal time);
+class Split_operator : public PhysicsModel {
+  Field3D U; // Evolving variable
 
-Field3D U;   // Evolving variable
+  Field3D phi; // Potential used for advection
 
-Field3D phi; // Potential used for advection
+  BoutReal rate; // Reaction rate
 
-BoutReal rate; // Reaction rate
+protected:
+  int init(bool UNUSED(restarting)) override {
+    // Give the solver two RHS functions
+    setSplitOperator(true);
 
-int physics_init(bool UNUSED(restarting)) {
-  // Give the solver two RHS functions
-  solver->setSplitOperator(physics_run, reaction);
-  
-  // Get options
-  auto globalOptions = Options::root();
-  auto options = globalOptions["split"];
-  rate = options["rate"].withDefault(1.0);
+    // Get options
+    rate = Options::root()["split"]["rate"].withDefault(1.0);
 
-  // Get phi settings from BOUT.inp
-  phi.setBoundary("phi");
-  initial_profile("phi", phi);
-  phi.applyBoundary();
-  
-  // Save phi to file for reference
-  SAVE_ONCE(phi);
+    // Get phi settings from BOUT.inp
+    phi.setBoundary("phi");
+    initial_profile("phi", phi);
+    phi.applyBoundary();
 
-  // Just solving one variable, U
-  SOLVE_FOR(U);
+    // Save phi to file for reference
+    SAVE_ONCE(phi);
 
-  return 0;
-}
+    // Just solving one variable, U
+    SOLVE_FOR(U);
 
-int physics_run(BoutReal UNUSED(time)) {
-  // Need communication
-  mesh->communicate(U);
+    return 0;
+  }
 
-  // Form of advection operator for reduced MHD type models
-  ddt(U) = -bracket(phi, U, BRACKET_SIMPLE);
-  
-  return 0;
-}
+  int convective(BoutReal UNUSED(time)) override {
+    // Need communication
+    U.getMesh()->communicate(U);
 
-int reaction(BoutReal UNUSED(time)) {
-  // A simple reaction operator. No communication needed
-  ddt(U) = rate * (1.-U);
+    // Form of advection operator for reduced MHD type models
+    ddt(U) = -bracket(phi, U, BRACKET_SIMPLE);
 
-  return 0;
-}
+    return 0;
+  }
+  int diffusive(BoutReal UNUSED(time)) override {
+    // A simple reaction operator. No communication needed
+    ddt(U) = rate * (1. - U);
+
+    return 0;
+  }
+};
+
+BOUTMAIN(Split_operator)

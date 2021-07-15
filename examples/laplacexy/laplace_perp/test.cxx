@@ -4,6 +4,8 @@
 #include <derivs.hxx>
 #include <field_factory.hxx>
 
+using bout::globals::mesh;
+
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
   
@@ -57,12 +59,12 @@ int main(int argc, char** argv) {
   mesh->communicate(solved);
   
   // Now differentiate using Laplace_perp
-  Field2D result = Laplace_perp(solved);
+  auto result = Laplace_perp(solved);
 
   // Write fields to output
   SAVE_ONCE3(input, solved, result);
-  dump.write();
-  
+  bout::globals::dump.write();
+
   BoutFinalise();
   return 0;
 }

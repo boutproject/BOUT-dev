@@ -25,6 +25,8 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <boutcomm.hxx>
 #include <globals.hxx>
 
@@ -47,7 +49,7 @@
 Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in,
                  DirectionTypes directions_in)
     : Field(localmesh, location_in, directions_in) {
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = "<F3D>";
 #endif
 
@@ -60,7 +62,8 @@ Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in,
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
 /// later)
-Field3D::Field3D(const Field3D& f) : Field(f), data(f.data) {
+Field3D::Field3D(const Field3D& f)
+    : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields) {
 
   TRACE("Field3D(Field3D&)");
 
@@ -69,9 +72,6 @@ Field3D::Field3D(const Field3D& f) : Field(f), data(f.data) {
     ny = fieldmesh->LocalNy;
     nz = fieldmesh->LocalNz;
   }
-
-  location = f.location;
-  fieldCoordinates = f.fieldCoordinates;
 }
 
 Field3D::Field3D(const Field2D& f) : Field(f) {
@@ -102,8 +102,6 @@ Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation
   nz = fieldmesh->LocalNz;
 
   ASSERT1(data.size() == nx * ny * nz);
-
-  setLocation(datalocation);
 }
 
 Field3D::~Field3D() { delete deriv; }
@@ -204,6 +202,13 @@ Field3D &Field3D::ynext(int dir) {
 }
 
 bool Field3D::requiresTwistShift(bool twist_shift_enabled) {
+  // Workaround for 3D coordinates.
+  // We need to communicate in the coordinates constructor in that
+  // case a Field3D, but coordinates isn't valid yet. As such we
+  // disable twist-shift in that case.
+  if (getCoordinates() == nullptr) {
+    return false;
+  }
   return getCoordinates()->getParallelTransform().requiresTwistShift(twist_shift_enabled,
       getDirectionY());
 }
@@ -252,11 +257,12 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
   TRACE("Field3D: Assignment from Field3D");
 
-  // Delete existing parallel slices. We don't copy parallel slices, so any
-  // that currently exist will be incorrect.
-  clearParallelSlices();
+  // Copy base slice
+  Field::operator=(rhs);
 
-  copyFieldMembers(rhs);
+  // Copy parallel slices or delete existing ones.
+  yup_fields = rhs.yup_fields;
+  ydown_fields = rhs.ydown_fields;
 
   // Copy the data and data sizes
   nx = rhs.nx;
@@ -264,6 +270,26 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   nz = rhs.nz;
 
   data = rhs.data;
+
+  return *this;
+}
+
+Field3D& Field3D::operator=(Field3D&& rhs) {
+  TRACE("Field3D: Assignment from Field3D");
+
+  // Move parallel slices or delete existing ones.
+  yup_fields = std::move(rhs.yup_fields);
+  ydown_fields = std::move(rhs.ydown_fields);
+
+  // Move the data and data sizes
+  nx = rhs.nx;
+  ny = rhs.ny;
+  nz = rhs.nz;
+
+  data = std::move(rhs.data);
+
+  // Move base slice last
+  Field::operator=(std::move(rhs));
 
   return *this;
 }
@@ -282,7 +308,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 
   /// Make sure there's a unique array to copy data into
   allocate();
-  ASSERT1(areFieldsCompatible(*this, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
   /// Copy data
   BOUT_FOR(i, rhs.getRegion("RGN_ALL")) {
@@ -297,7 +323,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 void Field3D::operator=(const FieldPerp &rhs) {
   TRACE("Field3D = FieldPerp");
 
-  ASSERT1(areFieldsCompatible(*this, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
 
@@ -338,9 +364,9 @@ void Field3D::applyBoundary(bool init) {
 
 #if CHECK > 0
   if (init) {
-
-    if(!boundaryIsSet)
-      output_warn << "WARNING: Call to Field3D::applyBoundary(), but no boundary set" << endl;
+    if (not isBoundarySet()) {
+      output_warn << "WARNING: Call to Field3D::applyBoundary(), but no boundary set\n";
+    }
   }
 #endif
 
@@ -348,25 +374,30 @@ void Field3D::applyBoundary(bool init) {
 
   if (background != nullptr) {
     // Apply boundary to the total of this and background
-    
+
     Field3D tot = *this + (*background);
     tot.copyBoundary(*this);
     tot.applyBoundary(init);
     *this = tot - (*background);
   } else {
     // Apply boundary to this field
-    for(const auto& bndry : bndry_op)
-      if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+    for (const auto& bndry : getBoundaryOps()) {
+      // Always apply to the values when initialising
+      // fields, otherwise apply only if wanted
+      if (!bndry->apply_to_ddt || init) {
         bndry->apply(*this);
+      }
+    }
   }
 }
 
 void Field3D::applyBoundary(BoutReal t) {
   TRACE("Field3D::applyBoundary()");
-  
+
 #if CHECK > 0
-  if(!boundaryIsSet)
-    output_warn << "WARNING: Call to Field3D::applyBoundary(t), but no boundary set." << endl;
+  if (not isBoundarySet()) {
+    output_warn << "WARNING: Call to Field3D::applyBoundary(t), but no boundary set.\n";
+  }
 #endif
 
   checkData(*this);
@@ -378,10 +409,11 @@ void Field3D::applyBoundary(BoutReal t) {
     tot.copyBoundary(*this);
     tot.applyBoundary(t);
     *this = tot - (*background);
-  }else {
+  } else {
     // Apply boundary to this field
-    for(const auto& bndry : bndry_op)
-      bndry->apply(*this,t);
+    for (const auto& bndry : getBoundaryOps()) {
+      bndry->apply(*this, t);
+    }
   }
 }
 
@@ -440,16 +472,17 @@ void Field3D::applyBoundary(const std::string &region, const std::string &condit
 
 void Field3D::applyTDerivBoundary() {
   TRACE("Field3D::applyTDerivBoundary()");
-  
+
   checkData(*this);
   ASSERT1(deriv != nullptr);
   checkData(*deriv);
 
   if (background != nullptr)
     *this += *background;
-    
-  for(const auto& bndry : bndry_op)
+
+  for (const auto& bndry : getBoundaryOps()) {
     bndry->apply_ddt(*this);
+  }
 
   if (background != nullptr)
     *this -= *background;
@@ -489,7 +522,7 @@ void Field3D::applyParallelBoundary() {
     *this = tot - (*background);
   } else {
     // Apply boundary to this field
-    for(const auto& bndry : bndry_op_par) {
+    for (const auto& bndry : getBoundaryOpPars()) {
       bndry->apply(*this);
     }
   }
@@ -508,7 +541,7 @@ void Field3D::applyParallelBoundary(BoutReal t) {
     *this = tot - (*background);
   } else {
     // Apply boundary to this field
-    for(const auto& bndry : bndry_op_par) {
+    for (const auto& bndry : getBoundaryOpPars()) {
       bndry->apply(*this, t);
     }
   }
@@ -610,7 +643,7 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs, const std::string& rgn) {
   // Check if the inputs are allocated
   checkData(lhs);
   checkData(rhs);
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   // Define and allocate the output result
   Field3D result{emptyFrom(lhs)};
@@ -626,7 +659,7 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, const std::string& rgn) 
 
   checkData(lhs);
   checkData(rhs);
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
   
@@ -678,7 +711,7 @@ Field3D filter(const Field3D &var, int N0, const std::string& rgn) {
     }
   }
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "filter(" + var.name + ")";
 #endif
 
@@ -749,7 +782,7 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   
   rfft(&(var(jx,jy,0)), ncz, v.begin()); // Forward FFT
 
-  BoutReal zlength = var.getCoordinates()->zlength();
+  BoutReal zlength = var.getCoordinates()->zlength()(jx, jy);
 
   // Apply phase shift
   for(int jz=1;jz<=ncz/2;jz++) {
@@ -840,4 +873,20 @@ bool operator==(const Field3D &a, const Field3D &b) {
 std::ostream& operator<<(std::ostream &out, const Field3D &value) {
   out << toString(value);
   return out;
+}
+
+void swap(Field3D& first, Field3D& second) noexcept {
+  using std::swap;
+
+  // Swap base class members
+  swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
+  swap(first.data, second.data);
+  swap(first.background, second.background);
+  swap(first.nx, second.nx);
+  swap(first.ny, second.ny);
+  swap(first.nz, second.nz);
+  swap(first.deriv, second.deriv);
+  swap(first.yup_fields, second.yup_fields);
+  swap(first.ydown_fields, second.ydown_fields);
 }

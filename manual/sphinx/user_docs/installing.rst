@@ -71,10 +71,10 @@ then run::
 
 This should give a terminal in a "boutuser" home directory, in which
 there is "BOUT-next", containing BOUT++ configured and compiled with
-NetCDF, HDF5, SUNDIALS, PETSc and SLEPc. Python 3 is also installed,
-with ipython, NumPy, Scipy and Matplotlib libaries. To plot to screen
-an X11 display is needed. Alternatively a shared directory can be
-created to pass files between the docker image and host. The following
+NetCDF, SUNDIALS, PETSc and SLEPc. Python 3 is also installed, with
+ipython, NumPy, Scipy and Matplotlib libaries. To plot to screen an
+X11 display is needed. Alternatively a shared directory can be created
+to pass files between the docker image and host. The following
 commands both enable X11 and create a shared directory::
 
     $ mkdir shared
@@ -89,10 +89,10 @@ the "shared" directory.
 
 If this is successful, then you can skip to section :ref:`sec-running`.
 
- Obtaining BOUT++
-----------------
-
 .. _sec-obtainbout:
+
+Obtaining BOUT++
+----------------
 
 BOUT++ is hosted publicly on github at
 https://github.com/boutproject/BOUT-dev. You can the latest stable
@@ -102,8 +102,12 @@ obtain a copy of the latest version, run::
 
     $ git clone git://github.com/boutproject/BOUT-dev.git
 
-which will create a directory ``BOUT-dev`` containing the code. To get
-the latest changes later, go into the ``BOUT-dev`` directory and run::
+
+which will create a directory ``BOUT-dev`` containing the code::
+
+    $ cd BOUT-dev
+
+To get the latest changes later, go into the ``BOUT-dev`` directory and run::
 
     $ git pull
 
@@ -122,13 +126,21 @@ The bare-minimum requirements for compiling and running BOUT++ are:
 
 #. A C++ compiler that supports C++14
 
-#. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <www.open-mpi.org/>`__),
-   MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
-   LAM (`www.lam-mpi.org/ <www.lam-mpi.org/>`__)
+#. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <https://www.open-mpi.org/>`__),
+   MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__)
    
-#. The NetCDF library ( `https://www.unidata.ucar.edu/downloads/netcdf <https://www.unidata.ucar.edu/downloads/netcdf>`__ )
+#. The NetCDF library (`https://www.unidata.ucar.edu/downloads/netcdf
+   <https://www.unidata.ucar.edu/downloads/netcdf>`__)
    
-The FFTW-3 library ( `http://www.fftw.org/ <http://www.fftw.org/>`__ ) is also strongly recommended
+The FFTW-3 library (`http://www.fftw.org/ <http://www.fftw.org/>`__)
+is also strongly recommended. Fourier transforms are used for some
+derivative methods, as well as the `ShiftedMetric` parallel transform
+which is used in the majority of BOUT++ tokamak simulations. Without
+FFTW-3, these options will not be available.
+
+.. note::
+   Only GCC versions >= 4.9 are supported. This is due to a bug in
+   previous versions.
 
 .. note::
    If you use an Intel compiler, you must also make sure that you have
@@ -169,7 +181,7 @@ MPICH2 and the needed libraries by running::
 
 On Ubuntu 16.04::
 
-    $ sudo apt-get libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
+    $ sudo apt-get install libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
 
 On Ubuntu 18.04::
 
@@ -182,7 +194,7 @@ The first line should be sufficient to install BOUT++, while the 2nd
 and 3rd line make sure that the tests work, and that the python
 interface can be build.
 Further, the encoding for python needs to be utf8 - it may be required
-to set `export LC_CTYPE=C.utf8`.
+to set ``export LC_CTYPE=C.utf8``.
 
 If you do not have administrator rights, so can't install packages, then
 you need to install these libraries from source into your home directory.
@@ -194,7 +206,7 @@ Arch Linux
 
 ::
 
-   $ pacman -S openmpi fftw netcdf-cxx 
+   $ pacman -S openmpi fftw netcdf-cxx make gcc
 
 
 Fedora
@@ -202,25 +214,19 @@ Fedora
 
 On Fedora the required libraries can be installed by running::
 
-   $ sudo dnf install autoconf automake netcdf-cxx4-devel fftw-devel hdf5-devel make python3-jinja2
-   $ sudo dnf install python3 python3-h5py python3-numpy python3-netcdf4 python3-scipy
-   $ sudo dnf install python2 python2-h5py python2-numpy python2-netcdf4 python2-scipy
-   $ sudo dnf install mpich-devel
-   $ sudo dnf install openmpi-devel
+   $ sudo dnf build-dep bout++
 
-Note that the python2/python3 stack is only required for for post
-processing and the tests, so feel free to install only what you
-actually need.
-Further, only either mpich or openmpi is required.
+This will install all the dependencies that are used to install
+BOUT++ for fedora. Feel free to install only a subset of the
+suggested packages. For example, only mpich or openmpi is required.
 To load an mpi implementation type::
 
    $ module load mpi
 
 After that the mpi library is loaded.
 Precompiled binaries are available for fedora as well.
-To get the latest release run::
+To get precompiled BOUT++ run::
 
-   $ sudo dnf copr enable davidsch/bout
    $ # install the mpich version - openmpi is available as well
    $ sudo dnf install bout++-mpich-devel
    $ # get the python3 modules - python2 is available as well
@@ -250,8 +256,7 @@ directory with the ``–with-fftw=`` option e.g::
 Configure should now find FFTW, and search for the NetCDF library. If
 configure finishes successfully, then skip to the next section, but if
 you see a message ``NetCDF support disabled`` then configure couldn’t
-find the NetCDF library. Unless you have another file format (like HDF5) installed, this
-will be followed by a message
+find the NetCDF library. This will be followed by a message
 ``ERROR: At least one file format must be supported``. Check that you have
 NetCDF installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
 
@@ -271,8 +276,6 @@ configuration::
       ARKODE support: yes
       NetCDF support: yes
       Parallel-NetCDF support: no
-      HDF5 support: yes (parallel: no)
-      MUMPS support: no
 
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.
@@ -286,50 +289,93 @@ There is now (experimental) support for `CMake <https://cmake.org/>`_. You will 
 3.9. CMake supports out-of-source builds by default, which are A Good
 Idea. Basic configuration with CMake looks like::
 
-  $ mkdir build && cd build
-  $ cmake ..
+  $ cmake . -B build
 
-You can then run ``make`` as usual.
+which creates a new directory ``build``, which you can then compile with::
+
+  $ cmake --build build
 
 You can see what build options are available with::
 
-  $ cmake .. -LH
+  $ cmake . -B build -LH
   ...
   // Enable backtrace
-  ENABLE_BACKTRACE:BOOL=ON
+  BOUT_ENABLE_BACKTRACE:BOOL=ON
 
   // Output coloring
-  ENABLE_COLOR:BOOL=ON
+  BOUT_ENABLE_COLOR:BOOL=ON
 
   // Enable OpenMP support
-  ENABLE_OPENMP:BOOL=OFF
+  BOUT_ENABLE_OPENMP:BOOL=OFF
 
   // Enable support for PETSc time solvers and inversions
-  USE_PETSC:BOOL=OFF
+  BOUT_USE_PETSC:BOOL=OFF
   ...
 
 CMake uses the ``-D<variable>=<choice>`` syntax to control these
 variables. You can set ``<package>_ROOT`` to guide CMake in finding
 the various optional third-party packages (except for PETSc/SLEPc,
-which use ``_DIR``). CMake understands the usual environment variables
-for setting the compiler, compiler/linking flags, as well as having
-built-in options to control them and things like static vs shared
-libraries, etc. See the `CMake documentation
-<https://cmake.org/documentation/>`_ for more infomation.
+which use ``_DIR``). Note that some packages have funny
+captialisation, for example ``NetCDF_ROOT``! Use ``-LH`` to see the
+form that each package expects.
+
+CMake understands the usual environment variables for setting the
+compiler, compiler/linking flags, as well as having built-in options
+to control them and things like static vs shared libraries, etc. See
+the `CMake documentation <https://cmake.org/documentation/>`_ for more
+infomation.
 
 A more complicated CMake configuration command
 might look like::
 
-  $ CC=mpicc CXX=mpic++ cmake .. \
-      -DUSE_PETSC=ON -DPETSC_DIR=/path/to/petsc/ \
-      -DUSE_SLEPC=ON -DSLEPC_DIR=/path/to/slepc/ \
-      -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials \
-      -DUSE_NETCDF=ON -DNetCDF_ROOT=/path/to/netcdf \
-      -DENABLE_OPENMP=ON \
-      -DENABLE_SIGFPE=OFF \
+  $ CC=mpicc CXX=mpic++ cmake . -B build \
+      -DBOUT_USE_PETSC=ON -DPETSC_DIR=/path/to/petsc/ \
+      -DBOUT_USE_SLEPC=ON -DSLEPC_DIR=/path/to/slepc/ \
+      -DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials \
+      -DBOUT_USE_NETCDF=ON -DNetCDF_ROOT=/path/to/netcdf \
+      -DBOUT_ENABLE_OPENMP=ON \
+      -DBOUT_ENABLE_SIGFPE=OFF \
       -DCMAKE_BUILD_TYPE=Debug \
       -DBUILD_SHARED_LIBS=ON
       -DCMAKE_INSTALL_PREFIX=/path/to/install/BOUT++
+
+If you wish to change the configuration after having built ``BOUT++``,
+it's wise to delete the ``CMakeCache.txt`` file in the build
+directory. The equivalent of ``make distclean`` with CMake is to just
+delete the entire build directory and reconfigure.
+
+Downloading Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you don't have some dependencies installed, CMake can be used to download,
+configure and compile them alongside BOUT++.
+
+For NetCDF, use ``-DBOUT_DOWNLOAD_NETCDF_CXX4=ON``
+
+For SUNDIALS, use ``-DBOUT_DOWNLOAD_SUNDIALS=ON``. If using ``ccmake`` this option
+may not appear initially. This automatically sets ``BOUT_USE_SUNDIALS=ON``, and
+configures SUNDIALS to use MPI.
+
+Bundled Dependencies
+~~~~~~~~~~~~~~~~~~~~
+
+BOUT++ bundles some dependencies, currently `mpark.variant
+<https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
+`googletest <https://github.com/google/googletest>`_. If you wish to
+use an existing installation of ``mpark.variant``, you can set
+``-DBOUT_USE_SYSTEM_MPARK_VARIANT=ON``, and supply the installation
+path using ``mpark_variant_ROOT`` via the command line or environment
+variable if it is installed in a non standard loction. Similarly for
+``fmt``, using ``-DBOUT_USE_SYSTEM_FMT=ON`` and ``fmt_ROOT``
+respectively. To turn off both, you can set
+``-DBOUT_USE_GIT_SUBMODULE=OFF``.
+
+The recommended way to use ``googletest`` is to compile it at the same
+time as your project, therefore there is no option to use an external
+installation for that.
+
+Using CMake with your physics model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can write a CMake configuration file (``CMakeLists.txt``) for your
 physics model in only four lines:
@@ -341,11 +387,26 @@ physics model in only four lines:
     add_executable(blob2d blob2d.cxx)
     target_link_libraries(blob2d PRIVATE bout++::bout++)
 
-You just need to give CMake the location where you installed BOUT++
-via the ``CMAKE_PREFIX_PATH`` variable::
+You just need to give CMake the location where you built or installed
+BOUT++ via the ``CMAKE_PREFIX_PATH`` variable::
 
-  $ mkdir build && cd build
-  $ cmake .. -DCMAKE_PREFIX_PATH=/path/to/install/BOUT++
+  $ cmake . -B build -DCMAKE_PREFIX_PATH=/path/to/built/BOUT++
+
+If you want to modify BOUT++ along with developing your model, you may
+instead wish to place the BOUT++ as a subdirectory of your model and
+use ``add_subdirectory`` instead of ``find_package`` above:
+
+.. code-block:: cmake
+
+    project(blob2d LANGUAGES CXX)
+    add_subdirectory(BOUT++/source)
+    add_executable(blob2d blob2d.cxx)
+    target_link_libraries(blob2d PRIVATE bout++::bout++)
+
+where ``BOUT++/source`` is the subdirectory containing the BOUT++
+source. Doing this has the advantage that any changes you make to
+BOUT++ source files will trigger a rebuild of both the BOUT++ library
+and your model when you next build your code.
 
 .. _sec-config-nls:
 
@@ -366,7 +427,10 @@ finishes, the configuration summary should contain a line like::
   configure:   Natural language support: yes (path: /home/user/BOUT-dev/locale)
 
 where the ``path`` is the directory containing the translations.
-  
+
+See :ref:`sec-run-nls` for details of how to switch language when running
+BOUT++ simulations.
+
 .. _sec-configanalysis:
 
 Configuring analysis routines
@@ -388,22 +452,34 @@ make a note of what configure printed out.
 Python configuration
 ~~~~~~~~~~~~~~~~~~~~
 
-To use Python, you will need the NumPy and SciPy libraries. On Debian or
-Ubuntu these can be installed with::
+To use Python, you will need the dependencies of the `boututils
+<https://github.com/boutproject/boututils>`__ and `boutdata
+<https://github.com/boutproject/boutdata>`__ libraries. The simplest way to get these is
+to install the packages with pip::
 
-    $ sudo apt-get install python-scipy
+    $ pip install --user boutdata
 
-which should then add all the other dependencies like NumPy. To test if
-everything is installed, run::
+or conda::
 
-    $ python -c "import scipy"
+    $ conda install boutdata
 
-If not, see the SciPy website https://www.scipy.org for instructions on
-installing.
+You can also install all the packages directly (see the documentation in the `boututils
+<https://github.com/boutproject/boututils>`__ and `boutdata
+<https://github.com/boutproject/boutdata>`__ repos for the most up to date list)
+using pip::
 
-To do this, the path to ``tools/pylib`` should be added to the
-``PYTHONPATH`` environment variable. Instructions for doing this are
-printed at the end of the configure script, for example::
+    $ pip install --user numpy scipy matplotlib sympy netCDF4 h5py future importlib-metadata
+
+or conda::
+
+    $ conda install numpy scipy matplotlib sympy netcdf4 h5py future importlib-metadata
+
+They may also be available from your Linux system's package manager.
+
+To use the versions of ``boututils`` and ``boutdata`` provided by BOUT++,  the path to
+``tools/pylib`` should be added to the ``PYTHONPATH`` environment variable. This is not
+necessary if you have installed the ``boututils`` and ``boutdata`` packages.  Instructions
+for doing this are printed at the end of the configure script, for example::
 
     Make sure that the tools/pylib directory is in your PYTHONPATH
     e.g. by adding to your ~/.bashrc file
@@ -414,8 +490,13 @@ To test if this command has worked, try running::
 
     $ python -c "import boutdata"
 
-If this doesn’t produce any error messages then Python is configured
-correctly.
+If this doesn’t produce any error messages then Python is configured correctly.
+
+Note that ``boututils`` and ``boutdata`` are provided by BOUT++ as submodules, so versions
+compatible with the checked out version of BOUT++ are downloaded into the
+``externalpackages`` directory. These are the versions used by the tests run by ``make
+check`` even if you have installed ``boututils`` and ``boutdata`` on your system.
+
 
 .. _sec-config-idl:
 
@@ -516,10 +597,10 @@ installation of BOUT++. Unless you want to use some experimental
 features of BOUT++, skip to section [sec-running] to start running the
 code.
 
+.. _sec-install-bout:
+
 Installing BOUT++ (experimental)
 --------------------------------
-
-.. _sec-install-bout:
 
 Most BOUT++ users install and develop their own copies in their home directory,
 so do not need to install BOUT++ to a system directory.

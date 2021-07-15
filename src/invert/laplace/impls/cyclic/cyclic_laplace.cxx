@@ -33,6 +33,11 @@
  *
  */
 
+#include "cyclic_laplace.hxx"
+#include "bout/build_config.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include <globals.hxx>
 #include <boutexception.hxx>
 #include <bout/mesh.hxx>
@@ -42,10 +47,9 @@
 #include <bout/constants.hxx>
 #include <output.hxx>
 
-#include "cyclic_laplace.hxx"
-
 LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(1.0), Dcoef(1.0) {
+
   Acoef.setLocation(location);
   C1coef.setLocation(location);
   C2coef.setLocation(location);
@@ -141,9 +145,9 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
+      BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
       BOUT_OMP(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
-        BoutReal zlen = coords->dz * (localmesh->LocalNz - 3);
         BoutReal kwave =
             kz * 2.0 * PI / (2. * zlen); // wave number is 1/[rad]; DST has extra 2.
 
@@ -209,9 +213,10 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
+      const BoutReal zlength = getUniform(coords->zlength());
       BOUT_OMP(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
-        BoutReal kwave = kz * 2.0 * PI / (coords->zlength()); // wave number is 1/[rad]
+        BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
         tridagMatrix(&a(kz, 0), &b(kz, 0), &c(kz, 0), &bcmplx(kz, 0), jy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
@@ -250,6 +255,9 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       }
     }
   }
+
+  checkData(x);
+
   return x;
 }
 
@@ -339,13 +347,13 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
+      const BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
       BOUT_OMP(for nowait)
       for (int ind = 0; ind < nsys; ind++) {
         // ind = (iy - ys) * nmode + kz
         int iy = ys + ind / nmode;
         int kz = ind % nmode;
 
-        BoutReal zlen = coords->dz * (localmesh->LocalNz - 3);
         BoutReal kwave =
             kz * 2.0 * PI / (2. * zlen); // wave number is 1/[rad]; DST has extra 2.
 
@@ -420,13 +428,14 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
+      const BoutReal zlength = getUniform(coords->zlength());
       BOUT_OMP(for nowait)
       for (int ind = 0; ind < nsys; ind++) {
         // ind = (iy - ys) * nmode + kz
         int iy = ys + ind / nmode;
         int kz = ind % nmode;
 
-        BoutReal kwave = kz * 2.0 * PI / (coords->zlength()); // wave number is 1/[rad]
+        BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
         tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
@@ -439,6 +448,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     // Solve tridiagonal systems
     cr->setCoefs(a3D, b3D, c3D);
     cr->solve(bcmplx3D, xcmplx3D);
+    // verify_solution(a3D,b3D,c3D,bcmplx3D,xcmplx3D,nsys);
 
     // FFT back to real space
     BOUT_OMP(parallel) {
@@ -468,5 +478,92 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       }
     }
   }
+
+  checkData(x);
+
   return x;
 }
+
+void LaplaceCyclic ::verify_solution(const Matrix<dcomplex>& a_ver,
+                                     const Matrix<dcomplex>& b_ver,
+                                     const Matrix<dcomplex>& c_ver,
+                                     const Matrix<dcomplex>& r_ver,
+                                     const Matrix<dcomplex>& x_sol, const int nsys) {
+  output.write("Verify solution\n");
+  const int nx = xe - xs + 1; // Number of X points on this processor,
+                              // including boundaries but not guard cells
+  const int xproc = localmesh->getXProcIndex();
+  const int yproc = localmesh->getYProcIndex();
+  const int nprocs = localmesh->getNXPE();
+  const int myrank = yproc * nprocs + xproc;
+  Matrix<dcomplex> y_ver(nsys, nx + 2);
+  Matrix<dcomplex> error(nsys, nx + 2);
+
+  MPI_Status status;
+  Array<MPI_Request> request(4);
+  Array<dcomplex> sbufup(nsys);
+  Array<dcomplex> sbufdown(nsys);
+  Array<dcomplex> rbufup(nsys);
+  Array<dcomplex> rbufdown(nsys);
+
+  // nsys = nmode * ny;  // Number of systems of equations to solve
+  Matrix<dcomplex> x_ver(nsys, nx + 2);
+
+  for (int kz = 0; kz < nsys; kz++) {
+    for (int ix = 0; ix < nx; ix++) {
+      x_ver(kz, ix + 1) = x_sol(kz, ix);
+    }
+  }
+
+  if (xproc > 0) {
+    MPI_Irecv(&rbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 901, MPI_COMM_WORLD,
+              &request[1]);
+    for (int kz = 0; kz < nsys; kz++) {
+      sbufdown[kz] = x_ver(kz, 1);
+    }
+    MPI_Isend(&sbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 900, MPI_COMM_WORLD,
+              &request[0]);
+  }
+  if (xproc < nprocs - 1) {
+    MPI_Irecv(&rbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 900, MPI_COMM_WORLD,
+              &request[3]);
+    for (int kz = 0; kz < nsys; kz++) {
+      sbufup[kz] = x_ver(kz, nx);
+    }
+    MPI_Isend(&sbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 901, MPI_COMM_WORLD,
+              &request[2]);
+  }
+
+  if (xproc > 0) {
+    MPI_Wait(&request[0], &status);
+    MPI_Wait(&request[1], &status);
+    for (int kz = 0; kz < nsys; kz++) {
+      x_ver(kz, 0) = rbufdown[kz];
+    }
+  }
+  if (xproc < nprocs - 1) {
+    MPI_Wait(&request[2], &status);
+    MPI_Wait(&request[3], &status);
+    for (int kz = 0; kz < nsys; kz++) {
+      x_ver(kz, nx + 1) = rbufup[kz];
+    }
+  }
+
+  BoutReal max_error = 0.0;
+  for (int kz = 0; kz < nsys; kz++) {
+    for (int i = 0; i < nx; i++) {
+      y_ver(kz, i) = a_ver(kz, i) * x_ver(kz, i) + b_ver(kz, i) * x_ver(kz, i + 1)
+                     + c_ver(kz, i) * x_ver(kz, i + 2);
+      error(kz, i) = y_ver(kz, i) - r_ver(kz, i);
+      max_error = std::max(max_error, std::abs(error(kz, i)));
+      output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, "
+                   "x={}, x+ = {}\n",
+                   error(kz, i).real(), r_ver(kz, i).real(), y_ver(kz, i).real(), kz, i,
+                   a_ver(kz, i).real(), b_ver(kz, i).real(), c_ver(kz, i).real(),
+                   x_ver(kz, i).real(), x_ver(kz, i + 1).real(), x_ver(kz, i + 2).real());
+    }
+  }
+  output.write("max abs error {}\n", max_error);
+}
+
+#endif // BOUT_USE_METRIC_3D

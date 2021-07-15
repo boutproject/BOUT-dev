@@ -1,64 +1,55 @@
 #!/usr/bin/env python3
 
-#requires: not travis
-# 
-# Run the test, compare results against the benchmark
+# requires: not travis
 #
+# Run the test, compare results against the benchmark
 
-# Variables to compare
-from __future__ import print_function
-try:
-  from builtins import str
-except:
-  pass
+import sys
 
-from boututils.run_wrapper import shell, launch
+from boututils.run_wrapper import build_and_log, launch
 from boutdata.collect import collect
-import numpy as np
-from sys import stdout, exit
 
 nproc = 1
 
+build_and_log("stopCheck test")
 
-
-print("Making stopCheck test")
-shell("make > make.log")
-
-checkVal=[True,False]
-nstepExpect=[1,11]
-dats = ["data","dataSecond"]
-datStopFiles = ["BOUT.stop","otherStop.check"]
- 
-vars=["t_array"]
+check_values = [True, False]
+expected_steps = [1, 11]
+data_dirs = ["data", "dataSecond"]
+stop_files = ["BOUT.stop", "otherStop.check"]
 
 print("Running stopCheck test")
 success = True
 
-for j, dat in enumerate(dats):
-  for i, check in enumerate(checkVal):
-    cmd = "./test_stopCheck"
+for data_dir, stop_file in zip(data_dirs, stop_files):
+    for check, expected in zip(check_values, expected_steps):
+        executable = "./test_stopCheck"
+        command = "{} -d {} stopCheck={} stopCheckName={}".format(
+            executable, data_dir, check, stop_file
+        )
 
-    s, out = launch(cmd+" -d "+dat+" stopCheck="+str(check)+" stopCheckName="+datStopFiles[j], nproc=nproc, pipe=True)
-    f = open("run.log."+dat+"."+str(check).lower(), "w")
-    f.write(out)
-    f.close()
-    
-    # Collect output data
-    for v in vars:
-      result = collect(v, path=dat, info=False)
+        s, out = launch(
+            command,
+            nproc=nproc,
+            pipe=True,
+        )
+        with open("run.log.{}.{}".format(data_dir, check), "w") as f:
+            f.write(out)
 
-      # Compare benchmark and output
-      if result.shape[0] != nstepExpect[i]:
-        print("Fail, wrong shape")
-        print("Option is "+str(check)+"/"+dat+"/"+datStopFiles[j])
-        print("shape is "+str(result.shape[0]))
-        print("expecting "+str(nstepExpect[i]))
-        success = False
-        continue
+        result = collect("t_array", path=data_dir, info=False)
+
+        if result.shape[0] != expected:
+            print("Fail, wrong shape")
+            print("\tOption is {}/{}/{}".format(check, data_dir, stop_file))
+            print("\tshape is {}".format(result.shape[0]))
+            print("\texpecting {}".format(expected))
+            sys.exit(1)
+            success = False
+            continue
 
 if success:
-  print(" => All checkStop tests passed")
-  exit(0)
+    print(" => All checkStop tests passed")
+    sys.exit(0)
 else:
-  print(" => Some failed tests")
-  exit(1)
+    print(" => Some failed tests")
+    sys.exit(1)

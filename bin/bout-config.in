@@ -19,31 +19,32 @@ BOUT_CONFIG_FILE=@PREFIX@/make.config
 cc="@CXX@"
 cxx="@CXX@"
 ld="@CXX@"
-checks="@CHECK_LEVEL@"
+checks="@BOUT_CHECK_LEVEL@"
 cflags="@CONFIG_CFLAGS@"
 libs="@CONFIG_LDFLAGS@"
 
 version="@BOUT_VERSION@"
-git="@GIT_REVISION@"
+git="@BOUT_REVISION@"
 idlpath="@IDLCONFIGPATH@"
 pythonpath="@PYTHONCONFIGPATH@"
 
-has_netcdf="@HAS_NETCDF@"
-has_pnetcdf="@HAS_PNETCDF@"
-has_hdf5="@HAS_HDF5@"
-has_pvode="@HAS_PVODE@"
-has_cvode="@HAS_CVODE@"
-has_ida="@HAS_IDA@"
-has_lapack="@HAS_LAPACK@"
-has_petsc="@HAS_PETSC@"
-has_slepc="@HAS_SLEPC@"
-has_mumps="@HAS_MUMPS@"
-has_arkode="@HAS_ARKODE@"
-has_openmp="@HAS_OPENMP@"
-has_nls="@HAS_NLS@"
-has_fftw="@HAS_FFTW@"
+has_netcdf="@BOUT_HAS_NETCDF@"
+has_legacy_netcdf="@BOUT_HAS_LEGACY_NETCDF@"
+has_pnetcdf="@BOUT_HAS_PNETCDF@"
+has_pvode="@BOUT_HAS_PVODE@"
+has_cvode="@BOUT_HAS_CVODE@"
+has_ida="@BOUT_HAS_IDA@"
+has_lapack="@BOUT_HAS_LAPACK@"
+has_petsc="@BOUT_HAS_PETSC@"
+has_slepc="@BOUT_HAS_SLEPC@"
+has_arkode="@BOUT_HAS_ARKODE@"
+has_openmp="@BOUT_USE_OPENMP@"
+has_nls="@BOUT_HAS_GETTEXT@"
+has_fftw="@BOUT_HAS_FFTW@"
 
 petsc_has_sundials="@PETSC_HAS_SUNDIALS@"
+
+metric_type="@BOUT_METRIC_TYPE@"
 
 usage()
 {
@@ -69,18 +70,19 @@ Available values for OPTION include:
   --python       Python path
 
   --has-netcdf  NetCDF file support
+  --has-legacy-netcdf  Legacy NetCDF file support
   --has-pnetcdf Parallel NetCDF file support
-  --has-hdf5    HDF5 file support
   --has-pvode   PVODE solver support
   --has-cvode   SUNDIALS CVODE solver support
   --has-ida     SUNDIALS IDA solver support
   --has-lapack  LAPACK support
   --has-petsc   PETSc support
   --has-slepc   SLEPc support
-  --has-mumps   MUMPS support
   --has-nls     Natural Language Support
 
   --petsc-has-sundials 
+
+  --metric-type
 EOF
 
     exit $1
@@ -105,20 +107,20 @@ all()
         echo "  --python      -> $pythonpath"
         echo
         echo "  --has-netcdf  -> $has_netcdf"
+        echo "  --has-legacy-netcdf  -> $has_legacy_netcdf"
         echo "  --has-pnetcdf -> $has_pnetcdf"
-        echo "  --has-hdf5    -> $has_hdf5"
         echo "  --has-pvode   -> $has_pvode"
         echo "  --has-cvode   -> $has_cvode"
         echo "  --has-ida     -> $has_ida"
         echo "  --has-lapack  -> $has_lapack"
         echo "  --has-petsc   -> $has_petsc"
         echo "  --has-slepc   -> $has_slepc"
-        echo "  --has-mumps   -> $has_mumps"
         echo "  --has-arkode  -> $has_arkode"
         echo "  --has-nls     -> $has_nls"
         echo
         echo "  --petsc-has-sundials -> $petsc_has_sundials"
         echo
+        echo "  --metric-type -> $metric_type"        
 }
 
 if test $# -eq 0; then
@@ -192,12 +194,12 @@ while test $# -gt 0; do
         echo $has_netcdf
         ;;
 
-    --has-pnetcdf)
-        echo $has_pnetcdf
+    --has-legacy-netcdf)
+        echo $has_legacy_netcdf
         ;;
 
-    --has-hdf5)
-        echo $has_hdf5
+    --has-pnetcdf)
+        echo $has_pnetcdf
         ;;
 
     --has-pvode)
@@ -224,10 +226,6 @@ while test $# -gt 0; do
         echo $has_slepc
         ;;
 
-    --has-mumps)
-        echo $has_mumps
-        ;;
-
     --has-arkode)
 	    echo $has_arkode
 	    ;;
@@ -240,6 +238,9 @@ while test $# -gt 0; do
 	    echo $has_nls
 	    ;;
 
+    --metric-type)
+	    echo $metric_type
+	    ;;
     
     --petsc-version)
         # TODO: Remove in next release

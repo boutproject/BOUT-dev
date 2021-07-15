@@ -6,14 +6,14 @@
 # Checks that the convergence is 2nd order
 # Exits with status 1 if any test failed
 
-#requires: all_tests
-
+# requires: all_tests
+# cores: 2
 
 from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import shell, build_and_log, launch_safe
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log
@@ -23,16 +23,14 @@ from os.path import join
 import matplotlib.pyplot as plt
 
 
-
-print("Making MMS diffusion test")
-shell_safe("make > make.log")
+build_and_log("MMS diffusion test")
 
 # List of input directories
 inputs = [
-    ("X", ["mesh:nx"])#,
-    #("Y",["mesh:ny"]),
-    #("XYZ", ["mesh:nx", "mesh:ny", "MZ"])
-    ]
+    ("X", ["mesh:nx"])  # ,
+    # ("Y",["mesh:ny"]),
+    # ("XYZ", ["mesh:nx", "mesh:ny", "MZ"])
+]
 
 # List of NX values to use
 nxlist = [8, 16, 32, 64, 128, 256, 512, 1024]
@@ -43,50 +41,50 @@ nproc = 2
 
 success = True
 
-for dir,sizes in inputs:
+for dir, sizes in inputs:
     print("Running test in '%s'" % (dir))
 
-    error_2   = []  # The L2 error (RMS)
+    error_2 = []  # The L2 error (RMS)
     error_inf = []  # The maximum error
 
     for nx in nxlist:
-        #args = "-d "+dir+" nout="+str(nout)+" timestep="+str(timestep)+" solver:type=rk4 solver:timestep="+str(0.01*timestep/nx)
-        args = "-d "+dir+" nout="+str(nout)
+        # args = "-d "+dir+" nout="+str(nout)+" timestep="+str(timestep)+" solver:type=rk4 solver:timestep="+str(0.01*timestep/nx)
+        args = "-d " + dir + " nout=" + str(nout)
         for s in sizes:
-            args += " "+s+"="+str(nx)
+            args += " " + s + "=" + str(nx)
 
         print("  Running with " + args)
 
         # Delete old data
-        shell("rm "+dir+"/BOUT.dmp.*.nc")
+        shell("rm " + dir + "/BOUT.dmp.*.nc")
 
         # Command to run
-        cmd = "./diffusion "+args
+        cmd = "./diffusion " + args
         # Launch using MPI
         s, out = launch_safe(cmd, nproc=nproc, pipe=True)
 
         # Save output to log file
-        f = open("run.log."+str(nx), "w")
+        f = open("run.log." + str(nx), "w")
         f.write(out)
         f.close()
 
         # Collect data
-        E_N = collect("E_N", tind=[nout,nout], path=dir,info=False)
+        E_N = collect("E_N", tind=[nout, nout], path=dir, info=False)
 
         # Remove guard cells
-        E_N = E_N[:,1:-1,:,:]
+        E_N = E_N[:, 1:-1, :, :]
 
         # Average error over domain
-        l2 = sqrt(mean(E_N**2))
-        linf = max(abs( E_N ))
+        l2 = sqrt(mean(E_N ** 2))
+        linf = max(abs(E_N))
 
-        error_2.append( l2 )
-        error_inf.append( linf )
+        error_2.append(l2)
+        error_inf.append(linf)
 
         print("  -> Error norm: l-2 %f l-inf %f" % (l2, linf))
 
     # Calculate grid spacing
-    dx = 1. / (array(nxlist) - 2.)
+    dx = 1.0 / (array(nxlist) - 2.0)
 
     # Calculate convergence order
 
@@ -94,7 +92,7 @@ for dir,sizes in inputs:
     print("Convergence order = %f" % (order))
 
     if 1.8 < order < 2.2:
-        #success
+        # success
         pass
     else:
         success = False
@@ -105,30 +103,32 @@ for dir,sizes in inputs:
     try:
         plt.figure()
 
-        plt.plot(dx, error_2, '-o', label=r'$l^2$')
-        plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
+        plt.plot(dx, error_2, "-o", label=r"$l^2$")
+        plt.plot(dx, error_inf, "-x", label=r"$l^\infty$")
 
-        plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+        plt.plot(
+            dx, error_2[-1] * (dx / dx[-1]) ** order, "--", label="Order %.1f" % (order)
+        )
 
         plt.legend(loc="upper left")
         plt.grid()
 
-        plt.yscale('log')
-        plt.xscale('log')
+        plt.yscale("log")
+        plt.xscale("log")
 
-        plt.xlabel(r'Mesh spacing $\delta x$')
+        plt.xlabel(r"Mesh spacing $\delta x$")
         plt.ylabel("Error norm")
 
-        plt.savefig(join(dir,"norm.pdf"))
+        plt.savefig(join(dir, "norm.pdf"))
 
-        #plt.show()
+        # plt.show()
         plt.close()
     except:
         pass
 
 if success:
-  print(" => All tests passed")
-  exit(0)
+    print(" => All tests passed")
+    exit(0)
 else:
-  print(" => Some failed tests")
-  exit(1)
+    print(" => Some failed tests")
+    exit(1)

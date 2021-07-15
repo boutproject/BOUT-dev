@@ -3,31 +3,33 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 400       # number of time-steps
-TIMESTEP = 1	 # time between outputs
+nout = 400       # number of time-steps
+timestep = 1	 # time between outputs
 
 MZ = 32     # number of points in z direction (2^n + 1)
-ZPERIOD = 5  # Number of periods
+zperiod = 5  # Number of periods
 
 non_uniform = true
 
 [mesh]
 # Simple mesh for linear device
 
+staggergrids = true  # Enable staggered grids
+
 nx = 68        # Number of radial grid points, including guards
 ny = 64        # Number of parallel (Y) grid points
 
 Length = 1     # length of machine in meters
-Rmin = 5e-3    # minimum radius in meters
-Rmax = 5e-2    # maximum radius
+Rmin = 0.005    # minimum radius in meters
+Rmax = 0.05    # maximum radius
 
 Bxy = 0.15     # magnetic field in Tesla
 
-Ni0  = 1e-3 + 1e-2*exp(-(x/0.5)^2)  # Density in units of 10^20 m^-3
-Te0  = 5               # Electron temperature in eV
-Ti0  = 0.1             # Ion temperature in eV
+Ni0 = 1e-3 + 1e-2*exp(-(x/0.5)^2)  # Density in units of 10^20 m^-3
+Te0 = 5               # Electron temperature in eV
+Ti0 = 0.1             # Ion temperature in eV
 
-Ni_x = 1e-2            # Density normalisation in units of 10^20 m^-3
+Ni_x = 0.01            # Density normalisation in units of 10^20 m^-3
 Te_x = 2               # Electron normalisation in eV
 Ti_x = Te_x            # Ion normalisation in eV
 bmag = 0.15            # Magnetic field normalisation in Tesla
@@ -74,7 +76,7 @@ upwind = W3
 [laplace]
 
 all_terms = true
-laplace_nonuniform = true
+nonuniform = true
 
 ##################################################
 # Solver settings
@@ -83,8 +85,8 @@ laplace_nonuniform = true
 type = pvode
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 mxstep = 50000
 
 ##################################################
@@ -94,23 +96,23 @@ mxstep = 50000
 
 AA = 4.0
 ZZ = 1.0
- 
+
 estatic = true    # if true, electrostatic (Apar = 0)
 ZeroElMass = false  # Use Ohms law without electron inertia
 zeff = 1.0        # Z effective
-nu_perp = 1.0e-20
+nu_perp = 1e-20
 
-nuIonNeutral = 2.e-3 # Ion-neutral collision rate, normalised to wci
+nuIonNeutral = 0.002 # Ion-neutral collision rate, normalised to wci
 
-ni_perpdiff = 2.e-3
-rho_perpdiff = 2.e-3
-te_perpdiff = 2.e-3
+ni_perpdiff = 0.002
+rho_perpdiff = 0.002
+te_perpdiff = 0.002
 
 nonlinear = true
 
 ShearFactor = 0.0
 
-arakawa = false     # Use Arakawa scheme for ExB advection   
+arakawa = false     # Use Arakawa scheme for ExB advection
 bout_exb = true   # Use the BOUT-06 subset of ExB terms
 
 remove_tor_av_ni = true
@@ -140,25 +142,11 @@ apar_flags = 0 # flags for apar inversion
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 3
-ys_opt = 3
-zs_opt = 3
-
-xs_mode = 1 # Radial mode number
-
-ys_mode = 1 # Parallel mode number
-
-zs_mode = 1 # asimuthal mode number
-
+function = mixmode(x)*mixmode(y)*mixmode(z)
 
 # boundary conditions
 # -------------------
@@ -189,11 +177,7 @@ ni_ni1_phi0 = false
 # Nonlinear Terms
 ni_ni1_phi1 = true
 
-scale = 1.0e-8 # only perturbing Ni
-
-#xinner = 1
-#xouter = 1
-
+scale = 1e-08 # only perturbing Ni
 
 # Section for only the rho equation
 # Contains switches for terms
@@ -215,7 +199,7 @@ rho_rho1_phi1 = true
 rho_ve2t = false
 
 
-scale = -1.0e-8
+scale = -1e-08
 
 bndry_all = dirichlet_o2
 
@@ -255,4 +239,3 @@ te_te1_phi0 = false
 te_te1_phi1 = false
 te_ajpar_te = false
 te_nu_tet = false
-

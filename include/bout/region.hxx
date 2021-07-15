@@ -123,12 +123,11 @@
 #define BOUT_FOR_OMP(index, region, omp_pragmas) BOUT_FOR_SERIAL(index, region)
 #endif
 
-#define BOUT_FOR(index, region)                                                          \
-  BOUT_FOR_OMP(index, region, parallel for schedule(OPENMP_SCHEDULE))
+#define BOUT_FOR(index, region) \
+  BOUT_FOR_OMP(index, region, parallel for schedule(BOUT_OPENMP_SCHEDULE))
 
-#define BOUT_FOR_INNER(index, region)                                                    \
-  BOUT_FOR_OMP(index, region, for schedule(OPENMP_SCHEDULE) nowait)
-
+#define BOUT_FOR_INNER(index, region) \
+  BOUT_FOR_OMP(index, region, for schedule(BOUT_OPENMP_SCHEDULE) nowait)
 
 enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
 
@@ -482,6 +481,14 @@ public:
   /// Collection of contiguous regions
   using ContiguousBlocks = std::vector<ContiguousBlock>;
 
+  // Type aliases for STL-container compatibility
+  using value_type = T;
+  using reference = value_type&;
+  using const_reference = const value_type&;
+  using size_type = typename RegionIndices::size_type;
+  using iterator = typename RegionIndices::iterator;
+  using const_iterator = typename RegionIndices::const_iterator;
+
   // NOTE::
   // Probably want to require a mesh in constructor, both to know nx/ny/nz
   // but also to ensure consistency etc.
@@ -638,7 +645,7 @@ public:
 
   /// Returns a new region including only indices contained in both
   /// this region and the other.
-  Region<T> getUnion(const Region<T>& otherRegion) {
+  Region<T> getIntersection(const Region<T>& otherRegion) {
     // Get other indices and sort as we're going to be searching through
     // this vector so if it's sorted we can be more efficient
     auto otherIndices = otherRegion.getIndices();
@@ -892,11 +899,11 @@ Region<T> mask(const Region<T> &region, const Region<T> &mask) {
   return result.mask(mask);
 }
 
-/// Return the union of two regions
+/// Return the intersection of two regions
 template <typename T>
-Region<T> getUnion(const Region<T>& region, const Region<T>& otherRegion) {
+Region<T> getIntersection(const Region<T>& region, const Region<T>& otherRegion) {
   auto result = region;
-  return result.getUnion(otherRegion);
+  return result.getIntersection(otherRegion);
 }
 
 /// Return a new region with combined indices from two Regions

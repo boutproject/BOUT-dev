@@ -28,6 +28,7 @@ The documentation is divided into the following sections:
    user_docs/installing
    user_docs/advanced_install
    user_docs/running_bout
+   user_docs/new_in_v5
    
 .. toctree::
    :maxdepth: 2
@@ -69,6 +70,8 @@ The documentation is divided into the following sections:
    user_docs/staggered_grids
    user_docs/eigenvalue_solver
    user_docs/nonlocal
+   user_docs/invertable_operator
+   user_docs/petsc
 
 .. toctree::
    :maxdepth: 1
@@ -88,6 +91,7 @@ The documentation is divided into the following sections:
    developer_docs/git_basics
    developer_docs/code_layout
    developer_docs/data_types
+   developer_docs/petsc_interface
    developer_docs/mesh
    developer_docs/file_io
    developer_docs/natural_language

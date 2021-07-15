@@ -1,5 +1,6 @@
+#include "bout/build_config.hxx"
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 #include "imex-bdf2.hxx"
 
@@ -669,8 +670,9 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
   BoutReal atol, rtol; // Tolerances for SNES solver
   options->get("atol", atol, 1e-16);
   options->get("rtol", rtol, 1e-10);
-  int max_nonlinear_it; // Maximum nonlinear (SNES) iterations
-  options->get("max_nonlinear_it", max_nonlinear_it, 5);
+  int max_nonlinear_it = (*options)["max_nonlinear_iterations"]
+                         .doc("Maximum number of nonlinear iterations per SNES solve")
+                         .withDefault(5);
   SNESSetTolerances(*snesIn,atol,rtol,PETSC_DEFAULT,max_nonlinear_it,PETSC_DEFAULT);
 
   /////////////////////////////////////////////////////
@@ -706,7 +708,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
   PC pc;
   KSPGetPC(ksp,&pc);
 
-  if(use_precon && have_user_precon()) {
+  if (use_precon && hasPreconditioner()) {
     output.write("\tUsing user-supplied preconditioner\n");
 
     // Set a Shell (matrix-free) preconditioner type
@@ -716,10 +718,10 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
     PCShellSetApply(pc,imexbdf2PCapply);
     // Context used to supply object pointer
     PCShellSetContext(pc,this);
-  }else if(matrix_free){
+  } else if (matrix_free) {
     PCSetType(pc, PCNONE);
   }
-  
+
   /////////////////////////////////////////////////////
   // diagnostics
   
@@ -1281,7 +1283,7 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
  * Preconditioner function
  */
 PetscErrorCode IMEXBDF2::precon(Vec x, Vec f) {
-  if(!have_user_precon()) {
+  if (!hasPreconditioner()) {
     // No user preconditioner
     throw BoutException("No user preconditioner");
   }
@@ -1292,18 +1294,18 @@ PetscErrorCode IMEXBDF2::precon(Vec x, Vec f) {
   Vec solution;
   SNESGetSolution(snes, &solution);
   BoutReal *soldata;
-  ierr = VecGetArray(x,&soldata);CHKERRQ(ierr);
+  ierr = VecGetArray(solution,&soldata);CHKERRQ(ierr);
   load_vars(soldata);
   ierr = VecRestoreArray(solution,&soldata);CHKERRQ(ierr);
 
   // Load vector to be inverted into ddt() variables
-  BoutReal *xdata;
-  ierr = VecGetArray(x,&xdata);CHKERRQ(ierr);
-  load_derivs(xdata);
-  ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
+  const BoutReal *xdata;
+  ierr = VecGetArrayRead(x,&xdata);CHKERRQ(ierr);
+  load_derivs(const_cast<BoutReal*>(xdata)); // Note: load_derivs does not modify data
+  ierr = VecRestoreArrayRead(x,&xdata);CHKERRQ(ierr);
 
   // Run the preconditioner
-  run_precon(implicit_curtime, implicit_gamma, 0.0);
+  runPreconditioner(implicit_curtime, implicit_gamma, 0.0);
 
   // Save the solution from F_vars
   BoutReal *fdata;

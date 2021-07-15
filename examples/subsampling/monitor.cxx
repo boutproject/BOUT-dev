@@ -36,11 +36,13 @@ public:
     const std::string dump_ext = "nc";
 
     if (append) {
-      if (!this->opena("{:s}/{:s}.{:s}", datadir, file, dump_ext))
+      if (!this->opena("{:s}/{:s}.{:s}", datadir, file, dump_ext)) {
         throw BoutException("Failed to open file for appending!");
+      }
     } else {
-      if (!this->openw("{:s}/{:s}.{:s}", datadir, file, dump_ext))
+      if (!this->openw("{:s}/{:s}.{:s}", datadir, file, dump_ext)) {
         throw BoutException("Failed to open file for writing!");
+      }
     }
   }
 };

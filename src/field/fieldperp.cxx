@@ -48,6 +48,15 @@ FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : FieldPerp(localmesh) {
   *this = val;
 }
 
+FieldPerp::FieldPerp(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC location_in,
+                     int yindex_in, DirectionTypes directions)
+    : Field(localmesh, location_in, directions), yindex(yindex_in),
+      nx(fieldmesh->LocalNx), nz(fieldmesh->LocalNz), data(std::move(data_in)) {
+  TRACE("FieldPerp: Copy constructor from Array and Mesh");
+
+  ASSERT1(data.size() == nx * nz);
+}
+
 FieldPerp& FieldPerp::allocate() {
   if (data.empty()) {
     if (!fieldmesh) {
@@ -71,13 +80,13 @@ FieldPerp& FieldPerp::allocate() {
  *                         ASSIGNMENT 
  ***************************************************************/
 
-FieldPerp &FieldPerp::operator=(const FieldPerp &rhs) {
+FieldPerp& FieldPerp::operator=(const FieldPerp& rhs) {
   /// Check for self-assignment
   if (this == &rhs) {
     return (*this); // skip this assignment
   }
 
-  copyFieldMembers(rhs);
+  Field::operator=(rhs);
 
   nx = rhs.nx;
   nz = rhs.nz;
@@ -102,6 +111,31 @@ const Region<IndPerp> &FieldPerp::getRegion(REGION region) const {
 }
 const Region<IndPerp> &FieldPerp::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegionPerp(region_name);
+}
+
+int FieldPerp::getGlobalIndex() const {
+  auto& fieldmesh = *getMesh();
+  const int start = fieldmesh.hasBndryLowerY() ? 0 : fieldmesh.ystart;
+  const int end = fieldmesh.hasBndryUpperY() ? fieldmesh.LocalNy : fieldmesh.yend + 1;
+
+  // Only use the global y index if it's either an interior (grid)
+  // point, or a boundary point. Otherwise, use -1 to indicate a guard
+  // cell or an invalid value. The actual FieldPerp value is still
+  // written to file
+  return (yindex >= start and yindex < end) ? fieldmesh.getGlobalYIndex(yindex) : -1;
+}
+
+FieldPerp& FieldPerp::setIndexFromGlobal(int y_global) {
+  auto& fieldmesh = *getMesh();
+  const int start = fieldmesh.hasBndryLowerY() ? 0 : fieldmesh.ystart;
+  const int end = fieldmesh.hasBndryUpperY() ? fieldmesh.LocalNy : fieldmesh.yend + 1;
+
+  // Only use the global y index if it's either an interior (grid)
+  // point, or a boundary point. Otherwise, use -1 to indicate a
+  // guard cell or an invalid value
+  const int yindex_local = fieldmesh.getLocalYIndex(y_global);
+  yindex = (yindex_local >= start and yindex_local < end) ? yindex_local : -1;
+  return *this;
 }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
@@ -170,3 +204,26 @@ void invalidateGuards(FieldPerp &var) {
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif
+
+bool operator==(const FieldPerp& a, const FieldPerp& b) {
+  if (!a.isAllocated() || !b.isAllocated()) {
+    return false;
+  }
+  return (a.getIndex() == b.getIndex()) and (min(abs(a - b)) < 1e-10);
+}
+
+std::ostream& operator<<(std::ostream& out, const FieldPerp& value) {
+  out << toString(value);
+  return out;
+}
+
+void swap(FieldPerp& first, FieldPerp& second) noexcept {
+  using std::swap;
+
+  swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
+  swap(first.nx, second.nx);
+  swap(first.nz, second.nz);
+  swap(first.yindex, second.yindex);
+  swap(first.data, second.data);
+}

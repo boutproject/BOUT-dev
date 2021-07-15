@@ -32,18 +32,26 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_PETSC
-
-class IMEXBDF2;
-
 #ifndef __IMEXBDF2_SOLVER_H__
 #define __IMEXBDF2_SOLVER_H__
+
+#include "bout/build_config.hxx"
+#include "bout/solver.hxx"
+
+#if not BOUT_HAS_PETSC
+
+namespace {
+RegisterUnavailableSolver registerunavailableimdexbdef2("imdexbdef2",
+                                                        "BOUT++ was not configured with PETSc");
+}
+
+#else
+
+class IMEXBDF2;
 
 #include "mpi.h"
 
 #include <bout_types.hxx>
-#include <bout/solver.hxx>
-
 #include <bout/petsclib.hxx>
 
 #include <petsc.h>

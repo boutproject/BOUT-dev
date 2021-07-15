@@ -10,15 +10,15 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 200        # number of time-steps
-TIMESTEP = 1e-1   # time between outputs
+nout = 200        # number of time-steps
+timestep = 0.1   # time between outputs
 
-TwistShift = false   # use twist-shift condition?
+twistshift = false   # use twist-shift condition?
 
 MZ = 32     # number of points in z direction (2^n)
 
 
-ZPERIOD = 1
+zperiod = 1
 ZMIN = -0.5
 ZMAX = 0.5
 
@@ -32,12 +32,15 @@ dump_format = "nc" # Output format. nc = NetCDF
 
 non_uniform = false
 
+[mesh]
+staggergrids = false # Use staggered grids (EXPERIMENTAL)
+
 ##################################################
 # derivative methods
 
 [mesh:ddx]
 
-first = C2  
+first = C2
 second = C2
 upwind = W3
 
@@ -63,10 +66,10 @@ upwind = W3
 #mukeep = 6
 #mlkeep = 6
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
-#type=karniadakis
+#type=splitrk
 #timestep = 1e-3
 
 ##################################################
@@ -74,7 +77,7 @@ RTOL = 1.0e-5  # relative tolerance
 
 [gravity]
 
-nonlinear  = false     # include non-linear terms?
+nonlinear = false     # include non-linear terms?
 
 Lz = 0.06   # Length of the box in Z
 
@@ -100,7 +103,7 @@ outer_boundary_flags = 0
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # boundary conditions

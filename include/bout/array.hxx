@@ -414,5 +414,10 @@ Array<T, Backing> copy(const Array<T, Backing>& other) {
   return a;
 }
 
+template<typename T>
+bool operator==(const Array<T>& lhs, const Array<T>& rhs) {
+  return std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
 #endif // __ARRAY_H__
 

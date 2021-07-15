@@ -6,7 +6,7 @@
  * up a linear system.
  *
  **************************************************************************
- * Copyright 2013 J. Buchanan, J.Omotani
+ * Copyright 2019 C. MacMackin
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *
@@ -30,6 +30,8 @@
 #ifndef __PETSC_INTERFACE_H__
 #define __PETSC_INTERFACE_H__
 
+#include "bout/build_config.hxx"
+
 #include <algorithm>
 #include <memory>
 #include <type_traits>
@@ -44,7 +46,7 @@
 #include <bout_types.hxx>
 #include <boutcomm.hxx>
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 template <class T>
 class GlobalIndexer;
 
@@ -105,14 +107,14 @@ public:
 
     bndryCandidate = mask(allCandidate, getRegionNobndry());
 
-    regionInnerX = getUnion(bndryCandidate, indices.getRegion("RGN_INNER_X"));
-    regionOuterX = getUnion(bndryCandidate, indices.getRegion("RGN_OUTER_X"));
+    regionInnerX = getIntersection(bndryCandidate, indices.getRegion("RGN_INNER_X"));
+    regionOuterX = getIntersection(bndryCandidate, indices.getRegion("RGN_OUTER_X"));
     if (std::is_same<T, FieldPerp>::value) {
       regionLowerY = Region<ind_type>({});
       regionUpperY = Region<ind_type>({});
     } else {
-      regionLowerY = getUnion(bndryCandidate, indices.getRegion("RGN_LOWER_Y"));
-      regionUpperY = getUnion(bndryCandidate, indices.getRegion("RGN_UPPER_Y"));
+      regionLowerY = getIntersection(bndryCandidate, indices.getRegion("RGN_LOWER_Y"));
+      regionUpperY = getIntersection(bndryCandidate, indices.getRegion("RGN_UPPER_Y"));
     }
     regionBndry = regionLowerY + regionInnerX + regionOuterX + regionUpperY;
     regionAll = getRegionNobndry() + regionBndry;
@@ -142,10 +144,6 @@ public:
   /// processes and, if possible, calculating the sparsity pattern of
   /// any matrices.
   void initialise() {
-    // The values communicated to the the corner guard-cells are
-    // out-of-date by one communication, so must call it twice to
-    // ensure they are correct.
-    fieldmesh->communicate(indices);
     fieldmesh->communicate(indices);
   }
 
@@ -230,8 +228,8 @@ private:
       numDiagonal[getGlobal(i) - globalStart] = stencils.getStencilSize(i);
     }
 
-    BOUT_FOR_SERIAL(i, regionBndry) {
-      if (!isLocal(i)) {
+    BOUT_FOR_SERIAL(i, indices.getRegion("RGN_GUARDS")) {
+      if (getGlobal(i) >= 0 && !isLocal(i)) {
         for (const auto& j : stencils.getIndicesWithStencilIncluding(i)) {
           if (isLocal(j)) {
             const int n = getGlobal(j) - globalStart;
@@ -245,7 +243,6 @@ private:
     sparsityCalculated = true;
   }
 
-  PetscLib lib;
   Mesh* fieldmesh;
 
   /// Fields containing the indices for each element (as reals)
@@ -327,7 +324,7 @@ public:
   PetscVector(const PetscVector<T>& v, Vec* vec) {
 #if CHECKLEVEL >= 2
     int fsize = v.indexConverter->size(), msize;
-    VecGetSize(*vec, &msize);
+    VecGetLocalSize(*vec, &msize);
     ASSERT2(fsize == msize);
 #endif
     vector.reset(vec);
@@ -386,8 +383,12 @@ public:
         value = 0.;
       }
     }
-    Element& operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
+    Element& operator=(const Element& other) {
+      ASSERT3(finite(static_cast<BoutReal>(other)));
+      return *this = static_cast<BoutReal>(other);
+    }
     Element& operator=(BoutReal val) {
+      ASSERT3(finite(val));
       value = val;
       int status;
       BOUT_OMP(critical)
@@ -398,7 +399,9 @@ public:
       return *this;
     }
     Element& operator+=(BoutReal val) {
+      ASSERT3(finite(val));
       value += val;
+      ASSERT3(finite(value));
       int status;
       BOUT_OMP(critical)
       status = VecSetValue(*petscVector, petscIndex, val, ADD_VALUES);
@@ -484,11 +487,11 @@ public:
   const Vec* get() const { return vector.get(); }
 
 private:
+  PetscLib lib;
   std::unique_ptr<Vec, VectorDeleter> vector = nullptr;
   IndexerPtr<T> indexConverter;
   CELL_LOC location;
   bool initialised = false;
-  PetscLib lib;
 };
 
 /*!
@@ -536,12 +539,11 @@ public:
 
   // Construct a matrix capable of operating on the specified field,
   // preallocating memory if requeted and possible.
-  PetscMatrix(T& f, IndexerPtr<T> indConverter, bool preallocate = true)
+  PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
       : matrix(new Mat(), MatrixDeleter()), indexConverter(indConverter) {
-    ASSERT1(indConverter->getMesh() == f.getMesh());
     const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
-    pt = &f.getMesh()->getCoordinates()->getParallelTransform();
+        std::is_same<T, FieldPerp>::value ? indConverter->getMesh()->getXcomm() : BoutComm::get();
+    pt = &indConverter->getMesh()->getCoordinates()->getParallelTransform();
     const int size = indexConverter->size();
 
     MatCreate(comm, matrix.get());
@@ -596,6 +598,11 @@ public:
             std::vector<BoutReal> w = {})
         : petscMatrix(matrix), petscRow(row), petscCol(col), positions(p), weights(w) {
       ASSERT2(positions.size() == weights.size());
+#if CHECK > 2
+      for (const auto val : weights) {
+        ASSERT3(finite(val));
+      }
+#endif
       if (positions.size() == 0) {
         positions = {col};
         weights = {1.0};
@@ -609,17 +616,26 @@ public:
         value = 0.;
       }
     }
-    Element& operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
+    Element& operator=(const Element& other) {
+      AUTO_TRACE();
+      ASSERT3(finite(static_cast<BoutReal>(other)));
+      return *this = static_cast<BoutReal>(other);
+    }
     Element& operator=(BoutReal val) {
+      AUTO_TRACE();
+      ASSERT3(finite(val));
       value = val;
       setValues(val, INSERT_VALUES);
       return *this;
     }
     Element& operator+=(BoutReal val) {
+      AUTO_TRACE();
+      ASSERT3(finite(val));
       auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
       if (columnPosition != positions.end()) {
         int i = std::distance(positions.begin(), columnPosition);
         value += weights[i] * val;
+        ASSERT3(finite(value));
       }
       setValues(val, ADD_VALUES);
       return *this;
@@ -628,10 +644,12 @@ public:
 
   private:
     void setValues(BoutReal val, InsertMode mode) {
+      TRACE("PetscMatrix setting values at ({}, {})", petscRow, petscCol);
       ASSERT3(positions.size() > 0);
       std::vector<PetscScalar> values;
       std::transform(weights.begin(), weights.end(), std::back_inserter(values),
                      [&val](BoutReal weight) -> PetscScalar { return weight * val; });
+
       int status;
       BOUT_OMP(critical)
       status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
@@ -711,7 +729,7 @@ public:
     BOUT_OMP(critical)
     status = MatGetValues(*get(), 1, &global1, 1, &global2, &value);
     if (status != 0) {
-      throw BoutException("Error when setting elements of a PETSc matrix.");
+      throw BoutException("Error when getting elements of a PETSc matrix.");
     }
     return value;
   }
@@ -758,12 +776,12 @@ public:
   const Mat* get() const { return matrix.get(); }
 
 private:
+  PetscLib lib;
   std::shared_ptr<Mat> matrix = nullptr;
   IndexerPtr<T> indexConverter;
   ParallelTransform* pt;
   int yoffset = 0;
   bool initialised = false;
-  PetscLib lib;
 };
 
 /*!

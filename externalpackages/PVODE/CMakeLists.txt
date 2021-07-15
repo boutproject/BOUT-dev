@@ -49,6 +49,10 @@ add_library(pvpre
   precon/band.h
   )
 
+
+set_target_properties(pvode PROPERTIES
+  SOVERSION 1.0.0)
+
 target_include_directories(pvpre PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/pvode>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -56,12 +60,36 @@ target_include_directories(pvpre PUBLIC
   )
 target_link_libraries(pvpre PUBLIC MPI::MPI_CXX)
 
+
+set_target_properties(pvpre PROPERTIES
+  SOVERSION 1.0.0)
+
 include(GNUInstallDirs)
 install(TARGETS pvode pvpre
-  EXPORT bout++Targets
+  EXPORT PVODETargets
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   )
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  PVODEConfigVersion.cmake
+  VERSION ${PACKAGE_VERSION}
+  COMPATIBILITY SameMajorVersion
+  )
+
+install(EXPORT PVODETargets
+  FILE PVODETargets.cmake
+  NAMESPACE PVODE::
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/PVODE"
+  )
+
+export(EXPORT PVODETargets
+  FILE "${CMAKE_CURRENT_BINARY_DIR}/PVODEConfig.cmake"
+  NAMESPACE PVODE::
+  )
+
+export(PACKAGE PVODE)

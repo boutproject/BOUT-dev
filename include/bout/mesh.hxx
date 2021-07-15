@@ -76,6 +76,9 @@ class Mesh;
 #include <list>
 #include <memory>
 #include <map>
+#include <set>
+#include <string>
+
 
 class MeshFactory : public Factory<
   Mesh, MeshFactory,
@@ -108,7 +111,8 @@ class Mesh {
 
   /// Constructor for a "bare", uninitialised Mesh
   /// Only useful for testing
-  Mesh() : source(nullptr), options(nullptr) {}
+  Mesh() : source(nullptr), options(nullptr),
+           include_corner_cells(true) {}
 
   /// Constructor
   /// @param[in] s  The source to be used for loading variables
@@ -189,9 +193,11 @@ class Mesh {
   /// @param[out] var   This will be set to the value. Will be allocated if needed
   /// @param[in] name   Name of the variable to read
   /// @param[in] def    The default value if not found
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(Field2D &var, const std::string &name, BoutReal def=0.0);
+  int get(Field2D& var, const std::string& name, BoutReal def=0.0,
+          bool communicate = true, CELL_LOC location=CELL_DEFAULT);
 
   /// Get a Field3D from the input source
   ///
@@ -201,7 +207,7 @@ class Mesh {
   /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(Field3D &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
+  int get(Field3D &var, const std::string &name, BoutReal def=0.0, bool communicate=true, CELL_LOC location=CELL_DEFAULT);
 
   /// Get a FieldPerp from the input source
   ///
@@ -211,7 +217,7 @@ class Mesh {
   /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(FieldPerp &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
+  int get(FieldPerp &var, const std::string &name, BoutReal def=0.0, bool communicate=true, CELL_LOC location=CELL_DEFAULT);
 
   /// Get a Vector2D from the input source.
   /// If \p var is covariant then this gets three
@@ -221,11 +227,14 @@ class Mesh {
   /// By default all fields revert to zero
   ///
   /// @param[in] var  This will be set to the value read
-  /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] name  The name of the vector. Individual fields are read based on this
+  /// name by appending. See above
   /// @param[in] def   The default value if not found (used for all the components)
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
-  /// @returns zero always. 
-  int get(Vector2D &var, const std::string &name, BoutReal def=0.0);
+  /// @returns zero always.
+  int get(Vector2D& var, const std::string& name, BoutReal def = 0.0,
+          bool communicate = true);
 
   /// Get a Vector3D from the input source.
   /// If \p var is covariant then this gets three
@@ -235,11 +244,14 @@ class Mesh {
   /// By default all fields revert to zero
   ///
   /// @param[in] var  This will be set to the value read
-  /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] name  The name of the vector. Individual fields are read based on this
+  /// name by appending. See above
   /// @param[in] def    The default value if not found (used for all the components)
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
-  /// @returns zero always. 
-  int get(Vector3D &var, const std::string &name, BoutReal def=0.0);
+  /// @returns zero always.
+  int get(Vector3D& var, const std::string& name, BoutReal def = 0.0,
+          bool communicate = true);
 
   /// Test if input source was a grid file
   bool isDataSourceGridFile() const;
@@ -271,6 +283,12 @@ class Mesh {
     communicateXZ(g);
   }
 
+  template <typename... Ts>
+  void communicateYZ(Ts&... ts) {
+    FieldGroup g(ts...);
+    communicateYZ(g);
+  }
+
   /*!
    * Communicate a group of fields
    */
@@ -281,6 +299,12 @@ class Mesh {
   ///
   /// @param g  The group of fields to communicate. Guard cells will be modified
   void communicateXZ(FieldGroup &g);
+
+  /// Communcate guard cells in YZ only
+  /// i.e. no X communication
+  ///
+  /// @param g  The group of fields to communicate. Guard cells will be modified
+  void communicateYZ(FieldGroup &g);
 
   /*!
    * Communicate an X-Z field
@@ -298,13 +322,38 @@ class Mesh {
     return send(g);
   }
 
+  /// Send guard cells from a list of FieldData objects in the x-direction
+  /// Packs arguments into a FieldGroup and passes to send(FieldGroup&).
+  template <typename... Ts>
+  comm_handle sendX(Ts&... ts) {
+    FieldGroup g(ts...);
+    return sendX(g);
+  }
+
+  /// Send guard cells from a list of FieldData objects in the y-direction
+  /// Packs arguments into a FieldGroup and passes to send(FieldGroup&).
+  template <typename... Ts>
+  comm_handle sendY(Ts&... ts) {
+    FieldGroup g(ts...);
+    return sendY(g);
+  }
+
   /// Perform communications without waiting for them
   /// to finish. Requires a call to wait() afterwards.
   ///
   /// \param g Group of fields to communicate
   /// \returns handle to be used as input to wait()
   virtual comm_handle send(FieldGroup &g) = 0;  
-  virtual int wait(comm_handle handle) = 0; ///< Wait for the handle, return error code
+
+  /// Send only the x-guard cells
+  virtual comm_handle sendX(FieldGroup &g, comm_handle handle = nullptr,
+                            bool disable_corners = false) = 0;
+
+  /// Send only the y-guard cells
+  virtual comm_handle sendY(FieldGroup &g, comm_handle handle = nullptr) = 0;
+
+  /// Wait for the handle, return error code
+  virtual int wait(comm_handle handle) = 0;
 
   // non-local communications
 
@@ -340,8 +389,8 @@ class Mesh {
   virtual int getYProcIndex() = 0; ///< This processor's index in Y direction
   
   // X communications
-  virtual bool firstX() = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?
-  virtual bool lastX() = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
+  virtual bool firstX() const = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?
+  virtual bool lastX() const = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
 
   /// Domain is periodic in X?
   bool periodicX{false};
@@ -477,14 +526,14 @@ class Mesh {
   // Boundary region iteration
 
   /// Iterate over the lower Y boundary
-  virtual const RangeIterator iterateBndryLowerY() const = 0;
+  virtual RangeIterator iterateBndryLowerY() const = 0;
 
   /// Iterate over the upper Y boundary
-  virtual const RangeIterator iterateBndryUpperY() const = 0;
-  virtual const RangeIterator iterateBndryLowerOuterY() const = 0;
-  virtual const RangeIterator iterateBndryLowerInnerY() const = 0;
-  virtual const RangeIterator iterateBndryUpperOuterY() const = 0;
-  virtual const RangeIterator iterateBndryUpperInnerY() const = 0;
+  virtual RangeIterator iterateBndryUpperY() const = 0;
+  virtual RangeIterator iterateBndryLowerOuterY() const = 0;
+  virtual RangeIterator iterateBndryLowerInnerY() const = 0;
+  virtual RangeIterator iterateBndryUpperOuterY() const = 0;
+  virtual RangeIterator iterateBndryUpperInnerY() const = 0;
   
   bool hasBndryLowerY(); ///< Is there a boundary on the lower guard cells in Y?
   bool hasBndryUpperY(); ///< Is there a boundary on the upper guard cells in Y?
@@ -493,6 +542,9 @@ class Mesh {
 
   /// Return a vector containing all the boundary regions on this processor
   virtual std::vector<BoundaryRegion*> getBoundaries() = 0;
+
+  /// Get the set of all possible boundaries in this configuration
+  virtual std::set<std::string> getPossibleBoundaries() const { return {}; }
 
   /// Add a boundary region to this processor
   virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
@@ -504,7 +556,7 @@ class Mesh {
   virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
   
   /// Branch-cut special handling (experimental)
-  virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}
+  virtual Field3D smoothSeparatrix(const Field3D &f) {return f;}
   
   virtual BoutReal GlobalX(int jx) const = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0; ///< Continuous Y index (0 -> 1)
@@ -514,6 +566,8 @@ class Mesh {
   //////////////////////////////////////////////////////////
   
   int GlobalNx, GlobalNy, GlobalNz; ///< Size of the global arrays. Note: can have holes
+  /// Size of the global arrays excluding boundary points.
+  int GlobalNxNoBoundaries, GlobalNyNoBoundaries, GlobalNzNoBoundaries;
   int OffsetX, OffsetY, OffsetZ;    ///< Offset of this mesh within the global array
                                     ///< so startx on this processor is OffsetX in global
   
@@ -524,14 +578,16 @@ class Mesh {
   /// Returns the global Y index given a local index
   /// The local index must include the boundary, the global index does not.
   [[deprecated("Use getGlobalYIndex or getGlobalYIndexNoBoundaries instead")]]
-  virtual int YGLOBAL(int yloc) const { return getGlobalYIndexNoBoundaries(yloc); }
+  int YGLOBAL(int yloc) const { return getGlobalYIndexNoBoundaries(yloc); }
 
   /// Returns the local X index given a global index
   /// If the global index includes the boundary cells, then so does the local.
-  virtual int XLOCAL(int xglo) const = 0;
+  [[deprecated("Use getLocalXIndex or getLocalXIndexNoBoundaries instead")]]
+  int XLOCAL(int xglo) const { return getLocalXIndex(xglo); };
   /// Returns the local Y index given a global index
   /// If the global index includes the boundary cells, then so does the local.
-  virtual int YLOCAL(int yglo) const = 0;
+  [[deprecated("Use getLocalYIndex or getLocalYIndexNoBoundaries instead")]]
+  int YLOCAL(int yglo) const { return getLocalYIndexNoBoundaries(yglo); };
 
   /// Returns a global X index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
@@ -541,6 +597,14 @@ class Mesh {
   /// Global index excludes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalXIndexNoBoundaries(int xlocal) const = 0;
 
+  /// Returns a local X index given a global index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalXIndex(int xglobal) const = 0;
+
+  /// Returns a local X index given a global index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalXIndexNoBoundaries(int xglobal) const = 0;
+
   /// Returns a global Y index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalYIndex(int ylocal) const = 0;
@@ -548,6 +612,14 @@ class Mesh {
   /// Returns a global Y index given a local index.
   /// Global index excludes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalYIndexNoBoundaries(int ylocal) const = 0;
+
+  /// Returns a local Y index given a global index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalYIndex(int yglobal) const = 0;
+
+  /// Returns a local Y index given a global index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalYIndexNoBoundaries(int yglobal) const = 0;
 
   /// Returns a global Z index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
@@ -557,15 +629,19 @@ class Mesh {
   /// Global index excludes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalZIndexNoBoundaries(int zlocal) const = 0;
 
+  /// Returns a local Z index given a global index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalZIndex(int zglobal) const = 0;
+
+  /// Returns a local Z index given a global index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalZIndexNoBoundaries(int zglobal) const = 0;
+
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
   
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend, zstart, zend;
-  
-  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
-  /// cell centred (default).
-  bool StaggerGrids{false};
   
   /// Include integrated shear (if shifting X)
   bool IncIntShear{false};
@@ -593,6 +669,7 @@ class Mesh {
     // (circular dependency between Mesh and Coordinates)
     auto inserted = coords_map.emplace(location, nullptr);
     inserted.first->second = createDefaultCoordinates(location);
+    inserted.first->second->geometry(false);
     return inserted.first->second;
   }
 
@@ -873,14 +950,12 @@ class Mesh {
   // REGION RELATED ROUTINES
   ///////////////////////////////////////////////////////////
 
-  // The maxregionblocksize to use when creating the default regions.
-  // Can be set in the input file and the global default is set by,
-  // MAXREGIONBLOCKSIZE in include/bout/region.hxx
-  int maxregionblocksize;
-  
   /// Get the named region from the region_map for the data iterator
   ///
   /// Throws if region_name not found
+  template <class T>
+  const Region<typename T::ind_type>& getRegion(const std::string &region_name) const;
+
   const Region<> &getRegion(const std::string &region_name) const{
     return getRegion3D(region_name);
   }
@@ -960,6 +1035,19 @@ protected:
   /// Pointer to the global MPI wrapper, for convenience
   MpiWrapper* mpi = nullptr;
 
+public:
+  // The maxregionblocksize to use when creating the default regions.
+  // Can be set in the input file and the global default is set by,
+  // MAXREGIONBLOCKSIZE in include/bout/region.hxx
+  int maxregionblocksize{MAXREGIONBLOCKSIZE};
+
+  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
+  /// cell centred (default).
+  bool StaggerGrids{false};
+
+  // Switch for communication of corner guard and boundary cells
+  const bool include_corner_cells;
+
 private:
 
   /// Allocates default Coordinates objects
@@ -979,5 +1067,18 @@ private:
 
   int localNumCells3D = -1, localNumCells2D = -1, localNumCellsPerp = -1;
 };
+
+template <>
+inline const Region<Ind3D>& Mesh::getRegion<Field3D>(const std::string& region_name) const {
+  return getRegion3D(region_name);
+}
+template <>
+inline const Region<Ind2D>& Mesh::getRegion<Field2D>(const std::string& region_name) const {
+  return getRegion2D(region_name);
+}
+template <>
+inline const Region<IndPerp>& Mesh::getRegion<FieldPerp>(const std::string& region_name) const {
+  return getRegionPerp(region_name);
+}
 
 #endif // __MESH_H__

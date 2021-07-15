@@ -1,5 +1,5 @@
-NOUT = 1
-TIMESTEP = 0.1
+nout = 1
+timestep = 0.1
 
 MZ = 16
 
@@ -10,20 +10,22 @@ ZMAX = 1
 
 grid = "grid.nc"
 
-TwistShift = true
+twistshift = true
 ShiftXderivs = true
 
 [mesh]
-paralleltransform = shifted
 symmetricGlobalX = true
+
+[mesh:paralleltransform]
+type = shifted
 
 [mesh:ddx]
 upwind = W3
 
 [solver]
 
-ATOL = 1.0e-12  # absolute tolerance
-RTOL = 1.0e-8   # relative tolerance
+atol = 1e-12  # absolute tolerance
+rtol = 1e-08   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 mms = true  # -> Enable MMS testing
@@ -32,7 +34,7 @@ mms = true  # -> Enable MMS testing
 floats = false # -> Output in double precision
 
 [laplace]
-all_terms = true 
+all_terms = true
 
 [drive]
 solution = sin(6.0*x^2 + y - z - (x^2 + 2)*(y + 0.1*sin(y)))
@@ -75,4 +77,3 @@ ddy = -((x^2 + 2)*(0.1*cos(y) + 1) - 1)*sin(4.0*x^2 - y + z + (x^2 + 2)*(y + 0.1
 source = sin(3.0*x - y + 2*z + 2*(x^2 + 2)*(y + 0.1*sin(y)))*cos(t) - 2.0*(0.2*(-((x^2 + 2)*(0.1*cos(y) + 1) - 1)*sin(4.0*x^2 - y + z + (x^2 + 2)*(y + 0.1*sin(y))) + (2*(x^2 + 2)*(0.1*cos(y) + 1) - 1)*sin(t)*cos(3.0*x - y + 2*z + 2*(x^2 + 2)*(y + 0.1*sin(y))))*sin(y)/((x^2 + 2)*(4.0/(-0.2*cos(y) + 2)^2 + 0.16/((x^2 + 2)^2*(-0.2*cos(y) + 2)^4*(0.1*cos(y) + 1)^2))*(-0.2*cos(y) + 2)^2*(0.1*cos(y) + 1)^2) - 0.8*(-((x^2 + 2)*(0.1*cos(y) + 1) - 1)*sin(4.0*x^2 - y + z + (x^2 + 2)*(y + 0.1*sin(y))) + (2*(x^2 + 2)*(0.1*cos(y) + 1) - 1)*sin(t)*cos(3.0*x - y + 2*z + 2*(x^2 + 2)*(y + 0.1*sin(y))))*sin(y)/((x^2 + 2)*(4.0/(-0.2*cos(y) + 2)^2 + 0.16/((x^2 + 2)^2*(-0.2*cos(y) + 2)^4*(0.1*cos(y) + 1)^2))*(-0.2*cos(y) + 2)^3*(0.1*cos(y) + 1)) + 2.0*(-((x^2 + 2)*(0.1*cos(y) + 1) - 1)*sin(4.0*x^2 - y + z + (x^2 + 2)*(y + 0.1*sin(y))) + (2*(x^2 + 2)*(0.1*cos(y) + 1) - 1)*sin(t)*cos(3.0*x - y + 2*z + 2*(x^2 + 2)*(y + 0.1*sin(y))))*(1.6*sin(y)/(-0.2*cos(y) + 2)^3 - 0.032*sin(y)/((x^2 + 2)^2*(-0.2*cos(y) + 2)^4*(0.1*cos(y) + 1)^3) + 0.128*sin(y)/((x^2 + 2)^2*(-0.2*cos(y) + 2)^5*(0.1*cos(y) + 1)^2))/((x^2 + 2)*(4.0/(-0.2*cos(y) + 2)^2 + 0.16/((x^2 + 2)^2*(-0.2*cos(y) + 2)^4*(0.1*cos(y) + 1)^2))^2*(-0.2*cos(y) + 2)^2*(0.1*cos(y) + 1)) + 2.0*(-0.2*(x^2 + 2)*sin(t)*sin(y)*cos(3.0*x - y + 2*z + 2*(x^2 + 2)*(y + 0.1*sin(y))) + 0.1*(x^2 + 2)*sin(y)*sin(4.0*x^2 - y + z + (x^2 + 2)*(y + 0.1*sin(y))) - ((x^2 + 2)*(0.1*cos(y) + 1) - 1)^2*cos(4.0*x^2 - y + z + (x^2 + 2)*(y + 0.1*sin(y))) - (2*(x^2 + 2)*(0.1*cos(y) + 1) - 1)^2*sin(t)*sin(3.0*x - y + 2*z + 2*(x^2 + 2)*(y + 0.1*sin(y))))/((x^2 + 2)*(4.0/(-0.2*cos(y) + 2)^2 + 0.16/((x^2 + 2)^2*(-0.2*cos(y) + 2)^4*(0.1*cos(y) + 1)^2))*(-0.2*cos(y) + 2)^2*(0.1*cos(y) + 1)))/((x^2 + 2)*(-0.2*cos(y) + 2)^2*(0.1*cos(y) + 1))
 
 bndry_all = fromFieldAligned(dirichlet_o2(laplacepar:solution))
-

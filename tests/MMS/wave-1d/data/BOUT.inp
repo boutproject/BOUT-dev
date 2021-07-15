@@ -7,19 +7,21 @@ timestep = 0.1  #Time between outputs
 
 # Number of points in z
 MZ = 1
-zmin = 0.0
-zmax = 0.15915494309189533577# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*pi*1.59 = 1
+ZMIN = 0.0
+ZMAX = 0.15915494309189535# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*pi*1.59 = 1
 
 #number of guard cells
 MYG = 1  #noy comm for now
 
+dump_format = "nc"     # Write NetCDF format files
+
 [output]
 floats = false #false -> output in doubles
 
-[mesh]  
-StaggerGrids = true
+[mesh]
+staggergrids = true
 
-ixseps1 = -1     
+ixseps1 = -1
 ixseps2 = -1             # Set x location of separatrix 2
 
 #nx = internals gridpoints + guardcells
@@ -28,13 +30,11 @@ nx = 8
 #ny = internal gridpoints
 ny = 1
 
-Lx = 1. 
-Ly = 1.
-
-dump_format="nc"     # Write NetCDF format files
+Lx = 1.0
+Ly = 1.0
 
 #grid points are distributed symmetrically
-symmetricGlobalX = true 
+symmetricGlobalX = true
 
 ##################################################
 [mesh:ddx]   # Methods used for perp (x) derivative terms
@@ -58,30 +58,30 @@ second = C2
 upwind = U1
 flux = SPLIT
 
-[solver] 
+[solver]
 
 type = pvode
 
-atol = 1.0e-15 # absolute tolerance
-rtol = 1.0e-7  # relative tolerance
+atol = 1e-15 # absolute tolerance
+rtol = 1e-07  # relative tolerance
 mxstep = 100000000
 
-[all]
+mms = true
 
-scale = 1.0 
-xs_opt = 0
-ys_opt = 0
-zs_opt = 0
+[f]
 
-[f] 
+solution = 0.9 + 0.9*x*mesh:Lx + 0.2*cos(10*t)*sin(5.*(x*mesh:Lx)^2);
+ddx = 0.9 + 2.*x*mesh:Lx*cos(10*t)*cos(5.*(x*mesh:Lx)^2)
+source = -0.8*x*mesh:Lx*cos(7*t)*cos(2.0*(x*mesh:Lx)^2) - 2.0*sin(10*t)*sin(5.0*(x*mesh:Lx)^2) - 0.7
 
-bndry_all = neumann # Should be ignored
-bndry_xin = neumann_o2
+bndry_all = neumann_o2(f:ddx) # Should be ignored
+bndry_xin = dirichlet_o2(f:solution)
 
-[g] 
+[g]
 
-bndry_all = dirichlet_o2
-bndry_xin = neumann  # Should have no effect
+solution = 0.7*x*mesh:Lx + 0.2*sin(2.0*(x*mesh:Lx)^2)*cos(7*t) + 0.9
+# ddx = 0.8*x*mesh:Lx*cos(7*t)*cos(2.0*(x*mesh:Lx)^2) + 0.7
+source = -2.0*x*mesh:Lx*cos(10*t)*cos(5.0*(x*mesh:Lx)^2) - 1.4*sin(7*t)*sin(2.0*(x*mesh:Lx)^2) - 0.9
 
-################################
-
+bndry_all = dirichlet_o2(g:solution)
+# bndry_xin = dirichlet(g:ddx)  # Should have no effect

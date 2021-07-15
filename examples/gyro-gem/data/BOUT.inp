@@ -3,29 +3,30 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 200       # number of time-steps
-TIMESTEP = 1e-5	   # time between outputs
+nout = 200       # number of time-steps
+timestep = 1e-05	   # time between outputs
 
 archive = 20
 
-TwistShift = true  # use twist-shift condition?
+twistshift = true  # use twist-shift condition?
 
 MZ = 32     # number of points in z direction (2^n)
-ZPERIOD = 10  # Number of periods
+zperiod = 10  # Number of periods
 
 MXG = 2
 MYG = 2
 
-grid="cyclone_68x32.nc"
+grid = "cyclone_68x32.nc"
 
 dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
-
-#StaggerGrids = true
 
 periodicX = false  # Make domain periodic in X
 
 [mesh]
-paralleltransform = shifted # Use shifted metric method
+staggergrids = false # Use staggered grids (EXPERIMENTAL)
+
+[mesh:paralleltransform]
+type = shifted # Use shifted metric method
 
 ##################################################
 # derivative methods
@@ -48,14 +49,6 @@ first = C4
 second = C4
 upwind = W3
 
-##################################################
-# Laplacian inversion settings
-
-[laplace]
-
-#all_terms = true
-#laplace_nonuniform = true
-#low_mem=true
 
 ##################################################
 # Solver settings
@@ -63,11 +56,11 @@ upwind = W3
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-12 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1e-12 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 mxstep = 50000
-type=karniadakis
-timestep=1e-6
+type = splitrk
+timestep = 1e-06
 
 ##################################################
 # settings for GEM model
@@ -79,8 +72,8 @@ small_rho_e = true
 include_grad_par_B = true
 Landau = 1.0
 
-nu_perp = 1e-6
-nu_par = 3e-3
+nu_perp = 1e-06
+nu_par = 0.003
 
 output_ddt = false  # Save time derivs to file
 
@@ -104,7 +97,7 @@ fix_profiles = true
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # boundary conditions
@@ -119,23 +112,23 @@ scale = 0.0 # default size of initial perturbations
 bndry_all = neumann
 
 [Ni]
-scale = 1e-3 # only perturbing Ni
+scale = 0.001 # only perturbing Ni
 
 function = exp(-((x-0.5)/0.2)^2) * exp(-((y/(2*pi) - 0.5)/0.5)^2) * sin(z)
 
 ddt = true # Evolve Ni
 
-ni1 = true # nonlinear ExB 
+ni1 = true # nonlinear ExB
 ti0 = true
 ti1 = true
-ui  = true # Parallel flow
+ui = true # Parallel flow
 curv = true # Curvature
 
 [ApUi]
 ddt = true # Evolve parallel ion flow
 
 uit = true  # Nonlinear ExB
-qi  = true
+qi = true
 phi = true  # Parallel gradient of phi
 parP = true # Parallel pressure gradient
 curv = true
@@ -157,17 +150,17 @@ ddt = true
 [Ne]
 ddt = true
 
-ne1 = true # nonlinear ExB 
+ne1 = true # nonlinear ExB
 te0 = true
 te1 = true
-ue  = true # Parallel flow
+ue = true # Parallel flow
 curv = true # Curvature
 
 [ApUe]
 ddt = true # Evolve parallel ion flow
 
 uet = true  # Nonlinear ExB
-qe  = true
+qe = true
 phi = true  # Parallel gradient of phi
 parP = true # Parallel pressure gradient
 curv = true

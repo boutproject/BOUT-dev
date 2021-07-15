@@ -1,4 +1,4 @@
-/// \file Base type for factories
+/// Base type for factories
 
 #pragma once
 #ifndef __BOUT_GENERIC_FACTORY_H__
@@ -6,6 +6,8 @@
 
 #include "boutexception.hxx"
 #include "options.hxx"
+
+#include <fmt/core.h>
 
 #include <functional>
 #include <map>
@@ -36,6 +38,7 @@
 ///     };
 ///
 ///     class MyFactory : public Factory<Base, MyFactory> {
+///      public:
 ///       static constexpr auto type_name = "Base";
 ///       static constexpr auto section_name = "base";
 ///       static constexpr auto option_name = "type";
@@ -45,6 +48,14 @@
 ///     RegisterInFactory<Base, Derived, MyFactory> register("derived_type");
 ///     auto foo = MyFactory::getInstance().create("derived_type");
 ///
+///   In a .cxx file the static members should be declared:
+///
+///     constexpr decltype(MyFactory::type_name) MyFactory::type_name;
+///     constexpr decltype(MyFactory::section_name) MyFactory::section_name;
+///     constexpr decltype(MyFactory::option_name) MyFactory::option_name;
+///     constexpr decltype(MyFactory::default_type) MyFactory::default_type;
+///
+///
 /// @tparam BaseType       The base class that this factory creates
 /// @tparam DerivedFactory The derived factory inheriting from this class
 /// @tparam TypeCreator    The function signature for creating a new BaseType
@@ -53,6 +64,12 @@
 template <class BaseType, class DerivedFactory,
           class TypeCreator = std::function<std::unique_ptr<BaseType>(Options*)>>
 class Factory {
+  /// Storage of the creation functions
+  std::map<std::string, TypeCreator> type_map;
+
+  /// Known implementations that are unavailable, along with the reason
+  std::map<std::string, std::string> unavailable_options;
+
 protected:
   // Type returned from the creation function
   using ReturnType = typename TypeCreator::result_type;
@@ -63,9 +80,6 @@ protected:
   /// symbols. If necessary, override this and put the (empty)
   /// implementation in the same TU as the registration symbols
   static void ensureRegistered() {}
-
-  /// Storage of the creation functions
-  std::map<std::string, TypeCreator> type_map;
 
   /// Return either \p options or the section from root
   Options* optionsOrDefaultSection(Options* options) const {
@@ -101,11 +115,28 @@ public:
     return type_map.insert(std::make_pair(name, creator)).second;
   }
 
+  /// Add a new "unavailable" type \p name to the factory. This type
+  /// cannot be created, but will be shown as a valid type, in
+  /// conjunction with the reason it cannot be created
+  ///
+  /// @param[in] name     An identifier for this type
+  /// @param[in] reason   The reason this type is unavailable
+  /// @returns true if the type was successfully added
+  bool addUnavailable(const std::string& name, const std::string& reason) {
+    return unavailable_options.insert(std::make_pair(name, reason)).second;
+  }
+
   /// Remove a type \p name from the factory
   ///
   /// @param[in] name  The identifier for the type to be removed
   /// @returns true if the type was successfully removed
   virtual bool remove(const std::string& name) { return type_map.erase(name) == 1; }
+
+  /// Remove a unavailable type \p name from the factory
+  ///
+  /// @param[in] name  The identifier for the type to be removed
+  /// @returns true if the type was successfully removed
+  bool removeUnavailable(const std::string& name) { return unavailable_options.erase(name) == 1; }
 
   /// Get the name of the type to create
   ///
@@ -140,15 +171,34 @@ public:
     if (index != std::end(type_map)) {
       return index->second(std::forward<Args>(args)...);
     }
+
     // List available options in error
     std::string available;
-    auto available_list = listAvailable();
-    for (auto i : available_list) {
+    for (auto i : listAvailable()) {
       available += i + "\n";
     }
+
+    // Check if it _could_ be available
+    auto unavailable_index = unavailable_options.find(name);
+    if (unavailable_index != std::end(unavailable_options)) {
+      throw BoutException("Error when trying to create a {0:s}: '{1:s}' is not available "
+                          "because {2:s}\nAvailable {0:s}s are:\n{3:s}",
+                          DerivedFactory::type_name,
+                          unavailable_index->first, unavailable_index->second, available);
+    }
+
     throw BoutException("Error when trying to create a {0:s}: Could not find "
                         "'{1:s}'\nAvailable {0:s}s are:\n{2:s}",
                         DerivedFactory::type_name, name, available);
+  }
+
+  /// Create a new object of the type given in options["type"]
+  ///
+  /// @param[in] options  The Options object to get the type to be created from
+  /// @returns the new object
+  template <typename... Args>
+  ReturnType create(Options* options, Args&&... args) const {
+    return create(getType(options), args...);
   }
 
   /// List available types that can be created
@@ -161,6 +211,15 @@ public:
       available.push_back(name.first);
     }
     return available;
+  }
+
+  std::vector<std::string> listUnavailableReasons() const {
+    std::vector<std::string> unavailable;
+    unavailable.reserve(type_map.size());
+    for (const auto& name : unavailable_options) {
+      unavailable.push_back(fmt::format("{} ({})", name.first, name.second));
+    }
+    return unavailable;
   }
 };
 
@@ -181,6 +240,22 @@ public:
                                       [](Options* options) -> std::unique_ptr<BaseType> {
                                         return std::make_unique<DerivedType>(options);
                                       });
+  }
+};
+
+/// Helper class for adding new (unavailable) types to Factory
+///
+/// See Factory for example
+///
+/// Adapted from
+/// http://www.drdobbs.com/conversations-abstract-factory-template/184403786
+///
+/// @tparam BaseType       Which factory to add \p DerivedType to
+template <class BaseType, class DerivedFactory>
+class RegisterUnavailableInFactory {
+public:
+  RegisterUnavailableInFactory(const std::string& name, const std::string& reason) {
+    DerivedFactory::getInstance().addUnavailable(name, reason);
   }
 };
 

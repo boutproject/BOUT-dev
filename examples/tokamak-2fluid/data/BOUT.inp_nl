@@ -63,8 +63,8 @@ filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1.0e-10 # absolute tolerance
+rtol = 1.0e-5  # relative tolerance
 pvode_mxstep = 50000
 
 ##################################################
@@ -121,31 +121,10 @@ apar_flags = 0 # flags for apar inversion
 
 [All]
 scale = 0.0 # default size of initial perturbations
+function = gauss(y, 0.5) * sin(z)
 
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 0
-ys_opt = 1
-zs_opt = 2
-
-ys_mode = 1 
-ys_wd = 0.5 
-zs_mode = 1 # toroidal mode number
-
-
-# boundary conditions (see boundary.h for values)
-# 0 = none applied
-# 1 = zero value
-# 2 = zero gradient
-# 3 = laplacian
-# 4 = laplacian with zero-gradient
-
-xinner = 2  ## Zero-gradient inner boundary
-xouter = 2  ## Zero-gradient outer boundary
+bndry_xin = neumann
+bndry_xout = neumann
 
 ##################################################
 # DENSITY
@@ -192,8 +171,8 @@ evolve = false
 [rho]
 scale = 1.0e-1
 
-xinner = 1
-xouter = 1
+bndry_xin = dirichlet
+bndry_xout = dirichlet
 
 # ExB advection terms
 rho0_phi1 = false
@@ -210,5 +189,5 @@ jpar1 = true   # Div_par(Jpar)   linear drive
 rho1 = false    # Perpendicular ion viscosity
 
 [jpar]
-xinner = 2
-xouter = 2
+bndry_xin = neumann
+bndry_xout = neumann

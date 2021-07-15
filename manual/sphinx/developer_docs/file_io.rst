@@ -10,12 +10,12 @@ and the `Datafile` class
 :doc:`datafile.cxx<../_breathe_autogen/file/datafile_8cxx>`). All
 other parts which need to read or write data go through these methods.
 
-Several different file formats are commonly used, such as HDF, HDF5,
-and netCDF. For historical reasons (inherited from BOUT), BOUT++
-originally used the Portable Data Binary (PDB) format developed at
-LLNL [1]_. To separate the basic file format functions from the higher
-level grid and Datafile classes, these use an abstract class
-`DataFormat`. Any class which implements the functions listed in
+netCDF is used for binary I/O. For historical reasons (inherited from
+BOUT), BOUT++ originally used the Portable Data Binary (PDB) format
+developed at LLNL [1]_. HDF5 was also previously supported. To
+separate the basic file format functions from the higher level grid
+and Datafile classes, these use an abstract class `DataFormat`. Any
+class which implements the functions listed in
 :doc:`dataformat.hxx<../_breathe_autogen/file/dataformat_8hxx>` can
 therefore be passed to grid or datafile. This makes implementing a new
 file format, and switching between formats at run-time, relatively
@@ -268,5 +268,5 @@ in the first output file, which `collect` uses to get its type and dimensions.
 .. [2] Actually, the C++ I/O code should work fine even if a `FieldPerp` object is defined
        with different y-indices on different processors. This may be useful for diagnostic
        or debugging purposes. However, Python routines like `collect` and
-       `restart.redistribute` will fail because they find inconsistent `yindex_global`
-       values.
+       `boutdata.restart.redistribute` will fail because they find inconsistent
+       `yindex_global` values.

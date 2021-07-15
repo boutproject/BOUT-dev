@@ -65,6 +65,7 @@ bool IsFieldClose(const T& field, const U& reference,
 
 int main(int argc, char** argv) {
   using bout::HeatFluxSNB;
+  using bout::globals::mesh;
 
   BoutInitialise(argc, argv);
 
@@ -180,6 +181,8 @@ int main(int argc, char** argv) {
       }
     }
   }
+
+  bout::checkForUnusedOptions();
 
   BoutFinalise();
 

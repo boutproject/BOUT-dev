@@ -1,9 +1,11 @@
+#include "bout/build_config.hxx"
+
 #include "gtest/gtest.h"
 
 #include "fft.hxx"
 #include "test_extras.hxx"
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 // The unit tests use the global mesh
 using namespace bout::globals;
 
@@ -39,12 +41,12 @@ public:
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
-        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}));
+    // No call to Coordinates::geometry() needed here
 
     auto coords = mesh->getCoordinates();
-    coords->setParallelTransform(
-        bout::utils::make_unique<ShiftedMetric>(*mesh, CELL_CENTRE, zShift,
-            coords->zlength()));
+    coords->setParallelTransform(bout::utils::make_unique<ShiftedMetric>(
+        *mesh, CELL_CENTRE, zShift, coords->zlength()(0, 0)));
 
     Field3D input_temp{mesh};
 
@@ -166,7 +168,8 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
   // Loosen tolerance a bit due to FFTs
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), input));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), input,
+			   "RGN_ALL", FFTTolerance));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
 }

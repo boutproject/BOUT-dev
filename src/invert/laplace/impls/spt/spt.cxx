@@ -108,6 +108,8 @@ FieldPerp LaplaceSPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   }else
     start(b, slicedata);
   finish(slicedata, x);
+
+  checkData(x);
   
   return x;
 }
@@ -291,7 +293,7 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
       data.bk(kz, ix) = dc1d[kz];
   }
 
-  BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
+  BoutReal kwaveFactor = 2.0 * PI / getUniform(coords->zlength());
 
   /// Set matrix elements
   for (int kz = 0; kz <= maxmode; kz++) {

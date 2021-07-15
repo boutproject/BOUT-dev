@@ -1,0 +1,5 @@
+BOUT_TOP ?= ../..
+
+SOURCEC = create-initial-profiles.cxx
+
+include $(BOUT_TOP)/make.config

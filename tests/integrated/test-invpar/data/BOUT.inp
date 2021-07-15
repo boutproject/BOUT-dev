@@ -1,29 +1,27 @@
 # Test of parallel tridiagonal solver
 #
 
-NOUT = 0  # No timesteps
+nout = 0  # No timesteps
 
 MZ = 5    # Z size
 
-grid = "test_io.grd.nc"
-
-dump_format = "nc"  # NetCDF format. Alternative is "pdb"
-
-TwistShift = false
+twistshift = false
 Ballooning = false
 
 tol = 1e-10
 
-[All]
-# Boundary options
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (semi-random phase)
+[mesh]
+staggergrids = true
 
-scale = 1.0
+nx = 12
+ny = 12
 
-xs_mode = 1
-ys_mode = 1
-zs_mode = 1
+dz = 0.3
+dy = 1.2 + 0.3*sin(y)
 
+g_22 = 1.1 + 0.2*cos(y)
+g22 = 1 / g_22
+
+[mesh:ddz]
+first = fft
+second = fft

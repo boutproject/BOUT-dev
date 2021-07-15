@@ -46,16 +46,17 @@
 #include <bout/openmpwrap.hxx>
 
 // Implementations:
-#include "impls/serial_tri/serial_tri.hxx"
-#include "impls/serial_band/serial_band.hxx"
-#include "impls/pdd/pdd.hxx"
-#include "impls/spt/spt.hxx"
-#include "impls/petsc/petsc_laplace.hxx"
-#include "impls/mumps/mumps_laplace.hxx"
 #include "impls/cyclic/cyclic_laplace.hxx"
-#include "impls/shoot/shoot_laplace.hxx"
+#include "impls/iterative_parallel_tri/iterative_parallel_tri.hxx"
 #include "impls/multigrid/multigrid_laplace.hxx"
 #include "impls/naulin/naulin_laplace.hxx"
+#include "impls/pcr/pcr.hxx"
+#include "impls/pdd/pdd.hxx"
+#include "impls/petsc/petsc_laplace.hxx"
+#include "impls/petsc3damg/petsc3damg.hxx"
+#include "impls/serial_band/serial_band.hxx"
+#include "impls/serial_tri/serial_tri.hxx"
+#include "impls/spt/spt.hxx"
 
 /**********************************************************************************
  *                         INITIALISATION AND CREATION
@@ -259,14 +260,21 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
 
   ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
   ASSERT1(d == nullptr || d->getLocation() == loc);
-
-  BoutReal kwave=jz*2.0*PI/coords->zlength(); // wave number is 1/[rad]
+  BoutReal kwave = jz * 2.0 * PI / coords->zlength()(jx, jy); // wave number is 1/[rad]
 
   tridagCoefs(jx, jy, kwave,
               a, b, c,
               ccoef, d, loc);
 }
 
+#if BOUT_USE_METRIC_3D
+void Laplacian::tridagCoefs(int /* jx */, int /* jy */, BoutReal /* kwave */,
+                            dcomplex& /* a */, dcomplex& /* b */, dcomplex& /* c */,
+                            const Field2D* /* c1coef */, const Field2D* /* c2coef */,
+                            const Field2D* /* d */, CELL_LOC /* loc */) {
+  throw BoutException("Laplacian::tridagCoefs() does not support 3d metrics.");
+}
+#else
 void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
                             dcomplex &a, dcomplex &b, dcomplex &c,
                             const Field2D *c1coef, const Field2D *c2coef,
@@ -362,6 +370,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
   b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,kwave*coef5);
   c = dcomplex(coef1 + coef4,kwave*coef3);
 }
+#endif
 
 /*!
  * Set the matrix components of A in Ax=b
@@ -400,12 +409,26 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
  * \param[out] cvec     The upper diagonal.
  *                      DO NOT CONFUSE WITH "C" (called ccoef here)
  */
+#if BOUT_USE_METRIC_3D
+void Laplacian::tridagMatrix(dcomplex* /*avec*/, dcomplex* /*bvec*/, dcomplex* /*cvec*/,
+                             dcomplex* /*bk*/, int /*jy*/, int /*kz*/, BoutReal /*kwave*/,
+                             int /*global_flags*/, int /*inner_boundary_flags*/,
+                             int /*outer_boundary_flags*/, const Field2D* /*a*/,
+                             const Field2D* /*c1coef*/, const Field2D* /*c2coef*/,
+                             const Field2D* /*d*/, bool /*includeguards*/) {
+  throw BoutException("Error: tridagMatrix does not yet work with 3D metric.");
+}
+#else
 void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              dcomplex *bk, int jy, int kz, BoutReal kwave,
                              int global_flags, int inner_boundary_flags, int outer_boundary_flags,
                              const Field2D *a, const Field2D *c1coef, const Field2D *c2coef,
                              const Field2D *d,
                              bool includeguards) {
+  ASSERT1(a->getLocation() == location);
+  ASSERT1(c1coef->getLocation() == location);
+  ASSERT1(c2coef->getLocation() == location);
+  ASSERT1(d->getLocation() == location);
 
   // Better have either both or neither C coefficients
   ASSERT3((c1coef == nullptr and c2coef == nullptr)
@@ -722,6 +745,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
     }
   }
 }
+#endif
 
 /**********************************************************************************
  *                              LEGACY INTERFACE

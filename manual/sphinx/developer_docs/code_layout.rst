@@ -150,13 +150,6 @@ The current source code files are:
 
       - :doc:`emptyformat.hxx<../_breathe_autogen/file/emptyformat_8hxx>`
 
-      - hdf5
-
-         - :doc:`h5_format.cxx<../_breathe_autogen/file/h5__format_8cxx>` implements an
-           interface to the HDF5 library
-
-         - :doc:`h5_format.hxx<../_breathe_autogen/file/h5__format_8hxx>`
-
       - netcdf
 
          - :doc:`nc_format.cxx<../_breathe_autogen/file/nc__format_8cxx>` implements an
@@ -192,10 +185,6 @@ The current source code files are:
       decomposition in :math:`z` combined with tri- and band-diagonal
       solvers in :math:`x` to solve Laplacian problems.
 
-   - :doc:`laplacefactory.hxx<../_breathe_autogen/file/laplacefactory_8hxx>`
-
-   - :doc:`laplacefactory.cxx<../_breathe_autogen/file/laplacefactory_8cxx>`
-
    - impls
 
       - serial\_tri
@@ -229,17 +218,7 @@ The current source code files are:
      inverts a problem involving only parallel :math:`y`
      derivatives. Intended for use in some preconditioners.
 
-   - :doc:`parderiv_factory.hxx<../_breathe_autogen/file/parderiv__factory_8hxx>`
-
-   - :doc:`parderiv_factory.cxx<../_breathe_autogen/file/parderiv__factory_8cxx>`
-
    - impls
-
-      - serial
-
-         - :doc:`serial.cxx<../_breathe_autogen/file/serial_8cxx>`
-
-         - :doc:`serial.hxx<../_breathe_autogen/file/serial_8hxx>`
 
       - cyclic
 
@@ -305,11 +284,6 @@ The current source code files are:
    - :doc:`solver.cxx<../_breathe_autogen/file/solver_8cxx>` is the
      interface for all solvers
 
-   - :doc:`solverfactory.cxx<../_breathe_autogen/file/solverfactory_8cxx>` creates solver
-     objects
-
-   - :doc:`solverfactory.hxx<../_breathe_autogen/file/solverfactory_8hxx>`
-
    - impls
 
       - cvode
@@ -354,7 +328,7 @@ The current source code files are:
      basic derivative methods such as upwinding, central difference
      and WENO methods. These are then used by
      :doc:`difops.cxx<../_breathe_autogen/file/difops_8cxx>`. Details are
-     given in section :ref:`sec-derivatives`.
+     given in section :ref:`sec-diffops`.
 
    - :doc:`msg_stack.cxx<../_breathe_autogen/file/msg__stack_8cxx>` is
      part of the error handling system. It maintains a stack of
@@ -374,10 +348,6 @@ The current source code files are:
    - :doc:`range.cxx<../_breathe_autogen/file/range_8cxx>` Provides the
      RangeIterator class, used to iterate over a set of
      ranges. Described in section :ref:`sec-rangeiterator`
-
-   - :doc:`stencils.cxx<../_breathe_autogen/file/stencils_8cxx>` contains
-     methods to operate on stencils which are used by differential
-     methods.
 
    - :doc:`timer.cxx<../_breathe_autogen/file/timer_8cxx>` a class for
      timing parts of the code like communications and file

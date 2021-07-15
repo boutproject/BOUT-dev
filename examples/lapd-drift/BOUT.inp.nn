@@ -63,8 +63,8 @@ laplace_nonuniform = true
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-12 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1.0e-12 # absolute tolerance
+rtol = 1.0e-5  # relative tolerance
 pvode_mxstep = 50000
 
 ##################################################
@@ -112,39 +112,13 @@ apar_flags = 0 # flags for apar inversion
 
 [All]
 scale = 0.0 # default size of initial perturbations
+function = sin(2*pi*x) * sin(y) * sin(z)
 
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 2
-ys_opt = 2
-zs_opt = 2
-
-xs_mode = 1
-
-ys_mode = 1#
-
-zs_mode = 1 # toroidal mode number
-
-
-# boundary conditions (see boundary.h for values)
-# 0 = none applied
-# 1 = zero value
-# 2 = zero gradient
-# 3 = laplacian
-# 4 = laplacian with zero-gradient
-
-xinner = 2  ## Zero-gradient inner boundary
-xouter = 2  ## Zero-gradient outer boundary
+bndry_xin = neumann
+bndry_xout = neumann
 
 [Ni]
 scale = 1.0e-8 # only perturbing Ni
-
-#xinner = 1
-#xouter = 1
 
 [rho]
 scale = -1.0e-8

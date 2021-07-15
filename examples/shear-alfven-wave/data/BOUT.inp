@@ -3,19 +3,19 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 100       # number of time-steps
-TIMESTEP = 2.5e1   # time between outputs
+nout = 100       # number of time-steps
+timestep = 25.0   # time between outputs
 
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 16     # number of points in z direction (2^n)
 ZMIN = 0.0
-ZMAX = 3.0246e-4
+ZMAX = 0.00030246
 
 MXG = 2
 MYG = 2
 
-grid="uedge.grd_Te_10.nc"
+grid = "uedge.grd_Te_10.nc"
 
 dump_format = "nc"
 
@@ -24,7 +24,7 @@ dump_format = "nc"
 
 [mesh:ddx]
 
-first = C2  # order of first x derivatives 
+first = C2  # order of first x derivatives
 second = C2 # order of second x derivatives
 upwind = W3 # order of upwinding method
 
@@ -46,8 +46,8 @@ upwind = W3
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 ##################################################
 # settings for 2fluid
@@ -59,7 +59,7 @@ ZZ = 1.0
 
 ZeroElMass = false # Use Ohms law without electron inertia
 Zeff = 2.0        # Z effective
-nu_perp = 1.0e-20
+nu_perp = 1e-20
 
 ShearFactor = 0.0
 
@@ -77,20 +77,9 @@ outer_boundary_flags = 0
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
-
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 0
-ys_opt = 1
-zs_opt = 2
-
-zs_mode = 1 # toroidal mode number
+function = gauss(y) * sin(z)
 
 # boundary conditions (see boundary.h for values)
 # 0 = none applied
@@ -114,6 +103,6 @@ evolve = false
 evolve = false
 
 [Ajpar]
-scale = 1.0e-3
+scale = 0.001
 
 function = sin(z) * exp( -((y/(2*pi) - 0.5)/0.5)^2 )

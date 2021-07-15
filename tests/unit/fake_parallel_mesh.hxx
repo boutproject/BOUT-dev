@@ -39,13 +39,15 @@ class Options;
 ///
 /// - Only a simple, rectangular topology is available
 ///
+/// - It does not work when include_corner_cells == false
+///
 class FakeParallelMesh : public BoutMesh {
 public:
   FakeParallelMesh(int nx, int ny, int nz, int nxpe, int nype, int pe_xind, int pe_yind)
       : BoutMesh((nxpe * (nx - 2)) + 2, nype * ny, nz, 1, 1, nxpe, nype, pe_xind,
                  pe_yind),
         yUpMesh(nullptr), yDownMesh(nullptr), xInMesh(nullptr), xOutMesh(nullptr),
-        mpiSmart(new FakeMpiWrapper(this)) {
+	mpiSmart(new FakeMpiWrapper(this)) {
     StaggerGrids = false;
     periodicX = false;
     IncIntShear = false;
@@ -74,8 +76,40 @@ public:
     addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
-  comm_handle send(FieldGroup& g) override {
-    overlapHandleMemory(yUpMesh, yDownMesh, xInMesh, xOutMesh);
+  comm_handle sendX(FieldGroup& g, comm_handle handle, bool disable_corners) override {
+    communicatingX = true;
+    if (handle == nullptr) {
+      overlapHandleMemory(yUpMesh, yDownMesh, xInMesh, xOutMesh);
+    }
+    std::vector<int> ids;
+    int i = 0;
+    for (auto f : g) {
+      ids.push_back(registeredFields[f]);
+      ASSERT1(registeredFieldIds[ids[i]] == f);
+      i++;
+    }
+    if (xInMesh != nullptr && xInMesh != this) {
+      FieldGroup xInGroup = makeGroup(xInMesh, ids);
+      if (!disable_corners) {
+	xInMesh->wait(xInMesh->sendY(xInGroup, nullptr));
+      }
+      xInMesh->parentSendX(xInGroup, nullptr, disable_corners);
+    }
+    if (xOutMesh != nullptr && xOutMesh != this) {
+      FieldGroup xOutGroup = makeGroup(xOutMesh, ids);
+      if (!disable_corners) {
+	xOutMesh->wait(xOutMesh->sendY(xOutGroup, nullptr));
+      }
+      xOutMesh->parentSendX(xOutGroup, nullptr, disable_corners);
+    }
+    return parentSendX(g, handle, disable_corners);
+  }
+
+  comm_handle sendY(FieldGroup& g, comm_handle handle) override {
+    communicatingY = true;
+    if (handle == nullptr) {
+      overlapHandleMemory(yUpMesh, yDownMesh, xInMesh, xOutMesh);
+    }
     std::vector<int> ids;
     int i = 0;
     for (auto f : g) {
@@ -85,21 +119,13 @@ public:
     }
     if (yUpMesh != nullptr && yUpMesh != this) {
       FieldGroup yUpGroup = makeGroup(yUpMesh, ids);
-      yUpMesh->parentSend(yUpGroup);
+      yUpMesh->parentSendY(yUpGroup, nullptr);
     }
     if (yDownMesh != nullptr && yDownMesh != this) {
       FieldGroup yDownGroup = makeGroup(yDownMesh, ids);
-      yDownMesh->parentSend(yDownGroup);
+      yDownMesh->parentSendY(yDownGroup, nullptr);
     }
-    if (xInMesh != nullptr && xInMesh != this) {
-      FieldGroup xInGroup = makeGroup(xInMesh, ids);
-      xInMesh->parentSend(xInGroup);
-    }
-    if (xOutMesh != nullptr && xOutMesh != this) {
-      FieldGroup xOutGroup = makeGroup(xOutMesh, ids);
-      xOutMesh->parentSend(xOutGroup);
-    }
-    return parentSend(g);
+    return parentSendY(g, handle);
   }
 
   // Need to override this functions to trick mesh into communicating for
@@ -126,6 +152,7 @@ public:
           f[ind] = (*xOutField)[ind.xm(xend - xstart + 1)];
         }
       }
+      // No corner cells to communicate for FieldPerp
     }
   }
 
@@ -182,7 +209,7 @@ public:
         } else if (*static_cast<const int*>(sendbuf) == localPerp) {
           *static_cast<int*>(recvbuf) = startPerp + localPerp;
         } else {
-          throw BoutException("Trying to use MPI_Scan with unrecognised input %d",
+          throw BoutException("Trying to use MPI_Scan with unrecognised input {:d}",
                               *static_cast<const int*>(sendbuf));
         }
       }
@@ -194,21 +221,31 @@ public:
     }
     virtual int MPI_Waitany(int UNUSED(count), MPI_Request UNUSED(array_of_requests[]),
                             int* indx, MPI_Status* UNUSED(status)) override {
-      if (mesh->yUpMesh && wait_any_count < 0 && mesh->UpXSplitIndex() > 0) {
+      // If this mesh should be receiving data from another one,
+      // return the appropriate index. Some corners cells are actually
+      // sent along with the rest of the edge. This can be predicted
+      // based on teh value of xy[In|Out][Up|Down]Mesh_SendsInner.
+      if (mesh->yUpMesh && wait_any_count < 0 && mesh->communicatingY &&
+	  mesh->UpXSplitIndex() > 0) {
         *indx = wait_any_count = 0;
-      } else if (mesh->yDownMesh && wait_any_count < 1 && mesh->UpXSplitIndex() == 0) {
+      } else if (mesh->yDownMesh && wait_any_count < 1 && mesh->communicatingY &&
+		 mesh->UpXSplitIndex() == 0) {
         *indx = wait_any_count = 1;
-      } else if (mesh->yDownMesh && wait_any_count < 2 && mesh->DownXSplitIndex() > 0) {
+      } else if (mesh->yDownMesh && wait_any_count < 2 && mesh->communicatingY &&
+		 mesh->DownXSplitIndex() > 0) {
         *indx = wait_any_count = 2;
-      } else if (mesh->yDownMesh && wait_any_count < 3 && mesh->DownXSplitIndex() == 0) {
+      } else if (mesh->yDownMesh && wait_any_count < 3 && mesh->communicatingY &&
+		 mesh->DownXSplitIndex() == 0) {
         *indx = wait_any_count = 3;
-      } else if (mesh->xInMesh && wait_any_count < 4) {
+      } else if (mesh->xInMesh && wait_any_count < 4 && mesh->communicatingX) {
         *indx = wait_any_count = 4;
-      } else if (mesh->xOutMesh && wait_any_count < 5) {
+      } else if (mesh->xOutMesh && wait_any_count < 5 && mesh->communicatingX) {
         *indx = wait_any_count = 5;
       } else {
         *indx = MPI_UNDEFINED;
         wait_any_count = -1;
+	mesh->communicatingX = false;
+	mesh->communicatingY = false;
       }
       return 0;
     }
@@ -222,13 +259,19 @@ public:
 
 private:
   FakeParallelMesh *yUpMesh, *yDownMesh, *xInMesh, *xOutMesh;
+  bool communicatingX = false, communicatingY = false;
   std::map<FieldData*, int> registeredFields;
   std::map<int, FieldData*> registeredFieldIds;
   std::map<FieldPerp*, int> registeredFieldPerps;
   std::map<int, FieldPerp*> registeredFieldPerpIds;
   std::unique_ptr<FakeMpiWrapper> mpiSmart;
 
-  comm_handle parentSend(FieldGroup& g) { return BoutMesh::send(g); }
+  comm_handle parentSendX(FieldGroup& g, comm_handle handle, bool disable_corners) {
+    return BoutMesh::sendX(g, handle, disable_corners);
+  }
+  comm_handle parentSendY(FieldGroup& g, comm_handle handle) {
+    return BoutMesh::sendY(g, handle);
+  }
 
   FieldGroup makeGroup(FakeParallelMesh* m, const std::vector<int> ids) {
     FieldGroup g;
@@ -248,14 +291,14 @@ std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz, int n
   for (int i = 0; i < nxpe; i++) {
     for (int j = 0; j < nype; j++) {
       meshes.push_back(FakeParallelMesh(nx, ny, nz, nxpe, nype, i, j));
-      meshes[j + i * nype].createDefaultRegions();
       bout::globals::mesh = &meshes[j + i * nype];
       static_cast<FakeParallelMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
       test_coords = std::make_shared<Coordinates>(
           bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
           Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
           Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
-          Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false);
+          Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
+      // No call to Coordinates::geometry() needed here
       static_cast<FakeParallelMesh*>(&meshes[j + i * nype])->setCoordinates(test_coords);
       test_coords->setParallelTransform(
           bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));

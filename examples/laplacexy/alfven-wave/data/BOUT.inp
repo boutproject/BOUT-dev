@@ -1,25 +1,26 @@
 
-NOUT = 2000
-TIMESTEP = 2
+nout = 2000
+timestep = 2
 
 grid = "d3d_119919.nc"
 
-[mesh]
-paralleltransform = shifted # Shifted metric method
-
 MZ = 1
+
+[mesh:paralleltransform]
+
+type = shifted # Shifted metric method
 
 [solver]
 
 mxstep = 10000
-atol = 1e-9
-rtol = 1e-7
+atol = 1e-09
+rtol = 1e-07
 
 [laplacexy]  # 2D solver in X-Y
 pctype = sor    # Preconditioner
 
 atol = 1e-12
-rtol = 1e-8
+rtol = 1e-08
 
 [laplace]    # 2D solver in X-Z
 
@@ -33,9 +34,9 @@ split_n0 = true    # Split phi into n=0 and n~=0 components?
 newXZsolver = true   # Use LaplaceXZ solver
 
 
-mu_epar = -1e7
+mu_epar = -10000000.0
 
-resistivity = 1e-7
+resistivity = 1e-07
 
 [Vort]
 scale = 0.0
@@ -43,12 +44,12 @@ scale = 0.0
 bndry_all = dirichlet_o2
 
 [Apar]
-scale = 1e-2
+scale = 0.01
 function = gauss(x-0.5,0.2)*sin(y)
 
 bndry_all = neumann_o2
 
-[jpar] 
+[jpar]
 bndry_all = neumann_o2
 
 [phi]
@@ -56,4 +57,3 @@ bndry_xin = none
 bndry_xout = none
 
 bndry_target = dirichlet_o2 # Zero value on targets
-

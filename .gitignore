@@ -25,6 +25,7 @@
 autom4te.cache/
 aclocal.m4
 /bin/bout-config
+/src/makefile
 /include/pvode
 /lib/
 /manual/*.pdf
@@ -44,6 +45,16 @@ build*/
 /.vs
 /CMakeSettings.json
 /CppProperties.json
+*.fls
+*.fdb_latexmk
 
 # Following is copied in by configure
 src/fmt/format.cxx
+
+# Following is configure-time file
+/include/bout/build_config.hxx
+/include/bout/revision.hxx
+/include/bout/version.hxx
+/aminclude_static.am
+/include/bout/build_defines.hxx
+/tools/pylib/boutconfig/__init__.py

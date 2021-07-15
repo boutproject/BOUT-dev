@@ -23,9 +23,11 @@
  * 
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include "pvode.hxx"
 
-#ifdef BOUT_HAS_PVODE
+#if BOUT_HAS_PVODE
 
 #include <bout/mesh.hxx>
 #include <boutcomm.hxx>
@@ -56,7 +58,7 @@ PvodeSolver::PvodeSolver(Options *options) : Solver(options) {
 }
 
 PvodeSolver::~PvodeSolver() {
-  if(initialised) {
+  if(pvode_initialised) {
     // Free CVODE memory
     
     N_VFree(u);
@@ -139,8 +141,8 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
   options->get("mldq", mldq, band_width_default);
   options->get("mukeep", mukeep, 0);
   options->get("mlkeep", mlkeep, 0);
-  options->get("ATOL", abstol, 1.0e-12);
-  options->get("RTOL", reltol, 1.0e-5);
+  options->get("atol", abstol, 1.0e-12);
+  options->get("rtol", reltol, 1.0e-5);
   options->get("use_precon", use_precon, false);
   options->get("precon_dimens", precon_dimens, 50);
   options->get("precon_tol", precon_tol, 1.0e-4);
@@ -200,6 +202,9 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
   }
 
   /*  CVSpgmr(cvode_mem, NONE, MODIFIED_GS, 10, 0.0, PVBBDPrecon, PVBBDPSol, pdata); */
+
+  // PvodeSolver is now initialised fully
+  pvode_initialised = true;
   
   return(0);
 }
@@ -211,7 +216,7 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
 int PvodeSolver::run() {
   TRACE("PvodeSolver::run()");
   
-  if(!initialised)
+  if(!pvode_initialised)
     throw BoutException("PvodeSolver not initialised\n");
   
   for(int i=0;i<NOUT;i++) {

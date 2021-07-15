@@ -66,12 +66,14 @@ class FieldTracer(object):
 
         if x_values.shape != z_values.shape:
             # Make the scalar the same shape as the array
-            if x_values.size is 1:
+            if x_values.size == 1:
                 x_values = np.zeros(z_values.shape) + x_values
-            elif z_values.size is 1:
+            elif z_values.size == 1:
                 z_values = np.zeros(x_values.shape) + z_values
             else:
-                raise ValueError("x_values and z_values must be the same size, or one must be a scalar")
+                raise ValueError(
+                    "x_values and z_values must be the same size, or one must be a scalar"
+                )
 
         array_shape = x_values.shape
 
@@ -87,8 +89,9 @@ class FieldTracer(object):
         if len(x_values) < 1000:
             position = np.column_stack((x_values, z_values)).flatten()
 
-            result = odeint(self.field_direction, position, y_values, args=(True,),
-                            rtol=rtol)
+            result = odeint(
+                self.field_direction, position, y_values, args=(True,), rtol=rtol
+            )
         else:
             # Split into smaller pieces
 
@@ -100,16 +103,16 @@ class FieldTracer(object):
             z_values = np.array_split(z_values, nchunks)
 
             # Combine x,z into flattened position arrays
-            chunks = [ np.column_stack((x, z)).flatten() for x,z in zip(x_values, z_values) ]
+            chunks = [
+                np.column_stack((x, z)).flatten() for x, z in zip(x_values, z_values)
+            ]
 
             # Process in chunks. Note: multiprocessing has trouble with closures
             # so fails in Python 2. Python 3 may work
-            results = [odeint(self.field_direction,
-                              chunk,
-                              y_values,
-                              args=(True,),
-                              rtol=rtol)
-                       for chunk in chunks]
+            results = [
+                odeint(self.field_direction, chunk, y_values, args=(True,), rtol=rtol)
+                for chunk in chunks
+            ]
 
             # Concatenate results into a single array
             result = np.concatenate(results, axis=1)
@@ -141,6 +144,7 @@ class FieldTracerReversible(object):
         Number of sub-steps between outputs
 
     """
+
     def __init__(self, field, rtol=1e-8, eps=1e-5, nsteps=20):
 
         self.field_direction = field.field_direction
@@ -148,7 +152,9 @@ class FieldTracerReversible(object):
         self.eps = float(eps)
         self.nsteps = int(nsteps)
 
-    def follow_field_lines(self, x_values, z_values, y_values, rtol=None, eps=None, nsteps=None):
+    def follow_field_lines(
+        self, x_values, z_values, y_values, rtol=None, eps=None, nsteps=None
+    ):
         """Uses field_direction to follow the magnetic field
         from every grid (x,z) point at toroidal angle y
         through a change in toroidal angle dy
@@ -192,7 +198,7 @@ class FieldTracerReversible(object):
 
         # Check settings, use defaults if not given
         if rtol is None:
-            rtol = self.rtol # Value set in __init__
+            rtol = self.rtol  # Value set in __init__
         rtol = float(rtol)
         if eps is None:
             eps = self.eps
@@ -205,7 +211,7 @@ class FieldTracerReversible(object):
         x_values = np.atleast_1d(x_values)
         y_values = np.atleast_1d(y_values)
         z_values = np.atleast_1d(z_values)
-        
+
         if len(y_values) < 2:
             raise ValueError("There must be at least two elements in y_values")
         if len(y_values.shape) > 1:
@@ -213,95 +219,98 @@ class FieldTracerReversible(object):
 
         if x_values.shape != z_values.shape:
             # Make the scalar the same shape as the array
-            if x_values.size is 1:
+            if x_values.size == 1:
                 x_values = np.zeros(z_values.shape) + x_values
-            elif z_values.size is 1:
+            elif z_values.size == 1:
                 z_values = np.zeros(x_values.shape) + z_values
             else:
-                raise ValueError("x_values and z_values must be the same size, or one must be a scalar")
+                raise ValueError(
+                    "x_values and z_values must be the same size, or one must be a scalar"
+                )
 
         array_shape = x_values.shape
-        
-        result = np.zeros((len(y_values),)+ array_shape + (2,))
+
+        result = np.zeros((len(y_values),) + array_shape + (2,))
 
         # Starting position
         x_pos = x_values
         z_pos = z_values
         y_pos = y_values[0]
-        
-        result[0,...,0] = x_pos
-        result[0,...,1] = z_pos
-        
+
+        result[0, ..., 0] = x_pos
+        result[0, ..., 1] = z_pos
+
         for yindex, y_next in enumerate(y_values[1:]):
-            yindex += 1 # Since we chopped off the first y_value
-            
+            yindex += 1  # Since we chopped off the first y_value
+
             # Split into sub-steps
             dy = (y_next - y_pos) / float(nsteps)
             for step in range(nsteps):
                 # Evaluate gradient at current position
-                dxdy, dzdy = self.field_direction( (x_pos, z_pos), y_pos )
-                
+                dxdy, dzdy = self.field_direction((x_pos, z_pos), y_pos)
+
                 # Half-step values
-                x_half = x_pos + 0.5*dxdy*dy
-                z_half = z_pos + 0.5*dzdy*dy
-        
+                x_half = x_pos + 0.5 * dxdy * dy
+                z_half = z_pos + 0.5 * dzdy * dy
+
                 # Now need to find the roots of a nonlinear equation
                 #
                 # f = 0.5*(dpos/dy)(pos_next)*dy - (pos_next - pos_half) = 0
-                # 
-        
+                #
+
                 # Use Euler method to get starting guess
-                x_pos += dxdy*dy
-                z_pos += dzdy*dy
+                x_pos += dxdy * dy
+                z_pos += dzdy * dy
                 y_pos += dy
-                
+
                 while True:
-                    dxdy, dzdy = self.field_direction( (x_pos, z_pos), y_pos )
-                    
+                    dxdy, dzdy = self.field_direction((x_pos, z_pos), y_pos)
+
                     # Calculate derivatives (Jacobian matrix) by finite difference
-                    dxdy_xe, dzdy_xe = self.field_direction( (x_pos+eps, z_pos), y_pos )
-                    dxdy_x = (dxdy_xe - dxdy)/eps
-                    dzdy_x = (dzdy_xe - dzdy)/eps
-                    
-                    dxdy_ze, dzdy_ze = self.field_direction( (x_pos, z_pos+eps), y_pos )
-                    dxdy_z = (dxdy_ze - dxdy)/eps
-                    dzdy_z = (dzdy_ze - dzdy)/eps
-        
+                    dxdy_xe, dzdy_xe = self.field_direction((x_pos + eps, z_pos), y_pos)
+                    dxdy_x = (dxdy_xe - dxdy) / eps
+                    dzdy_x = (dzdy_xe - dzdy) / eps
+
+                    dxdy_ze, dzdy_ze = self.field_direction((x_pos, z_pos + eps), y_pos)
+                    dxdy_z = (dxdy_ze - dxdy) / eps
+                    dzdy_z = (dzdy_ze - dzdy) / eps
+
                     # The function we are trying to find the roots of:
-                    fx = 0.5*dxdy*dy - x_pos + x_half 
-                    fz = 0.5*dzdy*dy - z_pos + z_half
-                    
+                    fx = 0.5 * dxdy * dy - x_pos + x_half
+                    fz = 0.5 * dzdy * dy - z_pos + z_half
+
                     # Now have a linear system to solve
                     #
                     # (x_pos)  -= ( dfx/dx   dfx/dz )^-1 (fx)
                     # (z_pos)     ( dfz/dx   dfz/dz )    (fz)
-                    
-                    dfxdx = 0.5*dxdy_x*dy - 1.0
-                    dfxdz = 0.5*dxdy_z*dy
-                    dfzdx = 0.5*dzdy_x*dy
-                    dfzdz = 0.5*dzdy_z*dy - 1.0
-                    
-                    determinant = dfxdx*dfzdz - dfxdz*dfzdx
+
+                    dfxdx = 0.5 * dxdy_x * dy - 1.0
+                    dfxdz = 0.5 * dxdy_z * dy
+                    dfzdx = 0.5 * dzdy_x * dy
+                    dfzdz = 0.5 * dzdy_z * dy - 1.0
+
+                    determinant = dfxdx * dfzdz - dfxdz * dfzdx
                     # Note: If determinant is too small then dt should be reduced
-                    
+
                     dx = (dfzdz * fx - dfxdz * fz) / determinant
                     dz = (dfxdx * fz - dfzdx * fx) / determinant
-                
+
                     x_pos -= dx
                     z_pos -= dz
                     # Check for convergence within tolerance
-                    if np.amax(dx**2 + dz**2) < rtol:
+                    if np.amax(dx ** 2 + dz ** 2) < rtol:
                         break
                 # Finished Newton iteration, taken step to (x_pos,y_pos,z_pos)
             # Finished sub-steps, reached y_pos = y_next
-            result[yindex,...,0] = x_pos
-            result[yindex,...,1] = z_pos
-            
+            result[yindex, ..., 0] = x_pos
+            result[yindex, ..., 1] = z_pos
+
         return result
 
 
-def trace_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3,
-                   y_slices=None, revs=20, nover=20):
+def trace_poincare(
+    magnetic_field, xpos, zpos, yperiod, nplot=3, y_slices=None, revs=20, nover=20
+):
     """Trace a Poincare graph of the field lines
 
     Does no plotting, see :py:func:`zoidberg.plot.plot_poincare`
@@ -339,13 +348,16 @@ def trace_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3,
 
     if nplot is None and y_slices is None:
         raise ValueError("nplot and y_slices cannot both be None")
-    
+
     if y_slices is not None:
         y_slices = np.asfarray(y_slices)
-        
+
         if np.amin(y_slices) < 0.0 or np.amax(y_slices) > yperiod:
-            raise ValueError("y_slices must all be between 0.0 and yperiod ({yperiod})"
-                             .format(yperiod=yperiod))
+            raise ValueError(
+                "y_slices must all be between 0.0 and yperiod ({yperiod})".format(
+                    yperiod=yperiod
+                )
+            )
         # Make sure y_slices is monotonically increasing
         y_slices.sort()
         # If y_slices is given, then nplot is the number of slices
@@ -356,18 +368,20 @@ def trace_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3,
         y_slices = np.linspace(0, yperiod, nplot, endpoint=False)
 
     # Extend the domain from [0,yperiod] to [0,revs*yperiod]
-    
-    revs = int(revs)    
+
+    revs = int(revs)
     y_values = y_slices[:]
     for n in np.arange(1, revs):
-        y_values = np.append(y_values, n*yperiod + y_values[:nplot])
-        
-    nover = int(nover) # Over-sample
-    y_values_over = np.zeros( ( nplot * revs * nover - (nover-1)) )
+        y_values = np.append(y_values, n * yperiod + y_values[:nplot])
+
+    nover = int(nover)  # Over-sample
+    y_values_over = np.zeros((nplot * revs * nover - (nover - 1)))
     y_values_over[::nover] = y_values
-    for i in range(1,nover):
-        y_values_over[i::nover] = (float(i)/float(nover))*y_values[1:] + (float(nover-i)/float(nover))*y_values[:-1]
-        
+    for i in range(1, nover):
+        y_values_over[i::nover] = (float(i) / float(nover)) * y_values[1:] + (
+            float(nover - i) / float(nover)
+        ) * y_values[:-1]
+
     # Starting location
     xpos = np.asfarray(xpos)
     zpos = np.asfarray(zpos)
@@ -375,9 +389,9 @@ def trace_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3,
     field_tracer = FieldTracer(magnetic_field)
     result = field_tracer.follow_field_lines(xpos, zpos, y_values_over)
 
-    result = result[::nover,...] # Remove unneeded points
+    result = result[::nover, ...]  # Remove unneeded points
 
     # Reshape data. Loops fastest over planes (nplot)
-    result = np.reshape(result, (revs, nplot)+result.shape[1:])
+    result = np.reshape(result, (revs, nplot) + result.shape[1:])
 
     return result, y_slices

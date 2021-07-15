@@ -1012,7 +1012,6 @@ PREDEFINED             = BACKTRACE \
                          BOUT_HAS_ARKODE \
                          BOUT_HAS_CVODE \
                          BOUT_HAS_IDA \
-                         BOUT_HAS_MUMPS \
                          BOUT_HAS_PETSC \
                          BOUT_HAS_PETSC_DEV \
                          BOUT_HAS_PVODE \
@@ -1022,7 +1021,6 @@ PREDEFINED             = BACKTRACE \
                          CHECK=3 \
                          DEPRECATED(func)=func \
                          HAS_PRETTY_FUNCTION \
-                         HDF5 \
                          LAPACK \
                          LOGCOLOR \
                          NCDF \
@@ -1030,7 +1028,6 @@ PREDEFINED             = BACKTRACE \
                          PETSC_HAS_SUNDIALS \
                          PETSC_RELEASE \
                          PETSC_VERSION=3.8 \
-                         PHDF5 \
                          PNCDF \
                          SIGHANDLE \
                          TRACK \

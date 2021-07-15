@@ -1,0 +1,16 @@
+twistshift = true
+
+[mesh]
+nx = 12
+ny = 12
+
+zShift = y
+ShiftAngle = 2*pi
+
+var = sin(y - z)
+
+[mesh:paralleltransform]
+type = shiftedinterp
+
+[mesh:paralleltransform:zinterpolation]
+type = hermitespline

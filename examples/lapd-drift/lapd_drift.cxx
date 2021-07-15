@@ -20,7 +20,8 @@
 class LAPDdrift : public PhysicsModel {
 private:
   // 2D initial profiles
-  Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0, src_ni0;
+  Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, Ajpar0, src_ni0;
+  Coordinates::FieldMetric rho0;
   Vector2D b0xcv; // for curvature terms
   
   // 3D evolving fields
@@ -159,11 +160,11 @@ protected:
     /*************** READ OPTIONS *************************/
     // Read some parameters
     
-    auto globalOptions = Options::root();
+    auto& globalOptions = Options::root();
     
     time_step = globalOptions["TIMESTEP"].withDefault(1.0);
 
-    auto options = globalOptions["2fluid"];
+    auto& options = globalOptions["2fluid"];
     AA = options["AA"].withDefault(4.0); // <=> AA = options["AA"].withDefault(1.0);
     ZZ = options["ZZ"].withDefault(1.0);
 
@@ -198,7 +199,7 @@ protected:
 
     // Set default values for terms in each equation
     // Allows default to be overridden in BOUT.inp file
-    auto option_rho = globalOptions["rho"];
+    auto& option_rho = globalOptions["rho"];
     evolve_rho = option_rho["evolve_rho"].withDefault(true);
     rho_jpar1 = option_rho["rho_jpar1"].withDefault(false);
     rho_nuin_rho1 = option_rho["rho_nuin_rho1"].withDefault(false);
@@ -210,7 +211,7 @@ protected:
     rho_ve2t = option_rho["rho_ve2t"].withDefault(false);
     rho_diff = option_rho["rho_diff"].withDefault(false);
 
-    auto option_ni = globalOptions["ni"];
+    auto& option_ni = globalOptions["ni"];
     evolve_ni = option_ni["evolve_ni"].withDefault(true);
     ni_jpar1 = option_ni["ni_jpar1"].withDefault(false);
     ni_ni0_phi1 = option_ni["ni_ni0_phi1"].withDefault(false);
@@ -219,7 +220,7 @@ protected:
     ni_src_ni0 = option_ni["ni_src_ni0"].withDefault(false);
     ni_diff = option_ni["ni_diff"].withDefault(false);
 
-    auto option_ajpar = globalOptions["ajpar"];
+    auto& option_ajpar = globalOptions["ajpar"];
     evolve_ajpar = option_ajpar["evolve_ajpar"].withDefault(true);
     ajpar_phi1 = option_ajpar["ajpar_phi1"].withDefault(false);
     ajpar_jpar1 = option_ajpar["ajpar_jpar1"].withDefault(false);
@@ -229,7 +230,7 @@ protected:
     ajpar_ajpar1_phi1 = option_ajpar["ajpar_ajpar1_phi1"].withDefault(false);
     ajpar_ve1_ve1 = option_ajpar["ajpar_ve1_ve1"].withDefault(false);
 
-    auto option_te = globalOptions["te"];
+    auto& option_te = globalOptions["te"];
     evolve_te = option_te["evolve_te"].withDefault(true);
     te_te1_phi0 = option_te["te_te1_phi0"].withDefault(false);
     te_te0_phi1 = option_te["te_te0_phi1"].withDefault(false);
@@ -248,7 +249,8 @@ protected:
     /************* SHIFTED RADIAL COORDINATES ************/
     
     // Check type of parallel transform
-    std::string ptstr = Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
+                                       .withDefault<std::string>("identity");
 
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0;  // I disappears from metric
@@ -355,30 +357,34 @@ protected:
     if (evolve_rho) {
       SOLVE_FOR(rho);
       comms.add(rho);
-    } else
+    } else {
       initial_profile("rho", rho);
-    
+    }
+
     if (evolve_ni) {
       SOLVE_FOR(ni);
       comms.add(ni);
-    } else
+    } else {
       initial_profile("ni", ni);
-    
+    }
+
     if (evolve_ajpar) {
       SOLVE_FOR(ajpar);
       comms.add(ajpar);
     } else {
       initial_profile("ajpar", ajpar);
-      if (ZeroElMass)
+      if (ZeroElMass) {
         dump.add(ajpar, "ajpar", 1); // output calculated Ajpar
+      }
     }
     
     if (evolve_te) {
       SOLVE_FOR(te);
       comms.add(te);
-    } else
+    } else {
       initial_profile("te", te);
-    
+    }
+
     // Set boundary conditions on jpar and VEt
     jpar.setBoundary("jpar");
     VEt.setBoundary("VEt");
@@ -422,7 +428,7 @@ protected:
     
     return 0;
   }
-  // End of physics_init()
+
   //////////////////////////////////////
   
 
@@ -505,7 +511,8 @@ protected:
     
     if (ZeroElMass) {
       // Set jpar,Ve,Ajpar neglecting the electron inertia term
-      jpar = ((Tet*Grad_par_LtoC(ni)) - (Nit*Grad_par_LtoC(phi)))/(fmei*0.51*nu);
+      jpar = (interp_to(Tet, CELL_YLOW)*Grad_par(ni, CELL_YLOW)
+              - interp_to(Nit, CELL_YLOW)*Grad_par(phi, CELL_YLOW))/(fmei*0.51*nu);
       
       // Set boundary condition on jpar
       jpar.applyBoundary();
@@ -513,12 +520,12 @@ protected:
       // Need to communicate jpar
       mesh->communicate(jpar);
       
-      Ve = -jpar/Nit;
+      Ve = -jpar/interp_to(Nit, CELL_YLOW);
       ajpar = Ve;
     } else {
     
       Ve = ajpar;
-      jpar = -Nit*Ve;
+      jpar = -interp_to(Nit, CELL_YLOW)*Ve;
       //jpar = -Ni0*Ve; //Linearize as in BOUT06
     }
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -540,7 +547,7 @@ protected:
       }
       
       if (ni_jpar1) {
-        ddt(ni) += Grad_par_CtoL(jpar); // Left hand differencing
+        ddt(ni) += Grad_par(jpar, CELL_CENTRE); // Left hand differencing
       }
       
       if (ni_src_ni0) {
@@ -569,7 +576,7 @@ protected:
     if (evolve_rho) {
       
       if (rho_jpar1) { 
-        ddt(rho) += Grad_par_CtoL(jpar); // Left hand differencing
+        ddt(rho) += Grad_par(jpar, CELL_CENTRE); // Left hand differencing
       }
       
       if (rho_nuin_rho1) {
@@ -613,28 +620,28 @@ protected:
     if (evolve_ajpar) {
 
       if (ajpar_phi1) {
-        ddt(ajpar) += (1./fmei)*Grad_par_LtoC(phi); // Right-hand deriv with b.c. Necessary for sheath mode
+        ddt(ajpar) += (1./fmei)*Grad_par(phi, CELL_YLOW); // Right-hand deriv with b.c. Necessary for sheath mode
       }
       
       if (ajpar_jpar1) {
-        ddt(ajpar) -= 0.51*nu*ajpar;
+        ddt(ajpar) -= 0.51*interp_to(nu, CELL_YLOW)*ajpar;
       }
       
 
       if (ajpar_te_ni) {
-        ddt(ajpar) -= (1./fmei)*(Tet/Nit)*Grad_par_LtoC(ni);
+        ddt(ajpar) -= (1./fmei)*interp_to(Tet/Nit, CELL_YLOW)*Grad_par(ni, CELL_YLOW);
       }
       
       if (ajpar_te) {
-        ddt(ajpar) -= (1.71/fmei)*Grad_par_LtoC(te);
+        ddt(ajpar) -= (1.71/fmei)*Grad_par(te, CELL_YLOW);
       }
       
       if (ajpar_ajpar1_phi0) {
-        ddt(ajpar) -= vE_Grad(ajpar,phi0);
+        ddt(ajpar) -= vE_Grad(ajpar,interp_to(phi0, CELL_YLOW));
       }
       
       if (ajpar_ajpar1_phi1) {
-        ddt(ajpar) -= vE_Grad(ajpar,phi);
+        ddt(ajpar) -= vE_Grad(ajpar,interp_to(phi, CELL_YLOW));
       }
       
       if (ajpar_ve1_ve1) {
@@ -664,11 +671,11 @@ protected:
       }
       
       if (te_ajpar_te) {
-        ddt(te) -= ajpar * Grad_par_LtoC(te);
+        ddt(te) -= interp_to(ajpar, CELL_CENTRE) * Grad_par(te);
       }
       
       if (te_te_ajpar) {
-        ddt(te) -= 2./3. * Tet * Grad_par_CtoL(ajpar);
+        ddt(te) -= 2./3. * Tet * Grad_par(ajpar, CELL_CENTRE);
       }
       
       if (te_nu_te1) {
@@ -680,7 +687,7 @@ protected:
       }
 
       if (te_jpar) {
-        ddt(te) += 0.71*2./3. * Tet/Nit * Grad_par_CtoL(jpar);
+        ddt(te) += 0.71*2./3. * Tet/Nit * Grad_par(jpar, CELL_CENTRE);
       }
       
       if (te_diff) {
@@ -719,14 +726,14 @@ protected:
     
     return 0;
   }
-  //End of physics_run
+
   /////////////////////////////////////////////////////////////////
   
   
   
   /****************SPECIAL DIFFERENTIAL OPERATORS******************/
-  const Field2D Perp_Grad_dot_Grad(const Field2D &p, const Field2D &f) {
-    
+  Coordinates::FieldMetric Perp_Grad_dot_Grad(const Field2D& p, const Field2D& f) {
+
     return DDX(p)*DDX(f)*mesh->getCoordinates()->g11;
   }
   
@@ -735,8 +742,8 @@ protected:
   // ExB terms. These routines allow comparisons with BOUT-06
   // if bout_exb=true is set in BOUT.inp
   /////////////////////////////////////////////////////////////////
-  const Field2D vE_Grad(const Field2D &f, const Field2D &p) {
-    Field2D result;
+  Coordinates::FieldMetric vE_Grad(const Field2D& f, const Field2D& p) {
+    Coordinates::FieldMetric result;
     if (bout_exb) {
       // Use a subset of terms for comparison to BOUT-06
       result = 0.0;
@@ -757,35 +764,39 @@ protected:
       result.allocate();
       
       int ncz = mesh->LocalNz;
-      for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
-        for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
+      for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+        for (int jy = mesh->ystart; jy <= mesh->yend; jy++) {
           for(int jz=0;jz<ncz;jz++) {
             int jzp = (jz + 1) % ncz;
             int jzm = (jz - 1 + ncz) % ncz;
           
             // J++ = DDZ(p)*DDX(f) - DDX(p)*DDZ(f)
-            BoutReal Jpp = 0.25*( (p(jx,jy,jzp) - p(jx,jy,jzm))*
-                                  (f(jx+1,jy) - f(jx-1,jy)) -
-                                  (p(jx+1,jy,jz) - p(jx-1,jy,jz))*
-                                  (f(jx,jy) - f(jx,jy)) )
-              / (coord->dx(jx,jy) * coord->dz);
-            
+            BoutReal Jpp =
+                0.25
+                * ((p(jx, jy, jzp) - p(jx, jy, jzm)) * (f(jx + 1, jy) - f(jx - 1, jy))
+                   - (p(jx + 1, jy, jz) - p(jx - 1, jy, jz)) * (f(jx, jy) - f(jx, jy)))
+                / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+
             // J+x
-            BoutReal Jpx = 0.25*( f(jx+1,jy)*(p(jx+1,jy,jzp)-p(jx+1,jy,jzm)) -
-                                  f(jx-1,jy)*(p(jx-1,jy,jzp)-p(jx-1,jy,jzm)) -
-                                  f(jx,jy)*(p(jx+1,jy,jzp)-p(jx-1,jy,jzp)) +
-                                  f(jx,jy)*(p(jx+1,jy,jzm)-p(jx-1,jy,jzm)))
-              / (coord->dx(jx,jy) * coord->dz);
+            BoutReal Jpx = 0.25
+                           * (f(jx + 1, jy) * (p(jx + 1, jy, jzp) - p(jx + 1, jy, jzm))
+                              - f(jx - 1, jy) * (p(jx - 1, jy, jzp) - p(jx - 1, jy, jzm))
+                              - f(jx, jy) * (p(jx + 1, jy, jzp) - p(jx - 1, jy, jzp))
+                              + f(jx, jy) * (p(jx + 1, jy, jzm) - p(jx - 1, jy, jzm)))
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
             // Jx+
-            BoutReal Jxp = 0.25*( f(jx+1,jy)*(p(jx,jy,jzp)-p(jx+1,jy,jz)) -
-                                  f(jx-1,jy)*(p(jx-1,jy,jz)-p(jx,jy,jzm)) -
-                                  f(jx-1,jy)*(p(jx,jy,jzp)-p(jx-1,jy,jz)) +
-                                  f(jx+1,jy)*(p(jx+1,jy,jz)-p(jx,jy,jzm)))
-              / (coord->dx(jx,jy) * coord->dz);
-            
+            BoutReal Jxp = 0.25
+                           * (f(jx + 1, jy) * (p(jx, jy, jzp) - p(jx + 1, jy, jz))
+                              - f(jx - 1, jy) * (p(jx - 1, jy, jz) - p(jx, jy, jzm))
+                              - f(jx - 1, jy) * (p(jx, jy, jzp) - p(jx - 1, jy, jz))
+                              + f(jx + 1, jy) * (p(jx + 1, jy, jz) - p(jx, jy, jzm)))
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+
             result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;
           }
-      
+        }
+      }
+
     }else if(bout_exb) {
       // Use a subset of terms for comparison to BOUT-06
       result = VDDX(DDZ(p), f);
@@ -818,35 +829,41 @@ protected:
       result.allocate();
       
       int ncz = mesh->LocalNz;
-      for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
-        for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
+      for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+        for (int jy = mesh->ystart; jy <= mesh->yend; jy++) {
           for(int jz=0;jz<ncz;jz++) {
             int jzp = (jz + 1) % ncz;
             int jzm = (jz - 1 + ncz) % ncz;
             
             // J++ = DDZ(p)*DDX(f) - DDX(p)*DDZ(f)
-            BoutReal Jpp = 0.25*( (p(jx,jy,jzp) - p(jx,jy,jzm))*
-                                  (f(jx+1,jy,jz) - f(jx-1,jy,jz)) -
-                                  (p(jx+1,jy,jz) - p(jx-1,jy,jz))*
-                                  (f(jx,jy,jzp) - f(jx,jy,jzm)) )
-              / (coord->dx(jx,jy) * coord->dz);
-            
+            BoutReal Jpp = 0.25
+                           * ((p(jx, jy, jzp) - p(jx, jy, jzm))
+                                  * (f(jx + 1, jy, jz) - f(jx - 1, jy, jz))
+                              - (p(jx + 1, jy, jz) - p(jx - 1, jy, jz))
+                                    * (f(jx, jy, jzp) - f(jx, jy, jzm)))
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+
             // J+x
-            BoutReal Jpx = 0.25*( f(jx+1,jy,jz)*(p(jx+1,jy,jzp)-p(jx+1,jy,jzm)) -
-                                  f(jx-1,jy,jz)*(p(jx-1,jy,jzp)-p(jx-1,jy,jzm)) -
-                                  f(jx,jy,jzp)*(p(jx+1,jy,jzp)-p(jx-1,jy,jzp)) +
-                                  f(jx,jy,jzm)*(p(jx+1,jy,jzm)-p(jx-1,jy,jzm)))
-              / (coord->dx(jx,jy) * coord->dz);
+            BoutReal Jpx =
+                0.25
+                * (f(jx + 1, jy, jz) * (p(jx + 1, jy, jzp) - p(jx + 1, jy, jzm))
+                   - f(jx - 1, jy, jz) * (p(jx - 1, jy, jzp) - p(jx - 1, jy, jzm))
+                   - f(jx, jy, jzp) * (p(jx + 1, jy, jzp) - p(jx - 1, jy, jzp))
+                   + f(jx, jy, jzm) * (p(jx + 1, jy, jzm) - p(jx - 1, jy, jzm)))
+                / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
             // Jx+
-            BoutReal Jxp = 0.25*( f(jx+1,jy,jzp)*(p(jx,jy,jzp)-p(jx+1,jy,jz)) -
-                                  f(jx-1,jy,jzm)*(p(jx-1,jy,jz)-p(jx,jy,jzm)) -
-                                  f(jx-1,jy,jzp)*(p(jx,jy,jzp)-p(jx-1,jy,jz)) +
-                                  f(jx+1,jy,jzm)*(p(jx+1,jy,jz)-p(jx,jy,jzm)))
-              / (coord->dx(jx,jy) * coord->dz);
-            
+            BoutReal Jxp = 0.25
+                           * (f(jx + 1, jy, jzp) * (p(jx, jy, jzp) - p(jx + 1, jy, jz))
+                              - f(jx - 1, jy, jzm) * (p(jx - 1, jy, jz) - p(jx, jy, jzm))
+                              - f(jx - 1, jy, jzp) * (p(jx, jy, jzp) - p(jx - 1, jy, jz))
+                              + f(jx + 1, jy, jzm) * (p(jx + 1, jy, jz) - p(jx, jy, jzm)))
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+
             result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;
           }
-      
+        }
+      }
+
     }else if(bout_exb) {
       // Use a subset of terms for comparison to BOUT-06
       result = VDDX(DDZ(p), f) + VDDZ(-DDX(p), f);

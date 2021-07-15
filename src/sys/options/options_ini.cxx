@@ -133,7 +133,8 @@ void OptionINI::read(Options *options, const string &filename) {
           // An odd number, so read another line
 
           if (fin.eof()) {
-            throw BoutException("\t'%s': Unbalanced brackets\n\tStarting line: %s", filename.c_str(), firstline.c_str());
+            throw BoutException("\t'{:s}': Unbalanced brackets\n\tStarting line: {:s}",
+                                filename, firstline);
           }
           
           string newline = getNextLine(fin);
@@ -160,7 +161,7 @@ void OptionINI::write(Options *options, const std::string &filename) {
   }
   
   // Call recursive function to write to file
-  writeSection(options, fout);
+  fout << fmt::format("{:ds}", *options);
   
   fout.close();
 }
@@ -175,7 +176,7 @@ string OptionINI::getNextLine(ifstream &fin) {
   string line;
 
   getline(fin, line);
-  line = lowercasequote(trim(trimComments(line))); // lowercase except for inside quotes
+  line = trim(trimComments(line));
 
   return line;
 }
@@ -202,64 +203,5 @@ void OptionINI::parse(const string &buffer, string &key, string &value) {
 
   if (key.find(':') != std::string::npos) {
     throw BoutException(_("\tKey must not contain ':' character\n\tLine: {:s}"), buffer);
-  }
-}
-
-void OptionINI::writeSection(const Options *options, std::ofstream &fout) {
-  string section_name = options->str();
-
-  if (section_name.length() > 0) {
-    // Print the section name at the start
-    fout << "[" << section_name << "]" << endl;
-  }
-  // Iterate over all values
-  for(const auto& it : options->getChildren()) {
-    if (it.second.isValue()) {
-      auto value = bout::utils::variantToString(it.second.value);
-      fout << it.first << " = " << value;
-
-      if (value.empty()) {
-        // Print an empty string as ""
-        fout << "\"\""; 
-      }
-      bool in_comment = false; // Has a '#' been printed yet?
-      
-      if (! it.second.valueUsed() ) {
-        fout << "\t\t# not used ";
-        in_comment = true;
-          
-        if (it.second.attributes.count("source")) {
-          fout << ", from: "
-               << it.second.attributes.at("source").as<std::string>();
-        }
-      }
-
-      if (it.second.attributes.count("type")) {
-        if (!in_comment) {
-          fout << "\t\t# type: ";
-          in_comment = true;
-        } else {
-          fout << ", type: ";
-        }
-        fout << it.second.attributes.at("type").as<std::string>();
-      }
-      
-      if (it.second.attributes.count("doc")) {
-        if (!in_comment) {
-          fout << "\t\t# ";
-          in_comment = true;
-        } else {
-          fout << ", doc: ";
-        }
-        fout << it.second.attributes.at("doc").as<std::string>();
-      }
-      fout << endl;
-    }
-  }
-  
-  // Iterate over sub-sections
-  for(const auto& it : options->subsections()) {
-    fout << endl;
-    writeSection(it.second, fout);
   }
 }

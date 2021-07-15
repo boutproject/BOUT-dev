@@ -6,19 +6,17 @@ from __future__ import division
 from __future__ import print_function
 
 try:
-  from builtins import str
+    from builtins import str
 except:
-  pass
+    pass
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import shell, build_and_log, launch_safe
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, concatenate
 
 
-
-print("Making MMS wave test")
-shell_safe("make > make.log")
+build_and_log("Making MMS wave test")
 
 # List of NX values to use
 nxlist = [8, 12, 20, 36, 68, 132]
@@ -28,82 +26,84 @@ timestep = 0.1
 
 nproc = 1
 
-error_2   = []  # The L2 error (RMS)
+error_2 = []  # The L2 error (RMS)
 error_inf = []  # The maximum error
 
 for nx in nxlist:
-    args = "mesh:nx="+str(nx)+" nout="+str(nout)+" timestep="+str(timestep)
-    
+    args = "mesh:nx=" + str(nx) + " nout=" + str(nout) + " timestep=" + str(timestep)
+
     print("Running with " + args)
 
     # Delete old data
     shell("rm data/BOUT.dmp.*.nc")
-    
+
     # Command to run
-    cmd = "./wave "+args
+    cmd = "./wave " + args
     # Launch using MPI
     s, out = launch_safe(cmd, nproc=nproc, pipe=True)
 
     # Save output to log file
-    f = open("run.log."+str(nx), "w")
+    f = open("run.log." + str(nx), "w")
     f.write(out)
     f.close()
 
     # Collect data
-    E_f = collect("E_f", tind=[nout,nout], path="data", info=False)
-    E_f = E_f[0,:,0,0]
-    
-    E_g = collect("E_g", tind=[nout,nout], path="data", info=False)
-    E_g = E_g[0,:,0,0]
+    E_f = collect("E_f", tind=[nout, nout], path="data", info=False)
+    E_f = E_f[0, :, 0, 0]
+
+    E_g = collect("E_g", tind=[nout, nout], path="data", info=False)
+    E_g = E_g[0, :, 0, 0]
 
     # Average error over domain, not including guard cells
     E = concatenate([E_f[1:-1], E_g[2:-1]])
 
-    l2 = sqrt(mean(E**2))
+    l2 = sqrt(mean(E ** 2))
     linf = max(abs(E))
-    
-    error_2.append( l2 )
-    error_inf.append( linf )
+
+    error_2.append(l2)
+    error_inf.append(linf)
 
     print("Error norm: l-2 %f l-inf %f" % (l2, linf))
 
 # Calculate grid spacing
-dx = 1. / (array(nxlist) - 2.)
+dx = 1.0 / (array(nxlist) - 2.0)
 
 order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
 print("Convergence order = %f" % (order))
 
 # plot errors
 try:
-  import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt
 
-  plt.plot(dx, error_2, '-o', label=r'$l^2$')
-  plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
-  plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+    plt.plot(dx, error_2, "-o", label=r"$l^2$")
+    plt.plot(dx, error_inf, "-x", label=r"$l^\infty$")
+    plt.plot(
+        dx, error_2[-1] * (dx / dx[-1]) ** order, "--", label="Order %.1f" % (order)
+    )
 
-  plt.legend(loc="upper left")
-  plt.grid()
+    plt.legend(loc="upper left")
+    plt.grid()
 
-  plt.yscale('log')
-  plt.xscale('log')
+    plt.yscale("log")
+    plt.xscale("log")
 
-  plt.xlabel(r'Mesh spacing $\delta x$')
-  plt.ylabel("Error norm")
+    plt.xlabel(r"Mesh spacing $\delta x$")
+    plt.ylabel("Error norm")
 
-  plt.savefig("wave_norm.pdf")
+    plt.savefig("wave_norm.pdf")
 
-  #plt.show()
-  plt.close()
+    # plt.show()
+    plt.close()
 except:
-  # Plotting could fail for any number of reasons, and the actual
-  # error raised may depend on, among other things, the current
-  # matplotlib backend, so catch everything
-  pass
+    # Plotting could fail for any number of reasons, and the actual
+    # error raised may depend on, among other things, the current
+    # matplotlib backend, so catch everything
+    pass
 
 if 2.2 > order > 1.8:
-  # test for success
-  print(" => Test passed")
-  exit(0)
+    # test for success
+    print(" => Test passed")
+    exit(0)
 else:
-  print(" => Test failed")
-  exit(1)
+    print(" => Test failed")
+    exit(1)
