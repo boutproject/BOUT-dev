@@ -1518,6 +1518,7 @@ class W7X_vacuum(MagneticField):
         import xarray as xr
         import pickle
         import matplotlib.pyplot as plt
+        from time import sleep
 
         tracer = Client("http://esb.ipp-hgw.mpg.de:8280/services/FieldLineProxy?wsdl")
 
@@ -1555,22 +1556,20 @@ class W7X_vacuum(MagneticField):
 
         if os.path.isfile(fname):
             print("Saved field found, loading from: ", fname)
-            ds = xr.open_dataset(fname)
-            Br = ds["Br"].values
-            Bphi = ds["Bphi"].values
-            Bz = ds["Bz"].values
-            del ds
+            with xr.open_dataset(fname) as ds:
+                Br = ds["Br"].values
+                Bphi = ds["Bphi"].values
+                Bz = ds["Bz"].values
 
         elif os.path.isfile(fname_old):
             print("Saved field found, loading from: ", fname_old)
             with open(fname_old, pickle_read_mode) as f:
                 Br, Bphi, Bz = pickle.load(f)
-            ds = xr.Dataset()
-            ds["Br"] = ("x", "y", "z"), Br
-            ds["Bz"] = ("x", "y", "z"), Bz
-            ds["Bphi"] = ("x", "y", "z"), Bphi
-            ds.to_netcdf(fname)
-            del ds
+            with xr.Dataset() as ds:
+                ds["Br"] = ("x", "y", "z"), Br
+                ds["Bz"] = ("x", "y", "z"), Bz
+                ds["Bphi"] = ("x", "y", "z"), Bphi
+                ds.to_netcdf(fname)
 
         else:
             print(
@@ -1620,9 +1619,15 @@ class W7X_vacuum(MagneticField):
                     try:
                         res = tracer.service.magneticField(pos, config)
                     except:
+                        # Catch any error. Different errors might be
+                        # reported, but we want to retry anyway.
+                        # Do not except Exception, as that would also
+                        # ignore control-C, which we do not want to
+                        # ignore.
                         redo -= 1
                         if redo == 0:
                             raise
+                        sleep(0.6 - 0.4 * redo)
                     else:
                         break
 
