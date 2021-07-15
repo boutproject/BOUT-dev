@@ -3,150 +3,163 @@ import boutcore as bc
 import numpy as np
 import sys
 
-#requires boutcore
-#requires not make
+# requires boutcore
+# requires not make
 
 bc.init("-d data -q -q -q")
-doPlot=0
+doPlot = 0
 for f in sys.argv[1:]:
-    if f == '-p':
+    if f == "-p":
         doPlot += 1
 
+
 def mget(f):
-    return f[3,:,0].flatten()
+    return f[3, :, 0].flatten()
+
 
 if doPlot > 2:
-    start=2
-    mmax=4
+    start = 2
+    mmax = 4
 else:
-    start=9
-    mmax=10
+    start = 9
+    mmax = 10
+
 
 def plot(*args):
     import matplotlib.pyplot as plt
+
     def close_event():
         plt.close()
-    fig=plt.figure()
+
+    fig = plt.figure()
     for f in args:
         pf = plt.plot
         if "log" in f:
             f.remove("log")
-            pf=plt.loglog
-        if isinstance(f[-1],str):
-            pf(*f[:-1],label=f[-1])
+            pf = plt.loglog
+        if isinstance(f[-1], str):
+            pf(*f[:-1], label=f[-1])
         else:
             pf(*f)
-        #plt.plot(mget(y),mget(f),'-o')
-        #plt.plot(mget(y),fo,'x-')
+        # plt.plot(mget(y),mget(f),'-o')
+        # plt.plot(mget(y),fo,'x-')
         plt.legend()
-    timer = fig.canvas.new_timer(interval = 4000)
+    timer = fig.canvas.new_timer(interval=4000)
     timer.add_callback(close_event)
     timer.start()
     plt.show()
 
-def create(nx,low):
-    udx=2*np.pi/nx
+
+def create(nx, low):
+    udx = 2 * np.pi / nx
     if not low:
-        ux=np.linspace(-1.5*udx,2*np.pi+1.5*udx,num=(nx+4))
+        ux = np.linspace(-1.5 * udx, 2 * np.pi + 1.5 * udx, num=(nx + 4))
     else:
-        ux=np.linspace(-1*udx,2*np.pi+2*udx,num=(nx+4))
-    nux = ux-.8*np.cos(ux)
+        ux = np.linspace(-1 * udx, 2 * np.pi + 2 * udx, num=(nx + 4))
+    nux = ux - 0.8 * np.cos(ux)
     return nux
 
-def integrate(dat,low):
-    ret=np.zeros_like(dat)
-    cur=-dat[0]
-    cur-=dat[1]
+
+def integrate(dat, low):
+    ret = np.zeros_like(dat)
+    cur = -dat[0]
+    cur -= dat[1]
     if low:
         for i in range(len(dat)):
             ret[i] = cur
-            cur+=dat[i]
+            cur += dat[i]
     else:
         for i in range(len(dat)):
-            cur+=dat[i]/2
+            cur += dat[i] / 2
             ret[i] = cur
-            cur+=dat[i]/2
+            cur += dat[i] / 2
     return ret
 
 
-mesh_cache={}
-def test(bdry, func, loc):
-    print("Testing %s with %s at %s"%(bdry,func,loc),end=' ... ')
-    errs=[]
-    dy=[]
+mesh_cache = {}
 
-    for ny in np.logspace(start,mmax,num=mmax-start+1,base=2):
+
+def test(bdry, func, loc):
+    print("Testing %s with %s at %s" % (bdry, func, loc), end=" ... ")
+    errs = []
+    dy = []
+
+    for ny in np.logspace(start, mmax, num=mmax - start + 1, base=2):
         global mesh_cache
         try:
-            mesh=mesh_cache[ny]
+            mesh = mesh_cache[ny]
         except KeyError:
-            bc.setOption("mesh:ny","%d"%ny,force=True)
-            bc.setOption("mesh:dy","(1+0.8*sin(y))/%d*2*pi"%ny,force=True)
-            mesh=bc.Mesh(section="mesh")
-            mesh_cache[ny]=mesh
-        mdy = mesh.coordinates.dy.get()[3,:].flatten()
-        y=integrate(mdy,loc == "YLOW")
-        fd=func(y)
-        f = bc.create3D("y",mesh,outloc=loc)
-        fds= fd.reshape((1,int(ny)+4,1))
+            bc.setOption("mesh:ny", "%d" % ny, force=True)
+            bc.setOption("mesh:dy", "(1+0.8*sin(y))/%d*2*pi" % ny, force=True)
+            mesh = bc.Mesh(section="mesh")
+            mesh_cache[ny] = mesh
+        mdy = mesh.coordinates.dy.get()[3, :].flatten()
+        y = integrate(mdy, loc == "YLOW")
+        fd = func(y)
+        f = bc.create3D("y", mesh, outloc=loc)
+        fds = fd.reshape((1, int(ny) + 4, 1))
         for i in range(6):
-            f[i,:,0] = fds
+            f[i, :, 0] = fds
 
-        fo=mget(f)
-        opt=bc.Options("")
+        fo = mget(f)
+        opt = bc.Options("")
 
-        myg=int(opt.get("mesh:myg",0))
+        myg = int(opt.get("mesh:myg", 0))
 
         for i in range(myg):
-            f[0, i  ,0]=-1
-            f[0,-1-i,0]=-1
+            f[0, i, 0] = -1
+            f[0, -1 - i, 0] = -1
 
         f.applyBoundary(bdry)
-        f=mget(f)
+        f = mget(f)
         if doPlot > 2:
-            plot([y,f,"with bc"],[y,fo,"org"],[y,"numpy"],[integrate(mdy,loc == "YLOW"),"bc"])
-        er=np.max(np.abs(f-fo))
+            plot(
+                [y, f, "with bc"],
+                [y, fo, "org"],
+                [y, "numpy"],
+                [integrate(mdy, loc == "YLOW"), "bc"],
+            )
+        er = np.max(np.abs(f - fo))
         errs.append(er)
-        dy.append(1./ny)
+        dy.append(1.0 / ny)
 
-    errc=np.log(errs[-2]/errs[-1])
-    difc=np.log(dy[-2]/dy[-1])
-    conv=errc/difc
-    success= order - .25 < conv < order + .25
+    errc = np.log(errs[-2] / errs[-1])
+    difc = np.log(dy[-2] / dy[-1])
+    conv = errc / difc
+    success = order - 0.25 < conv < order + 0.25
     if doPlot > 1 or (not success and doPlot > 0):
-        plot([dy,errs,"log","error vs spacing"])
+        plot([dy, errs, "log", "error vs spacing"])
     if success:
         print("Pass")
         return 0
     else:
-        print("Failure: expected %d, got %g"%(order,conv))
+        print("Failure: expected %d, got %g" % (order, conv))
         return 1
 
 
-
-testdata=[
+testdata = [
     ["dirichlet_nu_o4", np.sin, 5],
     ["dirichlet_nu_o3", np.sin, 3],
     ["dirichlet_nu_o2", np.sin, 3],
-    ["neumann_nu_o2", np.cos,2],
-    ["neumann_nu_o3", np.cos,[5,4]],
-    ["neumann_nu_o4", np.cos,4],
-    ["free_nu_o2", np.cos,2],
-    ["free_nu_o3", np.cos,4],
-    ["free_nu_o4", np.cos,4],
-    ["free_nu_o2", np.sin,3],
-    ["free_nu_o3", np.sin,3],
-    ["free_nu_o4", np.sin,5],
+    ["neumann_nu_o2", np.cos, 2],
+    ["neumann_nu_o3", np.cos, [5, 4]],
+    ["neumann_nu_o4", np.cos, 4],
+    ["free_nu_o2", np.cos, 2],
+    ["free_nu_o3", np.cos, 4],
+    ["free_nu_o4", np.cos, 4],
+    ["free_nu_o2", np.sin, 3],
+    ["free_nu_o3", np.sin, 3],
+    ["free_nu_o4", np.sin, 5],
 ]
 
-code=0
-locs=["CENTRE", "XLOW", "YLOW", "ZLOW"]
+code = 0
+locs = ["CENTRE", "XLOW", "YLOW", "ZLOW"]
 for bdry, func, forder in testdata:
     for loc in locs:
-        if isinstance(forder,list):
-            order=forder[1 if loc == "YLOW" else 0]
+        if isinstance(forder, list):
+            order = forder[1 if loc == "YLOW" else 0]
         else:
-            order=forder
+            order = forder
         code += test(bdry, func, loc)
 
 sys.exit(code)

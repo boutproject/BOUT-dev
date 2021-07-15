@@ -3,7 +3,7 @@
 from jinja2 import Environment
 import stencils_sympy as sten
 
-header="""\
+header = """\
 #include <boundary_standard.hxx>
 #include <bout/constants.hxx>
 #include <boutexception.hxx>
@@ -46,9 +46,9 @@ static void update_stagger_offsets(int& x_boundary_offset, int& y_boundary_offse
 }
 """
 
-env=Environment(trim_blocks=True);
+env = Environment(trim_blocks=True)
 
-apply_str="""
+apply_str = """
 void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
   Mesh *mesh = f.getMesh();
@@ -246,7 +246,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
   }
 }
 """
-clone_str="""
+clone_str = """
 BoundaryOp * {{class}}::clone(BoundaryRegion *region,
    const std::list<std::string> &args) {
 
@@ -258,7 +258,7 @@ BoundaryOp * {{class}}::clone(BoundaryRegion *region,
   return new {{class}}(region, newgen);
 }
 """
-stencil_str="""
+stencil_str = """
 vec{{order}} {{class}}::calc_interp_to_stencil(const vec{{order}} & spacing) const {
 vec{{order}} facs;
 // Stencil Code
@@ -267,8 +267,8 @@ return facs;
 }
 """
 
-orders=range(2,5)
-boundaries=["Dirichlet","Neumann","Free"]
+orders = range(2, 5)
+boundaries = ["Dirichlet", "Neumann", "Free"]
 
 if __name__ == "__main__":
     print(header)
@@ -276,21 +276,22 @@ if __name__ == "__main__":
     for order in orders:
         for boundary in boundaries:
             if boundary == "Neumann":
-                mat=sten.neumann
+                mat = sten.neumann
             else:
-                mat=sten.dirichlet
+                mat = sten.dirichlet
             try:
-                code=sten.gen_code(order,mat)
+                code = sten.gen_code(order, mat)
             except:
                 import sys
-                print("Order:",order,"boundary:",boundary,file=sys.stderr)
+
+                print("Order:", order, "boundary:", boundary, file=sys.stderr)
                 raise
-            args={
-                'order':order,
-                'type':boundary,
-                'class':"Boundary%sNonUniform_O%d"%(boundary,order),
-                'stencil_code': code,
-                'with_fg' : boundary != "Free",
+            args = {
+                "order": order,
+                "type": boundary,
+                "class": "Boundary%sNonUniform_O%d" % (boundary, order),
+                "stencil_code": code,
+                "with_fg": boundary != "Free",
             }
 
             print(env.from_string(apply_str).render(**args))

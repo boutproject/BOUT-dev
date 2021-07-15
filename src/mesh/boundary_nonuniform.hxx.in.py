@@ -2,13 +2,13 @@
 
 from jinja2 import Environment
 
-env=Environment(trim_blocks=True);
+env = Environment(trim_blocks=True)
 
 
-orders=range(2,5)
-boundaries=["Dirichlet","Neumann","Free"]
+orders = range(2, 5)
+boundaries = ["Dirichlet", "Neumann", "Free"]
 
-header="""
+header = """
 #include <utility>
 
 #include "boundary_op.hxx"
@@ -19,7 +19,7 @@ struct Indices{
 };
 
 """
-vecs="""
+vecs = """
 struct vec{{order}}{
 {% for i in range(order) %}
   BoutReal f{{i}};
@@ -34,7 +34,7 @@ struct vec{{order}}{
 """
 
 
-class_str="""
+class_str = """
 
 class {{class}} : public BoundaryOp {
 public:
@@ -65,9 +65,9 @@ if __name__ == "__main__":
         print(env.from_string(vecs).render(order=order))
     for order in orders:
         for boundary in boundaries:
-            args={
-                'order':order,
-                'boundary':boundary,
-                'class':"Boundary%sNonUniform_O%d"%(boundary,order),
+            args = {
+                "order": order,
+                "boundary": boundary,
+                "class": "Boundary%sNonUniform_O%d" % (boundary, order),
             }
             print(env.from_string(class_str).render(**args))
