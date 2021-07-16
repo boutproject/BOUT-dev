@@ -227,7 +227,7 @@ EOF
         of="$of~$i"
         ext="$ext~$i"
     fi
-    test -e $MODDIR/bout-dep || mkdir $MODDIR/bout-dep
+    test -e $found/bout-dep || mkdir $found/bout-dep
     echo "#%Module 1.0
 #
 #  BOUT++ dependency module for use with 'environment-modules' package
