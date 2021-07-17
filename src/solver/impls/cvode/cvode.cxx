@@ -57,6 +57,13 @@
 #include <numeric>
 #include <string>
 
+#ifdef BOUT_HAS_CALIPER
+#include <caliper/cali.h>
+#include <caliper/cali-manager.h>
+#endif
+
+
+
 class Field2D;
 
 #define ZERO RCONST(0.)
@@ -499,6 +506,11 @@ BoutReal CvodeSolver::run(BoutReal tout) {
 
 void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
   TRACE("Running RHS: CvodeSolver::res({})", t);
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_BEGIN("CvodeSolver:rhs");
+#endif
+
+  static int rhscount = 0; 
 
   // Load state from udata
   load_vars(udata);
@@ -512,6 +524,17 @@ void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
 
   // Save derivatives to dudata
   save_derivs(dudata);
+  rhscount++;  
+  printf("rhscount %d\n",rhscount);
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_END("CvodeSolver:rhs");
+#endif
+  if(rhscount == 3) {   
+     bout::globals::mpi->MPI_Barrier(BoutComm::get()); 
+     BoutFinalise();
+     std::exit(EXIT_SUCCESS); 
+  }
+  
 }
 
 /**************************************************************************

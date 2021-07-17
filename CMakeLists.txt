@@ -5,6 +5,12 @@ if(${CMAKE_VERSION} VERSION_LESS 3.12)
 else()
   cmake_policy(VERSION 3.12)
 endif()
+
+if (${CMAKE_MINOR_VERSION} VERSION_GREATER_EQUAL "18") 
+  cmake_policy(SET CMP0104 OLD) # we set cuda arch explicitly otherwise need CUDA_ARCHITECTURES for each target
+endif ()
+
+
 cmake_policy(SET CMP0025 NEW)
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0057 NEW)
