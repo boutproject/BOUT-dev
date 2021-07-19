@@ -166,6 +166,7 @@ submod() {
 
 
 info() {
+    BOUT_DEP=$PREFIX
     set +x
     cat <<EOF
 As an alternative to using environment module you can set the following variables directly:
