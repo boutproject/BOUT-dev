@@ -176,11 +176,11 @@ As an alternative to using environment module you can set the following variable
 
 Run configure with:
 
-  ./configure --with-netcdf=\$BOUT_DEP --with-sundials=\$BOUT_DEP --with-fftw=\$BOUT_DEP --with-petsc=\$BOUT_DEP
+  cmake -S . -B build -DBOUT_USE_NETCDF=\$BOUT_DEP -DBOUT_USE_PETSC=\$BOUT_DEP -DBOUT_USE_FFTW=\$BOUT_DEP -DBOUT_USE_SUNDIALS=\$BOUT_DEP
 
 or
 
-  ./configure --with-netcdf=$BOUT_DEP --with-sundials=$BOUT_DEP --with-fftw=$BOUT_DEP --with-petsc=$BOUT_DEP
+  cmake -S . -B build -DBOUT_USE_NETCDF=$BOUT_DEP -DBOUT_USE_PETSC=$BOUT_DEP -DBOUT_USE_FFTW=$BOUT_DEP -DBOUT_USE_SUNDIALS=$BOUT_DEP
 
 EOF
 }
