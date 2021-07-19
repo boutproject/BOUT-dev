@@ -28,6 +28,7 @@ FFTWCHECK=${FFTWCHECK:-${CHECK}}
 SUNCHECK=${SUNCHECK:-${CHECK}}
 PETSCCHECK=${PETSCCHECK:-${CHECK}}
 
+PYTHON=${PYTHON:-python3}
 
 help() {
 echo The following options are available:
@@ -157,6 +158,14 @@ petsc() {
 	make check
     fi
     make install
+}
+
+pymods() {
+    bin="$(realpath $0 | grep '.*/' -o)"
+    req=$bin/../requirements.txt
+    $PYTHON -m ensurepip
+    $PYTHON -m pip -U pip
+    $PYTHON -m pip -r $req
 }
 
 submod() {
@@ -290,6 +299,8 @@ sundials
 petsc
 ## Download BOUT++ submodules
 submod
+# Install python packages
+pymods
 ## Create a moduleinfo
 envmodule
 ## Print infos on how to proceed (assumes all other steps have been run)
