@@ -33,8 +33,14 @@
 #include <smoothing.hxx>
 #include <invert_laplace.hxx>
 #include <derivs.hxx>
+
+#ifdef BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
+#endif
+
+#ifdef BOUT_HAS_CUDA
 #include <cuda_profiler_api.h>
+#endif
 
 #if BOUT_HAS_HYPRE
 #include <bout/invert/laplacexy2_hypre.hxx>
