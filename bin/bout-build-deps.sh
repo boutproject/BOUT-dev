@@ -164,8 +164,8 @@ pymods() {
     bin="$(realpath $0 | grep '.*/' -o)"
     req=$bin/../requirements.txt
     $PYTHON -m ensurepip
-    $PYTHON -m pip -U pip
-    $PYTHON -m pip -r $req
+    $PYTHON -m pip install -U pip
+    $PYTHON -m pip install -r $req
 }
 
 submod() {
