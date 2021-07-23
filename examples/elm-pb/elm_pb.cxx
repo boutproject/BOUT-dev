@@ -1685,7 +1685,9 @@ public:
       	auto U_acc = FieldAccessor<>(U);
 	auto indices = U.getRegion("RGN_NOBNDRY").getIndices();
 	Ind3D *ob_i = &(indices)[0];
-#ifdef BOUT_HAS_RAJA  // defined(GPU) 	
+
+//TODO: fix this RAJA section, it's broken
+#if 0 //#ifdef BOUT_HAS_RAJA  // defined(GPU) 	
 // Good and speedup
 //
 
