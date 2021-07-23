@@ -64,12 +64,19 @@ public:
   int rhs(BoutReal UNUSED(time)) {
 
 
-//auto start = std::chrono::steady_clock::now();   
+auto start = std::chrono::steady_clock::now();   
     // Solve for potential
     phi = phiSolver->solve(vort, phi);    
     Field3D phi_minus_n = phi - n;
     // Communicate variables
     mesh->communicate(n, vort, phi, phi_minus_n);
+
+auto end = std::chrono::steady_clock::now();
+auto  time_taken = std::chrono::duration_cast<std::chrono::nanoseconds     >(end-     start);
+std::cout << "The solver alculation time  is "<< time_taken.count()<<" nano seconds.\n";
+
+
+start = std::chrono::steady_clock::now();
 
     // Create accessors which enable fast access
     auto n_acc = FieldAccessor<>(n);
@@ -130,9 +137,14 @@ for(auto i = 0; i <  indices.size(); i++) {
     }
 //--CPU code ---------------- end
 #endif
-//auto end = std::chrono::steady_clock::now();
-//auto  time_taken = std::chrono::duration_cast<std::chrono::nanoseconds     >(end-     start);
-//std::cout << "The operator since start is "<< time_taken.count()<<" nano      se     conds.\n";
+
+
+
+ end = std::chrono::steady_clock::now();
+ time_taken = std::chrono::duration_cast<std::chrono::nanoseconds     >(end-     start);
+ std::cout << "The Operator loop calculation time  is "<< time_taken.count()<<" nano seconds.\n";
+
+
 
     return 0;
   }  // end RHS

@@ -2,7 +2,9 @@
 arch=$(uname -m)
 compiler=gcc
 env_prefix=/usr/WS2/BOUT-GPU/lassen/env/
-local_prefix=/usr/WS2/BOUT-GPU/lassen/Holger/env
+#local_prefix=/usr/WS2/BOUT-GPU/lassen/Holger/env
+
+local_prefix=/usr/workspace/qin3/lassen/env
 build_base_dir=${local_prefix}/BOUT_build_cuda
 build_prefix=${build_base_dir}/build/${arch}-${compiler}/
 install_prefix=${build_base_dir}/install/${arch}-${compiler}/

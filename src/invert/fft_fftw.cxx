@@ -36,7 +36,11 @@
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
 
-#include <fftw3.h>
+// test cuFFTW
+#include <cufftw.h>
+//#include <fftw3.h>
+
+
 #include <cmath>
 
 #if BOUT_USE_OPENMP 
