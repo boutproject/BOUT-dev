@@ -31,7 +31,7 @@ protected:
     setSplitOperator();
 
     // Specify the preconditioner function
-    setPrecon( (preconfunc) &DiffusionNL::precon );
+    setPrecon(&DiffusionNL::precon);
 
     // Add the field "f" to the time integration solver
     SOLVE_FOR(f);

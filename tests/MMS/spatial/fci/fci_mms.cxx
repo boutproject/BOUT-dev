@@ -7,7 +7,7 @@ int main(int argc, char** argv) {
 
   using bout::globals::mesh;
 
-  Field3D input{FieldFactory::get()->create3D("input", Options::getRoot(), mesh)};
+  Field3D input{FieldFactory::get()->create3D("input_field", Options::getRoot(), mesh)};
   Field3D solution{FieldFactory::get()->create3D("solution", Options::getRoot(), mesh)};
 
   // Communicate to calculate parallel transform

@@ -147,12 +147,12 @@ class FieldPerp : public Field {
   FieldPerp& setIndexFromGlobal(int y_global);
 
   // these methods return FieldPerp to allow method chaining
-  FieldPerp& setLocation(CELL_LOC new_location) {
+  FieldPerp& setLocation(CELL_LOC new_location) override {
     Field::setLocation(new_location);
     return *this;
   }
-  FieldPerp& setDirectionY(YDirectionType d) {
-    directions.y = d;
+  FieldPerp& setDirectionY(YDirectionType d) override {
+    Field::setDirectionY(d);
     return *this;
   }
 
@@ -280,7 +280,11 @@ class FieldPerp : public Field {
    * Return the number of nz points
    */
   int getNz() const override {return nz;};
-  
+
+  bool is3D() const override { return false; }
+
+  friend void swap(FieldPerp& first, FieldPerp& second) noexcept;
+
 private:
   /// The Y index at which this FieldPerp is defined
   int yindex{-1};

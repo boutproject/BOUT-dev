@@ -74,6 +74,7 @@ jobs:
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
+                            -DBOUT_BUILD_DOCS=OFF
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
 
@@ -86,6 +87,7 @@ jobs:
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_HDF5=ON
                             -DBOUT_USE_SUNDIALS=ON
+                            -DBOUT_ENABLE_PYTHON=OFF
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
 
@@ -161,12 +163,7 @@ jobs:
 
       - name: Build (CMake)
         if: ${{ contains(matrix.config.name, 'CMake') }}
-        run: |
-          cmake --version
-          cmake . -B build ${{ matrix.config.cmake_options }}
-          cmake --build build --target build-check -j 2
-          cd build
-          ctest --output-on-failure --timeout 300
+        run: ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
 
       - name: Capture coverage
         if: ${{ matrix.config.name == 'Coverage' }}

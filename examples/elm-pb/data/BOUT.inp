@@ -4,12 +4,11 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 40          # number of time-steps
-TIMESTEP = 1       # time between outputs
-archive = 20        # Archive restart files after this number of outputs
+nout = 40          # number of time-steps
+timestep = 1       # time between outputs
 wall_limit = 1.55  # wall time limit (in hours)
 
-ZPERIOD = 15        # Fraction of a torus to simulate
+zperiod = 15        # Fraction of a torus to simulate
 MZ = 16             # Number of points in Z
 
 grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
@@ -19,7 +18,7 @@ restart_format = "nc"   # Restart file format
 
 [mesh]
 
-StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
+staggergrids = false    # Use staggered grids (EXPERIMENTAL)
 
 [mesh:paralleltransform]
 
@@ -50,13 +49,7 @@ upwind = W3
 # Fastest setting depends on machine and MPI
 # implementation. Do not affect result.
 [output]
-ShiftOutput = true
-
-[comms]
-
-async = false           # Use asyncronous sends?
-pre_post = false        # Post receives as early as possible
-group_nonblock = false  # Use non-blocking group operations?
+shiftoutput = true
 
 ##################################################
 # Laplacian inversion routines
@@ -67,7 +60,7 @@ group_nonblock = false  # Use non-blocking group operations?
 
 [fft]
 
-fft_measure = true  # If using FFTW, perform tests to determine fastest method
+fft_measurement_flag = measure  # If using FFTW, perform tests to determine fastest method
 
 ##################################################
 # Solver settings
@@ -75,8 +68,8 @@ fft_measure = true  # If using FFTW, perform tests to determine fastest method
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-08 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-08 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
 use_jacobian = false  # Use user-supplied Jacobian
@@ -148,10 +141,6 @@ zonal_bkgd = true    # keep this zonal harmonic?
 
 ## Jpar smoothing
 smooth_j_x = true   # Filter Jpar in the X direction
-lowpass_j_z = 16   # Remove high-k modes. Specifies maximum harmonic to keep
-
-## mask in x boundaries
-mask_j_x = true
 
 ## Magnetic perturbations
 include_rmp = false # Read RMP data from grid file
@@ -239,7 +228,7 @@ outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # boundary conditions
@@ -273,8 +262,8 @@ bndry_xout = zerolaplace
 bndry_xin = zerolaplace
 bndry_xout = zerolaplace
 
-bndry_yin = free_o3
-bndry_yout = free_o3
+bndry_yup = free_o3
+bndry_ydown = free_o3
 
 [J]    # parallel current
 

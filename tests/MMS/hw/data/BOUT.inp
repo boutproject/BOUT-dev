@@ -2,11 +2,11 @@ timestep = 0.1
 nout = 10
 
 MZ = 33
-zmin = 0
-zmax = 8 # Overwritten in hw.cxx
+ZMIN = 0
+ZMAX = 8 # Overwritten in hw.cxx
 
-mxg = 1
-myg = 1
+MXG = 1
+MYG = 1
 
 xl = x * mesh:Lx # A "global" setting, so can be used anywhere
 zl = z * mesh:Lx
@@ -46,7 +46,7 @@ modified = false
 
 bracket = 2  # 0 = std, 1 = simple, 2 = arakawa
 
-[All]
+[all]
 scale = 1.0
 
 [n]

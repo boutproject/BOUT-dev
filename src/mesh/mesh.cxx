@@ -49,25 +49,35 @@ Mesh* Mesh::create(GridDataSource *s, Options *opt) {
 
 Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
 
-Mesh::Mesh(GridDataSource *s, Options* opt)
-  : source(s), options(opt == nullptr ? Options::getRoot()->getSection("mesh") : opt),
-    include_corner_cells((*options)["include_corner_cells"]
-                         .doc("Communicate corner guard and boundary cells. Can be set "
-                               "to false if you are sure that you will not need these "
-                               "cells, for mixed derivatives D2DXDY (or anything else), "
-                               "for example if your grid has orthogonal x- and "
-                               "y-directions.  This might slightly reduce communication "
-                               "time.")
-                         .withDefault(true)) {
-  if(s == nullptr)
+Mesh::Mesh(GridDataSource* s, Options* opt)
+    : source(s), options(opt == nullptr ? Options::getRoot()->getSection("mesh") : opt),
+      calcParallelSlices_on_communicate(
+          (*options)["calcParallelSlices_on_communicate"]
+              .doc("Calculate parallel slices on all communicated fields")
+              .withDefault(true)),
+      maxregionblocksize((*options)["maxregionblocksize"]
+                             .doc("(Advanced) Sets the maximum size of continguous "
+                                  "blocks when creating Regions")
+                             .withDefault(MAXREGIONBLOCKSIZE)),
+      StaggerGrids(
+          (*options)["staggergrids"]
+              .doc("Enable staggered grids. By default, all variables are cell centred")
+              .withDefault(false)),
+      include_corner_cells(
+          (*options)["include_corner_cells"]
+              .doc("Communicate corner guard and boundary cells. Can be set "
+                   "to false if you are sure that you will not need these "
+                   "cells, for mixed derivatives D2DXDY (or anything else), "
+                   "for example if your grid has orthogonal x- and "
+                   "y-directions. This might slightly reduce communication "
+                   "time.")
+              .withDefault(true)) {
+
+  if (s == nullptr) {
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
-  
-  /// Get mesh options
-  OPTION(options, StaggerGrids,   false); // Stagger grids
-  OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
-  OPTION(options, calcParallelSlices_on_communicate, true);
-  // Initialise derivatives
-  derivs_init(options);  // in index_derivs.cxx for now
+  }
+
+  derivs_init(options); // in index_derivs.cxx for now
 }
 
 Mesh::~Mesh() { delete source; }
@@ -363,9 +373,9 @@ int Mesh::msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int
   /// Loop over variables
   for(const auto& var : var_list) {
     if(var->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * LocalNz * var->BoutRealSize();
+      len += (xlt - xge) * (ylt - yge) * LocalNz * var->elementSize();
     } else {
-      len += (xlt - xge) * (ylt - yge) * var->BoutRealSize();
+      len += (xlt - xge) * (ylt - yge) * var->elementSize();
     }
   }
 

@@ -34,7 +34,7 @@
 #include <omp.h>
 #endif
 
-#if BOUT_MSGSTACK_LEVEL > 1
+#if BOUT_USE_MSGSTACK
 int MsgStack::push(std::string message) {
 
 #ifdef _OPENMP

@@ -290,7 +290,7 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
   }
 
   // Get the "all" options
-  varOpts = options->getSection("All");
+  varOpts = options->getSection("all");
 
   /// Then (all, region)
   if(varOpts->isSet(prefix+region->label)) {

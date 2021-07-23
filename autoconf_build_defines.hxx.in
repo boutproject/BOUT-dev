@@ -54,9 +54,6 @@
 /* Type of the metric fields */
 #undef BOUT_METRIC_TYPE
 
-/* Enable MsgStack for traces */
-#undef BOUT_MSGSTACK_LEVEL
-
 /* OpenMP schedule */
 #undef BOUT_OPENMP_SCHEDULE
 
@@ -68,6 +65,9 @@
 
 /* Is the metric field 3D */
 #undef BOUT_USE_METRIC_3D
+
+/* Enable MsgStack for traces */
+#undef BOUT_USE_MSGSTACK
 
 /* Enable OpenMP */
 #undef BOUT_USE_OPENMP

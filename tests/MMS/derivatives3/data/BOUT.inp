@@ -4,11 +4,11 @@ timestep = 0.1
 [mesh]
 staggergrids = true
 n = 1
-nx = n+2*mxg
+nx = n+2*MXG
 ny = 32
 nz = n
-mxg = 0
-myg = 2
+MXG = 0
+MYG = 2
 dy = 1/ny
 
 [solver]
@@ -39,7 +39,7 @@ MYG = 2
 
 [meshx]
 staggergrids = true
-nx = n+2*mxg
+nx = n+2*MXG
 ny = 1
 nz = 1
 n = 2

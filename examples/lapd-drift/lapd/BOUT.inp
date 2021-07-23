@@ -3,18 +3,18 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 400       # number of time-steps
-TIMESTEP = 2	 # time between outputs
+nout = 400       # number of time-steps
+timestep = 2	 # time between outputs
 
 MZ = 32     # number of points in z direction (2^n + 1)
-ZPERIOD = 5  # Number of periods
+zperiod = 5  # Number of periods
 
 non_uniform = true
 
 [mesh]
 # Simple mesh for linear device
 
-StaggerGrids = true  # Enable staggered grids
+staggergrids = true  # Enable staggered grids
 
 nx = 54        # Number of radial grid points, including guards
 ny = 32        # Number of parallel (Y) grid points
@@ -52,19 +52,19 @@ ixseps2 = 10000
 ##################################################
 # derivative methods
 
-[ddx]
+[mesh:ddx]
 
 first = C4    # C4 = 4th order central, C2 = 2nd order central
 second = C4
 upwind = W3   # U1 = 1st order upwind, W3 = 3rd order WENO
 
-[ddy]
+[mesh:ddy]
 
 first = C4
 second = C4
 upwind = W3
 
-[ddz]
+[mesh:ddz]
 
 first = C4
 second = C4
@@ -75,7 +75,7 @@ upwind = W3
 [laplace]
 
 all_terms = true
-laplace_nonuniform = true
+nonuniform = true
 inner_boundary_flags = 1 # INVERT_DC_GRAD
 outer_boundary_flags = 2 # INVERT_AC_GRAD
 
@@ -86,8 +86,8 @@ outer_boundary_flags = 2 # INVERT_AC_GRAD
 type = pvode
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 mxstep = 50000
 
 ##################################################
@@ -131,7 +131,7 @@ filter_z_mode = 1  # Keep this Z harmonic
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = mixmode(x)*mixmode(y)*mixmode(z)
 

@@ -5,38 +5,40 @@ flags=
 libs=
 lib_dirs=
 ldflags=
-for fl in $(bout-config --cflags)
-do
-    if test ".${fl:0:2}" == ".-I"
-    then
-        inc_dirs+=" ${fl:2}"
-    else
-        flags+=" $fl"
-    fi
-done
-for fl in $(bout-config --libs)
-do
-    s=${fl:0:2}
-    if test ".$s" == ".-L"
-    then
-        lib_dirs+=" ${fl:2}"
-    elif test ".$s" == ".-l"
-    then
-        libs+=" ${fl:2}"
-    else
-        ldflags+=" $fl"
-    fi
-done
+if ! test ".$1" = ".--cmake" ; then
+    for fl in $(bout-config --cflags)
+    do
+	if test ".${fl:0:2}" == ".-I"
+	then
+            inc_dirs+=" ${fl:2}"
+	else
+            flags+=" $fl"
+	fi
+    done
+    for fl in $(bout-config --libs)
+    do
+	s=${fl:0:2}
+	if test ".$s" == ".-L"
+	then
+            lib_dirs+=" ${fl:2}"
+	elif test ".$s" == ".-l"
+	then
+            libs+=" ${fl:2}"
+	else
+            ldflags+=" $fl"
+	fi
+    done
 
-# needed sometimes to add include dir
-# We need the header files for numpy, which are (hopefully) somewhere
-# in the python directories.
-python_dirs=$($PY -c "import site; print('\n'.join(site.getsitepackages()))")
-numpyheader=$(for d in $python_dirs
-              do
-                  find $d|grep numpy/arrayobject.h
-              done)
-inc_dirs="${numpyheader%/*/*} $inc_dirs"
+    # needed sometimes to add include dir
+    # We need the header files for numpy, which are (hopefully) somewhere
+    # in the python directories.
+    python_dirs=$($PY -c "import site; print('\n'.join(site.getsitepackages()))")
+    numpyheader=$(for d in $python_dirs
+		  do
+                      find $d|grep numpy/arrayobject.h
+		  done)
+    inc_dirs="${numpyheader%/*/*} $inc_dirs"
+fi
 
 # Main file
 cat <<EOF

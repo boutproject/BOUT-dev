@@ -15,7 +15,7 @@ $(TOGEN): Makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/bin/bout-config common.sh
 		|| (fail=$$?; echo "touch $@ to ignore failed generation" ; exit $$fail)
 	@mv $@.tmp $@
 
-boutcore.so: boutcore.pyx setup.py helper.cxx helper.h $(TOGEN)
+boutcore.so: $(TOGEN)
 	@$(PY) setup.py build_ext --inplace
 
 .PHONY: clean

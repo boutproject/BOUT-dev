@@ -32,12 +32,12 @@
 
 # settings used by the core code
 
-NOUT = 100          # number of time-steps
-TIMESTEP = 1.0     # time between outputs, normalised to 1/Omega_ci
+nout = 100          # number of time-steps
+timestep = 1.0     # time between outputs, normalised to 1/Omega_ci
 
-ZPERIOD = 1
+zperiod = 1
 
-TwistShift = true
+twistshift = true
 
 [mesh]
 
@@ -75,7 +75,7 @@ logB = -log(Rmaj + (x-0.5)*Lx)  # x here between 0 and 1
 # Shift in Z after a single toroidal turn
 ShiftAngle = 0.1 * 2.*pi
 
-zshift = ShiftAngle * z / (2*pi)
+zShift = ShiftAngle * z / (2*pi)
 
 ##################################################
 # derivative methods
@@ -103,8 +103,8 @@ upwind = W3
 
 [solver]
 
-ATOL = 1e-10  # absolute tolerance
-RTOL = 1e-05   # relative tolerance
+atol = 1e-10  # absolute tolerance
+rtol = 1e-05   # relative tolerance
 mxstep = 1000000  # Maximum internal steps per output
 
 
@@ -138,7 +138,7 @@ AA = 40    # Ion atomic mass
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 bndry_all = neumann # Zero-gradient on all boundaries

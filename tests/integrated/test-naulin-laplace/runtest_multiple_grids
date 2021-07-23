@@ -28,7 +28,7 @@ for nproc in [1, 2, 4]:
     for inputfile in ["BOUT_jy4.inp", "BOUT_jy63.inp", "BOUT_jy127.inp"]:
 
         # set nxpe on the command line as we only use solution from one point in y, so splitting in y-direction is redundant (and also doesn't help test the solver)
-        cmd = "./test_naulin_laplace -f " + inputfile + " nxpe=" + str(nproc)
+        cmd = "./test_naulin_laplace -f " + inputfile + " NXPE=" + str(nproc)
 
         shell("rm data/BOUT.dmp.*.nc")
 
