@@ -1687,7 +1687,7 @@ public:
 	Ind3D *ob_i = &(indices)[0];
 
 //TODO: fix this RAJA section, it's broken
-#if 0 //#ifdef BOUT_HAS_RAJA  // defined(GPU) 	
+#if 1 //#ifdef BOUT_HAS_RAJA  // defined(GPU) 	
 // Good and speedup
 //
 
