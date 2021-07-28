@@ -1,2 +1,2 @@
 breathe~=4.12
-future~=0.16
+sphinx==4.0.1
