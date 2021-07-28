@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BOUT++ 4.2.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-23 17:43+0100\n"
+"POT-Creation-Date: 2021-07-28 14:25+0200\n"
 "PO-Revision-Date: 2019-02-11 12:46+0900\n"
 "Last-Translator: Marta <mpee500@york.ac.uk>\n"
 "Language-Team: Spanish\n"
@@ -182,14 +182,14 @@ msgstr "\tParalelización en OpenMP activada, usando %d procesos (`threads`)\n"
 
 #. Mark the option as used
 #. Option not found
-#: ../src/sys/options.cxx:183 ../src/sys/options.cxx:238
-#: ../src/sys/options.cxx:280 ../src/sys/options.cxx:319
+#: ../src/sys/options.cxx:195 ../src/sys/options.cxx:250
+#: ../src/sys/options.cxx:292 ../src/sys/options.cxx:331
 #: ../include/options.hxx:406 ../include/options.hxx:438
-#: ../include/options.hxx:460 ../include/options.hxx:635
+#: ../include/options.hxx:460 ../include/options.hxx:658
 msgid "\tOption "
 msgstr "\tOpción "
 
-#: ../src/sys/options.cxx:309
+#: ../src/sys/options.cxx:321
 #, c-format
 msgid "\tOption '%s': Boolean expected. Got '%s'\n"
 msgstr "\tOpción '%s': valor Booleano esperado. Se obtuvo '%s'\n"
@@ -273,7 +273,7 @@ msgstr ""
 "  -v, --verbose\t\tAumentar verbosidad\n"
 "  -q, --quiet\t\tDisminuir verbosidad\n"
 
-#: ../src/solver/solver.cxx:491
+#: ../src/solver/solver.cxx:509
 #, c-format
 msgid ""
 "\n"
@@ -282,7 +282,7 @@ msgstr ""
 "\n"
 "Ejecución finalizada en  : %s\n"
 
-#: ../src/solver/solver.cxx:456
+#: ../src/solver/solver.cxx:474
 #, c-format
 msgid ""
 "\n"
@@ -315,7 +315,7 @@ msgstr ""
 "Para todos los possibles parámetros input, vea el manual de usuario y/o el "
 "modelo físico fuente (ej. %s.cxx)\n"
 
-#: ../include/options.hxx:638
+#: ../include/options.hxx:661
 msgid ") overwritten with:"
 msgstr ""
 
@@ -323,7 +323,7 @@ msgstr ""
 msgid "4 of 8"
 msgstr ""
 
-#: ../src/sys/options.cxx:464
+#: ../src/sys/options.cxx:476
 msgid "All options used\n"
 msgstr "Usando todas las opciones\n"
 
@@ -346,7 +346,7 @@ msgstr "Regiones frontera en este procesador: "
 msgid "Cannot split %d X points equally between %d processors\n"
 msgstr "No se pueden dividir %d X points entre %d procesadores por igual\n"
 
-#: ../src/bout++.cxx:691
+#: ../src/bout++.cxx:697
 msgid "Check if a file exists, and exit if it does."
 msgstr ""
 
@@ -411,7 +411,7 @@ msgstr ""
 "No se pudo ejecutar bout-log-color. Asegúrese de que se encuentre en su "
 "PATH\n"
 
-#: ../src/solver/solver.cxx:574
+#: ../src/solver/solver.cxx:669
 #, c-format
 msgid "Couldn't add Monitor: %g is not a multiple of %g!"
 msgstr "No se pudo añadir el Monitor: %g no és multiplo de %g!"
@@ -431,12 +431,12 @@ msgstr "No se pudo encontrar la región %s en regionMap2D"
 msgid "Couldn't find region %s in regionMapPerp"
 msgstr "No se pudo encontrar la región %s en regionMapPerp"
 
-#: ../src/sys/options.cxx:268
+#: ../src/sys/options.cxx:280
 #, c-format
 msgid "Couldn't get BoutReal from option %s = '%s'"
 msgstr "No se pudo recuperar BoutReal de la opción %s = '%s'"
 
-#: ../src/sys/options.cxx:216
+#: ../src/sys/options.cxx:228
 #, c-format
 msgid "Couldn't get integer from option %s = '%s'"
 msgstr "No se pudo recuperar el entero de la opción %s = '%s'"
@@ -451,7 +451,7 @@ msgstr "DataDir \"%s\" no existe o no es accessible\n"
 msgid "DataDir \"%s\" is not a directory\n"
 msgstr "DataDir \"%s\" no es un directorio\n"
 
-#: ../src/solver/solver.cxx:524
+#: ../src/solver/solver.cxx:587
 msgid "ERROR: Solver is already initialised\n"
 msgstr "ERROR: el Solver ya se encuentra inicializado\n"
 
@@ -469,7 +469,7 @@ msgstr "Error durante el paso de opciones"
 msgid "Error: nx must be greater than 2 times MXG (2 * %d)"
 msgstr "Error: nx debe ser mayor que 2 veces MXG (2 * %d)"
 
-#: ../src/solver/solver.cxx:449
+#: ../src/solver/solver.cxx:454
 msgid "Failed to initialise solver-> Aborting\n"
 msgstr "Fallo en inicializar el solver-> Abortando\n"
 
@@ -478,7 +478,7 @@ msgstr "Fallo en inicializar el solver-> Abortando\n"
 msgid "Finding value for NXPE (ideal = %f)\n"
 msgstr "Encontrando valor para NXPE (ideal = %f)\n"
 
-#: ../src/solver/solver.cxx:526
+#: ../src/solver/solver.cxx:589
 msgid "Initialising solver\n"
 msgstr "Initializando el solver\n"
 
@@ -513,15 +513,15 @@ msgstr "La malla `mesh` debe contener ny"
 msgid "Missing integer array %s\n"
 msgstr "Fala la matriz entera %s\n"
 
-#: ../src/solver/solver.cxx:678
+#: ../src/solver/solver.cxx:773
 msgid "Monitor signalled to quit"
 msgstr "Monitor indicó salir"
 
-#: ../src/solver/solver.cxx:685
+#: ../src/solver/solver.cxx:780
 msgid "Monitor signalled to quit\n"
 msgstr "Monitor indicó salir\n"
 
-#: ../src/bout++.cxx:695
+#: ../src/bout++.cxx:701
 msgid "Name of file whose existence triggers a stop"
 msgstr ""
 
@@ -542,29 +542,29 @@ msgstr ""
 "Número de procesadores (%d) no divisible para NPs en la dirección x (%d)\n"
 
 #. Less than 2 time-steps left
-#: ../src/bout++.cxx:739
+#: ../src/bout++.cxx:745
 #, fuzzy, c-format
 msgid "Only %e seconds (%.2f steps) left. Quitting\n"
 msgstr "Solo faltan %e segundos. Saliendo\n"
 
-#: ../src/sys/options.cxx:175 ../src/sys/options.cxx:195
-#: ../src/sys/options.cxx:250 ../src/sys/options.cxx:292
+#: ../src/sys/options.cxx:187 ../src/sys/options.cxx:207
+#: ../src/sys/options.cxx:262 ../src/sys/options.cxx:304
 #, c-format
 msgid "Option %s has no value"
 msgstr "Opción %s sin valor"
 
-#: ../src/sys/options.cxx:72
+#: ../src/sys/options.cxx:78
 #, c-format
 msgid "Option %s is not a section"
 msgstr "Opción %s no es una sección"
 
 #. Doesn't exist
-#: ../src/sys/options.cxx:83
+#: ../src/sys/options.cxx:95
 #, c-format
 msgid "Option %s:%s does not exist"
 msgstr "Opción %s:%s no existe"
 
-#: ../include/options.hxx:643
+#: ../include/options.hxx:666
 #, c-format
 msgid ""
 "Options: Setting a value from same source (%s) to new value '%s' - old value "
@@ -602,12 +602,12 @@ msgstr "Región Perp registrada %s"
 msgid "Revision: %s\n"
 msgstr "Revisión: %s\n"
 
-#: ../src/solver/solver.cxx:492
+#: ../src/solver/solver.cxx:510
 msgid "Run time : "
 msgstr "Tiempo de ejecución : "
 
 #. / Run the solver
-#: ../src/solver/solver.cxx:453
+#: ../src/solver/solver.cxx:467
 msgid ""
 "Running simulation\n"
 "\n"
@@ -619,7 +619,7 @@ msgstr ""
 msgid "Signal"
 msgstr ""
 
-#: ../src/bout++.cxx:709
+#: ../src/bout++.cxx:715
 msgid ""
 "Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n"
 "\n"
@@ -628,7 +628,7 @@ msgstr ""
 "SOLVER\n"
 "\n"
 
-#: ../src/bout++.cxx:712
+#: ../src/bout++.cxx:718
 msgid ""
 "Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   "
 "Comm    I/O   SOLVER\n"
@@ -638,19 +638,19 @@ msgstr ""
 "Com    I/O   SOLVER\n"
 "\n"
 
-#: ../src/solver/solver.cxx:444
+#: ../src/solver/solver.cxx:449
 #, c-format
 msgid "Solver running for %d outputs with monitor timestep of %e\n"
 msgstr ""
 "Solver corriendo para %d outputs con intervalos de tiempo de monitor de %e\n"
 
-#: ../src/solver/solver.cxx:440
+#: ../src/solver/solver.cxx:445
 #, c-format
 msgid "Solver running for %d outputs with output timestep of %e\n"
 msgstr ""
 "Solver corriendo para %d outputs con intervalos de tiempo de output de %e\n"
 
-#: ../src/solver/solver.cxx:589
+#: ../src/solver/solver.cxx:684
 #, c-format
 msgid ""
 "Solver::addMonitor: Cannot reduce timestep (from %g to %g) after init is "
@@ -659,7 +659,7 @@ msgstr ""
 "Solver::addMonitor: No se puedo reducir el intervalo de tiempo (de %g a %g) "
 "después de que init fuera llamado!"
 
-#: ../src/solver/solver.cxx:1037
+#: ../src/solver/solver.cxx:1132
 #, c-format
 msgid ""
 "Time derivative at wrong location - Field is at %s, derivative is at %s for "
@@ -668,7 +668,7 @@ msgstr ""
 "Derivada del tiempo en lugar erróneo - El field se encuentra en  %s, la "
 "derivada se encuentra en %s para el field '%s'\n"
 
-#: ../src/solver/solver.cxx:1259
+#: ../src/solver/solver.cxx:1354
 #, c-format
 msgid "Time derivative for variable '%s' not set"
 msgstr "Derivada del tiempo para la variable '%s' no fijada"
@@ -696,7 +696,7 @@ msgstr ""
 "Opción paralleltransform desconocida.\n"
 "Opciones válidas son 'identity', 'shifted', 'fci'"
 
-#: ../src/sys/options.cxx:466
+#: ../src/sys/options.cxx:478
 msgid "Unused options:\n"
 msgstr "Opciones sin usar:\n"
 
@@ -736,43 +736,43 @@ msgstr ""
 "[VAR=VALUE]\n"
 
 #. restart file should be written by physics model
-#: ../src/solver/solver.cxx:700
+#: ../src/solver/solver.cxx:795
 #, fuzzy
 msgid "User signalled to quit. Returning\n"
 msgstr "Monitor indicó salir\n"
 
-#: ../src/sys/options.cxx:231
+#: ../src/sys/options.cxx:243
 #, c-format
 msgid "Value for option %s = %e is not an integer"
 msgstr "Valor para la opción %s = %e no es un entero"
 
-#: ../src/sys/options.cxx:273
+#: ../src/sys/options.cxx:285
 #, fuzzy, c-format
 msgid "Value for option %s cannot be converted to a BoutReal"
 msgstr "Valor para la opción %s = %e no es un entero"
 
-#: ../src/sys/options.cxx:440
+#: ../src/sys/options.cxx:452
 #, fuzzy, c-format
 msgid "Value for option %s cannot be converted to a Field2D"
 msgstr "Valor para la opción %s = %e no es un entero"
 
-#: ../src/sys/options.cxx:390
+#: ../src/sys/options.cxx:402
 #, fuzzy, c-format
 msgid "Value for option %s cannot be converted to a Field3D"
 msgstr "Valor para la opción %s = %e no es un entero"
 
-#: ../src/sys/options.cxx:313
+#: ../src/sys/options.cxx:325
 #, fuzzy, c-format
 msgid "Value for option %s cannot be converted to a bool"
 msgstr "Valor para la opción %s = %e no es un entero"
 
 #. Another type which can't be converted
-#: ../src/sys/options.cxx:222
+#: ../src/sys/options.cxx:234
 #, fuzzy, c-format
 msgid "Value for option %s is not an integer"
 msgstr "Valor para la opción %s = %e no es un entero"
 
-#: ../src/solver/solver.cxx:996 ../src/solver/solver.cxx:1000
+#: ../src/solver/solver.cxx:1091 ../src/solver/solver.cxx:1095
 #, c-format
 msgid "Variable '%s' not initialised"
 msgstr "Variable '%s' sin inicializar"
@@ -806,7 +806,7 @@ msgid ""
 "option extrapolate_y=false to disable this.\n"
 msgstr ""
 
-#: ../src/bout++.cxx:686
+#: ../src/bout++.cxx:692
 msgid "Wall time limit in hours. By default (< 0), no limit"
 msgstr ""
 
