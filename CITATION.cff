@@ -154,7 +154,7 @@ authors:
 
   - family-names: Wang
     given-names: Zhanhui
-version: 4.3.2
+version: 4.3.3
 date-released: 2020-10-19
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
