@@ -17,6 +17,48 @@
 
   See [\#2154](https://github.com/boutproject/BOUT-dev/pull/2154).
 
+## [v4.4.0](https://github.com/boutproject/BOUT-dev/tree/v4.4.0) (2021-07-30)
+
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.3...v4.4.4)
+
+**Merged pull requests:**
+
+- Add new contributors [\#2386](https://github.com/boutproject/BOUT-dev/pulls/2386) ([dschwoerer](https://github.com/users/dschwoerer))
+- Update locale [\#2385](https://github.com/boutproject/BOUT-dev/pulls/2385) ([dschwoerer](https://github.com/users/dschwoerer))
+- Fix RTD [\#2384](https://github.com/boutproject/BOUT-dev/pulls/2384) ([dschwoerer](https://github.com/users/dschwoerer))
+- Rename `max_nonlinear_it` to `max_nonlinear_iterations` [\#2339](https://github.com/boutproject/BOUT-dev/pulls/2339) ([johnomotani](https://github.com/users/johnomotani))
+- CVODE constraints and max_noinlinear_iterations options (4.4) [\#2304](https://github.com/boutproject/BOUT-dev/pulls/2304) ([johnomotani](https://github.com/users/johnomotani))
+- Fix some Solvers not always using user preconditioner/Jacobian (v4.4) [\#2284](https://github.com/boutproject/BOUT-dev/pulls/2284) ([ZedThree](https://github.com/users/ZedThree))
+- Fix formatting strings for pre-fmt in beuler solver [\#2278](https://github.com/boutproject/BOUT-dev/pulls/2278) ([bendudson](https://github.com/users/bendudson))
+- Backport of Backward Euler solver to v4.4 [\#2265](https://github.com/boutproject/BOUT-dev/pulls/2265) ([bendudson](https://github.com/users/bendudson))
+- Fix use of uninitialised value in Delp2 (4.4) [\#2263](https://github.com/boutproject/BOUT-dev/pulls/2263) ([johnomotani](https://github.com/users/johnomotani))
+- Save provenance tracking info from grid file (4.4) [\#2231](https://github.com/boutproject/BOUT-dev/pulls/2231) ([johnomotani](https://github.com/users/johnomotani))
+- Generate random run ID, track restarts (4.4) [\#2224](https://github.com/boutproject/BOUT-dev/pulls/2224) ([johnomotani](https://github.com/users/johnomotani))
+- Generate report for Timers (4.4) [\#2216](https://github.com/boutproject/BOUT-dev/pulls/2216) ([johnomotani](https://github.com/users/johnomotani))
+- Replace boutdata and boututils directories with submodules (v4.4) [\#2198](https://github.com/boutproject/BOUT-dev/pulls/2198) ([johnomotani](https://github.com/users/johnomotani))
+- Use bout_type="string" for strings in H5Format (4.4) [\#2194](https://github.com/boutproject/BOUT-dev/pulls/2194) ([johnomotani](https://github.com/users/johnomotani))
+- Write descriptions for std::vector<int> and std::string variables [\#2191](https://github.com/boutproject/BOUT-dev/pulls/2191) ([johnomotani](https://github.com/users/johnomotani))
+- Fix reading of char* in Ncxx4 (4.4) [\#2189](https://github.com/boutproject/BOUT-dev/pulls/2189) ([johnomotani](https://github.com/users/johnomotani))
+- Merge master into v4.4.0-alpha [\#2174](https://github.com/boutproject/BOUT-dev/pulls/2174) ([ZedThree](https://github.com/users/ZedThree))
+- I/O for std::vector<int> and std::string (4.4) [\#2155](https://github.com/boutproject/BOUT-dev/pulls/2155) ([johnomotani](https://github.com/users/johnomotani))
+- Check DataFile grid sizes match those in existing mesh (v4.4) [\#2148](https://github.com/boutproject/BOUT-dev/pulls/2148) ([johnomotani](https://github.com/users/johnomotani))
+- Call checkData() before returning result in Laplace inversions (v4.4) [\#2134](https://github.com/boutproject/BOUT-dev/pulls/2134) ([johnomotani](https://github.com/users/johnomotani))
+- Allow setting FFTW_EXHAUSTIVE (v4.4) [\#2132](https://github.com/boutproject/BOUT-dev/pulls/2132) ([johnomotani](https://github.com/users/johnomotani))
+- Make example relocatable [\#2127](https://github.com/boutproject/BOUT-dev/pulls/2127) ([dschwoerer](https://github.com/users/dschwoerer))
+- Merge master into v4.4.0-alpha [\#2121](https://github.com/boutproject/BOUT-dev/pulls/2121) ([ZedThree](https://github.com/users/ZedThree))
+- Handle FieldPerps in Datafile::varAdded() and Datafile::varPtr() (v4.4.0) [\#2094](https://github.com/boutproject/BOUT-dev/pulls/2094) ([johnomotani](https://github.com/users/johnomotani))
+- Staggered grids in InvertPar (v4.4.0) [\#2088](https://github.com/boutproject/BOUT-dev/pulls/2088) ([johnomotani](https://github.com/users/johnomotani))
+- Allow descriptions of output variables; save some diagnostics for solvers (v4.4) [\#2086](https://github.com/boutproject/BOUT-dev/pulls/2086) ([johnomotani](https://github.com/users/johnomotani))
+- Correct Grad2_par2 implementation in InvertParCR (v4.4.0) [\#2077](https://github.com/boutproject/BOUT-dev/pulls/2077) ([johnomotani](https://github.com/users/johnomotani))
+- Enable staggered versions of SplitFluxDerivativeType (4.4) [\#2059](https://github.com/boutproject/BOUT-dev/pulls/2059) ([johnomotani](https://github.com/users/johnomotani))
+- Merge master into v4.4.0-alpha [\#1998](https://github.com/boutproject/BOUT-dev/pulls/1998) ([ZedThree](https://github.com/users/ZedThree))
+- LaplaceXY: finite difference option (v4.4) [\#1924](https://github.com/boutproject/BOUT-dev/pulls/1924) ([johnomotani](https://github.com/users/johnomotani))
+- Backport of Laplace performance test [\#1910](https://github.com/boutproject/BOUT-dev/pulls/1910) ([JosephThomasParker](https://github.com/users/JosephThomasParker))
+- Macro for creating enum classes (v4.4) [\#1895](https://github.com/boutproject/BOUT-dev/pulls/1895) ([johnomotani](https://github.com/users/johnomotani))
+- Implement toFieldAligned and fromFieldAligned for Vector3D (v4.4) [\#1878](https://github.com/boutproject/BOUT-dev/pulls/1878) ([johnomotani](https://github.com/users/johnomotani))
+- Remove 3-element list indexers for collect() [\#1862](https://github.com/boutproject/BOUT-dev/pulls/1862) ([johnomotani](https://github.com/users/johnomotani))
+- Allow user to override library option defaults (v4.4) [\#1849](https://github.com/boutproject/BOUT-dev/pulls/1849) ([johnomotani](https://github.com/users/johnomotani))
+
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)
 
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.1...v4.3.2)
