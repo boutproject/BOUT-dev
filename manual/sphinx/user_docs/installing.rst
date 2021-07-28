@@ -185,7 +185,7 @@ On Ubuntu 16.04::
 
 On Ubuntu 18.04::
 
-    $ sudo apt-get install mpich libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev git g++ make
+    $ sudo apt-get install mpich libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-c++4-dev git g++ make
     $ sudo apt-get install python3 python3-distutils python3-pip python3-numpy python3-netcdf4 python3-scipy
     $ pip3 install --user Cython
 

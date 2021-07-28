@@ -100,5 +100,5 @@ add_custom_target(boutcore ALL
   DEPENDS boutcore_
   COMMENT "Building python interface"
   )
-target_link_libraries(boutcore_ bout++ ${Python_LIBRARIES})
+target_link_libraries(boutcore_ bout++)
 target_include_directories(boutcore_ PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> ${Numpy_INCLUDE_DIRS} ${Python_INCLUDE_DIRS})
