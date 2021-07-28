@@ -73,7 +73,7 @@ auto start = std::chrono::steady_clock::now();
 
 auto end = std::chrono::steady_clock::now();
 auto  time_taken = std::chrono::duration_cast<std::chrono::nanoseconds     >(end-     start);
-std::cout << "The solver alculation time  is "<< time_taken.count()<<" nano seconds.\n";
+std::cout << "The solver calculation time  is "<< time_taken.count()<<" nano seconds.\n";
 
 
 start = std::chrono::steady_clock::now();

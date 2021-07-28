@@ -208,6 +208,117 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
 
 }
 
+// using cuFFT for DST,  Discrete sine transforms, real to complex
+void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
+	
+	cufftReal *hostInputData = (cufftReal*)malloc(length*sizeof(cufftReal));
+	// copy data from input data to host
+	for (int j=0; j<length; j++) hostInputData[j] = in[j];
+
+	hostInputData[0] =0.;
+	hostInputData[length -1] = 0.;
+
+	for (int j = 1; j < length-1; j++){
+      	    hostInputData[j] = in[j];
+     	    hostInputData[2*(length-1)-j] = - in[j];
+ 	 }
+
+
+	// --- Device side input data allocation and initialization
+	cufftReal *deviceInputData; 
+	gpuErrchk(cudaMalloc((void**)&deviceInputData, length * sizeof(cufftReal)));
+	cudaMemcpy(deviceInputData, hostInputData, length * sizeof(cufftReal), cudaMemcpyHostToDevice);
+
+	//--- Host side output data allocation
+ 	cufftComplex *hostOutputData = (cufftComplex*)malloc((length / 2 + 1) * BATCH * sizeof(cufftComplex));
+
+	//--- Device side output data allocation
+ 	cufftComplex *deviceOutputData;
+ 	gpuErrchk(cudaMalloc((void**)&deviceOutputData, (length / 2 + 1) * sizeof(cufftComplex)));
+
+	cufftResult cufftStatus;
+	cufftHandle handle;
+	// cufft 1d, real to complex, r2c
+	cufftStatus = cufftPlan1d(&handle, length, CUFFT_R2C, BATCH);
+	if (cufftStatus != cudaSuccess) { printf("cufftPlan1d failed!"); }       
+
+	cufftStatus = cufftExecR2C(handle,  deviceInputData, deviceOutputData);
+	if (cufftStatus != cudaSuccess) { printf("cufftExecR2C failed!"); }  
+	gpuErrchk(cudaMemcpy(hostOutputData, deviceOutputData, (length / 2 + 1) * sizeof(cufftComplex), cudaMemcpyDeviceToHost));
+
+ 	out[0]=0.0;
+  	out[length-1]=0.0;
+
+  	for(int i=1;i<length-1;i++)
+    		out[i] = -hostOutputData[i].y / (length- 1.0); 
+	
+	cufftDestroy(handle);
+	gpuErrchk(cudaFree(deviceOutputData));
+	gpuErrchk(cudaFree(deviceInputData));
+
+
+}
+
+
+// using cuFFT for DST reverse, Reverse Discrete sine transforms, complex to real
+//
+void DST_rev(MAYBE_UNUSED(dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
+
+	cufftComplex *hostInputData = (cufftComplex*)malloc(length*sizeof(cufftComplex));
+	// copy data from input data to host
+	for (int j=0; j<length; j++){
+		 hostInputData[j].x = in[j].real();
+		 hostInputData[j].y = in[j].imag();
+		}
+
+
+	 hostInputData[0].x = 0.; hostInputData[0].y = 0.;
+  	 hostInputData[length-1].x = 0.; hostInputData[length-1].y = 0.;
+
+	  for (int j = 1; j < length-1; j++){
+	    hostInputData[j].x = 0.; hostInputData[j].y = -in[j].real()/2.;
+	    hostInputData[2*(length-1)-j].x = 0.; hostInputData[2*(length-1)-j].y =  in[j].real()/2.;
+	  }
+
+
+	// --- Device side input data allocation and initialization
+	cufftComplex *deviceInputData; 
+	gpuErrchk(cudaMalloc((void**)&deviceInputData, length * sizeof(cufftComplex)));
+	cudaMemcpy(deviceInputData, hostInputData, length * sizeof(cufftComplex), cudaMemcpyHostToDevice);
+
+	//--- Host side output data allocation
+	 cufftReal *hostOutputData = (cufftReal*)malloc((length) * BATCH * sizeof(cufftReal));
+
+	//--- Device side output data allocation
+	 cufftReal *deviceOutputData;
+	 gpuErrchk(cudaMalloc((void**)&deviceOutputData, length * sizeof(cufftReal)));
+
+	cufftResult cufftStatus;
+	cufftHandle handle;
+	// cufft id,  complex to real, c2r
+	cufftStatus = cufftPlan1d(&handle, length, CUFFT_C2R, BATCH);
+	if (cufftStatus != cudaSuccess) { printf("cufftPlan1d failed!"); }       
+
+	cufftStatus = cufftExecC2R(handle,  deviceInputData, deviceOutputData);
+	if (cufftStatus != cudaSuccess) { printf("cufftExecC2R failed!"); }  
+	gpuErrchk(cudaMemcpy(hostOutputData, deviceOutputData, (length ) * sizeof(cufftReal), cudaMemcpyDeviceToHost));
+
+	 
+	out[0]=0.0;
+  	out[length-1]=0.0;
+	// Store the cufft output of to the out
+	  for(int j=1;j<length-1;j++)
+	    out[j] = hostOutputData[j];
+
+	cufftDestroy(handle);
+	gpuErrchk(cudaFree(deviceOutputData));
+	gpuErrchk(cudaFree(deviceInputData));
+
+
+}
+
+
+
 /// Have we set fft_measure?
 bool fft_initialised{false};
 /// Should FFTW find an optimised plan by measuring various plans?
@@ -520,7 +631,7 @@ void b_irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_U
 #endif
 //  Discrete sine transforms (B Shanahan)
 
-void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
+void b_DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -578,7 +689,7 @@ void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSE
 #endif
 }
 
-void DST_rev(MAYBE_UNUSED(dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
+void b_DST_rev(MAYBE_UNUSED(dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -638,7 +749,7 @@ void DST_rev(MAYBE_UNUSED(dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(
 #endif
 }
 
-Array<dcomplex> rfft(const Array<BoutReal>& in) {
+Array<dcomplex> b_rfft(const Array<BoutReal>& in) {
   ASSERT1(!in.empty());
 
   int size{in.size()};
@@ -648,7 +759,7 @@ Array<dcomplex> rfft(const Array<BoutReal>& in) {
   return out;
 }
 
-Array<BoutReal> irfft(const Array<dcomplex>& in, int length) {
+Array<BoutReal> b_irfft(const Array<dcomplex>& in, int length) {
   ASSERT1(!in.empty());
   ASSERT1(in.size() == (length / 2) + 1);
 
