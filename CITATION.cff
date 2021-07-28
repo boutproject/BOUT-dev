@@ -164,7 +164,7 @@ authors:
   - family-names: James
     given-names: Toby
 
-version: 4.3.2
+version: 4.4.0
 date-released: 2020-10-19
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/

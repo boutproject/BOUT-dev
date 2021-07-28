@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.4.0-alpha],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[4.4.0],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
