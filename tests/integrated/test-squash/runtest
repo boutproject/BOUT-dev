@@ -5,6 +5,7 @@ import itertools
 import time
 import numpy as np
 from boututils.run_wrapper import launch_safe, shell_safe
+import re
 
 # requires: all_tests
 # requires: netcdf
