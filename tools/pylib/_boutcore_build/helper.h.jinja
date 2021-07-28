@@ -1,53 +1,38 @@
-. common.sh
-
-cat <<EOF
 #include <field3d.hxx>
 #include <bout_types.hxx>
 
-EOF
-for ftype in $fields
-do
-  setvars $ftype
-  cat <<EOF
-void c_get_${fdd}_all(const $ftype * f, double * data);
-void c_set_${fdd}_all($ftype * f, const double * data);
-void c_set_${fdd}_all_($ftype * f, double data);
-void c_set_${fdd}_from_${fdd}($ftype * lhs,const $ftype * rhs){
+{% for field in [field3d, field2d] %}
+void c_get_{{ field.fdd }}_all(const {{ field.field_type }} * f, double * data);
+void c_set_{{ field.fdd }}_all({{ field.field_type }} * f, const double * data);
+void c_set_{{ field.fdd }}_all_({{ field.field_type }} * f, double data);
+void c_set_{{ field.fdd }}_from_{{ field.fdd }}({{ field.field_type }} * lhs,const {{ field.field_type }} * rhs){
   *lhs=*rhs;
 }
-EOF
-for f in "add:+" "mul:*" "truediv:/" "div:/" "sub:-"
-do
-    n=${f%:*}
-    echo "$ftype * f$n( $ftype*,$ftype*);"
-    echo "$ftype * f$n( $ftype*,double);"
-    echo "$ftype * f$n( double,$ftype*);"
-    echo "void fi$n( $ftype*,$ftype*);"
-    echo "void fi$n( $ftype*,double);"
-    if [ $ftype = "Field3D" ]; then
-      echo "Field3D * f$n( Field3D*,Field2D*);"
-      echo "Field3D * f$n( Field2D*,Field3D*);"
-      echo "void fi$n( Field3D*,Field2D*);"
-    fi
-done
-    echo "$ftype c_minus($ftype a){return -a;};"
-done
-for vec in $vecs
-do
-    setvars $vec
-    cat <<EOF
-$field c_mul_${vec}_${vec}(const $vec * a, const $vec * b){ return (*a) * (*b) ;};
-EOF
-done
-cat <<EOF
+
+{% for name, op in ops %}
+{{ field.field_type }} * f{{ name }}( {{ field.field_type }}*,{{ field.field_type }}*);
+{{ field.field_type }} * f{{ name }}( {{ field.field_type }}*,double);
+{{ field.field_type }} * f{{ name }}( double,{{ field.field_type }}*);
+void fi{{ name }}( {{ field.field_type }}*,{{ field.field_type }}*);
+void fi{{ name }}( {{ field.field_type }}*,double);
+{% if field.field_type == "Field3D" %}
+Field3D * f{{ name }}( Field3D*,Field2D*);
+Field3D * f{{ name }}( Field2D*,Field3D*);
+void fi{{ name }}( Field3D*,Field2D*);
+{% endif %}
+{% endfor %}
+{{ field.field_type }} c_minus({{ field.field_type }} a){return -a;};
+{% endfor %}
+{% for vec in vecs %}
+{{ vec.field }} c_mul_{{ vec }}_{{ vec }}(const {{ vec }} * a, const {{ vec }} * b){ return (*a) * (*b) ;};
+{% endfor %}
+
 void c_get_f3d_part(const Field3D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
 void c_set_f3d_part(Field3D * f, const double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
 void c_set_f3d_part_(Field3D * f, const double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
 void c_get_f2d_part(const Field2D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy);
 void c_set_f2d_part(Field2D * f, const double * data,int xs,int xe, int dx,int ys,int ye, int dy);
 void c_set_f2d_part_(Field2D * f, const double data,int xs,int xe, int dx,int ys,int ye, int dy);
-EOF
-cat <<EOF
 
 Mesh * c_get_global_mesh();
 
@@ -126,4 +111,3 @@ Datafile * c_get_global_datafile(){
   return &bout::globals::dump;
 }
 
-EOF
