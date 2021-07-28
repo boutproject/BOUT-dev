@@ -84,7 +84,7 @@ start = std::chrono::steady_clock::now();
     auto phi_acc = FieldAccessor<>(phi);
     auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n); 
 
-#if 1 //def BOUT_HAS_RAJA
+#if 0 //def BOUT_HAS_RAJA
 //  RAJA code ----------- start
     auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
     Ind3D *ob_i = &(indices)[0];

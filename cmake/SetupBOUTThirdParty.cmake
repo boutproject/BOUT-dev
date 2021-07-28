@@ -38,6 +38,7 @@ if (BOUT_USE_CUDA)
    set_target_properties(bout++ PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
    set_target_properties(bout++ PROPERTIES POSITION_INDEPENDENT_CODE ON)
    set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CUDA)
+   target_link_libraries(bout++ PUBLIC  cufft)
    #target_compile_definitions(bout++ PUBLIC "BOUT_USE_CUDA") 
 endif ()   
 

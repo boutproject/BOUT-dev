@@ -22,7 +22,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * Update by Yining Qin in July 26, 2021 (2021 Nersc Hackathon) to support  cuFFT
  **************************************************************************/
 
 #include "bout/build_config.hxx"
@@ -37,9 +37,9 @@
 #include <bout/openmpwrap.hxx>
 
 // test cuFFTW
-#include <cufftw.h>
-//#include <fftw3.h>
+//#include <cufftw.h>
 
+#include <fftw3.h>
 
 #include <cmath>
 
@@ -50,8 +50,163 @@
 #include <boutexception.hxx>
 #endif
 
+//---cuFFT define start----
+#include "device_launch_parameters.h"
+#include <cufft.h>
+
+#define NX 3335 // Number of valid data
+#define N 5335 // Length of data after padding 0
+#define BATCH 1
+#define BLOCK_SIZE 1024
+
+using std::cout;
+using std::endl;
+
+//---cuFFT define end----
+
+
 namespace bout {
 namespace fft {
+
+/*
+ * Function: Determine if two cufftComplex arrays are equal
+ * Input: idA input head of A pointer A
+ * Input: idB output head of B pointer
+ * Input: the number of elements in the size array
+ * return: true or false
+ */
+
+bool cufftComplexIsEqual(cufftComplex *idA, cufftComplex *idB, const int size)
+{
+    for (int i = 0; i < size; i++)
+    {
+       if (abs(idA[i].x - idB[i].x) > 0.000001 || abs(idA[i].y - idB[i].y) > 0.000001)
+           return false;
+    }
+    return true;
+}
+
+/* Function: Implements scaling of the cufftComplex array, which is multiplied by a number
+ * Input: the head pointer of the idata input array
+ * Output: head pointer of the odata output array
+ * Input: the number of elements in the size array
+ * Input: scale scale
+ */
+static __global__ void cufftComplexScale(cufftComplex *ida, cufftComplex *oda, const int size, float scale)
+{
+    const int threadID = blockIdx.x * blockDim.x + threadIdx.x;
+ 
+    if (threadID < size)
+    {
+        oda[threadID].x = ida[threadID].x * scale;
+        oda[threadID].y = ida[threadID].y * scale;
+    }
+}
+
+#define BATCH 1
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool  abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+        fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);            
+        if (abort) exit(code);
+   }
+}
+
+
+// using cuFFT for rfft, real to complex 
+
+void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
+
+	cufftReal *hostInputData = (cufftReal*)malloc(length*sizeof(cufftReal));
+	// copy data from input data to host
+	for (int j=0; j<length; j++) hostInputData[j] = in[j];
+
+	// --- Device side input data allocation and initialization
+	cufftReal *deviceInputData; 
+	gpuErrchk(cudaMalloc((void**)&deviceInputData, length * sizeof(cufftReal)));
+	cudaMemcpy(deviceInputData, hostInputData, length * sizeof(cufftReal), cudaMemcpyHostToDevice);
+
+	//--- Host side output data allocation
+ 	cufftComplex *hostOutputData = (cufftComplex*)malloc((length / 2 + 1) * BATCH * sizeof(cufftComplex));
+
+	//--- Device side output data allocation
+ 	cufftComplex *deviceOutputData;
+ 	gpuErrchk(cudaMalloc((void**)&deviceOutputData, (length / 2 + 1) * sizeof(cufftComplex)));
+
+	cufftResult cufftStatus;
+	cufftHandle handle;
+	// cufft 1d, real to complex, r2c
+	cufftStatus = cufftPlan1d(&handle, length, CUFFT_R2C, BATCH);
+	if (cufftStatus != cudaSuccess) { printf("cufftPlan1d failed!"); }       
+
+	cufftStatus = cufftExecR2C(handle,  deviceInputData, deviceOutputData);
+	if (cufftStatus != cudaSuccess) { printf("cufftExecR2C failed!"); }  
+	gpuErrchk(cudaMemcpy(hostOutputData, deviceOutputData, (length / 2 + 1) * sizeof(cufftComplex), cudaMemcpyDeviceToHost));
+
+  
+  	//Normalising factor - this part is from original rfft code;
+  	const BoutReal fac = 1.0 / length;
+  	const int nmodes = (length/2) + 1;
+
+  	// Store the output in out, and normalize
+  	for(int j = 0; j < nmodes; j++){
+    		out[j] = dcomplex( hostOutputData[j].x, hostOutputData[j].y)*fac ; // ? Normalise
+	}
+	
+	cufftDestroy(handle);
+	gpuErrchk(cudaFree(deviceOutputData));
+	gpuErrchk(cudaFree(deviceInputData));
+
+}
+
+
+// using cuFFT for irfft, complex to real
+//
+void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
+
+	cufftComplex *hostInputData = (cufftComplex*)malloc(length*sizeof(cufftComplex));
+	// copy data from input data to host
+	for (int j=0; j<length; j++){
+		 hostInputData[j].x = in[j].real();
+		 hostInputData[j].y = in[j].imag();
+		}
+
+	// --- Device side input data allocation and initialization
+	cufftComplex *deviceInputData; 
+	gpuErrchk(cudaMalloc((void**)&deviceInputData, length * sizeof(cufftComplex)));
+	cudaMemcpy(deviceInputData, hostInputData, length * sizeof(cufftComplex), cudaMemcpyHostToDevice);
+
+	//--- Host side output data allocation
+	 cufftReal *hostOutputData = (cufftReal*)malloc((length) * BATCH * sizeof(cufftReal));
+
+	//--- Device side output data allocation
+	 cufftReal *deviceOutputData;
+	 gpuErrchk(cudaMalloc((void**)&deviceOutputData, length * sizeof(cufftReal)));
+
+	cufftResult cufftStatus;
+	cufftHandle handle;
+	// cufft id,  complex to real, c2r
+	cufftStatus = cufftPlan1d(&handle, length, CUFFT_C2R, BATCH);
+	if (cufftStatus != cudaSuccess) { printf("cufftPlan1d failed!"); }       
+
+	cufftStatus = cufftExecC2R(handle,  deviceInputData, deviceOutputData);
+	if (cufftStatus != cudaSuccess) { printf("cufftExecC2R failed!"); }  
+	gpuErrchk(cudaMemcpy(hostOutputData, deviceOutputData, (length ) * sizeof(cufftReal), cudaMemcpyDeviceToHost));
+
+	 
+	// Store the cufft output of to the out
+	  for(int j=0;j<length;j++)
+	    out[j] = hostOutputData[j];
+
+
+	cufftDestroy(handle);
+	gpuErrchk(cudaFree(deviceOutputData));
+	gpuErrchk(cudaFree(deviceInputData));
+
+
+}
 
 /// Have we set fft_measure?
 bool fft_initialised{false};
@@ -81,17 +236,20 @@ void fft_init(bool fft_measure) {
 
 #if ! BOUT_USE_OPENMP
 // Serial code
-void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
+void b_rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
+
 #else
+
   // static variables initialized once
   static double *fin;
   static fftw_complex *fout;
   static fftw_plan p;
   static int n = 0;
 
-  // If the current length mismatches n
+ 
+// If the current length mismatches n
   if(length != n) {
     // If n has been used before
     if(n > 0) {
@@ -141,10 +299,12 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
   // Store the output in out, and normalize
   for(int i=0;i<nmodes;i++)
     out[i] = dcomplex(fout[i][0], fout[i][1]) * fac; // Normalise
+ 
+
 #endif
 }
 
-void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
+void b_irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -207,7 +367,7 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
 }
 #else
 // Parallel thread-safe version of rfft and irfft
-void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
+void b_rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -218,7 +378,8 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
   static fftw_plan *p;
   static int size = 0, nthreads = 0;
 
-  int th_id = omp_get_thread_num();
+ 
+ int th_id = omp_get_thread_num();
   int n_th = omp_get_num_threads(); // Number of threads
 
   // Sort out memory. Also, FFTW planning routines not thread safe
@@ -284,7 +445,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
 #endif
 }
 
-void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
+void b_irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -425,6 +586,8 @@ void DST_rev(MAYBE_UNUSED(dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(
   static double *fout;
   static fftw_plan p;
   static int n = 0;
+
+ printf("call DST_rev\n");
 
   ASSERT1(length > 0);
 
