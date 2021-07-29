@@ -80,6 +80,7 @@ The following were backported from v5.0.0 in [\#2389](https://github.com/boutpro
 - CMake: Add option to download SUNDIALS at configure time [\#2331](https://github.com/boutproject/BOUT-dev/pull/2331) ([ZedThree](https://github.com/users/ZedThree))
 - CMake rename PACKAGE_TESTS to BOUT_TESTS [\#2347](https://github.com/boutproject/BOUT-dev/pull/2347) ([bendudson](https://github.com/users/bendudson))
 - CMake: Add SOVERSION; fix FindSUNDIALS [\#2358](https://github.com/boutproject/BOUT-dev/pull/2358) ([dschwoerer](https://github.com/users/dschwoerer))
+- Faster recompile [\#2294](https://github.com/boutproject/BOUT-dev/pull/2294) ([dschwoerer](https://github.com/users/dschwoerer))
 
 ## [v4.3.3](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2021-07-28)
 
