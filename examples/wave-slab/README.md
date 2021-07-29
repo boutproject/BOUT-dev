@@ -6,3 +6,8 @@ simulations. See the coordinates manual for details.
 
 Note: Here the only components of the coordinate system which are tested are
 `g_22` (for `Grad_par`), and the twist shift angle.
+
+This example uses a grid file `slab.grd.nc`. To create this file,
+please run:
+
+    ./generate.py

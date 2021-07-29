@@ -192,6 +192,10 @@ else:
 html_static_path = ['_static']
 
 
+def setup(app):
+    app.add_css_file('css/custom.css')
+
+
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.

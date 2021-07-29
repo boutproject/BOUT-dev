@@ -232,7 +232,7 @@ uninstall:
 ####################################################################
 
 # Rules for downloading submodules
-include $(BOUT_TOP)/makefile.submodules
+-include $(BOUT_TOP)/makefile.submodules
 
 ifeq ("$(TARGET)", "libfast")
 libfast: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(OBJ) $(DIRS)
