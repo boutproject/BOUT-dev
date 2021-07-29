@@ -3,7 +3,7 @@ BOUT_TOP	= ..
 
 DIRS			= field fileio invert mesh physics solver sys
 
-SOURCEC		= bout++.cxx
+SOURCEC		= bout++.cxx bout++-time.cxx
 SOURCEH		= bout.hxx
 CXXFLAGS       += -DMD5SUM=$(CHECKSUM) -DREVISION="$(REVISION)"
 TARGET	       ?= lib
@@ -38,7 +38,7 @@ include $(BOUT_TOP)/make.config
 # directories are finished and further to make sure we actually know
 # whether the file needs to be rebuild - which we can only know for
 # certain if all directories are finished
-bout++.o: $(BOUT_LIB_PATH)/.last.o.file .dummy
+bout++-time.o: $(BOUT_LIB_PATH)/.last.o.file | $(DIRS) bout++.o
 
 # The recipie could be removed, as it only catches the case of
 # out-of-date make.config
@@ -55,21 +55,27 @@ libfast: .libfast
 
 .libfast: @LIB_TO_BUILD@
 
-$(BOUT_LIB_PATH)/libbout++.a: bout++.o
+$(BOUT_LIB_PATH)/libbout++.a: bout++-time.o
 	@echo "Recreating libbout++.a"
-	@rm -f $(BOUT_LIB_PATH)/libbout++.a
-	@$(AR) $(ARFLAGS) $(LIB) $(shell find $(BOUT_TOP)/src -name \*.o -type f -print 2> /dev/null)
+	@rm -f $(LIB_A)
+	@$(AR) $(ARFLAGS) $(LIB_A) $(shell find $(BOUT_TOP)/src -name \*.o -type f -print 2> /dev/null) || rm -f $(LIB_A)
 	@touch .libfast
 	@#$(RANLIB) $(LIB)
 	@@STATIC_EXTRA@
 
-$(BOUT_LIB_PATH)/libbout++.so: bout++.o
+$(BOUT_LIB_PATH)/libbout++.so: bout++-time.o
 	@echo "Creating libbout++.so"
 	@echo $(BOUT_FLAGS) | grep -qi pic || (echo "not compiled with PIC support - reconfigure with --enable-shared" ;exit 1)
 	@$(RM) $(BOUT_LIB_PATH)/*.so*
-	@$(CXX) -shared -Wl,-soname,libbout++.so.$(BOUT_VERSION) -o $(LIB_SO).$(BOUT_VERSION) $(shell find $(BOUT_TOP)/src -name \*.o -type f -print 2> /dev/null)
-	@$(CXX) -shared -Wl,-soname,libpvode.so.1.0.0 -o $(BOUT_LIB_PATH)/libpvode_.so -L $(BOUT_LIB_PATH) -Wl,--whole-archive -lpvode -Wl,--no-whole-archive
-	@$(CXX) -shared -Wl,-soname,libpvpre.so.1.0.0 -o $(BOUT_LIB_PATH)/libpvpre_.so -L $(BOUT_LIB_PATH) -Wl,--whole-archive -lpvpre -Wl,--no-whole-archive
+	@$(CXX) -shared -Wl,-soname,libbout++.so.$(BOUT_VERSION) -o $(LIB_SO).$(BOUT_VERSION) \
+		$(shell find $(BOUT_TOP)/src -name \*.o -type f -print 2> /dev/null) \
+		$(LDFLAGS)
+	@$(CXX) -shared -Wl,-soname,libpvode.so.1.0.0 -o $(BOUT_LIB_PATH)/libpvode_.so \
+		-L $(BOUT_LIB_PATH) -Wl,--whole-archive -lpvode -Wl,--no-whole-archive \
+		$(LDFLAGS)
+	@$(CXX) -shared -Wl,-soname,libpvpre.so.1.0.0 -o $(BOUT_LIB_PATH)/libpvpre_.so \
+		-L $(BOUT_LIB_PATH) -Wl,--whole-archive -lpvpre -Wl,--no-whole-archive \
+		$(LDFLAGS)
 	@mv $(BOUT_LIB_PATH)/libpvode_.so $(BOUT_LIB_PATH)/libpvode.so.1.0.0
 	@mv $(BOUT_LIB_PATH)/libpvpre_.so $(BOUT_LIB_PATH)/libpvpre.so.1.0.0
 	@ln -s libbout++.so.$(BOUT_VERSION) $(LIB_SO)
@@ -84,7 +90,7 @@ all: lib end_message
 # Only needed for legacy build script
 ifneq ("$(TARGET)","libfast")
 # This to make sure build time is always printed correctly
-.PHONY: bout++.cxx
+.PHONY: bout++-time.cxx
 endif
 
 checksum:

@@ -3,6 +3,16 @@
 This is a slightly more readable, and therefore incomplete, summary of
 the changes from the full [changelog](CHANGELOG.md)
 
+4.3.3 is a bugfix release:
+- Better documentation and tests
+- Fix `shiftOutput` for aligned fields
+- Some improvements to the Python API, including support for Python's
+  exponentiation operator `**`, and MPI-aware logging
+- Fix an uninitialised variable in `Delp2`
+- Bump the version of jinja2 from 2.10 to 2.11
+- Fix for some Solvers not always using user preconditioner/Jacobian
+- Some minor fixes to the build systems
+
 4.3.2 is a bugfix release:
 - Make downloading the submodules a bit nicer, including an option for
   using non-bundled versions when using `configure`
