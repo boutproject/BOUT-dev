@@ -46,7 +46,7 @@ BOUT_FLAGS := $(BOUT_FLAGS) -DBOUT_FLAGS_STRING="$(BOUT_FLAGS)"
 
 # Specify the MPI C++ compiler in CXX
 
-CXX		= @MPICXX@
+CXX		= @CXX@
 CC      = $(CXX)
 
 AR		= ar
@@ -83,12 +83,10 @@ BOUT_VERSION  = @PACKAGE_VERSION@
 # Files that are needed by configure and should be dependencies for 'all'
 
 OBJ    = $(SOURCEC:%.cxx=%.o)
-ifndef RELEASED
-# If this is part of an packaged and installed installation, the user cannot
-# write these files, so they shouldn't be changed. Thus only set this, in
-# the non installed case.
-LIB    = $(BOUT_LIB_PATH)/libbout++.a
+ifndef RELEASE
+LIB_A  = $(BOUT_LIB_PATH)/libbout++.a
 LIB_SO = $(BOUT_LIB_PATH)/libbout++.so
+LIB    = @LIB_TO_BUILD@
 endif
 
 MPARK_VARIANT_INCLUDE_PATH=@MPARK_VARIANT_INCLUDE_PATH@
@@ -138,7 +136,9 @@ $(DIRS):
 # first a potential trailing slash is removed, and after that the
 # directory name is extracted. This allows to e.g. specify a directory
 # as fuu/bar/ and still get an archive named bar.a
-	@$(MAKE) -s --no-print-directory MODULE_DIR=$(MODULE_DIR) SUB_NAME=$(shell basename $@) TARGET=sub -C $@
+# The # probably doesn't need to be escaped as everything in the
+# recipy is passed to the shell, even lines starting with #
+	@$(MAKE) -s --no-print-directory MODULE_DIR=$(MODULE_DIR) SUB_NAME=$(shell f=$@ ; g=$${f%/} ; echo $${g##*/}) TARGET=sub -C $@
 endif
 endif
 
@@ -184,14 +184,14 @@ endif
 	$(INSTALL_DATA)  tools/idllib/README $(DESTDIR)@datadir@/bout++/idllib/
 	$(INSTALL_DATA)  tools/pylib/boutdata/*.py $(DESTDIR)@datadir@/bout++/pylib/boutdata/
 	$(INSTALL_DATA)  tools/pylib/boututils/*.py $(DESTDIR)@datadir@/bout++/pylib/boututils/
-	$(INSTALL_DATA)  make.config $(INSTALL_INCLUDE_PATH)
+	$(INSTALL_DATA)  make.config $(DESTDIR)@datadir@/bout++/
 	for mo in $(MO_FILES); do $(MKDIR) $(DESTDIR)@localedir@/`dirname $$mo`; $(INSTALL_DATA) locale/$$mo $(DESTDIR)@localedir@/$$mo; done
 	$(POST_INSTALL)    # Post-install commands follow.
 
 	@# Modify paths in the bout-config script 
 	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@bindir@/bout-config 
 	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(DESTDIR)@bindir@/bout-config
-	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@includedir@/bout++/make.config|" $(DESTDIR)@bindir@/bout-config
+	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^idlpath=.*|idlpath=@datadir@/bout++/idllib/|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^pythonpath=.*|pythonpath=@datadir@/bout++/pylib/|" $(DESTDIR)@bindir@/bout-config
 ifeq ("@OWN_MPARK@", "yes")
@@ -213,6 +213,7 @@ uninstall:
 	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.
 
 	$(NORMAL_UNINSTALL)  # Normal commands follow.
+	$(RM) $(DESTDIR)@datadir@/bout++/make.config
 	$(RM) -r $(DESTDIR)@datadir@/bout++/pylib/boututils/
 	$(RM) -r $(DESTDIR)@datadir@/bout++/pylib/boutdata/
 	$(RM) -r $(DESTDIR)@datadir@/bout++/idllib/
@@ -249,15 +250,11 @@ endif
 
 ifeq ("$(TARGET)", "sub")
 LIB=$(MODULE_DIR)/$(SUB_NAME).a
-sub:$(LIB)
-
-$(LIB): makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
+sub: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "  Adding $(OBJ) to $(LIB)"
-	@LIBT=$(LIB).$$$$.a && \
-		$(AR) $(ARFLAGS) $${LIBT} $(OBJ) && \
-		$(RANLIB) $${LIBT} && \
-		mv $${LIBT} $(LIB)
+	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
+	@$(RANLIB) $(LIB)
 endif
 endif
 
@@ -286,14 +283,13 @@ DIRS_=$(DIRS:%/=%)
 # then we extract the directory name, in case it is a longer path
 # We are not in a recipe, so # needs to be escaped
 # $$ is an escaped $
-DIRS__=$(shell for d in $(DIRS_) ; do basename $$d;done)
+DIRS__=$(shell for f in $(DIRS_) ; do echo $${f\#\#*/};done)
 # now we can generate a list of libraries
 SUB_LIBS=$(DIRS__:%=%.a)
 $(SUB_LIBS):$(DIRS__)
 
 $(SOURCEC): checklib
 $(SOURCEC:%.cxx=%.o): $(LIB)
-$(TARGET): | $(DIRS)
 $(TARGET): makefile $(BOUT_CONFIG_FILE) $(OBJ) $(SUB_LIBS)
 	@echo "  Linking" $(TARGET)
 	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(SUB_LIBS) $(BOUT_LIBS)
@@ -337,7 +333,7 @@ endif
 
 clean::
 	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
-	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
+	@for pp in $(DIRS) $(DIRS_CLEAN); do echo "  " cleaning $$pp; $(MAKE) --no-print-directory -C $$pp clean; done
 	@$(RM) -f $(SUB_LIBS)
 	-@$(RM) .*.mk
 	@test -f make.config && ( find src | grep '\.o$$' && echo "WARNING: Some object files remain - which might cause issues. Clean with $(MAKE) clean-remove-object-files" ) || exit 0
@@ -359,6 +355,8 @@ distclean:: clean clean-tests
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
+	-@$(RM) $(BOUT_TOP)/tools/pylib/boutconfig/__init__.py
+	@echo generated Python boutconfig module cleaned
 
 clean-tests: clean-unit-tests clean-integrated-tests clean-mms-tests
 

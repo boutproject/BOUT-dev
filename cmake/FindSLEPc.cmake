@@ -2,8 +2,8 @@
 # Once done this will define
 #
 #  SLEPC_FOUND        - system has SLEPc
-#  SLEPC_INCLUDE_DIR  - include directories for SLEPc
-#  SLEPC_LIBARIES     - libraries for SLEPc
+#  SLEPC_INCLUDE_DIRS - include directories for SLEPc
+#  SLEPC_LIBRARIES    - libraries for SLEPc
 #  SLEPC_DIR          - directory where SLEPc is built
 #  SLEPC_VERSION      - version of SLEPc
 #  SLEPC_VERSION_MAJOR - First number in SLEPC_VERSION
@@ -113,7 +113,7 @@ show :
   # Define macro for getting SLEPc variables from Makefile
   macro(SLEPC_GET_VARIABLE var name)
     set(${var} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE)
-    execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} --no-print-directory -f ${slepc_config_makefile} show VARIABLE=${name}
+    execute_process(COMMAND ${MAKE_EXECUTABLE} --no-print-directory -f ${slepc_config_makefile} show VARIABLE=${name}
       OUTPUT_VARIABLE ${var}
       RESULT_VARIABLE slepc_return)
   endmacro()
@@ -140,7 +140,7 @@ if (SLEPC_SKIP_BUILD_TESTS)
   set(SLEPC_TEST_RUNS TRUE)
   set(SLEPC_VERSION "UNKNOWN")
   set(SLEPC_VERSION_OK TRUE)
-elseif (SLEPC_LIBRARIES AND SLEPC_INCLUDE_DIRS)
+elseif (SLEPC_LIBRARIES AND SLEPC_INCLUDE_DIRS AND NOT SLEPC_TEST_RUNS)
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${SLEPC_INCLUDE_DIRS})
@@ -173,23 +173,23 @@ int main() {
     )
 
   if (SLEPC_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
-    set(SLEPC_VERSION ${OUTPUT} CACHE TYPE STRING)
+    set(SLEPC_VERSION "${OUTPUT}" CACHE STRING "SLEPC version number")
     string(REPLACE "." ";" SLEPC_VERSION_LIST ${SLEPC_VERSION})
     list(GET SLEPC_VERSION_LIST 0 SLEPC_VERSION_MAJOR)
     list(GET SLEPC_VERSION_LIST 1 SLEPC_VERSION_MINOR)
     list(GET SLEPC_VERSION_LIST 2 SLEPC_VERSION_SUBMINOR)
     mark_as_advanced(SLEPC_VERSION)
-    mark_as_advanced(SLEPC_VERSION_MAJOR, SLEPC_VERSION_MINOR, SLEPC_VERSION_SUBMINOR)
+    mark_as_advanced(SLEPC_VERSION_MAJOR SLEPC_VERSION_MINOR SLEPC_VERSION_SUBMINOR)
   endif()
 
   if (SLEPc_FIND_VERSION)
     # Check if version found is >= required version
     if (NOT "${SLEPC_VERSION}" VERSION_LESS "${SLEPc_FIND_VERSION}")
-      set(SLEPC_VERSION_OK TRUE)
+      set(SLEPC_VERSION_OK TRUE CACHE BOOL "")
     endif()
   else()
     # No specific version requested
-    set(SLEPC_VERSION_OK TRUE)
+    set(SLEPC_VERSION_OK TRUE CACHE BOOL "")
   endif()
   mark_as_advanced(SLEPC_VERSION_OK)
 
@@ -231,7 +231,7 @@ int main()
 
   if (SLEPC_TEST_LIB_COMPILED AND SLEPC_TEST_LIB_EXITCODE EQUAL 0)
     message(STATUS "Performing test SLEPC_TEST_RUNS - Success")
-    set(SLEPC_TEST_RUNS TRUE)
+    set(SLEPC_TEST_RUNS TRUE CACHE BOOL "SLEPc test program can run")
   else()
     message(STATUS "Performing test SLEPC_TEST_RUNS - Failed")
 
@@ -252,8 +252,8 @@ int main()
     if (SLEPC_TEST_3RD_PARTY_LIBS_COMPILED AND SLEPC_TEST_3RD_PARTY_LIBS_EXITCODE EQUAL 0)
       message(STATUS "Performing test SLEPC_TEST_3RD_PARTY_LIBS_RUNS - Success")
       set(SLEPC_LIBRARIES ${SLEPC_LIBRARIES} ${SLEPC_EXTERNAL_LIBRARIES}
-    CACHE STRING "SLEPc libraries." FORCE)
-      set(SLEPC_TEST_RUNS TRUE)
+        CACHE STRING "SLEPc libraries." FORCE)
+      set(SLEPC_TEST_RUNS TRUE CACHE BOOL "SLEPc test program can run")
     else()
       message(STATUS "Performing test SLEPC_TEST_3RD_PARTY_LIBS_RUNS - Failed")
     endif()
@@ -263,9 +263,11 @@ endif()
 # Standard package handling
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SLEPc
-  "SLEPc could not be found. Be sure to set SLEPC_DIR, PETSC_DIR, and PETSC_ARCH."
-  SLEPC_LIBRARIES SLEPC_DIR SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS
-  SLEPC_VERSION SLEPC_VERSION_OK)
+  FOUND_VAR SLEPC_FOUND
+  FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR, PETSC_DIR, and PETSC_ARCH."
+  VERSION_VAR SLEPC_VERSION
+  REQUIRED_VARS SLEPC_LIBRARIES SLEPC_DIR SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS
+                SLEPC_VERSION_OK)
 
 if (SLEPC_FOUND)
   if (NOT TARGET SLEPc::SLEPc)

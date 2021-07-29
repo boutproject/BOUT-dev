@@ -20,14 +20,12 @@ vars = [['max_error1',2.e-4],
         ['max_error8',1.e-4]]
 #tol = 1e-4                  # Absolute (?) tolerance
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 from sys import stdout, exit
 
 
-
-print("Making PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)")
-shell_safe("make > make.log")
+build_and_log("PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)")
 
 print("Running PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)")
 success = True
@@ -38,12 +36,11 @@ for nproc in [1,2,4]:
   #    nxpe = 2
   for jy in [2,34,65,81,113]:
 
-    cmd = "./test_petsc_laplace_MAST_grid "
-    "grid=grids/grid_MAST_SOL_jyis"+str(jy)+".nc"
+    cmd = "./test_petsc_laplace_MAST_grid grid=grids/grid_MAST_SOL_jyis{}.nc".format(jy)
 
     shell("rm data/BOUT.dmp.*.nc")
 
-    print("   %d processors...." % nproc)
+    print("   {} processors, grid_MAST_SOL_jyis{}".format(nproc, jy))
     s, out = launch_safe(cmd, nproc=nproc, pipe=True)
     f = open("run.log."+str(nproc), "w")
     f.write(out)

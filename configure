@@ -647,6 +647,9 @@ HAS_PVODE
 CHECK_LEVEL
 GIT_REVISION
 BOUT_VERSION
+SHARED_EXTRA
+STATIC_EXTRA
+LIB_TO_BUILD
 PYTHONCONFIGPATH
 IDLCONFIGPATH
 PREFIX
@@ -823,6 +826,7 @@ enable_optimize
 enable_sigfpe
 enable_backtrace
 enable_shared
+enable_static
 enable_openmp
 with_openmp_schedule
 enable_pvode_openmp
@@ -1482,6 +1486,7 @@ Optional Features:
   --enable-sigfpe         Enable FloatingPointExceptions
   --disable-backtrace     Disable function backtrace
   --enable-shared         Enable building bout++ into an shared object
+  --enable-static         Enable building bout++ into an static library
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
   --disable-openmp        do not use OpenMP
@@ -2726,6 +2731,13 @@ if test "${enable_shared+set}" = set; then :
   enableval=$enable_shared;
 else
   enable_shared=no
+fi
+
+# Check whether --enable-static was given.
+if test "${enable_static+set}" = set; then :
+  enableval=$enable_static;
+else
+  enable_static=auto
 fi
 
 # Check whether --enable-openmp was given.
@@ -6094,6 +6106,7 @@ $as_echo "$as_me:  -> Level 1 (Basic checking)" >&6;}
   3) :
     { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Level 3 (Full checking + stack tracing)" >&5
 $as_echo "$as_me:  -> Level 3 (Full checking + stack tracing)" >&6;}
+          enable_output_debug=yes
           CXXFLAGS="$CXXFLAGS -DCHECK=3"
           CHECK_LEVEL="3" ;; #(
   *) :
@@ -6342,6 +6355,7 @@ fi
 # Build into shared object (pic)
 #############################################################
 
+LIB_TO_BUILD=''
 if test "x$enable_shared" = "xyes"; then :
 
     # compile as position independent code.
@@ -6353,6 +6367,45 @@ if test "x$enable_shared" = "xyes"; then :
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS="$CXXFLAGS -fPIC"
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.so'
+    if test "x$enable_static" = "xauto"; then :
+
+        enable_static=no
+
+fi
+    SHARED_EXTRA=':'
+    if test "x$enable_static" = "xno"; then :
+
+        SHARED_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/libbout++.a'
+
+fi
+
+else
+
+    if test "x$enable_static" = "xauto"; then :
+
+        enable_static=yes
+
+fi
+
+fi
+
+if test "x$enable_static" = "xyes"; then :
+
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.a'
+    STATIC_EXTRA=':'
+    # In case we only build static, make sure shared libs are removed
+    if ! test "x$enable_shared" = "xyes"; then :
+
+        STATIC_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/*.so*'
+
+fi
+
+fi
+
+if test "x$LIB_TO_BUILD" = x ; then :
+
+    as_fn_error $? "Need to enable at least on of static or shared!" "$LINENO" 5
 
 fi
 
@@ -12492,7 +12545,7 @@ else
 
       # Set a compile-time flag
       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
-      MPICXX="$SCOREPPATH --user --nocompiler $MPICXX"
+      CXX="$SCOREPPATH --user --nocompiler $CXX"
       HAS_SCOREP="yes"
       { $as_echo "$as_me:${as_lineno-$LINENO}: Scorep support enabled" >&5
 $as_echo "$as_me: Scorep support enabled" >&6;}
@@ -12887,16 +12940,16 @@ $as_echo "$as_me: PVODE being built without OpenMP support" >&6;}
 
 fi
   # Clean PVODE
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: Building PVODE" >&5
 $as_echo "$as_me: Building PVODE" >&6;}
   echo "* Building PVODE" >> config-build.log
   echo "*************************************************************" >> config-build.log
 
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
   if test -f externalpackages/PVODE/lib/libpvode.a && test -f externalpackages/PVODE/lib/libpvpre.a; then :
 
@@ -17020,7 +17073,14 @@ BOUT_INCLUDE_PATH=$PWD/include
 
 
 
+
+
+
 ac_config_files="$ac_config_files bin/bout-config"
+
+ac_config_files="$ac_config_files src/makefile"
+
+ac_config_files="$ac_config_files tools/pylib/boutconfig/__init__.py"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -17751,6 +17811,8 @@ do
     "po-directories") CONFIG_COMMANDS="$CONFIG_COMMANDS po-directories" ;;
     "make.config") CONFIG_FILES="$CONFIG_FILES make.config" ;;
     "bin/bout-config") CONFIG_FILES="$CONFIG_FILES bin/bout-config" ;;
+    "src/makefile") CONFIG_FILES="$CONFIG_FILES src/makefile" ;;
+    "tools/pylib/boutconfig/__init__.py") CONFIG_FILES="$CONFIG_FILES tools/pylib/boutconfig/__init__.py" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

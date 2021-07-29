@@ -8,7 +8,7 @@ from boutdata import restart
 from boutdata.collect import collect
 from boututils.boutarray import BoutArray
 from boututils.datafile import DataFile
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 import numpy
 import os
 from sys import exit
@@ -20,8 +20,7 @@ nz = 4
 mxg = 2
 myg = 2
 
-print("Making restart I/O test")
-shell_safe("make > make.log")
+build_and_log("restart I/O test")
 
 x = numpy.linspace(0., 1., nx+2*mxg)[:, numpy.newaxis, numpy.newaxis]
 y = numpy.linspace(0., 1., ny+2*myg)[numpy.newaxis, :, numpy.newaxis]

@@ -123,8 +123,8 @@ class FieldPerp : public Field {
   }
 
   // these methods return FieldPerp to allow method chaining
-  FieldPerp& setLocation(CELL_LOC location) {
-    Field::setLocation(location);
+  FieldPerp& setLocation(CELL_LOC new_location) {
+    Field::setLocation(new_location);
     return *this;
   }
   FieldPerp& setDirectionY(YDirectionType d) {
@@ -315,14 +315,14 @@ inline FieldPerp emptyFrom<FieldPerp>(const FieldPerp& f) {
 
 #if CHECK > 0
 void checkData(const FieldPerp &f, const std::string& region = "RGN_NOX");
-[[gnu::deprecated("Please use checkData(const FieldPerp& f, "
+[[deprecated("Please use checkData(const FieldPerp& f, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline void checkData(const FieldPerp &f, REGION region) {
   return checkData(f, toString(region));
 }
 #else
 inline void checkData(const FieldPerp &UNUSED(f), const std::string& UNUSED(region) = "RGN_NOX") {}
-[[gnu::deprecated("Please use checkData(const FieldPerp& f, "
+[[deprecated("Please use checkData(const FieldPerp& f, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline void checkData(const FieldPerp &UNUSED(f), REGION UNUSED(region)) {}
 #endif

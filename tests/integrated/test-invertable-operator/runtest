@@ -9,7 +9,7 @@
 from __future__ import print_function
 from __future__ import division
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
@@ -19,8 +19,7 @@ reltol = 1.e-3  # Allowed relative tolerance
 nthreads=1
 
 
-print("Making invertable operator test")
-shell_safe("make > make.log")
+build_and_log("invertable operator test")
 
 # Delete old output files
 shell("rm data/BOUT.dmp.*")

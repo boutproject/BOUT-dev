@@ -89,6 +89,8 @@ AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
         [Disable function backtrace])],,[enable_backtrace=maybe])
 AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
+AC_ARG_ENABLE(static,       [AS_HELP_STRING([--enable-static],
+        [Enable building bout++ into an static library])],,[enable_static=auto])
 AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
 AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static/dynamic/guided/auto],
@@ -314,6 +316,7 @@ AS_IF([test "x$enable_checks" != "xno" && test "x$enable_checks" != "x0"], [
           CXXFLAGS="$CXXFLAGS -DCHECK=1"
           CHECK_LEVEL="1"],
     [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking + stack tracing)])
+          enable_output_debug=yes
           CXXFLAGS="$CXXFLAGS -DCHECK=3"
           CHECK_LEVEL="3"],
     [AC_MSG_NOTICE([ -> Level 2 (Basic checking + stack tracing)])
@@ -392,6 +395,7 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
 # Build into shared object (pic)
 #############################################################
 
+LIB_TO_BUILD=''
 AS_IF([test "x$enable_shared" = "xyes"], [
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
@@ -402,6 +406,31 @@ AS_IF([test "x$enable_shared" = "xyes"], [
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS="$CXXFLAGS -fPIC"
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.so'
+    AS_IF([test "x$enable_static" = "xauto"], [
+        enable_static=no
+    ])
+    SHARED_EXTRA=':'
+    AS_IF([test "x$enable_static" = "xno"], [
+        SHARED_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/libbout++.a'
+    ])
+], [
+    AS_IF([test "x$enable_static" = "xauto"], [
+        enable_static=yes
+    ])
+])
+
+AS_IF([test "x$enable_static" = "xyes"], [
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.a'
+    STATIC_EXTRA=':'
+    # In case we only build static, make sure shared libs are removed
+    AS_IF([! test "x$enable_shared" = "xyes"], [
+        STATIC_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/*.so*'
+    ])
+])
+
+AS_IF([test "x$LIB_TO_BUILD" = x ], [
+    AC_MSG_ERROR([Need to enable at least on of static or shared!])
 ])
 
 #############################################################
@@ -1134,7 +1163,7 @@ Please supply the path using --with-scorep=/path/to/scorep])
   ],[
       # Set a compile-time flag
       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
-      MPICXX="$SCOREPPATH --user --nocompiler $MPICXX"
+      CXX="$SCOREPPATH --user --nocompiler $CXX"
       HAS_SCOREP="yes"
       AC_MSG_NOTICE([Scorep support enabled])
   ])
@@ -1224,15 +1253,15 @@ AS_IF([test "$with_pvode" != "no"], [
     AC_MSG_NOTICE([PVODE being built without OpenMP support])
   ])
   # Clean PVODE
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
   AC_MSG_NOTICE([Building PVODE])
   echo "* Building PVODE" >> config-build.log
   echo "*************************************************************" >> config-build.log
 
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
   AS_IF([test -f externalpackages/PVODE/lib/libpvode.a && test -f externalpackages/PVODE/lib/libpvpre.a], [
     AC_MSG_NOTICE([Successfully built PVODE])
@@ -1378,6 +1407,9 @@ AC_SUBST(OWN_MPARK)
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
 AC_SUBST(PYTHONCONFIGPATH)
+AC_SUBST(LIB_TO_BUILD)
+AC_SUBST(STATIC_EXTRA)
+AC_SUBST(SHARED_EXTRA)
 
 AC_SUBST(BOUT_VERSION)
 AC_SUBST(GIT_REVISION)
@@ -1407,6 +1439,8 @@ AC_SUBST(HAS_NLS)
 AC_SUBST(HAS_FFTW)
 
 AC_CONFIG_FILES([bin/bout-config])
+AC_CONFIG_FILES([src/makefile])
+AC_CONFIG_FILES([tools/pylib/boutconfig/__init__.py])
 AC_OUTPUT
 chmod a+x bin/bout-config
 

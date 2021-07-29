@@ -222,7 +222,7 @@ const Vector3D cross(const Vector3D & lhs, const Vector2D &rhs);
  * sqrt( v.x^2 + v.y^2 + v.z^2 )
  */ 
 const Field3D abs(const Vector3D& v, const std::string& region = "RGN_ALL");
-[[gnu::deprecated("Please use Vector3D abs(const Vector3D& f, "
+[[deprecated("Please use Vector3D abs(const Vector3D& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline const Field3D abs(const Vector3D& v, REGION region) {
   return abs(v, toString(region));

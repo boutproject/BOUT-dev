@@ -73,9 +73,9 @@ Datafile::Datafile(Options* opt, Mesh* mesh_in)
 }
 
 Datafile::Datafile(Datafile &&other) noexcept
-    : parallel(other.parallel), flush(other.flush), guards(other.guards),
+    : mesh(other.mesh), parallel(other.parallel), flush(other.flush), guards(other.guards),
       floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly),
-      Lz(other.Lz), enabled(other.enabled), shiftOutput(other.shiftOutput),
+      Lz(other.Lz), enabled(other.enabled), init_missing(other.init_missing), shiftOutput(other.shiftOutput),
       shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter),
       flushFrequency(other.flushFrequency), file(std::move(other.file)),
       writable(other.writable), appending(other.appending), first_time(other.first_time),
@@ -91,20 +91,21 @@ Datafile::Datafile(Datafile &&other) noexcept
   other.file = nullptr;
 }
 
-Datafile::Datafile(const Datafile &other) :
-  mesh(other.mesh), parallel(other.parallel), flush(other.flush), guards(other.guards),
-  floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly), Lz(other.Lz),
-  enabled(other.enabled), shiftOutput(other.shiftOutput), shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter), flushFrequency(other.flushFrequency), 
-  file(nullptr), writable(other.writable), appending(other.appending), first_time(other.first_time),
-  int_arr(other.int_arr), int_vec_arr(other.int_vec_arr),
-  string_arr(other.string_arr), BoutReal_arr(other.BoutReal_arr),
-  bool_arr(other.bool_arr), f2d_arr(other.f2d_arr), f3d_arr(other.f3d_arr),
-  v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr)
-{
-  filenamelen=other.filenamelen;
-  filename=new char[filenamelen];
-  strncpy(filename,other.filename,filenamelen);
-  // Same added variables, but the file not the same 
+Datafile::Datafile(const Datafile& other)
+    : mesh(other.mesh), parallel(other.parallel), flush(other.flush),
+      guards(other.guards), floats(other.floats), openclose(other.openclose),
+      Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), enabled(other.enabled),
+      init_missing(other.init_missing), shiftOutput(other.shiftOutput),
+      shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter),
+      flushFrequency(other.flushFrequency), file(nullptr), writable(other.writable),
+      appending(other.appending), first_time(other.first_time), int_arr(other.int_arr),
+      int_vec_arr(other.int_vec_arr), string_arr(other.string_arr),
+      BoutReal_arr(other.BoutReal_arr), bool_arr(other.bool_arr), f2d_arr(other.f2d_arr),
+      f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
+  filenamelen = other.filenamelen;
+  filename = new char[filenamelen];
+  strncpy(filename, other.filename, filenamelen);
+  // Same added variables, but the file not the same
 }
 
 Datafile& Datafile::operator=(Datafile &&rhs) noexcept {
@@ -1682,7 +1683,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
   try {
     file->readFieldAttributes(name, *f);
-  } catch (const BoutException &e) {
+  } catch (const BoutException&) {
     if (init_missing) {
       output_warn.write("\tWARNING: Could not read 2D field %s attributes.\n", name.c_str());
     } else {
@@ -1720,7 +1721,7 @@ bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
 bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
   try {
     file->readFieldAttributes(name, *f);
-  } catch (const BoutException &e) {
+  } catch (const BoutException&) {
     if (init_missing) {
       output_warn.write("\tWARNING: Could not read 3D field %s attributes.\n", name.c_str());
     } else {
@@ -1764,7 +1765,7 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
 bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repeat) {
   try {
     file->readFieldAttributes(name, *f);
-  } catch (const BoutException &e) {
+  } catch (const BoutException&) {
     if (init_missing) {
       output_warn.write("\tWARNING: Could not read FieldPerp %s attributes.\n", name.c_str());
     } else {

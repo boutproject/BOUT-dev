@@ -8,7 +8,7 @@
 #requires: all_tests
 #requires: make
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import shell, launch_safe, build_and_log
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, pi
@@ -22,12 +22,10 @@ import time
 
 
 if __name__ == "__main__":
-    print("Making MMS advection test")
-    shell_safe("make > make.log")
+    build_and_log("MMS advection")
 
 def make_parent():
-    print("Making MMS advection test")
-    shell_safe("make -C .. > make.log")
+    build_and_log("MMS advection")
 
 # List of NX values to use
 #[16, 32, 64, 128, 256, 512, 1024]
@@ -41,10 +39,8 @@ dt0 = 0.15
 def run_mms(options,exit=True):
     success = True
 
-    err_2_all = []
-    err_inf_all = []
-    for opts,exp_order in options:
-        error_2   = []  # The L2 error (RMS)
+    for opts, exp_order in options:
+        error_2 = []  # The L2 error (RMS)
         error_inf = []  # The maximum error
 
         for nx in nxlist:
@@ -52,24 +48,23 @@ def run_mms(options,exit=True):
 
             dx = 2.*pi / (nx)
 
-            args = opts + " mesh:nx="+str(nx+4)+" mesh:dx="+str(dx)+" MZ="+str(nx) #+" solver:timestep="+str(dt0/nx)
+            args = f"{opts} mesh:nx={nx+4} mesh:dx={dx} MZ={nx}"
 
             print("  Running with " + args)
 
             # Delete old data
-            shell("rm data/BOUT.dmp.*.nc")
+            shell("rm -f data/BOUT.dmp.*.nc")
 
             # Command to run
-            cmd = "./advection "+args
+            cmd = "../advection " + args
             # Launch using MPI
             start_time_ = time.time()
             
             s, out = launch_safe(cmd, nproc=nproc, pipe=True)
 
             # Save output to log file
-            f = open("run.log."+str(nx), "w")
-            f.write(out)
-            f.close()
+            with open(f"run.log.{nx}", "w") as f:
+                f.write(out)
 
             # Collect data
             E_f = collect("E_f", xguards=False, tind=[1,1], info=False, path="data")

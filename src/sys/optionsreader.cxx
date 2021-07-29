@@ -38,7 +38,7 @@ void OptionsReader::read(Options *options, const char *file, ...) {
 
   try {
     parser->read(options, filename);
-  } catch (BoutException &e) {
+  } catch (const BoutException&) {
     delete[] filename;
     delete parser;
     throw;
@@ -64,7 +64,7 @@ void OptionsReader::write(Options *options, const char *file, ...) {
 
   try {
     parser->write(options, filename);
-  } catch (BoutException &e) {
+  } catch (const BoutException&) {
     delete[] filename;
     delete parser;
     throw;
