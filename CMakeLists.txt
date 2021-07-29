@@ -805,6 +805,9 @@ else()
   set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS}")
 endif()
 
+# For v4.4 without build_defines.hxx
+set(CONFIG_CFLAGS "${CONFIG_CFLAGS} ${BOUT_COMPILE_DEFINITIONS}")
+
 # This version of the file allows the build directory to be used directly
 configure_file(bin/bout-config.in bin/bout-config @ONLY)
 
