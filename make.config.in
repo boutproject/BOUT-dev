@@ -46,7 +46,7 @@ BOUT_FLAGS := $(BOUT_FLAGS) -DBOUT_FLAGS_STRING="$(BOUT_FLAGS)"
 
 # Specify the MPI C++ compiler in CXX
 
-CXX		= @MPICXX@
+CXX		= @CXX@
 CC      = $(CXX)
 
 AR		= ar
