@@ -37,6 +37,7 @@ authors:
 
   - family-names: Shanahan
     given-names: Brendan
+    affiliation: Max Planck Institute for Plasma Physics, Greifswald
 
   - family-names: Friedman
     given-names: Brett
@@ -44,8 +45,10 @@ authors:
   - family-names: Ma
     given-names: Chenhao
 
-  - family-names: Schwörer
+  - family-names: Bold
     given-names: David
+    affiliation: Max Planck Institute for Plasma Physics, Greifswald
+    orcid: https://orcid.org/0000-0003-0911-8606
 
   - family-names: Meyerson
     given-names: Dmitry
@@ -154,11 +157,15 @@ authors:
 
   - family-names: Wang
     given-names: Zhanhui
-version: 4.3.2
-date-released: 2020-10-19
+
+  - family-names: James
+    given-names: Toby
+
+version: 4.3.3
+date-released: 2021-07-29
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
-doi: 10.5281/zenodo.4046792
+doi: 10.5281/zenodo.5142504
 license: 'LGPL-3.0-or-later'
 references:
   - type: article

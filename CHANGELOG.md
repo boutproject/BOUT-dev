@@ -17,6 +17,31 @@
 
   See [\#2154](https://github.com/boutproject/BOUT-dev/pull/2154).
 
+## [v4.3.3](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2021-07-28)
+
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.2...master)
+
+**Merged pull requests:**
+
+- Fix documentation for examples/wave-slab [\#2369](https://github.com/boutproject/BOUT-dev/pull/2369) ([ZedThree](https://github.com/users/ZedThree))
+- Make include optional [\#2360](https://github.com/boutproject/BOUT-dev/pull/2360) ([dschwoerer](https://github.com/users/dschwoerer))
+- Fix ReadTheDocs (master) [\#2319](https://github.com/boutproject/BOUT-dev/pull/2319) ([ZedThree](https://github.com/users/ZedThree))
+- Fix for FindPETSc not being reentrant if pkg-config used [\#2317](https://github.com/boutproject/BOUT-dev/pull/2317) ([ZedThree](https://github.com/users/ZedThree))
+- Add missing snb.cxx to CMakeLists.txt [\#2315](https://github.com/boutproject/BOUT-dev/pull/2315) ([bendudson](https://github.com/users/bendudson))
+- Add notes on installing SUNDIALS [\#2311](https://github.com/boutproject/BOUT-dev/pull/2311) ([bendudson](https://github.com/users/bendudson))
+- Make blob2d example self contained [\#2288](https://github.com/boutproject/BOUT-dev/pull/2288) ([dschwoerer](https://github.com/users/dschwoerer))
+- Fix some Solvers not always using user preconditioner/Jacobian [\#2283](https://github.com/boutproject/BOUT-dev/pull/2283) ([ZedThree](https://github.com/users/ZedThree))
+- Bump jinja2 from 2.10.1 to 2.11.3 [\#2266](https://github.com/boutproject/BOUT-dev/pull/2266) ([dependabot[bot]](https://github.com/users/dependabot%5Bbot%5D))
+- Fix use of uninitialised value in Delp2 [\#2262](https://github.com/boutproject/BOUT-dev/pull/2262) ([johnomotani](https://github.com/users/johnomotani))
+- Add requirements to boutcore/print test [\#2175](https://github.com/boutproject/BOUT-dev/pull/2175) ([ZedThree](https://github.com/users/ZedThree))
+- Update docs on supported PETSc versions [\#2171](https://github.com/boutproject/BOUT-dev/pull/2171) ([johnomotani](https://github.com/users/johnomotani))
+- Convert Travis to Github Actions (master) [\#2170](https://github.com/boutproject/BOUT-dev/pull/2170) ([ZedThree](https://github.com/users/ZedThree))
+- Boutcore improvements [\#2166](https://github.com/boutproject/BOUT-dev/pull/2166) ([dschwoerer](https://github.com/users/dschwoerer))
+- Fix shiftOutput (master) [\#2158](https://github.com/boutproject/BOUT-dev/pull/2158) ([johnomotani](https://github.com/users/johnomotani))
+- Fix test-restart-io and FieldPerp writes [\#2154](https://github.com/boutproject/BOUT-dev/pull/2154) ([johnomotani](https://github.com/users/johnomotani))
+- Ignore more test data [\#2125](https://github.com/boutproject/BOUT-dev/pull/2125) ([dschwoerer](https://github.com/users/dschwoerer))
+- Fix links to open-mpi.org and lam-mpi.org [\#2122](https://github.com/boutproject/BOUT-dev/pull/2122) ([tobyjamez](https://github.com/users/tobyjamez))
+
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)
 
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.1...v4.3.2)
