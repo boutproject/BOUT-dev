@@ -79,7 +79,7 @@ void PetscLib::cleanup() {
 
 void PetscLib::setPetscOptions(Options& options, const std::string& prefix) {
   // Pass all options in the section to PETSc
-  for (auto& i : options.getChildren()) {
+  for (const auto& i : options.getChildren()) {
     if (not i.second.isValue()) {
       throw BoutException("Found subsection %s in %s when reading PETSc options - only "
           "values are allowed in the PETSc options, not subsections",
