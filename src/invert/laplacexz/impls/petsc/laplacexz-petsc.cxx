@@ -19,7 +19,10 @@
 #include <output.hxx>
 
 LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
-  : LaplaceXZ(m, opt, loc), coefs_set(false) {
+  : LaplaceXZ(m, opt, loc),
+    lib(opt==nullptr ? &(Options::root()["laplacexz"]) : opt),
+    coefs_set(false) {
+
   /* Constructor: LaplaceXZpetsc
    * Purpose:     - Setting inversion solver options
    *              - Setting the solver method
@@ -225,7 +228,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
 
     //////////////////////////////////////////////////
     // Declare KSP Context
-    KSPCreate( comm, &data.ksp );
+    KSPCreate(comm, &data.ksp);
 
     // Set KSP type
     KSPSetType( data.ksp, ksptype.c_str() );
@@ -242,7 +245,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
     PCFactorSetMatSolverPackage(pc,factor_package.c_str());
 #endif
 
-    KSPSetFromOptions( data.ksp );
+    lib.setOptionsFromInputFile(data.ksp);
 
     /// Add to slice vector
     slice.push_back(data);

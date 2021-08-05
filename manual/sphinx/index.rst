@@ -69,6 +69,8 @@ The documentation is divided into the following sections:
    user_docs/staggered_grids
    user_docs/eigenvalue_solver
    user_docs/nonlocal
+   user_docs/invertable_operator
+   user_docs/petsc
 
 .. toctree::
    :maxdepth: 1
