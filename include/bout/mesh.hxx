@@ -492,14 +492,16 @@ class Mesh {
   /// Returns the global Y index given a local index
   /// The local index must include the boundary, the global index does not.
   [[deprecated("Use getGlobalYIndex or getGlobalYIndexNoBoundaries instead")]]
-  virtual int YGLOBAL(int yloc) const { return getGlobalYIndexNoBoundaries(yloc); }
+  int YGLOBAL(int yloc) const { return getGlobalYIndexNoBoundaries(yloc); }
 
   /// Returns the local X index given a global index
   /// If the global index includes the boundary cells, then so does the local.
-  virtual int XLOCAL(int xglo) const = 0;
+  [[deprecated("Use getLocalXIndex or getLocalXIndexNoBoundaries instead")]]
+  int XLOCAL(int xglo) const { return getLocalXIndex(xglo); };
   /// Returns the local Y index given a global index
-  /// The global index does not include the boundary cells, the local does.
-  virtual int YLOCAL(int yglo) const = 0;
+  /// If the global index includes the boundary cells, then so does the local.
+  [[deprecated("Use getLocalYIndex or getLocalYIndexNoBoundaries instead")]]
+  int YLOCAL(int yglo) const { return getLocalYIndexNoBoundaries(yglo); };
 
   /// Returns a global X index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
@@ -509,6 +511,14 @@ class Mesh {
   /// Global index excludes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalXIndexNoBoundaries(int xlocal) const = 0;
 
+  /// Returns a local X index given a global index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalXIndex(int xglobal) const = 0;
+
+  /// Returns a local X index given a global index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalXIndexNoBoundaries(int xglobal) const = 0;
+
   /// Returns a global Y index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalYIndex(int ylocal) const = 0;
@@ -517,6 +527,14 @@ class Mesh {
   /// Global index excludes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalYIndexNoBoundaries(int ylocal) const = 0;
 
+  /// Returns a local Y index given a global index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalYIndex(int yglobal) const = 0;
+
+  /// Returns a local Y index given a global index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalYIndexNoBoundaries(int yglobal) const = 0;
+
   /// Returns a global Z index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalZIndex(int zlocal) const = 0;
@@ -524,6 +542,14 @@ class Mesh {
   /// Returns a global Z index given a local index.
   /// Global index excludes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalZIndexNoBoundaries(int zlocal) const = 0;
+
+  /// Returns a local Z index given a global index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalZIndex(int zglobal) const = 0;
+
+  /// Returns a local Z index given a global index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalZIndexNoBoundaries(int zglobal) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;

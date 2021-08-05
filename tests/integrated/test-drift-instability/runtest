@@ -1,5 +1,6 @@
 #!/bin/sh
 
-#requires: all_tests
+# Requires: all_tests
+# Requires: netcdf
 
 ./runtest.py
