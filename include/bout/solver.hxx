@@ -233,10 +233,10 @@ public:
 
   /// Add a variable to be solved. This must be done in the
   /// initialisation stage, before the simulation starts.
-  virtual void add(Field2D& v, const std::string& name);
-  virtual void add(Field3D& v, const std::string& name);
-  virtual void add(Vector2D& v, const std::string& name);
-  virtual void add(Vector3D& v, const std::string& name);
+  virtual void add(Field2D& v, const std::string& name, const std::string& description = "");
+  virtual void add(Field3D& v, const std::string& name, const std::string& description = "");
+  virtual void add(Vector2D& v, const std::string& name, const std::string& description = "");
+  virtual void add(Vector3D& v, const std::string& name, const std::string& description = "");
 
   /// Returns true if constraints available
   virtual bool constraints() { return has_constraints; }
@@ -281,9 +281,9 @@ public:
 
   // Solver status. Optional functions used to query the solver
   /// Number of 2D variables. Vectors count as 3
-  virtual int n2Dvars() const { return f2d.size(); }
+  virtual int n2Dvars() const { return static_cast<int>(f2d.size()); }
   /// Number of 3D variables. Vectors count as 3
-  virtual int n3Dvars() const { return f3d.size(); }
+  virtual int n3Dvars() const { return static_cast<int>(f3d.size()); }
 
   /// Get and reset the number of calls to the RHS function
   int resetRHSCounter();
@@ -319,6 +319,11 @@ public:
     pargv = &v;
   }
 
+  /// A unique identifier for this run. Throws if the identifier hasn't been set yet.
+  std::string getRunID() const;
+  /// The run from which this was restarted. Throws if the identifier hasn't been set yet.
+  std::string getRunRestartFrom() const;
+
 protected:
   /// Number of command-line arguments
   static int* pargc;
@@ -347,6 +352,7 @@ protected:
     bool covariant{false};               /// For vectors
     bool evolve_bndry{false};            /// Are the boundary regions being evolved?
     std::string name;                    /// Name of the variable
+    std::string description{""};         /// Description of what the variable is
   };
 
   /// Does \p var represent field \p name?
@@ -377,6 +383,26 @@ protected:
   std::vector<VarStr<Field3D>> f3d;
   std::vector<VarStr<Vector2D>> v2d;
   std::vector<VarStr<Vector3D>> v3d;
+
+  /// Vectors of diagnostic variables to save
+  std::vector<VarStr<int>> diagnostic_int;
+  std::vector<VarStr<BoutReal>> diagnostic_BoutReal;
+  void add_int_diagnostic(int &i, const std::string &name,
+                          const std::string &description = "") {
+    VarStr<int> v;
+    v.var = &i;
+    v.name = name;
+    v.description = description;
+    diagnostic_int.emplace_back(std::move(v));
+  };
+  void add_BoutReal_diagnostic(BoutReal &r, const std::string &name,
+                               const std::string &description = "") {
+    VarStr<BoutReal> v;
+    v.var = &r;
+    v.name = name;
+    v.description = description;
+    diagnostic_BoutReal.emplace_back(std::move(v));
+  };
 
   /// Can this solver handle constraints? Set to true if so.
   bool has_constraints{false};
@@ -449,6 +475,19 @@ protected:
   auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }
 
 private:
+  /// Generate a random UUID (version 4) and broadcast it to all processors
+  std::string createRunID() const;
+
+  /// Default value for `run_id`. Use 'z' because it is not a valid
+  /// hex character, so this is an invalid UUID
+  static constexpr auto default_run_id = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
+
+  /// Randomly generated run ID
+  /// Initialise with 36 characters so the allocated array is the right size
+  std::string run_id = default_run_id;
+  /// The run from which this was restarted.
+  std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
+
   /// Number of calls to the RHS function
   int rhs_ncalls{0};
   /// Number of calls to the explicit (convective) RHS function

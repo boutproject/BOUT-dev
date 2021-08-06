@@ -18,6 +18,7 @@ class Datafile;
 #include "bout/macro_for_each.hxx"
 
 #include "dataformat.hxx"
+#include "../src/fileio/impls/hdf5/h5_format.hxx"
 #include "bout/format.hxx"
 
 #include <cstdarg>
@@ -33,6 +34,7 @@ class Vector3D;
 
 #include <vector>
 #include <string>
+#include <cstring>
 #include <memory>
 
 /*!
@@ -68,14 +70,26 @@ class Datafile {
   void addOnce(T& value, std::string name) {
     add(value, name.c_str(), false);
   }
-  void add(int &i, const char *name, bool save_repeat = false);
-  void add(BoutReal &r, const char *name, bool save_repeat = false);
-  void add(bool &b, const char* name, bool save_repeat = false);
-  void add(Field2D &f, const char *name, bool save_repeat = false);
-  void add(Field3D &f, const char *name, bool save_repeat = false);
-  void add(FieldPerp &f, const char *name, bool save_repeat = false);
-  void add(Vector2D &f, const char *name, bool save_repeat = false);
-  void add(Vector3D &f, const char *name, bool save_repeat = false);
+  void add(int &i, const char *name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(std::vector<int> &ivec, const char *name, bool save_repeat = false,
+           const std::string & description = "");
+  void add(std::string &s, const char *name, bool save_repeat = false,
+           const std::string & description = "");
+  void add(BoutReal &r, const char *name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(bool &b, const char* name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(Field2D &f, const char *name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(Field3D &f, const char *name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(FieldPerp &f, const char *name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(Vector2D &f, const char *name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(Vector3D &f, const char *name, bool save_repeat = false,
+           const std::string &description = "");
   
   bool read();  ///< Read data into added variables 
   bool write(); ///< Write added variables
@@ -86,6 +100,29 @@ class Datafile {
   void setAttribute(const std::string &varname, const std::string &attrname, const std::string &text);
   void setAttribute(const std::string &varname, const std::string &attrname, int value);
   void setAttribute(const std::string &varname, const std::string &attrname, BoutReal value);
+
+  bool can_write_strings() {
+    // NetCDF DataFormat subclasses can read/write strings, but the HDF5 subclass is
+    // buggy. If the DataFormat is not an H5Format, it can write strings correctly.
+#ifdef HDF5
+    // Extract the file extension
+    int len = strlen(filename);
+    int ind = len-1;  
+    while((ind != -1) && (filename[ind] != '.')) {
+      ind--;
+    }
+    const char *s = filename + ind+1;
+
+    const char *hdf5_match[] = {"h5","hdf","hdf5"};
+    for(int i=0; i<3; i++) {
+      if(strcasecmp(s, hdf5_match[i]) == 0) {
+        return false;
+      }
+    }
+#endif
+
+    return true;
+  }
 
  private:
   Mesh* mesh;
@@ -117,15 +154,19 @@ class Datafile {
   /// A structure to hold a pointer to a class, and associated name and flags
   template <class T>
   struct VarStr {
-    T *ptr;             ///< Pointer to the data.
-                        ///< Note that this may be a user object, not a copy, so must not be destroyed
-    std::string name;        ///< Name as it appears in the output file
-    bool save_repeat;   ///< If true, has a time dimension and is saved every time step
-    bool covar;         ///< For vectors, true if a covariant vector, false if contravariant
+    T *ptr;                       ///< Pointer to the data.
+                                  ///< Note that this may be a user object, not a copy, so must not be destroyed
+    std::string name;             ///< Name as it appears in the output file
+    bool save_repeat;             ///< If true, has a time dimension and is saved every time step
+    bool covar;                   ///< For vectors, true if a covariant vector, false if contravariant
+    size_t size;                  ///< Size of a stored vector or string, to check it does not change after being added
+    std::string description{""};  ///< Documentation of what the variable is
   };
 
   // one set per variable type
   std::vector<VarStr<int>> int_arr;
+  std::vector<VarStr<std::vector<int>>> int_vec_arr;
+  std::vector<VarStr<std::string>> string_arr;
   std::vector<VarStr<BoutReal>> BoutReal_arr;
   std::vector<VarStr<bool>> bool_arr;
   std::vector<VarStr<Field2D>> f2d_arr;
@@ -139,6 +180,8 @@ class Datafile {
   bool read_fperp(const std::string &name, FieldPerp *f, bool save_repeat);
 
   bool write_int(const std::string &name, int *f, bool save_repeat);
+  bool write_int_vec(const std::string &name, std::vector<int> *f, bool save_repeat);
+  bool write_string(const std::string &name, std::string *f, bool save_repeat);
   bool write_real(const std::string &name, BoutReal *f, bool save_repeat);
   bool write_f2d(const std::string &name, Field2D *f, bool save_repeat);
   bool write_f3d(const std::string &name, Field3D *f, bool save_repeat);

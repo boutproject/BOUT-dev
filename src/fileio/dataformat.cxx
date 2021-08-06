@@ -47,15 +47,7 @@ void DataFormat::writeFieldAttributes(const std::string& name, const Field& f, b
 void DataFormat::writeFieldAttributes(const std::string& name, const FieldPerp& f, bool shiftOutput) {
   writeFieldAttributes(name, static_cast<const Field&>(f), shiftOutput);
 
-  auto& fieldmesh = *f.getMesh();
-  int yindex = f.getIndex();
-  if (yindex >= 0 and yindex < fieldmesh.LocalNy) {
-    // write global y-index as attribute
-    setAttribute(name, "yindex_global", fieldmesh.getGlobalYIndex(f.getIndex()));
-  } else {
-    // y-index is not valid, set global y-index to -1 to indicate 'not-valid'
-    setAttribute(name, "yindex_global", -1);
-  }
+  setAttribute(name, "yindex_global", f.getGlobalIndex());
 }
 
 void DataFormat::readFieldAttributes(const std::string& name, Field& f) {
@@ -82,9 +74,13 @@ void DataFormat::readFieldAttributes(const std::string& name, FieldPerp& f) {
   // Note: don't use DataFormat::mesh variable, because it may be null if the DataFormat
   // is part of a GridFromFile, which is created before the Mesh.
   if (getAttribute(name, "yindex_global", yindex_global)) {
-    // Apply correction because yindex_global includes boundaries
-    f.setIndex(f.getMesh()->YLOCAL(yindex_global) - f.getMesh()->ystart);
+    // If yindex_global is a guard cell or otherwise invalid value, f
+    // may not get allocated
+    f.setIndexFromGlobal(yindex_global);
   } else {
-    f.setIndex(f.getMesh()->YLOCAL(0));
+    // "yindex_global" wasn't present, so this might be an older
+    // file. We use the no-boundary form here, such that we get a
+    // default value on a grid cell
+    f.setIndex(f.getMesh()->getLocalYIndexNoBoundaries(0));
   }
 }

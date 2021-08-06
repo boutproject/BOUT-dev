@@ -293,7 +293,7 @@ class Mesh {
   /// @param[in] buffer A buffer of data to send
   /// @param[in] size   The length of \p buffer
   /// @param[in] tag    A label, must be the same at receive
-  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual MPI_Request sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
 
   /// Low-level communication routine
@@ -306,7 +306,7 @@ class Mesh {
   /// @param[inout] buffer  The buffer to fill with data. Must already be allocated of length \p size
   /// @param[in] size  The length of \p buffer
   /// @param[in] tag   A label, must be the same as send
-  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
   
   virtual int getNXPE() = 0; ///< The number of processors in the X direction
@@ -389,25 +389,25 @@ class Mesh {
   virtual bool lastY() const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
   virtual bool firstY(int xpos) const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
   virtual bool lastY(int xpos) const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
-  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int UpXSplitIndex() = 0;  ///< If the upper Y guard cells are split in two, return the X index where the split occurs
-  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int DownXSplitIndex() = 0; ///< If the lower Y guard cells are split in two, return the X index where the split occurs
 
   /// Send data
-  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYOutIndest(BoutReal *buffer, int size, int tag) = 0;
 
   ///
-  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
 
   ///
-  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYInIndest(BoutReal *buffer, int size, int tag) = 0;
 
   ///
-  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYInOutdest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -415,7 +415,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
-  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYOutIndest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -423,7 +423,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
-  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -431,7 +431,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
-  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -439,7 +439,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
-  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag) = 0;
   
   // Boundary region iteration
@@ -487,19 +487,21 @@ class Mesh {
   
   /// Returns the global X index given a local index
   /// If the local index includes the boundary cells, then so does the global.
-  [[gnu::deprecated("Use getGlobalXIndex instead")]]
+  [[deprecated("Use getGlobalXIndex instead")]]
   int XGLOBAL(int xloc) const { return getGlobalXIndex(xloc); }
   /// Returns the global Y index given a local index
   /// The local index must include the boundary, the global index does not.
-  [[gnu::deprecated("Use getGlobalYIndex or getGlobalYIndexNoBoundaries instead")]]
-  virtual int YGLOBAL(int yloc) const { return getGlobalYIndexNoBoundaries(yloc); }
+  [[deprecated("Use getGlobalYIndex or getGlobalYIndexNoBoundaries instead")]]
+  int YGLOBAL(int yloc) const { return getGlobalYIndexNoBoundaries(yloc); }
 
   /// Returns the local X index given a global index
   /// If the global index includes the boundary cells, then so does the local.
-  virtual int XLOCAL(int xglo) const = 0;
+  [[deprecated("Use getLocalXIndex or getLocalXIndexNoBoundaries instead")]]
+  int XLOCAL(int xglo) const { return getLocalXIndex(xglo); };
   /// Returns the local Y index given a global index
-  /// The global index does not include the boundary cells, the local does.
-  virtual int YLOCAL(int yglo) const = 0;
+  /// If the global index includes the boundary cells, then so does the local.
+  [[deprecated("Use getLocalYIndex or getLocalYIndexNoBoundaries instead")]]
+  int YLOCAL(int yglo) const { return getLocalYIndexNoBoundaries(yglo); };
 
   /// Returns a global X index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
@@ -509,6 +511,14 @@ class Mesh {
   /// Global index excludes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalXIndexNoBoundaries(int xlocal) const = 0;
 
+  /// Returns a local X index given a global index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalXIndex(int xglobal) const = 0;
+
+  /// Returns a local X index given a global index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalXIndexNoBoundaries(int xglobal) const = 0;
+
   /// Returns a global Y index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalYIndex(int ylocal) const = 0;
@@ -517,6 +527,14 @@ class Mesh {
   /// Global index excludes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalYIndexNoBoundaries(int ylocal) const = 0;
 
+  /// Returns a local Y index given a global index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalYIndex(int yglobal) const = 0;
+
+  /// Returns a local Y index given a global index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalYIndexNoBoundaries(int yglobal) const = 0;
+
   /// Returns a global Z index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalZIndex(int zlocal) const = 0;
@@ -524,6 +542,14 @@ class Mesh {
   /// Returns a global Z index given a local index.
   /// Global index excludes boundary cells, local index includes boundary or guard cells.
   virtual int getGlobalZIndexNoBoundaries(int zlocal) const = 0;
+
+  /// Returns a local Z index given a global index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalZIndex(int zglobal) const = 0;
+
+  /// Returns a local Z index given a global index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getLocalZIndexNoBoundaries(int zglobal) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
@@ -794,44 +820,44 @@ class Mesh {
     return bout::derivatives::index::FDDZ(vel, f, outloc, method, region);
   }
 
-  [[gnu::deprecated("Please use free function toFieldAligned instead")]]
+  [[deprecated("Please use free function toFieldAligned instead")]]
   const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
     return ::toFieldAligned(f, toString(region));
   }
 
-  [[gnu::deprecated("Please use free function fromFieldAligned instead")]]
+  [[deprecated("Please use free function fromFieldAligned instead")]]
   const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
     return ::fromFieldAligned(f, toString(region));
   }
 
-  [[gnu::deprecated("Please use free function toFieldAligned instead")]]
+  [[deprecated("Please use free function toFieldAligned instead")]]
   const Field2D toFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
     return ::toFieldAligned(f, toString(region));
   }
 
-  [[gnu::deprecated("Please use free function fromFieldAligned instead")]]
+  [[deprecated("Please use free function fromFieldAligned instead")]]
   const Field2D fromFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
     return ::fromFieldAligned(f, toString(region));
   }
 
-  [[gnu::deprecated("Please use "
+  [[deprecated("Please use "
       "Coordinates::getParallelTransform().canToFromFieldAligned instead")]]
   bool canToFromFieldAligned() {
     return getCoordinates()->getParallelTransform().canToFromFieldAligned();
   }
 
-  [[gnu::deprecated("Please use Coordinates::setParallelTransform instead")]]
+  [[deprecated("Please use Coordinates::setParallelTransform instead")]]
   void setParallelTransform(std::unique_ptr<ParallelTransform> pt) {
     getCoordinates()->setParallelTransform(std::move(pt));
   }
 
-  [[gnu::deprecated("This call is now unnecessary")]]
+  [[deprecated("This call is now unnecessary")]]
   void setParallelTransform() {
     // The ParallelTransform is set from options in the Coordinates
     // constructor, so this method doesn't need to do anything
   }
 
-  [[gnu::deprecated("Please use Coordinates::getParallelTransform instead")]]
+  [[deprecated("Please use Coordinates::getParallelTransform instead")]]
   ParallelTransform& getParallelTransform() {
     return getCoordinates()->getParallelTransform();
   }
@@ -849,6 +875,9 @@ class Mesh {
   /// Get the named region from the region_map for the data iterator
   ///
   /// Throws if region_name not found
+  template <class T>
+  const Region<typename T::ind_type>& getRegion(const std::string &region_name) const;
+
   const Region<> &getRegion(const std::string &region_name) const{
     return getRegion3D(region_name);
   }
@@ -942,5 +971,18 @@ private:
   std::map<std::string, Region<IndPerp>> regionMapPerp;
   Array<int> indexLookup3Dto2D;
 };
+
+template <>
+inline const Region<Ind3D>& Mesh::getRegion<Field3D>(const std::string& region_name) const {
+  return getRegion3D(region_name);
+}
+template <>
+inline const Region<Ind2D>& Mesh::getRegion<Field2D>(const std::string& region_name) const {
+  return getRegion2D(region_name);
+}
+template <>
+inline const Region<IndPerp>& Mesh::getRegion<FieldPerp>(const std::string& region_name) const {
+  return getRegionPerp(region_name);
+}
 
 #endif // __MESH_H__

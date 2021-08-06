@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-from boututils.run_wrapper import shell, launch
+from boututils.run_wrapper import build_and_log, launch
 from boutdata.collect import collect
 from sys import stdout, exit
 
@@ -14,8 +14,7 @@ path = "torus"
 # Set this to False to turn off plotting
 interactive = True
 
-print("Making test")
-shell("make > make.log")
+build_and_log("Laplace perp test")
 
 print("Running test")
 s, out = launch("./test -d "+path, nproc=1, pipe=True)

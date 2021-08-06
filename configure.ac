@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.3.3],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[4.4.0],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -64,6 +64,8 @@ AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
         [Enable support for scorep based instrumentation])],,[with_scorep=no])
 AC_ARG_WITH(system_mpark, [AS_HELP_STRING([--with-system-mpark],
         [Use mpark.variant already installed rather then the bundled one])],,[with_system_mpark=auto])
+AC_ARG_WITH(system_uuid,  [AS_HELP_STRING([--with-system-uuid],
+        [Use libuuid to generate UUIDs])],,[with_system_uuid=auto])
 
 dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 
@@ -87,6 +89,8 @@ AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
         [Disable function backtrace])],,[enable_backtrace=maybe])
 AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
+AC_ARG_ENABLE(static,       [AS_HELP_STRING([--enable-static],
+        [Enable building bout++ into an static library])],,[enable_static=auto])
 AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
 AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static/dynamic/guided/auto],
@@ -312,6 +316,7 @@ AS_IF([test "x$enable_checks" != "xno" && test "x$enable_checks" != "x0"], [
           CXXFLAGS="$CXXFLAGS -DCHECK=1"
           CHECK_LEVEL="1"],
     [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking + stack tracing)])
+          enable_output_debug=yes
           CXXFLAGS="$CXXFLAGS -DCHECK=3"
           CHECK_LEVEL="3"],
     [AC_MSG_NOTICE([ -> Level 2 (Basic checking + stack tracing)])
@@ -350,9 +355,10 @@ AS_IF([test "x$enable_sigfpe" = "xyes"], [
 ])
 
 BOUT_VERSION=$PACKAGE_VERSION
-BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
-BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
-BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.$(echo ${BOUT_VERSION_MINOR}|tr -d .)
+BOUT_VERSION_MAJOR=$(echo $PACKAGE_VERSION | cut -d. -f1)
+BOUT_VERSION_MINOR=$(echo $PACKAGE_VERSION | cut -d. -f2)
+BOUT_VERSION_PATCH=$(echo ${PACKAGE_VERSION%-alpha} | cut -d. -f3)
+BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR}${BOUT_VERSION_PATCH}
 CXXFLAGS="$CXXFLAGS -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 #############################################################
 # Enable Backtrace if possible
@@ -389,6 +395,7 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
 # Build into shared object (pic)
 #############################################################
 
+LIB_TO_BUILD=''
 AS_IF([test "x$enable_shared" = "xyes"], [
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
@@ -399,6 +406,31 @@ AS_IF([test "x$enable_shared" = "xyes"], [
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS="$CXXFLAGS -fPIC"
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.so'
+    AS_IF([test "x$enable_static" = "xauto"], [
+        enable_static=no
+    ])
+    SHARED_EXTRA=':'
+    AS_IF([test "x$enable_static" = "xno"], [
+        SHARED_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/libbout++.a'
+    ])
+], [
+    AS_IF([test "x$enable_static" = "xauto"], [
+        enable_static=yes
+    ])
+])
+
+AS_IF([test "x$enable_static" = "xyes"], [
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.a'
+    STATIC_EXTRA=':'
+    # In case we only build static, make sure shared libs are removed
+    AS_IF([! test "x$enable_shared" = "xyes"], [
+        STATIC_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/*.so*'
+    ])
+])
+
+AS_IF([test "x$LIB_TO_BUILD" = x ], [
+    AC_MSG_ERROR([Need to enable at least on of static or shared!])
 ])
 
 #############################################################
@@ -1131,7 +1163,7 @@ Please supply the path using --with-scorep=/path/to/scorep])
   ],[
       # Set a compile-time flag
       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
-      MPICXX="$SCOREPPATH --user --nocompiler $MPICXX"
+      CXX="$SCOREPPATH --user --nocompiler $CXX"
       HAS_SCOREP="yes"
       AC_MSG_NOTICE([Scorep support enabled])
   ])
@@ -1179,6 +1211,26 @@ AS_IF([test "$SYSTEM_HAS_MPARK" = "yes"], [
   MPARK_INCLUDE="-I$MPARK_VARIANT_INCLUDE_PATH"
   OWN_MPARK=yes
 ])
+
+#############################################################
+# Check for libuuid
+#############################################################
+
+AS_IF([test ".$with_system_uuid" = "no"], [
+  BOUT_HAS_UUID_SYSTEM_GENERATOR=no
+], [
+  BOUT_ADDPATH_CHECK_HEADER(uuid/uuid.h,
+   BOUT_ADDPATH_CHECK_LIB(uuid, uuid_generate,
+       BOUT_HAS_UUID_SYSTEM_GENERATOR=yes,
+       BOUT_HAS_UUID_SYSTEM_GENERATOR=no,
+       [$with_system_uuid]),
+   BOUT_HAS_UUID_SYSTEM_GENERATOR=no,
+   [$with_system_uuid])
+  AS_IF([test "$with_system_uuid" = "yes"], [
+   AC_MSG_FAILURE([*** System UUID generator not found, but explicitly requested])
+  ])
+])
+
 #############################################################
 # Download + Build PVODE '98
 #############################################################
@@ -1201,15 +1253,15 @@ AS_IF([test "$with_pvode" != "no"], [
     AC_MSG_NOTICE([PVODE being built without OpenMP support])
   ])
   # Clean PVODE
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
   AC_MSG_NOTICE([Building PVODE])
   echo "* Building PVODE" >> config-build.log
   echo "*************************************************************" >> config-build.log
 
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
   AS_IF([test -f externalpackages/PVODE/lib/libpvode.a && test -f externalpackages/PVODE/lib/libpvpre.a], [
     AC_MSG_NOTICE([Successfully built PVODE])
@@ -1355,6 +1407,9 @@ AC_SUBST(OWN_MPARK)
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
 AC_SUBST(PYTHONCONFIGPATH)
+AC_SUBST(LIB_TO_BUILD)
+AC_SUBST(STATIC_EXTRA)
+AC_SUBST(SHARED_EXTRA)
 
 AC_SUBST(BOUT_VERSION)
 AC_SUBST(GIT_REVISION)
@@ -1371,6 +1426,7 @@ AC_SUBST(HAS_MUMPS)
 AC_SUBST(HAS_LAPACK)
 AC_SUBST(HAS_PETSC)
 AC_SUBST(HAS_SLEPC)
+AC_SUBST(BOUT_HAS_UUID_SYSTEM_GENERATOR)
 AC_SUBST(PETSC_HAS_SUNDIALS)
 AC_SUBST(PETSC_MAKE_INCLUDE)
 AC_SUBST(PETSC_DIR)
@@ -1383,6 +1439,8 @@ AC_SUBST(HAS_NLS)
 AC_SUBST(HAS_FFTW)
 
 AC_CONFIG_FILES([bin/bout-config])
+AC_CONFIG_FILES([src/makefile])
+AC_CONFIG_FILES([tools/pylib/boutconfig/__init__.py])
 AC_OUTPUT
 chmod a+x bin/bout-config
 
@@ -1408,6 +1466,7 @@ AC_MSG_NOTICE([  Lapack support          : $HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)])
 AC_MSG_NOTICE([  Natural language support: $HAS_NLS (path: $localedir)])
+AC_MSG_NOTICE([  System UUID generator   : $BOUT_HAS_UUID_SYSTEM_GENERATOR])
 
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([-------------------------------])

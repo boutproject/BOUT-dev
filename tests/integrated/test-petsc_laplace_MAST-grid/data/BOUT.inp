@@ -31,6 +31,7 @@ rtol=1.e-10
 include_yguards=false
 maxits=1000
 fourth_order=true
+gmres_max_steps=32
 
 [SPT]
 #type=spt

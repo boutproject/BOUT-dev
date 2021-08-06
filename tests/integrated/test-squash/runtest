@@ -4,10 +4,13 @@ from boututils.datafile import DataFile
 import itertools
 import time
 import numpy as np
-from boututils.run_wrapper import launch_safe, shell_safe
+from boututils.run_wrapper import launch_safe, shell_safe, build_and_log
+import re
 
-#requires: all_tests
-#requires: netcdf
+# requires: all_tests
+# requires: netcdf
+
+IGNORED_VARS_PATTERN = re.compile("(wtime|ncalls|run_id|run_restart_from).*")
 
 
 class timer(object):
@@ -53,7 +56,7 @@ def verify(f1, f2):
                 raise RuntimeError("shape mismatch in ", v, d1[v], d2[v])
             if v in ["MXSUB", "MYSUB", "NXPE", "NYPE", "iteration","wall_time"]:
                 continue
-            if v.startswith("wtime") or v.startswith("ncalls"):
+            if IGNORED_VARS_PATTERN.match(v):
                 continue
             if not np.allclose(d1[v], d2[v], equal_nan=True):
                 err = ""
@@ -64,7 +67,7 @@ def verify(f1, f2):
                 raise RuntimeError("data mismatch in ", v, err, d1[v], d2[v])
 
 
-timed_shell_safe("make")
+build_and_log("Squash test")
 
 # Run once to get normal data
 timed_shell_safe("./squash -q -q -q nout=2")

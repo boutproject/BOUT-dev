@@ -16,7 +16,7 @@ shared: libfast
 	@$(CXX) -shared -Wl,-soname,libpvpre.so.1.0.0 -o $(BOUT_TOP)/lib/libpvpre_.so -L $(BOUT_TOP)/lib -Wl,--whole-archive -lpvpre -Wl,--no-whole-archive
 	@mv $(BOUT_TOP)/lib/libpvode_.so $(BOUT_TOP)/lib/libpvode.so.1.0.0
 	@mv $(BOUT_TOP)/lib/libpvpre_.so $(BOUT_TOP)/lib/libpvpre.so.1.0.0
-	@ln -s libbout++.so.4.3.3 $(LIB_SO)
+	@ln -s libbout++.so.4.4.0 $(LIB_SO)
 	@ln -s libpvode.so.1.0.0 lib/libpvode.so
 	@ln -s libpvpre.so.1.0.0 lib/libpvpre.so
 

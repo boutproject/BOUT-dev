@@ -10,6 +10,9 @@ GTEST_API_ int main(int argc, char** argv) {
   // setting fft_measure to false
   bout::fft::fft_init(false);
 
+  // MPI initialisationn
+  BoutComm::setArgs(argc, argv);
+
   printf("Running main() from bout_test_main.cxx\n");
   testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();
@@ -19,5 +22,9 @@ GTEST_API_ int main(int argc, char** argv) {
   Array<double>::cleanup();
   Array<int>::cleanup();
   Array<bool>::cleanup();
+
+  // MPI communicator, including MPI_Finalize()
+  BoutComm::cleanup();
+
   return result;
 }

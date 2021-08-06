@@ -289,50 +289,91 @@ There is now (experimental) support for `CMake <https://cmake.org/>`_. You will 
 3.9. CMake supports out-of-source builds by default, which are A Good
 Idea. Basic configuration with CMake looks like::
 
-  $ mkdir build && cd build
-  $ cmake ..
+  $ cmake . -B build
 
-You can then run ``make`` as usual.
+which creates a new directory ``build``, which you can then compile with::
+
+  $ cmake --build build
 
 You can see what build options are available with::
 
-  $ cmake .. -LH
+  $ cmake . -B build -LH
   ...
   // Enable backtrace
-  ENABLE_BACKTRACE:BOOL=ON
+  BOUT_ENABLE_BACKTRACE:BOOL=ON
 
   // Output coloring
-  ENABLE_COLOR:BOOL=ON
+  BOUT_ENABLE_COLOR:BOOL=ON
 
   // Enable OpenMP support
-  ENABLE_OPENMP:BOOL=OFF
+  BOUT_ENABLE_OPENMP:BOOL=OFF
 
   // Enable support for PETSc time solvers and inversions
-  USE_PETSC:BOOL=OFF
+  BOUT_USE_PETSC:BOOL=OFF
   ...
 
 CMake uses the ``-D<variable>=<choice>`` syntax to control these
 variables. You can set ``<package>_ROOT`` to guide CMake in finding
 the various optional third-party packages (except for PETSc/SLEPc,
-which use ``_DIR``). CMake understands the usual environment variables
-for setting the compiler, compiler/linking flags, as well as having
-built-in options to control them and things like static vs shared
-libraries, etc. See the `CMake documentation
-<https://cmake.org/documentation/>`_ for more infomation.
+which use ``_DIR``). Note that some packages have funny
+captialisation, for example ``NetCDF_ROOT``! Use ``-LH`` to see the
+form that each package expects.
+
+CMake understands the usual environment variables for setting the
+compiler, compiler/linking flags, as well as having built-in options
+to control them and things like static vs shared libraries, etc. See
+the `CMake documentation <https://cmake.org/documentation/>`_ for more
+infomation.
 
 A more complicated CMake configuration command
 might look like::
 
-  $ CC=mpicc CXX=mpic++ cmake .. \
-      -DUSE_PETSC=ON -DPETSC_DIR=/path/to/petsc/ \
-      -DUSE_SLEPC=ON -DSLEPC_DIR=/path/to/slepc/ \
-      -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials \
-      -DUSE_NETCDF=ON -DNetCDF_ROOT=/path/to/netcdf \
-      -DENABLE_OPENMP=ON \
-      -DENABLE_SIGFPE=OFF \
+  $ CC=mpicc CXX=mpic++ cmake . -B build \
+      -DBOUT_USE_PETSC=ON -DPETSC_DIR=/path/to/petsc/ \
+      -DBOUT_USE_SLEPC=ON -DSLEPC_DIR=/path/to/slepc/ \
+      -DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials \
+      -DBOUT_USE_NETCDF=ON -DNetCDF_ROOT=/path/to/netcdf \
+      -DBOUT_ENABLE_OPENMP=ON \
+      -DBOUT_ENABLE_SIGFPE=OFF \
       -DCMAKE_BUILD_TYPE=Debug \
       -DBUILD_SHARED_LIBS=ON
       -DCMAKE_INSTALL_PREFIX=/path/to/install/BOUT++
+
+If you wish to change the configuration after having built ``BOUT++``,
+it's wise to delete the ``CMakeCache.txt`` file in the build
+directory. The equivalent of ``make distclean`` with CMake is to just
+delete the entire build directory and reconfigure.
+
+Downloading Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you don't have some dependencies installed, CMake can be used to download,
+configure and compile them alongside BOUT++.
+
+For NetCDF, use ``-DBOUT_DOWNLOAD_NETCDF_CXX4=ON``
+
+For SUNDIALS, use ``-DBOUT_DOWNLOAD_SUNDIALS=ON``. If using ``ccmake`` this option
+may not appear initially. This automatically sets ``BOUT_USE_SUNDIALS=ON``, and
+configures SUNDIALS to use MPI.
+
+Bundled Dependencies
+^^^^^^^^^^^^^^^^^^^^
+
+BOUT++ bundles some dependencies, currently `mpark.variant
+<https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
+`googletest <https://github.com/google/googletest>`_. If you wish to
+use an existing installation of ``mpark.variant``, you can set
+``-DBOUT_USE_SYSTEM_MPARK_VARIANT=ON``, and supply the installation
+path using ``mpark_variant_ROOT`` via the command line or environment
+variable if it is installed in a non standard loction. You can also
+set ``-DBOUT_USE_GIT_SUBMODULE=OFF``.
+
+The recommended way to use ``googletest`` is to compile it at the same
+time as your project, therefore there is no option to use an external
+installation for that.
+
+Using CMake with your physics model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can write a CMake configuration file (``CMakeLists.txt``) for your
 physics model in only four lines:
@@ -344,11 +385,26 @@ physics model in only four lines:
     add_executable(blob2d blob2d.cxx)
     target_link_libraries(blob2d PRIVATE bout++::bout++)
 
-You just need to give CMake the location where you installed BOUT++
-via the ``CMAKE_PREFIX_PATH`` variable::
+You just need to give CMake the location where you built or installed
+BOUT++ via the ``CMAKE_PREFIX_PATH`` variable::
 
-  $ mkdir build && cd build
-  $ cmake .. -DCMAKE_PREFIX_PATH=/path/to/install/BOUT++
+  $ cmake . -B build -DCMAKE_PREFIX_PATH=/path/to/built/BOUT++
+
+If you want to modify BOUT++ along with developing your model, you may
+instead wish to place the BOUT++ as a subdirectory of your model and
+use ``add_subdirectory`` instead of ``find_package`` above:
+
+.. code-block:: cmake
+
+    project(blob2d LANGUAGES CXX)
+    add_subdirectory(BOUT++/source)
+    add_executable(blob2d blob2d.cxx)
+    target_link_libraries(blob2d PRIVATE bout++::bout++)
+
+where ``BOUT++/source`` is the subdirectory containing the BOUT++
+source. Doing this has the advantage that any changes you make to
+BOUT++ source files will trigger a rebuild of both the BOUT++ library
+and your model when you next build your code.
 
 .. _sec-config-nls:
 
@@ -394,22 +450,34 @@ make a note of what configure printed out.
 Python configuration
 ~~~~~~~~~~~~~~~~~~~~
 
-To use Python, you will need the NumPy and SciPy libraries. On Debian or
-Ubuntu these can be installed with::
+To use Python, you will need the dependencies of the `boututils
+<https://github.com/boutproject/boututils>`__ and `boutdata
+<https://github.com/boutproject/boutdata>`__ libraries. The simplest way to get these is
+to install the packages with pip::
 
-    $ sudo apt-get install python-scipy
+    $ pip install --user boutdata
 
-which should then add all the other dependencies like NumPy. To test if
-everything is installed, run::
+or conda::
 
-    $ python -c "import scipy"
+    $ conda install boutdata
 
-If not, see the SciPy website https://www.scipy.org for instructions on
-installing.
+You can also install all the packages directly (see the documentation in the `boututils
+<https://github.com/boutproject/boututils>`__ and `boutdata
+<https://github.com/boutproject/boutdata>`__ repos for the most up to date list)
+using pip::
 
-To do this, the path to ``tools/pylib`` should be added to the
-``PYTHONPATH`` environment variable. Instructions for doing this are
-printed at the end of the configure script, for example::
+    $ pip install --user numpy scipy matplotlib sympy netCDF4 h5py future importlib-metadata
+
+or conda::
+
+    $ conda install numpy scipy matplotlib sympy netcdf4 h5py future importlib-metadata
+
+They may also be available from your Linux system's package manager.
+
+To use the versions of ``boututils`` and ``boutdata`` provided by BOUT++,  the path to
+``tools/pylib`` should be added to the ``PYTHONPATH`` environment variable. This is not
+necessary if you have installed the ``boututils`` and ``boutdata`` packages.  Instructions
+for doing this are printed at the end of the configure script, for example::
 
     Make sure that the tools/pylib directory is in your PYTHONPATH
     e.g. by adding to your ~/.bashrc file
@@ -420,8 +488,13 @@ To test if this command has worked, try running::
 
     $ python -c "import boutdata"
 
-If this doesn’t produce any error messages then Python is configured
-correctly.
+If this doesn’t produce any error messages then Python is configured correctly.
+
+Note that ``boututils`` and ``boutdata`` are provided by BOUT++ as submodules, so versions
+compatible with the checked out version of BOUT++ are downloaded into the
+``externalpackages`` directory. These are the versions used by the tests run by ``make
+check`` even if you have installed ``boututils`` and ``boutdata`` on your system.
+
 
 .. _sec-config-idl:
 

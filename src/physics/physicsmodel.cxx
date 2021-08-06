@@ -72,30 +72,30 @@ int PhysicsModel::runJacobian(BoutReal t) {
   return (*this.*userjacobian)(t);
 }
 
-void PhysicsModel::bout_solve(Field2D &var, const char *name) {
+void PhysicsModel::bout_solve(Field2D &var, const char *name,
+                              const std::string& description) {
   // Add to solver
-  solver->add(var, name);
+  solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Field3D &var, const char *name) {
-  solver->add(var, name);
+void PhysicsModel::bout_solve(Field3D &var, const char *name,
+                              const std::string& description) {
+  solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector2D &var, const char *name) {
-  solver->add(var, name);
+void PhysicsModel::bout_solve(Vector2D &var, const char *name,
+                              const std::string& description) {
+  solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector3D &var, const char *name) {
-  solver->add(var, name);
+void PhysicsModel::bout_solve(Vector3D &var, const char *name,
+                              const std::string& description) {
+  solver->add(var, name, description);
 }
 
 int PhysicsModel::postInit(bool restarting) {
   TRACE("PhysicsModel::postInit");
   
-  // Add the solver variables to the restart file
-  // Second argument specifies no time history
-  solver->outputVars(restart, false);
-
   std::string restart_dir;  ///< Directory for restart files
   std::string dump_ext, restart_ext;  ///< Dump, Restart file extension
   
@@ -112,6 +112,17 @@ int PhysicsModel::postInit(bool restarting) {
   options->get("restart_format", restart_ext, dump_ext);
 
   std::string filename = restart_dir + "/BOUT.restart."+restart_ext;
+
+  // Add the solver variables to the restart file
+  // Second argument specifies no time history
+  // Open and close the restart file first so that it knows it's filename - needed so
+  // can_write_strings() works and we can skip writing run_id for HDF5 files.
+  if (!restart.openr("%s",filename.c_str())) {
+    throw BoutException("Error: Could not open restart file %s\n", filename.c_str());
+  }
+  restart.close();
+  solver->outputVars(restart, false);
+
   if (restarting) {
     output.write("Loading restart file: %s\n", filename.c_str());
 

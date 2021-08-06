@@ -43,6 +43,12 @@ Vector3D::Vector3D(const Vector3D &f)
     : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
       location(f.getLocation()) {}
 
+Vector3D::Vector3D(Mesh* localmesh, bool covariant, CELL_LOC location)
+  : x(localmesh), y(localmesh), z(localmesh), covariant(covariant) {
+
+    setLocation(location);
+  }
+
 Vector3D::~Vector3D() {
   if (deriv != nullptr) {
     // The ddt of the components (x.ddt) point to the same place as ddt.x
@@ -601,6 +607,26 @@ const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs)
 // Return the magnitude of a vector
 const Field3D abs(const Vector3D &v, const std::string& region) {
   return sqrt(v*v, region);
+}
+
+Vector3D toFieldAligned(const Vector3D& v, const std::string& region) {
+  Vector3D result{emptyFrom(v)};
+
+  result.x = toFieldAligned(v.x, region);
+  result.y = toFieldAligned(v.y, region);
+  result.z = toFieldAligned(v.z, region);
+
+  return result;
+}
+
+Vector3D fromFieldAligned(const Vector3D& v, const std::string& region) {
+  Vector3D result{emptyFrom(v)};
+
+  result.x = fromFieldAligned(v.x, region);
+  result.y = fromFieldAligned(v.y, region);
+  result.z = fromFieldAligned(v.z, region);
+
+  return result;
 }
 
 /***************************************************************

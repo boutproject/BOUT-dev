@@ -35,6 +35,7 @@
 #include "options.hxx"
 #include "output.hxx"
 #include "unused.hxx"
+#include "bout/bout_enum_class.hxx"
 #include "bout/mesh.hxx"
 #include "utils.hxx"
 
@@ -67,6 +68,9 @@ using CVODEINT = bout::utils::function_traits<CVLocalFn>::arg_t<0>;
 using CVODEINT = sunindextype;
 #endif
 #endif
+
+BOUT_ENUM_CLASS(positivity_constraint, none, positive, non_negative, negative,
+                non_positive);
 
 static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 static int cvode_bbd_rhs(CVODEINT Nlocal, BoutReal t, N_Vector u, N_Vector du,
@@ -112,6 +116,25 @@ constexpr auto& SUNLinSol_SPGMR = SUNSPGMR;
 CvodeSolver::CvodeSolver(Options* opts) : Solver(opts) {
   has_constraints = false; // This solver doesn't have constraints
   canReset = true;
+
+  // Add diagnostics to output
+  // Needs to be in constructor not init() because init() is called after
+  // Solver::outputVars()
+  add_int_diagnostic(nsteps, "cvode_nsteps", "Cumulative number of internal steps");
+  add_int_diagnostic(nfevals, "cvode_nfevals", "No. of calls to r.h.s.  function");
+  add_int_diagnostic(nniters, "cvode_nniters", "No. of nonlinear solver iterations");
+  add_int_diagnostic(npevals, "cvode_npevals", "No. of preconditioner solves");
+  add_int_diagnostic(nliters, "cvode_nliters", "No. of linear iterations");
+  add_BoutReal_diagnostic(last_step, "cvode_last_step",
+                          "Step size used for the last step before each output");
+  add_int_diagnostic(last_order, "cvode_last_order",
+                     "Order used during the last step before each output");
+  add_int_diagnostic(num_fails, "cvode_num_fails",
+                     "No. of local error test failures that have occurred");
+  add_int_diagnostic(nonlin_fails, "cvode_nonlin_fails",
+                     "No. of nonlinear convergence failures");
+  add_int_diagnostic(stab_lims, "cvode_stab_lims",
+                     "No. of order reductions due to stability limit detection");
 }
 
 CvodeSolver::~CvodeSolver() {
@@ -232,7 +255,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     if (abstolvec == nullptr)
       throw BoutException("SUNDIALS memory allocation (abstol vector) failed\n");
 
-    set_abstol_values(NV_DATA_P(abstolvec), f2dtols, f3dtols);
+    set_vector_option_values(NV_DATA_P(abstolvec), f2dtols, f3dtols);
 
     if (CVodeSVtolerances(cvode_mem, reltol, abstolvec) < 0)
       throw BoutException("CVodeSVtolerances failed\n");
@@ -265,6 +288,44 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   if (mxorder > 0) {
     CVodeSetMaxOrd(cvode_mem, mxorder);
   }
+
+  const auto max_nonlinear_iterations = (*options)["max_nonlinear_iterations"]
+    .doc("Maximum number of nonlinear iterations allowed by CVODE before reducing "
+         "timestep. CVODE default (used if this option is negative) is 3.")
+    .withDefault(-1);
+  if (max_nonlinear_iterations > 0) {
+    CVodeSetMaxNonlinIters(cvode_mem, max_nonlinear_iterations);
+  }
+
+  const auto apply_positivity_constraints = (*options)["apply_positivity_constraints"]
+    .doc("Use CVODE function CVodeSetConstraints to constrain variables - the constraint "
+         "to be applied is set by the positivity_constraint option in the subsection for "
+         "each variable")
+    .withDefault(false);
+#if not (SUNDIALS_VERSION_MAJOR >= 3 and SUNDIALS_VERSION_MINOR >= 2)
+  if (apply_positivity_constraints) {
+    throw BoutException("The apply_positivity_constraints option is only available with "
+                        "SUNDIALS>=3.2.0");
+  }
+#else
+  if (apply_positivity_constraints) {
+    auto f2d_constraints = create_constraints(f2d);
+    auto f3d_constraints = create_constraints(f3d);
+
+    N_Vector constraints_vec = N_VNew_Parallel(BoutComm::get(), local_N, neq);
+    if (constraints_vec == nullptr)
+      throw BoutException("SUNDIALS memory allocation (positivity constraints vector) "
+                          "failed\n");
+
+    set_vector_option_values(NV_DATA_P(constraints_vec), f2d_constraints,
+                             f3d_constraints);
+
+    if (CVodeSetConstraints(cvode_mem, constraints_vec) < 0)
+      throw BoutException("CVodeSetConstraints failed\n");
+
+    N_VDestroy_Parallel(constraints_vec);
+  }
+#endif
 
   /// Newton method can include Preconditioners and Jacobian function
   if (!func_iter) {
@@ -360,6 +421,36 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   return 0;
 }
 
+template<class FieldType>
+std::vector<BoutReal> CvodeSolver::create_constraints(
+    const std::vector<VarStr<FieldType>>& fields) {
+
+  std::vector<BoutReal> constraints;
+  constraints.reserve(fields.size());
+  std::transform(begin(fields), end(fields), std::back_inserter(constraints),
+                 [](const VarStr<FieldType>& f) {
+                   auto f_options = Options::root()[f.name];
+                   const auto value = f_options["positivity_constraint"]
+                                      .doc("Constraint to apply to this variable if "
+                                           "solver:apply_positivity_constraint=true. "
+                                           "Possible values are: none (default), "
+                                           "positive, non_negative, negative, or "
+                                           "non_positive.")
+                                      .withDefault(positivity_constraint::none);
+                   switch (value) {
+                     case positivity_constraint::none: return 0.0;
+                     case positivity_constraint::positive: return 2.0;
+                     case positivity_constraint::non_negative: return 1.0;
+                     case positivity_constraint::negative: return -2.0;
+                     case positivity_constraint::non_positive: return -1.0;
+                     default: throw BoutException("Incorrect value for "
+                                                  "positivity_constraint");
+                   }
+                 });
+  return constraints;
+}
+
+
 /**************************************************************************
  * Run - Advance time
  **************************************************************************/
@@ -382,18 +473,41 @@ int CvodeSolver::run() {
       throw BoutException("SUNDIALS CVODE timestep failed\n");
     }
 
+    // Get additional diagnostics
+    long int temp_long_int;
+    CVodeGetNumSteps(cvode_mem, &temp_long_int);
+    nsteps = int(temp_long_int);
+    CVodeGetNumRhsEvals(cvode_mem, &temp_long_int);
+    nfevals = int(temp_long_int);
+    CVodeGetNumNonlinSolvIters(cvode_mem, &temp_long_int);
+    nniters = int(temp_long_int);
+    CVSpilsGetNumPrecSolves(cvode_mem, &temp_long_int);
+    npevals = int(temp_long_int);
+    CVSpilsGetNumLinIters(cvode_mem, &temp_long_int);
+    nliters = int(temp_long_int);
+
+    // Last step size
+    CVodeGetLastStep(cvode_mem, &last_step);
+
+    // Order used in last step
+    CVodeGetLastOrder(cvode_mem, &last_order);
+
+    // Local error test failures
+    CVodeGetNumErrTestFails(cvode_mem, &temp_long_int);
+    num_fails = int(temp_long_int);
+
+    // Number of nonlinear convergence failures
+    CVodeGetNumNonlinSolvConvFails(cvode_mem, &temp_long_int);
+    nonlin_fails = int(temp_long_int);
+
+    // Stability limit order reductions
+    CVodeGetNumStabLimOrderReds(cvode_mem, &temp_long_int);
+    stab_lims = int(temp_long_int);
+
     if (diagnose) {
       // Print additional diagnostics
-      long int nsteps, nfevals, nniters, npevals, nliters;
-
-      CVodeGetNumSteps(cvode_mem, &nsteps);
-      CVodeGetNumRhsEvals(cvode_mem, &nfevals);
-      CVodeGetNumNonlinSolvIters(cvode_mem, &nniters);
-      CVSpilsGetNumPrecSolves(cvode_mem, &npevals);
-      CVSpilsGetNumLinIters(cvode_mem, &nliters);
-
       output.write(
-          "\nCVODE: nsteps %ld, nfevals %ld, nniters %ld, npevals %ld, nliters %ld\n",
+          "\nCVODE: nsteps %d, nfevals %d, nniters %d, npevals %d, nliters %d\n",
           nsteps, nfevals, nniters, npevals, nliters);
 
       output.write("    -> Newton iterations per step: %e\n",
@@ -403,32 +517,12 @@ int CvodeSolver::run() {
       output.write("    -> Preconditioner evaluations per Newton: %e\n",
                    static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
 
-      // Last step size
-      BoutReal last_step;
-      CVodeGetLastStep(cvode_mem, &last_step);
-
-      // Order used in last step
-      int last_order;
-      CVodeGetLastOrder(cvode_mem, &last_order);
-
       output.write("    -> Last step size: %e, order: %d\n", last_step, last_order);
 
-      // Local error test failures
-      long int num_fails;
-      CVodeGetNumErrTestFails(cvode_mem, &num_fails);
-
-      // Number of nonlinear convergence failures
-      long int nonlin_fails;
-      CVodeGetNumNonlinSolvConvFails(cvode_mem, &nonlin_fails);
-
-      output.write("    -> Local error fails: %ld, nonlinear convergence fails: %ld\n",
+      output.write("    -> Local error fails: %d, nonlinear convergence fails: %d\n",
                    num_fails, nonlin_fails);
 
-      // Stability limit order reductions
-      long int stab_lims;
-      CVodeGetNumStabLimOrderReds(cvode_mem, &stab_lims);
-
-      output.write("    -> Stability limit order reductions: %ld\n", stab_lims);
+      output.write("    -> Stability limit order reductions: %d\n", stab_lims);
     }
 
     /// Call the monitor function
@@ -624,33 +718,34 @@ static int cvode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector U
 }
 
 /**************************************************************************
- * vector abstol functions
+ * CVODE vector option functions
  **************************************************************************/
 
-void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data,
-                                    std::vector<BoutReal>& f2dtols,
-                                    std::vector<BoutReal>& f3dtols) {
-  int p = 0; // Counter for location in abstolvec_data array
+void CvodeSolver::set_vector_option_values(BoutReal* option_data,
+                                           std::vector<BoutReal>& f2dtols,
+                                           std::vector<BoutReal>& f3dtols) {
+  int p = 0; // Counter for location in option_data array
 
   // All boundaries
   for (const auto& i2d : bout::globals::mesh->getRegion2D("RGN_BNDRY")) {
-    loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, true);
+    loop_vector_option_values_op(i2d, option_data, p, f2dtols, f3dtols, true);
   }
   // Bulk of points
   for (const auto& i2d : bout::globals::mesh->getRegion2D("RGN_NOBNDRY")) {
-    loop_abstol_values_op(i2d, abstolvec_data, p, f2dtols, f3dtols, false);
+    loop_vector_option_values_op(i2d, option_data, p, f2dtols, f3dtols, false);
   }
 }
 
-void CvodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d), BoutReal* abstolvec_data,
-                                        int& p, std::vector<BoutReal>& f2dtols,
-                                        std::vector<BoutReal>& f3dtols, bool bndry) {
+void CvodeSolver::loop_vector_option_values_op(Ind2D UNUSED(i2d), BoutReal* option_data,
+                                               int& p, std::vector<BoutReal>& f2dtols,
+                                               std::vector<BoutReal>& f3dtols, bool bndry)
+{
   // Loop over 2D variables
   for (std::vector<BoutReal>::size_type i = 0; i < f2dtols.size(); i++) {
     if (bndry && !f2d[i].evolve_bndry) {
       continue;
     }
-    abstolvec_data[p] = f2dtols[i];
+    option_data[p] = f2dtols[i];
     p++;
   }
 
@@ -660,7 +755,7 @@ void CvodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d), BoutReal* abstolvec_d
       if (bndry && !f3d[i].evolve_bndry) {
         continue;
       }
-      abstolvec_data[p] = f3dtols[i];
+      option_data[p] = f3dtols[i];
       p++;
     }
   }

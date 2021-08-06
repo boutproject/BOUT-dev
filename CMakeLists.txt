@@ -6,9 +6,14 @@ else()
   cmake_policy(VERSION 3.12)
 endif()
 
+# CMake currently doesn't support proper semver
+# Set the version here, strip the prerelease identifier to use in `project`
+set(BOUT_FULL_VERSION 4.4.0)
+string(REGEX REPLACE "^([0-9]+\.[0-9]+\.[0-9]+)-.*" "\\1" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
+
 project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
-  VERSION 4.3.2
+  VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
 
 # This might not be entirely sensible, but helps CMake to find the
@@ -16,29 +21,32 @@ project(BOUT++
 find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
 find_package(MPI REQUIRED)
 
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+include(CMakeDependentOption)
 
-# Taken from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
-find_package(Git QUIET)
-if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-  # Update submodules as needed
-  option(GIT_SUBMODULE "Check submodules during build" ON)
-  if(GIT_SUBMODULE)
+# Override default
+option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
+
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+include(BOUT++functions)
+
+option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" ON)
+# Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
+# Update submodules as needed
+function(bout_update_submodules)
+  if(NOT BOUT_UPDATE_GIT_SUBMODULE)
+    return()
+  endif()
+  find_package(Git QUIET)
+  if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     message(STATUS "Submodule update")
-    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                    RESULT_VARIABLE GIT_SUBMOD_RESULT)
+    execute_process(COMMAND ${GIT_EXECUTABLE} -c submodule.recurse=false submodule update --init --recursive
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      RESULT_VARIABLE GIT_SUBMOD_RESULT)
     if(NOT GIT_SUBMOD_RESULT EQUAL "0")
       message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
     endif()
   endif()
-endif()
-
-if(NOT EXISTS "${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/CMakeLists.txt")
-  message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
-endif()
-
-add_subdirectory(externalpackages/mpark.variant)
+endfunction()
 
 set(BOUT_SOURCES
   ./include/boundary_factory.hxx
@@ -77,6 +85,7 @@ set(BOUT_SOURCES
   ./include/bout/rvec.hxx
   ./include/bout/scorepwrapper.hxx
   ./include/bout/slepclib.hxx
+  ./include/bout/snb.hxx
   ./include/bout/solver.hxx
   ./include/bout/solverfactory.hxx
   ./include/bout/surfaceiter.hxx
@@ -132,6 +141,7 @@ set(BOUT_SOURCES
   ./include/vector3d.hxx
   ./include/where.hxx
   ./src/bout++.cxx
+  ./src/bout++-time.cxx
   ./src/field/field.cxx
   ./src/field/field2d.cxx
   ./src/field/field3d.cxx
@@ -198,7 +208,6 @@ set(BOUT_SOURCES
   ./src/invert/parderiv/impls/cyclic/cyclic.hxx
   ./src/invert/parderiv/invert_parderiv.cxx
   ./src/invert/parderiv/parderiv_factory.cxx
-  ./src/invert/parderiv/parderiv_factory.hxx
   ./src/mesh/boundary_factory.cxx
   ./src/mesh/boundary_region.cxx
   ./src/mesh/boundary_standard.cxx
@@ -229,8 +238,11 @@ set(BOUT_SOURCES
   ./src/physics/gyro_average.cxx
   ./src/physics/physicsmodel.cxx
   ./src/physics/smoothing.cxx
+  ./src/physics/snb.cxx
   ./src/physics/sourcex.cxx
   ./src/physics/snb.cxx
+  ./src/solver/impls/adams_bashforth/adams_bashforth.cxx
+  ./src/solver/impls/adams_bashforth/adams_bashforth.hxx
   ./src/solver/impls/arkode/arkode.cxx
   ./src/solver/impls/arkode/arkode.hxx
   ./src/solver/impls/cvode/cvode.cxx
@@ -295,26 +307,84 @@ set(BOUT_SOURCES
   ./src/sys/utils.cxx
   )
 
+option(BOUT_GENERATE_FIELDOPS "Automatically re-generate the Field arithmetic operators from the Python templates. \
+Requires Python, clang-format, and Jinja2. Turn this OFF to skip generating them if, for example, \
+you are unable to install the Jinja2 Python module. This is only important for BOUT++ developers." ON)
+
+find_package(Python)
+find_package(ClangFormat)
+if (BOUT_GENERATE_FIELDOPS AND Python_FOUND AND ClangFormat_FOUND)
+  add_custom_command( OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/field/generated_fieldops.cxx
+    COMMAND ${Python_EXECUTABLE} gen_fieldops.py --filename generated_fieldops.cxx.tmp
+    COMMAND ${ClangFormat_BIN} generated_fieldops.cxx.tmp -i
+    COMMAND ${CMAKE_COMMAND} -E rename generated_fieldops.cxx.tmp generated_fieldops.cxx
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.jinja  ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/field/
+    COMMENT "Generating source code" )
+else()
+  message(AUTHOR_WARNING "'src/field/generated_fieldops.cxx' will not be \
+regenerated when you make changes to either \
+'src/field/gen_fieldops.py' or 'src/field/gen_fieldops.jinja'. \
+This is because either Python or clang-format is missing \
+(see above messages for more information) \
+or BOUT_GENERATE_FIELDOPS is OFF (current value: ${BOUT_GENERATE_FIELDOPS}). \
+This warning is only important for BOUT++ developers and can otherwise be \
+safely ignored.")
+endif()
+
 add_library(bout++
   ${BOUT_SOURCES}
   )
 add_library(bout++::bout++ ALIAS bout++)
-target_link_libraries(bout++ PUBLIC MPI::MPI_CXX mpark_variant)
+target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
 target_include_directories(bout++ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
+set(BOUT_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}/lib")
+set_target_properties(bout++ PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
+  ARCHIVE_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
+  SOVERSION 4.4.0)
+
+# Set some variables for the bout-config script
+set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
+set(BOUT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include")
 
 target_compile_definitions(bout++
-  PUBLIC "BOUT_VERSION_STRING=\"${PROJECT_VERSION}\""
+  PUBLIC "BOUT_VERSION_STRING=\"${BOUT_FULL_VERSION}\""
   PUBLIC "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
   )
 
 target_compile_features(bout++ PUBLIC cxx_std_11)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
-option(ENABLE_WARNINGS "Enable compiler warnings" ON)
-if (ENABLE_WARNINGS)
+# Various sanitizers, including coverage and address sanitizer
+include(cmake/Sanitizers.cmake)
+enable_sanitizers(bout++)
+
+cmake_dependent_option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF
+  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/mpark.variant/CMakeLists.txt" ON)
+
+if(BOUT_USE_SYSTEM_MPARK_VARIANT)
+  message(STATUS "Using external mpark.variant")
+  find_package(mpark_variant REQUIRED)
+  get_target_property(MPARK_VARIANT_INCLUDE_PATH mpark_variant INTERFACE_INCLUDE_DIRECTORIES)
+else()
+  message(STATUS "Using mpark.variant submodule")
+  bout_update_submodules()
+  add_subdirectory(externalpackages/mpark.variant)
+  if(NOT TARGET mpark_variant)
+    message(FATAL_ERROR "mpark_variant not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
+  endif()
+  set(MPARK_VARIANT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externalpackages/mpark.variant/include")
+  set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${MPARK_VARIANT_INCLUDE_PATH}")
+endif()
+target_link_libraries(bout++ PUBLIC mpark_variant)
+
+option(BOUT_ENABLE_WARNINGS "Enable compiler warnings" ON)
+if (BOUT_ENABLE_WARNINGS)
   target_compile_options(bout++ PRIVATE
     $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
       -Wall -Wextra >
@@ -334,7 +404,7 @@ endif()
 # Compile time features
 
 set(CHECK_LEVELS 0 1 2 3 4)
-set(CHECK 3 CACHE STRINGS "Set run-time checking level")
+set(CHECK 2 CACHE STRING "Set run-time checking level")
 set_property(CACHE CHECK PROPERTY STRINGS ${CHECK_LEVELS})
 if (NOT CHECK IN_LIST CHECK_LEVELS)
   message(FATAL_ERROR "CHECK must be one of ${CHECK_LEVELS}")
@@ -345,53 +415,53 @@ target_compile_definitions(bout++
   PUBLIC "BOUT_CHECK=${CHECK}")
 set(BOUT_CHECK_LEVEL ${CHECK})
 
-option(DEBUG_ENABLED "Enable extra debug output" OFF)
-option(ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF)
-if (ENABLE_OUTPUT_DEBUG OR DEBUG_ENABLED)
+cmake_dependent_option(BOUT_ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF
+  "CHECK LESS 3" ON)
+message(STATUS "Extra debug output: BOUT_USE_OUTPUT_DEBUG=${BOUT_ENABLE_OUTPUT_DEBUG}")
+set(BOUT_USE_OUTPUT_DEBUG ${BOUT_ENABLE_OUTPUT_DEBUG})
+if (BOUT_USE_OUTPUT_DEBUG)
   target_compile_definitions(bout++
     PUBLIC "DEBUG_ENABLED"
     PUBLIC "BOUT_OUTPUT_DEBUG")
 endif()
-message(STATUS "Extra debug output: DEBUG_ENABLED=${DEBUG_ENABLED}")
-set(BOUT_USE_OUTPUT_DEBUG ${DEBUG_ENABLED})
 
-option(ENABLE_SIGNAL "SegFault handling" ON)
-if (ENABLE_SIGNAL)
+option(BOUT_ENABLE_SIGNAL "SegFault handling" ON)
+message(STATUS "Signal handling: BOUT_USE_SIGNAL=${BOUT_ENABLE_SIGNAL}")
+set(BOUT_USE_SIGNAL ${BOUT_ENABLE_SIGNAL})
+if (BOUT_USE_SIGNAL)
   target_compile_definitions(bout++
     PUBLIC "SIGHANDLE"
     PUBLIC "BOUT_SIGHANDLE")
 endif()
-message(STATUS "Signal handling: SIGHANDLE=${ENABLE_SIGNAL}")
-set(BOUT_USE_SIGNAL ${ENABLE_SIGNAL})
 
-option(ENABLE_COLOR "Output coloring" ON)
-if (ENABLE_COLOR)
+option(BOUT_ENABLE_COLOR "Output coloring" ON)
+message(STATUS "Output coloring: BOUT_USE_COLOR=${BOUT_ENABLE_COLOR}")
+set(BOUT_USE_COLOR ${BOUT_ENABLE_COLOR})
+if (BOUT_USE_COLOR)
   target_compile_definitions(bout++
     PUBLIC "LOGCOLOR"
     PUBLIC "BOUT_LOGCOLOR")
 endif()
-message(STATUS "Output coloring: LOGCOLOR=${ENABLE_COLOR}")
-set(BOUT_USE_COLOR ${ENABLE_COLOR})
 
-option(ENABLE_TRACK "Field name tracking" ON)
-if (ENABLE_TRACK)
+option(BOUT_ENABLE_TRACK "Field name tracking" ON)
+message(STATUS "Field name tracking: BOUT_USE_TRACK=${BOUT_ENABLE_TRACK}")
+set(BOUT_USE_TRACK ${BOUT_ENABLE_TRACK})
+if (BOUT_USE_TRACK)
   target_compile_definitions(bout++
     PUBLIC "TRACK"
     PUBLIC "BOUT_TRACK")
 endif()
-message(STATUS "Field name tracking: TRACK=${ENABLE_TRACK}")
-set(BOUT_USE_TRACK ${ENABLE_TRACK})
 
-option(ENABLE_SIGFPE "Signalling floating point exceptions" OFF)
-if (ENABLE_SIGFPE)
+option(BOUT_ENABLE_SIGFPE "Signalling floating point exceptions" OFF)
+message(STATUS "Signalling floating point exceptions: BOUT_USE_SIGFPE=${BOUT_ENABLE_SIGFPE}")
+set(BOUT_USE_SIGFPE ${BOUT_ENABLE_SIGFPE})
+if (BOUT_USE_SIGFPE)
   target_compile_definitions(bout++
     PUBLIC "BOUT_FPE")
 endif()
-message(STATUS "Signalling floating point exceptions: BOUT_FPE=${ENABLE_SIGFPE}")
-set(BOUT_USE_SIGFPE ${ENABLE_SIGFPE})
 
-option(ENABLE_BACKTRACE "Enable backtrace" ON)
-if (ENABLE_BACKTRACE)
+option(BOUT_ENABLE_BACKTRACE "Enable backtrace" ON)
+if (BOUT_ENABLE_BACKTRACE)
   find_program(ADDR2LINE_FOUND addr2line)
   if (NOT ADDR2LINE_FOUND)
     message(FATAL_ERROR "addr2line not found")
@@ -400,16 +470,19 @@ if (ENABLE_BACKTRACE)
     PUBLIC "BACKTRACE"
     PUBLIC "BOUT_BACKTRACE")
   target_link_libraries(bout++ PUBLIC ${CMAKE_DL_LIBS})
+  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -l${CMAKE_DL_LIBS}")
 endif()
-message(STATUS "Enable backtrace: BACKTRACE=${ENABLE_BACKTRACE}")
-set(BOUT_USE_BACKTRACE ${ENABLE_BACKTRACE})
+message(STATUS "Enable backtrace: BOUT_USE_BACKTRACE=${BOUT_ENABLE_BACKTRACE}")
+set(BOUT_USE_BACKTRACE ${BOUT_ENABLE_BACKTRACE})
 
-option(ENABLE_OPENMP "Enable OpenMP support" OFF)
-if (ENABLE_OPENMP)
+option(BOUT_ENABLE_OPENMP "Enable OpenMP support" OFF)
+set(BOUT_OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
+set_property(CACHE BOUT_OPENMP_SCHEDULE PROPERTY STRINGS static dynamic guided auto)
+if (BOUT_ENABLE_OPENMP)
   find_package(OpenMP REQUIRED)
   target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
   set(possible_openmp_schedules static dynamic guided auto)
-  set(OPENMP_SCHEDULE static CACHE STRINGS "Set OpenMP schedule")
+  set(OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
   if (NOT OPENMP_SCHEDULE IN_LIST possible_openmp_schedules)
     message(FATAL_ERROR "OPENMP_SCHEDULE must be one of ${possible_openmp_schedules}")
   endif()
@@ -418,41 +491,63 @@ if (ENABLE_OPENMP)
     PUBLIC "BOUT_OPENMP_SCHEDULE=${OPENMP_SCHEDULE}")
   message(STATUS "OpenMP schedule: ${OPENMP_SCHEDULE}")
 endif()
-message(STATUS "Enable OpenMP: ${ENABLE_OPENMP}")
-set(BOUT_USE_OPENMP ${ENABLE_OPENMP})
+message(STATUS "Enable OpenMP: ${BOUT_ENABLE_OPENMP}")
+set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
 
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 message(STATUS "Git revision: ${GIT_SHA1}")
 target_compile_definitions(bout++
-  PUBLIC "GIT_REVISION=${GIT_SHA1}")
+  PUBLIC "REVISION=${GIT_SHA1}")
 set(BOUT_GIT_REVISION ${GIT_SHA1})
 
 # Optional dependencies
 
-option(USE_PVODE "Enable support for bundled PVODE" ON)
-if (USE_PVODE)
+option(BOUT_USE_PVODE "Enable support for bundled PVODE" ON)
+if (BOUT_USE_PVODE)
   add_subdirectory(externalpackages/PVODE)
   target_link_libraries(bout++ PUBLIC pvode pvpre)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_PVODE")
+  # Build the libraries in <build dir>/lib: this makes updating the
+  # path for bout-config much easier
+  set_target_properties(pvode pvpre PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
+  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -lpvode -lpvpre")
 endif()
-message(STATUS "PVODE support: ${USE_PVODE}")
-set(BOUT_HAS_PVODE ${USE_PVODE})
+message(STATUS "PVODE support: ${BOUT_USE_PVODE}")
+set(BOUT_HAS_PVODE ${BOUT_USE_PVODE})
 
-option(USE_NETCDF "Enable support for NetCDF output" ON)
-if (USE_NETCDF)
-  find_package(NetCDF REQUIRED)
+option(BOUT_USE_NETCDF "Enable support for NetCDF output" ON)
+option(BOUT_DOWNLOAD_NETCDF_CXX4 "Download and build netCDF-cxx4" OFF)
+if (BOUT_USE_NETCDF)
+  if (BOUT_DOWNLOAD_NETCDF_CXX4)
+    include(FetchContent)
+    FetchContent_Declare(
+      netcdf-cxx4
+      GIT_REPOSITORY https://github.com/ZedThree/netcdf-cxx4
+      GIT_TAG        "ad3e50953190615cb69dcc8a4652f9a88a8499cf"
+      )
+    # Don't build the netcdf tests, they have lots of warnings
+    set(NCXX_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    # Use our own FindnetCDF module which uses nc-config
+    find_package(netCDF REQUIRED)
+    FetchContent_MakeAvailable(netcdf-cxx4)
+  else()
+    find_package(netCDFCxx REQUIRED)
+    set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${netCDF_CXX_LIBRARY} ${netCDF_LIBRARIES}")
+  endif()
+  target_link_libraries(bout++ PUBLIC netCDF::netcdf-cxx4)
   target_compile_definitions(bout++
     PUBLIC "NCDF4"
     PUBLIC "BOUT_HAS_NETCDF")
-  target_link_libraries(bout++ PUBLIC NetCDF::NetCDF_CXX)
 endif()
-message(STATUS "NetCDF support: ${USE_NETCDF}")
-set(BOUT_HAS_NETCDF ${USE_NETCDF})
+message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
+set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
 
-option(USE_HDF5 "Enable support for HDF5 output" OFF)
-if (USE_HDF5)
+option(BOUT_USE_HDF5 "Enable support for HDF5 output" OFF)
+if (BOUT_USE_HDF5)
   find_package(HDF5 REQUIRED COMPONENTS CXX)
   target_compile_definitions(bout++
     PUBLIC "HDF5"
@@ -460,88 +555,122 @@ if (USE_HDF5)
   target_link_libraries(bout++ PUBLIC "${HDF5_CXX_LIBRARIES}")
   target_include_directories(bout++ PUBLIC "${HDF5_CXX_INCLUDE_DIRS}")
 endif()
-message(STATUS "HDF5 support: ${USE_HDF5}")
-set(BOUT_HAS_HDF5 ${USE_HDF5})
+message(STATUS "HDF5 support: ${BOUT_USE_HDF5}")
+set(BOUT_HAS_HDF5 ${BOUT_USE_HDF5})
 
-option(USE_FFTW "Enable support for FFTW" ON)
-if (USE_FFTW)
+option(BOUT_USE_FFTW "Enable support for FFTW" ON)
+if (BOUT_USE_FFTW)
   find_package(FFTW REQUIRED)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_FFTW")
   target_link_libraries(bout++ PUBLIC FFTW::FFTW)
+  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${FFTW_LIBRARIES}")
 endif()
-message(STATUS "FFTW support: ${USE_FFTW}")
-set(BOUT_HAS_FFTW ${USE_FFTW})
+message(STATUS "FFTW support: ${BOUT_USE_FFTW}")
+set(BOUT_HAS_FFTW ${BOUT_USE_FFTW})
 
-option(USE_LAPACK "Enable support for LAPACK" ON)
-if (USE_LAPACK)
+option(BOUT_USE_LAPACK "Enable support for LAPACK" ON)
+if (BOUT_USE_LAPACK)
   if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     # Cray wrappers sort this out for us
     find_package(LAPACK REQUIRED)
     target_link_libraries(bout++ PUBLIC "${LAPACK_LIBRARIES}")
+    string(JOIN " " CONFIG_LAPACK_LIBRARIES ${LAPACK_LIBRARIES})
+    set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${CONFIG_LAPACK_LIBRARIES}")
   endif()
   target_compile_definitions(bout++
     PUBLIC "LAPACK"
     PUBLIC "BOUT_HAS_LAPACK")
 endif()
-message(STATUS "LAPACK support: ${USE_LAPACK}")
-set(BOUT_HAS_LAPACK ${USE_LAPACK})
+message(STATUS "LAPACK support: ${BOUT_USE_LAPACK}")
+set(BOUT_HAS_LAPACK ${BOUT_USE_LAPACK})
 
-option(USE_PETSC "Enable support for PETSc time solvers and inversions" OFF)
-if (USE_PETSC)
+option(BOUT_USE_PETSC "Enable support for PETSc time solvers and inversions" OFF)
+if (BOUT_USE_PETSC)
   if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     # Cray wrappers sort this out for us
     find_package(PETSc REQUIRED)
     target_link_libraries(bout++ PUBLIC PETSc::PETSc)
+    string(JOIN " " CONFIG_PETSC_LIBRARIES ${PETSC_LIBRARIES})
+    set(CONFIG_LDFLAGS "${CONFIG_PETSC_LIBRARIES} ${CONFIG_LDFLAGS}")
   endif()
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_PETSC")
 endif()
-message(STATUS "PETSc support: ${USE_PETSC}")
-set(BOUT_HAS_PETSC ${USE_PETSC})
+message(STATUS "PETSc support: ${BOUT_USE_PETSC}")
+set(BOUT_HAS_PETSC ${BOUT_USE_PETSC})
 
-option(USE_SLEPC "Enable support for SLEPc eigen solver" OFF)
-if (USE_SLEPC)
+option(BOUT_USE_SLEPC "Enable support for SLEPc eigen solver" OFF)
+if (BOUT_USE_SLEPC)
   find_package(SLEPc REQUIRED)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_SLEPC")
   target_link_libraries(bout++ PUBLIC SLEPc::SLEPc)
+  string(JOIN " " CONFIG_SLEPC_LIBRARIES ${SLEPC_LIBRARIES})
+  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${CONFIG_SLEPC_LIBRARIES}")
 endif()
-message(STATUS "SLEPc support: ${USE_SLEPC}")
-set(BOUT_HAS_SLEPC ${USE_SLEPC})
+message(STATUS "SLEPc support: ${BOUT_USE_SLEPC}")
+set(BOUT_HAS_SLEPC ${BOUT_USE_SLEPC})
 
-option(USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF)
-if (USE_SUNDIALS)
-  find_package(SUNDIALS REQUIRED)
+option(BOUT_DOWNLOAD_SUNDIALS "Download and build SUNDIALS" OFF)
+# Force BOUT_USE_SUNDIALS if we're downloading it!
+cmake_dependent_option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF
+  "NOT BOUT_DOWNLOAD_SUNDIALS" ON)
+if (BOUT_USE_SUNDIALS)
+  if (BOUT_DOWNLOAD_SUNDIALS)
+    message(STATUS "Downloading and configuring SUNDIALS")
+    include(FetchContent)
+    FetchContent_Declare(
+      sundials
+      GIT_REPOSITORY https://github.com/ZedThree/sundials
+      GIT_TAG        "4f3bb8281c7b27343bcb95386ebbb665fb6196a5"
+      )
+    set(EXAMPLES_ENABLE_C OFF CACHE BOOL "" FORCE)
+    set(EXAMPLES_INSTALL OFF CACHE BOOL "" FORCE)
+    set(ENABLE_MPI ON CACHE BOOL "" FORCE)
+    set(ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
+    set(BUILD_STATIC_LIBS OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(sundials)
+    message(STATUS "SUNDIALS done configuring")
+  else()
+    find_package(SUNDIALS REQUIRED)
+  endif()
+  target_link_libraries(bout++ PUBLIC SUNDIALS::nvecparallel)
+  target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
+  target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
+  target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
+  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${SUNDIALS_cvode_LIBRARY} ${SUNDIALS_ida_LIBRARY} ${SUNDIALS_arkode_LIBRARY} ${SUNDIALS_nvecparallel_LIBRARY}")
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_CVODE"
     PUBLIC "BOUT_HAS_IDA"
     PUBLIC "BOUT_HAS_ARKODE"
     PUBLIC "BOUT_HAS_SUNDIALS")
-  target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
-  target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
-  target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
 endif()
-message(STATUS "SUNDIALS support: ${USE_SUNDIALS}")
-set(BOUT_HAS_SUNDIALS ${USE_SUNDIALS})
+message(STATUS "SUNDIALS support: ${BOUT_USE_SUNDIALS}")
+set(BOUT_HAS_SUNDIALS ${BOUT_USE_SUNDIALS})
+set(BOUT_HAS_ARKODE ${BOUT_USE_SUNDIALS})
+set(BOUT_HAS_CVODE ${BOUT_USE_SUNDIALS})
+set(BOUT_HAS_IDA ${BOUT_USE_SUNDIALS})
 
-option(USE_NLS "Enable Native Language Support" ON)
-find_package(Gettext)
-if (GETTEXT_FOUND)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_GETTEXT")
-  find_package(Intl)
-  if (Intl_FOUND)
-    target_link_libraries(bout++
-      PUBLIC ${Intl_LIBRARIES})
-    target_include_directories(bout++
-      PUBLIC ${Intl_INCLUDE_DIRS})
+option(BOUT_USE_NLS "Enable Native Language Support" ON)
+if (BOUT_USE_NLS)
+  find_package(Gettext)
+  if (GETTEXT_FOUND)
+	target_compile_definitions(bout++
+	  PUBLIC "BOUT_HAS_GETTEXT")
+	find_package(Intl)
+	if (Intl_FOUND)
+	  target_link_libraries(bout++
+		PUBLIC ${Intl_LIBRARIES})
+	  target_include_directories(bout++
+		PUBLIC ${Intl_INCLUDE_DIRS})
+	endif()
   endif()
 endif()
-set(BOUT_HAS_GETTEXT ${GETTEXT_FOUND})
+set(BOUT_HAS_GETTEXT ${BOUT_USE_NLS})
 
-option(USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
-if (USE_SCOREP)
+option(BOUT_USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
+if (BOUT_USE_SCOREP)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_SCOREP")
   message(STATUS "Score-P support enabled. Please make sure you are calling CMake like so:
@@ -549,7 +678,22 @@ if (USE_SCOREP)
   SCOREP_WRAPPER=off cmake -DCMAKE_C_COMPILER=scorep-mpicc -DCMAKE_CXX_COMPILER=scorep-mpicxx <other CMake options>
 ")
 endif()
-set(BOUT_HAS_SCOREP ${USE_SCOREP})
+set(BOUT_HAS_SCOREP ${BOUT_USE_SCOREP})
+
+option(BOUT_USE_UUID_SYSTEM_GENERATOR "Enable support for using a system UUID generator" ON)
+if (BOUT_USE_UUID_SYSTEM_GENERATOR)
+  find_package(Libuuid QUIET)
+  if (Libuuid_FOUND)
+    target_link_libraries(bout++
+      PUBLIC Libuuid::libuuid)
+    set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${Libuuid_LIBRARIES}")
+  else()
+    message(STATUS "libuuid not found, using fallback UUID generator")
+    set(BOUT_USE_UUID_SYSTEM_GENERATOR FALSE)
+  endif()
+endif()
+message(STATUS "UUID_SYSTEM_GENERATOR: ${BOUT_USE_UUID_SYSTEM_GENERATOR}")
+set(BOUT_HAS_UUID_SYSTEM_GENERATOR ${BOUT_USE_UUID_SYSTEM_GENERATOR})
 
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("int main() { const char* name = __PRETTY_FUNCTION__; }"
@@ -561,73 +705,157 @@ if (HAS_PRETTY_FUNCTION)
     PUBLIC "BOUT_HAS_PRETTY_FUNCTION")
 endif()
 
-# Copy FILENAME from source directory to build directory
-# and add dependency on TARGET
-macro(bout_test_copy_file TARGET FILENAME)
-  add_custom_command(TARGET "${TARGET}" POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-    ${CMAKE_CURRENT_SOURCE_DIR}/"${FILENAME}"
-    ${CMAKE_CURRENT_BINARY_DIR}/"${FILENAME}")
-endmacro()
+# Locations of the various Python modules, including the generated boutconfig module
+set(BOUT_PYTHONPATH "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib:${CMAKE_CURRENT_SOURCE_DIR}/tools/pylib")
+# Variables for boutconfig module -- note that these will contain
+# generator expressions and CMake targets, and not generally be very
+# useful
+get_target_property(BOUT_LIBS bout++ INTERFACE_LINK_LIBRARIES)
+get_target_property(BOUT_CFLAGS bout++ INTERFACE_INCLUDE_DIRECTORIES)
 
-# Add a new integrated test
-#
-# Required arguments:
-#
-# - TESTNAME: name of the test
-#
-# - SOURCES: list of source files
-#
-# Optional arguments:
-#
-# - USE_RUNTEST: if given, the test uses `./runtest` as the test
-#   command, otherwise it uses the executable
-#
-# - USE_DATA_BOUT_INP: if given, copy `data/BOUT.inp`
-#
-# - EXTRA_FILES: any extra files that are required to run the test
-#
-# - REQUIRES: list of variables that must be truthy to enable test
+# We want to compile the actual flags used into the library so we can
+# see them at runtime. This needs a few steps:
 
-function(bout_add_integrated_test TESTNAME)
-  set(options USE_RUNTEST USE_DATA_BOUT_INP)
-  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES)
-  cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "" "${multiValueArgs}" ${ARGN})
+# 1. Get the macro definitions. They come as a ;-separated list and
+#    without the -D. We also need to also stick a -D on the front of
+#    the first item
+get_property(BOUT_COMPILE_DEFINITIONS
+  TARGET bout++
+  PROPERTY COMPILE_DEFINITIONS)
+string(REPLACE ";" " -D" BOUT_COMPILE_DEFINITIONS "${BOUT_COMPILE_DEFINITIONS}")
+string(CONCAT BOUT_COMPILE_DEFINITIONS " -D" "${BOUT_COMPILE_DEFINITIONS}")
 
-  foreach (REQUIREMENT IN LISTS BOUT_TEST_OPTIONS_REQUIRES)
-    if (NOT ${REQUIREMENT})
-      message(STATUS "Not building test ${TESTNAME}, requirement not met: ${REQUIREMENT}")
-      return()
-    endif()
-  endforeach()
+# 2. Get the compiler options. Again, they come as a ;-separated
+#    list. Note that they don't include optimisation or debug flags:
+#    they're in the CMAKE_CXX_FLAGS* variables
+get_property(BOUT_COMPILE_OPTIONS
+  TARGET bout++
+  PROPERTY COMPILE_OPTIONS)
+string(REPLACE ";" " " BOUT_COMPILE_OPTIONS "${BOUT_COMPILE_OPTIONS}")
 
-  add_executable(${TESTNAME} ${BOUT_TEST_OPTIONS_SOURCES})
-  target_link_libraries(${TESTNAME} bout++)
-  target_include_directories(${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-
-  if (BOUT_TEST_OPTIONS_USE_RUNTEST)
-    add_test(NAME ${TESTNAME} COMMAND ./runtest)
-    bout_test_copy_file("${TESTNAME}" runtest)
-  else()
-    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
-  endif()
-  if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
-    bout_test_copy_file("${TESTNAME}" data/BOUT.inp)
-  endif()
-  if (BOUT_TEST_OPTIONS_EXTRA_FILES)
-    foreach (FILE ${BOUT_TEST_OPTIONS_EXTRA_FILES})
-      bout_test_copy_file("${TESTNAME}" "${FILE}")
-    endforeach()
-  endif()
-  set_target_properties(${TESTNAME} PROPERTIES FOLDER tests/integrated)
-endfunction()
-
-option(PACKAGE_TESTS "Build the tests" ON)
-if(PACKAGE_TESTS)
-  enable_testing()
-  add_subdirectory(tests/unit)
-  add_subdirectory(tests/integrated)
+# 3. The optimisation and/or debug flags are in the CMAKE_CXX_FLAGS*
+#    variables. We need both the common flags as well as those for the
+#    build type actually being used. Note: this might behave weirdly
+#    on Windows. Might need to expand CMAKE_CONFIGURATION_TYPES
+#    instead?
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE_UPPER "DEBUG")
+else()
+  string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
 endif()
+string(CONCAT BOUT_COMPILE_BUILD_FLAGS
+  " "
+  "${CMAKE_CXX_FLAGS}"
+  "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
+
+# 4. Now we join all the flags from the first three steps together
+string(CONCAT BOUT_FLAGS_STRING
+  "${BOUT_COMPILE_OPTIONS}"
+  "${BOUT_COMPILE_DEFINITIONS}"
+  "${BOUT_COMPILE_BUILD_FLAGS}")
+
+# 5. Finally actually add the flags as a define
+target_compile_definitions(bout++
+  PRIVATE BOUT_FLAGS_STRING=${BOUT_FLAGS_STRING})
+
+##################################################
+# Tests
+
+# Are we building BOUT++ directly, or as part of another project
+string(COMPARE EQUAL
+  "${PROJECT_NAME}" "${CMAKE_PROJECT_NAME}"
+  PROJECT_IS_TOP_LEVEL
+)
+option(BOUT_TESTS "Build the tests" ${PROJECT_IS_TOP_LEVEL})
+option(BOUT_RUN_ALL_TESTS "Run all of the tests (this can be slow!)" OFF)
+if(BOUT_TESTS)
+  enable_testing()
+
+  # Targets for just building the tests
+  # Tests need to add themselves as dependencies to these targets
+  add_custom_target(build-check-unit-tests)
+  add_custom_target(build-check-integrated-tests)
+  add_custom_target(build-check-mms-tests)
+
+  # Build all the tests
+  add_custom_target(build-check)
+  add_dependencies(build-check build-check-unit-tests build-check-integrated-tests build-check-mms-tests)
+
+  add_subdirectory(tests/unit EXCLUDE_FROM_ALL)
+  add_subdirectory(tests/integrated EXCLUDE_FROM_ALL)
+  add_subdirectory(tests/MMS EXCLUDE_FROM_ALL)
+
+  # Targets for running the tests
+  add_custom_target(check-unit-tests
+    COMMAND ctest -R serial_tests --output-on-failure)
+  add_dependencies(check-unit-tests build-check-unit-tests)
+
+  add_custom_target(check-integrated-tests
+    COMMAND ctest -R "test-" --output-on-failure)
+  add_dependencies(check-integrated-tests build-check-integrated-tests)
+
+  add_custom_target(check-mms-tests
+    COMMAND ctest -R "MMS-" --output-on-failure)
+  add_dependencies(check-mms-tests build-check-mms-tests)
+
+  # Run all the tests
+  add_custom_target(check)
+  add_dependencies(check check-unit-tests check-integrated-tests check-mms-tests)
+endif()
+
+option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
+if(BOUT_BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
+
+##################################################
+# Documentation
+
+option(BOUT_BUILD_DOCS "Build the documentation" OFF)
+if (BOUT_BUILD_DOCS)
+  add_subdirectory(manual EXCLUDE_FROM_ALL)
+endif()
+
+##################################################
+# Generate the bout-config script
+
+# Set some variables to match autotools so we can use the same input file
+set(CXX "${MPI_CXX_COMPILER}")
+set(PYTHONCONFIGPATH "${BOUT_PYTHONPATH}")
+set(BOUT_HAS_LEGACY_NETCDF OFF)
+set(BOUT_HAS_PNETCDF OFF)
+
+# For shared libraries we only need to know how to link against BOUT++,
+# while for static builds we need the dependencies too
+if (BUILD_SHARED_LIBS)
+  # Include rpath linker flag so user doesn't need to set LD_LIBRARY_PATH
+  set(CONFIG_LDFLAGS "${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}\$BOUT_LIB_PATH -L\$BOUT_LIB_PATH -lbout++")
+else()
+  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS}")
+endif()
+
+# For v4.4 without build_defines.hxx
+set(CONFIG_CFLAGS "${CONFIG_CFLAGS} ${BOUT_COMPILE_DEFINITIONS}")
+
+# This version of the file allows the build directory to be used directly
+configure_file(bin/bout-config.in bin/bout-config @ONLY)
+
+# We need to generate a separate version for installation, with the
+# correct install paths. So first we need to replace the build
+# directory library path with the installation path
+string(REPLACE
+  "${CMAKE_BINARY_DIR}/lib" "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}"
+  CONFIG_LDFLAGS "${CONFIG_LDFLAGS}")
+# Update mpark.variant include paths if we're building it
+if (NOT BOUT_USE_SYSTEM_MPARK_VARIANT)
+  set(MPARK_VARIANT_INCLUDE_PATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
+endif()
+set(BOUT_INCLUDE_PATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
+# We don't need the build include path any more
+string(REPLACE "-I${CMAKE_CURRENT_BINARY_DIR}/include" "" CONFIG_CFLAGS "${CONFIG_CFLAGS}")
+
+# This version now has the correct paths to use the final installation
+configure_file(bin/bout-config.in bin/bout-config-install @ONLY)
 
 ##################################################
 # Installation
@@ -641,6 +869,20 @@ install(TARGETS bout++
   INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   )
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+# The various helper scripts
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/"
+  USE_SOURCE_PERMISSIONS
+  DESTINATION "${CMAKE_INSTALL_BINDIR}")
+
+# The installed version of bout-config needs renaming when we install
+# it. Note this MUST be done after the installation of bin/, to make
+# sure we clobber any versions of bout-config hanging around from an
+# autotools build
+install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/bin/bout-config-install"
+  DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  RENAME "bout-config"
+  )
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
@@ -658,20 +900,35 @@ install(EXPORT bout++Targets
 configure_package_config_file(bout++Config.cmake.in bout++Config.cmake
   INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
   )
+
 install(
   FILES
       "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
       "${CMAKE_CURRENT_BINARY_DIR}/bout++ConfigVersion.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BOUT++functions.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CorrectWindowsPaths.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindClangFormat.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindFFTW.cmake"
-      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindNetCDF.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindnetCDF.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindnetCDFCxx.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPackageMultipass.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindLibuuid.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPETSc.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindScoreP.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSLEPc.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSUNDIALS.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSphinx.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ResolveCompilerPaths.cmake"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
+  )
+
+configure_package_config_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib/boutconfig/__init__.py
+  INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
+  )
+
+install(
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/boutconfig"
   )
 
 export(EXPORT bout++Targets
@@ -700,6 +957,7 @@ message("
    OpenMP support           : ${BOUT_USE_OPENMP}
    Natural language support : ${BOUT_HAS_GETTEXT}
    ScoreP support           : ${BOUT_HAS_SCOREP}
+   System UUID generator    : ${BOUT_HAS_UUID_SYSTEM_GENERATOR}
    Extra debug output       : ${BOUT_USE_OUTPUT_DEBUG}
    CHECK level              : ${BOUT_CHECK_LEVEL}
    Signal handling          : ${BOUT_USE_SIGNAL}
@@ -713,7 +971,7 @@ message("
    Make sure that the tools/pylib directory is in your PYTHONPATH
    e.g. by adding to your ~/.bashrc file
 
-       export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH
+       export PYTHONPATH=${BOUT_PYTHONPATH}:\$PYTHONPATH
 
 *** Now run `cmake --build .` to compile BOUT++ ***
 ")

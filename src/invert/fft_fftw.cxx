@@ -50,7 +50,7 @@ namespace fft {
 /// Have we set fft_measure?
 bool fft_initialised{false};
 /// Should FFTW find an optimised plan by measuring various plans?
-bool fft_measure{false};
+FFT_MEASUREMENT_FLAG fft_measurement_flag{FFT_MEASUREMENT_FLAG::estimate};
 
 void fft_init(Options* options) {
   if (fft_initialised) {
@@ -59,13 +59,49 @@ void fft_init(Options* options) {
   if (options == nullptr) {
     options = Options::getRoot()->getSection("fft");
   }
-  fft_init((*options)["fft_measure"]
-               .doc("Perform speed measurements to optimise settings?")
-               .withDefault(false));
+  bool fft_measure = (*options)["fft_measure"]
+                    .doc("Perform speed measurements to optimise settings?")
+                    .withDefault(false);
+  fft_measurement_flag = (*options)["fft_measurement_flag"]
+                    .doc("Level speed measurements to optimise FFT settings: [estimate], measure, exhaustive")
+                    .withDefault(FFT_MEASUREMENT_FLAG::estimate);
+
+  if ((*options)["fft_measure"].isSet()) {
+    output << "WARNING: fft_measure is deprecated and will be removed in BOUT++ v5.0. "
+           << "Use fft_measurement_flag instead." << std::endl;
+    if ((*options)["fft_measurement_flag"].isSet()) {
+      throw BoutException("Cannot set both fft_measure and fft_measurement_flag");
+    }
+    fft_init(fft_measure);
+  } else {
+    fft_init(fft_measurement_flag);
+  }
+}
+
+unsigned int get_measurement_flag(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
+  switch (fft_measurement_flag) {
+    case FFT_MEASUREMENT_FLAG::estimate:
+      return FFTW_ESTIMATE;
+    case FFT_MEASUREMENT_FLAG::measure:
+      return FFTW_MEASURE;
+    case FFT_MEASUREMENT_FLAG::exhaustive:
+      return FFTW_EXHAUSTIVE;
+    default:
+      throw BoutException("Error, unimplemented fft_measurement_flag");
+  }
+}
+
+void fft_init(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
+  bout::fft::fft_measurement_flag = fft_measurement_flag;
+  fft_initialised = true;
 }
 
 void fft_init(bool fft_measure) {
-  bout::fft::fft_measure = fft_measure;
+  if (fft_measure) {
+    fft_measurement_flag = FFT_MEASUREMENT_FLAG::measure;
+  } else {
+    fft_measurement_flag = FFT_MEASUREMENT_FLAG::estimate;
+  }
   fft_initialised = true;
 }
 
@@ -106,10 +142,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
      */
     fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1));
 
-    unsigned int flags = FFTW_ESTIMATE;
-    if (fft_measure) {
-      flags = FFTW_MEASURE;
-    }
+    auto flags = get_measurement_flag(fft_measurement_flag);
 
     /* fftw call
      * Plan a real-input/complex-output discrete Fourier transform (DFT)
@@ -169,10 +202,7 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
     // Initialize the output of the fourier transformation
     fout = (double*) fftw_malloc(sizeof(double) * length);
 
-    unsigned int flags = FFTW_ESTIMATE;
-    if (fft_measure) {
-      flags = FFTW_MEASURE;
-    }
+    auto flags = get_measurement_flag(fft_measurement_flag);
 
     /* fftw call
      * Plan a complex-input/real-output discrete Fourier transform (DFT)
@@ -242,10 +272,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
           fftw_malloc(sizeof(fftw_complex) * (length / 2 + 1) * n_th));
       p = new fftw_plan[n_th]; //Never freed
 
-      unsigned int flags = FFTW_ESTIMATE;
-      if (fft_measure) {
-        flags = FFTW_MEASURE;
-      }
+      auto flags = get_measurement_flag(fft_measurement_flag);
 
       for(int i=0;i<n_th;i++)
         // fftw call
@@ -318,10 +345,7 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
 
       p = new fftw_plan[n_th]; // Never freed
 
-      unsigned int flags = FFTW_ESTIMATE;
-      if (fft_measure) {
-        flags = FFTW_MEASURE;
-      }
+      auto flags = get_measurement_flag(fft_measurement_flag);
 
       for (int i = 0; i < n_th; i++)
         p[i] = fftw_plan_dft_c2r_1d(length, finall + i * (length / 2 + 1),
@@ -377,10 +401,7 @@ void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSE
     fin = static_cast<double *>(fftw_malloc(sizeof(double) * 2 * length));
     fout = static_cast<fftw_complex *>(fftw_malloc(sizeof(fftw_complex) * 2 * length));
 
-    unsigned int flags = FFTW_ESTIMATE;
-    if (fft_measure) {
-      flags = FFTW_MEASURE;
-    }
+    auto flags = get_measurement_flag(fft_measurement_flag);
 
     // fftw call
     // Plan a real-input/complex-output discrete Fourier transform (DFT)
@@ -436,10 +457,7 @@ void DST_rev(MAYBE_UNUSED(dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(
         static_cast<fftw_complex *>(fftw_malloc(sizeof(fftw_complex) * 2 * (length - 1)));
     fout = static_cast<double *>(fftw_malloc(sizeof(double) * 2 * (length - 1)));
 
-    unsigned int flags = FFTW_ESTIMATE;
-    if (fft_measure) {
-      flags = FFTW_MEASURE;
-    }
+    auto flags = get_measurement_flag(fft_measurement_flag);
 
     p = fftw_plan_dft_c2r_1d(2*(length-1), fin, fout, flags);
 
@@ -475,7 +493,7 @@ Array<dcomplex> rfft(const Array<BoutReal>& in) {
   int size{in.size()};
   Array<dcomplex> out{(size / 2) + 1};
 
-  rfft(in.begin(), size, out.begin());
+  bout::fft::rfft(in.begin(), size, out.begin());
   return out;
 }
 
@@ -485,7 +503,7 @@ Array<BoutReal> irfft(const Array<dcomplex>& in, int length) {
 
   Array<BoutReal> out{length};
 
-  irfft(in.begin(), length, out.begin());
+  bout::fft::irfft(in.begin(), length, out.begin());
   return out;
 }
 

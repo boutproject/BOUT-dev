@@ -158,14 +158,17 @@ authors:
   - family-names: Wang
     given-names: Zhanhui
 
+  - family-names: Ahmed
+    given-names: Sajidah
+
   - family-names: James
     given-names: Toby
 
-version: 4.3.3
-date-released: 2021-07-29
+version: 4.4.0
+date-released: 2020-08-06
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
-doi: 10.5281/zenodo.5142504
+doi: 10.5281/zenodo.5167527
 license: 'LGPL-3.0-or-later'
 references:
   - type: article

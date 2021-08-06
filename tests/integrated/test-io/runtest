@@ -12,20 +12,20 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, shell_safe, launch_safe
 from boutdata.collect import collect
+from boututils.datafile import DataFile
 import numpy as np
 from sys import stdout, exit
 
 
-
-print("Making I/O test")
-shell_safe("make > make.log")
+build_and_log("I/O test")
 
 # Read benchmark values
 
 vars = ['ivar', 'rvar', 'bvar', 'f2d', 'f3d', 'fperp', 'fperp2', 'ivar_evol', 'rvar_evol',
-        'bvar_evol', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z', 'fperp2_evol']
+        'bvar_evol', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z', 'fperp2_evol',
+        "ivar_vec", "svar", "ivar_vec_evol", "svar_evol"]
 
 field_vars = ['f2d', 'f3d', 'fperp', 'fperp2', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z',
         'fperp2_evol'] # Field quantities, not scalars
@@ -35,13 +35,21 @@ tol = 1e-10
 print("Reading benchmark data")
 bmk = {}
 for v in vars:
-  bmk[v] = collect(v, path="data", prefix="benchmark.out", info=False)
+    if "ivar_vec" in v or "svar" in v:
+        f = DataFile("data/benchmark.out.0.nc")
+        bmk[v] = f[v][...]
+    else:
+        bmk[v] = collect(v, path="data", prefix="benchmark.out", info=False)
 
 def check_output():
     success = True
     for v in vars:
         stdout.write("      Checking variable "+v+" ... ")
-        result = collect(v, path="data", info=False)
+        if "ivar_vec" in v or "svar" in v:
+            f = DataFile("data/BOUT.dmp.0.nc")
+            result = f[v][...]
+        else:
+            result = collect(v, path="data", info=False)
 
         # Compare benchmark and output
         if np.shape(bmk[v]) != np.shape(result):
@@ -49,11 +57,18 @@ def check_output():
             success = False
             continue
 
-        diff =  np.max(np.abs(bmk[v] - result))
-        if diff > tol:
-            print("Fail, maximum difference = "+str(diff))
-            success = False
-            continue
+        if result.dtype.kind not in np.typecodes["AllFloat"]:
+            # Non-float types should be identical
+            if not np.all(bmk[v] == result):
+                print("Fail")
+                success = False
+                continue
+        else:
+            diff = np.max(np.abs(bmk[v] - result))
+            if diff > tol:
+                print("Fail, maximum difference = " + str(diff))
+                success = False
+                continue
 
         if v in field_vars:
             # Check cell location
@@ -122,12 +137,14 @@ if not check_output():
 # Test incorrectly double-adding variables - should throw exception
 for check_incorrect_add in [
     "ivar",
+    "ivar_vec",
     "rvar",
     "bvar",
     "f2d",
     "f3d",
     "fperp",
     "ivar_evol",
+    "ivar_vec_evol",
     "rvar_evol",
     "bvar_evol",
     "v2d_evol",

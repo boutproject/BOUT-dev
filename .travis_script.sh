@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 #Default flags
 COVERAGE=0
@@ -126,7 +126,6 @@ fi
 if [[ ${INTEGRATED} == 1 ]]
 then
     time make check-integrated-tests
-    time py.test-3 tools/pylib/
 fi
 
 if [[ ${MMS} == 1 ]]

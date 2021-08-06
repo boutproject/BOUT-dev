@@ -810,6 +810,54 @@ make.config, replacing ``-lnetcdf_c++`` with -lnetcdf64\_c++, and
      sed 's/netcdf/netcdf64/g' make.config > make.config.new
      mv make.config.new make.config
 
+Compiling on Windows
+~~~~~~~~~~~~~~~~~~~~
+
+It is possible to compile BOUT++ on Windows using the CMake
+interface. Support is currently very experimental, and some features do
+not work. Testing has been done with MSVC 19.24 and Visual Studio 16.4,
+although previous versions may still work.
+
+The main difficulty of using BOUT++ on Windows is getting the
+dependencies sorted. The easiest way to install dependencies on Windows
+is using `vcpkg <https://github.com/microsoft/vcpkg/>`_. You may need to
+set the CMake toolchain file if calling ``cmake`` from PowerShell, or on
+older versions of Visual Studio. This will be a file somewhere like
+``C:/vcpkg/scripts/buildsystems/vcpkg.cmake``
+
+The minimal required CMake options are as follows:
+
+.. code-block:: bash
+
+    -DBOUT_ENABLE_BACKTRACE=OFF \
+    -DCMAKE_CXX_FLAGS="/permissive- /EHsc /bigobj" \
+    -DBUILD_SHARED_LIBS=OFF
+
+``ENABLE_BACKTRACE`` must be turned off due to the currently required
+``addr2line`` executable not being available on Windows.
+
+The following flags for the MSVC compiler are required:
+
+- ``/permissive-`` for standards compliance, such as treating the binary
+  operator alternative tokens (``and``, ``or``, etc) as tokens
+- ``/EHsc`` for standard C++ exception handling, and to assume that
+  ``extern "C"`` functions never throw
+- ``/bigobj`` to increase the number of sections in the .obj file,
+  required for the template-heavy derivatives machinery
+
+No modification to the source has been done to export the correct
+symbols for shared libraries on Windows, so you must either specifiy
+``-DBUILD_SHARED_LIBS=OFF`` to only build static libraries, or, if you
+really want shared libraries, ``-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON``.
+The latter is untested, use at your own risk!
+
+The unit tests should all pass, but most of the integrated tests will
+not run work out of the box yet as Windows doesn't understand
+shabangs. That is, without a file extension, it doesn't know what
+program to use to run ``runtest``. The majority of the tests can be
+run manually with ``python.exe runtest``. You will stil need to set
+``PYTHONPATH`` and have a suitable Python environment.
+
 Issues
 ------
 

@@ -51,6 +51,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/slepclib.hxx"
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout++-time.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -61,9 +62,21 @@ const char DEFAULT_DIR[] = "data";
 #include <string>
 #include <vector>
 
-// POSIX headers
 #include <sys/stat.h>
+
+// Define S_ISDIR if not defined by system headers (that is, MSVC)
+// Taken from https://github.com/curl/curl/blob/e59540139a398dc70fde6aec487b19c5085105af/lib/curl_setup.h#L748-L751
+#if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
+#define S_ISDIR(m) (((m)&S_IFMT) == S_IFDIR)
+#endif
+
+#ifdef _MSC_VER
+#include <windows.h>
+inline auto getpid() -> int { return GetCurrentProcessId(); }
+#else
+// POSIX headers
 #include <unistd.h>
+#endif
 
 #ifdef BOUT_FPE
 #include <fenv.h>
@@ -181,8 +194,10 @@ void setupSignalHandler(SignalHandler signal_handler) {
   feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
+#ifndef _MSC_VER
   /// Trap SIGUSR1 to allow a clean exit after next write
   std::signal(SIGUSR1, signal_handler);
+#endif
 }
 
 // This is currently just an alias to the existing handler
@@ -361,7 +376,7 @@ void printStartupHeader(int MYPE, int NPES) {
 #ifdef MD5SUM
   output_progress.write("MD5 checksum: %s\n", BUILDFLAG(MD5SUM));
 #endif
-  output_progress.write(_("Code compiled on %s at %s\n\n"), __DATE__, __TIME__);
+  output_progress.write(_("Code compiled on %s at %s\n\n"), boutcompiledate, boutcompiletime);
   output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
   output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
@@ -490,7 +505,7 @@ void setupOutput(const std::string& data_dir, const std::string& log_file, int v
   output_progress.enable(verbosity > 2);
   output_info.enable(verbosity > 3);
   output_verbose.enable(verbosity > 4);
-  // Only actually enabled if also compiled with DEBUG
+  // Only actually enabled if also compiled with BOUT_ENABLE_OUTPUT_DEBUG
   output_debug.enable(verbosity > 5);
 
   // The backward-compatible output object same as output_progress
@@ -592,6 +607,12 @@ int BoutFinalise(bool write_settings) {
     } catch (const BoutException& e) {
       output_error << _("Error whilst writing settings") << e.what() << endl;
     }
+  }
+
+  if (Options::root()["time_report:show"].withDefault(false)) {
+    output.write("\nTimer report \n\n");
+    Timer::printTimeReport();
+    output.write("\n");
   }
 
   // Delete the mesh
@@ -779,12 +800,14 @@ void bout_signal_handler(int sig) {
   case SIGINT:
     throw BoutException("\n****** SigInt caught ******\n\n");
     break;
+#ifndef _MSC_VER
   case SIGKILL:
     throw BoutException("\n****** SigKill caught ******\n\n");
     break;
   case SIGUSR1:
     user_requested_exit = true;
     break;
+#endif
   default:
     throw BoutException("\n****** Signal %d  caught ******\n\n", sig);
     break;

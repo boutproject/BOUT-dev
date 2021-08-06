@@ -25,6 +25,7 @@
 autom4te.cache/
 aclocal.m4
 /bin/bout-config
+/src/makefile
 /include/pvode
 /lib/
 /manual/*.pdf
@@ -41,3 +42,6 @@ src/.libfast
 .BOUT.pid.*
 build/
 build*/
+/.vs
+/CMakeSettings.json
+/CppProperties.json

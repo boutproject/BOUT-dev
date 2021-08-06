@@ -87,13 +87,27 @@ private:
   BoutReal pre_Wtime{0.0}; // Time in preconditioner
   int pre_ncalls{0};       // Number of calls to preconditioner
 
+  // Diagnostics from CVODE
+  int nsteps{0};
+  int nfevals{0};
+  int nniters{0};
+  int npevals{0};
+  int nliters{0};
+  BoutReal last_step{0.0};
+  int last_order{0};
+  int num_fails{0};
+  int nonlin_fails{0};
+  int stab_lims{0};
+
   bool cvode_initialised = false;
 
-  void set_abstol_values(BoutReal* abstolvec_data, std::vector<BoutReal>& f2dtols,
-                         std::vector<BoutReal>& f3dtols);
-  void loop_abstol_values_op(Ind2D i2d, BoutReal* abstolvec_data, int& p,
-                             std::vector<BoutReal>& f2dtols,
-                             std::vector<BoutReal>& f3dtols, bool bndry);
+  void set_vector_option_values(BoutReal* option_data, std::vector<BoutReal>& f2dtols,
+                                std::vector<BoutReal>& f3dtols);
+  void loop_vector_option_values_op(Ind2D i2d, BoutReal* option_data, int& p,
+                                    std::vector<BoutReal>& f2dtols,
+                                    std::vector<BoutReal>& f3dtols, bool bndry);
+  template<class FieldType>
+  std::vector<BoutReal> create_constraints(const std::vector<VarStr<FieldType>>& fields);
 #if SUNDIALS_VERSION_MAJOR >= 3
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};

@@ -72,7 +72,7 @@ BoundaryOpPar* BoundaryOpPar_dirichlet::clone(BoundaryRegionPar *region, const s
     try {
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_dirichlet(region, real_value);
-    } catch (BoutException& e) {
+    } catch (const BoutException&) {
       std::shared_ptr<FieldGenerator> newgen = nullptr;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
@@ -117,7 +117,7 @@ BoundaryOpPar* BoundaryOpPar_dirichlet_O3::clone(BoundaryRegionPar *region, cons
     try {
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_dirichlet_O3(region, real_value);
-    } catch (BoutException& e) {
+    } catch (const BoutException&) {
       std::shared_ptr<FieldGenerator> newgen = nullptr;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
@@ -169,7 +169,7 @@ BoundaryOpPar* BoundaryOpPar_dirichlet_interp::clone(BoundaryRegionPar *region, 
     try {
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_dirichlet_interp(region, real_value);
-    } catch (BoutException& e) {
+    } catch (const BoutException&) {
       std::shared_ptr<FieldGenerator> newgen = nullptr;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
@@ -218,7 +218,7 @@ BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, const std
     try {
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_neumann(region, real_value);
-    } catch (BoutException& e) {
+    } catch (const BoutException&) {
       std::shared_ptr<FieldGenerator> newgen = nullptr;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());

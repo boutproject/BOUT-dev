@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+
+# 
+# Run the test, compare results against the benchmark
+#
+
+#requires: petsc
+#requires: all_tests
+
+from boututils.run_wrapper import shell, shell_safe, launch, launch_safe
+from boutdata.collect import collect
+from sys import exit
+
+tol_orth = 5.e-8
+
+# Note accuracy of test is limited when g12!=0 by inconsistency between the way boundary
+# conditions are applied in LaplaceXY and the way they are applied in the D2DXDY()
+# operator called by Laplace_perp(). In D2DXDY(f) 'free_o3' boundary conditions are
+# applied to dfdy before calculating DDX(dfdy).
+tol_nonorth = 2.e-5
+
+argslist = ['laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=dirichlet '
+            'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=dirichlet f:bndry_ydown=dirichlet',
+            'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=neumann '
+            'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann',
+            'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=free_o3 '
+            'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=free_o3 f:bndry_ydown=free_o3',
+            #'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=dirichlet '
+            #'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=dirichlet f:bndry_ydown=dirichlet',
+            #'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=neumann '
+            #'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann',
+            #'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=dirichlet '
+            #'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=dirichlet f:bndry_ydown=dirichlet',
+            #'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=neumann '
+            #'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann',
+            #'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=dirichlet '
+            #'f:bndry_xin=neumann f:bndry_xout=neumann f:bndry_yup=dirichlet f:bndry_ydown=dirichlet',
+            'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=neumann '
+            'f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann laplacexy:pctype=hypre',
+            'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=free_o3 '
+            'f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=free_o3 f:bndry_ydown=free_o3 laplacexy:pctype=hypre',
+            'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=neumann '
+            'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann b:function=.1',
+            'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=free_o3 '
+            'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=free_o3 f:bndry_ydown=free_o3 b:function=.1',
+            'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=neumann '
+            'f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann b:function=.1 laplacexy:pctype=hypre',
+            'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=free_o3 '
+            'f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=free_o3 f:bndry_ydown=free_o3 b:function=.1 laplacexy:pctype=hypre',
+           ]
+
+print('Making LaplaceXY inversion test')
+shell_safe('make > make.log')
+
+print('Running LaplaceXY inversion test')
+success = True
+
+for nproc in [8]:
+    print('   %d processors....' % nproc)
+    for nonorth, tol in [(False, tol_orth), (True, tol_nonorth)]:
+        for args in argslist:
+            if not nonorth:
+                args += ' mesh:g12=0.'
+
+            cmd = './test-laplacexy ' + args
+
+            shell('rm data/BOUT.dmp.*.nc > /dev/null 2>&1')
+
+            if 'hypre' in args:
+                s, out = launch(cmd, nproc=nproc, pipe=True,verbose=True)
+                if s == 134:
+                    # PETSc did not recognise pctype option, probably means it
+                    # was not compiled with hypre, so skip tests that need
+                    # hypre to converge
+                    print('hypre not available as pre-conditioner in PETSc. Skipping...')
+                    continue
+            else:
+                s, out = launch_safe(cmd, nproc=nproc, pipe=True,verbose=True)
+
+            f = open('run.log.'+str(nproc), 'w')
+            f.write(out)
+            f.close()
+
+            # Collect output data
+            error = collect('max_error', path='data', info=False)
+            if error <= 0:
+                print('Convergence error')
+                success = False
+            elif error > tol:
+                print('Fail, maximum error is = '+str(error))
+                success = False
+            else:
+                print('Pass')
+
+if success:
+  print(' => All LaplaceXY inversion tests passed')
+  exit(0)
+else:
+  print(' => Some failed tests')
+  exit(1)

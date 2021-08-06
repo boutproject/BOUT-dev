@@ -177,13 +177,16 @@ class BoutMesh : public Mesh {
 
   int getGlobalXIndex(int xlocal) const override;
   int getGlobalXIndexNoBoundaries(int xlocal) const override;
+  int getLocalXIndex(int xglobal) const override;
+  int getLocalXIndexNoBoundaries(int xglobal) const override;
   int getGlobalYIndex(int ylocal) const override;
   int getGlobalYIndexNoBoundaries(int ylocal) const override;
+  int getLocalYIndex(int yglobal) const override;
+  int getLocalYIndexNoBoundaries(int yglobal) const override;
   int getGlobalZIndex(int zlocal) const override;
   int getGlobalZIndexNoBoundaries(int zlocal) const override;
-
-  int XLOCAL(int xglo) const override;
-  int YLOCAL(int yglo) const override;
+  int getLocalZIndex(int zglobal) const override;
+  int getLocalZIndexNoBoundaries(int zglobal) const override;
 
 private:
   std::string gridname;
@@ -237,6 +240,13 @@ private:
   BoutReal ZMIN, ZMAX; // Range of the Z domain (in fractions of 2pi)
 
   int MXG, MYG, MZG; // Boundary sizes
+
+  // Grid file provenance tracking info
+  std::string grid_id = "";
+  std::string hypnotoad_version = "";
+  std::string hypnotoad_git_hash = "";
+  std::string hypnotoad_git_diff = "";
+  std::string hypnotoad_geqdsk_filename = "";
 
   void default_connections();
   void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);

@@ -48,6 +48,7 @@ class Options;
 #include "bout/deprecated.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
+#include "fieldperp.hxx"
 
 #include <map>
 #include <string>
@@ -177,7 +178,7 @@ public:
 
   /// The type used to store values
   using ValueType =
-      bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D,
+      bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D, FieldPerp,
                            Array<BoutReal>, Matrix<BoutReal>, Tensor<BoutReal>>;
 
   /// The type used to store attributes
@@ -243,6 +244,11 @@ public:
   ///  - doc              [string] Documentation, describing what the variable does
   ///
   std::map<std::string, AttributeType> attributes;
+
+  /// Return true if this value has attribute \p key
+  bool hasAttribute(const std::string& key) const {
+    return attributes.find(key) != attributes.end();
+  }
   
   /// Get a sub-section or value
   ///
@@ -473,6 +479,29 @@ public:
     return val;
   }
 
+  /// Allow the user to override defaults set later, also used by the
+  /// BOUT_OVERRIDE_DEFAULT_OPTION.
+  template <typename T> T overrideDefault(T def) {
+
+    // Set the type
+    attributes["type"] = bout::utils::typeName<T>();
+
+    if (!is_value) {
+      // Option not found
+      assign(def, "user_default");
+      is_value = true; // Prevent this default being replaced by setDefault()
+      return def;
+    }
+
+    return as<T>();
+  }
+
+  /// Overloaded version for const char*
+  /// Note: Different from template since return type is different to input
+  std::string overrideDefault(const char* def) {
+    return overrideDefault<std::string>(std::string(def));
+  }
+
   /// Get the parent Options object
   Options &parent() {
     if (parent_instance == nullptr) {
@@ -668,6 +697,7 @@ template<> inline void Options::assign<>(const char *val, const std::string sour
 // Note: Field assignments don't check for previous assignment (always force)
 template<> void Options::assign<>(Field2D val, const std::string source);
 template<> void Options::assign<>(Field3D val, const std::string source);
+template<> void Options::assign<>(FieldPerp val, const std::string source);
 template<> void Options::assign<>(Array<BoutReal> val, const std::string source);
 template<> void Options::assign<>(Matrix<BoutReal> val, const std::string source);
 template<> void Options::assign<>(Tensor<BoutReal> val, const std::string source);
@@ -682,6 +712,7 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& similar_to) const;
 template <> bool Options::as<bool>(const bool& similar_to) const;
 template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const;
 template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
+template <> FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \
@@ -723,5 +754,12 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
     } else {								\
       Options::getRoot()->getSection("all")->get(#var, var, def);	\
     }}									\
+
+/// Define for over-riding library defaults for options, should be called in global
+/// namespace so that the new default is set before main() is called.
+#define BOUT_OVERRIDE_DEFAULT_OPTION(name, value)     \
+  namespace {                                         \
+    const auto user_default##__FILE__##__LINE__ =     \
+      Options::root()[name].overrideDefault(value); } \
 
 #endif // __OPTIONS_H__

@@ -72,7 +72,7 @@ public:
   int push(const char *s, ...)
     BOUT_FORMAT_ARGS( 2, 3); ///< Add a message to the stack. Returns a message id
 
-  [[gnu::deprecated("Please use `MsgStack::push` with an empty message instead")]]
+  [[deprecated("Please use `MsgStack::push` with an empty message instead")]]
   int setPoint(); ///< get a message point
 
   void pop();       ///< Remove the last message
@@ -85,7 +85,7 @@ public:
   /// Dummy functions which should be optimised out
   int push(const char *UNUSED(s), ...) { return 0; }
 
-  [[gnu::deprecated("Please use `MsgStack::push` with an empty message instead")]]
+  [[deprecated("Please use `MsgStack::push` with an empty message instead")]]
   int setPoint() { return 0; }
 
   void pop() {}

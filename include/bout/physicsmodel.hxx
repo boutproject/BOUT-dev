@@ -237,10 +237,10 @@ protected:
    * To evolve the state, the solver will set \p var, and the user-supplied
    * rhs() function should calculate ddt(var).
    */
-  void bout_solve(Field2D &var, const char *name);
-  void bout_solve(Field3D &var, const char *name);
-  void bout_solve(Vector2D &var, const char *name);
-  void bout_solve(Vector3D &var, const char *name);
+  void bout_solve(Field2D &var, const char *name, const std::string& description="");
+  void bout_solve(Field3D &var, const char *name, const std::string& description="");
+  void bout_solve(Vector2D &var, const char *name, const std::string& description="");
+  void bout_solve(Vector3D &var, const char *name, const std::string& description="");
 
   /// Stores the state for restarting
   Datafile restart; 

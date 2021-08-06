@@ -250,6 +250,9 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       }
     }
   }
+
+  checkData(x);
+
   return x;
 }
 
@@ -468,5 +471,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       }
     }
   }
+
+  checkData(x);
+
   return x;
 }
