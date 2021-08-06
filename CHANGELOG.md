@@ -23,6 +23,11 @@
 
 **Merged pull requests:**
 
+- Add ability to use FieldPerp in Options (v.4.4) [\#2395](https://github.com/boutproject/BOUT-dev/pull/2395) ([ZedThree](https://github.com/users/ZedThree))
+- Fix some HDF5 related issues and add Mesh::getLocal{X,Y,Z}Index (v4.4) [\#2394](https://github.com/boutproject/BOUT-dev/pull/2394) ([ZedThree](https://github.com/users/ZedThree))
+- Add Mesh::getRegion<T> for use in generic code (v4.4) [\#2393](https://github.com/boutproject/BOUT-dev/pull/2393) ([ZedThree](https://github.com/users/ZedThree))
+- Adding an adaptive, arbitrary order, Adams-Bashforth solver (v4.4) [\#2392](https://github.com/boutproject/BOUT-dev/pull/2392) ([ZedThree](https://github.com/users/ZedThree))
+- Allow PETSc options to be passed from BOUT.inp (v4.4) [\#2391](https://github.com/boutproject/BOUT-dev/pull/2391) ([ZedThree](https://github.com/users/ZedThree))
 - Add new contributors [\#2386](https://github.com/boutproject/BOUT-dev/pull/2386) ([dschwoerer](https://github.com/users/dschwoerer))
 - Update locale [\#2385](https://github.com/boutproject/BOUT-dev/pull/2385) ([dschwoerer](https://github.com/users/dschwoerer))
 - Fix RTD [\#2384](https://github.com/boutproject/BOUT-dev/pull/2384) ([dschwoerer](https://github.com/users/dschwoerer))
