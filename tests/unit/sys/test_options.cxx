@@ -812,6 +812,15 @@ TEST_F(OptionsTest, AssignSubSectionParent) {
   EXPECT_EQ(&option2["key2"]["key1"].parent(), &option2["key2"]);
 }
 
+TEST_F(OptionsTest, HasAttribute) {
+  Options option;
+
+  EXPECT_FALSE(option.hasAttribute("not here"));
+
+  option.attributes["here"] = true;
+  EXPECT_TRUE(option.hasAttribute("here"));
+}
+
 TEST_F(OptionsTest, AttributeMissingBool) {
   Options option;
 
@@ -1014,7 +1023,7 @@ TEST_F(OptionsTest, TypeAttributeInt) {
   Options option;
   option = "42";
 
-  // Casting to bool should modify the "type" attribute
+  // Casting to int should modify the "type" attribute
   int value = option.withDefault<int>(-1);
 
   EXPECT_EQ(value, 42);
@@ -1025,7 +1034,7 @@ TEST_F(OptionsTest, TypeAttributeField2D) {
   Options option;
   option = "42";
 
-  // Casting to bool should modify the "type" attribute
+  // Casting to Field2D should modify the "type" attribute
   Field2D value = option.withDefault<Field2D>(Field2D(-1, bout::globals::mesh));
 
   EXPECT_EQ(value(0,0), 42);
@@ -1036,11 +1045,22 @@ TEST_F(OptionsTest, TypeAttributeField3D) {
   Options option;
   option = "42";
 
-  // Casting to bool should modify the "type" attribute
+  // Casting to Field3D should modify the "type" attribute
   Field3D value = option.withDefault<Field3D>(Field3D(-1, bout::globals::mesh));
 
   EXPECT_EQ(value(0,0,0), 42);
   EXPECT_EQ(option.attributes["type"].as<std::string>(), "Field3D");
+}
+
+TEST_F(OptionsTest, TypeAttributeFieldPerp) {
+  Options option;
+  option = "36";
+
+  // Casting to FieldPerp should modify the "type" attribute
+  FieldPerp value = option.withDefault<FieldPerp>(FieldPerp(-1, bout::globals::mesh));
+
+  EXPECT_EQ(value(0,0,0), 36);
+  EXPECT_EQ(option.attributes["type"].as<std::string>(), "FieldPerp");
 }
 
 TEST_F(OptionsTest, DocString) {
