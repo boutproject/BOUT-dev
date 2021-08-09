@@ -43,12 +43,14 @@ boundary but ``z`` does not (since it is usually periodic):
 Note that the variable ``nz`` can be used before its definition; all
 variables are first read, and then processed afterwards.
     
-All expressions are calculated in floating point and then
-converted to an integer. The conversion is 
-done by rounding to the nearest integer, but throws an error if the
-floating point value is not within 1e-3 of an integer. This is to minimise
-unexpected behaviour. If you want to round any result to an integer,
-use the ``round`` function:
+Expressions are always calculated in floating point; When expressions
+are used to set integer quantities (such as the number of grid
+points), the expressions are calculated in floating point and then
+converted to an integer. The conversion is done by rounding to the
+nearest integer, but throws an error if the floating point value is
+not within 1e-3 of an integer. This is to minimise unexpected
+behaviour. If you want to round any result to the nearest integer, use
+the ``round`` function:
 
 .. code-block:: cfg
 
@@ -89,16 +91,18 @@ initialisation, common trigonometric and mathematical functions can be
 used. In the above example, some variables depend on each other, for
 example ``dy`` depends on ``L`` and ``ny``. The order in which these
 variables are defined doesn’t matter, so ``L`` could be defined below
-``dy``, but circular dependencies are not allowed. If the variables are
-defined in the same section (as ``dy`` and ``L``) then no section prefix
-is required. To refer to a variable in a different section, prefix the
-variable with the section name e.g. “``section:variable``”.
+``dy``, but circular dependencies are not allowed (by default; see
+section :ref:`sec-recursive-functions`). If the variables are defined
+in the same section (as ``dy`` and ``L``) or a parent section, then no
+section prefix is required. To refer to a variable in a different
+section, prefix the variable with the section name
+e.g. “``section:variable``”.
 
 More complex meshes can be created by supplying an input grid file to
 describe the grid points, geometry, and starting profiles. Currently
-BOUT++ supports either NetCDF, HDF5 format binary files. During startup,
-BOUT++ looks in the grid file for the following variables. If any are
-not found, a warning will be printed and the default values used.
+BOUT++ supports NetCDF format binary files. During startup, BOUT++
+looks in the grid file for the following variables. If any are not
+found, a warning will be printed and the default values used.
 
 -  X and Y grid sizes (integers) ``nx`` and ``ny`` **REQUIRED**
 
@@ -113,14 +117,9 @@ not found, a warning will be printed and the default values used.
    ``g13[nx][ny]``, and ``g23[nx][ny]``. If not found, these will be set
    to 0.
 
--  Z shift for interpolation between field-aligned coordinates and
-   shifted coordinates (see ``manual/coordinates.pdf``). Perpendicular
-   differential operators are calculated in shifted coordinates when
-   ``ShiftXderivs`` in ``mesh/mesh.hxx`` is enabled. ``ShiftXderivs``
-   can be set in the root section of ``BOUT.inp`` as
-   ``ShiftXderivs = true``. The shifts must be provided in the gridfile
-   in a field ``zshift[nx][ny]``. If not found, ``zshift`` is set to
-   zero.
+-  Z shift for interpolation between the base and field-aligned grids, see
+   :ref:`sec-parallel-transforms`. The shifts must be provided in the gridfile
+   in a field ``zShift(nx, ny)``. If not found, ``zShift`` is set to zero.
 
 The remaining quantities determine the topology of the grid. These are
 based on tokamak single/double-null configurations, but can be adapted
@@ -163,13 +162,73 @@ BOUT++ Topology
 Basic
 ~~~~~
 
-In order to handle tokamak geometry BOUT++ contains an internal topology
-which is determined by the branch-cut locations (``jyseps1_1``,
-``jyseps1_2``, ``jyseps2_1``, and ``jyseps2_2``) and separatrix
-locations (``ixseps1`` and ``ixseps2``).
+BOUT++ is designed to work in a variety of tokamak and non-tokamak
+geometries, from simple slabs to disconnected double-null
+configurations. In order to handle tokamak geometry BOUT++ contains an
+internal topology which is built from six regions determined by four
+branch-cut locations and two separatrix locations (``ixseps1`` and
+``ixseps2``). There are some limitations on these regions that we will
+discuss below, and some regions may be empty, all of which enables
+BOUT++ to describe effectively seven types of topology:
 
-The separatrix locations, ``ixseps1`` and ``ixseps2``, give the indices
-in the ``x`` domain where the first and second separatrices are located.
+- "core": this type of topology can describe the closed field line
+  regions inside the separatrix of tokamaks or other devices, or
+  idealised geometries like periodic slabs;
+
+- "SOL": these can describe the open field line regions of the
+  scrape-off layer (SOL) outside the separatrix of a tokamak, or linear
+  devices with a target plate at either end;
+
+- "limiter": these topologies have an open field line region and a
+  region where field lines hit a boundary, without an X-point;
+
+- "X-point": these topologies have four separate legs with their own
+  boundaries, and no closed field line region;
+
+- "single null": this type of topology has one X-point with two separate
+  legs, closed and an open field line regions, and a single separatrix;
+
+- "connected double null": these topologies have two X-points with two
+  separate legs each, closed and open field line regions and a single
+  separatrix that connects both X-points;
+
+- "disconnected double null": finally, these are similar to connected
+  double null geometries except that they have two separatrices that do
+  not connect the two X-points. These come in "lower" and "upper"
+  flavours, depending on which X-point is adjacent to the closed field
+  line region.
+
+The six regions that form the building blocks of these topologies are:
+
+- four separate "leg" regions that have a boundary in the ``y``
+  direction;
+
+- two "core" regions that do not have boundaries in ``y``.
+
+Each of these regions may have additional boundaries in the ``x``
+direction. The separate regions are illustrated in
+:numref:`fig-topology-cross-section`: the grey dashed lines show the
+region partitions, with the sections labelled 1, 2, and 3 forming one
+leg; 4, 5, and 6 forming one core region, and so on. The internal names
+for these separate regions use "inner" and "outer" in reference to the
+major radius -- that is, "inner" regions correspond to the left-hand
+side of :numref:`fig-topology-cross-section` and "outer" regions to the
+right-hand side.
+
+Two important limitations for BOUT++ grids are that a single processor
+can only belong to one region, and that there must be the same number of
+points on each processor. The first limitation means that certain
+topologies require a minimum number of processors. For example, a
+disconnected double null configuration uses all six regions -- therefore
+the minimum number of processors able to describe this in BOUT++ is
+six. Having equal numbers of points on each processor can put some
+restrictions on the resolution of simulations.
+
+The two separatrix locations are ``ixseps1`` and ``ixseps2``, these are
+the global indices in the ``x`` domain where the first and second
+separatrices are located. These values are set either in the grid file
+or in ``BOUT.inp``.  :numref:`fig-topology-cross-section` shows
+schematically how ``ixseps`` is used.
 
 If ``ixseps1 == ixseps2`` then there is a single separatrix representing
 the boundary between the core region and the SOL region and the grid is
@@ -179,28 +238,25 @@ the tokamak is an upper double null. If ``ixseps1 < ixseps2`` then there
 are two separatrices and the inner separatrix is ``ixseps1`` so the
 tokamak is a lower double null.
 
-In other words: Let us for illustrative purposes say that
-``ixseps1 > ixseps2`` (see :numref:`fig-topology-cross-section`). Let
-us say that we have a field ``f(x,y,z)`` with a global ``x``-index which
-includes ghost points. ``f(x<=xseps1,y,z)``) will then be periodic in
-the ``y``-direction, ``f(xspes1<x<=xseps2,y,z)``) will have boundary
+In other words: Let us for illustrative purposes say that ``ixseps1 >
+ixseps2`` (see :numref:`fig-topology-cross-section`). Let us say that we
+have a field ``f(x,y,z)`` with a global ``x``-index which includes ghost
+points. ``f(x <= ixseps1, y, z)``) will then be periodic in the
+``y``-direction, ``f(ixspes1 < x <= ixseps2, y, z)``) will have boundary
 condition in the ``y``-direction set by the lowermost ``ydown`` and
-``yup``. If ``f(xspes2<x,y,z)``) the boundary condition in the
+``yup``. If ``f(ixspes2 < x, y, z)``) the boundary condition in the
 ``y``-direction will be set by the uppermost ``ydown`` and ``yup``. As
 for now, there is no difference between the two sets of upper and lower
 ``ydown`` and ``yup`` boundary conditions (unless manually specified,
 see :ref:`sec-custom-BC`).
 
-These values are set either in the grid file or in ``BOUT.inp``.
-:numref:`fig-topology-cross-section` shows schematically how ``ixseps`` is
-used.
-
-The branch cut locations, ``jyseps1_1``, ``jyseps1_2``, ``jyseps2_1``,
-and ``jyseps2_2``, split the ``y`` domain into logical regions defining
-the SOL, the PFR (private flux region) and the core of the tokamak. This
-is illustrated also in :numref:`fig-topology-cross-section`. If
-``jyseps1_2 == jyseps2_1`` then the grid is a single null configuration,
-otherwise the grid is a double null configuration.
+The four branch cut locations, ``jyseps1_1``, ``jyseps1_2``,
+``jyseps2_1``, and ``jyseps2_2``, split the ``y`` domain into logical
+regions defining the SOL, the PFR (private flux region) and the core of
+the tokamak. This is illustrated also in
+:numref:`fig-topology-cross-section`. If ``jyseps1_2 == jyseps2_1`` then
+the grid is a single null configuration, otherwise the grid is a double
+null configuration.
 
 .. _fig-topology-cross-section:
 .. figure:: ../figs/topology_cross_section.*
@@ -208,7 +264,9 @@ otherwise the grid is a double null configuration.
 
    Deconstruction of a poloidal tokamak cross-section into logical
    domains using the parameters ``ixseps1``, ``ixseps2``,
-   ``jyseps1_1``, ``jyseps1_2``, ``jyseps2_1``, and ``jyseps2_2``
+   ``jyseps1_1``, ``jyseps1_2``, ``jyseps2_1``, and ``jyseps2_2``. This
+   configuration is a "disconnected double null" and shows all the
+   possible regions used in the BOUT++ topology.
 
 Advanced
 ~~~~~~~~
@@ -279,15 +337,15 @@ no branch-cuts in the X direction, there is just one destination for the
 processor number means that there’s a domain boundary so no
 communication is needed.
 
-The communication control variables are set in the ``topology()``
-function, in ``src/mesh/impls/bout/boutmesh.cxx`` starting around line
-2056. First the function ``default_connections()`` sets the topology to
-be a rectangle
+The communication control variables are set in the
+`BoutMesh::topology()` function, in
+``src/mesh/impls/bout/boutmesh.cxx``. First the function
+`default_connections()` sets the topology to be a rectangle.
 
-To change the topology, the function ``set_connection`` checks that the
-requested branch cut is on a processor boundary, and changes the
-communications consistently so that communications are two-way and there
-are no “dangling” communications.
+To change the topology, the function `BoutMesh::set_connection` checks
+that the requested branch cut is on a processor boundary, and changes
+the communications consistently so that communications are two-way and
+there are no “dangling” communications.
 
 3D variables
 ------------
@@ -328,11 +386,10 @@ Two representations are now supported for 3D variables:
 From EFIT files
 ---------------
 
-An IDL code called “Hypnotoad” has been developed to create BOUT++ input
-files from R-Z equilibria. This can read EFIT ’g’ files, find flux
-surfaces, and calculate metric coefficients. The code is in
-``tools/tokamak_grids/gridgen``, and has its own manual under the
-``doc`` subdirectory.
+A separate tool (in python) called `Hypnotoad <https://github.com/boutproject/hypnotoad>`_
+has been developed to create BOUT++ input files from R-Z equilibria. This can read EFIT ’g’
+(geqdsk) files, find flux surfaces, and calculate metric
+coefficients. 
 
 From ELITE and GATO files
 -------------------------
@@ -363,11 +420,13 @@ generate shifted circle (large aspect ratio) Grad-Shafranov equilibria.
 Zoidberg grid generator
 -----------------------
 
-The Zoidberg grid generator creates inputs for the Flux Coordinate Independent (FCI)
-parallel transform (section :ref:`sec-parallel-transforms`). The domain is
-divided into a set of 2D grids in the X-Z coordinates, and the magnetic field is followed 
-along the Y coordinate from each 2D grid to where it either intersects the forward
-and backward grid, or hits a boundary.
+The `Zoidberg <https://github.com/boutproject/zoidberg>`_ grid
+generator creates inputs for the Flux Coordinate Independent (FCI)
+parallel transform (section :ref:`sec-parallel-transforms`). The
+domain is divided into a set of 2D grids in the X-Z coordinates, and
+the magnetic field is followed along the Y coordinate from each 2D
+grid to where it either intersects the forward and backward grid, or
+hits a boundary.
 
 The simplest code which creates an output file is::
 
@@ -761,4 +820,3 @@ with the following formula:
 
 where :math:`R_0` is the major radius, :math:`a` is the minor radius,
 :math:`\epsilon` is the elongation (``elong``), :math:`\delta` the triangularity (``triang``), and :math:`b` the indentation (``indent``).
-

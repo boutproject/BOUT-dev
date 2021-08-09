@@ -126,12 +126,13 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   addGenerator("gauss", std::make_shared<FieldGaussian>(nullptr, nullptr));
   addGenerator("abs", std::make_shared<FieldGenOneArg<fabs>>(nullptr, "abs"));
   addGenerator("sqrt", std::make_shared<FieldGenOneArg<sqrt>>(nullptr, "sqrt"));
-  addGenerator("h", std::make_shared<FieldHeaviside>(nullptr));
+  addGenerator("H", std::make_shared<FieldHeaviside>(nullptr));
   addGenerator("erf", std::make_shared<FieldGenOneArg<erf>>(nullptr, "erf"));
   addGenerator("fmod", std::make_shared<FieldGenTwoArg<fmod>>(nullptr, nullptr));
 
   addGenerator("min", std::make_shared<FieldMin>());
   addGenerator("max", std::make_shared<FieldMax>());
+  addGenerator("clamp", std::make_shared<FieldClamp>());
 
   addGenerator("power", std::make_shared<FieldGenTwoArg<pow>>(nullptr, nullptr));
 
@@ -317,7 +318,7 @@ const Options* FieldFactory::findOption(const Options* opt, const std::string& n
   return result;
 }
 
-FieldGeneratorPtr FieldFactory::resolve(std::string& name) const {
+FieldGeneratorPtr FieldFactory::resolve(const std::string& name) const {
   if (options != nullptr) {
     // Check if in cache
     std::string key;
@@ -388,6 +389,23 @@ FieldGeneratorPtr FieldFactory::resolve(std::string& name) const {
   }
   output << "ExpressionParser error: Can't find generator '" << name << "'" << endl;
   return nullptr;
+}
+
+std::multiset<ExpressionParser::FuzzyMatch>
+FieldFactory::fuzzyFind(const std::string& name, std::string::size_type max_distance) const {
+  // First use parent fuzzyFind to check the list of generators
+  auto matches = ExpressionParser::fuzzyFind(name, max_distance);
+
+  if (options == nullptr) {
+    return matches;
+  }
+
+  // Now we can also search the options for likely candidates too
+  for (const auto& match : options->fuzzyFind(name, max_distance)) {
+    matches.insert({match.match.str(), match.distance});
+  }
+
+  return matches;
 }
 
 FieldGeneratorPtr FieldFactory::parse(const std::string& input, const Options* opt) const {

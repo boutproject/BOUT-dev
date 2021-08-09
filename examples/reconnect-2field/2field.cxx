@@ -203,10 +203,10 @@ protected:
     SAVE_ONCE(Phi0_ext, U0_ext);
 
     // Give the solver the preconditioner function
-    setPrecon((preconfunc)&TwoField::precon);
-    
+    setPrecon(&TwoField::precon);
+
     // Initialise parallel inversion class
-    inv = InvertPar::Create();
+    inv = InvertPar::create();
     inv->setCoefA(1.0);
     U.setBoundary("U");
     Apar.setBoundary("Apar");
@@ -246,18 +246,22 @@ protected:
     if (jpar_bndry > 0) {
       // Boundary in jpar
       if (mesh->firstX()) {
-        for (int i = jpar_bndry; i >= 0; i--)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = jpar_bndry; i >= 0; i--) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
               jpar(i, j, k) = jpar(i + 1, j, k);
             }
+          }
+        }
       }
       if (mesh->lastX()) {
-        for (int i = mesh->LocalNx - jpar_bndry - 1; i < mesh->LocalNx; i++)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = mesh->LocalNx - jpar_bndry - 1; i < mesh->LocalNx; i++) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
               jpar(i, j, k) = jpar(i - 1, j, k);
             }
+          }
+        }
       }
     }
 
@@ -278,16 +282,18 @@ protected:
       ddt(U) -= bracket(phi, U, bm); // ExB advection
     }
 
-    if (mu > 0.)
+    if (mu > 0.) {
       ddt(U) += mu * Delp2(U);
+    }
 
     // APAR
 
     ddt(Apar) = -Grad_parP(phi, CELL_YLOW) / beta_hat;
     ddt(Apar) += -Grad_parP(Phi0_ext, CELL_YLOW) / beta_hat;
 
-    if (eta > 0.)
+    if (eta > 0.) {
       ddt(Apar) -= eta * jpar / beta_hat;
+    }
 
     return 0;
   }
@@ -310,18 +316,22 @@ public:
     if (jpar_bndry > 0) {
       // Boundary in jpar
       if (mesh->firstX()) {
-        for (int i = jpar_bndry; i >= 0; i--)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = jpar_bndry; i >= 0; i--) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
               Jp(i,j,k) = Jp(i + 1,j,k);
             }
+          }
+        }
       }
       if (mesh->lastX()) {
-        for (int i = mesh->LocalNx - jpar_bndry - 1; i < mesh->LocalNx; i++)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = mesh->LocalNx - jpar_bndry - 1; i < mesh->LocalNx; i++) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
               Jp(i,j,k) = Jp(i - 1,j,k);
             }
+          }
+        }
       }
     }
 

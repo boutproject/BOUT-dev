@@ -1,18 +1,18 @@
-nout=1
-timestep=1
-periodicY=true
+nout = 1
+timestep = 1
+periodicY = true
 
-[MESH]
-MXG=2
-MYG=2
-dy=1/ny
-dx=1/nx
-dz=1/mz
-nx=5
-ny=6
-mz=1
+[mesh]
+MXG = 2
+MYG = 2
+dy = 1/ny
+dx = 1/nx
+dz = 1/mz
+nx = 5
+ny = 6
+mz = 1
 
-ixseps1		= -1
-ixseps2		= -1
+ixseps1 = -1
+ixseps2 = -1
 
-StaggerGrids=true
+staggergrids = true

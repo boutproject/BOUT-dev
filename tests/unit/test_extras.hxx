@@ -110,24 +110,6 @@ auto IsFieldEqual(const T& field, BoutReal reference,
   return ::testing::AssertionSuccess();
 }
 
-/// Disable a ConditionalOutput during a scope; reenable it on
-/// exit. You must give the variable a name!
-///
-///     {
-///       WithQuietoutput quiet{output};
-///       // output disabled during this scope
-///     }
-///     // output now enabled
-class WithQuietOutput {
-public:
-  explicit WithQuietOutput(ConditionalOutput& output_in) : output(output_in) {
-    output.disable();
-  }
-
-  ~WithQuietOutput() { output.enable(); }
-  ConditionalOutput& output;
-};
-
 class Options;
 
 /// FakeMesh has just enough information to create fields
@@ -282,16 +264,16 @@ public:
                               int UNUSED(tag)) override {
     return nullptr;
   }
-  const RangeIterator iterateBndryLowerY() const override {
+  RangeIterator iterateBndryLowerY() const override {
     return RangeIterator(xstart, xend);
   }
-  const RangeIterator iterateBndryUpperY() const override {
+  RangeIterator iterateBndryUpperY() const override {
     return RangeIterator(xstart, xend);
   }
-  const RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
   void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
   std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
   std::vector<BoundaryRegionPar*> getBoundariesPar() override {
@@ -303,18 +285,16 @@ public:
   BoutReal GlobalY(BoutReal jy) const override { return jy; }
   int getGlobalXIndex(int) const override { return 0; }
   int getGlobalXIndexNoBoundaries(int) const override { return 0; }
-  int getGlobalYIndex(int) const override { return 0; }
-  int getGlobalYIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalYIndex(int y) const override { return y; }
+  int getGlobalYIndexNoBoundaries(int y) const override { return y; }
   int getGlobalZIndex(int) const override { return 0; }
   int getGlobalZIndexNoBoundaries(int) const override { return 0; }
-  int XLOCAL(int UNUSED(xglo)) const override { return 0; }
-  int YLOCAL(int UNUSED(yglo)) const override { return 0; }
-  virtual int localSize3D() override { return LocalNx * LocalNy * LocalNz; }
-  virtual int localSize2D() override { return LocalNx * LocalNy; }
-  virtual int localSizePerp() override { return LocalNx * LocalNz; }
-  virtual int globalStartIndex3D() override { return 0; }
-  virtual int globalStartIndex2D() override { return 0; }
-  virtual int globalStartIndexPerp() override { return 0; }
+  int getLocalXIndex(int) const override { return 0; }
+  int getLocalXIndexNoBoundaries(int) const override { return 0; }
+  int getLocalYIndex(int y) const override { return y; }
+  int getLocalYIndexNoBoundaries(int y) const override { return y; }
+  int getLocalZIndex(int) const override { return 0; }
+  int getLocalZIndexNoBoundaries(int) const override { return 0; }
 
   void initDerivs(Options * opt){
     StaggerGrids=true;
@@ -381,6 +361,9 @@ public:
                   getRegionPerp("RGN_INNER_X") + getRegionPerp("RGN_OUTER_X"));
   }
 
+  // Make this public so we can test it
+  using Mesh::msg_len;
+
 private:
   std::vector<BoundaryRegion *> boundaries;
 };
@@ -398,9 +381,16 @@ class FakeGridDataSource : public GridDataSource {
   bool get(Mesh*, BoutReal&, const std::string&, BoutReal = 0.0) override {
     return false;
   }
-  bool get(Mesh*, Field2D&, const std::string&, BoutReal = 0.0) override { return false; }
-  bool get(Mesh*, Field3D&, const std::string&, BoutReal = 0.0) override { return false; }
-  bool get(Mesh*, FieldPerp&, const std::string&, BoutReal = 0.0) override {
+  bool get(Mesh*, Field2D&, const std::string&, BoutReal = 0.0,
+           CELL_LOC = CELL_DEFAULT) override {
+    return false;
+  }
+  bool get(Mesh*, Field3D&, const std::string&, BoutReal = 0.0,
+           CELL_LOC = CELL_DEFAULT) override {
+    return false;
+  }
+  bool get(Mesh*, FieldPerp&, const std::string&, BoutReal = 0.0,
+           CELL_LOC = CELL_DEFAULT) override {
     return false;
   }
 
@@ -480,6 +470,8 @@ public:
     mesh_staggered = nullptr;
     delete bout::globals::mpi;
     bout::globals::mpi = nullptr;
+
+    Options::cleanup();
   }
 
   static constexpr int nx = 3;

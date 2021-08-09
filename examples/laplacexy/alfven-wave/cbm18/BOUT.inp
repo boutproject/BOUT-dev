@@ -1,6 +1,6 @@
 
-NOUT = 500
-TIMESTEP = 10
+nout = 500
+timestep = 10
 
 grid = "cbm18_dens8.grid_nx68ny64.nc"
 
@@ -29,9 +29,9 @@ split_n0 = false    # Split phi into n=0 and n~=0 components?
 newXZsolver = true   # Use LaplaceXZ solver
 
 
-mu_epar = -1e7
+mu_epar = -10000000.0
 
-resistivity = 1e-7
+resistivity = 1e-07
 
 [Vort]
 scale = 0.0
@@ -39,12 +39,12 @@ scale = 0.0
 bndry_all = dirichlet_o2
 
 [Apar]
-scale = 1e-2
+scale = 0.01
 function = gauss(x-0.5,0.2)*sin(y)
 
 bndry_all = neumann_o2
 
-[jpar] 
+[jpar]
 bndry_all = neumann_o2
 
 [phi]
@@ -52,4 +52,3 @@ bndry_xin = none
 bndry_xout = none
 
 bndry_target = dirichlet_o2 # Zero value on targets
-

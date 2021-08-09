@@ -33,7 +33,7 @@ private:
 protected:
   int init(bool) {
     // Normalisation
-    auto opt = Options::root()["alfven"];
+    auto& opt = Options::root()["Alfven"];
     Tnorm = opt["Tnorm"].withDefault(100);  // Reference temperature [eV]
     Nnorm = opt["Nnorm"].withDefault(1e19); // Reference density [m^-3]
     Bnorm = opt["Bnorm"].withDefault(1.0);  // Reference magnetic field [T]
@@ -72,8 +72,8 @@ protected:
     phi = 0.0;
     
     // Specify the preconditioner function
-    setPrecon( (preconfunc) &Alfven::precon );
-    
+    setPrecon(&Alfven::precon);
+
     // Create an XZ solver
     newXZsolver = opt["newXZsolver"].withDefault(false);
     if(newXZsolver) {
@@ -195,9 +195,10 @@ protected:
     }
     
     BoutReal sbp = 1.0; // Sign of Bp
-    if(min(Bpxy, true) < 0.0)
+    if (min(Bpxy, true) < 0.0) {
       sbp = -1.0;
-    
+    }
+
     // Calculate metric components
     
     coord->g11 = SQ(Rxy*Bpxy);

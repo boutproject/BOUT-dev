@@ -6,8 +6,8 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 20       # number of time-steps
-TIMESTEP = 0.05   # time between outputs
+nout = 20       # number of time-steps
+timestep = 0.05   # time between outputs
 
 MXG = 0   # Guard cells in X
 MYG = 2   # Guard cells in Y
@@ -24,11 +24,11 @@ nx = 1
 ny = 128
 nz = 1
 
-dx = 1.
-dy = 1 / ny 
+dx = 1.0
+dy = 1 / ny
 dz = 1
 
-vy = 1.
+vy = 1.0
 pressure = 0.6
 density = 1.0 + H(y - pi/2)*H(3*pi/2 - y)
 
@@ -59,8 +59,8 @@ upwind = U1
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 ##################################################
 # settings for gas_compress
@@ -72,7 +72,7 @@ viscosity = 0.0
 
 v0_multiply = -1.0
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = gauss(y - pi, 0.1*pi) * sin(z)
 
@@ -84,4 +84,3 @@ bndry_all = neumann # Set all boundaries to Neumann
 
 [density]
 scale = 0.5
-

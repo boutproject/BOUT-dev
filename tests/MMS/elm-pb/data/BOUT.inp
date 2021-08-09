@@ -4,16 +4,16 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 1          # number of time-steps
-TIMESTEP = 1e-3       # time between outputs
+nout = 1          # number of time-steps
+timestep = 0.001       # time between outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
-TwistShift = true   # use twist-shift condition?
+twistshift = true   # use twist-shift condition?
 ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
 TwistOrder = 0      # order of twist-shift interpolation
 
 MZ = 17             # number of points in z direction (2^n + 1)
-ZPERIOD = 1         # Fraction of a torus to simulate
+zperiod = 1         # Fraction of a torus to simulate
 
 NXPE = 1
 
@@ -26,17 +26,6 @@ StaggerGrids = false    # Use staggered grids
 
 [mesh]
 symmetricGlobalX = true
-
-[output]
-floats = false # -> Output in double precision
-
-##################################################
-# Laplacian inversion routines
-
-[laplace]
-all_terms = true
-inner_boundary_flags = 0
-outer_boundary_flags = 0
 
 ##################################################
 # derivative methods
@@ -59,6 +48,17 @@ first = C4  # Z derivatives can be done using FFT
 second = C4
 upwind = W3
 
+[output]
+floats = false # -> Output in double precision
+
+##################################################
+# Laplacian inversion routines
+
+[laplace]
+all_terms = true
+inner_boundary_flags = 0
+outer_boundary_flags = 0
+
 ##################################################
 # Solver settings
 
@@ -67,8 +67,8 @@ upwind = W3
 mms = true
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-12 # absolute tolerance
-RTOL = 1.0e-8  # relative tolerance
+atol = 1e-12 # absolute tolerance
+rtol = 1e-08  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
 use_jacobian = false  # Use user-supplied Jacobian
@@ -80,8 +80,8 @@ mxstep = 5000   # Number of internal steps between outputs
 
 [highbeta]
 
-density = 1.0e19       # number density of deuterium [m^-3]
-                       # used to produce output normalisations
+density = 1e+19       # number density of deuterium [m^-3]
+# used to produce output normalisations
 
 ## Effects to include/exclude
 
@@ -89,7 +89,7 @@ include_jpar0 = true     # determines whether to include jpar0 terms
 include_curvature = true # include curvature drive term?
 
 compress = false       # set compressible (evolve Vpar)
-nonlinear  = true      # include non-linear terms?
+nonlinear = true      # include non-linear terms?
 
 diamag = true          # Include diamagnetic effects?
 diamag_grad_t = false  # Include Grad_par(Te) term in Psi equation
@@ -97,7 +97,7 @@ diamag_phi0 = false    # Balance ExB against Vd for stationary equilibrium
 
 ##################################################
 # BRACKET_METHOD flags:
-# 0:BRACKET_STD; derivative methods will be determined 
+# 0:BRACKET_STD; derivative methods will be determined
 #   by the choices C or W in this input file
 # 1:BRACKET_SIMPLE; 2:BRACKET_ARAKAWA; 3:BRACKET_CTU.
 
@@ -107,32 +107,32 @@ bm_mag_flag = 2
 ##################################################################
 
 eHall = false         # Include electron pressue effects in Ohm's law?
-AA    = 2.0          # ion mass in units of proton mass 
+AA = 2.0          # ion mass in units of proton mass
 
 ## Toroidal filtering
 filter_z = false   # remove all except one mode
 filter_z_mode = 1  # Specify which harmonic to keep (1 = fundamental)
 
 low_pass_z = -1    # Keep up to and including this harmonic (-1 = keep all)
-zonal_flow = -1    # remove this zonal harmonic  (-1 = keep zonal harmonic)
-zonal_field= -1     # remove this zonal harmonic  (-1 = keep zonal harmonic)
-zonal_bkgd = -1    # remove this zonal harmonic  (-1 = keep zonal harmonic)
+zonal_flow = false    # remove this zonal harmonic  (-1 = keep zonal harmonic)
+zonal_field = false     # remove this zonal harmonic  (-1 = keep zonal harmonic)
+zonal_bkgd = false    # remove this zonal harmonic  (-1 = keep zonal harmonic)
 
 ## Vacuum region control
 
 vacuum_pressure = 0.0 # the pressure below which it is considered vacuum
-                       # fraction of peak pressure
+# fraction of peak pressure
 vacuum_trans = 0.01   # transition width (fraction of P)
 
 ## Resistivity and Hyper-resistivity
 
-vac_lund = -1.0e8    # Lundquist number in vacuum  (negative -> infinity)
-core_lund = 1e1  # Lundquist number in core (negative -> infinity)
-hyperresist = -1.e-4 # Hyper-resistivity coefficient (like 1 / Lundquist number)
+vac_lund = -100000000.0    # Lundquist number in vacuum  (negative -> infinity)
+core_lund = 10.0  # Lundquist number in core (negative -> infinity)
+hyperresist = -0.0001 # Hyper-resistivity coefficient (like 1 / Lundquist number)
 
 ## Parallel pressure diffusion
 
-diffusion_par = -1.0e-0   # Parallel pressure diffusion (< 0 = none)
+diffusion_par = -1.0   # Parallel pressure diffusion (< 0 = none)
 
 ## Viscosity and Hyper-viscosity
 
@@ -148,7 +148,7 @@ phi_curv = true    # Include curvature*Grad(phi) in P equation
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 [phi]
@@ -202,8 +202,3 @@ source = -0.5*sin(t)*cos(3.0*x^2 + y - z - (x^2 + 2)*(y + 0.1*sin(y))) - 0.005*s
 
 #bndry_all = dirichlet_o2(P:solution)
 bndry_all = toFieldAligned(dirichlet_o2(P:solution_zshift))
-
-[Vpar]
-
-
-

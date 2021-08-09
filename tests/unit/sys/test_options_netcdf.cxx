@@ -2,7 +2,7 @@
 
 #include "bout/build_config.hxx"
 
-#if BOUT_HAS_NETCDF
+#if BOUT_HAS_NETCDF && !BOUT_HAS_LEGACY_NETCDF
 
 #include "gtest/gtest.h"
 
@@ -217,6 +217,25 @@ TEST_F(OptionsNetCDFTest, Field3DWriteCellYLow) {
   Options data = OptionsNetCDF(filename).read();
 
   EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(), toString(CELL_YLOW));
+}
+
+TEST_F(OptionsNetCDFTest, FieldPerpWriteCellCentre) {
+  {
+    Options options;
+    FieldPerp fperp(3.0);
+    fperp.setIndex(2);
+    options["fperp"] = fperp;
+
+    // Write file
+    OptionsNetCDF(filename).write(options);
+  }
+
+  // Read file
+  Options data = OptionsNetCDF(filename).read();
+
+  EXPECT_EQ(data["fperp"].attributes["cell_location"].as<std::string>(),
+            toString(CELL_CENTRE));
+  EXPECT_EQ(data["fperp"].attributes["yindex_global"].as<int>(), 2);
 }
 
 #endif // BOUT_HAS_NETCDF

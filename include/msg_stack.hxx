@@ -70,21 +70,15 @@ public:
   MsgStack() = default;
   ~MsgStack() { clear(); }
 
-#if CHECK > 1
+#if BOUT_USE_MSGSTACK
   /// Add a message to the stack. Returns a message id
   int push(std::string message);
   int push() { return push(""); }
-  [[deprecated("Please use `MsgStack::push()` instead")]] int push(std::nullptr_t) {
-    return push("");
-  }
 
   template <class S, class... Args>
   int push(const S& format, const Args&... args) {
     return push(fmt::format(format, args...));
   }
-
-  [[deprecated("Please use `MsgStack::push` with an empty message instead")]]
-  int setPoint(); ///< get a message point
 
   void pop();       ///< Remove the last message
   void pop(int id); ///< Remove all messages back to msg \p id
@@ -99,9 +93,6 @@ public:
   int push(const S&, const Args&...) {
     return 0;
   }
-
-  [[deprecated("Please use `MsgStack::push` with an empty message instead")]]
-  int setPoint() { return 0; }
 
   void pop() {}
   void pop(int UNUSED(id)) {}
@@ -140,6 +131,21 @@ GLOBAL MsgStack msg_stack;
  * constructor, and pops the message on destruction.
  */
 class MsgStackItem {
+  /// Backfill for C++14: note this _wrong_ and only useful for our
+  /// purposes here, that is, telling us if there has been an uncaught
+  /// exception, which is why this is a private method
+  static int uncaught_exceptions() {
+#if __cpp_lib_uncaught_exceptions >= 201411L
+    // C++17 version
+    return std::uncaught_exceptions();
+#else
+    // C++14 version
+    return static_cast<int>(std::uncaught_exception());
+#endif
+  }
+  // Number of uncaught exceptions when this instance was created
+  int exception_count = uncaught_exceptions();
+
 public:
   // Not currently used anywhere
   MsgStackItem(std::string message) : point(msg_stack.push(std::move(message))) {}
@@ -156,7 +162,7 @@ public:
                              line, file)) {}
   ~MsgStackItem() {
     // If an exception has occurred, don't pop the message
-    if (!std::uncaught_exception()) {
+    if (exception_count == uncaught_exceptions()) {
       msg_stack.pop(point);
     }
   }
@@ -182,7 +188,7 @@ private:
  *
  * } // Scope ends, message popped
  */
-#if CHECK > 0
+#if BOUT_USE_MSGSTACK
 
 /* Would like to have something like TRACE(message, ...) so that we can directly refer
    to the (required) first argument, which is the main message string. However because

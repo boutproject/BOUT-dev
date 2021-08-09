@@ -62,10 +62,12 @@ def file_tokens(fp):
     toklist = []
     while True:
         line = fp.readline()
-        if not line: break
+        if not line:
+            break
         toklist = line.split()
         for tok in toklist:
             yield tok
+
 
 token = file_tokens(f)
 
@@ -82,7 +84,7 @@ except ValueError:
 print("Size of grid: %d by %d\n" % (npsi, npol))
 
 # var will be a dictionary of variables
-var=dict()
+var = dict()
 
 while True:
     try:
@@ -90,13 +92,13 @@ while True:
     except:
         break
 
-    if (varname == 'R') or (varname == 'Z') or (varname[0] == 'B'):
+    if (varname == "R") or (varname == "Z") or (varname[0] == "B"):
         # A 2D variable
         try:
             data = np.zeros([npsi, npol])
             for j in np.arange(npol):
                 for i in np.arange(npsi):
-                    data[i,j] = float(next(token))
+                    data[i, j] = float(next(token))
         except StopIteration:
             print("ERROR: Unexpected end of file while reading " + varname)
             raise SystemExit
@@ -142,31 +144,33 @@ f.close()
 
 try:
     Bt = np.zeros([npsi, npol])
-    f = var['f(psi)']
-    R = var['R']
+    f = var["f(psi)"]
+    R = var["R"]
     for i in np.arange(npsi):
-        Bt[i,:] = f[i] * R[i,:]
-    var['Bt'] = Bt
+        Bt[i, :] = f[i] * R[i, :]
+    var["Bt"] = Bt
 except KeyError:
     print("ERROR: Need f(psi) and R to calculate Bt")
     raise SystemExit
 
 # Temperatures: If only have one, set equal
 
-if 'Te' in var and 'Ti' not in var:
-    var['Ti'] = var['Te']
+if "Te" in var and "Ti" not in var:
+    var["Ti"] = var["Te"]
 
-if 'Ti' in var and 'Te' not in var:
-    var['Te'] = var['Ti']
+if "Ti" in var and "Te" not in var:
+    var["Te"] = var["Ti"]
 
 
 # Calculate pressure
 
-if 'p' not in var:
-    if 'ne' in var and 'Te' in var:
+if "p" not in var:
+    if "ne" in var and "Te" in var:
         # Calculate using Ni, Te and Ti
         print("Calculating pressure from ne, Te, Ti")
-        var['p'] = var['ne'] * (var['Te'] + var['Ti']) * 1.602e-19 * (4.0*3.14159*1e-7)
+        var["p"] = (
+            var["ne"] * (var["Te"] + var["Ti"]) * 1.602e-19 * (4.0 * 3.14159 * 1e-7)
+        )
         # Could check against pprime
     else:
         # No plasma quantities to use, so integrate pprime
@@ -186,19 +190,21 @@ except:
 # Write data
 
 # Map between input and output variable names
-vnames = {'psi':'psi',
-          'f':'f(psi)',
-          'ffprime':'ffprime',
-          'mu0p':'p',
-          'mu0pprime':'pprime',
-          'qsafe':'q',
-          'Ni':'ne',
-          'Te':'Te',
-          'Ti':'Ti',
-          'Rxy':'R',
-          'Zxy':'Z',
-          'Bpxy':'Bp',
-          'Btxy':'Bt'}
+vnames = {
+    "psi": "psi",
+    "f": "f(psi)",
+    "ffprime": "ffprime",
+    "mu0p": "p",
+    "mu0pprime": "pprime",
+    "qsafe": "q",
+    "Ni": "ne",
+    "Te": "Te",
+    "Ti": "Ti",
+    "Rxy": "R",
+    "Zxy": "Z",
+    "Bpxy": "Bp",
+    "Btxy": "Bt",
+}
 
 try:
     of.write("nx", npsi)

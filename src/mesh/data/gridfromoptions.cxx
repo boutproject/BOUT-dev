@@ -45,7 +45,7 @@ bool GridFromOptions::get(Mesh*, BoutReal& rval, const std::string& name, BoutRe
   return hasVar(name);
 }
 
-bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutReal def) {
+bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutReal def, CELL_LOC location) {
   if (!hasVar(name)) {
     output_warn.write("Variable '{:s}' not in mesh options. Setting to {:e}\n", name,
                       def);
@@ -53,11 +53,11 @@ bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutRe
     return false;
   }
 
-  var = FieldFactory::get()->create2D(name, options, m);
+  var = FieldFactory::get()->create2D(name, options, m, location);
   return true;
 }
 
-bool GridFromOptions::get(Mesh* m, Field3D& var, const std::string& name, BoutReal def) {
+bool GridFromOptions::get(Mesh* m, Field3D& var, const std::string& name, BoutReal def, CELL_LOC location) {
   if (!hasVar(name)) {
     output_warn.write("Variable '{:s}' not in mesh options. Setting to {:e}\n", name,
                       def);
@@ -65,11 +65,11 @@ bool GridFromOptions::get(Mesh* m, Field3D& var, const std::string& name, BoutRe
     return false;
   }
 
-  var = FieldFactory::get()->create3D(name, options, m);
+  var = FieldFactory::get()->create3D(name, options, m, location);
   return true;
 }
 
-bool GridFromOptions::get(Mesh* m, FieldPerp& var, const std::string& name, BoutReal def) {
+bool GridFromOptions::get(Mesh* m, FieldPerp& var, const std::string& name, BoutReal def, CELL_LOC location) {
   // Cannot set attributes from options at the moment, so don't know what 'yindex' this
   // FieldPerp should have: just set to 0 for now, and create FieldPerp on all processors
   // (note: this is different to behaviour of GridFromFile which will only create the
@@ -83,7 +83,7 @@ bool GridFromOptions::get(Mesh* m, FieldPerp& var, const std::string& name, Bout
     return false;
   }
 
-  var = FieldFactory::get()->createPerp(name, options, m);
+  var = FieldFactory::get()->createPerp(name, options, m, location);
   var.setIndex(0);
 
   return true;

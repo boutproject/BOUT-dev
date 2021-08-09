@@ -4,26 +4,23 @@
 # preconditioning method of Schur factorisation
 #
 # CFL timestep = 1
-# 
+#
 #
 
-NOUT = 10
+nout = 10
 
 timestep = 10
 
 MZ = 5    # Z size
 
-dump_format = "nc"  # NetCDF format
-
-TwistShift = true
-Ballooning = false
-
-[mesh:ddy]
-first=c2
+twistshift = true
 
 [mesh] # Simple mesh for testing
 nx = 5
 ny = 32
+
+[mesh:ddy]
+first = c2
 
 [solver]
 type = cvode          # Need CVODE or PETSc
@@ -33,7 +30,7 @@ rightprec = false     # Use Right preconditioner (default left)
 diagnose = true       # Print additional diagnostics
 start_timestep = 10
 
-[All]
+[all]
 # Boundary options
 # 0 - constant
 # 1 - Gaussian
@@ -43,7 +40,5 @@ start_timestep = 10
 scale = 0.0
 
 [u]
-function=sin(y)
+function = sin(y)
 scale = 1.0
-
-[v]

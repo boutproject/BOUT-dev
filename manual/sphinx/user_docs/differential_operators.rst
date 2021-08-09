@@ -236,7 +236,7 @@ register a stencil using kernel in a single step. For example:
 
 
 Will define the `DDX_C2` functor and register it with the derivative
-store using key ``"C2"` for all three directions and both fields with
+store using key ``"C2"`` for all three directions and both fields with
 no staggering.
 
 
@@ -430,7 +430,7 @@ is the background *equilibrium* magnetic field.
 |                  | derivatives. The `Laplacian` solver performs the   |
 |                  | inverse operation                                  |
 +------------------+----------------------------------------------------+
-| ``brackets``     | Poisson brackets. The Arakawa option, neglects the |
+| ``bracket``      | Poisson brackets. The Arakawa option, neglects the |
 |                  | parallel :math:`y` derivatives if :math:`g_{xy}`   |
 |                  | and :math:`g_{yz}` are non-zero                    |
 +------------------+----------------------------------------------------+
@@ -491,7 +491,7 @@ and so the :math:`\nabla y` term cancels out:
 The bracket operators
 ---------------------
 
-The bracket operator ``brackets(phi, f, method)`` aims to
+The bracket operator ``bracket(phi, f, method)`` aims to
 differentiate equations on the form
 
 .. math::
@@ -527,7 +527,8 @@ cell is added to another. There are several caveats to this:
 * There will always be a small rounding error, even with double
   precision.
 
-The methods can be used by including the header::
+The methods can be used by including the
+:doc:`header<../_breathe_autogen/file/fv__ops_8cxx>`::
 
    #include "bout/fv_ops.hxx"
 
@@ -535,7 +536,7 @@ The methods can be used by including the header::
 **Note** The methods are defined in a namespace ``FV``.
 
 Some methods (those with templates) are defined in the header, but others
-are defined in ``src/mesh/fv_ops.cxx``.
+are defined in :doc:`src/mesh/fv_ops.cxx<../_breathe_autogen/file/fv__ops_8cxx>`.
 
 
 Parallel divergence ``Div_par``
@@ -615,7 +616,7 @@ The parallel diffusion operator calculates :math:`\nabla_{||}\left[k\partial_||\
                                     bool bndry_flux=true);
 
 
-This is done by calculating the flux :math:`k\partial_||\left(f\right)` on cell boundaries
+This is done by calculating the flux :math:`k\partial_{||}\left(f\right)` on cell boundaries
 using central differencing.
 
 

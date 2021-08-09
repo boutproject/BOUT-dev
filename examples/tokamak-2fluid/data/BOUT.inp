@@ -5,13 +5,12 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 200     # number of time-steps
-TIMESTEP = 1e1   # time between outputs
+nout = 200     # number of time-steps
+timestep = 10.0   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
-MZ = 33     # number of points in z direction (2^n + 1)
+MZ = 32     # number of points in z direction (2^n)
 
 ZMIN = 0.0
 ZMAX = 0.0202509 # 1e1 / 4.938060e+02
@@ -20,14 +19,12 @@ ZMAX = 0.0202509 # 1e1 / 4.938060e+02
 MXG = 2
 MYG = 2
 
-grid="data/uedge.grd.nc"
+grid = "data/uedge.grd.nc"
 
 dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
 
-NXPE = 2
-
 [mesh]
-StaggerGrids = true
+staggergrids = true
 
 ##################################################
 # derivative methods
@@ -55,7 +52,7 @@ upwind = U1
 
 [laplace]
 all_terms = false
-laplace_nonuniform = true
+nonuniform = true
 filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 
 ##################################################
@@ -64,8 +61,8 @@ filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 mxstep = 50000
 
 ##################################################
@@ -73,7 +70,7 @@ mxstep = 50000
 
 [2fluid]
 
-nu_perp = 1.0e-20
+nu_perp = 1e-20
 
 bkgd = 2    # Profile option for coefficients (ni, mu_i etc.)
 iTe_dc = 2  # Profile evolution option
@@ -84,7 +81,7 @@ Zeff = 32.0        # Z effective
 
 estatic = true     # if true, electrostatic (Apar = 0). (BOUT-06 = esop)
 ZeroElMass = true  # Use Ohms law without electron inertia
-bout_jpar = true   # Use BOUT-06 method to calculate ZeroElMass jpar 
+bout_jpar = true   # Use BOUT-06 method to calculate ZeroElMass jpar
 
 bout_exb = true    # Use the BOUT-06 subset of ExB terms
 
@@ -113,11 +110,11 @@ outer_boundary_flags = 0
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = gauss(y, 0.1) * sin(z)
 
-# boundary conditions 
+# boundary conditions
 #
 # dirichlet = Zero value
 # neumann   = Zero gradient
@@ -133,7 +130,7 @@ bndry_all = relax(neumann,20)
 #       any unused options can just be removed
 
 [Ni]
-scale = 1.0e-2 # Initial perturbation size
+scale = 0.01 # Initial perturbation size
 
 # ExB advection terms
 ni1_phi0 = false
@@ -148,8 +145,8 @@ vi1_ni1 = false
 vit_nit = false
 
 jpar1 = false  # Div_par(Jpar) linear term
-pe1   = false  # b0xkappa_Grad(Pe) linear term
-ni1   = false  # Perpendicular ion viscosity
+pe1 = false  # b0xkappa_Grad(Pe) linear term
+ni1 = false  # Perpendicular ion viscosity
 
 # Ni * b0xkappa_Grad(phi) terms
 ni0_curv_phi1 = false
@@ -170,7 +167,7 @@ evolve = false
 # VORTICITY
 
 [rho]
-scale = 1.0e-2
+scale = 0.01
 
 # ExB advection terms
 rho0_phi1 = false

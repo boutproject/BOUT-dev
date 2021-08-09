@@ -32,65 +32,8 @@
 #include <utils.hxx>
 #include <bout/mesh.hxx>
 
-Field::Field(Mesh *localmesh, CELL_LOC location_in,
-             DirectionTypes directions_in)
-    : fieldmesh(localmesh==nullptr ? bout::globals::mesh : localmesh),
-      location(location_in), directions(directions_in) {
-
-  // Need to check for nullptr again, because the fieldmesh might still be
-  // nullptr if the global mesh hasn't been initialized yet
-  if (fieldmesh != nullptr) {
-    // sets fieldCoordinates by getting Coordinates for our location from
-    // fieldmesh
-    getCoordinates();
-  }
-}
-
- void Field::setLocation(CELL_LOC new_location) {
-  AUTO_TRACE();
-  if (getMesh()->StaggerGrids) {
-    if (new_location == CELL_VSHIFT) {
-      throw BoutException(
-          "Field: CELL_VSHIFT cell location only makes sense for vectors");
-    }
-    if (new_location == CELL_DEFAULT) {
-      new_location = CELL_CENTRE;
-    }
-
-    location = new_location;
-  } else {
-#if CHECK > 0
-    if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
-      throw BoutException("Field: Trying to set off-centre location on "
-                          "non-staggered grid\n"
-                          "         Did you mean to enable staggered grids?");
-    }
-#endif
-    location = CELL_CENTRE;
-  }
-
-  fieldCoordinates = nullptr;
-  // Sets correct fieldCoordinates pointer and ensures Coordinates object is
-  // initialized for this Field's location
-  getCoordinates();
-}
-
-CELL_LOC Field::getLocation() const {
-  AUTO_TRACE();
-  return location;
-}
-BOUT_HOST_DEVICE Coordinates *Field::getCoordinates() const {
-  if (fieldCoordinates) {
-    return fieldCoordinates.get();
-  } else {
-    fieldCoordinates = getMesh()->getCoordinatesSmart(getLocation());
-    return fieldCoordinates.get();
-  }
-}
-BOUT_HOST_DEVICE Coordinates *Field::getCoordinates(CELL_LOC loc) const {
-  if (loc == CELL_DEFAULT) return getCoordinates();  
-  return getMesh()->getCoordinates(loc);
-}
+Field::Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
+    : FieldData(localmesh, location_in), directions(directions_in) {}
 
 int Field::getNx() const{
   return getMesh()->LocalNx;

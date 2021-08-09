@@ -158,8 +158,8 @@ class GEM : public PhysicsModel {
     //////////////////////////////////
     // Read options
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["gem"];
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["gem"];
 
     adiabatic_electrons = options["adiabatic_electrons"].withDefault(false);
     small_rho_e = options["small_rho_e"].withDefault(true);
@@ -397,33 +397,45 @@ class GEM : public PhysicsModel {
     if (ni_ddt) {
       SOLVE_FOR(Ni);
       comms.add(Ni);
-    } else Ni = 0.;
-  
+    } else {
+      Ni = 0.;
+    }
+
     if (apui_ddt) {
       SOLVE_FOR(ApUi);
       comms.add(ApUi);
-    } else ApUi = 0.;
-    
+    } else {
+      ApUi = 0.;
+    }
+
     if (tipar_ddt) {
       SOLVE_FOR(Tipar);
       comms.add(Tipar);
-    } else Tipar = 0.;
-  
+    } else {
+      Tipar = 0.;
+    }
+
     if (tiperp_ddt) {
       SOLVE_FOR(Tiperp);
       comms.add(Tiperp);
-    } else Tiperp = 0.;
-  
+    } else {
+      Tiperp = 0.;
+    }
+
     if (qipar_ddt) {
       SOLVE_FOR(qipar);
       comms.add(qipar);
-    } else qipar = 0.;
-  
+    } else {
+      qipar = 0.;
+    }
+
     if (qiperp_ddt) {
       SOLVE_FOR(qiperp);
       comms.add(qiperp);
-    } else qiperp = 0.;
-  
+    } else {
+      qiperp = 0.;
+    }
+
     /// Split operator, with artificial dissipation in second function
     setSplitOperator(); // Split into convective and diffusive (stiff)
     
@@ -437,65 +449,89 @@ class GEM : public PhysicsModel {
       if (ne_ddt) {
         SOLVE_FOR(Ne);
         comms.add(Ne);
-      } else Ne = 0.;
-    
+      } else {
+        Ne = 0.;
+      }
+
       if (apue_ddt) {
         SOLVE_FOR(ApUe);
         comms.add(ApUe);
-      } else ApUe = 0.;
-    
+      } else {
+        ApUe = 0.;
+      }
+
       if (tepar_ddt) {
         SOLVE_FOR(Tepar);
         comms.add(Tepar);
-      } else Tepar = 0.;
-    
+      } else {
+        Tepar = 0.;
+      }
+
       if (teperp_ddt) {
         SOLVE_FOR(Teperp);
         comms.add(Teperp);
-      } else Teperp = 0.;
-    
+      } else {
+        Teperp = 0.;
+      }
+
       if (qepar_ddt) {
         SOLVE_FOR(qepar);
         comms.add(qepar);
-      } else qepar = 0.;
-    
+      } else {
+        qepar = 0.;
+      }
+
       if (qeperp_ddt) {
         SOLVE_FOR(qeperp);
         comms.add(qeperp);
-      } else qeperp = 0.;
+      } else {
+        qeperp = 0.;
+      }
     }
     
     bool output_ddt;
     output_ddt = options["output_ddt"].withDefault(false);
     if (output_ddt) {
       // Output the time derivatives
-      
-      if (ni_ddt)
+
+      if (ni_ddt) {
         dump.add(ddt(Ni),     "F_Ni", 1);
-      if (apui_ddt)
+      }
+      if (apui_ddt) {
         dump.add(ddt(ApUi),   "F_ApUi", 1);
-      if (tipar_ddt)
+      }
+      if (tipar_ddt) {
         dump.add(ddt(Tipar),  "F_Tipar", 1);
-      if (tiperp_ddt)
+      }
+      if (tiperp_ddt) {
         dump.add(ddt(Tiperp), "F_Tiperp", 1);
-      if (qipar_ddt)
+      }
+      if (qipar_ddt) {
         dump.add(ddt(qipar),  "F_qipar", 1);
-      if (qiperp_ddt)
+      }
+      if (qiperp_ddt) {
         dump.add(ddt(qiperp), "F_qiperp", 1);
-    
+      }
+
       if (!adiabatic_electrons) {
-        if (ne_ddt)
+        if (ne_ddt) {
           dump.add(ddt(Ne),     "F_Ne", 1);
-        if (apue_ddt)
+        }
+        if (apue_ddt) {
           dump.add(ddt(ApUe),   "F_ApUe", 1);
-        if (tepar_ddt)
+        }
+        if (tepar_ddt) {
           dump.add(ddt(Tepar),  "F_Tepar", 1);
-        if (teperp_ddt)
+        }
+        if (teperp_ddt) {
           dump.add(ddt(Teperp), "F_Teperp", 1);
-        if (qepar_ddt)
+        }
+        if (qepar_ddt) {
           dump.add(ddt(qepar),  "F_qepar", 1);
-        if (qeperp_ddt)
+        }
+        if (qeperp_ddt) {
           dump.add(ddt(qeperp), "F_qeperp", 1);
+        }
       }
     }
     
@@ -535,9 +571,9 @@ class GEM : public PhysicsModel {
     Apar.setBoundary("Apar");
     
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create(&options["phiSolver"]);
+    phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
 
-    aparSolver = Laplacian::create(&options["aparSolver"]);
+    aparSolver = Laplacian::create(&globalOptions["aparSolver"], CELL_YLOW);
     aparSolver->setCoefA(beta_e * (1./mu_e - 1./mu_i));
     
     return 0;
@@ -594,9 +630,9 @@ class GEM : public PhysicsModel {
     if (jpar_bndry_width > 0) {
       // Zero j in boundary regions. Prevents vorticity drive
       // at the boundary
-      
-      for (int i=0;i<jpar_bndry_width;i++)
-        for (int j=0;j<mesh->LocalNy;j++)
+
+      for (int i = 0; i < jpar_bndry_width; i++) {
+        for (int j = 0; j < mesh->LocalNy; j++) {
           for (int k=0;k<mesh->LocalNz;k++) {
             if (mesh->firstX()) {
               Ui(i,j,k) = 0.0;
@@ -607,6 +643,8 @@ class GEM : public PhysicsModel {
               Ue(mesh->LocalNx-1-i,j,k) = 0.0;
             }
           }
+        }
+      }
     }
     
     Jpar = Ui - Ue;
@@ -643,57 +681,74 @@ class GEM : public PhysicsModel {
       
       if (ne_ddt) {
         ddt(Ne) = -UE_Grad(Ne0, phi_G);
-        if (ne_ne1)
-        ddt(Ne) -= UE_Grad(Ne, phi_G);
-        if (ne_te0)
+        if (ne_ne1) {
+          ddt(Ne) -= UE_Grad(Ne, phi_G);
+        }
+        if (ne_te0) {
           ddt(Ne) -= WE_Grad(Te0, Phi_G);
-        if (ne_te1)
+        }
+        if (ne_te1) {
           ddt(Ne) -= WE_Grad(Teperp, Phi_G);
-        
-        if (ne_ue)
+        }
+
+        if (ne_ue) {
           ddt(Ne) -= Div_parP(Ue, CELL_CENTRE);
-        
-        if (ne_curv)
+        }
+
+        if (ne_curv) {
           ddt(Ne) += curvature(phi_G + tau_e*Ne + 0.5*(tau_e*Tepar + tau_e*Teperp + Phi_G));
-        
-        if (low_pass_z > 0)
+        }
+
+        if (low_pass_z > 0) {
           ddt(Ne) = lowPass(ddt(Ne), low_pass_z);
-        
-        if (fix_profiles)
+        }
+
+        if (fix_profiles) {
           ddt(Ne) -= DC(ddt(Ne));
+        }
       }
       
       if (apue_ddt) {
         if (apue_ue1_phi1) {
           ddt(ApUe) = -mu_e*UE_Grad(Ue, phi_G);
-        } else
+        } else {
           ddt(ApUe) = 0.0;
-        
-        if (apue_qe1_phi1) 
+        }
+
+        if (apue_qe1_phi1) {
           ddt(ApUe) -= mu_e*WE_Grad(qeperp, Phi_G);
-      
-        if (apue_phi1) // Linear term
+        }
+
+        if (apue_phi1) { // Linear term
           ddt(ApUe) -= Grad_par(phi_G, CELL_YLOW);
-        if (apue_apar1_phi1) // Nonlinear term
+        }
+        if (apue_apar1_phi1) { // Nonlinear term
           ddt(ApUe) += beta_e*bracket(Apar, phi_G, BRACKET_ARAKAWA);
-        
-        if (apue_pet) // Linear terms
+        }
+
+        if (apue_pet) { // Linear terms
           ddt(ApUe) -= tau_i*Grad_parP(Ne0 + Te0, CELL_YLOW)
                        + tau_i*Grad_par(Ne+Tepar, CELL_YLOW);
-        if (apue_apar1_pe1) // Nonlinear terms
+        }
+        if (apue_apar1_pe1) { // Nonlinear terms
           ddt(ApUe) +=  tau_i*beta_e*bracket(Apar, Ne+Tepar, BRACKET_ARAKAWA);
-        
-        if (apue_curv)
+        }
+
+        if (apue_curv) {
           ddt(ApUe) += mu_e * tau_e * curvature(2.*Ue + qepar + 0.5*qeperp);
-        
-        if (apue_gradB)
+        }
+
+        if (apue_gradB) {
           ddt(ApUe) -= tau_e * (Phi_G + tau_e*Teperp - tau_e*Tepar)*Grad_par_logB;
-        
-        if (low_pass_z > 0)
+        }
+
+        if (low_pass_z > 0) {
           ddt(ApUe) = lowPass(ddt(ApUe), low_pass_z);
-        
-        if (fix_profiles)
+        }
+
+        if (fix_profiles) {
           ddt(ApUe) -= DC(ddt(ApUe));
+        }
       }
       
       if (tepar_ddt) {
@@ -708,12 +763,14 @@ class GEM : public PhysicsModel {
           ddt(Tepar) += -UE_Grad(Te0, phi_G)
             - 2.*Div_par(Ue + qepar, CELL_CENTRE);
         }
-        
-        if (low_pass_z > 0)
+
+        if (low_pass_z > 0) {
           ddt(Tepar) = lowPass(ddt(Tepar), low_pass_z);
-        
-        if (fix_profiles)
+        }
+
+        if (fix_profiles) {
           ddt(Tepar) -= DC(ddt(Tepar));
+        }
       }
       
       if (teperp_ddt) {
@@ -734,12 +791,14 @@ class GEM : public PhysicsModel {
             - WE_Grad(Ne0 + 2.*Te0, Phi_G)
             - Div_par(qeperp, CELL_CENTRE);
         }
-        
-        if (low_pass_z > 0)
+
+        if (low_pass_z > 0) {
           ddt(Teperp) = lowPass(ddt(Teperp), low_pass_z);
-        
-        if (fix_profiles)
+        }
+
+        if (fix_profiles) {
           ddt(Teperp) -= DC(ddt(Teperp));
+        }
       }
       
       if (qepar_ddt) {
@@ -756,12 +815,14 @@ class GEM : public PhysicsModel {
           ddt(qepar) += 
             - 1.5*(1./mu_e)*Grad_par(tau_e*Tepar, CELL_YLOW);
         }
-        
-        if (low_pass_z > 0)
+
+        if (low_pass_z > 0) {
           ddt(qepar) = lowPass(ddt(qepar), low_pass_z);
-        
-        if (fix_profiles)
+        }
+
+        if (fix_profiles) {
           ddt(qepar) -= DC(ddt(qepar));
+        }
       }
       
       if (qeperp_ddt) {
@@ -780,12 +841,14 @@ class GEM : public PhysicsModel {
           ddt(qeperp) +=
             -(1./mu_e)*Grad_par(Phi_G + tau_e*Teperp, CELL_YLOW);
         }
-        
-        if (low_pass_z > 0)
+
+        if (low_pass_z > 0) {
           ddt(qeperp) = lowPass(ddt(qeperp), low_pass_z);
-        
-        if (fix_profiles)
+        }
+
+        if (fix_profiles) {
           ddt(qeperp) -= DC(ddt(qeperp));
+        }
       }
     }
     
@@ -800,57 +863,74 @@ class GEM : public PhysicsModel {
     
     if (ni_ddt) {
       ddt(Ni) = -UE_Grad(Ni0, phi_G);
-      if (ni_ni1)
+      if (ni_ni1) {
         ddt(Ni) -= UE_Grad(Ni, phi_G);
-      if (ni_ti0)
+      }
+      if (ni_ti0) {
         ddt(Ni) -= WE_Grad(Ti0, Phi_G);
-      if (ni_ti1)
+      }
+      if (ni_ti1) {
         ddt(Ni) -= WE_Grad(Tiperp, Phi_G);
-      
-      if (ni_ui)
+      }
+
+      if (ni_ui) {
         ddt(Ni) -= Div_parP(Ui, CELL_CENTRE);
-      
-      if (ni_curv)
+      }
+
+      if (ni_curv) {
         ddt(Ni) += curvature(phi_G + tau_i*Ni + 0.5*(tau_i*Tipar + tau_i*Tiperp + Phi_G));
-      
-      if (low_pass_z > 0)
+      }
+
+      if (low_pass_z > 0) {
         ddt(Ni) = lowPass(ddt(Ni), low_pass_z);
-      
-      if (fix_profiles)
+      }
+
+      if (fix_profiles) {
         ddt(Ni) -= DC(ddt(Ni));
+      }
     }
     
     if (apui_ddt) {
       if (apui_ui1_phi1) {
         ddt(ApUi) = -mu_i*UE_Grad(Ui, phi_G);
-      } else
+      } else {
         ddt(ApUi) = 0.0;
-      
-      if (apui_qi1_phi1) 
+      }
+
+      if (apui_qi1_phi1) {
         ddt(ApUi) -= mu_i*WE_Grad(qiperp, Phi_G);
-    
-      if (apui_phi1)
+      }
+
+      if (apui_phi1) {
         ddt(ApUi) -= Grad_par(phi_G, CELL_YLOW);
-      if (apui_apar1_phi1) // Nonlinear term
+      }
+      if (apui_apar1_phi1) { // Nonlinear term
         ddt(ApUi) += beta_e*bracket(Apar, phi_G, BRACKET_ARAKAWA);
-      
-      if (apui_pit) // Linear terms
+      }
+
+      if (apui_pit) { // Linear terms
         ddt(ApUi) -= tau_i*Grad_parP(Ni0 + Ti0, CELL_YLOW)
                      + tau_i*Grad_par(Ni+Tipar, CELL_YLOW);
-      if (apui_apar1_pi1) // Nonlinear terms
+      }
+      if (apui_apar1_pi1) { // Nonlinear terms
         ddt(ApUi) +=  tau_i*beta_e*bracket(Apar, Ni+Tipar, BRACKET_ARAKAWA);
-      
-      if (apui_curv)
+      }
+
+      if (apui_curv) {
         ddt(ApUi) += mu_i * tau_i * curvature(2.*Ui + qipar + 0.5*qiperp);
-      
-      if (apui_gradB)
+      }
+
+      if (apui_gradB) {
         ddt(ApUi) -= tau_i * (Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB;
-      
-      if (low_pass_z > 0)
+      }
+
+      if (low_pass_z > 0) {
         ddt(ApUi) = lowPass(ddt(ApUi), low_pass_z);
-      
-      if (fix_profiles)
+      }
+
+      if (fix_profiles) {
         ddt(ApUi) -= DC(ddt(ApUi));
+      }
     }
     
     if (tipar_ddt) {
@@ -868,12 +948,14 @@ class GEM : public PhysicsModel {
           -UE_Grad(Ti0, phi_G)
           - 2.*Div_par(Ui + qipar, CELL_CENTRE);
       }
-      
-      if (low_pass_z > 0)
+
+      if (low_pass_z > 0) {
         ddt(Tipar) = lowPass(ddt(Tipar), low_pass_z);
-      
-      if (fix_profiles)
+      }
+
+      if (fix_profiles) {
         ddt(Tipar) -= DC(ddt(Tipar));
+      }
     }
     
     if (tiperp_ddt) {
@@ -894,12 +976,14 @@ class GEM : public PhysicsModel {
           - WE_Grad(Ni0 + 2.*Ti0, Phi_G)
           - Div_par(qiperp, CELL_CENTRE);
       }
-      
-      if (low_pass_z > 0)
+
+      if (low_pass_z > 0) {
         ddt(Tiperp) = lowPass(ddt(Tiperp), low_pass_z);
-      
-      if (fix_profiles)
+      }
+
+      if (fix_profiles) {
         ddt(Tiperp) -= DC(ddt(Tiperp));
+      }
     }
     
     if (qipar_ddt) {
@@ -915,12 +999,14 @@ class GEM : public PhysicsModel {
         ddt(qipar) +=
           - 1.5*(1./mu_i)*Grad_par(tau_i*Tipar, CELL_YLOW);
       }
-      
-      if (low_pass_z > 0)
+
+      if (low_pass_z > 0) {
         ddt(qipar) = lowPass(ddt(qipar), low_pass_z);
-      
-      if (fix_profiles)
+      }
+
+      if (fix_profiles) {
         ddt(qipar) -= DC(ddt(qipar));
+      }
     }
     
     if (qiperp_ddt) {
@@ -938,12 +1024,14 @@ class GEM : public PhysicsModel {
         ddt(qiperp) +=
           - (1./mu_i)*Grad_par(Phi_G + tau_i*Tiperp, CELL_YLOW);
       }
-      
-      if (low_pass_z > 0)
+
+      if (low_pass_z > 0) {
         ddt(qiperp) = lowPass(ddt(qiperp), low_pass_z);
-      
-      if (fix_profiles)
+      }
+
+      if (fix_profiles) {
         ddt(qiperp) -= DC(ddt(qiperp));
+      }
     }
     
     return 0;
@@ -997,10 +1085,12 @@ class GEM : public PhysicsModel {
       }
       if (apue_ddt) {
         ddt(ApUe) = 0.0;
-        if (apue_ue1_phi1)
+        if (apue_ue1_phi1) {
           ddt(ApUe) -= mu_e*UE_Grad_D(Ue, phi_G);
-        if (apue_Rei)
+        }
+        if (apue_Rei) {
           ddt(ApUe) -= Rei;
+        }
       }
       if (tepar_ddt) {
         ddt(Tepar) = -UE_Grad_D(Tepar, phi_G) - 2.*S_D;
@@ -1039,15 +1129,18 @@ class GEM : public PhysicsModel {
     
     if (ni_ddt) {
       ddt(Ni) = 0.;
-      if (ni_ni1)
+      if (ni_ni1) {
         ddt(Ni) -= UE_Grad_D(Ni, phi_G);
+      }
     }
     if (apui_ddt) {
       ddt(ApUi) = 0.0;
-      if (apui_ui1_phi1)
+      if (apui_ui1_phi1) {
         ddt(ApUi) = -mu_i*UE_Grad_D(Ui, phi_G);
-      if (apui_Rei)
+      }
+      if (apui_Rei) {
         ddt(ApUi) -= Rei;
+      }
     }
     if (tipar_ddt) {
       ddt(Tipar) = - UE_Grad_D(Tipar, phi_G) - 2.*S_D;

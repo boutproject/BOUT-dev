@@ -31,7 +31,7 @@ protected:
     setSplitOperator();
 
     // Specify the preconditioner function
-    setPrecon( (preconfunc) &DiffusionNL::precon );
+    setPrecon(&DiffusionNL::precon);
 
     // Add the field "f" to the time integration solver
     SOLVE_FOR(f);
@@ -102,7 +102,7 @@ protected:
     static std::unique_ptr<InvertPar> inv{nullptr};
     if (!inv) {
       // Initialise parallel inversion class
-      inv = InvertPar::Create();
+      inv = InvertPar::create();
       inv->setCoefA(1.0);
     }
 

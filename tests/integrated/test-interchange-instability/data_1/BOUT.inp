@@ -10,15 +10,15 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 50        # number of time-steps
-TIMESTEP = 1e2   # time between outputs
+nout = 50        # number of time-steps
+timestep = 100.0   # time between outputs
 
 ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false   # use twist-shift condition?
+twistshift = false   # use twist-shift condition?
 
 MZ = 64     # number of points in z direction (2^n + 1)
 ZMIN = 0.0
-ZMAX = 2.8505e-3
+ZMAX = 0.0028505
 
 MXG = 2
 MYG = 2
@@ -32,7 +32,7 @@ dump_format = "nc" # Output format. nc = NetCDF
 
 [mesh:ddx]
 
-first = C2  
+first = C2
 second = C2
 upwind = W3
 
@@ -64,8 +64,8 @@ outer_boundary_flags = 0  # outer boundary inversion flags
 #mukeep = 6
 #mlkeep = 6
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 ##################################################
 # settings for 2fluid
@@ -74,11 +74,6 @@ RTOL = 1.0e-5  # relative tolerance
 
 AA = 2.0
 ZZ = 1.0
- 
-estatic = true   # if true, electrostatic (Apar = 0)
-ZeroElMass = false # Use Ohms law without electron inertia
-Zeff = 2.0        # Z effective
-nu_perp = 1.0e-20
 
 ShearFactor = 0.0
 
@@ -88,7 +83,7 @@ ShearFactor = 0.0
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 
 # boundary conditions (see boundary.h for values)
 # 0 = none applied
@@ -100,22 +95,5 @@ ShearFactor = 0.0
 bndry_all = neumann # Zero-gradient on all boundaries
 
 [Ni]
-scale = 1.0e-4 # only perturbing Ni
+scale = 0.0001 # only perturbing Ni
 function = sin(4*z)
-
-[rho]
-
-[Vi]
-evolve = false
-
-[Te]
-evolve = false
-
-[Ti]
-evolve = false # Ti is a constant
-function = 1
-scale = 0.199 
-
-[Ajpar]
-evolve = false
-

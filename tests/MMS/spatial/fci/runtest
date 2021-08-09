@@ -32,7 +32,6 @@ nproc = 2
 mthread = 2
 
 
-
 success = True
 
 error_2 = {}
@@ -52,25 +51,22 @@ for nslice in nslices:
 
     # Which central difference scheme to use and its expected order
     order = nslice * 2
-    method_orders[nslice] = {
-        "name": "C{}".format(order),
-        "order": order
-    }
+    method_orders[nslice] = {"name": "C{}".format(order), "order": order}
 
     for n in nlist:
         # Define the magnetic field using new poloidal gridding method
         # Note that the Bz and Bzprime parameters here must be the same as in mms.py
         field = zb.field.Slab(Bz=0.05, Bzprime=0.1)
         # Create rectangular poloidal grids
-        poloidal_grid = zb.poloidal_grid.RectangularPoloidalGrid(nx, n, 0.1, 1.)
+        poloidal_grid = zb.poloidal_grid.RectangularPoloidalGrid(nx, n, 0.1, 1.0)
         # Set the ylength and y locations
-        ylength = 10.
+        ylength = 10.0
 
         if yperiodic:
             ycoords = linspace(0.0, ylength, n, endpoint=False)
         else:
             # Doesn't include the end points
-            ycoords = (arange(n) + 0.5)*ylength/float(n)
+            ycoords = (arange(n) + 0.5) * ylength / float(n)
 
         # Create the grid
         grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=yperiodic)
@@ -78,19 +74,20 @@ for nslice in nslices:
         maps = zb.make_maps(grid, field, nslice=nslice, quiet=True)
         zb.write_maps(grid, field, maps, new_names=False, metric2d=True, quiet=True)
 
-        args = (" MZ={} MYG={} mesh:paralleltransform:y_periodic={} mesh:ddy:first={}"
-                .format(n, nslice, yperiodic, method_orders[nslice]["name"]))
+        args = " MZ={} MYG={} mesh:paralleltransform:y_periodic={} mesh:ddy:first={}".format(
+            n, nslice, yperiodic, method_orders[nslice]["name"]
+        )
 
         # Command to run
-        cmd = "./fci_mms "+args
+        cmd = "./fci_mms " + args
 
-        print("Running command: "+cmd)
+        print("Running command: " + cmd)
 
         # Launch using MPI
         s, out = launch_safe(cmd, nproc=nproc, mthread=mthread, pipe=True)
 
         # Save output to log file
-        with open("run.log."+str(n), "w") as f:
+        with open("run.log." + str(n), "w") as f:
             f.write(out)
 
         if s:
@@ -99,24 +96,31 @@ for nslice in nslices:
             exit(s)
 
         # Collect data
-        l_2 = collect("l_2", tind=[1, 1], info=False,
-                      path=directory, xguards=False, yguards=False)
-        l_inf = collect("l_inf", tind=[1, 1], info=False,
-                        path=directory, xguards=False, yguards=False)
+        l_2 = collect(
+            "l_2", tind=[1, 1], info=False, path=directory, xguards=False, yguards=False
+        )
+        l_inf = collect(
+            "l_inf",
+            tind=[1, 1],
+            info=False,
+            path=directory,
+            xguards=False,
+            yguards=False,
+        )
 
         error_2[nslice].append(l_2)
         error_inf[nslice].append(l_inf)
 
         print("Errors : l-2 {:f} l-inf {:f}".format(l_2, l_inf))
 
-    dx = 1. / array(nlist)
+    dx = 1.0 / array(nlist)
 
     # Calculate convergence order
     fit = polyfit(log(dx), log(error_2[nslice]), 1)
     order = fit[0]
     stdout.write("Convergence order = {:f} (fit)".format(order))
 
-    order = log(error_2[nslice][-2]/error_2[nslice][-1])/log(dx[-2]/dx[-1])
+    order = log(error_2[nslice][-2] / error_2[nslice][-1]) / log(dx[-2] / dx[-1])
     stdout.write(", {:f} (small spacing)".format(order))
 
     # Should be close to the expected order
@@ -145,16 +149,24 @@ if False:
         fig, ax = plt.subplots(1, 1)
 
         for nslice in nslices:
-            ax.plot(dx, error_2[nslice], '-',
-                    label="{} $l_2$".format(method_orders[nslice]["name"]))
-            ax.plot(dx, error_inf[nslice], '--',
-                    label="{} $l_\inf$".format(method_orders[nslice]["name"]))
+            ax.plot(
+                dx,
+                error_2[nslice],
+                "-",
+                label="{} $l_2$".format(method_orders[nslice]["name"]),
+            )
+            ax.plot(
+                dx,
+                error_inf[nslice],
+                "--",
+                label="{} $l_\inf$".format(method_orders[nslice]["name"]),
+            )
         ax.legend(loc="upper left")
         ax.grid()
-        ax.set_yscale('log')
-        ax.set_xscale('log')
-        ax.set_title('error scaling')
-        ax.set_xlabel(r'Mesh spacing $\delta x$')
+        ax.set_yscale("log")
+        ax.set_xscale("log")
+        ax.set_title("error scaling")
+        ax.set_xlabel(r"Mesh spacing $\delta x$")
         ax.set_ylabel("Error norm")
 
         plt.savefig("fci_mms.pdf")

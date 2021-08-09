@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
 
-
 set(BLT_CXX_STD "c++14" CACHE STRING "Version of C++ standard")
 
 set(mdh_sources
@@ -32,15 +31,4 @@ blt_add_executable(
       "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
    DEPENDS_ON
      ${mdh_depends})
-
-
-  #target_link_libraries(
-  #   test_laplacexy_hypre PUBLIC 
-  # ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcusparse_static.a
-  # ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcurand_static.a
-  # ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libculibos.a
-  # ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublas_static.a
-  # ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublasLt_static.a
-  #)
-
 

@@ -38,8 +38,6 @@ class Mesh;  // #include "bout/mesh.hxx"
 
 #include "bout/assert.hxx"
 
-#include "bout/field_visitor.hxx"
-
 #include "utils.hxx"
 
 #include <vector>
@@ -160,7 +158,7 @@ class Mesh;  // #include "bout/mesh.hxx"
       f.yup()(0,1,0) // ok
 
  */
-class Field3D : public Field, public FieldData {
+class Field3D : public Field {
  public:
   using ind_type = Ind3D;
   
@@ -227,12 +225,12 @@ class Field3D : public Field, public FieldData {
   int getNz() const override {return nz;};
 
   // these methods return Field3D to allow method chaining
-  Field3D& setLocation(CELL_LOC new_location) {
+  Field3D& setLocation(CELL_LOC new_location) override {
     Field::setLocation(new_location);
     return *this;
   }
-  Field3D& setDirectionY(YDirectionType d) {
-    directions.y = d;
+  Field3D& setDirectionY(YDirectionType d) override {
+    Field::setDirectionY(d);
     return *this;
   }
 
@@ -454,17 +452,10 @@ class Field3D : public Field, public FieldData {
   Field3D & operator/=(const Field2D &rhs);
   Field3D & operator/=(BoutReal rhs);
   ///@}
-  
-  // FieldData virtual functions
-  
-  bool isReal() const override   { return true; }         // Consists of BoutReal values
-  bool is3D() const override     { return true; }         // Field is 3D
-  int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
-  int  BoutRealSize() const override { return 1; }
 
-  /// Visitor pattern support
-  void accept(FieldVisitor &v) override { v.accept(*this); }
-  
+  // FieldData virtual functions
+  bool is3D() const override { return true; }
+
 #if CHECK > 0
   void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else
@@ -495,26 +486,7 @@ class Field3D : public Field, public FieldData {
   void applyParallelBoundary(const std::string &region, const std::string &condition);
   void applyParallelBoundary(const std::string &region, const std::string &condition, Field3D *f);
 
-  friend void swap(Field3D& first, Field3D& second) noexcept {
-    using std::swap;
-
-    // Swap base class members
-    swap(static_cast<Field&>(first), static_cast<Field&>(second));
-
-    swap(first.data, second.data);
-    swap(first.background, second.background);
-    swap(first.nx, second.nx);
-    swap(first.ny, second.ny);
-    swap(first.nz, second.nz);
-    swap(first.deriv, second.deriv);
-    swap(first.yup_fields, second.yup_fields);
-    swap(first.ydown_fields, second.ydown_fields);
-    swap(first.bndry_op, second.bndry_op);
-    swap(first.boundaryIsCopy, second.boundaryIsCopy);
-    swap(first.boundaryIsSet, second.boundaryIsSet);
-    swap(first.bndry_op_par, second.bndry_op_par);
-    swap(first.bndry_generator, second.bndry_generator);
-  }
+  friend void swap(Field3D& first, Field3D& second) noexcept;
   
 private:
   /// Boundary - add a 2D field

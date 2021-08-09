@@ -6,18 +6,20 @@ timestep = 1 #Time between outputs
 
 # Number of points in z
 MZ = 1
-zmin = 0.0
-zmax = 0.15915494309189533577# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*pi*1.59 = 1
+ZMIN = 0.0
+ZMAX = 0.15915494309189535# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*pi*1.59 = 1
 
 #number of guard cells
 MYG = 1  #noy comm for now
 MXG = 1
 
+dump_format = "nc"     # Write NetCDF format files
+
 [output]
 floats = false #false -> output in doubles
 
-[mesh]  
-ixseps1 = -1     
+[mesh]
+ixseps1 = -1
 ixseps2 = -1             # Set x location of separatrix 2
 
 #nx = internals gridpoints + guardcells
@@ -26,13 +28,11 @@ nx = 4
 #ny = internal gridpoints
 ny = 1
 
-Lx = 1. 
-Ly = 1.
-
-dump_format="nc"     # Write NetCDF format files
+Lx = 1.0
+Ly = 1.0
 
 #grid points are distributed symmetrically
-symmetricGlobalX = true 
+symmetricGlobalX = true
 
 ##################################################
 [mesh:ddx]   # Methods used for perp (x) derivative terms
@@ -57,12 +57,12 @@ upwind = W3
 flux = SPLIT
 
 
-[solver] 
+[solver]
 
 #type = cvode
 
-atol = 1.0e-15 # absolute tolerance
-rtol = 1.0e-7  # relative tolerance
+atol = 1e-15 # absolute tolerance
+rtol = 1e-07  # relative tolerance
 mxstep = 1000000
 
 [cyto]
@@ -70,11 +70,9 @@ dis = 1
 
 [all]
 
-scale = 1.0 
+scale = 1.0
 
-[N] 
+[N]
 
 bndry_all = dirichlet_o2
 bndry_xin = neumann_o2
-################################
-

@@ -271,8 +271,7 @@ BOUT_DEVICE  inline void operator=(const Array other) const {
       old_size = ptr->size();
       release(ptr);
     }
-    ptr = get(new_size);
-   // printf("Array realloc from %d to %d @ %p\n",old_size,new_size,ptr->begin());  
+    ptr = get(new_size); 
   }
 
   /*!
@@ -454,7 +453,6 @@ private:
 #endif
      dataPtrType pp = static_cast<dataPtrType>(allocator.allocate(sizeof(dataBlock)));
      dataPtrType p = new (pp) dataBlock(len);
- //    printf("UM  Array %d %p %p\n",len,p,pp);
 #else
      dataPtrType p = new dataBlock(len);
 #endif
@@ -479,7 +477,6 @@ private:
       return;
     }
 
-   // printf("release size %d count %d data %p dataBlock %p\n",d->size(),d->use_count(),d->begin(),d);
     // Reduce reference count, and if zero return to store
     if (d->use_count() == 1) {
 #ifdef BOUT_HAS_UMPIRE
@@ -487,7 +484,6 @@ private:
       rm.deallocate(d->begin());
       rm.deallocate(d);
       umpire::Allocator alloc = rm.getAllocator("UM");
-    //  printf("Umpire UM Allocations %d\n",alloc.getAllocationCount());
 #else
       delete d;
 #endif
@@ -507,5 +503,11 @@ template <typename T, typename Backing>
   a.ensureUnique();
   return a;
 }
+
+template<typename T>
+bool operator==(const Array<T>& lhs, const Array<T>& rhs) {
+  return std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
 #endif // __ARRAY_H__
 

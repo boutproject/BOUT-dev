@@ -1,7 +1,7 @@
-# Change Log
+# Changelog
 
 ## [v5.0.0-alpha](https://github.com/boutproject/BOUT-dev/tree/next)
-[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.0...next)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.2...next)
 
 ### Breaking changes
 
@@ -14,6 +14,7 @@
 - Most factories and `create` methods standardised. Run
   `bin/bout-v5-factory-upgrader.py` on your physics models to update
   them [\#1842](https://github.com/boutproject/BOUT-dev/pull/1842)
+  [\#2087](https://github.com/boutproject/BOUT-dev/pull/2087)
 - We now use [fmt](https://fmt.dev) for all our string formatting,
   instead of the printf-style formatting. This affects calls to
   `Output`, `BoutException`/`ParseException`, `DataFile`,
@@ -39,7 +40,65 @@
   will need to be updated to either use `bout::globals::mesh` or
   `Field::getMesh()` in free
   functions. [\#2042](https://github.com/boutproject/BOUT-dev/pull/2042)
+- The `LaplaceShoot` Laplacian implementation was removed. There are
+  very few cases, if any, where this implementation actually
+  works. [\#2177](https://github.com/boutproject/BOUT-dev/pull/2177)
+- `PhysicsModel` expects the options `datadir` and `dump_format` to
+  have been set; this is only a problem if you don't call
+  `BoutInitialise`. [\#2062](https://github.com/boutproject/BOUT-dev/pull/2062)
+- Support for reading/writing HDF5 files has been removed ahead of
+  completely refactoring the I/O
+  systems. [\#2208](https://github.com/boutproject/BOUT-dev/pull/2208)
+- Removed the Karniadakis time solver. Other choices for split-operator schemes
+  are: `splitrk` (built-in), `imexbdf2` (requires PETSc), and `arkode` (requires
+  SUNDIALS) [\#2241](https://github.com/boutproject/BOUT-dev/pull/2241)
+- Conversion of Option to bool is now stricter.  Previously, only tested
+  (case-insensitively) if first character was 'n', 'f', '0', 'y', 't', or '1'.
+  Now only allow (still case-insensitively but checking full strings) 'n',
+  'no', 'f', 'false', '0', 'y', 'yes', 't', 'true', or '1'.
+  [\#2282](https://github.com/boutproject/BOUT-dev/pull/2282)
+- Having any unused options remaining after the first call to the physics model
+  `rhs` is now an error. Set `input:error_on_unused_options = false` for old
+  behaviour [\#2210](https://github.com/boutproject/BOUT-dev/pull/2210)
+- Input options are now case sensitive. Run `bin/bout-v5-input-file-upgrader.py`
+  to automatically fix the most common library options
+  [\#2210](https://github.com/boutproject/BOUT-dev/pull/2210)
+- Input options are now required to be either a section or a value,
+  and not both. This requires renaming the `restart` section to
+  `restart_files`. `bin/bout-v5-input-file-upgrader.py` can
+  automatically make this
+  change. [\#2277](https://github.com/boutproject/BOUT-dev/pull/2277)
+- `Options` are now only implicitly-castable to types stored in the
+  internal variant. Other types now require a call to
+  `Options::as<T>()`
+  [\#2341](https://github.com/boutproject/BOUT-dev/pull/2341)
 
+
+## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.1...v4.3.2)
+
+**Merged pull requests:**
+
+- Make output nicer + add info about timeout'ed tests [\#2120](https://github.com/boutproject/BOUT-dev/pull/2120) ([dschwoerer](https://github.com/dschwoerer))
+- Add timeout to tests [\#2118](https://github.com/boutproject/BOUT-dev/pull/2118) ([ZedThree](https://github.com/ZedThree))
+- Fix reading/writing `std::string` attributes when using HDF5 [\#2116](https://github.com/boutproject/BOUT-dev/pull/2116) ([ZedThree](https://github.com/ZedThree))
+- Rename death tests according to gtest recommendations [\#2115](https://github.com/boutproject/BOUT-dev/pull/2115) ([ZedThree](https://github.com/ZedThree))
+- Update breathe for readthedocs [\#2114](https://github.com/boutproject/BOUT-dev/pull/2114) ([ZedThree](https://github.com/ZedThree))
+- Fix `Div_par` when using more than one y guard cell [\#2113](https://github.com/boutproject/BOUT-dev/pull/2113) ([ZedThree](https://github.com/ZedThree))
+- Update documentation on processor splitting and advanced installation [\#2109](https://github.com/boutproject/BOUT-dev/pull/2109) ([ZedThree](https://github.com/ZedThree))
+- Soname v4.3.2 [\#2108](https://github.com/boutproject/BOUT-dev/pull/2108) ([dschwoerer](https://github.com/dschwoerer))
+- Add configure option to use system mpark.variant [\#2107](https://github.com/boutproject/BOUT-dev/pull/2107) ([dschwoerer](https://github.com/dschwoerer))
+- CI: Turn off patch coverage check [\#2103](https://github.com/boutproject/BOUT-dev/pull/2103) ([ZedThree](https://github.com/ZedThree))
+- Make examples relocatable [\#2100](https://github.com/boutproject/BOUT-dev/pull/2100) ([dschwoerer](https://github.com/dschwoerer))
+- Handle FieldPerps in `Datafile::varAdded()` and `Datafile::varPtr()` [\#2093](https://github.com/boutproject/BOUT-dev/pull/2093) ([johnomotani](https://github.com/johnomotani))
+- Correct `Grad2_par2` implementation in `InvertParCR` [\#2076](https://github.com/boutproject/BOUT-dev/pull/2076) ([johnomotani](https://github.com/johnomotani))
+- Enable staggered versions of `SplitFluxDerivativeType` [\#2058](https://github.com/boutproject/BOUT-dev/pull/2058) ([johnomotani](https://github.com/johnomotani))
+- Fixes for `tokamak-2fluid` example [\#2043](https://github.com/boutproject/BOUT-dev/pull/2043) ([johnomotani](https://github.com/johnomotani))
+- Add location checks to `Div_par_K_Grad_par` [\#2039](https://github.com/boutproject/BOUT-dev/pull/2039) ([bshanahan](https://github.com/bshanahan))
+- Add clang-format bot command for pull requests [\#2032](https://github.com/boutproject/BOUT-dev/pull/2032) ([ZedThree](https://github.com/ZedThree))
+- Update the staggered grids section of the manual [\#2029](https://github.com/boutproject/BOUT-dev/pull/2029) ([johnomotani](https://github.com/johnomotani))
+- Make dz in boutcore a property [\#2024](https://github.com/boutproject/BOUT-dev/pull/2024) ([dschwoerer](https://github.com/dschwoerer))
+- Prevent deadlock in downloading mpark [\#2017](https://github.com/boutproject/BOUT-dev/pull/2017) ([dschwoerer](https://github.com/dschwoerer))
 
 ## [v4.3.1](https://github.com/boutproject/BOUT-dev/tree/v4.3.1) (2020-03-27)
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.0...v4.3.1)
@@ -1457,6 +1516,3 @@
 
 
 \* *This Changelog was automatically generated by [github_changelog_generator](https://github.com/github-changelog-generator/github-changelog-generator)*
-
-
-\* *This Change Log was automatically generated by [github_changelog_generator](https://github.com/skywinder/Github-Changelog-Generator)*

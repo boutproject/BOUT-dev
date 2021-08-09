@@ -6,7 +6,7 @@
 nout = 20
 timestep = 0.05
 
-MXG=0
+MXG = 0
 
 [mesh]
 
@@ -31,4 +31,3 @@ upwind = c2   # Use 2nd-order central differencing
 function = exp(-((y-pi)/0.2)^2)
 
 bndry_yup = free
-

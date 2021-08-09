@@ -132,8 +132,7 @@ def fix_factories(old_factory, new_factory, source):
 
 
 def create_patch(filename, original, modified):
-    """Create a unified diff between original and modified
-    """
+    """Create a unified diff between original and modified"""
 
     patch = "\n".join(
         difflib.unified_diff(
@@ -149,9 +148,7 @@ def create_patch(filename, original, modified):
 
 
 def yes_or_no(question):
-    """Convert user input from yes/no variations to True/False
-
-    """
+    """Convert user input from yes/no variations to True/False"""
     while True:
         reply = input(question + " [y/N] ").lower().strip()
         if not reply or reply[0] == "n":

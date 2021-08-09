@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# 
+#
 # Run the test, compare results against the benchmark
 #
 
@@ -9,12 +9,13 @@
 
 # Variables to compare
 from __future__ import print_function
+
 try:
-  from builtins import str
+    from builtins import str
 except:
-  pass
-vars = ['yavg2d', 'yavg3d', 'sm3d']
-tol = 1e-10                  # Absolute tolerance
+    pass
+vars = ["yavg2d", "yavg3d", "sm3d"]
+tol = 1e-10  # Absolute tolerance
 
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
@@ -28,43 +29,43 @@ build_and_log("smoothing operator test")
 print("Reading benchmark data")
 bmk = {}
 for v in vars:
-  bmk[v] = collect(v, path="data", prefix="benchmark", info=False)
+    bmk[v] = collect(v, path="data", prefix="benchmark", info=False)
 
 print("Running smoothing operator test")
 success = True
 
-for nype in [1,2]:
-  for nxpe in [1,2]:
-    nproc = nxpe * nype
-    cmd = "../../../bin/test_smooth"
-    
-    shell("rm data/BOUT.dmp.*.nc")
+for nype in [1, 2]:
+    for nxpe in [1, 2]:
+        nproc = nxpe * nype
+        cmd = "./test_smooth"
 
-    print("   %d processor (%d x %d)...." % (nproc, nxpe, nype))
-    s, out = launch_safe(cmd+" nxpe="+str(nxpe), nproc=nproc, pipe=True)
-    with open("run.log."+str(nproc), "w") as f:
-      f.write(out)
+        shell("rm data/BOUT.dmp.*.nc")
 
-    # Collect output data
-    for v in vars:
-      stdout.write("      Checking variable "+v+" ... ")
-      result = collect(v, path="data", info=False)
-      # Compare benchmark and output
-      if np.shape(bmk[v]) != np.shape(result):
-        print("Fail, wrong shape")
-        success = False
-        continue
-      
-      diff =  np.max(np.abs(bmk[v] - result))
-      if diff > tol:
-        print("Fail, maximum difference = "+str(diff))
-        success = False
-      else:
-        print("Pass")
+        print("   %d processor (%d x %d)...." % (nproc, nxpe, nype))
+        s, out = launch_safe(cmd + " NXPE=" + str(nxpe), nproc=nproc, pipe=True)
+        with open("run.log." + str(nproc), "w") as f:
+            f.write(out)
+
+        # Collect output data
+        for v in vars:
+            stdout.write("      Checking variable " + v + " ... ")
+            result = collect(v, path="data", info=False)
+            # Compare benchmark and output
+            if np.shape(bmk[v]) != np.shape(result):
+                print("Fail, wrong shape")
+                success = False
+                continue
+
+            diff = np.max(np.abs(bmk[v] - result))
+            if diff > tol:
+                print("Fail, maximum difference = " + str(diff))
+                success = False
+            else:
+                print("Pass")
 
 if success:
-  print(" => All smoothing operator tests passed")
-  exit(0)
+    print(" => All smoothing operator tests passed")
+    exit(0)
 else:
-  print(" => Some failed tests")
-  exit(1)
+    print(" => Some failed tests")
+    exit(1)

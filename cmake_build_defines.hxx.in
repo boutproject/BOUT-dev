@@ -2,9 +2,9 @@
 #ifndef BOUT_BUILD_CONFIG_HXX
 #define BOUT_BUILD_CONFIG_HXX
 
-#cmakedefine BOUT_CHECK_LEVEL @BOUT_CHECK_LEVEL@
+#define BOUT_CHECK_LEVEL @BOUT_CHECK_LEVEL@
 // #cmakedefine BOUT_FLAGS_STRING @BOUT_FLAGS_STRING@
-#cmakedefine BOUT_OPENMP_SCHEDULE @BOUT_OPENMP_SCHEDULE@
+#define BOUT_OPENMP_SCHEDULE @BOUT_OPENMP_SCHEDULE@
 #cmakedefine01 BOUT_HAS_ARKODE
 #cmakedefine01 BOUT_HAS_CVODE
 #cmakedefine01 BOUT_HAS_FFTW
@@ -20,6 +20,7 @@
 #cmakedefine01 BOUT_HAS_SCOREP
 #cmakedefine01 BOUT_HAS_SLEPC
 #cmakedefine01 BOUT_HAS_SUNDIALS
+#cmakedefine01 BOUT_HAS_UUID_SYSTEM_GENERATOR
 #cmakedefine01 BOUT_USE_BACKTRACE
 #cmakedefine01 BOUT_USE_COLOR
 #cmakedefine01 BOUT_USE_OPENMP
@@ -30,5 +31,9 @@
 #cmakedefine BOUT_HAS_UMPIRE @BOUT_HAS_UMPIRE@
 #cmakedefine BOUT_HAS_RAJA @BOUT_HAS_RAJA@ 
 #cmakedefine BOUT_USE_CUDA @BOUT_USE_CUDA@
+#cmakedefine01 BOUT_USE_MSGSTACK
+
+// CMake build does not support legacy interface
+#define BOUT_HAS_LEGACY_NETCDF 0
 
 #endif // BOUT_BUILD_CONFIG_HXX

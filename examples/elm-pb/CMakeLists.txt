@@ -1,7 +1,14 @@
 cmake_minimum_required(VERSION 3.13)
 
+project(elmpb LANGUAGES CXX)
 
-project(elmpb LANGUAGES CXX C)
+if (NOT TARGET bout++::bout++)
+  find_package(bout++ REQUIRED)
+endif()
+
+# bout_add_example(elm_pb
+#   SOURCES elm_pb.cxx
+#   EXTRA_FILES cbm18_dens8.grid_nx68ny64.nc)
 
 set(elmpb_sources
    elm_pb.cxx

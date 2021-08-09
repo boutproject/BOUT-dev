@@ -224,6 +224,13 @@ public:
   const FieldPerp fromFieldAligned(const FieldPerp& f,
                                    const std::string& region = "RGN_ALL") override;
 
+  std::vector<PositionsAndWeights>
+  getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
+                              int UNUSED(yoffset)) override {
+    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented"
+                        "for `type = shifted`. Try `type = shiftedinterp`");
+  }
+
   bool canToFromFieldAligned() override { return true; }
 
   /// Save zShift to the output
@@ -232,7 +239,7 @@ public:
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
     // Twist-shift only if field-aligned
     if (ytype == YDirectionType::Aligned and not twist_shift_enabled) {
-      throw BoutException("'TwistShift = true' is required to communicate field-aligned "
+      throw BoutException("'twistshift = true' is required to communicate field-aligned "
           "Field3Ds when using ShiftedMetric.");
     }
     return ytype == YDirectionType::Aligned;
