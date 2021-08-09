@@ -195,7 +195,10 @@ const FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>
 }
 
 void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out) const {
-  Array<dcomplex> cmplx(nmodes);
+  
+  //TODO: This static keyword is a hotfix and should be removed in 
+  //      future iterations
+  static Array<dcomplex> cmplx(nmodes);
 
   // Take forward FFT
   rfft(in, mesh.LocalNz, &cmplx[0]);
