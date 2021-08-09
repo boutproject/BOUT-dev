@@ -1232,6 +1232,19 @@ public:
 
     Coordinates* metric = mesh->getCoordinates();
 
+// TODO: Hoist higher if possible
+// Global Indexing Array for GPU
+#ifdef BOUT_HAS_RAJA
+	auto indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
+	Ind3D *ob_i = &(indices)[0];
+
+	Array<int> _ob_i_ind(indices.size());
+	//TODO: make this parallel copy
+	for(auto i = 0; i < indices.size(); i++) {
+		_ob_i_ind[i] = ob_i[i].ind;
+	}
+#endif
+
     ////////////////////////////////////////////
     // Transitions from 0 in core to 1 in vacuum
     if (nonlinear) {
@@ -1499,8 +1512,6 @@ public:
        auto Jpar_acc = FieldAccessor<>(Jpar);
        auto eta_acc = FieldAccessor<>(eta);
        auto B0_2D_acc =Field2DAccessor<>(B0);
-       auto indices = B0U.getRegion("RGN_NOBNDRY").getIndices();
-       Ind3D *ob_i = &(indices)[0];       
 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 	 int i = ob_i[id].ind;
@@ -1540,15 +1551,6 @@ public:
  
 	auto g_22_acc = Field2DAccessor<>(metric->g_22);
 
-	auto indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
-	Ind3D *ob_i = &(indices)[0];
-	
-	Array<int> _ob_i_ind(indices.size());
-	//TODO: make this parallel copy
-	for(auto i = 0; i < indices.size(); i++) {
-		_ob_i_ind[i] = ob_i[i].ind;
-	}
-	
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  	int i = _ob_i_ind[id];
 
@@ -1561,7 +1563,6 @@ public:
 
 	//DDT(Psi_acc)[i] = -Grad_parP_g(phi_acc,g_22_acc, i) + eta_acc[ob_i[id]] * Jpar_acc[ob_i[id]];
 	 });
-
 
 #else
       ddt(Psi) = -Grad_parP(phi, loc) + eta * Jpar;
@@ -1591,7 +1592,6 @@ public:
 	auto dx_acc = Field2DAccessor<>(metric->dx);
 
 	auto dy_acc = Field2DAccessor<>(metric->dy);
-	
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
 		int i = _ob_i_ind[id];
@@ -1599,7 +1599,6 @@ public:
 		DDT(Psi_acc)[i] -= p1;
 
  	 });
-
 #else
         ddt(Psi) -= bracket(interp_to(phi0, loc), Psi, bm_exb); // Equilibrium flow
 #endif
@@ -1628,7 +1627,6 @@ public:
       //start = std::chrono::steady_clock::now();   
 #ifdef BOUT_HAS_RAJA  //defined(GPU)
 // no problem for this function,increase 1 s;
-	
 	const auto& _hyperresist = hyperresist;
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
@@ -1638,7 +1636,6 @@ public:
 		DDT(Psi_acc)[i] -= p1*p2;
 
  	 });
-
 #else
 	ddt(Psi) -= eta * hyperresist * Delp2(Jpar);
 #endif
@@ -1689,18 +1686,10 @@ public:
 	auto B0_acc = Field2DAccessor<>(B0);
         auto J0_acc =  Field2DAccessor<>(J0);	
       	auto U_acc = FieldAccessor<>(U);
-	auto indices = U.getRegion("RGN_NOBNDRY").getIndices();
-	Ind3D *ob_i = &(indices)[0];
-#ifdef BOUT_HAS_RAJA  // defined(GPU) 	
-// Good and speedup
-//
-
-	Array<int> _ob_i_ind(indices.size());
-	//TODO: make this parallel copy
-	for(auto i = 0; i < indices.size(); i++) {
-		_ob_i_ind[i] = ob_i[i].ind;
-	}
 	
+//TODO: Fix this Kernel
+#if 0 //#ifdef BOUT_HAS_RAJA  // defined(GPU) 	
+// Good and speedup
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
  
 		int i = _ob_i_ind[id];
@@ -1709,12 +1698,16 @@ public:
 		DDT(U_acc)[i] = p1*p2;
 
  	 });
-
 #else
     Psi_loc = interp_to(Psi, CELL_CENTRE,"RGN_ALL");
     Psi_loc.applyBoundary();
     // Grad j term
     ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi_loc, J0, CELL_CENTRE);
+    
+    //TODO: reseting the field accessor is nescessary after running
+    //      a CPU side function with GPU RAJA kernels to avoid an illegal
+    //      memory access error
+    U_acc = FieldAccessor<>(U);
 #endif
 //
     if (include_rmp) {
@@ -1732,7 +1725,7 @@ if (!nogradparj) {
 //does work and speed up     
      auto Jpar_acc = FieldAccessor<>(Jpar);
      auto g_22_acc = Field2DAccessor<>(metric->g_22);
-   	  
+	  
 	 RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 
                  int i = _ob_i_ind[id];
@@ -1741,7 +1734,6 @@ if (!nogradparj) {
                  DDT(U_acc)[i] -= p2 * p1;
 
           });
-
 #else
      ddt(U) -= SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
 #endif   
@@ -1761,13 +1753,11 @@ if (!nogradparj) {
  // 
     
 auto phi0_acc = Field2DAccessor<>(phi0);
-     
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
                  int i = _ob_i_ind[id];
                  BoutReal p1 = b0xGrad_dot_Grad_g(phi0_acc,U_acc,i);
                  DDT(U_acc)[i] -= p1;
           });
-
 #else
   ddt(U) -= b0xGrad_dot_Grad(phi0, U); // Equilibrium flow
 #endif
@@ -1788,7 +1778,6 @@ auto phi0_acc = Field2DAccessor<>(phi0);
 
 #ifdef BOUT_HAS_RAJA 
 	auto B0_2D_acc =Field2DAccessor<>(B0);   
-         
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
          int i = _ob_i_ind[id];
  	 BoutReal f1 = FIELD2D_3DINDEX_DATA(U_acc,B0_2D_acc,i);
@@ -1796,7 +1785,6 @@ auto phi0_acc = Field2DAccessor<>(phi0);
                  DDT(U_acc)[i] -= p1  * f1;
 
           });
-	
 #else
 ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
 #endif
@@ -1828,7 +1816,6 @@ ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
 		 BoutReal p1 = D2DY2_g(tmpU2_acc,i);
                  DDT(U_acc)[i] -=  _diffusion_u4 * p1;
  });
-
 #else
       tmpU2 = D2DY2(U);
       mesh->communicate(tmpU2);
@@ -1957,16 +1944,6 @@ if (evolve_pressure) {
 	auto phi_acc = FieldAccessor<>(phi);
         auto P0_acc = Field2DAccessor<>(P0);
 	
-	auto indices = P.getRegion("RGN_NOBNDRY").getIndices();
-        Ind3D *ob_i = &(indices)[0];       
-
-	Array<int> _ob_i_ind(indices.size());
-	
-	//TODO: make this parallel copy
-	for(auto i = 0; i < indices.size(); i++) {
-		_ob_i_ind[i] = ob_i[i].ind;
-	}
-
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
 	 	int i = _ob_i_ind[id];
 		BoutReal p1 = b0xGrad_dot_Grad_g(phi_acc,P0_acc,i);
@@ -1985,16 +1962,6 @@ if (evolve_pressure) {
       		 auto P_acc = FieldAccessor<>(P);   //P is field 3D
 		auto phi0_acc = Field2DAccessor<>(phi0); 
         	
-		//Should this section be here?
-		//Ind3D *ob_i = &(indices)[0];       
-
-		//Array<int> _ob_i_ind(indices.size());
-		
-		//TODO: make this parallel copy
-		//for(auto i = 0; i < indices.size(); i++) {
-		//	_ob_i_ind[i] = ob_i[i].ind;
-		//}
-		//End should it be here?
 		RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
                   int i = _ob_i_ind[id];
                   BoutReal p1 = b0xGrad_dot_Grad_g(phi0_acc,P_acc,i);
@@ -2112,19 +2079,9 @@ if (evolve_pressure) {
 #if  defined(GPU)
 // need to change fft
 //
-        indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
-        Ind3D *ob_i = &(indices)[0];
-
         auto P_acc = FieldAccessor<>(P);   //P is field 3D
 	auto Psi_acc = FieldAccessor<>(Psi);
 	auto U_acc = FieldAccessor<>(U);
-
-        Array<int> _ob_i_ind(indices.size());
-	
-	//TODO: make this a parallel copy
-	for(auto i = 0; i < indices.size(); i++) {
-		_ob_i_ind[i] = ob_i[i].ind;
-	}
 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
                   int i = _ob_i_ind;
@@ -2135,7 +2092,6 @@ if (evolve_pressure) {
  	          DDT(U_acc)[i] = p2;
 		  DDT(P_acc)[i] = p3;
 	});
- 
 #else
 	//printf("filter_z_mode is %5f \n",filter_z_mode);
         ddt(Psi) = filter(ddt(Psi), filter_z_mode);
@@ -2157,18 +2113,9 @@ if (evolve_pressure) {
 #if defined(GPU)
 // need to change fft
 //
-	indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
-        Ind3D *ob_i = &(indices)[0];
         auto P_acc = FieldAccessor<>(P);   //P is field 3D
 	auto Psi_acc = FieldAccessor<>(Psi);
 	auto U_acc = FieldAccessor<>(U);
-
-        Array<int> _ob_i_ind(indices.size());
-	
-	//TODO: make this a parallel copy
-	for(auto i = 0; i < indices.size(); i++) {
-		_ob_i_ind[i] = ob_i[i].ind;
-	}
 
 	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
                   int i = _ob_i_ind[id];
@@ -2179,7 +2126,6 @@ if (evolve_pressure) {
                   DDT(U_acc)[i] = p2;
                   DDT(P_acc)[i] = p3;
 	});
-
       ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
       ddt(U) = lowPass(ddt(U), low_pass_z, zonal_flow);
       ddt(P) = lowPass(ddt(P), low_pass_z, zonal_bkgd);
