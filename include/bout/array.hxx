@@ -265,10 +265,7 @@ BOUT_DEVICE  inline void operator=(const Array other) const {
    * Note that this invalidates the existing data!
    */
   void reallocate(size_type new_size) {
-   // printf("Array realloc attempt %d\n",new_size);
-    int old_size = 0;
     if(ptr) {
-      old_size = ptr->size();
       release(ptr);
     }
     ptr = get(new_size); 
