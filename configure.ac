@@ -31,7 +31,7 @@
 #    * Searching for libs in lib and lib64
 #
 
-AC_PREREQ([2.71])
+AC_PREREQ([2.69])
 AC_INIT([BOUT++],[5.0.0-alpha],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
@@ -62,6 +62,7 @@ AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
         [Enable support for scorep based instrumentation])],,[with_scorep=no])
 AC_ARG_WITH(hypre,       [AS_HELP_STRING([--with-hypre],
         [Enable support for HYPRE])],,[with_hypre=no])
+
 dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 AC_ARG_WITH(system_mpark, [AS_HELP_STRING([--with-system-mpark],
         [Use mpark.variant already installed rather then the bundled one])],,[with_system_mpark=auto])
@@ -186,6 +187,7 @@ AX_CXX_COMPILE_STDCXX([14], [noext], [mandatory])
 AC_CHECK_LIB([m], [sqrt])
 
 # Checks for header files.
+AC_HEADER_STDC
 AC_CHECK_HEADERS([malloc.h stdlib.h string.h strings.h])
 
 # Checks for library functions.
