@@ -2792,22 +2792,7 @@ void BoutMesh::addBoundaryRegions() {
     xe = UDATA_XSPLIT - 1;
   }
 
-<<<<<<< HEAD
-  if (xs < xstart)
-    xs = xstart - 1;
-  if (xe > xend)
-    xe = xend + 1;
-
-  addRegion3D("RGN_UPPER_Y_THIN",
-              Region<Ind3D>(xs, xe, yend + 1, yend + 1, 0, LocalNz - 1, LocalNy, LocalNz,
-                            maxregionblocksize));
-  addRegion2D("RGN_UPPER_Y_THIN", Region<Ind2D>(xs, xe, yend + 1, yend + 1, 0, 0, LocalNy,
-                                                1, maxregionblocksize));
-
-  if (xs < xstart)
-=======
   if (xs < xstart) {
->>>>>>> next
     xs = xstart;
   }
   if (xe > xend) {
