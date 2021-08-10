@@ -3,7 +3,7 @@
 
 #include "bout/build_config.hxx"
 
-#ifdef BOUT_HAS_HYPRE
+#if BOUT_HAS_HYPRE
 
 #include "boutcomm.hxx"
 #include "field.hxx"
