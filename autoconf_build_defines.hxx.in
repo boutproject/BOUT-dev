@@ -54,6 +54,9 @@
 /* Use libuuid for UUID generation */
 #undef BOUT_HAS_UUID_SYSTEM_GENERATOR
 
+/* Type of the metric fields */
+#undef BOUT_METRIC_TYPE
+
 /* OpenMP schedule */
 #undef BOUT_OPENMP_SCHEDULE
 
@@ -62,6 +65,9 @@
 
 /* Enable color logs option */
 #undef BOUT_USE_COLOR
+
+/* Is the metric field 3D */
+#undef BOUT_USE_METRIC_3D
 
 /* Enable MsgStack for traces */
 #undef BOUT_USE_MSGSTACK

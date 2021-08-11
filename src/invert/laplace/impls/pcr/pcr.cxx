@@ -158,6 +158,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
   }
 
   if (dst) {
+    const BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
@@ -189,7 +190,6 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       // including boundary conditions
       BOUT_OMP(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
-        BoutReal zlen = coords->dz * (localmesh->LocalNz - 3);
         BoutReal kwave =
             kz * 2.0 * PI / (2. * zlen); // wave number is 1/[rad]; DST has extra 2.
 
@@ -200,7 +200,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
                      &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
-    }
+    } // BOUT_OMP(parallel)
 
     // Solve tridiagonal systems
     cr_pcr_solver(a, b, c, bcmplx, xcmplx);
@@ -228,6 +228,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       }
     }
   } else {
+    const BoutReal zlength = getUniform(coords->zlength());
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
@@ -259,7 +260,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       // including boundary conditions
       BOUT_OMP(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
-        BoutReal kwave = kz * 2.0 * PI / (coords->zlength()); // wave number is 1/[rad]
+        BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
         tridagMatrix(&a(kz, 0), &b(kz, 0), &c(kz, 0), &bcmplx(kz, 0), jy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
@@ -267,7 +268,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
                      &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
-    }
+    } // BOUT_OMP(parallel)
 
     // Solve tridiagonal systems
     cr_pcr_solver(a, b, c, bcmplx, xcmplx);
@@ -363,6 +364,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
   auto bcmplx3D = Matrix<dcomplex>(nsys, nx);
 
   if (dst) {
+    const BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
@@ -402,7 +404,6 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
         int iy = ys + ind / nmode;
         int kz = ind % nmode;
 
-        BoutReal zlen = coords->dz * (localmesh->LocalNz - 3);
         BoutReal kwave =
             kz * 2.0 * PI / (2. * zlen); // wave number is 1/[rad]; DST has extra 2.
 
@@ -413,7 +414,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
                      &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
-    }
+    } // BOUT_OMP(parallel)
 
     // Solve tridiagonal systems
     cr_pcr_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
@@ -445,6 +446,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
       }
     }
   } else {
+    const BoutReal zlength = getUniform(coords->zlength());
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(localmesh->LocalNz / 2
@@ -485,7 +487,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
         int iy = ys + ind / nmode;
         int kz = ind % nmode;
 
-        BoutReal kwave = kz * 2.0 * PI / (coords->zlength()); // wave number is 1/[rad]
+        BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
         tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
@@ -493,7 +495,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
                      &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
-    }
+    } // BOUT_OMP(parallel)
 
     // Solve tridiagonal systems
     cr_pcr_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);

@@ -101,6 +101,8 @@ AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static/dynam
         [Set OpenMP schedule (default: static)])],,[with_openmp_schedule=static])
 AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
+AC_ARG_ENABLE(metric_3d, [AS_HELP_STRING([--enable-metric-3d],
+        [Use Field3D to store coordinates metric data])],,[enable_metric_3d=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -425,6 +427,14 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
       AC_MSG_WARN([Native backtrace disabled])
     ])
   ])
+])
+
+AS_IF([test "x$enable_metric_3d" != "xno"], [
+  AC_MSG_WARN([Using Field3D to store coordinates data, this is experimental.])
+  BOUT_METRIC_TYPE="3D"
+], [
+  AC_MSG_NOTICE([Using Field2D to store coordinates data])
+  BOUT_METRIC_TYPE="2D"
 ])
 
 #############################################################
@@ -1395,6 +1405,10 @@ BOUT_DEFINE_SUBST(BOUT_USE_SIGFPE, [Enable floating point exceptions])
 BOUT_DEFINE_SUBST(BOUT_USE_SIGNAL, [Enable signal handlers])
 BOUT_DEFINE_SUBST(BOUT_USE_TRACK, [Enable field name tracking])
 BOUT_DEFINE_SUBST(BOUT_USE_MSGSTACK, [Enable MsgStack for traces])
+AC_DEFINE_UNQUOTED([BOUT_METRIC_TYPE], $BOUT_METRIC_TYPE, [Type of the metric fields])
+BOUT_METRIC_3D=$(test $BOUT_METRIC_TYPE != 3D ; echo $?)
+AC_DEFINE_UNQUOTED([BOUT_USE_METRIC_3D], $BOUT_METRIC_3D, [Is the metric field 3D])
+AC_SUBST(BOUT_METRIC_TYPE)
 
 AC_SUBST(PETSC_HAS_SUNDIALS)
 AC_SUBST(PETSC_MAKE_INCLUDE)
@@ -1444,6 +1458,7 @@ AC_MSG_NOTICE([  Enable OpenMP           : $BOUT_USE_OPENMP])
 AC_MSG_NOTICE([  Enable FP exceptions    : $BOUT_USE_SIGFPE])
 AC_MSG_NOTICE([  Enable signal handlers  : $BOUT_USE_SIGNAL])
 AC_MSG_NOTICE([  Enable field names      : $BOUT_USE_TRACK])
+AC_MSG_NOTICE([  Metric type             : $BOUT_METRIC_TYPE])
 
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([-------------------------------])

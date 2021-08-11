@@ -6,6 +6,7 @@
 
 # Requires: all_tests
 # Requires: netcdf
+# Requires: not metric_3d
 # Cores: 4
 
 # Variables to compare

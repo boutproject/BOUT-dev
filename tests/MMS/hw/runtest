@@ -3,6 +3,7 @@
 # Python script to run and analyse MMS test
 
 # requires: all_tests
+# requires: not metric_3d
 # cores: 4
 
 from __future__ import division

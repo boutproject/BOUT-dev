@@ -204,6 +204,13 @@ Field3D &Field3D::ynext(int dir) {
 }
 
 bool Field3D::requiresTwistShift(bool twist_shift_enabled) {
+  // Workaround for 3D coordinates.
+  // We need to communicate in the coordinates constructor in that
+  // case a Field3D, but coordinates isn't valid yet. As such we
+  // disable twist-shift in that case.
+  if (getCoordinates() == nullptr) {
+    return false;
+  }
   return getCoordinates()->getParallelTransform().requiresTwistShift(twist_shift_enabled,
       getDirectionY());
 }
@@ -777,7 +784,7 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   
   rfft(&(var(jx,jy,0)), ncz, v.begin()); // Forward FFT
 
-  BoutReal zlength = var.getCoordinates()->zlength();
+  BoutReal zlength = var.getCoordinates()->zlength()(jx, jy);
 
   // Apply phase shift
   for(int jz=1;jz<=ncz/2;jz++) {

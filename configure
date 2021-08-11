@@ -665,6 +665,7 @@ PETSC_ARCH
 PETSC_DIR
 PETSC_MAKE_INCLUDE
 PETSC_HAS_SUNDIALS
+BOUT_METRIC_TYPE
 BOUT_USE_MSGSTACK
 BOUT_USE_TRACK
 BOUT_USE_SIGNAL
@@ -866,6 +867,7 @@ enable_static
 enable_openmp
 with_openmp_schedule
 enable_pvode_openmp
+enable_metric_3d
 with_gcov
 enable_code_coverage
 enable_nls
@@ -1535,6 +1537,7 @@ Optional Features:
   --enable-static         Enable building bout++ into an static library
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
+  --enable-metric-3d      Use Field3D to store coordinates metric data
   --disable-openmp        do not use OpenMP
   --enable-code-coverage  Whether to enable code coverage support
   --disable-nls           do not use Native Language Support
@@ -3203,6 +3206,14 @@ then :
   enableval=$enable_pvode_openmp;
 else $as_nop
   enable_pvode_openmp=no
+fi
+
+# Check whether --enable-metric_3d was given.
+if test ${enable_metric_3d+y}
+then :
+  enableval=$enable_metric_3d;
+else $as_nop
+  enable_metric_3d=no
 fi
 
 
@@ -6789,6 +6800,21 @@ printf "%s\n" "$as_me: WARNING: Native backtrace disabled" >&2;}
 fi
 
 fi
+
+fi
+
+if test "x$enable_metric_3d" != "xno"
+then :
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Using Field3D to store coordinates data, this is experimental." >&5
+printf "%s\n" "$as_me: WARNING: Using Field3D to store coordinates data, this is experimental." >&2;}
+  BOUT_METRIC_TYPE="3D"
+
+else $as_nop
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Using Field2D to store coordinates data" >&5
+printf "%s\n" "$as_me: Using Field2D to store coordinates data" >&6;}
+  BOUT_METRIC_TYPE="2D"
 
 fi
 
@@ -17452,6 +17478,14 @@ fi
 
 
 
+printf "%s\n" "#define BOUT_METRIC_TYPE $BOUT_METRIC_TYPE" >>confdefs.h
+
+BOUT_METRIC_3D=$(test $BOUT_METRIC_TYPE != 3D ; echo $?)
+
+printf "%s\n" "#define BOUT_USE_METRIC_3D $BOUT_METRIC_3D" >>confdefs.h
+
+
+
 
 
 
@@ -18989,6 +19023,8 @@ printf "%s\n" "$as_me:   Enable FP exceptions    : $BOUT_USE_SIGFPE" >&6;}
 printf "%s\n" "$as_me:   Enable signal handlers  : $BOUT_USE_SIGNAL" >&6;}
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}:   Enable field names      : $BOUT_USE_TRACK" >&5
 printf "%s\n" "$as_me:   Enable field names      : $BOUT_USE_TRACK" >&6;}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}:   Metric type             : $BOUT_METRIC_TYPE" >&5
+printf "%s\n" "$as_me:   Metric type             : $BOUT_METRIC_TYPE" >&6;}
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: " >&5
 printf "%s\n" "$as_me: " >&6;}

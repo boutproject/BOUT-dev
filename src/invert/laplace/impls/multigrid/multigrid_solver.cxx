@@ -27,6 +27,10 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include "multigrid_laplace.hxx"
 #include "unused.hxx"
 #include <bout/openmpwrap.hxx>
@@ -723,3 +727,5 @@ MultigridSerial::MultigridSerial(int level, int gx, int gz, MPI_Comm comm, int c
     }    
   }
 }
+
+#endif

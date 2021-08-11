@@ -261,13 +261,16 @@ index.
 Differencing
 ------------
 
-The mesh spacing is given by the public members `Mesh::dx`, `Mesh::dy`
-and `Mesh::dx`::
+The mesh spacing is given by the public members `Coordinates::dx`,
+`Coordinates::dy` and `Coordinates::dz`::
 
     // These used for differential operators
-    Field2D dx, dy;
-    Field2D d2x, d2y;    // 2nd-order correction for non-uniform meshes
-    BoutReal zlength, dz;    // Derived from options (in radians)
+    FieldMetric dx, dy, dz;
+    FieldMetric d2x, d2y;    // 2nd-order correction for non-uniform meshes
+    Field2D zlength();   // Computed from dz
+
+`Coordinates::FieldMetric` can be either `Field2D` or if BOUT++ has
+been configured with `--enable-metric-3d` then a `Field3D`.
 
 Metrics
 -------
@@ -277,66 +280,37 @@ details are handled by `Coordinates`. The contravariant and covariant
 metric tensor components are public members of `Coordinates`::
 
     // Contravariant metric tensor (g^{ij})
-    Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cxx
+    FieldMetric g11, g22, g33, g12, g13, g23; // These are read in grid.cxx
 
     // Covariant metric tensor
-    Field2D g_11, g_22, g_33, g_12, g_13, g_23;
+    FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
     int calcCovariant();     // Invert contravatiant metric to get covariant
     int calcContravariant(); // Invert covariant metric to get contravariant
 
 If only one of these sets is modified by an external code, then
-`Coordinates::calcCovariant` and `Coordinates::calcContravariant` can
-be used to calculate the other (uses Gauss-Jordan currently).
+`Coordinates::calcCovariant()` and `Coordinates::calcContravariant()`
+can be used to calculate the other (uses Gauss-Jordan currently).
 
 From the metric tensor components, `Coordinates` calculates several
 other useful quantities::
 
     int jacobian(); // Calculate J and Bxy
-    Field2D J; // Jacobian
-    Field2D Bxy; // Magnitude of B = nabla z times nabla x
+    FieldMetric J; // Jacobian
+    FieldMetric Bxy; // Magnitude of B = nabla z times nabla x
 
     /// Calculate differential geometry quantities from the metric tensor
     int geometry();
 
     // Christoffel symbol of the second kind (connection coefficients)
-    Field2D G1_11, G1_22, G1_33, G1_12, G1_13;
-    Field2D G2_11, G2_22, G2_33, G2_12, G2_23;
-    Field2D G3_11, G3_22, G3_33, G3_13, G3_23;
+    FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13;
+    FieldMetric G2_11, G2_22, G2_33, G2_12, G2_23;
+    FieldMetric G3_11, G3_22, G3_33, G3_13, G3_23;
 
-    Field2D G1, G2, G3;
+    FieldMetric G1, G2, G3;
 
 These quantities are public and accessible everywhere, but this is
 because they are needed in a lot of the code. They shouldn’t change
-after initialisation, unless the physics model starts doing fancy things
-with deforming meshes.
-
-Miscellaneous
--------------
-
-There are some public members of `Mesh` which are there for some
-specific task and don’t really go anywhere else (yet).
-
-To perform radial derivatives in tokamak geometry, interpolation is
-needed in the Z direction. This is done by shifting in Z by a phase
-factor, performing the derivatives, then shifting back. The following
-public variables are currently used for this::
-
-    bool ShiftXderivs; // Use shifted X derivatives
-    int  ShiftOrder;   // Order of shifted X derivative interpolation
-    Field2D zShift;    // Z shift for each point (radians)
-
-    Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
-    Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
-    bool IncIntShear; // Include integrated shear (if shifting X)
-
-    int  TwistOrder;   // Order of twist-shift interpolation
-
-This determines what order method to use for the interpolation at the
-twist-shift location, with ``0`` meaning FFT during communication. Since
-this must be 0 at the moment it’s fairly redundant and should be
-removed.
-
-A (currently experimental) feature is::
-
-    bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
+after initialisation, unless the physics model starts doing fancy
+things with deforming meshes. In that case it is up to the user to
+ensure they are updated.

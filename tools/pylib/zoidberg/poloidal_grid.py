@@ -397,6 +397,9 @@ class StructuredPoloidalGrid(PoloidalGrid):
             plt.plot(self.R, self.Z, ".")
             plt.plot(R, Z, "x")
 
+        cnt = 0
+        underrelax = 1
+        print()
         while True:
             # Use Newton iteration to find the index
             # dR, dZ are the distance away from the desired point
@@ -408,8 +411,18 @@ class StructuredPoloidalGrid(PoloidalGrid):
 
             # Check if close enough
             # Note: only check the points which are not in the boundary
-            if np.amax(mask * (dR ** 2 + dZ ** 2)) < tol:
+            val = np.amax(mask * (dR ** 2 + dZ ** 2))
+            if val < tol:
                 break
+            cnt += 1
+            if cnt == 10:
+                underrelax = 1.5
+            if cnt == 100:
+                underrelax = 2
+            if cnt == 1000:
+                underrelax = 2.5
+            if cnt == 10000:
+                underrelax = 3
 
             # Calculate derivatives
             dRdx, dZdx = self.getCoordinate(xind, zind, dx=1)
@@ -425,8 +438,8 @@ class StructuredPoloidalGrid(PoloidalGrid):
             # (y)     (-dZ/dx   dR/dx ) (dZ) / (dR/dx*dZ/dy - dR/dy*dZ/dx)
             determinant = dRdx * dZdz - dRdz * dZdx
 
-            xind -= mask * ((dZdz * dR - dRdz * dZ) / determinant)
-            zind -= mask * ((dRdx * dZ - dZdx * dR) / determinant)
+            xind -= mask * ((dZdz * dR - dRdz * dZ) / determinant / underrelax)
+            zind -= mask * ((dRdx * dZ - dZdx * dR) / determinant / underrelax)
 
             # Re-check for boundary
             in_boundary = xind < 0.5

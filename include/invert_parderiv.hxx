@@ -69,6 +69,8 @@ public:
   }
 };
 
+using RegisterUnavailableInvertPar = RegisterUnavailableInFactory<InvertPar, InvertParFactory>;
+
 /// Base class for parallel inversion solvers
 /*!
  * 

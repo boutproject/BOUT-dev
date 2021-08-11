@@ -28,6 +28,7 @@ The documentation is divided into the following sections:
    user_docs/installing
    user_docs/advanced_install
    user_docs/running_bout
+   user_docs/new_in_v5
    
 .. toctree::
    :maxdepth: 2

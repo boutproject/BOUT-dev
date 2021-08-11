@@ -32,11 +32,15 @@ for nproc in [1]:
 
     nx, ny = Rxy.shape
 
+    # Handle 3D metric case
+    if len(dx.shape) == 3:
+        dx = dx[:, :, 0]
+
     rwidth = 0.4
     dr = float(rwidth) / nx
 
     # Test value of dx
-    if np.max(np.abs(dx - dr * Bpxy * Rxy)) > 1e-7:
+    if not np.allclose(dx, dr * Bpxy * Rxy, atol=1e-7):
         print("Failed: dx does not match")
         exit(1)
 

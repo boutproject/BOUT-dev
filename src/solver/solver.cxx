@@ -795,14 +795,14 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
         int ret = monitor->call(this, simtime, iter / monitor->period - 1,
                                 NOUT / monitor->period);
         if (ret)
-          throw BoutException(_("Monitor signalled to quit"));
+          throw BoutException(_("Monitor signalled to quit (return code {})"), ret);
       }
     }
-  } catch (const BoutException&) {
+  } catch (const BoutException& e) {
     for (const auto& it : monitors) {
       it->cleanup();
     }
-    output_error.write(_("Monitor signalled to quit\n"));
+    output_error.write(_("Monitor signalled to quit (exception {})\n"), e.what());
     throw;
   }
 
