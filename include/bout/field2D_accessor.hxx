@@ -22,10 +22,13 @@
 
 template <CELL_LOC location = CELL_CENTRE>
 struct Field2DAccessor {
+  /// Delete default constructor
+  Field2DAccessor() = delete;
+
+  /// Constructor from Field2D
   explicit Field2DAccessor(Field2D& f) {
     ASSERT0(f.getLocation() == location);
     ASSERT0(f.isAllocated());
-
 
     data = &f(0, 0);
     //----- Field 2d data -> array

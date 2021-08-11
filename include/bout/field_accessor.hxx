@@ -22,6 +22,10 @@
 
 template <CELL_LOC location = CELL_CENTRE>
 struct FieldAccessor {
+  /// Remove default constructor
+  FieldAccessor() = delete;
+
+  /// Constructor from Field3D
   explicit FieldAccessor(Field3D& f) {
     ASSERT0(f.getLocation() == location);
     ASSERT0(f.isAllocated());
