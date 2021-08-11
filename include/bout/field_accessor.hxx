@@ -8,7 +8,7 @@
 #include "../field3d.hxx"
 #include "../field.hxx"
 #include "../field2d.hxx"
-
+#include "coordinates.hxx"
 
 #if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
 #define BOUT_HOST_DEVICE __host__ __device__

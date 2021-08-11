@@ -8,6 +8,7 @@
 #include "../field3d.hxx"
 #include "../field.hxx"
 #include "../field2d.hxx"
+#include "coordinates.hxx"
 
 
 #if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
