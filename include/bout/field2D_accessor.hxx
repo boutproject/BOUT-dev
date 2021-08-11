@@ -24,40 +24,43 @@ template <CELL_LOC location = CELL_CENTRE>
 struct Field2DAccessor {
   explicit Field2DAccessor(Field2D& f) {
     ASSERT0(f.getLocation() == location);
-    coords = f.getCoordinates();
-
     ASSERT0(f.isAllocated());
 
+
     data = &f(0, 0);
-    //----- Field 2d data -> array for GPU
+    //----- Field 2d data -> array
     f_data = &f(0, 0);
 
-    // Field size for GPU
+    // Field size
     f_nx = f.getNx();
     f_ny = f.getNy();
     f_nz = f.getNz();
 
-    //------ Field2D data to array for GPU
-    f2d_dx = &f.getCoordinates()->dx(0, 0);
-    f2d_dy = &f.getCoordinates()->dy(0, 0);
-    f2d_dz = f.getCoordinates()->dz;
-    f2d_J = &f.getCoordinates()->J(0, 0);
+    // Get coordinate system information
+    coords = f.getCoordinates();
 
-    f2d_G1 = &f.getCoordinates()->G1(0, 0);
-    f2d_G3 = &f.getCoordinates()->G3(0, 0);
-    f2d_g11 = &f.getCoordinates()->g11(0, 0);
-    f2d_g12 = &f.getCoordinates()->g12(0, 0);
-    f2d_g13 = &f.getCoordinates()->g13(0, 0);
-    f2d_g22 = &f.getCoordinates()->g22(0, 0);
-    f2d_g23 = &f.getCoordinates()->g23(0, 0);
-    f2d_g33 = &f.getCoordinates()->g33(0, 0);
+    //------ Field2D data to array
+    f2d_dx = &coords->dx(0, 0);
+    f2d_dy = &coords->dy(0, 0);
+    f2d_dz = &coords->dz(0, 0);
 
-    f2d_g_11 = &f.getCoordinates()->g_11(0, 0);
-    f2d_g_12 = &f.getCoordinates()->g_12(0, 0);
-    f2d_g_13 = &f.getCoordinates()->g_13(0, 0);
-    f2d_g_22 = &f.getCoordinates()->g_22(0, 0);
-    f2d_g_23 = &f.getCoordinates()->g_23(0, 0);
-    f2d_g_33 = &f.getCoordinates()->g_33(0, 0);
+    f2d_J = &coords->J(0, 0);
+
+    f2d_G1 = &coords->G1(0, 0);
+    f2d_G3 = &coords->G3(0, 0);
+    f2d_g11 = &coords->g11(0, 0);
+    f2d_g12 = &coords->g12(0, 0);
+    f2d_g13 = &coords->g13(0, 0);
+    f2d_g22 = &coords->g22(0, 0);
+    f2d_g23 = &coords->g23(0, 0);
+    f2d_g33 = &coords->g33(0, 0);
+
+    f2d_g_11 = &coords->g_11(0, 0);
+    f2d_g_12 = &coords->g_12(0, 0);
+    f2d_g_13 = &coords->g_13(0, 0);
+    f2d_g_22 = &coords->g_22(0, 0);
+    f2d_g_23 = &coords->g_23(0, 0);
+    f2d_g_33 = &coords->g_33(0, 0);
 
     //---------------------------------------
 
@@ -89,10 +92,10 @@ struct Field2DAccessor {
   // Note: The data size depends on Coordinates::FieldMetric
   //       and could be Field2D or Field3D
   BoutReal* f2d_dx = nullptr;
-  BoutReal* f2d_dy = nullptr; // pointer to Field2D data
-  BoutReal f2d_dz = 0.0;      // dz of Field2D
+  BoutReal* f2d_dy = nullptr;
+  BoutReal* f2d_dz = nullptr;
 
-  BoutReal* f2d_J = nullptr; // pointer to Field2D data
+  BoutReal* f2d_J = nullptr;
 
   BoutReal* f2d_G1 = nullptr;
   BoutReal* f2d_G3 = nullptr;
