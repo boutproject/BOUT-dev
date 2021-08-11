@@ -42,5 +42,15 @@ constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 #undef STRINGIFY1
 #undef STRINGIFY
 
+#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
+#define BOUT_HOST_DEVICE __host__ __device__
+#define BOUT_HOST __host__
+#define BOUT_DEVICE __device__
+#else
+#define BOUT_HOST_DEVICE
+#define BOUT_HOST
+#define BOUT_DEVICE
+#endif
+
 #endif // BOUT_BUILD_OPTIONS_HXX
 
