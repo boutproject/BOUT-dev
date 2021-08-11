@@ -28,11 +28,7 @@ using EXEC_POL = RAJA::loop_exec;
 #endif // defined(BOUT_ENABLE_CUDA)
 ////-----------CUDA settings------------------------------------------------------end
 #endif
-template <CELL_LOC location>
-BOUT_HOST_DEVICE inline BoutReal* DDT(const FieldAccessor<location>& f) {
 
-  return f.f_ddt;
-}
 template <CELL_LOC location>
 BOUT_HOST_DEVICE inline BoutReal* FIELD_DATA(const FieldAccessor<location>& f) {
 

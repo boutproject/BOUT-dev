@@ -80,4 +80,11 @@ struct FieldAccessor {
 /// Define a shorthand for 2D fields
 template <CELL_LOC location = CELL_CENTRE>
 using Field2DAccessor = FieldAccessor<location, Field2D>;
+
+/// Syntactic sugar for time derivative of a field
+template <CELL_LOC location, class FieldType>
+BOUT_HOST_DEVICE inline BoutReal* ddt(FieldAccessor<location, FieldType> &fa) {
+  return fa.ddt;
+}
+
 #endif
