@@ -8,6 +8,7 @@
 #include "../field.hxx"
 #include "../field2d.hxx"
 #include "../field3d.hxx"
+#include "coordinate_field_accessor.hxx"
 #include "coordinates.hxx"
 #include "build_config.hxx"
 
@@ -18,7 +19,12 @@ struct FieldAccessor {
   FieldAccessor() = delete;
 
   /// Constructor from Field3D
-  explicit FieldAccessor(Field3D& f) {
+  explicit FieldAccessor(FieldType& f)
+      : coords(f.getCoordinates()), dx(coords->dx), dy(coords->dy), dz(coords->dz),
+        J(coords->J), G1(coords->G1), G3(coords->G3), g11(coords->g11), g12(coords->g12),
+        g13(coords->g13), g22(coords->g22), g23(coords->g23), g33(coords->g33),
+        g_11(coords->g_11), g_12(coords->g_12), g_13(coords->g_13), g_22(coords->g_22),
+        g_23(coords->g_23), g_33(coords->g_33) {
     ASSERT0(f.getLocation() == location);
     ASSERT0(f.isAllocated());
 
@@ -31,34 +37,6 @@ struct FieldAccessor {
     f_nx = f.getNx();
     f_ny = f.getNy();
     f_nz = f.getNz();
-
-    // Get coordinate system information
-    coords = f.getCoordinates();
-
-    // Get pointers to the underlying arrays
-    // Note that data may be 2D or 3D, depending on Coordinate::FieldMetric
-    // In either case we can use three indices to access the data
-    dx = &coords->dx(0, 0, 0);
-    dy = &coords->dy(0, 0, 0);
-    dz = &coords->dz(0, 0, 0);
-
-    J = &coords->J(0, 0, 0);
-
-    G1 = &coords->G1(0, 0, 0);
-    G3 = &coords->G3(0, 0, 0);
-    g11 = &coords->g11(0, 0, 0);
-    g12 = &coords->g12(0, 0, 0);
-    g13 = &coords->g13(0, 0, 0);
-    g22 = &coords->g22(0, 0, 0);
-    g23 = &coords->g23(0, 0, 0);
-    g33 = &coords->g33(0, 0, 0);
-
-    g_11 = &coords->g_11(0, 0, 0);
-    g_12 = &coords->g_12(0, 0, 0);
-    g_13 = &coords->g_13(0, 0, 0);
-    g_22 = &coords->g_22(0, 0, 0);
-    g_23 = &coords->g_23(0, 0, 0);
-    g_33 = &coords->g_33(0, 0, 0);
 
     if (f.hasParallelSlices()) {
       yup = &f.yup();
@@ -89,28 +67,6 @@ struct FieldAccessor {
   // Metric tensor (Coordinates) data
   // Note: The data size depends on Coordinates::FieldMetric
   //       and could be Field2D or Field3D
-  BoutReal* dx = nullptr;
-  BoutReal* dy = nullptr;
-  BoutReal* dz = nullptr;
-
-  BoutReal* J = nullptr; ///< Coordinate system Jacobian
-
-  BoutReal* G1 = nullptr;
-  BoutReal* G3 = nullptr;
-  BoutReal* g11 = nullptr;
-  BoutReal* g12 = nullptr;
-  BoutReal* g13 = nullptr;
-  BoutReal* g22 = nullptr;
-  BoutReal* g23 = nullptr;
-  BoutReal* g33 = nullptr;
-
-  BoutReal* g_11 = nullptr;
-  BoutReal* g_12 = nullptr;
-  BoutReal* g_13 = nullptr;
-  BoutReal* g_22 = nullptr;
-  BoutReal* g_23 = nullptr;
-  BoutReal* g_33 = nullptr;
-
   BoutReal* f_yup = nullptr;   ///< Pointer to the Field2D yup data
   BoutReal* f_ydown = nullptr; ///< Pointer to the Field2D ydown data
   BoutReal* f_data = nullptr;  ///< Pointer to the Field2D data
@@ -120,6 +76,16 @@ struct FieldAccessor {
   int f_nx = 0;
   int f_ny = 0;
   int f_nz = 0;
+
+  CoordinateFieldAccessor dx, dy, dz; /// Grid spacing
+  CoordinateFieldAccessor J;          ///< Coordinate system Jacobian
+
+  CoordinateFieldAccessor G1, G3;
+
+  CoordinateFieldAccessor g11, g12, g13, g22, g23, g33;
+
+  CoordinateFieldAccessor g_11, g_12, g_13, g_22, g_23, g_33;
+
 };
 
 #endif
