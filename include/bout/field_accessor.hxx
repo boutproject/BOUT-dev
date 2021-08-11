@@ -29,48 +29,35 @@ struct FieldAccessor {
 
     data = &f(0, 0, 0);
 
-    //----- Field 3d data -> array
-    f_data = f(0, 0);
-
     // Field size
-    f_nx = f.getNx();
-    f_ny = f.getNy();
-    f_nz = f.getNz();
+    nx = f.getNx();
+    ny = f.getNy();
+    nz = f.getNz();
+
+    // Mesh z size, for index conversion
+    mesh_nz = f.getMesh()->LocalNz;
 
     if (f.hasParallelSlices()) {
-      yup = &f.yup();
-      ydown = &f.ydown();
-
-      // Field3D data -> array
-      f_yup = &f.yup()(0, 0, 0);
-      f_ydown = &(f.ydown()(0, 0, 0));
+      // Get arrays from yup and ydown fields
+      yup = &(f.yup()(0, 0, 0));
+      ydown = &(f.ydown()(0, 0, 0));
     }
 
     // ddt() array data
-    f_ddt = &(f.timeDeriv()->operator()(0, 0, 0));
+    ddt = &(f.timeDeriv()->operator()(0, 0, 0));
   }
 
+  BoutReal* data{nullptr}; ///< Pointer to the Field data
+  BoutReal* ddt{nullptr};  ///< Time-derivative data
 
-  Field3D* yup{nullptr};
-
-  Field3D* ydown{nullptr};
+  BoutReal* yup{nullptr};   ///< Pointer to the Field yup data
+  BoutReal* ydown{nullptr}; ///< Pointer to the Field ydown data
 
   Coordinates* coords{nullptr};
-
-  BoutReal* data;
 
   // Metric tensor (Coordinates) data
   // Note: The data size depends on Coordinates::FieldMetric
   //       and could be Field2D or Field3D
-  BoutReal* f_yup = nullptr;   ///< Pointer to the Field2D yup data
-  BoutReal* f_ydown = nullptr; ///< Pointer to the Field2D ydown data
-  BoutReal* f_data = nullptr;  ///< Pointer to the Field2D data
-
-  BoutReal* f_ddt = nullptr;
-
-  int f_nx = 0;
-  int f_ny = 0;
-  int f_nz = 0;
 
   CoordinateFieldAccessor dx, dy, dz; /// Grid spacing
   CoordinateFieldAccessor J;          ///< Coordinate system Jacobian
@@ -81,6 +68,13 @@ struct FieldAccessor {
 
   CoordinateFieldAccessor g_11, g_12, g_13, g_22, g_23, g_33;
 
+  // Field size
+  int nx = 0;
+  int ny = 0;
+  int nz = 0;
+
+  // Mesh Z size. Used to convert 3D to 2D indices
+  int mesh_nz
 };
 
 /// Define a shorthand for 2D fields
