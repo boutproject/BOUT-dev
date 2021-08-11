@@ -121,8 +121,6 @@ struct FieldAccessor {
 
   BoutReal* f_ddt = nullptr;
 
-  int* ind_3D_index = nullptr;
-
   int f_nx = 0;
   int f_ny = 0;
   int f_nz = 0;

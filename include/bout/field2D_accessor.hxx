@@ -121,8 +121,6 @@ struct Field2DAccessor {
 
   BoutReal* f_ddt = nullptr;
 
-  int* ind_2D_index = nullptr;
-
   int f_nx = 0;
   int f_ny = 0;
   int f_nz = 0;
