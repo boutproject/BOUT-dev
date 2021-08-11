@@ -94,7 +94,7 @@ set(BOUT_SOURCES
   ./include/bout/rvec.hxx
   ./include/bout/scorepwrapper.hxx
   ./include/bout/single_index_ops.hxx
-  ./include/bout/field2D_accessor.hxx
+  ./include/bout/field_accessor.hxx
   ./include/bout/coordinate_field_accessor.hxx
   ./include/bout/slepclib.hxx
   ./include/bout/snb.hxx

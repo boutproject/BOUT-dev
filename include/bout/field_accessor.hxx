@@ -12,8 +12,7 @@
 #include "coordinates.hxx"
 #include "build_config.hxx"
 
-
-template <CELL_LOC location = CELL_CENTRE>
+template <CELL_LOC location = CELL_CENTRE, class FieldType = Field3D>
 struct FieldAccessor {
   /// Remove default constructor
   FieldAccessor() = delete;
@@ -51,10 +50,6 @@ struct FieldAccessor {
     f_ddt = &(f.timeDeriv()->operator()(0, 0, 0));
   }
 
-  BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) { return data[d.ind]; }
-  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) const {
-    return data[d.ind];
-  }
 
   Field3D* yup{nullptr};
 
@@ -88,4 +83,7 @@ struct FieldAccessor {
 
 };
 
+/// Define a shorthand for 2D fields
+template <CELL_LOC location = CELL_CENTRE>
+using Field2DAccessor = FieldAccessor<location, Field2D>;
 #endif
