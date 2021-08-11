@@ -21,7 +21,6 @@ stop_files = ["BOUT.stop", "otherStop.check"]
 print("Running stopCheck test")
 success = True
 
-<<<<<<< HEAD
 for data_dir, stop_file in zip(data_dirs, stop_files):
     for check, expected in zip(check_values, expected_steps):
         executable = "./test_stopCheck"
@@ -47,29 +46,6 @@ for data_dir, stop_file in zip(data_dirs, stop_files):
             sys.exit(1)
             success = False
             continue
-=======
-for j, dat in enumerate(dats):
-  for i, check in enumerate(checkVal):
-    cmd = "../../../bin/test_stopCheck"
-
-    s, out = launch(cmd+" -d "+dat+" stopCheck="+str(check)+" stopCheckName="+datStopFiles[j], nproc=nproc, pipe=True)
-    f = open("run.log."+dat+"."+str(check).lower(), "w")
-    f.write(out)
-    f.close()
-    
-    # Collect output data
-    for v in vars:
-      result = collect(v, path=dat, info=False)
-
-      # Compare benchmark and output
-      if result.shape[0] != nstepExpect[i]:
-        print("Fail, wrong shape")
-        print("Option is "+str(check)+"/"+dat+"/"+datStopFiles[j])
-        print("shape is "+str(result.shape[0]))
-        print("expecting "+str(nstepExpect[i]))
-        success = False
-        continue
->>>>>>> next-outerloop-GPU-umpire
 
 if success:
     print(" => All checkStop tests passed")

@@ -8,7 +8,7 @@ import unittest
 
 
 class TestCommandLineArgs(unittest.TestCase):
-    command = "../../../bin/command-args 2>stderr.log"
+    command = "./command-args 2>stderr.log"
 
     def makeDirAndCopyInput(self, path):
         os.mkdir(path)
