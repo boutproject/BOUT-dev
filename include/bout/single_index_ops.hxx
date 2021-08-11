@@ -544,7 +544,7 @@ BoutReal* f3d_a = f3d.f_data;
 BoutReal* dy = f3d.f2d_dy;
 BoutReal result = f3d_a[i] / (dy[ind_2d]* dy[ind_2d]);
 
-//return result;
+return result;
 
 }
 
