@@ -68,17 +68,13 @@ struct FieldAccessor {
       yup = &f.yup();
       ydown = &f.ydown();
 
-      //----- Field3D data -> array for GPU
-      f_yup = static_cast<BoutReal*>(f.yup()(0, 0));
-      f_ydown = static_cast<BoutReal*>(f.ydown()(0, 0));
-      // ddt() array data for GPU
-      f_ddt = static_cast<BoutReal*>(f.timeDeriv()->operator()(0, 0));
-
-      // set field region index for GPU
-      // auto indices = f.getRegion("RGN_NOBNDRY").getIndices(); //set index of region
-      // Ind3D *ob_i = &(indices[0]);
-      //---------------------
+      // Field3D data -> array
+      f_yup = &f.yup()(0, 0, 0);
+      f_ydown = &(f.ydown()(0, 0, 0));
     }
+
+    // ddt() array data
+    f_ddt = &(f.timeDeriv()->operator()(0, 0, 0));
   }
 
   BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) { return data[d.ind]; }

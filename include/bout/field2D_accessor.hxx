@@ -68,11 +68,13 @@ struct Field2DAccessor {
       yup = &f.yup();
       ydown = &f.ydown();
 
-      // set field region index for GPU
-      // auto indices = f.getRegion("RGN_NOBNDRY").getIndices(); //set index of region
-      // Ind3D *ob_i = &(indices[0]);
-      //---------------------
+      // Field2D data -> array
+      f_yup = &f.yup()(0, 0, 0);
+      f_ydown = &(f.ydown()(0, 0, 0));
     }
+
+    // ddt() array data
+    f_ddt = &(f.timeDeriv()->operator()(0, 0, 0));
   }
 
   BoutReal& BOUT_HOST_DEVICE operator[](const Ind2D& d) { return data[d.ind]; }
