@@ -446,53 +446,6 @@ configure_file(
 
 ##################################################
 
-cmake_dependent_option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF
-  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/mpark.variant/CMakeLists.txt" ON)
-
-if(BOUT_USE_SYSTEM_MPARK_VARIANT)
-  message(STATUS "Using external mpark.variant")
-  find_package(mpark_variant REQUIRED)
-  get_target_property(MPARK_VARIANT_INCLUDE_PATH mpark_variant INTERFACE_INCLUDE_DIRECTORIES)
-else()
-  message(STATUS "Using mpark.variant submodule")
-  bout_update_submodules()
-  add_subdirectory(externalpackages/mpark.variant)
-  if(NOT TARGET mpark_variant)
-    message(FATAL_ERROR "mpark_variant not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
-  endif()
-  set(MPARK_VARIANT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externalpackages/mpark.variant/include")
-  set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${MPARK_VARIANT_INCLUDE_PATH}")
-endif()
-target_link_libraries(bout++ PUBLIC mpark_variant)
-
-cmake_dependent_option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF
-  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/fmt/CMakeLists.txt" ON)
-
-if(BOUT_USE_SYSTEM_FMT)
-  message(STATUS "Using external fmt")
-  find_package(fmt 6 REQUIRED)
-  get_target_property(FMT_INCLUDE_PATH fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
-else()
-  message(STATUS "Using fmt submodule")
-  bout_update_submodules()
-  # Need to install fmt alongside BOUT++
-  set(FMT_INSTALL ON CACHE BOOL "")
-  set(FMT_DEBUG_POSTFIX "" CACHE STRING "")
-  add_subdirectory(externalpackages/fmt)
-  if(NOT TARGET fmt::fmt)
-    message(FATAL_ERROR "fmt not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
-  endif()
-  # Build the library in <build dir>/lib: this makes updating the path
-  # for bout-config much easier
-  set_target_properties(fmt PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
-  set(FMT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externalpackages/fmt/include")
-  set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${FMT_INCLUDE_PATH}")
-  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -lfmt")
-endif()
-target_link_libraries(bout++ PUBLIC fmt::fmt)
-
 option(BOUT_ENABLE_WARNINGS "Enable compiler warnings" ON)
 if (BOUT_ENABLE_WARNINGS)
   target_compile_options(bout++ PRIVATE
@@ -696,9 +649,6 @@ endif ()
 add_subdirectory(examples/laplacexy/simple)
 add_subdirectory(examples/hasegawa-wakatani-3d)
 add_subdirectory(examples/elm-pb)
-add_subdirectory(tests/integrated/test-laplace-petsc3d)
-add_subdirectory(tests/integrated/test-laplace-hypre3d)
-add_subdirectory(tests/integrated/test-laplacexy2-hypre)
 
 ##################################################
 # Generate the build config header

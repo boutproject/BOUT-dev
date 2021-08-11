@@ -101,12 +101,14 @@ endif()
 message(STATUS "PETSc support: ${BOUT_USE_PETSC}")
 set(BOUT_HAS_PETSC ${BOUT_USE_PETSC})
 
+
 cmake_dependent_option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF
-   "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS ${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/CMakeLists.txt" ON)
-message(STATUS "BOUT_USE_SYSTEM_MPARK_VARIANT : ${BOUT_USE_SYSTEM_MPARK_VARIANT}") 
+  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/mpark.variant/CMakeLists.txt" ON)
+
 if(BOUT_USE_SYSTEM_MPARK_VARIANT)
   message(STATUS "Using external mpark.variant")
   find_package(mpark_variant REQUIRED)
+  get_target_property(MPARK_VARIANT_INCLUDE_PATH mpark_variant INTERFACE_INCLUDE_DIRECTORIES)
 else()
   message(STATUS "Using mpark.variant submodule")
   bout_update_submodules()
@@ -114,26 +116,38 @@ else()
   if(NOT TARGET mpark_variant)
     message(FATAL_ERROR "mpark_variant not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
   endif()
+  set(MPARK_VARIANT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externalpackages/mpark.variant/include")
+  set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${MPARK_VARIANT_INCLUDE_PATH}")
 endif()
 target_link_libraries(bout++ PUBLIC mpark_variant)
 
 cmake_dependent_option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF
-  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS ${PROJECT_SOURCE_DIR}/externalpackages/fmt/CMakeLists.txt" ON)
+  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/fmt/CMakeLists.txt" ON)
+
 if(BOUT_USE_SYSTEM_FMT)
   message(STATUS "Using external fmt")
   find_package(fmt 6 REQUIRED)
+  get_target_property(FMT_INCLUDE_PATH fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
 else()
   message(STATUS "Using fmt submodule")
   bout_update_submodules()
   # Need to install fmt alongside BOUT++
   set(FMT_INSTALL ON CACHE BOOL "")
+  set(FMT_DEBUG_POSTFIX "" CACHE STRING "")
   add_subdirectory(externalpackages/fmt)
   if(NOT TARGET fmt::fmt)
     message(FATAL_ERROR "fmt not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
   endif()
+  # Build the library in <build dir>/lib: this makes updating the path
+  # for bout-config much easier
+  set_target_properties(fmt PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
+  set(FMT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externalpackages/fmt/include")
+  set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${FMT_INCLUDE_PATH}")
+  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -lfmt")
 endif()
 target_link_libraries(bout++ PUBLIC fmt::fmt)
-
 
 option(BOUT_USE_PVODE "Enable support for bundled PVODE" ON)
 if (BOUT_USE_PVODE)
