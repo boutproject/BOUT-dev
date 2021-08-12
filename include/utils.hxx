@@ -37,6 +37,7 @@
 #include "bout/assert.hxx"
 #include "msg_stack.hxx"
 #include "unused.hxx"
+#include "bout/build_config.hxx"
 
 #include <algorithm>
 #include <cmath>
@@ -453,7 +454,7 @@ inline BoutReal randomu() {
  * i.e. t * t
  */
 template <typename T>
-T SQ(const T &t){
+BOUT_HOST_DEVICE inline T SQ(const T &t){
   return t*t;
 }
 
