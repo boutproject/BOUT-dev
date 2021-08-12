@@ -25,14 +25,20 @@
 
 #include <math.h>
 
-// library for GPU
-#include "RAJA/RAJA.hpp" // using RAJA lib
 #include <bout/physicsmodel.hxx>
 #include <bout/single_index_ops.hxx>
-#include <cuda_profiler_api.h>
 #include <derivs.hxx>
 #include <invert_laplace.hxx>
 #include <smoothing.hxx>
+
+#if BOUT_HAS_RAJA
+// library for GPU
+#include "RAJA/RAJA.hpp" // using RAJA lib
+#endif
+
+#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
+#include <cuda_profiler_api.h>
+#endif
 
 #if BOUT_HAS_HYPRE
 #include <bout/invert/laplacexy2_hypre.hxx>
@@ -40,18 +46,16 @@
 
 #include <field_factory.hxx>
 
-//#define GPU
-
 CELL_LOC loc = CELL_CENTRE;
 
 class ELMpb : public PhysicsModel {
 public:
   // 2D inital profiles
-  Field2D J0, P0;         // Current and pressure
-  Vector2D b0xcv;         // Curvature term
-  Field2D beta;           // Used for Vpar terms
+  Field2D J0, P0; // Current and pressure
+  Vector2D b0xcv; // Curvature term
+  Field2D beta;   // Used for Vpar terms
   Coordinates::FieldMetric gradparB;
-  Field2D phi0;           // When diamagnetic terms used
+  Field2D phi0; // When diamagnetic terms used
   Field2D Psixy, x;
   Coordinates::FieldMetric U0; // 0th vorticity of equilibrium flow,
   // radial flux coordinate, normalized radial flux coordinate
@@ -1637,356 +1641,357 @@ public:
       ddt(Psi) =
           ddt(Psi) * (1. - vac_mask) - (Psi - Psitarget) * vac_mask / relax_j_tconst;
     }
-  }
 
-  ////////////////////////////////////////////////////
-  // Vorticity equation
+    ////////////////////////////////////////////////////
+    // Vorticity equation
 
 #ifdef BOUT_HAS_RAJA
-  auto Psi_acc = FieldAccessor<>(Psi);
-  auto B0_acc = Field2DAccessor<>(B0);
-  auto J0_acc = Field2DAccessor<>(J0);
-  auto U_acc = FieldAccessor<>(U);
-  auto indices = U.getRegion("RGN_NOBNDRY").getIndices();
-  Ind3D* ob_i = &(indices)[0];
-  RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-    int i = ob_i[id].ind;
-    BoutReal p1 = SQ_g(U_acc, B0_acc, i);
-    BoutReal p2 = b0xGrad_dot_Grad_g(Psi_acc, J0_acc, i);
-    DDT(U_acc)[i] = p1 * p2;
-  });
-
-#else
-  Psi_loc = interp_to(Psi, CELL_CENTRE, "RGN_ALL");
-  Psi_loc.applyBoundary();
-  // Grad j term
-  ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi_loc, J0, CELL_CENTRE);
-#endif
-
-  if (include_rmp) {
-    ddt(U) += SQ(B0) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
-  }
-
-  ddt(U) += b0xcv * Grad(P); // curvature term
-
-  if (!nogradparj) {
-    // Parallel current term
-#ifdef BOUT_HAS_RAJA
-    auto Jpar_acc = FieldAccessor<>(Jpar);
-    auto g_22_acc = Field2DAccessor<>(metric->g_22);
-
+    auto Psi_acc = FieldAccessor<>(Psi);
+    auto B0_acc = Field2DAccessor<>(B0);
+    auto J0_acc = Field2DAccessor<>(J0);
+    auto U_acc = FieldAccessor<>(U);
+    auto indices = U.getRegion("RGN_NOBNDRY").getIndices();
+    Ind3D* ob_i = &(indices)[0];
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
                            [=] RAJA_DEVICE(int id) {
                              int i = ob_i[id].ind;
                              BoutReal p1 = SQ_g(U_acc, B0_acc, i);
-                             BoutReal p2 = Grad_parP_g(Jpar_acc, g_22_acc, i);
-                             DDT(U_acc)[i] -= p2 * p1;
+                             BoutReal p2 = b0xGrad_dot_Grad_g(Psi_acc, J0_acc, i);
+                             DDT(U_acc)[i] = p1 * p2;
                            });
 
 #else
-    ddt(U) -= SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
+    Psi_loc = interp_to(Psi, CELL_CENTRE, "RGN_ALL");
+    Psi_loc.applyBoundary();
+    // Grad j term
+    ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi_loc, J0, CELL_CENTRE);
 #endif
-  }
 
-  if (withflow && K_H_term) { // K_H_term
-    ddt(U) -= b0xGrad_dot_Grad(phi, U0);
-  }
-
-  if (diamag_phi0) {
-#ifdef BOUT_HAS_RAJA
-
-    auto phi0_acc = Field2DAccessor<>(phi0);
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
-                           [=] RAJA_DEVICE(int id) {
-                             int i = ob_i[id].ind;
-                             BoutReal p1 = b0xGrad_dot_Grad_g(phi0_acc, U_acc, i);
-                             DDT(U_acc)[i] -= p1;
-                           });
-#else
-    ddt(U) -= b0xGrad_dot_Grad(phi0, U);             // Equilibrium flow
-#endif
-  }
-
-  if (withflow) { // net flow
-    ddt(U) -= V_dot_Grad(V0net, U);
-  }
-
-  if (nonlinear) {
-
-#ifdef BOUT_HAS_RAJA
-    auto B0_2D_acc = Field2DAccessor<>(B0);
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
-                           [=] RAJA_DEVICE(int id) {
-                             int i = ob_i[id].ind;
-                             BoutReal f1 = FIELD2D_3DINDEX_DATA(U_acc, B0_2D_acc, i);
-                             BoutReal p1 = bracket_g(Psi_acc, U_acc, i);
-                             DDT(U_acc)[i] -= p1 * f1;
-                           });
-
-#else
-    ddt(U) -= bracket(phi, U, bm_exb) * B0;          // Advection
-#endif
-  }
-
-  // Viscosity terms
-  if (viscos_par > 0.0) {
-    ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
-  }
-
-  if (diffusion_u4 > 0.0) {
-
-    tmpU2 = D2DY2(U);
-    mesh->communicate(tmpU2);
-    tmpU2.applyBoundary();
-#ifdef BOUT_HAS_RAJA
-
-    auto tmpU2_acc = FieldAccessor<>(tmpU2);
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
-                           [=] RAJA_DEVICE(int id) {
-                             int i = ob_i[id].ind;
-                             BoutReal p1 = D2DY2_g(tmpU2_acc, i);
-                             DDT(U_acc)[i] -= diffusion_u4 * p1;
-                           });
-
-#else
-    ddt(U) -= diffusion_u4 * D2DY2(tmpU2);
-#endif
-  }
-
-  if (viscos_perp > 0.0) {
-    ddt(U) += viscos_perp * Delp2(U); // Perpendicular viscosity
-  }
-
-  // Hyper-viscosity
-  if (hyperviscos > 0.0) {
-    // Calculate coefficient.
-
-    hyper_mu_x = hyperviscos * metric->g_11 * SQ(metric->dx) * abs(metric->g11 * D2DX2(U))
-                 / (abs(U) + 1e-3);
-    hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
-
-    ddt(U) += hyper_mu_x * metric->g11 * D2DX2(U);
-
-    if (first_run) { // Print out maximum values of viscosity used on this processor
-      output.write("   Hyper-viscosity values:\n");
-      output.write("      Max mu_x = {:e}, Max_DC mu_x = {:e}\n", max(hyper_mu_x),
-                   max(DC(hyper_mu_x)));
+    if (include_rmp) {
+      ddt(U) += SQ(B0) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
     }
-  }
 
-  if (gyroviscous) {
+    ddt(U) += b0xcv * Grad(P); // curvature term
 
-    Field3D Pi;
-    Field2D Pi0;
-    Pi = 0.5 * P;
-    Pi0 = 0.5 * P0;
-
-    Dperp2Phi0 = Field3D(Delp2(B0 * phi0));
-    Dperp2Phi0.applyBoundary();
-    mesh->communicate(Dperp2Phi0);
-
-    Dperp2Phi = Delp2(B0 * phi);
-    Dperp2Phi.applyBoundary();
-    mesh->communicate(Dperp2Phi);
-
-    Dperp2Pi0 = Field3D(Delp2(Pi0));
-    Dperp2Pi0.applyBoundary();
-    mesh->communicate(Dperp2Pi0);
-
-    Dperp2Pi = Delp2(Pi);
-    Dperp2Pi.applyBoundary();
-    mesh->communicate(Dperp2Pi);
-
-    bracketPhi0P = bracket(B0 * phi0, Pi, bm_exb);
-    bracketPhi0P.applyBoundary();
-    mesh->communicate(bracketPhi0P);
-
-    bracketPhiP0 = bracket(B0 * phi, Pi0, bm_exb);
-    bracketPhiP0.applyBoundary();
-    mesh->communicate(bracketPhiP0);
-
-    ddt(U) -= 0.5 * Upara2 * bracket(Pi, Dperp2Phi0, bm_exb) / B0;
-
-    ddt(U) -= 0.5 * Upara2 * bracket(Pi0, Dperp2Phi, bm_exb) / B0;
-    Field3D B0phi = B0 * phi;
-    mesh->communicate(B0phi);
-    Field3D B0phi0 = B0 * phi0;
-    mesh->communicate(B0phi0);
-    ddt(U) += 0.5 * Upara2 * bracket(B0phi, Dperp2Pi0, bm_exb) / B0;
-    ddt(U) += 0.5 * Upara2 * bracket(B0phi0, Dperp2Pi, bm_exb) / B0;
-    ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhi0P) / B0;
-    ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhiP0) / B0;
-
-    if (nonlinear) {
-      Field3D B0phi = B0 * phi;
-      mesh->communicate(B0phi);
-      bracketPhiP = bracket(B0phi, Pi, bm_exb);
-      bracketPhiP.applyBoundary();
-      mesh->communicate(bracketPhiP);
-
-      ddt(U) -= 0.5 * Upara2 * bracket(Pi, Dperp2Phi, bm_exb) / B0;
-      ddt(U) += 0.5 * Upara2 * bracket(B0phi, Dperp2Pi, bm_exb) / B0;
-      ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhiP) / B0;
-    }
-  }
-
-  // left edge sink terms
-  if (sink_Ul > 0.0) {
-    ddt(U) -= sink_Ul * sink_tanhxl(P0, U, su_widthl, su_lengthl); // core sink
-  }
-
-  // right edge sink terms
-  if (sink_Ur > 0.0) {
-    ddt(U) -= sink_Ur * sink_tanhxr(P0, U, su_widthr, su_lengthr); //  sol sink
-  }
-
-  ddt(P) = 0.0;
-
-  if (evolve_pressure) {
-
+    if (!nogradparj) {
+      // Parallel current term
 #ifdef BOUT_HAS_RAJA
+      auto Jpar_acc = FieldAccessor<>(Jpar);
+      auto g_22_acc = Field2DAccessor<>(metric->g_22);
 
-    auto P_acc = FieldAccessor<>(P);
-    auto phi_acc = FieldAccessor<>(phi);
-    auto P0_acc = Field2DAccessor<>(P0);
-
-    auto indices = P.getRegion("RGN_NOBNDRY").getIndices();
-    Ind3D* ob_i = &(indices)[0];
-
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
-                           [=] RAJA_DEVICE(int id) {
-                             int i = ob_i[id].ind;
-                             BoutReal p1 = b0xGrad_dot_Grad_g(phi_acc, P0_acc, i);
-                             DDT(P_acc)[i] -= p1;
-                           });
+      RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
+                             [=] RAJA_DEVICE(int id) {
+                               int i = ob_i[id].ind;
+                               BoutReal p1 = SQ_g(U_acc, B0_acc, i);
+                               BoutReal p2 = Grad_parP_g(Jpar_acc, g_22_acc, i);
+                               DDT(U_acc)[i] -= p2 * p1;
+                             });
 
 #else
-    ddt(P) -= b0xGrad_dot_Grad(phi, P0);
+      ddt(U) -= SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
 #endif
+    }
+
+    if (withflow && K_H_term) { // K_H_term
+      ddt(U) -= b0xGrad_dot_Grad(phi, U0);
+    }
 
     if (diamag_phi0) {
-
 #ifdef BOUT_HAS_RAJA
-      auto P_acc = FieldAccessor<>(P);
+
       auto phi0_acc = Field2DAccessor<>(phi0);
       RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
                              [=] RAJA_DEVICE(int id) {
                                int i = ob_i[id].ind;
-                               BoutReal p1 = b0xGrad_dot_Grad_g(phi0_acc, P_acc, i);
-                               DDT(P_acc)[i] -= p1;
+                               BoutReal p1 = b0xGrad_dot_Grad_g(phi0_acc, U_acc, i);
+                               DDT(U_acc)[i] -= p1;
                              });
 #else
-      ddt(P) -= b0xGrad_dot_Grad(phi0, P);    // Equilibrium flow
+      ddt(U) -= b0xGrad_dot_Grad(phi0, U);             // Equilibrium flow
 #endif
     }
 
     if (withflow) { // net flow
-      ddt(P) -= V_dot_Grad(V0net, P);
+      ddt(U) -= V_dot_Grad(V0net, U);
     }
 
     if (nonlinear) {
-#ifdef BOUT_HAS_RAJA
 
-      auto phi_acc = FieldAccessor<>(phi);
+#ifdef BOUT_HAS_RAJA
       auto B0_2D_acc = Field2DAccessor<>(B0);
-      auto P_acc = FieldAccessor<>(P); // P is field 3D
       RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
                              [=] RAJA_DEVICE(int id) {
                                int i = ob_i[id].ind;
-                               BoutReal f1 = FIELD2D_3DINDEX_DATA(phi_acc, B0_2D_acc, i);
-                               BoutReal p1 = bracket_g(phi_acc, P_acc, i);
-                               DDT(phi_acc)[i] -= p1 * f1;
+                               BoutReal f1 = FIELD2D_3DINDEX_DATA(U_acc, B0_2D_acc, i);
+                               BoutReal p1 = bracket_g(Psi_acc, U_acc, i);
+                               DDT(U_acc)[i] -= p1 * f1;
                              });
 
 #else
-      ddt(P) -= bracket(phi, P, bm_exb) * B0; // Advection
+      ddt(U) -= bracket(phi, U, bm_exb) * B0;          // Advection
 #endif
     }
-  }
 
-  // Parallel diffusion terms
-  if (diffusion_par > 0.0) {
-    ddt(P) += diffusion_par * Grad2_par2(P); // Parallel diffusion
-  }
-  if (diffusion_p4 > 0.0) {
-    tmpP2 = D2DY2(P);
-    mesh->communicate(tmpP2);
-    tmpP2.applyBoundary();
-    ddt(P) = diffusion_p4 * D2DY2(tmpP2);
-  }
-
-  // heating source terms
-  if (heating_P > 0.0) {
-    BoutReal pnorm = P0(0, 0);
-    ddt(P) += heating_P * source_expx2(P0, 2. * hp_width, 0.5 * hp_length)
-              * (Tbar / pnorm); // heat source
-    ddt(P) += (100. * source_tanhx(P0, hp_width, hp_length) + 0.01) * metric->g11
-              * D2DX2(P) * (Tbar / Lbar / Lbar); // radial diffusion
-  }
-
-  // sink terms
-  if (sink_P > 0.0) {
-    ddt(P) -= sink_P * sink_tanhxr(P0, P, sp_width, sp_length) * Tbar; // sink
-  }
-
-  ////////////////////////////////////////////////////
-  // Compressional effects
-
-  if (compress) {
-
-    // ddt(P) += beta*( - Grad_parP(Vpar, CELL_CENTRE) + Vpar*gradparB );
-    ddt(P) -= beta * Div_par(Vpar, CELL_CENTRE);
-
-    if (phi_curv) {
-      ddt(P) -= 2. * beta * b0xcv * Grad(phi);
+    // Viscosity terms
+    if (viscos_par > 0.0) {
+      ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
     }
 
-    //
-    // Vpar equation
+    if (diffusion_u4 > 0.0) {
 
-    // ddt(Vpar) = -0.5*Grad_parP(P + P0, loc);
-
-    ddt(Vpar) = -0.5 * (Grad_par(P, loc) + Grad_par(P0, loc));
-
-    if (nonlinear) {
-      ddt(Vpar) -= bracket(interp_to(phi, loc), Vpar, bm_exb) * B0; // Advection
-    }
-  }
-
-  if (filter_z) {
-    // Filter out all except filter_z_mode
-
-    if (evolve_jpar) {
-      ddt(Jpar) = filter(ddt(Jpar), filter_z_mode);
-    } else {
+      tmpU2 = D2DY2(U);
+      mesh->communicate(tmpU2);
+      tmpU2.applyBoundary();
 #ifdef BOUT_HAS_RAJA
 
-      // need to change fft
-      //
-      indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
+      auto tmpU2_acc = FieldAccessor<>(tmpU2);
+      RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
+                             [=] RAJA_DEVICE(int id) {
+                               int i = ob_i[id].ind;
+                               BoutReal p1 = D2DY2_g(tmpU2_acc, i);
+                               DDT(U_acc)[i] -= diffusion_u4 * p1;
+                             });
+
+#else
+      ddt(U) -= diffusion_u4 * D2DY2(tmpU2);
+#endif
+    }
+
+    if (viscos_perp > 0.0) {
+      ddt(U) += viscos_perp * Delp2(U); // Perpendicular viscosity
+    }
+
+    // Hyper-viscosity
+    if (hyperviscos > 0.0) {
+      // Calculate coefficient.
+
+      hyper_mu_x = hyperviscos * metric->g_11 * SQ(metric->dx)
+                   * abs(metric->g11 * D2DX2(U)) / (abs(U) + 1e-3);
+      hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
+
+      ddt(U) += hyper_mu_x * metric->g11 * D2DX2(U);
+
+      if (first_run) { // Print out maximum values of viscosity used on this processor
+        output.write("   Hyper-viscosity values:\n");
+        output.write("      Max mu_x = {:e}, Max_DC mu_x = {:e}\n", max(hyper_mu_x),
+                     max(DC(hyper_mu_x)));
+      }
+    }
+
+    if (gyroviscous) {
+
+      Field3D Pi;
+      Field2D Pi0;
+      Pi = 0.5 * P;
+      Pi0 = 0.5 * P0;
+
+      Dperp2Phi0 = Field3D(Delp2(B0 * phi0));
+      Dperp2Phi0.applyBoundary();
+      mesh->communicate(Dperp2Phi0);
+
+      Dperp2Phi = Delp2(B0 * phi);
+      Dperp2Phi.applyBoundary();
+      mesh->communicate(Dperp2Phi);
+
+      Dperp2Pi0 = Field3D(Delp2(Pi0));
+      Dperp2Pi0.applyBoundary();
+      mesh->communicate(Dperp2Pi0);
+
+      Dperp2Pi = Delp2(Pi);
+      Dperp2Pi.applyBoundary();
+      mesh->communicate(Dperp2Pi);
+
+      bracketPhi0P = bracket(B0 * phi0, Pi, bm_exb);
+      bracketPhi0P.applyBoundary();
+      mesh->communicate(bracketPhi0P);
+
+      bracketPhiP0 = bracket(B0 * phi, Pi0, bm_exb);
+      bracketPhiP0.applyBoundary();
+      mesh->communicate(bracketPhiP0);
+
+      ddt(U) -= 0.5 * Upara2 * bracket(Pi, Dperp2Phi0, bm_exb) / B0;
+
+      ddt(U) -= 0.5 * Upara2 * bracket(Pi0, Dperp2Phi, bm_exb) / B0;
+      Field3D B0phi = B0 * phi;
+      mesh->communicate(B0phi);
+      Field3D B0phi0 = B0 * phi0;
+      mesh->communicate(B0phi0);
+      ddt(U) += 0.5 * Upara2 * bracket(B0phi, Dperp2Pi0, bm_exb) / B0;
+      ddt(U) += 0.5 * Upara2 * bracket(B0phi0, Dperp2Pi, bm_exb) / B0;
+      ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhi0P) / B0;
+      ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhiP0) / B0;
+
+      if (nonlinear) {
+        Field3D B0phi = B0 * phi;
+        mesh->communicate(B0phi);
+        bracketPhiP = bracket(B0phi, Pi, bm_exb);
+        bracketPhiP.applyBoundary();
+        mesh->communicate(bracketPhiP);
+
+        ddt(U) -= 0.5 * Upara2 * bracket(Pi, Dperp2Phi, bm_exb) / B0;
+        ddt(U) += 0.5 * Upara2 * bracket(B0phi, Dperp2Pi, bm_exb) / B0;
+        ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhiP) / B0;
+      }
+    }
+
+    // left edge sink terms
+    if (sink_Ul > 0.0) {
+      ddt(U) -= sink_Ul * sink_tanhxl(P0, U, su_widthl, su_lengthl); // core sink
+    }
+
+    // right edge sink terms
+    if (sink_Ur > 0.0) {
+      ddt(U) -= sink_Ur * sink_tanhxr(P0, U, su_widthr, su_lengthr); //  sol sink
+    }
+
+    ddt(P) = 0.0;
+
+    if (evolve_pressure) {
+
+#ifdef BOUT_HAS_RAJA
+
+      auto P_acc = FieldAccessor<>(P);
+      auto phi_acc = FieldAccessor<>(phi);
+      auto P0_acc = Field2DAccessor<>(P0);
+
+      auto indices = P.getRegion("RGN_NOBNDRY").getIndices();
       Ind3D* ob_i = &(indices)[0];
 
-      auto P_acc = FieldAccessor<>(P); // P is field 3D
-      auto Psi_acc = FieldAccessor<>(Psi);
-      auto U_acc = FieldAccessor<>(U);
-
       RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
                              [=] RAJA_DEVICE(int id) {
                                int i = ob_i[id].ind;
-                               BoutReal p1 = filter_g(Psi_acc, filter_z_mode, i);
-                               BoutReal p2 = filter_g(U_acc, filter_z_mode, i);
-                               BoutReal p3 = filter_g(P_acc, filter_z_mode, i);
-                               DDT(Psi_acc)[i] = p1;
-                               DDT(U_acc)[i] = p2;
-                               DDT(P_acc)[i] = p3;
+                               BoutReal p1 = b0xGrad_dot_Grad_g(phi_acc, P0_acc, i);
+                               DDT(P_acc)[i] -= p1;
                              });
 
 #else
-      ddt(Psi) = filter(ddt(Psi), filter_z_mode);
-      ddt(U) = filter(ddt(U), filter_z_mode);
-      ddt(P) = filter(ddt(P), filter_z_mode);
+      ddt(P) -= b0xGrad_dot_Grad(phi, P0);
+#endif
+
+      if (diamag_phi0) {
+
+#ifdef BOUT_HAS_RAJA
+        auto P_acc = FieldAccessor<>(P);
+        auto phi0_acc = Field2DAccessor<>(phi0);
+        RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
+                               [=] RAJA_DEVICE(int id) {
+                                 int i = ob_i[id].ind;
+                                 BoutReal p1 = b0xGrad_dot_Grad_g(phi0_acc, P_acc, i);
+                                 DDT(P_acc)[i] -= p1;
+                               });
+#else
+        ddt(P) -= b0xGrad_dot_Grad(phi0, P);    // Equilibrium flow
+#endif
+      }
+
+      if (withflow) { // net flow
+        ddt(P) -= V_dot_Grad(V0net, P);
+      }
+
+      if (nonlinear) {
+#ifdef BOUT_HAS_RAJA
+
+        auto phi_acc = FieldAccessor<>(phi);
+        auto B0_2D_acc = Field2DAccessor<>(B0);
+        auto P_acc = FieldAccessor<>(P); // P is field 3D
+        RAJA::forall<EXEC_POL>(
+            RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
+              int i = ob_i[id].ind;
+              BoutReal f1 = FIELD2D_3DINDEX_DATA(phi_acc, B0_2D_acc, i);
+              BoutReal p1 = bracket_g(phi_acc, P_acc, i);
+              DDT(phi_acc)[i] -= p1 * f1;
+            });
+
+#else
+        ddt(P) -= bracket(phi, P, bm_exb) * B0; // Advection
+#endif
+      }
+
+      // Parallel diffusion terms
+      if (diffusion_par > 0.0) {
+        ddt(P) += diffusion_par * Grad2_par2(P); // Parallel diffusion
+      }
+      if (diffusion_p4 > 0.0) {
+        tmpP2 = D2DY2(P);
+        mesh->communicate(tmpP2);
+        tmpP2.applyBoundary();
+        ddt(P) = diffusion_p4 * D2DY2(tmpP2);
+      }
+
+      // heating source terms
+      if (heating_P > 0.0) {
+        BoutReal pnorm = P0(0, 0);
+        ddt(P) += heating_P * source_expx2(P0, 2. * hp_width, 0.5 * hp_length)
+                  * (Tbar / pnorm); // heat source
+        ddt(P) += (100. * source_tanhx(P0, hp_width, hp_length) + 0.01) * metric->g11
+                  * D2DX2(P) * (Tbar / Lbar / Lbar); // radial diffusion
+      }
+
+      // sink terms
+      if (sink_P > 0.0) {
+        ddt(P) -= sink_P * sink_tanhxr(P0, P, sp_width, sp_length) * Tbar; // sink
+      }
+    }
+
+    ////////////////////////////////////////////////////
+    // Compressional effects
+
+    if (compress) {
+
+      // ddt(P) += beta*( - Grad_parP(Vpar, CELL_CENTRE) + Vpar*gradparB );
+      ddt(P) -= beta * Div_par(Vpar, CELL_CENTRE);
+
+      if (phi_curv) {
+        ddt(P) -= 2. * beta * b0xcv * Grad(phi);
+      }
+
+      //
+      // Vpar equation
+
+      // ddt(Vpar) = -0.5*Grad_parP(P + P0, loc);
+
+      ddt(Vpar) = -0.5 * (Grad_par(P, loc) + Grad_par(P0, loc));
+
+      if (nonlinear) {
+        ddt(Vpar) -= bracket(interp_to(phi, loc), Vpar, bm_exb) * B0; // Advection
+      }
+    }
+
+    if (filter_z) {
+      // Filter out all except filter_z_mode
+
+      if (evolve_jpar) {
+        ddt(Jpar) = filter(ddt(Jpar), filter_z_mode);
+      } else {
+#ifdef BOUT_HAS_RAJA
+
+        // need to change fft
+        //
+        indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
+        Ind3D* ob_i = &(indices)[0];
+
+        auto P_acc = FieldAccessor<>(P); // P is field 3D
+        auto Psi_acc = FieldAccessor<>(Psi);
+        auto U_acc = FieldAccessor<>(U);
+
+        RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
+                               [=] RAJA_DEVICE(int id) {
+                                 int i = ob_i[id].ind;
+                                 BoutReal p1 = filter_g(Psi_acc, filter_z_mode, i);
+                                 BoutReal p2 = filter_g(U_acc, filter_z_mode, i);
+                                 BoutReal p3 = filter_g(P_acc, filter_z_mode, i);
+                                 DDT(Psi_acc)[i] = p1;
+                                 DDT(U_acc)[i] = p2;
+                                 DDT(P_acc)[i] = p3;
+                               });
+
+#else
+        ddt(Psi) = filter(ddt(Psi), filter_z_mode);
+        ddt(U) = filter(ddt(U), filter_z_mode);
+        ddt(P) = filter(ddt(P), filter_z_mode);
 
 #endif
+      }
     }
 
     if (low_pass_z > 0) {
