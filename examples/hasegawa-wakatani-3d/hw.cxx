@@ -24,6 +24,8 @@
 #include <cuda_profiler_api.h>
 #endif
 
+#define RUN_WITH_RAJA 0
+
 class HW3D : public PhysicsModel {
 public:
   Field3D n, vort; // Evolving density and vorticity
@@ -65,53 +67,33 @@ public:
     auto phi_acc = FieldAccessor<>(phi);
     auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n);
 
-#if 0 // def BOUT_HAS_RAJA
-//  RAJA code ----------- start
+#if RUN_WITH_RAJA
     auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
     Ind3D *ob_i = &(indices)[0];
 
-    //printf("BOUT using RAJA\n");
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
       int i = ob_i[id].ind;
-      BoutReal div_current = alpha * Div_par_Grad_par_g(phi_minus_n_acc, i);
-		DDT(n_acc)[i] =  - bracket_g(phi_acc, n_acc, i)
-                	    - div_current
-                	    - kappa * DDZ_g(phi_acc, i)
-                	    + Dn * Delp2_g(n_acc, i)
-			;
-
-
-		DDT(vort_acc)[i] = - bracket_g(phi_acc, vort_acc, i)
-			      - div_current
-		              + Dvort * Delp2_g (vort_acc, i)
-			;
-		
-	  });
-
-//  RAJA code ----------- end
 #else
-    // -- CPU code ------------- start
-    // printf("BOUT not using RAJA\n");
     BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
+#endif
 
       BoutReal div_current = alpha * Div_par_Grad_par(phi_minus_n_acc, i);
 
-      ddt(n)[i] = -bracket(phi_acc, n_acc, i) - div_current - kappa * DDZ(phi_acc, i)
+      ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - div_current - kappa * DDZ(phi_acc, i)
                   + Dn * Delp2(n_acc, i);
 
-      ddt(vort)[i] =
+      ddt(vort_acc)[i] =
           -bracket(phi_acc, vort_acc, i) - div_current + Dvort * Delp2(vort_acc, i);
+
+#if RUN_WITH_RAJA
+    });
+#else
     }
-//--CPU code ---------------- end
 #endif
-    // auto end = std::chrono::steady_clock::now();
-    // auto  time_taken = std::chrono::duration_cast<std::chrono::nanoseconds     >(end-
-    // start); std::cout << "The operator since start is "<< time_taken.count()<<" nano se
-    // conds.\n";
 
     return 0;
-  } // end RHS
-};  // end class HW3D
+  }
+};
 
 // Define a main() function
 BOUTMAIN(HW3D);
