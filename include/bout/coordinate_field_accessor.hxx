@@ -4,6 +4,7 @@
 
 #include "build_config.hxx"
 #include "coordinates.hxx"
+#include "mesh.hxx"
 
 /// Thin wrapper around coordinate component data
 /// to provide a high performance interface
@@ -21,7 +22,15 @@ struct CoordinateFieldAccessor {
     mesh_nz = f.getMesh()->LocalNz;
   }
 
-  BoutReal& BOUT_HOST_DEVICE operator[](int index3D) {
+   BOUT_HOST_DEVICE inline BoutReal& operator[](int index3D) {
+#if BOUT_USE_METRIC_3D
+    return data[index3D]; // A Field3D, so just use the index
+#else
+    return data[index3D / mesh_nz]; // Field2D, so convert index
+#endif
+  }
+
+  BOUT_HOST_DEVICE const inline BoutReal& operator[](int index3D) const {
 #if BOUT_USE_METRIC_3D
     return data[index3D]; // A Field3D, so just use the index
 #else
