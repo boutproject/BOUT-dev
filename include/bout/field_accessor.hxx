@@ -47,13 +47,17 @@ struct FieldAccessor {
     ddt = &(f.timeDeriv()->operator()(0, 0, 0));
   }
 
+  BOUT_HOST_DEVICE BoutReal operator[](int ind) const {
+    return data[ind];
+  }
+
   BoutReal* data{nullptr}; ///< Pointer to the Field data
   BoutReal* ddt{nullptr};  ///< Time-derivative data
 
   BoutReal* yup{nullptr};   ///< Pointer to the Field yup data
   BoutReal* ydown{nullptr}; ///< Pointer to the Field ydown data
 
-  Coordinates* coords{nullptr};
+  Coordinates* coords;
 
   // Metric tensor (Coordinates) data
   // Note: The data size depends on Coordinates::FieldMetric
@@ -74,7 +78,7 @@ struct FieldAccessor {
   int nz = 0;
 
   // Mesh Z size. Used to convert 3D to 2D indices
-  int mesh_nz
+  int mesh_nz;
 };
 
 /// Define a shorthand for 2D fields
