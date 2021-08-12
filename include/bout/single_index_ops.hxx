@@ -60,8 +60,8 @@ BOUT_HOST_DEVICE inline BoutReal bracket(const Field2DAccessor<location>& f,
 template <CELL_LOC location>
 BOUT_HOST_DEVICE inline BoutReal bracket(const FieldAccessor<location>& f,
                                          const FieldAccessor<location>& g, const int i) {
-  BoutReal* f_a = f.data;
-  BoutReal* g_a = g.data;
+  const BoutReal* f_a = f.data;
+  const BoutReal* g_a = g.data;
 
   int ny = g.ny;
   int nz = g.nz;

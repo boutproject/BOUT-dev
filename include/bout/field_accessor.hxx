@@ -12,6 +12,34 @@
 #include "coordinates.hxx"
 #include "build_config.hxx"
 
+/// Simple wrapper around a BoutReal* 1D array
+///
+/// This is used to provide subscript operator [] for Ind3D
+struct BoutRealArray {
+  BoutReal* data;
+
+  BOUT_HOST_DEVICE inline BoutReal& operator[](int ind) {
+    return data[ind];
+  }
+
+  BOUT_HOST_DEVICE inline BoutReal& operator[](const Ind3D &ind) {
+    return data[ind.ind];
+  }
+
+  BOUT_HOST_DEVICE inline const BoutReal& operator[](int ind) const {
+    return data[ind];
+  }
+
+  BOUT_HOST_DEVICE inline const BoutReal& operator[](const Ind3D &ind) const {
+    return data[ind.ind];
+  }
+
+  /// Cast operators, so can be assigned to a raw pointer
+  explicit operator BoutReal*() { return data; }
+
+  explicit operator const BoutReal*() const { return data; }
+};
+
 /// Thin wrapper around field data, for fast but unsafe access
 ///
 /// @tparam location   Cell location of the data. This will be checked on construction
@@ -34,7 +62,7 @@ struct FieldAccessor {
     ASSERT0(f.getLocation() == location);
     ASSERT0(f.isAllocated());
 
-    data = &f(0, 0, 0);
+    data = BoutRealArray{&f(0, 0, 0)};
 
     // Field size
     nx = f.getNx();
@@ -46,27 +74,34 @@ struct FieldAccessor {
 
     if (f.hasParallelSlices()) {
       // Get arrays from yup and ydown fields
-      yup = &(f.yup()(0, 0, 0));
-      ydown = &(f.ydown()(0, 0, 0));
+      yup = BoutRealArray{&(f.yup()(0, 0, 0))};
+      ydown = BoutRealArray{&(f.ydown()(0, 0, 0))};
     }
 
     // ddt() array data
-    ddt = &(f.timeDeriv()->operator()(0, 0, 0));
+    ddt = BoutRealArray{&(f.timeDeriv()->operator()(0, 0, 0))};
   }
 
   /// Provide shorthand for access to field data.
   /// Does not convert between 3D and 2D indices,
   /// so fa[i] is equivalent to fa.data[i].
   ///
-  BOUT_HOST_DEVICE BoutReal operator[](int ind) const {
+  BOUT_HOST_DEVICE inline const BoutReal& operator[](int ind) const {
     return data[ind];
   }
 
-  BoutReal* data{nullptr}; ///< Pointer to the Field data
-  BoutReal* ddt{nullptr};  ///< Time-derivative data
+  BOUT_HOST_DEVICE inline const BoutReal& operator[](const Ind3D &ind) const {
+    return data[ind.ind];
+  }
 
-  BoutReal* yup{nullptr};   ///< Pointer to the Field yup data
-  BoutReal* ydown{nullptr}; ///< Pointer to the Field ydown data
+  // Pointers to the field data arrays
+  // These are wrapped in BoutRealArray types so they can be indexed with Ind3D or int
+
+  BoutRealArray data{nullptr}; ///< Pointer to the Field data
+  BoutRealArray ddt{nullptr};  ///< Time-derivative data
+
+  BoutRealArray yup{nullptr};   ///< Pointer to the Field yup data
+  BoutRealArray ydown{nullptr}; ///< Pointer to the Field ydown data
 
   Coordinates* coords;
 
@@ -105,7 +140,7 @@ using Field2DAccessor = FieldAccessor<location, Field2D>;
 ///  where fa is a FieldAccessor, and i is an int
 ///
 template <CELL_LOC location, class FieldType>
-BOUT_HOST_DEVICE inline BoutReal* ddt(FieldAccessor<location, FieldType> &fa) {
+BOUT_HOST_DEVICE inline BoutRealArray& ddt(FieldAccessor<location, FieldType> &fa) {
   return fa.ddt;
 }
 
