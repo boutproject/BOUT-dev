@@ -22,7 +22,11 @@ struct CoordinateFieldAccessor {
     mesh_nz = f.getMesh()->LocalNz;
   }
 
-   BOUT_HOST_DEVICE inline BoutReal& operator[](int index3D) {
+  /// Index operator
+  ///
+  /// @param[in] index3D    A 3D index. Converted to 2D if Coordinates::FieldMetric == Field2D
+  ///
+  BOUT_HOST_DEVICE inline BoutReal& operator[](int index3D) {
 #if BOUT_USE_METRIC_3D
     return data[index3D]; // A Field3D, so just use the index
 #else
@@ -30,6 +34,10 @@ struct CoordinateFieldAccessor {
 #endif
   }
 
+  /// Const index operator
+  ///
+  /// @param[in] index3D    A 3D index. Converted to 2D if Coordinates::FieldMetric == Field2D
+  ///
   BOUT_HOST_DEVICE const inline BoutReal& operator[](int index3D) const {
 #if BOUT_USE_METRIC_3D
     return data[index3D]; // A Field3D, so just use the index

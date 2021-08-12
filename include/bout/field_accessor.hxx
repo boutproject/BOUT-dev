@@ -12,12 +12,19 @@
 #include "coordinates.hxx"
 #include "build_config.hxx"
 
+/// Thin wrapper around field data, for fast but unsafe access
+///
+/// @tparam location   Cell location of the data. This will be checked on construction
+/// @tparam FieldType   Either Field3D (default) or Field2D
+///
 template <CELL_LOC location = CELL_CENTRE, class FieldType = Field3D>
 struct FieldAccessor {
   /// Remove default constructor
   FieldAccessor() = delete;
 
   /// Constructor from Field3D
+  ///
+  /// @param[in] f    The field to access. Must already be allocated
   explicit FieldAccessor(FieldType& f)
       : coords(f.getCoordinates()), dx(coords->dx), dy(coords->dy), dz(coords->dz),
         J(coords->J), G1(coords->G1), G3(coords->G3), g11(coords->g11), g12(coords->g12),
@@ -47,6 +54,10 @@ struct FieldAccessor {
     ddt = &(f.timeDeriv()->operator()(0, 0, 0));
   }
 
+  /// Provide shorthand for access to field data.
+  /// Does not convert between 3D and 2D indices,
+  /// so fa[i] is equivalent to fa.data[i].
+  ///
   BOUT_HOST_DEVICE BoutReal operator[](int ind) const {
     return data[ind];
   }
@@ -63,14 +74,14 @@ struct FieldAccessor {
   // Note: The data size depends on Coordinates::FieldMetric
   //       and could be Field2D or Field3D
 
-  CoordinateFieldAccessor dx, dy, dz; /// Grid spacing
+  CoordinateFieldAccessor dx, dy, dz; ///< Grid spacing
   CoordinateFieldAccessor J;          ///< Coordinate system Jacobian
 
   CoordinateFieldAccessor G1, G3;
 
-  CoordinateFieldAccessor g11, g12, g13, g22, g23, g33;
+  CoordinateFieldAccessor g11, g12, g13, g22, g23, g33; ///< Contravariant metric tensor (g^{ij})
 
-  CoordinateFieldAccessor g_11, g_12, g_13, g_22, g_23, g_33;
+  CoordinateFieldAccessor g_11, g_12, g_13, g_22, g_23, g_33; ///< Covariant metric tensor
 
   // Field size
   int nx = 0;
@@ -86,6 +97,13 @@ template <CELL_LOC location = CELL_CENTRE>
 using Field2DAccessor = FieldAccessor<location, Field2D>;
 
 /// Syntactic sugar for time derivative of a field
+///
+/// Usage:
+///
+///   ddt(fa)[i] =
+///
+///  where fa is a FieldAccessor, and i is an int
+///
 template <CELL_LOC location, class FieldType>
 BOUT_HOST_DEVICE inline BoutReal* ddt(FieldAccessor<location, FieldType> &fa) {
   return fa.ddt;
