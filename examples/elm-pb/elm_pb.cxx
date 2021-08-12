@@ -473,7 +473,7 @@ protected:
     filter_z_mode = options["filter_z_mode"]
                         .doc("Single toroidal mode number to keep")
                         .withDefault(1);
-    low_pass_z = options["low_pass_z"].doc("Low-pass filter").withDefault(false);
+    low_pass_z = options["low_pass_z"].doc("Low-pass filter").withDefault(-1);
     zonal_flow = options["zonal_flow"]
                      .doc("Keep zonal (n=0) component of potential?")
                      .withDefault(false);
