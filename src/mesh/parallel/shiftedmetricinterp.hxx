@@ -42,7 +42,7 @@ class ShiftedMetricInterp : public ParallelTransform {
 public:
   ShiftedMetricInterp() = delete;
   ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in,
-                      Options* opt = nullptr);
+                      BoutReal zlength_in, Options* opt = nullptr);
 
   /*!
    * Calculates the yup() and ydown() fields of f
@@ -106,6 +106,9 @@ private:
   /// This is the shift in toroidal angle (z) which takes a point from
   /// X-Z orthogonal to field-aligned along Y.
   Field2D zShift;
+
+  /// Length of the z-domain in radians
+  BoutReal zlength{0.};
 
   /// Cache of interpolators for the parallel slices. Slices are stored
   /// in the following order:
