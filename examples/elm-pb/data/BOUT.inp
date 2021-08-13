@@ -213,7 +213,7 @@ outer_boundary_flags = 4 # INVERT_AC_LAP
 
 [aparSolver]
 inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
-outer_boundary_flags = 4 # INVERT_DC_GRAD + INVERT_AC_LAP
+outer_boundary_flags = 4 # INVERT_AC_LAP
 
 ##################################################
 # settings for individual variables
