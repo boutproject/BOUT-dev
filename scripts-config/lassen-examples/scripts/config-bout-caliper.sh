@@ -73,7 +73,7 @@ if [ "$pkg" == "BOUT-dev" ]; then
           -DENABLE_RAJA=On \
           -DENABLE_UMPIRE=Off \
           -DENABLE_MPI=On \
-          -DENABLE_OPENMP=Off \
+          -DENABLE_OPENMP=On \
           -DENABLE_CUDA=On \
           -DCUDA_ARCH=sm_70 \
           -DCMAKE_CUDA_STANDARD=14 \
@@ -85,10 +85,10 @@ if [ "$pkg" == "BOUT-dev" ]; then
           -DBUILD_GTEST=Off \
           -DBUILD_TESTING=On \
           -DENABLE_TESTS=On \
-          -DPACKAGE_TESTS=ON \
+          -DPACKAGE_TESTS=On \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
           -DCMAKE_VERBOSE_MAKEFILE=Off \
-          -Dgtest_disable_pthreads=ON \
+          -Dgtest_disable_pthreads=On \
           -DCMAKE_INSTALL_RPATH="${module_prefix}/petsc-3.13.0-7b3be6747en6tm2v4ifa4zri556pdcxl/lib;${module_prefix}/hdf5-1.10.6-zkwocrtngfhf5nw6xk5c4cbekrdycznu/lib;/usr/tce/packages/cuda/cuda-10.1.243/nvidia/extras/CUPTI/lib64" \
           -DCMAKE_BUILD_RPATH="${module_prefix}/petsc-3.13.0-7b3be6747en6tm2v4ifa4zri556pdcxl/lib;${module_prefix}/hdf5-1.10.6-zkwocrtngfhf5nw6xk5c4cbekrdycznu/lib;/usr/tce/packages/cuda/cuda-10.1.243/nvidia/extras/CUPTI/lib64" \
           $source_dir
