@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.13)
 
+if (${CMAKE_MINOR_VERSION} VERSION_GREATER_EQUAL "18") 
+  cmake_policy(SET CMP0104 OLD) # we set cuda arch explicitly otherwise need CUDA_ARCHITECTURES for each target
+endif ()
+
 
 project(elmpb LANGUAGES CXX C)
 

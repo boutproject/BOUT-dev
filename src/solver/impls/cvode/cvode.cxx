@@ -37,8 +37,8 @@
 #include "options.hxx"
 #include "output.hxx"
 #include "unused.hxx"
-#include "bout/mesh.hxx"
 #include "utils.hxx"
+#include "bout/mesh.hxx"
 
 #include <cvode/cvode.h>
 
@@ -56,6 +56,11 @@
 #include <algorithm>
 #include <numeric>
 #include <string>
+
+#ifdef BOUT_HAS_CALIPER
+#include <caliper/cali-manager.h>
+#include <caliper/cali.h>
+#endif
 
 class Field2D;
 
@@ -156,8 +161,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     throw BoutException("Allreduce localN -> GlobalN failed!\n");
   }
 
-  output_info.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3Dvars(),
-                    n2Dvars(), neq, local_N);
+  output_info.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
+                    n3Dvars(), n2Dvars(), neq, local_N);
 
   // Allocate memory
   if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
@@ -166,8 +171,11 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   // Put the variables into uvec
   save_vars(NV_DATA_P(uvec));
 
-  diagnose = (*options)["diagnose"].doc("Print solver diagnostic information?").withDefault(false);
-  const auto adams_moulton = (*options)["adams_moulton"]
+  diagnose = (*options)["diagnose"]
+                 .doc("Print solver diagnostic information?")
+                 .withDefault(false);
+  const auto adams_moulton =
+      (*options)["adams_moulton"]
           .doc("Use Adams Moulton implicit multistep. Otherwise BDF method.")
           .withDefault(false);
 
@@ -193,7 +201,9 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   if (CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) < 0)
     throw BoutException("CVodeInit failed\n");
 
-  const auto max_order = (*options)["cvode_max_order"].doc("Maximum order of method to use. < 0 means no limit.").withDefault(-1);
+  const auto max_order = (*options)["cvode_max_order"]
+                             .doc("Maximum order of method to use. < 0 means no limit.")
+                             .withDefault(-1);
   if (max_order > 0) {
     if (CVodeSetMaxOrd(cvode_mem, max_order) < 0)
       throw BoutException("CVodeSetMaxOrder failed\n");
@@ -246,20 +256,26 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       throw BoutException("CVodeSStolerances failed\n");
   }
 
-  const auto mxsteps = (*options)["mxstep"].doc("Maximum number of internal steps between outputs.").withDefault(500);
+  const auto mxsteps = (*options)["mxstep"]
+                           .doc("Maximum number of internal steps between outputs.")
+                           .withDefault(500);
   CVodeSetMaxNumSteps(cvode_mem, mxsteps);
 
-  const auto max_timestep = (*options)["max_timestep"].doc("Maximum time step size").withDefault(-1.0);
+  const auto max_timestep =
+      (*options)["max_timestep"].doc("Maximum time step size").withDefault(-1.0);
   if (max_timestep > 0.0) {
     CVodeSetMaxStep(cvode_mem, max_timestep);
   }
 
-  const auto min_timestep = (*options)["min_timestep"].doc("Minimum time step size").withDefault(-1.0);
+  const auto min_timestep =
+      (*options)["min_timestep"].doc("Minimum time step size").withDefault(-1.0);
   if (min_timestep > 0.0) {
     CVodeSetMinStep(cvode_mem, min_timestep);
   }
 
-  const auto start_timestep = (*options)["start_timestep"].doc("Starting time step. < 0 then chosen by CVODE.").withDefault(-1.0);
+  const auto start_timestep = (*options)["start_timestep"]
+                                  .doc("Starting time step. < 0 then chosen by CVODE.")
+                                  .withDefault(-1.0);
   if (start_timestep > 0.0) {
     CVodeSetInitStep(cvode_mem, start_timestep);
   }
@@ -273,8 +289,10 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   if (!func_iter) {
     output_info.write("\tUsing Newton iteration\n");
     TRACE("Setting preconditioner");
-    const auto maxl = (*options)["maxl"].doc("Maximum number of linear iterations").withDefault(5);
-    const auto use_precon = (*options)["use_precon"].doc("Use preconditioner?").withDefault(false);
+    const auto maxl =
+        (*options)["maxl"].doc("Maximum number of linear iterations").withDefault(5);
+    const auto use_precon =
+        (*options)["use_precon"].doc("Use preconditioner?").withDefault(false);
 
     if (use_precon) {
 
@@ -395,9 +413,9 @@ int CvodeSolver::run() {
       CVSpilsGetNumPrecSolves(cvode_mem, &npevals);
       CVSpilsGetNumLinIters(cvode_mem, &nliters);
 
-      output.write(
-          "\nCVODE: nsteps {:d}, nfevals {:d}, nniters {:d}, npevals {:d}, nliters {:d}\n",
-          nsteps, nfevals, nniters, npevals, nliters);
+      output.write("\nCVODE: nsteps {:d}, nfevals {:d}, nniters {:d}, npevals {:d}, "
+                   "nliters {:d}\n",
+                   nsteps, nfevals, nniters, npevals, nliters);
 
       output.write("    -> Newton iterations per step: {:e}\n",
                    static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
@@ -499,6 +517,9 @@ BoutReal CvodeSolver::run(BoutReal tout) {
 
 void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
   TRACE("Running RHS: CvodeSolver::res({})", t);
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_BEGIN("CvodeSolver:rhs");
+#endif
 
   // Load state from udata
   load_vars(udata);
@@ -512,6 +533,9 @@ void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
 
   // Save derivatives to dudata
   save_derivs(dudata);
+#ifdef BOUT_HAS_CALIPER
+  CALI_MARK_END("CvodeSolver:rhs");
+#endif
 }
 
 /**************************************************************************
