@@ -87,9 +87,7 @@ public:
     PetscErrorPrintf = PetscErrorPrintfNone;
   }
 
-  virtual ~PetscMatrixTest() {
-    PetscErrorPrintf = PetscErrorPrintfDefault;
-  }
+  virtual ~PetscMatrixTest() { PetscErrorPrintf = PetscErrorPrintfDefault; }
 };
 
 using FieldTypes = ::testing::Types<Field3D, Field2D, FieldPerp>;
@@ -264,8 +262,7 @@ TYPED_TEST(PetscMatrixTest, TestDestroy) {
 
 // Test getting yup
 TYPED_TEST(PetscMatrixTest, TestYUp) {
-  PetscMatrix<TypeParam> matrix(this->indexer, false),
-      expected(this->indexer, false);
+  PetscMatrix<TypeParam> matrix(this->indexer, false), expected(this->indexer, false);
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YUp");
   if (std::is_same<TypeParam, FieldPerp>::value) {
@@ -294,8 +291,7 @@ TYPED_TEST(PetscMatrixTest, TestYUp) {
 
 // Test getting ydown
 TYPED_TEST(PetscMatrixTest, TestYDown) {
-  PetscMatrix<TypeParam> matrix(this->indexer, false),
-      expected(this->indexer, false);
+  PetscMatrix<TypeParam> matrix(this->indexer, false), expected(this->indexer, false);
   BoutReal val = 3.141592;
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YDown");
@@ -324,8 +320,7 @@ TYPED_TEST(PetscMatrixTest, TestYDown) {
 
 // Test getting ynext(0)
 TYPED_TEST(PetscMatrixTest, TestYNext0) {
-  PetscMatrix<TypeParam> matrix(this->indexer),
-      expected(this->indexer);
+  PetscMatrix<TypeParam> matrix(this->indexer), expected(this->indexer);
   BoutReal val = 3.141592;
   SCOPED_TRACE("YNext0");
   matrix.ynext(0)(this->indexA, this->indexB) = val;
@@ -340,8 +335,7 @@ TYPED_TEST(PetscMatrixTest, TestYNext0) {
 
 // Test getting ynext(1)
 TYPED_TEST(PetscMatrixTest, TestYNextPos) {
-  PetscMatrix<TypeParam> matrix(this->indexer, false),
-      expected(this->indexer, false);
+  PetscMatrix<TypeParam> matrix(this->indexer, false), expected(this->indexer, false);
   BoutReal val = 3.141592;
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YNextPos");
@@ -367,8 +361,7 @@ TYPED_TEST(PetscMatrixTest, TestYNextPos) {
 
 // Test getting ynext(-1)
 TYPED_TEST(PetscMatrixTest, TestYNextNeg) {
-  PetscMatrix<TypeParam> matrix(this->indexer, false),
-      expected(this->indexer, false);
+  PetscMatrix<TypeParam> matrix(this->indexer, false), expected(this->indexer, false);
   BoutReal val = 3.141592;
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YNextNeg");
@@ -410,17 +403,21 @@ TYPED_TEST(PetscMatrixTest, TestSwap) {
 TYPED_TEST(PetscMatrixTest, TestMatrixVectorMultiplyIdentity) {
   PetscMatrix<TypeParam> matrix(this->indexer);
   this->field.allocate();
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
-    this->field[i] = static_cast<BoutReal>(i.ind);
-    matrix(i, i) = 1.0;
+  {
+    BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
+      this->field[i] = static_cast<BoutReal>(i.ind);
+      matrix(i, i) = 1.0;
+    }
   }
   PetscVector<TypeParam> vector(this->field, this->indexer);
   vector.assemble();
   matrix.assemble();
   PetscVector<TypeParam> product = matrix * vector;
   TypeParam prodField = product.toField();
-  BOUT_FOR(i, prodField.getRegion("RGN_NOY")) {
-    EXPECT_NEAR(prodField[i], this->field[i], 1.e-10);
+  {
+    BOUT_FOR(i, prodField.getRegion("RGN_NOY")) {
+      EXPECT_NEAR(prodField[i], this->field[i], 1.e-10);
+    }
   }
 }
 
@@ -430,18 +427,22 @@ TYPED_TEST(PetscMatrixTest, TestMatrixVectorMultiplyOnes) {
   this->field.allocate();
   PetscVector<TypeParam> vector(this->field, this->indexer);
   BoutReal total = 0.0;
+  {
   BOUT_FOR_OMP(i, this->field.getRegion("RGN_NOY"),
      	       parallel for reduction(+:total) schedule(BOUT_OPENMP_SCHEDULE)) {
     vector(i) = static_cast<BoutReal>(i.ind);
     total += i.ind;
     BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOY")) { matrix(i, j) = 1.0; }
   }
+  }
   vector.assemble();
   matrix.assemble();
   PetscVector<TypeParam> product = matrix * vector;
   TypeParam prodField = product.toField();
-  BOUT_FOR(i, prodField.getRegion("RGN_NOY")) {
-    EXPECT_NEAR(prodField[i], total, 1.e-10);
+  {
+    BOUT_FOR(i, prodField.getRegion("RGN_NOY")) {
+      EXPECT_NEAR(prodField[i], total, 1.e-10);
+    }
   }
 }
 
