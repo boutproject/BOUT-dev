@@ -859,7 +859,7 @@ set(BOUT_HAS_PNETCDF OFF)
 # while for static builds we need the dependencies too
 if (BUILD_SHARED_LIBS)
   # Include rpath linker flag so user doesn't need to set LD_LIBRARY_PATH
-  set(CONFIG_LDFLAGS "${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}\$BOUT_LIB_PATH -L\$BOUT_LIB_PATH -lbout++")
+  set(CONFIG_LDFLAGS "${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}\$BOUT_LIB_PATH -L\$BOUT_LIB_PATH -lbout++ -lfmt")
 else()
   set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS}")
 endif()
