@@ -107,10 +107,3 @@ boutdata.shiftz module
     :members:
     :undoc-members:
 
-
-Module contents
----------------
-
-.. automodule:: boutdata
-    :members:
-    :undoc-members:
