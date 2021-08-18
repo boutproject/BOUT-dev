@@ -31,15 +31,6 @@
 
 include(FindPackageHandleStandardArgs)
 
-find_package(SUNDIALS CONFIG QUIET)
-
-if (SUNDIALS_FOUND)
-  if (TARGET SUNDIALS::nvecparallel)
-    return()
-  else()
-    message(STATUS "SUNDIALS found but not SUNDIALS::nvecparallel")
-  endif()
-endif()
 
 find_path(SUNDIALS_INCLUDE_DIR
   sundials_config.h
