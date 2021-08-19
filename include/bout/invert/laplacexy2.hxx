@@ -129,8 +129,8 @@ private:
   
   Mesh *localmesh;   ///< The mesh this operates on, provides metrics and communication
   
-  Field2D f2dinit; ///< This is here just to initialise matrix
-  PetscMatrix<Field2D> matrix; ///< Matrix to be inverted
+  IndexerPtr<Field2D> indexConverter;
+  std::shared_ptr<PetscMatrix<Field2D>> matrix; ///< Matrix to be inverted
   KSP ksp;          ///< Krylov Subspace solver
   PC pc;            ///< Preconditioner
 

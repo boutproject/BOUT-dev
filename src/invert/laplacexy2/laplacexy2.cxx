@@ -23,13 +23,16 @@ Ind2D index2d(Mesh* mesh, int x, int y) {
 }
 
 LaplaceXY2::LaplaceXY2(Mesh *m, Options *opt, const CELL_LOC loc)
-  : localmesh(m==nullptr ? bout::globals::mesh : m), f2dinit(localmesh), matrix(f2dinit), location(loc) {
+  : localmesh(m==nullptr ? bout::globals::mesh : m), location(loc) {
   Timer timer("invert");
 
   if (opt == nullptr) {
     // If no options supplied, use default
     opt = &(Options::root()["laplacexy"]);
   }
+
+  indexConverter = std::make_shared<GlobalIndexer<Field2D>>(localmesh, squareStencil<Field2D::ind_type>(localmesh));
+  matrix = std::make_shared<PetscMatrix<Field2D>>(indexConverter);
   
   // Get MPI communicator
   MPI_Comm comm = BoutComm::get();
@@ -131,9 +134,9 @@ void LaplaceXY2::setCoefs(const Field2D &A, const Field2D &B) {
   // 
   // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
 
-  for (auto& index_const : A.getRegion("RGN_NOBNDRY")) {
+  for (auto& index : indexConverter->getRegionNobndry()) {
     // Note: This is needed for now because PetscMatrix::operator() takes non-const refs
-    PetscMatrix<Field2D>::ind_type index = index_const;
+    //PetscMatrix<Field2D>::ind_type index = index_const;
 
     // Index offsets
     auto ind_xp = index.xp();
@@ -159,8 +162,8 @@ void LaplaceXY2::setCoefs(const Field2D &A, const Field2D &B) {
     
     BoutReal c = B[index] - xp - xm; // Central coefficient
 
-    matrix(index, ind_xp) = xp;
-    matrix(index, ind_xm) = xm;
+    (*matrix)(index, ind_xp) = xp;
+    (*matrix)(index, ind_xm) = xm;
     
     if( include_y_derivs ) {
       auto ind_yp = index.yp();
@@ -177,7 +180,7 @@ void LaplaceXY2::setCoefs(const Field2D &A, const Field2D &B) {
         
       BoutReal yp = -Acoef * J * g23 * g_23 / (g_22 * coords->J[index] * dy * coords->dy[index]);
       c -= yp;
-      matrix(index, ind_yp) = yp;
+      (*matrix)(index, ind_yp) = yp;
       
       // Metrics at y-1/2
       J    = 0.5*(coords->J[index]    + coords->J[ind_ym]);
@@ -189,11 +192,11 @@ void LaplaceXY2::setCoefs(const Field2D &A, const Field2D &B) {
       
       BoutReal ym = -Acoef * J * g23 * g_23 / (g_22 * coords->J[index] * dy * coords->dy[index]);
       c -= ym;
-      matrix(index, ind_ym) = ym;
+      (*matrix)(index, ind_ym) = ym;
     }
     // Note: The central coefficient is done last because this may be modified
     // if y derivs are/are not included.
-    matrix(index, index) = c;
+    (*matrix)(index, index) = c;
   }
   
   // X boundaries
@@ -205,8 +208,8 @@ void LaplaceXY2::setCoefs(const Field2D &A, const Field2D &B) {
         auto index = index2d(localmesh, localmesh->xstart, y);
         auto ind_xm = index.xm();
                             
-        matrix(ind_xm, index) = 0.5;
-        matrix(ind_xm, ind_xm) = 0.5;
+        (*matrix)(ind_xm, index) = 0.5;
+        (*matrix)(ind_xm, ind_xm) = 0.5;
       }
       
     } else {
@@ -216,8 +219,8 @@ void LaplaceXY2::setCoefs(const Field2D &A, const Field2D &B) {
         auto index = index2d(localmesh, localmesh->xstart, y);
         auto ind_xm = index.xm();
 
-        matrix(ind_xm, index) =  1.0;
-        matrix(ind_xm, ind_xm) = -1.0;
+        (*matrix)(ind_xm, index) =  1.0;
+        (*matrix)(ind_xm, ind_xm) = -1.0;
       }
     }
   }
@@ -228,8 +231,8 @@ void LaplaceXY2::setCoefs(const Field2D &A, const Field2D &B) {
       auto index = index2d(localmesh, localmesh->xend, y);
       auto ind_xp = index.xp();
 
-      matrix(ind_xp, ind_xp) = 0.5;
-      matrix(ind_xp, index) = 0.5;
+      (*matrix)(ind_xp, ind_xp) = 0.5;
+      (*matrix)(ind_xp, index) = 0.5;
     }
   }
 
@@ -239,8 +242,8 @@ void LaplaceXY2::setCoefs(const Field2D &A, const Field2D &B) {
       auto index = index2d(localmesh, it.ind, localmesh->ystart);
       auto ind_ym = index.ym();
 
-      matrix(ind_ym, ind_ym) = 0.5;
-      matrix(ind_ym, index) = 0.5;
+      (*matrix)(ind_ym, ind_ym) = 0.5;
+      (*matrix)(ind_ym, index) = 0.5;
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
@@ -248,8 +251,8 @@ void LaplaceXY2::setCoefs(const Field2D &A, const Field2D &B) {
       auto index = index2d(localmesh, it.ind, localmesh->yend);
       auto ind_yp = index.yp();
 
-      matrix(ind_yp, ind_yp) = 0.5;
-      matrix(ind_yp, index) = 0.5;
+      (*matrix)(ind_yp, ind_yp) = 0.5;
+      (*matrix)(ind_yp, index) = 0.5;
     }
   } else {
     // Neumann on Y boundaries
@@ -257,27 +260,27 @@ void LaplaceXY2::setCoefs(const Field2D &A, const Field2D &B) {
       auto index = index2d(localmesh, it.ind, localmesh->ystart);
       auto ind_ym = index.ym();
 
-      matrix(ind_ym, ind_ym) = -1.0;
-      matrix(ind_ym, index) = 1.0;
+      (*matrix)(ind_ym, ind_ym) = -1.0;
+      (*matrix)(ind_ym, index) = 1.0;
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
       auto index = index2d(localmesh, it.ind, localmesh->yend);
       auto ind_yp = index.yp();
 
-      matrix(ind_yp, ind_yp) = 1.0;
-      matrix(ind_yp, index) = -1.0;
+      (*matrix)(ind_yp, ind_yp) = 1.0;
+      (*matrix)(ind_yp, index) = -1.0;
     }
   }
   
   // Assemble Matrix
-  matrix.assemble();
+  (*matrix).assemble();
   
   // Set the operator
 #if PETSC_VERSION_GE(3,5,0)
-  KSPSetOperators(ksp, *matrix.get(), *matrix.get());
+  KSPSetOperators(ksp, *(*matrix).get(), *(*matrix).get());
 #else
-  KSPSetOperators(ksp, *matrix.get(), *matrix.get(), DIFFERENT_NONZERO_PATTERN);
+  KSPSetOperators(ksp, *(*matrix).get(), *(*matrix).get(), DIFFERENT_NONZERO_PATTERN);
 #endif
 }
 
@@ -301,7 +304,7 @@ const Field2D LaplaceXY2::solve(const Field2D &rhs, const Field2D &x0) {
 
   // Load initial guess x0 into xs and rhs into bs
 
-  PetscVector<Field2D> xs(x0), bs(rhs);
+  PetscVector<Field2D> xs(x0, indexConverter), bs(rhs, indexConverter);
 
   if (localmesh->firstX()) {
     if (x_inner_dirichlet) {
