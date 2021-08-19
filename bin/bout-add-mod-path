@@ -78,7 +78,20 @@ def ask_bouttop():
             print("`%s` is not a valid directory" % inp)
 
 
-def create_mod(modulepath, name, top):
+def ask_boutbuild(top):
+    build = os.path.realpath(top + "/build")
+    print("Do you want to use `%s` as BOUT_BUILD?" % build)
+    while True:
+        inp = input("[Y/n/<alt-path>]")
+        if inp in ["", "y", "Y"]:
+            return build
+        if os.path.isdir(inp):
+            return os.path.realpath(inp)
+        if inp not in "nN":
+            print("`%s` is not a valid directory" % inp)
+
+
+def create_mod(modulepath, name, top, build):
     pathlib.Path(modulepath + "/bout++").mkdir(parents=True, exist_ok=True)
     filename = modulepath + "/bout++/" + name
     if "LOADEDMODULES" in os.environ:
@@ -104,11 +117,19 @@ conflict bout++
 
 setenv        BOUT_TOP         {top}
 prepend-path  PATH             {top}/bin
-prepend-path  LD_LIBRARY_PATH  {top}/lib
 prepend-path  PYTHONPATH       {top}/tools/pylib
 prepend-path  IDL_PATH        +{top}/tools/idllib:'<IDL_DEFAULT>'
 """
         )
+        if build != top:
+            f.write(
+                f"""#%Module 1.0
+setenv        BOUT_BUILD       {build}
+prepend-path  PATH             {build}/bin
+prepend-path  LD_LIBRARY_PATH  {build}/lib
+prepend-path  PYTHONPATH       {build}/tools/pylib
+"""
+            )
     print(f"created `{filename}`")
 
 
@@ -151,13 +172,20 @@ if __name__ == "__main__":
         "--bout-top",
         "-t",
         nargs=1,
-        help="""bout-top is the root directory of the BOUT++ installation. Note that
-                        it only works with in-source-builds.""",
+        help="""bout-top is the root directory of the BOUT++ source.""",
+    )
+    parser.add_argument(
+        "--bout-build",
+        "-b",
+        nargs=1,
+        help="""bout-build is the root directory of the BOUT++ build.
+        Is the same as bout-top for in source builds.""",
     )
     args = parser.parse_args()
     modulepath = args.modpath
     name = args.name
     top = args.bout_top
+    build = args.bout_build
 
     if modulepath == None:
         modulepath = ask_modpath()
@@ -165,5 +193,7 @@ if __name__ == "__main__":
         name = ask_name()
     if top == None:
         top = ask_bouttop()
+    if build == None:
+        build = ask_boutbuild(top)
 
-    create_mod(modulepath, name, top)
+    create_mod(modulepath, name, top, build)
