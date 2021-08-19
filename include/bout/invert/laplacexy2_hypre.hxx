@@ -118,7 +118,6 @@ public:
 
 private:
   Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
-  Field2D f2dinit;                   ///< This is here just to initialise matrix
   IndexerPtr<Field2D> indexConverter;
   bout::HypreMatrix<Field2D> *M;
   bout::HypreVector<Field2D> *x;

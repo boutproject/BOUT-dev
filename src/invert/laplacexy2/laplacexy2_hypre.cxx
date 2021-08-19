@@ -32,8 +32,7 @@ Ind2D index2d(Mesh* mesh, int x, int y) {
 }
 
 LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
-    : localmesh(m == nullptr ? bout::globals::mesh : m), f2dinit(localmesh),
-      location(loc) {
+    : localmesh(m == nullptr ? bout::globals::mesh : m), location(loc) {
   Timer timer("invert");
 
   if (opt == nullptr) {
@@ -90,16 +89,11 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
   ASSERT1(A.getLocation() == location);
   ASSERT1(B.getLocation() == location);
 
-  //const auto& region = f2dinit.getRegion("RGN_NOBNDRY");
-  const auto &region = indexConverter->getRegionAll();
-
   Coordinates* coords = localmesh->getCoordinates(location);
 
   //////////////////////////////////////////////////
   // Set Matrix elements
   //
-
-
 
   // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
 
