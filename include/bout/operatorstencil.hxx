@@ -233,6 +233,10 @@ private:
 
 /// Utility function to create a square stencil
 /// Used in both LaplaceXY2 and LaplaceXY2Hypre
+///
+/// Returns a stencil object which indicates that non-boundary cells
+/// depend on all of their neighbours to a depth of one, including
+/// corners.
 template <class T>
 OperatorStencil<T> squareStencil(Mesh* localmesh) {
   OperatorStencil<T> stencil;
@@ -251,12 +255,12 @@ OperatorStencil<T> squareStencil(Mesh* localmesh) {
     offsets.insert(zero.xm().ym());
   }
   if (!std::is_same<T, Ind2D>::value) {
-    offsets.insert(zero.yp());
-    offsets.insert(zero.ym());
-    offsets.insert(zero.xp().yp());
-    offsets.insert(zero.xp().ym());
-    offsets.insert(zero.xm().yp());
-    offsets.insert(zero.xm().ym());
+    offsets.insert(zero.zp());
+    offsets.insert(zero.zm());
+    offsets.insert(zero.xp().zp());
+    offsets.insert(zero.xp().zm());
+    offsets.insert(zero.xm().zp());
+    offsets.insert(zero.xm().zm());
   }
   if (std::is_same<T, Ind3D>::value) {
     offsets.insert(zero.yp().zp());
