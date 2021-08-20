@@ -481,6 +481,10 @@ public:
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
+
+    // Set some auxilliary variables
+    test_coords->G1 = test_coords->G2 = test_coords->G3 = 0.0;
+
     // No call to Coordinates::geometry() needed here
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
     static_cast<FakeMesh*>(bout::globals::mesh)->setGridDataSource(
@@ -510,9 +514,23 @@ public:
         Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
         Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
         Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered});
+
+    // Set some auxilliary variables
+    test_coords_staggered->G1 = test_coords_staggered->G2 = test_coords_staggered->G3 =
+        0.0;
+
     // No call to Coordinates::geometry() needed here
     test_coords_staggered->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+
+    // Set all coordinates to the same Coordinates object for now
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(test_coords_staggered);
+    static_cast<FakeMesh*>(mesh_staggered)
+        ->setCoordinates(test_coords_staggered, CELL_XLOW);
+    static_cast<FakeMesh*>(mesh_staggered)
+        ->setCoordinates(test_coords_staggered, CELL_YLOW);
+    static_cast<FakeMesh*>(mesh_staggered)
+        ->setCoordinates(test_coords_staggered, CELL_ZLOW);
   }
 
   ~FakeMeshFixture() override {
