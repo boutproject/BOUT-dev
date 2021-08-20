@@ -1,34 +1,40 @@
 cmake_minimum_required(VERSION 3.13)
 
-set(BLT_CXX_STD "c++14" CACHE STRING "Version of C++ standard")
+project(mhd LANGUAGES CXX C)
 
-set(mdh_sources
+set(mhd_sources
    mhd.cxx
 )
 
-set(mdh_depends bout++ PETSc)
+set(mhd_depends bout++ PETSc)
 
-if(HAVE_CUDA)
-   list(APPEND mdh_depends cuda nvToolsExt)
+if(BOUT_HAS_RAJA)
+   list(APPEND mhd_depends RAJA)
+   find_package(RAJA REQUIRED)
 endif ()
 
-if(HAVE_RAJA)
-   list(APPEND mdh_depends RAJA)
+if(BOUT_HAS_UMPIRE)
+   list(APPEND mhd_depends umpire)
+   find_package(umpire REQUIRED)
 endif ()
 
-message(STATUS "CUDA_TOOLKIT_ROOT_DIR : ${CUDA_TOOLKIT_ROOT_DIR}")
-message(STATUS "mdh_depends: ${mdh_depends}")
-blt_add_executable(
-   NAME mdh
-   SOURCES ${mdh_sources}
-   INCLUDES 
-     ${PROJECT_SOURCE_DIR}/include
-     ${PROJECT_SOURCE_DIR}/externalpackages/fmt/include
-     ${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/include
-     ${CUDA_TOOLKIT_ROOT_DIR}/include
-   DEFINES 
-      "BOUT_VERSION_STRING=\"${BOUT_FULL_VERSION}\""
-      "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
-   DEPENDS_ON
-     ${mdh_depends})
+add_executable(mhd ${mhd_sources})
+target_link_libraries(mhd PRIVATE bout++::bout++)
+target_include_directories(mhd PUBLIC
+      ${PROJECT_SOURCE_DIR}/include
+      ${PROJECT_SOURCE_DIR}/externalpackages/fmt/include
+      ${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/include
+      )
+if(BOUT_USE_CUDA)
+   list(APPEND mhd_depends cuda)
+   set_source_files_properties(${mhd_sources} PROPERTIES LANGUAGE CUDA )
+   message(STATUS "mhd needs CUDA LIBRARY DIR: ${BOUT_CUDA_LIB_DIR}")
+   target_include_directories(mhd PUBLIC ${BOUT_CUDA_LIB_DIR}/../include )
+   target_compile_definitions(mhd PUBLIC "BOUT_USE_CUDA")
+endif ()
 
+if(BOUT_HAS_RAJA)
+   target_compile_definitions(mhd PUBLIC "BOUT_HAS_RAJA")
+endif ()
+
+message(STATUS "mhd_depends: ${mhd_depends}")
