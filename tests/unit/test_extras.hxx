@@ -411,7 +411,7 @@ public:
     return false;
   }
   bool get(Mesh* mesh, Field2D& fval, const std::string& name, BoutReal def = 0.0,
-           CELL_LOC location = CELL_DEFAULT) override {
+           CELL_LOC UNUSED(location) = CELL_DEFAULT) override {
     if (values[name].isSet()) {
       fval = values[name].as(Field2D(0.0, mesh));
       return true;
@@ -420,7 +420,7 @@ public:
     return false;
   }
   bool get(Mesh* mesh, Field3D& fval, const std::string& name, BoutReal def = 0.0,
-           CELL_LOC location = CELL_DEFAULT) override {
+           CELL_LOC UNUSED(location) = CELL_DEFAULT) override {
     if (values[name].isSet()) {
       fval = values[name].as(Field3D(0.0, mesh));
       return true;
@@ -429,7 +429,7 @@ public:
     return false;
   }
   bool get(Mesh* mesh, FieldPerp& fval, const std::string& name, BoutReal def = 0.0,
-           CELL_LOC location = CELL_DEFAULT) override {
+           CELL_LOC UNUSED(location) = CELL_DEFAULT) override {
     if (values[name].isSet()) {
       fval = values[name].as(FieldPerp(0.0, mesh));
       return true;
