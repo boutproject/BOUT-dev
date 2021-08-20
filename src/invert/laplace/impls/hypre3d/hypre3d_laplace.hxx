@@ -188,7 +188,6 @@ public:
   bool issetC = false;
   bool issetE = false;
   bool updateRequired = true;
-  int lastflag;               // The flag used to construct the matrix
   int lower_boundary_flags;
   int upper_boundary_flags;
 

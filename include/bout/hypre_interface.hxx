@@ -101,21 +101,15 @@ public:
   HypreVector(const HypreVector<T>&) = delete;
   auto operator=(const HypreVector<T>&) = delete;
 
-  HypreVector(HypreVector<T>&& other) {
-    comm = other.comm;
-    jlower = other.jlower;
-    jupper = other.jupper;
-    vsize = other.vsize;
+  HypreVector(HypreVector<T>&& other)
+      : comm(other.comm), jlower(other.jlower), jupper(other.jupper), vsize(other.vsize),
+        indexConverter(other.indexConverter), location(other.location),
+        initialised(other.initialised), have_indices(other.have_indices), I(other.I),
+        V(other.V) {
     std::swap(hypre_vector, other.hypre_vector);
     std::swap(parallel_vector, other.parallel_vector);
-    indexConverter = other.indexConverter;
-    location = other.location;
-    initialised = other.initialised;
     other.initialised = false;
-    have_indices = other.have_indices;
     other.have_indices = false;
-    I = other.I;
-    V = other.V;
     other.I = nullptr;
     other.V = nullptr;
   }
@@ -171,7 +165,7 @@ public:
   }
 
   /// Construct a vector with given index set, but don't set any values
-  HypreVector(IndexerPtr<T> indConverter) : indexConverter(indConverter) {
+  explicit HypreVector(IndexerPtr<T> indConverter) : indexConverter(indConverter) {
     Mesh& mesh = *indConverter->getMesh();
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
@@ -370,22 +364,14 @@ public:
 
   HypreMatrix() = default;
   HypreMatrix(const HypreMatrix<T>&) = delete;
-  HypreMatrix(HypreMatrix<T>&& other) {
-    comm = other.comm;
-    ilower = other.ilower;
-    iupper = other.iupper;
+  HypreMatrix(HypreMatrix<T>&& other)
+      : comm(other.comm), ilower(other.ilower), iupper(other.iupper),
+        index_converter(other.index_converter), location(other.location),
+        initialised(other.initialised), yoffset(other.yoffset),
+        parallel_transform(other.parallel_transform), assembled(other.assembled),
+        num_rows(other.num_rows), I(other.I), J(other.J), V(other.V) {
     std::swap(hypre_matrix, other.hypre_matrix);
     std::swap(parallel_matrix, other.parallel_matrix);
-    index_converter = other.index_converter;
-    location = other.location;
-    initialised = other.initialised;
-    yoffset = other.yoffset;
-    parallel_transform = other.parallel_transform;
-    assembled = other.assembled;
-    num_rows = other.num_rows;
-    I = other.I;
-    J = other.J;
-    V = other.V;
   }
   HypreMatrix<T>& operator=(const HypreMatrix<T>&) = delete;
   HypreMatrix<T>& operator=(HypreMatrix<T>&& other) {

@@ -142,7 +142,7 @@ TYPED_TEST(HypreVectorTest, Swap) {
 
 class MockTransform : public ParallelTransformIdentity {
 public:
-  MockTransform(Mesh& mesh_in) : ParallelTransformIdentity(mesh_in){};
+  explicit MockTransform(Mesh& mesh_in) : ParallelTransformIdentity(mesh_in){};
   MOCK_METHOD(std::vector<PositionsAndWeights>, getWeightsForYUpApproximation,
               (int i, int j, int k), (override));
   MOCK_METHOD(std::vector<PositionsAndWeights>, getWeightsForYDownApproximation,
@@ -233,7 +233,6 @@ TYPED_TEST(HypreMatrixTest, MoveAssignment) {
 TYPED_TEST(HypreMatrixTest, SetGetValue) {
   HypreMatrix<TypeParam> matrix(this->indexer);
   const auto& region = this->field.getRegion("RGN_NOBNDRY");
-  auto i = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(*std::begin(region)));
   auto idx = *std::begin(region);
   BoutReal value = 23.;
   BoutReal actual = -1.;

@@ -1500,7 +1500,6 @@ public:
       }
     }
 
-    auto start = std::chrono::steady_clock::now();
     ////////////////////////////////////////////////////
     // Parallel electric field
 

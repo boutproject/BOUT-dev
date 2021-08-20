@@ -40,9 +40,9 @@ public:
 
   GlobalIndexer() = default;
 
-  GlobalIndexer(Mesh* localmesh,
-                OperatorStencil<ind_type> stencil = OperatorStencil<ind_type>(),
-                bool autoInitialise = true)
+  explicit GlobalIndexer(Mesh* localmesh,
+                         OperatorStencil<ind_type> stencil = OperatorStencil<ind_type>(),
+                         bool autoInitialise = true)
       : fieldmesh(localmesh), indices(-1., localmesh), stencils(std::move(stencil)) {
 
     Region<ind_type> allCandidate, bndryCandidate;

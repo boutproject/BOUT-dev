@@ -480,7 +480,6 @@ private:
       auto& rm = umpire::ResourceManager::getInstance();
       rm.deallocate(d->begin());
       rm.deallocate(d);
-      umpire::Allocator alloc = rm.getAllocator("UM");
 #else
       delete d;
 #endif

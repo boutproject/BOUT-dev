@@ -181,19 +181,18 @@ BOUT_HOST_DEVICE inline BoutReal DDZ(const FieldAccessor<location, FieldType>& f
 
 template <CELL_LOC location>
 BOUT_HOST_DEVICE inline BoutReal Delp2(const FieldAccessor<location>& f, const int i) {
-  const int nx = f.nx;
   const int ny = f.ny;
   const int nz = f.nz;
 
-  int ixp = i_xp(i, ny, nz);
-  int ixm = i_xm(i, ny, nz);
-  int izp = i_zp(i, nz);
-  int izm = i_zm(i, nz);
+  const int ixp = i_xp(i, ny, nz);
+  const int ixm = i_xm(i, ny, nz);
+  const int izp = i_zp(i, nz);
+  const int izm = i_zm(i, nz);
 
-  int izpxp = i_xp(izp, ny, nz);
-  int izpxm = i_xm(izp, ny, nz);
-  int izmxp = i_xp(izm, ny, nz);
-  int izmxm = i_xm(izm, ny, nz);
+  const int izpxp = i_xp(izp, ny, nz);
+  const int izpxm = i_xm(izp, ny, nz);
+  const int izmxp = i_xp(izm, ny, nz);
+  const int izmxm = i_xm(izm, ny, nz);
 
   const BoutReal dx = f.dx[i];
   const BoutReal dz = f.dz[i];

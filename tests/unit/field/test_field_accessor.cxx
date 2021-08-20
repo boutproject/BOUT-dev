@@ -20,6 +20,7 @@ using FieldAccessorTest = FakeMeshFixture;
 TEST_F(FieldAccessorTest, CreationDefault) {
   Field3D var = 0.0;
   auto var_acc = FieldAccessor<>(var);
+  EXPECT_EQ(var_acc.data, &var(0,0,0));
 }
 
 TEST_F(FieldAccessorTest, CreationUnallocated) {
@@ -37,6 +38,7 @@ TEST_F(FieldAccessorTest, CreateYlow) {
   field.setLocation(CELL_YLOW);
 
   auto field_acc = FieldAccessor<CELL_YLOW>(field);
+  EXPECT_EQ(field_acc.data, &field(0,0,0));
 }
 
 TEST_F(FieldAccessorTest, CreateYlowWrongLocation) {
