@@ -29,6 +29,7 @@ SLEPC_ARCH ?= @SLEPC_ARCH@
 BOUT_INCLUDE_PATH=$(BOUT_TOP)/include
 BOUT_LIB_PATH=$(BOUT_TOP)/lib
 BOUT_CONFIG_FILE=$(BOUT_TOP)/make.config
+SONAME=4.4.0
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -175,9 +176,20 @@ endif
 	$(INSTALL_DATA) include/bout/*.hxx $(INSTALL_INCLUDE_PATH)/bout/
 	$(INSTALL_DATA) include/bout/sys/*.hxx $(INSTALL_INCLUDE_PATH)/bout/sys/
 	$(INSTALL_DATA) include/bout/invert/*.hxx $(INSTALL_INCLUDE_PATH)/bout/invert/
+ifneq ("@STATIC_EXTRA@x", "x")
 	$(INSTALL_DATA) lib/libbout++.a $(DESTDIR)@libdir@
 	$(INSTALL_DATA) lib/libpvode.a $(DESTDIR)@libdir@
 	$(INSTALL_DATA) lib/libpvpre.a $(DESTDIR)@libdir@
+endif
+ifneq ("@SHARED_EXTRA@x", "x")
+	$(INSTALL_DATA) lib/libbout++.so.$(SONAME) $(DESTDIR)@libdir@
+	$(INSTALL_DATA) lib/libpvode.so.* $(DESTDIR)@libdir@
+	$(INSTALL_DATA) lib/libpvpre.so.* $(DESTDIR)@libdir@
+	rm -f $(DESTDIR)@libdir@/lib{bout++,pvode,pvpre}.so
+	ln -s libbout++.so.$(SONAME) $(DESTDIR)@libdir@/libbout++.so
+	ln -s libpvode.so.1.0.0 $(DESTDIR)@libdir@/libpvode.so
+	ln -s libpvpre.so.1.0.0 $(DESTDIR)@libdir@/libpvpre.so
+endif
 	$(INSTALL_PROGRAM)  bin/bout-config $(DESTDIR)@bindir@
 	$(INSTALL_PROGRAM)  bin/bout-log-color $(DESTDIR)@bindir@
 	$(INSTALL_DATA)  tools/idllib/*.pro $(DESTDIR)@datadir@/bout++/idllib/
@@ -199,15 +211,15 @@ ifeq ("@OWN_MPARK@", "yes")
 endif
 
 	@# Modify paths in the make.config file
-	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(INSTALL_INCLUDE_PATH)/make.config
-	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(INSTALL_INCLUDE_PATH)/make.config
-	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@includedir@/bout++/make.config|" $(INSTALL_INCLUDE_PATH)/make.config
+	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
+	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(DESTDIR)@datadir@/bout++/make.config
+	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@includedir@/bout++/make.config|" $(DESTDIR)@datadir@/bout++/make.config
 ifeq ("@OWN_MPARK@", "yes")
-	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(INSTALL_INCLUDE_PATH)/make.config
+	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
 endif
 
 #	Set the make.config as released, so the library isn't rebuild. This way the .a file doesn't need to be preserved/installed
-	sed -i '26 i RELEASED                 = yes' $(INSTALL_INCLUDE_PATH)/make.config
+	sed -i '26 i RELEASED                 = yes' $(DESTDIR)@datadir@/bout++/make.config
 
 uninstall:
 	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.
