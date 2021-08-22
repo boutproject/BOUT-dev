@@ -196,7 +196,7 @@ endif
 	$(INSTALL_DATA)  tools/idllib/README $(DESTDIR)@datadir@/bout++/idllib/
 	$(INSTALL_DATA)  tools/pylib/boutdata/*.py $(DESTDIR)@datadir@/bout++/pylib/boutdata/
 	$(INSTALL_DATA)  tools/pylib/boututils/*.py $(DESTDIR)@datadir@/bout++/pylib/boututils/
-	$(INSTALL_DATA)  make.config $(DESTDIR)@datadir@/bout++/
+	$(INSTALL_DATA)  make.config $(INSTALL_INCLUDE_PATH)
 	for mo in $(MO_FILES); do $(MKDIR) $(DESTDIR)@localedir@/`dirname $$mo`; $(INSTALL_DATA) locale/$$mo $(DESTDIR)@localedir@/$$mo; done
 	$(POST_INSTALL)    # Post-install commands follow.
 
@@ -211,21 +211,21 @@ ifeq ("@OWN_MPARK@", "yes")
 endif
 
 	@# Modify paths in the make.config file
-	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
-	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(DESTDIR)@datadir@/bout++/make.config
-	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@includedir@/bout++/make.config|" $(DESTDIR)@datadir@/bout++/make.config
+	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(INSTALL_INCLUDE_PATH)/make.config
+	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(INSTALL_INCLUDE_PATH)/make.config
+	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@includedir@/bout++/make.config|" $(INSTALL_INCLUDE_PATH)/make.config
 ifeq ("@OWN_MPARK@", "yes")
-	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
+	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(INSTALL_INCLUDE_PATH)/make.config
 endif
 
 #	Set the make.config as released, so the library isn't rebuild. This way the .a file doesn't need to be preserved/installed
-	sed -i '26 i RELEASED                 = yes' $(DESTDIR)@datadir@/bout++/make.config
+	sed -i '26 i RELEASED                 = yes' $(INSTALL_INCLUDE_PATH)/make.config
 
 uninstall:
 	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.
 
 	$(NORMAL_UNINSTALL)  # Normal commands follow.
-	$(RM) $(DESTDIR)@datadir@/bout++/make.config
+	$(RM) $(INSTALL_INCLUDE_PATH)/make.config
 	$(RM) -r $(DESTDIR)@datadir@/bout++/pylib/boututils/
 	$(RM) -r $(DESTDIR)@datadir@/bout++/pylib/boutdata/
 	$(RM) -r $(DESTDIR)@datadir@/bout++/idllib/
