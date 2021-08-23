@@ -630,9 +630,21 @@ if(BOUT_TESTS)
   add_dependencies(check check-unit-tests check-integrated-tests check-mms-tests)
 endif()
 
+##################################################
+# Examples
+
 option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
 if(BOUT_BUILD_EXAMPLES)
   add_subdirectory(examples)
+else()
+  # Only build some examples (for testing)
+  add_subdirectory(examples/laplacexy/simple)
+  add_subdirectory(examples/hasegawa-wakatani-3d)
+  add_subdirectory(examples/elm-pb)
+
+  if(BOUT_HAS_HYPRE)
+   add_subdirectory(examples/laplacexy/simple-hypre)
+  endif ()
 endif()
 
 ##################################################
@@ -642,14 +654,6 @@ option(BOUT_BUILD_DOCS "Build the documentation" OFF)
 if (BOUT_BUILD_DOCS)
   add_subdirectory(manual EXCLUDE_FROM_ALL)
 endif()
-
-if(BOUT_HAS_HYPRE)
-   add_subdirectory(examples/laplacexy/simple-hypre)
-endif ()
-
-add_subdirectory(examples/laplacexy/simple)
-add_subdirectory(examples/hasegawa-wakatani-3d)
-add_subdirectory(examples/elm-pb)
 
 ##################################################
 # Generate the build config header
