@@ -6,4 +6,5 @@ bout_add_integrated_test(test-laplace-hypre3d
     data_slab_core/BOUT.inp
     data_slab_sol/BOUT.inp
   USE_RUNTEST
+  REQUIRES BOUT_HAS_HYPRE
   )
