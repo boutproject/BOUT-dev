@@ -88,18 +88,6 @@
 
 ## v4 known bugs
 
-- `FieldPerp` I/O has a couple of issues:
-  - the `global_yindex` attribute written in output files does not account for
-    boundary cells at the second (i.e.  upper) targets in double-null
-    configuration. This will be fixed in v5 using updated (but not
-    backward-compatible) indexing methods from `Mesh`.
-  - A `FieldPerp` may be read in on processors at different (but adjacent)
-    y-locations as it may be read in the guard cells. This is not the expected
-    behaviour (a given `FieldPerp`, if it represents a physical quantity rather
-    than just being a temporary variable for an x-z slice) should only be
-    defined and used at a single, global y-position. Should not be a problem
-    for `PhysicsModel` implementations that define a `FieldPerp` correctly, but
-    caused a problem for `test-io` and `test-io_hdf5`.
 
   See [\#2154](https://github.com/boutproject/BOUT-dev/pull/2154).
 
