@@ -156,6 +156,7 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
   return result;
 }
 
+#if BOUT_USE_METRIC_3D
 Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
                                   bool extrapolate_x, bool extrapolate_y,
                                   bool no_extra_interpolate, ParallelTransform* pt_) {
@@ -305,10 +306,11 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
       }
     }
   }
-#endif
+#endif // CHECK > 0
 
   return result;
 }
+#endif // BOUT_USE_METRIC_3D
 
 // If the CELL_CENTRE variable was read, the staggered version is required to
 // also exist for consistency
