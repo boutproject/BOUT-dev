@@ -29,6 +29,7 @@ SLEPC_ARCH ?= @SLEPC_ARCH@
 BOUT_INCLUDE_PATH=$(BOUT_TOP)/include
 BOUT_LIB_PATH=$(BOUT_TOP)/lib
 BOUT_CONFIG_FILE=$(BOUT_TOP)/make.config
+SONAME=4.4.0
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -175,16 +176,27 @@ endif
 	$(INSTALL_DATA) include/bout/*.hxx $(INSTALL_INCLUDE_PATH)/bout/
 	$(INSTALL_DATA) include/bout/sys/*.hxx $(INSTALL_INCLUDE_PATH)/bout/sys/
 	$(INSTALL_DATA) include/bout/invert/*.hxx $(INSTALL_INCLUDE_PATH)/bout/invert/
+ifneq ("@STATIC_EXTRA@x", "x")
 	$(INSTALL_DATA) lib/libbout++.a $(DESTDIR)@libdir@
 	$(INSTALL_DATA) lib/libpvode.a $(DESTDIR)@libdir@
 	$(INSTALL_DATA) lib/libpvpre.a $(DESTDIR)@libdir@
+endif
+ifneq ("@SHARED_EXTRA@x", "x")
+	$(INSTALL_DATA) lib/libbout++.so.$(SONAME) $(DESTDIR)@libdir@
+	$(INSTALL_DATA) lib/libpvode.so.* $(DESTDIR)@libdir@
+	$(INSTALL_DATA) lib/libpvpre.so.* $(DESTDIR)@libdir@
+	rm -f $(DESTDIR)@libdir@/lib{bout++,pvode,pvpre}.so
+	ln -s libbout++.so.$(SONAME) $(DESTDIR)@libdir@/libbout++.so
+	ln -s libpvode.so.1.0.0 $(DESTDIR)@libdir@/libpvode.so
+	ln -s libpvpre.so.1.0.0 $(DESTDIR)@libdir@/libpvpre.so
+endif
 	$(INSTALL_PROGRAM)  bin/bout-config $(DESTDIR)@bindir@
 	$(INSTALL_PROGRAM)  bin/bout-log-color $(DESTDIR)@bindir@
 	$(INSTALL_DATA)  tools/idllib/*.pro $(DESTDIR)@datadir@/bout++/idllib/
 	$(INSTALL_DATA)  tools/idllib/README $(DESTDIR)@datadir@/bout++/idllib/
 	$(INSTALL_DATA)  tools/pylib/boutdata/*.py $(DESTDIR)@datadir@/bout++/pylib/boutdata/
 	$(INSTALL_DATA)  tools/pylib/boututils/*.py $(DESTDIR)@datadir@/bout++/pylib/boututils/
-	$(INSTALL_DATA)  make.config $(DESTDIR)@datadir@/bout++/
+	$(INSTALL_DATA)  make.config $(INSTALL_INCLUDE_PATH)
 	for mo in $(MO_FILES); do $(MKDIR) $(DESTDIR)@localedir@/`dirname $$mo`; $(INSTALL_DATA) locale/$$mo $(DESTDIR)@localedir@/$$mo; done
 	$(POST_INSTALL)    # Post-install commands follow.
 
@@ -213,7 +225,7 @@ uninstall:
 	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.
 
 	$(NORMAL_UNINSTALL)  # Normal commands follow.
-	$(RM) $(DESTDIR)@datadir@/bout++/make.config
+	$(RM) $(INSTALL_INCLUDE_PATH)/make.config
 	$(RM) -r $(DESTDIR)@datadir@/bout++/pylib/boututils/
 	$(RM) -r $(DESTDIR)@datadir@/bout++/pylib/boutdata/
 	$(RM) -r $(DESTDIR)@datadir@/bout++/idllib/
