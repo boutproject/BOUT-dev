@@ -487,7 +487,7 @@ void printCompileTimeOptions() {
   output_info.write(_("\tParallel NetCDF support disabled\n"));
 #endif
 
-  output_info.write(_("\t3D metrics mode {}\n"), is_enabled(use_metric_3d));
+  output_info.write(_("\tMetrics mode is {}\n"), use_metric_3d ? "3D" : "2D");
 
   output_info.write(_("\tFFT support {}\n"), is_enabled(has_fftw));
   output_info.write(_("\tNatural language support {}\n"), is_enabled(has_gettext));
