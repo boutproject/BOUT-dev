@@ -33,30 +33,30 @@ if (BOUT_USE_CUDA)
 endif ()   
 
 # Caliper
-option(ENABLE_CALIPER "Enable Caliper" OFF)
-if (ENABLE_CALIPER)
+option(BOUT_ENABLE_CALIPER "Enable Caliper" OFF)
+if (BOUT_ENABLE_CALIPER)
   find_package(caliper REQUIRED)
   list(APPEND BOUT_DEPENDS caliper)
   target_include_directories(bout++ PUBLIC ${caliper_INCLUDE_DIR})
   target_link_libraries(bout++ PUBLIC caliper)
   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_CALIPER")
 endif ()
-set(BOUT_HAS_CALIPER ${ENABLE_CALIPER})
+set(BOUT_HAS_CALIPER ${BOUT_ENABLE_CALIPER})
 
 # UMPIRE
-option(ENABLE_UMPIRE "Enable UMPIRE memory management" OFF)
-if (ENABLE_UMPIRE)
+option(BOUT_ENABLE_UMPIRE "Enable UMPIRE memory management" OFF)
+if (BOUT_ENABLE_UMPIRE)
   find_package(UMPIRE REQUIRED)
   list(APPEND BOUT_DEPENDS umpire)
   target_include_directories(bout++ PUBLIC ${UMPIRE_INCLUDE_DIRS}/include)
   target_link_libraries(bout++ PUBLIC umpire)
   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_UMPIRE")
 endif ()
-set(BOUT_HAS_UMPIRE ${ENABLE_UMPIRE})
+set(BOUT_HAS_UMPIRE ${BOUT_ENABLE_UMPIRE})
 
 # RAJA
-option(ENABLE_RAJA "Enable RAJA" OFF)
-if (ENABLE_RAJA)
+option(BOUT_ENABLE_RAJA "Enable RAJA" OFF)
+if (BOUT_ENABLE_RAJA)
   find_package(RAJA REQUIRED)
   list(APPEND BOUT_DEPENDS RAJA)
   message(STATUS "RAJA_CONFIG:" ${RAJA_CONFIG}) 
@@ -68,12 +68,12 @@ if (ENABLE_RAJA)
   target_link_libraries(bout++ PUBLIC RAJA)
   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_RAJA")
 endif ()
-set(BOUT_HAS_RAJA ${ENABLE_RAJA})
+set(BOUT_HAS_RAJA ${BOUT_ENABLE_RAJA})
 
 # Hypre
-option(ENABLE_HYPRE "Enable Hypre solvers" OFF)
+option(BOUT_ENABLE_HYPRE "Enable Hypre solvers" OFF)
 set(HYPRE_DIR "" CACHE STRING "Point to HYPRE Install")
-if (ENABLE_HYPRE)
+if (BOUT_ENABLE_HYPRE)
   enable_language(C)
   find_package(HYPRE REQUIRED)
   list(APPEND BOUT_DEPENDS HYPRE)
@@ -84,22 +84,22 @@ if (ENABLE_HYPRE)
      target_link_libraries(bout++ PUBLIC "${BOUT_CUDA_LIB_DIR}/libcusparse_static.a;${BOUT_CUDA_LIB_DIR}/libcurand_static.a;${BOUT_CUDA_LIB_DIR}/libculibos.a;${BOUT_CUDA_LIB_DIR}/libcublas_static.a;${BOUT_CUDA_LIB_DIR}/libcublasLt_static.a")
   endif ()
 endif ()
-set(BOUT_HAS_HYPRE ${ENABLE_HYPRE})
+set(BOUT_HAS_HYPRE ${BOUT_ENABLE_HYPRE})
 
 # PETSc
-option(ENABLE_PETSC "Enable support for PETSc time solvers and inversions" On)
-if (ENABLE_PETSC)
+option(BOUT_USE_PETSC "Enable support for PETSc time solvers and inversions" OFF)
+if (BOUT_USE_PETSC)
   if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     # Cray wrappers sort this out for us
     find_package(PETSc REQUIRED)
     list(APPEND BOUT_DEPENDS PETSc)
     target_link_libraries(bout++ PUBLIC PETSc::PETSc)
-    #string(JOIN " " CONFIG_PETSC_LIBRARIES ${PETSC_LIBRARIES})
-    #set(CONFIG_LDFLAGS "${CONFIG_PETSC_LIBRARIES} ${CONFIG_LDFLAGS}")
+    string(JOIN " " CONFIG_PETSC_LIBRARIES ${PETSC_LIBRARIES})
+    set(CONFIG_LDFLAGS "${CONFIG_PETSC_LIBRARIES} ${CONFIG_LDFLAGS}")
   endif()
 endif()
-message(STATUS "PETSc support: ${ENABLE_PETSC}")
-set(BOUT_HAS_PETSC ${ENABLE_PETSC})
+message(STATUS "PETSc support: ${BOUT_USE_PETSC}")
+set(BOUT_HAS_PETSC ${BOUT_USE_PETSC})
 
 
 cmake_dependent_option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF
@@ -164,13 +164,29 @@ message(STATUS "PVODE support: ${BOUT_USE_PVODE}")
 set(BOUT_HAS_PVODE ${BOUT_USE_PVODE})
 
 option(BOUT_USE_NETCDF "Enable support for NetCDF output" ON)
+option(BOUT_DOWNLOAD_NETCDF_CXX4 "Download and build netCDF-cxx4" OFF)
 if (BOUT_USE_NETCDF)
-  find_package(NetCDF REQUIRED)
-  target_link_libraries(bout++ PUBLIC NetCDF::NetCDF_CXX)
+  if (BOUT_DOWNLOAD_NETCDF_CXX4)
+    include(FetchContent)
+    FetchContent_Declare(
+      netcdf-cxx4
+      GIT_REPOSITORY https://github.com/ZedThree/netcdf-cxx4
+      GIT_TAG        "ad3e50953190615cb69dcc8a4652f9a88a8499cf"
+      )
+    # Don't build the netcdf tests, they have lots of warnings
+    set(NCXX_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    # Use our own FindnetCDF module which uses nc-config
+    find_package(netCDF REQUIRED)
+    FetchContent_MakeAvailable(netcdf-cxx4)
+  else()
+    find_package(netCDF REQUIRED)
+    find_package(netCDFCxx REQUIRED)
+    set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${netCDF_CXX_LIBRARY} ${netCDF_LIBRARIES}")
+  endif()
+  target_link_libraries(bout++ PUBLIC netCDF::netcdf-cxx4)
 endif()
 message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
-
 
 option(BOUT_USE_FFTW "Enable support for FFTW" ON)
 if (BOUT_USE_FFTW)

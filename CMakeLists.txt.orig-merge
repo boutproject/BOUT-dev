@@ -23,12 +23,6 @@ project(BOUT++
   VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
 
-set(ENABLE_OPENMP On CACHE STRING "Enable OpenMP")
-set(ENABLE_CUDA Off CACHE STRING "Enable CUDA")
-option(ENABLE_UMPIRE "Enable UMPIRE memory management" Off)
-option(ENABLE_RAJA "Enable RAJA" Off)
-option(ENABLE_CALIPER "Enable Caliper" Off)
-
 include_directories(${CMAKE_BINARY_DIR}/include)
 include(CMakeDependentOption)
 
@@ -59,7 +53,7 @@ function(bout_update_submodules)
   endif()
 endfunction()
 
-set(BOUT_HEADERS
+set(BOUT_SOURCES
   ./include/boundary_factory.hxx
   ./include/boundary_op.hxx
   ./include/boundary_region.hxx
@@ -73,7 +67,6 @@ set(BOUT_HEADERS
   ./include/bout/deprecated.hxx
   ./include/bout/deriv_store.hxx
   ./include/bout/expr.hxx
-  ./include/bout/field_visitor.hxx
   ./include/bout/fieldgroup.hxx
   ./include/bout/format.hxx
   ./include/bout/fv_ops.hxx
@@ -82,10 +75,8 @@ set(BOUT_HEADERS
   ./include/bout/globalindexer.hxx
   ./include/bout/griddata.hxx
   ./include/bout/hypre_interface.hxx
-  ./include/bout/hyprelib.hxx
   ./include/bout/index_derivs.hxx
   ./include/bout/index_derivs_interface.hxx
-  ./include/bout/invert/laplacexy2_hypre.hxx
   ./include/bout/invert/laplacexy.hxx
   ./include/bout/invert/laplacexz.hxx
   ./include/bout/invertable_operator.hxx
@@ -94,8 +85,6 @@ set(BOUT_HEADERS
   ./include/bout/monitor.hxx
   ./include/bout/mpi_wrapper.hxx
   ./include/bout/openmpwrap.hxx
-  ./include/bout/operatorstencil.hxx
-  ./include/bout/output_bout_types.hxx
   ./include/bout/paralleltransform.hxx
   ./include/bout/petsclib.hxx
   ./include/bout/petsc_interface.hxx
@@ -112,6 +101,8 @@ set(BOUT_HEADERS
   ./include/bout/solver.hxx
   ./include/bout/solverfactory.hxx
   ./include/bout/surfaceiter.hxx
+  ./include/bout/operatorstencil.hxx
+  ./include/bout/output_bout_types.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
@@ -120,13 +111,15 @@ set(BOUT_HEADERS
   ./include/bout/sys/type_name.hxx
   ./include/bout/sys/uncopyable.hxx
   ./include/bout/sys/variant.hxx
+  ./include/bout/sys/Collectives.h
+  ./include/bout/sys/ExecutionPolicy.h
+  ./include/bout/sys/ForAll.h
   ./include/bout/sys/NVTXUtilities.h
   ./include/bout/template_combinations.hxx
   ./include/bout/traits.hxx
   ./include/bout_types.hxx
   ./include/boutcomm.hxx
   ./include/boutexception.hxx
-  ./include/boutmain.hxx
   ./include/cyclic_reduction.hxx
   ./include/datafile.hxx
   ./include/dataformat.hxx
@@ -144,8 +137,6 @@ set(BOUT_HEADERS
   ./include/gyro_average.hxx
   ./include/initialprofiles.hxx
   ./include/interpolation.hxx
-  ./include/interpolation_xz.hxx
-  ./include/interpolation_z.hxx
   ./include/invert_laplace.hxx
   ./include/invert_parderiv.hxx
   ./include/lapack_routines.hxx
@@ -168,68 +159,15 @@ set(BOUT_HEADERS
   ./include/vector2d.hxx
   ./include/vector3d.hxx
   ./include/where.hxx
-  ./src/bout++-time.hxx
-  ./src/field/fieldgenerators.hxx
-  ./src/fileio/formatfactory.hxx
-  ./src/fileio/impls/emptyformat.hxx
-  ./src/fileio/impls/hdf5/h5_format.hxx
-  ./src/fileio/impls/netcdf/nc_format.hxx
-  ./src/fileio/impls/netcdf4/ncxx4.hxx
-  ./src/fileio/impls/pnetcdf/pnetcdf.hxx
-  ./src/invert/laplace/impls/cyclic/cyclic_laplace.hxx
-  ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.hxx
-  ./src/invert/laplace/impls/multigrid/multigrid_laplace.hxx
-  ./src/invert/laplace/impls/naulin/naulin_laplace.hxx
-  ./src/invert/laplace/impls/pcr/pcr.hxx
-  ./src/invert/laplace/impls/pdd/pdd.hxx
-  ./src/invert/laplace/impls/petsc/petsc_laplace.hxx
-  ./src/invert/laplace/impls/petsc3damg/petsc3damg.hxx
-  ./src/invert/laplace/impls/serial_band/serial_band.hxx
-  ./src/invert/laplace/impls/serial_tri/serial_tri.hxx
-  ./src/invert/laplace/impls/shoot/shoot_laplace.hxx
-  ./src/invert/laplace/impls/spt/spt.hxx
-  ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx
-  ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
-  ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.hxx
-  ./src/invert/parderiv/impls/cyclic/cyclic.hxx
-  ./src/mesh/impls/bout/boutmesh.hxx
-  ./src/mesh/parallel/fci.hxx
-  ./src/mesh/parallel/shiftedmetricinterp.hxx
-  ./src/solver/impls/adams_bashforth/adams_bashforth.hxx
-  ./src/solver/impls/arkode/arkode.hxx
-  ./src/solver/impls/cvode/cvode.hxx
-  ./src/solver/impls/euler/euler.hxx
-  ./src/solver/impls/ida/ida.hxx
-  ./src/solver/impls/imex-bdf2/imex-bdf2.hxx
-  ./src/solver/impls/karniadakis/karniadakis.hxx
-  ./src/solver/impls/petsc/petsc.hxx
-  ./src/solver/impls/power/power.hxx
-  ./src/solver/impls/pvode/pvode.hxx
-  ./src/solver/impls/rk3-ssp/rk3-ssp.hxx
-  ./src/solver/impls/rk4/rk4.hxx
-  ./src/solver/impls/rkgeneric/impls/cashkarp/cashkarp.hxx
-  ./src/solver/impls/rkgeneric/impls/rk4simple/rk4simple.hxx
-  ./src/solver/impls/rkgeneric/impls/rkf34/rkf34.hxx
-  ./src/solver/impls/rkgeneric/impls/rkf45/rkf45.hxx
-  ./src/solver/impls/rkgeneric/rkgeneric.hxx
-  ./src/solver/impls/slepc/slepc.hxx
-  ./src/solver/impls/snes/snes.hxx
-  ./src/solver/impls/split-rk/split-rk.hxx
-  ./src/sys/options/optionparser.hxx
-  ./src/sys/options/options_ini.hxx
-  ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
-  ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
-)
-
-
-set(BOUT_SOURCES
   ./src/bout++.cxx
+  ./src/bout++-time.hxx
   ./src/field/field.cxx
   ./src/field/field2d.cxx
   ./src/field/field3d.cxx
   ./src/field/field_data.cxx
   ./src/field/field_factory.cxx
   ./src/field/fieldgenerators.cxx
+  ./src/field/fieldgenerators.hxx
   ./src/field/fieldgroup.cxx
   ./src/field/fieldperp.cxx
   ./src/field/generated_fieldops.cxx
@@ -242,32 +180,53 @@ set(BOUT_SOURCES
   ./src/fileio/datafile.cxx
   ./src/fileio/dataformat.cxx
   ./src/fileio/formatfactory.cxx
+  ./src/fileio/formatfactory.hxx
+  ./src/fileio/impls/emptyformat.hxx
   ./src/fileio/impls/netcdf/nc_format.cxx
+  ./src/fileio/impls/netcdf/nc_format.hxx
   ./src/fileio/impls/netcdf4/ncxx4.cxx
+  ./src/fileio/impls/netcdf4/ncxx4.hxx
   ./src/fileio/impls/pnetcdf/pnetcdf.cxx
+  ./src/fileio/impls/pnetcdf/pnetcdf.hxx
   ./src/invert/fft_fftw.cxx
   ./src/invert/lapack_routines.cxx
   ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx
+  ./src/invert/laplace/impls/cyclic/cyclic_laplace.hxx
   ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.cxx
+  ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.hxx
   ./src/invert/laplace/impls/multigrid/multigrid_alg.cxx
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.cxx
+  ./src/invert/laplace/impls/multigrid/multigrid_laplace.hxx
   ./src/invert/laplace/impls/multigrid/multigrid_solver.cxx
   ./src/invert/laplace/impls/naulin/naulin_laplace.cxx
+  ./src/invert/laplace/impls/naulin/naulin_laplace.hxx
   ./src/invert/laplace/impls/pcr/pcr.cxx
+  ./src/invert/laplace/impls/pcr/pcr.hxx
   ./src/invert/laplace/impls/pdd/pdd.cxx
+  ./src/invert/laplace/impls/pdd/pdd.hxx
   ./src/invert/laplace/impls/petsc/petsc_laplace.cxx
+  ./src/invert/laplace/impls/petsc/petsc_laplace.hxx
   ./src/invert/laplace/impls/petsc3damg/petsc3damg.cxx
+  ./src/invert/laplace/impls/petsc3damg/petsc3damg.hxx
   ./src/invert/laplace/impls/serial_band/serial_band.cxx
+  ./src/invert/laplace/impls/serial_band/serial_band.hxx
   ./src/invert/laplace/impls/serial_tri/serial_tri.cxx
+  ./src/invert/laplace/impls/serial_tri/serial_tri.hxx
   ./src/invert/laplace/impls/spt/spt.cxx
+  ./src/invert/laplace/impls/spt/spt.hxx
   ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.cxx
+  ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx
   ./src/invert/laplace/invert_laplace.cxx
   ./src/invert/laplacexy/laplacexy.cxx
+  ./include/bout/invert/laplacexy2_hypre.hxx
   ./src/invert/laplacexy2/laplacexy2_hypre.cxx 
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
+  ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
   ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.cxx
+  ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.hxx
   ./src/invert/laplacexz/laplacexz.cxx
   ./src/invert/parderiv/impls/cyclic/cyclic.cxx
+  ./src/invert/parderiv/impls/cyclic/cyclic.hxx
   ./src/invert/parderiv/invert_parderiv.cxx
   ./src/mesh/boundary_factory.cxx
   ./src/mesh/boundary_region.cxx
@@ -278,16 +237,20 @@ set(BOUT_SOURCES
   ./src/mesh/difops.cxx
   ./src/mesh/fv_ops.cxx
   ./src/mesh/impls/bout/boutmesh.cxx
+  ./src/mesh/impls/bout/boutmesh.hxx
   ./src/mesh/index_derivs.cxx
+  ./include/interpolation_xz.hxx
   ./src/mesh/interpolation_xz.cxx
   ./src/mesh/interpolation/bilinear_xz.cxx
   ./src/mesh/interpolation/hermite_spline_xz.cxx
   ./src/mesh/interpolation/hermite_spline_z.cxx
+  ./include/interpolation_z.hxx
   ./src/mesh/interpolation/interpolation_z.cxx
   ./src/mesh/interpolation/lagrange_4pt_xz.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
   ./src/mesh/mesh.cxx
   ./src/mesh/parallel/fci.cxx
+  ./src/mesh/parallel/fci.hxx
   ./src/mesh/parallel/identity.cxx
   ./src/mesh/parallel/shiftedmetric.cxx
   ./src/mesh/parallel/shiftedmetricinterp.cxx
@@ -301,25 +264,44 @@ set(BOUT_SOURCES
   ./src/physics/snb.cxx
   ./src/physics/sourcex.cxx
   ./src/solver/impls/adams_bashforth/adams_bashforth.cxx
+  ./src/solver/impls/adams_bashforth/adams_bashforth.hxx
   ./src/solver/impls/arkode/arkode.cxx
+  ./src/solver/impls/arkode/arkode.hxx
   ./src/solver/impls/cvode/cvode.cxx
+  ./src/solver/impls/cvode/cvode.hxx
   ./src/solver/impls/euler/euler.cxx
+  ./src/solver/impls/euler/euler.hxx
   ./src/solver/impls/ida/ida.cxx
+  ./src/solver/impls/ida/ida.hxx
   ./src/solver/impls/imex-bdf2/imex-bdf2.cxx
+  ./src/solver/impls/imex-bdf2/imex-bdf2.hxx
   ./src/solver/impls/petsc/petsc.cxx
+  ./src/solver/impls/petsc/petsc.hxx
   ./src/solver/impls/power/power.cxx
+  ./src/solver/impls/power/power.hxx
   ./src/solver/impls/pvode/pvode.cxx
+  ./src/solver/impls/pvode/pvode.hxx
   ./src/solver/impls/rk3-ssp/rk3-ssp.cxx
+  ./src/solver/impls/rk3-ssp/rk3-ssp.hxx
   ./src/solver/impls/rk4/rk4.cxx
+  ./src/solver/impls/rk4/rk4.hxx
   ./src/solver/impls/rkgeneric/impls/cashkarp/cashkarp.cxx
+  ./src/solver/impls/rkgeneric/impls/cashkarp/cashkarp.hxx
   ./src/solver/impls/rkgeneric/impls/rk4simple/rk4simple.cxx
+  ./src/solver/impls/rkgeneric/impls/rk4simple/rk4simple.hxx
   ./src/solver/impls/rkgeneric/impls/rkf34/rkf34.cxx
+  ./src/solver/impls/rkgeneric/impls/rkf34/rkf34.hxx
   ./src/solver/impls/rkgeneric/impls/rkf45/rkf45.cxx
+  ./src/solver/impls/rkgeneric/impls/rkf45/rkf45.hxx
   ./src/solver/impls/rkgeneric/rkgeneric.cxx
+  ./src/solver/impls/rkgeneric/rkgeneric.hxx
   ./src/solver/impls/rkgeneric/rkscheme.cxx
   ./src/solver/impls/slepc/slepc.cxx
+  ./src/solver/impls/slepc/slepc.hxx
   ./src/solver/impls/snes/snes.cxx
+  ./src/solver/impls/snes/snes.hxx
   ./src/solver/impls/split-rk/split-rk.cxx
+  ./src/solver/impls/split-rk/split-rk.hxx
   ./src/solver/solver.cxx
   ./src/sys/bout_types.cxx
   ./src/sys/boutcomm.cxx
@@ -327,10 +309,13 @@ set(BOUT_SOURCES
   ./src/sys/derivs.cxx
   ./src/sys/expressionparser.cxx
   ./src/sys/generator_context.cxx
+  ./include/bout/hyprelib.hxx
   ./src/sys/hyprelib.cxx
   ./src/sys/msg_stack.cxx
   ./src/sys/options.cxx
+  ./src/sys/options/optionparser.hxx
   ./src/sys/options/options_ini.cxx
+  ./src/sys/options/options_ini.hxx
   ./src/sys/options/options_netcdf.cxx
   ./src/sys/optionsreader.cxx
   ./src/sys/output.cxx
@@ -340,6 +325,8 @@ set(BOUT_SOURCES
   ./src/sys/timer.cxx
   ./src/sys/type_name.cxx
   ./src/sys/utils.cxx
+  ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
+  ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
   )
 
 
@@ -396,12 +383,6 @@ add_custom_command(
   DEPENDS ${BOUT_SOURCES}
   MAIN_DEPENDENCY "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
   )
-
-#if(BUILD_SHARED_LIBS)
-#   add_library(bout++ SHARED ${BOUT_SOURCES} ${BOUT_HEADERS})
-#else ()
-#   add_library(bout++ STATIC ${BOUT_SOURCES} ${BOUT_HEADERS})
-#endif ()
 
 add_library(bout++
   ${BOUT_SOURCES}
@@ -465,8 +446,8 @@ configure_file(
   "${PROJECT_BINARY_DIR}/include/bout/revision.hxx")
 
 ##################################################
-# Reconcile with NVCC later wrt CUDA vs CXX language flags
-option(BOUT_ENABLE_WARNINGS "Enable compiler warnings" OFF)
+
+option(BOUT_ENABLE_WARNINGS "Enable compiler warnings" ON)
 if (BOUT_ENABLE_WARNINGS)
   target_compile_options(bout++ PRIVATE
     $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:

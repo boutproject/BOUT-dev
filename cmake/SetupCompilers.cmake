@@ -1,16 +1,16 @@
 
 # Note: Currently BOUT++ always needs MPI. This option just determines
 # whether the find_* routines are used
-option(BOUT_ENABLE_MPI "Enable MPI support" ON)
-if(BOUT_ENABLE_MPI)
+option(ENABLE_MPI "Enable MPI support" ON)
+if(ENABLE_MPI)
    # This might not be entirely sensible, but helps CMake to find the
    # correct MPI, workaround for https://gitlab.kitware.com/cmake/cmake/issues/18895
    find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
    find_package(MPI REQUIRED)
 endif ()
-set(BOUT_USE_MPI ${BOUT_ENABLE_MPI})
+set(BOUT_USE_MPI ${ENABLE_MPI})
 
-option(BOUT_ENABLE_OPENMP "Enable OpenMP support" OFF)
+option(BOUT_ENABLE_OPENMP "Enable OpenMP support" ${ENABLE_OPENMP})
 set(BOUT_OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
 set_property(CACHE BOUT_OPENMP_SCHEDULE PROPERTY STRINGS static dynamic guided auto)
 if (BOUT_ENABLE_OPENMP)
@@ -24,11 +24,11 @@ endif ()
 set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
 message(STATUS "Enable OpenMP: ${BOUT_ENABLE_OPENMP}")
 
-option(BOUT_ENABLE_CUDA "Enable CUDA support" OFF)
-if(BOUT_ENABLE_CUDA)
+option(ENABLE_CUDA "Enable CUDA support" OFF)
+if(ENABLE_CUDA)
    # Set specific options for CUDA if enabled
    enable_language(CUDA)
-   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch ${CUDA_ARCH} -ccbin ${CMAKE_CXX_COMPILER}")
+   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode arch=compute_70,code=sm_70 -ccbin ${CMAKE_CXX_COMPILER}")
    if (ENABLE_RAJA)
       # RAJA uses lambda expressions
       set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda --expt-relaxed-constexpr")
@@ -40,4 +40,4 @@ if(BOUT_ENABLE_CUDA)
       set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler ${OpenMP_CXX_FLAGS}")
    endif ()
 endif()
-set(BOUT_USE_CUDA ${BOUT_ENABLE_CUDA})
+set(BOUT_USE_CUDA ${ENABLE_CUDA})
