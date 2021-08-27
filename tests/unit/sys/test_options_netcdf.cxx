@@ -228,7 +228,7 @@ TEST_F(OptionsNetCDFTest, FieldPerpWriteCellCentre) {
 
     // Ensure MPI is initialised, otherwise we end up creating threads while
     // the file is open, and the lock is not removed on closing.
-    fperp.getMesh->getXcomm();
+    fperp.getMesh()->getXcomm();
 
     // Write file
     OptionsNetCDF(filename).write(options);
