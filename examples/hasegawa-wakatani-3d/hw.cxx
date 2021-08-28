@@ -37,7 +37,7 @@ public:
   BoutReal Dvort, Dn;                   // Diffusion
   std::unique_ptr<Laplacian> phiSolver; // Laplacian solver for vort -> phi
 
-  int init(bool UNUSED(restart)) {
+  int init(bool UNUSED(restart)) override {
 
     auto& options = Options::root()["hw"];
     alpha = options["alpha"].withDefault(1.0);
@@ -54,7 +54,7 @@ public:
     return 0;
   }
 
-  int rhs(BoutReal UNUSED(time)) {
+  int rhs(BoutReal UNUSED(time)) override {
     // Solve for potential
     phi = phiSolver->solve(vort, phi);
     Field3D phi_minus_n = phi - n;

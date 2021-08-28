@@ -58,7 +58,7 @@ public:
   std::unique_ptr<Laplacian> phiSolver{
       nullptr}; ///< Performs Laplacian inversions to calculate phi
 
-  int init(bool UNUSED(restarting)) {
+  int init(bool UNUSED(restarting)) override {
 
     /******************Reading options *****************/
 
@@ -128,7 +128,7 @@ public:
     return 0;
   }
 
-  int rhs(BoutReal UNUSED(t)) {
+  int rhs(BoutReal UNUSED(t)) override {
 
     // RAJA::synchronize<RAJA::cuda_synchronize>();
     // Run communications
