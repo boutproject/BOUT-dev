@@ -652,6 +652,9 @@ endif ()
 add_subdirectory(examples/laplacexy/simple)
 add_subdirectory(examples/hasegawa-wakatani-3d)
 add_subdirectory(examples/elm-pb)
+
+add_subdirectory(examples/6field-simple)
+
 # eventually go back and turn on all the integrated tests
 add_subdirectory(tests/integrated/test-laplace-petsc3d)
 add_subdirectory(tests/integrated/test-laplace-hypre3d)
