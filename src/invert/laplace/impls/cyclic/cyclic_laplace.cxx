@@ -202,11 +202,23 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
           rfft(rhs[ix], localmesh->LocalNz, std::begin(k1d));
         }
 
+
+
         // Copy into array, transposing so kz is first index
         for (int kz = 0; kz < nmode; kz++)
           bcmplx(kz, ix - xs) = k1d[kz];
       }
 
+
+
+//// batchup fft and copy into bcmplx metrix
+//rfft_batchup(rhs, localmesh->LocalNz, xe, fftw_comlex_batch_out));
+//for (int ix = xs; ix <= xe; ix++) {
+//      for (int kz = 0; kz < nmode; kz++)
+//      bcmplx(kz, ix - xs) = fftw_comlex_batch_out[ix];
+//}
+
+ 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
       BOUT_OMP(for nowait)
