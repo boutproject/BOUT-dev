@@ -35,6 +35,9 @@
 #include <omp.h>
 #endif
 
+#define BOUT_USE_CUDA
+
+
 #if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
 #define BOUT_HOST_DEVICE __host__ __device__
 #define BOUT_HOST __host__
@@ -55,6 +58,7 @@
 #include <bout/openmpwrap.hxx>
 
 
+
 namespace {
 template <typename T>
 using iterator = T*;
@@ -68,10 +72,12 @@ struct ArrayData {
 #ifdef BOUT_HAS_UMPIRE 
      auto& rm = umpire::ResourceManager::getInstance();
 #ifdef BOUT_USE_CUDA
-     //auto allocator = rm.getAllocator("UM");
-     auto allocator = rm.getAllocator(umpire::resource::Pinned);
+     auto allocator = rm.getAllocator("UM");
+    // auto allocator = rm.getAllocator(umpire::resource::Pinned);
+    //
 #else
      auto allocator = rm.getAllocator("HOST");
+
 #endif
      data = static_cast<T*>(allocator.allocate(size * sizeof(T)));
 #else
@@ -449,6 +455,7 @@ private:
      auto& rm = umpire::ResourceManager::getInstance();
 #ifdef BOUT_USE_CUDA
      auto allocator = rm.getAllocator("UM");
+	//auto allocator = rm.getAllocator(umpire::resource::Pinned);
 #else
      auto allocator = rm.getAllocator("HOST");
 #endif
