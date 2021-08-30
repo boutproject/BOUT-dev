@@ -51,6 +51,7 @@ namespace fft {
  * \param[out] out   Pointer to the complex 1D array which is the FFT of in
  */
 void rfft(const BoutReal *in, int length, dcomplex *out);
+//void rfft_batchup( double  *in,int batchup_size,fftw_complex *out);
 
 /*!
  * Take the inverse fft of signal where the outputs are only reals.
