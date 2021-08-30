@@ -74,6 +74,47 @@ void fft_init(bool fft_measure) {
 /***********************************************************
  * Real FFTs
  ***********************************************************/
+void rfft_batchup( double  *in, const int *n_size1D, int batchup_size, fftw_complex *out)  {
+      fftw_plan fft_1d_batchup_forward ;  // Batch up fftw, plans
+      fft_1d_batchup_forward = fftw_plan_many_dft_r2c(1, // [int rank]     Rank 1 DFT
+                                          n_size1D, // [const int *n] Number of variables within input array
+                                          batchup_size, // [int howmany] Number of observations (number of DFT to perform)
+                                          in, // [double *in] Input array is X (it is cast to non-const but will not be modified since FFTW_DESTROY_INPUT is not set)
+                                          NULL, // [const int *inembed] Distance between each rank in input array (Not used since rank=1)
+                                          1, // [int istride] Distance between successive variables in input array (in unit of double)
+                                          1, // [int idist]   Distance between 2 observations in input array (in unit of double)
+                                          out, // [fftw_complex *out] Output array is Y
+                                          NULL, // [const int *onembed] Distance between each rank in output array (Not used since rank=1)
+                                          1, // [int ostride] Distance between successive variables in output array (in unit of fftw_complex)
+                                          1, // [int odist] Distance between 2 observations in output array (in unit of fftw_complex)
+                                          FFTW_ESTIMATE // [unsigned flags] Quickly choose a plan without performing full benchmarks (maybe sub-optimal but take less time)
+                                          );
+    if (fft_1d_batchup_forward == NULL) printf( "FFTW 1D forward plan creation failed");
+    fftw_execute(fft_1d_batchup_forward);
+    fftw_destroy_plan(fft_1d_batchup_forward);
+    fftw_cleanup();
+}
+
+void irfft_batchup(  fftw_complex *in, const int *n_size1D, int batchup_size, double *out) {
+      fftw_plan fft_1d_batchup_backward ;  // Batch up fftw, plans
+      fft_1d_batchup_backward = fftw_plan_many_dft_c2r(1, // [int rank]     Rank 1 DFT
+                                          n_size1D, // [const int *n] Number of variables within input array
+                                          1, // [int howmany] Number of observations (number of DFT to perform)
+                                          in, //// [fftw_complex *in] Input array is X (it is cast to non-const but will not be modified since FFTW_DESTROY_INPUT is not set)
+                                          NULL, // [const int *inembed] Distance between each rank in input array (Not used since rank=1)
+                                          1, // [int istride] Distance between successive variables in input array (in unit of double)
+                                          1, // [int idist]   Distance between 2 observations in input array (in unit of double)
+                                          out, // [double *out] Input array is X (it is cast to non-const but will not be modified since FFTW_DESTROY_INPUT is not set)
+                                          NULL, // [const int *onembed] Distance between each rank in output array (Not used since rank=1)
+                                          1, // [int ostride] Distance between successive variables in output array (in unit of fftw_complex)
+                                          1, // [int odist] Distance between 2 observations in output array (in unit of fftw_complex)
+                                          FFTW_ESTIMATE // [unsigned flags] Quickly choose a plan without performing full benchmarks (maybe sub-optimal but take less time)
+                                          );
+    if (fft_1d_batchup_backward == NULL) printf( "FFTW 1D backward plan creation failed");
+    fftw_execute(fft_1d_batchup_backward);
+    fftw_destroy_plan(fft_1d_batchup_backward);
+    fftw_cleanup();
+}
 
 #if ! BOUT_USE_OPENMP
 // Serial code
