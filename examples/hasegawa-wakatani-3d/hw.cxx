@@ -9,7 +9,7 @@
 
 #include <iostream>
 #include <cstdlib>
-
+#include <stdio.h>
 /// 3D simulations of HW
 /////
 ///// This version uses indexed operators
@@ -33,18 +33,25 @@
 #include <cuda_profiler_api.h>
 #endif
 
+
+
+#define MAX_n_region 100000
+
+
 class HW3D : public PhysicsModel {
 public:
   Field3D n, vort;  // Evolving density and vorticity
   Field3D phi;      // Electrostatic potential
-
   // Model parameters
   BoutReal alpha;      // Adiabaticity (~conductivity)
   BoutReal kappa;      // Density gradient drive
   BoutReal Dvort, Dn;  // Diffusion
   std::unique_ptr<Laplacian> phiSolver; // Laplacian solver for vort -> phi
+   
+  int* public_obj_d;
+  
 
-  int init(bool UNUSED(restart)) {
+ int init(bool UNUSED(restart)) {
 
     auto& options = Options::root()["hw"];
     alpha = options["alpha"].withDefault(1.0);
@@ -57,15 +64,16 @@ public:
     
     phiSolver = Laplacian::create();
     phi = 0.; // Starting phi
-
     return 0;
   }
 
-  int rhs(BoutReal UNUSED(time)) {
 
 
-//auto start = std::chrono::steady_clock::now();   
-    // Solve for potential
+ int rhs(BoutReal UNUSED(time)) {
+
+	//auto start = std::chrono::steady_clock::now();   
+    
+	// Solve for potential
     phi = phiSolver->solve(vort, phi);    
     Field3D phi_minus_n = phi - n;
     // Communicate variables
@@ -77,33 +85,46 @@ public:
     auto phi_acc = FieldAccessor<>(phi);
     auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n); 
 
-#if 0 //def BOUT_HAS_RAJA
-//  RAJA code ----------- start
-    auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
-    Ind3D *ob_i = &(indices)[0];
+#if 1  //def BOUT_HAS_RAJA
 
-    //printf("BOUT using RAJA\n");
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-      int i = ob_i[id].ind;
-      BoutReal div_current = alpha * Div_par_Grad_par_g(phi_minus_n_acc, i);
+    //  RAJA code ----------- start
+
+    
+    Array<int> testArray(MAX_n_region); 
+    auto obj_d = testArray.begin();
+    auto  indices = n.getRegion("RGN_NOBNDRY").getIndices();
+    int indices_size =indices.size();
+    Ind3D *ob_i = &(indices)[0];
+    for(int i= 0; i< indices_size;i++){
+	obj_d[i]=ob_i[i].ind;
+     }
+ 
+ 	BoutReal  alpha_UM  = alpha;  
+	BoutReal  kappa_UM = kappa; 
+	BoutReal  Dn_UM = Dn;
+	BoutReal  Dvort_UM = Dvort;
+
+    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0,n.getRegion("RGN_NOBNDRY").size()), [=] RAJA_DEVICE (int id) {
+    int i = obj_d[id];
+      
+	BoutReal div_current = alpha_UM * Div_par_Grad_par_g(phi_minus_n_acc, i);
 		DDT(n_acc)[i] =  - bracket_g(phi_acc, n_acc, i)
                 	    - div_current
-                	    - kappa * DDZ_g(phi_acc, i)
-                	    + Dn * Delp2_g(n_acc, i)
+                	    - kappa_UM * DDZ_g(phi_acc, i)
+                	    + Dn_UM * Delp2_g(n_acc, i)
 			;
-
 
 		DDT(vort_acc)[i] = - bracket_g(phi_acc, vort_acc, i)
 			      - div_current
-		              + Dvort * Delp2_g (vort_acc, i)
+		              + Dvort_UM * Delp2_g (vort_acc, i)
 			;
-		
 	  });
+
 
 //  RAJA code ----------- end
 #else
 // -- CPU code ------------- start
-    //printf("BOUT not using RAJA\n"); 
+   
     BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
       
       BoutReal div_current = alpha * Div_par_Grad_par(phi_minus_n_acc, i);
@@ -119,7 +140,8 @@ public:
                      + Dvort * Delp2(vort_acc, i)
 		;
     }
-//--CPU code ---------------- end
+   
+    //--CPU code ---------------- end
 #endif
 //auto end = std::chrono::steady_clock::now();
 //auto  time_taken = std::chrono::duration_cast<std::chrono::nanoseconds     >(end-     start);
@@ -127,8 +149,8 @@ public:
 
     return 0;
   }  // end RHS
-}; // end class HW3D
 
-// Define a main() function
+}; // end class HW3D
+ // Define a main() function
 BOUTMAIN(HW3D);
 
