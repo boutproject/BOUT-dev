@@ -56,7 +56,7 @@ if [ "$pkg" == "BOUT-dev" ]; then
           -DCMAKE_CXX_STANDARD=14 \
           -DCMAKE_C_COMPILER=$cc \
           -DCMAKE_INSTALL_PREFIX=$install_dir \
-          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_BUILD_TYPE=Debug \
           -DCMAKE_PREFIX_PATH="${tpl_install_prefix}/raja/share/raja/cmake;${tpl_install_prefix}/umpire/share/umpire/cmake" \
           -DNCXX4_CONFIG:FILEPATH=${module_prefix}/netcdf-cxx4-4.3.1-ptxvbr5iimq3lcapnzs5tw7heniv7mha/bin/ncxx4-config \
           -DNC_CONFIG:FILEPATH=${module_prefix}/netcdf-c-4.7.4-hpuuuxa5vze5qwvqhdzxlpkrigjghgtu/bin/nc-config \
