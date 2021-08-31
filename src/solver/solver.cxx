@@ -58,7 +58,6 @@
 #include "impls/snes/snes.hxx"
 #include "impls/split-rk/split-rk.hxx"
 
-
 // Static member variables
 
 int *Solver::pargc = nullptr;

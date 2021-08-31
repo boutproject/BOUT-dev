@@ -49,7 +49,6 @@ int Output::open(const std::string& filename) {
   file.open(filename);
 
   if (!file.is_open()) {
-    // diable temporarily since nvcc complains of 128bit integer types
     fmt::print(stderr, "Could not open log file '{}'\n", filename);
     return 1;
   }
