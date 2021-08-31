@@ -3,6 +3,38 @@
 This is a slightly more readable, and therefore incomplete, summary of
 the changes from the full [changelog](CHANGELOG.md)
 
+4.4.0 is a feature release. The main new features are:
+- The CMake support has been expanded, and will replace the autotools build
+  system in the next major release. See [the CMake installation
+  instructions](https://bout-dev.readthedocs.io/en/latest/user_docs/installing.html#cmake)
+  for details on building with CMake.
+- Output files can now handle `FieldPerp`, `std::vector<int>`, and
+  `std::string`, while input options can now handle `FieldPerp`.
+- Output and evolving variables can now have an optional description
+- The `boutdata` and `boututils` python libraries have been moved to standalone
+  packages. BOUT++ still comes bundled with them as submodules, but you can now
+  install them separately.
+- Staggered grids now work with `InvertPar` and split flux derivatives.
+- User code can set default values that override the library's default values.
+- Timing information can be output in a table at the end of the run with
+  `time_report:show`
+- Some basic provenance information tracking has been enabled: each run now
+  generates a random unique ID. Hypnotoad grid files that contain a UUID will
+  also be tracked.
+- A new time solver has been added, an adaptive, arbitrary order Adams-Bashforth
+  solver.
+- FFTs can use the `FFTW_EXHAUSTIVE` input option.
+
+4.3.3 is a bugfix release:
+- Better documentation and tests
+- Fix `shiftOutput` for aligned fields
+- Some improvements to the Python API, including support for Python's
+  exponentiation operator `**`, and MPI-aware logging
+- Fix an uninitialised variable in `Delp2`
+- Bump the version of jinja2 from 2.10 to 2.11
+- Fix for some Solvers not always using user preconditioner/Jacobian
+- Some minor fixes to the build systems
+
 4.3.2 is a bugfix release:
 - Make downloading the submodules a bit nicer, including an option for
   using non-bundled versions when using `configure`
@@ -143,7 +175,7 @@ Other changes are mostly housekeeping changes for the BOUT++ project.
   namespace. This should help ensure we play nice with other
   libraries, as well as logically group related things across parts of
   the codebase
-  
+
 [mpark]: https://github.com/mpark/variant
 [xlc]: https://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#issues
 [scorep]: https://www.vi-hps.org/projects/score-p/
