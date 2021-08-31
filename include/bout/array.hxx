@@ -228,8 +228,9 @@ public:
     return *this;
   }
 
-  BOUT_DEVICE inline void operator=(const Array other) const {
+  BOUT_DEVICE inline Array& operator=(const Array &other) {
     ptr->operator=(*other.ptr);
+    return *this;
   }
 
   /*!
