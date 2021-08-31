@@ -286,8 +286,16 @@ CMake
 -----
 
 There is now (experimental) support for `CMake <https://cmake.org/>`_. You will need CMake >
-3.9. CMake supports out-of-source builds by default, which are A Good
-Idea. Basic configuration with CMake looks like::
+3.9. Note that it is possible to get the latest version of CMake using ``pip``::
+
+  $ pip install --user cmake
+
+or ``conda``::
+
+  $ conda install cmake
+
+CMake supports out-of-source builds by default, which are A Good Idea.
+Basic configuration with CMake looks like::
 
   $ cmake . -B build
 
