@@ -29,7 +29,7 @@ if(BOUT_ENABLE_CUDA)
    # Set specific options for CUDA if enabled
    enable_language(CUDA)
    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch ${CUDA_ARCH} -ccbin ${CMAKE_CXX_COMPILER}")
-   if (ENABLE_RAJA)
+   if (BOUT_ENABLE_RAJA)
       # RAJA uses lambda expressions
       set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda --expt-relaxed-constexpr")
    endif ()
