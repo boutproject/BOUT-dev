@@ -330,11 +330,11 @@ void Mesh::communicate(FieldGroup &g) {
     // Wait for data from other processors
     wait(h);
   } else {
-  // Send data
-  comm_handle h = send(g);
+    // Send data
+    comm_handle h = send(g);
 
-  // Wait for data from other processors
-  wait(h);
+    // Wait for data from other processors
+    wait(h);
   }
 
   // Calculate yup and ydown fields for 3D fields
