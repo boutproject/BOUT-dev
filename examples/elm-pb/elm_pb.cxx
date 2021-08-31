@@ -197,13 +197,8 @@ public:
   bool zonal_bkgd;
 
   bool split_n0; // Solve the n=0 component of potential
-  //  std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
 
-#if 0 //  BOUT_HAS_HYPRE
-    std::unique_ptr< LaplaceXY2Hypre> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
-#else
   std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
-#endif
 
   Field2D phi2D; // Axisymmetric phi
 
@@ -531,18 +526,7 @@ public:
                    .withDefault(false);
     if (split_n0) {
       // Create an XY solver for n=0 component
-      // laplacexy = bout::utils::make_unique<LaplaceXY>(mesh);
-      // Set coefficients for Boussinesq solve
-      // laplacexy->setCoefs(1.0, 0.0);
-      // phi2D = 0.0; // Starting guess
-      // phi2D.setBoundary("phi");
-
-      // Create an XY solver for n=0 component
-#if 0 // BOUT_HAS_HYPRE
-          laplacexy = bout::utils::make_unique< LaplaceXY2Hypre>(mesh);
-#else
       laplacexy = bout::utils::make_unique<LaplaceXY>(mesh);
-#endif
       // Set coefficients for Boussinesq solve
       laplacexy->setCoefs(1.0, 0.0);
       phi2D = 0.0; // Starting guess

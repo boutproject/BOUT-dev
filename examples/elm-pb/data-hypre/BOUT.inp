@@ -4,12 +4,11 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 40          # number of time-steps
-TIMESTEP = 1       # time between outputs
-archive = 20        # Archive restart files after this number of outputs
+nout = 40          # number of time-steps
+timestep = 1       # time between outputs
 wall_limit = 1.55  # wall time limit (in hours)
 
-ZPERIOD = 15        # Fraction of a torus to simulate
+zperiod = 15        # Fraction of a torus to simulate
 MZ = 16             # Number of points in Z
 
 grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
@@ -19,38 +18,11 @@ restart_format = "nc"   # Restart file format
 
 [mesh]
 
-StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
+staggergrids = false    # Use staggered grids
 
 [mesh:paralleltransform]
 
 type = shifted # Use shifted metric method
-
-##################################################
-# Communications
-# Fastest setting depends on machine and MPI
-# implementation. Do not affect result.
-[output]
-ShiftOutput = true
-
-[comms]
-
-async = false           # Use asyncronous sends?
-pre_post = false        # Post receives as early as possible
-group_nonblock = false  # Use non-blocking group operations?
-
-##################################################
-# Laplacian inversion routines
-
-[laplace]
-
-# max_mode = 16  # Maximum N to solve for
-
-##################################################
-# FFTs
-
-[fft]
-
-fft_measure = true  # If using FFTW, perform tests to determine fastest method
 
 ##################################################
 # derivative methods
@@ -72,14 +44,35 @@ first = C4  # Z derivatives can be done using FFT
 second = C4
 upwind = W3
 
+[output]
+shiftoutput = true  # Put the output into field-aligned coordinates
+
+##################################################
+# Laplacian inversion routines
+
+[laplace]
+type=hypre3d
+
+flags = 0   # Flags for Laplacian inversion
+
+rtol = 1.e-9
+atol = 1.e-14
+
+##################################################
+# FFTs
+
+[fft]
+
+fft_measurement_flag = measure  # If using FFTW, perform tests to determine fastest method
+
 ##################################################
 # Solver settings
 
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-8 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1e-08 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
 use_jacobian = false  # Use user-supplied Jacobian
@@ -97,7 +90,6 @@ density = 1.0e19       # number density of deuterium [m^-3]
                        # used to produce output normalisations
 
 evolve_jpar = false     # If true, evolve J raher than Psi
-                       # EXPERIMENTAL
 
 evolve_pressure = true # If false, switch off all pressure evolution
 
@@ -109,7 +101,7 @@ include_jpar0 = true     # determines whether to include jpar0 terms
 include_curvature = true # include curvature drive term?
 
 compress = false       # set compressible (evolve Vpar)
-nonlinear  = false     # include non-linear terms?
+nonlinear = false     # include non-linear terms?
 
 diamag = true         # Include diamagnetic effects?
 diamag_grad_t = false  # Include Grad_par(Te) term in Psi equation
@@ -117,7 +109,7 @@ diamag_phi0 = true    # Balance ExB against Vd for stationary equilibrium
 
 ##################################################
 # BRACKET_METHOD flags:
-# 0:BRACKET_STD; derivative methods will be determined 
+# 0:BRACKET_STD; derivative methods will be determined
 #   by the choices C or W in this input file
 # 1:BRACKET_SIMPLE; 2:BRACKET_ARAKAWA; 3:BRACKET_CTU.
 
@@ -128,13 +120,13 @@ withflow = false     # With flow or not
 D_0 = 130000        # differential potential
 D_s = 20            # shear parameter
 K_H_term = false    # Contain K-H term
-sign = -1           # flow direction    
+sign = -1           # flow direction
 x0 = 0.855          # peak location
-D_min = 3000        #constant	 
+D_min = 3000        # constant
 ##################################################################
 
 eHall = false         # Include electron pressue effects in Ohm's law?
-AA    = 2.0          # ion mass in units of proton mass 
+AA = 2.0          # ion mass in units of proton mass
 
 noshear = false        # zero all shear
 
@@ -146,15 +138,11 @@ filter_z = true   # remove all except one mode
 filter_z_mode = 1  # Specify which harmonic to keep (1 = fundamental)
 low_pass_z = 16    # Keep up to and including this harmonic (-1 = keep all)
 zonal_flow = false    # keep this zonal harmonic?
-zonal_field= false     # keep this zonal harmonic?
+zonal_field = false     # keep this zonal harmonic?
 zonal_bkgd = true    # keep this zonal harmonic?
 
 ## Jpar smoothing
 smooth_j_x = true   # Filter Jpar in the X direction
-lowpass_j_z = 16   # Remove high-k modes. Specifies maximum harmonic to keep
- 
-## mask in x boundaries
-mask_j_x = true
 
 ## Magnetic perturbations
 include_rmp = false # Read RMP data from grid file
@@ -186,32 +174,32 @@ damp_t_const = 1e-2  # Damping time constant
 
 ## Parallel pressure diffusion
 
-diffusion_par = -1.0e-0   # Parallel pressure diffusion (< 0 = none)
-diffusion_p4  = -1.0e-5   # parallel hyper-viscous diffusion for pressure (< 0 = none)
-diffusion_u4  = 1.0e-5    # parallel hyper-viscous diffusion for vorticity (< 0 = none)
-diffusion_a4  = -1.0e-5   # parallel hyper-viscous diffusion for vector potential (< 0 = none)
+diffusion_par = -1.0   # Parallel pressure diffusion (< 0 = none)
+diffusion_p4 = -1e-05   # parallel hyper-viscous diffusion for pressure (< 0 = none)
+diffusion_u4 = 1e-05    # parallel hyper-viscous diffusion for vorticity (< 0 = none)
+diffusion_a4 = -1e-05   # parallel hyper-viscous diffusion for vector potential (< 0 = none)
 
 ## heat source in pressure in watts
- 
+
 heating_P = -1   #   heat power in watts (< 0 = none)
-hp_width  = 0.1     #   heat width, in percentage of nx (< 0 = none)
+hp_width = 0.1     #   heat width, in percentage of nx (< 0 = none)
 hp_length = 0.3    #   heat length in percentage of nx (< 0 = none)
- 
+
 ## sink rate in pressure
- 
+
 sink_P = -1   #   sink rate in pressure (< 0 = none)
-sp_width  = 0.04     #   sink width, in percentage of nx (< 0 = none)
+sp_width = 0.04     #   sink width, in percentage of nx (< 0 = none)
 sp_length = 0.15    #   sink length in percentage of nx (< 0 = none)
- 
- 
+
+
 ## left edge sink rate in vorticity
-sink_Ul = -1.0e1        #   left edge sink rate in vorticity (< 0 = none)
-su_widthl  = 0.06     #   left edge sink width, in percentage of nx (< 0 = none)
+sink_Ul = -10.0        #   left edge sink rate in vorticity (< 0 = none)
+su_widthl = 0.06     #   left edge sink width, in percentage of nx (< 0 = none)
 su_lengthl = 0.1     #   left edge sink length in percentage of nx (< 0 = none)
- 
+
 ## right edge sink rate in vorticity
-sink_Ur = -1.0e1        #   right edge sink rate in vorticity (< 0 = none)
-su_widthr  = 0.06     #   right edge sink width, in percentage of nx (< 0 = none)
+sink_Ur = -10.0        #   right edge sink rate in vorticity (< 0 = none)
+su_widthr = 0.06     #   right edge sink width, in percentage of nx (< 0 = none)
 su_lengthr = 0.1     #   right edge sink length in percentage of nx (< 0 = none)
 
 ## Viscosity and Hyper-viscosity
@@ -242,7 +230,7 @@ outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # boundary conditions
@@ -257,8 +245,7 @@ scale = 0.0 # default size of initial perturbations
 bndry_all = dirichlet_o2 # Default to zero-value
 
 [U]   # vorticity
-
-scale = 1.0e-5
+scale = 1e-05
 function = ballooning(gauss(x-0.5,0.1)*gauss(y-pi,0.6*pi)*sin(z),3)
 
 [P]  # pressure
@@ -276,8 +263,8 @@ bndry_xout = zerolaplace
 bndry_xin = zerolaplace
 bndry_xout = zerolaplace
 
-bndry_yin = free_o3
-bndry_yout = free_o3
+bndry_yup = free_o3
+bndry_ydown = free_o3
 
 [J]    # parallel current
 
@@ -293,4 +280,3 @@ bndry_core = neumann
 bndry_xin = none
 bndry_xout = none
 bndry_target = neumann
-
