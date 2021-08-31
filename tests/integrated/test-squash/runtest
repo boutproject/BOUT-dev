@@ -56,13 +56,22 @@ def verify(f1, f2):
                 continue
             if IGNORED_VARS_PATTERN.match(v):
                 continue
-            if not np.allclose(d1[v], d2[v], equal_nan=True):
+
+            v1 = d1[v]
+            v2 = d2[v]
+            # Ignore corners by setting them to zero
+            if len(v1.shape) >= 2:
+                # Probably Field2D or Field3D
+                v1[0,0] = v1[0,-1] = v1[-1,0] = v1[-1,-1] = 0.0
+                v2[0,0] = v2[0,-1] = v2[-1,0] = v2[-1,-1] = 0.0
+
+            if not np.allclose(v1, v2, equal_nan=True):
                 err = ""
-                dimensions = [range(x) for x in d1[v].shape]
+                dimensions = [range(x) for x in v1.shape]
                 for i in itertools.product(*dimensions):
-                    if d1[v][i] != d2[v][i]:
-                        err += "{}: {} != {}\n".format(i, d1[v][i], d2[v][i])
-                raise RuntimeError("data mismatch in ", v, err, d1[v], d2[v])
+                    if v1[i] != v2[i]:
+                        err += "{}: {} != {}\n".format(i, v1[i], v2[i])
+                raise RuntimeError("data mismatch in ", v, err, v1, v2)
 
 
 parser = argparse.ArgumentParser(description="Test the bout-squashoutput wrapper")
