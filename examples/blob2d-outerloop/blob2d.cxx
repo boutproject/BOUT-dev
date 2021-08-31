@@ -130,7 +130,6 @@ public:
 
   int rhs(BoutReal UNUSED(t)) override {
 
-    // RAJA::synchronize<RAJA::cuda_synchronize>();
     // Run communications
     ////////////////////////////////////////////////////////////////////////////
     mesh->communicate(n, vort);
@@ -154,7 +153,7 @@ public:
     auto vort_acc = FieldAccessor<>(vort);
     auto phi_acc = FieldAccessor<>(phi);
 
-    auto& region = n.getRegion("RGN_NOBNDRY"); // Region object
+    const auto& region = n.getRegion("RGN_NOBNDRY"); // Region object
 
 #if RUN_WITH_RAJA
     auto indices = region.getIndices(); // A std::vector of Ind3D objects
