@@ -342,13 +342,13 @@ void LaplaceHypre3d::updateMatrix3D() {
       C_df_dx += C_d2f_dx2 * coords->d1_dx[l];
     }
     C_df_dx /= 2 * coords->dx[l];
-    C_df_dz /= 2 * coords->dz;
+    C_df_dz /= 2 * coords->dz[l];
 
     C_d2f_dx2 /= SQ(coords->dx[l]);
     C_d2f_dy2 /= SQ(coords->dy[l]);
-    C_d2f_dz2 /= SQ(coords->dz);
+    C_d2f_dz2 /= SQ(coords->dz[l]);
 
-    C_d2f_dxdz /= 4 * coords->dx[l] * coords->dz;
+    C_d2f_dxdz /= 4 * coords->dx[l] * coords->dz[l];
 
     operator3D(l, l) = -2 * (C_d2f_dx2 + C_d2f_dy2 + C_d2f_dz2) + A[l];
     operator3D(l, l.xp()) = C_df_dx + C_d2f_dx2;
@@ -409,7 +409,7 @@ void LaplaceHypre3d::updateMatrix3D() {
     C_d2f_dxdy /= 4*coords->dx[l]; // NOTE: This value is not completed here. It needs to
                                    // be divide by dx(i +/- 1, j, k) when using to set a
                                    // matrix element
-    C_d2f_dydz /= 4*coords->dy[l]*coords->dz;
+    C_d2f_dydz /= 4*coords->dy[l]*coords->dz[l];
 
     // The values stored in the y-boundary are already interpolated
     // up/down, so we don't want the matrix to do any such
