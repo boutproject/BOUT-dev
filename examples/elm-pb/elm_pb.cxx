@@ -198,7 +198,11 @@ public:
 
   bool split_n0; // Solve the n=0 component of potential
 
+#if BOUT_HAS_HYPRE
+  std::unique_ptr<LaplaceXY2Hypre> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
+#else
   std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
+#endif
 
   Field2D phi2D; // Axisymmetric phi
 
@@ -270,9 +274,6 @@ public:
     output.write("Jysep1_1 = {:d}   Grid number = {:e}\n", int(Jysep), Grid_NX);
 
     if (Jysep > 0.) { // for single null geometry
-
-      printf("Jysep: %5f", Jysep);
-
       BoutReal Jxsep, Jysep2;
       mesh->get(Jxsep, "ixseps1");
       mesh->get(Jysep2, "jyseps2_2");
@@ -311,8 +312,7 @@ public:
     return result;
   }
 
-  // make private and protected funcitons and variables in public
-  //
+protected:
   int init(bool restarting) override {
     bool noshear;
 
@@ -386,8 +386,9 @@ public:
 
     density = options["density"].doc("Number density [m^-3]").withDefault(1.0e19);
 
-    evolve_jpar =
-        options["evolve_jpar"].doc("If true, evolve J raher than Psi").withDefault(false);
+    evolve_jpar = options["evolve_jpar"]
+                       .doc("If true, evolve J raher than Psi")
+                       .withDefault(false);
     phi_constraint = options["phi_constraint"]
                          .doc("Use solver constraint for phi?")
                          .withDefault(false);
@@ -433,8 +434,7 @@ public:
       throw BoutException("Invalid choice of bracket method. Must be 0 - 3\n");
     }
 
-    bm_mag_flag =
-        options["bm_mag_flag"].doc("magnetic flutter Poisson Bracket").withDefault(0);
+    bm_mag_flag = options["bm_mag_flag"].doc("magnetic flutter Poisson Bracket").withDefault(0);
     switch (bm_mag_flag) {
     case 0: {
       bm_mag = BRACKET_STD;
@@ -469,8 +469,7 @@ public:
     diamag_grad_t = options["diamag_grad_t"]
                         .doc("Grad_par(Te) term in Psi equation")
                         .withDefault(diamag);
-    diamag_phi0 =
-        options["diamag_phi0"].doc("Include equilibrium phi0").withDefault(diamag);
+    diamag_phi0 = options["diamag_phi0"].doc("Include equilibrium phi0").withDefault(diamag);
     dia_fact = options["dia_fact"]
                    .doc("Scale diamagnetic effects by this factor")
                    .withDefault(1.0);
@@ -494,8 +493,7 @@ public:
 
     noshear = options["noshear"].withDefault(false);
 
-    relax_j_vac =
-        options["relax_j_vac"].doc("Relax vacuum current to zero").withDefault(false);
+    relax_j_vac = options["relax_j_vac"].doc("Relax vacuum current to zero").withDefault<bool>(false);
     relax_j_tconst = options["relax_j_tconst"]
                          .doc("Time constant for relaxation of vacuum current. Alfven "
                               "(normalised) units")
@@ -509,7 +507,7 @@ public:
     filter_z_mode = options["filter_z_mode"]
                         .doc("Single toroidal mode number to keep")
                         .withDefault(1);
-    low_pass_z = options["low_pass_z"].doc("Low-pass filter").withDefault(false);
+    low_pass_z = options["low_pass_z"].doc("Low-pass filter").withDefault(-1);
     zonal_flow = options["zonal_flow"]
                      .doc("Keep zonal (n=0) component of potential?")
                      .withDefault(false);
@@ -526,7 +524,11 @@ public:
                    .withDefault(false);
     if (split_n0) {
       // Create an XY solver for n=0 component
+#if BOUT_HAS_HYPRE
+      laplacexy = bout::utils::make_unique<LaplaceXY2Hypre>(mesh);
+#else
       laplacexy = bout::utils::make_unique<LaplaceXY>(mesh);
+#endif
       // Set coefficients for Boussinesq solve
       laplacexy->setCoefs(1.0, 0.0);
       phi2D = 0.0; // Starting guess
@@ -546,49 +548,40 @@ public:
                             .withDefault(false);
 
     // Parallel differencing
-    parallel_lr_diff =
-        options["parallel_lr_diff"]
+    parallel_lr_diff = options["parallel_lr_diff"]
             .doc("Use left and right shifted stencils for parallel differences?")
-            .withDefault(false);
+            .withDefault<bool>(false);
 
     // RMP-related options
-    include_rmp =
-        options["include_rmp"].doc("Read RMP field rmp_A from grid?").withDefault(false);
+    include_rmp = options["include_rmp"].doc("Read RMP field rmp_A from grid?").withDefault<bool>(false);
 
-    simple_rmp =
-        options["simple_rmp"].doc("Include a simple RMP model?").withDefault(false);
+    simple_rmp = options["simple_rmp"].doc("Include a simple RMP model?").withDefault<bool>(false);
     rmp_factor = options["rmp_factor"].withDefault(1.0);
     rmp_ramp = options["rmp_ramp"].withDefault(-1.0);
     rmp_freq = options["rmp_freq"].withDefault(-1.0);
     rmp_rotate = options["rmp_rotate"].withDefault(0.0);
 
     // Vacuum region control
-    vacuum_pressure =
-        options["vacuum_pressure"]
+    vacuum_pressure = options["vacuum_pressure"]
             .doc("Fraction of peak pressure, below which is considered vacuum.")
             .withDefault(0.02);
-    vacuum_trans =
-        options["vacuum_trans"]
+    vacuum_trans = options["vacuum_trans"]
             .doc("Vacuum boundary transition width, as fraction of peak pressure.")
             .withDefault(0.005);
 
     // Resistivity and hyper-resistivity options
-    vac_lund =
-        options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
-    core_lund =
-        options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
+    vac_lund = options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
+    core_lund = options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
     hyperresist = options["hyperresist"].withDefault(-1.0);
     ehyperviscos = options["ehyperviscos"].withDefault(-1.0);
-    spitzer_resist =
-        options["spitzer_resist"].doc("Use Spitzer resistivity?").withDefault(false);
+    spitzer_resist = options["spitzer_resist"].doc("Use Spitzer resistivity?").withDefault<bool>(false);
     Zeff = options["Zeff"].withDefault(2.0); // Z effective
 
     // Inner boundary damping
     damp_width = options["damp_width"]
                      .doc("Width of the radial damping regions, in grid cells")
                      .withDefault(0);
-    damp_t_const =
-        options["damp_t_const"]
+    damp_t_const = options["damp_t_const"]
             .doc("Time constant for damping in radial regions. Normalised time units.")
             .withDefault(0.1);
 
@@ -597,8 +590,7 @@ public:
     viscos_perp = options["viscos_perp"].doc("Perpendicular viscosity").withDefault(-1.0);
     hyperviscos = options["hyperviscos"].doc("Radial hyperviscosity").withDefault(-1.0);
 
-    diffusion_par =
-        options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
+    diffusion_par = options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
     diffusion_p4 = options["diffusion_p4"]
                        .doc("parallel hyper-viscous diffusion for pressure")
                        .withDefault(-1.0);
@@ -650,8 +642,7 @@ public:
     su_lengthr = options["su_lengthr"].withDefault(0.15);
 
     // Compressional terms
-    phi_curv =
-        options["phi_curv"].doc("ExB compression in P equation?").withDefault(true);
+    phi_curv = options["phi_curv"].doc("ExB compression in P equation?").withDefault<bool>(true);
     g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
 
     x = (Psixy - Psiaxis) / (Psibndry - Psiaxis);
@@ -1206,8 +1197,6 @@ public:
 
     Field3D result = Grad_par(f, loc);
 
-    // printf("Grad_parP run");
-
     if (nonlinear) {
       result -= bracket(interp_to(Psi, loc), f, bm_mag) * B0;
 
@@ -1366,8 +1355,6 @@ public:
       mesh->communicate(phi);
     }
 
-    // auto start = std::chrono::steady_clock::now();
-
     if (!evolve_jpar) {
       // Get J from Psi
       Jpar = Delp2(Psi);
@@ -1487,9 +1474,7 @@ public:
     ////////////////////////////////////////////////////
     // Parallel electric field
 
-    if (evolve_jpar) { // - default is false
-
-      printf("evolve_jpar...\n");
+    if (evolve_jpar) {
       // Jpar
       Field3D B0U = B0 * U;
       mesh->communicate(B0U);
@@ -1793,7 +1778,6 @@ public:
       mesh->communicate(bracketPhiP0);
 
       ddt(U) -= 0.5 * Upara2 * bracket(Pi, Dperp2Phi0, bm_exb) / B0;
-
       ddt(U) -= 0.5 * Upara2 * bracket(Pi0, Dperp2Phi, bm_exb) / B0;
       Field3D B0phi = B0 * phi;
       mesh->communicate(B0phi);
@@ -1827,8 +1811,10 @@ public:
       ddt(U) -= sink_Ur * sink_tanhxr(P0, U, su_widthr, su_lengthr); //  sol sink
     }
 
-    ddt(P) = 0.0;
+    ////////////////////////////////////////////////////
+    // Pressure equation
 
+    ddt(P) = 0.0;
     if (evolve_pressure) {
 
 #ifdef BOUT_HAS_RAJA
@@ -1928,10 +1914,7 @@ public:
         ddt(P) -= 2. * beta * b0xcv * Grad(phi);
       }
 
-      //
       // Vpar equation
-
-      // ddt(Vpar) = -0.5*Grad_parP(P + P0, loc);
 
       ddt(Vpar) = -0.5 * (Grad_par(P, loc) + Grad_par(P0, loc));
 

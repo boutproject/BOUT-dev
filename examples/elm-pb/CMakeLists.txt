@@ -6,10 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-# bout_add_example(elm_pb
-#   SOURCES elm_pb.cxx
-#   EXTRA_FILES cbm18_dens8.grid_nx68ny64.nc)
-
 set(elmpb_sources
    elm_pb.cxx
 )
@@ -69,3 +65,13 @@ if(BOUT_HAS_RAJA)
 endif ()
 
 message(STATUS "elmpb_depends: ${elmpb_depends}")
+
+# Copy the documentation
+bout_copy_file(README.md)
+
+# Input files
+bout_copy_file(data/BOUT.inp)
+bout_copy_file(data-hypre/BOUT.inp)
+bout_copy_file(data-nonlinear/BOUT.inp)
+bout_copy_file(cbm18_dens8.grid_nx68ny64.nc)
+bout_copy_file(cbm18_8_y064_x516_090309.nc)
