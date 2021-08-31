@@ -1,11 +1,11 @@
 /// 3D simulations of HW
-/////
-///// This version uses indexed operators
-///// which reduce the number of loops over the domain
-/////
-////  GPU processing is enabled if BOUT_ENABLE_CUDA is defined
-/////  Profiling markers and ranges are set if USE_NVTX is defined
-/////  Based on Ben Dudson, Steven Glenn code, Yining Qin update 0521-2020
+///
+/// This version uses indexed operators
+/// which reduce the number of loops over the domain
+///
+/// GPU processing is enabled if BOUT_ENABLE_CUDA is defined
+/// Profiling markers and ranges are set if USE_NVTX is defined
+/// Based on Ben Dudson, Steven Glenn code, Yining Qin update 0521-2020
 
 #include <cstdlib>
 #include <iostream>

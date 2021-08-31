@@ -322,8 +322,10 @@ class Mesh {
     return send(g);
   }
 
-  /// Perform communications without waiting for them
-  /// to finish. Requires a call to wait() afterwards.
+  /// Send guard cells from a list of FieldData objects in the x-direction
+  /// Packs arguments into a FieldGroup and passes to send(FieldGroup&).
+  /// Perform communications without waiting for them to finish.
+  /// Requires a call to wait() afterwards.
   template <typename... Ts>
   comm_handle sendX(Ts&... ts) {
     FieldGroup g(ts...);
@@ -431,7 +433,7 @@ class Mesh {
 
   /// Return pointer to the mesh's MPI Wrapper object
   MpiWrapper& getMpi() { return *mpi; }
-  
+
   /// Is local X index \p jx periodic in Y?
   ///
   /// \param[in] jx   The local (on this processor) index in X

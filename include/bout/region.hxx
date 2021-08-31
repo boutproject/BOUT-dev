@@ -158,13 +158,10 @@ enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
 ///
 ///     result = field[index->yp()] - field[index->ym()];
 template<IND_TYPE N>
-class SpecificInd {
-public:
-  int ind = -1; //< 1D index into Field
-//private:
-  int ny = -1, nz = -1; //< Sizes of y and z dimensions
+struct SpecificInd {
+  int ind = -1; ///< 1D index into Field
+  int ny = -1, nz = -1; ///< Sizes of y and z dimensions
 
-public:
   SpecificInd() = default;
   SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
   explicit SpecificInd(int i) : ind(i) {};
@@ -329,7 +326,7 @@ inline bool operator!=(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
 }
 
 template<IND_TYPE N>
-inline  bool  operator<(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
+inline bool operator<(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
   return lhs.ind < rhs.ind;
 }
 

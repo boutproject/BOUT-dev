@@ -30,7 +30,3 @@ if(BOUT_USE_CUDA)
 endif ()
 
 message(STATUS "test_laplacexy_hypre_depends: ${test_laplacexy_hypre_depends}")
-
-
-  
-
