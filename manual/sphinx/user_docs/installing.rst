@@ -288,7 +288,7 @@ CMake
 There is now (experimental) support for `CMake <https://cmake.org/>`_. You will need CMake >
 3.9. Note that it is possible to get the latest version of CMake using ``pip``::
 
-  $ pip install --user cmake
+  $ pip install --user --upgrade cmake
 
 or ``conda``::
 
