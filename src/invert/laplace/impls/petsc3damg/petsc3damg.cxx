@@ -258,7 +258,8 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   if (reason == KSP_DIVERGED_ITS) {
     // Too many iterations, might be fixed by taking smaller timestep
     throw BoutIterationFail("Petsc3dAmg: too many iterations");
-  } else if (reason <= 0) {
+  }
+  if (reason <= 0) {
     output << "KSPConvergedReason is " << reason << "\n";
     throw BoutException("Petsc3dAmg: inversion failed to converge.");
   }
