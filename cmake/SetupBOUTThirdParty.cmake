@@ -25,7 +25,6 @@ if (BOUT_USE_CUDA)
   set(BOUT_SOURCES_CXX ${BOUT_SOURCES})
   list(FILTER BOUT_SOURCES_CXX INCLUDE REGEX ".*\.cxx")
 
-  message(STATUS "CXX files ${BOUT_SOURCES_CXX}")
   set_source_files_properties(${BOUT_SOURCES_CXX} PROPERTIES LANGUAGE CUDA )
   # CMAKE 3.14 if we don't use deprecated FindCUDA, then need to compute CUDA_TOOLKIT_ROOT_DIR
   #cmake 3.17 has FindCUDAToolkit
