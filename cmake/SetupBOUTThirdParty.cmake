@@ -20,7 +20,12 @@ if (BOUT_USE_CUDA)
   list(APPEND BOUT_DEPENDS cuda)
   enable_language(CUDA)
   message(STATUS "BOUT_USE_CUDA ${CMAKE_CUDA_COMPILER}")
-  set_source_files_properties(${BOUT_SOURCES} PROPERTIES LANGUAGE CUDA )
+
+  # Get all the .cxx files from BOUT_SOURCES
+  set(BOUT_SOURCES_CXX ${BOUT_SOURCES})
+  list(FILTER BOUT_SOURCES_CXX INCLUDE REGEX ".*\.cxx")
+
+  set_source_files_properties(${BOUT_SOURCES_CXX} PROPERTIES LANGUAGE CUDA )
   # CMAKE 3.14 if we don't use deprecated FindCUDA, then need to compute CUDA_TOOLKIT_ROOT_DIR
   #cmake 3.17 has FindCUDAToolkit
   get_filename_component(cuda_bin_dir ${CMAKE_CUDA_COMPILER} DIRECTORY)

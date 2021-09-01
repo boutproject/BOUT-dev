@@ -108,6 +108,20 @@ Cab
 
    ./configure --with-netcdf=/usr/local/tools/hdf5-gnu-serial-1.8.1/lib --with-fftw=/usr/local/tools/fftw3-3.2 --with-pdb=/usr/gapps/pact/new/lnx-2.5-ib/gnu
 
+Cori
+~~~~
+
+First set up the environment by loading the correct modules:
+
+.. code-block:: bash
+   source config/cori/setup-env-cgpu.sh
+
+Then configure BOUT++
+
+.. code-block:: bash
+   ./config/cori/config-bout-cgpu.sh
+
+
 Edison
 ~~~~~~
 

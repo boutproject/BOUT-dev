@@ -111,10 +111,6 @@ set(BOUT_SOURCES
   ./include/bout/sys/type_name.hxx
   ./include/bout/sys/uncopyable.hxx
   ./include/bout/sys/variant.hxx
-  ./include/bout/sys/Collectives.h
-  ./include/bout/sys/ExecutionPolicy.h
-  ./include/bout/sys/ForAll.h
-  ./include/bout/sys/NVTXUtilities.h
   ./include/bout/template_combinations.hxx
   ./include/bout/traits.hxx
   ./include/bout_types.hxx
@@ -151,7 +147,6 @@ set(BOUT_SOURCES
   ./include/parallel_boundary_region.hxx
   ./include/smoothing.hxx
   ./include/sourcex.hxx
-  ./include/StackTrace.hxx
   ./include/stencils.hxx
   ./include/unused.hxx
   ./include/utils.hxx
