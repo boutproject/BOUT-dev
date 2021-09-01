@@ -25,7 +25,7 @@ set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
 message(STATUS "Enable OpenMP: ${BOUT_ENABLE_OPENMP}")
 
 option(BOUT_ENABLE_CUDA "Enable CUDA support" OFF)
-option(CUDA_ARCH "CUDA architecture" "compute_70,code=sm_70")
+set(CUDA_ARCH "compute_70,code=sm_70" CACHE STRING "CUDA architecture")
 if(BOUT_ENABLE_CUDA)
    # Set specific options for CUDA if enabled
    enable_language(CUDA)
