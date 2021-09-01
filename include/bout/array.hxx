@@ -222,18 +222,10 @@ public:
    *
    * Uses copy-and-swap idiom
    */
-  BOUT_HOST inline Array& operator=(Array other) noexcept {
+  BOUT_HOST_DEVICE inline Array& operator=(Array other) noexcept {
     swap(*this, other);
     return *this;
   }
-
-#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
-  /// A different version for GPUs
-  BOUT_DEVICE inline Array& operator=(const Array &other) {
-    ptr->operator=(*other.ptr);
-    return *this;
-  }
-#endif
 
   /*!
    * Move constructor
