@@ -18,6 +18,12 @@
 struct BoutRealArray {
   BoutReal* data;
 
+  BoutRealArray() = delete; ///< No default constructor
+
+  /// Wrap a BoutReal pointer.
+  /// This does not take ownership
+  explicit BoutRealArray(BoutReal* data) : data(data) {}
+
   BOUT_HOST_DEVICE inline BoutReal& operator[](int ind) {
     return data[ind];
   }
