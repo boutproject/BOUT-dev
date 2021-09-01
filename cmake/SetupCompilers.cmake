@@ -25,10 +25,11 @@ set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
 message(STATUS "Enable OpenMP: ${BOUT_ENABLE_OPENMP}")
 
 option(BOUT_ENABLE_CUDA "Enable CUDA support" OFF)
+option(CUDA_ARCH "CUDA architecture" "compute_70,code=sm_70")
 if(BOUT_ENABLE_CUDA)
    # Set specific options for CUDA if enabled
    enable_language(CUDA)
-   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch ${CUDA_ARCH} -ccbin ${CMAKE_CXX_COMPILER}")
+   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode arch=${CUDA_ARCH} -ccbin ${CMAKE_CXX_COMPILER}")
    if (BOUT_ENABLE_RAJA)
       # RAJA uses lambda expressions
       set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda --expt-relaxed-constexpr")

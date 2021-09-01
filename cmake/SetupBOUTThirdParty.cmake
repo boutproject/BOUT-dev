@@ -232,10 +232,11 @@ if (BOUT_USE_SUNDIALS)
       GIT_REPOSITORY https://github.com/ZedThree/sundials
       GIT_TAG        "4f3bb8281c7b27343bcb95386ebbb665fb6196a5"
       )
+    # Note: These are settings for building SUNDIALS
     set(EXAMPLES_ENABLE_C OFF CACHE BOOL "" FORCE)
     set(EXAMPLES_INSTALL OFF CACHE BOOL "" FORCE)
-    set(BOUT_ENABLE_MPI ON CACHE BOOL "" FORCE)
-    set(BOUT_ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
+    set(ENABLE_MPI ${BOUT_USE_MPI} CACHE BOOL "" FORCE)
+    set(ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
     set(BUILD_STATIC_LIBS OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(sundials)
     message(STATUS "SUNDIALS done configuring")
