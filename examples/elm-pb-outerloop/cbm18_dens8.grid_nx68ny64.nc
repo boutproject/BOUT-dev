@@ -1,0 +1,1 @@
+../tokamak-grids/cbm18_dens8.grid_nx68ny64.nc

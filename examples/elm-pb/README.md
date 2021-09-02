@@ -1,6 +1,9 @@
 3-field ELM simulation
 ======================
 
+This version of elm-pb uses "standard" BOUT++ operators. There is a separate
+version `elm-pb-outerloop` which uses newer outer-loop operators.
+
 Inputs
 ------
 

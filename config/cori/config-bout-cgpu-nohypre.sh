@@ -1,55 +1,64 @@
-#!/usr/bin/env tcsh
-# this script is designed to be run in the BOUT source dir
-set arch = `uname -m`
-set compiler =  gcc
-set scratch_dir = `pwd`
-set build_prefix = ${scratch_dir}/build/${arch}-${compiler}/
-set install_prefix = ${scratch_dir}/install/${arch}-${compiler}/
-set source_prefix = ${scratch_dir}/
-set tpl_prefix = /global/project/projectdirs/bout/BOUT-GPU/tpl/
-set tpl_install_prefix = ${tpl_prefix}/install/${arch}-${compiler}/
-set module_prefix = /global/project/projectdirs/bout/BOUT-GPU/spack/opt/spack/cray-cnl7-skylake_avx512/gcc-8.3.0_cgpu/
+#!/usr/bin/env bash
+#
+# Configure BOUT++ on NERSC Cori
+#
+# This version configures WITHOUT Hypre, but includes PETSc,
+# RAJA and CUDA compilation.
+# This script is designed to be run in the BOUT source dir
 
-set pkg = BOUT-dev
+arch=$(uname -m)
+compiler=gcc
+scratch_dir=`pwd`
+build_prefix=${scratch_dir}/build/${arch}-${compiler}/
+install_prefix=${scratch_dir}/install/${arch}-${compiler}/
+source_prefix=${scratch_dir}/
+tpl_prefix=/global/project/projectdirs/bout/BOUT-GPU/tpl/
+tpl_install_prefix=${tpl_prefix}/install/${arch}-${compiler}/
+module_prefix=/global/project/projectdirs/bout/BOUT-GPU/spack/opt/spack/cray-cnl7-skylake_avx512/gcc-8.3.0_cgpu/
+
+pkg=BOUT-dev
 echo 'continue with script ' $pkg
-
-if ( "$1" == "-c" ) then
-    set pkg = $2
-    set dir = ${build_prefix}/$pkg
+if [[ "$1" == "-c" ]]; then
+    pkg=$2
+    dir=${build_prefix}/$pkg
     echo Removing $dir ...
     rm -rf $dir
-endif
+fi
 
-if ( "$compiler" == "xl" ) then
-    set cc = xlc
-    set cpp = xlC
-    set fc = xlf
-    set extra_cflags = ""
-else if ( "$compiler" == "clang" ) then
-    set cc = clang
-    set cpp = clang++
-#    set fc = xlf
-    set fc = mpifort
-    set = extra_cflags ""
-else if ( "$compiler" == "gcc" ) then
-    set cc = mpicc
-    set cpp = mpiCC
-    set fc = mpifort
-    set extra_cflags = ""
+if [[ "$compiler" == "xl" ]]; then
+    cc=xlc
+    cpp=xlC
+    fc=xlf
+    extra_cflags=""
+elif [[ "$compiler" == "clang" ]]; then
+    cc=clang
+    cpp=clang++
+#    fc=xlf
+    fc=mpifort
+    extra_cflags=""
+elif [[ "$compiler" == "gcc" ]]; then
+    cc=mpicc
+    cpp=mpiCC
+    fc=mpifort
+    extra_cflags=""
 else
     exit 1
-endif
+fi
 
-set build_dir = ${build_prefix}/${pkg}
-set install_dir = ${install_prefix}/${pkg}
-set source_dir = ${source_prefix} 
+
+#          -DCMAKE_CXX_FLAGS="-w" \
+#          -DCMAKE_CUDA_FLAGS="-w" \
+#          -DNetCDF_ROOT=${module_prefix}/netcdf-c-4.7.4-hpuuuxa5vze5qwvqhdzxlpkrigjghgtu/ \
+build_dir=${build_prefix}/${pkg}
+install_dir=${install_prefix}/${pkg}
+source_dir=${source_prefix} 
 echo 'Build in ' ${build_dir}
 echo 'Install in ' ${install_dir}
 echo 'Source in ' ${source_dir}
 
-if ( "$pkg" == "BOUT-dev" ) then
+if [ "$pkg" == "BOUT-dev" ]; then
     echo 'enter BOUT-dev script'
-    set source_dir = ${source_prefix} 
+    source_dir=${source_prefix} 
     mkdir -p $build_dir && cd $build_dir
     cmake  \
           -DCMAKE_CXX_COMPILER=$cpp \
@@ -80,9 +89,9 @@ if ( "$pkg" == "BOUT-dev" ) then
           -DBOUT_ENABLE_CUDA=On \
           -DCUDA_ARCH=sm_70 \
           -DCMAKE_CUDA_STANDARD=14 \
-          -DBOUT_USE_HYPRE=On \
+          -DBOUT_USE_HYPRE=Off \
           -DHYPRE_DIR="${tpl_prefix}/hypre_dir/hypre_autoconf/install" \
-          -DHYPRE_CUDA=On \
+          -DHYPRE_CUDA=Off \
           -DBUILD_SHARED_LIBS=Off \
           -DBOUT_TESTS=On \
           -DCHECK=1 \
@@ -93,4 +102,4 @@ if ( "$pkg" == "BOUT-dev" ) then
           -DCMAKE_INSTALL_RPATH="${module_prefix}/petsc-3.13.0-ym7gwgxfutg4m7ap3bz5tbvsitvfq2w2/lib;${module_prefix}/hdf5-1.10.6-twbl2egvtk5bmvx4bmlvpnugciapg46s/lib;${module_prefix}/netcdf-cxx4-4.3.1-ptxvbr5iimq3lcapnzs5tw7heniv7mha/lib;${module_prefix}/netcdf-c-4.7.4-hpuuuxa5vze5qwvqhdzxlpkrigjghgtu/lib;${module_prefix}/fftw-3.3.8-3nkroqhdwtudny5aifsjujxmzdvdz3jw/lib;${module_prefix}/sundials-5.1.0-nxrldjqsuekh3nmm4soadzjlwy3ggwz4/lib64" \
           -DCMAKE_BUILD_RPATH="${module_prefix}/petsc-3.13.0-ym7gwgxfutg4m7ap3bz5tbvsitvfq2w2/lib;${module_prefix}/hdf5-1.10.6-twbl2egvtk5bmvx4bmlvpnugciapg46s/lib;${module_prefix}/netcdf-cxx4-4.3.1-ptxvbr5iimq3lcapnzs5tw7heniv7mha/lib;${module_prefix}/netcdf-c-4.7.4-hpuuuxa5vze5qwvqhdzxlpkrigjghgtu/lib;${module_prefix}/fftw-3.3.8-3nkroqhdwtudny5aifsjujxmzdvdz3jw/lib;${module_prefix}/sundials-5.1.0-nxrldjqsuekh3nmm4soadzjlwy3ggwz4/lib64" \
           $source_dir
-endif
+fi

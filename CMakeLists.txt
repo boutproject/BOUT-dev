@@ -636,6 +636,7 @@ else()
   add_subdirectory(examples/laplacexy/simple)
   add_subdirectory(examples/hasegawa-wakatani-3d)
   add_subdirectory(examples/elm-pb)
+  add_subdirectory(examples/elm-pb-outerloop)
 
   if(BOUT_HAS_HYPRE)
    add_subdirectory(examples/laplacexy/simple-hypre)

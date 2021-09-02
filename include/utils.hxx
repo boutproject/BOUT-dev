@@ -696,4 +696,11 @@ std::string::size_type editDistance(const std::string& str1, const std::string& 
 template <typename T> T *pointer(T *val) { return val; }
 template <typename T> T *pointer(T &val) { return &val; }
 
+#ifndef BOUT_CONCAT
+/// Utility to evaluate and concatenate macro symbols
+/// Note that ## operator doesn't evaluate symols A or B
+#define BOUT_CONCAT_(A,B) A##B
+#define BOUT_CONCAT(A,B) BOUT_CONCAT_(A,B)
+#endif
+
 #endif // __UTILS_H__
