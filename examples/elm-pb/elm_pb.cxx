@@ -1467,38 +1467,33 @@ protected:
       // Vector potential
       ddt(Psi) = -Grad_parP(phi, loc) + eta * Jpar;
 
-      if (eHall) {
-        // electron parallel pressure
+      if (eHall) { // electron parallel pressure
         ddt(Psi) += 0.25 * delta_i
                     * (Grad_parP(P, loc)
                        + bracket(interp_to(P0, loc), Psi, bm_mag));
       }
 
-      if (diamag_phi0) {
-        ddt(Psi) -= bracket(interp_to(phi0, loc), Psi, bm_exb); // Equilibrium flow
+      if (diamag_phi0) { // Equilibrium flow
+        ddt(Psi) -= bracket(interp_to(phi0, loc), Psi, bm_exb);
       }
 
       if (withflow) { // net flow
         ddt(Psi) -= V_dot_Grad(V0net, Psi);
       }
 
-      if (diamag_grad_t) {
-        // grad_par(T_e) correction
-
+      if (diamag_grad_t) { // grad_par(T_e) correction
         ddt(Psi) += 1.71 * dnorm * 0.5 * Grad_parP(P, loc) / B0;
       }
 
-      // Hyper-resistivity
-      if (hyperresist > 0.0) {
+      if (hyperresist > 0.0) { // Hyper-resistivity
         ddt(Psi) -= eta * hyperresist * Delp2(Jpar);
       }
 
-      // electron Hyper-viscosity coefficient
-      if (ehyperviscos > 0.0) {
+      if (ehyperviscos > 0.0) { // electron Hyper-viscosity coefficient
         ddt(Psi) -= eta * ehyperviscos * Delp2(Jpar2);
       }
 
-      // xqx: parallel hyper-viscous diffusion for vector potential
+      // Parallel hyper-viscous diffusion for vector potential
       if (diffusion_a4 > 0.0) {
         tmpA2 = D2DY2(Psi);
         mesh->communicate(tmpA2);
@@ -1532,8 +1527,7 @@ protected:
 
     ddt(U) += b0xcv * Grad(P); // curvature term
 
-    if (!nogradparj) {
-      // Parallel current term
+    if (!nogradparj) { // Parallel current term
       ddt(U) -= SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
     }
 
@@ -1541,21 +1535,22 @@ protected:
       ddt(U) -= b0xGrad_dot_Grad(phi, U0);
     }
 
-    if (diamag_phi0) {
-      ddt(U) -= b0xGrad_dot_Grad(phi0, U); // Equilibrium flow
+    if (diamag_phi0) { // Equilibrium flow
+      ddt(U) -= b0xGrad_dot_Grad(phi0, U);
     }
 
     if (withflow) { // net flow
       ddt(U) -= V_dot_Grad(V0net, U);
     }
 
-    if (nonlinear) {
-      ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
+    if (nonlinear) { // Advection
+      ddt(U) -= bracket(phi, U, bm_exb) * B0;
     }
 
     // Viscosity terms
-    if (viscos_par > 0.0) {
-      ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
+
+    if (viscos_par > 0.0) { // Parallel viscosity
+      ddt(U) += viscos_par * Grad2_par2(U);
     }
 
     if (diffusion_u4 > 0.0) {
@@ -1658,34 +1653,33 @@ protected:
     if (evolve_pressure) {
       ddt(P) -= b0xGrad_dot_Grad(phi, P0);
 
-      if (diamag_phi0) {
-        ddt(P) -= b0xGrad_dot_Grad(phi0, P); // Equilibrium flow
+      if (diamag_phi0) { // Equilibrium flow
+        ddt(P) -= b0xGrad_dot_Grad(phi0, P);
       }
 
       if (withflow) { // net flow
         ddt(P) -= V_dot_Grad(V0net, P);
       }
 
-      if (nonlinear) {
-        ddt(P) -= bracket(phi, P, bm_exb) * B0; // Advection
+      if (nonlinear) { // Advection
+        ddt(P) -= bracket(phi, P, bm_exb) * B0;
       }
     }
 
     // Parallel diffusion terms
-    if (diffusion_par > 0.0) {
-      ddt(P) += diffusion_par * Grad2_par2(P); // Parallel diffusion
+
+    if (diffusion_par > 0.0) { // Parallel diffusion
+      ddt(P) += diffusion_par * Grad2_par2(P);
     }
 
-    // xqx: parallel hyper-viscous diffusion for pressure
-    if (diffusion_p4 > 0.0) {
+    if (diffusion_p4 > 0.0) { // parallel hyper-viscous diffusion for pressure
       tmpP2 = D2DY2(P);
       mesh->communicate(tmpP2);
       tmpP2.applyBoundary();
       ddt(P) = diffusion_p4 * D2DY2(tmpP2);
     }
 
-    // heating source terms
-    if (heating_P > 0.0) {
+    if (heating_P > 0.0) { // heating source terms
       BoutReal pnorm = P0(0, 0);
       ddt(P) += heating_P * source_expx2(P0, 2. * hp_width, 0.5 * hp_length)
                 * (Tbar / pnorm); // heat source
@@ -1693,8 +1687,7 @@ protected:
                 * D2DX2(P) * (Tbar / Lbar / Lbar); // radial diffusion
     }
 
-    // sink terms
-    if (sink_P > 0.0) {
+    if (sink_P > 0.0) { // sink terms
       ddt(P) -= sink_P * sink_tanhxr(P0, P, sp_width, sp_length) * Tbar; // sink
     }
 
@@ -1703,7 +1696,6 @@ protected:
 
     if (compress) {
 
-      // ddt(P) += beta*( - Grad_parP(Vpar, CELL_CENTRE) + Vpar*gradparB );
       ddt(P) -= beta * Div_par(Vpar, CELL_CENTRE);
 
       if (phi_curv) {
@@ -1739,7 +1731,6 @@ protected:
       } else {
         ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
       }
-
       ddt(U) = lowPass(ddt(U), low_pass_z, zonal_flow);
       ddt(P) = lowPass(ddt(P), low_pass_z, zonal_bkgd);
     }
