@@ -7,7 +7,7 @@
 module purge
 module load cgpu/1.0
 module load gcc/8.3.0
-module load cuda/10.1.243
+module load cuda/11.1.1
 module load openmpi/4.0.3
 module load cmake/3.14.4 
 module load intel/19.1.3.304
@@ -18,7 +18,7 @@ setenv SPACK_ROOT /global/project/projectdirs/bout/BOUT-GPU/spack
 #spack -C /global/project/projectdirs/bout/BOUT-GPU/env module tcl refresh -y
 set pp = $SPACK_ROOT/share/spack/modules/cray-cnl7-skylake_avx512
 set source_prefix = `pwd`
-setenv MODULEPATH `${source_prefix}/scripts-config/cori-examples/helpers/munge_echo.sh "$MODULEPATH" "$1"`
+setenv MODULEPATH `${pp}:${source_prefix}/scripts-config/cori-examples/helpers/munge_echo.sh "$MODULEPATH" "$1"`
 module refresh
 
 set cc = /usr/common/software/sles15_cgpu/gcc/8.3.0/bin/gcc
