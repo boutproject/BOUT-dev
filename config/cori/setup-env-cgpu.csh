@@ -17,8 +17,7 @@ setenv SPACK_ROOT /global/project/projectdirs/bout/BOUT-GPU/spack
 #. $SPACK_ROOT/share/spack/setup-env.sh
 #spack -C /global/project/projectdirs/bout/BOUT-GPU/env module tcl refresh -y
 set pp = $SPACK_ROOT/share/spack/modules/cray-cnl7-skylake_avx512
-set source_prefix = `pwd`
-setenv MODULEPATH `${pp}:${source_prefix}/scripts-config/cori-examples/helpers/munge_echo.sh "$MODULEPATH" "$1"`
+setenv MODULEPATH "${pp}:${MODULEPATH}"
 module refresh
 
 set cc = /usr/common/software/sles15_cgpu/gcc/8.3.0/bin/gcc
