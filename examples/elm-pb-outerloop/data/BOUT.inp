@@ -124,7 +124,7 @@ x0 = 0.855          # peak location
 D_min = 3000        # constant
 ##################################################################
 
-eHall = false         # Include electron pressue effects in Ohm's law?
+eHall = false         # Include electron pressure effects in Ohm's law?
 AA = 2.0          # ion mass in units of proton mass
 
 noshear = false        # zero all shear
@@ -204,7 +204,7 @@ su_lengthr = 0.1     #   right edge sink length in percentage of nx (< 0 = none)
 ## Viscosity and Hyper-viscosity
 
 viscos_par = -0.1   # Parallel viscosity (< 0 = none)
-viscos_perp = -1.0  # Perpendicular
+viscos_perp = -1.0  # Perpendicular viscosity (< 0 = none)
 hyperviscos = -1.0  # Radial hyper viscosity
 
 ## Compressional terms (only when compress = true)
