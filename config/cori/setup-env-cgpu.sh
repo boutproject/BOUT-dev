@@ -53,10 +53,14 @@ module load parmetis-4.0.3-gcc-8.3.0_cgpu-6gstsni
 module load metis-5.1.0-gcc-8.3.0_cgpu-h3ldxba
 module load autoconf-2.69-gcc-8.3.0_cgpu-y7sih6k
 module load automake-1.16.2-gcc-8.3.0_cgpu-3hi6mou
-module load python-3.7-gcc-8.3.0_cgpu-xkofizg
+
+# Note: Loading python modules at this point causes conda libraries
+# to be picked up as dependencies rather than system libs
+
+#module load python-3.7-gcc-8.3.0_cgpu-xkofizg
 module load py-setuptools-50.3.2-gcc-8.3.0_cgpu-yhqv5q2
 module load py-numpy-1.19.4-gcc-8.3.0_cgpu-r4h5h5y
-module load py-netcdf4-1.4.2-gcc-8.3.0_cgpu-xtj5s5w
+#module load py-netcdf4-1.4.2-gcc-8.3.0_cgpu-xtj5s5w
 module load py-cython-0.29.21-gcc-8.3.0_cgpu-snty3m7
 module load py-cftime-1.0.3.4-gcc-8.3.0_cgpu-e3iigwj
 

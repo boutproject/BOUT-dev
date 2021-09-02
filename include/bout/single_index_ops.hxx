@@ -347,4 +347,9 @@ BOUT_HOST_DEVICE inline BoutReal Grad_par(const FieldAccessor<location>& f, cons
   return DDY(f, i) / sqrt(f.g_22[i]);
 }
 
+template<CELL_LOC location, class FieldType>
+BOUT_HOST_DEVICE inline BoutReal Grad_par(const FieldAccessor<location, FieldType>& f, const Ind3D &ind) {
+  return Grad_par(f, ind.ind);
+}
+
 #endif // SINGLE_INDEX_OPS_H
