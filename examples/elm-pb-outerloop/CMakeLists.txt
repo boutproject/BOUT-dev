@@ -7,7 +7,7 @@ if (NOT TARGET bout++::bout++)
 endif()
 
 set(elmpb_sources
-   elm_pb.cxx
+   elm_pb_outerloop.cxx
 )
 
 if(BOUT_HAS_HYPRE)
@@ -71,7 +71,5 @@ bout_copy_file(README.md)
 
 # Input files
 bout_copy_file(data/BOUT.inp)
-bout_copy_file(data-hypre/BOUT.inp)
-bout_copy_file(data-nonlinear/BOUT.inp)
 bout_copy_file(cbm18_dens8.grid_nx68ny64.nc)
 bout_copy_file(cbm18_8_y064_x516_090309.nc)
