@@ -655,8 +655,9 @@ public:
   /// _not_ used from this instance. If an option has a "source"
   /// attribute in \p exclude_sources it is counted as having been
   /// used and so won't be included in the returned value. By default,
-  /// this is just "Output".
-  Options getUnused(const std::vector<std::string>& exclude_sources = {"Output"} ) const;
+  /// this is "Output" and "user_default" (used by overrideDefault).
+  Options getUnused(const std::vector<std::string>& exclude_sources = {
+                        "Output", "user_default"}) const;
 
   /// Print the options which haven't been used
   void printUnused() const;
