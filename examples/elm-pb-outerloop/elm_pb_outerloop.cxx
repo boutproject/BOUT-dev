@@ -18,12 +18,13 @@
 #define EHALL false           // Include electron pressure effects in Ohm's law?
 #define DIAMAG_PHI0 true      // Balance ExB against Vd for stationary equilibrium?
 #define DIAMAG_GRAD_T false   // Include Grad_par(Te) term in Psi equation?
-#define HYPERRESIST false     // Enable hyper-resistivity term?
+#define HYPERRESIST true      // Enable hyper-resistivity term?
 #define EHYPERVISCOS false    // Enable electron hyper-viscosity?
 #define INCLUDE_RMP false     // Include external magnetic field perturbation?
 #define GRADPARJ true  // parallel j term in vorticity (inverse of nogradparj setting)
 #define VISCOS_PERP false     // Perpendicular viscosity
 #define EVOLVE_PRESSURE true  // If false, switch off all pressure evolution
+#define NONLINEAR false       // Include non-linear terms?
 
 /*******************************************************************************/
 
@@ -89,7 +90,7 @@ CELL_LOC loc = CELL_CENTRE;
 /// If the first argument is true, evaluate to expr
 ///  false -> 0.0
 ///  Other -> Probably invalid symbol, compile error
-#define EVAL_IF(setting, expr) CONCAT(ENABLE_IF_, setting)(expr)
+#define EVAL_IF(setting, expr) CONCAT(EVAL_IF_, setting)(expr)
 #define EVAL_IF_true(expr) (expr)
 #define EVAL_IF_false(expr) 0.0
 
@@ -1541,14 +1542,12 @@ protected:
     CHECK_SETTING(EHYPERVISCOS, ehyperviscos > 0.0);
     CHECK_SETTING(INCLUDE_RMP, include_rmp);
     CHECK_SETTING(GRADPARJ, !nogradparj); // Note: Can't negate macro argument
-    CHECK_SETTING(VISCOS_PERP, viscos_perp);
+    CHECK_SETTING(VISCOS_PERP, viscos_perp > 0.0);
     CHECK_SETTING(EVOLVE_PRESSURE, evolve_pressure);
+    CHECK_SETTING(NONLINEAR, nonlinear);
 
     ////////////////////////////////////////////////////
     // Create accessors for direct access to the data
-
-    auto indices = U.getRegion("RGN_NOBNDRY").getIndices();
-    Ind3D* ob_i = &(indices)[0];
 
     // Equilibrium (2D) fields
     auto P0_acc = Field2DAccessor<>(P0);
@@ -1563,9 +1562,12 @@ protected:
 
     // Derived fields
     auto Jpar_acc = FieldAccessor<>(Jpar);
-    auto Jpar2_acc = FieldAccessor<>(Jpar2);
     auto phi_acc = FieldAccessor<>(phi);
     auto eta_acc = FieldAccessor<>(eta);
+
+#if EHYPERVISCOS
+    auto Jpar2_acc = FieldAccessor<>(Jpar2);
+#endif
 
 #if EVOLVE_JPAR
     Field3D B0U = B0 * U;
@@ -1613,7 +1615,7 @@ protected:
 
 #else
       // Evolve vector potential ddt(psi)
-      ddt(Psi_acc)[i] = - GRAD_PARP(phi_acc) + eta[i] * Jpar_acc[i]
+      ddt(Psi_acc)[i] = - GRAD_PARP(phi_acc) + eta_acc[i] * Jpar_acc[i]
 
         + EVAL_IF(EHALL, // electron parallel pressure
                   0.25 * delta_i * (Grad_par(P_acc, i) + bracket(P0_acc, Psi_acc, i)))
@@ -1726,7 +1728,7 @@ protected:
       Field3D Jtarget = Jpar * (1.0 - vac_mask); // Zero in vacuum
 
       // Invert laplacian for Psi
-      Psitarget = aparSolver->solve(Jtarget);
+      Field3D Psitarget = aparSolver->solve(Jtarget);
 
       // Add a relaxation term in the vacuum
       ddt(Psi) =

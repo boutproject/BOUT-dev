@@ -48,16 +48,6 @@ upwind = W3
 shiftoutput = true  # Put the output into field-aligned coordinates
 
 ##################################################
-# Laplacian inversion routines
-
-[laplace]
-
-flags = 0   # Flags for Laplacian inversion
-
-rtol = 1.e-9
-atol = 1.e-14
-
-##################################################
 # FFTs
 
 [fft]
@@ -74,11 +64,8 @@ atol = 1e-08 # absolute tolerance
 rtol = 1e-05  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
-use_jacobian = false  # Use user-supplied Jacobian
 
 mxstep = 5000   # Number of internal steps between outputs
-adams_moulton = false # Use Adams-Moulton method (default is BDF)
-func_iter = false     # Functional iteration (default is Newton)
 
 ##################################################
 # settings for high-beta reduced MHD
@@ -212,15 +199,11 @@ phi_curv = true    # Include curvature*Grad(phi) in P equation
 # gamma = 1.6666
 
 [phiSolver]
-#inner_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-#outer_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
+inner_boundary_flags = 4 # INVERT_AC_LAP
 outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 
 [aparSolver]
-#inner_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-#outer_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
+inner_boundary_flags = 4 # INVERT_AC_LAP
 outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 
 ##################################################
@@ -270,13 +253,9 @@ bndry_ydown = free_o3
 # Zero gradient in the core
 bndry_core = neumann
 
-[Vpar]
-
-bndry_core = neumann
-
 [phi]
 
 bndry_xin = none
 bndry_xout = none
-bndry_target = neumann
+#bndry_target = neumann
 

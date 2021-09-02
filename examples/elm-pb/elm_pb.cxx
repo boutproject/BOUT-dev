@@ -187,7 +187,6 @@ private:
 
   bool relax_j_vac;
   BoutReal relax_j_tconst; // Time-constant for j relax
-  Field3D Psitarget;       // The (moving) target to relax to
 
   bool smooth_j_x; // Smooth Jpar in the x direction
 
@@ -1507,7 +1506,7 @@ protected:
         Field3D Jtarget = Jpar * (1.0 - vac_mask); // Zero in vacuum
 
         // Invert laplacian for Psi
-        Psitarget = aparSolver->solve(Jtarget);
+        Field3D Psitarget = aparSolver->solve(Jtarget);
 
         // Add a relaxation term in the vacuum
         ddt(Psi) =
