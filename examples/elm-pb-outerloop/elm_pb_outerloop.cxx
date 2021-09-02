@@ -94,7 +94,6 @@ CELL_LOC loc = CELL_CENTRE;
 #define EVAL_IF_true(expr) (expr)
 #define EVAL_IF_false(expr) 0.0
 
-
 /// Gradient along perturbed magnetic field
 /// Note: This relies on Psi_acc, B0_acc, i, i2d and rmp_Psi_acc
 #define GRAD_PARP(f_acc)                                                \
@@ -104,6 +103,13 @@ CELL_LOC loc = CELL_CENTRE;
             + EVAL_IF(INCLUDE_RMP,                                      \
                       bracket(rmp_Psi_acc, f_acc, i) * B0_acc[i2d])))
 
+/// Set default options
+/// This sets sensible defaults for when it's not set in the input
+BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_target", "neumann");
+BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xin", "none");
+BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
+
+/// 3-field ELM simulation
 class ELMpb : public PhysicsModel {
 private:
   // 2D inital profiles

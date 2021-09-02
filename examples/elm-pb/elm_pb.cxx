@@ -27,6 +27,13 @@
 
 CELL_LOC loc = CELL_CENTRE;
 
+/// Set default options
+/// This sets sensible defaults for when it's not set in the input
+BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_target", "neumann");
+BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xin", "none");
+BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
+
+/// 3-field ELM simulation
 class ELMpb : public PhysicsModel {
 private:
   // 2D inital profiles
