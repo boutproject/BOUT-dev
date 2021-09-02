@@ -660,7 +660,7 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
 
     if (child->second.is_section) {
       // Recurse down and replace this section by its "unused" version
-      child->second = child->second.getUnused();
+      child->second = child->second.getUnused(exclude_sources);
       // If all of its children have been used, then we can remove it
       // as well
       if (child->second.children.empty()) {
