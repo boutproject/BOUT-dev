@@ -1,0 +1,3 @@
+#!/bin/bash
+
+./test-bout-override-default-option
