@@ -1,6 +1,7 @@
 add_subdirectory(test-attribs)
 add_subdirectory(test-backtrace)
 add_subdirectory(test-beuler)
+add_subdirectory(test-bout-override-default-option)
 add_subdirectory(test-command-args)
 add_subdirectory(test-communications)
 add_subdirectory(test-coordinates-initialization)
