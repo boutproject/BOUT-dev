@@ -23,7 +23,6 @@ project(BOUT++
   VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
 
-include_directories(${CMAKE_BINARY_DIR}/include)
 include(CMakeDependentOption)
 
 option(BUILD_SHARED_LIBS "Build shared libs" ON)
