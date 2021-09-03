@@ -179,6 +179,9 @@ BOUT_HOST_DEVICE inline BoutReal DDZ(const FieldAccessor<location, FieldType>& f
 //////////////////////////////////////////////////////////////////////////////
 // Delp2
 
+/// Laplacian in 2D (X-Z), compatible with Delp2 field operator if C2 is used
+///
+/// Note: The non-uniform mesh (dx not constant) corrections are always included
 template <CELL_LOC location>
 BOUT_HOST_DEVICE inline BoutReal Delp2(const FieldAccessor<location>& f, const int i) {
   const int ny = f.ny;
@@ -197,10 +200,10 @@ BOUT_HOST_DEVICE inline BoutReal Delp2(const FieldAccessor<location>& f, const i
   const BoutReal dx = f.dx[i];
   const BoutReal dz = f.dz[i];
 
-  return f.G1[i] * (f[ixp] - f[ixm]) / (2.0 * dx)             // DDX
-         + f.G3[i] * (f[izp] - f[izm]) / (2.0 * dz)           // DDZ
-         + f.g11[i] * (f[ixp] - 2.0 * f[i] + f[ixm]) / SQ(dx) // D2DX2
-         + f.g33[i] * (f[izp] - 2.0 * f[i] + f[izm]) / SQ(dz) // D2DZ2
+  return (f.G1[i] + f.d1_dx[i] * f.g11[i]) * (f[ixp] - f[ixm]) / (2.0 * dx) // DDX
+         + f.G3[i] * (f[izp] - f[izm]) / (2.0 * dz)                         // DDZ
+         + f.g11[i] * (f[ixp] - 2.0 * f[i] + f[ixm]) / SQ(dx)               // D2DX2
+         + f.g33[i] * (f[izp] - 2.0 * f[i] + f[izm]) / SQ(dz)               // D2DZ2
          + 2 * f.g13[i] * ((f[izpxp] - f[izpxm]) - (f[izmxp] - f[izmxm]))
                / (4. * dz * dx); // D2DXDZ
 }
@@ -311,6 +314,8 @@ BOUT_HOST_DEVICE inline BoutReal b0xGrad_dot_Grad(const FieldAccessor<location, 
 //////////////////////////////////////////////////////////////////////////////
 // D2DY2
 
+/// Second-order (C2) second derivative in Y
+/// Includes non-uniform grid correction (d1_dy factor).
 template <CELL_LOC location>
 BOUT_HOST_DEVICE inline BoutReal D2DY2(const FieldAccessor<location>& f, const int i) {
   const int nz = f.mesh_nz;
@@ -318,29 +323,22 @@ BOUT_HOST_DEVICE inline BoutReal D2DY2(const FieldAccessor<location>& f, const i
   int iyp = i_yp(i, nz);
   int iym = i_ym(i, nz);
 
-  BoutReal result = (f.yup[iyp] - 2. * f[i] + f.ydown[iym]) / SQ(f.dy[i]);
+  BoutReal dy = f.dy[i];
+
+  BoutReal result = (f.yup[iyp] - 2. * f[i] + f.ydown[iym]) / SQ(dy)
+    // non-uniform correction
+    + f.d1_dy[i] * (f.yup[iyp] - f.ydown[iym]) / (2. * dy);
 
   return result;
+}
+
+template<CELL_LOC location, class FieldType>
+BOUT_HOST_DEVICE inline BoutReal D2DY2(const FieldAccessor<location, FieldType>& f, const Ind3D &ind) {
+  return D2DY2(f, ind.ind);
 }
 
 //////////////////////////////////////////////////////////////////////////////
 // Grad_par
-
-template <CELL_LOC location, class FieldType>
-BOUT_HOST_DEVICE inline BoutReal Grad_parP(const FieldAccessor<location, FieldType>& f,
-                                           const int i) {
-  BoutReal result = Grad_par(f, i);
-
-  // if (nonlinear) {
-  //   result -= bracket(interp_to(Psi, loc), f, bm_mag) * B0;
-
-  // if (include_rmp) {
-  //  result -= bracket(interp_to(rmp_Psi, loc), f, bm_mag) * B0;
-  // }
-  // }
-
-  return result;
-}
 
 template <CELL_LOC location>
 BOUT_HOST_DEVICE inline BoutReal Grad_par(const FieldAccessor<location>& f, const int i) {
@@ -350,6 +348,25 @@ BOUT_HOST_DEVICE inline BoutReal Grad_par(const FieldAccessor<location>& f, cons
 template<CELL_LOC location, class FieldType>
 BOUT_HOST_DEVICE inline BoutReal Grad_par(const FieldAccessor<location, FieldType>& f, const Ind3D &ind) {
   return Grad_par(f, ind.ind);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Div_par
+
+/// Parallel divergence Div_par(f) = B Grad_par(f / B)
+template <CELL_LOC location>
+BOUT_HOST_DEVICE inline BoutReal Div_par(const FieldAccessor<location>& f, const int i) {
+  const int nz = f.nz;
+  const int iyp = i_yp(i, nz);
+  const int iym = i_ym(i, nz);
+
+  return 0.5 * f.B[i] * ((f.yup[iyp] / f.Byup[iyp]) - (f.ydown[iym] / f.Bydown[iym]))
+         / (f.dy[i] * sqrt(f.g_22[i]));
+}
+
+template<CELL_LOC location, class FieldType>
+BOUT_HOST_DEVICE inline BoutReal Div_par(const FieldAccessor<location, FieldType>& f, const Ind3D &ind) {
+  return Div_par(f, ind.ind);
 }
 
 #endif // SINGLE_INDEX_OPS_H
