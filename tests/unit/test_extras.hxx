@@ -477,8 +477,8 @@ public:
     bout::globals::mesh->createDefaultRegions();
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
     test_coords = std::make_shared<Coordinates>(
-        bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
-        Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+        bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
+        Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
 
@@ -513,14 +513,15 @@ public:
 
     test_coords_staggered = std::make_shared<Coordinates>(
         mesh_staggered, Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
-        BoutReal{1.0}, Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
         Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
-        Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
-        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
         Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
-        Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
         Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
-        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered});
+        Field2D{0.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
+        Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
+        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{0.0, mesh_staggered});
 
     // Set some auxilliary variables
     test_coords_staggered->G1 = test_coords_staggered->G2 = test_coords_staggered->G3 =
