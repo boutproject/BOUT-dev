@@ -142,6 +142,11 @@ or
 .. code-block:: csh
    ./config/cori/config-bout-cgpu-nohypre.csh
 
+See section :ref:`sec-gpusupport` for details of compiling and running
+on GPU machines, including Cori. Note that in order to access GPU
+nodes a request must be made through `NERSC services
+<https://nersc.servicenowservices.com/>`_.
+
 Edison
 ~~~~~~
 
