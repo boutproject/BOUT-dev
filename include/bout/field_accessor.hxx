@@ -62,7 +62,9 @@ struct FieldAccessor {
   /// @param[in] f    The field to access. Must already be allocated
   explicit FieldAccessor(FieldType& f)
       : coords(f.getCoordinates()), dx(coords->dx), dy(coords->dy), dz(coords->dz),
-        J(coords->J), G1(coords->G1), G3(coords->G3), g11(coords->g11), g12(coords->g12),
+        d1_dx(coords->d1_dx), d1_dy(coords->d1_dy), d1_dz(coords->d1_dz), J(coords->J),
+        B(coords->Bxy), Byup(coords->Bxy.yup()), Bydown(coords->Bxy.ydown()),
+        G1(coords->G1), G3(coords->G3), g11(coords->g11), g12(coords->g12),
         g13(coords->g13), g22(coords->g22), g23(coords->g23), g33(coords->g33),
         g_11(coords->g_11), g_12(coords->g_12), g_13(coords->g_13), g_22(coords->g_22),
         g_23(coords->g_23), g_33(coords->g_33) {
@@ -116,8 +118,10 @@ struct FieldAccessor {
   // Note: The data size depends on Coordinates::FieldMetric
   //       and could be Field2D or Field3D
 
-  CoordinateFieldAccessor dx, dy, dz; ///< Grid spacing
-  CoordinateFieldAccessor J;          ///< Coordinate system Jacobian
+  CoordinateFieldAccessor dx, dy, dz;          ///< Grid spacing
+  CoordinateFieldAccessor d1_dx, d1_dy, d1_dz; ///< Grid spacing non-uniformity
+  CoordinateFieldAccessor J;                   ///< Coordinate system Jacobian
+  CoordinateFieldAccessor B, Byup, Bydown;     ///< Magnetic field magnitude
 
   CoordinateFieldAccessor G1, G3;
 
