@@ -329,7 +329,6 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
 
   // Set boundary cells past the first one
   ////////////////////////////////////////
-#if 1
   // Inner X boundary
   if (localmesh->firstX()) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
@@ -357,7 +356,6 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
     for (int y = localmesh->yend + 2; y < localmesh->LocalNy; y++)
       sol(it.ind, y) = sol(it.ind, localmesh->yend + 1);
   }
-#endif
   return sol;
 }
 

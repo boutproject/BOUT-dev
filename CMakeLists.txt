@@ -1,14 +1,9 @@
-cmake_minimum_required(VERSION 3.9...3.12)
-
-if(${CMAKE_VERSION} VERSION_LESS 3.12)
+cmake_minimum_required(VERSION 3.13...3.16)
+if(${CMAKE_VERSION} VERSION_LESS 3.13)
   cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 else()
-  cmake_policy(VERSION 3.12)
+  cmake_policy(VERSION 3.13)
 endif()
-cmake_policy(SET CMP0025 NEW)
-cmake_policy(SET CMP0048 NEW)
-cmake_policy(SET CMP0057 NEW)
-cmake_policy(SET CMP0074 NEW)
 
 set(CXX_STANDARD "14")
 
