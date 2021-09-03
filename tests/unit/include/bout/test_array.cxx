@@ -220,13 +220,17 @@ TEST_F(ArrayTest, RetrieveData) {
 
   EXPECT_FALSE(a.empty());
   EXPECT_EQ(a.size(), 30);
-  if(a.useStore()) EXPECT_EQ(a[4], 4); // Test if reused data from store
+  if(a.useStore()) {
+    EXPECT_EQ(a[4], 4); // Test if reused data from store
+  }
   EXPECT_TRUE(a.unique());
 
   a.ensureUnique(); // Should have no effect
 
   EXPECT_EQ(a.size(), 30);
-  if(a.useStore()) EXPECT_EQ(a[4], 4); // Test if reused data from store
+  if(a.useStore()) {
+    EXPECT_EQ(a[4], 4); // Test if reused data from store
+  }
   EXPECT_TRUE(a.unique());
 }
 
