@@ -472,15 +472,17 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     else if (ksptype == KSPCHEBYSHEV)
       KSPChebyshevSetEigenvalues(ksp, chebyshev_max, chebyshev_min);
 #endif
-    else if (ksptype == KSPGMRES)
+    else if (ksptype == KSPGMRES) {
       KSPGMRESSetRestart(ksp, gmres_max_steps);
+    }
 
     // Set the relative and absolute tolerances
     KSPSetTolerances(ksp, rtol, atol, dtol, maxits);
 
     // If the initial guess is not set to zero
-    if (!(global_flags & INVERT_START_NEW))
+    if ((global_flags & INVERT_START_NEW) == 0) {
       KSPSetInitialGuessNonzero(ksp, (PetscBool) true);
+    }
 
     // Set the relative and absolute tolerances
     PCSetType(pc, pctype.c_str());

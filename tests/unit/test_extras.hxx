@@ -500,15 +500,15 @@ public:
     // fromFieldAligned
     test_coords->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
-    static_cast<FakeMesh*>(bout::globals::mesh)->createBoundaryRegions();
+    dynamic_cast<FakeMesh*>(bout::globals::mesh)->createBoundaryRegions();
 
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
     mesh_staggered->StaggerGrids = true;
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
+    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
+    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
+    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
+    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
     mesh_staggered->createDefaultRegions();
 
     test_coords_staggered = std::make_shared<Coordinates>(

@@ -398,7 +398,9 @@ int Mesh::ySize(int jx) const {
 
 bool Mesh::hasBndryLowerY() {
   static bool calc = false, answer;
-  if(calc) return answer; // Already calculated
+  if(calc) {
+    return answer; // Already calculated
+  }
 
   int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
   int allbndry;
@@ -410,7 +412,9 @@ bool Mesh::hasBndryLowerY() {
 
 bool Mesh::hasBndryUpperY() {
   static bool calc = false, answer;
-  if(calc) return answer; // Already calculated
+  if(calc) {
+    return answer; // Already calculated
+  }
 
   int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
   int allbndry;
@@ -429,17 +433,21 @@ int Mesh::localSize3D() {
     const int nz = LocalNz;
     localNumCells3D = nx * ny * nz;
     for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
+      if (it.ind == xstart) {
         localNumCells3D += nz;
-      if (it.ind == xend)
+      }
+      if (it.ind == xend) {
         localNumCells3D += nz;
+      }
       localNumCells3D += nz;
     }
     for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
+      if (it.ind == xstart) {
         localNumCells3D += nz;
-      if (it.ind == xend)
+      }
+      if (it.ind == xend) {
         localNumCells3D += nz;
+      }
       localNumCells3D += nz;
     }
   }
@@ -454,17 +462,21 @@ int Mesh::localSize2D() {
     const int ny = yend - ystart + 1;
     localNumCells2D = nx * ny;
     for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
+      if (it.ind == xstart) {
         localNumCells2D += 1;
-      if (it.ind == xend)
+      }
+      if (it.ind == xend) {
         localNumCells2D += 1;
+      }
       localNumCells2D += 1;
     }
     for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
+      if (it.ind == xstart) {
         localNumCells2D += 1;
-      if (it.ind == xend)
+      }
+      if (it.ind == xend) {
         localNumCells2D += 1;
+      }
       localNumCells2D += 1;
     }
   }
@@ -484,21 +496,21 @@ int Mesh::localSizePerp() {
 
 int Mesh::globalStartIndex3D() {
   int localSize = localSize3D();
-  int cumulativeSize;
+  int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
   return cumulativeSize - localSize;
 }
 
 int Mesh::globalStartIndex2D() {
   int localSize = localSize2D();
-  int cumulativeSize;
+  int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
   return cumulativeSize - localSize;
 }
 
 int Mesh::globalStartIndexPerp() {
   int localSize = localSizePerp();
-  int cumulativeSize;
+  int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
   return cumulativeSize - localSize;
 }
