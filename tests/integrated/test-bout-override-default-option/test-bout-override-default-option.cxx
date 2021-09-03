@@ -36,5 +36,5 @@ int main() {
   }
 
   // Return 0 for success=true, 1 for success=false
-  return not success;
+  return static_cast<int>(not success);
 }
