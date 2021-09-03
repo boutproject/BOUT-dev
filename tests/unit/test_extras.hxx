@@ -483,7 +483,14 @@ public:
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
 
     // Set some auxilliary variables
-    test_coords->G1 = test_coords->G2 = test_coords->G3 = 0.0;
+    // Usually set in geometry()
+    // Note: For testing these are set to non-zero values
+    test_coords->G1 = test_coords->G2 = test_coords->G3 = 0.1;
+
+    // Set nonuniform corrections
+    test_coords->non_uniform = true;
+    test_coords->d1_dx = test_coords->d1_dy = 0.2;
+    test_coords->d1_dz = 0.0;
 
     // No call to Coordinates::geometry() needed here
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
@@ -517,7 +524,12 @@ public:
 
     // Set some auxilliary variables
     test_coords_staggered->G1 = test_coords_staggered->G2 = test_coords_staggered->G3 =
-        0.0;
+        0.1;
+
+    // Set nonuniform corrections
+    test_coords_staggered->non_uniform = true;
+    test_coords_staggered->d1_dx = test_coords_staggered->d1_dy = 0.2;
+    test_coords_staggered->d1_dz = 0.0;
 
     // No call to Coordinates::geometry() needed here
     test_coords_staggered->setParallelTransform(
