@@ -111,7 +111,7 @@ BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
 
 /// 3-field ELM simulation
 class ELMpb : public PhysicsModel {
-private:
+public:
   // 2D inital profiles
   Field2D J0, P0;         // Current and pressure
   Vector2D b0xcv;         // Curvature term
@@ -373,7 +373,6 @@ private:
     return result;
   }
 
-protected:
   int init(bool restarting) override {
     bool noshear;
 

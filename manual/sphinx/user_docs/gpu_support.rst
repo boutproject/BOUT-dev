@@ -149,3 +149,15 @@ equations, and have the same inputs, as ``elm-pb``. Note that there are some dif
   To achieve higher performance, ``elm-pb-outerloop`` does this at compile time.
   There are checks to ensure that the code has been compiled with flags consistent
   with the input settings. See the README file for more details.
+
+
+Notes:
+
+* When RAJA is used in a physics model, all members of the PhysicsModel
+  should be public. If this is not done, then a compiler error like
+  "error: The enclosing parent function ("rhs") for an extended __device__ lambda
+  cannot have private or protected access within its class" may be encountered.
+
+
+
+
