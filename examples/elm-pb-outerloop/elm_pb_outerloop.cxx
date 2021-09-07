@@ -11,7 +11,7 @@
  * Based on model code,  Yining Qin update GPU RAJA code since 1117-2020
  *******************************************************************************/
 
-#define RUN_WITH_RAJA false   // Use RAJA loops?
+#define RUN_WITH_RAJA true   // Use RAJA loops?
 
 #define EVOLVE_JPAR false     // Evolve ddt(Jpar) rather than ddt(Psi)?
 #define RELAX_J_VAC false     // Relax to zero-current in the vacuum?
@@ -52,7 +52,7 @@
 // library for GPU
 #include "RAJA/RAJA.hpp" // using RAJA lib
 
-#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
+#if BOUT_USE_CUDA && defined(__CUDACC__)
 #include <cuda_profiler_api.h>
 #endif
 
