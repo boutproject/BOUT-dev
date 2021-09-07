@@ -151,8 +151,10 @@ using Field2DAccessor = FieldAccessor<location, Field2D>;
 ///  where fa is a FieldAccessor, and i is an int
 ///
 template <CELL_LOC location, class FieldType>
-BOUT_HOST_DEVICE inline BoutRealArray& ddt(FieldAccessor<location, FieldType> &fa) {
-  return fa.ddt;
+BOUT_HOST_DEVICE inline BoutRealArray& ddt(const FieldAccessor<location, FieldType> &fa) {
+  // Note: FieldAccessor captured by value is const in RAJA kernel.
+  //       Need to cast to non-const so that ddt() data can be assigned to
+  return const_cast<BoutRealArray&>(fa.ddt);
 }
 
 #endif
