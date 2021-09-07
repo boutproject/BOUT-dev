@@ -11,7 +11,7 @@
  * Based on model code,  Yining Qin update GPU RAJA code since 1117-2020
  *******************************************************************************/
 
-#define RUN_WITH_RAJA false   // Use RAJA loops?
+#define RUN_WITH_RAJA true   // Use RAJA loops?
 
 #define EVOLVE_JPAR false     // Evolve ddt(Jpar) rather than ddt(Psi)?
 #define RELAX_J_VAC false     // Relax to zero-current in the vacuum?
@@ -111,7 +111,7 @@ BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
 
 /// 3-field ELM simulation
 class ELMpb : public PhysicsModel {
-private:
+public:
   // 2D inital profiles
   Field2D J0, P0;         // Current and pressure
   Vector2D b0xcv;         // Curvature term
@@ -373,7 +373,6 @@ private:
     return result;
   }
 
-protected:
   int init(bool restarting) override {
     bool noshear;
 
@@ -1595,11 +1594,33 @@ protected:
 
     const auto& region = Jpar.getRegion("RGN_NOBNDRY"); // Region over which to iterate
 #if RUN_WITH_RAJA
-    auto indices = region.getIndices(); // A std::vector of Ind3D objects
-    Ind3D* ob_i = &(indices)[0];
+    
+	///////////////////////////////////////////////////
+	// First, caputre a device safe array for indices
+	//
+	auto indices = region.getIndices(); // A std::vector of Ind3D objects
+	Ind3D *ob_i = &(indices)[0];
+
+	Array<int> _ob_i_ind(indices.size()); // A device safe array
+	//TODO: make this parallel copy for efficiency
+	for(auto i = 0; i < indices.size(); i++) {
+		_ob_i_ind[i] = ob_i[i].ind;
+	}
+	
+	///////////////////////////////////////////////////
+	// Next, capture all all class member variables to 
+	// local scope 
+	//
+
+	const auto _loc = loc;	
+	const auto _delta_i = delta_i;
+	const auto _hyperresist = hyperresist;
+	const auto _relax_j_tconst = relax_j_tconst;
+	const auto _dnorm = dnorm;
+	const auto _ehyperviscos = ehyperviscos;
 
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-      int i = ob_i[id].ind;
+      int i = _ob_i_ind[i];
       int i2d = i / Jpar_acc.mesh_nz;  // An index for 2D objects
 #else
     BOUT_FOR(i, region) {
@@ -1613,31 +1634,31 @@ protected:
       // Evolving parallel current ddt(Jpar)
 
       ddt(Jpar_acc)[i] =
-          - Grad_par(B0U_acc, loc) / B0_acc[i2d] + eta_acc[i] * Delp2(Jpar_acc, i)
+          - Grad_par(B0U_acc, _loc) / B0_acc[i2d] + eta_acc[i] * Delp2(Jpar_acc, i)
 
           - EVAL_IF(RELAX_J_VAC, // Relax current to zero
-                    vac_mask_acc[i] * Jpar_acc[i] / relax_j_tconst)
+                    vac_mask_acc[i] * Jpar_acc[i] / _relax_j_tconst)
         ;
 
-#else
+#else 
       // Evolve vector potential ddt(psi)
       ddt(Psi_acc)[i] = - GRAD_PARP(phi_acc) + eta_acc[i] * Jpar_acc[i]
 
         + EVAL_IF(EHALL, // electron parallel pressure
-                  0.25 * delta_i * (Grad_par(P_acc, i) + bracket(P0_acc, Psi_acc, i)))
+                  0.25 * _delta_i * (Grad_par(P_acc, i) + bracket(P0_acc, Psi_acc, i)))
 
         - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
                   bracket(phi0_acc, Psi_acc, i))
 
         + EVAL_IF(DIAMAG_GRAD_T, // grad_par(T_e) correction
-                  1.71 * dnorm * 0.5 * Grad_par(P_acc, i) / B0_acc[i2d])
+                  1.71 * _dnorm * 0.5 * Grad_par(P_acc, i) / B0_acc[i2d])
 
         - EVAL_IF(HYPERRESIST, // Hyper-resistivity
-                  eta_acc[i] * hyperresist * Delp2(Jpar_acc, i))
+                  eta_acc[i] * _hyperresist * Delp2(Jpar_acc, i))
 
         - EVAL_IF(EHYPERVISCOS, // electron Hyper-viscosity
-                  eta_acc[i] * ehyperviscos * Delp2(Jpar2_acc, i))
-        ;
+                  eta_acc[i] * _ehyperviscos * Delp2(Jpar2_acc, i))
+        ; 
 
 #endif
 
