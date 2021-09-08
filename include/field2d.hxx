@@ -43,7 +43,7 @@ class Field3D; //#include "field3d.hxx"
 
 #include "unused.hxx"
 
-#ifdef BOUT_HAS_RAJA
+#if BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
 #endif
 
@@ -204,7 +204,7 @@ public:
    * significantly reduce performance.
    */
   BOUT_HOST_DEVICE inline BoutReal& operator()(int jx, int jy) {
-#if CHECK > 2 && !defined(BOUT_USE_CUDA)
+#if CHECK > 2 && !BOUT_USE_CUDA
     if (!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
 
@@ -216,7 +216,7 @@ public:
     return data[jx * ny + jy];
   }
   BOUT_HOST_DEVICE inline const BoutReal& operator()(int jx, int jy) const {
-#if CHECK > 2 && !defined(BOUT_USE_CUDA)
+#if CHECK > 2 && !BOUT_USE_CUDA
     if (!isAllocated())
       throw BoutException("Field2D: () operator on empty data");
 

@@ -1,4 +1,6 @@
-#ifdef BOUT_HAS_RAJA
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_RAJA
 
 #include <cstdlib>
 #include <cstring>
@@ -6,8 +8,6 @@
 
 #include "gtest/gtest.h"
 #include "RAJA/RAJA.hpp"
-
-//#include "bout/sys/ForAll.h"
 
 TEST(RajaTest, SimpleForall) {
 //
@@ -70,8 +70,6 @@ TEST(RajaTest, SimpleForall) {
   
 //----------------------------------------------------------------------------//
 
-  //std::cout << "\n Running RAJA sequential daxpy...\n";
-   
   std::memcpy( a, a0, N * sizeof(double) );  
 
   RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, N), [=] (int i) {

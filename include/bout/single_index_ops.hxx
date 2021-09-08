@@ -7,9 +7,9 @@
 
 #include "field_accessor.hxx"
 
-#ifdef BOUT_HAS_RAJA
+#if BOUT_HAS_RAJA
 //--  RAJA CUDA settings--------------------------------------------------------start
-#ifdef BOUT_USE_CUDA
+#if BOUT_USE_CUDA
 const int CUDA_BLOCK_SIZE = 256; // TODO: Make configurable
 using EXEC_POL = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
 #else  // BOUT_ENABLE_CUDA not defined
