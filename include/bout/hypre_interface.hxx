@@ -18,7 +18,7 @@
 #include "HYPRE_utilities.h"
 #include "_hypre_utilities.h"
 
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
 #include <caliper/cali.h>
 #include <caliper/cali-manager.h>
 #endif
@@ -29,7 +29,7 @@
 BOUT_ENUM_CLASS(HYPRE_SOLVER_TYPE, gmres, bicgstab, pcg);
 
 namespace bout {
-#ifdef BOUT_USE_CUDA // HYPRE with Cuda enabled
+#if BOUT_USE_CUDA // HYPRE with Cuda enabled
 #define HypreMalloc(P, SIZE) cudaMallocManaged(&P, SIZE)
 #define HypreFree(P) cudaFree(P)
 #else
@@ -185,14 +185,14 @@ public:
   }
 
   void assemble() {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
   CALI_MARK_BEGIN("hype_interface:vectorAssemble");
 #endif
     writeCacheToHypre();
     checkHypreError(HYPRE_IJVectorAssemble(hypre_vector));
     checkHypreError(HYPRE_IJVectorGetObject(hypre_vector,
                                             reinterpret_cast<void**>(&parallel_vector)));
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
   CALI_MARK_END("hype_interface:vectorAssemble");
 #endif
   }
@@ -207,7 +207,7 @@ public:
 
   T toField() {
  
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
   CALI_CXX_MARK_FUNCTION;
 #endif
     T result(indexConverter->getMesh());
@@ -228,7 +228,7 @@ public:
   }
 
   void importValuesFromField(const T& f) {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
   CALI_CXX_MARK_FUNCTION;
 #endif
     int vec_i = 0;
@@ -492,7 +492,7 @@ public:
 
   private:
     void setValues(BoutReal value_) {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
       CALI_CXX_MARK_FUNCTION;
 #endif
       TRACE("HypreMatrix setting values at ({}, {})", row, column);
@@ -509,7 +509,7 @@ public:
     }
 
     void addValues(BoutReal value_) {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
       CALI_CXX_MARK_FUNCTION;
 #endif
       TRACE("HypreMatrix setting values at ({}, {})", row, column);
@@ -527,7 +527,7 @@ public:
   };
 
   BoutReal getVal(const ind_type& row, const ind_type& column) const {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
       CALI_CXX_MARK_FUNCTION;
 #endif
     const HYPRE_BigInt global_row = index_converter->getGlobal(row);
@@ -543,7 +543,7 @@ public:
   }
 
   BoutReal getVal(const HYPRE_BigInt row, const HYPRE_BigInt column) const {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
       CALI_CXX_MARK_FUNCTION;
 #endif
     HYPRE_Complex value = 0.0;
@@ -559,7 +559,7 @@ public:
   }
 
   void setVal(const ind_type& row, const ind_type& column, BoutReal value) {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
       CALI_CXX_MARK_FUNCTION;
 #endif
     const HYPRE_BigInt global_row = index_converter->getGlobal(row);
@@ -575,7 +575,7 @@ public:
   }
 
   void setVal(const HYPRE_BigInt row, const HYPRE_BigInt column, BoutReal value) {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
       CALI_CXX_MARK_FUNCTION;
 #endif
     HYPRE_BigInt i = row - ilower;
@@ -596,7 +596,7 @@ public:
   }
 
   void addVal(const ind_type& row, const ind_type& column, BoutReal value) {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
       CALI_CXX_MARK_FUNCTION;
 #endif
     const HYPRE_BigInt global_row = index_converter->getGlobal(row);
@@ -612,7 +612,7 @@ public:
   }
 
   void addVal(const HYPRE_BigInt row, const HYPRE_BigInt column, BoutReal value) {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
       CALI_CXX_MARK_FUNCTION;
 #endif
     HYPRE_BigInt i = row - ilower;
@@ -702,7 +702,7 @@ public:
   }
 
   void assemble() {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
     CALI_CXX_MARK_FUNCTION;
 #endif
     HYPRE_BigInt num_entries = 0;
@@ -781,7 +781,7 @@ public:
   // y = alpha*A*x + beta*y
   // Note result is returned in 'y' argument
   void computeAxpby(double alpha, HypreVector<T>& x, double beta, HypreVector<T>& y) {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
     CALI_CXX_MARK_FUNCTION;
 #endif
     checkHypreError(HYPRE_ParCSRMatrixMatvec(alpha, parallel_matrix, x.getParallel(),
@@ -791,7 +791,7 @@ public:
   // y = A*x
   // Note result is returned in 'y' argument
   void computeAx(HypreVector<T>& x, HypreVector<T>& y) {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
     CALI_CXX_MARK_FUNCTION;
 #endif
     checkHypreError(HYPRE_ParCSRMatrixMatvec(1.0, parallel_matrix, x.getParallel(), 0.0,
@@ -867,7 +867,7 @@ public:
 
     HYPRE_BoomerAMGCreate(&precon);
     HYPRE_BoomerAMGSetOldDefault(precon);
-#ifdef BOUT_USE_CUDA
+#if BOUT_USE_CUDA
     HYPRE_BoomerAMGSetRelaxType(precon, 18);  // 18 or 7 for GPU implementation // 7 is slower to converge
     HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
     HYPRE_BoomerAMGSetCoarsenType(precon, 8); // must be PMIS (8) for GPU 
@@ -981,7 +981,7 @@ public:
   void setMatrix(HypreMatrix<T>* A_) { A = A_; }
 
   int setupAMG(HypreMatrix<T>* P_) {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
     CALI_CXX_MARK_FUNCTION;
 #endif
     P = P_;
@@ -1029,7 +1029,7 @@ public:
   }
 
   int solve() {
-#ifdef BOUT_HAS_CALIPER
+#if BOUT_HAS_CALIPER
     CALI_CXX_MARK_FUNCTION;
 #endif
     int solve_err;

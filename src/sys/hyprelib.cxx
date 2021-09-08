@@ -17,7 +17,7 @@ HypreLib::HypreLib() {
   {
     output << "Initialising Hypre\n";
     HYPRE_Init();  
-#ifdef BOUT_USE_CUDA
+#if BOUT_USE_CUDA
     hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
     HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
     hypre_HandleMemoryLocation(hypre_handle()) = memory_location;

@@ -35,7 +35,9 @@
 #include <omp.h>
 #endif
 
-#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
+#include "bout/build_config.hxx"
+
+#if BOUT_USE_CUDA && defined(__CUDACC__)
 #define BOUT_HOST_DEVICE __host__ __device__
 #define BOUT_HOST __host__
 #define BOUT_DEVICE __device__
@@ -45,7 +47,7 @@
 #define BOUT_DEVICE
 #endif
 
-#ifdef BOUT_HAS_UMPIRE
+#if BOUT_HAS_UMPIRE
 #include "umpire/Allocator.hpp"
 #include "umpire/ResourceManager.hpp"
 #endif
@@ -67,9 +69,9 @@ using const_iterator = const T*;
 template <typename T>
 struct ArrayData {
   ArrayData(int size) : len(size), clientUseCount(1), owner(true) {
-#ifdef BOUT_HAS_UMPIRE
+#if BOUT_HAS_UMPIRE
     auto& rm = umpire::ResourceManager::getInstance();
-#ifdef BOUT_USE_CUDA
+#if BOUT_USE_CUDA
     auto allocator = rm.getAllocator(umpire::resource::Pinned);
 #else
     auto allocator = rm.getAllocator("HOST");
@@ -83,7 +85,7 @@ struct ArrayData {
   BOUT_HOST_DEVICE ~ArrayData() {
 // __CUDA_ARCH__ is only defined device side
 #ifndef __CUDA_ARCH__
-#ifdef BOUT_HAS_UMPIRE
+#if BOUT_HAS_UMPIRE
     if (data != nullptr && owner && (clientUseCount == 1)) {
       auto& rm = umpire::ResourceManager::getInstance();
       rm.deallocate(data);
@@ -363,14 +365,14 @@ public:
    * so the user should perform checks.
    */
   BOUT_HOST_DEVICE inline T& operator[](size_type ind) {
-#ifndef BOUT_USE_CUDA
+#if not BOUT_USE_CUDA
     ASSERT3(0 <= ind && ind < size());
 #endif
     return ptr->operator[](ind);
   }
 
   BOUT_HOST_DEVICE inline const T& operator[](size_type ind) const {
-#ifndef BOUT_USE_CUDA
+#if not BOUT_USE_CUDA
     ASSERT3(0 <= ind && ind < size());
 #endif
     return ptr->operator[](ind);
@@ -402,9 +404,9 @@ private:
    * Expects \p len >= 0
    */
   dataPtrType get(size_type len) {
-#ifdef BOUT_HAS_UMPIRE
+#if BOUT_HAS_UMPIRE
     auto& rm = umpire::ResourceManager::getInstance();
-#ifdef BOUT_USE_CUDA
+#if BOUT_USE_CUDA
     auto allocator = rm.getAllocator("UM");
 #else
     auto allocator = rm.getAllocator("HOST");
@@ -437,7 +439,7 @@ private:
 
     // Reduce reference count, and if zero return to store
     if (d->use_count() == 1) {
-#ifdef BOUT_HAS_UMPIRE
+#if BOUT_HAS_UMPIRE
       auto& rm = umpire::ResourceManager::getInstance();
       rm.deallocate(d->begin());
       rm.deallocate(d);
