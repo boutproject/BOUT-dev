@@ -365,14 +365,14 @@ public:
    * so the user should perform checks.
    */
   BOUT_HOST_DEVICE inline T& operator[](size_type ind) {
-#if not BOUT_USE_CUDA
+#if !BOUT_USE_CUDA
     ASSERT3(0 <= ind && ind < size());
 #endif
     return ptr->operator[](ind);
   }
 
   BOUT_HOST_DEVICE inline const T& operator[](size_type ind) const {
-#if not BOUT_USE_CUDA
+#if !BOUT_USE_CUDA
     ASSERT3(0 <= ind && ind < size());
 #endif
     return ptr->operator[](ind);
