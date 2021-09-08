@@ -158,6 +158,10 @@ Notes:
   "error: The enclosing parent function ("rhs") for an extended __device__ lambda
   cannot have private or protected access within its class" may be encountered.
 
-
+* Class member variables cannot in general be used inside a RAJA loop: The ``this``
+  pointer is captured by value in the lambda function, not the value of the member variable. 
+  When the member variable is used on the GPU, the ``this`` pointer is generally not valid
+  (e.g. on NERSC Cori GPUs). Some architectures have Address Translation Services (ATS)
+  which enable host pointers to be resolved on the GPU.
 
 
