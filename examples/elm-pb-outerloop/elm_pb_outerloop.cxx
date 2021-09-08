@@ -11,7 +11,7 @@
  * Based on model code,  Yining Qin update GPU RAJA code since 1117-2020
  *******************************************************************************/
 
-#define RUN_WITH_RAJA true   // Use RAJA loops?
+#define RUN_WITH_RAJA false   // Use RAJA loops?
 
 #define EVOLVE_JPAR false     // Evolve ddt(Jpar) rather than ddt(Psi)?
 #define RELAX_J_VAC false     // Relax to zero-current in the vacuum?
@@ -1593,10 +1593,24 @@ public:
     // This can either use RAJA, or BOUT_FOR
 
     const auto& region = Jpar.getRegion("RGN_NOBNDRY"); // Region over which to iterate
+
+	///////////////////////////////////////////////////
+	// Capture all all class member variables to local
+	// scope. 
+	//
+
+	const auto _loc = loc;	
+	const auto _delta_i = delta_i;
+	const auto _hyperresist = hyperresist;
+	const auto _relax_j_tconst = relax_j_tconst;
+	const auto _dnorm = dnorm;
+	const auto _ehyperviscos = ehyperviscos;
+
+
 #if RUN_WITH_RAJA
     
 	///////////////////////////////////////////////////
-	// First, caputre a device safe array for indices
+	// Capture a device safe array for indices
 	//
 	auto indices = region.getIndices(); // A std::vector of Ind3D objects
 	Ind3D *ob_i = &(indices)[0];
@@ -1607,19 +1621,7 @@ public:
 		_ob_i_ind[i] = ob_i[i].ind;
 	}
 	
-	///////////////////////////////////////////////////
-	// Next, capture all all class member variables to 
-	// local scope 
-	//
-
-	const auto _loc = loc;	
-	const auto _delta_i = delta_i;
-	const auto _hyperresist = hyperresist;
-	const auto _relax_j_tconst = relax_j_tconst;
-	const auto _dnorm = dnorm;
-	const auto _ehyperviscos = ehyperviscos;
-
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
+	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
       int i = _ob_i_ind[i];
       int i2d = i / Jpar_acc.mesh_nz;  // An index for 2D objects
 #else
@@ -1702,7 +1704,7 @@ public:
 #endif
 
 #if RUN_WITH_RAJA
-    });
+    }); 
 #else
     }
 #endif
@@ -2001,7 +2003,7 @@ public:
     }
 
     first_run = false;
-
+   
     return 0;
   }
 
