@@ -1593,7 +1593,6 @@ public:
     // local scope
     //
 
-    const auto _loc = loc;
     const auto _delta_i = delta_i;
     const auto _hyperresist = hyperresist;
     const auto _relax_j_tconst = relax_j_tconst;
@@ -1608,7 +1607,7 @@ public:
 #if RUN_WITH_RAJA
 
     ///////////////////////////////////////////////////
-    // First, caputre a device safe array for indices
+    // First, capture a device safe array for indices
     //
     auto indices = region.getIndices(); // A std::vector of Ind3D objects
     Ind3D *ob_i = &(indices)[0];
@@ -1635,7 +1634,7 @@ public:
       // Evolving parallel current ddt(Jpar)
 
       ddt(Jpar_acc)[i] =
-          - Grad_par(B0U_acc, _loc) / B0_acc[i2d] + eta_acc[i] * Delp2(Jpar_acc, i)
+          - Grad_par(B0U_acc, i) / B0_acc[i2d] + eta_acc[i] * Delp2(Jpar_acc, i)
 
           - EVAL_IF(RELAX_J_VAC, // Relax current to zero
                     vac_mask_acc[i] * Jpar_acc[i] / _relax_j_tconst)
