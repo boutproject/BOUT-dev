@@ -44,9 +44,9 @@ struct CoordinatesAccessor {
   /// The number of values for each grid point
   /// Note: This might be > end to align to memory boundaries
   ///       e.g. 32-byte boundaries -> multiples of 32 / 8 = 4 desirable
-  constexpr stripe_size = Offset::end;
+  static constexpr int stripe_size = static_cast<int>(Offset::end);
 
-  static_assert(stripe_size >= Offset::end,
+  static_assert(stripe_size >= static_cast<int>(Offset::end),
                 "stripe_size must fit all Coordinates values");
 
   /// Underlying data pointer.
@@ -82,7 +82,7 @@ struct CoordinatesAccessor {
   ///     BoutReal dx(int index) const {...}
   ///     BoutReal dy(int index) const {...}
 #define COORD_FN(...)                           \
-  { MACRO_FOR_EACH(COORD_FN1, __VA_ARGS__) }
+  MACRO_FOR_EACH(COORD_FN1, __VA_ARGS__)
 
   COORD_FN(dx, dy, dz);
   COORD_FN(d1_dx, d1_dy, d1_dz);

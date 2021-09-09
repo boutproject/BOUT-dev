@@ -58,6 +58,7 @@ set(BOUT_SOURCES
   ./include/bout/bout_enum_class.hxx
   ./include/bout/constants.hxx
   ./include/bout/coordinates.hxx
+  ./include/bout/coordinates_accessor.hxx
   ./include/bout/deprecated.hxx
   ./include/bout/deriv_store.hxx
   ./include/bout/expr.hxx
@@ -221,6 +222,7 @@ set(BOUT_SOURCES
   ./src/mesh/boundary_region.cxx
   ./src/mesh/boundary_standard.cxx
   ./src/mesh/coordinates.cxx
+  ./src/mesh/coordinates_accessor.cxx
   ./src/mesh/data/gridfromfile.cxx
   ./src/mesh/data/gridfromoptions.cxx
   ./src/mesh/difops.cxx
