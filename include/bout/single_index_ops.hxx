@@ -357,7 +357,6 @@ BOUT_HOST_DEVICE inline BoutReal Grad_par(const FieldAccessor<location, FieldTyp
 //////////////////////////////////////////////////////////////////////////////
 // Div_par
 
-/*
 /// Parallel divergence Div_par(f) = B Grad_par(f / B)
 template <CELL_LOC location>
 BOUT_HOST_DEVICE inline BoutReal Div_par(const FieldAccessor<location>& f, const int i) {
@@ -365,14 +364,15 @@ BOUT_HOST_DEVICE inline BoutReal Div_par(const FieldAccessor<location>& f, const
   const int iyp = i_yp(i, nz);
   const int iym = i_ym(i, nz);
 
-  return 0.5 * f.B[i] * ((f.yup[iyp] / f.Byup[iyp]) - (f.ydown[iym] / f.Bydown[iym]))
-         / (f.dy[i] * sqrt(f.g_22[i]));
+  return 0.5 * f.coords.B(i)
+         * ((f.yup[iyp] / f.coords.Byup(iyp)) - (f.ydown[iym] / f.coords.Bydown(iym)))
+         / (f.coords.dy(i) * sqrt(f.coords.g_22(i)));
 }
 
-template<CELL_LOC location, class FieldType>
-BOUT_HOST_DEVICE inline BoutReal Div_par(const FieldAccessor<location, FieldType>& f, const Ind3D &ind) {
+template <CELL_LOC location, class FieldType>
+BOUT_HOST_DEVICE inline BoutReal Div_par(const FieldAccessor<location, FieldType>& f,
+                                         const Ind3D& ind) {
   return Div_par(f, ind.ind);
 }
-*/
 
 #endif // SINGLE_INDEX_OPS_H
