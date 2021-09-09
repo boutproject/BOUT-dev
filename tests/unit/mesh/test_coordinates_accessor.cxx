@@ -87,6 +87,9 @@ TEST_F(CoordinatesAccessorTest, ClearBoth) {
   coords.G1 = coords.G2 = coords.G3 = 0.2;
   coords.non_uniform = true;
   coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
+#if BOUT_USE_METRIC_3D
+  coords.Bxy.splitParallelSlices();
+#endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());
   CoordinatesAccessor acc2(&coords); // Different from previous Coordinates
@@ -123,6 +126,9 @@ TEST_F(CoordinatesAccessorTest, ClearOneTwo) {
   coords.G1 = coords.G2 = coords.G3 = 0.2;
   coords.non_uniform = true;
   coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
+#if BOUT_USE_METRIC_3D
+  coords.Bxy.splitParallelSlices();
+#endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());
   CoordinatesAccessor acc2(&coords); // Different from previous Coordinates
@@ -161,6 +167,9 @@ TEST_F(CoordinatesAccessorTest, ClearTwoOneNone) {
   coords.G1 = coords.G2 = coords.G3 = 0.2;
   coords.non_uniform = true;
   coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
+#if BOUT_USE_METRIC_3D
+  coords.Bxy.splitParallelSlices();
+#endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());
   CoordinatesAccessor acc2(&coords); // Different from previous Coordinates
