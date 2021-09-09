@@ -759,7 +759,7 @@ TEST_F(Field2DTest, ConstIndexingInd3D) {
   EXPECT_DOUBLE_EQ(field2[ind], 10);
 }
 
-#if CHECK > 2 && !defined(BOUT_USE_CUDA)
+#if CHECK > 2 && !BOUT_USE_CUDA
 TEST_F(Field2DTest, CheckNotEmpty) {
   Field2D field;
 

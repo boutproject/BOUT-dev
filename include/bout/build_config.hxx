@@ -19,6 +19,9 @@ constexpr auto has_legacy_netcdf = static_cast<bool>(BOUT_HAS_LEGACY_NETCDF);
 constexpr auto has_netcdf = static_cast<bool>(BOUT_HAS_NETCDF);
 constexpr auto has_petsc = static_cast<bool>(BOUT_HAS_PETSC);
 constexpr auto has_hypre = static_cast<bool>(BOUT_HAS_HYPRE);
+constexpr auto has_umpire = static_cast<bool>(BOUT_HAS_UMPIRE);
+constexpr auto has_caliper = static_cast<bool>(BOUT_HAS_CALIPER);
+constexpr auto has_raja = static_cast<bool>(BOUT_HAS_RAJA);
 constexpr auto has_pretty_function = static_cast<bool>(BOUT_HAS_PRETTY_FUNCTION);
 constexpr auto has_pvode = static_cast<bool>(BOUT_HAS_PVODE);
 constexpr auto has_scorep = static_cast<bool>(BOUT_HAS_SCOREP);
@@ -33,6 +36,7 @@ constexpr auto use_output_debug = static_cast<bool>(BOUT_USE_OUTPUT_DEBUG);
 constexpr auto use_sigfpe = static_cast<bool>(BOUT_USE_SIGFPE);
 constexpr auto use_signal = static_cast<bool>(BOUT_USE_SIGNAL);
 constexpr auto use_track = static_cast<bool>(BOUT_USE_TRACK);
+constexpr auto use_cuda = static_cast<bool>(BOUT_USE_CUDA);
 constexpr auto use_metric_3d = static_cast<bool>(BOUT_USE_METRIC_3D);
 constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 
@@ -42,7 +46,7 @@ constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 #undef STRINGIFY1
 #undef STRINGIFY
 
-#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
+#if BOUT_USE_CUDA && defined(__CUDACC__)
 #define BOUT_HOST_DEVICE __host__ __device__
 #define BOUT_HOST __host__
 #define BOUT_DEVICE __device__

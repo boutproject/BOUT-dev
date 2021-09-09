@@ -14,7 +14,7 @@
 #include <cmath>
 
 
-#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)  
+#if BOUT_USE_CUDA && defined(__CUDACC__)
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
 {

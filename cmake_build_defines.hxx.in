@@ -28,9 +28,10 @@
 #cmakedefine01 BOUT_USE_SIGFPE
 #cmakedefine01 BOUT_USE_SIGNAL
 #cmakedefine01 BOUT_USE_TRACK
-#cmakedefine BOUT_HAS_UMPIRE @BOUT_HAS_UMPIRE@
-#cmakedefine BOUT_HAS_RAJA @BOUT_HAS_RAJA@ 
-#cmakedefine BOUT_USE_CUDA @BOUT_USE_CUDA@
+#cmakedefine01 BOUT_HAS_UMPIRE
+#cmakedefine01 BOUT_HAS_CALIPER
+#cmakedefine01 BOUT_HAS_RAJA
+#cmakedefine01 BOUT_USE_CUDA
 #cmakedefine BOUT_METRIC_TYPE @BOUT_METRIC_TYPE@
 #cmakedefine01 BOUT_USE_METRIC_3D
 #cmakedefine01 BOUT_USE_MSGSTACK

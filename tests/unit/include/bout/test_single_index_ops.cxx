@@ -247,6 +247,7 @@ TEST_F(SingleIndexOpsTest, Grad_par) {
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
 }
 
+/*
 TEST_F(SingleIndexOpsTest, Div_par) {
   std::default_random_engine re;
 
@@ -270,3 +271,5 @@ TEST_F(SingleIndexOpsTest, Div_par) {
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
 }
+*/
+

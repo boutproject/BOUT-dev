@@ -16,11 +16,11 @@
 #include <invert_laplace.hxx>
 #include <smoothing.hxx>
 
-#ifdef BOUT_HAS_RAJA
+#if BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
 #endif
 
-#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
+#if BOUT_USE_CUDA && defined(__CUDACC__)
 #include <cuda_profiler_api.h>
 #endif
 

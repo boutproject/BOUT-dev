@@ -14,11 +14,11 @@
 
 #define RUN_WITH_RAJA 0
 
-#ifdef BOUT_HAS_RAJA
+#if BOUT_HAS_RAJA && RUN_WITH_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
 #endif
 
-#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
+#if BOUT_USE_CUDA && defined(__CUDACC__)
 #include <cuda_profiler_api.h>
 #endif
 

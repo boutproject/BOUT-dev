@@ -7,9 +7,9 @@
 
 #include "field_accessor.hxx"
 
-#ifdef BOUT_HAS_RAJA
+#if BOUT_HAS_RAJA
 //--  RAJA CUDA settings--------------------------------------------------------start
-#ifdef BOUT_USE_CUDA
+#if BOUT_USE_CUDA
 const int CUDA_BLOCK_SIZE = 256; // TODO: Make configurable
 using EXEC_POL = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
 #else  // BOUT_ENABLE_CUDA not defined
@@ -353,6 +353,7 @@ BOUT_HOST_DEVICE inline BoutReal Grad_par(const FieldAccessor<location, FieldTyp
 //////////////////////////////////////////////////////////////////////////////
 // Div_par
 
+/*
 /// Parallel divergence Div_par(f) = B Grad_par(f / B)
 template <CELL_LOC location>
 BOUT_HOST_DEVICE inline BoutReal Div_par(const FieldAccessor<location>& f, const int i) {
@@ -368,5 +369,6 @@ template<CELL_LOC location, class FieldType>
 BOUT_HOST_DEVICE inline BoutReal Div_par(const FieldAccessor<location, FieldType>& f, const Ind3D &ind) {
   return Div_par(f, ind.ind);
 }
+*/
 
 #endif // SINGLE_INDEX_OPS_H

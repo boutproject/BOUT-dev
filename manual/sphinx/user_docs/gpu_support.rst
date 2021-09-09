@@ -149,3 +149,19 @@ equations, and have the same inputs, as ``elm-pb``. Note that there are some dif
   To achieve higher performance, ``elm-pb-outerloop`` does this at compile time.
   There are checks to ensure that the code has been compiled with flags consistent
   with the input settings. See the README file for more details.
+
+
+Notes:
+
+* When RAJA is used in a physics model, all members of the PhysicsModel
+  should be public. If this is not done, then a compiler error like
+  "error: The enclosing parent function ("rhs") for an extended __device__ lambda
+  cannot have private or protected access within its class" may be encountered.
+
+* Class member variables cannot in general be used inside a RAJA loop: The ``this``
+  pointer is captured by value in the lambda function, not the value of the member variable. 
+  When the member variable is used on the GPU, the ``this`` pointer is generally not valid
+  (e.g. on NERSC Cori GPUs). Some architectures have Address Translation Services (ATS)
+  which enable host pointers to be resolved on the GPU.
+
+

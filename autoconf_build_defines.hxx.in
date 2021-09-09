@@ -6,6 +6,9 @@
 /* ARKODE support */
 #undef BOUT_HAS_ARKODE
 
+/* Caliper support */
+#undef BOUT_HAS_CALIPER
+
 /* CVODE support */
 #undef BOUT_HAS_CVODE
 
@@ -42,6 +45,9 @@
 /* PVODE support */
 #undef BOUT_HAS_PVODE
 
+/* RAJA support */
+#undef BOUT_HAS_RAJA
+
 /* Score-P support */
 #undef BOUT_HAS_SCOREP
 
@@ -50,6 +56,9 @@
 
 /* SUNDIALS support */
 #undef BOUT_HAS_SUNDIALS
+
+/* Umpire support */
+#undef BOUT_HAS_UMPIRE
 
 /* Use libuuid for UUID generation */
 #undef BOUT_HAS_UUID_SYSTEM_GENERATOR
@@ -65,6 +74,9 @@
 
 /* Enable color logs option */
 #undef BOUT_USE_COLOR
+
+/* Enable CUDA */
+#undef BOUT_USE_CUDA
 
 /* Is the metric field 3D */
 #undef BOUT_USE_METRIC_3D
