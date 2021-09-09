@@ -4,6 +4,15 @@
 
 #include <map>
 
+namespace {
+  /// Associate each Coordinates object with an Array object
+  /// which contains the coordinates data in striped form.
+  ///
+  /// Note: This association could perhaps be done by putting
+  ///       the Array inside Coordinates, but this keeps things decoupled
+  static std::map<const Coordinates*, Array<BoutReal>> coords_store;
+}
+
 CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
   ASSERT0(coords != nullptr);
 
@@ -11,15 +20,8 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
   Mesh* mesh = coords->dx.getMesh();
   mesh_nz = mesh->LocalNz;
 
-  /// Associate each Coordinates object with an Array object
-  /// which contains the coordinates data in striped form.
-  ///
-  /// Note: This association could perhaps be done by putting
-  ///       the Array inside Coordinates, but this keeps things decoupled
-  static std::map<const Coordinates*, Array<BoutReal>> store;
-
-  auto search = store.find(coords);
-  if (search != store.end()) {
+  auto search = coords_store.find(coords);
+  if (search != coords_store.end()) {
     // Found, so get the pointer to the data
     data = search->second.begin();
     return;
@@ -34,7 +36,7 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
 #endif
 
   // Create the array and get the underlying data
-  data = store.emplace(coords, array_size).first->second.begin();
+  data = coords_store.emplace(coords, array_size).first->second.begin();
 
   // Copy data from Coordinates variable into data array
   // Uses the symbol to look up the corresponding Offset
@@ -61,4 +63,16 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
     COPY_STRIPE(g11, g12, g13, g22, g23, g33);
     COPY_STRIPE(g_11, g_12, g_13, g_22, g_23, g_33);
   }
+}
+
+std::size_t CoordinatesAccessor::clear(const Coordinates* coords) {
+  if (coords == nullptr) {
+    // clear all
+    std::size_t num_removed = coords_store.size();
+    coords_store.clear();
+    return num_removed;
+  }
+
+  // Coordinates specified, so only remove one
+  return coords_store.erase(coords);
 }

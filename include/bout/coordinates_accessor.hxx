@@ -20,14 +20,31 @@
 /// Example
 ///
 ///   auto coord_acc = CoordinatesAccessor(mesh->getCoordinates());
-///    coord_acc.dx(index)  -> BoutReal at cell index
+///   coord_acc.dx(index)  -> BoutReal at cell index
 ///
+/// Notes
+///
+///  * Data from Coordinates is copied into an array which
+///    is cached. CoordinatesAccessors created with the same
+///    Coordinates pointer will re-use the same array without
+///    copying the data again.
+///    -> If Coordinates data is changed, the cache should be cleared
+///    by calling CoordinatesAccessor::clear()
 struct CoordinatesAccessor {
   CoordinatesAccessor() = delete;
 
   /// Constructor from Coordinates
   /// Copies data from coords, doesn't modify it
   CoordinatesAccessor(const Coordinates* coords);
+
+  /// Clear the cache of Coordinates data
+  ///
+  /// By default this clears everything; if only a specific
+  /// Coordinates should be removed then that can be specified.
+  ///
+  /// Returns the number of data arrays removed
+  /// (mainly to assist in testing)
+  static std::size_t clear(const Coordinates* coords = nullptr);
 
   /// Offsets of each coordinates variable into the striped array
   enum class Offset {
