@@ -54,8 +54,7 @@ int main(int argc, char** argv) {
 
   ////////////////////////////////////////////////////////////////////////////////////////
 
-  Field2D rhs, rhs_check;
-  rhs = Laplace_perpXY(a, f) + b*f;
+  Field2D rhs = Laplace_perpXY(a, f) + b*f;
 
   laplacexy.setCoefs(a, b);
 
@@ -68,7 +67,7 @@ int main(int argc, char** argv) {
   output<<"Magnitude of maximum absolute error is "<<max_error<<endl;
 
   sol.getMesh()->communicate(sol);
-  rhs_check = Laplace_perpXY(a, sol);
+  Field2D rhs_check = Laplace_perpXY(a, sol);
 
   using bout::globals::dump;
 

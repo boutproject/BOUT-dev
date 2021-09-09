@@ -239,22 +239,22 @@ public:
     return operator()(jx, jy);
   }
 
-  Field2D& operator+=(
-      const Field2D& rhs); ///< In-place addition. Copy-on-write used if data is shared
-  Field2D&
-  operator+=(BoutReal rhs); ///< In-place addition. Copy-on-write used if data is shared
-  Field2D& operator-=(
-      const Field2D& rhs); ///< In-place subtraction. Copy-on-write used if data is shared
-  Field2D& operator-=(
-      BoutReal rhs); ///< In-place subtraction. Copy-on-write used if data is shared
-  Field2D& operator*=(const Field2D& rhs); ///< In-place multiplication. Copy-on-write
-                                           ///< used if data is shared
-  Field2D& operator*=(
-      BoutReal rhs); ///< In-place multiplication. Copy-on-write used if data is shared
-  Field2D& operator/=(
-      const Field2D& rhs); ///< In-place division. Copy-on-write used if data is shared
-  Field2D&
-  operator/=(BoutReal rhs); ///< In-place division. Copy-on-write used if data is shared
+  /// In-place addition. Copy-on-write used if data is shared
+  Field2D& operator+=(const Field2D& rhs);
+  /// In-place addition. Copy-on-write used if data is shared
+  Field2D& operator+=(BoutReal rhs);
+  /// In-place subtraction. Copy-on-write used if data is shared
+  Field2D& operator-=(const Field2D& rhs);
+  /// In-place subtraction. Copy-on-write used if data is shared
+  Field2D& operator-=(BoutReal rhs);
+  /// In-place multiplication. Copy-on-write used if data is shared
+  Field2D& operator*=(const Field2D& rhs);
+  /// In-place multiplication. Copy-on-write used if data is shared
+  Field2D& operator*=(BoutReal rhs);
+  /// In-place division. Copy-on-write used if data is shared
+  Field2D& operator/=(const Field2D& rhs);
+  /// In-place division. Copy-on-write used if data is shared
+  Field2D& operator/=(BoutReal rhs);
 
   // FieldData virtual functions
 
