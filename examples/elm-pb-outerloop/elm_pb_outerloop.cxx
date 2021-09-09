@@ -1254,7 +1254,7 @@ public:
   }
 
   // Parallel gradient along perturbed field-line
-  const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
+  const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) const {
 
     if (loc == CELL_DEFAULT) {
       loc = f.getLocation();
