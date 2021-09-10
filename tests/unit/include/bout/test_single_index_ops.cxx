@@ -110,6 +110,9 @@ TEST_F(SingleIndexOpsTest, DDZ) {
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
 }
 
+#if !BOUT_USE_METRIC_3D
+// Arakawa bracket not implemented for 3D metrics yet
+
 TEST_F(SingleIndexOpsTest, bracket2d3d) {
   // Fill a field with random numbers
   std::default_random_engine re;
@@ -161,6 +164,8 @@ TEST_F(SingleIndexOpsTest, bracket3d3d) {
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
 }
+
+#endif // !BOUT_USE_METRIC_3D
 
 TEST_F(SingleIndexOpsTest, Delp2_3D) {
   // Fill a field with random numbers
