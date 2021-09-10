@@ -99,8 +99,8 @@ diamag_phi0 = true    # Balance ExB against Vd for stationary equilibrium
 #   by the choices C or W in this input file
 # 1:BRACKET_SIMPLE; 2:BRACKET_ARAKAWA; 3:BRACKET_CTU.
 
-bm_exb_flag = 0
-bm_mag_flag = 0
+bm_exb_flag = 2
+bm_mag_flag = 2
 ##################################################################
 withflow = false     # With flow or not
 D_0 = 130000        # differential potential
@@ -239,14 +239,6 @@ bndry_core = neumann
 # zero laplacian
 bndry_xin = zerolaplace
 bndry_xout = zerolaplace
-
-[Psi_loc] # for staggering
-
-bndry_xin = zerolaplace
-bndry_xout = zerolaplace
-
-bndry_yup = free_o3
-bndry_ydown = free_o3
 
 [J]    # parallel current
 

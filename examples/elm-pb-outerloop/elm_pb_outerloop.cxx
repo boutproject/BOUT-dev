@@ -141,7 +141,7 @@ public:
   Vector2D V0net; // net flow
 
   // 3D evolving variables
-  Field3D U, Psi, P, Vpar, Psi_loc;
+  Field3D U, Psi, P, Vpar;
 
   // Derived 3D variables
   Field3D Jpar, phi; // Parallel current, electric potential
@@ -420,7 +420,6 @@ public:
     Vpar.setLocation(loc);
     Psi.setLocation(loc);
     eta.setLocation(loc);
-    Psi_loc.setBoundary("Psi_loc");
 
     //////////////////////////////////////////////////////////////
     auto& globalOptions = Options::root();
@@ -1645,43 +1644,42 @@ public:
       ddt(Psi_acc)[i] = - GRAD_PARP(phi_acc) + eta_acc[i] * Jpar_acc[i]
 
         + EVAL_IF(EHALL, // electron parallel pressure
-                  0.25 * _delta_i * (Grad_par(P_acc, i) + bracket(P0_acc, Psi_acc, i)))
+                  0.25 * _delta_i * (GRAD_PARP(P_acc) + bracket(P0_acc, Psi_acc, i)))
 
         - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
                   bracket(phi0_acc, Psi_acc, i))
 
         + EVAL_IF(DIAMAG_GRAD_T, // grad_par(T_e) correction
-                  1.71 * _dnorm * 0.5 * Grad_par(P_acc, i) / B0_acc[i2d])
+                  1.71 * _dnorm * 0.5 * GRAD_PARP(P_acc) / B0_acc[i2d])
 
         - EVAL_IF(HYPERRESIST, // Hyper-resistivity
                   eta_acc[i] * _hyperresist * Delp2(Jpar_acc, i))
 
         - EVAL_IF(EHYPERVISCOS, // electron Hyper-viscosity
                   eta_acc[i] * _ehyperviscos * Delp2(Jpar2_acc, i))
-        ;
+      ;
 #endif
 
       ////////////////////////////////////////////////////
       // Vorticity equation
 
-      ddt(U_acc)[i] =
-        SQ(B0_acc[i2d]) * b0xGrad_dot_Grad(Psi_acc, J0_acc, i)
+      ddt(U_acc)[i] = SQ(B0_acc[i2d]) * b0xGrad_dot_Grad(Psi_acc, J0_acc, i)
 
-        + EVAL_IF(INCLUDE_RMP, // External magnetic field perturbation
-                  SQ(B0_acc[i2d]) * b0xGrad_dot_Grad(rmp_Psi_acc, J0_acc, i))
+          + EVAL_IF(INCLUDE_RMP, // External magnetic field perturbation
+                    SQ(B0_acc[i2d]) * b0xGrad_dot_Grad(rmp_Psi_acc, J0_acc, i))
 
-        - EVAL_IF(GRADPARJ, // Parallel current term
-                  SQ(B0_acc[i2d]) * GRAD_PARP(Jpar_acc))
+          - EVAL_IF(GRADPARJ, // Parallel current term
+                    SQ(B0_acc[i2d]) * GRAD_PARP(Jpar_acc))
 
-        - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
-                  b0xGrad_dot_Grad(phi0_acc, U_acc, i))
+          - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
+                    b0xGrad_dot_Grad(phi0_acc, U_acc, i))
 
-        - EVAL_IF(NONLINEAR, // Advection
-                  bracket(phi_acc, U_acc, i) * B0_acc[i2d])
+          - EVAL_IF(NONLINEAR, // Advection
+                    bracket(phi_acc, U_acc, i) * B0_acc[i2d])
 
-        + EVAL_IF(VISCOS_PERP, // Perpendicular viscosity
-                  viscos_perp * Delp2(U_acc, i))
-        ;
+          + EVAL_IF(VISCOS_PERP, // Perpendicular viscosity
+                    viscos_perp * Delp2(U_acc, i))
+          ;
 
       ////////////////////////////////////////////////////
       // Pressure equation
@@ -1714,6 +1712,9 @@ public:
     // Parallel electric field
 
 #if not EVOLVE_JPAR
+    // Vector potential
+    //ddt(Psi) = -Grad_parP(phi, loc) + eta * Jpar;
+
     // if (eHall) { // electron parallel pressure
     //   ddt(Psi) += 0.25 * delta_i
     //     * (Grad_parP(P, loc)
@@ -1766,7 +1767,7 @@ public:
     // Vorticity equation
 
     // Grad j term
-    //ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi_loc, J0, CELL_CENTRE);
+    //ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi, J0, CELL_CENTRE);
 
     // if (include_rmp) {
     //   ddt(U) += SQ(B0) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
@@ -1898,7 +1899,7 @@ public:
 
     if (evolve_pressure) {
 
-      // ddt(P) -= b0xGrad_dot_Grad(phi, P0);
+      //ddt(P) -= b0xGrad_dot_Grad(phi, P0);
 
       // if (diamag_phi0) { // Equilibrium flow
       //   ddt(P) -= b0xGrad_dot_Grad(phi0, P);
