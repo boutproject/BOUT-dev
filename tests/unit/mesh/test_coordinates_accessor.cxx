@@ -89,6 +89,7 @@ TEST_F(CoordinatesAccessorTest, ClearBoth) {
   coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
 #if BOUT_USE_METRIC_3D
   coords.Bxy.splitParallelSlices();
+  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
 #endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());
@@ -128,6 +129,7 @@ TEST_F(CoordinatesAccessorTest, ClearOneTwo) {
   coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
 #if BOUT_USE_METRIC_3D
   coords.Bxy.splitParallelSlices();
+  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
 #endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());
@@ -169,6 +171,7 @@ TEST_F(CoordinatesAccessorTest, ClearTwoOneNone) {
   coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
 #if BOUT_USE_METRIC_3D
   coords.Bxy.splitParallelSlices();
+  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
 #endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());
