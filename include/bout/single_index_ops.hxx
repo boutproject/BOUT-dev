@@ -53,8 +53,43 @@ BOUT_HOST_DEVICE inline int i_xm(const int id, const int ny, const int nz) {
 template <CELL_LOC location>
 BOUT_HOST_DEVICE inline BoutReal bracket(const Field2DAccessor<location>& f,
                                          const FieldAccessor<location>& g, const int i) {
-  return b0xGrad_dot_Grad(f, g, i) * f.coords.J(i)
-         / sqrt(f.coords.g_22(i)); // Dividing by B = sqrt(g_22) / J;
+  const BoutReal* f_a = f.data;
+  const BoutReal* g_a = g.data;
+
+  int ny = g.ny;
+  int nz = g.nz;
+
+  // Field2D indices for f
+
+  int i2d = i / f.mesh_nz;
+  int i2dxp = i_xp(i2d, ny, 1);
+  int i2dxm = i_xm(i2d, ny, 1);
+
+  // Offset indices in 3D field
+
+  int ixp = i_xp(i, ny, nz);
+  int ixm = i_xm(i, ny, nz);
+  int izp = i_zp(i, nz);
+  int izm = i_zm(i, nz);
+
+  int izpxp = i_xp(izp, ny, nz);
+  int izpxm = i_xm(izp, ny, nz);
+  int izmxp = i_xp(izm, ny, nz);
+  int izmxm = i_xm(izm, ny, nz);
+
+  // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+  BoutReal Jpp = - (f_a[i2dxp] - f_a[i2dxm]) * (g_a[izp] - g_a[izm]);
+
+  // J+x
+  BoutReal Jpx =
+      (-g_a[izp] * (f_a[i2dxp] - f_a[i2dxm]) + g_a[izm] * (f_a[i2dxp] - f_a[i2dxm]));
+
+  // Jx+
+  BoutReal Jxp =
+      (g_a[izpxp] * (f_a[i2d] - f_a[i2dxp]) - g_a[izmxm] * (f_a[i2dxm] - f_a[i2d])
+       - g_a[izpxm] * (f_a[i2d] - f_a[i2dxm]) + g_a[izmxp] * (f_a[i2dxp] - f_a[i2d]));
+
+  return (Jpp + Jpx + Jxp) / (12 * f.coords.dx(i) * f.coords.dz(i));
 }
 
 template <CELL_LOC location>

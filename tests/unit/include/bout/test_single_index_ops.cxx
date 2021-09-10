@@ -110,7 +110,33 @@ TEST_F(SingleIndexOpsTest, DDZ) {
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
 }
 
-TEST_F(SingleIndexOpsTest, bracket) {
+TEST_F(SingleIndexOpsTest, bracket2d3d) {
+  // Fill a field with random numbers
+  std::default_random_engine re;
+
+  auto input = random_field<Field2D>(re);
+  // Check that the field is not zero
+  ASSERT_FALSE(IsFieldEqual(input, 0.0, "RGN_NOBNDRY"));
+
+  auto input2 = random_field<Field3D>(re);
+  ASSERT_FALSE(IsFieldEqual(input2, 0.0, "RGN_NOBNDRY"));
+
+  // Differentiate whole field
+  Field3D difops = bracket(input, input2, BRACKET_ARAKAWA);
+
+  // Differentiate using index operations
+  Field3D indexops; indexops.allocate();
+  auto input_acc = Field2DAccessor<>(input);
+  auto input2_acc = FieldAccessor<>(input2);
+  BOUT_FOR(i, indexops.getRegion("RGN_NOBNDRY")) {
+    indexops[i] = bracket(input_acc, input2_acc, i);
+  }
+
+  // Check the answer is the same
+  ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
+}
+
+TEST_F(SingleIndexOpsTest, bracket3d3d) {
   // Fill a field with random numbers
   std::default_random_engine re;
 
@@ -128,7 +154,7 @@ TEST_F(SingleIndexOpsTest, bracket) {
   Field3D indexops; indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
   auto input2_acc = FieldAccessor<>(input2);
-  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, indexops.getRegion("RGN_NOBNDRY")) {
     indexops[i] = bracket(input_acc, input2_acc, i);
   }
 
