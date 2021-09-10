@@ -1,4 +1,7 @@
-// GPU version Field-Accessor, updated by Dr. Yining Qin, Oct.27, 2020
+/// FieldAccessor
+///
+/// Provides quick but unsafe access to field and coordinate system data
+///
 
 #pragma once
 #ifndef FIELD_ACCESSOR_H__
@@ -8,9 +11,9 @@
 #include "../field.hxx"
 #include "../field2d.hxx"
 #include "../field3d.hxx"
-#include "coordinate_field_accessor.hxx"
-#include "coordinates.hxx"
 #include "build_config.hxx"
+#include "coordinates.hxx"
+#include "coordinates_accessor.hxx"
 
 /// Simple wrapper around a BoutReal* 1D array
 ///
@@ -24,19 +27,13 @@ struct BoutRealArray {
   /// This does not take ownership
   explicit BoutRealArray(BoutReal* data) : data(data) {}
 
-  BOUT_HOST_DEVICE inline BoutReal& operator[](int ind) {
-    return data[ind];
-  }
+  BOUT_HOST_DEVICE inline BoutReal& operator[](int ind) { return data[ind]; }
 
-  BOUT_HOST_DEVICE inline BoutReal& operator[](const Ind3D &ind) {
-    return data[ind.ind];
-  }
+  BOUT_HOST_DEVICE inline BoutReal& operator[](const Ind3D& ind) { return data[ind.ind]; }
 
-  BOUT_HOST_DEVICE inline const BoutReal& operator[](int ind) const {
-    return data[ind];
-  }
+  BOUT_HOST_DEVICE inline const BoutReal& operator[](int ind) const { return data[ind]; }
 
-  BOUT_HOST_DEVICE inline const BoutReal& operator[](const Ind3D &ind) const {
+  BOUT_HOST_DEVICE inline const BoutReal& operator[](const Ind3D& ind) const {
     return data[ind.ind];
   }
 
@@ -60,14 +57,7 @@ struct FieldAccessor {
   /// Constructor from Field3D
   ///
   /// @param[in] f    The field to access. Must already be allocated
-  explicit FieldAccessor(FieldType& f)
-      : coords(f.getCoordinates()), dx(coords->dx), dy(coords->dy), dz(coords->dz),
-        d1_dx(coords->d1_dx), d1_dy(coords->d1_dy), d1_dz(coords->d1_dz), J(coords->J),
-        //B(coords->Bxy), Byup(coords->Bxy.yup()), Bydown(coords->Bxy.ydown()),
-        G1(coords->G1), G3(coords->G3), g11(coords->g11), g12(coords->g12),
-        g13(coords->g13), g22(coords->g22), g23(coords->g23), g33(coords->g33),
-        g_11(coords->g_11), g_12(coords->g_12), g_13(coords->g_13), g_22(coords->g_22),
-        g_23(coords->g_23), g_33(coords->g_33) {
+  explicit FieldAccessor(FieldType& f) : coords(f.getCoordinates()) {
     ASSERT0(f.getLocation() == location);
     ASSERT0(f.isAllocated());
 
@@ -95,11 +85,9 @@ struct FieldAccessor {
   /// Does not convert between 3D and 2D indices,
   /// so fa[i] is equivalent to fa.data[i].
   ///
-  BOUT_HOST_DEVICE inline const BoutReal& operator[](int ind) const {
-    return data[ind];
-  }
+  BOUT_HOST_DEVICE inline const BoutReal& operator[](int ind) const { return data[ind]; }
 
-  BOUT_HOST_DEVICE inline const BoutReal& operator[](const Ind3D &ind) const {
+  BOUT_HOST_DEVICE inline const BoutReal& operator[](const Ind3D& ind) const {
     return data[ind.ind];
   }
 
@@ -112,22 +100,7 @@ struct FieldAccessor {
   BoutRealArray yup{nullptr};   ///< Pointer to the Field yup data
   BoutRealArray ydown{nullptr}; ///< Pointer to the Field ydown data
 
-  Coordinates* coords;
-
-  // Metric tensor (Coordinates) data
-  // Note: The data size depends on Coordinates::FieldMetric
-  //       and could be Field2D or Field3D
-
-  CoordinateFieldAccessor dx, dy, dz;          ///< Grid spacing
-  CoordinateFieldAccessor d1_dx, d1_dy, d1_dz; ///< Grid spacing non-uniformity
-  CoordinateFieldAccessor J;                   ///< Coordinate system Jacobian
-//  CoordinateFieldAccessor B, Byup, Bydown;     ///< Magnetic field magnitude
-
-  CoordinateFieldAccessor G1, G3;
-
-  CoordinateFieldAccessor g11, g12, g13, g22, g23, g33; ///< Contravariant metric tensor (g^{ij})
-
-  CoordinateFieldAccessor g_11, g_12, g_13, g_22, g_23, g_33; ///< Covariant metric tensor
+  CoordinatesAccessor coords; ///< Provides access to Coordinates data
 
   // Field size
   int nx = 0;
@@ -151,7 +124,7 @@ using Field2DAccessor = FieldAccessor<location, Field2D>;
 ///  where fa is a FieldAccessor, and i is an int
 ///
 template <CELL_LOC location, class FieldType>
-BOUT_HOST_DEVICE inline BoutRealArray& ddt(const FieldAccessor<location, FieldType> &fa) {
+BOUT_HOST_DEVICE inline BoutRealArray& ddt(const FieldAccessor<location, FieldType>& fa) {
   // Note: FieldAccessor captured by value is const in RAJA kernel.
   //       Need to cast to non-const so that ddt() data can be assigned to
   return const_cast<BoutRealArray&>(fa.ddt);

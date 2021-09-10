@@ -49,6 +49,7 @@ set(serial_tests_source
   ./mesh/test_boundary_factory.cxx
   ./mesh/test_boutmesh.cxx
   ./mesh/test_coordinates.cxx
+  ./mesh/test_coordinates_accessor.cxx
   ./mesh/test_interpolation.cxx
   ./mesh/test_mesh.cxx
   ./mesh/test_paralleltransform.cxx

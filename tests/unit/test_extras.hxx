@@ -491,6 +491,10 @@ public:
     test_coords->non_uniform = true;
     test_coords->d1_dx = test_coords->d1_dy = 0.2;
     test_coords->d1_dz = 0.0;
+#if BOUT_USE_METRIC_3D
+    test_coords->Bxy.splitParallelSlices();
+    test_coords->Bxy.yup() = test_coords->Bxy.ydown() = test_coords->Bxy;
+#endif
 
     // No call to Coordinates::geometry() needed here
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
@@ -531,6 +535,11 @@ public:
     test_coords_staggered->non_uniform = true;
     test_coords_staggered->d1_dx = test_coords_staggered->d1_dy = 0.2;
     test_coords_staggered->d1_dz = 0.0;
+#if BOUT_USE_METRIC_3D
+    test_coords_staggered->Bxy.splitParallelSlices();
+    test_coords_staggered->Bxy.yup() = test_coords_staggered->Bxy.ydown() =
+        test_coords_staggered->Bxy;
+#endif
 
     // No call to Coordinates::geometry() needed here
     test_coords_staggered->setParallelTransform(
