@@ -1619,7 +1619,7 @@ public:
     }
 
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-      int i = _ob_i_ind[i];
+      int i = _ob_i_ind[id];
       int i2d = i / Jpar_acc.mesh_nz;  // An index for 2D objects
 #else
     BOUT_FOR(i, region) {
