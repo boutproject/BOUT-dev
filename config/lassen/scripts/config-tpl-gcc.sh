@@ -17,19 +17,12 @@ fi
 if [[ "$compiler" == "xl" ]]; then
     cc=xlc
     cpp=xlC
-    fc=xlf
-    extra_cflags=""
 elif [[ "$compiler" == "clang" ]]; then
     cc=mpiclang
     cpp=mpiclang++
-    fc=mpigfortran
-    #fc=mpifort
-    extra_cflags=""
 elif [[ "$compiler" == "gcc" ]]; then
     cc=mpicc
     cpp=mpiCC
-    fc=mpigfortran
-    extra_cflags=""
 else
     exit 1
 fi

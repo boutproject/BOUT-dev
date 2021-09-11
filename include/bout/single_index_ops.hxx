@@ -66,9 +66,6 @@ BOUT_HOST_DEVICE inline BoutReal bracket(const Field2DAccessor<location>& f,
   int i2dxm = i_xm(i2d, ny, 1);
 
   // Offset indices in 3D field
-
-  int ixp = i_xp(i, ny, nz);
-  int ixm = i_xm(i, ny, nz);
   int izp = i_zp(i, nz);
   int izm = i_zm(i, nz);
 

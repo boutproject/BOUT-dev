@@ -39,26 +39,15 @@ fi
 if [[ "$compiler" == "xl" ]]; then
     cc=xlc
     cpp=xlC
-    fc=xlf
-    extra_cflags=""
 elif [[ "$compiler" == "clang" ]]; then
     cc=clang
     cpp=clang++
-#    fc=xlf
-    fc=mpifort
-    extra_cflags=""
 elif [[ "$compiler" == "gcc" ]]; then
     cc=mpicc
     cpp=mpiCC
-    fc=mpifort
-    extra_cflags=""
 else
     exit 1
 fi
-
-#          -DOpenMP_Fortran_FLAGS="-qsmp" \
-#          --debug-trycompile \
-#          -DRAJA_CUDA_ARCH=sm_60 \
 
 build_dir=${build_prefix}/${pkg}
 install_dir=${install_prefix}/${pkg}

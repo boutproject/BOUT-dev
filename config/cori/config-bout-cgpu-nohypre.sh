@@ -8,7 +8,7 @@
 
 arch=$(uname -m)
 compiler=gcc
-scratch_dir=`pwd`
+scratch_dir=$(pwd)
 build_prefix=${scratch_dir}/build/${arch}-${compiler}/
 install_prefix=${scratch_dir}/install/${arch}-${compiler}/
 source_prefix=${scratch_dir}/
@@ -28,27 +28,16 @@ fi
 if [[ "$compiler" == "xl" ]]; then
     cc=xlc
     cpp=xlC
-    fc=xlf
-    extra_cflags=""
 elif [[ "$compiler" == "clang" ]]; then
     cc=clang
     cpp=clang++
-#    fc=xlf
-    fc=mpifort
-    extra_cflags=""
 elif [[ "$compiler" == "gcc" ]]; then
     cc=mpicc
     cpp=mpiCC
-    fc=mpifort
-    extra_cflags=""
 else
     exit 1
 fi
 
-
-#          -DCMAKE_CXX_FLAGS="-w" \
-#          -DCMAKE_CUDA_FLAGS="-w" \
-#          -DNetCDF_ROOT=${module_prefix}/netcdf-c-4.7.4-hpuuuxa5vze5qwvqhdzxlpkrigjghgtu/ \
 build_dir=${build_prefix}/${pkg}
 install_dir=${install_prefix}/${pkg}
 source_dir=${source_prefix} 

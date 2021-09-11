@@ -2,7 +2,7 @@
 # this script is designed to be run in the BOUT source dir
 arch=$(uname -m)
 compiler=gcc
-scratch_dir=`pwd`
+scratch_dir=$(pwd)
 build_prefix=${scratch_dir}/build/${arch}-${compiler}/
 install_prefix=${scratch_dir}/install/${arch}-${compiler}/
 source_prefix=${scratch_dir}/
@@ -22,19 +22,12 @@ fi
 if [[ "$compiler" == "xl" ]]; then
     cc=xlc
     cpp=xlC
-    fc=xlf
-    extra_cflags=""
 elif [[ "$compiler" == "clang" ]]; then
     cc=clang
     cpp=clang++
-#    fc=xlf
-    fc=mpifort
-    extra_cflags=""
 elif [[ "$compiler" == "gcc" ]]; then
     cc=mpicc
     cpp=mpiCC
-    fc=mpifort
-    extra_cflags=""
 else
     exit 1
 fi
