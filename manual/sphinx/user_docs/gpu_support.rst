@@ -4,6 +4,9 @@ GPU support
 ===========
 
 This section describes work in progress to develop GPU support in BOUT++ models.
+It includes both configuration and compilation on GPU systems, but also ways to
+write physics models which are designed to give higher performance. These methods
+may also be beneficial for CPU architectures.
 
 CMake configuration
 -------------------
@@ -129,6 +132,49 @@ these methods, or porting code from field operations to single index
 operations. It is therefore essential to have integrated tests and
 benchmarks for each model implementation: Unit tests are necessary
 but not sufficient for correctness.
+
+CoordinatesAccessor
+-------------------
+
+The differential operators used in physics models typically need
+access to grid spacing (eg. dx), non-uniform grid corrections
+(e.g. d1_dx), and multiple coordinate system fields (metric tensor
+components). When a ``FieldAccessor`` is created from a field, it uses the
+field's coordinate system to create a ``CoordinateAccessor``, which
+provides fast access to this extra data.
+
+The coordinate system data is usually stored in separate arrays, so
+that many different pointers would need to be passed to the CUDA
+kernels to use this data directly. This was found to cause compilation
+errors with ``nvcc`` along the lines of "Formal parameter space
+overflowed".
+
+The ``CoordinatesAccessor`` reduces the number of parameters (data
+pointers) by packing all ``Coordinates`` data (grid spacing, metric
+tensor components) into a single array. The ordering of this data in
+the array has not been optimised, but is currently striped: Data for
+the same grid cell is close to each other in memory. Some guidance on
+memory layout can be found `on the NVidia website
+<https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#coalesced-access-to-global-memory>`_ and might be used to improve performance in future. It is
+likely that the results might be architecture dependent.
+
+To minimise the number of times this data needs to be copied from
+individual fields into the single array, and then copied from CPU to
+GPU, ``CoordinatesAccessor``s are cached. A map (``coords_store``
+defined in ``coordinates_accessor.cxx``) associates
+``Array<BoutReal>`` objects (containing the array of data) to
+``Coordinates`` pointers. If a ``CoordinatesAccessor`` is constructed
+with a ``Coordinates`` pointer which is in the cache, then the
+previously created ``Array`` data is used.
+Some care is therefore needed if the ``Coordinates`` data is modified,
+to ensure that a new ``CoordinatesAccessor`` data array is created by
+clearing the old data from the cache.
+
+The easiest way to clear the cache is to call the static function
+``CoordinatesAccessor::clear()``, which will delete all arrays from
+the cache. To remove a single ``Coordinates`` key from the cache, pass
+the pointer to ``CoordinatesAccessor::clear(coordinates_ptr)``.  In
+both cases the number of keys removed from the cache will be returned.
 
 Examples
 --------
