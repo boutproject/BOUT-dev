@@ -72,7 +72,7 @@ struct ArrayData {
   iterator<T> begin() const { return data; }
   iterator<T> end() const { return data + len; }
   int size() const { return len; }
-  void operator=(ArrayData<T>& in) { std::copy(std::begin(in), std::end(in), begin()); }
+  void operator=(const ArrayData<T>& in) { std::copy(std::begin(in), std::end(in), begin()); }
   T& operator[](int ind) { return data[ind]; };
 private:
   int len; ///< Size of the array
@@ -159,7 +159,7 @@ struct SharedArrayData {
   }
 
   /// Move. No need to update counter
-  BOUT_HOST_DEVICE SharedArrayData(SharedArrayData&& other) {
+  BOUT_HOST_DEVICE SharedArrayData(SharedArrayData&& other) noexcept {
     len = other.len;
     data = other.data;
     counter = other.counter;
@@ -201,7 +201,7 @@ struct SharedArrayData {
   /// Return the number of references to this data
   /// Name chosen to emulate std::shared_ptr<ArrayData>
   int use_count() {
-    if (!counter) {
+    if (counter == nullptr) {
       return 0;
     }
     return *counter;
