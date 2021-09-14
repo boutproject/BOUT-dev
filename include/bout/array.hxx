@@ -332,14 +332,6 @@ public:
    */
   BOUT_HOST_DEVICE inline Array(Array&& other) noexcept { swap(*this, other); }
 
-  /*
-   * Move assignment operator
-   */
-  BOUT_HOST_DEVICE inline Array& operator=(Array&& other) noexcept {
-    swap(*this, other);
-    return *this;
-  }
-
   /*!
    * Reallocate the array with size = \p new_size
    *
