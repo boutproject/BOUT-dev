@@ -21,14 +21,13 @@
  *
  */
 
+
 #ifndef __ARRAY_H__
 #define __ARRAY_H__
 
 #include <algorithm>
 #include <map>
 #include <memory>
-#include <mutex>
-#include <numeric>
 #include <vector>
 
 #ifdef _OPENMP
@@ -68,7 +67,44 @@ using const_iterator = const T*;
  */
 template <typename T>
 struct ArrayData {
-  ArrayData(int size) : len(size), clientUseCount(1), owner(true) {
+  ArrayData(int size) : len(size) { data = new T[len]; }
+  ~ArrayData() { delete[] data; }
+  iterator<T> begin() const { return data; }
+  iterator<T> end() const { return data + len; }
+  int size() const { return len; }
+  void operator=(ArrayData<T>& in) { std::copy(std::begin(in), std::end(in), begin()); }
+  T& operator[](int ind) { return data[ind]; };
+private:
+  int len; ///< Size of the array
+  T* data; ///< Array of data
+};
+
+/*!
+ * SharedArrayData holds data and a reference count
+ * Handles the allocation and deletion of data
+ *
+ * This exists so that Arrays can be used in CUDA code, which
+ * requires that all accessed memory is allocated with Umpire.
+ *
+ * When used on the CPU it behaves like a shared pointer (pointing to itself)
+ * When used on the GPU (__CUDA_ARCH__ defined) behaves like raw pointer
+ *
+ * An alternative might be to work out how to use an Umpire
+ * allocator inside std::make_shared
+ *
+ * Note: In CUDA we can't create a new Array, but we can copy
+ *       and delete those copies. This disables reference counting.
+ * Note: __CUDA_ARCH__ is only defined device side
+ */
+template <typename T>
+struct SharedArrayData {
+  /// Default allocation.
+  /// Note: The result contains a null data pointer
+  SharedArrayData() {}
+
+  /// Create a new array. This will call `new`, or use Umpire if enabled.
+  /// Note: Both data and counter need to be allocated, preferably in the same data block
+  SharedArrayData(int size) : len(size) {
 #if BOUT_HAS_UMPIRE
     auto& rm = umpire::ResourceManager::getInstance();
 #if BOUT_USE_CUDA
@@ -76,50 +112,65 @@ struct ArrayData {
 #else
     auto allocator = rm.getAllocator("HOST");
 #endif
-    data = static_cast<T*>(allocator.allocate(size * sizeof(T)));
+    // Allocate space for both counter and data
+    auto raw_ptr = allocator.allocate(size * sizeof(T) + sizeof(int));
+    // data and counter are both pointers into the block of memory
+    data = static_cast<T*>(raw_ptr);
+    counter = static_cast<int*>(raw_ptr + size * sizeof(T));
 #else
+    // Un-managed
     data = new T[len];
+    counter = new int;
 #endif
+    *counter = 1; // Initialise with a single reference
   }
 
-  BOUT_HOST_DEVICE ~ArrayData() {
-// __CUDA_ARCH__ is only defined device side
+  /// Delete and deallocate/delete the data
+  /// If called from CUDA doesn't do anything, because in CUDA we don't take any ownership
+  BOUT_HOST_DEVICE ~SharedArrayData() {
 #ifndef __CUDA_ARCH__
+    if (!data) {
+      return; // No data allocated
+    }
+    (*counter)--; // Decrement counter. Not done in CUDA
+
+    if (*counter == 0) {
 #if BOUT_HAS_UMPIRE
-    if (data != nullptr && owner && (clientUseCount == 1)) {
       auto& rm = umpire::ResourceManager::getInstance();
-      rm.deallocate(data);
-      data = nullptr;
-      len = 0;
-      clientUseCount = 0;
-      owner = false;
-    }
+      rm.deallocate(data); // counter is part of the same memory allocation
 #else
-    if (data != nullptr && owner && (clientUseCount == 1)) {
       delete[] data;
-      data = nullptr;
-      len = 0;
-      clientUseCount = 0;
-      owner = false;
-    }
+      delete counter;
 #endif
+    }
 #endif
   }
 
-  BOUT_HOST_DEVICE ArrayData(const ArrayData& other) {
+  /// Make a shallow copy, referring to the same data
+  /// Increments the shared counter
+  BOUT_HOST_DEVICE SharedArrayData(const SharedArrayData& other) {
     len = other.len;
     data = other.data;
-    owner = false;
+    counter = other.counter;
+#ifndef __CUDA_ARCH__
+    (*counter)++; // Increment the shared reference counter
+    // Note: In CUDA don't take any ownership, treat as raw pointer
+#endif
+  }
+
+  /// Move. No need to update counter
+  BOUT_HOST_DEVICE SharedArrayData(SharedArrayData&& other) {
+    len = other.len;
+    data = other.data;
+    counter = other.counter;
   }
 
   BOUT_HOST_DEVICE inline iterator<T> begin() const { return data; }
   BOUT_HOST_DEVICE inline iterator<T> end() const { return data + len; }
   BOUT_HOST_DEVICE inline int size() const { return len; }
-  BOUT_HOST_DEVICE inline void dec_count() { clientUseCount--; }
-  BOUT_HOST_DEVICE inline void inc_count() { clientUseCount++; }
-  BOUT_HOST_DEVICE inline int use_count() { return clientUseCount; }
 
-  BOUT_HOST_DEVICE inline ArrayData<T>& operator=(const ArrayData<T>& in) {
+  /// Assign, deep copying the underlying data
+  BOUT_HOST_DEVICE inline SharedArrayData<T>& operator=(const SharedArrayData<T>& in) {
 #ifndef __CUDA_ARCH__
     std::copy(std::begin(in), std::end(in), begin());
 #else
@@ -136,11 +187,59 @@ struct ArrayData {
   BOUT_HOST_DEVICE inline T& operator[](int ind) { return data[ind]; };
   BOUT_HOST_DEVICE inline const T& operator[](int ind) const { return data[ind]; };
 
+  /// Dereference operator.
+  /// Here to emulate std::shared_ptr<ArrayData>
+  SharedArrayData& operator*() {
+    return *this;
+  }
+
+  /// Check if the data pointer is null
+  explicit operator bool() const noexcept {
+    return data != nullptr;
+  }
+
+  /// Return the number of references to this data
+  /// Name chosen to emulate std::shared_ptr<ArrayData>
+  int use_count() {
+    if (!counter) {
+      return 0;
+    }
+    return *counter;
+  }
+
 private:
   T* data = nullptr;
   int len = 0;
-  int clientUseCount = 0;
-  bool owner = false;
+  int* counter = nullptr;
+};
+
+// Creation Policies
+//
+// These determine how backing arrays are created. The result of `create(int len)` should
+// have shared pointer semantics
+//
+
+/// Create a shared pointer to the backing array
+struct CreateSharedPointer {
+  /// The type returned by create(len) is a pointer to the dataBlock type
+  template<class dataBlock>
+  using dataPtrType = std::shared_ptr<dataBlock>;
+
+  template<class dataBlock>
+  std::shared_ptr<dataBlock> create(int len) {
+    return std::make_shared<dataBlock>(len);
+  }
+};
+
+/// Special case where array also has pointer semantics (SharedArrayData)
+struct CreateDirectly {
+  template<class dataBlock>
+  using dataPtrType = dataBlock;
+
+  template<class dataBlock>
+  dataBlock create(int len) {
+    return dataBlock(len);
+  }
 };
 
 /*!
@@ -172,8 +271,12 @@ private:
  *  size, operator=, operator[], begin, end
  */
 
-template <typename T, typename Backing = ArrayData<T>>
-class Array {
+#if BOUT_HAS_UMPIRE
+template <typename T, typename Backing = SharedArrayData<T>, typename CreationPolicy = CreateDirectly>
+#else
+template <typename T, typename Backing = ArrayData<T>, typename CreationPolicy = CreateSharedPointer>
+#endif
+class Array : private CreationPolicy {
 public:
   using data_type = T;
   using backing_type = Backing;
@@ -186,7 +289,7 @@ public:
    * a.empty(); // True
    *
    */
-  Array() noexcept : ptr(nullptr) {}
+  Array() noexcept : ptr() {}
 
   /*!
    * Create an array of given length
@@ -200,23 +303,16 @@ public:
    */
   BOUT_HOST_DEVICE inline ~Array() {
 #ifndef __CUDA_ARCH__
-    if (ptr) {
-      release(ptr);
-    }
+    // Only free resources if not running on the device
+    // If running on the device don't take ownership, treat like raw pointer
+    release(ptr);
 #endif
   }
 
   /*!
    * Copy constructor
    */
-  BOUT_HOST_DEVICE Array(const Array& other) {
-    ptr = other.ptr;
-#ifndef __CUDA_ARCH__
-    if (ptr) {
-      ptr->inc_count();
-    }
-#endif
-  }
+  BOUT_HOST_DEVICE Array(const Array& other) noexcept : ptr(other.ptr) {}
 
   /*!
    * Assignment operator
@@ -232,7 +328,7 @@ public:
   /*!
    * Move constructor
    */
-  Array(Array&& other) noexcept { swap(*this, other); }
+  BOUT_HOST_DEVICE inline Array(Array&& other) noexcept { swap(*this, other); }
 
   /*!
    * Reallocate the array with size = \p new_size
@@ -240,9 +336,7 @@ public:
    * Note that this invalidates the existing data!
    */
   void reallocate(size_type new_size) {
-    if (ptr) {
-      release(ptr);
-    }
+    release(ptr);
     ptr = get(new_size);
   }
 
@@ -255,19 +349,33 @@ public:
    * but can be set to false by passing "false" as input.
    * Once set to false it can't be changed back to true.
    */
-
-  static bool useStore(bool keep_using = true) noexcept {
-    static bool value = false;
+  static bool useStore( bool keep_using = true ) noexcept {
+    static bool value = true;
+    if (keep_using) {
+      return value;
+    }
+    // Change to false
+    value = false;
     return value;
   }
+
   /*!
    * Release data. After this the Array is empty and any data access
    * will be invalid
    */
   void clear() noexcept { release(ptr); }
 
+  /*!
+   * Delete all data from the store and disable the store
+   *
+   * Note: After this is called the store cannot be re-enabled
+   */
   static void cleanup() {
-    // maybe do some umpire pool cleanup
+    // Clean the store, deleting data
+    store(true);
+    // Don't use the store anymore. This is so that array releases
+    // after cleanup() get deleted rather than put into the store
+    useStore(false);
   }
 
   /*!
@@ -293,10 +401,7 @@ public:
    *
    */
   bool unique() const noexcept {
-    if (ptr) {
-      return ptr->use_count() == 1;
-    }
-    return false;
+    return ptr.use_count() == 1;
   }
 
   /*!
@@ -305,7 +410,6 @@ public:
    * on the data.
    */
   void ensureUnique() {
-
     if (!ptr || unique())
       return;
 
@@ -324,37 +428,14 @@ public:
   //////////////////////////////////////////////////////////
   // Iterators
 
-  BOUT_HOST_DEVICE inline iterator<T> begin() noexcept {
-    if (ptr) {
-      return (ptr->begin());
-    } else {
-      return (nullptr);
-    }
-  }
+  BOUT_HOST_DEVICE inline iterator<T> begin() noexcept { return (ptr) ? std::begin(*ptr) : nullptr; }
 
-  BOUT_HOST_DEVICE inline iterator<T> end() noexcept {
-    if (ptr) {
-      return (ptr->end());
-    } else {
-      return (nullptr);
-    }
-  }
+  BOUT_HOST_DEVICE inline iterator<T> end() noexcept { return (ptr) ? std::end(*ptr) : nullptr; }
 
-  BOUT_HOST_DEVICE inline const_iterator<T> begin() const noexcept {
-    if (ptr) {
-      return (ptr->begin());
-    } else {
-      return (nullptr);
-    }
-  }
+  // Const iterators
+  BOUT_HOST_DEVICE inline const_iterator<T> begin() const noexcept { return (ptr) ? std::begin(*ptr) : nullptr; }
 
-  BOUT_HOST_DEVICE inline const_iterator<T> end() const noexcept {
-    if (ptr) {
-      return (ptr->end());
-    } else {
-      return (nullptr);
-    }
-  }
+  BOUT_HOST_DEVICE inline const_iterator<T> end() const noexcept { return (ptr) ? std::end(*ptr) : nullptr; }
 
   //////////////////////////////////////////////////////////
   // Element access
@@ -365,14 +446,14 @@ public:
    * so the user should perform checks.
    */
   BOUT_HOST_DEVICE inline T& operator[](size_type ind) {
-#if !BOUT_USE_CUDA
+#ifndef __CUDA_ARCH__
     ASSERT3(0 <= ind && ind < size());
 #endif
     return ptr->operator[](ind);
   }
 
   BOUT_HOST_DEVICE inline const T& operator[](size_type ind) const {
-#if !BOUT_USE_CUDA
+#ifndef __CUDA_ARCH__
     ASSERT3(0 <= ind && ind < size());
 #endif
     return ptr->operator[](ind);
@@ -382,20 +463,75 @@ public:
    * Exchange contents with another Array of the same type.
    * Sizes of the arrays may differ.
    */
-  friend void swap(Array<T>& first, Array<T>& second) noexcept {
+  friend void swap(Array<T, Backing, CreationPolicy>& first, Array<T, Backing, CreationPolicy>& second) noexcept {
     using std::swap;
     swap(first.ptr, second.ptr);
   }
 
 private:
-  // Type defs to help keep things brief -- which backing do we use
+
+  //Type defs to help keep things brief -- which backing do we use
   using dataBlock = Backing;
-  using dataPtrType = dataBlock*;
+  using dataPtrType = typename CreationPolicy::dataPtrType<dataBlock>;
+  using CreationPolicy::create; /// Function to create instances of dataPtrType
+
   /*!
    * Pointer to the data container object owned by this Array.
    * May be null
    */
-  dataPtrType ptr = nullptr;
+  dataPtrType ptr;
+
+  using storeType = std::map<size_type, std::vector<dataPtrType>>;
+  using arenaType = std::vector<storeType>;
+
+  /*!
+   * This maps from array size (size_type) to vectors of pointers to dataBlock objects
+   *
+   * By putting the static store inside a function it is initialised on first use,
+   * and doesn't need to be separately declared for each type T
+   *
+   * Inputs
+   * ------
+   *
+   * @param[in] cleanup   If set to true, deletes all dataBlock and clears the store
+   */
+  static storeType& store(bool cleanup=false) {
+#ifdef _OPENMP
+    static arenaType arena(omp_get_max_threads());
+#else
+    static arenaType arena(1);
+#endif
+    if (!cleanup) {
+#ifdef _OPENMP
+      return arena[omp_get_thread_num()];
+#else
+      return arena[0];
+#endif
+    }
+
+    // Clean by deleting all data -- possible that just stores.clear() is
+    // sufficient rather than looping over each entry.
+    BOUT_OMP(single)
+    {
+      for (auto &stores : arena) {
+        for (auto &p : stores) {
+          auto &v = p.second;
+          for (dataPtrType a : v) {
+            a.reset();
+          }
+          v.clear();
+        }
+        stores.clear();
+      }
+      // Here we ensure there is exactly one empty map still
+      // left in the arena as we have to return one such item
+      arena.resize(1);
+    }
+
+    // Store should now be empty but we need to return something,
+    // so return an empty storeType from the arena.
+    return arena[0];
+  }
 
   /*!
    * Returns a pointer to a dataBlock object of size \p len with no
@@ -404,18 +540,24 @@ private:
    * Expects \p len >= 0
    */
   dataPtrType get(size_type len) {
-#if BOUT_HAS_UMPIRE
-    auto& rm = umpire::ResourceManager::getInstance();
-#if BOUT_USE_CUDA
-    auto allocator = rm.getAllocator("UM");
-#else
-    auto allocator = rm.getAllocator("HOST");
-#endif
-    dataPtrType pp = static_cast<dataPtrType>(allocator.allocate(sizeof(dataBlock)));
-    dataPtrType p = new (pp) dataBlock(len);
-#else
-    dataPtrType p = new dataBlock(len);
-#endif
+    ASSERT3(len >= 0);
+
+    dataPtrType p;
+
+    auto& st = store()[len];
+
+    if (!st.empty()) {
+      p = st.back();
+      st.pop_back();
+    } else {
+      // Ensure that when we release the data block later we'll have
+      // enough space to put it in the store so that `release` can be
+      // noexcept
+      st.reserve(1);
+      // create function inherited from CreationPolicy
+      p = this->template create<dataBlock>(len);
+    }
+
     return p;
   }
 
@@ -431,41 +573,40 @@ private:
    * one data block. Of course, store() could throw -- in which case
    * we're doomed anyway, so the only thing we can do is abort
    */
-
-  void release(dataPtrType& d) {
+  void release(dataPtrType& d) noexcept {
     if (!d) {
       return;
     }
 
     // Reduce reference count, and if zero return to store
-    if (d->use_count() == 1) {
-#if BOUT_HAS_UMPIRE
-      auto& rm = umpire::ResourceManager::getInstance();
-      rm.deallocate(d->begin());
-      rm.deallocate(d);
-#else
-      delete d;
-#endif
-      d = nullptr;
-    } else {
-      d->dec_count();
+    if (d.use_count() == 1) {
+      if (useStore()) {
+        // Put back into store
+        store()[d->size()].push_back(std::move(d));
+        // Could return here but seems to slow things down a lot
+      }
     }
+
+    // Finish by setting pointer to nullptr if not putting on store
+    d = nullptr;
   }
 };
 
 /*!
  * Create a copy of an Array, which does not share data
  */
-template <typename T, typename Backing>
-Array<T, Backing> copy(const Array<T, Backing>& other) {
-  Array<T, Backing> a(other);
+template <typename T, typename Backing, typename CreationPolicy>
+Array<T, Backing> copy(const Array<T, Backing, CreationPolicy>& other) {
+  Array<T, Backing, CreationPolicy> a(other);
   a.ensureUnique();
   return a;
 }
 
-template <typename T>
-bool operator==(const Array<T>& lhs, const Array<T>& rhs) {
+/// Compare arrays, which may have different backing and creation policies
+template <typename T, typename B1, typename B2, typename C1, typename C2>
+bool operator==(const Array<T, B1, C1>& lhs, const Array<T, B2, C2>& rhs) {
   return std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 #endif // __ARRAY_H__
+
