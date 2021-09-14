@@ -472,7 +472,7 @@ private:
 
   //Type defs to help keep things brief -- which backing do we use
   using dataBlock = Backing;
-  using dataPtrType = typename CreationPolicy::dataPtrType<dataBlock>;
+  using dataPtrType = typename CreationPolicy::template dataPtrType<dataBlock>;
   using CreationPolicy::create; /// Function to create instances of dataPtrType
 
   /*!
