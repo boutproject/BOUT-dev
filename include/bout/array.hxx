@@ -72,7 +72,9 @@ struct ArrayData {
   iterator<T> begin() const { return data; }
   iterator<T> end() const { return data + len; }
   int size() const { return len; }
-  void operator=(const ArrayData<T>& in) { std::copy(std::begin(in), std::end(in), begin()); }
+  ArrayData<T>& operator=(const ArrayData<T>& in) { std::copy(std::begin(in), std::end(in), begin());
+    return *this;
+  }
   T& operator[](int ind) { return data[ind]; };
 private:
   int len; ///< Size of the array
