@@ -130,6 +130,10 @@ struct SharedArrayData {
   /// Delete and deallocate/delete the data
   /// If called from CUDA doesn't do anything, because in CUDA we don't take any ownership
   BOUT_HOST_DEVICE ~SharedArrayData() {
+    reset();
+  }
+
+  BOUT_HOST_DEVICE void reset() {
 #ifndef __CUDA_ARCH__
     if (!data) {
       return; // No data allocated
@@ -145,6 +149,8 @@ struct SharedArrayData {
       delete counter;
 #endif
     }
+    data = nullptr;
+    counter = nullptr;
 #endif
   }
 
@@ -186,13 +192,30 @@ struct SharedArrayData {
     return *this;
   }
 
+  /// Assign from nullptr
+  BOUT_HOST_DEVICE SharedArrayData<T>& operator=(std::nullptr_t) {
+    reset();
+  }
+
   BOUT_HOST_DEVICE inline T& operator[](int ind) { return data[ind]; };
   BOUT_HOST_DEVICE inline const T& operator[](int ind) const { return data[ind]; };
 
   /// Dereference operator.
   /// Here to emulate std::shared_ptr<ArrayData>
+  const SharedArrayData& operator*() const {
+    return *this;
+  }
+
   SharedArrayData& operator*() {
     return *this;
+  }
+
+  const SharedArrayData* operator->() const {
+    return this;
+  }
+
+  SharedArrayData* operator->() {
+    return this;
   }
 
   /// Check if the data pointer is null
@@ -202,7 +225,7 @@ struct SharedArrayData {
 
   /// Return the number of references to this data
   /// Name chosen to emulate std::shared_ptr<ArrayData>
-  int use_count() {
+  int use_count() const {
     if (counter == nullptr) {
       return 0;
     }
@@ -214,6 +237,12 @@ private:
   int len = 0;
   int* counter = nullptr;
 };
+
+/// Comparison to nullptr.
+template< class T >
+bool operator==( const SharedArrayData<T>& lhs, std::nullptr_t ) noexcept {
+  return static_cast<bool>(lhs);
+}
 
 // Creation Policies
 //
