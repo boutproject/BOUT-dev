@@ -758,11 +758,10 @@ string(REPLACE ";" " " BOUT_COMPILE_OPTIONS "${BOUT_COMPILE_OPTIONS}")
 #    build type actually being used. Note: this might behave weirdly
 #    on Windows. Might need to expand CMAKE_CONFIGURATION_TYPES
 #    instead?
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  set(CMAKE_BUILD_TYPE_UPPER "DEBUG")
-else()
-  string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
-endif()
+
+include(BuildType)
+# Here CMAKE_BUILD_TYPE is always set
+string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
 string(CONCAT BOUT_COMPILE_BUILD_FLAGS
   " "
   "${CMAKE_CXX_FLAGS}"
