@@ -556,7 +556,7 @@ string(REPLACE ";" " " BOUT_COMPILE_OPTIONS "${BOUT_COMPILE_OPTIONS}")
 #    on Windows. Might need to expand CMAKE_CONFIGURATION_TYPES
 #    instead?
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  set(CMAKE_BUILD_TYPE_UPPER "RELEASE")
+  set(CMAKE_BUILD_TYPE_UPPER "RELEASE")  # Note: Changing this doesn't change the default
 else()
   string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
 endif()
