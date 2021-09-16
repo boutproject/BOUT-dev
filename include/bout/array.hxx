@@ -48,6 +48,7 @@
 #if BOUT_HAS_UMPIRE
 #include "umpire/Allocator.hpp"
 #include "umpire/ResourceManager.hpp"
+#include "umpire/TypedAllocator.hpp"
 #endif
 
 #include <bout/assert.hxx>
@@ -101,48 +102,6 @@ private:
   int len; ///< Size of the array
   T* data; ///< Array of data
 };
-
-#if BOUT_HAS_UMPIRE
-
-/// C++ Allocator which can be passed to std::allocate_shared
-///
-/// Umpire allocators aren't C++ Allocators and can't be passed
-/// to STL containers.
-///
-/// This version adapted from a minimum example in the C++ standard
-/// via https://stackoverflow.com/a/22487421
-///
-template <class Tp>
-struct SimpleUmpireAllocator {
-  typedef Tp value_type;
-  SimpleUmpireAllocator() {}
-  template <class T> SimpleUmpireAllocator(const SimpleUmpireAllocator<T>& other) {}
-
-  /// Allocate memory by calling Umpire allocator
-  Tp* allocate(std::size_t n) {
-    auto& rm = umpire::ResourceManager::getInstance();
-#if BOUT_USE_CUDA
-    auto allocator = rm.getAllocator(umpire::resource::Pinned);
-#else
-    auto allocator = rm.getAllocator("HOST");
-#endif
-    return static_cast<Tp*>(allocator.allocate(n * sizeof(Tp)));
-  }
-  /// Deallocate by calling Umpire
-  void deallocate(Tp* p, std::size_t) {
-    auto& rm = umpire::ResourceManager::getInstance();
-    rm.deallocate(p);
-  }
-};
-template <class T, class U>
-bool operator==(const SimpleUmpireAllocator<T>&, const SimpleUmpireAllocator<U>&) {
-  return true; // All SimpleUmpireAllocators are equivalent
-}
-template <class T, class U>
-bool operator!=(const SimpleUmpireAllocator<T>&, const SimpleUmpireAllocator<U>&) {
-  return false;
-}
-#endif
 
 /*!
  * Data array type with automatic memory management
@@ -459,8 +418,14 @@ private:
       st.reserve(1);
 #if BOUT_HAS_UMPIRE
       // Use Umpire allocator for shared_ptr
-      SimpleUmpireAllocator<dataBlock> alloc;
-      p = std::allocate_shared<dataBlock>(alloc, len);
+      auto& rm = umpire::ResourceManager::getInstance();
+#if BOUT_USE_CUDA
+      auto allocator = rm.getAllocator(umpire::resource::Pinned);
+#else
+      auto allocator = rm.getAllocator("HOST");
+#endif
+      umpire::TypedAllocator<dataBlock> dataBlock_alloc{allocator};
+      p = std::allocate_shared<dataBlock>(dataBlock_alloc, len);
 #else
       // Use standard allocator
       p = std::make_shared<dataBlock>(len);
