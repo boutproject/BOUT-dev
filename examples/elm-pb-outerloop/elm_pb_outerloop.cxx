@@ -1609,17 +1609,17 @@ public:
     // First, capture a device safe array for indices
     //
     auto indices = region.getIndices(); // A std::vector of Ind3D objects
-    Ind3D *ob_i = &(indices)[0];
 
-    Array<int> _ob_i_ind(indices.size()); // A device safe array
-
-    //TODO: make this parallel copy for efficiency
+    Array<int> _ob_i_ind(indices.size()); // Backing data is device safe
+    // Copy indices into Array
     for(auto i = 0; i < indices.size(); i++) {
-      _ob_i_ind[i] = ob_i[i].ind;
+      _ob_i_ind[i] = indices[i].ind;
     }
+    // Get the raw pointer to use on the device
+    auto _ob_i_ind_raw = &_ob_i_ind[0];
 
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-      int i = _ob_i_ind[id];
+      int i = _ob_i_ind_raw[id];
       int i2d = i / Jpar_acc.mesh_nz;  // An index for 2D objects
 #else
     BOUT_FOR(i, region) {

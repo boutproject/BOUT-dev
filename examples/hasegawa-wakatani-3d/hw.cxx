@@ -69,10 +69,16 @@ public:
 
 #if RUN_WITH_RAJA
     auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
-    Ind3D *ob_i = &(indices)[0];
+    Array<int> _ob_i_ind(indices.size()); // Backing data is device safe
+    // Copy indices into Array
+    for(auto i = 0; i < indices.size(); i++) {
+      _ob_i_ind[i] = indices[i].ind;
+    }
+    // Get the raw pointer to use on the device
+    auto _ob_i_ind_raw = &_ob_i_ind[0];
 
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-      int i = ob_i[id].ind;
+      int i = _ob_i_ind_raw[id];
 #else
     BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
 #endif
