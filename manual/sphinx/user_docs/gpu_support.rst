@@ -211,3 +211,111 @@ Notes:
   which enable host pointers to be resolved on the GPU.
 
 
+Memory allocation and Umpire
+----------------------------
+
+Using GPUs effectively requires keeping track of even more levels of
+memory than usual. An extra complication is that trying to dereference
+a pointer to CPU memory while on the GPU device (or a device memory
+pointer while on the CPU) will result in a segfault on some
+architectures, while other architectures with Address Translation
+Services (ATS) will trap this access and transfer the required memory
+addresses, with a corresponding performance penalty for the time this
+transfer takes.
+
+At a low level, CPU and GPU memory are allocated separately, with buffers being
+explicitly synchronised by data transfer. To do this allocation, and
+automatically move data from CPU to GPU or back when needed, BOUT++ uses
+`Umpire <https://github.com/LLNL/Umpire>`_ . In order for this to work with
+data structures or multiple indirections, all steps in chain of pointers
+must be in the right place (CPU or device). Allocating everything with
+Umpire is the easiest way to ensure that this is the case.
+
+The calculations done in BOUT++ typically involve using blocks of
+memory of the a few common sizes, and the same calculations are done
+every timestep on different data as the simulation state evolves.
+BOUT++ therefore uses an arena system to store arrays which have been
+released, so that they can be re-used rather than deleted and
+allocated.  Allocator chaining is used: If the object pool runs out of
+arrays of the requested size, then a new one is allocated using Umpire
+or the native allocator (``new``).
+
+This is a `good talk by John Lakos [ACCU 2017] on memory allocators
+<https://www.youtube.com/watch?v=d1DpVR0tw0U>`_
+
+Future work
+-----------
+
+Indices
+~~~~~~~
+
+Setting up a RAJA loop to run on a GPU is still cumbersome and inefficient
+due to the need to transform CPU data structures into a form which can
+be passed to and used on the GPU. The examples contain code like::
+
+    auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
+     Array<int> _ob_i_ind(indices.size()); // Backing data is device safe
+     // Copy indices into Array
+     for(auto i = 0; i < indices.size(); i++) {
+       _ob_i_ind[i] = indices[i].ind;
+     }
+     // Get the raw pointer to use on the device
+     auto _ob_i_ind_raw = &_ob_i_ind[0];
+
+which is creating a raw pointer (``_ob_i_ind_raw``) to an array of
+``int``s which are allocated using Umpire. The original ``indices``
+are allocated using ``new`` and are inside a C++ ``std::vector``.  The
+RAJA loop then uses this array like this::
+
+    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
+      int i = _ob_i_ind_raw[id];
+      int i2d = i / Jpar_acc.mesh_nz;  // An index for 2D objects
+
+This code has several issues:
+
+#. It is inefficiently creating a new ``Array<int>`` and copying the
+   indices into it every time. In almost every case the indices will
+   not be changing.
+
+#. The indices lose their type information: Inside the loop an index
+   into a 3D field has the same type as an index into a 2D field (both
+   ``int``). This is a possible source of bugs.
+
+Possible fixes include:
+
+#. Changing ``Region`` to store indices inside an ``Array`` rather than ``std::vector``.
+   This would ensure that the ``SpecificInd`` objects were allocated with Umpire.
+   Then the GPU-side code could use ``SpecificInd`` objects for index conversion
+   and type safety.
+   This would still leave the problem of extracting the pointer from the ``Array``,
+   and would send more information to the GPU (``SpecificInd`` contains 3 ``ints``).
+
+#. The indices could be stored in two forms, one the ``std::vector`` as now, and alongside
+   it an ``Array<int>``.
+
+In either case it might be useful to have an ``ArrayAccessor`` type, which is just a range
+(begin/end pair, or pointer and length), and doesn't take ownership of the array data.
+
+Then the code might look something like::
+
+  auto indices_acc = ArrayAccessor<>(n.getRegion("RGN_NOBNDRY").getIndices());
+
+  RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
+    const Ind3D& i = indices_acc[id];
+
+RAJA vs BOUT_FOR
+~~~~~~~~~~~~~~~~
+
+The RAJA and BOUT_FOR loops need different outer forms, so a BOUT_FOR can't expand into
+or be swapped with a RAJA loop.
+
+#. Rather than taking a lambda function as an argument (and so needing a closing bracket),
+   a thin wrapper which has an ``operator=`` or ``operator<<`` would enable a lambda
+   function to be passed in from the right.
+   An issue is that the user-defined lambda function takes an ``Ind3D`` index, while RAJA
+   expects a lambda function taking an ``int``. Perhaps this can be done if nested lambdas
+   are allowed.
+
+#. New variables are needed, to hold the indices and the
+   index. Fortunately in C++14 or later, new variables can be
+   initialised in the capture clause (Generalized capture).

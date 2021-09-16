@@ -459,7 +459,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 ///     }
 ///
 /// If you wish to vectorise but can't use OpenMP then
-/// there is a serial verion of the macro:
+/// there is a serial version of the macro:
 ///
 ///     BoutReal max=0.;
 ///     BOUT_FOR_SERIAL(i, region) {
