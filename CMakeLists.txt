@@ -5,7 +5,6 @@ else()
   cmake_policy(VERSION 3.13)
 endif()
 
-set(CXX_STANDARD "14")
 
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
