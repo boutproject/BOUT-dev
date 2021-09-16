@@ -211,3 +211,31 @@ Notes:
   which enable host pointers to be resolved on the GPU.
 
 
+Memory allocation and Umpire
+----------------------------
+
+Using GPUs effectively requires keeping track of even more levels of
+memory than usual. An extra complication is that trying to dereference
+a pointer to CPU memory while on the GPU device (or a device memory
+pointer while on the CPU) will result in a segfault on some
+architectures, while other architectures with Address Translation
+Services (ATS) will trap this access and transfer the required memory
+addresses, with a corresponding performance penalty for the time this
+transfer takes.
+
+At a low level, CPU and GPU memory are allocated separately, with buffers being
+explicitly synchronised by data transfer. To do this allocation, and
+automatically move data from CPU to GPU or back when needed, BOUT++ uses
+`Umpire <https://github.com/LLNL/Umpire>`_ . In order for this to work with
+data structures or multiple indirections, all steps in chain of pointers
+must be in the right place (CPU or device). Allocating everything with
+Umpire is the easiest way to ensure that this is the case.
+
+The calculations done in BOUT++ typically involve using blocks of
+memory of the a few common sizes, and the same calculations are done
+every timestep on different data as the simulation state evolves.
+BOUT++ therefore uses an arena system to store arrays which have been
+released, so that they can be re-used rather than deleted and allocated.
+
+This is a `good talk by John Lakos [ACCU 2017] on memory allocators
+<https://www.youtube.com/watch?v=d1DpVR0tw0U>`_
