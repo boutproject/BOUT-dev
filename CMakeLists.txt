@@ -825,6 +825,8 @@ endif()
 option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
 if(BOUT_BUILD_EXAMPLES)
   add_subdirectory(examples)
+else()
+  add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
 ##################################################
