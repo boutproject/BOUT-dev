@@ -19,6 +19,8 @@
  * 2015-03-04  Ben Dudson <bd512@york.ac.uk>
  *     o Initial version
  *
+ * 2021 Holger Jones, Ben Dudson
+ *     o Added Umpire support, in multiple iterations/variations
  */
 
 #ifndef __ARRAY_H__
@@ -35,20 +37,9 @@
 
 #include "bout/build_config.hxx"
 
-#if BOUT_USE_CUDA && defined(__CUDACC__)
-#define BOUT_HOST_DEVICE __host__ __device__
-#define BOUT_HOST __host__
-#define BOUT_DEVICE __device__
-#else
-#define BOUT_HOST_DEVICE
-#define BOUT_HOST
-#define BOUT_DEVICE
-#endif
-
 #if BOUT_HAS_UMPIRE
 #include "umpire/Allocator.hpp"
 #include "umpire/ResourceManager.hpp"
-#include "umpire/TypedAllocator.hpp"
 #endif
 
 #include <bout/assert.hxx>
@@ -69,6 +60,9 @@ template <typename T>
 struct ArrayData {
   ArrayData(int size) : len(size) {
     // Allocate memory array
+    // Note: By allocating with Umpire, the raw data
+    //       array can be accessed on GPU devices
+    //       even though the Array object itself can't.
 #if BOUT_HAS_UMPIRE
     auto& rm = umpire::ResourceManager::getInstance();
 #if BOUT_USE_CUDA
@@ -96,8 +90,8 @@ struct ArrayData {
     std::copy(std::begin(in), std::end(in), begin());
     return *this;
   }
-  T& operator[](int ind) { return data[ind]; }
-
+  inline T& operator[](int ind) { return data[ind]; }
+  inline const T& operator[](int ind) const { return data[ind]; }
 private:
   int len; ///< Size of the array
   T* data; ///< Array of data
@@ -130,9 +124,12 @@ private:
  * store data. This defaults to a custom struct but can be std::valarray (
  * provided T is a compatible type), std::vector etc. Must provide the following :
  *  size, operator=, operator[], begin, end
+ *
+ * Notes:
+ *  - Arrays can't be used in GPU code. To access Array data
+ *    inside a RAJA loop, first extract the raw pointer
  */
-
-template <typename T, typename Backing = ArrayData<T>>
+template<typename T, typename Backing = ArrayData<T>>
 class Array {
 public:
   using data_type = T;
@@ -150,26 +147,20 @@ public:
 
   /*!
    * Create an array of given length
-   *
-   * Note: This can't be done in device (GPU) code
    */
   Array(size_type len) { ptr = get(len); }
 
   /*!
    * Destructor. Releases the underlying dataBlock
    */
-  BOUT_HOST_DEVICE inline ~Array() {
-#ifndef __CUDA_ARCH__
-    // Only free resources if not running on the device
-    // If running on the device don't take ownership, treat like raw pointer
+  ~Array() noexcept {
     release(ptr);
-#endif
   }
 
   /*!
    * Copy constructor
    */
-  BOUT_HOST_DEVICE Array(const Array& other) noexcept {
+  Array(const Array& other) noexcept {
     ptr = other.ptr;
   }
 
@@ -179,7 +170,7 @@ public:
    *
    * Uses copy-and-swap idiom
    */
-  BOUT_HOST_DEVICE inline Array& operator=(Array other) noexcept {
+  Array& operator=(Array other) noexcept {
     swap(*this, other);
     return *this;
   }
@@ -187,7 +178,9 @@ public:
   /*!
    * Move constructor
    */
-  BOUT_HOST_DEVICE inline Array(Array&& other) noexcept { swap(*this, other); }
+  Array(Array&& other) noexcept {
+    swap(*this, other);
+  }
 
   /*!
    * Reallocate the array with size = \p new_size
@@ -240,12 +233,14 @@ public:
   /*!
    * Returns true if the Array is empty
    */
-  BOUT_HOST_DEVICE inline bool empty() const noexcept { return ptr == nullptr; }
+  bool empty() const noexcept {
+    return ptr == nullptr;
+  }
 
   /*!
    * Return size of the array. Zero if the array is empty.
    */
-  BOUT_HOST_DEVICE inline size_type size() const noexcept {
+  size_type size() const noexcept {
     if (!ptr)
       return 0;
 
@@ -285,22 +280,14 @@ public:
   //////////////////////////////////////////////////////////
   // Iterators
 
-  BOUT_HOST_DEVICE inline iterator<T> begin() noexcept {
-    return (ptr) ? std::begin(*ptr) : nullptr;
-  }
+  iterator<T> begin() noexcept { return (ptr) ? std::begin(*ptr) : nullptr; }
 
-  BOUT_HOST_DEVICE inline iterator<T> end() noexcept {
-    return (ptr) ? std::end(*ptr) : nullptr;
-  }
+  iterator<T> end() noexcept { return (ptr) ? std::end(*ptr) : nullptr; }
 
   // Const iterators
-  BOUT_HOST_DEVICE inline const_iterator<T> begin() const noexcept {
-    return (ptr) ? std::begin(*ptr) : nullptr;
-  }
+  const_iterator<T> begin() const noexcept { return (ptr) ? std::begin(*ptr) : nullptr; }
 
-  BOUT_HOST_DEVICE inline const_iterator<T> end() const noexcept {
-    return (ptr) ? std::end(*ptr) : nullptr;
-  }
+  const_iterator<T> end() const noexcept { return (ptr) ? std::end(*ptr) : nullptr; }
 
   //////////////////////////////////////////////////////////
   // Element access
@@ -310,17 +297,12 @@ public:
    * or if ind is out of bounds. For efficiency no checking is performed,
    * so the user should perform checks.
    */
-  BOUT_HOST_DEVICE inline T& operator[](size_type ind) {
-#ifndef __CUDA_ARCH__
+  inline T& operator[](size_type ind) {
     ASSERT3(0 <= ind && ind < size());
-#endif
     return ptr->operator[](ind);
   }
-
-  BOUT_HOST_DEVICE inline const T& operator[](size_type ind) const {
-#ifndef __CUDA_ARCH__
+  inline const T& operator[](size_type ind) const {
     ASSERT3(0 <= ind && ind < size());
-#endif
     return ptr->operator[](ind);
   }
 
@@ -416,20 +398,7 @@ private:
       // enough space to put it in the store so that `release` can be
       // noexcept
       st.reserve(1);
-#if BOUT_HAS_UMPIRE
-      // Use Umpire allocator for shared_ptr
-      auto& rm = umpire::ResourceManager::getInstance();
-#if BOUT_USE_CUDA
-      auto allocator = rm.getAllocator(umpire::resource::Pinned);
-#else
-      auto allocator = rm.getAllocator("HOST");
-#endif
-      umpire::TypedAllocator<dataBlock> dataBlock_alloc{allocator};
-      p = std::allocate_shared<dataBlock>(dataBlock_alloc, len);
-#else
-      // Use standard allocator
       p = std::make_shared<dataBlock>(len);
-#endif
     }
 
     return p;
