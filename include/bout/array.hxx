@@ -102,6 +102,48 @@ private:
   T* data; ///< Array of data
 };
 
+#if BOUT_HAS_UMPIRE
+
+/// C++ Allocator which can be passed to std::allocate_shared
+///
+/// Umpire allocators aren't C++ Allocators and can't be passed
+/// to STL containers.
+///
+/// This version adapted from a minimum example in the C++ standard
+/// via https://stackoverflow.com/a/22487421
+///
+template <class Tp>
+struct SimpleUmpireAllocator {
+  typedef Tp value_type;
+  SimpleUmpireAllocator() {}
+  template <class T> SimpleUmpireAllocator(const SimpleUmpireAllocator<T>& other) {}
+
+  /// Allocate memory by calling Umpire allocator
+  Tp* allocate(std::size_t n) {
+    auto& rm = umpire::ResourceManager::getInstance();
+#if BOUT_USE_CUDA
+    auto allocator = rm.getAllocator(umpire::resource::Pinned);
+#else
+    auto allocator = rm.getAllocator("HOST");
+#endif
+    return static_cast<Tp*>(allocator.allocate(n * sizeof(Tp)));
+  }
+  /// Deallocate by calling Umpire
+  void deallocate(Tp* p, std::size_t) {
+    auto& rm = umpire::ResourceManager::getInstance();
+    rm.deallocate(p);
+  }
+};
+template <class T, class U>
+bool operator==(const SimpleUmpireAllocator<T>&, const SimpleUmpireAllocator<U>&) {
+  return true; // All SimpleUmpireAllocators are equivalent
+}
+template <class T, class U>
+bool operator!=(const SimpleUmpireAllocator<T>&, const SimpleUmpireAllocator<U>&) {
+  return false;
+}
+#endif
+
 /*!
  * Data array type with automatic memory management
  *
@@ -149,6 +191,8 @@ public:
 
   /*!
    * Create an array of given length
+   *
+   * Note: This can't be done in device (GPU) code
    */
   Array(size_type len) { ptr = get(len); }
 
@@ -166,7 +210,9 @@ public:
   /*!
    * Copy constructor
    */
-  BOUT_HOST_DEVICE Array(const Array& other) noexcept : ptr(other.ptr) {}
+  BOUT_HOST_DEVICE Array(const Array& other) noexcept {
+    ptr = other.ptr;
+  }
 
   /*!
    * Assignment operator
@@ -413,13 +459,8 @@ private:
       st.reserve(1);
 #if BOUT_HAS_UMPIRE
       // Use Umpire allocator for shared_ptr
-      auto& rm = umpire::ResourceManager::getInstance();
-#if BOUT_USE_CUDA
-      auto allocator = rm.getAllocator(umpire::resource::Pinned);
-#else
-      auto allocator = rm.getAllocator("HOST");
-#endif
-      p = std::allocate_shared<dataBlock>(allocator, len);
+      SimpleUmpireAllocator<dataBlock> alloc;
+      p = std::allocate_shared<dataBlock>(alloc, len);
 #else
       // Use standard allocator
       p = std::make_shared<dataBlock>(len);
