@@ -107,9 +107,11 @@ public:
     if (boussinesq) {
       // BOUT.inp section "phiBoussinesq"
       phiSolver = Laplacian::create(Options::getRoot()->getSection("phiBoussinesq"));
+      Options::root()["phiSolver"].setConditionallyUsed(); // Not using alternative options
     } else {
       // BOUT.inp section "phiSolver"
       phiSolver = Laplacian::create(Options::getRoot()->getSection("phiSolver"));
+      Options::root()["phiBoussinesq"].setConditionallyUsed();
     }
     phi = 0.0; // Starting guess for first solve (if iterative)
 
