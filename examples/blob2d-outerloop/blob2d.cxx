@@ -12,11 +12,10 @@
 
 #include "bout/single_index_ops.hxx" // Operators at a single index
 
-#define RUN_WITH_RAJA 0
+#define RUN_WITH_RAJA 1
 
 #if BOUT_HAS_RAJA && RUN_WITH_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
-#endif
 
 struct RajaWrapper {
   RajaWrapper(const Region<Ind3D>& region) {
@@ -41,6 +40,20 @@ struct RajaWrapper {
   // Note: This is private, but keyword not used due to CUDA limitation
   Array<int> _ob_i_ind; // Holds the index array
 };
+
+// Use RAJA for the loop
+// Note: Needs to be closed with `};` because it's a lambda function
+#define BOUT_FOR_RAJA(index, region) \
+  RajaWrapper(region) << [=] RAJA_DEVICE(int index)
+
+#else
+
+// If no RAJA, revert to BOUT_FOR
+// Note: Redundant ';' after closing brace should be ok
+#define BOUT_FOR_RAJA(index, region) \
+  BOUT_FOR(index, region)
+
+#endif
 
 /// 2D drift-reduced model, mainly used for blob studies
 ///
@@ -177,54 +190,27 @@ public:
 
     const auto& region = n.getRegion("RGN_NOBNDRY"); // Region object
 
-#if RUN_WITH_RAJA
-    RajaWrapper(region) << [=] RAJA_DEVICE(int i) {
-#else
-    BOUT_FOR(i, region) {
-#endif
+    BOUT_FOR_RAJA(i, region) {
       ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - 2 * DDZ(n_acc, i) * (rho_s / R_c)
                       + D_n * Delp2(n_acc, i);
 
       ddt(vort_acc)[i] = -bracket(phi_acc, vort_acc, i)
                          + 2 * DDZ(n_acc, i) * (rho_s / R_c)
                          + D_vort * Delp2(vort_acc, i);
-
-#if RUN_WITH_RAJA
     };
-#else
-    }
-#endif
 
     if (compressible) {
-#if RUN_WITH_RAJA
-      RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-        int i = ob_i[id].ind;
-#else
-      BOUT_FOR(i, region) {
-#endif
+      BOUT_FOR_RAJA(i, region) {
         ddt(n_acc)[i] -= 2 * n_acc[i] * DDZ(phi_acc, i) * (rho_s / R_c); // ExB Compression term
-#if RUN_WITH_RAJA
-      });
-#else
-      }
-#endif
+      };
     }
     
     if (sheath) {
       // Sheath closure
-#if RUN_WITH_RAJA
-      RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-        int i = ob_i[id].ind;
-#else
-      BOUT_FOR(i, region) {
-#endif
+      BOUT_FOR_RAJA(i, region) {
         ddt(n_acc)[i] += n_acc[i] * phi_acc[i] * (rho_s / L_par);
         ddt(vort_acc)[i] += phi_acc[i] * (rho_s / L_par);
-#if RUN_WITH_RAJA
-      });
-#else
-      }
-#endif
+      };
     }
 
     return 0;
