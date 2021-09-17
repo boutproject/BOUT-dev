@@ -18,6 +18,30 @@
 #include "RAJA/RAJA.hpp" // using RAJA lib
 #endif
 
+struct RajaWrapper {
+  RajaWrapper(const Region<Ind3D>& region) {
+    auto indices = region.getIndices(); // A std::vector of Ind3D objects
+    _ob_i_ind.reallocate(indices.size());
+    // Copy indices into Array
+    for(auto i = 0; i < indices.size(); i++) {
+      _ob_i_ind[i] = indices[i].ind;
+    }
+  }
+  template<typename F>
+  void operator<<(F f) {
+    // Get the raw pointer to use on the device
+    // Note: must be a local variable
+    int* _ob_i_ind_raw = &_ob_i_ind[0];
+    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, _ob_i_ind.size()),
+			   [=] RAJA_DEVICE(int id) {
+			     // Look up index and call user function
+			     f(_ob_i_ind_raw[id]);
+			   });
+  }
+  // Note: This is private, but keyword not used due to CUDA limitation
+  Array<int> _ob_i_ind; // Holds the index array
+};
+
 /// 2D drift-reduced model, mainly used for blob studies
 ///
 ///
@@ -154,17 +178,7 @@ public:
     const auto& region = n.getRegion("RGN_NOBNDRY"); // Region object
 
 #if RUN_WITH_RAJA
-    auto indices = region.getIndices(); // A std::vector of Ind3D objects
-    Array<int> _ob_i_ind(indices.size()); // Backing data is device safe
-    // Copy indices into Array
-    for(auto i = 0; i < indices.size(); i++) {
-      _ob_i_ind[i] = indices[i].ind;
-    }
-    // Get the raw pointer to use on the device
-    auto _ob_i_ind_raw = &_ob_i_ind[0];
-
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-      int i = _ob_i_ind_raw[id];
+    RajaWrapper(region) << [=] RAJA_DEVICE(int i) {
 #else
     BOUT_FOR(i, region) {
 #endif
@@ -176,7 +190,7 @@ public:
                          + D_vort * Delp2(vort_acc, i);
 
 #if RUN_WITH_RAJA
-    });
+    };
 #else
     }
 #endif
