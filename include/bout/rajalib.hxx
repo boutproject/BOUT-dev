@@ -79,7 +79,7 @@ struct RajaForAll {
   const RajaForAll& operator<<(F f) const {
     // Get the raw pointer to use on the device
     // Note: must be a local variable
-    int* _ob_i_ind_raw = &_ob_i_ind[0];
+    const int* _ob_i_ind_raw = &_ob_i_ind[0];
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, _ob_i_ind.size()),
 			   [=] RAJA_DEVICE(int id) {
 			     // Look up index and call user function
