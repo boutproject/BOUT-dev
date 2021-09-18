@@ -12,48 +12,8 @@
 
 #include "bout/single_index_ops.hxx" // Operators at a single index
 
-#define RUN_WITH_RAJA 1
-
-#if BOUT_HAS_RAJA && RUN_WITH_RAJA
-#include "RAJA/RAJA.hpp" // using RAJA lib
-
-struct RajaWrapper {
-  RajaWrapper(const Region<Ind3D>& region) {
-    auto indices = region.getIndices(); // A std::vector of Ind3D objects
-    _ob_i_ind.reallocate(indices.size());
-    // Copy indices into Array
-    for(auto i = 0; i < indices.size(); i++) {
-      _ob_i_ind[i] = indices[i].ind;
-    }
-  }
-  template<typename F>
-  void operator<<(F f) {
-    // Get the raw pointer to use on the device
-    // Note: must be a local variable
-    int* _ob_i_ind_raw = &_ob_i_ind[0];
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, _ob_i_ind.size()),
-			   [=] RAJA_DEVICE(int id) {
-			     // Look up index and call user function
-			     f(_ob_i_ind_raw[id]);
-			   });
-  }
-  // Note: This is private, but keyword not used due to CUDA limitation
-  Array<int> _ob_i_ind; // Holds the index array
-};
-
-// Use RAJA for the loop
-// Note: Needs to be closed with `};` because it's a lambda function
-#define BOUT_FOR_RAJA(index, region) \
-  RajaWrapper(region) << [=] RAJA_DEVICE(int index)
-
-#else
-
-// If no RAJA, revert to BOUT_FOR
-// Note: Redundant ';' after closing brace should be ok
-#define BOUT_FOR_RAJA(index, region) \
-  BOUT_FOR(index, region)
-
-#endif
+#define DISABLE_RAJA 0  // Disable RAJA here for testing?
+#include "bout/rajalib.hxx"
 
 /// 2D drift-reduced model, mainly used for blob studies
 ///
