@@ -11,7 +11,7 @@
  * Based on model code,  Yining Qin update GPU RAJA code since 1117-2020
  *******************************************************************************/
 
-#define RUN_WITH_RAJA true   // Use RAJA loops?
+#define DISABLE_RAJA 0        // Turn off RAJA in this file?
 
 #define EVOLVE_JPAR false     // Evolve ddt(Jpar) rather than ddt(Psi)?
 #define RELAX_J_VAC false     // Relax to zero-current in the vacuum?
@@ -48,20 +48,7 @@
 #include <invert_laplace.hxx>
 #include <smoothing.hxx>
 
-#if (BOUT_HAS_RAJA && RUN_WITH_RAJA)
-// library for GPU
-#include "RAJA/RAJA.hpp" // using RAJA lib
-
-#if BOUT_USE_CUDA && defined(__CUDACC__)
-#include <cuda_profiler_api.h>
-#endif
-
-#else
-// Don't try to run with RAJA
-#undef RUN_WITH_RAJA
-#define RUN_WITH_RAJA false
-#endif
-
+#include <bout/rajalib.hxx>  // Defines BOUT_FOR_RAJA
 
 #if BOUT_HAS_HYPRE
 #include <bout/invert/laplacexy2_hypre.hxx>
@@ -1600,31 +1587,10 @@ public:
 
     ////////////////////////////////////////////////////
     // Start loop over a region of the mesh
-    // This can either use RAJA, or BOUT_FOR
+    // If RAJA is not available, this will fall back to BOUT_FOR
 
-    const auto& region = Jpar.getRegion("RGN_NOBNDRY"); // Region over which to iterate
-#if RUN_WITH_RAJA
-
-    ///////////////////////////////////////////////////
-    // First, capture a device safe array for indices
-    //
-    auto indices = region.getIndices(); // A std::vector of Ind3D objects
-
-    Array<int> _ob_i_ind(indices.size()); // Backing data is device safe
-    // Copy indices into Array
-    for(auto i = 0; i < indices.size(); i++) {
-      _ob_i_ind[i] = indices[i].ind;
-    }
-    // Get the raw pointer to use on the device
-    auto _ob_i_ind_raw = &_ob_i_ind[0];
-
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-      int i = _ob_i_ind_raw[id];
-      int i2d = i / Jpar_acc.mesh_nz;  // An index for 2D objects
-#else
-    BOUT_FOR(i, region) {
-      int i2d = i.ind / Jpar_acc.mesh_nz;  // An index for 2D objects
-#endif
+    BOUT_FOR_RAJA(i, Jpar.getRegion("RGN_NOBNDRY")) {
+      int i2d = static_cast<int>(i) / Jpar_acc.mesh_nz;  // An index for 2D objects
 
       ////////////////////////////////////////////////////
       // Parallel electric field
@@ -1698,11 +1664,7 @@ public:
       ddt(P_acc)[i] = 0.0;
 #endif
 
-#if RUN_WITH_RAJA
-    });
-#else
-    }
-#endif
+    };
 
     // Terms which are not yet single index operators
     // Note: Terms which are included in the single index loop

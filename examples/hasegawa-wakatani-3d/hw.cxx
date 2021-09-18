@@ -7,24 +7,14 @@
 /// Profiling markers and ranges are set if USE_NVTX is defined
 /// Based on Ben Dudson, Steven Glenn code, Yining Qin update 0521-2020
 
-#include <cstdlib>
 #include <iostream>
 
 #include <bout/physicsmodel.hxx>
 #include <bout/single_index_ops.hxx>
-#include <derivs.hxx>
 #include <invert_laplace.hxx>
-#include <smoothing.hxx>
 
-#if BOUT_HAS_RAJA
-#include "RAJA/RAJA.hpp" // using RAJA lib
-#endif
-
-#if BOUT_USE_CUDA && defined(__CUDACC__)
-#include <cuda_profiler_api.h>
-#endif
-
-#define RUN_WITH_RAJA 0
+#define DISABLE_RAJA 0
+#include <bout/rajalib.hxx>
 
 class HW3D : public PhysicsModel {
 public:
@@ -61,41 +51,29 @@ public:
     // Communicate variables
     mesh->communicate(n, vort, phi, phi_minus_n);
 
+    // Create local variables; don't capture class members in RAJA loop
+    auto _alpha = alpha;
+    auto _kappa = kappa;
+    auto _Dn = Dn;
+    auto _Dvort = Dvort;
+
     // Create accessors which enable fast access
     auto n_acc = FieldAccessor<>(n);
     auto vort_acc = FieldAccessor<>(vort);
     auto phi_acc = FieldAccessor<>(phi);
     auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n);
 
-#if RUN_WITH_RAJA
-    auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
-    Array<int> _ob_i_ind(indices.size()); // Backing data is device safe
-    // Copy indices into Array
-    for(auto i = 0; i < indices.size(); i++) {
-      _ob_i_ind[i] = indices[i].ind;
-    }
-    // Get the raw pointer to use on the device
-    auto _ob_i_ind_raw = &_ob_i_ind[0];
+    BOUT_FOR_RAJA(i, n.getRegion("RGN_NOBNDRY")) {
 
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-      int i = _ob_i_ind_raw[id];
-#else
-    BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
-#endif
+      BoutReal div_current = _alpha * Div_par_Grad_par(phi_minus_n_acc, i);
 
-      BoutReal div_current = alpha * Div_par_Grad_par(phi_minus_n_acc, i);
-
-      ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - div_current - kappa * DDZ(phi_acc, i)
-                  + Dn * Delp2(n_acc, i);
+      ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - div_current - _kappa * DDZ(phi_acc, i)
+                  + _Dn * Delp2(n_acc, i);
 
       ddt(vort_acc)[i] =
-          -bracket(phi_acc, vort_acc, i) - div_current + Dvort * Delp2(vort_acc, i);
+          -bracket(phi_acc, vort_acc, i) - div_current + _Dvort * Delp2(vort_acc, i);
 
-#if RUN_WITH_RAJA
-    });
-#else
-    }
-#endif
+    };
 
     return 0;
   }
