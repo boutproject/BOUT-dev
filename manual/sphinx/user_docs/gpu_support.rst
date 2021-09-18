@@ -3,10 +3,96 @@
 GPU support
 ===========
 
-This section describes work in progress to develop GPU support in BOUT++ models.
-It includes both configuration and compilation on GPU systems, but also ways to
-write physics models which are designed to give higher performance. These methods
-may also be beneficial for CPU architectures.
+This section describes work in progress to develop GPU support in
+BOUT++ models.  It includes both configuration and compilation on GPU
+systems, but also ways to write physics models which are designed to
+give higher performance. These methods may also be beneficial for CPU
+architectures, but have fewer safety checks, less functionality and
+run-time flexibility than the field operators.
+
+To use the single index operators and the ``BOUT_FOR_RAJA`` loop macro::
+
+  #include "bout/single_index_ops.hxx"
+  #include "bout/rajalib.hxx"
+
+To run parts of a physics model RHS function on a GPU, the basic
+outline of the code is to first copy any class member variables which
+will be used in the loop into local variables::
+
+  auto _setting = setting; // Create a local variable to capture
+
+Then create ``FieldAccessor``s to efficiently access field and
+coordinate system data inside the loop::
+
+  auto n_acc = FieldAccessor<>(n);
+  auto phi_acc = FieldAccessor<>(phi);
+
+There are also ``Field2DAccessor``s for accessing ``Field2D``
+types. If fields are staggered, then the expected location should be
+passed as a template parameter::
+
+  auto Jpar_acc = FieldAccessor<CELL_YLOW>(Jpar);
+
+which enables the cell location to be checked in the operators at
+compile time rather than run time.
+
+Finally the loop itself can be written something like::
+
+  BOUT_FOR_RAJA(i, region) {
+    ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - 2 * DDZ(n_acc, i);
+    /* ... */
+  };
+
+Note the semicolon after the closing brace, which is needed because
+this is the body of a lambda function. Inside the body of the loop,
+the operators like ``bracket`` and ``DDZ`` calculate the derivatives
+at a single index ``i``. These are "single index operators` and are
+defined in ``bout/single_index_ops.hxx``.
+
+If RAJA is not available, the ``BOUT_FOR_RAJA`` macro will revert to
+``BOUT_FOR``.  For testing, this can be forced by defining
+``DISABLE_RAJA`` before including ``bout/rajalib.hxx``.
+
+Note: An important difference between ``BOUT_FOR`` and
+``BOUT_FOR_RAJA`` (apart from the closing semicolon) is that the type
+of the index ``i`` is different inside the loop: ``BOUT_FOR`` uses
+``SpecificInd`` types (typically ``Ind3D``), but ``BOUT_FOR_RAJA``
+uses ``int``.  ``SpecificInd`` can be explicitly cast to ``int`` so
+use ``static_cast<int>(i)`` to ensure that it's an integer both with
+and without RAJA. This might (hopefully) change in future versions.
+
+Examples
+--------
+
+The ``blob2d-outerloop`` example is the simplest one which uses single index operators
+and (optionally) RAJA. It should solve the same set of equations, with the same inputs,
+as `blob2d`.
+
+``hasegawa-wakatani-3d`` is a 3D turbulence model, typically solved in a slab geometry.
+
+``elm-pb-outerloop`` is a much more complicated model, which should solve the same
+equations, and have the same inputs, as ``elm-pb``. Note that there are some differences:
+
+* The numerical methods used in ``elm-pb`` can be selected at
+  run-time, and typically include WENO schemes e.g W3. In
+  ``elm-pb-outerloop`` the methods are fixed to C2 in all cases.
+* The equations solved by ``elm-pb`` can be changed by modifying input settings.
+  To achieve higher performance, ``elm-pb-outerloop`` does this at compile time.
+  There are checks to ensure that the code has been compiled with flags consistent
+  with the input settings. See the README file for more details.
+
+Notes:
+
+* When RAJA is used in a physics model, all members of the PhysicsModel
+  should be public. If this is not done, then a compiler error like
+  "error: The enclosing parent function ("rhs") for an extended __device__ lambda
+  cannot have private or protected access within its class" may be encountered.
+
+* Class member variables cannot in general be used inside a RAJA loop: The ``this``
+  pointer is captured by value in the lambda function, not the value of the member variable.
+  When the member variable is used on the GPU, the ``this`` pointer is generally not valid
+  (e.g. on NERSC Cori GPUs). Some architectures have Address Translation Services (ATS)
+  which enable host pointers to be resolved on the GPU.
 
 CMake configuration
 -------------------
@@ -31,7 +117,6 @@ RAJA, Umpire, and a CUDA compiler.
    +----------------------+-----------------------------------------+------------------------+
    | BOUT_ENABLE_WARNINGS | nvcc has incompatible warning flags     | On (turn Off for CUDA) |
    +----------------------+-----------------------------------------+------------------------+
-
 
 Single index operators
 ----------------------
@@ -75,7 +160,7 @@ might be written as::
   auto phi_acc = FieldAccessor<>(phi);
   auto result_acc = FieldAccessor<>(result);
 
-  BOUT_FOR(i, result.region("RGN_NOBNDRY")) {
+  BOUT_FOR_RAJA(i, result.region("RGN_NOBNDRY")) {
     result_acc[i] = DDX(phi_acc, i);
   }
 
@@ -176,41 +261,6 @@ the cache. To remove a single ``Coordinates`` key from the cache, pass
 the pointer to ``CoordinatesAccessor::clear(coordinates_ptr)``.  In
 both cases the number of keys removed from the cache will be returned.
 
-Examples
---------
-
-The ``blob2d-outerloop`` example is the simplest one which uses single index operators
-and (optionally) RAJA. It should solve the same set of equations, with the same inputs,
-as `blob2d`.
-
-``hasegawa-wakatani-3d`` is a 3D turbulence model, typically solved in a slab geometry.
-
-``elm-pb-outerloop`` is a much more complicated model, which should solve the same
-equations, and have the same inputs, as ``elm-pb``. Note that there are some differences:
-
-* The numerical methods used in ``elm-pb`` can be selected at
-  run-time, and typically include WENO schemes e.g W3. In
-  ``elm-pb-outerloop`` the methods are fixed to C2 in all cases.
-* The equations solved by ``elm-pb`` can be changed by modifying input settings.
-  To achieve higher performance, ``elm-pb-outerloop`` does this at compile time.
-  There are checks to ensure that the code has been compiled with flags consistent
-  with the input settings. See the README file for more details.
-
-
-Notes:
-
-* When RAJA is used in a physics model, all members of the PhysicsModel
-  should be public. If this is not done, then a compiler error like
-  "error: The enclosing parent function ("rhs") for an extended __device__ lambda
-  cannot have private or protected access within its class" may be encountered.
-
-* Class member variables cannot in general be used inside a RAJA loop: The ``this``
-  pointer is captured by value in the lambda function, not the value of the member variable. 
-  When the member variable is used on the GPU, the ``this`` pointer is generally not valid
-  (e.g. on NERSC Cori GPUs). Some architectures have Address Translation Services (ATS)
-  which enable host pointers to be resolved on the GPU.
-
-
 Memory allocation and Umpire
 ----------------------------
 
@@ -251,7 +301,8 @@ Indices
 
 Setting up a RAJA loop to run on a GPU is still cumbersome and inefficient
 due to the need to transform CPU data structures into a form which can
-be passed to and used on the GPU. The examples contain code like::
+be passed to and used on the GPU. In the `bout/rajalib.hxx` header there
+is code like:
 
     auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
      Array<int> _ob_i_ind(indices.size()); // Backing data is device safe
@@ -268,8 +319,7 @@ are allocated using ``new`` and are inside a C++ ``std::vector``.  The
 RAJA loop then uses this array like this::
 
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-      int i = _ob_i_ind_raw[id];
-      int i2d = i / Jpar_acc.mesh_nz;  // An index for 2D objects
+      int i = _ob_i_ind_raw[id]; // int passed to loop body
 
 This code has several issues:
 
@@ -302,20 +352,3 @@ Then the code might look something like::
 
   RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
     const Ind3D& i = indices_acc[id];
-
-RAJA vs BOUT_FOR
-~~~~~~~~~~~~~~~~
-
-The RAJA and BOUT_FOR loops need different outer forms, so a BOUT_FOR can't expand into
-or be swapped with a RAJA loop.
-
-#. Rather than taking a lambda function as an argument (and so needing a closing bracket),
-   a thin wrapper which has an ``operator=`` or ``operator<<`` would enable a lambda
-   function to be passed in from the right.
-   An issue is that the user-defined lambda function takes an ``Ind3D`` index, while RAJA
-   expects a lambda function taking an ``int``. Perhaps this can be done if nested lambdas
-   are allowed.
-
-#. New variables are needed, to hold the indices and the
-   index. Fortunately in C++14 or later, new variables can be
-   initialised in the capture clause (Generalized capture).
