@@ -12,3 +12,4 @@ bout_add_example(elm_pb
               data/BOUT.inp
               data-hypre/BOUT.inp
               data-nonlinear/BOUT.inp)
+

@@ -134,7 +134,6 @@ LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in) 
       operator3D(i, i.ym()) = 0.5;
     }
   }
-  printf("LaplaceHypre3d instance\n");
 
 #if BOUT_HAS_CALIPER
   printf("LaplaceHypre3d is using caliper\n");

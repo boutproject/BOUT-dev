@@ -439,10 +439,12 @@ configure_file(
 option(BOUT_ENABLE_WARNINGS "Enable compiler warnings" ON)
 if (BOUT_ENABLE_WARNINGS)
   target_compile_options(bout++ PRIVATE
+    $<$<NOT:$<COMPILE_LANGUAGE:CUDA>>:
     $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
-      -Wall -Wextra >
+      -Wall -Wextra > >
     $<$<CXX_COMPILER_ID:MSVC>:
-      /W4 >
+      /W4 >  
+    $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-Wall -Xcompiler=-Wextra >
    )
 
  include(EnableCXXWarningIfSupport)
@@ -451,7 +453,6 @@ if (BOUT_ENABLE_WARNINGS)
  target_enable_cxx_warning_if_supported(bout++
    FLAGS -Wnull-dereference -Wno-cast-function-type
    )
-
 endif()
 
 # Compile time features
@@ -586,7 +587,6 @@ option(BOUT_TESTS "Build the tests" ${PROJECT_IS_TOP_LEVEL})
 option(BOUT_RUN_ALL_TESTS "Run all of the tests (this can be slow!)" OFF)
 if(BOUT_TESTS)
   enable_testing()
-
   # Targets for just building the tests
   # Tests need to add themselves as dependencies to these targets
   add_custom_target(build-check-unit-tests)
