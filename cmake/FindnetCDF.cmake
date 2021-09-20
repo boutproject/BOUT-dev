@@ -26,16 +26,25 @@
 #   Set to TRUE to get extra debugging output
 
 include(BOUT++functions)
+include(CMakePrintHelpers)
 
-#find_package(netCDF QUIET CONFIG)
-#if (netCDF_FOUND)
-#  message(STATUS "netCDF CONFIG found")
-#  set(netCDF_FOUND TRUE)
-#  if (NOT TARGET netCDF::netcdf)
-#    bout_add_library_alias(netCDF::netcdf netcdf)
-#  endif()
-#  return()
-#endif()
+if (BOUT_NETCDF_VERSION)
+  find_package(netCDF ${BOUT_NETCDF_VERSION} EXACT QUIET CONFIG)
+else()
+  find_package(netCDF QUIET CONFIG)
+endif()
+   
+if (netCDF_FOUND)
+  message(STATUS "netCDF CONFIG found")
+  set(netCDF_FOUND TRUE)
+  if (NOT TARGET netCDF::netcdf)
+    bout_add_library_alias(netCDF::netcdf netcdf)
+  endif()
+  if (netCDF_DEBUG)
+     cmake_print_properties(TARGETS netcdf PROPERTIES LOCATION VERSION)
+  endif (netCDF_DEBUG)
+  return()
+endif()
 
 find_program(NC_CONFIG "nc-config"
   PATHS "${netCDF_ROOT}"
@@ -50,11 +59,11 @@ find_program(NC_CONFIG "nc-config"
 
 get_filename_component(NC_CONFIG_TMP "${NC_CONFIG}" DIRECTORY)
 get_filename_component(NC_CONFIG_LOCATION "${NC_CONFIG_TMP}" DIRECTORY)
-#if (netCDF_DEBUG)
+if (netCDF_DEBUG)
   message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
     " NC_CONFIG_LOCATION = ${NC_CONFIG_LOCATION}"
     " netCDF_ROOT = ${netCDF_ROOT}")
- #endif()
+endif()
 
 bout_inspect_netcdf_config(NC_HINTS_INCLUDE_DIR "${NC_CONFIG}" "--includedir")
 bout_inspect_netcdf_config(NC_HINTS_PREFIX "${NC_CONFIG}" "--prefix")
@@ -69,13 +78,13 @@ find_path(netCDF_C_INCLUDE_DIR
   PATH_SUFFIXES
     "include"
   )
-#if (netCDF_DEBUG)
+if (netCDF_DEBUG)
   message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
     " netCDF_C_INCLUDE_DIR = ${netCDF_C_INCLUDE_DIR}"
     " NC_HINTS_INCLUDE_DIR = ${NC_HINTS_INCLUDE_DIR}"
     " NC_HINTS_PREFIX = ${NC_HINTS_PREFIX}"
     )
- #endif()
+endif()
 mark_as_advanced(netCDF_C_INCLUDE_DIR)
 
 find_library(netCDF_C_LIBRARY
@@ -88,13 +97,13 @@ find_library(netCDF_C_LIBRARY
   PATH_SUFFIXES
     "lib" "lib64"
  )
-#if (netCDF_DEBUG)
+if (netCDF_DEBUG)
   message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
     " netCDF_C_LIBRARY = ${netCDF_C_LIBRARY}"
     " NC_HINTS_INCLUDE_DIR = ${NC_HINTS_INCLUDE_DIR}"
     " NC_HINTS_PREFIX = ${NC_HINTS_PREFIX}"
     )
- #endif()
+endif()
 mark_as_advanced(netCDF_C_LIBRARY)
 
 if (netCDF_C_INCLUDE_DIR)
@@ -115,6 +124,8 @@ if (netCDF_C_INCLUDE_DIR)
   unset(_netcdf_version_note)
   unset(_netcdf_version_lines)
 endif ()
+
+message(STATUS "netCDF_VERSION ${netCDF_VERSION}")
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(netCDF
