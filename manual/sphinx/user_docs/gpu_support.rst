@@ -16,8 +16,9 @@ To use the single index operators and the ``BOUT_FOR_RAJA`` loop macro::
   #include "bout/rajalib.hxx"
 
 To run parts of a physics model RHS function on a GPU, the basic
-outline of the code is to first copy any class member variables which
-will be used in the loop into local variables::
+outline of the code is to (optionally) first copy any class member
+variables which will be used in the loop into local variables
+(see below for an alternative method)::
 
   auto _setting = setting; // Create a local variable to capture
 
@@ -52,15 +53,14 @@ defined in ``bout/single_index_ops.hxx``.
 Any class member variables which are used inside the loop must be captured
 as a local variable. If this is not done, then the code will probably compile,
 but may produce an illegal memory access error at runtime on the GPU. To
-capture the class member, either copy it into a local variable:
-
-copy any class member variables which
+capture the class member, you can copy any class member variables which
 will be used in the loop into local variables::
 
   auto _setting = setting; // Create a local variable to capture
 
 and then use ``_setting`` rather than ``setting`` inside the loop.
-Alternatively, add variables to be captured to the ``BOUT_FOR_RAJA`` loop::
+Alternatively, add variables to be captured to a CAPTURE argument to
+the ``BOUT_FOR_RAJA`` loop::
 
   BOUT_FOR_RAJA(i, region, CAPTURE(setting)) {
     ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - 2 * DDZ(n_acc, i);
