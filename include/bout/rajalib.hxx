@@ -91,6 +91,14 @@ private:
   Array<int> _ob_i_ind; ///< Holds the index array
 };
 
+/// Create a variable which shadows another (has the same name)
+#define SHADOW_ARG(var) var=var
+
+/// Transform a list of variables into a list of var=var assignments
+/// Useful for capturing class members in lambda function arguments.
+#define CAPTURE(...) \
+  MACRO_FOR_EACH_ARG(SHADOW_ARG, __VA_ARGS__)
+
 /// Iterate an index over a region
 ///
 /// If BOUT_HAS_RAJA is true and DISABLE_RAJA is false, then this macro
@@ -103,8 +111,23 @@ private:
 ///   };   //<- Note semicolon!
 ///
 /// Note: Needs to be closed with `};` because it's a lambda function
-#define BOUT_FOR_RAJA(index, region) \
-  RajaForAll(region) << [=] RAJA_DEVICE(int index)
+///
+/// Extra arguments can be passed after the region, and will be added
+/// to the lambda capture. The intended use for this is to capture
+/// class member variables, which can't be used directly in a RAJA CUDA
+/// loop.
+///
+/// Usage:
+///
+///   BOUT_FOR_RAJA(i, region, CAPTURE(var1, var2)) {
+///     /* ... */
+///   };
+///
+/// which will have a lambda capture [=, var1=var1, var2=var2]
+/// to create variables which shadow the class members.
+///
+#define BOUT_FOR_RAJA(index, region, ...) \
+  RajaForAll(region) << [=, ## __VA_ARGS__] RAJA_DEVICE(int index)
 
 #else // BOUT_HAS_RAJA
 
@@ -112,8 +135,12 @@ private:
 
 /// If no RAJA, BOUT_FOR_RAJA reverts to BOUT_FOR
 /// Note: Redundant ';' after closing brace should be ignored by compiler
-#define BOUT_FOR_RAJA(index, region) \
+///       Ignores any additional arguments
+#define BOUT_FOR_RAJA(index, region, ...) \
   BOUT_FOR(index, region)
+
+/// If not using RAJA, CAPTURE doesn't do anything
+#define CAPTURE(...)
 
 #endif // BOUT_HAS_RAJA
 #endif // RAJALIB_H

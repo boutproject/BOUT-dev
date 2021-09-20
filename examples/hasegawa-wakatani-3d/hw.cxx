@@ -54,27 +54,23 @@ public:
     // Communicate variables
     mesh->communicate(n, vort, phi, phi_minus_n);
 
-    // Create local variables; don't capture class members in RAJA loop
-    auto _alpha = alpha;
-    auto _kappa = kappa;
-    auto _Dn = Dn;
-    auto _Dvort = Dvort;
-
     // Create accessors which enable fast access
     auto n_acc = FieldAccessor<>(n);
     auto vort_acc = FieldAccessor<>(vort);
     auto phi_acc = FieldAccessor<>(phi);
     auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n);
 
-    BOUT_FOR_RAJA(i, n.getRegion("RGN_NOBNDRY")) {
+    // Note: Capture class members, otherwise if accessed via `this` pointer
+    //       an illegal memory access error may occur on a GPU
+    BOUT_FOR_RAJA(i, n.getRegion("RGN_NOBNDRY"), CAPTURE(alpha, kappa, Dn, Dvort)) {
 
-      BoutReal div_current = _alpha * Div_par_Grad_par(phi_minus_n_acc, i);
+      BoutReal div_current = alpha * Div_par_Grad_par(phi_minus_n_acc, i);
 
-      ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - div_current - _kappa * DDZ(phi_acc, i)
-                  + _Dn * Delp2(n_acc, i);
+      ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - div_current - kappa * DDZ(phi_acc, i)
+                  + Dn * Delp2(n_acc, i);
 
       ddt(vort_acc)[i] =
-          -bracket(phi_acc, vort_acc, i) - div_current + _Dvort * Delp2(vort_acc, i);
+          -bracket(phi_acc, vort_acc, i) - div_current + Dvort * Delp2(vort_acc, i);
 
     };
 

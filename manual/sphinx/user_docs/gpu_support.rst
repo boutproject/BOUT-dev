@@ -49,6 +49,24 @@ the operators like ``bracket`` and ``DDZ`` calculate the derivatives
 at a single index ``i``. These are "single index operators` and are
 defined in ``bout/single_index_ops.hxx``.
 
+Any class member variables which are used inside the loop must be captured
+as a local variable. If this is not done, then the code will probably compile,
+but may produce an illegal memory access error at runtime on the GPU. To
+capture the class member, either copy it into a local variable:
+
+copy any class member variables which
+will be used in the loop into local variables::
+
+  auto _setting = setting; // Create a local variable to capture
+
+and then use ``_setting`` rather than ``setting`` inside the loop.
+Alternatively, add variables to be captured to the ``BOUT_FOR_RAJA`` loop::
+
+  BOUT_FOR_RAJA(i, region, CAPTURE(setting)) {
+    ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - 2 * DDZ(n_acc, i);
+    /* ... code which uses `setting` ... */
+  };
+
 If RAJA is not available, the ``BOUT_FOR_RAJA`` macro will revert to
 ``BOUT_FOR``.  For testing, this can be forced by defining
 ``DISABLE_RAJA`` before including ``bout/rajalib.hxx``.

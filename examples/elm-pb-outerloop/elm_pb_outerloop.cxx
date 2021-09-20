@@ -12,6 +12,7 @@
  *******************************************************************************/
 
 #define DISABLE_RAJA 0        // Turn off RAJA in this file?
+
 #define EVOLVE_JPAR false     // Evolve ddt(Jpar) rather than ddt(Psi)?
 #define RELAX_J_VAC false     // Relax to zero-current in the vacuum?
 #define EHALL false           // Include electron pressure effects in Ohm's law?
@@ -1576,22 +1577,16 @@ public:
     auto rmp_Psi_acc = FieldAccessor<>(rmp_Psi);
 #endif
 
-    ///////////////////////////////////////////////////
-    // Capture all all class member variables to
-    // local scope
-    //
-
-    const auto _delta_i = delta_i;
-    const auto _hyperresist = hyperresist;
-    const auto _relax_j_tconst = relax_j_tconst;
-    const auto _dnorm = dnorm;
-    const auto _ehyperviscos = ehyperviscos;
-
     ////////////////////////////////////////////////////
     // Start loop over a region of the mesh
     // If RAJA is not available, this will fall back to BOUT_FOR
+    //
+    // Note: Capture all class member variables into local scope
+    //       or an illegal memory access may occur on GPUs
 
-    BOUT_FOR_RAJA(i, Jpar.getRegion("RGN_NOBNDRY")) {
+    BOUT_FOR_RAJA(i, Jpar.getRegion("RGN_NOBNDRY"),
+		  CAPTURE(delta_i, hyperresist, relax_j_tconst,
+			  dnorm, ehyperviscos, viscos_perp)) {
       int i2d = static_cast<int>(i) / Jpar_acc.mesh_nz;  // An index for 2D objects
 
       ////////////////////////////////////////////////////
@@ -1604,7 +1599,7 @@ public:
           - Grad_par(B0U_acc, i) / B0_acc[i2d] + eta_acc[i] * Delp2(Jpar_acc, i)
 
           - EVAL_IF(RELAX_J_VAC, // Relax current to zero
-                    vac_mask_acc[i] * Jpar_acc[i] / _relax_j_tconst)
+                    vac_mask_acc[i] * Jpar_acc[i] / relax_j_tconst)
         ;
 
 #else
@@ -1612,19 +1607,19 @@ public:
       ddt(Psi_acc)[i] = - GRAD_PARP(phi_acc) + eta_acc[i] * Jpar_acc[i]
 
         + EVAL_IF(EHALL, // electron parallel pressure
-                  0.25 * _delta_i * (GRAD_PARP(P_acc) + bracket(P0_acc, Psi_acc, i)))
+                  0.25 * delta_i * (GRAD_PARP(P_acc) + bracket(P0_acc, Psi_acc, i)))
 
         - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
                   bracket(phi0_acc, Psi_acc, i))
 
         + EVAL_IF(DIAMAG_GRAD_T, // grad_par(T_e) correction
-                  1.71 * _dnorm * 0.5 * GRAD_PARP(P_acc) / B0_acc[i2d])
+                  1.71 * dnorm * 0.5 * GRAD_PARP(P_acc) / B0_acc[i2d])
 
         - EVAL_IF(HYPERRESIST, // Hyper-resistivity
-                  eta_acc[i] * _hyperresist * Delp2(Jpar_acc, i))
+                  eta_acc[i] * hyperresist * Delp2(Jpar_acc, i))
 
         - EVAL_IF(EHYPERVISCOS, // electron Hyper-viscosity
-                  eta_acc[i] * _ehyperviscos * Delp2(Jpar2_acc, i))
+                  eta_acc[i] * ehyperviscos * Delp2(Jpar2_acc, i))
       ;
 #endif
 

@@ -146,12 +146,6 @@ public:
 
     mesh->communicate(phi);
 
-    // Capture local variables not class members
-    auto _rho_s = rho_s;
-    auto _R_c = R_c;
-    auto _D_n = D_n;
-    auto _D_vort = D_vort;
-
     // Create data accessors for fast inner loop
     auto n_acc = FieldAccessor<>(n);
     auto vort_acc = FieldAccessor<>(vort);
@@ -159,18 +153,21 @@ public:
 
     const auto& region = n.getRegion("RGN_NOBNDRY"); // Region object
 
-    BOUT_FOR_RAJA(i, region) {
-      ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - 2 * DDZ(n_acc, i) * (_rho_s / _R_c)
-                      + _D_n * Delp2(n_acc, i);
+    // Note: Ensure that all class members are captured explicitly
+    //       If this is not done, then the `this` pointer will be captured,
+    //       resulting in illegal memory access on GPU devices.
+    BOUT_FOR_RAJA(i, region, CAPTURE(rho_s, R_c, D_n, D_vort)) {
+      ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - 2 * DDZ(n_acc, i) * (rho_s / R_c)
+                      + D_n * Delp2(n_acc, i);
 
       ddt(vort_acc)[i] = -bracket(phi_acc, vort_acc, i)
-                         + 2 * DDZ(n_acc, i) * (_rho_s / _R_c)
-                         + _D_vort * Delp2(vort_acc, i);
+                         + 2 * DDZ(n_acc, i) * (rho_s / R_c)
+                         + D_vort * Delp2(vort_acc, i);
     };
 
     if (compressible) {
-      BOUT_FOR_RAJA(i, region) {
-        ddt(n_acc)[i] -= 2 * n_acc[i] * DDZ(phi_acc, i) * (_rho_s / _R_c); // ExB Compression term
+      BOUT_FOR_RAJA(i, region, CAPTURE(rho_s, R_c)) {
+        ddt(n_acc)[i] -= 2 * n_acc[i] * DDZ(phi_acc, i) * (rho_s / R_c); // ExB Compression term
       };
     }
     
@@ -178,9 +175,9 @@ public:
       // Sheath closure
       auto _L_par = L_par;
 
-      BOUT_FOR_RAJA(i, region) {
-        ddt(n_acc)[i] += n_acc[i] * phi_acc[i] * (_rho_s / _L_par);
-        ddt(vort_acc)[i] += phi_acc[i] * (_rho_s / _L_par);
+      BOUT_FOR_RAJA(i, region, CAPTURE(rho_s, L_par)) {
+        ddt(n_acc)[i] += n_acc[i] * phi_acc[i] * (rho_s / L_par);
+        ddt(vort_acc)[i] += phi_acc[i] * (rho_s / L_par);
       };
     }
 
