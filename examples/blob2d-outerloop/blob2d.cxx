@@ -19,7 +19,7 @@
 ///
 ///
 class Blob2D : public PhysicsModel {
-public:
+private:
   // Evolving variables
   Field3D n, vort; ///< Density and vorticity
 
@@ -50,6 +50,9 @@ public:
 
   std::unique_ptr<Laplacian> phiSolver{
       nullptr}; ///< Performs Laplacian inversions to calculate phi
+
+public:
+  // Note: rhs() must be public so that RAJA can use CUDA
 
   int init(bool UNUSED(restarting)) override {
 

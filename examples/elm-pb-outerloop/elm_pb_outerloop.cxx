@@ -12,7 +12,6 @@
  *******************************************************************************/
 
 #define DISABLE_RAJA 0        // Turn off RAJA in this file?
-
 #define EVOLVE_JPAR false     // Evolve ddt(Jpar) rather than ddt(Psi)?
 #define RELAX_J_VAC false     // Relax to zero-current in the vacuum?
 #define EHALL false           // Include electron pressure effects in Ohm's law?
@@ -98,7 +97,7 @@ BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
 
 /// 3-field ELM simulation
 class ELMpb : public PhysicsModel {
-public:
+private:
   // 2D inital profiles
   Field2D J0, P0;         // Current and pressure
   Vector2D b0xcv;         // Curvature term
@@ -359,6 +358,9 @@ public:
 
     return result;
   }
+
+public:
+  // Note: The rhs() function needs to be public so that RAJA can use CUDA
 
   int init(bool restarting) override {
     bool noshear;

@@ -17,7 +17,7 @@
 #include <bout/rajalib.hxx>
 
 class HW3D : public PhysicsModel {
-public:
+private:
   Field3D n, vort; // Evolving density and vorticity
   Field3D phi;     // Electrostatic potential
 
@@ -26,6 +26,9 @@ public:
   BoutReal kappa;                       // Density gradient drive
   BoutReal Dvort, Dn;                   // Diffusion
   std::unique_ptr<Laplacian> phiSolver; // Laplacian solver for vort -> phi
+
+public:
+  // Note: rhs() function must be public, so that RAJA can use CUDA
 
   int init(bool UNUSED(restart)) override {
 

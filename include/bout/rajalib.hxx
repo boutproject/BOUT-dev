@@ -87,7 +87,7 @@ struct RajaForAll {
 			   });
     return *this;
   }
-  // Note: This is private, but keyword not used due to CUDA limitation
+private:
   Array<int> _ob_i_ind; ///< Holds the index array
 };
 
