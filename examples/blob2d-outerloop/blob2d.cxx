@@ -173,7 +173,6 @@ public:
     
     if (sheath) {
       // Sheath closure
-      auto _L_par = L_par;
 
       BOUT_FOR_RAJA(i, region, CAPTURE(rho_s, L_par)) {
         ddt(n_acc)[i] += n_acc[i] * phi_acc[i] * (rho_s / L_par);
