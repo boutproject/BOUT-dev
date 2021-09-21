@@ -27,6 +27,10 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include "multigrid_laplace.hxx"
 #include <bout/openmpwrap.hxx>
 #include "unused.hxx"
@@ -760,3 +764,5 @@ BOUT_OMP(for)
     fflush(stdout);
   }
 }
+
+#endif

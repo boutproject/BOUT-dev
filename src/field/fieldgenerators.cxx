@@ -81,19 +81,21 @@ BoutReal FieldBallooning::generate(const Context& ctx) {
                 / (localmesh->xend - localmesh->xstart);
   int jx = ROUND((ctx.x() - localmesh->GlobalX(0)) / dx);
 
+  const BoutReal zlength = getUniform(coords->zlength());
+
   if (localmesh->periodicY(jx, ts)) {
     // Start with the value at this point
     BoutReal value = arg->generate(ctx);
 
     for (int i = 1; i <= ball_n; i++) {
       // y - i * 2pi
-      value += arg->generate(Context(ctx).set(
-          "y", ctx.y() - i * TWOPI,
-          "z", ctx.z() + i * ts * TWOPI / coords->zlength()));
+      // clang-format off
+      value += arg->generate(Context(ctx).set("y", ctx.y() - i * TWOPI,
+                                              "z", ctx.z() + i * ts * TWOPI / zlength));
 
-      value += arg->generate(Context(ctx).set(
-          "y", ctx.y() + i * TWOPI,
-          "z", ctx.z() - i * ts * TWOPI / coords->zlength()));
+      value += arg->generate(Context(ctx).set("y", ctx.y() + i * TWOPI,
+                                              "z", ctx.z() - i * ts * TWOPI / zlength));
+      // clang-format on
     }
     return value;
   }

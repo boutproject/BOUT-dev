@@ -47,8 +47,8 @@ private:
     solver->add(B, "B");
 
     Coordinates *coord = mesh->getCoordinates();
-    output.write("dx[0,0] = {:e}, dy[0,0] = {:e}, dz = {:e}\n", coord->dx(0, 0),
-                 coord->dy(0, 0), coord->dz);
+    output.write("dx(0,0,0) = {:e}, dy(0,0,0) = {:e}, dz(0,0,0) = {:e}\n",
+                 coord->dx(0, 0, 0), coord->dy(0, 0, 0), coord->dz(0, 0, 0));
 
     SAVE_REPEAT(divB);
 

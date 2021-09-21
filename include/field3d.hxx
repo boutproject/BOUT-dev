@@ -463,6 +463,7 @@ class Field3D : public Field {
 #endif
 
   friend class Vector3D;
+  friend class Vector2D;
 
   Field3D& calcParallelSlices();
 

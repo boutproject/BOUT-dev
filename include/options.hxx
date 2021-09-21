@@ -655,8 +655,9 @@ public:
   /// _not_ used from this instance. If an option has a "source"
   /// attribute in \p exclude_sources it is counted as having been
   /// used and so won't be included in the returned value. By default,
-  /// this is just "Output".
-  Options getUnused(const std::vector<std::string>& exclude_sources = {"Output"} ) const;
+  /// this is "Output" and "user_default" (used by overrideDefault).
+  Options getUnused(const std::vector<std::string>& exclude_sources = {
+                        "Output", "user_default"}) const;
 
   /// Print the options which haven't been used
   void printUnused() const;
@@ -896,26 +897,26 @@ struct fmt::formatter<Options> : public bout::details::OptionsFormatterBase {};
     pointer(options)->get(#var4, var4, def);                      \
     pointer(options)->get(#var5, var5, def);}
 
-#define OPTION6(options, var1, var2, var3, var4, var5, var6, def){ \
-    pointer(options)->get(#var1, var1, def);                               \
-    pointer(options)->get(#var2, var2, def);                               \
-    pointer(options)->get(#var3, var3, def);                               \
-    pointer(options)->get(#var4, var4, def);                               \
-    pointer(options)->get(#var5, var5, def);                               \
+#define OPTION6(options, var1, var2, var3, var4, var5, var6, def){      \
+    pointer(options)->get(#var1, var1, def);                            \
+    pointer(options)->get(#var2, var2, def);                            \
+    pointer(options)->get(#var3, var3, def);                            \
+    pointer(options)->get(#var4, var4, def);                            \
+    pointer(options)->get(#var5, var5, def);                            \
     pointer(options)->get(#var6, var6, def);}
 
 #define VAROPTION(options, var, def) {					\
-    if (pointer(options)->isSet(#var)){						\
-      pointer(options)->get(#var, var, def);					\
+    if (pointer(options)->isSet(#var)){                                 \
+      pointer(options)->get(#var, var, def);                            \
     } else {								\
       Options::getRoot()->getSection("all")->get(#var, var, def);	\
     }}									\
 
 /// Define for over-riding library defaults for options, should be called in global
 /// namespace so that the new default is set before main() is called.
-#define BOUT_OVERRIDE_DEFAULT_OPTION(name, value)     \
-  namespace {                                         \
-    const auto user_default##__FILE__##__LINE__ =     \
-      Options::root()[name].overrideDefault(value); } \
+#define BOUT_OVERRIDE_DEFAULT_OPTION(name, value)               \
+  namespace {                                                   \
+    const auto BOUT_CONCAT(user_default,__LINE__) =             \
+      Options::root()[name].overrideDefault(value); }           \
 
 #endif // __OPTIONS_H__

@@ -312,24 +312,6 @@ Field2D operator-(const Field2D &f);
 
 // Non-member functions
 
-inline Field2D toFieldAligned(const Field2D& f, const std::string& UNUSED(region) = "RGN_ALL") {
-  return f;
-}
-[[deprecated("Please use toFieldAligned(const Field2D& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline Field2D toFieldAligned(const Field2D& f, REGION region) {
-  return toFieldAligned(f, toString(region));
-}
-
-inline Field2D fromFieldAligned(const Field2D& f, const std::string& UNUSED(region) = "RGN_ALL") {
-  return f;
-}
-[[deprecated("Please use fromFieldAligned(const Field2D& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline Field2D fromFieldAligned(const Field2D& f, REGION region) {
-  return fromFieldAligned(f, toString(region));
-}
-
 #if CHECK > 0
 /// Throw an exception if \p f is not allocated or if any
 /// elements are non-finite (for CHECK > 2).
@@ -354,6 +336,11 @@ void invalidateGuards(Field2D &var);
 #else
 inline void invalidateGuards(Field2D &UNUSED(var)) {}
 #endif
+
+/// Average in the Z direction
+/// Field2D has no Z direction -- return input
+/// @param[in] f     Variable to average
+inline Field2D DC(const Field2D& f) { return f; }
 
 /// Returns a reference to the time-derivative of a field \p f
 ///

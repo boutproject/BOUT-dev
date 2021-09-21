@@ -80,7 +80,7 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
 
   // Number of x points must be a power of 2
   if (!is_pow2(localmesh->GlobalNxNoBoundaries)) {
-    throw BoutException("LaplacePCR error: GlobalNx must be a power of 2");
+    throw BoutException("LaplacePCR error: GlobalNxNoBoundaries must be a power of 2");
   }
 
   Acoef.setLocation(location);
@@ -145,8 +145,8 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
   // Get the width of the boundary
 
   // If the flags to assign that only one guard cell should be used is set
-  int inbndry = localmesh->xstart;
-  int outbndry = localmesh->xstart;
+  inbndry = localmesh->xstart;
+  outbndry = localmesh->xstart;
   if (((global_flags & INVERT_BOTH_BNDRY_ONE) != 0) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
@@ -158,6 +158,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
   }
 
   if (dst) {
+    const BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
@@ -189,7 +190,6 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       // including boundary conditions
       BOUT_OMP(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
-        BoutReal zlen = coords->dz * (localmesh->LocalNz - 3);
         BoutReal kwave =
             kz * 2.0 * PI / (2. * zlen); // wave number is 1/[rad]; DST has extra 2.
 
@@ -200,7 +200,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
                      &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
-    }
+    } // BOUT_OMP(parallel)
 
     // Solve tridiagonal systems
     cr_pcr_solver(a, b, c, bcmplx, xcmplx);
@@ -228,6 +228,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       }
     }
   } else {
+    const BoutReal zlength = getUniform(coords->zlength());
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
@@ -259,7 +260,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       // including boundary conditions
       BOUT_OMP(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
-        BoutReal kwave = kz * 2.0 * PI / (coords->zlength()); // wave number is 1/[rad]
+        BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
         tridagMatrix(&a(kz, 0), &b(kz, 0), &c(kz, 0), &bcmplx(kz, 0), jy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
@@ -267,7 +268,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
                      &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
-    }
+    } // BOUT_OMP(parallel)
 
     // Solve tridiagonal systems
     cr_pcr_solver(a, b, c, bcmplx, xcmplx);
@@ -318,8 +319,8 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
   // Get the width of the boundary
 
   // If the flags to assign that only one guard cell should be used is set
-  int inbndry = localmesh->xstart;
-  int outbndry = localmesh->xstart;
+  inbndry = localmesh->xstart;
+  outbndry = localmesh->xstart;
   if (((global_flags & INVERT_BOTH_BNDRY_ONE) != 0) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
@@ -363,6 +364,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
   auto bcmplx3D = Matrix<dcomplex>(nsys, nx);
 
   if (dst) {
+    const BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
@@ -402,7 +404,6 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
         int iy = ys + ind / nmode;
         int kz = ind % nmode;
 
-        BoutReal zlen = coords->dz * (localmesh->LocalNz - 3);
         BoutReal kwave =
             kz * 2.0 * PI / (2. * zlen); // wave number is 1/[rad]; DST has extra 2.
 
@@ -413,7 +414,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
                      &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
-    }
+    } // BOUT_OMP(parallel)
 
     // Solve tridiagonal systems
     cr_pcr_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
@@ -445,6 +446,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
       }
     }
   } else {
+    const BoutReal zlength = getUniform(coords->zlength());
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(localmesh->LocalNz / 2
@@ -485,7 +487,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
         int iy = ys + ind / nmode;
         int kz = ind % nmode;
 
-        BoutReal kwave = kz * 2.0 * PI / (coords->zlength()); // wave number is 1/[rad]
+        BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
         tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
@@ -493,7 +495,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
                      &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
-    }
+    } // BOUT_OMP(parallel)
 
     // Solve tridiagonal systems
     cr_pcr_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
@@ -577,11 +579,12 @@ void LaplacePCR ::cr_pcr_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomplex>& b_mpi
       // don't want to copy them.
       // xs = xstart if a proc has no boundary points
       // xs = 0 if a proc has boundary points
-      aa(kz, ix + 1) = a_mpi(kz, ix + xstart - xs);
-      bb(kz, ix + 1) = b_mpi(kz, ix + xstart - xs);
-      cc(kz, ix + 1) = c_mpi(kz, ix + xstart - xs);
-      r(kz, ix + 1) = r_mpi(kz, ix + xstart - xs);
-      x(kz, ix + 1) = x_mpi(kz, ix + xstart - xs);
+      int offset = localmesh->xstart - xs;
+      aa(kz, ix + 1) = a_mpi(kz, ix + offset);
+      bb(kz, ix + 1) = b_mpi(kz, ix + offset);
+      cc(kz, ix + 1) = c_mpi(kz, ix + offset);
+      r(kz, ix + 1) = r_mpi(kz, ix + offset);
+      x(kz, ix + 1) = x_mpi(kz, ix + offset);
     }
     aa(kz, nx + 1) = 0;
     bb(kz, nx + 1) = 1;
@@ -613,31 +616,34 @@ void LaplacePCR ::cr_pcr_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomplex>& b_mpi
  * last interior rows from their respective boundary rows. This is necessary
  * to ensure we pass a square system of interior rows to the PCR library.
  */
-void LaplacePCR ::eliminate_boundary_rows(const Matrix<dcomplex>& a, Matrix<dcomplex>& b,
-                                          const Matrix<dcomplex>& c,
+void LaplacePCR ::eliminate_boundary_rows(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
+                                          Matrix<dcomplex>& c,
                                           Matrix<dcomplex>& r) {
 
   if (localmesh->firstX()) {
-    // x index is first interior row
-    const int xstart = localmesh->xstart;
     for (int kz = 0; kz < nsys; kz++) {
-      b(kz, xstart) =
-          b(kz, xstart) - c(kz, xstart - 1) * a(kz, xstart) / b(kz, xstart - 1);
-      r(kz, xstart) =
-          r(kz, xstart) - r(kz, xstart - 1) * a(kz, xstart) / b(kz, xstart - 1);
-      // Row elimination would set a to zero, but value is unused:
-      // a(kz,xstart) = 0.0;
+      // Do forward elimination on *all* boundary rows up to xstart
+      // This fixes the case where INVERT_BNDRY_ONE is true, but there are more
+      // than 1 guard cells.
+      for (int ix = 1; ix < localmesh->xstart + 1; ix++) {
+        b(kz, ix) =
+            b(kz, ix) - c(kz, ix - 1) * a(kz, ix) / b(kz, ix - 1);
+        r(kz, ix) =
+            r(kz, ix) - r(kz, ix - 1) * a(kz, ix) / b(kz, ix - 1);
+        a(kz, ix) = 0.0;
+      }
     }
   }
   if (localmesh->lastX()) {
-    int n = xe - xs + 1; // actual length of array
-    int xind = n - localmesh->xstart - 1;
     for (int kz = 0; kz < nsys; kz++) {
-      // x index is last interior row
-      b(kz, xind) = b(kz, xind) - c(kz, xind) * a(kz, xind + 1) / b(kz, xind + 1);
-      r(kz, xind) = r(kz, xind) - c(kz, xind) * r(kz, xind + 1) / b(kz, xind + 1);
-      // Row elimination would set c to zero, but value is unused:
-      // c(kz,xind) = 0.0;
+      // Do forward elimination on *all* boundary rows down to xend
+      // This fixes the case where INVERT_BNDRY_ONE is true, but there are more
+      // than 1 guard cells.
+      for (int ix = xe - xs - 1; ix > xe - xs - 1 - localmesh->xstart; ix--) {
+        b(kz, ix) = b(kz, ix) - c(kz, ix) * a(kz, ix + 1) / b(kz, ix + 1);
+        r(kz, ix) = r(kz, ix) - c(kz, ix) * r(kz, ix + 1) / b(kz, ix + 1);
+        c(kz, ix) = 0.0;
+      }
     }
   }
 }
@@ -1070,18 +1076,33 @@ void LaplacePCR ::verify_solution(const Matrix<dcomplex>& a_ver,
   }
 
   BoutReal max_error = 0.0;
+  int max_loc_x = 0;
+  int max_loc_z = 0;
   for (int kz = 0; kz < nsys; kz++) {
     for (int i = 0; i < nx; i++) {
       y_ver(kz, i) = a_ver(kz, i) * x_ver(kz, i) + b_ver(kz, i) * x_ver(kz, i + 1)
                      + c_ver(kz, i) * x_ver(kz, i + 2);
       error(kz, i) = y_ver(kz, i) - r_ver(kz, i);
+      if(std::abs(error(kz, i)) > max_error){
+        max_loc_x = i;
+        max_loc_z = kz;
+      }
+
       max_error = std::max(max_error, std::abs(error(kz, i)));
-      output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, "
-                   "x={}, x+ = {}\n",
-                   error(kz, i).real(), r_ver(kz, i).real(), y_ver(kz, i).real(), kz, i,
-                   a_ver(kz, i).real(), b_ver(kz, i).real(), c_ver(kz, i).real(),
-                   x_ver(kz, i).real(), x_ver(kz, i + 1).real(), x_ver(kz, i + 2).real());
+      if( error(kz, i).real() > 0.01 || error(kz, i).imag() > 0.01 ){
+	      output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, "
+			   "x={}, x+ = {}\n",
+			   error(kz, i).real(), r_ver(kz, i).real(), y_ver(kz, i).real(), kz, i,
+			   a_ver(kz, i).real(), b_ver(kz, i).real(), c_ver(kz, i).real(),
+			   x_ver(kz, i).real(), x_ver(kz, i + 1).real(), x_ver(kz, i + 2).real());
+	      output.write("abs error imag {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, "
+			   "x={}, x+ = {}\n",
+			   error(kz, i).imag(), r_ver(kz, i).imag(), y_ver(kz, i).imag(), kz, i,
+			   a_ver(kz, i).imag(), b_ver(kz, i).imag(), c_ver(kz, i).imag(),
+			   x_ver(kz, i).imag(), x_ver(kz, i + 1).imag(), x_ver(kz, i + 2).imag());
+      }
     }
   }
   output.write("max abs error {}\n", max_error);
+  output.write("max abs error location {} {}\n", max_loc_x, max_loc_z);
 }

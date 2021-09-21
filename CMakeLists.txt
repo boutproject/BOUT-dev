@@ -24,6 +24,8 @@ find_package(MPI REQUIRED)
 
 include(CMakeDependentOption)
 
+option(BUILD_SHARED_LIBS "Build shared libs" ON)
+
 # Override default
 option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
 
@@ -305,15 +307,29 @@ set(BOUT_SOURCES
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
   )
 
-option(BOUT_GENERATE_FIELDOPS "Automatically re-generate the Field arithmetic operators from the Python templates. \
-Requires Python, clang-format, and Jinja2. Turn this OFF to skip generating them if, for example, \
-you are unable to install the Jinja2 Python module. This is only important for BOUT++ developers." ON)
 
-find_package(Python)
+find_package(Python3)
 find_package(ClangFormat)
-if (BOUT_GENERATE_FIELDOPS AND Python_FOUND AND ClangFormat_FOUND)
+
+if (Python3_FOUND AND ClangFormat_FOUND)
+  set(BOUT_GENERATE_FIELDOPS_DEFAULT ON)
+else()
+  set(BOUT_GENERATE_FIELDOPS_DEFAULT OFF)
+endif()
+
+option(BOUT_GENERATE_FIELDOPS "Automatically re-generate the Field arithmetic operators from the Python templates. \
+Requires Python3, clang-format, and Jinja2. Turn this OFF to skip generating them if, for example, \
+you are unable to install the Jinja2 Python module. This is only important for BOUT++ developers." ${BOUT_GENERATE_FIELDOPS_DEFAULT})
+
+if (BOUT_GENERATE_FIELDOPS)
+  if (NOT Python3_FOUND)
+    message(FATAL_ERROR "python not found, but you have requested to generate code!")
+  endif()
+  if (NOT ClangFormat_FOUND)
+    message(FATAL_ERROR "clang-format not found, but you have requested to generate code!")
+  endif()
   add_custom_command( OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/field/generated_fieldops.cxx
-    COMMAND ${Python_EXECUTABLE} gen_fieldops.py --filename generated_fieldops.cxx.tmp
+    COMMAND ${Python3_EXECUTABLE} gen_fieldops.py --filename generated_fieldops.cxx.tmp
     COMMAND ${ClangFormat_BIN} generated_fieldops.cxx.tmp -i
     COMMAND ${CMAKE_COMMAND} -E rename generated_fieldops.cxx.tmp generated_fieldops.cxx
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.jinja  ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.py
@@ -323,12 +339,20 @@ else()
   message(AUTHOR_WARNING "'src/field/generated_fieldops.cxx' will not be \
 regenerated when you make changes to either \
 'src/field/gen_fieldops.py' or 'src/field/gen_fieldops.jinja'. \
-This is because either Python or clang-format is missing \
+This is because either Python3 or clang-format is missing \
 (see above messages for more information) \
 or BOUT_GENERATE_FIELDOPS is OFF (current value: ${BOUT_GENERATE_FIELDOPS}). \
 This warning is only important for BOUT++ developers and can otherwise be \
 safely ignored.")
 endif()
+
+set(BOUT_ENABLE_PYTHON MAYBE CACHE STRING "Build the Python interface")
+if (BOUT_ENABLE_PYTHON OR BOUT_ENABLE_PYTHON STREQUAL "MAYBE")
+  add_subdirectory(tools/pylib/_boutcore_build)
+else()
+  set(BOUT_ENABLE_PYTHON OFF)
+endif()
+set(BOUT_USE_PYTHON ${BOUT_ENABLE_PYTHON})
 
 # Ensure that the compile date/time is up-to-date when any of the sources change
 add_custom_command(
@@ -352,7 +376,8 @@ target_include_directories(bout++ PUBLIC
 set(BOUT_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}/lib")
 set_target_properties(bout++ PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
-  ARCHIVE_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}")
+  ARCHIVE_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
+  SOVERSION 5.0.0)
 
 # Set some variables for the bout-config script
 set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
@@ -527,6 +552,14 @@ if (BOUT_ENABLE_OPENMP)
 endif()
 message(STATUS "Enable OpenMP: ${BOUT_ENABLE_OPENMP}")
 set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
+
+option(BOUT_ENABLE_METRIC_3D "Enable 3D metric support" OFF)
+if(BOUT_ENABLE_METRIC_3D)
+  set(BOUT_METRIC_TYPE "3D")
+else()
+  set(BOUT_METRIC_TYPE "2D")
+endif()
+set(BOUT_USE_METRIC_3D ${BOUT_ENABLE_METRIC_3D})
 
 # Optional dependencies
 
@@ -725,11 +758,10 @@ string(REPLACE ";" " " BOUT_COMPILE_OPTIONS "${BOUT_COMPILE_OPTIONS}")
 #    build type actually being used. Note: this might behave weirdly
 #    on Windows. Might need to expand CMAKE_CONFIGURATION_TYPES
 #    instead?
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  set(CMAKE_BUILD_TYPE_UPPER "DEBUG")
-else()
-  string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
-endif()
+
+include(BuildType)
+# Here CMAKE_BUILD_TYPE is always set
+string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
 string(CONCAT BOUT_COMPILE_BUILD_FLAGS
   " "
   "${CMAKE_CXX_FLAGS}"
@@ -807,7 +839,10 @@ endif()
 # Generate the build config header
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_defines.hxx")
-  message(FATAL_ERROR "Generated build_defines.hxx header already exists; please remove '${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_defines.hxx' before continuing")
+  # If we do in source builds, this is fine
+  if (NOT ${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
+    message(FATAL_ERROR "Generated build_defines.hxx header already exists; please remove '${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_defines.hxx' before continuing")
+  endif()
 endif()
 
 configure_file(cmake_build_defines.hxx.in include/bout/build_defines.hxx)
@@ -967,6 +1002,8 @@ message("
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
    Backtrace enabled        : ${BOUT_USE_BACKTRACE}
+   Metric type              : ${BOUT_METRIC_TYPE}
+   Python API support       : ${BOUT_USE_PYTHON}
    Sanitizers enabled       : ${BOUT_USE_SANITIZERS}
 
    === Python ===
@@ -976,5 +1013,5 @@ message("
 
        export PYTHONPATH=${BOUT_PYTHONPATH}:\$PYTHONPATH
 
-*** Now run `cmake --build .` to compile BOUT++ ***
+*** Now run `cmake --build ${CMAKE_BINARY_DIR}` to compile BOUT++ ***
 ")

@@ -193,9 +193,11 @@ class Mesh {
   /// @param[out] var   This will be set to the value. Will be allocated if needed
   /// @param[in] name   Name of the variable to read
   /// @param[in] def    The default value if not found
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(Field2D &var, const std::string &name, BoutReal def=0.0, CELL_LOC location=CELL_DEFAULT);
+  int get(Field2D& var, const std::string& name, BoutReal def=0.0,
+          bool communicate = true, CELL_LOC location=CELL_DEFAULT);
 
   /// Get a Field3D from the input source
   ///
@@ -225,11 +227,14 @@ class Mesh {
   /// By default all fields revert to zero
   ///
   /// @param[in] var  This will be set to the value read
-  /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] name  The name of the vector. Individual fields are read based on this
+  /// name by appending. See above
   /// @param[in] def   The default value if not found (used for all the components)
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
-  /// @returns zero always. 
-  int get(Vector2D &var, const std::string &name, BoutReal def=0.0);
+  /// @returns zero always.
+  int get(Vector2D& var, const std::string& name, BoutReal def = 0.0,
+          bool communicate = true);
 
   /// Get a Vector3D from the input source.
   /// If \p var is covariant then this gets three
@@ -239,11 +244,14 @@ class Mesh {
   /// By default all fields revert to zero
   ///
   /// @param[in] var  This will be set to the value read
-  /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] name  The name of the vector. Individual fields are read based on this
+  /// name by appending. See above
   /// @param[in] def    The default value if not found (used for all the components)
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
-  /// @returns zero always. 
-  int get(Vector3D &var, const std::string &name, BoutReal def=0.0);
+  /// @returns zero always.
+  int get(Vector3D& var, const std::string& name, BoutReal def = 0.0,
+          bool communicate = true);
 
   /// Test if input source was a grid file
   bool isDataSourceGridFile() const;
@@ -661,6 +669,7 @@ class Mesh {
     // (circular dependency between Mesh and Coordinates)
     auto inserted = coords_map.emplace(location, nullptr);
     inserted.first->second = createDefaultCoordinates(location);
+    inserted.first->second->geometry(false);
     return inserted.first->second;
   }
 

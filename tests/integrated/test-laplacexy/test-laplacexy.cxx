@@ -30,6 +30,9 @@
 #include <initialprofiles.hxx>
 #include <options.hxx>
 
+using bout::globals::dump;
+using bout::globals::mesh;
+
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
