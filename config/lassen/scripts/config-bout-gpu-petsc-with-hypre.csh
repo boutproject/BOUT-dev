@@ -32,18 +32,12 @@ echo "arch=${arch}"
 if ( $compiler == "xl" ) then
     set cc=xlc
     set cpp=xlC
-    set fc=xlf
-    set extra_cflags=""
 else if ( $compiler == "clang" ) then 
     set cc=clang
     set cpp=clang++
-    set fc=mpifort
-    set extra_cflags=""
 else if ( $compiler == "gcc" ) then
     set cc=mpicc
     set cpp=mpiCC
-    set fc=mpifort
-    set extra_cflags=""
 else
     exit 1
 endif
