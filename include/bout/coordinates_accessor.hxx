@@ -35,7 +35,7 @@ struct CoordinatesAccessor {
 
   /// Constructor from Coordinates
   /// Copies data from coords, doesn't modify it
-  CoordinatesAccessor(const Coordinates* coords);
+  explicit CoordinatesAccessor(const Coordinates* coords);
 
   /// Clear the cache of Coordinates data
   ///
