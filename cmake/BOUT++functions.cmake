@@ -160,8 +160,8 @@ endfunction()
 #
 function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
-  set(oneValueArgs EXECUTABLE_NAME)
-  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES CONFLICTS TESTARGS EXTRA_DEPENDS PROCESSORS)
+  set(oneValueArgs EXECUTABLE_NAME PROCESSORS)
+  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES CONFLICTS TESTARGS EXTRA_DEPENDS)
   cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   bout_handle_requires_conflicts("test" ${TESTNAME}
@@ -212,7 +212,6 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
     add_test(NAME ${TESTNAME}
       COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS}
-      PROCESSORS ${BOUT_TEST_OPTIONS_PROCESSORS}
       )
     set_tests_properties(${TESTNAME} PROPERTIES
       ENVIRONMENT PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
@@ -221,6 +220,11 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
   else()
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME} ${BOUT_TEST_OPTIONS_TESTARGS})
   endif()
+
+  set_tests_properties(${TESTNAME} PROPERTIES
+    PROCESSORS ${BOUT_TEST_OPTIONS_PROCESSORS}
+    PROCESSOR_AFFINITY ON
+    )
 
   # Copy the input file if needed
   if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
