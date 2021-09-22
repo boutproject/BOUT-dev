@@ -56,13 +56,10 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
 
   const int ny = localmesh->LocalNy;
   const int nz = localmesh->LocalNz;
-  BOUT_FOR(i, delta_x.getRegion(region)) {
+  BOUT_FOR(i, getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
-
-    if (skip_mask(x, y, z))
-      continue;
 
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
@@ -116,7 +113,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
 
 void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                                   const BoutMask& mask, const std::string& region) {
-  skip_mask = mask;
+  setMask(mask);
   calcWeights(delta_x, delta_z, region);
 }
 
@@ -179,16 +176,7 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
     localmesh->wait(h);
   }
 
-  BOUT_FOR(i, f.getRegion(region)) {
-    const int x = i.x();
-    const int y = i.y();
-    const int z = i.z();
-
-    if (skip_mask(x, y, z))
-      continue;
-
-    const auto iyp = i.yp(y_offset);
-
+  BOUT_FOR(i, getRegion(region)) {
     const auto ic = i_corner[i];
     const auto iczp = ic.zp();
     const auto icxp = ic.xp();
