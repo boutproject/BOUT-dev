@@ -949,9 +949,4 @@ unsigned int size(const Region<T> &region){
   return region.size();
 }
 
-// template<typename T>
-class RegionID {
-  int value;
-};
-
 #endif /* __REGION_H__ */
