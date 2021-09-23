@@ -280,10 +280,7 @@ Field3D FCIMap::integrate(Field3D &f) const {
         if (boundary_mask(x,y,z))
           continue;
 
-        int zm = z - 1;
-        if (z == 0) {
-          zm = nz-1;
-        }
+        const int zm = z == 0 ? nz - 1 : z - 1;
 
         BoutReal f_c  = centre(x,ynext,z);
 
