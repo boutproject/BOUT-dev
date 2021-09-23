@@ -208,20 +208,8 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
     const BoutReal dR_dx = 0.5 * (R[i_xp] - R[i_xm]);
     const BoutReal dZ_dx = 0.5 * (Z[i_xp] - Z[i_xm]);
 
-    BoutReal dR_dz, dZ_dz;
-    // Handle the edge cases in Z
-    if (z == 0) {
-      dR_dz = R[i_zp] - R[i];
-      dZ_dz = Z[i_zp] - Z[i];
-
-    } else if (z == map_mesh.LocalNz - 1) {
-      dR_dz = R[i] - R[i_zm];
-      dZ_dz = Z[i] - Z[i_zm];
-
-    } else {
-      dR_dz = 0.5 * (R[i_zp] - R[i_zm]);
-      dZ_dz = 0.5 * (Z[i_zp] - Z[i_zm]);
-    }
+    const BoutReal dR_dz = 0.5 * (R[i_zp] - R[i_zm]);
+    const BoutReal dZ_dz = 0.5 * (Z[i_zp] - Z[i_zm]);
 
     const BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
 
