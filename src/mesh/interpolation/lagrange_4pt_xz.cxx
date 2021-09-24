@@ -39,7 +39,7 @@ XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh *mesh)
 
 void XZLagrange4pt::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                                 const std::string& region) {
-  const auto curregion = getRegion(region);
+  const auto curregion{getRegion(region)};
   BOUT_FOR(i, curregion) {
     const int x = i.x();
     const int y = i.y();
