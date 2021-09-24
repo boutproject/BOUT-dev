@@ -47,8 +47,7 @@ protected:
 public:
   XZInterpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
       : y_offset(y_offset),
-        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
-        region_name("RGN_ALL") {}
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn) {}
   XZInterpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : XZInterpolation(y_offset, mesh) {
     region = regionFromMask(mask, localmesh);
@@ -72,6 +71,10 @@ public:
     this->region_name = "";
     this->region = region;
   }
+  void setRegion(const Region<Ind3D>& region) {
+    this->region_name = "";
+    this->region = std::make_shared<Region<Ind3D>>(region);
+  }
   Region<Ind3D> getRegion() const {
     if (region_name != "") {
       return localmesh->getRegion(region_name);
@@ -80,9 +83,14 @@ public:
     return *region;
   }
   Region<Ind3D> getRegion(const std::string& region) const {
+    const bool has_region = region_name != "" or this->region != nullptr;
     if (region != "" and region != "RGN_ALL") {
-      return getIntersection(localmesh->getRegion(region), getRegion());
+      if (has_region) {
+        return getIntersection(localmesh->getRegion(region), getRegion());
+      }
+      return localmesh->getRegion(region);
     }
+    ASSERT1(has_region);
     return getRegion();
   }
   virtual void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
