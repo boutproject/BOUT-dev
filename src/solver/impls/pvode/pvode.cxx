@@ -141,8 +141,8 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
   options->get("mldq", mldq, band_width_default);
   options->get("mukeep", mukeep, 0);
   options->get("mlkeep", mlkeep, 0);
-  options->get("ATOL", abstol, 1.0e-12);
-  options->get("RTOL", reltol, 1.0e-5);
+  options->get("atol", abstol, 1.0e-12);
+  options->get("rtol", reltol, 1.0e-5);
   options->get("use_precon", use_precon, false);
   options->get("precon_dimens", precon_dimens, 50);
   options->get("precon_tol", precon_tol, 1.0e-4);

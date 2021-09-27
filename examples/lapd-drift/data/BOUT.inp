@@ -3,16 +3,13 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 400       # number of time-steps
-TIMESTEP = 2.0	   # time between outputs
+nout = 400       # number of time-steps
+timestep = 2.0	   # time between outputs
 
-archive = 500
-
-ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 32     # number of points in z direction (2^n + 1)
-ZPERIOD = 5  # Number of periods
+zperiod = 5  # Number of periods
 
 non_uniform = true
 
@@ -24,7 +21,7 @@ grid = "uedge.grd.nc"
 dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 
 [mesh]
-StaggerGrids = true
+staggergrids = true
 
 ##################################################
 # derivative methods
@@ -51,9 +48,10 @@ upwind = W3
 # Laplacian inversion settings
 
 [laplace]
-
+inner_boundary_flags = 1
+outer_boundary_flags = 2
 all_terms = true
-laplace_nonuniform = true
+nonuniform = true
 
 ##################################################
 # Solver settings
@@ -62,8 +60,8 @@ laplace_nonuniform = true
 type = pvode
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 mxstep = 50000
 
 ##################################################
@@ -101,25 +99,13 @@ evolve_source_te = false
 filter_z = false    # Filter in Z
 filter_z_mode = 1  # Keep this Z harmonic
 
-# field inversion flags: Add the following
-#  1 - Zero-gradient DC component on inner boundary
-#  2 - Zero-gradient AC component on inner boundary
-#  4 -      "        DC     "      " outer    "
-#  8 -      "        AC     "      " outer    "
-# 16 - Zero all DC components of the result
-# 32 - Don't use previous solution to start iterations
-#      (iterative methods only)
-
-phi_flags = 9  # inversion flags for phi
-apar_flags = 0 # flags for apar inversion
-
 ##################################################
 # settings for individual variables
 # The section "All" defines default settings for all variables
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # Form of initial perturbation

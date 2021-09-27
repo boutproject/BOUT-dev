@@ -36,9 +36,7 @@ protected:
     setSplitOperator(true);
 
     // Get options
-    auto globalOptions = Options::root();
-    auto options = globalOptions["split"];
-    rate = options["rate"].withDefault(1.0);
+    rate = Options::root()["split"]["rate"].withDefault(1.0);
 
     // Get phi settings from BOUT.inp
     phi.setBoundary("phi");

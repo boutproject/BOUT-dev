@@ -8,7 +8,6 @@
 # export MPIRUN="mpirun -np"
 # export MPIRUN="aprun -n"
 
-from __future__ import print_function
 import os
 import sys
 import time
@@ -226,6 +225,7 @@ if args.set_list is None:
         tests = glob.glob("*/runtest")
         tests += glob.glob("*/*/runtest")
         tests += glob.glob("*/*/*/runtest")
+        tests += glob.glob("*/*/*/*/runtest")
 
     tests = [x.rsplit("/", 1)[0] for x in tests]
 

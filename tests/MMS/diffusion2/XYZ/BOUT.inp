@@ -6,12 +6,14 @@ timestep = 1  # Time between outputs
 
 # Number of points in z
 MZ = 16
-zmin = 0.0
-zmax = 1.0
+ZMIN = 0.0
+ZMAX = 1.0
 
 #number of guard cells
 MYG = 1
 MXG = 1
+
+dump_format = "nc"     # Write NetCDF format files
 
 [output]
 floats = false #false -> output in doubles
@@ -28,8 +30,6 @@ ny = 16
 
 Lx = 1.0
 Ly = 1.0
-
-dump_format = "nc"     # Write NetCDF format files
 
 #grid points are distributed symmetrically
 symmetricGlobalX = true

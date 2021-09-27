@@ -58,25 +58,13 @@
 
 ////////////// X DERIVATIVE /////////////////
 
-Field3D DDX(const Field3D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region) {
-  Field3D result = bout::derivatives::index::DDX(f, outloc, method, region);
-  Coordinates *coords = f.getCoordinates(outloc);
-  result /= coords->dx;
-
-  if(f.getMesh()->IncIntShear) {
-    // Using BOUT-06 style shifting
-    result += coords->IntShiftTorsion * DDZ(f, outloc, method, region);
-  }
-
-  ASSERT2(((outloc == CELL_DEFAULT) && (result.getLocation() == f.getLocation())) ||
-          (result.getLocation() == outloc));
-
-  return result;
+Field3D DDX(const Field3D& f, CELL_LOC outloc, const std::string& method,
+            const std::string& region) {
+  return f.getCoordinates(outloc)->DDX(f, outloc, method, region);
 }
 
-Field2D DDX(const Field2D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region) {
+Coordinates::FieldMetric DDX(const Field2D& f, CELL_LOC outloc, const std::string& method,
+                             const std::string& region) {
   return f.getCoordinates(outloc)->DDX(f, outloc, method, region);
 }
 
@@ -88,8 +76,8 @@ Field3D DDY(const Field3D &f, CELL_LOC outloc, const std::string &method,
          / f.getCoordinates(outloc)->dy;
 }
 
-Field2D DDY(const Field2D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region) {
+Coordinates::FieldMetric DDY(const Field2D& f, CELL_LOC outloc, const std::string& method,
+                             const std::string& region) {
   return f.getCoordinates(outloc)->DDY(f, outloc, method, region);
 }
 
@@ -101,8 +89,9 @@ Field3D DDZ(const Field3D &f, CELL_LOC outloc, const std::string &method,
          / f.getCoordinates(outloc)->dz;
 }
 
-Field2D DDZ(const Field2D &f, CELL_LOC UNUSED(outloc), const std::string
-    &UNUSED(method), const std::string& UNUSED(region)) {
+Coordinates::FieldMetric DDZ(const Field2D& f, CELL_LOC UNUSED(outloc),
+                             const std::string& UNUSED(method),
+                             const std::string& UNUSED(region)) {
   auto tmp = Field2D(0., f.getMesh());
   tmp.setLocation(f.getLocation());
   return tmp;
@@ -175,11 +164,11 @@ Field3D D2DX2(const Field3D &f, CELL_LOC outloc, const std::string &method,
   return result;
 }
 
-Field2D D2DX2(const Field2D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region) {
+Coordinates::FieldMetric D2DX2(const Field2D& f, CELL_LOC outloc,
+                               const std::string& method, const std::string& region) {
   Coordinates *coords = f.getCoordinates(outloc);
 
-  Field2D result =
+  auto result =
       bout::derivatives::index::D2DX2(f, outloc, method, region) / SQ(coords->dx);
 
   if(coords->non_uniform) {
@@ -212,11 +201,11 @@ Field3D D2DY2(const Field3D &f, CELL_LOC outloc, const std::string &method,
   return result;
 }
 
-Field2D D2DY2(const Field2D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region) {
+Coordinates::FieldMetric D2DY2(const Field2D& f, CELL_LOC outloc,
+                               const std::string& method, const std::string& region) {
   Coordinates *coords = f.getCoordinates(outloc);
 
-  Field2D result =
+  auto result =
       bout::derivatives::index::D2DY2(f, outloc, method, region) / SQ(coords->dy);
   if(coords->non_uniform) {
     // Correction for non-uniform f.getMesh()
@@ -235,12 +224,10 @@ Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, const std::string &method,
          / SQ(f.getCoordinates(outloc)->dz);
 }
 
-Field2D D2DZ2(const Field2D &f, CELL_LOC outloc, const std::string &UNUSED(method),
-    const std::string& UNUSED(region)) {
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  return zeroFrom(f).setLocation(outloc);
+Coordinates::FieldMetric D2DZ2(const Field2D& f, CELL_LOC outloc,
+                               const std::string& method, const std::string& region) {
+  return bout::derivatives::index::D2DZ2(f, outloc, method, region)
+         / SQ(f.getCoordinates(outloc)->dz);
 }
 
 /*******************************************************************************
@@ -253,8 +240,8 @@ Field3D D4DX4(const Field3D &f, CELL_LOC outloc, const std::string &method,
          / SQ(SQ(f.getCoordinates(outloc)->dx));
 }
 
-Field2D D4DX4(const Field2D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region) {
+Coordinates::FieldMetric D4DX4(const Field2D& f, CELL_LOC outloc,
+                               const std::string& method, const std::string& region) {
   return bout::derivatives::index::D4DX4(f, outloc, method, region)
          / SQ(SQ(f.getCoordinates(outloc)->dx));
 }
@@ -265,8 +252,8 @@ Field3D D4DY4(const Field3D &f, CELL_LOC outloc, const std::string &method,
          / SQ(SQ(f.getCoordinates(outloc)->dy));
 }
 
-Field2D D4DY4(const Field2D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region) {
+Coordinates::FieldMetric D4DY4(const Field2D& f, CELL_LOC outloc,
+                               const std::string& method, const std::string& region) {
   return bout::derivatives::index::D4DY4(f, outloc, method, region)
          / SQ(SQ(f.getCoordinates(outloc)->dy));
 }
@@ -277,8 +264,8 @@ Field3D D4DZ4(const Field3D &f, CELL_LOC outloc, const std::string &method,
          / SQ(SQ(f.getCoordinates(outloc)->dz));
 }
 
-Field2D D4DZ4(const Field2D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region) {
+Coordinates::FieldMetric D4DZ4(const Field2D& f, CELL_LOC outloc,
+                               const std::string& method, const std::string& region) {
   return bout::derivatives::index::D4DZ4(f, outloc, method, region)
          / SQ(SQ(f.getCoordinates(outloc)->dz));
 }
@@ -294,16 +281,17 @@ Field2D D4DZ4(const Field2D &f, CELL_LOC outloc, const std::string &method,
  *
  * ** Communicates and applies boundary in X.
  */
-Field2D D2DXDY(const Field2D& f, CELL_LOC outloc, const std::string& method,
-               const std::string& region, const std::string& dfdy_boundary_condition,
-               const std::string& dfdy_region) {
+Coordinates::FieldMetric D2DXDY(const Field2D& f, CELL_LOC outloc,
+                                const std::string& method, const std::string& region,
+                                const std::string& dfdy_boundary_condition,
+                                const std::string& dfdy_region) {
   std::string dy_region = dfdy_region.empty() ? region : dfdy_region;
 
   // If staggering in x, take y-derivative at f's location.
   const auto y_location =
     (outloc == CELL_XLOW or f.getLocation() == CELL_XLOW) ? CELL_DEFAULT : outloc;
 
-  Field2D dfdy = DDY(f, y_location, method, dy_region);
+  auto dfdy = DDY(f, y_location, method, dy_region);
 
   // Set x-guard cells and x-boundary cells before calculating DDX
   f.getMesh()->communicate(dfdy);
@@ -337,12 +325,18 @@ Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
   return DDX(dfdy, outloc, method, region);
 }
 
-Field2D D2DXDZ(const Field2D &f, CELL_LOC outloc, const std::string &UNUSED(method),
-    const std::string& UNUSED(region)) {
+Coordinates::FieldMetric D2DXDZ(const Field2D& f, CELL_LOC outloc,
+                                MAYBE_UNUSED(const std::string& method),
+                                MAYBE_UNUSED(const std::string& region)) {
+#if BOUT_USE_METRIC_3D
+  Field3D tmp{f};
+  return D2DXDZ(tmp, outloc, method, region);
+#else
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
   return zeroFrom(f).setLocation(outloc);
+#endif
 }
 
 /// X-Z mixed derivative
@@ -356,12 +350,18 @@ Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc, const std::string &method,
   return DDZ(DDX(f, x_location, method, region), outloc, method, region);
 }
 
-Field2D D2DYDZ(const Field2D &f, CELL_LOC outloc, const std::string &UNUSED(method),
-    const std::string& UNUSED(region)) {
+Coordinates::FieldMetric D2DYDZ(const Field2D& f, CELL_LOC outloc,
+                                MAYBE_UNUSED(const std::string& method),
+                                MAYBE_UNUSED(const std::string& region)) {
+#if BOUT_USE_METRIC_3D
+  Field3D tmp{f};
+  return D2DYDZ(tmp, outloc, method, region);
+#else
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
   return zeroFrom(f).setLocation(outloc);
+#endif
 }
 
 Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc, MAYBE_UNUSED(const std::string&
@@ -381,9 +381,9 @@ Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc, MAYBE_UNUSED(const std::string
 
 ////////////// X DERIVATIVE /////////////////
 
-/// Special case where both arguments are 2D. Output location ignored for now
-Field2D VDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region) {
+/// Special case where both arguments are 2D.
+Coordinates::FieldMetric VDDX(const Field2D& v, const Field2D& f, CELL_LOC outloc,
+                              const std::string& method, const std::string& region) {
   return bout::derivatives::index::VDDX(v, f, outloc, method, region)
          / f.getCoordinates(outloc)->dx;
 }
@@ -398,8 +398,8 @@ Field3D VDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, const std::str
 ////////////// Y DERIVATIVE /////////////////
 
 // special case where both are 2D
-Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region) {
+Coordinates::FieldMetric VDDY(const Field2D& v, const Field2D& f, CELL_LOC outloc,
+                              const std::string& method, const std::string& region) {
   return bout::derivatives::index::VDDY(v, f, outloc, method, region)
          / f.getCoordinates(outloc)->dy;
 }
@@ -414,21 +414,26 @@ Field3D VDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, const std::str
 ////////////// Z DERIVATIVE /////////////////
 
 // special case where both are 2D
-Field2D VDDZ(const Field2D &UNUSED(v), const Field2D &f, CELL_LOC outloc, const
-    std::string &UNUSED(method), const std::string& UNUSED(region)) {
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  return zeroFrom(f).setLocation(outloc);
+Coordinates::FieldMetric VDDZ(const Field2D& v, const Field2D& f, CELL_LOC outloc,
+                              const std::string& method, const std::string& region) {
+  return bout::derivatives::index::VDDZ(v, f, outloc, method, region)
+         / f.getCoordinates(outloc)->dz;
 }
 
 // Note that this is zero because no compression is included
-Field2D VDDZ(const Field3D &UNUSED(v), const Field2D &f, CELL_LOC outloc, const
-    std::string &UNUSED(method), const std::string& UNUSED(region)) {
+Coordinates::FieldMetric VDDZ(MAYBE_UNUSED(const Field3D& v), const Field2D& f,
+                              CELL_LOC outloc, MAYBE_UNUSED(const std::string& method),
+                              MAYBE_UNUSED(const std::string& region)) {
+#if BOUT_USE_METRIC_3D
+  Field3D tmp{f};
+  return bout::derivatives::index::VDDZ(v, tmp, outloc, method, region)
+         / f.getCoordinates(outloc)->dz;
+#else
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
   return zeroFrom(f).setLocation(outloc);
+#endif
 }
 
 // general case
@@ -441,8 +446,8 @@ Field3D VDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, const std::str
 /*******************************************************************************
  * Flux conserving schemes
  *******************************************************************************/
-Field2D FDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region) {
+Coordinates::FieldMetric FDDX(const Field2D& v, const Field2D& f, CELL_LOC outloc,
+                              const std::string& method, const std::string& region) {
   return bout::derivatives::index::FDDX(v, f, outloc, method, region)
          / f.getCoordinates(outloc)->dx;
 }
@@ -455,8 +460,8 @@ Field3D FDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, const std::str
 
 /////////////////////////////////////////////////////////////////////////
 
-Field2D FDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region) {
+Coordinates::FieldMetric FDDY(const Field2D& v, const Field2D& f, CELL_LOC outloc,
+                              const std::string& method, const std::string& region) {
   return bout::derivatives::index::FDDY(v, f, outloc, method, region)
          / f.getCoordinates(outloc)->dy;
 }
@@ -469,12 +474,10 @@ Field3D FDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, const std::str
 
 /////////////////////////////////////////////////////////////////////////
 
-Field2D FDDZ(const Field2D &UNUSED(v), const Field2D &f, CELL_LOC outloc, const
-    std::string &UNUSED(method), const std::string& UNUSED(region)) {
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  return zeroFrom(f).setLocation(outloc);
+Coordinates::FieldMetric FDDZ(const Field2D& v, const Field2D& f, CELL_LOC outloc,
+                              const std::string& method, const std::string& region) {
+  return bout::derivatives::index::FDDZ(v, f, outloc, method, region)
+         / f.getCoordinates(outloc)->dz;
 }
 
 Field3D FDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, const std::string &method,

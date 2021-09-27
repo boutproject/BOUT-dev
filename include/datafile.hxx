@@ -133,11 +133,11 @@ class Datafile {
   int Lx,Ly,Lz; // The sizes in the x-, y- and z-directions of the arrays to be written
   bool enabled{true}; // Enable / Disable writing
   bool init_missing; // Initialise missing variables?
-  bool shiftOutput{false}; // Do we want to write out in shifted space?
-  bool shiftInput{false};  // Read in shifted space?
+  bool shiftoutput{false}; // Do we want to write out in shifted space?
+  bool shiftinput{false};  // Read in shifted space?
   // Counter used in determining when next openclose required
   int flushFrequencyCounter{0};
-  int flushFrequency{1}; // How many write calls do we want between openclose
+  int flushfrequency{1}; // How many write calls do we want between openclose
 
   std::unique_ptr<DataFormat> file;
   std::string filename;

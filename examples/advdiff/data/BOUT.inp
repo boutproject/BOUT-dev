@@ -4,19 +4,18 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 10         # number of time-steps
-TIMESTEP = 0.01    # time between outputs
+nout = 10         # number of time-steps
+timestep = 0.01    # time between outputs
 
-TwistShift = false   # use twist-shift condition?
+twistshift = false   # use twist-shift condition?
 
 MZ = 16     # number of points in z direction
-ZPERIOD = 10
+zperiod = 10
 
 MXG = 2
 MYG = 2
 
 grid = "./slab.grd.nc"
-dump_format = "nc" # Output format. nc = NetCDF
 
 ##################################################
 # derivative methods
@@ -44,34 +43,8 @@ upwind = U1
 
 [solver]
 
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
-
-##################################################
-# settings for 2fluid
-
-[2fluid]
-
-AA = 2.0
-ZZ = 1.0
-
-estatic = true   # if true, electrostatic (Apar = 0)
-ZeroElMass = false # Use Ohms law without electron inertia
-Zeff = 2.0        # Z effective
-nu_perp = 1e-20
-
-ShearFactor = 0.0
-
-# field inversion flags: Add the following
-#  1 - Zero-gradient DC component on inner boundary
-#  2 - Zero-gradient AC component on inner boundary
-#  4 -      "        DC     "      " outer    "
-#  8 -      "        AC     "      " outer    "
-# 16 - Zero all DC components of the result
-# 32 - Don't use previous solution to start iterations
-#      (iterative methods only)
-phi_flags = 0  # inversion flags for phi
-apar_flags = 0 # flags for apar inversion
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 ##################################################
 # settings for individual variables
@@ -79,9 +52,7 @@ apar_flags = 0 # flags for apar inversion
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
-scale = 0.0 # default size of initial perturbations
-
+[all]
 bndry_all = neumann # Zero-gradient on all boundaries
 
 [V]

@@ -316,8 +316,8 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   if (ARKStepSetAdaptivityMethod(arkode_mem, adap_method, 1, 1, nullptr) != ARK_SUCCESS)
     throw BoutException("ARKStepSetAdaptivityMethod failed\n");
 
-  const auto abstol = (*options)["ATOL"].withDefault(1.0e-12);
-  const auto reltol = (*options)["RTOL"].withDefault(1.0e-5);
+  const auto abstol = (*options)["atol"].withDefault(1.0e-12);
+  const auto reltol = (*options)["rtol"].withDefault(1.0e-5);
   const auto use_vector_abstol = (*options)["use_vector_abstol"].withDefault(false);
 
   if (use_vector_abstol) {

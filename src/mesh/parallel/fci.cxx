@@ -47,8 +47,9 @@
 
 #include <string>
 
-FCIMap::FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset_,
-               BoundaryRegionPar* boundary, bool zperiodic)
+FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
+               int offset_, BoundaryRegionPar* inner_boundary,
+               BoundaryRegionPar* outer_boundary, bool zperiodic)
     : map_mesh(mesh), offset(offset_), boundary_mask(map_mesh),
       corner_boundary_mask(map_mesh) {
 
@@ -115,7 +116,7 @@ FCIMap::FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset_,
 
   // Cell corners
   Field3D xt_prime_corner{emptyFrom(xt_prime)};
-  Field3D zt_prime_corner{emptyFrom(xt_prime)};
+  Field3D zt_prime_corner{emptyFrom(zt_prime)};
 
   BOUT_FOR(i, xt_prime_corner.getRegion("RGN_NOBNDRY")) {
     // Point interpolated from (x+1/2, z+1/2)
@@ -132,14 +133,13 @@ FCIMap::FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset_,
 
       xt_prime_corner[i] = -1.0;
       zt_prime_corner[i] = -1.0;
-      continue;
+    } else {
+      xt_prime_corner[i] =
+          0.25 * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
+
+      zt_prime_corner[i] =
+          0.25 * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
     }
-
-    xt_prime_corner[i] =
-        0.25 * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
-
-    zt_prime_corner[i] =
-        0.25 * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
   }
 
   interp_corner->setMask(corner_boundary_mask);
@@ -169,7 +169,7 @@ FCIMap::FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset_,
       }
     }
 
-    if (xt_prime[i] >= 0.0) {
+    if ((xt_prime[i] >= map_mesh.xstart) and (xt_prime[i] <= map_mesh.xend)) {
       // Not a boundary
       continue;
     }
@@ -231,6 +231,10 @@ FCIMap::FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset_,
     // Invert 2x2 matrix to get change in index
     const BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
     const BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
+
+    // Negative xt_prime means we've hit the inner boundary, otherwise
+    // the outer boundary
+    auto* boundary = (xt_prime[i] < 0.0) ? inner_boundary : outer_boundary;
     boundary->add_point(x, y, z, x + dx, y + 0.5 * offset,
                         z + dz,      // Intersection point in local index space
                         0.5 * dy[i], // Distance to intersection

@@ -58,7 +58,6 @@ else
     cd BOUT-dev
     echo "starting configure"
     time ./configure --with-petsc --enable-shared || cat config.log
-    sed -e "s|-L/usr/lib64 ||g" -i make.config
     for f in tests/requirements/*[^y] ; do
 	echo -n "$f: "
 	$f && echo yes || echo no

@@ -1,17 +1,15 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 50          # number of time-steps
-TIMESTEP = 1000.0       # time between outputs
+nout = 50          # number of time-steps
+timestep = 1000.0       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 4  # wall time limit (in hours)
 
-TwistShift = true   # use twist-shift condition?
-
-ShiftInitial = true
+twistshift = true   # use twist-shift condition?
 
 MZ = 64             # number of points in z direction (2^n)
-ZPERIOD = 1        # Fraction of a torus to simulate
+zperiod = 1        # Fraction of a torus to simulate
 
 MXG = 2
 MYG = 2
@@ -23,7 +21,7 @@ restart_format = "nc"   # Restart file format
 
 ##################################################
 [mesh]
-StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
+staggergrids = false    # Use staggered grids (EXPERIMENTAL)
 
 symmetricGlobalX = true
 
@@ -69,7 +67,7 @@ group_nonblock = false  # Use non-blocking group operations?
 
 # max_mode = 16  # Maximum N to solve for
 all_terms = false
-laplace_nonuniform = false
+nonuniform = false
 filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 
 ##################################################
@@ -77,7 +75,7 @@ filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 
 [fft]
 
-fft_measure = true  # If using FFTW, perform tests to determine fastest method
+fft_measurement_flag = measure  # If using FFTW, perform tests to determine fastest method
 
 ##################################################
 # Solver settings
@@ -85,8 +83,8 @@ fft_measure = true  # If using FFTW, perform tests to determine fastest method
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-08 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-08 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
 use_jacobian = false  # Use user-supplied Jacobian
@@ -114,7 +112,7 @@ include_jpar0 = false
 
 jpar_bndry = 3
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # boundary conditions

@@ -3,18 +3,18 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 400       # number of time-steps
-TIMESTEP = 1	 # time between outputs
+nout = 400       # number of time-steps
+timestep = 1	 # time between outputs
 
 MZ = 32     # number of points in z direction (2^n + 1)
-ZPERIOD = 5  # Number of periods
+zperiod = 5  # Number of periods
 
 non_uniform = true
 
 [mesh]
 # Simple mesh for linear device
 
-StaggerGrids = true  # Enable staggered grids
+staggergrids = true  # Enable staggered grids
 
 nx = 68        # Number of radial grid points, including guards
 ny = 64        # Number of parallel (Y) grid points
@@ -76,7 +76,7 @@ upwind = W3
 [laplace]
 
 all_terms = true
-laplace_nonuniform = true
+nonuniform = true
 
 ##################################################
 # Solver settings
@@ -85,8 +85,8 @@ laplace_nonuniform = true
 type = pvode
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 mxstep = 50000
 
 ##################################################
@@ -142,7 +142,7 @@ apar_flags = 0 # flags for apar inversion
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # form of initial profile:

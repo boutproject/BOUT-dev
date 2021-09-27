@@ -1,4 +1,4 @@
-mz = 129
+MZ = 129
 MYG = 0
 dump_format = "nc"
 

@@ -1,21 +1,28 @@
+f = gauss(x-0.5,0.05) * gauss(z-pi, 0.25)
 
 rhs = sin(x - z)
 rhs2 = rhs
 
+MXG=1
+MYG=0
+
 [mesh]
-nx = 36
-ny = 2
+nx = 34
+ny = 1
 nz = 32
 
 dx = 1
 dz = 1
 
-[laplace]
-type = petscamg   # Use PETSc implementation
+[laplacexz]
+type = petsc   # Use PETSc implementation
+
+rtol=1e-11
+atol=1e-11
 
 ksptype = gmres   # Linear iterative method
 
-pctype = lu   # Preconditioner. Direct "lu" or "ilu"; iterative "jacobi", "sor"
+pctype = hypre   # Preconditioner. Direct "lu" or "ilu"; iterative "jacobi", "sor"
 
 # Set package to perform factorisation for direct solves
 # "petsc" built-in solver only serial

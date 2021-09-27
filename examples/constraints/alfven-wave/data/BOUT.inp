@@ -1,6 +1,6 @@
 
-NOUT = 2000
-TIMESTEP = 2
+nout = 2000
+timestep = 2
 
 grid = "d3d_119919.nc"
 

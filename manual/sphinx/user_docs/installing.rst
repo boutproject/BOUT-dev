@@ -185,7 +185,7 @@ On Ubuntu 16.04::
 
 On Ubuntu 18.04::
 
-    $ sudo apt-get install mpich libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev git g++ make
+    $ sudo apt-get install mpich libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-c++4-dev git g++ make
     $ sudo apt-get install python3 python3-distutils python3-pip python3-numpy python3-netcdf4 python3-scipy
     $ pip3 install --user Cython
 
@@ -286,8 +286,16 @@ CMake
 -----
 
 There is now (experimental) support for `CMake <https://cmake.org/>`_. You will need CMake >
-3.9. CMake supports out-of-source builds by default, which are A Good
-Idea. Basic configuration with CMake looks like::
+3.9. Note that it is possible to get the latest version of CMake using ``pip``::
+
+  $ pip install --user --upgrade cmake
+
+or ``conda``::
+
+  $ conda install cmake
+
+CMake supports out-of-source builds by default, which are A Good Idea.
+Basic configuration with CMake looks like::
 
   $ cmake . -B build
 
@@ -343,6 +351,18 @@ If you wish to change the configuration after having built ``BOUT++``,
 it's wise to delete the ``CMakeCache.txt`` file in the build
 directory. The equivalent of ``make distclean`` with CMake is to just
 delete the entire build directory and reconfigure.
+
+Downloading Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you don't have some dependencies installed, CMake can be used to download,
+configure and compile them alongside BOUT++.
+
+For NetCDF, use ``-DBOUT_DOWNLOAD_NETCDF_CXX4=ON``
+
+For SUNDIALS, use ``-DBOUT_DOWNLOAD_SUNDIALS=ON``. If using ``ccmake`` this option
+may not appear initially. This automatically sets ``BOUT_USE_SUNDIALS=ON``, and
+configures SUNDIALS to use MPI.
 
 Bundled Dependencies
 ~~~~~~~~~~~~~~~~~~~~

@@ -670,8 +670,9 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
   BoutReal atol, rtol; // Tolerances for SNES solver
   options->get("atol", atol, 1e-16);
   options->get("rtol", rtol, 1e-10);
-  int max_nonlinear_it; // Maximum nonlinear (SNES) iterations
-  options->get("max_nonlinear_it", max_nonlinear_it, 5);
+  int max_nonlinear_it = (*options)["max_nonlinear_iterations"]
+                         .doc("Maximum number of nonlinear iterations per SNES solve")
+                         .withDefault(5);
   SNESSetTolerances(*snesIn,atol,rtol,PETSC_DEFAULT,max_nonlinear_it,PETSC_DEFAULT);
 
   /////////////////////////////////////////////////////
@@ -1293,15 +1294,15 @@ PetscErrorCode IMEXBDF2::precon(Vec x, Vec f) {
   Vec solution;
   SNESGetSolution(snes, &solution);
   BoutReal *soldata;
-  ierr = VecGetArray(x,&soldata);CHKERRQ(ierr);
+  ierr = VecGetArray(solution,&soldata);CHKERRQ(ierr);
   load_vars(soldata);
   ierr = VecRestoreArray(solution,&soldata);CHKERRQ(ierr);
 
   // Load vector to be inverted into ddt() variables
-  BoutReal *xdata;
-  ierr = VecGetArray(x,&xdata);CHKERRQ(ierr);
-  load_derivs(xdata);
-  ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
+  const BoutReal *xdata;
+  ierr = VecGetArrayRead(x,&xdata);CHKERRQ(ierr);
+  load_derivs(const_cast<BoutReal*>(xdata)); // Note: load_derivs does not modify data
+  ierr = VecRestoreArrayRead(x,&xdata);CHKERRQ(ierr);
 
   // Run the preconditioner
   runPreconditioner(implicit_curtime, implicit_gamma, 0.0);

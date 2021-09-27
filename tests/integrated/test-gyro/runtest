@@ -4,6 +4,7 @@
 # Run the test, compare results against the benchmark
 #
 
+# requires: not metric_3d
 # Requires: netcdf
 # Cores: 4
 
@@ -41,7 +42,7 @@ for nproc in [1, 2, 4]:
     if nproc > 2:
         nxpe = 2
 
-    cmd = "./test_gyro nxpe=" + str(nxpe)
+    cmd = "./test_gyro NXPE=" + str(nxpe)
 
     shell("rm data/BOUT.dmp.*.nc")
 

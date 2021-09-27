@@ -3,26 +3,22 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 100     # number of time-steps
-TIMESTEP = 0.001  # time between outputs
+nout = 100     # number of time-steps
+timestep = 0.001  # time between outputs
 
-TwistShift = true  # use twist-shift condition?
+twistshift = true  # use twist-shift condition?
 
 MZ = 64     # number of points in z direction (2^n)
 
-ZPERIOD = 10 # Fraction of a torus
+zperiod = 10 # Fraction of a torus
 
 MXG = 2
 MYG = 2
 
 grid = "d3d_119919.nc"
 
-#twistshift_pf = true # Grid has twist-shift in PF region
-
-dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
-
 [mesh]
-StaggerGrids = false # Use staggered grids (EXPERIMENTAL)
+staggergrids = false # Use staggered grids (EXPERIMENTAL)
 
 [mesh:paralleltransform]
 type = shifted # Use shifted metric method
@@ -55,7 +51,7 @@ flux = U1
 # Laplacian inversion settings
 [laplace]
 all_terms = false
-laplace_nonuniform = false
+nonuniform = false
 filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
@@ -67,8 +63,8 @@ outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 type = petsc
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 mxstep = 50000
 
 #type=splitrk
@@ -123,7 +119,7 @@ bracket_method = 2  # 0 = std, 1=simplified, 2 = arakawa, 3 = ctu
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # boundary conditions

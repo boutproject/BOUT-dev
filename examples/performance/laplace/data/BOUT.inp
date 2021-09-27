@@ -1,12 +1,12 @@
 # Performance test for Laplace inversion
 
-NOUT = 0  # No timesteps
+nout = 0  # No timesteps
 
 MZ = 32    # Z size
 
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
-nype = 1 # Set to 1 to ensure we only parallelize over x in scaling scan
+NYPE = 1 # Set to 1 to ensure we only parallelize over x in scaling scan
 
 [LaplaceTest]
 NUM_LOOPS = 1000

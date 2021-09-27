@@ -996,11 +996,17 @@ Logging output
 Logging should be used to report simulation progress, record
 information, and warn about potential problems. BOUT++ includes a
 simple logging facility which supports both C printf and C++ iostream
-styles. For example::
+styles.  For example::
 
-   output.write("This is an integer: %d, and this a real: %e\n", 5, 2.0)
+   output.write("This is an integer: {}, and this a real: {}\n", 5, 2.0)
 
    output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << endl;
+
+
+Formatting in the ``output.write`` function is done using the `{fmt}
+library <https://fmt.dev>`_. By default this cannot format BOUT++
+types, but by including ``output_bout_types.hxx`` some BOUT++ types
+can be formatted.
 
 Messages sent to ``output`` on processor 0 will be printed to console
 and saved to ``BOUT.log.0``. Messages from all other processors will

@@ -2,7 +2,7 @@ nout = 1
 timestep = 1
 periodicY = true
 
-[MESH]
+[mesh]
 MXG = 2
 MYG = 2
 dy = 1/ny
@@ -15,4 +15,4 @@ mz = 1
 ixseps1 = -1
 ixseps2 = -1
 
-StaggerGrids = true
+staggergrids = true

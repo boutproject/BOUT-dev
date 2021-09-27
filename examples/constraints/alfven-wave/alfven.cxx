@@ -33,7 +33,7 @@ private:
 protected:
   int init(bool) {
     // Normalisation
-    auto opt = Options::root()["alfven"];
+    auto& opt = Options::root()["Alfven"];
     Tnorm = opt["Tnorm"].withDefault(100);  // Reference temperature [eV]
     Nnorm = opt["Nnorm"].withDefault(1e19); // Reference density [m^-3]
     Bnorm = opt["Bnorm"].withDefault(1.0);  // Reference magnetic field [T]

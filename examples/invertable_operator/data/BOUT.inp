@@ -1,4 +1,4 @@
-NOUT = 0
+nout = 0
 
 [mesh]
 nx = 20
