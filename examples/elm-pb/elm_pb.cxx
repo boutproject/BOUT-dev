@@ -3,12 +3,6 @@
  * see elm_reduced.pdf
  * Basically the same as Hazeltine-Meiss but different normalisations.
  * Can also include the Vpar compressional term
- * This version uses indexed operators
- * which reduce the number of loops over the domain
- * GPU processing is enabled if BOUT_ENABLE_CUDA is defined
- * GPU version Hypre solver is enable if BOUT_HAS_HYPRE is defined
- * Profiling markers and ranges are set if USE_NVTX is defined
- * Based on model code,  Yining Qin update GPU RAJA code since 1117-2020
  *******************************************************************************/
 
 #include <bout/constants.hxx>
@@ -25,21 +19,6 @@
 
 #include <math.h>
 
-// library for GPU
-#include <bout/physicsmodel.hxx>
-#include <bout/single_index_ops.hxx>
-#include <derivs.hxx>
-#include <invert_laplace.hxx>
-#include <smoothing.hxx>
-
-#ifdef BOUT_HAS_RAJA
-#include "RAJA/RAJA.hpp" // using RAJA lib
-#endif
-
-#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
-#include <cuda_profiler_api.h>
-#endif
-
 #if BOUT_HAS_HYPRE
 #include <bout/invert/laplacexy2_hypre.hxx>
 #endif
@@ -48,14 +27,23 @@
 
 CELL_LOC loc = CELL_CENTRE;
 
+/// Set default options
+/// This sets sensible defaults for when it's not set in the input
+BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_target", "neumann");
+BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xin", "none");
+BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
+
+/// 3-field ELM simulation
 class ELMpb : public PhysicsModel {
-public:
+private:
   // 2D inital profiles
   Field2D J0, P0;         // Current and pressure
   Vector2D b0xcv;         // Curvature term
-  Field2D beta, gradparB; // Used for Vpar terms
+  Field2D beta;           // Used for Vpar terms
+  Coordinates::FieldMetric gradparB;
   Field2D phi0;           // When diamagnetic terms used
-  Field2D U0, Psixy, x;   // 0th vorticity of equilibrium flow,
+  Field2D Psixy, x;
+  Coordinates::FieldMetric U0; // 0th vorticity of equilibrium flow,
   // radial flux coordinate, normalized radial flux coordinate
 
   bool constn0;
@@ -195,7 +183,6 @@ public:
   bool zonal_bkgd;
 
   bool split_n0; // Solve the n=0 component of potential
-  //  std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
 
 #if BOUT_HAS_HYPRE
   std::unique_ptr<LaplaceXY2Hypre> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
@@ -207,7 +194,6 @@ public:
 
   bool relax_j_vac;
   BoutReal relax_j_tconst; // Time-constant for j relax
-  Field3D Psitarget;       // The (moving) target to relax to
 
   bool smooth_j_x; // Smooth Jpar in the x direction
 
@@ -221,14 +207,12 @@ public:
 
   bool include_rmp;     // Include RMP coil perturbation
   bool simple_rmp;      // Just use a simple form for the perturbation
-  int rmp_n, rmp_m;     // toroidal and poloidal mode numbers
-  BoutReal rmp_polwid;  // Poloidal width (-ve -> full, fraction of 2pi)
-  BoutReal rmp_polpeak; // Peak poloidal location (fraction of 2pi)
+
   BoutReal rmp_factor;  // Multiply amplitude by this factor
   BoutReal rmp_ramp;    // Ramp-up time for RMP [s]. negative -> instant
-  BoutReal rmp_freq; // Amplitude oscillation frequency [Hz] (negative -> no oscillation)
-  BoutReal rmp_rotate; // Rotation rate [Hz]
-  bool rmp_vac_mask;   // Should a vacuum mask be applied?
+  BoutReal rmp_freq;    // Amplitude oscillation frequency [Hz] (negative -> no oscillation)
+  BoutReal rmp_rotate;  // Rotation rate [Hz]
+  bool rmp_vac_mask;
   Field3D rmp_Psi0; // Parallel vector potential from Resonant Magnetic Perturbation (RMP)
                     // coils
   Field3D rmp_Psi;  // Value used in calculations
@@ -249,8 +233,6 @@ public:
   // Metric coefficients
   Field2D Rxy, Bpxy, Btxy, B0, hthe;
   Field2D I; // Shear factor
-
-  Field2D g_22;
 
   const BoutReal MU0 = 4.0e-7 * PI;
   const BoutReal Mi = 2.0 * 1.6726e-27; // Ion mass
@@ -277,9 +259,6 @@ public:
     output.write("Jysep1_1 = {:d}   Grid number = {:e}\n", int(Jysep), Grid_NX);
 
     if (Jysep > 0.) { // for single null geometry
-
-      printf("Jysep: %5f", Jysep);
-
       BoutReal Jxsep, Jysep2;
       mesh->get(Jxsep, "ixseps1");
       mesh->get(Jysep2, "jyseps2_2");
@@ -290,8 +269,10 @@ public:
 
         int globaly = mesh->getGlobalYIndex(i.y());
 
-        if (mgx > xgrid_num || (globaly <= int(Jysep) - 2) || (globaly > int(Jysep2) + 2))
+        if (mgx > xgrid_num || (globaly <= int(Jysep) - 2)
+            || (globaly > int(Jysep2) + 2)) {
           mgx = xgrid_num;
+        }
         BoutReal rlx = mgx - n0_center;
         BoutReal temp = exp(rlx / n0_width);
         BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
@@ -301,8 +282,9 @@ public:
       for (auto i : result) {
         BoutReal mgx = mesh->GlobalX(i.x());
         BoutReal xgrid_num = Grid_NXlimit / Grid_NX;
-        if (mgx > xgrid_num)
+        if (mgx > xgrid_num) {
           mgx = xgrid_num;
+        }
         BoutReal rlx = mgx - n0_center;
         BoutReal temp = exp(rlx / n0_width);
         BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
@@ -315,8 +297,7 @@ public:
     return result;
   }
 
-  // make private and protected funcitons and variables in public
-  //
+protected:
   int init(bool restarting) override {
     bool noshear;
 
@@ -390,8 +371,9 @@ public:
 
     density = options["density"].doc("Number density [m^-3]").withDefault(1.0e19);
 
-    evolve_jpar =
-        options["evolve_jpar"].doc("If true, evolve J raher than Psi").withDefault(false);
+    evolve_jpar = options["evolve_jpar"]
+                       .doc("If true, evolve J raher than Psi")
+                       .withDefault(false);
     phi_constraint = options["phi_constraint"]
                          .doc("Use solver constraint for phi?")
                          .withDefault(false);
@@ -437,8 +419,7 @@ public:
       throw BoutException("Invalid choice of bracket method. Must be 0 - 3\n");
     }
 
-    bm_mag_flag =
-        options["bm_mag_flag"].doc("magnetic flutter Poisson Bracket").withDefault(0);
+    bm_mag_flag = options["bm_mag_flag"].doc("magnetic flutter Poisson Bracket").withDefault(0);
     switch (bm_mag_flag) {
     case 0: {
       bm_mag = BRACKET_STD;
@@ -473,8 +454,7 @@ public:
     diamag_grad_t = options["diamag_grad_t"]
                         .doc("Grad_par(Te) term in Psi equation")
                         .withDefault(diamag);
-    diamag_phi0 =
-        options["diamag_phi0"].doc("Include equilibrium phi0").withDefault(diamag);
+    diamag_phi0 = options["diamag_phi0"].doc("Include equilibrium phi0").withDefault(diamag);
     dia_fact = options["dia_fact"]
                    .doc("Scale diamagnetic effects by this factor")
                    .withDefault(1.0);
@@ -498,8 +478,7 @@ public:
 
     noshear = options["noshear"].withDefault(false);
 
-    relax_j_vac =
-        options["relax_j_vac"].doc("Relax vacuum current to zero").withDefault(false);
+    relax_j_vac = options["relax_j_vac"].doc("Relax vacuum current to zero").withDefault<bool>(false);
     relax_j_tconst = options["relax_j_tconst"]
                          .doc("Time constant for relaxation of vacuum current. Alfven "
                               "(normalised) units")
@@ -513,7 +492,7 @@ public:
     filter_z_mode = options["filter_z_mode"]
                         .doc("Single toroidal mode number to keep")
                         .withDefault(1);
-    low_pass_z = options["low_pass_z"].doc("Low-pass filter").withDefault(false);
+    low_pass_z = options["low_pass_z"].doc("Low-pass filter").withDefault(-1);
     zonal_flow = options["zonal_flow"]
                      .doc("Keep zonal (n=0) component of potential?")
                      .withDefault(false);
@@ -529,13 +508,6 @@ public:
                    .doc("Solve zonal (n=0) component of potential using LaplaceXY?")
                    .withDefault(false);
     if (split_n0) {
-      // Create an XY solver for n=0 component
-      // laplacexy = bout::utils::make_unique<LaplaceXY>(mesh);
-      // Set coefficients for Boussinesq solve
-      // laplacexy->setCoefs(1.0, 0.0);
-      // phi2D = 0.0; // Starting guess
-      // phi2D.setBoundary("phi");
-
       // Create an XY solver for n=0 component
 #if BOUT_HAS_HYPRE
       laplacexy = bout::utils::make_unique<LaplaceXY2Hypre>(mesh);
@@ -561,49 +533,40 @@ public:
                             .withDefault(false);
 
     // Parallel differencing
-    parallel_lr_diff =
-        options["parallel_lr_diff"]
+    parallel_lr_diff = options["parallel_lr_diff"]
             .doc("Use left and right shifted stencils for parallel differences?")
-            .withDefault(false);
+            .withDefault<bool>(false);
 
     // RMP-related options
-    include_rmp =
-        options["include_rmp"].doc("Read RMP field rmp_A from grid?").withDefault(false);
+    include_rmp = options["include_rmp"].doc("Read RMP field rmp_A from grid?").withDefault<bool>(false);
 
-    simple_rmp =
-        options["simple_rmp"].doc("Include a simple RMP model?").withDefault(false);
+    simple_rmp = options["simple_rmp"].doc("Include a simple RMP model?").withDefault<bool>(false);
     rmp_factor = options["rmp_factor"].withDefault(1.0);
     rmp_ramp = options["rmp_ramp"].withDefault(-1.0);
     rmp_freq = options["rmp_freq"].withDefault(-1.0);
     rmp_rotate = options["rmp_rotate"].withDefault(0.0);
 
     // Vacuum region control
-    vacuum_pressure =
-        options["vacuum_pressure"]
+    vacuum_pressure = options["vacuum_pressure"]
             .doc("Fraction of peak pressure, below which is considered vacuum.")
             .withDefault(0.02);
-    vacuum_trans =
-        options["vacuum_trans"]
+    vacuum_trans = options["vacuum_trans"]
             .doc("Vacuum boundary transition width, as fraction of peak pressure.")
             .withDefault(0.005);
 
     // Resistivity and hyper-resistivity options
-    vac_lund =
-        options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
-    core_lund =
-        options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
+    vac_lund = options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
+    core_lund = options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
     hyperresist = options["hyperresist"].withDefault(-1.0);
     ehyperviscos = options["ehyperviscos"].withDefault(-1.0);
-    spitzer_resist =
-        options["spitzer_resist"].doc("Use Spitzer resistivity?").withDefault(false);
+    spitzer_resist = options["spitzer_resist"].doc("Use Spitzer resistivity?").withDefault<bool>(false);
     Zeff = options["Zeff"].withDefault(2.0); // Z effective
 
     // Inner boundary damping
     damp_width = options["damp_width"]
                      .doc("Width of the radial damping regions, in grid cells")
                      .withDefault(0);
-    damp_t_const =
-        options["damp_t_const"]
+    damp_t_const = options["damp_t_const"]
             .doc("Time constant for damping in radial regions. Normalised time units.")
             .withDefault(0.1);
 
@@ -612,8 +575,7 @@ public:
     viscos_perp = options["viscos_perp"].doc("Perpendicular viscosity").withDefault(-1.0);
     hyperviscos = options["hyperviscos"].doc("Radial hyperviscosity").withDefault(-1.0);
 
-    diffusion_par =
-        options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
+    diffusion_par = options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
     diffusion_p4 = options["diffusion_p4"]
                        .doc("parallel hyper-viscous diffusion for pressure")
                        .withDefault(-1.0);
@@ -665,8 +627,7 @@ public:
     su_lengthr = options["su_lengthr"].withDefault(0.15);
 
     // Compressional terms
-    phi_curv =
-        options["phi_curv"].doc("ExB compression in P equation?").withDefault(true);
+    phi_curv = options["phi_curv"].doc("ExB compression in P equation?").withDefault<bool>(true);
     g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
 
     x = (Psixy - Psiaxis) / (Psibndry - Psiaxis);
@@ -679,48 +640,60 @@ public:
       Dphi0 = -D_min - 0.5 * D_0 * (1.0 - tanh(D_s * (x - x0)));
     }
 
-    if (sign < 0) // change flow direction
+    if (sign < 0) { // change flow direction
       Dphi0 *= -1;
+    }
 
     V0 = -Rxy * Bpxy * Dphi0 / B0;
 
-    if (simple_rmp)
+    if (simple_rmp) {
       include_rmp = true;
+    }
+
+    // toroidal and poloidal mode numbers
+    const int rmp_n =
+        options["rmp_n"].doc("Simple RMP toroidal mode number").withDefault(3);
+    const int rmp_m =
+        options["rmp_m"].doc("Simple RMP poloidal mode number").withDefault(9);
+    const int rmp_polwid = options["rmp_polwid"]
+                               .doc("Poloidal width (-ve -> full, fraction of 2pi)")
+                               .withDefault(-1.0);
+    const int rmp_polpeak = options["rmp_polpeak"]
+                                .doc("Peak poloidal location (fraction of 2pi)")
+                                .withDefault(0.5);
+    rmp_vac_mask =
+        options["rmp_vac_mask"].doc("Should a vacuum mask be applied?").withDefault(true);
+    // Divide n by the size of the domain
+    const int zperiod = globalOptions["zperiod"].withDefault(1);
 
     if (include_rmp) {
       // Including external field coils.
       if (simple_rmp) {
         // Use a fairly simple form for the perturbation
-
         Field2D pol_angle;
         if (mesh->get(pol_angle, "pol_angle")) {
           output_warn.write("     ***WARNING: need poloidal angle for simple RMP\n");
           include_rmp = false;
         } else {
-          rmp_n = options["rmp_n"].doc("Simple RMP toroidal mode number").withDefault(3);
-          rmp_m = options["rmp_m"].doc("Simple RMP poloidal mode number").withDefault(9);
-          rmp_polwid = options["rmp_polwid"].withDefault(-1.0);
-          rmp_polpeak = options["rmp_polpeak"].withDefault(0.5);
-          rmp_vac_mask = options["rmp_vac_mask"].withDefault(true);
-          // Divide n by the size of the domain
-          int zperiod = globalOptions["zperiod"].withDefault(1);
-          if ((rmp_n % zperiod) != 0)
+          if ((rmp_n % zperiod) != 0) {
             output_warn.write(
                 "     ***WARNING: rmp_n ({:d}) not a multiple of zperiod ({:d})\n", rmp_n,
                 zperiod);
+          }
 
           output.write("\tMagnetic perturbation: n = {:d}, m = {:d}, magnitude {:e} Tm\n",
                        rmp_n, rmp_m, rmp_factor);
 
           rmp_Psi0 = 0.0;
           if (mesh->lastX()) {
-            // Set the outer boundary - line: - 675
-            for (int jx = mesh->LocalNx - 4; jx < mesh->LocalNx; jx++)
-              for (int jy = 0; jy < mesh->LocalNy; jy++)
+            // Set the outer boundary
+            for (int jx = mesh->LocalNx - 4; jx < mesh->LocalNx; jx++) {
+              for (int jy = 0; jy < mesh->LocalNy; jy++) {
                 for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
-                  BoutReal angle = rmp_m * pol_angle(jx, jy)
-                                   + rmp_n * ((BoutReal)jz) * mesh->getCoordinates()->dz;
+                  BoutReal angle =
+                      rmp_m * pol_angle(jx, jy)
+                      + rmp_n * ((BoutReal)jz) * mesh->getCoordinates()->dz(jx, jy, jz);
                   rmp_Psi0(jx, jy, jz) =
                       (((BoutReal)(jx - 4)) / ((BoutReal)(mesh->LocalNx - 5)))
                       * rmp_factor * cos(angle);
@@ -731,6 +704,8 @@ public:
                     rmp_Psi0(jx, jy, jz) *= exp(-gx * gx);
                   }
                 }
+              }
+            }
           }
 
           // Now have a simple model for Psi due to coils at the outer boundary
@@ -754,15 +729,18 @@ public:
       }
     }
 
-    if (!include_curvature)
+    if (!include_curvature) {
       b0xcv = 0.0;
+    }
 
-    if (!include_jpar0)
+    if (!include_jpar0) {
       J0 = 0.0;
+    }
 
     if (noshear) {
-      if (include_curvature)
+      if (include_curvature) {
         b0xcv.z += I * b0xcv.x;
+      }
       I = 0.0;
     }
 
@@ -775,18 +753,21 @@ public:
 
     } else {
       // Dimits style, using local coordinate system
-      if (include_curvature)
+      if (include_curvature) {
         b0xcv.z += I * b0xcv.x;
+      }
       I = 0.0; // I disappears from metric
     }
 
     //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
 
-    if (mesh->get(Bbar, "bmag")) // Typical magnetic field
+    if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
       Bbar = 1.0;
-    if (mesh->get(Lbar, "rmag")) // Typical length scale
+    }
+    if (mesh->get(Lbar, "rmag")) { // Typical length scale
       Lbar = 1.0;
+    }
 
     Va = sqrt(Bbar * Bbar / (MU0 * density * Mi));
 
@@ -807,8 +788,9 @@ public:
       output.write("Upara2 = {:e}     Omega_i = {:e}\n", Upara2, omega_i);
     }
 
-    if (eHall)
+    if (eHall) {
       output.write("                delta_i = {:e}   AA = {:e} \n", delta_i, AA);
+    }
 
     if (vac_lund > 0.0) {
       output.write("        Vacuum  Tau_R = {:e} s   eta = {:e} Ohm m\n", vac_lund * Tbar,
@@ -1028,8 +1010,9 @@ public:
       } else {
         SAVE_ONCE(rmp_Psi);
       }
-    } else
+    } else {
       rmp_Psi = 0.0;
+    }
 
     /**************** CALCULATE METRICS ******************/
 
@@ -1050,8 +1033,7 @@ public:
     metric->g_13 = I * Rxy * Rxy;
     metric->g_23 = Btxy * hthe * Rxy / Bpxy;
 
-    g_22 = metric->g_22; // Field2d object to read metric parameters
-    metric->geometry();  // Calculate quantities from metric tensor
+    metric->geometry(); // Calculate quantities from metric tensor
 
     // Set B field vector
 
@@ -1106,26 +1088,27 @@ public:
       solver->constraint(phi, C_phi, "phi");
 
       // Set preconditioner
-      setPrecon((preconfunc)&ELMpb::precon_phi);
+      setPrecon(&ELMpb::precon_phi);
 
     } else {
       // Phi solved in RHS (explicitly)
       SAVE_REPEAT(phi);
 
       // Set preconditioner
-      setPrecon((preconfunc)&ELMpb::precon);
+      setPrecon(&ELMpb::precon);
 
       // Set Jacobian
-      setJacobian((jacobianfunc)&ELMpb::jacobian);
+      setJacobian( (jacobianfunc) &ELMpb::jacobian );
     }
 
     // Diamagnetic phi0
     if (diamag_phi0) {
-      if (constn0)
+      if (constn0) {
         phi0 = -0.5 * dnorm * P0 / B0;
-      else
+      } else {
         // Stationary equilibrium plasma. ExB velocity balances diamagnetic drift
         phi0 = -0.5 * dnorm * P0 / B0 / N0;
+      }
       SAVE_ONCE(phi0);
     }
 
@@ -1141,10 +1124,9 @@ public:
     }
 
     // Create a solver for the Laplacian
-    phiSolver = std::unique_ptr<Laplacian>(Laplacian::create(&options["phiSolver"]));
+    phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
 
-    aparSolver =
-        std::unique_ptr<Laplacian>(Laplacian::create(&options["aparSolver"], loc));
+    aparSolver = Laplacian::create(&globalOptions["aparSolver"], loc);
 
     /////////////// CHECK VACUUM ///////////////////////
     // In vacuum region, initial vorticity should equal zero
@@ -1192,15 +1174,13 @@ public:
   }
 
   // Parallel gradient along perturbed field-line
-  const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
+  Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) const {
 
     if (loc == CELL_DEFAULT) {
       loc = f.getLocation();
     }
 
     Field3D result = Grad_par(f, loc);
-
-    // printf("Grad_parP run");
 
     if (nonlinear) {
       result -= bracket(interp_to(Psi, loc), f, bm_mag) * B0;
@@ -1215,13 +1195,7 @@ public:
 
   bool first_run = true; // For printing out some diagnostics first time around
 
-  // rhs_s
   int rhs(BoutReal t) override {
-
-    // auto start = std::chrono::steady_clock::now();
-    // auto end = std::chrono::steady_clock::now();
-    // auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-
     // Perform communications
     mesh->communicate(comms);
 
@@ -1290,8 +1264,9 @@ public:
         }
 
         // Set to zero in the core
-        if (rmp_vac_mask)
+        if (rmp_vac_mask) {
           rmp_Psi *= vac_mask;
+        }
       } else {
         // Set to zero in the core region
         if (rmp_vac_mask) {
@@ -1364,13 +1339,12 @@ public:
       mesh->communicate(phi);
     }
 
-    // auto start = std::chrono::steady_clock::now();
-
     if (!evolve_jpar) {
       // Get J from Psi
       Jpar = Delp2(Psi);
-      if (include_rmp)
+      if (include_rmp) {
         Jpar += Delp2(rmp_Psi);
+      }
 
       Jpar.applyBoundary();
       mesh->communicate(Jpar);
@@ -1379,14 +1353,18 @@ public:
         // Zero j in boundary regions. Prevents vorticity drive
         // at the boundary
 
-        for (int i = 0; i < jpar_bndry_width; i++)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = 0; i < jpar_bndry_width; i++) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
-              if (mesh->firstX())
+              if (mesh->firstX()) {
                 Jpar(i, j, k) = 0.0;
-              if (mesh->lastX())
+              }
+              if (mesh->lastX()) {
                 Jpar(mesh->LocalNx - 1 - i, j, k) = 0.0;
+              }
             }
+          }
+        }
       }
 
       // Smooth j in x
@@ -1408,14 +1386,18 @@ public:
         // Zero jpar2 in boundary regions. Prevents vorticity drive
         // at the boundary
 
-        for (int i = 0; i < jpar_bndry_width; i++)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = 0; i < jpar_bndry_width; i++) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
-              if (mesh->firstX())
+              if (mesh->firstX()) {
                 Jpar2(i, j, k) = 0.0;
-              if (mesh->lastX())
+              }
+              if (mesh->lastX()) {
                 Jpar2(mesh->LocalNx - 1 - i, j, k) = 0.0;
+              }
             }
+          }
+        }
       }
     }
 
@@ -1476,38 +1458,12 @@ public:
     ////////////////////////////////////////////////////
     // Parallel electric field
 
-    if (evolve_jpar) { // - default is false
-
-      printf("evolve_jpar...\n");
+    if (evolve_jpar) {
       // Jpar
       Field3D B0U = B0 * U;
       mesh->communicate(B0U);
-#if 0 
-//-GPU code start -------------------------------------------
-      //Create accessors which enable fast access
-       auto B0U_acc = FieldAccessor<>(B0U);
-       auto Jpar_acc = FieldAccessor<>(Jpar);
-       auto eta_acc = FieldAccessor<>(eta);
-       auto B0_2D_acc =Field2DAccessor<>(B0);
-       auto indices = B0U.getRegion("RGN_NOBNDRY").getIndices();
-       Ind3D *ob_i = &(indices)[0];       
-
-	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-	 int i = ob_i[id].ind;
-	 BoutReal t1 = Div_par_Grad_par_g(B0U_acc, i);
-	 BoutReal t2 =  Delp2_g (Jpar_acc, i);
-         BoutReal f1 = FIELD2D_DATA(B0_2D_acc)[i];
-	 printf("f2d data: %5f",f1 );
-         BoutReal f2 = FIELD_DATA(eta_acc)[i];
-	 BoutReal re = -t1  + f2 * t2; 
-	 DDT(Jpar_acc)[i] = 0.00001; 
-	});
- 
-      //ddt(Jpar) = -Grad_parP(B0U, loc) / B0 + eta * Delp2(Jpar);
-//-GPU code end  --------------------------------------------
-#else
       ddt(Jpar) = -Grad_parP(B0U, loc) / B0 + eta * Delp2(Jpar);
-#endif
+
       if (relax_j_vac) {
         // Make ddt(Jpar) relax to zero.
 
@@ -1515,133 +1471,36 @@ public:
       }
     } else {
       // Vector potential
-
-      // printf("...............ddt(Psi) start...\n");
-      // printf("...relax_j_vac is False.....\n");
-
-#ifdef BOUT_HAS_RAJA
-      // auto start = std::chrono::steady_clock::now();
-
-      auto Psi_acc = FieldAccessor<>(Psi);
-      auto phi_acc = FieldAccessor<>(phi);
-      auto Jpar_acc = FieldAccessor<>(Jpar);
-      auto eta_acc = FieldAccessor<>(eta);
-      auto hthe_acc = Field2DAccessor<>(hthe);
-
-      auto g_22_acc = Field2DAccessor<>(g_22);
-
-      auto indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
-      Ind3D* ob_i = &(indices)[0];
-
-      //	auto end = std::chrono::steady_clock::now();
-      // time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-      // auto time_taken =
-      // std::chrono::duration_cast<std::chrono::nanoseconds>(end-start); std::cout <<
-      // "The FieldAccessor preparing  since start is "<< time_taken.count()<<" nano
-      // seconds.\n";
-
-      RAJA::forall<EXEC_POL>(
-          RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-            int i = ob_i[id].ind;
-
-            BoutReal p1 = Grad_parP_g(phi_acc, g_22_acc, i);
-            BoutReal p2 = FIELD_DATA(eta_acc)[i] * FIELD_DATA(Jpar_acc)[i];
-            DDT(Psi_acc)[i] = -p1 + p2;
-          });
-
-#else
       ddt(Psi) = -Grad_parP(phi, loc) + eta * Jpar;
-#endif
 
-      // end = std::chrono::steady_clock::now();
-      // time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-      // time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
-      // std::cout << "The Grad_parP() since start is "<< time_taken.count()<<" nano
-      // seconds.\n";
-
-      if (eHall) { //-false
-        // electron parallel pressure
-        printf("...eHall...\n");
+      if (eHall) { // electron parallel pressure
         ddt(Psi) += 0.25 * delta_i
-                    * (Grad_parP(P, loc) + bracket(interp_to(P0, loc), Psi, bm_mag));
+                    * (Grad_parP(P, loc)
+                       + bracket(interp_to(P0, loc), Psi, bm_mag));
       }
 
-      if (diamag_phi0) //- true
-      {                // printf("...diamagi_phi0 is True...\n");
-
-        //  start = std::chrono::steady_clock::now();
-#if 0 // defined(GPU)
-// too much time for this gpu code, need to change.
-      
-         auto phi0_2D_acc =Field2DAccessor<>(phi0);
-	
-	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
- 
-		int i = ob_i[id].ind;
-
-		BoutReal p1 =  bracket_g(phi0_2D_acc,Psi_acc,i);
-		DDT(Psi_acc)[i] -= p1;
-
- 	 });
-
-	//ddt(Psi) -= bracket(interp_to(phi0, loc), Psi, bm_exb);
-#else
-        ddt(Psi) -= bracket(interp_to(phi0, loc), Psi, bm_exb); // Equilibrium flow
-#endif
+      if (diamag_phi0) { // Equilibrium flow
+        ddt(Psi) -= bracket(interp_to(phi0, loc), Psi, bm_exb);
       }
-      //	 end = std::chrono::steady_clock::now();
-      // auto time_taken =
-      // std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-      //      time_taken =
-      //      std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
-      // std::cout << "The bracket() since start is "<< time_taken.count()<<" nano
-      // seconds.\n";
 
-      if (withflow) // net flow - false
+      if (withflow) { // net flow
         ddt(Psi) -= V_dot_Grad(V0net, Psi);
+      }
 
-      if (diamag_grad_t) { // -none set
-        // grad_par(T_e) correction
-
+      if (diamag_grad_t) { // grad_par(T_e) correction
         ddt(Psi) += 1.71 * dnorm * 0.5 * Grad_parP(P, loc) / B0;
       }
 
-      // Hyper-resistivity  // running most of time
-      if (hyperresist > 0.0) {
-        //   printf("...hyperresists is True...\n");
-
-        // start = std::chrono::steady_clock::now();
-#ifdef BOUT_HAS_RAJA
-
-        RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
-                               [=] RAJA_DEVICE(int id) {
-                                 int i = ob_i[id].ind;
-                                 BoutReal p1 = FIELD_DATA(eta_acc)[i] * hyperresist;
-                                 BoutReal p2 = Delp2_g(Jpar_acc, i);
-                                 DDT(Psi_acc)[i] -= p1 * p2;
-                               });
-
-#else
+      if (hyperresist > 0.0) { // Hyper-resistivity
         ddt(Psi) -= eta * hyperresist * Delp2(Jpar);
-#endif
-        //	 end = std::chrono::steady_clock::now();
-        // auto time_taken =
-        // std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-        //      time_taken =
-        //      std::chrono::duration_cast<std::chrono::nanoseconds>(end-start);
-        //     std::cout << "The Delp2() since start is "<< time_taken.count()<<" nano
-        //     seconds.\n";
       }
 
-      // electron Hyper-viscosity coefficient
-      if (ehyperviscos > 0.0) {
-        printf("...ehyperviscos...\n");
+      if (ehyperviscos > 0.0) { // electron Hyper-viscosity coefficient
         ddt(Psi) -= eta * ehyperviscos * Delp2(Jpar2);
       }
 
-      // xqx: parallel hyper-viscous diffusion for vector potential
+      // Parallel hyper-viscous diffusion for vector potential
       if (diffusion_a4 > 0.0) {
-        printf("...diffusion_a4...\n");
         tmpA2 = D2DY2(Psi);
         mesh->communicate(tmpA2);
         tmpA2.applyBoundary();
@@ -1650,220 +1509,70 @@ public:
 
       // Vacuum solution
       if (relax_j_vac) {
-        printf("...relax_j_vac...\n");
         // Calculate the J and Psi profile we're aiming for
         Field3D Jtarget = Jpar * (1.0 - vac_mask); // Zero in vacuum
 
         // Invert laplacian for Psi
-        Psitarget = aparSolver->solve(Jtarget);
+        Field3D Psitarget = aparSolver->solve(Jtarget);
 
         // Add a relaxation term in the vacuum
         ddt(Psi) =
             ddt(Psi) * (1. - vac_mask) - (Psi - Psitarget) * vac_mask / relax_j_tconst;
       }
     }
-    // printf("...............ddt(Psi) end...\n\n");
+
     ////////////////////////////////////////////////////
     // Vorticity equation
-    // printf("...............ddt(U) start...\n");
-
-    auto start = std::chrono::steady_clock::now();
-    auto Psi_acc = FieldAccessor<>(Psi);
-    auto B0_acc = Field2DAccessor<>(B0);
-    auto J0_acc = Field2DAccessor<>(J0);
-    auto U_acc = FieldAccessor<>(U);
-    auto indices = U.getRegion("RGN_NOBNDRY").getIndices();
-    Ind3D* ob_i = &(indices)[0];
-
-#ifdef BOUT_HAS_RAJA
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
-                           [=] RAJA_DEVICE(int id) {
-                             int i = ob_i[id].ind;
-                             BoutReal p1 = SQ_g(U_acc, B0_acc, i);
-                             BoutReal p2 = b0xGrad_dot_Grad_g(Psi_acc, J0_acc, i);
-                             DDT(U_acc)[i] = p1 * p2;
-                           });
-
-#else
-    Psi_loc = interp_to(Psi, CELL_CENTRE, "RGN_ALL");
+    Psi_loc = interp_to(Psi, CELL_CENTRE,"RGN_ALL");
     Psi_loc.applyBoundary();
     // Grad j term
     ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi_loc, J0, CELL_CENTRE);
-#endif
-    auto end = std::chrono::steady_clock::now();
-    // auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-    auto time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    //  std::cout << "The first ddt(U) since start is "<< time_taken.count()<<" nano
-    //  seconds.\n";
-
     if (include_rmp) {
-      printf("...............include_rmp...\n");
       ddt(U) += SQ(B0) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
     }
 
-    start = std::chrono::steady_clock::now();
-
-#if 0 // defined(GPU)
-// issue, psi and p
-//
-	Field2D x=   b0xcv.x;
-	Field2D y=   b0xcv.y;
-	Field2D z=   b0xcv.z;
- 	
-	auto x_acc = Field2DAccessor<>(x);	
-	auto y_acc = Field2DAccessor<>(y);
-        auto z_acc = Field2DAccessor<>(z);
-	auto P_acc = FieldAccessor<>(P);
-	
-	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-		int i = ob_i[id].ind;
-		BoutReal bx = FIELD2D_3DINDEX_DATA(U_acc,x_acc,i);
-		BoutReal by = FIELD2D_3DINDEX_DATA(U_acc,y_acc,i);
-		BoutReal bz = FIELD2D_3DINDEX_DATA(U_acc,z_acc,i);
-		BoutReal p = bx* Grad_g(P_acc,i)[0]+ by*Grad_g(P_acc,i)[1]+bz*Grad_g(P_acc,i)[2]; 
-		DDT(U_acc)[i] += p;
-
- 	 });
-
-#else
     ddt(U) += b0xcv * Grad(P); // curvature term
 
-#endif
-    end = std::chrono::steady_clock::now();
-    // auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-    time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    // std::cout << "The ddt(U) += b0xcv * Grad(P) since start is "<<
-    // time_taken.count()<<" nano seconds.\n";
-
-    start = std::chrono::steady_clock::now();
-
-    if (!nogradparj) {
-      // printf("...............!nogradparj...\n");
-      // Parallel current term
-
-#ifdef BOUT_HAS_RAJA
-      auto Jpar_acc = FieldAccessor<>(Jpar);
-      auto g_22_acc = Field2DAccessor<>(g_22);
-
-      RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
-                             [=] RAJA_DEVICE(int id) {
-                               int i = ob_i[id].ind;
-                               BoutReal p1 = SQ_g(U_acc, B0_acc, i);
-                               BoutReal p2 = Grad_parP_g(Jpar_acc, g_22_acc, i);
-                               DDT(U_acc)[i] -= p2 * p1;
-                             });
-
-#else
+    if (!nogradparj) { // Parallel current term
       ddt(U) -= SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
-#endif
     }
 
-    end = std::chrono::steady_clock::now();
-    // auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-    time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    // std::cout << "The !nogradparj since start is "<< time_taken.count()<<" nano
-    // seconds.\n";
-
-    if (withflow && K_H_term) // K_H_term
+    if (withflow && K_H_term) { // K_H_term
       ddt(U) -= b0xGrad_dot_Grad(phi, U0);
-
-    start = std::chrono::steady_clock::now();
-
-    if (diamag_phi0) {
-      // printf("..............diamag_phi0...\n");
-
-#if 0 // defined(GPU)
- //  problem 
-    
-auto phi0_acc = Field2DAccessor<>(phi0);
-     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-                 int i = ob_i[id].ind;
-                 BoutReal p1 = b0xGrad_dot_Grad_g(phi0_acc,U_acc,i);
-                 DDT(U_acc)[i] -= p1;
-          });
-#else
-      ddt(U) -= b0xGrad_dot_Grad(phi0, U); // Equilibrium flow
-#endif
     }
-    end = std::chrono::steady_clock::now();
-    // auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-    time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    //  std::cout << "The diamag_phi0 since start is "<< time_taken.count()<<" nano
-    //  seconds.\n";
+
+    if (diamag_phi0) { // Equilibrium flow
+      ddt(U) -= b0xGrad_dot_Grad(phi0, U);
+    }
 
     if (withflow) { // net flow
-      printf("...............withflow...\n");
       ddt(U) -= V_dot_Grad(V0net, U);
     }
-    if (nonlinear) {
-      // printf("...............nonlinear...\n");
 
-#ifdef BOUT_HAS_RAJA
-      // no problem, increase 2 s
-      auto B0_2D_acc = Field2DAccessor<>(B0);
-      RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()),
-                             [=] RAJA_DEVICE(int id) {
-                               int i = ob_i[id].ind;
-                               BoutReal f1 = FIELD2D_3DINDEX_DATA(U_acc, B0_2D_acc, i);
-                               BoutReal p1 = bracket_g(Psi_acc, U_acc, i);
-                               DDT(U_acc)[i] -= p1; // * f1;
-                             });
-
-#else
-      ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
-#endif
+    if (nonlinear) { // Advection
+      ddt(U) -= bracket(phi, U, bm_exb) * B0;
     }
 
     // Viscosity terms
-    if (viscos_par > 0.0) {
-      printf("...............viscos_par...\n");
-      ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
+
+    if (viscos_par > 0.0) { // Parallel viscosity
+      ddt(U) += viscos_par * Grad2_par2(U);
     }
-    // xqx: parallel hyper-viscous diffusion for vorticity
+
     if (diffusion_u4 > 0.0) {
-      //  printf("...............diffusion_u4...\n");
-
-      start = std::chrono::steady_clock::now();
-
-#if 0 // defined(GPU)
-//big problem, delay the speed and wrong result!
-	 
-	auto tmpU= U;
-	auto tmpU_acc =  FieldAccessor<>(tmpU); 
-	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-                 int i = ob_i[id].ind;
-                 BoutReal p1 = D2DY2_g(tmpU_acc,i);
-                 DDT(tmpU_acc)[i] = p1;
-          });
-
-	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-                 int i = ob_i[id].ind;
-                 BoutReal p1 = D2DY2_g(tmpU_acc,i);
-                 DDT(U_acc)[i] -=  diffusion_u4 * p1;
-          });
-
-#else
       tmpU2 = D2DY2(U);
       mesh->communicate(tmpU2);
       tmpU2.applyBoundary();
-      //    tmpU2.applyBoundary("neumann");
       ddt(U) -= diffusion_u4 * D2DY2(tmpU2);
-#endif
     }
-    end = std::chrono::steady_clock::now();
-    // auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-    time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    //     std::cout << "The diffusion_u4 since start is "<< time_taken.count()<<" nano
-    //     seconds.\n";
 
     if (viscos_perp > 0.0) {
-      printf("...............viscos_perp...\n");
       ddt(U) += viscos_perp * Delp2(U); // Perpendicular viscosity
     }
+
     // Hyper-viscosity
     if (hyperviscos > 0.0) {
       // Calculate coefficient.
-      printf("...............hyperviscos...\n");
 
       hyper_mu_x = hyperviscos * metric->g_11 * SQ(metric->dx)
                    * abs(metric->g11 * D2DX2(U)) / (abs(U) + 1e-3);
@@ -1879,7 +1588,6 @@ auto phi0_acc = Field2DAccessor<>(phi0);
     }
 
     if (gyroviscous) {
-      printf("...............gyroviscous...\n");
 
       Field3D Pi;
       Field2D Pi0;
@@ -1922,7 +1630,6 @@ auto phi0_acc = Field2DAccessor<>(phi0);
       ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhiP0) / B0;
 
       if (nonlinear) {
-        printf("...............nonlinear...\n");
         Field3D B0phi = B0 * phi;
         mesh->communicate(B0phi);
         bracketPhiP = bracket(B0phi, Pi, bm_exb);
@@ -1937,136 +1644,56 @@ auto phi0_acc = Field2DAccessor<>(phi0);
 
     // left edge sink terms
     if (sink_Ul > 0.0) {
-      printf("...............sink_Ul...\n");
       ddt(U) -= sink_Ul * sink_tanhxl(P0, U, su_widthl, su_lengthl); // core sink
     }
 
     // right edge sink terms
     if (sink_Ur > 0.0) {
-      printf("...............sink_Ur...\n");
       ddt(U) -= sink_Ur * sink_tanhxr(P0, U, su_widthr, su_lengthr); //  sol sink
     }
 
-    // printf("...............ddt(U) end...\n\n");
     ////////////////////////////////////////////////////
     // Pressure equation
-    // printf(".........ddt(P) start  .................\n");
 
     ddt(P) = 0.0;
-
     if (evolve_pressure) {
-      // printf("evolve_pressure .................\n");
-
-      start = std::chrono::steady_clock::now();
-
-#if 0 //  defined(GPU)
- // too slow, but b0xGrad_dot_Grad_g does work; 
-    
-   auto P_acc = FieldAccessor<>(P);   //P is field 3D
-	auto phi_acc = FieldAccessor<>(phi);
-        auto P0_acc = Field2DAccessor<>(P0);
-	
-	auto indices = P.getRegion("RGN_NOBNDRY").getIndices();
-        Ind3D *ob_i = &(indices)[0];       
-
-	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-	 	int i = ob_i[id].ind;
-
-		BoutReal p1 = b0xGrad_dot_Grad_g(phi_acc,P0_acc,i);
-		DDT(P_acc)[i] -= p1; 
-	});
-
-#else
       ddt(P) -= b0xGrad_dot_Grad(phi, P0);
-#endif
-      end = std::chrono::steady_clock::now();
-      // auto time_taken =
-      // std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-      time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-      // std::cout << "The evolove_pressure of ddt(p) since start is "<<
-      // time_taken.count()<<" nano seconds.\n";
 
-      start = std::chrono::steady_clock::now();
-
-      if (diamag_phi0) {
-        // printf(".........diamag_phi0 .................\n");
-
-#if 0 // defined(GPU)
-      // problem: slow and wrong result	
-      		 auto P_acc = FieldAccessor<>(P);   //P is field 3D
-		auto phi0_acc = Field2DAccessor<>(phi0); 
-        	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-                  int i = ob_i[id].ind;
-                  BoutReal p1 = b0xGrad_dot_Grad_g(phi0_acc,P_acc,i);
-                  DDT(P_acc)[i] -= p1;
-           });
-#else
-        ddt(P) -= b0xGrad_dot_Grad(phi0, P); // Equilibrium flow
-#endif
+      if (diamag_phi0) { // Equilibrium flow
+        ddt(P) -= b0xGrad_dot_Grad(phi0, P);
       }
-
-      end = std::chrono::steady_clock::now();
-      // auto time_taken =
-      // std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-      time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-      //    std::cout << "The  diamag_phi0 of ddt(P) since start is "<<
-      //    time_taken.count()<<" nano seconds.\n";
 
       if (withflow) { // net flow
-        printf(".........withflow .................\n");
         ddt(P) -= V_dot_Grad(V0net, P);
       }
-      if (nonlinear) {
-        // printf(".........nonlinear .................\n");
 
-#ifdef BOUT_HAS_RAJA
-        // no problme, reference for previous one
-        auto phi_acc = FieldAccessor<>(phi);
-        auto B0_2D_acc = Field2DAccessor<>(B0);
-        auto P_acc = FieldAccessor<>(P); // P is field 3D
-        RAJA::forall<EXEC_POL>(
-            RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-              int i = ob_i[id].ind;
-              BoutReal f1 = FIELD2D_3DINDEX_DATA(phi_acc, B0_2D_acc, i);
-              BoutReal p1 = bracket_g(phi_acc, P_acc, i);
-              DDT(phi_acc)[i] -= p1 * f1;
-            });
-
-#else
-        ddt(P) -= bracket(phi, P, bm_exb) * B0; // Advection
-#endif
-
-      } // if nonlinear
-
-    } // if evolve pressure
+      if (nonlinear) { // Advection
+        ddt(P) -= bracket(phi, P, bm_exb) * B0;
+      }
+    }
 
     // Parallel diffusion terms
-    if (diffusion_par > 0.0) {
-      printf(".........diffusion_par .................\n");
-      ddt(P) += diffusion_par * Grad2_par2(P); // Parallel diffusion
+
+    if (diffusion_par > 0.0) { // Parallel diffusion
+      ddt(P) += diffusion_par * Grad2_par2(P);
     }
-    // xqx: parallel hyper-viscous diffusion for pressure
-    if (diffusion_p4 > 0.0) {
-      printf(".........diffusion_p4 .................\n");
+
+    if (diffusion_p4 > 0.0) { // parallel hyper-viscous diffusion for pressure
       tmpP2 = D2DY2(P);
       mesh->communicate(tmpP2);
       tmpP2.applyBoundary();
       ddt(P) = diffusion_p4 * D2DY2(tmpP2);
     }
 
-    // heating source terms
-    if (heating_P > 0.0) {
+    if (heating_P > 0.0) { // heating source terms
       BoutReal pnorm = P0(0, 0);
-      printf(".........hearing_P .................\n");
       ddt(P) += heating_P * source_expx2(P0, 2. * hp_width, 0.5 * hp_length)
                 * (Tbar / pnorm); // heat source
       ddt(P) += (100. * source_tanhx(P0, hp_width, hp_length) + 0.01) * metric->g11
                 * D2DX2(P) * (Tbar / Lbar / Lbar); // radial diffusion
     }
 
-    // sink terms
-    if (sink_P > 0.0) {
-      printf(".........sink_P .................\n");
+    if (sink_P > 0.0) { // sink terms
       ddt(P) -= sink_P * sink_tanhxr(P0, P, sp_width, sp_length) * Tbar; // sink
     }
 
@@ -2074,139 +1701,59 @@ auto phi0_acc = Field2DAccessor<>(phi0);
     // Compressional effects
 
     if (compress) {
-      printf(".........compress .................\n");
 
-      // ddt(P) += beta*( - Grad_parP(Vpar, CELL_CENTRE) + Vpar*gradparB );
       ddt(P) -= beta * Div_par(Vpar, CELL_CENTRE);
 
       if (phi_curv) {
-        printf(".........phi_curv .................\n");
         ddt(P) -= 2. * beta * b0xcv * Grad(phi);
       }
 
-      //
       // Vpar equation
-      printf(".........ddtVpar) Start  .................\n\n");
-
-      // ddt(Vpar) = -0.5*Grad_parP(P + P0, loc);
 
       ddt(Vpar) = -0.5 * (Grad_par(P, loc) + Grad_par(P0, loc));
 
-      if (nonlinear)
+      if (nonlinear) {
         ddt(Vpar) -= bracket(interp_to(phi, loc), Vpar, bm_exb) * B0; // Advection
+      }
     }
 
-    // printf(".........ddt(P) END  .................\n\n");
-
-    start = std::chrono::steady_clock::now();
     if (filter_z) {
       // Filter out all except filter_z_mode
 
-      // printf(".........filter_z  .................\n");
       if (evolve_jpar) {
-        //	printf(".........filter_z  .................\n");
         ddt(Jpar) = filter(ddt(Jpar), filter_z_mode);
-      } else
+      } else {
+        ddt(Psi) = filter(ddt(Psi), filter_z_mode);
+      }
 
-#if 0 // defined(GPU)
-// problem , need to discuss
-//
-        indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
-        Ind3D *ob_i = &(indices)[0];
-
-        auto P_acc = FieldAccessor<>(P);   //P is field 3D
-	auto Psi_acc = FieldAccessor<>(Psi);
-	auto U_acc = FieldAccessor<>(U);
-
-         
-	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-                  int i = ob_i[id].ind;
-                  BoutReal p1 = filter_g(Psi_acc,filter_z_mode,i);
-                  BoutReal p2 = filter_g(U_acc,filter_z_mode,i);
- 		  BoutReal p3 = filter_g(P_acc,filter_z_mode,i);
-		  DDT(Psi_acc)[i] = p1;
-
- 	     DDT(U_acc)[i] = p2;
-		  DDT(P_acc)[i] = p3;
-	});
-
-//        ddt(Psi) = filter(ddt(Psi), filter_z_mode);
-
-//          ddt(U) = filter(ddt(U), filter_z_mode);
-//        ddt(P) = filter(ddt(P), filter_z_mode);
-
-#else
-      // printf("filter_z_mode is %5f \n",filter_z_mode);
-      ddt(Psi) = filter(ddt(Psi), filter_z_mode);
       ddt(U) = filter(ddt(U), filter_z_mode);
       ddt(P) = filter(ddt(P), filter_z_mode);
-
-#endif
     }
-    end = std::chrono::steady_clock::now();
-    // auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-    time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    //      std::cout << "The  filter_z of ddt(P) since start is "<< time_taken.count()<<"
-    //      nano seconds.\n";
 
-    start = std::chrono::steady_clock::now();
     if (low_pass_z > 0) {
-      // printf(".........low_pass_z  .................\n");
       // Low-pass filter, keeping n up to low_pass_z
       if (evolve_jpar) {
         ddt(Jpar) = lowPass(ddt(Jpar), low_pass_z, zonal_field);
-      } else
-
-#if 0 // defined(GPU)
-// problem, need to discuss
-//
-	indices = Psi.getRegion("RGN_NOBNDRY").getIndices();
-        Ind3D *ob_i = &(indices)[0];
-        auto P_acc = FieldAccessor<>(P);   //P is field 3D
-	auto Psi_acc = FieldAccessor<>(Psi);
-	auto U_acc = FieldAccessor<>(U);
-
-        
-	RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-                  int i = ob_i[id].ind;
-                  BoutReal p1 = lowPass_g(Psi_acc,low_pass_z,zonal_field,i);
-                  BoutReal p2 = lowPass_g(U_acc,low_pass_z,zonal_flow,i);
-                  BoutReal p3 = lowPass_g(P_acc,low_pass_z, zonal_bkgd,i);
-                  DDT(Psi_acc)[i] = p1;
-              //    DDT(U_acc)[i] = p2;
-                  DDT(P_acc)[i] = p3;
-	});
-      
-       //ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
-      ddt(U) = lowPass(ddt(U), low_pass_z, zonal_flow);
-      //ddt(P) = lowPass(ddt(P), low_pass_z, zonal_bkgd);
-
-#else
-      //	printf("low_pass_z is %5f \n",filter_z_mode);
-      ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
+      } else {
+        ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
+      }
       ddt(U) = lowPass(ddt(U), low_pass_z, zonal_flow);
       ddt(P) = lowPass(ddt(P), low_pass_z, zonal_bkgd);
-#endif
     }
 
-    end = std::chrono::steady_clock::now();
-    // auto time_taken = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-    time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    //    std::cout << "The low_pass of ddt(P) since start is "<< time_taken.count()<<"
-    //    nano seconds.\n";
-
     if (damp_width > 0) {
-
-      printf(".........damp_width.................\n\n");
       for (int i = 0; i < damp_width; i++) {
-        for (int j = 0; j < mesh->LocalNy; j++)
+        for (int j = 0; j < mesh->LocalNy; j++) {
           for (int k = 0; k < mesh->LocalNz; k++) {
-            if (mesh->firstX())
+            if (mesh->firstX()) {
               ddt(U)(i, j, k) -= U(i, j, k) / damp_t_const;
-            if (mesh->lastX())
+            }
+            if (mesh->lastX()) {
               ddt(U)(mesh->LocalNx - 1 - i, j, k) -=
                   U(mesh->LocalNx - 1 - i, j, k) / damp_t_const;
+            }
           }
+        }
       }
     }
 
@@ -2227,7 +1774,6 @@ auto phi0_acc = Field2DAccessor<>(phi0);
    *******************************************************************************/
 
   int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
-    printf(".........precon.................\n\n");
     // First matrix, applying L
     mesh->communicate(ddt(Psi));
     Field3D Jrhs = Delp2(ddt(Psi));
@@ -2236,18 +1782,22 @@ auto phi0_acc = Field2DAccessor<>(phi0);
     if (jpar_bndry_width > 0) {
       // Boundary in jpar
       if (mesh->firstX()) {
-        for (int i = jpar_bndry_width; i >= 0; i--)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = jpar_bndry_width; i >= 0; i--) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
               Jrhs(i, j, k) = 0.5 * Jrhs(i + 1, j, k);
             }
+          }
+        }
       }
       if (mesh->lastX()) {
-        for (int i = mesh->LocalNx - jpar_bndry_width - 1; i < mesh->LocalNx; i++)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = mesh->LocalNx - jpar_bndry_width - 1; i < mesh->LocalNx; i++) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
               Jrhs(i, j, k) = 0.5 * Jrhs(i - 1, j, k);
             }
+          }
+        }
       }
     }
 
@@ -2258,8 +1808,9 @@ auto phi0_acc = Field2DAccessor<>(phi0);
 
     // Second matrix, solving Alfven wave dynamics
     static std::unique_ptr<InvertPar> invU{nullptr};
-    if (!invU)
-      invU = InvertPar::Create();
+    if (!invU) {
+      invU = InvertPar::create();
+    }
 
     invU->setCoefA(1.);
     invU->setCoefB(-SQ(gamma) * B0 * B0);
@@ -2292,9 +1843,6 @@ auto phi0_acc = Field2DAccessor<>(phi0);
    *******************************************************************************/
 
   int jacobian(BoutReal UNUSED(t)) {
-    // NOTE: LINEAR ONLY!
-
-    printf(".........jacobian.................\n\n");
     // Communicate
     mesh->communicate(ddt(P), ddt(Psi), ddt(U));
 

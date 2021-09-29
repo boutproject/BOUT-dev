@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
 
   // Currently hardcode solvers we don't want to test
   // Should be able to check which solvers aren't suitable
-  std::vector<std::string> eigen_solvers = {"power", "slepc", "snes"};
+  std::vector<std::string> eigen_solvers = {"power", "slepc", "snes", "beuler"};
 
   for (auto& eigen_solver : eigen_solvers) {
     if (SolverFactory::getInstance().remove(eigen_solver)) {
@@ -61,7 +61,9 @@ int main(int argc, char** argv) {
   root["mesh"]["nz"] = 1;
 
   root["output"]["enabled"] = false;
-  root["restart"]["enabled"] = false;
+  root["restart_files"]["enabled"] = false;
+  root["datadir"] = "data";
+  root["dump_format"] = "nc";
 
   // Set the command-line arguments
   SlepcLib::setArgs(argc, argv);
@@ -84,8 +86,11 @@ int main(int argc, char** argv) {
   constexpr int NOUT = 100;
 
   // Global options
-  root["NOUT"] = NOUT;
-  root["TIMESTEP"] = end / NOUT;
+  root["nout"] = NOUT;
+  root["timestep"] = end / NOUT;
+
+  // Don't error just because we haven't used all the options yet
+  root["input"]["error_on_unused_options"] = false;
 
   // Solver-specific options
   root["euler"]["mxstep"] = 100000;
@@ -98,9 +103,6 @@ int main(int argc, char** argv) {
 
   root["imexbdf2"]["adaptive"] = true;
   root["imexbdf2"]["adaptRtol"] = 1.e-5;
-
-  root["karniadakis"]["nout"] = 100;
-  root["karniadakis"]["timestep"] = end / (NOUT * 10000);
 
   root["petsc"]["nout"] = 10000;
   root["petsc"]["output_step"] = end / 10000;
@@ -142,8 +144,8 @@ int main(int argc, char** argv) {
     } catch (BoutException& e) {
       // Don't let one bad solver stop us trying the rest
       output_test << " ERROR\n";
-      output_info << "Error encountered with solver " << name << "\n";
-      output_info << e.what() << endl;
+      output_test << "Error encountered with solver " << name << "\n";
+      output_test << e.what() << endl;
       errors[name] = 0.;
     }
   }

@@ -48,7 +48,7 @@ class Vector3D;
  *
  * To create the value, it looks for a setting "function"
  * in a section called name. If that is not found, then it looks
- * for "function" in a section called "All". If that is also not
+ * for "function" in a section called "all". If that is also not
  * found, then the value defaults to zero.
  *
  * A second variable, "scale", can be used to multiply the function,

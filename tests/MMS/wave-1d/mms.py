@@ -1,5 +1,6 @@
 from __future__ import print_function
 from builtins import str
+
 #
 # Generate the test case using SymPy
 #
@@ -14,13 +15,13 @@ from sympy import symbols, cos, sin, diff
 
 # Define symbols
 
-x = symbols('x')
-t = symbols('t')
+x = symbols("x")
+t = symbols("t")
 
 # Define the manufactured solution
 
-f = 0.9 + 0.9*x + 0.2*cos(10*t)*sin(5.*x**2)
-g = 0.9 + 0.7*x + 0.2*cos(7*t)*sin(2.*x**2)
+f = 0.9 + 0.9 * x + 0.2 * cos(10 * t) * sin(5.0 * x ** 2)
+g = 0.9 + 0.7 * x + 0.2 * cos(7 * t) * sin(2.0 * x ** 2)
 
 # Calculate gradients in x for boundaries
 

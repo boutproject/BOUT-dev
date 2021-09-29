@@ -17,7 +17,7 @@ nz = 1
 dy = 0.2
 
 # Puts the boundaries half a step outside the last gridpoints
-symmetricGlobalY=true
+symmetricGlobalY = true
 
 # These flags make the y-direction non-periodic
 ixseps1 = -1

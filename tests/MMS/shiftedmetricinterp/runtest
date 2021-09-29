@@ -138,7 +138,6 @@ derivatives = [
 ]
 
 
-
 functions = [
     ["sin(%s + (z-mesh:zShift))", "-sin(%s + (z-mesh:zShift))"],
     ["cos(%s + (z-mesh:zShift))", "-cos(%s + (z-mesh:zShift))"],

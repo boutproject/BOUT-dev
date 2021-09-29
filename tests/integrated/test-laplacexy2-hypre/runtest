@@ -48,9 +48,7 @@ for nproc in [8]:
 
         shell("rm data/BOUT.dmp.*.nc > /dev/null 2>&1")
 
-        s, out = launch(
-            cmd, nproc=nproc, pipe=True, verbose=True
-        )
+        s, out = launch(cmd, nproc=nproc, pipe=True, verbose=True)
 
         f = open("run.log." + str(nproc), "w")
         f.write(out)

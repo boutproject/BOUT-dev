@@ -430,7 +430,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateSqrtX) {
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreateHeavisideXPi) {
-  auto output = this->create("h(x - pi)");
+  auto output = this->create("H(x - pi)");
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
@@ -477,6 +477,23 @@ TYPED_TEST(FieldFactoryCreationTest, CreateMaxX) {
   auto output = this->create("max(2, 3, 1, 4)");
 
   EXPECT_TRUE(IsFieldEqual(output, 4.));
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreateClampX) {
+  // Check that the first argument is within low and high limits
+  // Also check that each input can be an expression
+  
+  auto output = this->create("clamp(1 + 1, 1, 3)");
+
+  EXPECT_TRUE(IsFieldEqual(output, 2.));
+
+  output = this->create("clamp(-1, 2 - 1, 3)");
+
+  EXPECT_TRUE(IsFieldEqual(output, 1.));
+  
+  output = this->create("clamp(5, 1, 6 / 2)");
+
+  EXPECT_TRUE(IsFieldEqual(output, 3.));
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreatePowX) {
@@ -558,9 +575,10 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   localmesh.createDefaultRegions();
   localmesh.setCoordinates(std::make_shared<Coordinates>(
       &localmesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}));
+  // No call to Coordinates::geometry() needed here
 
   localmesh.getCoordinates()->setParallelTransform(
       bout::utils::make_unique<ParallelTransformIdentity>(localmesh));
@@ -577,6 +595,15 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   EXPECT_EQ(output.getNz(), nz);
 }
 
+// Subclass FieldFactory in order to expose the protected methods for
+// testing
+class FieldFactoryExposer : public FieldFactory {
+public:
+  explicit FieldFactoryExposer(Mesh* mesh, Options* opt = nullptr) : FieldFactory(mesh, opt) {}
+  using FieldFactory::resolve;
+  using FieldFactory::fuzzyFind;
+};
+
 // The following tests still use the FieldFactory, but don't need to
 // be typed and make take longer as they check that exceptions get
 // thrown. Doing these twice will slow down the test unnecessarily
@@ -589,7 +616,7 @@ public:
   WithQuietOutput quiet_info{output_info}, quiet{output}, quiet_error{output_error};
   WithQuietOutput quiet_warn{output_warn};
 
-  FieldFactory factory;
+  FieldFactoryExposer factory;
 };
 
 TEST_F(FieldFactoryTest, RequireMesh) {
@@ -604,7 +631,7 @@ TEST_F(FieldFactoryTest, RequireMesh) {
 
 TEST_F(FieldFactoryTest, CreateOnMeshWithoutCoordinates) {
   static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
-  EXPECT_THROW(factory.create3D("x"), BoutException);
+  EXPECT_NO_THROW(factory.create3D("x"));
 }
 
 TEST_F(FieldFactoryTest, CleanCache) {
@@ -720,6 +747,12 @@ TEST_F(FieldFactoryTest, MaxArgs) {
   EXPECT_THROW(factory.parse("max()"), ParseException);
 }
 
+TEST_F(FieldFactoryTest, ClampArgs) {
+  EXPECT_THROW(factory.parse("clamp()"), ParseException);
+  EXPECT_THROW(factory.parse("clamp(1)"), ParseException);
+  EXPECT_THROW(factory.parse("clamp(1,2)"), ParseException);
+}
+
 TEST_F(FieldFactoryTest, PowerArgs) {
   EXPECT_THROW(factory.parse("power()"), ParseException);
   EXPECT_THROW(factory.parse("power(x)"), ParseException);
@@ -771,6 +804,43 @@ TEST_F(FieldFactoryTest, Recursion) {
   EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 6)), 8);
   EXPECT_THROW(gen->generate(Context().set("n", 7)), BoutException); // Max recursion exceeded
 }
+
+TEST_F(FieldFactoryTest, ResolveGlobalOptions) {
+  Options::root()["f"] = "1 + 1";
+  Options::root()["g"] = "f + f";
+
+  auto g = factory.resolve("g");
+
+  EXPECT_EQ(g->generate({}), 4);
+}
+
+TEST_F(FieldFactoryTest, ResolveLocalOptions) {
+  // Some global options to check we don't pick up these
+  Options::root()["f"] = "1 + 1";
+  Options::root()["g"] = "f + f";
+
+  Options options;
+  options["f"] = "2 + 2";
+  options["g"] = "f * f";
+
+  FieldFactoryExposer factory_local(mesh, &options);
+  auto g = factory_local.resolve("g");
+
+  EXPECT_EQ(g->generate({}), 16);
+}
+
+TEST_F(FieldFactoryTest, FuzzyFind) {
+  Options::root()["moxmide"] = "f + f";
+
+  // Find a default generator and something from the options
+  auto matches = factory.fuzzyFind("mixmide");
+  EXPECT_EQ(matches.size(), 2);
+
+  // Check case difference from the options
+  auto CAPS_matches = factory.fuzzyFind("MOXMIDE");
+  EXPECT_EQ(CAPS_matches.size(), 1);
+}
+
 // A mock ParallelTransform to test transform_from_field_aligned
 // property of FieldFactory. For now, the transform just returns the
 // negative of the input. Ideally, this will get moved to GoogleMock
@@ -791,27 +861,27 @@ public:
 
   void checkInputGrid() override {}
 
-  const Field3D fromFieldAligned(const Field3D& f, const std::string&) override {
+  Field3D fromFieldAligned(const Field3D& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Aligned) {
       throw BoutException("Unaligned field passed to fromFieldAligned");
     }
     return -f;
   }
 
-  const FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
+  FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Aligned) {
       throw BoutException("Unaligned field passed to fromFieldAligned");
     }
     return -f;
   }
 
-  const Field3D toFieldAligned(const Field3D& f, const std::string&) override {
+  Field3D toFieldAligned(const Field3D& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Standard) {
       throw BoutException("Aligned field passed to toFieldAligned");
     }
     return -f;
   }
-  const FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override {
+  FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Standard) {
       throw BoutException("Aligned field passed to toFieldAligned");
     }

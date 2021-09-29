@@ -17,9 +17,12 @@ Momentum equation:
     d(nv)/dt + Div(nv v) = -Grad(p)
 
 The advection terms (divergences on the left) are solved using
-the FV::Div_par function in `bout/fv_ops.hxx`. This uses the MC
+the `FV::Div_par` function in `bout/fv_ops.hxx`. This uses the MC
 slope limiter, together with a Lax flux at the local sound speed
-to provide dissipation and minimise unphysical oscillations. 
+to provide dissipation and minimise unphysical oscillations.
+
+See also:
+https://bout-dev.readthedocs.io/en/latest/user_docs/differential_operators.html#parallel-divergence-div-par
 
 MMS test
 --------

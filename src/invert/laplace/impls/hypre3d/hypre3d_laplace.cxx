@@ -156,15 +156,30 @@ LaplaceHypre3d::~LaplaceHypre3d() {
 
 
 Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
+
+  // Timing reported in the log files. Includes any matrix construction.
+  // The timing for just the solve phase can be retreived from the "hypresolve"
+  // timer if desired.
+  Timer timer("invert");
+
   // If necessary, update the values in the matrix operator
+#if BOUT_HAS_CALIPER
+  CALI_MARK_BEGIN("LaplaceHypre3d_solve:updateMatrix3D");
+#endif
   if (updateRequired) {
     updateMatrix3D();
   }
 
+#if BOUT_HAS_CALIPER
+  CALI_MARK_END("LaplaceHypre3d_solve:updateMatrix3D");
+#endif
   auto b = b_in;
   // Make sure b has a unique copy of the data
   b.allocate();
 
+#if BOUT_HAS_CALIPER
+  CALI_MARK_BEGIN("LaplaceHypre3d_solve:AdjustBoundary");
+#endif
   // Adjust vectors to represent boundary conditions and check that
   // boundary cells are finite
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
@@ -211,11 +226,25 @@ Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
     }
   }
 
+#if BOUT_HAS_CALIPER
+  CALI_MARK_END("LaplaceHypre3d_solve:AdjustBoundary");
+#endif
+
+#if BOUT_HAS_CALIPER
+  CALI_MARK_BEGIN("LaplaceHypre3d_solve:vectorAssemble");
+#endif
+
   rhs.importValuesFromField(b);
   solution.importValuesFromField(x0);
   rhs.assemble();
   solution.assemble();
 
+#if BOUT_HAS_CALIPER
+  CALI_MARK_END("LaplaceHypre3d_solve:vectorAssemble");
+#endif
+#if BOUT_HAS_CALIPER
+  CALI_MARK_BEGIN("LaplaceHypre3d_solve:solve");
+#endif
   // Invoke solver
   { Timer timer("hypresolve");
     linearSystem.solve();
@@ -225,6 +254,12 @@ Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
   n_solves++;
   cumulative_iterations += linearSystem.getNumItersTaken();
 
+#if BOUT_HAS_CALIPER
+  CALI_MARK_END("LaplaceHypre3d_solve:solve");
+#endif
+#if BOUT_HAS_CALIPER
+  CALI_MARK_BEGIN("LaplaceHypre3d_solve:createField");
+#endif
   // Create field from solution
   Field3D result = solution.toField();
   localmesh->communicate(result);
@@ -253,6 +288,9 @@ Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
     }
   }
 
+#if BOUT_HAS_CALIPER
+  CALI_MARK_END("LaplaceHypre3d_solve:createField");
+#endif
   return result;
 }
 
@@ -315,13 +353,13 @@ void LaplaceHypre3d::updateMatrix3D() {
       C_df_dx += C_d2f_dx2 * coords->d1_dx[l];
     }
     C_df_dx /= 2 * coords->dx[l];
-    C_df_dz /= 2 * coords->dz;
+    C_df_dz /= 2 * coords->dz[l];
 
     C_d2f_dx2 /= SQ(coords->dx[l]);
     C_d2f_dy2 /= SQ(coords->dy[l]);
-    C_d2f_dz2 /= SQ(coords->dz);
+    C_d2f_dz2 /= SQ(coords->dz[l]);
 
-    C_d2f_dxdz /= 4 * coords->dx[l] * coords->dz;
+    C_d2f_dxdz /= 4 * coords->dx[l] * coords->dz[l];
 
     operator3D(l, l) = -2 * (C_d2f_dx2 + C_d2f_dy2 + C_d2f_dz2) + A[l];
     operator3D(l, l.xp()) = C_df_dx + C_d2f_dx2;
@@ -382,7 +420,7 @@ void LaplaceHypre3d::updateMatrix3D() {
     C_d2f_dxdy /= 4*coords->dx[l]; // NOTE: This value is not completed here. It needs to
                                    // be divide by dx(i +/- 1, j, k) when using to set a
                                    // matrix element
-    C_d2f_dydz /= 4*coords->dy[l]*coords->dz;
+    C_d2f_dydz /= 4*coords->dy[l]*coords->dz[l];
 
     // The values stored in the y-boundary are already interpolated
     // up/down, so we don't want the matrix to do any such

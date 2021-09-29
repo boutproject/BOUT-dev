@@ -44,7 +44,7 @@ namespace globals {
 #define SETTING(name, val) name = val
 #endif
 
-SETTING( Mesh *mesh, nullptr); ///< The mesh object
+SETTING(Mesh *mesh, nullptr); ///< The mesh object
 SETTING(MpiWrapper* mpi, nullptr); ///< The MPI wrapper object
 SETTING(HypreLib* hyprelib,nullptr);
 

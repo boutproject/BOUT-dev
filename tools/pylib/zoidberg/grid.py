@@ -59,14 +59,18 @@ class Grid(object):
         self.ycoords = np.asfarray(ycoords)
         self.Ly = Ly
         self.yperiodic = yperiodic
-        
+
         # Define the shape of the grid
         self.shape = (nx, len(ycoords), nz)
-        
+
     def __repr__(self):
-        return "Grid({0}, {1}:{2}:{3}, yperiodic={4})".format(self.poloidal_grids, 
-                                                              np.amin(self.ycoords), np.amax(self.ycoords), self.ycoords.size, 
-                                                              self.yperiodic)
+        return "Grid({0}, {1}:{2}:{3}, yperiodic={4})".format(
+            self.poloidal_grids,
+            np.amin(self.ycoords),
+            np.amax(self.ycoords),
+            self.ycoords.size,
+            self.yperiodic,
+        )
 
     def numberOfPoloidalGrids(self):
         """Returns the number of poloidal grids i.e. number of points in Y
@@ -98,7 +102,7 @@ class Grid(object):
 
         """
         yindex = int(yindex)
-        
+
         ny = self.ycoords.size
 
         if (yindex >= 0) and (yindex < ny):
@@ -107,28 +111,28 @@ class Grid(object):
                 # Only one grid
                 return self.poloidal_grids, self.ycoords[yindex]
             return self.poloidal_grids[yindex], self.ycoords[yindex]
-                
+
         # Out of range
-        
+
         if self.yperiodic:
             # Periodic domain
 
             # Map index into domain
-            y_remap = np.remainder(yindex, ny) # 0 <= yremap < ny
+            y_remap = np.remainder(yindex, ny)  # 0 <= yremap < ny
 
             # Get number of periods around the domain. Note this can be negative
-            nperiods = np.floor( float(yindex) / float(ny) )
+            nperiods = np.floor(float(yindex) / float(ny))
 
-            ycoord = self.ycoords[y_remap] + nperiods*self.Ly
-            
+            ycoord = self.ycoords[y_remap] + nperiods * self.Ly
+
             if self._ngrids == 1:
                 return self.poloidal_grids, ycoord
             return self.poloidal_grids[y_remap], ycoord
-                        
+
         # Not periodic
-        
+
         if yindex < 0:
-            return None, 0.0   # Hit the lower end in Y
+            return None, 0.0  # Hit the lower end in Y
         return None, self.Ly  # Hit the upper end in Y
 
     def metric(self):
@@ -146,58 +150,67 @@ class Grid(object):
         # Gather dx,dz and x-z metrics from poloidal slices
         dx = np.zeros(self.shape)
         dz = np.zeros(self.shape)
-        
+
         gxx = np.zeros(self.shape)
         gxz = np.zeros(self.shape)
         gzz = np.zeros(self.shape)
-        
+
         g_xx = np.zeros(self.shape)
         g_xz = np.zeros(self.shape)
         g_zz = np.zeros(self.shape)
-        
+
         # Separate grids for each slice
         for y in range(self.shape[1]):
             pol_metric = self.getPoloidalGrid(y)[0].metric()
-            dx[:,y,:] = pol_metric["dx"]
-            dz[:,y,:] = pol_metric["dz"]
-                
-            gxx[:,y,:] = pol_metric["gxx"]
-            gxz[:,y,:] = pol_metric["gxz"]
-            gzz[:,y,:] = pol_metric["gzz"]
-            
-            g_xx[:,y,:] = pol_metric["g_xx"]
-            g_xz[:,y,:] = pol_metric["g_xz"]
-            g_zz[:,y,:] = pol_metric["g_zz"]
-        
+            dx[:, y, :] = pol_metric["dx"]
+            dz[:, y, :] = pol_metric["dz"]
+
+            gxx[:, y, :] = pol_metric["gxx"]
+            gxz[:, y, :] = pol_metric["gxz"]
+            gzz[:, y, :] = pol_metric["gzz"]
+
+            g_xx[:, y, :] = pol_metric["g_xx"]
+            g_xz[:, y, :] = pol_metric["g_xz"]
+            g_zz[:, y, :] = pol_metric["g_zz"]
+
         # Calculate the gradient of the y coordinate w.r.t index
         # To avoid edge effects, repeat array three times then take the middle
-        ycoords = np.concatenate( (self.ycoords - self.Ly, self.ycoords, self.ycoords + self.Ly) )
+        ycoords = np.concatenate(
+            (self.ycoords - self.Ly, self.ycoords, self.ycoords + self.Ly)
+        )
         ny = self.ycoords.size
         if ny == 1:
             dy = np.array([self.Ly])
         else:
-            dy = np.gradient(ycoords[ny:(2*ny)])
-        
+            dy = np.gradient(ycoords[ny : (2 * ny)])
+
         dy3d = np.zeros(self.shape)
         for i in range(self.shape[1]):
-            dy3d[:,i,:] = dy[i]
+            dy3d[:, i, :] = dy[i]
 
         # Note: These y metrics are for Cartesian coordinates
         # If in cylindrical coordinates then these should be different
         g_yy = np.ones(self.shape)
         gyy = np.ones(self.shape)
 
-        return {"dx":dx, "dy":dy3d, "dz": dz,
-                "gyy": gyy,  "g_yy":g_yy,
-                "gxx": gxx,  "g_xx":g_xx,
-                "gxz": gxz,  "g_xz":g_xz,
-                "gzz": gzz,  "g_zz":g_zz}
+        return {
+            "dx": dx,
+            "dy": dy3d,
+            "dz": dz,
+            "gyy": gyy,
+            "g_yy": g_yy,
+            "gxx": gxx,
+            "g_xx": g_xx,
+            "gxz": gxz,
+            "g_xz": g_xz,
+            "gzz": gzz,
+            "g_zz": g_zz,
+        }
 
 
-def rectangular_grid(nx, ny, nz,
-                     Lx=1.0, Ly=10., Lz=1.0,
-                     xcentre=0.0, zcentre=0.0,
-                     yperiodic=False):
+def rectangular_grid(
+    nx, ny, nz, Lx=1.0, Ly=10.0, Lz=1.0, xcentre=0.0, zcentre=0.0, yperiodic=False
+):
     """Create a rectangular grid in (x,y,z)
 
     Here y is along the magnetic field (typically toroidal angle), and
@@ -222,27 +235,22 @@ def rectangular_grid(nx, ny, nz,
 
     # In this simple case we only need one RectangularPoloidalGrid
     # to represent all poloidal planes
-    
-    poloidal_grid = RectangularPoloidalGrid(nx, nz, Lx, Lz, 
-                                            xcentre,
-                                            zcentre)
+
+    poloidal_grid = RectangularPoloidalGrid(nx, nz, Lx, Lz, xcentre, zcentre)
 
     if yperiodic:
         ycoords = np.linspace(0.0, Ly, ny, endpoint=False)
     else:
         # Doesn't include the end points
-        ycoords = (np.arange(ny) + 0.5)*Ly/float(ny)
-    
-    return Grid( poloidal_grid, 
-                 ycoords, 
-                 Ly,
-                 yperiodic=yperiodic )
+        ycoords = (np.arange(ny) + 0.5) * Ly / float(ny)
 
-    
+    return Grid(poloidal_grid, ycoords, Ly, yperiodic=yperiodic)
+
+
 if __name__ == "__main__":
-    
-    grid = rectangular_grid(10,10,10)
+
+    grid = rectangular_grid(10, 10, 10)
 
     p = grid.getPoloidalGrid(-2)
-    
+
     print(grid)

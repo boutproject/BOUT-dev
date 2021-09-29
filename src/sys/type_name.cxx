@@ -2,6 +2,7 @@
 
 #include "field2d.hxx"
 #include "field3d.hxx"
+#include "fieldperp.hxx"
 
 namespace bout {
 namespace utils {
@@ -36,5 +37,9 @@ std::string typeName<Field3D>() {
   return "Field3D";
 }
 
+template <>
+std::string typeName<FieldPerp>() {
+  return "FieldPerp";
+}
 }
 }

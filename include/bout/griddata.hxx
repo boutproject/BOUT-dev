@@ -62,9 +62,9 @@ public:
   /// Get a BoutReal number
   virtual bool get(Mesh* m, BoutReal& rval, const std::string& name,
                    BoutReal def = 0.0) = 0;
-  virtual bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) = 0;
-  virtual bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) = 0;
-  virtual bool get(Mesh *m, FieldPerp &var, const std::string &name, BoutReal def = 0.0) = 0;
+  virtual bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0, CELL_LOC location=CELL_DEFAULT) = 0;
+  virtual bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0, CELL_LOC location=CELL_DEFAULT) = 0;
+  virtual bool get(Mesh *m, FieldPerp &var, const std::string &name, BoutReal def = 0.0, CELL_LOC location=CELL_DEFAULT) = 0;
 
   enum class Direction {X, Y, Z};
   // Define some aliases so GridDataSource::X, GridDataSource::Y and GridDataSource::Z can
@@ -108,10 +108,10 @@ public:
   bool get(Mesh* m, int& ival, const std::string& name, int def = 0) override;
   /// Get a BoutReal number
   bool get(Mesh* m, BoutReal& rval, const std::string& name, BoutReal def = 0.0) override;
-  bool get(Mesh* m, Field2D& var, const std::string& name, BoutReal def = 0.0) override;
-  bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) override;
-  bool get(Mesh *m, FieldPerp &var, const std::string &name, BoutReal def = 0.0) override {
-    return getField(m, var, name, def);
+  bool get(Mesh* m, Field2D& var, const std::string& name, BoutReal def = 0.0, CELL_LOC location = CELL_DEFAULT) override;
+  bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0, CELL_LOC location = CELL_DEFAULT) override;
+  bool get(Mesh *m, FieldPerp &var, const std::string &name, BoutReal def = 0.0, CELL_LOC location = CELL_DEFAULT) override {
+    return getField(m, var, name, def, location);
   }
 
   bool get(Mesh *m, std::vector<int> &var, const std::string &name, int len, int offset = 0,
@@ -146,7 +146,7 @@ private:
   // convenience template method to remove code duplication between Field2D,
   // Field3D and FieldPerp versions of get
   template<typename T>
-  bool getField(Mesh* m, T& var, const std::string& name, BoutReal def = 0.0);
+  bool getField(Mesh* m, T& var, const std::string& name, BoutReal def, CELL_LOC location);
   // utility method for Field2D to implement unshared parts of getField
   void readField(Mesh* m, const std::string& name, int ys, int yd, int ny_to_read,
       int xs, int xd, int nx_to_read, const std::vector<int>& size, Field2D& var);
@@ -225,8 +225,10 @@ public:
    * @param[out] var  The variable which will be set
    * @param[in] name  The name in the options. Not case sensitive
    * @param[in] def   Default value to use if option not found
+   * @param[in] location  Location at which to get the variable
    */
-  bool get(Mesh *mesh, Field2D &var, const std::string &name, BoutReal def = 0.0) override;
+  bool get(Mesh *mesh, Field2D &var, const std::string &name, BoutReal def = 0.0,
+           CELL_LOC location = CELL_DEFAULT) override;
 
   /*!
    * Get a Field3D object by finding the option with the given name,
@@ -236,8 +238,10 @@ public:
    * @param[out] var  The variable which will be set
    * @param[in] name  The name in the options. Not case sensitive
    * @param[in] def   Default value to use if option not found
+   * @param[in] location  Location at which to get the variable
    */
-  bool get(Mesh *mesh, Field3D &var, const std::string &name, BoutReal def = 0.0) override;
+  bool get(Mesh *mesh, Field3D &var, const std::string &name, BoutReal def = 0.0,
+           CELL_LOC location = CELL_DEFAULT) override;
 
   /*!
    * Get a FieldPerp object by finding the option with the given name,
@@ -247,8 +251,10 @@ public:
    * @param[out] var  The variable which will be set
    * @param[in] name  The name in the options. Not case sensitive
    * @param[in] def   Default value to use if option not found
+   * @param[in] location  Location at which to get the variable
    */
-  bool get(Mesh *mesh, FieldPerp &var, const std::string &name, BoutReal def = 0.0) override;
+  bool get(Mesh *mesh, FieldPerp &var, const std::string &name, BoutReal def = 0.0,
+           CELL_LOC location = CELL_DEFAULT) override;
 
   /*!
    * Get an array of integers. Currently reads a single

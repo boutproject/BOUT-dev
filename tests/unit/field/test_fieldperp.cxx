@@ -3,6 +3,7 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "gtest/gtest.h"
 
+#include "bout/array.hxx"
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include "boutexception.hxx"
@@ -13,7 +14,10 @@
 #include "utils.hxx"
 
 #include <cmath>
+#include <numeric>
 #include <set>
+#include <sstream>
+#include <string>
 #include <vector>
 
 /// Global mesh
@@ -123,6 +127,27 @@ TEST_F(FieldPerpTest, CreateOnGivenMesh) {
   EXPECT_EQ(field.getNx(), test_nx);
   EXPECT_EQ(field.getNy(), 1);
   EXPECT_EQ(field.getNz(), test_nz);
+}
+
+TEST_F(FieldPerpTest, CreateFromArray) {
+  WithQuietOutput quiet{output_info};
+
+  int test_nx = FieldPerpTest::nx + 1;
+  int test_ny = FieldPerpTest::ny + 1;
+  int test_nz = FieldPerpTest::nz + 1;
+
+  FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  fieldmesh.setCoordinates(nullptr);
+  fieldmesh.createDefaultRegions();
+
+  auto expected = makeField<FieldPerp>([](IndPerp& i) { return i.ind; }, &fieldmesh);
+
+  Array<BoutReal> array_data(test_nx * test_nz);
+  std::iota(array_data.begin(), array_data.end(), 0);
+
+  FieldPerp field{array_data, &fieldmesh};
+
+  EXPECT_TRUE(IsFieldEqual(field, expected));
 }
 
 TEST_F(FieldPerpTest, CopyCheckFieldmesh) {
@@ -442,7 +467,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_XGUARDS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1]) = sentinel;
   }
 
@@ -484,7 +509,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_YGUARDS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1]) = sentinel;
   }
 
@@ -526,7 +551,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_ZGUARDS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1]) = sentinel;
   }
 
@@ -572,7 +597,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOCORNERS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1]) = sentinel;
   }
 
@@ -1762,4 +1787,48 @@ TEST_F(FieldPerpTest, ZeroFrom) {
   EXPECT_TRUE(field2.isAllocated());
   EXPECT_TRUE(IsFieldEqual(field2, 0.));
 }
+
+TEST_F(FieldPerpTest, ToString) {
+  // Just check we can call toString
+  const std::string expected = "<FieldPerp>";
+  const FieldPerp field{};
+  EXPECT_EQ(toString(field), expected);
+}
+
+TEST_F(FieldPerpTest, OperatorStream) {
+  // Just check we can call operator<<
+  const FieldPerp field{};
+  std::stringstream stream;
+  stream << field;
+  EXPECT_EQ(stream.str(), toString(field));
+}
+
+TEST_F(FieldPerpTest, Equality) {
+  FieldPerp field1 = 1.;
+  field1.setIndex(1);
+  FieldPerp field2 = 1.;
+  field2.setIndex(1);
+  EXPECT_TRUE(field1 == field2);
+}
+
+TEST_F(FieldPerpTest, Inequality) {
+  FieldPerp field1 = 1.;
+  field1.setIndex(2);
+
+  FieldPerp field2{};
+  EXPECT_FALSE(field1 == field2);
+
+  FieldPerp field3{};
+  EXPECT_FALSE(field2 == field3);
+
+  FieldPerp field4 = 1.00001;
+  field4.setIndex(2);
+  EXPECT_FALSE(field1 == field4);
+
+  FieldPerp field5 = 1.;
+  field5.setIndex(3);
+  EXPECT_FALSE(field1 == field5);
+}
+
+
 #pragma GCC diagnostic pop

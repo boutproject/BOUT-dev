@@ -1,5 +1,5 @@
-NOUT = 1
-TIMESTEP = 0.1
+nout = 1
+timestep = 0.1
 
 MZ = 16
 
@@ -20,7 +20,7 @@ ny = 1
 [mesh:ddx]
 first = C4
 second = C4
-upwind=c2
+upwind = c2
 
 [mesh:ddy]
 first = C4
@@ -29,14 +29,14 @@ second = C4
 [mesh:ddz]
 first = C4
 second = C4
-upwind=c2
+upwind = c2
 
 [solver]
 
 #type = rk4
 
-ATOL = 1.0e-15  # absolute tolerance
-RTOL = 1.0e-15   # relative tolerance
+atol = 1e-15  # absolute tolerance
+rtol = 1e-15   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 mms = true  # -> Enable MMS testing

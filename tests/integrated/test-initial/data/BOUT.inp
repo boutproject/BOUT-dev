@@ -1,8 +1,5 @@
 # Test initial conditions in a "slab" grid
 
-# No timesteps
-NOUT = 0
-
 # Z size
 MZ = 4
 
@@ -18,7 +15,7 @@ symmetricGlobalY = false
 nx = 7
 ny = 12
 
-[All]
+[all]
 scale = 1.0
 
 [var_x]
@@ -52,7 +49,6 @@ function = atan(y,x)
 function = ballooning(x)
 
 [ballooning_n]
-n = 5
 function = ballooning(x,5)
 
 [cos]
@@ -122,7 +118,7 @@ function = 4*y
 function = erf(x)
 
 [tanhhat]
-function = TanhHat(x, 0.5, 0.4, 0.3)
+function = tanhhat(x, 0.5, 0.4, 0.3)
 
 [fmod]
 function = fmod(x,.50)

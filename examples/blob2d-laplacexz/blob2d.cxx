@@ -41,8 +41,8 @@ protected:
 
     /******************Reading options *****************/
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["model"];
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["model"];
 
     // Load system parameters
     Te0 = options["Te0"].withDefault(30); // Temp in eV
@@ -86,14 +86,23 @@ protected:
 
     /************ Create a solver for potential ********/
 
+    auto& boussinesq_options = Options::root()["phiBoussinesq"];
+    auto& non_boussinesq_options = Options::root()["phiSolver"];
+
     if (boussinesq) {
-      // Use options in BOUT.inp section "phiBoussinesq"
-      phiSolver = LaplaceXZ::create(mesh, &Options::root()["phiBoussinesq"]);
+      // BOUT.inp section "phiBoussinesq"
+      phiSolver = LaplaceXZ::create(mesh, &boussinesq_options);
+      // Mark other section as conditionally used so we don't get errors from unused
+      // options
+      non_boussinesq_options.setConditionallyUsed();
       // Set the coefficients once here
       phiSolver->setCoefs(Field2D(1.0), Field2D(0.0));
     } else {
-      // Use options in BOUT.inp section "phiSolver"
-      phiSolver = LaplaceXZ::create(mesh, &Options::root()["phiSolver"]);
+      // BOUT.inp section "phiSolver"
+      phiSolver = LaplaceXZ::create(mesh, &non_boussinesq_options);
+      // Mark other section as conditionally used so we don't get errors from unused
+      // options
+      boussinesq_options.setConditionallyUsed();
       // Coefficients will be set every RHS call
     }
     phi = 0.0; // Starting guess for first solve (if iterative)

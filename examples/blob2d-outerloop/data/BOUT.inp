@@ -9,8 +9,8 @@
 
 # settings used by the core code
 
-NOUT = 3      # number of time-steps
-TIMESTEP = 50  # time between outputs [1/wci]
+nout = 3      # number of time-steps
+timestep = 50  # time between outputs [1/wci]
 
 
 MXG = 2      # Number of X guard cells
@@ -51,8 +51,8 @@ upwind = W3
 
 [solver]
 
-ATOL = 1.0e-10  # absolute tolerance
-RTOL = 1.0e-5   # relative tolerance
+atol = 1.0e-10  # absolute tolerance
+rtol = 1.0e-5   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 ###################################################
@@ -80,7 +80,7 @@ flags      = 49152  # set_rhs i.e. identity matrix in boundaries
 
 [phiBoussinesq]
 # By default type is tri (serial) or spt (parallel)
-flags = 0
+#flags = 0
 
 ##################################################
 # general settings for the model
@@ -105,7 +105,7 @@ R_c = 1.5  # Radius of curvature (m)
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 bndry_all = neumann # Zero-gradient on all boundaries

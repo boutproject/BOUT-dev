@@ -1,3 +1,4 @@
+BOUT_TOP ?= .
 
 include make.config
 

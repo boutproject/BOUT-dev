@@ -10,6 +10,7 @@
 
 class Field2D;
 class Field3D;
+class FieldPerp;
 
 namespace bout {
 namespace utils {
@@ -37,6 +38,9 @@ namespace utils {
 
   template <>
   std::string typeName<Field3D>();
+
+  template <>
+  std::string typeName<FieldPerp>();
 }
 }
 

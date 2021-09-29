@@ -5,10 +5,17 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 #include <bout/globalfield.hxx>
 
-int physics_init(bool UNUSED(restarting)) {
+class Test_globalfield : public PhysicsModel {
+protected:
+  int init(bool UNUSED(restarting)) override;
+  int rhs(BoutReal UNUSED(t)) override;
+};
+
+
+int Test_globalfield::init(bool UNUSED(restarting)) {
   
   /////////////////////////////////////////////////////////////
   // 2D fields
@@ -117,7 +124,10 @@ int physics_init(bool UNUSED(restarting)) {
   return 1; // Signal an error, so quits
 }
 
-int physics_run(BoutReal UNUSED(t)) {
+int Test_globalfield::rhs(BoutReal UNUSED(t)) {
   // Doesn't do anything
   return 1;
 }
+
+
+BOUTMAIN(Test_globalfield)

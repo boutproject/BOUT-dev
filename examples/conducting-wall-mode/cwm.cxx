@@ -241,7 +241,7 @@ private:
     
     return 0;
   }
-  // End of physics_init()
+
   //////////////////////////////////////////////////////////////////
 
   ///////////////////////////////////////////////////////////////////
@@ -276,7 +276,7 @@ private:
 
     return 0;
   }
-  // End of physics_run
+
   /////////////////////////////////////////////////////////////////
 
   /****************BOUNDARY FUNCTIONS*****************************/
@@ -300,30 +300,34 @@ private:
 
     RangeIterator xrup = mesh->iterateBndryUpperY();
 
-    for (xrup.first(); !xrup.isDone(); xrup.next())
-      for (int jy = mesh->yend + 1; jy < mesh->LocalNy; jy++)
+    for (xrup.first(); !xrup.isDone(); xrup.next()) {
+      for (int jy = mesh->yend + 1; jy < mesh->LocalNy; jy++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           var(xrup.ind, jy, jz) = var(xrup.ind, jy - 1, jz)
-                                  + coord->dy(xrup.ind, jy)
-                                        * sqrt(coord->g_22(xrup.ind, jy))
+                                  + coord->dy(xrup.ind, jy, jz)
+                                        * sqrt(coord->g_22(xrup.ind, jy, jz))
                                         * value(xrup.ind, jy, jz);
         }
+      }
+    }
   }
 
   void bndry_ydown_Grad_par(Field3D& var, const Field3D& value) {
 
     RangeIterator xrdn = mesh->iterateBndryLowerY();
 
-    for (xrdn.first(); !xrdn.isDone(); xrdn.next())
-      for (int jy = mesh->ystart - 1; jy >= 0; jy--)
+    for (xrdn.first(); !xrdn.isDone(); xrdn.next()) {
+      for (int jy = mesh->ystart - 1; jy >= 0; jy--) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           var(xrdn.ind, jy, jz) = var(xrdn.ind, jy + 1, jz)
-                                  - coord->dy(xrdn.ind, jy)
-                                        * sqrt(coord->g_22(xrdn.ind, jy))
+                                  - coord->dy(xrdn.ind, jy, jz)
+                                        * sqrt(coord->g_22(xrdn.ind, jy, jz))
                                         * value(xrdn.ind, jy, jz);
         }
+      }
+    }
   }
 
   /////////////////////////////////////////////////////////////////

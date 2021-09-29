@@ -1,5 +1,5 @@
 
-BOUT_TOP	= ../..
+BOUT_TOP	?= ../..
 
 SOURCEC		= 2field.cxx
 

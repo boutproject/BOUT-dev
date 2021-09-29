@@ -150,13 +150,6 @@ The current source code files are:
 
       - :doc:`emptyformat.hxx<../_breathe_autogen/file/emptyformat_8hxx>`
 
-      - hdf5
-
-         - :doc:`h5_format.cxx<../_breathe_autogen/file/h5__format_8cxx>` implements an
-           interface to the HDF5 library
-
-         - :doc:`h5_format.hxx<../_breathe_autogen/file/h5__format_8hxx>`
-
       - netcdf
 
          - :doc:`nc_format.cxx<../_breathe_autogen/file/nc__format_8cxx>` implements an

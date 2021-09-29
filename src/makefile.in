@@ -3,7 +3,7 @@ BOUT_TOP	= ..
 
 DIRS			= field fileio invert mesh physics solver sys fmt
 
-SOURCEC		= bout++.cxx
+SOURCEC		= bout++.cxx bout++-time.cxx
 SOURCEH		= bout.hxx
 CXXFLAGS       += -DMD5SUM=$(CHECKSUM) -DBOUT_REVISION="$(BOUT_REVISION)"
 TARGET	       ?= lib
@@ -24,38 +24,22 @@ all: initial_message
 # prerequisites for 'all'
 include $(BOUT_TOP)/make.config
 
-# dummy target - must not be PHONY, to prevent unneeded rebuild of bout++.o
-# A target is needed to make sure that the directories are build first
-# It must be a real and existing target, otherwise the depending
-# targets are always updated as the requirement (.dummy) does not
-# exist.
-.dummy:$(DIRS)
-	@#empty recipe is needed
-
-# Rebuild bout++ to get the correct time of the build - but only if
+# Rebuild bout++-time to get the correct time of the build - but only if
 # any other file was rebuild
-# .dummy dependency to make sure the library is not build before the
-# directories are finished and further to make sure we actually know
-# whether the file needs to be rebuild - which we can only know for
-# certain if all directories are finished
-bout++.o: $(BOUT_LIB_PATH)/.last.o.file .dummy
+bout++-time.o: $(BOUT_LIB_PATH)/.last.o.file | $(DIRS) bout++.o
 
 # The recipie could be removed, as it only catches the case of
 # out-of-date make.config
 # The rest is needed to tell make that .last.o.file will be created
-$(BOUT_LIB_PATH)/.last.o.file: .dummy
+$(BOUT_LIB_PATH)/.last.o.file: | $(DIRS)
 	@test -f $@ || \
 	   echo "make.config is out of date - run ./configure"
 	@test -f $@ || \
 	   exit 1
 
-# make .libfast a real target - similar to .dummy to avoid that a
-# rebuild is forced.
-libfast: .libfast
+libfast: | @LIB_TO_BUILD@
 
-.libfast: @LIB_TO_BUILD@
-
-$(BOUT_LIB_PATH)/libbout++.a: bout++.o
+$(BOUT_LIB_PATH)/libbout++.a: bout++-time.o
 	@echo "Recreating libbout++.a"
 	@rm -f $(LIB_A)
 	@$(AR) $(ARFLAGS) $(LIB_A) $(shell find $(BOUT_TOP)/src -name \*.o -type f -print 2> /dev/null) || rm -f $(LIB_A)
@@ -63,7 +47,7 @@ $(BOUT_LIB_PATH)/libbout++.a: bout++.o
 	@#$(RANLIB) $(LIB)
 	@@STATIC_EXTRA@
 
-$(BOUT_LIB_PATH)/libbout++.so: bout++.o
+$(BOUT_LIB_PATH)/libbout++.so: bout++-time.o
 	@echo "Creating libbout++.so"
 	@echo $(BOUT_FLAGS) | grep -qi pic || (echo "not compiled with PIC support - reconfigure with --enable-shared" ;exit 1)
 	@$(RM) $(BOUT_LIB_PATH)/*.so*
@@ -90,7 +74,7 @@ all: lib end_message
 # Only needed for legacy build script
 ifneq ("$(TARGET)","libfast")
 # This to make sure build time is always printed correctly
-.PHONY: bout++.cxx
+.PHONY: bout++-time.cxx
 endif
 
 checksum:

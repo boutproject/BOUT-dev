@@ -26,18 +26,25 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
-
 #ifndef __PETSC_LAPLACE_H__
 #define __PETSC_LAPLACE_H__
 
-#if BOUT_HAS_PETSC
+#include "bout/build_config.hxx"
+#include "invert_laplace.hxx"
+
+#if not BOUT_HAS_PETSC
+
+namespace {
+RegisterUnavailableLaplace registerlaplacepetsc(LAPLACE_PETSC,
+                                                "BOUT++ was not configured with PETSc");
+}
+
+#else
 
 #include <globals.hxx>
 #include <output.hxx>
 #include <petscksp.h>
 #include <options.hxx>
-#include <invert_laplace.hxx>
 #include <bout/petsclib.hxx>
 #include <boutexception.hxx>
 

@@ -49,6 +49,8 @@ FieldPerp LaplacePDD::solve(const FieldPerp& b) {
   start(b, data);
   next(data);
   finish(data, x);
+
+  checkData(x);
   
   return x;
 }
@@ -96,6 +98,8 @@ Field3D LaplacePDD::solve(const Field3D& b) {
   }
 
   x.setLocation(b.getLocation()); 
+
+  checkData(x);
 
   return x;
 }
@@ -165,7 +169,7 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
 
   /// Create the matrices to be inverted (one for each z point)
 
-  BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
+  BoutReal kwaveFactor = 2.0 * PI / getUniform(coords->zlength());
 
   /// Set matrix elements
   for (int kz = 0; kz <= maxmode; kz++) {

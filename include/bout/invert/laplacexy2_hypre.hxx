@@ -118,7 +118,6 @@ public:
 
 private:
   Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
-  Field2D f2dinit;                   ///< This is here just to initialise matrix
   IndexerPtr<Field2D> indexConverter;
   bout::HypreMatrix<Field2D> *M;
   bout::HypreVector<Field2D> *x;
@@ -143,52 +142,6 @@ private:
    */
   MPI_Comm communicator();
 };
-
-
-template <class T>
-OperatorStencil<T> squareStencil(Mesh* localmesh) {
-  OperatorStencil<T> stencil;
-  IndexOffset<T> zero;
-  std::set<IndexOffset<T>> offsets = {
-      zero,
-      zero.xp(),
-      zero.xm(),
-  };
-  if (!std::is_same<T, IndPerp>::value) {
-    offsets.insert(zero.yp());
-    offsets.insert(zero.ym());
-    offsets.insert(zero.xp().yp());
-    offsets.insert(zero.xp().ym());
-    offsets.insert(zero.xm().yp());
-    offsets.insert(zero.xm().ym());
-  }
-  if (!std::is_same<T, Ind2D>::value) {
-    offsets.insert(zero.yp());
-    offsets.insert(zero.ym());
-    offsets.insert(zero.xp().yp());
-    offsets.insert(zero.xp().ym());
-    offsets.insert(zero.xm().yp());
-    offsets.insert(zero.xm().ym());
-  }
-  if (std::is_same<T, Ind3D>::value) {
-    offsets.insert(zero.yp().zp());
-    offsets.insert(zero.yp().zm());
-    offsets.insert(zero.ym().zp());
-    offsets.insert(zero.ym().zm());
-  }
-  std::vector<IndexOffset<T>> offsetsVec(offsets.begin(), offsets.end());
-  stencil.add(
-      [localmesh](T ind) -> bool {
-        return (localmesh->xstart <= ind.x() && ind.x() <= localmesh->xend
-                && (std::is_same<T, IndPerp>::value
-                    || (localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend))
-                && (std::is_same<T, Ind2D>::value
-                    || (localmesh->zstart <= ind.z() && ind.z() <= localmesh->zend)));
-              },
-      offsetsVec);
-  stencil.add([](T UNUSED(ind)) -> bool { return true; }, {zero});
-  return stencil;
-}
 
 #endif // BOUT_HAS_HYPRE
 #endif // LAPLACE_XY_HYPRE_H

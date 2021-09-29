@@ -1,0 +1,12 @@
+add_executable(MMS-advection advection.cxx)
+target_link_libraries(MMS-advection bout++)
+set_target_properties(MMS-advection PROPERTIES FOLDER tests/MMS)
+set_target_properties(MMS-advection PROPERTIES OUTPUT_NAME advection)
+add_dependencies(build-check-mms-tests MMS-advection)
+bout_copy_file(runtest)
+bout_copy_file(data/BOUT.inp)
+
+add_subdirectory(arakawa)
+add_subdirectory(central)
+add_subdirectory(upwind)
+add_subdirectory(weno3)

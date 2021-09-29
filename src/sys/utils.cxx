@@ -141,3 +141,44 @@ std::string trimComments(const std::string &s, const std::string &c) {
 std::string toString(const time_t& time) {
   return fmt::format("{:%c}", *std::localtime(&time));
 }
+
+std::string::size_type editDistance(const std::string& str1, const std::string& str2) {
+
+  using str_size_t = std::string::size_type;
+
+  const auto str1_size = str1.size() + 1;
+  const auto str2_size = str2.size() + 1;
+
+  auto distance = Matrix<str_size_t>(str1_size, str2_size);
+
+  // Initialise zeroth column and row with string index
+  for (str_size_t i = 0; i < str1_size; ++i) {
+    distance(i, 0) = i;
+  }
+  for (str_size_t j = 0; j < str2_size; ++j) {
+    distance(0, j) = j;
+  }
+
+  // Wikipedia uses 1-indexing for the input strings, but 0-indexing
+  // for the `d` matrix, so the input strings have an additional `-1`
+  // when indexing them
+  for (str_size_t i = 1; i < str1_size; ++i) {
+    for (str_size_t j = 1; j < str2_size; ++j) {
+      const str_size_t cost = (str1[i - 1] == str2[j - 1]) ? 0 : 1;
+
+      distance(i, j) = std::min({
+          distance(i - 1, j) + 1,       // deletion
+          distance(i, j - 1) + 1,       // insertion
+          distance(i - 1, j - 1) + cost // substitution
+      });
+
+      if (i > 1 and j > 1 and (str1[i - 1] == str2[j - 2])
+          and (str1[i - 2] == str2[j - 1])) {
+        // transposition
+        distance(i, j) = std::min(distance(i, j), distance(i - 2, j - 2) + 1);
+      }
+    }
+  }
+
+  return distance(str1_size - 1, str2_size - 1);
+}

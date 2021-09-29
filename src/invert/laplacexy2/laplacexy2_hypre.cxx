@@ -14,7 +14,7 @@
 #include <cmath>
 
 
-#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)  
+#if BOUT_USE_CUDA && defined(__CUDACC__)
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
 {
@@ -32,8 +32,7 @@ Ind2D index2d(Mesh* mesh, int x, int y) {
 }
 
 LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
-    : localmesh(m == nullptr ? bout::globals::mesh : m), f2dinit(localmesh),
-      location(loc) {
+    : localmesh(m == nullptr ? bout::globals::mesh : m), location(loc) {
   Timer timer("invert");
 
   if (opt == nullptr) {
@@ -90,16 +89,11 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
   ASSERT1(A.getLocation() == location);
   ASSERT1(B.getLocation() == location);
 
-  //const auto& region = f2dinit.getRegion("RGN_NOBNDRY");
-  const auto &region = indexConverter->getRegionAll();
-
   Coordinates* coords = localmesh->getCoordinates(location);
 
   //////////////////////////////////////////////////
   // Set Matrix elements
   //
-
-
 
   // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
 
@@ -335,7 +329,6 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
 
   // Set boundary cells past the first one
   ////////////////////////////////////////
-#if 1
   // Inner X boundary
   if (localmesh->firstX()) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
@@ -363,7 +356,6 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
     for (int y = localmesh->yend + 2; y < localmesh->LocalNy; y++)
       sol(it.ind, y) = sol(it.ind, localmesh->yend + 1);
   }
-#endif
   return sol;
 }
 

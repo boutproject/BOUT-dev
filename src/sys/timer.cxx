@@ -130,21 +130,11 @@ void Timer::printTimeReport() {
   });
 
   for (const auto& kv : sorted_info) {
-#if 0     
-    output.write("{0:<{1}} | {2:<{3}.9g} | {8:<{9}.2%} | {4:<{5}} | {6:<{7}.9g}\n",
+    output.write("{0:<{1}} | {2:<{3}.9g} | {8:<{9}.2f} | {4:<{5}} | {6:<{7}.9g}\n",
                  kv.first, max_width, kv.second.total_time.count(), total_time_width,
                  kv.second.hits, hit_width, kv.second.total_time.count() / kv.second.hits,
                  mean_time_width,
                  kv.second.total_time.count() / sorted_info[0].second.total_time.count(),
                  frac_width);
-#else
-    double frac = kv.second.total_time.count() / sorted_info[0].second.total_time.count() * 100;
-    output.write("{0:<{1}} | {2:<{3}.9g} | {4:<{5}.2g} | {6:<{7}} | {8:<{9}.9g}\n",
-                 kv.first, max_width,kv.second.total_time.count(), total_time_width,
-                 frac,frac_width,
-                 kv.second.hits, hit_width,
-                 kv.second.total_time.count() / kv.second.hits,
-                 mean_time_width);
-#endif
   }
 }

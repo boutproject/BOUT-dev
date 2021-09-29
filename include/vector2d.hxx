@@ -37,9 +37,11 @@ class Vector2D;
 #ifndef __VECTOR2D_H__
 #define __VECTOR2D_H__
 
-#include "field2d.hxx"
-class Field3D;  //#include "field3d.hxx"
+class Field2D;
+class Field3D;
 class Vector3D; //#include "vector3d.hxx"
+
+#include <bout/coordinates.hxx>
 
 /*!
  * A vector with three components (x,y,z) which only vary in 2D
@@ -47,15 +49,15 @@ class Vector3D; //#include "vector3d.hxx"
  */ 
 class Vector2D : public FieldData {
 public:
-  Vector2D(Mesh * fieldmesh = nullptr);
   Vector2D(const Vector2D &f);
 
   /// Many-argument constructor for fully specifying the initialisation of a Vector3D
-  Vector2D(Mesh* localmesh, bool covariant, CELL_LOC location);
+  Vector2D(Mesh* localmesh = nullptr, bool covariant = true,
+           CELL_LOC location = CELL_LOC::centre);
 
   ~Vector2D() override;
 
-  Field2D x, y, z; ///< components
+  Coordinates::FieldMetric x, y, z; ///< components
 
   bool covariant{true}; ///< true if the components are covariant (default)
 
@@ -126,26 +128,18 @@ public:
   const Vector2D operator/(const Field2D &rhs) const; ///< Divides all components by \p rhs
   const Vector3D operator/(const Field3D &rhs) const; ///< Divides all components by \p rhs
 
-  const Field2D operator*(const Vector2D &rhs) const; ///< Dot product
+  const Coordinates::FieldMetric operator*(const Vector2D& rhs) const; ///< Dot product
   const Field3D operator*(const Vector3D &rhs) const; ///< Dot product
 
-   /*!
-   * Set variable cell location
-   */ 
-  void setLocation(CELL_LOC loc); 
+  /// Set component locations consistently
+  Vector2D& setLocation(CELL_LOC loc) override;
 
-  // Get variable cell location
-  CELL_LOC getLocation() const;
+  /// Get component location
+  CELL_LOC getLocation() const override;
 
-  /// Visitor pattern support
-  void accept(FieldVisitor &v) override;
-  
   // FieldData virtual functions
-  
-  bool isReal() const override   { return true; }
-  bool is3D() const override     { return false; }
-  int  byteSize() const override { return 3*sizeof(BoutReal); }
-  int  BoutRealSize() const override { return 3; }
+  bool is3D() const override { return false; }
+  int elementSize() const override { return 3; }
 
   /// Apply boundary condition to all fields
   void applyBoundary(bool init=false) override;
@@ -178,10 +172,13 @@ const Vector3D cross(const Vector2D & lhs, const Vector3D &rhs);
  *
  * |v| = sqrt( v dot v )
  */
-const Field2D abs(const Vector2D& v, const std::string& region = "RGN_ALL");
-[[deprecated("Please use Vector2D abs(const Vector2D& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline const Field2D abs(const Vector2D &v, REGION region) {
+const Coordinates::FieldMetric abs(const Vector2D& v,
+                                   const std::string& region = "RGN_ALL");
+[[deprecated(
+    "Please use Vector2D abs(const Vector2D& f, "
+    "const std::string& region = \"RGN_ALL\") instead")]] inline const Coordinates::
+    FieldMetric
+    abs(const Vector2D& v, REGION region) {
   return abs(v, toString(region));
 }
 
@@ -199,7 +196,7 @@ inline Vector2D fromFieldAligned(Vector2D v, const std::string& UNUSED(region) =
 
 /// Create new Vector2D with same attributes as the argument, but uninitialised components
 inline Vector2D emptyFrom(const Vector2D& v) {
-  auto result = Vector2D(v.x.getMesh(), v.covariant, v.getLocation());
+  auto result = Vector2D(v.getMesh(), v.covariant, v.getLocation());
   result.x = emptyFrom(v.x);
   result.y = emptyFrom(v.y);
   result.z = emptyFrom(v.z);
@@ -209,7 +206,7 @@ inline Vector2D emptyFrom(const Vector2D& v) {
 
 /// Create new Vector2D with same attributes as the argument, and zero-initialised components
 inline Vector2D zeroFrom(const Vector2D& v) {
-  auto result = Vector2D(v.x.getMesh(), v.covariant, v.getLocation());
+  auto result = Vector2D(v.getMesh(), v.covariant, v.getLocation());
   result.x = zeroFrom(v.x);
   result.y = zeroFrom(v.y);
   result.z = zeroFrom(v.z);

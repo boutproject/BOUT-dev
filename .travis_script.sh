@@ -39,7 +39,7 @@ do
 	    TESTS=1
 	    ;;
         t) ### Set target to build
-            MAIN_TARGET="$OPTARG"
+            MAIN_TARGET="$MAIN_TARGET $OPTARG"
             ;;
         5) ### Run the update to version 5 script
             UPDATE_SCRIPT=1
@@ -102,6 +102,7 @@ export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
 for target in ${MAIN_TARGET[@]}
 do
     make_exit=0
+    echo "make $target"
     time make $target || make_exit=$?
     if [[ $make_exit -gt 0 ]]; then
 	make clean > /dev/null
@@ -124,7 +125,6 @@ fi
 if [[ ${INTEGRATED} == 1 ]]
 then
     time make check-integrated-tests
-    time py.test-3 tools/pylib/
 fi
 
 if [[ ${MMS} == 1 ]]

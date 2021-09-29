@@ -14,7 +14,7 @@ failed = False
 for shifttype in ["shifted", "shiftedinterp"]:
 
     s, out = launch_safe(
-        "../../../bin/test_yupdown mesh:paralleltransform:type=" + shifttype,
+        "./test_yupdown mesh:paralleltransform:type=" + shifttype,
         nproc=1,
         pipe=True,
         verbose=True,

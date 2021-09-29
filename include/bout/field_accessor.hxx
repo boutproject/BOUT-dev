@@ -1,145 +1,133 @@
-// GPU version Field-Accessor, updated by Dr. Yining Qin, Oct.27, 2020
+/// FieldAccessor
+///
+/// Provides quick but unsafe access to field and coordinate system data
+///
 
 #pragma once
 #ifndef FIELD_ACCESSOR_H__
 #define FIELD_ACCESSOR_H__
 
 #include "../bout_types.hxx"
-#include "../field3d.hxx"
 #include "../field.hxx"
 #include "../field2d.hxx"
+#include "../field3d.hxx"
+#include "build_config.hxx"
+#include "coordinates.hxx"
+#include "coordinates_accessor.hxx"
 
+/// Simple wrapper around a BoutReal* 1D array
+///
+/// This is used to provide subscript operator [] for Ind3D
+struct BoutRealArray {
+  BoutReal* data;
 
-#if defined(BOUT_USE_CUDA) && defined(__CUDACC__)
-#define BOUT_HOST_DEVICE __host__ __device__
-#define BOUT_HOST __host__
-#define BOUT_DEVICE __device__
-#else
-#define BOUT_HOST_DEVICE
-#define BOUT_HOST
-#define BOUT_DEVICE
-#endif
+  BoutRealArray() = delete; ///< No default constructor
 
-template<CELL_LOC location = CELL_CENTRE>
-struct FieldAccessor {
-  explicit FieldAccessor(Field3D &f) {
-    ASSERT0(f.getLocation() == location);
-    coords = f.getCoordinates();
-    
-    ASSERT0(f.isAllocated());
-  
-    data = &f(0,0,0);
+  /// Wrap a BoutReal pointer.
+  /// This does not take ownership
+  explicit BoutRealArray(BoutReal* data) : data(data) {}
 
-    //----- Field 3d data -> array for GPU    
-    f_data = f(0,0);
+  BOUT_HOST_DEVICE inline BoutReal& operator[](int ind) { return data[ind]; }
 
-    // Field size for GPU 
-    f_nx = f.getNx();
-    f_ny = f.getNy();
-    f_nz = f.getNz();
-    
-   //------ Field2D data to array for GPU
-    f2d_dx= &f.getCoordinates()->dx(0,0);
-    f2d_dy= &f.getCoordinates()->dy(0,0);
-    f2d_dz= f.getCoordinates()->dz;
-    f2d_J= &f.getCoordinates()->J(0,0);
-    
-    f2d_G1= &f.getCoordinates()->G1(0,0);
-    f2d_G3= &f.getCoordinates()->G3(0,0);
-    f2d_g11= &f.getCoordinates()->g11(0,0);
-    f2d_g12= &f.getCoordinates()->g12(0,0);
-    f2d_g13= &f.getCoordinates()->g13(0,0);
-    f2d_g22= &f.getCoordinates()->g22(0,0);
-    f2d_g23= &f.getCoordinates()->g23(0,0);
-    f2d_g33= &f.getCoordinates()->g33(0,0);
- 
-    f2d_g_11= &f.getCoordinates()->g_11(0,0);
-    f2d_g_12= &f.getCoordinates()->g_12(0,0);
-    f2d_g_13= &f.getCoordinates()->g_13(0,0);
-    f2d_g_22= &f.getCoordinates()->g_22(0,0);
-    f2d_g_23= &f.getCoordinates()->g_23(0,0);
-    f2d_g_33= &f.getCoordinates()->g_33(0,0);
- 
-  
- //---------------------------------------
+  BOUT_HOST_DEVICE inline BoutReal& operator[](const Ind3D& ind) { return data[ind.ind]; }
 
-  if (f.hasParallelSlices()) {
-      yup = &f.yup();
-      ydown = &f.ydown();
-     
-    //----- Field3D data -> array for GPU
-     f_yup =  static_cast<BoutReal*>(f.yup()(0,0));
-     f_ydown =  static_cast<BoutReal*>(f.ydown()(0,0));
-     // ddt() array data for GPU
-     f_ddt =  static_cast<BoutReal*>(f.timeDeriv()->operator()(0,0));
+  BOUT_HOST_DEVICE inline const BoutReal& operator[](int ind) const { return data[ind]; }
 
-    // set field region index for GPU
-     // auto indices = f.getRegion("RGN_NOBNDRY").getIndices(); //set index of region
-     // Ind3D *ob_i = &(indices[0]);
-     //---------------------
-
-
-	}
+  BOUT_HOST_DEVICE inline const BoutReal& operator[](const Ind3D& ind) const {
+    return data[ind.ind];
   }
 
-    BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D &d) {
-    return data[d.ind];
-  }
-  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D &d) const {
-    return data[d.ind];
-  }
-  
+  /// Cast operators, so can be assigned to a raw pointer
+  /// Note: Not explicit, so can be cast implicitly
+  operator BoutReal*() { return data; }
 
- Field3D   *yup {nullptr};
-
- Field3D   *ydown {nullptr};
-
- Coordinates*  coords {nullptr};
-
- BoutReal* data;
-
-// --------------  define for GPU
- BoutReal* f2d_dx = nullptr;
- BoutReal* f2d_dy = nullptr;  // pointer to Field2D data
- BoutReal f2d_dz = 0.0;       // dz of Field2D
-
- BoutReal* f2d_J = nullptr;  // pointer to Field2D data
- 
- BoutReal* f2d_G1 = nullptr;
- BoutReal* f2d_G3 = nullptr;
- BoutReal* f2d_g11 = nullptr;
- BoutReal* f2d_g12 = nullptr;
- BoutReal* f2d_g13 = nullptr;
- BoutReal* f2d_g22 = nullptr;
- BoutReal* f2d_g23 = nullptr;
- BoutReal* f2d_g33 = nullptr;
-
- BoutReal* f2d_g_11 = nullptr;
- BoutReal* f2d_g_12 = nullptr;
- BoutReal* f2d_g_13 = nullptr;
- BoutReal* f2d_g_22 = nullptr;
- BoutReal* f2d_g_23 = nullptr;
- BoutReal* f2d_g_33 = nullptr;
-
-
-
-
-
-
-
- BoutReal* f_yup = nullptr;
- BoutReal* f_ydown = nullptr;
- BoutReal* f_data = nullptr;
-
- BoutReal* f_ddt = nullptr;
-
- int* ind_3D_index = nullptr;
-  
- int f_nx =0;
- int f_ny =0;
- int f_nz =0;
-//--------------------------------
-
+  operator const BoutReal*() const { return data; }
 };
 
-#endif 
+/// Thin wrapper around field data, for fast but unsafe access
+///
+/// @tparam location   Cell location of the data. This will be checked on construction
+/// @tparam FieldType   Either Field3D (default) or Field2D
+///
+template <CELL_LOC location = CELL_CENTRE, class FieldType = Field3D>
+struct FieldAccessor {
+  /// Remove default constructor
+  FieldAccessor() = delete;
+
+  /// Constructor from Field3D
+  ///
+  /// @param[in] f    The field to access. Must already be allocated
+  explicit FieldAccessor(FieldType& f) : coords(f.getCoordinates()) {
+    ASSERT0(f.getLocation() == location);
+    ASSERT0(f.isAllocated());
+
+    data = BoutRealArray{&f(0, 0, 0)};
+
+    // Field size
+    nx = f.getNx();
+    ny = f.getNy();
+    nz = f.getNz();
+
+    // Mesh z size, for index conversion
+    mesh_nz = f.getMesh()->LocalNz;
+
+    if (f.hasParallelSlices()) {
+      // Get arrays from yup and ydown fields
+      yup = BoutRealArray{&(f.yup()(0, 0, 0))};
+      ydown = BoutRealArray{&(f.ydown()(0, 0, 0))};
+    }
+
+    // ddt() array data
+    ddt = BoutRealArray{&(f.timeDeriv()->operator()(0, 0, 0))};
+  }
+
+  /// Provide shorthand for access to field data.
+  /// Does not convert between 3D and 2D indices,
+  /// so fa[i] is equivalent to fa.data[i].
+  ///
+  BOUT_HOST_DEVICE inline const BoutReal& operator[](int ind) const { return data[ind]; }
+
+  BOUT_HOST_DEVICE inline const BoutReal& operator[](const Ind3D& ind) const {
+    return data[ind.ind];
+  }
+
+  // Pointers to the field data arrays
+  // These are wrapped in BoutRealArray types so they can be indexed with Ind3D or int
+
+  BoutRealArray data{nullptr}; ///< Pointer to the Field data
+  BoutRealArray ddt{nullptr};  ///< Time-derivative data
+
+  BoutRealArray yup{nullptr};   ///< Pointer to the Field yup data
+  BoutRealArray ydown{nullptr}; ///< Pointer to the Field ydown data
+
+  CoordinatesAccessor coords; ///< Provides access to Coordinates data
+
+  // Field size
+  int nx = 0;
+  int ny = 0;
+  int nz = 0;
+
+  // Mesh Z size. Used to convert 3D to 2D indices
+  int mesh_nz;
+};
+
+/// Define a shorthand for 2D fields
+template <CELL_LOC location = CELL_CENTRE>
+using Field2DAccessor = FieldAccessor<location, Field2D>;
+
+/// Syntactic sugar for time derivative of a field
+///
+/// Usage:
+///
+///   ddt(fa)[i] =
+///
+///  where fa is a FieldAccessor, and i is an int
+///
+template <CELL_LOC location, class FieldType>
+BOUT_HOST_DEVICE inline BoutRealArray& ddt(const FieldAccessor<location, FieldType>& fa) {
+  // Note: FieldAccessor captured by value is const in RAJA kernel.
+  //       Need to cast to non-const so that ddt() data can be assigned to
+  return const_cast<BoutRealArray&>(fa.ddt);
+}
+
+#endif

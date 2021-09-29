@@ -110,24 +110,6 @@ auto IsFieldEqual(const T& field, BoutReal reference,
   return ::testing::AssertionSuccess();
 }
 
-/// Disable a ConditionalOutput during a scope; reenable it on
-/// exit. You must give the variable a name!
-///
-///     {
-///       WithQuietoutput quiet{output};
-///       // output disabled during this scope
-///     }
-///     // output now enabled
-class WithQuietOutput {
-public:
-  explicit WithQuietOutput(ConditionalOutput& output_in) : output(output_in) {
-    output.disable();
-  }
-
-  ~WithQuietOutput() { output.enable(); }
-  ConditionalOutput& output;
-};
-
 class Options;
 
 /// FakeMesh has just enough information to create fields
@@ -282,16 +264,16 @@ public:
                               int UNUSED(tag)) override {
     return nullptr;
   }
-  const RangeIterator iterateBndryLowerY() const override {
+  RangeIterator iterateBndryLowerY() const override {
     return RangeIterator(xstart, xend);
   }
-  const RangeIterator iterateBndryUpperY() const override {
+  RangeIterator iterateBndryUpperY() const override {
     return RangeIterator(xstart, xend);
   }
-  const RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
+  RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
   void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
   std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
   std::vector<BoundaryRegionPar*> getBoundariesPar() override {
@@ -303,18 +285,16 @@ public:
   BoutReal GlobalY(BoutReal jy) const override { return jy; }
   int getGlobalXIndex(int) const override { return 0; }
   int getGlobalXIndexNoBoundaries(int) const override { return 0; }
-  int getGlobalYIndex(int) const override { return 0; }
-  int getGlobalYIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalYIndex(int y) const override { return y; }
+  int getGlobalYIndexNoBoundaries(int y) const override { return y; }
   int getGlobalZIndex(int) const override { return 0; }
   int getGlobalZIndexNoBoundaries(int) const override { return 0; }
-  int XLOCAL(int UNUSED(xglo)) const override { return 0; }
-  int YLOCAL(int UNUSED(yglo)) const override { return 0; }
-  virtual int localSize3D() override { return LocalNx * LocalNy * LocalNz; }
-  virtual int localSize2D() override { return LocalNx * LocalNy; }
-  virtual int localSizePerp() override { return LocalNx * LocalNz; }
-  virtual int globalStartIndex3D() override { return 0; }
-  virtual int globalStartIndex2D() override { return 0; }
-  virtual int globalStartIndexPerp() override { return 0; }
+  int getLocalXIndex(int) const override { return 0; }
+  int getLocalXIndexNoBoundaries(int) const override { return 0; }
+  int getLocalYIndex(int y) const override { return y; }
+  int getLocalYIndexNoBoundaries(int y) const override { return y; }
+  int getLocalZIndex(int) const override { return 0; }
+  int getLocalZIndexNoBoundaries(int) const override { return 0; }
 
   void initDerivs(Options * opt){
     StaggerGrids=true;
@@ -381,6 +361,9 @@ public:
                   getRegionPerp("RGN_INNER_X") + getRegionPerp("RGN_OUTER_X"));
   }
 
+  // Make this public so we can test it
+  using Mesh::msg_len;
+
 private:
   std::vector<BoundaryRegion *> boundaries;
 };
@@ -388,34 +371,92 @@ private:
 /// FakeGridDataSource provides a non-null GridDataSource* source to use with FakeMesh, to
 /// allow testing of methods that use 'source' - in particular allowing
 /// source->hasXBoundaryGuards and source->hasXBoundaryGuards to be called.
+/// By passing in a set of values, the mesh->get routines can be used.
 class FakeGridDataSource : public GridDataSource {
+public:
+  FakeGridDataSource() {}
+  /// Constructor setting values which can be fetched from this source
+  FakeGridDataSource(Options& values) : values(values) {}
+
+  /// Take an rvalue (e.g. initializer list), convert to lvalue and delegate constructor
+  FakeGridDataSource(Options&& values) : FakeGridDataSource(values) {}
+
   bool hasVar(const std::string& UNUSED(name)) override { return false; }
 
-  bool get(Mesh*, std::string&, const std::string&, const std::string& = "") override {
+  bool get(MAYBE_UNUSED(Mesh* m), std::string& sval, const std::string& name,
+           const std::string& def = "") override {
+    if (values[name].isSet()) {
+      sval = values[name].as<std::string>();
+      return true;
+    }
+    sval = def;
     return false;
   }
-  bool get(Mesh*, int&, const std::string&, int = 0) override { return false; }
-  bool get(Mesh*, BoutReal&, const std::string&, BoutReal = 0.0) override {
+  bool get(MAYBE_UNUSED(Mesh* m), int& ival, const std::string& name,
+           int def = 0) override {
+    if (values[name].isSet()) {
+      ival = values[name].as<int>();
+      return true;
+    }
+    ival = def;
     return false;
   }
-  bool get(Mesh*, Field2D&, const std::string&, BoutReal = 0.0) override { return false; }
-  bool get(Mesh*, Field3D&, const std::string&, BoutReal = 0.0) override { return false; }
-  bool get(Mesh*, FieldPerp&, const std::string&, BoutReal = 0.0) override {
+  bool get(MAYBE_UNUSED(Mesh* m), BoutReal& rval, const std::string& name,
+           BoutReal def = 0.0) override {
+    if (values[name].isSet()) {
+      rval = values[name].as<BoutReal>();
+      return true;
+    }
+    rval = def;
+    return false;
+  }
+  bool get(Mesh* mesh, Field2D& fval, const std::string& name, BoutReal def = 0.0,
+           CELL_LOC UNUSED(location) = CELL_DEFAULT) override {
+    if (values[name].isSet()) {
+      fval = values[name].as(Field2D(0.0, mesh));
+      return true;
+    }
+    fval = def;
+    return false;
+  }
+  bool get(Mesh* mesh, Field3D& fval, const std::string& name, BoutReal def = 0.0,
+           CELL_LOC UNUSED(location) = CELL_DEFAULT) override {
+    if (values[name].isSet()) {
+      fval = values[name].as(Field3D(0.0, mesh));
+      return true;
+    }
+    fval = def;
+    return false;
+  }
+  bool get(Mesh* mesh, FieldPerp& fval, const std::string& name, BoutReal def = 0.0,
+           CELL_LOC UNUSED(location) = CELL_DEFAULT) override {
+    if (values[name].isSet()) {
+      fval = values[name].as(FieldPerp(0.0, mesh));
+      return true;
+    }
+    fval = def;
     return false;
   }
 
-  bool get(Mesh*, std::vector<int>&, const std::string&, int, int = 0,
-           Direction = GridDataSource::X) override {
+  bool get(MAYBE_UNUSED(Mesh* m), MAYBE_UNUSED(std::vector<int>& var),
+           MAYBE_UNUSED(const std::string& name), MAYBE_UNUSED(int len),
+           MAYBE_UNUSED(int def) = 0, Direction = GridDataSource::X) override {
+    throw BoutException("Not Implemented");
     return false;
   }
-  bool get(Mesh*, std::vector<BoutReal>&, const std::string&, int, int = 0,
+  bool get(MAYBE_UNUSED(Mesh* m), MAYBE_UNUSED(std::vector<BoutReal>& var),
+           MAYBE_UNUSED(const std::string& name), MAYBE_UNUSED(int len),
+           MAYBE_UNUSED(int def) = 0,
            Direction UNUSED(dir) = GridDataSource::X) override {
+    throw BoutException("Not Implemented");
     return false;
   }
 
   bool hasXBoundaryGuards(Mesh* UNUSED(m)) override { return true; }
 
   bool hasYBoundaryGuards() override { return true; }
+private:
+  Options values; ///< Store values to be returned by get()
 };
 
 /// Test fixture to make sure the global mesh is our fake
@@ -436,11 +477,26 @@ public:
     bout::globals::mesh->createDefaultRegions();
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
     test_coords = std::make_shared<Coordinates>(
-        bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
-        Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+        bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
+        Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
-        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
-        false);
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
+
+    // Set some auxilliary variables
+    // Usually set in geometry()
+    // Note: For testing these are set to non-zero values
+    test_coords->G1 = test_coords->G2 = test_coords->G3 = 0.1;
+
+    // Set nonuniform corrections
+    test_coords->non_uniform = true;
+    test_coords->d1_dx = test_coords->d1_dy = 0.2;
+    test_coords->d1_dz = 0.0;
+#if BOUT_USE_METRIC_3D
+    test_coords->Bxy.splitParallelSlices();
+    test_coords->Bxy.yup() = test_coords->Bxy.ydown() = test_coords->Bxy;
+#endif
+
+    // No call to Coordinates::geometry() needed here
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
     static_cast<FakeMesh*>(bout::globals::mesh)->setGridDataSource(
         new FakeGridDataSource());
@@ -448,29 +504,55 @@ public:
     // fromFieldAligned
     test_coords->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
-    static_cast<FakeMesh*>(bout::globals::mesh)->createBoundaryRegions();
+    dynamic_cast<FakeMesh*>(bout::globals::mesh)->createBoundaryRegions();
 
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
     mesh_staggered->StaggerGrids = true;
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
+    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
+    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
+    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
+    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
     mesh_staggered->createDefaultRegions();
 
     test_coords_staggered = std::make_shared<Coordinates>(
         mesh_staggered, Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
-        BoutReal{1.0}, Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
         Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
-        Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
-        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
         Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
-        Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
         Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
-        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered}, false);
+        Field2D{0.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
+        Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
+        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{0.0, mesh_staggered});
+
+    // Set some auxilliary variables
+    test_coords_staggered->G1 = test_coords_staggered->G2 = test_coords_staggered->G3 =
+        0.1;
+
+    // Set nonuniform corrections
+    test_coords_staggered->non_uniform = true;
+    test_coords_staggered->d1_dx = test_coords_staggered->d1_dy = 0.2;
+    test_coords_staggered->d1_dz = 0.0;
+#if BOUT_USE_METRIC_3D
+    test_coords_staggered->Bxy.splitParallelSlices();
+    test_coords_staggered->Bxy.yup() = test_coords_staggered->Bxy.ydown() =
+        test_coords_staggered->Bxy;
+#endif
+
+    // No call to Coordinates::geometry() needed here
     test_coords_staggered->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+
+    // Set all coordinates to the same Coordinates object for now
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(test_coords_staggered);
+    static_cast<FakeMesh*>(mesh_staggered)
+        ->setCoordinates(test_coords_staggered, CELL_XLOW);
+    static_cast<FakeMesh*>(mesh_staggered)
+        ->setCoordinates(test_coords_staggered, CELL_YLOW);
+    static_cast<FakeMesh*>(mesh_staggered)
+        ->setCoordinates(test_coords_staggered, CELL_ZLOW);
   }
 
   ~FakeMeshFixture() override {
@@ -480,6 +562,8 @@ public:
     mesh_staggered = nullptr;
     delete bout::globals::mpi;
     bout::globals::mpi = nullptr;
+
+    Options::cleanup();
   }
 
   static constexpr int nx = 3;
@@ -491,87 +575,5 @@ public:
   std::shared_ptr<Coordinates> test_coords{nullptr};
   std::shared_ptr<Coordinates> test_coords_staggered{nullptr};
 };
-
-/// Returns a stencil object which indicates that non-boundary cells
-/// depend on all of their neighbours to a depth of one, including
-/// corners.
-template <class T>
-OperatorStencil<T> squareStencil(Mesh* localmesh) {
-  OperatorStencil<T> stencil;
-  IndexOffset<T> zero;
-  std::set<IndexOffset<T>> offsets = {
-      zero,
-      zero.xp(),
-      zero.xm(),
-  };
-  if (!std::is_same<T, IndPerp>::value) {
-    offsets.insert(zero.yp());
-    offsets.insert(zero.ym());
-    offsets.insert(zero.xp().yp());
-    offsets.insert(zero.xp().ym());
-    offsets.insert(zero.xm().yp());
-    offsets.insert(zero.xm().ym());
-  }
-  if (!std::is_same<T, Ind2D>::value) {
-    offsets.insert(zero.zp());
-    offsets.insert(zero.zm());
-    offsets.insert(zero.xp().zp());
-    offsets.insert(zero.xp().zm());
-    offsets.insert(zero.xm().zp());
-    offsets.insert(zero.xm().zm());
-  }
-  if (std::is_same<T, Ind3D>::value) {
-    offsets.insert(zero.yp().zp());
-    offsets.insert(zero.yp().zm());
-    offsets.insert(zero.ym().zp());
-    offsets.insert(zero.ym().zm());
-  }
-  std::vector<IndexOffset<T>> offsetsVec(offsets.begin(), offsets.end());
-  stencil.add(
-      [localmesh](T ind) -> bool {
-        return (localmesh->xstart <= ind.x() && ind.x() <= localmesh->xend
-                && (std::is_same<T, IndPerp>::value
-                    || (localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend))
-                && (std::is_same<T, Ind2D>::value
-                    || (localmesh->zstart <= ind.z() && ind.z() <= localmesh->zend)));
-      },
-      offsetsVec);
-  stencil.add([](T UNUSED(ind)) -> bool { return true; }, {zero});
-  return stencil;
-}
-
-/// Returns a stencil object which indicates that non-boundary cells
-/// depend on all of their neighbours to a depth of one, excluding
-/// corners.
-template <class T>
-OperatorStencil<T> starStencil(Mesh* localmesh) {
-  OperatorStencil<T> stencil;
-  IndexOffset<T> zero;
-  std::set<IndexOffset<T>> offsets = {
-      zero,
-      zero.xp(),
-      zero.xm(),
-  };
-  if (!std::is_same<T, IndPerp>::value) {
-    offsets.insert(zero.yp());
-    offsets.insert(zero.ym());
-  }
-  if (!std::is_same<T, Ind2D>::value) {
-    offsets.insert(zero.zp());
-    offsets.insert(zero.zm());
-  }
-  std::vector<IndexOffset<T>> offsetsVec(offsets.begin(), offsets.end());
-  stencil.add(
-      [localmesh](T ind) -> bool {
-        return (localmesh->xstart <= ind.x() && ind.x() <= localmesh->xend
-                && (std::is_same<T, IndPerp>::value
-                    || (localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend))
-                && (std::is_same<T, Ind2D>::value
-                    || (localmesh->zstart <= ind.z() && ind.z() <= localmesh->zend)));
-      },
-      offsetsVec);
-  stencil.add([](T UNUSED(ind)) -> bool { return true; }, {zero});
-  return stencil;
-}
 
 #endif //  TEST_EXTRAS_H__

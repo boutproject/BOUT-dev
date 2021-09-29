@@ -22,7 +22,9 @@ def test_make_maps_slab():
 
     # Since this is a straight magnetic field in a simple rectangle,
     # all the maps should be the same, and should be the identity
-    identity_map_x, identity_map_z = np.meshgrid(np.arange(nx), np.arange(nz), indexing='ij')
+    identity_map_x, identity_map_z = np.meshgrid(
+        np.arange(nx), np.arange(nz), indexing="ij"
+    )
 
     # Check that maps has the required forward and backward index variables
     offsets = chain(range(1, nslice + 1), range(-1, -(nslice + 1), -1))
@@ -37,7 +39,9 @@ def test_make_maps_slab():
         assert maps[var].shape == (nx, ny, nz)
 
         # The first/last abs(offset) points are not valid, so ignore those
-        interior_range = range(ny-abs(offset)) if offset > 0 else range(abs(offset), ny)
+        interior_range = (
+            range(ny - abs(offset)) if offset > 0 else range(abs(offset), ny)
+        )
         # Those invalid points should be set to -1
         end_slice = slice(-1, -(offset + 1), -1) if offset > 0 else slice(0, -offset)
         identity_map = identity_map_x if "x" in var else identity_map_z
@@ -55,12 +59,12 @@ def test_make_maps_straight_stellarator():
     nz = 7
 
     # Create magnetic field
-    magnetic_field = field.StraightStellarator(radius = np.sqrt(2.0))
+    magnetic_field = field.StraightStellarator(radius=np.sqrt(2.0))
 
     # Create a rectangular grid in (x,y,z)
-    rectangle = grid.rectangular_grid(nx,ny,nz,
-                                      Lx = 1.0, Lz = 1.0, Ly = 10.0,
-                                      yperiodic = True)
+    rectangle = grid.rectangular_grid(
+        nx, ny, nz, Lx=1.0, Lz=1.0, Ly=10.0, yperiodic=True
+    )
 
     # Here both the field and and grid are centred at (x,z) = (0,0)
     # and the rectangular grid here fits entirely within the coils

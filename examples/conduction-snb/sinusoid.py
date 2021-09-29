@@ -5,10 +5,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from boututils.run_wrapper import shell_safe, launch_safe
+from boututils.run_wrapper import launch_safe, build_and_log
 from boutdata.collect import collect
 
-shell_safe("make > make.log")
+build_and_log("Sinusoidal SNB")
 
 # Electron temperature in eV
 Telist = 10 ** np.linspace(0,3,20)

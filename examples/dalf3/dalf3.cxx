@@ -408,18 +408,22 @@ protected:
     
     // Boundary in jpar
     if (mesh->firstX()) {
-      for (int i=4;i>=0;i--)
-        for (int j=0;j<mesh->LocalNy;j++)
+      for (int i = 4; i >= 0; i--) {
+        for (int j = 0; j < mesh->LocalNy; j++) {
           for (int k=0;k<mesh->LocalNz;k++) {
             jpar(i,j,k) = 0.5*jpar(i+1,j,k);
           }
+        }
+      }
     }
     if (mesh->lastX()) {
-      for (int i=mesh->LocalNx-5;i<mesh->LocalNx;i++)
-        for (int j=0;j<mesh->LocalNy;j++)
+      for (int i = mesh->LocalNx - 5; i < mesh->LocalNx; i++) {
+        for (int j = 0; j < mesh->LocalNy; j++) {
           for (int k=0;k<mesh->LocalNz;k++) {
             jpar(i,j,k) = 0.5*jpar(i-1,j,k);
           }
+        }
+      }
     }
     
     
@@ -444,9 +448,10 @@ protected:
       ddt(Vort) += hyper_viscosity*Delp2(delp2_vort);
     }
 
-    if (filter_z)
+    if (filter_z) {
       ddt(Vort) = filter(ddt(Vort), 1);
-    
+    }
+
     // Parallel Ohm's law
     if (!(estatic && ZeroElMass)) {
       // beta_hat*apar + mu_hat*jpar
@@ -460,8 +465,9 @@ protected:
         ddt(Ajpar) -= mu_hat*bracket(phi, jpar, bm);
       }
 
-      if (filter_z)
+      if (filter_z) {
         ddt(Ajpar) = filter(ddt(Ajpar), 1);
+      }
     }
     
     // Parallel velocity
@@ -477,10 +483,11 @@ protected:
     if (viscosity_par > 0.) {
       ddt(Vpar) += viscosity_par * Grad2_par2(Vpar);
     }
-    
-    if (filter_z)
+
+    if (filter_z) {
       ddt(Vpar) = filter(ddt(Vpar), 1);
-    
+    }
+
     // Electron pressure
     ddt(Pe) =
       - bracket(phi, Pet, bm)
@@ -494,38 +501,46 @@ protected:
       // Experimental smoothing across separatrix
       ddt(Vort) += mesh->smoothSeparatrix(Vort);
     }
-    
-    if (filter_z)
+
+    if (filter_z) {
       ddt(Pe) = filter(ddt(Pe), 1);
-    
+    }
+
     // Boundary in Vpar and vorticity
     
     if (mesh->firstX()) {
-      for (int i=3;i>=0;i--)
-        for (int j=0;j<mesh->LocalNy;j++)
+      for (int i = 3; i >= 0; i--) {
+        for (int j = 0; j < mesh->LocalNy; j++) {
           for (int k=0;k<mesh->LocalNz;k++) {
             ddt(Vpar)(i,j,k) = ddt(Vpar)(i+1,j,k);
             ddt(Vort)(i,j,k) = ddt(Vort)(i+1,j,k);
           }
-      
+        }
+      }
+
       // Subtract DC component
-      for (int i=0;i<10;i++)
+      for (int i = 0; i < 10; i++) {
         for (int j=0;j<mesh->LocalNy;j++) {
           BoutReal avg = 0.;
-          for (int k=0;k<mesh->LocalNz;k++)
+          for (int k = 0; k < mesh->LocalNz; k++) {
             avg += ddt(Vort)(i,j,k);
+          }
           avg /= (BoutReal) mesh->LocalNz;
-          for (int k=0;k<mesh->LocalNz;k++)
+          for (int k = 0; k < mesh->LocalNz; k++) {
             ddt(Vort)(i,j,k) -= avg;
+          }
+      }
       }
     }
     if (mesh->lastX()) {
-      for (int i=mesh->LocalNx-3;i<mesh->LocalNx;i++)
-        for (int j=0;j<mesh->LocalNy;j++)
+      for (int i = mesh->LocalNx - 3; i < mesh->LocalNx; i++) {
+        for (int j = 0; j < mesh->LocalNy; j++) {
           for (int k=0;k<mesh->LocalNz;k++) {
             ddt(Vpar)(i,j,k) = ddt(Vpar)(i-1,j,k);
             ddt(Vort)(i,j,k) = ddt(Vort)(i-1,j,k);
           }
+        }
+      }
     }
   
     return 0;

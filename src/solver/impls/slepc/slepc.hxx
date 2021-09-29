@@ -24,14 +24,22 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
-
-#if BOUT_HAS_SLEPC
-
-class SlepcSolver;
-
 #ifndef __SLEPC_SOLVER_H__
 #define __SLEPC_SOLVER_H__
+
+#include "bout/build_config.hxx"
+#include "bout/solver.hxx"
+
+#if not BOUT_HAS_SLEPC
+
+namespace {
+RegisterUnavailableSolver registerunavailableslepc("slepc",
+                                                   "BOUT++ was not configured with SLEPc");
+}
+
+#else
+
+class SlepcSolver;
 
 #include <slepc.h>
 // PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
@@ -46,7 +54,6 @@ class SlepcSolver;
 #undef MPI_Waitall
 #undef MPI_Waitany
 
-#include <bout/solver.hxx>
 #include <field2d.hxx>
 #include <field3d.hxx>
 #include <utils.hxx>
@@ -98,52 +105,35 @@ public:
     }
   }
 
-  void setRHS(rhsfunc f) override { // Old API
-    Solver::setRHS(f);
-    if (!selfSolve) {
-      advanceSolver->setRHS(f);
-    }
-  }
-
   //////Following overrides all just pass through to advanceSolver
 
   // Override virtual add functions in order to pass through to advanceSolver
-  void add(Field2D& v, const std::string& name) override {
-    Solver::add(v, name);
+  void add(Field2D& v, const std::string& name,
+           const std::string& description = "") override {
+    Solver::add(v, name, description);
     if (!selfSolve) {
-      advanceSolver->add(v, name);
+      advanceSolver->add(v, name, description);
     }
   }
-  void add(Field3D& v, const std::string& name) override {
-    Solver::add(v, name);
+  void add(Field3D& v, const std::string& name,
+           const std::string& description = "") override {
+    Solver::add(v, name, description);
     if (!selfSolve) {
-      advanceSolver->add(v, name);
+      advanceSolver->add(v, name, description);
     }
   }
-  void add(Vector2D& v, const std::string& name) override {
-    Solver::add(v, name);
+  void add(Vector2D& v, const std::string& name,
+           const std::string& description = "") override {
+    Solver::add(v, name, description);
     if (!selfSolve) {
-      advanceSolver->add(v, name);
+      advanceSolver->add(v, name, description);
     }
   }
-  void add(Vector3D& v, const std::string& name) override {
-    Solver::add(v, name);
+  void add(Vector3D& v, const std::string& name,
+           const std::string& description = "") override {
+    Solver::add(v, name, description);
     if (!selfSolve) {
-      advanceSolver->add(v, name);
-    }
-  }
-
-  // Set operations
-  void setJacobian(Jacobian j) override {
-    if (!selfSolve) {
-      advanceSolver->setJacobian(j);
-    }
-  }
-  void setSplitOperator(rhsfunc fC, rhsfunc fD) override {
-    if (selfSolve) {
-      Solver::setSplitOperator(fC, fD);
-    } else {
-      advanceSolver->setSplitOperator(fC, fD);
+      advanceSolver->add(v, name, description);
     }
   }
 
@@ -259,6 +249,6 @@ private:
   PetscInt localSize;
 };
 
-#endif // __SLEPC_SOLVER_H__
+#endif // BOUT_HAS_SLEPC
 
-#endif
+#endif // __SLEPC_SOLVER_H__

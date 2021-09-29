@@ -2,8 +2,8 @@
 
 # Python script to run and analyse MMS test
 
-#requires: all_tests
-#cores: 2
+# requires: all_tests
+# cores: 2
 
 from __future__ import division
 from __future__ import print_function
@@ -25,41 +25,41 @@ timestep = 0.1
 
 nproc = 2
 
-error_2   = []  # The L2 error (RMS)
+error_2 = []  # The L2 error (RMS)
 error_inf = []  # The maximum error
 
 for nx in nxlist:
-    args = "mesh:nx="+str(nx+4)+" MZ="+str(nx)
-    
+    args = "mesh:nx=" + str(nx + 4) + " MZ=" + str(nx)
+
     print("Running with " + args)
 
     # Delete old data
     shell("rm data/BOUT.dmp.*.nc")
-    
+
     # Command to run
-    cmd = "./laplace "+args
+    cmd = "./laplace " + args
     # Launch using MPI
     s, out = launch_safe(cmd, nproc=nproc, pipe=True)
 
     # Save output to log file
-    f = open("run.log."+str(nx), "w")
+    f = open("run.log." + str(nx), "w")
     f.write(out)
     f.close()
 
     # Collect data
-    E = collect("error", tind=[nout,nout], path="data")
-    E = E[1:-1,0,:]
-    
-    l2 = sqrt(mean(E**2))
+    E = collect("error", tind=[nout, nout], path="data")
+    E = E[1:-1, 0, :]
+
+    l2 = sqrt(mean(E ** 2))
     linf = max(abs(E))
-    
-    error_2.append( l2 )
-    error_inf.append( linf )
+
+    error_2.append(l2)
+    error_inf.append(linf)
 
     print("Error norm: l-2 %f l-inf %f" % (l2, linf))
 
 # Calculate grid spacing
-dx = 1. / (array(nxlist) - 2.)
+dx = 1.0 / (array(nxlist) - 2.0)
 
 # plot errors
 
@@ -68,25 +68,27 @@ order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
 try:
     import matplotlib.pyplot as plt
 
-    plt.plot(dx, error_2, '-o', label=r'$l^2$')
-    plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
+    plt.plot(dx, error_2, "-o", label=r"$l^2$")
+    plt.plot(dx, error_inf, "-x", label=r"$l^\infty$")
 
     print("Convergence order = %f" % (order))
 
-    plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+    plt.plot(
+        dx, error_2[-1] * (dx / dx[-1]) ** order, "--", label="Order %.1f" % (order)
+    )
 
     plt.legend(loc="upper left")
     plt.grid()
 
-    plt.yscale('log')
-    plt.xscale('log')
+    plt.yscale("log")
+    plt.xscale("log")
 
-    plt.xlabel(r'Mesh spacing $\delta x$')
+    plt.xlabel(r"Mesh spacing $\delta x$")
     plt.ylabel("Error norm")
 
     plt.savefig("norm.pdf")
 
-    #plt.show()
+    # plt.show()
 except:
     pass
 

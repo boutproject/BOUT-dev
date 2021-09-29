@@ -5,18 +5,18 @@ from boutdata.mms import *
 
 from math import pi
 
-Lx = 2*pi
-Lz = 2*pi
+Lx = 2 * pi
+Lz = 2 * pi
 
-ZMAX = Lz / (2*pi)
+ZMAX = Lz / (2 * pi)
 
 metric = Metric()  # Identity metric
 
 # Define solution in terms of input x,y,z
 
-g = sin(6*x**2 - z)   # Constant drive for advection
+g = sin(6 * x ** 2 - z)  # Constant drive for advection
 
-f = cos(4*x**2 + z)
+f = cos(4 * x ** 2 + z)
 
 # Turn solution into real x and z coordinates
 replace = [(x, metric.x / Lx), (z, metric.z / ZMAX)]

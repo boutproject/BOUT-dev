@@ -1,116 +1,116 @@
 
-#include <boutmain.hxx>
-#include <smoothing.hxx>
-#include <invert_laplace.hxx>
+#include <bout/constants.hxx>
+#include <bout/physicsmodel.hxx>
 #include <derivs.hxx>
 #include <field_factory.hxx>
-#include <bout/constants.hxx>
+#include <invert_laplace.hxx>
+#include <smoothing.hxx>
 
-Field3D n, vort;  // Evolving density and vorticity
-Field3D phi;
+class Hw : public PhysicsModel {
 
-BoutReal alpha, kappa, Dvort, Dn;
-bool modified; // Modified H-W equations?
+  Field3D n, vort; // Evolving density and vorticity
+  Field3D phi;
 
-std::unique_ptr<Laplacian> phiSolver{nullptr}; // Laplacian solver for vort -> phi
+  BoutReal alpha, kappa, Dvort, Dn;
+  bool modified; // Modified H-W equations?
 
-// Poisson brackets: b0 x Grad(f) dot Grad(g) / B = [f, g]
-// Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
-BRACKET_METHOD bm; // Bracket method for advection terms
+  std::unique_ptr<Laplacian> phiSolver{nullptr}; // Laplacian solver for vort -> phi
 
-int physics_init(bool UNUSED(restart)) {
-  
-  Options *options = Options::getRoot()->getSection("hw");
-  OPTION(options, alpha, 1.0);
-  OPTION(options, kappa, 0.1);
-  OPTION(options, Dvort, 1e-2);
-  OPTION(options, Dn,    1e-2);
+  // Poisson brackets: b0 x Grad(f) dot Grad(g) / B = [f, g]
+  // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
+  BRACKET_METHOD bm; // Bracket method for advection terms
 
-  OPTION(options, modified, false);
-  
-  ////// Set mesh spacing
-  Options *meshoptions = Options::getRoot()->getSection("mesh");
+protected:
+  int init(bool UNUSED(restart)) override {
 
-  BoutReal Lx;
-  meshoptions->get("Lx",Lx,1.0);
+    Options* options = Options::getRoot()->getSection("hw");
+    OPTION(options, alpha, 1.0);
+    OPTION(options, kappa, 0.1);
+    OPTION(options, Dvort, 1e-2);
+    OPTION(options, Dn, 1e-2);
 
-  /*this assumes equidistant grid*/
-  int nguard = mesh->xstart;
-  mesh->getCoordinates()->dx = Lx/(mesh->GlobalNx - 2*nguard);
-  mesh->getCoordinates()->dz = TWOPI*Lx/(mesh->LocalNz);
-  /////
+    OPTION(options, modified, false);
 
-  SOLVE_FOR2(n, vort);
-  SAVE_REPEAT(phi);
+    ////// Set mesh spacing
+    Options* meshoptions = Options::getRoot()->getSection("mesh");
 
-  phiSolver = Laplacian::create();
-  phi = 0.; // Starting phi
-  
-  // Use default flags 
+    BoutReal Lx;
+    meshoptions->get("Lx", Lx, 1.0);
 
-  // Choose method to use for Poisson bracket advection terms
-  int bracket;
-  OPTION(options, bracket, 0);
-  switch(bracket) {
-  case 0: {
-    bm = BRACKET_STD; 
-    output << "\tBrackets: default differencing\n";
-    break;
+    /*this assumes equidistant grid*/
+    int nguard = mesh->xstart;
+    mesh->getCoordinates()->dx = Lx / (mesh->GlobalNx - 2 * nguard);
+    mesh->getCoordinates()->dz = TWOPI * Lx / (mesh->LocalNz);
+    /////
+
+    SOLVE_FOR2(n, vort);
+    SAVE_REPEAT(phi);
+
+    phiSolver = Laplacian::create();
+    phi = 0.; // Starting phi
+
+    // Use default flags
+
+    // Choose method to use for Poisson bracket advection terms
+    int bracket;
+    OPTION(options, bracket, 0);
+    switch (bracket) {
+    case 0: {
+      bm = BRACKET_STD;
+      output << "\tBrackets: default differencing\n";
+      break;
+    }
+    case 1: {
+      bm = BRACKET_SIMPLE;
+      output << "\tBrackets: simplified operator\n";
+      break;
+    }
+    case 2: {
+      bm = BRACKET_ARAKAWA;
+      output << "\tBrackets: Arakawa scheme\n";
+      break;
+    }
+    case 3: {
+      bm = BRACKET_CTU;
+      output << "\tBrackets: Corner Transport Upwind method\n";
+      break;
+    }
+    default:
+      output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
+      return 1;
+    }
+
+    return 0;
   }
-  case 1: {
-    bm = BRACKET_SIMPLE; 
-    output << "\tBrackets: simplified operator\n";
-    break;
-  }
-  case 2: {
-    bm = BRACKET_ARAKAWA; 
-    output << "\tBrackets: Arakawa scheme\n";
-    break;
-  }
-  case 3: {
-    bm = BRACKET_CTU; 
-    output << "\tBrackets: Corner Transport Upwind method\n";
-    break;
-  }
-  default:
-    output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
-    return 1;
-  }
 
-  return 0;
-}
+  int rhs(BoutReal time) override {
 
-int physics_run(BoutReal time) {
-  
-  // Solve for potential, adding a source term
-  Field3D phiS = FieldFactory::get()->create3D("phi:source", Options::getRoot(), mesh, CELL_CENTRE, time);
-  phi = phiSolver->solve(vort + phiS, phi);
-  
-  // Communicate variables
-  mesh->communicate(n, vort, phi);
+    // Solve for potential, adding a source term
+    Field3D phiS = FieldFactory::get()->create3D("phi:source", Options::getRoot(), mesh,
+                                                 CELL_CENTRE, time);
+    phi = phiSolver->solve(vort + phiS, phi);
 
-  // Modified H-W equations, with zonal component subtracted from resistive coupling term
-  Field3D nonzonal_n = n;
-  Field3D nonzonal_phi = phi;
-  if(modified) {
-    // Subtract average in Y and Z
-    nonzonal_n -= averageY(DC(n));
-    nonzonal_phi -= averageY(DC(phi));
+    // Communicate variables
+    mesh->communicate(n, vort, phi);
+
+    // Modified H-W equations, with zonal component subtracted from resistive coupling
+    // term
+    Field3D nonzonal_n = n;
+    Field3D nonzonal_phi = phi;
+    if (modified) {
+      // Subtract average in Y and Z
+      nonzonal_n -= averageY(DC(n));
+      nonzonal_phi -= averageY(DC(phi));
+    }
+
+    ddt(n) = -bracket(phi, n, bm) + alpha * (nonzonal_phi - nonzonal_n) - kappa * DDZ(phi)
+             + Dn * Delp2(n);
+
+    ddt(vort) = -bracket(phi, vort, bm) + alpha * (nonzonal_phi - nonzonal_n)
+                + Dvort * Delp2(vort);
+
+    return 0;
   }
-  
-  ddt(n) = 
-    - bracket(phi, n, bm) 
-    + alpha*(nonzonal_phi - nonzonal_n)
-    - kappa*DDZ(phi)
-    + Dn*Delp2(n)
-    ;
-  
-  ddt(vort) = 
-    - bracket(phi, vort, bm)
-    + alpha*(nonzonal_phi - nonzonal_n)
-    + Dvort*Delp2(vort)
-    ;
-  
-  return 0;
-}
+};
 
+BOUTMAIN(Hw)

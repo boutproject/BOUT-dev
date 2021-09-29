@@ -32,6 +32,8 @@ int main(int argc, char **argv) {
   // Output data
   bout::globals::dump.write();
 
+  bout::checkForUnusedOptions();
+
   BoutFinalise();
   return 0;
 }

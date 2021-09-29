@@ -6,13 +6,14 @@
 #include <iostream>
 #include <msg_stack.hxx>
 #include <output.hxx>
+#include <utils.hxx>
 
 #if BOUT_USE_BACKTRACE
 #include <execinfo.h>
 #include <dlfcn.h>
 #endif
 
-#include <utils.hxx>
+#include <cstdlib>
 
 #include <fmt/format.h>
 
@@ -22,6 +23,13 @@ void BoutParallelThrowRhsFail(int status, const char *message) {
 
   if (allstatus) {
     throw BoutRhsFail(message);
+  }
+}
+
+BoutException::BoutException(std::string msg) : message(std::move(msg)) {
+  makeBacktrace();
+  if (std::getenv("BOUT_SHOW_BACKTRACE") != nullptr) {
+    message = getBacktrace() + "\n" + message;
   }
 }
 

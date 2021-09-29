@@ -188,6 +188,49 @@ private:
   std::list<FieldGeneratorPtr> input;
 };
 
+/// Clamp
+///
+/// Force a value to be in specified range
+/// Also called `clip` e.g. in NumPy, but in C++17 std::clamp is in <algorithm>
+///
+/// Note that the result is not well defined if low > high
+class FieldClamp : public FieldGenerator {
+public:
+  FieldClamp() = default;
+  FieldClamp(FieldGeneratorPtr value, FieldGeneratorPtr low, FieldGeneratorPtr high)
+      : value(value), low(low), high(high) {}
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
+    if (args.size() != 3) {
+      throw ParseException(
+          "clamp function must have three inputs (value, low, high) but got {:d}",
+          args.size());
+    }
+    auto arg_it = std::begin(args);
+    auto first = *arg_it++;
+    auto second = *arg_it++;
+    auto third = *arg_it;
+
+    return std::make_shared<FieldClamp>(first, second, third);
+  }
+  BoutReal generate(const bout::generator::Context& pos) override {
+    BoutReal result = value->generate(pos);
+    // Now ensure that result is between low and high values
+    BoutReal lowval = low->generate(pos);
+    if (result < lowval) {
+      return lowval;
+    }
+    BoutReal highval = high->generate(pos);
+    if (result > highval) {
+      return highval;
+    }
+    return result;
+  }
+
+private:
+  FieldGeneratorPtr value; ///< The value to be clamped
+  FieldGeneratorPtr low, high; ///< The range within which the result will be
+};
+
 /// Generator to round to the nearest integer
 class FieldRound : public FieldGenerator {
 public:

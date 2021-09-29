@@ -1,4 +1,4 @@
-mz = 129
+MZ = 129
 MYG = 0
 dump_format = "nc"
 
@@ -7,62 +7,62 @@ nx = 132
 ny = 1
 
 [mesh:ddx]
-first=C4
-second=C4
+first = C4
+second = C4
 
 [mesh:ddy]
-first=C2
-second=C2
+first = C2
+second = C2
 
 [mesh:ddz]
-first=C4
-second=C4
+first = C4
+second = C4
 
 #############################################
 
 [petsc2nd]
-type=petsc
-all_terms=true
-nonuniform=true
-rtol=1.e-8
-atol = 1e-6
-include_yguards=false
-maxits=1000
+type = petsc
+all_terms = true
+nonuniform = true
+rtol = 1e-08
+atol = 1e-06
+include_yguards = false
+maxits = 1000
 
 gmres_max_steps = 300
 
 pctype = shell    # Supply a second solver as a preconditioner
-rightprec=true   # Right precondition
+rightprec = true   # Right precondition
 
 [petsc2nd:precon] # Options for the preconditioning solver
-                  # Leave default type (tri or spt)
-all_terms  = true
+# Leave default type (tri or spt)
+all_terms = true
 nonuniform = true
-filter     = 0.    # Must not filter
+filter = 0.0    # Must not filter
 inner_boundary_flags = 32 # Identity in boundary
 outer_boundary_flags = 32 # Identity in boundary
 
 #############################################
 
 [petsc4th]
-type=petsc
-all_terms=true
-nonuniform=true
-rtol=1.e-8
-atol = 1e-6
-include_yguards=false
-maxits=1000
-fourth_order=true
+type = petsc
+all_terms = true
+nonuniform = true
+rtol = 1e-08
+atol = 1e-06
+include_yguards = false
+maxits = 1000
+fourth_order = true
 
 gmres_max_steps = 30
 
 pctype = shell
-rightprec=true
+rightprec = true
 
 [petsc4th:precon]
-all_terms  = true
+all_terms = true
 nonuniform = true
-filter     = 0.
+filter = 0.0
 inner_boundary_flags = 32 # Identity in boundary
 outer_boundary_flags = 32 # Identity in boundary
 
@@ -70,14 +70,13 @@ outer_boundary_flags = 32 # Identity in boundary
 
 [SPT]
 #type=spt
-all_terms=true
-nonuniform=true
+all_terms = true
+nonuniform = true
 #flags=15
-include_yguards=false
+include_yguards = false
 
 #maxits=10000
 
 [laplace]
 all_terms = true
 nonuniform = true
-

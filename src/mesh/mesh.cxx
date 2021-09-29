@@ -49,25 +49,35 @@ Mesh* Mesh::create(GridDataSource *s, Options *opt) {
 
 Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
 
-Mesh::Mesh(GridDataSource *s, Options* opt)
-  : source(s), options(opt == nullptr ? Options::getRoot()->getSection("mesh") : opt),
-    include_corner_cells((*options)["include_corner_cells"]
-                         .doc("Communicate corner guard and boundary cells. Can be set "
-                               "to false if you are sure that you will not need these "
-                               "cells, for mixed derivatives D2DXDY (or anything else), "
-                               "for example if your grid has orthogonal x- and "
-                               "y-directions.  This might slightly reduce communication "
-                               "time.")
-                         .withDefault(true)) {
-  if(s == nullptr)
-    throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
+Mesh::Mesh(GridDataSource* s, Options* opt)
+    : source(s), options(opt == nullptr ? Options::getRoot()->getSection("mesh") : opt),
+      calcParallelSlices_on_communicate(
+          (*options)["calcParallelSlices_on_communicate"]
+              .doc("Calculate parallel slices on all communicated fields")
+              .withDefault(true)),
+      maxregionblocksize((*options)["maxregionblocksize"]
+                             .doc("(Advanced) Sets the maximum size of continguous "
+                                  "blocks when creating Regions")
+                             .withDefault(MAXREGIONBLOCKSIZE)),
+      StaggerGrids(
+          (*options)["staggergrids"]
+              .doc("Enable staggered grids. By default, all variables are cell centred")
+              .withDefault(false)),
+      include_corner_cells(
+          (*options)["include_corner_cells"]
+              .doc("Communicate corner guard and boundary cells. Can be set "
+                   "to false if you are sure that you will not need these "
+                   "cells, for mixed derivatives D2DXDY (or anything else), "
+                   "for example if your grid has orthogonal x- and "
+                   "y-directions. This might slightly reduce communication "
+                   "time.")
+              .withDefault(true)) {
 
-  /// Get mesh options
-  OPTION(options, StaggerGrids,   false); // Stagger grids
-  OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
-  OPTION(options, calcParallelSlices_on_communicate, true);
-  // Initialise derivatives
-  derivs_init(options);  // in index_derivs.cxx for now
+  if (s == nullptr) {
+    throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
+  }
+
+  derivs_init(options); // in index_derivs.cxx for now
 }
 
 Mesh::~Mesh() { delete source; }
@@ -139,17 +149,21 @@ int Mesh::get(bool &bval, const std::string &name, bool def) {
   return !success;
 }
 
-int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
+int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communicate,
+              CELL_LOC location) {
   TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);
 
-  if (source == nullptr or !source->get(this, var, name, def)) {
+  if (source == nullptr or !source->get(this, var, name, def, location)) {
     // set val to default in source==nullptr too:
     var = def;
+    var.setLocation(location);
     return 1;
   }
 
   // Communicate to get guard cell data
-  Mesh::communicate(var);
+  if (communicate) {
+    Mesh::communicate(var);
+  }
 
   // Check that the data is valid
   checkData(var);
@@ -157,12 +171,14 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
   return 0;
 }
 
-int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communicate) {
+int Mesh::get(Field3D &var, const std::string &name, BoutReal def,
+              bool communicate, CELL_LOC location) {
   TRACE("Loading 3D field: Mesh::get(Field3D, {:s})", name);
 
-  if (source == nullptr or !source->get(this, var, name, def)) {
+  if (source == nullptr or !source->get(this, var, name, def, location)) {
     // set val to default in source==nullptr too:
     var = def;
+    var.setLocation(location);
     return 1;
   }
 
@@ -178,12 +194,13 @@ int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communic
 }
 
 int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
-    bool UNUSED(communicate)) {
+    bool UNUSED(communicate), CELL_LOC location) {
   TRACE("Loading FieldPerp: Mesh::get(FieldPerp, {:s})", name);
 
-  if (source == nullptr or !source->get(this, var, name, def)) {
+  if (source == nullptr or !source->get(this, var, name, def, location)) {
     // set val to default in source==nullptr too:
     var = def;
+    var.setLocation(location);
     return 1;
   }
 
@@ -203,43 +220,43 @@ int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
  * Data get routines
  **************************************************************************/
 
-int Mesh::get(Vector2D &var, const std::string &name, BoutReal def) {
+int Mesh::get(Vector2D& var, const std::string& name, BoutReal def, bool communicate) {
   TRACE("Loading 2D vector: Mesh::get(Vector2D, {:s})", name);
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
-    get(var.x, name+"_x", def);
-    get(var.y, name+"_y", def);
-    get(var.z, name+"_z", def);
+    get(var.x, name + "_x", def, communicate);
+    get(var.y, name + "_y", def, communicate);
+    get(var.z, name + "_z", def, communicate);
 
   }else {
     output << _("\tReading contravariant vector ") << name << endl;
 
-    get(var.x, name+"x", def);
-    get(var.y, name+"y", def);
-    get(var.z, name+"z", def);
+    get(var.x, name + "x", def, communicate);
+    get(var.y, name + "y", def, communicate);
+    get(var.z, name + "z", def, communicate);
   }
 
   return 0;
 }
 
-int Mesh::get(Vector3D &var, const std::string &name, BoutReal def) {
+int Mesh::get(Vector3D& var, const std::string& name, BoutReal def, bool communicate) {
   TRACE("Loading 3D vector: Mesh::get(Vector3D, {:s})", name);
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
-    get(var.x, name+"_x", def);
-    get(var.y, name+"_y", def);
-    get(var.z, name+"_z", def);
+    get(var.x, name + "_x", def, communicate);
+    get(var.y, name + "_y", def, communicate);
+    get(var.z, name + "_z", def, communicate);
 
   }else {
     output << ("\tReading contravariant vector ") << name << endl;
 
-    get(var.x, name+"x", def);
-    get(var.y, name+"y", def);
-    get(var.z, name+"z", def);
+    get(var.x, name + "x", def, communicate);
+    get(var.y, name + "y", def, communicate);
+    get(var.z, name + "z", def, communicate);
   }
 
   return 0;
@@ -313,11 +330,11 @@ void Mesh::communicate(FieldGroup &g) {
     // Wait for data from other processors
     wait(h);
   } else {
-  // Send data
-  comm_handle h = send(g);
+    // Send data
+    comm_handle h = send(g);
 
-  // Wait for data from other processors
-  wait(h);
+    // Wait for data from other processors
+    wait(h);
   }
 
   // Calculate yup and ydown fields for 3D fields
@@ -356,9 +373,9 @@ int Mesh::msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int
   /// Loop over variables
   for(const auto& var : var_list) {
     if(var->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * LocalNz * var->BoutRealSize();
+      len += (xlt - xge) * (ylt - yge) * LocalNz * var->elementSize();
     } else {
-      len += (xlt - xge) * (ylt - yge) * var->BoutRealSize();
+      len += (xlt - xge) * (ylt - yge) * var->elementSize();
     }
   }
 
@@ -381,7 +398,9 @@ int Mesh::ySize(int jx) const {
 
 bool Mesh::hasBndryLowerY() {
   static bool calc = false, answer;
-  if(calc) return answer; // Already calculated
+  if(calc) {
+    return answer; // Already calculated
+  }
 
   int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
   int allbndry;
@@ -393,7 +412,9 @@ bool Mesh::hasBndryLowerY() {
 
 bool Mesh::hasBndryUpperY() {
   static bool calc = false, answer;
-  if(calc) return answer; // Already calculated
+  if(calc) {
+    return answer; // Already calculated
+  }
 
   int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
   int allbndry;
@@ -412,17 +433,21 @@ int Mesh::localSize3D() {
     const int nz = LocalNz;
     localNumCells3D = nx * ny * nz;
     for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
+      if (it.ind == xstart) {
         localNumCells3D += nz;
-      if (it.ind == xend)
+      }
+      if (it.ind == xend) {
         localNumCells3D += nz;
+      }
       localNumCells3D += nz;
     }
     for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
+      if (it.ind == xstart) {
         localNumCells3D += nz;
-      if (it.ind == xend)
+      }
+      if (it.ind == xend) {
         localNumCells3D += nz;
+      }
       localNumCells3D += nz;
     }
   }
@@ -437,17 +462,21 @@ int Mesh::localSize2D() {
     const int ny = yend - ystart + 1;
     localNumCells2D = nx * ny;
     for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
+      if (it.ind == xstart) {
         localNumCells2D += 1;
-      if (it.ind == xend)
+      }
+      if (it.ind == xend) {
         localNumCells2D += 1;
+      }
       localNumCells2D += 1;
     }
     for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
+      if (it.ind == xstart) {
         localNumCells2D += 1;
-      if (it.ind == xend)
+      }
+      if (it.ind == xend) {
         localNumCells2D += 1;
+      }
       localNumCells2D += 1;
     }
   }
@@ -467,21 +496,21 @@ int Mesh::localSizePerp() {
 
 int Mesh::globalStartIndex3D() {
   int localSize = localSize3D();
-  int cumulativeSize;
+  int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
   return cumulativeSize - localSize;
 }
 
 int Mesh::globalStartIndex2D() {
   int localSize = localSize2D();
-  int cumulativeSize;
+  int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
   return cumulativeSize - localSize;
 }
 
 int Mesh::globalStartIndexPerp() {
   int localSize = localSizePerp();
-  int cumulativeSize;
+  int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
   return cumulativeSize - localSize;
 }
@@ -691,6 +720,7 @@ void Mesh::recalculateStaggeredCoordinates() {
     }
 
     *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
+    coords_map[location]->geometry(false, true);
   }
 }
 

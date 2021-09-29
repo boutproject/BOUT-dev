@@ -166,6 +166,18 @@ constexpr auto& ARKStepSetUserData = ARKodeSetUserData;
 
 ArkodeSolver::ArkodeSolver(Options* opts) : Solver(opts) {
   has_constraints = false; // This solver doesn't have constraints
+
+  // Add diagnostics to output
+  add_int_diagnostic(nsteps, "arkode_nsteps", "Cumulative number of internal steps");
+  add_int_diagnostic(nfe_evals, "arkode_nfe_evals",
+                     "No. of calls to fe (explicit portion of the right-hand-side "
+                     "function) function");
+  add_int_diagnostic(nfi_evals, "arkode_nfi_evals",
+                     "No. of calls to fi (implicit portion of the right-hand-side "
+                     "function) function");
+  add_int_diagnostic(nniters, "arkode_nniters", "No. of nonlinear solver iterations");
+  add_int_diagnostic(npevals, "arkode_npevals", "No. of preconditioner evaluations");
+  add_int_diagnostic(nliters, "arkode_nliters", "No. of linear iterations");
 }
 
 ArkodeSolver::~ArkodeSolver() {
@@ -304,8 +316,8 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   if (ARKStepSetAdaptivityMethod(arkode_mem, adap_method, 1, 1, nullptr) != ARK_SUCCESS)
     throw BoutException("ARKStepSetAdaptivityMethod failed\n");
 
-  const auto abstol = (*options)["ATOL"].withDefault(1.0e-12);
-  const auto reltol = (*options)["RTOL"].withDefault(1.0e-5);
+  const auto abstol = (*options)["atol"].withDefault(1.0e-12);
+  const auto reltol = (*options)["rtol"].withDefault(1.0e-5);
   const auto use_vector_abstol = (*options)["use_vector_abstol"].withDefault(false);
 
   if (use_vector_abstol) {
@@ -413,7 +425,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
       throw BoutException("ARKSpgmr failed\n");
 #endif
 
-    if (!have_user_precon()) {
+    if (!hasPreconditioner()) {
       output.write("\tUsing BBD preconditioner\n");
 
       /// Get options
@@ -464,7 +476,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   /// Set Jacobian-vector multiplication function
 
   const auto use_jacobian = (*options)["use_jacobian"].withDefault(false);
-  if (use_jacobian && jacfunc) {
+  if (use_jacobian and hasJacobian()) {
     output.write("\tUsing user-supplied Jacobian function\n");
 
     if (ARKStepSetJacTimes(arkode_mem, nullptr, arkode_jac) != ARK_SUCCESS)
@@ -506,15 +518,22 @@ int ArkodeSolver::run() {
       throw BoutException("ARKode timestep failed\n");
     }
 
+    // Get additional diagnostics
+    long int temp_long_int, temp_long_int2;
+    ARKStepGetNumSteps(arkode_mem, &temp_long_int);
+    nsteps = int(temp_long_int);
+    ARKStepGetNumRhsEvals(arkode_mem, &temp_long_int, &temp_long_int2);
+    nfe_evals = int(temp_long_int);
+    nfi_evals = int(temp_long_int2);
+    ARKStepGetNumNonlinSolvIters(arkode_mem, &temp_long_int);
+    nniters = int(temp_long_int);
+    ARKStepGetNumPrecEvals(arkode_mem, &temp_long_int);
+    npevals = int(temp_long_int);
+    ARKStepGetNumLinIters(arkode_mem, &temp_long_int);
+    nliters = int(temp_long_int);
+
     if (diagnose) {
       // Print additional diagnostics
-      long int nsteps, nfe_evals, nfi_evals, nniters, npevals, nliters;
-
-      ARKStepGetNumSteps(arkode_mem, &nsteps);
-      ARKStepGetNumRhsEvals(arkode_mem, &nfe_evals, &nfi_evals);
-      ARKStepGetNumNonlinSolvIters(arkode_mem, &nniters);
-      ARKStepGetNumPrecEvals(arkode_mem, &npevals);
-      ARKStepGetNumLinIters(arkode_mem, &nliters);
 
       output.write("\nARKODE: nsteps {:d}, nfe_evals {:d}, nfi_evals {:d}, nniters {:d}, "
                    "npevals {:d}, nliters {:d}\n",
@@ -645,7 +664,7 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* uda
 
   const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
-  if (!have_user_precon()) {
+  if (!hasPreconditioner()) {
     // Identity (but should never happen)
     const int N = NV_LOCLENGTH_P(uvec);
     std::copy(rvec, rvec + N, zvec);
@@ -658,7 +677,7 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* uda
   // Load vector to be inverted into F_vars
   load_derivs(rvec);
 
-  run_precon(t, gamma, delta);
+  runPreconditioner(t, gamma, delta);
 
   // Save the solution from F_vars
   save_derivs(zvec);
@@ -674,8 +693,9 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* uda
 void ArkodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata) {
   TRACE("Running Jacobian: ArkodeSolver::jac({:e})", t);
 
-  if (jacfunc == nullptr)
+  if (not hasJacobian()) {
     throw BoutException("No jacobian function supplied!\n");
+  }
 
   // Load state from ydate
   load_vars(ydata);
@@ -684,7 +704,7 @@ void ArkodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* J
   load_derivs(vdata);
 
   // Call function
-  (*jacfunc)(t);
+  runJacobian(t);
 
   // Save Jv from vars
   save_derivs(Jvdata);

@@ -51,3 +51,13 @@ TEST(VariantTest, ToStringTest) {
 
   EXPECT_EQ(bout::utils::variantToString(var), "true");
 }
+
+TEST(VariantTest, IsVariantMember) {
+  using test_variant = bout::utils::variant<bool, int>;
+  static_assert(
+      bout::utils::isVariantMember<int, test_variant>::value,
+      "isVariantMember should detect 'int' is a member of 'variant<bool, int>'");
+  static_assert(
+      not bout::utils::isVariantMember<double, test_variant>::value,
+      "isVariantMember should detect 'double' is not a member of 'variant<bool, int>'");
+}

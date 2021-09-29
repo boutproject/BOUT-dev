@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
      bout::globals::dump.write();  // Save output file
   }
   BoutFinalise();
-#ifdef BOUT_USE_CUDA
+#if BOUT_USE_CUDA
   cudaDeviceReset();
 #endif
   return 0;

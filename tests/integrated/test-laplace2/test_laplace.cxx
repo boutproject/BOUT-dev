@@ -4,11 +4,18 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 #include <invert_laplace.hxx>
 #include <field_factory.hxx>
 
-int physics_init(bool UNUSED(restarting)) {
+class Test_laplace : public PhysicsModel {
+protected:
+  int init(bool UNUSED(restarting)) override;
+  int rhs(BoutReal UNUSED(t)) override;
+};
+
+
+int Test_laplace::init(bool UNUSED(restarting)) {
   FieldFactory f(mesh);
   
   Options *options = Options::getRoot();
@@ -57,7 +64,10 @@ int physics_init(bool UNUSED(restarting)) {
   return 1;
 }
 
-int physics_run(BoutReal UNUSED(t)) {
+int Test_laplace::rhs(BoutReal UNUSED(t)) {
   // Doesn't do anything
   return 1;
 }
+
+
+BOUTMAIN(Test_laplace)

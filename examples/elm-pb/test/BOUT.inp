@@ -4,19 +4,19 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 5          # number of time-steps
-TIMESTEP = 0.1       # time between outputs
+nout = 5          # number of time-steps
+timestep = 0.1       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 0.85  # wall time limit (in hours)
 
 ShiftXderivs = true # use shifted radial derivatives?
-TwistShift = true   # use twist-shift condition?
+twistshift = true   # use twist-shift condition?
 ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
 TwistOrder = 0      # order of twist-shift interpolation
 non_uniform = true
 
 MZ = 9             # number of points in z direction (2^n + 1)
-ZPERIOD = 15        # Fraction of a torus to simulate
+zperiod = 15        # Fraction of a torus to simulate
 
 MXG = 2
 MYG = 2
@@ -55,7 +55,7 @@ nonuniform = true
 
 [fft]
 
-fft_measure = true  # If using FFTW, perform tests to determine fastest method
+fft_measurement_flag = measure  # If using FFTW, perform tests to determine fastest method
 
 ##################################################
 # derivative methods
@@ -84,8 +84,8 @@ upwind = W3
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-8 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1e-08 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
 use_jacobian = false  # Use user-supplied Jacobian
@@ -99,23 +99,23 @@ func_iter = false     # Functional iteration (default is Newton)
 
 [highbeta]
 
-#hyperbolic tanh profile, N0 = N0tanh(n0_height*Nbar, n0_ave*Nbar, n0_width, n0_center) 
-n0_fake_prof = true    #use the hyperbolic profile of n0. If both  n0_fake_prof and T0_fake_prof are false, use the profiles from grid file 
+#hyperbolic tanh profile, N0 = N0tanh(n0_height*Nbar, n0_ave*Nbar, n0_width, n0_center)
+n0_fake_prof = true    #use the hyperbolic profile of n0. If both  n0_fake_prof and T0_fake_prof are false, use the profiles from grid file
 n0_height = 0.55       #the total height of profile of N0, in percentage of Ni_x
 n0_ave = 0.2           #the constant tail of N0 profile, in percentage of Ni_x
 n0_width = 0.1         #the width of the gradient of N0, in percentage of x
 n0_center = 0.633      #the the center of N0, in percentage of x
-n0_bottom_x = 0.81     #the start of flat region of N0 on SOL side, in percentage of x 
+n0_bottom_x = 0.81     #the start of flat region of N0 on SOL side, in percentage of x
 T0_fake_prof = false   #use the costant profile of T0. It is prior to n0_fake_prof
 Tconst = -1.0          #the amplitude of Ti0 and Te0, in percentage of Tibar
 
-constn0 =false         #Using constant density profile. When this is true, both  n0_fake_prof and n0_fake_prof are set to false automaticly 
+constn0 = false         #Using constant density profile. When this is true, both  n0_fake_prof and n0_fake_prof are set to false automaticly
 
-density = 1.0e20       # number density of deuterium [m^-3]
-                       # used to produce output normalisations
+density = 1e+20       # number density of deuterium [m^-3]
+# used to produce output normalisations
 
 evolve_jpar = false     # If true, evolve J raher than Psi
-                       # EXPERIMENTAL
+# EXPERIMENTAL
 
 evolve_pressure = true # If false, switch off all pressure evolution
 
@@ -127,7 +127,7 @@ include_jpar0 = true     # determines whether to include jpar0 terms
 include_curvature = true # include curvature drive term?
 
 compress = true       # set compressible (evolve Vpar)
-nonlinear  = true     # include non-linear terms?
+nonlinear = true     # include non-linear terms?
 
 diamag = true         # Include diamagnetic effects?
 diamag_grad_t = false  # Include Grad_par(Te) term in Psi equation
@@ -138,7 +138,7 @@ Zeff = 1
 
 ##################################################
 # BRACKET_METHOD flags:
-# 0:BRACKET_STD; derivative methods will be determined 
+# 0:BRACKET_STD; derivative methods will be determined
 #   by the choices C or W in this input file
 # 1:BRACKET_SIMPLE; 2:BRACKET_ARAKAWA; 3:BRACKET_CTU.
 
@@ -149,34 +149,34 @@ withflow = false     # With flow or not
 D_0 = 130000        # differential potential
 D_s = 20            # shear parameter
 K_H_term = false    # Contain K-H term
-sign = -1           # flow direction    
+sign = -1           # flow direction
 x0 = 0.855          # peak location
-D_min = 3000        #constant	 
+D_min = 3000        #constant
 ##################################################################
 
 eHall = false         # Include electron pressue effects in Ohm's law?
-AA    = 2.0          # ion mass in units of proton mass 
+AA = 2.0          # ion mass in units of proton mass
 
 Vt0 = 0.0    # Equilibrium toroidal rotation normalized to Alfven velocity
-Vp0 =  0.0    # Equilibrium poloidal rotation normalized to Alfven velocity
+Vp0 = 0.0    # Equilibrium poloidal rotation normalized to Alfven velocity
 
 noshear = false        # zero all shear
 
 relax_j_vac = false    # Relax to zero-current in the vacuum
-relax_j_tconst = 1e-2  # Time constant for vacuum relaxation
+relax_j_tconst = 0.01  # Time constant for vacuum relaxation
 
 ## Toroidal filtering
 filter_z = false   # remove all except one mode
 filter_z_mode = 1  # Specify which harmonic to keep (1 = fundamental)
 low_pass_z = 16    # Keep up to and including this harmonic (-1 = keep all)
 zonal_flow = 0    # remove this zonal harmonic  (-1 = keep zonal harmonic)
-zonal_field= 0     # remove this zonal harmonic  (-1 = keep zonal harmonic)
+zonal_field = 0     # remove this zonal harmonic  (-1 = keep zonal harmonic)
 zonal_bkgd = -1    # remove this zonal harmonic  (-1 = keep zonal harmonic)
 
 ## Jpar smoothing
 smooth_j_x = true   # Filter Jpar in the X direction
 lowpass_j_z = 16   # Remove high-k modes. Specifies maximum harmonic to keep
- 
+
 ## mask in x boundaries
 mask_j_x = true
 
@@ -186,56 +186,56 @@ include_rmp = false # Read RMP data from grid file
 simple_rmp = false  # Enable/disable a simple model of RMP
 rmp_n = 3           # Toroidal mode number
 rmp_m = 6           # Poloidal mode number
-rmp_factor = 1.e-4  # Amplitude of Apar [Tm]
-rmp_ramp = 1.e-4    # Timescale [s] of ramp
+rmp_factor = 0.0001  # Amplitude of Apar [Tm]
+rmp_ramp = 0.0001    # Timescale [s] of ramp
 rmp_polwid = -1.0   # Width of Gaussian factor (< 0 = No Gaussian)
 rmp_polpeak = 0.5   # Y location of maximum (fraction)
 
 ## Vacuum region control
 
 vacuum_pressure = 0.02 # the pressure below which it is considered vacuum
-                       # fraction of peak pressure
+# fraction of peak pressure
 vacuum_trans = 0.01   # transition width (fraction of P)
 
 ## Resistivity and Hyper-resistivity
 
-vac_lund = 1.0e8    # Lundquist number in vacuum  (negative -> infinity)
-core_lund = 1.0e8  # Lundquist number in core (negative -> infinity)
-hyperresist = -1.e-4 # Hyper-resistivity coefficient (like 1 / Lundquist number)
+vac_lund = 100000000.0    # Lundquist number in vacuum  (negative -> infinity)
+core_lund = 100000000.0  # Lundquist number in core (negative -> infinity)
+hyperresist = -0.0001 # Hyper-resistivity coefficient (like 1 / Lundquist number)
 
 ## Inner boundary damping
 
 damp_width = -1       # Width of damping region (grid cells)
-damp_t_const = 1e-2  # Damping time constant
+damp_t_const = 0.01  # Damping time constant
 
 ## Parallel pressure diffusion
 
-diffusion_par = -1.0e-0   # Parallel pressure diffusion (< 0 = none)
-diffusion_p4  = -1.0e-5   # parallel hyper-viscous diffusion for pressure (< 0 = none)
-diffusion_u4  = -1.0e-5    # parallel hyper-viscous diffusion for vorticity (< 0 = none)
-diffusion_a4  = -1.0e-5   # parallel hyper-viscous diffusion for vector potential (< 0 = none)
+diffusion_par = -1.0   # Parallel pressure diffusion (< 0 = none)
+diffusion_p4 = -1e-05   # parallel hyper-viscous diffusion for pressure (< 0 = none)
+diffusion_u4 = -1e-05    # parallel hyper-viscous diffusion for vorticity (< 0 = none)
+diffusion_a4 = -1e-05   # parallel hyper-viscous diffusion for vector potential (< 0 = none)
 
 ## heat source in pressure in watts
- 
+
 heating_P = -1   #   heat power in watts (< 0 = none)
-hp_width  = 0.1     #   heat width, in percentage of nx (< 0 = none)
+hp_width = 0.1     #   heat width, in percentage of nx (< 0 = none)
 hp_length = 0.3    #   heat length in percentage of nx (< 0 = none)
- 
+
 ## sink rate in pressure
- 
+
 sink_P = -1   #   sink rate in pressure (< 0 = none)
-sp_width  = 0.04     #   sink width, in percentage of nx (< 0 = none)
+sp_width = 0.04     #   sink width, in percentage of nx (< 0 = none)
 sp_length = 0.15    #   sink length in percentage of nx (< 0 = none)
- 
- 
+
+
 ## left edge sink rate in vorticity
-sink_Ul = -1.0e1        #   left edge sink rate in vorticity (< 0 = none)
-su_widthl  = 0.06     #   left edge sink width, in percentage of nx (< 0 = none)
+sink_Ul = -10.0        #   left edge sink rate in vorticity (< 0 = none)
+su_widthl = 0.06     #   left edge sink width, in percentage of nx (< 0 = none)
 su_lengthl = 0.1     #   left edge sink length in percentage of nx (< 0 = none)
- 
+
 ## right edge sink rate in vorticity
-sink_Ur = -1.0e1        #   right edge sink rate in vorticity (< 0 = none)
-su_widthr  = 0.06     #   right edge sink width, in percentage of nx (< 0 = none)
+sink_Ur = -10.0        #   right edge sink rate in vorticity (< 0 = none)
+su_widthr = 0.06     #   right edge sink width, in percentage of nx (< 0 = none)
 su_lengthr = 0.1     #   right edge sink length in percentage of nx (< 0 = none)
 
 ## Viscosity and Hyper-viscosity
@@ -255,7 +255,7 @@ phi_curv = true    # Include curvature*Grad(phi) in P equation
 #  8 -      "        AC     "      " outer    "
 # 16 - Zero all DC components of the result
 # 32 - Don't use previous solution to start iterations
-#      (iterative methods only) 
+#      (iterative methods only)
 # 64 - Set the width of the boundary layer to 1
 # 128 - use 4th order differencing
 # 256 - Laplacian = 0 inner boundary (combine 2nd & 4th-order)
@@ -273,7 +273,7 @@ apar_flags = 769
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = gauss(x - 0.5, 0.1) * gauss(y - pi, 0.3*pi) * sin(z)
 
@@ -290,10 +290,10 @@ bndry_all = dirichlet # Default to zero-value
 
 [U]   # vorticity
 
-scale = -1.0e-3
+scale = -0.001
 
 [P]  # pressure
-scale = 1.0e-2
+scale = 0.01
 
 [Psi]  # Vector potential
 
@@ -307,7 +307,7 @@ bndry_xout = zerolaplace
 bndry_core = neumann
 
 [Vpar]
-scale = -1.e-3
+scale = -0.001
 bndry_core = neumann
 
 [phi]

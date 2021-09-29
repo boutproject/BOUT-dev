@@ -28,6 +28,7 @@ The documentation is divided into the following sections:
    user_docs/installing
    user_docs/advanced_install
    user_docs/running_bout
+   user_docs/new_in_v5
    
 .. toctree::
    :maxdepth: 2
@@ -39,6 +40,7 @@ The documentation is divided into the following sections:
    user_docs/variable_init
    user_docs/boundary_options
    user_docs/testing
+   user_docs/gpu_support
    
 .. toctree::
    :maxdepth: 2

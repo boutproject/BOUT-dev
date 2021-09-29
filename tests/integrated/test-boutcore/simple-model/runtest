@@ -4,6 +4,7 @@
 # requires not make
 
 from boutcore import *
+
 init("-d mini")
 
 

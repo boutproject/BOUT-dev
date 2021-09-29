@@ -1,19 +1,18 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
 # Cores: 4
 
-make
+from boututils.run_wrapper import build_and_log, launch_safe
 
-test ".$MPIRUN" = "." && MPIRUN="mpirun -np"
+build_and_log("vector communication test")
 
-$MPIRUN 4 ../../../bin/testVec  > log.4
+status, out = launch_safe("./testVec", nproc=4, pipe=True)
 
-exit=$?
+with open("run.log.4", "w") as f:
+    f.write(out)
 
-if test $exit -gt 0
-then
-    echo "Failed to vector communication test"
-    exit $exit
-fi
+if status:
+    print(" => Test failed")
+    exit(status)
 
-echo "Test successfull."
+print(" => Test passed")

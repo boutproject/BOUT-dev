@@ -6,9 +6,8 @@ import numpy as np
 
 
 class NoBoundary(object):
-    """No boundary, so no points outside
+    """No boundary, so no points outside"""
 
-    """
     def outside(self, x, y, z):
         """Returns True if the point is outside the boundary
 
@@ -57,8 +56,10 @@ class RectangularBoundaryXZ(object):
 
         """
 
-        return np.logical_or( np.logical_or( x < self.xmin, x > self.xmax),
-                              np.logical_or( z < self.zmin, z > self.zmax))
+        return np.logical_or(
+            np.logical_or(x < self.xmin, x > self.xmax),
+            np.logical_or(z < self.zmin, z > self.zmax),
+        )
 
 
 class PolygonBoundaryXZ(object):
@@ -74,7 +75,7 @@ class PolygonBoundaryXZ(object):
         """
 
         # Find a point outside the polygon
-        self.zout = np.amax(zarr) + 1.0 # Somewhere outside the polygon
+        self.zout = np.amax(zarr) + 1.0  # Somewhere outside the polygon
         self.xarr = xarr
         self.zarr = zarr
 
@@ -115,12 +116,12 @@ class PolygonBoundaryXZ(object):
         # changes True->False->True i.e. XOR
 
         nsegments = len(self.xarr)
-        for i in range(nsegments): # Loop over all segments
+        for i in range(nsegments):  # Loop over all segments
 
             xp_0 = self.xarr[i]
             zp_0 = self.zarr[i]
 
-            ip = (i + 1) % nsegments # Next point
+            ip = (i + 1) % nsegments  # Next point
             xp_1 = self.xarr[ip]
             zp_1 = self.zarr[ip]
 
@@ -131,10 +132,11 @@ class PolygonBoundaryXZ(object):
 
             b = (x_0 - xp_0) / (xp_1 - xp_0)
 
-            a = (zp_0 - z_0 + b * (zp_1 - zp_0))/(z_1 - z_0)
+            a = (zp_0 - z_0 + b * (zp_1 - zp_0)) / (z_1 - z_0)
 
-            intersect = np.logical_and( np.logical_and( b >= 0.0, b <= 1.0),
-                                        np.logical_and( a >= 0.0, a <= 1.0))
+            intersect = np.logical_and(
+                np.logical_and(b >= 0.0, b <= 1.0), np.logical_and(a >= 0.0, a <= 1.0)
+            )
 
             # intersect is now true for those points which intersect this line segment
             outside = np.logical_xor(outside, intersect)

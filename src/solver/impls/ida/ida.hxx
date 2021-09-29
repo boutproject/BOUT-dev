@@ -31,10 +31,17 @@
 #define __IDA_SOLVER_H__
 
 #include "bout/build_config.hxx"
-
-#if BOUT_HAS_IDA
-
 #include "bout/solver.hxx"
+
+#if not BOUT_HAS_IDA
+
+namespace {
+RegisterUnavailableSolver registerunavailableida("ida",
+                                                 "BOUT++ was not configured with IDA/SUNDIALS");
+}
+
+#else
+
 #include "bout_types.hxx"
 
 #include <sundials/sundials_config.h>

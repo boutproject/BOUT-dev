@@ -3,27 +3,19 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 400       # number of time-steps
-TIMESTEP = 1e3   # time between outputs
+nout = 400       # number of time-steps
+timestep = 1000.0   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
-ShiftOrder = 0
-TwistOrder = 0
+twistshift = false  # use twist-shift condition?
 
 MZ = 2     # number of points in z direction (2^n + 1)
 ZMIN = 0.0
-ZMAX = 5.5460e-02
+ZMAX = 0.05546
 
 MXG = 2
 MYG = 2
 
-grid="uedge.grd_Up_Ni_Tei_2d.nc"
-
-dump_format = "nc"  # NetCDF format
-
-[comms]
-async = false
+grid = "uedge.grd_Up_Ni_Tei_2d.nc"
 
 ##################################################
 # derivative methods
@@ -53,8 +45,8 @@ upwind = U1
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
 mxstep = 5000 # Maximum number of internal steps
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 ##################################################
 # settings for uedge model
@@ -64,13 +56,6 @@ RTOL = 1.0e-5  # relative tolerance
 AA = 2.0
 ZZ = 1.0
 
-estatic = false   # if true, electrostatic (Apar = 0)
-ZeroElMass = FALSE # Use Ohms law without electron inertia
-Zeff = 2.0        # Z effective
-nu_perp = 1.0e-20
-
-ShearFactor = 0.0
-
 chi_perp = 0.6
 
 ##################################################
@@ -79,7 +64,7 @@ chi_perp = 0.6
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = gauss(x - 0.5, 0.5) * sin(y) * mixmode(z)
 
@@ -111,22 +96,22 @@ bndry_all = neumann # Default for all variables, boundaries
 
 bndry_target = neumann
 bndry_core = relax(dirichlet(1.))   # 1e13 cm^-3 on core boundary
-bndry_all  = relax(dirichlet(0.1))  # 1e12 cm^-3 on all other boundaries
+bndry_all = relax(dirichlet(0.1))  # 1e12 cm^-3 on all other boundaries
 
 [Vi]
 
 bndry_core = neumann
-bndry_pf   = neumann
-bndry_sol  = neumann
+bndry_pf = neumann
+bndry_sol = neumann
 bndry_ydown = relax(dirichlet(-1.41648))   # -3.095e4/Vi_x
-bndry_yup   = relax(dirichlet( 1.41648))
+bndry_yup = relax(dirichlet( 1.41648))
 
 [Te]
 
 bndry_core = relax(dirichlet(10.)) # 100eV / Te_x on core boundary
-bndry_all  = relax(dirichlet(1.))  # Relax to 10.eV / Te_x on other boundaries
+bndry_all = relax(dirichlet(1.))  # Relax to 10.eV / Te_x on other boundaries
 
 [Ti]
 
 bndry_core = relax(dirichlet(10.))
-bndry_all  = relax(dirichlet(1.))
+bndry_all = relax(dirichlet(1.))

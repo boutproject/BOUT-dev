@@ -12,15 +12,14 @@
 
 #include "bout/single_index_ops.hxx" // Operators at a single index
 
-#include "RAJA/RAJA.hpp" // using RAJA lib
-#include <cuda_profiler_api.h>
-#include <gpu_functions.hxx>
+#define DISABLE_RAJA 0  // Disable RAJA here for testing?
+#include "bout/rajalib.hxx"
 
 /// 2D drift-reduced model, mainly used for blob studies
 ///
 ///
 class Blob2D : public PhysicsModel {
-public:
+private:
   // Evolving variables
   Field3D n, vort; ///< Density and vorticity
 
@@ -49,9 +48,13 @@ public:
   bool compressible; ///< If allow inclusion of n grad phi term in density evolution
   bool sheath;       ///< Sheath connected?
 
-  std::unique_ptr<Laplacian> phiSolver{nullptr}; ///< Performs Laplacian inversions to calculate phi
+  std::unique_ptr<Laplacian> phiSolver{
+      nullptr}; ///< Performs Laplacian inversions to calculate phi
 
-  int init(bool UNUSED(restarting)) {
+public:
+  // Note: rhs() must be public so that RAJA can use CUDA
+
+  int init(bool UNUSED(restarting)) override {
 
     /******************Reading options *****************/
 
@@ -60,7 +63,7 @@ public:
 
     // Load system parameters
     Te0 = options["Te0"].doc("Temperature in eV").withDefault(30.0);
-    
+
     e = options["e"].withDefault(1.602e-19);
     m_i = options["m_i"].withDefault(2 * 1.667e-27);
     m_e = options["m_e"].withDefault(9.11e-31);
@@ -90,9 +93,10 @@ public:
     c_s = sqrt(e * Te0 / m_i); // Bohm sound speed
     rho_s = c_s / Omega_i;     // Bohm gyro-radius
 
-    output.write("\n\n\t----------Parameters: ------------ \n\tOmega_i = {:e} /s,\n\tc_s = "
-                 "{:e} m/s,\n\trho_s = {:e} m\n",
-                 Omega_i, c_s, rho_s);
+    output.write(
+        "\n\n\t----------Parameters: ------------ \n\tOmega_i = {:e} /s,\n\tc_s = "
+        "{:e} m/s,\n\trho_s = {:e} m\n",
+        Omega_i, c_s, rho_s);
 
     // Calculate delta_*, blob size scaling
     output.write("\tdelta_* = rho_s * (dn/n) * {:e} ",
@@ -101,11 +105,13 @@ public:
     /************ Create a solver for potential ********/
 
     if (boussinesq) {
-       // BOUT.inp section "phiBoussinesq"
+      // BOUT.inp section "phiBoussinesq"
       phiSolver = Laplacian::create(Options::getRoot()->getSection("phiBoussinesq"));
+      Options::root()["phiSolver"].setConditionallyUsed(); // Not using alternative options
     } else {
       // BOUT.inp section "phiSolver"
-      phiSolver = Laplacian::create(Options::getRoot()->getSection("phiSolver")); 
+      phiSolver = Laplacian::create(Options::getRoot()->getSection("phiSolver"));
+      Options::root()["phiBoussinesq"].setConditionallyUsed();
     }
     phi = 0.0; // Starting guess for first solve (if iterative)
 
@@ -120,10 +126,8 @@ public:
     return 0;
   }
 
-  int rhs(BoutReal UNUSED(t)) {
+  int rhs(BoutReal UNUSED(t)) override {
 
-
-    // RAJA::synchronize<RAJA::cuda_synchronize>();
     // Run communications
     ////////////////////////////////////////////////////////////////////////////
     mesh->communicate(n, vort);
@@ -147,88 +151,35 @@ public:
     auto vort_acc = FieldAccessor<>(vort);
     auto phi_acc = FieldAccessor<>(phi);
 
-// / GPU code --------------------------start   
+    const auto& region = n.getRegion("RGN_NOBNDRY"); // Region object
 
-RAJA::synchronize<RAJA::cuda_synchronize>();
-//BoutReal*   gpu_n_ddt= const_cast<BoutReal*>(n.timeDeriv()->operator()(0,0)); // copy ddt(n) to __device__
-//BoutReal*   gpu_vort_ddt = const_cast<BoutReal*>(vort.timeDeriv()->operator()(0,0)); // copy ddt(vort) to __device__
- 
- 
-  gpu_n_ddt= const_cast<BoutReal*>(n.timeDeriv()->operator()(0,0)); // copy ddt(n) to __device__
-  gpu_vort_ddt = const_cast<BoutReal*>(vort.timeDeriv()->operator()(0,0)); // copy ddt(vort) to __device__
+    // Note: Ensure that all class members are captured explicitly
+    //       If this is not done, then the `this` pointer will be captured,
+    //       resulting in illegal memory access on GPU devices.
+    BOUT_FOR_RAJA(i, region, CAPTURE(rho_s, R_c, D_n, D_vort)) {
+      ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - 2 * DDZ(n_acc, i) * (rho_s / R_c)
+                      + D_n * Delp2(n_acc, i);
 
-   auto region = n.getRegion("RGN_NOBNDRY"); // Region object
-   auto indices = region.getIndices();   // A std::vector of Ind3D objects
-   
-//  Copy data to __device__
-   RAJA_data_copy(n,vort,phi, phi,n_acc,phi_acc);
-
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int i) {
-
-                gpu_n_ddt[i] = - gpu_bracket_par(phi_acc, n_acc, i) //gpu_n_ddt[i]
-                                  - 2 * gpu_DZZ_par(n_acc, i) * (rho_s / R_c)
-                                  + D_n *gpu_Delp2_par(n_acc, i) 
-				;
-
-                gpu_vort_ddt[i] = - gpu_bracket_par(phi_acc, vort_acc, i)
-                                     + 2 * gpu_DZZ_par(n_acc, i) * (rho_s / R_c)/ p_n[i]
-                                     + D_vort *gpu_Delp2_par(vort_acc, i) / p_n[i]
-				 ;
-
-        });
-
-//cudaDeviceSynchronize();
-
-//RAJA::synchronize<RAJA::cuda_synchronize>();
-//std::cout<<"gpu_n_ddt[99]:  "<< gpu_n_ddt[99]<< std::endl;
-//std::cout<<"gpu_vort_ddt[99]:  "<< gpu_vort_ddt[99]<< std::endl;
-
-
-
-// GPU code --------------------------end
-
-
-  /*
-    // Allocate arrays to store the time derivatives
-    ddt(n).allocate();
-    ddt(vort).allocate();
-    // Iterate over the mesh except boundaries because derivatives are needed
-    BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
-
-      // Density Evolution
-      /////////////////////////////////////////////////////////////////////////////
-
-      ddt(n)[i] = -bracket(phi_acc, n_acc, i)             // ExB term
-                  + 2 * DDZ(n_acc, i) * (rho_s / R_c) // Curvature term
-                  + D_n * Delp2(n_acc, i);            // Diffusion term
-      
-      // Vorticity evolution
-      /////////////////////////////////////////////////////////////////////////////
-
-      ddt(vort)[i] = -bracket(phi_acc, vort_acc, i)                // ExB term
-                   + 2 * DDZ(n_acc, i) * (rho_s / R_c) / n_acc[i] // Curvature term
-                   + D_vort * Delp2(vort_acc, i) / n_acc[i]      // Viscous diffusion term
-          ;
-    
-
-	}
+      ddt(vort_acc)[i] = -bracket(phi_acc, vort_acc, i)
+                         + 2 * DDZ(n_acc, i) * (rho_s / R_c)
+                         + D_vort * Delp2(vort_acc, i);
+    };
 
     if (compressible) {
-      BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
-        ddt(n)[i] -= 2 * n_acc[i] * DDZ(phi_acc, i) * (rho_s / R_c); // ExB Compression term
-      }
+      BOUT_FOR_RAJA(i, region, CAPTURE(rho_s, R_c)) {
+        ddt(n_acc)[i] -= 2 * n_acc[i] * DDZ(phi_acc, i) * (rho_s / R_c); // ExB Compression term
+      };
     }
     
     if (sheath) {
       // Sheath closure
-      BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
-        ddt(n)[i] += n_acc[i] * phi_acc[i] * (rho_s / L_par);
 
-        ddt(vort)[i] += phi_acc[i] * (rho_s / L_par);
-      }
+      BOUT_FOR_RAJA(i, region, CAPTURE(rho_s, L_par)) {
+        ddt(n_acc)[i] += n_acc[i] * phi_acc[i] * (rho_s / L_par);
+        ddt(vort_acc)[i] += phi_acc[i] * (rho_s / L_par);
+      };
     }
- */ 
- 
+
     return 0;
   }
 };

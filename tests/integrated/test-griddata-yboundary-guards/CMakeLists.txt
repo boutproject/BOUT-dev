@@ -8,4 +8,5 @@ bout_add_integrated_test(test-griddata-yboundary-guards
     data-singlenull-0/BOUT.inp
     data-singlenull-1/BOUT.inp
     data-singlenull-2/BOUT.inp
+  REQUIRES BOUT_HAS_NETCDF
   )

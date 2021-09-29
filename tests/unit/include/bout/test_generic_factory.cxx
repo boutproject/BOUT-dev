@@ -45,6 +45,7 @@ constexpr decltype(BaseFactory::default_type) BaseFactory::default_type;
 RegisterInFactory<Base, Base, BaseFactory> registerme("base");
 RegisterInFactory<Base, Derived1, BaseFactory> registerme1("derived1");
 RegisterInFactory<Base, Derived2, BaseFactory> registerme2("derived2");
+RegisterUnavailableInFactory<Base, BaseFactory> dontregisterme("not here", "this is only a test");
 } // namespace
 
 class BaseComplicated {
@@ -121,6 +122,13 @@ TEST(GenericFactory, ListAvailable) {
   EXPECT_EQ(available, expected);
 }
 
+TEST(GenericFactory, ListUnavailable) {
+  auto available = BaseFactory::getInstance().listUnavailableReasons();
+  std::vector<std::string> expected{"not here (this is only a test)"};
+
+  EXPECT_EQ(available, expected);
+}
+
 TEST(GenericFactory, Remove) {
   auto available = BaseFactory::getInstance().listAvailable();
   std::vector<std::string> expected{"base", "derived1", "derived2"};
@@ -145,6 +153,10 @@ TEST(GenericFactory, RemoveNonexistant) {
 
 TEST(GenericFactory, GetUnknownType) {
   EXPECT_THROW(BaseFactory::getInstance().create("unknown"), BoutException);
+}
+
+TEST(GenericFactory, GetUnavailableType) {
+  EXPECT_THROW(BaseFactory::getInstance().create("not here"), BoutException);
 }
 
 TEST(GenericFactory, Complicated) {

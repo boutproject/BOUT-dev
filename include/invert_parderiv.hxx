@@ -44,15 +44,16 @@ class InvertPar;
 
 class InvertParFactory
     : public Factory<InvertPar, InvertParFactory,
-                             std::function<std::unique_ptr<InvertPar>(Options*, Mesh*)>> {
+                     std::function<std::unique_ptr<InvertPar>(Options*, CELL_LOC, Mesh*)>> {
 public:
   static constexpr auto type_name = "InvertPar";
   static constexpr auto section_name = "parderiv";
   static constexpr auto option_name = "type";
   static constexpr auto default_type = PARDERIVCYCLIC;
 
-  ReturnType create(Options* options = nullptr, Mesh* mesh = nullptr) {
-    return Factory::create(getType(options), options, mesh);
+  ReturnType create(Options* options = nullptr, CELL_LOC location = CELL_CENTRE,
+                    Mesh* mesh = nullptr) {
+    return Factory::create(getType(options), options, location, mesh);
   }
   static void ensureRegistered();
 };
@@ -62,11 +63,13 @@ class RegisterInvertPar {
 public:
   RegisterInvertPar(const std::string& name) {
     InvertParFactory::getInstance().add(
-        name, [](Options* options, Mesh* mesh) -> std::unique_ptr<InvertPar> {
-          return std::make_unique<DerivedType>(options, mesh);
+        name, [](Options* options, CELL_LOC location, Mesh* mesh) -> std::unique_ptr<InvertPar> {
+          return std::make_unique<DerivedType>(options, location, mesh);
         });
   }
 };
+
+using RegisterUnavailableInvertPar = RegisterUnavailableInFactory<InvertPar, InvertParFactory>;
 
 /// Base class for parallel inversion solvers
 /*!
@@ -92,17 +95,18 @@ public:
    * with pure virtual members, so can't be created directly.
    * To create an InvertPar object call the create() static function.
    */ 
-  InvertPar(Options *UNUSED(opt), Mesh *mesh_in = nullptr)
-    : localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {}
+  InvertPar(Options *UNUSED(opt), CELL_LOC location_in, Mesh *mesh_in = nullptr)
+    : location(location_in),
+      localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {}
   virtual ~InvertPar() = default;
 
   /*!
    * Create an instance of InvertPar
-   * 
-   * Note: For consistency this should be renamed "create" and take an Options* argument
    */
-  static std::unique_ptr<InvertPar> Create(Mesh *mesh_in = nullptr) {
-    return InvertParFactory::getInstance().create(nullptr, mesh_in);
+  static std::unique_ptr<InvertPar> create(Options *opt_in = nullptr,
+                                           CELL_LOC location_in = CELL_CENTRE,
+                                           Mesh *mesh_in = nullptr) {
+    return InvertParFactory::getInstance().create(opt_in, location_in, mesh_in);
   }
   
   /*!
@@ -131,37 +135,58 @@ public:
    */
   virtual void setCoefA(const Field2D &f) = 0;
   virtual void setCoefA(const Field3D &f) {setCoefA(DC(f));}
-  virtual void setCoefA(BoutReal f) {setCoefA(Field2D(f, localmesh));}
+  virtual void setCoefA(BoutReal f) {
+    auto A = Field2D(f, localmesh);
+    A.setLocation(location);
+    setCoefA(A);
+  }
   
   /*!
    * Set the Grad2_par2 coefficient B
    */ 
   virtual void setCoefB(const Field2D &f) = 0;
   virtual void setCoefB(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefB(BoutReal f) {setCoefB(Field2D(f, localmesh));}
+  virtual void setCoefB(BoutReal f) {
+    auto B = Field2D(f, localmesh);
+    B.setLocation(location);
+    setCoefB(B);
+  }
   
   /*!
    * Set the D2DYDZ coefficient C
    */
   virtual void setCoefC(const Field2D& f) = 0;
   virtual void setCoefC(const Field3D& f) { setCoefC(DC(f)); }
-  virtual void setCoefC(BoutReal f) { setCoefC(Field2D(f, localmesh)); }
+  virtual void setCoefC(BoutReal f) {
+    auto C = Field2D(f, localmesh);
+    C.setLocation(location);
+    setCoefC(C);
+  }
 
   /*!
    * Set the D2DZ2 coefficient D
    */
   virtual void setCoefD(const Field2D& f) = 0;
   virtual void setCoefD(const Field3D& f) { setCoefD(DC(f)); }
-  virtual void setCoefD(BoutReal f) { setCoefD(Field2D(f, localmesh)); }
+  virtual void setCoefD(BoutReal f) {
+    auto D = Field2D(f, localmesh);
+    D.setLocation(location);
+    setCoefD(D);
+  }
 
   /*!
    * Set the DDY coefficient E
    */
   virtual void setCoefE(const Field2D& f) = 0;
   virtual void setCoefE(const Field3D& f) { setCoefE(DC(f)); }
-  virtual void setCoefE(BoutReal f) { setCoefE(Field2D(f, localmesh)); }
+  virtual void setCoefE(BoutReal f) {
+    auto E = Field2D(f, localmesh);
+    E.setLocation(location);
+    setCoefE(E);
+  }
 
 protected:
+  CELL_LOC location;
   Mesh* localmesh; ///< Mesh object for this solver
 
 private:

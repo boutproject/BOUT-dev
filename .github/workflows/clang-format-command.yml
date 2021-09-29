@@ -1,0 +1,50 @@
+name: clang-format-command
+on:
+  repository_dispatch:
+    types: [clang-format-command]
+jobs:
+  clang-format:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the pull request branch
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.client_payload.pull_request.head.ref }}
+      # Fetch the merge base too, or git clang-format won't have anything to compare to!
+      - run: |
+          git fetch --no-tags --prune --depth=1 origin ${{ github.event.client_payload.pull_request.base.sha }}
+
+      # This also installs git-clang-format
+      - name: Install clang-format
+        run: sudo apt install clang-format
+
+      # git-clang-format is a bit annoying and doesn't have a proper "quiet" or "check" mode
+      # So we have to hope that the "nothing to do" message doesn't change ever
+      - name: Run clang-format
+        id: format
+        run: |
+          if [[ $(git clang-format-9 --quiet --diff ${{ github.event.client_payload.pull_request.base.sha }}) != "no modified files to format" ]]; then
+              echo "::set-output name=format::true"
+          else
+              echo "::set-output name=format::false"
+          fi
+
+      # Execute clang-format and commit the change to the PR branch
+      - name: Commit to the PR branch
+        if: steps.format.outputs.format == 'true'
+        run: |
+          git clang-format-9 ${{ github.event.client_payload.pull_request.base.sha }}
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -am "[clang-format-command] fixes"
+          git push
+
+      - name: Add reaction
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: ${{ github.event.client_payload.github.payload.repository.full_name }}
+          comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
+          reaction-type: hooray

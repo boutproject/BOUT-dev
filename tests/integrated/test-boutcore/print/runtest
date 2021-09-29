@@ -1,0 +1,9 @@
+#!/bin/sh
+# requires boutcore
+# requires not make
+
+set -ex
+python3 test.py > out.log
+msg="We can print to the log from python 🎉"
+grep "$msg" out.log
+grep "$msg" test/BOUT.log.0
