@@ -1179,6 +1179,8 @@ public:
         phi0 = -0.5 * dnorm * P0 / B0 / N0;
       }
       SAVE_ONCE(phi0);
+    } else {
+      phi0 = 0.0;
     }
 
     // Add some equilibrium quantities and normalisations
