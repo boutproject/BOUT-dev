@@ -466,8 +466,14 @@ class Mesh {
   virtual int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
   // Y communications
-  virtual bool firstY() const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
-  virtual bool lastY() const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
+
+  ///< Is this processor first in Y?
+  /// Note: First on the global grid, not necessarily at a boundary
+  virtual bool firstY() const = 0;
+
+  ///< Is this processor last in Y?
+  /// Note: Last on the global grid, not necessarily at a boundary
+  virtual bool lastY() const = 0;
 
   /// Is this processor first in Y?
   /// Note: Not necessarily at a boundary, but first in the Y communicator
