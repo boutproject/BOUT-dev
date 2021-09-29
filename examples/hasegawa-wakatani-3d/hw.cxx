@@ -40,8 +40,8 @@ public:
 
     SOLVE_FOR(n, vort);
     SAVE_REPEAT(phi);
+    phiSolver = Laplacian::create(nullptr, CELL_CENTRE, mesh, solver, &dump);
 
-    phiSolver = Laplacian::create();
     phi = 0.; // Starting phi
 
     return 0;

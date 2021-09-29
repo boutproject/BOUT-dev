@@ -39,6 +39,7 @@ class LaplaceHypre3d;
 #include <options.hxx>
 #include <invert_laplace.hxx>
 #include <boutexception.hxx>
+#include <bout/monitor.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/hypre_interface.hxx>
 
@@ -50,7 +51,8 @@ RegisterLaplace<LaplaceHypre3d> registerlaplacehypre3d(LAPLACE_HYPRE3D);
 
 class LaplaceHypre3d : public Laplacian {
 public:
-  LaplaceHypre3d(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplaceHypre3d(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+                 Mesh *mesh_in = nullptr, Solver *solver = nullptr, Datafile *dump = nullptr);
   ~LaplaceHypre3d() override;
 
   void setCoefA(const Field2D &val) override {
@@ -202,6 +204,20 @@ public:
   bout::HypreVector<Field3D> solution;
   bout::HypreVector<Field3D> rhs;
   bout::HypreSystem<Field3D> linearSystem;
+
+  // used to save some statistics
+  int n_solves = 0;
+  int cumulative_iterations = 0;
+  BoutReal average_iterations = 0.0;
+  class Hypre3dMonitor : public Monitor {
+  public:
+    Hypre3dMonitor(LaplaceHypre3d &laplace_in) : laplace(laplace_in) {}
+
+    int call(Solver*, BoutReal, int, int) override;
+  private:
+    LaplaceHypre3d &laplace;
+  };
+  Hypre3dMonitor monitor;
 
   bool use_precon;  // Switch for preconditioning
   bool rightprec;   // Right preconditioning

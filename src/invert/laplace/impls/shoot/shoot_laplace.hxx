@@ -1,12 +1,13 @@
 /**************************************************************************
- * Perpendicular Laplacian inversion. Serial code using FFT
- * and tridiagonal solver.
+ * Perpendicular Laplacian inversion in serial or parallel
+ * 
+ * Uses shooting method from outer boundary
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2014 B.D.Dudson
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- *
+ * 
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -24,60 +25,65 @@
  *
  **************************************************************************/
 
-class LaplaceSerialTri;
+class LaplaceShoot;
 
-#ifndef __SERIAL_TRI_H__
-#define __SERIAL_TRI_H__
+#ifndef __LAP_SHOOT_H__
+#define __LAP_SHOOT_H__
 
 #include <invert_laplace.hxx>
-#include <dcomplex.hxx>
 #include <options.hxx>
+#include <boutexception.hxx>
+#include <utils.hxx>
 
 namespace {
-RegisterLaplace<LaplaceSerialTri> registerlaplaceserialtri(LAPLACE_TRI);
+RegisterLaplace<LaplaceShoot> registerlaplaceshot(LAPLACE_SHOOT);
 }
 
-class LaplaceSerialTri : public Laplacian {
+class LaplaceShoot : public Laplacian {
 public:
-  LaplaceSerialTri(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-                   Mesh *mesh_in = nullptr, Solver *solver = nullptr,
-                   Datafile *dump = nullptr);
-  ~LaplaceSerialTri(){};
-
+  LaplaceShoot(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE,
+               Mesh *mesh_in = nullptr, Solver *solver = nullptr,
+               Datafile *dump = nullptr);
+  ~LaplaceShoot(){};
+  
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
-    A = val;
+    Acoef = val;
   }
   using Laplacian::setCoefC;
   void setCoefC(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
-    C = val;
+    Ccoef = val;
   }
   using Laplacian::setCoefD;
   void setCoefD(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
-    D = val;
+    Dcoef = val;
   }
   using Laplacian::setCoefEx;
   void setCoefEx(const Field2D &UNUSED(val)) override {
-    throw BoutException("LaplaceSerialTri does not have Ex coefficient");
+    throw BoutException("LaplaceShoot does not have Ex coefficient");
   }
   using Laplacian::setCoefEz;
   void setCoefEz(const Field2D &UNUSED(val)) override {
-    throw BoutException("LaplaceSerialTri does not have Ez coefficient");
+    throw BoutException("LaplaceShoot does not have Ez coefficient");
   }
 
   using Laplacian::solve;
   FieldPerp solve(const FieldPerp &b) override;
-  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp &b, const FieldPerp &UNUSED(x0)) override {return solve(b);}
 private:
-  // The coefficents in
-  // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
-  Field2D A, C, D;
+  Field2D Acoef, Ccoef, Dcoef;
+  
+  int nmode;  // Number of modes being solved
+  
+  Array<dcomplex> km, kc, kp, rhsk;
+  
+  Array<BoutReal> buffer; // For communications
 };
 
-#endif // __SERIAL_TRI_H__
+#endif

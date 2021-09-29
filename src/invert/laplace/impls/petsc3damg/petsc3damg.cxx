@@ -38,13 +38,16 @@
 #include <derivs.hxx>
 #include <utils.hxx>
 
-LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mesh_in)
-    : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-      lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
-      indexer(std::make_shared<GlobalIndexer<Field3D>>(
-          localmesh, getStencil(localmesh, lowerY, upperY))),
-      operator3D(indexer), kspInitialised(false),
-      lib(opt == nullptr ? &(Options::root()["laplace"]) : opt) {
+LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mesh_in,
+                                     Solver *solver, Datafile *dump) :
+  Laplacian(opt, loc, mesh_in),
+  A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
+  lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
+  indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh,
+						   getStencil(localmesh, lowerY, upperY))),
+  operator3D(indexer), kspInitialised(false),
+  lib(opt==nullptr ? &(Options::root()["laplace"]) : opt)
+{
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
   // Initialise PETSc objects

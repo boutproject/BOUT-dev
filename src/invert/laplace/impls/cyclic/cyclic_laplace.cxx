@@ -47,7 +47,10 @@
 #include <bout/constants.hxx>
 #include <output.hxx>
 
-LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
+#include "cyclic_laplace.hxx"
+
+LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in,
+                             Solver *, Datafile *)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(1.0), Dcoef(1.0) {
 
   Acoef.setLocation(location);
