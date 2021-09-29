@@ -466,10 +466,24 @@ class Mesh {
   virtual int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
   // Y communications
-  virtual bool firstY() const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
-  virtual bool lastY() const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
-  virtual bool firstY(int xpos) const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
-  virtual bool lastY(int xpos) const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
+
+  ///< Is this processor first in Y?
+  /// Note: First on the global grid, not necessarily at a boundary
+  virtual bool firstY() const = 0;
+
+  ///< Is this processor last in Y?
+  /// Note: Last on the global grid, not necessarily at a boundary
+  virtual bool lastY() const = 0;
+
+  /// Is this processor first in Y?
+  /// Note: Not necessarily at a boundary, but first in the Y communicator
+  ///       for the flux surface through local X index xpos
+  virtual bool firstY(int xpos) const = 0;
+
+  /// Is this processor last in Y?
+  /// Note: Not necessarily at a boundary, but last in the Y communicator
+  ///       for the flux surface through local X index xpos
+  virtual bool lastY(int xpos) const = 0;
   [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int UpXSplitIndex() = 0;  ///< If the upper Y guard cells are split in two, return the X index where the split occurs
   [[deprecated("This experimental functionality will be removed in 5.0")]]
@@ -534,10 +548,14 @@ class Mesh {
   virtual RangeIterator iterateBndryLowerInnerY() const = 0;
   virtual RangeIterator iterateBndryUpperOuterY() const = 0;
   virtual RangeIterator iterateBndryUpperInnerY() const = 0;
-  
-  bool hasBndryLowerY(); ///< Is there a boundary on the lower guard cells in Y?
-  bool hasBndryUpperY(); ///< Is there a boundary on the upper guard cells in Y?
 
+  /// Is there a boundary on the lower guard cells in Y
+  /// on any processor along the X direction?
+  bool hasBndryLowerY();
+
+  /// Is there a boundary on the upper guard cells in Y
+  /// on any processor along the X direction?
+  bool hasBndryUpperY();
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
