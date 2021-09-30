@@ -4,6 +4,7 @@
 # Run the test, compare results against the benchmark
 #
 
+# requires: not metric_3d
 # requires: petsc
 # cores: 8
 
@@ -59,7 +60,7 @@ for nproc in [8]:
                 "hypre not available as pre-conditioner in PETSc. Re-running with "
                 + "pctype=shell..."
             )
-            s, out = launch(cmd, nproc=nproc, pipe=True, verbose=True)
+            _, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
 
         f = open("run.log." + str(nproc), "w")
         f.write(out)

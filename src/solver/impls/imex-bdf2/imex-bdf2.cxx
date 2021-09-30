@@ -1294,15 +1294,15 @@ PetscErrorCode IMEXBDF2::precon(Vec x, Vec f) {
   Vec solution;
   SNESGetSolution(snes, &solution);
   BoutReal *soldata;
-  ierr = VecGetArray(x,&soldata);CHKERRQ(ierr);
+  ierr = VecGetArray(solution,&soldata);CHKERRQ(ierr);
   load_vars(soldata);
   ierr = VecRestoreArray(solution,&soldata);CHKERRQ(ierr);
 
   // Load vector to be inverted into ddt() variables
-  BoutReal *xdata;
-  ierr = VecGetArray(x,&xdata);CHKERRQ(ierr);
-  load_derivs(xdata);
-  ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
+  const BoutReal *xdata;
+  ierr = VecGetArrayRead(x,&xdata);CHKERRQ(ierr);
+  load_derivs(const_cast<BoutReal*>(xdata)); // Note: load_derivs does not modify data
+  ierr = VecRestoreArrayRead(x,&xdata);CHKERRQ(ierr);
 
   // Run the preconditioner
   runPreconditioner(implicit_curtime, implicit_gamma, 0.0);

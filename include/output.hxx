@@ -217,6 +217,9 @@ public:
 private:
   /// The lower-level Output to send output to
   Output *base;
+
+protected:
+  friend class WithQuietOutput;
   /// Does this instance output anything?
   bool enabled;
 };
@@ -265,18 +268,22 @@ template <typename T> ConditionalOutput &operator<<(ConditionalOutput &out, cons
 /// exit. You must give the variable a name!
 ///
 ///     {
-///       WithQuietoutput quiet{output};
+///       WithQuietOutput quiet{output};
 ///       // output disabled during this scope
 ///     }
 ///     // output now enabled
 class WithQuietOutput {
 public:
   explicit WithQuietOutput(ConditionalOutput& output_in) : output(output_in) {
+    state = output.enabled;
     output.disable();
   }
 
-  ~WithQuietOutput() { output.enable(); }
+  ~WithQuietOutput() { output.enable(state); }
+
+private:
   ConditionalOutput& output;
+  bool state;
 };
 
 /// To allow statements like "output.write(...)" or "output << ..."

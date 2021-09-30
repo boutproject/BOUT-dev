@@ -203,3 +203,51 @@ TEST_F(FieldTest, filledFromConstInd3D) {
     ASSERT_DOUBLE_EQ(result[i], i.x() * i.y());
   }
 }
+
+TEST_F(FieldTest, IsUniformTrue3D) {
+  Field3D uniform{1.0};
+  EXPECT_TRUE(isUniform(uniform));
+}
+
+TEST_F(FieldTest, IsUniformFalse3D) {
+  Field3D nonuniform{2.0};
+  nonuniform(1, 2, 3) = 3.0;
+  EXPECT_FALSE(isUniform(nonuniform));
+}
+
+TEST_F(FieldTest, IsUniformTrue2D) {
+  Field2D uniform{4.0};
+  EXPECT_TRUE(isUniform(uniform));
+}
+
+TEST_F(FieldTest, IsUniformFalse2D) {
+  Field2D nonuniform{5.0};
+  nonuniform(2, 1) = 6.0;
+  EXPECT_FALSE(isUniform(nonuniform));
+}
+
+TEST_F(FieldTest, GetUniformTrue3D) {
+  Field3D uniform{10.0};
+  EXPECT_EQ(getUniform(uniform), 10.0);
+}
+
+TEST_F(FieldTest, GetUniformFalse3D) {
+  Field3D nonuniform{20.0};
+  nonuniform(1, 2, 3) = 30.0;
+#if CHECK > 1
+  EXPECT_THROW(getUniform(nonuniform), BoutException);
+#endif
+}
+
+TEST_F(FieldTest, GetUniformTrue2D) {
+  Field2D uniform{40.0};
+  EXPECT_EQ(getUniform(uniform), 40.0);
+}
+
+TEST_F(FieldTest, GetUniformFalse2D) {
+  Field2D nonuniform{50.0};
+  nonuniform(2, 1) = 60.0;
+#if CHECK > 1
+  EXPECT_THROW(getUniform(nonuniform), BoutException);
+#endif
+}

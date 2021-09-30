@@ -1,6 +1,6 @@
 
 BOUT_TOP	= ../../..
 
-SOURCEC		= test_fieldfactory2.cxx
+SOURCEC		= test-bout-override-default-option.cxx
 
 include $(BOUT_TOP)/make.config

@@ -1417,4 +1417,3 @@ std::vector<NcDim> Ncxx4::getRecDimVec(int nd) {
 }
 
 #endif // BOUT_HAS_NETCDF
-

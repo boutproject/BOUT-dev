@@ -58,7 +58,7 @@ class GEM : public PhysicsModel {
   
   Vector3D B0vec; // Equilibrium B field vector
   Field2D logB;   // For curvature
-  Field2D Grad_par_logB; // Grad_par(log(B))
+  Coordinates::FieldMetric Grad_par_logB; // Grad_par(log(B))
 
   Field2D Ni0, Ne0; // Gyro-center densities
   Field2D Ti0, Te0; // Starting isotropic temperatures

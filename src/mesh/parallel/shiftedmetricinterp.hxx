@@ -57,10 +57,10 @@ public:
    * Note that the returned field will no longer be orthogonal in X-Z, and the
    * metric tensor will need to be changed if X derivatives are used.
    */
-  const Field3D toFieldAligned(const Field3D& f,
-                               const std::string& region = "RGN_ALL") override;
-  const FieldPerp toFieldAligned(const FieldPerp& UNUSED(f),
-                                 const std::string& UNUSED(region) = "RGN_ALL") override {
+  Field3D toFieldAligned(const Field3D& f,
+                         const std::string& region = "RGN_ALL") override;
+  FieldPerp toFieldAligned(const FieldPerp& UNUSED(f),
+                           const std::string& UNUSED(region) = "RGN_ALL") override {
     throw BoutException("Not implemented yet");
   }
 
@@ -68,11 +68,10 @@ public:
    * Converts a field back to X-Z orthogonal coordinates
    * from field aligned coordinates.
    */
-  const Field3D fromFieldAligned(const Field3D& f,
-                                 const std::string& region = "RGN_ALL") override;
-  const FieldPerp
-  fromFieldAligned(const FieldPerp& UNUSED(f),
-                   const std::string& UNUSED(region) = "RGN_ALL") override {
+  Field3D fromFieldAligned(const Field3D& f,
+                           const std::string& region = "RGN_ALL") override;
+  FieldPerp fromFieldAligned(const FieldPerp& UNUSED(f),
+                             const std::string& UNUSED(region) = "RGN_ALL") override {
     throw BoutException("Not implemented yet");
   }
 

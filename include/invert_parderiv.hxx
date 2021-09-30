@@ -60,6 +60,8 @@ public:
 template <class DerivedType>
 using RegisterInvertPar = InvertParFactory::RegisterInFactory<DerivedType>;
 
+using RegisterUnavailableInvertPar = RegisterUnavailableInFactory<InvertPar, InvertParFactory>;
+
 /// Base class for parallel inversion solvers
 /*!
  * 
