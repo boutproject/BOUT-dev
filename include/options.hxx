@@ -449,15 +449,20 @@ public:
 
   /// Get the value of this option. If not found,
   /// set to the default value
-  template <typename T> T withDefault(T def) {
+  template <typename T>
+  T withDefault(T def) {
 
     // Set the type
     attributes["type"] = bout::utils::typeName<T>();
-    
-    if (is_section) {
-      // Option not found
+
+    const bool deferred_default =
+        hasAttribute("deferred") and attributes.at("deferred").as<bool>();
+
+    if (is_section or deferred_default) {
+      // Option not found, or it was a deferred default
       assign(def, DEFAULT_SOURCE);
       value_used = true; // Mark the option as used
+      attributes.erase("deferred"); // No longer deferred
 
       output_info << _("\tOption ") << full_name << " = " << def << " (" << DEFAULT_SOURCE
                   << ")" << std::endl;
@@ -553,6 +558,19 @@ public:
   /// Note: Different from template since return type is different to input
   std::string overrideDefault(const char* def) {
     return overrideDefault<std::string>(std::string(def));
+  }
+
+  /// Similar to `withDefault`, but if the default is used, it can be
+  /// overridden by a later call to `withDefault`
+  ///
+  /// This is useful for `ArgumentHelper` where we want to record
+  /// input options, but the real default value is computed from other
+  /// options we don't have access to.
+  template <typename T>
+  T withDeferredDefault(T def) {
+    T value = withDefault(def);
+    attributes["deferred"] = true;
+    return value;
   }
 
   /// Get the parent Options object
