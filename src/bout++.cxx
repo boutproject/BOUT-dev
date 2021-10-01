@@ -487,9 +487,7 @@ void printCompileTimeOptions() {
   output_info.write(_("\tParallel NetCDF support disabled\n"));
 #endif
 
-#ifdef METRIC3D
-  output_info.write("\tRUNNING IN 3D-METRIC MODE\n");
-#endif
+  output_info.write(_("\tMetrics mode is {}\n"), use_metric_3d ? "3D" : "2D");
 
   output_info.write(_("\tFFT support {}\n"), is_enabled(has_fftw));
   output_info.write(_("\tNatural language support {}\n"), is_enabled(has_gettext));
@@ -667,6 +665,7 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   dump_file.addOnce(const_cast<bool&>(bout::build::use_sigfpe), "use_sigfpe");
   dump_file.addOnce(const_cast<bool&>(bout::build::use_signal), "use_signal");
   dump_file.addOnce(const_cast<bool&>(bout::build::use_track), "use_track");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_metric_3d), "use_metric_3d");
   dump_file.addOnce(const_cast<bool&>(bout::build::use_msgstack), "use_msgstack");
 
   return dump_file;

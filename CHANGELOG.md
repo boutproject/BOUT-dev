@@ -86,6 +86,105 @@
   `Options::as<T>()`
   [\#2341](https://github.com/boutproject/BOUT-dev/pull/2341)
 
+## v4 known bugs
+
+
+  See [\#2154](https://github.com/boutproject/BOUT-dev/pull/2154).
+
+## [v4.4.0](https://github.com/boutproject/BOUT-dev/tree/v4.4.0) (2021-07-30)
+
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.3...v4.4.4)
+
+**Merged pull requests:**
+
+- Add ability to use FieldPerp in Options (v.4.4) [\#2395](https://github.com/boutproject/BOUT-dev/pull/2395) ([ZedThree](https://github.com/users/ZedThree))
+- Fix some HDF5 related issues and add Mesh::getLocal{X,Y,Z}Index (v4.4) [\#2394](https://github.com/boutproject/BOUT-dev/pull/2394) ([ZedThree](https://github.com/users/ZedThree))
+- Add Mesh::getRegion<T> for use in generic code (v4.4) [\#2393](https://github.com/boutproject/BOUT-dev/pull/2393) ([ZedThree](https://github.com/users/ZedThree))
+- Adding an adaptive, arbitrary order, Adams-Bashforth solver (v4.4) [\#2392](https://github.com/boutproject/BOUT-dev/pull/2392) ([ZedThree](https://github.com/users/ZedThree))
+- Allow PETSc options to be passed from BOUT.inp (v4.4) [\#2391](https://github.com/boutproject/BOUT-dev/pull/2391) ([ZedThree](https://github.com/users/ZedThree))
+- Add new contributors [\#2386](https://github.com/boutproject/BOUT-dev/pull/2386) ([dschwoerer](https://github.com/users/dschwoerer))
+- Update locale [\#2385](https://github.com/boutproject/BOUT-dev/pull/2385) ([dschwoerer](https://github.com/users/dschwoerer))
+- Fix RTD [\#2384](https://github.com/boutproject/BOUT-dev/pull/2384) ([dschwoerer](https://github.com/users/dschwoerer))
+- Rename `max_nonlinear_it` to `max_nonlinear_iterations` [\#2339](https://github.com/boutproject/BOUT-dev/pull/2339) ([johnomotani](https://github.com/users/johnomotani))
+- CVODE constraints and max_noinlinear_iterations options (4.4) [\#2304](https://github.com/boutproject/BOUT-dev/pull/2304) ([johnomotani](https://github.com/users/johnomotani))
+- Fix some Solvers not always using user preconditioner/Jacobian (v4.4) [\#2284](https://github.com/boutproject/BOUT-dev/pull/2284) ([ZedThree](https://github.com/users/ZedThree))
+- Fix formatting strings for pre-fmt in beuler solver [\#2278](https://github.com/boutproject/BOUT-dev/pull/2278) ([bendudson](https://github.com/users/bendudson))
+- Backport of Backward Euler solver to v4.4 [\#2265](https://github.com/boutproject/BOUT-dev/pull/2265) ([bendudson](https://github.com/users/bendudson))
+- Fix use of uninitialised value in Delp2 (4.4) [\#2263](https://github.com/boutproject/BOUT-dev/pull/2263) ([johnomotani](https://github.com/users/johnomotani))
+- Save provenance tracking info from grid file (4.4) [\#2231](https://github.com/boutproject/BOUT-dev/pull/2231) ([johnomotani](https://github.com/users/johnomotani))
+- Generate random run ID, track restarts (4.4) [\#2224](https://github.com/boutproject/BOUT-dev/pull/2224) ([johnomotani](https://github.com/users/johnomotani))
+- Generate report for Timers (4.4) [\#2216](https://github.com/boutproject/BOUT-dev/pull/2216) ([johnomotani](https://github.com/users/johnomotani))
+- Replace boutdata and boututils directories with submodules (v4.4) [\#2198](https://github.com/boutproject/BOUT-dev/pull/2198) ([johnomotani](https://github.com/users/johnomotani))
+- Use bout_type="string" for strings in H5Format (4.4) [\#2194](https://github.com/boutproject/BOUT-dev/pull/2194) ([johnomotani](https://github.com/users/johnomotani))
+- Write descriptions for std::vector<int> and std::string variables [\#2191](https://github.com/boutproject/BOUT-dev/pull/2191) ([johnomotani](https://github.com/users/johnomotani))
+- Fix reading of char* in Ncxx4 (4.4) [\#2189](https://github.com/boutproject/BOUT-dev/pull/2189) ([johnomotani](https://github.com/users/johnomotani))
+- Merge master into v4.4.0-alpha [\#2174](https://github.com/boutproject/BOUT-dev/pull/2174) ([ZedThree](https://github.com/users/ZedThree))
+- I/O for std::vector<int> and std::string (4.4) [\#2155](https://github.com/boutproject/BOUT-dev/pull/2155) ([johnomotani](https://github.com/users/johnomotani))
+- Check DataFile grid sizes match those in existing mesh (v4.4) [\#2148](https://github.com/boutproject/BOUT-dev/pull/2148) ([johnomotani](https://github.com/users/johnomotani))
+- Call checkData() before returning result in Laplace inversions (v4.4) [\#2134](https://github.com/boutproject/BOUT-dev/pull/2134) ([johnomotani](https://github.com/users/johnomotani))
+- Allow setting FFTW_EXHAUSTIVE (v4.4) [\#2132](https://github.com/boutproject/BOUT-dev/pull/2132) ([johnomotani](https://github.com/users/johnomotani))
+- Make example relocatable [\#2127](https://github.com/boutproject/BOUT-dev/pull/2127) ([dschwoerer](https://github.com/users/dschwoerer))
+- Merge master into v4.4.0-alpha [\#2121](https://github.com/boutproject/BOUT-dev/pull/2121) ([ZedThree](https://github.com/users/ZedThree))
+- Handle FieldPerps in Datafile::varAdded() and Datafile::varPtr() (v4.4.0) [\#2094](https://github.com/boutproject/BOUT-dev/pull/2094) ([johnomotani](https://github.com/users/johnomotani))
+- Staggered grids in InvertPar (v4.4.0) [\#2088](https://github.com/boutproject/BOUT-dev/pull/2088) ([johnomotani](https://github.com/users/johnomotani))
+- Allow descriptions of output variables; save some diagnostics for solvers (v4.4) [\#2086](https://github.com/boutproject/BOUT-dev/pull/2086) ([johnomotani](https://github.com/users/johnomotani))
+- Correct Grad2_par2 implementation in InvertParCR (v4.4.0) [\#2077](https://github.com/boutproject/BOUT-dev/pull/2077) ([johnomotani](https://github.com/users/johnomotani))
+- Enable staggered versions of SplitFluxDerivativeType (4.4) [\#2059](https://github.com/boutproject/BOUT-dev/pull/2059) ([johnomotani](https://github.com/users/johnomotani))
+- Merge master into v4.4.0-alpha [\#1998](https://github.com/boutproject/BOUT-dev/pull/1998) ([ZedThree](https://github.com/users/ZedThree))
+- LaplaceXY: finite difference option (v4.4) [\#1924](https://github.com/boutproject/BOUT-dev/pull/1924) ([johnomotani](https://github.com/users/johnomotani))
+- Backport of Laplace performance test [\#1910](https://github.com/boutproject/BOUT-dev/pull/1910) ([JosephThomasParker](https://github.com/users/JosephThomasParker))
+- Macro for creating enum classes (v4.4) [\#1895](https://github.com/boutproject/BOUT-dev/pull/1895) ([johnomotani](https://github.com/users/johnomotani))
+- Implement toFieldAligned and fromFieldAligned for Vector3D (v4.4) [\#1878](https://github.com/boutproject/BOUT-dev/pull/1878) ([johnomotani](https://github.com/users/johnomotani))
+- Remove 3-element list indexers for collect() [\#1862](https://github.com/boutproject/BOUT-dev/pull/1862) ([johnomotani](https://github.com/users/johnomotani))
+- Allow user to override library option defaults (v4.4) [\#1849](https://github.com/boutproject/BOUT-dev/pull/1849) ([johnomotani](https://github.com/users/johnomotani))
+
+The following were backported from v5.0.0 in [\#2389](https://github.com/boutproject/BOUT-dev/pull/2389):
+
+- Add remaining integrated tests to CMake build [\#1833](https://github.com/boutproject/BOUT-dev/pull/1833) ([ZedThree](https://github.com/users/ZedThree))
+- Fixes for Windows [\#1874](https://github.com/boutproject/BOUT-dev/pull/1874) ([ZedThree](https://github.com/users/ZedThree))
+- CMake: fix FindSlepc for non-make generators [\#1881](https://github.com/boutproject/BOUT-dev/pull/1881) ([ZedThree](https://github.com/users/ZedThree))
+- CMake: enable using external mpark.variant [\#1900](https://github.com/boutproject/BOUT-dev/pull/1900) ([ZedThree](https://github.com/users/ZedThree))
+- Cmake fixes [\#1909](https://github.com/boutproject/BOUT-dev/pull/1909) ([dschwoerer](https://github.com/users/dschwoerer))
+- CMake: find package fixes [\#1912](https://github.com/boutproject/BOUT-dev/pull/1912) ([ZedThree](https://github.com/users/ZedThree))
+- Fix runtest for non-make generators [\#1952](https://github.com/boutproject/BOUT-dev/pull/1952) ([ZedThree](https://github.com/users/ZedThree))
+- CMake: Generate Field arithmetic operators [\#2119](https://github.com/boutproject/BOUT-dev/pull/2119) ([dschwoerer](https://github.com/users/dschwoerer))
+- CMake: Add option to download and build netCDF C++ API [\#2138](https://github.com/boutproject/BOUT-dev/pull/2138) ([ZedThree](https://github.com/users/ZedThree))
+- Fix CMake config file following change to netCDF cmake module [\#2162](https://github.com/boutproject/BOUT-dev/pull/2162) ([ZedThree](https://github.com/users/ZedThree))
+- Make input Options case sensitive and error on unused Options [\#2210](https://github.com/boutproject/BOUT-dev/pull/2210) ([ZedThree](https://github.com/users/ZedThree))
+- Next CMake fixes [\#2275](https://github.com/boutproject/BOUT-dev/pull/2275) ([bendudson](https://github.com/users/bendudson))
+- Add MMS tests to CMake build [\#2286](https://github.com/boutproject/BOUT-dev/pull/2286) ([ZedThree](https://github.com/users/ZedThree))
+- CMake: Build documentation [\#2300](https://github.com/boutproject/BOUT-dev/pull/2300) ([ZedThree](https://github.com/users/ZedThree))
+- Fix for FindPETSc not being reentrant if pkg-config used (next) [\#2318](https://github.com/boutproject/BOUT-dev/pull/2318) ([ZedThree](https://github.com/users/ZedThree))
+- CMake: Fix a few minor issues, generate `bout-config` [\#2328](https://github.com/boutproject/BOUT-dev/pull/2328) ([ZedThree](https://github.com/users/ZedThree))
+- CMake: Add option to download SUNDIALS at configure time [\#2331](https://github.com/boutproject/BOUT-dev/pull/2331) ([ZedThree](https://github.com/users/ZedThree))
+- CMake rename PACKAGE_TESTS to BOUT_TESTS [\#2347](https://github.com/boutproject/BOUT-dev/pull/2347) ([bendudson](https://github.com/users/bendudson))
+- CMake: Add SOVERSION; fix FindSUNDIALS [\#2358](https://github.com/boutproject/BOUT-dev/pull/2358) ([dschwoerer](https://github.com/users/dschwoerer))
+- Faster recompile [\#2294](https://github.com/boutproject/BOUT-dev/pull/2294) ([dschwoerer](https://github.com/users/dschwoerer))
+
+## [v4.3.3](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2021-07-28)
+
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.2...master)
+
+**Merged pull requests:**
+
+- Fix documentation for examples/wave-slab [\#2369](https://github.com/boutproject/BOUT-dev/pull/2369) ([ZedThree](https://github.com/users/ZedThree))
+- Make include optional [\#2360](https://github.com/boutproject/BOUT-dev/pull/2360) ([dschwoerer](https://github.com/users/dschwoerer))
+- Fix ReadTheDocs (master) [\#2319](https://github.com/boutproject/BOUT-dev/pull/2319) ([ZedThree](https://github.com/users/ZedThree))
+- Fix for FindPETSc not being reentrant if pkg-config used [\#2317](https://github.com/boutproject/BOUT-dev/pull/2317) ([ZedThree](https://github.com/users/ZedThree))
+- Add missing snb.cxx to CMakeLists.txt [\#2315](https://github.com/boutproject/BOUT-dev/pull/2315) ([bendudson](https://github.com/users/bendudson))
+- Add notes on installing SUNDIALS [\#2311](https://github.com/boutproject/BOUT-dev/pull/2311) ([bendudson](https://github.com/users/bendudson))
+- Make blob2d example self contained [\#2288](https://github.com/boutproject/BOUT-dev/pull/2288) ([dschwoerer](https://github.com/users/dschwoerer))
+- Fix some Solvers not always using user preconditioner/Jacobian [\#2283](https://github.com/boutproject/BOUT-dev/pull/2283) ([ZedThree](https://github.com/users/ZedThree))
+- Bump jinja2 from 2.10.1 to 2.11.3 [\#2266](https://github.com/boutproject/BOUT-dev/pull/2266) ([dependabot[bot]](https://github.com/users/dependabot%5Bbot%5D))
+- Fix use of uninitialised value in Delp2 [\#2262](https://github.com/boutproject/BOUT-dev/pull/2262) ([johnomotani](https://github.com/users/johnomotani))
+- Add requirements to boutcore/print test [\#2175](https://github.com/boutproject/BOUT-dev/pull/2175) ([ZedThree](https://github.com/users/ZedThree))
+- Update docs on supported PETSc versions [\#2171](https://github.com/boutproject/BOUT-dev/pull/2171) ([johnomotani](https://github.com/users/johnomotani))
+- Convert Travis to Github Actions (master) [\#2170](https://github.com/boutproject/BOUT-dev/pull/2170) ([ZedThree](https://github.com/users/ZedThree))
+- Boutcore improvements [\#2166](https://github.com/boutproject/BOUT-dev/pull/2166) ([dschwoerer](https://github.com/users/dschwoerer))
+- Fix shiftOutput (master) [\#2158](https://github.com/boutproject/BOUT-dev/pull/2158) ([johnomotani](https://github.com/users/johnomotani))
+- Fix test-restart-io and FieldPerp writes [\#2154](https://github.com/boutproject/BOUT-dev/pull/2154) ([johnomotani](https://github.com/users/johnomotani))
+- Ignore more test data [\#2125](https://github.com/boutproject/BOUT-dev/pull/2125) ([dschwoerer](https://github.com/users/dschwoerer))
+- Fix links to open-mpi.org and lam-mpi.org [\#2122](https://github.com/boutproject/BOUT-dev/pull/2122) ([tobyjamez](https://github.com/users/tobyjamez))
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.1...v4.3.2)
