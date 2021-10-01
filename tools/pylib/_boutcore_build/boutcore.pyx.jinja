@@ -364,7 +364,7 @@ cdef class {{ field.field_type }}:
         """
         return self.cobj.isAllocated()
 
-    def __getitem__(self,slices):
+    def __getitem__(self, slices):
         """
         Get data from the {{ field.field_type }}
         Supports full {{ field.ndims }}D slicing support.
@@ -558,6 +558,27 @@ cdef class {{ vec }}:
                                       str(type(self))+"' and '"+str(type(rhs))+
                                       "' - not supported (yet?).")
 
+    @property
+    def shape(self):
+        return 3, {{ vec.field.makelist("self.cobj.x.getN$d()") }}
+
+    def get(self):
+        """
+        Get all data of the {{ vec }}
+
+        Returns
+        -------
+        np.ndarray
+             A {{ vec.field.ndims+1 }}D numpy array with the data of the {{ vec }}
+        """
+        cdef np.ndarray[double, mode="c", ndim={{ vec.field.ndims + 1 }}] data_ = np.ascontiguousarray(np.zeros(self.shape))
+{% for i, d in ("0x", "1y", "2z") %}
+        c_get_{{ vec.fdd }}_all(&self.cobj.{{ d }}, &data_[{{i}}, {{ vec.field.makelist("0") }}]);
+{% endfor %}
+        return data_
+
+
+
     def __dealloc__(self):
         self.__boutcore_dealloc()
 
@@ -565,6 +586,7 @@ cdef class {{ vec }}:
         if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
             self.cobj=NULL
+
 
 cdef {{ vec }} {{ vec.vdd }}FromObj(c.{{ vec }} i):
     v={{ vec }}()
