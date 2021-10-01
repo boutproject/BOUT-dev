@@ -56,7 +56,7 @@ public:
       : y_offset(y_offset), localmesh(mesh), region_name(region_name) {}
   XZInterpolation(std::shared_ptr<Region<Ind3D>> region, int y_offset = 0,
                   Mesh* mesh = nullptr)
-      : y_offset(y_offset), localmesh(mesh), region(region) {}
+    : y_offset(y_offset), localmesh(mesh), region(std::move(region)) {}
   virtual ~XZInterpolation() = default;
 
   void setMask(const BoutMask& mask) {
@@ -76,15 +76,15 @@ public:
     this->region = std::make_shared<Region<Ind3D>>(region);
   }
   Region<Ind3D> getRegion() const {
-    if (region_name != "") {
+    if (!region_name.empty()) {
       return localmesh->getRegion(region_name);
     }
     ASSERT1(region != nullptr);
     return *region;
   }
   Region<Ind3D> getRegion(const std::string& region) const {
-    const bool has_region = region_name != "" or this->region != nullptr;
-    if (region != "" and region != "RGN_ALL") {
+    const bool has_region = !region_name.empty() or this->region != nullptr;
+    if (!region.empty() and region != "RGN_ALL") {
       if (has_region) {
         return getIntersection(localmesh->getRegion(region), getRegion());
       }
