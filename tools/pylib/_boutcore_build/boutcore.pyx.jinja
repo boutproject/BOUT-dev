@@ -404,23 +404,23 @@ cdef class {{ field.field_type }}:
         """
         if len(slices)!={{ field.ndims }}:
             raise IndexError("This is a {{ field.ndims }}D object!")
-        dims=[]
+        dims = []
         import numbers
         inds = _resolve_slices(slices,
                               [{{ field.makelist('self.cobj.getN$d()') }}])
         if isinstance(data_,{{ field.field_type }}):
             # get all to get a numpy array
-            data_=data_[{{ field.makelist(':') }}]
+            data_ = data_[{{ field.makelist(':') }}]
         elif isinstance(data_,numbers.Number):
             c_set_{{ field.fdd }}_part_(self.cobj,<double>data_,{{ field.makelist('inds[$i][0],inds[$i][1],inds[$i][2]') }})
             return
         try:
-            dims_in=data_.shape
+            dims_in = data_.shape
         except:
             raise TypeError("Expected a {{ field.field_type }} or a numpy array")
         for i in inds:
             dims.append((i[1]-i[0])//i[2])
-        dims_in=self._checkDims(dims,dims_in)
+        dims_in = self._checkDims(dims,dims_in)
         cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data__ = np.ascontiguousarray(data_)
         c_set_{{ field.fdd }}_part(self.cobj,&data__[{{ field.makelist("0") }}],{{ field.makelist('inds[$i][0],inds[$i][1],inds[$i][2]') }});
 
@@ -428,35 +428,35 @@ cdef class {{ field.field_type }}:
         if len(dims_in) > {{ field.ndims }}:
             raise IndexError("This is a {{ field.ndims }}D object, but got %d dimensions"%len(dims_in))
         if len(dims_in) < {{ field.ndims }}:
-            len_dims=len([1 for d in dims if d>1])
+            len_dims = len([1 for d in dims if d>1])
             if len(dims_in) != len_dims:
                 raise IndexError("This is a {{ field.ndims }}D object, but got %d dimensions"%len(dims_in))
-            dims_in_new=[]
-            k=0
+            dims_in_new = []
+            k = 0
             for i in range({{ field.ndims }}):
-                if (dims[i]==1):
+                if (dims[i] == 1):
                     dims_in_new.append(1)
                 else:
                     dims_in_new.append(dims_in[k])
-                    k+=1
-            dims_in=dims_in_new
+                    k += 1
+            dims_in = dims_in_new
         for i in range({{ field.ndims }}):
             if dims[i] != dims_in[i]:
                 raise IndexError("Expected %s but got %s."%(dims,dims_in))
 
 {% for name, op in ops %}
     def __{{ name }}__(self,other):
-        fu={{ field.field_type }}()
+        fu = {{ field.field_type }}()
         import numbers
         if isinstance(self,{{ field.field_type }}) and isinstance(other,{{ field.field_type }}):
-            fu.cobj=f{{ name }}((<{{ field.field_type }}?>self).cobj , (<{{ field.field_type }}?>other).cobj)
+            fu.cobj = f{{ name }}((<{{ field.field_type }}?>self).cobj , (<{{ field.field_type }}?>other).cobj)
         elif isinstance(self,{{ field.field_type }}) and isinstance(other, numbers.Number):
-            fu.cobj=f{{ name }}((<{{ field.field_type }}?>self).cobj , (<double?>float(other)))
+            fu.cobj = f{{ name }}((<{{ field.field_type }}?>self).cobj , (<double?>float(other)))
         elif isinstance(self,numbers.Number) and isinstance(other, {{ field.field_type }}):
-            fu.cobj=f{{ name }}(<double?>float(self),(<{{ field.field_type }}?>other).cobj)
+            fu.cobj = f{{ name }}(<double?>float(self),(<{{ field.field_type }}?>other).cobj)
 {% if field == field3d %}
         elif isinstance(self,Field3D) and isinstance(other,Field2D):
-            fu.cobj=f{{ name }}((<Field3D?>self).cobj , (<Field2D?>other).cobj)
+            fu.cobj = f{{ name }}((<Field3D?>self).cobj , (<Field2D?>other).cobj)
 {% endif %}
         else:
             print("{{ name }}",type(self),type(other),isinstance(self,numbers.Number))
@@ -464,12 +464,12 @@ cdef class {{ field.field_type }}:
         return fu
 
     def __r{{ name }}__(self,lhs):
-        fu={{ field.field_type }}()
+        fu = {{ field.field_type }}()
         if isinstance(lhs,float) or isinstance(lhs,int):
-            fu.cobj=f{{ name }}(<double?>float(lhs),(<{{ field.field_type }}?>self).cobj)
+            fu.cobj = f{{ name }}(<double?>float(lhs),(<{{ field.field_type }}?>self).cobj)
 {% if field == field3d %}
         elif isinstance(lhs,Field2D):
-            fu.cobj=f{{ name }}((<Field2D?>lhs).cobj,(<Field3D?>self).cobj)
+            fu.cobj = f{{ name }}((<Field2D?>lhs).cobj,(<Field3D?>self).cobj)
 {% endif %}
         else:
             return NotImplemented
@@ -513,8 +513,8 @@ cdef class {{ field.field_type }}:
             _time = time
             self.cobj.applyBoundary(_time)
         elif boundary is not None:
-            tmp=boundary.encode()
-            bndry=tmp
+            tmp = boundary.encode()
+            bndry = tmp
             self.cobj.applyBoundary(bndry)
         else:
             self.cobj.applyBoundary()
@@ -523,9 +523,9 @@ cdef class {{ field.field_type }}:
         self.__boutcore_dealloc()
 
     def __boutcore_dealloc(self):
-        if self.isSelfOwned and self.cobj!=NULL:
+        if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
-            self.cobj=NULL
+            self.cobj = NULL
 {% endfor %}
 {% for vec in vecs %}
 cdef extern from "helper.h":
@@ -560,7 +560,7 @@ cdef class {{ vec }}:
         self.__boutcore_dealloc()
 
     def __boutcore_dealloc(self):
-        if self.isSelfOwned and self.cobj!=NULL:
+        if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
             self.cobj=NULL
 
