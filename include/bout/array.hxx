@@ -280,8 +280,9 @@ public:
    * Return size of the array. Zero if the array is empty.
    */
   size_type size() const noexcept {
-    if (!ptr)
+    if (!ptr) {
       return 0;
+    }
 
     // Note: std::valarray::size is technically not noexcept, so
     // Array::size shouldn't be either if we're using valarrays -- in
@@ -301,8 +302,9 @@ public:
    * on the data.
    */
   void ensureUnique() {
-    if (!ptr || unique())
+    if (!ptr || unique()) {
       return;
+    }
 
     // Get a new (unique) block of data
     dataPtrType p = get(size());

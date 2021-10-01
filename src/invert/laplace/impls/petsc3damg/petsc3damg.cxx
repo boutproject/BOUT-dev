@@ -71,7 +71,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   // Checking flags are set to something which is not implemented
   // This is done binary (which is possible as each flag is a power of 2)
   if ((global_flags & ~implemented_flags) != 0) {
-    if (global_flags & INVERT_4TH_ORDER) {
+    if ((global_flags & INVERT_4TH_ORDER) != 0) {
       output << "For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
                 "setting INVERT_4TH_ORDER flag"
              << "\n";
@@ -200,8 +200,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
 
   // If necessary, update the values in the matrix operator and initialise
   // the Krylov solver
-  if (updateRequired)
+  if (updateRequired) {
     updateMatrix3D();
+  }
   PetscVector<Field3D> rhs(b_in, indexer), guess(x0, indexer);
 
   // Adjust vectors to represent boundary conditions and check that
