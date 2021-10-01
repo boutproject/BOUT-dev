@@ -58,6 +58,7 @@ cdef class {{ field.field_type }}:
     """
     cdef c.{{ field.field_type }} * cobj
     cdef c.bool isSelfOwned
+
     @classmethod
     def fromMesh(cls, mesh=None):
         """
@@ -74,6 +75,7 @@ cdef class {{ field.field_type }}:
             mesh = Mesh.getGlobal()
         {{ field.fdd }}.cobj = new c.{{ field.field_type }}((<Mesh?>mesh).cobj)
         return {{ field.fdd }}
+
     @classmethod
     def fromCollect(cls, name, tind=-1, mesh=None, ignoreDataType=False, **kwargs):
         """
@@ -248,7 +250,6 @@ cdef class {{ field.field_type }}:
         """
         dims = [{{ field.makelist("self.cobj.getN$d()")}}]
 {% set zeros = field.makelist("0") %}
-{% set nxlist = field.makelist("n$d") %}
         if isinstance(data, (int, float)):
             data = np.zeros(dims)+data
         if data.dtype != np.dtype("float64"):
@@ -280,11 +281,8 @@ cdef class {{ field.field_type }}:
         array
             A {{ field.ndims }}D numpy array with the data of the {{ field.field_type }}
         """
-        nx = self.cobj.getNx()
-        ny = self.cobj.getNy()
-        nz = self.cobj.getNz()
-        cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(np.zeros(({{ nxlist }})))
-        c_get_{{ field.fdd }}_all(self.cobj,&data_[{{ zeros }}]);
+        cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(np.zeros(self.shape))
+        c_get_{{ field.fdd }}_all(self.cobj, &data_[{{ zeros }}]);
         return data_
 
     def setLocation(self, location):
@@ -526,6 +524,10 @@ cdef class {{ field.field_type }}:
         if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
             self.cobj = NULL
+
+    @property
+    def shape(self):
+        return {{ field.makelist("self.cobj.getN$d()") }}
 {% endfor %}
 {% for vec in vecs %}
 cdef extern from "helper.h":
