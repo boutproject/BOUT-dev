@@ -68,6 +68,22 @@ public:
    * Ensure that Hypre has been initialised
    */
   explicit HypreLib();
+
+  /// Copy constructor
+  Hyprelib(const Hyprelib &other);
+
+  /// Move constructor
+  Hyprelib(Hyprelib &&other) noexcept;
+
+  /// Assignment doesn't do anything
+  Hyprelib& operator=(const Hyprelib &other) noexcept {
+    return *this;
+  }
+
+  /// Move assignment doesn't do anything
+  Hyprelib& operator=(Hyprelib &&other) noexcept {
+    return *this;
+  }
   
   ~HypreLib();
   
