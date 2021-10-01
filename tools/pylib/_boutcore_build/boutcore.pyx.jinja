@@ -384,7 +384,7 @@ cdef class {{ field.field_type }}:
         """
         if len(slices)!={{ field.ndims }}:
             raise IndexError("This is a {{ field.ndims }}D object, but got %d slics"%len(slices))
-        inds=_resolve_slices(slices,
+        inds = _resolve_slices(slices,
                             [{{ field.makelist('self.cobj.getN$d()') }}])
         dims=[]
         for i in inds:
@@ -406,8 +406,8 @@ cdef class {{ field.field_type }}:
             raise IndexError("This is a {{ field.ndims }}D object!")
         dims=[]
         import numbers
-        inds=_resolve_slices(slices,
-                            [{{ field.makelist('self.cobj.getN$d()') }}])
+        inds = _resolve_slices(slices,
+                              [{{ field.makelist('self.cobj.getN$d()') }}])
         if isinstance(data_,{{ field.field_type }}):
             # get all to get a numpy array
             data_=data_[{{ field.makelist(':') }}]
@@ -513,7 +513,7 @@ cdef class {{ field.field_type }}:
             _time = time
             self.cobj.applyBoundary(_time)
         elif boundary is not None:
-            tmp=boundary.encode('ascii')
+            tmp=boundary.encode()
             bndry=tmp
             self.cobj.applyBoundary(bndry)
         else:
@@ -629,7 +629,7 @@ cdef class Mesh:
                 if opt == NULL:
                     opt = c.Options.getRoot()
                 for sec in section.split(":"):
-                    tmp=sec.encode('ascii')
+                    tmp=sec.encode()
                     opt=opt.getSection(tmp)
             self.cobj = c.Mesh.create(opt)
             if self.cobj == NULL:
@@ -856,7 +856,7 @@ cdef void callback(void * parameter, void * method) with gil:
         str__="Exception in Python callback: type:%s\nInfo:%s %s\n"%(str(type(e)),str(e),str(e.args))
         import traceback
         str__ += traceback.format_exc()
-        str_=str__.encode('ascii')
+        str_=str__.encode()
         c.throw_BoutException(str_)
 
 
@@ -913,9 +913,9 @@ cdef class PhysicsModelBase(object):
         cdef char * tmp
         cdef c.Field3D * f3d
         for key in kwargs:
-            t2=str.encode(key)
-            tmp=t2
-            f3d=(<Field3D?>kwargs[key]).cobj
+            t2 = str.encode(key)
+            tmp = t2
+            f3d = (<Field3D?>kwargs[key]).cobj
             self.cmodel.getSolver().add(f3d[0],tmp)
 
     def setRhs(self,rhs):
@@ -1071,7 +1071,7 @@ def init(args=[]):
     fu=[]
     cdef char * tmp
     for i in range(len(args)):
-        t2=str.encode(args[i])
+        t2 = str.encode(args[i])
         tmp=t2
         fu.append(tmp)
         string_buf[i]=<char*>fu[i]
@@ -1168,9 +1168,9 @@ def {{ DD }}({% if flux %}Field3D velocity, {% endif %}Field3D field, outloc="CE
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
     if method.startswith("DIFF_"):
         method=method[5:]
-    cdef c.string method_ = method.encode('ascii')
+    cdef c.string method_ = method.encode()
 {% if region %}
-    cdef c.string region_ = region.encode('ascii')
+    cdef c.string region_ = region.encode()
 {% endif %}
     return {{ret.ddd}}FromObj(c.{{ DD }}({{ "velocity.cobj[0], " if flux else "" }}field.cobj[0],outloc_,method_{% if region %},region_{% endif %}))
 {% endmacro %}
@@ -1375,7 +1375,7 @@ def create3D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0):
     if msh is None:
         msh=Mesh.getGlobal()
     cdef FieldFactory fact=msh.getFactory()
-    cdef c.string str_=string.encode('ascii')
+    cdef c.string str_=string.encode()
     return f3dFromObj(
         (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0
                                            ,outloc_,time))
@@ -1451,7 +1451,7 @@ cdef class Options:
         self.cobj = c.Options.getRoot()
         cdef c.string sec_
         for sec in name.split(":"):
-            sec_=sec.encode('ascii')
+            sec_=sec.encode()
             self.cobj=self.cobj.getSection(sec_)
         self.isSelfOwned=False
 
@@ -1475,8 +1475,8 @@ cdef class Options:
         opt.cobj = new c.Options()
         opt.isSelfOwned = True
         cdef char * file_
-        file__=file.encode('ascii')
-        file_=file__
+        file__ = file.encode()
+        file_ = file__
         c.OptionsReader.getInstance().read(opt.cobj, "%s", file_)
         return opt
 
@@ -1502,16 +1502,16 @@ cdef class Options:
         cdef c.Options * opt=self.cobj
         cdef c.string sec_
         for sec in name.split(":")[:-1]:
-            sec_=sec.encode('ascii')
+            sec_=sec.encode()
             opt=opt.getSection(sec_)
-        cdef c.string key = name.split(":")[-1].encode('ascii')
-        cdef c.string value_ = value.encode('ascii')
-        cdef c.string source_ = source.encode('ascii')
+        cdef c.string key = name.split(":")[-1].encode()
+        cdef c.string value_ = value.encode()
+        cdef c.string source_ = source.encode()
         opt.set(key,value_, source_, force)
         opt.cleanCache()
         return self
 
-    def get(self,name,default):
+    def get(self, name, default):
         """
         Get an option
 
@@ -1532,9 +1532,9 @@ cdef class Options:
         cdef c.Options * opt=self.cobj
         cdef c.string sec_
         for sec in name.split(":")[:-1]:
-            sec_=sec.encode('ascii')
+            sec_=sec.encode()
             opt=opt.getSection(sec_)
-        cdef c.string key = name.split(":")[-1].encode('ascii')
+        cdef c.string key = name.split(":")[-1].encode()
         import numbers
 
         cdef double ret_real=0
@@ -1542,24 +1542,24 @@ cdef class Options:
         cdef c.string default_
         cdef c.string ret_str
 
-        if isinstance(default,bool):
-            opt.get(key,ret_bool, <c.bool> default)
+        if isinstance(default, bool):
+            opt.get(key, ret_bool, <c.bool> default)
             return ret_bool
-        elif isinstance(default,numbers.Number):
-            opt.get(key,ret_real,<double> default)
+        elif isinstance(default, numbers.Number):
+            opt.get(key, ret_real, <double> default)
             return ret_real
         else:
-            default_= str(default).encode('ascii')
-            opt.get(key,ret_str, default_)
-            return ret_str
+            default_= str(default).encode()
+            opt.get(key, ret_str, default_)
+            return ret_str.decode()
 
     def __dealloc__(self):
         self.__boutcore_dealloc()
 
     def __boutcore_dealloc(self):
-        if self.isSelfOwned and self.cobj!=NULL:
+        if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
-            self.cobj=NULL
+            self.cobj = NULL
 
 cdef class Datafile:
     cdef c.Datafile * cobj
@@ -1597,7 +1597,7 @@ def print(*args, sep=' ', end='\n'):
     _print(sep.join([str(a) for a in args])+end)
 
 cdef _print(value):
-    cdef c.string str_=value.encode('utf-8')
+    cdef c.string str_=value.encode()
     c.output_info.write(str_.c_str())
 
 {% include "helper.py" %}
