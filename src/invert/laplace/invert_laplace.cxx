@@ -64,8 +64,8 @@
  **********************************************************************************/
 
 /// Laplacian inversion initialisation. Called once at the start to get settings
-Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in, Solver *solver,
-                     Datafile *dump)
+Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in,
+                     Solver* UNUSED(solver), Datafile* UNUSED(dump))
     : location(loc), localmesh(mesh_in == nullptr ? bout::globals::mesh : mesh_in) {
 
   if (options == nullptr) {

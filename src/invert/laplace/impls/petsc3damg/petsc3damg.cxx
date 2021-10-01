@@ -38,16 +38,14 @@
 #include <derivs.hxx>
 #include <utils.hxx>
 
-LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mesh_in,
-                                     Solver *solver, Datafile *dump) :
-  Laplacian(opt, loc, mesh_in),
-  A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-  lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
-  indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh,
-						   getStencil(localmesh, lowerY, upperY))),
-  operator3D(indexer), kspInitialised(false),
-  lib(opt==nullptr ? &(Options::root()["laplace"]) : opt)
-{
+LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
+                                     Solver* UNUSED(solver), Datafile* UNUSED(dump))
+    : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
+      lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
+      indexer(std::make_shared<GlobalIndexer<Field3D>>(
+          localmesh, getStencil(localmesh, lowerY, upperY))),
+      operator3D(indexer), kspInitialised(false),
+      lib(opt == nullptr ? &(Options::root()["laplace"]) : opt) {
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
   // Initialise PETSc objects
@@ -72,27 +70,28 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
 #if CHECK > 0
   // Checking flags are set to something which is not implemented
   // This is done binary (which is possible as each flag is a power of 2)
-  if (global_flags & ~implemented_flags) {
-    if (global_flags & INVERT_4TH_ORDER)
+  if ((global_flags & ~implemented_flags) != 0) {
+    if (global_flags & INVERT_4TH_ORDER) {
       output << "For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
                 "setting INVERT_4TH_ORDER flag"
              << "\n";
+    }
     throw BoutException("Attempted to set Laplacian inversion flag that is not "
                         "implemented in petsc_laplace.cxx");
   }
-  if (inner_boundary_flags & ~implemented_boundary_flags) {
+  if ((inner_boundary_flags & ~implemented_boundary_flags) != 0) {
     throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
                         "implemented in petsc_laplace.cxx");
   }
-  if (outer_boundary_flags & ~implemented_boundary_flags) {
+  if ((outer_boundary_flags & ~implemented_boundary_flags) != 0) {
     throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
                         "implemented in petsc_laplace.cxx");
   }
-  if (lower_boundary_flags & ~implemented_boundary_flags) {
+  if ((lower_boundary_flags & ~implemented_boundary_flags) != 0) {
     throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
                         "implemented in petsc_laplace.cxx");
   }
-  if (upper_boundary_flags & ~implemented_boundary_flags) {
+  if ((upper_boundary_flags & ~implemented_boundary_flags) != 0) {
     throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
                         "implemented in petsc_laplace.cxx");
   }
@@ -137,7 +136,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
 
   // Set up boundary conditions in operator
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
-    if (inner_boundary_flags & INVERT_AC_GRAD) {
+    if ((inner_boundary_flags & INVERT_AC_GRAD) != 0) {
       // Neumann on inner X boundary
       operator3D(i, i) = -1. / coords->dx[i] / sqrt(coords->g_11[i]);
       operator3D(i, i.xp()) = 1. / coords->dx[i] / sqrt(coords->g_11[i]);
@@ -149,7 +148,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
-    if (outer_boundary_flags & INVERT_AC_GRAD) {
+    if ((outer_boundary_flags & INVERT_AC_GRAD) != 0) {
       // Neumann on outer X boundary
       operator3D(i, i) = 1. / coords->dx[i] / sqrt(coords->g_11[i]);
       operator3D(i, i.xm()) = -1. / coords->dx[i] / sqrt(coords->g_11[i]);
@@ -161,7 +160,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
-    if (lower_boundary_flags & INVERT_AC_GRAD) {
+    if ((lower_boundary_flags & INVERT_AC_GRAD) != 0) {
       // Neumann on lower Y boundary
       operator3D(i, i) = -1. / coords->dy[i] / sqrt(coords->g_22[i]);
       operator3D(i, i.yp()) = 1. / coords->dy[i] / sqrt(coords->g_22[i]);
@@ -173,7 +172,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
-    if (upper_boundary_flags & INVERT_AC_GRAD) {
+    if ((upper_boundary_flags & INVERT_AC_GRAD) != 0) {
       // Neumann on upper Y boundary
       operator3D(i, i) = 1. / coords->dy[i] / sqrt(coords->g_22[i]);
       operator3D(i, i.ym()) = -1. / coords->dy[i] / sqrt(coords->g_22[i]);
@@ -186,8 +185,9 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
 }
 
 LaplacePetsc3dAmg::~LaplacePetsc3dAmg() {
-  if (kspInitialised)
+  if (kspInitialised) {
     KSPDestroy(&ksp);
+  }
 }
 
 Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
@@ -293,8 +293,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
 Field2D LaplacePetsc3dAmg::solve(const Field2D& b) { return Laplacian::solve(b); }
 
 PetscMatrix<Field3D>& LaplacePetsc3dAmg::getMatrix3D() {
-  if (updateRequired)
+  if (updateRequired) {
     updateMatrix3D();
+  }
   return operator3D;
 }
 
@@ -440,8 +441,9 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   MatSetBlockSize(*operator3D.get(), 1);
 
   // Declare KSP Context (abstract PETSc object that manages all Krylov methods)
-  if (kspInitialised)
+  if (kspInitialised) {
     KSPDestroy(&ksp);
+  }
   KSPCreate(BoutComm::get(), &ksp);
   kspInitialised = true;
 #if PETSC_VERSION_GE(3, 5, 0)
@@ -469,13 +471,13 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   } else {
     KSPSetType(ksp, ksptype.c_str()); // Set the type of the solver
 
-    if (ksptype == KSPRICHARDSON)
+    if (ksptype == KSPRICHARDSON) {
       KSPRichardsonSetScale(ksp, richardson_damping_factor);
 #ifdef KSPCHEBYSHEV
-    else if (ksptype == KSPCHEBYSHEV)
+    } else if (ksptype == KSPCHEBYSHEV) {
       KSPChebyshevSetEigenvalues(ksp, chebyshev_max, chebyshev_min);
 #endif
-    else if (ksptype == KSPGMRES) {
+    } else if (ksptype == KSPGMRES) {
       KSPGMRESSetRestart(ksp, gmres_max_steps);
     }
 

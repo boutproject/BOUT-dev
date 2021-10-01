@@ -178,7 +178,6 @@ private:
   virtual void registerFieldForTest(T& UNUSED(f)) {
     // This is a place-holder which does nothing. It can be overridden
     // by descendent classes if necessary to set up testing.
-    return;
   }
 
   void calculateSparsity() const {

@@ -42,10 +42,9 @@
 
 BoutReal soltime=0.0,settime=0.0;
 
-LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_in,
-                                   Solver *, Datafile *) :
-  Laplacian(opt, loc, mesh_in),
-  A(0.0), C1(1.0), C2(1.0), D(1.0) {
+LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
+                                   Solver* UNUSED(solver), Datafile* UNUSED(dump))
+    : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0) {
 
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
   
@@ -203,7 +202,7 @@ BOUT_OMP(master)
       output<<"Num threads = "<<omp_get_num_threads()<<endl;
     } 
 #endif
-  }  
+  }
 }
 
 FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {

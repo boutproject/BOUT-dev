@@ -40,8 +40,6 @@ int main(int argc, char** argv) {
   // Div(A Grad_perp(f)) + B*f = rhs
   // A*Laplace_perp(f) + Grad_perp(A).Grad_perp(f) + B*f = rhs
   Field2D f, a, b, sol;
-  Field2D error, absolute_error; //Absolute value of relative error: abs((f - sol)/f)
-  BoutReal max_error; //Output of test
 
   initial_profile("f", f);
   initial_profile("a", a);
@@ -60,9 +58,9 @@ int main(int argc, char** argv) {
 
   Field2D guess = 0.0;
   sol = laplacexy.solve(rhs, guess);
-  error = (f - sol)/f;
-  absolute_error = f - sol;
-  max_error = max(abs(absolute_error), true);
+  BoutReal error = (f - sol)/f;
+  BoutReal absolute_error = f - sol; //Absolute value of relative error: abs((f - sol)/f)
+  BoutReal max_error = max(abs(absolute_error), true);
 
   output<<"Magnitude of maximum absolute error is "<<max_error<<endl;
 

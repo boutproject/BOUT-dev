@@ -77,7 +77,7 @@ struct ArrayData {
   }
 
   /// Move constructor
-  ArrayData(ArrayData&& in) : len(in.len), data(in.data) {
+  ArrayData(ArrayData&& in) noexcept : len(in.len), data(in.data) {
     in.len = 0;
     in.data = nullptr;
   }

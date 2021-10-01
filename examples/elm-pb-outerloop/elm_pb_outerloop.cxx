@@ -364,8 +364,6 @@ public:
   // Note: The rhs() function needs to be public so that RAJA can use CUDA
 
   int init(bool restarting) override {
-    bool noshear;
-
     Coordinates* metric = mesh->getCoordinates();
 
     output.write("Solving high-beta flute reduced equations\n");
@@ -384,10 +382,10 @@ public:
     mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
 
     // Load metrics
-    if (mesh->get(Rxy, "Rxy")) { // m
+    if (mesh->get(Rxy, "Rxy") != 0) { // m
       throw BoutException("Error: Cannot read Rxy from grid\n");
     }
-    if (mesh->get(Bpxy, "Bpxy")) { // T
+    if (mesh->get(Bpxy, "Bpxy") != 0) { // T
       throw BoutException("Error: Cannot read Bpxy from grid\n");
     }
     mesh->get(Btxy, "Btxy");          // T
@@ -540,7 +538,7 @@ public:
 
     experiment_Er = options["experiment_Er"].withDefault(false);
 
-    noshear = options["noshear"].withDefault(false);
+    bool noshear = options["noshear"].withDefault<bool>(false);
 
     relax_j_vac = options["relax_j_vac"].doc("Relax vacuum current to zero").withDefault<bool>(false);
     relax_j_tconst = options["relax_j_tconst"]
@@ -740,7 +738,7 @@ public:
       if (simple_rmp) {
         // Use a fairly simple form for the perturbation
         Field2D pol_angle;
-        if (mesh->get(pol_angle, "pol_angle")) {
+        if (mesh->get(pol_angle, "pol_angle") != 0) {
           output_warn.write("     ***WARNING: need poloidal angle for simple RMP\n");
           include_rmp = false;
         } else {
@@ -789,7 +787,7 @@ public:
         }
       } else {
         // Load perturbation from grid file.
-        include_rmp = !mesh->get(rmp_Psi0, "rmp_A"); // Only include if found
+        include_rmp = mesh->get(rmp_Psi0, "rmp_A") == 0; // Only include if found
         if (!include_rmp) {
           output_warn.write("WARNING: Couldn't read 'rmp_A' from grid file\n");
         }
@@ -831,10 +829,10 @@ public:
     //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
 
-    if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
+    if (mesh->get(Bbar, "bmag") != 0) { // Typical magnetic field
       Bbar = 1.0;
     }
-    if (mesh->get(Lbar, "rmag")) { // Typical length scale
+    if (mesh->get(Lbar, "rmag") != 0) { // Typical length scale
       Lbar = 1.0;
     }
 
@@ -976,15 +974,15 @@ public:
         Te0 = Ti0;
         N0 = P0 / (Ti0 + Te0);
       } else {
-        if (mesh->get(N0, "Niexp")) { // N_i0
+        if (mesh->get(N0, "Niexp") != 0) { // N_i0
           throw BoutException("Error: Cannot read Ni0 from grid\n");
         }
 
-        if (mesh->get(Ti0, "Tiexp")) { // T_i0
+        if (mesh->get(Ti0, "Tiexp") != 0) { // T_i0
           throw BoutException("Error: Cannot read Ti0 from grid\n");
         }
 
-        if (mesh->get(Te0, "Teexp")) { // T_e0
+        if (mesh->get(Te0, "Teexp") != 0) { // T_e0
           throw BoutException("Error: Cannot read Te0 from grid\n");
         }
         N0 /= Nbar;
