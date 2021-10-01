@@ -193,8 +193,6 @@ public:
   int lower_boundary_flags;
   int upper_boundary_flags;
 
-  int meshx, meshz, size, localN; // Mesh sizes, total size, no of points on this processor
-
   Options *opts;              // Laplace Section Options Object
 
   RangeIterator lowerY, upperY;
