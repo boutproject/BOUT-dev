@@ -23,7 +23,7 @@ cdef extern from "helper.h":
     void c_get_{{ field.fdd }}_all(c.{{ field.field_type }}* f, double* data)
     void c_set_{{ field.fdd }}_all_(c.{{ field.field_type }}* f, double data)
     void c_set_{{ field.fdd }}_from_{{ field.fdd }}(c.{{ field.field_type }}* f, c.{{ field.field_type }}* f)
-{% set indices=field.makelist('int $ds, int $de, int d$d') %}
+{% set indices = field.makelist("int $ds, int $de, int d$d") %}
     void c_get_{{ field.fdd }}_part(c.{{ field.field_type }}* f, double* data, {{ indices }})
     void c_set_{{ field.fdd }}_part(c.{{ field.field_type }}* f, double* data, {{ indices }})
     void c_set_{{ field.fdd }}_part_(c.{{ field.field_type }}* f, double data, {{ indices }})
@@ -42,12 +42,12 @@ cdef extern from "helper.h":
     c.{{ field.field_type }} c_minus(c.{{ field.field_type }} )
 
 cdef {{ field.field_type }} {{ field.fdd }}FromObj(c.{{ field.field_type }} i):
-    f={{ field.field_type }}()
-    f.cobj=new c.{{ field.field_type }}(<const c.{{ field.field_type }}& ?>i)
+    f = {{ field.field_type }}()
+    f.cobj = new c.{{ field.field_type }}(<const c.{{ field.field_type }}& ?>i)
     return f
 
 cdef {{ field.field_type }} {{ field.fdd }}FromPtr(c.{{ field.field_type }}* i):
-    f={{ field.field_type }}()
+    f = {{ field.field_type }}()
     f.cobj = i
     f.isSelfOwned = False
     return f
@@ -58,8 +58,9 @@ cdef class {{ field.field_type }}:
     """
     cdef c.{{ field.field_type }} * cobj
     cdef c.bool isSelfOwned
+
     @classmethod
-    def fromMesh(cls,mesh=None):
+    def fromMesh(cls, mesh=None):
         """
         Create a {{ field.field_type }}.
 
@@ -71,11 +72,12 @@ cdef class {{ field.field_type }}:
         checkInit()
         {{ field.fdd }} = {{ field.field_type }}()
         if mesh is None:
-            mesh=Mesh.getGlobal()
+            mesh = Mesh.getGlobal()
         {{ field.fdd }}.cobj = new c.{{ field.field_type }}((<Mesh?>mesh).cobj)
         return {{ field.fdd }}
+
     @classmethod
-    def fromCollect(cls,name,tind=-1,mesh=None,ignoreDataType=False, **kwargs):
+    def fromCollect(cls, name, tind=-1, mesh=None, ignoreDataType=False, **kwargs):
         """
         Create a {{ field.field_type }} from reading in a datafile via collect.
 
@@ -108,24 +110,24 @@ cdef class {{ field.field_type }}:
             nx = mesh_.LocalNx
             nx_ = nx - 2 * nxg
             xstart = nx_ * nxi
-            kwargs['xind'] = [xstart, xstart + nx]
+            kwargs["xind"] = [xstart, xstart + nx]
         if (nype):
             if "yind" in kwargs.keys():
                 raise RuntimeError("Do not support yind slicing with MPI")
             nyi = mesh_.getYProcIndex()
             nyg = mesh_.ystart
             ny = mesh_.LocalNy
-            ny_ = ny-2*nyg
-            ystart=ny_*nyi
-            kwargs['yind'] = [ystart, ystart + ny]
+            ny_ = ny - 2 * nyg
+            ystart = ny_ * nyi
+            kwargs["yind"] = [ystart, ystart + ny]
         data = collect(name, yguards=True, tind=tind, **kwargs)
-        dims = dimensions(name,**{k:v for k,v in kwargs.items() if k in ['path','prefix']})
-        if dims[0] == 't':
+        dims = dimensions(name, **{k : v for k, v in kwargs.items() if k in {"path","prefix"}})
+        if dims[0] == "t":
             data = data.reshape(data.shape[1:])
         if len(data.shape) != {{ field.ndims }}:
             raise TypeError("Expected {{ field.ndims }}D data")
         try:
-            loc = data.attributes['cell_location']
+            loc = data.attributes["cell_location"]
         except KeyError:
             pass
         else:
@@ -163,8 +165,8 @@ cdef class {{ field.field_type }}:
         # save original _kwargs from outputs so we can restore them later
         orig_kwargs = copy.copy(outputs._kwargs)
         kwargs = outputs._kwargs
-        kwargs['xguards'] = True
-        kwargs['yguards'] = True
+        kwargs["xguards"] = True
+        kwargs["yguards"] = True
         if (nxpe):
             if "xind" in kwargs.keys():
                 raise RuntimeError("Do not support xind slicing with MPI")
@@ -173,7 +175,7 @@ cdef class {{ field.field_type }}:
             nx = mesh_.LocalNx
             nx_ = nx-2 * nxg
             xstart = nx_ * nxi
-            kwargs['xind'] = [xstart, xstart + nx]
+            kwargs["xind"] = [xstart, xstart + nx]
         if (nype):
             if "yind" in kwargs.keys():
                 raise RuntimeError("Do not support yind slicing with MPI")
@@ -182,25 +184,25 @@ cdef class {{ field.field_type }}:
             ny = mesh_.LocalNy
             ny_=ny-2*nyg
             ystart = ny_ * nyi
-            kwargs['yind'] = [ystart, ystart + ny]
+            kwargs["yind"] = [ystart, ystart + ny]
         dims = outputs.dimensions[name]
         if outputs._caching:
             # if BoutOutputs object is caching the arrays, let it collect all
             # time points, then slice here
-            if dims[0] == 't':
-                # Use slice with one element here so shape of 'data' is as if
-                # we had passed argument 'tind=tind' to collect (with
+            if dims[0] == "t":
+                # Use slice with one element here so shape of "data" is as if
+                # we had passed argument "tind=tind" to collect (with
                 # one-element t-dimension)
                 data = outputs[name][tind: tind + 1]
             else:
                 data = outputs[name]
         else:
             # otherwise only collect data for tind
-            kwargs['tind'] = tind
+            kwargs["tind"] = tind
             data = outputs[name]
         # restore original _kwargs
         outputs._kwargs = orig_kwargs
-        if dims[0] == 't':
+        if dims[0] == "t":
             data=data.reshape(data.shape[1:])
         if len(data.shape) != {{ field.ndims }}:
             raise TypeError("Expected {{ field.ndims }}D data")
@@ -220,7 +222,7 @@ cdef class {{ field.field_type }}:
         self.isSelfOwned=True
         #self.cobj = (<c.{{ field.field_type }} * ?> cobj_)
         #if self.cobj == NULL:
-        #    raise MemoryError('Not enough memory, allocation failed.')
+        #    raise MemoryError("Not enough memory, allocation failed.")
 
     def set(self, data, ignoreDataType=False):
         """
@@ -246,14 +248,13 @@ cdef class {{ field.field_type }}:
         ignoreDataType : bool, optional
             Ignore if data is off different type to BoutRealxx
         """
-        dims = [{{ field.makelist('self.cobj.getN$d()')}}]
+        dims = [{{ field.makelist("self.cobj.getN$d()")}}]
 {% set zeros = field.makelist("0") %}
-{% set nxlist = field.makelist("n$d") %}
         if isinstance(data, (int, float)):
             data = np.zeros(dims)+data
-        if data.dtype != np.dtype('float64'):
+        if data.dtype != np.dtype("float64"):
             if ignoreDataType:
-                data = data.astype('float64')
+                data = data.astype("float64")
             else:
                 raise TypeError("expected float64 data, but got %s.\nThis can be ignored by adding ignoreDataType=True as argument"%data.dtype)
         dims_in=self._checkDims(dims,data.shape)
@@ -280,11 +281,8 @@ cdef class {{ field.field_type }}:
         array
             A {{ field.ndims }}D numpy array with the data of the {{ field.field_type }}
         """
-        nx = self.cobj.getNx()
-        ny = self.cobj.getNy()
-        nz = self.cobj.getNz()
-        cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(np.zeros(({{ nxlist }})))
-        c_get_{{ field.fdd }}_all(self.cobj,&data_[{{ zeros }}]);
+        cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(np.zeros(self.shape))
+        c_get_{{ field.fdd }}_all(self.cobj, &data_[{{ zeros }}]);
         return data_
 
     def setLocation(self, location):
@@ -366,7 +364,7 @@ cdef class {{ field.field_type }}:
         """
         return self.cobj.isAllocated()
 
-    def __getitem__(self,slices):
+    def __getitem__(self, slices):
         """
         Get data from the {{ field.field_type }}
         Supports full {{ field.ndims }}D slicing support.
@@ -384,13 +382,13 @@ cdef class {{ field.field_type }}:
         """
         if len(slices)!={{ field.ndims }}:
             raise IndexError("This is a {{ field.ndims }}D object, but got %d slics"%len(slices))
-        inds=_resolve_slices(slices,
-                            [{{ field.makelist('self.cobj.getN$d()') }}])
+        inds = _resolve_slices(slices,
+                            [{{ field.makelist("self.cobj.getN$d()") }}])
         dims=[]
         for i in inds:
             dims.append((i[1]-i[0])//i[2])
         cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(np.zeros(dims))
-        c_get_{{ field.fdd }}_part(self.cobj,&data_[{{ zeros }}], {{ field.makelist('inds[$i][0],inds[$i][1],inds[$i][2]') }});
+        c_get_{{ field.fdd }}_part(self.cobj,&data_[{{ zeros }}], {{ field.makelist("inds[$i][0],inds[$i][1],inds[$i][2]") }});
         return data_
 
     def __setitem__(self,slices,data_):
@@ -404,59 +402,59 @@ cdef class {{ field.field_type }}:
         """
         if len(slices)!={{ field.ndims }}:
             raise IndexError("This is a {{ field.ndims }}D object!")
-        dims=[]
+        dims = []
         import numbers
-        inds=_resolve_slices(slices,
-                            [{{ field.makelist('self.cobj.getN$d()') }}])
+        inds = _resolve_slices(slices,
+                              [{{ field.makelist("self.cobj.getN$d()") }}])
         if isinstance(data_,{{ field.field_type }}):
             # get all to get a numpy array
-            data_=data_[{{ field.makelist(':') }}]
+            data_ = data_[{{ field.makelist(":") }}]
         elif isinstance(data_,numbers.Number):
-            c_set_{{ field.fdd }}_part_(self.cobj,<double>data_,{{ field.makelist('inds[$i][0],inds[$i][1],inds[$i][2]') }})
+            c_set_{{ field.fdd }}_part_(self.cobj,<double>data_,{{ field.makelist("inds[$i][0],inds[$i][1],inds[$i][2]") }})
             return
         try:
-            dims_in=data_.shape
+            dims_in = data_.shape
         except:
             raise TypeError("Expected a {{ field.field_type }} or a numpy array")
         for i in inds:
             dims.append((i[1]-i[0])//i[2])
-        dims_in=self._checkDims(dims,dims_in)
+        dims_in = self._checkDims(dims,dims_in)
         cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data__ = np.ascontiguousarray(data_)
-        c_set_{{ field.fdd }}_part(self.cobj,&data__[{{ field.makelist("0") }}],{{ field.makelist('inds[$i][0],inds[$i][1],inds[$i][2]') }});
+        c_set_{{ field.fdd }}_part(self.cobj,&data__[{{ field.makelist("0") }}],{{ field.makelist("inds[$i][0],inds[$i][1],inds[$i][2]") }});
 
     def _checkDims(self,dims,dims_in):
         if len(dims_in) > {{ field.ndims }}:
             raise IndexError("This is a {{ field.ndims }}D object, but got %d dimensions"%len(dims_in))
         if len(dims_in) < {{ field.ndims }}:
-            len_dims=len([1 for d in dims if d>1])
+            len_dims = len([1 for d in dims if d>1])
             if len(dims_in) != len_dims:
                 raise IndexError("This is a {{ field.ndims }}D object, but got %d dimensions"%len(dims_in))
-            dims_in_new=[]
-            k=0
+            dims_in_new = []
+            k = 0
             for i in range({{ field.ndims }}):
-                if (dims[i]==1):
+                if (dims[i] == 1):
                     dims_in_new.append(1)
                 else:
                     dims_in_new.append(dims_in[k])
-                    k+=1
-            dims_in=dims_in_new
+                    k += 1
+            dims_in = dims_in_new
         for i in range({{ field.ndims }}):
             if dims[i] != dims_in[i]:
                 raise IndexError("Expected %s but got %s."%(dims,dims_in))
 
 {% for name, op in ops %}
     def __{{ name }}__(self,other):
-        fu={{ field.field_type }}()
+        fu = {{ field.field_type }}()
         import numbers
         if isinstance(self,{{ field.field_type }}) and isinstance(other,{{ field.field_type }}):
-            fu.cobj=f{{ name }}((<{{ field.field_type }}?>self).cobj , (<{{ field.field_type }}?>other).cobj)
+            fu.cobj = f{{ name }}((<{{ field.field_type }}?>self).cobj , (<{{ field.field_type }}?>other).cobj)
         elif isinstance(self,{{ field.field_type }}) and isinstance(other, numbers.Number):
-            fu.cobj=f{{ name }}((<{{ field.field_type }}?>self).cobj , (<double?>float(other)))
+            fu.cobj = f{{ name }}((<{{ field.field_type }}?>self).cobj , (<double?>float(other)))
         elif isinstance(self,numbers.Number) and isinstance(other, {{ field.field_type }}):
-            fu.cobj=f{{ name }}(<double?>float(self),(<{{ field.field_type }}?>other).cobj)
+            fu.cobj = f{{ name }}(<double?>float(self),(<{{ field.field_type }}?>other).cobj)
 {% if field == field3d %}
         elif isinstance(self,Field3D) and isinstance(other,Field2D):
-            fu.cobj=f{{ name }}((<Field3D?>self).cobj , (<Field2D?>other).cobj)
+            fu.cobj = f{{ name }}((<Field3D?>self).cobj , (<Field2D?>other).cobj)
 {% endif %}
         else:
             print("{{ name }}",type(self),type(other),isinstance(self,numbers.Number))
@@ -464,12 +462,12 @@ cdef class {{ field.field_type }}:
         return fu
 
     def __r{{ name }}__(self,lhs):
-        fu={{ field.field_type }}()
+        fu = {{ field.field_type }}()
         if isinstance(lhs,float) or isinstance(lhs,int):
-            fu.cobj=f{{ name }}(<double?>float(lhs),(<{{ field.field_type }}?>self).cobj)
+            fu.cobj = f{{ name }}(<double?>float(lhs),(<{{ field.field_type }}?>self).cobj)
 {% if field == field3d %}
         elif isinstance(lhs,Field2D):
-            fu.cobj=f{{ name }}((<Field2D?>lhs).cobj,(<Field3D?>self).cobj)
+            fu.cobj = f{{ name }}((<Field2D?>lhs).cobj,(<Field3D?>self).cobj)
 {% endif %}
         else:
             return NotImplemented
@@ -513,8 +511,8 @@ cdef class {{ field.field_type }}:
             _time = time
             self.cobj.applyBoundary(_time)
         elif boundary is not None:
-            tmp=boundary.encode('ascii')
-            bndry=tmp
+            tmp = boundary.encode()
+            bndry = tmp
             self.cobj.applyBoundary(bndry)
         else:
             self.cobj.applyBoundary()
@@ -523,9 +521,13 @@ cdef class {{ field.field_type }}:
         self.__boutcore_dealloc()
 
     def __boutcore_dealloc(self):
-        if self.isSelfOwned and self.cobj!=NULL:
+        if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
-            self.cobj=NULL
+            self.cobj = NULL
+
+    @property
+    def shape(self):
+        return {{ field.makelist("self.cobj.getN$d()") }}
 {% endfor %}
 {% for vec in vecs %}
 cdef extern from "helper.h":
@@ -556,13 +558,35 @@ cdef class {{ vec }}:
                                       str(type(self))+"' and '"+str(type(rhs))+
                                       "' - not supported (yet?).")
 
+    @property
+    def shape(self):
+        return 3, {{ vec.field.makelist("self.cobj.x.getN$d()") }}
+
+    def get(self):
+        """
+        Get all data of the {{ vec }}
+
+        Returns
+        -------
+        np.ndarray
+             A {{ vec.field.ndims+1 }}D numpy array with the data of the {{ vec }}
+        """
+        cdef np.ndarray[double, mode="c", ndim={{ vec.field.ndims + 1 }}] data_ = np.ascontiguousarray(np.zeros(self.shape))
+{% for i, d in ("0x", "1y", "2z") %}
+        c_get_{{ vec.fdd }}_all(&self.cobj.{{ d }}, &data_[{{i}}, {{ vec.field.makelist("0") }}]);
+{% endfor %}
+        return data_
+
+
+
     def __dealloc__(self):
         self.__boutcore_dealloc()
 
     def __boutcore_dealloc(self):
-        if self.isSelfOwned and self.cobj!=NULL:
+        if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
             self.cobj=NULL
+
 
 cdef {{ vec }} {{ vec.vdd }}FromObj(c.{{ vec }} i):
     v={{ vec }}()
@@ -629,11 +653,11 @@ cdef class Mesh:
                 if opt == NULL:
                     opt = c.Options.getRoot()
                 for sec in section.split(":"):
-                    tmp=sec.encode('ascii')
+                    tmp=sec.encode()
                     opt=opt.getSection(tmp)
             self.cobj = c.Mesh.create(opt)
             if self.cobj == NULL:
-                raise MemoryError('Not enough memory, allocation failed.')
+                raise MemoryError("Not enough memory, allocation failed.")
             self.cobj.load()
 
     @classmethod
@@ -811,14 +835,14 @@ cdef class Laplacian:
         """
 {% set coeffs="A C C1 C2 D Ex Ez".split() %}
 {% for coeff in coeffs %}
-        if '{{ coeff }}' in kwargs:
-            self.setCoef{{ coeff}}(kwargs['{{ coeff }}'])
+        if "{{ coeff }}" in kwargs:
+            self.setCoef{{ coeff}}(kwargs["{{ coeff }}"])
 {% endfor %}
 {% for coeff in coeffs %}
 
     def setCoef{{ coeff }}(self,Field3D {{ coeff }}):
         """
-        Set the '{{ coeff }}' coefficient of the Laplacian solver
+        Set the "{{ coeff }}" coefficient of the Laplacian solver
 
         Parameters
         ----------
@@ -856,7 +880,7 @@ cdef void callback(void * parameter, void * method) with gil:
         str__="Exception in Python callback: type:%s\nInfo:%s %s\n"%(str(type(e)),str(e),str(e.args))
         import traceback
         str__ += traceback.format_exc()
-        str_=str__.encode('ascii')
+        str_=str__.encode()
         c.throw_BoutException(str_)
 
 
@@ -867,9 +891,9 @@ cdef class PythonModelCallback:
     cdef c.PythonModelCallback * cobj
 
     def __cinit__(self, method):
-        # 'callback' :: The pattern/converter method to fire a Python
+        # "callback" :: The pattern/converter method to fire a Python
         #               object method from C typed infos
-        # 'method'   :: The effective method passed by the Python user
+        # "method"   :: The effective method passed by the Python user
         checkInit()
         self.cobj = new c.PythonModelCallback(callback, <void*>method)
 
@@ -882,7 +906,7 @@ cdef class PythonModelCallback:
             self.cobj = NULL
 
     cpdef void execute(self, parameter):
-        # 'parameter' :: The parameter to be passed to the 'method'
+        # "parameter" :: The parameter to be passed to the "method"
         self.cobj.cy_execute(<void*>parameter)
 
 
@@ -913,9 +937,9 @@ cdef class PhysicsModelBase(object):
         cdef char * tmp
         cdef c.Field3D * f3d
         for key in kwargs:
-            t2=str.encode(key)
-            tmp=t2
-            f3d=(<Field3D?>kwargs[key]).cobj
+            t2 = str.encode(key)
+            tmp = t2
+            f3d = (<Field3D?>kwargs[key]).cobj
             self.cmodel.getSolver().add(f3d[0],tmp)
 
     def setRhs(self,rhs):
@@ -947,7 +971,7 @@ cdef class PhysicsModelBase(object):
         self.cmodel.set_init_func(self.callbackinit)
 
     def __dealloc__(self):
-        if hasattr(self, '__boutcore_dealloc'):
+        if hasattr(self, "__boutcore_dealloc"):
             self.__boutcore_dealloc()
         else:
             PhysicsModelBase.__boutcore_dealloc(self)
@@ -1071,12 +1095,12 @@ def init(args=[]):
     fu=[]
     cdef char * tmp
     for i in range(len(args)):
-        t2=str.encode(args[i])
+        t2 = str.encode(args[i])
         tmp=t2
         fu.append(tmp)
         string_buf[i]=<char*>fu[i]
     # terminate string_buf with a null pointer for OpenMPI, which requires this
-    # because it iterates through 'argv' with a loop 'for (p = argv; *p; ++p)'
+    # because it iterates through "argv" with a loop "for (p = argv; *p; ++p)"
     string_buf[len(args)] = NULL
     cdef int fuu=len(args)
     if is_openmpi:
@@ -1115,7 +1139,7 @@ def finalise():
                   PythonModelCallback)
     for obj in objects:
         if isinstance(obj,ourClasses):
-            if hasattr(obj, '__boutcore_dealloc'):
+            if hasattr(obj, "__boutcore_dealloc"):
                 obj.__boutcore_dealloc()
             else:
                 for ourClass in ourClasses:
@@ -1168,9 +1192,9 @@ def {{ DD }}({% if flux %}Field3D velocity, {% endif %}Field3D field, outloc="CE
     cdef benum.CELL_LOC outloc_= benum.resolve_cell_loc(outloc)
     if method.startswith("DIFF_"):
         method=method[5:]
-    cdef c.string method_ = method.encode('ascii')
+    cdef c.string method_ = method.encode()
 {% if region %}
-    cdef c.string region_ = region.encode('ascii')
+    cdef c.string region_ = region.encode()
 {% endif %}
     return {{ret.ddd}}FromObj(c.{{ DD }}({{ "velocity.cobj[0], " if flux else "" }}field.cobj[0],outloc_,method_{% if region %},region_{% endif %}))
 {% endmacro %}
@@ -1375,7 +1399,7 @@ def create3D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0):
     if msh is None:
         msh=Mesh.getGlobal()
     cdef FieldFactory fact=msh.getFactory()
-    cdef c.string str_=string.encode('ascii')
+    cdef c.string str_=string.encode()
     return f3dFromObj(
         (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0
                                            ,outloc_,time))
@@ -1422,7 +1446,7 @@ def setOption(name, value, source="PyInterface", force=False):
         thrown. setting this to `True` avoids the exception.
     """
     checkInit()
-    root=Options('')
+    root=Options("")
     root.set(name,value,source,force)
 
 cdef class Options:
@@ -1439,8 +1463,8 @@ cdef class Options:
         Parameters
         ----------
         name : string, optional
-            The name of the section. Can contain ':' to specify subsections.
-            Defaults to the root section ''.
+            The name of the section. Can contain ":" to specify subsections.
+            Defaults to the root section "".
 
         Returns
         -------
@@ -1451,7 +1475,7 @@ cdef class Options:
         self.cobj = c.Options.getRoot()
         cdef c.string sec_
         for sec in name.split(":"):
-            sec_=sec.encode('ascii')
+            sec_=sec.encode()
             self.cobj=self.cobj.getSection(sec_)
         self.isSelfOwned=False
 
@@ -1475,8 +1499,8 @@ cdef class Options:
         opt.cobj = new c.Options()
         opt.isSelfOwned = True
         cdef char * file_
-        file__=file.encode('ascii')
-        file_=file__
+        file__ = file.encode()
+        file_ = file__
         c.OptionsReader.getInstance().read(opt.cobj, "%s", file_)
         return opt
 
@@ -1502,16 +1526,16 @@ cdef class Options:
         cdef c.Options * opt=self.cobj
         cdef c.string sec_
         for sec in name.split(":")[:-1]:
-            sec_=sec.encode('ascii')
+            sec_=sec.encode()
             opt=opt.getSection(sec_)
-        cdef c.string key = name.split(":")[-1].encode('ascii')
-        cdef c.string value_ = value.encode('ascii')
-        cdef c.string source_ = source.encode('ascii')
+        cdef c.string key = name.split(":")[-1].encode()
+        cdef c.string value_ = value.encode()
+        cdef c.string source_ = source.encode()
         opt.set(key,value_, source_, force)
         opt.cleanCache()
         return self
 
-    def get(self,name,default):
+    def get(self, name, default):
         """
         Get an option
 
@@ -1532,9 +1556,9 @@ cdef class Options:
         cdef c.Options * opt=self.cobj
         cdef c.string sec_
         for sec in name.split(":")[:-1]:
-            sec_=sec.encode('ascii')
+            sec_=sec.encode()
             opt=opt.getSection(sec_)
-        cdef c.string key = name.split(":")[-1].encode('ascii')
+        cdef c.string key = name.split(":")[-1].encode()
         import numbers
 
         cdef double ret_real=0
@@ -1542,24 +1566,24 @@ cdef class Options:
         cdef c.string default_
         cdef c.string ret_str
 
-        if isinstance(default,bool):
-            opt.get(key,ret_bool, <c.bool> default)
+        if isinstance(default, bool):
+            opt.get(key, ret_bool, <c.bool> default)
             return ret_bool
-        elif isinstance(default,numbers.Number):
-            opt.get(key,ret_real,<double> default)
+        elif isinstance(default, numbers.Number):
+            opt.get(key, ret_real, <double> default)
             return ret_real
         else:
-            default_= str(default).encode('ascii')
-            opt.get(key,ret_str, default_)
-            return ret_str
+            default_= str(default).encode()
+            opt.get(key, ret_str, default_)
+            return ret_str.decode()
 
     def __dealloc__(self):
         self.__boutcore_dealloc()
 
     def __boutcore_dealloc(self):
-        if self.isSelfOwned and self.cobj!=NULL:
+        if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
-            self.cobj=NULL
+            self.cobj = NULL
 
 cdef class Datafile:
     cdef c.Datafile * cobj
@@ -1575,10 +1599,10 @@ cdef class Datafile:
         cdef char * tmp
         cdef double * dbl
         cdef c.Field3D * f3d
-        t2=str.encode(name)
-        tmp=t2
+        t2 = str.encode(name)
+        tmp = t2
         if isinstance(data,Field3D):
-            f3d=(<Field3D>data).cobj
+            f3d = (<Field3D>data).cobj
             self.cobj.add(f3d[0],tmp,<c.bool>save_repeat)
         else:
             raise TypeError("unsupported datatype")
@@ -1593,11 +1617,11 @@ cdef class Datafile:
         # is never self owned
         pass
 
-def print(*args, sep=' ', end='\n'):
-    _print(sep.join([str(a) for a in args])+end)
+def print(*args, sep=" ", end="\n"):
+    _print(sep.join([str(a) for a in args]) + end)
 
 cdef _print(value):
-    cdef c.string str_=value.encode('utf-8')
+    cdef c.string str_ = value.encode()
     c.output_info.write(str_.c_str())
 
 {% include "helper.py" %}
