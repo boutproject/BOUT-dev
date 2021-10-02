@@ -549,9 +549,11 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
     upperEdgeStencil.insert(i);
   }
   const std::vector<OffsetInd3D> interiorStencilVector(interiorStencil.begin(),
-                                                       interiorStencil.end()),
-      lowerEdgeStencilVector(lowerEdgeStencil.begin(), lowerEdgeStencil.end()),
-      upperEdgeStencilVector(upperEdgeStencil.begin(), upperEdgeStencil.end());
+                                                       interiorStencil.end());
+  const std::vector<OffsetInd3D> lowerEdgeStencilVector(lowerEdgeStencil.begin(),
+                                                        lowerEdgeStencil.end());
+  const std::vector<OffsetInd3D> upperEdgeStencilVector(upperEdgeStencil.begin(),
+                                                        upperEdgeStencil.end());
 
   // If there is a lower y-boundary then create a part of the stencil
   // for cells immediately adjacent to it.
