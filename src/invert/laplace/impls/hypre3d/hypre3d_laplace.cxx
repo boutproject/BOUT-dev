@@ -30,22 +30,26 @@
 #include "hypre3d_laplace.hxx"
 
 #include <bout/mesh.hxx>
+#include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <bout/assert.hxx>
 #include <utils.hxx>
+#include <datafile.hxx>
 #include <derivs.hxx>
 #include <bout/hypre_interface.hxx>
 #include <bout/operatorstencil.hxx>
 
-LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
+LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in,
+                               Solver *solver, Datafile *dump) :
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
   opts(opt == nullptr ? Options::getRoot()->getSection("laplace") : opt),
   lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
   indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh,
 						   getStencil(localmesh, lowerY, upperY))),
-  operator3D(indexer), solution(indexer), rhs(indexer), linearSystem(*localmesh, *opts)
+  operator3D(indexer), solution(indexer), rhs(indexer), linearSystem(*localmesh, *opts),
+  monitor(*this)
 {
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
@@ -135,10 +139,15 @@ LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in) 
     }
   }
 
-#if BOUT_HAS_CALIPER
-  printf("LaplaceHypre3d is using caliper\n");
-#endif
-
+  // Set up output
+  if (solver == nullptr or dump == nullptr) {
+    output_warn << "Warning: Need to pass both a Solver and a Datafile to "
+                   "Laplacian::create() to get iteration counts in the output." << endl;
+  } else {
+    solver->addMonitor(&monitor);
+    auto name = opt->name();
+    dump->addRepeat(average_iterations, name + "_average_iterations");
+  }
 }
 
 
@@ -240,7 +249,10 @@ Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
   { Timer timer("hypresolve");
     linearSystem.solve();
   }
-  //printf("NumIterations %d\n",linearSystem.getNumItersTaken());
+
+  // Increment counters
+  n_solves++;
+  cumulative_iterations += linearSystem.getNumItersTaken();
 
 #if BOUT_HAS_CALIPER
   CALI_MARK_END("LaplaceHypre3d_solve:solve");
@@ -539,6 +551,21 @@ OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
   }
 
   return stencil;
+}
+
+int LaplaceHypre3d::Hypre3dMonitor::call(Solver*, BoutReal, int, int) {
+  if (laplace.n_solves == 0) {
+    laplace.average_iterations = 0.0;
+    return 0;
+  }
+
+  // Calculate average and reset counters
+  laplace.average_iterations = static_cast<BoutReal>(laplace.cumulative_iterations)
+                               / static_cast<BoutReal>(laplace.n_solves);
+
+  output_info.write("\nHypre3d average iterations: {}\n", laplace.average_iterations);
+
+  return 0;
 }
 
 #endif // BOUT_HAS_HYPRE

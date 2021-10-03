@@ -12,17 +12,14 @@
 
 #include "bout/single_index_ops.hxx" // Operators at a single index
 
-#define RUN_WITH_RAJA 0
-
-#if BOUT_HAS_RAJA && RUN_WITH_RAJA
-#include "RAJA/RAJA.hpp" // using RAJA lib
-#endif
+#define DISABLE_RAJA 0  // Disable RAJA here for testing?
+#include "bout/rajalib.hxx"
 
 /// 2D drift-reduced model, mainly used for blob studies
 ///
 ///
 class Blob2D : public PhysicsModel {
-public:
+private:
   // Evolving variables
   Field3D n, vort; ///< Density and vorticity
 
@@ -53,6 +50,9 @@ public:
 
   std::unique_ptr<Laplacian> phiSolver{
       nullptr}; ///< Performs Laplacian inversions to calculate phi
+
+public:
+  // Note: rhs() must be public so that RAJA can use CUDA
 
   int init(bool UNUSED(restarting)) override {
 
@@ -153,64 +153,31 @@ public:
 
     const auto& region = n.getRegion("RGN_NOBNDRY"); // Region object
 
-#if RUN_WITH_RAJA
-    auto indices = region.getIndices(); // A std::vector of Ind3D objects
-    Array<int> _ob_i_ind(indices.size()); // Backing data is device safe
-    // Copy indices into Array
-    for(auto i = 0; i < indices.size(); i++) {
-      _ob_i_ind[i] = indices[i].ind;
-    }
-    // Get the raw pointer to use on the device
-    auto _ob_i_ind_raw = &_ob_i_ind[0];
-
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-      int i = _ob_i_ind_raw[id];
-#else
-    BOUT_FOR(i, region) {
-#endif
+    // Note: Ensure that all class members are captured explicitly
+    //       If this is not done, then the `this` pointer will be captured,
+    //       resulting in illegal memory access on GPU devices.
+    BOUT_FOR_RAJA(i, region, CAPTURE(rho_s, R_c, D_n, D_vort)) {
       ddt(n_acc)[i] = -bracket(phi_acc, n_acc, i) - 2 * DDZ(n_acc, i) * (rho_s / R_c)
                       + D_n * Delp2(n_acc, i);
 
       ddt(vort_acc)[i] = -bracket(phi_acc, vort_acc, i)
                          + 2 * DDZ(n_acc, i) * (rho_s / R_c)
                          + D_vort * Delp2(vort_acc, i);
-
-#if RUN_WITH_RAJA
-    });
-#else
-    }
-#endif
+    };
 
     if (compressible) {
-#if RUN_WITH_RAJA
-      RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-        int i = ob_i[id].ind;
-#else
-      BOUT_FOR(i, region) {
-#endif
+      BOUT_FOR_RAJA(i, region, CAPTURE(rho_s, R_c)) {
         ddt(n_acc)[i] -= 2 * n_acc[i] * DDZ(phi_acc, i) * (rho_s / R_c); // ExB Compression term
-#if RUN_WITH_RAJA
-      });
-#else
-      }
-#endif
+      };
     }
     
     if (sheath) {
       // Sheath closure
-#if RUN_WITH_RAJA
-      RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-        int i = ob_i[id].ind;
-#else
-      BOUT_FOR(i, region) {
-#endif
+
+      BOUT_FOR_RAJA(i, region, CAPTURE(rho_s, L_par)) {
         ddt(n_acc)[i] += n_acc[i] * phi_acc[i] * (rho_s / L_par);
         ddt(vort_acc)[i] += phi_acc[i] * (rho_s / L_par);
-#if RUN_WITH_RAJA
-      });
-#else
-      }
-#endif
+      };
     }
 
     return 0;

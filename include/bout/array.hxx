@@ -75,6 +75,16 @@ struct ArrayData {
     data = new T[len];
 #endif
   }
+
+  /// Move constructor
+  ArrayData(ArrayData&& in) noexcept : len(in.len), data(in.data) {
+    in.len = 0;
+    in.data = nullptr;
+  }
+
+  /// Disable copy, since ArrayData takes ownership of data
+  ArrayData(const ArrayData& in) = delete;
+
   ~ArrayData() {
 #if BOUT_HAS_UMPIRE
     auto& rm = umpire::ResourceManager::getInstance();
@@ -86,10 +96,39 @@ struct ArrayData {
   iterator<T> begin() const { return data; }
   iterator<T> end() const { return data + len; }
   int size() const { return len; }
+
+  /// Copy assignment
+  /// Copy the underlying data from one array to the other
+  ///
+  /// @param in  ArrayData with the same len as this.
   ArrayData<T>& operator=(const ArrayData<T>& in) {
+    ASSERT1(in.len == len); // Ensure that the array lengths are the same
     std::copy(std::begin(in), std::end(in), begin());
     return *this;
   }
+
+  /// Move assignment
+  ArrayData<T>& operator=(ArrayData<T>&& in) {
+    if (this != &in) {
+      // Free resources
+#if BOUT_HAS_UMPIRE
+      auto& rm = umpire::ResourceManager::getInstance();
+      rm.deallocate(data);
+#else
+      delete[] data;
+#endif
+      // Copy pointers
+      len = in.len;
+      data = in.data;
+
+      // Remove pointer from input so that it is
+      // not freed multiple times
+      in.len = 0;
+      in.data = nullptr;
+    }
+    return *this;
+  }
+
   inline T& operator[](int ind) { return data[ind]; }
   inline const T& operator[](int ind) const { return data[ind]; }
 private:
@@ -241,8 +280,9 @@ public:
    * Return size of the array. Zero if the array is empty.
    */
   size_type size() const noexcept {
-    if (!ptr)
+    if (!ptr) {
       return 0;
+    }
 
     // Note: std::valarray::size is technically not noexcept, so
     // Array::size shouldn't be either if we're using valarrays -- in
@@ -262,8 +302,9 @@ public:
    * on the data.
    */
   void ensureUnique() {
-    if (!ptr || unique())
+    if (!ptr || unique()) {
       return;
+    }
 
     // Get a new (unique) block of data
     dataPtrType p = get(size());

@@ -56,7 +56,7 @@ public:
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
   void setCoefs(const Field2D& UNUSED(A), const Field2D& UNUSED(B)) {}
-  const Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
+  Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
 };
@@ -115,7 +115,7 @@ public:
    * The solution as a Field2D. On failure an exception will be raised
    * 
    */
-  const Field2D solve(const Field2D &rhs, const Field2D &x0);
+  Field2D solve(const Field2D &rhs, const Field2D &x0);
 
   /*!
    * Preconditioner function
@@ -139,7 +139,6 @@ private:
   
   // Boundary conditions
   bool x_inner_dirichlet; // Dirichlet on inner X boundary?
-  bool x_outer_dirichlet; // Dirichlet on outer X boundary?
   bool y_bndry_dirichlet; // Dirichlet on Y boundary?
 
   // Location of the rhs and solution

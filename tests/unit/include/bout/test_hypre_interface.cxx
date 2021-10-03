@@ -260,7 +260,6 @@ TYPED_TEST(HypreMatrixTest, SetGetValue) {
 TYPED_TEST(HypreMatrixTest, AddGetValue) {
   HypreMatrix<TypeParam> matrix(this->indexer);
   const auto& region = this->field.getRegion("RGN_NOBNDRY");
-  auto i = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(*std::begin(region)));
   auto idx = *std::begin(region);
   BoutReal value = 23.;
   BoutReal actual = -1.;

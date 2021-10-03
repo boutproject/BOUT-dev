@@ -7,27 +7,17 @@
 /// Profiling markers and ranges are set if USE_NVTX is defined
 /// Based on Ben Dudson, Steven Glenn code, Yining Qin update 0521-2020
 
-#include <cstdlib>
 #include <iostream>
 
 #include <bout/physicsmodel.hxx>
 #include <bout/single_index_ops.hxx>
-#include <derivs.hxx>
 #include <invert_laplace.hxx>
-#include <smoothing.hxx>
 
-#if BOUT_HAS_RAJA
-#include "RAJA/RAJA.hpp" // using RAJA lib
-#endif
-
-#if BOUT_USE_CUDA && defined(__CUDACC__)
-#include <cuda_profiler_api.h>
-#endif
-
-#define RUN_WITH_RAJA 0
+#define DISABLE_RAJA 0
+#include <bout/rajalib.hxx>
 
 class HW3D : public PhysicsModel {
-public:
+private:
   Field3D n, vort; // Evolving density and vorticity
   Field3D phi;     // Electrostatic potential
 
@@ -36,6 +26,9 @@ public:
   BoutReal kappa;                       // Density gradient drive
   BoutReal Dvort, Dn;                   // Diffusion
   std::unique_ptr<Laplacian> phiSolver; // Laplacian solver for vort -> phi
+
+public:
+  // Note: rhs() function must be public, so that RAJA can use CUDA
 
   int init(bool UNUSED(restart)) override {
 
@@ -47,8 +40,8 @@ public:
 
     SOLVE_FOR(n, vort);
     SAVE_REPEAT(phi);
+    phiSolver = Laplacian::create(nullptr, CELL_CENTRE, mesh, solver, &dump);
 
-    phiSolver = Laplacian::create();
     phi = 0.; // Starting phi
 
     return 0;
@@ -67,21 +60,9 @@ public:
     auto phi_acc = FieldAccessor<>(phi);
     auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n);
 
-#if RUN_WITH_RAJA
-    auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
-    Array<int> _ob_i_ind(indices.size()); // Backing data is device safe
-    // Copy indices into Array
-    for(auto i = 0; i < indices.size(); i++) {
-      _ob_i_ind[i] = indices[i].ind;
-    }
-    // Get the raw pointer to use on the device
-    auto _ob_i_ind_raw = &_ob_i_ind[0];
-
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE (int id) {
-      int i = _ob_i_ind_raw[id];
-#else
-    BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
-#endif
+    // Note: Capture class members, otherwise if accessed via `this` pointer
+    //       an illegal memory access error may occur on a GPU
+    BOUT_FOR_RAJA(i, n.getRegion("RGN_NOBNDRY"), CAPTURE(alpha, kappa, Dn, Dvort)) {
 
       BoutReal div_current = alpha * Div_par_Grad_par(phi_minus_n_acc, i);
 
@@ -91,11 +72,7 @@ public:
       ddt(vort_acc)[i] =
           -bracket(phi_acc, vort_acc, i) - div_current + Dvort * Delp2(vort_acc, i);
 
-#if RUN_WITH_RAJA
-    });
-#else
-    }
-#endif
+    };
 
     return 0;
   }

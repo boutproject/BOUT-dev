@@ -39,9 +39,7 @@ int main(int argc, char** argv) {
   // Solving equations of the form
   // Div(A Grad_perp(f)) + B*f = rhs
   // A*Laplace_perp(f) + Grad_perp(A).Grad_perp(f) + B*f = rhs
-  Field2D f, a, b, sol;
-  Field2D error, absolute_error; //Absolute value of relative error: abs((f - sol)/f)
-  BoutReal max_error; //Output of test
+  Field2D f, a, b;
 
   initial_profile("f", f);
   initial_profile("a", a);
@@ -59,12 +57,12 @@ int main(int argc, char** argv) {
   laplacexy.setCoefs(a, b);
 
   Field2D guess = 0.0;
-  sol = laplacexy.solve(rhs, guess);
-  error = (f - sol)/f;
-  absolute_error = f - sol;
-  max_error = max(abs(absolute_error), true);
+  Field2D sol = laplacexy.solve(rhs, guess);
+  Field2D error = (f - sol)/f;
+  Field2D absolute_error = abs(f - sol); // Absolute value of relative error: abs((f - sol)/f)
+  BoutReal max_error = max(absolute_error, true);
 
-  output<<"Magnitude of maximum absolute error is "<<max_error<<endl;
+  output << "Magnitude of maximum absolute error is " << max_error << endl;
 
   sol.getMesh()->communicate(sol);
   Field2D rhs_check = Laplace_perpXY(a, sol);

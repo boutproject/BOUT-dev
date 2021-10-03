@@ -11,7 +11,7 @@
  * Based on model code,  Yining Qin update GPU RAJA code since 1117-2020
  *******************************************************************************/
 
-#define RUN_WITH_RAJA true   // Use RAJA loops?
+#define DISABLE_RAJA 0        // Turn off RAJA in this file?
 
 #define EVOLVE_JPAR false     // Evolve ddt(Jpar) rather than ddt(Psi)?
 #define RELAX_J_VAC false     // Relax to zero-current in the vacuum?
@@ -48,20 +48,7 @@
 #include <invert_laplace.hxx>
 #include <smoothing.hxx>
 
-#if (BOUT_HAS_RAJA && RUN_WITH_RAJA)
-// library for GPU
-#include "RAJA/RAJA.hpp" // using RAJA lib
-
-#if BOUT_USE_CUDA && defined(__CUDACC__)
-#include <cuda_profiler_api.h>
-#endif
-
-#else
-// Don't try to run with RAJA
-#undef RUN_WITH_RAJA
-#define RUN_WITH_RAJA false
-#endif
-
+#include <bout/rajalib.hxx>  // Defines BOUT_FOR_RAJA
 
 #if BOUT_HAS_HYPRE
 #include <bout/invert/laplacexy2_hypre.hxx>
@@ -111,7 +98,7 @@ BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
 
 /// 3-field ELM simulation
 class ELMpb : public PhysicsModel {
-public:
+private:
   // 2D inital profiles
   Field2D J0, P0;         // Current and pressure
   Vector2D b0xcv;         // Curvature term
@@ -373,9 +360,10 @@ public:
     return result;
   }
 
-  int init(bool restarting) override {
-    bool noshear;
+public:
+  // Note: The rhs() function needs to be public so that RAJA can use CUDA
 
+  int init(bool restarting) override {
     Coordinates* metric = mesh->getCoordinates();
 
     output.write("Solving high-beta flute reduced equations\n");
@@ -394,10 +382,10 @@ public:
     mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
 
     // Load metrics
-    if (mesh->get(Rxy, "Rxy")) { // m
+    if (mesh->get(Rxy, "Rxy") != 0) { // m
       throw BoutException("Error: Cannot read Rxy from grid\n");
     }
-    if (mesh->get(Bpxy, "Bpxy")) { // T
+    if (mesh->get(Bpxy, "Bpxy") != 0) { // T
       throw BoutException("Error: Cannot read Bpxy from grid\n");
     }
     mesh->get(Btxy, "Btxy");          // T
@@ -550,7 +538,7 @@ public:
 
     experiment_Er = options["experiment_Er"].withDefault(false);
 
-    noshear = options["noshear"].withDefault(false);
+    bool noshear = options["noshear"].withDefault<bool>(false);
 
     relax_j_vac = options["relax_j_vac"].doc("Relax vacuum current to zero").withDefault<bool>(false);
     relax_j_tconst = options["relax_j_tconst"]
@@ -750,7 +738,7 @@ public:
       if (simple_rmp) {
         // Use a fairly simple form for the perturbation
         Field2D pol_angle;
-        if (mesh->get(pol_angle, "pol_angle")) {
+        if (mesh->get(pol_angle, "pol_angle") != 0) {
           output_warn.write("     ***WARNING: need poloidal angle for simple RMP\n");
           include_rmp = false;
         } else {
@@ -799,7 +787,7 @@ public:
         }
       } else {
         // Load perturbation from grid file.
-        include_rmp = !mesh->get(rmp_Psi0, "rmp_A"); // Only include if found
+        include_rmp = mesh->get(rmp_Psi0, "rmp_A") == 0; // Only include if found
         if (!include_rmp) {
           output_warn.write("WARNING: Couldn't read 'rmp_A' from grid file\n");
         }
@@ -841,10 +829,10 @@ public:
     //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
 
-    if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
+    if (mesh->get(Bbar, "bmag") != 0) { // Typical magnetic field
       Bbar = 1.0;
     }
-    if (mesh->get(Lbar, "rmag")) { // Typical length scale
+    if (mesh->get(Lbar, "rmag") != 0) { // Typical length scale
       Lbar = 1.0;
     }
 
@@ -986,15 +974,15 @@ public:
         Te0 = Ti0;
         N0 = P0 / (Ti0 + Te0);
       } else {
-        if (mesh->get(N0, "Niexp")) { // N_i0
+        if (mesh->get(N0, "Niexp") != 0) { // N_i0
           throw BoutException("Error: Cannot read Ni0 from grid\n");
         }
 
-        if (mesh->get(Ti0, "Tiexp")) { // T_i0
+        if (mesh->get(Ti0, "Tiexp") != 0) { // T_i0
           throw BoutException("Error: Cannot read Ti0 from grid\n");
         }
 
-        if (mesh->get(Te0, "Teexp")) { // T_e0
+        if (mesh->get(Te0, "Teexp") != 0) { // T_e0
           throw BoutException("Error: Cannot read Te0 from grid\n");
         }
         N0 /= Nbar;
@@ -1189,6 +1177,8 @@ public:
         phi0 = -0.5 * dnorm * P0 / B0 / N0;
       }
       SAVE_ONCE(phi0);
+    } else {
+      phi0 = 0.0;
     }
 
     // Add some equilibrium quantities and normalisations
@@ -1587,44 +1577,17 @@ public:
     auto rmp_Psi_acc = FieldAccessor<>(rmp_Psi);
 #endif
 
-    ///////////////////////////////////////////////////
-    // Capture all all class member variables to
-    // local scope
-    //
-
-    const auto _delta_i = delta_i;
-    const auto _hyperresist = hyperresist;
-    const auto _relax_j_tconst = relax_j_tconst;
-    const auto _dnorm = dnorm;
-    const auto _ehyperviscos = ehyperviscos;
-
     ////////////////////////////////////////////////////
     // Start loop over a region of the mesh
-    // This can either use RAJA, or BOUT_FOR
-
-    const auto& region = Jpar.getRegion("RGN_NOBNDRY"); // Region over which to iterate
-#if RUN_WITH_RAJA
-
-    ///////////////////////////////////////////////////
-    // First, capture a device safe array for indices
+    // If RAJA is not available, this will fall back to BOUT_FOR
     //
-    auto indices = region.getIndices(); // A std::vector of Ind3D objects
+    // Note: Capture all class member variables into local scope
+    //       or an illegal memory access may occur on GPUs
 
-    Array<int> _ob_i_ind(indices.size()); // Backing data is device safe
-    // Copy indices into Array
-    for(auto i = 0; i < indices.size(); i++) {
-      _ob_i_ind[i] = indices[i].ind;
-    }
-    // Get the raw pointer to use on the device
-    auto _ob_i_ind_raw = &_ob_i_ind[0];
-
-    RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, indices.size()), [=] RAJA_DEVICE(int id) {
-      int i = _ob_i_ind_raw[id];
-      int i2d = i / Jpar_acc.mesh_nz;  // An index for 2D objects
-#else
-    BOUT_FOR(i, region) {
-      int i2d = i.ind / Jpar_acc.mesh_nz;  // An index for 2D objects
-#endif
+    BOUT_FOR_RAJA(i, Jpar.getRegion("RGN_NOBNDRY"),
+		  CAPTURE(delta_i, hyperresist, relax_j_tconst,
+			  dnorm, ehyperviscos, viscos_perp)) {
+      int i2d = static_cast<int>(i) / Jpar_acc.mesh_nz;  // An index for 2D objects
 
       ////////////////////////////////////////////////////
       // Parallel electric field
@@ -1636,7 +1599,7 @@ public:
           - Grad_par(B0U_acc, i) / B0_acc[i2d] + eta_acc[i] * Delp2(Jpar_acc, i)
 
           - EVAL_IF(RELAX_J_VAC, // Relax current to zero
-                    vac_mask_acc[i] * Jpar_acc[i] / _relax_j_tconst)
+                    vac_mask_acc[i] * Jpar_acc[i] / relax_j_tconst)
         ;
 
 #else
@@ -1644,19 +1607,19 @@ public:
       ddt(Psi_acc)[i] = - GRAD_PARP(phi_acc) + eta_acc[i] * Jpar_acc[i]
 
         + EVAL_IF(EHALL, // electron parallel pressure
-                  0.25 * _delta_i * (GRAD_PARP(P_acc) + bracket(P0_acc, Psi_acc, i)))
+                  0.25 * delta_i * (GRAD_PARP(P_acc) + bracket(P0_acc, Psi_acc, i)))
 
         - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
                   bracket(phi0_acc, Psi_acc, i))
 
         + EVAL_IF(DIAMAG_GRAD_T, // grad_par(T_e) correction
-                  1.71 * _dnorm * 0.5 * GRAD_PARP(P_acc) / B0_acc[i2d])
+                  1.71 * dnorm * 0.5 * GRAD_PARP(P_acc) / B0_acc[i2d])
 
         - EVAL_IF(HYPERRESIST, // Hyper-resistivity
-                  eta_acc[i] * _hyperresist * Delp2(Jpar_acc, i))
+                  eta_acc[i] * hyperresist * Delp2(Jpar_acc, i))
 
         - EVAL_IF(EHYPERVISCOS, // electron Hyper-viscosity
-                  eta_acc[i] * _ehyperviscos * Delp2(Jpar2_acc, i))
+                  eta_acc[i] * ehyperviscos * Delp2(Jpar2_acc, i))
       ;
 #endif
 
@@ -1698,11 +1661,7 @@ public:
       ddt(P_acc)[i] = 0.0;
 #endif
 
-#if RUN_WITH_RAJA
-    });
-#else
-    }
-#endif
+    };
 
     // Terms which are not yet single index operators
     // Note: Terms which are included in the single index loop

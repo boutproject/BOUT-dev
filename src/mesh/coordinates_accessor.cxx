@@ -10,7 +10,7 @@ namespace {
   ///
   /// Note: This association could perhaps be done by putting
   ///       the Array inside Coordinates, but this keeps things decoupled
-  static std::map<const Coordinates*, Array<BoutReal>> coords_store;
+  std::map<const Coordinates*, Array<BoutReal>> coords_store;
 }
 
 CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {

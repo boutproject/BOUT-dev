@@ -57,7 +57,7 @@ public:
     throw BoutException("LaplaceXY requires Hypre. No LaplaceXY available");
   }
   void setCoefs(const Field2D& UNUSED(A), const Field2D& UNUSED(B)) {}
-  const Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
+  Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
     throw BoutException("LaplaceXY requires Hypre. No LaplaceXY available");
   }
 };

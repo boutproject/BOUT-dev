@@ -546,12 +546,12 @@ public:
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
 
     // Set all coordinates to the same Coordinates object for now
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(test_coords_staggered);
-    static_cast<FakeMesh*>(mesh_staggered)
+    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(test_coords_staggered);
+    dynamic_cast<FakeMesh*>(mesh_staggered)
         ->setCoordinates(test_coords_staggered, CELL_XLOW);
-    static_cast<FakeMesh*>(mesh_staggered)
+    dynamic_cast<FakeMesh*>(mesh_staggered)
         ->setCoordinates(test_coords_staggered, CELL_YLOW);
-    static_cast<FakeMesh*>(mesh_staggered)
+    dynamic_cast<FakeMesh*>(mesh_staggered)
         ->setCoordinates(test_coords_staggered, CELL_ZLOW);
   }
 

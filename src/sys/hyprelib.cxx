@@ -15,19 +15,37 @@ int HypreLib::count = 0;
 HypreLib::HypreLib() {
   BOUT_OMP(critical(HypreLib))
   {
-    output << "Initialising Hypre\n";
-    HYPRE_Init();  
+    if (count == 0) { // Initialise once
+      output << "Initialising Hypre\n";
+      HYPRE_Init();
 #if BOUT_USE_CUDA
-    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
-    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
-    hypre_HandleMemoryLocation(hypre_handle()) = memory_location;
+      hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
+      HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_DEVICE;
+      hypre_HandleMemoryLocation(hypre_handle()) = memory_location;
 #else
-    hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_HOST;
-    HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_HOST;
-    hypre_HandleMemoryLocation(hypre_handle()) = memory_location;
+      hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_HOST;
+      HYPRE_MemoryLocation memory_location = HYPRE_MEMORY_HOST;
+      hypre_HandleMemoryLocation(hypre_handle()) = memory_location;
 #endif
+    }
+    count++;
   }
-  count++;
+}
+
+Hyprelib(const Hyprelib &other) noexcept {
+  BOUT_OMP(critical(HypreLib))
+  {
+    // No need to initialise Hypre, because it must already be initialised
+    count++; // Copying, so increase count
+  }
+}
+
+Hyprelib(Hyprelib &&other) noexcept {
+  BOUT_OMP(critical(HypreLib))
+  {
+    // No need to initialise Hypre, because it must already be initialised
+    count++; // Creating a new Hyprelib object; other will be deleted
+  }
 }
 
 HypreLib::~HypreLib() {

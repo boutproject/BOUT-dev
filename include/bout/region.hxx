@@ -166,6 +166,9 @@ struct SpecificInd {
   SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
   explicit SpecificInd(int i) : ind(i) {};
 
+  /// Allow explicit conversion to an int
+  explicit operator int() const { return ind; }
+
   /// Pre-increment operator
   SpecificInd &operator++() {
     ++ind;
