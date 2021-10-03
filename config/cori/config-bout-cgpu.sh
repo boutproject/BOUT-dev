@@ -6,7 +6,7 @@ scratch_dir=$(pwd)
 build_prefix=${scratch_dir}/build/${arch}-${compiler}/
 install_prefix=${scratch_dir}/install/${arch}-${compiler}/
 source_prefix=${scratch_dir}/
-tpl_prefix=/global/project/projectdirs/bout/BOUT-GPU/tpl/
+tpl_prefix=/global/project/projectdirs/bout/BOUT-GPU/tpl_11h/
 tpl_install_prefix=${tpl_prefix}/install/${arch}-${compiler}/
 module_prefix=/global/project/projectdirs/bout/BOUT-GPU/spack/opt/spack/cray-cnl7-skylake_avx512/gcc-8.3.0_cgpu/
 
@@ -33,9 +33,6 @@ else
 fi
 
 
-#          -DCMAKE_CXX_FLAGS="-w" \
-#          -DCMAKE_CUDA_FLAGS="-w" \
-#          -DNetCDF_ROOT=${module_prefix}/netcdf-c-4.7.4-hpuuuxa5vze5qwvqhdzxlpkrigjghgtu/ \
 build_dir=${build_prefix}/${pkg}
 install_dir=${install_prefix}/${pkg}
 source_dir=${source_prefix} 
@@ -72,7 +69,7 @@ if [ "$pkg" == "BOUT-dev" ]; then
           -DBOUT_ENABLE_UMPIRE=On \
           -DBOUT_ENABLE_MPI=On \
           -DBOUT_ENABLE_OPENMP=Off \
-	  -DBOUT_ENABLE_WARNINGS=Off \
+	       -DBOUT_ENABLE_WARNINGS=Off \
           -DBOUT_ENABLE_CUDA=On \
           -DCUDA_ARCH="compute_70,code=sm_70" \
           -DCMAKE_CUDA_STANDARD=14 \

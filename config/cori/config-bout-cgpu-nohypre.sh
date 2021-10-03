@@ -12,7 +12,7 @@ scratch_dir=$(pwd)
 build_prefix=${scratch_dir}/build/${arch}-${compiler}/
 install_prefix=${scratch_dir}/install/${arch}-${compiler}/
 source_prefix=${scratch_dir}/
-tpl_prefix=/global/project/projectdirs/bout/BOUT-GPU/tpl/
+tpl_prefix=/global/project/projectdirs/bout/BOUT-GPU/tpl_11h/
 tpl_install_prefix=${tpl_prefix}/install/${arch}-${compiler}/
 module_prefix=/global/project/projectdirs/bout/BOUT-GPU/spack/opt/spack/cray-cnl7-skylake_avx512/gcc-8.3.0_cgpu/
 
@@ -49,7 +49,7 @@ if [ "$pkg" == "BOUT-dev" ]; then
     echo 'enter BOUT-dev script'
     source_dir=${source_prefix} 
     mkdir -p $build_dir && cd $build_dir
-    cmake  \
+    cmake \
           -DCMAKE_CXX_COMPILER=$cpp \
           -DCMAKE_CXX_STANDARD=14 \
           -DCMAKE_C_COMPILER=$cc \
@@ -67,14 +67,14 @@ if [ "$pkg" == "BOUT-dev" ]; then
           -DBOUT_USE_LAPACK=On \
           -DBOUT_USE_NLS=On \
           -DBOUT_USE_PETSC=On \
-          -DPETSC_DIR=${module_prefix}/petsc-3.13.0-ym7gwgxfutg4m7ap3bz5tbvsitvfq2w2 \
+          -DPETSC_DIR=${module_prefix}/petsc-3.13.0-ihyubgkjxq7aldwlwpomlq2wbhkj5lql \
           -DBOUT_USE_PVODE=On \
           -DBOUT_USE_SUNDIALS=On \
           -DBOUT_ENABLE_RAJA=On \
           -DBOUT_ENABLE_UMPIRE=On \
           -DBOUT_ENABLE_MPI=On \
           -DBOUT_ENABLE_OPENMP=Off \
-	  -DBOUT_ENABLE_WARNINGS=Off \
+	       -DBOUT_ENABLE_WARNINGS=Off \
           -DBOUT_ENABLE_CUDA=On \
           -DCUDA_ARCH="compute_70,code=sm_70" \
           -DCMAKE_CUDA_STANDARD=14 \
@@ -88,7 +88,7 @@ if [ "$pkg" == "BOUT-dev" ]; then
           -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
           -DCMAKE_VERBOSE_MAKEFILE=On \
           -Dgtest_disable_pthreads=On \
-          -DCMAKE_INSTALL_RPATH="${module_prefix}/petsc-3.13.0-ym7gwgxfutg4m7ap3bz5tbvsitvfq2w2/lib;${module_prefix}/hdf5-1.10.6-twbl2egvtk5bmvx4bmlvpnugciapg46s/lib;${module_prefix}/netcdf-cxx4-4.3.1-ptxvbr5iimq3lcapnzs5tw7heniv7mha/lib;${module_prefix}/netcdf-c-4.7.4-hpuuuxa5vze5qwvqhdzxlpkrigjghgtu/lib;${module_prefix}/fftw-3.3.8-3nkroqhdwtudny5aifsjujxmzdvdz3jw/lib;${module_prefix}/sundials-5.1.0-nxrldjqsuekh3nmm4soadzjlwy3ggwz4/lib64" \
-          -DCMAKE_BUILD_RPATH="${module_prefix}/petsc-3.13.0-ym7gwgxfutg4m7ap3bz5tbvsitvfq2w2/lib;${module_prefix}/hdf5-1.10.6-twbl2egvtk5bmvx4bmlvpnugciapg46s/lib;${module_prefix}/netcdf-cxx4-4.3.1-ptxvbr5iimq3lcapnzs5tw7heniv7mha/lib;${module_prefix}/netcdf-c-4.7.4-hpuuuxa5vze5qwvqhdzxlpkrigjghgtu/lib;${module_prefix}/fftw-3.3.8-3nkroqhdwtudny5aifsjujxmzdvdz3jw/lib;${module_prefix}/sundials-5.1.0-nxrldjqsuekh3nmm4soadzjlwy3ggwz4/lib64" \
+          -DCMAKE_INSTALL_RPATH="${module_prefix}/petsc-3.13.0-ihyubgkjxq7aldwlwpomlq2wbhkj5lql/lib;${module_prefix}/hdf5-1.10.6-twbl2egvtk5bmvx4bmlvpnugciapg46s/lib;${module_prefix}/netcdf-cxx4-4.3.1-ptxvbr5iimq3lcapnzs5tw7heniv7mha/lib;${module_prefix}/netcdf-c-4.7.4-hpuuuxa5vze5qwvqhdzxlpkrigjghgtu/lib;${module_prefix}/fftw-3.3.8-3nkroqhdwtudny5aifsjujxmzdvdz3jw/lib;${module_prefix}/sundials-5.1.0-nxrldjqsuekh3nmm4soadzjlwy3ggwz4/lib64" \
+          -DCMAKE_BUILD_RPATH="${module_prefix}/petsc-3.13.0-ihyubgkjxq7aldwlwpomlq2wbhkj5lql/lib;${module_prefix}/hdf5-1.10.6-twbl2egvtk5bmvx4bmlvpnugciapg46s/lib;${module_prefix}/netcdf-cxx4-4.3.1-ptxvbr5iimq3lcapnzs5tw7heniv7mha/lib;${module_prefix}/netcdf-c-4.7.4-hpuuuxa5vze5qwvqhdzxlpkrigjghgtu/lib;${module_prefix}/fftw-3.3.8-3nkroqhdwtudny5aifsjujxmzdvdz3jw/lib;${module_prefix}/sundials-5.1.0-nxrldjqsuekh3nmm4soadzjlwy3ggwz4/lib64" \
           $source_dir
 fi

@@ -70,18 +70,18 @@ public:
   explicit HypreLib();
 
   /// Copy constructor
-  Hyprelib(const Hyprelib &other);
+  HypreLib(const HypreLib &other) noexcept;
 
   /// Move constructor
-  Hyprelib(Hyprelib &&other) noexcept;
+  HypreLib(HypreLib &&other) noexcept;
 
   /// Assignment doesn't do anything
-  Hyprelib& operator=(const Hyprelib &other) noexcept {
+  HypreLib& operator=(const HypreLib &other) noexcept {
     return *this;
   }
 
   /// Move assignment doesn't do anything
-  Hyprelib& operator=(Hyprelib &&other) noexcept {
+  HypreLib& operator=(HypreLib &&other) noexcept {
     return *this;
   }
   
