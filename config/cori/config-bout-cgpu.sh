@@ -69,7 +69,7 @@ if [ "$pkg" == "BOUT-dev" ]; then
           -DBOUT_ENABLE_UMPIRE=On \
           -DBOUT_ENABLE_MPI=On \
           -DBOUT_ENABLE_OPENMP=Off \
-	       -DBOUT_ENABLE_WARNINGS=Off \
+          -DBOUT_ENABLE_WARNINGS=Off \
           -DBOUT_ENABLE_CUDA=On \
           -DCUDA_ARCH="compute_70,code=sm_70" \
           -DCMAKE_CUDA_STANDARD=14 \

@@ -96,7 +96,7 @@ TYPED_TEST(HypreVectorTest, Assemble) {
   HYPRE_Complex actual{-1.};
 
   // HYPRE_IJVectorGetValues when using CUDA requires indices and values use device compatible memory
-  #if BOUT_USE_CUDA && defined(__CUDACC__)
+#if BOUT_USE_CUDA && defined(__CUDACC__)
   HYPRE_BigInt *um_i;
   HYPRE_Complex *um_actual;
   cudaMallocManaged(&um_i,sizeof(HYPRE_BigInt));
