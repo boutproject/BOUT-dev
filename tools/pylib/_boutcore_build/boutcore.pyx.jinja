@@ -488,7 +488,8 @@ cdef class {{ field.field_type }}:
 
 
 {% endfor %}
-    def applyBoundary(self, boundary=None, time=None):
+{% for boundaryMethod in field.boundaries %}
+    def {{ boundaryMethod }}(self, boundary=None, time=None):
         """
         Set the boundaries of a {{ field.field_type }}. Only one of both arguments
         can be provided. If no value is provided, the default boundary
@@ -509,14 +510,15 @@ cdef class {{ field.field_type }}:
             raise RuntimeError("Can only pass one option at a time")
         if time is not None:
             _time = time
-            self.cobj.applyBoundary(_time)
+            self.cobj.{{ boundaryMethod }}(_time)
         elif boundary is not None:
             tmp = boundary.encode()
             bndry = tmp
-            self.cobj.applyBoundary(bndry)
+            self.cobj.{{ boundaryMethod }}(bndry)
         else:
-            self.cobj.applyBoundary()
+            self.cobj.{{ boundaryMethod }}()
 
+{% endfor %}
     def __dealloc__(self):
         self.__boutcore_dealloc()
 
