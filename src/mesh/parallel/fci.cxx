@@ -300,7 +300,7 @@ Field3D FCIMap::integrate(Field3D &f) const {
           // which would include cell edges and corners
           result(x, ynext, z) = 0.5 * (f_c + 0.25 * (f_pp + f_mp + f_pm + f_mm));
 
-          ASSERT2(finite(result(x,ynext,z)));
+          ASSERT2(std::isfinite(result(x,ynext,z)));
         }
       }
     }

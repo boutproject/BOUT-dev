@@ -802,7 +802,7 @@ bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
   }
   
   for(int i=0;i<lx*ly*lz;i++) {
-    if(!finite(data[i]))
+    if(!std::isfinite(data[i]))
       data[i] = 0.0;
   }
 
@@ -853,7 +853,7 @@ bool Ncxx4::write_perp(BoutReal *data, const std::string& name, int lx, int lz) 
   }
 
   for(int i=0;i<lx*lz;i++) {
-    if(!finite(data[i]))
+    if(!std::isfinite(data[i]))
       data[i] = 0.0;
   }
 
@@ -1120,7 +1120,7 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
   }
   
   for(int i=0;i<lx*ly*lz;i++) {
-    if(!finite(data[i]))
+    if(!std::isfinite(data[i]))
       data[i] = 0.0;
   }
 
@@ -1188,7 +1188,7 @@ bool Ncxx4::write_rec_perp(BoutReal *data, const std::string& name, int lx, int 
   }
 
   for(int i=0;i<lx*lz;i++) {
-    if(!finite(data[i]))
+    if(!std::isfinite(data[i]))
       data[i] = 0.0;
   }
 

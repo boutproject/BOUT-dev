@@ -249,7 +249,7 @@ inline void checkFinite(const T& f, const std::string& name="field", const std::
   }
 
   BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
-    if (!::finite(f[i])) {
+    if (!std::isfinite(f[i])) {
       throw BoutException("{:s} is not finite at {:s}", name, toString(i));
     }
   }
@@ -696,7 +696,7 @@ inline bool finite(const T &f, const std::string& rgn = "RGN_ALL") {
   }
 
   BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
-    if (!finite(f[i])) {
+    if (!std::isfinite(f[i])) {
       return false;
     }
   }
