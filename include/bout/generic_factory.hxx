@@ -140,8 +140,18 @@ protected:
   /// implementation in the same TU as the registration symbols
   static void ensureRegistered() {}
 
+public:
+  virtual ~Factory() = default;
+
+  /// Get the singleton instance
+  static DerivedFactory& getInstance() {
+    static DerivedFactory instance{};
+    DerivedFactory::ensureRegistered();
+    return instance;
+  }
+
   /// Return either \p options or the section from root
-  Options* optionsOrDefaultSection(Options* options) const {
+  static Options* optionsOrDefaultSection(Options* options) {
     if (options == nullptr) {
       options = &Options::root()[DerivedFactory::section_name];
     }
@@ -167,16 +177,6 @@ protected:
     throw BoutException("Error when trying to {3} a {0:s}: Could not find "
                         "'{1:s}'\nAvailable {0:s}s are:\n{2:s}",
                         DerivedFactory::type_name, name, available, verb);
-  }
-
-public:
-  virtual ~Factory() = default;
-
-  /// Get the singleton instance
-  static DerivedFactory& getInstance() {
-    static DerivedFactory instance{};
-    DerivedFactory::ensureRegistered();
-    return instance;
   }
 
   /// Return the name of the default type to create
