@@ -35,6 +35,30 @@ namespace {
 RegisterLaplace<LaplaceNaulin> registerlaplacenaulin(LAPLACE_NAULIN);
 }
 
+
+namespace bout {
+template <>
+struct ArgumentHelper<LaplaceNaulin> : ArgumentHelper<Laplacian> {
+  explicit ArgumentHelper(Options& options);
+  explicit ArgumentHelper(Options* options)
+      : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options)) {}
+  static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
+                                               Mesh* mesh);
+  /// Solver tolerances
+  BoutReal rtol, atol;
+
+  /// Maximum number of iterations
+  int maxits;
+
+  /// Initial choice for under-relaxation factor, should be greater than 0 and
+  /// less than or equal to 1. Value of 1 means no underrelaxation
+  BoutReal initial_underrelax_factor{1.};
+
+  /// Type of Laplacian solver used to solve the equation with constant-in-z coefficients
+  std::string delp2type;
+};
+} // namespace bout
+
 /// Solves the 2D Laplacian equation
 /*!
  * 
@@ -137,6 +161,8 @@ public:
   BoutReal getMeanIterations() const { return naulinsolver_mean_its; }
   void resetMeanIterations() { naulinsolver_mean_its = 0; }
 private:
+  LaplaceNaulin(const bout::ArgumentHelper<LaplaceNaulin>& args, Options* opt,
+                const CELL_LOC loc, Mesh* mesh_in);
   LaplaceNaulin(const LaplaceNaulin&);
   LaplaceNaulin& operator=(const LaplaceNaulin&);
   Field3D Acoef, C1coef, C2coef, Dcoef;
@@ -145,23 +171,23 @@ private:
   std::unique_ptr<Laplacian> delp2solver{nullptr};
 
   /// Solver tolerances
-  BoutReal rtol, atol;
+  BoutReal rtol{1.e-7}, atol{1.e-20};
 
   /// Maximum number of iterations
-  int maxits;
+  int maxits{100};
 
   /// Initial choice for under-relaxation factor, should be greater than 0 and
   /// less than or equal to 1. Value of 1 means no underrelaxation
   BoutReal initial_underrelax_factor{1.};
 
   /// Mean number of iterations taken by the solver
-  BoutReal naulinsolver_mean_its;
+  BoutReal naulinsolver_mean_its{0.};
 
   /// Mean number of times the underrelaxation factor is reduced
   BoutReal naulinsolver_mean_underrelax_counts{0.};
 
   /// Counter for the number of times the solver has been called
-  int ncalls;
+  int ncalls{0};
 
   /// Copy the boundary guard cells from the input 'initial guess' x0 into x.
   /// These may be used to set non-zero-value boundary conditions

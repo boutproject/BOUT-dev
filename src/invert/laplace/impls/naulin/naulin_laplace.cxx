@@ -146,29 +146,67 @@
 
 #include "naulin_laplace.hxx"
 
-LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
+namespace bout {
+ArgumentHelper<LaplaceNaulin>::ArgumentHelper(Options& options)
+    : ArgumentHelper<Laplacian>(options),
+      rtol(options["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
+      atol(options["atol"].doc("Absolute tolerance").withDefault(1.e-20)),
+      maxits(options["maxits"].doc("Maximum number of iterations").withDefault(100)),
+      initial_underrelax_factor(
+          options["initial_underrelax_factor"]
+              .doc("Initial choice for under-relaxation factor, should be greater than 0 "
+                   "and less than or equal to 1. Value of 1 means no underrelaxation")
+              .withDefault(1.)),
+      delp2type(
+          options["delp2type:type"]
+              .doc("Type of Laplacian solver used to solve the equation with "
+                   "constant-in-z coefficients. This requires an FFT scheme, otherwise "
+                   "it will not exactly invert Delp2, and the Naulin solver will not "
+                   "converge. Valid choices are 'cyclic', 'spt', or 'tri'")
+              .withDefault("cyclic")) {}
+
+PreconditionResult ArgumentHelper<LaplaceNaulin>::checkPreconditions(
+    Options* options, MAYBE_UNUSED(CELL_LOC location), MAYBE_UNUSED(Mesh* mesh)) {
+  ArgumentHelper<LaplaceNaulin> args(*options);
+
+  if (args.initial_underrelax_factor <= 0. or args.initial_underrelax_factor > 1.) {
+    return {false, fmt::format("LaplaceNaulin error: 'initial_underrelax_factor' must be "
+                               "between 0. and 1. (got {})",
+                               args.initial_underrelax_factor)};
+  }
+  if (not(args.delp2type == "cyclic" or args.delp2type == "spt"
+          or args.delp2type == "tri")) {
+    return {false, fmt::format("LaplaceNaulin error: delp2solver must be one of "
+                               "'cyclic', 'spt', or 'tri' (got '{}')",
+                               args.delp2type)};
+  }
+
+  return {true, ""};
+}
+} // namespace bout
+
+LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
+  LaplaceNaulin(bout::ArgumentHelper<LaplaceNaulin>(opt), opt, loc, mesh_in) {}
+
+LaplaceNaulin::LaplaceNaulin(const bout::ArgumentHelper<LaplaceNaulin>& args, Options* opt,
+                const CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
-      delp2solver(nullptr), naulinsolver_mean_its(0.), ncalls(0) {
+      rtol(args.rtol), atol(args.atol), maxits(args.maxits), initial_underrelax_factor(args.initial_underrelax_factor) {
 
   ASSERT1(opt != nullptr); // An Options pointer should always be passed in by LaplaceFactory
+
+  const auto preconditions = args.checkPreconditions(opt, location, localmesh);
+  if (preconditions) {
+    throw BoutException(preconditions.reason);
+  }
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);
   C2coef.setLocation(location);
   Dcoef.setLocation(location);
 
-  // Get options
-  OPTION(opt, rtol, 1.e-7);
-  OPTION(opt, atol, 1.e-20);
-  OPTION(opt, maxits, 100);
-  OPTION(opt, initial_underrelax_factor, 1.);
-  ASSERT0(initial_underrelax_factor > 0. and initial_underrelax_factor <= 1.);
   delp2solver = create(opt->getSection("delp2solver"), location, localmesh);
-  std::string delp2type;
-  opt->getSection("delp2solver")->get("type", delp2type, "cyclic");
-  // Check delp2solver is using an FFT scheme, otherwise it will not exactly
-  // invert Delp2 and we will not converge
-  ASSERT0( delp2type=="cyclic" || delp2type=="spt" || delp2type=="tri" );
+
   // Use same flags for FFT solver as for NaulinSolver
   delp2solver->setGlobalFlags(global_flags);
   delp2solver->setInnerBoundaryFlags(inner_boundary_flags);

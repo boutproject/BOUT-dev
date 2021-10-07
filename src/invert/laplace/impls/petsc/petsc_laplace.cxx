@@ -60,12 +60,83 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
-LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
-  Laplacian(opt, loc, mesh_in),
-  A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-  issetD(false), issetC(false), issetE(false),
-  lib(opt==nullptr ? &(Options::root()["laplace"]) : opt)
-{
+namespace bout {
+ArgumentHelper<LaplacePetsc>::ArgumentHelper(Options& options)
+    : ArgumentHelper<Laplacian>(options),
+      ksptype(options["ksptype"].doc("KSP solver type").withDefault(KSP_GMRES)),
+      pctype(options["pctype"]
+                 .doc("Preconditioner type. See the PETSc documentation for options. "
+                      "WARNING: Only a few of these options actually make sense! "
+                      "Suggestions are 'pbjacobi' or 'sor'")
+                 .withDefault("none")),
+      richardson_damping_factor(options["richardson_damping_factor"].withDefault(1.0)),
+      chebyshev_max(options["chebyshev_max"].withDefault(100)),
+      chebyshev_min(options["chebyshev_min"].withDefault(0.01)),
+      gmres_max_steps(options["gmres_max_steps"].withDefault(30)),
+
+      rtol(options["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5)),
+      atol(options["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-50)),
+      dtol(options["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e5)),
+      maxits(
+          options["maxits"].doc("Maximum number of KSP iterations").withDefault(100000)),
+      direct(options["direct"].doc("Use direct (LU) solver?").withDefault(false)),
+      fourth_order(options["fourth_order"]
+                       .doc("Use fourth-order finite different stencil")
+                       .withDefault(false)),
+      rightprec(options["rightprec"]
+                    .doc("Use right preconditioning (only used if 'pctype' is 'user')")
+                    .withDefault(true)) {}
+
+PreconditionResult ArgumentHelper<LaplacePetsc>::checkPreconditions(
+    Options* options, MAYBE_UNUSED(CELL_LOC location), Mesh* mesh) {
+
+  ArgumentHelper<LaplacePetsc> args{options};
+
+  // These are the implemented flags
+  constexpr auto implemented_flags = INVERT_START_NEW;
+  constexpr auto implemented_boundary_flags = INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
+  // Checking flags are set to something which is not implemented
+  // This is done binary (which is possible as each flag is a power of 2)
+  if (args.global_flags & ~implemented_flags) {
+    if (args.global_flags & INVERT_4TH_ORDER) {
+      output.write("For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
+                   "setting INVERT_4TH_ORDER flag\n");
+    }
+    return {false,"Attempted to set Laplacian inversion flag that is not "
+      "implemented in petsc_laplace.cxx"};
+  }
+  if (args.inner_boundary_flags & ~implemented_boundary_flags) {
+    return {false,"Attempted to set Laplacian inversion boundary flag that is not "
+      "implemented in petsc_laplace.cxx"};
+  }
+  if (args.outer_boundary_flags & ~implemented_boundary_flags) {
+    return {false,"Attempted to set Laplacian inversion boundary flag that is not "
+      "implemented in petsc_laplace.cxx"};
+  }
+  const auto localmesh = mesh == nullptr? bout::globals::mesh : mesh;
+  if (localmesh->periodicX) {
+    return {false,"LaplacePetsc does not work with periodicity in the x direction "
+                        "(localmesh->PeriodicX == true). Change boundary conditions or "
+      "use serial-tri or cyclic solver instead"};
+  }
+  return {true, ""};
+}
+}
+
+LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in)
+    : LaplacePetsc(bout::ArgumentHelper<LaplacePetsc>{opt}, opt, loc, mesh_in) {}
+
+LaplacePetsc::LaplacePetsc(const bout::ArgumentHelper<LaplacePetsc>& args, Options* opt,
+                           const CELL_LOC loc, Mesh* mesh_in)
+    : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
+      issetD(false), issetC(false), issetE(false),
+      lib(opt == nullptr ? &(Options::root()["laplace"]) : opt), ksptype(args.ksptype),
+      pctype(args.pctype), richardson_damping_factor(args.richardson_damping_factor),
+      chebyshev_max(args.chebyshev_max), chebyshev_min(args.chebyshev_min),
+      gmres_max_steps(args.gmres_max_steps), rtol(args.rtol), atol(args.atol),
+      dtol(args.dtol), maxits(args.maxits), direct(args.direct),
+      fourth_order(args.fourth_order), rightprec(args.rightprec) {
+
   A.setLocation(location);
   C1.setLocation(location);
   C2.setLocation(location);
@@ -73,33 +144,12 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   Ex.setLocation(location);
   Ez.setLocation(location);
 
-  // Get Options in Laplace Section
-  if (!opt) opts = Options::getRoot()->getSection("laplace");
-  else opts=opt;
-
-  #if CHECK > 0
-    // These are the implemented flags
-    implemented_flags = INVERT_START_NEW;
-    implemented_boundary_flags = INVERT_AC_GRAD
-                                 + INVERT_SET
-                                 + INVERT_RHS
-                                 ;
-    // Checking flags are set to something which is not implemented
-    // This is done binary (which is possible as each flag is a power of 2)
-    if ( global_flags & ~implemented_flags ) {
-      if (global_flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
-      throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in petsc_laplace.cxx");
-    }
-    if ( inner_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }
-    if ( outer_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }
-    if(localmesh->periodicX) {
-      throw BoutException("LaplacePetsc does not work with periodicity in the x direction (localmesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
-      }
-  #endif
+#if CHECK > 0
+  const auto preconditions = args.checkPreconditions(opt, location, localmesh);
+  if (preconditions) {
+    throw BoutException(preconditions.reason);
+  }
+#endif
 
   // Get communicator for group of processors in X - all points in z-x plane for fixed y.
   comm = localmesh->getXcomm();
@@ -107,10 +157,14 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   // Need to determine local size to use based on prior parallelisation
   // Coefficient values are stored only on local processors.
   localN = (localmesh->xend - localmesh->xstart + 1) * (localmesh->LocalNz);
-  if(localmesh->firstX())
-    localN += localmesh->xstart * (localmesh->LocalNz);    // If on first processor add on width of boundary region
-  if(localmesh->lastX())
-    localN += localmesh->xstart * (localmesh->LocalNz);    // If on last processor add on width of boundary region
+  // If on first processor add on width of boundary region
+  if (localmesh->firstX()) {
+    localN += localmesh->xstart * (localmesh->LocalNz);
+  }
+  // If on last processor add on width of boundary region
+  if (localmesh->lastX()) {
+    localN += localmesh->xstart * (localmesh->LocalNz);
+  }
 
   // Calculate 'size' (the total number of points in physical grid)
   if (bout::globals::mpi->MPI_Allreduce(&localN, &size, 1, MPI_INT, MPI_SUM, comm)
@@ -122,20 +176,15 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   meshx = size / meshz;
 
   // Create PETSc type of vectors for the solution and the RHS vector
-  VecCreate( comm, &xs );
-  VecSetSizes( xs, localN, size );
-  VecSetFromOptions( xs );
-  VecDuplicate( xs , &bs );
-
-  // Get 4th order solver switch
-  opts->get("fourth_order", fourth_order, false);
+  VecCreate(comm, &xs);
+  VecSetSizes(xs, localN, size);
+  VecSetFromOptions(xs);
+  VecDuplicate(xs, &bs);
 
   // Set size of (the PETSc) Matrix on each processor to localN x localN
-  MatCreate( comm, &MatA );
-  MatSetSizes( MatA, localN, localN, size, size );
+  MatCreate(comm, &MatA);
+  MatSetSizes(MatA, localN, localN, size, size);
   MatSetFromOptions(MatA);
-  //   if (fourth_order) MatMPIAIJSetPreallocation( MatA, 25, PETSC_NULL, 10, PETSC_NULL );
-//   else MatMPIAIJSetPreallocation( MatA, 9, PETSC_NULL, 3, PETSC_NULL );
 
   /* Pre allocate memory
    * nnz denotes an array containing the number of non-zeros in the various rows
@@ -145,185 +194,148 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
    *         parallel)
    */
   PetscInt *d_nnz, *o_nnz;
-  PetscMalloc( (localN)*sizeof(PetscInt), &d_nnz );
-  PetscMalloc( (localN)*sizeof(PetscInt), &o_nnz );
+  PetscMalloc((localN) * sizeof(PetscInt), &d_nnz);
+  PetscMalloc((localN) * sizeof(PetscInt), &o_nnz);
   if (fourth_order) {
-    // first and last 2*localmesh-LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
-    if ( localmesh->firstX() && localmesh->lastX() ) {
-      for (int i=0; i<localmesh->LocalNz; i++) {
-        d_nnz[i]=15;
-        d_nnz[localN-1-i]=15;
-        o_nnz[i]=0;
-        o_nnz[localN-1-i]=0;
+    // first and last 2*localmesh-LocalNz entries are the edge x-values that (may) have
+    // 'off-diagonal' components (i.e. on another processor)
+    if (localmesh->firstX() && localmesh->lastX()) {
+      for (int i = 0; i < localmesh->LocalNz; i++) {
+        d_nnz[i] = 15;
+        d_nnz[localN - 1 - i] = 15;
+        o_nnz[i] = 0;
+        o_nnz[localN - 1 - i] = 0;
       }
-      for (int i=(localmesh->LocalNz); i<2*(localmesh->LocalNz); i++) {
-        d_nnz[i]=20;
-        d_nnz[localN-1-i]=20;
-        o_nnz[i]=0;
-        o_nnz[localN-1-i]=0;
+      for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
+        d_nnz[i] = 20;
+        d_nnz[localN - 1 - i] = 20;
+        o_nnz[i] = 0;
+        o_nnz[localN - 1 - i] = 0;
       }
-    }
-    else if ( localmesh->firstX() ) {
-      for (int i=0; i<localmesh->LocalNz; i++) {
-        d_nnz[i]=15;
-        d_nnz[localN-1-i]=15;
-        o_nnz[i]=0;
-        o_nnz[localN-1-i]=10;
+    } else if (localmesh->firstX()) {
+      for (int i = 0; i < localmesh->LocalNz; i++) {
+        d_nnz[i] = 15;
+        d_nnz[localN - 1 - i] = 15;
+        o_nnz[i] = 0;
+        o_nnz[localN - 1 - i] = 10;
       }
-      for (int i=(localmesh->LocalNz); i<2*(localmesh->LocalNz); i++) {
-        d_nnz[i]=20;
-        d_nnz[localN-1-i]=20;
-        o_nnz[i]=0;
-        o_nnz[localN-1-i]=5;
+      for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
+        d_nnz[i] = 20;
+        d_nnz[localN - 1 - i] = 20;
+        o_nnz[i] = 0;
+        o_nnz[localN - 1 - i] = 5;
       }
-    }
-    else if ( localmesh->lastX() ) {
-      for (int i=0; i<localmesh->LocalNz; i++) {
-        d_nnz[i]=15;
-        d_nnz[localN-1-i]=15;
-        o_nnz[i]=10;
-        o_nnz[localN-1-i]=0;
+    } else if (localmesh->lastX()) {
+      for (int i = 0; i < localmesh->LocalNz; i++) {
+        d_nnz[i] = 15;
+        d_nnz[localN - 1 - i] = 15;
+        o_nnz[i] = 10;
+        o_nnz[localN - 1 - i] = 0;
       }
-      for (int i=(localmesh->LocalNz); i<2*(localmesh->LocalNz); i++) {
-        d_nnz[i]=20;
-        d_nnz[localN-1-i]=20;
-        o_nnz[i]=5;
-        o_nnz[localN-1-i]=0;
+      for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
+        d_nnz[i] = 20;
+        d_nnz[localN - 1 - i] = 20;
+        o_nnz[i] = 5;
+        o_nnz[localN - 1 - i] = 0;
       }
-    }
-    else {
-      for (int i=0; i<localmesh->LocalNz; i++) {
-        d_nnz[i]=15;
-        d_nnz[localN-1-i]=15;
-        o_nnz[i]=10;
-        o_nnz[localN-1-i]=10;
+    } else {
+      for (int i = 0; i < localmesh->LocalNz; i++) {
+        d_nnz[i] = 15;
+        d_nnz[localN - 1 - i] = 15;
+        o_nnz[i] = 10;
+        o_nnz[localN - 1 - i] = 10;
       }
-      for (int i=(localmesh->LocalNz); i<2*(localmesh->LocalNz); i++) {
-        d_nnz[i]=20;
-        d_nnz[localN-1-i]=20;
-        o_nnz[i]=5;
-        o_nnz[localN-1-i]=5;
+      for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
+        d_nnz[i] = 20;
+        d_nnz[localN - 1 - i] = 20;
+        o_nnz[i] = 5;
+        o_nnz[localN - 1 - i] = 5;
       }
     }
 
-    for (int i=2*(localmesh->LocalNz); i<localN-2*((localmesh->LocalNz));i++) {
-      d_nnz[i]=25;
-        d_nnz[localN-1-i]=25;
-        o_nnz[i]=0;
-        o_nnz[localN-1-i]=0;
+    for (int i = 2 * (localmesh->LocalNz); i < localN - 2 * ((localmesh->LocalNz)); i++) {
+      d_nnz[i] = 25;
+      d_nnz[localN - 1 - i] = 25;
+      o_nnz[i] = 0;
+      o_nnz[localN - 1 - i] = 0;
     }
 
     // Use d_nnz and o_nnz for preallocating the matrix
     if (localmesh->firstX() && localmesh->lastX()) {
       // Only one processor in X
-      MatSeqAIJSetPreallocation( MatA, 0, d_nnz );
-    }else {
-      MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
+      MatSeqAIJSetPreallocation(MatA, 0, d_nnz);
+    } else {
+      MatMPIAIJSetPreallocation(MatA, 0, d_nnz, 0, o_nnz);
     }
-  }
-  else {
-    // first and last localmesh->LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
-    if ( localmesh->firstX() && localmesh->lastX() ) {
-      for (int i=0; i<localmesh->LocalNz; i++) {
-        d_nnz[i]=6;
-        d_nnz[localN-1-i]=6;
-        o_nnz[i]=0;
-        o_nnz[localN-1-i]=0;
+  } else {
+    // first and last localmesh->LocalNz entries are the edge x-values that (may) have
+    // 'off-diagonal' components (i.e. on another processor)
+    if (localmesh->firstX() && localmesh->lastX()) {
+      for (int i = 0; i < localmesh->LocalNz; i++) {
+        d_nnz[i] = 6;
+        d_nnz[localN - 1 - i] = 6;
+        o_nnz[i] = 0;
+        o_nnz[localN - 1 - i] = 0;
       }
-    }
-    else if ( localmesh->firstX() ) {
-      for (int i=0; i<localmesh->LocalNz; i++) {
-        d_nnz[i]=6;
-        d_nnz[localN-1-i]=6;
-        o_nnz[i]=0;
-        o_nnz[localN-1-i]=3;
+    } else if (localmesh->firstX()) {
+      for (int i = 0; i < localmesh->LocalNz; i++) {
+        d_nnz[i] = 6;
+        d_nnz[localN - 1 - i] = 6;
+        o_nnz[i] = 0;
+        o_nnz[localN - 1 - i] = 3;
       }
-    }
-    else if ( localmesh->lastX() ) {
-      for (int i=0; i<localmesh->LocalNz; i++) {
-        d_nnz[i]=6;
-        d_nnz[localN-1-i]=6;
-        o_nnz[i]=3;
-        o_nnz[localN-1-i]=0;
+    } else if (localmesh->lastX()) {
+      for (int i = 0; i < localmesh->LocalNz; i++) {
+        d_nnz[i] = 6;
+        d_nnz[localN - 1 - i] = 6;
+        o_nnz[i] = 3;
+        o_nnz[localN - 1 - i] = 0;
       }
-    }
-    else {
-      for (int i=0; i<localmesh->LocalNz; i++) {
-        d_nnz[i]=6;
-        d_nnz[localN-1-i]=6;
-        o_nnz[i]=3;
-        o_nnz[localN-1-i]=3;
+    } else {
+      for (int i = 0; i < localmesh->LocalNz; i++) {
+        d_nnz[i] = 6;
+        d_nnz[localN - 1 - i] = 6;
+        o_nnz[i] = 3;
+        o_nnz[localN - 1 - i] = 3;
       }
     }
 
-    for (int i=localmesh->LocalNz; i<localN-(localmesh->LocalNz);i++) {
-      d_nnz[i]=9;
-        d_nnz[localN-1-i]=9;
-        o_nnz[i]=0;
-        o_nnz[localN-1-i]=0;
+    for (int i = localmesh->LocalNz; i < localN - (localmesh->LocalNz); i++) {
+      d_nnz[i] = 9;
+      d_nnz[localN - 1 - i] = 9;
+      o_nnz[i] = 0;
+      o_nnz[localN - 1 - i] = 0;
     }
 
     // Use d_nnz and o_nnz for preallocating the matrix
     if (localmesh->firstX() && localmesh->lastX()) {
-      MatSeqAIJSetPreallocation( MatA, 0, d_nnz );
+      MatSeqAIJSetPreallocation(MatA, 0, d_nnz);
     } else {
-      MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
+      MatMPIAIJSetPreallocation(MatA, 0, d_nnz, 0, o_nnz);
     }
   }
   // Free the d_nnz and o_nnz arrays, as these are will not be used anymore
-  PetscFree( d_nnz );
-  PetscFree( o_nnz );
+  PetscFree(d_nnz);
+  PetscFree(o_nnz);
   // Sets up the internal matrix data structures for the later use.
   MatSetUp(MatA);
 
   // Declare KSP Context (abstract PETSc object that manages all Krylov methods)
   KSPCreate(comm, &ksp);
 
-  // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
-  ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSP_GMRES);
-
-  // Get preconditioner type
-  // WARNING: only a few of these options actually make sense: see the
-  // PETSc documentation to work out which they are (possibly
-  // pbjacobi, sor might be useful choices?)
-  pctype = (*opts)["pctype"]
-               .doc("Preconditioner type. See the PETSc documentation for options")
-               .withDefault("none");
-
   // Let "user" be a synonym for "shell"
   if (pctype == "user") {
     pctype = PCSHELL;
   }
-  
-  // Get Options specific to particular solver types
-  opts->get("richardson_damping_factor",richardson_damping_factor,1.0,true);
-  opts->get("chebyshev_max",chebyshev_max,100,true);
-  opts->get("chebyshev_min",chebyshev_min,0.01,true);
-  opts->get("gmres_max_steps",gmres_max_steps,30,true);
 
-  // Get Tolerances for KSP solver
-  rtol = (*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5);
-  atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-50);
-  dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e5);
-  maxits = (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000);
-
-  // Get direct solver switch
-  direct = (*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false);
   if (direct) {
-    output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
+    output.write("\nUsing LU decompostion for direct solution of system\n\n");
   }
 
   if (pctype == PCSHELL) {
-
-    rightprec = (*opts)["rightprec"].doc("Right preconditioning?").withDefault(true);
-
     // Options for preconditioner are in a subsection
     pcsolve = Laplacian::create(opts->getSection("precon"));
   }
-
-  // Ensure that the matrix is constructed first time
-  //   coefchanged = true;
-  //  lastflag = -1;
 }
 
 FieldPerp LaplacePetsc::solve(const FieldPerp& b) { return solve(b, b); }

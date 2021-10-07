@@ -66,6 +66,34 @@ namespace {
 RegisterLaplace<LaplacePetsc> registerlaplacepetsc(LAPLACE_PETSC);
 }
 
+
+namespace bout {
+template <>
+struct ArgumentHelper<LaplacePetsc> : ArgumentHelper<Laplacian> {
+  explicit ArgumentHelper(Options& options);
+  explicit ArgumentHelper(Options* options)
+      : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options)) {}
+  static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
+                                               Mesh* mesh);
+
+  std::string ksptype; ///< KSP solver type
+  std::string pctype;  ///< Preconditioner type
+  // Values specific to particular solvers
+  BoutReal richardson_damping_factor;
+  BoutReal chebyshev_max, chebyshev_min;
+  int gmres_max_steps;
+  // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
+  // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
+  BoutReal rtol, atol, dtol;
+  int maxits; // Maximum number of iterations in solver.
+  bool direct; //Use direct LU solver if true.
+  bool fourth_order;
+
+  bool rightprec;   // Right preconditioning
+};
+} // namespace bout
+
+
 class LaplacePetsc : public Laplacian {
 public:
   LaplacePetsc(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
@@ -189,6 +217,9 @@ public:
   int precon(Vec x, Vec y); ///< Preconditioner function
 
 private:
+  LaplacePetsc(const bout::ArgumentHelper<LaplacePetsc>& args, Options* opt,
+               const CELL_LOC loc, Mesh* mesh_in);
+
   void Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele, Mat &MatA );
   void Coeffs( int x, int y, int z, BoutReal &A1, BoutReal &A2, BoutReal &A3, BoutReal &A4, BoutReal &A5 );
 
@@ -219,6 +250,8 @@ private:
   Vec xs, bs;                 // Solution and RHS vectors
   KSP ksp;
 
+  PetscLib lib;
+
   Options *opts;              // Laplace Section Options Object
   std::string ksptype; ///< KSP solver type
   std::string pctype;  ///< Preconditioner type
@@ -235,9 +268,6 @@ private:
   bool direct; //Use direct LU solver if true.
   bool fourth_order;
 
-  PetscLib lib;
-
-  bool use_precon;  // Switch for preconditioning
   bool rightprec;   // Right preconditioning
   std::unique_ptr<Laplacian> pcsolve; // Laplacian solver for preconditioning
 
