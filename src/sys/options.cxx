@@ -204,7 +204,13 @@ Options& Options::operator=(const Options& other) {
   // Note: Here can't do copy-and-swap because pointers to parents are stored
 
   value = other.value;
-  attributes = other.attributes;
+
+  // Assigning the attributes.
+  // The simple assignment operator fails to compile with Apple Clang 12
+  //   attributes = other.attributes;
+  attributes.clear();
+  attributes.insert(other.attributes.begin(), other.attributes.end());
+
   full_name = other.full_name;
   is_section = other.is_section;
   children = other.children;
