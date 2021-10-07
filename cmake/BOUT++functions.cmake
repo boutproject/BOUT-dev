@@ -121,6 +121,8 @@ function(bout_add_example EXAMPLENAME)
   endif()
 
   set_target_properties(${EXAMPLENAME} PROPERTIES FOLDER examples)
+
+  add_dependencies(build-all-examples ${EXAMPLENAME})
 endfunction()
 
 
