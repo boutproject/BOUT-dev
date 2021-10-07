@@ -38,6 +38,8 @@ namespace bout {
 template <>
 struct ArgumentHelper<LaplacePCR> : public ArgumentHelper<Laplacian> {
   explicit ArgumentHelper(Options& options);
+  explicit ArgumentHelper(Options* options)
+      : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options)) {}
   static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
                                                Mesh* mesh);
   bool dst;
@@ -113,6 +115,9 @@ public:
                        double* x_sol);
 
 private:
+  LaplacePCR(const bout::ArgumentHelper<LaplacePCR>& args, Options* opt,
+             const CELL_LOC loc, Mesh* mesh_in);
+
   Field2D Acoef, C1coef, C2coef, Dcoef;
   Matrix<dcomplex> bcmplx, xcmplx;
 
@@ -163,7 +168,10 @@ private:
                        const Matrix<dcomplex>& c_ver, const Matrix<dcomplex>& r_ver,
                        const Matrix<dcomplex>& x_sol) const;
 
-  /// Number of unfiltered Fourier modes
+  /// Use DST instead of FFT
+  bool dst{false};
+
+  /// Number of unfiltered Fourier modes (== nsys of cyclic_reduction)
   int nmode;
 
   /// Number of systems to solve = number of unfiltered Fourier modes times number of y
@@ -189,8 +197,6 @@ private:
   bool isOuterBoundaryFlagSet(int flag) const {
     return (outer_boundary_flags & flag) != 0;
   }
-
-  bool dst{false};
 };
 
 #endif // BOUT_PCR_H

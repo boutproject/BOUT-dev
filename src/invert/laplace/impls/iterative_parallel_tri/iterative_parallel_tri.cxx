@@ -84,22 +84,17 @@ PreconditionResult ArgumentHelper<LaplaceIPT>::checkPreconditions(
 }
 } // namespace bout
 
-LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
-    : Laplacian(opt, loc, mesh_in),
-      rtol((*opt)["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
-      atol((*opt)["atol"].doc("Absolute tolerance").withDefault(1.e-20)),
-      maxits((*opt)["maxits"].doc("Maximum number of iterations").withDefault(100)),
-      max_level((*opt)["max_level"].doc("Maximum number of coarse grids").withDefault(0)),
-      max_cycle((*opt)["max_cycle"]
-                    .doc("Maximum number of iterations per coarse grid")
-                    .withDefault(1)),
-      predict_exit((*opt)["predict_exit"]
-                       .doc("Predict when convergence will be reached, and skip "
-                            "expensive convergence checks at earlier iterations")
-                       .withDefault(false)),
-      A(0.0, localmesh), C(1.0, localmesh), D(1.0, localmesh), nmode(maxmode + 1),
-      ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
-      bvec(ny, nmode, ncx), cvec(ny, nmode, ncx), upperGuardVector(ny, nmode, ncx),
+LaplaceIPT::LaplaceIPT(Options* opt, const CELL_LOC loc, Mesh* mesh_in)
+    : LaplaceIPT(bout::ArgumentHelper<LaplaceIPT>{opt}, opt, loc, mesh_in) {}
+
+LaplaceIPT::LaplaceIPT(const bout::ArgumentHelper<LaplaceIPT>& args, Options* opt,
+                       const CELL_LOC loc, Mesh* mesh_in)
+    : Laplacian(opt, loc, mesh_in), rtol(args.rtol), atol(args.atol), maxits(args.maxits),
+      max_level(args.max_level), max_cycle(args.max_cycle),
+      predict_exit(args.predict_exit), A(0.0, localmesh), C(1.0, localmesh),
+      D(1.0, localmesh), nmode(maxmode + 1), ncx(localmesh->LocalNx),
+      ny(localmesh->LocalNy), avec(ny, nmode, ncx), bvec(ny, nmode, ncx),
+      cvec(ny, nmode, ncx), upperGuardVector(ny, nmode, ncx),
       lowerGuardVector(ny, nmode, ncx), minvb(nmode, ncx), al(ny, nmode), bl(ny, nmode),
       au(ny, nmode), bu(ny, nmode), rl(nmode), ru(nmode), r1(ny, nmode), r2(ny, nmode),
       first_call(ny), x0saved(ny, 4, nmode), converged(nmode), fine_error(4, nmode) {
@@ -108,19 +103,9 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   C.setLocation(location);
   D.setLocation(location);
 
-  // Number of procs must be a factor of 2
-  const int n = localmesh->NXPE;
-  if (!is_pow2(n)) {
-    throw BoutException("LaplaceIPT error: NXPE must be a power of 2");
-  }
-  // Number of levels cannot must be such that nproc <= 2^(max_level-1)
-  if (n > 1 and n < pow(2, max_level + 1)) {
-    throw BoutException("LaplaceIPT error: number of levels and processors must satisfy "
-                        "NXPE > 2^(max_levels+1).");
-  }
-  // Cannot use multigrid on 1 core
-  if (n == 1 and max_level != 0) {
-    throw BoutException("LaplaceIPT error: must have max_level=0 if using one processor. ");
+  const auto preconditions = args.checkPreconditions(opt, location, localmesh);
+  if (preconditions) {
+    throw BoutException(preconditions.reason);
   }
 
   static int ipt_solver_count = 1;

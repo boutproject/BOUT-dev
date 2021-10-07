@@ -87,61 +87,43 @@ PreconditionResult ArgumentHelper<LaplacePCR>::checkPreconditions(
 } // namespace bout
 
 LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
+  : LaplacePCR(bout::ArgumentHelper<LaplacePCR>{opt}, opt, loc, mesh_in) {}
+
+LaplacePCR::LaplacePCR(const bout::ArgumentHelper<LaplacePCR>& args, Options* opt,
+                       const CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
-      C2coef(1.0, localmesh), Dcoef(1.0, localmesh), nmode(maxmode + 1),
-      ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
-      bvec(ny, nmode, ncx), cvec(ny, nmode, ncx) {
+      C2coef(1.0, localmesh), Dcoef(1.0, localmesh), dst(args.dst),
+      nmode(dst ? localmesh->LocalNz - 2 : maxmode + 1), ncx(localmesh->LocalNx),
+      ny(localmesh->LocalNy), avec(ny, nmode, ncx), bvec(ny, nmode, ncx),
+      cvec(ny, nmode, ncx) {
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);
   C2coef.setLocation(location);
   Dcoef.setLocation(location);
 
-  // Number of X procs must be a power of 2
-  const int nxpe = localmesh->getNXPE();
-  if (!is_pow2(nxpe)) {
-    throw BoutException("LaplacePCR error: NXPE must be a power of 2");
+  const auto preconditions = args.checkPreconditions(opt, location, localmesh);
+  if (preconditions) {
+    throw BoutException(preconditions.reason);
   }
-
-  // Number of x points must be a power of 2
-  if (!is_pow2(localmesh->GlobalNxNoBoundaries)) {
-    throw BoutException("LaplacePCR error: GlobalNxNoBoundaries must be a power of 2");
-  }
-
-  Acoef.setLocation(location);
-  C1coef.setLocation(location);
-  C2coef.setLocation(location);
-  Dcoef.setLocation(location);
-
-  // Get options
-
-  OPTION(opt, dst, false);
-
-  if (dst) {
-    nmode = localmesh->LocalNz - 2;
-  } else {
-    nmode = maxmode + 1; // Number of Z modes. maxmode set in
-                         // invert_laplace.cxx from options
-  }
-
-  // Note nmode == nsys of cyclic_reduction
 
   // Allocate arrays
 
   xs = localmesh->xstart; // Starting X index
-  if (localmesh->firstX()
-      && !localmesh->periodicX) { // Only want to include guard cells at boundaries
-                                  // (unless periodic in x)
+  if (localmesh->firstX() && !localmesh->periodicX) {
+    // Only want to include guard cells at boundaries
+    // (unless periodic in x)
     xs = 0;
   }
   xe = localmesh->xend; // Last X index
-  if (localmesh->lastX()
-      && !localmesh->periodicX) { // Only want to include guard cells at boundaries
-                                  // (unless periodic in x)
+  if (localmesh->lastX() && !localmesh->periodicX) {
+    // Only want to include guard cells at boundaries
+    // (unless periodic in x)
     xe = localmesh->LocalNx - 1;
   }
-  int n = xe - xs + 1; // Number of X points on this processor,
-                       // including boundaries but not guard cells
+  // Number of X points on this processor, including boundaries but
+  // not guard cells
+  const int n = xe - xs + 1;
 
   a.reallocate(nmode, n);
   b.reallocate(nmode, n);
