@@ -62,26 +62,30 @@
  *                         INITIALISATION AND CREATION
  **********************************************************************************/
 
-bout::ArgumentHelper<Laplacian>::ArgumentHelper(Options& options)
+bout::ArgumentHelper<Laplacian>::ArgumentHelper(Options& options,
+                                                MAYBE_UNUSED(CELL_LOC location),
+                                                Mesh* mesh)
     : async_send(options["async"].doc("Use asyncronous MPI send?").withDefault(true)),
       filter(options["filter"]
                  .doc("Fraction of Z modes to filter out. Between 0 and 1")
                  .withDefault(0.0)),
-      // NOTE: Default value requires `Mesh::LocalNz`
       maxmode(options["maxmode"]
                   .doc("The maximum Z mode to solve for. Default is based on filter and "
                        "mesh size")
-                  .withDeferredDefault(999.)),
+                  .withDefault(mesh == nullptr
+                                   ? 999.
+                                   : ROUND((1.0 - filter)
+                                           * static_cast<BoutReal>(mesh->LocalNz / 2)))),
       low_mem(options["low_mem"]
                   .doc("If true, reduce the amount of memory used")
                   .withDefault(false)),
       all_terms(
           options["all_terms"].doc("Include first derivative terms?").withDefault(true)),
-      // NOTE: The default value should be set from `Coordinates::non_uniform`
-      nonuniform(options["nonuniform"]
-                     .doc("Use non-uniform grid corrections? Default is the coordinates "
-                          "setting (top-level option 'non_uniform').")
-                     .withDeferredDefault(true)),
+      nonuniform(
+          options["nonuniform"]
+              .doc("Use non-uniform grid corrections? Default is the coordinates "
+                   "setting (top-level option 'non_uniform').")
+              .withDefault(mesh == nullptr ? true : mesh->getCoordinates()->non_uniform)),
       include_yguards(options["include_yguards"]
                           .doc("Solve Laplacian in Y guard cells?")
                           .withDefault(false)),
@@ -124,12 +128,9 @@ Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in)
   // Communication option. Controls if asyncronous sends are used
   async_send = args.async_send;
 
-  const int ncz = localmesh->LocalNz;
-  // convert filtering into an integer number of modes
-  // ArgumentHelper already set the default
-  maxmode = (*options)["maxmode"].withDefault(ROUND((1.0 - args.filter) * static_cast<BoutReal>(ncz / 2)));
-
   // Clamp maxmode between 0 and nz/2
+  const int ncz = localmesh->LocalNz;
+  maxmode = args.maxmode;
   if (maxmode < 0) {
     maxmode = 0;
   }
@@ -138,9 +139,7 @@ Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in)
   }
 
   low_mem = args.low_mem;
-
-  nonuniform = (*options)["nonuniform"].withDefault(coords->non_uniform);
-
+  nonuniform = args.nonuniform;
   all_terms = args.all_terms;
   global_flags = args.global_flags;
   inner_boundary_flags = args.inner_boundary_flags;

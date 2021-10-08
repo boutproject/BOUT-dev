@@ -157,7 +157,7 @@ using RegisterUnavailableLaplace = LaplaceFactory::RegisterUnavailableInFactory;
 namespace bout{
 template <>
 struct ArgumentHelper<Laplacian> : public ArgumentHelperBase {
-  explicit ArgumentHelper(Options& options);
+  explicit ArgumentHelper(Options& options, CELL_LOC loc = CELL_CENTRE, Mesh* mesh = nullptr);
   /// If true, use asyncronous send in parallel algorithms
   bool async_send;
   /// Fraction of Z modes to filter out

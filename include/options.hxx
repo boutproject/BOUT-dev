@@ -560,26 +560,6 @@ public:
     return overrideDefault<std::string>(std::string(def));
   }
 
-  /// Similar to `withDefault`, but if the default is used, it can be
-  /// overridden by a later call to `withDefault`
-  ///
-  /// This is useful for `ArgumentHelper` where we want to record
-  /// input options, but the real default value is computed from other
-  /// options we don't have access to.
-  template <typename T>
-  T withDeferredDefault(T def) {
-    const bool default_exists =
-        (not is_section)
-        and (hasAttribute("source")
-             and (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)));
-    if (default_exists) {
-      return as<T>();
-    }
-    T value = withDefault(def);
-    attributes["deferred"] = true;
-    return value;
-  }
-
   /// Get the parent Options object
   Options &parent() {
     if (parent_instance == nullptr) {

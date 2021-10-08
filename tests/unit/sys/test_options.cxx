@@ -316,26 +316,6 @@ TEST_F(OptionsTest, OverrideDefaultValueOptions) {
   EXPECT_EQ(value, "override_value");
 }
 
-TEST_F(OptionsTest, DeferredDefaultValueOptions) {
-  Options options;
-
-  auto something = options["not_set"].withDeferredDefault(false);
-  EXPECT_FALSE(something);
-  EXPECT_FALSE(options.isSet("not_set"));
-  EXPECT_TRUE(options["not_set"].hasAttribute("source"));
-
-  // This should be ok
-  something = options["not_set"].withDefault(true);
-  EXPECT_TRUE(something);
-  EXPECT_FALSE(options.isSet("not_set"));
-
-  // Deferring a second time is ok, uses previous default
-  EXPECT_NO_THROW(options["not_set"].withDeferredDefault(false));
-
-  // But now this should fail
-  EXPECT_THROW(options["not_set"].withDefault(false), BoutException);
-}
-
 TEST_F(OptionsTest, SingletonTest) {
   Options *root = Options::getRoot();
   Options *second = Options::getRoot();
