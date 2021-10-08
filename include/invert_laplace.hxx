@@ -135,7 +135,7 @@ public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
   static constexpr auto option_name = "type";
-  static constexpr auto default_type = LAPLACE_PCR;
+  static constexpr auto default_type = LAPLACE_CYCLIC;
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
                     Mesh* mesh = nullptr);
