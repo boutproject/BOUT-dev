@@ -329,6 +329,9 @@ TEST_F(OptionsTest, DeferredDefaultValueOptions) {
   EXPECT_TRUE(something);
   EXPECT_FALSE(options.isSet("not_set"));
 
+  // Deferring a second time is ok, uses previous default
+  EXPECT_NO_THROW(options["not_set"].withDeferredDefault(false));
+
   // But now this should fail
   EXPECT_THROW(options["not_set"].withDefault(false), BoutException);
 }

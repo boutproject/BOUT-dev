@@ -568,6 +568,13 @@ public:
   /// options we don't have access to.
   template <typename T>
   T withDeferredDefault(T def) {
+    const bool default_exists =
+        (not is_section)
+        and (hasAttribute("source")
+             and (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)));
+    if (default_exists) {
+      return as<T>();
+    }
     T value = withDefault(def);
     attributes["deferred"] = true;
     return value;
