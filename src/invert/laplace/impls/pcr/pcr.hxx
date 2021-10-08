@@ -42,6 +42,7 @@ struct ArgumentHelper<LaplacePCR> : public ArgumentHelper<Laplacian> {
       : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options)) {}
   static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
                                                Mesh* mesh);
+  PreconditionResult checkPreconditions(CELL_LOC location, Mesh* mesh) const;
   bool dst;
 };
 } // namespace bout

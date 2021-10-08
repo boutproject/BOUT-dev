@@ -53,7 +53,8 @@ struct ArgumentHelper<LaplaceIPT> : public ArgumentHelper<Laplacian> {
       : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options)) {}
   static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
                                                Mesh* mesh);
-  /// Solver tolerances
+  PreconditionResult checkPreconditions(MAYBE_UNUSED(CELL_LOC location),
+                                        Mesh* mesh) const;
   BoutReal rtol, atol;
   /// Maximum number of iterations
   int maxits;

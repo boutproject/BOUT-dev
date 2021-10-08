@@ -75,6 +75,7 @@ struct ArgumentHelper<LaplacePetsc> : ArgumentHelper<Laplacian> {
       : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options)) {}
   static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
                                                Mesh* mesh);
+  PreconditionResult checkPreconditions(CELL_LOC location, Mesh* mesh) const;
 
   std::string ksptype; ///< KSP solver type
   std::string pctype;  ///< Preconditioner type
@@ -216,6 +217,10 @@ public:
 
   int precon(Vec x, Vec y); ///< Preconditioner function
 
+  static constexpr auto implemented_flags = INVERT_START_NEW;
+  static constexpr auto implemented_boundary_flags =
+      INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
+
 private:
   LaplacePetsc(const bout::ArgumentHelper<LaplacePetsc>& args, Options* opt,
                const CELL_LOC loc, Mesh* mesh_in);
@@ -252,7 +257,6 @@ private:
 
   PetscLib lib;
 
-  Options *opts;              // Laplace Section Options Object
   std::string ksptype; ///< KSP solver type
   std::string pctype;  ///< Preconditioner type
 
@@ -273,11 +277,6 @@ private:
 
   void vecToField(Vec x, FieldPerp &f);        // Copy a vector into a fieldperp
   void fieldToVec(const FieldPerp &f, Vec x);  // Copy a fieldperp into a vector
-
-  #if CHECK > 0
-    int implemented_flags;
-    int implemented_boundary_flags;
-  #endif
 };
 
 #endif //BOUT_HAS_PETSC

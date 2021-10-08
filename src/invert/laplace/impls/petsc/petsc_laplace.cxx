@@ -91,43 +91,47 @@ PreconditionResult ArgumentHelper<LaplacePetsc>::checkPreconditions(
     Options* options, MAYBE_UNUSED(CELL_LOC location), Mesh* mesh) {
 
   ArgumentHelper<LaplacePetsc> args{options};
+  return args.checkPreconditions(location, mesh);
+}
 
-  // These are the implemented flags
-  constexpr auto implemented_flags = INVERT_START_NEW;
-  constexpr auto implemented_boundary_flags = INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
+PreconditionResult
+ArgumentHelper<LaplacePetsc>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location),
+                                                 Mesh* mesh) const {
+
   // Checking flags are set to something which is not implemented
   // This is done binary (which is possible as each flag is a power of 2)
-  if (args.global_flags & ~implemented_flags) {
-    if (args.global_flags & INVERT_4TH_ORDER) {
-      output.write("For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
-                   "setting INVERT_4TH_ORDER flag\n");
+  if (global_flags & ~LaplacePetsc::implemented_flags) {
+    if (global_flags & INVERT_4TH_ORDER) {
+      output.write(
+          "For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
+          "setting INVERT_4TH_ORDER flag\n");
     }
-    return {false,"Attempted to set Laplacian inversion flag that is not "
-      "implemented in petsc_laplace.cxx"};
+    return {false, "Attempted to set Laplacian inversion flag that is not "
+                   "implemented in petsc_laplace.cxx"};
   }
-  if (args.inner_boundary_flags & ~implemented_boundary_flags) {
-    return {false,"Attempted to set Laplacian inversion boundary flag that is not "
-      "implemented in petsc_laplace.cxx"};
+  if (inner_boundary_flags & ~LaplacePetsc::implemented_boundary_flags) {
+    return {false, "Attempted to set Laplacian inversion boundary flag that is not "
+                   "implemented in petsc_laplace.cxx"};
   }
-  if (args.outer_boundary_flags & ~implemented_boundary_flags) {
-    return {false,"Attempted to set Laplacian inversion boundary flag that is not "
-      "implemented in petsc_laplace.cxx"};
+  if (outer_boundary_flags & ~LaplacePetsc::implemented_boundary_flags) {
+    return {false, "Attempted to set Laplacian inversion boundary flag that is not "
+                   "implemented in petsc_laplace.cxx"};
   }
-  const auto localmesh = mesh == nullptr? bout::globals::mesh : mesh;
+  const auto localmesh = mesh == nullptr ? bout::globals::mesh : mesh;
   if (localmesh->periodicX) {
-    return {false,"LaplacePetsc does not work with periodicity in the x direction "
-                        "(localmesh->PeriodicX == true). Change boundary conditions or "
-      "use serial-tri or cyclic solver instead"};
+    return {false, "LaplacePetsc does not work with periodicity in the x direction "
+                   "(localmesh->PeriodicX == true). Change boundary conditions or "
+                   "use serial-tri or cyclic solver instead"};
   }
   return {true, ""};
 }
-}
+} // namespace bout
 
 LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in)
-    : LaplacePetsc(bout::ArgumentHelper<LaplacePetsc>{opt}, opt, loc, mesh_in) {}
+  : LaplacePetsc(bout::ArgumentHelper<LaplacePetsc>{opt, loc, mesh_in}, opt) {}
 
 LaplacePetsc::LaplacePetsc(const bout::ArgumentHelper<LaplacePetsc>& args, Options* opt,
-                           const CELL_LOC loc, Mesh* mesh_in)
+                           CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
       issetD(false), issetC(false), issetE(false),
       lib(opt == nullptr ? &(Options::root()["laplace"]) : opt), ksptype(args.ksptype),
@@ -145,8 +149,8 @@ LaplacePetsc::LaplacePetsc(const bout::ArgumentHelper<LaplacePetsc>& args, Optio
   Ez.setLocation(location);
 
 #if CHECK > 0
-  const auto preconditions = args.checkPreconditions(opt, location, localmesh);
-  if (preconditions) {
+  const auto preconditions = args.checkPreconditions(location, localmesh);
+  if (not preconditions) {
     throw BoutException(preconditions.reason);
   }
 #endif
@@ -334,7 +338,7 @@ LaplacePetsc::LaplacePetsc(const bout::ArgumentHelper<LaplacePetsc>& args, Optio
 
   if (pctype == PCSHELL) {
     // Options for preconditioner are in a subsection
-    pcsolve = Laplacian::create(opts->getSection("precon"));
+    pcsolve = Laplacian::create(opt->getSection("precon"));
   }
 }
 

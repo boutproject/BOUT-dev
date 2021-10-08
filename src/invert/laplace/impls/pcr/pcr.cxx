@@ -66,9 +66,16 @@ ArgumentHelper<LaplacePCR>::ArgumentHelper(Options& options)
     : bout::ArgumentHelper<Laplacian>(options),
       dst(options["dst"].doc("Use DST instead of FFT").withDefault(false)) {}
 
-PreconditionResult ArgumentHelper<LaplacePCR>::checkPreconditions(
-    MAYBE_UNUSED(Options* options), MAYBE_UNUSED(CELL_LOC location), Mesh* mesh) {
+PreconditionResult ArgumentHelper<LaplacePCR>::checkPreconditions(Options* options,
+                                                                  CELL_LOC location,
+                                                                  Mesh* mesh) {
+  ArgumentHelper<LaplacePCR> args{options};
+  return args.checkPreconditions(location, mesh);
+}
 
+PreconditionResult
+ArgumentHelper<LaplacePCR>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location),
+                                               Mesh* mesh) const {
   Mesh* localmesh = (mesh == nullptr) ? bout::globals::mesh : mesh;
 
   // Number of X procs must be a power of 2
@@ -102,8 +109,8 @@ LaplacePCR::LaplacePCR(const bout::ArgumentHelper<LaplacePCR>& args, Options* op
   C2coef.setLocation(location);
   Dcoef.setLocation(location);
 
-  const auto preconditions = args.checkPreconditions(opt, location, localmesh);
-  if (preconditions) {
+  const auto preconditions = args.checkPreconditions(location, localmesh);
+  if (not preconditions) {
     throw BoutException(preconditions.reason);
   }
 

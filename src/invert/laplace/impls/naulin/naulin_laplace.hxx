@@ -44,6 +44,7 @@ struct ArgumentHelper<LaplaceNaulin> : ArgumentHelper<Laplacian> {
       : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options)) {}
   static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
                                                Mesh* mesh);
+  PreconditionResult checkPreconditions(CELL_LOC location, Mesh* mesh) const;
   /// Solver tolerances
   BoutReal rtol, atol;
 

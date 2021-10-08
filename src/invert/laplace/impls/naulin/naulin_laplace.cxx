@@ -165,20 +165,25 @@ ArgumentHelper<LaplaceNaulin>::ArgumentHelper(Options& options)
                    "converge. Valid choices are 'cyclic', 'spt', or 'tri'")
               .withDefault("cyclic")) {}
 
-PreconditionResult ArgumentHelper<LaplaceNaulin>::checkPreconditions(
-    Options* options, MAYBE_UNUSED(CELL_LOC location), MAYBE_UNUSED(Mesh* mesh)) {
+PreconditionResult ArgumentHelper<LaplaceNaulin>::checkPreconditions(Options* options,
+                                                                     CELL_LOC location,
+                                                                     Mesh* mesh) {
   ArgumentHelper<LaplaceNaulin> args(*options);
+  return args.checkPreconditions(location, mesh);
+}
 
-  if (args.initial_underrelax_factor <= 0. or args.initial_underrelax_factor > 1.) {
+PreconditionResult
+ArgumentHelper<LaplaceNaulin>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location),
+                                                  MAYBE_UNUSED(Mesh* mesh)) const {
+  if (initial_underrelax_factor <= 0. or initial_underrelax_factor > 1.) {
     return {false, fmt::format("LaplaceNaulin error: 'initial_underrelax_factor' must be "
                                "between 0. and 1. (got {})",
-                               args.initial_underrelax_factor)};
+                               initial_underrelax_factor)};
   }
-  if (not(args.delp2type == "cyclic" or args.delp2type == "spt"
-          or args.delp2type == "tri")) {
+  if (not(delp2type == "cyclic" or delp2type == "spt" or delp2type == "tri")) {
     return {false, fmt::format("LaplaceNaulin error: delp2solver must be one of "
                                "'cyclic', 'spt', or 'tri' (got '{}')",
-                               args.delp2type)};
+                               delp2type)};
   }
 
   return {true, ""};
@@ -195,8 +200,8 @@ LaplaceNaulin::LaplaceNaulin(const bout::ArgumentHelper<LaplaceNaulin>& args, Op
 
   ASSERT1(opt != nullptr); // An Options pointer should always be passed in by LaplaceFactory
 
-  const auto preconditions = args.checkPreconditions(opt, location, localmesh);
-  if (preconditions) {
+  const auto preconditions = args.checkPreconditions(location, localmesh);
+  if (not preconditions) {
     throw BoutException(preconditions.reason);
   }
 

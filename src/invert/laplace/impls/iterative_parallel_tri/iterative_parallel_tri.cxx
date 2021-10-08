@@ -65,18 +65,24 @@ ArgumentHelper<LaplaceIPT>::ArgumentHelper(Options& options)
 PreconditionResult ArgumentHelper<LaplaceIPT>::checkPreconditions(
     Options* options, MAYBE_UNUSED(CELL_LOC location), Mesh* mesh) {
   ArgumentHelper<LaplaceIPT> args(*options);
+  return args.checkPreconditions(location, mesh);
+}
+
+PreconditionResult
+ArgumentHelper<LaplaceIPT>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location),
+                                               Mesh* mesh) const {
   // Number of procs must be a factor of 2
   const int n = mesh->NXPE;
   if (!is_pow2(n)) {
     return {false, "LaplaceIPT error: NXPE must be a power of 2"};
   }
   // Number of levels cannot must be such that nproc <= 2^(max_level-1)
-  if (n > 1 and n < pow(2, args.max_level + 1)) {
+  if (n > 1 and n < pow(2, max_level + 1)) {
     return {false, "LaplaceIPT error: number of levels and processors must satisfy "
                    "NXPE > 2^(max_levels+1)."};
   }
   // Cannot use multigrid on 1 core
-  if (n == 1 and args.max_level != 0) {
+  if (n == 1 and max_level != 0) {
     return {false, "LaplaceIPT error: must have max_level=0 if using one processor. "};
   }
 
@@ -103,8 +109,8 @@ LaplaceIPT::LaplaceIPT(const bout::ArgumentHelper<LaplaceIPT>& args, Options* op
   C.setLocation(location);
   D.setLocation(location);
 
-  const auto preconditions = args.checkPreconditions(opt, location, localmesh);
-  if (preconditions) {
+  const auto preconditions = args.checkPreconditions(location, localmesh);
+  if (not preconditions) {
     throw BoutException(preconditions.reason);
   }
 
