@@ -98,7 +98,7 @@ struct ArgumentHelper<LaplacePetsc3dAmg> : ArgumentHelper<Laplacian> {
 
 class LaplacePetsc3dAmg : public Laplacian {
 public:
-  LaplacePetsc3dAmg(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplacePetsc3dAmg(Options *opt = nullptr, CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplacePetsc3dAmg() override;
 
   void setCoefA(const Field2D &val) override {

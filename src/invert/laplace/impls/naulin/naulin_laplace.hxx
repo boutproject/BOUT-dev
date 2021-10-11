@@ -68,9 +68,9 @@ struct ArgumentHelper<LaplaceNaulin> : ArgumentHelper<Laplacian> {
  */
 class LaplaceNaulin : public Laplacian {
 public:
-  LaplaceNaulin(Options *opt = NULL, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplaceNaulin(Options* opt = NULL, CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
   ~LaplaceNaulin() = default;
-  
+
   using Laplacian::setCoefA;
   using Laplacian::setCoefC;
   using Laplacian::setCoefC1;
@@ -165,7 +165,7 @@ public:
   void resetMeanIterations() { naulinsolver_mean_its = 0; }
 private:
   LaplaceNaulin(const bout::ArgumentHelper<LaplaceNaulin>& args, Options* opt,
-                const CELL_LOC loc, Mesh* mesh_in);
+                CELL_LOC loc, Mesh* mesh_in);
   LaplaceNaulin(const LaplaceNaulin&);
   LaplaceNaulin& operator=(const LaplaceNaulin&);
   Field3D Acoef, C1coef, C2coef, Dcoef;

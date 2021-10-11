@@ -97,7 +97,7 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   : LaplacePCR(bout::ArgumentHelper<LaplacePCR>{opt}, opt, loc, mesh_in) {}
 
 LaplacePCR::LaplacePCR(const bout::ArgumentHelper<LaplacePCR>& args, Options* opt,
-                       const CELL_LOC loc, Mesh* mesh_in)
+                       CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
       C2coef(1.0, localmesh), Dcoef(1.0, localmesh), dst(args.dst),
       nmode(dst ? localmesh->LocalNz - 2 : maxmode + 1), ncx(localmesh->LocalNx),

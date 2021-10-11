@@ -76,9 +76,7 @@ RegisterLaplace<LaplaceIPT> registerlaplaceipt(LAPLACE_IPT);
 
 class LaplaceIPT : public Laplacian {
 public:
-  LaplaceIPT(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-             Mesh* mesh_in = nullptr);
-
+  LaplaceIPT(Options* opt = nullptr, CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
   ~LaplaceIPT() = default;
 
   friend class Level;
@@ -171,8 +169,8 @@ public:
   };
 
 private:
-  LaplaceIPT(const bout::ArgumentHelper<LaplaceIPT>& args, Options* opt,
-             const CELL_LOC loc, Mesh* mesh_in);
+  LaplaceIPT(const bout::ArgumentHelper<LaplaceIPT>& args, Options* opt, CELL_LOC loc,
+             Mesh* mesh_in);
 
   /// Solver tolerances
   BoutReal rtol, atol;

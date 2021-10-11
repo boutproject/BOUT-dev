@@ -65,7 +65,7 @@ struct ArgumentHelper<LaplaceSerialBand> : ArgumentHelper<Laplacian> {
 
 class LaplaceSerialBand : public Laplacian {
 public:
-  LaplaceSerialBand(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplaceSerialBand(Options *opt = nullptr, CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceSerialBand(){};
   
   using Laplacian::setCoefA;

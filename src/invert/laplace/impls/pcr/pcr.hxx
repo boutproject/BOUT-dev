@@ -55,8 +55,7 @@ RegisterLaplace<LaplacePCR> registerlaplacepcr(LAPLACE_PCR);
 
 class LaplacePCR : public Laplacian {
 public:
-  LaplacePCR(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-             Mesh* mesh_in = nullptr);
+  LaplacePCR(Options* opt = nullptr, CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
   ~LaplacePCR() = default;
 
   using Laplacian::setCoefA;
@@ -118,8 +117,8 @@ public:
                        double* x_sol);
 
 private:
-  LaplacePCR(const bout::ArgumentHelper<LaplacePCR>& args, Options* opt,
-             const CELL_LOC loc, Mesh* mesh_in);
+  LaplacePCR(const bout::ArgumentHelper<LaplacePCR>& args, Options* opt, CELL_LOC loc,
+             Mesh* mesh_in);
 
   Field2D Acoef, C1coef, C2coef, Dcoef;
   Matrix<dcomplex> bcmplx, xcmplx;

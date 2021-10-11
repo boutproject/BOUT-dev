@@ -128,7 +128,7 @@ ArgumentHelper<LaplacePetsc>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location)
 }
 } // namespace bout
 
-LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in)
+LaplacePetsc::LaplacePetsc(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   : LaplacePetsc(bout::ArgumentHelper<LaplacePetsc>{opt, loc, mesh_in}, opt, loc, mesh_in) {}
 
 LaplacePetsc::LaplacePetsc(const bout::ArgumentHelper<LaplacePetsc>& args, Options* opt,

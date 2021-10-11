@@ -58,7 +58,7 @@ PreconditionResult ArgumentHelper<LaplaceSerialBand>::checkPreconditions(
 }
 } // namespace bout
 
-LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
+LaplaceSerialBand::LaplaceSerialBand(Options *opt, CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   Acoef.setLocation(location);
   Ccoef.setLocation(location);

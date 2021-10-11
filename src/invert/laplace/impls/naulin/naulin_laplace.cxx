@@ -191,15 +191,17 @@ ArgumentHelper<LaplaceNaulin>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location
 }
 } // namespace bout
 
-LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
+LaplaceNaulin::LaplaceNaulin(Options *opt, CELL_LOC loc, Mesh *mesh_in) :
   LaplaceNaulin(bout::ArgumentHelper<LaplaceNaulin>(opt), opt, loc, mesh_in) {}
 
-LaplaceNaulin::LaplaceNaulin(const bout::ArgumentHelper<LaplaceNaulin>& args, Options* opt,
-                const CELL_LOC loc, Mesh* mesh_in)
+LaplaceNaulin::LaplaceNaulin(const bout::ArgumentHelper<LaplaceNaulin>& args,
+                             Options* opt, CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
-      rtol(args.rtol), atol(args.atol), maxits(args.maxits), initial_underrelax_factor(args.initial_underrelax_factor) {
+      rtol(args.rtol), atol(args.atol), maxits(args.maxits),
+      initial_underrelax_factor(args.initial_underrelax_factor) {
 
-  ASSERT1(opt != nullptr); // An Options pointer should always be passed in by LaplaceFactory
+  // An Options pointer should always be passed in by LaplaceFactory
+  ASSERT1(opt != nullptr);
 
   bout::assertPreconditions(args, location, localmesh);
 

@@ -99,7 +99,8 @@ struct ArgumentHelper<LaplacePetsc> : ArgumentHelper<Laplacian> {
 
 class LaplacePetsc : public Laplacian {
 public:
-  LaplacePetsc(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplacePetsc(Options* opt = nullptr, CELL_LOC loc = CELL_CENTRE,
+               Mesh* mesh_in = nullptr);
   ~LaplacePetsc() {
     KSPDestroy( &ksp );
     VecDestroy( &xs );
@@ -225,7 +226,7 @@ public:
 
 private:
   LaplacePetsc(const bout::ArgumentHelper<LaplacePetsc>& args, Options* opt,
-               const CELL_LOC loc, Mesh* mesh_in);
+               CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
 
   void Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele, Mat &MatA );
   void Coeffs( int x, int y, int z, BoutReal &A1, BoutReal &A2, BoutReal &A3, BoutReal &A4, BoutReal &A5 );

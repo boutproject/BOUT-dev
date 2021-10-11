@@ -84,7 +84,7 @@ struct ArgumentHelper<LaplaceSPT> : ArgumentHelper<Laplacian> {
  */
 class LaplaceSPT : public Laplacian {
 public:
-  LaplaceSPT(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplaceSPT(Options *opt = nullptr, CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceSPT();
   
   using Laplacian::setCoefA;
