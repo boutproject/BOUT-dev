@@ -794,16 +794,19 @@ bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
     // is in the range of a float
     
     for(int i=0;i<lx*ly*lz;i++) {
-      if(data[i] > 1e20)
+      if (data[i] > 1e20) {
 	data[i] = 1e20;
-      if(data[i] < -1e20)
+      }
+      if (data[i] < -1e20) {
 	data[i] = -1e20;
+      }
     }
   }
   
-  for(int i=0;i<lx*ly*lz;i++) {
-    if(!std::isfinite(data[i]))
+  for (int i = 0; i < lx * ly * lz; i++) {
+    if (!std::isfinite(data[i])) {
       data[i] = 0.0;
+    }
   }
 
   var.putVar(start, counts, data);
@@ -852,9 +855,10 @@ bool Ncxx4::write_perp(BoutReal *data, const std::string& name, int lx, int lz) 
     }
   }
 
-  for(int i=0;i<lx*lz;i++) {
-    if(!std::isfinite(data[i]))
+  for (int i = 0; i < lx * lz; i++) {
+    if (!std::isfinite(data[i])) {
       data[i] = 0.0;
+    }
   }
 
   var.putVar(start, counts, data);
@@ -1112,16 +1116,19 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
     // is in the range of a float
     
     for(int i=0;i<lx*ly*lz;i++) {
-      if(data[i] > 1e20)
+      if (data[i] > 1e20) {
 	data[i] = 1e20;
-      if(data[i] < -1e20)
+      }
+      if (data[i] < -1e20) {
 	data[i] = -1e20;
+      }
     }
   }
   
-  for(int i=0;i<lx*ly*lz;i++) {
-    if(!std::isfinite(data[i]))
+  for (int i = 0; i < lx * ly * lz; i++) {
+    if (!std::isfinite(data[i])) {
       data[i] = 0.0;
+    }
   }
 
   std::vector<size_t> start(4);
@@ -1180,16 +1187,19 @@ bool Ncxx4::write_rec_perp(BoutReal *data, const std::string& name, int lx, int 
     // is in the range of a float
 
     for(int i=0;i<lx*lz;i++) {
-      if(data[i] > 1e20)
+      if (data[i] > 1e20) {
         data[i] = 1e20;
-      if(data[i] < -1e20)
+      }
+      if (data[i] < -1e20) {
         data[i] = -1e20;
+      }
     }
   }
 
-  for(int i=0;i<lx*lz;i++) {
-    if(!std::isfinite(data[i]))
+  for (int i = 0; i < lx * lz; i++) {
+    if (!std::isfinite(data[i])) {
       data[i] = 0.0;
+    }
   }
 
   std::vector<size_t> start(3);
