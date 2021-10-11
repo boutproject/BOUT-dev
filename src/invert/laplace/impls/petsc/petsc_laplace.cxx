@@ -101,8 +101,8 @@ ArgumentHelper<LaplacePetsc>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location)
 
   // Checking flags are set to something which is not implemented
   // This is done binary (which is possible as each flag is a power of 2)
-  if (global_flags & ~LaplacePetsc::implemented_flags) {
-    if (global_flags & INVERT_4TH_ORDER) {
+  if ((global_flags & ~LaplacePetsc::implemented_flags) != 0) {
+    if ((global_flags & INVERT_4TH_ORDER) != 0) {
       output.write(
           "For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
           "setting INVERT_4TH_ORDER flag\n");
@@ -110,11 +110,11 @@ ArgumentHelper<LaplacePetsc>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location)
     return {false, "Attempted to set Laplacian inversion flag that is not "
                    "implemented in petsc_laplace.cxx"};
   }
-  if (inner_boundary_flags & ~LaplacePetsc::implemented_boundary_flags) {
+  if ((inner_boundary_flags & ~LaplacePetsc::implemented_boundary_flags) != 0) {
     return {false, "Attempted to set Laplacian inversion boundary flag that is not "
                    "implemented in petsc_laplace.cxx"};
   }
-  if (outer_boundary_flags & ~LaplacePetsc::implemented_boundary_flags) {
+  if ((outer_boundary_flags & ~LaplacePetsc::implemented_boundary_flags) != 0) {
     return {false, "Attempted to set Laplacian inversion boundary flag that is not "
                    "implemented in petsc_laplace.cxx"};
   }
