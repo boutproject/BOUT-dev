@@ -47,8 +47,8 @@
 #include <bout/scorepwrapper.hxx>
 
 namespace bout {
-ArgumentHelper<LaplaceIPT>::ArgumentHelper(Options& options)
-    : ArgumentHelper<Laplacian>(options),
+ArgumentHelper<LaplaceIPT>::ArgumentHelper(Options& options, CELL_LOC loc, Mesh* mesh_in)
+  : ArgumentHelper<Laplacian>(options, loc, mesh_in),
       rtol(options["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
       atol(options["atol"].doc("Absolute tolerance").withDefault(1.e-20)),
       maxits(options["maxits"].doc("Maximum number of iterations").withDefault(100)),
@@ -90,11 +90,11 @@ ArgumentHelper<LaplaceIPT>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location),
 }
 } // namespace bout
 
-LaplaceIPT::LaplaceIPT(Options* opt, const CELL_LOC loc, Mesh* mesh_in)
-    : LaplaceIPT(bout::ArgumentHelper<LaplaceIPT>{opt}, opt, loc, mesh_in) {}
+LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
+  : LaplaceIPT(bout::ArgumentHelper<LaplaceIPT>{opt, loc, mesh_in}, opt, loc, mesh_in) {}
 
 LaplaceIPT::LaplaceIPT(const bout::ArgumentHelper<LaplaceIPT>& args, Options* opt,
-                       const CELL_LOC loc, Mesh* mesh_in)
+                       CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in), rtol(args.rtol), atol(args.atol), maxits(args.maxits),
       max_level(args.max_level), max_cycle(args.max_cycle),
       predict_exit(args.predict_exit), A(0.0, localmesh), C(1.0, localmesh),

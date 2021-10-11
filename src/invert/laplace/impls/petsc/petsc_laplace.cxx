@@ -61,8 +61,9 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
 }
 
 namespace bout {
-ArgumentHelper<LaplacePetsc>::ArgumentHelper(Options& options)
-    : ArgumentHelper<Laplacian>(options),
+ArgumentHelper<LaplacePetsc>::ArgumentHelper(Options& options, CELL_LOC loc,
+                                             Mesh* mesh_in)
+    : ArgumentHelper<Laplacian>(options, loc, mesh_in),
       ksptype(options["ksptype"].doc("KSP solver type").withDefault(KSP_GMRES)),
       pctype(options["pctype"]
                  .doc("Preconditioner type. See the PETSc documentation for options. "
@@ -128,7 +129,7 @@ ArgumentHelper<LaplacePetsc>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location)
 } // namespace bout
 
 LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in)
-  : LaplacePetsc(bout::ArgumentHelper<LaplacePetsc>{opt, loc, mesh_in}, opt) {}
+  : LaplacePetsc(bout::ArgumentHelper<LaplacePetsc>{opt, loc, mesh_in}, opt, loc, mesh_in) {}
 
 LaplacePetsc::LaplacePetsc(const bout::ArgumentHelper<LaplacePetsc>& args, Options* opt,
                            CELL_LOC loc, Mesh* mesh_in)

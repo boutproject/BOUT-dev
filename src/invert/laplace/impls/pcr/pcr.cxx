@@ -62,8 +62,8 @@
 using namespace std;
 
 namespace bout {
-ArgumentHelper<LaplacePCR>::ArgumentHelper(Options& options)
-    : bout::ArgumentHelper<Laplacian>(options),
+ArgumentHelper<LaplacePCR>::ArgumentHelper(Options& options, CELL_LOC loc, Mesh* mesh_in)
+    : ArgumentHelper<Laplacian>(options, loc, mesh_in),
       dst(options["dst"].doc("Use DST instead of FFT").withDefault(false)) {}
 
 PreconditionResult ArgumentHelper<LaplacePCR>::checkPreconditions(Options* options,

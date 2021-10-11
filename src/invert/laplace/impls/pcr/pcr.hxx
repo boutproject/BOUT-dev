@@ -36,10 +36,12 @@ class LaplacePCR;
 
 namespace bout {
 template <>
-struct ArgumentHelper<LaplacePCR> : public ArgumentHelper<Laplacian> {
-  explicit ArgumentHelper(Options& options);
-  explicit ArgumentHelper(Options* options)
-      : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options)) {}
+struct ArgumentHelper<LaplacePCR> : ArgumentHelper<Laplacian> {
+  explicit ArgumentHelper(Options& options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr);
+  explicit ArgumentHelper(Options* options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr)
+      : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options), loc, mesh_in) {}
   static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
                                                Mesh* mesh);
   PreconditionResult checkPreconditions(CELL_LOC location, Mesh* mesh) const;

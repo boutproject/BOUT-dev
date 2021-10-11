@@ -47,10 +47,12 @@ RegisterUnavailableLaplace registerlaplaceipt(LAPLACE_IPT,
 
 namespace bout {
 template <>
-struct ArgumentHelper<LaplaceIPT> : public ArgumentHelper<Laplacian> {
-  explicit ArgumentHelper(Options& options);
-  explicit ArgumentHelper(Options* options)
-      : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options)) {}
+struct ArgumentHelper<LaplaceIPT> : ArgumentHelper<Laplacian> {
+  explicit ArgumentHelper(Options& options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr);
+  explicit ArgumentHelper(Options* options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr)
+      : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options), loc, mesh_in) {}
   static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
                                                Mesh* mesh);
   PreconditionResult checkPreconditions(MAYBE_UNUSED(CELL_LOC location),

@@ -147,8 +147,9 @@
 #include "naulin_laplace.hxx"
 
 namespace bout {
-ArgumentHelper<LaplaceNaulin>::ArgumentHelper(Options& options)
-    : ArgumentHelper<Laplacian>(options),
+ArgumentHelper<LaplaceNaulin>::ArgumentHelper(Options& options, CELL_LOC loc,
+                                              Mesh* mesh_in)
+    : ArgumentHelper<Laplacian>(options, loc, mesh_in),
       rtol(options["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
       atol(options["atol"].doc("Absolute tolerance").withDefault(1.e-20)),
       maxits(options["maxits"].doc("Maximum number of iterations").withDefault(100)),
