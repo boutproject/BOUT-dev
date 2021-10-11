@@ -83,29 +83,32 @@ struct ArgumentHelper<LaplacePetsc> : ArgumentHelper<Laplacian> {
   std::string pctype;  ///< Preconditioner type
   // Values specific to particular solvers
   BoutReal richardson_damping_factor;
-  BoutReal chebyshev_max, chebyshev_min;
+  BoutReal chebyshev_max;
+  BoutReal chebyshev_min;
   int gmres_max_steps;
-  // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
-  // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
-  BoutReal rtol, atol, dtol;
-  int maxits; // Maximum number of iterations in solver.
-  bool direct; //Use direct LU solver if true.
+  // Convergence Parameters. Solution is considered converged if |r_k|
+  // < max( rtol * |b| , atol ) where r_k = b - Ax_k. The solution is
+  // considered diverged if |r_k| > dtol * |b|.
+  BoutReal rtol;
+  BoutReal atol;
+  BoutReal dtol;
+  int maxits;  // Maximum number of iterations in solver.
+  bool direct; // Use direct LU solver if true.
   bool fourth_order;
-
-  bool rightprec;   // Right preconditioning
+  /// Right preconditioning
+  bool rightprec;
 };
 } // namespace bout
-
 
 class LaplacePetsc : public Laplacian {
 public:
   LaplacePetsc(Options* opt = nullptr, CELL_LOC loc = CELL_CENTRE,
                Mesh* mesh_in = nullptr);
   ~LaplacePetsc() {
-    KSPDestroy( &ksp );
-    VecDestroy( &xs );
-    VecDestroy( &bs );
-    MatDestroy( &MatA );
+    KSPDestroy(&ksp);
+    VecDestroy(&xs);
+    VecDestroy(&bs);
+    MatDestroy(&MatA);
   }
 
   using Laplacian::setCoefA;
@@ -228,8 +231,9 @@ private:
   LaplacePetsc(const bout::ArgumentHelper<LaplacePetsc>& args, Options* opt,
                CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
 
-  void Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele, Mat &MatA );
-  void Coeffs( int x, int y, int z, BoutReal &A1, BoutReal &A2, BoutReal &A3, BoutReal &A4, BoutReal &A5 );
+  void Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele, Mat& MatA);
+  void Coeffs(int x, int y, int z, BoutReal& A1, BoutReal& A2, BoutReal& A3, BoutReal& A4,
+              BoutReal& A5);
 
   /* Ex and Ez
    * Additional 1st derivative terms to allow for solution field to be
@@ -238,24 +242,21 @@ private:
    * See LaplacePetsc::Coeffs for details an potential pit falls
    */
   Field3D A, C1, C2, D, Ex, Ez;
-// Metrics are not constant in y-direction, so matrix always changes as you loop over the grid
-// Hence using coefchanged switch to avoid recomputing the mmatrix is not a useful thing to do (unless maybe in a cylindrical machine, but not worth implementing just for that)
-//   bool coefchanged;           // Set to true when C, D, Ex or Ez coefficients are changed
-//   bool Acoefchanged;	      // Set to true when A coefficient is changed
   bool issetD;
   bool issetC;
   bool issetE;
-  int lastflag;               // The flag used to construct the matrix
 
-  FieldPerp sol;              // solution Field
+  FieldPerp sol; // solution Field
 
-  // Istart is the first row of MatA owned by the process, Iend is 1 greater than the last row.
+  // Istart is the first row of MatA owned by the process, Iend is 1 greater than the last
+  // row.
   int Istart, Iend;
 
-  int meshx, meshz, size, localN; // Mesh sizes, total size, no of points on this processor
+  // Mesh sizes, total size, no of points on this processor
+  int meshx, meshz, size, localN;
   MPI_Comm comm;
   Mat MatA;
-  Vec xs, bs;                 // Solution and RHS vectors
+  Vec xs, bs; // Solution and RHS vectors
   KSP ksp;
 
   PetscLib lib;
