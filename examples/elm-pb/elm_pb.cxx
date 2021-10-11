@@ -19,6 +19,8 @@
 
 #include <math.h>
 
+// Something changed here
+
 #if BOUT_HAS_HYPRE
 #include <bout/invert/laplacexy2_hypre.hxx>
 #endif
