@@ -42,15 +42,29 @@
 
 #include "spt.hxx"
 
+namespace bout {
+PreconditionResult ArgumentHelper<LaplaceSPT>::checkPreconditions(
+    MAYBE_UNUSED(Options* options), MAYBE_UNUSED(CELL_LOC location), Mesh* mesh) {
+  if (mesh->periodicX) {
+    return {false, "LaplaceSPT does not work with periodicity in the x "
+                   "direction (mesh:PeriodicX == true). Change boundary conditions "
+                   "or use serial-tri or cyclic solver instead"};
+  }
+  return {true, ""};
+}
+} // namespace bout
+
 LaplaceSPT::LaplaceSPT(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   Acoef.setLocation(location);
   Ccoef.setLocation(location);
   Dcoef.setLocation(location);
 
-  if(localmesh->periodicX) {
-      throw BoutException("LaplaceSPT does not work with periodicity in the x direction (localmesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
-    }
+  const auto preconditions = bout::ArgumentHelper<LaplaceSPT>::checkPreconditions(
+      opt, location, localmesh);
+  if (not preconditions) {
+    throw BoutException(preconditions.reason);
+  }
 	
   // Get start and end indices
   ys = localmesh->ystart;

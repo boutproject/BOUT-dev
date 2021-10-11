@@ -49,6 +49,20 @@ namespace {
 RegisterLaplace<LaplaceSerialBand> registerlaplaceserialband(LAPLACE_BAND);
 }
 
+namespace bout {
+template <>
+struct ArgumentHelper<LaplaceSerialBand> : ArgumentHelper<Laplacian> {
+  explicit ArgumentHelper(Options& options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr)
+      : ArgumentHelper<Laplacian>(options, loc, mesh_in) {}
+  explicit ArgumentHelper(Options* options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr)
+      : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options), loc, mesh_in) {}
+  static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
+                                               Mesh* mesh);
+};
+}
+
 class LaplaceSerialBand : public Laplacian {
 public:
   LaplaceSerialBand(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);

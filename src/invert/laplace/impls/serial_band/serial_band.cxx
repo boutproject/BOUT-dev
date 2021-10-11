@@ -42,20 +42,37 @@
 
 //#define SECONDORDER // Define to use 2nd order differencing
 
+namespace bout {
+PreconditionResult ArgumentHelper<LaplaceSerialBand>::checkPreconditions(
+    MAYBE_UNUSED(Options* options), MAYBE_UNUSED(CELL_LOC location), Mesh* mesh) {
+  if (!mesh->firstX() || !mesh->lastX()) {
+    return {false, fmt::format("LaplaceSerialBand only works for mesh:NXPE = 1 (got {})",
+                               mesh->getNXPE())};
+  }
+  if (mesh->periodicX) {
+    return {false, "LaplaceSerialBand does not work with periodicity in the x "
+                   "direction (mesh:PeriodicX == true). Change boundary conditions "
+                   "or use serial-tri or cyclic solver instead"};
+  }
+  return {true, ""};
+}
+} // namespace bout
+
 LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   Acoef.setLocation(location);
   Ccoef.setLocation(location);
   Dcoef.setLocation(location);
 
-  if(!localmesh->firstX() || !localmesh->lastX())
-    throw BoutException("LaplaceSerialBand only works for localmesh->NXPE = 1");
-  if(localmesh->periodicX) {
-      throw BoutException("LaplaceSerialBand does not work with periodicity in the x direction (localmesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
-    }
+  const auto preconditions = bout::ArgumentHelper<LaplaceSerialBand>::checkPreconditions(
+      opt, location, localmesh);
+  if (not preconditions) {
+    throw BoutException(preconditions.reason);
+  }
+
   // Allocate memory
 
-  int ncz = localmesh->LocalNz;
+  const int ncz = localmesh->LocalNz;
   bk.reallocate(localmesh->LocalNx, ncz / 2 + 1);
   bk1d.reallocate(localmesh->LocalNx);
 

@@ -37,6 +37,20 @@ namespace {
 RegisterLaplace<LaplaceSerialTri> registerlaplaceserialtri(LAPLACE_TRI);
 }
 
+namespace bout {
+template <>
+struct ArgumentHelper<LaplaceSerialTri> : ArgumentHelper<Laplacian> {
+  explicit ArgumentHelper(Options& options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr)
+      : ArgumentHelper<Laplacian>(options, loc, mesh_in) {}
+  explicit ArgumentHelper(Options* options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr)
+      : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options), loc, mesh_in) {}
+  static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
+                                               Mesh* mesh);
+};
+}
+
 class LaplaceSerialTri : public Laplacian {
 public:
   LaplaceSerialTri(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);

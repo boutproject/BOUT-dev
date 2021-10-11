@@ -38,17 +38,93 @@
 #include <bout/petsc_interface.hxx>
 #include <bout/operatorstencil.hxx>
 
+namespace bout {
+ArgumentHelper<LaplacePetsc3dAmg>::ArgumentHelper(Options& options, CELL_LOC loc,
+                                                  Mesh* mesh_in)
+    : ArgumentHelper<Laplacian>(options, loc, mesh_in),
+      lower_boundary_flags(options["lower_boundary_flags"]
+                               .doc("Flags for the lower Y boundary")
+                               .withDefault(0)),
+      upper_boundary_flags(options["upper_boundary_flags"]
+                               .doc("Flags for the upper Y boundary")
+                               .withDefault(0)),
+      ksptype(options["ksptype"].doc("KSP solver type").withDefault(KSPGMRES)),
+      pctype(options["pctype"]
+                 .doc("Preconditioner type. See the PETSc documentation for options. ")
+                 .withDefault(default_pctype)),
+      richardson_damping_factor(options["richardson_damping_factor"].withDefault(1.0)),
+      chebyshev_max(options["chebyshev_max"].withDefault(100)),
+      chebyshev_min(options["chebyshev_min"].withDefault(0.01)),
+      gmres_max_steps(options["gmres_max_steps"].withDefault(30)),
+
+      rtol(options["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5)),
+      atol(options["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-50)),
+      dtol(options["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e5)),
+      maxits(
+          options["maxits"].doc("Maximum number of KSP iterations").withDefault(100000)),
+      direct(options["direct"].doc("Use direct (LU) solver?").withDefault(false)),
+      rightprec(options["rightprec"]
+                    .doc("Use right preconditioning (only used if 'pctype' is 'user')")
+                    .withDefault(true)) {}
+
+PreconditionResult ArgumentHelper<LaplacePetsc3dAmg>::checkPreconditions(
+    Options* options, MAYBE_UNUSED(CELL_LOC location), Mesh* mesh) {
+
+  ArgumentHelper<LaplacePetsc3dAmg> args{options};
+  return args.checkPreconditions(location, mesh);
+}
+
+PreconditionResult
+ArgumentHelper<LaplacePetsc3dAmg>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location),
+                                                 Mesh* mesh) const {
+
+  // Checking flags are set to something which is not implemented
+  // This is done binary (which is possible as each flag is a power of 2)
+  if (global_flags & ~LaplacePetsc3dAmg::implemented_flags) {
+    if (global_flags & INVERT_4TH_ORDER) {
+      output.write(
+          "For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
+          "setting INVERT_4TH_ORDER flag\n");
+    }
+    return {false, "Attempted to set Laplacian inversion flag that is not "
+                   "implemented in LaplacePetsc3dAmg"};
+  }
+  if (inner_boundary_flags & ~LaplacePetsc3dAmg::implemented_boundary_flags) {
+    return {false, "Attempted to set Laplacian inversion boundary flag that is not "
+                   "implemented in LaplacePetsc3dAmg"};
+  }
+  if (outer_boundary_flags & ~LaplacePetsc3dAmg::implemented_boundary_flags) {
+    return {false, "Attempted to set Laplacian inversion boundary flag that is not "
+                   "implemented in LaplacePetsc3dAmg"};
+  }
+  const auto localmesh = mesh == nullptr ? bout::globals::mesh : mesh;
+  if (localmesh->periodicX) {
+    return {false, "LaplacePetsc does not work with periodicity in the x direction "
+                   "(localmesh->PeriodicX == true). Change boundary conditions or "
+                   "use serial-tri or cyclic solver instead"};
+  }
+  return {true, ""};
+}
+} // namespace bout
+
 LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
-  Laplacian(opt, loc, mesh_in),
-  A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-  lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
-  indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh,
-						   getStencil(localmesh, lowerY, upperY))),
-  operator3D(indexer), kspInitialised(false),
-  lib(opt==nullptr ? &(Options::root()["laplace"]) : opt)
-{
+  LaplacePetsc3dAmg(bout::ArgumentHelper<LaplacePetsc3dAmg>{opt, loc, mesh_in}, opt, loc, mesh_in) {}
+
+LaplacePetsc3dAmg::LaplacePetsc3dAmg(const bout::ArgumentHelper<LaplacePetsc3dAmg>& args,
+                                     Options* opt, CELL_LOC loc, Mesh* mesh_in)
+    : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
+      lower_boundary_flags(args.lower_boundary_flags),
+      upper_boundary_flags(args.upper_boundary_flags), ksptype(args.ksptype),
+      pctype(args.pctype), richardson_damping_factor(args.richardson_damping_factor),
+      chebyshev_max(args.chebyshev_max), chebyshev_min(args.chebyshev_min),
+      gmres_max_steps(args.gmres_max_steps), rtol(args.rtol), atol(args.atol),
+      dtol(args.dtol), maxits(args.maxits), direct(args.direct),
+      lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
+      indexer(std::make_shared<GlobalIndexer<Field3D>>(
+          localmesh, getStencil(localmesh, lowerY, upperY))),
+      operator3D(indexer), kspInitialised(false), lib(opt), rightprec(args.rightprec) {
+
   // Provide basic initialisation of field coefficients, etc.
-  // Get relevent options from user input
   // Initialise PETSc objects
   A.setLocation(location);
   C1.setLocation(location);
@@ -57,76 +133,20 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   Ex.setLocation(location);
   Ez.setLocation(location);
 
-  // Get Options in Laplace Section
-  if (!opt) {
-    opts = Options::getRoot()->getSection("laplace");
-  } else {
-    opts=opt;
-  }
+#if CHECK > 0
+  args.checkPreconditions(location, localmesh);
+#endif
 
-  // Get y boundary flags
-  lower_boundary_flags = (*opts)["lower_boundary_flags"].withDefault(0);
-  upper_boundary_flags = (*opts)["upper_boundary_flags"].withDefault(0);
-
-  #if CHECK > 0
-    // Checking flags are set to something which is not implemented
-    // This is done binary (which is possible as each flag is a power of 2)
-    if ( global_flags & ~implemented_flags ) {
-      if (global_flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<"\n";
-      throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in petsc_laplace.cxx");
-    }
-    if ( inner_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }
-    if ( outer_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }
-    if ( lower_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }
-    if ( upper_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }    
-    if(localmesh->periodicX) {
-      throw BoutException("LaplacePetsc3dAmg does not work with periodicity in the x direction (localmesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
-    }
-  #endif
-
-  // Get Tolerances for KSP solver
-  rtol = (*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5);
-  atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-5);
-  dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e6);
-  maxits = (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000);
-
-  richardson_damping_factor = (*opts)["richardson_damping_factor"].withDefault(1.0);
-  chebyshev_max = (*opts)["chebyshev_max"].withDefault(100.0);
-  chebyshev_min = (*opts)["chebyshev_min"].withDefault(0.01);
-  gmres_max_steps = (*opts)["gmres_max_steps"].withDefault(30);
-
-  // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
-  ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSPGMRES);
-
-  // Get preconditioner type
-#ifdef PETSC_HAVE_HYPRE
-  // PETSc was compiled with Hypre
-  pctype = (*opts)["pctype"].doc("PC type").withDefault(PCHYPRE);
-#else
-  // Hypre not available
-  pctype = (*opts)["pctype"].doc("PC type").withDefault(PCGAMG);
-#endif // PETSC_HAVE_HYPRE
-
-  // Get direct solver switch
-  direct = (*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false);
   if (direct) {
-    output << "\n" << "Using LU decompostion for direct solution of system" << "\n" << "\n";
+    output.write("\nUsing LU decompostion for direct solution of system\n\n");
   }
 
   // Set up boundary conditions in operator
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
-    if(inner_boundary_flags & INVERT_AC_GRAD) {
+    if (inner_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on inner X boundary
-      operator3D(i, i) = -1./coords->dx[i]/sqrt(coords->g_11[i]);
-      operator3D(i, i.xp()) = 1./coords->dx[i]/sqrt(coords->g_11[i]);
+      operator3D(i, i) = -1. / coords->dx[i] / sqrt(coords->g_11[i]);
+      operator3D(i, i.xp()) = 1. / coords->dx[i] / sqrt(coords->g_11[i]);
     } else {
       // Dirichlet on inner X boundary
       operator3D(i, i) = 0.5;
@@ -135,10 +155,10 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
-    if(outer_boundary_flags & INVERT_AC_GRAD) {
+    if (outer_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on outer X boundary
-      operator3D(i, i) = 1./coords->dx[i]/sqrt(coords->g_11[i]);
-      operator3D(i, i.xm()) = -1./coords->dx[i]/sqrt(coords->g_11[i]);
+      operator3D(i, i) = 1. / coords->dx[i] / sqrt(coords->g_11[i]);
+      operator3D(i, i.xm()) = -1. / coords->dx[i] / sqrt(coords->g_11[i]);
     } else {
       // Dirichlet on outer X boundary
       operator3D(i, i) = 0.5;
@@ -147,10 +167,10 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
-    if(lower_boundary_flags & INVERT_AC_GRAD) {
+    if (lower_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on lower Y boundary
-      operator3D(i, i) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
-      operator3D(i, i.yp()) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
+      operator3D(i, i) = -1. / coords->dy[i] / sqrt(coords->g_22[i]);
+      operator3D(i, i.yp()) = 1. / coords->dy[i] / sqrt(coords->g_22[i]);
     } else {
       // Dirichlet on lower Y boundary
       operator3D(i, i) = 0.5;
@@ -159,10 +179,10 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
-    if(upper_boundary_flags & INVERT_AC_GRAD) {
+    if (upper_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on upper Y boundary
-      operator3D(i, i) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
-      operator3D(i, i.ym()) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
+      operator3D(i, i) = 1. / coords->dy[i] / sqrt(coords->g_22[i]);
+      operator3D(i, i.ym()) = -1. / coords->dy[i] / sqrt(coords->g_22[i]);
     } else {
       // Dirichlet on upper Y boundary
       operator3D(i, i) = 0.5;
@@ -170,7 +190,6 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
     }
   }
 }
-
 
 LaplacePetsc3dAmg::~LaplacePetsc3dAmg() {
   if (kspInitialised) KSPDestroy(&ksp);

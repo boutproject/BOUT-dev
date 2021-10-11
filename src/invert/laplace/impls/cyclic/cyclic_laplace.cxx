@@ -47,37 +47,41 @@
 #include <bout/constants.hxx>
 #include <output.hxx>
 
-LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
-    : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(1.0), Dcoef(1.0) {
+namespace bout {
+ArgumentHelper<LaplaceCyclic>::ArgumentHelper(Options& options, CELL_LOC loc, Mesh* mesh_in)
+    : ArgumentHelper<Laplacian>(options, loc, mesh_in),
+      dst(options["dst"].doc("Use DST instead of FFT").withDefault(false)) {}
+} // namespace bout
+
+LaplaceCyclic::LaplaceCyclic(Options* opt, CELL_LOC loc, Mesh* mesh_in)
+    : LaplaceCyclic(bout::ArgumentHelper<LaplaceCyclic>{opt}, opt, loc, mesh_in) {}
+
+LaplaceCyclic::LaplaceCyclic(const bout::ArgumentHelper<LaplaceCyclic>& args,
+                             Options* opt, CELL_LOC loc, Mesh* mesh_in)
+    : Laplacian(opt, loc, mesh_in), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
+      C2coef(1.0, localmesh), Dcoef(1.0, localmesh), dst(args.dst),
+      nmode(dst ? localmesh->LocalNz - 2 : maxmode + 1) {
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);
   C2coef.setLocation(location);
   Dcoef.setLocation(location);
 
-  // Get options
-
-  OPTION(opt, dst, false);
-
-  if(dst) {
-    nmode = localmesh->LocalNz-2;
-  }else
-    nmode = maxmode+1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
-
-  // Note nmode == nsys of cyclic_reduction
-
   // Allocate arrays
 
+  // Only want to include guard cells at boundaries (unless periodic in x)
   xs = localmesh->xstart; // Starting X index
-  if(localmesh->firstX() && !localmesh->periodicX){ // Only want to include guard cells at boundaries (unless periodic in x)
+  if(localmesh->firstX() && !localmesh->periodicX){
 	  xs = 0;
   }
+  // Only want to include guard cells at boundaries (unless periodic in x)
   xe = localmesh->xend;   // Last X index
-  if(localmesh->lastX() && !localmesh->periodicX){ // Only want to include guard cells at boundaries (unless periodic in x)
+  if(localmesh->lastX() && !localmesh->periodicX){
 	  xe = localmesh->LocalNx-1;
   }
-  int n = xe - xs + 1;  // Number of X points on this processor,
-                        // including boundaries but not guard cells
+  // Number of X points on this processor, including boundaries but
+  // not guard cells
+  const int n = xe - xs + 1;
 
   a.reallocate(nmode, n);
   b.reallocate(nmode, n);

@@ -57,6 +57,45 @@ namespace {
 RegisterLaplace<LaplacePetsc3dAmg> registerlaplacepetsc3damg(LAPLACE_PETSC3DAMG);
 }
 
+namespace bout {
+template <>
+struct ArgumentHelper<LaplacePetsc3dAmg> : ArgumentHelper<Laplacian> {
+  explicit ArgumentHelper(Options& options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr);
+  explicit ArgumentHelper(Options* options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr)
+      : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options), loc, mesh_in) {}
+  static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
+                                               Mesh* mesh);
+  PreconditionResult checkPreconditions(CELL_LOC location, Mesh* mesh) const;
+
+  int lower_boundary_flags;
+  int upper_boundary_flags;
+  std::string ksptype; ///< KSP solver type
+  std::string pctype;  ///< Preconditioner type
+#if PETSC_HAVE_HYPRE
+  static constexpr auto default_pctype = PCHYPRE;
+#else
+  static constexpr auto default_pctype = PCGAMG;
+#endif
+  // Values specific to particular solvers
+  BoutReal richardson_damping_factor;
+  BoutReal chebyshev_max;
+  BoutReal chebyshev_min;
+  int gmres_max_steps;
+  // Convergence Parameters. Solution is considered converged if |r_k|
+  // < max( rtol * |b| , atol ) where r_k = b - Ax_k. The solution is
+  // considered diverged if |r_k| > dtol * |b|.
+  BoutReal rtol;
+  BoutReal atol;
+  BoutReal dtol;
+  int maxits;  // Maximum number of iterations in solver.
+  bool direct; // Use direct LU solver if true.
+  /// Right preconditioning
+  bool rightprec;
+};
+} // namespace bout
+
 class LaplacePetsc3dAmg : public Laplacian {
 public:
   LaplacePetsc3dAmg(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
@@ -169,7 +208,14 @@ public:
     throw BoutException("LaplacePetsc3DAmg cannot solve for FieldPerp");
   }
 
+  // These are the implemented flags
+  static constexpr int implemented_flags = INVERT_START_NEW;
+  static constexpr int implemented_boundary_flags =
+      INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
+
 private:
+  LaplacePetsc3dAmg(const bout::ArgumentHelper<LaplacePetsc3dAmg>& args, Options* opt,
+                    CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
 
   // (Re)compute the values of the matrix representing the Laplacian operator
   void updateMatrix3D();
@@ -196,7 +242,6 @@ private:
   bool issetC = false;
   bool issetE = false;
   bool updateRequired = true;
-  int lastflag;               // The flag used to construct the matrix
   int lower_boundary_flags;
   int upper_boundary_flags;
 
@@ -227,10 +272,6 @@ private:
 
   bool use_precon;  // Switch for preconditioning
   bool rightprec;   // Right preconditioning
-
-  // These are the implemented flags
-  static constexpr int implemented_flags = INVERT_START_NEW,
-    implemented_boundary_flags = INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
 };
 
 #endif //BOUT_HAS_PETSC

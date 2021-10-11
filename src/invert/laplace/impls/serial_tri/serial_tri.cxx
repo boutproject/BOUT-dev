@@ -38,15 +38,29 @@
 
 #include <output.hxx>
 
+namespace bout {
+PreconditionResult ArgumentHelper<LaplaceSerialTri>::checkPreconditions(
+    MAYBE_UNUSED(Options* options), MAYBE_UNUSED(CELL_LOC location), Mesh* mesh) {
+  if (!mesh->firstX() || !mesh->lastX()) {
+    return {false, fmt::format("LaplaceSerialTri only works for mesh:NXPE = 1 (got {})",
+                               mesh->getNXPE())};
+  }
+  return {true, ""};
+}
+} // namespace bout
+
 LaplaceSerialTri::LaplaceSerialTri(Options *opt, CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0) {
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
 
-  if(!localmesh->firstX() || !localmesh->lastX()) {
-    throw BoutException("LaplaceSerialTri only works for localmesh->NXPE = 1");
+  const auto preconditions = bout::ArgumentHelper<LaplaceSerialTri>::checkPreconditions(
+      opt, location, localmesh);
+  if (not preconditions) {
+    throw BoutException(preconditions.reason);
   }
+
 }
 
 FieldPerp LaplaceSerialTri::solve(const FieldPerp& b) { return solve(b, b); }

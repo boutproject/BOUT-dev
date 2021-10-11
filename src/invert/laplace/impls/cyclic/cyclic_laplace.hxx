@@ -53,13 +53,30 @@ namespace {
 RegisterLaplace<LaplaceCyclic> registerlaplacecycle(LAPLACE_CYCLIC);
 }
 
+namespace bout {
+template <>
+struct ArgumentHelper<LaplaceCyclic> : ArgumentHelper<Laplacian> {
+  explicit ArgumentHelper(Options& options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr);
+  explicit ArgumentHelper(Options* options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr)
+      : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options), loc, mesh_in) {}
+  static PreconditionResult checkPreconditions(MAYBE_UNUSED(Options* options),
+                                               MAYBE_UNUSED(CELL_LOC location),
+                                               MAYBE_UNUSED(Mesh* mesh)) {
+    return {true, ""};
+  }
+  bool dst;
+};
+}
+
 /// Solves the 2D Laplacian equation using the CyclicReduce class
 /*!
  * 
  */
 class LaplaceCyclic : public Laplacian {
 public:
-  LaplaceCyclic(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplaceCyclic(Options *opt = nullptr, CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceCyclic();
   
   using Laplacian::setCoefA;
@@ -111,13 +128,14 @@ public:
                        const Matrix<dcomplex>& x_sol, int nsys);
 
 private:
+  LaplaceCyclic(const bout::ArgumentHelper<LaplaceCyclic>& args, Options* opt,
+                CELL_LOC loc, Mesh* mesh_in);
   Field2D Acoef, C1coef, C2coef, Dcoef;
   
-  int nmode;  // Number of modes being solved
+  bool dst;
+  int nmode;  // Number of modes being solved. Note nmode == nsys of cyclic_reduction
   int xs, xe; // Start and end X indices
   Matrix<dcomplex> a, b, c, bcmplx, xcmplx;
-  
-  bool dst;
   
   CyclicReduce<dcomplex> *cr; ///< Tridiagonal solver
 };

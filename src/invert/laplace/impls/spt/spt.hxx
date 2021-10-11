@@ -50,6 +50,20 @@ namespace {
 RegisterLaplace<LaplaceSPT> registerlaplacespt(LAPLACE_SPT);
 }
 
+namespace bout {
+template <>
+struct ArgumentHelper<LaplaceSPT> : ArgumentHelper<Laplacian> {
+  explicit ArgumentHelper(Options& options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr)
+      : ArgumentHelper<Laplacian>(options, loc, mesh_in) {}
+  explicit ArgumentHelper(Options* options, CELL_LOC loc = CELL_CENTRE,
+                          Mesh* mesh_in = nullptr)
+      : ArgumentHelper(*LaplaceFactory::optionsOrDefaultSection(options), loc, mesh_in) {}
+  static PreconditionResult checkPreconditions(Options* options, CELL_LOC location,
+                                               Mesh* mesh);
+};
+}
+
 /// Simple parallelisation of the Thomas tridiagonal solver algorithm (serial code)
 /*!
  * This is a reference code which performs the same operations as the serial code.
