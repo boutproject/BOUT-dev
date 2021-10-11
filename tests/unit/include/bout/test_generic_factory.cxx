@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "boutexception.hxx"
 #include "bout/generic_factory.hxx"
@@ -29,6 +30,32 @@ public:
   std::string foo() override { return "Derived2"; }
 };
 
+namespace bout {
+template <>
+struct ArgumentHelper<Base> : ArgumentHelperBase {
+  ArgumentHelper(Options& options)
+      : something(options["something"].doc("Test option").withDefault(2)) {}
+  int something;
+  static PreconditionResult checkPreconditions(MAYBE_UNUSED(Options* options)) {
+    return {true, ""};
+  }
+};
+
+template <>
+struct ArgumentHelper<Derived1> : ArgumentHelper<Base> {
+  ArgumentHelper(Options& options)
+      : ArgumentHelper<Base>(options),
+        another_thing(options["another_thing"].doc("Another test option").withDefault(4)) {}
+  int another_thing;
+  static PreconditionResult checkPreconditions(Options* options) {
+    if (options->isSet("nothing")) {
+      return {false, "'Nothing' was set"};
+    }
+    return {true, ""};
+  }
+};
+} // namespace bout
+
 namespace {
 class BaseFactory : public Factory<Base, BaseFactory, Options*> {
 public:
@@ -45,7 +72,8 @@ constexpr decltype(BaseFactory::default_type) BaseFactory::default_type;
 BaseFactory::RegisterInFactory<Base> registerme("base");
 BaseFactory::RegisterInFactory<Derived1> registerme1("derived1");
 BaseFactory::RegisterInFactory<Derived2> registerme2("derived2");
-BaseFactory::RegisterUnavailableInFactory dontregisterme("not here", "this is only a test");
+BaseFactory::RegisterUnavailableInFactory dontregisterme("not here",
+                                                         "this is only a test");
 } // namespace
 
 class BaseComplicated {
@@ -142,6 +170,30 @@ TEST(GenericFactory, GetUnknownType) {
 
 TEST(GenericFactory, GetUnavailableType) {
   EXPECT_THROW(BaseFactory::getInstance().create("not here"), BoutException);
+}
+
+TEST(GenericFactory, Help) {
+  const auto help = BaseFactory::getInstance().help("derived1");
+  EXPECT_THAT(help, testing::ContainsRegex("base:something"));
+  EXPECT_THAT(help, testing::ContainsRegex("base:another_thing"));
+}
+
+TEST(GenericFactory, HelpForNonExistent) {
+  EXPECT_THROW(BaseFactory::getInstance().help("not here"), BoutException);
+}
+
+TEST(GenericFactory, CheckPreconditionTrue) {
+  Options options;
+  const auto preconditions = BaseFactory::getInstance().checkPreconditions("derived1")(&options);
+  EXPECT_TRUE(preconditions);
+}
+
+TEST(GenericFactory, CheckPreconditionFalse) {
+  Options options;
+  options["nothing"] = true;
+  const auto preconditions = BaseFactory::getInstance().checkPreconditions("derived1")(&options);
+  EXPECT_FALSE(preconditions);
+  EXPECT_EQ(preconditions.reason, "'Nothing' was set");
 }
 
 TEST(GenericFactory, AssertPrecondition) {
