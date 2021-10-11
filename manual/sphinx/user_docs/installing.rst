@@ -358,6 +358,10 @@ directory running::
 
   $ make VERBOSE=1
 
+If building by running CMake then the ``-v`` flag also works. For example::
+
+  $ cmake --build . -v
+
 Downloading Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
