@@ -211,11 +211,11 @@ public:
   /// @param[in] name     An identifier for this type
   /// @param[in] creator  A function for creating this helper
   /// @returns true if the helper was successfully added
-  virtual bool addHelp(const std::string& name, ArgumentHelperCreator creator) {
+  virtual bool addHelp(const std::string& name, const ArgumentHelperCreator& creator) {
     return argument_map.insert(std::make_pair(name, creator)).second;
   }
 
-  virtual bool addPrecondition(const std::string& name, PreconditionChecker check) {
+  virtual bool addPrecondition(const std::string& name, const PreconditionChecker& check) {
     return precondition_map.insert(std::make_pair(name, check)).second;
   }
 
