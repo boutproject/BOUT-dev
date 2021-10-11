@@ -60,12 +60,8 @@ LaplaceSPT::LaplaceSPT(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   Ccoef.setLocation(location);
   Dcoef.setLocation(location);
 
-  const auto preconditions = bout::ArgumentHelper<LaplaceSPT>::checkPreconditions(
-      opt, location, localmesh);
-  if (not preconditions) {
-    throw BoutException(preconditions.reason);
-  }
-	
+  bout::assertPreconditions<LaplaceSPT>(opt, location, localmesh);
+
   // Get start and end indices
   ys = localmesh->ystart;
   ye = localmesh->yend;

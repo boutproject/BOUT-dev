@@ -109,10 +109,7 @@ LaplacePCR::LaplacePCR(const bout::ArgumentHelper<LaplacePCR>& args, Options* op
   C2coef.setLocation(location);
   Dcoef.setLocation(location);
 
-  const auto preconditions = args.checkPreconditions(location, localmesh);
-  if (not preconditions) {
-    throw BoutException(preconditions.reason);
-  }
+  bout::assertPreconditions(args, location, localmesh);
 
   // Allocate arrays
 

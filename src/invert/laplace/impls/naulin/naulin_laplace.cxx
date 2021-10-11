@@ -201,10 +201,7 @@ LaplaceNaulin::LaplaceNaulin(const bout::ArgumentHelper<LaplaceNaulin>& args, Op
 
   ASSERT1(opt != nullptr); // An Options pointer should always be passed in by LaplaceFactory
 
-  const auto preconditions = args.checkPreconditions(location, localmesh);
-  if (not preconditions) {
-    throw BoutException(preconditions.reason);
-  }
+  bout::assertPreconditions(args, location, localmesh);
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);

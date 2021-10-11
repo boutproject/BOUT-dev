@@ -144,6 +144,13 @@ TEST(GenericFactory, GetUnavailableType) {
   EXPECT_THROW(BaseFactory::getInstance().create("not here"), BoutException);
 }
 
+TEST(GenericFactory, AssertPrecondition) {
+  Options options;
+  EXPECT_NO_THROW(bout::assertPreconditions<Derived1>(&options));
+  options["nothing"] = true;
+  EXPECT_THROW(bout::assertPreconditions<Derived1>(&options), BoutException);
+}
+
 TEST(GenericFactory, Complicated) {
 
   std::unique_ptr<BaseComplicated> base_{

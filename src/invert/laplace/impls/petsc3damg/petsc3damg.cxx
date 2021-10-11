@@ -134,7 +134,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(const bout::ArgumentHelper<LaplacePetsc3dAm
   Ez.setLocation(location);
 
 #if CHECK > 0
-  args.checkPreconditions(location, localmesh);
+  bout::assertPreconditions(args, location, localmesh);
 #endif
 
   if (direct) {

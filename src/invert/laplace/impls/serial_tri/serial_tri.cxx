@@ -49,18 +49,13 @@ PreconditionResult ArgumentHelper<LaplaceSerialTri>::checkPreconditions(
 }
 } // namespace bout
 
-LaplaceSerialTri::LaplaceSerialTri(Options *opt, CELL_LOC loc, Mesh *mesh_in)
+LaplaceSerialTri::LaplaceSerialTri(Options* opt, CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0) {
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
 
-  const auto preconditions = bout::ArgumentHelper<LaplaceSerialTri>::checkPreconditions(
-      opt, location, localmesh);
-  if (not preconditions) {
-    throw BoutException(preconditions.reason);
-  }
-
+  bout::assertPreconditions<LaplaceSerialTri>(opt, location, localmesh);
 }
 
 FieldPerp LaplaceSerialTri::solve(const FieldPerp& b) { return solve(b, b); }

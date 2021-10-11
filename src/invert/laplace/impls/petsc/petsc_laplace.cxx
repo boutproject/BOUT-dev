@@ -150,10 +150,7 @@ LaplacePetsc::LaplacePetsc(const bout::ArgumentHelper<LaplacePetsc>& args, Optio
   Ez.setLocation(location);
 
 #if CHECK > 0
-  const auto preconditions = args.checkPreconditions(location, localmesh);
-  if (not preconditions) {
-    throw BoutException(preconditions.reason);
-  }
+  bout::assertPreconditions(args, location, localmesh);
 #endif
 
   // Get communicator for group of processors in X - all points in z-x plane for fixed y.
@@ -393,8 +390,6 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   int i = Istart;   // The row in the PETSc matrix
   { Timer timer("petscsetup");
-
-    //     if ((fourth_order) && !(lastflag&INVERT_4TH_ORDER)) throw BoutException("Should not change INVERT_4TH_ORDER flag in LaplacePetsc: 2nd order and 4th order require different pre-allocation to optimize PETSc solver");
 
   /* Set Matrix Elements
    *
@@ -775,9 +770,6 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Assemble Matrix
   MatAssemblyBegin( MatA, MAT_FINAL_ASSEMBLY );
   MatAssemblyEnd( MatA, MAT_FINAL_ASSEMBLY );
-
-//   // Record which flags were used for this matrix
-//   lastflag = flags;
 
   // Assemble RHS Vector
   VecAssemblyBegin(bs);

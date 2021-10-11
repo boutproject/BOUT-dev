@@ -63,6 +63,25 @@ struct ArgumentHelper : public ArgumentHelperBase {
   };
 };
 
+/// Check the preconditions of type T using previously constructed
+/// `ArgumentHelper`, and throw if they aren't met
+template <class T, typename... Args>
+void assertPreconditions(const ArgumentHelper<T>& help, Args&&... args) {
+  const auto preconditions = help.checkPreconditions(std::forward<Args>(args)...);
+  if (not preconditions.success) {
+    throw BoutException(preconditions.reason);
+  }
+}
+
+/// Check the preconditions of type T using `ArgumentHelper`, and
+/// throw if they aren't met
+template <class T, typename... Args>
+void assertPreconditions(Args&&... args) {
+  const auto preconditions = ArgumentHelper<T>::checkPreconditions(std::forward<Args>(args)...);
+  if (not preconditions.success) {
+    throw BoutException(preconditions.reason);
+  }
+}
 }
 
 /// Generic Factory, adapted from Modern C++ Design/Loki by A. Alexandrescu

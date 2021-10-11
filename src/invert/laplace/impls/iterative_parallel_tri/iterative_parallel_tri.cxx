@@ -109,10 +109,7 @@ LaplaceIPT::LaplaceIPT(const bout::ArgumentHelper<LaplaceIPT>& args, Options* op
   C.setLocation(location);
   D.setLocation(location);
 
-  const auto preconditions = args.checkPreconditions(location, localmesh);
-  if (not preconditions) {
-    throw BoutException(preconditions.reason);
-  }
+  bout::assertPreconditions(args, location, localmesh);
 
   static int ipt_solver_count = 1;
   bout::globals::dump.addRepeat(

@@ -64,11 +64,7 @@ LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mes
   Ccoef.setLocation(location);
   Dcoef.setLocation(location);
 
-  const auto preconditions = bout::ArgumentHelper<LaplaceSerialBand>::checkPreconditions(
-      opt, location, localmesh);
-  if (not preconditions) {
-    throw BoutException(preconditions.reason);
-  }
+  bout::assertPreconditions<LaplaceSerialBand>(opt, location, localmesh);
 
   // Allocate memory
 
