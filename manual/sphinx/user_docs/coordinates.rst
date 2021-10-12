@@ -331,7 +331,7 @@ major radius (R) and height (Z) directions:
 
    \begin{aligned}
    B_Z &= -\frac{1}{R}\frac{\partial \psi}{\partial R} \qquad B_R = \frac{1}{R}\frac{\partial \psi}{\partial Z} \\
-   \nabla_\psi &= \frac{\partial\psi}{\partial R}\nabla R + \frac{\partial \psi}{\partial Z}\nabla Z \\
+   \nabla \psi &= \frac{\partial\psi}{\partial R}\nabla R + \frac{\partial \psi}{\partial Z}\nabla Z \\
                &= -RB_Z\nabla R + RB_R \nabla Z
    \end{aligned}
 
@@ -387,8 +387,8 @@ collecting terms, we get:
    \begin{aligned}
    \left(%
    \begin{array}{c}
-   B_{\hat{R}}
-   B_{\hat{Z}}
+   B_{\hat{R}} \\
+   B_{\hat{Z}} \\
    B_{\hat{\phi}}
    \end{array}
    %
@@ -403,7 +403,7 @@ collecting terms, we get:
    \begin{array}{c}
    B^x \\
    B^y \\
-   B^z \\
+   B^z
    \end{array}
    %
    \right)
