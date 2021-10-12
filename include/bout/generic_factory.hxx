@@ -33,11 +33,7 @@ struct PreconditionResult {
 
 /// Base class for `ArgumentHelper` so we can store actual
 /// implementations in `Factory`
-struct ArgumentHelperBase {
-private:
-  // We don't want output from `Options` when we construct an `ArgumentHelper`
-  WithQuietOutput info{output_info};
-};
+struct ArgumentHelperBase {};
 
 /// Specialise this for some class `T` in order to get help on the
 /// command line for `T`'s options. Both constructor and
@@ -308,6 +304,8 @@ public:
       throwUnavailableError("get help for", name);
     }
 
+    // We don't want output from `Options` when we construct an `ArgumentHelper`
+    WithQuietOutput info{output_info};
     Options options;
     index->second(options[DerivedFactory::section_name]);
     return fmt::format("{:id}", options);
