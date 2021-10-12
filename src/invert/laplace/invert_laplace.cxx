@@ -114,7 +114,7 @@ LaplaceFactory::ReturnType LaplaceFactory::create(Options* options, CELL_LOC loc
 }
 
 /// Laplacian inversion initialisation. Called once at the start to get settings
-Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in)
+Laplacian::Laplacian(Options* options, CELL_LOC loc, Mesh* mesh_in)
     : location(loc == CELL_DEFAULT ? CELL_CENTRE : loc),
       localmesh(mesh_in == nullptr ? bout::globals::mesh : mesh_in),
       coords(localmesh->getCoordinates()) {
