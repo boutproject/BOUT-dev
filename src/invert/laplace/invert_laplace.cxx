@@ -110,7 +110,9 @@ bout::ArgumentHelper<Laplacian>::ArgumentHelper(Options& options,
 LaplaceFactory::ReturnType LaplaceFactory::create(Options* options, CELL_LOC loc,
                                                   Mesh* mesh) {
   options = optionsOrDefaultSection(options);
-  return Factory::create(getType(options), options, loc, mesh);
+  return Factory::create(getType(options), options,
+                         loc == CELL_DEFAULT ? CELL_CENTRE : loc,
+                         mesh == nullptr ? bout::globals::mesh : mesh);
 }
 
 /// Laplacian inversion initialisation. Called once at the start to get settings
