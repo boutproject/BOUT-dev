@@ -192,7 +192,7 @@ ArgumentHelper<LaplaceNaulin>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location
 } // namespace bout
 
 LaplaceNaulin::LaplaceNaulin(Options *opt, CELL_LOC loc, Mesh *mesh_in) :
-  LaplaceNaulin(bout::ArgumentHelper<LaplaceNaulin>(opt), opt, loc, mesh_in) {}
+  LaplaceNaulin(bout::ArgumentHelper<LaplaceNaulin>{opt, loc, mesh_in}, opt, loc, mesh_in) {}
 
 LaplaceNaulin::LaplaceNaulin(const bout::ArgumentHelper<LaplaceNaulin>& args,
                              Options* opt, CELL_LOC loc, Mesh* mesh_in)

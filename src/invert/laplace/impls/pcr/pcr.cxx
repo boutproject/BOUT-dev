@@ -94,7 +94,7 @@ ArgumentHelper<LaplacePCR>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location),
 } // namespace bout
 
 LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
-  : LaplacePCR(bout::ArgumentHelper<LaplacePCR>{opt}, opt, loc, mesh_in) {}
+    : LaplacePCR(bout::ArgumentHelper<LaplacePCR>{opt, loc, mesh_in}, opt, loc, mesh_in) {}
 
 LaplacePCR::LaplacePCR(const bout::ArgumentHelper<LaplacePCR>& args, Options* opt,
                        CELL_LOC loc, Mesh* mesh_in)
