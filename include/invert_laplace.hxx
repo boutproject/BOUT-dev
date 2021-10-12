@@ -192,7 +192,7 @@ struct ArgumentHelper<Laplacian> : public ArgumentHelperBase {
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
-  Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
+  Laplacian(Options *options = nullptr, CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
   virtual ~Laplacian() = default;
 
   /// Set coefficients for inversion. Re-builds matrices if necessary
@@ -282,7 +282,7 @@ public:
    * @param[in] opt  The options section to use. By default "laplace" will be used
    */
   static std::unique_ptr<Laplacian> create(Options* opts = nullptr,
-                                           const CELL_LOC location = CELL_CENTRE,
+                                           CELL_LOC location = CELL_CENTRE,
                                            Mesh* mesh_in = nullptr) {
     return LaplaceFactory::getInstance().create(opts, location, mesh_in);
   }
