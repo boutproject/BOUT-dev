@@ -91,7 +91,10 @@ ArgumentHelper<LaplaceIPT>::checkPreconditions(MAYBE_UNUSED(CELL_LOC location),
 } // namespace bout
 
 LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
-  : LaplaceIPT(bout::ArgumentHelper<LaplaceIPT>{opt, loc, mesh_in}, opt, loc, mesh_in) {}
+    : LaplaceIPT(bout::ArgumentHelper<LaplaceIPT>{opt, loc,
+                                                  mesh_in == nullptr ? bout::globals::mesh
+                                                                     : mesh_in},
+                 opt, loc, mesh_in) {}
 
 LaplaceIPT::LaplaceIPT(const bout::ArgumentHelper<LaplaceIPT>& args, Options* opt,
                        CELL_LOC loc, Mesh* mesh_in)

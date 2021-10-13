@@ -107,8 +107,11 @@ ArgumentHelper<LaplacePetsc3dAmg>::checkPreconditions(MAYBE_UNUSED(CELL_LOC loca
 }
 } // namespace bout
 
-LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, CELL_LOC loc, Mesh *mesh_in) :
-  LaplacePetsc3dAmg(bout::ArgumentHelper<LaplacePetsc3dAmg>{opt, loc, mesh_in}, opt, loc, mesh_in) {}
+LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, CELL_LOC loc, Mesh* mesh_in)
+    : LaplacePetsc3dAmg(
+        bout::ArgumentHelper<LaplacePetsc3dAmg>{
+            opt, loc, mesh_in == nullptr ? bout::globals::mesh : mesh_in},
+        opt, loc, mesh_in) {}
 
 LaplacePetsc3dAmg::LaplacePetsc3dAmg(const bout::ArgumentHelper<LaplacePetsc3dAmg>& args,
                                      Options* opt, CELL_LOC loc, Mesh* mesh_in)

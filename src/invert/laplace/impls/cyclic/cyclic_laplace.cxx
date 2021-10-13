@@ -54,8 +54,10 @@ ArgumentHelper<LaplaceCyclic>::ArgumentHelper(Options& options, CELL_LOC loc, Me
 } // namespace bout
 
 LaplaceCyclic::LaplaceCyclic(Options* opt, CELL_LOC loc, Mesh* mesh_in)
-    : LaplaceCyclic(bout::ArgumentHelper<LaplaceCyclic>{opt, loc, mesh_in}, opt, loc,
-                    mesh_in) {}
+    : LaplaceCyclic(
+        bout::ArgumentHelper<LaplaceCyclic>{
+            opt, loc, mesh_in == nullptr ? bout::globals::mesh : mesh_in},
+        opt, loc, mesh_in) {}
 
 LaplaceCyclic::LaplaceCyclic(const bout::ArgumentHelper<LaplaceCyclic>& args,
                              Options* opt, CELL_LOC loc, Mesh* mesh_in)
