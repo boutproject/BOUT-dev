@@ -394,7 +394,7 @@ collecting terms, we get:
    %
    \right) = \left(%
    \begin{array}{ccc}
-   \left( -\frac{\sigma_{B\text{pol}}}{RB_{pol}^2}B_Z & \frac{h_\theta}{B_{pol}}B_R & 0 \\
+   -\frac{\sigma_{B\text{pol}}}{RB_{pol}^2}B_Z & \frac{h_\theta}{B_{pol}}B_R & 0 \\
    \frac{\sigma_{B\text{pol}}}{RB_{pol}^2}B_R & \frac{h_\theta}{B_{pol}}B_Z & 0 \\
    I{\sigma_{B\text{pol}}}R & \nu R & {\sigma_{B\text{pol}}} R
    \end{array}
