@@ -125,7 +125,7 @@ Laplacian::Laplacian(Options* options, CELL_LOC loc, Mesh* mesh_in)
 
   output.write("Initialising Laplacian inversion routines\n");
 
-  const bout::ArgumentHelper<Laplacian> args(*options, loc, mesh_in);
+  const bout::ArgumentHelper<Laplacian> args(*options, location, localmesh);
 
   // Communication option. Controls if asyncronous sends are used
   async_send = args.async_send;
