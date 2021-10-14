@@ -161,7 +161,7 @@ Compiling with Apple Clang 12, the following configuration has been known to wor
 
 .. code-block:: tcsh
 
-   cmake . -B build -DBOUT_ENABLE_BACKTRACE=Off -DBUILD_SHARED_LIBS=Off -DBOUT_USE_NLS=Off
+   cmake . -B build -DBOUT_ENABLE_BACKTRACE=Off -DBUILD_SHARED_LIBS=Off -DBOUT_USE_NLS=Off -DBOUT_USE_UUID_SYSTEM_GENERATOR=Off
    cd build
    make
 
