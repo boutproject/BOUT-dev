@@ -602,8 +602,6 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       
       
       ISColoring iscoloring;
-      
-#if PETSC_VERSION_GE(3,5,0)
       MatColoring coloring; // This new in PETSc 3.5
       MatColoringCreate(Jmf,&coloring);
       MatColoringSetType(coloring,MATCOLORINGSL);
@@ -611,28 +609,18 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       // Calculate index sets
       MatColoringApply(coloring,&iscoloring);
       MatColoringDestroy(&coloring);
-#else
-      // Pre-3.5
-      MatGetColoring(Jmf,MATCOLORINGSL,&iscoloring);
-#endif
 
       // Create data structure for SNESComputeJacobianDefaultColor
       MatFDColoringCreate(Jmf,iscoloring,&fdcoloring);
-      ISColoringDestroy(&iscoloring);
       // Set the function to difference
-      //MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForDifferencing,this);
       MatFDColoringSetFunction(
           fdcoloring, reinterpret_cast<PetscErrorCode(*)()>(FormFunctionForColoring),
           this);
       MatFDColoringSetFromOptions(fdcoloring);
-      //MatFDColoringSetUp(Jmf,iscoloring,fdcoloring);
-      
-#if PETSC_VERSION_GE(3,4,0)
-      SNESSetJacobian(*snesIn,Jmf,Jmf,SNESComputeJacobianDefault,fdcoloring);
-#else
-      // Before 3.4
-      SNESSetJacobian(*snesIn,Jmf,Jmf,SNESDefaultComputeJacobian,fdcoloring);
-#endif
+      MatFDColoringSetUp(Jmf,iscoloring,fdcoloring);
+      ISColoringDestroy(&iscoloring);
+
+      SNESSetJacobian(*snesIn, Jmf, Jmf, SNESComputeJacobianDefaultColor, fdcoloring);
 
       // Re-use Jacobian
       int lag_jacobian;
