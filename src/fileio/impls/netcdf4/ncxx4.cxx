@@ -91,7 +91,7 @@ bool Ncxx4::openr(const char *name) {
     return false;
   }
 
-  if(dataFile->isNull()) {
+  if (dataFile->isNull()) {
     delete dataFile;
     dataFile = nullptr;
     return false;
@@ -100,15 +100,17 @@ bool Ncxx4::openr(const char *name) {
   /// Get the dimensions from the file
 
   xDim = dataFile->getDim("x");
-  if(xDim.isNull())
+  if (xDim.isNull()) {
     output_warn.write("WARNING: NetCDF file should have an 'x' dimension\n");
+  }
 
   yDim = dataFile->getDim("y");
-  if(yDim.isNull())
+  if (yDim.isNull()) {
     output_warn.write("WARNING: NetCDF file should have a 'y' dimension\n");
+  }
 
   zDim = dataFile->getDim("z");
-  if(zDim.isNull()) {
+  if (zDim.isNull()) {
     // Z dimension optional, and could be any size (Fourier harmonics)
 #ifdef NCDF_VERBOSE
     output_info.write("INFO: NetCDF file has no 'z' coordinate\n");
@@ -116,7 +118,7 @@ bool Ncxx4::openr(const char *name) {
   }
 
   tDim = dataFile->getDim("t");
-  if(tDim.isNull()) {
+  if (tDim.isNull()) {
     // T dimension optional
 #ifdef NCDF_VERBOSE
     output_info.write("INFO: NetCDF file has no 't' coordinate\n");
@@ -143,14 +145,14 @@ bool Ncxx4::openw(const char *name, bool append) {
   if (dataFile != nullptr) // Already open. Close then re-open
     close(); 
 
-  if(append) {
+  if (append) {
     try {
       dataFile = new NcFile(name, NcFile::write);
     } catch (netCDF::exceptions::NcException&) {
       return false;
     }
 
-    if(dataFile->isNull()) {
+    if (dataFile->isNull()) {
       delete dataFile;
       dataFile = nullptr;
       return false;
@@ -159,7 +161,7 @@ bool Ncxx4::openw(const char *name, bool append) {
     /// Get the dimensions from the file
 
     xDim = dataFile->getDim("x");
-    if(xDim.isNull()) {
+    if (xDim.isNull()) {
       output_error.write("ERROR: NetCDF file should have an 'x' dimension\n");
       delete dataFile;
       dataFile = nullptr;
@@ -167,7 +169,7 @@ bool Ncxx4::openw(const char *name, bool append) {
     }
 
     yDim = dataFile->getDim("y");
-    if(yDim.isNull()) {
+    if (yDim.isNull()) {
       output_error.write("ERROR: NetCDF file should have a 'y' dimension\n");
       delete dataFile;
       dataFile = nullptr;
@@ -175,7 +177,7 @@ bool Ncxx4::openw(const char *name, bool append) {
     }
 
     zDim = dataFile->getDim("z");
-    if(zDim.isNull()) {
+    if (zDim.isNull()) {
       output_error.write("ERROR: NetCDF file should have a 'z' dimension\n");
       delete dataFile;
       dataFile = nullptr;
@@ -183,7 +185,7 @@ bool Ncxx4::openw(const char *name, bool append) {
     }
 
     tDim = dataFile->getDim("t");
-    if(tDim.isNull()) {
+    if (tDim.isNull()) {
       output_error.write("ERROR: NetCDF file should have a 't' dimension\n");
       delete dataFile;
       dataFile = nullptr;
@@ -202,14 +204,14 @@ bool Ncxx4::openw(const char *name, bool append) {
     // Get the size of the 't' dimension for records
     default_rec = tDim.getSize();
     
-  }else {
+  } else {
     try {
       dataFile = new NcFile(name, NcFile::replace);
     } catch (netCDF::exceptions::NcException&) {
       return false;
     }
     
-    if(dataFile->isNull()) {
+    if (dataFile->isNull()) {
       delete dataFile;
       dataFile = nullptr;
       return false;
@@ -218,14 +220,14 @@ bool Ncxx4::openw(const char *name, bool append) {
     /// Add the dimensions
     
     xDim = dataFile->addDim("x", mesh->LocalNx);
-    if(xDim.isNull()) {
+    if (xDim.isNull()) {
       delete dataFile;
       dataFile = nullptr;
       return false;
     }
   
     yDim = dataFile->addDim("y", mesh->LocalNy);
-    if(yDim.isNull()) {
+    if (yDim.isNull()) {
       delete dataFile;
       dataFile = nullptr;
       return false;
@@ -801,9 +803,10 @@ bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
     }
   }
   
-  for(int i=0;i<lx*ly*lz;i++) {
-    if(!finite(data[i]))
+  for (int i = 0; i < lx * ly * lz; i++) {
+    if (!std::finite(data[i])) {
       data[i] = 0.0;
+    }
   }
 
   var.putVar(start, counts, data);
@@ -844,17 +847,20 @@ bool Ncxx4::write_perp(BoutReal *data, const std::string& name, int lx, int lz) 
     // corrupt the whole dataset. Make sure everything
     // is in the range of a float
 
-    for(int i=0;i<lx*lz;i++) {
-      if(data[i] > 1e20)
+    for (int i = 0; i < lx * lz; i++) {
+      if (data[i] > 1e20) {
         data[i] = 1e20;
-      if(data[i] < -1e20)
+      }
+      if (data[i] < -1e20) {
         data[i] = -1e20;
+      }
     }
   }
 
-  for(int i=0;i<lx*lz;i++) {
-    if(!finite(data[i]))
+  for (int i = 0; i < lx * lz; i++) {
+    if (!std::finite(data[i])) {
       data[i] = 0.0;
+    }
   }
 
   var.putVar(start, counts, data);
@@ -1112,16 +1118,19 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
     // is in the range of a float
     
     for(int i=0;i<lx*ly*lz;i++) {
-      if(data[i] > 1e20)
+      if (data[i] > 1e20) {
 	data[i] = 1e20;
-      if(data[i] < -1e20)
+      }
+      if (data[i] < -1e20) {
 	data[i] = -1e20;
+      }
     }
   }
   
-  for(int i=0;i<lx*ly*lz;i++) {
-    if(!finite(data[i]))
+  for (int i = 0; i < lx * ly * lz; i++) {
+    if (!std::finite(data[i])) {
       data[i] = 0.0;
+    }
   }
 
   std::vector<size_t> start(4);
@@ -1187,9 +1196,10 @@ bool Ncxx4::write_rec_perp(BoutReal *data, const std::string& name, int lx, int 
     }
   }
 
-  for(int i=0;i<lx*lz;i++) {
-    if(!finite(data[i]))
+  for (int i = 0; i < lx * lz; i++) {
+    if (!std::finite(data[i])) {
       data[i] = 0.0;
+    }
   }
 
   std::vector<size_t> start(3);
