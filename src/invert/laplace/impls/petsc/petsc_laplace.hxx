@@ -206,7 +206,6 @@ private:
   bool issetD;
   bool issetC;
   bool issetE;
-  int lastflag;               // The flag used to construct the matrix
 
   FieldPerp sol;              // solution Field
 
@@ -237,7 +236,6 @@ private:
 
   PetscLib lib;
 
-  bool use_precon;  // Switch for preconditioning
   bool rightprec;   // Right preconditioning
   std::unique_ptr<Laplacian> pcsolve; // Laplacian solver for preconditioning
 
