@@ -351,15 +351,38 @@ PETSc's SNES solvers to solve the nonlinear system at each timestep,
 and adjusts the internal timestep to keep the number of SNES
 iterations within a given range.
 
-+---------------------+-----------+----------------------------------------------------+
-| Option              | Default   |Description                                         |
-+=====================+===========+====================================================+
-| max_nonlinear_it    | 50        | If exceeded, solve restarts with timestep / 2      |
-+---------------------+-----------+----------------------------------------------------+
-| upper_its           | 80% max   | If exceeded, next timestep reduced by 10%          |
-+---------------------+-----------+----------------------------------------------------+
-| lower_its           | 50% max   | If under this, next timestep increased by 10%      |
-+---------------------+-----------+----------------------------------------------------+
++---------------------------+-----------+----------------------------------------------------+
+| Option                    | Default   |Description                                         |
++===========================+===========+====================================================+
+| snes_type                 | anderson  | PETSc SNES nonlinear solver (try qn, newtonls)     |
++---------------------------+-----------+----------------------------------------------------+
+| max_nonlinear_iterations  | 50        | If exceeded, solve restarts with timestep / 2      |
++---------------------------+-----------+----------------------------------------------------+
+| maxl                      | 20        | Maximum number of linear iterations                |
++---------------------------+-----------+----------------------------------------------------+
+| atol                      | 1e-16     | Absolute tolerance of SNES solve                   |
++---------------------------+-----------+----------------------------------------------------+
+| rtol                      | 1e-10     | Relative tolerance of SNES solve                   |
++---------------------------+-----------+----------------------------------------------------+
+| upper_its                 | 80% max   | If exceeded, next timestep reduced by 10%          |
++---------------------------+-----------+----------------------------------------------------+
+| lower_its                 | 50% max   | If under this, next timestep increased by 10%      |
++---------------------------+-----------+----------------------------------------------------+
+| timestep                  | output dt | Initial timestep                                   |
++---------------------------+-----------+----------------------------------------------------+
+| predictor                 | true      | Use linear predictor?                              |
++---------------------------+-----------+----------------------------------------------------+
+| matrix_free               | true      | Use matrix free Jacobian-vector product?           |
++---------------------------+-----------+----------------------------------------------------+
+| use_coloring              | true      | If `matrix_free=false`, use coloring to speed up   |
+|                           |           | calculation of the Jacobian elements.              |
++---------------------------+-----------+----------------------------------------------------+
+| lag_jacobian              | 4         | Re-use the Jacobian for successive inner solves    |
++---------------------------+-----------+----------------------------------------------------+
+| kspsetinitialguessnonzero | false     | If true, Use previous solution as KSP initial      |
++---------------------------+-----------+----------------------------------------------------+
+| use_precon                | false     | Use user-supplied preconditioner?                  |
++---------------------------+-----------+----------------------------------------------------+
 
 The predictor is linear extrapolation from the last two timesteps. It seems to be
 effective, but can be disabled by setting ``predictor = false``.
@@ -373,6 +396,11 @@ problems seem to be `anderson
 (the default) and `qn
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESQN.html#SNESQN>`_
 (quasinewton).
+
+The `newtonls` SNES type can be very effective if combined with Jacobian coloring:
+The coloring enables the Jacobian to be calculated relatively efficiently; once a Jacobian
+matrix has been calculated, effective preconditioners can be used to speed up convergence.
+Set `solver:snes_type=newtonls  solver:matrix_free=false` to try this option.
 
 ODE integration
 ---------------
