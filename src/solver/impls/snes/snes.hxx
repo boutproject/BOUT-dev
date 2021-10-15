@@ -57,11 +57,35 @@ public:
   SNESSolver(Options* opt = nullptr) : Solver(opt) {}
   ~SNESSolver() {}
 
+  /// Initialise solver. Must be called once and only once
+  ///
+  /// @param[in] nout         Number of outputs
+  /// @param[in] tstep        Time between outputs. NB: Not internal timestep
   int init(int nout, BoutReal tstep) override;
 
+  /// Run the simulation
   int run() override;
 
-  PetscErrorCode snes_function(Vec x, Vec f); ///< Nonlinear function
+  /// Nonlinear function. This is called by PETSc SNES object
+  /// via a static C-style function. For implicit
+  /// time integration this function calculates:
+  ///
+  ///     f = (x - gamma*G(x)) - rhs
+  ///
+  ///
+  /// @param[in] x  The state vector
+  /// @param[out] f  The vector for the result f(x)
+  /// @param[in] linear  Specifies that the SNES solver is in a linear (KSP) inner loop,
+  ///                    so the operator should be linearised if possible
+  PetscErrorCode snes_function(Vec x, Vec f, bool linear); ///< Nonlinear function
+
+  /// Preconditioner. Called by PCapply
+  /// via a C-style static function.
+  ///
+  /// @param[in] x  The vector to be operated on
+  /// @param[out] f  The result of the operation
+  PetscErrorCode precon(Vec x, Vec f);
+
 private:
   BoutReal timestep; ///< Internal timestep
   BoutReal dt;       ///< Current timestep used in snes_function
@@ -85,8 +109,10 @@ private:
   Vec x1;               ///< Previous solution
   BoutReal time1{-1.0}; ///< Time of previous solution
 
-  SNES snes; ///< SNES context
-  Mat Jmf;   ///< Matrix-free Jacobian
+  SNES snes;                ///< SNES context
+  Mat Jmf;                  ///< Matrix-free Jacobian
+  MatFDColoring fdcoloring; ///< Matrix coloring context, used for finite difference
+                            ///< Jacobian evaluation
 };
 
 #else
@@ -96,7 +122,7 @@ RegisterUnavailableSolver registerunavailablesnes("snes",
                                                   "BOUT++ was not configured with PETSc");
 RegisterUnavailableSolver
     registerunavailablebeuler("beuler", "BOUT++ was not configured with PETSc");
-}
+} // namespace
 
 #endif // BOUT_HAS_PETSC
 
