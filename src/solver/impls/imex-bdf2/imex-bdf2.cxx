@@ -144,13 +144,14 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   OPTION(options, timestep, tstep); // Internal timestep
   OPTION(options, mxstep, 100000);  // Maximum number of internal iterations
   ninternal = static_cast<int>(out_timestep / timestep);
-  if ((ninternal == 0) || (out_timestep / ninternal > timestep))
+  if ((ninternal == 0) || (out_timestep / ninternal > timestep)) {
     ++ninternal;
+  }
   if (ninternal > mxstep) {
     throw BoutException(
         "Error: Number of internal timesteps ({:d}) exceeds mxstep ({:d})", ninternal,
         mxstep);
-  };
+  }
 
   timestep = out_timestep / ninternal;
   output.write("\tUsing timestep = {:e}, {:d} internal steps per output\n", timestep,
@@ -211,8 +212,9 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
 
   // The SNES solver object(s)
   constructSNES(&snes);
-  if (adaptive)
+  if (adaptive) {
     constructSNES(&snesAlt);
+  }
 
   return 0;
 }
