@@ -33,10 +33,10 @@
 #include "dcomplex.hxx"
 #include "boutexception.hxx"
 
-#include "msg_stack.hxx"
-#include "unused.hxx"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
+#include "msg_stack.hxx"
+#include "unused.hxx"
 #include "bout/region.hxx"
 
 #include <algorithm>

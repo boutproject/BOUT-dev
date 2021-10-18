@@ -875,17 +875,6 @@ std::ostream& operator<<(std::ostream &out, const Field3D &value) {
   return out;
 }
 
-const Region<Ind3D>& Field3D::getDefaultRegion(const std::string& region_name) const {
-  if (regionID != -1) {
-    return fieldmesh->getRegion(regionID);
-  }
-  return fieldmesh->getRegion(region_name);
-}
-
-void Field3D::setRegion(const std::string& region_name) {
-  regionID = fieldmesh->getRegionID(region_name);
-}
-
 void swap(Field3D& first, Field3D& second) noexcept {
   using std::swap;
 
@@ -900,4 +889,15 @@ void swap(Field3D& first, Field3D& second) noexcept {
   swap(first.deriv, second.deriv);
   swap(first.yup_fields, second.yup_fields);
   swap(first.ydown_fields, second.ydown_fields);
+}
+
+const Region<Ind3D>& Field3D::getDefaultRegion(const std::string& region_name) const {
+  if (regionID != -1) {
+    return fieldmesh->getRegion(regionID);
+  }
+  return fieldmesh->getRegion(region_name);
+}
+
+void Field3D::setRegion(const std::string& region_name) {
+  regionID = fieldmesh->getRegionID(region_name);
 }
