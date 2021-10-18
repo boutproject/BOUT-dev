@@ -15,7 +15,7 @@ class Field(object):
 
     """
 
-    def __init__(self, field_type, dimensions, fdd):
+    def __init__(self, field_type, dimensions, fdd, boundaries):
         # C++ type of the field, e.g. Field3D
         self.field_type = field_type
         # array: dimensions of the field
@@ -23,6 +23,7 @@ class Field(object):
         # Short identifier
         self.fdd = fdd
         self.ddd = fdd
+        self.boundaries = boundaries
 
     def __eq__(self, other):
         try:
@@ -69,9 +70,11 @@ class Vector(object):
 
 ops = [("add", "+"), ("mul", "*"), ("truediv", "/"), ("div", "/"), ("sub", "-")]
 
-field2d = Field("Field2D", ["x", "y"], "f2d")
-field3d = Field("Field3D", ["x", "y", "z"], "f3d")
-fieldperp = Field("FieldPerp", ["x", "z"], "fperp")
+field2d = Field("Field2D", ["x", "y"], "f2d", ["applyBoundary"])
+field3d = Field(
+    "Field3D", ["x", "y", "z"], "f3d", ["applyBoundary", "applyParallelBoundary"]
+)
+fieldperp = Field("FieldPerp", ["x", "z"], "fperp", ["applyBoundary"])
 
 metric = field3d if conf["metric_type"] == "3D" else field2d
 

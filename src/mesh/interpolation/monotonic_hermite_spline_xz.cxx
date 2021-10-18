@@ -103,7 +103,7 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
     BoutReal result = +f_z * h00_z(x, y, z) + f_zp1 * h01_z(x, y, z)
                       + fz_z * h10_z(x, y, z) + fz_zp1 * h11_z(x, y, z);
 
-    ASSERT2(finite(result) || x < localmesh->xstart || x > localmesh->xend);
+    ASSERT2(std::isfinite(result) || x < localmesh->xstart || x > localmesh->xend);
 
     // Monotonicity
     // Force the interpolated result to be in the range of the
@@ -121,8 +121,8 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
                                       f(i_corner(x, y, z), y_next, z_mod_p1),
                                       f(i_corner(x, y, z) + 1, y_next, z_mod_p1));
 
-    ASSERT2(finite(localmax) || x < localmesh->xstart || x > localmesh->xend);
-    ASSERT2(finite(localmin) || x < localmesh->xstart || x > localmesh->xend);
+    ASSERT2(std::isfinite(localmax) || x < localmesh->xstart || x > localmesh->xend);
+    ASSERT2(std::isfinite(localmin) || x < localmesh->xstart || x > localmesh->xend);
 
     if (result > localmax) {
       result = localmax;

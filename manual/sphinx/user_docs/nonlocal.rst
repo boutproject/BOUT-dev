@@ -15,10 +15,10 @@ The Spitzer-Harm heat flux `q_{SH}` is calculated using
 
    q_{SH} = - \frac{n_e e T_e}{m_e}\frac{3\sqrt{\pi}}{4}\tau_{ei,T}\kappa_0\frac{Z+0.24}{Z+4.2} \partial_{||} T_e
 
-where `n_e` is the electron density in `m^{-3}`, `T_e` is the electron temperature in eV, `kappa_0 = 13.58`,
+where `n_e` is the electron density in `m^{-3}`, `T_e` is the electron temperature in eV, `\kappa_0 = 13.58`,
 `Z` is the average ion charge. The resulting expression is in units of `eV/m^2/s`. 
 
-The thermal collision time `tau_{ei,T} = \lambda_{ei,T} / v_{T}` is calculated using the thermal mean free path
+The thermal collision time `\tau_{ei,T} = \lambda_{ei,T} / v_{T}` is calculated using the thermal mean free path
 and thermal velocity:
 
 .. math::

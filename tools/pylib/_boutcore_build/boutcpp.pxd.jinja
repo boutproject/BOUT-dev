@@ -22,9 +22,11 @@ cdef extern from "{{ field.header }}.hxx":
         bool isAllocated()
         void setLocation(benum.CELL_LOC)
         benum.CELL_LOC getLocation()
-        void applyBoundary(const string bndry)
-        void applyBoundary()
-        void applyBoundary(double t)
+{% for boundaryMethod in field.boundaries %}
+        void {{ boundaryMethod }}(const string bndry)
+        void {{ boundaryMethod }}()
+        void {{ boundaryMethod }}(double t)
+{% endfor %}
 {% for fun in "sqrt", "exp", "log", "sin", "cos", "abs" %}
     {{ field.field_type }} {{ fun }}({{ field.field_type }})
 {% endfor %}

@@ -125,8 +125,8 @@ bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) const {
     // Check index 1 on all procs, except: the last proc only has index 1 if the
     // max_level == 0.
     if (not l.localmesh->lastX() or l.max_level == 0) {
-      if (std::fabs(ar(l.jy, 1, kz)) + std::fabs(cr(l.jy, 1, kz))
-          > std::fabs(br(l.jy, 1, kz))) {
+      if (std::abs(ar(l.jy, 1, kz)) + std::abs(cr(l.jy, 1, kz))
+          > std::abs(br(l.jy, 1, kz))) {
         output_error.write("Rank {}, jy={}, kz={}, lower row not diagonally dominant\n",
                            BoutComm::rank(), l.jy, kz);
         output_error.flush();
@@ -135,8 +135,8 @@ bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) const {
     }
     // Check index 2 on final proc only.
     if (l.localmesh->lastX()) {
-      if (std::fabs(ar(l.jy, 2, kz)) + std::fabs(cr(l.jy, 2, kz))
-          > std::fabs(br(l.jy, 2, kz))) {
+      if (std::abs(ar(l.jy, 2, kz)) + std::abs(cr(l.jy, 2, kz))
+          > std::abs(br(l.jy, 2, kz))) {
         output_error.write("Rank {}, jy={}, kz={}, upper row not diagonally dominant\n",
                            BoutComm::rank(), l.jy, kz);
         output_error.flush();
@@ -1060,7 +1060,7 @@ LaplaceIPT::Level::Level(LaplaceIPT& l)
       // Send coefficients up
       ABtmp[0] = 0.0;
       ABtmp[1] = l.bu(l.jy, kz);
-      if (std::fabs(l.al(l.jy, kz)) > 1e-14) {
+      if (std::abs(l.al(l.jy, kz)) > 1e-14) {
         ABtmp[0] = l.au(l.jy, kz) / l.al(l.jy, kz);
         ABtmp[1] -= ABtmp[0] * l.bl(l.jy, kz);
       }
@@ -1172,7 +1172,7 @@ void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex>& bcmplx) 
     if (not l.localmesh->lastX()) {
       // Send coefficients up
       Rsendup[kz] = l.ru[kz];
-      if (std::fabs(l.al(l.jy, kz)) > 1e-14) {
+      if (std::abs(l.al(l.jy, kz)) > 1e-14) {
         Rsendup[kz] -= l.rl[kz] * l.au(l.jy, kz) / l.al(l.jy, kz);
       }
     }

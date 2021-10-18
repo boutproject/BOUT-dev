@@ -156,6 +156,7 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
   return result;
 }
 
+#if BOUT_USE_METRIC_3D
 Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
                                   bool extrapolate_x, bool extrapolate_y,
                                   bool no_extra_interpolate, ParallelTransform* pt_) {
@@ -305,10 +306,11 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
       }
     }
   }
-#endif
+#endif // CHECK > 0
 
   return result;
 }
+#endif // BOUT_USE_METRIC_3D
 
 // If the CELL_CENTRE variable was read, the staggered version is required to
 // also exist for consistency
@@ -618,80 +620,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     IntShiftTorsion = 0.;
   }
 }
-
-// use anonymous namespace so this utility function is not available outside this file
-namespace {
-/// Interpolate a FieldMetric to a new CELL_LOC with interp_to.
-/// Communicates to set internal guard cells.
-/// Boundary guard cells are set equal to the nearest grid point (equivalent to
-/// 2nd order accurate Neumann boundary condition).
-/// Corner guard cells are set to BoutNaN
-Coordinates::FieldMetric
-interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::FieldMetric& f),
-                      MAYBE_UNUSED(CELL_LOC location),
-                      MAYBE_UNUSED(ParallelTransform* pt)) {
-  Mesh* localmesh = f.getMesh();
-  Coordinates::FieldMetric result;
-#if BOUT_USE_METRIC_3D
-  if (location == CELL_YLOW) {
-    auto f_aligned = f.getCoordinates() == nullptr ? pt->toFieldAligned(f, "RGN_NOX")
-                                                   : toFieldAligned(f, "RGN_NOX");
-    result = interp_to(f_aligned, location, "RGN_NOBNDRY");
-    result = result.getCoordinates() == nullptr
-                 ? pt->fromFieldAligned(result, "RGN_NOBNDRY")
-                 : fromFieldAligned(result, "RGN_NOBNDRY");
-  } else
-#endif
-  {
-    result = interp_to(f, location, "RGN_NOBNDRY");
-  }
-  communicate(result);
-
-  // Copy nearest value into boundaries so that differential geometry terms can
-  // be interpolated if necessary
-  // Note: cannot use applyBoundary("neumann") here because applyBoundary()
-  // would try to create a new Coordinates object since we have not finished
-  // initializing yet, leading to an infinite recursion
-  for (auto bndry : localmesh->getBoundaries()) {
-    if (bndry->bx != 0) {
-      // If bx!=0 we are on an x-boundary, inner if bx>0 and outer if bx<0
-      for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-        for (int i = 0; i < localmesh->xstart; i++) {
-          for (int z = 0; z < result.getNz(); ++z) {
-            result(bndry->x + i * bndry->bx, bndry->y, z) =
-                result(bndry->x + (i - 1) * bndry->bx, bndry->y - bndry->by, z);
-          }
-        }
-      }
-    }
-    if (bndry->by != 0) {
-      // If by!=0 we are on a y-boundary, upper if by>0 and lower if by<0
-      for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-        for (int i = 0; i < localmesh->ystart; i++) {
-          for (int z = 0; z < result.getNz(); ++z) {
-            result(bndry->x, bndry->y + i * bndry->by, z) =
-                result(bndry->x - bndry->bx, bndry->y + (i - 1) * bndry->by, z);
-          }
-        }
-      }
-    }
-  }
-
-  // Set corner guard cells
-  for (int i = 0; i < localmesh->xstart; i++) {
-    for (int j = 0; j < localmesh->ystart; j++) {
-      for (int z = 0; z < result.getNz(); ++z) {
-        result(i, j, z) = BoutNaN;
-        result(i, localmesh->LocalNy - 1 - j, z) = BoutNaN;
-        result(localmesh->LocalNx - 1 - i, j, z) = BoutNaN;
-        result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j, z) = BoutNaN;
-      }
-    }
-  }
-
-  return result;
-}
-} // namespace
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
@@ -1626,7 +1554,7 @@ Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& m
   if (! f.hasParallelSlices() and ! transform->canToFromFieldAligned()) {
     Field3D f_parallel = f;
     transform->calcParallelSlices(f_parallel);
-    f_parallel.applyParallelBoundary();
+    f_parallel.applyParallelBoundary("parallel_neumann");
     return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
   }
 #endif

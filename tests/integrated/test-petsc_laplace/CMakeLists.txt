@@ -4,4 +4,5 @@ bout_add_integrated_test(test-petsc-laplace
   CONFLICTS BOUT_USE_METRIC_3D # default preconditioner uses 'cyclic' Laplace solver which is not available with 3d metrics
   USE_RUNTEST
   USE_DATA_BOUT_INP
+  PROCESSORS 4
   )
