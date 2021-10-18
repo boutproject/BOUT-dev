@@ -187,13 +187,13 @@ if __name__ == "__main__":
     top = args.bout_top
     build = args.bout_build
 
-    if modulepath == None:
+    if modulepath is None:
         modulepath = ask_modpath()
-    if name == None:
+    if name is None:
         name = ask_name()
-    if top == None:
+    if top is None:
         top = ask_bouttop()
-    if build == None:
+    if build is None:
         build = ask_boutbuild(top)
 
     create_mod(modulepath, name, top, build)
