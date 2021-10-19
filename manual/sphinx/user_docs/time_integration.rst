@@ -354,53 +354,66 @@ iterations within a given range.
 +---------------------------+-----------+----------------------------------------------------+
 | Option                    | Default   |Description                                         |
 +===========================+===========+====================================================+
-| snes_type                 | anderson  | PETSc SNES nonlinear solver (try qn, newtonls)     |
+| snes_type                 | newtonls  | PETSc SNES nonlinear solver (try anderson, qn)     |
 +---------------------------+-----------+----------------------------------------------------+
-| max_nonlinear_iterations  | 50        | If exceeded, solve restarts with timestep / 2      |
+| max_nonlinear_iterations  | 20        | If exceeded, solve restarts with timestep / 2      |
 +---------------------------+-----------+----------------------------------------------------+
 | maxl                      | 20        | Maximum number of linear iterations                |
 +---------------------------+-----------+----------------------------------------------------+
-| atol                      | 1e-16     | Absolute tolerance of SNES solve                   |
+| atol                      | 1e-12     | Absolute tolerance of SNES solve                   |
 +---------------------------+-----------+----------------------------------------------------+
-| rtol                      | 1e-10     | Relative tolerance of SNES solve                   |
+| rtol                      | 1e-5      | Relative tolerance of SNES solve                   |
 +---------------------------+-----------+----------------------------------------------------+
 | upper_its                 | 80% max   | If exceeded, next timestep reduced by 10%          |
 +---------------------------+-----------+----------------------------------------------------+
 | lower_its                 | 50% max   | If under this, next timestep increased by 10%      |
 +---------------------------+-----------+----------------------------------------------------+
-| timestep                  | output dt | Initial timestep                                   |
+| timestep                  | 1         | Initial timestep                                   |
 +---------------------------+-----------+----------------------------------------------------+
 | predictor                 | true      | Use linear predictor?                              |
 +---------------------------+-----------+----------------------------------------------------+
-| matrix_free               | true      | Use matrix free Jacobian-vector product?           |
+| matrix_free               | false     | Use matrix free Jacobian-vector product?           |
 +---------------------------+-----------+----------------------------------------------------+
 | use_coloring              | true      | If `matrix_free=false`, use coloring to speed up   |
 |                           |           | calculation of the Jacobian elements.              |
 +---------------------------+-----------+----------------------------------------------------+
-| lag_jacobian              | 4         | Re-use the Jacobian for successive inner solves    |
+| lag_jacobian              | 50        | Re-use the Jacobian for successive inner solves    |
 +---------------------------+-----------+----------------------------------------------------+
 | kspsetinitialguessnonzero | false     | If true, Use previous solution as KSP initial      |
 +---------------------------+-----------+----------------------------------------------------+
 | use_precon                | false     | Use user-supplied preconditioner?                  |
+|                           |           | If false, the default PETSc preconditioner is used |
++---------------------------+-----------+----------------------------------------------------+
+| diagnose                  | false     | Print diagnostic information every iteration       |
 +---------------------------+-----------+----------------------------------------------------+
 
 The predictor is linear extrapolation from the last two timesteps. It seems to be
 effective, but can be disabled by setting ``predictor = false``.
 
+The default `newtonls` SNES type can be very effective if combined
+with Jacobian coloring: The coloring enables the Jacobian to be
+calculated relatively efficiently; once a Jacobian matrix has been
+calculated, effective preconditioners can be used to speed up
+convergence.  It is important to note that the coloring assumes a star
+stencil and so won't work for every problem: It assumes that each
+evolving quantity is coupled to all other evolving quantities on the
+same grid cell, and on all the neighbouring grid cells. If the RHS
+function includes Fourier transforms, or matrix inversions
+(e.g. potential solves) then these will introduce longer-range
+coupling and the Jacobian calculation will give spurious
+results. Generally the method will then fail to converge. Two
+solutions are to a) switch to matrix-free (`matrix_free=true`), or b)
+solve the matrix inversion as a constraint.
+
 The `SNES type
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESType.html>`_
 can be set through PETSc command-line options, or in the BOUT++
 options as setting `snes_type`. Good choices for unpreconditioned
-problems seem to be `anderson
+problems where the Jacobian is not available (`matrix_free=true`) seem to be `anderson
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESANDERSON.html#SNESANDERSON>`_
-(the default) and `qn
+and `qn
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESQN.html#SNESQN>`_
 (quasinewton).
-
-The `newtonls` SNES type can be very effective if combined with Jacobian coloring:
-The coloring enables the Jacobian to be calculated relatively efficiently; once a Jacobian
-matrix has been calculated, effective preconditioners can be used to speed up convergence.
-Set `solver:snes_type=newtonls  solver:matrix_free=false` to try this option.
 
 ODE integration
 ---------------
