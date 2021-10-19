@@ -677,10 +677,17 @@ int SNESSolver::run() {
 
       if (timestep < dt_min_reset) {
 	// Hit the minimum timestep, probably through repeated failures
-	// Try resetting the preconditioner, and a large timestep
+
+	if (saved_jacobian_lag != 0) {
+	  // Already tried this and it didn't work
+	  throw BoutException("Solver failed after many attempts");
+	}
+
+	// Try resetting the preconditioner, turn off predictor, and use a large timestep
 	SNESGetLagJacobian(snes, &saved_jacobian_lag);
 	SNESSetLagJacobian(snes, 1);
 	timestep = out_timestep;
+	predictor = false; // Predictor can cause problems in near steady-state.
       }
 
       // Set the timestep
