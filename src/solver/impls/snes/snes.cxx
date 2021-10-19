@@ -92,6 +92,10 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   timestep =
       (*options)["timestep"].doc("Initial backward Euler timestep").withDefault(1.0);
 
+  dt_min_reset = (*options)["dt_min_reset"]
+                   .doc("If dt falls below this, reset to starting dt")
+                   .withDefault(1e-6);
+
   diagnose =
       (*options)["diagnose"].doc("Print additional diagnostics").withDefault<bool>(false);
 
@@ -559,6 +563,10 @@ int SNESSolver::init(int nout, BoutReal tstep) {
             .doc("Re-use the Jacobian this number of SNES iterations")
             .withDefault(50);
     SNESSetLagJacobian(snes, lag_jacobian);
+    // Set Jacobian and preconditioner to persist across time steps
+    SNESSetLagJacobianPersists(snes, PETSC_TRUE);
+    SNESSetLagPreconditionerPersists(snes, PETSC_TRUE);
+    SNESSetLagPreconditioner(snes, 1); // Rebuild when Jacobian is rebuilt
   }
 
   // Set tolerances
@@ -662,9 +670,18 @@ int SNESSolver::run() {
 
     bool looping = true;
     int snes_failures = 0; // Count SNES convergence failures
+    int saved_jacobian_lag = 0;
     do {
       // Copy the state (snes_x) into initial values (x0)
       VecCopy(snes_x, x0);
+
+      if (timestep < dt_min_reset) {
+	// Hit the minimum timestep, probably through repeated failures
+	// Try resetting the preconditioner, and a large timestep
+	SNESGetLagJacobian(snes, &saved_jacobian_lag);
+	SNESSetLagJacobian(snes, 1);
+	timestep = out_timestep;
+      }
 
       // Set the timestep
       dt = timestep;
@@ -710,6 +727,13 @@ int SNESSolver::run() {
           output.write("WARNING: snes_x locked for writing\n");
         }
         continue; // Try again
+      }
+
+      if (saved_jacobian_lag != 0) {
+	// Following successful step, reset Jacobian lag
+	// to previous value
+	SNESSetLagJacobian(snes, saved_jacobian_lag);
+	saved_jacobian_lag = 0;
       }
 
       if (predictor) {
