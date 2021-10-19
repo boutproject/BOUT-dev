@@ -123,12 +123,12 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   // Set the callback function
   SNESSetFunction(snes, snes_f, FormFunction, this);
 
-  std::string snes_type = (*options)["snes_type"].withDefault("anderson");
+  std::string snes_type = (*options)["snes_type"].withDefault("newtonls");
   SNESSetType(snes, snes_type.c_str());
 
   // Set up the Jacobian
   bool matrix_free =
-      (*options)["matrix_free"].doc("Use matrix free Jacobian?").withDefault<bool>(true);
+      (*options)["matrix_free"].doc("Use matrix free Jacobian?").withDefault<bool>(false);
   if (matrix_free) {
     /*
       PETSc SNES matrix free Jacobian, using a different
@@ -430,7 +430,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
               for (int j = 0; j < n2d; j++) {
                 PetscInt col = ind2 + j;
 
-                // output.write("SETTING 1: {:d}, {:d}\n", row, col);
                 MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
               }
             }
@@ -450,7 +449,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
               // Depends on 2D fields
               for (int j = 0; j < n2d; j++) {
                 PetscInt col = ind0 + j;
-                // output.write("SETTING 2: {:d}, {:d}\n", row, col);
                 MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
               }
 
@@ -476,7 +474,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
                 // 3D fields on this cell
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
-                  // output.write("SETTING 3: {:d}, {:d}\n", row, col);
                   MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
                 }
               }
@@ -560,19 +557,19 @@ int SNESSolver::init(int nout, BoutReal tstep) {
     const int lag_jacobian =
         (*options)["lag_jacobian"]
             .doc("Re-use the Jacobian this number of SNES iterations")
-            .withDefault(4);
+            .withDefault(50);
     SNESSetLagJacobian(snes, lag_jacobian);
   }
 
   // Set tolerances
   BoutReal atol =
-      (*options)["atol"].doc("Absolute tolerance in SNES solve").withDefault(1e-16);
+      (*options)["atol"].doc("Absolute tolerance in SNES solve").withDefault(1e-12);
   BoutReal rtol =
-      (*options)["rtol"].doc("Relative tolerance in SNES solve").withDefault(1e-10);
+      (*options)["rtol"].doc("Relative tolerance in SNES solve").withDefault(1e-5);
 
   int maxits = (*options)["max_nonlinear_iterations"]
                    .doc("Maximum number of nonlinear iterations per SNES solve")
-                   .withDefault(50);
+                   .withDefault(20);
 
   upper_its = (*options)["upper_its"]
                   .doc("Iterations above which the next timestep is reduced")
@@ -664,6 +661,7 @@ int SNESSolver::run() {
     BoutReal target = simtime + out_timestep;
 
     bool looping = true;
+    int snes_failures = 0; // Count SNES convergence failures
     do {
       // Copy the state (snes_x) into initial values (x0)
       VecCopy(snes_x, x0);
@@ -694,6 +692,8 @@ int SNESSolver::run() {
       if (reason < 0) {
         // Diverged
 
+	++snes_failures;
+
         // Try a smaller timestep
         timestep /= 2.0;
         // Restore state
@@ -719,19 +719,28 @@ int SNESSolver::run() {
       }
 
       simtime += dt;
-      int its;
-      SNESGetIterationNumber(snes, &its);
+      int nl_its;
+      SNESGetIterationNumber(snes, &nl_its);
+
+      int lin_its;
+      SNESGetLinearSolveIterations(snes, &lin_its);
 
       if (diagnose) {
-        output.write("SNES time: {}, timestep: {}, iterations: {}\n", simtime, timestep,
-                     its);
+	std::cout << "\r"; // Carriage return for printing to screen
+        output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}", simtime, timestep,
+                     nl_its, lin_its);
+        if (snes_failures > 0) {
+	  output.write(", SNES failures: {}", snes_failures);
+	  snes_failures = 0;
+	}
+	output.write("\n");
       }
 
       if (looping) {
-        if (its <= lower_its) {
+        if (nl_its <= lower_its) {
           // Increase timestep slightly
           timestep *= 1.1;
-        } else if (its >= upper_its) {
+        } else if (nl_its >= upper_its) {
           // Reduce timestep slightly
           timestep *= 0.9;
         }
