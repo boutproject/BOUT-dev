@@ -100,7 +100,7 @@ mark_as_advanced(netCDF_CXX_LIBRARY)
 
 bout_inspect_netcdf_config(_ncxx4_version "${NCXX4_CONFIG}" "--version")
 if (_ncxx4_version)
-  string(REGEX REPLACE "netCDF-cxx4 \([0-9]+\.[0-9]+\.[0-9]+\)" "\\1" netCDFCxx_VERSION "${_ncxx4_version}")
+  string(REGEX REPLACE "netCDF-cxx4 \([0-9]+\\.[0-9]+\\.[0-9]+\)" "\\1" netCDFCxx_VERSION "${_ncxx4_version}")
   message(STATUS "Found netCDFCxx version ${netCDFCxx_VERSION}")
 else ()
   message(WARNING "Couldn't get NetCDF version")
