@@ -1421,49 +1421,57 @@ void IMEXBDF2::loopVars(BoutReal* u) {
 
       // Inner X
       if (mesh->firstX() && !mesh->periodicX) {
-        for (int jx = 0; jx < mesh->xstart; ++jx)
-          for (int jy = mesh->ystart; jy <= mesh->yend; ++jy)
+        for (int jx = 0; jx < mesh->xstart; ++jx) {
+          for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
             for (int jz = 0; jz < mesh->LocalNz; ++jz) {
               op.run(jx, jy, jz, u);
               ++u;
             }
+          }
+        }
       }
 
       // Outer X
       if (mesh->lastX() && !mesh->periodicX) {
-        for (int jx = mesh->xend + 1; jx < mesh->LocalNx; ++jx)
-          for (int jy = mesh->ystart; jy <= mesh->yend; ++jy)
+        for (int jx = mesh->xend + 1; jx < mesh->LocalNx; ++jx) {
+          for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
             for (int jz = 0; jz < mesh->LocalNz; ++jz) {
               op.run(jx, jy, jz, u);
               ++u;
             }
+          }
+        }
       }
       // Lower Y
       for (RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); ++xi) {
-        for (int jy = 0; jy < mesh->ystart; ++jy)
+        for (int jy = 0; jy < mesh->ystart; ++jy) {
           for (int jz = 0; jz < mesh->LocalNz; ++jz) {
             op.run(*xi, jy, jz, u);
             ++u;
           }
+        }
       }
 
       // Upper Y
       for (RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); ++xi) {
-        for (int jy = mesh->yend + 1; jy < mesh->LocalNy; ++jy)
+        for (int jy = mesh->yend + 1; jy < mesh->LocalNy; ++jy) {
           for (int jz = 0; jz < mesh->LocalNz; ++jz) {
             op.run(*xi, jy, jz, u);
             ++u;
           }
+        }
       }
     }
 
     // Bulk of points
-    for (int jx = mesh->xstart; jx <= mesh->xend; ++jx)
-      for (int jy = mesh->ystart; jy <= mesh->yend; ++jy)
+    for (int jx = mesh->xstart; jx <= mesh->xend; ++jx) {
+      for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
         for (int jz = 0; jz < mesh->LocalNz; ++jz) {
           op.run(jx, jy, jz, u);
           ++u;
         }
+      }
+    }
   }
 }
 
