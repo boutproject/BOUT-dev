@@ -757,7 +757,7 @@ int SNESSolver::run() {
       SNESGetLinearSolveIterations(snes, &lin_its);
 
       if (diagnose) {
-	std::cout << "\r"; // Carriage return for printing to screen
+	output.print("\r"); // Carriage return for printing to screen
         output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}", simtime, timestep,
                      nl_its, lin_its);
         if (snes_failures > 0) {
