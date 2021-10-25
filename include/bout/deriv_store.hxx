@@ -132,13 +132,13 @@ struct DerivativeStore {
   /// Register a function with standardFunc interface. Which map is used
   /// depends on the derivType input.
   void registerDerivative(standardFunc func, DERIV derivType, DIRECTION direction,
-                          STAGGER stagger, std::string methodName) {
+                          STAGGER stagger, std::string methodName, bool force=false) {
     AUTO_TRACE();
     const auto key = getKey(direction, stagger, methodName);
 
     switch (derivType) {
     case (DERIV::Standard):
-      if (standard.count(key) != 0) {
+      if (standard.count(key) != 0 and not force) {
         throw BoutException("Trying to override standard derivative : "
                             "direction %s, stagger %s, key %s",
                             toString(direction).c_str(),
@@ -147,7 +147,7 @@ struct DerivativeStore {
       standard[key] = func;
       break;
     case (DERIV::StandardSecond):
-      if (standardSecond.count(key) != 0) {
+      if (standardSecond.count(key) != 0 and not force) {
         throw BoutException("Trying to override standardSecond derivative : "
                             "direction %s, stagger %s, key %s",
                             toString(direction).c_str(),
@@ -156,7 +156,7 @@ struct DerivativeStore {
       standardSecond[key] = func;
       break;
     case (DERIV::StandardFourth):
-      if (standardFourth.count(key) != 0) {
+      if (standardFourth.count(key) != 0 and not force) {
         throw BoutException("Trying to override standardFourth derivative : "
                             "direction %s, stagger %s, key %s",
                             toString(direction).c_str(),
@@ -179,13 +179,13 @@ struct DerivativeStore {
   /// Register a function with upwindFunc/fluxFunc interface. Which map is used
   /// depends on the derivType input.
   void registerDerivative(upwindFunc func, DERIV derivType, DIRECTION direction,
-                          STAGGER stagger, std::string methodName) {
+                          STAGGER stagger, std::string methodName, bool force=false) {
     AUTO_TRACE();
     const auto key = getKey(direction, stagger, methodName);
 
     switch (derivType) {
     case (DERIV::Upwind):
-      if (upwind.count(key) != 0) {
+      if (upwind.count(key) != 0 and not force) {
         throw BoutException("Trying to override upwind derivative : "
                             "direction %s, stagger %s, key %s",
                             toString(direction).c_str(),
@@ -194,7 +194,7 @@ struct DerivativeStore {
       upwind[key] = func;
       break;
     case (DERIV::Flux):
-      if (flux.count(key) != 0) {
+      if (flux.count(key) != 0 and not force) {
         throw BoutException("Trying to override flux derivative : "
                             "direction %s, stagger %s, key %s",
                             toString(direction).c_str(),
@@ -216,17 +216,17 @@ struct DerivativeStore {
   /// Templated versions of the above registration routines.
   template <typename Direction, typename Stagger, typename Method>
   void registerDerivative(standardFunc func, Direction direction, Stagger stagger,
-                          Method method) {
+                          Method method, bool force=false) {
     AUTO_TRACE();
     registerDerivative(func, method.meta.derivType, direction.lookup(), stagger.lookup(),
-                       method.meta.key);
+                       method.meta.key, force);
   };
   template <typename Direction, typename Stagger, typename Method>
   void registerDerivative(upwindFunc func, Direction direction, Stagger stagger,
-                          Method method) {
+                          Method method, bool force=false) {
     AUTO_TRACE();
     registerDerivative(func, method.meta.derivType, direction.lookup(), stagger.lookup(),
-                       method.meta.key);
+                       method.meta.key, force);
   };
 
   /// Routines to return a specific differential operator. Note we
