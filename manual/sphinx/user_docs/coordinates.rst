@@ -6,9 +6,10 @@
 Field-aligned coordinates
 =========================
 
-:Author: B.Dudson§, M.V.Umansky, L.C.Wang, X.Q.Xu, L.L.LoDestro
-         §Department of Physics, University of York, UK
-         Lawrence Livermore National Laboratory, USA
+:Author: B.Dudson, John Omotani, M.V.Umansky, L.C.Wang, X.Q.Xu, L.L.LoDestro,
+         Department of Physics, University of York, UK;
+         Culham Centre for Fusion Energy, UKAEA, UK;
+         Lawrence Livermore National Laboratory, USA;
          IFTS, China
 
 Introduction
@@ -316,6 +317,96 @@ Note that `\texttt{zShift}` can be related to the integrated shear `I`:
 
    \begin{aligned}
    I = \int_{y_0}^y\frac{\partial\nu\left(x, y\right)}{\partial\psi}dy = \frac{\partial}{\partial x} \texttt{zShift}
+   \end{aligned}
+
+Transform back to Cartesian
+---------------------------
+
+Contravariant components of vectors, for example `\left(B^x, B^y,
+B^z\right)`, can be transformed back to cylindrical coordinates by
+first calculating the components of the poloidal magnetic field in the
+major radius (R) and height (Z) directions:
+
+.. math::
+
+   \begin{aligned}
+   B_Z &= -\frac{1}{R}\frac{\partial \psi}{\partial R} \qquad B_R = \frac{1}{R}\frac{\partial \psi}{\partial Z} \\
+   \nabla \psi &= \frac{\partial\psi}{\partial R}\nabla R + \frac{\partial \psi}{\partial Z}\nabla Z \\
+               &= -RB_Z\nabla R + RB_R \nabla Z
+   \end{aligned}
+
+If using an exising grid, the `B_R` and `B_Z` components can be found
+by calculating the tangent vector along the `x` direction, then using
+the fact that the poloidal field is perpendicular to that tangent
+vector.  Note: This needs additional care if the grid is
+non-orthogonal.
+
+Since the `\left(\psi, \theta, \zeta\right)` coordinate system is
+orthogonal, we can use
+
+.. math::
+
+   \begin{aligned}
+   {\boldsymbol{e}}_\psi &= g_{\psi\psi}\nabla\psi = \frac{1}{RB_{pol}^2}\left(B_R\hat{\boldsymbol{Z}} - B_Z\hat{\boldsymbol{R}}\right) \\
+   {\boldsymbol{e}}_\theta &= J_{\psi\theta\zeta}\nabla\theta\times\nabla\zeta \\
+                           &= \frac{h_\theta}{B_{pol}}\left(B_R \hat{\boldsymbol{R}} + B_Z\hat{\boldsymbol{Z}}\right) \\
+   {\boldsymbol{e}}_\zeta &= {\sigma_{B\text{pol}}}{\boldsymbol{e}}_\phi = {\sigma_{B\text{pol}}}R\hat{\boldsymbol{\phi}}
+   \end{aligned}
+
+where `\hat{\boldsymbol{R}}`, `\hat{\boldsymbol{Z}}` and
+`\hat{\boldsymbol{\phi}}` are unit vectors in the cylindrical
+coordinate system.
+
+Then we can write down the basis vectors in the field-aligned
+coordinates (equation :eq:`eq:basisvectors`), in terms of cylindrical
+coordinate unit vectors:
+
+.. math::
+   :label: eq:basisvectors_cyl
+
+   \begin{aligned}
+   {\boldsymbol{e}}_x &= \frac{\sigma_{B\text{pol}}}{RB_{pol}^2}\left(B_R\hat{\boldsymbol{Z}} - B_Z\hat{\boldsymbol{R}}\right) + I{\sigma_{B\text{pol}}}R\hat{\boldsymbol{\phi}} \\
+   {\boldsymbol{e}}_y &= \frac{h_\theta}{B_{pol}}\left(B_R \hat{\boldsymbol{R}} + B_Z\hat{\boldsymbol{Z}}\right) + \nu R\hat{\boldsymbol{\phi}} \\
+   {\boldsymbol{e}}_z &= {\sigma_{B\text{pol}}}R\hat{\boldsymbol{\phi}}
+   \end{aligned}
+
+A vector, for example the magnetic field, can be written in
+field-aligned coordinates in terms of its contravariant components:
+
+.. math::
+
+   \begin{aligned}
+   {\boldsymbol{B}} &= B^x{\boldsymbol{e}}_x + B^y{\boldsymbol{e}}_y + B^z{\boldsymbol{e}}_z
+   \end{aligned}
+
+Substitituting in the expressions for the basis vectors in equation :eq:`eq:basisvectors_cyl`, and
+collecting terms, we get:
+
+.. math::
+
+   \begin{aligned}
+   \left(%
+   \begin{array}{c}
+   B_{\hat{R}} \\
+   B_{\hat{Z}} \\
+   B_{\hat{\phi}}
+   \end{array}
+   %
+   \right) = \left(%
+   \begin{array}{ccc}
+   -\frac{\sigma_{B\text{pol}}}{RB_{pol}^2}B_Z & \frac{h_\theta}{B_{pol}}B_R & 0 \\
+   \frac{\sigma_{B\text{pol}}}{RB_{pol}^2}B_R & \frac{h_\theta}{B_{pol}}B_Z & 0 \\
+   I{\sigma_{B\text{pol}}}R & \nu R & {\sigma_{B\text{pol}}} R
+   \end{array}
+   %
+   \right) \left(%
+   \begin{array}{c}
+   B^x \\
+   B^y \\
+   B^z
+   \end{array}
+   %
+   \right)
    \end{aligned}
 
 
