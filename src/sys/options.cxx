@@ -436,41 +436,38 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
 
     return Field3D(stored_value);
   }
-  
-  try {
+
+  if (bout::utils::holds_alternative<BoutReal>(value)) {
     BoutReal scalar_value = bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
     
     // Get metadata from similar_to, fill field with scalar_value
     return filledFrom(similar_to, scalar_value);
-  } catch (const std::bad_cast&) {
-    
-    // Convert from a string using FieldFactory
-    if (bout::utils::holds_alternative<std::string>(value)) {
-      return FieldFactory::get()->create3D(bout::utils::get<std::string>(value), this,
-                                           similar_to.getMesh(),
-                                           similar_to.getLocation());
-    } else if (bout::utils::holds_alternative<Tensor<BoutReal>>(value)) {
-      auto localmesh = similar_to.getMesh();
-      if (!localmesh) {
-        throw BoutException("mesh must be supplied when converting Tensor to Field3D");
-      }
-
-      // Get a reference, to try and avoid copying
-      const auto& tensor = bout::utils::get<Tensor<BoutReal>>(value);
-      
-      // Check if the dimension sizes are the same as a Field3D
-      if (tensor.shape() == std::make_tuple(localmesh->LocalNx,
-                                            localmesh->LocalNy,
-                                            localmesh->LocalNz)) {
-        return Field3D(tensor.getData(), localmesh, similar_to.getLocation(),
-                       {similar_to.getDirectionY(), similar_to.getDirectionZ()});
-      }
-      // If dimension sizes not the same, may be able
-      // to select a region from it using Mesh e.g. if this
-      // is from the input grid file.
-
-    }
   }
+
+  // Convert from a string using FieldFactory
+  if (bout::utils::holds_alternative<std::string>(value)) {
+    return FieldFactory::get()->create3D(bout::utils::get<std::string>(value), this,
+                                         similar_to.getMesh(), similar_to.getLocation());
+  } else if (bout::utils::holds_alternative<Tensor<BoutReal>>(value)) {
+    auto localmesh = similar_to.getMesh();
+    if (!localmesh) {
+      throw BoutException("mesh must be supplied when converting Tensor to Field3D");
+    }
+
+    // Get a reference, to try and avoid copying
+    const auto& tensor = bout::utils::get<Tensor<BoutReal>>(value);
+
+    // Check if the dimension sizes are the same as a Field3D
+    if (tensor.shape()
+        == std::make_tuple(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz)) {
+      return Field3D(tensor.getData(), localmesh, similar_to.getLocation(),
+                     {similar_to.getDirectionY(), similar_to.getDirectionZ()});
+    }
+    // If dimension sizes not the same, may be able
+    // to select a region from it using Mesh e.g. if this
+    // is from the input grid file.
+  }
+
   throw BoutException(_("Value for option {:s} cannot be converted to a Field3D"),
                       full_name);
 }
