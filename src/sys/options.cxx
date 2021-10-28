@@ -437,7 +437,8 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
     return Field3D(stored_value);
   }
 
-  if (bout::utils::holds_alternative<BoutReal>(value)) {
+  if (bout::utils::holds_alternative<BoutReal>(value)
+      or bout::utils::holds_alternative<int>(value)) {
     BoutReal scalar_value = bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
     
     // Get metadata from similar_to, fill field with scalar_value
@@ -490,7 +491,8 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
     return stored_value;
   }
 
-  if (bout::utils::holds_alternative<BoutReal>(value)) {
+  if (bout::utils::holds_alternative<BoutReal>(value)
+      or bout::utils::holds_alternative<int>(value)) {
     BoutReal scalar_value = bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
     // Get metadata from similar_to, fill field with scalar_value
@@ -540,8 +542,8 @@ FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
     return stored_value;
   }
 
-  if (bout::utils::holds_alternative<BoutReal>(value)) {
-
+  if (bout::utils::holds_alternative<BoutReal>(value)
+      or bout::utils::holds_alternative<int>(value)) {
     BoutReal scalar_value =
         bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
