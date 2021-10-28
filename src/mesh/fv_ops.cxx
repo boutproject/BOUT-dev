@@ -137,86 +137,65 @@ namespace FV {
 
     // Y flux
 
-    for (int i = mesh->xstart; i <= mesh->xend; i++) {
-      for (int j = mesh->ystart; j <= mesh->yend; j++) {
-        for (int k = 0; k < mesh->LocalNz; k++) {
-          // Calculate flux between j and j+1
-          int kp = (k + 1) % mesh->LocalNz;
-          int km = (k - 1 + mesh->LocalNz) % mesh->LocalNz;
+    BOUT_FOR(i, yzresult.getRegion("RGN_NOBNDRY")) {
+      auto ikp = i.zp();
+      auto ikm = i.zm();
 
-          BoutReal coef =
-              0.5
-              * (g_23c(i, j, k) / SQ(Jc(i, j, k) * Bxyc(i, j, k))
-                 + g_23up(i, j + 1, k) / SQ(Jup(i, j + 1, k) * Bxyup(i, j + 1, k)));
+      BoutReal coef = 0.5
+                      * (g_23c[i] / SQ(Jc[i] * Bxyc[i])
+                         + g_23up[i.yp()] / SQ(Jup[i.yp()] * Bxyup[i.yp()]));
 
-          // Calculate Z derivative at y boundary
-          BoutReal dfdz =
-              0.5 * (fc(i, j, kp) - fc(i, j, km) + fup(i, j + 1, kp) - fup(i, j + 1, km))
-              / (dzc(i, j, k) + dzup(i, j + 1, k));
+      // Calculate Z derivative at y boundary
+      BoutReal dfdz = 0.5 * (fc[ikp] - fc[ikm] + fup[ikp.yp()] - fup[ikm.yp()])
+                      / (dzc[i] + dzup[i.yp()]);
 
-          // Y derivative
-          BoutReal dfdy =
-              2. * (fup(i, j + 1, k) - fc(i, j, k)) / (dyup(i, j + 1, k) + dyc(i, j, k));
+      // Y derivative
+      BoutReal dfdy = 2. * (fup[i.yp()] - fc[i]) / (dyup[i.yp()] + dyc[i]);
 
-          BoutReal fout =
-              0.25 * (ac(i, j, k) + aup(i, j + 1, k))
-              * (Jc(i, j, k) * g23c(i, j, k) + Jup(i, j + 1, k) * g23up(i, j + 1, k))
-              * (dfdz - coef * dfdy);
+      BoutReal fout = 0.25 * (ac[i] + aup[i.yp()])
+                      * (Jc[i] * g23c[i] + Jup[i.yp()] * g23up[i.yp()])
+                      * (dfdz - coef * dfdy);
 
-          yzresult(i, j, k) = fout / (dyc(i, j, k) * Jc(i, j, k));
+      yzresult[i] = fout / (dyc[i] * Jc[i]);
 
-          // Calculate flux between j and j-1
-	  coef =
-              0.5
-              * (g_23c(i, j, k) / SQ(Jc(i, j, k) * Bxyc(i, j, k))
-                 + g_23down(i, j - 1, k) / SQ(Jdown(i, j - 1, k) * Bxydown(i, j - 1, k)));
+      // Calculate flux between j and j-1
+      coef = 0.5
+             * (g_23c[i] / SQ(Jc[i] * Bxyc[i])
+                + g_23down[i.ym()] / SQ(Jdown[i.ym()] * Bxydown[i.ym()]));
 
-          dfdz =
-              0.5
-              * (fc(i, j, kp) - fc(i, j, km) + fdown(i, j - 1, kp) - fdown(i, j - 1, km))
-              / (dzc(i, j, k) + dzdown(i, j - 1, k));
+      dfdz = 0.5 * (fc[ikp] - fc[ikm] + fdown[ikp.ym()] - fdown[ikm.ym()])
+             / (dzc[i] + dzdown[i.ym()]);
 
-          dfdy = 2. * (fc(i, j, k) - fdown(i, j - 1, k))
-                 / (dyc(i, j, k) + dydown(i, j - 1, k));
+      dfdy = 2. * (fc[i] - fdown[i.ym()]) / (dyc[i] + dydown[i.ym()]);
 
-          fout =
-              0.25 * (ac(i, j, k) + adown(i, j - 1, k))
-              * (Jc(i, j, k) * g23c(i, j, k) + Jdown(i, j - 1, k) * g23down(i, j - 1, k))
-              * (dfdz - coef * dfdy);
+      fout = 0.25 * (ac[i] + adown[i.ym()])
+             * (Jc[i] * g23c[i] + Jdown[i.ym()] * g23down[i.ym()]) * (dfdz - coef * dfdy);
 
-          yzresult(i, j, k) -= fout / (dyc(i, j, k) * Jc(i, j, k));
-        }
-      }
+      yzresult[i] -= fout / (dyc[i] * Jc[i]);
     }
 
     // Z flux
 
-    for (int i = mesh->xstart; i <= mesh->xend; i++) {
-      for (int j = mesh->ystart; j <= mesh->yend; j++) {
-        for (int k = 0; k < mesh->LocalNz; k++) {
-          // Calculate flux between k and k+1
-          int kp = (k + 1) % mesh->LocalNz;
+    BOUT_FOR(i, yzresult.getRegion("RGN_NOBNDRY")) {
+      // Calculate flux between k and k+1
+      auto ikp = i.zp();
 
-          // Coefficient in front of df/dy term
-          BoutReal coef = g_23c(i, j, k)
-                          / (dyup(i, j + 1, k) + 2. * dyc(i, j, k) + dydown(i, j - 1, k))
-                          / SQ(Jc(i, j, k) * Bxyc(i, j, k));
+      // Coefficient in front of df/dy term
+      BoutReal coef =
+          g_23c[i] / (dyup[i.yp()] + 2. * dyc[i] + dydown[i.ym()]) / SQ(Jc[i] * Bxyc[i]);
 
-          BoutReal fout =
-              0.25 * (ac(i, j, k) + ac(i, j, kp))
-              * (Jc(i, j, k) * coord->g33(i, j, k) + Jc(i, j, kp) * coord->g33(i, j, kp))
-              * ( // df/dz
-                  (fc(i, j, kp) - fc(i, j, k)) / dzc(i, j, k)
-                  // - g_yz * df/dy / SQ(J*B)
-                  - coef
-                        * (fup(i, j + 1, k) + fup(i, j + 1, kp) - fdown(i, j - 1, k)
-                           - fdown(i, j - 1, kp)));
+      BoutReal fout =
+          0.25 * (ac[i] + ac(i, j, kp))
+          * (Jc[i] * coord->g33[i] + Jc[ikp] * coord->g33[ikp])
+          * ( // df/dz
+              (fc[ikp] - fc[i]) / dzc[i]
+              // - g_yz * df/dy / SQ(J*B)
+              - coef * (fup[i.yp()] + fup[ikp.yp()] - fdown[i.ym()] - fdown[ikp.ym()]));
 
-          yzresult(i, j, k) += fout / (Jc(i, j, k) * dzc(i, j, k));
-          yzresult(i, j, kp) -= fout / (Jc(i, j, kp) * dzc(i, j, kp));
-        }
-      }
+      yzresult[i] += fout / (Jc[i] * dzc[i]);
+      yzresult[ikp] -= fout / (Jc[ikp] * dzc[ikp]);
     }
+
     // Check if we need to transform back
     if (f.hasParallelSlices() && a.hasParallelSlices()) {
       result += yzresult;
