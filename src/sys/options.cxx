@@ -450,8 +450,8 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
                                          similar_to.getMesh(), similar_to.getLocation());
   }
   if (bout::utils::holds_alternative<Tensor<BoutReal>>(value)) {
-    auto localmesh = similar_to.getMesh();
-    if (!localmesh) {
+    auto* localmesh = similar_to.getMesh();
+    if (localmesh != nullptr) {
       throw BoutException("mesh must be supplied when converting Tensor to Field3D");
     }
 
@@ -503,8 +503,8 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
                                          similar_to.getMesh(), similar_to.getLocation());
   }
   if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
-    auto localmesh = similar_to.getMesh();
-    if (!localmesh) {
+    auto* localmesh = similar_to.getMesh();
+    if (localmesh != nullptr) {
       throw BoutException("mesh must be supplied when converting Matrix to Field2D");
     }
 
@@ -558,8 +558,8 @@ FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
                                            similar_to.getMesh(), location);
   }
   if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
-    auto localmesh = similar_to.getMesh();
-    if (!localmesh) {
+    auto* localmesh = similar_to.getMesh();
+    if (localmesh != nullptr) {
       throw BoutException("mesh must be supplied when converting Matrix to FieldPerp");
     }
 
