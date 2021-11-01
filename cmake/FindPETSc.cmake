@@ -111,7 +111,7 @@ if (PETSC_DIR AND NOT PETSC_ARCH)
     if (NOT PETSC_ARCH)
       find_path (petscconf petscconf.h
         HINTS ${PETSC_DIR}
-        PATH_SUFFIXES ${arch}/include bmake/${arch} 
+        PATH_SUFFIXES ${arch}/include bmake/${arch}
         NO_DEFAULT_PATH)
       if (petscconf)
         set (PETSC_ARCH "${arch}" CACHE STRING "PETSc build architecture")
