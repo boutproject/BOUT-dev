@@ -59,7 +59,7 @@ if [ "$pkg" == "BOUT-dev" ]; then
           -DCMAKE_CXX_STANDARD=17 \
           -DCMAKE_C_COMPILER=$cc \
           -DCMAKE_INSTALL_PREFIX=$install_dir \
-          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CXX_FLAGS="-w " \
           -DCMAKE_CUDA_FLAGS="-w " \
           -DBOUT_USE_NETCDF=On \

@@ -16,6 +16,7 @@ namespace {
 CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
   ASSERT0(coords != nullptr);
 
+  //printf("CoordinatesAccessor::CoordinatesAccessor: %p\n",coords);
   // Size of the mesh in Z. Used to convert 3D -> 2D index
   Mesh* mesh = coords->dx.getMesh();
   mesh_nz = mesh->LocalNz;
@@ -71,8 +72,8 @@ std::size_t CoordinatesAccessor::clear(const Coordinates* coords) {
     std::size_t num_removed = coords_store.size();
     coords_store.clear();
     return num_removed;
+  } else {
+    // Coordinates specified, so only remove one
+    return coords_store.erase(coords);
   }
-
-  // Coordinates specified, so only remove one
-  return coords_store.erase(coords);
 }

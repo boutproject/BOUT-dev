@@ -55,6 +55,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/version.hxx"
 #include "fmt/format.h"
 #include "bout++-time.hxx"
+#include "bout/coordinates_accessor.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -732,6 +733,8 @@ int BoutFinalise(bool write_settings) {
 
   // Cleanup boundary factory
   BoundaryFactory::cleanup();
+
+  CoordinatesAccessor::clear(NULL);
 
   // Cleanup timer
   Timer::cleanup();
