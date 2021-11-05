@@ -733,6 +733,7 @@ int SNESSolver::run() {
           // Locked for write
           output.write("WARNING: snes_x locked for writing\n");
         }
+        looping = true;
         continue; // Try again
       }
 
