@@ -351,41 +351,45 @@ PETSc's SNES solvers to solve the nonlinear system at each timestep,
 and adjusts the internal timestep to keep the number of SNES
 iterations within a given range.
 
-+---------------------------+-----------+----------------------------------------------------+
-| Option                    | Default   |Description                                         |
-+===========================+===========+====================================================+
-| snes_type                 | newtonls  | PETSc SNES nonlinear solver (try anderson, qn)     |
-+---------------------------+-----------+----------------------------------------------------+
-| max_nonlinear_iterations  | 20        | If exceeded, solve restarts with timestep / 2      |
-+---------------------------+-----------+----------------------------------------------------+
-| maxl                      | 20        | Maximum number of linear iterations                |
-+---------------------------+-----------+----------------------------------------------------+
-| atol                      | 1e-12     | Absolute tolerance of SNES solve                   |
-+---------------------------+-----------+----------------------------------------------------+
-| rtol                      | 1e-5      | Relative tolerance of SNES solve                   |
-+---------------------------+-----------+----------------------------------------------------+
-| upper_its                 | 80% max   | If exceeded, next timestep reduced by 10%          |
-+---------------------------+-----------+----------------------------------------------------+
-| lower_its                 | 50% max   | If under this, next timestep increased by 10%      |
-+---------------------------+-----------+----------------------------------------------------+
-| timestep                  | 1         | Initial timestep                                   |
-+---------------------------+-----------+----------------------------------------------------+
-| predictor                 | true      | Use linear predictor?                              |
-+---------------------------+-----------+----------------------------------------------------+
-| matrix_free               | false     | Use matrix free Jacobian-vector product?           |
-+---------------------------+-----------+----------------------------------------------------+
-| use_coloring              | true      | If `matrix_free=false`, use coloring to speed up   |
-|                           |           | calculation of the Jacobian elements.              |
-+---------------------------+-----------+----------------------------------------------------+
-| lag_jacobian              | 50        | Re-use the Jacobian for successive inner solves    |
-+---------------------------+-----------+----------------------------------------------------+
-| kspsetinitialguessnonzero | false     | If true, Use previous solution as KSP initial      |
-+---------------------------+-----------+----------------------------------------------------+
-| use_precon                | false     | Use user-supplied preconditioner?                  |
-|                           |           | If false, the default PETSc preconditioner is used |
-+---------------------------+-----------+----------------------------------------------------+
-| diagnose                  | false     | Print diagnostic information every iteration       |
-+---------------------------+-----------+----------------------------------------------------+
++---------------------------+---------------+----------------------------------------------------+
+| Option                    | Default       |Description                                         |
++===========================+===============+====================================================+
+| snes_type                 | newtonls      | PETSc SNES nonlinear solver (try anderson, qn)     |
++---------------------------+---------------+----------------------------------------------------+
+| ksp_type                  | gmres         | PETSc KSP linear solver
++---------------------------+---------------+----------------------------------------------------+
+| pc_type                   | ilu / bjacobi | PETSc PC preconditioner                            |
++---------------------------+---------------+----------------------------------------------------+
+| max_nonlinear_iterations  | 20            | If exceeded, solve restarts with timestep / 2      |
++---------------------------+---------------+----------------------------------------------------+
+| maxl                      | 20            | Maximum number of linear iterations                |
++---------------------------+---------------+----------------------------------------------------+
+| atol                      | 1e-12         | Absolute tolerance of SNES solve                   |
++---------------------------+---------------+----------------------------------------------------+
+| rtol                      | 1e-5          | Relative tolerance of SNES solve                   |
++---------------------------+---------------+----------------------------------------------------+
+| upper_its                 | 80% max       | If exceeded, next timestep reduced by 10%          |
++---------------------------+---------------+----------------------------------------------------+
+| lower_its                 | 50% max       | If under this, next timestep increased by 10%      |
++---------------------------+---------------+----------------------------------------------------+
+| timestep                  | 1             | Initial timestep                                   |
++---------------------------+---------------+----------------------------------------------------+
+| predictor                 | true          | Use linear predictor?                              |
++---------------------------+---------------+----------------------------------------------------+
+| matrix_free               | false         | Use matrix free Jacobian-vector product?           |
++---------------------------+---------------+----------------------------------------------------+
+| use_coloring              | true          | If `matrix_free=false`, use coloring to speed up   |
+|                           |               | calculation of the Jacobian elements.              |
++---------------------------+---------------+----------------------------------------------------+
+| lag_jacobian              | 50            | Re-use the Jacobian for successive inner solves    |
++---------------------------+---------------+----------------------------------------------------+
+| kspsetinitialguessnonzero | false         | If true, Use previous solution as KSP initial      |
++---------------------------+---------------+----------------------------------------------------+
+| use_precon                | false         | Use user-supplied preconditioner?                  |
+|                           |               | If false, the default PETSc preconditioner is used |
++---------------------------+---------------+----------------------------------------------------+
+| diagnose                  | false         | Print diagnostic information every iteration       |
++---------------------------+---------------+----------------------------------------------------+
 
 The predictor is linear extrapolation from the last two timesteps. It seems to be
 effective, but can be disabled by setting ``predictor = false``.

@@ -590,11 +590,18 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   SNESSetTolerances(snes, atol, rtol, PETSC_DEFAULT, maxits, PETSC_DEFAULT);
 
   bool use_precon =
-      (*options)["use_precon"].doc("Use preconditioner?").withDefault<bool>(false);
+      (*options)["use_precon"].doc("Use user-supplied preconditioner?").withDefault<bool>(false);
 
   // Get KSP context from SNES
   KSP ksp;
   SNESGetKSP(snes, &ksp);
+
+  std::string ksp_type = (*options)["ksp_type"]
+    .doc("Linear solver type. By default let PETSc decide (gmres)")
+    .withDefault("default");
+  if (ksp_type != "default") {
+    KSPSetType(ksp, ksp_type.c_str());
+  }
 
   bool kspsetinitialguessnonzero = (*options)["kspsetinitialguessnonzero"]
                                        .doc("Set the initial guess to be non-zero")
@@ -627,7 +634,17 @@ int SNESSolver::init(int nout, BoutReal tstep) {
     // Context used to supply object pointer
     PCShellSetContext(pc, this);
   } else if (matrix_free) {
+    // Can't use preconditioner because no Jacobian matrix available
     PCSetType(pc, PCNONE);
+  } else {
+    // Set PC type from input
+    std::string pc_type = (*options)["pc_type"]
+      .doc("Preconditioner type. By default lets PETSc decide (ilu or bjacobi)")
+      .withDefault("default");
+
+    if (pc_type != "default") {
+      PCSetType(pc, pc_type.c_str());
+    }
   }
 
   // Get runtime options
