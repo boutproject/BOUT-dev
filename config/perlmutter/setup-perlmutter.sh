@@ -24,20 +24,16 @@ libraryadd() {
     }
 
 module purge
-source /opt/cray/pe/cpe/21.09/restore_lmod_system_defaults.sh
+source /opt/cray/pe/cpe/21.10/restore_lmod_system_defaults.sh
 module load craype-x86-rome
-module load libfabric/1.11.0.4.79
+module load libfabric
 module load craype-network-ofi
-module load perftools-base/21.09.0
 module load xpmem/2.2.40-7.0.1.0_3.1__g1d7a24d.shasta
-module load cray-dsmml/0.2.1
 module load cray-libsci/21.08.1.2
 module load PrgEnv-gnu
 module load cpe-cuda
 module load cuda/11.1.1
-module load cray-pmi/6.0.13
-module load cray-pmi-lib/6.0.13
-module load cray-mpich/8.1.9
+module load cray-mpich
 module load xalt/2.10.2
 module load darshan/3.2.1  
 module load python/3.8-anaconda-2020.11
@@ -55,7 +51,7 @@ modulepathadd "$pp"
 #echo $pp
 module refresh
 
-pathadd /opt/cray/pe/mpich/8.1.9/ofi/gnu/9.1/bin/
+pathadd /opt/cray/pe/mpich/8.1.10/ofi/gnu/9.1/bin/
 
 module load cmake-3.20.5-gcc-9.3.0-6oxlyfa
 module load metis-5.1.0-gcc-9.3.0-ozqdhv3
@@ -66,6 +62,7 @@ module load umpire-6.0.0-gcc-9.3.0-wsaedkc
 module load sundials-5.8.0-gcc-9.3.0-jqainc7
 module load netcdf-c-4.8.1-gcc-9.3.0-yx3q7wo
 module load netcdf-cxx4-4.3.1-gcc-9.3.0-howgwk7
+module load superlu-dist-6.4.0-gcc-9.3.0-qgrx3gd
 
 alias sxd='salloc -C gpu -N 1 -t 60 -A mp2_g'
 
