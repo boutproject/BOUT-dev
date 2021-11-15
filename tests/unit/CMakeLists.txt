@@ -1,4 +1,9 @@
 bout_update_submodules()
+
+# disable gtest pthreads for proper execution of Death tests (on some platforms)
+add_definitions(-DGTEST_HAS_PTHREAD=0)
+set(gtest_disable_pthreads ON CACHE BOOL "" FORCE)
+
 add_subdirectory("${PROJECT_SOURCE_DIR}/externalpackages/googletest"
   "externalpackages/googletest")
 
@@ -6,9 +11,6 @@ if(NOT TARGET gtest)
   message(FATAL_ERROR "googletest not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
 endif()
 
-# disable gtest pthreads for proper execution of Death tests (on some platforms)
-add_definitions(-DGTEST_HAS_PTHREAD=0)
-set(gtest_disable_pthreads ON)
 mark_as_advanced(
   BUILD_GMOCK BUILD_GTEST BUILD_SHARED_LIBS
   gmock_build_tests gtest_build_samples gtest_build_tests
