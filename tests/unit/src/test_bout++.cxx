@@ -363,7 +363,7 @@ public:
 
 using SignalHandlerTestDeathTest = SignalHandlerTest;
 
-#if 0
+#if !defined(__NVCC__)
 TEST_F(SignalHandlerTestDeathTest, SegFault) {
   bout::experimental::setupSignalHandler(bout::experimental::defaultSignalHandler);
   // This test is *incredibly* expensive, maybe as much as 1s, so only test the one signal

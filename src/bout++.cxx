@@ -734,7 +734,7 @@ int BoutFinalise(bool write_settings) {
   // Cleanup boundary factory
   BoundaryFactory::cleanup();
 
-  CoordinatesAccessor::clear(NULL);
+  CoordinatesAccessor::clear();
 
   // Cleanup timer
   Timer::cleanup();
