@@ -39,7 +39,7 @@ const Field2D InvertPar::solve(const Field2D &f) {
 
 // DO NOT REMOVE: ensures linker keeps all symbols in this TU
 void InvertParFactory::ensureRegistered() {}
-#if 0 // until we reconcile multiple defintion errors under nvcc 
+#if !defined(__NVCC__) // until we reconcile multiple definition errors under nvcc
 constexpr decltype(InvertParFactory::type_name) InvertParFactory::type_name;
 constexpr decltype(InvertParFactory::section_name) InvertParFactory::section_name;
 constexpr decltype(InvertParFactory::option_name) InvertParFactory::option_name;
