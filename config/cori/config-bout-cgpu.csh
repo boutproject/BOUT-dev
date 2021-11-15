@@ -6,7 +6,7 @@ set scratch_dir = `pwd`
 set build_prefix = ${scratch_dir}/build/${arch}-${compiler}/
 set install_prefix = ${scratch_dir}/install/${arch}-${compiler}/
 set source_prefix = ${scratch_dir}/
-set tpl_prefix = /global/project/projectdirs/bout/BOUT-GPU/tpl/
+set tpl_prefix = /global/project/projectdirs/bout/BOUT-GPU/tpl_11h/
 set tpl_install_prefix = ${tpl_prefix}/install/${arch}-${compiler}/
 set module_prefix = /global/project/projectdirs/bout/BOUT-GPU/spack/opt/spack/cray-cnl7-skylake_avx512/gcc-8.3.0_cgpu/
 

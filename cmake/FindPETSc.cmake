@@ -260,7 +260,9 @@ show :
   endif ()
 
   include(Check${PETSC_LANGUAGE_BINDINGS}SourceRuns)
+
   macro (PETSC_TEST_RUNS includes libraries runs)
+    message(STATUS "PETSc test with : ${includes} ${libraries}" )
     if (PETSC_VERSION VERSION_GREATER 3.1)
       set (_PETSC_TSDestroy "TSDestroy(&ts)")
     else ()

@@ -94,7 +94,22 @@ TYPED_TEST(HypreVectorTest, Assemble) {
 
   auto raw_vector = vector.get();
   HYPRE_Complex actual{-1.};
+
+  // HYPRE_IJVectorGetValues when using CUDA requires indices and values use device compatible memory
+#if BOUT_USE_CUDA && defined(__CUDACC__)
+  HYPRE_BigInt *um_i;
+  HYPRE_Complex *um_actual;
+  cudaMallocManaged(&um_i,sizeof(HYPRE_BigInt));
+  cudaMallocManaged(&um_actual,sizeof(HYPRE_Complex));
+  *um_i = i;
+  *um_actual = actual;
+  auto status = HYPRE_IJVectorGetValues(raw_vector, 1, um_i, um_actual);
+  actual = *um_actual;
+  cudaFree(um_i);
+  cudaFree(um_actual);
+#else
   auto status = HYPRE_IJVectorGetValues(raw_vector, 1, &i, &actual);
+#endif
 
   if (status != 0) {
     // Not clearing the (global) error will break future calls!

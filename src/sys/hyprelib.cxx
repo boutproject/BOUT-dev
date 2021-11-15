@@ -32,7 +32,7 @@ HypreLib::HypreLib() {
   }
 }
 
-Hyprelib(const Hyprelib &other) noexcept {
+HypreLib::HypreLib(const HypreLib &other) noexcept {
   BOUT_OMP(critical(HypreLib))
   {
     // No need to initialise Hypre, because it must already be initialised
@@ -40,13 +40,14 @@ Hyprelib(const Hyprelib &other) noexcept {
   }
 }
 
-Hyprelib(Hyprelib &&other) noexcept {
+HypreLib::HypreLib(HypreLib &&other) noexcept {
   BOUT_OMP(critical(HypreLib))
   {
     // No need to initialise Hypre, because it must already be initialised
     count++; // Creating a new Hyprelib object; other will be deleted
   }
 }
+
 
 HypreLib::~HypreLib() {
   BOUT_OMP(critical(HypreLib))

@@ -29,7 +29,7 @@
 BOUT_ENUM_CLASS(HYPRE_SOLVER_TYPE, gmres, bicgstab, pcg);
 
 namespace bout {
-#if BOUT_USE_CUDA // HYPRE with Cuda enabled
+#if BOUT_USE_CUDA && defined(__CUDACC__)// HYPRE with Cuda enabled
 #define HypreMalloc(P, SIZE) cudaMallocManaged(&P, SIZE)
 #define HypreFree(P) cudaFree(P)
 #else

@@ -36,6 +36,9 @@ unset CRAY_SITE_LIST_DIR
 # and with hypre
 module load petsc-3.13.0-gcc-8.3.0_cgpu-ihyubgk
 
+# The following so PETSc tests can always find PETSc lib when linking
+setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${PETSC_DIR}/lib"
+
 module load netcdf-cxx4-4.3.1-gcc-8.3.0_cgpu-ptxvbr5
 module load netcdf-c-4.7.4-gcc-8.3.0_cgpu-hpuuuxa
 module load hdf5-1.10.6-gcc-8.3.0_cgpu-twbl2eg

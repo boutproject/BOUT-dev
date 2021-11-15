@@ -72,7 +72,6 @@ std::size_t CoordinatesAccessor::clear(const Coordinates* coords) {
     coords_store.clear();
     return num_removed;
   }
-
   // Coordinates specified, so only remove one
   return coords_store.erase(coords);
 }

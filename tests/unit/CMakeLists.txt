@@ -1,4 +1,9 @@
 bout_update_submodules()
+
+# disable gtest pthreads for proper execution of Death tests (on some platforms)
+add_definitions(-DGTEST_HAS_PTHREAD=0)
+set(gtest_disable_pthreads ON CACHE BOOL "" FORCE)
+
 add_subdirectory("${PROJECT_SOURCE_DIR}/externalpackages/googletest"
   "externalpackages/googletest")
 
