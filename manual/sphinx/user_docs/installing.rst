@@ -352,6 +352,16 @@ it's wise to delete the ``CMakeCache.txt`` file in the build
 directory. The equivalent of ``make distclean`` with CMake is to just
 delete the entire build directory and reconfigure.
 
+If you need to debug a CMake build, you can see the compile and link commands
+which are being issued by adding `VERBOSE=1` to the make command i.e. in the build
+directory running::
+
+  $ make VERBOSE=1
+
+If building by running CMake then the ``-v`` flag also works. For example::
+
+  $ cmake --build . -v
+
 Downloading Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

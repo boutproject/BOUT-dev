@@ -393,7 +393,7 @@ set_target_properties(bout++ PROPERTIES
 # Set some variables for the bout-config script
 set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
 set(BOUT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include")
+set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS}")
 
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
@@ -501,7 +501,7 @@ option(BOUT_ENABLE_BACKTRACE "Enable backtrace" ON)
 if (BOUT_ENABLE_BACKTRACE)
   find_program(ADDR2LINE_FOUND addr2line)
   if (NOT ADDR2LINE_FOUND)
-    message(FATAL_ERROR "addr2line not found")
+    message(FATAL_ERROR "addr2line not found. Disable backtrace by setting BOUT_ENABLE_BACKTRACE=Off")
   endif()
   target_link_libraries(bout++ PUBLIC ${CMAKE_DL_LIBS})
   set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -l${CMAKE_DL_LIBS}")
@@ -583,7 +583,7 @@ string(COMPARE EQUAL
   PROJECT_IS_TOP_LEVEL
 )
 option(BOUT_TESTS "Build the tests" ${PROJECT_IS_TOP_LEVEL})
-option(BOUT_RUN_ALL_TESTS "Run all of the tests (this can be slow!)" OFF)
+option(BOUT_ENABLE_ALL_TESTS "Enable running all of the tests, rather then the standard selection of fast tests" OFF)
 if(BOUT_TESTS)
   enable_testing()
   # Targets for just building the tests
@@ -618,22 +618,10 @@ if(BOUT_TESTS)
   add_dependencies(check check-unit-tests check-integrated-tests check-mms-tests)
 endif()
 
-##################################################
-# Examples
-
-option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
+option(BOUT_BUILD_EXAMPLES "Build the examples" ON)
 if(BOUT_BUILD_EXAMPLES)
-  add_subdirectory(examples)
-else()
-  # Only build some examples (for testing)
-  add_subdirectory(examples/laplacexy/simple)
-  add_subdirectory(examples/hasegawa-wakatani-3d)
-  add_subdirectory(examples/elm-pb)
-  add_subdirectory(examples/elm-pb-outerloop)
-
-  if(BOUT_HAS_HYPRE)
-   add_subdirectory(examples/laplacexy/simple-hypre)
-  endif ()
+  add_custom_target(build-all-examples)
+  add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
 ##################################################
@@ -670,7 +658,7 @@ set(BOUT_HAS_PNETCDF OFF)
 # while for static builds we need the dependencies too
 if (BUILD_SHARED_LIBS)
   # Include rpath linker flag so user doesn't need to set LD_LIBRARY_PATH
-  set(CONFIG_LDFLAGS "${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}\$BOUT_LIB_PATH -L\$BOUT_LIB_PATH -lbout++")
+  set(CONFIG_LDFLAGS "${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}\$BOUT_LIB_PATH -L\$BOUT_LIB_PATH -lbout++ -lfmt")
 else()
   set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS}")
 endif()

@@ -856,7 +856,9 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
   /* Duplicate the solution vector X into a work vector */
   ierr = VecDuplicate(X,&interpolatedX);CHKERRQ(ierr);
   while (s->next_output <= t && s->next_output <= tfinal) {
-    if (s->interpolate) ierr = TSInterpolate(ts,s->next_output,interpolatedX);CHKERRQ(ierr);
+    if (s->interpolate){
+      ierr = TSInterpolate(ts,s->next_output,interpolatedX);CHKERRQ(ierr);
+    }
 
     /* Place the interpolated values into the global variables */
     ierr = VecGetArrayRead(interpolatedX,&x);CHKERRQ(ierr);

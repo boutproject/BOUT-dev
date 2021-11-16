@@ -1,5 +1,7 @@
 #include "adams_bashforth.hxx"
 
+#include <array>
+
 #include <boutcomm.hxx>
 #include <boutexception.hxx>
 #include <msg_stack.hxx>

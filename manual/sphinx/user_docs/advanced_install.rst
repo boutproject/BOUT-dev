@@ -193,6 +193,17 @@ With the tcsh shell use
    setenv PETSC_ARCH arch-c
    ./configure --with-netcdf=/usr/local/tools/netcdf-gnu-4.1 --with-fftw=/usr/local MPICXX=mpiCC EXTRA_LIBS=-lcurl --with-petsc --with-cvode=~farley9/local --with-ida=~farley9/local
 
+MacOS / Apple Darwin
+~~~~~~~~~~~~~~~~~~~~
+
+Compiling with Apple Clang 12, the following configuration has been known to work
+
+.. code-block:: tcsh
+
+   cmake . -B build -DBOUT_ENABLE_BACKTRACE=Off -DBUILD_SHARED_LIBS=Off -DBOUT_USE_NLS=Off -DBOUT_USE_UUID_SYSTEM_GENERATOR=Off
+   cd build
+   make
+
 Marconi
 ~~~~~~~
 
