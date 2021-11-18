@@ -574,6 +574,9 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       (*options)["atol"].doc("Absolute tolerance in SNES solve").withDefault(1e-12);
   BoutReal rtol =
       (*options)["rtol"].doc("Relative tolerance in SNES solve").withDefault(1e-5);
+  BoutReal stol = (*options)["stol"]
+    .doc("Convergence tolerance in terms of the norm of the change in the solution between steps")
+    .withDefault(1e-8);
 
   int maxits = (*options)["max_nonlinear_iterations"]
                    .doc("Maximum number of nonlinear iterations per SNES solve")
@@ -587,7 +590,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
                   .doc("Iterations below which the next timestep is increased")
                   .withDefault(static_cast<int>(maxits * 0.5));
 
-  SNESSetTolerances(snes, atol, rtol, PETSC_DEFAULT, maxits, PETSC_DEFAULT);
+  SNESSetTolerances(snes, atol, rtol, stol, maxits, PETSC_DEFAULT);
 
   // Force SNES to take at least one nonlinear iteration.
   // This may prevent the solver from getting stuck in false steady state conditions
@@ -771,19 +774,44 @@ int SNESSolver::run() {
         time1 = simtime;
       }
 
-      simtime += dt;
-
       int nl_its;
       SNESGetIterationNumber(snes, &nl_its);
+
+      if (nl_its == 0) {
+        // This can occur even with SNESSetForceIteration
+        // Results in simulation state freezing and rapidly going to the end
+
+        {
+          const BoutReal* xdata = nullptr;
+          int ierr = VecGetArrayRead(snes_x, &xdata);
+          CHKERRQ(ierr);
+          load_vars(const_cast<BoutReal*>(xdata));
+          ierr = VecRestoreArrayRead(snes_x, &xdata);
+          CHKERRQ(ierr);
+        }
+        run_rhs(simtime);
+
+        // Copy derivatives back
+        {
+          BoutReal* fdata = nullptr;
+          ierr = VecGetArray(snes_f, &fdata);
+          CHKERRQ(ierr);
+          save_derivs(fdata);
+          ierr = VecRestoreArray(snes_f, &fdata);
+          CHKERRQ(ierr);
+        }
+
+        // Forward Euler
+        VecAXPY(snes_x, dt, snes_f);
+      }
+
+      simtime += dt;
 
       if (diagnose) {
         // Gather and print diagnostic information
 
         int lin_its;
-        //SNESGetLinearSolveIterations(snes, &lin_its); // <- Seems to be same as nl_its
-        KSP ksp;
-        SNESGetKSP(snes, &ksp);
-        KSPGetIterationNumber(ksp, &lin_its);
+        SNESGetLinearSolveIterations(snes, &lin_its);
 
         output.print("\r"); // Carriage return for printing to screen
         output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}", simtime, timestep,
