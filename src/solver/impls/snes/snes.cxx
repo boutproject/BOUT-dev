@@ -589,6 +589,10 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
   SNESSetTolerances(snes, atol, rtol, PETSC_DEFAULT, maxits, PETSC_DEFAULT);
 
+  // Force SNES to take at least one nonlinear iteration.
+  // This may prevent the solver from getting stuck in false steady state conditions
+  SNESSetForceIteration(snes, PETSC_TRUE);
+
   bool use_precon =
       (*options)["use_precon"].doc("Use user-supplied preconditioner?").withDefault<bool>(false);
 
@@ -725,13 +729,13 @@ int SNESSolver::run() {
       }
 
       // Run the solver
-      SNESSolve(snes, nullptr, snes_x);
+      PetscErrorCode ierr = SNESSolve(snes, nullptr, snes_x);
 
       // Find out if converged
       SNESConvergedReason reason;
       SNESGetConvergedReason(snes, &reason);
-      if (reason < 0) {
-        // Diverged
+      if ((ierr != 0) or (reason < 0)) {
+        // Diverged or SNES failed
 
 	++snes_failures;
 
@@ -768,16 +772,22 @@ int SNESSolver::run() {
       }
 
       simtime += dt;
+
       int nl_its;
       SNESGetIterationNumber(snes, &nl_its);
 
-      int lin_its;
-      SNESGetLinearSolveIterations(snes, &lin_its);
-
       if (diagnose) {
-	output.print("\r"); // Carriage return for printing to screen
-        output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}", simtime, timestep,
-                     nl_its, lin_its);
+        // Gather and print diagnostic information
+
+        int lin_its;
+        //SNESGetLinearSolveIterations(snes, &lin_its); // <- Seems to be same as nl_its
+        KSP ksp;
+        SNESGetKSP(snes, &ksp);
+        KSPGetIterationNumber(ksp, &lin_its);
+
+        output.print("\r"); // Carriage return for printing to screen
+        output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}", simtime, timestep,
+                     nl_its, lin_its, reason);
         if (snes_failures > 0) {
 	  output.write(", SNES failures: {}", snes_failures);
 	  snes_failures = 0;
