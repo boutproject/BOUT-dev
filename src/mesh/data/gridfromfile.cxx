@@ -154,7 +154,7 @@ template <typename T>
 bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
                         CELL_LOC location) {
   static_assert(bout::utils::is_Field<T>::value,
-                "templated GridFile::get only works for Field2D, Field3D or FieldPerp");
+                "templated GridFile::getField only works for Field2D, Field3D or FieldPerp");
 
   Timer timer("io");
   AUTO_TRACE();
