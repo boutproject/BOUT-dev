@@ -185,7 +185,7 @@ namespace FV {
           g_23c[i] / (dyup[i.yp()] + 2. * dyc[i] + dydown[i.ym()]) / SQ(Jc[i] * Bxyc[i]);
 
       BoutReal fout =
-          0.25 * (ac[i] + ac(i, j, kp))
+          0.25 * (ac[i] + ac[ikp])
           * (Jc[i] * coord->g33[i] + Jc[ikp] * coord->g33[ikp])
           * ( // df/dz
               (fc[ikp] - fc[i]) / dzc[i]
