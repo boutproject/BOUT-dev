@@ -41,8 +41,7 @@ public:
 protected:
   Mesh* localmesh{nullptr};
 
-  std::string region_name{""};
-  std::shared_ptr<Region<Ind3D>> region{nullptr};
+  int region_id{-1};
 
 public:
   XZInterpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
@@ -50,48 +49,44 @@ public:
         localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn) {}
   XZInterpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : XZInterpolation(y_offset, mesh) {
-    region = regionFromMask(mask, localmesh);
+    setMask(mask);
   }
   XZInterpolation(const std::string& region_name, int y_offset = 0, Mesh* mesh = nullptr)
-      : y_offset(y_offset), localmesh(mesh), region_name(region_name) {}
-  XZInterpolation(std::shared_ptr<Region<Ind3D>> region, int y_offset = 0,
+    : y_offset(y_offset), localmesh(mesh), region_id(localmesh->getRegionID(region_name)) {}
+  XZInterpolation(const Region<Ind3D>& region, int y_offset = 0,
                   Mesh* mesh = nullptr)
-      : y_offset(y_offset), localmesh(mesh), region(region) {}
+      : y_offset(y_offset), localmesh(mesh){
+    setRegion(region);
+  }
   virtual ~XZInterpolation() = default;
 
   void setMask(const BoutMask& mask) {
-    region = regionFromMask(mask, localmesh);
-    region_name = "";
+    setRegion(regionFromMask(mask, localmesh));
   }
   void setRegion(const std::string& region_name) {
-    this->region_name = region_name;
-    this->region = nullptr;
-  }
-  void setRegion(const std::shared_ptr<Region<Ind3D>>& region) {
-    this->region_name = "";
-    this->region = region;
+    this->region_id = localmesh->getRegionID(region_name);
   }
   void setRegion(const Region<Ind3D>& region) {
-    this->region_name = "";
-    this->region = std::make_shared<Region<Ind3D>>(region);
+    std::string name;
+    int i=0;
+    do {
+      name = fmt::format("unsec_reg_xz_interp_{:d}",i++);
+    } while (localmesh->hasRegion3D(name));
+    localmesh->addRegion(name, region);
+    this->region_id = localmesh->getRegionID(name);
   }
-  Region<Ind3D> getRegion() const {
-    if (region_name != "") {
-      return localmesh->getRegion(region_name);
-    }
-    ASSERT1(region != nullptr);
-    return *region;
+  const Region<Ind3D>& getRegion() const {
+    ASSERT2(region_id != -1);
+    return localmesh->getRegion(region_id);
   }
-  Region<Ind3D> getRegion(const std::string& region) const {
-    const bool has_region = region_name != "" or this->region != nullptr;
-    if (region != "" and region != "RGN_ALL") {
-      if (has_region) {
-        return getIntersection(localmesh->getRegion(region), getRegion());
-      }
+  const Region<Ind3D>& getRegion(const std::string& region) const {
+    if (region_id == -1) {
       return localmesh->getRegion(region);
     }
-    ASSERT1(has_region);
-    return getRegion();
+    if (region == "" or region == "RGN_ALL"){
+      return getRegion();
+    }
+    return localmesh->getRegion(localmesh->getCommonRegion(localmesh->getRegionID(region), region_id));
   }
   virtual void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                            const std::string& region = "RGN_NOBNDRY") = 0;
@@ -156,7 +151,7 @@ public:
   XZHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr);
   XZHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : XZHermiteSpline(y_offset, mesh) {
-    region = regionFromMask(mask, localmesh);
+    setRegion(regionFromMask(mask, localmesh));
   }
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
@@ -214,7 +209,7 @@ public:
   XZLagrange4pt(int y_offset = 0, Mesh *mesh = nullptr);
   XZLagrange4pt(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : XZLagrange4pt(y_offset, mesh) {
-    region = regionFromMask(mask, localmesh);
+    setRegion(regionFromMask(mask, localmesh));
   }
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
@@ -247,7 +242,7 @@ public:
   XZBilinear(int y_offset = 0, Mesh *mesh = nullptr);
   XZBilinear(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : XZBilinear(y_offset, mesh) {
-    region = regionFromMask(mask, localmesh);
+    setRegion(regionFromMask(mask, localmesh));
   }
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
