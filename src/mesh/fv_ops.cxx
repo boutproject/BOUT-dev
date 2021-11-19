@@ -22,7 +22,9 @@ namespace FV {
   
     int xs = mesh->xstart-1;
     int xe = mesh->xend;
-  
+
+    ASSERT2(xs >= 0);
+
     /*
       if(mesh->firstX())
       xs += 1;
@@ -49,54 +51,9 @@ namespace FV {
       }
     }
 
-    // Y and Z fluxes require Y derivatives
+    bool fci = f.hasParallelSlices() && a.hasParallelSlices();
 
-    // Fields containing values along the magnetic field
-    Field3D fup(mesh), fdown(mesh);
-    Field3D aup(mesh), adown(mesh);
-
-    Field3D g23up(mesh), g23down(mesh);
-    Field3D g_23up(mesh), g_23down(mesh);
-    Field3D Jup(mesh), Jdown(mesh);
-    Field3D dyup(mesh), dydown(mesh);
-    Field3D dzup(mesh), dzdown(mesh);
-    Field3D Bxyup(mesh), Bxydown(mesh);
-
-    // Values on this y slice (centre).
-    // This is needed because toFieldAligned may modify the field
-    Field3D fc = f;
-    Field3D ac = a;
-
-    Field3D g23c = coord->g23;
-    Field3D g_23c = coord->g_23;
-    Field3D Jc = coord->J;
-    Field3D dyc = coord->dy;
-    Field3D dzc = coord->dz;
-    Field3D Bxyc = coord->Bxy;
-
-    // Result of the Y and Z fluxes
-    Field3D yzresult(mesh);
-    yzresult.allocate();
-
-    if (f.hasParallelSlices() && a.hasParallelSlices()) {
-      // Both inputs have yup and ydown
-
-      fup = f.yup();
-      fdown = f.ydown();
-
-      aup = a.yup();
-      adown = a.ydown();
-    } else {
-      // At least one input doesn't have yup/ydown fields.
-      // Need to shift to/from field aligned coordinates
-
-      fup = fdown = fc = toFieldAligned(f);
-      aup = adown = ac = toFieldAligned(a);
-
-      yzresult.setDirectionY(YDirectionType::Aligned);
-    }
-
-    if (bout::build::use_metric_3d) {
+    if (bout::build::use_metric_3d and fci) {
       // 3D Metric, need yup/ydown fields.
       // Requires previous communication of metrics
       // -- should insert communication here?
@@ -105,95 +62,94 @@ namespace FV {
           || !coord->Bxy.hasParallelSlices() || !coord->J.hasParallelSlices()) {
         throw BoutException("metrics have no yup/down: Maybe communicate in init?");
       }
-
-      g23up = coord->g23.yup();
-      g23down = coord->g23.ydown();
-
-      g_23up = coord->g_23.yup();
-      g_23down = coord->g_23.ydown();
-
-      Jup = coord->J.yup();
-      Jdown = coord->J.ydown();
-
-      dyup = coord->dy.yup();
-      dydown = coord->dy.ydown();
-
-      dzup = coord->dz.yup();
-      dzdown = coord->dz.ydown();
-
-      Bxyup = coord->Bxy.yup();
-      Bxydown = coord->Bxy.ydown();
-
-    } else {
-      // No 3D metrics
-      // Need to shift to/from field aligned coordinates
-      g23up = g23down = g23c = toFieldAligned(coord->g23);
-      g_23up = g_23down = g_23c = toFieldAligned(coord->g_23);
-      Jup = Jdown = Jc = toFieldAligned(coord->J);
-      dyup = dydown = dyc = toFieldAligned(coord->dy);
-      dzup = dzdown = dzc = toFieldAligned(coord->dz);
-      Bxyup = Bxydown = Bxyc = toFieldAligned(coord->Bxy);
     }
+
+    // Y and Z fluxes require Y derivatives
+
+    // Fields containing values along the magnetic field
+
+    // Values on this y slice (centre).
+    // This is needed because toFieldAligned may modify the field
+#define GET(a, b)                                   \
+  const Field3D a##c = fci ? b : toFieldAligned(b); \
+  const Field3D a##up = fci ? b.yup() : a##c;       \
+  const Field3D a##down = fci ? b.ydown() : a##c;
+
+    GET(f, f);
+    GET(a, a);
+    // Only in 3D case with FCI do the metrics have parallel slices
+    fci = fci and bout::build::use_metric_3d;
+    GET(g23, coord->g23);
+    GET(g_23, coord->g_23);
+    GET(J, coord->J);
+    GET(dy, coord->dy);
+    GET(dz, coord->dz);
+    GET(Bxy, coord->Bxy);
+#undef GET
+
+    // Result of the Y and Z fluxes
+    Field3D yzresult(0.0, mesh);
+    // yzresult.allocate();
 
     // Y flux
 
     BOUT_FOR(i, yzresult.getRegion("RGN_NOBNDRY")) {
       auto ikp = i.zp();
       auto ikm = i.zm();
+      {
+        const BoutReal coef = 0.5
+                              * (g_23c[i] / SQ(Jc[i] * Bxyc[i])
+                                 + g_23up[i.yp()] / SQ(Jup[i.yp()] * Bxyup[i.yp()]));
 
-      BoutReal coef = 0.5
-                      * (g_23c[i] / SQ(Jc[i] * Bxyc[i])
-                         + g_23up[i.yp()] / SQ(Jup[i.yp()] * Bxyup[i.yp()]));
+        // Calculate Z derivative at y boundary
+        const BoutReal dfdz = 0.5 * (fc[ikp] - fc[ikm] + fup[ikp.yp()] - fup[ikm.yp()])
+                              / (dzc[i] + dzup[i.yp()]);
 
-      // Calculate Z derivative at y boundary
-      BoutReal dfdz = 0.5 * (fc[ikp] - fc[ikm] + fup[ikp.yp()] - fup[ikm.yp()])
-                      / (dzc[i] + dzup[i.yp()]);
+        // Y derivative
+        const BoutReal dfdy = 2. * (fup[i.yp()] - fc[i]) / (dyup[i.yp()] + dyc[i]);
 
-      // Y derivative
-      BoutReal dfdy = 2. * (fup[i.yp()] - fc[i]) / (dyup[i.yp()] + dyc[i]);
+        const BoutReal fout = 0.25 * (ac[i] + aup[i.yp()])
+                              * (Jc[i] * g23c[i] + Jup[i.yp()] * g23up[i.yp()])
+                              * (dfdz - coef * dfdy);
 
-      BoutReal fout = 0.25 * (ac[i] + aup[i.yp()])
-                      * (Jc[i] * g23c[i] + Jup[i.yp()] * g23up[i.yp()])
-                      * (dfdz - coef * dfdy);
+        yzresult[i] += fout / (dyc[i] * Jc[i]);
+      }
+      {
+        // Calculate flux between j and j-1
+        const BoutReal coef =
+            0.5
+            * (g_23c[i] / SQ(Jc[i] * Bxyc[i])
+               + g_23down[i.ym()] / SQ(Jdown[i.ym()] * Bxydown[i.ym()]));
 
-      yzresult[i] = fout / (dyc[i] * Jc[i]);
+        const BoutReal dfdz = 0.5
+                              * (fc[ikp] - fc[ikm] + fdown[ikp.ym()] - fdown[ikm.ym()])
+                              / (dzc[i] + dzdown[i.ym()]);
 
-      // Calculate flux between j and j-1
-      coef = 0.5
-             * (g_23c[i] / SQ(Jc[i] * Bxyc[i])
-                + g_23down[i.ym()] / SQ(Jdown[i.ym()] * Bxydown[i.ym()]));
+        const BoutReal dfdy = 2. * (fc[i] - fdown[i.ym()]) / (dyc[i] + dydown[i.ym()]);
 
-      dfdz = 0.5 * (fc[ikp] - fc[ikm] + fdown[ikp.ym()] - fdown[ikm.ym()])
-             / (dzc[i] + dzdown[i.ym()]);
+        const BoutReal fout = 0.25 * (ac[i] + adown[i.ym()])
+                              * (Jc[i] * g23c[i] + Jdown[i.ym()] * g23down[i.ym()])
+                              * (dfdz - coef * dfdy);
 
-      dfdy = 2. * (fc[i] - fdown[i.ym()]) / (dyc[i] + dydown[i.ym()]);
-
-      fout = 0.25 * (ac[i] + adown[i.ym()])
-             * (Jc[i] * g23c[i] + Jdown[i.ym()] * g23down[i.ym()]) * (dfdz - coef * dfdy);
-
-      yzresult[i] -= fout / (dyc[i] * Jc[i]);
-    }
-
+        yzresult[i] -= fout / (dyc[i] * Jc[i]);
+      }
     // Z flux
+      {
 
-    BOUT_FOR(i, yzresult.getRegion("RGN_NOBNDRY")) {
-      // Calculate flux between k and k+1
-      auto ikp = i.zp();
+        // Coefficient in front of df/dy term
+        const BoutReal coef = g_23c[i] / (dyup[i.yp()] + 2. * dyc[i] + dydown[i.ym()])
+                              / SQ(Jc[i] * Bxyc[i]);
 
-      // Coefficient in front of df/dy term
-      BoutReal coef =
-          g_23c[i] / (dyup[i.yp()] + 2. * dyc[i] + dydown[i.ym()]) / SQ(Jc[i] * Bxyc[i]);
+        const BoutReal fout =
+            0.25 * (ac[i] + ac[ikp]) * (Jc[i] * coord->g33[i] + Jc[ikp] * coord->g33[ikp])
+            * ( // df/dz
+                (fc[ikp] - fc[i]) / dzc[i]
+                // - g_yz * df/dy / SQ(J*B)
+                - coef * (fup[i.yp()] + fup[ikp.yp()] - fdown[i.ym()] - fdown[ikp.ym()]));
 
-      BoutReal fout =
-          0.25 * (ac[i] + ac[ikp])
-          * (Jc[i] * coord->g33[i] + Jc[ikp] * coord->g33[ikp])
-          * ( // df/dz
-              (fc[ikp] - fc[i]) / dzc[i]
-              // - g_yz * df/dy / SQ(J*B)
-              - coef * (fup[i.yp()] + fup[ikp.yp()] - fdown[i.ym()] - fdown[ikp.ym()]));
-
-      yzresult[i] += fout / (Jc[i] * dzc[i]);
-      yzresult[ikp] -= fout / (Jc[ikp] * dzc[ikp]);
+        yzresult[i] += fout / (Jc[i] * dzc[i]);
+        yzresult[ikp] -= fout / (Jc[ikp] * dzc[ikp]);
+      }
     }
 
     // Check if we need to transform back
