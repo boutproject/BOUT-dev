@@ -1666,6 +1666,7 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   auto invSg = 1.0 / sqrt(g_22);
   // Communicate to get parallel slices
   localmesh->communicate(invSg);
+  invSg.applyParallelBoundary("parallel_neumann");
   auto result = DDY(invSg, outloc, method) * DDY(f, outloc, method) * invSg
                 + D2DY2(f, outloc, method) / g_22;
 
@@ -1683,6 +1684,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
   auto invSg = 1.0 / sqrt(g_22);
   // Communicate to get parallel slices
   localmesh->communicate(invSg);
+  invSg.applyParallelBoundary("parallel_neumann");
   auto sg = DDY(invSg, outloc, method) * invSg;
 
   Field3D result = ::DDY(f, outloc, method);
