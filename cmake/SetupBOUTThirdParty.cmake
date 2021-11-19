@@ -107,7 +107,7 @@ set(BOUT_HAS_PETSC ${BOUT_USE_PETSC})
 
 
 cmake_dependent_option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF
-  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/mpark.variant/CMakeLists.txt" ON)
+  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS ${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/CMakeLists.txt" ON)
 
 if(BOUT_USE_SYSTEM_MPARK_VARIANT)
   message(STATUS "Using external mpark.variant")
@@ -126,7 +126,7 @@ endif()
 target_link_libraries(bout++ PUBLIC mpark_variant)
 
 cmake_dependent_option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF
-  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/fmt/CMakeLists.txt" ON)
+  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS ${PROJECT_SOURCE_DIR}/externalpackages/fmt/CMakeLists.txt" ON)
 
 if(BOUT_USE_SYSTEM_FMT)
   message(STATUS "Using external fmt")
