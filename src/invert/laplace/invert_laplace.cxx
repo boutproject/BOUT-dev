@@ -46,6 +46,7 @@
 #include <bout/openmpwrap.hxx>
 
 // Implementations:
+#include "impls/hypre3d/hypre3d_laplace.hxx"
 #include "impls/cyclic/cyclic_laplace.hxx"
 #include "impls/iterative_parallel_tri/iterative_parallel_tri.hxx"
 #include "impls/multigrid/multigrid_laplace.hxx"
@@ -63,7 +64,8 @@
  **********************************************************************************/
 
 /// Laplacian inversion initialisation. Called once at the start to get settings
-Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in)
+Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in,
+                     Solver* UNUSED(solver), Datafile* UNUSED(dump))
     : location(loc), localmesh(mesh_in == nullptr ? bout::globals::mesh : mesh_in) {
 
   if (options == nullptr) {
@@ -758,8 +760,9 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
                           const Field2D *ccoef, const Field2D *d, CELL_LOC loc) {
   Laplacian::defaultInstance()->tridagCoefs(jx,jy, jz, a, b, c, ccoef, d, loc);
 }
-
+#if !defined(__NVCC__)  // until we reconcile multiple definition errors under nvcc
 constexpr decltype(LaplaceFactory::type_name) LaplaceFactory::type_name;
 constexpr decltype(LaplaceFactory::section_name) LaplaceFactory::section_name;
 constexpr decltype(LaplaceFactory::option_name) LaplaceFactory::option_name;
 constexpr decltype(LaplaceFactory::default_type) LaplaceFactory::default_type;
+#endif

@@ -1,0 +1,68 @@
+# petsc@3.13.0%gcc@8.3.1~X~batch~cgns~complex~cuda~debug+double~exodusii+fftw~giflib+hdf5~hypre~int64~jpeg~knl~libpng~libyaml~memkind+metis~moab~mpfr+mpi~mumps~p4est~random123~saws+shared~suite-sparse+superlu-dist~trilinos~valgrind clanguage=C arch=linux-rhel7-power9le
+module load petsc-3.13.0-gcc-8.3.1-7b3be67
+# fftw@3.3.8%gcc@8.3.1+mpi~openmp~pfft_patches precision=double,float arch=linux-rhel7-power9le
+module load fftw-3.3.8-gcc-8.3.1-us44bjy
+# spectrum-mpi@rolling-release%gcc@8.3.1 arch=linux-rhel7-power9le
+module load spectrum-mpi-rolling-release-gcc-8.3.1-2jra7yq
+# hdf5@1.10.6%gcc@8.3.1+cxx~debug~fortran+hl~java+mpi+pic+shared~szip~threadsafe api=none arch=linux-rhel7-power9le
+module load hdf5-1.10.6-gcc-8.3.1-zkwocrt
+# zlib@1.2.11%gcc@8.3.1+optimize+pic+shared arch=linux-rhel7-power9le
+module load zlib-1.2.11-gcc-8.3.1-drkbhfs
+# metis@5.1.0%gcc@8.3.1~gdb~int64+real64+shared build_type=Release patches=4991da938c1d3a1d3dea78e49bbebecba00273f98df2a656e38b83d55b281da1,b1225da886605ea558db7ac08dd8054742ea5afe5ed61ad4d0fe7a495b1270d2 arch=linux-rhel7-power9le
+module load metis-5.1.0-gcc-8.3.1-wbsy3pr
+# openblas@0.3.12%gcc@8.3.1~consistent_fpcsr~ilp64+pic+shared threads=none arch=linux-rhel7-power9le
+module load openblas-0.3.12-gcc-8.3.1-ityghg7
+# parmetis@4.0.3%gcc@8.3.1~gdb~int64~ipo+shared build_type=RelWithDebInfo patches=4f892531eb0a807eb1b82e683a416d3e35154a455274cf9b162fb02054d11a5b,50ed2081bc939269689789942067c58b3e522c269269a430d5d34c00edbc5870,704b84f7c7444d4372cb59cca6e1209df4ef3b033bc4ee3cf50f369bce972a9d arch=linux-rhel7-power9le
+module load parmetis-4.0.3-gcc-8.3.1-ufyxpup
+# superlu-dist@6.4.0%gcc@8.3.1~cuda~int64~ipo~openmp+shared build_type=RelWithDebInfo cuda_arch=none arch=linux-rhel7-power9le
+module load superlu-dist-6.4.0-gcc-8.3.1-vcb4y4k
+# netcdf-cxx4@4.3.1%gcc@8.3.1+doxygen+pic+shared+static arch=linux-rhel7-power9le
+module load netcdf-cxx4-4.3.1-gcc-8.3.1-sj65c6a
+# netcdf-c@4.7.4%gcc@8.3.1~dap~hdf4~jna+mpi~parallel-netcdf+pic+shared arch=linux-rhel7-power9le
+module load netcdf-c-4.7.4-gcc-8.3.1-7x3quj3
+# sundials@5.1.0%gcc@8.3.1+ARKODE+CVODE+CVODES+IDA+IDAS+KINSOL~cuda+examples-c~examples-cuda~examples-cxx~examples-f2003+examples-f77~examples-f90+examples-install~f2003~fcmix+generic-math~hypre~int64~ipo~klu~lapack+mpi~openmp~petsc~pthread~raja+shared+static~superlu-dist~superlu-mt~trilinos build_type=RelWithDebInfo precision=double arch=linux-rhel7-power9le
+module load sundials-5.1.0-gcc-8.3.1-xj6yqy3
+# py-netcdf4@1.4.2%gcc@8.3.1 patches=255b5ae328c6b2b293a59d7eb8934f861f265eba770c6a37411222d161e84171 arch=linux-rhel7-power9le
+module load py-netcdf4-1.4.2-gcc-8.3.1-qaq5y62
+# py-cftime@1.0.3.4%gcc@8.3.1 arch=linux-rhel7-power9le
+module load py-cftime-1.0.3.4-gcc-8.3.1-vtrhecv
+# py-numpy@1.19.4%gcc@8.3.1+blas+lapack arch=linux-rhel7-power9le
+module load py-numpy-1.19.4-gcc-8.3.1-3wuk6mn
+# py-setuptools@50.3.2%gcc@8.3.1 arch=linux-rhel7-power9le
+module load py-setuptools-50.3.2-gcc-8.3.1-7qhu5yv
+# python@3.8.6%gcc@8.3.1+bz2+ctypes+dbm~debug+libxml2+lzma~nis~optimizations+pic+pyexpat+pythoncmd+readline+shared+sqlite3+ssl~tix~tkinter~ucs4+uuid+zlib patches=0d98e93189bc278fbc37a50ed7f183bd8aaf249a8e1670a465f0db6bb4f8cf87 arch=linux-rhel7-power9le
+module load python-3.8.6-gcc-8.3.1-hhjbqw5
+# bzip2@1.0.8%gcc@8.3.1+shared arch=linux-rhel7-power9le
+module load bzip2-1.0.8-gcc-8.3.1-oyprkqt
+# gdbm@1.18.1%gcc@8.3.1 arch=linux-rhel7-power9le
+module load gdbm-1.18.1-gcc-8.3.1-d3zwee4
+# readline@8.0%gcc@8.3.1 arch=linux-rhel7-power9le
+module load readline-8.0-gcc-8.3.1-7kp2rj7
+# ncurses@6.2%gcc@8.3.1~symlinks+termlib arch=linux-rhel7-power9le
+module load ncurses-6.2-gcc-8.3.1-qphu6y5
+# gettext@0.21%gcc@8.3.1+bzip2+curses+git~libunistring+libxml2+tar+xz arch=linux-rhel7-power9le
+module load gettext-0.21-gcc-8.3.1-dumypfy
+# libiconv@1.16%gcc@8.3.1 arch=linux-rhel7-power9le
+module load libiconv-1.16-gcc-8.3.1-vhhscxp
+# libxml2@2.9.10%gcc@8.3.1~python arch=linux-rhel7-power9le
+module load libxml2-2.9.10-gcc-8.3.1-szmzgtm
+# xz@5.2.5%gcc@8.3.1~pic arch=linux-rhel7-power9le
+module load xz-5.2.5-gcc-8.3.1-u6f5vja
+# tar@1.32%gcc@8.3.1 arch=linux-rhel7-power9le
+module load tar-1.32-gcc-8.3.1-fckmmfg
+# libffi@3.3%gcc@8.3.1 patches=26f26c6f29a7ce9bf370ad3ab2610f99365b4bdd7b82e7c31df41a3370d685c0 arch=linux-rhel7-power9le
+module load libffi-3.3-gcc-8.3.1-umt5qmh
+# libuuid@1.0.3%gcc@8.3.1 arch=linux-rhel7-power9le
+module load libuuid-1.0.3-gcc-8.3.1-n7pjshn
+# openssl@1.1.1h%gcc@8.3.1+systemcerts arch=linux-rhel7-power9le
+module load openssl-1.1.1h-gcc-8.3.1-vix3r3n
+# sqlite@3.33.0%gcc@8.3.1+column_metadata+fts~functions~rtree arch=linux-rhel7-power9le
+module load sqlite-3.33.0-gcc-8.3.1-fnud4o4
+# py-sympy@1.4%gcc@8.3.1 arch=linux-rhel7-power9le
+module load py-sympy-1.4-gcc-8.3.1-kxnyx2f
+# py-mpmath@1.1.0%gcc@8.3.1 arch=linux-rhel7-power9le
+module load py-mpmath-1.1.0-gcc-8.3.1-xkhpgji
+# py-scipy@1.4.1%gcc@8.3.1 patches=5433f60831cb554101520a8f8871ac5a32c95f7a971ccd68b69049535b106780 arch=linux-rhel7-power9le
+module load py-scipy-1.4.1-gcc-8.3.1-oc4b6wq
+# py-pybind11@2.5.0%gcc@8.3.1~ipo build_type=RelWithDebInfo arch=linux-rhel7-power9le
+module load py-pybind11-2.5.0-gcc-8.3.1-a364eaw

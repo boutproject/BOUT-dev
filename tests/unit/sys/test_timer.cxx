@@ -225,6 +225,8 @@ TEST(TimerTest, Cleanup) {
               bout::testing::TimerTolerance);
 }
 
+// Don't currently know why this test fails, and also causes segfault when unwinding the tests
+#if 1
 TEST(TimerTest, ListAllInfo) {
   Timer::cleanup();
 
@@ -242,18 +244,33 @@ TEST(TimerTest, ListAllInfo) {
     Timer time_long{"18 characters long"};
   }
 
+  printf("Timer::resetTime\n");
   Timer::resetTime("two");
-
+#if 0
   std::streambuf* old_cout_rdbuf(std::cout.rdbuf());
   std::stringstream cout_capture;
+  cout_capture.str("");
+  cout_capture.clear();
   std::cout.rdbuf(cout_capture.rdbuf());
 
+  printf("Timer printTimeReport\n");
   Timer::printTimeReport();
 
+  printf("Timer printTimeReport done\n");
   std::cout.rdbuf(old_cout_rdbuf);
+#else
+
+  std::stringstream   cout_capture;
+  std::streambuf*     oldbuf  = std::cout.rdbuf( cout_capture.rdbuf() );  
+  Timer::printTimeReport();
+  std::cout.rdbuf(oldbuf);
+
+#endif
+  std::cerr << cout_capture.str();
 
   using namespace ::testing;
   EXPECT_THAT(cout_capture.str(), HasSubstr("Timer name         |"));
   EXPECT_THAT(cout_capture.str(), ContainsRegex("one *| 0\\.\\d+ | 1    | 0\\.\\d+"));
   EXPECT_THAT(cout_capture.str(), ContainsRegex("two *| 0 * | 2    | 0\\.\\d+"));
 }
+#endif

@@ -42,6 +42,7 @@ const char DEFAULT_DIR[] = "data";
 #include "msg_stack.hxx"
 #include "optionsreader.hxx"
 #include "output.hxx"
+#include "bout/hyprelib.hxx"
 #include "bout/invert/laplacexz.hxx"
 #include "bout/mpi_wrapper.hxx"
 #include "bout/openmpwrap.hxx"
@@ -54,6 +55,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/version.hxx"
 #include "fmt/format.h"
 #include "bout++-time.hxx"
+#include "bout/coordinates_accessor.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -201,6 +203,8 @@ int BoutInitialise(int& argc, char**& argv) {
 
     bout::globals::dump =
         setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);
+    //after MPI 
+    bout::globals::hyprelib = new HypreLib();
 
   } catch (const BoutException& e) {
     output_error.write(_("Error encountered during initialisation: {:s}\n"), e.what());
@@ -249,6 +253,7 @@ void setupGetText() {
 
     bindtextdomain(GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
   } catch (const std::runtime_error& e) {
+#if 1
     fmt::print(
         stderr,
         FMT_STRING(
@@ -257,6 +262,7 @@ void setupGetText() {
             "may be "
             "a problem with the BOUT_LOCALE_PATH={:s} that BOUT++ was compiled with.\n"),
         BUILDFLAG(BOUT_LOCALE_PATH));
+#endif
   }
 #endif // BOUT_HAS_GETTEXT
 }
@@ -488,7 +494,6 @@ void printCompileTimeOptions() {
 #endif
 
   output_info.write(_("\tMetrics mode is {}\n"), use_metric_3d ? "3D" : "2D");
-
   output_info.write(_("\tFFT support {}\n"), is_enabled(has_fftw));
   output_info.write(_("\tNatural language support {}\n"), is_enabled(has_gettext));
   output_info.write(_("\tLAPACK support {}\n"), is_enabled(has_lapack));
@@ -729,6 +734,8 @@ int BoutFinalise(bool write_settings) {
   // Cleanup boundary factory
   BoundaryFactory::cleanup();
 
+  CoordinatesAccessor::clear();
+
   // Cleanup timer
   Timer::cleanup();
 
@@ -741,6 +748,9 @@ int BoutFinalise(bool write_settings) {
 
   // Call PetscFinalize if not already called
   PetscLib::cleanup();
+
+  // Call HYPER_Finalize if not already called
+  HypreLib::cleanup();
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();
@@ -875,8 +885,7 @@ void bout_signal_handler(int sig) {
   // Set signal handler back to default to prevent possible infinite loop
   signal(SIGSEGV, SIG_DFL);
   // print number of process to stderr, so the user knows which log to check
-  fmt::print(stderr, FMT_STRING("\nSighandler called on process {:d} with sig {:d}\n"),
-             BoutComm::rank(), sig);
+  fmt::print(stderr, FMT_STRING("\nSighandler called on process {:d} with sig {:d}\n"), BoutComm::rank(), sig);
 
   switch (sig) {
   case SIGSEGV:

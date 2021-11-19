@@ -60,6 +60,10 @@ AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
         [Use the SUNDIALS ARKODE solver])],,[])
 AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
         [Enable support for scorep based instrumentation])],,[with_scorep=no])
+AC_ARG_WITH(hypre,       [AS_HELP_STRING([--with-hypre],
+        [Enable support for HYPRE])],,[with_hypre=no])
+
+dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 AC_ARG_WITH(system_mpark, [AS_HELP_STRING([--with-system-mpark],
         [Use mpark.variant already installed rather then the bundled one])],,[with_system_mpark=auto])
 AC_ARG_WITH(system_uuid,  [AS_HELP_STRING([--with-system-uuid],
@@ -1076,6 +1080,24 @@ AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
 ])
 
 #############################################################
+# HYPRE
+#############################################################
+
+BOUT_HAS_HYPRE="no"
+AS_IF([test "$with_hypre" != "no"], [
+  BOUT_ADDPATH_CHECK_HEADER(HYPRE.h,
+    BOUT_ADDPATH_CHECK_LIB(HYPRE, HYPRE_IJVectorCreate,
+      [
+       BOUT_HAS_HYPRE="yes"
+      ],
+      AC_MSG_ERROR([HYPRE requested but not found]),
+      $with_hypre),
+    AC_MSG_ERROR([HYPRE requested but not found]),
+    $with_hypre
+  )
+])
+
+#############################################################
 # Scorep setup
 #############################################################
 
@@ -1320,6 +1342,19 @@ CONFIG_CFLAGS=`$MAKE cflags -f output.make`
 CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 
 #############################################################
+# Defines which are supported by CMake build but not autoconf
+
+BOUT_USE_CUDA="no"
+BOUT_HAS_RAJA="no"
+BOUT_HAS_UMPIRE="no"
+BOUT_HAS_CALIPER="no"
+
+BOUT_DEFINE_SUBST(BOUT_USE_CUDA, [Enable CUDA])
+BOUT_DEFINE_SUBST(BOUT_HAS_RAJA, [RAJA support])
+BOUT_DEFINE_SUBST(BOUT_HAS_UMPIRE, [Umpire support])
+BOUT_DEFINE_SUBST(BOUT_HAS_CALIPER, [Caliper support])
+
+#############################################################
 # Write configuration to bout-config
 #############################################################
 
@@ -1367,6 +1402,7 @@ BOUT_DEFINE_SUBST(BOUT_HAS_LAPACK, [LAPACK support])
 BOUT_DEFINE_SUBST(BOUT_HAS_NETCDF, [NETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_LEGACY_NETCDF, [NETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PETSC, [PETSc support])
+BOUT_DEFINE_SUBST(BOUT_HAS_HYPRE, [Hypre support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PNETCDF, [PNETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PRETTY_FUNCTION, [Compiler PRETTYFUNCTION support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PVODE, [PVODE support])
@@ -1425,6 +1461,7 @@ AC_MSG_NOTICE([  Lapack support          : $BOUT_HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $BOUT_HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $BOUT_USE_OPENMP (schedule: $OPENMP_SCHEDULE)])
 AC_MSG_NOTICE([  Natural language support: $BOUT_HAS_GETTEXT (path: $localedir)])
+AC_MSG_NOTICE([  HYPRE support           : $BOUT_HAS_HYPRE])
 AC_MSG_NOTICE([  System UUID generator   : $BOUT_HAS_UUID_SYSTEM_GENERATOR])
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([  Enable backtrace        : $BOUT_USE_BACKTRACE])

@@ -108,12 +108,15 @@ class BoutMask;
 ///     BOUT_FOR(index, region) {
 ///        A[index] = B[index] + C[index];
 ///     }
+//
+
+
 #define BOUT_FOR_SERIAL(index, region)                                                   \
   for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();        \
        block < end; ++block)                                                             \
     for (auto index = block->first; index < block->second; ++index)
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP 
 #define BOUT_FOR_OMP(index, region, omp_pragmas)                                         \
   BOUT_OMP(omp_pragmas)                                                                  \
   for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
@@ -156,16 +159,16 @@ enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
 ///
 ///     result = field[index->yp()] - field[index->ym()];
 template<IND_TYPE N>
-class SpecificInd {
-public:
-  int ind = -1; //< 1D index into Field
-private:
-  int ny = -1, nz = -1; //< Sizes of y and z dimensions
+struct SpecificInd {
+  int ind = -1; ///< 1D index into Field
+  int ny = -1, nz = -1; ///< Sizes of y and z dimensions
 
-public:
   SpecificInd() = default;
   SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
   explicit SpecificInd(int i) : ind(i) {};
+
+  /// Allow explicit conversion to an int
+  explicit operator int() const { return ind; }
 
   /// Pre-increment operator
   SpecificInd &operator++() {
@@ -460,7 +463,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 ///     }
 ///
 /// If you wish to vectorise but can't use OpenMP then
-/// there is a serial verion of the macro:
+/// there is a serial version of the macro:
 ///
 ///     BoutReal max=0.;
 ///     BOUT_FOR_SERIAL(i, region) {

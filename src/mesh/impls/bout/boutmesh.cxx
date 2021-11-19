@@ -2816,6 +2816,14 @@ void BoutMesh::addBoundaryRegions() {
   
   // Inner X
   if(firstX() && !periodicX) {
+    addRegion3D("RGN_INNER_X_THIN",
+                Region<Ind3D>(xstart - 1, xstart - 1, ystart, yend, 0, LocalNz - 1,
+                              LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X_THIN", Region<Ind2D>(xstart - 1, xstart - 1, ystart, yend, 0,
+                                                  0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(xstart - 1, xstart - 1, 0, 0, 0, LocalNz - 1, 1,
+                                  LocalNz, maxregionblocksize));
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
@@ -2827,6 +2835,12 @@ void BoutMesh::addBoundaryRegions() {
     output_info.write("\tBoundary region inner X\n");
   } else {
     // Empty region
+    addRegion3D("RGN_INNER_X_THIN",
+                Region<Ind3D>(0, -1, 0, 0, 0, 0, LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X_THIN",
+                Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
@@ -2837,6 +2851,14 @@ void BoutMesh::addBoundaryRegions() {
 
   // Outer X
   if(lastX() && !periodicX) {
+    addRegion3D("RGN_OUTER_X_THIN",
+                Region<Ind3D>(xend + 1, xend + 1, ystart, yend, 0, LocalNz - 1, LocalNy,
+                              LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X_THIN", Region<Ind2D>(xend + 1, xend + 1, ystart, yend, 0, 0,
+                                                  LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_OUTER_X_THIN",
+                  Region<IndPerp>(xend + 1, xend + 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                                  maxregionblocksize));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
@@ -2849,6 +2871,12 @@ void BoutMesh::addBoundaryRegions() {
     output_info.write("\tBoundary region outer X\n");
   } else {
     // Empty region
+    addRegion3D("RGN_OUTER_X_THIN",
+                Region<Ind3D>(0, -1, 0, 0, 0, 0, LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X_THIN",
+                Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_OUTER_X_THIN",
+                  Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,

@@ -5,20 +5,6 @@
 BOUT_TOP=../../..
 error=
 
-for i in BoutReal # double float int char size_t
-do
-    # Search for "(... const $i...)", but exclude lines with "template"
-    # because sometimes "const BoutReal" is needed in template specialisations
-    grep -E "\([^\)]*const[^\(,:<]*$i[^,\):\*>]*\&"  -r --include=*xx $BOUT_TOP | grep -v template &&
-        error=yes &&
-        echo "const $i should be passed by value"
-done
-#for emacs regexp: \([,\(]\)[[:space:]]*const[[:space:]]+\([A-Za-z]+\)[[:space:]]+\([A-Za-z0-9]+\)[[:space:]]*\([,\)]\) → \1\2 \3\4)
-grep [\(,][[:space:]]*const[[:space:]][[:alnum:]]*[[:space:]][[:alnum:]]*[[:space:]]*[,\)] -r --include=*hxx $BOUT_TOP -n &&
-    error=yes &&
-    echo "Declaration of functions shouldn't declare pass-by-value as const"
-
-
 paths="src include examples tests"
 
 

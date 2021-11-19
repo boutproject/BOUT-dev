@@ -104,7 +104,9 @@ Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation
   ASSERT1(data.size() == nx * ny * nz);
 }
 
-Field3D::~Field3D() { delete deriv; }
+Field3D::~Field3D() {
+  delete deriv;
+}
 
 Field3D& Field3D::allocate() {
   if(data.empty()) {
@@ -126,7 +128,7 @@ Field3D& Field3D::allocate() {
   return *this;
 }
 
-Field3D* Field3D::timeDeriv() {
+BOUT_HOST_DEVICE Field3D* Field3D::timeDeriv() {
   if(deriv == nullptr) {
     deriv = new Field3D{emptyFrom(*this)};
   }

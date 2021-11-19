@@ -9,6 +9,7 @@
 #cmakedefine01 BOUT_HAS_CVODE
 #cmakedefine01 BOUT_HAS_FFTW
 #cmakedefine01 BOUT_HAS_GETTEXT
+#cmakedefine01 BOUT_HAS_HYPRE
 #cmakedefine01 BOUT_HAS_IDA
 #cmakedefine01 BOUT_HAS_LAPACK
 #cmakedefine01 BOUT_HAS_NETCDF
@@ -26,6 +27,10 @@
 #cmakedefine01 BOUT_USE_SIGFPE
 #cmakedefine01 BOUT_USE_SIGNAL
 #cmakedefine01 BOUT_USE_TRACK
+#cmakedefine01 BOUT_HAS_UMPIRE
+#cmakedefine01 BOUT_HAS_CALIPER
+#cmakedefine01 BOUT_HAS_RAJA
+#cmakedefine01 BOUT_USE_CUDA
 #cmakedefine BOUT_METRIC_TYPE @BOUT_METRIC_TYPE@
 #cmakedefine01 BOUT_USE_METRIC_3D
 #cmakedefine01 BOUT_USE_MSGSTACK
