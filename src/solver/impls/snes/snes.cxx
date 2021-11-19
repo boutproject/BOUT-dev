@@ -130,6 +130,16 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   std::string snes_type = (*options)["snes_type"].withDefault("newtonls");
   SNESSetType(snes, snes_type.c_str());
 
+  // Line search
+  std::string line_search_type = (*options)["line_search_type"]
+    .doc("Line search type: basic, bt, l2, cp, nleqerr")
+    .withDefault("default");
+  if (line_search_type != "default") {
+    SNESLineSearch linesearch;
+    SNESGetLineSearch(snes, &linesearch);
+    SNESLineSearchSetType(linesearch, line_search_type.c_str());
+  }
+
   // Set up the Jacobian
   bool matrix_free =
       (*options)["matrix_free"].doc("Use matrix free Jacobian?").withDefault<bool>(false);
@@ -739,6 +749,21 @@ int SNESSolver::run() {
       SNESGetConvergedReason(snes, &reason);
       if ((ierr != 0) or (reason < 0)) {
         // Diverged or SNES failed
+
+        // Print diagnostics to help identify source of the problem
+
+        output.write("\n======== SNES failed =========\n");
+        output.write("\nReturn code: {}, reason: {}\n", ierr, reason);
+        for (const auto& f : f2d) {
+          output.write("{} : ({} -> {}), ddt: ({} -> {})\n", f.name,
+                       min(*f.var, true, "RGN_NOBNDRY"), max(*f.var, true, "RGN_NOBNDRY"),
+                       min(*f.F_var, true, "RGN_NOBNDRY"), max(*f.F_var, true, "RGN_NOBNDRY"));
+        }
+        for (const auto& f : f3d) {
+          output.write("{} : ({} -> {}), ddt: ({} -> {})\n", f.name,
+                       min(*f.var, true, "RGN_NOBNDRY"), max(*f.var, true, "RGN_NOBNDRY"),
+                       min(*f.F_var, true, "RGN_NOBNDRY"), max(*f.F_var, true, "RGN_NOBNDRY"));
+        }
 
 	++snes_failures;
 
