@@ -73,7 +73,7 @@ public:
   inline const bool& operator[](const Ind3D& i) const { return mask[i]; }
 };
 
-inline std::unique_ptr<Region<Ind3D>> regionFromMask(const BoutMask& mask,
+inline Region<Ind3D> regionFromMask(const BoutMask& mask,
                                                      const Mesh* mesh) {
   std::vector<Ind3D> indices;
   for (auto i : mesh->getRegion("RGN_ALL")) {
@@ -81,6 +81,6 @@ inline std::unique_ptr<Region<Ind3D>> regionFromMask(const BoutMask& mask,
       indices.push_back(i);
     }
   }
-  return std::make_unique<Region<Ind3D>>(indices);
+  return Region<Ind3D>{indices};
 }
 #endif //__MASK_H__
