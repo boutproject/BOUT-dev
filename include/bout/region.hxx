@@ -548,7 +548,7 @@ public:
     indices = getRegionIndices();
   };
 
-  bool operator==(const Region<T>& other) {
+  bool operator==(const Region<T>& other) const {
     if (this->size() != other.size()) {
       return false;
     }
