@@ -1211,6 +1211,13 @@ def {{ DD }}({% if flux %}Field3D velocity, {% endif %}Field3D field, outloc="CE
 
     {%- endfor %}
 {% endfor %}
+
+{{ deriv("d", "D2DXDY") }}
+
+{{ deriv("d", "D2DXDZ") }}
+
+{{ deriv("d", "D2DYDZ") }}
+
 {{ deriv("d", "Div_par", region=False) }}
 
 {{ deriv("d", "Grad_par", region=False) }}
