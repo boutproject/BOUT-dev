@@ -16,6 +16,3 @@
 [submodule "externalpackages/boututils"]
 	path = externalpackages/boututils
 	url = https://github.com/boutproject/boututils.git
-[submodule "config"]
-	path = config
-	url = https://github.com/boutproject/BOUT-configs.git
