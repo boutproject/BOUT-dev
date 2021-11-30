@@ -198,6 +198,10 @@ int BoutInitialise(int& argc, char**& argv) {
     // Load from sources. Required for Field initialisation
     bout::globals::mesh->load();
 
+    // time_report options are used in BoutFinalise, i.e. after we
+    // check for unused options
+    Options::root()["time_report"].setConditionallyUsed();
+
   } catch (const BoutException& e) {
     output_error.write(_("Error encountered during initialisation: {:s}\n"), e.what());
     throw;
