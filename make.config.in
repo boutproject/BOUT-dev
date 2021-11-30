@@ -236,7 +236,7 @@ uninstall:
 ####################################################################
 
 # Rules for downloading submodules
-include $(BOUT_TOP)/makefile.submodules
+-include $(BOUT_TOP)/makefile.submodules
 
 ifeq ("$(TARGET)", "libfast")
 libfast: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(OBJ) $(DIRS)
@@ -330,7 +330,7 @@ endif
 	@echo "  Compiling " $(@:.o=.cxx)
 	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@:.o=.cxx) -o $@
 ifeq ("$(TARGET)","libfast")
-	test "$@" = "bout++-time.o" || touch $(BOUT_TOP)/lib/.last.o.file
+	@test "$@" = "bout++-time.o" || touch $(BOUT_TOP)/lib/.last.o.file
 endif
 
 ####################################################################

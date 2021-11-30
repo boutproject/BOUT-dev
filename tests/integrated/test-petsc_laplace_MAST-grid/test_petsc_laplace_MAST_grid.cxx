@@ -664,7 +664,7 @@ int main(int argc, char** argv) {
   // Write and close the output file
   bout::writeDefaultOutputFile(dump);
   
-  output << "\nFinished running test. Triggering error to quit\n\n";
+  output << "\nFinished running test.\n\n";
   
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
   }

@@ -21,6 +21,7 @@ import argparse
 
 try:
     from breathe import apidoc
+
     has_breathe = True
 except ImportError:
     print("breathe module not installed")
@@ -39,18 +40,63 @@ if on_readthedocs:
     from unittest.mock import MagicMock
 
     class Mock(MagicMock):
-        __all__ = ["foo",]
+        __all__ = [
+            "foo",
+        ]
+
         @classmethod
         def __getattr__(cls, name):
             return MagicMock()
 
     MOCK_MODULES = [
-        'boutcore',
-        'bunch',
-        'h5py',
-        'netCDF4',
+        "h5py",
+        "netCDF4",
+        "mayavi2",
+        "enthought",
+        "enthought.mayavi",
+        "enthought.mayavi.scripts",
+        "enthought.tvtk",
+        "enthought.tvtk.api",
+        "scipy",
+        "scipy.ndimage",
+        "scipy.interpolate",
+        "scipy.integrate",
+        "tvtk",
+        "tvtk.tools",
+        "tvtk.api",
+        "scipy.ndimage.filters",
+        "scipy.ndimage.morphology",
+        "scipy.spatial",
     ]
     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+    print(os.environ)
+    print(sys.argv)
+    python = sys.argv[0]
+    pydir = "/".join(python.split("/")[:-2])
+    os.system("which clang-format")
+    os.system("which clang-format-6.0")
+    os.system(
+        "git clone https://github.com/mpark/variant.git ../../externalpackages/mpark.variant"
+    )
+    pwd = "/".join(os.getcwd().split("/")[:-2])
+    os.system("git clone https://github.com/fmtlib/fmt.git ../../externalpackages/fmt")
+    cmake = (
+        "cmake  . -DBOUT_USE_FFTW=ON"
+        + " -DBOUT_USE_LAPACK=OFF"
+        + " -DBOUT_ENABLE_PYTHON=ON"
+        + " -DBOUT_UPDATE_GIT_SUBMODULE=OFF"
+        + " -DBOUT_TESTS=OFF"
+        + f" -DPython_ROOT_DIR={pydir}"
+        + f" -Dmpark_variant_DIR={pwd}/externalpackages/mpark.variant/"
+        + f" -Dfmt_DIR={pwd}/externalpackages/fmt/"
+    )
+    # os.system("mkdir ../../build")
+    os.system("echo " + cmake)
+    x = os.system("cd ../.. ;" + cmake)
+    assert x == 0
+    x = os.system("cd ../.. ; make -j 2 -f Makefile")
+    assert x == 0
+
 
 # readthedocs currently runs out of memory if we actually dare to try to do this
 if has_breathe:
@@ -60,16 +106,18 @@ if has_breathe:
     else:
         subprocess.call("cd ../doxygen; doxygen Doxyfile", shell=True)
     # Now use breathe.apidoc to autogen rst files for each XML file
-    apidoc_args = argparse.Namespace(destdir='_breathe_autogen/',
-                                     dryrun=False,
-                                     force=True,
-                                     notoc=False,
-                                     outtypes=("file"),
-                                     project="BOUT++",
-                                     rootpath='../doxygen/bout/xml',
-                                     suffix='rst',
-                                     members=True,
-                                     quiet=False)
+    apidoc_args = argparse.Namespace(
+        destdir="_breathe_autogen/",
+        dryrun=False,
+        force=True,
+        notoc=False,
+        outtypes=("file"),
+        project="BOUT++",
+        rootpath="../doxygen/bout/xml",
+        suffix="rst",
+        members=True,
+        quiet=False,
+    )
     apidoc_args.rootpath = os.path.abspath(apidoc_args.rootpath)
     if not os.path.isdir(apidoc_args.destdir):
         if not apidoc_args.dryrun:
@@ -80,7 +128,7 @@ if has_breathe:
 
     # -- Options for breathe extension ----------------------------------------
 
-    breathe_projects = { "BOUT++": "../doxygen/bout/xml" }
+    breathe_projects = {"BOUT++": "../doxygen/bout/xml"}
     breathe_default_project = "BOUT++"
     breathe_default_members = ("members",)
 
@@ -93,22 +141,24 @@ if has_breathe:
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.coverage',
-              'sphinx.ext.mathjax',
-              'sphinx.ext.autodoc',
-              'sphinx.ext.napoleon',
-              'sphinx.ext.todo',
+extensions = [
+    "sphinx.ext.coverage",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
 ]
 
 if has_breathe:
-    extensions.append('breathe')
+    extensions.append("breathe")
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # How to parse markdown files
 try:
     from recommonmark.parser import CommonMarkParser
+
     source_parsers = {".md": CommonMarkParser}
 except ImportError:
     print("recommonmark module not installed")
@@ -117,24 +167,24 @@ except ImportError:
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_suffix = ['.rst', '.md']
+source_suffix = [".rst", ".md"]
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = 'BOUT++'
-copyright = '2017, B. Dudson'
-author = 'The BOUT++ team'
+project = "BOUT++"
+copyright = "2017, B. Dudson"
+author = "The BOUT++ team"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = '5.0'
+version = "5.0"
 # The full version, including alpha/beta/rc tags.
-release = '5.0.0-alpha'
+release = "5.0.0-alpha"
 
 # The language for content autogenerated by Sphinx. Refer to documentation
 # for a list of supported languages.
@@ -146,25 +196,25 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
 # Tell sphinx what the primary language being documented is.
-primary_domain = 'cpp'
+primary_domain = "cpp"
 
 # Tell sphinx what the pygments highlight language should be.
-highlight_language = 'cpp'
+highlight_language = "cpp"
 
 # Turn on figure numbering
 numfig = True
 
 # The default role for text marked up `like this`
-default_role = 'any'
+default_role = "any"
 
 # Handle multiple parameters on one line correctly (in Python docs)
 napoleon_use_param = False
@@ -176,9 +226,10 @@ napoleon_use_param = False
 #
 if on_readthedocs:
     import sphinx_rtd_theme
-    html_theme = 'sphinx_rtd_theme'
+
+    html_theme = "sphinx_rtd_theme"
 else:
-    html_theme = 'sphinxdoc'
+    html_theme = "sphinxdoc"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -189,17 +240,17 @@ else:
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 
 def setup(app):
-    app.add_css_file('css/custom.css')
+    app.add_css_file("css/custom.css")
 
 
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'BOUTdoc'
+htmlhelp_basename = "BOUTdoc"
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -208,14 +259,12 @@ latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     #
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     #
-    'preamble': r'''
+    "preamble": r"""
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \makeatletter
@@ -229,8 +278,7 @@ latex_elements = {
 \makeatother
 
 
-''',
-
+""",
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
@@ -240,8 +288,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'BOUT.tex', 'BOUT++ Documentation',
-     'The BOUT++ team', 'manual'),
+    (master_doc, "BOUT.tex", "BOUT++ Documentation", "The BOUT++ team", "manual"),
 ]
 
 
@@ -249,10 +296,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'bout', 'BOUT++ Documentation',
-     [author], 1)
-]
+man_pages = [(master_doc, "bout", "BOUT++ Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output -------------------------------------------
@@ -261,10 +305,13 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'BOUT', 'BOUT++ Documentation',
-     author, 'BOUT', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        "BOUT",
+        "BOUT++ Documentation",
+        author,
+        "BOUT",
+        "One line description of project.",
+        "Miscellaneous",
+    ),
 ]
-
-
-

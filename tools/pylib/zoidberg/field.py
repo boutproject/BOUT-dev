@@ -1,11 +1,23 @@
 from builtins import object
 
 import numpy as np
+import sys
+
 
 try:
     from . import boundary
 except ImportError:
     import boundary
+
+
+if sys.version_info >= (3, 0):
+    pickle_read_mode = "rb"
+    pickle_write_mode = "wb"
+else:
+    pickle_read_mode = "r"
+    pickle_write_mode = "w"
+
+from .progress import update_progress
 
 
 class MagneticField(object):
@@ -36,6 +48,7 @@ class MagneticField(object):
     Slab : A straight field in normal Cartesian coordinates
     CurvedSlab : A field in curvilinear coordinates
     StraightStellarator : A rotating ellipse stellarator without curvature
+    RotatingEllipse : A rotating ellipse stellarator with curvature
     VMEC : A numerical field from a VMEC equilibrium file
     GEQDSK : A numerical field from an EFIT g-file
 
@@ -194,7 +207,9 @@ class MagneticField(object):
             if np.amin(np.abs(By)) < 1e-8:
                 # Very small By
                 print(x, z, ycoord, By)
-                raise ValueError("Small By")
+                raise ValueError(
+                    "Small By ({}) at (x={}, y={}, z={})".format(By, x, ycoord, z)
+                )
 
             R_By = Rmaj / By
             # Rate of change of x location [m] with y angle [radians]
@@ -318,7 +333,22 @@ class CurvedSlab(MagneticField):
 
 
 try:
-    from sympy import Symbol, atan2, cos, sin, log, pi, sqrt, lambdify
+    from sympy import (
+        Symbol,
+        atan2,
+        cos,
+        sin,
+        log,
+        pi,
+        sqrt,
+        lambdify,
+        Piecewise,
+        Sum,
+        gamma,
+        And,
+        factorial,
+        diff,
+    )
 
     class StraightStellarator(MagneticField):
         """A "rotating ellipse" stellarator without curvature
@@ -426,6 +456,506 @@ try:
             self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
             self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
 
+    class RotatingEllipse(MagneticField):
+        """A "rotating ellipse" stellarator
+        Parameters
+        ----------
+        xcentre : float, optional
+            Middle of the domain in x [m]
+        zcentre : float, optional
+            Middle of the domain in z [m]
+        radius : float, optional
+            Radius of coils [meters]
+        yperiod : float, optional
+            The period over which the coils return to their original position
+        I_coil : float, optional
+            Current in each coil
+        Btor : float, optional
+            Toroidal magnetic field strength
+        """
+
+        def coil(self, xcentre, zcentre, radius, angle, iota, I):
+            """Defines a single coil
+            Parameters
+            ----------
+            radius : float
+                Radius to coil
+            angle : float
+                Initial angle of coil
+            iota : float
+                Rotational transform of coil
+            I : float
+                Current through coil
+            Returns
+            -------
+            (x, z) - x, z coordinates of coils along phi
+            """
+
+            return (
+                xcentre + radius * cos(angle + iota * self.phi),
+                zcentre + radius * sin(angle + iota * self.phi),
+                I,
+            )
+
+        def __init__(
+            self,
+            xcentre=0.0,
+            zcentre=0.0,
+            radius=0.8,
+            yperiod=np.pi,
+            I_coil=0.05,
+            Btor=1.0,
+            smooth=False,
+            smooth_args={},
+        ):
+            xcentre = float(xcentre)
+            zcentre = float(zcentre)
+            radius = float(radius)
+            yperiod = float(yperiod)
+            Btor = float(Btor)
+
+            iota = 2.0 * np.pi / yperiod
+
+            self.x = Symbol("x")
+            self.z = Symbol("z")
+            self.y = Symbol("y")
+            self.r = Symbol("r")
+            self.r = (self.x ** 2 + self.z ** 2) ** (0.5)
+            self.phi = Symbol("phi")
+
+            self.xcentre = xcentre
+            self.zcentre = zcentre
+            self.radius = radius
+
+            # Four coils equally spaced, alternating direction for current
+            self.coil_list = [
+                self.coil(
+                    xcentre,
+                    zcentre,
+                    radius,
+                    n * pi,
+                    iota,
+                    ((-1) ** np.mod(i, 2)) * I_coil,
+                )
+                for i, n in enumerate(np.arange(4) / 2.0)
+            ]
+
+            A = 0.0
+            Bx = 0.0
+            Bz = 0.0
+
+            for c in self.coil_list:
+                xc, zc, Ic = c
+                rc = (xc ** 2 + zc ** 2) ** (0.5)
+                r2 = (self.x - xc) ** 2 + (self.z - zc) ** 2
+                theta = atan2(self.z - zc, self.x - xc)  # Angle relative to coil
+
+                A -= Ic * 0.1 * log(r2)
+
+                B = Ic * 0.2 / sqrt(r2)
+
+                Bx += B * sin(theta)
+                Bz -= B * cos(theta)
+
+            By = Btor / self.x
+            self.Afunc = lambdify((self.x, self.z, self.phi), A, "numpy")
+
+            self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
+            self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
+            self.Byfunc = lambdify((self.x, self.z, self.phi), By, "numpy")
+
+        def Rfunc(self, x, z, phi):
+            return np.full(x.shape, x)
+
+    class DommaschkPotentials(MagneticField):
+        """A magnetic field generator using the Dommaschk potentials.
+        Parameters
+        ----------
+        A: Coefficient matrix for the torodial and polidial harmonics. Form: (m,l,(a,b,c,d))
+        R_0: major radius [m]
+        B_0: magnetic field on axis [T]
+
+        Important Methods
+        -----------------
+        Bxfunc/Byfunc/Bzfunc(x,z,y): Returns magnetic field in radial/torodial/z-direction
+        Sfunc(x,z,y): Returns approximate magnetic surface invariant for Dommaschk potentials. Use this to visualize flux surfaces
+
+
+
+        """
+
+        def __init__(self, A, R_0=1.0, B_0=1.0):
+
+            self.R_0 = R_0
+            self.B_0 = B_0
+
+            self.R = Symbol("R")
+            self.phi = Symbol("phi")
+            self.Z = Symbol("Z")
+
+            self.m = Symbol("m")
+            self.l = Symbol("l")
+            self.n = Symbol("n")
+            self.k = Symbol("k")
+
+            self.A = A
+
+            self.P = (
+                self.U(self.A)
+                .doit()
+                .subs([(self.R, self.R / self.R_0), (self.Z, self.Z / R_0)])
+            )
+            self.P_hat = (
+                self.U_hat(self.A)
+                .doit()
+                .subs([(self.R, self.R / self.R_0), (self.Z, self.Z / R_0)])
+            )
+
+            S = 0.5 * (
+                log(self.R / self.R_0) ** 2 + (self.Z / R_0) ** 2
+            ) - self.R / self.R_0 * (
+                log(self.R / self.R_0) * self.R_0 * diff(self.P_hat, self.R)
+                + self.Z * self.R / self.R_0 * diff(self.P_hat, self.Z)
+            )  # .subs([(self.R, self.R/self.R_0), (self.Z, self.Z)])
+
+            Bx = R_0 * diff(self.P, self.R)
+            By = R_0 / self.R * diff(self.P, self.phi)
+            Bz = diff(self.P, self.Z)
+
+            self.Sf = lambdify((self.R, self.phi, self.Z), S, "numpy")
+
+            self.Bxf = lambdify((self.R, self.phi, self.Z), Bx, "numpy")
+            self.Byf = lambdify((self.R, self.phi, self.Z), By, "numpy")
+            self.Bzf = lambdify((self.R, self.phi, self.Z), Bz, "numpy")
+
+        def Bxfunc(self, x, z, phi):
+
+            return self.Bxf(x, phi, z) / self.Byf(self.R_0, 0, 0) * self.B_0
+
+        def Byfunc(self, x, z, phi):
+
+            return self.Byf(x, phi, z) / self.Byf(self.R_0, 0, 0) * self.B_0
+
+        def Bzfunc(self, x, z, phi):
+
+            return self.Bzf(x, phi, z) / self.Byf(self.R_0, 0, 0) * self.B_0
+
+        def Sfunc(self, x, z, y):
+            """
+            Parameters
+            ----------
+            x: radial coordinates normalized to R_0
+            z: binormal coordinate
+            y: torodial angle normalized to 2*pi
+
+            Returns
+            -------
+            Approximate magnetic surface invariant S at location (x,z,y). This is from the original Dommaschk paper. Use to visualize flux surfaces
+            """
+            return self.Sf(x, y, z)
+
+        def Rfunc(self, x, z, phi):
+            """
+            Parameters
+            ----------
+            x: radial coordinates normalized to R_0
+            z: binormal coordinate
+            y: torodial angle normalized to 2*pi
+
+            Returns
+            -------
+            Radial coordinate x
+            """
+
+            return x
+
+        def CD(self, m, k):
+            """
+            Parameters
+            ----------
+            m: torodial harmonic
+            k: summation index in D
+
+            Returns:
+            --------
+            Sympy function CD_mk (R) (Dirichlet boudary conditions)
+            """
+
+            n = Symbol("n")
+            b = Symbol("b")
+            i = Symbol("i")
+
+            alpha = Piecewise(
+                (
+                    (
+                        ((-1) ** n)
+                        / (gamma(b + n + 1) * gamma(n + 1) * 2 ** (2 * n + b))
+                    ),
+                    n >= 0,
+                ),
+                (0, True),
+            )
+            alpha_st = Piecewise((alpha * (2 * n + b), n >= 0), (0, True))
+
+            beta = Piecewise(
+                (
+                    (gamma(b - n)) / (gamma(n + 1) * 2 ** (2 * n - b + 1)),
+                    And(n >= 0, n < b),
+                ),
+                (0, True),
+            )
+            beta_st = Piecewise((beta * (2 * n - b), And(n >= 0, n < b)), (0, True))
+
+            delta = Piecewise(
+                (alpha / 2 * Sum(1 / i + 1 / (b + i), (i, 1, n + 1)), n > 0), (0, True)
+            )
+            delta_st = Piecewise((delta * (2 * n + b), n > 0), (0, True))
+
+            j = Symbol("j")
+
+            CD = Sum(
+                -(
+                    alpha.subs([(n, j), (b, m)])
+                    * (
+                        alpha_st.subs([(n, k - m - j), (b, m)]) * log(self.R)
+                        + delta_st.subs([(n, k - m - j), (b, m)])
+                        - alpha.subs([(n, k - m - j), (b, m)])
+                    )
+                    - delta.subs([(n, j), (b, m)])
+                    * alpha_st.subs([(n, k - m - j), (b, m)])
+                    + alpha.subs([(n, j), (b, m)]) * beta_st.subs([(n, k - j), (b, m)])
+                )
+                * self.R ** (2 * j + m)
+                + beta.subs([(n, j), (b, m)])
+                * alpha_st.subs([(n, k - j), (b, m)])
+                * self.R ** (2 * j - m),
+                (j, 0, k),
+            )
+
+            return CD
+
+        def CN(self, m, k):
+            """
+            Parameters
+            ----------
+            m: torodial harmonic
+            k: summation index in N
+
+            Returns:
+            --------
+            Sympy function CN_mk (R) (Neumann boundary conditions)
+            """
+
+            n = Symbol("n")
+            b = Symbol("b")
+            i = Symbol("i")
+
+            alpha = Piecewise(
+                (
+                    (
+                        ((-1) ** n)
+                        / (gamma(b + n + 1) * gamma(n + 1) * 2 ** (2 * n + b))
+                    ),
+                    n >= 0,
+                ),
+                (0, True),
+            )
+            alpha_st = Piecewise((alpha * (2 * n + b), n >= 0), (0, True))
+
+            beta = Piecewise(
+                (
+                    (gamma(b - n)) / (gamma(n + 1) * 2 ** (2 * n - b + 1)),
+                    And(n >= 0, n < b),
+                ),
+                (0, True),
+            )
+            beta_st = Piecewise((beta * (2 * n - b), And(n >= 0, n < b)), (0, True))
+
+            delta = Piecewise(
+                (alpha / 2 * Sum(1 / i + 1 / (b + i), (i, 1, n + 1)), n > 0), (0, True)
+            )
+            delta_st = Piecewise((delta * (2 * n + b), n > 0), (0, True))
+
+            j = Symbol("j")
+
+            CN = Sum(
+                (
+                    alpha.subs([(n, j), (b, m)])
+                    * (
+                        alpha.subs([(n, k - m - j), (b, m)]) * log(self.R)
+                        + delta.subs([(n, k - m - j), (b, m)])
+                    )
+                    - delta.subs([(n, j), (b, m)])
+                    * alpha.subs([(n, k - m - j), (b, m)])
+                    + alpha.subs([(n, j), (b, m)]) * beta.subs([(n, k - j), (b, m)])
+                )
+                * self.R ** (2 * j + m)
+                - beta.subs([(n, j), (b, m)])
+                * alpha.subs([(n, k - j), (b, m)])
+                * self.R ** (2 * j - m),
+                (j, 0, k),
+            )
+
+            return CN
+
+        def D(self, m, n):
+            """
+            Parameters
+            ----------
+            m: torodial mode number
+            n: summation index in  V
+
+            Returns:
+            --------
+            Sympy function D_mn (R, Z) (Dirichlet boundary conditions)
+            """
+
+            i = Symbol("i")
+            D = log(1)
+            k_arr = np.arange(0, int(n / 2) + 1, 1)
+            CD_f = self.CD(m, i)
+
+            for k in k_arr:
+                D += (self.Z ** (n - 2 * k)) / factorial(n - 2 * k) * CD_f.subs(i, k)
+
+            return D
+
+        def N(self, m, n):
+            """
+            Parameters
+            ----------
+            m: torodial mode number
+            n: summation index in V
+
+            Returns:
+            --------
+            Sympy function N_mn (R, Z) (Neumann boundary conditions)
+            """
+
+            i = Symbol("i")
+            N = log(1)
+            k_arr = np.arange(0, int(n / 2) + 1, 1)
+            CN_f = self.CN(m, i)
+            for k in k_arr:
+                N += (self.Z ** (n - 2 * k)) / factorial(n - 2 * k) * CN_f.subs(i, k)
+
+            return N
+
+        def V(self, m, l, a, b, c, d):
+            """
+            Parameters
+            ----------
+            m: torodial mode number
+            l: polodial mode number
+            a,b,c,d: Coefficients for m,l-th Dommaschk potential (elements of matrix A)
+
+            Returns:
+            --------
+            Sympy function V_ml
+            """
+
+            V = (a * cos(m * self.phi) + b * sin(m * self.phi)) * self.D(m, l) + (
+                c * cos(m * self.phi) + d * sin(m * self.phi)
+            ) * self.N(m, l - 1)
+
+            return V
+
+        def U(self, A):
+            """
+            Parameters
+            ----------
+            A: Coefficient matrix for the torodial and polidial harmonics. Form: (m,l,(a,b,c,d))
+
+            Returns
+            -----------------
+            U: Superposition of all modes given in A
+
+            """
+            U = self.phi
+            for i in range(A.shape[0]):
+                for j in range(A.shape[1]):
+                    if A[i, j, 0] or A[i, j, 1] or A[i, j, 2] or A[i, j, 3] != 0:
+
+                        U += self.V(
+                            i, j, A[i, j, 0], A[i, j, 1], A[i, j, 2], A[i, j, 3]
+                        )
+
+            return U
+
+        def V_hat(self, m, l, a, b, c, d):
+            """
+            Parameters
+            ----------
+            m: torodial mode number
+            l: polodial mode number
+            a,b,c,d: Coefficients for m,l-th Dommaschk potential (elements of matrix A)
+
+            Returns:
+            --------
+            Sympy function V_hat_ml; Similar to V; needed for calculation of magnetic surface invariant S
+            """
+
+            V = (
+                a * cos(m * (self.phi - np.pi / (2 * m)))
+                + b * sin(m * (self.phi - np.pi / (2 * m)))
+            ) * self.D(m, l) + (
+                c * cos(m * (self.phi - np.pi / (2 * m)))
+                + d * sin(m * (self.phi - np.pi / (2 * m)))
+            ) * self.N(
+                m, l - 1
+            )
+
+            return V
+
+        def U_hat(self, A):
+            """
+            Parameters
+            ----------
+            A: Coefficient matrix for the torodial and polidial harmonics. Form: (m,l,(a,b,c,d))
+
+            Returns
+            -----------------
+            U: Superposition of all modes given in A
+
+            """
+
+            U = log(1)
+            for i in range(A.shape[0]):
+                for j in range(A.shape[1]):
+                    if A[i, j, 0] or A[i, j, 1] or A[i, j, 2] or A[i, j, 3] != 0:
+                        U += self.V_hat(
+                            i, j, A[i, j, 0], A[i, j, 1], A[i, j, 2], A[i, j, 3]
+                        ) * Piecewise((self.phi, i == 0), (1 / i, i > 0))
+
+            return U
+
+    class Screwpinch(MagneticField):
+        def __init__(
+            self, xcentre=1.5, zcentre=0.0, shear=0, yperiod=2 * np.pi, Btor=1.0
+        ):
+            self.x = Symbol("x")
+            self.z = Symbol("z")
+            self.y = Symbol("y")
+            self.r = Symbol("r")
+            self.r = ((self.x - xcentre) ** 2 + (self.z - zcentre) ** 2) ** (0.5)
+
+            self.phi = Symbol("phi")
+
+            alpha = shear
+            self.theta = atan2(self.z - zcentre, self.x - xcentre)
+            A = alpha * self.r ** 2
+            Bx = -alpha * self.r * self.r * sin(self.theta)
+            Bz = alpha * self.r * self.r * cos(self.theta)
+            By = Btor / self.x
+
+            self.Afunc = lambdify((self.x, self.z, self.phi), A, "numpy")
+            self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
+            self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
+            self.Byfunc = lambdify((self.x, self.z, self.phi), By, "numpy")
+
+        def Rfunc(self, x, z, phi):
+            return np.full(x.shape, x)
+
 
 except ImportError:
 
@@ -442,6 +972,28 @@ except ImportError:
             raise ImportError(
                 "No Sympy module: Can't generate StraightStellarator fields"
             )
+
+    class RotatingEllipse(MagneticField):
+        """
+        Invalid RotatingEllipse, since no Sympy module.
+        Rather than printing an error on startup, which may
+        be missed or ignored, this raises
+        an exception if StraightStellarator is ever used.
+        """
+
+        def __init__(self, *args, **kwargs):
+            raise ImportError("No Sympy module: Can't generate RotatingEllipse fields")
+
+    class Screwpinch(MagneticField):
+        """
+        Invalid screwpinch, since no Sympy module.
+        Rather than printing an error on startup, which may
+        be missed or ignored, this raises
+        an exception if StraightStellarator is ever used.
+        """
+
+        def __init__(self, *args, **kwargs):
+            raise ImportError("No Sympy module: Can't generate screwpinch fields")
 
 
 class VMEC(MagneticField):
@@ -870,3 +1422,448 @@ class GEQDSK(MagneticField):
             return np.reshape(self.p_spl(np.ravel(psinorm)), psinorm.shape)
 
         return self.p_spl(psinorm)
+
+
+class W7X_vacuum(MagneticField):
+    def __init__(
+        self,
+        nx=128,
+        ny=32,
+        nz=128,
+        x_range=(4.05, 6.55),
+        z_range=(-1.35, 1, 35),
+        phimax=2.0 * np.pi,
+        configuration=0,
+        plot_poincare=False,
+        include_plasma_field=False,
+        wout_file="wout_w7x.0972_0926_0880_0852_+0000_+0000.01.00jh.nc",
+    ):
+        """
+        Get the field for W7X from the webservices.
+
+        Parameters
+        ----------
+        configuration : int
+            The id's are listed here:
+            http://webservices.ipp-hgw.mpg.de/docs/fieldlinetracer.html#MagneticConfig
+            While the description are at:
+            http://svvmec1.ipp-hgw.mpg.de:8080/vmecrest/v1/Coil_currents_1_AA_T_0011.pdf
+        """
+        from scipy.interpolate import RegularGridInterpolator
+        import numpy as np
+
+        ## create 1D arrays of cylindrical coordinates
+        r = np.linspace(x_range[0], x_range[-1], nx)
+        phi = np.linspace(0, phimax, ny)
+        z = np.linspace(z_range[0], z_range[-1], nz)
+
+        ## make those 1D arrays 3D
+        rarray, yarray, zarray = np.meshgrid(r, phi, z, indexing="ij")
+
+        ## call vacuum field values
+        b_vac = W7X_vacuum.field_values(
+            rarray, yarray, zarray, configuration, plot_poincare
+        )
+        Bx_vac = b_vac[0]
+        By_vac = b_vac[1]
+        Bz_vac = b_vac[2]
+
+        if include_plasma_field:
+            b_plasma = W7X_vacuum.plasma_field(
+                rarray, yarray, zarray, wout_file=wout_file
+            )
+            Bx_plasma = b_plasma[0]
+            By_plasma = b_plasma[1]
+            Bz_plasma = b_plasma[2]
+        else:
+            Bx_plasma = 0
+            By_plasma = 0
+            Bz_plasma = 0
+
+        Bx = Bx_vac + Bx_plasma
+        By = By_vac + By_plasma
+        Bz = Bz_vac + Bz_plasma
+
+        # Now we have a field and regular grid in (R,Z,phi) so
+        # we can get an interpolation function in 3D
+        points = (r, phi, z)
+
+        try:
+            self.br_interp = RegularGridInterpolator(
+                points, Bx, bounds_error=False, fill_value=0.0
+            )
+        except:
+            print([i.shape for i in points], Bx.shape)
+            import matplotlib.pyplot as plt
+
+            for i in points:
+                plt.plot(i)
+            plt.show()
+            raise
+
+        self.bz_interp = RegularGridInterpolator(
+            points, Bz, bounds_error=False, fill_value=0.0
+        )
+        self.bphi_interp = RegularGridInterpolator(
+            points, By, bounds_error=False, fill_value=1.0
+        )
+
+        # if you want non-interpolated, 3D arrays, make this your return function:
+        # return Bx,By,Bz
+
+        # return points, br_interp, bphi_interp, bz_interp
+
+    def field_values(r, phi, z, configuration=0, plot_poincare=False):
+        """This uses the webservices field line tracer to get the vacuum
+        magnetic field given 3d arrrays for R, phi, and Z. Only works
+        on IPP network
+
+        http://webservices.ipp-hgw.mpg.de/docs/fieldlinetracer.html
+
+        Contact brendan.shanahan@ipp.mpg.de for questions
+
+        """
+        from osa import Client
+        import os.path
+        import pickle
+        import matplotlib.pyplot as plt
+
+        tracer = Client("http://esb.ipp-hgw.mpg.de:8280/services/FieldLineProxy?wsdl")
+
+        nx = r.shape[0]
+        ny = phi.shape[1]
+        nz = z.shape[2]
+
+        # create (standardized) file name for saving/loading magnetic field.
+        fname = "B.w7x.{}.{}.{}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.dat".format(
+            nx,
+            ny,
+            nz,
+            r[0, 0, 0],
+            r[-1, 0, 0],
+            phi[0, 0, 0],
+            phi[0, -1, 0],
+            z[0, 0, 0],
+            z[0, 0, -1],
+        )
+
+        if os.path.isfile(fname):
+            print("Saved field found, loading from: ", fname)
+            with open(fname, pickle_read_mode) as f:
+                Br, Bphi, Bz = pickle.load(f)
+
+        else:
+            print(
+                "No saved field found -- (re)calculating (must be on IPP network for this to work...)"
+            )
+            print(
+                "Calculating field for Wendelstein 7-X; nx = ",
+                nx,
+                " ny = ",
+                ny,
+                " nz = ",
+                nz,
+            )
+
+            ## Create configuration objects
+            config = tracer.types.MagneticConfig()
+            config.configIds = configuration
+
+            tot = nx * ny * nz
+
+            Bx = np.zeros(tot)
+            By = np.zeros(tot)
+            Bz = np.zeros(tot)
+            pos = tracer.types.Points3D()
+
+            x1 = np.ndarray.flatten(
+                np.ones((nx, ny, nz)) * r * np.cos(phi)
+            )  # x in Cartesian (real-space)
+            x2 = np.ndarray.flatten(
+                np.ones((nx, ny, nz)) * r * np.sin(phi)
+            )  # y in Cartesian (real-space)
+            x3 = np.ndarray.flatten(z)  # z in Cartesian (real-space)
+            chunk = 100000
+            if tot > chunk * 2:
+                update_progress(0)
+            for i in range(0, tot, chunk):
+                end = i + chunk
+                end = min(end, tot)
+                slc = slice(i, end)
+                pos.x1 = x1[slc]
+                pos.x2 = x2[slc]
+                pos.x3 = x3[slc]
+
+                ## Call tracer service
+                res = tracer.service.magneticField(pos, config)
+
+                Bx[slc] = res.field.x1
+                By[slc] = res.field.x2
+                Bz[slc] = res.field.x3
+
+                if tot > chunk * 2:
+                    update_progress((i + 1) / tot)
+            ## Reshape to 3d array
+            Bx = Bx.reshape((nx, ny, nz))
+            By = By.reshape((nx, ny, nz))
+            Bz = Bz.reshape((nx, ny, nz))
+
+            ## Convert to cylindrical coordinates
+            Br = Bx * np.cos(phi) + By * np.sin(phi)
+            Bphi = -Bx * np.sin(phi) + By * np.cos(phi)
+
+            ## Save so we don't have to do this every time.
+            with open(fname, pickle_write_mode) as f:
+                pickle.dump([Br, Bphi, Bz], f)
+
+        if plot_poincare:
+            ## Poincare plot as done on the web services
+            ## Independent of the previously-made field.
+
+            print("Making poincare plot (only works on IPP network)...")
+            ## Create configuration objects
+            config = tracer.types.MagneticConfig()
+            config.configIds = configuration
+            pos = tracer.types.Points3D()
+
+            pos.x1 = np.linspace(5.6, 6.2, 80)
+            pos.x2 = np.zeros(80)
+            pos.x3 = np.zeros(80)
+
+            poincare = tracer.types.PoincareInPhiPlane()
+            poincare.numPoints = 200
+            poincare.phi0 = [
+                0.0
+            ]  ## This is where the poincare plane is (bean=0, triangle = pi/5.)
+
+            task = tracer.types.Task()
+            task.step = 0.2
+            task.poincare = poincare
+
+            res = tracer.service.trace(pos, config, task, None, None)
+
+            for i in range(0, len(res.surfs)):
+                plt.scatter(
+                    res.surfs[i].points.x1, res.surfs[i].points.x3, color="black", s=0.1
+                )
+                plt.show()
+
+        return Br, Bphi, Bz
+
+    def plasma_field(r, phi, z, wout_file="wout.nc"):
+        """This uses EXTENDER via the IPP webservices to get the magnetic
+        field from the plasma given 3d arrrays for R, phi, and Z. Only
+        works on IPP network
+
+        http://webservices.ipp-hgw.mpg.de/docs/extender.html
+
+        Contact brendan.shanahan@ipp.mpg.de for questions
+
+        """
+        from osa import Client
+        import os.path
+        import pickle
+
+        cl = Client("http://esb.ipp-hgw.mpg.de:8280/services/Extender?wsdl")
+        vmecURL = "http://svvmec1.ipp-hgw.mpg.de:8080/vmecrest/v1/w7x_ref_1/wout.nc"
+
+        nx = r.shape[0]
+        ny = phi.shape[1]
+        nz = z.shape[2]
+
+        # create (standardized) file name for saving/loading magnetic field.
+        fname = "B.w7x_plasma_field.{}.{}.{}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.{:.2f}-{:.2f}.dat".format(
+            nx,
+            ny,
+            nz,
+            r[0, 0, 0],
+            r[-1, 0, 0],
+            phi[0, 0, 0],
+            phi[0, -1, 0],
+            z[0, 0, 0],
+            z[0, 0, -1],
+        )
+
+        if os.path.isfile(fname):
+            print("Saved field found, loading from: ", fname)
+            with open(fname, pickle_read_mode) as f:
+                Br, Bphi, Bz = pickle.load(f)
+        else:
+            print(
+                "No saved plasma field found -- (re)calculating (must be on IPP network for this to work...)"
+            )
+            print(
+                "Calculating plasma field for Wendelstein 7-X; nx = ",
+                nx,
+                " ny = ",
+                ny,
+                " nz = ",
+                nz,
+            )
+            print(
+                "This part takes AGES... estimate: ",
+                nx * ny * nz / 52380.0,
+                " minutes.",
+            )
+
+            points = cl.types.Points3D()
+
+            ## Extender uses cylindrical coordinates, no need to convert, just flatten.
+            points.x1 = np.ndarray.flatten(r)  # x in Cylindrical
+            points.x2 = np.ndarray.flatten(phi)  # y in Cylindrical
+            points.x3 = np.ndarray.flatten(z)  # z in Cylindrical
+
+            ## call EXTENDER on web services
+            # if not (os.path.isfile(wout_file)):
+            plasmafield = cl.service.getPlasmaField(None, vmecURL, points, None)
+            # else:
+            # plasmafield = cl.service.getPlasmaField(wout, None, points, None)
+
+            ## Reshape to 3d array
+            Br = np.ndarray.reshape(np.asarray(plasmafield.x1), (nx, ny, nz))
+            Bphi = np.ndarray.reshape(np.asarray(plasmafield.x2), (nx, ny, nz))
+            Bz = np.ndarray.reshape(np.asarray(plasmafield.x3), (nx, ny, nz))
+
+            ## Save so we don't have to do this every time.
+            with open(fname, pickle_write_mode) as f:
+                pickle.dump([Br, Bphi, Bz], f)
+
+        return Br, Bphi, Bz
+
+    def magnetic_axis(self, phi_axis=0, configuration=0):
+        from osa import Client
+
+        tracer = Client("http://esb.ipp-hgw.mpg.de:8280/services/FieldLineProxy?wsdl")
+
+        config = tracer.types.MagneticConfig()
+        config.configIds = configuration
+        settings = tracer.types.AxisSettings()
+        res = tracer.service.findAxis(0.05, config, settings)
+
+        magnetic_axis_x = np.asarray(res.axis.vertices.x1)  # (m)
+        magnetic_axis_y = np.asarray(
+            res.axis.vertices.x2
+        )  # (m) -- REAL SPACE from an arbitrary start point
+        magnetic_axis_z = np.asarray(res.axis.vertices.x3)  # (m)
+        magnetic_axis_rmaj = np.sqrt(
+            magnetic_axis_x ** 2 + magnetic_axis_y ** 2 + magnetic_axis_z ** 2
+        )
+
+        magnetic_axis_r = np.sqrt(
+            np.asarray(magnetic_axis_x) ** 2 + np.asarray(magnetic_axis_y ** 2)
+        )
+        magnetic_axis_phi = np.arctan(magnetic_axis_y / magnetic_axis_x)
+
+        index = np.where(
+            (magnetic_axis_phi >= 0.97 * phi_axis)
+            & (magnetic_axis_phi <= 1.03 * phi_axis)
+        )
+        index = index[0]
+
+        return np.asarray([magnetic_axis_r[index], magnetic_axis_z[index]])[:, 0]
+
+    def Bxfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.0 * np.pi)
+        return self.br_interp((x, phi, z))
+
+    def Bzfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.0 * np.pi)
+        return self.bz_interp((x, phi, z))
+
+    def Byfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.0 * np.pi)
+        # Interpolate to get flux surface normalised psi
+        return self.bphi_interp((x, phi, z))
+
+    def Rfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.0 * np.pi)
+        return x
+
+
+class W7X_VMEC(MagneticField):
+    def __init__(
+        self,
+        nx=512,
+        ny=32,
+        nz=512,
+        x_range=(4.05, 6.55),
+        z_range=(-1.35, 1, 35),
+        phi_range=(0, 2 * np.pi),
+        vmec_id="w7x_ref_171",
+    ):
+        from scipy.interpolate import RegularGridInterpolator
+
+        self.nx = nx
+        self.ny = ny
+        self.nz = nz
+        ## create 1D arrays of cylindrical coordinates
+        r = np.linspace(x_range[0], x_range[-1], nx)
+        phi = np.linspace(phi_range[0], phi_range[-1], ny)
+        z = np.linspace(z_range[0], z_range[-1], nz)
+
+        ## make those 1D arrays 3D
+        rarray, yarray, zarray = np.meshgrid(r, phi, z, indexing="ij")
+
+        ## call vacuum field values
+        b_vmec = self.field_values(rarray, yarray, zarray, vmec_id)
+        Bx_vmec = b_vmec[0]
+        By_vmec = b_vmec[1]
+        Bz_vmec = b_vmec[2]
+
+        # Now we have a field and regular grid in (R,Z,phi) so
+        # we can get an interpolation function in 3D
+        points = (r, phi, z)
+
+        self.br_interp = RegularGridInterpolator(
+            points, Bx_vmec, bounds_error=False, fill_value=0.0
+        )
+        self.bz_interp = RegularGridInterpolator(
+            points, Bz_vmec, bounds_error=False, fill_value=0.0
+        )
+        self.bphi_interp = RegularGridInterpolator(
+            points, By_vmec, bounds_error=False, fill_value=1.0
+        )
+
+    def field_values(self, r, phi, z, vmec_id="w7x_ref_171"):
+        from osa import Client
+
+        vmec = Client("http://esb:8280/services/vmec_v5?wsdl")
+
+        pos = vmec.types.Points3D()
+
+        pos.x1 = np.ndarray.flatten(
+            np.ones((self.nx, self.ny, self.nz)) * r * np.cos(phi)
+        )  # x in Cartesian (real-space)
+        pos.x2 = np.ndarray.flatten(
+            np.ones((self.nx, self.ny, self.nz)) * r * np.sin(phi)
+        )  # y in Cartesian (real-space)
+        pos.x3 = np.ndarray.flatten(z)  # z in Cartesian (real-space)
+        b = vmec.service.magneticField(str(vmec_id), pos)
+
+        ## Reshape to 3d array
+        Bx = np.ndarray.reshape(np.asarray(b.field.x1), (self.nx, self.ny, self.nz))
+        By = np.ndarray.reshape(np.asarray(b.field.x2), (self.nx, self.ny, self.nz))
+        Bz = np.ndarray.reshape(np.asarray(b.field.x3), (self.nx, self.ny, self.nz))
+
+        ## Convert to cylindrical coordinates
+        Br = Bx * np.cos(phi) + By * np.sin(phi)
+        Bphi = -Bx * np.sin(phi) + By * np.cos(phi)
+
+        return Br, Bphi, Bz
+
+    def Bxfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.0 * np.pi)
+        return self.br_interp((x, phi, z))
+
+    def Bzfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.0 * np.pi)
+        return self.bz_interp((x, phi, z))
+
+    def Byfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.0 * np.pi)
+        # Interpolate to get flux surface normalised psi
+        return self.bphi_interp((x, phi, z))
+
+    def Rfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.0 * np.pi)
+        return x

@@ -1,4 +1,7 @@
 #include "laplacexz-cyclic.hxx"
+#include "bout/build_config.hxx"
+
+#if not BOUT_USE_METRIC_3D
 
 #include <utils.hxx>
 #include <fft.hxx>
@@ -9,7 +12,6 @@
 #include <output.hxx>
 
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc) {
-
   // Number of Z Fourier modes, including DC
   nmode = (m->LocalNz) / 2 + 1;
 
@@ -72,9 +74,10 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   ASSERT2(max(abs(coord->g13)) < 1e-5);
   
   int ind = 0;
+  const BoutReal zlength = getUniform(coord->zlength());
   for(int y=localmesh->ystart; y <= localmesh->yend; y++) {
     for(int kz = 0; kz < nmode; kz++) {
-      BoutReal kwave=kz*2.0*PI/(coord->zlength());
+      BoutReal kwave = kz * 2.0 * PI / zlength;
 
       if(localmesh->firstX()) {
         // Inner X boundary
@@ -267,3 +270,5 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   
   return result;
 }
+
+#endif // BOUT_USE_METRIC_3D

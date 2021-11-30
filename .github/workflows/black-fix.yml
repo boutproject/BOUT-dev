@@ -30,7 +30,7 @@ jobs:
       run: |
         pwd
         ls
-        $HOME/.local/bin/black tests/ tools/ $(grep '^#.*python.*$' bin/ tests/ tools/ -Ir|cut -d: -f1|grep -v _boutcore_build)
+        $HOME/.local/bin/black tests/ tools/ $(grep '^#.*python.*$' bin/ tests/ tools/ src/ -Ir|cut -d: -f1|grep -v _boutcore_build)
 
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:

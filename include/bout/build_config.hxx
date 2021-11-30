@@ -32,6 +32,7 @@ constexpr auto use_output_debug = static_cast<bool>(BOUT_USE_OUTPUT_DEBUG);
 constexpr auto use_sigfpe = static_cast<bool>(BOUT_USE_SIGFPE);
 constexpr auto use_signal = static_cast<bool>(BOUT_USE_SIGNAL);
 constexpr auto use_track = static_cast<bool>(BOUT_USE_TRACK);
+constexpr auto use_metric_3d = static_cast<bool>(BOUT_USE_METRIC_3D);
 constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 
 } // namespace build

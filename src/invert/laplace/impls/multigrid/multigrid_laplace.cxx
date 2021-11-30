@@ -28,6 +28,10 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
+#include "bout/build_config.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include <bout/mesh.hxx>
 #include <msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
@@ -549,7 +553,6 @@ BOUT_OMP(for)
 }
 
 void LaplaceMultigrid::generateMatrixF(int level) {
-
   TRACE("LaplaceMultigrid::generateMatrixF(int)");
   
   // Set (fine-level) matrix entries
@@ -567,20 +570,23 @@ BOUT_OMP(for collapse(2))
       int k2 = k-1;
       int k2p  = (k2+1)%Nz_global;
       int k2m  = (k2+Nz_global-1)%Nz_global;
-      
+
+      BoutReal dz = coords->dz(i2, yindex);
       BoutReal ddx_C = (C2(i2+1, yindex, k2) - C2(i2-1, yindex, k2))/2./coords->dx(i2, yindex)/C1(i2, yindex, k2);
-      BoutReal ddz_C = (C2(i2, yindex, k2p) - C2(i2, yindex, k2m)) /2./coords->dz/C1(i2, yindex, k2);
-      
+      BoutReal ddz_C =
+          (C2(i2, yindex, k2p) - C2(i2, yindex, k2m)) / 2. / dz / C1(i2, yindex, k2);
+
       BoutReal ddx = D(i2, yindex, k2)*coords->g11(i2, yindex)/coords->dx(i2, yindex)/coords->dx(i2, yindex); 
                // coefficient of 2nd derivative stencil (x-direction)
-      
-      BoutReal ddz = D(i2, yindex, k2)*coords->g33(i2, yindex)/coords->dz/coords->dz; 
-              // coefficient of 2nd derivative stencil (z-direction)
-      
-      BoutReal dxdz = D(i2, yindex, k2)*2.*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz; 
-              // coefficient of mixed derivative stencil (could assume zero, at least initially, 
-              // if easier; then check this is true in constructor)
-      
+
+      BoutReal ddz = D(i2, yindex, k2) * coords->g33(i2, yindex) / SQ(dz);
+      // coefficient of 2nd derivative stencil (z-direction)
+
+      BoutReal dxdz =
+          D(i2, yindex, k2) * 2. * coords->g13(i2, yindex) / coords->dx(i2, yindex) / dz;
+      // coefficient of mixed derivative stencil (could assume zero, at least initially,
+      // if easier; then check this is true in constructor)
+
       BoutReal dxd = (D(i2, yindex, k2)*coords->G1(i2, yindex)
         + coords->g11(i2, yindex)*ddx_C
         + coords->g13(i2, yindex)*ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
@@ -589,12 +595,15 @@ BOUT_OMP(for collapse(2))
         // add correction for non-uniform dx
         dxd += D(i2, yindex, k2)*coords->d1_dx(i2, yindex);
       }
-      
-      BoutReal dzd = (D(i2, yindex, k2)*coords->G3(i2, yindex)
-        + coords->g33(i2, yindex)*ddz_C
-        + coords->g13(i2, yindex)*ddx_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
-      )/coords->dz; // coefficient of 1st derivative stencil (z-direction)
-      
+
+      BoutReal dzd =
+          (D(i2, yindex, k2) * coords->G3(i2, yindex) + coords->g33(i2, yindex) * ddz_C
+           + coords->g13(i2, yindex)
+                 * ddx_C // (could assume zero, at least initially, if easier; then check
+                         // this is true in constructor)
+           )
+          / dz; // coefficient of 1st derivative stencil (z-direction)
+
       int ic = i*(llz+2)+k;
       mat[ic*9] = dxdz/4.;
       mat[ic*9+1] = ddx - dxd/2.;
@@ -684,3 +693,4 @@ BOUT_OMP(for)
   }
 }
 
+#endif // BOUT_USE_METRIC_3D

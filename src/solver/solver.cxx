@@ -829,10 +829,11 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     for (const auto& monitor : monitors) {
       if ((iter % monitor.monitor->period) == 0) {
         // Call each monitor one by one
-        if (monitor.monitor->call(this, simtime, iter / monitor.monitor->period - 1,
-                                  NOUT / monitor.monitor->period)
-            != 0) {
-          throw BoutException(_("Monitor signalled to quit"));
+        const int ret =
+            monitor.monitor->call(this, simtime, iter / monitor.monitor->period - 1,
+                                  NOUT / monitor.monitor->period);
+        if (ret != 0) {
+          throw BoutException(_("Monitor signalled to quit (return code {})"), ret);
         }
         // Write the monitor's diagnostics to the main output file
         Options monitor_dump;
@@ -850,11 +851,11 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     }
 
     model->finishOutputTimestep();
-  } catch (const BoutException&) {
+  } catch (const BoutException& e) {
     for (const auto& monitor : monitors) {
       monitor.monitor->cleanup();
     }
-    output_error.write(_("Monitor signalled to quit\n"));
+    output_error.write(_("Monitor signalled to quit (exception {})\n"), e.what());
     throw;
   }
 

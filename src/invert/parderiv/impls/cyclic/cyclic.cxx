@@ -35,10 +35,14 @@
  *
  ************************************************************************/
 
+#include "cyclic.hxx"
+#include "bout/build_config.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include <derivs.hxx>
 #include <globals.hxx>
 #include <utils.hxx>
-#include "cyclic.hxx"
 #include <fft.hxx>
 #include <boutexception.hxx>
 #include <cyclic_reduction.hxx>
@@ -103,6 +107,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   auto b = Matrix<dcomplex>(nsys, size);
   auto c = Matrix<dcomplex>(nsys, size);
 
+  const auto zlength = getUniform(coord->zlength());
   // Loop over flux-surfaces
   for (surf.first(); !surf.isDone(); surf.next()) {
     int x = surf.xpos;
@@ -142,7 +147,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
 
     // Set up tridiagonal system
     for (int k = 0; k < nsys; k++) {
-      BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/length
+      BoutReal kwave = k * 2.0 * PI / zlength; // wave number is 1/length
       for (int y = 0; y < localmesh->LocalNy - localmesh->ystart - local_ystart; y++) {
 
         BoutReal acoef = A(x, y + local_ystart);                       // Constant
@@ -177,16 +182,17 @@ const Field3D InvertParCR::solve(const Field3D &f) {
       int rank, np;
       bout::globals::mpi->MPI_Comm_rank(surf.communicator(), &rank);
       bout::globals::mpi->MPI_Comm_size(surf.communicator(), &np);
+
       if (rank == 0) {
         for (int k = 0; k < nsys; k++) {
-          BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/[rad]
+          BoutReal kwave = k * 2.0 * PI / zlength; // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
           a(k, 0) *= phase;
         }
       }
       if (rank == np - 1) {
         for (int k = 0; k < nsys; k++) {
-          BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/[rad]
+          BoutReal kwave = k * 2.0 * PI / zlength; // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , sin(kwave*ts));
           c(k, localmesh->LocalNy - 2 * localmesh->ystart - 1) *= phase;
         }
@@ -235,3 +241,4 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   return fromFieldAligned(result, "RGN_NOBNDRY");
 }
 
+#endif // BOUT_USE_METRIC_3D

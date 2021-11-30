@@ -206,7 +206,13 @@ Options& Options::operator=(const Options& other) {
   // Note: Here can't do copy-and-swap because pointers to parents are stored
 
   value = other.value;
-  attributes = other.attributes;
+
+  // Assigning the attributes.
+  // The simple assignment operator fails to compile with Apple Clang 12
+  //   attributes = other.attributes;
+  attributes.clear();
+  attributes.insert(other.attributes.begin(), other.attributes.end());
+
   full_name = other.full_name;
   is_section = other.is_section;
   children = other.children;
@@ -304,6 +310,27 @@ template <> std::string Options::as<std::string>(const std::string& UNUSED(simil
   return result;
 }
 
+namespace {
+/// Use FieldFactory to evaluate expression
+double parseExpression(const Options::ValueType& value, const Options* options,
+                       const std::string& type, const std::string& full_name) {
+  try {
+    // Parse the string, giving this Option pointer for the context
+    // then generate a value at t,x,y,z = 0,0,0,0
+    auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), options);
+    if (!gen) {
+      throw ParseException("FieldFactory did not return a generator for '{}'",
+                           bout::utils::variantToString(value));
+    }
+    return gen->generate({});
+  } catch (ParseException& error) {
+    // Convert any exceptions to something a bit more useful
+    throw BoutException(_("Couldn't get {} from option {:s} = '{:s}': {}"), type,
+                        full_name, bout::utils::variantToString(value), error.what());
+  }
+}
+} // namespace
+
 template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
   if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
@@ -322,15 +349,8 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
       rval = bout::utils::get<BoutReal>(value);
     
     } else if (bout::utils::holds_alternative<std::string>(value)) {
-      // Use FieldFactory to evaluate expression
-      // Parse the string, giving this Option pointer for the context
-      // then generate a value at t,x,y,z = 0,0,0,0
-      auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
-      if (!gen) {
-        throw BoutException(_("Couldn't get integer from option {:s} = '{:s}'"),
-                            full_name, bout::utils::variantToString(value));
-      }
-      rval = gen->generate({});
+      rval = parseExpression(value, this, "integer", full_name);
+
     } else {
       // Another type which can't be converted
       throw BoutException(_("Value for option {:s} is not an integer"), full_name);
@@ -372,16 +392,8 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) c
     result = bout::utils::get<BoutReal>(value);
       
   } else if (bout::utils::holds_alternative<std::string>(value)) {
-    
-    // Use FieldFactory to evaluate expression
-    // Parse the string, giving this Option pointer for the context
-    // then generate a value at t,x,y,z = 0,0,0,0
-    auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
-    if (!gen) {
-      throw BoutException(_("Couldn't get BoutReal from option {:s} = '{:s}'"), full_name,
-                          bout::utils::get<std::string>(value));
-    }
-    result = gen->generate({});
+    result = parseExpression(value, this, "BoutReal", full_name);
+
   } else {
     throw BoutException(_("Value for option {:s} cannot be converted to a BoutReal"),
                         full_name);
@@ -467,41 +479,40 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
 
     return Field3D(stored_value);
   }
-  
-  try {
+
+  if (bout::utils::holds_alternative<BoutReal>(value)
+      or bout::utils::holds_alternative<int>(value)) {
     BoutReal scalar_value = bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
     
     // Get metadata from similar_to, fill field with scalar_value
     return filledFrom(similar_to, scalar_value);
-  } catch (const std::bad_cast&) {
-    
-    // Convert from a string using FieldFactory
-    if (bout::utils::holds_alternative<std::string>(value)) {
-      return FieldFactory::get()->create3D(bout::utils::get<std::string>(value), this,
-                                           similar_to.getMesh(),
-                                           similar_to.getLocation());
-    } else if (bout::utils::holds_alternative<Tensor<BoutReal>>(value)) {
-      auto localmesh = similar_to.getMesh();
-      if (!localmesh) {
-        throw BoutException("mesh must be supplied when converting Tensor to Field3D");
-      }
-
-      // Get a reference, to try and avoid copying
-      const auto& tensor = bout::utils::get<Tensor<BoutReal>>(value);
-      
-      // Check if the dimension sizes are the same as a Field3D
-      if (tensor.shape() == std::make_tuple(localmesh->LocalNx,
-                                            localmesh->LocalNy,
-                                            localmesh->LocalNz)) {
-        return Field3D(tensor.getData(), localmesh, similar_to.getLocation(),
-                       {similar_to.getDirectionY(), similar_to.getDirectionZ()});
-      }
-      // If dimension sizes not the same, may be able
-      // to select a region from it using Mesh e.g. if this
-      // is from the input grid file.
-
-    }
   }
+
+  // Convert from a string using FieldFactory
+  if (bout::utils::holds_alternative<std::string>(value)) {
+    return FieldFactory::get()->create3D(bout::utils::get<std::string>(value), this,
+                                         similar_to.getMesh(), similar_to.getLocation());
+  }
+  if (bout::utils::holds_alternative<Tensor<BoutReal>>(value)) {
+    Mesh* localmesh = similar_to.getMesh();
+    if (localmesh == nullptr) {
+      throw BoutException("mesh must be supplied when converting Tensor to Field3D");
+    }
+
+    // Get a reference, to try and avoid copying
+    const auto& tensor = bout::utils::get<Tensor<BoutReal>>(value);
+
+    // Check if the dimension sizes are the same as a Field3D
+    if (tensor.shape()
+        == std::make_tuple(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz)) {
+      return Field3D(tensor.getData(), localmesh, similar_to.getLocation(),
+                     {similar_to.getDirectionY(), similar_to.getDirectionZ()});
+    }
+    // If dimension sizes not the same, may be able
+    // to select a region from it using Mesh e.g. if this
+    // is from the input grid file.
+  }
+
   throw BoutException(_("Value for option {:s} cannot be converted to a Field3D"),
                       full_name);
 }
@@ -522,36 +533,36 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
 
     return stored_value;
   }
-  
-  try {
+
+  if (bout::utils::holds_alternative<BoutReal>(value)
+      or bout::utils::holds_alternative<int>(value)) {
     BoutReal scalar_value = bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
     // Get metadata from similar_to, fill field with scalar_value
     return filledFrom(similar_to, scalar_value);
-  } catch (const std::bad_cast&) {
-    
-    // Convert from a string using FieldFactory
-    if (bout::utils::holds_alternative<std::string>(value)) {
-      return FieldFactory::get()->create2D(bout::utils::get<std::string>(value), this,
-                                           similar_to.getMesh(),
-                                           similar_to.getLocation());
-    } else if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
-      auto localmesh = similar_to.getMesh();
-      if (!localmesh) {
-        throw BoutException("mesh must be supplied when converting Matrix to Field2D");
-      }
+  }
 
-      // Get a reference, to try and avoid copying
-      const auto& matrix = bout::utils::get<Matrix<BoutReal>>(value);
+  // Convert from a string using FieldFactory
+  if (bout::utils::holds_alternative<std::string>(value)) {
+    return FieldFactory::get()->create2D(bout::utils::get<std::string>(value), this,
+                                         similar_to.getMesh(), similar_to.getLocation());
+  }
+  if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
+    Mesh* localmesh = similar_to.getMesh();
+    if (localmesh == nullptr) {
+      throw BoutException("mesh must be supplied when converting Matrix to Field2D");
+    }
 
-      // Check if the dimension sizes are the same as a Field3D
-      if (matrix.shape() == std::make_tuple(localmesh->LocalNx,
-                                            localmesh->LocalNy)) {
-        return Field2D(matrix.getData(), localmesh, similar_to.getLocation(),
-                       {similar_to.getDirectionY(), similar_to.getDirectionZ()});
-      }
+    // Get a reference, to try and avoid copying
+    const auto& matrix = bout::utils::get<Matrix<BoutReal>>(value);
+
+    // Check if the dimension sizes are the same as a Field3D
+    if (matrix.shape() == std::make_tuple(localmesh->LocalNx, localmesh->LocalNy)) {
+      return Field2D(matrix.getData(), localmesh, similar_to.getLocation(),
+                     {similar_to.getDirectionY(), similar_to.getDirectionZ()});
     }
   }
+
   throw BoutException(_("Value for option {:s} cannot be converted to a Field2D"),
                       full_name);
 }
@@ -574,65 +585,65 @@ FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
     return stored_value;
   }
 
-  try {
+  if (bout::utils::holds_alternative<BoutReal>(value)
+      or bout::utils::holds_alternative<int>(value)) {
     BoutReal scalar_value =
         bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
     // Get metadata from similar_to, fill field with scalar_value
     return filledFrom(similar_to, scalar_value);
-  } catch (const std::bad_cast&) {
+  }
+  const CELL_LOC location = hasAttribute("cell_location")
+                                ? CELL_LOCFromString(attributes.at("cell_location"))
+                                : similar_to.getLocation();
 
-    const CELL_LOC location = hasAttribute("cell_location")
-                                  ? CELL_LOCFromString(attributes.at("cell_location"))
-                                  : similar_to.getLocation();
-
-    // Convert from a string using FieldFactory
-    if (bout::utils::holds_alternative<std::string>(value)) {
-      return FieldFactory::get()->createPerp(bout::utils::get<std::string>(value), this,
-                                             similar_to.getMesh(), location);
-    } else if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
-      auto localmesh = similar_to.getMesh();
-      if (!localmesh) {
-        throw BoutException("mesh must be supplied when converting Matrix to FieldPerp");
-      }
-
-      // Get a reference, to try and avoid copying
-      const auto& matrix = bout::utils::get<Matrix<BoutReal>>(value);
-
-      // Check if the dimension sizes are the same as a FieldPerp
-      if (matrix.shape() == std::make_tuple(localmesh->LocalNx, localmesh->LocalNz)) {
-        const auto y_direction =
-            hasAttribute("direction_y")
-                ? YDirectionTypeFromString(attributes.at("direction_y"))
-                : similar_to.getDirectionY();
-        const auto z_direction =
-            hasAttribute("direction_z")
-                ? ZDirectionTypeFromString(attributes.at("direction_z"))
-                : similar_to.getDirectionZ();
-
-        auto result = FieldPerp(matrix.getData(), localmesh, location, -1,
-                                {y_direction, z_direction});
-
-        // Set the index after creating the field so as to not
-        // duplicate the code in `FieldPerp::setIndexFromGlobal`
-        if (hasAttribute("yindex_global")) {
-          result.setIndexFromGlobal(attributes.at("yindex_global"));
-        } else if (similar_to.getIndex() == -1) {
-          // If `yindex_global` attribute wasn't present (might be an
-          // older file), and `similar_to` doesn't have its index set
-          // (might not have been passed, so be default constructed),
-          // use the no-boundary form so that we get a default value
-          // on a grid cell
-          result.setIndex(localmesh->getLocalYIndexNoBoundaries(0));
-        } else {
-          result.setIndex(similar_to.getIndex());
-        }
-        return result;
-      }
-      // If dimension sizes not the same, may be able
-      // to select a region from it using Mesh e.g. if this
-      // is from the input grid file.
+  // Convert from a string using FieldFactory
+  if (bout::utils::holds_alternative<std::string>(value)) {
+    return FieldFactory::get()->createPerp(bout::utils::get<std::string>(value), this,
+                                           similar_to.getMesh(), location);
+  }
+  if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
+    Mesh* localmesh = similar_to.getMesh();
+    if (localmesh == nullptr) {
+      throw BoutException("mesh must be supplied when converting Matrix to FieldPerp");
     }
+
+    // Get a reference, to try and avoid copying
+    const auto& matrix = bout::utils::get<Matrix<BoutReal>>(value);
+
+    // Check if the dimension sizes are the same as a FieldPerp
+    if (matrix.shape() == std::make_tuple(localmesh->LocalNx, localmesh->LocalNz)) {
+      const auto y_direction =
+          hasAttribute("direction_y")
+              ? YDirectionTypeFromString(attributes.at("direction_y"))
+              : similar_to.getDirectionY();
+      const auto z_direction =
+          hasAttribute("direction_z")
+              ? ZDirectionTypeFromString(attributes.at("direction_z"))
+              : similar_to.getDirectionZ();
+
+      auto result = FieldPerp(matrix.getData(), localmesh, location, -1,
+                              {y_direction, z_direction});
+
+      // Set the index after creating the field so as to not
+      // duplicate the code in `FieldPerp::setIndexFromGlobal`
+      if (hasAttribute("yindex_global")) {
+        result.setIndexFromGlobal(attributes.at("yindex_global"));
+      } else if (similar_to.getIndex() == -1) {
+        // If `yindex_global` attribute wasn't present (might be an
+        // older file), and `similar_to` doesn't have its index set
+        // (might not have been passed, so be default constructed),
+        // use the no-boundary form so that we get a default value
+        // on a grid cell
+        result.setIndex(localmesh->getLocalYIndexNoBoundaries(0));
+      } else {
+        result.setIndex(similar_to.getIndex());
+      }
+      return result;
+    }
+    // If dimension sizes not the same, may be able
+    // to select a region from it using Mesh e.g. if this
+    // is from the input grid file.
   }
   throw BoutException(_("Value for option {:s} cannot be converted to a FieldPerp"),
                       full_name);
@@ -811,7 +822,7 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
 
     if (child->second.is_section) {
       // Recurse down and replace this section by its "unused" version
-      child->second = child->second.getUnused();
+      child->second = child->second.getUnused(exclude_sources);
       // If all of its children have been used, then we can remove it
       // as well
       if (child->second.children.empty()) {

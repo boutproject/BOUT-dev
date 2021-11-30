@@ -31,12 +31,23 @@
 #ifndef __MULTIGRID_LAPLACE_H__
 #define __MULTIGRID_LAPLACE_H__
 
+#include "invert_laplace.hxx"
+#include "bout/build_config.hxx"
+
+#if BOUT_USE_METRIC_3D
+
+namespace {
+RegisterUnavailableLaplace
+    registerlaplacemultigrid(LAPLACE_MULTIGRID, "BOUT++ was configured with 3D metrics");
+}
+
+#else
+
 #include <bout/mpi_wrapper.hxx>
 
 #include <globals.hxx>
 #include <output.hxx>
 #include <options.hxx>
-#include <invert_laplace.hxx>
 #include <boutexception.hxx>
 #include <utils.hxx>
 
@@ -238,5 +249,7 @@ private:
 namespace {
 RegisterLaplace<LaplaceMultigrid> registerlaplacemultigrid(LAPLACE_MULTIGRID);
 }
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // __MULTIGRID_LAPLACE_H__

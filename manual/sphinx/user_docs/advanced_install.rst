@@ -154,6 +154,17 @@ With the tcsh shell use
    setenv PETSC_ARCH arch-c
    ./configure --with-netcdf=/usr/local/tools/netcdf-gnu-4.1 --with-fftw=/usr/local MPICXX=mpiCC EXTRA_LIBS=-lcurl --with-petsc --with-cvode=~farley9/local --with-ida=~farley9/local
 
+MacOS / Apple Darwin
+~~~~~~~~~~~~~~~~~~~~
+
+Compiling with Apple Clang 12, the following configuration has been known to work
+
+.. code-block:: tcsh
+
+   cmake . -B build -DBOUT_ENABLE_BACKTRACE=Off -DBUILD_SHARED_LIBS=Off -DBOUT_USE_NLS=Off -DBOUT_USE_UUID_SYSTEM_GENERATOR=Off
+   cd build
+   make
+
 Marconi
 ~~~~~~~
 
@@ -436,6 +447,12 @@ Use the ``--with-sundials`` option to configure BOUT++ with SUNDIALS::
 
 SUNDIALS will allow you to select at run-time which solver to use. See
 :ref:`sec-timeoptions` for more details on how to do this.
+
+Notes:
+
+* If compiling SUNDIALS, make sure that it is configured with MPI (``MPI_ENABLE=ON``)
+* If you install SUNDIALS to a non-standard (system) directory, you will probably have
+  to add the ``lib`` directory to the ``LD_LIBRARY_PATH`` environment variable.
 
 .. _sec-PETSc-install:
 

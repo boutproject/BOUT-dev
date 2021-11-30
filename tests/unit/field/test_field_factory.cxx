@@ -575,9 +575,10 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   localmesh.createDefaultRegions();
   localmesh.setCoordinates(std::make_shared<Coordinates>(
       &localmesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}));
+  // No call to Coordinates::geometry() needed here
 
   localmesh.getCoordinates()->setParallelTransform(
       bout::utils::make_unique<ParallelTransformIdentity>(localmesh));
@@ -630,7 +631,7 @@ TEST_F(FieldFactoryTest, RequireMesh) {
 
 TEST_F(FieldFactoryTest, CreateOnMeshWithoutCoordinates) {
   static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
-  EXPECT_THROW(factory.create3D("x"), BoutException);
+  EXPECT_NO_THROW(factory.create3D("x"));
 }
 
 TEST_F(FieldFactoryTest, CleanCache) {
@@ -860,27 +861,27 @@ public:
 
   void checkInputGrid() override {}
 
-  const Field3D fromFieldAligned(const Field3D& f, const std::string&) override {
+  Field3D fromFieldAligned(const Field3D& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Aligned) {
       throw BoutException("Unaligned field passed to fromFieldAligned");
     }
     return -f;
   }
 
-  const FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
+  FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Aligned) {
       throw BoutException("Unaligned field passed to fromFieldAligned");
     }
     return -f;
   }
 
-  const Field3D toFieldAligned(const Field3D& f, const std::string&) override {
+  Field3D toFieldAligned(const Field3D& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Standard) {
       throw BoutException("Aligned field passed to toFieldAligned");
     }
     return -f;
   }
-  const FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override {
+  FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Standard) {
       throw BoutException("Aligned field passed to toFieldAligned");
     }

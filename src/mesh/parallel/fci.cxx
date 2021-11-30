@@ -47,8 +47,9 @@
 
 #include <string>
 
-FCIMap::FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset_,
-               BoundaryRegionPar* boundary, bool zperiodic)
+FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
+               int offset_, BoundaryRegionPar* inner_boundary,
+               BoundaryRegionPar* outer_boundary, bool zperiodic)
     : map_mesh(mesh), offset(offset_), boundary_mask(map_mesh),
       corner_boundary_mask(map_mesh) {
 
@@ -115,7 +116,7 @@ FCIMap::FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset_,
 
   // Cell corners
   Field3D xt_prime_corner{emptyFrom(xt_prime)};
-  Field3D zt_prime_corner{emptyFrom(xt_prime)};
+  Field3D zt_prime_corner{emptyFrom(zt_prime)};
 
   BOUT_FOR(i, xt_prime_corner.getRegion("RGN_NOBNDRY")) {
     // Point interpolated from (x+1/2, z+1/2)
@@ -230,6 +231,10 @@ FCIMap::FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset_,
     // Invert 2x2 matrix to get change in index
     const BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
     const BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
+
+    // Negative xt_prime means we've hit the inner boundary, otherwise
+    // the outer boundary
+    auto* boundary = (xt_prime[i] < 0.0) ? inner_boundary : outer_boundary;
     boundary->add_point(x, y, z, x + dx, y + 0.5 * offset,
                         z + dz,      // Intersection point in local index space
                         0.5 * dy[i], // Distance to intersection
@@ -253,6 +258,10 @@ Field3D FCIMap::integrate(Field3D &f) const {
   Field3D corner = interp_corner->interpolate(f);
 
   Field3D result{emptyFrom(f)};
+#if CHECK > 2
+  // The more general version of invalidate guards
+  result = BoutNaN;
+#endif
 
   int nz = map_mesh.LocalNz;
 
@@ -291,7 +300,7 @@ Field3D FCIMap::integrate(Field3D &f) const {
           // which would include cell edges and corners
           result(x, ynext, z) = 0.5 * (f_c + 0.25 * (f_pp + f_mp + f_pm + f_mm));
 
-          ASSERT2(finite(result(x,ynext,z)));
+          ASSERT2(std::isfinite(result(x,ynext,z)));
         }
       }
     }

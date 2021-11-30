@@ -363,12 +363,13 @@ target_include_directories(bout++ PUBLIC
 set(BOUT_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}/lib")
 set_target_properties(bout++ PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
-  ARCHIVE_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}")
+  ARCHIVE_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
+  SOVERSION 5.0.0)
 
 # Set some variables for the bout-config script
 set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
 set(BOUT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include")
+set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS}")
 
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
@@ -516,7 +517,7 @@ option(BOUT_ENABLE_BACKTRACE "Enable backtrace" ON)
 if (BOUT_ENABLE_BACKTRACE)
   find_program(ADDR2LINE_FOUND addr2line)
   if (NOT ADDR2LINE_FOUND)
-    message(FATAL_ERROR "addr2line not found")
+    message(FATAL_ERROR "addr2line not found. Disable backtrace by setting BOUT_ENABLE_BACKTRACE=Off")
   endif()
   target_link_libraries(bout++ PUBLIC ${CMAKE_DL_LIBS})
   set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -l${CMAKE_DL_LIBS}")
@@ -538,6 +539,14 @@ if (BOUT_ENABLE_OPENMP)
 endif()
 message(STATUS "Enable OpenMP: ${BOUT_ENABLE_OPENMP}")
 set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
+
+option(BOUT_ENABLE_METRIC_3D "Enable 3D metric support" OFF)
+if(BOUT_ENABLE_METRIC_3D)
+  set(BOUT_METRIC_TYPE "3D")
+else()
+  set(BOUT_METRIC_TYPE "2D")
+endif()
+set(BOUT_USE_METRIC_3D ${BOUT_ENABLE_METRIC_3D})
 
 # Optional dependencies
 
@@ -609,6 +618,9 @@ if (BOUT_USE_PETSC)
     target_link_libraries(bout++ PUBLIC PETSc::PETSc)
     string(JOIN " " CONFIG_PETSC_LIBRARIES ${PETSC_LIBRARIES})
     set(CONFIG_LDFLAGS "${CONFIG_PETSC_LIBRARIES} ${CONFIG_LDFLAGS}")
+    foreach(PETSC_INCLUDE ${PETSC_INCLUDES})
+      set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I${PETSC_INCLUDE}")
+    endforeach()
   endif()
 endif()
 message(STATUS "PETSc support: ${BOUT_USE_PETSC}")
@@ -736,11 +748,10 @@ string(REPLACE ";" " " BOUT_COMPILE_OPTIONS "${BOUT_COMPILE_OPTIONS}")
 #    build type actually being used. Note: this might behave weirdly
 #    on Windows. Might need to expand CMAKE_CONFIGURATION_TYPES
 #    instead?
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  set(CMAKE_BUILD_TYPE_UPPER "DEBUG")
-else()
-  string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
-endif()
+
+include(BuildType)
+# Here CMAKE_BUILD_TYPE is always set
+string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
 string(CONCAT BOUT_COMPILE_BUILD_FLAGS
   " "
   "${CMAKE_CXX_FLAGS}"
@@ -765,7 +776,7 @@ string(COMPARE EQUAL
   PROJECT_IS_TOP_LEVEL
 )
 option(BOUT_TESTS "Build the tests" ${PROJECT_IS_TOP_LEVEL})
-option(BOUT_RUN_ALL_TESTS "Run all of the tests (this can be slow!)" OFF)
+option(BOUT_ENABLE_ALL_TESTS "Enable running all of the tests, rather then the standard selection of fast tests" OFF)
 if(BOUT_TESTS)
   enable_testing()
 
@@ -801,9 +812,10 @@ if(BOUT_TESTS)
   add_dependencies(check check-unit-tests check-integrated-tests check-mms-tests)
 endif()
 
-option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
+option(BOUT_BUILD_EXAMPLES "Build the examples" ON)
 if(BOUT_BUILD_EXAMPLES)
-  add_subdirectory(examples)
+  add_custom_target(build-all-examples)
+  add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
 ##################################################
@@ -818,7 +830,10 @@ endif()
 # Generate the build config header
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_defines.hxx")
-  message(FATAL_ERROR "Generated build_defines.hxx header already exists; please remove '${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_defines.hxx' before continuing")
+  # If we do in source builds, this is fine
+  if (NOT ${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
+    message(FATAL_ERROR "Generated build_defines.hxx header already exists; please remove '${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_defines.hxx' before continuing")
+  endif()
 endif()
 
 configure_file(cmake_build_defines.hxx.in include/bout/build_defines.hxx)
@@ -837,7 +852,7 @@ set(BOUT_HAS_PNETCDF OFF)
 # while for static builds we need the dependencies too
 if (BUILD_SHARED_LIBS)
   # Include rpath linker flag so user doesn't need to set LD_LIBRARY_PATH
-  set(CONFIG_LDFLAGS "${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}\$BOUT_LIB_PATH -L\$BOUT_LIB_PATH -lbout++")
+  set(CONFIG_LDFLAGS "${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}\$BOUT_LIB_PATH -L\$BOUT_LIB_PATH -lbout++ -lfmt")
 else()
   set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS}")
 endif()
@@ -978,6 +993,7 @@ message("
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
    Backtrace enabled        : ${BOUT_USE_BACKTRACE}
+   Metric type              : ${BOUT_METRIC_TYPE}
    Python API support       : ${BOUT_USE_PYTHON}
    Sanitizers enabled       : ${BOUT_USE_SANITIZERS}
 

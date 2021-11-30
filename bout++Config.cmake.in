@@ -10,6 +10,7 @@ set(BOUT_USE_BACKTRACE @BOUT_USE_BACKTRACE@)
 set(BOUT_USE_OPENMP @BOUT_USE_OPENMP@)
 set(BOUT_HAS_OUTPUT_DEBUG @BOUT_HAS_OUTPUT_DEBUG@)
 set(BOUT_CHECK_LEVEL @BOUT_CHECK_LEVEL@)
+set(BOUT_USE_METRIC_3D @BOUT_USE_METRIC_3D@)
 
 set(BOUT_HAS_PVODE @BOUT_HAS_PVODE@)
 set(BOUT_HAS_NETCDF @BOUT_HAS_NETCDF@)
@@ -28,7 +29,12 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
 # specify the paths for the external packages as well
 if(EXISTS "@CMAKE_BINARY_DIR@/externalpackages/fmt")
   list(APPEND CMAKE_PREFIX_PATH "@CMAKE_BINARY_DIR@/externalpackages/fmt")
+endif()
+if(EXISTS "@CMAKE_BINARY_DIR@/externalpackages/mpark.variant")
   list(APPEND CMAKE_PREFIX_PATH "@CMAKE_BINARY_DIR@/externalpackages/mpark.variant")
+endif()
+if(EXISTS "@CMAKE_BINARY_DIR@/externalpackages/PVODE")
+  list(APPEND CMAKE_PREFIX_PATH "@CMAKE_BINARY_DIR@/externalpackages/PVODE")
 endif()
 
 # If using the build directory directly, we need the CMake modules too
