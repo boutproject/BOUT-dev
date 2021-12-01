@@ -102,19 +102,29 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   predictor =
       (*options)["predictor"].doc("Use linear predictor?").withDefault<bool>(true);
 
+  equation_form = (*options)["equation_form"]
+    .doc("Form of equation to solve: 0 = Pseudo-transient;"
+         " 1 = Rearranged Backward-Euler; 2 = Backward Euler;"
+         " 3 = Direct Newton")
+    .withDefault(1);
   // Initialise PETSc components
   int ierr;
 
   // Vectors
   ierr = VecCreate(BoutComm::get(), &snes_x);
-  CHKERRQ(ierr); // NOLINT
+  CHKERRQ(ierr);
   ierr = VecSetSizes(snes_x, nlocal, PETSC_DECIDE);
-  CHKERRQ(ierr); // NOLINT
+  CHKERRQ(ierr);
   ierr = VecSetFromOptions(snes_x);
-  CHKERRQ(ierr); // NOLINT
+  CHKERRQ(ierr);
 
   VecDuplicate(snes_x, &snes_f);
   VecDuplicate(snes_x, &x0);
+
+  if (equation_form == 1) {
+    // Need an intermediate vector for rearranged Backward Euler
+    VecDuplicate(snes_x, &delta_x);
+  }
 
   if (predictor) {
     // Storage for previous solution
@@ -914,10 +924,36 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   ierr = VecRestoreArray(f, &fdata);
   CHKERRQ(ierr);
 
-  // Backward Euler
-  // Set fdata = xdata - x0 - Δt*fdata
-  VecAYPX(f, -dt, x);   // f <- x - Δt*f
-  VecAXPY(f, -1.0, x0); // f <- f - x0
+  switch (equation_form) {
+  case 0: {
+    // Pseudo-transient timestepping (as in UEDGE)
+    // f <- f - x/Δt
+    VecAXPY(f, -1./dt, x);
+    break;
+  }
+  case 1: {
+    // Rearranged Backward Euler
+    // f = (x0 - x)/Δt + f
+    // First calculate x - x0 to minimise floating point issues
+    VecWAXPY(delta_x, -1.0, x0, x);  // delta_x = x - x0
+    VecAXPY(f, -1./dt, delta_x); // f <- f - delta_x / dt
+    break;
+  }
+  case 2: {
+    // Backward Euler
+    // Set f = x - x0 - Δt*f
+    VecAYPX(f, -dt, x);   // f <- x - Δt*f
+    VecAXPY(f, -1.0, x0); // f <- f - x0
+    break;
+  }
+  case 3: {
+    // Direct Newton solve -> don't modify f
+    break;
+  }
+  default: {
+    throw BoutException("Invalid choice of equation_form. Try 0-3");
+  }
+  };
 
   return 0;
 }
