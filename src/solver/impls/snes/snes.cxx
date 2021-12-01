@@ -604,7 +604,9 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
   // Force SNES to take at least one nonlinear iteration.
   // This may prevent the solver from getting stuck in false steady state conditions
+#if PETSC_VERSION_GE(3, 8, 0)
   SNESSetForceIteration(snes, PETSC_TRUE);
+#endif
 
   bool use_precon =
       (*options)["use_precon"].doc("Use user-supplied preconditioner?").withDefault<bool>(false);
