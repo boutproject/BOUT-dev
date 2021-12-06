@@ -163,7 +163,7 @@ Options OptionsNetCDF::read() {
   NcFile dataFile(filename, NcFile::read);
 
   if (dataFile.isNull()) {
-    throw BoutException("Could not open NetCDF file '{:s}'", filename);
+    throw BoutException("Could not open NetCDF file '{:s}' for reading", filename);
   }
 
   Options result;
