@@ -133,10 +133,8 @@ public:
   using ModelJacobianFunc = int (Model::*)(BoutReal t);
 
   PhysicsModel();
-  PhysicsModel(Mesh* mesh_, const bout::OptionsNetCDF& output_, bool output_enabled_,
-               const bout::OptionsNetCDF& restart_, bool restart_enabled_)
-      : mesh(mesh_), output_file(output_), output_enabled(output_enabled_),
-        restart_file(restart_), restart_enabled(restart_enabled_) {}
+  PhysicsModel(Mesh* mesh_, bool output_enabled_, bool restart_enabled_)
+      : mesh(mesh_), output_enabled(output_enabled_), restart_enabled(restart_enabled_) {}
 
   virtual ~PhysicsModel() = default;
   

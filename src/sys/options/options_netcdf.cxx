@@ -160,14 +160,14 @@ Options OptionsNetCDF::read() {
   Timer timer("io");
 
   // Open file
-  NcFile dataFile(filename, NcFile::read);
+  const NcFile read_file(filename, NcFile::read);
 
-  if (dataFile.isNull()) {
+  if (read_file.isNull()) {
     throw BoutException("Could not open NetCDF file '{:s}' for reading", filename);
   }
 
   Options result;
-  readGroup(filename, dataFile, result);
+  readGroup(filename, read_file, result);
 
   return result;
 }
@@ -681,7 +681,9 @@ void OptionsNetCDF::write(const Options& options, const std::string& time_dim) {
     ncmode = file.good() ? NcFile::FileMode::write : NcFile::FileMode::newFile;
   }
 
-  NcFile dataFile(filename, ncmode);
+  if (dataFile.isNull()) {
+    dataFile.open(filename, ncmode);
+  }
 
   if (dataFile.isNull()) {
     throw BoutException("Could not open NetCDF file '{:s}' for writing", filename);
@@ -689,12 +691,7 @@ void OptionsNetCDF::write(const Options& options, const std::string& time_dim) {
 
   writeGroup(options, dataFile, time_dim);
 
-  // Not a terribly pleasant hack: the first time we call this
-  // function we might want to overwrite the existing file, but the
-  // second time, we definitely don't! An alternative would be to keep
-  // the NcFile object itself hanging about as a member variable, but
-  // then we start needing to worry about flushing the file etc.
-  file_mode = FileMode::append;
+  dataFile.sync();
 }
 
 std::string getRestartDirectoryName(Options& options) {

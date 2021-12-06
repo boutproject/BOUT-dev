@@ -45,6 +45,8 @@ public:
 
 #include <string>
 
+#include <netcdf>
+
 #include "options.hxx"
 
 namespace bout {
@@ -59,10 +61,10 @@ public:
   OptionsNetCDF() {}
   explicit OptionsNetCDF(std::string filename, FileMode mode = FileMode::replace)
       : filename(std::move(filename)), file_mode(mode) {}
-  OptionsNetCDF(const OptionsNetCDF&) = default;
-  OptionsNetCDF(OptionsNetCDF&&) = default;
-  OptionsNetCDF& operator=(const OptionsNetCDF&) = default;
-  OptionsNetCDF& operator=(OptionsNetCDF&&) = default;
+  OptionsNetCDF(const OptionsNetCDF&) = delete;
+  OptionsNetCDF(OptionsNetCDF&&) = delete;
+  OptionsNetCDF& operator=(const OptionsNetCDF&) = delete;
+  OptionsNetCDF& operator=(OptionsNetCDF&&) = delete;
 
   /// Read options from file
   Options read();
@@ -78,6 +80,8 @@ public:
 private:
   std::string filename;
   FileMode file_mode{FileMode::replace};
+
+  netCDF::NcFile dataFile;
 };
 
 } // namespace bout

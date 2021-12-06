@@ -43,7 +43,7 @@ private:
 class MockPhysicsModel : public PhysicsModel {
 public:
   // Don't enable the output/restart files
-  MockPhysicsModel() : PhysicsModel(bout::globals::mesh, {}, false, {}, false) {}
+  MockPhysicsModel() : PhysicsModel(bout::globals::mesh, false, false) {}
   MOCK_METHOD(int, init, (bool restarting), (override));
   // Mock postInit even though it's not pure virtual because it does
   // stuff with files
