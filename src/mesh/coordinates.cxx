@@ -983,7 +983,7 @@ Field2D Coordinates::zlength() const {
     zlength_cache = std::make_unique<Field2D>(0., localmesh);
 
 #if BOUT_USE_METRIC_3D
-    BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) { zlength_cache[i] += dz[i]; }
+    BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) { (*zlength_cache)[i] += dz[i]; }
 #else
     (*zlength_cache) = dz * nz;
 #endif
