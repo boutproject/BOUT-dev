@@ -90,15 +90,8 @@ public:
 
   FieldMetric dx, dy, dz; ///< Mesh spacing in x, y and z
 
-  Field2D zlength() const {
-#if BOUT_USE_METRIC_3D
-    Field2D result(0., localmesh);
-    BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) { result[i] += dz[i]; }
-    return result;
-#else
-    return dz * nz;
-#endif
-  } ///< Length of the Z domain. Used for FFTs
+  /// Length of the Z domain. Used for FFTs
+  Field2D zlength() const;
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
   bool non_uniform;
@@ -298,6 +291,10 @@ private:
 
   /// Handles calculation of yup and ydown
   std::unique_ptr<ParallelTransform> transform{nullptr};
+
+  /// Cache variable for `zlength`. Invalidated when
+  /// `Coordinates::geometry` is called
+  mutable std::unique_ptr<Field2D> zlength_cache{nullptr};
 
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
