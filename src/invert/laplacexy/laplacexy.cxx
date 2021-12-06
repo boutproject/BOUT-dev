@@ -1850,7 +1850,7 @@ int LaplaceXY::globalIndex(int x, int y) {
   return static_cast<int>(std::round(indexXY(x, y)));
 }
 
-void LaplaceXY::savePerformance(Solver& solver, std::string name) {
+void LaplaceXY::savePerformance(Solver& solver, const std::string& name) {
   // set flag so that performance monitoring values are calculated
   save_performance = true;
 
@@ -1864,7 +1864,8 @@ void LaplaceXY::savePerformance(Solver& solver, std::string name) {
   solver.addMonitor(&monitor, Solver::BACK);
 }
 
-int LaplaceXY::LaplaceXYMonitor::call(Solver*, BoutReal, int, int) {
+int LaplaceXY::LaplaceXYMonitor::call(Solver* /*solver*/, BoutReal /*time*/, int /*iter*/,
+                                      int /*nout*/) {
   laplacexy.output_average_iterations = laplacexy.average_iterations;
 
   laplacexy.n_calls = 0;

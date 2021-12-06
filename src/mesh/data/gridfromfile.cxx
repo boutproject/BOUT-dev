@@ -59,7 +59,7 @@ bool GridFile::get(Mesh* UNUSED(m), std::string& sval, const std::string& name,
   const bool success = data.isSet(name);
   if (not success) {
     // Override any previously set defaults
-    data[name].force(def, data.getDefaultSource());
+    data[name].force(def, Options::getDefaultSource());
   }
   sval = data[name];
   return success;

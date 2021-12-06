@@ -136,7 +136,7 @@ public:
   /*!
    * If this method is called, save some performance monitoring information
    */
-  void savePerformance(Solver& solver, std::string name = "");
+  void savePerformance(Solver& solver, const std::string& name = "");
 
 private:
   
@@ -223,7 +223,7 @@ private:
   public:
     LaplaceXYMonitor(LaplaceXY& owner) : laplacexy(owner) {}
 
-    int call(Solver*, BoutReal, int, int) override;
+    int call(Solver* /*solver*/, BoutReal /*time*/, int /*iter*/, int /*nout*/) override;
     void outputVars(Options& output_options, const std::string& time_dimension) override;
   private:
     // LaplaceXY object that this monitor belongs to
