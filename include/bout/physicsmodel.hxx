@@ -68,20 +68,20 @@ public:
                                          Matrix<BoutReal>*, Tensor<BoutReal>*>;
 
   template <class T>
-  void addRepeat(T& value, std::string name) {
-    add(&value, std::move(name), true);
+  void addRepeat(T& value, const std::string& name) {
+    add(&value, name, true);
   }
   template <class T>
-  void addOnce(T& value, std::string name) {
-    add(&value, std::move(name), false);
+  void addOnce(T& value, const std::string& name) {
+    add(&value, name, false);
   }
   template <class T>
   void add(T& value, const std::string& name, bool save_repeat = false) {
-    add(&value, std::move(name), save_repeat);
+    add(&value, name, save_repeat);
   }
 
-  void addRepeat(ValueType value, std::string name) { add(value, std::move(name), true); }
-  void addOnce(ValueType value, std::string name) { add(value, std::move(name), false); }
+  void addRepeat(ValueType value, const std::string& name) { add(value, name, true); }
+  void addOnce(ValueType value, const std::string& name) { add(value, name, false); }
   void add(ValueType value, const std::string& name, bool save_repeat = false);
 
   /// Write stored data to file immediately
