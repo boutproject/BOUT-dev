@@ -91,7 +91,7 @@ public:
   FieldMetric dx, dy, dz; ///< Mesh spacing in x, y and z
 
   /// Length of the Z domain. Used for FFTs
-  Field2D zlength() const;
+  const Field2D& zlength() const;
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
   bool non_uniform;
