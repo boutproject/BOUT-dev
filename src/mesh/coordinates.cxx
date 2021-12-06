@@ -1276,7 +1276,6 @@ int Coordinates::geometry(bool recalculate_staggered,
 
   // Invalidate and recalculate cached variables
   zlength_cache.reset();
-  zlength();
 
   return 0;
 }
