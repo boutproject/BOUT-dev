@@ -653,8 +653,8 @@ OptionsNetCDF::OptionsNetCDF(std::string filename, FileMode mode)
     : filename(std::move(filename)), file_mode(mode), data_file(nullptr) {}
 
 OptionsNetCDF::~OptionsNetCDF() = default;
-OptionsNetCDF::OptionsNetCDF(OptionsNetCDF&&) = default;
-OptionsNetCDF& OptionsNetCDF::operator=(OptionsNetCDF&&) = default;
+OptionsNetCDF::OptionsNetCDF(OptionsNetCDF&&) noexcept = default;
+OptionsNetCDF& OptionsNetCDF::operator=(OptionsNetCDF&&) noexcept = default;
 
 
 void OptionsNetCDF::verifyTimesteps() const {

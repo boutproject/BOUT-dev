@@ -69,9 +69,9 @@ public:
   explicit OptionsNetCDF(std::string filename, FileMode mode = FileMode::replace);
   ~OptionsNetCDF();
   OptionsNetCDF(const OptionsNetCDF&) = delete;
-  OptionsNetCDF(OptionsNetCDF&&);
+  OptionsNetCDF(OptionsNetCDF&&) noexcept;
   OptionsNetCDF& operator=(const OptionsNetCDF&) = delete;
-  OptionsNetCDF& operator=(OptionsNetCDF&&);
+  OptionsNetCDF& operator=(OptionsNetCDF&&) noexcept;
 
   /// Read options from file
   Options read();
