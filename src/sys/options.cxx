@@ -209,6 +209,27 @@ template <> std::string Options::as<std::string>(const std::string& UNUSED(simil
   return result;
 }
 
+namespace {
+/// Use FieldFactory to evaluate expression
+double parseExpression(const Options::ValueType& value, const Options* options,
+                       const std::string& type, const std::string& full_name) {
+  try {
+    // Parse the string, giving this Option pointer for the context
+    // then generate a value at t,x,y,z = 0,0,0,0
+    auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), options);
+    if (!gen) {
+      throw ParseException("FieldFactory did not return a generator for '%s'",
+                           bout::utils::variantToString(value).c_str());
+    }
+    return gen->generate(0., 0., 0., 0.);
+  } catch (ParseException& error) {
+    // Convert any exceptions to something a bit more useful
+    throw BoutException(_("Couldn't get %s from option %s = '%s': %s"), type.c_str(),
+                        full_name.c_str(), bout::utils::variantToString(value).c_str(), error.what());
+  }
+}
+} // namespace
+
 template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
@@ -227,15 +248,8 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
       rval = bout::utils::get<BoutReal>(value);
     
     } else if (bout::utils::holds_alternative<std::string>(value)) {
-      // Use FieldFactory to evaluate expression
-      // Parse the string, giving this Option pointer for the context
-      // then generate a value at t,x,y,z = 0,0,0,0
-      auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
-      if (!gen) {
-        throw BoutException(_("Couldn't get integer from option %s = '%s'"),
-                            full_name.c_str(), bout::utils::variantToString(value).c_str());
-      }
-      rval = gen->generate(0, 0, 0, 0);
+      rval = parseExpression(value, this, "integer", full_name);
+
     } else {
       // Another type which can't be converted
       throw BoutException(_("Value for option %s is not an integer"),
@@ -278,16 +292,8 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) c
     result = bout::utils::get<BoutReal>(value);
       
   } else if (bout::utils::holds_alternative<std::string>(value)) {
-    
-    // Use FieldFactory to evaluate expression
-    // Parse the string, giving this Option pointer for the context
-    // then generate a value at t,x,y,z = 0,0,0,0
-    auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
-    if (!gen) {
-      throw BoutException(_("Couldn't get BoutReal from option %s = '%s'"), full_name.c_str(),
-                          bout::utils::get<std::string>(value).c_str());
-    }
-    result = gen->generate(0, 0, 0, 0);
+    result = parseExpression(value, this, "BoutReal", full_name);
+
   } else {
     throw BoutException(_("Value for option %s cannot be converted to a BoutReal"),
                         full_name.c_str());
