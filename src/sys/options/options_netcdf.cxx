@@ -647,6 +647,16 @@ std::vector<TimeDimensionError> verifyTimesteps(const NcGroup& group) {
 
 namespace bout {
 
+OptionsNetCDF::OptionsNetCDF() : data_file(nullptr) {}
+
+OptionsNetCDF::OptionsNetCDF(std::string filename, FileMode mode)
+    : filename(std::move(filename)), file_mode(mode), data_file(nullptr) {}
+
+OptionsNetCDF::~OptionsNetCDF() = default;
+OptionsNetCDF::OptionsNetCDF(OptionsNetCDF&&) = default;
+OptionsNetCDF& OptionsNetCDF::operator=(OptionsNetCDF&&) = default;
+
+
 void OptionsNetCDF::verifyTimesteps() const {
   NcFile dataFile(filename, NcFile::read);
   auto errors = ::verifyTimesteps(dataFile);
@@ -681,17 +691,17 @@ void OptionsNetCDF::write(const Options& options, const std::string& time_dim) {
     ncmode = file.good() ? NcFile::FileMode::write : NcFile::FileMode::newFile;
   }
 
-  if (dataFile.isNull()) {
-    dataFile.open(filename, ncmode);
+  if (not data_file) {
+    data_file = std::make_unique<netCDF::NcFile>(filename, ncmode);
   }
 
-  if (dataFile.isNull()) {
+  if (data_file->isNull()) {
     throw BoutException("Could not open NetCDF file '{:s}' for writing", filename);
   }
 
-  writeGroup(options, dataFile, time_dim);
+  writeGroup(options, *data_file, time_dim);
 
-  dataFile.sync();
+  data_file->sync();
 }
 
 std::string getRestartDirectoryName(Options& options) {

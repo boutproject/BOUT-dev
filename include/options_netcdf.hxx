@@ -44,10 +44,15 @@ public:
 #else
 
 #include <string>
-
-#include <netcdf>
+#include <memory>
 
 #include "options.hxx"
+
+/// Forward declare netCDF file type so we don't need to depend
+/// directly on netCDF
+namespace netCDF {
+class NcFile;
+}
 
 namespace bout {
 
@@ -58,13 +63,15 @@ public:
                        append   ///< Append to file when writing
   };
 
-  OptionsNetCDF() {}
-  explicit OptionsNetCDF(std::string filename, FileMode mode = FileMode::replace)
-      : filename(std::move(filename)), file_mode(mode) {}
+  // Constructors need to be defined in implementation due to forward
+  // declaration of NcFile
+  OptionsNetCDF();
+  explicit OptionsNetCDF(std::string filename, FileMode mode = FileMode::replace);
+  ~OptionsNetCDF();
   OptionsNetCDF(const OptionsNetCDF&) = delete;
-  OptionsNetCDF(OptionsNetCDF&&) = delete;
+  OptionsNetCDF(OptionsNetCDF&&);
   OptionsNetCDF& operator=(const OptionsNetCDF&) = delete;
-  OptionsNetCDF& operator=(OptionsNetCDF&&) = delete;
+  OptionsNetCDF& operator=(OptionsNetCDF&&);
 
   /// Read options from file
   Options read();
@@ -78,10 +85,12 @@ public:
   /// any differences, otherwise is silent
   void verifyTimesteps() const;
 private:
+  /// Name of the file on disk
   std::string filename;
+  /// How to open the file for writing
   FileMode file_mode{FileMode::replace};
-
-  netCDF::NcFile dataFile;
+  /// Pointer to netCDF file so we don't introduce direct dependence
+  std::unique_ptr<netCDF::NcFile> data_file;
 };
 
 } // namespace bout
