@@ -13,8 +13,8 @@ protected:
     g.setLocation(CELL_YLOW); // g staggered 
     
     // Tell BOUT++ to solve f and g
-    bout_solve(f, "f");
-    bout_solve(g, "g");
+    solver->add(f, "f");
+    solver->add(g, "g");
 
     return 0;
   }

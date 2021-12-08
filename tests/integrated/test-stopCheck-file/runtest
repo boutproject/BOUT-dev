@@ -28,7 +28,11 @@ for data_dir, stop_file in zip(data_dirs, stop_files):
             executable, data_dir, check, stop_file
         )
 
-        s, out = launch(command, nproc=nproc, pipe=True,)
+        s, out = launch(
+            command,
+            nproc=nproc,
+            pipe=True,
+        )
         with open("run.log.{}.{}".format(data_dir, check), "w") as f:
             f.write(out)
 

@@ -28,10 +28,10 @@
 #include <utils.hxx>
 #include <cmath>
 
-#include <bout/mesh.hxx>
 #include "bout/build_config.hxx"
-#include <output.hxx>
+#include <bout/mesh.hxx>
 #include <msg_stack.hxx>
+#include <output.hxx>
 
 using std::string;
 using std::vector;

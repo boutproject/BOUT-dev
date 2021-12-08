@@ -3,8 +3,8 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 100     # number of time-steps
-TIMESTEP = 1e-2   # time between outputs
+nout = 100     # number of time-steps
+timestep = 0.01   # time between outputs
 
 MZ = 64     # number of points in z direction (2^n)
 
@@ -12,7 +12,7 @@ grid = "simple_xz.nc"
 
 dump_format = "nc" # Set extension for dump files (nc = NetCDF)
 
-NXPE = 1 
+NXPE = 1
 
 periodicX = true   # Make domain periodic in X
 
@@ -41,56 +41,27 @@ upwind = W3
 flux = U1
 
 ##################################################
-# Laplacian inversion settings
-
-[laplace]
-all_terms = false
-laplace_nonuniform = true
-filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
-
-##################################################
 # Solver settings
 
 [solver]
 
-# mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
-mxstep = 50000
-
-type=karniadakis
-timestep=1e-4
+type = splitrk
+timestep = 0.0001
 
 ##################################################
 # settings for split operator model
 
 [split]
 
-rate = 0.  # Reaction rate
+rate = 0.0  # Reaction rate
 
 ##################################################
 # settings for individual variables
-# The section "All" defines default settings for all variables
-# These can be overridden for individual variables in
-# a section of that name.
-
-[All]
-scale = 0.0 # default size of initial perturbations
-function = sin(2*pi*x) * sin(z)
-# boundary conditions
-# -------------------
-# dirichlet    - Zero value
-# neumann      - Zero gradient
-# zerolaplace  - Laplacian = 0, decaying solution
-# constlaplace - Laplacian = const, decaying solution
-#
-# relax( )   - Make boundary condition relaxing
-
-bndry_all = dirichlet # Default zero value
 
 [U]
-scale = 1.
+scale = 1.0
 function = sin(4*pi*x) * sin(3*z)
 
 [phi]
-scale = 1.
+scale = 1.0
+function = sin(2*pi*x) * sin(z)

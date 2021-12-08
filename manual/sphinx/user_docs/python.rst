@@ -7,9 +7,8 @@ boututils
 ---------
 
 -  ``class Datafile`` provides a convenient way to read and write NetCDF
-   or HDF5 files. There are many different NetCDF libraries available
-   for Python, so this class tries to provide a consistent interface to
-   many of them, as well as to h5py.
+   files. There are many different NetCDF libraries available for Python, so
+   this class tries to provide a consistent interface to many of them.
 
 -  ``deriv()``
 

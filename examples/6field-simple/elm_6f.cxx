@@ -422,54 +422,71 @@ protected:
     // Prints out what values are assigned
     /////////////////////////////////////////////////////////////
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["highbeta"];
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["highbeta"];
 
-    // use the hyperbolic profile of n0. If both  n0_fake_prof and
-    // T0_fake_prof are false, use the profiles from grid file
-    n0_fake_prof = options["n0_fake_prof"].withDefault(false);
-    // the total height of profile of N0, in percentage of Ni_x
-    n0_height = options["n0_height"].withDefault(0.4);
-    // the center or average of N0, in percentage of Ni_x
-    n0_ave = options["n0_ave"].withDefault(0.01);
-    // the width of the gradient of N0,in percentage of x
-    n0_width = options["n0_width"].withDefault(0.1);
-    // the grid number of the center of N0, in percentage of x
-    n0_center = options["n0_center"].withDefault(0.633);
-    // the start of flat region of N0 on SOL side, in percentage of x
-    n0_bottom_x = options["n0_bottom_x"].withDefault(0.81);
-    T0_fake_prof = options["T0_fake_prof"].withDefault(false);
-    // the amplitude of constant temperature, in percentage
-    Tconst = options["Tconst"].withDefault(-1.0);
+    n0_fake_prof = options["n0_fake_prof"]
+                       .doc("use the hyperbolic profile of n0. If both  n0_fake_prof and "
+                            "T0_fake_prof are "
+                            "false, use the profiles from grid file")
+                       .withDefault(false);
+    n0_height = options["n0_height"]
+                    .doc("the total height of profile of N0, in percentage of Ni_x")
+                    .withDefault(0.4);
+    n0_ave = options["n0_ave"]
+                 .doc("the center or average of N0, in percentage of Ni_x")
+                 .withDefault(0.01);
+    n0_width = options["n0_width"]
+                   .doc("the width of the gradient of N0,in percentage of x")
+                   .withDefault(0.1);
+    n0_center = options["n0_center"]
+                    .doc("the grid number of the center of N0, in percentage of x")
+                    .withDefault(0.633);
+    n0_bottom_x =
+        options["n0_bottom_x"]
+            .doc("the start of flat region of N0 on SOL side, in percentage of x")
+            .withDefault(0.81);
+    T0_fake_prof = options["T0_fake_prof"].doc("").withDefault(false);
+    Tconst = options["Tconst"]
+                 .doc("the amplitude of constant temperature, in percentage")
+                 .withDefault(-1.0);
 
     experiment_Er = options["experiment_Er"].withDefault(false);
 
-    // test parameter for the cross term of invert Lapalace
-    laplace_alpha = options["laplace_alpha"].withDefault(1.0);
-    // limit the negative value of total quantities
-    Low_limit = options["Low_limit"].withDefault(1.0e-10);
-    // input q95 as a constant, if <0 use profile from grid
-    q95_input = options["q95_input"].withDefault(5.0);
-    // using magnetic field to calculate q profile
-    local_q = options["local_q"].withDefault(false);
-    // flux-limiting coefficient, typical value is [0.03, 3]
-    q_alpha = options["q_alpha"].withDefault(1.0);
+    laplace_alpha = options["laplace_alpha"]
+                        .doc("test parameter for the cross term of invert Lapalace")
+                        .withDefault(1.0);
+    Low_limit = options["Low_limit"]
+                    .doc("limit the negative value of total quantities")
+                    .withDefault(1.0e-10);
+    q95_input = options["q95_input"]
+                    .doc("input q95 as a constant, if <0 use profile from grid")
+                    .withDefault(5.0);
+    local_q = options["local_q"]
+                  .doc("Using magnetic field to calculate q profile?")
+                  .withDefault(false);
+    q_alpha = options["q_alpha"]
+                  .doc("flux-limiting coefficient, typical value is [0.03, 3]")
+                  .withDefault(1.0);
 
-    // sheath energy transmission factor for ion
-    gamma_i_BC = options["gamma_i_BC"].withDefault(-1.0);
-    // sheath energy transmission factor for electron
-    gamma_e_BC = options["gamma_e_BC"].withDefault(-1.0);
-    // Sheath boundary width in grid number
-    Sheath_width = options["Sheath_width"].withDefault(1);
+    gamma_i_BC = options["gamma_i_BC"]
+                     .doc("sheath energy transmission factor for ion")
+                     .withDefault(-1.0);
+    gamma_e_BC = options["gamma_e_BC"]
+                     .doc("sheath energy transmission factor for electron")
+                     .withDefault(-1.0);
+    Sheath_width = options["Sheath_width"]
+                       .doc("Sheath boundary width in grid number")
+                       .withDefault(1);
 
-    density = options["density"].withDefault(1.0e19);      // Number density [m^-3]
-    Zi = options["Zi"].withDefault(1);                     // ion charge number
-    continuity = options["continuity"].withDefault(false); // use continuity equation
+    density = options["density"].doc("Number density [m^-3]").withDefault(1.0e19);
+    Zi = options["Zi"].doc("ion charge number").withDefault(1);
+    continuity = options["continuity"].doc("use continuity equation").withDefault(false);
 
-    // If true, evolve J raher than Psi
-    evolve_jpar = options["evolve_jpar"].withDefault(false);
-    // Use solver constraint for phi
-    phi_constraint = options["phi_constraint"].withDefault(false);
+    evolve_jpar =
+        options["evolve_jpar"].doc("If true, evolve J raher than Psi").withDefault(false);
+    phi_constraint =
+        options["phi_constraint"].doc("Use solver constraint for phi").withDefault(false);
 
     // Effects to include/exclude
     include_curvature = options["include_curvature"].withDefault(true);
@@ -535,127 +552,138 @@ protected:
       return 1;
     }
 
-    AA = options["AA"].withDefault(1.0); // ion mass in units of proton mass
+    AA = options["AA"].doc("ion mass in units of proton mass").withDefault(1.0);
     Mi *= AA;
 
-    // including electron inertial, electron mass
-    emass = options["emass"].withDefault(false);
-    // inverse of electron mass
-    emass_inv = options["emass_inv"].withDefault(1.0);
+    emass = options["emass"]
+                .doc("including electron inertial, electron mass")
+                .withDefault(false);
+    emass_inv = options["emass_inv"].doc("inverse of electron mass").withDefault(1.0);
 
-    // Diamagnetic effects?
-    diamag = options["diamag"].withDefault(false);
-    // Include equilibrium phi0
-    diamag_phi0 = options["diamag_phi0"].withDefault(diamag);
-    // Scale diamagnetic effects by this factor
-    dia_fact = options["dia_fact"].withDefault(1.0);
+    diamag = options["diamag"].doc("Diamagnetic effects?").withDefault(false);
+    diamag_phi0 =
+        options["diamag_phi0"].doc("Include equilibrium phi0").withDefault(diamag);
+    dia_fact = options["dia_fact"]
+                   .doc("Scale diamagnetic effects by this factor")
+                   .withDefault(1.0);
 
     noshear = options["noshear"].withDefault(false);
 
     relax_j_vac =
-        options["relax_j_vac"].withDefault(false); // Relax vacuum current to zero
+        options["relax_j_vac"].doc("Relax vacuum current to zero").withDefault(false);
     relax_j_tconst = options["relax_j_tconst"].withDefault(0.1);
 
     // Toroidal filtering
-    filter_z = options["filter_z"].withDefault(false); // Filter a single n
+    filter_z = options["filter_z"].doc("Filter a single n").withDefault(false);
     filter_z_mode = options["filter_z_mode"].withDefault(1);
-    low_pass_z = options["low_pass_z"].withDefault(false);   // Low-pass filter
+    low_pass_z = options["low_pass_z"].doc("Low pass filter. < 0 -> off").withDefault(-1);
     zonal_flow = options["zonal_flow"].withDefault(false);   // zonal flow filter
     zonal_field = options["zonal_field"].withDefault(false); // zonal field filter
     zonal_bkgd = options["zonal_bkgd"].withDefault(false);   // zonal background P filter
 
-    filter_nl = options["filter_nl"].withDefault(-1); // zonal background P filter
+    filter_nl = options["filter_nl"].doc("zonal background P filter").withDefault(-1);
 
     // Radial smoothing
-    smooth_j_x = options["smooth_j_x"].withDefault(false); // Smooth Jpar in x
+    smooth_j_x = options["smooth_j_x"].doc("Smooth Jpar in x").withDefault(false);
 
     // Jpar boundary region
     jpar_bndry_width = options["jpar_bndry_width"].withDefault(-1);
 
     // Parallel differencing
-    // Use a (semi-) Lagrangian method for Grad_parP
-    OPTION(options, parallel_lagrange, false);
+    parallel_lagrange = options["parallel_lagrange"]
+                            .doc("Use a (semi-) Lagrangian method for Grad_parP")
+                            .withDefault(false);
     parallel_project = options["parallel_project"].withDefault(false);
 
     // Vacuum region control
-    // Fraction of peak pressure
-    vacuum_pressure = options["vacuum_pressure"].withDefault(0.02);
-    // Transition width in pressure
-    vacuum_trans = options["vacuum_trans"].withDefault(0.005);
+    vacuum_pressure =
+        options["vacuum_pressure"].doc("Fraction of peak pressure").withDefault(0.02);
+    vacuum_trans =
+        options["vacuum_trans"].doc("Transition width in pressure").withDefault(0.005);
 
     // Resistivity and hyper-resistivity options
-    vac_lund = options["vac_lund"].withDefault(0.0); // Lundquist number in vacuum region
-    core_lund = options["core_lund"].withDefault(0.0); // Lundquist number in core region
+    vac_lund =
+        options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
+    core_lund =
+        options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
     hyperresist = options["hyperresist"].withDefault(-1.0);
     ehyperviscos = options["ehyperviscos"].withDefault(-1.0);
-    // Use Spitzer resistivity
-    spitzer_resist = options["spitzer_resist"].withDefault(false);
+    spitzer_resist =
+        options["spitzer_resist"].doc("Use Spitzer resistivity?").withDefault(false);
 
     // Inner boundary damping
     damp_width = options["damp_width"].withDefault(0);
     damp_t_const = options["damp_t_const"].withDefault(0.1);
 
     // Viscosity and hyper-viscosity
-    viscos_par = options["viscos_par"].withDefault(-1.0);   // Parallel viscosity
-    viscos_perp = options["viscos_perp"].withDefault(-1.0); // Perpendicular viscosity
-    hyperviscos = options["hyperviscos"].withDefault(-1.0); // Radial hyperviscosity
+    viscos_par = options["viscos_par"].doc("Parallel viscosity").withDefault(-1.0);
+    viscos_perp = options["viscos_perp"].doc("Perpendicular viscosity").withDefault(-1.0);
+    hyperviscos = options["hyperviscos"].doc("Radial hyperviscosity").withDefault(-1.0);
 
-    // Parallel temperature diffusion
-    diffusion_par = options["diffusion_par"].withDefault(-1.0);
-    // M: 4th Parallel density diffusion
-    diffusion_n4 = options["diffusion_n4"].withDefault(-1.0);
-    // M: 4th Parallel ion temperature diffusion
-    diffusion_ti4 = options["diffusion_ti4"].withDefault(-1.0);
-    // M: 4th Parallel electron temperature diffusion
-    diffusion_te4 = options["diffusion_te4"].withDefault(-1.0);
-    // M: 4th Parallel ion parallel velocity diffusion
-    diffusion_v4 = options["diffusion_v4"].withDefault(-1.0);
-    // xqx: parallel hyper-viscous diffusion for vorticity
-    diffusion_u4 = options["diffusion_u4"].withDefault(-1.0);
+    diffusion_par =
+        options["diffusion_par"].doc("Parallel temperature diffusion").withDefault(-1.0);
+    diffusion_n4 =
+        options["diffusion_n4"].doc("4th Parallel density diffusion").withDefault(-1.0);
+    diffusion_ti4 = options["diffusion_ti4"]
+                        .doc("4th Parallel ion temperature diffusion")
+                        .withDefault(-1.0);
+    diffusion_te4 = options["diffusion_te4"]
+                        .doc("4th Parallel electron temperature diffusion")
+                        .withDefault(-1.0);
+    diffusion_u4 = options["diffusion_u4"]
+                       .doc("parallel hyper-viscous diffusion for vorticity")
+                       .withDefault(-1.0);
+    diffusion_v4 = options["diffusion_v4"]
+                       .doc("4th order Parallel ion velocity diffusion (< 0 = none)")
+                       .withDefault(-1.0);
 
     // heating factor in pressure
-    // heating power in pressure
-    heating_P = options["heating_P"].withDefault(-1.0);
-    // the percentage of radial grid points for heating profile radial
-    // width in pressure
-    hp_width = options["hp_width"].withDefault(0.1);
-    // the percentage of radial grid points for heating profile radial
-    // domain in pressure
-    hp_length = options["hp_length"].withDefault(0.04);
+    heating_P = options["heating_P"].doc("heating power in pressure").withDefault(-1.0);
+    //
+    hp_width = options["hp_width"]
+                   .doc("the percentage of radial grid points for heating profile radial "
+                        "width in pressure")
+                   .withDefault(0.1);
+    hp_length = options["hp_length"]
+                    .doc("the percentage of radial grid points for heating profile "
+                         "radial domain in pressure")
+                    .withDefault(0.04);
 
     // sink factor in pressure
-    // sink in pressure
-    sink_vp = options["sink_vp"].withDefault(-1.0);
-    // the percentage of radial grid points for sink profile radial
-    // width in pressure
-    sp_width = options["sp_width"].withDefault(0.05);
-    // the percentage of radial grid points for sink profile radial
-    // domain in pressure
-    sp_length = options["sp_length"].withDefault(0.04);
+    sink_vp = options["sink_vp"].doc("sink in pressure").withDefault(-1.0);
+    sp_width = options["sp_width"]
+                   .doc("the percentage of radial grid points for sink profile radial "
+                        "width in pressure")
+                   .withDefault(0.05);
+    sp_length = options["sp_length"]
+                    .doc("the percentage of radial grid points for sink profile radial "
+                         "domain in pressure")
+                    .withDefault(0.04);
 
     // left edge sink factor in vorticity
-    // left edge sink in vorticity
-    sink_Ul = options["sink_Ul"].withDefault(-1.0);
-    // the percentage of left edge radial grid points for sink profile
-    // radial width in vorticity
-    su_widthl = options["su_widthl"].withDefault(0.06);
-    // the percentage of left edge radial grid points for sink profile
-    // radial domain in vorticity
-    su_lengthl = options["su_lengthl"].withDefault(0.15);
+    sink_Ul = options["sink_Ul"].doc("left edge sink in vorticity").withDefault(-1.0);
+    su_widthl = options["su_widthl"]
+                    .doc("the percentage of left edge radial grid points for sink "
+                         "profile radial width in vorticity")
+                    .withDefault(0.06);
+    su_lengthl = options["su_lengthl"]
+                     .doc("the percentage of left edge radial grid points for sink "
+                          "profile radial domain in vorticity")
+                     .withDefault(0.15);
 
     // right edge sink factor in vorticity
     // right edge sink in vorticity
-    sink_Ur = options["sink_Ur"].withDefault(-1.0);
+    sink_Ur = options["sink_Ur"].doc("").withDefault(-1.0);
     // the percentage of right edge radial grid points for sink profile
     // radial width in vorticity
-    su_widthr = options["su_widthr"].withDefault(0.06);
+    su_widthr = options["su_widthr"].doc("").withDefault(0.06);
     // the percentage of right edge radial grid points for sink profile
     // radial domain in vorticity
-    su_lengthr = options["su_lengthr"].withDefault(0.15);
+    su_lengthr = options["su_lengthr"].doc("").withDefault(0.15);
 
     // Compressional terms
-    phi_curv = options["phi_curv"].withDefault(true);
-    g = options["gamma"].withDefault(5.0 / 3.0);
+    phi_curv = options["phi_curv"].doc("Compressional ExB terms").withDefault(true);
+    g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
 
     if (!include_curvature) {
       b0xcv = 0.0;
@@ -786,31 +814,31 @@ protected:
       dump.add(diffusion_par, "diffusion_par", 0);
     }
 
-    // M: 4th order diffusion of p
+    // 4th order diffusion of p
     if (diffusion_n4 > 0.0) {
       output.write("    diffusion_n4: {:e}\n", diffusion_n4);
       dump.add(diffusion_n4, "diffusion_n4", 0);
     }
 
-    // M: 4th order diffusion of Ti
+    // 4th order diffusion of Ti
     if (diffusion_ti4 > 0.0) {
       output.write("    diffusion_ti4: {:e}\n", diffusion_ti4);
       dump.add(diffusion_ti4, "diffusion_ti4", 0);
     }
 
-    // M: 4th order diffusion of Te
+    // 4th order diffusion of Te
     if (diffusion_te4 > 0.0) {
       output.write("    diffusion_te4: {:e}\n", diffusion_te4);
       dump.add(diffusion_te4, "diffusion_te4", 0);
     }
 
-    // M: 4th order diffusion of Vipar
+    // 4th order diffusion of Vipar
     if (diffusion_v4 > 0.0) {
       output.write("    diffusion_v4: {:e}\n", diffusion_v4);
       dump.add(diffusion_v4, "diffusion_v4", 0);
     }
 
-    // xqx: parallel hyper-viscous diffusion for vorticity
+    // parallel hyper-viscous diffusion for vorticity
     if (diffusion_u4 > 0.0) {
       output.write("    diffusion_u4: {:e}\n", diffusion_u4);
       dump.add(diffusion_u4, "diffusion_u4", 0);
@@ -875,37 +903,23 @@ protected:
     Pi0 = N0 * Ti0;
     Pe0 = Ne0 * Te0;
 
-    nu_e.setLocation(CELL_YLOW);
     nu_e.setBoundary("kappa");
     if (spitzer_resist) {
-      eta_spitzer.setLocation(CELL_YLOW);
       eta_spitzer.setBoundary("kappa");
     }
     if (diffusion_par > 0.0) {
-      nu_i.setLocation(CELL_YLOW);
       nu_i.setBoundary("kappa");
-      vth_i.setLocation(CELL_YLOW);
-      vth_e.setLocation(CELL_YLOW);
       vth_i.setBoundary("kappa");
       vth_e.setBoundary("kappa");
-      kappa_par_i.setLocation(CELL_YLOW);
-      kappa_par_e.setLocation(CELL_YLOW);
       kappa_par_i.setBoundary("kappa");
       kappa_par_e.setBoundary("kappa");
-      kappa_perp_i.setLocation(CELL_YLOW);
-      kappa_perp_e.setLocation(CELL_YLOW);
       kappa_perp_i.setBoundary("kappa");
       kappa_perp_e.setBoundary("kappa");
     }
 
     if (compress0) {
-      eta_i0.setLocation(CELL_CENTRE);
       eta_i0.setBoundary("Ti");
-      pi_ci.setLocation(CELL_CENTRE);
       pi_ci.setBoundary("Ti");
-
-      // dump.add(eta_i0, "eta_i0", 1);
-      // dump.add(pi_ci, "pi_ci", 1);
     }
 
     BoutReal pnorm = max(P0, true); // Maximum over all processors
@@ -1077,66 +1091,24 @@ protected:
     V0eff.y = -(Btxy / (B0 * B0)) * (Vp0 * Btxy - Vt0 * Bpxy) / hthe;
     V0eff.z = (Bpxy / (B0 * B0)) * (Vp0 * Btxy - Vt0 * Bpxy) / Rxy;
 
-    /**************** SET VARIABLE LOCATIONS *************/
-
-    P.setLocation(CELL_CENTRE);
-    U.setLocation(CELL_CENTRE);
-    phi.setLocation(CELL_CENTRE);
-    Psi.setLocation(CELL_YLOW);
-    if (emass) {
-      Ajpar.setLocation(CELL_YLOW);
-    }
-    Jpar.setLocation(CELL_YLOW);
-
-    Ni.setLocation(CELL_YLOW);
-    Ti.setLocation(CELL_CENTRE);
-    Te.setLocation(CELL_CENTRE);
-
-    Vipar.setLocation(CELL_YLOW);
-    Vepar.setLocation(CELL_YLOW);
-    Pi.setLocation(CELL_CENTRE);
-    Pe.setLocation(CELL_CENTRE);
-
-    N_tmp.setLocation(CELL_CENTRE);
-    if (nonlinear) {
-      Ti_tmp.setLocation(CELL_CENTRE);
-      Te_tmp.setLocation(CELL_CENTRE);
-    }
-
     Pe.setBoundary("P");
     Pi.setBoundary("P");
 
     /**************** SET EVOLVING VARIABLES *************/
 
     // Tell BOUT which variables to evolve
-    SOLVE_FOR(U);
-    SOLVE_FOR(Ni);
-    SOLVE_FOR(Ti);
-    SOLVE_FOR(Te);
-    SOLVE_FOR(Psi);
+    SOLVE_FOR(U, Ni, Ti, Te, Psi);
 
-    dump.add(Jpar, "jpar", 1);
-
-    dump.add(P, "P", 1);
-    dump.add(Vepar, "Vepar", 1);
+    SAVE_REPEAT(Jpar, P, Vepar);
 
     if (parallel_lagrange) {
       // Evolving the distortion of the flux surfaces (Ideal-MHD only!)
-
-      solver->add(Xip_x, "Xip_x");
-      solver->add(Xip_z, "Xip_z");
-
-      solver->add(Xim_x, "Xim_x");
-      solver->add(Xim_z, "Xim_z");
+      SOLVE_FOR(Xip_x, Xip_z, Xim_x, Xim_z);
     }
 
     if (parallel_project) {
       // Add Xi to the dump file
-      dump.add(Xip_x, "Xip_x", 1);
-      dump.add(Xip_z, "Xip_z", 1);
-
-      dump.add(Xim_x, "Xim_x", 1);
-      dump.add(Xim_z, "Xim_z", 1);
+      SAVE_REPEAT(Xip_x, Xip_z, Xim_x, Xim_z);
     }
 
     if (compress0) {
@@ -1148,12 +1120,11 @@ protected:
 
     if (phi_constraint) {
       // Implicit Phi solve using IDA
-
       solver->constraint(phi, C_phi, "phi");
 
     } else {
       // Phi solved in RHS (explicitly)
-      dump.add(phi, "phi", 1);
+      SAVE_REPEAT(phi);
     }
 
     // Diamagnetic phi0
@@ -1170,21 +1141,20 @@ protected:
 
     // Add some equilibrium quantities and normalisations
     // everything needed to recover physical units
-    SAVE_ONCE2(J0, P0);
-    SAVE_ONCE4(density, Lbar, Bbar, Tbar);
-    SAVE_ONCE3(Tibar, Tebar, Nbar);
-    SAVE_ONCE2(Va, B0);
-    SAVE_ONCE3(Ti0, Te0, N0);
+    SAVE_ONCE(J0, P0);
+    SAVE_ONCE(density, Lbar, Bbar, Tbar);
+    SAVE_ONCE(Tibar, Tebar, Nbar);
+    SAVE_ONCE(Va, B0);
+    SAVE_ONCE(Ti0, Te0, N0);
 
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create(&options["phiSolver"]);
+    phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
 
-    aparSolver = Laplacian::create(&options["aparSolver"]);
+    aparSolver = Laplacian::create(&globalOptions["aparSolver"]);
 
     /////////////// CHECK VACUUM ///////////////////////
     // In vacuum region, initial vorticity should equal zero
 
-    ubyn.setLocation(CELL_CENTRE);
     ubyn.setBoundary("U");
 
     if (!restarting) {
@@ -1321,19 +1291,14 @@ protected:
         eta_spitzer = 0.51 * 1.03e-4 * Zi * LnLambda
                       * pow(Te_tmp * Tebar, -1.5); // eta in Ohm-m. ln(Lambda) = 20
         eta_spitzer /= SI::mu0 * Va * Lbar;
-        // eta_spitzer.applyBoundary();
-        // mesh->communicate(eta_spitzer);
       } else {
         eta = core_resist + (vac_resist - core_resist) * vac_mask;
       }
 
       nu_e = 2.91e-6 * LnLambda * (N_tmp * Nbar * density / 1.e6)
              * pow(Te_tmp * Tebar, -1.5); // nu_e in 1/S.
-      // nu_e.applyBoundary();
-      // mesh->communicate(nu_e);
 
       if (diffusion_par > 0.0) {
-        // xqx addition, begin
         // Use Spitzer thermal conductivities
 
         nu_i = 4.80e-8 * (Zi * Zi * Zi * Zi / sqrt(AA)) * LnLambda
@@ -1354,12 +1319,8 @@ protected:
 
         kappa_par_i *= kappa_par_i_fl / (kappa_par_i + kappa_par_i_fl);
         kappa_par_i *= Tipara1 * N_tmp;
-        // kappa_par_i.applyBoundary();
-        // mesh->communicate(kappa_par_i);
         kappa_par_e *= kappa_par_e_fl / (kappa_par_e + kappa_par_e_fl);
         kappa_par_e *= Tepara1 * N_tmp * Zi;
-        // kappa_par_e.applyBoundary();
-        // mesh->communicate(kappa_par_e);
       }
     }
 
@@ -1400,7 +1361,6 @@ protected:
       }
     }
 
-    // xqx begin
     // Get Delp2(J) from J
     Jpar2 = -Delp2(Jpar);
 
@@ -1433,9 +1393,9 @@ protected:
       ddt(Psi) = 0.0;
 
       if (spitzer_resist) {
-        ddt(Psi) = -Grad_parP(B0 * phi, CELL_CENTRE) / B0 - eta_spitzer * Jpar;
+        ddt(Psi) = -Grad_parP(B0 * phi) / B0 - eta_spitzer * Jpar;
       } else {
-        ddt(Psi) = -Grad_parP(B0 * phi, CELL_CENTRE) / B0 - eta * Jpar;
+        ddt(Psi) = -Grad_parP(B0 * phi) / B0 - eta * Jpar;
       }
 
       if (diamag) {
@@ -1460,7 +1420,7 @@ protected:
 
       ddt(U) += 2.0 * Upara1 * b0xcv * Grad(P); // curvature term
 
-      ddt(U) += SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
+      ddt(U) += SQ(B0) * Grad_parP(Jpar); // b dot grad j
 
       if (diamag) {
         ddt(U) -= bracket(B0 * phi0, U, bm_exb); // Equilibrium flow
@@ -1468,12 +1428,9 @@ protected:
 
       if (nonlinear) {
         ddt(U) -= bracket(B0 * phi, U, bm_exb); // Advection
-        /*if (compress0)
-        //ddt(U) -= Vipar*Grad_par(U);
-        ddt(U) -= Vpar_Grad_par(Vipar, U);*/
       }
 
-      // xqx: parallel hyper-viscous diffusion for vector potential
+      // parallel hyper-viscous diffusion for vector potential
       if (diffusion_u4 > 0.0) {
         tmpA2 = Grad2_par2new(Psi);
         mesh->communicate(tmpA2);
@@ -1495,7 +1452,8 @@ protected:
 
         ddt(U) += hyper_mu_x * coord->g11 * D2DX2(U);
 
-        if (first_run) { // Print out maximum values of viscosity used on this processor
+        if (first_run) {
+          // Print out maximum values of viscosity used on this processor
           output.write("   Hyper-viscosity values:\n");
           output.write("      Max mu_x = {:e}, Max_DC mu_x = {:e}\n", max(hyper_mu_x),
                        max(DC(hyper_mu_x)));
@@ -1532,10 +1490,10 @@ protected:
       }
 
       if (compress0) {
-        ddt(Ni) -= N0 * B0 * Grad_parP(Vipar / B0, CELL_CENTRE);
+        ddt(Ni) -= N0 * B0 * Grad_parP(Vipar / B0);
       }
 
-      // M: 4th order Parallel diffusion terms
+      // 4th order Parallel diffusion terms
       if (diffusion_n4 > 0.0) {
         tmpN2 = Grad2_par2new(Ni);
         mesh->communicate(tmpN2);
@@ -1562,15 +1520,15 @@ protected:
       }
 
       if (compress0) {
-        ddt(Ti) -= 2.0 / 3.0 * Ti0 * B0 * Grad_parP(Vipar / B0, CELL_CENTRE);
+        ddt(Ti) -= 2.0 / 3.0 * Ti0 * B0 * Grad_parP(Vipar / B0);
       }
 
       if (diffusion_par > 0.0) {
         ddt(Ti) += kappa_par_i * Grad2_par2(Ti) / N0; // Parallel diffusion
-        ddt(Ti) += Grad_par(kappa_par_i, CELL_CENTRE) * Grad_par(Ti, CELL_YLOW) / N0;
+        ddt(Ti) += Grad_par(kappa_par_i) * Grad_par(Ti) / N0;
       }
 
-      // M: 4th order Parallel diffusion terms
+      // 4th order Parallel diffusion terms
       if (diffusion_ti4 > 0.0) {
         tmpTi2 = Grad2_par2new(Ti);
         mesh->communicate(tmpTi2);
@@ -1598,12 +1556,12 @@ protected:
       }
 
       if (compress0) {
-        ddt(Te) -= 2.0 / 3.0 * Te0 * B0 * Grad_parP(Vepar / B0, CELL_CENTRE);
+        ddt(Te) -= 2.0 / 3.0 * Te0 * B0 * Grad_parP(Vepar / B0);
       }
 
       if (diffusion_par > 0.0) {
         ddt(Te) += kappa_par_e * Grad2_par2(Te) / N0; // Parallel diffusion
-        ddt(Te) += Grad_par(kappa_par_e, CELL_CENTRE) * Grad_par(Te, CELL_YLOW) / N0;
+        ddt(Te) += Grad_par(kappa_par_e) * Grad_par(Te) / N0;
       }
 
       if (diffusion_te4 > 0.0) {
@@ -1620,7 +1578,7 @@ protected:
 
       ddt(Vipar) = 0.0;
 
-      ddt(Vipar) -= Vipara * Grad_parP(P, CELL_YLOW) / N0;
+      ddt(Vipar) -= Vipara * Grad_parP(P) / N0;
       ddt(Vipar) += Vipara * bracket(Psi, P0, bm_mag) * B0 / N0;
 
       if (diamag) {
@@ -1631,7 +1589,7 @@ protected:
         ddt(Vipar) -= bracket(B0 * phi, Vipar, bm_exb);
       }
 
-      // xqx: parallel hyper-viscous diffusion for vector potential
+      // parallel hyper-viscous diffusion for vector potential
       if (diffusion_v4 > 0.0) {
         tmpVp2 = Grad2_par2new(Vipar);
         mesh->communicate(tmpVp2);

@@ -11,7 +11,7 @@ g11 = 1. + .1*sin(2.*pi*x)*cos(y)
 g22 = 1. + .05872*sin(2.*pi*x)*cos(y)
 g33 = 1. + .115832*sin(2.*pi*x)*cos(y)
 g12 = 0.0
-g13 = 0.
+g13 = 0.0
 g23 = 0.5 + .04672*sin(2.*pi*x)*cos(y)
 
 jyseps1_1 = 15
@@ -26,7 +26,7 @@ ixseps2 = 64
 [laplacexy]
 pctype = shell    # Supply a second solver as a preconditioner
 #pctype = hypre    # Algebraic multigrid preconditioner using hypre library
-rtol = 1.e-14
+rtol = 1e-14
 
 core_bndry_dirichlet = true
 pf_bndry_dirichlet = true
@@ -49,4 +49,4 @@ bndry_ydown = neumann
 function = 1. + .1*sin(x + .1)*sin(y/pi + .1)
 
 [b]
-function = 0.
+function = 0.0

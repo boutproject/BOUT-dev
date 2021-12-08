@@ -5,13 +5,11 @@
 #include <bout/assert.hxx>
 
 class Test_region_iterator : public PhysicsModel {
+  Field3D n;
 protected:
   int init(bool UNUSED(restarting)) override;
   int rhs(BoutReal UNUSED(t)) override;
 };
-
-
-Field3D n;
 
 int Test_region_iterator::init(bool UNUSED(restarting)) {
 

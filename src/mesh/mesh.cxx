@@ -49,25 +49,35 @@ Mesh* Mesh::create(GridDataSource *s, Options *opt) {
 
 Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
 
-Mesh::Mesh(GridDataSource *s, Options* opt)
-  : source(s), options(opt == nullptr ? Options::getRoot()->getSection("mesh") : opt),
-    include_corner_cells((*options)["include_corner_cells"]
-                         .doc("Communicate corner guard and boundary cells. Can be set "
-                               "to false if you are sure that you will not need these "
-                               "cells, for mixed derivatives D2DXDY (or anything else), "
-                               "for example if your grid has orthogonal x- and "
-                               "y-directions.  This might slightly reduce communication "
-                               "time.")
-                         .withDefault(true)) {
-  if(s == nullptr)
+Mesh::Mesh(GridDataSource* s, Options* opt)
+    : source(s), options(opt == nullptr ? Options::getRoot()->getSection("mesh") : opt),
+      calcParallelSlices_on_communicate(
+          (*options)["calcParallelSlices_on_communicate"]
+              .doc("Calculate parallel slices on all communicated fields")
+              .withDefault(true)),
+      maxregionblocksize((*options)["maxregionblocksize"]
+                             .doc("(Advanced) Sets the maximum size of continguous "
+                                  "blocks when creating Regions")
+                             .withDefault(MAXREGIONBLOCKSIZE)),
+      StaggerGrids(
+          (*options)["staggergrids"]
+              .doc("Enable staggered grids. By default, all variables are cell centred")
+              .withDefault(false)),
+      include_corner_cells(
+          (*options)["include_corner_cells"]
+              .doc("Communicate corner guard and boundary cells. Can be set "
+                   "to false if you are sure that you will not need these "
+                   "cells, for mixed derivatives D2DXDY (or anything else), "
+                   "for example if your grid has orthogonal x- and "
+                   "y-directions. This might slightly reduce communication "
+                   "time.")
+              .withDefault(true)) {
+
+  if (s == nullptr) {
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
-  
-  /// Get mesh options
-  OPTION(options, StaggerGrids,   false); // Stagger grids
-  OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
-  OPTION(options, calcParallelSlices_on_communicate, true);
-  // Initialise derivatives
-  derivs_init(options);  // in index_derivs.cxx for now
+  }
+
+  derivs_init(options); // in index_derivs.cxx for now
 }
 
 Mesh::~Mesh() { delete source; }
@@ -139,7 +149,8 @@ int Mesh::get(bool &bval, const std::string &name, bool def) {
   return !success;
 }
 
-int Mesh::get(Field2D &var, const std::string &name, BoutReal def, CELL_LOC location) {
+int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communicate,
+              CELL_LOC location) {
   TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);
 
   if (source == nullptr or !source->get(this, var, name, def, location)) {
@@ -150,7 +161,9 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def, CELL_LOC loca
   }
 
   // Communicate to get guard cell data
-  Mesh::communicate(var);
+  if (communicate) {
+    Mesh::communicate(var);
+  }
 
   // Check that the data is valid
   checkData(var);
@@ -207,43 +220,43 @@ int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
  * Data get routines
  **************************************************************************/
 
-int Mesh::get(Vector2D &var, const std::string &name, BoutReal def) {
+int Mesh::get(Vector2D& var, const std::string& name, BoutReal def, bool communicate) {
   TRACE("Loading 2D vector: Mesh::get(Vector2D, {:s})", name);
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
-    get(var.x, name+"_x", def);
-    get(var.y, name+"_y", def);
-    get(var.z, name+"_z", def);
+    get(var.x, name + "_x", def, communicate);
+    get(var.y, name + "_y", def, communicate);
+    get(var.z, name + "_z", def, communicate);
 
   }else {
     output << _("\tReading contravariant vector ") << name << endl;
 
-    get(var.x, name+"x", def);
-    get(var.y, name+"y", def);
-    get(var.z, name+"z", def);
+    get(var.x, name + "x", def, communicate);
+    get(var.y, name + "y", def, communicate);
+    get(var.z, name + "z", def, communicate);
   }
 
   return 0;
 }
 
-int Mesh::get(Vector3D &var, const std::string &name, BoutReal def) {
+int Mesh::get(Vector3D& var, const std::string& name, BoutReal def, bool communicate) {
   TRACE("Loading 3D vector: Mesh::get(Vector3D, {:s})", name);
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
-    get(var.x, name+"_x", def);
-    get(var.y, name+"_y", def);
-    get(var.z, name+"_z", def);
+    get(var.x, name + "_x", def, communicate);
+    get(var.y, name + "_y", def, communicate);
+    get(var.z, name + "_z", def, communicate);
 
   }else {
     output << ("\tReading contravariant vector ") << name << endl;
 
-    get(var.x, name+"x", def);
-    get(var.y, name+"y", def);
-    get(var.z, name+"z", def);
+    get(var.x, name + "x", def, communicate);
+    get(var.y, name + "y", def, communicate);
+    get(var.z, name + "z", def, communicate);
   }
 
   return 0;
@@ -360,9 +373,9 @@ int Mesh::msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int
   /// Loop over variables
   for(const auto& var : var_list) {
     if(var->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * LocalNz * var->BoutRealSize();
+      len += (xlt - xge) * (ylt - yge) * LocalNz * var->elementSize();
     } else {
-      len += (xlt - xge) * (ylt - yge) * var->BoutRealSize();
+      len += (xlt - xge) * (ylt - yge) * var->elementSize();
     }
   }
 
@@ -612,6 +625,7 @@ void Mesh::recalculateStaggeredCoordinates() {
     }
 
     *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
+    coords_map[location]->geometry(false, true);
   }
 }
 

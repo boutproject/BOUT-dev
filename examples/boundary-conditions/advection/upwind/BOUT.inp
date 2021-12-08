@@ -8,7 +8,7 @@
 nout = 20
 timestep = 0.05
 
-MXG=0
+MXG = 0
 
 [mesh]
 
@@ -31,4 +31,3 @@ upwind = u1   # Use 1st-order upwinding
 [f]
 
 function = exp(-((y-pi)/0.2)^2)
-

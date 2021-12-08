@@ -12,35 +12,35 @@ from numpy import sqrt, max, abs, mean, array, log
 try:
     import matplotlib.pyplot as plt
 except:
-    plt=None
+    plt = None
 
-#requires: all_tests
+# requires: all_tests
 
 
 build_and_log("Making MMS d2dz2 test")
 
 nproc = 1
 
-error_2     = []    # The L2 error (RMS)
-error_inf = []    # The maximum error
+error_2 = []  # The L2 error (RMS)
+error_inf = []  # The maximum error
 
 # List of MZ values to use
 mzlist = [8, 16, 32, 64, 128, 256, 512, 1024]
 
 for mz in mzlist:
-    args = "MZ="+str(mz)
+    args = "MZ=" + str(mz)
 
     # Delete old data
     shell("rm data/BOUT.dmp.*.nc")
 
     # Command to run
-    cmd = "./test_d2dz2 "+args
+    cmd = "./test_d2dz2 " + args
 
     # Launch using MPI
     s, out = launch_safe(cmd, nproc=nproc, pipe=True)
 
     # Save output to log file
-    f = open("run.log."+str(mz), "w")
+    f = open("run.log." + str(mz), "w")
     f.write(out)
     f.close()
 
@@ -51,17 +51,17 @@ for mz in mzlist:
     err = result - solution
 
     # Average error
-    l2 = sqrt(mean(err**2))
-    linf = max(abs( err ))
+    l2 = sqrt(mean(err ** 2))
+    linf = max(abs(err))
 
-    error_2.append( l2 )
-    error_inf.append( linf )
+    error_2.append(l2)
+    error_inf.append(linf)
 
     print("Error norm: l-2 %f l-inf %f" % (l2, linf))
 
 
 # Calculate grid spacing
-dx = 1. / (array(mzlist) - 2.)
+dx = 1.0 / (array(mzlist) - 2.0)
 
 order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
 print("Convergence order = %f" % (order))
@@ -69,24 +69,25 @@ print("Convergence order = %f" % (order))
 
 # plot errors
 try:
-    plt.plot(dx, error_2, '-o', label=r'$l^2$')
-    plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
+    plt.plot(dx, error_2, "-o", label=r"$l^2$")
+    plt.plot(dx, error_inf, "-x", label=r"$l^\infty$")
 
-
-    plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+    plt.plot(
+        dx, error_2[-1] * (dx / dx[-1]) ** order, "--", label="Order %.1f" % (order)
+    )
 
     plt.legend(loc="upper left")
     plt.grid()
 
-    plt.yscale('log')
-    plt.xscale('log')
+    plt.yscale("log")
+    plt.xscale("log")
 
-    plt.xlabel(r'Mesh spacing $\delta z$')
+    plt.xlabel(r"Mesh spacing $\delta z$")
     plt.ylabel("Error norm")
 
     plt.savefig("norm.pdf")
 
-    #plt.show()
+    # plt.show()
     plt.close()
 except:
     pass

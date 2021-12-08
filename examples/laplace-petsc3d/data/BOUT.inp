@@ -25,20 +25,20 @@ function = .1*mixmode(x, 13.)*mixmode(y, 14.)*mixmode(z, 15.)
 bndry_par_all = parallel_neumann
 
 [A]
-function = 0.
+function = 0.0
 
 #################################################################################
-[mesh]
-paralleltransform = shiftedinterp
+[mesh:paralleltransform]
+type = shiftedinterp
 
-[interpolation]
-type = hermitesplineonlyz
+[mesh:paralleltransform:zinterpolation]
+type = hermitespline
 
 #################################################################################
 [laplace]
 type = petsc3damg
-rtol = 1.e-8
-atol = 1.e-12
+rtol = 1e-08
+atol = 1e-12
 
 [input]
 transform_from_field_aligned = false
@@ -67,4 +67,4 @@ function = mixmode(x, 9.)*mixmode(z, 10.)
 function = mixmode(x, 11.)*mixmode(z, 12.)
 
 [solver]
-mxstep = 1e6
+mxstep = 1000000.0

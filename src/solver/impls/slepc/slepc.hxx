@@ -105,13 +105,6 @@ public:
     }
   }
 
-  void setRHS(rhsfunc f) override { // Old API
-    Solver::setRHS(f);
-    if (!selfSolve) {
-      advanceSolver->setRHS(f);
-    }
-  }
-
   //////Following overrides all just pass through to advanceSolver
 
   // Override virtual add functions in order to pass through to advanceSolver
@@ -141,20 +134,6 @@ public:
     Solver::add(v, name, description);
     if (!selfSolve) {
       advanceSolver->add(v, name, description);
-    }
-  }
-
-  // Set operations
-  void setJacobian(Jacobian j) override {
-    if (!selfSolve) {
-      advanceSolver->setJacobian(j);
-    }
-  }
-  void setSplitOperator(rhsfunc fC, rhsfunc fD) override {
-    if (selfSolve) {
-      Solver::setSplitOperator(fC, fD);
-    } else {
-      advanceSolver->setSplitOperator(fC, fD);
     }
   }
 

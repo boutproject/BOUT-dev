@@ -48,8 +48,7 @@
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in,
-      DirectionTypes directions_in)
+Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
     : Field(localmesh, location_in, directions_in) {
 
   if (fieldmesh) {
@@ -73,9 +72,6 @@ Field2D::Field2D(const Field2D& f) : Field(f), data(f.data) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
-
-  location = f.location;
-  fieldCoordinates = f.fieldCoordinates;
 }
 
 Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field2D(localmesh) {
@@ -150,11 +146,7 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
 
   TRACE("Field2D: Assignment from Field2D");
 
-#if BOUT_USE_TRACK
-  name = rhs.name;
-#endif
-
-  copyFieldMembers(rhs);
+  Field::operator=(rhs);
 
   // Copy the data and data sizes
   nx = rhs.nx;
@@ -162,6 +154,27 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
 
   // Copy reference to data
   data = rhs.data;
+
+  return *this;
+}
+
+Field2D& Field2D::operator=(Field2D&& rhs) noexcept {
+  // Check for self-assignment
+  if (this == &rhs) {
+    return (*this); // skip this assignment
+  }
+
+  TRACE("Field2D: Move assignment from Field2D");
+
+  // Move the data and data sizes
+  nx = rhs.nx;
+  ny = rhs.ny;
+
+  // Move reference to data
+  data = std::move(rhs.data);
+
+  // Move base slice last
+  Field::operator=(std::move(rhs));
 
   return *this;
 }
@@ -186,31 +199,35 @@ void Field2D::applyBoundary(bool init) {
 
 #if CHECK > 0
   if (init) {
-
-    if(!boundaryIsSet)
-      output_warn << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
+    if (not isBoundarySet()) {
+      output_warn << "WARNING: Call to Field2D::applyBoundary(), but no boundary set\n";
+    }
   }
 #endif
 
   checkData(*this);
 
-  for(const auto& bndry : bndry_op)
-    if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+  for (const auto& bndry : getBoundaryOps()) {
+    // Always apply to the values when initialising
+    // fields, otherwise apply only if wanted
+    if (!bndry->apply_to_ddt || init) {
       bndry->apply(*this);
+    }
+  }
 }
 
 void Field2D::applyBoundary(BoutReal time) {
   TRACE("Field2D::applyBoundary(time)");
 
 #if CHECK > 0
-  if (!boundaryIsSet) {
+  if (not isBoundarySet()) {
     output_warn << "WARNING: Call to Field2D::applyBoundary(time), but no boundary set\n";
   }
 #endif
 
   checkData(*this);
 
-  for (const auto& bndry : bndry_op) {
+  for (const auto& bndry : getBoundaryOps()) {
     bndry->apply(*this, time);
   }
 }
@@ -298,8 +315,9 @@ void Field2D::applyTDerivBoundary() {
   ASSERT1(deriv != nullptr);
   checkData(*deriv);
 
-  for(const auto& bndry : bndry_op)
+  for (const auto& bndry : getBoundaryOps()) {
     bndry->apply_ddt(*this);
+  }
 }
 
 void Field2D::setBoundaryTo(const Field2D &f2d) {
@@ -374,4 +392,16 @@ bool operator==(const Field2D &a, const Field2D &b) {
 std::ostream& operator<<(std::ostream &out, const Field2D &value) {
   out << toString(value);
   return out;
+}
+
+void swap(Field2D& first, Field2D& second) noexcept {
+  using std::swap;
+
+  // Swap base class members
+  swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
+  swap(first.data, second.data);
+  swap(first.nx, second.nx);
+  swap(first.ny, second.ny);
+  swap(first.deriv, second.deriv);
 }

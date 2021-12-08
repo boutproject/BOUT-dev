@@ -1,4 +1,18 @@
-#include <bout/invert/laplacexz.hxx>
+#ifndef LAPLACEXZ_CYCLIC_HXX
+#define LAPLACEXZ_CYCLIC_HXX
+
+#include "bout/build_config.hxx"
+#include "bout/invert/laplacexz.hxx"
+
+#if BOUT_USE_METRIC_3D
+
+namespace {
+RegisterUnavailableLaplaceXZ registerlaplacexzcylic{
+    "cyclic", "BOUT++ was configured with 3D metrics"};
+} // namespace
+
+#else
+
 #include <cyclic_reduction.hxx>
 #include <dcomplex.hxx>
 #include <globals.hxx>
@@ -29,3 +43,7 @@ private:
 namespace {
 RegisterLaplaceXZ<LaplaceXZcyclic> registerlaplacexzcylic{"cyclic"};
 } // namespace
+
+#endif // BOUT_USE_METRIC_3D
+
+#endif // LAPLACEXZ_CYCLIC_HXX

@@ -7,16 +7,16 @@ timestep = 0.1  # Time between outputs
 
 MZ = 1          # Number of points in z
 
-dump_format="nc"     # Write NetCDF format files
+dump_format = "nc"     # Write NetCDF format files
 
-grid="conduct_grid.nc"
+grid = "conduct_grid.nc"
 
 
 ##################################################
 [mesh]  # Geometry of the mesh
 
 # Puts the boundaries half a step outside the last gridpoints
-symmetricGlobalY=true
+symmetricGlobalY = true
 
 # These flags make the y-direction non-periodic
 ixseps1 = -1
@@ -35,8 +35,8 @@ flux = U1
 
 type = pvode # Which solver to use
 
-atol = 1.0e-10 # absolute tolerance
-rtol = 1.0e-5  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 ##################################################
 [conduction]  # Settings for the conduction model

@@ -4,14 +4,15 @@
 # Run the test, check it completed successfully
 #
 
-#requires: netcdf
-#cores: 2
+# requires: netcdf
+# cores: 2
 
 from __future__ import print_function
+
 try:
-  from builtins import str
+    from builtins import str
 except:
-  pass
+    pass
 from boututils.run_wrapper import build_and_log, launch_safe
 from boutdata.collect import collect
 from sys import exit
@@ -21,28 +22,28 @@ build_and_log("Region Iterator test")
 
 flags = [""]
 cmd = "./test_region_iterator"
-code = 0 # Return code
-pipe=True
+code = 0  # Return code
+pipe = True
 
-for nproc in [1,2]:#Number of mpi procs
-  for mthread in [1]:#Number of omp threads (not yet supported)
-    print("\t{n} processors and {m} threads".format(n=nproc,m=mthread))
+for nproc in [1, 2]:  # Number of mpi procs
+    for mthread in [1]:  # Number of omp threads (not yet supported)
+        print("\t{n} processors and {m} threads".format(n=nproc, m=mthread))
 
-    for f in flags:
-      # Run the case
-      s, out = launch_safe(cmd+" "+f, nproc=nproc, pipe=pipe)
-      if pipe:
-        f = open("run.log."+str(nproc)+"."+str(mthread), "w")
-        f.write(out)
-        f.close()
+        for f in flags:
+            # Run the case
+            s, out = launch_safe(cmd + " " + f, nproc=nproc, pipe=pipe)
+            if pipe:
+                f = open("run.log." + str(nproc) + "." + str(mthread), "w")
+                f.write(out)
+                f.close()
 
-      #If we've got here we know that cmd launched by launch_safe passed
-      #as otherwise it raises.
-      print("Passed")
+            # If we've got here we know that cmd launched by launch_safe passed
+            # as otherwise it raises.
+            print("Passed")
 
 if code == 0:
-  print(" => All range iterator tests passed")
+    print(" => All range iterator tests passed")
 else:
-  print(" => Some failed tests")
+    print(" => Some failed tests")
 
 exit(code)

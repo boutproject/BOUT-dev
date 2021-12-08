@@ -97,7 +97,7 @@ serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) \
 	@$(LD) -o $@ $(TEST_OBJECTS) bout_test_main.a $(LDFLAGS) $(BOUT_LIBS) $(SUB_LIBS)
 
 # Override this on the command line to print full output from the unit tests
-QUIET ?= ./quiet.sh
+QUIET ?= --gtest_brief=1
 
 # Note: This depends on GTEST_SENTINEL, which checks out Google Test if not present
 #       The correct behaviour relies on the dependencies being checked in left-to-right order
@@ -105,7 +105,7 @@ QUIET ?= ./quiet.sh
 #       target in make.config being used instead.
 check: $(GTEST_SENTINEL) serial_tests
 	@echo "Running unit test"
-	@$(QUIET) ./serial_tests $(GTEST_ARGS)
+	@./serial_tests $(QUIET) $(GTEST_ARGS)
 
 # This is the same target as a make rule in make.config. Adding unmet dependencies here
 # results in makefile reverting to the make.config version.

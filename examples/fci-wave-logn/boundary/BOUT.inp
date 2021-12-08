@@ -1,28 +1,23 @@
 #
-# 
+#
 
 nout = 100
 timestep = 0.1
 
 grid = "tokamak.fci.nc"
 
-myg = 1
-nxpe=1
+MYG = 1
+NXPE = 1
 
 [mesh:paralleltransform]
 
 type = fci
 
-[solver]  # Time integration solver
-
-#atol = 1e-6
-#rtol = 1e-3
-
 [fciwave]
 
-expand_divergence=false
+expand_divergence = false
 
-background = 1e-6   # Background density
+background = 1e-06   # Background density
 
 [all]
 bndry_par_all = parallel_neumann

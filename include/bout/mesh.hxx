@@ -76,6 +76,9 @@ class Mesh;
 #include <list>
 #include <memory>
 #include <map>
+#include <set>
+#include <string>
+
 
 class MeshFactory : public Factory<
   Mesh, MeshFactory,
@@ -190,9 +193,11 @@ class Mesh {
   /// @param[out] var   This will be set to the value. Will be allocated if needed
   /// @param[in] name   Name of the variable to read
   /// @param[in] def    The default value if not found
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(Field2D &var, const std::string &name, BoutReal def=0.0, CELL_LOC location=CELL_DEFAULT);
+  int get(Field2D& var, const std::string& name, BoutReal def=0.0,
+          bool communicate = true, CELL_LOC location=CELL_DEFAULT);
 
   /// Get a Field3D from the input source
   ///
@@ -222,11 +227,14 @@ class Mesh {
   /// By default all fields revert to zero
   ///
   /// @param[in] var  This will be set to the value read
-  /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] name  The name of the vector. Individual fields are read based on this
+  /// name by appending. See above
   /// @param[in] def   The default value if not found (used for all the components)
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
-  /// @returns zero always. 
-  int get(Vector2D &var, const std::string &name, BoutReal def=0.0);
+  /// @returns zero always.
+  int get(Vector2D& var, const std::string& name, BoutReal def = 0.0,
+          bool communicate = true);
 
   /// Get a Vector3D from the input source.
   /// If \p var is covariant then this gets three
@@ -236,11 +244,14 @@ class Mesh {
   /// By default all fields revert to zero
   ///
   /// @param[in] var  This will be set to the value read
-  /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] name  The name of the vector. Individual fields are read based on this
+  /// name by appending. See above
   /// @param[in] def    The default value if not found (used for all the components)
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
-  /// @returns zero always. 
-  int get(Vector3D &var, const std::string &name, BoutReal def=0.0);
+  /// @returns zero always.
+  int get(Vector3D& var, const std::string& name, BoutReal def = 0.0,
+          bool communicate = true);
 
   /// Test if input source was a grid file
   bool isDataSourceGridFile() const;
@@ -455,10 +466,24 @@ class Mesh {
   virtual int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
   // Y communications
-  virtual bool firstY() const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
-  virtual bool lastY() const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
-  virtual bool firstY(int xpos) const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
-  virtual bool lastY(int xpos) const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
+
+  ///< Is this processor first in Y?
+  /// Note: First on the global grid, not necessarily at a boundary
+  virtual bool firstY() const = 0;
+
+  ///< Is this processor last in Y?
+  /// Note: Last on the global grid, not necessarily at a boundary
+  virtual bool lastY() const = 0;
+
+  /// Is this processor first in Y?
+  /// Note: Not necessarily at a boundary, but first in the Y communicator
+  ///       for the flux surface through local X index xpos
+  virtual bool firstY(int xpos) const = 0;
+
+  /// Is this processor last in Y?
+  /// Note: Not necessarily at a boundary, but last in the Y communicator
+  ///       for the flux surface through local X index xpos
+  virtual bool lastY(int xpos) const = 0;
   [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int UpXSplitIndex() = 0;  ///< If the upper Y guard cells are split in two, return the X index where the split occurs
   [[deprecated("This experimental functionality will be removed in 5.0")]]
@@ -515,22 +540,29 @@ class Mesh {
   // Boundary region iteration
 
   /// Iterate over the lower Y boundary
-  virtual const RangeIterator iterateBndryLowerY() const = 0;
+  virtual RangeIterator iterateBndryLowerY() const = 0;
 
   /// Iterate over the upper Y boundary
-  virtual const RangeIterator iterateBndryUpperY() const = 0;
-  virtual const RangeIterator iterateBndryLowerOuterY() const = 0;
-  virtual const RangeIterator iterateBndryLowerInnerY() const = 0;
-  virtual const RangeIterator iterateBndryUpperOuterY() const = 0;
-  virtual const RangeIterator iterateBndryUpperInnerY() const = 0;
-  
-  bool hasBndryLowerY(); ///< Is there a boundary on the lower guard cells in Y?
-  bool hasBndryUpperY(); ///< Is there a boundary on the upper guard cells in Y?
+  virtual RangeIterator iterateBndryUpperY() const = 0;
+  virtual RangeIterator iterateBndryLowerOuterY() const = 0;
+  virtual RangeIterator iterateBndryLowerInnerY() const = 0;
+  virtual RangeIterator iterateBndryUpperOuterY() const = 0;
+  virtual RangeIterator iterateBndryUpperInnerY() const = 0;
 
+  /// Is there a boundary on the lower guard cells in Y
+  /// on any processor along the X direction?
+  bool hasBndryLowerY();
+
+  /// Is there a boundary on the upper guard cells in Y
+  /// on any processor along the X direction?
+  bool hasBndryUpperY();
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
   virtual std::vector<BoundaryRegion*> getBoundaries() = 0;
+
+  /// Get the set of all possible boundaries in this configuration
+  virtual std::set<std::string> getPossibleBoundaries() const { return {}; }
 
   /// Add a boundary region to this processor
   virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
@@ -542,7 +574,7 @@ class Mesh {
   virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
   
   /// Branch-cut special handling (experimental)
-  virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}
+  virtual Field3D smoothSeparatrix(const Field3D &f) {return f;}
   
   virtual BoutReal GlobalX(int jx) const = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0; ///< Continuous Y index (0 -> 1)
@@ -629,10 +661,6 @@ class Mesh {
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend, zstart, zend;
   
-  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
-  /// cell centred (default).
-  bool StaggerGrids{false};
-  
   /// Include integrated shear (if shifting X)
   bool IncIntShear{false};
 
@@ -659,6 +687,7 @@ class Mesh {
     // (circular dependency between Mesh and Coordinates)
     auto inserted = coords_map.emplace(location, nullptr);
     inserted.first->second = createDefaultCoordinates(location);
+    inserted.first->second->geometry(false);
     return inserted.first->second;
   }
 
@@ -939,11 +968,6 @@ class Mesh {
   // REGION RELATED ROUTINES
   ///////////////////////////////////////////////////////////
 
-  // The maxregionblocksize to use when creating the default regions.
-  // Can be set in the input file and the global default is set by,
-  // MAXREGIONBLOCKSIZE in include/bout/region.hxx
-  int maxregionblocksize;
-  
   /// Get the named region from the region_map for the data iterator
   ///
   /// Throws if region_name not found
@@ -1030,6 +1054,15 @@ protected:
   MpiWrapper* mpi = nullptr;
 
 public:
+  // The maxregionblocksize to use when creating the default regions.
+  // Can be set in the input file and the global default is set by,
+  // MAXREGIONBLOCKSIZE in include/bout/region.hxx
+  int maxregionblocksize{MAXREGIONBLOCKSIZE};
+
+  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
+  /// cell centred (default).
+  bool StaggerGrids{false};
+
   // Switch for communication of corner guard and boundary cells
   const bool include_corner_cells;
 

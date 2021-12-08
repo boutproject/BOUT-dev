@@ -13,4 +13,3 @@ nz = 1
 [laplacexy]
 pctype = sor  # Preconditioner
 include_y_derivs = true
-

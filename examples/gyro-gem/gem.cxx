@@ -58,7 +58,7 @@ class GEM : public PhysicsModel {
   
   Vector3D B0vec; // Equilibrium B field vector
   Field2D logB;   // For curvature
-  Field2D Grad_par_logB; // Grad_par(log(B))
+  Coordinates::FieldMetric Grad_par_logB; // Grad_par(log(B))
 
   Field2D Ni0, Ne0; // Gyro-center densities
   Field2D Ti0, Te0; // Starting isotropic temperatures
@@ -158,8 +158,8 @@ class GEM : public PhysicsModel {
     //////////////////////////////////
     // Read options
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["gem"];
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["gem"];
 
     adiabatic_electrons = options["adiabatic_electrons"].withDefault(false);
     small_rho_e = options["small_rho_e"].withDefault(true);
@@ -571,9 +571,9 @@ class GEM : public PhysicsModel {
     Apar.setBoundary("Apar");
     
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create(&options["phiSolver"]);
+    phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
 
-    aparSolver = Laplacian::create(&options["aparSolver"]);
+    aparSolver = Laplacian::create(&globalOptions["aparSolver"], CELL_YLOW);
     aparSolver->setCoefA(beta_e * (1./mu_e - 1./mu_i));
     
     return 0;

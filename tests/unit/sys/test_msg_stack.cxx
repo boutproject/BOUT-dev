@@ -1,5 +1,5 @@
 // These tests rely on MsgStack::getDump, and so won't work without it
-#if CHECK > 1
+#if BOUT_USE_MSGSTACK
 
 #include "gtest/gtest.h"
 #include "msg_stack.hxx"
@@ -68,18 +68,6 @@ TEST(MsgStackTest, PushReturnTest) {
   for (int i = 0; i < 6; i++) {
     EXPECT_EQ(msg_stack.push("Message {:d}", i), i);
   }
-}
-
-TEST(MsgStackTest, SetPointTest) {
-  MsgStack msg_stack;
-
-  for (int i = 0; i < 6; i++) {
-    EXPECT_EQ(msg_stack.setPoint(), i);
-  }
-
-  auto dump = msg_stack.getDump();
-  auto expected_dump = "====== Back trace ======\n";
-  EXPECT_EQ(dump, expected_dump);
 }
 
 TEST(MsgStackTest, NoMessageTest) {

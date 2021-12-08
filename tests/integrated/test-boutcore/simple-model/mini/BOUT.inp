@@ -1,19 +1,19 @@
 nout = 10
 timestep = 0.1
 
-mxg = 1
-myg = 0
+MXG = 1
+MYG = 0
 
 [mesh]
-n=5
-nx=n+2*mxg
-ny=1
-nz=1
-dx=1/n/2/pi
+n = 5
+nx = n+2*MXG
+ny = 1
+nz = 1
+dx = 1/n/2/pi
 
 [solver]
-rtol = 1e-8
+rtol = 1e-08
 atol = 1e-10
 
 [dens]
-function=sin(2*pi*x)
+function = sin(2*pi*x)

@@ -178,6 +178,13 @@ LaplacePetsc3dAmg::~LaplacePetsc3dAmg() {
 
 
 Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
+  AUTO_TRACE();
+
+  // Timing reported in the log files. Includes any matrix construction.
+  // The timing for just the solve phase can be retrieved from the "petscsolve"
+  // timer if desired.
+  Timer timer("invert");
+
   // If necessary, update the values in the matrix operator and initialise
   // the Krylov solver
   if (updateRequired) updateMatrix3D();
@@ -252,11 +259,29 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   // Create field from result
   Field3D solution = guess.toField();
   localmesh->communicate(solution);
-  BOUT_FOR(i, indexer->getRegionLowerY()) {
-    solution.ydown()[i] = solution[i];
+  if (solution.hasParallelSlices()) {
+    BOUT_FOR(i, indexer->getRegionLowerY()) {
+      solution.ydown()[i] = solution[i];
+    }
+    BOUT_FOR(i, indexer->getRegionUpperY()) {
+      solution.yup()[i] = solution[i];
+    }
+    for (int b = 1; b < localmesh->ystart; b++) {
+      BOUT_FOR(i, indexer->getRegionLowerY()) {
+        solution.ydown(b)[i.ym(b)] = solution[i];
+      }
+      BOUT_FOR(i, indexer->getRegionUpperY()) {
+        solution.yup(b)[i.yp(b)] = solution[i];
+      }
+    }
   }
-  BOUT_FOR(i, indexer->getRegionUpperY()) {
-    solution.yup()[i] = solution[i];
+  for (int b = 1; b < localmesh->xstart; b++) {
+    BOUT_FOR(i, indexer->getRegionInnerX()) {
+      solution[i.xm(b)] = solution[i];
+    }
+    BOUT_FOR(i, indexer->getRegionOuterX()) {
+      solution[i.xp(b)] = solution[i];
+    }
   }
 
   checkData(solution);
@@ -277,8 +302,8 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   const Field3D dc_dx = issetC ? DDX(C2) : Field3D();
   const Field3D dc_dy = issetC ? DDY(C2) : Field3D();
   const Field3D dc_dz = issetC ? DDZ(C2) : Field3D();
-  const Field2D dJ_dy = DDY(coords->J/coords->g_22);
-  
+  const auto dJ_dy = DDY(coords->J / coords->g_22);
+
   // Set up the matrix for the internal points on the grid.
   // Boundary conditions were set in the constructor.
   BOUT_FOR_SERIAL(l, indexer->getRegionNobndry()) {
@@ -321,13 +346,13 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
       C_df_dx += C_d2f_dx2 * coords->d1_dx[l];
     }
     C_df_dx /= 2 * coords->dx[l];
-    C_df_dz /= 2 * coords->dz;
+    C_df_dz /= 2 * coords->dz[l];
 
     C_d2f_dx2 /= SQ(coords->dx[l]);
     C_d2f_dy2 /= SQ(coords->dy[l]);
-    C_d2f_dz2 /= SQ(coords->dz);
+    C_d2f_dz2 /= SQ(coords->dz[l]);
 
-    C_d2f_dxdz /= 4 * coords->dx[l] * coords->dz;
+    C_d2f_dxdz /= 4 * coords->dx[l] * coords->dz[l];
 
     operator3D(l, l) = -2 * (C_d2f_dx2 + C_d2f_dy2 + C_d2f_dz2) + A[l];
     operator3D(l, l.xp()) = C_df_dx + C_d2f_dx2;
@@ -389,7 +414,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     C_d2f_dxdy /= 4*coords->dx[l]; // NOTE: This value is not completed here. It needs to
                                    // be divide by dx(i +/- 1, j, k) when using to set a
                                    // matrix element
-    C_d2f_dydz /= 4*coords->dy[l]*coords->dz;
+    C_d2f_dydz /= 4 * coords->dy[l] * coords->dz[l];
 
     // The values stored in the y-boundary are already interpolated
     // up/down, so we don't want the matrix to do any such
@@ -463,8 +488,8 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
 }
 
 OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
-						     RangeIterator lowerYBound,
-						     RangeIterator upperYBound) {
+                                                     const RangeIterator& lowerYBound,
+                                                     const RangeIterator& upperYBound) {
   OperatorStencil<Ind3D> stencil;
 
   // Get the pattern used for interpolation. This is assumed to be the
@@ -511,7 +536,7 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
   // If there is a lower y-boundary then create a part of the stencil
   // for cells immediately adjacent to it.
   if (lowerYBound.max() - lowerYBound.min() > 0) {
-    stencil.add([index = localmesh->ystart, &lowerYBound](Ind3D ind) -> bool {
+    stencil.add([index = localmesh->ystart, lowerYBound](Ind3D ind) -> bool {
 		  return index == ind.y() && lowerYBound.intersects(ind.x()); },
       lowerEdgeStencilVector);
   }
@@ -519,7 +544,7 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
   // If there is an upper y-boundary then create a part of the stencil
   // for cells immediately adjacent to it.
   if (upperYBound.max() - upperYBound.min() > 0) {
-    stencil.add([index = localmesh->yend, &upperYBound](Ind3D ind) -> bool {
+    stencil.add([index = localmesh->yend, upperYBound](Ind3D ind) -> bool {
 		  return index == ind.y() && upperYBound.intersects(ind.x()); },
       upperEdgeStencilVector);
   }

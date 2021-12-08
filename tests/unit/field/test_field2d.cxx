@@ -30,28 +30,16 @@ using namespace bout::globals;
 // Reuse the "standard" fixture for FakeMesh
 using Field2DTest = FakeMeshFixture;
 
-TEST_F(Field2DTest, IsReal) {
-  Field2D field;
-
-  EXPECT_TRUE(field.isReal());
-}
-
 TEST_F(Field2DTest, Is3D) {
   Field2D field;
 
   EXPECT_FALSE(field.is3D());
 }
 
-TEST_F(Field2DTest, ByteSize) {
-  Field2D field;
-
-  EXPECT_EQ(field.byteSize(), sizeof(BoutReal));
-}
-
 TEST_F(Field2DTest, BoutRealSize) {
   Field2D field;
 
-  EXPECT_EQ(field.BoutRealSize(), 1);
+  EXPECT_EQ(field.elementSize(), 1);
 }
 
 TEST_F(Field2DTest, Allocate) {
@@ -1485,4 +1473,11 @@ TEST_F(Field2DTest, ZeroFrom) {
   EXPECT_TRUE(field2.isAllocated());
   EXPECT_TRUE(IsFieldEqual(field2, 0.));
 }
+
+TEST_F(Field2DTest, DC) {
+  Field2D field =
+      makeField<Field2D>([](const Ind2D& i) -> BoutReal { return i.x() * i.y(); });
+  EXPECT_EQ(DC(field), field);
+}
+
 #pragma GCC diagnostic pop

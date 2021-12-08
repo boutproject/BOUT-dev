@@ -10,20 +10,20 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 30       # number of time-steps
-TIMESTEP = 5e3   # time between outputs
+nout = 30       # number of time-steps
+timestep = 5000.0   # time between outputs
 
 ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 33     # number of points in z direction (2^n + 1)
 ZMIN = 0.0
-ZMAX = 1.91125e-4
+ZMAX = 0.000191125
 
 MXG = 2
 MYG = 2
 
-grid="uedge.grd_std.cdl"
+grid = "uedge.grd_std.cdl"
 
 dump_format = "nc" # Output format. nc = NetCDF
 
@@ -68,8 +68,8 @@ outer_boundary_flags = 0
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-12 # absolute tolerance
-RTOL = 1.0e-7  # relative tolerance
+atol = 1e-12 # absolute tolerance
+rtol = 1e-07  # relative tolerance
 mxstep = 5000
 
 ##################################################
@@ -79,11 +79,11 @@ mxstep = 5000
 
 AA = 2.0
 ZZ = 1.0
- 
+
 estatic = true    # if true, electrostatic (Apar = 0)
 ZeroElMass = true  # Use Ohms law without electron inertia
 Zeff = 128.0       # Z effective
-nu_perp = 1.0e-20
+nu_perp = 1e-20
 
 ShearFactor = 0.0
 
@@ -93,7 +93,7 @@ ShearFactor = 0.0
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 
 # boundary conditions
 # -------------------
@@ -105,7 +105,7 @@ ShearFactor = 0.0
 bndry_all = neumann # Zero-gradient on all boundaries
 
 [Ni]
-scale = 1.0e-8 # only perturbing Ni
+scale = 1e-08 # only perturbing Ni
 
 function = sin(y)*sin(z)
 

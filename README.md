@@ -1,8 +1,8 @@
 # BOUT++
 
 <!---Build nice shields at shields.io-->
-[![Build Status](https://travis-ci.org/boutproject/BOUT-dev.svg?branch=master)](https://travis-ci.org/boutproject/BOUT-dev)
-[![License](https://img.shields.io/badge/license-LGPL-blue.svg)](https://img.shields.io/badge/license-LGPL-blue.svg)
+[![Build Status](https://github.com/boutproject/BOUT-dev/actions/workflows/tests.yml/badge.svg?branch=next)](https://github.com/boutproject/BOUT-dev/actions)
+[![License](https://img.shields.io/badge/license-LGPL-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
 [![py3comp](https://img.shields.io/badge/py3-compatible-brightgreen.svg)](https://img.shields.io/badge/py3-compatible-brightgreen.svg)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1423213.svg)](https://doi.org/10.5281/zenodo.1423213)
 
@@ -62,9 +62,7 @@ BOUT++ needs the following:
 
 * A C++14 compiler
 * MPI
-* Either NetCDF or HDF5
-
-Note that some of the tests require NetCDF rather than HDF5
+* NetCDF
 
 BOUT++ has the following optional dependencies:
 

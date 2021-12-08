@@ -869,9 +869,7 @@ in ``init``, you then:
    name; actual opening of the file happens later when the data is
    written. If you are not using parallel I/O, the processor number is
    also inserted into the file name before the last “.”, so mydata.nc”
-   becomes “mydata.0.nc”, “mydata.1.nc” etc. The file format used
-   depends on the extension, so “.nc” will open NetCDF, and “.hdf5” or
-   “.h5” an HDF5 file.
+   becomes “mydata.0.nc”, “mydata.1.nc” etc.
 
    (see e.g. src/fileio/datafile.cxx line 139, which calls
    src/fileio/dataformat.cxx line 23, which then calls the file format
@@ -998,11 +996,17 @@ Logging output
 Logging should be used to report simulation progress, record
 information, and warn about potential problems. BOUT++ includes a
 simple logging facility which supports both C printf and C++ iostream
-styles. For example::
+styles.  For example::
 
-   output.write("This is an integer: %d, and this a real: %e\n", 5, 2.0)
+   output.write("This is an integer: {}, and this a real: {}\n", 5, 2.0)
 
    output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << endl;
+
+
+Formatting in the ``output.write`` function is done using the `{fmt}
+library <https://fmt.dev>`_. By default this cannot format BOUT++
+types, but by including ``output_bout_types.hxx`` some BOUT++ types
+can be formatted.
 
 Messages sent to ``output`` on processor 0 will be printed to console
 and saved to ``BOUT.log.0``. Messages from all other processors will

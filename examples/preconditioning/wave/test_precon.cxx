@@ -1,43 +1,42 @@
 /*
  * Test simple implicit preconditioning
- * 
+ *
  *
  * PETSc flags for testing:
  * solver:type=petsc -ts_type theta -ts_theta_theta 0.5 -{ksp,snes,ts}_monitor
  */
 
-#include <bout.hxx>
 #include <bout/physicsmodel.hxx>
+#include <bout.hxx>
 #include <invert_parderiv.hxx>
 
 class Test_precon : public PhysicsModel {
+  Field3D u, v; // Evolving variables
+
+  std::unique_ptr<InvertPar> inv{nullptr}; // Parallel inversion class
+
+  int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta));
+  int jacobian(BoutReal UNUSED(t));
+
 protected:
   int init(bool UNUSED(restarting)) override;
   int rhs(BoutReal UNUSED(t)) override;
 };
 
-
-int precon(BoutReal t, BoutReal cj, BoutReal delta); // Preconditioner
-int jacobian(BoutReal t); // Jacobian-vector multiply
-
-Field3D u, v; // Evolving variables
-
-std::unique_ptr<InvertPar> inv{nullptr}; // Parallel inversion class
-
 int Test_precon::init(bool UNUSED(restarting)) {
   // Set variables to evolve
-  SOLVE_FOR2(u,v);
-  
+  SOLVE_FOR2(u, v);
+
   // Give the solver the preconditioner function
-  solver->setPrecon(precon);
-  
+  setPrecon(&Test_precon::precon);
+
   // Set Jacobian
-  solver->setJacobian(jacobian);
-  
+  setJacobian(&Test_precon::jacobian);
+
   // Initialise parallel inversion class
   inv = InvertPar::create();
   inv->setCoefA(1.0);
-  
+
   return 0;
 }
 
@@ -46,7 +45,7 @@ int Test_precon::rhs(BoutReal UNUSED(t)) {
 
   ddt(u) = Grad_par(v);
   ddt(v) = Grad_par(u);
-  
+
   return 0;
 }
 
@@ -57,43 +56,43 @@ int Test_precon::rhs(BoutReal UNUSED(t)) {
  * o Values to be inverted in time derivatives
  *
  * o Return values should be in time derivatives
- * 
+ *
  *********************************************************/
-int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
+int Test_precon::precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
   auto* mesh = u.getMesh();
 
   // Communicate vector to be inverted
   mesh->communicate(ddt(u), ddt(v));
-  
-  //output << "t = " << t << " Gamma = " << gamma << endl;
-  
-  // First matrix 
+
+  // output << "t = " << t << " Gamma = " << gamma << endl;
+
+  // First matrix
   //  | I   -U |
   //  | 0    I |
-  ddt(u) = ddt(u) + gamma*Grad_par(ddt(v));
-  //ddt(v) = ddt(v);
-  
+  ddt(u) = ddt(u) + gamma * Grad_par(ddt(v));
+  // ddt(v) = ddt(v);
+
   // Second matrix, containing Schur complement
-  // | (1 - UL)^-1  0 | 
+  // | (1 - UL)^-1  0 |
   // |   0          I |
   inv->setCoefB(-SQ(gamma));
   ddt(u) = inv->solve(ddt(u));
-  
+
   // Third matrix
   // |  I  0 |
   // | -L  I |
   mesh->communicate(ddt(u));
-  ddt(v) = gamma*Grad_par(ddt(u)) + ddt(v);
+  ddt(v) = gamma * Grad_par(ddt(u)) + ddt(v);
 
   ddt(u).applyBoundary("dirichlet");
   ddt(v).applyBoundary("dirichlet");
-  
+
   return 0;
 }
 
 /*********************************************************
  * Jacobian
- * 
+ *
  * o System state in variables (as in RHS function)
  * o Vector to be multiplied is in time derivatives
  *
@@ -102,7 +101,7 @@ int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
  * enable by setting solver / use_jacobian = true in BOUT.inp
  *********************************************************/
 
-int jacobian(BoutReal UNUSED(t)) {
+int Test_precon::jacobian(BoutReal UNUSED(t)) {
   auto* mesh = u.getMesh();
 
   mesh->communicate(ddt(u), ddt(v));
@@ -113,7 +112,5 @@ int jacobian(BoutReal UNUSED(t)) {
   ddt(v).applyBoundary("dirichlet");
   return 0;
 }
-
-
 
 BOUTMAIN(Test_precon)

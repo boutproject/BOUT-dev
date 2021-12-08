@@ -71,10 +71,10 @@ then run::
 
 This should give a terminal in a "boutuser" home directory, in which
 there is "BOUT-next", containing BOUT++ configured and compiled with
-NetCDF, HDF5, SUNDIALS, PETSc and SLEPc. Python 3 is also installed,
-with ipython, NumPy, Scipy and Matplotlib libaries. To plot to screen
-an X11 display is needed. Alternatively a shared directory can be
-created to pass files between the docker image and host. The following
+NetCDF, SUNDIALS, PETSc and SLEPc. Python 3 is also installed, with
+ipython, NumPy, Scipy and Matplotlib libaries. To plot to screen an
+X11 display is needed. Alternatively a shared directory can be created
+to pass files between the docker image and host. The following
 commands both enable X11 and create a shared directory::
 
     $ mkdir shared
@@ -102,8 +102,12 @@ obtain a copy of the latest version, run::
 
     $ git clone git://github.com/boutproject/BOUT-dev.git
 
-which will create a directory ``BOUT-dev`` containing the code. To get
-the latest changes later, go into the ``BOUT-dev`` directory and run::
+
+which will create a directory ``BOUT-dev`` containing the code::
+
+    $ cd BOUT-dev
+
+To get the latest changes later, go into the ``BOUT-dev`` directory and run::
 
     $ git pull
 
@@ -123,8 +127,7 @@ The bare-minimum requirements for compiling and running BOUT++ are:
 #. A C++ compiler that supports C++14
 
 #. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <https://www.open-mpi.org/>`__),
-   MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
-   LAM (`www.lam-mpi.org/ <https://www.lam-mpi.org/>`__)
+   MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__)
    
 #. The NetCDF library (`https://www.unidata.ucar.edu/downloads/netcdf
    <https://www.unidata.ucar.edu/downloads/netcdf>`__)
@@ -182,7 +185,7 @@ On Ubuntu 16.04::
 
 On Ubuntu 18.04::
 
-    $ sudo apt-get install mpich libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev git g++ make
+    $ sudo apt-get install mpich libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-c++4-dev git g++ make
     $ sudo apt-get install python3 python3-distutils python3-pip python3-numpy python3-netcdf4 python3-scipy
     $ pip3 install --user Cython
 
@@ -253,8 +256,7 @@ directory with the ``–with-fftw=`` option e.g::
 Configure should now find FFTW, and search for the NetCDF library. If
 configure finishes successfully, then skip to the next section, but if
 you see a message ``NetCDF support disabled`` then configure couldn’t
-find the NetCDF library. Unless you have another file format (like HDF5) installed, this
-will be followed by a message
+find the NetCDF library. This will be followed by a message
 ``ERROR: At least one file format must be supported``. Check that you have
 NetCDF installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
 
@@ -274,7 +276,6 @@ configuration::
       ARKODE support: yes
       NetCDF support: yes
       Parallel-NetCDF support: no
-      HDF5 support: yes (parallel: no)
 
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.
@@ -285,8 +286,16 @@ CMake
 -----
 
 There is now (experimental) support for `CMake <https://cmake.org/>`_. You will need CMake >
-3.9. CMake supports out-of-source builds by default, which are A Good
-Idea. Basic configuration with CMake looks like::
+3.9. Note that it is possible to get the latest version of CMake using ``pip``::
+
+  $ pip install --user --upgrade cmake
+
+or ``conda``::
+
+  $ conda install cmake
+
+CMake supports out-of-source builds by default, which are A Good Idea.
+Basic configuration with CMake looks like::
 
   $ cmake . -B build
 
@@ -343,8 +352,30 @@ it's wise to delete the ``CMakeCache.txt`` file in the build
 directory. The equivalent of ``make distclean`` with CMake is to just
 delete the entire build directory and reconfigure.
 
+If you need to debug a CMake build, you can see the compile and link commands
+which are being issued by adding `VERBOSE=1` to the make command i.e. in the build
+directory running::
+
+  $ make VERBOSE=1
+
+If building by running CMake then the ``-v`` flag also works. For example::
+
+  $ cmake --build . -v
+
+Downloading Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you don't have some dependencies installed, CMake can be used to download,
+configure and compile them alongside BOUT++.
+
+For NetCDF, use ``-DBOUT_DOWNLOAD_NETCDF_CXX4=ON``
+
+For SUNDIALS, use ``-DBOUT_DOWNLOAD_SUNDIALS=ON``. If using ``ccmake`` this option
+may not appear initially. This automatically sets ``BOUT_USE_SUNDIALS=ON``, and
+configures SUNDIALS to use MPI.
+
 Bundled Dependencies
-^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~
 
 BOUT++ bundles some dependencies, currently `mpark.variant
 <https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
@@ -362,7 +393,7 @@ time as your project, therefore there is no option to use an external
 installation for that.
 
 Using CMake with your physics model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can write a CMake configuration file (``CMakeLists.txt``) for your
 physics model in only four lines:
@@ -584,10 +615,10 @@ installation of BOUT++. Unless you want to use some experimental
 features of BOUT++, skip to section [sec-running] to start running the
 code.
 
+.. _sec-install-bout:
+
 Installing BOUT++ (experimental)
 --------------------------------
-
-.. _sec-install-bout:
 
 Most BOUT++ users install and develop their own copies in their home directory,
 so do not need to install BOUT++ to a system directory.
