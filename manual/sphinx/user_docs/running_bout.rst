@@ -301,153 +301,149 @@ over this see if there are any important warnings or errors. Each
 processor outputs its own log file ``BOUT.log.#`` and the log from
 processor 0 is also sent to the screen. This output may look a little
 different if it’s out of date, but the general layout will probably be
-the same.
+the same. The exact order that options are printed in may also vary
+between versions and models.
 
 First comes the introductory blurb::
 
-    BOUT++ version 1.0
-    Revision: c8794400adc256480f72c651dcf186fb6ea1da49
-    MD5 checksum: 8419adb752f9c23b90eb50ea2261963c
-    Code compiled on May 11 2011 at 18:22:37
+    BOUT++ version 4.4.0
+    Revision: 7cfbc6890a82cb6b3b6c81870d8a8fca723de542
+    Code compiled on Dec  7 2021 at 15:14:05
 
     B.Dudson (University of York), M.Umansky (LLNL) 2007
     Based on BOUT by Xueqiao Xu, 1999
 
-The version number (1.0 here) gets increased occasionally after some
+The version number (4.4.0 here) gets increased occasionally after some
 major feature has been added. To help match simulations to code
-versions, the Git revision of the core BOUT++ code and the date and time
-it was compiled is recorded. Because code could be modified from the
-revision, an MD5 checksum of all the code is also calculated. This
-information makes it possible to verify precisely which version of the
-code was used for any given run.
-
-Next comes the compile-time options, which depend on how BOUT++ was
-configured (see :ref:`sec-compile-bout`)::
-
-    Compile-time options:
-            Checking enabled, level 2
-            Signal handling enabled
-            netCDF support enabled
-            Parallel NetCDF support disabled
-
-This says that some run-time checking of values is enabled, that the
-code will try to catch segmentation faults to print a useful error, that
-NetCDF files are supported, but that the parallel flavour isn’t.
+versions, the Git revision of the core BOUT++ code and the date and
+time it was compiled is recorded. This information makes it possible
+to verify precisely which version of the code was used for any given
+run.
 
 The processor number comes next::
 
     Processor number: 0 of 1
 
 This will always be processor number ’0’ on screen as only the output
-from processor ’0’ is sent to the terminal. After this the core BOUT++
-code reads some options::
+from processor ’0’ is sent to the terminal.
 
-            Option /nout = 50 (data/BOUT.inp)
-            Option /timestep = 100 (data/BOUT.inp)
-            Option /grid = slab.6b5.r1.cdl (data/BOUT.inp)
-            Option /dump_float = true   (default)
-            Option /non_uniform = false (data/BOUT.inp)
-            Option /restart = false  (default)
-            Option /append = false  (default)
-            Option /dump_format = nc (data/BOUT.inp)
-            Option /StaggerGrids = false  (default)
+The process ID (pid) is also printed::
+
+    pid: 17835
+
+which is useful for distinguishing multiple simulations running at the
+same time and, for example, stop one run if it starts misbehaving.
+
+Next comes the compile-time options, which depend on how BOUT++ was
+configured (see :ref:`sec-compile-bout`)::
+
+    Compile-time options:
+        Checking enabled, level 2
+        Signal handling enabled
+        netCDF support enabled
+        Parallel NetCDF support disabled
+        OpenMP parallelisation disabled
+        Compiled with flags : "-Wall -Wextra ..."
+
+This says that some run-time checking of values is enabled, that the
+code will try to catch segmentation faults to print a useful error, that
+NetCDF files are supported, but that the parallel flavour isn’t. The
+compilation flags are printed, which can be useful for checking if a
+run was built with optimisation or debugging enabled. These flags can
+be quite long, so we've truncated them in the snippet above.
+
+The complete command line is printed (excluding any MPI options)::
+
+        Command line options for this run : ./conduction nout=1
+
+After this the core BOUT++ code reads some options::
+
+    Reading options file data/BOUT.inp
+        Option nout = 100 (data/BOUT.inp) overwritten with:
+            nout = 1 (Command line)
+    Writing options to file data/BOUT.settings
+
+    Getting grid data from options
+        Option mesh:type = bout (default)
+        Option mesh:StaggerGrids = 0 (default)
+        Option mesh:maxregionblocksize = 64 (default)
+        Option mesh:calcParallelSlices_on_communicate = 1 (default)
+        Option mesh:ddz:fft_filter = 0 (default)
+        Option mesh:symmetricGlobalX = 1 (default)
+        Option mesh:symmetricglobaly = true (data/BOUT.inp)
 
 This lists each option and the value it has been assigned. For every
 option the source of the value being used is also given. If a value had
 been given on the command line then ``(command line)`` would appear
 after the option.::
 
-    Setting X differencing methods
-            First       :  Second order central (C2)
-            Second      :  Second order central (C2)
-            Upwind      :  Third order WENO (W3)
-            Flux        :  Split into upwind and central (SPLIT)
-    Setting Y differencing methods
-            First       :  Fourth order central (C4)
-            Second      :  Fourth order central (C4)
-            Upwind      :  Third order WENO (W3)
-            Flux        :  Split into upwind and central (SPLIT)
-    Setting Z differencing methods
-            First       :  FFT (FFT)
-            Second      :  FFT (FFT)
-            Upwind      :  Third order WENO (W3)
-            Flux        :  Split into upwind and central (SPLIT)
+        Option mesh:ddx:first = c2 (data/BOUT.inp)
+        Option mesh:ddx:second = c2 (data/BOUT.inp)
+        Option mesh:ddx:upwind = w3 (data/BOUT.inp)
+        Option mesh:ddy:first = c2 (data/BOUT.inp)
+        Option mesh:ddy:second = c2 (data/BOUT.inp)
+        Option mesh:ddy:upwind = w3 (data/BOUT.inp)
+        Option mesh:ddz:first = fft (data/BOUT.inp)
+        Option mesh:ddz:second = fft (data/BOUT.inp)
+        Option mesh:ddz:upwind = w3 (data/BOUT.inp)
 
-This is a list of the differential methods for each direction. These are
-set in the BOUT.inp file (``[ddx]``, ``[ddy]`` and ``[ddz]`` sections),
-but can be overridden for individual operators. For each direction,
-numerical methods can be specified for first and second central
-difference terms, upwinding terms of the form
-:math:`{{\frac{\partial f}{\partial t}}} = {{\boldsymbol{v}}}\cdot\nabla f`,
-and flux terms of the form
-:math:`{{\frac{\partial f}{\partial t}}} = \nabla\cdot({{\boldsymbol{v}}}f)`.
-By default the flux terms are just split into a central and an upwinding
-term.
+This is a list of the differential methods for each direction. These
+are set in the BOUT.inp file (``[mesh:ddx]``, ``[mesh:ddy]`` and
+``[mesh:ddz]`` sections), but can be overridden for individual
+operators. For each direction, numerical methods can be specified for
+first and second central difference terms, upwinding terms of the form
+:math:`{{\frac{\partial f}{\partial t}}} =
+{{\boldsymbol{v}}}\cdot\nabla f`, and flux terms of the form
+:math:`{{\frac{\partial f}{\partial t}}} =
+\nabla\cdot({{\boldsymbol{v}}}f)`. By default the flux terms are just
+split into a central and an upwinding term. A list of available
+methods is given in :ref:`sec-diffmethod`.::
 
-In brackets are the code used to specify the method in BOUT.inp. A list
-of available methods is given in :ref:`sec-diffmethod`.::
-
-    Setting grid format
-            Option /grid_format =  (default)
-            Using NetCDF format for file 'slab.6b5.r1.cdl'
     Loading mesh
-            Grid size: 10 by 64
-            Option /mxg = 2 (data/BOUT.inp)
-            Option /myg = 2 (data/BOUT.inp)
-            Option /NXPE = 1 (default)
-            Option /mz = 65 (data/BOUT.inp)
-            Option /twistshift = false (data/BOUT.inp)
-            Option /TwistOrder = 0 (default)
-            Option /ShiftOrder = 0 (default)
-            Option /shiftxderivs = false (data/BOUT.inp)
-            Option /IncIntShear = false  (default)
-            Option /BoundaryOnCell = false  (default)
-            Option /StaggerGrids = false  (default)
-            Option /periodicX = false  (default)
-            Option /async_send = false  (default)
-            Option /zmin = 0 (data/BOUT.inp)
-            Option /zmax = 0.0028505 (data/BOUT.inp)::
+        Option input:transform_from_field_aligned = 1 (default)
+        Option mesh:nx = 1 (data/BOUT.inp)
+        Option mesh:ny = 100 (data/BOUT.inp)
+        Option mesh:nz = 1 (data/BOUT.inp)
+        Read nz from input grid file
+        Grid size: 1 x 100 x 1
+    Variable 'MXG' not in mesh options. Setting to 0
+        Option mxg = 0 (data/BOUT.inp)
+    Variable 'MYG' not in mesh options. Setting to 0
+        Option MYG = 2 (default)
+        Guard cells (x,y,z): 0, 2, 0
+        Option mesh:ixseps1 = -1 (data/BOUT.inp)
+        Option mesh:ixseps2 = -1 (data/BOUT.inp)
 
-    WARNING: Number of inner y points 'ny_inner' not found. Setting to 32
-
-Optional quantities (such as ``ny_inner`` in this case) which are not
+Optional quantities (such as ``MXG/MYG`` in this case) which are not
 specified are given a default (best-guess) value, and a warning is
 printed.::
 
-            EQUILIBRIUM IS SINGLE NULL (SND)
-            MYPE_IN_CORE = 0
-            DXS = 0, DIN = -1. DOUT = -1
-            UXS = 0, UIN = -1. UOUT = -1
-            XIN = -1, XOUT = -1
-            Twist-shift:
+        EQUILIBRIUM IS SINGLE NULL (SND)
+        MYPE_IN_CORE = 0
+        DXS = 0, DIN = -1. DOUT = -1
+        UXS = 0, UIN = -1. UOUT = -1
+        XIN = -1, XOUT = -1
+        Twist-shift:
 
 At this point, BOUT++ reads the grid file, and works out the topology of
 the grid, and connections between processors. BOUT++ then tries to read
 the metric coefficients from the grid file::
 
-            WARNING: Could not read 'g11' from grid. Setting to 1.000000e+00
-            WARNING: Could not read 'g22' from grid. Setting to 1.000000e+00
-            WARNING: Could not read 'g33' from grid. Setting to 1.000000e+00
-            WARNING: Could not read 'g12' from grid. Setting to 0.000000e+00
-            WARNING: Could not read 'g13' from grid. Setting to 0.000000e+00
-            WARNING: Could not read 'g23' from grid. Setting to 0.000000e+00
+    Variable 'g11' not in mesh options. Setting to 1.000000e+00
+    Variable 'g22' not in mesh options. Setting to 1.000000e+00
+    Variable 'g33' not in mesh options. Setting to 1.000000e+00
+    Variable 'g12' not in mesh options. Setting to 0.000000e+00
+    Variable 'g13' not in mesh options. Setting to 0.000000e+00
+    Variable 'g23' not in mesh options. Setting to 0.000000e+00
 
 These warnings are printed because the coefficients have not been
 specified in the grid file, and so the metric tensor is set to the
-default identity matrix.::
+default identity matrix. For this particular example we don't need to
+do anything special in the direction parallel to the magnetic field,
+so we set the parallel transform to be the identity (see
+:ref:`sec-parallel-transforms`)::
 
-            WARNING: Could not read 'zShift' from grid. Setting to 0.000000e+00
-            WARNING: Z shift for radial derivatives not found
-
-To get radial derivatives, the quasi-ballooning coordinate method is
-used . The upshot of this is that to get radial derivatives,
-interpolation in Z is needed. This should also always be set to FFT.::
-
-            WARNING: Twist-shift angle 'ShiftAngle' not found. Setting from zShift
-            Option /twistshift_pf = false  (default)::
-
-            Maximum error in diagonal inversion is 0.000000e+00
-            Maximum error in off-diagonal inversion is 0.000000e+00
+    Option mesh:paralleltransform = identity (default)
 
 If only the contravariant components (``g11`` etc.) of the metric tensor
 are specified, the covariant components (``g_11`` etc.) are calculated
@@ -456,85 +452,79 @@ calculated by calculating :math:`g_{ij}g^{jk}` as a check. Since no
 metrics were specified in the input, the metric tensor was set to the
 identity matrix, making inversion easy and the error tiny.::
 
-            WARNING: Could not read 'J' from grid. Setting to 0.000000e+00
-            WARNING: Jacobian 'J' not found. Calculating from metric tensor::
-
-            Maximum difference in Bxy is 1.444077e-02
+    Variable 'J' not in mesh options. Setting to 0.000000e+00
+        WARNING: Jacobian 'J' not found. Calculating from metric tensor
+    Variable 'Bxy' not in mesh options. Setting to 0.000000e+00
+        WARNING: Magnitude of B field 'Bxy' not found. Calculating from metric tensor
     Calculating differential geometry terms
-            Communicating connection terms
-    Boundary regions in this processor: core, sol, target, target,
-            done::
+    Communicating connection terms
+    Boundary regions in this processor: upper_target, lower_target,
+    Constructing default regions
 
-    Setting file formats
-            Using NetCDF format for file 'data/BOUT.dmp.0.nc'
-
-The laplacian inversion code is initialised, and prints out the options
-used.::
+The Laplacian inversion (see :ref:`sec-laplacian`) code is
+initialised, and prints out the options used.::
 
     Initialising Laplacian inversion routines
-            Option comms/async = true   (default)
-            Option laplace/filter = 0.2 (default)
-            Option laplace/low_mem = false  (default)
-            Option laplace/use_pdd = false  (default)
-            Option laplace/all_terms = false  (default)
-            Option laplace/laplace_nonuniform = false  (default)
-            Using serial algorithm
-            Option laplace/max_mode = 26 (default)
+        Option phiboussinesq:async = 1 (default)
+        Option phiboussinesq:filter = 0 (default)
+        Option phiboussinesq:maxmode = 128 (default)
+        Option phiboussinesq:low_mem = 0 (default)
+        Option phiboussinesq:nonuniform = 1 (default)
+        Option phiboussinesq:all_terms = 1 (default)
+        Option phiboussinesq:flags = 0 (delta_1/BOUT.inp)
 
 After this comes the physics module-specific output::
 
     Initialising physics module
-            Option solver/type =  (default)
-            .
-            .
-            .
+            Option solver:type = cvode (default)
 
-This typically lists the options used, and useful/important
-normalisation factors etc.
+This typically lists the options used, useful/important normalisation
+factors, and so on.
 
 Finally, once the physics module has been initialised, and the current
 values loaded, the solver can be started::
 
     Initialising solver
-            Option /archive = -1 (default)
-            Option /dump_format = nc (data/BOUT.inp)
-            Option /restart_format = nc (default)
-            Using NetCDF format for file 'nc'::
+        Option datadir = delta_1 ()
+        Option dump_format = nc (default)
+        Option restart_format = nc (default)
+        Using NetCDF4 format for file 'delta_1/BOUT.restart.nc'
 
-    Initialising PVODE solver
-            Boundary region inner X
-            Boundary region outer X
-            3d fields = 2, 2d fields = 0 neq=84992, local_N=84992
+    Constructing default regions
+        Boundary region inner X
+        Boundary region outer X
+        3d fields = 2, 2d fields = 0 neq=100, local_N=100
 
 This last line gives the number of equations being evolved (in this case
-84992), and the number of these on this processor (here 84992).::
-
-            Option solver/mudq = 16 (default)
-            Option solver/mldq = 16 (default)
-            Option solver/mukeep = 0 (default)
-            Option solver/mlkeep = 0 (default)
+100), and the number of these on this processor (here 100).::
 
 The absolute and relative tolerances come next::
 
-            Option solver/atol = 1e-10 (data/BOUT.inp)
-            Option solver/rtol = 1e-05 (data/BOUT.inp)::
-
-            Option solver/use_precon = false  (default)
-            Option solver/precon_dimens = 50 (default)
-            Option solver/precon_tol = 0.0001 (default)
-            Option solver/mxstep = 500 (default)::
-
-            Option fft/fft_measure = false  (default)
+        Option solver:atol = 1e-12 (default)
+        Option solver:rtol = 1e-05 (default)
 
 This next option specifies the maximum number of internal timesteps
-which CVODE will take between outputs.::
+that CVODE will take between outputs.::
 
-            Option fft/fft_measure = false  (default)
+        Option solver:mxstep = 500 (default)
+
+After (almost!) all of the options are read in, the simulation proper
+starts::
+
     Running simulation
 
-    Run started at  : Wed May 11 18:23:20 2011
+    Run ID: 332467c7-1210-401a-b44c-f8a3a3415827
 
-            Option /wall_limit = -1 (default)
+    Run started at  : Tue 07 Dec 2021 17:50:39 GMT
+
+The ``Run ID`` here is a `universally unique identifier
+<https://en.wikipedia.org/wiki/Universally_unique_identifier>` (UUID)
+which is a random 128-bit label unique to this current
+simulation. This makes it easier to identify all of the associated
+outputs of a simulation, and record the data for future reference.
+
+A few more options may appear between these last progress messages and
+the per-timestep output discussed in the next section.
 
 Per-timestep output
 -------------------
