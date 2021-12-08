@@ -82,7 +82,7 @@ run, and produce a bunch of files in the ``data/`` subdirectory.
    if needed. In some cases the options used have documentation, with a brief
    explanation of how they are used. In most cases the type the option is used
    as (e.g. ``int``, ``BoutReal`` or ``bool``) is given.
-   
+
 -  ``BOUT.restart.*.nc`` are the restart files for the last time point.
    Currently each processor saves its own state in a separate file, but
    there is experimental support for parallel I/O. For the settings, see
@@ -111,17 +111,21 @@ To see some of the other command-line options try "-h"::
 and see the section on options (:ref:`sec-options`).
 
 To analyse the output of the simulation, cd into the ``data``
-subdirectory and start python or IDL (skip to :ref:`Using IDL <sec-intro-using-idl>` for IDL).
+subdirectory and start Python.
 
 Analysing the output Using python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. note:: We now recommend using `xBOUT
+          <https://xbout.readthedocs.io/en/latest>` to analyse BOUT++
+          simulations.
 
 In order to analyse the output of the simulation using Python, you
 will first need to have set up python to use the BOUT++ libraries
 ``boutdata`` and ``boututils``; see section
 :ref:`sec-config-python` for how to do this. The analysis routines have
 some requirements such as SciPy; see section
-:ref:`sec-python-requirements` for details. 
+:ref:`sec-python-requirements` for details.
 
 To print a list of variables in the output files, one way is to use the ``DataFile``
 class. This is a wrapper around the various NetCDF and HDF5 libraries for python:
@@ -151,66 +155,6 @@ animation
 The first index of the array passed to ``showdata`` is assumed to be time, amd the remaining
 indices are plotted. In this example we pass a 2D array ``[t,y]``, so ``showdata`` will animate
 a line plot.
-
-.. _sec-intro-using-idl:
-
-Analysing the output using IDL
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-First, list the variables in one of the data files:
-
-.. code-block:: idl
-
-    IDL> print, file_list("BOUT.dmp.0.nc")
-    iteration MXSUB MYSUB MXG MYG MZ NXPE NYPE BOUT_VERSION t_array ZMAX ZMIN T
-
-All of these except ’\ ``T``\ ’ are in all output files, and they
-contain information about the layout of the mesh so that the data can be
-put in the correct place. The most useful variable is ’\ ``t_array``\ ’
-which is a 1D array of simulation output times. To read this, we can use
-the ``collect`` function:
-
-.. code-block:: idl
-
-    IDL> time = collect(var="t_array")
-    IDL> print, time
-          1.10000      1.20000      1.30000      1.40000      1.50000 ...
-
-The number of variables in an output file depends on the model being
-solved, which in this case consists of a single scalar field
-’\ ``T``\ ’. To read this into IDL, again use ``collect``:
-
-.. code-block:: idl
-
-    IDL> T = collect(var="T")
-    IDL> help, T
-    T               FLOAT     = Array[5, 64, 1, 20]
-
-This is a 4D variable, arranged as ``[x, y, z, t]``. The :math:`x`
-direction has 5 points, consisting of 2 points either side for the
-boundaries and one point in the middle which is evolving. This case is
-only solving a 1D problem in :math:`y` with 64 points so to display an
-animation of this
-
-.. code-block:: idl
-
-    IDL> showdata, T[2,*,0,*]
-
-which selects the only evolving :math:`x` point, all :math:`y`, the only
-:math:`z` point, and all time points. If given 3D variables, showdata
-will display an animated surface
-
-.. code-block:: idl
-
-    IDL> showdata, T[*,*,0,*]
-
-and to make this a coloured contour plot
-
-.. code-block:: idl
-
-    IDL> showdata, T[*,*,0,*], /cont
-
-The equivalent commands in Python are as follows. 
 
 .. _sec-run-nls:
 
