@@ -1896,7 +1896,7 @@ u^k` in equation :eq:`eq:laplacegen` gives
    \nabla^2f &= \nabla\cdot\nabla f = \nabla\cdot\left(\frac{\partial}{\partial
    x}\nabla x + \frac{\partial}{\partial y}\nabla y + \frac{\partial}{\partial
    z}\nabla z\right) \nonumber \\
-   &= \frac{\partial^2 f}{\partial x^2}\left|\nabla x\right|^2 + \frac{\partial^2
+   =& \frac{\partial^2 f}{\partial x^2}\left|\nabla x\right|^2 + \frac{\partial^2
    f}{\partial y^2}\left|\nabla y\right|^2 + \frac{\partial^2 f}{\partial z^2}\left|\nabla
    z\right|^2 \\
    &+2\frac{\partial^2 f}{\partial x\partial y}\left(\nabla x\cdot\nabla
