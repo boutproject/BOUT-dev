@@ -1847,11 +1847,6 @@ metric coefficients `g_{ij} = \mathbf{e_i\cdot e_j}` and
 orthogonal then `g_{ij}=g^{ij} = 0` for `i\neq j` i.e. the
 metric is diagonal.
 
-.. math::
-   :label: eq:covariantemetric
-
-   \text{$g_{ij} = h_ih_j\boldsymbol{e}_i\cdot\boldsymbol{e}_j$ and so $g_{ii} = h_i^2$}
-
 For a general set of coordinates, the nabla operator can be expressed as
 
 .. math::
