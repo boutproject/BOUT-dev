@@ -100,19 +100,29 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   predictor =
       (*options)["predictor"].doc("Use linear predictor?").withDefault<bool>(true);
 
+  equation_form = (*options)["equation_form"]
+    .doc("Form of equation to solve: 0 = Pseudo-transient;"
+         " 1 = Rearranged Backward-Euler; 2 = Backward Euler;"
+         " 3 = Direct Newton")
+    .withDefault(1);
   // Initialise PETSc components
   int ierr;
 
   // Vectors
   ierr = VecCreate(BoutComm::get(), &snes_x);
-  CHKERRQ(ierr); // NOLINT
+  CHKERRQ(ierr);
   ierr = VecSetSizes(snes_x, nlocal, PETSC_DECIDE);
-  CHKERRQ(ierr); // NOLINT
+  CHKERRQ(ierr);
   ierr = VecSetFromOptions(snes_x);
-  CHKERRQ(ierr); // NOLINT
+  CHKERRQ(ierr);
 
   VecDuplicate(snes_x, &snes_f);
   VecDuplicate(snes_x, &x0);
+
+  if (equation_form == 1) {
+    // Need an intermediate vector for rearranged Backward Euler
+    VecDuplicate(snes_x, &delta_x);
+  }
 
   if (predictor) {
     // Storage for previous solution
@@ -127,6 +137,16 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
   std::string snes_type = (*options)["snes_type"].withDefault("newtonls");
   SNESSetType(snes, snes_type.c_str());
+
+  // Line search
+  std::string line_search_type = (*options)["line_search_type"]
+    .doc("Line search type: basic, bt, l2, cp, nleqerr")
+    .withDefault("default");
+  if (line_search_type != "default") {
+    SNESLineSearch linesearch;
+    SNESGetLineSearch(snes, &linesearch);
+    SNESLineSearchSetType(linesearch, line_search_type.c_str());
+  }
 
   // Set up the Jacobian
   bool matrix_free =
@@ -572,6 +592,9 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       (*options)["atol"].doc("Absolute tolerance in SNES solve").withDefault(1e-12);
   BoutReal rtol =
       (*options)["rtol"].doc("Relative tolerance in SNES solve").withDefault(1e-5);
+  BoutReal stol = (*options)["stol"]
+    .doc("Convergence tolerance in terms of the norm of the change in the solution between steps")
+    .withDefault(1e-8);
 
   int maxits = (*options)["max_nonlinear_iterations"]
                    .doc("Maximum number of nonlinear iterations per SNES solve")
@@ -585,7 +608,13 @@ int SNESSolver::init(int nout, BoutReal tstep) {
                   .doc("Iterations below which the next timestep is increased")
                   .withDefault(static_cast<int>(maxits * 0.5));
 
-  SNESSetTolerances(snes, atol, rtol, PETSC_DEFAULT, maxits, PETSC_DEFAULT);
+  SNESSetTolerances(snes, atol, rtol, stol, maxits, PETSC_DEFAULT);
+
+  // Force SNES to take at least one nonlinear iteration.
+  // This may prevent the solver from getting stuck in false steady state conditions
+#if PETSC_VERSION_GE(3, 8, 0)
+  SNESSetForceIteration(snes, PETSC_TRUE);
+#endif
 
   bool use_precon =
       (*options)["use_precon"].doc("Use user-supplied preconditioner?").withDefault<bool>(false);
@@ -723,13 +752,28 @@ int SNESSolver::run() {
       }
 
       // Run the solver
-      SNESSolve(snes, nullptr, snes_x);
+      PetscErrorCode ierr = SNESSolve(snes, nullptr, snes_x);
 
       // Find out if converged
       SNESConvergedReason reason;
       SNESGetConvergedReason(snes, &reason);
-      if (reason < 0) {
-        // Diverged
+      if ((ierr != 0) or (reason < 0)) {
+        // Diverged or SNES failed
+
+        // Print diagnostics to help identify source of the problem
+
+        output.write("\n======== SNES failed =========\n");
+        output.write("\nReturn code: %d, reason: %d\n", ierr, reason);
+        for (const auto& f : f2d) {
+          output.write("%s : (%e -> %e), ddt: (%e -> %e)\n", f.name.c_str(),
+                       min(*f.var, true, "RGN_NOBNDRY"), max(*f.var, true, "RGN_NOBNDRY"),
+                       min(*f.F_var, true, "RGN_NOBNDRY"), max(*f.F_var, true, "RGN_NOBNDRY"));
+        }
+        for (const auto& f : f3d) {
+          output.write("%s : (%e -> %e), ddt: (%e -> %e)\n", f.name.c_str(),
+                       min(*f.var, true, "RGN_NOBNDRY"), max(*f.var, true, "RGN_NOBNDRY"),
+                       min(*f.F_var, true, "RGN_NOBNDRY"), max(*f.F_var, true, "RGN_NOBNDRY"));
+        }
 
 	++snes_failures;
 
@@ -765,17 +809,48 @@ int SNESSolver::run() {
         time1 = simtime;
       }
 
-      simtime += dt;
       int nl_its;
       SNESGetIterationNumber(snes, &nl_its);
 
-      int lin_its;
-      SNESGetLinearSolveIterations(snes, &lin_its);
+      if (nl_its == 0) {
+        // This can occur even with SNESSetForceIteration
+        // Results in simulation state freezing and rapidly going to the end
+
+        {
+          const BoutReal* xdata = nullptr;
+          int ierr = VecGetArrayRead(snes_x, &xdata);
+          CHKERRQ(ierr);
+          load_vars(const_cast<BoutReal*>(xdata));
+          ierr = VecRestoreArrayRead(snes_x, &xdata);
+          CHKERRQ(ierr);
+        }
+        run_rhs(simtime);
+
+        // Copy derivatives back
+        {
+          BoutReal* fdata = nullptr;
+          ierr = VecGetArray(snes_f, &fdata);
+          CHKERRQ(ierr);
+          save_derivs(fdata);
+          ierr = VecRestoreArray(snes_f, &fdata);
+          CHKERRQ(ierr);
+        }
+
+        // Forward Euler
+        VecAXPY(snes_x, dt, snes_f);
+      }
+
+      simtime += dt;
 
       if (diagnose) {
-	output.print("\r"); // Carriage return for printing to screen
-        output.write("Time: %e, timestep: %e, nl iter: %d, lin iter: %d", simtime, timestep,
-                     nl_its, lin_its);
+        // Gather and print diagnostic information
+
+        int lin_its;
+        SNESGetLinearSolveIterations(snes, &lin_its);
+
+        output.print("\r"); // Carriage return for printing to screen
+        output.write("Time: %e, timestep: %e, nl iter: %d, lin iter: %d, reason: %d", simtime, timestep,
+                     nl_its, lin_its, reason);
         if (snes_failures > 0) {
 	  output.write(", SNES failures: %d", snes_failures);
 	  snes_failures = 0;
@@ -847,10 +922,36 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
   ierr = VecRestoreArray(f, &fdata);
   CHKERRQ(ierr);
 
-  // Backward Euler
-  // Set fdata = xdata - x0 - Δt*fdata
-  VecAYPX(f, -dt, x);   // f <- x - Δt*f
-  VecAXPY(f, -1.0, x0); // f <- f - x0
+  switch (equation_form) {
+  case 0: {
+    // Pseudo-transient timestepping (as in UEDGE)
+    // f <- f - x/Δt
+    VecAXPY(f, -1./dt, x);
+    break;
+  }
+  case 1: {
+    // Rearranged Backward Euler
+    // f = (x0 - x)/Δt + f
+    // First calculate x - x0 to minimise floating point issues
+    VecWAXPY(delta_x, -1.0, x0, x);  // delta_x = x - x0
+    VecAXPY(f, -1./dt, delta_x); // f <- f - delta_x / dt
+    break;
+  }
+  case 2: {
+    // Backward Euler
+    // Set f = x - x0 - Δt*f
+    VecAYPX(f, -dt, x);   // f <- x - Δt*f
+    VecAXPY(f, -1.0, x0); // f <- f - x0
+    break;
+  }
+  case 3: {
+    // Direct Newton solve -> don't modify f
+    break;
+  }
+  default: {
+    throw BoutException("Invalid choice of equation_form. Try 0-3");
+  }
+  };
 
   return 0;
 }

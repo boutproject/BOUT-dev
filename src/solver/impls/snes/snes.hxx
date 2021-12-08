@@ -97,10 +97,13 @@ private:
   int nlocal; ///< Number of variables on local processor
   int neq;    ///< Number of variables in total
 
+  int equation_form; ///< Form of the equation to solve
+
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function
   Vec snes_x;   ///< Result of SNES
   Vec x0;       ///< Solution at start of current timestep
+  Vec delta_x;  ///< Change in solution
 
   bool predictor;       ///< Use linear predictor?
   Vec x1;               ///< Previous solution
