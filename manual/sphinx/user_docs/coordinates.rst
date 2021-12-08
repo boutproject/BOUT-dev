@@ -1749,9 +1749,10 @@ and so
 Differential geometry
 =====================
 
-.. warning:: Several mistakes have been found (and is now corrected)
-  in this section, so it should be proof read before removing this
-  warning!  The following are notes from [haeseler]_.
+.. warning:: The following are notes from [haeseler]_. If you are new to this
+	     topic it is strongly suggested to read [haeseler]_ instead, as
+	     here not all terms are defined, and the discussion of co- and
+	     contra variant components is short.
 
 Sets of vectors `\left\{\mathbf{A, B, C}\right\}` and
 `\left\{\mathbf{a, b, c}\right\}` are reciprocal if
