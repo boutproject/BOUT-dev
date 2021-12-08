@@ -423,7 +423,8 @@ void Solver::constraint(Vector3D& v, Vector3D& C_v, std::string name) {
  **************************************************************************/
 
 int Solver::solve(int NOUT, BoutReal TIMESTEP) {
-  
+  output_progress.write(_("Initialising solver\n"));
+
   Options& globaloptions = Options::root(); // Default from global options
   
   if (NOUT < 0) {
@@ -585,8 +586,6 @@ int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
 
   if (initialised)
     throw BoutException(_("ERROR: Solver is already initialised\n"));
-
-  output_progress.write(_("Initialising solver\n"));
 
   NPES = BoutComm::size();
   MYPE = BoutComm::rank();
