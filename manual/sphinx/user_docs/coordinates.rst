@@ -1749,10 +1749,11 @@ and so
 Differential geometry
 =====================
 
-.. warning:: The following are notes from [haeseler]_. If you are new to this
-	     topic it is strongly suggested to read [haeseler]_ instead, as
-	     here not all terms are defined, and the discussion of co- and
-	     contra variant components is short.
+.. warning:: The following are notes from [haeseleer]_. If you are new to this
+	     topic it is strongly suggested to read [haeseleer]_ chapter 2
+	     instead, as here not all terms are defined, and the discussion of
+	     co- and contra variant components is incomplete. Similiarly, the
+	     notation is based on [haeseleer]_ and not explained in detail.
 
 Sets of vectors `\left\{\mathbf{A, B, C}\right\}` and
 `\left\{\mathbf{a, b, c}\right\}` are reciprocal if
@@ -1867,7 +1868,9 @@ and for a general set of (differentiable) coordinates
    u^i}\left(Jg^{ij}\frac{\partial\phi}{\partial u^j}\right)
    \end{aligned}
 
-which can be expanded as
+with `J` the determinant of the jacobian matrix `J_{ij}`, and `g_{ij}=J_{ki}J_{kj}` and
+`[g^{ij}] = [g_{ij}]^{-1}`.
+This can be expanded as
 
 .. math::
    :label: eq:laplace_expand
@@ -2022,7 +2025,7 @@ We would here like to find an expression for the Laplacian
    \begin{aligned}
        {\nabla}^2 = {\nabla\cdot}{\nabla}\end{aligned}
 
-In general we have (using equation (2.6.39) in D’Haeseleer [haeseler]_)
+In general we have (using equation (2.6.39) in D’haeseleer [haeseleer]_)
 
 .. math::
    :label: eq:divA
@@ -2401,7 +2404,7 @@ Alternatively, equation :eq:`eq:exb1` can be expanded as
    \nabla\cdot\left(n\frac{\mathbf{b}\times\nabla\phi}{B}\right) &= \frac{1}{J}\frac{\partial}{\partial\psi}\left(Jn\frac{\partial\phi}{\partial z} \right) - \frac{1}{J}\frac{\partial}{\partial z}\left(Jn\frac{\partial\phi}{\partial\psi}\right)  \\
                                                                  & \quad + \frac{1}{J}\frac{\partial}{\partial\psi}\left(Jn\frac{g^{\psi\psi}g^{yz}}{B^2}\frac{\partial\phi}{\partial y}\right) - \frac{1}{J}\frac{\partial}{\partial y}\left(Jn\frac{g^{\psi\psi}g^{yz}}{B^2}\frac{\partial\phi}{\partial\psi}\right)\end{aligned}
 
-.. [haeseler] Haeseler, W. D.: Flux Coordinates and Magnetic Field Structure, Springer-Verlag, 1991, ISBN 3-540-52419-3
+.. [haeseleer] D'haeseleer, W. D.: Flux Coordinates and Magnetic Field Structure, Springer-Verlag, 1991, ISBN 3-540-52419-3
 
 .. rubric:: Footnotes
 
