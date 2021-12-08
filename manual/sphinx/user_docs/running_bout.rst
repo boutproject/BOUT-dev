@@ -276,7 +276,7 @@ The process ID (pid) is also printed::
     pid: 17835
 
 which is useful for distinguishing multiple simulations running at the
-same time and, for example, stop one run if it starts misbehaving.
+same time and, for example, to stop one run if it starts misbehaving.
 
 Next comes the compile-time options, which depend on how BOUT++ was
 configured (see :ref:`sec-compile-bout`)::
