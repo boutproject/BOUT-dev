@@ -1900,10 +1900,12 @@ u^k` in equation :eq:`eq:laplacegen` gives
    z}\nabla z\right) \nonumber \\
    &= \frac{\partial^2 f}{\partial x^2}\left|\nabla x\right|^2 + \frac{\partial^2
    f}{\partial y^2}\left|\nabla y\right|^2 + \frac{\partial^2 f}{\partial z^2}\left|\nabla
-   z\right|^2 \\ +2\frac{\partial^2 f}{\partial x\partial y}\left(\nabla x\cdot\nabla
+   z\right|^2 \\
+   &+2\frac{\partial^2 f}{\partial x\partial y}\left(\nabla x\cdot\nabla
    y\right) +2\frac{\partial^2 f}{\partial x\partial z}\left(\nabla x\cdot\nabla z\right)
    +2\frac{\partial^2 f}{\partial y\partial z}\left(\nabla y\cdot\nabla z\right)
-   \nonumber \\ +\nabla^2x\frac{\partial f}{\partial x} +\nabla^2y\frac{\partial
+   \nonumber \\
+   &+\nabla^2x\frac{\partial f}{\partial x} +\nabla^2y\frac{\partial
    f}{\partial y} + \nabla^2z\frac{\partial f}{\partial z} \nonumber
    \end{aligned}
 
