@@ -576,47 +576,36 @@ of the command, for example::
 
 Equivalently, put “restart=true” near the top of the BOUT.inp input
 file. Note that this will overwrite the existing data in the
-“BOUT.dmp.\*.nc” files. If you want to append to them instead then add
+``BOUT.dmp.\*.nc`` files. If you want to append to them instead then add
 the keyword append to the command, for example::
 
      $ mpirun -np 2 ./conduction restart append
 
-or also put “append=true” near the top of the BOUT.inp input file.
+or also put ``append=true`` near the top of the BOUT.inp input file.
 
 When restarting simulations BOUT++ will by default output the initial
 state, unless appending to existing data files when it will not output
 until the first timestep is completed. To override this behaviour, you
-can specify the option dump\_on\_restart manually. If dump\_on\_restart
+can specify the option ``dump_on_restart`` manually. If ``dump_on_restart``
 is true then the initial state will always be written out, if false then
-it never will be (regardless of the values of restart and append).
+it never will be (regardless of the values of ``restart`` and ``append``).
 
-If you need to restart from a different point in your simulation, or the
-BOUT.restart files become corrupted, you can either use archived restart
-files, or create new restart files. Archived restart files have names
-like “BOUT.restart\_0020.#.nc”, and are written every 20 outputs by
-default. To change this, set “archive” in the BOUT.inp file. To use
-these files, they must be renamed to “BOUT.restart.#.nc”. A useful tool
-to do this is “rename”::
-
-    $ rename 's/_0020//' *.nc
-
-will strip out “\_0020” from any file names ending in “.nc”.
-
-If you don’t have archived restarts, or want to start from a different
-time-point, there are Python routines for creating new restart files. If
-your PYTHONPATH environment variable is set up (see
-:ref:`sec-configanalysis`) then you can use the
-``boutdata.restart.create`` function in
-``tools/pylib/boutdata/restart.py``:
+If you need to restart from a different point in your simulation, or
+the ``BOUT.restart`` files become corrupted, you can use `xBOUT
+<https://xbout.readthedocs.io/en/latest>` to create new restart files
+from any time-point in your output files. Use the `.to_restart()
+<https://xbout.readthedocs.io/en/latest/xbout.html#xbout.boutdataset.BoutDatasetAccessor.to_restart>`
+method:
 
 .. code-block:: pycon
 
-    >>> from boutdata.restart import create
-    >>> create(final=10, path='data', output='.')
+    >>> import xbout
+    >>> df = xbout.open_boutdataset("data/BOUT.dmp.*.nc")
+    >>> df.bout.to_restart(tind=10)
 
-The above will take time point 10 from the BOUT.dmp.\* files in the
-“data” directory. For each one, it will output a BOUT.restart file in
-the output directory “.”.
+The above will take time point 10 from the ``BOUT.dmp.*.nc`` files in
+the ``data`` directory. For each one, it will output a
+``BOUT.restart.*.nc`` file in the output directory ``.``.
 
 Stopping simulations
 --------------------
