@@ -8,7 +8,7 @@ endif()
 
 # CMake currently doesn't support proper semver
 # Set the version here, strip the prerelease identifier to use in `project`
-set(BOUT_FULL_VERSION 4.4.0)
+set(BOUT_FULL_VERSION 4.4.1)
 string(REGEX REPLACE "^([0-9]+\.[0-9]+\.[0-9]+)-.*" "\\1" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
 
 project(BOUT++
@@ -345,7 +345,7 @@ set(BOUT_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}/lib")
 set_target_properties(bout++ PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
   ARCHIVE_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
-  SOVERSION 4.4.0)
+  SOVERSION 4.4.1)
 
 # Set some variables for the bout-config script
 set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
