@@ -56,7 +56,7 @@ BOUT_ENUM_CLASS(BoutSnesEquationForm, pseudo_transient, rearranged_backward_eule
 /// nonlinear ODE by integrating in time with Backward Euler
 class SNESSolver : public Solver {
 public:
-  SNESSolver(Options* opt = nullptr) : Solver(opt) {}
+  explicit SNESSolver(Options* opt = nullptr);
   ~SNESSolver() {}
 
   /// Initialise solver. Must be called once and only once

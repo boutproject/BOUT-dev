@@ -56,6 +56,9 @@ static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
+SNESSolver::SNESSolver(Options* opt)
+    : Solver(opt), lib((opt == nullptr) ? &(Options::root()["solver"]) : opt) {}
+
 int SNESSolver::init(int nout, BoutReal tstep) {
 
   TRACE("Initialising SNES solver");
@@ -626,7 +629,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   }
 
   // Get runtime options
-  SNESSetFromOptions(snes);
+  lib.setOptionsFromInputFile(snes);
 
   {
     // Some reporting
