@@ -202,24 +202,15 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       std::vector<PetscInt> o_nnz(localN);
 
       // Set values for most points
-      if (mesh->LocalNz > 1) {
-        // A 3D mesh, so need points in Z
 
-        for (int i = 0; i < localN; i++) {
-          // Non-zero elements on this processor
-          d_nnz[i] = 7 * n3d + 5 * n2d; // Star pattern in 3D
-          // Non-zero elements on neighboring processor
-          o_nnz[i] = 0;
-        }
-      } else {
-        // Only one point in Z
-
-        for (int i = 0; i < localN; i++) {
-          // Non-zero elements on this processor
-          d_nnz[i] = 5 * (n3d + n2d); // Star pattern in 2D
-          // Non-zero elements on neighboring processor
-          o_nnz[i] = 0;
-        }
+      const auto star_pattern_2d = 5 * (n3d + n2d);
+      const auto star_pattern_3d = 7 * n3d + 5 * n2d;
+      const auto star_pattern = (mesh->LocalNz > 1) ? star_pattern_3d : star_pattern_2d;
+      for (int i = 0; i < localN; i++) {
+        // Non-zero elements on this processor
+        d_nnz[i] = star_pattern;
+        // Non-zero elements on neighboring processor
+        o_nnz[i] = 0;
       }
 
       // X boundaries
@@ -229,16 +220,9 @@ int SNESSolver::init(int nout, BoutReal tstep) {
           for (int z = 0; z < mesh->LocalNz; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
-            if (z == 0) {
-              // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-              }
-            } else {
-              // Only 3D fields
-              for (int i = 0; i < n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-              }
+            const int num_fields = (z == 0) ? n2d + n3d : n3d;
+            for (int i = 0; i < num_fields; i++) {
+              d_nnz[localIndex + i] -= (n3d + n2d);
             }
           }
         }
@@ -248,18 +232,10 @@ int SNESSolver::init(int nout, BoutReal tstep) {
           for (int z = 0; z < mesh->LocalNz; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
-            if (z == 0) {
-              // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-                o_nnz[localIndex + i] += (n3d + n2d);
-              }
-            } else {
-              // Only 3D fields
-              for (int i = 0; i < n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-                o_nnz[localIndex + i] += (n3d + n2d);
-              }
+            const int num_fields = (z == 0) ? n2d + n3d : n3d;
+            for (int i = 0; i < num_fields; i++) {
+              d_nnz[localIndex + i] -= (n3d + n2d);
+              o_nnz[localIndex + i] += (n3d + n2d);
             }
           }
         }
@@ -271,16 +247,9 @@ int SNESSolver::init(int nout, BoutReal tstep) {
           for (int z = 0; z < mesh->LocalNz; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
-            if (z == 0) {
-              // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-              }
-            } else {
-              // Only 3D fields
-              for (int i = 0; i < n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-              }
+            const int num_fields = (z == 0) ? n2d + n3d : n3d;
+            for (int i = 0; i < num_fields; i++) {
+              d_nnz[localIndex + i] -= (n3d + n2d);
             }
           }
         }
@@ -290,18 +259,10 @@ int SNESSolver::init(int nout, BoutReal tstep) {
           for (int z = 0; z < mesh->LocalNz; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
-            if (z == 0) {
-              // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-                o_nnz[localIndex + i] += (n3d + n2d);
-              }
-            } else {
-              // Only 3D fields
-              for (int i = 0; i < n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-                o_nnz[localIndex + i] += (n3d + n2d);
-              }
+            const int num_fields = (z == 0) ? n2d + n3d : n3d;
+            for (int i = 0; i < num_fields; i++) {
+              d_nnz[localIndex + i] -= (n3d + n2d);
+              o_nnz[localIndex + i] += (n3d + n2d);
             }
           }
         }
@@ -319,7 +280,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
         int localIndex = ROUND(index(x, mesh->ystart, 0));
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
-          // d_nnz[localIndex+i] -= (n3d + n2d);
           o_nnz[localIndex + i] += (n3d + n2d);
         }
 
@@ -328,7 +288,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
           // Only 3D fields
           for (int i = 0; i < n3d; i++) {
-            // d_nnz[localIndex+i] -= (n3d + n2d);
             o_nnz[localIndex + i] += (n3d + n2d);
           }
         }
@@ -337,7 +296,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
         localIndex = ROUND(index(x, mesh->yend, 0));
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
-          // d_nnz[localIndex+i] -= (n3d + n2d);
           o_nnz[localIndex + i] += (n3d + n2d);
         }
 
@@ -346,7 +304,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
           // Only 3D fields
           for (int i = 0; i < n3d; i++) {
-            // d_nnz[localIndex+i] -= (n3d + n2d);
             o_nnz[localIndex + i] += (n3d + n2d);
           }
         }
