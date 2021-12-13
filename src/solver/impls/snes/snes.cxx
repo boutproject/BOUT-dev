@@ -8,7 +8,9 @@
 #include <msg_stack.hxx>
 #include <utils.hxx>
 
+#include <array>
 #include <cmath>
+#include <vector>
 
 #include <output.hxx>
 
@@ -196,9 +198,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       MatSetSizes(Jmf, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE);
       MatSetFromOptions(Jmf);
 
-      PetscInt *d_nnz, *o_nnz;
-      PetscMalloc((localN) * sizeof(PetscInt), &d_nnz);
-      PetscMalloc((localN) * sizeof(PetscInt), &o_nnz);
+      std::vector<PetscInt> d_nnz(localN);
+      std::vector<PetscInt> o_nnz(localN);
 
       // Set values for most points
       if (mesh->LocalNz > 1) {
@@ -392,11 +393,9 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       }
 
       // Pre-allocate
-      MatMPIAIJSetPreallocation(Jmf, 0, d_nnz, 0, o_nnz);
+      MatMPIAIJSetPreallocation(Jmf, 0, d_nnz.data(), 0, o_nnz.data());
       MatSetUp(Jmf);
       MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
-      PetscFree(d_nnz);
-      PetscFree(o_nnz);
 
       // Determine which row/columns of the matrix are locally owned
       int Istart, Iend;
@@ -412,8 +411,9 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       // Mark non-zero entries
 
       // Offsets for a 5-point pattern
-      const int xoffset[5] = {0, -1, 1, 0, 0};
-      const int yoffset[5] = {0, 0, 0, -1, 1};
+      constexpr std::size_t stencil_size = 5;
+      const std::array<int, stencil_size> xoffset = {0, -1, 1, 0, 0};
+      const std::array<int, stencil_size> yoffset = {0, 0, 0, -1, 1};
 
       PetscScalar val = 1.0;
 
@@ -427,7 +427,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
             PetscInt row = ind0 + i;
 
             // Loop through each point in the 5-point stencil
-            for (int c = 0; c < 5; c++) {
+            for (std::size_t c = 0; c < stencil_size; c++) {
               int xi = x + xoffset[c];
               int yi = y + yoffset[c];
 
@@ -469,7 +469,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
               }
 
               // 5 point star pattern
-              for (int c = 0; c < 5; c++) {
+              for (std::size_t c = 0; c < stencil_size; c++) {
                 int xi = x + xoffset[c];
                 int yi = y + yoffset[c];
 
