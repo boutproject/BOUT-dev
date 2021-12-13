@@ -29,8 +29,6 @@ static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void* ctx) {
  *
  * This function can be a linearised form of FormFunction
  */
-#undef __FUNCT__
-#define __FUNCT__ "FormFunctionForDifferencing"
 static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
 }
@@ -40,15 +38,11 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  *
  * This can be a linearised and simplified form of FormFunction
  */
-#undef __FUNCT__
-#define __FUNCT__ "FormFunctionForColoring"
 static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
                                               void* ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
 }
 
-#undef __FUNCT__
-#define __FUNCT__ "snesPCapply"
 static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   int ierr;
 

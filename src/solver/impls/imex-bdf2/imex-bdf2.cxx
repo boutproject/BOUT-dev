@@ -40,8 +40,6 @@ IMEXBDF2::~IMEXBDF2() {
  * This function assumes the context void pointer is a pointer
  * to an IMEXBDF2 object.
  */
-#undef __FUNCT__
-#define __FUNCT__ "FormFunction"
 static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void *ctx) {
   return static_cast<IMEXBDF2 *>(ctx)->snes_function(x, f, false);
 }
@@ -51,8 +49,6 @@ static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void *ctx) {
  *
  * This function can be a linearised form of FormFunction
  */
-#undef __FUNCT__
-#define __FUNCT__ "FormFunctionForDifferencing"
 static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
   return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
 }
@@ -62,15 +58,11 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  *
  * This can be a linearised and simplified form of FormFunction
  */
-#undef __FUNCT__
-#define __FUNCT__ "FormFunctionForColoring"
 static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
                                               void *ctx) {
   return static_cast<IMEXBDF2 *>(ctx)->snes_function(x, f, true);
 }
 
-#undef __FUNCT__
-#define __FUNCT__ "imexbdf2PCapply"
 static PetscErrorCode imexbdf2PCapply(PC pc,Vec x,Vec y) {
   int ierr;
 
