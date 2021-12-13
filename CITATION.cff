@@ -165,10 +165,10 @@ authors:
     given-names: Toby
 
 version: 4.4.1
-date-released: 2020-08-06
+date-released: 2020-12-15
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
-doi: 10.5281/zenodo.5167527
+doi: 10.5281/zenodo.5776785
 license: 'LGPL-3.0-or-later'
 references:
   - type: article
