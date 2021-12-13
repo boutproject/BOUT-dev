@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BOUT++ 4.2.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-28 14:25+0200\n"
+"POT-Creation-Date: 2021-12-13 14:14+0000\n"
 "PO-Revision-Date: 2020-03-19 12:42+0000\n"
 "Last-Translator: David <schword2@mail.dcu.ie>\n"
 "Language-Team: German\n"
@@ -96,22 +96,22 @@ msgstr "\t -> ny/NYPE (%d/%d = %d) muss >= MYG (%d) sein\n"
 msgid "\tCandidate value: %d\n"
 msgstr "\tzu überprüfender Wert: %d\n"
 
-#: ../src/bout++.cxx:379
+#: ../src/bout++.cxx:394
 msgid "\tChecking disabled\n"
 msgstr "\tChecks sind deaktiviert\n"
 
-#: ../src/bout++.cxx:377
+#: ../src/bout++.cxx:392
 #, c-format
 msgid "\tChecking enabled, level %d\n"
 msgstr "\tChecks der Stufe %d sind aktiviert\n"
 
-#: ../src/bout++.cxx:425
+#: ../src/bout++.cxx:440
 msgid "\tCommand line options for this run : "
 msgstr "\tKommandozeilenoptionen für diese Ausführung: "
 
 #. The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
 #. which could cause problems (e.g. terminate strings).
-#: ../src/bout++.cxx:421
+#: ../src/bout++.cxx:436
 #, c-format
 msgid "\tCompiled with flags : %s\n"
 msgstr "\tWurde kompiliert mit den Optionen : %s\n"
@@ -174,25 +174,25 @@ msgstr ""
 msgid "\tMultiple '=' in command-line argument '%s'\n"
 msgstr "\t'=' darf nicht mehrfach vorkommen: '%s'\n"
 
-#: ../src/bout++.cxx:408
+#: ../src/bout++.cxx:423
 msgid "\tOpenMP parallelisation disabled\n"
 msgstr "\tOpenMP Parallelisierung ist deaktiviert\n"
 
-#: ../src/bout++.cxx:405
+#: ../src/bout++.cxx:420
 #, c-format
 msgid "\tOpenMP parallelisation enabled, using %d threads\n"
 msgstr "\tOpenMP Parallelisierung mit %d Threads ist aktiviert\n"
 
 #. Mark the option as used
 #. Option not found
-#: ../src/sys/options.cxx:195 ../src/sys/options.cxx:250
-#: ../src/sys/options.cxx:292 ../src/sys/options.cxx:331
-#: ../include/options.hxx:406 ../include/options.hxx:438
-#: ../include/options.hxx:460 ../include/options.hxx:658
+#: ../src/sys/options.cxx:202 ../src/sys/options.cxx:271
+#: ../src/sys/options.cxx:305 ../src/sys/options.cxx:344
+#: ../include/options.hxx:412 ../include/options.hxx:444
+#: ../include/options.hxx:466 ../include/options.hxx:664
 msgid "\tOption "
 msgstr "\tOption "
 
-#: ../src/sys/options.cxx:321
+#: ../src/sys/options.cxx:334
 #, c-format
 msgid "\tOption '%s': Boolean expected. Got '%s'\n"
 msgstr "\tOption '%s': Boolscherwert erwartet, '%s' gefunden\n"
@@ -202,11 +202,11 @@ msgstr "\tOption '%s': Boolscherwert erwartet, '%s' gefunden\n"
 msgid "\tOptions file '%s' not found\n"
 msgstr "\tDie Optionendatei '%s' konnte nicht gefunden werden\n"
 
-#: ../src/bout++.cxx:401
+#: ../src/bout++.cxx:416
 msgid "\tParallel NetCDF support disabled\n"
 msgstr "\tParallele-NetCDF Unterstützung ist deaktiviert\n"
 
-#: ../src/bout++.cxx:399
+#: ../src/bout++.cxx:414
 msgid "\tParallel NetCDF support enabled\n"
 msgstr "\tParllele-NetCDF Unterstützung ist aktiviert\n"
 
@@ -222,11 +222,11 @@ msgstr "\tKontravariantevektoren werden gelesen "
 msgid "\tReading covariant vector "
 msgstr "\tKovariantevektoren werden gelesen "
 
-#: ../src/bout++.cxx:385
+#: ../src/bout++.cxx:400
 msgid "\tSignal handling disabled\n"
 msgstr "\tSignalverarbeitung ist deaktiviert\n"
 
-#: ../src/bout++.cxx:383
+#: ../src/bout++.cxx:398
 msgid "\tSignal handling enabled\n"
 msgstr "\tSignalverarbeitung ist aktiviert\n"
 
@@ -239,15 +239,15 @@ msgstr ""
 msgid "\tdone\n"
 msgstr "\tfertig\n"
 
-#: ../src/bout++.cxx:394
+#: ../src/bout++.cxx:409
 msgid "\tnetCDF support disabled\n"
 msgstr "\tNetCDF Unterstützung ist deaktiviert\n"
 
-#: ../src/bout++.cxx:389
+#: ../src/bout++.cxx:404
 msgid "\tnetCDF support enabled\n"
 msgstr "\tNetCDF Unterstützung ist aktiviert\n"
 
-#: ../src/bout++.cxx:392
+#: ../src/bout++.cxx:407
 msgid "\tnetCDF4 support enabled\n"
 msgstr "\tNetCDF4 Unterstützung ist aktiviert\n"
 
@@ -257,7 +257,7 @@ msgid ""
 "\tSplit Runge-Kutta-Legendre and SSP-RK3 solver\n"
 msgstr ""
 
-#: ../src/bout++.cxx:229
+#: ../src/bout++.cxx:244
 msgid ""
 "\n"
 "  -d <data directory>\tLook in <data directory> for input/output files\n"
@@ -294,11 +294,11 @@ msgstr ""
 "\n"
 "Simulation gestartet um %s\n"
 
-#: ../src/bout++.cxx:237
+#: ../src/bout++.cxx:252
 msgid "  -c, --color\t\tColor output using bout-log-color\n"
 msgstr "  -c, --color\t\tFarbliche Ausgabe mit bout-log-color\n"
 
-#: ../src/bout++.cxx:240
+#: ../src/bout++.cxx:255
 #, c-format
 msgid ""
 "  -h, --help\t\tThis message\n"
@@ -318,7 +318,7 @@ msgstr ""
 "Weitere Eingabeparameter sind in dem Manual und dem Quellcode (z.B. %s.cxx) "
 "des Physikmoduls definiert.\n"
 
-#: ../include/options.hxx:661
+#: ../include/options.hxx:667
 msgid ") overwritten with:"
 msgstr ") überschrieben mit:"
 
@@ -326,16 +326,16 @@ msgstr ") überschrieben mit:"
 msgid "4 of 8"
 msgstr ""
 
-#: ../src/sys/options.cxx:476
+#: ../src/sys/options.cxx:571
 msgid "All options used\n"
 msgstr "Alle genutzten Optionen\n"
 
-#: ../src/bout++.cxx:357
+#: ../src/bout++.cxx:372
 #, c-format
 msgid "BOUT++ version %s\n"
 msgstr "BOUT++ Version %s\n"
 
-#: ../src/bout++.cxx:112
+#: ../src/bout++.cxx:125
 msgid "Bad command line arguments:\n"
 msgstr "Fehlerhafte Kommandozeilen Optionen:\n"
 
@@ -350,11 +350,11 @@ msgstr ""
 "%d Punkte in der X-Richtung können nicht gleichmässig zwischen %d Prozessen "
 "verteilt werden\n"
 
-#: ../src/bout++.cxx:697
+#: ../src/bout++.cxx:712
 msgid "Check if a file exists, and exit if it does."
 msgstr ""
 
-#: ../src/bout++.cxx:364
+#: ../src/bout++.cxx:379
 #, c-format
 msgid ""
 "Code compiled on %s at %s\n"
@@ -367,7 +367,7 @@ msgstr ""
 msgid "Command line"
 msgstr "Befehlszeile"
 
-#: ../src/bout++.cxx:374 ../tests/unit/src/test_bout++.cxx:300
+#: ../src/bout++.cxx:389 ../tests/unit/src/test_bout++.cxx:300
 msgid "Compile-time options:\n"
 msgstr "Kompiliert mit:\n"
 
@@ -379,7 +379,7 @@ msgstr "Wurde mit folgenden Optionen kompiliert"
 msgid "Constructing default regions"
 msgstr "Standardregionen werden erstellt"
 
-#: ../src/bout++.cxx:349
+#: ../src/bout++.cxx:364
 #, c-format
 msgid "Could not create PID file %s"
 msgstr "Die Ausgabedatei '%s' konnte nicht erstellt werden"
@@ -391,7 +391,7 @@ msgstr ""
 "Es konnte keine gültige Anzahl an Prozessoren in X Richtung gefunden werden "
 "(NXPE). Versuche es mit einer anderen Zahl an Prozessoren."
 
-#: ../src/bout++.cxx:483
+#: ../src/bout++.cxx:498
 #, c-format
 msgid "Could not open %s/%s.%d for writing"
 msgstr ""
@@ -408,7 +408,7 @@ msgid "Could not read integer array '%s'\n"
 msgstr "Der Ganzzahlen-Array '%s' konnte nicht gelesen werden\n"
 
 #. Failed . Probably not important enough to stop the simulation
-#: ../src/bout++.cxx:463
+#: ../src/bout++.cxx:478
 msgid "Could not run bout-log-color. Make sure it is in your PATH\n"
 msgstr ""
 "Der Befehl 'bout-log-color' konnte nicht ausgeführt werden. Stellen Sie "
@@ -436,23 +436,18 @@ msgstr "Die Region '%s' ist nicht in regionMap3D"
 msgid "Couldn't find region %s in regionMapPerp"
 msgstr "Die Region '%s' ist nicht in regionMapPerp"
 
-#: ../src/sys/options.cxx:280
-#, c-format
-msgid "Couldn't get BoutReal from option %s = '%s'"
-msgstr ""
-"Die Option %s = '%s' konnte nicht als Gleitkommazahl interpretiert werden."
-
-#: ../src/sys/options.cxx:228
-#, c-format
-msgid "Couldn't get integer from option %s = '%s'"
+#. Convert any exceptions to something a bit more useful
+#: ../src/sys/options.cxx:227
+#, fuzzy, c-format
+msgid "Couldn't get %s from option %s = '%s': %s"
 msgstr "Die Option %s = '%s' konnte nicht als ganze Zahl interpretiert werden."
 
-#: ../src/bout++.cxx:337
+#: ../src/bout++.cxx:352
 #, c-format
 msgid "DataDir \"%s\" does not exist or is not accessible\n"
 msgstr "Der Datenordner \"%s\" existiert nicht oder ist nicht lesbar\n"
 
-#: ../src/bout++.cxx:334
+#: ../src/bout++.cxx:349
 #, c-format
 msgid "DataDir \"%s\" is not a directory\n"
 msgstr "\"%s\" soll als Datenordner verwendet werden, ist jedoch kein Ordner\n"
@@ -461,12 +456,12 @@ msgstr "\"%s\" soll als Datenordner verwendet werden, ist jedoch kein Ordner\n"
 msgid "ERROR: Solver is already initialised\n"
 msgstr "FEHLER: Der Integrator ist bereits initialisiert.\n"
 
-#: ../src/bout++.cxx:166
+#: ../src/bout++.cxx:179
 #, c-format
 msgid "Error encountered during initialisation: %s\n"
 msgstr "Es wurde ein Fehler während der Initialisierung gefunden: %s\n"
 
-#: ../src/bout++.cxx:593
+#: ../src/bout++.cxx:608
 msgid "Error whilst writing settings"
 msgstr "Es wurde ein Fehler beim Schreiben der Einstellungsdatei gefunden"
 
@@ -490,7 +485,7 @@ msgstr "Suche NXPE Wert (optimal = %f)\n"
 msgid "Initialising solver\n"
 msgstr "Integrator wird initialisiert\n"
 
-#: ../src/bout++.cxx:323
+#: ../src/bout++.cxx:338
 msgid ""
 "Input and output file for settings must be different.\n"
 "Provide -o <settings file> to avoid this issue.\n"
@@ -529,7 +524,7 @@ msgstr "Der Monitor signaliserte die Beendigung"
 msgid "Monitor signalled to quit\n"
 msgstr "Beendigung durch Monitor\n"
 
-#: ../src/bout++.cxx:701
+#: ../src/bout++.cxx:716
 msgid "Name of file whose existence triggers a stop"
 msgstr ""
 
@@ -550,13 +545,13 @@ msgstr ""
 "Anzahl an Prozessoren (%d) nicht teilbar durch Anzahl in y Richtung (%d)\n"
 
 #. Less than 2 time-steps left
-#: ../src/bout++.cxx:745
+#: ../src/bout++.cxx:760
 #, c-format
 msgid "Only %e seconds (%.2f steps) left. Quitting\n"
 msgstr "Nur noch %e Sekunden (%.2f Schritte) verfügbar. Abbruch\n"
 
-#: ../src/sys/options.cxx:187 ../src/sys/options.cxx:207
-#: ../src/sys/options.cxx:262 ../src/sys/options.cxx:304
+#: ../src/sys/options.cxx:194 ../src/sys/options.cxx:235
+#: ../src/sys/options.cxx:283 ../src/sys/options.cxx:317
 #, c-format
 msgid "Option %s has no value"
 msgstr "Der Option '%s' wurde kein Wert zugewiesen"
@@ -572,7 +567,7 @@ msgstr "Die Option '%s' ist keine Gruppierung"
 msgid "Option %s:%s does not exist"
 msgstr "Die Option %s:%s exisitiert nicht"
 
-#: ../include/options.hxx:666
+#: ../include/options.hxx:672
 #, c-format
 msgid ""
 "Options: Setting a value from same source (%s) to new value '%s' - old value "
@@ -581,7 +576,7 @@ msgstr ""
 "Optionen: Der Wert %3$s wird mit dem Wert %2$s gleichen Ursprungs (%1$s) "
 "überschrieben."
 
-#: ../src/bout++.cxx:368
+#: ../src/bout++.cxx:383
 #, c-format
 msgid ""
 "Processor number: %d of %d\n"
@@ -605,7 +600,7 @@ msgstr "3D Region '%s' hinzugefügt"
 msgid "Registered region Perp %s"
 msgstr "Perp Region '%s' hinzugefügt"
 
-#: ../src/bout++.cxx:359
+#: ../src/bout++.cxx:374
 #, c-format
 msgid "Revision: %s\n"
 msgstr "Revision: %s\n"
@@ -627,7 +622,7 @@ msgstr ""
 msgid "Signal"
 msgstr ""
 
-#: ../src/bout++.cxx:715
+#: ../src/bout++.cxx:730
 msgid ""
 "Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n"
 "\n"
@@ -636,7 +631,7 @@ msgstr ""
 "Integrator\n"
 "\n"
 
-#: ../src/bout++.cxx:718
+#: ../src/bout++.cxx:733
 msgid ""
 "Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   "
 "Comm    I/O   SOLVER\n"
@@ -703,26 +698,26 @@ msgstr ""
 "Unbekannte Paralleltransformation\n"
 "Gültige Optionen sind 'identity', 'shifted', 'fci'"
 
-#: ../src/sys/options.cxx:478
+#: ../src/sys/options.cxx:573
 msgid "Unused options:\n"
 msgstr "Ungenutzte Optionen:\n"
 
-#: ../src/bout++.cxx:261
+#: ../src/bout++.cxx:276
 #, c-format
 msgid "Usage is %s -d <data directory>\n"
 msgstr "Benutzung: %s -d <Datenordner>\n"
 
-#: ../src/bout++.cxx:272
+#: ../src/bout++.cxx:287
 #, c-format
 msgid "Usage is %s -f <options filename>\n"
 msgstr "Benutzung: %s -f <Optionendatei>\n"
 
-#: ../src/bout++.cxx:293
+#: ../src/bout++.cxx:308
 #, c-format
 msgid "Usage is %s -l <log filename>\n"
 msgstr "Benutzung: %s -f <Logdatei>\n"
 
-#: ../src/bout++.cxx:283
+#: ../src/bout++.cxx:298
 #, c-format
 msgid "Usage is %s -o <settings filename>\n"
 msgstr "Benutzung: %s -f <Einstellungsdatei>\n"
@@ -733,7 +728,7 @@ msgstr ""
 
 #. Print help message -- note this will be displayed once per processor as we've not
 #. started MPI yet.
-#: ../src/bout++.cxx:225
+#: ../src/bout++.cxx:240
 #, c-format
 msgid ""
 "Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] "
@@ -747,33 +742,33 @@ msgstr ""
 msgid "User signalled to quit. Returning\n"
 msgstr "Beendigung durch Benutzer.\n"
 
-#: ../src/sys/options.cxx:243
+#: ../src/sys/options.cxx:264
 #, c-format
 msgid "Value for option %s = %e is not an integer"
 msgstr "Wert der Option %s = %e ist keine Ganzzahl"
 
-#: ../src/sys/options.cxx:285
+#: ../src/sys/options.cxx:298
 #, c-format
 msgid "Value for option %s cannot be converted to a BoutReal"
 msgstr "Wert der Option %s ist keine Flieskommazahl"
 
-#: ../src/sys/options.cxx:452
+#: ../src/sys/options.cxx:465
 #, c-format
 msgid "Value for option %s cannot be converted to a Field2D"
 msgstr "Wert der Option %s ist keine Field2D"
 
-#: ../src/sys/options.cxx:402
+#: ../src/sys/options.cxx:415 ../src/sys/options.cxx:547
 #, c-format
 msgid "Value for option %s cannot be converted to a Field3D"
 msgstr "Wert der Option %s ist keine Field3D"
 
-#: ../src/sys/options.cxx:325
+#: ../src/sys/options.cxx:338
 #, c-format
 msgid "Value for option %s cannot be converted to a bool"
 msgstr "Wert der Option %s ist keine Boolescher Wert"
 
 #. Another type which can't be converted
-#: ../src/sys/options.cxx:234
+#: ../src/sys/options.cxx:255
 #, c-format
 msgid "Value for option %s is not an integer"
 msgstr "Wert der Option %s ist keine Ganzzahl"
@@ -812,7 +807,7 @@ msgid ""
 "option extrapolate_y=false to disable this.\n"
 msgstr ""
 
-#: ../src/bout++.cxx:692
+#: ../src/bout++.cxx:707
 msgid "Wall time limit in hours. By default (< 0), no limit"
 msgstr ""
 
@@ -829,6 +824,11 @@ msgstr "Vorgabe"
 #: ../src/mesh/impls/bout/boutmesh.cxx:162
 msgid "nx must be greater than 2*MXG"
 msgstr "nx muss größer als 2*MXG sein"
+
+#, c-format
+#~ msgid "Couldn't get BoutReal from option %s = '%s'"
+#~ msgstr ""
+#~ "Die Option %s = '%s' konnte nicht als Gleitkommazahl interpretiert werden."
 
 #~ msgid ""
 #~ "\tOption %s = %s (%s) overwritten with:\n"
