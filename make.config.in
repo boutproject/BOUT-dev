@@ -29,7 +29,7 @@ SLEPC_ARCH ?= @SLEPC_ARCH@
 BOUT_INCLUDE_PATH=$(BOUT_TOP)/include
 BOUT_LIB_PATH=$(BOUT_TOP)/lib
 BOUT_CONFIG_FILE=$(BOUT_TOP)/make.config
-SONAME=4.4.1
+SONAME=4.4.0
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
