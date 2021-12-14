@@ -195,6 +195,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       //////////////////////////////////////////////////
       // Pre-allocate PETSc storage
 
+      output_progress.write("Setting Jacobian matrix sizes\n");
+
       int localN = getLocalN(); // Number of rows on this processor
       int n2d = f2d.size();
       int n3d = f3d.size();
@@ -324,6 +326,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
         // z = 0 case
         int localIndex = ROUND(index(x, mesh->ystart, 0));
+        ASSERT2(localIndex >= 0);
+
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
           // d_nnz[localIndex+i] -= (n3d + n2d);
@@ -335,8 +339,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
           // Only 3D fields
           for (int i = 0; i < n3d; i++) {
-            // d_nnz[localIndex+i] -= (n3d + n2d);
-            o_nnz[localIndex + i] += (n3d + n2d);
+            // d_nnz[localIndex+i] -= n3d + n2d;
+            o_nnz[localIndex + i] += n3d + n2d;
           }
         }
 
@@ -344,7 +348,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
         localIndex = ROUND(index(x, mesh->yend, 0));
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
-          // d_nnz[localIndex+i] -= (n3d + n2d);
+          // d_nnz[localIndex + i] -= (n3d + n2d);
           o_nnz[localIndex + i] += (n3d + n2d);
         }
 
@@ -353,8 +357,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
           // Only 3D fields
           for (int i = 0; i < n3d; i++) {
-            // d_nnz[localIndex+i] -= (n3d + n2d);
-            o_nnz[localIndex + i] += (n3d + n2d);
+            // d_nnz[localIndex + i] -= n3d + n2d;
+            o_nnz[localIndex + i] += n3d + n2d;
           }
         }
       }
@@ -364,9 +368,14 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
         // z = 0 case
         int localIndex = ROUND(index(it.ind, mesh->ystart, 0));
+        if (localIndex < 0) {
+          // This can occur because it.ind includes values in x boundary e.g. x=0
+          continue;
+        }
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
           o_nnz[localIndex + i] -= (n3d + n2d);
+          //d_nnz[localIndex + i] += (n3d + n2d);
         }
 
         for (int z = 1; z < mesh->LocalNz; z++) {
@@ -375,6 +384,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
           // Only 3D fields
           for (int i = 0; i < n3d; i++) {
             o_nnz[localIndex + i] -= (n3d + n2d);
+            //d_nnz[localIndex + i] += (n3d + n2d);
           }
         }
       }
@@ -387,6 +397,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
           o_nnz[localIndex + i] -= (n3d + n2d);
+          //d_nnz[localIndex + i] += (n3d + n2d);
         }
 
         for (int z = 1; z < mesh->LocalNz; z++) {
@@ -394,10 +405,13 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
           // Only 3D fields
           for (int i = 0; i < n3d; i++) {
-            o_nnz[localIndex + i] -= (n3d + n2d);
+            o_nnz[localIndex + i] -= n3d + n2d;
+            //d_nnz[localIndex + i] += n3d + n2d;
           }
         }
       }
+
+      output_progress.write("Pre-allocating Jacobian\n");
 
       // Pre-allocate
       MatMPIAIJSetPreallocation(Jmf, 0, d_nnz, 0, o_nnz);
@@ -418,6 +432,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
       //////////////////////////////////////////////////
       // Mark non-zero entries
+
+      output_progress.write("Marking non-zero Jacobian entries\n");
 
       // Offsets for a 5-point pattern
       const int xoffset[5] = {0, -1, 1, 0, 0};
@@ -533,9 +549,13 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       }
       // Finished marking non-zero entries
 
+      output_progress.write("Assembling Jacobian matrix\n");
+
       // Assemble Matrix
       MatAssemblyBegin(Jmf, MAT_FINAL_ASSEMBLY);
       MatAssemblyEnd(Jmf, MAT_FINAL_ASSEMBLY);
+
+      output_progress.write("Creating Jacobian coloring\n");
 
       ISColoring iscoloring;
 
