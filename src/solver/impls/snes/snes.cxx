@@ -394,6 +394,10 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
         // z = 0 case
         int localIndex = ROUND(index(it.ind, mesh->yend, 0));
+        if (localIndex < 0) {
+          continue;
+        }
+
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
           o_nnz[localIndex + i] -= (n3d + n2d);

@@ -419,6 +419,14 @@ and `qn
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESQN.html#SNESQN>`_
 (quasinewton).
 
+Preconditioner types:
+
+#. On one processor the ILU solver is typically very effective, and is usually the default
+#. The Hypre package can be installed with PETSc and used as a preconditioner. One of the
+   options available in Hypre is the Euler parallel ILU solver.
+   Enable with command-line args ``-pc_type hypre -pc_hypre_type euclid -pc_hypre_euclid_levels k``
+   where ``k`` is the level (1-8 typically).
+
 ODE integration
 ---------------
 
