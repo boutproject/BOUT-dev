@@ -95,7 +95,7 @@ protected:
   /// This is protected rather than private so that it can be
   /// extended and used by HermiteSplineMonotonic
 
-  Tensor<int> i_corner; // x-index of bottom-left grid point
+  Tensor<SpecificInd<IND_TYPE::IND_3D>> i_corner; // index of bottom-left grid point
   Tensor<int> k_corner; // z-index of bottom-left grid point
 
   // Basis functions for cubic Hermite spline interpolation

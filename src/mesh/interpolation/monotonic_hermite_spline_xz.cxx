@@ -66,44 +66,35 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
     if (skip_mask(x, y, z))
       continue;
 
-    // Due to lack of guard cells in z-direction, we need to ensure z-index
-    // wraps around
-    const int ncz = localmesh->LocalNz;
-    const int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
-    const int z_mod_p1 = (z_mod + 1) % ncz;
+    const auto iyp = i.yp(y_offset);
 
-    const int y_next = y + y_offset;
+    const auto ic = i_corner[i];
+    const auto iczp = ic.zp();
+    const auto icxp = ic.xp();
+    const auto icxpzp = iczp.xp();
 
     // Interpolate f in X at Z
-    const BoutReal f_z = f(i_corner(x, y, z), y_next, z_mod) * h00_x(x, y, z)
-                         + f(i_corner(x, y, z) + 1, y_next, z_mod) * h01_x(x, y, z)
-                         + fx(i_corner(x, y, z), y_next, z_mod) * h10_x(x, y, z)
-                         + fx(i_corner(x, y, z) + 1, y_next, z_mod) * h11_x(x, y, z);
+    const BoutReal f_z =
+        f[ic] * h00_x[i] + f[icxp] * h01_x[i] + fx[ic] * h10_x[i] + fx[icxp] * h11_x[i];
 
     // Interpolate f in X at Z+1
-    const BoutReal f_zp1 = f(i_corner(x, y, z), y_next, z_mod_p1) * h00_x(x, y, z)
-                           + f(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h01_x(x, y, z)
-                           + fx(i_corner(x, y, z), y_next, z_mod_p1) * h10_x(x, y, z)
-                           + fx(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h11_x(x, y, z);
+    const BoutReal f_zp1 = f[iczp] * h00_x[i] + f[icxpzp] * h01_x[i] + fx[iczp] * h10_x[i]
+                           + fx[icxpzp] * h11_x[i];
 
     // Interpolate fz in X at Z
-    const BoutReal fz_z = fz(i_corner(x, y, z), y_next, z_mod) * h00_x(x, y, z)
-                          + fz(i_corner(x, y, z) + 1, y_next, z_mod) * h01_x(x, y, z)
-                          + fxz(i_corner(x, y, z), y_next, z_mod) * h10_x(x, y, z)
-                          + fxz(i_corner(x, y, z) + 1, y_next, z_mod) * h11_x(x, y, z);
+    const BoutReal fz_z = fz[ic] * h00_x[i] + fz[icxp] * h01_x[i] + fxz[ic] * h10_x[i]
+                          + fxz[icxp] * h11_x[i];
 
     // Interpolate fz in X at Z+1
-    const BoutReal fz_zp1 =
-        fz(i_corner(x, y, z), y_next, z_mod_p1) * h00_x(x, y, z)
-        + fz(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h01_x(x, y, z)
-        + fxz(i_corner(x, y, z), y_next, z_mod_p1) * h10_x(x, y, z)
-        + fxz(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h11_x(x, y, z);
+    const BoutReal fz_zp1 = fz[iczp] * h00_x[i] + fz[icxpzp] * h01_x[i]
+                            + fxz[iczp] * h10_x[i] + fxz[icxpzp] * h11_x[i];
 
     // Interpolate in Z
-    BoutReal result = +f_z * h00_z(x, y, z) + f_zp1 * h01_z(x, y, z)
-                      + fz_z * h10_z(x, y, z) + fz_zp1 * h11_z(x, y, z);
+    BoutReal result =
+        +f_z * h00_z[i] + f_zp1 * h01_z[i] + fz_z * h10_z[i] + fz_zp1 * h11_z[i];
 
-    ASSERT2(std::isfinite(result) || x < localmesh->xstart || x > localmesh->xend);
+    ASSERT2(std::isfinite(result) || i.x() < localmesh->xstart
+            || i.x() > localmesh->xend);
 
     // Monotonicity
     // Force the interpolated result to be in the range of the
@@ -111,18 +102,14 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
     // but also degrades accuracy near maxima and minima.
     // Perhaps should only impose near boundaries, since that is where
     // problems most obviously occur.
-    const BoutReal localmax = BOUTMAX(f(i_corner(x, y, z), y_next, z_mod),
-                                      f(i_corner(x, y, z) + 1, y_next, z_mod),
-                                      f(i_corner(x, y, z), y_next, z_mod_p1),
-                                      f(i_corner(x, y, z) + 1, y_next, z_mod_p1));
+    const BoutReal localmax = BOUTMAX(f[ic], f[icxp], f[iczp], f[icxpzp]);
 
-    const BoutReal localmin = BOUTMIN(f(i_corner(x, y, z), y_next, z_mod),
-                                      f(i_corner(x, y, z) + 1, y_next, z_mod),
-                                      f(i_corner(x, y, z), y_next, z_mod_p1),
-                                      f(i_corner(x, y, z) + 1, y_next, z_mod_p1));
+    const BoutReal localmin = BOUTMIN(f[ic], f[icxp], f[iczp], f[icxpzp]);
 
-    ASSERT2(std::isfinite(localmax) || x < localmesh->xstart || x > localmesh->xend);
-    ASSERT2(std::isfinite(localmin) || x < localmesh->xstart || x > localmesh->xend);
+    ASSERT2(std::isfinite(localmax) || i.x() < localmesh->xstart
+            || i.x() > localmesh->xend);
+    ASSERT2(std::isfinite(localmin) || i.x() < localmesh->xstart
+            || i.x() > localmesh->xend);
 
     if (result > localmax) {
       result = localmax;
@@ -131,7 +118,7 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
       result = localmin;
     }
 
-    f_interp(x, y_next, z) = result;
+    f_interp[iyp] = result;
   }
   return f_interp;
 }
