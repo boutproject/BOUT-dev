@@ -60,10 +60,6 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
 
   const auto curregion{getRegion(region)};
   BOUT_FOR(i, curregion) {
-    const int x = i.x();
-    const int y = i.y();
-    const int z = i.z();
-
     const auto iyp = i.yp(y_offset);
 
     const auto ic = i_corner[i];

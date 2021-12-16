@@ -177,6 +177,8 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
   }
 
   BOUT_FOR(i, getRegion(region)) {
+    const auto iyp = i.yp(y_offset);
+
     const auto ic = i_corner[i];
     const auto iczp = ic.zp();
     const auto icxp = ic.xp();
