@@ -78,12 +78,15 @@ public:
 
   using Factory::create;
   ReturnType create(Options* options, int y_offset = 0, Mesh* mesh = nullptr,
-                    Region<Ind3D> region_in = {}) {
+                    Region<Ind3D> region_in = {}) const {
     return Factory::create(options, y_offset, mesh, region_in);
   }
   ReturnType create(int y_offset = 0, Mesh* mesh = nullptr,
-                    Region<Ind3D> region_in = {}) {
+                    Region<Ind3D> region_in = {}) const {
     return Factory::create(getType(nullptr), y_offset, mesh, region_in);
+  }
+  ReturnType create(const std::string& type, MAYBE_UNUSED(Options* options)) const {
+    return Factory::create(type, 0, nullptr, Region<Ind3D>{});
   }
 
   static void ensureRegistered();

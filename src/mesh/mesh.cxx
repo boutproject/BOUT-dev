@@ -12,9 +12,15 @@
 
 #include "impls/bout/boutmesh.hxx"
 
-MeshFactory::ReturnType MeshFactory::create(Options* options, GridDataSource* source) {
+MeshFactory::ReturnType MeshFactory::create(Options* options,
+                                            GridDataSource* source) const {
+  return create(getType(options), options, source);
+}
+
+MeshFactory::ReturnType MeshFactory::create(const std::string& type, Options* options,
+                                            GridDataSource* source) const {
   if (source != nullptr) {
-    return Factory::create(getType(options), source, options);
+    return Factory::create(type, source, options);
   }
 
   if (options == nullptr) {
@@ -40,7 +46,7 @@ MeshFactory::ReturnType MeshFactory::create(Options* options, GridDataSource* so
     source = static_cast<GridDataSource*>(new GridFromOptions(options));
   }
 
-  return Factory::create(getType(options), source, options);
+  return Factory::create(type, source, options);
 }
 
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {

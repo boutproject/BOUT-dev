@@ -236,8 +236,11 @@ public:
   static constexpr auto default_type = "hermitespline";
 
   using Factory::create;
-  ReturnType create(Mesh* mesh = nullptr) {
+  ReturnType create(Mesh* mesh = nullptr) const {
     return Factory::create(getType(nullptr), mesh);
+  }
+  ReturnType create(const std::string& type, MAYBE_UNUSED(Options* options)) const {
+    return Factory::create(type, nullptr);
   }
 
   static void ensureRegistered();
