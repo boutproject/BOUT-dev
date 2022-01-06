@@ -43,8 +43,7 @@ constexpr auto PARDERIVCYCLIC = "cyclic";
 class InvertPar;
 
 class InvertParFactory
-    : public Factory<InvertPar, InvertParFactory,
-                     std::function<std::unique_ptr<InvertPar>(Options*, CELL_LOC, Mesh*)>> {
+    : public Factory<InvertPar, InvertParFactory, Options*, CELL_LOC, Mesh*> {
 public:
   static constexpr auto type_name = "InvertPar";
   static constexpr auto section_name = "parderiv";
@@ -59,17 +58,9 @@ public:
 };
 
 template <class DerivedType>
-class RegisterInvertPar {
-public:
-  RegisterInvertPar(const std::string& name) {
-    InvertParFactory::getInstance().add(
-        name, [](Options* options, CELL_LOC location, Mesh* mesh) -> std::unique_ptr<InvertPar> {
-          return std::make_unique<DerivedType>(options, location, mesh);
-        });
-  }
-};
+using RegisterInvertPar = InvertParFactory::RegisterInFactory<DerivedType>;
 
-using RegisterUnavailableInvertPar = RegisterUnavailableInFactory<InvertPar, InvertParFactory>;
+using RegisterUnavailableInvertPar = InvertParFactory::RegisterUnavailableInFactory;
 
 /// Base class for parallel inversion solvers
 /*!
