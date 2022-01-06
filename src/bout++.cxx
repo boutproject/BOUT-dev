@@ -379,7 +379,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
             "  --list-laplacians\t\tList the available Laplacian inversion solvers\n"
             "  --help-laplacian <laplacian>\tPrint help for the given Laplacian inversion solver\n"
             "  --list-laplacexz\t\tList the available LaplaceXZ inversion solvers\n"
-            "  --help-laplacex <laplacex>\tPrint help for the given LaplaceXZ inversion solver\n"
+            "  --help-laplacexz <laplacexz>\tPrint help for the given LaplaceXZ inversion solver\n"
             "  --list-invertpars\t\tList the available InvertPar solvers\n"
             "  --help-invertpar <invertpar>\tPrint help for the given InvertPar solver\n"
             "  --list-rkschemes\t\tList the available Runge-Kutta schemes\n"
