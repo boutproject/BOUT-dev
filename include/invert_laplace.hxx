@@ -138,9 +138,12 @@ public:
   static constexpr auto default_type = LAPLACE_CYCLIC;
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
-                    Mesh* mesh = nullptr) {
+                    Mesh* mesh = nullptr) const {
     options = optionsOrDefaultSection(options);
     return Factory::create(getType(options), options, loc, mesh);
+  }
+  ReturnType create(const std::string& type, Options* options) const {
+    return Factory::create(type, options, CELL_CENTRE, nullptr);
   }
 };
 

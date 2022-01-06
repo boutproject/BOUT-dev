@@ -86,7 +86,9 @@ public:
   static constexpr auto option_name = "type";
   static constexpr auto default_type = "bout";
 
-  ReturnType create(Options* options = nullptr, GridDataSource* source = nullptr);
+  ReturnType create(const std::string& type, Options* options = nullptr,
+                    GridDataSource* source = nullptr) const;
+  ReturnType create(Options* options = nullptr, GridDataSource* source = nullptr) const;
 };
 
 template <class DerivedType>

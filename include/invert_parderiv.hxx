@@ -51,8 +51,11 @@ public:
   static constexpr auto default_type = PARDERIVCYCLIC;
 
   ReturnType create(Options* options = nullptr, CELL_LOC location = CELL_CENTRE,
-                    Mesh* mesh = nullptr) {
+                    Mesh* mesh = nullptr) const {
     return Factory::create(getType(options), options, location, mesh);
+  }
+  ReturnType create(const std::string& type, Options* options) const {
+    return Factory::create(type, options, CELL_CENTRE, nullptr);
   }
   static void ensureRegistered();
 };

@@ -48,8 +48,11 @@ public:
   static constexpr auto default_type = "cyclic";
 
   ReturnType create(Mesh* mesh = nullptr, Options* options = nullptr,
-                    CELL_LOC loc = CELL_CENTRE) {
+                    CELL_LOC loc = CELL_CENTRE) const {
     return Factory::create(getType(options), mesh, optionsOrDefaultSection(options), loc);
+  }
+  ReturnType create(const std::string& type, Options* options) const {
+    return Factory::create(type, nullptr, options, CELL_CENTRE);
   }
 
   static void ensureRegistered();
