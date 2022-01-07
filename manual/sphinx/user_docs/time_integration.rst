@@ -955,12 +955,12 @@ be ignored.
 Once the problem to be solved has been specified, the solver can be
 initialised using::
 
-    int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
+    int init();
 
 which returns an error code (0 on success). This is currently called in
 :doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`::
 
-    if(solver.init(rhs, argc, argv, restart, NOUT, TIMESTEP)) {
+    if (solver.init()) {
       output.write("Failed to initialise solver. Aborting\n");
       return(1);
     }

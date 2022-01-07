@@ -34,14 +34,11 @@ void RKGenericSolver::setMaxTimestep(BoutReal dt) {
     timestep = dt; // Won't be used this time, but next
 }
 
-int RKGenericSolver::init(int nout, BoutReal tstep) {
+int RKGenericSolver::init() {
 
   TRACE("Initialising RKGeneric solver");
   
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
-    return 1;
-
+  Solver::init();
   output << "\n\tRunge-Kutta generic solver with scheme type "<<scheme->getType()<<"\n";
 
   // Calculate number of variables

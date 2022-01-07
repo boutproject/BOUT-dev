@@ -25,13 +25,10 @@ void RK3SSP::setMaxTimestep(BoutReal dt) {
   timestep = dt; // Won't be used this time, but next
 }
 
-int RK3SSP::init(int nout, BoutReal tstep) {
+int RK3SSP::init() {
   TRACE("Initialising RK3 SSP solver");
   
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
-    return 1;
-  
+  Solver::init();  
   output << "\n\tRunge-Kutta 3rd-order SSP solver\n";
 
   // Calculate number of variables

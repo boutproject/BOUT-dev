@@ -30,12 +30,10 @@ void EulerSolver::setMaxTimestep(BoutReal dt) {
   timestep_reduced = true;
 }
 
-int EulerSolver::init(int nout, BoutReal tstep) {
+int EulerSolver::init() {
   TRACE("Initialising Euler solver");
   
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
-    return 1;
+  Solver::init();
   
   output << "\n\tEuler solver\n";
 

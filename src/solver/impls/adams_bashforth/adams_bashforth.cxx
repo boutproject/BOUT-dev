@@ -302,15 +302,11 @@ void AdamsBashforthSolver::setMaxTimestep(BoutReal dt) {
   }
 }
 
-int AdamsBashforthSolver::init(int nout, BoutReal tstep) {
+int AdamsBashforthSolver::init() {
 
   TRACE("Initialising AdamsBashforth solver");
 
-  // Call the generic initialisation first
-  if (Solver::init(nout, tstep) != 0) {
-    return 1;
-  }
-
+  Solver::init();
   output << "\n\tAdams-Bashforth (explicit) multistep solver\n";
 
   // Calculate number of variables

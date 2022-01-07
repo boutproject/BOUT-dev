@@ -49,7 +49,7 @@ public:
   BoutReal getCurrentTimestep() override { return timestep; }
 
   // Setup solver and scheme
-  int init(int nout, BoutReal tstep) override;
+  int init() override;
 
   // Actually evolve
   int run() override;

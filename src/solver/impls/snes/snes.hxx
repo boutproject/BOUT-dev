@@ -57,8 +57,7 @@ public:
   explicit SNESSolver(Options* opts = nullptr);
   ~SNESSolver() = default;
 
-  int init(int nout, BoutReal tstep) override;
-
+  int init() override;
   int run() override;
 
   PetscErrorCode snes_function(Vec x, Vec f); ///< Nonlinear function

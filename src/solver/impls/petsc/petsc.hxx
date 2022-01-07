@@ -92,8 +92,7 @@ public:
   PetscSolver(Options *opts = nullptr);
   ~PetscSolver();
 
-  int init(int NOUT, BoutReal TIMESTEP) override;
-
+  int init() override;
   int run() override;
 
   // These functions used internally (but need to be public)

@@ -35,14 +35,11 @@ void RK4Solver::setMaxTimestep(BoutReal dt) {
     timestep = dt; // Won't be used this time, but next
 }
 
-int RK4Solver::init(int nout, BoutReal tstep) {
+int RK4Solver::init() {
 
   TRACE("Initialising RK4 solver");
   
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
-    return 1;
-  
+  Solver::init();  
   output << "\n\tRunge-Kutta 4th-order solver\n";
 
   // Calculate number of variables

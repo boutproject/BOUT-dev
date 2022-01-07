@@ -44,8 +44,7 @@ public:
   explicit SplitRK(Options* opts = nullptr);
   ~SplitRK() = default;
 
-  int init(int nout, BoutReal tstep) override;
-
+  int init() override;
   int run() override;
 private:
   int nstages{2}; ///< Number of stages in the RKL 

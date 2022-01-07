@@ -43,8 +43,7 @@ class PowerSolver : public Solver {
   explicit PowerSolver(Options* opts = nullptr);
   ~PowerSolver() = default;
   
-  int init(int nout, BoutReal tstep) override;
-  
+  int init() override;
   int run() override;
 
   void outputVars(Datafile &outputfile, bool save_repeat=true) override {

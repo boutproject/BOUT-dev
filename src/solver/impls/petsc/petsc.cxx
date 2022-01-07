@@ -94,7 +94,7 @@ PetscSolver::~PetscSolver() {
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init() {
   PetscErrorCode  ierr;
   int             neq;
   MPI_Comm        comm = PETSC_COMM_WORLD;
@@ -107,8 +107,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   PetscLogEventRegister("loop_vars",PETSC_VIEWER_CLASSID,&loop_event);
   PetscLogEventRegister("solver_f",PETSC_VIEWER_CLASSID,&solver_event);
 
-  /// Call the generic initialisation first
-  Solver::init(NOUT, TIMESTEP);
+  Solver::init();
 
   ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
   output.write("Initialising PETSc-dev solver\n");

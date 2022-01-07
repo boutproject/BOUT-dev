@@ -478,7 +478,7 @@ int Solver::solve(int nout, BoutReal timestep) {
         nout / default_monitor_period, timestep * default_monitor_period);
 
   // Initialise
-  if (init(nout, timestep)) {
+  if (init()) {
     throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
 
@@ -616,7 +616,7 @@ std::string Solver::getRunRestartFrom() const {
  * Initialisation
  **************************************************************************/
 
-int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
+int Solver::init() {
   
   TRACE("Solver::init()");
 

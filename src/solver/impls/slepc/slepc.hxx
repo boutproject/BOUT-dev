@@ -85,7 +85,7 @@ public:
                PetscReal errest[], PetscInt nest);
 
   // These contain slepc specific code and call the advanceSolver code
-  int init(int NOUT, BoutReal TIMESTEP) override;
+  int init() override;
   int run() override;
 
   ////////////////////////////////////////

@@ -120,13 +120,11 @@ IdaSolver::~IdaSolver() {
  * Initialise
  **************************************************************************/
 
-int IdaSolver::init(int nout, BoutReal tstep) {
+int IdaSolver::init() {
 
   TRACE("Initialising IDA solver");
 
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
-    return 1;
+  Solver::init();
 
   output.write("Initialising IDA solver\n");
 

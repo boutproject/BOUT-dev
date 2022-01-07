@@ -208,12 +208,10 @@ CvodeSolver::~CvodeSolver() {
  * Initialise
  **************************************************************************/
 
-int CvodeSolver::init(int nout, BoutReal tstep) {
+int CvodeSolver::init() {
   TRACE("Initialising CVODE solver");
 
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
-    return 1;
+  Solver::init();
 
   output_progress.write("Initialising SUNDIALS' CVODE solver\n");
 

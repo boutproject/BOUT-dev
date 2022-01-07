@@ -84,7 +84,7 @@ PvodeSolver::~PvodeSolver() {
  * Initialise
  **************************************************************************/
 
-int PvodeSolver::init(int nout, BoutReal tstep) {
+int PvodeSolver::init() {
   TRACE("Initialising PVODE solver");
 
   int mudq, mldq, mukeep, mlkeep;
@@ -94,10 +94,7 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
   int n2d = n2Dvars(); // Number of 2D variables
   int n3d = n3Dvars(); // Number of 3D variables
 
-  /// Call the generic initialisation first
-  if(Solver::init(nout, tstep))
-    return 1;
-  
+  Solver::init();  
   output.write("Initialising PVODE solver\n");
 
   int local_N = getLocalN();

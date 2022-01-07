@@ -199,7 +199,7 @@ TEST_F(SolverTest, SetModelAfterInit) {
   EXPECT_CALL(model, init).Times(0);
   EXPECT_CALL(model, postInit).Times(0);
 
-  solver.init(0, 0);
+  solver.init();
 
   EXPECT_THROW(solver.setModel(&model), BoutException);
 }
@@ -516,15 +516,15 @@ TEST_F(SolverTest, NoInitTwice) {
   Options options;
   FakeSolver solver{&options};
 
-  EXPECT_NO_THROW(solver.init(0, 0));
-  EXPECT_THROW(solver.init(0, 0), BoutException);
+  EXPECT_NO_THROW(solver.init());
+  EXPECT_THROW(solver.init(), BoutException);
 }
 
 TEST_F(SolverTest, NoAddAfterInit) {
   Options options;
   FakeSolver solver{&options};
 
-  EXPECT_NO_THROW(solver.init(0, 0));
+  EXPECT_NO_THROW(solver.init());
 
   Field2D field1{};
   EXPECT_THROW(solver.add(field1, "field"), BoutException);
@@ -540,7 +540,7 @@ TEST_F(SolverTest, NoConstraintsAfterInit) {
   Options options;
   FakeSolver solver{&options};
 
-  EXPECT_NO_THROW(solver.init(0, 0));
+  EXPECT_NO_THROW(solver.init());
 
   Field2D field1{};
   EXPECT_THROW(solver.constraint(field1, field1, "field"), BoutException);
@@ -621,7 +621,7 @@ TEST_F(SolverTest, GetLocalN) {
   solver.add(field3, "field3");
   solver.add(field4, "field4");
 
-  solver.init(0, 0);
+  solver.init();
 
   constexpr auto globalmesh_nx_no_boundry = SolverTest::nx - 2;
   constexpr auto globalmesh_ny_no_boundry = SolverTest::ny - 2;
@@ -840,7 +840,7 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_EQ(larger_timestep.last_called, 1);
   EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
 
-  solver.init(0, 0);
+  solver.init();
 
   FakeMonitor too_small_postinit_timestep{0.001};
   EXPECT_THROW(solver.addMonitor(&too_small_postinit_timestep), BoutException);

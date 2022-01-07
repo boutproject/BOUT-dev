@@ -47,8 +47,7 @@ class EulerSolver : public Solver {
   void setMaxTimestep(BoutReal dt) override;
   BoutReal getCurrentTimestep() override {return timestep; }
   
-  int init(int nout, BoutReal tstep) override;
-  
+  int init() override;
   int run() override;
  private:
   int mxstep; //< Maximum number of internal steps between outputs

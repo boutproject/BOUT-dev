@@ -13,13 +13,10 @@ PowerSolver::PowerSolver(Options* opts)
     : Solver(opts),
       curtime((*options)["curtime"].doc("Simulation time (fixed)").withDefault(0.0)) {}
 
-int PowerSolver::init(int nout, BoutReal tstep) {
+int PowerSolver::init() {
   TRACE("Initialising Power solver");
   
-  /// Call the generic initialisation first
-  if(Solver::init(nout, tstep))
-    return 1;
-  
+  Solver::init();
   output << "\n\tPower eigenvalue solver\n";
 
   // Calculate number of variables

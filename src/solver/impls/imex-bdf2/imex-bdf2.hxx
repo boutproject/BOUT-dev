@@ -81,10 +81,7 @@ class IMEXBDF2 : public Solver {
   BoutReal getCurrentTimestep() override {return timestep; }
 
   /// Initialise solver. Must be called once and only once
-  ///
-  /// @param[in] nout         Number of outputs
-  /// @param[in] tstep        Time between outputs. NB: Not internal timestep
-  int init(int nout, BoutReal tstep) override;
+  int init() override;
 
   /// Run the simulation
   int run() override;

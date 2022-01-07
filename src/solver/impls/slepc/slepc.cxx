@@ -222,14 +222,14 @@ SlepcSolver::~SlepcSolver() {
   }
 }
 
-int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
+int SlepcSolver::init() {
 
   TRACE("Initialising SLEPc solver");
 
   // Report initialisation
   output.write("Initialising SLEPc solver\n");
   if (selfSolve) {
-    Solver::init(NOUT, TIMESTEP);
+    Solver::init();
 
     // If no advanceSolver then can only advance one step at a time
     setNumberOutputSteps(1);
@@ -240,7 +240,7 @@ int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   // Initialise advanceSolver if not self
   if (!selfSolve && !ddtMode) {
-    advanceSolver->init(getNumberOutputSteps(), getOutputTimestep());
+    advanceSolver->init();
   }
 
   // Calculate grid sizes

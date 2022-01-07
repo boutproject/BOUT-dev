@@ -34,14 +34,10 @@ SplitRK::SplitRK(Options* opts)
   ASSERT0(nstages > 1);
 }
 
-int SplitRK::init(int nout, BoutReal tstep) {
+int SplitRK::init() {
   AUTO_TRACE();
 
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep)) {
-    return 1;
-  }
-
+  Solver::init();
   output.write(_("\n\tSplit Runge-Kutta-Legendre and SSP-RK3 solver\n"));
 
   // Calculate number of variables

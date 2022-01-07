@@ -255,12 +255,10 @@ ArkodeSolver::~ArkodeSolver() {
  * Initialise
  **************************************************************************/
 
-int ArkodeSolver::init(int nout, BoutReal tstep) {
+int ArkodeSolver::init() {
   TRACE("Initialising ARKODE solver");
 
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
-    return 1;
+  Solver::init();
 
   output.write("Initialising SUNDIALS' ARKODE solver\n");
 

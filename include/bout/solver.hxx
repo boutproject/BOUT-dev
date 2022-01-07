@@ -280,9 +280,7 @@ public:
   int solve(int nout = -1, BoutReal timestep = 0.0);
 
   /// Initialise the solver
-  /// NOTE: nout and tstep should be passed to run, not init.
-  ///       Needed because of how the PETSc TS code works
-  virtual int init(int nout, BoutReal tstep);
+  virtual int init();
 
   /// Run the solver, calling monitors nout times, at intervals of
   /// tstep. This function is called by solve(), and is specific to

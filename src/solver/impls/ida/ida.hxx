@@ -63,8 +63,7 @@ public:
   explicit IdaSolver(Options* opts = nullptr);
   ~IdaSolver();
 
-  int init(int nout, BoutReal tstep) override;
-
+  int init() override;
   int run() override;
   BoutReal run(BoutReal tout);
 

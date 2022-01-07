@@ -45,15 +45,11 @@ SNESSolver::SNESSolver(Options* opts)
           (*options)["diagnose"].doc("Print additional diagnostics").withDefault(false)),
       predictor((*options)["predictor"].doc("Use linear predictor?").withDefault(true)) {}
 
-int SNESSolver::init(int nout, BoutReal tstep) {
+int SNESSolver::init() {
 
   TRACE("Initialising SNES solver");
 
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep) != 0) {
-    return 1;
-  }
-
+  Solver::init();
   output << "\n\tSNES steady state solver\n";
 
   // Calculate number of variables
