@@ -68,8 +68,7 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   // Put starting values into f0
   save_vars(std::begin(f0));
 
-  //Initialise scheme
-  scheme->init(nlocal,neq,adaptive,atol,rtol,options);
+  scheme->init(nlocal, neq, adaptive, atol, rtol);
 
   return 0;
 }
