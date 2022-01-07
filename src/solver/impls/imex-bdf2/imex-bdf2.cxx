@@ -21,20 +21,74 @@
 // Redundent definition because < C++17
 constexpr int IMEXBDF2::MAX_SUPPORTED_ORDER;
 
-IMEXBDF2::IMEXBDF2(Options *opt)
-    : Solver(opt), snes_f(nullptr), snes_x(nullptr), snes(nullptr), snesAlt(nullptr),
-      snesUse(nullptr), Jmf(nullptr) {
-
+IMEXBDF2::IMEXBDF2(Options* opt)
+    : Solver(opt), maxOrder((*options)["maxOrder"]
+                                .doc("Maximum order of the scheme (1/2/3)")
+                                .withDefault(2)),
+      timestep((*options)["timestep"]
+                   .doc("Internal timestep (defaults to output timestep)")
+                   .withDefault(getOutputTimestep())),
+      mxstep((*options)["mxstep"]
+                 .doc("Maximum number of internal iterations")
+                 .withDefault(100000)),
+      adaptive((*options)["adaptive"]
+                   .doc("Do we try to estimate the error?")
+                   .withDefault(true)),
+      nadapt((*options)["nadapt"].doc("How often do we check the error").withDefault(4)),
+      mxstepAdapt((*options)["mxstepAdapt"]
+                      .doc("Maximum no. consecutive times we try to reduce timestep")
+                      .withDefault(mxstep)),
+      scaleCushUp((*options)["scaleCushUp"]
+                      .doc("Don't increase timestep if scale factor < (1 + scaleCushUp)")
+                      .withDefault(1.5)),
+      scaleCushDown(
+          (*options)["scaleCushDown"]
+              .doc("Don't decrease timestep if scale factor > (1 - scaleCushDown)")
+              .withDefault(1.0)),
+      adaptRtol((*options)["adaptRtol"].doc("Target relative error").withDefault(1.0e-3)),
+      dtMax((*options)["dtMax"].doc("Maximum timestep").withDefault(getOutputTimestep())),
+      dtMinFatal((*options)["dtMinFatal"]
+                     .doc("Abort if timestep drops below this (ignored if negative)")
+                     .withDefault(1.0e-10)),
+      dtMin((*options)["dtMin"].doc("Minimum timestep").withDefault(dtMinFatal)),
+      matrix_free(
+          (*options)["matrix_free"].doc(" Default is matrix free").withDefault(true)),
+      use_coloring((*options)["use_coloring"]
+                       .doc("Use matrix coloring to calculate Jacobian")
+                       .withDefault(true)),
+      atol((*options)["atol"].doc("Absolute tolerance").withDefault(1e-16)),
+      rtol((*options)["rtol"].doc("Relative tolerance").withDefault(1e-10)),
+      max_nonlinear_it((*options)["max_nonlinear_iterations"]
+                           .doc("Maximum number of nonlinear iterations per SNES solve")
+                           .withDefault(5)),
+      lag_jacobian((*options)["lag_jacobian"]
+                       .doc("How often to rebuild Jacobian (see PETSc's documentation "
+                            "for SNESSetLagJacobian; used if `matrix_free` is false and "
+                            "`use_coloring` is true)")
+                       .withDefault(4)),
+      use_precon((*options)["use_precon"]
+                     .doc("Use user-supplied preconditioner")
+                     .withDefault(false)),
+      kspsetinitialguessnonzero((*options)["kspsetinitialguessnonzero"]
+                                    .doc("Set the initial guess to be non-zero")
+                                    .withDefault(false)),
+      maxl((*options)["maxl"].doc("Maximum number of iterations").withDefault(20)),
+      predictor(
+          (*options)["predictor"]
+              .doc("Type of predictor to use in implicit solve: 0 = constant, next step "
+                   "same as previous; 1 = linear extrapolation from previous two steps; "
+                   "2 = quadratic extrapolation; other values = no non-linear solve")
+              .withDefault(1)),
+      diagnose((*options)["diagnose"].doc(" Print diagnostics").withDefault(false)),
+      verbose((*options)["verbose"]
+                  .doc(" More outputs at each timestep")
+                  .withDefault(false)) {
   has_constraints = true; ///< This solver can handle constraints
 }
 
 IMEXBDF2::~IMEXBDF2() {
-  if (snes_f != nullptr) {
-    VecDestroy(&snes_f);
-  }
-  if (snes_x != nullptr) {
-    VecDestroy(&snes_x);
-  }
+  VecDestroy(&snes_f);
+  VecDestroy(&snes_x);
 }
 
 /*!
@@ -99,9 +153,6 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
 
   output << "\n\tIMEX-BDF2 time-integration solver\n";
 
-  nsteps = nout; // Save number of output steps
-  out_timestep = tstep;
-
   // Calculate number of variables
   nlocal = getLocalN();
 
@@ -139,23 +190,23 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
     set_id(std::begin(is_dae));
   }
 
-  // Get options
-  OPTION(options, timestep, tstep); // Internal timestep
-  OPTION(options, mxstep, 100000); //Maximum number of internal iterations
-  ninternal = static_cast<int>(out_timestep / timestep);
-  if((ninternal == 0) || (out_timestep / ninternal > timestep))
+  ninternal = static_cast<int>(getOutputTimestep() / timestep);
+  if ((ninternal == 0) || (getOutputTimestep() / ninternal > timestep)) {
     ++ninternal;
-  if(ninternal>mxstep){
-    throw BoutException("Error: Number of internal timesteps ({:d}) exceeds mxstep ({:d})", ninternal, mxstep);
+  }
+  if (ninternal > mxstep) {
+    throw BoutException(
+        "Error: Number of internal timesteps ({:d}) exceeds mxstep ({:d})", ninternal,
+        mxstep);
   };
 
-  timestep = out_timestep / ninternal;
-  output.write("\tUsing timestep = {:e}, {:d} internal steps per output\n", timestep, ninternal);
+  timestep = getOutputTimestep() / ninternal;
+  output.write("\tUsing timestep = {:e}, {:d} internal steps per output\n", timestep,
+               ninternal);
 
-
-  OPTION(options, maxOrder, 2); //Maximum order of the scheme (1/2/3)
-  if(maxOrder > MAX_SUPPORTED_ORDER){
-    throw BoutException("Requested maxOrder greater than MAX_SUPPORTED_ORDER ({:d})",MAX_SUPPORTED_ORDER);
+  if (maxOrder > MAX_SUPPORTED_ORDER) {
+    throw BoutException("Requested maxOrder greater than MAX_SUPPORTED_ORDER ({:d})",
+                        MAX_SUPPORTED_ORDER);
   }
 
   // Allocate memory and initialise structures
@@ -171,17 +222,8 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
 
   rhs.reallocate(nlocal);
 
-  OPTION(options, adaptive, true); //Do we try to estimate the error?
-  OPTION(options, nadapt, 4); //How often do we check the error
-  OPTION(options, dtMinFatal, 1.0e-10);
-  OPTION(options, dtMax, out_timestep);
-  OPTION(options, dtMin, dtMinFatal);
-  if(adaptive){
+  if (adaptive) {
     err.reallocate(nlocal);
-    OPTION(options, adaptRtol, 1.0e-3); //Target relative error
-    OPTION(options, mxstepAdapt, mxstep); //Maximum no. consecutive times we try to reduce timestep
-    OPTION(options, scaleCushUp, 1.5);
-    OPTION(options, scaleCushDown, 1.0);
   }
 
   // Put starting values into u
@@ -223,8 +265,6 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
   /////////////////////////////////////////////////////
   // Set up the Jacobian
 
-  bool matrix_free;
-  OPTION(options, matrix_free, true); // Default is matrix free
   if(matrix_free) {
     /*!
       PETSc SNES matrix free Jacobian, using a different
@@ -250,8 +290,6 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
      * 
      */
 
-    bool use_coloring;
-    OPTION(options, use_coloring, true);
     if(use_coloring) {
       // Use matrix coloring to calculate Jacobian
 
@@ -635,8 +673,6 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
 #endif
 
       // Re-use Jacobian
-      int lag_jacobian;
-      OPTION(options, lag_jacobian,   4);
       SNESSetLagJacobian(*snesIn,lag_jacobian);
       
       //MatView(Jmf, PETSC_VIEWER_DRAW_WORLD);
@@ -667,37 +703,19 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
   
   /////////////////////////////////////////////////////
   // Set tolerances
-  BoutReal atol, rtol; // Tolerances for SNES solver
-  options->get("atol", atol, 1e-16);
-  options->get("rtol", rtol, 1e-10);
-  int max_nonlinear_it = (*options)["max_nonlinear_iterations"]
-                         .doc("Maximum number of nonlinear iterations per SNES solve")
-                         .withDefault(5);
   SNESSetTolerances(*snesIn,atol,rtol,PETSC_DEFAULT,max_nonlinear_it,PETSC_DEFAULT);
 
   /////////////////////////////////////////////////////
-  // Predictor method
-  options->get("predictor", predictor, 1);
-
-  /////////////////////////////////////////////////////
   // Preconditioner
-
-  bool use_precon;
-  OPTION(options, use_precon,   false);
  
   // Get KSP context from SNES
   KSP ksp;
   SNESGetKSP(*snesIn, &ksp);
-  
-  bool kspsetinitialguessnonzero;
-  options->get("kspsetinitialguessnonzero", kspsetinitialguessnonzero, false);
-  if(kspsetinitialguessnonzero) {
-    //Set the initial guess to be non-zero
+
+  if (kspsetinitialguessnonzero) {
     KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
   }
 
-  int maxl; // Maximum number of linear iterations
-  OPTION(options, maxl, 20);
   KSPSetTolerances(ksp, 
                    PETSC_DEFAULT,  // rtol
                    PETSC_DEFAULT,  // abstol
@@ -722,12 +740,6 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
     PCSetType(pc, PCNONE);
   }
 
-  /////////////////////////////////////////////////////
-  // diagnostics
-  
-  OPTION(options, diagnose, false); // Print diagnostics
-  OPTION(options, verbose, false); // More outputs at each timestep
-  
   /////////////////////////////////////////////////////
   // Get runtime options
   SNESSetFromOptions(*snesIn);
@@ -759,14 +771,14 @@ int IMEXBDF2::run() {
 
   int internalCounter=0; //Cumulative number of successful internal iterations
 
-  for(int s=0;s<nsteps;s++) {
+  for (int s = 0; s < getNumberOutputSteps(); s++) {
     BoutReal cumulativeTime = 0.;
     int counter = 0; //How many iterations in this output step
     
     // Reset linear and nonlinear fail counts
     linear_fails = 0;
     nonlinear_fails = 0;
-    while(cumulativeTime<out_timestep){
+    while (cumulativeTime < getOutputTimestep()) {
       //Move state history along one stage (i.e. u_2-->u_3,u_1-->u_2, u-->u_1 etc.)
       //Note: This sets the current timestep to be the same as the last timestep.
       shuffleState();
@@ -805,10 +817,10 @@ int IMEXBDF2::run() {
 	//we'll set a flag to alert us to this forced change. 
 	bool artificalLimit = false;
         BoutReal dtNoLimit = dtNext; // What dt would have been without artificial limit
-	if(cumulativeTime+dtNext > out_timestep){
-	  artificalLimit = true;
-	  dtNext = out_timestep - cumulativeTime;
-	}
+        if (cumulativeTime + dtNext > getOutputTimestep()) {
+          artificalLimit = true;
+          dtNext = getOutputTimestep() - cumulativeTime;
+        }
 
         if(verbose) {
           output << endl << "At t=" << cumulativeTime << " attempting internal step "<<counter<<" (attempt "<<adaptCounter<<")"<<endl;
@@ -987,7 +999,7 @@ int IMEXBDF2::run() {
 
     /// Call the monitor function
 
-    if(call_monitors(simtime, s, nsteps)) {
+    if (call_monitors(simtime, s, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }

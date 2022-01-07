@@ -74,7 +74,7 @@ RegisterSolver<IMEXBDF2> registersolverimexbdf2("imexbdf2");
 ///
 class IMEXBDF2 : public Solver {
  public:
-  IMEXBDF2(Options *opt = nullptr);
+  explicit IMEXBDF2(Options *opt = nullptr);
   ~IMEXBDF2();
 
   /// Returns the current internal timestep
@@ -112,8 +112,6 @@ class IMEXBDF2 : public Solver {
 
   int maxOrder; ///< Specify the maximum order of the scheme to use (1/2/3)
 
-  BoutReal out_timestep; ///< The output timestep
-  int nsteps; ///< Number of output steps
   BoutReal timestep; ///< The internal timestep
   int ninternal;     ///< Number of internal steps per output
   int mxstep; ///< Maximum number of internal steps between outputs
@@ -127,11 +125,30 @@ class IMEXBDF2 : public Solver {
   BoutReal scaleCushUp; ///< Don't increase timestep if scale factor < 1.0+scaleCushUp
   BoutReal scaleCushDown; ///< Don't decrease timestep if scale factor > 1.0-scaleCushDown
   BoutReal adaptRtol; ///< Target relative error for adaptivity.
-  BoutReal dtMin; ///< Minimum timestep we want to use
   BoutReal dtMax; ///< Maximum timestep we want to use
   BoutReal dtMinFatal; ///< If timestep wants to drop below this we abort. Set -ve to deactivate
+  BoutReal dtMin; ///< Minimum timestep we want to use
 
-  //Scheme coefficients
+  /// Default is matrix free
+  bool matrix_free;
+  /// Use matrix coloring
+  bool use_coloring;
+  /// Absolute tolerance
+  BoutReal atol;
+  /// Relative tolerance
+  BoutReal rtol;
+  /// Maximum number of nonlinear iterations per SNES solve
+  int max_nonlinear_it;
+  /// How often to rebuild Jacobian
+  int lag_jacobian;
+  /// Use preconditioner
+  bool use_precon;
+  /// Set initial guess non-zerp
+  bool kspsetinitialguessnonzero;
+  /// Maximum number of iterations
+  int maxl;
+
+  /// Scheme coefficients
   std::vector<BoutReal> uFac, fFac, gFac;
   BoutReal dtImp;
 
@@ -167,16 +184,16 @@ class IMEXBDF2 : public Solver {
 
   // Implicit solver
   PetscErrorCode solve_implicit(BoutReal curtime, BoutReal gamma);
-  BoutReal implicit_gamma;
-  BoutReal implicit_curtime;
+  BoutReal implicit_gamma{0.0};
+  BoutReal implicit_curtime{0.0};
   int predictor;    ///< Predictor method
   PetscLib lib; ///< Handles initialising, finalising PETSc
-  Vec      snes_f;  ///< Used by SNES to store function
-  Vec      snes_x;  ///< Result of SNES
-  SNES     snes;    ///< SNES context
-  SNES     snesAlt; ///< Alternative SNES object for adaptive checks
-  SNES     snesUse; ///< The snes object to use in solve stage. Allows easy switching.
-  Mat      Jmf;     ///< Matrix-free Jacobian
+  Vec snes_f{nullptr};  ///< Used by SNES to store function
+  Vec snes_x{nullptr};  ///< Result of SNES
+  SNES snes{nullptr};    ///< SNES context
+  SNES snesAlt{nullptr}; ///< Alternative SNES object for adaptive checks
+  SNES snesUse{nullptr}; ///< The snes object to use in solve stage. Allows easy switching.
+  Mat Jmf{nullptr};     ///< Matrix-free Jacobian
 
   // Diagnostics
   bool diagnose;  ///< Output diagnostics every timestep
