@@ -488,6 +488,11 @@ protected:
   /// Get the list of monitors
   auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }
 
+  /// Get the currently set number of output steps requested
+  int getNumberOutputSteps() const { return number_output_steps; }
+  /// Get the currently set output timestep
+  BoutReal getOutputTimestep() const { return output_timestep; }
+
 private:
   /// Generate a random UUID (version 4) and broadcast it to all processors
   std::string createRunID() const;
@@ -550,6 +555,11 @@ private:
   /// Fix all the monitor periods based on \p output_timestep, as well
   /// as adjusting \p NOUT and \p output_timestep to be consistent
   void finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep);
+
+  /// Number of requested output steps
+  int number_output_steps;
+  /// Requested timestep between outputs
+  BoutReal output_timestep;
 };
 
 #endif // __SOLVER_H__
