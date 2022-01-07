@@ -164,7 +164,67 @@ constexpr auto& ARKStepSetPreconditioner = ARKSpilsSetPreconditioner;
 constexpr auto& ARKStepSetUserData = ARKodeSetUserData;
 #endif
 
-ArkodeSolver::ArkodeSolver(Options* opts) : Solver(opts) {
+ArkodeSolver::ArkodeSolver(Options* opts)
+    : Solver(opts), diagnose((*options)["diagnose"]
+                                 .doc("Print some additional diagnostics")
+                                 .withDefault(false)),
+      mxsteps((*options)["mxstep"]
+                  .doc("Maximum number of steps to take between outputs")
+                  .withDefault(500)),
+      imex((*options)["imex"].doc("Use ImEx capability").withDefault(true)),
+      solve_explicit(
+          (*options)["explicit"].doc("Solve only explicit part").withDefault(true)),
+      solve_implicit(
+          (*options)["implicit"].doc("Solve only implicit part").withDefault(true)),
+      set_linear(
+          (*options)["set_linear"]
+              .doc("Use linear implicit solver (only evaluates jacobian inversion once)")
+              .withDefault(false)),
+      fixed_step((*options)["fixed_step"]
+                     .doc("Solve explicit portion in fixed timestep mode. NOTE: This is "
+                          "not recommended except for code comparison")
+                     .withDefault(false)),
+      order((*options)["order"].doc("Order of internal step").withDefault(4)),
+      cfl_frac((*options)["cfl_frac"]
+                   .doc("Fraction of the estimated explicitly stable step to use")
+                   .withDefault(-1.0)),
+      adap_method((*options)["adap_method"]
+                      .doc("Set timestep adaptivity function: 0 -> PID adaptivity "
+                           "(default); 1 -> PI; 2 -> I; 3 -> explicit Gustafsson; 4 -> "
+                           "implicit Gustafsson; 5 -> ImEx Gustafsson;")
+                      .withDefault(0)),
+      abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
+      reltol((*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5)),
+      use_vector_abstol((*options)["use_vector_abstol"]
+                            .doc("Use separate absolute tolerance for each field")
+                            .withDefault(false)),
+      max_timestep((*options)["max_timestep"]
+                       .doc("Maximum timestep (only used if greater than zero)")
+                       .withDefault(-1.)),
+      min_timestep((*options)["min_timestep"]
+                       .doc("Minimum timestep (only used if greater than zero)")
+                       .withDefault(-1.)),
+      start_timestep((*options)["start_timestep"]
+                         .doc("Initial timestep (only used if greater than zero)")
+                         .withDefault(-1)),
+      fixed_point(
+          (*options)["fixed_point"]
+              .doc("Use accelerated fixed point solver instead of Newton iterative")
+              .withDefault(false)),
+      use_precon((*options)["use_precon"]
+                     .doc("Use user-supplied preconditioner function")
+                     .withDefault(false)),
+      maxl(
+          (*options)["maxl"].doc("Number of Krylov basis vectors to use").withDefault(0)),
+      rightprec((*options)["rightprec"]
+                    .doc("Use right preconditioning instead of left preconditioning")
+                    .withDefault(false)),
+      use_jacobian((*options)["use_jacobian"]
+                       .doc("Use user-supplied Jacobian function")
+                       .withDefault(false)),
+      optimize((*options)["optimize"]
+                   .doc("Use ARKode optimal parameters")
+                   .withDefault(false)) {
   has_constraints = false; // This solver doesn't have constraints
 
   // Add diagnostics to output
@@ -181,16 +241,14 @@ ArkodeSolver::ArkodeSolver(Options* opts) : Solver(opts) {
 }
 
 ArkodeSolver::~ArkodeSolver() {
-  if (initialised) {
-    N_VDestroy_Parallel(uvec);
-    ARKStepFree(&arkode_mem);
+  N_VDestroy_Parallel(uvec);
+  ARKStepFree(&arkode_mem);
 #if SUNDIALS_VERSION_MAJOR >= 3
-    SUNLinSolFree(sun_solver);
+  SUNLinSolFree(sun_solver);
 #endif
 #if SUNDIALS_VERSION_MAJOR >= 4
-    SUNNonlinSolFree(nonlinear_solver);
+  SUNNonlinSolFree(nonlinear_solver);
 #endif
-  }
 }
 
 /**************************************************************************
@@ -203,10 +261,6 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   /// Call the generic initialisation first
   if (Solver::init(nout, tstep))
     return 1;
-
-  // Save nout and tstep for use in run
-  NOUT = nout;
-  TIMESTEP = tstep;
 
   output.write("Initialising SUNDIALS' ARKODE solver\n");
 
@@ -230,26 +284,16 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   // Put the variables into uvec
   save_vars(NV_DATA_P(uvec));
 
-  diagnose = (*options)["diagnose"].withDefault(false);
-  // Maximum number of steps to take between outputs
-  const auto mxsteps = (*options)["mxstep"].withDefault(500);
-  // Use ImEx capability
-  const auto imex = (*options)["imex"].withDefault(true);
-  // Solve only explicit part
-  const auto solve_explicit = (*options)["explicit"].withDefault(true);
-  // Solve only implicit part
-  const auto solve_implicit = (*options)["implicit"].withDefault(true);
-
   ASSERT1(solve_explicit or solve_implicit);
 
-  const auto& explicit_rhs = [imex, solve_explicit]() {
+  const auto& explicit_rhs = [this]() {
     if (imex) {
       return arkode_rhs_explicit;
     } else {
       return solve_explicit ? arkode_rhs : nullptr;
     }
   }();
-  const auto& implicit_rhs = [imex, solve_implicit]() {
+  const auto& implicit_rhs = [this]() {
     if (imex) {
       return arkode_rhs_implicit;
     } else {
@@ -278,17 +322,12 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   if (ARKStepSetUserData(arkode_mem, this) != ARK_SUCCESS)
     throw BoutException("ARKStepSetUserData failed\n");
 
-  // Use linear implicit solver (only evaluates jacobian inversion once
-  const auto set_linear = (*options)["set_linear"].withDefault(false);
   if (set_linear) {
     output.write("\tSetting ARKStep implicit solver to Linear\n");
     if (ARKStepSetLinear(arkode_mem, 1) != ARK_SUCCESS)
       throw BoutException("ARKStepSetLinear failed\n");
   }
 
-  // Solve explicit portion in fixed timestep mode
-  // NOTE: This is not recommended except for code comparison
-  const auto fixed_step = (*options)["fixed_step"].withDefault(false);
   if (fixed_step) {
     // If not given, default to adaptive timestepping
     const auto fixed_timestep = (*options)["timestep"].withDefault(0.0);
@@ -296,35 +335,23 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
       throw BoutException("ARKStepSetFixedStep failed\n");
   }
 
-  const auto order = (*options)["order"].withDefault(4);
-  if (ARKStepSetOrder(arkode_mem, order) != ARK_SUCCESS)
+  if (ARKStepSetOrder(arkode_mem, order) != ARK_SUCCESS) {
     throw BoutException("ARKStepSetOrder failed\n");
+  }
 
-  const auto cfl_frac = (*options)["cfl_frac"].withDefault(-1.0);
-  if (ARKStepSetCFLFraction(arkode_mem, cfl_frac) != ARK_SUCCESS)
+  if (ARKStepSetCFLFraction(arkode_mem, cfl_frac) != ARK_SUCCESS) {
     throw BoutException("ARKStepSetCFLFraction failed\n");
+  }
 
-  // Set timestep adaptivity function
-  const auto adap_method = (*options)["adap_method"].withDefault(0);
-  // 0 -> PID adaptivity (default)
-  // 1 -> PI
-  // 2 -> I
-  // 3 -> explicit Gustafsson
-  // 4 -> implicit Gustafsson
-  // 5 -> ImEx Gustafsson
-
-  if (ARKStepSetAdaptivityMethod(arkode_mem, adap_method, 1, 1, nullptr) != ARK_SUCCESS)
+  if (ARKStepSetAdaptivityMethod(arkode_mem, adap_method, 1, 1, nullptr) != ARK_SUCCESS) {
     throw BoutException("ARKStepSetAdaptivityMethod failed\n");
-
-  const auto abstol = (*options)["atol"].withDefault(1.0e-12);
-  const auto reltol = (*options)["rtol"].withDefault(1.0e-5);
-  const auto use_vector_abstol = (*options)["use_vector_abstol"].withDefault(false);
+  }
 
   if (use_vector_abstol) {
     std::vector<BoutReal> f2dtols;
     f2dtols.reserve(f2d.size());
     std::transform(begin(f2d), end(f2d), std::back_inserter(f2dtols),
-                   [abstol](const VarStr<Field2D>& f2) {
+                   [abstol = abstol](const VarStr<Field2D>& f2) {
                      auto f2_options = Options::root()[f2.name];
                      const auto wrong_name = f2_options.isSet("abstol");
                      if (wrong_name) {
@@ -338,7 +365,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
     std::vector<BoutReal> f3dtols;
     f3dtols.reserve(f3d.size());
     std::transform(begin(f3d), end(f3d), std::back_inserter(f3dtols),
-                   [abstol](const VarStr<Field3D>& f3) {
+                   [abstol = abstol](const VarStr<Field3D>& f3) {
                      return Options::root()[f3.name]["atol"].withDefault(abstol);
                    });
 
@@ -360,19 +387,16 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   if (ARKStepSetMaxNumSteps(arkode_mem, mxsteps) != ARK_SUCCESS)
     throw BoutException("ARKStepSetMaxNumSteps failed\n");
 
-  const auto max_timestep = (*options)["max_timestep"].withDefault(-1.);
   if (max_timestep > 0.0) {
     if (ARKStepSetMaxStep(arkode_mem, max_timestep) != ARK_SUCCESS)
       throw BoutException("ARKStepSetMaxStep failed\n");
   }
 
-  const auto min_timestep = (*options)["min_timestep"].withDefault(-1.);
   if (min_timestep > 0.0) {
     if (ARKStepSetMinStep(arkode_mem, min_timestep) != ARK_SUCCESS)
       throw BoutException("ARKStepSetMinStep failed\n");
   }
 
-  const auto start_timestep = (*options)["start_timestep"].withDefault(-1);
   if (start_timestep > 0.0) {
     if (ARKStepSetInitStep(arkode_mem, start_timestep) != ARK_SUCCESS)
       throw BoutException("ARKStepSetInitStep failed");
@@ -380,12 +404,9 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
 
   // ARKStepSetPredictorMethod(arkode_mem,4);
 
-  /// Newton method can include Preconditioners and Jacobian function
-  const auto fixed_point = (*options)["fixed_point"].withDefault(false);
-
 #if SUNDIALS_VERSION_MAJOR < 4
-  if (fixed_point) { // Use accellerated fixed point
-    output.write("\tUsing accellerated fixed point solver\n");
+  if (fixed_point) {
+    output.write("\tUsing accelerated fixed point solver\n");
     if (ARKodeSetFixedPoint(arkode_mem, 3.0))
       throw BoutException("ARKodeSetFixedPoint failed\n");
   } else {
@@ -407,12 +428,9 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
     throw BoutException("ARKStepSetNonlinearSolver failed\n");
 #endif
 
-  const auto use_precon = (*options)["use_precon"].withDefault(false);
-  const auto maxl = (*options)["maxl"].withDefault(0);
-
   /// Set Preconditioner
   if (use_precon) {
-    const auto rightprec = (*options)["rightprec"].withDefault(false);
+
     const int prectype = rightprec ? PREC_RIGHT : PREC_LEFT;
 
 #if SUNDIALS_VERSION_MAJOR >= 3
@@ -441,10 +459,22 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
             return a + localmesh->xend - localmesh->xstart + 3;
           });
 
-      const auto mudq = (*options)["mudq"].withDefault(band_width_default);
-      const auto mldq = (*options)["mldq"].withDefault(band_width_default);
-      const auto mukeep = (*options)["mukeep"].withDefault(n3Dvars() + n2Dvars());
-      const auto mlkeep = (*options)["mlkeep"].withDefault(n3Dvars() + n2Dvars());
+      const auto mudq = (*options)["mudq"]
+                            .doc("Upper half-bandwidth to be used in the difference "
+                                 "quotient Jacobian approximation")
+                            .withDefault(band_width_default);
+      const auto mldq = (*options)["mldq"]
+                            .doc("Lower half-bandwidth to be used in the difference "
+                                 "quotient Jacobian approximation")
+                            .withDefault(band_width_default);
+      const auto mukeep = (*options)["mukeep"]
+                              .doc("Upper half-bandwidth of the retained banded "
+                                   "approximate Jacobian block")
+                              .withDefault(n3Dvars() + n2Dvars());
+      const auto mlkeep = (*options)["mlkeep"]
+                              .doc("Lower half-bandwidth of the retained banded "
+                                   "approximate Jacobian block")
+                              .withDefault(n3Dvars() + n2Dvars());
 
       if (ARKBBDPrecInit(arkode_mem, local_N, mudq, mldq, mukeep, mlkeep, ZERO,
                          arkode_bbd_rhs, nullptr)
@@ -475,7 +505,6 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
 
   /// Set Jacobian-vector multiplication function
 
-  const auto use_jacobian = (*options)["use_jacobian"].withDefault(false);
   if (use_jacobian and hasJacobian()) {
     output.write("\tUsing user-supplied Jacobian function\n");
 
@@ -484,8 +513,6 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   } else
     output.write("\tUsing difference quotient approximation for Jacobian\n");
 
-  // Use ARKode optimal parameters
-  const auto optimize = (*options)["optimize"].withDefault(false);
   if (optimize) {
     output.write("\tUsing ARKode inbuilt optimization\n");
     if (ARKStepSetOptimalParams(arkode_mem) != ARK_SUCCESS)
@@ -504,10 +531,10 @@ int ArkodeSolver::run() {
   if (!initialised)
     throw BoutException("ArkodeSolver not initialised\n");
 
-  for (int i = 0; i < NOUT; i++) {
+  for (int i = 0; i < getNumberOutputSteps(); i++) {
 
     /// Run the solver for one output timestep
-    simtime = run(simtime + TIMESTEP);
+    simtime = run(simtime + getOutputTimestep());
     iteration++;
 
     /// Check if the run succeeded
@@ -533,8 +560,6 @@ int ArkodeSolver::run() {
     nliters = int(temp_long_int);
 
     if (diagnose) {
-      // Print additional diagnostics
-
       output.write("\nARKODE: nsteps {:d}, nfe_evals {:d}, nfi_evals {:d}, nniters {:d}, "
                    "npevals {:d}, nliters {:d}\n",
                    nsteps, nfe_evals, nfi_evals, nniters, npevals, nliters);
@@ -547,9 +572,7 @@ int ArkodeSolver::run() {
                    static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
     }
 
-    /// Call the monitor function
-
-    if (call_monitors(simtime, i, NOUT)) {
+    if (call_monitors(simtime, i, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }
