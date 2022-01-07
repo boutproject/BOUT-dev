@@ -54,8 +54,8 @@ RegisterSolver<SNESSolver> registersolverbeuler("beuler");
 /// nonlinear ODE by integrating in time with Backward Euler
 class SNESSolver : public Solver {
 public:
-  SNESSolver(Options* opt = nullptr) : Solver(opt) {}
-  ~SNESSolver() {}
+  explicit SNESSolver(Options* opts = nullptr);
+  ~SNESSolver() = default;
 
   int init(int nout, BoutReal tstep) override;
 
@@ -66,10 +66,12 @@ private:
   BoutReal timestep; ///< Internal timestep
   BoutReal dt;       ///< Current timestep used in snes_function
 
-  int lower_its, upper_its; ///< Limits on iterations for timestep adjustment
+  std::string snes_type;
+  BoutReal atol; ///< Absolute tolerance
+  BoutReal rtol; ///< Relative tolerance
 
-  BoutReal out_timestep; ///< Output timestep
-  int nsteps;            ///< Number of steps to take
+  int maxits; ///< Maximum nonlinear iterations
+  int lower_its, upper_its; ///< Limits on iterations for timestep adjustment
 
   bool diagnose; ///< Output additional diagnostics
 

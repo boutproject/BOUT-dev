@@ -25,6 +25,26 @@ static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void* ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
 }
 
+SNESSolver::SNESSolver(Options* opts)
+    : Solver(opts),
+      timestep(
+          (*options)["timestep"].doc("Initial backward Euler timestep").withDefault(1.0)),
+      snes_type((*options)["snes_type"].doc("PETSc nonlinear solver method to use").withDefault("anderson")),
+      atol((*options)["atol"].doc("Absolute tolerance in SNES solve").withDefault(1e-16)),
+      rtol((*options)["rtol"].doc("Relative tolerance in SNES solve").withDefault(1e-10)),
+      maxits((*options)["max_nonlinear_iterations"]
+                 .doc("Maximum number of nonlinear iterations per SNES solve")
+                 .withDefault(50)),
+      lower_its((*options)["lower_its"]
+                    .doc("Iterations below which the next timestep is increased")
+                    .withDefault(static_cast<int>(maxits * 0.5))),
+      upper_its((*options)["upper_its"]
+                    .doc("Iterations above which the next timestep is reduced")
+                    .withDefault(static_cast<int>(maxits * 0.8))),
+      diagnose(
+          (*options)["diagnose"].doc("Print additional diagnostics").withDefault(false)),
+      predictor((*options)["predictor"].doc("Use linear predictor?").withDefault(true)) {}
+
 int SNESSolver::init(int nout, BoutReal tstep) {
 
   TRACE("Initialising SNES solver");
@@ -33,9 +53,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   if (Solver::init(nout, tstep) != 0) {
     return 1;
   }
-
-  out_timestep = tstep; // Output timestep
-  nsteps = nout;        // Save number of output steps
 
   output << "\n\tSNES steady state solver\n";
 
@@ -52,14 +69,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
   output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3Dvars(),
                n2Dvars(), neq, nlocal);
-
-  timestep =
-      (*options)["timestep"].doc("Initial backward Euler timestep").withDefault(1.0);
-
-  diagnose =
-      (*options)["diagnose"].doc("Print additional diagnostics").withDefault(false);
-
-  predictor = (*options)["predictor"].doc("Use linear predictor?").withDefault(true);
 
   // Initialise PETSc components
   int ierr;
@@ -86,7 +95,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   // Set the callback function
   SNESSetFunction(snes, snes_f, FormFunction, this);
 
-  std::string snes_type = (*options)["snes_type"].withDefault("anderson");
   SNESSetType(snes, snes_type.c_str());
 
   // Set up the Jacobian
@@ -105,23 +113,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 
   // Set tolerances
-  BoutReal atol =
-      (*options)["atol"].doc("Absolute tolerance in SNES solve").withDefault(1e-16);
-  BoutReal rtol =
-      (*options)["rtol"].doc("Relative tolerance in SNES solve").withDefault(1e-10);
-
-  int maxits = (*options)["max_nonlinear_iterations"]
-                   .doc("Maximum number of nonlinear iterations per SNES solve")
-                   .withDefault(50);
-
-  upper_its = (*options)["upper_its"]
-                  .doc("Iterations above which the next timestep is reduced")
-                  .withDefault(static_cast<int>(maxits * 0.8));
-
-  lower_its = (*options)["lower_its"]
-                  .doc("Iterations below which the next timestep is increased")
-                  .withDefault(static_cast<int>(maxits * 0.5));
-
   SNESSetTolerances(snes, atol, rtol, PETSC_DEFAULT, maxits, PETSC_DEFAULT);
 
   // Get runtime options
@@ -142,8 +133,8 @@ int SNESSolver::run() {
     CHKERRQ(ierr); // NOLINT
   }
 
-  for (int s = 0; s < nsteps; s++) {
-    BoutReal target = simtime + out_timestep;
+  for (int s = 0; s < getNumberOutputSteps(); s++) {
+    BoutReal target = simtime + getOutputTimestep();
 
     bool looping = true;
     do {
@@ -231,9 +222,7 @@ int SNESSolver::run() {
     }
     run_rhs(simtime); // Run RHS to calculate auxilliary variables
 
-    /// Call the monitor function
-
-    if (call_monitors(simtime, s, nsteps) != 0) {
+    if (call_monitors(simtime, s, getNumberOutputSteps()) != 0) {
       break; // User signalled to quit
     }
   }
