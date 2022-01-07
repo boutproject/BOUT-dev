@@ -11,7 +11,21 @@
 
 #include <output.hxx>
 
-RK4Solver::RK4Solver(Options *options) : Solver(options) { canReset = true; }
+RK4Solver::RK4Solver(Options* opts)
+    : Solver(opts), atol((*options)["atol"].doc("Absolute tolerance").withDefault(1.e-5)),
+      rtol((*options)["rtol"].doc("Relative tolerance").withDefault(1.e-3)),
+      max_timestep((*options)["max_timestep"]
+                       .doc("Maximum timestep")
+                       .withDefault(getOutputTimestep())),
+      timestep((*options)["timestep"].doc("Starting timestep").withDefault(max_timestep)),
+      mxstep((*options)["mxstep"]
+                 .doc("Maximum number of steps between outputs")
+                 .withDefault(500)),
+      adaptive((*options)["adaptive"]
+                   .doc("Adapt internal timestep using 'atol' and 'rtol'.")
+                   .withDefault(false)) {
+  canReset = true;
+}
 
 void RK4Solver::setMaxTimestep(BoutReal dt) {
   if (dt > timestep)
@@ -31,8 +45,6 @@ int RK4Solver::init(int nout, BoutReal tstep) {
   
   output << "\n\tRunge-Kutta 4th-order solver\n";
 
-  nsteps = nout; // Save number of output steps
-  out_timestep = tstep;
   max_dt = tstep;
   
   // Calculate number of variables
@@ -64,22 +76,14 @@ int RK4Solver::init(int nout, BoutReal tstep) {
   // Put starting values into f0
   save_vars(std::begin(f0));
 
-  // Get options
-  atol = (*options)["atol"].doc("Absolute tolerance").withDefault(1.e-5);
-  rtol = (*options)["rtol"].doc("Relative tolerance").withDefault(1.e-3);
-  max_timestep = (*options)["max_timestep"].doc("Maximum timestep").withDefault(tstep);
-  timestep = (*options)["timestep"].doc("Starting timestep").withDefault(max_timestep);
-  mxstep = (*options)["mxstep"].doc("Maximum number of steps between outputs").withDefault(500);
-  adaptive = (*options)["adaptive"].doc("Adapt internal timestep using 'atol' and 'rtol'.").withDefault(false);
-
   return 0;
 }
 
 int RK4Solver::run() {
   TRACE("RK4Solver::run()");
   
-  for(int s=0;s<nsteps;s++) {
-    BoutReal target = simtime + out_timestep;
+  for(int s=0;s<getNumberOutputSteps();s++) {
+    BoutReal target = simtime + getOutputTimestep();
     
     BoutReal dt;
     bool running = true;
@@ -155,7 +159,7 @@ int RK4Solver::run() {
     
     /// Call the monitor function
     
-    if(call_monitors(simtime, s, nsteps)) {
+    if(call_monitors(simtime, s, getNumberOutputSteps())) {
       break; // Stop simulation
     }
   }
