@@ -487,6 +487,8 @@ protected:
 
   /// Get the currently set number of output steps requested
   int getNumberOutputSteps() const { return number_output_steps; }
+  /// Change the number of requested output steps
+  void setNumberOutputSteps(int nout) { number_output_steps = nout; }
   /// Get the currently set output timestep
   BoutReal getOutputTimestep() const { return output_timestep; }
 
