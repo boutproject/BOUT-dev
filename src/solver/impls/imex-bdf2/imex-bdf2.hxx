@@ -73,12 +73,12 @@ RegisterSolver<IMEXBDF2> registersolverimexbdf2("imexbdf2");
 /// and includes some adaptive capabilities
 ///
 class IMEXBDF2 : public Solver {
- public:
-  explicit IMEXBDF2(Options *opt = nullptr);
+public:
+  explicit IMEXBDF2(Options* opt = nullptr);
   ~IMEXBDF2();
 
   /// Returns the current internal timestep
-  BoutReal getCurrentTimestep() override {return timestep; }
+  BoutReal getCurrentTimestep() override { return timestep; }
 
   /// Initialise solver. Must be called once and only once
   int init() override;
@@ -95,7 +95,8 @@ class IMEXBDF2 : public Solver {
   ///
   /// @param[in] x  The state vector
   /// @param[out] f  The vector for the result f(x)
-  /// @param[in] linear   Specifies that the SNES solver is in a linear (KSP) inner loop, so the operator should be linearised if possible
+  /// @param[in] linear   Specifies that the SNES solver is in a linear (KSP) inner loop,
+  /// so the operator should be linearised if possible
   PetscErrorCode snes_function(Vec x, Vec f, bool linear);
 
   /// Preconditioner. Called by PCapply
@@ -104,7 +105,7 @@ class IMEXBDF2 : public Solver {
   /// @param[in] x  The vector to be operated on
   /// @param[out] f  The result of the operation
   PetscErrorCode precon(Vec x, Vec f);
- private:
+private:
   static constexpr int MAX_SUPPORTED_ORDER = 4; //Should this be #defined instead?
 
   int maxOrder; ///< Specify the maximum order of the scheme to use (1/2/3)
@@ -124,7 +125,7 @@ class IMEXBDF2 : public Solver {
   BoutReal adaptRtol; ///< Target relative error for adaptivity.
   BoutReal dtMax; ///< Maximum timestep we want to use
   BoutReal dtMinFatal; ///< If timestep wants to drop below this we abort. Set -ve to deactivate
-  BoutReal dtMin; ///< Minimum timestep we want to use
+  BoutReal dtMin;      ///< Minimum timestep we want to use
 
   /// Default is matrix free
   bool matrix_free;
@@ -185,12 +186,13 @@ class IMEXBDF2 : public Solver {
   BoutReal implicit_curtime{0.0};
   int predictor;    ///< Predictor method
   PetscLib lib; ///< Handles initialising, finalising PETSc
-  Vec snes_f{nullptr};  ///< Used by SNES to store function
-  Vec snes_x{nullptr};  ///< Result of SNES
+  Vec snes_f{nullptr};   ///< Used by SNES to store function
+  Vec snes_x{nullptr};   ///< Result of SNES
   SNES snes{nullptr};    ///< SNES context
   SNES snesAlt{nullptr}; ///< Alternative SNES object for adaptive checks
-  SNES snesUse{nullptr}; ///< The snes object to use in solve stage. Allows easy switching.
-  Mat Jmf{nullptr};     ///< Matrix-free Jacobian
+  SNES snesUse{
+      nullptr};     ///< The snes object to use in solve stage. Allows easy switching.
+  Mat Jmf{nullptr}; ///< Matrix-free Jacobian
 
   // Diagnostics
   bool diagnose;  ///< Output diagnostics every timestep

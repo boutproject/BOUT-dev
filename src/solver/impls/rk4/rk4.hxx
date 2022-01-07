@@ -55,7 +55,7 @@ private:
   BoutReal max_timestep; //< Maximum timestep
   BoutReal timestep;     //< The internal timestep
   int mxstep;            //< Maximum number of internal steps between outputs
-  bool adaptive; //< Adapt timestep?
+  bool adaptive;         //< Adapt timestep?
 
   Array<BoutReal> f0, f1, f2;
 

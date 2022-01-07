@@ -189,7 +189,7 @@ int PetscSolver::init() {
     output.write("\tUsing BDF method\n");
     ierr = TSSundialsSetType(ts, SUNDIALS_BDF);CHKERRQ(ierr);
   }
-#endif 
+#endif
 
   // Initial time and timestep
   ierr = TSSetTime(ts, simtime); CHKERRQ(ierr);
@@ -200,13 +200,16 @@ int PetscSolver::init() {
   PetscInt total_steps = mxstep * getNumberOutputSteps();
   // Final output time
   PetscReal tfinal = simtime + (getNumberOutputSteps() * getOutputTimestep());
-  output.write("\tSet total_steps {:d}, tfinal {:g}, simtime {:g}\n", total_steps, tfinal, simtime);
+  output.write("\tSet total_steps {:d}, tfinal {:g}, simtime {:g}\n", total_steps, tfinal,
+               simtime);
 
 #if PETSC_VERSION_GE(3,8,0)
-  ierr = TSSetMaxSteps(ts, total_steps); CHKERRQ(ierr);
+  ierr = TSSetMaxSteps(ts, total_steps);
+  CHKERRQ(ierr);
   ierr = TSSetMaxTime(ts, tfinal); CHKERRQ(ierr);
 #else
-  ierr = TSSetDuration(ts, total_steps, tfinal); CHKERRQ(ierr);
+  ierr = TSSetDuration(ts, total_steps, tfinal);
+  CHKERRQ(ierr);
 #endif
 
   // Set the current solution

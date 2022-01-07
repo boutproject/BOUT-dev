@@ -84,9 +84,9 @@ public:
   void jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
 
 private:
-  BoutReal hcur;     //< Current internal timestep
+  BoutReal hcur; //< Current internal timestep
 
-  bool diagnose{false};      //< Output additional diagnostics
+  bool diagnose{false}; //< Output additional diagnostics
 
   N_Vector uvec{nullptr};    //< Values
   void* arkode_mem{nullptr}; //< ARKODE internal memory block

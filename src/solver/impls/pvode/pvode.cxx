@@ -55,8 +55,8 @@ BoutReal ropt[OPT_SIZE];
 
 PvodeSolver::PvodeSolver(Options* opts)
     : Solver(opts), use_precon((*options)["use_precon"]
-                                      .doc("Use user-supplied preconditioner")
-                                      .withDefault(false)),
+                                   .doc("Use user-supplied preconditioner")
+                                   .withDefault(false)),
       precon_dimens(
           (*options)["precon_dimens"].doc("Maximum Krylov dimension").withDefault(50)),
       precon_tol((*options)["precon_tol"]
@@ -94,7 +94,7 @@ int PvodeSolver::init() {
   int n2d = n2Dvars(); // Number of 2D variables
   int n3d = n3Dvars(); // Number of 3D variables
 
-  Solver::init();  
+  Solver::init();
   output.write("Initialising PVODE solver\n");
 
   int local_N = getLocalN();
@@ -217,9 +217,9 @@ int PvodeSolver::run() {
   
   if(!pvode_initialised)
     throw BoutException("PvodeSolver not initialised\n");
-  
-  for(int i=0;i<getNumberOutputSteps();i++) {
-    
+
+  for (int i = 0; i < getNumberOutputSteps(); i++) {
+
     /// Run the solver for one output timestep
     simtime = run(simtime + getOutputTimestep());
     iteration++;
@@ -233,13 +233,13 @@ int PvodeSolver::run() {
     }
     
     /// Call the monitor function
-    
-    if(call_monitors(simtime, i, getNumberOutputSteps())) {
+
+    if (call_monitors(simtime, i, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }
   }
-  
+
   return 0;
 }
 

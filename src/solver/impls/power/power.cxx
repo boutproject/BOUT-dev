@@ -15,7 +15,7 @@ PowerSolver::PowerSolver(Options* opts)
 
 int PowerSolver::init() {
   TRACE("Initialising Power solver");
-  
+
   Solver::init();
   output << "\n\tPower eigenvalue solver\n";
 

@@ -11,8 +11,9 @@
 #include <output.hxx>
 
 RK3SSP::RK3SSP(Options* opt)
-    : Solver(opt),
-      max_timestep((*options)["max_timestep"].doc("Maximum timestep").withDefault(getOutputTimestep())),
+    : Solver(opt), max_timestep((*options)["max_timestep"]
+                                    .doc("Maximum timestep")
+                                    .withDefault(getOutputTimestep())),
       timestep((*options)["timestep"].doc("Starting timestep").withDefault(max_timestep)),
       mxstep((*options)["mxstep"]
                  .doc("Maximum number of steps between outputs")
@@ -27,8 +28,8 @@ void RK3SSP::setMaxTimestep(BoutReal dt) {
 
 int RK3SSP::init() {
   TRACE("Initialising RK3 SSP solver");
-  
-  Solver::init();  
+
+  Solver::init();
   output << "\n\tRunge-Kutta 3rd-order SSP solver\n";
 
   // Calculate number of variables

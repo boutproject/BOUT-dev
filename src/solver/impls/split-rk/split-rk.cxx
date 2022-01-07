@@ -68,10 +68,10 @@ int SplitRK::init() {
   }
   
   ASSERT0(adapt_period > 0);
-  
+
   int ninternal_steps = static_cast<int>(std::ceil(getOutputTimestep() / timestep));
   ASSERT0(ninternal_steps > 0);
-  
+
   timestep = getOutputTimestep() / ninternal_steps;
   output.write(_("\tUsing a timestep {:e}\n"), timestep);
   
@@ -185,7 +185,7 @@ int SplitRK::run() {
     load_vars(std::begin(state)); // Put result into variables
     // Call rhs function to get extra variables at this time
     run_rhs(simtime);
-    
+
     iteration++;
 
     if (call_monitors(simtime, step, getNumberOutputSteps())) {

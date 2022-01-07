@@ -14,7 +14,9 @@
 RKGenericSolver::RKGenericSolver(Options* opts)
     : Solver(opts), atol((*options)["atol"].doc("Absolute tolerance").withDefault(1.e-5)),
       rtol((*options)["rtol"].doc("Relative tolerance").withDefault(1.e-3)),
-      max_timestep((*options)["max_timestep"].doc("Maximum timestep").withDefault(getOutputTimestep())),
+      max_timestep((*options)["max_timestep"]
+                       .doc("Maximum timestep")
+                       .withDefault(getOutputTimestep())),
       timestep((*options)["timestep"].doc("Starting timestep").withDefault(max_timestep)),
       mxstep((*options)["mxstep"]
                  .doc("Maximum number of steps between outputs")
@@ -37,7 +39,7 @@ void RKGenericSolver::setMaxTimestep(BoutReal dt) {
 int RKGenericSolver::init() {
 
   TRACE("Initialising RKGeneric solver");
-  
+
   Solver::init();
   output << "\n\tRunge-Kutta generic solver with scheme type "<<scheme->getType()<<"\n";
 

@@ -29,7 +29,9 @@ SNESSolver::SNESSolver(Options* opts)
     : Solver(opts),
       timestep(
           (*options)["timestep"].doc("Initial backward Euler timestep").withDefault(1.0)),
-      snes_type((*options)["snes_type"].doc("PETSc nonlinear solver method to use").withDefault("anderson")),
+      snes_type((*options)["snes_type"]
+                    .doc("PETSc nonlinear solver method to use")
+                    .withDefault("anderson")),
       atol((*options)["atol"].doc("Absolute tolerance in SNES solve").withDefault(1e-16)),
       rtol((*options)["rtol"].doc("Relative tolerance in SNES solve").withDefault(1e-10)),
       maxits((*options)["max_nonlinear_iterations"]

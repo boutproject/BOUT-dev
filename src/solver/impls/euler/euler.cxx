@@ -32,9 +32,9 @@ void EulerSolver::setMaxTimestep(BoutReal dt) {
 
 int EulerSolver::init() {
   TRACE("Initialising Euler solver");
-  
+
   Solver::init();
-  
+
   output << "\n\tEuler solver\n";
 
   // Calculate number of variables
@@ -65,7 +65,7 @@ int EulerSolver::run() {
 
   for (int s = 0; s < getNumberOutputSteps(); s++) {
     BoutReal target = simtime + getOutputTimestep();
-    
+
     bool running = true;
     int internal_steps = 0;
     do {

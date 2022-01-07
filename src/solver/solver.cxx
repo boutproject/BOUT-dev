@@ -617,7 +617,7 @@ std::string Solver::getRunRestartFrom() const {
  **************************************************************************/
 
 int Solver::init() {
-  
+
   TRACE("Solver::init()");
 
   if (initialised)

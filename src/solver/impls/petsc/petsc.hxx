@@ -124,8 +124,8 @@ private:
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
 
-  Vec u{nullptr};      ///< PETSc solution vector
-  TS ts{nullptr};      ///< PETSc timestepper object
+  Vec u{nullptr}; ///< PETSc solution vector
+  TS ts{nullptr}; ///< PETSc timestepper object
   Mat J{nullptr}; ///< RHS Jacobian
   Mat Jmf{nullptr};
   MatFDColoring matfdcoloring{nullptr};

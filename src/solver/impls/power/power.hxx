@@ -39,31 +39,30 @@ RegisterSolver<PowerSolver> registersolverpower("power");
 class Options;
 
 class PowerSolver : public Solver {
- public:
+public:
   explicit PowerSolver(Options* opts = nullptr);
   ~PowerSolver() = default;
-  
+
   int init() override;
   int run() override;
 
-  void outputVars(Datafile &outputfile, bool save_repeat=true) override {
+  void outputVars(Datafile& outputfile, bool save_repeat = true) override {
     // Include base class functionality
     this->Solver::outputVars(outputfile, save_repeat);
 
     // Save the eigenvalue to the output
     outputfile.add(eigenvalue, "eigenvalue", true);
   }
- private:
+private:
+   BoutReal curtime; //< Current simulation time (fixed)
 
-  BoutReal curtime; //< Current simulation time (fixed)
-  
-  BoutReal eigenvalue; //< Estimated eigenvalue
+   BoutReal eigenvalue; //< Estimated eigenvalue
 
-  int nlocal, nglobal; //< Number of variables
-  Array<BoutReal> f0;  //< The system state
+   int nlocal, nglobal; //< Number of variables
+   Array<BoutReal> f0;  //< The system state
 
-  BoutReal norm(Array<BoutReal> &state);
-  void divide(Array<BoutReal> &in, BoutReal value);
+   BoutReal norm(Array<BoutReal>& state);
+   void divide(Array<BoutReal>& in, BoutReal value);
 };
 
 #endif // __KARNIADAKIS_SOLVER_H__

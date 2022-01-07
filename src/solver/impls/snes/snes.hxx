@@ -69,7 +69,7 @@ private:
   BoutReal atol; ///< Absolute tolerance
   BoutReal rtol; ///< Relative tolerance
 
-  int maxits; ///< Maximum nonlinear iterations
+  int maxits;               ///< Maximum nonlinear iterations
   int lower_its, upper_its; ///< Limits on iterations for timestep adjustment
 
   bool diagnose; ///< Output additional diagnostics

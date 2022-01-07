@@ -40,28 +40,29 @@ RegisterSolver<EulerSolver> registersolvereuler("euler");
 }
 
 class EulerSolver : public Solver {
- public:
-  explicit EulerSolver(Options *options = nullptr);
+public:
+  explicit EulerSolver(Options* options = nullptr);
   ~EulerSolver() = default;
-  
+
   void setMaxTimestep(BoutReal dt) override;
-  BoutReal getCurrentTimestep() override {return timestep; }
-  
+  BoutReal getCurrentTimestep() override { return timestep; }
+
   int init() override;
   int run() override;
- private:
-  int mxstep; //< Maximum number of internal steps between outputs
+private:
+  int mxstep;          //< Maximum number of internal steps between outputs
   BoutReal cfl_factor; //< Factor by which timestep must be smaller than maximum
 
   Array<BoutReal> f0, f1;
 
-  BoutReal timestep; //< The internal timestep
+  BoutReal timestep;     //< The internal timestep
   bool timestep_reduced; //< Set true if the timestep is reduced during RHS call
-  
+
   int nlocal; //< Number of variables on local processor
-  
-  void take_step(BoutReal curtime, BoutReal dt, 
-                 Array<BoutReal> &start, Array<BoutReal> &result); // Take a single step to calculate f1
+
+  /// Take a single step to calculate f1
+  void take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
+                 Array<BoutReal>& result);
 };
 
 #endif // __KARNIADAKIS_SOLVER_H__

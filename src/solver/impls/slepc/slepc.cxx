@@ -631,7 +631,9 @@ void SlepcSolver::slepcToBout(PetscScalar& reEigIn, PetscScalar& imEigIn,
     return;
   }
 
-  const dcomplex boutEig = ddtMode ? slepcEig * ci : ci * log(slepcEig) / (getOutputTimestep() * getNumberOutputSteps());
+  const dcomplex boutEig =
+      ddtMode ? slepcEig * ci
+              : ci * log(slepcEig) / (getOutputTimestep() * getNumberOutputSteps());
 
   // Set return values
   reEigOut = boutEig.real();
@@ -652,7 +654,9 @@ void SlepcSolver::boutToSlepc(BoutReal& reEigIn, BoutReal& imEigIn, PetscScalar&
 
   const dcomplex boutEig(reEigIn, imEigIn);
   const dcomplex ci(0.0, 1.0);
-  const dcomplex slepcEig = ddtMode ? -ci * boutEig : exp(-ci * boutEig * (getOutputTimestep() * getNumberOutputSteps()));
+  const dcomplex slepcEig =
+      ddtMode ? -ci * boutEig
+              : exp(-ci * boutEig * (getOutputTimestep() * getNumberOutputSteps()));
 
   // Set return values
   reEigOut = slepcEig.real();
