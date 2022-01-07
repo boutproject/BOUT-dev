@@ -226,10 +226,6 @@ private:
   // For selfSolve=true
   Array<BoutReal> f0, f1;
 
-  // Timestep details
-  int nout;
-  BoutReal tstep;
-
   // Used for SLEPc options
   int nEig, maxIt;
   int mpd; // Maximum projected dimension
