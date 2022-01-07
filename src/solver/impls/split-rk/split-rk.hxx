@@ -41,7 +41,7 @@ RegisterSolver<SplitRK> registersolversplitrk("splitrk");
 
 class SplitRK : public Solver {
 public:
-  explicit SplitRK(Options *opt = nullptr) : Solver(opt) {}
+  explicit SplitRK(Options* opts = nullptr);
   ~SplitRK() = default;
 
   int init(int nout, BoutReal tstep) override;
@@ -49,9 +49,6 @@ public:
   int run() override;
 private:
   int nstages{2}; ///< Number of stages in the RKL 
-  
-  BoutReal out_timestep{0.0}; ///< The output timestep
-  int nsteps{0}; ///< Number of output steps
   
   BoutReal timestep{0.0}; ///< The internal timestep
 
