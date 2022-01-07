@@ -34,8 +34,6 @@ int RK3SSP::init(int nout, BoutReal tstep) {
   
   output << "\n\tRunge-Kutta 3rd-order SSP solver\n";
 
-  max_dt = tstep;
-  
   // Calculate number of variables
   nlocal = getLocalN();
   

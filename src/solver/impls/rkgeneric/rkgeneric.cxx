@@ -44,8 +44,6 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
 
   output << "\n\tRunge-Kutta generic solver with scheme type "<<scheme->getType()<<"\n";
 
-  max_dt = tstep;
-  
   // Calculate number of variables
   nlocal = getLocalN();
   

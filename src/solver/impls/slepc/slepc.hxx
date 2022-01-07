@@ -181,19 +181,16 @@ public:
       return advanceSolver->n3Dvars();
     }
   }
-  // Time steps
   void setMaxTimestep(BoutReal dt) override {
-    if (selfSolve) {
-      Solver::setMaxTimestep(dt);
-    } else {
+    if (not selfSolve) {
       advanceSolver->setMaxTimestep(dt);
     }
   }
   BoutReal getCurrentTimestep() override {
     if (selfSolve) {
-      return Solver::max_dt;
+      return Solver::getCurrentTimestep();
     }
-    { return advanceSolver->getCurrentTimestep(); }
+    return advanceSolver->getCurrentTimestep();
   }
 
   int compareState;

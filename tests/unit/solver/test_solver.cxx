@@ -576,15 +576,6 @@ TEST_F(SolverTest, ResetInternalFields) {
   EXPECT_THROW(solver.resetInternalFields(), BoutException);
 }
 
-TEST_F(SolverTest, SetMaxTimestep) {
-  Options options;
-  FakeSolver solver{&options};
-
-  auto expected = 4.5;
-  EXPECT_NO_THROW(solver.setMaxTimestep(expected));
-  EXPECT_EQ(solver.getMaxTimestepShim(), expected);
-}
-
 TEST_F(SolverTest, GetCurrentTimestep) {
   Options options;
   FakeSolver solver{&options};

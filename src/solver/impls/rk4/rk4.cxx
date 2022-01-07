@@ -45,8 +45,6 @@ int RK4Solver::init(int nout, BoutReal tstep) {
   
   output << "\n\tRunge-Kutta 4th-order solver\n";
 
-  max_dt = tstep;
-  
   // Calculate number of variables
   nlocal = getLocalN();
   

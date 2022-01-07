@@ -267,7 +267,7 @@ public:
   virtual void constraint(Vector3D& v, Vector3D& C_v, std::string name);
 
   /// Set a maximum internal timestep (only for explicit schemes)
-  virtual void setMaxTimestep(BoutReal dt) { max_dt = dt; }
+  virtual void setMaxTimestep(MAYBE_UNUSED(BoutReal dt)) {}
   /// Return the current internal timestep
   virtual BoutReal getCurrentTimestep() { return 0.0; }
 
@@ -481,9 +481,6 @@ protected:
 
   /// Returns a Field3D containing the global indices
   Field3D globalIndex(int localStart);
-
-  /// Maximum internal timestep
-  BoutReal max_dt{-1.0};
 
   /// Get the list of monitors
   auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }

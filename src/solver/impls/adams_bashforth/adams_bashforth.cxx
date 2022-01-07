@@ -313,8 +313,6 @@ int AdamsBashforthSolver::init(int nout, BoutReal tstep) {
 
   output << "\n\tAdams-Bashforth (explicit) multistep solver\n";
 
-  max_dt = getOutputTimestep();
-
   // Calculate number of variables
   nlocal = getLocalN();
 

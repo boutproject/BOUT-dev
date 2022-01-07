@@ -63,7 +63,6 @@ public:
   }
 
   // Shims for protected functions
-  auto getMaxTimestepShim() const -> BoutReal { return max_dt; }
   using Solver::getLocalN;
   using Solver::hasPreconditioner;
   using Solver::runPreconditioner;
