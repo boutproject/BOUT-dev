@@ -40,7 +40,7 @@ RegisterSolver<RKGenericSolver> registersolverrkgeneric("rkgeneric");
 
 class RKGenericSolver : public Solver {
  public:
-  RKGenericSolver(Options *options);
+  explicit RKGenericSolver(Options *opts = nullptr);
   ~RKGenericSolver() = default;
   
   void resetInternalFields() override;
@@ -64,18 +64,16 @@ class RKGenericSolver : public Solver {
   Array<BoutReal> f0, f2, tmpState;
 
   //Inputs
-  BoutReal atol, rtol;   // Tolerances for adaptive timestepping
-  BoutReal max_timestep; // Maximum timestep
-  int mxstep; // Maximum number of internal steps between outputs
-  bool adaptive;   // Adapt timestep?
+  BoutReal atol, rtol;   //< Tolerances for adaptive timestepping
+  BoutReal max_timestep; //< Maximum timestep
+  BoutReal timestep;     //< The internal timestep
+  int mxstep;            //< Maximum number of internal steps between outputs
+  bool adaptive;         //< Adapt timestep?
 
   //Internal vars
-  BoutReal out_timestep; // The output timestep
-  int nsteps; // Number of output steps
-  BoutReal timestep; // The internal timestep
-  int nlocal, neq; // Number of variables on local processor and in total
+  int nlocal, neq; //< Number of variables on local processor and in total
   
-  //Pointer to the actual scheme used
+  /// Pointer to the actual scheme used
   std::unique_ptr<RKScheme> scheme{nullptr};
 
 };
