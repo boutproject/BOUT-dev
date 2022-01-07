@@ -40,9 +40,8 @@ class Options;
 
 class PowerSolver : public Solver {
  public:
-  PowerSolver() : Solver() {}
-  PowerSolver(Options*) : Solver() {}
-  ~PowerSolver(){};
+  explicit PowerSolver(Options* opts = nullptr);
+  ~PowerSolver() = default;
   
   int init(int nout, BoutReal tstep) override;
   
@@ -57,15 +56,13 @@ class PowerSolver : public Solver {
   }
  private:
 
-  BoutReal curtime; // Current simulation time (fixed)
+  BoutReal curtime; //< Current simulation time (fixed)
   
-  BoutReal eigenvalue;
+  BoutReal eigenvalue; //< Estimated eigenvalue
 
-  int nlocal, nglobal; // Number of variables
-  Array<BoutReal> f0;  // The system state
-  
-  int nsteps; // Number of output steps
-  
+  int nlocal, nglobal; //< Number of variables
+  Array<BoutReal> f0;  //< The system state
+
   BoutReal norm(Array<BoutReal> &state);
   void divide(Array<BoutReal> &in, BoutReal value);
 };

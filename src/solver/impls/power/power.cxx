@@ -9,6 +9,10 @@
 
 #include <output.hxx>
 
+PowerSolver::PowerSolver(Options* opts)
+    : Solver(opts),
+      curtime((*options)["curtime"].doc("Simulation time (fixed)").withDefault(0.0)) {}
+
 int PowerSolver::init(int nout, BoutReal tstep) {
   TRACE("Initialising Power solver");
   
@@ -17,11 +21,6 @@ int PowerSolver::init(int nout, BoutReal tstep) {
     return 1;
   
   output << "\n\tPower eigenvalue solver\n";
-  
-  nsteps = nout; // Save number of output steps
-  
-  // Get options
-  OPTION(options, curtime, 0.0);
 
   // Calculate number of variables
   nlocal = getLocalN();
@@ -48,11 +47,11 @@ int PowerSolver::init(int nout, BoutReal tstep) {
 
 int PowerSolver::run() {
   TRACE("PowerSolver::run()");
-  
+
   // Make sure that f0 has a norm of 1
   divide(f0, norm(f0));
-  
-  for(int s=0;s<nsteps;s++) {
+
+  for (int s = 0; s < getNumberOutputSteps(); s++) {
 
     load_vars(std::begin(f0));
     run_rhs(curtime);
@@ -60,21 +59,21 @@ int PowerSolver::run() {
 
     // Estimate eigenvalue
     eigenvalue = norm(f0);
-    
+
     // Normalise
     divide(f0, eigenvalue);
-    
+
     /// Call the monitor function. The eigenvalue
     /// is given rather than time, so it appears
     /// in the output logs
-    if(call_monitors(eigenvalue, s, nsteps)) {
+    if (call_monitors(eigenvalue, s, getNumberOutputSteps())) {
       // User signalled to quit
-      
+
       output.write("Monitor signalled to quit. Returning\n");
       break;
     }
   }
-  
+
   return 0;
 }
 
