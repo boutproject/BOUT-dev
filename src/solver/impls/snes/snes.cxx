@@ -330,7 +330,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
-          // d_nnz[localIndex+i] -= (n3d + n2d);
           o_nnz[localIndex + i] += (n3d + n2d);
         }
 
