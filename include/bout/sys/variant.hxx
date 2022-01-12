@@ -99,7 +99,7 @@ struct isVariantMember<T, variant<ALL_T...>>
 /// which \p v can hold.
 template <typename Variant, typename T>
 bool variantEqualTo(const Variant& v, const T& t) {
-  return visit(details::IsEqual<T>(t), v);
+  return bout::utils::visit(details::IsEqual<T>(t), v);
 }
 
 ////////////////////////////////////////////////////////////
