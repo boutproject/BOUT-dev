@@ -165,7 +165,7 @@ authors:
     given-names: Toby
 
 version: 4.4.1
-date-released: 2020-12-15
+date-released: 2022-01-13
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
 doi: 10.5281/zenodo.5776785
