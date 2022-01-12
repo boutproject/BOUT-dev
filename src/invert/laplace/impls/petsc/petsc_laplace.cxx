@@ -46,8 +46,7 @@
 #define KSP_BICG        "bicg"
 #define KSP_PREONLY     "preonly"
 
-#undef __FUNCT__
-#define __FUNCT__ "laplacePCapply"
+
 static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   int ierr;
 
