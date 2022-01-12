@@ -6,9 +6,10 @@
 Field-aligned coordinates
 =========================
 
-:Author: B.Dudson§, M.V.Umansky, L.C.Wang, X.Q.Xu, L.L.LoDestro
-         §Department of Physics, University of York, UK
-         Lawrence Livermore National Laboratory, USA
+:Author: B.Dudson, John Omotani, M.V.Umansky, L.C.Wang, X.Q.Xu, L.L.LoDestro,
+         Department of Physics, University of York, UK;
+         Culham Centre for Fusion Energy, UKAEA, UK;
+         Lawrence Livermore National Laboratory, USA;
          IFTS, China
 
 Introduction
@@ -316,6 +317,96 @@ Note that `\texttt{zShift}` can be related to the integrated shear `I`:
 
    \begin{aligned}
    I = \int_{y_0}^y\frac{\partial\nu\left(x, y\right)}{\partial\psi}dy = \frac{\partial}{\partial x} \texttt{zShift}
+   \end{aligned}
+
+Transform back to Cartesian
+---------------------------
+
+Contravariant components of vectors, for example `\left(B^x, B^y,
+B^z\right)`, can be transformed back to cylindrical coordinates by
+first calculating the components of the poloidal magnetic field in the
+major radius (R) and height (Z) directions:
+
+.. math::
+
+   \begin{aligned}
+   B_Z &= -\frac{1}{R}\frac{\partial \psi}{\partial R} \qquad B_R = \frac{1}{R}\frac{\partial \psi}{\partial Z} \\
+   \nabla \psi &= \frac{\partial\psi}{\partial R}\nabla R + \frac{\partial \psi}{\partial Z}\nabla Z \\
+               &= -RB_Z\nabla R + RB_R \nabla Z
+   \end{aligned}
+
+If using an exising grid, the `B_R` and `B_Z` components can be found
+by calculating the tangent vector along the `x` direction, then using
+the fact that the poloidal field is perpendicular to that tangent
+vector.  Note: This needs additional care if the grid is
+non-orthogonal.
+
+Since the `\left(\psi, \theta, \zeta\right)` coordinate system is
+orthogonal, we can use
+
+.. math::
+
+   \begin{aligned}
+   {\boldsymbol{e}}_\psi &= g_{\psi\psi}\nabla\psi = \frac{1}{RB_{pol}^2}\left(B_R\hat{\boldsymbol{Z}} - B_Z\hat{\boldsymbol{R}}\right) \\
+   {\boldsymbol{e}}_\theta &= J_{\psi\theta\zeta}\nabla\theta\times\nabla\zeta \\
+                           &= \frac{h_\theta}{B_{pol}}\left(B_R \hat{\boldsymbol{R}} + B_Z\hat{\boldsymbol{Z}}\right) \\
+   {\boldsymbol{e}}_\zeta &= {\sigma_{B\text{pol}}}{\boldsymbol{e}}_\phi = {\sigma_{B\text{pol}}}R\hat{\boldsymbol{\phi}}
+   \end{aligned}
+
+where `\hat{\boldsymbol{R}}`, `\hat{\boldsymbol{Z}}` and
+`\hat{\boldsymbol{\phi}}` are unit vectors in the cylindrical
+coordinate system.
+
+Then we can write down the basis vectors in the field-aligned
+coordinates (equation :eq:`eq:basisvectors`), in terms of cylindrical
+coordinate unit vectors:
+
+.. math::
+   :label: eq:basisvectors_cyl
+
+   \begin{aligned}
+   {\boldsymbol{e}}_x &= \frac{\sigma_{B\text{pol}}}{RB_{pol}^2}\left(B_R\hat{\boldsymbol{Z}} - B_Z\hat{\boldsymbol{R}}\right) + I{\sigma_{B\text{pol}}}R\hat{\boldsymbol{\phi}} \\
+   {\boldsymbol{e}}_y &= \frac{h_\theta}{B_{pol}}\left(B_R \hat{\boldsymbol{R}} + B_Z\hat{\boldsymbol{Z}}\right) + \nu R\hat{\boldsymbol{\phi}} \\
+   {\boldsymbol{e}}_z &= {\sigma_{B\text{pol}}}R\hat{\boldsymbol{\phi}}
+   \end{aligned}
+
+A vector, for example the magnetic field, can be written in
+field-aligned coordinates in terms of its contravariant components:
+
+.. math::
+
+   \begin{aligned}
+   {\boldsymbol{B}} &= B^x{\boldsymbol{e}}_x + B^y{\boldsymbol{e}}_y + B^z{\boldsymbol{e}}_z
+   \end{aligned}
+
+Substitituting in the expressions for the basis vectors in equation :eq:`eq:basisvectors_cyl`, and
+collecting terms, we get:
+
+.. math::
+
+   \begin{aligned}
+   \left(%
+   \begin{array}{c}
+   B_{\hat{R}} \\
+   B_{\hat{Z}} \\
+   B_{\hat{\phi}}
+   \end{array}
+   %
+   \right) = \left(%
+   \begin{array}{ccc}
+   -\frac{\sigma_{B\text{pol}}}{RB_{pol}^2}B_Z & \frac{h_\theta}{B_{pol}}B_R & 0 \\
+   \frac{\sigma_{B\text{pol}}}{RB_{pol}^2}B_R & \frac{h_\theta}{B_{pol}}B_Z & 0 \\
+   I{\sigma_{B\text{pol}}}R & \nu R & {\sigma_{B\text{pol}}} R
+   \end{array}
+   %
+   \right) \left(%
+   \begin{array}{c}
+   B^x \\
+   B^y \\
+   B^z
+   \end{array}
+   %
+   \right)
    \end{aligned}
 
 
@@ -1658,9 +1749,11 @@ and so
 Differential geometry
 =====================
 
-.. warning:: Several mistakes have been found (and is now corrected)
-  in this section, so it should be proof read before removing this
-  warning!  The following are notes from [haeseler]_.
+.. warning:: The following are notes from [haeseleer]_. If you are new to this
+	     topic it is strongly suggested to read [haeseleer]_ chapter 2
+	     instead, as here not all terms are defined, and the discussion of
+	     co- and contra variant components is incomplete. Similiarly, the
+	     notation is based on [haeseleer]_ and not explained in detail.
 
 Sets of vectors `\left\{\mathbf{A, B, C}\right\}` and
 `\left\{\mathbf{a, b, c}\right\}` are reciprocal if
@@ -1755,11 +1848,6 @@ metric coefficients `g_{ij} = \mathbf{e_i\cdot e_j}` and
 orthogonal then `g_{ij}=g^{ij} = 0` for `i\neq j` i.e. the
 metric is diagonal.
 
-.. math::
-   :label: eq:covariantemetric
-
-   \text{$g_{ij} = h_ih_j\boldsymbol{e}_i\cdot\boldsymbol{e}_j$ and so $g_{ii} = h_i^2$}
-
 For a general set of coordinates, the nabla operator can be expressed as
 
 .. math::
@@ -1780,7 +1868,9 @@ and for a general set of (differentiable) coordinates
    u^i}\left(Jg^{ij}\frac{\partial\phi}{\partial u^j}\right)
    \end{aligned}
 
-which can be expanded as
+with `J` the determinant of the jacobian matrix `J_{ij}`, and `g_{ij}=J_{ki}J_{kj}` and
+`[g^{ij}] = [g_{ij}]^{-1}`.
+This can be expanded as
 
 .. math::
    :label: eq:laplace_expand
@@ -1806,12 +1896,14 @@ u^k` in equation :eq:`eq:laplacegen` gives
    \nabla^2f &= \nabla\cdot\nabla f = \nabla\cdot\left(\frac{\partial}{\partial
    x}\nabla x + \frac{\partial}{\partial y}\nabla y + \frac{\partial}{\partial
    z}\nabla z\right) \nonumber \\
-   &= \frac{\partial^2 f}{\partial x^2}\left|\nabla x\right|^2 + \frac{\partial^2
+   =& \frac{\partial^2 f}{\partial x^2}\left|\nabla x\right|^2 + \frac{\partial^2
    f}{\partial y^2}\left|\nabla y\right|^2 + \frac{\partial^2 f}{\partial z^2}\left|\nabla
-   z\right|^2 \\ +2\frac{\partial^2 f}{\partial x\partial y}\left(\nabla x\cdot\nabla
+   z\right|^2 \\
+   &+2\frac{\partial^2 f}{\partial x\partial y}\left(\nabla x\cdot\nabla
    y\right) +2\frac{\partial^2 f}{\partial x\partial z}\left(\nabla x\cdot\nabla z\right)
    +2\frac{\partial^2 f}{\partial y\partial z}\left(\nabla y\cdot\nabla z\right)
-   \nonumber \\ +\nabla^2x\frac{\partial f}{\partial x} +\nabla^2y\frac{\partial
+   \nonumber \\
+   &+\nabla^2x\frac{\partial f}{\partial x} +\nabla^2y\frac{\partial
    f}{\partial y} + \nabla^2z\frac{\partial f}{\partial z} \nonumber
    \end{aligned}
 
@@ -1933,7 +2025,7 @@ We would here like to find an expression for the Laplacian
    \begin{aligned}
        {\nabla}^2 = {\nabla\cdot}{\nabla}\end{aligned}
 
-In general we have (using equation (2.6.39) in D’Haeseleer [haeseler]_)
+In general we have (using equation (2.6.39) in D’haeseleer [haeseleer]_)
 
 .. math::
    :label: eq:divA
@@ -2312,7 +2404,7 @@ Alternatively, equation :eq:`eq:exb1` can be expanded as
    \nabla\cdot\left(n\frac{\mathbf{b}\times\nabla\phi}{B}\right) &= \frac{1}{J}\frac{\partial}{\partial\psi}\left(Jn\frac{\partial\phi}{\partial z} \right) - \frac{1}{J}\frac{\partial}{\partial z}\left(Jn\frac{\partial\phi}{\partial\psi}\right)  \\
                                                                  & \quad + \frac{1}{J}\frac{\partial}{\partial\psi}\left(Jn\frac{g^{\psi\psi}g^{yz}}{B^2}\frac{\partial\phi}{\partial y}\right) - \frac{1}{J}\frac{\partial}{\partial y}\left(Jn\frac{g^{\psi\psi}g^{yz}}{B^2}\frac{\partial\phi}{\partial\psi}\right)\end{aligned}
 
-.. [haeseler] Haeseler, W. D.: Flux Coordinates and Magnetic Field Structure, Springer-Verlag, 1991, ISBN 3-540-52419-3
+.. [haeseleer] D'haeseleer, W. D.: Flux Coordinates and Magnetic Field Structure, Springer-Verlag, 1991, ISBN 3-540-52419-3
 
 .. rubric:: Footnotes
 

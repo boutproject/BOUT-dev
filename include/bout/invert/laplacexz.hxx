@@ -40,9 +40,7 @@
 class LaplaceXZ;
 
 class LaplaceXZFactory
-    : public Factory<
-          LaplaceXZ, LaplaceXZFactory,
-          std::function<std::unique_ptr<LaplaceXZ>(Mesh*, Options*, CELL_LOC)>> {
+    : public Factory<LaplaceXZ, LaplaceXZFactory, Mesh*, Options*, CELL_LOC> {
 public:
   static constexpr auto type_name = "LaplaceXZ";
   static constexpr auto section_name = "laplacexz";
@@ -50,25 +48,20 @@ public:
   static constexpr auto default_type = "cyclic";
 
   ReturnType create(Mesh* mesh = nullptr, Options* options = nullptr,
-                    CELL_LOC loc = CELL_CENTRE) {
+                    CELL_LOC loc = CELL_CENTRE) const {
     return Factory::create(getType(options), mesh, optionsOrDefaultSection(options), loc);
+  }
+  ReturnType create(const std::string& type, Options* options) const {
+    return Factory::create(type, nullptr, options, CELL_CENTRE);
   }
 
   static void ensureRegistered();
 };
 
 template <class DerivedType>
-class RegisterLaplaceXZ {
-public:
-  RegisterLaplaceXZ(const std::string& name) {
-    LaplaceXZFactory::getInstance().add(
-      name, [](Mesh* mesh, Options* options, CELL_LOC loc) -> std::unique_ptr<LaplaceXZ> {
-        return std::make_unique<DerivedType>(mesh, options, loc);
-      });
-  }
-};
+using RegisterLaplaceXZ = LaplaceXZFactory::RegisterInFactory<DerivedType>;
 
-using RegisterUnavailableLaplaceXZ = RegisterUnavailableInFactory<LaplaceXZ, LaplaceXZFactory>;
+using RegisterUnavailableLaplaceXZ = LaplaceXZFactory::RegisterUnavailableInFactory;
 
 class LaplaceXZ {
 public:
