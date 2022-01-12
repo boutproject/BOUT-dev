@@ -23,6 +23,7 @@
 
 **Merged pull requests:**
 
+- Back-port beuler/snes improvements to master [\#2459](https://github.com/boutproject/BOUT-dev/pull/2459) ([bendudson](https://github.com/users/bendudson))
 - Update "Running BOUT++" documentation [\#2475](https://github.com/boutproject/BOUT-dev/pull/2475) ([ZedThree](https://github.com/users/ZedThree))
 - Raise more descriptive error if converting Option fails [\#2474](https://github.com/boutproject/BOUT-dev/pull/2474) ([ZedThree](https://github.com/users/ZedThree))
 - Print correct CMake build directory in configure message [\#2473](https://github.com/boutproject/BOUT-dev/pull/2473) ([ZedThree](https://github.com/users/ZedThree))

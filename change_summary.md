@@ -8,6 +8,7 @@ the changes from the full [changelog](CHANGELOG.md)
 - Fixed some issues when installing
 - Fixed some issues when downloading SUNDIALS and netCDF C++
 - Fixed some out of date documentation
+- Some improvements/fixes to the `beuler/snes` solver
 
 4.4.0 is a feature release. The main new features are:
 - The CMake support has been expanded, and will replace the autotools build
