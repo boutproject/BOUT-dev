@@ -185,6 +185,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       }
     }
   }else {
+    const BoutReal zlength = getUniform(coords->zlength());
     BOUT_OMP(parallel)
     {
       /// Create a local thread-scope working array
@@ -213,7 +214,6 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
-      const BoutReal zlength = getUniform(coords->zlength());
       BOUT_OMP(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
         BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
@@ -396,6 +396,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       }
     }
   } else {
+    const BoutReal zlength = getUniform(coords->zlength());
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(localmesh->LocalNz / 2 +
@@ -428,7 +429,6 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
-      const BoutReal zlength = getUniform(coords->zlength());
       BOUT_OMP(for nowait)
       for (int ind = 0; ind < nsys; ind++) {
         // ind = (iy - ys) * nmode + kz
