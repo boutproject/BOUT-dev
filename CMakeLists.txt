@@ -660,7 +660,7 @@ if (BOUT_USE_SUNDIALS)
     FetchContent_Declare(
       sundials
       GIT_REPOSITORY https://github.com/ZedThree/sundials
-      GIT_TAG        "4f3bb8281c7b27343bcb95386ebbb665fb6196a5"
+      GIT_TAG        cmake-export-fixes
       )
     set(EXAMPLES_ENABLE_C OFF CACHE BOOL "" FORCE)
     set(EXAMPLES_INSTALL OFF CACHE BOOL "" FORCE)

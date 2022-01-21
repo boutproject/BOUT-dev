@@ -611,8 +611,6 @@ int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
   if (initialised)
     throw BoutException(_("ERROR: Solver is already initialised\n"));
 
-  output_progress.write(_("Initialising solver\n"));
-
   NPES = BoutComm::size();
   MYPE = BoutComm::rank();
   

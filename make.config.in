@@ -181,6 +181,15 @@ endif
 	$(INSTALL_DATA) lib/libbout++.a $(DESTDIR)@libdir@
 	$(INSTALL_DATA) lib/libpvode.a $(DESTDIR)@libdir@
 	$(INSTALL_DATA) lib/libpvpre.a $(DESTDIR)@libdir@
+ifneq ("@SHARED_EXTRA@x", "x")
+	$(INSTALL_PROGRAM) lib/libbout++.so.$(SONAME) $(DESTDIR)@libdir@
+	$(INSTALL_PROGRAM) lib/libpvode.so.* $(DESTDIR)@libdir@
+	$(INSTALL_PROGRAM) lib/libpvpre.so.* $(DESTDIR)@libdir@
+	rm -f $(DESTDIR)@libdir@/lib{bout++,pvode,pvpre}.so
+	ln -s libbout++.so.$(SONAME) $(DESTDIR)@libdir@/libbout++.so
+	ln -s libpvode.so.1.0.0 $(DESTDIR)@libdir@/libpvode.so
+	ln -s libpvpre.so.1.0.0 $(DESTDIR)@libdir@/libpvpre.so
+endif
 	$(INSTALL_PROGRAM)  bin/bout-config $(DESTDIR)@bindir@
 	$(INSTALL_PROGRAM)  bin/bout-log-color $(DESTDIR)@bindir@
 	$(INSTALL_DATA)  tools/idllib/*.pro $(DESTDIR)@datadir@/bout++/idllib/
