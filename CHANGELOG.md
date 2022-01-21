@@ -17,6 +17,26 @@
 
   See [\#2154](https://github.com/boutproject/BOUT-dev/pull/2154).
 
+## [v4.4.1](https://github.com/boutproject/BOUT-dev/tree/v4.4.1) (2021-12-15)
+
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.4.0...v4.4.1)
+
+**Merged pull requests:**
+
+- Back-port beuler/snes improvements to master [\#2459](https://github.com/boutproject/BOUT-dev/pull/2459) ([bendudson](https://github.com/users/bendudson))
+- Update "Running BOUT++" documentation [\#2475](https://github.com/boutproject/BOUT-dev/pull/2475) ([ZedThree](https://github.com/users/ZedThree))
+- Raise more descriptive error if converting Option fails [\#2474](https://github.com/boutproject/BOUT-dev/pull/2474) ([ZedThree](https://github.com/users/ZedThree))
+- Print correct CMake build directory in configure message [\#2473](https://github.com/boutproject/BOUT-dev/pull/2473) ([ZedThree](https://github.com/users/ZedThree))
+- CMake: Fix using the build directory directly [\#2464](https://github.com/boutproject/BOUT-dev/pull/2464) ([ZedThree](https://github.com/users/ZedThree))
+- Add `bout::utils::` prefix to `visit` [\#2463](https://github.com/boutproject/BOUT-dev/pull/2463) ([ZedThree](https://github.com/users/ZedThree))
+- Fix SUNDIALS download git tag [\#2462](https://github.com/boutproject/BOUT-dev/pull/2462) ([ZedThree](https://github.com/users/ZedThree))
+- Fix permission of shared objects [\#2433](https://github.com/boutproject/BOUT-dev/pull/2433) ([dschwoerer](https://github.com/users/dschwoerer))
+- Fix BOUT_OVERRIDE_DEFAULT_OPTION() [\#2417](https://github.com/boutproject/BOUT-dev/pull/2417) ([johnomotani](https://github.com/users/johnomotani))
+- Ensure MPI is initialised before writing [\#2409](https://github.com/boutproject/BOUT-dev/pull/2409) ([dschwoerer](https://github.com/users/dschwoerer))
+- Remove `<optional>` include from uuid (v4.4.1) [\#2407](https://github.com/boutproject/BOUT-dev/pull/2407) ([ZedThree](https://github.com/users/ZedThree))
+- Fix make install [\#2401](https://github.com/boutproject/BOUT-dev/pull/2401) ([dschwoerer](https://github.com/users/dschwoerer))
+- Fix soname [\#2400](https://github.com/boutproject/BOUT-dev/pull/2400) ([dschwoerer](https://github.com/users/dschwoerer))
+
 ## [v4.4.0](https://github.com/boutproject/BOUT-dev/tree/v4.4.0) (2021-07-30)
 
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.3...v4.4.4)
