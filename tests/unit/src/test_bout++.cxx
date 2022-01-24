@@ -6,7 +6,6 @@
 #include "utils.hxx"
 
 #include <algorithm>
-#include <csignal>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -313,34 +312,6 @@ TEST_F(PrintStartupTest, CommandLineArguments) {
   }
 }
 
-#ifdef SIGHANDLE
-
-#ifdef BOUT_FPE
-#include <fenv.h>
-#endif
-
-class SignalHandlerTest : public ::testing::Test {
-public:
-  SignalHandlerTest() = default;
-  virtual ~SignalHandlerTest() {
-    std::signal(SIGUSR1, SIG_DFL);
-    std::signal(SIGFPE, SIG_DFL);
-    std::signal(SIGSEGV, SIG_DFL);
-#ifdef BOUT_FPE
-    std::signal(SIGFPE, SIG_DFL);
-    fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
-#endif
-  }
-};
-
-using SignalHandlerTestDeathTest = SignalHandlerTest;
-
-TEST_F(SignalHandlerTestDeathTest, SegFault) {
-  bout::experimental::setupSignalHandler(bout::experimental::defaultSignalHandler);
-  // This test is *incredibly* expensive, maybe as much as 1s, so only test the one signal
-  EXPECT_DEATH(std::raise(SIGSEGV), "SEGMENTATION FAULT");
-}
-#endif
 
 TEST(BoutInitialiseFunctions, SetRunStartInfo) {
   WithQuietOutput quiet{output_info};
