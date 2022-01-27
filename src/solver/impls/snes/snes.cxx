@@ -24,7 +24,7 @@
  * to an SNESSolver object.
  */
 static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void* ctx) {
-  return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
+  return static_cast<SNESSolver*>(ctx)->snes_function(x, f, false);
 }
 
 /*!
@@ -33,7 +33,7 @@ static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void* ctx) {
  * This function can be a linearised form of FormFunction
  */
 static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
-  return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
+  return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
 
 /*!
@@ -43,7 +43,7 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  */
 static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
                                               void* ctx) {
-  return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
+  return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
 
 static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
@@ -102,9 +102,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       (*options)["predictor"].doc("Use linear predictor?").withDefault<bool>(true);
 
   equation_form = (*options)["equation_form"]
-    .doc("Form of equation to solve: Pseudo-transient;"
-         " Rearranged Backward-Euler; Backward Euler;"
-         " Direct Newton")
+    .doc("Form of equation to solve: rearranged_backward_euler (default);"
+         " pseudo_transient; backward_euler; direct_newton")
     .withDefault(BoutSnesEquationForm::rearranged_backward_euler);
   // Initialise PETSc components
   int ierr;
@@ -193,6 +192,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
       //////////////////////////////////////////////////
       // Pre-allocate PETSc storage
+
+      output_progress.write("Setting Jacobian matrix sizes\n");
 
       int localN = getLocalN(); // Number of rows on this processor
       int n2d = f2d.size();
@@ -283,6 +284,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
         // z = 0 case
         int localIndex = ROUND(index(x, mesh->ystart, 0));
+        ASSERT2(localIndex >= 0);
+
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
           o_nnz[localIndex + i] += (n3d + n2d);
@@ -339,6 +342,10 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
         // z = 0 case
         int localIndex = ROUND(index(it.ind, mesh->yend, 0));
+        if (localIndex < 0) {
+          continue; // Out of domain
+        }
+
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
           o_nnz[localIndex + i] -= (n3d + n2d);
@@ -353,6 +360,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
           }
         }
       }
+
+      output_progress.write("Pre-allocating Jacobian\n");
 
       // Pre-allocate
       MatMPIAIJSetPreallocation(Jmf, 0, d_nnz.data(), 0, o_nnz.data());
@@ -371,6 +380,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
       //////////////////////////////////////////////////
       // Mark non-zero entries
+
+      output_progress.write("Marking non-zero Jacobian entries\n");
 
       // Offsets for a 5-point pattern
       constexpr std::size_t stencil_size = 5;
@@ -487,9 +498,13 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       }
       // Finished marking non-zero entries
 
+      output_progress.write("Assembling Jacobian matrix\n");
+
       // Assemble Matrix
       MatAssemblyBegin(Jmf, MAT_FINAL_ASSEMBLY);
       MatAssemblyEnd(Jmf, MAT_FINAL_ASSEMBLY);
+
+      output_progress.write("Creating Jacobian coloring\n");
 
       ISColoring iscoloring;
 
@@ -641,12 +656,12 @@ int SNESSolver::init(int nout, BoutReal tstep) {
     KSPGetType(ksp, &ksptype);
     SNESType snestype;
     SNESGetType(snes, &snestype);
-    output.write("SNES Type : %s\n", snestype);
+    output.write("SNES Type : {}\n", snestype);
     if (ksptype) {
-      output.write("KSP Type  : %s\n", ksptype);
+      output.write("KSP Type  : {}\n", ksptype);
     }
     if (pctype) {
-      output.write("PC Type   : %s\n", pctype);
+      output.write("PC Type   : {}\n", pctype);
     }
   }
 
@@ -719,14 +734,14 @@ int SNESSolver::run() {
         // Print diagnostics to help identify source of the problem
 
         output.write("\n======== SNES failed =========\n");
-        output.write("\nReturn code: %d, reason: %d\n", ierr, reason);
+        output.write("\nReturn code: {}, reason: {}\n", ierr, reason);
         for (const auto& f : f2d) {
-          output.write("%s : (%e -> %e), ddt: (%e -> %e)\n", f.name.c_str(),
+          output.write("{} : ({} -> {}), ddt: ({} -> {})\n", f.name,
                        min(*f.var, true, "RGN_NOBNDRY"), max(*f.var, true, "RGN_NOBNDRY"),
                        min(*f.F_var, true, "RGN_NOBNDRY"), max(*f.F_var, true, "RGN_NOBNDRY"));
         }
         for (const auto& f : f3d) {
-          output.write("%s : (%e -> %e), ddt: (%e -> %e)\n", f.name.c_str(),
+          output.write("{} : ({} -> {}), ddt: ({} -> {})\n", f.name,
                        min(*f.var, true, "RGN_NOBNDRY"), max(*f.var, true, "RGN_NOBNDRY"),
                        min(*f.F_var, true, "RGN_NOBNDRY"), max(*f.F_var, true, "RGN_NOBNDRY"));
         }
@@ -847,7 +862,7 @@ int SNESSolver::run() {
 }
 
 // f = rhs
-PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
+PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   // Get data from PETSc into BOUT++ fields
   const BoutReal* xdata = nullptr;
   int ierr = VecGetArrayRead(x, &xdata);
@@ -858,7 +873,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
 
   try {
     // Call RHS function
-    run_rhs(simtime + dt);
+    run_rhs(simtime + dt, linear);
   } catch (BoutException& e) {
     // Simulation might fail, e.g. negative densities
     // if timestep too large

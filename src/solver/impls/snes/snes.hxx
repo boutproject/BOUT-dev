@@ -28,8 +28,8 @@
 #ifndef __SNES_SOLVER_H__
 #define __SNES_SOLVER_H__
 
-#include "bout/build_config.hxx"
-#include "bout/solver.hxx"
+#include <bout/build_config.hxx>
+#include <bout/solver.hxx>
 
 #if BOUT_HAS_PETSC
 
@@ -39,7 +39,6 @@ class SNESSolver;
 
 #include <bout/bout_enum_class.hxx>
 #include <bout/petsclib.hxx>
-#include <bout/solver.hxx>
 #include <bout_types.hxx>
 
 #include <petsc.h>
@@ -80,7 +79,9 @@ public:
   ///
   /// @param[in] x  The state vector
   /// @param[out] f  The vector for the result f(x)
-  PetscErrorCode snes_function(Vec x, Vec f); ///< Nonlinear function
+  /// @param[in] linear  Specifies that the SNES solver is in a linear (KSP) inner loop,
+  ///                    so the operator should be linearised if possible
+  PetscErrorCode snes_function(Vec x, Vec f, bool linear); ///< Nonlinear function
 
   /// Preconditioner. Called by PCapply
   /// via a C-style static function.
