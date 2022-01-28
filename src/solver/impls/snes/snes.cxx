@@ -96,6 +96,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
                    .doc("If dt falls below this, reset to starting dt")
                    .withDefault(1e-6);
 
+  max_timestep = (*options)["max_timestep"].doc("Maximum timestep").withDefault(1e37);
+
   diagnose =
       (*options)["diagnose"].doc("Print additional diagnostics").withDefault<bool>(false);
 
@@ -887,6 +889,10 @@ int SNESSolver::run() {
         if (nl_its <= lower_its) {
           // Increase timestep slightly
           timestep *= 1.1;
+
+	  if (timestep > max_timestep) {
+            timestep = max_timestep;
+	  }
         } else if (nl_its >= upper_its) {
           // Reduce timestep slightly
           timestep *= 0.9;
