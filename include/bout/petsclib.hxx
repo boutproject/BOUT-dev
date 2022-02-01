@@ -126,9 +126,10 @@ private:
 
 #include "unused.hxx"
 
-// PETSc not available, so KSP not already defined. KSP should never be called, so forward
-// declaration OK here.
+// PETSc not available, so KSP and SNES not already defined. KSP and SNES should never be
+// called, so forward declaration OK here.
 class KSP;
+class SNES;
 
 class PetscLib {
 public:
