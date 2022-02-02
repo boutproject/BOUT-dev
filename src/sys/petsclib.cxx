@@ -74,6 +74,18 @@ void PetscLib::setOptionsFromInputFile(KSP& ksp) {
   }
 }
 
+void PetscLib::setOptionsFromInputFile(SNES& snes) {
+  auto ierr = SNESSetOptionsPrefix(snes, options_prefix.c_str());
+  if (ierr) {
+    throw BoutException("SNESSetOptionsPrefix failed with error %i", ierr);
+  }
+
+  ierr = SNESSetFromOptions(snes);
+  if (ierr) {
+    throw BoutException("SNESSetFromOptions failed with error %i", ierr);
+  }
+}
+
 void PetscLib::cleanup() {
   BOUT_OMP(critical(PetscLib))
   {

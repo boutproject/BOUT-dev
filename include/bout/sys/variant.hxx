@@ -137,7 +137,7 @@ struct StaticCastOrThrow {
 /// in which case std::bad_cast will be thrown at runtime
 template <typename Variant, typename T>
 T variantStaticCastOrThrow(const Variant &v) {
-  return visit( details::StaticCastOrThrow<T>(), v );
+  return bout::utils::visit( details::StaticCastOrThrow<T>(), v );
 }
 
 namespace details {
@@ -152,7 +152,7 @@ struct ToString {
 } // namespace details
 
 template <typename Variant>
-std::string variantToString(const Variant& v) { return visit(details::ToString(), v); }
+std::string variantToString(const Variant& v) { return bout::utils::visit(details::ToString(), v); }
 
 } // namespace utils
 } // namespace bout

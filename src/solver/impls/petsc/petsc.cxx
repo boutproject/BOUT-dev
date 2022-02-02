@@ -632,8 +632,7 @@ PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
 /**************************************************************************
  * Static functions which can be used for PETSc callbacks
  **************************************************************************/
-#undef __FUNCT__
-#define __FUNCT__ "solver_f"
+
 PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data) {
   PetscFunctionBegin;
   auto* s = static_cast<PetscSolver*>(f_data);
@@ -646,8 +645,6 @@ PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_
 /*
   FormIFunction = Udot - RHSFunction
 */
-#undef __FUNCT__
-#define __FUNCT__ "solver_if"
 PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec globalout, void *f_data) {
   PetscErrorCode ierr;
 
@@ -658,8 +655,6 @@ PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec gl
   PetscFunctionReturn(0);
 }
 
-#undef __FUNCT__
-#define __FUNCT__ "solver_rhsjacobian"
 #if PETSC_VERSION_GE(3,5,0)
 PetscErrorCode solver_rhsjacobian(TS UNUSED(ts), BoutReal UNUSED(t), Vec UNUSED(globalin),
                                   Mat J, Mat Jpre, void *UNUSED(f_data)) {
@@ -695,8 +690,6 @@ PetscErrorCode solver_rhsjacobian(MAYBE_UNUSED(TS ts), MAYBE_UNUSED(BoutReal t),
 /*
   solver_ijacobian - Compute IJacobian = dF/dU + a dF/dUdot  - a dummy matrix used for pc=none
 */
-#undef __FUNCT__
-#define __FUNCT__ "solver_ijacobian"
 #if PETSC_VERSION_GE(3,5,0)
 PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin, Vec UNUSED(globalindot),
                                 PetscReal a, Mat J, Mat Jpre, void *f_data) {
@@ -743,8 +736,6 @@ PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin,
 /*
   solver_ijacobianfd - Compute IJacobian = dF/dU + a dF/dUdot  using finite deference - not implemented yet
 */
-#undef __FUNCT__
-#define __FUNCT__ "solver_ijacobianfd"
 #if PETSC_VERSION_GE(3,5,0)
 PetscErrorCode solver_ijacobianfd(TS ts, BoutReal t, Vec globalin,
                                   Vec UNUSED(globalindot), PetscReal UNUSED(a), Mat J, Mat Jpre,
@@ -768,8 +759,6 @@ PetscErrorCode solver_ijacobianfd(TS ts,BoutReal t,Vec globalin,Vec globalindot,
 #endif
 //-----------------------------------------
 
-#undef __FUNCT__
-#define __FUNCT__ "PhysicsSNESApply"
 PetscErrorCode PhysicsSNESApply(SNES snes, Vec x) {
   PetscErrorCode ierr;
   Vec F,Fout;
@@ -812,9 +801,6 @@ PetscErrorCode PhysicsSNESApply(SNES snes, Vec x) {
   PetscFunctionReturn(0);
 }
 
-
-#undef __FUNCT__
-#define __FUNCT__ "PhysicsPCApply"
 PetscErrorCode PhysicsPCApply(PC pc,Vec x,Vec y) {
   int ierr;
 
@@ -825,8 +811,6 @@ PetscErrorCode PhysicsPCApply(PC pc,Vec x,Vec y) {
   PetscFunctionReturn(s->pre(pc, x, y));
 }
 
-#undef __FUNCT__
-#define __FUNCT__ "PhysicsJacobianApply"
 PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y) {
   // Get the context
   PetscSolver *s;
@@ -834,8 +818,6 @@ PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y) {
   PetscFunctionReturn(s->jac(x, y));
 }
 
-#undef __FUNCT__
-#define __FUNCT__ "PetscMonitor"
 PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, void *ctx) {
   PetscErrorCode ierr;
   auto* s = static_cast<PetscSolver*>(ctx);
@@ -879,8 +861,6 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
   PetscFunctionReturn(0);
 }
 
-#undef __FUNCT__
-#define __FUNCT__ "PetscSNESMonitor"
 PetscErrorCode PetscSNESMonitor(SNES snes, PetscInt its, PetscReal norm, void *ctx)
 {
   PetscErrorCode ierr;
