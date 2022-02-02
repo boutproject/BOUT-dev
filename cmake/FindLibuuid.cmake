@@ -45,6 +45,27 @@ endif ()
 find_path(Libuuid_INCLUDE_DIRS uuid/uuid.h)
 find_library(Libuuid_LIBRARIES uuid)
 
+set (SYMLINK_SYSTEM_UUID OFF
+     CACHE
+     BOOL
+     "Make symlinks to the found libuuid (workaround for potential confilicts in LD_LIBRARY_PATH")
+if (SYMLINK_SYSTEM_UUID)
+  cmake_minimum_required(VERSION 3.14)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/uuid)
+  file(CREATE_LINK
+       ${Libuuid_INCLUDE_DIRS}/uuid/uuid.h
+       ${CMAKE_CURRENT_BINARY_DIR}/include/uuid/uuid.h
+       COPY_ON_ERROR SYMBOLIC)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
+  file(CREATE_LINK
+       ${Libuuid_LIBRARIES}
+       ${CMAKE_CURRENT_BINARY_DIR}/lib/libuuid.so
+       COPY_ON_ERROR SYMBOLIC)
+  set(Libuuid_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/include/ CACHE PATH "" FORCE)
+  set(Libuuid_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/lib/libuuid.so CACHE FILEPATH "" FORCE)
+  set(Libuuid_ROOT ${CMAKE_CURRENT_BINARY_DIR} CACHE FILEPATH "" FORCE)
+endif()
+
 find_package_handle_standard_args(Libuuid DEFAULT_MSG Libuuid_LIBRARIES Libuuid_INCLUDE_DIRS)
 
 mark_as_advanced(Libuuid_LIBRARIES Libuuid_INCLUDE_DIRS)
