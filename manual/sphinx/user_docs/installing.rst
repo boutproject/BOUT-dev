@@ -373,7 +373,7 @@ time as your project, therefore there is no option to use an external
 installation for that.
 
 Using CMake with your physics model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can write a CMake configuration file (``CMakeLists.txt``) for your
 physics model in only four lines:
