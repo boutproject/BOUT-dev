@@ -406,6 +406,43 @@ source. Doing this has the advantage that any changes you make to
 BOUT++ source files will trigger a rebuild of both the BOUT++ library
 and your model when you next build your code.
 
+Working with an active `conda` environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When `conda` is used, it installs separate versions of several libraries. These
+can cause warnings or even failures when linking BOUT++ executables. There are
+several alternatives to deal with this problem:
+* The simplest but least convenient option is to use `conda deactivate` before
+  configuring, compiling, or running any BOUT++ program.
+* You might sometimes want to link to the conda-installed libraries. This is
+  probably not ideal for production runs on an HPC system (as conda downloads
+  binary packages that will not be optimized for specific hardware), but can be
+  a simple way to get packages for testing or on a personal computer. In this
+  case just keep your `conda` environment active, and with luck the libraries
+  should be picked up by the standard search mechanisms.
+* In case you do want a fully optimized and as-stable-as-possible build for
+  production runs, it is probably best not to depend on any conda packages for
+  compiling or running BOUT++ executables (restrict `conda` to providing Python
+  packages for post-processing, and their dependencies). The CMake setup has
+  options to help this. Using the following (where necessary) should allow you
+  to leave the `conda` environment active when configuring, compiling, and
+  running BOUT++ executables, without being affected by the `conda`
+  environment:
+    * `BOUT_IGNORE_CONDA_ENV` (default `OFF`) - if set to `ON`, excludes
+      anything in the conda environment from CMake search paths. This setting
+      does most of the work to separate BOUT++ from the `conda` environment.
+    * If BOUT++ is using system-provided libraries (typically under `/usr`),
+      they may be shadowed at run-time by `conda`-provided libraries that are
+      present in `LD_LIBRARY_PATH`. When libraries are installed in generic
+      system directories (such as `/usr`), CMake cannot specify a particular
+      directory to prevent this shadowing. This is usually not an issue on HPC
+      systems as libraries are provided by modules, which install them in
+      module-specific directories. Workarounds for some special cases can be
+      enabled:
+        * `SYMLINK_SYSTEM_UUID` can be set to `ON` to force use of the
+          `libuuid` that was found at configure-time by symlinking it from the
+          build directory.
+
 .. _sec-config-nls:
 
 Natural Language Support
