@@ -16,6 +16,27 @@ project(BOUT++
   VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
 
+# Optionally ignore anything that is installed by conda
+set (BOUT_IGNORE_CONDA_ENV OFF CACHE BOOL "Ignore anything installed by conda. May introduce a slow step to the configuration, due to scanning a large number of files under $CONDA_PREFIX.")
+if (BOUT_IGNORE_CONDA_ENV)
+  if (EXISTS $ENV{CONDA_PREFIX})
+    # CMake does not allow ignoring everything under a prefix, so we have to
+    # get a list with *every* directory under CONDA_PREFIX.
+    # GLOB_RECURSE also doesn't seem to directly allow matching directories,
+    # but 'LIST_DIRECTORIES true' makes all directories traversed appear in the
+    # result, and setting the glob-pattern to [] (which does not match anything
+    # because square brackets match to any of the characters inside the
+    # brackets) means we do not actually match any files.
+    # [This may become less awful in CMake-3.23.0, where it may be possible to
+    # filter by prefix, not just directory, see
+    # https://gitlab.kitware.com/cmake/cmake/-/merge_requests/6880]
+    file(GLOB_RECURSE BOUT_IGNORE_CONDA_ENV_DIRECTORY_LIST
+         LIST_DIRECTORIES true
+         $ENV{CONDA_PREFIX}/[])
+    list (APPEND CMAKE_IGNORE_PATH ${BOUT_IGNORE_CONDA_ENV_DIRECTORY_LIST})
+  endif()
+endif()
+
 # This might not be entirely sensible, but helps CMake to find the
 # correct MPI, workaround for https://gitlab.kitware.com/cmake/cmake/issues/18895
 find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)

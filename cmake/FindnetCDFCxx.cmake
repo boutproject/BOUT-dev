@@ -27,13 +27,16 @@
 
 include(BOUT++functions)
 
-find_package(netCDFCxx QUIET CONFIG)
-if (netCDFCxx_FOUND)
-  set(netCDFCxx_FOUND TRUE)
-  if (NOT TARGET netCDF::netcdf-cxx4)
-    bout_add_library_alias(netCDF::netcdf-cxx4 netcdf-cxx4)
+if (NOT EXISTS ${NCXX4_CONFIG})
+  # Only search if NCXX4_CONFIG was not set explicitly
+  find_package(netCDFCxx QUIET CONFIG)
+  if (netCDFCxx_FOUND)
+    set(netCDFCxx_FOUND TRUE)
+    if (NOT TARGET netCDF::netcdf-cxx4)
+      bout_add_library_alias(netCDF::netcdf-cxx4 netcdf-cxx4)
+    endif()
+    return()
   endif()
-  return()
 endif()
 
 find_package(netCDF REQUIRED)

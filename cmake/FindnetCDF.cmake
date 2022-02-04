@@ -27,13 +27,16 @@
 
 include(BOUT++functions)
 
-find_package(netCDF QUIET CONFIG)
-if (netCDF_FOUND)
-  set(netCDF_FOUND TRUE)
-  if (NOT TARGET netCDF::netcdf)
-    bout_add_library_alias(netCDF::netcdf netcdf)
+if (NOT EXISTS ${NC_CONFIG})
+  # Only search if NC_CONFIG was not set explicitly
+  find_package(netCDF QUIET CONFIG)
+  if (netCDF_FOUND)
+    set(netCDF_FOUND TRUE)
+    if (NOT TARGET netCDF::netcdf)
+      bout_add_library_alias(netCDF::netcdf netcdf)
+    endif()
+    return()
   endif()
-  return()
 endif()
 
 find_program(NC_CONFIG "nc-config"
