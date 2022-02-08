@@ -978,6 +978,21 @@ void Coordinates::outputVars(Datafile& file) {
   getParallelTransform().outputVars(file);
 }
 
+const Field2D& Coordinates::zlength() const {
+  BOUT_OMP(critical)
+  if (not zlength_cache) {
+    zlength_cache = std::make_unique<Field2D>(0., localmesh);
+
+#if BOUT_USE_METRIC_3D
+    BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) { (*zlength_cache)[i] += dz[i]; }
+#else
+    (*zlength_cache) = dz * nz;
+#endif
+  }
+
+  return *zlength_cache;
+}
+
 int Coordinates::geometry(bool recalculate_staggered,
     bool force_interpolate_from_centre) {
   TRACE("Coordinates::geometry");
@@ -1259,6 +1274,9 @@ int Coordinates::geometry(bool recalculate_staggered,
     // Re-calculate interpolated Coordinates at staggered locations
     localmesh->recalculateStaggeredCoordinates();
   }
+
+  // Invalidate and recalculate cached variables
+  zlength_cache.reset();
 
   return 0;
 }

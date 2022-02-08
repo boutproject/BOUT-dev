@@ -28,8 +28,8 @@
 #ifndef __SNES_SOLVER_H__
 #define __SNES_SOLVER_H__
 
-#include "bout/build_config.hxx"
-#include "bout/solver.hxx"
+#include <bout/build_config.hxx>
+#include <bout/solver.hxx>
 
 #if BOUT_HAS_PETSC
 
@@ -37,6 +37,7 @@ class SNESSolver;
 
 #include "mpi.h"
 
+#include <bout/bout_enum_class.hxx>
 #include <bout/petsclib.hxx>
 #include <bout_types.hxx>
 
@@ -50,11 +51,14 @@ RegisterSolver<SNESSolver> registersolversnes("snes");
 RegisterSolver<SNESSolver> registersolverbeuler("beuler");
 } // namespace
 
+BOUT_ENUM_CLASS(BoutSnesEquationForm, pseudo_transient, rearranged_backward_euler,
+                backward_euler, direct_newton);
+
 /// Uses PETSc's SNES interface to find a steady state solution to a
 /// nonlinear ODE by integrating in time with Backward Euler
 class SNESSolver : public Solver {
 public:
-  SNESSolver(Options* opt = nullptr) : Solver(opt) {}
+  explicit SNESSolver(Options* opt = nullptr);
   ~SNESSolver() {}
 
   /// Initialise solver. Must be called once and only once
@@ -102,7 +106,8 @@ private:
   int nlocal; ///< Number of variables on local processor
   int neq;    ///< Number of variables in total
 
-  int equation_form; ///< Form of the equation to solve
+  /// Form of the equation to solve
+  BoutSnesEquationForm equation_form;
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function

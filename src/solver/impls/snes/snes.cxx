@@ -9,7 +9,9 @@
 #include <msg_stack.hxx>
 #include <utils.hxx>
 
+#include <array>
 #include <cmath>
+#include <vector>
 
 #include <output.hxx>
 
@@ -30,8 +32,6 @@ static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void* ctx) {
  *
  * This function can be a linearised form of FormFunction
  */
-#undef __FUNCT__
-#define __FUNCT__ "FormFunctionForDifferencing"
 static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
@@ -41,15 +41,11 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  *
  * This can be a linearised and simplified form of FormFunction
  */
-#undef __FUNCT__
-#define __FUNCT__ "FormFunctionForColoring"
 static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
                                               void* ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
 
-#undef __FUNCT__
-#define __FUNCT__ "snesPCapply"
 static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   int ierr;
 
@@ -60,6 +56,9 @@ static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
 
   PetscFunctionReturn(s->precon(x, y));
 }
+
+SNESSolver::SNESSolver(Options* opt)
+    : Solver(opt), lib((opt == nullptr) ? &(Options::root()["solver"]) : opt) {}
 
 int SNESSolver::init(int nout, BoutReal tstep) {
 
@@ -104,11 +103,11 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   predictor =
       (*options)["predictor"].doc("Use linear predictor?").withDefault<bool>(true);
 
-  equation_form = (*options)["equation_form"]
-    .doc("Form of equation to solve: 0 = Pseudo-transient;"
-         " 1 = Rearranged Backward-Euler; 2 = Backward Euler;"
-         " 3 = Direct Newton")
-    .withDefault(1);
+  equation_form =
+      (*options)["equation_form"]
+          .doc("Form of equation to solve: rearranged_backward_euler (default);"
+               " pseudo_transient; backward_euler; direct_newton")
+          .withDefault(BoutSnesEquationForm::rearranged_backward_euler);
   // Initialise PETSc components
   int ierr;
 
@@ -123,7 +122,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   VecDuplicate(snes_x, &snes_f);
   VecDuplicate(snes_x, &x0);
 
-  if (equation_form == 1) {
+  if (equation_form == BoutSnesEquationForm::rearranged_backward_euler) {
     // Need an intermediate vector for rearranged Backward Euler
     VecDuplicate(snes_x, &delta_x);
   }
@@ -208,29 +207,19 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       MatSetSizes(Jmf, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE);
       MatSetFromOptions(Jmf);
 
-      PetscInt *d_nnz, *o_nnz;
-      PetscMalloc((localN) * sizeof(PetscInt), &d_nnz);
-      PetscMalloc((localN) * sizeof(PetscInt), &o_nnz);
+      std::vector<PetscInt> d_nnz(localN);
+      std::vector<PetscInt> o_nnz(localN);
 
       // Set values for most points
-      if (mesh->LocalNz > 1) {
-        // A 3D mesh, so need points in Z
 
-        for (int i = 0; i < localN; i++) {
-          // Non-zero elements on this processor
-          d_nnz[i] = 7 * n3d + 5 * n2d; // Star pattern in 3D
-          // Non-zero elements on neighboring processor
-          o_nnz[i] = 0;
-        }
-      } else {
-        // Only one point in Z
-
-        for (int i = 0; i < localN; i++) {
-          // Non-zero elements on this processor
-          d_nnz[i] = 5 * (n3d + n2d); // Star pattern in 2D
-          // Non-zero elements on neighboring processor
-          o_nnz[i] = 0;
-        }
+      const auto star_pattern_2d = 5 * (n3d + n2d);
+      const auto star_pattern_3d = 7 * n3d + 5 * n2d;
+      const auto star_pattern = (mesh->LocalNz > 1) ? star_pattern_3d : star_pattern_2d;
+      for (int i = 0; i < localN; i++) {
+        // Non-zero elements on this processor
+        d_nnz[i] = star_pattern;
+        // Non-zero elements on neighboring processor
+        o_nnz[i] = 0;
       }
 
       // X boundaries
@@ -240,16 +229,9 @@ int SNESSolver::init(int nout, BoutReal tstep) {
           for (int z = 0; z < mesh->LocalNz; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
-            if (z == 0) {
-              // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-              }
-            } else {
-              // Only 3D fields
-              for (int i = 0; i < n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-              }
+            const int num_fields = (z == 0) ? n2d + n3d : n3d;
+            for (int i = 0; i < num_fields; i++) {
+              d_nnz[localIndex + i] -= (n3d + n2d);
             }
           }
         }
@@ -259,18 +241,10 @@ int SNESSolver::init(int nout, BoutReal tstep) {
           for (int z = 0; z < mesh->LocalNz; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
-            if (z == 0) {
-              // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-                o_nnz[localIndex + i] += (n3d + n2d);
-              }
-            } else {
-              // Only 3D fields
-              for (int i = 0; i < n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-                o_nnz[localIndex + i] += (n3d + n2d);
-              }
+            const int num_fields = (z == 0) ? n2d + n3d : n3d;
+            for (int i = 0; i < num_fields; i++) {
+              d_nnz[localIndex + i] -= (n3d + n2d);
+              o_nnz[localIndex + i] += (n3d + n2d);
             }
           }
         }
@@ -282,16 +256,9 @@ int SNESSolver::init(int nout, BoutReal tstep) {
           for (int z = 0; z < mesh->LocalNz; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
-            if (z == 0) {
-              // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-              }
-            } else {
-              // Only 3D fields
-              for (int i = 0; i < n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-              }
+            const int num_fields = (z == 0) ? n2d + n3d : n3d;
+            for (int i = 0; i < num_fields; i++) {
+              d_nnz[localIndex + i] -= (n3d + n2d);
             }
           }
         }
@@ -301,18 +268,10 @@ int SNESSolver::init(int nout, BoutReal tstep) {
           for (int z = 0; z < mesh->LocalNz; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
-            if (z == 0) {
-              // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-                o_nnz[localIndex + i] += (n3d + n2d);
-              }
-            } else {
-              // Only 3D fields
-              for (int i = 0; i < n3d; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-                o_nnz[localIndex + i] += (n3d + n2d);
-              }
+            const int num_fields = (z == 0) ? n2d + n3d : n3d;
+            for (int i = 0; i < num_fields; i++) {
+              d_nnz[localIndex + i] -= (n3d + n2d);
+              o_nnz[localIndex + i] += (n3d + n2d);
             }
           }
         }
@@ -340,8 +299,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
           // Only 3D fields
           for (int i = 0; i < n3d; i++) {
-            // d_nnz[localIndex+i] -= n3d + n2d;
-            o_nnz[localIndex + i] += n3d + n2d;
+            o_nnz[localIndex + i] += (n3d + n2d);
           }
         }
 
@@ -349,7 +307,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
         localIndex = ROUND(index(x, mesh->yend, 0));
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
-          // d_nnz[localIndex + i] -= (n3d + n2d);
           o_nnz[localIndex + i] += (n3d + n2d);
         }
 
@@ -358,8 +315,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
           // Only 3D fields
           for (int i = 0; i < n3d; i++) {
-            // d_nnz[localIndex + i] -= n3d + n2d;
-            o_nnz[localIndex + i] += n3d + n2d;
+            o_nnz[localIndex + i] += (n3d + n2d);
           }
         }
       }
@@ -376,7 +332,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
           o_nnz[localIndex + i] -= (n3d + n2d);
-          //d_nnz[localIndex + i] += (n3d + n2d);
         }
 
         for (int z = 1; z < mesh->LocalNz; z++) {
@@ -385,7 +340,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
           // Only 3D fields
           for (int i = 0; i < n3d; i++) {
             o_nnz[localIndex + i] -= (n3d + n2d);
-            //d_nnz[localIndex + i] += (n3d + n2d);
           }
         }
       }
@@ -396,13 +350,12 @@ int SNESSolver::init(int nout, BoutReal tstep) {
         // z = 0 case
         int localIndex = ROUND(index(it.ind, mesh->yend, 0));
         if (localIndex < 0) {
-          continue;
+          continue; // Out of domain
         }
 
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
           o_nnz[localIndex + i] -= (n3d + n2d);
-          //d_nnz[localIndex + i] += (n3d + n2d);
         }
 
         for (int z = 1; z < mesh->LocalNz; z++) {
@@ -410,8 +363,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
           // Only 3D fields
           for (int i = 0; i < n3d; i++) {
-            o_nnz[localIndex + i] -= n3d + n2d;
-            //d_nnz[localIndex + i] += n3d + n2d;
+            o_nnz[localIndex + i] -= (n3d + n2d);
           }
         }
       }
@@ -419,11 +371,9 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       output_progress.write("Pre-allocating Jacobian\n");
 
       // Pre-allocate
-      MatMPIAIJSetPreallocation(Jmf, 0, d_nnz, 0, o_nnz);
+      MatMPIAIJSetPreallocation(Jmf, 0, d_nnz.data(), 0, o_nnz.data());
       MatSetUp(Jmf);
       MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
-      PetscFree(d_nnz);
-      PetscFree(o_nnz);
 
       // Determine which row/columns of the matrix are locally owned
       int Istart, Iend;
@@ -441,8 +391,9 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       output_progress.write("Marking non-zero Jacobian entries\n");
 
       // Offsets for a 5-point pattern
-      const int xoffset[5] = {0, -1, 1, 0, 0};
-      const int yoffset[5] = {0, 0, 0, -1, 1};
+      constexpr std::size_t stencil_size = 5;
+      const std::array<int, stencil_size> xoffset = {0, -1, 1, 0, 0};
+      const std::array<int, stencil_size> yoffset = {0, 0, 0, -1, 1};
 
       PetscScalar val = 1.0;
 
@@ -456,7 +407,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
             PetscInt row = ind0 + i;
 
             // Loop through each point in the 5-point stencil
-            for (int c = 0; c < 5; c++) {
+            for (std::size_t c = 0; c < stencil_size; c++) {
               int xi = x + xoffset[c];
               int yi = y + yoffset[c];
 
@@ -498,7 +449,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
               }
 
               // 5 point star pattern
-              for (int c = 0; c < 5; c++) {
+              for (std::size_t c = 0; c < stencil_size; c++) {
                 int xi = x + xoffset[c];
                 int yi = y + yoffset[c];
 
@@ -702,7 +653,24 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   }
 
   // Get runtime options
-  SNESSetFromOptions(snes);
+  lib.setOptionsFromInputFile(snes);
+
+  {
+    // Some reporting
+    PCType pctype;
+    PCGetType(pc, &pctype);
+    KSPType ksptype;
+    KSPGetType(ksp, &ksptype);
+    SNESType snestype;
+    SNESGetType(snes, &snestype);
+    output.write("SNES Type : {}\n", snestype);
+    if (ksptype) {
+      output.write("KSP Type  : {}\n", ksptype);
+    }
+    if (pctype) {
+      output.write("PC Type   : {}\n", pctype);
+    }
+  }
 
   {
     // Some reporting
@@ -876,13 +844,13 @@ int SNESSolver::run() {
         SNESGetLinearSolveIterations(snes, &lin_its);
 
         output.print("\r"); // Carriage return for printing to screen
-        output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}", simtime, timestep,
-                     nl_its, lin_its, reason);
+        output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}",
+                     simtime, timestep, nl_its, lin_its, reason);
         if (snes_failures > 0) {
-	  output.write(", SNES failures: {}", snes_failures);
-	  snes_failures = 0;
-	}
-	output.write("\n");
+          output.write(", SNES failures: {}", snes_failures);
+          snes_failures = 0;
+        }
+        output.write("\n");
       }
 
       if (looping) {
@@ -890,9 +858,9 @@ int SNESSolver::run() {
           // Increase timestep slightly
           timestep *= 1.1;
 
-	  if (timestep > max_timestep) {
+          if (timestep > max_timestep) {
             timestep = max_timestep;
-	  }
+          }
         } else if (nl_its >= upper_its) {
           // Reduce timestep slightly
           timestep *= 0.9;
@@ -954,13 +922,13 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   CHKERRQ(ierr);
 
   switch (equation_form) {
-  case 0: {
+  case BoutSnesEquationForm::pseudo_transient: {
     // Pseudo-transient timestepping (as in UEDGE)
     // f <- f - x/Δt
     VecAXPY(f, -1./dt, x);
     break;
   }
-  case 1: {
+  case BoutSnesEquationForm::rearranged_backward_euler: {
     // Rearranged Backward Euler
     // f = (x0 - x)/Δt + f
     // First calculate x - x0 to minimise floating point issues
@@ -968,14 +936,14 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
     VecAXPY(f, -1./dt, delta_x); // f <- f - delta_x / dt
     break;
   }
-  case 2: {
+  case BoutSnesEquationForm::backward_euler: {
     // Backward Euler
     // Set f = x - x0 - Δt*f
     VecAYPX(f, -dt, x);   // f <- x - Δt*f
     VecAXPY(f, -1.0, x0); // f <- f - x0
     break;
   }
-  case 3: {
+  case BoutSnesEquationForm::direct_newton: {
     // Direct Newton solve -> don't modify f
     break;
   }
