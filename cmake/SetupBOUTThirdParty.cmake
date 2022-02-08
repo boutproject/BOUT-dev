@@ -74,7 +74,6 @@ set(BOUT_HAS_RAJA ${BOUT_ENABLE_RAJA})
 
 # Hypre
 option(BOUT_USE_HYPRE "Enable support for Hypre solvers" OFF)
-set(HYPRE_DIR "" CACHE STRING "Point to HYPRE Install")
 if (BOUT_USE_HYPRE)
   enable_language(C)
   find_package(HYPRE REQUIRED)
@@ -85,6 +84,7 @@ if (BOUT_USE_HYPRE)
      target_link_libraries(bout++ PUBLIC "${BOUT_CUDA_LIB_DIR}/libcusparse_static.a;${BOUT_CUDA_LIB_DIR}/libcurand_static.a;${BOUT_CUDA_LIB_DIR}/libculibos.a;${BOUT_CUDA_LIB_DIR}/libcublas_static.a;${BOUT_CUDA_LIB_DIR}/libcublasLt_static.a")
   endif ()
 endif ()
+message(STATUS "HYPRE support: ${BOUT_USE_HYPRE}")
 set(BOUT_HAS_HYPRE ${BOUT_USE_HYPRE})
 
 # PETSc
