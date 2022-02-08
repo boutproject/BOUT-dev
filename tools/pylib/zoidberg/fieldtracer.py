@@ -298,7 +298,7 @@ class FieldTracerReversible(object):
                     x_pos -= dx
                     z_pos -= dz
                     # Check for convergence within tolerance
-                    if np.amax(dx ** 2 + dz ** 2) < rtol:
+                    if np.amax(dx**2 + dz**2) < rtol:
                         break
                 # Finished Newton iteration, taken step to (x_pos,y_pos,z_pos)
             # Finished sub-steps, reached y_pos = y_next

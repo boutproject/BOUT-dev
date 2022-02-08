@@ -17,7 +17,7 @@ from boutdata.mms import exprToStr, y, t
 # Define the manufactured solution
 
 f = y + cos(y) - sin(t) * cos(0.5 * y)
-g = y ** 2 + sin(y) + cos(t) * cos(0.1 * y * y)
+g = y**2 + sin(y) + cos(t) * cos(0.1 * y * y)
 
 # Calculate gradients in x for boundaries
 
