@@ -9,6 +9,7 @@
 #include "field.hxx"
 #include "utils.hxx"
 #include "bout/bout_enum_class.hxx"
+#include "bout/caliper_wrapper.hxx"
 #include "bout/globalindexer.hxx"
 
 #include "HYPRE.h"
@@ -17,11 +18,6 @@
 #include "HYPRE_parcsr_mv.h"
 #include "HYPRE_utilities.h"
 #include "_hypre_utilities.h"
-
-#if BOUT_HAS_CALIPER
-#include <caliper/cali.h>
-#include <caliper/cali-manager.h>
-#endif
 
 #include <memory>
 
@@ -185,16 +181,11 @@ public:
   }
 
   void assemble() {
-#if BOUT_HAS_CALIPER
-  CALI_MARK_BEGIN("hype_interface:vectorAssemble");
-#endif
+    CALI_CXX_MARK_FUNCTION;
     writeCacheToHypre();
     checkHypreError(HYPRE_IJVectorAssemble(hypre_vector));
     checkHypreError(HYPRE_IJVectorGetObject(hypre_vector,
                                             reinterpret_cast<void**>(&parallel_vector)));
-#if BOUT_HAS_CALIPER
-  CALI_MARK_END("hype_interface:vectorAssemble");
-#endif
   }
 
   void writeCacheToHypre() {
@@ -206,10 +197,8 @@ public:
   }
 
   T toField() {
- 
-#if BOUT_HAS_CALIPER
-  CALI_CXX_MARK_FUNCTION;
-#endif
+    CALI_CXX_MARK_FUNCTION;
+
     T result(indexConverter->getMesh());
     result.allocate().setLocation(location);
 
@@ -228,9 +217,8 @@ public:
   }
 
   void importValuesFromField(const T& f) {
-#if BOUT_HAS_CALIPER
-  CALI_CXX_MARK_FUNCTION;
-#endif
+    CALI_CXX_MARK_FUNCTION;
+
     int vec_i = 0;
     BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
       HYPRE_BigInt index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
@@ -492,9 +480,8 @@ public:
 
   private:
     void setValues(BoutReal value_) {
-#if BOUT_HAS_CALIPER
       CALI_CXX_MARK_FUNCTION;
-#endif
+
       TRACE("HypreMatrix setting values at ({}, {})", row, column);
       ASSERT3(!positions.empty());
       std::vector<HYPRE_Complex> values;
@@ -509,9 +496,7 @@ public:
     }
 
     void addValues(BoutReal value_) {
-#if BOUT_HAS_CALIPER
       CALI_CXX_MARK_FUNCTION;
-#endif
       TRACE("HypreMatrix setting values at ({}, {})", row, column);
       ASSERT3(!positions.empty());
       std::vector<HYPRE_Complex> values;
@@ -527,9 +512,7 @@ public:
   };
 
   BoutReal getVal(const ind_type& row, const ind_type& column) const {
-#if BOUT_HAS_CALIPER
-      CALI_CXX_MARK_FUNCTION;
-#endif
+    CALI_CXX_MARK_FUNCTION;
     const HYPRE_BigInt global_row = index_converter->getGlobal(row);
     const HYPRE_BigInt global_column = index_converter->getGlobal(column);
 #if CHECKLEVEL >= 1
@@ -543,9 +526,7 @@ public:
   }
 
   BoutReal getVal(const HYPRE_BigInt row, const HYPRE_BigInt column) const {
-#if BOUT_HAS_CALIPER
-      CALI_CXX_MARK_FUNCTION;
-#endif
+    CALI_CXX_MARK_FUNCTION;
     HYPRE_Complex value = 0.0;
     HYPRE_BigInt i = row - ilower;
     ASSERT2(i >= 0 && i < num_rows);
@@ -559,9 +540,7 @@ public:
   }
 
   void setVal(const ind_type& row, const ind_type& column, BoutReal value) {
-#if BOUT_HAS_CALIPER
-      CALI_CXX_MARK_FUNCTION;
-#endif
+    CALI_CXX_MARK_FUNCTION;
     const HYPRE_BigInt global_row = index_converter->getGlobal(row);
     const HYPRE_BigInt global_column = index_converter->getGlobal(column);
 #if CHECKLEVEL >= 1
@@ -575,9 +554,7 @@ public:
   }
 
   void setVal(const HYPRE_BigInt row, const HYPRE_BigInt column, BoutReal value) {
-#if BOUT_HAS_CALIPER
-      CALI_CXX_MARK_FUNCTION;
-#endif
+    CALI_CXX_MARK_FUNCTION;
     HYPRE_BigInt i = row - ilower;
     ASSERT2(i >= 0 && i < num_rows);
     bool value_set = false;
@@ -596,9 +573,7 @@ public:
   }
 
   void addVal(const ind_type& row, const ind_type& column, BoutReal value) {
-#if BOUT_HAS_CALIPER
-      CALI_CXX_MARK_FUNCTION;
-#endif
+    CALI_CXX_MARK_FUNCTION;
     const HYPRE_BigInt global_row = index_converter->getGlobal(row);
     const HYPRE_BigInt global_column = index_converter->getGlobal(column);
 #if CHECKLEVEL >= 1
@@ -612,9 +587,7 @@ public:
   }
 
   void addVal(const HYPRE_BigInt row, const HYPRE_BigInt column, BoutReal value) {
-#if BOUT_HAS_CALIPER
-      CALI_CXX_MARK_FUNCTION;
-#endif
+    CALI_CXX_MARK_FUNCTION;
     HYPRE_BigInt i = row - ilower;
     ASSERT2(i >= 0 && i < num_rows);
     bool value_set = false;
@@ -702,9 +675,8 @@ public:
   }
 
   void assemble() {
-#if BOUT_HAS_CALIPER
     CALI_CXX_MARK_FUNCTION;
-#endif
+
     HYPRE_BigInt num_entries = 0;
     HYPRE_BigInt* num_cols;
     HYPRE_BigInt* cols;
@@ -781,9 +753,8 @@ public:
   // y = alpha*A*x + beta*y
   // Note result is returned in 'y' argument
   void computeAxpby(double alpha, HypreVector<T>& x, double beta, HypreVector<T>& y) {
-#if BOUT_HAS_CALIPER
     CALI_CXX_MARK_FUNCTION;
-#endif
+
     checkHypreError(HYPRE_ParCSRMatrixMatvec(alpha, parallel_matrix, x.getParallel(),
                                              beta, y.getParallel()));
   }
@@ -791,9 +762,8 @@ public:
   // y = A*x
   // Note result is returned in 'y' argument
   void computeAx(HypreVector<T>& x, HypreVector<T>& y) {
-#if BOUT_HAS_CALIPER
     CALI_CXX_MARK_FUNCTION;
-#endif
+
     checkHypreError(HYPRE_ParCSRMatrixMatvec(1.0, parallel_matrix, x.getParallel(), 0.0,
                                              y.getParallel()));
   }
@@ -981,9 +951,8 @@ public:
   void setMatrix(HypreMatrix<T>* A_) { A = A_; }
 
   int setupAMG(HypreMatrix<T>* P_) {
-#if BOUT_HAS_CALIPER
     CALI_CXX_MARK_FUNCTION;
-#endif
+
     P = P_;
     switch (solver_type) {
     case HYPRE_SOLVER_TYPE::gmres: {
@@ -1029,9 +998,8 @@ public:
   }
 
   int solve() {
-#if BOUT_HAS_CALIPER
     CALI_CXX_MARK_FUNCTION;
-#endif
+
     int solve_err;
     ASSERT2(A != nullptr);
     ASSERT2(x != nullptr);

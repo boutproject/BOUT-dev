@@ -37,6 +37,7 @@
 #include <utils.hxx>
 #include <datafile.hxx>
 #include <derivs.hxx>
+#include <bout/caliper_wrapper.hxx>
 #include <bout/hypre_interface.hxx>
 #include <bout/operatorstencil.hxx>
 
@@ -163,23 +164,17 @@ Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
   Timer timer("invert");
 
   // If necessary, update the values in the matrix operator
-#if BOUT_HAS_CALIPER
   CALI_MARK_BEGIN("LaplaceHypre3d_solve:updateMatrix3D");
-#endif
   if (updateRequired) {
     updateMatrix3D();
   }
 
-#if BOUT_HAS_CALIPER
   CALI_MARK_END("LaplaceHypre3d_solve:updateMatrix3D");
-#endif
   auto b = b_in;
   // Make sure b has a unique copy of the data
   b.allocate();
 
-#if BOUT_HAS_CALIPER
   CALI_MARK_BEGIN("LaplaceHypre3d_solve:AdjustBoundary");
-#endif
   // Adjust vectors to represent boundary conditions and check that
   // boundary cells are finite
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
@@ -225,26 +220,18 @@ Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
       ASSERT1(finite(b[i]));
     }
   }
-
-#if BOUT_HAS_CALIPER
   CALI_MARK_END("LaplaceHypre3d_solve:AdjustBoundary");
-#endif
 
-#if BOUT_HAS_CALIPER
   CALI_MARK_BEGIN("LaplaceHypre3d_solve:vectorAssemble");
-#endif
 
   rhs.importValuesFromField(b);
   solution.importValuesFromField(x0);
   rhs.assemble();
   solution.assemble();
 
-#if BOUT_HAS_CALIPER
   CALI_MARK_END("LaplaceHypre3d_solve:vectorAssemble");
-#endif
-#if BOUT_HAS_CALIPER
+
   CALI_MARK_BEGIN("LaplaceHypre3d_solve:solve");
-#endif
   // Invoke solver
   { Timer timer("hypresolve");
     linearSystem.solve();
@@ -254,12 +241,10 @@ Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
   n_solves++;
   cumulative_iterations += linearSystem.getNumItersTaken();
 
-#if BOUT_HAS_CALIPER
   CALI_MARK_END("LaplaceHypre3d_solve:solve");
-#endif
-#if BOUT_HAS_CALIPER
+
   CALI_MARK_BEGIN("LaplaceHypre3d_solve:createField");
-#endif
+
   // Create field from solution
   Field3D result = solution.toField();
   localmesh->communicate(result);
@@ -288,9 +273,7 @@ Field3D LaplaceHypre3d::solve(const Field3D &b_in, const Field3D &x0) {
     }
   }
 
-#if BOUT_HAS_CALIPER
   CALI_MARK_END("LaplaceHypre3d_solve:createField");
-#endif
   return result;
 }
 

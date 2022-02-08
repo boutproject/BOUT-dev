@@ -55,6 +55,7 @@ set(BOUT_SOURCES
   ./include/bout/array.hxx
   ./include/bout/assert.hxx
   ./include/bout/bout_enum_class.hxx
+  ./include/bout/caliper_wrapper.hxx
   ./include/bout/constants.hxx
   ./include/bout/coordinates.hxx
   ./include/bout/coordinates_accessor.hxx
