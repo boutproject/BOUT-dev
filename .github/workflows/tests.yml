@@ -29,9 +29,7 @@ jobs:
         config:
           - name: "Default options"
             os: ubuntu-18.04
-            configure_options: "--with-petsc
-                                --with-slepc
-                                --with-sundials=/home/runner/local"
+            configure_options: ""
             script_flags: "-uim"
 
           - name: "Optimised, shared, Python"
