@@ -94,6 +94,7 @@ private:
   BoutReal timestep; ///< Internal timestep
   BoutReal dt;       ///< Current timestep used in snes_function
   BoutReal dt_min_reset; ///< If dt falls below this, reset solve
+  BoutReal max_timestep; ///< Maximum timestep
 
   int lower_its, upper_its; ///< Limits on iterations for timestep adjustment
 
@@ -131,7 +132,7 @@ RegisterUnavailableSolver registerunavailablesnes("snes",
                                                   "BOUT++ was not configured with PETSc");
 RegisterUnavailableSolver
     registerunavailablebeuler("beuler", "BOUT++ was not configured with PETSc");
-}
+} // namespace
 
 #endif // BOUT_HAS_PETSC
 

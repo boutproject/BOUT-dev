@@ -50,7 +50,7 @@ AA = 2  # Ion atomic mass
 #
 
 mi_me = AA * 1.67262158e-27 / 9.109e-31
-beta_e = qe * Tnorm * Nnorm / (old_div(Bnorm ** 2, mu0))
+beta_e = qe * Tnorm * Nnorm / (old_div(Bnorm**2, mu0))
 
 # Normalisation parameters
 Cs0 = sqrt(qe * Tnorm / (AA * Mp))
@@ -86,9 +86,9 @@ Btxy /= Bnorm
 Bxy /= Bnorm
 hthe /= rho_s0
 
-dx /= rho_s0 ** 2 * Bnorm
+dx /= rho_s0**2 * Bnorm
 
-bxcvz *= rho_s0 ** 2
+bxcvz *= rho_s0**2
 
 # Define a metric
 metric = Metric()  # Identity
@@ -96,8 +96,8 @@ metric = Metric()  # Identity
 Lx = dx * (nx - 2.0 * MXG)  # Size of the X domain
 
 metric.g11 = (Rxy * Bpxy) ** 2
-metric.g22 = old_div(1.0, (hthe ** 2))
-metric.g33 = (sinty ** 2) * metric.g11 + old_div((Bxy ** 2), metric.g11)
+metric.g22 = old_div(1.0, (hthe**2))
+metric.g33 = (sinty**2) * metric.g11 + old_div((Bxy**2), metric.g11)
 metric.g12 = 0.0
 metric.g13 = -sinty * metric.g11
 metric.g23 = -sbp * Btxy / (hthe * Bpxy * Rxy)
@@ -115,15 +115,15 @@ metric.g_23 = sbp * Btxy * hthe * Rxy / Bpxy
 
 # Define the manufactured solution in terms of input x,y and z
 
-Ne = 0.9 + 0.9 * x + 0.2 * cos(t) * sin(5.0 * x ** 2 - 5.0 * z)
-Te = 1 + 0.5 * cos(t) * cos(3 * x ** 2 - 4 * z)
+Ne = 0.9 + 0.9 * x + 0.2 * cos(t) * sin(5.0 * x**2 - 5.0 * z)
+Te = 1 + 0.5 * cos(t) * cos(3 * x**2 - 4 * z)
 Vort = sin(2 * t) * cos(x - z)
-VePsi = 0.5 * cos(7 * t) * cos(3 * x ** 2 - 3 * z)
-Vi = -0.1 * cos(7 * t) * cos(3 * x ** 2 - 3 * z)
+VePsi = 0.5 * cos(7 * t) * cos(3 * x**2 - 3 * z)
+Vi = -0.1 * cos(7 * t) * cos(3 * x**2 - 3 * z)
 
 phi = sin(z - x + t) * sin(2.0 * pi * x)  # Must satisfy Dirichlet BCs for now
 psi = sin(pi * x) * (
-    0.5 * x - cos(7 * t) * sin(3.0 * x ** 2 - 3 * z)
+    0.5 * x - cos(7 * t) * sin(3.0 * x**2 - 3 * z)
 )  # Must satisfy Dirichlet BCs for now
 
 # Substitute to get in terms of actual x,y,z coordinates

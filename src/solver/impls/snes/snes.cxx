@@ -95,16 +95,19 @@ int SNESSolver::init(int nout, BoutReal tstep) {
                    .doc("If dt falls below this, reset to starting dt")
                    .withDefault(1e-6);
 
+  max_timestep = (*options)["max_timestep"].doc("Maximum timestep").withDefault(1e37);
+
   diagnose =
       (*options)["diagnose"].doc("Print additional diagnostics").withDefault<bool>(false);
 
   predictor =
       (*options)["predictor"].doc("Use linear predictor?").withDefault<bool>(true);
 
-  equation_form = (*options)["equation_form"]
-    .doc("Form of equation to solve: rearranged_backward_euler (default);"
-         " pseudo_transient; backward_euler; direct_newton")
-    .withDefault(BoutSnesEquationForm::rearranged_backward_euler);
+  equation_form =
+      (*options)["equation_form"]
+          .doc("Form of equation to solve: rearranged_backward_euler (default);"
+               " pseudo_transient; backward_euler; direct_newton")
+          .withDefault(BoutSnesEquationForm::rearranged_backward_euler);
   // Initialise PETSc components
   int ierr;
 
@@ -322,6 +325,10 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
         // z = 0 case
         int localIndex = ROUND(index(it.ind, mesh->ystart, 0));
+        if (localIndex < 0) {
+          // This can occur because it.ind includes values in x boundary e.g. x=0
+          continue;
+        }
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
           o_nnz[localIndex + i] -= (n3d + n2d);
@@ -665,6 +672,23 @@ int SNESSolver::init(int nout, BoutReal tstep) {
     }
   }
 
+  {
+    // Some reporting
+    PCType pctype;
+    PCGetType(pc, &pctype);
+    KSPType ksptype;
+    KSPGetType(ksp, &ksptype);
+    SNESType snestype;
+    SNESGetType(snes, &snestype);
+    output.write("SNES Type : {}\n", snestype);
+    if (ksptype) {
+      output.write("KSP Type  : {}\n", ksptype);
+    }
+    if (pctype) {
+      output.write("PC Type   : {}\n", pctype);
+    }
+  }
+
   return 0;
 }
 
@@ -833,6 +857,10 @@ int SNESSolver::run() {
         if (nl_its <= lower_its) {
           // Increase timestep slightly
           timestep *= 1.1;
+
+          if (timestep > max_timestep) {
+            timestep = max_timestep;
+          }
         } else if (nl_its >= upper_its) {
           // Reduce timestep slightly
           timestep *= 0.9;
