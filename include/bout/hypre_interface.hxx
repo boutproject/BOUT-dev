@@ -479,9 +479,9 @@ public:
       std::transform(
           weights.begin(), weights.end(), std::back_inserter(values),
           [&value_](BoutReal weight) -> HYPRE_Complex { return weight * value_; });
-      HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>(positions.size());
+      const HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>(positions.size());
       // BOUT_OMP(critical)
-      for (HYPRE_BigInt i = 0; i < positions.size(); ++i) {
+      for (HYPRE_BigInt i = 0; i < ncolumns; ++i) {
         matrix->setVal(row, positions[i], values[i]);
       }
     }
@@ -494,9 +494,9 @@ public:
       std::transform(
           weights.begin(), weights.end(), std::back_inserter(values),
           [&value_](BoutReal weight) -> HYPRE_Complex { return weight * value_; });
-      HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>(positions.size());
+      const HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>(positions.size());
       // BOUT_OMP(critical)
-      for (HYPRE_BigInt i = 0; i < positions.size(); ++i) {
+      for (HYPRE_BigInt i = 0; i < ncolumns; ++i) {
         matrix->addVal(row, positions[i], values[i]);
       }
     }
@@ -521,7 +521,8 @@ public:
     HYPRE_Complex value = 0.0;
     HYPRE_BigInt i = row - ilower;
     ASSERT2(i >= 0 && i < num_rows);
-    for (HYPRE_BigInt col_ind = 0; col_ind < (*J)[i].size(); ++col_ind) {
+    const HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>((*J)[i].size());
+    for (HYPRE_BigInt col_ind = 0; col_ind < ncolumns; ++col_ind) {
       if ((*J)[i][col_ind] == column) {
         value = (*V)[i][col_ind];
         break;
@@ -549,7 +550,8 @@ public:
     HYPRE_BigInt i = row - ilower;
     ASSERT2(i >= 0 && i < num_rows);
     bool value_set = false;
-    for (HYPRE_BigInt col_ind = 0; col_ind < (*J)[i].size(); ++col_ind) {
+    const HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>((*J)[i].size());
+    for (HYPRE_BigInt col_ind = 0; col_ind < ncolumns; ++col_ind) {
       if ((*J)[i][col_ind] == column) {
         (*V)[i][col_ind] = value;
         value_set = true;
@@ -582,7 +584,8 @@ public:
     HYPRE_BigInt i = row - ilower;
     ASSERT2(i >= 0 && i < num_rows);
     bool value_set = false;
-    for (HYPRE_BigInt col_ind = 0; col_ind < (*J)[i].size(); ++col_ind) {
+    const HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>((*J)[i].size());
+    for (HYPRE_BigInt col_ind = 0; col_ind < ncolumns; ++col_ind) {
       if ((*J)[i][col_ind] == column) {
         (*V)[i][col_ind] += value;
         value_set = true;
@@ -986,7 +989,7 @@ public:
   int solve() {
     CALI_CXX_MARK_FUNCTION;
 
-    int solve_err;
+    int solve_err{};
     ASSERT2(A != nullptr);
     ASSERT2(x != nullptr);
     ASSERT2(b != nullptr);
