@@ -108,7 +108,7 @@ struct ArrayData {
   }
 
   /// Move assignment
-  ArrayData<T>& operator=(ArrayData<T>&& in) {
+  ArrayData<T>& operator=(ArrayData<T>&& in) noexcept {
     if (this != &in) {
       // Free resources
 #if BOUT_HAS_UMPIRE
