@@ -11,6 +11,7 @@
 #include "bout/bout_enum_class.hxx"
 #include "bout/caliper_wrapper.hxx"
 #include "bout/globalindexer.hxx"
+#include "bout/hyprelib.hxx"
 
 #include "HYPRE.h"
 #include "HYPRE_IJ_mv.h"
@@ -75,6 +76,7 @@ class HypreVector {
   bool have_indices{false};
   HYPRE_BigInt* I{nullptr};
   HYPRE_Complex* V{nullptr};
+  HypreLib hyprelib{};
 
 public:
   static_assert(bout::utils::is_Field<T>::value, "HypreVector only works with Fields");
@@ -333,6 +335,7 @@ class HypreMatrix {
   std::vector<HYPRE_BigInt>* I;
   std::vector<std::vector<HYPRE_BigInt>>* J;
   std::vector<std::vector<HYPRE_Complex>>* V;
+  HypreLib hyprelib{};
 
   // todo also take care of I,J,V
   struct MatrixDeleter {
@@ -783,11 +786,10 @@ private:
   HYPRE_Solver precon;
   bool solver_setup;
   HYPRE_SOLVER_TYPE solver_type = HYPRE_SOLVER_TYPE::gmres;
+  HypreLib hyprelib{};
 
 public:
   HypreSystem(Mesh& mesh, Options& options) {
-    //HYPRE_Init(); //handled by HypreLib
-
     solver_type = options["hypre_solver_type"]
                       .doc("Type of solver to use when solving Hypre system. Possible "
                            "values are: gmres, bicgstab, pcg")
@@ -851,10 +853,7 @@ public:
     solver_setup = false;
   }
 
-  ~HypreSystem() {
-    // HYPRE_Finalize(); // finalizing mid-stream e.g.  before tests unwind causes all
-    // sorts of memory related issues; so defer to hyprelib for finalization
-  }
+  ~HypreSystem() = default;
 
   void setRelTol(double tol) {
     switch (solver_type) {
