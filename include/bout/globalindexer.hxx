@@ -48,8 +48,8 @@ public:
     Region<ind_type> allCandidate, bndryCandidate;
     if (stencils.getNumParts() > 0) {
       std::set<ind_type> allIndices(getRegionNobndry().getIndices().begin(),
-                                    getRegionNobndry().getIndices().end()),
-          newIndices;
+                                    getRegionNobndry().getIndices().end());
+      std::set<ind_type> newIndices;
       BOUT_FOR_SERIAL(i, getRegionNobndry()) {
         for (const IndexOffset<ind_type> j : stencils.getStencilPart(i)) {
           insertIndex(i + j, allIndices, newIndices);
