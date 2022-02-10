@@ -6,13 +6,9 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-if(NOT BOUT_HAS_HYPRE)
-  message(FATAL_ERROR "This example requires BOUT++ to have been built with HYPRE")
-endif()
-
 bout_add_example(test_laplacexy_hypre
   SOURCES test-laplacexy-hypre.cxx
-  EXTRA_FILES data/BOUT.inp)
+  REQUIRES BOUT_HAS_HYPRE)
 
 if(BOUT_USE_CUDA)
   set_source_files_properties(test-laplacexy-hypre.cxx PROPERTIES LANGUAGE CUDA )
