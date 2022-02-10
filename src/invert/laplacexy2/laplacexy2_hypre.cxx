@@ -2,27 +2,25 @@
 
 #if BOUT_HAS_HYPRE
 
-#include <bout/assert.hxx>
-
-#include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <globals.hxx>
-#include <utils.hxx>
-
-#include <output.hxx>
+#include "boutcomm.hxx"
+#include "globals.hxx"
+#include "output.hxx"
+#include "utils.hxx"
+#include "bout/assert.hxx"
+#include "bout/mesh.hxx"
+#include "bout/sys/timer.hxx"
 
 #include <cmath>
 
-
 #if BOUT_USE_CUDA && defined(__CUDACC__)
-#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
-inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
-{
-   if (code != cudaSuccess) 
-   {
-      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
-      if (abort) exit(code);
-   }
+#define gpuErrchk(ans) \
+  { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort = true) {
+  if (code != cudaSuccess) {
+    fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+    if (abort)
+      exit(code);
+  }
 }
 #endif
 
@@ -32,7 +30,12 @@ Ind2D index2d(Mesh* mesh, int x, int y) {
 }
 
 LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
-    : localmesh(m == nullptr ? bout::globals::mesh : m), location(loc) {
+    : localmesh(m == nullptr ? bout::globals::mesh : m),
+      indexConverter(std::make_shared<GlobalIndexer<Field2D>>(
+          localmesh, squareStencil<Field2D::ind_type>(localmesh))),
+      M(indexConverter), x(indexConverter), b(indexConverter),
+      linearSystem(*localmesh, (opt == nullptr) ? Options::root()["laplacexy"] : *opt),
+      location(loc) {
   Timer timer("invert");
 
   if (opt == nullptr) {
@@ -40,26 +43,20 @@ LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
     opt = &(Options::root()["laplacexy"]);
   }
 
-  indexConverter = std::make_shared<GlobalIndexer<Field2D>>(localmesh, squareStencil<Field2D::ind_type>(localmesh));
-
-  linearSystem = new bout::HypreSystem<Field2D>(*localmesh, *opt);
-  M = new bout::HypreMatrix<Field2D>(indexConverter);
-  x = new bout::HypreVector<Field2D>(indexConverter);
-  b = new bout::HypreVector<Field2D>(indexConverter);
-  linearSystem->setMatrix(M);
-  linearSystem->setSolutionVector(x);
-  linearSystem->setRHSVector(b);
+  linearSystem.setMatrix(&M);
+  linearSystem.setSolutionVector(&x);
+  linearSystem.setRHSVector(&b);
 
   ///////////////////////////////////////////////////
   // Decide boundary condititions
   if (localmesh->periodicY(localmesh->xstart)) {
     // Periodic in Y, so in the core
-    opt->get("core_bndry_dirichlet", x_inner_dirichlet, false);
+    x_inner_dirichlet = (*opt)["core_bndry_dirichlet"].withDefault(false);
   } else {
     // Non-periodic, so in the PF region
-    opt->get("pf_bndry_dirichlet", x_inner_dirichlet, true);
+    x_inner_dirichlet = (*opt)["pf_bndry_dirichlet"].withDefault(true);
   }
-  opt->get("y_bndry_dirichlet", y_bndry_dirichlet, false);
+  y_bndry_dirichlet = (*opt)["y_bndry_dirichlet"].withDefault(false);
 
   ///////////////////////////////////////////////////
   // Including Y derivatives?
@@ -69,8 +66,8 @@ LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
                          .withDefault<bool>(true);
 
   print_timing = (*opt)["print_timing"]
-                       .doc("Print extra timing information for LaplaceXY2Hypre")
-                       .withDefault(false);
+                     .doc("Print extra timing information for LaplaceXY2Hypre")
+                     .withDefault(false);
 
   ///////////////////////////////////////////////////
   // Set the default coefficients
@@ -98,9 +95,9 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
   // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
 
   if (print_timing) {
-    output << "setting up matrix..." << endl;
+    output_info.write("setting up matrix...\n");
   }
-  auto start = std::chrono::system_clock::now();  //AARON
+  auto start = std::chrono::system_clock::now();
   for (auto& index : indexConverter->getRegionNobndry()) {
     // Index offsets
     auto ind_xp = index.xp();
@@ -125,8 +122,8 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
 
     BoutReal c = B[index] - xp - xm; // Central coefficient
 
-    (*M)(index, ind_xp) = xp;
-    (*M)(index, ind_xm) = xm;
+    M(index, ind_xp) = xp;
+    M(index, ind_xm) = xm;
 
     if (include_y_derivs) {
       auto ind_yp = index.yp();
@@ -155,91 +152,83 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
 
       BoutReal ym =
           -Acoef * J * g23 * g_23 / (g_22 * coords->J[index] * dy * coords->dy[index]);
-      c -= ym;  
-      (*M)(index, ind_yp) = yp;
-      (*M)(index, ind_ym) = ym;  
+      c -= ym;
+      M(index, ind_yp) = yp;
+      M(index, ind_ym) = ym;
     }
     // Note: The central coefficient is done last because this may be modified
     // if y derivs are/are not included.
-    (*M)(index, index) = c;
+    M(index, index) = c;
   }
 
   // X boundaries
   if (x_inner_dirichlet) {
     // Dirichlet on inner X boundary
     BOUT_FOR_SERIAL(i, indexConverter->getRegionInnerX()) {
-      (*M)(i, i.xp()) = 0.5;
-      (*M)(i, i) = 0.5;
+      M(i, i.xp()) = 0.5;
+      M(i, i) = 0.5;
     }
 
   } else {
     // Neumann on inner X boundary
     BOUT_FOR_SERIAL(i, indexConverter->getRegionInnerX()) {
-      (*M)(i, i.xp()) = 1.0;
-      (*M)(i, i) = -1.0;
+      M(i, i.xp()) = 1.0;
+      M(i, i) = -1.0;
     }
   }
   // Dirichlet on outer X boundary
   BOUT_FOR_SERIAL(i, indexConverter->getRegionOuterX()) {
-    (*M)(i, i) = 0.5;
-    (*M)(i, i.xm()) = 0.5;
+    M(i, i) = 0.5;
+    M(i, i.xm()) = 0.5;
   }
 
   if (y_bndry_dirichlet) {
-    // Dirichlet on Y boundaries 
+    // Dirichlet on Y boundaries
     BOUT_FOR_SERIAL(i, indexConverter->getRegionLowerY()) {
-      (*M)(i, i) = 0.5;
-      (*M)(i, i.yp()) = 0.5;
+      M(i, i) = 0.5;
+      M(i, i.yp()) = 0.5;
     }
 
     BOUT_FOR_SERIAL(i, indexConverter->getRegionUpperY()) {
-      (*M)(i, i) = 0.5;
-      (*M)(i, i.ym()) = 0.5;
+      M(i, i) = 0.5;
+      M(i, i.ym()) = 0.5;
     }
   } else {
-    // Neumann on Y boundaries   
+    // Neumann on Y boundaries
     BOUT_FOR_SERIAL(i, indexConverter->getRegionLowerY()) {
-      (*M)(i, i) = -1.0;
-      (*M)(i, i.yp()) = 1.0;
+      M(i, i) = -1.0;
+      M(i, i.yp()) = 1.0;
     }
 
     BOUT_FOR_SERIAL(i, indexConverter->getRegionUpperY()) {
-      (*M)(i, i) = 1.0;
-      (*M)(i, i.ym()) = -1.0;
+      M(i, i) = 1.0;
+      M(i, i.ym()) = -1.0;
     }
   }
 
-  auto end = std::chrono::system_clock::now();  //AARON
+  auto end = std::chrono::system_clock::now();
   if (print_timing) {
-    auto dur = end-start;  //AARON
-    output << "*****Matrix set time:  " << dur.count() << endl;
+    const auto dur = end - start;
+    output_info.write("*****Matrix set time:  {}\n", dur.count());
   }
 
   start = std::chrono::system_clock::now();
-  // Assemble Matrix
-  M->assemble();
+  M.assemble();
 
   if (print_timing) {
-    end = std::chrono::system_clock::now();  //AARON
-    auto dur = end-start;  //AARON
-    output << "*****Matrix asm time:  " << dur.count() << endl;
+    end = std::chrono::system_clock::now();
+    const auto dur = end - start;
+    output_info.write("*****Matrix asm time:  {}\n", dur.count());
   }
 
   start = std::chrono::system_clock::now();
-  linearSystem->setupAMG(M);
+  linearSystem.setupAMG(&M);
 
   if (print_timing) {
-    end = std::chrono::system_clock::now();  //AARON
-    auto dur = end-start;  //AARON
-    output << "*****Matrix prec time:  " << dur.count() << endl;
+    end = std::chrono::system_clock::now();
+    const auto dur = end - start;
+    output_info.write("*****Matrix prec time:  {}\n", dur.count());
   }
-}
-
-LaplaceXY2Hypre::~LaplaceXY2Hypre() {
-  delete M;
-  delete x;
-  delete b;
-  delete linearSystem;
 }
 
 Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
@@ -250,81 +239,72 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
 
-  auto start = std::chrono::system_clock::now();  //AARON
+  auto start = std::chrono::system_clock::now();
 
-  x->importValuesFromField(x0);
-  b->importValuesFromField(rhs);
+  x.importValuesFromField(x0);
+  b.importValuesFromField(rhs);
 
   // Set boundary values
   //////////////////////
 
   if (x_inner_dirichlet) {
     BOUT_FOR_SERIAL(i, indexConverter->getRegionInnerX()) {
-      (*b)(i) = 0.5 * (x0[i] + x0[i.xp()]);
+      b(i) = 0.5 * (x0[i] + x0[i.xp()]);
     }
   } else {
     // Inner X boundary (Neumann)
-    BOUT_FOR_SERIAL(i, indexConverter->getRegionInnerX()) {
-      (*b)(i) = 0.0;
-    }
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionInnerX()) { b(i) = 0.0; }
   }
 
   // Outer X boundary (Dirichlet)
   BOUT_FOR_SERIAL(i, indexConverter->getRegionOuterX()) {
-    (*b)(i) = 0.5 * (x0[i.xm()] + x0[i]);
+    b(i) = 0.5 * (x0[i.xm()] + x0[i]);
   }
 
   if (y_bndry_dirichlet) {
     BOUT_FOR_SERIAL(i, indexConverter->getRegionLowerY()) {
-      (*b)(i) = 0.5 * (x0[i] + x0[i.yp()]);
+      b(i) = 0.5 * (x0[i] + x0[i.yp()]);
     }
 
     BOUT_FOR_SERIAL(i, indexConverter->getRegionUpperY()) {
-      (*b)(i) = 0.5 * (x0[i] + x0[i.ym()]);
+      b(i) = 0.5 * (x0[i] + x0[i.ym()]);
     }
   } else {
     // Y boundaries Neumann
-    BOUT_FOR_SERIAL(i, indexConverter->getRegionLowerY()) {
-      (*b)(i) = 0.0;
-    }
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionLowerY()) { b(i) = 0.0; }
 
-    BOUT_FOR_SERIAL(i, indexConverter->getRegionUpperY()) {
-      (*b)(i) = 0.0;
-    }
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionUpperY()) { b(i) = 0.0; }
   }
 
-  x->assemble();
-  b->assemble();
+  x.assemble();
+  b.assemble();
 
-  auto form_vec = std::chrono::system_clock::now();  //AARON  
+  auto form_vec = std::chrono::system_clock::now();
 
   if (print_timing) {
-    std::chrono::duration<double> formvec_dur = form_vec-start;  //AARON
-    output << "*****Form Vectors time:  " << formvec_dur.count() << endl;
+    const auto formvec_dur = form_vec - start;
+    output_info.write("*****Form Vectors time:  {}\n", formvec_dur.count());
   }
 
-  // Solve the system
-  start = std::chrono::system_clock::now();  //AARON
-  linearSystem->solve();
+  start = std::chrono::system_clock::now();
+  linearSystem.solve();
 
-  auto slv = std::chrono::system_clock::now();  //AARON
+  auto slv = std::chrono::system_clock::now();
 
   if (print_timing) {
-    std::chrono::duration<double> slv_dur = slv-start;  //AARON
-    output << "*****BoomerAMG solve time:  " << slv_dur.count() << endl;
+    const auto slv_dur = slv - start;
+    output_info.write("*****BoomerAMG solve time:  {}\n", slv_dur.count());
   }
 
   // Convert result into a Field2D
-  start = std::chrono::system_clock::now();  //AARON  
-  Field2D sol = x->toField();
-  //sol.allocate().setLocation(CELL_LOC::centre);
-  //x->exportValuesToField(sol);
+  start = std::chrono::system_clock::now();
+  Field2D sol = x.toField();
 
-  auto formfield = std::chrono::system_clock::now();  //AARON
+  auto formfield = std::chrono::system_clock::now();
 
   if (print_timing) {
-    std::chrono::duration<double> formfield_dur = formfield-start;  //AARON
-    output << "*****Form field time:  " << formfield_dur.count() << endl;
+    const auto formfield_dur = formfield - start;
+    output_info.write("*****Form field time:  {}\n", formfield_dur.count());
   }
 
   // Set boundary cells past the first one
@@ -333,7 +313,7 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
   if (localmesh->firstX()) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       for (int x = localmesh->xstart - 2; x >= 0; x--)
-        sol(x, y) = sol(localmesh->xstart-1, y);
+        sol(x, y) = sol(localmesh->xstart - 1, y);
     }
   }
 
