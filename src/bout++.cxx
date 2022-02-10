@@ -748,7 +748,7 @@ int BoutFinalise(bool write_settings) {
   PetscLib::cleanup();
 
   // Call HYPER_Finalize if not already called
-  HypreLib::cleanup();
+  bout::HypreLib::cleanup();
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();
