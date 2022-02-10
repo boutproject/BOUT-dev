@@ -55,11 +55,6 @@ int checkHypreError(int error) {
 }
 } // namespace
 
-template <class T>
-class HypreVector;
-template <class T>
-void swap(HypreVector<T>& lhs, HypreVector<T>& rhs);
-
 // TODO: check correctness of initialise/assemble
 // TODO: set sizes
 // TODO: set contiguous blocks at once
@@ -313,11 +308,6 @@ public:
     swap(lhs.initialised, rhs.initialised);
   }
 };
-
-template <class T>
-class HypreMatrix;
-template <class T>
-void swap(HypreMatrix<T>& lhs, HypreMatrix<T>& rhs);
 
 template <class T>
 class HypreMatrix {
