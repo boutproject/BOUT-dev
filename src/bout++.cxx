@@ -203,8 +203,6 @@ int BoutInitialise(int& argc, char**& argv) {
 
     bout::globals::dump =
         setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);
-    //after MPI 
-    bout::globals::hyprelib = new HypreLib();
 
   } catch (const BoutException& e) {
     output_error.write(_("Error encountered during initialisation: {:s}\n"), e.what());
