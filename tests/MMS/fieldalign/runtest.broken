@@ -105,7 +105,7 @@ for dir in inputs:
         E_f = collect("E_f", tind=[nout, nout], path=directory, info=False)
 
         # Average error over domain, not including guard cells
-        l2 = sqrt(mean(E_f ** 2))
+        l2 = sqrt(mean(E_f**2))
         linf = max(abs(E_f))
 
         error_2.append(l2)
