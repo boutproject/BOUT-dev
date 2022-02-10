@@ -46,7 +46,7 @@ int checkHypreError(int error) {
       throw BoutException("A Hypre call failed with error code {:d}: {:s}", error,
                           &error_cstr[0]);
     else if (error == 1) {
-      printf("Hypre returns %d %s\n",error,&error_cstr[0]);
+      output_error.write("Hypre returns {} {}\n", error, error_cstr);
       HYPRE_ClearAllErrors();
     }
   }
@@ -154,7 +154,6 @@ public:
 
     location = f.getLocation();
     initialised = true;
-    //printf("vsize %d\n",vsize);
     HypreMalloc(I, vsize * sizeof(HYPRE_BigInt));
     HypreMalloc(V, vsize * sizeof(HYPRE_Complex));
     importValuesFromField(f);
@@ -175,7 +174,6 @@ public:
     checkHypreError(HYPRE_IJVectorInitialize(hypre_vector));
     initialised = true;
     location = CELL_LOC::centre;
-    // printf("vsize %d\n",vsize);
     HypreMalloc(I, vsize * sizeof(HYPRE_BigInt));
     HypreMalloc(V, vsize * sizeof(HYPRE_Complex));
   }
@@ -686,14 +684,13 @@ public:
     HypreMalloc(num_cols, num_rows * sizeof(HYPRE_BigInt));
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
       num_cols[i] = (*J)[i].size();
-      ;
       num_entries += (*J)[i].size();
     }
 
     HypreMalloc(rawI, num_rows * sizeof(HYPRE_BigInt));
     HypreMalloc(cols, num_entries * sizeof(HYPRE_BigInt));
     HypreMalloc(vals, num_entries * sizeof(HYPRE_Complex));
-    //printf("num_rows %d num_entries %d\n",num_rows,num_entries);
+
     HYPRE_BigInt entry = 0;
     for (HYPRE_BigInt i = 0; i < num_rows; ++i) {
       rawI[i] = (*I)[i];
@@ -1032,7 +1029,6 @@ public:
         checkHypreError(HYPRE_ParCSRPCGSetup(solver, A->getParallel(), b->getParallel(),
                                                x->getParallel()));
         solver_setup = true;
-        //printf("PCG solver setup\n");
       }
 
       solve_err = checkHypreError(HYPRE_ParCSRPCGSolve(
