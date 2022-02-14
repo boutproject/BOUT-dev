@@ -1,6 +1,9 @@
 name: black
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - '**.py'
 
 defaults:
   run:
