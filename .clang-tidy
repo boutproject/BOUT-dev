@@ -1,5 +1,5 @@
 ---
-Checks:          'clang-diagnostic-*,clang-analyzer-*,-*,performance-*,readability-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,mpi-*,misc-*,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-misc-non-private-member-variables-in-classes,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-type-vararg,-clang-analyzer-optin.mpi*'
+Checks:          'clang-diagnostic-*,clang-analyzer-*,-*,performance-*,readability-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,mpi-*,misc-*,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-misc-non-private-member-variables-in-classes,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-type-vararg,-clang-analyzer-optin.mpi*,-bugprone-exception-escape,-cppcoreguidelines-pro-bounds-pointer-arithmetic'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
@@ -319,8 +319,6 @@ CheckOptions:
     value:           ''
   - key:             readability-implicit-bool-conversion.AllowIntegerConditions
     value:           'false'
-  - key:             misc-throw-by-value-catch-by-reference.MaxSize
-    value:           '-1'
   - key:             google-readability-function-size.StatementThreshold
     value:           '800'
   - key:             llvm-else-after-return.WarnOnConditionVariables
