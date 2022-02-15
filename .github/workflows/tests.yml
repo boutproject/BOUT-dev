@@ -60,6 +60,7 @@ jobs:
             os: ubuntu-20.04
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_OPENMP=ON
+                            -DCMAKE_BUILD_TYPE=Release
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
