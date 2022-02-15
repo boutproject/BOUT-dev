@@ -16,16 +16,13 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
-      - name: Ensure base ref is accessible
-        run: git fetch origin
-
       # This also installs git-clang-format
       - name: Install clang-format
         run: sudo apt install clang-format
 
       - name: Run clang-format
         id: format
-        run: git clang-format --diff ${{ github.base_ref }}
+        run: git clang-format --diff origin/${{ github.base_ref }}
 
       - name: Commit to the PR branch
         uses: stefanzweifel/git-auto-commit-action@v4
