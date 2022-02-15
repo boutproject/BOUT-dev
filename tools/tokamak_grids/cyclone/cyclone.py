@@ -94,7 +94,7 @@ else:
 
 dx = Bp * (dr / float(nx - 1)) * Rxy
 
-Bxy = sqrt(Btxy ** 2 + Bpxy ** 2)
+Bxy = sqrt(Btxy**2 + Bpxy**2)
 
 zShift = zeros([nx, ny])
 qint = eps_integral(epsilon)
@@ -137,7 +137,7 @@ for x in range(nx):
         rpos = (float(x) / float(nx - 1) - 0.5) * dr
         R = Rmaj - (rminor + rpos) * cos(theta[y])
         Bt = Bt0 * Rmaj / R
-        logB[x, y] = log(sqrt(Bt ** 2 + Bp ** 2))
+        logB[x, y] = log(sqrt(Bt**2 + Bp**2))
 
 ######################################################
 # Topology: Just in the core

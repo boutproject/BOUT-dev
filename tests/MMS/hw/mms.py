@@ -71,10 +71,10 @@ pi = symbols("pi")
 
 # Define the manufactured solution
 
-n = 0.9 + 0.9 * x + 0.2 * cos(10 * t) * sin(5.0 * x ** 2 - 2 * z)
-vort = 0.9 + 0.7 * x + 0.2 * cos(7 * t) * sin(2.0 * x ** 2 - 3 * z)
+n = 0.9 + 0.9 * x + 0.2 * cos(10 * t) * sin(5.0 * x**2 - 2 * z)
+vort = 0.9 + 0.7 * x + 0.2 * cos(7 * t) * sin(2.0 * x**2 - 3 * z)
 phi = sin(pi * x) * (
-    0.5 * x - cos(7 * t) * sin(3.0 * x ** 2 - 3 * z)
+    0.5 * x - cos(7 * t) * sin(3.0 * x**2 - 3 * z)
 )  # Must satisfy Dirichlet BCs for now
 
 # Calculate gradients in x for boundaries

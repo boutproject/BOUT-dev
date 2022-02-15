@@ -1,3 +1,4 @@
+
 /**************************************************************************
  * 3D Laplacian Solver
  *                           Using PETSc Solvers
@@ -209,41 +210,41 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   // boundary cells are finite
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
     const BoutReal val = (inner_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(finite(x0[i]));
+    ASSERT1(std::isfinite(x0[i]));
     if (!(inner_boundary_flags & INVERT_RHS)) {
       rhs(i) = val;
     } else {
-      ASSERT1(finite(b_in[i]));
+      ASSERT1(std::isfinite(b_in[i]));
     }
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
     const BoutReal val = (outer_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(finite(x0[i]));
+    ASSERT1(std::isfinite(x0[i]));
     if (!(outer_boundary_flags & INVERT_RHS)) {
       rhs(i) = val;
     } else {
-      ASSERT1(finite(b_in[i]));
+      ASSERT1(std::isfinite(b_in[i]));
     }
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
     const BoutReal val = (lower_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(finite(x0[i]));
+    ASSERT1(std::isfinite(x0[i]));
     if (!(lower_boundary_flags & INVERT_RHS)) {
       rhs(i) = val;
     } else {
-      ASSERT1(finite(b_in[i]));
+      ASSERT1(std::isfinite(b_in[i]));
     }
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
     const BoutReal val = (upper_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(finite(x0[i]));
+    ASSERT1(std::isfinite(x0[i]));
     if (!(upper_boundary_flags & INVERT_RHS)) {
       rhs(i) = val;
     } else {
-      ASSERT1(finite(b_in[i]));
+      ASSERT1(std::isfinite(b_in[i]));
     }
   }
 

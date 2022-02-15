@@ -51,7 +51,7 @@ for mz in mzlist:
     err = result - solution
 
     # Average error
-    l2 = sqrt(mean(err ** 2))
+    l2 = sqrt(mean(err**2))
     linf = max(abs(err))
 
     error_2.append(l2)

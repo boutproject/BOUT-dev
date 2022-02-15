@@ -63,7 +63,7 @@ def gauss(x, width=1.0):
     """
     Normalised gaussian
     """
-    return np.exp(-(x ** 2) / (2 * width ** 2)) / np.sqrt(2 * np.pi)
+    return np.exp(-(x**2) / (2 * width**2)) / np.sqrt(2 * np.pi)
 
 
 def mixmode(x, seed=0.5):
