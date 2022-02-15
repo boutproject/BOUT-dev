@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BOUT++ 4.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-12-13 14:14+0000\n"
+"POT-Creation-Date: 2022-02-15 16:11+0000\n"
 "PO-Revision-Date: 2018-10-21 22:46+0100\n"
 "Last-Translator:  <benjamin.dudson@york.ac.uk>\n"
 "Language-Team: French\n"
@@ -246,7 +246,7 @@ msgid ""
 "  -q, --quiet\t\tDecrease verbosity\n"
 msgstr ""
 
-#: ../src/solver/solver.cxx:509
+#: ../src/solver/solver.cxx:510
 #, c-format
 msgid ""
 "\n"
@@ -255,7 +255,7 @@ msgstr ""
 "\n"
 "L'exécution se termine à %s\n"
 
-#: ../src/solver/solver.cxx:474
+#: ../src/solver/solver.cxx:475
 #, fuzzy, c-format
 msgid ""
 "\n"
@@ -284,7 +284,7 @@ msgstr ""
 msgid ") overwritten with:"
 msgstr ""
 
-#: ../tests/unit/src/test_bout++.cxx:294
+#: ../tests/unit/src/test_bout++.cxx:293
 msgid "4 of 8"
 msgstr ""
 
@@ -327,11 +327,11 @@ msgstr ""
 msgid "Command line"
 msgstr ""
 
-#: ../src/bout++.cxx:389 ../tests/unit/src/test_bout++.cxx:300
+#: ../src/bout++.cxx:389 ../tests/unit/src/test_bout++.cxx:299
 msgid "Compile-time options:\n"
 msgstr ""
 
-#: ../tests/unit/src/test_bout++.cxx:304
+#: ../tests/unit/src/test_bout++.cxx:303
 msgid "Compiled with flags"
 msgstr ""
 
@@ -370,7 +370,7 @@ msgstr ""
 msgid "Could not run bout-log-color. Make sure it is in your PATH\n"
 msgstr ""
 
-#: ../src/solver/solver.cxx:669
+#: ../src/solver/solver.cxx:668
 #, c-format
 msgid "Couldn't add Monitor: %g is not a multiple of %g!"
 msgstr ""
@@ -406,7 +406,7 @@ msgstr "Le répertoire de données \"%s\" n'existe pas ou n'est pas accessible\n
 msgid "DataDir \"%s\" is not a directory\n"
 msgstr "\"%s\" n'est pas un répertoire\n"
 
-#: ../src/solver/solver.cxx:587
+#: ../src/solver/solver.cxx:588
 msgid "ERROR: Solver is already initialised\n"
 msgstr ""
 
@@ -424,7 +424,7 @@ msgstr ""
 msgid "Error: nx must be greater than 2 times MXG (2 * %d)"
 msgstr ""
 
-#: ../src/solver/solver.cxx:454
+#: ../src/solver/solver.cxx:455
 msgid "Failed to initialise solver-> Aborting\n"
 msgstr "Échec d'initialisation du solutionneur -> Abandonner\n"
 
@@ -433,7 +433,7 @@ msgstr "Échec d'initialisation du solutionneur -> Abandonner\n"
 msgid "Finding value for NXPE (ideal = %f)\n"
 msgstr ""
 
-#: ../src/solver/solver.cxx:589
+#: ../src/solver/solver.cxx:426
 msgid "Initialising solver\n"
 msgstr ""
 
@@ -465,11 +465,11 @@ msgstr ""
 msgid "Missing integer array %s\n"
 msgstr ""
 
-#: ../src/solver/solver.cxx:773
+#: ../src/solver/solver.cxx:772
 msgid "Monitor signalled to quit"
 msgstr ""
 
-#: ../src/solver/solver.cxx:780
+#: ../src/solver/solver.cxx:779
 msgid "Monitor signalled to quit\n"
 msgstr ""
 
@@ -548,12 +548,12 @@ msgstr ""
 msgid "Revision: %s\n"
 msgstr ""
 
-#: ../src/solver/solver.cxx:510
+#: ../src/solver/solver.cxx:511
 msgid "Run time : "
 msgstr "Temps d'exécution : "
 
 #. / Run the solver
-#: ../src/solver/solver.cxx:467
+#: ../src/solver/solver.cxx:468
 msgid ""
 "Running simulation\n"
 "\n"
@@ -561,7 +561,7 @@ msgstr ""
 "L'exécution commence\n"
 "\n"
 
-#: ../tests/unit/src/test_bout++.cxx:301
+#: ../tests/unit/src/test_bout++.cxx:300
 msgid "Signal"
 msgstr ""
 
@@ -578,32 +578,32 @@ msgid ""
 "\n"
 msgstr ""
 
-#: ../src/solver/solver.cxx:449
+#: ../src/solver/solver.cxx:450
 #, c-format
 msgid "Solver running for %d outputs with monitor timestep of %e\n"
 msgstr ""
 "Le solveur fonctionne pour %d sorties avec un temps de moniteur de %e\n"
 
-#: ../src/solver/solver.cxx:445
+#: ../src/solver/solver.cxx:446
 #, c-format
 msgid "Solver running for %d outputs with output timestep of %e\n"
 msgstr "Le solveur fonctionne pour %d sorties avec un pas de sortie de %e\n"
 
-#: ../src/solver/solver.cxx:684
+#: ../src/solver/solver.cxx:683
 #, c-format
 msgid ""
 "Solver::addMonitor: Cannot reduce timestep (from %g to %g) after init is "
 "called!"
 msgstr ""
 
-#: ../src/solver/solver.cxx:1132
+#: ../src/solver/solver.cxx:1131
 #, c-format
 msgid ""
 "Time derivative at wrong location - Field is at %s, derivative is at %s for "
 "field '%s'\n"
 msgstr ""
 
-#: ../src/solver/solver.cxx:1354
+#: ../src/solver/solver.cxx:1353
 #, c-format
 msgid "Time derivative for variable '%s' not set"
 msgstr ""
@@ -653,7 +653,7 @@ msgstr ""
 msgid "Usage is %s -o <settings filename>\n"
 msgstr ""
 
-#: ../tests/unit/src/test_bout++.cxx:30 ../tests/unit/src/test_bout++.cxx:44
+#: ../tests/unit/src/test_bout++.cxx:29 ../tests/unit/src/test_bout++.cxx:43
 msgid "Usage:"
 msgstr ""
 
@@ -667,7 +667,7 @@ msgid ""
 msgstr ""
 
 #. restart file should be written by physics model
-#: ../src/solver/solver.cxx:795
+#: ../src/solver/solver.cxx:794
 msgid "User signalled to quit. Returning\n"
 msgstr ""
 
@@ -702,7 +702,7 @@ msgstr ""
 msgid "Value for option %s is not an integer"
 msgstr ""
 
-#: ../src/solver/solver.cxx:1091 ../src/solver/solver.cxx:1095
+#: ../src/solver/solver.cxx:1090 ../src/solver/solver.cxx:1094
 #, c-format
 msgid "Variable '%s' not initialised"
 msgstr ""
