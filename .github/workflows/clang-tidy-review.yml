@@ -6,6 +6,10 @@ on:
       - '**.cxx'
       - '**.hxx'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   review:
     runs-on: ubuntu-latest
