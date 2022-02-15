@@ -16,6 +16,9 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
+      - name: Ensure base ref is accessible
+        run: git fetch origin
+
       # This also installs git-clang-format
       - name: Install clang-format
         run: sudo apt install clang-format
