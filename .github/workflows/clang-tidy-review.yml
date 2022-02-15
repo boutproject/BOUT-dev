@@ -32,4 +32,5 @@ jobs:
                              -DBOUT_USE_SUNDIALS=ON \
                              -DBOUT_BUILD_EXAMPLES=ON \
                              -DBOUT_BUILD_DOCS=OFF \
+                             -DBOUT_ENABLE_PYTHON=OFF \
                              -DCMAKE_EXPORT_COMPILE_COMMANDS=On
