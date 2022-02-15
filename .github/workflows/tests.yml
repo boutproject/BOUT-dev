@@ -27,7 +27,7 @@ jobs:
         is_master_or_next:
           - ${{ github.ref ==  'refs/heads/master' || github.ref == 'refs/heads/next'  || github.base_ref ==  'master' || github.base_ref == 'next' }}
         config:
-          - name: "Default options"
+          - name: "Default options, Ubuntu 18.04"
             os: ubuntu-18.04
             configure_options: ""
             script_flags: "-uim"
@@ -56,7 +56,7 @@ jobs:
                                 --with-sundials=/home/runner/local"
             script_flags: "-uim"
 
-          - name: "CMake, shared, Ubuntu 20.04"
+          - name: "CMake, shared, release, Ubuntu 20.04"
             os: ubuntu-20.04
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_OPENMP=ON
@@ -68,7 +68,7 @@ jobs:
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
 
-          - name: "CMake, shared, Ubuntu 20.04, 3D metrics"
+          - name: "CMake, shared, OpenMP, Ubuntu 20.04, 3D metrics"
             os: ubuntu-20.04
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
