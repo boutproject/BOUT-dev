@@ -51,14 +51,14 @@ public:
                                     getRegionNobndry().getIndices().end()),
           newIndices;
       BOUT_FOR_SERIAL(i, getRegionNobndry()) {
-        for (const IndexOffset<ind_type> j : stencils.getStencilPart(i)) {
+        for (const IndexOffset<ind_type>& j : stencils.getStencilPart(i)) {
           insertIndex(i + j, allIndices, newIndices);
         }
       }
       std::set<ind_type> candidateIndices = newIndices;
       while (candidateIndices.size() > 0) {
         newIndices.clear();
-        for (const ind_type i : candidateIndices) {
+        for (const ind_type& i : candidateIndices) {
           insertIndex(i, allIndices, newIndices);
         }
         candidateIndices = newIndices;

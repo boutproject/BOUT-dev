@@ -21,11 +21,11 @@ phi = (sin(z - x + t) + 0.001 * cos(y - z)) * sin(
     2.0 * pi * x
 )  # Must satisfy Dirichlet BCs for now
 
-Psi = 1e-2 * cos(4 * x ** 2 + z - y)  # + sin(t)*sin(3*x + 2*z - y))
+Psi = 1e-2 * cos(4 * x**2 + z - y)  # + sin(t)*sin(3*x + 2*z - y))
 
 U = 2.0 * cos(2 * t) * cos(x - z + 4 * y)
 
-P = 1 + 0.5 * cos(t) * cos(3 * x ** 2 - z + y) + 0.005 * sin(y - z) * sin(t)
+P = 1 + 0.5 * cos(t) * cos(3 * x**2 - z + y) + 0.005 * sin(y - z) * sin(t)
 
 P0 = 2 + cos(x * pi)  # Pressure pedestal
 J0 = 1 - x - sin(x * pi) ** 2 * cos(y)  # Parallel current
@@ -97,9 +97,9 @@ if hyperresist > 0.0:
 # Vorticity
 
 dUdt = (
-    B0 ** 2 * b0xGrad_dot_Grad(Psi, J0, metric)
+    B0**2 * b0xGrad_dot_Grad(Psi, J0, metric)
     + bxcvz * diff(P, metric.z)
-    - (B0 ** 2) * Grad_parP(Jpar)
+    - (B0**2) * Grad_parP(Jpar)
 )
 if nonlinear:
     # Bracket method '0' (STD) goes to b0xGrad_dot_Grad

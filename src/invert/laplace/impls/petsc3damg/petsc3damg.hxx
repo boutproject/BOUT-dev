@@ -201,8 +201,6 @@ private:
   int lower_boundary_flags;
   int upper_boundary_flags;
 
-  int meshx, meshz, size, localN; // Mesh sizes, total size, no of points on this processor
-
   Options *opts;              // Laplace Section Options Object
   std::string ksptype; ///< KSP solver type
   std::string pctype;  ///< Preconditioner type
@@ -225,9 +223,6 @@ private:
   KSP ksp;
   bool kspInitialised;
   PetscLib lib;
-
-  bool use_precon;  // Switch for preconditioning
-  bool rightprec;   // Right preconditioning
 
   // These are the implemented flags
   static constexpr int implemented_flags = INVERT_START_NEW,
