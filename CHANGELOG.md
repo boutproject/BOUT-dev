@@ -17,6 +17,18 @@
 
   See [\#2154](https://github.com/boutproject/BOUT-dev/pull/2154).
 
+## [v4.4.2](https://github.com/boutproject/BOUT-dev/tree/v4.4.2) (2021-12-15)
+
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.4.1...v4.4.2)
+
+**Merged pull requests:**
+
+- CMake: option to ignore a conda environment; fix for PVODE [\#2494](https://github.com/boutproject/BOUT-dev/pull/2494) ([johnomotani](https://github.com/users/johnomotani))
+- CMake fixes for netCDF [\#2493](https://github.com/boutproject/BOUT-dev/pull/2493) ([johnomotani](https://github.com/users/johnomotani))
+- Fix bug in PetscLib that broke no-PETSc builds [\#2492](https://github.com/boutproject/BOUT-dev/pull/2492) ([johnomotani](https://github.com/users/johnomotani))
+- Remove tests depending on UB [\#2491](https://github.com/boutproject/BOUT-dev/pull/2491) ([j-b-o](https://github.com/users/j-b-o))
+- Make cmake submodule update work with older versions of git [\#2490](https://github.com/boutproject/BOUT-dev/pull/2490) ([johnomotani](https://github.com/users/johnomotani))
+
 ## [v4.4.1](https://github.com/boutproject/BOUT-dev/tree/v4.4.1) (2021-12-15)
 
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.4.0...v4.4.1)
