@@ -75,7 +75,7 @@ for dir, sizes in inputs:
         E_N = E_N[:, 1:-1, :, :]
 
         # Average error over domain
-        l2 = sqrt(mean(E_N ** 2))
+        l2 = sqrt(mean(E_N**2))
         linf = max(abs(E_N))
 
         error_2.append(l2)

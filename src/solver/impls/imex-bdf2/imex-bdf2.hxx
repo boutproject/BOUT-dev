@@ -41,8 +41,8 @@
 #if not BOUT_HAS_PETSC
 
 namespace {
-RegisterUnavailableSolver registerunavailableimdexbdef2("imdexbdef2",
-                                                        "BOUT++ was not configured with PETSc");
+RegisterUnavailableSolver
+    registerunavailableimdexbdef2("imdexbdef2", "BOUT++ was not configured with PETSc");
 }
 
 #else
@@ -51,8 +51,8 @@ class IMEXBDF2;
 
 #include "mpi.h"
 
-#include <bout_types.hxx>
 #include <bout/petsclib.hxx>
+#include <bout_types.hxx>
 
 #include <petsc.h>
 #include <petscsnes.h>
@@ -106,26 +106,26 @@ public:
   /// @param[out] f  The result of the operation
   PetscErrorCode precon(Vec x, Vec f);
 private:
-  static constexpr int MAX_SUPPORTED_ORDER = 4; //Should this be #defined instead?
+  static constexpr int MAX_SUPPORTED_ORDER = 4; // Should this be #defined instead?
 
   int maxOrder; ///< Specify the maximum order of the scheme to use (1/2/3)
 
-  BoutReal timestep; ///< The internal timestep
-  int ninternal;     ///< Number of internal steps per output
-  int mxstep; ///< Maximum number of internal steps between outputs
+  BoutReal timestep;     ///< The internal timestep
+  int ninternal;         ///< Number of internal steps per output
+  int mxstep;            ///< Maximum number of internal steps between outputs
 
-  //Adaptivity
+  // Adaptivity
 
   /// Use adaptive timestepping?
-  bool adaptive; // Do we want to do an error check to enable adaptivity?
-  int nadapt; ///< How often do we check the error
-  int mxstepAdapt;  ///< Maximum no. consecutive times we try to reduce timestep
-  BoutReal scaleCushUp; ///< Don't increase timestep if scale factor < 1.0+scaleCushUp
+  bool adaptive;          // Do we want to do an error check to enable adaptivity?
+  int nadapt;             ///< How often do we check the error
+  int mxstepAdapt;        ///< Maximum no. consecutive times we try to reduce timestep
+  BoutReal scaleCushUp;   ///< Don't increase timestep if scale factor < 1.0+scaleCushUp
   BoutReal scaleCushDown; ///< Don't decrease timestep if scale factor > 1.0-scaleCushDown
-  BoutReal adaptRtol; ///< Target relative error for adaptivity.
-  BoutReal dtMax; ///< Maximum timestep we want to use
-  BoutReal dtMinFatal; ///< If timestep wants to drop below this we abort. Set -ve to deactivate
-  BoutReal dtMin;      ///< Minimum timestep we want to use
+  BoutReal adaptRtol;     ///< Target relative error for adaptivity.
+  BoutReal dtMax;         ///< Maximum timestep we want to use
+  BoutReal dtMinFatal;    ///< If timestep wants to drop below this we abort. Set -ve to deactivate
+  BoutReal dtMin;         ///< Minimum timestep we want to use
 
   /// Default is matrix free
   bool matrix_free;
@@ -157,14 +157,14 @@ private:
   /// @param[in] curtime  The current simulation time
   /// @param[in] dt       The time step to take
   /// @param[in] order    The order of accuracy
-  void take_step(BoutReal curtime, BoutReal dt, int order=2);
+  void take_step(BoutReal curtime, BoutReal dt, int order = 2);
 
   /// Setup a SNES object
   /// This includes creating, setting functions, options,
   /// and internal (KSP) solver, and Jacobian options
   /// including coloring.
   ///
-  void constructSNES(SNES *snesIn);
+  void constructSNES(SNES* snesIn);
 
   /// Shuffle state along one step
   void shuffleState();
@@ -173,7 +173,7 @@ private:
   void calculateCoeffs(int order);
 
   // Working memory
-  Array<BoutReal> u ; ///< System state at current time
+  Array<BoutReal> u;               ///< System state at current time
   std::vector<Array<BoutReal>> uV; ///< The solution history
   std::vector<Array<BoutReal>> fV; ///< The non-stiff solution history
   std::vector<BoutReal> timesteps; ///< Timestep history
@@ -195,29 +195,30 @@ private:
   Mat Jmf{nullptr}; ///< Matrix-free Jacobian
 
   // Diagnostics
-  bool diagnose;  ///< Output diagnostics every timestep
-  bool verbose;  ///< Gives a more verbose output for each timestep
-  int linear_fails;   ///< Number of linear (KSP) convergence failures
-  int nonlinear_fails;  ///< Numbef of nonlinear (SNES) convergence failures
+  bool diagnose;       ///< Output diagnostics every timestep
+  bool verbose;        ///< Gives a more verbose output for each timestep
+  int linear_fails;    ///< Number of linear (KSP) convergence failures
+  int nonlinear_fails; ///< Numbef of nonlinear (SNES) convergence failures
 
-  bool have_constraints; ///< Are there any constraint variables?
+  bool have_constraints;  ///< Are there any constraint variables?
   Array<BoutReal> is_dae; ///< If using constraints, 1 -> DAE, 0 -> AE
 
-  MatFDColoring fdcoloring; ///< Matrix coloring context, used for finite difference Jacobian evaluation
+  MatFDColoring fdcoloring; ///< Matrix coloring context, used for finite difference
+                            ///< Jacobian evaluation
 
-  template< class Op >
-  void loopVars(BoutReal *u);
+  template <class Op>
+  void loopVars(BoutReal* u);
 
   /// Save variables from BOUT++ fields into a
   /// pre-allocated array \p u
-  void saveVars(BoutReal *u);
+  void saveVars(BoutReal* u);
 
   /// Load variables from input vector u into BOUT++ fields
-  void loadVars(BoutReal *u);
+  void loadVars(BoutReal* u);
 
   /// Save time derivatives from ddt() fields into
   /// a preallocated array \p u.
-  void saveDerivs(BoutReal *u);
+  void saveDerivs(BoutReal* u);
 };
 
 #endif // __IMEXBDF2_SOLVER_H__

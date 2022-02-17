@@ -1240,7 +1240,7 @@ Field3D Solver::globalIndex(int localStart) {
  * Running user-supplied functions
  **************************************************************************/
 
-int Solver::run_rhs(BoutReal t) {
+int Solver::run_rhs(BoutReal t, bool linear) {
   int status;
 
   Timer timer("rhs");
@@ -1255,13 +1255,13 @@ int Solver::run_rhs(BoutReal t) {
 
     save_vars(tmp.begin()); // Copy variables into tmp
     pre_rhs(t);
-    status = model->runConvective(t);
+    status = model->runConvective(t, linear);
     post_rhs(t); // Check variables, apply boundary conditions
 
     load_vars(tmp.begin());   // Reset variables
     save_derivs(tmp.begin()); // Save time derivatives
     pre_rhs(t);
-    status = model->runDiffusive(t, false);
+    status = model->runDiffusive(t, linear);
     post_rhs(t);
     save_derivs(tmp2.begin()); // Save time derivatives
     for (BoutReal *t = tmp.begin(), *t2 = tmp2.begin(); t != tmp.end(); ++t, ++t2) {
@@ -1270,7 +1270,7 @@ int Solver::run_rhs(BoutReal t) {
     load_derivs(tmp.begin()); // Put back time-derivatives
   } else {
     pre_rhs(t);
-    status = model->runRHS(t);
+    status = model->runRHS(t, linear);
     post_rhs(t);
   }
 
@@ -1284,16 +1284,16 @@ int Solver::run_rhs(BoutReal t) {
 }
 
 /// NOTE: This calls add_mms_sources
-int Solver::run_convective(BoutReal t) {
+int Solver::run_convective(BoutReal t, bool linear) {
   int status;
 
   Timer timer("rhs");
   pre_rhs(t);
   if (model->splitOperator()) {
-    status = model->runConvective(t);
+    status = model->runConvective(t, linear);
   } else if (!is_nonsplit_model_diffusive) {
     // Return total
-    status = model->runRHS(t);
+    status = model->runRHS(t, linear);
   } else {
     // Zero if not split
     for (const auto& f : f3d)
@@ -1323,7 +1323,7 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
     post_rhs(t);
   } else if (is_nonsplit_model_diffusive) {
     // Return total
-    status = model->runRHS(t);
+    status = model->runRHS(t, linear);
   } else {
     // Zero if not split
     for (const auto& f : f3d)
@@ -1339,37 +1339,42 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
 void Solver::pre_rhs(BoutReal t) {
 
   // Apply boundary conditions to the values
-  for(const auto& f : f2d) {
-    if(!f.constraint) // If it's not a constraint
+  for (const auto& f : f2d) {
+    if (!f.constraint) { // If it's not a constraint
       f.var->applyBoundary(t);
+    }
   }
   
-  for(const auto& f : f3d) {
-    if(!f.constraint)
+  for (const auto& f : f3d) {
+    if (!f.constraint) {
       f.var->applyBoundary(t);
+    }
   }
   
 }
 
 void Solver::post_rhs(BoutReal UNUSED(t)) {
 #if CHECK > 0
-  for(const auto& f : f3d) {
-    if(!f.F_var->isAllocated())
+  for (const auto& f : f3d) {
+    if (!f.F_var->isAllocated()) {
       throw BoutException(_("Time derivative for variable '{:s}' not set"), f.name);
+    }
   }
 #endif
   // Make sure vectors in correct basis
-  for(const auto& v : v2d) {
-    if(v.covariant) {
+  for (const auto& v : v2d) {
+    if (v.covariant) {
       v.F_var->toCovariant();
-    }else
+    } else {
       v.F_var->toContravariant();
+    }
   }
-  for(const auto& v : v3d) {
-    if(v.covariant) {
+  for (const auto& v : v3d) {
+    if (v.covariant) {
       v.F_var->toCovariant();
-    }else
+    } else {
       v.F_var->toContravariant();
+    }
   }
 
   // Make sure 3D fields are at the correct cell location, etc.
@@ -1378,19 +1383,21 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
   }
 
   // Apply boundary conditions to the time-derivatives
-  for(const auto& f : f2d) {
-    if(!f.constraint && f.evolve_bndry) // If it's not a constraint and if the boundary is evolving
+  for (const auto& f : f2d) {
+    if (!f.constraint && f.evolve_bndry) { // If it's not a constraint and if the boundary is evolving
       f.var->applyTDerivBoundary();
+    }
   }
   
-  for(const auto& f : f3d) {
-    if(!f.constraint && f.evolve_bndry)
+  for (const auto& f : f3d) {
+    if (!f.constraint && f.evolve_bndry) {
       f.var->applyTDerivBoundary();
+    }
   }
 #if CHECK > 2
   {
     TRACE("Solver checking time derivatives");
-    for(const auto& f : f3d) {
+    for (const auto& f : f3d) {
       TRACE("Variable: {:s}", f.name);
       checkData(*f.F_var);
     }

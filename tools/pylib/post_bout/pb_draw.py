@@ -972,7 +972,7 @@ class LinResDraw(LinRes):
             Ln_drive_scale = s.meta["w_Ln"][0] ** -1
             # Ln_drive_scale = 2.1e3
             # clonex.set_ylim(Ln_drive_scale*ymin, Ln_drive_scale*ymax)
-            clonex.set_ylim(ynorm ** -1 * ymin, ynorm ** -1 * ymax)
+            clonex.set_ylim(ynorm**-1 * ymin, ynorm**-1 * ymax)
 
             try:
                 if trans:

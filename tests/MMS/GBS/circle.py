@@ -76,7 +76,7 @@ def generate(
     Bpxy[:, :] = Bt
 
     Bxy = ndarray([nx, ny])
-    Bxy[:, :] = sqrt(Bt ** 2 + Bp ** 2)
+    Bxy[:, :] = sqrt(Bt**2 + Bp**2)
 
     hthe = ndarray([nx, ny])
     hthe[:, :] = R

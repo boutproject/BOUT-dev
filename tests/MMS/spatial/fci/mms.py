@@ -23,7 +23,7 @@ Bp = 0.05
 Bpprime = 0.1
 
 Bpx = Bp + (x - 0.5) * Lx * Bpprime  # Note: x in range [0,1]
-B = sqrt(Bpx ** 2 + Bt ** 2)
+B = sqrt(Bpx**2 + Bt**2)
 
 
 def FCI_ddy(f):

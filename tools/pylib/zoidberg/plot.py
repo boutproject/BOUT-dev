@@ -231,7 +231,7 @@ def plot_streamlines(grid, magnetic_field, y_slice=0, width=None, **kwargs):
 
     if width is not None:
         # Get the B field magnitude in the poloidal plane
-        bxz_mag = np.sqrt(magnetic_field.b_mag ** 2 - magnetic_field.by ** 2)
+        bxz_mag = np.sqrt(magnetic_field.b_mag**2 - magnetic_field.by**2)
         linewidth = width * (bxz_mag[full_slice] / bxz_mag.max()).T
     else:
         linewidth = 1

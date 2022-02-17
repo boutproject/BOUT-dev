@@ -171,7 +171,7 @@ def run_zeff_case(zeff):
     gamma = gamma / wstar
 
     # Calculate analytic result
-    t = 0.5 * (np.sqrt(sparn ** 4 + 16 * sparn ** 2) - sparn ** 2)
+    t = 0.5 * (np.sqrt(sparn**4 + 16 * sparn**2) - sparn**2)
     wr = 0.5 * np.sqrt(t)
     wi = sparn / np.sqrt(t) - 0.5 * sparn
 

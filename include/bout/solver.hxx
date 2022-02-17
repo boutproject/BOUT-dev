@@ -431,11 +431,11 @@ protected:
   int iteration{0};
 
   /// Run the user's RHS function
-  int run_rhs(BoutReal t);
+  int run_rhs(BoutReal t, bool linear = false);
   /// Calculate only the convective parts
-  int run_convective(BoutReal t);
+  int run_convective(BoutReal t, bool linear = false);
   /// Calculate only the diffusive parts
-  int run_diffusive(BoutReal t, bool linear = true);
+  int run_diffusive(BoutReal t, bool linear = false);
 
   /// Calls all monitor functions
   ///
