@@ -87,7 +87,16 @@ public:
 
   virtual void applyBoundary(bool UNUSED(init)=false) {}
   virtual void applyTDerivBoundary() {};
-//JMAD
+
+  virtual void applyParallelBoundary(){};
+  virtual void applyParallelBoundary(BoutReal t){};
+  virtual void applyParallelBoundary(const std::string& condition){};
+  virtual void applyParallelBoundary(const char* condition) {
+    applyParallelBoundary(std::string(condition));
+  }
+  virtual void applyParallelBoundary(const std::string& region,
+                                     const std::string& condition){};
+  // JMAD
   void addBndryFunction(FuncPtr userfunc, BndryLoc location);
   void addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location);
   
