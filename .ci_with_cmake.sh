@@ -3,7 +3,7 @@
 set -ex
 
 cmake --version
-cmake . -B build $@ -DCMAKE_INSTALL_PREFIX=$(pwd)/installed
+cmake -S . -B build $@ -DCMAKE_INSTALL_PREFIX=$(pwd)/installed
 cmake --build build --target build-check -j 2
 cd build
 ctest --output-on-failure --timeout 300
