@@ -50,7 +50,7 @@ jobs:
                                 --with-sundials=/home/runner/local"
             cmake_options: "-DBOUT_ENABLE_CHECKS=OFF
                             -DBUILD_SHARED_LIBS=OFF
-                            CXXFLAGS=-Ofast
+                            -DCXXFLAGS=-Ofast
                             -DBOUT_ENABLE_SIGNAL=OFF
                             -DBOUT_ENABLE_TRACK=OFF
                             -DBOUT_ENABLE_BACKTRACE=OFF
