@@ -472,13 +472,13 @@ class Field3D : public Field {
   /// This uses 2nd order central differences to set the value
   /// on the boundary to the value on the boundary in field \p f3d.
   /// Note: does not just copy values in boundary region.
-  void setBoundaryTo(const Field3D &f3d); 
+  void setBoundaryTo(const Field3D &f3d);
 
-  void applyParallelBoundary();
-  void applyParallelBoundary(BoutReal t);
-  void applyParallelBoundary(const std::string &condition);
-  void applyParallelBoundary(const char* condition) { applyParallelBoundary(std::string(condition)); }
-  void applyParallelBoundary(const std::string &region, const std::string &condition);
+  void applyParallelBoundary() override;
+  void applyParallelBoundary(BoutReal t) override;
+  void applyParallelBoundary(const std::string& condition) override;
+  void applyParallelBoundary(const std::string& region,
+                             const std::string& condition) override;
   void applyParallelBoundary(const std::string &region, const std::string &condition, Field3D *f);
 
   friend void swap(Field3D& first, Field3D& second) noexcept;
