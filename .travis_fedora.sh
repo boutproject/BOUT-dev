@@ -57,11 +57,11 @@ else
     cd
     cd BOUT-dev
     echo "starting configure"
-    time ./configure --with-petsc --enable-shared || cat config.log
+    time cmake -S . -B build -DBOUT_USE_PETSC=ON
     for f in tests/requirements/*[^y] ; do
 	echo -n "$f: "
 	$f && echo yes || echo no
     done
-    time make build-check -j 2
-    time make check
+    time make -C build build-check -j 2
+    time make -C build check
 fi
