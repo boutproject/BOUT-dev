@@ -73,7 +73,7 @@ for dir, sizes in inputs:
         E_N = collect("E_N", tind=[nout, nout], path=dir, info=False)
 
         # Average error over domain, not including guard cells
-        l2 = sqrt(mean(E_N ** 2))
+        l2 = sqrt(mean(E_N**2))
         linf = max(abs(E_N))
 
         error_2.append(l2)

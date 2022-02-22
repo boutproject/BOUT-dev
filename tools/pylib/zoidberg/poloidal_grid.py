@@ -411,7 +411,7 @@ class StructuredPoloidalGrid(PoloidalGrid):
 
             # Check if close enough
             # Note: only check the points which are not in the boundary
-            val = np.amax(mask * (dR ** 2 + dZ ** 2))
+            val = np.amax(mask * (dR**2 + dZ**2))
             if val < tol:
                 break
             cnt += 1
@@ -487,15 +487,15 @@ class StructuredPoloidalGrid(PoloidalGrid):
         dRdz /= dz
         dZdz /= dz
 
-        g_xx = dRdx ** 2 + dZdx ** 2
+        g_xx = dRdx**2 + dZdx**2
         g_xz = dRdx * dRdz + dZdx * dZdz
-        g_zz = dRdz ** 2 + dZdz ** 2
+        g_zz = dRdz**2 + dZdz**2
 
         # Calculate metric by inverting
         # ( gxx   gxz ) = ( g_xx   g_xz )^-1
         # ( gxz   gzz )   ( g_xz   g_zz )
 
-        determinant = g_xx * g_zz - g_xz ** 2
+        determinant = g_xx * g_zz - g_xz**2
         gxx = g_zz / determinant
         gzz = g_xx / determinant
         gxz = -g_xz / determinant
@@ -794,17 +794,17 @@ def grid_elliptic(
         dZdz = (Z_zp - Z_zm) / (2.0 * dz)
         dZdx = (Z_xp - Z_xm) / (2.0 * dx)
 
-        a = dRdz ** 2 + dZdz ** 2
+        a = dRdz**2 + dZdz**2
         b = dRdz * dRdx + dZdx * dZdz
-        c = dRdx ** 2 + dZdx ** 2
+        c = dRdx**2 + dZdx**2
 
         # Now solve a*R_xx - 2*b*R_xz + c*R_zz = 0
         # For now using Jacobi update
 
-        a_dx2 = a / dx ** 2
+        a_dx2 = a / dx**2
         b_dxdz = b / (2.0 * dx * dz)
-        c_dz2 = c / dz ** 2
-        inv_diag = 1.0 / (2 * a / dx ** 2 + 2 * c / dz ** 2)
+        c_dz2 = c / dz**2
+        inv_diag = 1.0 / (2 * a / dx**2 + 2 * c / dz**2)
 
         Rold = R.copy()
         Zold = Z.copy()
