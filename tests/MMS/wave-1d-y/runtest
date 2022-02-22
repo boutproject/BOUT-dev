@@ -75,7 +75,7 @@ for ny in nylist:
 
         # Average error over domain
 
-        l2 = sqrt(mean(E ** 2))
+        l2 = sqrt(mean(E**2))
         linf = max(abs(E))
 
         error_2[var].append(l2)

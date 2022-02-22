@@ -82,7 +82,7 @@ pi = symbols("pi")
 # Define the manufactured solution
 
 # n = 0.9 + 0.9*x + 0.2*sin(5.*x**2 - 2*z) + cos(y)
-n = 0.9 + 0.9 * x + 0.2 * sin(5.0 * x ** 2)
+n = 0.9 + 0.9 * x + 0.2 * sin(5.0 * x**2)
 
 
 # Calculate gradients for boundaries
