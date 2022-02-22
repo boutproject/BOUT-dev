@@ -10,11 +10,13 @@ ctest --output-on-failure --timeout 300
 
 # Test bout-config basic functionallity
 cd ../examples/make-script
+PATH=../../build/bin:$PATH bout-config --all
 PATH=../../build/bin:$PATH make
 ./test --help
 cd -
 make install -j 2
 cd -
 rm test
+PATH=../../installed/bin:$PATH bout-config --all
 PATH=../../installed/bin:$PATH make
 ./test --help
