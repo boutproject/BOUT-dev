@@ -265,17 +265,92 @@ void setupGetText() {
 #endif // BOUT_HAS_GETTEXT
 }
 
-template <class T>
-void printAvailableImplementations(const T& factory) {
+/// Print all of the available implementations for a given `Factory`
+template <class Factory>
+[[noreturn]] void printAvailableImplementations() {
+  const auto factory = Factory::getInstance();
+
   for (const auto& implementation : factory.listAvailable()) {
     std::cout << implementation << "\n";
   }
   auto unavailable = factory.listUnavailableReasons();
   if (not unavailable.empty()) {
-    std::cout << fmt::format("\nThe following {}s are currently unavailable:\n", T::type_name);
+    std::cout << fmt::format("\nThe following {}s are currently unavailable:\n",
+                             Factory::type_name);
     for (const auto& implementation : unavailable) {
       std::cout << implementation << "\n";
     }
+  }
+  std::exit(EXIT_SUCCESS);
+}
+
+/// Print all the Options used in constructing \p type
+template <class Factory>
+[[noreturn]] void printTypeOptions(const std::string& type) {
+  const auto factory = Factory::getInstance();
+
+  // Make sure all the type construction is quiet
+  output.disable();
+  output_error.disable();
+  output_warn.disable();
+  output_progress.disable();
+  output_info.disable();
+  output_verbose.disable();
+  output_debug.disable();
+
+  // There are some non-optional arguments to mesh we'll need to
+  // supply if we don't have an input file
+  Options& mesh_options = Options::root()["mesh"];
+  mesh_options["MXG"] = 1;
+  mesh_options["MYG"] = 1;
+  mesh_options["nx"] = 4;
+  mesh_options["ny"] = 4;
+  mesh_options["nz"] = 4;
+
+  // We might need a global mesh for some types, so best make one
+  bout::globals::mpi = new MpiWrapper();
+  bout::globals::mesh = Mesh::create();
+  bout::globals::mesh->load();
+
+  // An empty Options that we'll later check for used values
+  Options help_options;
+
+  // Most likely failure is typo in type name, so we definitely want
+  // to print that
+  try {
+    factory.create(type, &help_options[Factory::section_name]);
+  } catch (const BoutException& error) {
+    std::cout << error.what() << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+
+  // Now we can print all the options used in constructing our
+  // type. Note that this does require all the options are used in the
+  // constructor, and not in a `init` method or similar
+  std::cout << fmt::format("Input options for {} '{}':\n\n", Factory::type_name, type);
+  std::cout << fmt::format("{:id}\n", help_options);
+  std::exit(EXIT_SUCCESS);
+}
+
+/// Handle the command line options for the given `Factory`: listing
+/// all types, and used options for a given type
+template <class Factory>
+void handleFactoryHelp(const std::string& current_arg, int i, int argc, char** argv,
+                       bool plural_needs_e = false) {
+  const auto name = lowercase(Factory::type_name);
+
+  const auto list_arg = fmt::format("--list-{}{}s", name, plural_needs_e ? "e" : "");
+  const auto help_arg = fmt::format("--help-{}", name);
+
+  if (current_arg == list_arg) {
+    printAvailableImplementations<Factory>();
+  }
+
+  if (current_arg == help_arg) {
+    if (i + 1 >= argc) {
+      throw BoutException(_("Usage is {} {} <name>\n"), argv[0], help_arg);
+    }
+    printTypeOptions<Factory>(argv[i + 1]);
   }
 }
 
@@ -304,13 +379,21 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       output.write(
           _("  --print-config\t\tPrint the compile-time configuration\n"
             "  --list-solvers\t\tList the available time solvers\n"
+            "  --help-solver <solver>\tPrint help for the given time solver\n"
             "  --list-laplacians\t\tList the available Laplacian inversion solvers\n"
+            "  --help-laplacian <laplacian>\tPrint help for the given Laplacian inversion solver\n"
             "  --list-laplacexz\t\tList the available LaplaceXZ inversion solvers\n"
+            "  --help-laplacexz <laplacexz>\tPrint help for the given LaplaceXZ inversion solver\n"
             "  --list-invertpars\t\tList the available InvertPar solvers\n"
+            "  --help-invertpar <invertpar>\tPrint help for the given InvertPar solver\n"
             "  --list-rkschemes\t\tList the available Runge-Kutta schemes\n"
+            "  --help-rkscheme <rkscheme>\tPrint help for the given Runge-Kutta scheme\n"
             "  --list-meshes\t\t\tList the available Meshes\n"
+            "  --help-mesh <mesh>\t\tPrint help for the given Mesh\n"
             "  --list-xzinterpolations\tList the available XZInterpolations\n"
+            "  --help-xzinterpolation <xzinterpolation>\tPrint help for the given XZInterpolation\n"
             "  --list-zinterpolations\tList the available ZInterpolations\n"
+            "  --help-zinterpolation <zinterpolation>\tPrint help for the given ZInterpolation\n"
             "  -h, --help\t\t\tThis message\n"
             "  restart [append]\t\tRestart the simulation. If append is specified, "
             "append to the existing output files, otherwise overwrite them\n"
@@ -325,38 +408,14 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       printCompileTimeOptions();
       std::exit(EXIT_SUCCESS);
     }
-    if (current_arg == "--list-solvers") {
-      printAvailableImplementations(SolverFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-laplacians") {
-      printAvailableImplementations(LaplaceFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-laplacexzs") {
-      printAvailableImplementations(LaplaceXZFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-invertpars") {
-      printAvailableImplementations(InvertParFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-rkschemes") {
-      printAvailableImplementations(RKSchemeFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-meshes") {
-      printAvailableImplementations(MeshFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-xzinterpolations") {
-      printAvailableImplementations(XZInterpolationFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-zinterpolations") {
-      printAvailableImplementations(ZInterpolationFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
+    handleFactoryHelp<SolverFactory>(current_arg, i, argc, argv);
+    handleFactoryHelp<LaplaceFactory>(current_arg, i, argc, argv);
+    handleFactoryHelp<LaplaceXZFactory>(current_arg, i, argc, argv);
+    handleFactoryHelp<InvertParFactory>(current_arg, i, argc, argv);
+    handleFactoryHelp<RKSchemeFactory>(current_arg, i, argc, argv);
+    handleFactoryHelp<MeshFactory>(current_arg, i, argc, argv, true);
+    handleFactoryHelp<XZInterpolationFactory>(current_arg, i, argc, argv);
+    handleFactoryHelp<ZInterpolationFactory>(current_arg, i, argc, argv);
   }
 
   CommandLineArgs args;

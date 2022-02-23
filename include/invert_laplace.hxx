@@ -134,10 +134,7 @@ constexpr int INVERT_KX_ZERO = 16;
  */
 
 class LaplaceFactory
-    : public Factory<
-          Laplacian, LaplaceFactory,
-          std::function<std::unique_ptr<Laplacian>(Options*, CELL_LOC, Mesh*, Solver*,
-                                                   Datafile*)>> {
+  : public Factory<Laplacian, LaplaceFactory, Options*, CELL_LOC, Mesh*, Solver*, Datafile*> {
 public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
@@ -150,6 +147,9 @@ public:
     options = optionsOrDefaultSection(options);
     return Factory::create(getType(options), options, loc, mesh, solver, dump);
   }
+  ReturnType create(const std::string& type, Options* options) const {
+    return Factory::create(type, options, CELL_CENTRE, nullptr, nullptr, nullptr);
+  }
 };
 
 /// Simpler name for Factory registration helper class
@@ -161,19 +161,9 @@ public:
 ///     RegisterLaplace<MyLaplace> registerlaplacemine("mylaplace");
 ///     }
 template <class DerivedType>
-class RegisterLaplace {
-public:
-  RegisterLaplace(const std::string& name) {
-    LaplaceFactory::getInstance().add(
-        name,
-        [](Options* options, CELL_LOC loc, Mesh* mesh, Solver* solver, Datafile* dump)
-        -> std::unique_ptr<Laplacian> {
-          return std::make_unique<DerivedType>(options, loc, mesh, solver, dump);
-        });
-  }
-};
+using RegisterLaplace = LaplaceFactory::RegisterInFactory<DerivedType>;
 
-using RegisterUnavailableLaplace = RegisterUnavailableInFactory<Laplacian, LaplaceFactory>;
+using RegisterUnavailableLaplace = LaplaceFactory::RegisterUnavailableInFactory;
 
 /// Base class for Laplacian inversion
 class Laplacian {

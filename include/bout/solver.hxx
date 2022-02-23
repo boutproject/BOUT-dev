@@ -98,7 +98,7 @@ enum class SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS
 /// A type to set where in the list monitors are added
 enum class MonitorPosition {BACK, FRONT};
 
-class SolverFactory : public Factory<Solver, SolverFactory> {
+class SolverFactory : public Factory<Solver, SolverFactory, Options*> {
 public:
   static constexpr auto type_name = "Solver";
   static constexpr auto section_name = "solver";
@@ -122,9 +122,9 @@ public:
 ///     RegisterSolver<MySolver> registersolvermine("mysolver");
 ///     }
 template <typename DerivedType>
-using RegisterSolver = RegisterInFactory<Solver, DerivedType, SolverFactory>;
+using RegisterSolver = SolverFactory::RegisterInFactory<DerivedType>;
 
-using RegisterUnavailableSolver = RegisterUnavailableInFactory<Solver, SolverFactory>;
+using RegisterUnavailableSolver = SolverFactory::RegisterUnavailableInFactory;
 
 ///////////////////////////////////////////////////////////////////
 
@@ -433,11 +433,11 @@ protected:
   int iteration{0};
 
   /// Run the user's RHS function
-  int run_rhs(BoutReal t);
+  int run_rhs(BoutReal t, bool linear = false);
   /// Calculate only the convective parts
-  int run_convective(BoutReal t);
+  int run_convective(BoutReal t, bool linear = false);
   /// Calculate only the diffusive parts
-  int run_diffusive(BoutReal t, bool linear = true);
+  int run_diffusive(BoutReal t, bool linear = false);
 
   /// Calls all monitor functions
   ///
