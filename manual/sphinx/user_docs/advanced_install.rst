@@ -480,10 +480,12 @@ Use the following configure options to ensure PETSc is compatible with BOUT++::
       --with-mpi=yes \
       --with-precision=double \
       --with-scalar-type=real \
-      --with-shared-libraries=0
+      --with-shared-libraries=1 \
+      --with-debugging=0 \
+      --prefix=$HOME/local/petsc-version-options
 
-You may also wish to add ``--with-debugging=yes`` to ``./configure``
-in order to allow debugging.
+You may also wish to change ``--with-debugging=yes`` at the end to
+``./configure`` in order to allow debugging.
 
 .. note:: If you build BOUT++ using a standalone version of SUNDIALS,
           it is advisable to not also build PETSc with SUNDIALS.
@@ -501,66 +503,37 @@ in order to allow debugging.
 
           to ``./configure``.
 
-To make PETSc, type::
+To make PETSc type what is shown after the configuer step, something like::
 
     $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug all
 
 Should BLAS, LAPACK, or any other packages be missing, you will get an
 error, and a suggestion that you can append
-``--download-name-of-package`` to the ``./configure`` line. You may want
-to test that everything is configured properly. To do this, type::
+``--download-name-of-package`` to the ``./configure`` line. You may
+want to test that everything is configured properly. To do this
+replace ``all`` with ``test`` in the make command. It should be
+something like::
 
     $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug test
 
-To use PETSc, you have to define the ``PETSC_DIR`` and ``PETSC_ARCH``
-environment variables to match how PETSc was built::
+To install PETSc, replace ``test``/``all`` with ``install`` and run
+something like::
 
-    $ export PETSC_DIR=$HOME/petsc-3.13.4
-    $ export PETSC_ARCH=arch-linux2-cxx-debug
+    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug install
 
-and add to your startup file ``$HOME/.bashrc``::
+To configure BOUT++ with PETSc, add to the cmake configure command::
 
-    export PETSC_DIR=$HOME/petsc-3.13.4
-    export PETSC_ARCH=arch-linux2-cxx-debug
+    -DBOUT_USE_PETSC=ON -DPETSC_ROOT=$HOME/local/petsc-version-options
 
-To configure BOUT++ with PETSc, go to the BOUT++ root directory, and
-type::
+For example like this::
 
-    $ ./configure --with-petsc
+    $ cmake -DBOUT_USE_PETSC=ON -DPETSC_ROOT=$HOME/local/petsc-version-options
 
-You can configure BOUT++ against different PETSc installations either
-through the ``PETSC_DIR/ARCH`` variables as above, or by specifying
-them on the command line::
+BOUT++ can also work with PETSc if it has not been installed. In this
+case ensure that ``PETSC_DIR`` and ``PETSC_ARCH`` is set, for example
+like this::
 
-  $ ./configure --with-petsc PETSC_DIR=/path/to/other/petsc PETSC_ARCH=other-arch
-
-.. note:: Unfortunately, there are a variety of ways PETSc can be
-          installed on a system, and it is hard to automatically work
-          out how to compile against a particular installation. In
-          particular, there are two PETSc-supported ways of installing
-          PETSc that are subtly different.
-
-          The first way is as above, using ``PETSC_DIR`` and
-          ``PETSC_ARCH``. A second way is to use the ``--prefix``
-          argument to ``configure`` (much like the traditional GNU
-          ``configure`` scripts) when building PETSc. In this case,
-          ``PETSC_DIR`` will be the path passed to ``--prefix`` and
-          ``PETSC_ARCH`` will be empty. When configuring BOUT++, one
-          can use ``--with-petsc=$PETSC_DIR`` as a shortcut in this
-          case. This will NOT work if PETSc was installed with a
-          ``PETSC_ARCH``.
-
-          However, there are at least some Linux distributions that
-          install PETSc in yet another way and you may need to set
-          ``PETSC_DIR/ARCH`` differently. For example, for Fedora, as
-          of May 2018, you will need to configure and build BOUT++
-          like so::
-
-            $ ./configure --with-petsc=/usr/lib64/openmpi
-            $ PETSC_DIR=/usr make
-
-          Replace `openmpi` with the correct MPI implementation that
-          you have installed.
+    $ PETSC_DIR=/path/to/petsc PETSC_ARCH=arch-linux2-cxx-debug cmake -DBOUT_USE_PETSC=ON
 
 .. _sec-lapack:
 
