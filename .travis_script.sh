@@ -74,6 +74,8 @@ export MAKEFLAGS="-j 2 -k"
 echo "****************************************"
 echo "Configuring with $CONFIGURE_OPTIONS"
 echo "****************************************"
+mpic++ --version || :
+gcc --version || :
 conf=0
 time $CONFIGURE_SHELL ./configure $CONFIGURE_OPTIONS MAKEFLAGS="$MAKEFLAGS" || conf=$?
 if test $conf -gt 0
