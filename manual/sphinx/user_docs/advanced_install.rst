@@ -484,8 +484,8 @@ Use the following configure options to ensure PETSc is compatible with BOUT++::
       --with-debugging=0 \
       --prefix=$HOME/local/petsc-version-options
 
-You may also wish to change ``--with-debugging=yes`` at the end to
-``./configure`` in order to allow debugging.
+You may also wish to change to ``--with-debugging=yes`` in the
+arguments to ``./configure``, in order to allow debugging.
 
 .. note:: If you build BOUT++ using a standalone version of SUNDIALS,
           it is advisable to not also build PETSc with SUNDIALS.
@@ -503,16 +503,17 @@ You may also wish to change ``--with-debugging=yes`` at the end to
 
           to ``./configure``.
 
-To make PETSc type what is shown after the configuer step, something like::
+To make PETSc type what is shown in the terminal output after the configure
+step, something like::
 
     $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug all
 
 Should BLAS, LAPACK, or any other packages be missing, you will get an
 error, and a suggestion that you can append
-``--download-name-of-package`` to the ``./configure`` line. You may
-want to test that everything is configured properly. To do this
-replace ``all`` with ``test`` in the make command. It should be
-something like::
+``--download-name-of-package`` to the ``./configure`` line.
+
+You may want to test that everything is configured properly. To do this replace
+``all`` with ``test`` in the make command. It should be something like::
 
     $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug test
 
@@ -530,7 +531,7 @@ For example like this::
     $ cmake -DBOUT_USE_PETSC=ON -DPETSC_ROOT=$HOME/local/petsc-version-options
 
 BOUT++ can also work with PETSc if it has not been installed. In this
-case ensure that ``PETSC_DIR`` and ``PETSC_ARCH`` is set, for example
+case ensure that ``PETSC_DIR`` and ``PETSC_ARCH`` are set, for example
 like this::
 
     $ PETSC_DIR=/path/to/petsc PETSC_ARCH=arch-linux2-cxx-debug cmake -DBOUT_USE_PETSC=ON
