@@ -89,13 +89,13 @@ public:
   virtual void applyTDerivBoundary() {};
 
   virtual void applyParallelBoundary(){};
-  virtual void applyParallelBoundary(BoutReal t){};
-  virtual void applyParallelBoundary(const std::string& condition){};
+  virtual void applyParallelBoundary(BoutReal UNUSED(t)){};
+  virtual void applyParallelBoundary(const std::string& UNUSED(condition)){};
   virtual void applyParallelBoundary(const char* condition) {
     applyParallelBoundary(std::string(condition));
   }
-  virtual void applyParallelBoundary(const std::string& region,
-                                     const std::string& condition){};
+  virtual void applyParallelBoundary(const std::string& UNUSED(region),
+                                     const std::string& UNUSED(condition)){};
   // JMAD
   void addBndryFunction(FuncPtr userfunc, BndryLoc location);
   void addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location);
