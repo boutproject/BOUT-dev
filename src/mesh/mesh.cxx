@@ -774,19 +774,35 @@ int Mesh::getCommonRegion(int lhs, int rhs) {
    */
   const size_t pos = (high * (high - 1)) /2 + low;
   if (region3Dintersect.size() <= pos) {
-    region3Dintersect.resize(pos+1, -1);
+    BOUT_OMP(critical(mesh_getIntersection_realloc))
+#if BOUT_USE_OPENMP
+    if (region3Dintersect.size() <= pos)
+#endif
+    {
+      region3Dintersect.resize(pos+1, -1);
+    }
   }
   if (region3Dintersect[pos] != -1){
     return region3Dintersect[pos];
   }
-  auto common = getIntersection(region3D[low], region3D[high]);
-  for (size_t i = 0; i < region3D.size(); ++i) {
-    if (common == region3D[i]) {
-      region3Dintersect[pos] = i;
-      return i;
+  {
+    BOUT_OMP(critical(mesh_getIntersection))
+#if BOUT_USE_OPENMP
+    if (region3Dintersect[pos] == -1)
+#endif
+    {
+      auto common = getIntersection(region3D[low], region3D[high]);
+      for (size_t i = 0; i < region3D.size(); ++i) {
+	if (common == region3D[i]) {
+	  region3Dintersect[pos] = i;
+	  break;
+	}
+      }
+      if (region3Dintersect[pos] == -1) {
+	region3D.push_back(common);
+        region3Dintersect[pos] = region3D.size() - 1;
+      }
     }
   }
-  region3D.push_back(common);
-  region3Dintersect[pos] = region3D.size() - 1;
-  return region3D.size() - 1;
+  return region3Dintersect[pos];
 }
