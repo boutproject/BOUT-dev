@@ -87,8 +87,8 @@ if on_readthedocs:
         + " -DBOUT_UPDATE_GIT_SUBMODULE=OFF"
         + " -DBOUT_TESTS=OFF"
         + f" -DPython_ROOT_DIR={pydir}"
-        + f" -Dmpark_variant_DIR={pwd}/externalpackages/mpark.variant/"
-        + f" -Dfmt_DIR={pwd}/externalpackages/fmt/"
+        + f" -Dmpark_variant_ROOT={pwd}/externalpackages/mpark.variant/"
+        + f" -Dfmt_ROOT={pwd}/externalpackages/fmt/"
     )
     # os.system("mkdir ../../build")
     os.system("echo " + cmake)
