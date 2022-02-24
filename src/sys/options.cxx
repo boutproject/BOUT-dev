@@ -928,7 +928,7 @@ void checkForUnusedOptions(const Options& options, const std::string& data_dir,
     // Raw string to help with the formatting of the message, and a
     // separate variable so clang-format doesn't barf on the
     // exception
-    const std::string unused_message = _(R"""(
+    const std::string unused_message = _(R"(
 There were unused input options:
 -----
 {:i}
@@ -951,7 +951,7 @@ turn off this check for unused options. You can always set
 'input:validate=true' to check inputs without running the full
 simulation.
 
-{})""");
+{})");
 
     throw BoutException(unused_message, unused, data_dir, option_file,
                         unused.getChildren().begin()->first, additional_info);
