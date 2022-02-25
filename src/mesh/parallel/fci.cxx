@@ -262,8 +262,6 @@ Field3D FCIMap::integrate(Field3D &f) const {
   result = BoutNaN;
 #endif
 
-  int nz = map_mesh.LocalNz;
-
   BOUT_FOR(i, region_no_boundary) {
     const auto inext = i.yp(offset);
     BoutReal f_c = centre[inext];
