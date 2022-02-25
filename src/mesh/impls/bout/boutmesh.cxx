@@ -70,6 +70,7 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
   comm_outer = MPI_COMM_NULL;
 
   mpi = bout::globals::mpi;
+  par_boundary.resize(static_cast<int>(BoundaryParType::SIZE));
 }
 
 BoutMesh::~BoutMesh() {
@@ -80,8 +81,10 @@ BoutMesh::~BoutMesh() {
   for (const auto& bndry : boundary) {
     delete bndry;
   }
-  for (const auto& bndry : par_boundary) {
-    delete bndry;
+  for (const auto& type : par_boundary) {
+    for (const auto& bndry : type) {
+      delete bndry;
+    }
   }
 
   if (comm_x != MPI_COMM_NULL) {
@@ -2955,11 +2958,32 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
 
 std::vector<BoundaryRegion *> BoutMesh::getBoundaries() { return boundary; }
 
-std::vector<BoundaryRegionPar *> BoutMesh::getBoundariesPar() { return par_boundary; }
+//std::vector<BoundaryRegionPar *> BoutMesh::getBoundariesPar(BoundaryParType type) { return par_boundary[type] ; }
 
-void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry) {
+void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry, BoundaryParType type) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;
-  par_boundary.push_back(bndry);
+  switch (type) {
+  case BoundaryParType::xin_fwd:
+    par_boundary[static_cast<int>(BoundaryParType::xin)].push_back(bndry);
+    par_boundary[static_cast<int>(BoundaryParType::fwd)].push_back(bndry);
+    break;
+  case BoundaryParType::xin_bwd:
+    par_boundary[static_cast<int>(BoundaryParType::xin)].push_back(bndry);
+    par_boundary[static_cast<int>(BoundaryParType::bwd)].push_back(bndry);
+    break;
+  case BoundaryParType::xout_fwd:
+    par_boundary[static_cast<int>(BoundaryParType::xout)].push_back(bndry);
+    par_boundary[static_cast<int>(BoundaryParType::fwd)].push_back(bndry);
+    break;
+  case BoundaryParType::xout_bwd:
+    par_boundary[static_cast<int>(BoundaryParType::xout)].push_back(bndry);
+    par_boundary[static_cast<int>(BoundaryParType::bwd)].push_back(bndry);
+    break;
+  default:
+    throw BoutException("Unexpected type of boundary {}", type);
+  }
+  par_boundary[static_cast<int>(type)].push_back(bndry);
+  par_boundary[static_cast<int>(BoundaryParType::all)].push_back(bndry);
 }
 
 Field3D BoutMesh::smoothSeparatrix(const Field3D& f) {
