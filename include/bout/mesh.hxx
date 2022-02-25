@@ -569,11 +569,12 @@ class Mesh {
   /// Add a boundary region to this processor
   virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
 
+  enum class BoundaryParType {all, xin, xout, fwd, bwd, xin_fwd, xout_fwd, xin_bwd, xout_bwd, SIZE};
   /// Get all the parallel (Y) boundaries on this processor 
-  virtual std::vector<BoundaryRegionPar*> getBoundariesPar() = 0;
+  virtual std::vector<BoundaryRegionPar*> getBoundariesPar(BoundaryParType type=BoundaryParType::all) = 0;
 
   /// Add a parallel(Y) boundary to this processor 
-  virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
+  virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry), BoundaryParType UNUSED(type)) {}
   
   /// Branch-cut special handling (experimental)
   virtual Field3D smoothSeparatrix(const Field3D &f) {return f;}
