@@ -233,7 +233,7 @@ public:
   RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
   void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
   std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
-  std::vector<BoundaryRegionPar*> getBoundariesPar() override {
+  std::vector<BoundaryRegionPar*> getBoundariesPar(Mesh::BoundaryParType) override {
     return std::vector<BoundaryRegionPar*>();
   }
   BoutReal GlobalX(int jx) const override { return jx; }
