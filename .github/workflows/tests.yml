@@ -29,9 +29,6 @@ jobs:
         config:
           - name: "Default options"
             os: ubuntu-18.04
-            configure_options: "--with-petsc
-                                --with-slepc
-                                --with-sundials=/home/runner/local"
             cmake_options: "-DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
@@ -39,15 +36,6 @@ jobs:
 
           - name: "Optimised, static"
             os: ubuntu-18.04
-            configure_options: "--enable-shared
-                                --enable-checks=no
-                                --enable-optimize=3
-                                --disable-signal
-                                --disable-track
-                                --disable-backtrace
-                                --with-petsc
-                                --with-slepc
-                                --with-sundials=/home/runner/local"
             cmake_options: "-DBOUT_ENABLE_CHECKS=OFF
                             -DBUILD_SHARED_LIBS=OFF
                             -DCXXFLAGS=-Ofast
@@ -61,13 +49,6 @@ jobs:
 
           - name: "Debug, shared"
             os: ubuntu-18.04
-            configure_options: "--enable-shared
-                                --enable-sigfpe
-                                --enable-debug
-                                --enable-track
-                                --with-petsc
-                                --with-slepc
-                                --with-sundials=/home/runner/local"
             cmake_options: "-DBOUT_ENABLE_CHECKS=3
                             -DCMAKE_BUILD_TYPE=Debug
                             -DBOUT_ENABLE_SIGNAL=ON
@@ -80,11 +61,6 @@ jobs:
 
           - name: "OpenMP, shared"
             os: ubuntu-18.04
-            configure_options: "--enable-shared
-                                --enable-openmp
-                                --with-petsc
-                                --with-slepc
-                                --with-sundials=/home/runner/local"
             cmake_options: "-DBOUT_ENABLE_OPENMP=ON
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
@@ -119,14 +95,6 @@ jobs:
 
           - name: "Coverage"
             os: ubuntu-18.04
-            configure_options: "--enable-shared
-                                --enable-code-coverage
-                                --enable-debug
-                                --enable-track
-                                --with-lapack
-                                --with-petsc
-                                --with-slepc
-                                --with-sundials=/home/runner/local"
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DCMAKE_BUILD_TYPE=Debug
                             -DCHECK=3
@@ -148,7 +116,6 @@ jobs:
       - name: Job information
         run: |
           echo Build: ${{ matrix.config.name }}, ${{ matrix.config.os }}
-          echo Configure options: ${{ matrix.config.configure_options }}
           echo CMake options: ${{ matrix.config.cmake_options }}
 
       - name: Install dependencies
