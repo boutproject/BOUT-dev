@@ -4,6 +4,12 @@ on:
   push:
     paths:
       - '**.py'
+      - 'bin/**'
+      - '**/runtest'
+      - '**/run'
+      - 'tests/integrated/test_suite'
+      - 'tests/requirements/*'
+      - 'tools/tokamak_grids/**'
 
 defaults:
   run:
