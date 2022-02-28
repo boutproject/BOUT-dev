@@ -81,8 +81,8 @@ BoutMesh::~BoutMesh() {
   for (const auto& bndry : boundary) {
     delete bndry;
   }
-  for (const auto& type : par_boundary) {
-    for (const auto& bndry : type) {
+  if (par_boundary.size() > 0) {
+    for (const auto& bndry : par_boundary[0]) {
       delete bndry;
     }
   }
@@ -2958,7 +2958,7 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
 
 std::vector<BoundaryRegion *> BoutMesh::getBoundaries() { return boundary; }
 
-//std::vector<BoundaryRegionPar *> BoutMesh::getBoundariesPar(BoundaryParType type) { return par_boundary[type] ; }
+std::vector<BoundaryRegionPar *> BoutMesh::getBoundariesPar(BoundaryParType type) { return par_boundary[static_cast<int>(type)] ; }
 
 void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry, BoundaryParType type) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;
