@@ -14,6 +14,8 @@ else
     ctest --output-on-failure --timeout 300
 fi
 
+export LD_LIBRARY_PATH=/home/runner/local/lib:$LD_LIBRARY_PATH
+
 # Test bout-config basic functionallity
 cd ../examples/make-script
 PATH=../../build/bin:$PATH bout-config --all
