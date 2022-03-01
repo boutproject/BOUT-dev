@@ -22,13 +22,13 @@ cd -
 
 make install -j 2
 rm -rf build
-
+# Test installation with plain `make`
 cd ../examples/make-script
 rm test
 PATH=../../installed/bin:$PATH make
 ./test --help
 cd -
-
+# Test installation with CMake
 cd ../examples/conduction
 cmake . -B build -DCMAKE_PREFIX_PATH=../../installed
 cmake --build build
