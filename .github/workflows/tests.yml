@@ -21,7 +21,7 @@ jobs:
       OMPI_MCA_rmaps_base_oversubscribe: yes
       MPIRUN: mpiexec -np
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         # Need this to be able to exclude the coverage job
         is_master_or_next:
@@ -142,7 +142,7 @@ jobs:
 
       - name: Install pip packages
         run: |
-          ./.pip_install_for_travis.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'gcovr' 'cmake' 'h5py' zoidberg
+          ./.pip_install_for_travis.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'gcovr' 'cmake' 'h5py' zoidberg fastcov
           # Add the pip install location to the runner's PATH
           echo ~/.local/bin >> $GITHUB_PATH
 

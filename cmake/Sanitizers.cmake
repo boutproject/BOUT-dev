@@ -15,7 +15,7 @@ function(enable_sanitizers target_name)
       find_program(fastcov_FOUND fastcov)
       message(STATUS "Looking for fastcov: ${fastcov_FOUND}")
       find_program(genhtml_FOUND genhtml)
-      message(STATUS "Looking for genhtml: ${fastcov_FOUND}")
+      message(STATUS "Looking for genhtml: ${genhtml_FOUND}")
 
       if (fastcov_FOUND AND genhtml_FOUND)
         set(COVERAGE_NAME coverage CACHE STRING "Name of coverage output file")
@@ -45,7 +45,7 @@ function(enable_sanitizers target_name)
           COMMENT "Cleaning coverage information"
           )
       else()
-        message(STATUS "Coverage enabled, but coverage-capture not available. Please install fastcov and lcov")
+        message(FATAL_ERROR "Coverage enabled, but coverage-capture not available. Please install fastcov and lcov")
       endif()
 
     endif()
