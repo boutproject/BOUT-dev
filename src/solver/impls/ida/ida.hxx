@@ -89,6 +89,9 @@ private:
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
 #endif
+#if SUNDIALS_VERSION_MAJOR >= 6
+  SUNContext suncontext;
+#endif
 };
 
 #endif // BOUT_HAS_IDA

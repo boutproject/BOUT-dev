@@ -124,6 +124,9 @@ private:
   /// Solver for functional iterations for Adams-Moulton
   SUNNonlinearSolver nonlinear_solver{nullptr};
 #endif
+#if SUNDIALS_VERSION_MAJOR >= 6
+  SUNContext suncontext;
+#endif
 };
 
 #endif // BOUT_HAS_CVODE

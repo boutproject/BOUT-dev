@@ -118,6 +118,10 @@ int IdaSolver::init(int nout, BoutReal tstep) {
   if (Solver::init(nout, tstep))
     return 1;
 
+#if SUNDIALS_VERSION_MAJOR >= 6
+  suncontext = SUNContext_Create();
+#endif
+
   // Save nout and tstep for use in run
   NOUT = nout;
   TIMESTEP = tstep;
@@ -141,11 +145,11 @@ int IdaSolver::init(int nout, BoutReal tstep) {
                local_N);
 
   // Allocate memory
-  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq SUNCTX_PLACEHOLDER)) == nullptr)
     throw BoutException("SUNDIALS memory allocation failed\n");
-  if ((duvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+  if ((duvec = N_VNew_Parallel(BoutComm::get(), local_N, neq SUNCTX_PLACEHOLDER)) == nullptr)
     throw BoutException("SUNDIALS memory allocation failed\n");
-  if ((id = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+  if ((id = N_VNew_Parallel(BoutComm::get(), local_N, neq SUNCTX_PLACEHOLDER)) == nullptr)
     throw BoutException("SUNDIALS memory allocation failed\n");
 
   // Put the variables into uvec
@@ -161,7 +165,7 @@ int IdaSolver::init(int nout, BoutReal tstep) {
   set_id(NV_DATA_P(id));
 
   // Call IDACreate to initialise
-  if ((idamem = IDACreate()) == nullptr)
+  if ((idamem = IDACreate(SUNCTX_PLACEHOLDER)) == nullptr)
     throw BoutException("IDACreate failed\n");
 
   // For callbacks, need pointer to solver object
@@ -186,7 +190,7 @@ int IdaSolver::init(int nout, BoutReal tstep) {
   // Call IDASpgmr to specify the IDA linear solver IDASPGMR
   const auto maxl = (*options)["maxl"].withDefault(6 * n3d);
 #if SUNDIALS_VERSION_MAJOR >= 3
-  if ((sun_solver = SUNLinSol_SPGMR(uvec, PREC_NONE, maxl)) == nullptr)
+  if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl SUNCTX_PLACEHOLDER)) == nullptr)
     throw BoutException("Creating SUNDIALS linear solver failed\n");
   if (IDASpilsSetLinearSolver(idamem, sun_solver) != IDA_SUCCESS)
     throw BoutException("IDASpilsSetLinearSolver failed\n");

@@ -130,6 +130,14 @@ constexpr auto& SUNLinSol_SPGMR = SUNSPGMR;
 }
 #endif
 
+#if SUNDIALS_VERSION_MAJOR >= 6
+#define SUNCTX_PLACEHOLDER , suncontext
+#else
+#define SUNCTX_PLACEHOLDER
+#define SUN_PREC_RIGHT PREC_RIGHT
+#define SUN_PREC_NONE PREC_NONE
+#endif
+
 // Aliases for older versions
 // In SUNDIALS 4, ARKode has become ARKStep, hence all the renames
 constexpr auto& ARKStepEvolve = ARKode;
@@ -204,6 +212,10 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   if (Solver::init(nout, tstep))
     return 1;
 
+#if SUNDIALS_VERSION_MAJOR >= 6
+  suncontext = SUNContext_Create();
+#endif
+
   // Save nout and tstep for use in run
   NOUT = nout;
   TIMESTEP = tstep;
@@ -224,7 +236,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
                n2Dvars(), neq, local_N);
 
   // Allocate memory
-  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq SUNCTX_PLACEHOLDER)) == nullptr)
     throw BoutException("SUNDIALS memory allocation failed\n");
 
   // Put the variables into uvec
@@ -257,7 +269,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
     }
   }();
 
-  if ((arkode_mem = ARKStepCreate(explicit_rhs, implicit_rhs, simtime, uvec)) == nullptr)
+  if ((arkode_mem = ARKStepCreate(explicit_rhs, implicit_rhs, simtime, uvec SUNCTX_PLACEHOLDER)) == nullptr)
     throw BoutException("ARKStepCreate failed\n");
 
   if (imex and solve_explicit and solve_implicit) {
@@ -342,7 +354,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
                      return Options::root()[f3.name]["atol"].withDefault(abstol);
                    });
 
-    N_Vector abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq);
+    N_Vector abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq SUNCTX_PLACEHOLDER);
     if (abstolvec == nullptr)
       throw BoutException("SUNDIALS memory allocation (abstol vector) failed\n");
 
@@ -396,11 +408,11 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
 #else
   if (fixed_point) {
     output.write("\tUsing accelerated fixed point solver\n");
-    if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 3)) == nullptr)
+    if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 3 SUNCTX_PLACEHOLDER)) == nullptr)
       throw BoutException("Creating SUNDIALS fixed point nonlinear solver failed\n");
   } else {
     output.write("\tUsing Newton iteration\n");
-    if ((nonlinear_solver = SUNNonlinSol_Newton(uvec)) == nullptr)
+    if ((nonlinear_solver = SUNNonlinSol_Newton(uvec SUNCTX_PLACEHOLDER)) == nullptr)
       throw BoutException("Creating SUNDIALS Newton nonlinear solver failed\n");
   }
   if (ARKStepSetNonlinearSolver(arkode_mem, nonlinear_solver) != ARK_SUCCESS)
@@ -413,10 +425,10 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   /// Set Preconditioner
   if (use_precon) {
     const auto rightprec = (*options)["rightprec"].withDefault(false);
-    const int prectype = rightprec ? PREC_RIGHT : PREC_LEFT;
+    const int prectype = rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT;
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-    if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl)) == nullptr)
+    if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl SUNCTX_PLACEHOLDER)) == nullptr)
       throw BoutException("Creating SUNDIALS linear solver failed\n");
     if (ARKStepSetLinearSolver(arkode_mem, sun_solver, nullptr) != ARK_SUCCESS)
       throw BoutException("ARKStepSetLinearSolver failed\n");
@@ -463,12 +475,12 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
     output.write("\tNo preconditioning\n");
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-    if ((sun_solver = SUNLinSol_SPGMR(uvec, PREC_NONE, maxl)) == nullptr)
+    if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl SUNCTX_PLACEHOLDER)) == nullptr)
       throw BoutException("Creating SUNDIALS linear solver failed\n");
     if (ARKStepSetLinearSolver(arkode_mem, sun_solver, nullptr) != ARK_SUCCESS)
       throw BoutException("ARKStepSetLinearSolver failed\n");
 #else
-    if (ARKSpgmr(arkode_mem, PREC_NONE, maxl) != ARKSPILS_SUCCESS)
+    if (ARKSpgmr(arkode_mem, SUN_PREC_NONE, maxl) != ARKSPILS_SUCCESS)
       throw BoutException("ARKSpgmr failed\n");
 #endif
   }
