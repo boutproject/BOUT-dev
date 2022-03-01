@@ -65,6 +65,18 @@ using IDAINT = sunindextype;
 #endif
 #endif
 
+#if SUNDIALS_VERSION_MAJOR >= 6
+#define SUNCTX_PLACEHOLDER , suncontext
+#define SUNCTX_PLACEHOLDER_  suncontext
+#else
+#define SUNCTX_PLACEHOLDER
+#define SUNCTX_PLACEHOLDER_
+#define SUN_PREC_RIGHT PREC_RIGHT
+#define SUN_PREC_LEFT PREC_LEFT
+#define SUN_PREC_NONE PREC_NONE
+#endif
+
+
 static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data);
 static int ida_bbd_res(IDAINT Nlocal, BoutReal t, N_Vector u, N_Vector du, N_Vector rr,
                        void* user_data);
@@ -119,7 +131,10 @@ int IdaSolver::init(int nout, BoutReal tstep) {
     return 1;
 
 #if SUNDIALS_VERSION_MAJOR >= 6
-  suncontext = SUNContext_Create();
+  {
+    const int err = SUNContext_Create(MPI_COMM_WORLD, &suncontext);
+    ASSERT0(err == 0);
+  }
 #endif
 
   // Save nout and tstep for use in run
@@ -165,7 +180,7 @@ int IdaSolver::init(int nout, BoutReal tstep) {
   set_id(NV_DATA_P(id));
 
   // Call IDACreate to initialise
-  if ((idamem = IDACreate(SUNCTX_PLACEHOLDER)) == nullptr)
+  if ((idamem = IDACreate(SUNCTX_PLACEHOLDER_)) == nullptr)
     throw BoutException("IDACreate failed\n");
 
   // For callbacks, need pointer to solver object

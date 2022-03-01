@@ -130,13 +130,6 @@ constexpr auto& SUNLinSol_SPGMR = SUNSPGMR;
 }
 #endif
 
-#if SUNDIALS_VERSION_MAJOR >= 6
-#define SUNCTX_PLACEHOLDER , suncontext
-#else
-#define SUNCTX_PLACEHOLDER
-#define SUN_PREC_RIGHT PREC_RIGHT
-#define SUN_PREC_NONE PREC_NONE
-#endif
 
 // Aliases for older versions
 // In SUNDIALS 4, ARKode has become ARKStep, hence all the renames
@@ -170,6 +163,15 @@ constexpr auto& ARKStepSetOptimalParams = ARKodeSetOptimalParams;
 constexpr auto& ARKStepSetOrder = ARKodeSetOrder;
 constexpr auto& ARKStepSetPreconditioner = ARKSpilsSetPreconditioner;
 constexpr auto& ARKStepSetUserData = ARKodeSetUserData;
+#endif
+
+#if SUNDIALS_VERSION_MAJOR >= 6
+#define SUNCTX_PLACEHOLDER , suncontext
+#else
+#define SUNCTX_PLACEHOLDER
+#define SUN_PREC_RIGHT PREC_RIGHT
+#define SUN_PREC_LEFT PREC_LEFT
+#define SUN_PREC_NONE PREC_NONE
 #endif
 
 ArkodeSolver::ArkodeSolver(Options* opts) : Solver(opts) {
@@ -213,7 +215,10 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
     return 1;
 
 #if SUNDIALS_VERSION_MAJOR >= 6
-  suncontext = SUNContext_Create();
+  {
+    const int err = SUNContext_Create(MPI_COMM_WORLD, &suncontext);
+    ASSERT0(err == 0);
+  }
 #endif
 
   // Save nout and tstep for use in run

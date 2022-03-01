@@ -108,6 +108,8 @@ inline int CVSpilsSetJacTimes(void* arkode_mem, std::nullptr_t,
 
 #if SUNDIALS_VERSION_MAJOR >= 6
 #define SUNCTX_PLACEHOLDER , suncontext
+constexpr auto CV_FUNCTIONAL = 0;
+constexpr auto CV_NEWTON = 0;
 #else
 #define SUNCTX_PLACEHOLDER
 #define SUN_PREC_RIGHT PREC_RIGHT
@@ -115,7 +117,7 @@ inline int CVSpilsSetJacTimes(void* arkode_mem, std::nullptr_t,
 #define SUN_PREC_NONE PREC_NONE
 #endif
 
-#if SUNDIALS_VERSION_MAJOR >= 4
+#if SUNDIALS_VERSION_MAJOR == 4 || SUNDIALS_VERSION_MAJOR == 5
 // Shim for newer versions
 inline void* CVodeCreate(int lmm, int UNUSED(iter)) { return CVodeCreate(lmm SUNCTX_PLACEHOLDER); }
 constexpr auto CV_FUNCTIONAL = 0;
@@ -175,7 +177,10 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     return 1;
 
 #if SUNDIALS_VERSION_MAJOR >= 6
-  suncontext = SUNContext_Create();
+  {
+    const int err = SUNContext_Create(MPI_COMM_WORLD, &suncontext);
+    ASSERT0(err == 0);
+  }
 #endif
 
   // Save nout and tstep for use in run
@@ -221,7 +226,11 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   const auto func_iter = (*options)["func_iter"].withDefault(adams_moulton);
   const auto iter = func_iter ? CV_FUNCTIONAL : CV_NEWTON;
 
-  if ((cvode_mem = CVodeCreate(lmm, iter SUNCTX_PLACEHOLDER)) == nullptr)
+  if ((cvode_mem = CVodeCreate(lmm
+#if SUNDIALS_VERSION_MAJOR < 4
+			       , iter
+#endif
+ SUNCTX_PLACEHOLDER)) == nullptr)
     throw BoutException("CVodeCreate failed\n");
 
   // For callbacks, need pointer to solver object
