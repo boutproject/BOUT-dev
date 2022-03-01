@@ -168,7 +168,7 @@ jobs:
           # This is to try and make the coverage report slightly more accurate
           # It still won't include, e.g. any solvers we don't build with though
           find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
-          make code-coverage-capture
+          make -C build code-coverage-capture
 
       - name: Upload coverage
         if: ${{ matrix.config.name == 'Coverage' }}
