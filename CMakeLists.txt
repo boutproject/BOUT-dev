@@ -6,6 +6,10 @@ else()
   cmake_policy(VERSION 3.12)
 endif()
 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.15)
+  cmake_policy(set CMP0094 NEW)
+endif()
+
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
 set(BOUT_FULL_VERSION 5.0.0-alpha)
