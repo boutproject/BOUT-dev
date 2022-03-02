@@ -282,7 +282,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   //       (in the first boundary cell) so one boundary cell is already set
   BOUT_FOR(i, indexer->getRegionInnerX()) {
     for (int b = 1; b < localmesh->xstart; b++) {
-      solution[i.xm(b)] = 2.*solution[i.xm(b-1)] - solution[i.xm(b-2)];
+      solution[i.xm(b)] = 3.*solution[i.xm(b-1)] - 3.*solution[i.xm(b-2)] + solution[i.xm(b-3)];
     }
   }
 
