@@ -1,0 +1,47 @@
+name: Docker
+
+on:
+  push:
+    branches:
+      - master
+      - next
+      # Add your branch here if you want containers for it
+      - db-WIP
+
+jobs:
+  build:
+    name: Build container image
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: bout3d
+      USER: oi4ai
+    strategy:
+      fail-fast: false
+      matrix:
+        mpi: [mpich]
+        config:
+          - name: "Debug"
+            tag_postfix: "debug"
+            options: "-DCHECK=3"
+
+          - name: "Optimised"
+            tag_postfix: "opt"
+            options: "-DCHECK=0"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Debug infos
+        run: |
+          echo ${{ github.sha }}
+          echo ${{ github.ref_name }}
+
+      - name: Build and push
+        env:
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          DOCKER_USER: ${{ env.USER }}
+        run: |
+          TAGS="${{ env.USER }}/${{ env.IMAGE_NAME }}:latest-${{ matrix.config.tag_postfix }} \
+                ${{ env.USER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-${{ matrix.config.tag_postfix }}" \
+          CMAKE_OPTIONS=${{ matrix.config.options }} \
+          MPI=${{ matrix.mpi }} \
+          sh .docker/build.sh
+
