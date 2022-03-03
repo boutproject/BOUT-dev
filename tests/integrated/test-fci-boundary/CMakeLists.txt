@@ -5,10 +5,9 @@ bout_add_mms_test(test-fci-boundary
   PROCESSORS 1
   )
 
-
 set(gridfile ${CMAKE_CURRENT_BINARY_DIR}/grid.fci.nc)
 add_custom_command(OUTPUT ${gridfile}
-  COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH} ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/grid.py ${gridfile}
+  COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH} ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/grid.py ${gridfile}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/../../../tools/pylib/boutconfig/__init__.py
   DEPENDS grid.py
