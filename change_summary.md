@@ -3,6 +3,13 @@
 This is a slightly more readable, and therefore incomplete, summary of
 the changes from the full [changelog](CHANGELOG.md)
 
+4.4.1 is a bugfix release:
+- Fixed some issues building BOUT++ on MacOS
+- Fixed some issues when installing
+- Fixed some issues when downloading SUNDIALS and netCDF C++
+- Fixed some out of date documentation
+- Some improvements/fixes to the `beuler/snes` solver
+
 4.4.0 is a feature release. The main new features are:
 - The CMake support has been expanded, and will replace the autotools build
   system in the next major release. See [the CMake installation
