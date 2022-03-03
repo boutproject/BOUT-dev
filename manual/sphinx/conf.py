@@ -86,7 +86,7 @@ if on_readthedocs:
         + " -DBOUT_ENABLE_PYTHON=ON"
         + " -DBOUT_UPDATE_GIT_SUBMODULE=OFF"
         + " -DBOUT_TESTS=OFF"
-        + f" -DPython_ROOT_DIR={pydir}"
+        + f" -DPython3_ROOT_DIR={pydir}"
         + f" -Dmpark_variant_DIR={pwd}/externalpackages/mpark.variant/"
         + f" -Dfmt_DIR={pwd}/externalpackages/fmt/"
     )

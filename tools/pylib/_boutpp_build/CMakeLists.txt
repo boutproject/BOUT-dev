@@ -25,7 +25,7 @@ bout_python_maybe_error(${Cython_FOUND} Cython)
 find_package(Bash)
 bout_python_maybe_error(${Bash_FOUND} Bash)
 
-execute_process(COMMAND ${Python_EXECUTABLE} -c "import jinja2"
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import jinja2"
   RESULT_VARIABLE jinja2_FOUND)
 if (jinja2_FOUND EQUAL 0)
   # We have jinja2 - all good
@@ -33,7 +33,7 @@ else()
   bout_python_maybe_error(OFF jinja2)
 endif()
 
-execute_process(COMMAND ${Python_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX')[:-3])"
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX')[:-3])"
   RESULT_VARIABLE PYTHON_WORKING
   OUTPUT_VARIABLE PYTHON_EXT_SUFFIX
   OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -73,7 +73,7 @@ foreach(file IN LISTS files)
   #message(FATAL_ERROR "${gen} ${src}/${file}.jinja")
   add_custom_command(OUTPUT ${gen}
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${tar}
-	COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${tar}/..:\${PYTHONPATH} ${Python_EXECUTABLE} generate.py ${file}.jinja ${gen}
+	COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${tar}/..:\${PYTHONPATH} ${Python3_EXECUTABLE} generate.py ${file}.jinja ${gen}
 	DEPENDS ${src}/${file}.jinja
 	DEPENDS ${src}/helper.py
 	DEPENDS ${src}/resolve_enum_inv.pyx.jinja
@@ -93,8 +93,7 @@ endforeach()
 
 add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libboutpp.cpp
   COMMAND ${CMAKE_COMMAND} -E copy boutpp.pyx libboutpp.pyx
-  COMMAND ${Python_EXECUTABLE} -m cython libboutpp.pyx --cplus -3  -X binding=True -X embedsignature=True
-  COMMENT "Cythonizing python interface"
+  COMMAND ${Python3_EXECUTABLE} -m cython libboutpp.pyx --cplus -3  -X binding=True -X embedsignature=True
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${boutpp_depends}
   )
@@ -120,5 +119,6 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/boutpp.py
   DESTINATION ${CMAKE_INSTALL_PYTHON_SITEARCH}/boutpp/
   RENAME __init__.py
   )
+
 target_link_libraries(boutpp${PYTHON_EXT_SUFFIX} bout++)
-target_include_directories(boutpp${PYTHON_EXT_SUFFIX} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> ${Numpy_INCLUDE_DIRS} ${Python_INCLUDE_DIRS})
+target_include_directories(boutpp${PYTHON_EXT_SUFFIX} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> ${Numpy_INCLUDE_DIRS} ${Python3_INCLUDE_DIRS})
