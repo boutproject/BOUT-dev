@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BOUT++ 4.2.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-12-13 14:14+0000\n"
+"POT-Creation-Date: 2022-02-15 16:11+0000\n"
 "PO-Revision-Date: 2020-03-19 12:42+0000\n"
 "Last-Translator: David <schword2@mail.dcu.ie>\n"
 "Language-Team: German\n"
@@ -276,7 +276,7 @@ msgstr ""
 "  -v, --verbose\t\tWortreicherer Ausgabe\n"
 "  -q, --quiet\t\tNur wichtigere Ausgaben anzeigen\n"
 
-#: ../src/solver/solver.cxx:509
+#: ../src/solver/solver.cxx:510
 #, c-format
 msgid ""
 "\n"
@@ -285,7 +285,7 @@ msgstr ""
 "\n"
 "Simulation beendet um %s\n"
 
-#: ../src/solver/solver.cxx:474
+#: ../src/solver/solver.cxx:475
 #, c-format
 msgid ""
 "\n"
@@ -322,7 +322,7 @@ msgstr ""
 msgid ") overwritten with:"
 msgstr ") überschrieben mit:"
 
-#: ../tests/unit/src/test_bout++.cxx:294
+#: ../tests/unit/src/test_bout++.cxx:293
 msgid "4 of 8"
 msgstr ""
 
@@ -367,11 +367,11 @@ msgstr ""
 msgid "Command line"
 msgstr "Befehlszeile"
 
-#: ../src/bout++.cxx:389 ../tests/unit/src/test_bout++.cxx:300
+#: ../src/bout++.cxx:389 ../tests/unit/src/test_bout++.cxx:299
 msgid "Compile-time options:\n"
 msgstr "Kompiliert mit:\n"
 
-#: ../tests/unit/src/test_bout++.cxx:304
+#: ../tests/unit/src/test_bout++.cxx:303
 msgid "Compiled with flags"
 msgstr "Wurde mit folgenden Optionen kompiliert"
 
@@ -414,7 +414,7 @@ msgstr ""
 "Der Befehl 'bout-log-color' konnte nicht ausgeführt werden. Stellen Sie "
 "sicher, dass er sich in $PATH befindet.\n"
 
-#: ../src/solver/solver.cxx:669
+#: ../src/solver/solver.cxx:668
 #, c-format
 msgid "Couldn't add Monitor: %g is not a multiple of %g!"
 msgstr ""
@@ -452,7 +452,7 @@ msgstr "Der Datenordner \"%s\" existiert nicht oder ist nicht lesbar\n"
 msgid "DataDir \"%s\" is not a directory\n"
 msgstr "\"%s\" soll als Datenordner verwendet werden, ist jedoch kein Ordner\n"
 
-#: ../src/solver/solver.cxx:587
+#: ../src/solver/solver.cxx:588
 msgid "ERROR: Solver is already initialised\n"
 msgstr "FEHLER: Der Integrator ist bereits initialisiert.\n"
 
@@ -470,7 +470,7 @@ msgstr "Es wurde ein Fehler beim Schreiben der Einstellungsdatei gefunden"
 msgid "Error: nx must be greater than 2 times MXG (2 * %d)"
 msgstr "Fehler: nx muss größer als 2 mal MXG sein (2 * %d)"
 
-#: ../src/solver/solver.cxx:454
+#: ../src/solver/solver.cxx:455
 msgid "Failed to initialise solver-> Aborting\n"
 msgstr ""
 "Der Integrator konnte nicht initialisiert werden. Der Prozess wird "
@@ -481,7 +481,7 @@ msgstr ""
 msgid "Finding value for NXPE (ideal = %f)\n"
 msgstr "Suche NXPE Wert (optimal = %f)\n"
 
-#: ../src/solver/solver.cxx:589
+#: ../src/solver/solver.cxx:426
 msgid "Initialising solver\n"
 msgstr "Integrator wird initialisiert\n"
 
@@ -516,11 +516,11 @@ msgstr "Das Gitter muss ny enthalten"
 msgid "Missing integer array %s\n"
 msgstr "Ganzzahlen-Array '%s' nicht gesetzt\n"
 
-#: ../src/solver/solver.cxx:773
+#: ../src/solver/solver.cxx:772
 msgid "Monitor signalled to quit"
 msgstr "Der Monitor signaliserte die Beendigung"
 
-#: ../src/solver/solver.cxx:780
+#: ../src/solver/solver.cxx:779
 msgid "Monitor signalled to quit\n"
 msgstr "Beendigung durch Monitor\n"
 
@@ -605,12 +605,12 @@ msgstr "Perp Region '%s' hinzugefügt"
 msgid "Revision: %s\n"
 msgstr "Revision: %s\n"
 
-#: ../src/solver/solver.cxx:510
+#: ../src/solver/solver.cxx:511
 msgid "Run time : "
 msgstr "Dauer: "
 
 #. / Run the solver
-#: ../src/solver/solver.cxx:467
+#: ../src/solver/solver.cxx:468
 msgid ""
 "Running simulation\n"
 "\n"
@@ -618,7 +618,7 @@ msgstr ""
 "Simulation wird gestartet\n"
 "\n"
 
-#: ../tests/unit/src/test_bout++.cxx:301
+#: ../tests/unit/src/test_bout++.cxx:300
 msgid "Signal"
 msgstr ""
 
@@ -641,18 +641,18 @@ msgstr ""
 "Komm    I/O   Integrator\n"
 "\n"
 
-#: ../src/solver/solver.cxx:449
+#: ../src/solver/solver.cxx:450
 #, c-format
 msgid "Solver running for %d outputs with monitor timestep of %e\n"
 msgstr ""
 "Integriere mit einem `Monitor`-Zeitschritt von %2$e für %1$d Aufrufe.\n"
 
-#: ../src/solver/solver.cxx:445
+#: ../src/solver/solver.cxx:446
 #, c-format
 msgid "Solver running for %d outputs with output timestep of %e\n"
 msgstr "Integriere %d Zeitschritte von je %e\n"
 
-#: ../src/solver/solver.cxx:684
+#: ../src/solver/solver.cxx:683
 #, c-format
 msgid ""
 "Solver::addMonitor: Cannot reduce timestep (from %g to %g) after init is "
@@ -661,7 +661,7 @@ msgstr ""
 "Der Integrator kann den Zeitschritt nicht von %g auf %g reduzieren, nachdem "
 "er initialisiert wurde!"
 
-#: ../src/solver/solver.cxx:1132
+#: ../src/solver/solver.cxx:1131
 #, c-format
 msgid ""
 "Time derivative at wrong location - Field is at %s, derivative is at %s for "
@@ -670,7 +670,7 @@ msgstr ""
 "Die zeitliche Ableitung ist an der falschen Stelle. Das Feld '%3$s' ist an "
 "Position %1$s, während die Ableitung an Position %2$s ist.\n"
 
-#: ../src/solver/solver.cxx:1354
+#: ../src/solver/solver.cxx:1353
 #, c-format
 msgid "Time derivative for variable '%s' not set"
 msgstr "Zeitliche Ableitung für Variable '%s' nicht gesetzt"
@@ -722,7 +722,7 @@ msgstr "Benutzung: %s -f <Logdatei>\n"
 msgid "Usage is %s -o <settings filename>\n"
 msgstr "Benutzung: %s -f <Einstellungsdatei>\n"
 
-#: ../tests/unit/src/test_bout++.cxx:30 ../tests/unit/src/test_bout++.cxx:44
+#: ../tests/unit/src/test_bout++.cxx:29 ../tests/unit/src/test_bout++.cxx:43
 msgid "Usage:"
 msgstr ""
 
@@ -738,7 +738,7 @@ msgstr ""
 "[VAR=WERT]\n"
 
 #. restart file should be written by physics model
-#: ../src/solver/solver.cxx:795
+#: ../src/solver/solver.cxx:794
 msgid "User signalled to quit. Returning\n"
 msgstr "Beendigung durch Benutzer.\n"
 
@@ -773,7 +773,7 @@ msgstr "Wert der Option %s ist keine Boolescher Wert"
 msgid "Value for option %s is not an integer"
 msgstr "Wert der Option %s ist keine Ganzzahl"
 
-#: ../src/solver/solver.cxx:1091 ../src/solver/solver.cxx:1095
+#: ../src/solver/solver.cxx:1090 ../src/solver/solver.cxx:1094
 #, c-format
 msgid "Variable '%s' not initialised"
 msgstr "Variable '%s' ist nicht initialisiert"
