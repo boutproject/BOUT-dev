@@ -90,10 +90,10 @@ public:
         new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD_XOUT, -1, &mesh);
 
     // Add the boundary region to the mesh's vector of parallel boundaries
-    mesh.addBoundaryPar(forward_boundary_xin, Mesh::BoundaryParType::xin_fwd);
-    mesh.addBoundaryPar(backward_boundary_xin, Mesh::BoundaryParType::xin_bwd);
-    mesh.addBoundaryPar(forward_boundary_xout, Mesh::BoundaryParType::xout_fwd);
-    mesh.addBoundaryPar(backward_boundary_xout, Mesh::BoundaryParType::xout_bwd);
+    mesh.addBoundaryPar(forward_boundary_xin, BoundaryParType::xin_fwd);
+    mesh.addBoundaryPar(backward_boundary_xin, BoundaryParType::xin_bwd);
+    mesh.addBoundaryPar(forward_boundary_xout, BoundaryParType::xout_fwd);
+    mesh.addBoundaryPar(backward_boundary_xout, BoundaryParType::xout_bwd);
 
     field_line_maps.reserve(mesh.ystart * 2);
     for (int offset = 1; offset < mesh.ystart + 1; ++offset) {

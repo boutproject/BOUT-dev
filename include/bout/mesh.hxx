@@ -73,6 +73,8 @@ class Mesh;
 #include <bout/region.hxx>
 #include "bout/generic_factory.hxx"
 
+#include <bout/bout_enum_class.hxx>
+
 #include <list>
 #include <memory>
 #include <map>
@@ -91,6 +93,8 @@ public:
 
   ReturnType create(Options* options = nullptr, GridDataSource* source = nullptr);
 };
+
+BOUT_ENUM_CLASS(BoundaryParType, all, xin, xout, fwd, bwd, xin_fwd, xout_fwd, xin_bwd, xout_bwd, SIZE);
 
 template <class DerivedType>
 class RegisterMesh {
@@ -569,7 +573,6 @@ class Mesh {
   /// Add a boundary region to this processor
   virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
 
-  enum class BoundaryParType {all, xin, xout, fwd, bwd, xin_fwd, xout_fwd, xin_bwd, xout_bwd, SIZE};
   /// Get all the parallel (Y) boundaries on this processor 
   virtual std::vector<BoundaryRegionPar*> getBoundariesPar(BoundaryParType type=BoundaryParType::all) = 0;
 

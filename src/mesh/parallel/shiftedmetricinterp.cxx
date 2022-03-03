@@ -187,10 +187,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   }
 
   // Add the boundary region to the mesh's vector of parallel boundaries
-  mesh.addBoundaryPar(forward_boundary_xin, Mesh::BoundaryParType::xin_fwd);
-  mesh.addBoundaryPar(backward_boundary_xin, Mesh::BoundaryParType::xin_bwd);
-  mesh.addBoundaryPar(forward_boundary_xout, Mesh::BoundaryParType::xout_fwd);
-  mesh.addBoundaryPar(backward_boundary_xout, Mesh::BoundaryParType::xin_bwd);
+  mesh.addBoundaryPar(forward_boundary_xin, BoundaryParType::xin_fwd);
+  mesh.addBoundaryPar(backward_boundary_xin, BoundaryParType::xin_bwd);
+  mesh.addBoundaryPar(forward_boundary_xout, BoundaryParType::xout_fwd);
+  mesh.addBoundaryPar(backward_boundary_xout, BoundaryParType::xin_bwd);
 }
 
 void ShiftedMetricInterp::checkInputGrid() {
