@@ -12,26 +12,26 @@
 #   Numpy_INCLUDE_DIR - Required libraries
 
 
-find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
+find_package(Python3 3.6 REQUIRED COMPONENTS Interpreter Development)
 
 if (NOT Numpy_FOUND)
-  execute_process(COMMAND ${Python_EXECUTABLE} -c "import numpy ; print(numpy.__version__)"
+  execute_process(COMMAND ${Python3_EXECUTABLE} -c "import numpy ; print(numpy.__version__)"
     OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE Numpy_VERSION
     )
-  execute_process(COMMAND ${Python_EXECUTABLE} -c "import numpy ; print(numpy.get_include())"
+  execute_process(COMMAND ${Python3_EXECUTABLE} -c "import numpy ; print(numpy.get_include())"
     OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE _numpy_include_dirs
     )
 endif()
 
 if (Numpy_DEBUG)
-  message(STATUS "Looking for numpy headers in: ${_numpy_include_dirs} ${PYTHON_INCLUDE_DIR}")
+  message(STATUS "Looking for numpy headers in: ${_numpy_include_dirs} ${Python3_INCLUDE_DIRS}")
 endif()
 
 find_path(Numpy_INCLUDE_DIR
   numpy/arrayobject.h
-  PATHS "${_numpy_include_dirs}" "${PYTHON_INCLUDE_DIR}"
+  PATHS "${_numpy_include_dirs}" "${Python3_INCLUDE_DIRS}"
   PATH_SUFFIXES numpy/core/include
   )
 
