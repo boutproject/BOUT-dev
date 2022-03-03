@@ -12,6 +12,7 @@ add_custom_command(OUTPUT ${gridfile}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/../../../tools/pylib/boutconfig/__init__.py
   DEPENDS grid.py
+  IMPLICIT_DEPENDS  ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Creating test-fci-boundary grid file"
   )
 add_custom_target(test-fci-boundary-grid DEPENDS ${gridfile})
