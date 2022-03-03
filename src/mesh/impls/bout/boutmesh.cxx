@@ -3162,7 +3162,7 @@ void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry, BoundaryParType type) {
     par_boundary[static_cast<int>(BoundaryParType::bwd)].push_back(bndry);
     break;
   default:
-    throw BoutException("Unexpected type of boundary {}", type);
+    throw BoutException("Unexpected type of boundary {}", toString(type));
   }
   par_boundary[static_cast<int>(type)].push_back(bndry);
   par_boundary[static_cast<int>(BoundaryParType::all)].push_back(bndry);
