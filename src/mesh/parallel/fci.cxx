@@ -222,7 +222,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
 
     // Negative xt_prime means we've hit the inner boundary, otherwise
     // the outer boundary
-    auto* boundary = (xt_prime[i] < 0.0) ? inner_boundary : outer_boundary;
+    auto* boundary = (xt_prime[i] < map_mesh.xstart) ? inner_boundary : outer_boundary;
     boundary->add_point(x, y, z, x + dx, y + 0.5 * offset,
                         z + dz,      // Intersection point in local index space
                         0.5 * dy[i], // Distance to intersection
