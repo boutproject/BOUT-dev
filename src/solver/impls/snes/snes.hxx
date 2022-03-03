@@ -102,6 +102,7 @@ private:
   int nsteps;            ///< Number of steps to take
 
   bool diagnose; ///< Output additional diagnostics
+  bool diagnose_failures; ///< Print diagnostics on SNES failures
 
   int nlocal; ///< Number of variables on local processor
   int neq;    ///< Number of variables in total

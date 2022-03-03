@@ -5,6 +5,14 @@ else()
   cmake_policy(VERSION 3.13)
 endif()
 
+# Find python based on version
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.15)
+  cmake_policy(SET CMP0094 NEW)
+endif()
+# We support the new syntax, so avoid deprecation warning
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.22)
+  cmake_policy(SET CMP0127 NEW)
+endif()
 
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
