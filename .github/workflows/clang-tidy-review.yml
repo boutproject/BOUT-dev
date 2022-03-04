@@ -34,7 +34,6 @@ jobs:
           exclude: "tests/unit/*cxx"
           cmake_command: |
             cmake . -B build -DBUILD_SHARED_LIBS=ON \
-                             -DBOUT_ENABLE_OPENMP=ON \
                              -DBOUT_USE_PETSC=ON \
                              -DBOUT_USE_SLEPC=ON \
                              -DBOUT_USE_SUNDIALS=ON \
