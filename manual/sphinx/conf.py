@@ -76,10 +76,10 @@ if on_readthedocs:
     os.system("which clang-format")
     os.system("which clang-format-6.0")
     os.system(
-        "git clone https://github.com/mpark/variant.git ../../externalpackages/mpark.variant"
+        "git submodule update --init --recursive ../../externalpackages/mpark.variant"
     )
     pwd = "/".join(os.getcwd().split("/")[:-2])
-    os.system("git clone https://github.com/fmtlib/fmt.git ../../externalpackages/fmt")
+    os.system("git submodule update --init --recursive ../../externalpackages/fmt")
     cmake = (
         "cmake  . -DBOUT_USE_FFTW=ON"
         + " -DBOUT_USE_LAPACK=OFF"
