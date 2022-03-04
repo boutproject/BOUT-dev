@@ -65,18 +65,6 @@ using IDAINT = sunindextype;
 #endif
 #endif
 
-#if SUNDIALS_VERSION_MAJOR >= 6
-#define SUNCTX_PLACEHOLDER , suncontext
-#define SUNCTX_PLACEHOLDER_  suncontext
-#else
-#define SUNCTX_PLACEHOLDER
-#define SUNCTX_PLACEHOLDER_
-#define SUN_PREC_RIGHT PREC_RIGHT
-#define SUN_PREC_LEFT PREC_LEFT
-#define SUN_PREC_NONE PREC_NONE
-#endif
-
-
 static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data);
 static int ida_bbd_res(IDAINT Nlocal, BoutReal t, N_Vector u, N_Vector du, N_Vector rr,
                        void* user_data);
