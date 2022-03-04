@@ -8,3 +8,4 @@ xbout>=0.2.5
 boututils>=0.1.7
 boutdata>=0.1.5
 sphinx==4.0.1
+zoidberg
