@@ -1,14 +1,22 @@
-cat <<EOF
+ARG MPI
 FROM docker.io/oi4ai/bout-base:openmp-$MPI-mini
 
 # ----------------------------------------------------------------
 # Build and install BOUT++
 # ----------------------------------------------------------------
-RUN useradd boutuser -p boutforever -G wheel
-RUN mkdir /opt/bout++ && chown boutuser /opt/bout++
+# password: boutforever
+RUN useradd boutuser -G wheel -p '$6$MoHfQDiMU5ajgDMm$9FAMLxMflKwQCZ.sJBNG6wLGnPeySVizdA8wN0k8LSXKPkCfOb/sM9Y4jKFvh5rzKSwLtYSTzvJyETqrFlxBV.'
+
+RUN echo '%wheel ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 USER boutuser
 WORKDIR /home/boutuser
+
+ARG MPI
+ARG COMMIT
+ARG CMAKE_OPTIONS
+
+RUN sudo ls
 
 # Checkout submodules now so configure later is fast, and iterating on
 # it less painful
@@ -34,8 +42,8 @@ ENV MPI_BIN=/usr/lib64/$MPI/bin \
     MPI_HOME=/usr/lib64/$MPI
 
 
-RUN export PATH=\$MPI_BIN:\$PATH LD_LIBRARY_PATH=\$MPI_LIB:\$LD_LIBRARY_PATH \
- && export PKG_CONFIG_PATH=\$MPI_LIB/pkgconfig:\$PKG_CONFIG_PATH MANPATH=\$MPI_MAN:\$MANPATH \
+RUN export PATH=$MPI_BIN:$PATH LD_LIBRARY_PATH=$MPI_LIB:$LD_LIBRARY_PATH \
+ && export PKG_CONFIG_PATH=$MPI_LIB/pkgconfig:$PKG_CONFIG_PATH MANPATH=$MPI_MAN:$MANPATH \
  && cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/opt/bout++/ \
           -DBOUT_GENERATE_FIELDOPS=OFF \
           -DBOUT_USE_PETSC=ON -DPETSc_ROOT=/opt/petsc \
@@ -45,7 +53,6 @@ RUN export PATH=\$MPI_BIN:\$PATH LD_LIBRARY_PATH=\$MPI_LIB:\$LD_LIBRARY_PATH \
 
 
 RUN make -C build -j 2
-RUN make -C build install
+RUN sudo make -C build install
 
 RUN find /opt/bout++
-EOF
