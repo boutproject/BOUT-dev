@@ -187,8 +187,9 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
                     n2Dvars(), neq, local_N);
 
   // Allocate memory
-  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext)) == nullptr)
+  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext)) == nullptr) {
     throw BoutException("SUNDIALS memory allocation failed\n");
+  }
 
   // Put the variables into uvec
   save_vars(NV_DATA_P(uvec));
@@ -210,8 +211,9 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   const auto func_iter = (*options)["func_iter"].withDefault(adams_moulton);
   const auto iter = func_iter ? CV_FUNCTIONAL : CV_NEWTON;
 
-  if ((cvode_mem = CVodeCreate(lmm, iter, suncontext)) == nullptr)
+  if ((cvode_mem = CVodeCreate(lmm, iter, suncontext)) == nullptr) {
     throw BoutException("CVodeCreate failed\n");
+  }
 
   // For callbacks, need pointer to solver object
   if (CVodeSetUserData(cvode_mem, this) < 0)
@@ -394,8 +396,9 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       output_info.write("\tNo preconditioning\n");
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-      if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext)) == nullptr)
+      if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext)) == nullptr) {
         throw BoutException("Creating SUNDIALS linear solver failed\n");
+      }
       if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS)
         throw BoutException("CVSpilsSetLinearSolver failed\n");
 #else
@@ -416,8 +419,9 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   } else {
     output_info.write("\tUsing Functional iteration\n");
 #if SUNDIALS_VERSION_MAJOR >= 4
-    if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 0, suncontext)) == nullptr)
+    if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 0, suncontext)) == nullptr) {
       throw BoutException("SUNNonlinSol_FixedPoint failed\n");
+    }
 
     if (CVodeSetNonlinearSolver(cvode_mem, nonlinear_solver))
       throw BoutException("CVodeSetNonlinearSolver failed\n");

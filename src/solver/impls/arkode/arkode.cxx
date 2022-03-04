@@ -123,7 +123,6 @@ int ARKStepSetLinearSolver(void* arkode_mem, SUNLinearSolver LS, std::nullptr_t)
 }
 #endif
 
-
 // Aliases for older versions
 // In SUNDIALS 4, ARKode has become ARKStep, hence all the renames
 constexpr auto& ARKStepEvolve = ARKode;
@@ -395,12 +394,14 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
 #else
   if (fixed_point) {
     output.write("\tUsing accelerated fixed point solver\n");
-    if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 3, suncontext)) == nullptr)
+    if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 3, suncontext)) == nullptr) {
       throw BoutException("Creating SUNDIALS fixed point nonlinear solver failed\n");
+    }
   } else {
     output.write("\tUsing Newton iteration\n");
-    if ((nonlinear_solver = SUNNonlinSol_Newton(uvec, suncontext)) == nullptr)
+    if ((nonlinear_solver = SUNNonlinSol_Newton(uvec, suncontext)) == nullptr) {
       throw BoutException("Creating SUNDIALS Newton nonlinear solver failed\n");
+    }
   }
   if (ARKStepSetNonlinearSolver(arkode_mem, nonlinear_solver) != ARK_SUCCESS)
     throw BoutException("ARKStepSetNonlinearSolver failed\n");
@@ -415,8 +416,9 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
     const int prectype = rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT;
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-    if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl, suncontext)) == nullptr)
+    if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl, suncontext)) == nullptr) {
       throw BoutException("Creating SUNDIALS linear solver failed\n");
+    }
     if (ARKStepSetLinearSolver(arkode_mem, sun_solver, nullptr) != ARK_SUCCESS)
       throw BoutException("ARKStepSetLinearSolver failed\n");
 #else
@@ -462,8 +464,9 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
     output.write("\tNo preconditioning\n");
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-    if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext)) == nullptr)
+    if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext)) == nullptr) {
       throw BoutException("Creating SUNDIALS linear solver failed\n");
+    }
     if (ARKStepSetLinearSolver(arkode_mem, sun_solver, nullptr) != ARK_SUCCESS)
       throw BoutException("ARKStepSetLinearSolver failed\n");
 #else

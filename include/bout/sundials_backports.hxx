@@ -8,10 +8,10 @@
 #ifndef BOUT_SUNDIALS_BACKPORTS_H
 #define BOUT_SUNDIALS_BACKPORTS_H
 
-#include <sundials/sundials_config.h>
-#include <sundials/sundials_types.h>
-#include <sundials/sundials_iterative.h>
 #include <nvector/nvector_parallel.h>
+#include <sundials/sundials_config.h>
+#include <sundials/sundials_iterative.h>
+#include <sundials/sundials_types.h>
 
 #if SUNDIALS_VERSION_MAJOR >= 3
 #include <sunlinsol/sunlinsol_spgmr.h>
