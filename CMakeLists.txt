@@ -6,6 +6,15 @@ else()
   cmake_policy(VERSION 3.12)
 endif()
 
+# Find python based on version
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.15)
+  cmake_policy(SET CMP0094 NEW)
+endif()
+# We support the new syntax, so avoid deprecation warning
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.22)
+  cmake_policy(SET CMP0127 NEW)
+endif()
+
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
 set(BOUT_FULL_VERSION 5.0.0-alpha)
@@ -684,20 +693,32 @@ set(BOUT_HAS_ARKODE ${BOUT_USE_SUNDIALS})
 set(BOUT_HAS_CVODE ${BOUT_USE_SUNDIALS})
 set(BOUT_HAS_IDA ${BOUT_USE_SUNDIALS})
 
-option(BOUT_USE_NLS "Enable Native Language Support" ON)
+set(ON_OFF_AUTO ON OFF AUTO)
+set(BOUT_USE_NLS AUTO CACHE STRING "Enable Native Language Support")
+set_property(CACHE BOUT_USE_NLS PROPERTY STRINGS ${ON_OFF_AUTO})
+
+set(BOUT_HAS_GETTEXT OFF)
 if (BOUT_USE_NLS)
   find_package(Gettext)
   if (GETTEXT_FOUND)
-	find_package(Intl)
-	if (Intl_FOUND)
-	  target_link_libraries(bout++
-		PUBLIC ${Intl_LIBRARIES})
-	  target_include_directories(bout++
-		PUBLIC ${Intl_INCLUDE_DIRS})
-	endif()
+    find_package(Intl)
+    if (Intl_FOUND)
+      target_link_libraries(bout++
+        PUBLIC ${Intl_LIBRARIES})
+      target_include_directories(bout++
+        PUBLIC ${Intl_INCLUDE_DIRS})
+      set(BOUT_HAS_GETTEXT ON)
+    else()
+      if (NOT BOUT_USE_NLS STREQUAL "AUTO")
+	message(FATAL_ERROR "Intl not found but requested!")
+      endif()
+    endif()
+  else()
+    if (NOT BOUT_USE_NLS STREQUAL "AUTO")
+      message(FATAL_ERROR "GETTEXT not found but requested!")
+    endif()
   endif()
 endif()
-set(BOUT_HAS_GETTEXT ${BOUT_USE_NLS})
 
 option(BOUT_USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
 if (BOUT_USE_SCOREP)
