@@ -254,7 +254,8 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
     }
   }();
 
-  if ((arkode_mem = ARKStepCreate(explicit_rhs, implicit_rhs, simtime, uvec, suncontext)) == nullptr) {
+  if ((arkode_mem = ARKStepCreate(explicit_rhs, implicit_rhs, simtime, uvec, suncontext))
+      == nullptr) {
     throw BoutException("ARKStepCreate failed\n");
   }
 
@@ -464,7 +465,8 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
     output.write("\tNo preconditioning\n");
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-    if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext)) == nullptr) {
+    if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext))
+        == nullptr) {
       throw BoutException("Creating SUNDIALS linear solver failed\n");
     }
     if (ARKStepSetLinearSolver(arkode_mem, sun_solver, nullptr) != ARK_SUCCESS)

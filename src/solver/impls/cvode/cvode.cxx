@@ -396,7 +396,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       output_info.write("\tNo preconditioning\n");
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-      if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext)) == nullptr) {
+      if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext))
+          == nullptr) {
         throw BoutException("Creating SUNDIALS linear solver failed\n");
       }
       if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS)
