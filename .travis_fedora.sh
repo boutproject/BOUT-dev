@@ -37,7 +37,7 @@ then
     cat /etc/os-release
     # Ignore weak depencies
     echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
-    time dnf -y install dnf-plugins-core python3-pip
+    time dnf -y install dnf-plugins-core python3-pip cmake
     # Allow to override packages - see #2073
     time dnf copr enable -y davidsch/fixes4bout || :
     time dnf -y upgrade
@@ -58,11 +58,11 @@ else
     cd
     cd BOUT-dev
     echo "starting configure"
-    time ./configure --with-petsc --enable-shared || cat config.log
+    time cmake -S . -B build -DBOUT_USE_PETSC=ON
     for f in tests/requirements/*[^y] ; do
 	echo -n "$f: "
 	$f && echo yes || echo no
     done
-    time make build-check -j 2
-    time make check
+    time make -C build build-check -j 2
+    time make -C build check
 fi

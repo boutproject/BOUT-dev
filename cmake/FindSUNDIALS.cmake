@@ -31,10 +31,6 @@
 
 include(FindPackageHandleStandardArgs)
 
-find_package(SUNDIALS CONFIG QUIET)
-if (SUNDIALS_FOUND)
-  return()
-endif()
 
 find_path(SUNDIALS_INCLUDE_DIR
   sundials_config.h
