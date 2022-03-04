@@ -43,11 +43,9 @@ RegisterUnavailableSolver registerunavailableida("ida",
 #else
 
 #include "bout_types.hxx"
+#include "bout/sundials_backports.hxx"
 
 #include <sundials/sundials_config.h>
-#if SUNDIALS_VERSION_MAJOR >= 3
-#include <sunlinsol/sunlinsol_spgmr.h>
-#endif
 
 #include <nvector/nvector_parallel.h>
 
@@ -85,13 +83,10 @@ private:
   BoutReal pre_Wtime{0.0}; // Time in preconditioner
   int pre_ncalls{0};       // Number of calls to preconditioner
 
-#if SUNDIALS_VERSION_MAJOR >= 3
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
-#endif
-#if SUNDIALS_VERSION_MAJOR >= 6
-  SUNContext suncontext;
-#endif
+  /// Context for SUNDIALS memory allocations
+  sundials::Context suncontext;
 };
 
 #endif // BOUT_HAS_IDA
