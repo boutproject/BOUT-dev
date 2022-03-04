@@ -23,6 +23,8 @@
 #include <sunnonlinsol/sunnonlinsol_newton.h>
 #endif
 
+#include "unused.hxx"
+
 #if SUNDIALS_VERSION_MAJOR < 3
 using SUNLinearSolver = int*;
 inline void SUNLinSolFree(MAYBE_UNUSED(SUNLinearSolver solver)) {}
@@ -35,7 +37,6 @@ inline void SUNNonlinSolFree(MAYBE_UNUSED(SUNNonlinearSolver solver)) {}
 #endif
 
 #if SUNDIALS_VERSION_MAJOR < 6
-#include "unused.hxx"
 namespace sundials {
 struct Context {
   Context(MPI_Comm comm MAYBE_UNUSED() = nullptr) {}
