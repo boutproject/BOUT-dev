@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    name: Build container image
+    name: Build ${{ matrix.config.name }} Container
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: bout3d
