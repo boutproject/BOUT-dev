@@ -10,7 +10,7 @@ function(enable_sanitizers target_name)
 
     if(ENABLE_COVERAGE)
       target_compile_options(${target_name} PUBLIC --coverage -O0 -g)
-      target_link_libraries(${target_name} PUBLIC --coverage)
+      target_link_libraries(${target_name} PUBLIC --coverage -lgcov)
 
       find_program(lcov_FOUND lcov)
       message(STATUS "Looking for lcov: ${lcov_FOUND}")
@@ -24,8 +24,8 @@ function(enable_sanitizers target_name)
 
         add_custom_target(code-coverage-capture
           COMMAND
-            lcov -c --directory  "${CMAKE_CURRENT_SOURCE_DIR}/src" --directory "${CMAKE_CURRENT_SOURCE_DIR}/include"
-            --output-file "${COVERAGE_FILE}"
+            lcov -c --directory  "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/bout++.dir/src"
+              --output-file "${COVERAGE_FILE}"
           COMMAND
             genhtml --output-directory "${COVERAGE_NAME}" --demangle-cpp --legend --show-details "${COVERAGE_FILE}"
           COMMAND
