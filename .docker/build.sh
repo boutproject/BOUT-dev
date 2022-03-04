@@ -9,9 +9,10 @@ fi
 file=$1
 (test $file && test -f $file) || file=.docker/fedora/Dockerfile
 test $# -gt 0 && shift
-if test -e $file
+
+if test -x $file
 then
-    COMMIT=$(git rev-parse HEAD) bash $file $@ > Dockerfile
+    COMMIT=$(git rev-parse HEAD) $file $@ > Dockerfile
 else
     cp $file Dockerfile
 fi
