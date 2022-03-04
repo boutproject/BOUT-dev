@@ -21,7 +21,7 @@ jobs:
       OMPI_MCA_rmaps_base_oversubscribe: yes
       MPIRUN: mpiexec -np
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         # Need this to be able to exclude the coverage job
         is_master_or_next:
@@ -29,9 +29,6 @@ jobs:
         config:
           - name: "Default options"
             os: ubuntu-18.04
-            configure_options: "--with-petsc
-                                --with-slepc
-                                --with-sundials=/home/runner/local"
             cmake_options: "-DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
@@ -39,15 +36,6 @@ jobs:
 
           - name: "Optimised, static"
             os: ubuntu-18.04
-            configure_options: "--enable-shared
-                                --enable-checks=no
-                                --enable-optimize=3
-                                --disable-signal
-                                --disable-track
-                                --disable-backtrace
-                                --with-petsc
-                                --with-slepc
-                                --with-sundials=/home/runner/local"
             cmake_options: "-DBOUT_ENABLE_CHECKS=OFF
                             -DBUILD_SHARED_LIBS=OFF
                             -DCXXFLAGS=-Ofast
@@ -61,13 +49,6 @@ jobs:
 
           - name: "Debug, shared"
             os: ubuntu-18.04
-            configure_options: "--enable-shared
-                                --enable-sigfpe
-                                --enable-debug
-                                --enable-track
-                                --with-petsc
-                                --with-slepc
-                                --with-sundials=/home/runner/local"
             cmake_options: "-DBOUT_ENABLE_CHECKS=3
                             -DCMAKE_BUILD_TYPE=Debug
                             -DBOUT_ENABLE_SIGNAL=ON
@@ -76,21 +57,14 @@ jobs:
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
                             -DSUNDIALS_ROOT=/home/runner/local"
-            script_flags: "-uim"
 
           - name: "OpenMP, shared"
             os: ubuntu-18.04
-            configure_options: "--enable-shared
-                                --enable-openmp
-                                --with-petsc
-                                --with-slepc
-                                --with-sundials=/home/runner/local"
             cmake_options: "-DBOUT_ENABLE_OPENMP=ON
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
                             -DSUNDIALS_ROOT=/home/runner/local"
-            script_flags: "-uim"
             omp_num_threads: 2
 
           - name: "Shared, Ubuntu 20.04"
@@ -119,14 +93,6 @@ jobs:
 
           - name: "Coverage"
             os: ubuntu-18.04
-            configure_options: "--enable-shared
-                                --enable-code-coverage
-                                --enable-debug
-                                --enable-track
-                                --with-lapack
-                                --with-petsc
-                                --with-slepc
-                                --with-sundials=/home/runner/local"
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DCMAKE_BUILD_TYPE=Debug
                             -DCHECK=3
@@ -137,7 +103,7 @@ jobs:
                             -DBOUT_USE_SUNDIALS=ON
                             -DBOUT_ENABLE_PYTHON=ON
                             -DSUNDIALS_ROOT=/home/runner/local"
-            script_flags: "-u"
+            unit_only: YES
         exclude:
           # Don't run the coverage tests if the branch isn't master or next
           - is_master_or_next: false
@@ -148,7 +114,6 @@ jobs:
       - name: Job information
         run: |
           echo Build: ${{ matrix.config.name }}, ${{ matrix.config.os }}
-          echo Configure options: ${{ matrix.config.configure_options }}
           echo CMake options: ${{ matrix.config.cmake_options }}
 
       - name: Install dependencies
@@ -177,7 +142,7 @@ jobs:
 
       - name: Install pip packages
         run: |
-          ./.pip_install_for_travis.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'gcovr' 'cmake' 'h5py' zoidberg
+          ./.pip_install_for_travis.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'gcovr' 'cmake' 'h5py' zoidberg fastcov
           # Add the pip install location to the runner's PATH
           echo ~/.local/bin >> $GITHUB_PATH
 
@@ -191,7 +156,7 @@ jobs:
         run: ./.build_sundials_for_travis.sh
 
       - name: Build (CMake)
-        run: ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
+        run: UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
 
       - name: Capture coverage
         if: ${{ matrix.config.name == 'Coverage' }}
@@ -203,7 +168,7 @@ jobs:
           # This is to try and make the coverage report slightly more accurate
           # It still won't include, e.g. any solvers we don't build with though
           find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
-          make code-coverage-capture
+          make -C build code-coverage-capture
 
       - name: Upload coverage
         if: ${{ matrix.config.name == 'Coverage' }}
