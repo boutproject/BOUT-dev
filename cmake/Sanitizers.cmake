@@ -43,7 +43,7 @@ function(enable_sanitizers target_name)
           COMMENT "Cleaning coverage information"
           )
       else()
-        message(FATAL_ERROR "Coverage enabled, but coverage-capture not available. Please install lcov and lcov")
+        message(FATAL_ERROR "Coverage enabled, but coverage-capture not available. Please install lcov")
       endif()
 
     endif()
