@@ -486,7 +486,7 @@ Use the following configure options to ensure PETSc is compatible with BOUT++::
 
 You may also wish to change to ``--with-debugging=yes`` in the
 arguments to ``./configure``, in order to allow debugging of PETSc.
-The optimisation flags need chaning for cross compiling or non gcc 
+The optimisation flags need changing for cross compiling or non gcc 
 compilers. Set a different prefix to change the place PETSc will be
 installed to.
 
