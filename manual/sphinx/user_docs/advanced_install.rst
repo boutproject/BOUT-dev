@@ -570,55 +570,6 @@ NOTES:
    “MPICXX=mpiCC” to configure. Also need to specify this to NetCDF
    library by passing “CXX=mpiCC” to NetCDF configure.
 
-.. _sec-mpi-from-source:
-
-Installing MPICH from source
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In your home directory, create
-two subdirectories: One called “install” where we’ll put the source
-code, and one called “local” where we’ll install the MPI compiler::
-
-    $ cd
-    $ mkdir install
-    $ mkdir local
-
-Download the latest stable version of MPICH from https://www.mpich.org/ and put the
-file in the “install” subdirectory created above. At the time of writing
-(January 2018), the file was called ``mpich-3.2.1.tar.gz``. Untar the file::
-
-    $ tar -xzvf mpich-3.2.1.tar.gz
-
-which will create a directory containing the source code. ’cd’ into this
-directory and run::
-
-    $ ./configure --prefix=$HOME/local
-    $ make
-    $ make install
-
-Each of which might take a while. This is the standard way of installing
-software from source, and will also be used for installing libraries
-later. The ``–prefix=`` option specifies where the software should be
-installed. Since we don’t have permission to write in the system
-directories (e.g. ``/usr/bin``), we just use a subdirectory of our home
-directory. The ``configure`` command configures the install, finding the
-libraries and commands it needs. ``make`` compiles everything using the
-options found by ``configure``. The final ``make install`` step copies
-the compiled code into the correct places under ``$HOME/local``.
-
-To be able to use the MPI compiler, you need to modify the ``PATH``
-environment variable. To do this, run::
-
-    $ export PATH=$PATH:$HOME/local/bin
-
-and add this to the end of your startup file ``$HOME/.bashrc``. If
-you’re using CSH rather than BASH, the command is::
-
-    % setenv PATH ${PATH}:${HOME}/local/bin
-
-and the startup file is ``$HOME/.cshrc``. You should now be able to run
-``mpicc`` and so have a working MPI compiler.
-
 .. _sec-fftw-from-source:
 
 Installing FFTW from source
