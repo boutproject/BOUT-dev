@@ -216,8 +216,8 @@ def write_maps(
         for yindex in range(grid.numberOfPoloidalGrids()):
             pol_grid, ypos = grid.getPoloidalGrid(yindex)
             Rmaj[:, yindex, :] = magnetic_field.Rfunc(pol_grid.R, pol_grid.Z, ypos)
-        metric["gyy"] = 1.0 / Rmaj ** 2
-        metric["g_yy"] = Rmaj ** 2
+        metric["gyy"] = 1.0 / Rmaj**2
+        metric["g_yy"] = Rmaj**2
 
     # Get magnetic field and pressure
     Bmag = np.zeros(grid.shape)
