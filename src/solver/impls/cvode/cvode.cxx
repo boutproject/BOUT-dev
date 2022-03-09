@@ -53,7 +53,6 @@
 #endif
 
 #include <cvode/cvode_bbdpre.h>
-#include <nvector/nvector_parallel.h>
 #include <sundials/sundials_types.h>
 
 #include <algorithm>
@@ -108,16 +107,23 @@ inline int CVSpilsSetJacTimes(void* arkode_mem, std::nullptr_t,
 
 #if SUNDIALS_VERSION_MAJOR >= 4
 // Shim for newer versions
-inline void* CVodeCreate(int lmm, int UNUSED(iter)) { return CVodeCreate(lmm); }
 constexpr auto CV_FUNCTIONAL = 0;
 constexpr auto CV_NEWTON = 0;
-#elif SUNDIALS_VERSION_MAJOR == 3
-namespace {
-constexpr auto& SUNLinSol_SPGMR = SUNSPGMR;
+#endif
+
+#if SUNDIALS_VERSION_MAJOR >= 3
+void* CVodeCreate(int lmm, MAYBE_UNUSED(int iter), MAYBE_UNUSED(SUNContext context)) {
+#if SUNDIALS_VERSION_MAJOR == 3
+  return CVodeCreate(lmm, iter);
+#elif SUNDIALS_VERSION_MAJOR == 4 || SUNDIALS_VERSION_MAJOR == 5
+  return CVodeCreate(lmm);
+#else
+  return CVodeCreate(lmm, context);
+#endif
 }
 #endif
 
-CvodeSolver::CvodeSolver(Options* opts) : Solver(opts) {
+CvodeSolver::CvodeSolver(Options* opts) : Solver(opts), suncontext(MPI_COMM_WORLD) {
   has_constraints = false; // This solver doesn't have constraints
   canReset = true;
 
@@ -145,12 +151,8 @@ CvodeSolver::~CvodeSolver() {
   if (cvode_initialised) {
     N_VDestroy_Parallel(uvec);
     CVodeFree(&cvode_mem);
-#if SUNDIALS_VERSION_MAJOR >= 3
     SUNLinSolFree(sun_solver);
-#endif
-#if SUNDIALS_VERSION_MAJOR >= 4
     SUNNonlinSolFree(nonlinear_solver);
-#endif
   }
 }
 
@@ -185,8 +187,9 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
                     n2Dvars(), neq, local_N);
 
   // Allocate memory
-  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext)) == nullptr) {
     throw BoutException("SUNDIALS memory allocation failed\n");
+  }
 
   // Put the variables into uvec
   save_vars(NV_DATA_P(uvec));
@@ -208,8 +211,9 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   const auto func_iter = (*options)["func_iter"].withDefault(adams_moulton);
   const auto iter = func_iter ? CV_FUNCTIONAL : CV_NEWTON;
 
-  if ((cvode_mem = CVodeCreate(lmm, iter)) == nullptr)
+  if ((cvode_mem = CVodeCreate(lmm, iter, suncontext)) == nullptr) {
     throw BoutException("CVodeCreate failed\n");
+  }
 
   // For callbacks, need pointer to solver object
   if (CVodeSetUserData(cvode_mem, this) < 0)
@@ -256,7 +260,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
                      return Options::root()[f3.name]["atol"].withDefault(abstol);
                    });
 
-    N_Vector abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq);
+    N_Vector abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext);
     if (abstolvec == nullptr)
       throw BoutException("SUNDIALS memory allocation (abstol vector) failed\n");
 
@@ -317,7 +321,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     auto f2d_constraints = create_constraints(f2d);
     auto f3d_constraints = create_constraints(f3d);
 
-    N_Vector constraints_vec = N_VNew_Parallel(BoutComm::get(), local_N, neq);
+    N_Vector constraints_vec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext);
     if (constraints_vec == nullptr)
       throw BoutException("SUNDIALS memory allocation (positivity constraints vector) "
                           "failed\n");
@@ -344,11 +348,12 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       const auto rightprec = (*options)["rightprec"]
                                  .doc("Use right preconditioner? Otherwise use left.")
                                  .withDefault(false);
-      const int prectype = rightprec ? PREC_RIGHT : PREC_LEFT;
+      const int prectype = rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT;
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-      if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl)) == nullptr)
+      if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl, suncontext)) == nullptr) {
         throw BoutException("Creating SUNDIALS linear solver failed\n");
+      }
       if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS)
         throw BoutException("CVSpilsSetLinearSolver failed\n");
 #else
@@ -391,12 +396,14 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       output_info.write("\tNo preconditioning\n");
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-      if ((sun_solver = SUNLinSol_SPGMR(uvec, PREC_NONE, maxl)) == nullptr)
+      if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext))
+          == nullptr) {
         throw BoutException("Creating SUNDIALS linear solver failed\n");
+      }
       if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS)
         throw BoutException("CVSpilsSetLinearSolver failed\n");
 #else
-      if (CVSpgmr(cvode_mem, PREC_NONE, maxl) != CVSPILS_SUCCESS)
+      if (CVSpgmr(cvode_mem, SUN_PREC_NONE, maxl) != CVSPILS_SUCCESS)
         throw BoutException("CVSpgmr failed\n");
 #endif
     }
@@ -413,8 +420,9 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   } else {
     output_info.write("\tUsing Functional iteration\n");
 #if SUNDIALS_VERSION_MAJOR >= 4
-    if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 0)) == nullptr)
+    if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 0, suncontext)) == nullptr) {
       throw BoutException("SUNNonlinSol_FixedPoint failed\n");
+    }
 
     if (CVodeSetNonlinearSolver(cvode_mem, nonlinear_solver))
       throw BoutException("CVodeSetNonlinearSolver failed\n");

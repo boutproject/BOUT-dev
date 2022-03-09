@@ -269,9 +269,9 @@ FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo& lex) const {
   // Make a nice error message if we couldn't find the identifier
   const auto generatorNotFoundErrorMessage = [&](const std::string& name) -> std::string {
     const std::string message_template = _(
-        R"""(Couldn't find generator '{}'. BOUT++ expressions are now case-sensitive, so you
+        R"(Couldn't find generator '{}'. BOUT++ expressions are now case-sensitive, so you
 may need to change your input file.
-{})""");
+{})");
 
     // Start position of the current identifier: by this point, we've either
     // moved one character past the token, or we're still at the start
