@@ -7,6 +7,7 @@ defaults:
 
 jobs:
   standard_tests:
+    timeout-minutes: 60
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
     env:
@@ -184,6 +185,7 @@ jobs:
   Fedora:
     # This is its own job as it doesn't use most of the steps of the
     # standard_tests
+    timeout-minutes: 60
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2

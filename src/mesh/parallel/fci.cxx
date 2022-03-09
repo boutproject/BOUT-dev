@@ -257,6 +257,10 @@ Field3D FCIMap::integrate(Field3D &f) const {
   Field3D corner = interp_corner->interpolate(f);
 
   Field3D result{emptyFrom(f)};
+#if CHECK > 2
+  // The more general version of invalidate guards
+  result = BoutNaN;
+#endif
 
   int nz = map_mesh.LocalNz;
 

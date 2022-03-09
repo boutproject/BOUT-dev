@@ -527,7 +527,7 @@ inline BoutReal MINMOD(BoutReal a, BoutReal b) {
 #if CHECK > 0
 /// Throw an exception if \p f is not finite
 inline void checkData(BoutReal f) {
-  if (!finite(f)) {
+  if (!std::isfinite(f)) {
     throw BoutException("BoutReal: Operation on non-finite data");
   }
 }

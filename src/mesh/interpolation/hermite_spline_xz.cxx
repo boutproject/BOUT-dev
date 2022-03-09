@@ -216,7 +216,7 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
     f_interp(x, y_next, z) = +f_z * h00_z(x, y, z) + f_zp1 * h01_z(x, y, z)
                              + fz_z * h10_z(x, y, z) + fz_zp1 * h11_z(x, y, z);
 
-    ASSERT2(finite(f_interp(x, y_next, z)) || x < localmesh->xstart
+    ASSERT2(std::isfinite(f_interp(x, y_next, z)) || x < localmesh->xstart
             || x > localmesh->xend);
   }
   return f_interp;
