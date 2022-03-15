@@ -476,16 +476,19 @@ following steps::
 Use the following configure options to ensure PETSc is compatible with BOUT++::
 
     $ ./configure \
-      --with-clanguage=cxx \
       --with-mpi=yes \
       --with-precision=double \
       --with-scalar-type=real \
       --with-shared-libraries=1 \
       --with-debugging=0 \
+      {C,CXX,F}OPTFLAGS="-O3 -march=native" \
       --prefix=$HOME/local/petsc-version-options
 
 You may also wish to change to ``--with-debugging=yes`` in the
-arguments to ``./configure``, in order to allow debugging.
+arguments to ``./configure``, in order to allow debugging of PETSc.
+The optimisation flags need changing for cross compiling or non gcc 
+compilers. Set a different prefix to change the place PETSc will be
+installed to.
 
 .. note:: If you build BOUT++ using a standalone version of SUNDIALS,
           it is advisable to not also build PETSc with SUNDIALS.
@@ -496,7 +499,7 @@ arguments to ``./configure``, in order to allow debugging.
               --download-mumps \
               --download-scalapack \
               --download-blacs \
-              --download-fblas-lapack=1 \
+              --download-fblaslapack=1 \
               --download-parmetis \
               --download-ptscotch \
               --download-metis
