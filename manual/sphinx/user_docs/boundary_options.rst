@@ -3,6 +3,8 @@
 Boundary conditions
 ===================
 
+See also :ref:`sec-physicsmodel-boundary-conditions`.
+
 Like the variable initialisation, boundary conditions can be set for
 each variable in individual sections, with default values in a section
 ``[All]``. Boundary conditions are specified for each variable, being
