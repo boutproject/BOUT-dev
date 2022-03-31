@@ -120,6 +120,9 @@ Note that here :math:`\theta_0` does not need to be constant in X
 (radius), since it is only the relative shifts between Y locations
 which matters.
 
+Special handling is needed for parallel boundary conditions, see
+:ref:`sec-parallel-bc-shifted-metric`.
+
 .. _sec-aligned-transform:
 
 Aligned transform
@@ -162,6 +165,11 @@ something like::
 
     ddt(f) = D_par * fromFieldAligned(Grad2_par2(f_aligned));
 
+Special handling is needed for parallel boundary conditions, see
+:ref:`sec-parallel-bc-aligned-transform`.
+
+.. _sec-fci:
+
 FCI method
 ----------
 
@@ -185,3 +193,6 @@ backward_zt_prime(x,y,z).
 
 Tools for calculating these mappings include Zoidberg, a Python tool
 which carries out field-line tracing and generates FCI inputs.
+
+Special handling is needed for parallel boundary conditions, see
+:ref:`sec-parallel-bc-fci`.
