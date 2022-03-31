@@ -17,8 +17,8 @@ region, the options are checked in order from most to least specific:
 
 -  Section ``var``, ``bndry_`` + region name. Depending on the mesh
    file, regions of the grid are given labels. Currently these are
-   ``core``, ``sol``, ``pf`` and ``target`` which are intended for
-   tokamak edge simulations. Hence the variables checked are
+   ``core``, ``sol``, ``pf``, ``lower_target`` and ``upper_target`` which are
+   intended for tokamak edge simulations. Hence the variables checked are
    ``bndry_core``, ``bndry_pf`` etc.
 
 -  Section ``var``, ``bndry_`` + boundary side. These names are ``xin``,
