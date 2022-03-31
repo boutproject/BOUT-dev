@@ -84,9 +84,6 @@ following are available:
 -  ``relax`` - Relaxing boundaries. Evolve the variable towards the
    given boundary condition at a given rate
 
--  ``shifted`` - Apply boundary conditions in orthogonal X-Z
-   coordinates, rather than field-aligned
-
 -  ``width`` - Modifies the width of the region over which the boundary
    condition is applied
 
@@ -119,22 +116,6 @@ By default, the relaxation rate is set to :math:`10` (i.e. a time-scale
 of :math:`\tau=0.1`). To change this, give the rate as the second
 argument e.g. ``relax(dirichlet, 2)`` would relax to a Dirichlet
 boundary condition at a rate of :math:`2`.
-
-Shifted boundaries
-------------------
-
-By default boundary conditions are applied in field-aligned coordinates,
-where :math:`y` is along field-lines but :math:`x` has a discontinuity
-at the twist-shift location. If radial derivatives are being done in
-shifted coordinates where :math:`x` and :math:`z` are orthogonal, then
-boundary conditions should also be applied in shifted coordinates. To do
-this, the ``shifted`` boundary modifier applies a :math:`z` shift,
-applies the boundary condition, then shifts back. For example::
-
-    bndry_core = shifted( neumann )
-
-would ensure that radial derivatives were zero in shifted coordinates on
-the core boundary.
 
 Changing the width of boundaries
 --------------------------------
