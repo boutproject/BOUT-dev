@@ -28,7 +28,8 @@ To handle these different cases in the same code, the BOUT++ mesh
 implements different `ParallelTransform` classes. Each `Field3D` class
 contains a pointer to the values up and down in the Y direction,
 called yup and ydown.  These values are calculated during
-communication::
+communication (unless explicitly disabled, see
+:ref:`sec-aligned-transform`)::
 
    Field3D f(0.0);  // f allocated, set to zero
    f.yup();    // error: f.yup not allocated
@@ -53,6 +54,12 @@ a centred difference along Y using the Field3D iterators (section
    }
 
 Note the use of yp() and ym() to increase and decrease the Y index.
+
+Parallel derivatives or interpolations can also be calculated by
+transforming to a globally field aligned grid,
+:ref:`sec-aligned-transform`. This method is also used as a fallback
+when the input does not have parallel slices calculated when using
+:ref:`sec-shifted-metric`.
 
 Field-aligned grid
 ------------------
@@ -112,6 +119,48 @@ location :math:`\theta_0`:
 Note that here :math:`\theta_0` does not need to be constant in X
 (radius), since it is only the relative shifts between Y locations
 which matters.
+
+.. _sec-aligned-transform:
+
+Aligned transform
+-----------------
+
+The aligned transform method is a variation of shifted metric.
+Parallel derivatives are calculated by transforming their argument to
+a globally field aligned mesh, by toroidal interpolation using zShift,
+calculating the derivative or interpolation on the globally aligned
+grid, and then transforming the result back to the standard toroidal
+grid.
+
+The aligned transform scheme is implemented using the
+``ShiftedMetric`` class for parallel transforms, by disabling the
+calculation of parallel slices. Select it by using:
+
+.. code-block:: cfg
+
+   [mesh]
+   paralleltransform = shifted
+   calcParallelSlices_on_communicate = false
+
+With these settings, inputs to parallel derivative or interpolation
+operators will be implicitly transformed to the globally aligned grid,
+and the results transformed back.
+
+Using implicit transformations can result in more interpolations than
+absolutely necessary being done. For example, when using y-staggered
+grids, most variables will need both a parallel interpolation between
+``CELL_CENTRE`` and ``CELL_YLOW`` and also at least one parallel
+derivative. To optimise such cases, the field aligned version of a
+variable can be calculated and stored in a separate object. BOUT++
+operators return their result on the same grid as the input argument,
+so if the result of an operation on a field aligned variable is needed
+on the toroidal grid, it must be transformed explicitly. For example,
+parallel diffusion of a variable ``f`` in this scheme might look
+something like::
+
+    f_aligned = toFieldAligned(f);
+
+    ddt(f) = D_par * fromFieldAligned(Grad2_par2(f_aligned));
 
 FCI method
 ----------
