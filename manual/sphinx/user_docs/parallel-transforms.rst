@@ -42,7 +42,7 @@ communication::
 In the case of slab geometry, yup and ydown point to the original
 field (f).  For this reason the value of f along the magnetic field
 from f(x,y,z) is given by f.ydown(x,y-1,z) and f.yup(x,y+1,z). To take
-a second derivative along Y using the Field3D iterators (section
+a centred difference along Y using the Field3D iterators (section
 :ref:`sec-iterating`)::
 
    Field3D result;
@@ -61,7 +61,7 @@ The default `ParallelTransform` is the identity transform, which sets
 yup() and ydown() to point to the same field. In the input options the
 setting is
 
-.. code-block:: bash
+.. code-block:: cfg
 
    [mesh]
    paralleltransform = identity
@@ -84,12 +84,14 @@ periodic in poloidal angle. Note that it is not recommended to use
 make the radial derivatives inaccurate away from the outboard midplane (which
 is normall chosen as the zero point for the integrated shear).
 
+.. _sec-shifted-metric:
+
 Shifted metric
 --------------
 
 The shifted metric method is selected using:
 
-.. code-block:: bash
+.. code-block:: cfg
 
    [mesh]
    paralleltransform = shifted
@@ -116,7 +118,7 @@ FCI method
 
 To use the FCI method for parallel transforms, set
 
-.. code-block:: bash
+.. code-block:: cfg
 
    [mesh]
    paralleltransform = fci
