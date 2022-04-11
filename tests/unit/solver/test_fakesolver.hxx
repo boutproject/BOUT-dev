@@ -74,6 +74,8 @@ public:
   using Solver::call_timestep_monitors;
   using Solver::hasJacobian;
   using Solver::runJacobian;
+
+  Monitor& getSolverMonitor() { return this->solver_monitor; }
 };
 
 #endif // FAKESOLVER_H

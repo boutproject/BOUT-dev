@@ -57,7 +57,10 @@ Solver::Solver(Options* opts)
               .doc("If not a split operator, treat RHS as diffusive?")
               .withDefault(true)),
       mms((*options)["mms"].withDefault(false)),
-      mms_initialise((*options)["mms_initialise"].withDefault(mms)) {}
+      mms_initialise((*options)["mms_initialise"].withDefault(mms)) {
+
+  addMonitor(&solver_monitor, MonitorPosition::FRONT);
+}
 
 /**************************************************************************
  * Add physics models

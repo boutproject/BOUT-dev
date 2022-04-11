@@ -474,6 +474,18 @@ protected:
   /// Get the list of monitors
   auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }
 
+  /// Monitor that is called at output steps to update the iteration count
+  class SolverMonitor : public Monitor {
+  public:
+    SolverMonitor() {}
+  private:
+    int call(Solver* solver, BoutReal UNUSED(t), int UNUSED(iter),
+             int UNUSED(NOUT)) override {
+      solver->iteration++;
+      return 0;
+    }
+  };
+  SolverMonitor solver_monitor;
 private:
   /// Generate a random UUID (version 4) and broadcast it to all processors
   std::string createRunID() const;
