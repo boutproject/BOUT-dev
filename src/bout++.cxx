@@ -668,6 +668,9 @@ int BoutFinalise(bool write_settings) {
 int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   TRACE("BoutMonitor::call(%e, %d, %d)", t, iter, NOUT);
 
+  // Increment Solver's iteration counter, and set the global `iteration`
+  iteration = solver->incrementIterationCounter();
+
   // Data used for timing
   static bool first_time = true;
   static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
@@ -678,7 +681,6 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
   simtime = t;
-  iteration = iter + 1;
 
   /// Collect timing information
   run_data.wtime = Timer::resetTime("run");

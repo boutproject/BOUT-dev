@@ -324,6 +324,13 @@ public:
   /// The run from which this was restarted. Throws if the identifier hasn't been set yet.
   std::string getRunRestartFrom() const;
 
+  /// Get the number of completed output steps
+  int getIterationCounter() const { return iteration; }
+
+  /// Add one to the iteration count, used by BoutMonitor, but could be called by a
+  //user-defined monitor (if `bout_run()` is not used)
+  int incrementIterationCounter() { return iteration++; }
+
 protected:
   /// Number of command-line arguments
   static int* pargc;
@@ -411,8 +418,6 @@ protected:
 
   /// Current simulation time
   BoutReal simtime{0.0};
-  /// Current iteration (output time-step) number
-  int iteration{0};
 
   /// Run the user's RHS function
   int run_rhs(BoutReal t);
@@ -487,6 +492,9 @@ private:
   std::string run_id = default_run_id;
   /// The run from which this was restarted.
   std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
+
+  /// Current iteration (output time-step) number
+  int iteration{0};
 
   /// Number of calls to the RHS function
   int rhs_ncalls{0};

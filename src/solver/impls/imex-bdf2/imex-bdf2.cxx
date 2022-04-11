@@ -967,8 +967,6 @@ int IMEXBDF2::run() {
     loadVars(std::begin(u));// Put result into variables
     run_rhs(simtime); // Run RHS to calculate auxilliary variables
 
-    iteration++; // Advance iteration number
-
     /// Call the monitor function
 
     if(call_monitors(simtime, s, nsteps)) {
