@@ -500,7 +500,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     }
 
     // Call monitors so initial values are written to output dump files
-    if (call_monitors(simtime, -1, NOUT)) {
+    if (call_monitors(simtime, 0, NOUT)) {
       throw BoutException("Initial monitor call failed!");
     }
   }

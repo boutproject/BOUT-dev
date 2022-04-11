@@ -120,7 +120,7 @@ int EulerSolver::run() {
     
     /// Call the monitor function
     
-    if(call_monitors(simtime, s, nsteps)) {
+    if(call_monitors(simtime, s+1, nsteps)) {
       // Stop simulation
       break;
     }

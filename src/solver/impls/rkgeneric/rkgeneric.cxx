@@ -160,7 +160,7 @@ int RKGenericSolver::run() {
     run_rhs(simtime); //Ensure aux. variables are up to date
 
     /// Call the output step monitor function
-    if(call_monitors(simtime, s, nsteps)) break; // Stop simulation
+    if(call_monitors(simtime, s+1, nsteps)) break; // Stop simulation
   }
   
   return 0;

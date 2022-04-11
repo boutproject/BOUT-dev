@@ -836,7 +836,7 @@ int SNESSolver::run() {
 
     /// Call the monitor function
 
-    if (call_monitors(simtime, s, nsteps) != 0) {
+    if (call_monitors(simtime, s+1, nsteps) != 0) {
       break; // User signalled to quit
     }
   }

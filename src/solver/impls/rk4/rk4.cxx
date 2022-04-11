@@ -150,7 +150,7 @@ int RK4Solver::run() {
     
     /// Call the monitor function
     
-    if(call_monitors(simtime, s, nsteps)) {
+    if(call_monitors(simtime, s+1, nsteps)) {
       break; // Stop simulation
     }
   }

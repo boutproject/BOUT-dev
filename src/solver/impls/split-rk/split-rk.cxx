@@ -190,7 +190,7 @@ int SplitRK::run() {
     
     /// Call the monitor function
     
-    if(call_monitors(simtime, step, nsteps)) {
+    if(call_monitors(simtime, step+1, nsteps)) {
       // User signalled to quit
       break;
     }

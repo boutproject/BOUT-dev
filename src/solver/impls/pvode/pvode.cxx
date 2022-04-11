@@ -231,7 +231,7 @@ int PvodeSolver::run() {
     
     /// Call the monitor function
     
-    if(call_monitors(simtime, i, NOUT)) {
+    if(call_monitors(simtime, i+1, NOUT)) {
       // User signalled to quit
       break;
     }

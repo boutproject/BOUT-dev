@@ -142,7 +142,7 @@ int KarniadakisSolver::run() {
     
     /// Call the monitor function
     
-    if(call_monitors(simtime, i, nsteps)) {
+    if(call_monitors(simtime, i+1, nsteps)) {
       // User signalled to quit
       break;
     }

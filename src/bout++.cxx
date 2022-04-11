@@ -678,7 +678,7 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
   simtime = t;
-  iteration = iter + 1;
+  iteration = iter;
 
   /// Collect timing information
   run_data.wtime = Timer::resetTime("run");
