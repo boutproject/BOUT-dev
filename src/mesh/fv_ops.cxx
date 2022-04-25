@@ -8,8 +8,8 @@
 
 namespace FV {
 
-  // Div ( a Laplace_perp(f) )  -- Vorticity
-  const Field3D Div_a_Laplace_perp(const Field3D &a, const Field3D &f) {
+  // Div ( a Grad_perp(f) ) -- ∇⊥ ( a ⋅ ∇⊥ f) --  Vorticity
+  const Field3D Div_a_Grad_perp(const Field3D &a, const Field3D &f) {
     ASSERT2(a.getLocation() == f.getLocation());
 
     Mesh *mesh = a.getMesh();
