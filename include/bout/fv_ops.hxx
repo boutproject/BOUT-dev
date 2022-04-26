@@ -17,9 +17,9 @@ namespace FV {
 /*!
  * Div ( a Grad_perp(f) ) -- ∇⊥ ( a ⋅ ∇⊥ f) -- Vorticity
  */
-const Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& x);
+Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& x);
 
-[[deprecated("Please use Div_a_Grad_perp instead")]] inline const Field3D
+[[deprecated("Please use Div_a_Grad_perp instead")]] inline Field3D
 Div_a_Laplace_perp(const Field3D& a, const Field3D& x) {
   return Div_a_Grad_perp(a, x);
 }
