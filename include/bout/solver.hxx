@@ -426,6 +426,9 @@ protected:
   /// Calculate only the diffusive parts
   int run_diffusive(BoutReal t, bool linear = true);
 
+  /// Reset the iteration counter
+  void resetIterationCounter(int value = 0) { iteration = value; }
+
   /// Calls all monitor functions
   ///
   /// There are two important things to note about how \p iter is
