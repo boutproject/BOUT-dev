@@ -328,7 +328,7 @@ public:
   int getIterationCounter() const { return iteration; }
 
   /// Add one to the iteration count, used by BoutMonitor, but could be called by a
-  //user-defined monitor (if `bout_run()` is not used)
+  // user-defined monitor (if `bout_run()` is not used)
   int incrementIterationCounter() { return iteration++; }
 
 protected:
