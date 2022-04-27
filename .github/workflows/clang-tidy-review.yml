@@ -18,10 +18,6 @@ jobs:
         with:
           submodules: true
 
-      - name: Create compile_commands.json
-        run: |
-          cmake --version
-
       - name: Run clang-tidy
         uses: ZedThree/clang-tidy-review@v0.8.3
         id: review
