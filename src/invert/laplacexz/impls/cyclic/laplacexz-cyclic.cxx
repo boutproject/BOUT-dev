@@ -12,20 +12,22 @@
 #include <output.hxx>
 
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc) {
+  // Note: `m` may be nullptr, but localmesh is set in LaplaceXZ base constructor
+
   // Number of Z Fourier modes, including DC
-  nmode = (m->LocalNz) / 2 + 1;
+  nmode = (localmesh->LocalNz) / 2 + 1;
 
   // Number of independent systems of
   // equations to solve
-  nsys = nmode * (m->yend - m->ystart + 1);
+  nsys = nmode * (localmesh->yend - localmesh->ystart + 1);
 
   // Start and end X index
-  xstart = m->xstart; // Starting X index
-  if (m->firstX()) {
+  xstart = localmesh->xstart; // Starting X index
+  if (localmesh->firstX()) {
     xstart -= 1;
   }
-  xend = m->xend;
-  if (m->lastX()) {
+  xend = localmesh->xend;
+  if (localmesh->lastX()) {
     xend += 1;
   }
 
@@ -39,8 +41,8 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) 
   xcmplx.reallocate(nsys, nloc);
   rhscmplx.reallocate(nsys, nloc);
 
-  k1d.reallocate((m->LocalNz) / 2 + 1);
-  k1d_2.reallocate((m->LocalNz) / 2 + 1);
+  k1d.reallocate((localmesh->LocalNz) / 2 + 1);
+  k1d_2.reallocate((localmesh->LocalNz) / 2 + 1);
 
   // Create a cyclic reduction object, operating on dcomplex values
   cr = bout::utils::make_unique<CyclicReduce<dcomplex>>(localmesh->getXcomm(), nloc);
