@@ -264,7 +264,9 @@ LaplaceXZpetsc::~LaplaceXZpetsc() {
 
   for (auto &it : slice) {
     MatDestroy(&it.MatA);
-    MatDestroy(&it.MatP);
+    if(coefs_set) {
+      MatDestroy(&it.MatP);
+    }
 
     if (!petsc_is_finalised) {
       // PetscFinalize may already have destroyed this object
