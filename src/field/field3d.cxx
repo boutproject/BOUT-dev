@@ -514,6 +514,7 @@ void Field3D::applyParallelBoundary() {
   TRACE("Field3D::applyParallelBoundary()");
 
   checkData(*this);
+  ASSERT1(! yup_fields.empty());
 
   if (background != nullptr) {
     // Apply boundary to the total of this and background
@@ -533,6 +534,7 @@ void Field3D::applyParallelBoundary(BoutReal t) {
   TRACE("Field3D::applyParallelBoundary(t)");
 
   checkData(*this);
+  ASSERT1(! yup_fields.empty());
 
   if (background != nullptr) {
     // Apply boundary to the total of this and background
@@ -552,6 +554,7 @@ void Field3D::applyParallelBoundary(const std::string &condition) {
   TRACE("Field3D::applyParallelBoundary(condition)");
 
   checkData(*this);
+  ASSERT1(! yup_fields.empty());
 
   if (background != nullptr) {
     // Apply boundary to the total of this and background
@@ -576,6 +579,7 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
   TRACE("Field3D::applyParallelBoundary(region, condition)");
 
   checkData(*this);
+  ASSERT1(! yup_fields.empty());
 
   if (background != nullptr) {
     // Apply boundary to the total of this and background
@@ -603,6 +607,7 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
   TRACE("Field3D::applyParallelBoundary(region, condition, f)");
 
   checkData(*this);
+  ASSERT1(! yup_fields.empty());
 
   if (background != nullptr) {
     // Apply boundary to the total of this and background
