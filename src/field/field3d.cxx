@@ -135,15 +135,8 @@ Field3D* Field3D::timeDeriv() {
 
 void Field3D::splitParallelSlices() {
   TRACE("Field3D::splitParallelSlices");
-  
-#if CHECK > 2
-  if (yup_fields.size() != ydown_fields.size()) {
-    throw BoutException("Field3D::splitParallelSlices: forward/backward parallel slices not in sync.\n"
-                        "    This is an internal library error");
-  }
-#endif
 
-  if (!yup_fields.empty()) {
+  if (hasParallelSlices()) {
     return;
   }
 
@@ -158,14 +151,7 @@ void Field3D::splitParallelSlices() {
 void Field3D::clearParallelSlices() {
   TRACE("Field3D::clearParallelSlices");
 
-#if CHECK > 2
-  if (yup_fields.size() != ydown_fields.size()) {
-    throw BoutException("Field3D::mergeYupYdown: forward/backward parallel slices not in sync.\n"
-                        "    This is an internal library error");
-  }
-#endif
-
-  if (yup_fields.empty() && ydown_fields.empty()) {
+  if (!hasParallelSlices()) {
     return;
   }
 
@@ -514,7 +500,7 @@ void Field3D::applyParallelBoundary() {
   TRACE("Field3D::applyParallelBoundary()");
 
   checkData(*this);
-  ASSERT1(! yup_fields.empty());
+  ASSERT1(hasParallelSlices());
   ASSERT2(background == nullptr);
 
   // Apply boundary to this field
@@ -528,7 +514,7 @@ void Field3D::applyParallelBoundary(BoutReal t) {
   TRACE("Field3D::applyParallelBoundary(t)");
 
   checkData(*this);
-  ASSERT1(! yup_fields.empty());
+  ASSERT1(hasParallelSlices());
   ASSERT2(background == nullptr);
 
   // Apply boundary to this field
@@ -542,7 +528,7 @@ void Field3D::applyParallelBoundary(const std::string &condition) {
   TRACE("Field3D::applyParallelBoundary(condition)");
 
   checkData(*this);
-  ASSERT1(! yup_fields.empty());
+  ASSERT1(hasParallelSlices());
   ASSERT2(background == nullptr);
 
   /// Get the boundary factory (singleton)
@@ -561,7 +547,7 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
   TRACE("Field3D::applyParallelBoundary(region, condition)");
 
   checkData(*this);
-  ASSERT1(! yup_fields.empty());
+  ASSERT1(hasParallelSlices());
   ASSERT2(background == nullptr);
 
   /// Get the boundary factory (singleton)
@@ -583,7 +569,7 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
   TRACE("Field3D::applyParallelBoundary(region, condition, f)");
 
   checkData(*this);
-  ASSERT1(! yup_fields.empty());
+  ASSERT1(hasParallelSlices());
   ASSERT2(background == nullptr);
 
   /// Get the boundary factory (singleton)
