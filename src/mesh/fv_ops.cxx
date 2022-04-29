@@ -25,19 +25,10 @@ namespace FV {
 
     ASSERT2(xs >= 0);
 
-    /*
-      if(mesh->firstX())
-      xs += 1;
-    */
-    /*
-      if(mesh->lastX())
-      xe -= 1;
-    */
-
     for (int i = xs; i <= xe; i++) {
       for (int j = mesh->ystart; j <= mesh->yend; j++) {
         for (int k = 0; k < mesh->LocalNz; k++) {
-          // Calculate flux from i to i+1
+          // Calculate flux from i to i+1 in x direction
 
           BoutReal fout = 0.5 * (a(i, j, k) + a(i + 1, j, k))
                           * (coord->J(i, j, k) * coord->g11(i, j, k)
@@ -51,7 +42,7 @@ namespace FV {
       }
     }
 
-    bool fci = f.hasParallelSlices() && a.hasParallelSlices();
+    const bool fci = f.hasParallelSlices() && a.hasParallelSlices();
 
     if (bout::build::use_metric_3d and fci) {
       // 3D Metric, need yup/ydown fields.
@@ -70,21 +61,21 @@ namespace FV {
 
     // Values on this y slice (centre).
     // This is needed because toFieldAligned may modify the field
-#define GET(a, b)                                   \
+#define GET(fci, a, b)				    \
   const Field3D a##c = fci ? b : toFieldAligned(b); \
   const Field3D a##up = fci ? b.yup() : a##c;       \
   const Field3D a##down = fci ? b.ydown() : a##c;
 
-    GET(f, f);
-    GET(a, a);
+    GET(fci, f, f);
+    GET(fci, a, a);
     // Only in 3D case with FCI do the metrics have parallel slices
-    fci = fci and bout::build::use_metric_3d;
-    GET(g23, coord->g23);
-    GET(g_23, coord->g_23);
-    GET(J, coord->J);
-    GET(dy, coord->dy);
-    GET(dz, coord->dz);
-    GET(Bxy, coord->Bxy);
+    const bool metric_fci = fci and bout::build::use_metric_3d;
+    GET(metric_fci, g23, coord->g23);
+    GET(metric_fci, g_23, coord->g_23);
+    GET(metric_fci, J, coord->J);
+    GET(metric_fci, dy, coord->dy);
+    GET(metric_fci, dz, coord->dz);
+    GET(metric_fci, Bxy, coord->Bxy);
 #undef GET
 
     // Result of the Y and Z fluxes
@@ -153,7 +144,7 @@ namespace FV {
     }
 
     // Check if we need to transform back
-    if (f.hasParallelSlices() && a.hasParallelSlices()) {
+    if (fci) {
       result += yzresult;
     } else {
       result += fromFieldAligned(yzresult);
