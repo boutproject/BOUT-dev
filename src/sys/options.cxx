@@ -797,6 +797,13 @@ fmt::format_context::iterator
 bout::details::OptionsFormatterBase::format(const Options& options,
                                             fmt::format_context& ctx) {
 
+  const auto conditionally_used = [](const Options& option) -> bool {
+    if (not option.hasAttribute(conditionally_used_attribute)) {
+      return false;
+    }
+    return option.attributes.at(conditionally_used_attribute).as<bool>();
+  };
+
   if (options.isValue()) {
     const std::string section_name = options.str();
     const std::string name = (inline_section_names and not section_name.empty())
@@ -816,6 +823,14 @@ bout::details::OptionsFormatterBase::format(const Options& options,
     const bool has_type = options.attributes.count("type") != 0U;
 
     std::vector<std::string> comments;
+
+    if (not options.valueUsed()) {
+      if (conditionally_used(options)) {
+        comments.emplace_back("unused value (marked conditionally used)");
+      } else {
+        comments.emplace_back("unused value (NOT marked conditionally used)");
+      }
+    }
 
     if (docstrings) {
       if (has_type) {
