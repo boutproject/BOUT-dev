@@ -668,6 +668,9 @@ int BoutFinalise(bool write_settings) {
 int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   TRACE("BoutMonitor::call(%e, %d, %d)", t, iter, NOUT);
 
+  // Increment Solver's iteration counter, and set the global `iteration`
+  iteration = solver->incrementIterationCounter();
+
   // Data used for timing
   static bool first_time = true;
   static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
@@ -678,7 +681,6 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
   simtime = t;
-  iteration = iter;
 
   /// Collect timing information
   run_data.wtime = Timer::resetTime("run");
@@ -741,11 +743,11 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
 
   run_data.t_elapsed = MPI_Wtime() - mpi_start_time;
 
-  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration + 1, NOUT,
+  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration, NOUT,
                         (time_to_hms(run_data.t_elapsed)).c_str());
   output_progress.print(
       " ETA %s",
-      (time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1)))
+      (time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 2)))
           .c_str());
 
   /// Write dump file

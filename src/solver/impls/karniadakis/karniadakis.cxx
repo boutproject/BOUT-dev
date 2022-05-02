@@ -135,7 +135,6 @@ int KarniadakisSolver::run() {
       
       call_timestep_monitors(simtime, timestep);
     }
-    iteration++;
     
     // Call RHS to communicate and get auxilliary variables
     load_vars(std::begin(f0));

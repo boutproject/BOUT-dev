@@ -579,7 +579,7 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
   static bool first = true;
   if (eigenValOnly && first) {
     first = false;
-    iteration = 0;
+    resetIterationCounter();
   }
   BoutReal reEigBout, imEigBout;
   slepcToBout(eigr[nconv], eigi[nconv], reEigBout, imEigBout);
@@ -601,10 +601,10 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
       if (eigenValOnly) {
         simtime = reEigBout;
         bout::globals::dump.write();
-        iteration++;
+        incrementIterationCounter();
         simtime = imEigBout;
         bout::globals::dump.write();
-        iteration++;
+        incrementIterationCounter();
       }
     }
   }
@@ -693,7 +693,7 @@ void SlepcSolver::analyseResults() {
   output << "Converged eigenvalues :\n"
             "\tIndex\tSlepc eig (mag.)\t\t\tBOUT eig (mag.)\n";
 
-  iteration = 0;
+  resetIterationCounter();
 
   // Declare and create vectors to store eigenfunctions
   Vec vecReal, vecImag;
@@ -740,7 +740,7 @@ void SlepcSolver::analyseResults() {
 
     // Write to file
     bout::globals::dump.write();
-    iteration++;
+    incrementIterationCounter();
 
     // Now write imaginary part of eigen data
     // First dump imag part to fields
@@ -750,7 +750,7 @@ void SlepcSolver::analyseResults() {
 
     // Write to file
     bout::globals::dump.write();
-    iteration++;
+    incrementIterationCounter();
   }
 
   // Destroy vectors

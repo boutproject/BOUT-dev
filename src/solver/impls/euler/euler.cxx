@@ -118,8 +118,6 @@ int EulerSolver::run() {
     // Call rhs function to get extra variables at this time
     run_rhs(simtime);
     
-    iteration++; // Advance iteration number
-    
     /// Call the monitor function
     
     if(call_monitors(simtime, s, nsteps)) {
