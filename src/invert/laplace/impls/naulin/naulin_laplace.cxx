@@ -77,7 +77,7 @@
  *         vort = (vortD/n) - grad_perp(ln_n)*grad_perp(phiCur)
  *         [Delp2(phiNext) + 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiNext) + DC(A/D)*phiNext
  *          = b(phiCur)
- *          = (rhs/D) - (1/C1/D*grad_perp(C2)*grad_perp(phiCur) - 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiNext)) - (A/D - DC(A/D))*phiCur]
+ *          = (rhs/D) - (1/C1/D*grad_perp(C2)*grad_perp(phiCur) - 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiCur)) - (A/D - DC(A/D))*phiCur]
  *         \endcode
  *         where phiCur is phi of the current iteration
  *         [and DC(f) is the constant-in-z component of f]
