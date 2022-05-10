@@ -21,7 +21,7 @@ $cmd login -p $DOCKER_TOKEN -u $DOCKER_USER
 
 cat Dockerfile
 
-$cmd build -t mobydick . --build-arg=COMMIT=$(git rev-parse HEAD) --build-arg=MPI=$MPI --build-arg=CMAKE_OPTIONS="$CMAKE_OPTIONS"
+$cmd build -t mobydick . --build-arg=COMMIT=$(git rev-parse HEAD) --build-arg=MPI=$MPI --build-arg=CMAKE_OPTIONS="$CMAKE_OPTIONS" --build-arg=BASE=$BASE
 for tag in $TAGS
 do
     $cmd tag mobydick $tag

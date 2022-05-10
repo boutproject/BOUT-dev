@@ -1,5 +1,5 @@
-ARG MPI
-FROM docker.io/oi4ai/bout-base:openmp-$MPI-mini
+ARG BASE
+FROM docker.io/oi4ai/bout-base:$BASE
 
 # ----------------------------------------------------------------
 # Build and install BOUT++
