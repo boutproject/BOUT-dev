@@ -24,10 +24,18 @@ jobs:
           - name: "Debug"
             tag_postfix: "debug"
             options: "-DCHECK=3"
+            base_postfix: "mini"
 
           - name: "Optimised"
             tag_postfix: "opt"
             options: "-DCHECK=0"
+            base_postfix: "mini"
+
+          - name: "Full"
+            tag_postfix: "full"
+            options: "-DCHECK=3"
+            base_postfix: "full"
+
     steps:
       - uses: actions/checkout@v2
       - name: Debug infos
@@ -39,10 +47,11 @@ jobs:
         env:
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
           DOCKER_USER: ${{ env.USER }}
+          BASE: openmp-${{ matrix.mpi }}-${{ matrix.config.base_postfix }}
+          MPI: ${{ matrix.mpi }}
+          CMAKE_OPTIONS: ${{ matrix.config.options }}
         run: |
           TAGS="${{ env.USER }}/${{ env.IMAGE_NAME }}:latest-${{ matrix.config.tag_postfix }} \
                 ${{ env.USER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-${{ matrix.config.tag_postfix }}" \
-          CMAKE_OPTIONS=${{ matrix.config.options }} \
-          MPI=${{ matrix.mpi }} \
           sh .docker/build.sh
 
