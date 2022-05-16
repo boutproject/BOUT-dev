@@ -29,17 +29,17 @@
 
 #include "hypre3d_laplace.hxx"
 
+#include <bout/assert.hxx>
+#include <bout/caliper_wrapper.hxx>
+#include <bout/hypre_interface.hxx>
 #include <bout/mesh.hxx>
+#include <bout/operatorstencil.hxx>
 #include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
-#include <bout/assert.hxx>
-#include <utils.hxx>
 #include <datafile.hxx>
 #include <derivs.hxx>
-#include <bout/caliper_wrapper.hxx>
-#include <bout/hypre_interface.hxx>
-#include <bout/operatorstencil.hxx>
+#include <utils.hxx>
 
 LaplaceHypre3d::LaplaceHypre3d(Options *opt, const CELL_LOC loc, Mesh *mesh_in,
                                Solver *solver, Datafile *dump) :

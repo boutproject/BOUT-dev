@@ -52,16 +52,16 @@ namespace bout {
  * The first instance which is created initialises Hypre.
  * Keeps a count of the number of how many instances exist
  * when the last instance is destroyed it finalises Hypre.
- */ 
+ */
 class HypreLib {
 public:
   explicit HypreLib();
 
   HypreLib(const HypreLib &other) noexcept;
   HypreLib(HypreLib &&other) noexcept;
-  HypreLib& operator=(const HypreLib &other) = default;
-  HypreLib& operator=(HypreLib &&other) = default;
-  
+  HypreLib& operator=(const HypreLib& other) = default;
+  HypreLib& operator=(HypreLib&& other) = default;
+
   ~HypreLib();
   
   static void cleanup(); 
@@ -77,5 +77,5 @@ public:
 };
 
 #endif // BOUT_HAS_HYPRE
-}
+} // namespace bout
 #endif //  BOUT_HYPRELIB_H
