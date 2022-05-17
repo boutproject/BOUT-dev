@@ -43,4 +43,3 @@ constexpr decltype(InvertParFactory::type_name) InvertParFactory::type_name;
 constexpr decltype(InvertParFactory::section_name) InvertParFactory::section_name;
 constexpr decltype(InvertParFactory::option_name) InvertParFactory::option_name;
 constexpr decltype(InvertParFactory::default_type) InvertParFactory::default_type;
-

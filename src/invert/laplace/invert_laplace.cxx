@@ -764,4 +764,3 @@ constexpr decltype(LaplaceFactory::type_name) LaplaceFactory::type_name;
 constexpr decltype(LaplaceFactory::section_name) LaplaceFactory::section_name;
 constexpr decltype(LaplaceFactory::option_name) LaplaceFactory::option_name;
 constexpr decltype(LaplaceFactory::default_type) LaplaceFactory::default_type;
-

@@ -3,8 +3,8 @@
 #include "bout/build_config.hxx"
 
 #if BOUT_HAS_CALIPER
-#include <caliper/cali.h>
 #include <caliper/cali-manager.h>
+#include <caliper/cali.h>
 
 #else
 
