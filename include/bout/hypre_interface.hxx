@@ -855,7 +855,7 @@ public:
       break;
     }
     default: {
-      throw BoutException("Unsupported hypre_solver_type {}", solver_type);
+      throw BoutException("Unsupported hypre_solver_type {}", toString(solver_type));
     }
     }
 
