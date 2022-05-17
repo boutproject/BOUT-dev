@@ -64,25 +64,16 @@ public:
 
 #else // BOUT_HAS_HYPRE
 
+class Mesh;
+
 #include "utils.hxx"
 #include <bout/hypre_interface.hxx>
-#include <bout/mesh.hxx>
-#include <cyclic_reduction.hxx>
-
-#include "HYPRE.h"
-#include "HYPRE_parcsr_ls.h"
 
 class LaplaceXY2Hypre {
 public:
-  /*!
-   * Constructor
-   */
   LaplaceXY2Hypre(Mesh* m = nullptr, Options* opt = nullptr,
                   const CELL_LOC loc = CELL_CENTRE);
-  /*!
-   * Destructor
-   */
-  ~LaplaceXY2Hypre();
+  ~LaplaceXY2Hypre() = default;
 
   /*!
    * Set coefficients (A, B) in equation:
@@ -119,10 +110,10 @@ public:
 private:
   Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
   IndexerPtr<Field2D> indexConverter;
-  bout::HypreMatrix<Field2D> *M;
-  bout::HypreVector<Field2D> *x;
-  bout::HypreVector<Field2D> *b;
-  bout::HypreSystem<Field2D> *linearSystem;
+  bout::HypreMatrix<Field2D> M;
+  bout::HypreVector<Field2D> x;
+  bout::HypreVector<Field2D> b;
+  bout::HypreSystem<Field2D> linearSystem;
 
   // Y derivatives
   bool include_y_derivs; // Include Y derivative terms?

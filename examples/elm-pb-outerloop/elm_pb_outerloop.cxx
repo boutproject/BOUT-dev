@@ -67,17 +67,13 @@ CELL_LOC loc = CELL_CENTRE;
                         compiletime, runtime);                                  \
   }
 
-/// Concatenate two macros, evaluating first. Utility macro
-#define CONCAT_(A, B) A##B
-#define CONCAT(A, B) CONCAT_(A, B)
-
 /// Decide whether an expression is evaluated.
 /// Note: In C++17 or later this might be replaced by constexpr
 ///
 /// If the first argument is true, evaluate to expr
 ///  false -> 0.0
 ///  Other -> Probably invalid symbol, compile error
-#define EVAL_IF(setting, expr) CONCAT(EVAL_IF_, setting)(expr)
+#define EVAL_IF(setting, expr) BOUT_CONCAT(EVAL_IF_, setting)(expr)
 #define EVAL_IF_true(expr) (expr)
 #define EVAL_IF_false(expr) 0.0
 

@@ -203,8 +203,6 @@ int BoutInitialise(int& argc, char**& argv) {
 
     bout::globals::dump =
         setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);
-    //after MPI 
-    bout::globals::hyprelib = new HypreLib();
 
   } catch (const BoutException& e) {
     output_error.write(_("Error encountered during initialisation: {:s}\n"), e.what());
@@ -809,7 +807,7 @@ int BoutFinalise(bool write_settings) {
   PetscLib::cleanup();
 
   // Call HYPER_Finalize if not already called
-  HypreLib::cleanup();
+  bout::HypreLib::cleanup();
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();

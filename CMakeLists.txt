@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.13...3.16)
-if(${CMAKE_VERSION} VERSION_LESS 3.13)
+cmake_minimum_required(VERSION 3.17...3.20)
+if(${CMAKE_VERSION} VERSION_LESS 3.20)
   cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 else()
-  cmake_policy(VERSION 3.13)
+  cmake_policy(VERSION 3.17)
 endif()
 
 # Find python based on version
@@ -63,6 +63,7 @@ set(BOUT_SOURCES
   ./include/bout/array.hxx
   ./include/bout/assert.hxx
   ./include/bout/bout_enum_class.hxx
+  ./include/bout/caliper_wrapper.hxx
   ./include/bout/constants.hxx
   ./include/bout/coordinates.hxx
   ./include/bout/coordinates_accessor.hxx
