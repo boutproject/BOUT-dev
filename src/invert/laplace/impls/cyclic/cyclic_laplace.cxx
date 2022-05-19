@@ -296,7 +296,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   if (((global_flags & INVERT_BOTH_BNDRY_ONE) != 0) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if ((inner_boundary_flags & INVERT_BNDRY_ONE) != 0){
+  if ((inner_boundary_flags & INVERT_BNDRY_ONE) != 0) {
     inbndry = 1;
   }
   if ((outer_boundary_flags & INVERT_BNDRY_ONE) != 0) {
@@ -435,7 +435,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
         // Take FFT in Z direction, apply shift, and put result in k1d
 
-        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0) && localmesh->firstX())
+        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
+             && localmesh->firstX())
             || ((localmesh->LocalNx - ix - 1 < outbndry)
                 && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
           // Use the values in x0 in the boundary

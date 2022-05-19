@@ -11,7 +11,6 @@
 // previous tests
 //
 
-
 class ArrayTest : public ::testing::Test {
 public:
   ArrayTest() { Array<double>::useStore(true); }
@@ -220,7 +219,7 @@ TEST_F(ArrayTest, RetrieveData) {
 
   EXPECT_FALSE(a.empty());
   EXPECT_EQ(a.size(), 30);
-  if(a.useStore()) {
+  if (a.useStore()) {
     EXPECT_EQ(a[4], 4); // Test if reused data from store
   }
   EXPECT_TRUE(a.unique());
@@ -228,7 +227,7 @@ TEST_F(ArrayTest, RetrieveData) {
   a.ensureUnique(); // Should have no effect
 
   EXPECT_EQ(a.size(), 30);
-  if(a.useStore()) {
+  if (a.useStore()) {
     EXPECT_EQ(a[4], 4); // Test if reused data from store
   }
   EXPECT_TRUE(a.unique());
@@ -244,7 +243,7 @@ TEST_F(ArrayTest, Assignment) {
   EXPECT_FALSE(b.unique());
 }
 
-#if CHECK > 2 && ! BOUT_USE_CUDA
+#if CHECK > 2 && !BOUT_USE_CUDA
 TEST_F(ArrayTest, OutOfBoundsThrow) {
   Array<double> a(34);
   EXPECT_NO_THROW(a[33] = 1.0);

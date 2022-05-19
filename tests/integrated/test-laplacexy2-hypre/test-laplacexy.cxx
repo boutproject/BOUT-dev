@@ -23,9 +23,9 @@
  *
  **************************************************************************/
 
-#include <bout.hxx>
 #include <bout/constants.hxx>
 #include <bout/invert/laplacexy2_hypre.hxx>
+#include <bout.hxx>
 #include <derivs.hxx>
 #include <initialprofiles.hxx>
 #include <options.hxx>
@@ -52,14 +52,15 @@ int main(int argc, char** argv) {
 
   ////////////////////////////////////////////////////////////////////////////////////////
 
-  Field2D rhs = Laplace_perpXY(a, f) + b*f;
+  Field2D rhs = Laplace_perpXY(a, f) + b * f;
 
   laplacexy.setCoefs(a, b);
 
   Field2D guess = 0.0;
   Field2D sol = laplacexy.solve(rhs, guess);
-  Field2D error = (f - sol)/f;
-  Field2D absolute_error = abs(f - sol); // Absolute value of relative error: abs((f - sol)/f)
+  Field2D error = (f - sol) / f;
+  Field2D absolute_error =
+      abs(f - sol); // Absolute value of relative error: abs((f - sol)/f)
   BoutReal max_error = max(absolute_error, true);
 
   output << "Magnitude of maximum absolute error is " << max_error << endl;

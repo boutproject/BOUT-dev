@@ -193,7 +193,7 @@ FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
 
 void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out) const {
 #if BOUT_HAS_UMPIRE
-  //TODO: This static keyword is a hotfix and should be removed in 
+  // TODO: This static keyword is a hotfix and should be removed in
   //      future iterations. It is here because otherwise many allocations
   //      lead to very poor performance
   static Array<dcomplex> cmplx(nmodes);

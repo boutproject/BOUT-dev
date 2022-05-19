@@ -337,20 +337,18 @@ class Field3D : public Field {
   
   Region<Ind3D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
   Region<Ind3D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
-  
-  BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D &d) {
-    return data[d.ind];
-  }
-  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D &d) const {
+
+  BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) { return data[d.ind]; }
+  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) const {
     return data[d.ind];
   }
 
-  BoutReal& BOUT_HOST_DEVICE operator()(const IndPerp &d, int jy);
-  const BoutReal& BOUT_HOST_DEVICE operator()(const IndPerp &d, int jy) const;
+  BoutReal& BOUT_HOST_DEVICE operator()(const IndPerp& d, int jy);
+  const BoutReal& BOUT_HOST_DEVICE operator()(const IndPerp& d, int jy) const;
 
-  BoutReal& BOUT_HOST_DEVICE operator()(const Ind2D &d, int jz);
-  const BoutReal& BOUT_HOST_DEVICE operator()(const Ind2D &d, int jz) const;
-  
+  BoutReal& BOUT_HOST_DEVICE operator()(const Ind2D& d, int jz);
+  const BoutReal& BOUT_HOST_DEVICE operator()(const Ind2D& d, int jz) const;
+
   /*!
    * Direct access to the underlying data array
    *
@@ -683,9 +681,7 @@ inline void invalidateGuards(Field3D &UNUSED(var)) {}
 /// Returns a reference to the time-derivative of a field \p f
 ///
 /// Wrapper around member function f.timeDeriv()
-BOUT_HOST_DEVICE inline Field3D& ddt(Field3D &f) {
-  return *(f.timeDeriv());
-}
+BOUT_HOST_DEVICE inline Field3D& ddt(Field3D& f) { return *(f.timeDeriv()); }
 
 /// toString template specialisation
 /// Defined in utils.hxx

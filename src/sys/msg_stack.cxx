@@ -30,14 +30,14 @@
 #include <cstdarg>
 #include <string>
 
-#if BOUT_USE_OPENMP 
+#if BOUT_USE_OPENMP
 #include <omp.h>
 #endif
 
 #if BOUT_USE_MSGSTACK
 int MsgStack::push(std::string message) {
 
-#if BOUT_USE_OPENMP 
+#if BOUT_USE_OPENMP
   // This is temporary fix: no messages from OMP regions if there's
   // more than one thread
   if (omp_get_num_threads() > 1) {
@@ -64,7 +64,7 @@ void MsgStack::pop() {
 }
 
 void MsgStack::pop(int id) {
-#if BOUT_USE_OPENMP 
+#if BOUT_USE_OPENMP
   if (omp_get_num_threads() > 1) {
     return;
   }

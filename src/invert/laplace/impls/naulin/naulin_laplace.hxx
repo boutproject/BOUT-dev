@@ -41,9 +41,9 @@ RegisterLaplace<LaplaceNaulin> registerlaplacenaulin(LAPLACE_NAULIN);
  */
 class LaplaceNaulin : public Laplacian {
 public:
-  LaplaceNaulin(Options *opt = NULL, const CELL_LOC loc = CELL_CENTRE,
-                Mesh *mesh_in = nullptr, Solver *solver = nullptr,
-                Datafile *dump = nullptr);
+  LaplaceNaulin(Options* opt = NULL, const CELL_LOC loc = CELL_CENTRE,
+                Mesh* mesh_in = nullptr, Solver* solver = nullptr,
+                Datafile* dump = nullptr);
   ~LaplaceNaulin() = default;
   
   using Laplacian::setCoefA;

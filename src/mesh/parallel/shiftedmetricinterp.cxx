@@ -32,7 +32,8 @@
 #include "bout/constants.hxx"
 
 ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
-                                         Field2D zShift_in, BoutReal zlength_in, Options* opt)
+                                         Field2D zShift_in, BoutReal zlength_in,
+                                         Options* opt)
     : ParallelTransform(mesh, opt), location(location_in), zShift(std::move(zShift_in)),
       zlength(zlength_in), ydown_index(mesh.ystart) {
   // check the coordinate system used for the grid data source
@@ -65,10 +66,9 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (const auto& i : zt_prime_up.getRegion(RGN_NOY)) {
       // Field line moves in z by an angle zShift(i,j+1)-zShift(i,j) when going
       // from j to j+1, but we want the shift in index-space
-      zt_prime_up[i] =
-          static_cast<BoutReal>(i.z())
-          + (zShift[i.yp(y_offset + 1)] - zShift[i])
-            * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
+      zt_prime_up[i] = static_cast<BoutReal>(i.z())
+                       + (zShift[i.yp(y_offset + 1)] - zShift[i])
+                             * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
     }
 
     parallel_slice_interpolators[yup_index + y_offset]->calcWeights(zt_prime_up);
@@ -76,10 +76,9 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (const auto& i : zt_prime_down.getRegion(RGN_NOY)) {
       // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
       // from j to j-1, but we want the shift in index-space
-      zt_prime_down[i] =
-          static_cast<BoutReal>(i.z())
-          - (zShift[i] - zShift[i.ym(y_offset + 1)])
-            * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
+      zt_prime_down[i] = static_cast<BoutReal>(i.z())
+                         - (zShift[i] - zShift[i.ym(y_offset + 1)])
+                               * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
     }
 
     parallel_slice_interpolators[ydown_index + y_offset]->calcWeights(zt_prime_down);

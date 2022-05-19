@@ -32,9 +32,11 @@ const char DEFAULT_DIR[] = "data";
 #define GLOBALORIGIN
 
 #include "boundary_factory.hxx"
+#include "bout++-time.hxx"
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
 #include "datafile.hxx"
+#include "fmt/format.h"
 #include "interpolation_xz.hxx"
 #include "interpolation_z.hxx"
 #include "invert_laplace.hxx"
@@ -42,6 +44,7 @@ const char DEFAULT_DIR[] = "data";
 #include "msg_stack.hxx"
 #include "optionsreader.hxx"
 #include "output.hxx"
+#include "bout/coordinates_accessor.hxx"
 #include "bout/hyprelib.hxx"
 #include "bout/invert/laplacexz.hxx"
 #include "bout/mpi_wrapper.hxx"
@@ -53,9 +56,6 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
 #include "bout/version.hxx"
-#include "fmt/format.h"
-#include "bout++-time.hxx"
-#include "bout/coordinates_accessor.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -942,7 +942,8 @@ void bout_signal_handler(int sig) {
   // Set signal handler back to default to prevent possible infinite loop
   signal(SIGSEGV, SIG_DFL);
   // print number of process to stderr, so the user knows which log to check
-  fmt::print(stderr, FMT_STRING("\nSighandler called on process {:d} with sig {:d}\n"), BoutComm::rank(), sig);
+  fmt::print(stderr, FMT_STRING("\nSighandler called on process {:d} with sig {:d}\n"),
+             BoutComm::rank(), sig);
 
   switch (sig) {
   case SIGSEGV:

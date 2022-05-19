@@ -75,7 +75,7 @@ BOUT_HOST_DEVICE inline BoutReal bracket(const Field2DAccessor<location>& f,
   int izmxm = i_xm(izm, ny, nz);
 
   // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-  BoutReal Jpp = - (f_a[i2dxp] - f_a[i2dxm]) * (g_a[izp] - g_a[izm]);
+  BoutReal Jpp = -(f_a[i2dxp] - f_a[i2dxm]) * (g_a[izp] - g_a[izm]);
 
   // J+x
   BoutReal Jpx =
@@ -127,9 +127,10 @@ BOUT_HOST_DEVICE inline BoutReal bracket(const FieldAccessor<location>& f,
   return (Jpp + Jpx + Jxp) / (12 * f.coords.dx(i) * f.coords.dz(i));
 }
 
-template<CELL_LOC location, class FieldType_f, class FieldType_g>
+template <CELL_LOC location, class FieldType_f, class FieldType_g>
 BOUT_HOST_DEVICE inline BoutReal bracket(const FieldAccessor<location, FieldType_f>& f,
-                                         const FieldAccessor<location, FieldType_g>& g, const Ind3D &ind) {
+                                         const FieldAccessor<location, FieldType_g>& g,
+                                         const Ind3D& ind) {
   return bracket(f, g, ind.ind);
 }
 
@@ -159,8 +160,9 @@ BOUT_HOST_DEVICE inline BoutReal DDX(const FieldAccessor<location>& f, const int
   return 0.5 * (f.data[ixp] - f.data[ixm]) / f.coords.dx(i);
 }
 
-template<CELL_LOC location, class FieldType>
-BOUT_HOST_DEVICE inline BoutReal DDX(const FieldAccessor<location, FieldType>& f, const Ind3D &ind) {
+template <CELL_LOC location, class FieldType>
+BOUT_HOST_DEVICE inline BoutReal DDX(const FieldAccessor<location, FieldType>& f,
+                                     const Ind3D& ind) {
   return DDX(f, ind.ind);
 }
 
@@ -187,8 +189,9 @@ BOUT_HOST_DEVICE inline BoutReal DDY(const FieldAccessor<location>& f, const int
   return 0.5 * (f.yup[iyp] - f.ydown[iym]) / f.coords.dy(i);
 }
 
-template<CELL_LOC location, class FieldType>
-BOUT_HOST_DEVICE inline BoutReal DDY(const FieldAccessor<location, FieldType>& f, const Ind3D &ind) {
+template <CELL_LOC location, class FieldType>
+BOUT_HOST_DEVICE inline BoutReal DDY(const FieldAccessor<location, FieldType>& f,
+                                     const Ind3D& ind) {
   return DDY(f, ind.ind);
 }
 
@@ -203,8 +206,9 @@ BOUT_HOST_DEVICE inline BoutReal DDZ(const FieldAccessor<location>& f, const int
   return 0.5 * (f[izp] - f[izm]) / f.coords.dz(i);
 }
 
-template<CELL_LOC location, class FieldType>
-BOUT_HOST_DEVICE inline BoutReal DDZ(const FieldAccessor<location, FieldType>& f, const Ind3D &ind) {
+template <CELL_LOC location, class FieldType>
+BOUT_HOST_DEVICE inline BoutReal DDZ(const FieldAccessor<location, FieldType>& f,
+                                     const Ind3D& ind) {
   return DDZ(f, ind.ind);
 }
 
@@ -241,8 +245,9 @@ BOUT_HOST_DEVICE inline BoutReal Delp2(const FieldAccessor<location>& f, const i
                / (4. * dz * dx); // D2DXDZ
 }
 
-template<CELL_LOC location, class FieldType>
-BOUT_HOST_DEVICE inline BoutReal Delp2(const FieldAccessor<location, FieldType>& f, const Ind3D &ind) {
+template <CELL_LOC location, class FieldType>
+BOUT_HOST_DEVICE inline BoutReal Delp2(const FieldAccessor<location, FieldType>& f,
+                                       const Ind3D& ind) {
   return Delp2(f, ind.ind);
 }
 
@@ -265,15 +270,16 @@ BOUT_HOST_DEVICE inline BoutReal Div_par_Grad_par(const FieldAccessor<location>&
 
   BoutReal gradient_lower =
       2. * (f[i] - f.ydown[iym]) / (f.coords.dy(i) + f.coords.dy(iym));
-  BoutReal flux_lower =
-    gradient_lower * (f.coords.J(i) + f.coords.J(iym)) / (f.coords.g_22(i) + f.coords.g_22(iym));
+  BoutReal flux_lower = gradient_lower * (f.coords.J(i) + f.coords.J(iym))
+                        / (f.coords.g_22(i) + f.coords.g_22(iym));
 
   BoutReal output = (flux_upper - flux_lower) / (f.coords.dy(i) * f.coords.J(i));
   return output;
 }
 
-template<CELL_LOC location, class FieldType>
-BOUT_HOST_DEVICE inline BoutReal Div_par_Grad_par(const FieldAccessor<location, FieldType>& f, const Ind3D &ind) {
+template <CELL_LOC location, class FieldType>
+BOUT_HOST_DEVICE inline BoutReal
+Div_par_Grad_par(const FieldAccessor<location, FieldType>& f, const Ind3D& ind) {
   return Div_par_Grad_par(f, ind.ind);
 }
 
@@ -340,12 +346,12 @@ BOUT_HOST_DEVICE BoutReal b0xGrad_dot_Grad(const Field2DAccessor<location>& phi,
   return (vddx + vddy + vddz) / (f.coords.J(i) * sqrt(f.coords.g_22(i)));
 }
 
-template<CELL_LOC location, class FieldType_f, class FieldType_g>
-BOUT_HOST_DEVICE inline BoutReal b0xGrad_dot_Grad(const FieldAccessor<location, FieldType_f>& f,
-                                                  const FieldAccessor<location, FieldType_g>& g, const Ind3D &ind) {
+template <CELL_LOC location, class FieldType_f, class FieldType_g>
+BOUT_HOST_DEVICE inline BoutReal
+b0xGrad_dot_Grad(const FieldAccessor<location, FieldType_f>& f,
+                 const FieldAccessor<location, FieldType_g>& g, const Ind3D& ind) {
   return b0xGrad_dot_Grad(f, g, ind.ind);
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 // D2DY2
@@ -362,14 +368,15 @@ BOUT_HOST_DEVICE inline BoutReal D2DY2(const FieldAccessor<location>& f, const i
   BoutReal dy = f.coords.dy(i);
 
   BoutReal result = (f.yup[iyp] - 2. * f[i] + f.ydown[iym]) / SQ(dy)
-    // non-uniform correction
-    + f.coords.d1_dy(i) * (f.yup[iyp] - f.ydown[iym]) / (2. * dy);
+                    // non-uniform correction
+                    + f.coords.d1_dy(i) * (f.yup[iyp] - f.ydown[iym]) / (2. * dy);
 
   return result;
 }
 
-template<CELL_LOC location, class FieldType>
-BOUT_HOST_DEVICE inline BoutReal D2DY2(const FieldAccessor<location, FieldType>& f, const Ind3D &ind) {
+template <CELL_LOC location, class FieldType>
+BOUT_HOST_DEVICE inline BoutReal D2DY2(const FieldAccessor<location, FieldType>& f,
+                                       const Ind3D& ind) {
   return D2DY2(f, ind.ind);
 }
 
@@ -381,8 +388,9 @@ BOUT_HOST_DEVICE inline BoutReal Grad_par(const FieldAccessor<location>& f, cons
   return DDY(f, i) / sqrt(f.coords.g_22(i));
 }
 
-template<CELL_LOC location, class FieldType>
-BOUT_HOST_DEVICE inline BoutReal Grad_par(const FieldAccessor<location, FieldType>& f, const Ind3D &ind) {
+template <CELL_LOC location, class FieldType>
+BOUT_HOST_DEVICE inline BoutReal Grad_par(const FieldAccessor<location, FieldType>& f,
+                                          const Ind3D& ind) {
   return Grad_par(f, ind.ind);
 }
 

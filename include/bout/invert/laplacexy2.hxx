@@ -1,18 +1,18 @@
 /**************************************************************************
  * Laplacian solver in 2D (X-Y)
  *
- * Equation solved is: 
+ * Equation solved is:
  *
  * Div( A * Grad_perp(x) ) + B*x = b
  *
  * Intended for use in solving n = 0 component of potential
  * from inversion of vorticity equation
- * 
+ *
  **************************************************************************
  * Copyright 2015 B.Dudson
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -41,8 +41,8 @@
 #warning LaplaceXY requires PETSc. No LaplaceXY available
 
 #include <bout/mesh.hxx>
-#include <options.hxx>
 #include <boutexception.hxx>
+#include <options.hxx>
 
 /*!
  * Create a dummy class so that code will compile
@@ -52,7 +52,7 @@
 class LaplaceXY2 {
 public:
   LaplaceXY2(Mesh* UNUSED(m) = nullptr, Options* UNUSED(opt) = nullptr,
-            const CELL_LOC UNUSED(loc) = CELL_CENTRE) {
+             const CELL_LOC UNUSED(loc) = CELL_CENTRE) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
   void setCoefs(const Field2D& UNUSED(A), const Field2D& UNUSED(B)) {}
@@ -75,18 +75,18 @@ public:
 #undef MPI_Waitall
 #undef MPI_Waitany
 
-#include <bout/mesh.hxx>
-#include <bout/petsclib.hxx>
-#include <bout/petsc_interface.hxx>
-#include <cyclic_reduction.hxx>
 #include "utils.hxx"
+#include <bout/mesh.hxx>
+#include <bout/petsc_interface.hxx>
+#include <bout/petsclib.hxx>
+#include <cyclic_reduction.hxx>
 
 class LaplaceXY2 {
 public:
-  /*! 
+  /*!
    * Constructor
    */
-  LaplaceXY2(Mesh *m = nullptr, Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  LaplaceXY2(Mesh* m = nullptr, Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
   /*!
    * Destructor
    */
@@ -96,11 +96,11 @@ public:
    * Set coefficients (A, B) in equation:
    * Div( A * Grad_perp(x) ) + B*x = b
    */
-  void setCoefs(const Field2D &A, const Field2D &B);
-  
+  void setCoefs(const Field2D& A, const Field2D& B);
+
   /*!
    * Solve Laplacian in X-Y
-   * 
+   *
    * Inputs
    * ======
    *
@@ -108,14 +108,14 @@ public:
    *        and contain valid data.
    * x0   - Initial guess at the solution. If this is unallocated
    *        then an initial guess of zero will be used.
-   * 
+   *
    * Returns
    * =======
-   * 
+   *
    * The solution as a Field2D. On failure an exception will be raised
-   * 
+   *
    */
-  Field2D solve(const Field2D &rhs, const Field2D &x0);
+  Field2D solve(const Field2D& rhs, const Field2D& x0);
 
   /*!
    * Preconditioner function
@@ -123,27 +123,27 @@ public:
    * and should not be called by external users
    */
   int precon(Vec x, Vec y);
+
 private:
-  
-  PetscLib lib;     ///< Requires PETSc library
-  
-  Mesh *localmesh;   ///< The mesh this operates on, provides metrics and communication
-  
+  PetscLib lib; ///< Requires PETSc library
+
+  Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
+
   IndexerPtr<Field2D> indexConverter;
   std::shared_ptr<PetscMatrix<Field2D>> matrix; ///< Matrix to be inverted
-  KSP ksp;          ///< Krylov Subspace solver
-  PC pc;            ///< Preconditioner
+  KSP ksp;                                      ///< Krylov Subspace solver
+  PC pc;                                        ///< Preconditioner
 
   // Y derivatives
   bool include_y_derivs; // Include Y derivative terms?
-  
+
   // Boundary conditions
   bool x_inner_dirichlet; // Dirichlet on inner X boundary?
   bool y_bndry_dirichlet; // Dirichlet on Y boundary?
 
   // Location of the rhs and solution
   CELL_LOC location;
-  
+
   /*!
    * Return the communicator for XY
    */

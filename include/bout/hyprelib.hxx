@@ -1,28 +1,28 @@
 /*!************************************************************************
  * Provides access to the Hypre library, handling initialisation and
- * finalisation. 
+ * finalisation.
  *
  * Usage
  * -----
  *
  * #include <bout/hyprelib.hxx>
- * 
+ *
  * class MyClass {
  *   public:
- *   
+ *
  *   private:
  *     HypreLib lib;
  * };
- * 
+ *
  *
  * This will then automatically initialise Hypre the first time an object
  * is created, and finalise it when the last object is destroyed.
- * 
+ *
  **************************************************************************
  * Copyright 2012 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -57,14 +57,15 @@ class HypreLib {
 public:
   explicit HypreLib();
 
-  HypreLib(const HypreLib &other) noexcept;
-  HypreLib(HypreLib &&other) noexcept;
+  HypreLib(const HypreLib& other) noexcept;
+  HypreLib(HypreLib&& other) noexcept;
   HypreLib& operator=(const HypreLib& other) = default;
   HypreLib& operator=(HypreLib&& other) = default;
 
   ~HypreLib();
-  
-  static void cleanup(); 
+
+  static void cleanup();
+
 private:
   static int count; ///< How many instances?
 };

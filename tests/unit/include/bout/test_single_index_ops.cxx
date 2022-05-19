@@ -2,16 +2,16 @@
 
 #include "test_extras.hxx"
 
-#include "bout/single_index_ops.hxx"
-#include "difops.hxx"
 #include "derivs.hxx"
+#include "difops.hxx"
+#include "bout/single_index_ops.hxx"
 
 #include <random>
 
 /// Global mesh
-namespace bout{
-namespace globals{
-extern Mesh *mesh;
+namespace bout {
+namespace globals {
+extern Mesh* mesh;
 } // namespace globals
 } // namespace bout
 
@@ -46,16 +46,15 @@ TEST_F(SingleIndexOpsTest, DDX) {
 
   // Check that the field is not zero
   ASSERT_FALSE(IsFieldEqual(input, 0.0, "RGN_NOBNDRY"));
-  
+
   // Differentiate whole field
   Field3D difops = DDX(input);
 
   // Differentiate using index operations
-  Field3D indexops; indexops.allocate();
+  Field3D indexops;
+  indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = DDX(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = DDX(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
@@ -72,16 +71,15 @@ TEST_F(SingleIndexOpsTest, DDY) {
 
   // need the yup/ydown fields
   mesh->communicate(input);
-  
+
   // Differentiate whole field
   Field3D difops = DDY(input);
 
   // Differentiate using index operations
-  Field3D indexops; indexops.allocate();
+  Field3D indexops;
+  indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = DDY(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = DDY(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
@@ -95,16 +93,15 @@ TEST_F(SingleIndexOpsTest, DDZ) {
 
   // Check that the field is not zero
   ASSERT_FALSE(IsFieldEqual(input, 0.0, "RGN_NOBNDRY"));
-  
+
   // Differentiate whole field
   Field3D difops = DDZ(input);
 
   // Differentiate using index operations
-  Field3D indexops; indexops.allocate();
+  Field3D indexops;
+  indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = DDZ(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = DDZ(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
@@ -128,7 +125,8 @@ TEST_F(SingleIndexOpsTest, bracket2d3d) {
   Field3D difops = bracket(input, input2, BRACKET_ARAKAWA);
 
   // Differentiate using index operations
-  Field3D indexops; indexops.allocate();
+  Field3D indexops;
+  indexops.allocate();
   auto input_acc = Field2DAccessor<>(input);
   auto input2_acc = FieldAccessor<>(input2);
   BOUT_FOR(i, indexops.getRegion("RGN_NOBNDRY")) {
@@ -154,7 +152,8 @@ TEST_F(SingleIndexOpsTest, bracket3d3d) {
   Field3D difops = bracket(input, input2, BRACKET_ARAKAWA);
 
   // Differentiate using index operations
-  Field3D indexops; indexops.allocate();
+  Field3D indexops;
+  indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
   auto input2_acc = FieldAccessor<>(input2);
   BOUT_FOR(i, indexops.getRegion("RGN_NOBNDRY")) {
@@ -181,11 +180,10 @@ TEST_F(SingleIndexOpsTest, Delp2_3D) {
   Field3D difops = Delp2(input, CELL_DEFAULT, false);
 
   // Differentiate using index operations
-  Field3D indexops; indexops.allocate();
+  Field3D indexops;
+  indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = Delp2(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = Delp2(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
@@ -206,12 +204,9 @@ TEST_F(SingleIndexOpsTest, b0xGrad_dot_Grad_3D_2D) {
 
   // Set the numerical methods
   // Note: Important setting is Field3D upwind (U1 -> C2)
-  Options diff_options {{"ddx", {{"first", "C2"},
-                                 {"upwind", "C2"}}},
-                        {"ddy", {{"first", "C2"},
-                                 {"upwind", "C2"}}},
-                        {"ddz", {{"first", "C2"},
-                                 {"upwind", "C2"}}}};
+  Options diff_options{{"ddx", {{"first", "C2"}, {"upwind", "C2"}}},
+                       {"ddy", {{"first", "C2"}, {"upwind", "C2"}}},
+                       {"ddz", {{"first", "C2"}, {"upwind", "C2"}}}};
   DerivativeStore<Field2D>::getInstance().initialise(&diff_options);
   DerivativeStore<Field3D>::getInstance().initialise(&diff_options);
 
@@ -219,7 +214,8 @@ TEST_F(SingleIndexOpsTest, b0xGrad_dot_Grad_3D_2D) {
   Field3D difops = b0xGrad_dot_Grad(input1, input2);
 
   // Differentiate using index operations
-  Field3D indexops; indexops.allocate();
+  Field3D indexops;
+  indexops.allocate();
   auto input1_acc = FieldAccessor<>(input1);
   auto input2_acc = Field2DAccessor<>(input2);
   BOUT_FOR(i, input1.getRegion("RGN_NOBNDRY")) {
@@ -244,11 +240,10 @@ TEST_F(SingleIndexOpsTest, D2DY2) {
   Field3D difops = D2DY2(input);
 
   // Differentiate using index operations
-  Field3D indexops; indexops.allocate();
+  Field3D indexops;
+  indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = D2DY2(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = D2DY2(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
@@ -268,11 +263,10 @@ TEST_F(SingleIndexOpsTest, Grad_par) {
   Field3D difops = Grad_par(input);
 
   // Differentiate using index operations
-  Field3D indexops; indexops.allocate();
+  Field3D indexops;
+  indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = Grad_par(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = Grad_par(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
@@ -292,11 +286,10 @@ TEST_F(SingleIndexOpsTest, Div_par) {
   Field3D difops = Div_par(input);
 
   // Differentiate using index operations
-  Field3D indexops; indexops.allocate();
+  Field3D indexops;
+  indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = Div_par(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = Div_par(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));

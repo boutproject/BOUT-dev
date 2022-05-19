@@ -148,8 +148,8 @@ protected:
     /////////////////////////////////////////////////////////////////////////////
 
     ddt(n) = -bracket(phi, n, BRACKET_ARAKAWA) // ExB term
-             + 2 * DDZ(n) * (rho_s / R_c)     // Curvature term
-             + D_n * Delp2(n);                // Diffusion term
+             + 2 * DDZ(n) * (rho_s / R_c)      // Curvature term
+             + D_n * Delp2(n);                 // Diffusion term
     if (compressible) {
       ddt(n) -= 2 * n * DDZ(phi) * (rho_s / R_c); // ExB Compression term
     }
@@ -163,8 +163,8 @@ protected:
     /////////////////////////////////////////////////////////////////////////////
 
     ddt(omega) = -bracket(phi, omega, BRACKET_ARAKAWA) // ExB term
-                 + 2 * DDZ(n) * (rho_s / R_c) / n     // Curvature term
-                 + D_vort * Delp2(omega) / n          // Viscous diffusion term
+                 + 2 * DDZ(n) * (rho_s / R_c) / n      // Curvature term
+                 + D_vort * Delp2(omega) / n           // Viscous diffusion term
         ;
 
     if (sheath) {

@@ -48,13 +48,30 @@ struct CoordinatesAccessor {
 
   /// Offsets of each coordinates variable into the striped array
   enum class Offset {
-    dx, dy, dz,                          // Grid spacing
-    d1_dx, d1_dy, d1_dz,                 // Grid spacing non-uniformity
-    J,                                   // Jacobian
-    B, Byup, Bydown,                     // Magnetic field magnitude
-    G1, G3,                              // Metric derivatives
-    g11, g12, g13, g22, g23, g33,        // Contravariant metric tensor (g^{ij})
-    g_11, g_12, g_13, g_22, g_23, g_33,  // Covariant metric tensor
+    dx,
+    dy,
+    dz, // Grid spacing
+    d1_dx,
+    d1_dy,
+    d1_dz, // Grid spacing non-uniformity
+    J,     // Jacobian
+    B,
+    Byup,
+    Bydown, // Magnetic field magnitude
+    G1,
+    G3, // Metric derivatives
+    g11,
+    g12,
+    g13,
+    g22,
+    g23,
+    g33, // Contravariant metric tensor (g^{ij})
+    g_11,
+    g_12,
+    g_13,
+    g_22,
+    g_23,
+    g_33, // Covariant metric tensor
     end
   };
 
@@ -75,7 +92,7 @@ struct CoordinatesAccessor {
   /// and the variable offset
   BOUT_HOST_DEVICE inline BoutReal lookup(int index, int offset) const {
 #if BOUT_USE_METRIC_3D
-    const int ind = index;  // Use 3D index
+    const int ind = index; // Use 3D index
 #else
     const int ind = index / mesh_nz; // Convert to a 2D index
 #endif
@@ -87,9 +104,9 @@ struct CoordinatesAccessor {
   ///
   /// e.g. COORD_FN1(dx) defines a function
   ///     BoutReal dx(int index) const {...}
-#define COORD_FN1(symbol)                                     \
-  BOUT_HOST_DEVICE inline BoutReal symbol(int index) const {  \
-    return lookup(index, static_cast<int>(Offset::symbol));   \
+#define COORD_FN1(symbol)                                    \
+  BOUT_HOST_DEVICE inline BoutReal symbol(int index) const { \
+    return lookup(index, static_cast<int>(Offset::symbol));  \
   }
 
   /// Generates lookup functions for each symbol
@@ -98,8 +115,7 @@ struct CoordinatesAccessor {
   /// e.g. COORD_FN(dx, dy) produces two functions
   ///     BoutReal dx(int index) const {...}
   ///     BoutReal dy(int index) const {...}
-#define COORD_FN(...)                           \
-  MACRO_FOR_EACH(COORD_FN1, __VA_ARGS__)
+#define COORD_FN(...) MACRO_FOR_EACH(COORD_FN1, __VA_ARGS__)
 
   COORD_FN(dx, dy, dz);
   COORD_FN(d1_dx, d1_dy, d1_dz);

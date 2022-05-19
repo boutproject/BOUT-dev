@@ -129,11 +129,11 @@ const Region<Ind2D> &Field2D::getRegion(const std::string &region_name) const {
 }
 
 // Not in header because we need to access fieldmesh
-BOUT_HOST_DEVICE BoutReal& Field2D::operator[](const Ind3D &d) {
+BOUT_HOST_DEVICE BoutReal& Field2D::operator[](const Ind3D& d) {
   return operator[](fieldmesh->map3Dto2D(d));
 }
 
-BOUT_HOST_DEVICE const BoutReal& Field2D::operator[](const Ind3D &d) const {
+BOUT_HOST_DEVICE const BoutReal& Field2D::operator[](const Ind3D& d) const {
   return operator[](fieldmesh->map3Dto2D(d));
 }
 

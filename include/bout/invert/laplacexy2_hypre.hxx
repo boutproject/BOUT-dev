@@ -40,10 +40,10 @@
 
 #warning LaplaceXY requires Hypre. No LaplaceXY available
 
+#include "bout/globalindexer.hxx"
 #include <bout/mesh.hxx>
 #include <boutexception.hxx>
 #include <options.hxx>
-#include "bout/globalindexer.hxx"
 
 /*!
  * Create a dummy class so that code will compile
@@ -98,14 +98,14 @@ public:
    * The solution as a Field2D. On failure an exception will be raised
    *
    */
-   Field2D solve(Field2D& rhs, Field2D& x0);
+  Field2D solve(Field2D& rhs, Field2D& x0);
 
   /*!
    * Preconditioner function
    * This is called by Hypre via a static function.
    * and should not be called by external users
    */
-  //int precon(HYPRE_IJVector x, HYPRE_IJVector y);
+  // int precon(HYPRE_IJVector x, HYPRE_IJVector y);
 
 private:
   Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication

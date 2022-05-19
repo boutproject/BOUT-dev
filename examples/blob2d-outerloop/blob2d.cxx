@@ -12,7 +12,7 @@
 
 #include "bout/single_index_ops.hxx" // Operators at a single index
 
-#define DISABLE_RAJA 0  // Disable RAJA here for testing?
+#define DISABLE_RAJA 0 // Disable RAJA here for testing?
 #include "bout/rajalib.hxx"
 
 /// 2D drift-reduced model, mainly used for blob studies
@@ -107,7 +107,8 @@ public:
     if (boussinesq) {
       // BOUT.inp section "phiBoussinesq"
       phiSolver = Laplacian::create(Options::getRoot()->getSection("phiBoussinesq"));
-      Options::root()["phiSolver"].setConditionallyUsed(); // Not using alternative options
+      Options::root()["phiSolver"]
+          .setConditionallyUsed(); // Not using alternative options
     } else {
       // BOUT.inp section "phiSolver"
       phiSolver = Laplacian::create(Options::getRoot()->getSection("phiSolver"));
@@ -167,10 +168,11 @@ public:
 
     if (compressible) {
       BOUT_FOR_RAJA(i, region, CAPTURE(rho_s, R_c)) {
-        ddt(n_acc)[i] -= 2 * n_acc[i] * DDZ(phi_acc, i) * (rho_s / R_c); // ExB Compression term
+        ddt(n_acc)[i] -=
+            2 * n_acc[i] * DDZ(phi_acc, i) * (rho_s / R_c); // ExB Compression term
       };
     }
-    
+
     if (sheath) {
       // Sheath closure
 

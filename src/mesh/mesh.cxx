@@ -404,7 +404,7 @@ int Mesh::ySize(int jx) const {
 
 bool Mesh::hasBndryLowerY() {
   static bool calc = false, answer;
-  if(calc) {
+  if (calc) {
     return answer; // Already calculated
   }
 
@@ -418,7 +418,7 @@ bool Mesh::hasBndryLowerY() {
 
 bool Mesh::hasBndryUpperY() {
   static bool calc = false, answer;
-  if(calc) {
+  if (calc) {
     return answer; // Already calculated
   }
 

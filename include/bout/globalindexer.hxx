@@ -98,16 +98,14 @@ public:
   }
 
   virtual ~GlobalIndexer() {}
-  
+
   /// Call this immediately after construction when running unit tests.
   void initialiseTest() {}
 
   /// Finish setting up the indexer, communicating indices across
   /// processes and, if possible, calculating the sparsity pattern of
   /// any matrices.
-  void initialise() {
-    fieldmesh->communicate(indices);
-  }
+  void initialise() { fieldmesh->communicate(indices); }
 
   Mesh* getMesh() const { return fieldmesh; }
 

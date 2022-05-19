@@ -67,9 +67,8 @@ class LaplaceSPT;
  */
 class LaplaceSPT : public Laplacian {
 public:
-  LaplaceSPT(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE,
-             Mesh *mesh_in = nullptr, Solver *solver = nullptr,
-             Datafile *dump = nullptr);
+  LaplaceSPT(Options* opt = nullptr, const CELL_LOC = CELL_CENTRE,
+             Mesh* mesh_in = nullptr, Solver* solver = nullptr, Datafile* dump = nullptr);
   ~LaplaceSPT();
   
   using Laplacian::setCoefA;
@@ -157,9 +156,9 @@ private:
 };
 
 namespace {
-  // Note: After class definition so compiler knows that
-  //       registered class is derived from Laplacian
+// Note: After class definition so compiler knows that
+//       registered class is derived from Laplacian
 RegisterLaplace<LaplaceSPT> registerlaplacespt(LAPLACE_SPT);
-}
+} // namespace
 
 #endif // __SPT_H__

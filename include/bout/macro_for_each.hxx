@@ -107,7 +107,6 @@
                           _fe_4, _fe_3, _fe_2, _fe_1)                   \
   (fn, __VA_ARGS__))
 
-
 /// Apply a macro (first argument) to each
 /// of the following arguments, separate by commas.
 /// For constructing argument lists.
@@ -120,10 +119,9 @@
 /// expands to
 ///
 ///    test(a), test(b), test(c)
-#define MACRO_FOR_EACH_ARG(arg, ...)                                      \
-  BOUT_EXPAND(_GET_FOR_EACH_EXPANSION(__VA_ARGS__,                      \
-                          _ae_10, _ae_9, _ae_8, _ae_7, _ae_6, _ae_5,    \
-                          _ae_4, _ae_3, _ae_2, _ae_1)                   \
-  (arg, __VA_ARGS__))
+#define MACRO_FOR_EACH_ARG(arg, ...)                                                   \
+  BOUT_EXPAND(_GET_FOR_EACH_EXPANSION(__VA_ARGS__, _ae_10, _ae_9, _ae_8, _ae_7, _ae_6, \
+                                      _ae_5, _ae_4, _ae_3, _ae_2,                      \
+                                      _ae_1)(arg, __VA_ARGS__))
 
 #endif
