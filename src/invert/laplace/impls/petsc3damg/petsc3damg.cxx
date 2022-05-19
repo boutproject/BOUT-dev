@@ -282,9 +282,24 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
       BOUT_FOR(i, indexer->getRegionUpperY()) { solution.yup(b)[i.yp(b)] = solution[i]; }
     }
   }
-  for (int b = 1; b < localmesh->xstart; b++) {
-    BOUT_FOR(i, indexer->getRegionInnerX()) { solution[i.xm(b)] = solution[i]; }
-    BOUT_FOR(i, indexer->getRegionOuterX()) { solution[i.xp(b)] = solution[i]; }
+
+  // Set inner boundary cells by extrapolating
+  // from single boundary cell which is set by the solver
+  // Note: RegionInnerX is the set of points just outside the domain
+  //       (in the first boundary cell) so one boundary cell is already set
+  BOUT_FOR(i, indexer->getRegionInnerX()) {
+    for (int b = 1; b < localmesh->xstart; b++) {
+      solution[i.xm(b)] = 3.*solution[i.xm(b-1)] - 3.*solution[i.xm(b-2)] + solution[i.xm(b-3)];
+    }
+  }
+
+  // Set outer boundary cells by extrapolating
+  // Note: RegionOuterX is the set of points just outside the domain
+  //       (in the first boundary cell) so one boundary cell is already set
+  BOUT_FOR(i, indexer->getRegionOuterX()) {
+    for (int b = 1; b < localmesh->xstart; b++) {
+      solution[i.xp(b)] = 3.*solution[i.xp(b-1)] - 3.*solution[i.xp(b-2)] + solution[i.xp(b-3)];
+    }
   }
 
   checkData(solution);

@@ -257,7 +257,18 @@ class Field3D : public Field {
 
   /// Check if this field has yup and ydown fields
   bool hasParallelSlices() const {
+#if CHECK > 2
+    if (yup_fields.size() != ydown_fields.size()) {
+      throw BoutException(
+          "Field3D::splitParallelSlices: forward/backward parallel slices not in sync.\n"
+          "    This is an internal library error");
+    }
+#endif
+#if CHECK
     return !yup_fields.empty() and !ydown_fields.empty();
+#else
+    return !yup_fields.empty();
+#endif
   }
 
   [[deprecated("Please use Field3D::hasParallelSlices instead")]]
