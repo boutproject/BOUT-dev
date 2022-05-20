@@ -500,6 +500,10 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     if (call_monitors(simtime, -1, NOUT)) {
       throw BoutException("Initial monitor call failed!");
     }
+
+    // Reset iteration counter to undo the increment from the initial call_monitors().
+    // That call was either at t=0, or a repeat of the last output before restarting.
+    resetIterationCounter(getIterationCounter() - 1);
   }
 
   int status;
