@@ -53,11 +53,13 @@ class LaplaceXY2 {
 public:
   LaplaceXY2(Mesh* UNUSED(m) = nullptr, Options* UNUSED(opt) = nullptr,
              const CELL_LOC UNUSED(loc) = CELL_CENTRE) {
-    throw BoutException("LaplaceXY2 requires PETSc and 2D metrics. No LaplaceXY2 available");
+    throw BoutException(
+        "LaplaceXY2 requires PETSc and 2D metrics. No LaplaceXY2 available");
   }
   void setCoefs(const Field2D& UNUSED(A), const Field2D& UNUSED(B)) {}
   Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
-    throw BoutException("LaplaceXY2 requires PETSc and 2D metrics. No LaplaceXY2 available");
+    throw BoutException(
+        "LaplaceXY2 requires PETSc and 2D metrics. No LaplaceXY2 available");
   }
 };
 
