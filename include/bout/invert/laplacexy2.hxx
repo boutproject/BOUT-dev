@@ -130,9 +130,9 @@ private:
   Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
 
   IndexerPtr<Field2D> indexConverter;
-  std::shared_ptr<PetscMatrix<Field2D>> matrix; ///< Matrix to be inverted
-  KSP ksp;                                      ///< Krylov Subspace solver
-  PC pc;                                        ///< Preconditioner
+  PetscMatrix<Field2D> matrix; ///< Matrix to be inverted
+  KSP ksp;                     ///< Krylov Subspace solver
+  PC pc;                       ///< Preconditioner
 
   // Y derivatives
   bool include_y_derivs; // Include Y derivative terms?

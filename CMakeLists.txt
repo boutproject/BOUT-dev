@@ -215,6 +215,8 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx
   ./src/invert/laplace/invert_laplace.cxx
   ./src/invert/laplacexy/laplacexy.cxx
+  ./include/bout/invert/laplacexy2.hxx
+  ./src/invert/laplacexy2/laplacexy2.cxx
   ./include/bout/invert/laplacexy2_hypre.hxx
   ./src/invert/laplacexy2/laplacexy2_hypre.cxx 
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
