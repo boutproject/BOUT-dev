@@ -197,7 +197,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
     else output<<"Multigrid solver with merging "<<mgmpi<<endl;
 #if BOUT_USE_OPENMP
     BOUT_OMP(parallel)
-    BOUT_OMP(master) { output << "Num threads = " << omp_get_num_threads() << endl; } 
+    BOUT_OMP(master) { output << "Num threads = " << omp_get_num_threads() << endl; }
 #endif
   }
 }
