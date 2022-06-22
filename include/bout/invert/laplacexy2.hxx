@@ -35,10 +35,10 @@
 
 #include "bout/build_defines.hxx"
 
-#if not BOUT_HAS_PETSC
-// If no PETSc
+#if (not BOUT_HAS_PETSC) or BOUT_USE_METRIC_3D
+// If no PETSc or 3D metrics
 
-#warning LaplaceXY requires PETSc. No LaplaceXY available
+#warning LaplaceXY2 requires PETSc and 2D metrics. No LaplaceXY2 available
 
 #include <bout/mesh.hxx>
 #include <boutexception.hxx>
@@ -53,15 +53,15 @@ class LaplaceXY2 {
 public:
   LaplaceXY2(Mesh* UNUSED(m) = nullptr, Options* UNUSED(opt) = nullptr,
              const CELL_LOC UNUSED(loc) = CELL_CENTRE) {
-    throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
+    throw BoutException("LaplaceXY2 requires PETSc and 2D metrics. No LaplaceXY2 available");
   }
   void setCoefs(const Field2D& UNUSED(A), const Field2D& UNUSED(B)) {}
   Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
-    throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
+    throw BoutException("LaplaceXY2 requires PETSc and 2D metrics. No LaplaceXY2 available");
   }
 };
 
-#else // BOUT_HAS_PETSC
+#else // BOUT_HAS_PETSC and 2D metrics
 
 // PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
 #undef MPI_Allreduce

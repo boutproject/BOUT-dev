@@ -1,6 +1,6 @@
 #include "bout/build_defines.hxx"
 
-#if BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC and not BOUT_USE_METRIC_3D
 
 #include <petscksp.h>
 
