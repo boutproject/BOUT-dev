@@ -8,4 +8,8 @@ endif()
 
 bout_add_example(elm_pb
   SOURCES elm_pb.cxx
-  EXTRA_FILES cbm18_dens8.grid_nx68ny64.nc)
+  EXTRA_FILES cbm18_dens8.grid_nx68ny64.nc
+              data/BOUT.inp
+              data-hypre/BOUT.inp
+              data-nonlinear/BOUT.inp)
+

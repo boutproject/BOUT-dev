@@ -59,12 +59,11 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
-LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
-  Laplacian(opt, loc, mesh_in),
-  A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-  issetD(false), issetC(false), issetE(false),
-  lib(opt==nullptr ? &(Options::root()["laplace"]) : opt)
-{
+LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
+                           Solver* UNUSED(solver), Datafile* UNUSED(dump))
+    : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
+      issetD(false), issetC(false), issetE(false),
+      lib(opt == nullptr ? &(Options::root()["laplace"]) : opt) {
   A.setLocation(location);
   C1.setLocation(location);
   C2.setLocation(location);
