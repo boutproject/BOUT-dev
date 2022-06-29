@@ -49,6 +49,7 @@ public:
 
   int init() override;
   int run() override;
+
 private:
   int mxstep;          //< Maximum number of internal steps between outputs
   BoutReal cfl_factor; //< Factor by which timestep must be smaller than maximum

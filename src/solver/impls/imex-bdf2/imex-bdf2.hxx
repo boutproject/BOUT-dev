@@ -124,7 +124,8 @@ private:
   BoutReal scaleCushDown; ///< Don't decrease timestep if scale factor > 1.0-scaleCushDown
   BoutReal adaptRtol;     ///< Target relative error for adaptivity.
   BoutReal dtMax;         ///< Maximum timestep we want to use
-  BoutReal dtMinFatal;    ///< If timestep wants to drop below this we abort. Set -ve to deactivate
+  BoutReal dtMinFatal;    ///< If timestep wants to drop below this we abort. Set -ve to
+                          ///< deactivate
   BoutReal dtMin;         ///< Minimum timestep we want to use
 
   /// Default is matrix free
@@ -184,8 +185,8 @@ private:
   PetscErrorCode solve_implicit(BoutReal curtime, BoutReal gamma);
   BoutReal implicit_gamma{0.0};
   BoutReal implicit_curtime{0.0};
-  int predictor;    ///< Predictor method
-  PetscLib lib; ///< Handles initialising, finalising PETSc
+  int predictor;         ///< Predictor method
+  PetscLib lib;          ///< Handles initialising, finalising PETSc
   Vec snes_f{nullptr};   ///< Used by SNES to store function
   Vec snes_x{nullptr};   ///< Result of SNES
   SNES snes{nullptr};    ///< SNES context

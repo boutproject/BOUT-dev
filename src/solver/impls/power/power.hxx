@@ -53,16 +53,17 @@ public:
     // Save the eigenvalue to the output
     outputfile.add(eigenvalue, "eigenvalue", true);
   }
+
 private:
-   BoutReal curtime; //< Current simulation time (fixed)
+  BoutReal curtime; //< Current simulation time (fixed)
 
-   BoutReal eigenvalue; //< Estimated eigenvalue
+  BoutReal eigenvalue; //< Estimated eigenvalue
 
-   int nlocal, nglobal; //< Number of variables
-   Array<BoutReal> f0;  //< The system state
+  int nlocal, nglobal; //< Number of variables
+  Array<BoutReal> f0;  //< The system state
 
-   BoutReal norm(Array<BoutReal>& state);
-   void divide(Array<BoutReal>& in, BoutReal value);
+  BoutReal norm(Array<BoutReal>& state);
+  void divide(Array<BoutReal>& in, BoutReal value);
 };
 
 #endif // __KARNIADAKIS_SOLVER_H__

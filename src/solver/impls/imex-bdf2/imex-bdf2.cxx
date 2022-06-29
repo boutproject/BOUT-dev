@@ -659,8 +659,8 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       SNESSetJacobian(*snesIn, Jmf, Jmf, SNESComputeJacobianDefaultColor, fdcoloring);
 
       // Re-use Jacobian
-      SNESSetLagJacobian(*snesIn,lag_jacobian);
-      
+      SNESSetLagJacobian(*snesIn, lag_jacobian);
+
       // MatView(Jmf, PETSC_VIEWER_DRAW_WORLD);
       // MatView(Jmf, PETSC_VIEWER_STDOUT_WORLD);
     } else {
@@ -688,11 +688,11 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
 
   /////////////////////////////////////////////////////
   // Set tolerances
-  SNESSetTolerances(*snesIn,atol,rtol,PETSC_DEFAULT,max_nonlinear_it,PETSC_DEFAULT);
+  SNESSetTolerances(*snesIn, atol, rtol, PETSC_DEFAULT, max_nonlinear_it, PETSC_DEFAULT);
 
   /////////////////////////////////////////////////////
   // Preconditioner
- 
+
   // Get KSP context from SNES
   KSP ksp;
   SNESGetKSP(*snesIn, &ksp);
@@ -701,11 +701,11 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
     KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
   }
 
-  KSPSetTolerances(ksp, 
-                   PETSC_DEFAULT,  // rtol
-                   PETSC_DEFAULT,  // abstol
-                   PETSC_DEFAULT,  // dtol (divergence tolerance)
-                   maxl);  // Maximum number of iterations
+  KSPSetTolerances(ksp,
+                   PETSC_DEFAULT, // rtol
+                   PETSC_DEFAULT, // abstol
+                   PETSC_DEFAULT, // dtol (divergence tolerance)
+                   maxl);         // Maximum number of iterations
 
   // Get PC context from KSP
   PC pc;
@@ -766,8 +766,8 @@ int IMEXBDF2::run() {
     linear_fails = 0;
     nonlinear_fails = 0;
     while (cumulativeTime < getOutputTimestep()) {
-      //Move state history along one stage (i.e. u_2-->u_3,u_1-->u_2, u-->u_1 etc.)
-      //Note: This sets the current timestep to be the same as the last timestep.
+      // Move state history along one stage (i.e. u_2-->u_3,u_1-->u_2, u-->u_1 etc.)
+      // Note: This sets the current timestep to be the same as the last timestep.
       shuffleState();
 
       // First part of time step -- Run the convective part to find f_1
