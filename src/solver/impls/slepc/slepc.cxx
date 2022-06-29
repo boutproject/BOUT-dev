@@ -46,6 +46,7 @@ struct QuietFPE {
 #if BOUT_USE_SIGFPE
   QuietFPE() : flags(fegetexcept()) { fedisableexcept(flags); }
   ~QuietFPE() { feenableexcept(flags); }
+
 private:
   int flags;
 #endif

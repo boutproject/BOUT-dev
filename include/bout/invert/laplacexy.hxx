@@ -225,6 +225,7 @@ private:
 
     int call(Solver* /*solver*/, BoutReal /*time*/, int /*iter*/, int /*nout*/) override;
     void outputVars(Options& output_options, const std::string& time_dimension) override;
+
   private:
     // LaplaceXY object that this monitor belongs to
     LaplaceXY& laplacexy;

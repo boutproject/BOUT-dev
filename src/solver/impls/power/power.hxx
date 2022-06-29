@@ -49,7 +49,8 @@ class PowerSolver : public Solver {
   int run() override;
 
   void outputVars(Options& output_options, bool save_repeat = true) override;
- private:
+
+private:
 
   BoutReal curtime; // Current simulation time (fixed)
   

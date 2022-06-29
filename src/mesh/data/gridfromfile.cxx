@@ -14,7 +14,8 @@
 #include <utils.hxx>
 
 GridFile::GridFile(std::string gridfilename)
-  : GridDataSource(true), data(bout::OptionsNetCDF(gridfilename).read()), filename(std::move(gridfilename)) {
+    : GridDataSource(true), data(bout::OptionsNetCDF(gridfilename).read()),
+      filename(std::move(gridfilename)) {
   TRACE("GridFile constructor");
 
   // Get number of y-boundary guard cells saved in the grid file
@@ -171,7 +172,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   // Global (x, y, z) dimensions of field
   const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
 
-  switch(size.size()) {
+  switch (size.size()) {
   case 1: {
     // 0 or 1 dimension
     if (size[0] != 1) {
@@ -244,9 +245,9 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   int ny_to_read = -1;
 
   ///Check if field dimensions are correct. x-direction
-  int grid_xguards = (size[0] - (m->GlobalNx - 2*mxg)) / 2;
+  int grid_xguards = (size[0] - (m->GlobalNx - 2 * mxg)) / 2;
   // Check there is no rounding in calculation of grid_xguards
-  ASSERT1( (size[0] - (m->GlobalNx - 2*mxg)) % 2 == 0 );
+  ASSERT1((size[0] - (m->GlobalNx - 2 * mxg)) % 2 == 0);
   if (grid_xguards >= 0) { ///including ghostpoints
     nx_to_read = m->LocalNx;
     xd = grid_xguards - mxg;
@@ -272,7 +273,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
       ASSERT1(yd >= 0);
     } else if (grid_yguards == 0) {
       // excluding ghostpoints
-      ASSERT1(size[1] == m->GlobalNy - m->numberOfYBoundaries()*2*myg);
+      ASSERT1(size[1] == m->GlobalNy - m->numberOfYBoundaries() * 2 * myg);
       ny_to_read = m->LocalNy - 2*myg;
       yd = myg;
     } else {
@@ -298,7 +299,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
 
     // If field does not include ghost points in x-direction ->
     // Upper and lower X boundaries copied from nearest point
-    if (size[0] == m->GlobalNx - 2*mxg ) {
+    if (size[0] == m->GlobalNx - 2 * mxg) {
       for (int x=0; x<m->xstart; x++) {
         for (int y=0; y<m->LocalNy; y++) {
           for (int z=0; z<var.getNz(); z++) {
@@ -355,7 +356,7 @@ void readFieldAttributes(Options& field_options, Field& f) {
     f.setDirectionZ(ZDirectionTypeFromString(direction_z_string));
   }
 }
-}
+} // namespace
 
 void GridFile::readField(Mesh* UNUSED(m), const std::string& name, int ys, int yd,
                          int ny_to_read, int xs, int xd, int nx_to_read,
@@ -473,8 +474,10 @@ bool GridFile::get(MAYBE_UNUSED(Mesh* m), MAYBE_UNUSED(std::vector<int>& var),
 bool GridFile::get(Mesh *UNUSED(m), std::vector<BoutReal> &var, const std::string &name,
                    int len, int offset, GridDataSource::Direction UNUSED(dir)) {
   TRACE("GridFile::get(vector<BoutReal>)");
-  
-  if (not data.isSet(name)) { return false;}
+
+  if (not data.isSet(name)) {
+    return false;
+  }
 
   const auto full_var = data[name].as<Array<BoutReal>>();
   const auto* it = std::begin(full_var);
@@ -496,7 +499,7 @@ bool GridFile::hasXBoundaryGuards(Mesh* m) {
     return false;
   }
 
-  return size[0] > m->GlobalNx - 2*m->xstart;
+  return size[0] > m->GlobalNx - 2 * m->xstart;
 }
 
 /////////////////////////////////////////////////////////////
@@ -525,7 +528,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name,
   /// Check the size of the data
   Options option = data[name];
   const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
-  
+
   if (size.size() != 3) {
     output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
     return false;

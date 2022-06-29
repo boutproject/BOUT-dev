@@ -40,13 +40,13 @@ class Laplacian;
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 #endif
 
-#include "fieldperp.hxx"
-#include "field3d.hxx"
 #include "field2d.hxx"
-#include <boutexception.hxx>
+#include "field3d.hxx"
+#include "fieldperp.hxx"
 #include "unused.hxx"
 #include "bout/generic_factory.hxx"
 #include "bout/monitor.hxx"
+#include <boutexception.hxx>
 
 #include "dcomplex.hxx"
 
@@ -279,9 +279,7 @@ public:
 
   /// Register performance monitor with \p solver, prefix output with
   /// `Options` section name
-  void savePerformance(Solver& solver) {
-    savePerformance(solver, getPerformanceName());
-  }
+  void savePerformance(Solver& solver) { savePerformance(solver, getPerformanceName()); }
   /// Register performance monitor that is call every timestep with \p
   /// solver, prefix output with \p name. Call this function from your
   /// `PhysicsModel::init` to get time-dependent performance
@@ -354,6 +352,7 @@ private:
     LaplacianMonitor(Laplacian& owner) : laplacian(&owner) {}
     int call(Solver* solver, BoutReal time, int iter, int nout) override;
     void outputVars(Options& options, const std::string& time_dimension) override;
+
   private:
     Laplacian* laplacian{nullptr};
   };
@@ -363,6 +362,7 @@ private:
 public:
   /// Get name for writing performance information
   std::string getPerformanceName() const { return performance_name; };
+
 protected:
   /// Set the name for writing performance information
   void setPerformanceName(std::string name) { performance_name = std::move(name); }

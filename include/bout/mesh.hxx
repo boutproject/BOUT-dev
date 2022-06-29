@@ -134,11 +134,11 @@ class Mesh {
   /// because creating Fields uses the global "mesh" pointer
   /// which isn't created until Mesh is constructed
   virtual int load() {return 1;}
-  
+
   /// Add output variables to \p output_options
   /// These are used for post-processing
   virtual void outputVars(MAYBE_UNUSED(Options& output_options)) {}
-  
+
   // Get routines to request data from mesh file
   
   /// Get a string from the input source

@@ -24,7 +24,8 @@ int main(int argc, char** argv) {
 
   mesh->communicate(test_aligned);
 
-  Options::root()["check"] = FieldFactory::get()->create3D("check", nullptr, nullptr, CELL_YLOW);
+  Options::root()["check"] =
+      FieldFactory::get()->create3D("check", nullptr, nullptr, CELL_YLOW);
 
   Options::root()["test"] = test;
   Options::root()["test_aligned"] = test_aligned;

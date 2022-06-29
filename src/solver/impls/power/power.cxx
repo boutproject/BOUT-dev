@@ -2,8 +2,8 @@
 
 #include "power.hxx"
 
-#include <boutcomm.hxx>
 #include <bout/sys/timer.hxx>
+#include <boutcomm.hxx>
 #include <msg_stack.hxx>
 
 #include <cmath>

@@ -18,14 +18,14 @@ public:
       : Monitor(timestep),
         output_file(getCustomOutputName(Options::root()[section_name]),
                     Options::root()[section_name]["append"].withDefault(false)
-                    ? bout::OptionsNetCDF::FileMode::append
-                    : bout::OptionsNetCDF::FileMode::replace) {}
+                        ? bout::OptionsNetCDF::FileMode::append
+                        : bout::OptionsNetCDF::FileMode::replace) {}
 
   int call(Solver*, BoutReal _time, int, int) override {
     // This method writes all the diagnostics to a unique file
     Options output;
     output["t_array"].assignRepeat(_time);
-    for (const auto& item: dump.getData()) {
+    for (const auto& item : dump.getData()) {
       bout::utils::visit(bout::OptionsConversionVisitor{output, item.name}, item.value);
       if (item.repeat) {
         output[item.name].attributes["time_dimension"] = "t";
@@ -38,15 +38,13 @@ public:
 
   void outputVars(Options& options, const std::string& time_dimension) override {
     // This method writes all the diagnostics to the main output file
-    for (const auto& item: dump.getData()) {
+    for (const auto& item : dump.getData()) {
       bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
       options[item.name].attributes["time_dimension"] = time_dimension;
     }
   }
 
-  void add(BoutReal& data, const std::string& name) {
-    dump.addRepeat(data, name);
-  }
+  void add(BoutReal& data, const std::string& name) { dump.addRepeat(data, name); }
 
 private:
   bout::DataFileFacade dump;

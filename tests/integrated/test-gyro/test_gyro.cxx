@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
   FieldFactory f(bout::globals::mesh);
 
   Field3D input3d = f.create3D("gauss(x-0.5,0.2)*gauss(y-pi)*sin(3*y - z)");
-  
+
   Options dump;
 
   // Gyro-average
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
   bout::writeDefaultOutputFile(dump);
 
   output.write("\nFinished running test.\n\n");
-  
+
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
   
   bout::checkForUnusedOptions();

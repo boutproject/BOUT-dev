@@ -43,8 +43,8 @@ public:
 
 #else
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include "options.hxx"
 
@@ -84,6 +84,7 @@ public:
   /// same size in that dimension. Throws BoutException if there are
   /// any differences, otherwise is silent
   void verifyTimesteps() const;
+
 private:
   /// Name of the file on disk
   std::string filename;

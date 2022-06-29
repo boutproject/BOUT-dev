@@ -5,9 +5,9 @@
 #include "options_netcdf.hxx"
 
 #include "bout.hxx"
-#include "bout/sys/timer.hxx"
 #include "globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/sys/timer.hxx"
 
 #include <exception>
 #include <iostream>
@@ -417,7 +417,8 @@ void NcPutAttVisitor::operator()(const std::string& value) {
   var.putAtt(name, value);
 }
 
-void writeGroup(const Options& options, NcGroup group, const std::string& time_dimension) {
+void writeGroup(const Options& options, NcGroup group,
+                const std::string& time_dimension) {
 
   for (const auto& childpair : options.getChildren()) {
     const auto& name = childpair.first;
@@ -656,7 +657,6 @@ OptionsNetCDF::~OptionsNetCDF() = default;
 OptionsNetCDF::OptionsNetCDF(OptionsNetCDF&&) noexcept = default;
 OptionsNetCDF& OptionsNetCDF::operator=(OptionsNetCDF&&) noexcept = default;
 
-
 void OptionsNetCDF::verifyTimesteps() const {
   NcFile dataFile(filename, NcFile::read);
   auto errors = ::verifyTimesteps(dataFile);
@@ -731,9 +731,7 @@ std::string getOutputFilename(Options& options, int rank) {
                      options["datadir"].withDefault<std::string>("data"), rank);
 }
 
-void writeDefaultOutputFile() {
-  writeDefaultOutputFile(Options::root());
-}
+void writeDefaultOutputFile() { writeDefaultOutputFile(Options::root()); }
 
 void writeDefaultOutputFile(Options& options) {
   bout::experimental::addBuildFlagsToOptions(options);

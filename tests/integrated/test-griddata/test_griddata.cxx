@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
   bout::experimental::addBuildFlagsToOptions(dump);
   bout::globals::mesh->outputVars(dump);
   bout::OptionsNetCDF("data.nc").write(dump);
-  
+
   BoutFinalise();
   return 0;
 }

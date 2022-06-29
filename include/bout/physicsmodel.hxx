@@ -47,8 +47,8 @@ class PhysicsModel;
 #include "bout/macro_for_each.hxx"
 #include "bout/sys/variant.hxx"
 
-#include <vector>
 #include <type_traits>
+#include <vector>
 
 class Mesh;
 
@@ -107,6 +107,7 @@ struct OptionsConversionVisitor {
 private:
   Options& options;
   std::string name;
+
 public:
   OptionsConversionVisitor(Options& options_, std::string name_)
       : options(options_), name(std::move(name_)) {}
@@ -220,7 +221,7 @@ public:
   int runJacobian(BoutReal t);
 
   int runTimestepMonitor(BoutReal simtime, BoutReal dt) {return timestepMonitor(simtime, dt);}
-  
+
   /// Write \p options to `output_file`
   void writeOutputFile(const Options& options);
   /// Write variables with \p time_dimension from \p options to `output_file`
@@ -229,6 +230,7 @@ public:
   /// Finish the output for this timestep, verifying all evolving
   /// variables have the correct length
   void finishOutputTimestep() const;
+
 protected:
   
   // The init and rhs functions are implemented by user code to specify problem
@@ -341,9 +343,7 @@ protected:
   void bout_solve(Vector3D &var, const char *name, const std::string& description="");
 
   /// Helper function for reading from restart_options
-  Options& readFromRestartFile(const std::string& name) {
-    return restart_options[name];
-  }
+  Options& readFromRestartFile(const std::string& name) { return restart_options[name]; }
 
   /// Write the restart file to disk now
   void writeRestartFile();
@@ -475,64 +475,84 @@ private:
 
 /// Write this variable once to the grid file
 #define SAVE_ONCE1(var) dump.addOnce(var, #var);
-#define SAVE_ONCE2(var1, var2) { \
-  dump.addOnce(var1, #var1); \
-  dump.addOnce(var2, #var2);}
-#define SAVE_ONCE3(var1, var2, var3) {\
-  dump.addOnce(var1, #var1); \
-  dump.addOnce(var2, #var2); \
-  dump.addOnce(var3, #var3);}
-#define SAVE_ONCE4(var1, var2, var3, var4) { \
-  dump.addOnce(var1, #var1); \
-  dump.addOnce(var2, #var2); \
-  dump.addOnce(var3, #var3); \
-  dump.addOnce(var4, #var4);}
-#define SAVE_ONCE5(var1, var2, var3, var4, var5) {\
-  dump.addOnce(var1, #var1); \
-  dump.addOnce(var2, #var2); \
-  dump.addOnce(var3, #var3); \
-  dump.addOnce(var4, #var4); \
-  dump.addOnce(var5, #var5);}
-#define SAVE_ONCE6(var1, var2, var3, var4, var5, var6) {\
-  dump.addOnce(var1, #var1); \
-  dump.addOnce(var2, #var2); \
-  dump.addOnce(var3, #var3); \
-  dump.addOnce(var4, #var4); \
-  dump.addOnce(var5, #var5); \
-  dump.addOnce(var6, #var6);}
+#define SAVE_ONCE2(var1, var2) \
+  {                            \
+    dump.addOnce(var1, #var1); \
+    dump.addOnce(var2, #var2); \
+  }
+#define SAVE_ONCE3(var1, var2, var3) \
+  {                                  \
+    dump.addOnce(var1, #var1);       \
+    dump.addOnce(var2, #var2);       \
+    dump.addOnce(var3, #var3);       \
+  }
+#define SAVE_ONCE4(var1, var2, var3, var4) \
+  {                                        \
+    dump.addOnce(var1, #var1);             \
+    dump.addOnce(var2, #var2);             \
+    dump.addOnce(var3, #var3);             \
+    dump.addOnce(var4, #var4);             \
+  }
+#define SAVE_ONCE5(var1, var2, var3, var4, var5) \
+  {                                              \
+    dump.addOnce(var1, #var1);                   \
+    dump.addOnce(var2, #var2);                   \
+    dump.addOnce(var3, #var3);                   \
+    dump.addOnce(var4, #var4);                   \
+    dump.addOnce(var5, #var5);                   \
+  }
+#define SAVE_ONCE6(var1, var2, var3, var4, var5, var6) \
+  {                                                    \
+    dump.addOnce(var1, #var1);                         \
+    dump.addOnce(var2, #var2);                         \
+    dump.addOnce(var3, #var3);                         \
+    dump.addOnce(var4, #var4);                         \
+    dump.addOnce(var5, #var5);                         \
+    dump.addOnce(var6, #var6);                         \
+  }
 
-#define SAVE_ONCE(...)                          \
+#define SAVE_ONCE(...) \
   { MACRO_FOR_EACH(SAVE_ONCE1, __VA_ARGS__) }
 
 /// Write this variable every timestep
 #define SAVE_REPEAT1(var) dump.addRepeat(var, #var);
-#define SAVE_REPEAT2(var1, var2) { \
-  dump.addRepeat(var1, #var1); \
-  dump.addRepeat(var2, #var2);}
-#define SAVE_REPEAT3(var1, var2, var3) {\
-  dump.addRepeat(var1, #var1); \
-  dump.addRepeat(var2, #var2); \
-  dump.addRepeat(var3, #var3);}
-#define SAVE_REPEAT4(var1, var2, var3, var4) { \
-  dump.addRepeat(var1, #var1); \
-  dump.addRepeat(var2, #var2); \
-  dump.addRepeat(var3, #var3); \
-  dump.addRepeat(var4, #var4);}
-#define SAVE_REPEAT5(var1, var2, var3, var4, var5) {\
-  dump.addRepeat(var1, #var1); \
-  dump.addRepeat(var2, #var2); \
-  dump.addRepeat(var3, #var3); \
-  dump.addRepeat(var4, #var4); \
-  dump.addRepeat(var5, #var5);}
-#define SAVE_REPEAT6(var1, var2, var3, var4, var5, var6) {\
-  dump.addRepeat(var1, #var1); \
-  dump.addRepeat(var2, #var2); \
-  dump.addRepeat(var3, #var3); \
-  dump.addRepeat(var4, #var4); \
-  dump.addRepeat(var5, #var5); \
-  dump.addRepeat(var6, #var6);}
+#define SAVE_REPEAT2(var1, var2) \
+  {                              \
+    dump.addRepeat(var1, #var1); \
+    dump.addRepeat(var2, #var2); \
+  }
+#define SAVE_REPEAT3(var1, var2, var3) \
+  {                                    \
+    dump.addRepeat(var1, #var1);       \
+    dump.addRepeat(var2, #var2);       \
+    dump.addRepeat(var3, #var3);       \
+  }
+#define SAVE_REPEAT4(var1, var2, var3, var4) \
+  {                                          \
+    dump.addRepeat(var1, #var1);             \
+    dump.addRepeat(var2, #var2);             \
+    dump.addRepeat(var3, #var3);             \
+    dump.addRepeat(var4, #var4);             \
+  }
+#define SAVE_REPEAT5(var1, var2, var3, var4, var5) \
+  {                                                \
+    dump.addRepeat(var1, #var1);                   \
+    dump.addRepeat(var2, #var2);                   \
+    dump.addRepeat(var3, #var3);                   \
+    dump.addRepeat(var4, #var4);                   \
+    dump.addRepeat(var5, #var5);                   \
+  }
+#define SAVE_REPEAT6(var1, var2, var3, var4, var5, var6) \
+  {                                                      \
+    dump.addRepeat(var1, #var1);                         \
+    dump.addRepeat(var2, #var2);                         \
+    dump.addRepeat(var3, #var3);                         \
+    dump.addRepeat(var4, #var4);                         \
+    dump.addRepeat(var5, #var5);                         \
+    dump.addRepeat(var6, #var6);                         \
+  }
 
-#define SAVE_REPEAT(...)                        \
+#define SAVE_REPEAT(...) \
   { MACRO_FOR_EACH(SAVE_REPEAT1, __VA_ARGS__) }
 
 #endif // __PHYSICS_MODEL_H__

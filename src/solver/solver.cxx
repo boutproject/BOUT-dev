@@ -659,7 +659,8 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
     output_options[f.name].attributes["description"] = f.description;
     if (mms) {
       // Add an error variable
-      output_options["E_" + f.name].assignRepeat(*(f.MMS_err), "t", save_repeat, "Solver");
+      output_options["E_" + f.name].assignRepeat(*(f.MMS_err), "t", save_repeat,
+                                                 "Solver");
       output_options["E_" + f.name].attributes["description"] = f.description;
     }
   }

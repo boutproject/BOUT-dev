@@ -223,8 +223,8 @@ int main(int argc, char** argv) {
   dump["error1"] = error1;
   dump["absolute_error1"] = absolute_error1;
   dump["max_error1"] = max_error1;
-  
-//   dump.write();dump.close();MPI_Barrier(BoutComm::get());exit(17);return 1;
+
+  //   dump.write();dump.close();MPI_Barrier(BoutComm::get());exit(17);return 1;
   
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 2: Gaussian x-profiles, 4th order Krylov
@@ -257,7 +257,7 @@ int main(int argc, char** argv) {
   output<<"Magnitude of maximum absolute error is "<<max_error2<<endl;
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
-  
+
   dump["a2"] = a1;
   dump["b2"] = b1;
   dump["c2"] = c1;
@@ -267,7 +267,7 @@ int main(int argc, char** argv) {
   dump["error2"] = error2;
   dump["absolute_error2"] = absolute_error2;
   dump["max_error2"] = max_error2;
-  
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 3+4: Gaussian x-profiles, z-independent coefficients and compare with SPT method
   Field2D a3,c3,d3;
@@ -318,7 +318,7 @@ int main(int argc, char** argv) {
   output<<"Magnitude of maximum absolute error is "<<max_error3<<endl;
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
-  
+
   dump["a3"] = a3;
   dump["b3"] = b3;
   dump["c3"] = c3;
@@ -328,7 +328,7 @@ int main(int argc, char** argv) {
   dump["error3"] = error3;
   dump["absolute_error3"] = absolute_error3;
   dump["max_error3"] = max_error3;
-  
+
   Options* SPT_options;
   SPT_options = Options::getRoot()->getSection("SPT");
   auto invert_SPT = Laplacian::create(SPT_options);
@@ -350,7 +350,7 @@ int main(int argc, char** argv) {
   output<<"Magnitude of maximum absolute error is "<<max_error4<<endl;
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
-  
+
   dump["a4"] = a3;
   dump["b4"] = b3;
   dump["c4"] = c3;
@@ -360,7 +360,7 @@ int main(int argc, char** argv) {
   dump["error4"] = error4;
   dump["absolute_error4"] = absolute_error4;
   dump["max_error4"] = max_error4;
-  
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 5: Cosine x-profiles, 2nd order Krylov
   Field3D f5,a5,b5,c5,d5,sol5;
@@ -562,7 +562,7 @@ int main(int argc, char** argv) {
   output<<"Magnitude of maximum absolute error is "<<max_error6<<endl;
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
-  
+
   dump["a6"] = a5;
   dump["b6"] = b5;
   dump["c6"] = c5;
@@ -623,7 +623,7 @@ int main(int argc, char** argv) {
   output<<"Magnitude of maximum absolute error is "<<max_error7<<endl;
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
-  
+
   dump["a7"] = a7;
   dump["b7"] = b7;
   dump["c7"] = c7;
@@ -650,7 +650,7 @@ int main(int argc, char** argv) {
   output<<"Magnitude of maximum absolute error is "<<max_error8<<endl;
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
-  
+
   dump["a8"] = a7;
   dump["b8"] = b7;
   dump["c8"] = c7;
@@ -660,12 +660,12 @@ int main(int argc, char** argv) {
   dump["error8"] = error8;
   dump["absolute_error8"] = absolute_error8;
   dump["max_error8"] = max_error8;
-  
+
   // Write and close the output file
   bout::writeDefaultOutputFile(dump);
-  
+
   output << "\nFinished running test.\n\n";
-  
+
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
   }
   BoutFinalise();

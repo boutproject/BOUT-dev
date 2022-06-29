@@ -209,9 +209,7 @@ void PhysicsModel::writeRestartFile() {
   }
 }
 
-void PhysicsModel::writeOutputFile() {
-  writeOutputFile(output_options);
-}
+void PhysicsModel::writeOutputFile() { writeOutputFile(output_options); }
 
 void PhysicsModel::writeOutputFile(const Options& options) {
   if (output_enabled) {
@@ -219,7 +217,8 @@ void PhysicsModel::writeOutputFile(const Options& options) {
   }
 }
 
-void PhysicsModel::writeOutputFile(const Options& options, const std::string& time_dimension) {
+void PhysicsModel::writeOutputFile(const Options& options,
+                                   const std::string& time_dimension) {
   if (output_enabled) {
     output_file.write(options, time_dimension);
   }

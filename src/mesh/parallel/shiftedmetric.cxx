@@ -6,12 +6,12 @@
  *
  */
 
+#include "bout/paralleltransform.hxx"
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
-#include "bout/paralleltransform.hxx"
+#include <bout/sys/timer.hxx>
 #include <fft.hxx>
 #include <output.hxx>
-#include <bout/sys/timer.hxx>
 
 #include <cmath>
 
