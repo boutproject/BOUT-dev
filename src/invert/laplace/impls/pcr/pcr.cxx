@@ -61,7 +61,8 @@
 
 using namespace std;
 
-LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
+LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED(solver),
+                       Datafile* UNUSED(dump))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
       C2coef(1.0, localmesh), Dcoef(1.0, localmesh), nmode(maxmode + 1),
       ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
@@ -90,7 +91,9 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
 
   // Get options
 
-  OPTION(opt, dst, false);
+  dst = (*opt)["dst"]
+            .doc("Use Discrete Sine Transform in Z to enforce Dirichlet boundaries in Z")
+            .withDefault<bool>(false);
 
   if (dst) {
     nmode = localmesh->LocalNz - 2;

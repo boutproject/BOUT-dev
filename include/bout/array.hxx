@@ -1,6 +1,6 @@
 /*
  * Handle arrays of data
- * 
+ *
  * Provides an interface to create, iterate over and release
  * arrays of templated types.
  *
@@ -8,30 +8,38 @@
  * arrays are released they are put into a store. Rather
  * than allocating memory, objects are retrieved from the
  * store. This minimises new and delete operations.
- * 
- * 
+ *
+ *
  * Ben Dudson, University of York, 2015
  *
  *
  * Changelog
  * ---------
- * 
+ *
  * 2015-03-04  Ben Dudson <bd512@york.ac.uk>
  *     o Initial version
  *
+ * 2021 Holger Jones, Ben Dudson
+ *     o Added Umpire support, in multiple iterations/variations
  */
-
 
 #ifndef __ARRAY_H__
 #define __ARRAY_H__
 
 #include <algorithm>
 #include <map>
-#include <vector>
 #include <memory>
+#include <vector>
 
 #ifdef _OPENMP
 #include <omp.h>
+#endif
+
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_UMPIRE
+#include "umpire/Allocator.hpp"
+#include "umpire/ResourceManager.hpp"
 #endif
 
 #include <bout/assert.hxx>
@@ -50,16 +58,83 @@ using const_iterator = const T*;
  */
 template <typename T>
 struct ArrayData {
-  ArrayData(int size) : len(size) { data = new T[len]; }
-  ~ArrayData() { delete[] data; }
+  ArrayData(int size) : len(size) {
+    // Allocate memory array
+    // Note: By allocating with Umpire, the raw data
+    //       array can be accessed on GPU devices
+    //       even though the Array object itself can't.
+#if BOUT_HAS_UMPIRE
+    auto& rm = umpire::ResourceManager::getInstance();
+#if BOUT_USE_CUDA
+    auto allocator = rm.getAllocator(umpire::resource::Pinned);
+#else
+    auto allocator = rm.getAllocator("HOST");
+#endif
+    data = static_cast<T*>(allocator.allocate(size * sizeof(T)));
+#else // BOUT_HAS_UMPIRE
+    data = new T[len];
+#endif
+  }
+
+  /// Move constructor
+  ArrayData(ArrayData&& in) noexcept : len(in.len), data(in.data) {
+    in.len = 0;
+    in.data = nullptr;
+  }
+
+  /// Disable copy, since ArrayData takes ownership of data
+  ArrayData(const ArrayData& in) = delete;
+
+  ~ArrayData() {
+#if BOUT_HAS_UMPIRE
+    auto& rm = umpire::ResourceManager::getInstance();
+    rm.deallocate(data);
+#else
+    delete[] data;
+#endif
+  }
   iterator<T> begin() const { return data; }
   iterator<T> end() const { return data + len; }
   int size() const { return len; }
-  void operator=(ArrayData<T>& in) { std::copy(std::begin(in), std::end(in), begin()); }
-  T& operator[](int ind) { return data[ind]; };
+
+  /// Copy assignment
+  /// Copy the underlying data from one array to the other
+  ///
+  /// @param in  ArrayData with the same len as this.
+  ArrayData<T>& operator=(const ArrayData<T>& in) {
+    ASSERT1(in.len == len); // Ensure that the array lengths are the same
+    std::copy(std::begin(in), std::end(in), begin());
+    return *this;
+  }
+
+  /// Move assignment
+  ArrayData<T>& operator=(ArrayData<T>&& in) noexcept {
+    if (this != &in) {
+      // Free resources
+#if BOUT_HAS_UMPIRE
+      auto& rm = umpire::ResourceManager::getInstance();
+      rm.deallocate(data);
+#else
+      delete[] data;
+#endif
+      // Copy pointers
+      len = in.len;
+      data = in.data;
+
+      // Remove pointer from input so that it is
+      // not freed multiple times
+      in.len = 0;
+      in.data = nullptr;
+    }
+    return *this;
+  }
+
+  inline T& operator[](int ind) { return data[ind]; }
+  inline const T& operator[](int ind) const { return data[ind]; }
+
 private:
   int len; ///< Size of the array
-  T* data; ///< Array of data  
+  T* data; ///< Array of data
 };
 
 /*!
@@ -68,27 +143,31 @@ private:
  * This implements a container similar to std::vector
  * but with reference counting like a smart pointer
  * and custom memory management to minimise new and delete calls
- * 
+ *
  * This can be used as an alternative to static arrays
- * 
+ *
  * Array<dcomplex> vals(100); // 100 complex numbers
- * 
+ *
  * vals[10] = 1.0;  // ok
- * 
+ *
  * When an Array goes out of scope or is deleted,
  * the underlying memory (dataBlock/Backing) is put into
- * a map, rather than being freed. 
+ * a map, rather than being freed.
  * If the same size arrays are used repeatedly then this
  * avoids the need to use new and delete.
  *
  * This behaviour can be disabled by calling the static function useStore:
  *
  * Array<dcomplex>::useStore(false); // Disables memory store
- * 
+ *
  * The second template argument determines what type of container to use to
  * store data. This defaults to a custom struct but can be std::valarray (
  * provided T is a compatible type), std::vector etc. Must provide the following :
  *  size, operator=, operator[], begin, end
+ *
+ * Notes:
+ *  - Arrays can't be used in GPU code. To access Array data
+ *    inside a RAJA loop, first extract the raw pointer
  */
 template<typename T, typename Backing = ArrayData<T>>
 class Array {
@@ -96,36 +175,32 @@ public:
   using data_type = T;
   using backing_type = Backing;
   using size_type = int;
-    
+
   /*!
    * Create an empty array
-   * 
+   *
    * Array a();
    * a.empty(); // True
-   * 
+   *
    */
   Array() noexcept : ptr(nullptr) {}
-  
+
   /*!
    * Create an array of given length
    */
-  Array(size_type len) {
-    ptr = get(len);
-  }
-  
+  Array(size_type len) { ptr = get(len); }
+
   /*!
    * Destructor. Releases the underlying dataBlock
    */
   ~Array() noexcept {
     release(ptr);
   }
-  
+
   /*!
    * Copy constructor
    */
-  Array(const Array &other) noexcept {
-    ptr = other.ptr; 
-  }
+  Array(const Array& other) noexcept { ptr = other.ptr; }
 
   /*!
    * Assignment operator
@@ -158,33 +233,31 @@ public:
   /*!
    * Holds a static variable which controls whether
    * memory blocks (dataBlock) are put into a store
-   * or new/deleted each time. 
+   * or new/deleted each time.
    *
    * The variable is initialised to true on first use,
    * but can be set to false by passing "false" as input.
    * Once set to false it can't be changed back to true.
    */
-  static bool useStore( bool keep_using = true ) noexcept {
+  static bool useStore(bool keep_using = true) noexcept {
     static bool value = true;
     if (keep_using) {
-      return value; 
+      return value;
     }
     // Change to false
     value = false;
     return value;
   }
-  
+
   /*!
    * Release data. After this the Array is empty and any data access
    * will be invalid
    */
-  void clear() noexcept {
-    release(ptr);
-  }
+  void clear() noexcept { release(ptr); }
 
   /*!
    * Delete all data from the store and disable the store
-   * 
+   *
    * Note: After this is called the store cannot be re-enabled
    */
   static void cleanup() {
@@ -206,22 +279,21 @@ public:
    * Return size of the array. Zero if the array is empty.
    */
   size_type size() const noexcept {
-    if(!ptr)
+    if (!ptr) {
       return 0;
+    }
 
     // Note: std::valarray::size is technically not noexcept, so
     // Array::size shouldn't be either if we're using valarrays -- in
     // practice, it is so this shouldn't matter
     return ptr->size();
   }
-  
+
   /*!
    * Returns true if the data is unique to this Array.
-   * 
+   *
    */
-  bool unique() const noexcept {
-    return ptr.use_count() == 1;
-  }
+  bool unique() const noexcept { return ptr.use_count() == 1; }
 
   /*!
    * Ensures that this Array does not share data with another
@@ -229,17 +301,18 @@ public:
    * on the data.
    */
   void ensureUnique() {
-    if(!ptr || unique())
+    if (!ptr || unique()) {
       return;
+    }
 
     // Get a new (unique) block of data
     dataPtrType p = get(size());
 
-    //Make copy of the underlying data
+    // Make copy of the underlying data
     p->operator=((*ptr));
 
-    //Update the local pointer and release old
-    //Can't just do ptr=p as need to try to add to store.
+    // Update the local pointer and release old
+    // Can't just do ptr=p as need to try to add to store.
     release(ptr);
     ptr = std::move(p);
   }
@@ -264,11 +337,11 @@ public:
    * or if ind is out of bounds. For efficiency no checking is performed,
    * so the user should perform checks.
    */
-  T& operator[](size_type ind) {
+  inline T& operator[](size_type ind) {
     ASSERT3(0 <= ind && ind < size());
     return ptr->operator[](ind);
   }
-  const T& operator[](size_type ind) const {
+  inline const T& operator[](size_type ind) const {
     ASSERT3(0 <= ind && ind < size());
     return ptr->operator[](ind);
   }
@@ -277,19 +350,18 @@ public:
    * Exchange contents with another Array of the same type.
    * Sizes of the arrays may differ.
    */
-  friend void swap(Array<T> &first, Array<T> &second) noexcept {
+  friend void swap(Array<T, Backing>& first, Array<T, Backing>& second) noexcept {
     using std::swap;
     swap(first.ptr, second.ptr);
   }
 
 private:
-
-  //Type defs to help keep things brief -- which backing do we use
+  // Type defs to help keep things brief -- which backing do we use
   using dataBlock = Backing;
   using dataPtrType = std::shared_ptr<dataBlock>;
 
   /*!
-   * Pointer to the data container object owned by this Array. 
+   * Pointer to the data container object owned by this Array.
    * May be null
    */
   dataPtrType ptr;
@@ -308,15 +380,14 @@ private:
    *
    * @param[in] cleanup   If set to true, deletes all dataBlock and clears the store
    */
-  static storeType& store(bool cleanup=false) {
-#ifdef _OPENMP    
+  static storeType& store(bool cleanup = false) {
+#ifdef _OPENMP
     static arenaType arena(omp_get_max_threads());
 #else
     static arenaType arena(1);
 #endif
-    
     if (!cleanup) {
-#ifdef _OPENMP 
+#ifdef _OPENMP
       return arena[omp_get_thread_num()];
 #else
       return arena[0];
@@ -325,11 +396,10 @@ private:
 
     // Clean by deleting all data -- possible that just stores.clear() is
     // sufficient rather than looping over each entry.
-    BOUT_OMP(single)
-    {
-      for (auto &stores : arena) {
-        for (auto &p : stores) {
-          auto &v = p.second;
+    BOUT_OMP(single) {
+      for (auto& stores : arena) {
+        for (auto& p : stores) {
+          auto& v = p.second;
           for (dataPtrType a : v) {
             a.reset();
           }
@@ -342,11 +412,11 @@ private:
       arena.resize(1);
     }
 
-    //Store should now be empty but we need to return something,
-    //so return an empty storeType from the arena.
+    // Store should now be empty but we need to return something,
+    // so return an empty storeType from the arena.
     return arena[0];
   }
-  
+
   /*!
    * Returns a pointer to a dataBlock object of size \p len with no
    * references. This is either from the store, or newly allocated
@@ -359,7 +429,7 @@ private:
     dataPtrType p;
 
     auto& st = store()[len];
-    
+
     if (!st.empty()) {
       p = st.back();
       st.pop_back();
@@ -387,8 +457,9 @@ private:
    * we're doomed anyway, so the only thing we can do is abort
    */
   void release(dataPtrType& d) noexcept {
-    if (!d)
+    if (!d) {
       return;
+    }
 
     // Reduce reference count, and if zero return to store
     if (d.use_count() == 1) {
@@ -414,8 +485,9 @@ Array<T, Backing> copy(const Array<T, Backing>& other) {
   return a;
 }
 
-template<typename T>
-bool operator==(const Array<T>& lhs, const Array<T>& rhs) {
+/// Compare arrays, which may have different backing
+template <typename T, typename B1, typename B2>
+bool operator==(const Array<T, B1>& lhs, const Array<T, B2>& rhs) {
   return std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 

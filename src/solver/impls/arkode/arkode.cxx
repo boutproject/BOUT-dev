@@ -43,8 +43,6 @@
 
 #if SUNDIALS_VERSION_MAJOR >= 4
 #include <arkode/arkode_arkstep.h>
-#include <sunnonlinsol/sunnonlinsol_fixedpoint.h>
-#include <sunnonlinsol/sunnonlinsol_newton.h>
 #else
 #include <arkode/arkode.h>
 #if SUNDIALS_VERSION_MAJOR >= 3
@@ -55,7 +53,6 @@
 #endif
 
 #include <arkode/arkode_bbdpre.h>
-#include <nvector/nvector_parallel.h>
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_types.h>
 
@@ -124,10 +121,6 @@ void* ARKStepCreate(ARKRhsFn fe, ARKRhsFn fi, BoutReal t0, N_Vector y0) {
 int ARKStepSetLinearSolver(void* arkode_mem, SUNLinearSolver LS, std::nullptr_t) {
   return ARKSpilsSetLinearSolver(arkode_mem, LS);
 }
-
-namespace {
-constexpr auto& SUNLinSol_SPGMR = SUNSPGMR;
-}
 #endif
 
 // Aliases for older versions
@@ -162,6 +155,13 @@ constexpr auto& ARKStepSetOptimalParams = ARKodeSetOptimalParams;
 constexpr auto& ARKStepSetOrder = ARKodeSetOrder;
 constexpr auto& ARKStepSetPreconditioner = ARKSpilsSetPreconditioner;
 constexpr auto& ARKStepSetUserData = ARKodeSetUserData;
+#endif
+
+#if SUNDIALS_VERSION_MAJOR < 6
+void* ARKStepCreate(ARKRhsFn fe, ARKRhsFn fi, BoutReal t0, N_Vector y0,
+                    MAYBE_UNUSED(SUNContext context)) {
+  return ARKStepCreate(fe, fi, t0, y0);
+}
 #endif
 
 ArkodeSolver::ArkodeSolver(Options* opts)
@@ -222,9 +222,9 @@ ArkodeSolver::ArkodeSolver(Options* opts)
       use_jacobian((*options)["use_jacobian"]
                        .doc("Use user-supplied Jacobian function")
                        .withDefault(false)),
-      optimize((*options)["optimize"]
-                   .doc("Use ARKode optimal parameters")
-                   .withDefault(false)) {
+      optimize(
+          (*options)["optimize"].doc("Use ARKode optimal parameters").withDefault(false)),
+      suncontext(MPI_COMM_WORLD) {
   has_constraints = false; // This solver doesn't have constraints
 
   // Add diagnostics to output
@@ -243,12 +243,8 @@ ArkodeSolver::ArkodeSolver(Options* opts)
 ArkodeSolver::~ArkodeSolver() {
   N_VDestroy_Parallel(uvec);
   ARKStepFree(&arkode_mem);
-#if SUNDIALS_VERSION_MAJOR >= 3
   SUNLinSolFree(sun_solver);
-#endif
-#if SUNDIALS_VERSION_MAJOR >= 4
   SUNNonlinSolFree(nonlinear_solver);
-#endif
 }
 
 /**************************************************************************
@@ -276,8 +272,9 @@ int ArkodeSolver::init() {
                n2Dvars(), neq, local_N);
 
   // Allocate memory
-  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext)) == nullptr) {
     throw BoutException("SUNDIALS memory allocation failed\n");
+  }
 
   // Put the variables into uvec
   save_vars(NV_DATA_P(uvec));
@@ -299,8 +296,10 @@ int ArkodeSolver::init() {
     }
   }();
 
-  if ((arkode_mem = ARKStepCreate(explicit_rhs, implicit_rhs, simtime, uvec)) == nullptr)
+  if ((arkode_mem = ARKStepCreate(explicit_rhs, implicit_rhs, simtime, uvec, suncontext))
+      == nullptr) {
     throw BoutException("ARKStepCreate failed\n");
+  }
 
   if (imex and solve_explicit and solve_implicit) {
     output_info.write("\tUsing ARKode ImEx solver \n");
@@ -367,7 +366,7 @@ int ArkodeSolver::init() {
                      return Options::root()[f3.name]["atol"].withDefault(abstol);
                    });
 
-    N_Vector abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq);
+    N_Vector abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext);
     if (abstolvec == nullptr)
       throw BoutException("SUNDIALS memory allocation (abstol vector) failed\n");
 
@@ -415,12 +414,14 @@ int ArkodeSolver::init() {
 #else
   if (fixed_point) {
     output.write("\tUsing accelerated fixed point solver\n");
-    if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 3)) == nullptr)
+    if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 3, suncontext)) == nullptr) {
       throw BoutException("Creating SUNDIALS fixed point nonlinear solver failed\n");
+    }
   } else {
     output.write("\tUsing Newton iteration\n");
-    if ((nonlinear_solver = SUNNonlinSol_Newton(uvec)) == nullptr)
+    if ((nonlinear_solver = SUNNonlinSol_Newton(uvec, suncontext)) == nullptr) {
       throw BoutException("Creating SUNDIALS Newton nonlinear solver failed\n");
+    }
   }
   if (ARKStepSetNonlinearSolver(arkode_mem, nonlinear_solver) != ARK_SUCCESS)
     throw BoutException("ARKStepSetNonlinearSolver failed\n");
@@ -428,12 +429,12 @@ int ArkodeSolver::init() {
 
   /// Set Preconditioner
   if (use_precon) {
-
-    const int prectype = rightprec ? PREC_RIGHT : PREC_LEFT;
+    const int prectype = rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT;
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-    if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl)) == nullptr)
+    if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl, suncontext)) == nullptr) {
       throw BoutException("Creating SUNDIALS linear solver failed\n");
+    }
     if (ARKStepSetLinearSolver(arkode_mem, sun_solver, nullptr) != ARK_SUCCESS)
       throw BoutException("ARKStepSetLinearSolver failed\n");
 #else
@@ -491,12 +492,14 @@ int ArkodeSolver::init() {
     output.write("\tNo preconditioning\n");
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-    if ((sun_solver = SUNLinSol_SPGMR(uvec, PREC_NONE, maxl)) == nullptr)
+    if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext))
+        == nullptr) {
       throw BoutException("Creating SUNDIALS linear solver failed\n");
+    }
     if (ARKStepSetLinearSolver(arkode_mem, sun_solver, nullptr) != ARK_SUCCESS)
       throw BoutException("ARKStepSetLinearSolver failed\n");
 #else
-    if (ARKSpgmr(arkode_mem, PREC_NONE, maxl) != ARKSPILS_SUCCESS)
+    if (ARKSpgmr(arkode_mem, SUN_PREC_NONE, maxl) != ARKSPILS_SUCCESS)
       throw BoutException("ARKSpgmr failed\n");
 #endif
   }

@@ -41,7 +41,7 @@ RegisterLaplace<LaplacePCR> registerlaplacepcr(LAPLACE_PCR);
 class LaplacePCR : public Laplacian {
 public:
   LaplacePCR(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-             Mesh* mesh_in = nullptr);
+             Mesh* mesh_in = nullptr, Solver* solver = nullptr, Datafile* dump = nullptr);
   ~LaplacePCR() = default;
 
   using Laplacian::setCoefA;

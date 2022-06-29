@@ -42,16 +42,9 @@ RegisterUnavailableSolver registerunavailablearkode("arkode",
 #else
 
 #include "bout_types.hxx"
+#include "bout/sundials_backports.hxx"
 
 #include <sundials/sundials_config.h>
-#if SUNDIALS_VERSION_MAJOR >= 3
-#include <sunlinsol/sunlinsol_spgmr.h>
-#endif
-
-#if SUNDIALS_VERSION_MAJOR >= 4
-#include <sundials/sundials_nonlinearsolver.h>
-#endif
-
 #include <nvector/nvector_parallel.h>
 
 #include <vector>
@@ -158,14 +151,12 @@ private:
                              std::vector<BoutReal>& f2dtols,
                              std::vector<BoutReal>& f3dtols, bool bndry);
 
-#if SUNDIALS_VERSION_MAJOR >= 3
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
-#endif
-#if SUNDIALS_VERSION_MAJOR >= 4
   /// Solver for functional iterations for Adams-Moulton
   SUNNonlinearSolver nonlinear_solver{nullptr};
-#endif
+  /// Context for SUNDIALS memory allocations
+  sundials::Context suncontext;
 };
 
 #endif // BOUT_HAS_ARKODE
