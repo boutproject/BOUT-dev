@@ -981,6 +981,7 @@ void Coordinates::outputVars(Options& output_options) {
 }
 
 const Field2D& Coordinates::zlength() const {
+  BOUT_OMP(critical)
   if (not zlength_cache) {
     zlength_cache = std::make_unique<Field2D>(0., localmesh);
 
@@ -1278,7 +1279,6 @@ int Coordinates::geometry(bool recalculate_staggered,
 
   // Invalidate and recalculate cached variables
   zlength_cache.reset();
-  zlength();
 
   return 0;
 }
@@ -1515,8 +1515,8 @@ void Coordinates::setParallelTransform(Options* options) {
       transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
                                                           getUniform(zlength()));
     } else if (ptstr == "shiftedinterp") {
-      transform =
-          bout::utils::make_unique<ShiftedMetricInterp>(*localmesh, location, zShift);
+      transform = bout::utils::make_unique<ShiftedMetricInterp>(
+          *localmesh, location, zShift, getUniform(zlength()));
     }
 
   } else if (ptstr == "fci") {

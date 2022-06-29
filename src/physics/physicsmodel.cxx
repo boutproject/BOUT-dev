@@ -105,16 +105,16 @@ void PhysicsModel::initialise(Solver* s) {
   }
 }
 
-int PhysicsModel::runRHS(BoutReal time) {
-  return rhs(time);
+int PhysicsModel::runRHS(BoutReal time, bool linear) {
+  return rhs(time, linear);
 }
 
 bool PhysicsModel::splitOperator() {
   return splitop;
 }
 
-int PhysicsModel::runConvective(BoutReal time) {
-  return convective(time);
+int PhysicsModel::runConvective(BoutReal time, bool linear) {
+  return convective(time, linear);
 }
 
 int PhysicsModel::runDiffusive(BoutReal time, bool linear) {

@@ -12,9 +12,15 @@
 
 #include "impls/bout/boutmesh.hxx"
 
-MeshFactory::ReturnType MeshFactory::create(Options* options, GridDataSource* source) {
+MeshFactory::ReturnType MeshFactory::create(Options* options,
+                                            GridDataSource* source) const {
+  return create(getType(options), options, source);
+}
+
+MeshFactory::ReturnType MeshFactory::create(const std::string& type, Options* options,
+                                            GridDataSource* source) const {
   if (source != nullptr) {
-    return Factory::create(getType(options), source, options);
+    return Factory::create(type, source, options);
   }
 
   if (options == nullptr) {
@@ -38,7 +44,7 @@ MeshFactory::ReturnType MeshFactory::create(Options* options, GridDataSource* so
     source = static_cast<GridDataSource*>(new GridFromOptions(options));
   }
 
-  return Factory::create(getType(options), source, options);
+  return Factory::create(type, source, options);
 }
 
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
@@ -396,7 +402,9 @@ int Mesh::ySize(int jx) const {
 
 bool Mesh::hasBndryLowerY() {
   static bool calc = false, answer;
-  if(calc) return answer; // Already calculated
+  if (calc) {
+    return answer; // Already calculated
+  }
 
   int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
   int allbndry;
@@ -408,7 +416,9 @@ bool Mesh::hasBndryLowerY() {
 
 bool Mesh::hasBndryUpperY() {
   static bool calc = false, answer;
-  if(calc) return answer; // Already calculated
+  if (calc) {
+    return answer; // Already calculated
+  }
 
   int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
   int allbndry;
@@ -416,6 +426,97 @@ bool Mesh::hasBndryUpperY() {
   answer = static_cast<bool>(allbndry);
   calc = true;
   return answer;
+}
+
+int Mesh::localSize3D() {
+  if (localNumCells3D < 0) {
+    const int xs = firstX() ? xstart - 1 : xstart;
+    const int xe = lastX() ? xend + 2 : xend + 1;
+    const int nx = xe - xs;
+    const int ny = yend - ystart + 1;
+    const int nz = LocalNz;
+    localNumCells3D = nx * ny * nz;
+    for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
+      if (it.ind == xstart) {
+        localNumCells3D += nz;
+      }
+      if (it.ind == xend) {
+        localNumCells3D += nz;
+      }
+      localNumCells3D += nz;
+    }
+    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
+      if (it.ind == xstart) {
+        localNumCells3D += nz;
+      }
+      if (it.ind == xend) {
+        localNumCells3D += nz;
+      }
+      localNumCells3D += nz;
+    }
+  }
+  return localNumCells3D;
+}
+
+int Mesh::localSize2D() {
+  if (localNumCells2D < 0) {
+    const int xs = firstX() ? xstart - 1 : xstart;
+    const int xe = lastX() ? xend + 2 : xend + 1;
+    const int nx = xe - xs;
+    const int ny = yend - ystart + 1;
+    localNumCells2D = nx * ny;
+    for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
+      if (it.ind == xstart) {
+        localNumCells2D += 1;
+      }
+      if (it.ind == xend) {
+        localNumCells2D += 1;
+      }
+      localNumCells2D += 1;
+    }
+    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
+      if (it.ind == xstart) {
+        localNumCells2D += 1;
+      }
+      if (it.ind == xend) {
+        localNumCells2D += 1;
+      }
+      localNumCells2D += 1;
+    }
+  }
+  return localNumCells2D;
+}
+
+int Mesh::localSizePerp() {
+  if (localNumCellsPerp < 0) {
+    const int xs = firstX() ? xstart - 1 : xstart;
+    const int xe = lastX() ? xend + 2 : xend + 1;
+    const int nx = xe - xs;
+    const int nz = LocalNz;
+    localNumCellsPerp = nx * nz;
+  }
+  return localNumCellsPerp;
+}
+
+int Mesh::globalStartIndex3D() {
+  int localSize = localSize3D();
+  int cumulativeSize = 0;
+  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
+  return cumulativeSize - localSize;
+}
+
+int Mesh::globalStartIndex2D() {
+  int localSize = localSize2D();
+  int cumulativeSize = 0;
+  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
+  return cumulativeSize - localSize;
+}
+
+int Mesh::globalStartIndexPerp() {
+  int localSize = localSizePerp();
+  int cumulativeSize = 0;
+  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
+  return cumulativeSize - localSize;
 }
 
 const std::vector<int> Mesh::readInts(const std::string &name, int n) {

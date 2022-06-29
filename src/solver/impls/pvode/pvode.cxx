@@ -68,6 +68,11 @@ PvodeSolver::~PvodeSolver() {
   }
 }
 
+#if SUNDIALS_VERSION_MAJOR >= 6
+#else
+#define SUN_MODIFIED_GS MODIFIED_GS
+#endif
+
 /**************************************************************************
  * Initialise
  **************************************************************************/
@@ -195,13 +200,12 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
      parameter delt, preconditioner setup and solve routines from the
      PVBBDPRE module, and the pointer to the preconditioner data block.    */
 
-  if(use_precon) {
-    CVSpgmr(cvode_mem, LEFT, MODIFIED_GS, precon_dimens, precon_tol, PVBBDPrecon, PVBBDPSol, pdata);
-  }else {
-    CVSpgmr(cvode_mem, NONE, MODIFIED_GS, 10, ZERO, PVBBDPrecon, PVBBDPSol, pdata);
+  if (use_precon) {
+    CVSpgmr(cvode_mem, LEFT, SUN_MODIFIED_GS, precon_dimens, precon_tol, PVBBDPrecon,
+            PVBBDPSol, pdata);
+  } else {
+    CVSpgmr(cvode_mem, NONE, SUN_MODIFIED_GS, 10, ZERO, PVBBDPrecon, PVBBDPSol, pdata);
   }
-
-  /*  CVSpgmr(cvode_mem, NONE, MODIFIED_GS, 10, 0.0, PVBBDPrecon, PVBBDPSol, pdata); */
 
   // PvodeSolver is now initialised fully
   pvode_initialised = true;

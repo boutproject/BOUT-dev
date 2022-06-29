@@ -18,8 +18,7 @@
 
 #include <cmath>
 
-#undef __FUNCT__
-#define __FUNCT__ "laplacePCapply"
+
 static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   int ierr;
   

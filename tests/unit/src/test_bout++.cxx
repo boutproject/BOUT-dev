@@ -341,7 +341,6 @@ TEST_F(PrintStartupTest, CommandLineArguments) {
     EXPECT_TRUE(IsSubString(buffer.str(), arg));
   }
 }
-
 #if BOUT_USE_SIGNAL
 
 #if BOUT_USE_SIGFPE
@@ -364,13 +363,14 @@ public:
 
 using SignalHandlerTestDeathTest = SignalHandlerTest;
 
+#if !defined(__NVCC__)
 TEST_F(SignalHandlerTestDeathTest, SegFault) {
   bout::experimental::setupSignalHandler(bout::experimental::defaultSignalHandler);
   // This test is *incredibly* expensive, maybe as much as 1s, so only test the one signal
   EXPECT_DEATH(std::raise(SIGSEGV), "SEGMENTATION FAULT");
 }
 #endif
-
+#endif
 TEST(BoutInitialiseFunctions, SetRunStartInfo) {
   WithQuietOutput quiet{output_info};
 

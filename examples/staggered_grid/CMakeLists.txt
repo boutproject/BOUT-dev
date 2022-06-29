@@ -8,5 +8,5 @@ endif()
 
 bout_add_example(staggered_grid
   SOURCES test_staggered.cxx
-  EXTRA_FILES generate.py runandplot test-staggered.nc
+  EXTRA_FILES generate.py run test-staggered.nc
   DATA_DIRS data test)

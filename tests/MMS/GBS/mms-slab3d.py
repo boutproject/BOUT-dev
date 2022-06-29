@@ -43,7 +43,7 @@ AA = 0.1  # Ion atomic mass
 #
 
 mi_me = AA * 1.67262158e-27 / 9.109e-31
-beta_e = qe * Tnorm * Nnorm / (old_div(Bnorm ** 2, mu0))
+beta_e = qe * Tnorm * Nnorm / (old_div(Bnorm**2, mu0))
 
 # Normalisation parameters
 Cs0 = sqrt(qe * Tnorm / (AA * Mp))
@@ -87,9 +87,9 @@ Btxy /= Bnorm
 Bxy /= Bnorm
 hthe /= rho_s0
 
-dx /= rho_s0 ** 2 * Bnorm
+dx /= rho_s0**2 * Bnorm
 
-bxcvz *= rho_s0 ** 2
+bxcvz *= rho_s0**2
 
 # Define a metric
 metric = Metric()  # Identity
@@ -98,8 +98,8 @@ Lx = dx * (nx - 2.0 * MXG)  # Size of the X domain
 Ly = dy * ny  # Size of the Y domain
 
 metric.g11 = (Rxy * Bpxy) ** 2
-metric.g22 = old_div(1.0, (hthe ** 2))
-metric.g33 = (sinty ** 2) * metric.g11 + old_div((Bxy ** 2), metric.g11)
+metric.g22 = old_div(1.0, (hthe**2))
+metric.g33 = (sinty**2) * metric.g11 + old_div((Bxy**2), metric.g11)
 metric.g12 = 0.0
 metric.g13 = -sinty * metric.g11
 metric.g23 = -sbp * Btxy / (hthe * Bpxy * Rxy)
@@ -123,18 +123,18 @@ print("g_12 = %e, g_23 = %e" % (metric.g_12, metric.g_23))
 
 # Define the manufactured solution in terms of input x,y and z
 
-Ne = 0.9 + 0.9 * x + 0.5 * cos(t) * sin(5.0 * x ** 2 - z) + 0.01 * sin(y - z)
-Te = 1 + 0.5 * cos(t) * cos(3 * x ** 2 - 2 * z) + 0.005 * sin(y - z) * sin(t)
+Ne = 0.9 + 0.9 * x + 0.5 * cos(t) * sin(5.0 * x**2 - z) + 0.01 * sin(y - z)
+Te = 1 + 0.5 * cos(t) * cos(3 * x**2 - 2 * z) + 0.005 * sin(y - z) * sin(t)
 Vort = 2.0 * sin(2 * t) * cos(x - z + 4 * y)
-VePsi = cos(1.5 * t) * (2.0 * sin((x - 0.5) ** 2 + z) + 0.05 * cos(3 * x ** 2 + y - z))
-Vi = -0.01 * cos(7 * t) * cos(3 * x ** 2 + 2 * y - 2 * z)
+VePsi = cos(1.5 * t) * (2.0 * sin((x - 0.5) ** 2 + z) + 0.05 * cos(3 * x**2 + y - z))
+Vi = -0.01 * cos(7 * t) * cos(3 * x**2 + 2 * y - 2 * z)
 
 # phi = sin(z - x + t)*sin(2.*pi*x)
 phi = (sin(z - x + t) + 0.001 * cos(y - z)) * sin(
     2.0 * pi * x
 )  # Must satisfy Dirichlet BCs for now
 psi = sin(pi * x) * (
-    0.5 * x - 0.1 * cos(7 * t) * sin(3.0 * x ** 2 + y - z)
+    0.5 * x - 0.1 * cos(7 * t) * sin(3.0 * x**2 + y - z)
 )  # Must satisfy Dirichlet BCs for now
 
 # Substitute to get in terms of actual x,y,z coordinates
@@ -168,7 +168,7 @@ print("mi_me*beta_e = ", mi_me * beta_e)
 Gi = 0.0
 Ge = 0.0
 
-tau_e = Omega_ci * tau_e0 * (Te ** 1.5) / Ne
+tau_e = Omega_ci * tau_e0 * (Te**1.5) / Ne
 # Normalised collision time
 
 nu = old_div(1.0, (1.96 * Ne * tau_e * mi_me))
@@ -203,7 +203,7 @@ if parallel:
 dVortdt = -bracket(phi, Vort, metric) + 2.0 * B * C(Pe) / Ne + B * C(Gi) / (3.0 * Ne)
 
 if parallel:
-    dVortdt += -Vpar_Grad_par(Vi, Vort, metric) + B ** 2 * (
+    dVortdt += -Vpar_Grad_par(Vi, Vort, metric) + B**2 * (
         Grad_par(Vi - Ve, metric) + (Vi - Ve) * Grad_par(Ne, metric) / Ne
     )
 
@@ -355,10 +355,10 @@ print("  bracket : ", exprmag(-bracket(phi, Vort, metric)), "\n")
 print("  C(Pe)   : ", exprmag(2.0 * B * C(Pe) / Ne), "\n")
 print("  C(Gi)   : ", exprmag(B * C(Gi) / (3.0 * Ne)), "\n")
 print("  Vpar_Grad_par(Vi, Vort) : ", exprmag(-Vpar_Grad_par(Vi, Vort, metric)), "\n")
-print("  B**2*Grad_par(Vi - Ve) :", exprmag(B ** 2 * Grad_par(Vi - Ve, metric)), "\n")
+print("  B**2*Grad_par(Vi - Ve) :", exprmag(B**2 * Grad_par(Vi - Ve, metric)), "\n")
 print(
     "  B**2*(Vi - Ve)*Grad_par(log(Ne)) :",
-    exprmag(B ** 2 * (Vi - Ve) * Grad_par(log(Ne), metric)),
+    exprmag(B**2 * (Vi - Ve) * Grad_par(log(Ne), metric)),
     "\n",
 )
 

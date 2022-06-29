@@ -52,7 +52,7 @@ def create_function_signature_re(function_name, argument_types):
         ]
     )
 
-    return fr"int\s+{function_name}\s*\({arguments}\)"
+    return rf"int\s+{function_name}\s*\({arguments}\)"
 
 
 LEGACY_MODEL_INCLUDE_RE = re.compile(
@@ -158,7 +158,7 @@ def fix_model_operator(
     arguments = ", ".join(arg_names)
 
     # Modify the definition: it's out-of-line so we need the qualified name
-    modified = operator_re.sub(fr"int {model_name}::{new_name}({arguments})", source)
+    modified = operator_re.sub(rf"int {model_name}::{new_name}({arguments})", source)
 
     # Create the declaration
     return (
@@ -264,7 +264,7 @@ def convert_old_solver_api(source, name):
         if decl:
             method_decls.append(decl)
     # Almost a straight replacement, but it's now a member-function pointer
-    source = PRECON_RE.sub(fr"setPrecon(&{name}::\1)", source)
+    source = PRECON_RE.sub(rf"setPrecon(&{name}::\1)", source)
 
     # Fix uses of solver->setJacobian, basically the same as for setPrecon
     jacobians = JACOBIAN_RE.findall(source)
@@ -274,7 +274,7 @@ def convert_old_solver_api(source, name):
         )
         if decl:
             method_decls.append(decl)
-    source = JACOBIAN_RE.sub(fr"setJacobian(&{name}::\1)", source)
+    source = JACOBIAN_RE.sub(rf"setJacobian(&{name}::\1)", source)
 
     # If we didn't find any free functions that need to be made into
     # methods, we're done
