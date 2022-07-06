@@ -10,7 +10,14 @@
 
 #include <output.hxx>
 
-RK3SSP::RK3SSP(Options *opt) : Solver(opt) {}
+RK3SSP::RK3SSP(Options* opt)
+    : Solver(opt), max_timestep((*options)["max_timestep"]
+                                    .doc("Maximum timestep")
+                                    .withDefault(getOutputTimestep())),
+      timestep((*options)["timestep"].doc("Starting timestep").withDefault(max_timestep)),
+      mxstep((*options)["mxstep"]
+                 .doc("Maximum number of steps between outputs")
+                 .withDefault(500)) {}
 
 void RK3SSP::setMaxTimestep(BoutReal dt) {
   if(dt > timestep)
@@ -19,20 +26,12 @@ void RK3SSP::setMaxTimestep(BoutReal dt) {
   timestep = dt; // Won't be used this time, but next
 }
 
-int RK3SSP::init(int nout, BoutReal tstep) {
-
+int RK3SSP::init() {
   TRACE("Initialising RK3 SSP solver");
-  
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
-    return 1;
-  
+
+  Solver::init();
   output << "\n\tRunge-Kutta 3rd-order SSP solver\n";
 
-  nsteps = nout; // Save number of output steps
-  out_timestep = tstep;
-  max_dt = tstep;
-  
   // Calculate number of variables
   nlocal = getLocalN();
   
@@ -59,54 +58,47 @@ int RK3SSP::init(int nout, BoutReal tstep) {
   // Put starting values into f
   save_vars(std::begin(f));
 
-  // Get options
-  OPTION(options, max_timestep, tstep); // Maximum timestep
-  OPTION(options, timestep, max_timestep); // Starting timestep
-  OPTION(options, mxstep, 500); // Maximum number of steps between outputs
-
   return 0;
 }
 
 int RK3SSP::run() {
   TRACE("RK3SSP::run()");
-  
-  for(int s=0;s<nsteps;s++) {
-    BoutReal target = simtime + out_timestep;
-    
+
+  for (int s = 0; s < getNumberOutputSteps(); s++) {
+    BoutReal target = simtime + getOutputTimestep();
+
     BoutReal dt;
     bool running = true;
     do {
       // Take a single time step
-      
+
       dt = timestep;
       running = true;
-      if((simtime + dt) >= target) {
-        dt = target - simtime; // Make sure the last timestep is on the output 
+      if ((simtime + dt) >= target) {
+        dt = target - simtime; // Make sure the last timestep is on the output
         running = false;
       }
       output.write("t = {:e}, dt = {:e}\n", simtime, dt);
       // No adaptive timestepping for now
       take_step(simtime, dt, f, f);
-      
+
       simtime += dt;
-      
+
       call_timestep_monitors(simtime, dt);
-    }while(running);
+    } while (running);
 
     load_vars(std::begin(f)); // Put result into variables
     // Call rhs function to get extra variables at this time
     run_rhs(simtime);
- 
+
     iteration++; // Advance iteration number
-    
-    /// Call the monitor function
-    
-    if(call_monitors(simtime, s, nsteps)) {
+
+    if (call_monitors(simtime, s, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }
   }
-  
+
   return 0;
 }
 

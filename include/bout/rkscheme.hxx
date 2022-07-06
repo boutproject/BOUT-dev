@@ -36,7 +36,6 @@ class RKScheme;
 #define __RKSCHEME_H__
 
 #include <bout_types.hxx>
-#include <options.hxx>
 #include <utils.hxx>
 #include "bout/generic_factory.hxx"
 
@@ -68,54 +67,52 @@ template <typename DerivedType>
 using RegisterRKScheme = RKSchemeFactory::RegisterInFactory<DerivedType>;
 
 class RKScheme {
- public:
-
-  //Options picks the scheme, pretty much everything else is automated
-  RKScheme(Options *opts = nullptr);
+public:
+  explicit RKScheme(Options* options, bool default_follow_high_order = false);
   virtual ~RKScheme() = default;
 
-  //Finish generic initialisation
-  void init(int nlocalIn, int neqIn, bool adaptiveIn, BoutReal atolIn,
-            BoutReal rtolIn, Options *options = nullptr);
+  /// Finish generic initialisation
+  void init(int nlocalIn, int neqIn, bool adaptiveIn, BoutReal atolIn, BoutReal rtolIn);
 
-  //Get the time at given stage
+  /// Get the time at given stage
   BoutReal setCurTime(BoutReal timeIn,BoutReal dt,int curStage);
 
-  //Get the state vector at given stage
+  /// Get the state vector at given stage
   virtual void setCurState(const Array<BoutReal> &start, Array<BoutReal> &out,int curStage, 
 			   BoutReal dt);
 
-  //Calculate the output state and return the error estimate (if adaptive)
+  /// Calculate the output state and return the error estimate (if adaptive)
   virtual BoutReal setOutputStates(const Array<BoutReal> &start,BoutReal dt, Array<BoutReal> &resultFollow);
 
-  //Update the timestep
+  /// Update the timestep
   virtual BoutReal updateTimestep(BoutReal dt,BoutReal err);
 
-  //Returns the string name for the given scheme
+  /// Returns the string name for the given scheme
   virtual std::string getType(){return label;};
 
-  //Returns the number of stages for the current scheme
+  /// Returns the number of stages for the current scheme
   int getStageCount(){return numStages;};
 
-  //Returns the number of orders for the current scheme
+  /// Returns the number of orders for the current scheme
   int getNumOrders(){return numOrders;};
 
-  //The intermediate stages
+  /// The intermediate stages
   Matrix<BoutReal> steps;
 
- protected:
-  //Information about scheme
-  bool followHighOrder; //If true the recommended solution is the higher order one.
+protected:
+  // Information about scheme
+  /// If true the recommended solution is the higher order one.
+  bool followHighOrder;
   std::string label;
-  int numStages; //Number of stages in the scheme
-  int numOrders; //Number of orders in the scheme
-  int order; //Order of scheme
+  int numStages; //< Number of stages in the scheme
+  int numOrders; //< Number of orders in the scheme
+  int order;     //< Order of scheme
 
-  //The Butcher Tableau
+  // The Butcher Tableau
   Matrix<BoutReal> stageCoeffs;
   Matrix<BoutReal> resultCoeffs;
   Array<BoutReal> timeCoeffs;
-  
+
   Array<BoutReal> resultAlt;
 
   int nlocal;
@@ -123,19 +120,20 @@ class RKScheme {
   BoutReal atol;
   BoutReal rtol;
   bool adaptive;
+  bool diagnose;
 
-  BoutReal dtfac;
+  BoutReal dtfac{1.0};
 
-  virtual BoutReal getErr(Array<BoutReal> &solA, Array<BoutReal> &solB);
+  virtual BoutReal getErr(Array<BoutReal>& solA, Array<BoutReal>& solB);
 
-  virtual void constructOutput(const Array<BoutReal> &start,BoutReal dt, 
-			       int index, Array<BoutReal> &sol);
+  virtual void constructOutput(const Array<BoutReal>& start, BoutReal dt, int index,
+                               Array<BoutReal>& sol);
 
-  virtual void constructOutputs(const Array<BoutReal> &start,BoutReal dt, 
-				int indexFollow,int indexAlt,
-				Array<BoutReal> &solFollow, Array<BoutReal> &solAlt);
+  virtual void constructOutputs(const Array<BoutReal>& start, BoutReal dt,
+                                int indexFollow, int indexAlt, Array<BoutReal>& solFollow,
+                                Array<BoutReal>& solAlt);
 
- private:
+private:
   void verifyCoeffs();
   void printButcherTableau();
   void zeroSteps();
