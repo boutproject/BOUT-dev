@@ -247,9 +247,9 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
         // - Solve periodic tridiagonal system
         // - Subtract average of result
 
-        a(0,0) = 0.0;
-        b(0,0) = 1.0;
-        c(0,0) = 0.0;
+        a(0, 0) = 0.0;
+        b(0, 0) = 1.0;
+        c(0, 0) = 0.0;
         bcmplx(0, 0) = 0.0;
       }
     }
@@ -261,18 +261,17 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     if (localmesh->periodicX) {
       // Subtract X average of kz=0 mode
       BoutReal local[2] = {
-        0.0, // index 0 = sum of coefficients
-        static_cast<BoutReal>(xe - xs + 1) // number of grid cells
+          0.0,                               // index 0 = sum of coefficients
+          static_cast<BoutReal>(xe - xs + 1) // number of grid cells
       };
       for (int ix = xs; ix <= xe; ix++) {
-        local[0] += xcmplx(0, ix-xs).real();
+        local[0] += xcmplx(0, ix - xs).real();
       }
       BoutReal global[2];
-      MPI_Allreduce(local, global, 2, MPI_DOUBLE,
-                    MPI_SUM, localmesh->getXcomm());
+      MPI_Allreduce(local, global, 2, MPI_DOUBLE, MPI_SUM, localmesh->getXcomm());
       BoutReal avg = global[0] / global[1];
       for (int ix = xs; ix <= xe; ix++) {
-        xcmplx(0, ix-xs) -= avg;
+        xcmplx(0, ix - xs) -= avg;
       }
     }
 
@@ -497,9 +496,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
                      &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
 
-        if (localmesh->periodicX
-            and localmesh->firstX()
-            and kz == 0) {
+        if (localmesh->periodicX and localmesh->firstX() and kz == 0) {
           // Special case kz = 0 and kx = 0
           a3D(ind, 0) = 0.0;
           b3D(ind, 0) = 1.0;
@@ -515,24 +512,23 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
     if (localmesh->periodicX) {
       // Subtract X average of kz=0 mode
-      BoutReal local[ny+1];
+      BoutReal local[ny + 1];
       for (int y = 0; y < ny; y++) {
         local[y] = 0.0;
         for (int ix = xs; ix <= xe; ix++) {
-          local[y] += xcmplx3D(y * nmode, ix-xs).real();
+          local[y] += xcmplx3D(y * nmode, ix - xs).real();
         }
       }
       local[ny] = static_cast<BoutReal>(xe - xs + 1);
 
       // Global reduce
-      BoutReal global[ny+1];
-      MPI_Allreduce(local, global, ny + 1, MPI_DOUBLE,
-                    MPI_SUM, localmesh->getXcomm());
+      BoutReal global[ny + 1];
+      MPI_Allreduce(local, global, ny + 1, MPI_DOUBLE, MPI_SUM, localmesh->getXcomm());
       // Subtract average from kz=0 modes
       for (int y = 0; y < ny; y++) {
         BoutReal avg = global[y] / global[ny];
         for (int ix = xs; ix <= xe; ix++) {
-          xcmplx3D(y * nmode, ix-xs) -= avg;
+          xcmplx3D(y * nmode, ix - xs) -= avg;
         }
       }
     }
