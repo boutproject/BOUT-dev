@@ -169,7 +169,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
                      kwave, // kwave (inverse wave length)
                      global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
                      &C1coef, &C2coef, &Dcoef,
-                     false, // Don't include guard cells in arrays
+                     false,  // Don't include guard cells in arrays
                      false); // Z domain not periodic
       }
     }
@@ -401,7 +401,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
                      kwave, // kwave (inverse wave length)
                      global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
                      &C1coef, &C2coef, &Dcoef,
-                     false, // Don't include guard cells in arrays
+                     false,  // Don't include guard cells in arrays
                      false); // Z domain not periodic
       }
     }
