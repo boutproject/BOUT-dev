@@ -161,7 +161,7 @@ void OptionINI::write(Options *options, const std::string &filename) {
   }
   
   // Call recursive function to write to file
-  fout << fmt::format("{:ds}", *options);
+  fout << fmt::format("{:uds}", *options);
   
   fout.close();
 }
