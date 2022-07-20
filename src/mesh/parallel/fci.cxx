@@ -72,6 +72,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
 
   // Index-space coordinates of forward/backward points
   Field3D xt_prime{&map_mesh}, zt_prime{&map_mesh};
+  Field3D Global_xt_prime{&map_mesh};
 
   // Real-space coordinates of grid points
   Field3D R{&map_mesh}, Z{&map_mesh};
@@ -94,7 +95,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
 
   // If we can't read in any of these fields, things will silently not
   // work, so best throw
-  if (map_mesh.get(xt_prime, parallel_slice_field_name("xt_prime"), 0.0, false) != 0) {
+  if (map_mesh.get(Global_xt_prime, parallel_slice_field_name("xt_prime"), 0.0, false) != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
                         parallel_slice_field_name("xt_prime"));
@@ -115,8 +116,11 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
                         parallel_slice_field_name("Z"));
   }
 
+   // Convert global xt_prime to local-index space
+  xt_prime = Global_xt_prime - ( map_mesh.OffsetX );
+
   // Cell corners
-  Field3D xt_prime_corner{emptyFrom(xt_prime)};
+  Field3D xt_prime_corner{emptyFrom(Global_xt_prime)};
   Field3D zt_prime_corner{emptyFrom(zt_prime)};
 
   BOUT_FOR(i, xt_prime_corner.getRegion("RGN_NOBNDRY")) {
@@ -152,7 +156,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
 
   {
     TRACE("FCImap: calculating weights");
-    interp->calcWeights(xt_prime, zt_prime);
+    interp->calcWeights(Global_xt_prime, zt_prime);
   }
 
   const int ncz = map_mesh.LocalNz;
