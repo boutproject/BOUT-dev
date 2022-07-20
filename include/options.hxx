@@ -849,6 +849,9 @@ struct OptionsFormatterBase {
 private:
   /// Include the 'doc' attribute, if present
   bool docstrings{false};
+  /// If an option is unused add a comment and whether it is
+  /// conditionally unused
+  bool unused{false};
   /// If true, print variables as 'section:variable', rather than a
   /// section header '[section]' and plain 'variable'
   bool inline_section_names{false};

@@ -777,6 +777,9 @@ bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
     case 's':
       source = true;
       break;
+    case 'u':
+      unused = true;
+      break;
     default:
       throw fmt::format_error("invalid format for 'Options'");
     }
@@ -824,7 +827,7 @@ bout::details::OptionsFormatterBase::format(const Options& options,
 
     std::vector<std::string> comments;
 
-    if (not options.valueUsed()) {
+    if (unused and not options.valueUsed()) {
       if (conditionally_used(options)) {
         comments.emplace_back("unused value (marked conditionally used)");
       } else {
