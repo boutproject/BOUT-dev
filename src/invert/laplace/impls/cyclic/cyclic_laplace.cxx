@@ -169,7 +169,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
                      kwave, // kwave (inverse wave length)
                      global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
                      &C1coef, &C2coef, &Dcoef,
-                     false); // Don't include guard cells in arrays
+                     false, // Don't include guard cells in arrays
+                     false); // Z domain not periodic
       }
     }
 
@@ -239,18 +240,6 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
                      global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
                      &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
-      }
-      if (localmesh->periodicX and localmesh->firstX()) {
-        // Special case for kz = 0
-        // Need to exclude the kx=0,kz=0 mode
-        // - Set an arbitrary location to zero
-        // - Solve periodic tridiagonal system
-        // - Subtract average of result
-
-        a(0, 0) = 0.0;
-        b(0, 0) = 1.0;
-        c(0, 0) = 0.0;
-        bcmplx(0, 0) = 0.0;
       }
     }
 
@@ -412,7 +401,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
                      kwave, // kwave (inverse wave length)
                      global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
                      &C1coef, &C2coef, &Dcoef,
-                     false); // Don't include guard cells in arrays
+                     false, // Don't include guard cells in arrays
+                     false); // Z domain not periodic
       }
     }
 
@@ -495,14 +485,6 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
                      global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
                      &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
-
-        if (localmesh->periodicX and localmesh->firstX() and kz == 0) {
-          // Special case kz = 0 and kx = 0
-          a3D(ind, 0) = 0.0;
-          b3D(ind, 0) = 1.0;
-          c3D(ind, 0) = 0.0;
-          bcmplx3D(ind, 0) = 0.0;
-        }
       }
     }
 
