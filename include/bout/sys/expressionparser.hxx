@@ -65,8 +65,9 @@ public:
     return nullptr;
   }
 
-  [[deprecated("This will be removed in a future version. Implementations should override the Context version of this function.")]]
-  virtual double generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
+  [[deprecated("This will be removed in a future version. Implementations should "
+               "override the Context version of this function.")]] virtual double
+  generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
     return generate(bout::generator::Context().set("x", x, "y", y, "z", z, "t", t));
   }
 

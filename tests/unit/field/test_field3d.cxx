@@ -1142,7 +1142,6 @@ TEST_F(Field3DTest, CheckData) {
   EXPECT_NO_THROW(checkData(field));
   EXPECT_NO_THROW(checkData(field, "RGN_NOBNDRY"));
   EXPECT_THROW(checkData(field, "RGN_ALL"), BoutException);
-  
 }
 
 #if CHECK > 0

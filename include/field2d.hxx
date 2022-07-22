@@ -138,9 +138,7 @@ public:
   /// Check if this field has yup and ydown fields
   bool hasParallelSlices() const { return true; }
 
-  Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) {
-    return *this;
-  }
+  Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) { return *this; }
   const Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
     return *this;
   }
@@ -316,11 +314,13 @@ Field2D operator-(const Field2D& f);
 
 // Non-member functions
 
-inline Field2D toFieldAligned(const Field2D& f, const std::string& UNUSED(region) = "RGN_ALL") {
+inline Field2D toFieldAligned(const Field2D& f,
+                              const std::string& UNUSED(region) = "RGN_ALL") {
   return f;
 }
 
-inline Field2D fromFieldAligned(const Field2D& f, const std::string& UNUSED(region) = "RGN_ALL") {
+inline Field2D fromFieldAligned(const Field2D& f,
+                                const std::string& UNUSED(region) = "RGN_ALL") {
   return f;
 }
 
@@ -329,9 +329,10 @@ inline Field2D fromFieldAligned(const Field2D& f, const std::string& UNUSED(regi
 /// elements are non-finite (for CHECK > 2).
 /// Loops over all points including the boundaries by
 /// default (can be changed using the \p rgn argument
-void checkData(const Field2D &f, const std::string& region = "RGN_NOBNDRY");
+void checkData(const Field2D& f, const std::string& region = "RGN_NOBNDRY");
 #else
-inline void checkData(const Field2D &UNUSED(f), std::string UNUSED(region) = "RGN_NOBNDRY") {}
+inline void checkData(const Field2D& UNUSED(f),
+                      std::string UNUSED(region) = "RGN_NOBNDRY") {}
 #endif
 
 /// Force guard cells of passed field \p var to NaN

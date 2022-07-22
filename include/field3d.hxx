@@ -576,9 +576,8 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal,
     const std::string& rgn = "RGN_ALL");
 /// The argument \p keep_zonal used to be integer "zmin" -- this was a
 /// misnomer. Please use the version above which uses a bool instead
-[[deprecated("Please use a bool for `keep_zonal`")]]
-inline Field3D lowPass(const Field3D& var, int zmax, int keep_zonal,
-                                  REGION rgn = RGN_ALL) {
+[[deprecated("Please use a bool for `keep_zonal`")]] inline Field3D
+lowPass(const Field3D& var, int zmax, int keep_zonal, REGION rgn = RGN_ALL) {
   ASSERT0(static_cast<bool>(keep_zonal) == keep_zonal);
   return lowPass(var, zmax, static_cast<bool>(keep_zonal), toString(rgn));
 }

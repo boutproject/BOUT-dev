@@ -39,13 +39,17 @@ public:
 
   /// Convert a field into field-aligned coordinates
   /// so that the y index is along the magnetic field
-  virtual Field3D toFieldAligned(const Field3D &f, const std::string& region = "RGN_ALL") = 0;
-  virtual FieldPerp toFieldAligned(const FieldPerp &f, const std::string& region = "RGN_ALL") = 0;
-  
+  virtual Field3D toFieldAligned(const Field3D& f,
+                                 const std::string& region = "RGN_ALL") = 0;
+  virtual FieldPerp toFieldAligned(const FieldPerp& f,
+                                   const std::string& region = "RGN_ALL") = 0;
+
   /// Convert back from field-aligned coordinates
   /// into standard form
-  virtual Field3D fromFieldAligned(const Field3D &f, const std::string& region = "RGN_ALL") = 0;
-  virtual FieldPerp fromFieldAligned(const FieldPerp &f, const std::string& region = "RGN_ALL") = 0;
+  virtual Field3D fromFieldAligned(const Field3D& f,
+                                   const std::string& region = "RGN_ALL") = 0;
+  virtual FieldPerp fromFieldAligned(const FieldPerp& f,
+                                     const std::string& region = "RGN_ALL") = 0;
 
   /// Field2D are axisymmetric, so transformation to or from field-aligned coordinates is
   /// a null operation.
@@ -283,7 +287,7 @@ private:
    *
    */
   Field3D shiftZ(const Field3D& f, const Field2D& zangle,
-                       const std::string& region = "RGN_NOX") const;
+                 const std::string& region = "RGN_NOX") const;
 
   /*!
    * Shift a 3D field or FieldPerp \p f by the given phase \p phs in Z
