@@ -29,6 +29,8 @@ jobs:
           # the unit tests until they're fixed or ignored upstream
           exclude: "tests/unit/*cxx"
           cmake_command: |
+            pip install cmake && \
+            cmake --version && \
             cmake . -B build -DBUILD_SHARED_LIBS=ON \
                              -DBOUT_USE_PETSC=ON \
                              -DBOUT_USE_SLEPC=ON \
