@@ -36,12 +36,6 @@ class Vector3D;
 
 #include "bout_types.hxx"
 #include "bout/coordinates.hxx"
-// Those are needed because we implement functions here.
-// They can be dropped if we remove the deprecated wrappers.
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
 
 /// Gradient of scalar field \p f, returning a covariant vector
 ///
