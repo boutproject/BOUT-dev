@@ -31,6 +31,7 @@ jobs:
           cmake_command: |
             pip install cmake && \
             cmake --version && \
+            git config --global --add safe.directory "$GITHUB_WORKSPACE" && \
             cmake . -B build -DBUILD_SHARED_LIBS=ON \
                              -DBOUT_USE_PETSC=ON \
                              -DBOUT_USE_SLEPC=ON \
