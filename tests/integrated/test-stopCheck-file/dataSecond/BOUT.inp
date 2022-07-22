@@ -4,10 +4,10 @@
 # the results on varying numbers of processors
 #
 
-NOUT = 10  # No timesteps
+nout = 10  # No timesteps
 
 MZ = 8    # Z size
 
 [mesh]
-NX = 10
-NY = 3
+nx = 10
+ny = 3

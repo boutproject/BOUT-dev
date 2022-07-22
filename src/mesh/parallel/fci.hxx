@@ -44,8 +44,9 @@ class FCIMap {
 
 public:
   FCIMap() = delete;
-  FCIMap(Mesh& mesh, const Field2D& dy, Options& options, int offset,
-         BoundaryRegionPar* boundary, bool zperiodic);
+  FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options, int offset,
+         BoundaryRegionPar* inner_boundary, BoundaryRegionPar* outer_boundary,
+         bool zperiodic);
 
   // The mesh this map was created on
   Mesh& map_mesh;
@@ -71,42 +72,57 @@ public:
 class FCITransform : public ParallelTransform {
 public:
   FCITransform() = delete;
-  FCITransform(Mesh& mesh, const Field2D& dy, bool zperiodic = true, Options* opt = nullptr)
+  FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool zperiodic = true,
+               Options* opt = nullptr)
       : ParallelTransform(mesh, opt) {
 
     // check the coordinate system used for the grid data source
     FCITransform::checkInputGrid();
 
-    auto forward_boundary = new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD, +1, &mesh);
-    auto backward_boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, -1, &mesh);
+    auto forward_boundary_xin =
+        new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD_XIN, +1, &mesh);
+    auto backward_boundary_xin =
+        new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD_XIN, -1, &mesh);
+    auto forward_boundary_xout =
+        new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD_XOUT, +1, &mesh);
+    auto backward_boundary_xout =
+        new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD_XOUT, -1, &mesh);
 
     // Add the boundary region to the mesh's vector of parallel boundaries
-    mesh.addBoundaryPar(forward_boundary);
-    mesh.addBoundaryPar(backward_boundary);
+    mesh.addBoundaryPar(forward_boundary_xin);
+    mesh.addBoundaryPar(backward_boundary_xin);
+    mesh.addBoundaryPar(forward_boundary_xout);
+    mesh.addBoundaryPar(backward_boundary_xout);
 
     field_line_maps.reserve(mesh.ystart * 2);
     for (int offset = 1; offset < mesh.ystart + 1; ++offset) {
-      field_line_maps.emplace_back(mesh, dy, options, offset, forward_boundary, zperiodic);
-      field_line_maps.emplace_back(mesh, dy, options, -offset, backward_boundary, zperiodic);
+      field_line_maps.emplace_back(mesh, dy, options, offset, forward_boundary_xin,
+                                   forward_boundary_xout, zperiodic);
+      field_line_maps.emplace_back(mesh, dy, options, -offset, backward_boundary_xin,
+                                   backward_boundary_xout, zperiodic);
     }
   }
 
   void calcParallelSlices(Field3D &f) override;
   
   void integrateParallelSlices(Field3D &f) override;
-  
-  const Field3D toFieldAligned(const Field3D &UNUSED(f), const std::string& UNUSED(region) = "RGN_ALL") override {
+
+  Field3D toFieldAligned(const Field3D& UNUSED(f),
+                         const std::string& UNUSED(region) = "RGN_ALL") override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
-  const FieldPerp toFieldAligned(const FieldPerp &UNUSED(f), const std::string& UNUSED(region) = "RGN_ALL") override {
+  FieldPerp toFieldAligned(const FieldPerp& UNUSED(f),
+                           const std::string& UNUSED(region) = "RGN_ALL") override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 
-  const Field3D fromFieldAligned(const Field3D &UNUSED(f), const std::string& UNUSED(region) = "RGN_ALL") override {
-    throw BoutException("FCI method cannot transform into field aligned grid");
+  Field3D fromFieldAligned(const Field3D& UNUSED(f),
+                           const std::string& UNUSED(region) = "RGN_ALL") override {
+    throw BoutException("FCI method cannot transform from field aligned grid");
   }
-  const FieldPerp fromFieldAligned(const FieldPerp &UNUSED(f), const std::string& UNUSED(region) = "RGN_ALL") override {
-    throw BoutException("FCI method cannot transform into field aligned grid");
+  FieldPerp fromFieldAligned(const FieldPerp& UNUSED(f),
+                             const std::string& UNUSED(region) = "RGN_ALL") override {
+    throw BoutException("FCI method cannot transform from field aligned grid");
   }
 
   bool canToFromFieldAligned() override { return false; }

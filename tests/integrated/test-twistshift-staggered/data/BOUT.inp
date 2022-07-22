@@ -9,7 +9,10 @@ nx = 5
 ny = 7
 nz = 5
 
+dx = 1.0
+dx_ylow = 1.0  # Needed so BOUT++ recognises that _ylow quantities are present
 zShift = (y-0.5) * (x+1)
+zShift_ylow = (y-0.5) * (x+1)
 ShiftAngle = 2*pi*(x+1)
 
 [mesh:paralleltransform]

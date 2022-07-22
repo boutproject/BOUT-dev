@@ -236,7 +236,7 @@ register a stencil using kernel in a single step. For example:
 
 
 Will define the `DDX_C2` functor and register it with the derivative
-store using key ``"C2"` for all three directions and both fields with
+store using key ``"C2"`` for all three directions and both fields with
 no staggering.
 
 

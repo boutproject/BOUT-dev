@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "utils.hxx"
 
+#include <set>
 #include <string>
 
 TEST(MatrixTest, DefaultShape) {
@@ -669,6 +670,19 @@ TEST(StringUtilitiesTest, StringTrimComments) {
   EXPECT_EQ("space  ", trimComments(input, "#"));
 }
 
+TEST(StringUtilitiesTest, EditDistance) {
+  EXPECT_EQ(editDistance("hello", "hllo"), 1);              // deletion
+  EXPECT_EQ(editDistance("hello", "helloo"), 1);            // insertion
+  EXPECT_EQ(editDistance("hello", "hullo"), 1);             // substitution
+  EXPECT_EQ(editDistance("hello", "hlelo"), 1);             // transposition
+  EXPECT_EQ(editDistance("hello", "hluoo"), 3);             // multiple edits
+  EXPECT_EQ(editDistance("hello_world", "helloworld"), 1);  // insertion non-letter
+  EXPECT_EQ(editDistance("Hello World", "hello world"), 2); // two substitutions
+  EXPECT_EQ(editDistance("hello world", "Hello World"), 2); // transitive
+  // Following might be affected by encoding, so should be at least two
+  EXPECT_GE(editDistance("très tôt", "tres tot"), 2);       // non-ASCII
+}
+
 namespace {
 using function_typedef = int(*)(char, int, double);
 int function_pointer(double, char) {return 0;};
@@ -734,3 +748,45 @@ TEST(FunctionTraitsTest, SecondArg) {
       std::is_same<function_traits<function_typedef>::arg_t<1>, int>::value,
       "Wrong second argument type for function_traits of a typedef using arg_t");
 }
+
+#ifndef __cpp_lib_erase_if
+TEST(StdLibBackPorts, EraseIfMultiset) {
+  std::multiset<int> data { 3, 3, 4, 5, 5, 6, 6, 7, 2, 1, 0 };
+  auto divisible_by_3 = [](auto const& x) { return (x % 3) == 0; };
+
+  bout::utils::erase_if(data, divisible_by_3);
+
+  std::multiset<int> expected { 1, 2, 4, 5, 5, 7 };
+
+  EXPECT_EQ(data, expected);
+}
+
+TEST(StdLibBackPorts, EraseIfSet) {
+  std::set<int> data { 3, 4, 5, 6, 7, 2, 1, 0 };
+  auto divisible_by_3 = [](auto const& x) { return (x % 3) == 0; };
+
+  bout::utils::erase_if(data, divisible_by_3);
+
+  std::set<int> expected { 1, 2, 4, 5, 7 };
+
+  EXPECT_EQ(data, expected);
+}
+
+TEST(StdLibBackPorts, EraseVector) {
+  std::vector<int> data{1, 2, 3, 3, 3, 3, 4, 5, 6};
+  bout::utils::erase(data, 3);
+  std::vector<int> expected{1, 2, 4, 5, 6};
+  EXPECT_EQ(data, expected);
+}
+
+TEST(StdLibBackPorts, EraseIfVector) {
+  std::vector<int> data{3, 3, 4, 5, 5, 6, 6, 7, 2, 1, 0};
+  auto divisible_by_3 = [](auto const& x) { return (x % 3) == 0; };
+
+  bout::utils::erase_if(data, divisible_by_3);
+
+  std::vector<int> expected{4, 5, 5, 7, 2, 1};
+
+  EXPECT_EQ(data, expected);
+}
+#endif

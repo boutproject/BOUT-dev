@@ -4,6 +4,7 @@
 # Run the test, compare results against the benchmark
 #
 
+# requires: not metric_3d
 # requires: petsc
 # cores: 8
 
@@ -12,12 +13,6 @@ from boutdata.collect import collect
 from sys import exit
 
 tol = 5.0e-8
-
-# Note accuracy of test is limited when g12!=0 by inconsistency between the way boundary
-# conditions are applied in LaplaceXY and the way they are applied in the D2DXDY()
-# operator called by Laplace_perp(). In D2DXDY(f) 'free_o3' boundary conditions are
-# applied to dfdy before calculating DDX(dfdy).
-tol_nonorth = 2.0e-5
 
 argslist = [
     "laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=dirichlet "
@@ -73,7 +68,7 @@ for nproc in [8]:
                 "hypre not available as pre-conditioner in PETSc. Re-running with "
                 + "pctype=shell..."
             )
-            s, out = launch(cmd, nproc=nproc, pipe=True, verbose=True)
+            _, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
 
         f = open("run.log." + str(nproc), "w")
         f.write(out)

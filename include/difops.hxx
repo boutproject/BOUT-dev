@@ -51,14 +51,15 @@
  * enabled)
  * @param[in] method  The method to use. The default is set in the options.
  */
-const Field2D Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
-                       const std::string& method = "DEFAULT");
-inline const Field2D Grad_par(const Field2D& var, CELL_LOC outloc, DIFF_METHOD method) {
+Coordinates::FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
+                                  const std::string& method = "DEFAULT");
+inline Coordinates::FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc,
+                                         DIFF_METHOD method) {
   return Grad_par(var, outloc, toString(method));
 }
 
-const Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
-                       const std::string& method = "DEFAULT");
+Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
+                 const std::string& method = "DEFAULT");
 
 /*!
  * Derivative along perturbed magnetic field
@@ -70,7 +71,7 @@ const Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
  * Combines the parallel and perpendicular calculation to include
  * grid-points at the corners.
  */
-const Field3D Grad_parP(const Field3D& apar, const Field3D& f);
+Field3D Grad_parP(const Field3D& apar, const Field3D& f);
 
 /*!
  * vpar times parallel derivative along unperturbed B-field (upwinding)
@@ -86,19 +87,20 @@ const Field3D Grad_parP(const Field3D& apar, const Field3D& f);
  * @param[in] method  The numerical method to use. The default is set in the options
  *
  */
-const Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                            CELL_LOC outloc = CELL_DEFAULT,
-                            const std::string& method = "DEFAULT");
-inline const Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc,
-                                   DIFF_METHOD method) {
+Coordinates::FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                                       CELL_LOC outloc = CELL_DEFAULT,
+                                       const std::string& method = "DEFAULT");
+
+inline Coordinates::FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                                              CELL_LOC outloc, DIFF_METHOD method) {
   return Vpar_Grad_par(v, f, outloc, toString(method));
 }
 
-const Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
-                            CELL_LOC outloc = CELL_DEFAULT,
-                            const std::string& method = "DEFAULT");
-inline const Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
-                                   DIFF_METHOD method) {
+Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                      const std::string& method = "DEFAULT");
+
+inline Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
+                             DIFF_METHOD method) {
   return Vpar_Grad_par(v, f, outloc, toString(method));
 }
 
@@ -114,15 +116,18 @@ inline const Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC 
  * @param[in] method  The numerical method to use
  *
  */
-const Field2D Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                      const std::string& method = "DEFAULT");
-inline const Field2D Div_par(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
+Coordinates::FieldMetric Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                                 const std::string& method = "DEFAULT");
+
+inline Coordinates::FieldMetric Div_par(const Field2D& f, CELL_LOC outloc,
+                                        DIFF_METHOD method) {
   return Div_par(f, outloc, toString(method));
 }
 
-const Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-                      const std::string& method = "DEFAULT");
-inline const Field3D Div_par(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
+Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                const std::string& method = "DEFAULT");
+
+inline Field3D Div_par(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
   return Div_par(f, outloc, toString(method));
 }
 
@@ -130,15 +135,15 @@ inline const Field3D Div_par(const Field3D& f, CELL_LOC outloc, DIFF_METHOD meth
 // Both f and v are interpolated onto cell boundaries
 // using 2nd order central difference, then multiplied together
 // to get the flux at the boundary.
-const Field3D Div_par(const Field3D& f, const Field3D& v);
+Field3D Div_par(const Field3D& f, const Field3D& v);
 
 // Flux methods. Model divergence of flux: df/dt =  Div(v * f)
 // TODO : Should we add Field2D versions?
-const Field3D Div_par_flux(const Field3D& v, const Field3D& f,
-                           CELL_LOC outloc = CELL_DEFAULT,
-                           const std::string& method = "DEFAULT");
-inline const Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
-                                  DIFF_METHOD method) {
+Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                     const std::string& method = "DEFAULT");
+
+inline Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
+                            DIFF_METHOD method) {
   return Div_par_flux(v, f, outloc, toString(method));
 }
 
@@ -153,15 +158,16 @@ inline const Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC o
  * @param[in] f The field to be differentiated
  * @param[in] outloc The cell location of the result
  */
-const Field2D Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                         const std::string& method = "DEFAULT");
-inline const Field2D Grad2_par2(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
+Coordinates::FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                                    const std::string& method = "DEFAULT");
+inline Coordinates::FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc,
+                                           DIFF_METHOD method) {
   return Grad2_par2(f, outloc, toString(method));
 }
 
-const Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-                         const std::string& method = "DEFAULT");
-inline const Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
+Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT");
+inline Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
   return Grad2_par2(f, outloc, toString(method));
 }
 
@@ -175,12 +181,17 @@ inline const Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, DIFF_METHOD m
  * @param[in] kY  The diffusion coefficient
  * @param[in] f   The field whose gradient drives a flux
  */
-const Field2D Div_par_K_Grad_par(BoutReal kY, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field2D Div_par_K_Grad_par(const Field2D &kY, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
+Coordinates::FieldMetric Div_par_K_Grad_par(BoutReal kY, const Field2D& f,
+                                            CELL_LOC outloc = CELL_DEFAULT);
+Field3D Div_par_K_Grad_par(BoutReal kY, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT);
+Coordinates::FieldMetric Div_par_K_Grad_par(const Field2D& kY, const Field2D& f,
+                                            CELL_LOC outloc = CELL_DEFAULT);
+Field3D Div_par_K_Grad_par(const Field2D& kY, const Field3D& f,
+                           CELL_LOC outloc = CELL_DEFAULT);
+Field3D Div_par_K_Grad_par(const Field3D& kY, const Field2D& f,
+                           CELL_LOC outloc = CELL_DEFAULT);
+Field3D Div_par_K_Grad_par(const Field3D& kY, const Field3D& f,
+                           CELL_LOC outloc = CELL_DEFAULT);
 
 /*!
  * Perpendicular Laplacian operator
@@ -191,50 +202,52 @@ const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC o
  *
  * For the full perpendicular Laplacian, use Laplace_perp
  */
-const Field2D Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
-const Field3D Delp2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
-const FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT,
-                      bool useFFT = true);
+Coordinates::FieldMetric Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                               bool useFFT = true);
+Field3D Delp2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
+FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
 
 /*!
  * Perpendicular Laplacian, keeping y derivatives
  *
  * 
  */
-const Field2D Laplace_perp(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                           const std::string& dfdy_boundary_condition = "free_o3",
-                           const std::string& dfdy_region = "");
-const Field3D Laplace_perp(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-                           const std::string& dfdy_boundary_condition = "free_o3",
-                           const std::string& dfdy_region = "");
+Coordinates::FieldMetric
+Laplace_perp(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+             const std::string& dfdy_boundary_condition = "free_o3",
+             const std::string& dfdy_region = "");
+Field3D Laplace_perp(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                     const std::string& dfdy_boundary_condition = "free_o3",
+                     const std::string& dfdy_region = "");
 
 /*!
  * Parallel Laplacian operator
  *
  */
-const Field2D Laplace_par(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D Laplace_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
+Coordinates::FieldMetric Laplace_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
+Field3D Laplace_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT);
 
 /*!
  * Full Laplacian operator (par + perp)
  */
-const Field2D Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                      const std::string& dfdy_boundary_condition = "free_o3",
-                      const std::string& dfdy_region = "");
-const Field3D Laplace(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-                      const std::string& dfdy_boundary_condition = "free_o3",
-                      const std::string& dfdy_region = "");
+Coordinates::FieldMetric Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                                 const std::string& dfdy_boundary_condition = "free_o3",
+                                 const std::string& dfdy_region = "");
+Field3D Laplace(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                const std::string& dfdy_boundary_condition = "free_o3",
+                const std::string& dfdy_region = "");
 
 /*!
  * Inverse of Laplacian operator in LaplaceXY solver
  */
-const Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
+Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
 
 /*!
  * Terms of form b0 x Grad(phi) dot Grad(A)
  * 
  */
-const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A, CELL_LOC outloc=CELL_DEFAULT);
+Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
+                                          CELL_LOC outloc = CELL_DEFAULT);
 
 /*!
  * Terms of form 
@@ -247,9 +260,12 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A, CELL_LOC ou
  * @param[in] A   The field being advected
  * @param[in] outloc  The cell location where the result is defined. By default the same as A.
  */
-const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field2D &A, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC outloc=CELL_DEFAULT);
+Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field2D& A,
+                         CELL_LOC outloc = CELL_DEFAULT);
+Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A,
+                         CELL_LOC outloc = CELL_DEFAULT);
+Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A,
+                         CELL_LOC outloc = CELL_DEFAULT);
 
 /*!
  * Poisson bracket methods
@@ -283,17 +299,15 @@ constexpr BRACKET_METHOD BRACKET_ARAKAWA_OLD = BRACKET_METHOD::arakawa_old;
  * @param[in] solver   Pointer to the time integration solver
  * 
  */
-const Field2D bracket(const Field2D &f, const Field2D &g,
-                      BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc = CELL_DEFAULT,
-                      Solver *solver = nullptr);
-const Field3D bracket(const Field2D &f, const Field3D &g,
-                      BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc = CELL_DEFAULT,
-                      Solver *solver = nullptr);
-const Field3D bracket(const Field3D &f, const Field2D &g,
-                      BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc = CELL_DEFAULT,
-                      Solver *solver = nullptr);
-const Field3D bracket(const Field3D &f, const Field3D &g,
-                      BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc = CELL_DEFAULT,
-                      Solver *solver = nullptr);
+Coordinates::FieldMetric bracket(const Field2D& f, const Field2D& g,
+                                 BRACKET_METHOD method = BRACKET_STD,
+                                 CELL_LOC outloc = CELL_DEFAULT,
+                                 Solver* solver = nullptr);
+Field3D bracket(const Field2D& f, const Field3D& g, BRACKET_METHOD method = BRACKET_STD,
+                CELL_LOC outloc = CELL_DEFAULT, Solver* solver = nullptr);
+Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method = BRACKET_STD,
+                CELL_LOC outloc = CELL_DEFAULT, Solver* solver = nullptr);
+Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method = BRACKET_STD,
+                CELL_LOC outloc = CELL_DEFAULT, Solver* solver = nullptr);
 
 #endif /* __DIFOPS_H__ */

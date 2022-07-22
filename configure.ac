@@ -60,6 +60,10 @@ AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
         [Use the SUNDIALS ARKODE solver])],,[])
 AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
         [Enable support for scorep based instrumentation])],,[with_scorep=no])
+AC_ARG_WITH(hypre,       [AS_HELP_STRING([--with-hypre],
+        [Enable support for HYPRE])],,[with_hypre=no])
+
+dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 AC_ARG_WITH(system_mpark, [AS_HELP_STRING([--with-system-mpark],
         [Use mpark.variant already installed rather then the bundled one])],,[with_system_mpark=auto])
 AC_ARG_WITH(system_uuid,  [AS_HELP_STRING([--with-system-uuid],
@@ -68,7 +72,9 @@ AC_ARG_WITH(system_uuid,  [AS_HELP_STRING([--with-system-uuid],
 AC_ARG_ENABLE(warnings,     [AS_HELP_STRING([--disable-warnings],
         [Disable compiler warnings])],,[])
 AC_ARG_ENABLE(checks,       [AS_HELP_STRING([--enable-checks=no/1/2/3],
-        [Set run-time checking level])],,[])
+        [Set run-time checking level])],,[enable_checks=default])
+AC_ARG_ENABLE(msgstack,     [AS_HELP_STRING([--enable-msgstack=no/yes],
+        [Enable MstStack for backtrace. Default based on check level.])],,[enable_msgstack=maybe])
 AC_ARG_ENABLE(signal,       [AS_HELP_STRING([--disable-signal],
         [Disable SEGFAULT handling])],,[])
 AC_ARG_ENABLE(color,        [AS_HELP_STRING([--disable-color],
@@ -95,6 +101,8 @@ AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static/dynam
         [Set OpenMP schedule (default: static)])],,[with_openmp_schedule=static])
 AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
+AC_ARG_ENABLE(metric_3d, [AS_HELP_STRING([--enable-metric-3d],
+        [Use Field3D to store coordinates metric data])],,[enable_metric_3d=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -268,9 +276,10 @@ AS_IF([test "x$enable_warnings" != "xno"], [
 ])
 
 OPT_FLAGS=""
+enable_checks_def=2
 AS_IF([test "$enable_debug" != ""], [
   AC_MSG_NOTICE([Enabling all debug options])
-  enable_checks="3"
+  enable_checks_def=3
   # use -Og with available, otherwise fall back to -O0
   OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
 ], [
@@ -282,14 +291,15 @@ AS_IF([test "$enable_debug" != ""], [
     ["fast" | "4"],
         [AC_MSG_NOTICE([Enabling level 4 optimisations])
          OPT_FLAGS="-Ofast -fno-finite-math-only -march=native -funroll-loops"
-         DISABLE_CHECK=probably],
+         enable_checks_def=0],
     ["3"],
         [AC_MSG_NOTICE([Enabling level 3 optimisations])
          OPT_FLAGS="-O3 -march=native -funroll-loops"
-         DISABLE_CHECK=probably],
+         enable_checks_def=0],
     ["2"],
         [AC_MSG_NOTICE([Enabling level 2 optimisations])
-         OPT_FLAGS="-O2 -march=native"],
+         OPT_FLAGS="-O2 -march=native"
+         enable_checks_def=1],
     ["1" | "0"],
         [AC_MSG_NOTICE([Enabling level $enable_optimize optimisations])
          OPT_FLAGS="-O$enable_optimize"],
@@ -305,8 +315,8 @@ AX_APPEND_COMPILE_FLAGS([ dnl
 ], [CXXFLAGS], [$extra_compiler_flags_test])
 
 # Disable checks if optimization > 2 is used
-AS_IF([test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"], [
-  enable_checks=no
+AS_IF([test "x$enable_checks" = "xdefault" ], [
+  enable_checks=$enable_checks_def
 ])
 
 BOUT_CHECK_LEVEL=0
@@ -316,15 +326,29 @@ AS_IF([test "x$enable_checks" != "xno" && test "x$enable_checks" != "x0"], [
     [1], [AC_MSG_NOTICE([ -> Level 1 (Basic checking)])
           CXXFLAGS="$CXXFLAGS -DCHECK=1"
           BOUT_CHECK_LEVEL=1],
-    [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking + stack tracing)])
+    [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking)])
           enable_output_debug=yes
           CXXFLAGS="$CXXFLAGS -DCHECK=3"
           BOUT_CHECK_LEVEL=3],
-    [AC_MSG_NOTICE([ -> Level 2 (Basic checking + stack tracing)])
+    [AC_MSG_NOTICE([ -> Level 2 (Enhanced checking)])
      CXXFLAGS="$CXXFLAGS -DCHECK=2"
      BOUT_CHECK_LEVEL=2])
 ], [
   AC_MSG_NOTICE([Run-time checking disabled])
+])
+
+BOUT_USE_MSGSTACK=$(test $BOUT_CHECK_LEVEL -gt 1 && echo yes || echo no)
+AS_IF([test "x$enable_msgstack" = "xyes" ], [
+  BOUT_USE_MSGSTACK=yes
+], [
+  AS_IF([test "x$enable_msgstack" = "xno" ], [
+    BOUT_USE_MSGSTACK=no
+  ], [])
+])
+AS_IF([test $BOUT_USE_MSGSTACK = no ], [
+  AC_MSG_NOTICE([Stack tracing disabled])
+], [
+  AC_MSG_NOTICE([Stack tracing enabled])
 ])
 
 BOUT_USE_SIGNAL=no
@@ -403,6 +427,14 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
       AC_MSG_WARN([Native backtrace disabled])
     ])
   ])
+])
+
+AS_IF([test "x$enable_metric_3d" != "xno"], [
+  AC_MSG_WARN([Using Field3D to store coordinates data, this is experimental.])
+  BOUT_METRIC_TYPE="3D"
+], [
+  AC_MSG_NOTICE([Using Field2D to store coordinates data])
+  BOUT_METRIC_TYPE="2D"
 ])
 
 #############################################################
@@ -824,7 +856,7 @@ PETSC_ERROR_MESSAGE])
   BOUT_HAS_PETSC="yes"
 
   EXTRA_INCS="$EXTRA_INCS $PETSC_CFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $PETSC_LIBS"
+  EXTRA_LIBS="$PETSC_LIBS $EXTRA_LIBS"
  ])
 ], [
   PETSC_MAKE_INCLUDE=
@@ -1045,6 +1077,24 @@ AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
     ARKodeCreate();
     #endif
   ])
+])
+
+#############################################################
+# HYPRE
+#############################################################
+
+BOUT_HAS_HYPRE="no"
+AS_IF([test "$with_hypre" != "no"], [
+  BOUT_ADDPATH_CHECK_HEADER(HYPRE.h,
+    BOUT_ADDPATH_CHECK_LIB(HYPRE, HYPRE_IJVectorCreate,
+      [
+       BOUT_HAS_HYPRE="yes"
+      ],
+      AC_MSG_ERROR([HYPRE requested but not found]),
+      $with_hypre),
+    AC_MSG_ERROR([HYPRE requested but not found]),
+    $with_hypre
+  )
 ])
 
 #############################################################
@@ -1292,6 +1342,19 @@ CONFIG_CFLAGS=`$MAKE cflags -f output.make`
 CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 
 #############################################################
+# Defines which are supported by CMake build but not autoconf
+
+BOUT_USE_CUDA="no"
+BOUT_HAS_RAJA="no"
+BOUT_HAS_UMPIRE="no"
+BOUT_HAS_CALIPER="no"
+
+BOUT_DEFINE_SUBST(BOUT_USE_CUDA, [Enable CUDA])
+BOUT_DEFINE_SUBST(BOUT_HAS_RAJA, [RAJA support])
+BOUT_DEFINE_SUBST(BOUT_HAS_UMPIRE, [Umpire support])
+BOUT_DEFINE_SUBST(BOUT_HAS_CALIPER, [Caliper support])
+
+#############################################################
 # Write configuration to bout-config
 #############################################################
 
@@ -1339,6 +1402,7 @@ BOUT_DEFINE_SUBST(BOUT_HAS_LAPACK, [LAPACK support])
 BOUT_DEFINE_SUBST(BOUT_HAS_NETCDF, [NETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_LEGACY_NETCDF, [NETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PETSC, [PETSc support])
+BOUT_DEFINE_SUBST(BOUT_HAS_HYPRE, [Hypre support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PNETCDF, [PNETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PRETTY_FUNCTION, [Compiler PRETTYFUNCTION support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PVODE, [PVODE support])
@@ -1353,6 +1417,11 @@ BOUT_DEFINE_SUBST(BOUT_USE_OPENMP, [Enable OpenMP])
 BOUT_DEFINE_SUBST(BOUT_USE_SIGFPE, [Enable floating point exceptions])
 BOUT_DEFINE_SUBST(BOUT_USE_SIGNAL, [Enable signal handlers])
 BOUT_DEFINE_SUBST(BOUT_USE_TRACK, [Enable field name tracking])
+BOUT_DEFINE_SUBST(BOUT_USE_MSGSTACK, [Enable MsgStack for traces])
+AC_DEFINE_UNQUOTED([BOUT_METRIC_TYPE], $BOUT_METRIC_TYPE, [Type of the metric fields])
+BOUT_METRIC_3D=$(test $BOUT_METRIC_TYPE != 3D ; echo $?)
+AC_DEFINE_UNQUOTED([BOUT_USE_METRIC_3D], $BOUT_METRIC_3D, [Is the metric field 3D])
+AC_SUBST(BOUT_METRIC_TYPE)
 
 AC_SUBST(PETSC_HAS_SUNDIALS)
 AC_SUBST(PETSC_MAKE_INCLUDE)
@@ -1392,6 +1461,7 @@ AC_MSG_NOTICE([  Lapack support          : $BOUT_HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $BOUT_HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $BOUT_USE_OPENMP (schedule: $OPENMP_SCHEDULE)])
 AC_MSG_NOTICE([  Natural language support: $BOUT_HAS_GETTEXT (path: $localedir)])
+AC_MSG_NOTICE([  HYPRE support           : $BOUT_HAS_HYPRE])
 AC_MSG_NOTICE([  System UUID generator   : $BOUT_HAS_UUID_SYSTEM_GENERATOR])
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([  Enable backtrace        : $BOUT_USE_BACKTRACE])
@@ -1401,6 +1471,7 @@ AC_MSG_NOTICE([  Enable OpenMP           : $BOUT_USE_OPENMP])
 AC_MSG_NOTICE([  Enable FP exceptions    : $BOUT_USE_SIGFPE])
 AC_MSG_NOTICE([  Enable signal handlers  : $BOUT_USE_SIGNAL])
 AC_MSG_NOTICE([  Enable field names      : $BOUT_USE_TRACK])
+AC_MSG_NOTICE([  Metric type             : $BOUT_METRIC_TYPE])
 
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([-------------------------------])

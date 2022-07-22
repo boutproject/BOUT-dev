@@ -3,6 +3,7 @@
 # Python script to run and analyse MMS test
 
 # requires: all_tests
+# requires: not metric_3d
 # cores: 4
 
 from __future__ import division
@@ -67,7 +68,7 @@ for nx in nxlist:
     # Average error over domain, not including guard cells
     E = concatenate([E_n[1:-1, :], E_vort[2:-1, :]])
 
-    l2 = sqrt(mean(E ** 2))
+    l2 = sqrt(mean(E**2))
     linf = max(abs(E))
 
     error_2.append(l2)

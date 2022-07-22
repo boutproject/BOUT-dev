@@ -122,6 +122,7 @@ int main(int argc, char **argv) {
 
   MPI_Barrier(BoutComm::get());
 
+  bout::checkForUnusedOptions();
   BoutFinalise();
   return 0;
 }

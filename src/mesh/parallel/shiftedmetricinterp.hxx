@@ -42,7 +42,7 @@ class ShiftedMetricInterp : public ParallelTransform {
 public:
   ShiftedMetricInterp() = delete;
   ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in,
-                      Options* opt = nullptr);
+                      BoutReal zlength_in, Options* opt = nullptr);
 
   /*!
    * Calculates the yup() and ydown() fields of f
@@ -57,10 +57,10 @@ public:
    * Note that the returned field will no longer be orthogonal in X-Z, and the
    * metric tensor will need to be changed if X derivatives are used.
    */
-  const Field3D toFieldAligned(const Field3D& f,
-                               const std::string& region = "RGN_ALL") override;
-  const FieldPerp toFieldAligned(const FieldPerp& UNUSED(f),
-                                 const std::string& UNUSED(region) = "RGN_ALL") override {
+  Field3D toFieldAligned(const Field3D& f,
+                         const std::string& region = "RGN_ALL") override;
+  FieldPerp toFieldAligned(const FieldPerp& UNUSED(f),
+                           const std::string& UNUSED(region) = "RGN_ALL") override {
     throw BoutException("Not implemented yet");
   }
 
@@ -68,11 +68,10 @@ public:
    * Converts a field back to X-Z orthogonal coordinates
    * from field aligned coordinates.
    */
-  const Field3D fromFieldAligned(const Field3D& f,
-                                 const std::string& region = "RGN_ALL") override;
-  const FieldPerp
-  fromFieldAligned(const FieldPerp& UNUSED(f),
-                   const std::string& UNUSED(region) = "RGN_ALL") override {
+  Field3D fromFieldAligned(const Field3D& f,
+                           const std::string& region = "RGN_ALL") override;
+  FieldPerp fromFieldAligned(const FieldPerp& UNUSED(f),
+                             const std::string& UNUSED(region) = "RGN_ALL") override {
     throw BoutException("Not implemented yet");
   }
 
@@ -92,7 +91,7 @@ public:
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
     // Twist-shift only if field-aligned
     if (ytype == YDirectionType::Aligned and not twist_shift_enabled) {
-      throw BoutException("'TwistShift = true' is required to communicate field-aligned "
+      throw BoutException("'twistshift = true' is required to communicate field-aligned "
                           "Field3Ds when using ShiftedMetric.");
     }
     return ytype == YDirectionType::Aligned;
@@ -107,6 +106,9 @@ private:
   /// This is the shift in toroidal angle (z) which takes a point from
   /// X-Z orthogonal to field-aligned along Y.
   Field2D zShift;
+
+  /// Length of the z-domain in radians
+  BoutReal zlength{0.};
 
   /// Cache of interpolators for the parallel slices. Slices are stored
   /// in the following order:

@@ -5,7 +5,7 @@ nx = 12
 ny = 12
 
 zShift = y
-shiftAngle = 2*pi
+ShiftAngle = 2*pi
 
 var = sin(y - z)
 

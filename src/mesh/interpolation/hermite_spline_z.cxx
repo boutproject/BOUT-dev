@@ -172,7 +172,7 @@ Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region_
     f_interp[i.yp(y_offset)] = f[corner] * h00[i] + f[corner_zp1] * h01[i]
                                + fz[corner] * h10[i] + fz[corner_zp1] * h11[i];
 
-    ASSERT2(finite(f_interp[i.yp(y_offset)]) || i.x() < localmesh->xstart
+    ASSERT2(std::isfinite(f_interp[i.yp(y_offset)]) || i.x() < localmesh->xstart
             || i.x() > localmesh->xend);
   }
   return f_interp;

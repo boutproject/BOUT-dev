@@ -8,13 +8,11 @@
 #include "unused.hxx"
 
 class Test_stopcheck : public PhysicsModel {
+  Field3D N;
 protected:
   int init(bool UNUSED(restarting)) override;
   int rhs(BoutReal UNUSED(t)) override;
 };
-
-
-Field3D N;
 
 int Test_stopcheck::init(bool UNUSED(restarting)) {
   solver->add(N,"N");

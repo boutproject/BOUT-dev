@@ -80,13 +80,13 @@ FieldPerp& FieldPerp::allocate() {
  *                         ASSIGNMENT 
  ***************************************************************/
 
-FieldPerp &FieldPerp::operator=(const FieldPerp &rhs) {
+FieldPerp& FieldPerp::operator=(const FieldPerp& rhs) {
   /// Check for self-assignment
   if (this == &rhs) {
     return (*this); // skip this assignment
   }
 
-  copyFieldMembers(rhs);
+  Field::operator=(rhs);
 
   nx = rhs.nx;
   nz = rhs.nz;
@@ -215,4 +215,15 @@ bool operator==(const FieldPerp& a, const FieldPerp& b) {
 std::ostream& operator<<(std::ostream& out, const FieldPerp& value) {
   out << toString(value);
   return out;
+}
+
+void swap(FieldPerp& first, FieldPerp& second) noexcept {
+  using std::swap;
+
+  swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
+  swap(first.nx, second.nx);
+  swap(first.nz, second.nz);
+  swap(first.yindex, second.yindex);
+  swap(first.data, second.data);
 }

@@ -23,8 +23,6 @@
 #
 # Taken from https://github.com/jedbrown/cmake-modules/blob/master/FindPETSc.cmake
 
-cmake_policy(VERSION 3.3)
-
 find_package(MPI REQUIRED)
 
 set(PETSC_VALID_COMPONENTS
@@ -259,7 +257,9 @@ show :
   endif ()
 
   include(Check${PETSC_LANGUAGE_BINDINGS}SourceRuns)
+
   macro (PETSC_TEST_RUNS includes libraries runs)
+    message(STATUS "PETSc test with : ${includes} ${libraries}" )
     if (PETSC_VERSION VERSION_GREATER 3.1)
       set (_PETSC_TSDestroy "TSDestroy(&ts)")
     else ()
@@ -306,7 +306,7 @@ int main(int argc,char *argv[]) {
     set (petsc_openmp_library ";OpenMP::OpenMP_${PETSC_LANGUAGE_BINDINGS}")
   endif()
   set (petsc_mpi_include_dirs "${MPI_${PETSC_LANGUAGE_BINDINGS}_INCLUDE_DIRS}")
-  set (petsc_additional_libraries "MPI::MPI_${PETSC_LANGUAGE_BINDINGS}${petsc_openmp_library}")
+  #set (petsc_additional_libraries "MPI::MPI_${PETSC_LANGUAGE_BINDINGS}${petsc_openmp_library}")
 
   petsc_test_runs ("${petsc_includes_minimal};${petsc_mpi_include_dirs}"
     "${PETSC_LIBRARIES_TS};${petsc_additional_libraries}"
@@ -358,23 +358,27 @@ int main(int argc,char *argv[]) {
   set (PETSC_INCLUDES ${petsc_includes_needed} CACHE STRING "PETSc include path" FORCE)
   set (PETSC_LIBRARIES ${PETSC_LIBRARIES_ALL} CACHE STRING "PETSc libraries" FORCE)
   set (PETSC_COMPILER ${petsc_cc} CACHE FILEPATH "PETSc compiler" FORCE)
-  # Note that we have forced values for all these choices.  If you
-  # change these, you are telling the system to trust you that they
-  # work.  It is likely that you will end up with a broken build.
-  mark_as_advanced (PETSC_INCLUDES PETSC_LIBRARIES PETSC_COMPILER PETSC_DEFINITIONS PETSC_MPIEXEC PETSC_EXECUTABLE_RUNS)
 endif ()
 
-if (NOT PETSC_INCLUDES)
-  include(FindPkgConfig)
-  pkg_search_module(PkgPETSC PETSc>3.4.0 petsc>3.4.0)
-  set (PETSC_LIBRARIES ${PkgPETSC_LINK_LIBRARIES} CACHE STRING "PETSc libraries" FORCE)
-  set (PETSC_INCLUDES ${PkgPETSC_INCLUDE_DIRS} CACHE STRING "PETSc include path" FORCE)
-  set (PETSC_EXECUTABLE_RUNS "not-needed")
+if (NOT PETSC_INCLUDES AND NOT TARGET PETSc::PETSc)
+  find_package(PkgConfig)
+  if (PkgConfig_FOUND)
+    pkg_search_module(PkgPETSC PETSc>3.4.0 petsc>3.4.0)
+    set (PETSC_LIBRARIES ${PkgPETSC_LINK_LIBRARIES} CACHE STRING "PETSc libraries" FORCE)
+    set (PETSC_INCLUDES ${PkgPETSC_INCLUDE_DIRS} CACHE STRING "PETSc include path" FORCE)
+    set (PETSC_EXECUTABLE_RUNS "YES" CACHE BOOL
+        "Can the system successfully run a PETSc executable?  This variable can be manually set to \"YES\" to force CMake to accept a given PETSc configuration, but this will almost always result in a broken build.  If you change PETSC_DIR, PETSC_ARCH, or PETSC_CURRENT you would have to reset this variable." FORCE)
+  endif()
 endif()
+
+# Note that we have forced values for all these choices.  If you
+# change these, you are telling the system to trust you that they
+# work.  It is likely that you will end up with a broken build.
+mark_as_advanced (PETSC_INCLUDES PETSC_LIBRARIES PETSC_COMPILER PETSC_DEFINITIONS PETSC_MPIEXEC PETSC_EXECUTABLE_RUNS)
 
 include (FindPackageHandleStandardArgs)
 find_package_handle_standard_args (PETSc
-  REQUIRED_VARS PETSC_INCLUDES PETSC_LIBRARIES PETSC_EXECUTABLE_RUNS
+  REQUIRED_VARS PETSC_INCLUDES PETSC_LIBRARIES
   VERSION_VAR PETSC_VERSION
   FAIL_MESSAGE "PETSc could not be found.  Be sure to set PETSC_DIR and PETSC_ARCH.")
 

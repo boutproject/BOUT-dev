@@ -2,8 +2,14 @@
 # configure-time, as well as exposing a nice target if things go wrong
 # afterwards (for example, after changing branches)
 
-submodules: mpark_submodule
+submodules: sub_all
 
 mpark_submodule:
 	@echo "Downloading mpark.variant"
-	git submodule update --init --recursive $(PWD)/externalpackages/mpark.variant
+	git submodule update --init --recursive ./externalpackages/mpark.variant
+
+sub_all:
+	@for d in $$(ls externalpackages | grep -v PVODE) ; do echo "Downloading $$d" ; git submodule update --init --recursive ./externalpackages/$$d ; done
+
+python_submodules:
+	@for d in boututils boutdata ; do echo "Downloading $$d" ; git submodule update --init --recursive ./externalpackages/$$d ; done

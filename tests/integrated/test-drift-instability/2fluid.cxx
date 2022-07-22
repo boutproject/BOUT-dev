@@ -52,7 +52,7 @@ class TwoFluid : public PhysicsModel {
 
   // settings
   bool estatic, ZeroElMass; // Switch for electrostatic operation (true = no Apar)
-  BoutReal zeff, nu_perp;
+  BoutReal Zeff, nu_perp;
   bool evolve_rho, evolve_te, evolve_ni, evolve_ajpar, evolve_vi, evolve_ti;
   BoutReal ShearFactor;
 
@@ -118,15 +118,15 @@ protected:
 
     OPTION(options, estatic, false);
     OPTION(options, ZeroElMass, false);
-    OPTION(options, zeff, 1.0);
+    OPTION(options, Zeff, 1.0);
     OPTION(options, nu_perp, 0.0);
     OPTION(options, ShearFactor, 1.0);
 
     (globalOptions->getSection("Ni"))->get("evolve", evolve_ni, true);
     (globalOptions->getSection("rho"))->get("evolve", evolve_rho, true);
-    (globalOptions->getSection("vi"))->get("evolve", evolve_vi, true);
-    (globalOptions->getSection("te"))->get("evolve", evolve_te, true);
-    (globalOptions->getSection("ti"))->get("evolve", evolve_ti, true);
+    (globalOptions->getSection("Vi"))->get("evolve", evolve_vi, true);
+    (globalOptions->getSection("Te"))->get("evolve", evolve_te, true);
+    (globalOptions->getSection("Ti"))->get("evolve", evolve_ti, true);
     (globalOptions->getSection("Ajpar"))->get("evolve", evolve_ajpar, true);
 
     if (ZeroElMass)
@@ -136,12 +136,13 @@ protected:
     phi_solver = Laplacian::create(globalOptions->getSection("phisolver"));
     if (!estatic && !ZeroElMass) {
       apar_solver = Laplacian::create(globalOptions->getSection("aparsolver"));
+    } else {
+      (*globalOptions)["aparsolver"].setConditionallyUsed();
     }
 
     /************* SHIFTED RADIAL COORDINATES ************/
 
-    bool ShiftXderivs;
-    globalOptions->get("shiftXderivs", ShiftXderivs, false); // Read global flag
+    const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
       ShearFactor = 0.0; // I disappears from metric
       b0xcv.z += I * b0xcv.x;
@@ -157,7 +158,7 @@ protected:
     wci = 9.58e3 * ZZ * bmag / AA;
     nueix = 2.91e-6 * Ni_x * lambda_ei / pow(Te_x, 1.5);
     nuiix = 4.78e-8 * pow(ZZ, 4.) * Ni_x * lambda_ii / pow(Ti_x, 1.5) / sqrt(AA);
-    nu_hat = zeff * nueix / wci;
+    nu_hat = Zeff * nueix / wci;
 
     if (nu_perp < 1.e-10) {
       mui_hat = (3. / 10.) * nuiix / wci;

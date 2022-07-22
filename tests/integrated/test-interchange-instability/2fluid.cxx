@@ -90,8 +90,8 @@ protected:
     phi_solver = Laplacian::create();
 
     /************* SHIFTED RADIAL COORDINATES ************/
-    bool ShiftXderivs;
-    globalOptions->get("shiftXderivs", ShiftXderivs, false); // Read global flag
+
+    const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
       ShearFactor = 0.0; // I disappears from metric
       b0xcv.z += I * b0xcv.x;

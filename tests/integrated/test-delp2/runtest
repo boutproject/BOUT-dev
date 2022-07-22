@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
 
-from __future__ import print_function
-
-try:
-    from builtins import str
-except:
-    pass
-
 # requires: fftw
 # cores: 4
 
@@ -25,10 +18,10 @@ exefile = "./test_delp2"
 
 # List of settings to apply
 settings = [
-    "mxg=2 mesh:nx=36 diffusion:useFFT=true",
-    "mxg=1 mesh:nx=34 diffusion:useFFT=true",
-    "mxg=2 mesh:nx=36 diffusion:useFFT=false",
-    "mxg=1 mesh:nx=34 diffusion:useFFT=false",
+    "MXG=2 mesh:nx=36 diffusion:useFFT=true",
+    "MXG=1 mesh:nx=34 diffusion:useFFT=true",
+    "MXG=2 mesh:nx=36 diffusion:useFFT=false",
+    "MXG=1 mesh:nx=34 diffusion:useFFT=false",
 ]
 
 

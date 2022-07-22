@@ -42,7 +42,8 @@
 
 #include "spt.hxx"
 
-LaplaceSPT::LaplaceSPT(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
+LaplaceSPT::LaplaceSPT(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
+                       Solver* UNUSED(solver), Datafile* UNUSED(dump))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   Acoef.setLocation(location);
   Ccoef.setLocation(location);
@@ -293,7 +294,7 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
       data.bk(kz, ix) = dc1d[kz];
   }
 
-  BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
+  BoutReal kwaveFactor = 2.0 * PI / getUniform(coords->zlength());
 
   /// Set matrix elements
   for (int kz = 0; kz <= maxmode; kz++) {

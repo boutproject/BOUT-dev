@@ -36,17 +36,17 @@
 #include <bout/scorepwrapper.hxx>
 #include <interpolation.hxx>
 
-Vector2D::Vector2D(Mesh* localmesh) : x(localmesh), y(localmesh), z(localmesh) {}
-
-Vector2D::Vector2D(const Vector2D &f)
-    : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
+Vector2D::Vector2D(const Vector2D& f)
+    : FieldData(f), x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
       location(f.getLocation()) {}
 
 Vector2D::Vector2D(Mesh* localmesh, bool covariant, CELL_LOC location)
-  : x(localmesh), y(localmesh), z(localmesh), covariant(covariant) {
-
-    setLocation(location);
+    : FieldData(localmesh), x(getMesh()), y(getMesh()), z(getMesh()),
+      covariant(covariant) {
+  if (getMesh() != nullptr) {
+    Vector2D::setLocation(location);
   }
+}
 
 Vector2D::~Vector2D() {
   if (deriv != nullptr) {
@@ -64,7 +64,7 @@ Vector2D::~Vector2D() {
 void Vector2D::toCovariant() {
   SCOREP0();  
   if(!covariant) {
-    Mesh *localmesh = x.getMesh();
+    Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
       Coordinates *metric_x, *metric_y, *metric_z;
@@ -85,7 +85,7 @@ void Vector2D::toCovariant() {
       const auto y_at_z = interp_to(y, z.getLocation());
 
       // multiply by g_{ij}
-      BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")){
+      BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         x[i] = metric_x->g_11[i]*x[i] + metric_x->g_12[i]*y_at_x[i] + metric_x->g_13[i]*z_at_x[i];
         y[i] = metric_y->g_22[i]*y[i] + metric_y->g_12[i]*x_at_y[i] + metric_y->g_23[i]*z_at_y[i];
         z[i] = metric_z->g_33[i]*z[i] + metric_z->g_13[i]*x_at_z[i] + metric_z->g_23[i]*y_at_z[i];
@@ -94,9 +94,9 @@ void Vector2D::toCovariant() {
       const auto metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Field2D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
+      Coordinates::FieldMetric gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
-      BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")){
+      BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         gx[i] = metric->g_11[i]*x[i] + metric->g_12[i]*y[i] + metric->g_13[i]*z[i];
         gy[i] = metric->g_22[i]*y[i] + metric->g_12[i]*x[i] + metric->g_23[i]*z[i];
         gz[i] = metric->g_33[i]*z[i] + metric->g_13[i]*x[i] + metric->g_23[i]*y[i];
@@ -114,7 +114,7 @@ void Vector2D::toContravariant() {
   SCOREP0();
   if(covariant) {
     // multiply by g^{ij}
-    Mesh *localmesh = x.getMesh();
+    Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
       Coordinates *metric_x, *metric_y, *metric_z;
@@ -136,7 +136,7 @@ void Vector2D::toContravariant() {
       const auto y_at_z = interp_to(y, z.getLocation());
 
       // multiply by g_{ij}
-      BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")){
+      BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         x[i] = metric_x->g11[i]*x[i] + metric_x->g12[i]*y_at_x[i] + metric_x->g13[i]*z_at_x[i];
         y[i] = metric_y->g22[i]*y[i] + metric_y->g12[i]*x_at_y[i] + metric_y->g23[i]*z_at_y[i];
         z[i] = metric_z->g33[i]*z[i] + metric_z->g13[i]*x_at_z[i] + metric_z->g23[i]*y_at_z[i];
@@ -146,9 +146,9 @@ void Vector2D::toContravariant() {
       const auto metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Field2D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
+      Coordinates::FieldMetric gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
-      BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")){
+      BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         gx[i] = metric->g11[i]*x[i] + metric->g12[i]*y[i] + metric->g13[i]*z[i];
         gy[i] = metric->g22[i]*y[i] + metric->g12[i]*x[i] + metric->g23[i]*z[i];
         gz[i] = metric->g33[i]*z[i] + metric->g13[i]*x[i] + metric->g23[i]*y[i];
@@ -165,7 +165,7 @@ void Vector2D::toContravariant() {
 
 Vector2D* Vector2D::timeDeriv() {
   if (deriv == nullptr) {
-    deriv = new Vector2D(x.getMesh());
+    deriv = new Vector2D(getMesh());
 
     // Check if the components have a time-derivative
     // Need to make sure that ddt(v.x) = ddt(v).x
@@ -321,7 +321,7 @@ const Vector2D Vector2D::operator-(const Vector2D &rhs) const {
 }
 
 const Vector3D Vector2D::operator-(const Vector3D &rhs) const {
-  Vector3D result(x.getMesh());
+  Vector3D result(getMesh());
   result = *this;
   result -= rhs;
   return result;
@@ -342,7 +342,7 @@ const Vector2D Vector2D::operator*(const Field2D &rhs) const {
 }
 
 const Vector3D Vector2D::operator*(const Field3D &rhs) const {
-  Vector3D result(x.getMesh());
+  Vector3D result(getMesh());
   result = *this;
   result *= rhs;
   return result;
@@ -363,7 +363,7 @@ const Vector2D Vector2D::operator/(const Field2D &rhs) const {
 }
 
 const Vector3D Vector2D::operator/(const Field3D &rhs) const {
-  Vector3D result(x.getMesh());
+  Vector3D result(getMesh());
   result = *this;
   result /= rhs;
   return result;
@@ -371,11 +371,11 @@ const Vector3D Vector2D::operator/(const Field3D &rhs) const {
 
 ////////////////// DOT PRODUCT ///////////////////
 
-const Field2D Vector2D::operator*(const Vector2D &rhs) const {
+const Coordinates::FieldMetric Vector2D::operator*(const Vector2D& rhs) const {
   ASSERT2(location == rhs.getLocation());
 
-  Mesh *localmesh = x.getMesh();
-  Field2D result{emptyFrom(x)};
+  Mesh* localmesh = getMesh();
+  Coordinates::FieldMetric result{emptyFrom(x)};
 
   if(rhs.covariant ^ covariant) {
     // Both different - just multiply components
@@ -423,14 +423,14 @@ CELL_LOC Vector2D::getLocation() const {
   return location;
 }
 
-void Vector2D::setLocation(CELL_LOC loc) {
+Vector2D& Vector2D::setLocation(CELL_LOC loc) {
   SCOREP0();  
   TRACE("Vector2D::setLocation");
   if (loc == CELL_DEFAULT) {
     loc = CELL_CENTRE;
   }
 
-  if (x.getMesh()->StaggerGrids) {
+  if (getMesh()->StaggerGrids) {
     if (loc == CELL_VSHIFT) {
       x.setLocation(CELL_XLOW);
       y.setLocation(CELL_YLOW);
@@ -451,6 +451,8 @@ void Vector2D::setLocation(CELL_LOC loc) {
   }
 
   location = loc;
+
+  return *this;
 }
 
 /***************************************************************
@@ -474,33 +476,24 @@ const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs) {
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Field2D abs(const Vector2D &v, const std::string& region) {
+const Coordinates::FieldMetric abs(const Vector2D& v, const std::string& region) {
   return sqrt(v*v, region);
-}
-
-/***************************************************************
- *               FieldData VIRTUAL FUNCTIONS
- ***************************************************************/
-
-////////////////////////////////////////////////////////////
-// Visitor pattern support
-
-void Vector2D::accept(FieldVisitor &v) {
-  v.accept(*this);
 }
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
-void Vector2D::applyBoundary(bool init)
-{
-  for(const auto& bndry : bndry_op)
-    if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+void Vector2D::applyBoundary(bool init) {
+  for (const auto& bndry : getBoundaryOps()) {
+    // Always apply to the values when initialising fields, otherwise
+    // apply only if wanted
+    if (!bndry->apply_to_ddt || init) {
       bndry->apply(*this);
+    }
+  }
 }
 
-void Vector2D::applyTDerivBoundary()
-{
-  for(const auto& bndry : bndry_op)
+void Vector2D::applyTDerivBoundary() {
+  for (const auto& bndry : getBoundaryOps()) {
     bndry->apply_ddt(*this);
+  }
 }
-

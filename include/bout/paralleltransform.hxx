@@ -39,13 +39,24 @@ public:
 
   /// Convert a field into field-aligned coordinates
   /// so that the y index is along the magnetic field
-  virtual const Field3D toFieldAligned(const Field3D &f, const std::string& region = "RGN_ALL") = 0;
-  virtual const FieldPerp toFieldAligned(const FieldPerp &f, const std::string& region = "RGN_ALL") = 0;
+  virtual Field3D toFieldAligned(const Field3D &f, const std::string& region = "RGN_ALL") = 0;
+  virtual FieldPerp toFieldAligned(const FieldPerp &f, const std::string& region = "RGN_ALL") = 0;
   
   /// Convert back from field-aligned coordinates
   /// into standard form
-  virtual const Field3D fromFieldAligned(const Field3D &f, const std::string& region = "RGN_ALL") = 0;
-  virtual const FieldPerp fromFieldAligned(const FieldPerp &f, const std::string& region = "RGN_ALL") = 0;
+  virtual Field3D fromFieldAligned(const Field3D &f, const std::string& region = "RGN_ALL") = 0;
+  virtual FieldPerp fromFieldAligned(const FieldPerp &f, const std::string& region = "RGN_ALL") = 0;
+
+  /// Field2D are axisymmetric, so transformation to or from field-aligned coordinates is
+  /// a null operation.
+  virtual Field2D toFieldAligned(const Field2D& f,
+                                 const std::string& UNUSED(region) = "RGN_ALL") {
+    return f;
+  }
+  virtual Field2D fromFieldAligned(const Field2D& f,
+                                   const std::string& UNUSED(region) = "RGN_ALL") {
+    return f;
+  }
 
   virtual bool canToFromFieldAligned() = 0;
 
@@ -109,12 +120,14 @@ public:
    * The field is already aligned in Y, so this
    * does nothing
    */
-  const Field3D toFieldAligned(const Field3D& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+  Field3D toFieldAligned(const Field3D& f,
+                         const std::string& UNUSED(region) = "RGN_ALL") override {
     ASSERT2(f.getDirectionY() == YDirectionType::Standard);
     Field3D result = f;
     return result.setDirectionY(YDirectionType::Aligned);
   }
-  const FieldPerp toFieldAligned(const FieldPerp& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+  FieldPerp toFieldAligned(const FieldPerp& f,
+                           const std::string& UNUSED(region) = "RGN_ALL") override {
     ASSERT2(f.getDirectionY() == YDirectionType::Standard);
     FieldPerp result = f;
     return result.setDirectionY(YDirectionType::Aligned);
@@ -124,12 +137,14 @@ public:
    * The field is already aligned in Y, so this
    * does nothing
    */
-  const Field3D fromFieldAligned(const Field3D& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+  Field3D fromFieldAligned(const Field3D& f,
+                           const std::string& UNUSED(region) = "RGN_ALL") override {
     ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
     Field3D result = f;
     return result.setDirectionY(YDirectionType::Standard);
   }
-  const FieldPerp fromFieldAligned(const FieldPerp& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+  FieldPerp fromFieldAligned(const FieldPerp& f,
+                             const std::string& UNUSED(region) = "RGN_ALL") override {
     ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
     FieldPerp result = f;
     return result.setDirectionY(YDirectionType::Standard);
@@ -181,18 +196,19 @@ public:
    * in X-Z, and the metric tensor will need to be changed
    * if X derivatives are used.
    */
-  const Field3D toFieldAligned(const Field3D& f, const std::string& region = "RGN_ALL") override;
-  const FieldPerp toFieldAligned(const FieldPerp& f,
-                                 const std::string& region = "RGN_ALL") override;
+  Field3D toFieldAligned(const Field3D& f,
+                         const std::string& region = "RGN_ALL") override;
+  FieldPerp toFieldAligned(const FieldPerp& f,
+                           const std::string& region = "RGN_ALL") override;
 
   /*!
    * Converts a field back to X-Z orthogonal coordinates
    * from field aligned coordinates.
    */
-  const Field3D fromFieldAligned(const Field3D& f,
-                                 const std::string& region = "RGN_ALL") override;
-  const FieldPerp fromFieldAligned(const FieldPerp& f,
-                                   const std::string& region = "RGN_ALL") override;
+  Field3D fromFieldAligned(const Field3D& f,
+                           const std::string& region = "RGN_ALL") override;
+  FieldPerp fromFieldAligned(const FieldPerp& f,
+                             const std::string& region = "RGN_ALL") override;
 
   std::vector<PositionsAndWeights>
   getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
@@ -209,7 +225,7 @@ public:
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
     // Twist-shift only if field-aligned
     if (ytype == YDirectionType::Aligned and not twist_shift_enabled) {
-      throw BoutException("'TwistShift = true' is required to communicate field-aligned "
+      throw BoutException("'twistshift = true' is required to communicate field-aligned "
           "Field3Ds when using ShiftedMetric.");
     }
     return ytype == YDirectionType::Aligned;
@@ -254,8 +270,8 @@ private:
    * Shift a 2D field in Z.
    * Since 2D fields are constant in Z, this has no effect
    */
-  const Field2D shiftZ(const Field2D& f, const Field2D& UNUSED(zangle),
-                       const std::string UNUSED(region) = "RGN_NOX") const {
+  Field2D shiftZ(const Field2D& f, const Field2D& UNUSED(zangle),
+                 const std::string UNUSED(region) = "RGN_NOX") const {
     return f;
   };
 
@@ -266,7 +282,7 @@ private:
    * @param[in] zangle   Toroidal angle (z)
    *
    */
-  const Field3D shiftZ(const Field3D& f, const Field2D& zangle,
+  Field3D shiftZ(const Field3D& f, const Field2D& zangle,
                        const std::string& region = "RGN_NOX") const;
 
   /*!
@@ -279,12 +295,12 @@ private:
    * @param[in] phs  The phase to shift by
    * @param[in] y_direction_out  The value to set yDirectionType of the result to
    */
-  const Field3D shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
-                       const YDirectionType y_direction_out,
-                       const std::string& region = "RGN_NOX") const;
-  const FieldPerp shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
-                         const YDirectionType y_direction_out,
-                         const std::string& region = "RGN_NOX") const;
+  Field3D shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
+                 const YDirectionType y_direction_out,
+                 const std::string& region = "RGN_NOX") const;
+  FieldPerp shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
+                   const YDirectionType y_direction_out,
+                   const std::string& region = "RGN_NOX") const;
 
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle

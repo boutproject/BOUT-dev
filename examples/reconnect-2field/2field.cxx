@@ -203,8 +203,8 @@ protected:
     SAVE_ONCE(Phi0_ext, U0_ext);
 
     // Give the solver the preconditioner function
-    setPrecon((preconfunc)&TwoField::precon);
-    
+    setPrecon(&TwoField::precon);
+
     // Initialise parallel inversion class
     inv = InvertPar::create();
     inv->setCoefA(1.0);

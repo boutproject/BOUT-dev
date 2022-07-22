@@ -1,13 +1,12 @@
 
-NOUT = 50
-TIMESTEP = 0.2
+nout = 50
+timestep = 0.2
 
 grid = "slab.grd.nc"
 
 MZ = 64
 
-shiftInitial = true
-TwistShift = true
+twistshift = true
 
 [mesh]
 symmetricGlobalX = true

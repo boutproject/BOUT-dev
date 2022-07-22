@@ -72,7 +72,25 @@ struct IsEqual {
     return CompareTypes<T, U>()(t, u);
   }
 };
+
+/// Backport of std::disjunction
+template <class...>
+struct disjunction : std::false_type {};
+template <class B1>
+struct disjunction<B1> : B1 {};
+template <class B1, class... Bn>
+struct disjunction<B1, Bn...>
+    : std::conditional_t<bool(B1::value), B1, disjunction<Bn...>> {};
+
 } // namespace details
+
+template <typename T, typename VARIANT_T>
+struct isVariantMember;
+
+/// Is type `T` a member of variant `variant<ALL_T>`?
+template <typename T, typename... ALL_T>
+struct isVariantMember<T, variant<ALL_T...>>
+    : public details::disjunction<std::is_same<T, ALL_T>...> {};
 
 /// Return true only if the given variant \p v
 /// has the same type and value as \p t
@@ -81,7 +99,7 @@ struct IsEqual {
 /// which \p v can hold.
 template <typename Variant, typename T>
 bool variantEqualTo(const Variant& v, const T& t) {
-  return visit(details::IsEqual<T>(t), v);
+  return bout::utils::visit(details::IsEqual<T>(t), v);
 }
 
 ////////////////////////////////////////////////////////////
@@ -119,7 +137,7 @@ struct StaticCastOrThrow {
 /// in which case std::bad_cast will be thrown at runtime
 template <typename Variant, typename T>
 T variantStaticCastOrThrow(const Variant &v) {
-  return visit( details::StaticCastOrThrow<T>(), v );
+  return bout::utils::visit( details::StaticCastOrThrow<T>(), v );
 }
 
 namespace details {
@@ -134,7 +152,7 @@ struct ToString {
 } // namespace details
 
 template <typename Variant>
-std::string variantToString(const Variant& v) { return visit(details::ToString(), v); }
+std::string variantToString(const Variant& v) { return bout::utils::visit(details::ToString(), v); }
 
 } // namespace utils
 } // namespace bout

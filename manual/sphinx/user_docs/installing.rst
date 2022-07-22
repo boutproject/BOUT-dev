@@ -185,7 +185,7 @@ On Ubuntu 16.04::
 
 On Ubuntu 18.04::
 
-    $ sudo apt-get install mpich libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev git g++ make
+    $ sudo apt-get install mpich libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-c++4-dev git g++ make
     $ sudo apt-get install python3 python3-distutils python3-pip python3-numpy python3-netcdf4 python3-scipy
     $ pip3 install --user Cython
 
@@ -286,8 +286,16 @@ CMake
 -----
 
 There is now (experimental) support for `CMake <https://cmake.org/>`_. You will need CMake >
-3.9. CMake supports out-of-source builds by default, which are A Good
-Idea. Basic configuration with CMake looks like::
+3.9. Note that it is possible to get the latest version of CMake using ``pip``::
+
+  $ pip install --user --upgrade cmake
+
+or ``conda``::
+
+  $ conda install cmake
+
+CMake supports out-of-source builds by default, which are A Good Idea.
+Basic configuration with CMake looks like::
 
   $ cmake . -B build
 
@@ -344,8 +352,30 @@ it's wise to delete the ``CMakeCache.txt`` file in the build
 directory. The equivalent of ``make distclean`` with CMake is to just
 delete the entire build directory and reconfigure.
 
+If you need to debug a CMake build, you can see the compile and link commands
+which are being issued by adding `VERBOSE=1` to the make command i.e. in the build
+directory running::
+
+  $ make VERBOSE=1
+
+If building by running CMake then the ``-v`` flag also works. For example::
+
+  $ cmake --build . -v
+
+Downloading Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you don't have some dependencies installed, CMake can be used to download,
+configure and compile them alongside BOUT++.
+
+For NetCDF, use ``-DBOUT_DOWNLOAD_NETCDF_CXX4=ON``
+
+For SUNDIALS, use ``-DBOUT_DOWNLOAD_SUNDIALS=ON``. If using ``ccmake`` this option
+may not appear initially. This automatically sets ``BOUT_USE_SUNDIALS=ON``, and
+configures SUNDIALS to use MPI.
+
 Bundled Dependencies
-^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~
 
 BOUT++ bundles some dependencies, currently `mpark.variant
 <https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
@@ -363,7 +393,7 @@ time as your project, therefore there is no option to use an external
 installation for that.
 
 Using CMake with your physics model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can write a CMake configuration file (``CMakeLists.txt``) for your
 physics model in only four lines:
@@ -585,10 +615,10 @@ installation of BOUT++. Unless you want to use some experimental
 features of BOUT++, skip to section [sec-running] to start running the
 code.
 
+.. _sec-install-bout:
+
 Installing BOUT++ (experimental)
 --------------------------------
-
-.. _sec-install-bout:
 
 Most BOUT++ users install and develop their own copies in their home directory,
 so do not need to install BOUT++ to a system directory.

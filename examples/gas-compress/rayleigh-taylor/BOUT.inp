@@ -4,11 +4,10 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 200       # number of time-steps
-TIMESTEP = 0.1   # time between outputs
+nout = 200       # number of time-steps
+timestep = 0.1   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 129     # number of points in z direction
 ZMIN = 0.0
@@ -46,8 +45,8 @@ upwind = U1
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 ##################################################
 # settings for gas_compress
@@ -59,7 +58,7 @@ viscosity = 0.0005
 
 sub_initial = true
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 # Boundary conditions

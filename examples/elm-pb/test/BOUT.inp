@@ -4,19 +4,19 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 5          # number of time-steps
-TIMESTEP = 0.1       # time between outputs
+nout = 5          # number of time-steps
+timestep = 0.1       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 0.85  # wall time limit (in hours)
 
 ShiftXderivs = true # use shifted radial derivatives?
-TwistShift = true   # use twist-shift condition?
+twistshift = true   # use twist-shift condition?
 ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
 TwistOrder = 0      # order of twist-shift interpolation
 non_uniform = true
 
 MZ = 9             # number of points in z direction (2^n + 1)
-ZPERIOD = 15        # Fraction of a torus to simulate
+zperiod = 15        # Fraction of a torus to simulate
 
 MXG = 2
 MYG = 2
@@ -55,7 +55,7 @@ nonuniform = true
 
 [fft]
 
-fft_measure = true  # If using FFTW, perform tests to determine fastest method
+fft_measurement_flag = measure  # If using FFTW, perform tests to determine fastest method
 
 ##################################################
 # derivative methods
@@ -84,8 +84,8 @@ upwind = W3
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-08 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-08 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
 use_jacobian = false  # Use user-supplied Jacobian
@@ -273,7 +273,7 @@ apar_flags = 769
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = gauss(x - 0.5, 0.1) * gauss(y - pi, 0.3*pi) * sin(z)
 

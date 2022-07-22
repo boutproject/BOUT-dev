@@ -5,7 +5,7 @@
 # Delp2 and Laplacian inversion.
 #
 
-NOUT = 0  # No timesteps
+nout = 0  # No timesteps
 
 MZ = 1    # Z size
 

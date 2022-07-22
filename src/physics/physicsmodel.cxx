@@ -38,19 +38,19 @@ PhysicsModel::PhysicsModel()
     : mesh(bout::globals::mesh), dump(bout::globals::dump), modelMonitor(this) {
 
   // Set up restart file
-  restart = Datafile(Options::getRoot()->getSection("restart"));
+  restart = Datafile(Options::getRoot()->getSection("restart_files"));
 }
 
-int PhysicsModel::runRHS(BoutReal time) {
-  return rhs(time);
+int PhysicsModel::runRHS(BoutReal time, bool linear) {
+  return rhs(time, linear);
 }
 
 bool PhysicsModel::splitOperator() {
   return splitop;
 }
 
-int PhysicsModel::runConvective(BoutReal time) {
-  return convective(time);
+int PhysicsModel::runConvective(BoutReal time, bool linear) {
+  return convective(time, linear);
 }
 
 int PhysicsModel::runDiffusive(BoutReal time, bool linear) {

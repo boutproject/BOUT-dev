@@ -30,7 +30,7 @@ vz = G
 
 zShift = 0
 nu = 0
-shiftangle = 0
+ShiftAngle = 0
 I = 0
 HH = 0
 

@@ -9,7 +9,7 @@ const std::string& safeAt(const std::map<T, std::string>& mymap, T t) {
   AUTO_TRACE();
   auto found = mymap.find(t);
   if (found == mymap.end()) {
-    throw BoutException("Did not find enum {:d}", t);
+    throw BoutException("Did not find enum {:d}", static_cast<int>(t));
   }
   return found->second;
 }

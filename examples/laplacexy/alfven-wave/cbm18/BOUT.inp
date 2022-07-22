@@ -1,6 +1,6 @@
 
-NOUT = 500
-TIMESTEP = 10
+nout = 500
+timestep = 10
 
 grid = "cbm18_dens8.grid_nx68ny64.nc"
 

@@ -49,58 +49,37 @@ TEST_F(OptionsReaderTest, BadFilename) {
 
 TEST_F(OptionsReaderTest, BadCommandLineMultipleEquals) {
   OptionsReader reader;
-  Options *options = Options::getRoot();
+  Options* options = Options::getRoot();
 
-  char **argv = static_cast<char **>(malloc(2*(sizeof(char*))));
-  argv[0] = copy_string("prog");
-  argv[1] = copy_string("int_key=42=31");
+  std::vector<std::string> argv{"prog", "int_key=42=31"};
 
-  EXPECT_THROW(reader.parseCommandLine(options, 2, argv), BoutException);
-
-  free(argv[0]);
-  free(argv[1]);
-  free(argv);
+  EXPECT_THROW(reader.parseCommandLine(options, argv), BoutException);
 }
 
 TEST_F(OptionsReaderTest, BadCommandLineEmptyKey) {
   OptionsReader reader;
-  Options *options = Options::getRoot();
+  Options* options = Options::getRoot();
 
-  char **argv = static_cast<char **>(malloc(2*(sizeof(char*))));
-  argv[0] = copy_string("prog");
-  argv[1] = copy_string("=42");
+  std::vector<std::string> argv{"prog", "=42"};
 
-  EXPECT_THROW(reader.parseCommandLine(options, 2, argv), BoutException);
-
-  free(argv[0]);
-  free(argv[1]);
-  free(argv);
+  EXPECT_THROW(reader.parseCommandLine(options, argv), BoutException);
 }
 
 TEST_F(OptionsReaderTest, BadCommandLineEmptyValue) {
   OptionsReader reader;
-  Options *options = Options::getRoot();
+  Options* options = Options::getRoot();
 
-  char **argv = static_cast<char **>(malloc(2*(sizeof(char*))));
-  argv[0] = copy_string("prog");
-  argv[1] = copy_string("int_key=");
+  std::vector<std::string> argv{"prog", "int_key="};
 
-  EXPECT_THROW(reader.parseCommandLine(options, 2, argv), BoutException);
-
-  free(argv[0]);
-  free(argv[1]);
-  free(argv);
+  EXPECT_THROW(reader.parseCommandLine(options, argv), BoutException);
 }
 
 TEST_F(OptionsReaderTest, ParseCommandLine) {
   OptionsReader reader;
-  Options *options = Options::getRoot();
+  Options* options = Options::getRoot();
 
-  char **argv = static_cast<char **>(malloc(2*(sizeof(char*))));
-  argv[0] = copy_string("prog");
-  argv[1] = copy_string("int_key=42");
-
-  reader.parseCommandLine(options, 2, argv);
+  std::vector<std::string> argv{"prog", "int_key=42"};
+  reader.parseCommandLine(options, argv);
 
   ASSERT_TRUE(options->isSet("int_key"));
 
@@ -108,21 +87,15 @@ TEST_F(OptionsReaderTest, ParseCommandLine) {
   options->get("int_key", value, -1, false);
 
   EXPECT_EQ(value, 42);
-
-  free(argv[0]);
-  free(argv[1]);
-  free(argv);
 }
 
 TEST_F(OptionsReaderTest, ParseCommandLineGlobalInstance) {
   OptionsReader *reader = OptionsReader::getInstance();
   Options *options = Options::getRoot();
 
-  char **argv = static_cast<char **>(malloc(2*(sizeof(char*))));
-  argv[0] = copy_string("prog");
-  argv[1] = copy_string("int_key=42");
+  std::vector<std::string> argv{"prog", "int_key=42"};
 
-  reader->parseCommandLine(options, 2, argv);
+  reader->parseCommandLine(options, argv);
 
   ASSERT_TRUE(options->isSet("int_key"));
 
@@ -132,23 +105,15 @@ TEST_F(OptionsReaderTest, ParseCommandLineGlobalInstance) {
   EXPECT_EQ(value, 42);
 
   reader->cleanup();
-
-  free(argv[0]);
-  free(argv[1]);
-  free(argv);
 }
 
 TEST_F(OptionsReaderTest, ParseCommandLineWithSpaces) {
   OptionsReader reader;
   Options *options = Options::getRoot();
 
-  char **argv = static_cast<char **>(malloc(4*(sizeof(char*))));
-  argv[0] = copy_string("prog");
-  argv[1] = copy_string("int_key");
-  argv[2] = copy_string("=");
-  argv[3] = copy_string("42");
+  std::vector<std::string> argv{"prog", "int_key", "=", "42"};
 
-  reader.parseCommandLine(options, 4, argv);
+  reader.parseCommandLine(options, argv);
 
   ASSERT_TRUE(options->isSet("int_key"));
 
@@ -156,24 +121,15 @@ TEST_F(OptionsReaderTest, ParseCommandLineWithSpaces) {
   options->get("int_key", value, -1, false);
 
   EXPECT_EQ(value, 42);
-
-  free(argv[0]);
-  free(argv[1]);
-  free(argv[2]);
-  free(argv[3]);
-  free(argv);
 }
 
 TEST_F(OptionsReaderTest, ParseCommandLineWithTrailingSpace) {
   OptionsReader reader;
   Options *options = Options::getRoot();
 
-  char **argv = static_cast<char **>(malloc(3*(sizeof(char*))));
-  argv[0] = copy_string("prog");
-  argv[1] = copy_string("int_key=");
-  argv[2] = copy_string("42");
+  std::vector<std::string> argv{"prog", "int_key=", "42"};
 
-  reader.parseCommandLine(options, 3, argv);
+  reader.parseCommandLine(options, argv);
 
   ASSERT_TRUE(options->isSet("int_key"));
 
@@ -181,23 +137,15 @@ TEST_F(OptionsReaderTest, ParseCommandLineWithTrailingSpace) {
   options->get("int_key", value, -1, false);
 
   EXPECT_EQ(value, 42);
-
-  free(argv[0]);
-  free(argv[1]);
-  free(argv[2]);
-  free(argv);
 }
 
 TEST_F(OptionsReaderTest, ParseCommandLineFlag) {
   OptionsReader reader;
   Options *options = Options::getRoot();
 
-  char **argv = static_cast<char **>(malloc(3*(sizeof(char*))));
-  argv[0] = copy_string("prog");
-  argv[1] = copy_string("-flag");
-  argv[2] = copy_string("command");
+  std::vector<std::string> argv{"prog", "-flag", "command"};
 
-  reader.parseCommandLine(options, 3, argv);
+  reader.parseCommandLine(options, argv);
 
   ASSERT_TRUE(options->isSet("flag"));
 
@@ -210,24 +158,15 @@ TEST_F(OptionsReaderTest, ParseCommandLineFlag) {
 
   bool command;
   options->get("command", command, false, false);
-
-  EXPECT_EQ(command, true);
-
-  free(argv[0]);
-  free(argv[1]);
-  free(argv[2]);
-  free(argv);
 }
 
 TEST_F(OptionsReaderTest, ParseCommandLineWithSection) {
   OptionsReader reader;
   Options *options = Options::getRoot();
 
-  char **argv = static_cast<char **>(malloc(2*(sizeof(char*))));
-  argv[0] = copy_string("prog");
-  argv[1] = copy_string("subsection1:int_key=42");
+  std::vector<std::string> argv{"prog", "subsection1:int_key=42"};
 
-  reader.parseCommandLine(options, 2, argv);
+  reader.parseCommandLine(options, argv);
 
   EXPECT_FALSE(options->isSet("int_key"));
 
@@ -239,10 +178,6 @@ TEST_F(OptionsReaderTest, ParseCommandLineWithSection) {
   section1->get("int_key", sub_value, -1, false);
 
   EXPECT_EQ(sub_value, 42);
-
-  free(argv[0]);
-  free(argv[1]);
-  free(argv);
 }
 
 TEST_F(OptionsReaderTest, ReadFile) {

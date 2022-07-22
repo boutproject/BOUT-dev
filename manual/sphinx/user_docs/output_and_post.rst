@@ -647,9 +647,9 @@ data, BOUT++ saves some metadata into output files.
    +-----------------------------+---------------------------------------------+
    | `run_restart_from`          | If the run was restarted, the `run_id` of   |
    |                             | the run it was restarted from.              |
-   |                             | `"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"` if |
-   |                             | the run was not restarted, or the previous  |
-   |                             | run had no `run_id`                         |
+   |                             | ``"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"``  |
+   |                             | if the run was not restarted, or the        |
+   |                             | previous run had no `run_id`                |
    +-----------------------------+---------------------------------------------+
 
 .. table:: Provenance tracking grid metadata variables

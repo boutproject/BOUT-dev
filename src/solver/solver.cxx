@@ -69,13 +69,31 @@ char ***Solver::pargv = nullptr;
 
 Solver::Solver(Options* opts)
     : options(opts == nullptr ? &Options::root()["solver"] : opts),
-      monitor_timestep((*options)["monitor_timestep"].withDefault(false)),
+      NPES(BoutComm::size()), MYPE(BoutComm::rank()),
+      monitor_timestep((*options)["monitor_timestep"]
+                           .doc("Call monitors on internal timesteps")
+                           .withDefault(false)),
       is_nonsplit_model_diffusive(
           (*options)["is_nonsplit_model_diffusive"]
               .doc("If not a split operator, treat RHS as diffusive?")
               .withDefault(true)),
-      mms((*options)["mms"].withDefault(false)),
-      mms_initialise((*options)["mms_initialise"].withDefault(mms)) {}
+      mms((*options)["mms"]
+              .doc("Use Method of Manufactured Solutions to track error scaling")
+              .withDefault(false)),
+      mms_initialise((*options)["mms_initialise"]
+                         .doc("Use MMS solution for field initial conditions")
+                         .withDefault(mms)),
+      number_output_steps(
+          (*options)["nout"]
+              .doc("Number of output steps. Overrides global setting.")
+              .withDefault(
+                  Options::root()["nout"].doc("Number of output steps").withDefault(1))),
+      output_timestep(
+          (*options)["output_step"]
+              .doc("Output time step size. Overrides global 'timestep' setting.")
+              .withDefault(Options::root()["timestep"]
+                               .doc("Output time step size")
+                               .withDefault(1.0))) {}
 
 /**************************************************************************
  * Add physics models
@@ -90,9 +108,6 @@ void Solver::setModel(PhysicsModel *m) {
   
   // Initialise them model, which specifies which variables to evolve
   m->initialise(this);
-  
-  // Check if the model is split operator
-  split_operator = m->splitOperator();
   
   model = m;
 }
@@ -149,7 +164,7 @@ void Solver::add(Field2D& v, const std::string& name, const std::string& descrip
   }
   
   // Check if the boundary regions should be evolved
-  // First get option from section "All"
+  // First get option from section "all"
   // then use that as default for specific section
   d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
   d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
@@ -208,7 +223,7 @@ void Solver::add(Field3D& v, const std::string& name, const std::string& descrip
   }
   
   // Check if the boundary regions should be evolved
-  // First get option from section "All"
+  // First get option from section "all"
   // then use that as default for specific section
   d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
   d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
@@ -440,35 +455,30 @@ void Solver::constraint(Vector3D& v, Vector3D& C_v, std::string name) {
  * Solver main loop: Initialise, run, and finish
  **************************************************************************/
 
-int Solver::solve(int NOUT, BoutReal TIMESTEP) {
-  
+int Solver::solve(int nout, BoutReal timestep) {
+
   Options& globaloptions = Options::root(); // Default from global options
-  
-  if (NOUT < 0) {
-    /// Get options
-    NOUT = globaloptions["NOUT"].doc("Number of output steps").withDefault(1);
-    TIMESTEP = globaloptions["TIMESTEP"].doc("Output time step size").withDefault(1.0);
-    
-    // Check specific solver options, which override global options
-    NOUT = (*options)["NOUT"]
-               .doc("Number of output steps. Overrides global setting.")
-               .withDefault(NOUT);
-    TIMESTEP = (*options)["output_step"]
-                   .doc("Output time step size. Overrides global TIMESTEP setting.")
-                   .withDefault(TIMESTEP);
+
+  if (nout < 0) {
+    nout = number_output_steps;
+    timestep = output_timestep;
+  } else {
+    number_output_steps = nout;
+    output_timestep = timestep;
   }
 
-  finaliseMonitorPeriods(NOUT, TIMESTEP);
+  finaliseMonitorPeriods(nout, timestep);
 
-  output_progress.write(_("Solver running for {:d} outputs with output timestep of {:e}\n"),
-                        NOUT, TIMESTEP);
+  output_progress.write(
+      _("Solver running for {:d} outputs with output timestep of {:e}\n"), nout,
+      timestep);
   if (default_monitor_period > 1)
     output_progress.write(
         _("Solver running for {:d} outputs with monitor timestep of {:e}\n"),
-        NOUT / default_monitor_period, TIMESTEP * default_monitor_period);
+        nout / default_monitor_period, timestep * default_monitor_period);
 
   // Initialise
-  if (init(NOUT, TIMESTEP)) {
+  if (init()) {
     throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
 
@@ -478,8 +488,8 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
   // Put the run ID into the options tree
   // Forcing in case the value has been previously set
-  Options::root()["run"]["run_id"].force(run_id, "Solver");
-  Options::root()["run"]["run_restart_from"].force(run_restart_from, "Solver");
+  Options::root()["run"]["run_id"].force(run_id, "Output");
+  Options::root()["run"]["run_restart_from"].force(run_restart_from, "Output");
 
   /// Run the solver
   output_info.write(_("Running simulation\n\n"));
@@ -493,28 +503,37 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
   Timer timer("run"); // Start timer
 
-  const bool restart = globaloptions["restart"]
-               .doc("Load state from restart files?")
-               .withDefault(false);
+  const bool restart =
+      globaloptions["restart"].doc("Load state from restart files?").withDefault(false);
 
-  const bool append = globaloptions["append"]
+  const bool append =
+      globaloptions["append"]
           .doc("Add new outputs to the end of existing files? If false, overwrite files.")
           .withDefault(false);
   const bool dump_on_restart = globaloptions["dump_on_restart"]
                                    .doc("Write initial state as time point 0?")
                                    .withDefault(!restart || !append);
 
+  // Run RHS once to ensure all variables set
+  if (run_rhs(simtime)) {
+    throw BoutException("Physics RHS call failed\n");
+  }
+
+  // Check for unused/mistyped options
+  const bool validate_input = globaloptions["input"]["validate"]
+                                  .doc("Check for unused options and stop")
+                                  .withDefault(false);
+  bout::checkForUnusedOptions();
+  if (validate_input) {
+    return 0;
+  }
+
   if (dump_on_restart) {
 
     /// Write initial state as time-point 0
 
-    // Run RHS once to ensure all variables set
-    if (run_rhs(simtime)) {
-      throw BoutException("Physics RHS call failed\n");
-    }
-
     // Call monitors so initial values are written to output dump files
-    if (call_monitors(simtime, -1, NOUT)) {
+    if (call_monitors(simtime, -1, nout)) {
       throw BoutException("Initial monitor call failed!");
     }
   }
@@ -597,8 +616,8 @@ std::string Solver::getRunRestartFrom() const {
  * Initialisation
  **************************************************************************/
 
-int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
-  
+int Solver::init() {
+
   TRACE("Solver::init()");
 
   if (initialised)
@@ -606,9 +625,6 @@ int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
 
   output_progress.write(_("Initialising solver\n"));
 
-  NPES = BoutComm::size();
-  MYPE = BoutComm::rank();
-  
   /// Mark as initialised. No more variables can be added
   initialised = true;
 
@@ -787,14 +803,14 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
         int ret = monitor->call(this, simtime, iter / monitor->period - 1,
                                 NOUT / monitor->period);
         if (ret)
-          throw BoutException(_("Monitor signalled to quit"));
+          throw BoutException(_("Monitor signalled to quit (return code {})"), ret);
       }
     }
-  } catch (const BoutException&) {
+  } catch (const BoutException& e) {
     for (const auto& it : monitors) {
       it->cleanup();
     }
-    output_error.write(_("Monitor signalled to quit\n"));
+    output_error.write(_("Monitor signalled to quit (exception {})\n"), e.what());
     throw;
   }
 
@@ -834,6 +850,9 @@ int Solver::resetRHSCounter_e() {
   rhs_ncalls_e = 0;
   return t;
 }
+
+bool Solver::splitOperator() { return model->splitOperator(); }
+
 /////////////////////////////////////////////////////
 
 void Solver::addTimestepMonitor(TimestepMonitorFunc f) {
@@ -855,12 +874,7 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
   }
 
   // Call physics model monitor
-  if (model != nullptr) {
-    const int ret = model->runTimestepMonitor(simtime, lastdt);
-    if (ret)
-      return ret;
-  }
-  return 0;
+  return model->runTimestepMonitor(simtime, lastdt);
 }
 
 /**************************************************************************
@@ -1226,51 +1240,37 @@ Field3D Solver::globalIndex(int localStart) {
  * Running user-supplied functions
  **************************************************************************/
 
-void Solver::setSplitOperator(rhsfunc fC, rhsfunc fD) {
-  split_operator = true;
-  phys_conv = fC;
-  phys_diff = fD;
-}
-
-int Solver::run_rhs(BoutReal t) {
+int Solver::run_rhs(BoutReal t, bool linear) {
   int status;
-  
+
   Timer timer("rhs");
-  
-  if(split_operator) {
+
+  if (model->splitOperator()) {
     // Run both parts
-    
+
     int nv = getLocalN();
     // Create two temporary arrays for system state
     Array<BoutReal> tmp(nv);
     Array<BoutReal> tmp2(nv);
-    
+
     save_vars(tmp.begin()); // Copy variables into tmp
     pre_rhs(t);
-    if(model) {
-      status = model->runConvective(t);
-    }else 
-      status = (*phys_conv)(t);
+    status = model->runConvective(t, linear);
     post_rhs(t); // Check variables, apply boundary conditions
-    
-    load_vars(tmp.begin()); // Reset variables
+
+    load_vars(tmp.begin());   // Reset variables
     save_derivs(tmp.begin()); // Save time derivatives
     pre_rhs(t);
-    if(model) {
-      status = model->runDiffusive(t, false);
-    }else
-      status = (*phys_diff)(t);
+    status = model->runDiffusive(t, linear);
     post_rhs(t);
     save_derivs(tmp2.begin()); // Save time derivatives
-    for(BoutReal *t = tmp.begin(), *t2 = tmp2.begin(); t != tmp.end(); ++t, ++t2)
+    for (BoutReal *t = tmp.begin(), *t2 = tmp2.begin(); t != tmp.end(); ++t, ++t2) {
       *t += *t2;
+    }
     load_derivs(tmp.begin()); // Put back time-derivatives
-  }else {
+  } else {
     pre_rhs(t);
-    if(model) {
-      status = model->runRHS(t);
-    }else
-      status = (*phys_run)(t);
+    status = model->runRHS(t, linear);
     post_rhs(t);
   }
 
@@ -1284,23 +1284,16 @@ int Solver::run_rhs(BoutReal t) {
 }
 
 /// NOTE: This calls add_mms_sources
-int Solver::run_convective(BoutReal t) {
+int Solver::run_convective(BoutReal t, bool linear) {
   int status;
 
   Timer timer("rhs");
   pre_rhs(t);
-  if (split_operator) {
-    if (model) {
-      status = model->runConvective(t);
-    } else
-      status = (*phys_conv)(t);
+  if (model->splitOperator()) {
+    status = model->runConvective(t, linear);
   } else if (!is_nonsplit_model_diffusive) {
     // Return total
-    if (model) {
-      status = model->runRHS(t);
-    } else {
-      status = (*phys_run)(t);
-    }
+    status = model->runRHS(t, linear);
   } else {
     // Zero if not split
     for (const auto& f : f3d)
@@ -1324,20 +1317,13 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
 
   Timer timer("rhs");
   pre_rhs(t);
-  if (split_operator) {
+  if (model->splitOperator()) {
 
-    if (model) {
-      status = model->runDiffusive(t, linear);
-    } else {
-      status = (*phys_diff)(t);
-    }
+    status = model->runDiffusive(t, linear);
     post_rhs(t);
   } else if (is_nonsplit_model_diffusive) {
     // Return total
-    if (model) {
-      status = model->runRHS(t);
-    } else
-      status = (*phys_run)(t);
+    status = model->runRHS(t, linear);
   } else {
     // Zero if not split
     for (const auto& f : f3d)
@@ -1353,37 +1339,42 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
 void Solver::pre_rhs(BoutReal t) {
 
   // Apply boundary conditions to the values
-  for(const auto& f : f2d) {
-    if(!f.constraint) // If it's not a constraint
+  for (const auto& f : f2d) {
+    if (!f.constraint) { // If it's not a constraint
       f.var->applyBoundary(t);
+    }
   }
   
-  for(const auto& f : f3d) {
-    if(!f.constraint)
+  for (const auto& f : f3d) {
+    if (!f.constraint) {
       f.var->applyBoundary(t);
+    }
   }
   
 }
 
 void Solver::post_rhs(BoutReal UNUSED(t)) {
 #if CHECK > 0
-  for(const auto& f : f3d) {
-    if(!f.F_var->isAllocated())
+  for (const auto& f : f3d) {
+    if (!f.F_var->isAllocated()) {
       throw BoutException(_("Time derivative for variable '{:s}' not set"), f.name);
+    }
   }
 #endif
   // Make sure vectors in correct basis
-  for(const auto& v : v2d) {
-    if(v.covariant) {
+  for (const auto& v : v2d) {
+    if (v.covariant) {
       v.F_var->toCovariant();
-    }else
+    } else {
       v.F_var->toContravariant();
+    }
   }
-  for(const auto& v : v3d) {
-    if(v.covariant) {
+  for (const auto& v : v3d) {
+    if (v.covariant) {
       v.F_var->toCovariant();
-    }else
+    } else {
       v.F_var->toContravariant();
+    }
   }
 
   // Make sure 3D fields are at the correct cell location, etc.
@@ -1392,19 +1383,21 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
   }
 
   // Apply boundary conditions to the time-derivatives
-  for(const auto& f : f2d) {
-    if(!f.constraint && f.evolve_bndry) // If it's not a constraint and if the boundary is evolving
+  for (const auto& f : f2d) {
+    if (!f.constraint && f.evolve_bndry) { // If it's not a constraint and if the boundary is evolving
       f.var->applyTDerivBoundary();
+    }
   }
   
-  for(const auto& f : f3d) {
-    if(!f.constraint && f.evolve_bndry)
+  for (const auto& f : f3d) {
+    if (!f.constraint && f.evolve_bndry) {
       f.var->applyTDerivBoundary();
+    }
   }
 #if CHECK > 2
   {
     TRACE("Solver checking time derivatives");
-    for(const auto& f : f3d) {
+    for (const auto& f : f3d) {
       TRACE("Variable: {:s}", f.name);
       checkData(*f.F_var);
     }
@@ -1417,22 +1410,14 @@ bool Solver::varAdded(const std::string& name) {
          || contains(v3d, name);
 }
 
-bool Solver::have_user_precon() {
-  if(model)
-    return model->hasPrecon();
+bool Solver::hasPreconditioner() { return model->hasPrecon(); }
 
-  return prefunc != nullptr;
+int Solver::runPreconditioner(BoutReal t, BoutReal gamma, BoutReal delta) {
+  return model->runPrecon(t, gamma, delta);
 }
 
-int Solver::run_precon(BoutReal t, BoutReal gamma, BoutReal delta) {
-  if(!have_user_precon())
-    return 1;
-
-  if(model)
-    return model->runPrecon(t, gamma, delta);
-  
-  return (*prefunc)(t, gamma, delta);
-}
+bool Solver::hasJacobian() { return model->hasJacobian(); }
+int Solver::runJacobian(BoutReal time) { return model->runJacobian(time); }
 
 // Add source terms to time derivatives
 void Solver::add_mms_sources(BoutReal t) {

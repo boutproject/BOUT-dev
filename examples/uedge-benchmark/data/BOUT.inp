@@ -3,13 +3,10 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 400       # number of time-steps
-TIMESTEP = 1000.0   # time between outputs
+nout = 400       # number of time-steps
+timestep = 1000.0   # time between outputs
 
-ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
-ShiftOrder = 0
-TwistOrder = 0
+twistshift = false  # use twist-shift condition?
 
 MZ = 2     # number of points in z direction (2^n + 1)
 ZMIN = 0.0
@@ -19,11 +16,6 @@ MXG = 2
 MYG = 2
 
 grid = "uedge.grd_Up_Ni_Tei_2d.nc"
-
-dump_format = "nc"  # NetCDF format
-
-[comms]
-async = false
 
 ##################################################
 # derivative methods
@@ -53,8 +45,8 @@ upwind = U1
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
 mxstep = 5000 # Maximum number of internal steps
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 ##################################################
 # settings for uedge model
@@ -64,13 +56,6 @@ RTOL = 1e-05  # relative tolerance
 AA = 2.0
 ZZ = 1.0
 
-estatic = false   # if true, electrostatic (Apar = 0)
-ZeroElMass = FALSE # Use Ohms law without electron inertia
-Zeff = 2.0        # Z effective
-nu_perp = 1e-20
-
-ShearFactor = 0.0
-
 chi_perp = 0.6
 
 ##################################################
@@ -79,7 +64,7 @@ chi_perp = 0.6
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = gauss(x - 0.5, 0.5) * sin(y) * mixmode(z)
 

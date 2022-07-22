@@ -6,11 +6,11 @@ staggergrids = true
 nx = 4
 ny = 32
 nz = 32
-dy = 2*Pi/ny
+dy = 2*pi/ny
 # use zshift that is periodic in y, because otherwise we need to make the input
 # functions periodic in field-aligned coordinates, not just in y and z
-zshift = exp(sin(y))
-shiftangle = 0.0
+zShift = exp(sin(y))
+ShiftAngle = 0.0
 
 [mesh:paralleltransform]
 type = shiftedinterp

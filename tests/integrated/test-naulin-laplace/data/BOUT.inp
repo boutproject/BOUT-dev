@@ -1,4 +1,4 @@
-myg = 0
+MYG = 0
 
 [mesh]
 nx = 100

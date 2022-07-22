@@ -30,7 +30,7 @@ vz = G
 
 zShift = 0.02*x + 0.1*y
 nu = 0.1
-shiftangle = 2.*pi/10.
+ShiftAngle = 2.*pi/10.
 I = 0
 HH = 0.1
 

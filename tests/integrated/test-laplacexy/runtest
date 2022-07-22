@@ -4,6 +4,7 @@
 # Run the test, compare results against the benchmark
 #
 
+# requires: not metric_3d
 # requires: petsc
 # requires: all_tests
 # cores: 8
