@@ -221,8 +221,6 @@ public:
   bool lastY() const override { return true; }
   bool firstY(int UNUSED(xpos)) const override { return true; }
   bool lastY(int UNUSED(xpos)) const override { return true; }
-  int UpXSplitIndex() override { return 0; }
-  int DownXSplitIndex() override { return 0; }
   RangeIterator iterateBndryLowerY() const override {
     return RangeIterator(xstart, xend);
   }

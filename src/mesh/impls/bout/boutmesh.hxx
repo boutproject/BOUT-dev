@@ -144,8 +144,6 @@ class BoutMesh : public Mesh {
   bool lastY() const override;
   bool firstY(int xpos) const override;
   bool lastY(int xpos) const override;
-  int UpXSplitIndex() override;
-  int DownXSplitIndex() override;
 
   // Boundary iteration
   RangeIterator iterateBndryLowerY() const override;

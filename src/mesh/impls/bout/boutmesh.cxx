@@ -1584,9 +1584,6 @@ bool BoutMesh::lastY(int xpos) const {
   return rank == size - 1;
 }
 
-int BoutMesh::UpXSplitIndex() { return UDATA_XSPLIT; }
-
-int BoutMesh::DownXSplitIndex() { return DDATA_XSPLIT; }
 /****************************************************************
  *                 GRID INDEX ROUTINES
  *

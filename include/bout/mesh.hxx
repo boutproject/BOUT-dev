@@ -450,10 +450,6 @@ class Mesh {
   /// Note: Not necessarily at a boundary, but last in the Y communicator
   ///       for the flux surface through local X index xpos
   virtual bool lastY(int xpos) const = 0;
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual int UpXSplitIndex() = 0;  ///< If the upper Y guard cells are split in two, return the X index where the split occurs
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual int DownXSplitIndex() = 0; ///< If the lower Y guard cells are split in two, return the X index where the split occurs
 
   // Boundary region iteration
 
