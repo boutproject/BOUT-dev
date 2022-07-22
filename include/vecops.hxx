@@ -36,7 +36,6 @@ class Vector3D;
 
 #include "bout_types.hxx"
 #include "bout/coordinates.hxx"
-#include "bout/deprecated.hxx"
 // Those are needed because we implement functions here.
 // They can be dropped if we remove the deprecated wrappers.
 #include "field2d.hxx"
