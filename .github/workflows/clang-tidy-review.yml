@@ -39,4 +39,5 @@ jobs:
                              -DBOUT_BUILD_EXAMPLES=ON \
                              -DBOUT_BUILD_DOCS=OFF \
                              -DBOUT_ENABLE_PYTHON=OFF \
-                             -DCMAKE_EXPORT_COMPILE_COMMANDS=On
+                             -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
+                             -DBOUT_UPDATE_GIT_SUBMODULE=OFF
