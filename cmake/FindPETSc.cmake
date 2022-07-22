@@ -23,8 +23,6 @@
 #
 # Taken from https://github.com/jedbrown/cmake-modules/blob/master/FindPETSc.cmake
 
-cmake_policy(VERSION 3.3)
-
 find_package(MPI REQUIRED)
 
 set(PETSC_VALID_COMPONENTS
@@ -259,7 +257,9 @@ show :
   endif ()
 
   include(Check${PETSC_LANGUAGE_BINDINGS}SourceRuns)
+
   macro (PETSC_TEST_RUNS includes libraries runs)
+    message(STATUS "PETSc test with : ${includes} ${libraries}" )
     if (PETSC_VERSION VERSION_GREATER 3.1)
       set (_PETSC_TSDestroy "TSDestroy(&ts)")
     else ()
@@ -306,7 +306,7 @@ int main(int argc,char *argv[]) {
     set (petsc_openmp_library ";OpenMP::OpenMP_${PETSC_LANGUAGE_BINDINGS}")
   endif()
   set (petsc_mpi_include_dirs "${MPI_${PETSC_LANGUAGE_BINDINGS}_INCLUDE_DIRS}")
-  set (petsc_additional_libraries "MPI::MPI_${PETSC_LANGUAGE_BINDINGS}${petsc_openmp_library}")
+  #set (petsc_additional_libraries "MPI::MPI_${PETSC_LANGUAGE_BINDINGS}${petsc_openmp_library}")
 
   petsc_test_runs ("${petsc_includes_minimal};${petsc_mpi_include_dirs}"
     "${PETSC_LIBRARIES_TS};${petsc_additional_libraries}"

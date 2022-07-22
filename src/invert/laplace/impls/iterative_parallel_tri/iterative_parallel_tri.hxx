@@ -52,7 +52,7 @@ RegisterLaplace<LaplaceIPT> registerlaplaceipt(LAPLACE_IPT);
 class LaplaceIPT : public Laplacian {
 public:
   LaplaceIPT(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-             Mesh* mesh_in = nullptr);
+             Mesh* mesh_in = nullptr, Solver* solver = nullptr, Datafile* dump = nullptr);
   ~LaplaceIPT() = default;
 
   friend class Level;
@@ -233,9 +233,7 @@ private:
   /// First and last interior points xstart, xend
   int xs, xe;
 
-  bool isGlobalFlagSet(int flag) const {
-    return (global_flags & flag) != 0;
-  }
+  bool isGlobalFlagSet(int flag) const { return (global_flags & flag) != 0; }
   bool isInnerBoundaryFlagSet(int flag) const {
     return (inner_boundary_flags & flag) != 0;
   }

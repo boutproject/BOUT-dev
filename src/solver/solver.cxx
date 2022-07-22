@@ -69,13 +69,31 @@ char ***Solver::pargv = nullptr;
 
 Solver::Solver(Options* opts)
     : options(opts == nullptr ? &Options::root()["solver"] : opts),
-      monitor_timestep((*options)["monitor_timestep"].withDefault(false)),
+      NPES(BoutComm::size()), MYPE(BoutComm::rank()),
+      monitor_timestep((*options)["monitor_timestep"]
+                           .doc("Call monitors on internal timesteps")
+                           .withDefault(false)),
       is_nonsplit_model_diffusive(
           (*options)["is_nonsplit_model_diffusive"]
               .doc("If not a split operator, treat RHS as diffusive?")
               .withDefault(true)),
-      mms((*options)["mms"].withDefault(false)),
-      mms_initialise((*options)["mms_initialise"].withDefault(mms)) {}
+      mms((*options)["mms"]
+              .doc("Use Method of Manufactured Solutions to track error scaling")
+              .withDefault(false)),
+      mms_initialise((*options)["mms_initialise"]
+                         .doc("Use MMS solution for field initial conditions")
+                         .withDefault(mms)),
+      number_output_steps(
+          (*options)["nout"]
+              .doc("Number of output steps. Overrides global setting.")
+              .withDefault(
+                  Options::root()["nout"].doc("Number of output steps").withDefault(1))),
+      output_timestep(
+          (*options)["output_step"]
+              .doc("Output time step size. Overrides global 'timestep' setting.")
+              .withDefault(Options::root()["timestep"]
+                               .doc("Output time step size")
+                               .withDefault(1.0))) {}
 
 /**************************************************************************
  * Add physics models
@@ -442,17 +460,11 @@ int Solver::solve(int nout, BoutReal timestep) {
   Options& globaloptions = Options::root(); // Default from global options
 
   if (nout < 0) {
-    /// Get options
-    nout = globaloptions["nout"].doc("Number of output steps").withDefault(1);
-    timestep = globaloptions["timestep"].doc("Output time step size").withDefault(1.0);
-
-    // Check specific solver options, which override global options
-    nout = (*options)["nout"]
-               .doc("Number of output steps. Overrides global setting.")
-               .withDefault(nout);
-    timestep = (*options)["output_step"]
-                   .doc("Output time step size. Overrides global 'timestep' setting.")
-                   .withDefault(timestep);
+    nout = number_output_steps;
+    timestep = output_timestep;
+  } else {
+    number_output_steps = nout;
+    output_timestep = timestep;
   }
 
   finaliseMonitorPeriods(nout, timestep);
@@ -466,7 +478,7 @@ int Solver::solve(int nout, BoutReal timestep) {
         nout / default_monitor_period, timestep * default_monitor_period);
 
   // Initialise
-  if (init(nout, timestep)) {
+  if (init()) {
     throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
 
@@ -604,16 +616,15 @@ std::string Solver::getRunRestartFrom() const {
  * Initialisation
  **************************************************************************/
 
-int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
-  
+int Solver::init() {
+
   TRACE("Solver::init()");
 
   if (initialised)
     throw BoutException(_("ERROR: Solver is already initialised\n"));
 
-  NPES = BoutComm::size();
-  MYPE = BoutComm::rank();
-  
+  output_progress.write(_("Initialising solver\n"));
+
   /// Mark as initialised. No more variables can be added
   initialised = true;
 

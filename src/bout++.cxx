@@ -32,9 +32,11 @@ const char DEFAULT_DIR[] = "data";
 #define GLOBALORIGIN
 
 #include "boundary_factory.hxx"
+#include "bout++-time.hxx"
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
 #include "datafile.hxx"
+#include "fmt/format.h"
 #include "interpolation_xz.hxx"
 #include "interpolation_z.hxx"
 #include "invert_laplace.hxx"
@@ -42,6 +44,8 @@ const char DEFAULT_DIR[] = "data";
 #include "msg_stack.hxx"
 #include "optionsreader.hxx"
 #include "output.hxx"
+#include "bout/coordinates_accessor.hxx"
+#include "bout/hyprelib.hxx"
 #include "bout/invert/laplacexz.hxx"
 #include "bout/mpi_wrapper.hxx"
 #include "bout/openmpwrap.hxx"
@@ -52,8 +56,6 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
 #include "bout/version.hxx"
-#include "fmt/format.h"
-#include "bout++-time.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -249,6 +251,7 @@ void setupGetText() {
 
     bindtextdomain(GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
   } catch (const std::runtime_error& e) {
+#if 1
     fmt::print(
         stderr,
         FMT_STRING(
@@ -257,6 +260,7 @@ void setupGetText() {
             "may be "
             "a problem with the BOUT_LOCALE_PATH={:s} that BOUT++ was compiled with.\n"),
         BUILDFLAG(BOUT_LOCALE_PATH));
+#endif
   }
 #endif // BOUT_HAS_GETTEXT
 }
@@ -547,7 +551,6 @@ void printCompileTimeOptions() {
 #endif
 
   output_info.write(_("\tMetrics mode is {}\n"), use_metric_3d ? "3D" : "2D");
-
   output_info.write(_("\tFFT support {}\n"), is_enabled(has_fftw));
   output_info.write(_("\tNatural language support {}\n"), is_enabled(has_gettext));
   output_info.write(_("\tLAPACK support {}\n"), is_enabled(has_lapack));
@@ -788,6 +791,8 @@ int BoutFinalise(bool write_settings) {
   // Cleanup boundary factory
   BoundaryFactory::cleanup();
 
+  CoordinatesAccessor::clear();
+
   // Cleanup timer
   Timer::cleanup();
 
@@ -800,6 +805,9 @@ int BoutFinalise(bool write_settings) {
 
   // Call PetscFinalize if not already called
   PetscLib::cleanup();
+
+  // Call HYPER_Finalize if not already called
+  bout::HypreLib::cleanup();
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();

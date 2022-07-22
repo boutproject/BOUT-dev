@@ -315,6 +315,8 @@ class Mesh {
 
   /// Send guard cells from a list of FieldData objects in the x-direction
   /// Packs arguments into a FieldGroup and passes to send(FieldGroup&).
+  /// Perform communications without waiting for them to finish.
+  /// Requires a call to wait() afterwards.
   template <typename... Ts>
   comm_handle sendX(Ts&... ts) {
     FieldGroup g(ts...);
@@ -344,7 +346,7 @@ class Mesh {
   virtual comm_handle sendY(FieldGroup &g, comm_handle handle = nullptr) = 0;
 
   /// Wait for the handle, return error code
-  virtual int wait(comm_handle handle) = 0;
+  virtual int wait(comm_handle handle) = 0; ///< Wait for the handle, return error code
 
   // non-local communications
 
@@ -597,6 +599,26 @@ class Mesh {
   /// If the global index includes the boundary cells, then so does the local.
   [[deprecated("Use getLocalYIndex or getLocalYIndexNoBoundaries instead")]]
   int YLOCAL(int yglo) const { return getLocalYIndexNoBoundaries(yglo); };
+
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for 3D fields. Boundaries
+  /// are only included to a depth of 1.
+  virtual int localSize3D();
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for 2D fields. Boundaries
+  /// are only included to a depth of 1.
+  virtual int localSize2D();
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for perpendicular fields.
+  /// Boundaries are only included to a depth of 1.
+  virtual int localSizePerp();
+
+  /// Get the value of the first global 3D index on this processor.
+  virtual int globalStartIndex3D();
+  /// Get the value of the first global 2D index on this processor.
+  virtual int globalStartIndex2D();
+  /// Get the value of the first global perpendicular index on this processor.
+  virtual int globalStartIndexPerp();
 
   /// Returns a global X index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
@@ -1009,10 +1031,10 @@ class Mesh {
   }
   
   /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
-  Ind2D map3Dto2D(const Ind3D &ind3D){
+  BOUT_HOST_DEVICE Ind2D map3Dto2D(const Ind3D& ind3D) {
     return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
   }
-  
+
   /// Create the default regions for the data iterator
   ///
   /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}

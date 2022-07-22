@@ -40,6 +40,7 @@ The documentation is divided into the following sections:
    user_docs/variable_init
    user_docs/boundary_options
    user_docs/testing
+   user_docs/gpu_support
    
 .. toctree::
    :maxdepth: 2
