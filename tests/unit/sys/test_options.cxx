@@ -1171,17 +1171,17 @@ section3:subsection2:value6		# source: a test
 }
 
 TEST_F(OptionsTest, FormatUnused) {
-  Options option{
-    {"section1", {{"value1", 42}}}};
-  std::string expected = "section1:value1\t\t# unused value (NOT marked conditionally used)\n";
+  Options option{{"section1", {{"value1", 42}}}};
+  std::string expected =
+      "section1:value1\t\t# unused value (NOT marked conditionally used)\n";
   EXPECT_EQ(fmt::format("{:iku}", option), expected);
 }
 
 TEST_F(OptionsTest, FormatConditionallyUsed) {
-  Options option{
-    {"section1", {{"value1", 42}}}};
+  Options option{{"section1", {{"value1", 42}}}};
   option.setConditionallyUsed();
-  std::string expected = "section1:value1\t\t# unused value (marked conditionally used)\n";
+  std::string expected =
+      "section1:value1\t\t# unused value (marked conditionally used)\n";
   EXPECT_EQ(fmt::format("{:iku}", option), expected);
 }
 
