@@ -62,7 +62,6 @@ public:
   LaplaceCyclic(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
                 Mesh* mesh_in = nullptr, Solver* solver = nullptr,
                 Datafile* dump = nullptr);
-  ~LaplaceCyclic();
 
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &val) override {
