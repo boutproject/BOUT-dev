@@ -33,14 +33,11 @@
  *
  */
 
-<<<<<<< HEAD
-=======
 #include "cyclic_laplace.hxx"
 #include "bout/build_config.hxx"
 
 #if not BOUT_USE_METRIC_3D
 
->>>>>>> next
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
