@@ -120,7 +120,7 @@ private:
   Matrix<dcomplex> a, b, c, bcmplx, xcmplx;
   
   bool dst;
-  
+
   std::unique_ptr<CyclicReduce<dcomplex>> cr; ///< Tridiagonal solver
 };
 

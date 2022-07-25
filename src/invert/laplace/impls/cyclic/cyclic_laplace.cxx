@@ -41,7 +41,7 @@
 #if not BOUT_USE_METRIC_3D
 
 >>>>>>> next
-#include <bout/constants.hxx>
+    #include < bout / constants.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
@@ -52,9 +52,7 @@
 
 #include "cyclic_laplace.hxx"
 
-LaplaceCyclic::LaplaceCyclic(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
-                             Solver* UNUSED(solver), Datafile* UNUSED(dump))
-    : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(1.0), Dcoef(1.0) {
+                      LaplaceCyclic::LaplaceCyclic(Options* opt, const CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED(solver), Datafile* UNUSED(dump)) : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(1.0), Dcoef(1.0) {
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);
