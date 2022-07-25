@@ -25,6 +25,8 @@ PetscLib::PetscLib(Options* opt) {
       output << "Initialising PETSc\n";
       PETSC_COMM_WORLD = BoutComm::getInstance()->getComm();
       PetscInitialize(pargc,pargv,PETSC_NULL,help);
+      PetscPopSignalHandler();
+
       PetscLogEventRegister("Total BOUT++",0,&USER_EVENT);
       PetscLogEventBegin(USER_EVENT,0,0,0,0);
 
@@ -71,6 +73,18 @@ void PetscLib::setOptionsFromInputFile(KSP& ksp) {
   ierr = KSPSetFromOptions(ksp);
   if (ierr) {
     throw BoutException("KSPSetFromOptions failed with error {}", ierr);
+  }
+}
+
+void PetscLib::setOptionsFromInputFile(SNES& snes) {
+  auto ierr = SNESSetOptionsPrefix(snes, options_prefix.c_str());
+  if (ierr) {
+    throw BoutException("SNESSetOptionsPrefix failed with error %i", ierr);
+  }
+
+  ierr = SNESSetFromOptions(snes);
+  if (ierr) {
+    throw BoutException("SNESSetFromOptions failed with error %i", ierr);
   }
 }
 

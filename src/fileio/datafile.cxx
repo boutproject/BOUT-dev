@@ -64,18 +64,18 @@ Datafile::Datafile(Options* opt, Mesh* mesh_in)
   OPTION(opt, openclose, true); // Open and close every write or read
   OPTION(opt, enabled, true);
   OPTION(opt, init_missing, false); // Initialise missing variables?
-  OPTION(opt, shiftOutput, false); // Do we want to write 3D fields in shifted space?
-  OPTION(opt, shiftInput, false); // Do we want to read 3D fields in shifted space?
-  OPTION(opt, flushFrequency, 1); // How frequently do we flush the file
+  OPTION(opt, shiftoutput, false); // Do we want to write 3D fields in shifted space?
+  OPTION(opt, shiftinput, false); // Do we want to read 3D fields in shifted space?
+  OPTION(opt, flushfrequency, 1); // How frequently do we flush the file
 }
 
 Datafile::Datafile(Datafile&& other) noexcept
     : mesh(other.mesh), parallel(other.parallel), flush(other.flush),
       guards(other.guards), floats(other.floats), openclose(other.openclose),
       Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), enabled(other.enabled),
-      init_missing(other.init_missing), shiftOutput(other.shiftOutput),
-      shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter),
-      flushFrequency(other.flushFrequency), file(std::move(other.file)),
+      init_missing(other.init_missing), shiftoutput(other.shiftoutput),
+      shiftinput(other.shiftinput), flushFrequencyCounter(other.flushFrequencyCounter),
+      flushfrequency(other.flushfrequency), file(std::move(other.file)),
       filename(std::move(other.filename)), writable(other.writable),
       appending(other.appending), first_time(other.first_time),
       int_arr(std::move(other.int_arr)), int_vec_arr(std::move(other.int_vec_arr)),
@@ -90,9 +90,9 @@ Datafile::Datafile(const Datafile& other)
     : mesh(other.mesh), parallel(other.parallel), flush(other.flush),
       guards(other.guards), floats(other.floats), openclose(other.openclose),
       Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), enabled(other.enabled),
-      init_missing(other.init_missing), shiftOutput(other.shiftOutput),
-      shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter),
-      flushFrequency(other.flushFrequency), file(nullptr), filename(other.filename),
+      init_missing(other.init_missing), shiftoutput(other.shiftoutput),
+      shiftinput(other.shiftinput), flushFrequencyCounter(other.flushFrequencyCounter),
+      flushfrequency(other.flushfrequency), file(nullptr), filename(other.filename),
       writable(other.writable), appending(other.appending), first_time(other.first_time),
       int_arr(other.int_arr), int_vec_arr(other.int_vec_arr),
       string_arr(other.string_arr), BoutReal_arr(other.BoutReal_arr),
@@ -108,10 +108,10 @@ Datafile& Datafile::operator=(Datafile &&rhs) noexcept {
   openclose    = rhs.openclose;
   enabled      = rhs.enabled;
   init_missing = rhs.init_missing;
-  shiftOutput  = rhs.shiftOutput;
-  shiftInput   = rhs.shiftInput;
+  shiftoutput  = rhs.shiftoutput;
+  shiftinput   = rhs.shiftinput;
   flushFrequencyCounter = 0;
-  flushFrequency = rhs.flushFrequency;
+  flushfrequency = rhs.flushfrequency;
   file         = std::move(rhs.file);
   filename     = std::move(rhs.filename);
   writable     = rhs.writable;
@@ -980,6 +980,18 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat, const std::s
 
     // Add variables to file
     auto dname = d.covar ? d.name + "_" : d.name;
+#if BOUT_USE_METRIC_3D
+    // Add variables to file
+    if (!file->addVarField3D(dname + "x", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
+    }
+    if (!file->addVarField3D(dname + "y", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
+    }
+    if (!file->addVarField3D(dname + "z", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
+    }
+#else
     if (!file->addVarField2D(dname + "x", save_repeat)) {
       throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
     }
@@ -989,6 +1001,7 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat, const std::s
     if (!file->addVarField2D(dname + "z", save_repeat)) {
       throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
     }
+#endif
 
     if(openclose) {
       file->close();
@@ -1266,6 +1279,19 @@ bool Datafile::read() {
   }
 
   // 2D vectors
+#if BOUT_USE_METRIC_3D
+  for (const auto& var : v2d_arr) {
+    if (var.covar) {
+      // Reading covariant vector
+      read_f3d(var.name + "_x", &(var.ptr->x), var.save_repeat);
+      read_f3d(var.name + "_y", &(var.ptr->y), var.save_repeat);
+      read_f3d(var.name + "_z", &(var.ptr->z), var.save_repeat);
+    } else {
+      read_f3d(var.name + "x", &(var.ptr->x), var.save_repeat);
+      read_f3d(var.name + "y", &(var.ptr->y), var.save_repeat);
+      read_f3d(var.name + "z", &(var.ptr->z), var.save_repeat);
+    }
+#else
   for(const auto& var : v2d_arr) {
     if(var.covar) {
       // Reading covariant vector
@@ -1277,7 +1303,7 @@ bool Datafile::read() {
       read_f2d(var.name + "y", &(var.ptr->y), var.save_repeat);
       read_f2d(var.name + "z", &(var.ptr->z), var.save_repeat);
     }
-
+#endif
     var.ptr->covariant = var.covar;
   }
 
@@ -1314,7 +1340,7 @@ bool Datafile::write() {
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
-  if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
+  if(openclose && (flushFrequencyCounter % flushfrequency == 0)) {
     // Open the file
     if(!file->openw(filename, BoutComm::rank(), appending)) {
       if (appending) {
@@ -1391,7 +1417,7 @@ bool Datafile::write() {
 
     // 3D fields
     for (const auto& var : f3d_arr) {
-      file->writeFieldAttributes(var.name, *var.ptr, shiftOutput);
+      file->writeFieldAttributes(var.name, *var.ptr, shiftoutput);
       if (not var.description.empty()) {
         file->setAttribute(var.name, "description", var.description);
       }
@@ -1399,7 +1425,7 @@ bool Datafile::write() {
 
     // FieldPerps
     for (const auto& var : fperp_arr) {
-      file->writeFieldAttributes(var.name, *var.ptr, shiftOutput);
+      file->writeFieldAttributes(var.name, *var.ptr, shiftoutput);
       if (not var.description.empty()) {
         file->setAttribute(var.name, "description", var.description);
       }
@@ -1421,9 +1447,9 @@ bool Datafile::write() {
     for(const auto& var : v3d_arr) {
       Vector3D v  = *(var.ptr);
       auto name = var.covar ? var.name + "_" : var.name;
-      file->writeFieldAttributes(name+"x", v.x, shiftOutput);
-      file->writeFieldAttributes(name+"y", v.y, shiftOutput);
-      file->writeFieldAttributes(name+"z", v.z, shiftOutput);
+      file->writeFieldAttributes(name+"x", v.x, shiftoutput);
+      file->writeFieldAttributes(name+"y", v.y, shiftoutput);
+      file->writeFieldAttributes(name+"z", v.z, shiftoutput);
       if (not var.description.empty()) {
         file->setAttribute(var.name, "description", var.description);
       }
@@ -1493,9 +1519,15 @@ bool Datafile::write() {
       v.toContravariant();
     }
 
+#if BOUT_USE_METRIC_3D
+    write_f3d(name + "x", &(v.x), var.save_repeat);
+    write_f3d(name + "y", &(v.y), var.save_repeat);
+    write_f3d(name + "z", &(v.z), var.save_repeat);
+#else
     write_f2d(name+"x", &(v.x), var.save_repeat);
     write_f2d(name+"y", &(v.y), var.save_repeat);
     write_f2d(name+"z", &(v.z), var.save_repeat);
+#endif
   }
 
   // 3D vectors
@@ -1517,7 +1549,7 @@ bool Datafile::write() {
     write_f3d(name+"z", &(v.z), var.save_repeat);
   }
   
-  if(openclose  && (flushFrequencyCounter+1 % flushFrequency == 0)){
+  if(openclose  && (flushFrequencyCounter+1 % flushfrequency == 0)){
     file->close();
   }
   flushFrequencyCounter++;
@@ -1555,7 +1587,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
-  if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
+  if(openclose && (flushFrequencyCounter % flushfrequency == 0)) {
     // Open the file
     if(!file->openw(filename, BoutComm::rank(), appending)) {
       if (appending) {
@@ -1593,7 +1625,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
-  if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
+  if(openclose && (flushFrequencyCounter % flushfrequency == 0)) {
     // Open the file
     if(!file->openw(filename, BoutComm::rank(), appending)) {
       if (appending) {
@@ -1631,7 +1663,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
-  if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
+  if(openclose && (flushFrequencyCounter % flushfrequency == 0)) {
     // Open the file
     if(!file->openw(filename, BoutComm::rank(), appending)) {
       if (appending) {
@@ -1740,7 +1772,7 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
   }
 
   
-  if (shiftInput) {
+  if (shiftinput) {
     // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
     *f = fromFieldAligned(*f, "RGN_ALL");
   }
@@ -1791,7 +1823,7 @@ bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repea
       }
     }
 
-    if (shiftInput) {
+    if (shiftinput) {
       // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
       *f = fromFieldAligned(*f, "RGN_ALL");
     }
@@ -1855,7 +1887,7 @@ bool Datafile::write_f3d(const std::string &name, Field3D *f, bool save_repeat) 
 
   //Deal with shifting the output
   Field3D f_out{emptyFrom(*f)};
-  if(shiftOutput and not (f->getDirectionY() == YDirectionType::Aligned)) {
+  if(shiftoutput and not (f->getDirectionY() == YDirectionType::Aligned)) {
     f_out = toFieldAligned(*f);
   }else {
     f_out = *f;
@@ -1878,7 +1910,7 @@ bool Datafile::write_fperp(const std::string &name, FieldPerp *f, bool save_repe
 
     //Deal with shifting the output
     FieldPerp f_out{emptyFrom(*f)};
-    if(shiftOutput and not (f->getDirectionY() == YDirectionType::Aligned)) {
+    if(shiftoutput and not (f->getDirectionY() == YDirectionType::Aligned)) {
       f_out = toFieldAligned(*f);
     }else {
       f_out = *f;

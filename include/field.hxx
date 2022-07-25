@@ -26,14 +26,17 @@
 
 class Field;
 
-#ifndef __FIELD_H__
-#define __FIELD_H__
+#ifndef FIELD_H
+#define FIELD_H
 
 #include "bout/build_config.hxx"
 
 #include <cmath>
 #include <cstdio>
 #include <memory>
+#include <string>
+
+#include "field_data.hxx"
 
 #include "bout/region.hxx"
 #include "bout_types.hxx"
@@ -50,18 +53,9 @@ class Field;
 #include "unused.hxx"
 
 class Mesh;
-class Coordinates;
 
-#if BOUT_USE_TRACK
-#include <string>
-#endif
-
-/*!
- * \brief Base class for fields
- *
- * Defines the virtual function SetStencil, used by differencing methods
- */
-class Field {
+/// Base class for scalar fields
+class Field : public FieldData {
 public:
   Field() = default;
   Field(const Field& other) = default;
@@ -71,15 +65,6 @@ public:
   virtual ~Field() = default;
 
   Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in);
-
-  /// Set variable location for staggered grids to @param new_location
-  ///
-  /// Throws BoutException if new_location is not `CELL_CENTRE` and
-  /// staggered grids are turned off and checks are on. If checks are
-  /// off, silently sets location to ``CELL_CENTRE`` instead.
-  void setLocation(CELL_LOC new_location);
-  /// Get variable location
-  CELL_LOC getLocation() const;
 
   /// Getters for DIRECTION types
   DirectionTypes getDirections() const {
@@ -93,11 +78,17 @@ public:
   }
 
   /// Setters for *DirectionType
-  void setDirectionY(YDirectionType y_type) {
-    directions.y = y_type;
+  virtual Field& setDirections(DirectionTypes directions_in) {
+    directions = directions_in;
+    return *this;
   }
-  void setDirectionZ(ZDirectionType z_type) {
+  virtual Field& setDirectionY(YDirectionType y_type) {
+    directions.y = y_type;
+    return *this;
+  }
+  virtual Field& setDirectionZ(ZDirectionType z_type) {
     directions.z = z_type;
+    return *this;
   }
 
   std::string name;
@@ -121,28 +112,6 @@ public:
   bool bndry_xin{true}, bndry_xout{true}, bndry_yup{true}, bndry_ydown{true};
 #endif
 
-  Mesh* getMesh() const {
-    if (fieldmesh) {
-      return fieldmesh;
-    } else {
-      // Don't set fieldmesh=mesh here, so that fieldmesh==nullptr until
-      // allocate() is called in one of the derived classes. fieldmesh==nullptr
-      // indicates that some initialization that would be done in the
-      // constructor if fieldmesh was a valid Mesh object still needs to be
-      // done.
-      return bout::globals::mesh;
-    }
-  }
-
-  /// Returns a pointer to the coordinates object at this field's
-  /// location from the mesh this field is on.
-  Coordinates* getCoordinates() const;
-
-  /// Returns a pointer to the coordinates object at the requested
-  /// location from the mesh this field is on. If location is CELL_DEFAULT
-  /// then return coordinates at field location
-  Coordinates* getCoordinates(CELL_LOC loc) const;
-
   /*!
    * Return the number of nx points
    */
@@ -158,28 +127,12 @@ public:
 
   friend void swap(Field& first, Field& second) noexcept {
     using std::swap;
+    swap(static_cast<FieldData&>(first), static_cast<FieldData&>(second));
     swap(first.name, second.name);
-    swap(first.fieldmesh, second.fieldmesh);
-    swap(first.fieldCoordinates, second.fieldCoordinates);
-    swap(first.location, second.location);
     swap(first.directions, second.directions);
   }
-protected:
-  Mesh* fieldmesh{nullptr};
-  mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};
 
-  /// Location of the variable in the cell
-  CELL_LOC location{CELL_CENTRE};
-
-  /// Copy the members from another Field
-  void copyFieldMembers(const Field& f) {
-    name = f.name;
-    fieldmesh = f.fieldmesh;
-    fieldCoordinates = f.fieldCoordinates;
-    location = f.location;
-    directions = f.directions;
-  }
-
+private:
   /// Labels for the type of coordinate system this field is defined over
   DirectionTypes directions{YDirectionType::Standard, ZDirectionType::Standard};
 };
@@ -296,7 +249,7 @@ inline void checkFinite(const T& f, const std::string& name="field", const std::
   }
 
   BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
-    if (!::finite(f[i])) {
+    if (!std::isfinite(f[i])) {
       throw BoutException("{:s} is not finite at {:s}", name, toString(i));
     }
   }
@@ -320,7 +273,9 @@ inline void checkPositive(const T& f, const std::string& name="field", const std
 
   BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
     if (f[i] <= 0.) {
-      throw BoutException("{:s} is not positive at {:s}", name, toString(i));
+      throw BoutException("{:s} ({:s} {:s}) is {:e} (not positive) at {:s}", name,
+                          toString(f.getLocation()), toString(f.getDirections()), f[i],
+                          toString(i));
     }
   }
 }
@@ -395,6 +350,52 @@ template<typename T, typename = bout::utils::EnableIfField<T>>
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline BoutReal min(const T& f, bool allpe, REGION rgn) {
   return min(f, allpe, toString(rgn));
+}
+
+/// Returns true if all elements of \p f over \p region are equal. By
+/// default only checks the local processor, use \p allpe to check
+/// globally
+///
+/// @param[in] f       The field to check
+/// @param[in] allpe   Check over all processors
+/// @param[in] region  The region to check for uniformity over
+template <typename T, typename = bout::utils::EnableIfField<T>>
+inline bool isUniform(const T& f, bool allpe = false,
+                      const std::string& region = "RGN_ALL") {
+  bool result = true;
+  auto element = f[*f.getRegion(region).begin()];
+  // TODO: maybe parallise this loop, as the early return is unlikely
+  BOUT_FOR_SERIAL(i, f.getRegion(region)) {
+    if (f[i] != element) {
+      result = false;
+      break;
+    }
+  }
+  if (allpe) {
+    bool localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_C_BOOL, MPI_LOR, BoutComm::get());
+  }
+  return result;
+}
+
+/// Returns the value of the first element of \p f (in the region \p
+/// region if given). If checks are enabled, then throws an exception
+/// if \p f is not uniform over \p region. By default only checks the
+/// local processor, use \p allpe to check globally
+///
+/// @param[in] f       The field to check
+/// @param[in] allpe   Check over all processors
+/// @param[in] region  The region to assume is uniform
+template <typename T, typename = bout::utils::EnableIfField<T>>
+inline BoutReal getUniform(const T& f, bool allpe = false,
+                           const std::string& region = "RGN_ALL") {
+#if CHECK > 1
+  if (not isUniform(f, allpe, region)) {
+    throw BoutException("Requested getUniform({}, {}, {}) but Field is not const", f.name,
+                        allpe, region);
+  }
+#endif
+  return f[*f.getRegion(region).begin()];
 }
 
 /// Maximum of \p r, excluding the boundary/guard cells by default
@@ -695,7 +696,7 @@ inline bool finite(const T &f, const std::string& rgn = "RGN_ALL") {
   }
 
   BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
-    if (!finite(f[i])) {
+    if (!std::isfinite(f[i])) {
       return false;
     }
   }
@@ -746,4 +747,4 @@ inline T floor(const T& var, BoutReal f, REGION rgn) {
 
 #undef FIELD_FUNC
 
-#endif /* __FIELD_H__ */
+#endif /* FIELD_H */

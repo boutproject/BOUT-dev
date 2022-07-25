@@ -57,7 +57,7 @@
 BoutMesh::BoutMesh(GridDataSource *s, Options *opt) : Mesh(s, opt) {
   OPTION(options, symmetricGlobalX, true);
   if (!options->isSet("symmetricGlobalY")) {
-    std::string optionfile = Options::root()["optionfile"].withDefault("");
+    std::string optionfile = Options::root()["optionfile"].withDefault("BOUT.inp");
     output_warn << "WARNING: The default of this option has changed in release 4.1.\n\
 If you want the old setting, you have to specify mesh:symmetricGlobalY=false in "
                 << optionfile << "\n";
@@ -511,7 +511,7 @@ int BoutMesh::load() {
   /// Call topology to set layout of grid
   topology();
 
-  TwistShift = options["TwistShift"]
+  TwistShift = options["twistshift"]
                    .doc("Apply a Twist-Shift boundary using ShiftAngle?")
                    .withDefault(false);
 
@@ -992,6 +992,8 @@ void BoutMesh::createYBoundaries() {
 std::set<std::string> BoutMesh::getPossibleBoundaries() const {
   // Result set: set so it automatically takes care of duplicates
   std::set<std::string> all_boundaries{};
+  WithQuietOutput quiet_info(output_info);
+  WithQuietOutput quiet_warn(output_warn);
 
   // Lambda that modifies `all_boundaries`
   const auto get_boundaries_on_different_rank = [mesh = this, &all_boundaries](
@@ -1009,7 +1011,7 @@ std::set<std::string> BoutMesh::getPossibleBoundaries() const {
                        mesh->MXG, mesh->MYG, mesh->NXPE, mesh->NYPE, x_rank, y_rank,
                        mesh->symmetricGlobalX, mesh->symmetricGlobalY, mesh->periodicX,
                        mesh->ixseps1, mesh->ixseps2, mesh->jyseps1_1, mesh->jyseps2_1,
-                       mesh->jyseps1_2, mesh->jyseps2_2, mesh->ny_inner};
+                       mesh->jyseps1_2, mesh->jyseps2_2, mesh->ny_inner, false};
     // We need to create the boundaries
     mesh_copy.createXBoundaries();
     mesh_copy.createYBoundaries();
@@ -1910,7 +1912,8 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
 BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
                    int nype, int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y,
                    bool periodicX_, int ixseps1_, int ixseps2_, int jyseps1_1_,
-                   int jyseps2_1_, int jyseps1_2_, int jyseps2_2_, int ny_inner_)
+                   int jyseps2_1_, int jyseps1_2_, int jyseps2_2_, int ny_inner_,
+                   bool create_regions)
     : nx(input_nx), ny(input_ny), nz(input_nz), NPES(nxpe * nype),
       MYPE(nxpe * pe_yind + pe_xind), PE_YIND(pe_yind), NYPE(nype), NZPE(1),
       ixseps1(ixseps1_), ixseps2(ixseps2_), symmetricGlobalX(symmetric_X),
@@ -1921,8 +1924,10 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   setYDecompositionIndices(jyseps1_1_, jyseps2_1_, jyseps1_2_, jyseps2_2_, ny_inner_);
   setDerivedGridSizes();
   topology();
-  createDefaultRegions();
-  addBoundaryRegions();
+  if (create_regions) {
+    createDefaultRegions();
+    addBoundaryRegions();
+  }
 }
 /****************************************************************
  *                       CONNECTIONS
@@ -2811,6 +2816,14 @@ void BoutMesh::addBoundaryRegions() {
   
   // Inner X
   if(firstX() && !periodicX) {
+    addRegion3D("RGN_INNER_X_THIN",
+                Region<Ind3D>(xstart - 1, xstart - 1, ystart, yend, 0, LocalNz - 1,
+                              LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X_THIN", Region<Ind2D>(xstart - 1, xstart - 1, ystart, yend, 0,
+                                                  0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(xstart - 1, xstart - 1, 0, 0, 0, LocalNz - 1, 1,
+                                  LocalNz, maxregionblocksize));
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
@@ -2822,6 +2835,12 @@ void BoutMesh::addBoundaryRegions() {
     output_info.write("\tBoundary region inner X\n");
   } else {
     // Empty region
+    addRegion3D("RGN_INNER_X_THIN",
+                Region<Ind3D>(0, -1, 0, 0, 0, 0, LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X_THIN",
+                Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
@@ -2832,6 +2851,14 @@ void BoutMesh::addBoundaryRegions() {
 
   // Outer X
   if(lastX() && !periodicX) {
+    addRegion3D("RGN_OUTER_X_THIN",
+                Region<Ind3D>(xend + 1, xend + 1, ystart, yend, 0, LocalNz - 1, LocalNy,
+                              LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X_THIN", Region<Ind2D>(xend + 1, xend + 1, ystart, yend, 0, 0,
+                                                  LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_OUTER_X_THIN",
+                  Region<IndPerp>(xend + 1, xend + 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                                  maxregionblocksize));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
@@ -2844,6 +2871,12 @@ void BoutMesh::addBoundaryRegions() {
     output_info.write("\tBoundary region outer X\n");
   } else {
     // Empty region
+    addRegion3D("RGN_OUTER_X_THIN",
+                Region<Ind3D>(0, -1, 0, 0, 0, 0, LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X_THIN",
+                Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_OUTER_X_THIN",
+                  Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,

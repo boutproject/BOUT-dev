@@ -95,12 +95,21 @@ protected:
 
     /************ Create a solver for potential ********/
 
+    Options& boussinesq_options = Options::root()["phiBoussinesq"];
+    Options& non_boussinesq_options = Options::root()["phiSolver"];
+
     if (boussinesq) {
-       // BOUT.inp section "phiBoussinesq"
-      phiSolver = Laplacian::create(Options::getRoot()->getSection("phiBoussinesq"));
+      // BOUT.inp section "phiBoussinesq"
+      phiSolver = Laplacian::create(&boussinesq_options);
+      // Mark other section as conditionally used so we don't get errors from unused
+      // options
+      non_boussinesq_options.setConditionallyUsed();
     } else {
       // BOUT.inp section "phiSolver"
-      phiSolver = Laplacian::create(Options::getRoot()->getSection("phiSolver")); 
+      phiSolver = Laplacian::create(&non_boussinesq_options);
+      // Mark other section as conditionally used so we don't get errors from unused
+      // options
+      boussinesq_options.setConditionallyUsed();
     }
     phi = 0.0; // Starting guess for first solve (if iterative)
 
@@ -138,9 +147,9 @@ protected:
     // Density Evolution
     /////////////////////////////////////////////////////////////////////////////
 
-    ddt(n) = -bracket(phi, n, BRACKET_SIMPLE) // ExB term
-             + 2 * DDZ(n) * (rho_s / R_c)     // Curvature term
-             + D_n * Delp2(n);                // Diffusion term
+    ddt(n) = -bracket(phi, n, BRACKET_ARAKAWA) // ExB term
+             + 2 * DDZ(n) * (rho_s / R_c)      // Curvature term
+             + D_n * Delp2(n);                 // Diffusion term
     if (compressible) {
       ddt(n) -= 2 * n * DDZ(phi) * (rho_s / R_c); // ExB Compression term
     }
@@ -153,9 +162,9 @@ protected:
     // Vorticity evolution
     /////////////////////////////////////////////////////////////////////////////
 
-    ddt(omega) = -bracket(phi, omega, BRACKET_SIMPLE) // ExB term
-                 + 2 * DDZ(n) * (rho_s / R_c) / n     // Curvature term
-                 + D_vort * Delp2(omega) / n          // Viscous diffusion term
+    ddt(omega) = -bracket(phi, omega, BRACKET_ARAKAWA) // ExB term
+                 + 2 * DDZ(n) * (rho_s / R_c) / n      // Curvature term
+                 + D_vort * Delp2(omega) / n           // Viscous diffusion term
         ;
 
     if (sheath) {

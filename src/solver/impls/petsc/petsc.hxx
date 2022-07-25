@@ -92,12 +92,7 @@ public:
   PetscSolver(Options *opts = nullptr);
   ~PetscSolver();
 
-  // Can be called from physics initialisation to supply callbacks
-  void setPrecon(PhysicsPrecon f) { prefunc = f; }
-  void setJacobian(Jacobian j) override { jacfunc = j; }
-
-  int init(int NOUT, BoutReal TIMESTEP) override;
-
+  int init() override;
   int run() override;
 
   // These functions used internally (but need to be public)
@@ -123,36 +118,36 @@ public:
   PetscLogEvent solver_event, loop_event, init_event;
 
 private:
-  PhysicsPrecon prefunc; ///< Preconditioner
-  Jacobian jacfunc;      ///< Jacobian - vector function
-
   BoutReal shift; ///< Shift (alpha) parameter from TS
   Vec state;
   BoutReal ts_time; ///< Internal PETSc timestepper time
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
 
-  Vec u;      ///< PETSc solution vector
-  TS ts;      ///< PETSc timestepper object
-  Mat J, Jmf; ///< RHS Jacobian
-  MatFDColoring matfdcoloring;
-
-  int nout;       ///< The number of outputs
-  BoutReal tstep; ///< Time between outputs
+  Vec u{nullptr}; ///< PETSc solution vector
+  TS ts{nullptr}; ///< PETSc timestepper object
+  Mat J{nullptr}; ///< RHS Jacobian
+  Mat Jmf{nullptr};
+  MatFDColoring matfdcoloring{nullptr};
 
   bool diagnose; ///< If true, print some information about current stage
 
   BoutReal next_output; ///< When the monitor should be called next
 
-  PetscBool interpolate; ///< Whether to interpolate or not
+  PetscBool interpolate{PETSC_TRUE}; ///< Whether to interpolate or not
 
   char output_name[PETSC_MAX_PATH_LEN];
-  PetscBool output_flag;
+  PetscBool output_flag{PETSC_FALSE};
   PetscInt prev_linear_its;
-  BoutReal bout_snes_time;
+  BoutReal bout_snes_time{0.0};
   std::vector<snes_info> snes_list;
 
   bool adaptive; ///< Use adaptive timestepping
+  bool use_precon, use_jacobian;
+  BoutReal abstol, reltol;
+  bool adams_moulton;
+  BoutReal start_timestep;
+  int mxstep;
 };
 
 #endif // BOUT_HAS_PETSC

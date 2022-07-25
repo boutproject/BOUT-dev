@@ -20,7 +20,7 @@ function = gauss(x-0.5, 0.3) * gauss(y-0.5,0.3)
 scale = 1
 function = 0
 
-[Probes]
+[probes]
 file = "PROBES.dmp"
 floats = true
 openclose = true # false if it should be fast

@@ -2,13 +2,13 @@ nout = 10
 timestep = 0.1
 
 [mesh]
-staggerGrids = True
+staggergrids = True
 n = 1
-nx = n+2*mxg
+nx = n+2*MXG
 ny = 16
 nz = n
-mxg = 0
-myg = 2
+MXG = 0
+MYG = 2
 dy = 2*pi/ny
 
 [solver]

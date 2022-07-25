@@ -10,11 +10,11 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 30       # number of time-steps
-TIMESTEP = 5000.0   # time between outputs
+nout = 30       # number of time-steps
+timestep = 5000.0   # time between outputs
 
 ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 33     # number of points in z direction (2^n + 1)
 ZMIN = 0.0
@@ -68,8 +68,8 @@ outer_boundary_flags = 0
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-12 # absolute tolerance
-RTOL = 1e-07  # relative tolerance
+atol = 1e-12 # absolute tolerance
+rtol = 1e-07  # relative tolerance
 mxstep = 5000
 
 ##################################################
@@ -93,7 +93,7 @@ ShearFactor = 0.0
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 
 # boundary conditions
 # -------------------

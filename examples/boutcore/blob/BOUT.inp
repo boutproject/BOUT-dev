@@ -9,12 +9,8 @@
 
 # settings used by the core code
 
-NOUT = 50      # number of time-steps
-TIMESTEP = 50  # time between outputs [1/wci]
-
-
-MXG = 2      # Number of X guard cells
-MYG = 0      # No y derivatives, so no guard cells needed in y
+nout = 50      # number of time-steps
+timestep = 50  # time between outputs [1/wci]
 
 [mesh]
 
@@ -24,6 +20,10 @@ nz = 256
 
 dx = 0.3      # Grid spacing [rho_s]
 dz = 0.3
+
+
+MXG = 2      # Number of X guard cells
+MYG = 0      # No y derivatives, so no guard cells needed in y
 
 ##################################################
 # derivative methods
@@ -51,8 +51,8 @@ upwind = W3
 
 [solver]
 
-ATOL = 1e-10  # absolute tolerance
-RTOL = 1e-05   # relative tolerance
+atol = 1e-10  # absolute tolerance
+rtol = 1e-05   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 ###################################################
@@ -105,7 +105,7 @@ R_c = 1.5  # Radius of curvature (m)
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 bndry_all = neumann # Zero-gradient on all boundaries

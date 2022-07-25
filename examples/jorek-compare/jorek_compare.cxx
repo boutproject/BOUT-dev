@@ -390,7 +390,7 @@ private:
   }
 
   int rhs(BoutReal t) override {
-    TRACE("Started physics_run({:e})", t);
+    TRACE("Started Jorek::rhs({:e})", t);
 
     // Invert laplacian for phi
     if (vorticity_momentum) {

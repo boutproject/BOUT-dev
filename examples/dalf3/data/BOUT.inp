@@ -3,16 +3,16 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 100          # number of time-steps
-TIMESTEP = 10.0       # time between outputs
+nout = 100          # number of time-steps
+timestep = 10.0       # time between outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
-TwistShift = true   # use twist-shift condition?
+twistshift = true   # use twist-shift condition?
 ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
 TwistOrder = 0      # order of twist-shift interpolation
 
 MZ = 64             # number of points in z direction (2^n + 1)
-ZPERIOD = 10        # Fraction of a torus to simulate
+zperiod = 10        # Fraction of a torus to simulate
 
 MXG = 2
 MYG = 2
@@ -24,7 +24,7 @@ restart_format = "nc"   # Restart file format
 
 [mesh]
 
-StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
+staggergrids = false    # Use staggered grids (EXPERIMENTAL)
 
 ##################################################
 # derivative methods
@@ -64,8 +64,8 @@ group_nonblock = false  # Use non-blocking group operations?
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-08 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-08 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
 use_jacobian = false  # Use user-supplied Jacobian
@@ -107,7 +107,7 @@ outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 
 split_n0 = true # Split into n=0 and n != 0
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = gauss(x - 0.5, 0.1) * gauss(y - pi, 0.3*pi) * sin(z)
 

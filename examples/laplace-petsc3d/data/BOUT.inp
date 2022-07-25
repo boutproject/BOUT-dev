@@ -28,11 +28,11 @@ bndry_par_all = parallel_neumann
 function = 0.0
 
 #################################################################################
-[mesh]
-paralleltransform = shiftedinterp
+[mesh:paralleltransform]
+type = shiftedinterp
 
-[interpolation]
-type = hermitesplineonlyz
+[mesh:paralleltransform:zinterpolation]
+type = hermitespline
 
 #################################################################################
 [laplace]

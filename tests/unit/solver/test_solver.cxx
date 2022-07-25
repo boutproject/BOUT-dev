@@ -1,3 +1,4 @@
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include "boutexception.hxx"
@@ -5,6 +6,7 @@
 #include "field3d.hxx"
 #include "test_extras.hxx"
 #include "test_fakesolver.hxx"
+#include "bout/physicsmodel.hxx"
 #include "bout/solver.hxx"
 #include "bout/sys/uuid.h"
 
@@ -38,6 +40,34 @@ private:
   BoutReal trigger_time{0.0};
 };
 
+class MockPhysicsModel : public PhysicsModel {
+public:
+  MockPhysicsModel() : PhysicsModel() {}
+  MOCK_METHOD(int, init, (bool restarting), (override));
+  // Mock postInit even though it's not pure virtual because it does
+  // stuff with files
+  MOCK_METHOD(int, postInit, (bool restarting), (override));
+  MOCK_METHOD(int, rhs, (BoutReal time), (override));
+  MOCK_METHOD(int, convective, (BoutReal t), (override));
+  MOCK_METHOD(int, diffusive, (BoutReal t), (override));
+  MOCK_METHOD(int, diffusive, (BoutReal t, bool linear), (override));
+  MOCK_METHOD(int, outputMonitor, (BoutReal simtime, int iter, int NOUT), (override));
+  MOCK_METHOD(int, timestepMonitor, (BoutReal simtime, BoutReal dt), (override));
+
+  int preconditioner(BoutReal time, BoutReal gamma, BoutReal delta) {
+    return static_cast<int>(time + gamma + delta);
+  }
+
+  int jacobian(BoutReal time) {
+    return static_cast<int>(time);
+  }
+
+  // Expose some protected methods to aid testing
+  using PhysicsModel::setPrecon;
+  using PhysicsModel::setJacobian;
+  using PhysicsModel::setSplitOperator;
+};
+
 } // namespace
 
 class SolverTest : public FakeMeshFixture {
@@ -53,6 +83,7 @@ public:
     Options::root()["another_vectorx"]["function"] = "8.0";
     Options::root()["another_vectory"]["function"] = "9.0";
     Options::root()["another_vectorz"]["function"] = "10.0";
+    Options::root()["input"]["error_on_unused_options"] = false;
   }
   virtual ~SolverTest() { Options::cleanup(); }
 
@@ -144,6 +175,33 @@ TEST_F(SolverTest, BadCreateFromNameAndOptions) {
 
   Options options;
   EXPECT_THROW(Solver::create("bad_solver", &options), BoutException);
+}
+
+TEST_F(SolverTest, SetModel) {
+  Options options;
+  FakeSolver solver{&options};
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+
+  solver.setModel(&model);
+
+  // Can't set a second model
+  EXPECT_THROW(solver.setModel(&model), BoutException);
+}
+
+TEST_F(SolverTest, SetModelAfterInit) {
+  Options options;
+  FakeSolver solver{&options};
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(0);
+  EXPECT_CALL(model, postInit).Times(0);
+
+  solver.init();
+
+  EXPECT_THROW(solver.setModel(&model), BoutException);
 }
 
 TEST_F(SolverTest, AddField2D) {
@@ -256,22 +314,27 @@ TEST_F(SolverTest, AddVector2D) {
 
   Vector2D vector1{}, vector2{};
   EXPECT_NO_THROW(solver.add(vector1, "vector"));
-  EXPECT_EQ(solver.n2Dvars(), 3);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+#if not(BOUT_USE_METRIC_3D)
+  constexpr int n2d = 3, n3d = 0;
+#else
+  constexpr int n2d = 0, n3d = 3;
+#endif
+  EXPECT_EQ(solver.n2Dvars(), n2d);
+  EXPECT_EQ(solver.n3Dvars(), n3d);
   EXPECT_TRUE(IsFieldEqual(vector1.x, 5.0));
   EXPECT_TRUE(IsFieldEqual(vector1.y, 6.0));
   EXPECT_TRUE(IsFieldEqual(vector1.z, 7.0));
 
 #if CHECK > 0
   EXPECT_THROW(solver.add(vector2, "vector"), BoutException);
-  EXPECT_EQ(solver.n2Dvars(), 3);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+  EXPECT_EQ(solver.n2Dvars(), n2d);
+  EXPECT_EQ(solver.n3Dvars(), n3d);
 #endif
 
   vector2.covariant = false;
   EXPECT_NO_THROW(solver.add(vector2, "another_vector"));
-  EXPECT_EQ(solver.n2Dvars(), 6);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+  EXPECT_EQ(solver.n2Dvars(), n2d * 2);
+  EXPECT_EQ(solver.n3Dvars(), n3d * 2);
   EXPECT_TRUE(IsFieldEqual(vector2.x, 8.0));
   EXPECT_TRUE(IsFieldEqual(vector2.y, 9.0));
   EXPECT_TRUE(IsFieldEqual(vector2.z, 10.0));
@@ -382,29 +445,34 @@ TEST_F(SolverTest, ConstraintVector2D) {
 
   Vector2D vector1{}, vector2{};
   EXPECT_NO_THROW(solver.constraint(vector1, vector1, "vector"));
-  EXPECT_EQ(solver.n2Dvars(), 3);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+#if not(BOUT_USE_METRIC_3D)
+  constexpr int n2d = 3, n3d = 0;
+#else
+  constexpr int n2d = 0, n3d = 3;
+#endif
+  EXPECT_EQ(solver.n2Dvars(), n2d);
+  EXPECT_EQ(solver.n3Dvars(), n3d);
 
 #if CHECK > 0
   EXPECT_THROW(solver.constraint(vector2, vector2, "vector"), BoutException);
-  EXPECT_EQ(solver.n2Dvars(), 3);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+  EXPECT_EQ(solver.n2Dvars(), n2d);
+  EXPECT_EQ(solver.n3Dvars(), n3d);
 
   EXPECT_THROW(solver.constraint(vector2, vector2, ""), BoutException);
-  EXPECT_EQ(solver.n2Dvars(), 3);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+  EXPECT_EQ(solver.n2Dvars(), n2d);
+  EXPECT_EQ(solver.n3Dvars(), n3d);
 
   solver.changeHasConstraints(false);
   EXPECT_THROW(solver.constraint(vector2, vector2, "some_other_name"), BoutException);
-  EXPECT_EQ(solver.n2Dvars(), 3);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+  EXPECT_EQ(solver.n2Dvars(), n2d);
+  EXPECT_EQ(solver.n3Dvars(), n3d);
   solver.changeHasConstraints(true);
 #endif
 
   vector2.covariant = false;
   EXPECT_NO_THROW(solver.constraint(vector2, vector2, "another_vector"));
-  EXPECT_EQ(solver.n2Dvars(), 6);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+  EXPECT_EQ(solver.n2Dvars(), n2d * 2);
+  EXPECT_EQ(solver.n3Dvars(), n3d * 2);
 
   const auto expected_names = std::vector<std::string>{"vector", "another_vector"};
   EXPECT_EQ(solver.listVector2DNames(), expected_names);
@@ -448,15 +516,15 @@ TEST_F(SolverTest, NoInitTwice) {
   Options options;
   FakeSolver solver{&options};
 
-  EXPECT_NO_THROW(solver.init(0, 0));
-  EXPECT_THROW(solver.init(0, 0), BoutException);
+  EXPECT_NO_THROW(solver.init());
+  EXPECT_THROW(solver.init(), BoutException);
 }
 
 TEST_F(SolverTest, NoAddAfterInit) {
   Options options;
   FakeSolver solver{&options};
 
-  EXPECT_NO_THROW(solver.init(0, 0));
+  EXPECT_NO_THROW(solver.init());
 
   Field2D field1{};
   EXPECT_THROW(solver.add(field1, "field"), BoutException);
@@ -472,7 +540,7 @@ TEST_F(SolverTest, NoConstraintsAfterInit) {
   Options options;
   FakeSolver solver{&options};
 
-  EXPECT_NO_THROW(solver.init(0, 0));
+  EXPECT_NO_THROW(solver.init());
 
   Field2D field1{};
   EXPECT_THROW(solver.constraint(field1, field1, "field"), BoutException);
@@ -488,10 +556,15 @@ TEST_F(SolverTest, SplitOperator) {
   Options options;
   FakeSolver solver{&options};
 
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+
+  solver.setModel(&model);
+
   EXPECT_FALSE(solver.splitOperator());
 
-  rhsfunc fake_rhs = [](BoutReal) -> int { return 0; };
-  solver.setSplitOperator(fake_rhs, fake_rhs);
+  model.setSplitOperator();
 
   EXPECT_TRUE(solver.splitOperator());
 }
@@ -501,15 +574,6 @@ TEST_F(SolverTest, ResetInternalFields) {
   FakeSolver solver{&options};
 
   EXPECT_THROW(solver.resetInternalFields(), BoutException);
-}
-
-TEST_F(SolverTest, SetMaxTimestep) {
-  Options options;
-  FakeSolver solver{&options};
-
-  auto expected = 4.5;
-  EXPECT_NO_THROW(solver.setMaxTimestep(expected));
-  EXPECT_EQ(solver.getMaxTimestepShim(), expected);
 }
 
 TEST_F(SolverTest, GetCurrentTimestep) {
@@ -557,7 +621,7 @@ TEST_F(SolverTest, GetLocalN) {
   solver.add(field3, "field3");
   solver.add(field4, "field4");
 
-  solver.init(0, 0);
+  solver.init();
 
   constexpr auto globalmesh_nx_no_boundry = SolverTest::nx - 2;
   constexpr auto globalmesh_ny_no_boundry = SolverTest::ny - 2;
@@ -569,42 +633,76 @@ TEST_F(SolverTest, GetLocalN) {
       + (localmesh_nx_no_boundry * localmesh_ny_no_boundry * localmesh_nz)
       + (nx * ny * nz);
 
-  EXPECT_EQ(solver.getLocalNShim(), expected_total);
+  EXPECT_EQ(solver.getLocalN(), expected_total);
 }
 
 TEST_F(SolverTest, HavePreconditioner) {
-  PhysicsPrecon preconditioner = [](BoutReal time, BoutReal gamma,
-                                    BoutReal delta) -> int {
-    return static_cast<int>(time + gamma + delta);
-  };
-
   Options options;
   FakeSolver solver{&options};
 
-  EXPECT_FALSE(solver.haveUserPreconShim());
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
 
-  solver.setPrecon(preconditioner);
+  solver.setModel(&model);
 
-  EXPECT_TRUE(solver.haveUserPreconShim());
+  EXPECT_FALSE(solver.hasPreconditioner());
+
+  model.setPrecon(&MockPhysicsModel::preconditioner);
+
+  EXPECT_TRUE(solver.hasPreconditioner());
 }
 
 TEST_F(SolverTest, RunPreconditioner) {
-  PhysicsPrecon preconditioner = [](BoutReal time, BoutReal gamma,
-                                    BoutReal delta) -> int {
-    return static_cast<int>(time + gamma + delta);
-  };
-
   Options options;
   FakeSolver solver{&options};
 
-  solver.setPrecon(preconditioner);
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+
+  solver.setModel(&model);
+  model.setPrecon(&MockPhysicsModel::preconditioner);
 
   constexpr auto time = 1.0;
   constexpr auto gamma = 2.0;
   constexpr auto delta = 3.0;
   constexpr auto expected = time + gamma + delta;
 
-  EXPECT_EQ(solver.runPreconShim(time, gamma, delta), expected);
+  EXPECT_EQ(solver.runPreconditioner(time, gamma, delta), expected);
+}
+
+TEST_F(SolverTest, HasJacobian) {
+  Options options;
+  FakeSolver solver{&options};
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+  solver.setModel(&model);
+
+  EXPECT_FALSE(solver.hasJacobian());
+
+  model.setJacobian(&MockPhysicsModel::jacobian);
+
+  EXPECT_TRUE(solver.hasJacobian());
+}
+
+TEST_F(SolverTest, RunJacobian) {
+  Options options;
+  FakeSolver solver{&options};
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+
+  solver.setModel(&model);
+  model.setJacobian(&MockPhysicsModel::jacobian);
+
+  constexpr auto time = 4.0;
+  constexpr auto expected = 4;
+
+  EXPECT_EQ(solver.runJacobian(time), expected);
 }
 
 TEST_F(SolverTest, AddMonitor) {
@@ -619,7 +717,7 @@ TEST_F(SolverTest, AddMonitor) {
 
   EXPECT_THROW(monitor.setTimestepShim(20.0), BoutException);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 0, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 0, 0));
 
   EXPECT_EQ(monitor.last_called, 0);
 }
@@ -635,19 +733,19 @@ TEST_F(SolverTest, AddMonitorFront) {
   EXPECT_NO_THROW(solver.addMonitor(&monitor2, Solver::FRONT));
 
   // Everything's fine
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 0, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 0, 0));
 
   EXPECT_EQ(monitor1.last_called, 0);
   EXPECT_EQ(monitor2.last_called, 0);
 
   // One monitor signals to quit
-  EXPECT_THROW(solver.callMonitorsShim(5.0, 1, 0), BoutException);
+  EXPECT_THROW(solver.call_monitors(5.0, 1, 0), BoutException);
 
   EXPECT_EQ(monitor1.last_called, 0);
   EXPECT_EQ(monitor2.last_called, 1);
 
   // Last timestep
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 9, 10));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 9, 10));
 
   EXPECT_EQ(monitor1.last_called, 9);
   EXPECT_EQ(monitor2.last_called, 9);
@@ -666,19 +764,19 @@ TEST_F(SolverTest, AddMonitorBack) {
   EXPECT_NO_THROW(solver.addMonitor(&monitor2, Solver::BACK));
 
   // Everything's fine
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 0, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 0, 0));
 
   EXPECT_EQ(monitor1.last_called, 0);
   EXPECT_EQ(monitor2.last_called, 0);
 
   // One monitor signals to quit
-  EXPECT_THROW(solver.callMonitorsShim(5.0, 1, 0), BoutException);
+  EXPECT_THROW(solver.call_monitors(5.0, 1, 0), BoutException);
 
   EXPECT_EQ(monitor1.last_called, 1);
   EXPECT_EQ(monitor2.last_called, 0);
 
   // Last timestep
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 9, 10));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 9, 10));
 
   EXPECT_EQ(monitor1.last_called, 9);
   EXPECT_EQ(monitor2.last_called, 9);
@@ -702,7 +800,7 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_NO_THROW(solver.addMonitor(&larger_timestep));
   EXPECT_THROW(solver.addMonitor(&incompatible_timestep), BoutException);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, -1, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, -1, 0));
 
   EXPECT_EQ(default_timestep.last_called, -1);
   EXPECT_EQ(smaller_timestep.last_called, -1);
@@ -710,7 +808,7 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_EQ(larger_timestep.last_called, -1);
   EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 9, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 9, 0));
 
   EXPECT_EQ(default_timestep.last_called, 0);
   EXPECT_EQ(smaller_timestep.last_called, 0);
@@ -718,7 +816,7 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_EQ(larger_timestep.last_called, -1);
   EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 10, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 10, 0));
 
   EXPECT_EQ(default_timestep.last_called, 0);
   EXPECT_EQ(smaller_timestep.last_called, 0);
@@ -726,7 +824,7 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_EQ(larger_timestep.last_called, -1);
   EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 199, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 199, 0));
 
   EXPECT_EQ(default_timestep.last_called, 19);
   EXPECT_EQ(smaller_timestep.last_called, 19);
@@ -734,7 +832,7 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_EQ(larger_timestep.last_called, 0);
   EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 399, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 399, 0));
 
   EXPECT_EQ(default_timestep.last_called, 39);
   EXPECT_EQ(smaller_timestep.last_called, 39);
@@ -742,14 +840,14 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_EQ(larger_timestep.last_called, 1);
   EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
 
-  solver.init(0, 0);
+  solver.init();
 
   FakeMonitor too_small_postinit_timestep{0.001};
   EXPECT_THROW(solver.addMonitor(&too_small_postinit_timestep), BoutException);
   FakeMonitor larger_postinit_timestep{4.};
   EXPECT_NO_THROW(solver.addMonitor(&larger_postinit_timestep, Solver::BACK));
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 399, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 399, 0));
 
   EXPECT_EQ(default_timestep.last_called, 39);
   EXPECT_EQ(smaller_timestep.last_called, 39);
@@ -771,11 +869,11 @@ TEST_F(SolverTest, RemoveMonitor) {
   solver.removeMonitor(&monitor1);
 
   std::list<Monitor*> expected{&monitor2};
-  EXPECT_EQ(solver.getMonitorsShim(), expected);
+  EXPECT_EQ(solver.getMonitors(), expected);
 
   // Removing same monitor again should be a no-op
   solver.removeMonitor(&monitor1);
-  EXPECT_EQ(solver.getMonitorsShim(), expected);
+  EXPECT_EQ(solver.getMonitors(), expected);
 }
 
 namespace {
@@ -795,9 +893,15 @@ TEST_F(SolverTest, AddTimestepMonitor) {
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor1));
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor2));
 
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., 1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., -1.), 1);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(-1., -1.), 2);
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+  solver.setModel(&model);
+  EXPECT_CALL(model, timestepMonitor).Times(1);
+
+  EXPECT_EQ(solver.call_timestep_monitors(1., 1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(1., -1.), 1);
+  EXPECT_EQ(solver.call_timestep_monitors(-1., -1.), 2);
 }
 
 TEST_F(SolverTest, RemoveTimestepMonitor) {
@@ -810,15 +914,23 @@ TEST_F(SolverTest, RemoveTimestepMonitor) {
 
   solver.removeTimestepMonitor(timestep_monitor1);
 
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., 1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., -1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(-1., -1.), 2);
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+  solver.setModel(&model);
+  EXPECT_CALL(model, timestepMonitor).Times(2);
+
+  EXPECT_EQ(solver.call_timestep_monitors(1., 1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(1., -1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(-1., -1.), 2);
 
   solver.removeTimestepMonitor(timestep_monitor1);
 
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., 1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., -1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(-1., -1.), 2);
+  EXPECT_CALL(model, timestepMonitor).Times(2);
+
+  EXPECT_EQ(solver.call_timestep_monitors(1., 1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(1., -1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(-1., -1.), 2);
 }
 
 TEST_F(SolverTest, DontCallTimestepMonitors) {
@@ -828,17 +940,29 @@ TEST_F(SolverTest, DontCallTimestepMonitors) {
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor1));
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor2));
 
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., 1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(1., -1.), 0);
-  EXPECT_EQ(solver.callTimestepMonitorsShim(-1., -1.), 0);
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+  solver.setModel(&model);
+  EXPECT_CALL(model, timestepMonitor).Times(0);
+
+  EXPECT_EQ(solver.call_timestep_monitors(1., 1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(1., -1.), 0);
+  EXPECT_EQ(solver.call_timestep_monitors(-1., -1.), 0);
 }
 
 TEST_F(SolverTest, BasicSolve) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
 
+  EXPECT_CALL(model, rhs(0)).Times(1);
+
+  Options::cleanup();
   EXPECT_NO_THROW(solver.solve());
 
   EXPECT_TRUE(solver.init_called);
@@ -849,9 +973,15 @@ TEST_F(SolverTest, GetRunID) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
-
   EXPECT_THROW(solver.getRunID(), BoutException);
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(1);
   solver.solve();
 
   EXPECT_NO_THROW(solver.getRunID());
@@ -862,9 +992,15 @@ TEST_F(SolverTest, GetRunRestartFrom) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
-
   EXPECT_THROW(solver.getRunRestartFrom(), BoutException);
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(1);
   solver.solve();
 
   EXPECT_NO_THROW(solver.getRunRestartFrom());
@@ -878,7 +1014,12 @@ TEST_F(SolverTest, SolveBadInit) {
   options["fail_init"] = -1;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(0);
 
   EXPECT_THROW(solver.solve(), BoutException);
 
@@ -891,8 +1032,14 @@ TEST_F(SolverTest, SolveBadRun) {
   options["fail_run"] = -1;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
 
+  EXPECT_CALL(model, rhs(0)).Times(1);
+
+  Options::cleanup();
   EXPECT_EQ(solver.solve(), -1);
 
   EXPECT_TRUE(solver.init_called);
@@ -906,8 +1053,14 @@ TEST_F(SolverTest, SolveThrowRun) {
   options["throw_run"] = true;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
 
+  EXPECT_CALL(model, rhs(0)).Times(1);
+
+  Options::cleanup();
   EXPECT_THROW(solver.solve(), BoutException);
 
   EXPECT_TRUE(solver.init_called);
@@ -917,8 +1070,6 @@ TEST_F(SolverTest, SolveThrowRun) {
 TEST_F(SolverTest, SolveFixDefaultTimestep) {
   Options options;
   FakeSolver solver{&options};
-
-  Options::root()["dump_on_restart"] = false;
 
   FakeMonitor default_timestep;
   FakeMonitor smaller_timestep{0.1};
@@ -930,30 +1081,43 @@ TEST_F(SolverTest, SolveFixDefaultTimestep) {
   solver.addMonitor(&even_smaller_timestep);
   solver.addMonitor(&larger_timestep);
 
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(1);
+
+  Options::cleanup();
   EXPECT_NO_THROW(solver.solve(100, 1.));
 
   EXPECT_TRUE(solver.init_called);
   EXPECT_TRUE(solver.run_called);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 99, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 99, 0));
 
   EXPECT_EQ(default_timestep.last_called, 0);
   EXPECT_EQ(smaller_timestep.last_called, 9);
   EXPECT_EQ(even_smaller_timestep.last_called, 99);
-  EXPECT_EQ(larger_timestep.last_called, called_sentinel);
+  EXPECT_EQ(larger_timestep.last_called, -1);
 }
 
 TEST_F(SolverTest, SolveFixDefaultTimestepBad) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
-
   FakeMonitor default_timestep;
   FakeMonitor smaller_timestep{0.1};
 
   solver.addMonitor(&default_timestep);
   solver.addMonitor(&smaller_timestep);
+
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(0);
 
   EXPECT_THROW(solver.solve(100, 3.142), BoutException);
 
@@ -965,20 +1129,26 @@ TEST_F(SolverTest, SolveFixDefaultTimestepSmaller) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
-
   FakeMonitor default_timestep;
   FakeMonitor smaller_timestep{0.1};
 
   solver.addMonitor(&default_timestep);
   solver.addMonitor(&smaller_timestep);
 
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(1);
+
+  Options::cleanup();
   EXPECT_NO_THROW(solver.solve(100, 0.01));
 
   EXPECT_TRUE(solver.init_called);
   EXPECT_TRUE(solver.run_called);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 99, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 99, 0));
 
   EXPECT_EQ(default_timestep.last_called, 99);
   EXPECT_EQ(smaller_timestep.last_called, 9);
@@ -988,21 +1158,28 @@ TEST_F(SolverTest, SolveFixDefaultTimestepLarger) {
   Options options;
   FakeSolver solver{&options};
 
-  Options::root()["dump_on_restart"] = false;
-
   FakeMonitor default_timestep;
   FakeMonitor smaller_timestep{0.1};
 
   solver.addMonitor(&default_timestep);
   solver.addMonitor(&smaller_timestep);
 
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init(false)).Times(1);
+  EXPECT_CALL(model, postInit(false)).Times(1);
+  solver.setModel(&model);
+
+  EXPECT_CALL(model, rhs(0)).Times(1);
+
+  Options::cleanup();
   EXPECT_NO_THROW(solver.solve(100, 1.));
 
   EXPECT_TRUE(solver.init_called);
   EXPECT_TRUE(solver.run_called);
 
-  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 99, 0));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 99, 0));
 
   EXPECT_EQ(default_timestep.last_called, 9);
   EXPECT_EQ(smaller_timestep.last_called, 99);
 }
+

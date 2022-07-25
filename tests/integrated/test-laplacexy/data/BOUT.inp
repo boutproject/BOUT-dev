@@ -24,7 +24,7 @@ ixseps1 = 64
 ixseps2 = 64
 
 [laplacexy]
-pctype = shell    # Supply a second solver as a preconditioner
+pctype = sor    # Supply a second solver as a preconditioner
 #pctype = hypre    # Algebraic multigrid preconditioner using hypre library
 finite_volume = false
 rtol = 1e-14

@@ -6,8 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-if(NOT BOUT_HAS_PETSC)
-  message(FATAL_ERROR "This example requires PETSc. Please compile BOUT++ with PETSc")
-endif()
-
-bout_add_example(invertable_operator SOURCES invertable_operator.cxx)
+bout_add_example(invertable_operator
+  SOURCES invertable_operator.cxx
+  REQUIRES BOUT_HAS_PETSC)

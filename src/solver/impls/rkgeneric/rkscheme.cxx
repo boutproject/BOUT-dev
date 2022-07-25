@@ -3,6 +3,7 @@
 #include <bout/rkscheme.hxx>
 #include <boutcomm.hxx>
 #include <cmath>
+#include <options.hxx>
 #include <output.hxx>
 
 // Implementations
@@ -15,39 +16,32 @@
 // PUBLIC
 ////////////////////
 
-//Initialise
-RKScheme::RKScheme(Options *UNUSED(opts)) {
-  // Currently not reading anything from the options here
+RKScheme::RKScheme(Options* options, bool default_follow_high_order)
+    : followHighOrder((*options)["followHighOrder"]
+                          .doc("Use the higher order solution")
+                          .withDefault(default_follow_high_order)),
+      diagnose((*options)["diagnose"].doc("Enable diagnostics").withDefault(false)),
+      dtfac((*options)["dtfac"].doc("Time step adjustment factor").withDefault(1.0)) {}
 
-  // Initialise internals
-  dtfac = 1.0; // Time step factor
-}
-
-//Finish generic initialisation
-void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, const BoutReal atolIn, 
-		    const BoutReal rtolIn, Options *options){
-
-  bool diagnose;
-  OPTION(options, dtfac, dtfac); //Time step adjustment factor
-  OPTION(options, diagnose, false); //Diagnostics enabled?
-
-  //Store configuration data
+void RKScheme::init(int nlocalIn, int neqIn, bool adaptiveIn, BoutReal atolIn,
+                    BoutReal rtolIn) {
+  // Store configuration data
   nlocal = nlocalIn;
   neq = neqIn;
   atol = atolIn;
   rtol = rtolIn;
   adaptive = adaptiveIn;
 
-  //Allocate storage for stages
+  // Allocate storage for stages
   steps.reallocate(getStageCount(), nlocal);
   zeroSteps();
 
-  //Allocate array for storing alternative order result
+  // Allocate array for storing alternative order result
   if (adaptive)
     resultAlt.reallocate(nlocal); // Result--alternative order
 
-  //Will probably only want the following when debugging, but leave it on for now
-  if(diagnose){
+  // Will probably only want the following when debugging, but leave it on for now
+  if (diagnose) {
     verifyCoeffs();
     printButcherTableau();
   }

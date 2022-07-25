@@ -8,7 +8,6 @@
 # export MPIRUN="mpirun -np"
 # export MPIRUN="aprun -n"
 
-from __future__ import print_function
 import os
 import sys
 import time
@@ -182,14 +181,14 @@ class Test(threading.Thread):
             print("{:{width}}".format(self.name, width=self.width), end="")
             if self.status == 0:
                 # ✓ Passed
-                print(u"\u2713", end="")  # No newline
+                print("\u2713", end="")  # No newline
             elif self.status == 124:
                 # 💤 timeout
-                print(u"\U0001f4a4", end="")  # No newline
+                print("\U0001f4a4", end="")  # No newline
                 self.output += "\n(It is likely that a timeout occured)"
             else:
                 # ❌ Failed
-                print(u"\u274C", end="")  # No newline
+                print("\u274C", end="")  # No newline
             print(" %7.3f s" % (time.time() - self.local.start_time), flush=True)
 
     def _cost(self):
@@ -226,6 +225,7 @@ if args.set_list is None:
         tests = glob.glob("*/runtest")
         tests += glob.glob("*/*/runtest")
         tests += glob.glob("*/*/*/runtest")
+        tests += glob.glob("*/*/*/*/runtest")
 
     tests = [x.rsplit("/", 1)[0] for x in tests]
 
@@ -351,7 +351,7 @@ if failed:
     print("======= FAILURES ========")
     for test, output in failed:
         # Note: need Unicode string in case output contains unicode
-        print(u"\n----- {0} -----\n{1}".format(test, output))
+        print("\n----- {0} -----\n{1}".format(test, output))
 
     print(
         "======= {0} failed in {1:.2f} seconds ========".format(

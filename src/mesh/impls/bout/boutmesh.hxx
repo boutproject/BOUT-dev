@@ -211,10 +211,13 @@ protected:
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
            int pe_xind, int pe_yind, bool create_topology = true, bool symmetric_X = true,
            bool symmetric_Y = true);
+  /// Another constructor useful for testing, and used in
+  /// `getPossibleBoundaries`. \p create_regions controls whether or
+  /// not the various `Region`s are created on the new mesh
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
            int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y, bool periodic_X,
            int ixseps1_, int ixseps2_, int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
-           int jyseps2_2_, int ny_inner_);
+           int jyseps2_2_, int ny_inner_, bool create_regions=true);
 
   /// Very basic initialisation, only suitable for testing
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int input_npes)

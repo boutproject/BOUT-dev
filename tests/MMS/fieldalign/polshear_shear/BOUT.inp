@@ -32,7 +32,7 @@ theta = y + 0.05*(0.5-x)*sin(y)
 
 zShift = 0.1*x*(y + (-0.05*x + 0.025)*sin(mesh:theta))
 nu = 0.1*x
-shiftangle = 2.*pi/10.*x
+ShiftAngle = 2.*pi/10.*x
 I = 0.1*y + 0.1*(-0.05*x + 0.025)*sin(mesh:theta)
 HH = 0.1*x
 

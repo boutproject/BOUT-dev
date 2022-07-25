@@ -32,9 +32,11 @@ const char DEFAULT_DIR[] = "data";
 #define GLOBALORIGIN
 
 #include "boundary_factory.hxx"
+#include "bout++-time.hxx"
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
 #include "datafile.hxx"
+#include "fmt/format.h"
 #include "interpolation_xz.hxx"
 #include "interpolation_z.hxx"
 #include "invert_laplace.hxx"
@@ -42,6 +44,8 @@ const char DEFAULT_DIR[] = "data";
 #include "msg_stack.hxx"
 #include "optionsreader.hxx"
 #include "output.hxx"
+#include "bout/coordinates_accessor.hxx"
+#include "bout/hyprelib.hxx"
 #include "bout/invert/laplacexz.hxx"
 #include "bout/mpi_wrapper.hxx"
 #include "bout/openmpwrap.hxx"
@@ -52,8 +56,6 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
 #include "bout/version.hxx"
-#include "fmt/format.h"
-#include "bout++-time.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -166,20 +168,30 @@ int BoutInitialise(int& argc, char**& argv) {
 
     // Load settings file
     OptionsReader* reader = OptionsReader::getInstance();
+    // Ideally we'd use the long options for `datadir` and
+    // `optionfile` here, but we'd need to call parseCommandLine
+    // _first_ in order to do that and set the source, etc., but we
+    // need to call that _second_ in order to override the input file
     reader->read(Options::getRoot(), "{}/{}", args.data_dir, args.opt_file);
 
     // Get options override from command-line
-    reader->parseCommandLine(Options::getRoot(), argc, argv);
+    reader->parseCommandLine(Options::getRoot(), args.argv);
 
-    // Override options set from short option from the command-line
-    Options::root()["datadir"].force(args.data_dir);
-    Options::root()["optionfile"].force(args.opt_file);
-    Options::root()["settingsfile"].force(args.set_file);
+    // Get the variables back out so they count as having been used
+    // when checking for unused options. They normally _do_ get used,
+    // but it's possible that only happens in BoutFinalise, which is
+    // too late for that check.
+    const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
+    MAYBE_UNUSED()
+    const auto optionfile =
+        Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
+    const auto settingsfile =
+        Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
 
     setRunStartInfo(Options::root());
 
     if (MYPE == 0) {
-      writeSettingsFile(Options::root(), args.data_dir, args.set_file);
+      writeSettingsFile(Options::root(), datadir, settingsfile);
     }
 
     bout::globals::mpi = new MpiWrapper();
@@ -239,6 +251,7 @@ void setupGetText() {
 
     bindtextdomain(GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
   } catch (const std::runtime_error& e) {
+#if 1
     fmt::print(
         stderr,
         FMT_STRING(
@@ -247,21 +260,97 @@ void setupGetText() {
             "may be "
             "a problem with the BOUT_LOCALE_PATH={:s} that BOUT++ was compiled with.\n"),
         BUILDFLAG(BOUT_LOCALE_PATH));
+#endif
   }
 #endif // BOUT_HAS_GETTEXT
 }
 
-template <class T>
-void printAvailableImplementations(const T& factory) {
+/// Print all of the available implementations for a given `Factory`
+template <class Factory>
+[[noreturn]] void printAvailableImplementations() {
+  const auto factory = Factory::getInstance();
+
   for (const auto& implementation : factory.listAvailable()) {
     std::cout << implementation << "\n";
   }
   auto unavailable = factory.listUnavailableReasons();
   if (not unavailable.empty()) {
-    std::cout << fmt::format("\nThe following {}s are currently unavailable:\n", T::type_name);
+    std::cout << fmt::format("\nThe following {}s are currently unavailable:\n",
+                             Factory::type_name);
     for (const auto& implementation : unavailable) {
       std::cout << implementation << "\n";
     }
+  }
+  std::exit(EXIT_SUCCESS);
+}
+
+/// Print all the Options used in constructing \p type
+template <class Factory>
+[[noreturn]] void printTypeOptions(const std::string& type) {
+  const auto factory = Factory::getInstance();
+
+  // Make sure all the type construction is quiet
+  output.disable();
+  output_error.disable();
+  output_warn.disable();
+  output_progress.disable();
+  output_info.disable();
+  output_verbose.disable();
+  output_debug.disable();
+
+  // There are some non-optional arguments to mesh we'll need to
+  // supply if we don't have an input file
+  Options& mesh_options = Options::root()["mesh"];
+  mesh_options["MXG"] = 1;
+  mesh_options["MYG"] = 1;
+  mesh_options["nx"] = 4;
+  mesh_options["ny"] = 4;
+  mesh_options["nz"] = 4;
+
+  // We might need a global mesh for some types, so best make one
+  bout::globals::mpi = new MpiWrapper();
+  bout::globals::mesh = Mesh::create();
+  bout::globals::mesh->load();
+
+  // An empty Options that we'll later check for used values
+  Options help_options;
+
+  // Most likely failure is typo in type name, so we definitely want
+  // to print that
+  try {
+    factory.create(type, &help_options[Factory::section_name]);
+  } catch (const BoutException& error) {
+    std::cout << error.what() << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+
+  // Now we can print all the options used in constructing our
+  // type. Note that this does require all the options are used in the
+  // constructor, and not in a `init` method or similar
+  std::cout << fmt::format("Input options for {} '{}':\n\n", Factory::type_name, type);
+  std::cout << fmt::format("{:id}\n", help_options);
+  std::exit(EXIT_SUCCESS);
+}
+
+/// Handle the command line options for the given `Factory`: listing
+/// all types, and used options for a given type
+template <class Factory>
+void handleFactoryHelp(const std::string& current_arg, int i, int argc, char** argv,
+                       bool plural_needs_e = false) {
+  const auto name = lowercase(Factory::type_name);
+
+  const auto list_arg = fmt::format("--list-{}{}s", name, plural_needs_e ? "e" : "");
+  const auto help_arg = fmt::format("--help-{}", name);
+
+  if (current_arg == list_arg) {
+    printAvailableImplementations<Factory>();
+  }
+
+  if (current_arg == help_arg) {
+    if (i + 1 >= argc) {
+      throw BoutException(_("Usage is {} {} <name>\n"), argv[0], help_arg);
+    }
+    printTypeOptions<Factory>(argv[i + 1]);
   }
 }
 
@@ -290,13 +379,21 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       output.write(
           _("  --print-config\t\tPrint the compile-time configuration\n"
             "  --list-solvers\t\tList the available time solvers\n"
+            "  --help-solver <solver>\tPrint help for the given time solver\n"
             "  --list-laplacians\t\tList the available Laplacian inversion solvers\n"
+            "  --help-laplacian <laplacian>\tPrint help for the given Laplacian inversion solver\n"
             "  --list-laplacexz\t\tList the available LaplaceXZ inversion solvers\n"
+            "  --help-laplacexz <laplacexz>\tPrint help for the given LaplaceXZ inversion solver\n"
             "  --list-invertpars\t\tList the available InvertPar solvers\n"
+            "  --help-invertpar <invertpar>\tPrint help for the given InvertPar solver\n"
             "  --list-rkschemes\t\tList the available Runge-Kutta schemes\n"
+            "  --help-rkscheme <rkscheme>\tPrint help for the given Runge-Kutta scheme\n"
             "  --list-meshes\t\t\tList the available Meshes\n"
+            "  --help-mesh <mesh>\t\tPrint help for the given Mesh\n"
             "  --list-xzinterpolations\tList the available XZInterpolations\n"
+            "  --help-xzinterpolation <xzinterpolation>\tPrint help for the given XZInterpolation\n"
             "  --list-zinterpolations\tList the available ZInterpolations\n"
+            "  --help-zinterpolation <zinterpolation>\tPrint help for the given ZInterpolation\n"
             "  -h, --help\t\t\tThis message\n"
             "  restart [append]\t\tRestart the simulation. If append is specified, "
             "append to the existing output files, otherwise overwrite them\n"
@@ -311,45 +408,24 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       printCompileTimeOptions();
       std::exit(EXIT_SUCCESS);
     }
-    if (current_arg == "--list-solvers") {
-      printAvailableImplementations(SolverFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-laplacians") {
-      printAvailableImplementations(LaplaceFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-laplacexzs") {
-      printAvailableImplementations(LaplaceXZFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-invertpars") {
-      printAvailableImplementations(InvertParFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-rkschemes") {
-      printAvailableImplementations(RKSchemeFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-meshes") {
-      printAvailableImplementations(MeshFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-xzinterpolations") {
-      printAvailableImplementations(XZInterpolationFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
-    if (current_arg == "--list-zinterpolations") {
-      printAvailableImplementations(ZInterpolationFactory::getInstance());
-      std::exit(EXIT_SUCCESS);
-    }
+    handleFactoryHelp<SolverFactory>(current_arg, i, argc, argv);
+    handleFactoryHelp<LaplaceFactory>(current_arg, i, argc, argv);
+    handleFactoryHelp<LaplaceXZFactory>(current_arg, i, argc, argv);
+    handleFactoryHelp<InvertParFactory>(current_arg, i, argc, argv);
+    handleFactoryHelp<RKSchemeFactory>(current_arg, i, argc, argv);
+    handleFactoryHelp<MeshFactory>(current_arg, i, argc, argv, true);
+    handleFactoryHelp<XZInterpolationFactory>(current_arg, i, argc, argv);
+    handleFactoryHelp<ZInterpolationFactory>(current_arg, i, argc, argv);
   }
 
   CommandLineArgs args;
-
   args.original_argv.reserve(argc);
   std::copy(argv, argv + argc, std::back_inserter(args.original_argv));
+  args.argv = args.original_argv;
 
+  // Parse single-letter and non-Options arguments, expanding the
+  // single-letter arguments into their canonical names, and removing
+  // the non-Options arguments
   for (int i = 1; i < argc; i++) {
     if (string(argv[i]) == "-d") {
       // Set data directory
@@ -358,9 +434,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       }
 
       args.data_dir = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
+      args.argv[i - 1] = "datadir=";
 
     } else if (string(argv[i]) == "-f") {
       // Set options file
@@ -369,9 +443,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       }
 
       args.opt_file = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
+      args.argv[i - 1] = "optionfile=";
 
     } else if (string(argv[i]) == "-o") {
       // Set options file
@@ -380,39 +452,36 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       }
 
       args.set_file = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
+      args.argv[i - 1] = "settingsfile=";
 
     } else if ((string(argv[i]) == "-l") || (string(argv[i]) == "--log")) {
+      // Set log file
       if (i + 1 >= argc) {
         throw BoutException(_("Usage is {:s} -l <log filename>\n"), argv[0]);
       }
 
       args.log_file = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
+      args.argv[i - 1] = "logfile=";
 
     } else if ((string(argv[i]) == "-v") || (string(argv[i]) == "--verbose")) {
       args.verbosity++;
-
-      argv[i][0] = 0;
+      args.argv[i] = "";
 
     } else if ((string(argv[i]) == "-q") || (string(argv[i]) == "--quiet")) {
       args.verbosity--;
-
-      argv[i][0] = 0;
+      args.argv[i] = "";
 
     } else if ((string(argv[i]) == "-c") || (string(argv[i]) == "--color")) {
       // Add color to the output by piping through bout-log-color
       // This is done after checking all command-line inputs
       // in case -c is set multiple times
       args.color_output = true;
-
-      argv[i][0] = 0;
+      args.argv[i] = "";
     }
   }
+
+  // Remove empty values from canonicalised arguments
+  bout::utils::erase(args.argv, "");
 
   if (args.set_file == args.opt_file) {
     throw BoutException(
@@ -481,10 +550,7 @@ void printCompileTimeOptions() {
   output_info.write(_("\tParallel NetCDF support disabled\n"));
 #endif
 
-#ifdef METRIC3D
-  output_info.write("\tRUNNING IN 3D-METRIC MODE\n");
-#endif
-
+  output_info.write(_("\tMetrics mode is {}\n"), use_metric_3d ? "3D" : "2D");
   output_info.write(_("\tFFT support {}\n"), is_enabled(has_fftw));
   output_info.write(_("\tNatural language support {}\n"), is_enabled(has_gettext));
   output_info.write(_("\tLAPACK support {}\n"), is_enabled(has_lapack));
@@ -510,6 +576,7 @@ void printCompileTimeOptions() {
   output_info.write(_("\tFloating-point exceptions {}\n"), is_enabled(use_sigfpe));
   output_info.write(_("\tSignal handling support {}\n"), is_enabled(use_signal));
   output_info.write(_("\tField name tracking {}\n"), is_enabled(use_track));
+  output_info.write(_("\tMessage stack {}\n"), is_enabled(use_msgstack));
 
   // The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
   // which could cause problems (e.g. terminate strings).
@@ -597,16 +664,16 @@ void setRunStartInfo(Options& options) {
 
   // Note: have to force value, since may already be set if a previously
   // output BOUT.settings file was used as input
-  runinfo["version"].force(bout::version::full, "");
-  runinfo["revision"].force(bout::version::revision, "");
+  runinfo["version"].force(bout::version::full, "Output");
+  runinfo["revision"].force(bout::version::revision, "Output");
 
   time_t start_time = time(nullptr);
-  runinfo["started"].force(ctime(&start_time), "");
+  runinfo["started"].force(ctime(&start_time), "Output");
 }
 
 void setRunFinishInfo(Options& options) {
   time_t end_time = time(nullptr);
-  options["run"]["finished"].force(ctime(&end_time), "");
+  options["run"]["finished"].force(ctime(&end_time), "Output");
 }
 
 Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir) {
@@ -660,6 +727,8 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   dump_file.addOnce(const_cast<bool&>(bout::build::use_sigfpe), "use_sigfpe");
   dump_file.addOnce(const_cast<bool&>(bout::build::use_signal), "use_signal");
   dump_file.addOnce(const_cast<bool&>(bout::build::use_track), "use_track");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_metric_3d), "use_metric_3d");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_msgstack), "use_msgstack");
 
   return dump_file;
 }
@@ -671,19 +740,6 @@ void writeSettingsFile(Options& options, const std::string& data_dir,
 
 } // namespace experimental
 } // namespace bout
-
-int bout_run(Solver* solver, rhsfunc physics_run) {
-
-  /// Set the RHS function
-  solver->setRHS(physics_run);
-
-  /// Add the monitor function
-  Monitor* bout_monitor = new BoutMonitor();
-  solver->addMonitor(bout_monitor, Solver::BACK);
-
-  /// Run the simulation
-  return solver->solve();
-}
 
 int BoutFinalise(bool write_settings) {
 
@@ -697,7 +753,7 @@ int BoutFinalise(bool write_settings) {
       setRunFinishInfo(options);
 
       const auto data_dir = options["datadir"].withDefault(std::string{DEFAULT_DIR});
-      const auto set_file = options["settingsfile"].withDefault("");
+      const auto set_file = options["settingsfile"].withDefault("BOUT.settings");
 
       if (BoutComm::rank() == 0) {
         writeSettingsFile(options, data_dir, set_file);
@@ -735,6 +791,8 @@ int BoutFinalise(bool write_settings) {
   // Cleanup boundary factory
   BoundaryFactory::cleanup();
 
+  CoordinatesAccessor::clear();
+
   // Cleanup timer
   Timer::cleanup();
 
@@ -747,6 +805,9 @@ int BoutFinalise(bool write_settings) {
 
   // Call PetscFinalize if not already called
   PetscLib::cleanup();
+
+  // Call HYPER_Finalize if not already called
+  bout::HypreLib::cleanup();
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();
@@ -766,15 +827,28 @@ int BoutFinalise(bool write_settings) {
  * Called each timestep by the solver
  **************************************************************************/
 
+BoutMonitor::BoutMonitor(BoutReal timestep) : BoutMonitor(timestep, Options::root()) {}
+
+BoutMonitor::BoutMonitor(BoutReal timestep, Options& options)
+    : Monitor(timestep),
+      wall_limit(options["wall_limit"]
+                     .doc(_("Wall time limit in hours. By default (< 0), no limit"))
+                     .withDefault(-1.0)
+                 * 60. * 60.),
+      stop_check(options["stopCheck"]
+                     .doc(_("Check if a file exists, and exit if it does."))
+                     .withDefault(false)),
+      stop_check_name(
+          fmt::format("{}/{}", Options::root()["datadir"].withDefault(DEFAULT_DIR),
+                      options["stopCheckName"]
+                          .doc(_("Name of file whose existence triggers a stop"))
+                          .withDefault("BOUT.stop"))) {
+  // Add wall clock time etc to dump file
+  run_data.outputVars(bout::globals::dump);
+}
+
 int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
-
-  // Data used for timing
-  static bool first_time = true;
-  static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
-
-  static bool stopCheck;            // Check for file, exit if exists?
-  static std::string stopCheckName; // File checked, whose existence triggers a stop
 
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
@@ -787,7 +861,7 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   run_data.ncalls_e = solver->resetRHSCounter_e();
   run_data.ncalls_i = solver->resetRHSCounter_i();
 
-  bool output_split = solver->splitOperator();
+  const bool output_split = solver->splitOperator();
   run_data.wtime_rhs = Timer::resetTime("rhs");
   run_data.wtime_invert = Timer::resetTime("invert");
   // Time spent communicating (part of RHS)
@@ -799,34 +873,16 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
 
   output_progress.print("\r"); // Only goes to screen
 
+  // First time the monitor has been called
+  static bool first_time = true;
   if (first_time) {
-    /// First time the monitor has been called
 
-    /// Get some options
-    auto& options = Options::root();
-    wall_limit = options["wall_limit"]
-                     .doc(_("Wall time limit in hours. By default (< 0), no limit"))
-                     .withDefault(-1.0);
-    wall_limit *= 60.0 * 60.0; // Convert from hours to seconds
-
-    stopCheck = options["stopCheck"]
-                    .doc(_("Check if a file exists, and exit if it does."))
-                    .withDefault(false);
-    if (stopCheck) {
-      stopCheckName = options["stopCheckName"]
-                          .doc(_("Name of file whose existence triggers a stop"))
-                          .withDefault("BOUT.stop");
-      // Now add data directory to start of name to ensure we look in a run specific location
-      std::string data_dir = Options::root()["datadir"].withDefault(DEFAULT_DIR);
-      stopCheckName = data_dir + "/" + stopCheckName;
-    }
-
-    /// Record the starting time
+    // Record the starting time
     mpi_start_time = bout::globals::mpi->MPI_Wtime() - run_data.wtime;
 
     first_time = false;
 
-    /// Print the column header for timing info
+    // Print the column header for timing info
     if (!output_split) {
       output_progress.write(_("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm "
                               "   I/O   SOLVER\n\n"));
@@ -866,10 +922,10 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   }
 
   // Check if the user has created the stop file and if so trigger an exit
-  if (stopCheck) {
-    std::ifstream f(stopCheckName);
+  if (stop_check) {
+    std::ifstream f(stop_check_name);
     if (f.good()) {
-      output << "\nFile " << stopCheckName << " exists -- triggering exit." << endl;
+      output.write("\nStop file {} exists -- triggering exit\n", stop_check_name);
       user_requested_exit = true;
     }
   }

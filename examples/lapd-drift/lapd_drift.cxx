@@ -20,7 +20,8 @@
 class LAPDdrift : public PhysicsModel {
 private:
   // 2D initial profiles
-  Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0, src_ni0;
+  Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, Ajpar0, src_ni0;
+  Coordinates::FieldMetric rho0;
   Vector2D b0xcv; // for curvature terms
   
   // 3D evolving fields
@@ -159,11 +160,11 @@ protected:
     /*************** READ OPTIONS *************************/
     // Read some parameters
     
-    auto globalOptions = Options::root();
+    auto& globalOptions = Options::root();
     
     time_step = globalOptions["TIMESTEP"].withDefault(1.0);
 
-    auto options = globalOptions["2fluid"];
+    auto& options = globalOptions["2fluid"];
     AA = options["AA"].withDefault(4.0); // <=> AA = options["AA"].withDefault(1.0);
     ZZ = options["ZZ"].withDefault(1.0);
 
@@ -198,7 +199,7 @@ protected:
 
     // Set default values for terms in each equation
     // Allows default to be overridden in BOUT.inp file
-    auto option_rho = globalOptions["rho"];
+    auto& option_rho = globalOptions["rho"];
     evolve_rho = option_rho["evolve_rho"].withDefault(true);
     rho_jpar1 = option_rho["rho_jpar1"].withDefault(false);
     rho_nuin_rho1 = option_rho["rho_nuin_rho1"].withDefault(false);
@@ -210,7 +211,7 @@ protected:
     rho_ve2t = option_rho["rho_ve2t"].withDefault(false);
     rho_diff = option_rho["rho_diff"].withDefault(false);
 
-    auto option_ni = globalOptions["ni"];
+    auto& option_ni = globalOptions["ni"];
     evolve_ni = option_ni["evolve_ni"].withDefault(true);
     ni_jpar1 = option_ni["ni_jpar1"].withDefault(false);
     ni_ni0_phi1 = option_ni["ni_ni0_phi1"].withDefault(false);
@@ -219,7 +220,7 @@ protected:
     ni_src_ni0 = option_ni["ni_src_ni0"].withDefault(false);
     ni_diff = option_ni["ni_diff"].withDefault(false);
 
-    auto option_ajpar = globalOptions["ajpar"];
+    auto& option_ajpar = globalOptions["ajpar"];
     evolve_ajpar = option_ajpar["evolve_ajpar"].withDefault(true);
     ajpar_phi1 = option_ajpar["ajpar_phi1"].withDefault(false);
     ajpar_jpar1 = option_ajpar["ajpar_jpar1"].withDefault(false);
@@ -229,7 +230,7 @@ protected:
     ajpar_ajpar1_phi1 = option_ajpar["ajpar_ajpar1_phi1"].withDefault(false);
     ajpar_ve1_ve1 = option_ajpar["ajpar_ve1_ve1"].withDefault(false);
 
-    auto option_te = globalOptions["te"];
+    auto& option_te = globalOptions["te"];
     evolve_te = option_te["evolve_te"].withDefault(true);
     te_te1_phi0 = option_te["te_te1_phi0"].withDefault(false);
     te_te0_phi1 = option_te["te_te0_phi1"].withDefault(false);
@@ -427,7 +428,7 @@ protected:
     
     return 0;
   }
-  // End of physics_init()
+
   //////////////////////////////////////
   
 
@@ -725,14 +726,14 @@ protected:
     
     return 0;
   }
-  //End of physics_run
+
   /////////////////////////////////////////////////////////////////
   
   
   
   /****************SPECIAL DIFFERENTIAL OPERATORS******************/
-  const Field2D Perp_Grad_dot_Grad(const Field2D &p, const Field2D &f) {
-    
+  Coordinates::FieldMetric Perp_Grad_dot_Grad(const Field2D& p, const Field2D& f) {
+
     return DDX(p)*DDX(f)*mesh->getCoordinates()->g11;
   }
   
@@ -741,8 +742,8 @@ protected:
   // ExB terms. These routines allow comparisons with BOUT-06
   // if bout_exb=true is set in BOUT.inp
   /////////////////////////////////////////////////////////////////
-  const Field2D vE_Grad(const Field2D &f, const Field2D &p) {
-    Field2D result;
+  Coordinates::FieldMetric vE_Grad(const Field2D& f, const Field2D& p) {
+    Coordinates::FieldMetric result;
     if (bout_exb) {
       // Use a subset of terms for comparison to BOUT-06
       result = 0.0;
@@ -770,25 +771,27 @@ protected:
             int jzm = (jz - 1 + ncz) % ncz;
           
             // J++ = DDZ(p)*DDX(f) - DDX(p)*DDZ(f)
-            BoutReal Jpp = 0.25*( (p(jx,jy,jzp) - p(jx,jy,jzm))*
-                                  (f(jx+1,jy) - f(jx-1,jy)) -
-                                  (p(jx+1,jy,jz) - p(jx-1,jy,jz))*
-                                  (f(jx,jy) - f(jx,jy)) )
-              / (coord->dx(jx,jy) * coord->dz);
-            
+            BoutReal Jpp =
+                0.25
+                * ((p(jx, jy, jzp) - p(jx, jy, jzm)) * (f(jx + 1, jy) - f(jx - 1, jy))
+                   - (p(jx + 1, jy, jz) - p(jx - 1, jy, jz)) * (f(jx, jy) - f(jx, jy)))
+                / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+
             // J+x
-            BoutReal Jpx = 0.25*( f(jx+1,jy)*(p(jx+1,jy,jzp)-p(jx+1,jy,jzm)) -
-                                  f(jx-1,jy)*(p(jx-1,jy,jzp)-p(jx-1,jy,jzm)) -
-                                  f(jx,jy)*(p(jx+1,jy,jzp)-p(jx-1,jy,jzp)) +
-                                  f(jx,jy)*(p(jx+1,jy,jzm)-p(jx-1,jy,jzm)))
-              / (coord->dx(jx,jy) * coord->dz);
+            BoutReal Jpx = 0.25
+                           * (f(jx + 1, jy) * (p(jx + 1, jy, jzp) - p(jx + 1, jy, jzm))
+                              - f(jx - 1, jy) * (p(jx - 1, jy, jzp) - p(jx - 1, jy, jzm))
+                              - f(jx, jy) * (p(jx + 1, jy, jzp) - p(jx - 1, jy, jzp))
+                              + f(jx, jy) * (p(jx + 1, jy, jzm) - p(jx - 1, jy, jzm)))
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
             // Jx+
-            BoutReal Jxp = 0.25*( f(jx+1,jy)*(p(jx,jy,jzp)-p(jx+1,jy,jz)) -
-                                  f(jx-1,jy)*(p(jx-1,jy,jz)-p(jx,jy,jzm)) -
-                                  f(jx-1,jy)*(p(jx,jy,jzp)-p(jx-1,jy,jz)) +
-                                  f(jx+1,jy)*(p(jx+1,jy,jz)-p(jx,jy,jzm)))
-              / (coord->dx(jx,jy) * coord->dz);
-            
+            BoutReal Jxp = 0.25
+                           * (f(jx + 1, jy) * (p(jx, jy, jzp) - p(jx + 1, jy, jz))
+                              - f(jx - 1, jy) * (p(jx - 1, jy, jz) - p(jx, jy, jzm))
+                              - f(jx - 1, jy) * (p(jx, jy, jzp) - p(jx - 1, jy, jz))
+                              + f(jx + 1, jy) * (p(jx + 1, jy, jz) - p(jx, jy, jzm)))
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+
             result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;
           }
         }
@@ -833,25 +836,29 @@ protected:
             int jzm = (jz - 1 + ncz) % ncz;
             
             // J++ = DDZ(p)*DDX(f) - DDX(p)*DDZ(f)
-            BoutReal Jpp = 0.25*( (p(jx,jy,jzp) - p(jx,jy,jzm))*
-                                  (f(jx+1,jy,jz) - f(jx-1,jy,jz)) -
-                                  (p(jx+1,jy,jz) - p(jx-1,jy,jz))*
-                                  (f(jx,jy,jzp) - f(jx,jy,jzm)) )
-              / (coord->dx(jx,jy) * coord->dz);
-            
+            BoutReal Jpp = 0.25
+                           * ((p(jx, jy, jzp) - p(jx, jy, jzm))
+                                  * (f(jx + 1, jy, jz) - f(jx - 1, jy, jz))
+                              - (p(jx + 1, jy, jz) - p(jx - 1, jy, jz))
+                                    * (f(jx, jy, jzp) - f(jx, jy, jzm)))
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+
             // J+x
-            BoutReal Jpx = 0.25*( f(jx+1,jy,jz)*(p(jx+1,jy,jzp)-p(jx+1,jy,jzm)) -
-                                  f(jx-1,jy,jz)*(p(jx-1,jy,jzp)-p(jx-1,jy,jzm)) -
-                                  f(jx,jy,jzp)*(p(jx+1,jy,jzp)-p(jx-1,jy,jzp)) +
-                                  f(jx,jy,jzm)*(p(jx+1,jy,jzm)-p(jx-1,jy,jzm)))
-              / (coord->dx(jx,jy) * coord->dz);
+            BoutReal Jpx =
+                0.25
+                * (f(jx + 1, jy, jz) * (p(jx + 1, jy, jzp) - p(jx + 1, jy, jzm))
+                   - f(jx - 1, jy, jz) * (p(jx - 1, jy, jzp) - p(jx - 1, jy, jzm))
+                   - f(jx, jy, jzp) * (p(jx + 1, jy, jzp) - p(jx - 1, jy, jzp))
+                   + f(jx, jy, jzm) * (p(jx + 1, jy, jzm) - p(jx - 1, jy, jzm)))
+                / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
             // Jx+
-            BoutReal Jxp = 0.25*( f(jx+1,jy,jzp)*(p(jx,jy,jzp)-p(jx+1,jy,jz)) -
-                                  f(jx-1,jy,jzm)*(p(jx-1,jy,jz)-p(jx,jy,jzm)) -
-                                  f(jx-1,jy,jzp)*(p(jx,jy,jzp)-p(jx-1,jy,jz)) +
-                                  f(jx+1,jy,jzm)*(p(jx+1,jy,jz)-p(jx,jy,jzm)))
-              / (coord->dx(jx,jy) * coord->dz);
-            
+            BoutReal Jxp = 0.25
+                           * (f(jx + 1, jy, jzp) * (p(jx, jy, jzp) - p(jx + 1, jy, jz))
+                              - f(jx - 1, jy, jzm) * (p(jx - 1, jy, jz) - p(jx, jy, jzm))
+                              - f(jx - 1, jy, jzp) * (p(jx, jy, jzp) - p(jx - 1, jy, jz))
+                              + f(jx + 1, jy, jzm) * (p(jx + 1, jy, jz) - p(jx, jy, jzm)))
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+
             result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;
           }
         }

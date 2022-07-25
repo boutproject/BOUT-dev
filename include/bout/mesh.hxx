@@ -79,29 +79,20 @@ class Mesh;
 #include <set>
 #include <string>
 
-
-class MeshFactory : public Factory<
-  Mesh, MeshFactory,
-  std::function<std::unique_ptr<Mesh>(GridDataSource*, Options*)>> {
+class MeshFactory : public Factory<Mesh, MeshFactory, GridDataSource*, Options*> {
 public:
   static constexpr auto type_name = "Mesh";
   static constexpr auto section_name = "mesh";
   static constexpr auto option_name = "type";
   static constexpr auto default_type = "bout";
 
-  ReturnType create(Options* options = nullptr, GridDataSource* source = nullptr);
+  ReturnType create(const std::string& type, Options* options = nullptr,
+                    GridDataSource* source = nullptr) const;
+  ReturnType create(Options* options = nullptr, GridDataSource* source = nullptr) const;
 };
 
 template <class DerivedType>
-class RegisterMesh {
-public:
-  RegisterMesh(const std::string& name) {
-    MeshFactory::getInstance().add(
-        name, [](GridDataSource* source, Options* options) -> std::unique_ptr<Mesh> {
-          return std::make_unique<DerivedType>(source, options);
-        });
-  }
-};
+using RegisterMesh = MeshFactory::RegisterInFactory<DerivedType>;
 
 /// Type used to return pointers to handles
 using comm_handle = void*;
@@ -193,9 +184,11 @@ class Mesh {
   /// @param[out] var   This will be set to the value. Will be allocated if needed
   /// @param[in] name   Name of the variable to read
   /// @param[in] def    The default value if not found
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(Field2D &var, const std::string &name, BoutReal def=0.0, CELL_LOC location=CELL_DEFAULT);
+  int get(Field2D& var, const std::string& name, BoutReal def=0.0,
+          bool communicate = true, CELL_LOC location=CELL_DEFAULT);
 
   /// Get a Field3D from the input source
   ///
@@ -225,11 +218,14 @@ class Mesh {
   /// By default all fields revert to zero
   ///
   /// @param[in] var  This will be set to the value read
-  /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] name  The name of the vector. Individual fields are read based on this
+  /// name by appending. See above
   /// @param[in] def   The default value if not found (used for all the components)
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
-  /// @returns zero always. 
-  int get(Vector2D &var, const std::string &name, BoutReal def=0.0);
+  /// @returns zero always.
+  int get(Vector2D& var, const std::string& name, BoutReal def = 0.0,
+          bool communicate = true);
 
   /// Get a Vector3D from the input source.
   /// If \p var is covariant then this gets three
@@ -239,11 +235,14 @@ class Mesh {
   /// By default all fields revert to zero
   ///
   /// @param[in] var  This will be set to the value read
-  /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] name  The name of the vector. Individual fields are read based on this
+  /// name by appending. See above
   /// @param[in] def    The default value if not found (used for all the components)
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
-  /// @returns zero always. 
-  int get(Vector3D &var, const std::string &name, BoutReal def=0.0);
+  /// @returns zero always.
+  int get(Vector3D& var, const std::string& name, BoutReal def = 0.0,
+          bool communicate = true);
 
   /// Test if input source was a grid file
   bool isDataSourceGridFile() const;
@@ -316,6 +315,8 @@ class Mesh {
 
   /// Send guard cells from a list of FieldData objects in the x-direction
   /// Packs arguments into a FieldGroup and passes to send(FieldGroup&).
+  /// Perform communications without waiting for them to finish.
+  /// Requires a call to wait() afterwards.
   template <typename... Ts>
   comm_handle sendX(Ts&... ts) {
     FieldGroup g(ts...);
@@ -345,7 +346,7 @@ class Mesh {
   virtual comm_handle sendY(FieldGroup &g, comm_handle handle = nullptr) = 0;
 
   /// Wait for the handle, return error code
-  virtual int wait(comm_handle handle) = 0;
+  virtual int wait(comm_handle handle) = 0; ///< Wait for the handle, return error code
 
   // non-local communications
 
@@ -458,10 +459,24 @@ class Mesh {
   virtual int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
   // Y communications
-  virtual bool firstY() const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
-  virtual bool lastY() const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
-  virtual bool firstY(int xpos) const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
-  virtual bool lastY(int xpos) const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
+
+  ///< Is this processor first in Y?
+  /// Note: First on the global grid, not necessarily at a boundary
+  virtual bool firstY() const = 0;
+
+  ///< Is this processor last in Y?
+  /// Note: Last on the global grid, not necessarily at a boundary
+  virtual bool lastY() const = 0;
+
+  /// Is this processor first in Y?
+  /// Note: Not necessarily at a boundary, but first in the Y communicator
+  ///       for the flux surface through local X index xpos
+  virtual bool firstY(int xpos) const = 0;
+
+  /// Is this processor last in Y?
+  /// Note: Not necessarily at a boundary, but last in the Y communicator
+  ///       for the flux surface through local X index xpos
+  virtual bool lastY(int xpos) const = 0;
   [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int UpXSplitIndex() = 0;  ///< If the upper Y guard cells are split in two, return the X index where the split occurs
   [[deprecated("This experimental functionality will be removed in 5.0")]]
@@ -526,10 +541,14 @@ class Mesh {
   virtual RangeIterator iterateBndryLowerInnerY() const = 0;
   virtual RangeIterator iterateBndryUpperOuterY() const = 0;
   virtual RangeIterator iterateBndryUpperInnerY() const = 0;
-  
-  bool hasBndryLowerY(); ///< Is there a boundary on the lower guard cells in Y?
-  bool hasBndryUpperY(); ///< Is there a boundary on the upper guard cells in Y?
 
+  /// Is there a boundary on the lower guard cells in Y
+  /// on any processor along the X direction?
+  bool hasBndryLowerY();
+
+  /// Is there a boundary on the upper guard cells in Y
+  /// on any processor along the X direction?
+  bool hasBndryUpperY();
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
@@ -580,6 +599,26 @@ class Mesh {
   /// If the global index includes the boundary cells, then so does the local.
   [[deprecated("Use getLocalYIndex or getLocalYIndexNoBoundaries instead")]]
   int YLOCAL(int yglo) const { return getLocalYIndexNoBoundaries(yglo); };
+
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for 3D fields. Boundaries
+  /// are only included to a depth of 1.
+  virtual int localSize3D();
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for 2D fields. Boundaries
+  /// are only included to a depth of 1.
+  virtual int localSize2D();
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for perpendicular fields.
+  /// Boundaries are only included to a depth of 1.
+  virtual int localSizePerp();
+
+  /// Get the value of the first global 3D index on this processor.
+  virtual int globalStartIndex3D();
+  /// Get the value of the first global 2D index on this processor.
+  virtual int globalStartIndex2D();
+  /// Get the value of the first global perpendicular index on this processor.
+  virtual int globalStartIndexPerp();
 
   /// Returns a global X index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
@@ -635,10 +674,6 @@ class Mesh {
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend, zstart, zend;
   
-  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
-  /// cell centred (default).
-  bool StaggerGrids{false};
-  
   /// Include integrated shear (if shifting X)
   bool IncIntShear{false};
 
@@ -665,6 +700,7 @@ class Mesh {
     // (circular dependency between Mesh and Coordinates)
     auto inserted = coords_map.emplace(location, nullptr);
     inserted.first->second = createDefaultCoordinates(location);
+    inserted.first->second->geometry(false);
     return inserted.first->second;
   }
 
@@ -945,11 +981,6 @@ class Mesh {
   // REGION RELATED ROUTINES
   ///////////////////////////////////////////////////////////
 
-  // The maxregionblocksize to use when creating the default regions.
-  // Can be set in the input file and the global default is set by,
-  // MAXREGIONBLOCKSIZE in include/bout/region.hxx
-  int maxregionblocksize{MAXREGIONBLOCKSIZE};
-  
   /// Get the named region from the region_map for the data iterator
   ///
   /// Throws if region_name not found
@@ -1000,10 +1031,10 @@ class Mesh {
   }
   
   /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
-  Ind2D map3Dto2D(const Ind3D &ind3D){
+  BOUT_HOST_DEVICE Ind2D map3Dto2D(const Ind3D& ind3D) {
     return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
   }
-  
+
   /// Create the default regions for the data iterator
   ///
   /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
@@ -1036,6 +1067,15 @@ protected:
   MpiWrapper* mpi = nullptr;
 
 public:
+  // The maxregionblocksize to use when creating the default regions.
+  // Can be set in the input file and the global default is set by,
+  // MAXREGIONBLOCKSIZE in include/bout/region.hxx
+  int maxregionblocksize{MAXREGIONBLOCKSIZE};
+
+  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
+  /// cell centred (default).
+  bool StaggerGrids{false};
+
   // Switch for communication of corner guard and boundary cells
   const bool include_corner_cells;
 

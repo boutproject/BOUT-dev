@@ -16,11 +16,11 @@ metric = shape.metric()  # Get the metric tensor
 # NOTE: These are orthogonal tokamak coordinates
 #       so y is poloidal angle, not parallel coordinate
 
-drive = sin(6 * x ** 2 - z + y)  # Constant drive for advection
+drive = sin(6 * x**2 - z + y)  # Constant drive for advection
 
-advect = cos(4 * x ** 2 + z - y) + sin(t) * sin(3 * x + 2 * z - y)
-delp2 = cos(4 * x ** 2 + z - y) + sin(t) * sin(3 * x + 2 * z - y)
-laplacepar = cos(4 * x ** 2 + z - y) + sin(t) * sin(3 * x + 2 * z - y)
+advect = cos(4 * x**2 + z - y) + sin(t) * sin(3 * x + 2 * z - y)
+delp2 = cos(4 * x**2 + z - y) + sin(t) * sin(3 * x + 2 * z - y)
+laplacepar = cos(4 * x**2 + z - y) + sin(t) * sin(3 * x + 2 * z - y)
 
 ZMAX = 1
 

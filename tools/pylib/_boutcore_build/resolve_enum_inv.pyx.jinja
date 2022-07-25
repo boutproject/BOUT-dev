@@ -1,0 +1,10 @@
+{% for enum in enums %}
+def _resolve_inv_{{ enum.lower }}(int tores):
+    opts={
+{% for val in enum.vals %}
+        <int> benum.{{val}}:"{{val}}",
+{% endfor %}
+          }
+    return opts[<int> tores]
+
+{% endfor %}

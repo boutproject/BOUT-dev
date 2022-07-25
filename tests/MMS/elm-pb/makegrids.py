@@ -34,7 +34,7 @@ bxcvz = -((1.0 / shape.Rxy) ** 2) * cos(y)  # Curvature
 Lbar = 1.0
 Bbar = 1.0
 J0 = -J0 * shape.Bxy / (MU0 * Lbar)  # Turn into A/m^2
-P0 = P0 * Bbar ** 2 / (2.0 * MU0)  # Pascals
+P0 = P0 * Bbar**2 / (2.0 * MU0)  # Pascals
 
 shape.add(P0, "pressure")
 shape.add(J0, "Jpar0")

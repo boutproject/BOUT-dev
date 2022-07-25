@@ -10,6 +10,7 @@ int main(int argc, char** argv) {
   bout::globals::dump.setAttribute("g12", "value", 42);
   bout::globals::dump.write();
 
+  bout::checkForUnusedOptions();
   BoutFinalise();
   return 0;
 }

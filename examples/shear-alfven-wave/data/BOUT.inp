@@ -3,10 +3,10 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 100       # number of time-steps
-TIMESTEP = 25.0   # time between outputs
+nout = 100       # number of time-steps
+timestep = 25.0   # time between outputs
 
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 16     # number of points in z direction (2^n)
 ZMIN = 0.0
@@ -46,8 +46,8 @@ upwind = W3
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1e-10 # absolute tolerance
-RTOL = 1e-05  # relative tolerance
+atol = 1e-10 # absolute tolerance
+rtol = 1e-05  # relative tolerance
 
 ##################################################
 # settings for 2fluid
@@ -77,7 +77,7 @@ outer_boundary_flags = 0
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 function = gauss(y) * sin(z)
 
