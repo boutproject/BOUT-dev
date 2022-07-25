@@ -175,6 +175,8 @@ The format can be controlled through the following four format codes:
 
 * ``s``: include the ``source`` attribute, if it's present
 
+* ``u``: if the option is unused add a comment, including whether it is conditionally used
+
 Here are some examples of formatting the same `Options` object using different
 combinations of the format codes::
 
