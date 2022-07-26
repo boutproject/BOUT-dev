@@ -29,15 +29,8 @@
 #ifndef __VECOPS_H__
 #define __VECOPS_H__
 
-class Field2D;
-class Field3D;
-class Vector2D;
-class Vector3D;
-
 #include "bout_types.hxx"
 #include "bout/coordinates.hxx"
-// Those are needed because we implement functions here.
-// They can be dropped if we remove the deprecated wrappers.
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "vector2d.hxx"
