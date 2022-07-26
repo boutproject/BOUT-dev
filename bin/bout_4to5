@@ -136,67 +136,6 @@ do
     done
 done
 
-headerfilelist="$(cat ${0}_header_file_list)"
-
-include=$DIR/../include/
-function gen_compat() {
-    for f in $headerfilelist
-    do
-        mv $f bout -i
-        echo "#pragma once
-#warning <$f> has moved to <bout/$f> - this can be fixed with bin/bout_fix_headerlocation.sh
-#include \"bout/$f\"" > $f
-    done
-}
-
-if test $(cat $include/boundary_factory.hxx|wc -l) -gt 20
-then
-    verbose "  Creating compat headerfiles"
-    (cd $include ; $printordo gen_compat)
-else
-    verbose "  Compat headerfiles seem to be available"
-fi
-
-verbose "  Update files to look for headers in bout/ subfolder"
-for dir in $work
-do
-    includes=$(grep "#include" $dir -Hr )
-    for f in  $headerfilelist
-    do
-        matched=$(echo "$includes"|grep [^/]$f )
-        todo=$(echo "$matched"|cut -d: -f1 )
-        for doit in $todo
-        do
-            $printordo sed -i "s/\([<\"]\)$f/\1bout\/$f/" $doit
-        done
-    done
-done
-if test $WORK == default
-then
-    for f in $DIR/../include/bout/*
-    do
-        if test -f $f
-        then
-            $printordo sed -i "s|\.\./||" $f
-        fi
-    done
-
-    pydir=$DIR/../tools/pylib/_boutcore_build
-    for f in $pydir/*in
-    do
-	matched=$(grep '[/_a-z$A-Z0-9]*.hxx' -o $f|sort -u)
-	for h in $matched
-	do
-	    test -f $pydir/$h && continue
-	    #test  b=${h::5} = bout/ && continue
-	    test $h = bout.hxx && continue
-	    echo "$h" | $GREP -q '/' && continue
-	    sed -i "s|$h|bout/$h|" $f
-	done
-    done
-fi
-
-
 # # clang-format everything - disabled due to issue https://github.com/boutproject/BOUT-dev/issues/1017
 # if test $# -eq 0
 # then
