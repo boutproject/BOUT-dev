@@ -1,3 +1,4 @@
+// clang-format off
 /*!
  * \file naulin_laplace.cxx
  *
@@ -135,6 +136,7 @@
  *          * if no
  *              * Stop: Function returns phiNext
  */
+// clang-format on
 
 #include <boutexception.hxx>
 #include <bout/mesh.hxx>
