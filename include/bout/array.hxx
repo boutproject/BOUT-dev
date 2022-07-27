@@ -271,9 +271,7 @@ public:
   /*!
    * Returns true if the Array is empty
    */
-  bool empty() const noexcept {
-    return ptr == nullptr;
-  }
+  bool empty() const noexcept { return not static_cast<bool>(ptr); }
 
   /*!
    * Return size of the array. Zero if the array is empty.
