@@ -100,7 +100,7 @@ version from https://github.com/boutproject/BOUT-dev/releases. If you
 want to develop BOUT++, you should use git to clone the repository. To
 obtain a copy of the latest version, run::
 
-    $ git clone git://github.com/boutproject/BOUT-dev.git
+    $ git clone https://github.com/boutproject/BOUT-dev.git
 
 
 which will create a directory ``BOUT-dev`` containing the code::
