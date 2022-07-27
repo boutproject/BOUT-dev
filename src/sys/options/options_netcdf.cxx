@@ -26,8 +26,8 @@ constexpr auto current_time_index_name = "current_time_index";
 /// means we don't need to keep track of it in the code
 int getCurrentTimeIndex(const NcVar& var) {
   const auto atts_map = var.getAtts();
-  const auto it = atts_map.find(current_time_index_name);
-  if (it == atts_map.end()) {
+  const auto time_index_attribute = atts_map.find(current_time_index_name);
+  if (time_index_attribute == atts_map.end()) {
     // Attribute doesn't exist, so let's start at zero. There
     // are various ways this might break, for example, if the
     // variable was added to the file by a different
@@ -38,8 +38,22 @@ int getCurrentTimeIndex(const NcVar& var) {
     return 0;
   }
   int current_time_index;
-  it->second.getValues(&current_time_index);
+  time_index_attribute->second.getValues(&current_time_index);
   return current_time_index;
+}
+
+template <class T>
+T readVariable(const NcVar& variable) {
+  T value;
+  variable.getVar(&value);
+  return value;
+}
+
+template <class T>
+T readAttribute(const NcAtt& attribute) {
+  T value;
+  attribute.getValues(&value);
+  return value;
 }
 
 void readGroup(const std::string& filename, const NcGroup& group, Options& result) {
@@ -56,27 +70,14 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
     switch (ndims) {
     case 0: {
       // Scalar variables
-
       if (var_type == ncDouble) {
-        double value;
-        var.getVar(&value);
-        result[var_name] = value;
-        result[var_name].attributes["source"] = filename;
+        result[var_name] = readVariable<double>(var);
       } else if (var_type == ncFloat) {
-        float value;
-        var.getVar(&value);
-        result[var_name] = value;
-        result[var_name].attributes["source"] = filename;
+        result[var_name] = readVariable<float>(var);
       } else if (var_type == ncInt or var_type == ncShort) {
-        int value;
-        var.getVar(&value);
-        result[var_name] = value;
-        result[var_name].attributes["source"] = filename;
+        result[var_name] = readVariable<int>(var);
       } else if (var_type == ncString) {
-        char* value;
-        var.getVar(&value);
-        result[var_name] = std::string(value);
-        result[var_name].attributes["source"] = filename;
+        result[var_name] = std::string(readVariable<char*>(var));
       }
       // Note: NetCDF does not support boolean atoms
       // else ignore
@@ -84,37 +85,37 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
     }
     case 1: {
       if (var_type == ncDouble or var_type == ncFloat) {
-        Array<double> value(dims[0].getSize());
+        Array<double> value(static_cast<int>(dims[0].getSize()));
         var.getVar(value.begin());
         result[var_name] = value;
-        result[var_name].attributes["source"] = filename;
       } else if ((var_type == ncString) or (var_type == ncChar)) {
         std::string value;
         value.resize(dims[0].getSize());
         var.getVar(&(value[0]));
         result[var_name] = value;
-        result[var_name].attributes["source"] = filename;
       }
       break;
     }
     case 2: {
       if (var_type == ncDouble or var_type == ncFloat) {
-        Matrix<double> value(dims[0].getSize(), dims[1].getSize());
+        Matrix<double> value(static_cast<int>(dims[0].getSize()),
+                             static_cast<int>(dims[1].getSize()));
         var.getVar(value.begin());
         result[var_name] = value;
-        result[var_name].attributes["source"] = filename;
       }
       break;
     }
     case 3: {
       if (var_type == ncDouble or var_type == ncFloat) {
-        Tensor<double> value(dims[0].getSize(), dims[1].getSize(), dims[2].getSize());
+        Tensor<double> value(static_cast<int>(dims[0].getSize()),
+                             static_cast<int>(dims[1].getSize()),
+                             static_cast<int>(dims[2].getSize()));
         var.getVar(value.begin());
         result[var_name] = value;
-        result[var_name].attributes["source"] = filename;
       }
     }
     }
+    result[var_name].attributes["source"] = filename;
 
     // Get variable attributes
     for (const auto& attpair : var.getAtts()) {
@@ -124,17 +125,11 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
       auto att_type = att.getType(); // Type of the attribute
 
       if (att_type == ncInt) {
-        int value;
-        att.getValues(&value);
-        result[var_name].attributes[att_name] = value;
+        result[var_name].attributes[att_name] = readAttribute<int>(att);
       } else if (att_type == ncFloat) {
-        float value;
-        att.getValues(&value);
-        result[var_name].attributes[att_name] = value;
+        result[var_name].attributes[att_name] = readAttribute<float>(att);
       } else if (att_type == ncDouble) {
-        double value;
-        att.getValues(&value);
-        result[var_name].attributes[att_name] = value;
+        result[var_name].attributes[att_name] = readAttribute<double>(att);
       } else if ((att_type == ncString) or (att_type == ncChar)) {
         std::string value;
         att.getValues(value);
@@ -230,7 +225,7 @@ NcType NcTypeVisitor::operator()<FieldPerp>(const FieldPerp& UNUSED(t)) {
 struct NcDimVisitor {
   NcDimVisitor(NcGroup& group) : group(group) {}
   template <typename T>
-  std::vector<NcDim> operator()(const T& UNUSED(t)) {
+  std::vector<NcDim> operator()(const T& UNUSED(value)) {
     return {};
   }
 
@@ -550,9 +545,9 @@ void writeGroup(const Options& options, NcGroup group,
         }
 
         // Write attributes
-        for (const auto& it : child.attributes) {
-          const std::string& att_name = it.first;
-          const auto& att = it.second;
+        for (const auto& attribute : child.attributes) {
+          const std::string& att_name = attribute.first;
+          const auto& att = attribute.second;
 
           bout::utils::visit(NcPutAttVisitor(var, att_name), att);
         }
@@ -666,7 +661,7 @@ void OptionsNetCDF::verifyTimesteps() const {
     return;
   }
 
-  std::string error_string = "";
+  std::string error_string;
   for (const auto& error : errors) {
     error_string += fmt::format(
         "  variable: {}; dimension: {}; expected size: {}; actual size: {}\n",
