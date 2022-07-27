@@ -29,16 +29,8 @@
 #ifndef __VECOPS_H__
 #define __VECOPS_H__
 
-class Field2D;
-class Field3D;
-class Vector2D;
-class Vector3D;
-
 #include "bout_types.hxx"
 #include "bout/coordinates.hxx"
-#include "bout/deprecated.hxx"
-// Those are needed because we implement functions here.
-// They can be dropped if we remove the deprecated wrappers.
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "vector2d.hxx"
@@ -97,17 +89,9 @@ Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f,
 
 Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
             const std::string& method = "DEFAULT");
-DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
-                                    const std::string& method,
-                                    CELL_LOC outloc = CELL_DEFAULT)) {
-  return Div(v, f, outloc, method);
-}
+
 inline Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
                    DIFF_METHOD method = DIFF_DEFAULT) {
-  return Div(v, f, outloc, toString(method));
-}
-DEPRECATED(inline Field3D Div(const Vector3D& v, const Field3D& f, DIFF_METHOD method,
-                              CELL_LOC outloc = CELL_DEFAULT)) {
   return Div(v, f, outloc, toString(method));
 }
 

@@ -46,7 +46,6 @@ class Options;
 #include "bout/sys/variant.hxx"
 #include "bout/sys/type_name.hxx"
 #include "bout/traits.hxx"
-#include "bout/deprecated.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "fieldperp.hxx"
@@ -688,8 +687,6 @@ public:
 
   /// Read-only access to internal options and sections
   /// to allow iteration over the tree
-  using ValuesMap = std::map<std::string, OptionValue>;
-  DEPRECATED(ValuesMap values() const);
   std::map<std::string, const Options*> subsections() const;
 
   const std::map<std::string, Options>& getChildren() const {

@@ -67,7 +67,6 @@ set(BOUT_SOURCES
   ./include/bout/constants.hxx
   ./include/bout/coordinates.hxx
   ./include/bout/coordinates_accessor.hxx
-  ./include/bout/deprecated.hxx
   ./include/bout/deriv_store.hxx
   ./include/bout/expr.hxx
   ./include/bout/fieldgroup.hxx
