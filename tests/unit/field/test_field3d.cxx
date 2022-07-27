@@ -1140,9 +1140,8 @@ TEST_F(Field3DTest, CheckData) {
   field(0, 0, 0) = std::nan("");
 
   EXPECT_NO_THROW(checkData(field));
-  EXPECT_NO_THROW(checkData(field, RGN_NOBNDRY));
-  EXPECT_THROW(checkData(field, RGN_ALL), BoutException);
-  
+  EXPECT_NO_THROW(checkData(field, "RGN_NOBNDRY"));
+  EXPECT_THROW(checkData(field, "RGN_ALL"), BoutException);
 }
 
 #if CHECK > 0
@@ -2073,8 +2072,8 @@ TEST_F(Field3DTest, Min) {
   const BoutReal min_value = 40.0;
 
   EXPECT_EQ(min(field, false), min_value);
-  EXPECT_EQ(min(field, false, RGN_ALL), -99.0);
-  EXPECT_EQ(min(field, true, RGN_ALL), -99.0);
+  EXPECT_EQ(min(field, false, "RGN_ALL"), -99.0);
+  EXPECT_EQ(min(field, true, "RGN_ALL"), -99.0);
 }
 
 TEST_F(Field3DTest, Max) {
@@ -2090,8 +2089,8 @@ TEST_F(Field3DTest, Max) {
   const BoutReal max_value = 60.0;
 
   EXPECT_EQ(max(field, false), max_value);
-  EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
-  EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
+  EXPECT_EQ(max(field, false, "RGN_ALL"), 99.0);
+  EXPECT_EQ(max(field, true, "RGN_ALL"), 99.0);
 }
 
 TEST_F(Field3DTest, Mean) {
@@ -2109,8 +2108,8 @@ TEST_F(Field3DTest, Mean) {
   const BoutReal mean_value_all = 50.0 + 10.0/npoints_all;
 
   EXPECT_EQ(mean(field, false), mean_value_nobndry);
-  EXPECT_EQ(mean(field, false, RGN_ALL), mean_value_all);
-  EXPECT_EQ(mean(field, true, RGN_ALL), mean_value_all);
+  EXPECT_EQ(mean(field, false, "RGN_ALL"), mean_value_all);
+  EXPECT_EQ(mean(field, true, "RGN_ALL"), mean_value_all);
 }
 
 TEST_F(Field3DTest, DC) {

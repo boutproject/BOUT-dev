@@ -186,15 +186,6 @@ public:
     return nullptr;
   }
   int wait(comm_handle UNUSED(handle)) override { return 0; }
-  MPI_Request sendToProc(int UNUSED(xproc), int UNUSED(yproc), BoutReal* UNUSED(buffer),
-                         int UNUSED(size), int UNUSED(tag)) override {
-    return MPI_Request();
-  }
-  comm_handle receiveFromProc(int UNUSED(xproc), int UNUSED(yproc),
-                              BoutReal* UNUSED(buffer), int UNUSED(size),
-                              int UNUSED(tag)) override {
-    return nullptr;
-  }
   int getNXPE() override { return 1; }
   int getNYPE() override { return 1; }
   int getXProcIndex() override { return 1; }
@@ -230,40 +221,6 @@ public:
   bool lastY() const override { return true; }
   bool firstY(int UNUSED(xpos)) const override { return true; }
   bool lastY(int UNUSED(xpos)) const override { return true; }
-  int UpXSplitIndex() override { return 0; }
-  int DownXSplitIndex() override { return 0; }
-  int sendYOutIndest(BoutReal* UNUSED(buffer), int UNUSED(size),
-                     int UNUSED(tag)) override {
-    return 0;
-  }
-  int sendYOutOutdest(BoutReal* UNUSED(buffer), int UNUSED(size),
-                      int UNUSED(tag)) override {
-    return 0;
-  }
-  int sendYInIndest(BoutReal* UNUSED(buffer), int UNUSED(size),
-                    int UNUSED(tag)) override {
-    return 0;
-  }
-  int sendYInOutdest(BoutReal* UNUSED(buffer), int UNUSED(size),
-                     int UNUSED(tag)) override {
-    return 0;
-  }
-  comm_handle irecvYOutIndest(BoutReal* UNUSED(buffer), int UNUSED(size),
-                              int UNUSED(tag)) override {
-    return nullptr;
-  }
-  comm_handle irecvYOutOutdest(BoutReal* UNUSED(buffer), int UNUSED(size),
-                               int UNUSED(tag)) override {
-    return nullptr;
-  }
-  comm_handle irecvYInIndest(BoutReal* UNUSED(buffer), int UNUSED(size),
-                             int UNUSED(tag)) override {
-    return nullptr;
-  }
-  comm_handle irecvYInOutdest(BoutReal* UNUSED(buffer), int UNUSED(size),
-                              int UNUSED(tag)) override {
-    return nullptr;
-  }
   RangeIterator iterateBndryLowerY() const override {
     return RangeIterator(xstart, xend);
   }

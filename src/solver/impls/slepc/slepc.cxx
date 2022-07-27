@@ -182,15 +182,10 @@ SlepcSolver::SlepcSolver(Options* options) {
   if (targRe == 0.0 && targIm == 0.0) {
     target = 999.0;
   } else {
-    // Ideally we'd set the target here from
-    // targRe and targIm (using boutToSlepc) to
-    // convert to slepc target. Unfortunately
-    // when not in ddtMode the boutToSlepc routine
-    // requires tstep and nout to be set but these
-    // aren't available until ::init so for now just
-    // set target to -1 to signal we need to set it
-    // later.
-    target = -1.0;
+    PetscScalar slepcRe, slepcIm;
+    boutToSlepc(targRe, targIm, slepcRe, slepcIm);
+    dcomplex tmp(slepcRe, slepcIm);
+    target = std::abs(tmp);
 
     // If we've set a target then we change the default
     // for the userWhich variable as targets work best with this
@@ -243,29 +238,17 @@ SlepcSolver::~SlepcSolver() {
   }
 }
 
-int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
+int SlepcSolver::init() {
 
   TRACE("Initialising SLEPc solver");
 
   // Report initialisation
   output.write("Initialising SLEPc solver\n");
   if (selfSolve) {
-    Solver::init(NOUT, TIMESTEP);
+    Solver::init();
 
     // If no advanceSolver then can only advance one step at a time
-    NOUT = 1;
-  }
-
-  // Save for use later
-  nout = NOUT;
-  tstep = TIMESTEP;
-
-  // Now we can calculate the slepc target (see ::SlepcSolver for details)
-  if (target == -1.0) {
-    PetscScalar slepcRe, slepcIm;
-    boutToSlepc(targRe, targIm, slepcRe, slepcIm);
-    dcomplex tmp(slepcRe, slepcIm);
-    target = std::abs(tmp);
+    setNumberOutputSteps(1);
   }
 
   // Read options
@@ -273,7 +256,7 @@ int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   // Initialise advanceSolver if not self
   if (!selfSolve && !ddtMode) {
-    advanceSolver->init(NOUT, TIMESTEP);
+    advanceSolver->init();
   }
 
   // Calculate grid sizes
@@ -521,7 +504,7 @@ int SlepcSolver::advanceStep(Mat& UNUSED(matOperator), Vec& inData, Vec& outData
       save_vars(std::begin(f0));
       save_derivs(std::begin(f1));
       for (int iVec = 0; iVec < localSize; iVec++) {
-        f0[iVec] += f1[iVec] * tstep;
+        f0[iVec] += f1[iVec] * getOutputTimestep();
       }
       load_vars(std::begin(f0));
     } else {
@@ -670,7 +653,9 @@ void SlepcSolver::slepcToBout(PetscScalar& reEigIn, PetscScalar& imEigIn,
     return;
   }
 
-  const dcomplex boutEig = ddtMode ? slepcEig * ci : ci * log(slepcEig) / (tstep * nout);
+  const dcomplex boutEig =
+      ddtMode ? slepcEig * ci
+              : ci * log(slepcEig) / (getOutputTimestep() * getNumberOutputSteps());
 
   // Set return values
   reEigOut = boutEig.real();
@@ -691,7 +676,9 @@ void SlepcSolver::boutToSlepc(BoutReal& reEigIn, BoutReal& imEigIn, PetscScalar&
 
   const dcomplex boutEig(reEigIn, imEigIn);
   const dcomplex ci(0.0, 1.0);
-  const dcomplex slepcEig = ddtMode ? -ci * boutEig : exp(-ci * boutEig * (tstep * nout));
+  const dcomplex slepcEig =
+      ddtMode ? -ci * boutEig
+              : exp(-ci * boutEig * (getOutputTimestep() * getNumberOutputSteps()));
 
   // Set return values
   reEigOut = slepcEig.real();

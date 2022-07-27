@@ -36,8 +36,8 @@
 #if not BOUT_HAS_IDA
 
 namespace {
-RegisterUnavailableSolver registerunavailableida("ida",
-                                                 "BOUT++ was not configured with IDA/SUNDIALS");
+RegisterUnavailableSolver
+    registerunavailableida("ida", "BOUT++ was not configured with IDA/SUNDIALS");
 }
 
 #else
@@ -58,11 +58,10 @@ RegisterSolver<IdaSolver> registersolverida("ida");
 
 class IdaSolver : public Solver {
 public:
-  IdaSolver(Options* opts = nullptr);
+  explicit IdaSolver(Options* opts = nullptr);
   ~IdaSolver();
 
-  int init(int nout, BoutReal tstep) override;
-
+  int init() override;
   int run() override;
   BoutReal run(BoutReal tout);
 
@@ -72,8 +71,16 @@ public:
            BoutReal* zvec);
 
 private:
-  int NOUT;          // Number of outputs. Specified in init, needed in run
-  BoutReal TIMESTEP; // Time between outputs
+  /// Absolute tolerance
+  BoutReal abstol;
+  /// Relative tolerance
+  BoutReal reltol;
+  /// Maximum number of steps to take between outputs
+  int mxsteps;
+  /// Use user-supplied preconditioner
+  bool use_precon;
+  /// Correct the initial values
+  bool correct_start;
 
   N_Vector uvec{nullptr};  // Values
   N_Vector duvec{nullptr}; // Time-derivatives

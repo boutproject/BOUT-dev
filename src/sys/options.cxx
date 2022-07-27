@@ -866,18 +866,6 @@ void Options::setConditionallyUsed() {
 
 void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
 
-std::map<std::string, Options::OptionValue> Options::values() const {
-  std::map<std::string, OptionValue> options;
-  for (const auto& it : children) {
-    if (it.second.isValue()) {
-      options.emplace(it.first, OptionValue { bout::utils::variantToString(it.second.value),
-                                               bout::utils::variantToString(it.second.attributes.at("source")),
-                                               it.second.value_used});
-    }
-  }
-  return options;
-}
-
 std::map<std::string, const Options *> Options::subsections() const {
   std::map<std::string, const Options *> sections;
   for (const auto &it : children) {
@@ -927,6 +915,9 @@ bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
     case 's':
       source = true;
       break;
+    case 'u':
+      unused = true;
+      break;
     default:
       throw fmt::format_error("invalid format for 'Options'");
     }
@@ -947,6 +938,13 @@ fmt::format_context::iterator
 bout::details::OptionsFormatterBase::format(const Options& options,
                                             fmt::format_context& ctx) {
 
+  const auto conditionally_used = [](const Options& option) -> bool {
+    if (not option.hasAttribute(conditionally_used_attribute)) {
+      return false;
+    }
+    return option.attributes.at(conditionally_used_attribute).as<bool>();
+  };
+
   if (options.isValue()) {
     const std::string section_name = options.str();
     const std::string name = (inline_section_names and not section_name.empty())
@@ -966,6 +964,14 @@ bout::details::OptionsFormatterBase::format(const Options& options,
     const bool has_type = options.attributes.count("type") != 0U;
 
     std::vector<std::string> comments;
+
+    if (unused and not options.valueUsed()) {
+      if (conditionally_used(options)) {
+        comments.emplace_back("unused value (marked conditionally used)");
+      } else {
+        comments.emplace_back("unused value (NOT marked conditionally used)");
+      }
+    }
 
     if (docstrings) {
       if (has_type) {
