@@ -609,8 +609,8 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
         // Silence the default monitor
         WithQuietOutput progress{output_progress};
         // Call monitors so fields get written
-        call_monitors(reEigBout, iteration++, nout);
-        call_monitors(imEigBout, iteration++, nout);
+        call_monitors(reEigBout, iteration++, getNumberOutputSteps());
+        call_monitors(imEigBout, iteration++, getNumberOutputSteps());
       }
     }
   }
@@ -744,12 +744,12 @@ void SlepcSolver::analyseResults() {
     // Silence the default monitor
     WithQuietOutput progress{output_progress};
     // Call monitors so fields get written
-    call_monitors(reEigBout, iteration++, nout);
+    call_monitors(reEigBout, iteration++, getOutputTimestep());
 
     // Now write imaginary part of eigen data
     // First dump imag part to fields
     vecToFields(vecImag);
-    call_monitors(imEigBout, iteration++, nout);
+    call_monitors(imEigBout, iteration++, getOutputTimestep());
   }
 
   // Destroy vectors
