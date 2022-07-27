@@ -9,11 +9,11 @@ Getting started
 .. _sec-getting-started:
 
 This section goes through the process of getting, installing, and
-starting to run BOUT++. 
+starting to run BOUT++.
 
 The quickest way to get started is to use a pre-built binary. These
 take care of all dependencies, configuration and compilation. See
-section :ref:`sec-prebuiltinstall`. 
+section :ref:`sec-prebuiltinstall`.
 
 The remainder of this section will go through the following steps to
 manually install BOUT++. Only the basic functionality needed to use
@@ -26,19 +26,19 @@ and how to fix some common problems.
 #. :ref:`Installing dependencies <sec-dependencies>`
 
 #. :ref:`Configuring BOUT++ <sec-config-bout>`
-   
+
 #. :ref:`Configuring BOUT++ analysis codes <sec-configanalysis>`
 
    #. :ref:`Python <sec-config-python>`
 
    #. :ref:`IDL <sec-config-idl>`
-   
+
 #. :ref:`Compiling BOUT++ <sec-compile-bout>`
 
 #. :ref:`Running the test suite <sec-runtestsuite>`
 
 #. :ref:`Installing BOUT++ (experimental) <sec-install-bout>`
-   
+
 **Note**: In this manual commands to run in a BASH shell will begin with
 ’$’, and commands specific to CSH with a ’%’.
 
@@ -53,9 +53,9 @@ Docker image
 `Docker <https://www.docker.com>`_ is a widely used container system,
 which packages together the operating system environment, libraries
 and other dependencies into an image. This image can be downloaded and
-run reproducibly on a wide range of hosts, including Windows, Linux and OS X. 
+run reproducibly on a wide range of hosts, including Windows, Linux and OS X.
 Here is the starting page for `instructions on installing Docker
-<https://docs.docker.com/install/>`_. 
+<https://docs.docker.com/install/>`_.
 
 The BOUT++ docker images are `hosted on dockerhub
 <https://hub.docker.com/u/boutproject/>`_ for some releases and
@@ -128,10 +128,10 @@ The bare-minimum requirements for compiling and running BOUT++ are:
 
 #. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <https://www.open-mpi.org/>`__),
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__)
-   
+
 #. The NetCDF library (`https://www.unidata.ucar.edu/downloads/netcdf
    <https://www.unidata.ucar.edu/downloads/netcdf>`__)
-   
+
 The FFTW-3 library (`http://www.fftw.org/ <http://www.fftw.org/>`__)
 is also strongly recommended. Fourier transforms are used for some
 derivative methods, as well as the `ShiftedMetric` parallel transform
@@ -167,7 +167,7 @@ and :ref:`NetCDF <sec-netcdf-from-source>`.
 
 
 Ubuntu / Debian
-~~~~~~~~~~~~~~~   
+~~~~~~~~~~~~~~~
 
 On Ubuntu or Debian distributions if you have administrator rights then you can install
 MPICH2 and the needed libraries by running::
@@ -548,7 +548,7 @@ IDL configuration
 
 If you want to use `IDL <https://en.wikipedia.org/wiki/IDL_(programming_language)>`__ to analyse
 BOUT++ outputs, then the ``IDL_PATH`` environment variable should include the
-``tools/idllib/`` subdirectory included with BOUT++. 
+``tools/idllib/`` subdirectory included with BOUT++.
 The required command (for Bash) is printed at the end of the BOUT++ configuration::
 
     $ export IDL_PATH=...
@@ -648,7 +648,7 @@ Installing BOUT++ (experimental)
 Most BOUT++ users install and develop their own copies in their home directory,
 so do not need to install BOUT++ to a system directory.
 As of version 4.1 (August 2017), it is possible to install BOUT++ but this is
-not widely used and so should be considered experimental. 
+not widely used and so should be considered experimental.
 
 After configuring and compiling BOUT++ as above, BOUT++ can be installed
 to system directories by running as superuser or ``sudo``::
@@ -658,11 +658,11 @@ to system directories by running as superuser or ``sudo``::
 .. DANGER:: Do not do this unless you know what you're doing!
 
 This will install the following files under ``/usr/local/``:
-   
+
 * ``/usr/local/bin/bout-config``  A script which can be used to query BOUT++ configuration and compile codes with BOUT++.
 
 * ``/usr/local/include/bout++/...`` header files for BOUT++
-    
+
 * ``/usr/local/lib/libbout++.a``  The main BOUT++ library
 
 * ``/usr/local/lib/libpvode.a`` and ``/usr/local/lib/libpvpre.a``, the PVODE library
@@ -670,7 +670,7 @@ This will install the following files under ``/usr/local/``:
 * ``/usr/local/share/bout++/pylib/...`` Python analysis routines
 
 * ``/usr/local/share/bout++/idllib/...`` IDL analysis routines
-  
+
 * ``/usr/local/share/bout++/make.config`` A ``makefile`` configuration, used to compile many BOUT++ examples
 
 
@@ -694,7 +694,7 @@ More control over where files are installed is possible by passing options to
 * ``--includedir=`` sets where the ``bout++/*.hxx`` header files wil be installed (default ``/usr/local/include``)
 
 * ``--libdir=`` sets where the ``libbout++.a``, ``libpvode.a`` and ``libpvpre.a`` libraries are installed (default ``/usr/local/lib``)
-  
+
 * ``--datadir=`` sets where ``idllib``, ``pylib`` and ``make.config`` are installed (default ``/usr/local/share/``)
 
 
@@ -709,7 +709,7 @@ The python and IDL analysis scripts can be configured using
 ``bout-config`` rather than manually setting paths as in
 :ref:`sec-configanalysis`. Add this line to your startup file
 (e.g. ``$HOME/.bashrc``)::
-   
+
    export PYTHONPATH=`bout-config --python`:$PYTHONPATH
 
 note the back ticks around ``bout-config --python`` not
@@ -718,5 +718,3 @@ quotes. Similarly for IDL::
    export IDL_PATH=`bout-config --idl`:'<IDL_DEFAULT>':$IDL_PATH
 
 More details on using bout-config are in the :ref:`section on makefiles <sec-bout-config>`.
-
-
