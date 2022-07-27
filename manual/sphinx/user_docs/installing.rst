@@ -233,23 +233,52 @@ To get precompiled BOUT++ run::
 CMake
 -----
 
-There is now (experimental) support for `CMake <https://cmake.org/>`_. You will need CMake >
-3.9. Note that it is possible to get the latest version of CMake using ``pip``::
+BOUT++ uses the `CMake <https://cmake.org/>`_ build system
+generator. You will need CMake >= 3.17.
 
-  $ pip install --user --upgrade cmake
+.. note::
+   It is possible to get the latest version of CMake using ``pip``::
 
-or ``conda``::
+      $ pip install --user --upgrade cmake
 
-  $ conda install cmake
+    or ``conda``::
+
+      $ conda install cmake
+
+    You may need to put ``~/.local/bin`` in your ``$PATH``
 
 CMake supports out-of-source builds by default, which are A Good Idea.
 Basic configuration with CMake looks like::
 
-  $ cmake . -B build
+  $ cmake -S . -B build
 
-which creates a new directory ``build``, which you can then compile with::
+which creates a new directory ``build``. You can call this directory
+anything you like, and you also put it anywhere you like, you just
+need to specify the path to the BOUT++ source directory with the
+``-S`` argument. This makes it very easy to keep two build directories
+alongside one another, one with a debug build and one optimised, for
+example.
 
+After configuring the build directory, you can then compile BOUT++ with::
+
+  # Build the library
   $ cmake --build build
+  # Build the library with 8 threads
+  $ cmake --build build -j 8
+  # Build the "blob2d" example
+  $ cmake --build build --target blob2d
+
+By default, CMake will use ``makefiles``, and so it is possible to
+also build BOUT++ with ``make`` from the build directory -- note that
+you must still run ``cmake`` once first to configure BOUT++::
+
+  $ cmake . -B build
+  $ cd build
+  $ make
+
+.. note::
+   You might see some instructions in the documentation using ``make``
+   -- they should be run from the ``build`` directory.
 
 You can see what build options are available with::
 
@@ -300,15 +329,11 @@ it's wise to delete the ``CMakeCache.txt`` file in the build
 directory. The equivalent of ``make distclean`` with CMake is to just
 delete the entire build directory and reconfigure.
 
-If you need to debug a CMake build, you can see the compile and link commands
-which are being issued by adding `VERBOSE=1` to the make command i.e. in the build
-directory running::
+If you need to debug a CMake build, you can see the compile and link
+commands which are being issued by adding ``--verbose`` to the build
+command::
 
-  $ make VERBOSE=1
-
-If building by running CMake then the ``-v`` flag also works. For example::
-
-  $ cmake --build . -v
+  $ cmake --build build --verbose
 
 Downloading Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~
