@@ -228,54 +228,6 @@ To get precompiled BOUT++ run::
    $ # get the python3 modules - python2 is available as well
    $ sudo dnf install python3-bout++
 
-.. _sec-config-bout:
-
-Configuring  BOUT++
--------------------
-
-To compile BOUT++, you first need to configure it. 
-Go into the ``BOUT-dev`` directory and run::
-
-    $ ./configure
-
-If this finishes by printing a summary, and paths for IDL, Python, and
-Octave, then the libraries are set up and you can skip to the next
-section. If you see a message
-“``ERROR: FFTW not found. Required by BOUT++``” then make sure 
-FFTW-3 is installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
-
-If FFTW-3 is installed in a non-standard location, you can specify  the
-directory with the ``–with-fftw=`` option e.g::
-
-    $ ./configure --with-fftw=$HOME/local
-
-Configure should now find FFTW, and search for the NetCDF library. If
-configure finishes successfully, then skip to the next section, but if
-you see a message ``NetCDF support disabled`` then configure couldn’t
-find the NetCDF library. This will be followed by a message
-``ERROR: At least one file format must be supported``. Check that you have
-NetCDF installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
-
-Like the FFTW-3 library, if NetCDF is installed in a non-standard location then
-you can specify the directory with the ``--with-netcdf=`` option e.g.::
-
-    $ ./configure --with-fftw=$HOME/local --with-netcdf=$HOME/local
-
-which should now finish successfully, printing a summary of the
-configuration::
-
-    Configuration summary
-      PETSc support: no
-      SLEPc support: no
-      IDA support: yes
-      CVODE support: yes
-      ARKODE support: yes
-      NetCDF support: yes
-      Parallel-NetCDF support: no
-
-If not, see :ref:`sec-advancedinstall` for some things you can try to
-resolve common problems.
-
 .. _sec-cmake:
 
 CMake
@@ -421,6 +373,58 @@ where ``BOUT++/source`` is the subdirectory containing the BOUT++
 source. Doing this has the advantage that any changes you make to
 BOUT++ source files will trigger a rebuild of both the BOUT++ library
 and your model when you next build your code.
+
+.. _sec-config-bout:
+
+./configure
+-----------
+
+.. warning::
+   As of BOUT++ 5.0, ``./configure`` is no longer supported and will
+   be removed in 6.0. Please switch to using CMake to build BOUT++.
+
+To compile BOUT++, you first need to configure it.
+Go into the ``BOUT-dev`` directory and run::
+
+    $ ./configure
+
+If this finishes by printing a summary, and paths for IDL, Python, and
+Octave, then the libraries are set up and you can skip to the next
+section. If you see a message
+“``ERROR: FFTW not found. Required by BOUT++``” then make sure
+FFTW-3 is installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
+
+If FFTW-3 is installed in a non-standard location, you can specify  the
+directory with the ``–with-fftw=`` option e.g::
+
+    $ ./configure --with-fftw=$HOME/local
+
+Configure should now find FFTW, and search for the NetCDF library. If
+configure finishes successfully, then skip to the next section, but if
+you see a message ``NetCDF support disabled`` then configure couldn’t
+find the NetCDF library. This will be followed by a message
+``ERROR: At least one file format must be supported``. Check that you have
+NetCDF installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
+
+Like the FFTW-3 library, if NetCDF is installed in a non-standard location then
+you can specify the directory with the ``--with-netcdf=`` option e.g.::
+
+    $ ./configure --with-fftw=$HOME/local --with-netcdf=$HOME/local
+
+which should now finish successfully, printing a summary of the
+configuration::
+
+    Configuration summary
+      PETSc support: no
+      SLEPc support: no
+      IDA support: yes
+      CVODE support: yes
+      ARKODE support: yes
+      NetCDF support: yes
+      Parallel-NetCDF support: no
+
+If not, see :ref:`sec-advancedinstall` for some things you can try to
+resolve common problems.
 
 .. _sec-config-nls:
 
