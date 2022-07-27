@@ -139,10 +139,6 @@ which is used in the majority of BOUT++ tokamak simulations. Without
 FFTW-3, these options will not be available.
 
 .. note::
-   Only GCC versions >= 4.9 are supported. This is due to a bug in
-   previous versions.
-
-.. note::
    If you use an Intel compiler, you must also make sure that you have
    a version of GCC that supports C++14 (GCC 5+).
 
