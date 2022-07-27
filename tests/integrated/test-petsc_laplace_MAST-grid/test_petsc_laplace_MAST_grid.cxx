@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
   dump["max_error1"] = max_error1;
 
   //   dump.write();dump.close();MPI_Barrier(BoutComm::get());exit(17);return 1;
-  
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 2: Gaussian x-profiles, 4th order Krylov
   Field3D sol2;

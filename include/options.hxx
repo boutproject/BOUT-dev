@@ -736,7 +736,6 @@ public:
   static std::string getDefaultSource();
 
 private:
-  
   /// The source label given to default values
   static const std::string DEFAULT_SOURCE;
   
