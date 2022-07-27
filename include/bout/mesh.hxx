@@ -49,10 +49,10 @@ class Mesh;
 #include <bout/index_derivs_interface.hxx>
 #include <bout/mpi_wrapper.hxx>
 
-#include "field_data.hxx"
 #include "bout_types.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
+#include "field_data.hxx"
 #include "options.hxx"
 
 #include "fieldgroup.hxx"

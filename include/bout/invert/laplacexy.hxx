@@ -81,11 +81,11 @@ public:
 #undef MPI_Waitall
 #undef MPI_Waitany
 
+#include "utils.hxx"
+#include "bout/solver.hxx"
 #include <bout/mesh.hxx>
 #include <bout/petsclib.hxx>
-#include "bout/solver.hxx"
 #include <cyclic_reduction.hxx>
-#include "utils.hxx"
 
 class Options;
 class Solver;

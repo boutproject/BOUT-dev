@@ -39,7 +39,7 @@ public:
   }
 };
 
-}
+} // namespace bout
 
 #else
 

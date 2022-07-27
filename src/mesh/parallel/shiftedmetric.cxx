@@ -15,7 +15,6 @@
 
 #include <cmath>
 
-
 ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
     BoutReal zlength_in, Options* opt)
     : ParallelTransform(m, opt), location(location_in), zShift(std::move(zShift_)),
