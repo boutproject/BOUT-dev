@@ -195,7 +195,7 @@ which have been implemented.
 .. _tab-gpusupport-singleindexfunctions:
 .. table:: Single index operator functions
 
-   +------------------------------ +-------------------------------------------+
+   +-------------------------------+-------------------------------------------+
    | Function                      | Description                               |
    +===============================+===========================================+
    | DDX(F3D, i)                   | Derivative in X with ``ddx:first=C2``     |
