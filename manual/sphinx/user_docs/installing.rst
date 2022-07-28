@@ -335,6 +335,42 @@ command::
 
   $ cmake --build build --verbose
 
+Common CMake Options
+~~~~~~~~~~~~~~~~~~~~
+
+The default build configuration options try to be sensible for new
+users and developers, but there are a few you probably want to set
+manually for production runs or for debugging:
+
+* ``CMAKE_BUILD_TYPE``: The default is ``RelWithDebInfo``, which
+  builds an optimised executable with debug symbols included. Change
+  this to ``Release`` to remove the debug symbols, or ``Debug`` for an
+  unoptimised build, but better debug experience
+
+* ``CHECK``: This sets the level of internal runtime checking done in
+  the BOUT++ library, and ranges from 0 to 4 (inclusive). By default,
+  this is 2, which aims to be a balance between useful checks and
+  speed. Set this to 0 for faster production runs, and to 4 for more
+  in-depth (and slower) checking.
+
+* ``BOUT_UPDATE_GIT_SUBMODULE``: This is on by default, and ensures
+  that the bundled git submodules are up-to-date. You should turn this
+  off if you are using system versions, or if you run into problems
+  updating the submodules.
+
+* ``NetCDF_ROOT``: NetCDF is one of the few required, non-bundled
+  dependencies. If CMake is having trouble finding netCDF, or the
+  correct version, you should set this variable to the installed
+  location of the netCDF C library.
+
+* ``BOUT_BUILD_EXAMPLES``, ``BOUT_TESTS``: These two options are
+  particularly useful for developers of the BOUT++ library, and for
+  new users. You can turn them off to save some time configuring the
+  library. By default, these are on, but the examples and tests are
+  not built unless you specifically ask for them, using the targets
+  ``build-all-examples`` and ``build-check`` respectively.
+
+
 Downloading Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
