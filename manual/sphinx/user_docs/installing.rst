@@ -170,25 +170,15 @@ Ubuntu / Debian
 ~~~~~~~~~~~~~~~
 
 On Ubuntu or Debian distributions if you have administrator rights then you can install
-MPICH2 and the needed libraries by running::
+the basic dependencies with::
 
-    $ sudo apt-get install mpich2 libmpich2-dev
-    $ sudo apt-get install libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
+    $ sudo apt-get install libmpich-dev libfftw3-dev libnetcdf-c++4-dev git make
 
-On Ubuntu 16.04::
+To additionally build the Python interface, you need some Python packages::
 
-    $ sudo apt-get install libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
-
-On Ubuntu 18.04::
-
-    $ sudo apt-get install mpich libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-c++4-dev git g++ make
     $ sudo apt-get install python3 python3-distutils python3-pip python3-numpy python3-netcdf4 python3-scipy
     $ pip3 install --user Cython
 
-
-The first line should be sufficient to install BOUT++, while the 2nd
-and 3rd line make sure that the tests work, and that the python
-interface can be build.
 Further, the encoding for python needs to be utf8 - it may be required
 to set ``export LC_CTYPE=C.utf8``.
 
