@@ -267,7 +267,7 @@ public:
   virtual void constraint(Vector3D& v, Vector3D& C_v, std::string name);
 
   /// Set a maximum internal timestep (only for explicit schemes)
-  virtual void setMaxTimestep(BoutReal dt) { max_dt = dt; }
+  virtual void setMaxTimestep(MAYBE_UNUSED(BoutReal dt)) {}
   /// Return the current internal timestep
   virtual BoutReal getCurrentTimestep() { return 0.0; }
 
@@ -280,9 +280,7 @@ public:
   int solve(int nout = -1, BoutReal timestep = 0.0);
 
   /// Initialise the solver
-  /// NOTE: nout and tstep should be passed to run, not init.
-  ///       Needed because of how the PETSc TS code works
-  virtual int init(int nout, BoutReal tstep);
+  virtual int init();
 
   /// Run the solver, calling monitors nout times, at intervals of
   /// tstep. This function is called by solve(), and is specific to
@@ -482,11 +480,15 @@ protected:
   /// Returns a Field3D containing the global indices
   Field3D globalIndex(int localStart);
 
-  /// Maximum internal timestep
-  BoutReal max_dt{-1.0};
-
   /// Get the list of monitors
   auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }
+
+  /// Get the currently set number of output steps requested
+  int getNumberOutputSteps() const { return number_output_steps; }
+  /// Change the number of requested output steps
+  void setNumberOutputSteps(int nout) { number_output_steps = nout; }
+  /// Get the currently set output timestep
+  BoutReal getOutputTimestep() const { return output_timestep; }
 
 private:
   /// Generate a random UUID (version 4) and broadcast it to all processors
@@ -550,6 +552,11 @@ private:
   /// Fix all the monitor periods based on \p output_timestep, as well
   /// as adjusting \p NOUT and \p output_timestep to be consistent
   void finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep);
+
+  /// Number of requested output steps
+  int number_output_steps;
+  /// Requested timestep between outputs
+  BoutReal output_timestep;
 };
 
 #endif // __SOLVER_H__

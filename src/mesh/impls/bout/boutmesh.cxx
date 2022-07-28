@@ -1463,33 +1463,6 @@ int BoutMesh::wait(comm_handle handle) {
  *             Non-Local Communications
  ***************************************************************/
 
-MPI_Request BoutMesh::sendToProc(int xproc, int yproc, BoutReal *buffer, int size,
-                                 int tag) {
-  Timer timer("comms");
-
-  MPI_Request request{};
-
-  mpi->MPI_Isend(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(xproc, yproc), tag,
-                 BoutComm::get(), &request);
-
-  return request;
-}
-
-comm_handle BoutMesh::receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size,
-                                      int tag) {
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle *ch = get_handle(0, 0);
-
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(xproc, yproc), tag,
-                 BoutComm::get(), ch->request);
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
-}
-
 int BoutMesh::getNXPE() { return NXPE; }
 
 int BoutMesh::getNYPE() { return NYPE; }
@@ -1609,161 +1582,6 @@ bool BoutMesh::lastY(int xpos) const {
     MPI_Comm_rank(comm_outer, &rank);
   }
   return rank == size - 1;
-}
-
-int BoutMesh::UpXSplitIndex() { return UDATA_XSPLIT; }
-
-int BoutMesh::DownXSplitIndex() { return DDATA_XSPLIT; }
-
-int BoutMesh::sendYOutIndest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == NYPE - 1) {
-    return 1;
-  }
-
-  Timer timer("comms");
-
-  if (UDATA_INDEST != -1) {
-    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_INDEST, tag, BoutComm::get());
-  } else {
-    throw BoutException("Expected UDATA_INDEST to exist, but it does not.");
-  }
-  return 0;
-}
-
-int BoutMesh::sendYOutOutdest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == NYPE - 1) {
-    return 1;
-  }
-
-  Timer timer("comms");
-
-  if (UDATA_OUTDEST != -1) {
-    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, tag, BoutComm::get());
-  } else {
-    throw BoutException("Expected UDATA_OUTDEST to exist, but it does not.");
-  }
-
-  return 0;
-}
-
-int BoutMesh::sendYInIndest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == 0) {
-    return 1;
-  }
-
-  Timer timer("comms");
-
-  if (DDATA_INDEST != -1) {
-    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_INDEST, tag, BoutComm::get());
-  } else {
-    throw BoutException("Expected DDATA_INDEST to exist, but it does not.");
-  }
-
-  return 0;
-}
-
-int BoutMesh::sendYInOutdest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == 0) {
-    return 1;
-  }
-
-  Timer timer("comms");
-
-  if (DDATA_OUTDEST != -1) {
-    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, tag, BoutComm::get());
-  } else {
-    throw BoutException("Expected DDATA_OUTDEST to exist, but it does not.");
-  }
-
-  return 0;
-}
-
-comm_handle BoutMesh::irecvYOutIndest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == NYPE - 1) {
-    return nullptr;
-  }
-
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
-
-  if (UDATA_INDEST != -1) {
-    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_INDEST, tag, BoutComm::get(),
-                   ch->request);
-  } else {
-    throw BoutException("Expected UDATA_INDEST to exist, but it does not.");
-  }
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
-}
-
-comm_handle BoutMesh::irecvYOutOutdest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == NYPE - 1) {
-    return nullptr;
-  }
-
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
-
-  if (UDATA_OUTDEST != -1) {
-    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, tag, BoutComm::get(),
-                   ch->request);
-  } else {
-    throw BoutException("Expected UDATA_OUTDEST to exist, but it does not.");
-  }
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
-}
-
-comm_handle BoutMesh::irecvYInIndest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == 0) {
-    return nullptr;
-  }
-
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
-
-  if (DDATA_INDEST != -1) {
-    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_INDEST, tag, BoutComm::get(),
-                   ch->request);
-  } else {
-    throw BoutException("Expected DDATA_INDEST to exist, but it does not.");
-  }
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
-}
-
-comm_handle BoutMesh::irecvYInOutdest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == 0) {
-    return nullptr;
-  }
-
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
-
-  if (DDATA_OUTDEST != -1) {
-    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, tag, BoutComm::get(),
-                   ch->request);
-  } else {
-    throw BoutException("Expected DDATA_OUTDEST to exist, but it does not.");
-  }
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
 }
 
 /****************************************************************
@@ -2816,6 +2634,14 @@ void BoutMesh::addBoundaryRegions() {
   
   // Inner X
   if(firstX() && !periodicX) {
+    addRegion3D("RGN_INNER_X_THIN",
+                Region<Ind3D>(xstart - 1, xstart - 1, ystart, yend, 0, LocalNz - 1,
+                              LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X_THIN", Region<Ind2D>(xstart - 1, xstart - 1, ystart, yend, 0,
+                                                  0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(xstart - 1, xstart - 1, 0, 0, 0, LocalNz - 1, 1,
+                                  LocalNz, maxregionblocksize));
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
@@ -2827,6 +2653,12 @@ void BoutMesh::addBoundaryRegions() {
     output_info.write("\tBoundary region inner X\n");
   } else {
     // Empty region
+    addRegion3D("RGN_INNER_X_THIN",
+                Region<Ind3D>(0, -1, 0, 0, 0, 0, LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X_THIN",
+                Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
@@ -2837,6 +2669,14 @@ void BoutMesh::addBoundaryRegions() {
 
   // Outer X
   if(lastX() && !periodicX) {
+    addRegion3D("RGN_OUTER_X_THIN",
+                Region<Ind3D>(xend + 1, xend + 1, ystart, yend, 0, LocalNz - 1, LocalNy,
+                              LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X_THIN", Region<Ind2D>(xend + 1, xend + 1, ystart, yend, 0, 0,
+                                                  LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_OUTER_X_THIN",
+                  Region<IndPerp>(xend + 1, xend + 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                                  maxregionblocksize));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
@@ -2849,6 +2689,12 @@ void BoutMesh::addBoundaryRegions() {
     output_info.write("\tBoundary region outer X\n");
   } else {
     // Empty region
+    addRegion3D("RGN_OUTER_X_THIN",
+                Region<Ind3D>(0, -1, 0, 0, 0, 0, LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X_THIN",
+                Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_OUTER_X_THIN",
+                  Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,

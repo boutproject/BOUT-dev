@@ -358,7 +358,7 @@ private:
       solver->outputVars(bout::globals::dump);                     \
       solver->solve();                                             \
     } catch (const BoutException& e) {                             \
-      output << "Error encountered\n";                             \
+      output << "Error encountered: " << e.what();                 \
       output << e.getBacktrace() << endl;                          \
       MPI_Abort(BoutComm::get(), 1);                               \
     }                                                              \

@@ -18,7 +18,7 @@ restart_format = "nc"   # Restart file format
 
 [mesh]
 
-staggergrids = false    # Use staggered grids (EXPERIMENTAL)
+staggergrids = false    # Use staggered grids
 
 [mesh:paralleltransform]
 
@@ -44,16 +44,8 @@ first = C4  # Z derivatives can be done using FFT
 second = C4
 upwind = W3
 
-##################################################
-# Communications
-# Fastest setting depends on machine and MPI
-# implementation. Do not affect result.
 [output]
-shiftoutput = true
-
-##################################################
-# Laplacian inversion routines
-
+shiftoutput = true  # Put the output into field-aligned coordinates
 
 ##################################################
 # FFTs
@@ -72,22 +64,18 @@ atol = 1e-08 # absolute tolerance
 rtol = 1e-05  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
-use_jacobian = false  # Use user-supplied Jacobian
 
 mxstep = 5000   # Number of internal steps between outputs
-adams_moulton = false # Use Adams-Moulton method (default is BDF)
-func_iter = false     # Functional iteration (default is Newton)
 
 ##################################################
 # settings for high-beta reduced MHD
 
 [highbeta]
 
-density = 1e+19       # number density of deuterium [m^-3]
-# used to produce output normalisations
+density = 1.0e19       # number density of deuterium [m^-3]
+                       # used to produce output normalisations
 
 evolve_jpar = false     # If true, evolve J raher than Psi
-# EXPERIMENTAL
 
 evolve_pressure = true # If false, switch off all pressure evolution
 
@@ -120,16 +108,16 @@ D_s = 20            # shear parameter
 K_H_term = false    # Contain K-H term
 sign = -1           # flow direction
 x0 = 0.855          # peak location
-D_min = 3000        #constant
+D_min = 3000        # constant
 ##################################################################
 
-eHall = false         # Include electron pressue effects in Ohm's law?
+eHall = false         # Include electron pressure effects in Ohm's law?
 AA = 2.0          # ion mass in units of proton mass
 
 noshear = false        # zero all shear
 
 relax_j_vac = false    # Relax to zero-current in the vacuum
-relax_j_tconst = 0.01  # Time constant for vacuum relaxation
+relax_j_tconst = 1e-2  # Time constant for vacuum relaxation
 
 ## Toroidal filtering
 filter_z = true   # remove all except one mode
@@ -148,27 +136,27 @@ include_rmp = false # Read RMP data from grid file
 simple_rmp = false  # Enable/disable a simple model of RMP
 rmp_n = 3           # Toroidal mode number
 rmp_m = 6           # Poloidal mode number
-rmp_factor = 0.0001  # Amplitude of Apar [Tm]
-rmp_ramp = 0.0001    # Timescale [s] of ramp
+rmp_factor = 1.e-4  # Amplitude of Apar [Tm]
+rmp_ramp = 1.e-4    # Timescale [s] of ramp
 rmp_polwid = -1.0   # Width of Gaussian factor (< 0 = No Gaussian)
 rmp_polpeak = 0.5   # Y location of maximum (fraction)
 
 ## Vacuum region control
 
 vacuum_pressure = 0.02 # the pressure below which it is considered vacuum
-# fraction of peak pressure
+                       # fraction of peak pressure
 vacuum_trans = 0.01   # transition width (fraction of P)
 
 ## Resistivity and Hyper-resistivity
 
-vac_lund = 100000000.0    # Lundquist number in vacuum  (negative -> infinity)
-core_lund = 100000000.0  # Lundquist number in core (negative -> infinity)
-hyperresist = 0.0001 # Hyper-resistivity coefficient (like 1 / Lundquist number)
+vac_lund = 1.0e8    # Lundquist number in vacuum  (negative -> infinity)
+core_lund = 1.0e8  # Lundquist number in core (negative -> infinity)
+hyperresist = 1.e-4 # Hyper-resistivity coefficient (like 1 / Lundquist number)
 
 ## Inner boundary damping
 
 damp_width = -1       # Width of damping region (grid cells)
-damp_t_const = 0.01  # Damping time constant
+damp_t_const = 1e-2  # Damping time constant
 
 ## Parallel pressure diffusion
 
@@ -203,7 +191,7 @@ su_lengthr = 0.1     #   right edge sink length in percentage of nx (< 0 = none)
 ## Viscosity and Hyper-viscosity
 
 viscos_par = -0.1   # Parallel viscosity (< 0 = none)
-viscos_perp = -1.0  # Perpendicular
+viscos_perp = -1.0  # Perpendicular viscosity (< 0 = none)
 hyperviscos = -1.0  # Radial hyper viscosity
 
 ## Compressional terms (only when compress = true)
@@ -211,15 +199,11 @@ phi_curv = true    # Include curvature*Grad(phi) in P equation
 # gamma = 1.6666
 
 [phiSolver]
-#inner_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-#outer_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
+inner_boundary_flags = 4 # INVERT_AC_LAP
 outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 
 [aparSolver]
-#inner_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-#outer_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
+inner_boundary_flags = 4 # INVERT_AC_LAP
 outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 
 ##################################################
@@ -243,7 +227,6 @@ scale = 0.0 # default size of initial perturbations
 bndry_all = dirichlet_o2 # Default to zero-value
 
 [U]   # vorticity
-
 scale = 1e-05
 function = ballooning(gauss(x-0.5,0.1)*gauss(y-pi,0.6*pi)*sin(z),3)
 
@@ -270,12 +253,9 @@ bndry_ydown = free_o3
 # Zero gradient in the core
 bndry_core = neumann
 
-[Vpar]
-
-bndry_core = neumann
-
 [phi]
 
 bndry_xin = none
 bndry_xout = none
-bndry_target = neumann
+#bndry_target = neumann
+

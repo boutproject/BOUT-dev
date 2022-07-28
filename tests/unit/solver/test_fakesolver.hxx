@@ -23,11 +23,9 @@ public:
   }
   bool run_called{false};
 
-  int init(int nout, BoutReal tstep) override {
+  int init() override {
     init_called = true;
-    if (Solver::init(nout, tstep)) {
-      return 1;
-    }
+    Solver::init();
     return (*options)["fail_init"].withDefault(0);
   }
   bool init_called{false};
@@ -63,7 +61,6 @@ public:
   }
 
   // Shims for protected functions
-  auto getMaxTimestepShim() const -> BoutReal { return max_dt; }
   using Solver::getLocalN;
   using Solver::hasPreconditioner;
   using Solver::runPreconditioner;
