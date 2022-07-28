@@ -4,6 +4,8 @@
 #include <output.hxx>
 #include <utils.hxx>
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
@@ -202,7 +204,13 @@ Options& Options::operator=(const Options& other) {
   // Note: Here can't do copy-and-swap because pointers to parents are stored
 
   value = other.value;
-  attributes = other.attributes;
+
+  // Assigning the attributes.
+  // The simple assignment operator fails to compile with Apple Clang 12
+  //   attributes = other.attributes;
+  attributes.clear();
+  attributes.insert(other.attributes.begin(), other.attributes.end());
+
   full_name = other.full_name;
   is_section = other.is_section;
   children = other.children;
@@ -265,6 +273,27 @@ template <> std::string Options::as<std::string>(const std::string& UNUSED(simil
   return result;
 }
 
+namespace {
+/// Use FieldFactory to evaluate expression
+double parseExpression(const Options::ValueType& value, const Options* options,
+                       const std::string& type, const std::string& full_name) {
+  try {
+    // Parse the string, giving this Option pointer for the context
+    // then generate a value at t,x,y,z = 0,0,0,0
+    auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), options);
+    if (!gen) {
+      throw ParseException("FieldFactory did not return a generator for '{}'",
+                           bout::utils::variantToString(value));
+    }
+    return gen->generate({});
+  } catch (ParseException& error) {
+    // Convert any exceptions to something a bit more useful
+    throw BoutException(_("Couldn't get {} from option {:s} = '{:s}': {}"), type,
+                        full_name, bout::utils::variantToString(value), error.what());
+  }
+}
+} // namespace
+
 template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
   if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
@@ -283,15 +312,8 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
       rval = bout::utils::get<BoutReal>(value);
     
     } else if (bout::utils::holds_alternative<std::string>(value)) {
-      // Use FieldFactory to evaluate expression
-      // Parse the string, giving this Option pointer for the context
-      // then generate a value at t,x,y,z = 0,0,0,0
-      auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
-      if (!gen) {
-        throw BoutException(_("Couldn't get integer from option {:s} = '{:s}'"),
-                            full_name, bout::utils::variantToString(value));
-      }
-      rval = gen->generate({});
+      rval = parseExpression(value, this, "integer", full_name);
+
     } else {
       // Another type which can't be converted
       throw BoutException(_("Value for option {:s} is not an integer"), full_name);
@@ -333,16 +355,8 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) c
     result = bout::utils::get<BoutReal>(value);
       
   } else if (bout::utils::holds_alternative<std::string>(value)) {
-    
-    // Use FieldFactory to evaluate expression
-    // Parse the string, giving this Option pointer for the context
-    // then generate a value at t,x,y,z = 0,0,0,0
-    auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
-    if (!gen) {
-      throw BoutException(_("Couldn't get BoutReal from option {:s} = '{:s}'"), full_name,
-                          bout::utils::get<std::string>(value));
-    }
-    result = gen->generate({});
+    result = parseExpression(value, this, "BoutReal", full_name);
+
   } else {
     throw BoutException(_("Value for option {:s} cannot be converted to a BoutReal"),
                         full_name);
@@ -428,41 +442,40 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
 
     return Field3D(stored_value);
   }
-  
-  try {
+
+  if (bout::utils::holds_alternative<BoutReal>(value)
+      or bout::utils::holds_alternative<int>(value)) {
     BoutReal scalar_value = bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
     
     // Get metadata from similar_to, fill field with scalar_value
     return filledFrom(similar_to, scalar_value);
-  } catch (const std::bad_cast&) {
-    
-    // Convert from a string using FieldFactory
-    if (bout::utils::holds_alternative<std::string>(value)) {
-      return FieldFactory::get()->create3D(bout::utils::get<std::string>(value), this,
-                                           similar_to.getMesh(),
-                                           similar_to.getLocation());
-    } else if (bout::utils::holds_alternative<Tensor<BoutReal>>(value)) {
-      auto localmesh = similar_to.getMesh();
-      if (!localmesh) {
-        throw BoutException("mesh must be supplied when converting Tensor to Field3D");
-      }
-
-      // Get a reference, to try and avoid copying
-      const auto& tensor = bout::utils::get<Tensor<BoutReal>>(value);
-      
-      // Check if the dimension sizes are the same as a Field3D
-      if (tensor.shape() == std::make_tuple(localmesh->LocalNx,
-                                            localmesh->LocalNy,
-                                            localmesh->LocalNz)) {
-        return Field3D(tensor.getData(), localmesh, similar_to.getLocation(),
-                       {similar_to.getDirectionY(), similar_to.getDirectionZ()});
-      }
-      // If dimension sizes not the same, may be able
-      // to select a region from it using Mesh e.g. if this
-      // is from the input grid file.
-
-    }
   }
+
+  // Convert from a string using FieldFactory
+  if (bout::utils::holds_alternative<std::string>(value)) {
+    return FieldFactory::get()->create3D(bout::utils::get<std::string>(value), this,
+                                         similar_to.getMesh(), similar_to.getLocation());
+  }
+  if (bout::utils::holds_alternative<Tensor<BoutReal>>(value)) {
+    Mesh* localmesh = similar_to.getMesh();
+    if (localmesh == nullptr) {
+      throw BoutException("mesh must be supplied when converting Tensor to Field3D");
+    }
+
+    // Get a reference, to try and avoid copying
+    const auto& tensor = bout::utils::get<Tensor<BoutReal>>(value);
+
+    // Check if the dimension sizes are the same as a Field3D
+    if (tensor.shape()
+        == std::make_tuple(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz)) {
+      return Field3D(tensor.getData(), localmesh, similar_to.getLocation(),
+                     {similar_to.getDirectionY(), similar_to.getDirectionZ()});
+    }
+    // If dimension sizes not the same, may be able
+    // to select a region from it using Mesh e.g. if this
+    // is from the input grid file.
+  }
+
   throw BoutException(_("Value for option {:s} cannot be converted to a Field3D"),
                       full_name);
 }
@@ -483,36 +496,36 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
 
     return stored_value;
   }
-  
-  try {
+
+  if (bout::utils::holds_alternative<BoutReal>(value)
+      or bout::utils::holds_alternative<int>(value)) {
     BoutReal scalar_value = bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
     // Get metadata from similar_to, fill field with scalar_value
     return filledFrom(similar_to, scalar_value);
-  } catch (const std::bad_cast&) {
-    
-    // Convert from a string using FieldFactory
-    if (bout::utils::holds_alternative<std::string>(value)) {
-      return FieldFactory::get()->create2D(bout::utils::get<std::string>(value), this,
-                                           similar_to.getMesh(),
-                                           similar_to.getLocation());
-    } else if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
-      auto localmesh = similar_to.getMesh();
-      if (!localmesh) {
-        throw BoutException("mesh must be supplied when converting Matrix to Field2D");
-      }
+  }
 
-      // Get a reference, to try and avoid copying
-      const auto& matrix = bout::utils::get<Matrix<BoutReal>>(value);
+  // Convert from a string using FieldFactory
+  if (bout::utils::holds_alternative<std::string>(value)) {
+    return FieldFactory::get()->create2D(bout::utils::get<std::string>(value), this,
+                                         similar_to.getMesh(), similar_to.getLocation());
+  }
+  if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
+    Mesh* localmesh = similar_to.getMesh();
+    if (localmesh == nullptr) {
+      throw BoutException("mesh must be supplied when converting Matrix to Field2D");
+    }
 
-      // Check if the dimension sizes are the same as a Field3D
-      if (matrix.shape() == std::make_tuple(localmesh->LocalNx,
-                                            localmesh->LocalNy)) {
-        return Field2D(matrix.getData(), localmesh, similar_to.getLocation(),
-                       {similar_to.getDirectionY(), similar_to.getDirectionZ()});
-      }
+    // Get a reference, to try and avoid copying
+    const auto& matrix = bout::utils::get<Matrix<BoutReal>>(value);
+
+    // Check if the dimension sizes are the same as a Field3D
+    if (matrix.shape() == std::make_tuple(localmesh->LocalNx, localmesh->LocalNy)) {
+      return Field2D(matrix.getData(), localmesh, similar_to.getLocation(),
+                     {similar_to.getDirectionY(), similar_to.getDirectionZ()});
     }
   }
+
   throw BoutException(_("Value for option {:s} cannot be converted to a Field2D"),
                       full_name);
 }
@@ -535,66 +548,67 @@ FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
     return stored_value;
   }
 
-  try {
+  if (bout::utils::holds_alternative<BoutReal>(value)
+      or bout::utils::holds_alternative<int>(value)) {
     BoutReal scalar_value =
         bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
     // Get metadata from similar_to, fill field with scalar_value
     return filledFrom(similar_to, scalar_value);
-  } catch (const std::bad_cast&) {
-
-    const CELL_LOC location = hasAttribute("cell_location")
-                                  ? CELL_LOCFromString(attributes.at("cell_location"))
-                                  : similar_to.getLocation();
-
-    // Convert from a string using FieldFactory
-    if (bout::utils::holds_alternative<std::string>(value)) {
-      return FieldFactory::get()->createPerp(bout::utils::get<std::string>(value), this,
-                                             similar_to.getMesh(), location);
-    } else if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
-      auto localmesh = similar_to.getMesh();
-      if (!localmesh) {
-        throw BoutException("mesh must be supplied when converting Matrix to FieldPerp");
-      }
-
-      // Get a reference, to try and avoid copying
-      const auto& matrix = bout::utils::get<Matrix<BoutReal>>(value);
-
-      // Check if the dimension sizes are the same as a FieldPerp
-      if (matrix.shape() == std::make_tuple(localmesh->LocalNx, localmesh->LocalNz)) {
-        const auto y_direction =
-            hasAttribute("direction_y")
-                ? YDirectionTypeFromString(attributes.at("direction_y"))
-                : similar_to.getDirectionY();
-        const auto z_direction =
-            hasAttribute("direction_z")
-                ? ZDirectionTypeFromString(attributes.at("direction_z"))
-                : similar_to.getDirectionZ();
-
-        auto result = FieldPerp(matrix.getData(), localmesh, location, -1,
-                                {y_direction, z_direction});
-
-        // Set the index after creating the field so as to not
-        // duplicate the code in `FieldPerp::setIndexFromGlobal`
-        if (hasAttribute("yindex_global")) {
-          result.setIndexFromGlobal(attributes.at("yindex_global"));
-        } else if (similar_to.getIndex() == -1) {
-          // If `yindex_global` attribute wasn't present (might be an
-          // older file), and `similar_to` doesn't have its index set
-          // (might not have been passed, so be default constructed),
-          // use the no-boundary form so that we get a default value
-          // on a grid cell
-          result.setIndex(localmesh->getLocalYIndexNoBoundaries(0));
-        } else {
-          result.setIndex(similar_to.getIndex());
-        }
-        return result;
-      }
-      // If dimension sizes not the same, may be able
-      // to select a region from it using Mesh e.g. if this
-      // is from the input grid file.
-    }
   }
+  const CELL_LOC location = hasAttribute("cell_location")
+                                ? CELL_LOCFromString(attributes.at("cell_location"))
+                                : similar_to.getLocation();
+
+  // Convert from a string using FieldFactory
+  if (bout::utils::holds_alternative<std::string>(value)) {
+    return FieldFactory::get()->createPerp(bout::utils::get<std::string>(value), this,
+                                           similar_to.getMesh(), location);
+  }
+  if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
+    Mesh* localmesh = similar_to.getMesh();
+    if (localmesh == nullptr) {
+      throw BoutException("mesh must be supplied when converting Matrix to FieldPerp");
+    }
+
+    // Get a reference, to try and avoid copying
+    const auto& matrix = bout::utils::get<Matrix<BoutReal>>(value);
+
+    // Check if the dimension sizes are the same as a FieldPerp
+    if (matrix.shape() == std::make_tuple(localmesh->LocalNx, localmesh->LocalNz)) {
+      const auto y_direction =
+          hasAttribute("direction_y")
+              ? YDirectionTypeFromString(attributes.at("direction_y"))
+              : similar_to.getDirectionY();
+      const auto z_direction =
+          hasAttribute("direction_z")
+              ? ZDirectionTypeFromString(attributes.at("direction_z"))
+              : similar_to.getDirectionZ();
+
+      auto result = FieldPerp(matrix.getData(), localmesh, location, -1,
+                              {y_direction, z_direction});
+
+      // Set the index after creating the field so as to not
+      // duplicate the code in `FieldPerp::setIndexFromGlobal`
+      if (hasAttribute("yindex_global")) {
+        result.setIndexFromGlobal(attributes.at("yindex_global"));
+      } else if (similar_to.getIndex() == -1) {
+        // If `yindex_global` attribute wasn't present (might be an
+        // older file), and `similar_to` doesn't have its index set
+        // (might not have been passed, so be default constructed),
+        // use the no-boundary form so that we get a default value
+        // on a grid cell
+        result.setIndex(localmesh->getLocalYIndexNoBoundaries(0));
+      } else {
+        result.setIndex(similar_to.getIndex());
+      }
+      return result;
+    }
+    // If dimension sizes not the same, may be able
+    // to select a region from it using Mesh e.g. if this
+    // is from the input grid file.
+  }
+
   throw BoutException(_("Value for option {:s} cannot be converted to a Field3D"),
                       full_name);
 }
@@ -658,7 +672,7 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
 
     if (child->second.is_section) {
       // Recurse down and replace this section by its "unused" version
-      child->second = child->second.getUnused();
+      child->second = child->second.getUnused(exclude_sources);
       // If all of its children have been used, then we can remove it
       // as well
       if (child->second.children.empty()) {
@@ -702,18 +716,6 @@ void Options::setConditionallyUsed() {
 
 void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
 
-std::map<std::string, Options::OptionValue> Options::values() const {
-  std::map<std::string, OptionValue> options;
-  for (const auto& it : children) {
-    if (it.second.isValue()) {
-      options.emplace(it.first, OptionValue { bout::utils::variantToString(it.second.value),
-                                               bout::utils::variantToString(it.second.attributes.at("source")),
-                                               it.second.value_used});
-    }
-  }
-  return options;
-}
-
 std::map<std::string, const Options *> Options::subsections() const {
   std::map<std::string, const Options *> sections;
   for (const auto &it : children) {
@@ -745,34 +747,135 @@ std::vector<std::string> Options::getFlattenedKeys() const {
   return flattened_names;
 }
 
-std::string toString(const Options& value) {
+fmt::format_parse_context::iterator
+bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
 
-  std::string result;
+  const auto* closing_brace = std::find(ctx.begin(), ctx.end(), '}');
+  std::for_each(ctx.begin(), closing_brace, [&](auto it) {
+    switch (it) {
+    case 'd':
+      docstrings = true;
+      break;
+    case 'i':
+      inline_section_names = true;
+      break;
+    case 'k':
+      key_only = true;
+      break;
+    case 's':
+      source = true;
+      break;
+    case 'u':
+      unused = true;
+      break;
+    default:
+      throw fmt::format_error("invalid format for 'Options'");
+    }
+  });
 
-  // Get all the child values first
-  for (const auto& child : value.getChildren()) {
-    if (child.second.isValue()) {
-      const auto value = bout::utils::variantToString(child.second.value);
+  // Keep a copy of the format string (without the last '}') so we can
+  // pass it down to the subsections.
+  const auto size = std::distance(ctx.begin(), closing_brace);
+  format_string.reserve(size + 3);
+  format_string.assign("{:");
+  format_string.append(ctx.begin(), closing_brace);
+  format_string.push_back('}');
+
+  return closing_brace;
+}
+
+fmt::format_context::iterator
+bout::details::OptionsFormatterBase::format(const Options& options,
+                                            fmt::format_context& ctx) {
+
+  const auto conditionally_used = [](const Options& option) -> bool {
+    if (not option.hasAttribute(conditionally_used_attribute)) {
+      return false;
+    }
+    return option.attributes.at(conditionally_used_attribute).as<bool>();
+  };
+
+  if (options.isValue()) {
+    const std::string section_name = options.str();
+    const std::string name = (inline_section_names and not section_name.empty())
+                                 ? section_name
+                                 : options.name();
+    fmt::format_to(ctx.out(), "{}", name);
+
+    if (not key_only) {
+      const auto value = bout::utils::variantToString(options.value);
       // Convert empty strings to ""
       const std::string as_str = value.empty() ? "\"\"" : value;
-      result += fmt::format("{} = {}\n", child.first, as_str);
+      fmt::format_to(ctx.out(), " = {}", as_str);
     }
+
+    const bool has_doc = options.attributes.count("doc") != 0U;
+    const bool has_source = options.attributes.count("source") != 0U;
+    const bool has_type = options.attributes.count("type") != 0U;
+
+    std::vector<std::string> comments;
+
+    if (unused and not options.valueUsed()) {
+      if (conditionally_used(options)) {
+        comments.emplace_back("unused value (marked conditionally used)");
+      } else {
+        comments.emplace_back("unused value (NOT marked conditionally used)");
+      }
+    }
+
+    if (docstrings) {
+      if (has_type) {
+        comments.emplace_back(
+            fmt::format("type: {}", options.attributes.at("type").as<std::string>()));
+      }
+
+      if (has_doc) {
+        comments.emplace_back(
+            fmt::format("doc: {}", options.attributes.at("doc").as<std::string>()));
+      }
+    }
+
+    if (source and has_source) {
+      const auto source = options.attributes.at("source").as<std::string>();
+      if (not source.empty()) {
+        comments.emplace_back(fmt::format("source: {}", source));
+      }
+    }
+
+    if (not comments.empty()) {
+      fmt::format_to(ctx.out(), "\t\t# {}", fmt::join(comments, ", "));
+    }
+    return ctx.out();
   }
 
   // Only print section headers if the section has a name and it has
   // non-section children
-  const std::string section_name = value.str();
-  if (not(section_name.empty() or result.empty())) {
-    result = fmt::format("\n[{}]\n{}", section_name, result);
+  const auto children = options.getChildren();
+  const bool has_child_values =
+      std::any_of(children.begin(), children.end(),
+                  [](const auto& child) { return child.second.isValue(); });
+  const std::string section_name = options.str();
+  if (not inline_section_names and not section_name.empty() and has_child_values) {
+    fmt::format_to(ctx.out(), "\n[{}]\n", section_name);
+  }
+
+  // Get all the child values first
+  for (const auto& child : children) {
+    if (child.second.isValue()) {
+      fmt::format_to(ctx.out(), format_string, child.second);
+      fmt::format_to(ctx.out(), "\n");
+    }
   }
 
   // Now descend the tree, accumulating subsections
-  for (const auto& subsection : value.subsections()) {
-    result += toString(*subsection.second);
+  for (const auto& subsection : options.subsections()) {
+    fmt::format_to(ctx.out(), format_string, *subsection.second);
   }
 
-  return result;
+  return ctx.out();
 }
+
+std::string toString(const Options& value) { return fmt::format("{}", value); }
 
 namespace bout {
 void checkForUnusedOptions() {
@@ -818,7 +921,7 @@ void checkForUnusedOptions(const Options& options, const std::string& data_dir,
       }
       possible_misspellings += fmt::format("\nUnused option '{}', did you mean:\n", key);
       for (const auto& match : fuzzy_matches) {
-        possible_misspellings += fmt::format("\t{}\n", match.match.str());
+        possible_misspellings += fmt::format("\t{:idk}\n", match.match);
       }
     }
 
@@ -831,10 +934,10 @@ void checkForUnusedOptions(const Options& options, const std::string& data_dir,
     // Raw string to help with the formatting of the message, and a
     // separate variable so clang-format doesn't barf on the
     // exception
-    const std::string unused_message = _(R"""(
+    const std::string unused_message = _(R"(
 There were unused input options:
 -----
-{}
+{:i}
 -----
 It's possible you've mistyped some options. BOUT++ input arguments are
 now case-sensitive, and some have changed name. You can try running
@@ -854,9 +957,9 @@ turn off this check for unused options. You can always set
 'input:validate=true' to check inputs without running the full
 simulation.
 
-{})""");
+{})");
 
-    throw BoutException(unused_message, toString(unused), data_dir, option_file,
+    throw BoutException(unused_message, unused, data_dir, option_file,
                         unused.getChildren().begin()->first, additional_info);
   }
 }

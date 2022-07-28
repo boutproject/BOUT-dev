@@ -46,10 +46,11 @@ class Options;
 #include "bout/sys/variant.hxx"
 #include "bout/sys/type_name.hxx"
 #include "bout/traits.hxx"
-#include "bout/deprecated.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "fieldperp.hxx"
+
+#include <fmt/core.h>
 
 #include <map>
 #include <ostream>
@@ -360,8 +361,10 @@ public:
 
   // Getting options
 
-  /// Cast operator, which allows this class to be
-  /// assigned to type T
+  /// Cast operator, which allows this class to be assigned to type
+  /// T. This is only allowed for types that are members of the
+  /// `ValueType` variant. For other types, please use
+  /// `Options::as<T>()`
   ///
   /// Example:
   ///
@@ -369,8 +372,12 @@ public:
   /// option["test"] = 2.0;
   /// int value = option["test"];
   ///
-  template <typename T> operator T() const { return as<T>(); }
-  
+  template <typename T, typename = typename std::enable_if_t<
+                            bout::utils::isVariantMember<T, ValueType>::value>>
+  operator T() const {
+    return as<T>();
+  }
+
   /// Get the value as a specified type
   /// If there is no value then an exception is thrown
   /// Note there are specialised versions of this template
@@ -647,8 +654,9 @@ public:
   /// _not_ used from this instance. If an option has a "source"
   /// attribute in \p exclude_sources it is counted as having been
   /// used and so won't be included in the returned value. By default,
-  /// this is just "Output".
-  Options getUnused(const std::vector<std::string>& exclude_sources = {"Output"} ) const;
+  /// this is "Output" and "user_default" (used by overrideDefault).
+  Options getUnused(const std::vector<std::string>& exclude_sources = {
+                        "Output", "user_default"}) const;
 
   /// Print the options which haven't been used
   void printUnused() const;
@@ -679,8 +687,6 @@ public:
 
   /// Read-only access to internal options and sections
   /// to allow iteration over the tree
-  using ValuesMap = std::map<std::string, OptionValue>;
-  DEPRECATED(ValuesMap values() const);
   std::map<std::string, const Options*> subsections() const;
 
   const std::map<std::string, Options>& getChildren() const {
@@ -826,6 +832,45 @@ void checkForUnusedOptions(const Options& options, const std::string& data_dir,
                            const std::string& option_file);
 }
 
+namespace bout {
+namespace details {
+/// Implementation of fmt::formatter<Options> in a non-template class
+/// so that we can put the function definitions in the .cxx file,
+/// avoiding lengthy recompilation if we change it
+struct OptionsFormatterBase {
+  auto parse(fmt::format_parse_context& ctx)
+      -> fmt::format_parse_context::iterator;
+  auto format(const Options& options, fmt::format_context& ctx)
+      -> fmt::format_context::iterator;
+
+private:
+  /// Include the 'doc' attribute, if present
+  bool docstrings{false};
+  /// If an option is unused add a comment and whether it is
+  /// conditionally unused
+  bool unused{false};
+  /// If true, print variables as 'section:variable', rather than a
+  /// section header '[section]' and plain 'variable'
+  bool inline_section_names{false};
+  /// Only include the key name, and not the value
+  bool key_only{false};
+  /// Include the 'source' attribute, if present
+  bool source{false};
+  /// Format string to passed down to subsections
+  std::string format_string;
+};
+} // namespace details
+} // namespace bout
+
+/// Format `Options` to string. Format string specification is:
+///
+/// - 'd': include 'doc' attribute if present
+/// - 'i': inline section names
+/// - 'k': only print the key, not the value
+/// - 's': include 'source' attribute if present
+template <>
+struct fmt::formatter<Options> : public bout::details::OptionsFormatterBase {};
+
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \
   pointer(options)->get(#var, var, def)
@@ -852,26 +897,26 @@ void checkForUnusedOptions(const Options& options, const std::string& data_dir,
     pointer(options)->get(#var4, var4, def);                      \
     pointer(options)->get(#var5, var5, def);}
 
-#define OPTION6(options, var1, var2, var3, var4, var5, var6, def){ \
-    pointer(options)->get(#var1, var1, def);                               \
-    pointer(options)->get(#var2, var2, def);                               \
-    pointer(options)->get(#var3, var3, def);                               \
-    pointer(options)->get(#var4, var4, def);                               \
-    pointer(options)->get(#var5, var5, def);                               \
+#define OPTION6(options, var1, var2, var3, var4, var5, var6, def){      \
+    pointer(options)->get(#var1, var1, def);                            \
+    pointer(options)->get(#var2, var2, def);                            \
+    pointer(options)->get(#var3, var3, def);                            \
+    pointer(options)->get(#var4, var4, def);                            \
+    pointer(options)->get(#var5, var5, def);                            \
     pointer(options)->get(#var6, var6, def);}
 
 #define VAROPTION(options, var, def) {					\
-    if (pointer(options)->isSet(#var)){						\
-      pointer(options)->get(#var, var, def);					\
+    if (pointer(options)->isSet(#var)){                                 \
+      pointer(options)->get(#var, var, def);                            \
     } else {								\
       Options::getRoot()->getSection("all")->get(#var, var, def);	\
     }}									\
 
 /// Define for over-riding library defaults for options, should be called in global
 /// namespace so that the new default is set before main() is called.
-#define BOUT_OVERRIDE_DEFAULT_OPTION(name, value)     \
-  namespace {                                         \
-    const auto user_default##__FILE__##__LINE__ =     \
-      Options::root()[name].overrideDefault(value); } \
+#define BOUT_OVERRIDE_DEFAULT_OPTION(name, value)               \
+  namespace {                                                   \
+    const auto BOUT_CONCAT(user_default,__LINE__) =             \
+      Options::root()[name].overrideDefault(value); }           \
 
 #endif // __OPTIONS_H__

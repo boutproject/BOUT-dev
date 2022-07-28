@@ -228,14 +228,16 @@ int main(int argc, char** argv) {
   x0 = 0.;
   if (mesh->firstX())
     for (int k=0;k<mesh->LocalNz;k++)
-      x0(mesh->xstart-1,mesh->ystart,k) = (f4(mesh->xstart,mesh->ystart,k)-f4(mesh->xstart-1,mesh->ystart,k))
-                                        /mesh->getCoordinates()->dx(mesh->xstart,mesh->ystart)
-                                        /sqrt(mesh->getCoordinates()->g_11(mesh->xstart,mesh->ystart));
+      x0(mesh->xstart - 1, mesh->ystart, k) =
+          (f4(mesh->xstart, mesh->ystart, k) - f4(mesh->xstart - 1, mesh->ystart, k))
+          / mesh->getCoordinates()->dx(mesh->xstart, mesh->ystart, k)
+          / sqrt(mesh->getCoordinates()->g_11(mesh->xstart, mesh->ystart, k));
   if (mesh->lastX())
     for (int k=0;k<mesh->LocalNz;k++)
-      x0(mesh->xend+1,mesh->ystart,k) = (f4(mesh->xend+1,mesh->ystart,k)-f4(mesh->xend,mesh->ystart,k))
-                                        /mesh->getCoordinates()->dx(mesh->xend,mesh->ystart)
-                                        /sqrt(mesh->getCoordinates()->g_11(mesh->xend,mesh->ystart));
+      x0(mesh->xend + 1, mesh->ystart, k) =
+          (f4(mesh->xend + 1, mesh->ystart, k) - f4(mesh->xend, mesh->ystart, k))
+          / mesh->getCoordinates()->dx(mesh->xend, mesh->ystart, k)
+          / sqrt(mesh->getCoordinates()->g_11(mesh->xend, mesh->ystart, k));
 
   try {
     sol4 = invert->solve(sliceXZ(b4, mesh->ystart), sliceXZ(x0, mesh->ystart));

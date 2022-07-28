@@ -69,41 +69,41 @@ given in table :numref:`tab-solveropts`.
 .. _tab-solveropts:
 .. table:: Time integration solver options
 	   
-   +------------------+--------------------------------------------+-------------------------------------+
-   | Option           | Description                                | Solvers used                        |
-   +==================+============================================+=====================================+
-   | atol             | Absolute tolerance                         | rk4, pvode, cvode, ida, imexbdf2,   |
-   |                  |                                            | beuler                              |
-   +------------------+--------------------------------------------+-------------------------------------+
-   | rtol             | Relative tolerance                         | rk4, pvode, cvode, ida, imexbdf2,   |
-   |                  |                                            | beuler                              |
-   +------------------+--------------------------------------------+-------------------------------------+
-   | mxstep           | Maximum internal steps                     | rk4, imexbdf2                       |
-   |                  | per output step                            |                                     |
-   +------------------+--------------------------------------------+-------------------------------------+
-   | max\_timestep    | Maximum timestep                           | rk4, cvode                          |
-   +------------------+--------------------------------------------+-------------------------------------+
-   | timestep         | Starting timestep                          | rk4, euler, imexbdf2, beuler        |
-   +------------------+--------------------------------------------+-------------------------------------+
-   | adaptive         | Adapt timestep? (Y/N)                      | rk4, imexbdf2                       |
-   +------------------+--------------------------------------------+-------------------------------------+
-   | use\_precon      | Use a preconditioner? (Y/N)                | pvode, cvode, ida, imexbdf2         |
-   +------------------+--------------------------------------------+-------------------------------------+
-   | mudq, mldq       | BBD preconditioner settings                | pvode, cvode, ida                   |
-   +------------------+--------------------------------------------+-------------------------------------+
-   | mukeep, mlkeep   |                                            |                                     |
-   +------------------+--------------------------------------------+-------------------------------------+
-   | maxl             | Maximum number of linear iterations        | cvode, imexbdf2                     |
-   +------------------+--------------------------------------------+-------------------------------------+
-   | max_nonlinear_it | Maximum number of nonlinear iterations     | imexbdf2, beuler                    |
-   +------------------+--------------------------------------------+-------------------------------------+
-   | use\_jacobian    | Use user-supplied Jacobian? (Y/N)          | cvode                               |
-   +------------------+--------------------------------------------+-------------------------------------+
-   | adams\_moulton   | Use Adams-Moulton method                   | cvode                               |
-   |                  | rather than BDF                            |                                     |
-   +------------------+--------------------------------------------+-------------------------------------+
-   | diagnose         | Collect and print additional diagnostics   | cvode, imexbdf2, beuler             |
-   +------------------+--------------------------------------------+-------------------------------------+
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | Option                   | Description                                | Solvers used                        |
+   +==========================+============================================+=====================================+
+   | atol                     | Absolute tolerance                         | rk4, pvode, cvode, ida, imexbdf2,   |
+   |                          |                                            | beuler                              |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | rtol                     | Relative tolerance                         | rk4, pvode, cvode, ida, imexbdf2,   |
+   |                          |                                            | beuler                              |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | mxstep                   | Maximum internal steps                     | rk4, imexbdf2                       |
+   |                          | per output step                            |                                     |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | max\_timestep            | Maximum timestep                           | rk4, cvode                          |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | timestep                 | Starting timestep                          | rk4, euler, imexbdf2, beuler        |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | adaptive                 | Adapt timestep? (Y/N)                      | rk4, imexbdf2                       |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | use\_precon              | Use a preconditioner? (Y/N)                | pvode, cvode, ida, imexbdf2         |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | mudq, mldq               | BBD preconditioner settings                | pvode, cvode, ida                   |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | mukeep, mlkeep           |                                            |                                     |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | maxl                     | Maximum number of linear iterations        | cvode, imexbdf2                     |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | max_nonlinear_iterations | Maximum number of nonlinear iterations     | cvode, imexbdf2, beuler             |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | use\_jacobian            | Use user-supplied Jacobian? (Y/N)          | cvode                               |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | adams\_moulton           | Use Adams-Moulton method                   | cvode                               |
+   |                          | rather than BDF                            |                                     |
+   +--------------------------+--------------------------------------------+-------------------------------------+
+   | diagnose                 | Collect and print additional diagnostics   | cvode, imexbdf2, beuler             |
+   +--------------------------+--------------------------------------------+-------------------------------------+
 
 |
 
@@ -143,6 +143,13 @@ many iterations are needed to solve the linear system. If the number of
 iterations becomes large, this may be an indication that the system is
 poorly conditioned, and a preconditioner might help improve performance.
 See :ref:`sec-preconditioning`.
+
+CVODE can set constraints to keep some quantities positive, non-negative,
+negative or non-positive. These constraints can be activated by setting the
+option ``solver:apply_positivity_constraints=true``, and then in the section
+for a certain variable (e.g. ``[n]``), setting the option
+``positivity_constraint`` to one of ``positive``, ``non_negative``,
+``negative``, or ``non_positive``.
 
 IMEX-BDF2
 ---------
@@ -344,28 +351,81 @@ PETSc's SNES solvers to solve the nonlinear system at each timestep,
 and adjusts the internal timestep to keep the number of SNES
 iterations within a given range.
 
-+---------------------+-----------+----------------------------------------------------+
-| Option              | Default   |Description                                         |
-+=====================+===========+====================================================+
-| max_nonlinear_it    | 50        | If exceeded, solve restarts with timestep / 2      |
-+---------------------+-----------+----------------------------------------------------+
-| upper_its           | 80% max   | If exceeded, next timestep reduced by 10%          |
-+---------------------+-----------+----------------------------------------------------+
-| lower_its           | 50% max   | If under this, next timestep increased by 10%      |
-+---------------------+-----------+----------------------------------------------------+
++---------------------------+---------------+----------------------------------------------------+
+| Option                    | Default       |Description                                         |
++===========================+===============+====================================================+
+| snes_type                 | newtonls      | PETSc SNES nonlinear solver (try anderson, qn)     |
++---------------------------+---------------+----------------------------------------------------+
+| ksp_type                  | gmres         | PETSc KSP linear solver
++---------------------------+---------------+----------------------------------------------------+
+| pc_type                   | ilu / bjacobi | PETSc PC preconditioner                            |
++---------------------------+---------------+----------------------------------------------------+
+| max_nonlinear_iterations  | 20            | If exceeded, solve restarts with timestep / 2      |
++---------------------------+---------------+----------------------------------------------------+
+| maxl                      | 20            | Maximum number of linear iterations                |
++---------------------------+---------------+----------------------------------------------------+
+| atol                      | 1e-12         | Absolute tolerance of SNES solve                   |
++---------------------------+---------------+----------------------------------------------------+
+| rtol                      | 1e-5          | Relative tolerance of SNES solve                   |
++---------------------------+---------------+----------------------------------------------------+
+| upper_its                 | 80% max       | If exceeded, next timestep reduced by 10%          |
++---------------------------+---------------+----------------------------------------------------+
+| lower_its                 | 50% max       | If under this, next timestep increased by 10%      |
++---------------------------+---------------+----------------------------------------------------+
+| timestep                  | 1             | Initial timestep                                   |
++---------------------------+---------------+----------------------------------------------------+
+| predictor                 | true          | Use linear predictor?                              |
++---------------------------+---------------+----------------------------------------------------+
+| matrix_free               | false         | Use matrix free Jacobian-vector product?           |
++---------------------------+---------------+----------------------------------------------------+
+| use_coloring              | true          | If `matrix_free=false`, use coloring to speed up   |
+|                           |               | calculation of the Jacobian elements.              |
++---------------------------+---------------+----------------------------------------------------+
+| lag_jacobian              | 50            | Re-use the Jacobian for successive inner solves    |
++---------------------------+---------------+----------------------------------------------------+
+| kspsetinitialguessnonzero | false         | If true, Use previous solution as KSP initial      |
++---------------------------+---------------+----------------------------------------------------+
+| use_precon                | false         | Use user-supplied preconditioner?                  |
+|                           |               | If false, the default PETSc preconditioner is used |
++---------------------------+---------------+----------------------------------------------------+
+| diagnose                  | false         | Print diagnostic information every iteration       |
++---------------------------+---------------+----------------------------------------------------+
 
 The predictor is linear extrapolation from the last two timesteps. It seems to be
 effective, but can be disabled by setting ``predictor = false``.
+
+The default `newtonls` SNES type can be very effective if combined
+with Jacobian coloring: The coloring enables the Jacobian to be
+calculated relatively efficiently; once a Jacobian matrix has been
+calculated, effective preconditioners can be used to speed up
+convergence.  It is important to note that the coloring assumes a star
+stencil and so won't work for every problem: It assumes that each
+evolving quantity is coupled to all other evolving quantities on the
+same grid cell, and on all the neighbouring grid cells. If the RHS
+function includes Fourier transforms, or matrix inversions
+(e.g. potential solves) then these will introduce longer-range
+coupling and the Jacobian calculation will give spurious
+results. Generally the method will then fail to converge. Two
+solutions are to a) switch to matrix-free (`matrix_free=true`), or b)
+solve the matrix inversion as a constraint.
 
 The `SNES type
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESType.html>`_
 can be set through PETSc command-line options, or in the BOUT++
 options as setting `snes_type`. Good choices for unpreconditioned
-problems seem to be `anderson
+problems where the Jacobian is not available (`matrix_free=true`) seem to be `anderson
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESANDERSON.html#SNESANDERSON>`_
-(the default) and `qn
+and `qn
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESQN.html#SNESQN>`_
 (quasinewton).
+
+Preconditioner types:
+
+#. On one processor the ILU solver is typically very effective, and is usually the default
+#. The Hypre package can be installed with PETSc and used as a preconditioner. One of the
+   options available in Hypre is the Euler parallel ILU solver.
+   Enable with command-line args ``-pc_type hypre -pc_hypre_type euclid -pc_hypre_euclid_levels k``
+   where ``k`` is the level (1-8 typically).
 
 ODE integration
 ---------------
@@ -948,12 +1008,12 @@ be ignored.
 Once the problem to be solved has been specified, the solver can be
 initialised using::
 
-    int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
+    int init();
 
 which returns an error code (0 on success). This is currently called in
 :doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`::
 
-    if(solver.init(rhs, argc, argv, restart, NOUT, TIMESTEP)) {
+    if (solver.init()) {
       output.write("Failed to initialise solver. Aborting\n");
       return(1);
     }

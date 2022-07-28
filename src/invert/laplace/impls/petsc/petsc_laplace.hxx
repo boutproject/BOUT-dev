@@ -68,7 +68,9 @@ RegisterLaplace<LaplacePetsc> registerlaplacepetsc(LAPLACE_PETSC);
 
 class LaplacePetsc : public Laplacian {
 public:
-  LaplacePetsc(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplacePetsc(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+               Mesh* mesh_in = nullptr, Solver* solver = nullptr,
+               Datafile* dump = nullptr);
   ~LaplacePetsc() {
     KSPDestroy( &ksp );
     VecDestroy( &xs );
@@ -206,7 +208,6 @@ private:
   bool issetD;
   bool issetC;
   bool issetE;
-  int lastflag;               // The flag used to construct the matrix
 
   FieldPerp sol;              // solution Field
 
@@ -237,7 +238,6 @@ private:
 
   PetscLib lib;
 
-  bool use_precon;  // Switch for preconditioning
   bool rightprec;   // Right preconditioning
   std::unique_ptr<Laplacian> pcsolve; // Laplacian solver for preconditioning
 

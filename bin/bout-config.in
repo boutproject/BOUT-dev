@@ -36,6 +36,7 @@ has_cvode="@BOUT_HAS_CVODE@"
 has_ida="@BOUT_HAS_IDA@"
 has_lapack="@BOUT_HAS_LAPACK@"
 has_petsc="@BOUT_HAS_PETSC@"
+has_hypre="@BOUT_HAS_HYPRE@"
 has_slepc="@BOUT_HAS_SLEPC@"
 has_arkode="@BOUT_HAS_ARKODE@"
 has_openmp="@BOUT_USE_OPENMP@"
@@ -43,6 +44,8 @@ has_nls="@BOUT_HAS_GETTEXT@"
 has_fftw="@BOUT_HAS_FFTW@"
 
 petsc_has_sundials="@PETSC_HAS_SUNDIALS@"
+
+metric_type="@BOUT_METRIC_TYPE@"
 
 usage()
 {
@@ -75,10 +78,13 @@ Available values for OPTION include:
   --has-ida     SUNDIALS IDA solver support
   --has-lapack  LAPACK support
   --has-petsc   PETSc support
+  --has-hypre   Hypre support
   --has-slepc   SLEPc support
   --has-nls     Natural Language Support
 
   --petsc-has-sundials 
+
+  --metric-type
 EOF
 
     exit $1
@@ -110,12 +116,14 @@ all()
         echo "  --has-ida     -> $has_ida"
         echo "  --has-lapack  -> $has_lapack"
         echo "  --has-petsc   -> $has_petsc"
+        echo "  --has-hypre   -> $has_hypre"
         echo "  --has-slepc   -> $has_slepc"
         echo "  --has-arkode  -> $has_arkode"
         echo "  --has-nls     -> $has_nls"
         echo
         echo "  --petsc-has-sundials -> $petsc_has_sundials"
         echo
+        echo "  --metric-type -> $metric_type"        
 }
 
 if test $# -eq 0; then
@@ -217,6 +225,10 @@ while test $# -gt 0; do
         echo $has_petsc
         ;;
 
+    --has-hypre)
+        echo $has_hypre
+        ;;
+
     --has-slepc)
         echo $has_slepc
         ;;
@@ -233,6 +245,9 @@ while test $# -gt 0; do
 	    echo $has_nls
 	    ;;
 
+    --metric-type)
+	    echo $metric_type
+	    ;;
     
     --petsc-version)
         # TODO: Remove in next release

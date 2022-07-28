@@ -13,11 +13,16 @@
 #include <bout/mesh.hxx>
 
 namespace FV {
-  /*!
-   * Div ( a Laplace_perp(x) )  -- Vorticity
-   */
-  const Field3D Div_a_Laplace_perp(const Field3D &a, const Field3D &x);
-  
+/*!
+ * Div ( a Grad_perp(f) ) -- ∇⊥ ( a ⋅ ∇⊥ f) -- Vorticity
+ */
+Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& x);
+
+[[deprecated("Please use Div_a_Grad_perp instead")]] inline Field3D
+Div_a_Laplace_perp(const Field3D& a, const Field3D& x) {
+  return Div_a_Grad_perp(a, x);
+}
+
   /*!
    * Divergence of a parallel diffusion Div( k * Grad_par(f) )
    */
@@ -231,11 +236,11 @@ namespace FV {
 
       for (int j = ys; j <= ye; j++) {
         // Pre-calculate factors which multiply fluxes
-
+#if not(BOUT_USE_METRIC_3D)
         // For right cell boundaries
         BoutReal common_factor = (coord->J(i, j) + coord->J(i, j + 1)) /
           (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j + 1)));
-        
+
         BoutReal flux_factor_rc = common_factor / (coord->dy(i, j) * coord->J(i, j));
         BoutReal flux_factor_rp = common_factor / (coord->dy(i, j + 1) * coord->J(i, j + 1));
 
@@ -245,8 +250,28 @@ namespace FV {
 
         BoutReal flux_factor_lc = common_factor / (coord->dy(i, j) * coord->J(i, j));
         BoutReal flux_factor_lm = common_factor / (coord->dy(i, j - 1) * coord->J(i, j - 1));
-        
+#endif
         for (int k = 0; k < mesh->LocalNz; k++) {
+#if BOUT_USE_METRIC_3D
+          // For right cell boundaries
+          BoutReal common_factor =
+              (coord->J(i, j, k) + coord->J(i, j + 1, k))
+              / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
+
+          BoutReal flux_factor_rc =
+              common_factor / (coord->dy(i, j, k) * coord->J(i, j, k));
+          BoutReal flux_factor_rp =
+              common_factor / (coord->dy(i, j + 1, k) * coord->J(i, j + 1, k));
+
+          // For left cell boundaries
+          common_factor = (coord->J(i, j, k) + coord->J(i, j - 1, k))
+                          / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
+
+          BoutReal flux_factor_lc =
+              common_factor / (coord->dy(i, j, k) * coord->J(i, j, k));
+          BoutReal flux_factor_lm =
+              common_factor / (coord->dy(i, j - 1, k) * coord->J(i, j - 1, k));
+#endif
 
           ////////////////////////////////////////////
           // Reconstruct f at the cell faces
@@ -452,13 +477,13 @@ namespace FV {
 
       if (vU > 0.0) {
         BoutReal flux = vU * s.R;
-        result[i] += flux / (coord->J[i] * coord->dz);
-        result[i.zp()] -= flux / (coord->J[i.zp()] * coord->dz);
+        result[i] += flux / (coord->J[i] * coord->dz[i]);
+        result[i.zp()] -= flux / (coord->J[i.zp()] * coord->dz[i.zp()]);
       }
       if (vD < 0.0) {
         BoutReal flux = vD * s.L;
-        result[i] -= flux / (coord->J[i] * coord->dz);
-        result[i.zm()] += flux / (coord->J[i.zm()] * coord->dz);
+        result[i] -= flux / (coord->J[i] * coord->dz[i]);
+        result[i.zm()] += flux / (coord->J[i.zm()] * coord->dz[i.zm()]);
       }
     }
 
@@ -473,6 +498,7 @@ namespace FV {
     
     Field3D yresult = 0.0;    
     yresult.setDirectionY(YDirectionType::Aligned);
+
     BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       // Y velocities on y boundaries
       BoutReal vU = 0.25 * (vy[i] + vy[i.yp()]) * (coord->J[i] + coord->J[i.yp()]);
@@ -487,6 +513,11 @@ namespace FV {
     }
     return result + fromFieldAligned(yresult, "RGN_NOBNDRY");
   }
-}
 
+  /*!
+   * X-Z Finite Volume diffusion operator
+   */
+  Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f,
+                       CELL_LOC outloc = CELL_DEFAULT);
+}    // namespace FV
 #endif // __FV_OPS_H__

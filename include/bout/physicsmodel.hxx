@@ -107,7 +107,8 @@ public:
    * Input
    * -----
    *
-   * @param[in] time  The simulation time
+   * @param[in] time    The simulation time
+   * @param[in] linear  True if the function can be a linearised form
    *
    * The system state should be in the evolving variables
    *
@@ -118,7 +119,7 @@ public:
    * 
    * Returns a flag: 0 indicates success, non-zero an error flag
    */
-  int runRHS(BoutReal time);
+  int runRHS(BoutReal time, bool linear = false);
   
   /*!
    * True if this model uses split operators
@@ -127,13 +128,21 @@ public:
   
   /*!
    * Run the convective (usually explicit) part of the model
+   *
+   * @param[in] time    The simulation time
+   * @param[in] linear  True if the function can be a linearised form
+   *
    */
-  int runConvective(BoutReal time);
+  int runConvective(BoutReal time, bool linear = false);
   
   /*!
    * Run the diffusive (usually implicit) part of the model
+   *
+   * @param[in] time    The simulation time
+   * @param[in] linear  True if the function can be a linearised form
+   *
    */
-  int runDiffusive(BoutReal time, bool linear);
+  int runDiffusive(BoutReal time, bool linear = false);
   
   /*!
    * True if a preconditioner has been defined
@@ -193,8 +202,13 @@ protected:
    *
    * By default this function just returns an error,
    * which will stop the simulation.
+   *
+   * An optional second argument can be used, @p linear,
+   * which is set to true when the rhs() function can be
+   * linearised. This is used in e.g. linear iterative solves.
    */
   virtual int rhs(BoutReal UNUSED(t)) {return 1;}
+  virtual int rhs(BoutReal t, bool UNUSED(linear)) {return rhs(t);}
 
   /* 
      If split operator is set to true, then
@@ -207,6 +221,7 @@ protected:
      rhs() = convective() + diffusive()
    */
   virtual int convective(BoutReal UNUSED(t)) {return 1;}
+  virtual int convective(BoutReal t, bool UNUSED(linear)) { return convective(t); }
   virtual int diffusive(BoutReal UNUSED(t)) {return 1;}
   virtual int diffusive(BoutReal t, bool UNUSED(linear)) { return diffusive(t); }
   
@@ -343,7 +358,7 @@ private:
       solver->outputVars(bout::globals::dump);                     \
       solver->solve();                                             \
     } catch (const BoutException& e) {                             \
-      output << "Error encountered\n";                             \
+      output << "Error encountered: " << e.what();                 \
       output << e.getBacktrace() << endl;                          \
       MPI_Abort(BoutComm::get(), 1);                               \
     }                                                              \
