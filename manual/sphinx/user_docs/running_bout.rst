@@ -135,11 +135,6 @@ xBOUT documentation
 `xbout.readthedocs.io <https://xbout.readthedocs.io/en/latest/>`_.
 
 There is also an older set of NumPy-based Python tools, described below.
-
-.. note:: We now recommend using `xBOUT
-          <https://xbout.readthedocs.io/en/latest>` to analyse BOUT++
-          simulations.
-
 In order to analyse the output of the simulation using Python, you
 will first need to have set up python to use the BOUT++ libraries
 ``boutdata`` and ``boututils``; see section
