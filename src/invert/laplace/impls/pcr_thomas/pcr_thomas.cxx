@@ -44,7 +44,6 @@
 #include <bout/openmpwrap.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
-#include <cmath>
 #include <fft.hxx>
 #include <lapack_routines.hxx>
 #include <utils.hxx>
