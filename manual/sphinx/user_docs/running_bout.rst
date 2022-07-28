@@ -554,9 +554,9 @@ it never will be (regardless of the values of ``restart`` and ``append``).
 
 If you need to restart from a different point in your simulation, or
 the ``BOUT.restart`` files become corrupted, you can use `xBOUT
-<https://xbout.readthedocs.io/en/latest>` to create new restart files
+<https://xbout.readthedocs.io/en/latest>`_ to create new restart files
 from any time-point in your output files. Use the `.to_restart()
-<https://xbout.readthedocs.io/en/latest/xbout.html#xbout.boutdataset.BoutDatasetAccessor.to_restart>`
+<https://xbout.readthedocs.io/en/latest/xbout.html#xbout.boutdataset.BoutDatasetAccessor.to_restart>`_
 method:
 
 .. code-block:: pycon
