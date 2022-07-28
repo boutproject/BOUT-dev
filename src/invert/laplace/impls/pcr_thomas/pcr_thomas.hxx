@@ -41,7 +41,8 @@ RegisterLaplace<LaplacePCR_THOMAS> registerlaplacepcrthomas(LAPLACE_PCR_THOMAS);
 class LaplacePCR_THOMAS : public Laplacian {
 public:
   LaplacePCR_THOMAS(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-             Mesh* mesh_in = nullptr);
+                    Mesh* mesh_in = nullptr, Solver* solver = nullptr,
+                    Datafile* dump = nullptr);
   ~LaplacePCR_THOMAS() = default;
 
   using Laplacian::setCoefA;
