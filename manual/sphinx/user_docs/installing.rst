@@ -231,11 +231,11 @@ generator. You will need CMake >= 3.17.
 
       $ pip install --user --upgrade cmake
 
-    or ``conda``::
+   or ``conda``::
 
       $ conda install cmake
 
-    You may need to put ``~/.local/bin`` in your ``$PATH``
+   You may need to put ``~/.local/bin`` in your ``$PATH``
 
 CMake supports out-of-source builds by default, which are A Good Idea.
 Basic configuration with CMake looks like::
