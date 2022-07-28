@@ -480,7 +480,7 @@ starts::
     Run started at  : Tue 07 Dec 2021 17:50:39 GMT
 
 The ``Run ID`` here is a `universally unique identifier
-<https://en.wikipedia.org/wiki/Universally_unique_identifier>` (UUID)
+<https://en.wikipedia.org/wiki/Universally_unique_identifier>`_ (UUID)
 which is a random 128-bit label unique to this current
 simulation. This makes it easier to identify all of the associated
 outputs of a simulation, and record the data for future reference.

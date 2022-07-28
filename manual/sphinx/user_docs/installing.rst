@@ -184,8 +184,8 @@ to set ``export LC_CTYPE=C.utf8``.
 
 If you do not have administrator rights, so can't install packages, then
 you need to install these libraries from source into your home directory.
-See sections on :ref:`installing MPI <sec-mpi-from-source>`, :ref:`installing FFTW <sec-fftw-from-source>`
-and :ref:`installing NetCDF <sec-netcdf-from-source>`.
+See :ref:`sec-advancedinstall` for details on installing some of these.
+
 
 Arch Linux
 ~~~~~~~~~~
