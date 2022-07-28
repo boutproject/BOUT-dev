@@ -40,7 +40,7 @@ RegisterLaplace<LaplacePCR_THOMAS> registerlaplacepcrthomas(LAPLACE_PCR_THOMAS);
 
 class LaplacePCR_THOMAS : public Laplacian {
 public:
-  LaplacePCR_THOMAS(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+  LaplacePCR_THOMAS(Options* opt = nullptr, CELL_LOC loc = CELL_CENTRE,
                     Mesh* mesh_in = nullptr, Solver* solver = nullptr,
                     Datafile* dump = nullptr);
   ~LaplacePCR_THOMAS() = default;
@@ -148,7 +148,7 @@ private:
   void pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                               Matrix<dcomplex>& c, Matrix<dcomplex>& r,
                               Matrix<dcomplex>& x) const;
-  void pThomas_forward_multiple_row(Matrix<dcomplex> &a, Matrix<dcomplex> &b, Matrix<dcomplex> &c, Matrix<dcomplex> &r);
+  void pThomas_forward_multiple_row(Matrix<dcomplex> &a, Matrix<dcomplex> &b, Matrix<dcomplex> &c, Matrix<dcomplex> &r) const;
   void pcr_double_row_substitution(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                               Matrix<dcomplex>& c, Matrix<dcomplex>& r,
                               Matrix<dcomplex>& x);
