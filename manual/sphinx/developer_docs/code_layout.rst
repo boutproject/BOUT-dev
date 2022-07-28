@@ -205,12 +205,6 @@ The current source code files are:
 
          - :doc:`spt.cxx<../_breathe_autogen/file/spt_8cxx>`
 
-      - pdd
-
-         - :doc:`pdd.hxx<../_breathe_autogen/file/pdd_8hxx>`
-
-         - :doc:`pdd.cxx<../_breathe_autogen/file/pdd_8cxx>`
-
 - invert / parderiv
 
    -
