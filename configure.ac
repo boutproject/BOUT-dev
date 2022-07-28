@@ -36,6 +36,8 @@ AC_INIT([BOUT++],[5.0.0-alpha],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
+AC_MSG_WARN([./configure is deprecated and will be removed in a future version, please use CMake instead])
+
 AC_ARG_WITH(netcdf,       [AS_HELP_STRING([--with-netcdf],
         [Enable support for netCDF files])],,[])
 AC_ARG_WITH(pnetcdf,      [AS_HELP_STRING([--with-pnetcdf],
@@ -1493,3 +1495,5 @@ AC_MSG_NOTICE([])
 AC_MSG_NOTICE([   export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH])
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([*** Now run '$MAKE' to compile BOUT++ ***])
+AC_MSG_NOTICE([])
+AC_MSG_WARN([./configure is deprecated and will be removed in a future version, please use CMake instead])
