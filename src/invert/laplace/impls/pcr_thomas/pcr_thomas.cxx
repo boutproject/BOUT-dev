@@ -39,17 +39,17 @@
 #include "pcr_thomas.hxx"
 #include "globals.hxx"
 
+#include "boutcomm.hxx"
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
 #include <fft.hxx>
 #include <lapack_routines.hxx>
-#include <utils.hxx>
-#include "boutcomm.hxx"
 #include <output.hxx>
-#include <bout/scorepwrapper.hxx>
+#include <utils.hxx>
 
 #include <algorithm>
 #include <cmath>
@@ -534,17 +534,22 @@ Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
   return x;
 }
 
-/** 
- * @brief   Thomas-PCR solver: pThomas_forward_multiple + pcr_forward_double + pThomas_backward_multiple
- * @param   a_mpi (input) Lower off-diagonal coeff., which is assigned to local private pointer a
+/**
+ * @brief   Thomas-PCR solver: pThomas_forward_multiple + pcr_forward_double +
+ * pThomas_backward_multiple
+ * @param   a_mpi (input) Lower off-diagonal coeff., which is assigned to local private
+ * pointer a
  * @param   b_mpi (input) Diagonal coeff., which is assigned to local private pointer b
- * @param   c_mpi (input) Upper off-diagonal coeff.,, which is assigned to local private pointer c
+ * @param   c_mpi (input) Upper off-diagonal coeff.,, which is assigned to local private
+ * pointer c
  * @param   r_mpi (input) RHS vector, which is assigned to local private pointer r
  * @param   x_mpi (output) Solution vector, which is assigned to local private pointer x
-*/
-void LaplacePCR_THOMAS ::pcr_thomas_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomplex>& b_mpi,
-                                Matrix<dcomplex>& c_mpi, Matrix<dcomplex>& r_mpi,
-                                Matrix<dcomplex>& x_mpi) {
+ */
+void LaplacePCR_THOMAS ::pcr_thomas_solver(Matrix<dcomplex>& a_mpi,
+                                           Matrix<dcomplex>& b_mpi,
+                                           Matrix<dcomplex>& c_mpi,
+                                           Matrix<dcomplex>& r_mpi,
+                                           Matrix<dcomplex>& x_mpi) {
 
   const int xstart = localmesh->xstart;
   const int xend = localmesh->xend;
@@ -611,9 +616,10 @@ void LaplacePCR_THOMAS ::pcr_thomas_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomp
  * last interior rows from their respective boundary rows. This is necessary
  * to ensure we pass a square system of interior rows to the PCR library.
  */
-void LaplacePCR_THOMAS ::eliminate_boundary_rows(const Matrix<dcomplex>& a, Matrix<dcomplex>& b,
-                                          const Matrix<dcomplex>& c,
-                                          Matrix<dcomplex>& r) {
+void LaplacePCR_THOMAS ::eliminate_boundary_rows(const Matrix<dcomplex>& a,
+                                                 Matrix<dcomplex>& b,
+                                                 const Matrix<dcomplex>& c,
+                                                 Matrix<dcomplex>& r) {
 
   if (localmesh->firstX()) {
     // x index is first interior row
@@ -644,10 +650,10 @@ void LaplacePCR_THOMAS ::eliminate_boundary_rows(const Matrix<dcomplex>& a, Matr
  * Apply the boundary conditions on the first and last X processors
  */
 void LaplacePCR_THOMAS ::apply_boundary_conditions(const Matrix<dcomplex>& a,
-                                            const Matrix<dcomplex>& b,
-                                            const Matrix<dcomplex>& c,
-                                            const Matrix<dcomplex>& r,
-                                            Matrix<dcomplex>& x) {
+                                                   const Matrix<dcomplex>& b,
+                                                   const Matrix<dcomplex>& c,
+                                                   const Matrix<dcomplex>& r,
+                                                   Matrix<dcomplex>& x) {
 
   if (localmesh->firstX()) {
     for (int kz = 0; kz < nsys; kz++) {
@@ -672,8 +678,8 @@ void LaplacePCR_THOMAS ::apply_boundary_conditions(const Matrix<dcomplex>& a,
  * performed.
  */
 void LaplacePCR_THOMAS ::cr_forward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
-                                          Matrix<dcomplex>& c,
-                                          Matrix<dcomplex>& r) const {
+                                                 Matrix<dcomplex>& c,
+                                                 Matrix<dcomplex>& r) const {
   MPI_Comm comm = BoutComm::get();
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
@@ -744,9 +750,11 @@ void LaplacePCR_THOMAS ::cr_forward_multiple_row(Matrix<dcomplex>& a, Matrix<dco
  * @brief   Backward substitution of CR after single-row solution per MPI process is
  * obtained.
  */
-void LaplacePCR_THOMAS ::cr_backward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
-                                           Matrix<dcomplex>& c, Matrix<dcomplex>& r,
-                                           Matrix<dcomplex>& x) const {
+void LaplacePCR_THOMAS ::cr_backward_multiple_row(Matrix<dcomplex>& a,
+                                                  Matrix<dcomplex>& b,
+                                                  Matrix<dcomplex>& c,
+                                                  Matrix<dcomplex>& r,
+                                                  Matrix<dcomplex>& x) const {
   MPI_Comm comm = BoutComm::get();
 
   MPI_Status status;
@@ -795,8 +803,8 @@ void LaplacePCR_THOMAS ::cr_backward_multiple_row(Matrix<dcomplex>& a, Matrix<dc
  * i+nprocs/2 rows.
  */
 void LaplacePCR_THOMAS ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
-                                         Matrix<dcomplex>& c, Matrix<dcomplex>& r,
-                                         Matrix<dcomplex>& x) const {
+                                                Matrix<dcomplex>& c, Matrix<dcomplex>& r,
+                                                Matrix<dcomplex>& x) const {
 
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
@@ -834,18 +842,18 @@ void LaplacePCR_THOMAS ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcom
     const int tag_recv_out = 201;
     const int tag_send_in = 201;
     const int tag_send_out = 200;
-    
+
     if (xproc + dist_rank < nprocs) {
-      MPI_Irecv(&rbuf1[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank + dist_rank, tag_recv_out, comm,
-		  &request[0]);
-      MPI_Isend(&sbuf[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank + dist_rank, tag_send_out, comm,
-                  &request[1]);
+      MPI_Irecv(&rbuf1[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank + dist_rank, tag_recv_out,
+                comm, &request[0]);
+      MPI_Isend(&sbuf[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank + dist_rank, tag_send_out,
+                comm, &request[1]);
     }
     if (xproc - dist_rank >= 0) {
-      MPI_Irecv(&rbuf0[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank - dist_rank, tag_recv_in, comm,
-                  &request[2]);
-      MPI_Isend(&sbuf[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank - dist_rank, tag_send_in, comm,
-                  &request[3]);
+      MPI_Irecv(&rbuf0[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank - dist_rank, tag_recv_in,
+                comm, &request[2]);
+      MPI_Isend(&sbuf[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank - dist_rank, tag_send_in,
+                comm, &request[3]);
     }
     if (xproc + dist_rank < nprocs) {
       MPI_Wait(&request[0], &status);
@@ -966,130 +974,134 @@ void LaplacePCR_THOMAS ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcom
   }
 }
 
-/** 
+/**
  * @brief   First phase of hybrid Thomas and PCR algorithm
- * @detail  Forward and backward elimination to remain two equations of first and last rows for each MPI processes
-*/
-void LaplacePCR_THOMAS :: pThomas_forward_multiple_row(Matrix<dcomplex> &a, Matrix<dcomplex> &b, Matrix<dcomplex> &c, Matrix<dcomplex> &r) const
-{
-    for (int kz = 0; kz < nsys; kz++) {
-      for(int i=3;i<=n_mpi;i++) {
-        const dcomplex alpha = - a(kz,i) / b(kz,i-1);
-        a(kz,i)  = alpha * a(kz,i-1);
-        b(kz,i) += alpha * c(kz,i-1);
-        r(kz,i) += alpha * r(kz,i-1);
-      }
-      for(int i=n_mpi-2;i>=1;i--) {
-        const dcomplex beta  = - c(kz,i) / b(kz,i+1);
-        c(kz,i)  = beta * c(kz,i+1);
-        r(kz,i) += beta * r(kz,i+1);
-        if(i==1) {
-            b(kz,1) += beta * a(kz,2);
-        }
-        else
-        {
-            a(kz,i) += beta * a(kz,i+1);
-        }
+ * @detail  Forward and backward elimination to remain two equations of first and last
+ * rows for each MPI processes
+ */
+void LaplacePCR_THOMAS ::pThomas_forward_multiple_row(Matrix<dcomplex>& a,
+                                                      Matrix<dcomplex>& b,
+                                                      Matrix<dcomplex>& c,
+                                                      Matrix<dcomplex>& r) const {
+  for (int kz = 0; kz < nsys; kz++) {
+    for (int i = 3; i <= n_mpi; i++) {
+      const dcomplex alpha = -a(kz, i) / b(kz, i - 1);
+      a(kz, i) = alpha * a(kz, i - 1);
+      b(kz, i) += alpha * c(kz, i - 1);
+      r(kz, i) += alpha * r(kz, i - 1);
+    }
+    for (int i = n_mpi - 2; i >= 1; i--) {
+      const dcomplex beta = -c(kz, i) / b(kz, i + 1);
+      c(kz, i) = beta * c(kz, i + 1);
+      r(kz, i) += beta * r(kz, i + 1);
+      if (i == 1) {
+        b(kz, 1) += beta * a(kz, 2);
+      } else {
+        a(kz, i) += beta * a(kz, i + 1);
       }
     }
+  }
 }
 
-/** 
+/**
  * @brief   PCR solver for two equations per each MPI process
  * @detail  Forward CR to remain a single equation per each MPI process.
  *          PCR solver for single row is, then, executed.
  *          Substitution is also performed to obtain every solution.
-*/
-void LaplacePCR_THOMAS :: pcr_double_row_substitution(Matrix<dcomplex> &a, Matrix<dcomplex> &b, Matrix<dcomplex> &c, Matrix<dcomplex> &r, Matrix<dcomplex> &x)
-{
-    Array<dcomplex> alpha(nsys);
-    Array<dcomplex> gamma(nsys);
-    Array<dcomplex> sbuf(4 * nsys);
-    Array<dcomplex> rbuf(4 * nsys);
-    auto recvvec = Array<dcomplex>(nsys);
-    auto sendvec = Array<dcomplex>(nsys);
+ */
+void LaplacePCR_THOMAS ::pcr_double_row_substitution(Matrix<dcomplex>& a,
+                                                     Matrix<dcomplex>& b,
+                                                     Matrix<dcomplex>& c,
+                                                     Matrix<dcomplex>& r,
+                                                     Matrix<dcomplex>& x) {
+  Array<dcomplex> alpha(nsys);
+  Array<dcomplex> gamma(nsys);
+  Array<dcomplex> sbuf(4 * nsys);
+  Array<dcomplex> rbuf(4 * nsys);
+  auto recvvec = Array<dcomplex>(nsys);
+  auto sendvec = Array<dcomplex>(nsys);
 
-    MPI_Status status;
-    MPI_Status status1;
-    Array<MPI_Request> request(2);
-    MPI_Comm comm = BoutComm::get();
+  MPI_Status status;
+  MPI_Status status1;
+  Array<MPI_Request> request(2);
+  MPI_Comm comm = BoutComm::get();
 
-    /// Cyclic reduction until single row remains per MPI process.
-    /// First row of next rank is sent to current rank at the row of n_mpi+1 for reduction.
-    if(xproc<nprocs-1) {
-        MPI_Irecv(&rbuf[0], 4*nsys, MPI_DOUBLE_COMPLEX, myrank+1, 0, comm, &request[0]);
-    }
-    if(xproc>0) {
-      for (int kz = 0; kz < nsys; kz++) {
-        sbuf[0 + 4 * kz] = a(kz,1);
-        sbuf[1 + 4 * kz] = b(kz,1);
-        sbuf[2 + 4 * kz] = c(kz,1);
-        sbuf[3 + 4 * kz] = r(kz,1);
-      }
-      MPI_Isend(&sbuf[0], 4*nsys, MPI_DOUBLE_COMPLEX, myrank-1, 0, comm, &request[1]);
-    }
-    if(xproc<nprocs-1) {
-      MPI_Wait(&request[0], &status1);
-      for (int kz = 0; kz < nsys; kz++) {
-        a(kz,n_mpi+1) = rbuf[0 + 4 * kz];
-        b(kz,n_mpi+1) = rbuf[1 + 4 * kz];
-        c(kz,n_mpi+1) = rbuf[2 + 4 * kz];
-        r(kz,n_mpi+1) = rbuf[3 + 4 * kz];
-      }
-    }
-
-    /// Every first row are reduced to the last row (n_mpi) in each MPI rank.
-    const int ip = 1;
-    const int in = n_mpi + 1;
+  /// Cyclic reduction until single row remains per MPI process.
+  /// First row of next rank is sent to current rank at the row of n_mpi+1 for reduction.
+  if (xproc < nprocs - 1) {
+    MPI_Irecv(&rbuf[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 0, comm, &request[0]);
+  }
+  if (xproc > 0) {
     for (int kz = 0; kz < nsys; kz++) {
-      alpha[kz] = -a(kz,n_mpi) / b(kz,ip);
-      gamma[kz] = -c(kz,n_mpi) / b(kz,in);
-
-      b(kz,n_mpi) += (alpha[kz] * c(kz,ip) + gamma[kz] * a(kz,in));
-      a(kz,n_mpi) = alpha[kz] * a(kz,ip);
-      c(kz,n_mpi) = gamma[kz] * c(kz,in);
-      r(kz,n_mpi) += (alpha[kz] * r(kz,ip) + gamma[kz] * r(kz,in));
+      sbuf[0 + 4 * kz] = a(kz, 1);
+      sbuf[1 + 4 * kz] = b(kz, 1);
+      sbuf[2 + 4 * kz] = c(kz, 1);
+      sbuf[3 + 4 * kz] = r(kz, 1);
     }
-    
-    if(xproc>0) {
-        MPI_Wait(&request[1], &status);
-    }
-
-    /// Solution of last row in each MPI rank is obtained in pcr_forward_single_row().
-    pcr_forward_single_row(a, b, c, r, x);
-
-    /// Solution of first row in each MPI rank.
-    if(xproc>0) {
-        MPI_Irecv(&recvvec[0], nsys, MPI_DOUBLE_COMPLEX, myrank-1, 100, comm, &request[0]);
-    }
-    if(xproc<nprocs-1) {
-      for (int kz = 0; kz < nsys; kz++) {
-        sendvec[kz] = x(kz, n_mpi);
-      }
-      MPI_Isend(&sendvec[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 100, comm, &request[1]);
-    }
-    if(xproc>0) {
-      MPI_Wait(&request[0], &status);
-      for (int kz = 0; kz < nsys; kz++) {
-        x(kz, 0) = recvvec[kz];
-      }
-    }
-
+    MPI_Isend(&sbuf[0], 4 * nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 0, comm, &request[1]);
+  }
+  if (xproc < nprocs - 1) {
+    MPI_Wait(&request[0], &status1);
     for (int kz = 0; kz < nsys; kz++) {
-      x(kz,1) = r(kz,1)-c(kz,1)*x(kz,n_mpi)-a(kz,1)*x(kz,0);
-      x(kz,1) = x(kz,1)/b(kz,1);
+      a(kz, n_mpi + 1) = rbuf[0 + 4 * kz];
+      b(kz, n_mpi + 1) = rbuf[1 + 4 * kz];
+      c(kz, n_mpi + 1) = rbuf[2 + 4 * kz];
+      r(kz, n_mpi + 1) = rbuf[3 + 4 * kz];
     }
+  }
 
-    if(xproc<nprocs-1) {
-        MPI_Wait(&request[1], &status);
-    }
-    /// Solution of other rows in each MPI rank.
+  /// Every first row are reduced to the last row (n_mpi) in each MPI rank.
+  const int ip = 1;
+  const int in = n_mpi + 1;
+  for (int kz = 0; kz < nsys; kz++) {
+    alpha[kz] = -a(kz, n_mpi) / b(kz, ip);
+    gamma[kz] = -c(kz, n_mpi) / b(kz, in);
+
+    b(kz, n_mpi) += (alpha[kz] * c(kz, ip) + gamma[kz] * a(kz, in));
+    a(kz, n_mpi) = alpha[kz] * a(kz, ip);
+    c(kz, n_mpi) = gamma[kz] * c(kz, in);
+    r(kz, n_mpi) += (alpha[kz] * r(kz, ip) + gamma[kz] * r(kz, in));
+  }
+
+  if (xproc > 0) {
+    MPI_Wait(&request[1], &status);
+  }
+
+  /// Solution of last row in each MPI rank is obtained in pcr_forward_single_row().
+  pcr_forward_single_row(a, b, c, r, x);
+
+  /// Solution of first row in each MPI rank.
+  if (xproc > 0) {
+    MPI_Irecv(&recvvec[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 100, comm, &request[0]);
+  }
+  if (xproc < nprocs - 1) {
     for (int kz = 0; kz < nsys; kz++) {
-      for(int i=2;i<n_mpi;i++) {
-        x(kz,i) = r(kz,i)-c(kz,i)*x(kz,n_mpi)-a(kz,i)*x(kz,1);
-        x(kz,i) = x(kz,i)/b(kz,i);
-      }
+      sendvec[kz] = x(kz, n_mpi);
     }
+    MPI_Isend(&sendvec[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 100, comm, &request[1]);
+  }
+  if (xproc > 0) {
+    MPI_Wait(&request[0], &status);
+    for (int kz = 0; kz < nsys; kz++) {
+      x(kz, 0) = recvvec[kz];
+    }
+  }
+
+  for (int kz = 0; kz < nsys; kz++) {
+    x(kz, 1) = r(kz, 1) - c(kz, 1) * x(kz, n_mpi) - a(kz, 1) * x(kz, 0);
+    x(kz, 1) = x(kz, 1) / b(kz, 1);
+  }
+
+  if (xproc < nprocs - 1) {
+    MPI_Wait(&request[1], &status);
+  }
+  /// Solution of other rows in each MPI rank.
+  for (int kz = 0; kz < nsys; kz++) {
+    for (int i = 2; i < n_mpi; i++) {
+      x(kz, i) = r(kz, i) - c(kz, i) * x(kz, n_mpi) - a(kz, i) * x(kz, 1);
+      x(kz, i) = x(kz, i) / b(kz, i);
+    }
+  }
 }
 
 /**
@@ -1101,10 +1113,10 @@ void LaplacePCR_THOMAS :: pcr_double_row_substitution(Matrix<dcomplex> &a, Matri
  * @param   *x_sol Solution vector
  */
 void LaplacePCR_THOMAS ::verify_solution(const Matrix<dcomplex>& a_ver,
-                                  const Matrix<dcomplex>& b_ver,
-                                  const Matrix<dcomplex>& c_ver,
-                                  const Matrix<dcomplex>& r_ver,
-                                  const Matrix<dcomplex>& x_sol) const {
+                                         const Matrix<dcomplex>& b_ver,
+                                         const Matrix<dcomplex>& c_ver,
+                                         const Matrix<dcomplex>& r_ver,
+                                         const Matrix<dcomplex>& x_sol) const {
   output.write("Verify solution\n");
   const int nx = xe - xs + 1; // Number of X points on this processor,
                               // including boundaries but not guard cells
