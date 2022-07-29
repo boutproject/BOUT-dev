@@ -85,6 +85,10 @@
   internal variant. Other types now require a call to
   `Options::as<T>()`
   [\#2341](https://github.com/boutproject/BOUT-dev/pull/2341)
+- The Laplacian inversion solver `LaplacePDD` (`"pdd"`) has been
+  removed. This implementation had some quite significant drawbacks
+  that made it not terribly useful in practice
+  [\#3566](https://github.com/boutproject/BOUT-dev/pull/3566)
 
 ## v4 known bugs
 

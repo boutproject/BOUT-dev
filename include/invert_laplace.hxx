@@ -54,7 +54,6 @@ class Solver;
 class Datafile;
 
 constexpr auto LAPLACE_SPT = "spt";
-constexpr auto LAPLACE_PDD = "pdd";
 constexpr auto LAPLACE_TRI = "tri";
 constexpr auto LAPLACE_BAND = "band";
 constexpr auto LAPLACE_PETSC = "petsc";
