@@ -153,6 +153,7 @@ LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
       delp2solver(nullptr), naulinsolver_mean_its(0.), ncalls(0) {
 
   ASSERT1(opt != nullptr); // An Options pointer should always be passed in by LaplaceFactory
+  Options& options = *opt;
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);
@@ -160,10 +161,12 @@ LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   Dcoef.setLocation(location);
 
   // Get options
-  OPTION(opt, rtol, 1.e-7);
-  OPTION(opt, atol, 1.e-20);
-  OPTION(opt, maxits, 100);
-  OPTION(opt, initial_underrelax_factor, 1.);
+  rtol = options["rtol"].doc("relative tolerance").withDefault(1.e-7);
+  atol = options["atol"].doc("absolute tolerance").withDefault(1.e-20);
+  maxits = options["maxits"].doc("maximum number of iterations").withDefault(100);
+  initial_underrelax_factor = options["initial_underrelax_factor"]
+    .doc("Initial underrelaxation factor for the fixed point iteration.")
+    .withDefault(1.0);
   ASSERT0(initial_underrelax_factor > 0. and initial_underrelax_factor <= 1.);
   delp2solver = create(opt->getSection("delp2solver"), location, localmesh);
   std::string delp2type;
