@@ -426,7 +426,34 @@ value = [a = 1,
   reader.read(Options::getRoot(), filename.c_str());
 
   auto options = Options::root();
-  
+
+  EXPECT_EQ(options["result"].as<int>(), 6);
+  EXPECT_EQ(options["value"].as<int>(), 5);
+}
+
+TEST_F(OptionsReaderTest, ReadMultiLine2) {
+  const std::string text = R"(
+
+result = (1 + (   # Two open parens
+          2 +
+          3))
+
+value = [a = 1,
+         b = (2 * 2
+        )](
+           {a} + {b})
+
+)";
+
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+
+  OptionsReader reader;
+  reader.read(Options::getRoot(), filename.c_str());
+
+  auto options = Options::root();
+
   EXPECT_EQ(options["result"].as<int>(), 6);
   EXPECT_EQ(options["value"].as<int>(), 5);
 }
