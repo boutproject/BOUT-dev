@@ -11,7 +11,7 @@
 #define S__LINE__ S_(__LINE__)
 
 #define EXPECT_TRUE(expr)                                                       \
-  if (!(expr)) {                                                        \
+  if (!(expr)) {                                                                \
     throw BoutException("Line " S__LINE__ " Expected true, got false: " #expr); \
   }
 
@@ -20,12 +20,14 @@
     throw BoutException("Line " S__LINE__ " Expected false, got true: " #expr); \
   }
 
-#define EXPECT_LT(expr1, expr2) {               \
-    auto val1 = expr1;                          \
-    auto val2 = expr2;                          \
-    if (val1 >= val2) {                                                 \
-      throw BoutException("Line " S__LINE__ " Expected " #expr1 " ({}) < " #expr2 " ({})", val1, val2); \
-    }                                                                   \
+#define EXPECT_LT(expr1, expr2)                                                         \
+  {                                                                                     \
+    auto val1 = expr1;                                                                  \
+    auto val2 = expr2;                                                                  \
+    if (val1 >= val2) {                                                                 \
+      throw BoutException(                                                              \
+          "Line " S__LINE__ " Expected " #expr1 " ({}) < " #expr2 " ({})", val1, val2); \
+    }                                                                                   \
   }
 
 /// Is \p field equal to \p reference, with a tolerance of \p tolerance?
