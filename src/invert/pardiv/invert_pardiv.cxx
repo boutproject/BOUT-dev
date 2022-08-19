@@ -30,7 +30,7 @@
 #include "impls/cyclic/pardiv_cyclic.hxx"
 #include <bout/invert_pardiv.hxx>
 
-const Field2D InvertParDiv::solve(const Field2D& f) {
+Field2D InvertParDiv::solve(const Field2D& f) {
   Field3D var(f);
 
   var = solve(var);

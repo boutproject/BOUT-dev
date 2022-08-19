@@ -1,5 +1,5 @@
 /************************************************************************
- * Inversion of parallel derivatives
+ * Inversion of parallel divergence
  *
  * Inverts a matrix of the form
  *
@@ -37,8 +37,8 @@
  *
  ************************************************************************/
 
-#ifndef __INV_PARDIV_CR_H__
-#define __INV_PARDIV_CR_H__
+#ifndef INV_PARDIV_CR_H
+#define INV_PARDIV_CR_H
 
 #include "bout/build_config.hxx"
 #include "bout/invert_pardiv.hxx"
@@ -62,7 +62,7 @@ public:
                           Mesh* mesh_in = bout::globals::mesh);
 
   using InvertParDiv::solve;
-  const Field3D solve(const Field3D& f) override;
+  Field3D solve(const Field3D& f) override;
 
   using InvertParDiv::setCoefA;
   void setCoefA(const Field2D& f) override {
@@ -89,4 +89,4 @@ RegisterInvertParDiv<InvertParDivCR> registerinvertpardivcyclic{PARDIVCYCLIC};
 
 #endif // BOUT_USE_METRIC_3D
 
-#endif // __INV_PARDIV_CR_H__
+#endif // INV_PARDIV_CR_H

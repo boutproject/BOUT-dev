@@ -209,7 +209,8 @@ int main(int argc, char** argv) {
 
     for (int x = mesh->xstart; x <= mesh->xend; x++) {
       for (int y = mesh->ystart; y <= mesh->yend; y++) {
-        float yn = (float(y) + 0.5) / float(mesh->yend + 1);
+        double yn = (double(y) + 0.5) / double(mesh->yend + 1);
+
         coord->dy(x, y) = 1. - 0.9 * yn;
         coord->J(x, y) = (1. + yn * yn);
       }
@@ -241,7 +242,7 @@ int main(int argc, char** argv) {
       q_maxabs = BOUTMAX(q_maxabs, fabs(q_sh), fabs(q_snb));
     }
     // Expect integrals to be the same
-    EXPECT_LT(fabs(q_sh - q_snb), 1e-10 * q_maxabs);
+    EXPECT_LT(fabs(q_sh - q_snb), 1e-8 * q_maxabs);
   }
 
   bout::checkForUnusedOptions();

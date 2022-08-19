@@ -1,6 +1,6 @@
 /************************************************************************
- * Inversion of parallel derivatives
- * Intended for use in preconditioner for reduced MHD
+ * Inversion of parallel divergence
+ * Intended for use in SNB heat flux calculation
  *
  * Inverts a matrix of the form
  *
@@ -28,8 +28,8 @@
  *
  ************************************************************************/
 
-#ifndef __INV_PARDIV_H__
-#define __INV_PARDIV_H__
+#ifndef INV_PARDIV_H
+#define INV_PARDIV_H
 
 #include "field2d.hxx"
 #include "field3d.hxx"
@@ -107,23 +107,23 @@ public:
    * Warning: Default implementation very inefficient. This converts
    * the Field2D to a Field3D then calls solve() on the 3D variable
    */
-  virtual const Field2D solve(const Field2D& f);
+  virtual Field2D solve(const Field2D& f);
 
   /*!
    * Solve the system of equations
    *
    * This method must be implemented
    */
-  virtual const Field3D solve(const Field3D& f) = 0;
+  virtual Field3D solve(const Field3D& f) = 0;
 
   /*!
    * Solve, given an initial guess for the solution
    * This can help if using an iterative scheme
    */
-  virtual const Field3D solve(const Field2D& f, const Field2D& UNUSED(start)) {
+  virtual Field3D solve(const Field2D& f, const Field2D& UNUSED(start)) {
     return solve(f);
   }
-  virtual const Field3D solve(const Field3D& f, const Field3D& UNUSED(start)) {
+  virtual Field3D solve(const Field3D& f, const Field3D& UNUSED(start)) {
     return solve(f);
   }
 
@@ -156,4 +156,4 @@ protected:
 private:
 };
 
-#endif // __INV_PARDIV_H__
+#endif // INV_PARDIV_H
