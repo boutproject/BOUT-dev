@@ -1,3 +1,4 @@
+#include <bout/constants.hxx>
 #include <bout/snb.hxx>
 #include <bout.hxx>
 #include <boutexception.hxx>
@@ -10,13 +11,21 @@
 #define S__LINE__ S_(__LINE__)
 
 #define EXPECT_TRUE(expr)                                                       \
-  if (!expr) {                                                                  \
+  if (!(expr)) {                                                        \
     throw BoutException("Line " S__LINE__ " Expected true, got false: " #expr); \
   }
 
 #define EXPECT_FALSE(expr)                                                      \
   if (expr) {                                                                   \
     throw BoutException("Line " S__LINE__ " Expected false, got true: " #expr); \
+  }
+
+#define EXPECT_LT(expr1, expr2) {               \
+    auto val1 = expr1;                          \
+    auto val2 = expr2;                          \
+    if (val1 >= val2) {                                                 \
+      throw BoutException("Line " S__LINE__ " Expected " #expr1 " ({}) < " #expr2 " ({})", val1, val2); \
+    }                                                                   \
   }
 
 /// Is \p field equal to \p reference, with a tolerance of \p tolerance?
@@ -195,6 +204,7 @@ int main(int argc, char** argv) {
 
     // Change the mesh spacing and cell volume (Jdy)
     Coordinates* coord = Te.getCoordinates();
+
     for (int x = mesh->xstart; x <= mesh->xend; x++) {
       for (int y = mesh->ystart; y <= mesh->yend; y++) {
         float yn = (float(y) + 0.5) / float(mesh->yend + 1);
@@ -208,6 +218,10 @@ int main(int argc, char** argv) {
     Field3D Div_q_SH;
     Field3D Div_q = snb.divHeatFlux(Te, Ne, &Div_q_SH);
 
+    // Normalise to W/m^3
+    Div_q_SH *= SI::qe;
+    Div_q *= SI::qe;
+
     // Check that fluxes are not equal
     EXPECT_FALSE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"));
 
@@ -217,12 +231,15 @@ int main(int argc, char** argv) {
     // Integrate Div(q) over domain
     BoutReal q_sh = 0.0;
     BoutReal q_snb = 0.0;
+    BoutReal q_maxabs = 0.0; // Maximum heat flux as a reference scale
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
-      q_sh += Div_q_SH(mesh->xstart, y, 0);
-      q_snb += Div_q(mesh->xstart, y, 0);
+      q_sh += Div_q_SH(mesh->xstart, y, 0) * J(mesh->xstart, y) * dy(mesh->xstart, y);
+      q_snb += Div_q(mesh->xstart, y, 0) * J(mesh->xstart, y) * dy(mesh->xstart, y);
+
+      q_maxabs = BOUTMAX(q_maxabs, fabs(q_sh), fabs(q_snb));
     }
     // Expect integrals to be the same
-    EXPECT_TRUE(fabs(q_sh - q_snb) < 1e-10);
+    EXPECT_LT(fabs(q_sh - q_snb), 1e-10 * q_maxabs);
   }
 
   bout::checkForUnusedOptions();
