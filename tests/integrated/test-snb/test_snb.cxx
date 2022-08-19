@@ -25,8 +25,8 @@ bool IsFieldEqual(const T& field, const U& reference,
                   const std::string& region = "RGN_ALL", BoutReal tolerance = 1e-10) {
   for (auto i : field.getRegion(region)) {
     if (fabs(field[i] - reference[i]) > tolerance) {
-      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i], reference[i],
-                   tolerance);
+      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i],
+                   reference[i], tolerance);
       return false;
     }
   }
@@ -55,8 +55,8 @@ bool IsFieldClose(const T& field, const U& reference,
   for (auto i : field.getRegion(region)) {
     if (fabs(field[i] - reference[i])
         > tolerance * (fabs(reference[i]) + fabs(field[i]))) {
-      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i], reference[i],
-                   tolerance * (fabs(reference[i]) + fabs(field[i])));
+      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i],
+                   reference[i], tolerance * (fabs(reference[i]) + fabs(field[i])));
       return false;
     }
   }
@@ -180,6 +180,49 @@ int main(int argc, char** argv) {
                             Div_q_1(0, mesh->yend - y + mesh->ystart, 0));
       }
     }
+  }
+
+  ///////////////////////////////////////////////////////////
+  // The integral of the flux divergences over the domain
+  // (i.e. the boundary fluxes) should be the same
+  // even if the grid is non-uniform
+
+  {
+    FieldFactory factory;
+    auto Te = factory.create3D("1e3 + 0.01*sin(y)");
+    auto Ne = factory.create3D("1e19 * (1 + 0.5*sin(y))");
+    mesh->communicate(Te, Ne);
+
+    // Change the mesh spacing and cell volume (Jdy)
+    Coordinates* coord = Te.getCoordinates();
+    for (int x = mesh->xstart; x <= mesh->xend; x++) {
+      for (int y = mesh->ystart; y <= mesh->yend; y++) {
+        float yn = (float(y) + 0.5) / float(mesh->yend + 1);
+        coord->dy(x, y) = 1. - 0.9 * yn;
+        coord->J(x, y) = (1. + yn * yn);
+      }
+    }
+
+    HeatFluxSNB snb;
+
+    Field3D Div_q_SH;
+    Field3D Div_q = snb.divHeatFlux(Te, Ne, &Div_q_SH);
+
+    // Check that fluxes are not equal
+    EXPECT_FALSE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"));
+
+    const Field2D dy = coord->dy;
+    const Field2D J = coord->J;
+
+    // Integrate Div(q) over domain
+    BoutReal q_sh = 0.0;
+    BoutReal q_snb = 0.0;
+    for (int y = mesh->ystart; y <= mesh->yend; y++) {
+      q_sh += Div_q_SH(mesh->xstart, y, 0);
+      q_snb += Div_q(mesh->xstart, y, 0);
+    }
+    // Expect integrals to be the same
+    EXPECT_TRUE(fabs(q_sh - q_snb) < 1e-10);
   }
 
   bout::checkForUnusedOptions();
