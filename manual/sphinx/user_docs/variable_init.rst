@@ -94,22 +94,23 @@ following values are also already defined:
    +--------+------------------------------------------------------------------------------------+
 
 
-By default, :math:`x` is defined as ``i / (nx - 2*MXG)``, where ``MXG``
-is the width of the boundary region, by default 2. Hence :math:`x`
-actually goes from 0 on the leftmost point to ``(nx-1)/(nx-4)`` on the
-rightmost point. This is not a particularly good definition, but for
-most cases its sufficient to create some initial profiles. For some
-problems like island reconnection simulations, it’s useful to define
-:math:`x` in a particular way which is more symmetric than the default.
-To do this, set in BOUT.inp
+By default, :math:`x` is defined as ``(i+0.5) / (nx - 2*MXG)``, where ``MXG``
+is the width of the boundary region (by default 2) and ``i`` is the x-index
+value on the grid *excluding boundary points*. Hence :math:`x` actually goes
+from 0 on the boundary to the left of the leftmost point to 1 on the rightmost
+point boundary to the right of the rightmost grid point.
 
-.. code-block:: cfg
+.. note::
+  The previous default (prior to v3.0), was for :math:`x` to be defined as
+  ``(i + MXG) / (nx - 2*MXG)``. Then :math:`x` actually goes from 0 on the
+  leftmost boundary point to ``(nx-1)/(nx-4)`` on the rightmost boundary point.
+  To revert to the old behaviour, set
 
-      [mesh]
-      symmetricGlobalX = true
+  .. code-block:: cfg
 
-This will change the definition of :math:`x` to ``i / (nx - 1)``, so
-:math:`x` is then between :math:`0` and :math:`1` everywhere.
+        [mesh]
+        symmetricGlobalX = false
+
 
 By default the expressions are evaluated in a field-aligned coordinate system,
 i.e. if you are using the ``[mesh]`` option ``paralleltransform = shifted``,
