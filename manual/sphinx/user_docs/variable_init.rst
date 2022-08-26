@@ -86,7 +86,7 @@ following values are also already defined:
    +========+====================================================================================+
    | x      | :math:`x` position between :math:`0` and :math:`1`                                 |
    +--------+------------------------------------------------------------------------------------+
-   | y      | :math:`y` position between :math:`0` and :math:`2\pi` (excluding the last point)   |
+   | y      | :math:`y` angle-like position, definition depends on topology of grid              |
    +--------+------------------------------------------------------------------------------------+
    | z      | :math:`z` position between :math:`0` and :math:`2\pi` (excluding the last point)   |
    +--------+------------------------------------------------------------------------------------+
@@ -111,6 +111,38 @@ point boundary to the right of the rightmost grid point.
         [mesh]
         symmetricGlobalX = false
 
+For slab-like or limiter-like geometries with no branch cuts, :math:`y` is an
+angular coordinate between :math:`0` and :math:`2\pi`, defined as
+``(j + 0.5) / ny`` where ``j`` is the y-index value on the grid *excluding
+boundary points*. Hence :math:`y` actually goes from :math:`0` on the boundary
+to the left of the leftmost point to :math:`2\pi` on the rightmost point
+boundary to the right of the rightmost grid point.
+
+For tokamak geometries, :math:`y` is an angular coordinate which goes between
+:math:`0` and :math:`2\pi` in the core region. In a single-null geometry or
+before the upper divertor in a double-null, :math:`y` is defined as ``2*pi*(j -
+0.5 - jyseps1_1)``. After the upper divertor in a double-null, :math:`y` is
+defined as ``2*pi*(j - 0.5 - jyseps1_1 - (jyseps1_2 - jyseps2_1))``. So
+:math:`y` has values less than :math:`0` in the lower, inner divertor leg and
+greater than :math:`2\pi` in the lower, outer divertor leg. In the upper, inner
+divertor leg of a double-null geometry, :math:`y` increases smoothly from the
+value it had in the inner-core/inner-SOL, jumping at the location of the target
+so that in the upper, outer divertor leg it joins smoothly to the
+outer-core/outer-SOL.
+
+.. note::
+  The previous default (prior to v3.0), was for :math:`y` to be defined as
+  ``j_core / ny_core`` where ``j_core`` is the grid index excluding boundary
+  points and points in any divertor legs (``j_core = 0`` in the lower, inner
+  divertor leg, ``j_core = jyseps2_1 - jyseps1_1`` in the upper divertor legs
+  if present, ``j_core = ny_core`` in the lower, outer divertor leg) and
+  ``ny_core = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2)`` is the number
+  of points in the core region.  To revert to the old behaviour, set
+
+  .. code-block:: cfg
+
+        [mesh]
+        symmetricGlobalY = false
 
 By default the expressions are evaluated in a field-aligned coordinate system,
 i.e. if you are using the ``[mesh]`` option ``paralleltransform = shifted``,
