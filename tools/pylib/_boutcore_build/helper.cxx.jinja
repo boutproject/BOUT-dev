@@ -15,13 +15,16 @@ void c_set_{{ field.fdd }}_all({{ field.field_type }} * f, const double * data){
 }
 
 void c_set_{{ field.fdd }}_all_({{ field.field_type }} * f, const double data){
-  (*f)=data;
+  (*f) = data;
+}
+void c_set_{{ field.fdd }}_all_({{ field.field_type }} * f, const {{ field.field_type }} * rhs){
+  (*f) = (*rhs);
 }
 
 void c_get_{{ field.fdd }}_all(const {{ field.field_type }} * f, double * data){
-  int j=0;
+  int j = 0;
   for (auto i : (*f)){
-    data[j++]=(*f)[i];
+    data[j++] = (*f)[i];
   }
 }
 

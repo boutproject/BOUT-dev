@@ -19,6 +19,7 @@ cdef extern from "boutexception_helper.hxx":
 {% for field in fields %}
 
 cdef extern from "helper.h":
+    void c_set_{{ field.fdd }}_all(c.{{ field.field_type }}* f, c.{{ field.field_type }}* rhs)
     void c_set_{{ field.fdd }}_all(c.{{ field.field_type }}* f, double* data)
     void c_get_{{ field.fdd }}_all(c.{{ field.field_type }}* f, double* data)
     void c_set_{{ field.fdd }}_all_(c.{{ field.field_type }}* f, double data)
@@ -248,6 +249,9 @@ cdef class {{ field.field_type }}:
         ignoreDataType : bool, optional
             Ignore if data is off different type to BoutRealxx
         """
+        if isinstance(data, {{ field.field_type }}):
+            c_set_{{ field.fdd }}_all(self.cobj, (<{{ field.field_type }}?>data).cobj)
+            return
         dims = [{{ field.makelist("self.cobj.getN$d()")}}]
 {% set zeros = field.makelist("0") %}
         if isinstance(data, (int, float)):
@@ -1506,7 +1510,7 @@ cdef class Options:
         return opt
 
 
-    def set(self,name,value,source="PyInterface", force=False):
+    def set(self, name, value, source="PyInterface", force=False):
         """
         Set an option
 
