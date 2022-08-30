@@ -444,8 +444,8 @@ cdef class {{ field.field_type }}:
 
 {% for name, op in ops %}
     def __{{ name }}__(self,other):
-        fu = {{ field.field_type }}()
         import numbers
+        fu = {{ field.field_type }}()
         if isinstance(self,{{ field.field_type }}) and isinstance(other,{{ field.field_type }}):
             fu.cobj = f{{ name }}((<{{ field.field_type }}?>self).cobj , (<{{ field.field_type }}?>other).cobj)
         elif isinstance(self,{{ field.field_type }}) and isinstance(other, numbers.Number):
@@ -457,8 +457,7 @@ cdef class {{ field.field_type }}:
             fu.cobj = f{{ name }}((<Field3D?>self).cobj , (<Field2D?>other).cobj)
 {% endif %}
         else:
-            print("{{ name }}",type(self),type(other),isinstance(self,numbers.Number))
-            return NotImplemented
+            return other.__r{{ name }}__(self)
         return fu
 
     def __r{{ name }}__(self,lhs):
