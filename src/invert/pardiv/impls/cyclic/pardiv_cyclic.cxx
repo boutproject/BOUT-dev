@@ -94,7 +94,7 @@ Field3D InvertParDivCR::solve(const Field3D& f) {
 
       if (n > size) {
         size = n; // Maximum size
-}
+      }
     }
   }
 
@@ -146,7 +146,7 @@ Field3D InvertParDivCR::solve(const Field3D& f) {
     // Take Fourier transform
     for (int y = 0; y < localmesh->LocalNy - localmesh->ystart - local_ystart; y++) {
       rfft(alignedField(x, y + local_ystart), localmesh->LocalNz, &rhs(y + y0, 0));
-}
+    }
 
     // Set up tridiagonal system
     for (int k = 0; k < nsys; k++) {
@@ -235,13 +235,13 @@ Field3D InvertParDivCR::solve(const Field3D& f) {
     for (int k = 0; k < nsys; k++) {
       for (int y = 0; y < size; y++) {
         rhs(y, k) = xk(k, y);
-}
+      }
     }
 
     // Inverse Fourier transform
     for (int y = 0; y < size; y++) {
       irfft(&rhs(y, 0), localmesh->LocalNz, result(x, y + local_ystart - y0));
-}
+    }
   }
 
   return fromFieldAligned(result, "RGN_NOBNDRY");
