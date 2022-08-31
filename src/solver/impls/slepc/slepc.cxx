@@ -744,12 +744,12 @@ void SlepcSolver::analyseResults() {
     // Silence the default monitor
     WithQuietOutput progress{output_progress};
     // Call monitors so fields get written
-    call_monitors(reEigBout, iteration++, getOutputTimestep());
+    call_monitors(reEigBout, iteration++, getNumberOutputSteps());
 
     // Now write imaginary part of eigen data
     // First dump imag part to fields
     vecToFields(vecImag);
-    call_monitors(imEigBout, iteration++, getOutputTimestep());
+    call_monitors(imEigBout, iteration++, getNumberOutputSteps());
   }
 
   // Destroy vectors
