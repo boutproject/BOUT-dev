@@ -19,11 +19,10 @@ cdef extern from "boutexception_helper.hxx":
 {% for field in fields %}
 
 cdef extern from "helper.h":
-    void c_set_{{ field.fdd }}_all(c.{{ field.field_type }}* f, c.{{ field.field_type }}* rhs)
-    void c_set_{{ field.fdd }}_all(c.{{ field.field_type }}* f, double* data)
+    void c_set_all(c.{{ field.field_type }}* f, c.{{ field.field_type }}* rhs)
+    void c_set_all(c.{{ field.field_type }}* f, double* data)
     void c_get_{{ field.fdd }}_all(c.{{ field.field_type }}* f, double* data)
-    void c_set_{{ field.fdd }}_all_(c.{{ field.field_type }}* f, double data)
-    void c_set_{{ field.fdd }}_from_{{ field.fdd }}(c.{{ field.field_type }}* f, c.{{ field.field_type }}* f)
+    void c_set_all(c.{{ field.field_type }}* f, double data)
 {% set indices = field.makelist("int $ds, int $de, int d$d") %}
     void c_get_{{ field.fdd }}_part(c.{{ field.field_type }}* f, double* data, {{ indices }})
     void c_set_{{ field.fdd }}_part(c.{{ field.field_type }}* f, double* data, {{ indices }})
@@ -221,9 +220,6 @@ cdef class {{ field.field_type }}:
         if obj:
             self.cobj = obj.cobj
         self.isSelfOwned=True
-        #self.cobj = (<c.{{ field.field_type }} * ?> cobj_)
-        #if self.cobj == NULL:
-        #    raise MemoryError("Not enough memory, allocation failed.")
 
     def set(self, data, ignoreDataType=False):
         """
@@ -250,7 +246,7 @@ cdef class {{ field.field_type }}:
             Ignore if data is off different type to BoutRealxx
         """
         if isinstance(data, {{ field.field_type }}):
-            c_set_{{ field.fdd }}_all(self.cobj, (<{{ field.field_type }}?>data).cobj)
+            c_set_all(self.cobj, (<{{ field.field_type }}?>data).cobj)
             return
         dims = [{{ field.makelist("self.cobj.getN$d()")}}]
 {% set zeros = field.makelist("0") %}
@@ -263,7 +259,7 @@ cdef class {{ field.field_type }}:
                 raise TypeError("expected float64 data, but got %s.\nThis can be ignored by adding ignoreDataType=True as argument"%data.dtype)
         dims_in=self._checkDims(dims,data.shape)
         cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(data)
-        c_set_{{ field.fdd }}_all(self.cobj,&data_[{{ zeros }}])
+        c_set_all(self.cobj,&data_[{{ zeros }}])
 
     def get(self):
         """
@@ -330,7 +326,7 @@ cdef class {{ field.field_type }}:
             The time derivative
         """
         if val:
-            c_set_{{ field.fdd }}_from_{{ field.fdd }}(&c.ddt(self.cobj[0]),(<{{ field.field_type }}?>val).cobj)
+            c_set_all(&c.ddt(self.cobj[0]),(<{{ field.field_type }}?>val).cobj)
         return {{ field.fdd }}FromPtr(&c.ddt(self.cobj[0]))
 
     def __neg__(self):

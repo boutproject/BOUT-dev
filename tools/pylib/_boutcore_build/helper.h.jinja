@@ -3,12 +3,9 @@
 
 {% for field in [field3d, field2d] %}
 void c_get_{{ field.fdd }}_all(const {{ field.field_type }} * f, double * data);
-void c_set_{{ field.fdd }}_all({{ field.field_type }} * f, const {{ field.field_type }} * rhs);
-void c_set_{{ field.fdd }}_all({{ field.field_type }} * f, const double * data);
-void c_set_{{ field.fdd }}_all_({{ field.field_type }} * f, double data);
-void c_set_{{ field.fdd }}_from_{{ field.fdd }}({{ field.field_type }} * lhs,const {{ field.field_type }} * rhs){
-  *lhs=*rhs;
-}
+void c_set_all({{ field.field_type }} * f, const {{ field.field_type }} * rhs);
+void c_set_all({{ field.field_type }} * f, const double * data);
+void c_set_all({{ field.field_type }} * f, double data);
 
 {% for name, op in ops %}
 {{ field.field_type }} * f{{ name }}( {{ field.field_type }}*,{{ field.field_type }}*);
