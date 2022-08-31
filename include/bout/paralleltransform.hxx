@@ -280,16 +280,6 @@ private:
   };
 
   /*!
-   * Shift a 3D field \p f in Z by the given \p zangle
-   *
-   * @param[in] f  The field to shift
-   * @param[in] zangle   Toroidal angle (z)
-   *
-   */
-  Field3D shiftZ(const Field3D& f, const Field2D& zangle,
-                 const std::string& region = "RGN_NOX") const;
-
-  /*!
    * Shift a 3D field or FieldPerp \p f by the given phase \p phs in Z
    *
    * Calculates FFT in Z, multiplies by the complex phase
@@ -305,16 +295,6 @@ private:
   FieldPerp shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
                    const YDirectionType y_direction_out,
                    const std::string& region = "RGN_NOX") const;
-
-  /*!
-   * Shift a given 1D array, assumed to be in Z, by the given \p zangle
-   *
-   * @param[in] in  A 1D array of length \p len
-   * @param[in] len  Length of the in and out arrays
-   * @param[in] zangle  The angle (z coordinate) to shift by
-   * @param[out] out  A 1D array of length \p len, already allocated
-   */
-  void shiftZ(const BoutReal* in, int len, BoutReal zangle, BoutReal* out) const;
 
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle
