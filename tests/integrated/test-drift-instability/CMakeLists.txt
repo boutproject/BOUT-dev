@@ -5,5 +5,6 @@ bout_add_integrated_test(test-drift-instability
   USE_DATA_BOUT_INP
   EXTRA_FILES uedge.grd_std.cdl
   REQUIRES BOUT_HAS_NETCDF
+  REQUIRES BOUT_HAS_FFTW
   PROCESSORS 2
   )

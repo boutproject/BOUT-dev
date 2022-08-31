@@ -1,8 +1,8 @@
 
 BOUT_TOP = ../../../../..
 
-SOURCEC         = pdd.cxx
-SOURCEH         = pdd.hxx
+SOURCEC         = pcr_thomas.cxx
+SOURCEH         = pcr_thomas.hxx
 TARGET          = lib
 
 include $(BOUT_TOP)/make.config

@@ -3030,9 +3030,10 @@ BoutReal BoutMesh::GlobalY(int jy) const {
     int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
     if (yi < ny_inner) {
+      // before upper target
       yi -= jyseps1_1 + 0.5;
     } else {
-      // Result in core between 0.5 and 1.0
+      // after upper target
       yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
     }
     return yi / nycore;
@@ -3076,9 +3077,10 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
     int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
     if (yi < ny_inner) {
+      // before upper target
       yi -= jyseps1_1 + 0.5;
     } else {
-      // Result in core between 0.5 and 1.0
+      // after upper target
       yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
     }
     return yi / nycore;

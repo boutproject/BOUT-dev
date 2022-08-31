@@ -55,9 +55,6 @@ implementations are listed in table :numref:`tab-laplacetypes`.
    | `spt                   | Parallel only (NXPE>1). Thomas algorithm.                    |                                          |
    | <sec-spt_>`__          |                                                              |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
-   | `pdd                   | Parallel Diagnonally Dominant algorithm. Experimental        |                                          |
-   | <sec-pdd_>`__          |                                                              |                                          |
-   +------------------------+--------------------------------------------------------------+------------------------------------------+
    | `ipt                   | Iterative parallel tridiagonal solver. Parallel only, but    |                                          |
    | <sec-ipt_>`__          | automatically falls back to Thomas algorithm for NXPE=1.     |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
@@ -766,16 +763,6 @@ set of 3 poloidal slices (i.e. MYSUB=3)
    Parallel Laplacian inversion with MYSUB=3 on 4 processors. Red
    periods are where a processor is idle - in this case about 40% of the
    time
-
-.. _sec-pdd:
-
-PDD algorithm
-~~~~~~~~~~~~~
-
-This is the Parallel Diagonally Dominant (PDD) algorithm. It’s very
-fast, but achieves this by neglecting some cross-processor terms. For
-ELM simulations, it has been found that these terms are important, so
-this method is not usually used.
 
 .. _sec-cyclic:
 

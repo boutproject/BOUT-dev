@@ -85,7 +85,8 @@ Expressions can include addition (``+``), subtraction (``-``),
 multiplication (``*``), division (``/``) and exponentiation (``^``)
 operators, with the usual precedence rules. In addition to ``π``,
 expressions can use predefined variables ``x``, ``y``, ``z`` and ``t``
-to refer to the spatial and time coordinates.
+to refer to the spatial and time coordinates (for definitions of the values
+these variables take see :ref:`sec-expressions`).
 A number of functions are defined, listed in table
 :numref:`tab-initexprfunc`. One slightly unusual feature (borrowed from `Julia <https://julialang.org/>`_)
 is that if a number comes before a symbol or an opening bracket (``(``)

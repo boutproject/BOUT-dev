@@ -484,9 +484,6 @@ class Field3D : public Field {
   friend void swap(Field3D& first, Field3D& second) noexcept;
   
 private:
-  /// Boundary - add a 2D field
-  const Field2D *background{nullptr};
-
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};
 

@@ -9,11 +9,11 @@ Getting started
 .. _sec-getting-started:
 
 This section goes through the process of getting, installing, and
-starting to run BOUT++. 
+starting to run BOUT++.
 
 The quickest way to get started is to use a pre-built binary. These
 take care of all dependencies, configuration and compilation. See
-section :ref:`sec-prebuiltinstall`. 
+section :ref:`sec-prebuiltinstall`.
 
 The remainder of this section will go through the following steps to
 manually install BOUT++. Only the basic functionality needed to use
@@ -26,19 +26,19 @@ and how to fix some common problems.
 #. :ref:`Installing dependencies <sec-dependencies>`
 
 #. :ref:`Configuring BOUT++ <sec-config-bout>`
-   
+
 #. :ref:`Configuring BOUT++ analysis codes <sec-configanalysis>`
 
    #. :ref:`Python <sec-config-python>`
 
    #. :ref:`IDL <sec-config-idl>`
-   
+
 #. :ref:`Compiling BOUT++ <sec-compile-bout>`
 
 #. :ref:`Running the test suite <sec-runtestsuite>`
 
 #. :ref:`Installing BOUT++ (experimental) <sec-install-bout>`
-   
+
 **Note**: In this manual commands to run in a BASH shell will begin with
 ’$’, and commands specific to CSH with a ’%’.
 
@@ -53,9 +53,9 @@ Docker image
 `Docker <https://www.docker.com>`_ is a widely used container system,
 which packages together the operating system environment, libraries
 and other dependencies into an image. This image can be downloaded and
-run reproducibly on a wide range of hosts, including Windows, Linux and OS X. 
+run reproducibly on a wide range of hosts, including Windows, Linux and OS X.
 Here is the starting page for `instructions on installing Docker
-<https://docs.docker.com/install/>`_. 
+<https://docs.docker.com/install/>`_.
 
 The BOUT++ docker images are `hosted on dockerhub
 <https://hub.docker.com/u/boutproject/>`_ for some releases and
@@ -100,7 +100,7 @@ version from https://github.com/boutproject/BOUT-dev/releases. If you
 want to develop BOUT++, you should use git to clone the repository. To
 obtain a copy of the latest version, run::
 
-    $ git clone git://github.com/boutproject/BOUT-dev.git
+    $ git clone https://github.com/boutproject/BOUT-dev.git
 
 
 which will create a directory ``BOUT-dev`` containing the code::
@@ -128,19 +128,15 @@ The bare-minimum requirements for compiling and running BOUT++ are:
 
 #. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <https://www.open-mpi.org/>`__),
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__)
-   
+
 #. The NetCDF library (`https://www.unidata.ucar.edu/downloads/netcdf
    <https://www.unidata.ucar.edu/downloads/netcdf>`__)
-   
+
 The FFTW-3 library (`http://www.fftw.org/ <http://www.fftw.org/>`__)
 is also strongly recommended. Fourier transforms are used for some
 derivative methods, as well as the `ShiftedMetric` parallel transform
 which is used in the majority of BOUT++ tokamak simulations. Without
 FFTW-3, these options will not be available.
-
-.. note::
-   Only GCC versions >= 4.9 are supported. This is due to a bug in
-   previous versions.
 
 .. note::
    If you use an Intel compiler, you must also make sure that you have
@@ -171,35 +167,25 @@ and :ref:`NetCDF <sec-netcdf-from-source>`.
 
 
 Ubuntu / Debian
-~~~~~~~~~~~~~~~   
+~~~~~~~~~~~~~~~
 
 On Ubuntu or Debian distributions if you have administrator rights then you can install
-MPICH2 and the needed libraries by running::
+the basic dependencies with::
 
-    $ sudo apt-get install mpich2 libmpich2-dev
-    $ sudo apt-get install libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
+    $ sudo apt-get install libmpich-dev libfftw3-dev libnetcdf-c++4-dev git make
 
-On Ubuntu 16.04::
+To additionally build the Python interface, you need some Python packages::
 
-    $ sudo apt-get install libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
-
-On Ubuntu 18.04::
-
-    $ sudo apt-get install mpich libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-c++4-dev git g++ make
     $ sudo apt-get install python3 python3-distutils python3-pip python3-numpy python3-netcdf4 python3-scipy
     $ pip3 install --user Cython
 
-
-The first line should be sufficient to install BOUT++, while the 2nd
-and 3rd line make sure that the tests work, and that the python
-interface can be build.
 Further, the encoding for python needs to be utf8 - it may be required
 to set ``export LC_CTYPE=C.utf8``.
 
 If you do not have administrator rights, so can't install packages, then
 you need to install these libraries from source into your home directory.
-See sections on :ref:`installing MPI <sec-mpi-from-source>`, :ref:`installing FFTW <sec-fftw-from-source>`
-and :ref:`installing NetCDF <sec-netcdf-from-source>`.
+See :ref:`sec-advancedinstall` for details on installing some of these.
+
 
 Arch Linux
 ~~~~~~~~~~
@@ -232,76 +218,57 @@ To get precompiled BOUT++ run::
    $ # get the python3 modules - python2 is available as well
    $ sudo dnf install python3-bout++
 
-.. _sec-config-bout:
-
-Configuring  BOUT++
--------------------
-
-To compile BOUT++, you first need to configure it. 
-Go into the ``BOUT-dev`` directory and run::
-
-    $ ./configure
-
-If this finishes by printing a summary, and paths for IDL, Python, and
-Octave, then the libraries are set up and you can skip to the next
-section. If you see a message
-“``ERROR: FFTW not found. Required by BOUT++``” then make sure 
-FFTW-3 is installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
-
-If FFTW-3 is installed in a non-standard location, you can specify  the
-directory with the ``–with-fftw=`` option e.g::
-
-    $ ./configure --with-fftw=$HOME/local
-
-Configure should now find FFTW, and search for the NetCDF library. If
-configure finishes successfully, then skip to the next section, but if
-you see a message ``NetCDF support disabled`` then configure couldn’t
-find the NetCDF library. This will be followed by a message
-``ERROR: At least one file format must be supported``. Check that you have
-NetCDF installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
-
-Like the FFTW-3 library, if NetCDF is installed in a non-standard location then
-you can specify the directory with the ``--with-netcdf=`` option e.g.::
-
-    $ ./configure --with-fftw=$HOME/local --with-netcdf=$HOME/local
-
-which should now finish successfully, printing a summary of the
-configuration::
-
-    Configuration summary
-      PETSc support: no
-      SLEPc support: no
-      IDA support: yes
-      CVODE support: yes
-      ARKODE support: yes
-      NetCDF support: yes
-      Parallel-NetCDF support: no
-
-If not, see :ref:`sec-advancedinstall` for some things you can try to
-resolve common problems.
-
 .. _sec-cmake:
 
 CMake
 -----
 
-There is now (experimental) support for `CMake <https://cmake.org/>`_. You will need CMake >
-3.9. Note that it is possible to get the latest version of CMake using ``pip``::
+BOUT++ uses the `CMake <https://cmake.org/>`_ build system
+generator. You will need CMake >= 3.17.
 
-  $ pip install --user --upgrade cmake
+.. note::
+   It is possible to get the latest version of CMake using ``pip``::
 
-or ``conda``::
+      $ pip install --user --upgrade cmake
 
-  $ conda install cmake
+   or ``conda``::
+
+      $ conda install cmake
+
+   You may need to put ``~/.local/bin`` in your ``$PATH``
 
 CMake supports out-of-source builds by default, which are A Good Idea.
 Basic configuration with CMake looks like::
 
-  $ cmake . -B build
+  $ cmake -S . -B build
 
-which creates a new directory ``build``, which you can then compile with::
+which creates a new directory ``build``. You can call this directory
+anything you like, and you also put it anywhere you like, you just
+need to specify the path to the BOUT++ source directory with the
+``-S`` argument. This makes it very easy to keep two build directories
+alongside one another, one with a debug build and one optimised, for
+example.
 
+After configuring the build directory, you can then compile BOUT++ with::
+
+  # Build the library
   $ cmake --build build
+  # Build the library with 8 threads
+  $ cmake --build build -j 8
+  # Build the "blob2d" example
+  $ cmake --build build --target blob2d
+
+By default, CMake will use ``makefiles``, and so it is possible to
+also build BOUT++ with ``make`` from the build directory -- note that
+you must still run ``cmake`` once first to configure BOUT++::
+
+  $ cmake . -B build
+  $ cd build
+  $ make
+
+.. note::
+   You might see some instructions in the documentation using ``make``
+   -- they should be run from the ``build`` directory.
 
 You can see what build options are available with::
 
@@ -352,15 +319,47 @@ it's wise to delete the ``CMakeCache.txt`` file in the build
 directory. The equivalent of ``make distclean`` with CMake is to just
 delete the entire build directory and reconfigure.
 
-If you need to debug a CMake build, you can see the compile and link commands
-which are being issued by adding `VERBOSE=1` to the make command i.e. in the build
-directory running::
+If you need to debug a CMake build, you can see the compile and link
+commands which are being issued by adding ``--verbose`` to the build
+command::
 
-  $ make VERBOSE=1
+  $ cmake --build build --verbose
 
-If building by running CMake then the ``-v`` flag also works. For example::
+Common CMake Options
+~~~~~~~~~~~~~~~~~~~~
 
-  $ cmake --build . -v
+The default build configuration options try to be sensible for new
+users and developers, but there are a few you probably want to set
+manually for production runs or for debugging:
+
+* ``CMAKE_BUILD_TYPE``: The default is ``RelWithDebInfo``, which
+  builds an optimised executable with debug symbols included. Change
+  this to ``Release`` to remove the debug symbols, or ``Debug`` for an
+  unoptimised build, but better debug experience
+
+* ``CHECK``: This sets the level of internal runtime checking done in
+  the BOUT++ library, and ranges from 0 to 4 (inclusive). By default,
+  this is 2, which aims to be a balance between useful checks and
+  speed. Set this to 0 for faster production runs, and to 4 for more
+  in-depth (and slower) checking.
+
+* ``BOUT_UPDATE_GIT_SUBMODULE``: This is on by default, and ensures
+  that the bundled git submodules are up-to-date. You should turn this
+  off if you are using system versions, or if you run into problems
+  updating the submodules.
+
+* ``NetCDF_ROOT``: NetCDF is one of the few required, non-bundled
+  dependencies. If CMake is having trouble finding netCDF, or the
+  correct version, you should set this variable to the installed
+  location of the netCDF C library.
+
+* ``BOUT_BUILD_EXAMPLES``, ``BOUT_TESTS``: These two options are
+  particularly useful for developers of the BOUT++ library, and for
+  new users. You can turn them off to save some time configuring the
+  library. By default, these are on, but the examples and tests are
+  not built unless you specifically ask for them, using the targets
+  ``build-all-examples`` and ``build-check`` respectively.
+
 
 Downloading Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -392,39 +391,57 @@ The recommended way to use ``googletest`` is to compile it at the same
 time as your project, therefore there is no option to use an external
 installation for that.
 
-Using CMake with your physics model
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _sec-config-bout:
 
-You can write a CMake configuration file (``CMakeLists.txt``) for your
-physics model in only four lines:
+./configure
+-----------
 
-.. code-block:: cmake
+.. warning::
+   As of BOUT++ 5.0, ``./configure`` is no longer supported and will
+   be removed in 6.0. Please switch to using CMake to build BOUT++.
 
-    project(blob2d LANGUAGES CXX)
-    find_package(bout++ REQUIRED)
-    add_executable(blob2d blob2d.cxx)
-    target_link_libraries(blob2d PRIVATE bout++::bout++)
+To compile BOUT++, you first need to configure it.
+Go into the ``BOUT-dev`` directory and run::
 
-You just need to give CMake the location where you built or installed
-BOUT++ via the ``CMAKE_PREFIX_PATH`` variable::
+    $ ./configure
 
-  $ cmake . -B build -DCMAKE_PREFIX_PATH=/path/to/built/BOUT++
+If this finishes by printing a summary, and paths for IDL, Python, and
+Octave, then the libraries are set up and you can skip to the next
+section. If you see a message
+“``ERROR: FFTW not found. Required by BOUT++``” then make sure
+FFTW-3 is installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
 
-If you want to modify BOUT++ along with developing your model, you may
-instead wish to place the BOUT++ as a subdirectory of your model and
-use ``add_subdirectory`` instead of ``find_package`` above:
+If FFTW-3 is installed in a non-standard location, you can specify  the
+directory with the ``–with-fftw=`` option e.g::
 
-.. code-block:: cmake
+    $ ./configure --with-fftw=$HOME/local
 
-    project(blob2d LANGUAGES CXX)
-    add_subdirectory(BOUT++/source)
-    add_executable(blob2d blob2d.cxx)
-    target_link_libraries(blob2d PRIVATE bout++::bout++)
+Configure should now find FFTW, and search for the NetCDF library. If
+configure finishes successfully, then skip to the next section, but if
+you see a message ``NetCDF support disabled`` then configure couldn’t
+find the NetCDF library. This will be followed by a message
+``ERROR: At least one file format must be supported``. Check that you have
+NetCDF installed (See the previous section on :ref:`installing dependencies <sec-dependencies>` ).
 
-where ``BOUT++/source`` is the subdirectory containing the BOUT++
-source. Doing this has the advantage that any changes you make to
-BOUT++ source files will trigger a rebuild of both the BOUT++ library
-and your model when you next build your code.
+Like the FFTW-3 library, if NetCDF is installed in a non-standard location then
+you can specify the directory with the ``--with-netcdf=`` option e.g.::
+
+    $ ./configure --with-fftw=$HOME/local --with-netcdf=$HOME/local
+
+which should now finish successfully, printing a summary of the
+configuration::
+
+    Configuration summary
+      PETSc support: no
+      SLEPc support: no
+      IDA support: yes
+      CVODE support: yes
+      ARKODE support: yes
+      NetCDF support: yes
+      Parallel-NetCDF support: no
+
+If not, see :ref:`sec-advancedinstall` for some things you can try to
+resolve common problems.
 
 .. _sec-config-nls:
 
@@ -523,7 +540,7 @@ IDL configuration
 
 If you want to use `IDL <https://en.wikipedia.org/wiki/IDL_(programming_language)>`__ to analyse
 BOUT++ outputs, then the ``IDL_PATH`` environment variable should include the
-``tools/idllib/`` subdirectory included with BOUT++. 
+``tools/idllib/`` subdirectory included with BOUT++.
 The required command (for Bash) is printed at the end of the BOUT++ configuration::
 
     $ export IDL_PATH=...
@@ -623,7 +640,7 @@ Installing BOUT++ (experimental)
 Most BOUT++ users install and develop their own copies in their home directory,
 so do not need to install BOUT++ to a system directory.
 As of version 4.1 (August 2017), it is possible to install BOUT++ but this is
-not widely used and so should be considered experimental. 
+not widely used and so should be considered experimental.
 
 After configuring and compiling BOUT++ as above, BOUT++ can be installed
 to system directories by running as superuser or ``sudo``::
@@ -633,11 +650,11 @@ to system directories by running as superuser or ``sudo``::
 .. DANGER:: Do not do this unless you know what you're doing!
 
 This will install the following files under ``/usr/local/``:
-   
+
 * ``/usr/local/bin/bout-config``  A script which can be used to query BOUT++ configuration and compile codes with BOUT++.
 
 * ``/usr/local/include/bout++/...`` header files for BOUT++
-    
+
 * ``/usr/local/lib/libbout++.a``  The main BOUT++ library
 
 * ``/usr/local/lib/libpvode.a`` and ``/usr/local/lib/libpvpre.a``, the PVODE library
@@ -645,7 +662,7 @@ This will install the following files under ``/usr/local/``:
 * ``/usr/local/share/bout++/pylib/...`` Python analysis routines
 
 * ``/usr/local/share/bout++/idllib/...`` IDL analysis routines
-  
+
 * ``/usr/local/share/bout++/make.config`` A ``makefile`` configuration, used to compile many BOUT++ examples
 
 
@@ -669,7 +686,7 @@ More control over where files are installed is possible by passing options to
 * ``--includedir=`` sets where the ``bout++/*.hxx`` header files wil be installed (default ``/usr/local/include``)
 
 * ``--libdir=`` sets where the ``libbout++.a``, ``libpvode.a`` and ``libpvpre.a`` libraries are installed (default ``/usr/local/lib``)
-  
+
 * ``--datadir=`` sets where ``idllib``, ``pylib`` and ``make.config`` are installed (default ``/usr/local/share/``)
 
 
@@ -684,7 +701,7 @@ The python and IDL analysis scripts can be configured using
 ``bout-config`` rather than manually setting paths as in
 :ref:`sec-configanalysis`. Add this line to your startup file
 (e.g. ``$HOME/.bashrc``)::
-   
+
    export PYTHONPATH=`bout-config --python`:$PYTHONPATH
 
 note the back ticks around ``bout-config --python`` not
@@ -693,5 +710,3 @@ quotes. Similarly for IDL::
    export IDL_PATH=`bout-config --idl`:'<IDL_DEFAULT>':$IDL_PATH
 
 More details on using bout-config are in the :ref:`section on makefiles <sec-bout-config>`.
-
-

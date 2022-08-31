@@ -83,11 +83,16 @@
 - `Options` are now only implicitly-castable to types stored in the internal
   variant. Other types now require a call to `Options::as<T>()`
   [\#2341](https://github.com/boutproject/BOUT-dev/pull/2341)
+- The Laplacian inversion solver `LaplacePDD` (`"pdd"`) has been
+  removed. This implementation had some quite significant drawbacks
+  that made it not terribly useful in practice
+  [\#3566](https://github.com/boutproject/BOUT-dev/pull/3566)
 - `DataFile` and `bout::globals::dump` have been removed in favour of
   `OptionsNetCDF`. Uses of `SAVE_ONCE/REPEAT` inside `PhysicsModel` code will
   still work for the time being; outside of `PhysicsModel` methods, these macros
   will need to be manually replaced. See **FIXME: DOCS TO BE WRITTEN** for more
   details. [\#2209](https://github.com/boutproject/BOUT-dev/pull/2209)
+
 
 ## v4 known bugs
 
