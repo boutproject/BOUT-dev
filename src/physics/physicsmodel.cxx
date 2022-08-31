@@ -94,13 +94,13 @@ void PhysicsModel::initialise(Solver* s) {
   }
 
   // Call user init code to specify evolving variables
-  if (init(restarting)) {
+  if (init(restarting) != 0) {
     throw BoutException("Couldn't initialise physics model");
   }
 
   // Post-initialise, which reads restart files
   // This function can be overridden by the user
-  if (postInit(restarting)) {
+  if (postInit(restarting) != 0) {
     throw BoutException("Couldn't restart physics model");
   }
 }
