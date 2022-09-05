@@ -472,6 +472,18 @@ cdef class {{ field.field_type }}:
             if dims[i] != dims_in[i]:
                 raise IndexError("Expected %s but got %s."%(dims,dims_in))
 
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+{% for fun in "sqrt", "exp", "sin", "cos", "log", "abs" %}
+        if ufunc == np.{{ fun }}:
+            assert method == "__call__"
+            assert len(inputs) == 1
+            assert kwargs == {}
+            assert self == inputs[0]
+            return {{ field.fdd }}FromObj(c.{{ fun }}(self.cobj[0]))
+{% endfor %}
+        print("Debug output:", ufunc, method, inputs, kwargs)
+        return NotImplemented
+
 {% for name, op in ops %}
     def __{{ name }}__(self,other):
         import numbers
