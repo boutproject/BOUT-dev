@@ -371,7 +371,7 @@ cdef class {{ field.field_type }}:
         if isinstance(slices, slice):
             slices = (slices,)
         if isinstance(slices, tuple):
-            if len(slices) >= {{ field.ndims }}:
+            if len(slices) > {{ field.ndims }}:
                 raise IndexError(f"This is a {{ field.ndims }}D object, cannot slice with {len(slices)} dims")
             if len(slices) < {{ field.ndims }}:
                 if ... in slices:
