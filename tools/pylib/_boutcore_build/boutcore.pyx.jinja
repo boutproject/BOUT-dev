@@ -260,7 +260,7 @@ cdef class {{ field.field_type }}:
                 data = data.astype("float64")
             else:
                 raise TypeError("expected float64 data, but got %s.\nThis can be ignored by adding ignoreDataType=True as argument"%data.dtype)
-        dims_in=self._checkDims(dims,data.shape)
+        dims_in = self._checkDims(dims, data.shape)
         cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(data)
         c_set_all(self.cobj,&data_[{{ zeros }}])
 
@@ -441,7 +441,7 @@ cdef class {{ field.field_type }}:
             dims_in = data.shape
             for i in inds:
                 dims.append((i[1]-i[0])//i[2])
-            dims_in = self._checkDims(dims,dims_in)
+            dims_in = self._checkDims(dims, dims_in)
             data_flat = np.ascontiguousarray(data).reshape(-1)
             c_set_{{ field.fdd }}_part(self.cobj,&data_flat[0],{{ field.makelist("inds[$i][0],inds[$i][1],inds[$i][2]") }});
             return
@@ -452,7 +452,7 @@ cdef class {{ field.field_type }}:
         c_set_part(self.cobj, &data_flat[0], &indices[0], len(indices))
 
 
-    def _checkDims(self,dims,dims_in):
+    def _checkDims(self, dims, dims_in):
         if len(dims_in) > {{ field.ndims }}:
             raise IndexError("This is a {{ field.ndims }}D object, but got %d dimensions"%len(dims_in))
         if len(dims_in) < {{ field.ndims }}:
