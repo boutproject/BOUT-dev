@@ -6,6 +6,9 @@ void c_get_{{ field.fdd }}_all(const {{ field.field_type }} * f, double * data);
 void c_set_all({{ field.field_type }} * f, const {{ field.field_type }} * rhs);
 void c_set_all({{ field.field_type }} * f, const double * data);
 void c_set_all({{ field.field_type }} * f, double data);
+void c_set_part({{ field.field_type }}* field, const double* data, const int* indices, int num);
+void c_get_part({{ field.field_type }}* field, double* data, const int* indices, int num);
+
 
 {% for name, op in ops %}
 {{ field.field_type }} * f{{ name }}( {{ field.field_type }}*,{{ field.field_type }}*);

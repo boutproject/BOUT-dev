@@ -21,6 +21,22 @@ void c_set_all({{ field.field_type }} * f, const {{ field.field_type }} * rhs){
   (*f) = (*rhs);
 }
 
+void c_set_part({{ field.field_type }}* field, const double* data, const int* indices, int num){
+  // get pointer of data field
+  double * field_data = &(*field)[Ind{{ field.ndims }}D(0)];
+  for (int j=0; j < num ; ++j){
+    field_data[indices[j]] = data[j];
+  }
+}
+
+void c_get_part({{ field.field_type }}* field, double* data, const int* indices, int num){
+  // get pointer of data field
+  double * field_data = &(*field)[Ind{{ field.ndims }}D(0)];
+  for (int j=0; j < num ; ++j){
+     data[j] = field_data[indices[j]];
+  }
+}
+
 void c_get_{{ field.fdd }}_all(const {{ field.field_type }} * f, double * data){
   int j = 0;
   for (auto i : (*f)){
