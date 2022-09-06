@@ -3,7 +3,12 @@
 # requires not make
 
 set -ex
-python3 test.py > out.log
-msg="We can print to the log from python 🎉"
-grep "$msg" out.log
-grep "$msg" test/BOUT.log.0
+
+function testit() {
+    msg="$@"
+    python3 test.py $msg > out.log
+    grep "$msg" out.log
+    grep "$msg" test/BOUT.log.0
+}
+
+testit Can we print to the log from python? 🎉  '__does_it_still__work {}'
