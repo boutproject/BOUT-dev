@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+# requires boutcore
+# requires not make
+
+import numpy as np
+import boutcore as bc
+
+bc.init("-d test")
+mesh = bc.Mesh.getGlobal()
+field = bc.Field3D.fromMesh(mesh)
+ndat = np.random.random(field.shape)
+field[:] = ndat
+
+assert np.all(ndat == field[:])
+
+with open("slicingexamples") as f:
+    examples = [l for l in f]
+
+print(*examples)
+print(field.shape)
+for ex in examples:
+    
+    if "=" in ex:
+        pass
+    else:
+        toeval = f"""
+nout = {ex.replace('x', 'ndat')}
+print(nout.shape)
+fout = {ex.replace('x', 'field')}
+assert fout.shape == nout.shape , f"Field3D returned {{ fout.shape }} but numpy {{ nout.shape }}"
+assert np.all(fout == nout) , f"data mismatch, {{ fout == nout }}"
+"""
+        # for l in toeval.split("\n"):
+        #     if not l:
+        #         continue
+        #     print(l)
+        #     eval(l)
+        try:
+            print("running", ex)
+            exec(toeval)
+        except:
+            print("Failed to test", ex)
+            raise
+        
+#slicings = 2, 
