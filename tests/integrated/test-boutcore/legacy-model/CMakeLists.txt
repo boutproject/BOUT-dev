@@ -1,0 +1,5 @@
+bout_add_integrated_test(test-boutcore-legacy-model
+  USE_RUNTEST
+  USE_DATA_BOUT_INP
+  REQUIRES BOUT_ENABLE_PYTHON
+)

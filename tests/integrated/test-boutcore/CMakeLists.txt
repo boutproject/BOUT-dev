@@ -1,0 +1,7 @@
+add_subdirectory(collect)
+add_subdirectory(collect-staggered)
+add_subdirectory(legacy-model)
+add_subdirectory(mms-ddz)
+add_subdirectory(print)
+add_subdirectory(simple-model)
+
