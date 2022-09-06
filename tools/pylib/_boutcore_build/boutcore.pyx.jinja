@@ -377,9 +377,11 @@ cdef class {{ field.field_type }}:
             if len(slices) < {{ field.ndims }}:
                 if ... in slices:
                     slices0 = slices[:slices.index(...)]
-                    slices1 = slices[:slices.index(...)]
+                    slices1 = slices[slices.index(...) + 1:]
                     slices = *slices0, *[slice(None)] * ({{ field.ndims }} - len(slices) + 1), *slices1
+                    assert len(slices) == {{ field.ndims }} , f"failed: { slices } is not {{ field.ndims }} long"
                 slices = *slices, *[slice(None)] * ({{ field.ndims }} - len(slices))
+                assert len(slices) == {{ field.ndims }} , f"failed: { slices } is not {{ field.ndims }} long"
         return slices
 
     def __getitem__(self, slices):
@@ -399,21 +401,24 @@ cdef class {{ field.field_type }}:
             Numpy array of the requested data
         """
         cdef np.ndarray[double, mode="c", ndim=1] data_flat
-        cdef np.ndarray[size_t, mode="c", ndim=1]  indices
+        cdef np.ndarray[size_t, mode="c", ndim=1] indices
         slices = self._sanitise_slices(slices)
         if isinstance(slices, tuple) and all([isinstance(x, slice) for x in slices]):
+            print("use custom code for", *slices)
             inds = _resolve_slices(slices,
                                    [{{ field.makelist("self.cobj.getN$d()") }}])
             outshape = [((i[1]-i[0])//i[2]) for i in inds]
             data_flat = np.ascontiguousarray(np.zeros(np.prod(outshape)))
-            c_get_{{ field.fdd }}_part(self.cobj, &data_flat[0], {{ field.makelist("inds[$i][0],inds[$i][1],inds[$i][2]") }});
+            if np.prod(outshape):
+                 c_get_{{ field.fdd }}_part(self.cobj, &data_flat[0], {{ field.makelist("inds[$i][0],inds[$i][1],inds[$i][2]") }});
         else:
             allindices = np.arange(np.prod(self.shape), dtype=size_t).reshape(self.shape)
             selectedindices = allindices[slices]
             outshape = selectedindices.shape
             indices = np.ravel(selectedindices)
             data_flat = np.empty(len(indices))
-            c_get_part(self.cobj, &data_flat[0], &indices[0], len(indices))
+            if len(indices):
+                c_get_part(self.cobj, &data_flat[0], &indices[0], len(indices))
         data = data_flat.reshape(outshape)
         return data
 
@@ -483,6 +488,11 @@ cdef class {{ field.field_type }}:
             return {{ field.fdd }}FromObj(c.{{ fun }}(self.cobj[0]))
 {% endfor %}
         print("Debug output:", ufunc, method, inputs, kwargs)
+        if len(inputs) == 1:
+            assert self == inputs[0]
+            # convert to numpy and return
+            dat = self.get()
+            return dat.__array_ufunc__(ufunc, method, (dat,), **kwargs)
         return NotImplemented
 
 {% for name, op in ops %}

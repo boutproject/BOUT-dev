@@ -6,13 +6,14 @@ def _resolve_slice(ind, num):
         if rem != 0:
             ret[1] -= rem
             ret[1] += ret[2]
+        if d*ret[2] < 0:
+            return [0, 0, 1]
         return ret
-    else:
-        if ind < 0:
-            ind = num + ind
-        if ind < 0 or ind >= num:
-            raise IndexError("%d is out of range [%d:%d]" % (ind, 0, num))
-        return [ind, ind + 1, 1]
+    if ind < 0:
+        ind = num + ind
+    if ind < 0 or ind >= num:
+        raise IndexError("%d is out of range [%d:%d]" % (ind, 0, num))
+    return [ind, ind + 1, 1]
 
 
 def _resolve_slices(inds, nums):
