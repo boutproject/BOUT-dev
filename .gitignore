@@ -70,3 +70,6 @@ src/fmt/format.cxx
 /tests/integrated/test-options-netcdf/test.nc
 /tests/integrated/test-options-netcdf/time.nc
 /tests/integrated/test-yupdown-weights/test_yupdown_weights
+
+*_build/
+build_*/
