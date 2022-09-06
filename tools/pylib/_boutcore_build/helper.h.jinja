@@ -6,8 +6,8 @@ void c_get_{{ field.fdd }}_all(const {{ field.field_type }} * f, double * data);
 void c_set_all({{ field.field_type }} * f, const {{ field.field_type }} * rhs);
 void c_set_all({{ field.field_type }} * f, const double * data);
 void c_set_all({{ field.field_type }} * f, double data);
-void c_set_part({{ field.field_type }}* field, const double* data, const int* indices, int num);
-void c_get_part({{ field.field_type }}* field, double* data, const int* indices, int num);
+void c_set_part({{ field.field_type }}* field, const double* data, const size_t* indices, size_t num);
+void c_get_part({{ field.field_type }}* field, double* data, const size_t* indices, size_t num);
 
 
 {% for name, op in ops %}
@@ -23,17 +23,15 @@ void fi{{ name }}( Field3D*,Field2D*);
 {% endif %}
 {% endfor %}
 {{ field.field_type }} c_minus({{ field.field_type }} a){return -a;};
+
+{% set indices = field.makelist("size_t $ds, size_t $de, int d$d") %}
+void c_get_{{ field.fdd }}_part(const {{ field.field_type }} * f, double * data, {{ indices }});
+void c_set_{{ field.fdd }}_part({{ field.field_type }} * f, const double * data, {{ indices }});
+void c_set_{{ field.fdd }}_part_({{ field.field_type }} * f, const double data, {{ indices }});
 {% endfor %}
 {% for vec in vecs %}
 {{ vec.field }} c_mul_{{ vec }}_{{ vec }}(const {{ vec }} * a, const {{ vec }} * b){ return (*a) * (*b) ;};
 {% endfor %}
-
-void c_get_f3d_part(const Field3D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
-void c_set_f3d_part(Field3D * f, const double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
-void c_set_f3d_part_(Field3D * f, const double data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
-void c_get_f2d_part(const Field2D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy);
-void c_set_f2d_part(Field2D * f, const double * data,int xs,int xe, int dx,int ys,int ye, int dy);
-void c_set_f2d_part_(Field2D * f, const double data,int xs,int xe, int dx,int ys,int ye, int dy);
 
 Mesh * c_get_global_mesh();
 

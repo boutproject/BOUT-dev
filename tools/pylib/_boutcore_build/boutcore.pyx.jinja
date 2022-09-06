@@ -13,6 +13,7 @@ import copy
 from libcpp.memory cimport unique_ptr
 from cython.operator import dereference as deref
 
+size_t = np.uint
 
 cdef extern from "boutexception_helper.hxx":
      cdef void raise_bout_py_error()
@@ -23,10 +24,10 @@ cdef extern from "helper.h":
     void c_set_all(c.{{ field.field_type }}* f, double* data)
     void c_get_{{ field.fdd }}_all(c.{{ field.field_type }}* f, double* data)
     void c_set_all(c.{{ field.field_type }}* f, double data)
-    void c_set_part(c.{{ field.field_type }}* field, double* data, int* indices, int num)
-    void c_get_part(c.{{ field.field_type }}* field, double* data, int* indices, int num)
+    void c_set_part(c.{{ field.field_type }}* field, double* data, size_t* indices, size_t num)
+    void c_get_part(c.{{ field.field_type }}* field, double* data, size_t* indices, size_t num)
 
-{% set indices = field.makelist("int $ds, int $de, int d$d") %}
+{% set indices = field.makelist("size_t $ds, size_t $de, int d$d") %}
     void c_get_{{ field.fdd }}_part(c.{{ field.field_type }}* f, double* data, {{ indices }})
     void c_set_{{ field.fdd }}_part(c.{{ field.field_type }}* f, double* data, {{ indices }})
     void c_set_{{ field.fdd }}_part_(c.{{ field.field_type }}* f, double data, {{ indices }})
@@ -398,7 +399,7 @@ cdef class {{ field.field_type }}:
             Numpy array of the requested data
         """
         cdef np.ndarray[double, mode="c", ndim=1] data_flat
-        cdef np.ndarray[int, mode="c", ndim=1]  indices
+        cdef np.ndarray[size_t, mode="c", ndim=1]  indices
         slices = self._sanitise_slices(slices)
         if isinstance(slices, tuple) and all([isinstance(x, slice) for x in slices]):
             inds = _resolve_slices(slices,
@@ -407,10 +408,10 @@ cdef class {{ field.field_type }}:
             data_flat = np.ascontiguousarray(np.zeros(np.prod(outshape)))
             c_get_{{ field.fdd }}_part(self.cobj, &data_flat[0], {{ field.makelist("inds[$i][0],inds[$i][1],inds[$i][2]") }});
         else:
-            allindices = np.arange(np.prod(self.shape), dtype=int).reshape(self.shape)
+            allindices = np.arange(np.prod(self.shape), dtype=size_t).reshape(self.shape)
             selectedindices = allindices[slices]
             outshape = selectedindices.shape
-            indices = selectedindices.ascontiguousarray()
+            indices = np.ravel(selectedindices)
             data_flat = np.empty(len(indices))
             c_get_part(self.cobj, &data_flat[0], &indices[0], len(indices))
         data = data_flat.reshape(outshape)
@@ -445,8 +446,8 @@ cdef class {{ field.field_type }}:
             data_flat = np.ascontiguousarray(data).reshape(-1)
             c_set_{{ field.fdd }}_part(self.cobj,&data_flat[0],{{ field.makelist("inds[$i][0],inds[$i][1],inds[$i][2]") }});
             return
-        allindices = np.arange(np.prod(self.shape), dtype=int).reshape(self.shape)
-        cdef np.ndarray[int, mode="c", ndim=1] indices = allindices[slices].ascontiguousarray()
+        allindices = np.arange(np.prod(self.shape), dtype=size_t).reshape(self.shape)
+        cdef np.ndarray[size_t, mode="c", ndim=1] indices = np.ravel(allindices[slices])
         data_flat = np.ascontiguousarray(data)
         assert len(data_flat) == len(indices)
         c_set_part(self.cobj, &data_flat[0], &indices[0], len(indices))
@@ -504,7 +505,7 @@ cdef class {{ field.field_type }}:
 
     def __r{{ name }}__(self,lhs):
         fu = {{ field.field_type }}()
-        if isinstance(lhs,float) or isinstance(lhs,int):
+        if isinstance(lhs, float) or isinstance(lhs, int):
             fu.cobj = f{{ name }}(<double?>float(lhs),(<{{ field.field_type }}?>self).cobj)
 {% if field == field3d %}
         elif isinstance(lhs,Field2D):
@@ -517,7 +518,7 @@ cdef class {{ field.field_type }}:
     def __i{{ name }}__(self,other):
         if isinstance(other,{{ field.field_type }}):
             fi{{ name }}((<{{ field.field_type }}?>self).cobj , (<{{ field.field_type }}?>other).cobj)
-        elif isinstance(other,float) or isinstance(other,int):
+        elif isinstance(other, float) or isinstance(other, int):
             fi{{ name }}((<{{ field.field_type }}?>self).cobj , (<double?>float(other)))
 {% if field == field3d %}
         elif isinstance(other,Field2D):
@@ -1145,7 +1146,7 @@ def init(args=[]):
     # terminate string_buf with a null pointer for OpenMPI, which requires this
     # because it iterates through "argv" with a loop "for (p = argv; *p; ++p)"
     string_buf[len(args)] = NULL
-    cdef int fuu=len(args)
+    cdef int fuu = len(args)
     if is_openmpi:
         PyMPI_OPENMPI_dlopen_libmpi()
     ret=BoutInitialise(fuu,string_buf)

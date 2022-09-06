@@ -15,7 +15,7 @@ cdef extern from "{{ field.header }}.hxx":
     cppclass {{ field.field_type }}:
         {{ field.field_type }}(Mesh * mesh);
         {{ field.field_type }}(const {{ field.field_type }} &)
-        double & operator()(int,int,int)
+        double & operator()(int, int, int)
         int getNx()
         int getNy()
         int getNz()
