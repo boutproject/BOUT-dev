@@ -360,8 +360,9 @@ class Mesh {
   /// @param[in] buffer A buffer of data to send
   /// @param[in] size   The length of \p buffer
   /// @param[in] tag    A label, must be the same at receive
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual MPI_Request sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
+  [[deprecated(
+      "This experimental functionality will be removed in 5.0")]] virtual MPI_Request
+  sendToProc(int xproc, int yproc, BoutReal* buffer, int size, int tag) = 0;
 
   /// Low-level communication routine
   /// Receive a buffer of data from another processor
@@ -370,12 +371,14 @@ class Mesh {
   ///
   /// @param[in] xproc X index of sending processor
   /// @param[in] yproc Y index of sending processor
-  /// @param[inout] buffer  The buffer to fill with data. Must already be allocated of length \p size
+  /// @param[inout] buffer  The buffer to fill with data. Must already be allocated of
+  /// length \p size
   /// @param[in] size  The length of \p buffer
   /// @param[in] tag   A label, must be the same as send
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual comm_handle receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
-  
+  [[deprecated(
+      "This experimental functionality will be removed in 5.0")]] virtual comm_handle
+  receiveFromProc(int xproc, int yproc, BoutReal* buffer, int size, int tag) = 0;
+
   virtual int getNXPE() = 0; ///< The number of processors in the X direction
   virtual int getNYPE() = 0; ///< The number of processors in the Y direction
   virtual int getXProcIndex() = 0; ///< This processor's index in X direction
@@ -477,59 +480,65 @@ class Mesh {
   /// Note: Not necessarily at a boundary, but last in the Y communicator
   ///       for the flux surface through local X index xpos
   virtual bool lastY(int xpos) const = 0;
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual int UpXSplitIndex() = 0;  ///< If the upper Y guard cells are split in two, return the X index where the split occurs
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual int DownXSplitIndex() = 0; ///< If the lower Y guard cells are split in two, return the X index where the split occurs
+  [[deprecated("This experimental functionality will be removed in 5.0")]] virtual int
+  UpXSplitIndex() = 0; ///< If the upper Y guard cells are split in two, return the X
+                       ///< index where the split occurs
+  [[deprecated("This experimental functionality will be removed in 5.0")]] virtual int
+  DownXSplitIndex() = 0; ///< If the lower Y guard cells are split in two, return the X
+                         ///< index where the split occurs
 
   /// Send data
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual int sendYOutIndest(BoutReal *buffer, int size, int tag) = 0;
+  [[deprecated("This experimental functionality will be removed in 5.0")]] virtual int
+  sendYOutIndest(BoutReal* buffer, int size, int tag) = 0;
 
   ///
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual int sendYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
+  [[deprecated("This experimental functionality will be removed in 5.0")]] virtual int
+  sendYOutOutdest(BoutReal* buffer, int size, int tag) = 0;
 
   ///
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual int sendYInIndest(BoutReal *buffer, int size, int tag) = 0;
+  [[deprecated("This experimental functionality will be removed in 5.0")]] virtual int
+  sendYInIndest(BoutReal* buffer, int size, int tag) = 0;
 
   ///
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual int sendYInOutdest(BoutReal *buffer, int size, int tag) = 0;
-
-  /// Non-blocking receive. Must be followed by a call to wait()
-  ///
-  /// @param[out] buffer  A buffer of length \p size which must already be allocated
-  /// @param[in] size The number of BoutReals expected
-  /// @param[in] tag  The tag number of the expected message
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual comm_handle irecvYOutIndest(BoutReal *buffer, int size, int tag) = 0;
+  [[deprecated("This experimental functionality will be removed in 5.0")]] virtual int
+  sendYInOutdest(BoutReal* buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
   ///
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual comm_handle irecvYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
+  [[deprecated(
+      "This experimental functionality will be removed in 5.0")]] virtual comm_handle
+  irecvYOutIndest(BoutReal* buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
   ///
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag) = 0;
+  [[deprecated(
+      "This experimental functionality will be removed in 5.0")]] virtual comm_handle
+  irecvYOutOutdest(BoutReal* buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
   ///
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
-  [[deprecated("This experimental functionality will be removed in 5.0")]]
-  virtual comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag) = 0;
-  
+  [[deprecated(
+      "This experimental functionality will be removed in 5.0")]] virtual comm_handle
+  irecvYInIndest(BoutReal* buffer, int size, int tag) = 0;
+
+  /// Non-blocking receive. Must be followed by a call to wait()
+  ///
+  /// @param[out] buffer  A buffer of length \p size which must already be allocated
+  /// @param[in] size The number of BoutReals expected
+  /// @param[in] tag  The tag number of the expected message
+  [[deprecated(
+      "This experimental functionality will be removed in 5.0")]] virtual comm_handle
+  irecvYInOutdest(BoutReal* buffer, int size, int tag) = 0;
+
   // Boundary region iteration
 
   /// Iterate over the lower Y boundary
@@ -581,24 +590,31 @@ class Mesh {
   int GlobalNxNoBoundaries, GlobalNyNoBoundaries, GlobalNzNoBoundaries;
   int OffsetX, OffsetY, OffsetZ;    ///< Offset of this mesh within the global array
                                     ///< so startx on this processor is OffsetX in global
-  
+
   /// Returns the global X index given a local index
   /// If the local index includes the boundary cells, then so does the global.
-  [[deprecated("Use getGlobalXIndex instead")]]
-  int XGLOBAL(int xloc) const { return getGlobalXIndex(xloc); }
+  [[deprecated("Use getGlobalXIndex instead")]] int XGLOBAL(int xloc) const {
+    return getGlobalXIndex(xloc);
+  }
   /// Returns the global Y index given a local index
   /// The local index must include the boundary, the global index does not.
-  [[deprecated("Use getGlobalYIndex or getGlobalYIndexNoBoundaries instead")]]
-  int YGLOBAL(int yloc) const { return getGlobalYIndexNoBoundaries(yloc); }
+  [[deprecated("Use getGlobalYIndex or getGlobalYIndexNoBoundaries instead")]] int
+  YGLOBAL(int yloc) const {
+    return getGlobalYIndexNoBoundaries(yloc);
+  }
 
   /// Returns the local X index given a global index
   /// If the global index includes the boundary cells, then so does the local.
-  [[deprecated("Use getLocalXIndex or getLocalXIndexNoBoundaries instead")]]
-  int XLOCAL(int xglo) const { return getLocalXIndex(xglo); };
+  [[deprecated("Use getLocalXIndex or getLocalXIndexNoBoundaries instead")]] int
+  XLOCAL(int xglo) const {
+    return getLocalXIndex(xglo);
+  };
   /// Returns the local Y index given a global index
   /// If the global index includes the boundary cells, then so does the local.
-  [[deprecated("Use getLocalYIndex or getLocalYIndexNoBoundaries instead")]]
-  int YLOCAL(int yglo) const { return getLocalYIndexNoBoundaries(yglo); };
+  [[deprecated("Use getLocalYIndex or getLocalYIndexNoBoundaries instead")]] int
+  YLOCAL(int yglo) const {
+    return getLocalYIndexNoBoundaries(yglo);
+  };
 
   /// Returns the number of unique cells (i.e., ones not used for
   /// communication) on this processor for 3D fields. Boundaries
@@ -934,48 +950,47 @@ class Mesh {
     return bout::derivatives::index::FDDZ(vel, f, outloc, method, region);
   }
 
-  [[deprecated("Please use free function toFieldAligned instead")]]
-  const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
+  [[deprecated("Please use free function toFieldAligned instead")]] const Field3D
+  toFieldAligned(const Field3D& f, const REGION region = RGN_ALL) {
     return ::toFieldAligned(f, toString(region));
   }
 
-  [[deprecated("Please use free function fromFieldAligned instead")]]
-  const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
+  [[deprecated("Please use free function fromFieldAligned instead")]] const Field3D
+  fromFieldAligned(const Field3D& f, const REGION region = RGN_ALL) {
     return ::fromFieldAligned(f, toString(region));
   }
 
-  [[deprecated("Please use free function toFieldAligned instead")]]
-  const Field2D toFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
+  [[deprecated("Please use free function toFieldAligned instead")]] const Field2D
+  toFieldAligned(const Field2D& f, const REGION region = RGN_ALL) {
     return ::toFieldAligned(f, toString(region));
   }
 
-  [[deprecated("Please use free function fromFieldAligned instead")]]
-  const Field2D fromFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
+  [[deprecated("Please use free function fromFieldAligned instead")]] const Field2D
+  fromFieldAligned(const Field2D& f, const REGION region = RGN_ALL) {
     return ::fromFieldAligned(f, toString(region));
   }
 
   [[deprecated("Please use "
-      "Coordinates::getParallelTransform().canToFromFieldAligned instead")]]
-  bool canToFromFieldAligned() {
+               "Coordinates::getParallelTransform().canToFromFieldAligned instead")]] bool
+  canToFromFieldAligned() {
     return getCoordinates()->getParallelTransform().canToFromFieldAligned();
   }
 
-  [[deprecated("Please use Coordinates::setParallelTransform instead")]]
-  void setParallelTransform(std::unique_ptr<ParallelTransform> pt) {
+  [[deprecated("Please use Coordinates::setParallelTransform instead")]] void
+  setParallelTransform(std::unique_ptr<ParallelTransform> pt) {
     getCoordinates()->setParallelTransform(std::move(pt));
   }
 
-  [[deprecated("This call is now unnecessary")]]
-  void setParallelTransform() {
+  [[deprecated("This call is now unnecessary")]] void setParallelTransform() {
     // The ParallelTransform is set from options in the Coordinates
     // constructor, so this method doesn't need to do anything
   }
 
-  [[deprecated("Please use Coordinates::getParallelTransform instead")]]
-  ParallelTransform& getParallelTransform() {
+  [[deprecated(
+      "Please use Coordinates::getParallelTransform instead")]] ParallelTransform&
+  getParallelTransform() {
     return getCoordinates()->getParallelTransform();
   }
-
 
   ///////////////////////////////////////////////////////////
   // REGION RELATED ROUTINES

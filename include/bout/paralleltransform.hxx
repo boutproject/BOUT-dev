@@ -31,8 +31,8 @@ public:
   /// Given a 3D field, calculate and set the Y up down fields
   virtual void calcParallelSlices(Field3D &f) = 0;
 
-  [[deprecated("Please use ParallelTransform::calcParallelSlices instead")]]
-  void calcYupYdown(Field3D& f) {
+  [[deprecated("Please use ParallelTransform::calcParallelSlices instead")]] void
+  calcYupYdown(Field3D& f) {
     calcParallelSlices(f);
   }
 
@@ -42,11 +42,11 @@ public:
     return calcParallelSlices(f);
   }
 
-  [[deprecated("Please use ParallelTransform::integrateParallelSlices instead")]]
-  void integrateYupYdown(Field3D& f) {
+  [[deprecated("Please use ParallelTransform::integrateParallelSlices instead")]] void
+  integrateYupYdown(Field3D& f) {
     integrateParallelSlices(f);
   }
-  
+
   /// Convert a field into field-aligned coordinates
   /// so that the y index is along the magnetic field
   virtual Field3D toFieldAligned(const Field3D& f,

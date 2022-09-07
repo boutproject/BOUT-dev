@@ -426,7 +426,7 @@ value = [a = 1,
   reader.read(Options::getRoot(), filename.c_str());
 
   auto options = Options::root();
-  
+
   EXPECT_EQ(options["result"].as<int>(), 6);
   EXPECT_EQ(options["value"].as<int>(), 5);
 }

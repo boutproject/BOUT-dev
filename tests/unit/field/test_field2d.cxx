@@ -810,7 +810,6 @@ TEST_F(Field2DTest, CheckData) {
   EXPECT_NO_THROW(checkData(field));
   EXPECT_NO_THROW(checkData(field, RGN_NOBNDRY));
   EXPECT_THROW(checkData(field, RGN_ALL), BoutException);
-
 }
 
 #if CHECK > 0

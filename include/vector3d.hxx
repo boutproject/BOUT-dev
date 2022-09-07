@@ -209,8 +209,8 @@ const Vector3D cross(const Vector3D & lhs, const Vector2D &rhs);
  */ 
 const Field3D abs(const Vector3D& v, const std::string& region = "RGN_ALL");
 [[deprecated("Please use Vector3D abs(const Vector3D& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline const Field3D abs(const Vector3D& v, REGION region) {
+             "const std::string& region = \"RGN_ALL\") instead")]] inline const Field3D
+abs(const Vector3D& v, REGION region) {
   return abs(v, toString(region));
 }
 

@@ -59,21 +59,23 @@
 #ifdef VDERIV_FUNC_REGION_ENUM_TO_STRING
 #error This utility macro should not clash with another one
 #else
-#define VDERIV_FUNC_REGION_ENUM_TO_STRING(func, T, T1, T2) \
-[[deprecated("Please use #func(const #T1 v, const #T2& f, " \
-    "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", const " \
-    "std::string& region = \"RGN_ALL\") instead")]] \
-inline T func(const T1& v, const T2& f, CELL_LOC outloc, const std::string& method, \
-    REGION region) { \
-  return func(v, f, outloc, method, toString(region)); \
-} \
-[[deprecated("Please use #func(const #T1& v, const #T2& f, " \
-    "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
-    "const std::string& region = \"RGN_ALL\") instead")]] \
-inline T func(const T1& v, const T2& f, CELL_LOC outloc, DIFF_METHOD method, \
-    REGION region = RGN_NOBNDRY) { \
-  return func(v, f, outloc, toString(method), toString(region)); \
-}
+#define VDERIV_FUNC_REGION_ENUM_TO_STRING(func, T, T1, T2)                              \
+  [[deprecated(                                                                         \
+      "Please use #func(const #T1 v, const #T2& f, "                                    \
+      "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", const " \
+      "std::string& region = \"RGN_ALL\") instead")]] inline T                          \
+  func(const T1& v, const T2& f, CELL_LOC outloc, const std::string& method,            \
+       REGION region) {                                                                 \
+    return func(v, f, outloc, method, toString(region));                                \
+  }                                                                                     \
+  [[deprecated(                                                                         \
+      "Please use #func(const #T1& v, const #T2& f, "                                   \
+      "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", "       \
+      "const std::string& region = \"RGN_ALL\") instead")]] inline T                    \
+  func(const T1& v, const T2& f, CELL_LOC outloc, DIFF_METHOD method,                   \
+       REGION region = RGN_NOBNDRY) {                                                   \
+    return func(v, f, outloc, toString(method), toString(region));                      \
+  }
 #endif
 
 ////////// FIRST DERIVATIVES //////////

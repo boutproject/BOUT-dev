@@ -232,10 +232,9 @@ public:
   Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
       CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
   [[deprecated("Please use Coordinates::Vpar_Grad_par(const Field3D& v, "
-      "const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, "
-      "const std::string& method = \"DEFAULT\") instead")]]
-  inline Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
-      DIFF_METHOD method) {
+               "const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, "
+               "const std::string& method = \"DEFAULT\") instead")]] inline Field3D
+  Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
     return Vpar_Grad_par(v, f, outloc, toString(method));
   }
 

@@ -410,7 +410,7 @@ void Field3D::applyBoundary(const std::string &condition) {
 
   if (background != nullptr) {
     // Apply boundary to the total of this and background
-    
+
     Field3D tot = *this + (*background);
     tot.applyBoundary(condition);
     *this = tot - (*background);

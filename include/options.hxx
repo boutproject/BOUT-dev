@@ -40,16 +40,16 @@ class Options;
 #define __OPTIONS_H__
 
 #include "bout_types.hxx"
-#include "unused.hxx"
-#include "output.hxx"
-#include "utils.hxx"
-#include "bout/sys/variant.hxx"
-#include "bout/sys/type_name.hxx"
-#include "bout/traits.hxx"
-#include "bout/deprecated.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "fieldperp.hxx"
+#include "output.hxx"
+#include "unused.hxx"
+#include "utils.hxx"
+#include "bout/deprecated.hxx"
+#include "bout/sys/type_name.hxx"
+#include "bout/sys/variant.hxx"
+#include "bout/traits.hxx"
 
 #include <fmt/core.h>
 

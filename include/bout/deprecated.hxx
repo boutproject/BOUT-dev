@@ -15,7 +15,7 @@
 ///       DEPRECATED(int someFunction(const string &input));
 ///     }
 #ifdef __GNUC__
-#define DEPRECATED(func) __attribute__ ((deprecated)) func
+#define DEPRECATED(func) __attribute__((deprecated)) func
 #elif defined(_MSC_VER)
 #define DEPRECATED(func) __declspec(deprecated) func
 #else

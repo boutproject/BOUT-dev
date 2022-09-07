@@ -70,8 +70,9 @@ private:
   }
 };
 
-class LaplaceCyclicTest : public FakeMeshFixture,
-                          public testing::WithParamInterface<std::tuple<bool, bool, bool>> {
+class LaplaceCyclicTest
+    : public FakeMeshFixture,
+      public testing::WithParamInterface<std::tuple<bool, bool, bool>> {
 public:
   WithQuietOutput info{output_info}, warn{output_warn}, progress{output_progress},
       all{output};
@@ -102,9 +103,7 @@ public:
     forward = ForwardOperator(std::get<1>(param), std::get<2>(param));
   }
 
-  ~LaplaceCyclicTest() {
-    Options::cleanup();
-  }
+  ~LaplaceCyclicTest() { Options::cleanup(); }
 
   const BoutReal sigmasq = 0.02;
   LaplaceCyclic solver;

@@ -1463,7 +1463,7 @@ int BoutMesh::wait(comm_handle handle) {
  *             Non-Local Communications
  ***************************************************************/
 
-MPI_Request BoutMesh::sendToProc(int xproc, int yproc, BoutReal *buffer, int size,
+MPI_Request BoutMesh::sendToProc(int xproc, int yproc, BoutReal* buffer, int size,
                                  int tag) {
   Timer timer("comms");
 
@@ -1475,12 +1475,12 @@ MPI_Request BoutMesh::sendToProc(int xproc, int yproc, BoutReal *buffer, int siz
   return request;
 }
 
-comm_handle BoutMesh::receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size,
+comm_handle BoutMesh::receiveFromProc(int xproc, int yproc, BoutReal* buffer, int size,
                                       int tag) {
   Timer timer("comms");
 
   // Get a communications handle. Not fussy about size of arrays
-  CommHandle *ch = get_handle(0, 0);
+  CommHandle* ch = get_handle(0, 0);
 
   mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(xproc, yproc), tag,
                  BoutComm::get(), ch->request);

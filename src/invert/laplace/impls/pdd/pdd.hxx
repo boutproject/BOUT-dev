@@ -1,6 +1,6 @@
 /**************************************************************************
  * Perpendicular Laplacian inversion
- * 
+ *
  * This code uses the Parallel Diagonally Dominant algorithm. This is very efficient
  * (constant number of communications), but achieves this by neglecting "small"
  * corrections. For ELM simulations these seem to be non-negligable, hence:
@@ -11,7 +11,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -57,63 +57,64 @@ public:
   ~LaplacePDD() {}
 
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &val) override {
+  void setCoefA(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Acoef = val;
   }
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &val) override {
+  void setCoefC(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ccoef = val;
   }
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &val) override {
+  void setCoefD(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Dcoef = val;
   }
   using Laplacian::setCoefEx;
-  void setCoefEx(const Field2D &UNUSED(val)) override {
+  void setCoefEx(const Field2D& UNUSED(val)) override {
     throw BoutException("LaplacePDD does not have Ex coefficient");
   }
   using Laplacian::setCoefEz;
-  void setCoefEz(const Field2D &UNUSED(val)) override {
+  void setCoefEz(const Field2D& UNUSED(val)) override {
     throw BoutException("LaplacePDD does not have Ez coefficient");
   }
 
   using Laplacian::solve;
-  FieldPerp solve(const FieldPerp &b) override;
-  Field3D solve(const Field3D &b) override;
+  FieldPerp solve(const FieldPerp& b) override;
+  Field3D solve(const Field3D& b) override;
+
 private:
   Field2D Acoef, Ccoef, Dcoef;
-  
+
   const int PDD_COMM_XV; // First message tag
   const int PDD_COMM_Y;  // Second tag
-  
+
   /// Data structure for PDD algorithm
   struct PDD_data {
-    Matrix<dcomplex> bk;  ///< b vector in Fourier space
+    Matrix<dcomplex> bk; ///< b vector in Fourier space
 
     Matrix<dcomplex> avec, bvec, cvec; ///< Diagonal bands of matrix
-  
+
     int jy; ///< Y index
-  
+
     Matrix<dcomplex> xk;
     Matrix<dcomplex> v, w;
 
     Array<BoutReal> snd; // send buffer
     Array<BoutReal> rcv; // receive buffer
-  
+
     comm_handle recv_handle;
 
     Array<dcomplex> y2i;
   };
-  
-  void start(const FieldPerp &b, PDD_data &data);
-  void next(PDD_data &data);
-  void finish(PDD_data &data, FieldPerp &x);
+
+  void start(const FieldPerp& b, PDD_data& data);
+  void next(PDD_data& data);
+  void finish(PDD_data& data, FieldPerp& x);
 };
 
 #endif // __LAPLACE_PDD_H__

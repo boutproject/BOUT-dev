@@ -32,7 +32,7 @@ public:
   const char* what() const noexcept override {
     return message.c_str();
   }
-  void DEPRECATED(Backtrace()) {};
+  void DEPRECATED(Backtrace()){};
 
   /// Return the exception message along with the MsgStack and
   /// backtrace (if available)

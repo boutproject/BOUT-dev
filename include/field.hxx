@@ -290,10 +290,10 @@ inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
 }
 
-template<typename T>
+template <typename T>
 [[deprecated("Please use toFieldAligned(const T& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline T toFieldAligned(const T& f, REGION region) {
+             "const std::string& region = \"RGN_ALL\") instead")]] inline T
+toFieldAligned(const T& f, REGION region) {
   return toFieldAligned(f, toString(region));
 }
 
@@ -304,10 +304,10 @@ inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
 }
 
-template<typename T>
+template <typename T>
 [[deprecated("Please use fromFieldAligned(const T& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline T fromFieldAligned(const T& f, REGION region) {
+             "const std::string& region = \"RGN_ALL\") instead")]] inline T
+fromFieldAligned(const T& f, REGION region) {
   return fromFieldAligned(f, toString(region));
 }
 
@@ -345,10 +345,10 @@ inline BoutReal min(const T& f, bool allpe = false,
   return result;
 }
 
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template <typename T, typename = bout::utils::EnableIfField<T>>
 [[deprecated("Please use Field3D min(const Field3D& f, bool allpe, "
-    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
-inline BoutReal min(const T& f, bool allpe, REGION rgn) {
+             "const std::string& region = \"RGN_NOBNDRY\") instead")]] inline BoutReal
+min(const T& f, bool allpe, REGION rgn) {
   return min(f, allpe, toString(rgn));
 }
 
@@ -432,10 +432,10 @@ inline BoutReal max(const T& f, bool allpe = false,
   return result;
 }
 
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template <typename T, typename = bout::utils::EnableIfField<T>>
 [[deprecated("Please use Field3D max(const Field3D& f, bool allpe, "
-    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
-inline BoutReal max(const T& f, bool allpe, REGION rgn) {
+             "const std::string& region = \"RGN_NOBNDRY\") instead")]] inline BoutReal
+max(const T& f, bool allpe, REGION rgn) {
   return max(f, allpe, toString(rgn));
 }
 
@@ -475,10 +475,10 @@ inline BoutReal mean(const T& f, bool allpe = false,
   return result / static_cast<BoutReal>(count);
 }
 
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template <typename T, typename = bout::utils::EnableIfField<T>>
 [[deprecated("Please use Field3D mean(const Field3D& f, bool allpe, "
-    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
-inline BoutReal mean(const T& f, bool allpe, REGION rgn) {
+             "const std::string& region = \"RGN_NOBNDRY\") instead")]] inline BoutReal
+mean(const T& f, bool allpe, REGION rgn) {
   return mean(f, allpe, toString(rgn));
 }
 
@@ -500,10 +500,10 @@ T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
   checkData(result);
   return result;
 }
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template <typename T, typename = bout::utils::EnableIfField<T>>
 [[deprecated("Please use pow(const T& lhs, const T& rhs"
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline T pow(const T& lhs, const T& rhs, REGION rgn) {
+             "const std::string& region = \"RGN_ALL\") instead")]] inline T
+pow(const T& lhs, const T& rhs, REGION rgn) {
   return pow(lhs, rhs, toString(rgn));
 }
 
@@ -522,10 +522,10 @@ T pow(const T &lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
   checkData(result);
   return result;
 }
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template <typename T, typename = bout::utils::EnableIfField<T>>
 [[deprecated("Please use pow(const T& lhs, BoutReal rhs"
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline T pow(const T& lhs, BoutReal rhs, REGION rgn) {
+             "const std::string& region = \"RGN_ALL\") instead")]] inline T
+pow(const T& lhs, BoutReal rhs, REGION rgn) {
   return pow(lhs, rhs, toString(rgn));
 }
 
@@ -545,13 +545,12 @@ T pow(BoutReal lhs, const T &rhs, const std::string& rgn = "RGN_ALL") {
   checkData(result);
   return result;
 }
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template <typename T, typename = bout::utils::EnableIfField<T>>
 [[deprecated("Please use pow(BoutReal lhs, const T& rhs"
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline T pow(BoutReal lhs, const T& rhs, REGION rgn) {
+             "const std::string& region = \"RGN_ALL\") instead")]] inline T
+pow(BoutReal lhs, const T& rhs, REGION rgn) {
   return pow(lhs, rhs, toString(rgn));
 }
-
 
 /*!
  * This macro takes a function \p func, which is
@@ -572,23 +571,23 @@ inline T pow(BoutReal lhs, const T& rhs, REGION rgn) {
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else
-#define FIELD_FUNC(name, func)                                                       \
-  template<typename T, typename = bout::utils::EnableIfField<T>>                     \
-  inline T name(const T &f, const std::string& rgn = "RGN_ALL") {                    \
-    AUTO_TRACE();                                                                    \
-    /* Check if the input is allocated */                                            \
-    checkData(f);                                                                    \
-    /* Define and allocate the output result */                                      \
-    T result{emptyFrom(f)};                                                          \
-    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                   \
-    checkData(result);                                                               \
-    return result;                                                                   \
-  }                                                                                  \
-  template<typename T, typename = bout::utils::EnableIfField<T>>                     \
-  [[deprecated("Please use func(const T& f, "                                   \
-      "const std::string& region = \"RGN_ALL\") instead")]]                          \
-  inline T name(const T& f, REGION region) {                                         \
-    return name(f, toString(region));                                                \
+#define FIELD_FUNC(name, func)                                                \
+  template <typename T, typename = bout::utils::EnableIfField<T>>             \
+  inline T name(const T& f, const std::string& rgn = "RGN_ALL") {             \
+    AUTO_TRACE();                                                             \
+    /* Check if the input is allocated */                                     \
+    checkData(f);                                                             \
+    /* Define and allocate the output result */                               \
+    T result{emptyFrom(f)};                                                   \
+    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }            \
+    checkData(result);                                                        \
+    return result;                                                            \
+  }                                                                           \
+  template <typename T, typename = bout::utils::EnableIfField<T>>             \
+  [[deprecated("Please use func(const T& f, "                                 \
+               "const std::string& region = \"RGN_ALL\") instead")]] inline T \
+  name(const T& f, REGION region) {                                           \
+    return name(f, toString(region));                                         \
   }
 #endif
 
@@ -703,10 +702,10 @@ inline bool finite(const T &f, const std::string& rgn = "RGN_ALL") {
 
   return true;
 }
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template <typename T, typename = bout::utils::EnableIfField<T>>
 [[deprecated("Please use bool finite(const Field3D& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline bool finite(const T& f, REGION rgn) {
+             "const std::string& region = \"RGN_ALL\") instead")]] inline bool
+finite(const T& f, REGION rgn) {
   return finite(f, toString(rgn));
 }
 
@@ -738,10 +737,10 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
 
   return result;
 }
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template <typename T, typename = bout::utils::EnableIfField<T>>
 [[deprecated("Please use floor(const T& var, BoutReal f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline T floor(const T& var, BoutReal f, REGION rgn) {
+             "const std::string& region = \"RGN_ALL\") instead")]] inline T
+floor(const T& var, BoutReal f, REGION rgn) {
   return floor(var, f, toString(rgn));
 }
 
