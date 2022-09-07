@@ -274,8 +274,8 @@ models, and the most useful of them are:
 
 .. code-block:: cfg
 
-    NOUT = 100       # number of time-points output
-    TIMESTEP = 1.0   # time between outputs
+    nout = 100       # number of time-points output
+    timestep = 1.0   # time between outputs
 
 which set the number of outputs, and the time step between them. Note
 that this has nothing to do with the internal timestep used to advance
@@ -359,10 +359,10 @@ multiples or fractions of :math:`2\pi`. To specify a fraction of
 
 .. code-block:: cfg
 
-    ZPERIOD = 10
+    zperiod = 10
 
 This specifies a Z range from :math:`0` to
-:math:`2\pi / {\texttt{ZPERIOD}}`, and is useful for simulation of
+:math:`2\pi / {\texttt{zperiod}}`, and is useful for simulation of
 tokamaks to make sure that the domain is an integer fraction of a torus.
 If instead you want to specify the Z range directly (for example if Z is
 not an angle), there are the options
