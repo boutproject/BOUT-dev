@@ -106,7 +106,7 @@ Various sources of documentation are:
 License and terms of use
 ------------------------
 
-Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+Copyright 2010 - 2022 BOUT++ contributors
 
 BOUT++ is free software: you can redistribute it and/or modify it
 under the terms of the GNU Lesser General Public License as published
@@ -129,8 +129,8 @@ BOUT++ is free software, but since it is a scientific code we also ask
 that you show professional courtesy when using this code:
 
 #. Since you are benefiting from work on BOUT++, we ask that you submit
-   any improvements you make to the code to us by emailing Ben Dudson at
-   bd512@york.ac.uk
+   any improvements you make to the code to us via the boutproject github
+   issues and pull-request system.
 
 #. If you use BOUT++ results in a paper or professional publication, we
    ask that you send your results to one of the BOUT++ authors first so
