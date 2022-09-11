@@ -19,7 +19,7 @@ with open("slicingexamples") as f:
 print(*examples)
 print(field.shape)
 for ex in examples:
-    
+
     if "=" in ex:
         pass
     else:
@@ -41,5 +41,5 @@ assert np.all(fout == nout) , f"data mismatch, {{ fout == nout }}"
         except:
             print("Failed to test", ex)
             raise
-        
-#slicings = 2, 
+
+# slicings = 2,

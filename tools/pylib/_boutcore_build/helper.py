@@ -6,7 +6,7 @@ def _resolve_slice(ind, num):
         if rem != 0:
             ret[1] -= rem
             ret[1] += ret[2]
-        if d*ret[2] < 0:
+        if d * ret[2] < 0:
             return [0, 0, 1]
         return ret
     if ind < 0:
