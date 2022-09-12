@@ -59,13 +59,13 @@ int getNz( {{ field.field_type }} * a){
 {% for name, op in ops %}
 {{ field.field_type }} * f{{ name }}({{ field.field_type }}* a, {{ field.field_type }}* b){
   {{ field.field_type }} * r = new {{ field.field_type }}(*a);
-  *r {{ op }} = *b;
+  *r {{ op }}= *b;
   return r;
 }
 
 {{ field.field_type }} * f{{ name }}({{ field.field_type }}* a, double b){
   {{ field.field_type }} * r = new {{ field.field_type }}(*a);
-  *r {{ op }} = b;
+  *r {{ op }}= b;
   return r;
 }
 
@@ -74,18 +74,18 @@ int getNz( {{ field.field_type }} * a){
 }
 
 void fi{{ name }}({{ field.field_type }}* a, {{ field.field_type }}* b){
-  *a {{ op }} = *b;
+  *a {{ op }}= *b;
 }
 
 void fi{{ name }}({{ field.field_type }}* a, double b){
-  *a {{ op }} = b;
+  *a {{ op }}= b;
 }
 
-{% if field.field_type = = "Field3D" %}
+{% if field.field_type == "Field3D" %}
 
 Field3D * f{{ name }}(Field3D* a, Field2D* b){
   Field3D * r = new Field3D(*a);
-  *r {{ op }} = *b;
+  *r {{ op }}= *b;
   return r;
 }
 
@@ -94,7 +94,7 @@ Field3D * f{{ name }}(Field2D*a,Field3D*b){
 }
 
 void fi{{ name }}(Field3D*a,Field2D*b){
-  *a {{ op }} = *b;
+  *a {{ op }}= *b;
 }
 {% endif %}
 {% endfor %}
