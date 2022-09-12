@@ -7,10 +7,10 @@
 {% for field in [field3d, field2d] %}
 
 void c_set_all({{ field.field_type }} * f, const double * data){
-  int j=0;
+  int j = 0;
   f->allocate();
   for (auto i : (*f)){
-    (*f)[i]=data[j++];
+    (*f)[i] = data[j++];
   }
 }
 
@@ -24,7 +24,7 @@ void c_set_all({{ field.field_type }} * f, const {{ field.field_type }} * rhs){
 void c_set_part({{ field.field_type }}* field, const double* data, const size_t* indices, size_t num){
   // get pointer of data field
   double * field_data = &(*field)[Ind{{ field.ndims }}D(0)];
-  for (size_t j=0; j < num ; ++j){
+  for (size_t j = 0; j < num ; ++j){
     field_data[indices[j]] = data[j];
   }
 }
@@ -32,8 +32,8 @@ void c_set_part({{ field.field_type }}* field, const double* data, const size_t*
 void c_get_part({{ field.field_type }}* field, double* data, const size_t* indices, size_t num){
   // get pointer of data field
   double * field_data = &(*field)[Ind{{ field.ndims }}D(0)];
-  for (size_t j=0; j < num ; ++j){
-     data[j] = field_data[indices[j]];
+  for (size_t j = 0; j < num ; ++j){
+    data[j] = field_data[indices[j]];
   }
 }
 
@@ -58,14 +58,14 @@ int getNz( {{ field.field_type }} * a){
 
 {% for name, op in ops %}
 {{ field.field_type }} * f{{ name }}({{ field.field_type }}* a, {{ field.field_type }}* b){
-  {{ field.field_type }} * r=new {{ field.field_type }}(*a);
-  *r {{ op }}= *b;
+  {{ field.field_type }} * r = new {{ field.field_type }}(*a);
+  *r {{ op }} = *b;
   return r;
 }
 
 {{ field.field_type }} * f{{ name }}({{ field.field_type }}* a, double b){
-  {{ field.field_type }} * r=new {{ field.field_type }}(*a);
-  *r {{ op }}= b;
+  {{ field.field_type }} * r = new {{ field.field_type }}(*a);
+  *r {{ op }} = b;
   return r;
 }
 
@@ -74,18 +74,18 @@ int getNz( {{ field.field_type }} * a){
 }
 
 void fi{{ name }}({{ field.field_type }}* a, {{ field.field_type }}* b){
-  *a {{ op }}= *b;
+  *a {{ op }} = *b;
 }
 
 void fi{{ name }}({{ field.field_type }}* a, double b){
-  *a {{ op }}= b;
+  *a {{ op }} = b;
 }
 
-{% if field.field_type == "Field3D" %}
+{% if field.field_type = = "Field3D" %}
 
 Field3D * f{{ name }}(Field3D* a, Field2D* b){
-  Field3D * r=new Field3D(*a);
-  *r {{ op }}= *b;
+  Field3D * r = new Field3D(*a);
+  *r {{ op }} = *b;
   return r;
 }
 
@@ -94,7 +94,7 @@ Field3D * f{{ name }}(Field2D*a,Field3D*b){
 }
 
 void fi{{ name }}(Field3D*a,Field2D*b){
-  *a {{ op }}= *b;
+  *a {{ op }} = *b;
 }
 {% endif %}
 {% endfor %}
@@ -103,11 +103,11 @@ void fi{{ name }}(Field3D*a,Field2D*b){
 
 {% set indices = field3d.makelist("size_t $ds, size_t $de, int d$d") %}
 void c_get_f3d_part(const Field3D * f3d, double * data, {{ indices }}){
-  int j=0;
-  for (int x=xs;x!=xe;x+=dx){
-    for (int y=ys;y!=ye;y+=dy){
-      for (int z=zs;z!=ze;z+=dz){
-        data[j++]=(*f3d)(x,y,z);
+  int j = 0;
+  for (size_t x = xs; x != xe; x += dx){
+    for (size_t y = ys; y != ye; y += dy){
+      for (size_t z = zs; z != ze; z += dz){
+	data[j++] = (*f3d)(x,y,z);
       }
     }
   }
@@ -115,50 +115,50 @@ void c_get_f3d_part(const Field3D * f3d, double * data, {{ indices }}){
 
 void c_set_f3d_part(Field3D * f3d, const double * data, {{ indices }}){
   f3d->allocate();
-  int j=0;
-  for (int x=xs;x!=xe;x+=dx){
-    for (int y=ys;y!=ye;y+=dy){
-      for (int z=zs;z!=ze;z+=dz){
-        (*f3d)(x,y,z)=data[j++];
+  size_t j = 0;
+  for (size_t x = xs; x != xe; x += dx){
+    for (size_t y = ys; y != ye; y += dy){
+      for (size_t z = zs; z != ze; z += dz){
+	(*f3d)(x,y,z) = data[j++];
       }
     }
   }
 }
 void c_set_f3d_part_(Field3D * f3d, const double data, {{ indices }}){
   f3d->allocate();
-  for (int x=xs;x!=xe;x+=dx){
-    for (int y=ys;y!=ye;y+=dy){
-      for (int z=zs;z!=ze;z+=dz){
-        (*f3d)(x,y,z)=data;
+  for (size_t x = xs; x != xe; x += dx){
+    for (size_t y = ys; y != ye; y += dy){
+      for (size_t z = zs; z != ze; z += dz){
+	(*f3d)(x,y,z) = data;
       }
     }
   }
 }
 
-{% set indices = field2d.makelist("size_t $ds, size_t $de, int d$d") %}
+{% set indices = field2d.makelist("size_t $ds, size_t $de, size_t d$d") %}
 void c_get_f2d_part(const Field2D * f2d, double * data, {{ indices }}){
-  int j=0;
-  for (int x=xs;x!=xe;x+=dx){
-    for (int y=ys;y!=ye;y+=dy){
-      data[j++]=(*f2d)(x,y);
+  size_t j = 0;
+  for (size_t x = xs; x != xe; x += dx){
+    for (size_t y = ys; y != ye; y += dy){
+      data[j++] = (*f2d)(x,y);
     }
   }
 }
 
 void c_set_f2d_part(Field2D * f2d, const double * data, {{ indices }}){
   f2d->allocate();
-  int j=0;
-  for (int x=xs;x!=xe;x+=dx){
-    for (int y=ys;y!=ye;y+=dy){
-      (*f2d)(x,y)=data[j++];
+  size_t j = 0;
+  for (size_t x = xs; x != xe; x += dx){
+    for (size_t y = ys; y != ye; y += dy){
+      (*f2d)(x,y) = data[j++];
     }
   }
 }
 void c_set_f2d_part_(Field2D * f2d, const double data, {{ indices }}){
   f2d->allocate();
-  for (int x=xs;x!=xe;x+=dx){
-    for (int y=ys;y!=ye;y+=dy){
-      (*f2d)(x,y)=data;
+  for (size_t x = xs; x != xe; x += dx){
+    for (size_t y = ys; y != ye; y += dy){
+      (*f2d)(x,y) = data;
     }
   }
 }
@@ -170,8 +170,8 @@ Mesh * c_get_global_mesh(){
 void c_mesh_normalise(Mesh * msh, double norm){
   //printf("%g\n",norm);
   auto coord = msh->getCoordinates();
-  coord->dx/=norm;
-  coord->dy/=norm;
-  coord->dz/=norm;
+  coord->dx /= norm;
+  coord->dy /= norm;
+  coord->dz /= norm;
   coord->geometry();
 }
