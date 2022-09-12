@@ -3,3 +3,5 @@ bout_add_integrated_test(test-boutcore-mms-ddz
   USE_DATA_BOUT_INP
   REQUIRES BOUT_ENABLE_PYTHON
 )
+
+add_dependencies(test-boutcore-mms-ddz boutcore)

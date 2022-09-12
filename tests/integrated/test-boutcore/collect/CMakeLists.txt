@@ -3,3 +3,5 @@ bout_add_integrated_test(test-boutcore-collect
   EXTRA_FILES input/BOUT.inp
   REQUIRES BOUT_ENABLE_PYTHON
 )
+
+add_dependencies(test-boutcore-collect boutcore)
