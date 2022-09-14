@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# requires: not travis
-#
 # Run the test, compare results against the benchmark
 
 import sys
