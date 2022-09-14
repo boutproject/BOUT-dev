@@ -21,8 +21,6 @@ MYG = 2
 
 grid = "data/uedge.grd.nc"
 
-dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
-
 [mesh]
 staggergrids = true
 

@@ -354,7 +354,21 @@ public:
     is_section = true; // Invalidates any existing setting
     assign(val, source);
   }
-  
+
+  /// Assign a value that is expected to vary in time.
+  ///
+  /// Overwrites any existing setting, and ensures the "time_dimension"
+  /// attribute is set. If \p save_repeat is false, doesn't set
+  /// "time_dimension". This can be useful in some generic functions
+  template <typename T>
+  void assignRepeat(T val, std::string time_dimension = "t", bool save_repeat = true,
+                    std::string source = "") {
+    force(val, std::move(source));
+    if (save_repeat) {
+      attributes["time_dimension"] = std::move(time_dimension);
+    }
+  }
+
   /// Test if a key is set by the user.
   /// Values set via default values are ignored.
   bool isSet() const;
@@ -368,9 +382,9 @@ public:
   ///
   /// Example:
   ///
-  /// Options option;
-  /// option["test"] = 2.0;
-  /// int value = option["test"];
+  ///     Options option;
+  ///     option["test"] = 2.0;
+  ///     int value = option["test"];
   ///
   template <typename T, typename = typename std::enable_if_t<
                             bout::utils::isVariantMember<T, ValueType>::value>>
@@ -378,21 +392,21 @@ public:
     return as<T>();
   }
 
-  /// Get the value as a specified type
-  /// If there is no value then an exception is thrown
-  /// Note there are specialised versions of this template
-  /// for some types.
+  /// Get the value as a specified type. If there is no value then an
+  /// exception is thrown. Note there are specialised versions of
+  /// this template for some types.
   ///
   /// Example:
   ///
-  /// Options option;
-  /// option["test"] = 2.0;
-  /// int value = option["test"].as<int>();
+  ///     Options option;
+  ///     option["test"] = 2.0;
+  ///     int value = option["test"].as<int>();
   ///
   /// An optional argument is an object which the result should be similar to.
   /// The main use for this is in Field2D and Field3D specialisations,
   /// where the Mesh and cell location are taken from this input.
-  /// 
+  ///
+  /// Attributes override properties of the \p similar_to argument.
   template <typename T>
   T as(const T& UNUSED(similar_to) = {}) const {
     if (is_section) {
@@ -719,8 +733,9 @@ public:
     return lhs.children == rhs.children;
   }
 
- private:
-  
+  static std::string getDefaultSource();
+
+private:
   /// The source label given to default values
   static const std::string DEFAULT_SOURCE;
   
@@ -785,12 +800,18 @@ template<> inline void Options::assign<>(std::string val, std::string source) { 
 // Note: const char* version needed to avoid conversion to bool
 template<> inline void Options::assign<>(const char *val, std::string source) { _set(std::string(val), source, false);}
 // Note: Field assignments don't check for previous assignment (always force)
-template<> inline void Options::assign<>(Field2D val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(Field3D val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(FieldPerp val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(Array<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(Matrix<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(Tensor<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
+template <>
+void Options::assign<>(Field2D val, std::string source);
+template <>
+void Options::assign<>(Field3D val, std::string source);
+template <>
+void Options::assign<>(FieldPerp val, std::string source);
+template <>
+void Options::assign<>(Array<BoutReal> val, std::string source);
+template <>
+void Options::assign<>(Matrix<BoutReal> val, std::string source);
+template <>
+void Options::assign<>(Tensor<BoutReal> val, std::string source);
 
 /// Specialised similar comparison methods
 template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }
@@ -803,6 +824,12 @@ template <> bool Options::as<bool>(const bool& similar_to) const;
 template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const;
 template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
 template <> FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
+template <>
+Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) const;
+template <>
+Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_to) const;
+template <>
+Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_to) const;
 
 /// Convert \p value to string
 std::string toString(const Options& value);

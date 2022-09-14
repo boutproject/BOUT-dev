@@ -869,20 +869,22 @@ quantities from the grid file are accessed through Mesh::get.
 Time dependence
 ~~~~~~~~~~~~~~~
 
-When writing NetCDF files, some variables should have a time
-dimension added, and then be added to each time they are written. This
-has been implemented using an attribute: If variables in the ``Options``
-tree have an attribute "time_dimension" then that is used as the name
+When writing NetCDF files, some variables should have a time dimension
+added, and then be added to each time they are written. This has been
+implemented using an attribute: If variables in the ``Options`` tree
+have an attribute ``"time_dimension"`` then that is used as the name
 of the time dimension in the output file. This allows multiple time
 dimensions e.g. high frequency diagnostics and low frequency outputs,
-to exist in the same file::
+to exist in the same file. `Options::assignRepeat` can be used to
+automatically set the ``"time_dimension"`` attribute::
 
   Options data;
   data["scalar"] = 1.0;
+  // You can set the attribute manually like so:
   data["scalar"].attributes["time_dimension"] = "t";
   
-  data["field"] = Field3D(2.0);
-  data["field"].attributes["time_dimension"] = "t";
+  // Or use `assignRepeat` to do it automatically:
+  data["field"].assignRepeat(Field3D(2.0));
   
   OptionsNetCDF("time.nc").write(data);
   
@@ -894,14 +896,11 @@ to exist in the same file::
   // Append data to file
   OptionsNetCDF("time.nc", OptionsNetCDF::FileMode::append).write(data);
 
-Some issues:
-
-* Currently all variables in the Options tree are written when passed
-  to ``OptionsNetCDF::write``. This means that the variables with
-  different time dimensions should be stored in different Options
-  trees, so they can be written at different times. One possibility is
-  to have an optional argument to write, so that only variables with
-  one specified time dimension are updated.
+.. note:: By default, `OptionsNetCDF::write` will only write variables
+          with a ``"time_dimension"`` of ``"t"``. You can write
+          variables with a different time dimension by passing it as
+          the second argument:
+          ``OptionsNetCDF(filename).write(options, "t2")`` for example.
 
 
 FFT
