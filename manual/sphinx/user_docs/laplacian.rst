@@ -30,6 +30,7 @@ implementations are listed in table :numref:`tab-laplacetypes`.
 .. _tab-laplacetypes:
 .. table:: Laplacian implementation types
    :width: 100
+   :widths: 15 75 10
 
    +------------------------+--------------------------------------------------------------+------------------------------------------+
    | Name                   | Description                                                  | Requirements                             |
