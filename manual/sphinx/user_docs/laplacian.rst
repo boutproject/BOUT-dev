@@ -29,8 +29,6 @@ implementations are listed in table :numref:`tab-laplacetypes`.
 
 .. _tab-laplacetypes:
 .. table:: Laplacian implementation types
-   :width: 100
-   :widths: 15 75 10
 
    +------------------------+--------------------------------------------------------------+------------------------------------------+
    | Name                   | Description                                                  | Requirements                             |
@@ -157,7 +155,6 @@ within the physics module using ``setGlobalFlags``,
 
 .. _tab-laplacesettings:
 .. table:: Laplacian inversion options
-   :width: 100
 
    +--------------------------+-------------------------------------------------------------------------+----------------------------------------------+
    | Name                     | Meaning                                                                 | Default value                                |
@@ -195,7 +192,6 @@ within the physics module using ``setGlobalFlags``,
 
 .. _tab-laplaceglobalflags:
 .. table:: Laplacian inversion ``global_flags`` values: add the required quantities together.
-   :width: 100
 
    +--------+--------------------------------------------------------------------------------+-----------------------------+
    | Flag   | Meaning                                                                        | Code variable               |
@@ -219,7 +215,6 @@ within the physics module using ``setGlobalFlags``,
 
 .. _tab-laplaceBCflags:
 .. table:: Laplacian inversion ``outer_boundary_flags`` or ``inner_boundary_flags`` values: add the required quantities together.
-   :width: 100
 
    +--------+----------------------------------------------------------------------+----------------------------+
    | Flag   | Meaning                                                              | Code variable              |
@@ -265,7 +260,6 @@ within the physics module using ``setGlobalFlags``,
 
 .. _tab-laplaceflags:
 .. table:: Laplacian inversion ``flags`` values (DEPRECATED!): add the required quantities together.
-   :width: 100
 
    +--------+------------------------------------------------------------------------------------------+
    | Flag   | Meaning                                                                                  |
