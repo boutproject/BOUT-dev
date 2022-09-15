@@ -5,3 +5,4 @@ bout_add_integrated_test(test-boutcore-mms-ddz
 )
 
 add_dependencies(test-boutcore-mms-ddz boutcore)
+add_dependencies(build-check-integrated-tests boutcore)

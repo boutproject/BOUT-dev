@@ -5,3 +5,4 @@ bout_add_integrated_test(test-boutcore-collect-staggered
 )
 
 add_dependencies(test-boutcore-collect-staggered boutcore)
+add_dependencies(build-check-integrated-tests boutcore)

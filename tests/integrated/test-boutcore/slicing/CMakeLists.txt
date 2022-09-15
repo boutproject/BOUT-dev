@@ -5,3 +5,4 @@ bout_add_integrated_test(test-boutcore-slicing
 )
 
 add_dependencies(test-boutcore-slicing boutcore)
+add_dependencies(build-check-integrated-tests boutcore)

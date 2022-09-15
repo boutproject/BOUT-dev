@@ -5,3 +5,4 @@ bout_add_integrated_test(test-boutcore-print
 )
 
 add_dependencies(test-boutcore-print boutcore)
+add_dependencies(build-check-integrated-tests boutcore)

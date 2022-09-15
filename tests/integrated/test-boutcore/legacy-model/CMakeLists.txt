@@ -5,3 +5,4 @@ bout_add_integrated_test(test-boutcore-legacy-model
 )
 
 add_dependencies(test-boutcore-legacy-model boutcore)
+add_dependencies(build-check-integrated-tests boutcore)
