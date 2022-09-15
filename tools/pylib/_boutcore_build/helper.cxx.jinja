@@ -135,7 +135,7 @@ void c_set_f3d_part_(Field3D * f3d, const double data, {{ indices }}){
   }
 }
 
-{% set indices = field2d.makelist("size_t $ds, size_t $de, size_t d$d") %}
+{% set indices = field2d.makelist("size_t $ds, size_t $de, int d$d") %}
 void c_get_f2d_part(const Field2D * f2d, double * data, {{ indices }}){
   size_t j = 0;
   for (size_t x = xs; x != xe; x += dx){
