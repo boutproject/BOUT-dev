@@ -70,6 +70,17 @@ public:
   inline const bool& operator()(int jx, int jy, int jz) const {
     return mask(jx, jy, jz);
   }
+  inline const bool& operator[](const Ind3D& i) const { return mask[i]; }
 };
 
+inline std::unique_ptr<Region<Ind3D>> regionFromMask(const BoutMask& mask,
+                                                     const Mesh* mesh) {
+  std::vector<Ind3D> indices;
+  for (auto i : mesh->getRegion("RGN_ALL")) {
+    if (not mask(i.x(), i.y(), i.z())) {
+      indices.push_back(i);
+    }
+  }
+  return std::make_unique<Region<Ind3D>>(indices);
+}
 #endif //__MASK_H__

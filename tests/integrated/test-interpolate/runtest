@@ -71,7 +71,7 @@ for method in methods:
 
             E = interp - solution
 
-            l2 = float(sqrt(mean(E ** 2)))
+            l2 = float(sqrt(mean(E**2)))
             linf = float(max(abs(E)))
 
             error_2[var].append(l2)

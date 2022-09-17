@@ -209,7 +209,7 @@ if (Br == None) or (Bz == None):
     # Use dpsi = 2*PI*R*Bp dx (for now)
     Bpol = None
 else:
-    Bpol = np.sqrt(Br ** 2 + Bz ** 2)
+    Bpol = np.sqrt(Br**2 + Bz**2)
 
 # Calculate toroidal field
 Btor = old_div(fnorm, xnorm)

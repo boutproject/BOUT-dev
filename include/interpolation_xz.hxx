@@ -35,24 +35,64 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x,
 const Field3D interpolate(const Field2D &f, const Field3D &delta_x);
 
 class XZInterpolation {
+public:
+  int y_offset;
+
 protected:
   Mesh* localmesh{nullptr};
 
-  // 3D vector of points to skip (true -> skip this point)
-  BoutMask skip_mask;
+  std::string region_name{""};
+  std::shared_ptr<Region<Ind3D>> region{nullptr};
 
 public:
   XZInterpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
-      : localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
-        skip_mask(*localmesh, false), y_offset(y_offset) {}
+      : y_offset(y_offset),
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn) {}
   XZInterpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : XZInterpolation(y_offset, mesh) {
-    skip_mask = mask;
+    region = regionFromMask(mask, localmesh);
   }
+  XZInterpolation(const std::string& region_name, int y_offset = 0, Mesh* mesh = nullptr)
+      : y_offset(y_offset), localmesh(mesh), region_name(region_name) {}
+  XZInterpolation(std::shared_ptr<Region<Ind3D>> region, int y_offset = 0,
+                  Mesh* mesh = nullptr)
+    : y_offset(y_offset), localmesh(mesh), region(std::move(region)) {}
   virtual ~XZInterpolation() = default;
 
-
-  void setMask(const BoutMask &mask) { skip_mask = mask; }
+  void setMask(const BoutMask& mask) {
+    region = regionFromMask(mask, localmesh);
+    region_name = "";
+  }
+  void setRegion(const std::string& region_name) {
+    this->region_name = region_name;
+    this->region = nullptr;
+  }
+  void setRegion(const std::shared_ptr<Region<Ind3D>>& region) {
+    this->region_name = "";
+    this->region = region;
+  }
+  void setRegion(const Region<Ind3D>& region) {
+    this->region_name = "";
+    this->region = std::make_shared<Region<Ind3D>>(region);
+  }
+  Region<Ind3D> getRegion() const {
+    if (!region_name.empty()) {
+      return localmesh->getRegion(region_name);
+    }
+    ASSERT1(region != nullptr);
+    return *region;
+  }
+  Region<Ind3D> getRegion(const std::string& region) const {
+    const bool has_region = !region_name.empty() or this->region != nullptr;
+    if (!region.empty() and region != "RGN_ALL") {
+      if (has_region) {
+        return getIntersection(localmesh->getRegion(region), getRegion());
+      }
+      return localmesh->getRegion(region);
+    }
+    ASSERT1(has_region);
+    return getRegion();
+  }
   virtual void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                            const std::string& region = "RGN_NOBNDRY") = 0;
   virtual void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
@@ -69,7 +109,6 @@ public:
                               const std::string& region = "RGN_NOBNDRY") = 0;
 
   // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
-  int y_offset;
   void setYOffset(int offset) { y_offset = offset; }
 
   virtual std::vector<ParallelTransform::PositionsAndWeights>
@@ -117,7 +156,7 @@ public:
   XZHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr);
   XZHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : XZHermiteSpline(y_offset, mesh) {
-    skip_mask = mask;
+    region = regionFromMask(mask, localmesh);
   }
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
@@ -175,7 +214,7 @@ public:
   XZLagrange4pt(int y_offset = 0, Mesh *mesh = nullptr);
   XZLagrange4pt(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : XZLagrange4pt(y_offset, mesh) {
-    skip_mask = mask;
+    region = regionFromMask(mask, localmesh);
   }
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
@@ -208,7 +247,7 @@ public:
   XZBilinear(int y_offset = 0, Mesh *mesh = nullptr);
   XZBilinear(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : XZBilinear(y_offset, mesh) {
-    skip_mask = mask;
+    region = regionFromMask(mask, localmesh);
   }
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
