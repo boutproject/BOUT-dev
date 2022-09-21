@@ -289,6 +289,17 @@ cdef class {{ field.field_type }}:
         c_get_{{ field.fdd }}_all(self.cobj, &data_[{{ zeros }}]);
         return data_
 
+    def getMesh(self):
+        """
+        Get the mesh associated with the field
+
+        Returns
+        -------
+        bc.Mesh
+            The mesh of the field
+        """
+        return meshFromPtr(self.cobj[0].getMesh())
+
     def setLocation(self, location):
         """
         Set the location of the {{ field.field_type }}
@@ -665,7 +676,7 @@ cdef class Mesh:
     It contains also the coordinates and is responsible for taking deriavtives.
     """
     cdef c.Mesh * cobj;
-    cdef c.bool isGlobal
+    cdef c.bool isSelfOwned
     cdef double isNormalised
     cdef FieldFactory factory
     cdef Coordinates _coords
@@ -694,11 +705,12 @@ cdef class Mesh:
         self.cobj=<c.Mesh*>0
         cdef c.string tmp
         cdef c.Options * opt = NULL
-        self.isGlobal=False
+        self.isSelfOwned = False
         self.isNormalised=-1
         self.factory = FieldFactory()
         self._coords = None
         if create:
+            self.isSelfOwned = True
             if options:
                 opt = (<Options?>options).cobj
                 # Safe copy - to prevent GC
@@ -727,14 +739,14 @@ cdef class Mesh:
         checkInit()
         msh = Mesh(create=False);
         msh.cobj = c_get_global_mesh();
-        msh.isGlobal=True
+        msh.isSelfOwned = False
         return msh
 
     def __dealloc__(self):
         self.__boutcore_dealloc()
 
     def __boutcore_dealloc(self):
-        if self.cobj and not self.isGlobal:
+        if self.cobj and self.isSelfOwned:
             del self.cobj
             self.cobj = NULL
 
@@ -795,6 +807,14 @@ cdef class Mesh:
         if self._coords is None:
             self._coords = coordsFromPtr(self.cobj.getCoordinates())
         return self._coords
+
+
+cdef Mesh meshFromPtr(c.Mesh * obj):
+    mesh = Mesh()
+    mesh.cobj = obj
+    mesh.isSelfOwned = False
+    return mesh
+
 
 cdef Coordinates coordsFromPtr(c.Coordinates * obj):
     coords = Coordinates()
