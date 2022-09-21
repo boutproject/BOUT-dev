@@ -919,12 +919,6 @@ cdef class FieldFactory:
             del self.cobj
             self.cobj = NULL
 
-    # @classmethod
-    # def fromPtr(cls,FieldFactory * cobj_):
-    #     fu=cls()
-    #     fu.cobj=cobj_
-    #     return fu
-
 cdef void callback(void * parameter, void * method) with gil:
     cdef double time = (<double*>parameter)[0]
     cdef c.string str_
