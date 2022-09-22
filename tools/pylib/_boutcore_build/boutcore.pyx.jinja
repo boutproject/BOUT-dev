@@ -12,6 +12,9 @@ from libc.stdlib cimport malloc, free
 import copy
 from libcpp.memory cimport unique_ptr
 from cython.operator import dereference as deref
+import numbers
+import sys
+import gc
 
 size_t = np.uint
 
@@ -445,7 +448,6 @@ cdef class {{ field.field_type }}:
         slices = self._sanitise_slices(slices)
         if isinstance(slices, tuple) and all([isinstance(x, slice) for x in slices]):
             dims = []
-            import numbers
             inds = _resolve_slices(slices,
                                    [{{ field.makelist("self.cobj.getN$d()") }}])
             if isinstance(data, {{ field.field_type }}):
@@ -506,7 +508,6 @@ cdef class {{ field.field_type }}:
 
 {% for name, op in ops %}
     def __{{ name }}__(self,other):
-        import numbers
         result = {{ field.field_type }}()
         if isinstance(self,{{ field.field_type }}) and isinstance(other,{{ field.field_type }}):
             result.cobj = f{{ name }}((<{{ field.field_type }}?>self).cobj , (<{{ field.field_type }}?>other).cobj)
@@ -992,7 +993,6 @@ cdef class PhysicsModelBase(object):
         if self._done_pyinit == False:
             self._done_pyinit = True
             self.cmodel.pyinit()
-        import sys
         sys.stdout.flush()
         self.cmodel.solve()
 
@@ -1198,7 +1198,6 @@ def finalise():
     global _isInit
     wasInit = _isInit
     _isInit = False
-    import gc
     objects = gc.get_objects()
     ourClasses = (Coordinates, Field2D, Field3D, Mesh, Options,
                   PhysicsModel, PhysicsModelBase, Vector2D, Vector3D,
@@ -1625,7 +1624,6 @@ cdef class Options:
             sec_=sec.encode()
             opt=opt.getSection(sec_)
         cdef c.string key = name.split(":")[-1].encode()
-        import numbers
 
         cdef double ret_real=0
         cdef c.bool ret_bool=False
