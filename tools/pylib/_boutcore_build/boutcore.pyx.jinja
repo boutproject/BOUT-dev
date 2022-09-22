@@ -509,15 +509,15 @@ cdef class {{ field.field_type }}:
 {% for name, op in ops %}
     def __{{ name }}__(self,other):
         result = {{ field.field_type }}()
-        if isinstance(self,{{ field.field_type }}) and isinstance(other,{{ field.field_type }}):
-            result.cobj = f{{ name }}((<{{ field.field_type }}?>self).cobj , (<{{ field.field_type }}?>other).cobj)
-        elif isinstance(self,{{ field.field_type }}) and isinstance(other, numbers.Number):
-            result.cobj = f{{ name }}((<{{ field.field_type }}?>self).cobj , (<double?>float(other)))
-        elif isinstance(self,numbers.Number) and isinstance(other, {{ field.field_type }}):
-            result.cobj = f{{ name }}(<double?>float(self),(<{{ field.field_type }}?>other).cobj)
+        if isinstance(self, {{ field.field_type }}) and isinstance(other, {{ field.field_type }}):
+            result.cobj = f{{ name }}((<{{ field.field_type }}?>self).cobj, (<{{ field.field_type }}?>other).cobj)
+        elif isinstance(self, {{ field.field_type }}) and isinstance(other, numbers.Number):
+            result.cobj = f{{ name }}((<{{ field.field_type }}?>self).cobj, (<double?>float(other)))
+        elif isinstance(self, numbers.Number) and isinstance(other, {{ field.field_type }}):
+            result.cobj = f{{ name }}(<double?>float(self), (<{{ field.field_type }}?>other).cobj)
 {% if field == field3d %}
-        elif isinstance(self,Field3D) and isinstance(other,Field2D):
-            result.cobj = f{{ name }}((<Field3D?>self).cobj , (<Field2D?>other).cobj)
+        elif isinstance(self, Field3D) and isinstance(other, Field2D):
+            result.cobj = f{{ name }}((<Field3D?>self).cobj, (<Field2D?>other).cobj)
 {% endif %}
         else:
             return other.__r{{ name }}__(self)
@@ -525,23 +525,23 @@ cdef class {{ field.field_type }}:
 
     def __r{{ name }}__(self,lhs):
         result = {{ field.field_type }}()
-        if isinstance(lhs, float) or isinstance(lhs, int):
-            result.cobj = f{{ name }}(<double?>float(lhs),(<{{ field.field_type }}?>self).cobj)
+        if isinstance(lhs, (float, int)):
+            result.cobj = f{{ name }}(<double?>float(lhs), (<{{ field.field_type }}?>self).cobj)
 {% if field == field3d %}
-        elif isinstance(lhs,Field2D):
-            result.cobj = f{{ name }}((<Field2D?>lhs).cobj,(<Field3D?>self).cobj)
+        elif isinstance(lhs, Field2D):
+            result.cobj = f{{ name }}((<Field2D?>lhs).cobj, (<Field3D?>self).cobj)
 {% endif %}
         else:
             return NotImplemented
         return result
 
     def __i{{ name }}__(self,other):
-        if isinstance(other,{{ field.field_type }}):
+        if isinstance(other, {{ field.field_type }}):
             fi{{ name }}((<{{ field.field_type }}?>self).cobj , (<{{ field.field_type }}?>other).cobj)
-        elif isinstance(other, float) or isinstance(other, int):
+        elif isinstance(other, (float, int)):
             fi{{ name }}((<{{ field.field_type }}?>self).cobj , (<double?>float(other)))
 {% if field == field3d %}
-        elif isinstance(other,Field2D):
+        elif isinstance(other, Field2D):
             fi{{ name }}((<Field3D?>self).cobj , (<Field2D?>other).cobj)
 {% endif %}
         else:
@@ -1203,7 +1203,7 @@ def finalise():
                   PhysicsModel, PhysicsModelBase, Vector2D, Vector3D,
                   PythonModelCallback)
     for obj in objects:
-        if isinstance(obj,ourClasses):
+        if isinstance(obj, ourClasses):
             if hasattr(obj, "__boutcore_dealloc"):
                 obj.__boutcore_dealloc()
             else:
@@ -1665,9 +1665,9 @@ cdef class Datafile:
         cdef c.Field3D * f3d
         t2 = str.encode(name)
         tmp = t2
-        if isinstance(data,Field3D):
+        if isinstance(data, Field3D):
             f3d = (<Field3D>data).cobj
-            self.cobj.add(f3d[0],tmp,<c.bool>save_repeat)
+            self.cobj.add(f3d[0], tmp, <c.bool>save_repeat)
         else:
             raise TypeError("unsupported datatype")
     def write(self):
