@@ -78,7 +78,6 @@ public:
     solver->setModel(this);
     bout_monitor = new BoutMonitor();
     solver->addMonitor(bout_monitor, Solver::BACK);
-    solver->outputVars(bout::globals::dump);
   };
   void free(){
     delete bout_monitor;
@@ -105,8 +104,3 @@ private:
 void throw_BoutException(std::string err){
   throw BoutException(err);
 }
-
-Datafile * c_get_global_datafile(){
-  return &bout::globals::dump;
-}
-

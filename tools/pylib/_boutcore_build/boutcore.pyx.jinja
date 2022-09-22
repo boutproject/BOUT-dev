@@ -10,6 +10,7 @@ import atexit
 cimport resolve_enum as benum
 from libc.stdlib cimport malloc, free
 import copy
+from libcpp.string cimport string
 from libcpp.memory cimport unique_ptr
 from cython.operator import dereference as deref
 import numbers
@@ -665,7 +666,6 @@ cdef extern from "helper.h":
     void c_laplacian_solve(c.Laplacian *, c.Field3D *, c.Field3D*)
     c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
     void c_mesh_normalise(c.Mesh* , double)
-    c.Datafile * c_get_global_datafile()
 
 cdef class Mesh:
     """
@@ -1511,8 +1511,8 @@ def setOption(name, value, source="PyInterface", force=False):
         thrown. setting this to `True` avoids the exception.
     """
     checkInit()
-    root=Options("")
-    root.set(name,value,source,force)
+    root = Options.root()
+    root.set(name, value, source, force)
 
 cdef class Options:
     """
@@ -1521,7 +1521,16 @@ cdef class Options:
     cdef c.Options * cobj
     cdef c.bool isSelfOwned
 
-    def __init__(self,name=""):
+    def __init__(self, **kwargs):
+        """Construct an Options from keywords or dict"""
+        self.cobj = new c.Options()
+        self.isSelfOwned = False
+
+        for key, value in kwargs.items():
+            self[key] = value
+
+    @staticmethod
+    def root(name=""):
         """
         Get a section from the global options tree
 
@@ -1537,12 +1546,14 @@ cdef class Options:
             The Options object
         """
         checkInit()
-        self.cobj = c.Options.getRoot()
+        root = Options()
+        root.cobj = c.Options.getRoot()
         cdef c.string sec_
         for sec in name.split(":"):
-            sec_=sec.encode()
-            self.cobj=self.cobj.getSection(sec_)
-        self.isSelfOwned=False
+            sec_ = sec.encode('ascii')
+            root.cobj = root.cobj.getSection(sec_)
+        root.isSelfOwned = False
+        return root
 
     @classmethod
     def fromFile(cls, file):
@@ -1569,6 +1580,62 @@ cdef class Options:
         c.OptionsReader.getInstance().read(opt.cobj, "%s", file_)
         return opt
 
+    @staticmethod
+    def _check_is_variant_member(value):
+        if not isinstance(value, (bool, int, float, str, Field2D, Field3D)):
+           raise ValueError("value is not assignable to Options, wrong type")
+
+    def __getitem__(self, name):
+        opt = Options()
+        opt.cobj = &(deref(self.cobj)[<string> name.encode("ascii")])
+        return opt
+
+    def __setitem__(self, name, value):
+        self._check_is_variant_member(value)
+        if isinstance(value, Field2D):
+           deref(self.cobj)[<string> name.encode("ascii")] = deref((<Field2D>value).cobj)
+        elif isinstance(value, Field3D):
+           deref(self.cobj)[<string> name.encode("ascii")] = deref((<Field3D>value).cobj)
+        else:
+           deref(self.cobj)[<string> name.encode("ascii")] = value
+
+    def assign(self, value, source=""):
+        self._check_is_variant_member(value)
+
+        cdef string source_ = <string?> source.encode("ascii")
+
+        if isinstance(value, Field2D):
+           self.cobj.assign(deref((<Field2D>value).cobj), source_)
+        elif isinstance(value, Field3D):
+           self.cobj.assign(deref((<Field3D>value).cobj), source_)
+        else:
+           self.cobj.assign(value, source_)
+
+    def force(self, value, source=""):
+        self._check_is_variant_member(value)
+
+        cdef string source_ = <string?> source.encode("ascii")
+
+        if isinstance(value, Field2D):
+           self.cobj.force(deref((<Field2D>value).cobj), source_)
+        elif isinstance(value, Field3D):
+           self.cobj.force(deref((<Field3D>value).cobj), source_)
+        else:
+           self.cobj.force(value, source_)
+
+    def assignRepeat(self, value, time_dimension="t", save_repeat=True, source=""):
+        self._check_is_variant_member(value)
+
+        cdef string time_dimension_ = <string?> time_dimension.encode("ascii")
+        cdef string source_ = <string?> source.encode("ascii")
+        cdef c.bool save_repeat_ = <c.bool?> save_repeat
+
+        if isinstance(value, Field2D):
+           self.cobj.assignRepeat(deref((<Field2D>value).cobj), time_dimension_, save_repeat_, source_)
+        elif isinstance(value, Field3D):
+           self.cobj.assignRepeat(deref((<Field3D>value).cobj), time_dimension_, save_repeat_, source_)
+        else:
+           self.cobj.assignRepeat(value, time_dimension_, save_repeat_, source_)
 
     def set(self, name, value, source="PyInterface", force=False):
         """
@@ -1588,15 +1655,15 @@ cdef class Options:
             If a value is overwritten, an exception is
             thrown. setting this to `True` avoids the exception.
         """
-        cdef c.Options * opt=self.cobj
+        cdef c.Options* opt = self.cobj
         cdef c.string sec_
         for sec in name.split(":")[:-1]:
-            sec_=sec.encode()
-            opt=opt.getSection(sec_)
-        cdef c.string key = name.split(":")[-1].encode()
-        cdef c.string value_ = value.encode()
-        cdef c.string source_ = source.encode()
-        opt.set(key,value_, source_, force)
+            sec_ = sec.encode('ascii')
+            opt = opt.getSection(sec_)
+        cdef c.string key = name.split(":")[-1].encode('ascii')
+        cdef c.string value_ = value.encode('ascii')
+        cdef c.string source_ = source.encode('ascii')
+        opt.set(key,value_, source_, <c.bool?> force)
         opt.cleanCache()
         return self
 
@@ -1649,37 +1716,9 @@ cdef class Options:
             del self.cobj
             self.cobj = NULL
 
-cdef class Datafile:
-    cdef c.Datafile * cobj
 
-    def __init__(self):
-        self.cobj = c_get_global_datafile()
-
-    def add(self,save_repeat=False,**kwargs):
-        for key in kwargs:
-            self._add(kwargs[key],key,save_repeat)
-
-    def _add(self,data,name,save_repeat):
-        cdef char * tmp
-        cdef double * dbl
-        cdef c.Field3D * f3d
-        t2 = str.encode(name)
-        tmp = t2
-        if isinstance(data, Field3D):
-            f3d = (<Field3D>data).cobj
-            self.cobj.add(f3d[0], tmp, <c.bool>save_repeat)
-        else:
-            raise TypeError("unsupported datatype")
-    def write(self):
-        self.cobj.write()
-
-
-    def __dealloc__(self):
-        self.__boutcore_dealloc()
-
-    def __boutcore_dealloc(self):
-        # is never self owned
-        pass
+def writeDefaultOutputFile(options: Options):
+    c.writeDefaultOutputFile(deref(options.cobj))
 
 def print(*args, sep=" ", end="\n"):
     _print(sep.join([str(a) for a in args]) + end)

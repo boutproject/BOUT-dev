@@ -137,10 +137,6 @@ int main(int argc, char** argv) {
   Field3D flagosad;
   TEST_BLOCK("flagosad", flagosad = lap->solve(input, set_to););
 
-  // Write and close the output file
-  bout::globals::dump.write();
-  bout::globals::dump.close();
-
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
 
   // Report

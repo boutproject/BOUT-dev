@@ -277,7 +277,7 @@ communications or boundary conditions here)
 
     Field3D D2DXDY(Field3D f) {
       auto result{emptyFrom(f)};
-      auto& coords = \*f.getCoordinates()
+      auto& coords = *f.getCoordinates()
 
       auto dfdx_yup = DDX(f.yup());
       auto dfdx_ydown = DDX(f.ydown());

@@ -40,6 +40,7 @@
 #include <cstring>
 #include <ctime>
 #include <numeric>
+#include <set>
 
 // Implementations:
 #include "impls/adams_bashforth/adams_bashforth.hxx"
@@ -69,13 +70,36 @@ char ***Solver::pargv = nullptr;
 
 Solver::Solver(Options* opts)
     : options(opts == nullptr ? &Options::root()["solver"] : opts),
-      monitor_timestep((*options)["monitor_timestep"].withDefault(false)),
+      NPES(BoutComm::size()), MYPE(BoutComm::rank()),
+      monitor_timestep((*options)["monitor_timestep"]
+                           .doc("Call monitors on internal timesteps")
+                           .withDefault(false)),
+      save_repeat_run_id((*options)["save_repeat_run_id"]
+                             .doc("Write run_id and run_restart_from at every output "
+                                  "timestep, to make it easier to concatenate output "
+                                  "data sets in time")
+                             .withDefault(false)),
       is_nonsplit_model_diffusive(
           (*options)["is_nonsplit_model_diffusive"]
               .doc("If not a split operator, treat RHS as diffusive?")
               .withDefault(true)),
-      mms((*options)["mms"].withDefault(false)),
-      mms_initialise((*options)["mms_initialise"].withDefault(mms)) {}
+      mms((*options)["mms"]
+              .doc("Use Method of Manufactured Solutions to track error scaling")
+              .withDefault(false)),
+      mms_initialise((*options)["mms_initialise"]
+                         .doc("Use MMS solution for field initial conditions")
+                         .withDefault(mms)),
+      number_output_steps(
+          (*options)["nout"]
+              .doc("Number of output steps. Overrides global setting.")
+              .withDefault(
+                  Options::root()["nout"].doc("Number of output steps").withDefault(1))),
+      output_timestep(
+          (*options)["output_step"]
+              .doc("Output time step size. Overrides global 'timestep' setting.")
+              .withDefault(Options::root()["timestep"]
+                               .doc("Output time step size")
+                               .withDefault(1.0))) {}
 
 /**************************************************************************
  * Add physics models
@@ -442,17 +466,11 @@ int Solver::solve(int nout, BoutReal timestep) {
   Options& globaloptions = Options::root(); // Default from global options
 
   if (nout < 0) {
-    /// Get options
-    nout = globaloptions["nout"].doc("Number of output steps").withDefault(1);
-    timestep = globaloptions["timestep"].doc("Output time step size").withDefault(1.0);
-
-    // Check specific solver options, which override global options
-    nout = (*options)["nout"]
-               .doc("Number of output steps. Overrides global setting.")
-               .withDefault(nout);
-    timestep = (*options)["output_step"]
-                   .doc("Output time step size. Overrides global 'timestep' setting.")
-                   .withDefault(timestep);
+    nout = number_output_steps;
+    timestep = output_timestep;
+  } else {
+    number_output_steps = nout;
+    output_timestep = timestep;
   }
 
   finaliseMonitorPeriods(nout, timestep);
@@ -466,7 +484,7 @@ int Solver::solve(int nout, BoutReal timestep) {
         nout / default_monitor_period, timestep * default_monitor_period);
 
   // Initialise
-  if (init(nout, timestep)) {
+  if (init()) {
     throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
 
@@ -600,56 +618,61 @@ std::string Solver::getRunRestartFrom() const {
   return run_restart_from;
 }
 
+void Solver::writeToModelOutputFile(const Options& options) {
+  if (model == nullptr) {
+    return;
+  }
+  model->writeOutputFile(options);
+}
+
 /**************************************************************************
  * Initialisation
  **************************************************************************/
 
-int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
-  
+int Solver::init() {
+
   TRACE("Solver::init()");
 
   if (initialised)
     throw BoutException(_("ERROR: Solver is already initialised\n"));
 
-  NPES = BoutComm::size();
-  MYPE = BoutComm::rank();
-  
+  output_progress.write(_("Initialising solver\n"));
+
   /// Mark as initialised. No more variables can be added
   initialised = true;
 
   return 0;
 }
 
-void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
-  /// Add basic variables to the file
-  outputfile.addOnce(simtime,  "tt");
-  outputfile.addOnce(iteration, "hist_hi");
+void Solver::outputVars(Options& output_options, bool save_repeat) {
+  Timer time("io");
+  output_options["tt"].force(simtime, "Solver");
+  output_options["hist_hi"].force(iteration, "Solver");
 
-  // Add run information
-  bool save_repeat_run_id = (!save_repeat) ? false :
-                            (*options)["save_repeat_run_id"]
-                                .doc("Write run_id and run_restart_from at every output "
-                                     "timestep, to make it easier to concatenate output "
-                                     "data sets in time")
-                                .withDefault(false);
-  outputfile.add(run_id, "run_id", save_repeat_run_id, "UUID for this simulation");
-  outputfile.add(run_restart_from, "run_restart_from", save_repeat_run_id,
-                 "run_id of the simulation this one was restarted from."
-                 "'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' means the run is not a restart, "
-                 "or the previous run did not have a run_id.");
+  output_options["run_id"]
+      .doc("UUID for this simulation")
+      .assignRepeat(run_id, "t", save_repeat and save_repeat_run_id, "Solver");
+  output_options["run_restart_from"]
+      .doc("run_id of the simulation this one was restarted from."
+           "'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' means the run is not a restart, "
+           "or the previous run did not have a run_id.")
+      .assignRepeat(run_restart_from, "t", save_repeat and save_repeat_run_id, "Solver");
 
   // Add 2D and 3D evolving fields to output file
-  for(const auto& f : f2d) {
+  for (const auto& f : f2d) {
     // Add to dump file (appending)
-    outputfile.add(*(f.var), f.name.c_str(), save_repeat, f.description);
-  }  
-  for(const auto& f : f3d) {
+    output_options[f.name].assignRepeat(*(f.var), "t", save_repeat, "Solver");
+    output_options[f.name].attributes["description"] = f.description;
+  }
+  for (const auto& f : f3d) {
     // Add to dump file (appending)
-    outputfile.add(*(f.var), f.name.c_str(), save_repeat, f.description);
-    
-    if(mms) {
+    output_options[f.name].assignRepeat(*(f.var), "t", save_repeat, "Solver");
+    output_options[f.name].attributes["description"] = f.description;
+    if (mms) {
       // Add an error variable
-      outputfile.add(*(f.MMS_err), ("E_" + f.name).c_str(), save_repeat);
+      output_options["E_" + f.name].assignRepeat(*(f.MMS_err), "t", save_repeat,
+                                                 "Solver");
+      output_options["E_" + f.name].attributes["description"] = f.description;
     }
   }
 
@@ -659,13 +682,29 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
     // restarting
 
     // Add solver diagnostics to output file
-    for (const auto &d : diagnostic_int) {
-      // Add to dump file (appending)
-      outputfile.add(*(d.var), d.name.c_str(), save_repeat, d.description);
+    for (const auto& d : diagnostic_int) {
+      output_options[d.name].assignRepeat(*(d.var), "t", true, "Solver");
+      output_options[d.name].attributes["description"] = d.description;
     }
-    for (const auto &d : diagnostic_BoutReal) {
-      // Add to dump file (appending)
-      outputfile.add(*(d.var), d.name.c_str(), save_repeat, d.description);
+    for (const auto& d : diagnostic_BoutReal) {
+      output_options[d.name].assignRepeat(*(d.var), "t", true, "Solver");
+      output_options[d.name].attributes["description"] = d.description;
+    }
+  }
+}
+
+void Solver::readEvolvingVariablesFromOptions(Options& options) {
+  run_id = options["run_id"].withDefault(default_run_id);
+  simtime = options["tt"].as<BoutReal>();
+  iteration = options["hist_hi"].as<int>();
+
+  for (auto& f : f2d) {
+    *(f.var) = options[f.name].as<Field2D>();
+  }
+  for (const auto& f : f3d) {
+    *(f.var) = options[f.name].as<Field3D>();
+    if (mms) {
+      *(f.MMS_err) = options["E_" + f.name].as<Field3D>();
     }
   }
 }
@@ -711,7 +750,7 @@ BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
   const auto multiplier =
       static_cast<int>(std::round(internal_timestep / new_monitor->timestep));
   for (const auto& monitor : monitors) {
-    monitor->period *= multiplier;
+    monitor.monitor->period *= multiplier;
   }
 
   // Update default_monitor_frequency so that monitors with no
@@ -739,16 +778,21 @@ void Solver::finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep) {
       // update old monitors
       const auto multiplier =
           static_cast<int>(std::round(internal_timestep / output_timestep));
-      for (const auto& i : monitors) {
-        i->period = i->period * multiplier;
+      for (const auto& monitor : monitors) {
+        monitor.monitor->period *= multiplier;
       }
     }
   }
-  // Now set any monitors which still have the default timestep/period
-  for (const auto& i : monitors) {
-    if (i->timestep < 0) {
-      i->timestep = internal_timestep * default_monitor_period;
-      i->period = default_monitor_period;
+  int count = 0;
+  // Now set any monitors which still have the default
+  // timestep/period, and set the time_dimension for each monitor
+  for (auto& monitor : monitors) {
+    if (monitor.monitor->timestep < 0) {
+      monitor.monitor->timestep = internal_timestep * default_monitor_period;
+      monitor.monitor->period = default_monitor_period;
+      monitor.time_dimension = "t";
+    } else {
+      monitor.time_dimension = fmt::format("t{}", ++count);
     }
   }
 }
@@ -760,14 +804,14 @@ void Solver::addMonitor(Monitor* monitor, MonitorPosition pos) {
   monitor->is_added = true;
 
   if (pos == MonitorPosition::FRONT) {
-    monitors.push_front(monitor);
+    monitors.push_front({monitor, ""});
   } else {
-    monitors.push_back(monitor);
+    monitors.push_back({monitor, ""});
   }
 }
 
-void Solver::removeMonitor(Monitor * f) {
-  monitors.remove(f);
+void Solver::removeMonitor(Monitor* f) {
+  monitors.remove_if([&f](auto& monitor) { return monitor.monitor == f; });
 }
 
 extern bool user_requested_exit;
@@ -785,19 +829,41 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
 
   ++iter;
   try {
+    // We need to write each time dimension a maximum of once per
+    // timestep. The set of unique time dimensions may be the same
+    // size or smaller than the set of monitors, so we need to keep
+    // track of the unique dimensions each timestep.
+    std::set<std::string> seen_time_dimensions;
+
     // Call monitors
     for (const auto& monitor : monitors) {
-      if ((iter % monitor->period) == 0) {
+      if ((iter % monitor.monitor->period) == 0) {
         // Call each monitor one by one
-        int ret = monitor->call(this, simtime, iter / monitor->period - 1,
-                                NOUT / monitor->period);
-        if (ret)
+        const int ret =
+            monitor.monitor->call(this, simtime, iter / monitor.monitor->period - 1,
+                                  NOUT / monitor.monitor->period);
+        if (ret != 0) {
           throw BoutException(_("Monitor signalled to quit (return code {})"), ret);
+        }
+        // Write the monitor's diagnostics to the main output file
+        Options monitor_dump;
+        monitor.monitor->outputVars(monitor_dump, monitor.time_dimension);
+        model->writeOutputFile(monitor_dump, monitor.time_dimension);
+        // This monitor's time dimension needs writing out
+        seen_time_dimensions.insert(monitor.time_dimension);
       }
     }
+    // Write all the unique time dimensions that were advanced this timestep
+    for (const auto& time_dimension : seen_time_dimensions) {
+      Options time_dump;
+      time_dump[time_dimension].assignRepeat(simtime, time_dimension);
+      model->writeOutputFile(time_dump, time_dimension);
+    }
+
+    model->finishOutputTimestep();
   } catch (const BoutException& e) {
-    for (const auto& it : monitors) {
-      it->cleanup();
+    for (const auto& monitor : monitors) {
+      monitor.monitor->cleanup();
     }
     output_error.write(_("Monitor signalled to quit (exception {})\n"), e.what());
     throw;
@@ -808,8 +874,8 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
                                     BoutComm::get());
 
   if (iter == NOUT || abort) {
-    for (const auto& it : monitors) {
-      it->cleanup();
+    for (const auto& monitor : monitors) {
+      monitor.monitor->cleanup();
     }
   }
 

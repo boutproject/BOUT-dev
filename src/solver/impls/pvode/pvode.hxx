@@ -45,32 +45,38 @@ RegisterSolver<PvodeSolver> registersolverpvode("pvode");
 }
 
 class PvodeSolver : public Solver {
- public:
-  PvodeSolver(Options *opts);
+public:
+  explicit PvodeSolver(Options* opts = nullptr);
   ~PvodeSolver();
-  
+
   BoutReal getCurrentTimestep() override { return hcur; }
-  
-  int init(int nout, BoutReal tstep) override;
-  
+
+  int init() override;
   int run() override;
   BoutReal run(BoutReal tout);
 
   // These functions used internally (but need to be public)
-  void rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata);
-  void gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata);
+  void rhs(int N, BoutReal t, BoutReal* udata, BoutReal* dudata);
+  void gloc(int N, BoutReal t, BoutReal* udata, BoutReal* dudata);
 
- private:
-  int NOUT; // Number of outputs. Specified in init, needed in run
-  BoutReal TIMESTEP; // Time between outputs
-  BoutReal hcur; // Current internal timestep
+private:
+  /// Current internal timestep
+  BoutReal hcur;
+  /// Use preconditioner
+  bool use_precon;
+  /// Maximum Krylov dimension
+  int precon_dimens;
+  /// Preconditioner tolerance
+  BoutReal precon_tol;
+  /// Maximum number of steps
+  int pvode_mxstep;
 
-  pvode::N_Vector u;
-  pvode::machEnvType machEnv;
-  void *cvode_mem;
+  pvode::N_Vector u{nullptr};
+  pvode::machEnvType machEnv{nullptr};
+  void* cvode_mem{nullptr};
 
   BoutReal abstol, reltol; // addresses passed in init must be preserved
-  pvode::PVBBDData pdata;
+  pvode::PVBBDData pdata{nullptr};
 
   bool pvode_initialised = false;
 };

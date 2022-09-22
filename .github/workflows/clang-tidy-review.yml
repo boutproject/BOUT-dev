@@ -14,7 +14,7 @@ jobs:
   review:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
 
@@ -29,6 +29,9 @@ jobs:
           # the unit tests until they're fixed or ignored upstream
           exclude: "tests/unit/*cxx"
           cmake_command: |
+            pip install cmake && \
+            cmake --version && \
+            git config --global --add safe.directory "$GITHUB_WORKSPACE" && \
             cmake . -B build -DBUILD_SHARED_LIBS=ON \
                              -DBOUT_USE_PETSC=ON \
                              -DBOUT_USE_SLEPC=ON \
@@ -36,4 +39,5 @@ jobs:
                              -DBOUT_BUILD_EXAMPLES=ON \
                              -DBOUT_BUILD_DOCS=OFF \
                              -DBOUT_ENABLE_PYTHON=OFF \
-                             -DCMAKE_EXPORT_COMPILE_COMMANDS=On
+                             -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
+                             -DBOUT_UPDATE_GIT_SUBMODULE=OFF

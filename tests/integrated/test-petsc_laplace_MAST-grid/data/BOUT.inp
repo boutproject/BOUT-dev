@@ -1,7 +1,6 @@
 mz = 129
 #MYG = 0
 grid = "grids/grid_MAST_SOL_jyis65.nc"
-dump_format = "nc"
 
 [mesh:ddx]
 first = C4

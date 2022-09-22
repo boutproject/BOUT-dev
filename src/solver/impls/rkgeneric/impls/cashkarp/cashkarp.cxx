@@ -6,9 +6,6 @@ CASHKARPScheme::CASHKARPScheme(Options *options):RKScheme(options){
   numOrders = 2;
   order = 4;
   label = "cashkarp";
-  followHighOrder = false;
-
-  OPTION(options, followHighOrder, followHighOrder);
 
   //Allocate coefficient arrays
   stageCoeffs.reallocate(numStages, numStages);

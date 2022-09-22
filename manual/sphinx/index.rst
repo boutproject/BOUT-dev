@@ -25,6 +25,7 @@ The documentation is divided into the following sections:
    :name: getting-started
 
    user_docs/introduction
+   user_docs/quickstart
    user_docs/installing
    user_docs/advanced_install
    user_docs/running_bout

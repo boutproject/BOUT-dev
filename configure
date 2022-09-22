@@ -2402,7 +2402,8 @@ ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
-
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ./configure is deprecated and will be removed in a future version, please use CMake instead" >&5
+$as_echo "$as_me: WARNING: ./configure is deprecated and will be removed in a future version, please use CMake instead" >&2;}
 
 
 # Check whether --with-netcdf was given.
@@ -17266,3 +17267,7 @@ $as_echo "$as_me:    export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH" >&6;}
 $as_echo "$as_me: " >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: *** Now run '$MAKE' to compile BOUT++ ***" >&5
 $as_echo "$as_me: *** Now run '$MAKE' to compile BOUT++ ***" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
+$as_echo "$as_me: " >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ./configure is deprecated and will be removed in a future version, please use CMake instead" >&5
+$as_echo "$as_me: WARNING: ./configure is deprecated and will be removed in a future version, please use CMake instead" >&2;}

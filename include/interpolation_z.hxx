@@ -76,7 +76,6 @@ public:
   static constexpr auto option_name = "type";
   static constexpr auto default_type = "hermitespline";
 
-  using Factory::create;
   ReturnType create(Options* options, int y_offset = 0, Mesh* mesh = nullptr,
                     Region<Ind3D> region_in = {}) const {
     return Factory::create(options, y_offset, mesh, region_in);

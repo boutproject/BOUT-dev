@@ -48,9 +48,6 @@ first = C4  # Z derivatives can be done using FFT
 second = C4
 upwind = W3
 
-[output]
-floats = false # -> Output in double precision
-
 ##################################################
 # Laplacian inversion routines
 
