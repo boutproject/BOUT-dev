@@ -415,7 +415,6 @@ cdef class {{ field.field_type }}:
         cdef np.ndarray[size_t, mode="c", ndim=1] indices
         slices = self._sanitise_slices(slices)
         if isinstance(slices, tuple) and all([isinstance(x, slice) for x in slices]):
-            print("use custom code for", *slices)
             inds = _resolve_slices(slices,
                                    [{{ field.makelist("self.cobj.getN$d()") }}])
             outshape = [((i[1]-i[0])//i[2]) for i in inds]
@@ -498,7 +497,6 @@ cdef class {{ field.field_type }}:
             assert self == inputs[0]
             return {{ field.fdd }}FromObj(c.{{ fun }}(self.cobj[0]))
 {% endfor %}
-        print("Debug output:", ufunc, method, inputs, kwargs)
         if len(inputs) == 1:
             assert self == inputs[0]
             # convert to numpy and return
