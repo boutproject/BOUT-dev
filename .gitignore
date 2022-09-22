@@ -40,8 +40,6 @@ src/.libfast
 .*.mk
 *.mo
 .BOUT.pid.*
-build/
-build*/
 /.vs
 /CMakeSettings.json
 /CppProperties.json
@@ -71,5 +69,7 @@ src/fmt/format.cxx
 /tests/integrated/test-options-netcdf/time.nc
 /tests/integrated/test-yupdown-weights/test_yupdown_weights
 
-*_build/
-build_*/
+/build/
+/build*/
+/*_build/
+/build_*/
