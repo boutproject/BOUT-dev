@@ -704,7 +704,8 @@ install(DIRECTORY "${PROJECT_BINARY_DIR}/include/"
 # The various helper scripts
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/"
   USE_SOURCE_PERMISSIONS
-  DESTINATION "${CMAKE_INSTALL_BINDIR}")
+  DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  REGEX bout-squashoutput EXCLUDE)
 
 # The installed version of bout-config needs renaming when we install
 # it. Note this MUST be done after the installation of bin/, to make
