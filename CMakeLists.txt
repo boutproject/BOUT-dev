@@ -27,9 +27,10 @@ execute_process(
   OUTPUT_VARIABLE BOUT_FULL_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
+
 foreach(error_code ${error_codes})
-  if (${error_code} GREATER 0)
-    set(BOUT_FULL_VERSION 5.0.0-alpha)
+  if (NOT ${error_code} STREQUAL 0)
+    set(BOUT_FULL_VERSION 5.0.0.alpha)
   endif()
 endforeach()
 string(REGEX REPLACE "^([0-9]+\.[0-9]+\.[0-9]+)\..*" "\\1" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
