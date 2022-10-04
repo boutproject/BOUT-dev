@@ -16,8 +16,8 @@ endif()
 
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
-# We try to use git to git a full description, inspired by setuptools_scm
-# Not we use distance from 4.0.0 so it does not reset on minor releases.
+# We try to use git to get a full description, inspired by setuptools_scm
+# Note we use distance from 4.0.0 so it does not reset on minor releases.
 # string(TIMESTAMP date "%Y%m%d" UTC)
 execute_process(
   COMMAND "git" describe --tags --match=v4.0.0
