@@ -354,6 +354,15 @@ This warning is only important for BOUT++ developers and can otherwise be \
 safely ignored.")
 endif()
 
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import site ; print('/'.join(site.getusersitepackages().split('/')[-2:]))"
+  RESULT_VARIABLE PYTHON_WORKING
+  OUTPUT_VARIABLE PYTHON_SITEPATH_SUFFIX
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+set(CMAKE_INSTALL_PYTHON_SITEARCH lib/${PYTHON_SITEPATH_SUFFIX} CACHE STRING "Location to install python arch-specific modules")
+
+# message(FATAL_ERROR ${CMAKE_INSTALL_PYTHON_SITEARCH})
+
 set(BOUT_ENABLE_PYTHON MAYBE CACHE STRING "Build the Python interface")
 if (BOUT_ENABLE_PYTHON OR BOUT_ENABLE_PYTHON STREQUAL "MAYBE")
   add_subdirectory(tools/pylib/_boutcore_build)
@@ -762,7 +771,7 @@ configure_package_config_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib
 
 install(
   FILES "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/boutconfig"
+  DESTINATION "${CMAKE_INSTALL_PYTHON_SITEARCH}/boutconfig"
   )
 
 export(EXPORT bout++Targets
