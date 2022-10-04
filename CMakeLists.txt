@@ -16,9 +16,24 @@ endif()
 
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
-set(BOUT_FULL_VERSION 5.0.0-alpha)
-string(REGEX REPLACE "^([0-9]+\.[0-9]+\.[0-9]+)-.*" "\\1" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
-string(REGEX REPLACE "^[0-9]+\.[0-9]+\.[0-9]+-(.*)" "\\1" BOUT_VERSION_TAG ${BOUT_FULL_VERSION})
+# We try to use git to git a full description, inspired by setuptools_scm
+# Not we use distance from 4.0.0 so it does not reset on minor releases.
+# string(TIMESTAMP date "%Y%m%d" UTC)
+execute_process(
+  COMMAND "git" describe --tags --match=v4.0.0
+  COMMAND sed -e s/v4.0.0-/5.0.0.alpha.dev/ -e s/-/+/
+  # -e "s/$/.d${TIMESTAMP}/"
+  RESULTS_VARIABLE error_codes
+  OUTPUT_VARIABLE BOUT_FULL_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+foreach(error_code ${error_codes})
+  if (${error_code} GREATER 0)
+    set(BOUT_FULL_VERSION 5.0.0-alpha)
+  endif()
+endforeach()
+string(REGEX REPLACE "^([0-9]+\.[0-9]+\.[0-9]+)\..*" "\\1" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
+string(REGEX REPLACE "^[0-9]+\.[0-9]+\.[0-9]+\.(.*)" "\\1" BOUT_VERSION_TAG ${BOUT_FULL_VERSION})
 
 project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
