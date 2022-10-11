@@ -25,6 +25,14 @@ bout_python_maybe_error(${Cython_FOUND} Cython)
 find_package(Bash)
 bout_python_maybe_error(${Bash_FOUND} Bash)
 
+execute_process(COMMAND ${Python_EXECUTABLE} -c "import jinja2"
+  RESULT_VARIABLE jinja2_FOUND)
+if (jinja2_FOUND EQUAL 0)
+  # We have jinja2 - all good
+else()
+  bout_python_maybe_error(OFF jinja2)
+endif()
+
 execute_process(COMMAND ${Python_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))"
   RESULT_VARIABLE PYTHON_WORKING
   OUTPUT_VARIABLE PYTHON_EXT_SUFFIX
