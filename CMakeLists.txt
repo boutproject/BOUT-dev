@@ -607,9 +607,11 @@ if(BOUT_TESTS)
   add_subdirectory(tests/MMS EXCLUDE_FROM_ALL)
 
   # Targets for running the tests
-  add_custom_target(check-unit-tests
-    COMMAND ctest -R serial_tests --output-on-failure)
-  add_dependencies(check-unit-tests build-check-unit-tests)
+  if (BOUT_ENABLE_UNIT_TESTS)
+    add_custom_target(check-unit-tests
+      COMMAND ctest -R serial_tests --output-on-failure)
+    add_dependencies(check-unit-tests build-check-unit-tests)
+  endif()
 
   add_custom_target(check-integrated-tests
     COMMAND ctest -R "test-" --output-on-failure)
@@ -621,7 +623,11 @@ if(BOUT_TESTS)
 
   # Run all the tests
   add_custom_target(check)
-  add_dependencies(check check-unit-tests check-integrated-tests check-mms-tests)
+  add_dependencies(check check-integrated-tests check-mms-tests)
+  if (BOUT_ENABLE_UNIT_TESTS)
+    add_dependencies(check check-unit-tests)
+  endif()
+
 endif()
 
 option(BOUT_BUILD_EXAMPLES "Build the examples" ON)
