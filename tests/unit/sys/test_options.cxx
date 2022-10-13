@@ -860,7 +860,7 @@ TEST_F(OptionsTest, AttributeSetReplace) {
 
   // Has changed previously set attribute
   EXPECT_TRUE(option.hasAttribute("one"));
-  EXPECT_EQ(option.attributes["one"].as<int>(), 1);
+  EXPECT_EQ(option.attributes["one"].as<int>(), 2);
 
   // Has inserted new attribute
   EXPECT_TRUE(option.hasAttribute("two"));
