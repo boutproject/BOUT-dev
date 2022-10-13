@@ -298,7 +298,7 @@ public:
   ///       });
   Options& setAttributes(
       std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
-    for (auto& attr : attrs) {
+    for (const auto& attr : attrs) {
       attributes[attr.first] = attr.second;
     }
     return *this;
