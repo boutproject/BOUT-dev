@@ -828,6 +828,45 @@ TEST_F(OptionsTest, AttributeTimeDimension) {
   EXPECT_EQ(option.as<int>(), 4);
 }
 
+TEST_F(OptionsTest, AttributeInsertOne) {
+  Options option;
+
+  option.insertAttributes({{"answer", 42}});
+
+  EXPECT_TRUE(option.hasAttribute("answer"));
+  EXPECT_EQ(option.attributes["answer"].as<int>(), 42);
+}
+
+TEST_F(OptionsTest, AttributeInsertTwo) {
+  Options option;
+
+  option.insertAttributes({{"one", 1}, {"two", 2}});
+
+  EXPECT_TRUE(option.hasAttribute("one"));
+  EXPECT_EQ(option.attributes["one"].as<int>(), 1);
+
+  EXPECT_TRUE(option.hasAttribute("two"));
+  EXPECT_EQ(option.attributes["two"].as<int>(), 2);
+}
+
+TEST_F(OptionsTest, AttributeInsertNoReplace) {
+  Options option;
+
+  option.attributes["one"] = 1;
+  EXPECT_TRUE(option.hasAttribute("one"));
+  EXPECT_EQ(option.attributes["one"].as<int>(), 1);
+
+  option.insertAttributes({{"one", 2}, {"two", 2}});
+
+  // Has not changed previously set attribute
+  EXPECT_TRUE(option.hasAttribute("one"));
+  EXPECT_EQ(option.attributes["one"].as<int>(), 1);
+
+  // Has inserted new attribute
+  EXPECT_TRUE(option.hasAttribute("two"));
+  EXPECT_EQ(option.attributes["two"].as<int>(), 2);
+}
+
 TEST_F(OptionsTest, EqualityBool) {
   Options option;
 

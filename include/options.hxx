@@ -229,6 +229,13 @@ public:
       return *this;
     }
 
+    /// Initialise with a value
+    /// This enables AttributeTypes to be constructed using initializer lists
+    template <typename T>
+    AttributeType(T value) {
+      operator=(value);
+    }
+
     /// Cast operator, which allows this class to be
     /// assigned to type T
     /// This will throw std::bad_cast if it can't be done
@@ -266,7 +273,16 @@ public:
   bool hasAttribute(const std::string& key) const {
     return attributes.find(key) != attributes.end();
   }
-  
+
+  /// Set attributes if they have not already been set
+  /// Takes an initializer_list so that multiple attributes can be set at the same time
+  Options& insertAttributes(std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
+    for (auto& attr : attrs) {
+      attributes.emplace(attr);
+    }
+    return *this;
+  }
+
   /// Get a sub-section or value
   ///
   /// Example:
