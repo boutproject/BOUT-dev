@@ -276,7 +276,8 @@ public:
 
   /// Set attributes if they have not already been set
   /// Takes an initializer_list so that multiple attributes can be set at the same time
-  Options& insertAttributes(std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
+  Options& insertAttributes(
+      std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
     for (auto& attr : attrs) {
       attributes.emplace(attr);
     }
