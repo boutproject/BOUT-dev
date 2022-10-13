@@ -229,6 +229,9 @@ public:
       return *this;
     }
 
+    /// Copy assignment operator
+    AttributeType& operator=(const AttributeType& other) = default;
+
     /// Initialise with a value
     /// This enables AttributeTypes to be constructed using initializer lists
     template <typename T>
@@ -274,11 +277,28 @@ public:
     return attributes.find(key) != attributes.end();
   }
 
-  /// Set attributes if they have not already been set
-  /// Takes an initializer_list so that multiple attributes can be set at the same time
-  Options& insertAttributes(std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
+  /// Set attributes, overwriting any already set
+  ///
+  /// Parameters
+  /// ----------
+  /// An initializer_list so that multiple attributes can be set at the same time
+  ///
+  /// Returns
+  /// -------
+  /// A reference to `this`, for method chaining
+  ///
+  /// Example
+  /// -------
+  ///
+  ///     Options options;
+  ///     options["value"].setAttributes({
+  ///         {"units", "m/s"},
+  ///         {"conversion", 10.2},
+  ///         {"long_name", "some velocity"}
+  ///       });
+  Options& setAttributes(std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
     for (auto& attr : attrs) {
-      attributes.emplace(attr);
+      attributes[attr.first] = attr.second;
     }
     return *this;
   }

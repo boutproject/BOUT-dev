@@ -720,7 +720,7 @@ assigning multiple attributes, an ``initializer_list`` can be more
 readable::
 
   Options options;
-  options["value"].insertAttributes({
+  options["value"].setAttributes({
       {"units", "m/s"},
       {"conversion", 10.2},
       {"long_name", "important value"}
