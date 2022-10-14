@@ -17,12 +17,11 @@ endif()
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
-# Note we use distance from 4.0.0 so it does not reset on minor releases.
-# string(TIMESTAMP date "%Y%m%d" UTC)
+set(_bout_previous_version "v4.0.0")
+set(_bout_next_version "5.0.0.alpha")
 execute_process(
-  COMMAND "git" describe --tags --match=v4.0.0
-  COMMAND sed -e s/v4.0.0-/5.0.0.alpha.dev/ -e s/-/+/
-  # -e "s/$/.d${TIMESTAMP}/"
+  COMMAND "git" describe --tags --match=${_bout_previous_version}
+  COMMAND sed -e s/${_bout_previous_version}-/${_bout_next_version}.dev/ -e s/-/+/
   RESULTS_VARIABLE error_codes
   OUTPUT_VARIABLE BOUT_FULL_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -30,7 +29,7 @@ execute_process(
 
 foreach(error_code ${error_codes})
   if (NOT ${error_code} STREQUAL 0)
-    set(BOUT_FULL_VERSION 5.0.0.alpha)
+    set(BOUT_FULL_VERSION ${_bout_next_version})
   endif()
 endforeach()
 string(REGEX REPLACE "^([0-9]+\.[0-9]+\.[0-9]+)\..*" "\\1" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
@@ -40,6 +39,8 @@ project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
   VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
+
+message(STATUS "Configuring BOUT++ version ${BOUT_FULL_VERSION}")
 
 include(CMakeDependentOption)
 

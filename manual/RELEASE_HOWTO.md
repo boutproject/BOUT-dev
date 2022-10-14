@@ -56,7 +56,7 @@ Before merging PR:
     - [ ]  [`manual/sphinx/conf.py`][sphinx_conf]: `version` and `release`
     - [ ]  [`manual/doxygen/Doxyfile_readthedocs`][Doxyfile_readthedocs]: `PROJECT_NUMBER`
     - [ ]  [`manual/doxygen/Doxyfile`][Doxyfile]: `PROJECT_NUMBER`
-    - [ ]  [`CMakeLists.txt`][CMakeLists.txt]: `BOUT_FULL_VERSION`
+    - [ ]  [`CMakeLists.txt`][CMakeLists.txt]: `_bout_previous_version`, `_bout_next_version`
 
 After PR is merged:
 
@@ -76,7 +76,7 @@ After PR is merged:
     - [ ]  [`manual/sphinx/conf.py`][sphinx_conf]: `version` and `release`
     - [ ]  [`manual/doxygen/Doxyfile_readthedocs`][Doxyfile_readthedocs]: `PROJECT_NUMBER`
     - [ ]  [`manual/doxygen/Doxyfile`][Doxyfile]: `PROJECT_NUMBER`
-    - [ ]  [`CMakeLists.txt`][CMakeLists.txt]: `BOUT_FULL_VERSION`
+    - [ ]  [`CMakeLists.txt`][CMakeLists.txt]: `_bout_previous_version`, `_bout_next_version`
 
 [Doxyfile]: ../manual/doxygen/Doxyfile
 [Doxyfile_readthedocs]: ../manual/doxygen/Doxyfile_readthedocs
