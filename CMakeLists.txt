@@ -361,8 +361,6 @@ execute_process(COMMAND ${Python3_EXECUTABLE} -c "import site ; print('/'.join(s
 )
 set(CMAKE_INSTALL_PYTHON_SITEARCH lib/${PYTHON_SITEPATH_SUFFIX} CACHE STRING "Location to install python arch-specific modules")
 
-# message(FATAL_ERROR ${CMAKE_INSTALL_PYTHON_SITEARCH})
-
 set(BOUT_ENABLE_PYTHON MAYBE CACHE STRING "Build the Python interface")
 if (BOUT_ENABLE_PYTHON OR BOUT_ENABLE_PYTHON STREQUAL "MAYBE")
   add_subdirectory(tools/pylib/_boutcore_build)
@@ -762,7 +760,6 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/"
   REGEX "bout-config\.in" EXCLUDE
   REGEX "bout-pylib-cmd-to-bin" EXCLUDE
 )
-message(USING REGEX)
 
 # The installed version of bout-config needs renaming when we install
 # it. Note this MUST be done after the installation of bin/, to make
