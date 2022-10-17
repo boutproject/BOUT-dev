@@ -33,7 +33,7 @@ else()
   bout_python_maybe_error(OFF jinja2)
 endif()
 
-execute_process(COMMAND ${Python_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))"
+execute_process(COMMAND ${Python_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX').removesuffix('.so'))"
   RESULT_VARIABLE PYTHON_WORKING
   OUTPUT_VARIABLE PYTHON_EXT_SUFFIX
   OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -91,29 +91,34 @@ foreach(file IN LISTS files)
   bout_copy_file("${file}")
 endforeach()
 
-add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/boutcore.cpp
-  COMMAND ${Python_EXECUTABLE} -m cython boutcore.pyx --cplus -3  -X binding=True -X embedsignature=True
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libboutcore.cpp
+  COMMAND ${CMAKE_COMMAND} -E copy boutcore.pyx libboutcore.pyx
+  COMMAND ${Python_EXECUTABLE} -m cython libboutcore.pyx --cplus -3  -X binding=True -X embedsignature=True
   COMMENT "Cythonizing python interface"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${boutcore_depends}
   )
 
-add_library(boutcore_ SHARED
-  ${tar}/boutcore.cpp
+add_library(boutcore${PYTHON_EXT_SUFFIX} SHARED
+  ${tar}/libboutcore.cpp
   ${tar}/helper.cxx
   ${tar}/boutexception_helper.cxx
   )
 
-add_custom_target(boutcore ALL
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libboutcore_.so ${CMAKE_CURRENT_BINARY_DIR}/../boutcore${PYTHON_EXT_SUFFIX}
-  BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/../boutcore${PYTHON_EXT_SUFFIX}
-  DEPENDS boutcore_
+add_custom_target(boutcore.py ALL
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libboutcore${PYTHON_EXT_SUFFIX}.so  ${CMAKE_CURRENT_BINARY_DIR}/../boutcore/__init__.py
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/boutcore.py ${CMAKE_CURRENT_BINARY_DIR}/../boutcore/
+  DEPENDS boutcore${PYTHON_EXT_SUFFIX}
   COMMENT "Building python interface"
-  )
+)
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/../boutcore${PYTHON_EXT_SUFFIX}
-  DESTINATION ${CMAKE_INSTALL_PYTHON_SITEARCH}
-  )
+install(TARGETS  boutcore${PYTHON_EXT_SUFFIX}
+  DESTINATION ${CMAKE_INSTALL_PYTHON_SITEARCH}/boutcore/
+)
 
-target_link_libraries(boutcore_ bout++)
-target_include_directories(boutcore_ PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> ${Numpy_INCLUDE_DIRS} ${Python_INCLUDE_DIRS})
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/boutcore.py
+  DESTINATION ${CMAKE_INSTALL_PYTHON_SITEARCH}/boutcore/
+  RENAME __init__.py
+  )
+target_link_libraries(boutcore${PYTHON_EXT_SUFFIX} bout++)
+target_include_directories(boutcore${PYTHON_EXT_SUFFIX} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> ${Numpy_INCLUDE_DIRS} ${Python_INCLUDE_DIRS})
