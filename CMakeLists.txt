@@ -758,7 +758,11 @@ install(DIRECTORY "${PROJECT_BINARY_DIR}/include/"
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/"
   USE_SOURCE_PERMISSIONS
   DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  REGEX bout-squashoutput EXCLUDE)
+  REGEX "bout-squashoutput" EXCLUDE
+  REGEX "bout-config\.in" EXCLUDE
+  REGEX "bout-pylib-cmd-to-bin" EXCLUDE
+)
+message(USING REGEX)
 
 # The installed version of bout-config needs renaming when we install
 # it. Note this MUST be done after the installation of bin/, to make
