@@ -1,8 +1,9 @@
 import os  # corelib
+
 try:
     import packaging.tags  # packaging
 except:
-    packaging=None
+    packaging = None
 import glob  # corelib
 import hashlib  # corelib
 import base64  # corelib
@@ -105,6 +106,7 @@ def build_sdist(sdist_directory, config_settings=None):
 
 def get_requires_for_build_sdist(config_settings=None):
     return []
+
 
 def get_requires_for_build_wheel(config_settings=None):
     return ["packaging"]
