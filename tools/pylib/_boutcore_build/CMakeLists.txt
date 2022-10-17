@@ -33,7 +33,7 @@ else()
   bout_python_maybe_error(OFF jinja2)
 endif()
 
-execute_process(COMMAND ${Python_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX').removesuffix('.so'))"
+execute_process(COMMAND ${Python_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX')[:-3])"
   RESULT_VARIABLE PYTHON_WORKING
   OUTPUT_VARIABLE PYTHON_EXT_SUFFIX
   OUTPUT_STRIP_TRAILING_WHITESPACE

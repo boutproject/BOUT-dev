@@ -25,7 +25,7 @@ def hash(fn):
         # Read and update hash string value in blocks of 4K
         for byte_block in iter(lambda: f.read(4096), b""):
             sha256_hash.update(byte_block)
-    return f"sha256={base64.urlsafe_b64encode(sha256_hash.digest()).decode().removesuffix('=')}"
+    return f"sha256={base64.urlsafe_b64encode(sha256_hash.digest()).decode()[:-1]}"
 
 
 def size(fn):
