@@ -636,6 +636,38 @@ if(BOUT_BUILD_EXAMPLES)
   add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
+
+##################################################
+# L10N: localisation - include translations
+
+
+include(GNUInstallDirs)
+
+find_package(Gettext)
+
+if (GETTEXT_FOUND)
+  #add_custom_target(mofiles ALL)
+  set(bout_langs es de fr zh_CN zh_TW)
+
+  foreach(_lang IN LISTS bout_langs)
+    set(_gmoFile ${CMAKE_CURRENT_BINARY_DIR}/locale/${_lang}/libbout.gmo)
+    set(_poFile ${CMAKE_CURRENT_SOURCE_DIR}/locale/${_lang}/libbout.po)
+    add_custom_command(OUTPUT ${_gmoFile} _mo_file_${_lang}
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/locale/${_lang}/
+      COMMAND ${GETTEXT_MSGFMT_EXECUTABLE} -o ${_gmoFile} ${_poFile}
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      DEPENDS ${_poFile}
+    )
+
+    list(APPEND _gmoFiles ${_gmoFile})
+
+    install(FILES ${_gmoFile} DESTINATION ${CMAKE_INSTALL_LOCALEDIR}/${_lang}/LC_MESSAGES/ RENAME libbout.mo)
+  endforeach()
+  add_custom_target(mofiles ALL
+    DEPENDS ${_gmoFiles})
+endif()
+
+
 ##################################################
 # Documentation
 
@@ -708,7 +740,6 @@ configure_file(bin/bout-config.in bin/bout-config-install @ONLY)
 ##################################################
 # Installation
 
-include(GNUInstallDirs)
 install(TARGETS bout++
   EXPORT bout++Targets
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
