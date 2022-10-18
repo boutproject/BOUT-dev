@@ -151,7 +151,7 @@ def get_requires_for_build_wheel(config_settings=None):
 
 
 def mkdir_p(path):
-    full = "/"
+    full = ""
     for k in path.split("/"):
         full += k + "/"
         try:
