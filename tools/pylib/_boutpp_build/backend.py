@@ -3,7 +3,7 @@ import glob  # corelib
 import hashlib  # corelib
 import base64  # corelib
 import tempfile  # corelib
-import subprocess # corelib
+import subprocess  # corelib
 
 try:
     import packaging.tags  # packaging
@@ -29,8 +29,11 @@ def getversion(_cache={}):
             _cache["r"] = run2("cat _version.txt")
     return _cache["r"].strip()
 
+
 def run2(cmd):
-    child = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+    child = subprocess.Popen(
+        cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True
+    )
     output = child.stdout.read().decode("utf-8", "ignore")
     child.communicate()
     assert child.returncode == 0, f"{cmd} failed with {child.returncode}"
@@ -67,7 +70,6 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
                 opts += f" {k}={v}"
             else:
                 opts += f" {k}=ON"
-    print(wheel_directory)
     tag = gettag()
     whlname = f"boutpp-{getversion()}-{tag}.whl"
     trueprefix = f"{os.getcwd()}/_wheel_install/"
@@ -89,20 +91,19 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
 
 
 def build_sdist(sdist_directory, config_settings=None):
-    print(config_settings)
-    print(sdist_directory)
-    enable_gz=False
-    enable_xz=True
+    print(config_settings, sdist_directory)
+    enable_gz = False
+    enable_xz = True
     if config_settings is not None:
         for k, v in config_settings.items():
-            if v == "sdist":
-                if k == "onlygz":
-                    enable_gz=True
-                    enable_xz=False
-                elif k =="both":
+            if k == "sdist":
+                if v == "onlygz":
+                    enable_gz = True
+                    enable_xz = False
+                elif v == "both":
                     enable_gz = True
                 else:
-                    raise ValueError(f"unknown option {k} for {v}")
+                    raise ValueError(f"unknown option {v} for {k}")
     prefix = f"boutpp-{getversion()}"
     name = f"{prefix}.tar"
     run(f"git archive HEAD --prefix {prefix}/ -o {sdist_directory}/{name}")
@@ -124,20 +125,20 @@ License-File: COPYING
 """
         )
     run(
-        f"tar --append -f {sdist_directory}/{name} _version.txt"
+        f"tar --append -f {sdist_directory}/{name} _version.txt --xform='s\\_version.txt\\{prefix}/_version.txt\\'"
     )
     run(
         f"tar --append -f {sdist_directory}/{name} {tmp} --xform='s\\{tmp[1:]}\\{prefix}/PKG-INFO\\'"
     )
-    # keep .gz for faster testing
+
+    if enable_gz:
+        run(f"gzip --force --keep {sdist_directory}/{name}")
+        if not enable_xz:
+            name += ".gz"
     if enable_xz:
         run(f"rm {sdist_directory}/{name}.xz -f")
         run(f"xz --best {sdist_directory}/{name}")
         name += ".xz"
-    if enable_gz:
-        run(f"gzip --force {sdist_directory}/{name}")
-        if not enable_xz:
-            name += ".gz"
     return name
 
 
