@@ -28,7 +28,7 @@ required, as the provided one may be only for the compute nodes.
 Further, numpy header files are required, therefore numpy needs to be
 compiled as well.
 Further, the header files need to be exposed to the boutpp cython
-compilation, e.g. by adding them to ``_boutpp_build/boutcore.pyx.in``.
+compilation, e.g. by adding them to ``_boutpp_build/boutpp.pyx.in``.
 It seems both ``NUMPY/numpy/core/include`` and
 ``NUMPY/build/src.linux-x86_64-2.7/numpy/core/include/numpy`` need to be
 added, where ``NUMPY`` is the path of the numpy directory.
@@ -107,7 +107,7 @@ A simple MMS test:
        sim=boutpp.DDZ(f)
        ana=boutpp.create3D("cos(z)",mesh)
        err=sim-ana
-       err=boutpp.max(boutcore.abs(err))
+       err=boutpp.max(boutpp.abs(err))
        errors.append(err)
 
 

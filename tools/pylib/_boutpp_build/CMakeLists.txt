@@ -92,7 +92,7 @@ foreach(file IN LISTS files)
 endforeach()
 
 add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libboutpp.cpp
-  COMMAND ${CMAKE_COMMAND} -E copy boutpp.pyx libboutcore.pyx
+  COMMAND ${CMAKE_COMMAND} -E copy boutpp.pyx libboutpp.pyx
   COMMAND ${Python_EXECUTABLE} -m cython libboutpp.pyx --cplus -3  -X binding=True -X embedsignature=True
   COMMENT "Cythonizing python interface"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -106,8 +106,8 @@ add_library(boutpp${PYTHON_EXT_SUFFIX} SHARED
   )
 
 add_custom_target(boutpp.py ALL
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libboutpp${PYTHON_EXT_SUFFIX}.so  ${CMAKE_CURRENT_BINARY_DIR}/../boutcore/__init__.py
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/boutpp.py ${CMAKE_CURRENT_BINARY_DIR}/../boutcore/
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libboutpp${PYTHON_EXT_SUFFIX}.so  ${CMAKE_CURRENT_BINARY_DIR}/../boutpp/__init__.py
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/boutpp.py ${CMAKE_CURRENT_BINARY_DIR}/../boutpp/
   DEPENDS boutpp${PYTHON_EXT_SUFFIX}
   COMMENT "Building python interface"
 )

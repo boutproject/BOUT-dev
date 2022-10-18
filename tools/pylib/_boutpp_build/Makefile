@@ -2,7 +2,7 @@ all: boutpp.so
 PY?=python3
 BOUT_TOP?=../../..
 
-boutpp.pyx: boutcore.pyx.jinja helper.py resolve_enum_inv.pyx.jinja scan_enums.py
+boutpp.pyx: boutpp.pyx.jinja helper.py resolve_enum_inv.pyx.jinja scan_enums.py
 resolve_enum.pxd:resolve_enum.pxd.jinja scan_enums.py
 helper.h:helper.h.jinja
 helper.cxx:helper.cxx.jinja
@@ -29,7 +29,7 @@ boutpp.so: $(TOGEN) $(TOGEN2)
 .PHONY: clean
 
 clean:
-	rm -f boutpp.cpp boutcore.so
+	rm -f boutpp.cpp boutpp.so
 	rm -f $(TOGEN) $(TOGEN2)
 	rm -rf build
 
