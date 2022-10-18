@@ -1,12 +1,13 @@
 import os  # corelib
+import glob  # corelib
+import hashlib  # corelib
+import base64  # corelib
+import tempfile  # corelib
 
 try:
     import packaging.tags  # packaging
 except:
     packaging = None
-import glob  # corelib
-import hashlib  # corelib
-import base64  # corelib
 
 
 def run(cmd):
@@ -16,7 +17,7 @@ def run(cmd):
 
 
 def getversion():
-    return "v5.0.0.alpha.dev10000"
+    return "v5.0.0.alpha.dev10001"
 
 
 def hash(fn):
@@ -32,17 +33,23 @@ def size(fn):
     return os.path.getsize(fn)
 
 
+def gettag():
+    thisos = list(packaging.tags.platform_tags())[-1]
+    tag = "-".join(str(next(packaging.tags.sys_tags())).split("-")[:2] + [thisos])
+    return tag
+
+
 def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     print(config_settings, metadata_directory)
     opts = ""
-    for k, v in config_settings.items():
-        if v:
-            opts += f" {k}={v}"
-        else:
-            opts += f" {k}=ON"
+    if config_settings is not None:
+        for k, v in config_settings.items():
+            if v:
+                opts += f" {k}={v}"
+            else:
+                opts += f" {k}=ON"
     print(wheel_directory)
-    thisos = list(packaging.tags.platform_tags())[-1]
-    tag = "-".join(str(next(packaging.tags.sys_tags())).split("-")[:2] + [thisos])
+    tag = gettag()
     whlname = f"boutcore-{getversion()}-{tag}.whl"
     trueprefix = f"{os.getcwd()}/_wheel_install/"
     prefix = f"{trueprefix}/boutcore/"
@@ -51,9 +58,67 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
         + f" -DCMAKE_INSTALL_PREFIX={prefix} -DCMAKE_INSTALL_LIBDIR={prefix} -DCMAKE_INSTALL_PYTHON_SITEARCH={trueprefix}"
         + opts
     )
-    run("cmake --build  _wheel_build/ -j 4")
+    run(f"cmake --build  _wheel_build/ -j {os.cpu_count()}")
     run("cmake --install _wheel_build/")
-    distinfo = f"_wheel_install/boutcore-{getversion()}.dist-info"
+    distinfo = f"_wheel_install"
+    prepare_metadata_for_build_wheel("_wheel_install", record=True)
+
+    run(f"cd {trueprefix} ; zip  {wheel_directory}/{whlname} . -rq --symlinks")
+    # cmd = f"git archive HEAD -o {wheel_directory}/{whlname}"
+    # run(cmd)
+    return whlname
+
+
+def build_sdist(sdist_directory, config_settings=None):
+    print(config_settings)
+    print(sdist_directory)
+    prefix = f"boutcore-{getversion()}"
+    name = f"{prefix}.tar"
+    run(f"git archive HEAD --prefix {prefix}/ -o {sdist_directory}/{name}")
+    _, tmp = tempfile.mkstemp(suffix=".tar")
+    for ext in "fmt", "mpark.variant":
+        run(
+            f"git archive --remote=externalpackages/{ext} HEAD --prefix  {prefix}/externalpackages/{ext}/ --format=tar > {tmp}"
+        )
+        run(f"tar -Af {sdist_directory}/{name} {tmp}")
+        run(f"rm {tmp}")
+
+    # _, tmpd = tempfile.mkdtemp()
+    with open(tmp, "w") as f:
+        f.write(
+            f"""Metadata-Version: 2.1
+Name: boutcore
+Version: {getversion()}
+License-File: COPYING
+"""
+        )
+    run(
+        f"tar --append -f {sdist_directory}/{name} {tmp} --xform='s\\{tmp[1:]}\\{prefix}/PKG-INFO\\'"
+    )
+    # keep .gz for faster testing
+    if 1:
+        run(f"rm {sdist_directory}/{name}.xz -f")
+        run(f"xz --best {sdist_directory}/{name}")
+        name += ".xz"
+    else:
+        run(f"gzip --force {sdist_directory}/{name}")
+        name += ".gz"
+    return name
+
+
+def get_requires_for_build_sdist(config_settings=None):
+    return []
+
+
+def get_requires_for_build_wheel(config_settings=None):
+    return ["packaging", "cython", "jinja2", "numpy"]
+
+
+def prepare_metadata_for_build_wheel(
+    metadata_directory, config_settings=None, record=False
+):
+    thisdir = f"boutcore-{getversion()}.dist-info"
+    distinfo = f"{metadata_directory}/{thisdir}"
     try:
         os.mkdir(distinfo)
     except FileExistsError:
@@ -73,40 +138,18 @@ License-File: COPYING
             f"""Wheel-Version: 1.0
 Generator: boutcore_custom_build_wheel ({getversion()})
 Root-Is-Purelib: false
-Tag: {tag}
+Tag: {gettag()}
 """
         )
 
-    with open(f"{distinfo}/RECORD", "w") as f:
-        for fn in glob.iglob("_wheel_install/**", recursive=True):
-            if not os.path.isfile(fn):
-                continue
-            fn0 = fn.removeprefix("_wheel_install/")
-            if fn0 != f"{distinfo}/RECORD":
-                f.write(f"{fn0},{hash(fn)},{size(fn)}\n")
-            else:
-                f.write(f"{fn0},,\n")
-
-    run(f"cd {trueprefix} ; zip  {wheel_directory}/{whlname} . -rq --symlinks")
-    # cmd = f"git archive HEAD -o {wheel_directory}/{whlname}"
-    # run(cmd)
-    return whlname
-
-
-def build_sdist(sdist_directory, config_settings=None):
-    print(config_settings)
-    print(sdist_directory)
-    prefix = f"boutcore-{getversion()}"
-    prefix = "boutcore-v5.0.0"
-    name = f"{prefix}.tar.gz"
-    run(f"git archive HEAD --prefix {prefix}/ -o {sdist_directory}/{name}")
-    # run(f"tar --append -f {sdist_directory}/{name} _bout_version.txt")
-    return name
-
-
-def get_requires_for_build_sdist(config_settings=None):
-    return []
-
-
-def get_requires_for_build_wheel(config_settings=None):
-    return ["packaging"]
+    if record:
+        with open(f"{distinfo}/RECORD", "w") as f:
+            for fn in glob.iglob("_wheel_install/**", recursive=True):
+                if not os.path.isfile(fn):
+                    continue
+                fn0 = fn.removeprefix("_wheel_install/")
+                if fn0 != f"{distinfo}/RECORD":
+                    f.write(f"{fn0},{hash(fn)},{size(fn)}\n")
+                else:
+                    f.write(f"{fn0},,\n")
+    return thisdir
