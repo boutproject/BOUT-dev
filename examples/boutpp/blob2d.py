@@ -9,9 +9,9 @@
 #
 ###################################################################
 
-import boutcore as bc
+import boutpp as bc
 from numpy import sqrt
-from boutcore import bracket, DDZ, Delp2, PhysicsModel
+from boutpp import bracket, DDZ, Delp2, PhysicsModel
 import sys
 import os
 

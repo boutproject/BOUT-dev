@@ -3,4 +3,4 @@
 requires = []
 # Defined by PEP 517:
 build-backend = "backend"
-backend-path = ["tools/pylib/_boutcore_build/"]
+backend-path = ["tools/pylib/_boutpp_build/"]

@@ -521,9 +521,9 @@ cdef class {{ field.field_type }}:
 
 {% endfor %}
     def __dealloc__(self):
-        self.__boutcore_dealloc()
+        self.__boutpp_dealloc()
 
-    def __boutcore_dealloc(self):
+    def __boutpp_dealloc(self):
         if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
             self.cobj = NULL
@@ -583,9 +583,9 @@ cdef class {{ vec }}:
 
 
     def __dealloc__(self):
-        self.__boutcore_dealloc()
+        self.__boutpp_dealloc()
 
-    def __boutcore_dealloc(self):
+    def __boutpp_dealloc(self):
         if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
             self.cobj=NULL
@@ -679,9 +679,9 @@ cdef class Mesh:
         return msh
 
     def __dealloc__(self):
-        self.__boutcore_dealloc()
+        self.__boutpp_dealloc()
 
-    def __boutcore_dealloc(self):
+    def __boutpp_dealloc(self):
         if self.cobj and not self.isGlobal:
             del self.cobj
             self.cobj = NULL
@@ -779,9 +779,9 @@ cdef class Coordinates:
 {% endfor %}
 
     def __dealloc__(self):
-        self.__boutcore_dealloc()
+        self.__boutpp_dealloc()
 
-    def __boutcore_dealloc(self):
+    def __boutpp_dealloc(self):
         if self.cobj and self.isSelfOwned:
             del self.cobj
             self.cobj = NULL
@@ -860,9 +860,9 @@ cdef class FieldFactory:
         checkInit()
         cobj=< c.FieldFactory*>0
     def __dealloc__(self):
-        self.__boutcore_dealloc()
+        self.__boutpp_dealloc()
 
-    def __boutcore_dealloc(self):
+    def __boutpp_dealloc(self):
         if self.cobj != NULL:
             del self.cobj
             self.cobj = NULL
@@ -900,9 +900,9 @@ cdef class PythonModelCallback:
         self.cobj = new c.PythonModelCallback(callback, <void*>method)
 
     def __dealloc__(self):
-        self.__boutcore_dealloc()
+        self.__boutpp_dealloc()
 
-    def __boutcore_dealloc(self):
+    def __boutpp_dealloc(self):
         if self.cobj:
             del self.cobj
             self.cobj = NULL
@@ -973,12 +973,12 @@ cdef class PhysicsModelBase(object):
         self.cmodel.set_init_func(self.callbackinit)
 
     def __dealloc__(self):
-        if hasattr(self, "__boutcore_dealloc"):
-            self.__boutcore_dealloc()
+        if hasattr(self, "__boutpp_dealloc"):
+            self.__boutpp_dealloc()
         else:
-            PhysicsModelBase.__boutcore_dealloc(self)
+            PhysicsModelBase.__boutpp_dealloc(self)
 
-    def __boutcore_dealloc(self):
+    def __boutpp_dealloc(self):
         if self.cmodel != <c.PythonModel *> 0:
             self.cmodel.free()
             del self.cmodel
@@ -997,7 +997,7 @@ class PhysicsModel(PhysicsModelBase):
 
     A complete simulation could look something like this:
 
-    import boutcore as bc
+    import boutpp as bc
 
     bc.init("mesh:n=48")
     class MyModel(bc.PhysicsModel):
@@ -1059,14 +1059,14 @@ class PhysicsModel(PhysicsModelBase):
     def __dealloc__(self):
         super(PhysicsModel,self).__dealloc__()
 
-    def __boutcore_dealloc(self):
-        super(PhysicsModel,self).__boutcore_dealloc()
+    def __boutpp_dealloc(self):
+        super(PhysicsModel,self).__boutpp_dealloc()
 
 cdef extern from "bout.hxx":
     int BoutInitialise(int&, char **&) except +raise_bout_py_error
     void BoutFinalise()
 
-cdef extern from "boutcore_openmpi_compat.hxx":
+cdef extern from "boutpp_openmpi_compat.hxx":
     void PyMPI_OPENMPI_dlopen_libmpi()
     c.bool is_openmpi
 
@@ -1083,7 +1083,7 @@ def init(args=[]):
     """
     global _isInit
     if _isInit:
-        raise RuntimeError("The BOUT++ library was already initialised - please call boutcore.init(args) only once")
+        raise RuntimeError("The BOUT++ library was already initialised - please call boutpp.init(args) only once")
     try:
         # python3 version
         if isinstance(args, str):
@@ -1092,7 +1092,7 @@ def init(args=[]):
         # fallback to python2
         if isinstance(args, basestring):
             args=args.split(" ")
-    args.insert(0,"boutcore")
+    args.insert(0,"boutpp")
     cdef char **string_buf = <char **>malloc((len(args)+1) * sizeof(char*))
     fu=[]
     cdef char * tmp
@@ -1124,7 +1124,7 @@ def finalise():
     Note that this deallocates the C++ objects, thus the python
     objects might not work any more.
     """
-    # Go through all living objects, find the ones from boutcore, so
+    # Go through all living objects, find the ones from boutpp, so
     # that we can free them.
     # We cannot rely on python, as
     #  * Python does not even garantee that they are freed
@@ -1141,12 +1141,12 @@ def finalise():
                   PythonModelCallback)
     for obj in objects:
         if isinstance(obj,ourClasses):
-            if hasattr(obj, "__boutcore_dealloc"):
-                obj.__boutcore_dealloc()
+            if hasattr(obj, "__boutpp_dealloc"):
+                obj.__boutpp_dealloc()
             else:
                 for ourClass in ourClasses:
                     if isinstance(obj, ourClass):
-                         ourClass.__boutcore_dealloc(obj)
+                         ourClass.__boutpp_dealloc(obj)
                          break
     del objects
     # Actually finalise
@@ -1155,11 +1155,11 @@ def finalise():
 
 def checkInit():
     """
-    Assert that boutcore has been initialized
+    Assert that boutpp has been initialized
     """
     global _isInit
     if not _isInit:
-       raise RuntimeError("The BOUT++ library was not initialised - please call boutcore.init(args) first")
+       raise RuntimeError("The BOUT++ library was not initialised - please call boutpp.init(args) first")
 
 
 {% macro deriv(d, name, flux=False, region=True, ret=field3d) %}
@@ -1647,9 +1647,9 @@ cdef class Options:
             return ret_str.decode()
 
     def __dealloc__(self):
-        self.__boutcore_dealloc()
+        self.__boutpp_dealloc()
 
-    def __boutcore_dealloc(self):
+    def __boutpp_dealloc(self):
         if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
             self.cobj = NULL

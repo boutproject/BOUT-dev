@@ -1,28 +1,28 @@
 .. Use python as the default language for syntax highlighting in this file
 .. highlight:: python
 
-.. _boutcore_api:
+.. _boutpp_api:
 
 .. default-domain:: py
 
-boutcore package
+boutpp package
 ================
 
 Module contents
 ---------------
 
-.. automodule:: boutcore
+.. automodule:: boutpp
     :members:
 
 Undocumented functions
 ----------------------
 
-.. automodule:: boutcore
+.. automodule:: boutpp
    :undoc-members:
 
 Special and inherited functions
 -------------------------------
 
-.. automodule:: boutcore
+.. automodule:: boutpp
    :special-members:
    :inherited-members:

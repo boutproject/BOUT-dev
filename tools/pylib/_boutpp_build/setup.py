@@ -27,8 +27,8 @@ include.append(numpy.get_include())
 
 extensions = [
     Extension(
-        "boutcore",
-        ["boutcore.pyx"],
+        "boutpp",
+        ["boutpp.pyx"],
         include_dirs=include,
         libraries=libs,
         library_dirs=ldirs,

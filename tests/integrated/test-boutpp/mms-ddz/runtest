@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-import boutcore
+import boutpp
 import numpy as np
 
-# requires boutcore
+# requires boutpp
 # requires not make
 
 errorlist = ""
-boutcore.init("-d data -q -q -q")  # +" -f BOUT.settings")
+boutpp.init("-d data -q -q -q")  # +" -f BOUT.settings")
 
 shapes = []
 errors = []
@@ -15,12 +15,12 @@ start = 6
 doPlot = False
 nzs = np.logspace(start, mmax, num=mmax - start + 1, base=2)
 for nz in nzs:
-    boutcore.setOption("meshz:nz", "%d" % nz, force=True)
-    boutcore.setOption("meshz:dz", "2*pi/%d" % nz, force=True)
-    mesh = boutcore.Mesh(section="meshz")
-    f = boutcore.create3D("sin(z)", mesh)
-    sim = boutcore.DDZ(f)
-    ana = boutcore.create3D("cos(z)", mesh)
+    boutpp.setOption("meshz:nz", "%d" % nz, force=True)
+    boutpp.setOption("meshz:dz", "2*pi/%d" % nz, force=True)
+    mesh = boutpp.Mesh(section="meshz")
+    f = boutpp.create3D("sin(z)", mesh)
+    sim = boutpp.DDZ(f)
+    ana = boutpp.create3D("cos(z)", mesh)
     err = sim - ana
     err = np.max(np.abs(err.getAll()))
     errors.append(err)

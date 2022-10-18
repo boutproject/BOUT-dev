@@ -1,5 +1,5 @@
 #!/bin/python3
-import boutcore as bc
+import boutpp as bc
 
 bc.init("mesh:n=48")
 

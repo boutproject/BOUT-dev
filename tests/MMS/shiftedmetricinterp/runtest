@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import boutcore
+import boutpp
 
-# requires boutcore
+# requires boutpp
 # requires not make
 
 from boutdata.data import BoutOptionsFile
@@ -12,7 +12,7 @@ from sys import exit
 
 errorlist = []
 
-boutcore.init("-d data -q -q -q")
+boutpp.init("-d data -q -q -q")
 
 
 def runtests(functions, derivatives, direction, stag, msg, errorlist, ordertol=0.1):
@@ -28,20 +28,20 @@ def runtests(functions, derivatives, direction, stag, msg, errorlist, ordertol=0
 
         errors = []
         for nz in nzs:
-            boutcore.setOption(
+            boutpp.setOption(
                 "mesh:ny",
                 "%d" % (nz + (2 * guards if direction == "x" else 0)),
                 force=True,
             )
-            boutcore.setOption("mesh:dy", "2*pi/(%d)" % (nz), force=True)
-            boutcore.setOption(
+            boutpp.setOption("mesh:dy", "2*pi/(%d)" % (nz), force=True)
+            boutpp.setOption(
                 "mesh:nz",
                 "%d" % (nz + (2 * guards if direction == "x" else 0)),
                 force=True,
             )
-            boutcore.setOption("mesh:dz", "2*pi/(%d)" % (nz), force=True)
+            boutpp.setOption("mesh:dz", "2*pi/(%d)" % (nz), force=True)
             dirnfac = direction + "*" + fac
-            mesh = boutcore.Mesh(section="mesh")
+            mesh = boutpp.Mesh(section="mesh")
 
             opt = BoutOptionsFile("data/BOUT.inp")
             opt["mesh"]["ny"] = nz
@@ -58,10 +58,10 @@ def runtests(functions, derivatives, direction, stag, msg, errorlist, ordertol=0
             # ensures that its dimension is (nx,ny,nz). One or more dimensions in
             # the numpy array might only have length 1 if the coordinate was not
             # explicitly present (normally we could rely on array broadcasting,
-            # but this is not used when creating a boutcore.Field3D object.
+            # but this is not used when creating a boutpp.Field3D object.
             opt["mms"]["f"] = infunc.replace("%s", dirnfac) + "+0.*x*y*z"
             f_array = opt.evaluate("mms:f")
-            f = boutcore.Field3D.fromMesh(mesh)
+            f = boutpp.Field3D.fromMesh(mesh)
             f.set(f_array)
             mesh.communicate(f)  # communicate to set yup/ydown fields
             sim = diff_func(f, method=diff, outloc=outloc)
@@ -72,7 +72,7 @@ def runtests(functions, derivatives, direction, stag, msg, errorlist, ordertol=0
                 )
             opt["mms"]["ana"] = outfunc.replace("%s", dirnfac) + "+0.*x*y*z"
             ana_array = opt.evaluate("mms:ana")
-            ana = boutcore.Field3D.fromMesh(mesh)
+            ana = boutpp.Field3D.fromMesh(mesh)
             ana.set(ana_array)
             err = sim - ana
             err = err.getAll()
@@ -129,7 +129,7 @@ derivatives = [
     [2, "C2"],
 ]
 
-direction = ["y", "1", 2, boutcore.DDY]
+direction = ["y", "1", 2, boutpp.DDY]
 
 runtests(functions, derivatives, direction, stag=False, msg="DD", errorlist=errorlist)
 
@@ -143,7 +143,7 @@ functions = [
     ["cos(%s + (z-mesh:zShift))", "-cos(%s + (z-mesh:zShift))"],
 ]
 
-direction = ["y", "1", 2, boutcore.D2DY2]
+direction = ["y", "1", 2, boutpp.D2DY2]
 
 runtests(functions, derivatives, direction, False, "D2D2", errorlist, ordertol=0.2)
 

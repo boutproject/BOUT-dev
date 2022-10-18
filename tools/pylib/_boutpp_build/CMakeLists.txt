@@ -62,11 +62,11 @@ message(STATUS "Building BOUT++ Python interface")
 set(generated)
 set(src ${CMAKE_CURRENT_SOURCE_DIR})
 set(tar ${CMAKE_CURRENT_BINARY_DIR})
-set(files "boutcore.pyx" "resolve_enum.pxd" "helper.cxx" "helper.h" "boutcpp.pxd")
+set(files "boutpp.pyx" "resolve_enum.pxd" "helper.cxx" "helper.h" "boutcpp.pxd")
 foreach(file IN LISTS files)
-  # helper.py and resolve_enum_inv.pyx.in are only required by boutcore.pyx
+  # helper.py and resolve_enum_inv.pyx.in are only required by boutpp.pyx
   #set(deps {src}/$file.in ${src}/common.sh)
-  #if (${file} STREQUAL boutcore.pyx)
+  #if (${file} STREQUAL boutpp.pyx)
   #list(APPEND deps
   set(gen ${tar}/${file})
   list(APPEND generated ${gen})
@@ -83,42 +83,42 @@ foreach(file IN LISTS files)
 	COMMENT "Generating ${file}")
 endforeach()
 
-set(boutcore_depends ${generated})
+set(boutpp_depends ${generated})
 
-set(files "boutexception_helper.hxx" "boutexception_helper.cxx" "boutcore_openmpi_compat.hxx" "bout_options.pxd" "setup.py")
+set(files "boutexception_helper.hxx" "boutexception_helper.cxx" "boutpp_openmpi_compat.hxx" "bout_options.pxd" "setup.py")
 foreach(file IN LISTS files)
-  list(APPEND ${boutcore_depends} "${CMAKE_CURRENT_BINARY_DIR}/${file}")
+  list(APPEND ${boutpp_depends} "${CMAKE_CURRENT_BINARY_DIR}/${file}")
   bout_copy_file("${file}")
 endforeach()
 
-add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libboutcore.cpp
-  COMMAND ${CMAKE_COMMAND} -E copy boutcore.pyx libboutcore.pyx
-  COMMAND ${Python_EXECUTABLE} -m cython libboutcore.pyx --cplus -3  -X binding=True -X embedsignature=True
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libboutpp.cpp
+  COMMAND ${CMAKE_COMMAND} -E copy boutpp.pyx libboutcore.pyx
+  COMMAND ${Python_EXECUTABLE} -m cython libboutpp.pyx --cplus -3  -X binding=True -X embedsignature=True
   COMMENT "Cythonizing python interface"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${boutcore_depends}
+  DEPENDS ${boutpp_depends}
   )
 
-add_library(boutcore${PYTHON_EXT_SUFFIX} SHARED
-  ${tar}/libboutcore.cpp
+add_library(boutpp${PYTHON_EXT_SUFFIX} SHARED
+  ${tar}/libboutpp.cpp
   ${tar}/helper.cxx
   ${tar}/boutexception_helper.cxx
   )
 
-add_custom_target(boutcore.py ALL
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libboutcore${PYTHON_EXT_SUFFIX}.so  ${CMAKE_CURRENT_BINARY_DIR}/../boutcore/__init__.py
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/boutcore.py ${CMAKE_CURRENT_BINARY_DIR}/../boutcore/
-  DEPENDS boutcore${PYTHON_EXT_SUFFIX}
+add_custom_target(boutpp.py ALL
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libboutpp${PYTHON_EXT_SUFFIX}.so  ${CMAKE_CURRENT_BINARY_DIR}/../boutcore/__init__.py
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/boutpp.py ${CMAKE_CURRENT_BINARY_DIR}/../boutcore/
+  DEPENDS boutpp${PYTHON_EXT_SUFFIX}
   COMMENT "Building python interface"
 )
 
-install(TARGETS  boutcore${PYTHON_EXT_SUFFIX}
-  DESTINATION ${CMAKE_INSTALL_PYTHON_SITEARCH}/boutcore/
+install(TARGETS  boutpp${PYTHON_EXT_SUFFIX}
+  DESTINATION ${CMAKE_INSTALL_PYTHON_SITEARCH}/boutpp/
 )
 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/boutcore.py
-  DESTINATION ${CMAKE_INSTALL_PYTHON_SITEARCH}/boutcore/
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/boutpp.py
+  DESTINATION ${CMAKE_INSTALL_PYTHON_SITEARCH}/boutpp/
   RENAME __init__.py
   )
-target_link_libraries(boutcore${PYTHON_EXT_SUFFIX} bout++)
-target_include_directories(boutcore${PYTHON_EXT_SUFFIX} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> ${Numpy_INCLUDE_DIRS} ${Python_INCLUDE_DIRS})
+target_link_libraries(boutpp${PYTHON_EXT_SUFFIX} bout++)
+target_include_directories(boutpp${PYTHON_EXT_SUFFIX} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> ${Numpy_INCLUDE_DIRS} ${Python_INCLUDE_DIRS})

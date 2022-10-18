@@ -1,5 +1,5 @@
 #!/bin/sh
-# requires boutcore
+# requires boutpp
 # requires not make
 
 set -ex

@@ -363,7 +363,7 @@ set(CMAKE_INSTALL_PYTHON_SITEARCH lib/${PYTHON_SITEPATH_SUFFIX} CACHE STRING "Lo
 
 set(BOUT_ENABLE_PYTHON MAYBE CACHE STRING "Build the Python interface")
 if (BOUT_ENABLE_PYTHON OR BOUT_ENABLE_PYTHON STREQUAL "MAYBE")
-  add_subdirectory(tools/pylib/_boutcore_build)
+  add_subdirectory(tools/pylib/_boutpp_build)
 else()
   set(BOUT_ENABLE_PYTHON OFF)
 endif()

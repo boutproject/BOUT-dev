@@ -9,9 +9,9 @@
 #
 ###################################################################
 
-import boutcore as bc
+import boutpp as bc
 from numpy import sqrt
-from boutcore import bracket, DDZ, Delp2
+from boutpp import bracket, DDZ, Delp2
 import sys
 
 bc.init("-d blob".split(" ") + sys.argv[1:])

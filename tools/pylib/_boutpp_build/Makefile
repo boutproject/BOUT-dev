@@ -1,14 +1,14 @@
-all: boutcore.so
+all: boutpp.so
 PY?=python3
 BOUT_TOP?=../../..
 
-boutcore.pyx: boutcore.pyx.jinja helper.py resolve_enum_inv.pyx.jinja scan_enums.py
+boutpp.pyx: boutcore.pyx.jinja helper.py resolve_enum_inv.pyx.jinja scan_enums.py
 resolve_enum.pxd:resolve_enum.pxd.jinja scan_enums.py
 helper.h:helper.h.jinja
 helper.cxx:helper.cxx.jinja
 boutcpp.pxd:boutcpp.pxd.jinja
 
-TOGEN=helper.cxx helper.h boutcpp.pxd boutcore.pyx resolve_enum.pxd
+TOGEN=helper.cxx helper.h boutcpp.pxd boutpp.pyx resolve_enum.pxd
 $(TOGEN): Makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/bin/bout-config ../boutconfig/__init__.py
 
 $(TOGEN): generate.py
@@ -21,7 +21,7 @@ $(TOGEN): generate.py
 # that case it might be required to check the linking commands, and
 # add the apropriate flags.
 # LDSHARED=$$($(BOUT_TOP)/bin/bout-config --ld )
-boutcore.so: $(TOGEN) $(TOGEN2)
+boutpp.so: $(TOGEN) $(TOGEN2)
 	CC=$$($(BOUT_TOP)/bin/bout-config --cc ) \
 	 CXX=$$($(BOUT_TOP)/bin/bout-config --cxx) \
 	 PYTHONPATH=..:$$PYTHONPATH $(PY) setup.py build_ext --inplace
@@ -29,12 +29,12 @@ boutcore.so: $(TOGEN) $(TOGEN2)
 .PHONY: clean
 
 clean:
-	rm -f boutcore.cpp boutcore.so
+	rm -f boutpp.cpp boutcore.so
 	rm -f $(TOGEN) $(TOGEN2)
 	rm -rf build
 
-pseudoinstall: boutcore.so
-	cp boutcore*.so ..
+pseudoinstall: boutpp.so
+	cp boutpp*.so ..
 
 .PHONY: input
 input:

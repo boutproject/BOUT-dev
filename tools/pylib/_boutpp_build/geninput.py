@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import boutcore as bc
+import boutpp as bc
 import numpy as np
 
 bc.init("-d input -f ../data/BOUT.inp".split(" "))

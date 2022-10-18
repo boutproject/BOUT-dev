@@ -1,10 +1,10 @@
-The python boutcore module
+The python boutpp module
 ==========================
 
 Installing
 ----------
 
-Installing boutcore can be tricky.
+Installing boutpp can be tricky.
 Ideally it should be just
 
 .. code-block:: bash
@@ -20,19 +20,19 @@ dependencies can be difficult.
 If problems arise, it might be worth checking a copy of the bout
 module out, to reduce the risk of causing issues with the old bout
 installation. This is especially true if you are trying to run
-boutcore not on compute nodes of a super computer but rather on
+boutpp not on compute nodes of a super computer but rather on
 post-processing/login/... nodes.
 
-To use boutcore on the login node, a self compiled version of mpi may be
+To use boutpp on the login node, a self compiled version of mpi may be
 required, as the provided one may be only for the compute nodes.
 Further, numpy header files are required, therefore numpy needs to be
 compiled as well.
-Further, the header files need to be exposed to the boutcore cython
-compilation, e.g. by adding them to ``_boutcore_build/boutcore.pyx.in``.
+Further, the header files need to be exposed to the boutpp cython
+compilation, e.g. by adding them to ``_boutpp_build/boutcore.pyx.in``.
 It seems both ``NUMPY/numpy/core/include`` and
 ``NUMPY/build/src.linux-x86_64-2.7/numpy/core/include/numpy`` need to be
 added, where ``NUMPY`` is the path of the numpy directory.
-For running boutcore on the post processing nodes, fftw3 needs to be
+For running boutpp on the post processing nodes, fftw3 needs to be
 compiled as well, if certain fftw routines are used. Note, fftw needs
 to be configured with ``--enable-shared``.
 
@@ -55,7 +55,7 @@ If you are running fedora - you can install pre-build binaries:
 Purpose
 -------
 
-The boutcore module exposes (part) of the BOUT++ C++ library to python.
+The boutpp module exposes (part) of the BOUT++ C++ library to python.
 It allows to calculate e.g. BOUT++ derivatives in python.
 
 State
@@ -74,7 +74,7 @@ Vectors are not exposed yet.
 Functions
 ---------
 
-See the API documentation :ref:`boutcore_api`
+See the API documentation :ref:`boutpp_api`
 
 Examples
 --------
@@ -82,14 +82,14 @@ Some trivial post processing:
 
 .. code-block:: python
 
-   import boutcore
+   import boutpp
    import numpy as np
    args="-d data -f BOUT.settings -o BOUT.post".split(" ")
-   boutcore.init(args)
-   dens=boutcore.Field3D.fromCollect("n",path="data")
-   temp=boutcore.Field3D.fromCollect("T",path="data")
+   boutpp.init(args)
+   dens=boutpp.Field3D.fromCollect("n",path="data")
+   temp=boutpp.Field3D.fromCollect("T",path="data")
    pres=dens*temp
-   dpdz=boutcore.DDZ(pres,outloc="CELL_ZLOW")
+   dpdz=boutpp.DDZ(pres,outloc="CELL_ZLOW")
 
 
 
@@ -97,17 +97,17 @@ A simple MMS test:
 
 .. code-block:: python
 
-   import boutcore
+   import boutpp
    import numpy as np
-   boutcore.init("-d data -f BOUT.settings -o BOUT.post")
+   boutpp.init("-d data -f BOUT.settings -o BOUT.post")
    for nz in [64,128,256]:
-       boutcore.setOption("meshz:nz","%d"%nz)
-       mesh=boutcore.Mesh(OptionSection="meshz")
-       f=boutcore.create3D("sin(z)",mesh)
-       sim=boutcore.DDZ(f)
-       ana=boutcore.create3D("cos(z)",mesh)
+       boutpp.setOption("meshz:nz","%d"%nz)
+       mesh=boutpp.Mesh(OptionSection="meshz")
+       f=boutpp.create3D("sin(z)",mesh)
+       sim=boutpp.DDZ(f)
+       ana=boutpp.create3D("cos(z)",mesh)
        err=sim-ana
-       err=boutcore.max(boutcore.abs(err))
+       err=boutpp.max(boutcore.abs(err))
        errors.append(err)
 
 
@@ -115,11 +115,11 @@ A real example - unstagger data:
 
 .. code-block:: python
 
-   import boutcore
-   boutcore.init("-d data -f BOUT.settings -o BOUT.post")
+   import boutpp
+   boutpp.init("-d data -f BOUT.settings -o BOUT.post")
    # uses location from dump - is already staggered
-   upar=boutcore.Field3D.fromCollect("Upar")
-   upar=boutcore.interp_to(upar,"CELL_CENTRE")
+   upar=boutpp.Field3D.fromCollect("Upar")
+   upar=boutpp.interp_to(upar,"CELL_CENTRE")
    # convert to numpy array
    upar=upar.getAll()
 
@@ -130,7 +130,7 @@ A real example - check derivative contributions:
 
    #!/usr/bin/env python
 
-   from boutcore import *
+   from boutpp import *
    import numpy as np
    from netCDF4 import Dataset
    import sys
@@ -142,7 +142,7 @@ A real example - check derivative contributions:
 
    times=collect("t_array",path=path)
 
-   boutcore.init("-d data -f BOUT.settings -o BOUT.post")
+   boutpp.init("-d data -f BOUT.settings -o BOUT.post")
    with Dataset(path+'/vort.nc', 'w', format='NETCDF4') as outdmp:
       phiSolver=Laplacian()
       phi=Field3D.fromCollect("n",path=path,tind=0,info=False)

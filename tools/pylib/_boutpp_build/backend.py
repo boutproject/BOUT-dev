@@ -50,9 +50,9 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
                 opts += f" {k}=ON"
     print(wheel_directory)
     tag = gettag()
-    whlname = f"boutcore-{getversion()}-{tag}.whl"
+    whlname = f"boutpp-{getversion()}-{tag}.whl"
     trueprefix = f"{os.getcwd()}/_wheel_install/"
-    prefix = f"{trueprefix}/boutcore/"
+    prefix = f"{trueprefix}/boutpp/"
     run(
         "cmake -S . -B _wheel_build/ -DBOUT_ENABLE_PYTHON=ON "
         + f" -DCMAKE_INSTALL_PREFIX={prefix} -DCMAKE_INSTALL_LIBDIR={prefix} -DCMAKE_INSTALL_PYTHON_SITEARCH={trueprefix}"
@@ -72,7 +72,7 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
 def build_sdist(sdist_directory, config_settings=None):
     print(config_settings)
     print(sdist_directory)
-    prefix = f"boutcore-{getversion()}"
+    prefix = f"boutpp-{getversion()}"
     name = f"{prefix}.tar"
     run(f"git archive HEAD --prefix {prefix}/ -o {sdist_directory}/{name}")
     _, tmp = tempfile.mkstemp(suffix=".tar")
@@ -87,7 +87,7 @@ def build_sdist(sdist_directory, config_settings=None):
     with open(tmp, "w") as f:
         f.write(
             f"""Metadata-Version: 2.1
-Name: boutcore
+Name: boutpp
 Version: {getversion()}
 License-File: COPYING
 """
@@ -117,7 +117,7 @@ def get_requires_for_build_wheel(config_settings=None):
 def prepare_metadata_for_build_wheel(
     metadata_directory, config_settings=None, record=False
 ):
-    thisdir = f"boutcore-{getversion()}.dist-info"
+    thisdir = f"boutpp-{getversion()}.dist-info"
     distinfo = f"{metadata_directory}/{thisdir}"
     try:
         os.mkdir(distinfo)
@@ -126,7 +126,7 @@ def prepare_metadata_for_build_wheel(
     with open(f"{distinfo}/METADATA", "w") as f:
         f.write(
             f"""Metadata-Version: 2.1
-Name: boutcore
+Name: boutpp
 Version: {getversion()}
 License-File: COPYING
 """
@@ -136,7 +136,7 @@ License-File: COPYING
     with open(f"{distinfo}/WHEEL", "w") as f:
         f.write(
             f"""Wheel-Version: 1.0
-Generator: boutcore_custom_build_wheel ({getversion()})
+Generator: boutpp_custom_build_wheel ({getversion()})
 Root-Is-Purelib: false
 Tag: {gettag()}
 """

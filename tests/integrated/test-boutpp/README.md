@@ -1,7 +1,7 @@
-Testing the boutcore interface
+Testing the boutpp interface
 =============================
 
-Some tests for the boutcore interface:
+Some tests for the boutpp interface:
 
 
 collect

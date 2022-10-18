@@ -1,10 +1,10 @@
-boutcore.pyx
+boutpp.pyx
 helper.cxx
 helper.h
 resolve_enum.pxd
 boutcpp.pxd
 setup.py
-boutcore.cpp
+boutpp.cpp
 \#*#
 .#*
 BOUT.settings
