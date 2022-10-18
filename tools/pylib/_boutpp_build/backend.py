@@ -3,6 +3,7 @@ import glob  # corelib
 import hashlib  # corelib
 import base64  # corelib
 import tempfile  # corelib
+import subprocess # corelib
 
 try:
     import packaging.tags  # packaging
@@ -13,11 +14,21 @@ except:
 def run(cmd):
     print(f"running `{cmd}`")
     ret = os.system(cmd)
-    assert ret == 0
+    assert ret == 0, f"{cmd} failed with {ret}"
 
 
-def getversion():
-    return "v5.0.0.alpha.dev10001"
+def getversion(_cache={}):
+    # return "v5.0.0.alpha.dev10336+ge81ad71cf"
+    if "r" not in _cache:
+        _cache["r"] = run2("git describe --tags --match=v4.0.0|sed s/v4.0.0-/v5.0.0.dev/|sed s/-/+/").strip()
+    return _cache["r"]
+
+def run2(cmd):
+    child = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+    output = child.stdout.read().decode("utf-8", "ignore")
+    child.communicate()
+    assert child.returncode == 0, f"{cmd} failed with {child.returncode}"
+    return output
 
 
 def hash(fn):
