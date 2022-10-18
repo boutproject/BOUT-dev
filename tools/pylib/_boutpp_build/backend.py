@@ -149,15 +149,22 @@ def get_requires_for_build_wheel(config_settings=None):
     return ["packaging", "cython", "jinja2", "numpy"]
 
 
+def mkdir_p(path):
+    full = "/"
+    for k in path.split("/"):
+        full += k + "/"
+        try:
+            os.mkdir(full)
+        except FileExistsError:
+            pass
+
+
 def prepare_metadata_for_build_wheel(
     metadata_directory, config_settings=None, record=False
 ):
     thisdir = f"boutpp-{getversion()}.dist-info"
     distinfo = f"{metadata_directory}/{thisdir}"
-    try:
-        os.mkdir(distinfo)
-    except FileExistsError:
-        pass
+    mkdir_p(distinfo)
     with open(f"{distinfo}/METADATA", "w") as f:
         f.write(
             f"""Metadata-Version: 2.1
