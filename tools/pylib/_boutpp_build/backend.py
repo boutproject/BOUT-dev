@@ -84,7 +84,8 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     distinfo = f"_wheel_install"
     prepare_metadata_for_build_wheel("_wheel_install", record=True)
 
-    run(f"cd {trueprefix} ; zip  {wheel_directory}/{whlname} . -rq --symlinks")
+    # Do not add --symlink as python's does not extract that as symlinks
+    run(f"cd {trueprefix} ; zip  {wheel_directory}/{whlname} . -rq")
     # cmd = f"git archive HEAD -o {wheel_directory}/{whlname}"
     # run(cmd)
     return whlname
