@@ -56,9 +56,7 @@ def runtests(functions, derivatives, directions, stag, msg):
                             "Location does not match - expected %s but got %s"
                             % (floc, sim.getLocation())
                         )
-                ana = boutpp.create3D(
-                    outfunc.replace("%s", dirnfac), mesh, outloc=floc
-                )
+                ana = boutpp.create3D(outfunc.replace("%s", dirnfac), mesh, outloc=floc)
                 err = sim - ana
                 err = err.getAll().flatten()
                 if guards:
