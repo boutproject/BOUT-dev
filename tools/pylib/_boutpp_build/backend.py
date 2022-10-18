@@ -55,6 +55,8 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     opts = ""
     if config_settings is not None:
         for k, v in config_settings.items():
+            if v == "sdist":
+                continue
             if v:
                 opts += f" {k}={v}"
             else:
@@ -83,6 +85,18 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
 def build_sdist(sdist_directory, config_settings=None):
     print(config_settings)
     print(sdist_directory)
+    enable_gz=False
+    enable_xz=True
+    if config_settings is not None:
+        for k, v in config_settings.items():
+            if v == "sdist":
+                if k == "onlygz":
+                    enable_gz=True
+                    enable_xz=False
+                elif k =="both":
+                    enable_gz = True
+                else:
+                    raise ValueError(f"unknown option {k} for {v}")
     prefix = f"boutpp-{getversion()}"
     name = f"{prefix}.tar"
     run(f"git archive HEAD --prefix {prefix}/ -o {sdist_directory}/{name}")
@@ -107,13 +121,14 @@ License-File: COPYING
         f"tar --append -f {sdist_directory}/{name} {tmp} --xform='s\\{tmp[1:]}\\{prefix}/PKG-INFO\\'"
     )
     # keep .gz for faster testing
-    if 1:
+    if enable_xz:
         run(f"rm {sdist_directory}/{name}.xz -f")
         run(f"xz --best {sdist_directory}/{name}")
         name += ".xz"
-    else:
+    if enable_gz:
         run(f"gzip --force {sdist_directory}/{name}")
-        name += ".gz"
+        if not enable_xz:
+            name += ".gz"
     return name
 
 
