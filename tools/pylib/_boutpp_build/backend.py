@@ -20,8 +20,13 @@ def run(cmd):
 def getversion(_cache={}):
     # return "v5.0.0.alpha.dev10336+ge81ad71cf"
     if "r" not in _cache:
-        _cache["r"] = run2("git describe --tags --match=v4.0.0|sed s/v4.0.0-/v5.0.0.dev/|sed s/-/+/").strip()
-    return _cache["r"]
+        try:
+            _cache["r"] = run2("git describe --tags --match=v4.0.0|sed s/v4.0.0-/v5.0.0.dev/|sed s/-/+/")
+            with open("_version.txt", "w") as f:
+                f.write(_cache["r"])
+        except AssertionError:
+            _cache["r"] = run2("cat _version.txt")
+    return _cache["r"].strip()
 
 def run2(cmd):
     child = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
@@ -117,6 +122,9 @@ Version: {getversion()}
 License-File: COPYING
 """
         )
+    run(
+        f"tar --append -f {sdist_directory}/{name} _version.txt"
+    )
     run(
         f"tar --append -f {sdist_directory}/{name} {tmp} --xform='s\\{tmp[1:]}\\{prefix}/PKG-INFO\\'"
     )
