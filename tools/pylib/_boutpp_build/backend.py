@@ -18,10 +18,11 @@ def run(cmd):
 
 
 def getversion(_cache={}):
-    # return "v5.0.0.alpha.dev10336+ge81ad71cf"
     if "r" not in _cache:
         try:
-            _cache["r"] = run2("git describe --tags --match=v4.0.0|sed s/v4.0.0-/v5.0.0.dev/|sed s/-/+/")
+            tmp = run2("git describe --tags --match=v4.0.0")
+            tmp = run2(f"echo {tmp.strip()} | sed -e s/v4.0.0-/v5.0.0.dev/ -e s/-.*//")
+            _cache["r"] = tmp
             with open("_version.txt", "w") as f:
                 f.write(_cache["r"])
         except AssertionError:
