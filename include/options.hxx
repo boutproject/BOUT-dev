@@ -266,7 +266,7 @@ public:
   bool hasAttribute(const std::string& key) const {
     return attributes.find(key) != attributes.end();
   }
-  
+
   /// Get a sub-section or value
   ///
   /// Example:
