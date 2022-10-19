@@ -16,16 +16,22 @@ def run(cmd):
     ret = os.system(cmd)
     assert ret == 0, f"{cmd} failed with {ret}"
 
-useLocalVersion=True
+
+useLocalVersion = True
+
 
 def getversion(_cache={}):
     if "r" not in _cache:
         try:
             tmp = run2("git describe --tags --match=v4.0.0")
             if useLocalVersion:
-                tmp = run2(f"echo {tmp.strip()} | sed -e s/v4.0.0-/v5.0.0.dev/ -e s/-/+/")
+                tmp = run2(
+                    f"echo {tmp.strip()} | sed -e s/v4.0.0-/v5.0.0.dev/ -e s/-/+/"
+                )
             else:
-                tmp = run2(f"echo {tmp.strip()} | sed -e s/v4.0.0-/v5.0.0.dev/ -e s/-.*//")
+                tmp = run2(
+                    f"echo {tmp.strip()} | sed -e s/v4.0.0-/v5.0.0.dev/ -e s/-.*//"
+                )
             _cache["r"] = tmp
             with open("_version.txt", "w") as f:
                 f.write(_cache["r"])
@@ -72,7 +78,7 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
                 continue
             if k == "useLocalVersion":
                 global useLocalVersion
-                useLocalVersion=False
+                useLocalVersion = False
                 continue
             if v:
                 opts += f" {k}={v}"
@@ -115,7 +121,7 @@ def build_sdist(sdist_directory, config_settings=None):
                     raise ValueError(f"unknown option {v} for {k}")
             if k == "useLocalVersion":
                 global useLocalVersion
-                useLocalVersion=False
+                useLocalVersion = False
     prefix = f"boutpp-{getversion()}"
     name = f"{prefix}.tar"
     run(f"git archive HEAD --prefix {prefix}/ -o {sdist_directory}/{name}")
