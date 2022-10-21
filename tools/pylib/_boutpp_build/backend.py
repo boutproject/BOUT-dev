@@ -18,6 +18,7 @@ def run(cmd):
 
 
 useLocalVersion = True
+pkgname = "boutpp"
 
 
 def getversion(_cache={}):
@@ -73,19 +74,23 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     print(config_settings, metadata_directory)
     opts = ""
     if config_settings is not None:
+        global useLocalVersion, pkgname
         for k, v in config_settings.items():
             if k == "sdist":
                 continue
             if k == "useLocalVersion":
-                global useLocalVersion
                 useLocalVersion = False
+                continue
+            if k == "nightly":
+                useLocalVersion = False
+                pkgname = "boutpp-nightly"
                 continue
             if v:
                 opts += f" {k}={v}"
             else:
                 opts += f" {k}=ON"
     tag = gettag()
-    whlname = f"boutpp-{getversion()}-{tag}.whl"
+    whlname = f"{pkgname}-{getversion()}-{tag}.whl"
     trueprefix = f"{os.getcwd()}/_wheel_install/"
     prefix = f"{trueprefix}/boutpp/"
     run(
@@ -107,57 +112,63 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
 
 def build_sdist(sdist_directory, config_settings=None):
     print(config_settings, sdist_directory)
-    enable_gz = False
-    enable_xz = True
+    enable_gz = True
+    enable_xz = False
     if config_settings is not None:
+        global useLocalVersion, pkgname
         for k, v in config_settings.items():
             if k == "sdist":
                 if v == "onlygz":
                     enable_gz = True
                     enable_xz = False
+                elif v == "onlyxz":
+                    enable_xz = True
+                    enable_gz = False
                 elif v == "both":
-                    enable_gz = True
+                    enable_xz = True
                 else:
                     raise ValueError(f"unknown option {v} for {k}")
             if k == "useLocalVersion":
-                global useLocalVersion
                 useLocalVersion = False
-    prefix = f"boutpp-{getversion()}"
-    name = f"{prefix}.tar"
-    run(f"git archive HEAD --prefix {prefix}/ -o {sdist_directory}/{name}")
+            if k == "nightly":
+                useLocalVersion = False
+                pkgname = "boutpp-nightly"
+    prefix = f"{pkgname}-{getversion()}"
+    fname = f"{prefix}.tar"
+    run(f"git archive HEAD --prefix {prefix}/ -o {sdist_directory}/{fname}")
     _, tmp = tempfile.mkstemp(suffix=".tar")
     for ext in "fmt", "mpark.variant":
         run(
             f"git archive --remote=externalpackages/{ext} HEAD --prefix  {prefix}/externalpackages/{ext}/ --format=tar > {tmp}"
         )
-        run(f"tar -Af {sdist_directory}/{name} {tmp}")
+        run(f"tar -Af {sdist_directory}/{fname} {tmp}")
         run(f"rm {tmp}")
 
     # _, tmpd = tempfile.mkdtemp()
     with open(tmp, "w") as f:
         f.write(
             f"""Metadata-Version: 2.1
-Name: boutpp
+Name: {pkgname}
 Version: {getversion()}
 License-File: COPYING
 """
         )
     run(
-        f"tar --append -f {sdist_directory}/{name} _version.txt --xform='s\\_version.txt\\{prefix}/_version.txt\\'"
+        f"tar --append -f {sdist_directory}/{fname} _version.txt --xform='s\\_version.txt\\{prefix}/_version.txt\\'"
     )
     run(
-        f"tar --append -f {sdist_directory}/{name} {tmp} --xform='s\\{tmp[1:]}\\{prefix}/PKG-INFO\\'"
+        f"tar --append -f {sdist_directory}/{fname} {tmp} --xform='s\\{tmp[1:]}\\{prefix}/PKG-INFO\\'"
     )
 
     if enable_gz:
-        run(f"gzip --force --keep {sdist_directory}/{name}")
+        run(f"gzip --force --best --keep {sdist_directory}/{fname}")
         if not enable_xz:
-            name += ".gz"
+            fname += ".gz"
     if enable_xz:
-        run(f"rm {sdist_directory}/{name}.xz -f")
-        run(f"xz --best {sdist_directory}/{name}")
-        name += ".xz"
-    return name
+        run(f"rm {sdist_directory}/{fname}.xz -f")
+        run(f"xz --best {sdist_directory}/{fname}")
+        fname += ".xz"
+    return fname
 
 
 def get_requires_for_build_sdist(config_settings=None):
@@ -181,13 +192,13 @@ def mkdir_p(path):
 def prepare_metadata_for_build_wheel(
     metadata_directory, config_settings=None, record=False
 ):
-    thisdir = f"boutpp-{getversion()}.dist-info"
+    thisdir = f"{pkgname}-{getversion()}.dist-info"
     distinfo = f"{metadata_directory}/{thisdir}"
     mkdir_p(distinfo)
     with open(f"{distinfo}/METADATA", "w") as f:
         f.write(
             f"""Metadata-Version: 2.1
-Name: boutpp
+Name: {pkgname}
 Version: {getversion()}
 License-File: COPYING
 """
@@ -214,3 +225,23 @@ Tag: {gettag()}
                 else:
                     f.write(f"{fn0},,\n")
     return thisdir
+
+
+def nightly():
+    return build_sdist(os.getcwd() + "/dist/", dict(nightly=True))
+
+
+def sdist():
+    return build_sdist(os.getcwd() + "/dist/")
+
+
+def wheel():
+    return build_wheel(os.getcwd() + "/dist/")
+
+
+if __name__ == "__main__":
+    import sys
+
+    todos = dict(nightly=nightly, sdist=sdist, wheel=wheel)
+    for todo in sys.argv[1:]:
+        todos[todo]()
