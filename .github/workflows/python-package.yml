@@ -24,11 +24,10 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install --upgrade build
-        sudo apt update &&
-        sudo apt install -y
+      run: python -m pip install --upgrade pip &&
+           pip install --upgrade build &&
+           sudo apt update &&
+           sudo apt install -y
                  libfftw3-dev
                  libnetcdf-dev
                  libnetcdf-c++4-dev
@@ -65,11 +64,10 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install --upgrade build
-        sudo apt update &&
-        sudo apt install -y
+      run: python -m pip install --upgrade pip &&
+           pip install --upgrade build &&
+           sudo apt update &&
+           sudo apt install -y
                  libfftw3-dev
                  libnetcdf-dev
                  libnetcdf-c++4-dev
@@ -115,11 +113,10 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install --upgrade build
-        sudo apt update &&
-        sudo apt install -y
+      run: python -m pip install --upgrade pip &&
+           pip install --upgrade build &&
+           sudo apt update &&
+           sudo apt install -y
                  libfftw3-dev
                  libnetcdf-dev
                  libnetcdf-c++4-dev
