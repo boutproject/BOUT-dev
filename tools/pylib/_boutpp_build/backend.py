@@ -19,9 +19,12 @@ def run(cmd):
 
 useLocalVersion = True
 pkgname = "boutpp"
+version = None
 
 
 def getversion(_cache={}):
+    if version is not None:
+        return version
     if "r" not in _cache:
         try:
             tmp = run2("git describe --tags --match=v4.0.0")
@@ -71,7 +74,9 @@ def gettag():
 
 
 def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
-    print(config_settings, metadata_directory)
+    if metadata_directory:
+        parse(f"{metadata_directory}/METADATA")
+
     opts = ""
     if config_settings is not None:
         global useLocalVersion, pkgname
@@ -192,6 +197,9 @@ def mkdir_p(path):
 def prepare_metadata_for_build_wheel(
     metadata_directory, config_settings=None, record=False
 ):
+    if not record and os.path.isfile("PKG-INFO"):
+        parse("PKG-INFO")
+
     thisdir = f"{pkgname}-{getversion()}.dist-info"
     distinfo = f"{metadata_directory}/{thisdir}"
     mkdir_p(distinfo)
@@ -225,6 +233,16 @@ Tag: {gettag()}
                 else:
                     f.write(f"{fn0},,\n")
     return thisdir
+
+
+def parse(fn):
+    with open(fn) as f:
+        global pkgname, version
+        for line in f:
+            if line.startswith("Name:"):
+                pkgname = line[5:].strip()
+            if line.startswith("Version:"):
+                version = line[8:].strip()
 
 
 def nightly():
