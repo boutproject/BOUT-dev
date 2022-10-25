@@ -74,3 +74,4 @@ src/fmt/format.cxx
 # Python stuff
 /_wheel*/
 /dist/
+/_version.txt
