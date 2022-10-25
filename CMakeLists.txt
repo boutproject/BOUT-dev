@@ -9,6 +9,7 @@ endif()
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.15)
   cmake_policy(SET CMP0094 NEW)
 endif()
+cmake_policy(SET CMP0095 NEW)
 # We support the new syntax, so avoid deprecation warning
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.22)
   cmake_policy(SET CMP0127 NEW)

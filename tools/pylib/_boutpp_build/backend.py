@@ -99,8 +99,9 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     trueprefix = f"{os.getcwd()}/_wheel_install/"
     prefix = f"{trueprefix}/boutpp/"
     run(
-        "cmake -S . -B _wheel_build/ -DBOUT_ENABLE_PYTHON=ON "
-        + f" -DCMAKE_INSTALL_PREFIX={prefix} -DCMAKE_INSTALL_LIBDIR={prefix} -DCMAKE_INSTALL_PYTHON_SITEARCH={trueprefix}"
+        "cmake -S . -B _wheel_build/ -DBOUT_ENABLE_PYTHON=ON"
+        + f" -DCMAKE_INSTALL_PREFIX={prefix} -DCMAKE_INSTALL_LIBDIR={prefix}"
+        + f" -DCMAKE_INSTALL_PYTHON_SITEARCH={trueprefix} -DCMAKE_INSTALL_RPATH=\$ORIGIN"
         + opts
     )
     run(f"cmake --build  _wheel_build/ -j {os.cpu_count()}")
