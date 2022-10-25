@@ -4,7 +4,7 @@ from jinja2 import Environment
 import sys
 import stencils_sympy as sten
 
-from boundary_nonuniform_common import *
+from boundary_nonuniform_common import orders, boundaries, maybeopen
 
 header = """\
 #include <boundary_standard.hxx>

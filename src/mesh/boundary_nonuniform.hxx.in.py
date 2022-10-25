@@ -3,7 +3,7 @@
 import sys
 
 from jinja2 import Environment
-from boundary_nonuniform_common import orders, bounderies, maybeopen
+from boundary_nonuniform_common import orders, boundaries, maybeopen
 
 env = Environment(trim_blocks=True)
 

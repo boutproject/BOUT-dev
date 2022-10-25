@@ -18,7 +18,7 @@ class maybeopen:
         if file:
             print(*args, file=file)
         if self.fn:
-            self.fd.write(" ".join(args))
+            self.fd.write(" ".join(args) + "\n")
         else:
             print(*args)
 

@@ -246,6 +246,8 @@ set(BOUT_SOURCES
   ./src/mesh/parallel_boundary_op.cxx
   ./src/mesh/parallel_boundary_region.cxx
   ./src/mesh/surfaceiter.cxx
+  ./src/mesh/boundary_nonuniform.hxx
+  ./src/mesh/boundary_nonuniform.cxx
   ./src/physics/gyro_average.cxx
   ./src/physics/physicsmodel.cxx
   ./src/physics/smoothing.cxx
@@ -338,7 +340,7 @@ else()
 endif()
 
 
-if (Python3_FOUND AND ClangFormat_FOUND AND jinja2_FOUND and sympy_FOUND)
+if (Python3_FOUND AND ClangFormat_FOUND AND jinja2_FOUND AND sympy_FOUND)
   set(BOUT_GENERATE_CXX_DEFAULT ON)
 else()
   set(BOUT_GENERATE_CXX_DEFAULT OFF)
@@ -369,7 +371,7 @@ if (BOUT_GENERATE_CXX)
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/field/
     COMMENT "Generating source code (src/field/generated_fieldops.cxx)" )
   foreach(ext in "cxx" "hxx")
-    set(_outfile ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh/generated_fieldops.${ext})
+    set(_outfile ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh/boundary_nonuniform.${ext})
     add_custom_command( OUTPUT ${_outfile}
       COMMAND ${Python3_EXECUTABLE} ${_outfile}.in.py ${_outfile}.tmp
       COMMAND ${ClangFormat_BIN} ${_outfile}.tmp -i
