@@ -24,9 +24,15 @@ def factorial(a):
         return a * factorial(a - 1)
 
 
-def gen_code(order, matrix_type):
+def get_inverse(order, matrix_type, _cache={}):
+    key = f"{matrix_type}{order}"
+
+    if key in _cache:
+        return _cache[key]
+
     x = [Symbol("spacing.f%d" % i) for i in range(order)]
     matrix = matrix_type(x)
+
     A = Matrix(order, order, matrix)
 
     try:
@@ -36,6 +42,12 @@ def gen_code(order, matrix_type):
 
         print(A, matrix, file=sys.stderr)
         raise
+    _cache[key] = iA
+    return iA
+
+
+def gen_code(order, matrix_type):
+    iA = get_inverse(order, matrix_type)
     ret = ""
     for i in range(order):
         ret += ccode(simp(iA[0, i]), assign_to="facs.f%d" % i)
@@ -57,6 +69,9 @@ class dirichlet:
     def __call__(self, i, j):
         return taylor(self.x, i, j)
 
+    def __repr__(self):
+        return "dirichlet"
+
 
 class neumann:
     def __init__(self, x):
@@ -67,6 +82,9 @@ class neumann:
             return taylor(self.x, i, j - 1)
         else:
             return taylor(self.x, i, j)
+
+    def __repr__(self):
+        return "neumann"
 
 
 if __name__ == "__main__":
