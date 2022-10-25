@@ -25,8 +25,6 @@ MYG = 2
 
 grid = "uedge.grd_std.cdl"
 
-dump_format = "nc" # Output format. nc = NetCDF
-
 #StaggerGrids = true
 
 ##################################################

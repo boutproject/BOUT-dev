@@ -40,7 +40,6 @@
 
 #include "bout_types.hxx"
 #include "boutexception.hxx"
-#include "datafile.hxx"
 #include "options.hxx"
 #include "unused.hxx"
 #include "bout/monitor.hxx"
@@ -315,9 +314,12 @@ public:
 
   /// Add evolving variables to output (dump) file or restart file
   ///
-  /// @param[inout] outputfile   The file to add variable to
+  /// @param[inout] outputfile  The `Options` to add variable to
   /// @param[in] save_repeat    If true, add variables with time dimension
-  virtual void outputVars(Datafile& outputfile, bool save_repeat = true);
+  virtual void outputVars(Options& output_options, bool save_repeat = true);
+
+  /// Copy evolving variables out of \p options
+  virtual void readEvolvingVariablesFromOptions(Options& options);
 
   /// Create a Solver object. This uses the "type" option in the given
   /// Option section to determine which solver type to create.
@@ -339,6 +341,9 @@ public:
   std::string getRunID() const;
   /// The run from which this was restarted. Throws if the identifier hasn't been set yet.
   std::string getRunRestartFrom() const;
+
+  /// Write \p options to the model's output file
+  void writeToModelOutputFile(const Options& options);
 
 protected:
   /// Number of command-line arguments
@@ -480,8 +485,24 @@ protected:
   /// Returns a Field3D containing the global indices
   Field3D globalIndex(int localStart);
 
+  /// Maximum internal timestep
+  BoutReal max_dt{-1.0};
+
+  /// Helper struct for Monitor and the name of its time dimension
+  struct MonitorInfo {
+    /// Non-owning pointer to a monitor instance
+    Monitor* monitor;
+    /// Name of the time dimension for writing outputs to
+    /// file. Monitors with the same period as the outputs have plain
+    /// "t", all other monitors have an ascending integer suffix,
+    /// starting with the front monitor. WARNING! This could change if
+    /// there are different monitors added on subsequent restarts, or
+    /// if they are added in a different order.
+    std::string time_dimension;
+  };
+
   /// Get the list of monitors
-  auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }
+  auto getMonitors() const -> const std::list<MonitorInfo>& { return monitors; }
 
   /// Get the currently set number of output steps requested
   int getNumberOutputSteps() const { return number_output_steps; }
@@ -503,6 +524,8 @@ private:
   std::string run_id = default_run_id;
   /// The run from which this was restarted.
   std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
+  /// Save `run_id` and `run_restart_from` every output
+  bool save_repeat_run_id{false};
 
   /// Number of calls to the RHS function
   int rhs_ncalls{0};
@@ -529,7 +552,7 @@ private:
   void calculate_mms_error(BoutReal t);
 
   /// List of monitor functions
-  std::list<Monitor*> monitors;
+  std::list<MonitorInfo> monitors;
   /// List of timestep monitor functions
   std::list<TimestepMonitorFunc> timestep_monitors;
 

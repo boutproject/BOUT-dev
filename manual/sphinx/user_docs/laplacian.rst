@@ -55,9 +55,6 @@ implementations are listed in table :numref:`tab-laplacetypes`.
    | `spt                   | Parallel only (NXPE>1). Thomas algorithm.                    |                                          |
    | <sec-spt_>`__          |                                                              |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
-   | `pdd                   | Parallel Diagnonally Dominant algorithm. Experimental        |                                          |
-   | <sec-pdd_>`__          |                                                              |                                          |
-   +------------------------+--------------------------------------------------------------+------------------------------------------+
    | `ipt                   | Iterative parallel tridiagonal solver. Parallel only, but    |                                          |
    | <sec-ipt_>`__          | automatically falls back to Thomas algorithm for NXPE=1.     |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
@@ -101,7 +98,7 @@ The `Laplacian` class is defined in ``invert_laplace.hxx`` and solves
 problems formulated like equation :eq:`full_laplace_inv` To use this
 class, first create an instance of it::
 
-    Laplacian *lap = Laplacian::create();
+    std::unique_ptr<Laplacian> lap = Laplacian::create();
 
 By default, this will use the options in a section called “laplace”, but
 can be given a different section as an argument. By default
@@ -701,14 +698,14 @@ calculate coefficients in a Tridiagonal matrix::
 
 For the user of the class, some static functions are defined::
 
-      static Laplacian* create(Options *opt = nullptr);
+      static std::unique_ptr<Laplacian> create(Options *opt = nullptr);
       static Laplacian* defaultInstance();
 
 The create function allows new Laplacian implementations to be created,
 based on options. To use the options in the ``[laplace]`` section, just
 use the default::
 
-      Laplacian* lap = Laplacian::create();
+      std::unique_ptr<Laplacian> lap = Laplacian::create();
 
 The code for the `Laplacian` base class is in
 ``src/invert/laplace/invert_laplace.cxx``. The actual creation of new
@@ -766,16 +763,6 @@ set of 3 poloidal slices (i.e. MYSUB=3)
    Parallel Laplacian inversion with MYSUB=3 on 4 processors. Red
    periods are where a processor is idle - in this case about 40% of the
    time
-
-.. _sec-pdd:
-
-PDD algorithm
-~~~~~~~~~~~~~
-
-This is the Parallel Diagonally Dominant (PDD) algorithm. It’s very
-fast, but achieves this by neglecting some cross-processor terms. For
-ELM simulations, it has been found that these terms are important, so
-this method is not usually used.
 
 .. _sec-cyclic:
 
@@ -988,7 +975,7 @@ discretised in terms of fluxes through cell faces.
 The header file is ``include/bout/invert/laplacexz.hxx``. The solver is
 constructed by using the `LaplaceXZ::create` function::
 
-      LaplaceXZ *lap = LaplaceXZ::create(mesh);
+      std::unique_ptr<LaplaceXZ> lap = LaplaceXZ::create(mesh);
 
 Note that a pointer to a `Mesh` object must be given, which
 for now is the global variable `mesh`. By default the
@@ -1046,7 +1033,7 @@ The code in ``examples/test-laplacexz`` is a simple test case for
 `LaplaceXZ` . First it creates a `LaplaceXZ`
 object::
 
-      LaplaceXZ *inv = LaplaceXZ::create(mesh);
+      std::unique_ptr<LaplaceXZ> inv = LaplaceXZ::create(mesh);
 
 For this test the ``petsc`` implementation is the default:
 

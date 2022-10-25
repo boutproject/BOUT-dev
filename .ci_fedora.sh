@@ -23,7 +23,7 @@ then
     time $cmd pull registry.fedoraproject.org/fedora:$version
     time $cmd create --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
          --name mobydick registry.fedoraproject.org/fedora:$version \
-	     /tmp/BOUT-dev/.travis_fedora.sh $mpi
+	     /tmp/BOUT-dev/.ci_fedora.sh $mpi
     time $cmd cp ${TRAVIS_BUILD_DIR} mobydick:/tmp
     time $cmd start -a mobydick
     exit 0
@@ -59,10 +59,6 @@ else
     cd BOUT-dev
     echo "starting configure"
     time cmake -S . -B build -DBOUT_USE_PETSC=ON
-    for f in tests/requirements/*[^y] ; do
-	echo -n "$f: "
-	$f && echo yes || echo no
-    done
     time make -C build build-check -j 2
     time make -C build check
 fi

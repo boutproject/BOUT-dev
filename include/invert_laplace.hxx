@@ -40,21 +40,20 @@ class Laplacian;
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 #endif
 
-#include "fieldperp.hxx"
-#include "field3d.hxx"
 #include "field2d.hxx"
-#include <boutexception.hxx>
+#include "field3d.hxx"
+#include "fieldperp.hxx"
 #include "unused.hxx"
 #include "bout/generic_factory.hxx"
+#include "bout/monitor.hxx"
+#include <boutexception.hxx>
 
 #include "dcomplex.hxx"
-#include "options.hxx"
 
 class Solver;
 class Datafile;
 
 constexpr auto LAPLACE_SPT = "spt";
-constexpr auto LAPLACE_PDD = "pdd";
 constexpr auto LAPLACE_TRI = "tri";
 constexpr auto LAPLACE_BAND = "band";
 constexpr auto LAPLACE_PETSC = "petsc";
@@ -166,6 +165,9 @@ using RegisterLaplace = LaplaceFactory::RegisterInFactory<DerivedType>;
 
 using RegisterUnavailableLaplace = LaplaceFactory::RegisterUnavailableInFactory;
 
+class Options;
+class Solver;
+
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
@@ -267,6 +269,32 @@ public:
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
 
   static void cleanup(); ///< Frees all memory
+
+  /// Add any output variables to \p output_options, for example,
+  /// performance information, with optional name for the time
+  /// dimension
+  void outputVars(Options& output_options) const { outputVars(output_options, "t"); }
+  virtual void outputVars(MAYBE_UNUSED(Options& output_options),
+                          MAYBE_UNUSED(const std::string& time_dimension)) const {}
+
+  /// Register performance monitor with \p solver, prefix output with
+  /// `Options` section name
+  void savePerformance(Solver& solver) { savePerformance(solver, getPerformanceName()); }
+  /// Register performance monitor that is call every timestep with \p
+  /// solver, prefix output with \p name. Call this function from your
+  /// `PhysicsModel::init` to get time-dependent performance
+  /// information, or call `outputVars` directly in non-model code to
+  /// get the information at that point in time.
+  ///
+  /// To use this for a Laplacian implementation, override
+  /// `outputVars(Options&, const std::string&)`, and add whatever
+  /// information you would like to save to the `Options`
+  /// argument. This will then be called automatically by
+  /// `LaplacianMonitor`.
+  ///
+  /// See `LaplaceNaulin::outputVars` for an example.
+  void savePerformance(Solver& solver, const std::string& name);
+
 protected:
   bool async_send; ///< If true, use asyncronous send in parallel algorithms
   
@@ -311,9 +339,33 @@ protected:
   Mesh* localmesh;     ///< Mesh object for this solver
   Coordinates* coords; ///< Coordinates object, so we only have to call
                        ///  localmesh->getCoordinates(location) once
+
 private:
   /// Singleton instance
   static std::unique_ptr<Laplacian> instance;
+  /// Name for writing performance infomation; default taken from
+  /// constructing `Options` section
+  std::string performance_name;
+
+  class LaplacianMonitor : public Monitor {
+  public:
+    LaplacianMonitor(Laplacian& owner) : laplacian(&owner) {}
+    int call(Solver* solver, BoutReal time, int iter, int nout) override;
+    void outputVars(Options& options, const std::string& time_dimension) override;
+
+  private:
+    Laplacian* laplacian{nullptr};
+  };
+
+  LaplacianMonitor monitor{*this};
+
+public:
+  /// Get name for writing performance information
+  std::string getPerformanceName() const { return performance_name; };
+
+protected:
+  /// Set the name for writing performance information
+  void setPerformanceName(std::string name) { performance_name = std::move(name); }
 };
 
 ////////////////////////////////////////////

@@ -53,7 +53,7 @@ do
     esac
 done
 
-./.build_sundials_for_travis.sh
+./.build_sundials_for_ci.sh
 
 if test $UPDATE_SCRIPT -gt 0
 then

@@ -33,12 +33,11 @@
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
-#include "bout/paralleltransform.hxx"
-#include "datafile.hxx"
-#include "utils.hxx"
-#include <bout_types.hxx>
 #include "field2d.hxx"
 #include "field3d.hxx"
+#include "utils.hxx"
+#include "bout/paralleltransform.hxx"
+#include <bout_types.hxx>
 
 class Datafile;
 class Mesh;
@@ -81,12 +80,8 @@ public:
 
   ~Coordinates() = default;
 
-  /*!
-   * Adds variables to the output file, for post-processing
-   * 
-   * Must be a better way so that Coordinates doesn't depend on Datafile
-   */
-  void outputVars(Datafile &file);
+  /// Add variables to \p output_options, for post-processing
+  void outputVars(Options& output_options);
 
   FieldMetric dx, dy, dz; ///< Mesh spacing in x, y and z
 

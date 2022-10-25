@@ -87,11 +87,20 @@ int main(int argc, char **argv) {
   b_interp = interp->interpolate(b, deltaz);
   c_interp = interp->interpolate(c, deltaz);
 
-  SAVE_ONCE3(a, a_interp, a_solution);
-  SAVE_ONCE3(b, b_interp, b_solution);
-  SAVE_ONCE3(c, c_interp, c_solution);
+  Options dump;
+  dump["a"] = a;
+  dump["a_interp"] = a_interp;
+  dump["a_solution"] = a_solution;
 
-  bout::globals::dump.write();
+  dump["b"] = b;
+  dump["b_interp"] = b_interp;
+  dump["b_solution"] = b_solution;
+
+  dump["c"] = c;
+  dump["c_interp"] = c_interp;
+  dump["c_solution"] = c_solution;
+
+  bout::writeDefaultOutputFile(dump);
 
   bout::checkForUnusedOptions();
   BoutFinalise();

@@ -84,8 +84,8 @@ public:
                         "in this subclass");
   }
 
-  /// Output variables used by a ParallelTransform instance to the dump files
-  virtual void outputVars(Datafile& UNUSED(file)) {}
+  /// Output variables used by a ParallelTransform instance to \p output_options
+  virtual void outputVars(MAYBE_UNUSED(Options& output_options)) {}
 
   /// If \p twist_shift_enabled is true, does a `Field3D` with Y direction \p ytype
   /// require a twist-shift at branch cuts on closed field lines?
@@ -224,7 +224,7 @@ public:
   bool canToFromFieldAligned() override { return true; }
 
   /// Save zShift to the output
-  void outputVars(Datafile& file) override;
+  void outputVars(Options& output_options) override;
 
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
     // Twist-shift only if field-aligned
@@ -280,16 +280,6 @@ private:
   };
 
   /*!
-   * Shift a 3D field \p f in Z by the given \p zangle
-   *
-   * @param[in] f  The field to shift
-   * @param[in] zangle   Toroidal angle (z)
-   *
-   */
-  Field3D shiftZ(const Field3D& f, const Field2D& zangle,
-                 const std::string& region = "RGN_NOX") const;
-
-  /*!
    * Shift a 3D field or FieldPerp \p f by the given phase \p phs in Z
    *
    * Calculates FFT in Z, multiplies by the complex phase
@@ -305,16 +295,6 @@ private:
   FieldPerp shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
                    const YDirectionType y_direction_out,
                    const std::string& region = "RGN_NOX") const;
-
-  /*!
-   * Shift a given 1D array, assumed to be in Z, by the given \p zangle
-   *
-   * @param[in] in  A 1D array of length \p len
-   * @param[in] len  Length of the in and out arrays
-   * @param[in] zangle  The angle (z coordinate) to shift by
-   * @param[out] out  A 1D array of length \p len, already allocated
-   */
-  void shiftZ(const BoutReal* in, int len, BoutReal zangle, BoutReal* out) const;
 
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle

@@ -358,21 +358,12 @@ void Field3D::applyBoundary(bool init) {
 
   checkData(*this);
 
-  if (background != nullptr) {
-    // Apply boundary to the total of this and background
-
-    Field3D tot = *this + (*background);
-    tot.copyBoundary(*this);
-    tot.applyBoundary(init);
-    *this = tot - (*background);
-  } else {
-    // Apply boundary to this field
-    for (const auto& bndry : getBoundaryOps()) {
-      // Always apply to the values when initialising
-      // fields, otherwise apply only if wanted
-      if (!bndry->apply_to_ddt || init) {
-        bndry->apply(*this);
-      }
+  // Apply boundary to this field
+  for (const auto& bndry : getBoundaryOps()) {
+    // Always apply to the values when initialising
+    // fields, otherwise apply only if wanted
+    if (!bndry->apply_to_ddt || init) {
+      bndry->apply(*this);
     }
   }
 }
@@ -388,18 +379,9 @@ void Field3D::applyBoundary(BoutReal t) {
 
   checkData(*this);
 
-  if (background != nullptr) {
-    // Apply boundary to the total of this and background
-
-    Field3D tot = *this + (*background);
-    tot.copyBoundary(*this);
-    tot.applyBoundary(t);
-    *this = tot - (*background);
-  } else {
-    // Apply boundary to this field
-    for (const auto& bndry : getBoundaryOps()) {
-      bndry->apply(*this, t);
-    }
+  // Apply boundary to this field
+  for (const auto& bndry : getBoundaryOps()) {
+    bndry->apply(*this, t);
   }
 }
 
@@ -407,15 +389,6 @@ void Field3D::applyBoundary(const std::string &condition) {
   TRACE("Field3D::applyBoundary(condition)");
   
   checkData(*this);
-
-  if (background != nullptr) {
-    // Apply boundary to the total of this and background
-    
-    Field3D tot = *this + (*background);
-    tot.applyBoundary(condition);
-    *this = tot - (*background);
-    return;
-  }
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
@@ -463,15 +436,9 @@ void Field3D::applyTDerivBoundary() {
   ASSERT1(deriv != nullptr);
   checkData(*deriv);
 
-  if (background != nullptr)
-    *this += *background;
-
   for (const auto& bndry : getBoundaryOps()) {
     bndry->apply_ddt(*this);
   }
-
-  if (background != nullptr)
-    *this -= *background;
 }
 
 void Field3D::setBoundaryTo(const Field3D &f3d) {
@@ -501,7 +468,6 @@ void Field3D::applyParallelBoundary() {
 
   checkData(*this);
   ASSERT1(hasParallelSlices());
-  ASSERT2(background == nullptr);
 
   // Apply boundary to this field
   for (const auto& bndry : getBoundaryOpPars()) {
@@ -515,7 +481,6 @@ void Field3D::applyParallelBoundary(BoutReal t) {
 
   checkData(*this);
   ASSERT1(hasParallelSlices());
-  ASSERT2(background == nullptr);
 
   // Apply boundary to this field
   for (const auto& bndry : getBoundaryOpPars()) {
@@ -529,7 +494,6 @@ void Field3D::applyParallelBoundary(const std::string &condition) {
 
   checkData(*this);
   ASSERT1(hasParallelSlices());
-  ASSERT2(background == nullptr);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory* bfact = BoundaryFactory::getInstance();
@@ -548,7 +512,6 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 
   checkData(*this);
   ASSERT1(hasParallelSlices());
-  ASSERT2(background == nullptr);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory* bfact = BoundaryFactory::getInstance();
@@ -570,7 +533,6 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 
   checkData(*this);
   ASSERT1(hasParallelSlices());
-  ASSERT2(background == nullptr);
 
   /// Get the boundary factory (singleton)
   BoundaryFactory* bfact = BoundaryFactory::getInstance();
@@ -843,7 +805,6 @@ void swap(Field3D& first, Field3D& second) noexcept {
   swap(static_cast<Field&>(first), static_cast<Field&>(second));
 
   swap(first.data, second.data);
-  swap(first.background, second.background);
   swap(first.nx, second.nx);
   swap(first.ny, second.ny);
   swap(first.nz, second.nz);

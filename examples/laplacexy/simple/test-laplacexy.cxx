@@ -17,9 +17,11 @@ int main(int argc, char** argv) {
   Field2D x = 0.0;
   
   x = laplacexy.solve(rhs, x);
-  
-  SAVE_ONCE2(rhs, x);
-  bout::globals::dump.write(); // Save output file
+
+  Options dump;
+  dump["rhs"] = rhs;
+  dump["x"] = x;
+  bout::writeDefaultOutputFile(dump);
 
   BoutFinalise();
   return 0;
