@@ -1,9 +1,9 @@
-#include <globals.hxx>
+#include "boundary_nonuniform.hxx"
 #include <boundary_factory.hxx>
 #include <boundary_standard.hxx>
+#include <globals.hxx>
 #include <options.hxx>
 #include <utils.hxx>
-#include "boundary_nonuniform.hxx"
 
 #include <list>
 #include <string>
@@ -44,7 +44,7 @@ BoundaryFactory::BoundaryFactory() {
   add(new BoundaryFreeNonUniform_O4(), "free_nu_o4");
   add(new BoundaryFreeNonUniform_O3(), "free_nu_o3");
   add(new BoundaryFreeNonUniform_O2(), "free_nu_o2");
-  
+
   addMod(new BoundaryRelax(), "relax");
   addMod(new BoundaryWidth(), "width");
   addMod(new BoundaryToFieldAligned(), "toFieldAligned");
