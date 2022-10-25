@@ -5,6 +5,9 @@ on:
     paths:
       - '**.cxx'
       - '**.hxx'
+    branches:
+      - master
+      - next
 
 jobs:
   clang-format:
