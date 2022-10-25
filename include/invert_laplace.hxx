@@ -40,28 +40,32 @@ class Laplacian;
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 #endif
 
-#include "fieldperp.hxx"
-#include "field3d.hxx"
 #include "field2d.hxx"
-#include <boutexception.hxx>
+#include "field3d.hxx"
+#include "fieldperp.hxx"
 #include "unused.hxx"
 #include "bout/generic_factory.hxx"
+#include "bout/monitor.hxx"
+#include <boutexception.hxx>
 
 #include "dcomplex.hxx"
-#include "options.hxx"
+
+class Solver;
+class Datafile;
 
 constexpr auto LAPLACE_SPT = "spt";
-constexpr auto LAPLACE_PDD = "pdd";
 constexpr auto LAPLACE_TRI = "tri";
 constexpr auto LAPLACE_BAND = "band";
 constexpr auto LAPLACE_PETSC = "petsc";
 constexpr auto LAPLACE_PETSCAMG = "petscamg";
 constexpr auto LAPLACE_PETSC3DAMG = "petsc3damg";
+constexpr auto LAPLACE_HYPRE3D = "hypre3d";
 constexpr auto LAPLACE_CYCLIC = "cyclic";
 constexpr auto LAPLACE_MULTIGRID = "multigrid";
 constexpr auto LAPLACE_NAULIN = "naulin";
 constexpr auto LAPLACE_IPT = "ipt";
 constexpr auto LAPLACE_PCR = "pcr";
+constexpr auto LAPLACE_PCR_THOMAS = "pcr_thomas";
 
 // Inversion flags for each boundary
 /// Zero-gradient for DC (constant in Z) component. Default is zero value
@@ -129,10 +133,8 @@ constexpr int INVERT_KX_ZERO = 16;
   const int INVERT_DC_IN_GRADPARINV = 2097152;
  */
 
-class LaplaceFactory
-    : public Factory<
-          Laplacian, LaplaceFactory,
-          std::function<std::unique_ptr<Laplacian>(Options*, CELL_LOC, Mesh*)>> {
+class LaplaceFactory : public Factory<Laplacian, LaplaceFactory, Options*, CELL_LOC,
+                                      Mesh*, Solver*, Datafile*> {
 public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
@@ -140,9 +142,13 @@ public:
   static constexpr auto default_type = LAPLACE_CYCLIC;
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
-                    Mesh* mesh = nullptr) {
+                    Mesh* mesh = nullptr, Solver* solver = nullptr,
+                    Datafile* dump = nullptr) {
     options = optionsOrDefaultSection(options);
-    return Factory::create(getType(options), options, loc, mesh);
+    return Factory::create(getType(options), options, loc, mesh, solver, dump);
+  }
+  ReturnType create(const std::string& type, Options* options) const {
+    return Factory::create(type, options, CELL_CENTRE, nullptr, nullptr, nullptr);
   }
 };
 
@@ -155,23 +161,18 @@ public:
 ///     RegisterLaplace<MyLaplace> registerlaplacemine("mylaplace");
 ///     }
 template <class DerivedType>
-class RegisterLaplace {
-public:
-  RegisterLaplace(const std::string& name) {
-    LaplaceFactory::getInstance().add(
-        name,
-        [](Options* options, CELL_LOC loc, Mesh* mesh) -> std::unique_ptr<Laplacian> {
-          return std::make_unique<DerivedType>(options, loc, mesh);
-        });
-  }
-};
+using RegisterLaplace = LaplaceFactory::RegisterInFactory<DerivedType>;
 
-using RegisterUnavailableLaplace = RegisterUnavailableInFactory<Laplacian, LaplaceFactory>;
+using RegisterUnavailableLaplace = LaplaceFactory::RegisterUnavailableInFactory;
+
+class Options;
+class Solver;
 
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
-  Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
+  Laplacian(Options* options = nullptr, const CELL_LOC loc = CELL_CENTRE,
+            Mesh* mesh_in = nullptr, Solver* solver = nullptr, Datafile* dump = nullptr);
   virtual ~Laplacian() = default;
 
   /// Set coefficients for inversion. Re-builds matrices if necessary
@@ -260,14 +261,40 @@ public:
    *
    * @param[in] opt  The options section to use. By default "laplace" will be used
    */
-  static std::unique_ptr<Laplacian> create(Options* opts = nullptr,
-                                           const CELL_LOC location = CELL_CENTRE,
-                                           Mesh* mesh_in = nullptr) {
-    return LaplaceFactory::getInstance().create(opts, location, mesh_in);
+  static std::unique_ptr<Laplacian>
+  create(Options* opts = nullptr, const CELL_LOC location = CELL_CENTRE,
+         Mesh* mesh_in = nullptr, Solver* solver = nullptr, Datafile* dump = nullptr) {
+    return LaplaceFactory::getInstance().create(opts, location, mesh_in, solver, dump);
   }
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
 
   static void cleanup(); ///< Frees all memory
+
+  /// Add any output variables to \p output_options, for example,
+  /// performance information, with optional name for the time
+  /// dimension
+  void outputVars(Options& output_options) const { outputVars(output_options, "t"); }
+  virtual void outputVars(MAYBE_UNUSED(Options& output_options),
+                          MAYBE_UNUSED(const std::string& time_dimension)) const {}
+
+  /// Register performance monitor with \p solver, prefix output with
+  /// `Options` section name
+  void savePerformance(Solver& solver) { savePerformance(solver, getPerformanceName()); }
+  /// Register performance monitor that is call every timestep with \p
+  /// solver, prefix output with \p name. Call this function from your
+  /// `PhysicsModel::init` to get time-dependent performance
+  /// information, or call `outputVars` directly in non-model code to
+  /// get the information at that point in time.
+  ///
+  /// To use this for a Laplacian implementation, override
+  /// `outputVars(Options&, const std::string&)`, and add whatever
+  /// information you would like to save to the `Options`
+  /// argument. This will then be called automatically by
+  /// `LaplacianMonitor`.
+  ///
+  /// See `LaplaceNaulin::outputVars` for an example.
+  void savePerformance(Solver& solver, const std::string& name);
+
 protected:
   bool async_send; ///< If true, use asyncronous send in parallel algorithms
   
@@ -312,9 +339,33 @@ protected:
   Mesh* localmesh;     ///< Mesh object for this solver
   Coordinates* coords; ///< Coordinates object, so we only have to call
                        ///  localmesh->getCoordinates(location) once
+
 private:
   /// Singleton instance
   static std::unique_ptr<Laplacian> instance;
+  /// Name for writing performance infomation; default taken from
+  /// constructing `Options` section
+  std::string performance_name;
+
+  class LaplacianMonitor : public Monitor {
+  public:
+    LaplacianMonitor(Laplacian& owner) : laplacian(&owner) {}
+    int call(Solver* solver, BoutReal time, int iter, int nout) override;
+    void outputVars(Options& options, const std::string& time_dimension) override;
+
+  private:
+    Laplacian* laplacian{nullptr};
+  };
+
+  LaplacianMonitor monitor{*this};
+
+public:
+  /// Get name for writing performance information
+  std::string getPerformanceName() const { return performance_name; };
+
+protected:
+  /// Set the name for writing performance information
+  void setPerformanceName(std::string name) { performance_name = std::move(name); }
 };
 
 ////////////////////////////////////////////

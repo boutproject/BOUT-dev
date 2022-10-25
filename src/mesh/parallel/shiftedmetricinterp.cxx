@@ -32,9 +32,10 @@
 #include "bout/constants.hxx"
 
 ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
-                                         Field2D zShift_in, Options* opt)
+                                         Field2D zShift_in, BoutReal zlength_in,
+                                         Options* opt)
     : ParallelTransform(mesh, opt), location(location_in), zShift(std::move(zShift_in)),
-      ydown_index(mesh.ystart) {
+      zlength(zlength_in), ydown_index(mesh.ystart) {
   // check the coordinate system used for the grid data source
   ShiftedMetricInterp::checkInputGrid();
 
@@ -65,10 +66,9 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (const auto& i : zt_prime_up.getRegion(RGN_NOY)) {
       // Field line moves in z by an angle zShift(i,j+1)-zShift(i,j) when going
       // from j to j+1, but we want the shift in index-space
-      zt_prime_up[i] =
-          static_cast<BoutReal>(i.z())
-          + (zShift[i.yp(y_offset + 1)] - zShift[i])
-            * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
+      zt_prime_up[i] = static_cast<BoutReal>(i.z())
+                       + (zShift[i.yp(y_offset + 1)] - zShift[i])
+                             * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
     }
 
     parallel_slice_interpolators[yup_index + y_offset]->calcWeights(zt_prime_up);
@@ -76,10 +76,9 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (const auto& i : zt_prime_down.getRegion(RGN_NOY)) {
       // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
       // from j to j-1, but we want the shift in index-space
-      zt_prime_down[i] =
-          static_cast<BoutReal>(i.z())
-          - (zShift[i] - zShift[i.ym(y_offset + 1)])
-            * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
+      zt_prime_down[i] = static_cast<BoutReal>(i.z())
+                         - (zShift[i] - zShift[i.ym(y_offset + 1)])
+                               * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
     }
 
     parallel_slice_interpolators[ydown_index + y_offset]->calcWeights(zt_prime_down);
@@ -98,7 +97,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     // Field line moves in z by an angle zShift(i,j) when going
     // from y0 to y(j), but we want the shift in index-space
     zt_prime_to[i] = static_cast<BoutReal>(i.z())
-                     + zShift[i] * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
+                     + zShift[i] * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
   }
 
   interp_to_aligned->calcWeights(zt_prime_to);
@@ -108,7 +107,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     // from y0 to y(j), but we want the shift in index-space.
     // Here we reverse the shift, so subtract zShift
     zt_prime_from[i] = static_cast<BoutReal>(i.z())
-                       - zShift[i] * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
+                       - zShift[i] * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
   }
 
   interp_from_aligned->calcWeights(zt_prime_from);
@@ -124,7 +123,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           it.ind, mesh.yend, z,
           mesh.GlobalX(it.ind),                           // x
           2. * PI * mesh.GlobalY(mesh.yend + 0.5),        // y
-          2. * PI * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
+          zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
               + 0.5 * (zShift(it.ind, mesh.yend + 1) - zShift(it.ind, mesh.yend)),
           0.25
               * (dy(it.ind, mesh.yend) // dy/2
@@ -141,7 +140,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           it.ind, mesh.ystart, z,
           mesh.GlobalX(it.ind),                           // x
           2. * PI * mesh.GlobalY(mesh.ystart - 0.5),      // y
-          2. * PI * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
+          zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
               + 0.5 * (zShift(it.ind, mesh.ystart) - zShift(it.ind, mesh.ystart - 1)),
           0.25
               * (dy(it.ind, mesh.ystart - 1) // dy/2
@@ -159,7 +158,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           it.ind, mesh.yend, z,
           mesh.GlobalX(it.ind),                           // x
           2. * PI * mesh.GlobalY(mesh.yend + 0.5),        // y
-          2. * PI * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
+          zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
               + 0.5 * (zShift(it.ind, mesh.yend + 1) - zShift(it.ind, mesh.yend)),
           0.25
               * (dy(it.ind, mesh.yend) // dy/2
@@ -176,7 +175,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           it.ind, mesh.ystart, z,
           mesh.GlobalX(it.ind),                           // x
           2. * PI * mesh.GlobalY(mesh.ystart - 0.5),      // y
-          2. * PI * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
+          zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
               + 0.5 * (zShift(it.ind, mesh.ystart) - zShift(it.ind, mesh.ystart - 1)),
           0.25
               * (dy(it.ind, mesh.ystart - 1) // dy/2

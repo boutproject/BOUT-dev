@@ -108,6 +108,45 @@ Cab
 
    ./configure --with-netcdf=/usr/local/tools/hdf5-gnu-serial-1.8.1/lib --with-fftw=/usr/local/tools/fftw3-3.2 --with-pdb=/usr/gapps/pact/new/lnx-2.5-ib/gnu
 
+Cori
+~~~~
+
+First set up the environment by loading the correct modules. For Bash shell use:
+
+.. code-block:: bash
+   source config/cori/setup-env-cgpu.sh
+
+and for C shell:
+
+.. code-block:: csh
+   source config/cori/setup-env-cgpu.sh
+
+Then configure BOUT++ by running a script which calls CMake. Under bash:
+
+.. code-block:: bash
+   ./config/cori/config-bout-cgpu.sh
+
+and C shell:
+
+.. code-block:: csh
+   ./config/cori/config-bout-cgpu.csh
+
+At the time of writing, Hypre linking is not working with CUDA. If you come across
+errors with the above configuration, try turning off Hypre support:
+
+.. code-block:: bash
+   ./config/cori/config-bout-cgpu-nohypre.sh
+
+or
+
+.. code-block:: csh
+   ./config/cori/config-bout-cgpu-nohypre.csh
+
+See section :ref:`sec-gpusupport` for details of compiling and running
+on GPU machines, including Cori. Note that in order to access GPU
+nodes a request must be made through `NERSC services
+<https://nersc.servicenowservices.com/>`_.
+
 Edison
 ~~~~~~
 
@@ -153,6 +192,17 @@ With the tcsh shell use
    setenv PETSC_DIR ~farley9/projects/petsc/petsc-3.2-p1
    setenv PETSC_ARCH arch-c
    ./configure --with-netcdf=/usr/local/tools/netcdf-gnu-4.1 --with-fftw=/usr/local MPICXX=mpiCC EXTRA_LIBS=-lcurl --with-petsc --with-cvode=~farley9/local --with-ida=~farley9/local
+
+MacOS / Apple Darwin
+~~~~~~~~~~~~~~~~~~~~
+
+Compiling with Apple Clang 12, the following configuration has been known to work
+
+.. code-block:: tcsh
+
+   cmake . -B build -DBOUT_ENABLE_BACKTRACE=Off -DBUILD_SHARED_LIBS=Off -DBOUT_USE_NLS=Off -DBOUT_USE_UUID_SYSTEM_GENERATOR=Off
+   cd build
+   make
 
 Marconi
 ~~~~~~~
@@ -437,6 +487,12 @@ Use the ``--with-sundials`` option to configure BOUT++ with SUNDIALS::
 SUNDIALS will allow you to select at run-time which solver to use. See
 :ref:`sec-timeoptions` for more details on how to do this.
 
+Notes:
+
+* If compiling SUNDIALS, make sure that it is configured with MPI (``MPI_ENABLE=ON``)
+* If you install SUNDIALS to a non-standard (system) directory, you will probably have
+  to add the ``lib`` directory to the ``LD_LIBRARY_PATH`` environment variable.
+
 .. _sec-PETSc-install:
 
 PETSc
@@ -459,14 +515,19 @@ following steps::
 Use the following configure options to ensure PETSc is compatible with BOUT++::
 
     $ ./configure \
-      --with-clanguage=cxx \
       --with-mpi=yes \
       --with-precision=double \
       --with-scalar-type=real \
-      --with-shared-libraries=0
+      --with-shared-libraries=1 \
+      --with-debugging=0 \
+      {C,CXX,F}OPTFLAGS="-O3 -march=native" \
+      --prefix=$HOME/local/petsc-version-options
 
-You may also wish to add ``--with-debugging=yes`` to ``./configure``
-in order to allow debugging.
+You may also wish to change to ``--with-debugging=yes`` in the
+arguments to ``./configure``, in order to allow debugging of PETSc.
+The optimisation flags need changing for cross compiling or non gcc 
+compilers. Set a different prefix to change the place PETSc will be
+installed to.
 
 .. note:: If you build BOUT++ using a standalone version of SUNDIALS,
           it is advisable to not also build PETSc with SUNDIALS.
@@ -477,73 +538,45 @@ in order to allow debugging.
               --download-mumps \
               --download-scalapack \
               --download-blacs \
-              --download-fblas-lapack=1 \
+              --download-fblaslapack=1 \
               --download-parmetis \
               --download-ptscotch \
               --download-metis
 
           to ``./configure``.
 
-To make PETSc, type::
+To make PETSc type what is shown in the terminal output after the configure
+step, something like::
 
     $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug all
 
 Should BLAS, LAPACK, or any other packages be missing, you will get an
 error, and a suggestion that you can append
-``--download-name-of-package`` to the ``./configure`` line. You may want
-to test that everything is configured properly. To do this, type::
+``--download-name-of-package`` to the ``./configure`` line.
+
+You may want to test that everything is configured properly. To do this replace
+``all`` with ``test`` in the make command. It should be something like::
 
     $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug test
 
-To use PETSc, you have to define the ``PETSC_DIR`` and ``PETSC_ARCH``
-environment variables to match how PETSc was built::
+To install PETSc, replace ``test``/``all`` with ``install`` and run
+something like::
 
-    $ export PETSC_DIR=$HOME/petsc-3.13.4
-    $ export PETSC_ARCH=arch-linux2-cxx-debug
+    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug install
 
-and add to your startup file ``$HOME/.bashrc``::
+To configure BOUT++ with PETSc, add to the cmake configure command::
 
-    export PETSC_DIR=$HOME/petsc-3.13.4
-    export PETSC_ARCH=arch-linux2-cxx-debug
+    -DBOUT_USE_PETSC=ON -DPETSC_ROOT=$HOME/local/petsc-version-options
 
-To configure BOUT++ with PETSc, go to the BOUT++ root directory, and
-type::
+For example like this::
 
-    $ ./configure --with-petsc
+    $ cmake -DBOUT_USE_PETSC=ON -DPETSC_ROOT=$HOME/local/petsc-version-options
 
-You can configure BOUT++ against different PETSc installations either
-through the ``PETSC_DIR/ARCH`` variables as above, or by specifying
-them on the command line::
+BOUT++ can also work with PETSc if it has not been installed. In this
+case ensure that ``PETSC_DIR`` and ``PETSC_ARCH`` are set, for example
+like this::
 
-  $ ./configure --with-petsc PETSC_DIR=/path/to/other/petsc PETSC_ARCH=other-arch
-
-.. note:: Unfortunately, there are a variety of ways PETSc can be
-          installed on a system, and it is hard to automatically work
-          out how to compile against a particular installation. In
-          particular, there are two PETSc-supported ways of installing
-          PETSc that are subtly different.
-
-          The first way is as above, using ``PETSC_DIR`` and
-          ``PETSC_ARCH``. A second way is to use the ``--prefix``
-          argument to ``configure`` (much like the traditional GNU
-          ``configure`` scripts) when building PETSc. In this case,
-          ``PETSC_DIR`` will be the path passed to ``--prefix`` and
-          ``PETSC_ARCH`` will be empty. When configuring BOUT++, one
-          can use ``--with-petsc=$PETSC_DIR`` as a shortcut in this
-          case. This will NOT work if PETSc was installed with a
-          ``PETSC_ARCH``.
-
-          However, there are at least some Linux distributions that
-          install PETSc in yet another way and you may need to set
-          ``PETSC_DIR/ARCH`` differently. For example, for Fedora, as
-          of May 2018, you will need to configure and build BOUT++
-          like so::
-
-            $ ./configure --with-petsc=/usr/lib64/openmpi
-            $ PETSC_DIR=/usr make
-
-          Replace `openmpi` with the correct MPI implementation that
-          you have installed.
+    $ PETSC_DIR=/path/to/petsc PETSC_ARCH=arch-linux2-cxx-debug cmake -DBOUT_USE_PETSC=ON
 
 .. _sec-lapack:
 
@@ -578,55 +611,6 @@ NOTES:
 -  On LLNL’s Grendel, mpicxx is broken. Use mpiCC instead by passing
    “MPICXX=mpiCC” to configure. Also need to specify this to NetCDF
    library by passing “CXX=mpiCC” to NetCDF configure.
-
-.. _sec-mpi-from-source:
-
-Installing MPICH from source
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In your home directory, create
-two subdirectories: One called “install” where we’ll put the source
-code, and one called “local” where we’ll install the MPI compiler::
-
-    $ cd
-    $ mkdir install
-    $ mkdir local
-
-Download the latest stable version of MPICH from https://www.mpich.org/ and put the
-file in the “install” subdirectory created above. At the time of writing
-(January 2018), the file was called ``mpich-3.2.1.tar.gz``. Untar the file::
-
-    $ tar -xzvf mpich-3.2.1.tar.gz
-
-which will create a directory containing the source code. ’cd’ into this
-directory and run::
-
-    $ ./configure --prefix=$HOME/local
-    $ make
-    $ make install
-
-Each of which might take a while. This is the standard way of installing
-software from source, and will also be used for installing libraries
-later. The ``–prefix=`` option specifies where the software should be
-installed. Since we don’t have permission to write in the system
-directories (e.g. ``/usr/bin``), we just use a subdirectory of our home
-directory. The ``configure`` command configures the install, finding the
-libraries and commands it needs. ``make`` compiles everything using the
-options found by ``configure``. The final ``make install`` step copies
-the compiled code into the correct places under ``$HOME/local``.
-
-To be able to use the MPI compiler, you need to modify the ``PATH``
-environment variable. To do this, run::
-
-    $ export PATH=$PATH:$HOME/local/bin
-
-and add this to the end of your startup file ``$HOME/.bashrc``. If
-you’re using CSH rather than BASH, the command is::
-
-    % setenv PATH ${PATH}:${HOME}/local/bin
-
-and the startup file is ``$HOME/.cshrc``. You should now be able to run
-``mpicc`` and so have a working MPI compiler.
 
 .. _sec-fftw-from-source:
 

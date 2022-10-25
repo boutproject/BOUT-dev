@@ -7,6 +7,7 @@
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/sys/timer.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>
 #include <utils.hxx>
@@ -156,6 +157,7 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
   return result;
 }
 
+#if BOUT_USE_METRIC_3D
 Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
                                   bool extrapolate_x, bool extrapolate_y,
                                   bool no_extra_interpolate, ParallelTransform* pt_) {
@@ -305,10 +307,11 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
       }
     }
   }
-#endif
+#endif // CHECK > 0
 
   return result;
 }
+#endif // BOUT_USE_METRIC_3D
 
 // If the CELL_CENTRE variable was read, the staggered version is required to
 // also exist for consistency
@@ -618,80 +621,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     IntShiftTorsion = 0.;
   }
 }
-
-// use anonymous namespace so this utility function is not available outside this file
-namespace {
-/// Interpolate a FieldMetric to a new CELL_LOC with interp_to.
-/// Communicates to set internal guard cells.
-/// Boundary guard cells are set equal to the nearest grid point (equivalent to
-/// 2nd order accurate Neumann boundary condition).
-/// Corner guard cells are set to BoutNaN
-Coordinates::FieldMetric
-interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::FieldMetric& f),
-                      MAYBE_UNUSED(CELL_LOC location),
-                      MAYBE_UNUSED(ParallelTransform* pt)) {
-  Mesh* localmesh = f.getMesh();
-  Coordinates::FieldMetric result;
-#if BOUT_USE_METRIC_3D
-  if (location == CELL_YLOW) {
-    auto f_aligned = f.getCoordinates() == nullptr ? pt->toFieldAligned(f, "RGN_NOX")
-                                                   : toFieldAligned(f, "RGN_NOX");
-    result = interp_to(f_aligned, location, "RGN_NOBNDRY");
-    result = result.getCoordinates() == nullptr
-                 ? pt->fromFieldAligned(result, "RGN_NOBNDRY")
-                 : fromFieldAligned(result, "RGN_NOBNDRY");
-  } else
-#endif
-  {
-    result = interp_to(f, location, "RGN_NOBNDRY");
-  }
-  communicate(result);
-
-  // Copy nearest value into boundaries so that differential geometry terms can
-  // be interpolated if necessary
-  // Note: cannot use applyBoundary("neumann") here because applyBoundary()
-  // would try to create a new Coordinates object since we have not finished
-  // initializing yet, leading to an infinite recursion
-  for (auto bndry : localmesh->getBoundaries()) {
-    if (bndry->bx != 0) {
-      // If bx!=0 we are on an x-boundary, inner if bx>0 and outer if bx<0
-      for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-        for (int i = 0; i < localmesh->xstart; i++) {
-          for (int z = 0; z < result.getNz(); ++z) {
-            result(bndry->x + i * bndry->bx, bndry->y, z) =
-                result(bndry->x + (i - 1) * bndry->bx, bndry->y - bndry->by, z);
-          }
-        }
-      }
-    }
-    if (bndry->by != 0) {
-      // If by!=0 we are on a y-boundary, upper if by>0 and lower if by<0
-      for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-        for (int i = 0; i < localmesh->ystart; i++) {
-          for (int z = 0; z < result.getNz(); ++z) {
-            result(bndry->x, bndry->y + i * bndry->by, z) =
-                result(bndry->x - bndry->bx, bndry->y + (i - 1) * bndry->by, z);
-          }
-        }
-      }
-    }
-  }
-
-  // Set corner guard cells
-  for (int i = 0; i < localmesh->xstart; i++) {
-    for (int j = 0; j < localmesh->ystart; j++) {
-      for (int z = 0; z < result.getNz(); ++z) {
-        result(i, j, z) = BoutNaN;
-        result(i, localmesh->LocalNy - 1 - j, z) = BoutNaN;
-        result(localmesh->LocalNx - 1 - i, j, z) = BoutNaN;
-        result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j, z) = BoutNaN;
-      }
-    }
-  }
-
-  return result;
-}
-} // namespace
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
@@ -1019,35 +948,51 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   }
 }
 
-void Coordinates::outputVars(Datafile& file) {
+void Coordinates::outputVars(Options& output_options) {
+  Timer time("io");
   const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
 
-  file.addOnce(dx, "dx" + loc_string);
-  file.addOnce(dy, "dy" + loc_string);
-  file.addOnce(dz, "dz" + loc_string);
+  output_options["dx" + loc_string].force(dx, "Coordinates");
+  output_options["dy" + loc_string].force(dy, "Coordinates");
+  output_options["dz" + loc_string].force(dz, "Coordinates");
 
-  file.addOnce(g11, "g11" + loc_string);
-  file.addOnce(g22, "g22" + loc_string);
-  file.addOnce(g33, "g33" + loc_string);
-  file.addOnce(g12, "g12" + loc_string);
-  file.addOnce(g13, "g13" + loc_string);
-  file.addOnce(g23, "g23" + loc_string);
+  output_options["g11" + loc_string].force(g11, "Coordinates");
+  output_options["g22" + loc_string].force(g22, "Coordinates");
+  output_options["g33" + loc_string].force(g33, "Coordinates");
+  output_options["g12" + loc_string].force(g12, "Coordinates");
+  output_options["g13" + loc_string].force(g13, "Coordinates");
+  output_options["g23" + loc_string].force(g23, "Coordinates");
 
-  file.addOnce(g_11, "g_11" + loc_string);
-  file.addOnce(g_22, "g_22" + loc_string);
-  file.addOnce(g_33, "g_33" + loc_string);
-  file.addOnce(g_12, "g_12" + loc_string);
-  file.addOnce(g_13, "g_13" + loc_string);
-  file.addOnce(g_23, "g_23" + loc_string);
+  output_options["g_11" + loc_string].force(g_11, "Coordinates");
+  output_options["g_22" + loc_string].force(g_22, "Coordinates");
+  output_options["g_33" + loc_string].force(g_33, "Coordinates");
+  output_options["g_12" + loc_string].force(g_12, "Coordinates");
+  output_options["g_13" + loc_string].force(g_13, "Coordinates");
+  output_options["g_23" + loc_string].force(g_23, "Coordinates");
 
-  file.addOnce(J, "J" + loc_string);
-  file.addOnce(Bxy, "Bxy" + loc_string);
+  output_options["J" + loc_string].force(J, "Coordinates");
+  output_options["Bxy" + loc_string].force(Bxy, "Coordinates");
 
-  file.addOnce(G1, "G1" + loc_string);
-  file.addOnce(G2, "G2" + loc_string);
-  file.addOnce(G3, "G3" + loc_string);
+  output_options["G1" + loc_string].force(G1, "Coordinates");
+  output_options["G2" + loc_string].force(G2, "Coordinates");
+  output_options["G3" + loc_string].force(G3, "Coordinates");
 
-  getParallelTransform().outputVars(file);
+  getParallelTransform().outputVars(output_options);
+}
+
+const Field2D& Coordinates::zlength() const {
+  BOUT_OMP(critical)
+  if (not zlength_cache) {
+    zlength_cache = std::make_unique<Field2D>(0., localmesh);
+
+#if BOUT_USE_METRIC_3D
+    BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) { (*zlength_cache)[i] += dz[i]; }
+#else
+    (*zlength_cache) = dz * nz;
+#endif
+  }
+
+  return *zlength_cache;
 }
 
 int Coordinates::geometry(bool recalculate_staggered,
@@ -1332,6 +1277,9 @@ int Coordinates::geometry(bool recalculate_staggered,
     localmesh->recalculateStaggeredCoordinates();
   }
 
+  // Invalidate and recalculate cached variables
+  zlength_cache.reset();
+
   return 0;
 }
 
@@ -1567,8 +1515,8 @@ void Coordinates::setParallelTransform(Options* options) {
       transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
                                                           getUniform(zlength()));
     } else if (ptstr == "shiftedinterp") {
-      transform =
-          bout::utils::make_unique<ShiftedMetricInterp>(*localmesh, location, zShift);
+      transform = bout::utils::make_unique<ShiftedMetricInterp>(
+          *localmesh, location, zShift, getUniform(zlength()));
     }
 
   } else if (ptstr == "fci") {
@@ -1626,7 +1574,7 @@ Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& m
   if (! f.hasParallelSlices() and ! transform->canToFromFieldAligned()) {
     Field3D f_parallel = f;
     transform->calcParallelSlices(f_parallel);
-    f_parallel.applyParallelBoundary();
+    f_parallel.applyParallelBoundary("parallel_neumann");
     return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
   }
 #endif

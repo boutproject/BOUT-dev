@@ -169,7 +169,7 @@ repository on.
    Now cd to the new directory and pull the latest changes from github::
 
            $ cd bout_tmp
-           $ git pull git://github.com/boutproject/BOUT-dev.git
+           $ git pull https://github.com/boutproject/BOUT-dev.git
          
 
    Note: You should be able to access this repository from Franklin, but

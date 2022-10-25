@@ -5,4 +5,5 @@ bout_add_integrated_test(test-fieldgroupComm
   USE_DATA_BOUT_INP
   EXTRA_FILES cyclone_68x32.nc
   REQUIRES BOUT_HAS_NETCDF
+  PROCESSORS 4
   )

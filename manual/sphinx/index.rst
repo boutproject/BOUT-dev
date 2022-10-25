@@ -25,6 +25,7 @@ The documentation is divided into the following sections:
    :name: getting-started
 
    user_docs/introduction
+   user_docs/quickstart
    user_docs/installing
    user_docs/advanced_install
    user_docs/running_bout
@@ -40,6 +41,7 @@ The documentation is divided into the following sections:
    user_docs/variable_init
    user_docs/boundary_options
    user_docs/testing
+   user_docs/gpu_support
    
 .. toctree::
    :maxdepth: 2

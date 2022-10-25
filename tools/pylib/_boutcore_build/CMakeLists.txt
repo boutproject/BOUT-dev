@@ -54,7 +54,7 @@ message(STATUS "Building BOUT++ Python interface")
 set(generated)
 set(src ${CMAKE_CURRENT_SOURCE_DIR})
 set(tar ${CMAKE_CURRENT_BINARY_DIR})
-set(files "setup.py" "boutcore.pyx" "resolve_enum.pxd" "helper.cxx" "helper.h" "boutcpp.pxd")
+set(files "boutcore.pyx" "resolve_enum.pxd" "helper.cxx" "helper.h" "boutcpp.pxd")
 foreach(file IN LISTS files)
   # helper.py and resolve_enum_inv.pyx.in are only required by boutcore.pyx
   #set(deps {src}/$file.in ${src}/common.sh)
@@ -62,22 +62,24 @@ foreach(file IN LISTS files)
   #list(APPEND deps
   set(gen ${tar}/${file})
   list(APPEND generated ${gen})
-  #message(FATAL_ERROR "${gen} ${src}/${file}.in")
+  #message(FATAL_ERROR "${gen} ${src}/${file}.jinja")
   add_custom_command(OUTPUT ${gen}
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${tar}
-	COMMAND bash ${src}/${file}.in --cmake > ${gen}
-	DEPENDS ${src}/${file}.in
+	COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${tar}/..:\${PYTHONPATH} ${Python_EXECUTABLE} generate.py ${file}.jinja ${gen}
+	DEPENDS ${src}/${file}.jinja
 	DEPENDS ${src}/helper.py
-	DEPENDS ${src}/resolve_enum_inv.pyx.in
-	DEPENDS ${src}/common.sh
+	DEPENDS ${src}/resolve_enum_inv.pyx.jinja
+	DEPENDS ${src}/generate.py
 	DEPENDS bout++
 	WORKING_DIRECTORY ${src}/
 	COMMENT "Generating ${file}")
 endforeach()
-set(files "boutexception_helper.hxx" "boutexception_helper.cxx" "boutcore_openmpi_compat.hxx")
+
+set(boutcore_depends ${generated})
+
+set(files "boutexception_helper.hxx" "boutexception_helper.cxx" "boutcore_openmpi_compat.hxx" "bout_options.pxd" "setup.py")
 foreach(file IN LISTS files)
-  set(gen ${CMAKE_CURRENT_BINARY_DIR}/${file})
-  list(APPEND generated ${gen})
+  list(APPEND ${boutcore_depends} "${CMAKE_CURRENT_BINARY_DIR}/${file}")
   bout_copy_file("${file}")
 endforeach()
 
@@ -85,7 +87,7 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/boutcore.cpp
   COMMAND ${Python_EXECUTABLE} -m cython boutcore.pyx --cplus -3  -X binding=True -X embedsignature=True
   COMMENT "Cythonizing python interface"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${generated}
+  DEPENDS ${boutcore_depends}
   )
 
 add_library(boutcore_ SHARED
@@ -100,5 +102,5 @@ add_custom_target(boutcore ALL
   DEPENDS boutcore_
   COMMENT "Building python interface"
   )
-target_link_libraries(boutcore_ bout++ ${Python_LIBRARIES})
+target_link_libraries(boutcore_ bout++)
 target_include_directories(boutcore_ PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> ${Numpy_INCLUDE_DIRS} ${Python_INCLUDE_DIRS})

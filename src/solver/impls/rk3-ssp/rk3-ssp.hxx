@@ -38,44 +38,38 @@ class RK3SSP;
 
 #include "mpi.h"
 
-#include <bout_types.hxx>
 #include <bout/solver.hxx>
+#include <bout_types.hxx>
 
 namespace {
 RegisterSolver<RK3SSP> registersolverrk3ssp("rk3ssp");
 }
 
 class RK3SSP : public Solver {
- public:
-  RK3SSP(Options *opt = nullptr);
-  ~RK3SSP(){};
-  
+public:
+  explicit RK3SSP(Options* opt = nullptr);
+  ~RK3SSP() = default;
+
   void setMaxTimestep(BoutReal dt) override;
-  BoutReal getCurrentTimestep() override {return timestep; }
-  
-  int init(int nout, BoutReal tstep) override;
-  
+  BoutReal getCurrentTimestep() override { return timestep; }
+
+  int init() override;
   int run() override;
- private:
 
-  BoutReal max_timestep; // Maximum timestep
-  int mxstep; // Maximum number of internal steps between outputs
-  
+private:
+  BoutReal max_timestep; //< Maximum timestep
+  BoutReal timestep;     //< The internal timestep
+  int mxstep;            //< Maximum number of internal steps between outputs
+
   Array<BoutReal> f;
-  
-  BoutReal out_timestep; // The output timestep
-  int nsteps; // Number of output steps
-  
-  BoutReal timestep; // The internal timestep
 
-  int nlocal, neq; // Number of variables on local processor and in total
-  
-  void take_step(BoutReal curtime, BoutReal dt, 
-                 Array<BoutReal> &start, Array<BoutReal> &result); // Take a single step to calculate f1
-  
-  Array<BoutReal> u1, u2, u3, L; // Time-stepping arrays
-  
+  int nlocal, neq; //< Number of variables on local processor and in total
+
+  /// Take a single step to calculate f1
+  void take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
+                 Array<BoutReal>& result);
+
+  Array<BoutReal> u1, u2, u3, L; //< Time-stepping arrays
 };
 
 #endif // __RK4_SOLVER_H__
-

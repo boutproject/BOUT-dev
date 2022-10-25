@@ -26,6 +26,8 @@
 
 #include "mask.hxx"
 
+class Options;
+
 /// Interpolate a field onto a perturbed set of points
 const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
                           const Field3D &delta_z);
@@ -228,31 +230,24 @@ public:
 };
 
 class XZInterpolationFactory
-    : public Factory<XZInterpolation, XZInterpolationFactory,
-                     std::function<std::unique_ptr<XZInterpolation>(Mesh*)>> {
+    : public Factory<XZInterpolation, XZInterpolationFactory, Mesh*> {
 public:
   static constexpr auto type_name = "XZInterpolation";
   static constexpr auto section_name = "xzinterpolation";
   static constexpr auto option_name = "type";
   static constexpr auto default_type = "hermitespline";
 
-  using Factory::create;
-  ReturnType create(Mesh* mesh = nullptr) {
-    return Factory::create(getType(nullptr), mesh);
+  ReturnType create(Options* options = nullptr, Mesh* mesh = nullptr) const {
+    return Factory::create(getType(options), mesh);
+  }
+  ReturnType create(const std::string& type, MAYBE_UNUSED(Options* options)) const {
+    return Factory::create(type, nullptr);
   }
 
   static void ensureRegistered();
 };
 
 template <class DerivedType>
-class RegisterXZInterpolation {
-public:
-  RegisterXZInterpolation(const std::string& name) {
-    XZInterpolationFactory::getInstance().add(
-        name, [](Mesh* mesh) -> std::unique_ptr<XZInterpolation> {
-          return std::make_unique<DerivedType>(mesh);
-        });
-  }
-};
+using RegisterXZInterpolation = XZInterpolationFactory::RegisterInFactory<DerivedType>;
 
 #endif // __INTERP_XZ_H__

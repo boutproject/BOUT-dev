@@ -42,16 +42,9 @@ RegisterUnavailableSolver registerunavailablearkode("arkode",
 #else
 
 #include "bout_types.hxx"
+#include "bout/sundials_backports.hxx"
 
 #include <sundials/sundials_config.h>
-#if SUNDIALS_VERSION_MAJOR >= 3
-#include <sunlinsol/sunlinsol_spgmr.h>
-#endif
-
-#if SUNDIALS_VERSION_MAJOR >= 4
-#include <sundials/sundials_nonlinearsolver.h>
-#endif
-
 #include <nvector/nvector_parallel.h>
 
 #include <vector>
@@ -65,12 +58,12 @@ RegisterSolver<ArkodeSolver> registersolverarkode("arkode");
 
 class ArkodeSolver : public Solver {
 public:
-  ArkodeSolver(Options* opts = nullptr);
+  explicit ArkodeSolver(Options* opts = nullptr);
   ~ArkodeSolver();
 
   BoutReal getCurrentTimestep() override { return hcur; }
 
-  int init(int nout, BoutReal tstep) override;
+  int init() override;
 
   int run() override;
   BoutReal run(BoutReal tout);
@@ -84,17 +77,65 @@ public:
   void jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
 
 private:
-  int NOUT;          // Number of outputs. Specified in init, needed in run
-  BoutReal TIMESTEP; // Time between outputs
-  BoutReal hcur;     // Current internal timestep
+  BoutReal hcur; //< Current internal timestep
 
-  bool diagnose{false};      // Output additional diagnostics
+  bool diagnose{false}; //< Output additional diagnostics
 
-  N_Vector uvec{nullptr};    // Values
-  void* arkode_mem{nullptr}; // ARKODE internal memory block
+  N_Vector uvec{nullptr};    //< Values
+  void* arkode_mem{nullptr}; //< ARKODE internal memory block
 
-  BoutReal pre_Wtime{0.0}; // Time in preconditioner
-  int pre_ncalls{0};       // Number of calls to preconditioner
+  BoutReal pre_Wtime{0.0}; //< Time in preconditioner
+  int pre_ncalls{0};       //< Number of calls to preconditioner
+
+  /// Maximum number of steps to take between outputs
+  int mxsteps;
+  /// Use ImEx capability
+  bool imex;
+  /// Solve only explicit part
+  bool solve_explicit;
+  /// Solve only implicit part
+  bool solve_implicit;
+  /// Use linear implicit solver (only evaluates jacobian inversion once)
+  bool set_linear;
+  /// Solve explicit portion in fixed timestep mode. NOTE: This is not recommended except
+  /// for code comparison
+  bool fixed_step;
+  /// Order of internal step
+  int order;
+  /// Fraction of the estimated explicitly stable step to use
+  BoutReal cfl_frac;
+  /// Set timestep adaptivity function:
+  /// - 0: PID adaptivity (default)
+  /// - 1: PI
+  /// - 2: I
+  /// - 3: explicit Gustafsson
+  /// - 4: implicit Gustafsson
+  /// - 5: ImEx Gustafsson
+  int adap_method;
+  /// Absolute tolerance
+  BoutReal abstol;
+  /// Relative tolerance
+  BoutReal reltol;
+  /// Use separate absolute tolerance for each field
+  bool use_vector_abstol;
+  /// Maximum timestep (only used if greater than zero)
+  BoutReal max_timestep;
+  /// Minimum timestep (only used if greater than zero)
+  BoutReal min_timestep;
+  /// Initial timestep (only used if greater than zero)
+  BoutReal start_timestep;
+  /// Use accelerated fixed point solver instead of Newton iterative
+  bool fixed_point;
+  /// Use user-supplied preconditioner function
+  bool use_precon;
+  /// Number of Krylov basis vectors to use
+  int maxl;
+  /// Use right preconditioning instead of left preconditioning
+  bool rightprec;
+  /// Use user-supplied Jacobian function
+  bool use_jacobian;
+  /// Use ARKode optimal parameters
+  bool optimize;
 
   // Diagnostics from ARKODE
   int nsteps{0};
@@ -110,14 +151,12 @@ private:
                              std::vector<BoutReal>& f2dtols,
                              std::vector<BoutReal>& f3dtols, bool bndry);
 
-#if SUNDIALS_VERSION_MAJOR >= 3
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
-#endif
-#if SUNDIALS_VERSION_MAJOR >= 4
   /// Solver for functional iterations for Adams-Moulton
   SUNNonlinearSolver nonlinear_solver{nullptr};
-#endif
+  /// Context for SUNDIALS memory allocations
+  sundials::Context suncontext;
 };
 
 #endif // BOUT_HAS_ARKODE

@@ -126,7 +126,7 @@ specify
 
    #requires petsc
    
-Currently the requirements which can be combined are ``travis``,
+Currently the requirements which can be combined are
 ``netcdf``, ``pnetcdf``, ``pvode``, ``cvode``, ``ida``, ``lapack``,
 ``petsc``, ``slepc``, ``arkode``, ``openmp`` and ``make``. The
 ``make`` requirement is set to True when the tests are being compiled

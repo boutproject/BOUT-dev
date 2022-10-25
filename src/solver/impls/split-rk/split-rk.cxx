@@ -1,16 +1,44 @@
 #include "split-rk.hxx"
 
-int SplitRK::init(int nout, BoutReal tstep) {
+SplitRK::SplitRK(Options* opts)
+    : Solver(opts), nstages((*options)["nstages"]
+                                .doc("Number of stages in RKL step. Must be > 1")
+                                .withDefault(10)),
+      timestep((*options)["timestep"]
+                   .doc("Internal timestep. This may be rounded down.")
+                   .withDefault(getOutputTimestep())),
+      adaptive((*options)["adaptive"]
+                   .doc("Use accuracy tolerances to adapt timestep?")
+                   .withDefault(true)),
+      atol((*options)["atol"].doc("Absolute tolerance").withDefault(1e-10)),
+      rtol((*options)["rtol"].doc("Relative tolerance").withDefault(1e-5)),
+      max_timestep((*options)["max_timestep"]
+                       .doc("Maximum timestep. Negative means no limit.")
+                       .withDefault(getOutputTimestep())),
+      max_timestep_change(
+          (*options)["max_timestep_change"]
+              .doc("Maximum factor by which the timestep should be changed. Must be >1")
+              .withDefault(2.0)),
+      mxstep((*options)["mxstep"]
+                 .doc("Maximum number of internal steps between outputs")
+                 .withDefault(1000)),
+      adapt_period(
+          (*options)["adapt_period"]
+              .doc("Number of steps between tolerance checks. 1 means check every step.")
+              .withDefault(1)),
+      diagnose((*options)["diagnose"]
+                   .doc("Print diagnostic information?")
+                   .withDefault(false)) {
+  ASSERT0(max_timestep_change > 1.0);
+  ASSERT0(mxstep > 0);
+  ASSERT0(nstages > 1);
+}
+
+int SplitRK::init() {
   AUTO_TRACE();
 
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
-    return 1;
-
+  Solver::init();
   output.write(_("\n\tSplit Runge-Kutta-Legendre and SSP-RK3 solver\n"));
-
-  nsteps = nout; // Save number of output steps
-  out_timestep = tstep;
 
   // Calculate number of variables
   nlocal = getLocalN();
@@ -33,33 +61,6 @@ int SplitRK::init(int nout, BoutReal tstep) {
   // Put starting values into f
   save_vars(std::begin(state));
 
-  // Get options. Default values for many of these are set in constructor.
-  auto &opt = *options;
-  timestep = opt["timestep"]
-                 .doc("Internal timestep. This may be rounded down.")
-                 .withDefault(out_timestep);
-
-  adaptive = opt["adaptive"].doc("Use accuracy tolerances to adapt timestep?").withDefault(adaptive);
-
-  atol = opt["atol"].doc("Absolute tolerance").withDefault(atol);
-  rtol = opt["rtol"].doc("Relative tolerance").withDefault(rtol);
-
-  max_timestep = opt["max_timestep"].doc("Maximum timestep. Negative means no limit.").withDefault(out_timestep);
-
-  max_timestep_change = opt["max_timestep_change"]
-                            .doc("Maximum factor by which the timestep should be changed. Must be >1")
-                            .withDefault(max_timestep_change);
-  ASSERT0(max_timestep_change > 1.0);
-  
-  mxstep = opt["mxstep"]
-               .doc("Maximum number of internal steps between outputs")
-               .withDefault(mxstep);
-  ASSERT0(mxstep > 0);
-
-  adapt_period = opt["adapt_period"]
-          .doc("Number of steps between tolerance checks. 1 means check every step.")
-          .withDefault(adapt_period);
-
   if (adaptive) {
     // Need additional storage to compare results after time steps
     state1.reallocate(nlocal);
@@ -67,28 +68,23 @@ int SplitRK::init(int nout, BoutReal tstep) {
   }
   
   ASSERT0(adapt_period > 0);
-  
-  int ninternal_steps = static_cast<int>(std::ceil(out_timestep / timestep));
+
+  int ninternal_steps = static_cast<int>(std::ceil(getOutputTimestep() / timestep));
   ASSERT0(ninternal_steps > 0);
-  
-  timestep = out_timestep / ninternal_steps;
+
+  timestep = getOutputTimestep() / ninternal_steps;
   output.write(_("\tUsing a timestep {:e}\n"), timestep);
   
-  nstages = opt["nstages"].doc("Number of stages in RKL step. Must be > 1").withDefault(10);
-  ASSERT0(nstages > 1);
-
-  diagnose = opt["diagnose"].doc("Print diagnostic information?").withDefault(diagnose);
-
   return 0;
 }
 
 int SplitRK::run() {
   AUTO_TRACE();
 
-  for (int step = 0; step < nsteps; step++) {
+  for (int step = 0; step < getNumberOutputSteps(); step++) {
     // Take an output step
 
-    BoutReal target = simtime + out_timestep;
+    BoutReal target = simtime + getOutputTimestep();
 
     BoutReal dt;  // The next timestep to take
     bool running = true;  // Changed to false to break out of inner loop
@@ -189,12 +185,10 @@ int SplitRK::run() {
     load_vars(std::begin(state)); // Put result into variables
     // Call rhs function to get extra variables at this time
     run_rhs(simtime);
-    
-    iteration++; // Advance iteration number
-    
-    /// Call the monitor function
-    
-    if(call_monitors(simtime, step, nsteps)) {
+
+    iteration++;
+
+    if (call_monitors(simtime, step, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }

@@ -372,13 +372,13 @@ class _ref(object):  # NOT a derived obj, just takes one as a var
 
             if haswak:
                 omega = old_div(-omega_star, (1 + (k) ** 2))
-                gamma = old_div(((k ** 2) * omega_star ** 2), (nu * (1 + k ** 2) ** 3))
+                gamma = old_div(((k**2) * omega_star**2), (nu * (1 + k**2) ** 3))
             else:
                 # omega = -np.sqrt(nu*omega_star)/(np.sqrt(2)*k) + nu**(3/2)/(8*np.sqrt(2*omega_star)*k**3)
                 # gamma = np.sqrt(nu*omega_star)/(np.sqrt(2)*k) - nu/(2* k**2) + nu**(3/2)/(8*np.sqrt(2*omega_star)*k**3)
-                omega = -omega_star + old_div((2 * k ** 4 * omega_star ** 3), nu ** 2)
+                omega = -omega_star + old_div((2 * k**4 * omega_star**3), nu**2)
                 gamma = old_div((k * omega_star) ** 2, nu) - (
-                    5 * (k ** 6 * omega_star * 4 / nu ** 3)
+                    5 * (k**6 * omega_star * 4 / nu**3)
                 )
             self.gamma.append(gamma)
             self.omega.append(omega)

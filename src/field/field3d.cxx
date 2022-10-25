@@ -126,7 +126,7 @@ Field3D& Field3D::allocate() {
   return *this;
 }
 
-Field3D* Field3D::timeDeriv() {
+BOUT_HOST_DEVICE Field3D* Field3D::timeDeriv() {
   if(deriv == nullptr) {
     deriv = new Field3D{emptyFrom(*this)};
   }
@@ -135,15 +135,8 @@ Field3D* Field3D::timeDeriv() {
 
 void Field3D::splitParallelSlices() {
   TRACE("Field3D::splitParallelSlices");
-  
-#if CHECK > 2
-  if (yup_fields.size() != ydown_fields.size()) {
-    throw BoutException("Field3D::splitParallelSlices: forward/backward parallel slices not in sync.\n"
-                        "    This is an internal library error");
-  }
-#endif
 
-  if (!yup_fields.empty()) {
+  if (hasParallelSlices()) {
     return;
   }
 
@@ -158,14 +151,7 @@ void Field3D::splitParallelSlices() {
 void Field3D::clearParallelSlices() {
   TRACE("Field3D::clearParallelSlices");
 
-#if CHECK > 2
-  if (yup_fields.size() != ydown_fields.size()) {
-    throw BoutException("Field3D::mergeYupYdown: forward/backward parallel slices not in sync.\n"
-                        "    This is an internal library error");
-  }
-#endif
-
-  if (yup_fields.empty() && ydown_fields.empty()) {
+  if (!hasParallelSlices()) {
     return;
   }
 
@@ -372,21 +358,12 @@ void Field3D::applyBoundary(bool init) {
 
   checkData(*this);
 
-  if (background != nullptr) {
-    // Apply boundary to the total of this and background
-
-    Field3D tot = *this + (*background);
-    tot.copyBoundary(*this);
-    tot.applyBoundary(init);
-    *this = tot - (*background);
-  } else {
-    // Apply boundary to this field
-    for (const auto& bndry : getBoundaryOps()) {
-      // Always apply to the values when initialising
-      // fields, otherwise apply only if wanted
-      if (!bndry->apply_to_ddt || init) {
-        bndry->apply(*this);
-      }
+  // Apply boundary to this field
+  for (const auto& bndry : getBoundaryOps()) {
+    // Always apply to the values when initialising
+    // fields, otherwise apply only if wanted
+    if (!bndry->apply_to_ddt || init) {
+      bndry->apply(*this);
     }
   }
 }
@@ -402,18 +379,9 @@ void Field3D::applyBoundary(BoutReal t) {
 
   checkData(*this);
 
-  if (background != nullptr) {
-    // Apply boundary to the total of this and background
-
-    Field3D tot = *this + (*background);
-    tot.copyBoundary(*this);
-    tot.applyBoundary(t);
-    *this = tot - (*background);
-  } else {
-    // Apply boundary to this field
-    for (const auto& bndry : getBoundaryOps()) {
-      bndry->apply(*this, t);
-    }
+  // Apply boundary to this field
+  for (const auto& bndry : getBoundaryOps()) {
+    bndry->apply(*this, t);
   }
 }
 
@@ -421,15 +389,6 @@ void Field3D::applyBoundary(const std::string &condition) {
   TRACE("Field3D::applyBoundary(condition)");
   
   checkData(*this);
-
-  if (background != nullptr) {
-    // Apply boundary to the total of this and background
-    
-    Field3D tot = *this + (*background);
-    tot.applyBoundary(condition);
-    *this = tot - (*background);
-    return;
-  }
 
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
@@ -477,15 +436,9 @@ void Field3D::applyTDerivBoundary() {
   ASSERT1(deriv != nullptr);
   checkData(*deriv);
 
-  if (background != nullptr)
-    *this += *background;
-
   for (const auto& bndry : getBoundaryOps()) {
     bndry->apply_ddt(*this);
   }
-
-  if (background != nullptr)
-    *this -= *background;
 }
 
 void Field3D::setBoundaryTo(const Field3D &f3d) {
@@ -514,17 +467,11 @@ void Field3D::applyParallelBoundary() {
   TRACE("Field3D::applyParallelBoundary()");
 
   checkData(*this);
+  ASSERT1(hasParallelSlices());
 
-  if (background != nullptr) {
-    // Apply boundary to the total of this and background
-    Field3D tot = *this + (*background);
-    tot.applyParallelBoundary();
-    *this = tot - (*background);
-  } else {
-    // Apply boundary to this field
-    for (const auto& bndry : getBoundaryOpPars()) {
-      bndry->apply(*this);
-    }
+  // Apply boundary to this field
+  for (const auto& bndry : getBoundaryOpPars()) {
+    bndry->apply(*this);
   }
 }
 
@@ -533,17 +480,11 @@ void Field3D::applyParallelBoundary(BoutReal t) {
   TRACE("Field3D::applyParallelBoundary(t)");
 
   checkData(*this);
+  ASSERT1(hasParallelSlices());
 
-  if (background != nullptr) {
-    // Apply boundary to the total of this and background
-    Field3D tot = *this + (*background);
-    tot.applyParallelBoundary(t);
-    *this = tot - (*background);
-  } else {
-    // Apply boundary to this field
-    for (const auto& bndry : getBoundaryOpPars()) {
-      bndry->apply(*this, t);
-    }
+  // Apply boundary to this field
+  for (const auto& bndry : getBoundaryOpPars()) {
+    bndry->apply(*this, t);
   }
 }
 
@@ -552,22 +493,16 @@ void Field3D::applyParallelBoundary(const std::string &condition) {
   TRACE("Field3D::applyParallelBoundary(condition)");
 
   checkData(*this);
+  ASSERT1(hasParallelSlices());
 
-  if (background != nullptr) {
-    // Apply boundary to the total of this and background
-    Field3D tot = *this + (*background);
-    tot.applyParallelBoundary(condition);
-    *this = tot - (*background);
-  } else {
-    /// Get the boundary factory (singleton)
-    BoundaryFactory *bfact = BoundaryFactory::getInstance();
+  /// Get the boundary factory (singleton)
+  BoundaryFactory* bfact = BoundaryFactory::getInstance();
 
-    /// Loop over the mesh boundary regions
-    for(const auto& reg : fieldmesh->getBoundariesPar()) {
-      auto op = std::unique_ptr<BoundaryOpPar>{
-          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
-      op->apply(*this);
-    }
+  /// Loop over the mesh boundary regions
+  for (const auto& reg : fieldmesh->getBoundariesPar()) {
+    auto op = std::unique_ptr<BoundaryOpPar>{
+        dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
+    op->apply(*this);
   }
 }
 
@@ -576,24 +511,18 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
   TRACE("Field3D::applyParallelBoundary(region, condition)");
 
   checkData(*this);
+  ASSERT1(hasParallelSlices());
 
-  if (background != nullptr) {
-    // Apply boundary to the total of this and background
-    Field3D tot = *this + (*background);
-    tot.applyParallelBoundary(region, condition);
-    *this = tot - (*background);
-  } else {
-    /// Get the boundary factory (singleton)
-    BoundaryFactory *bfact = BoundaryFactory::getInstance();
+  /// Get the boundary factory (singleton)
+  BoundaryFactory* bfact = BoundaryFactory::getInstance();
 
-    /// Loop over the mesh boundary regions
-    for(const auto& reg : fieldmesh->getBoundariesPar()) {
-      if (reg->label == region) {
-        auto op = std::unique_ptr<BoundaryOpPar>{
-            dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
-        op->apply(*this);
-        break;
-      }
+  /// Loop over the mesh boundary regions
+  for (const auto& reg : fieldmesh->getBoundariesPar()) {
+    if (reg->label == region) {
+      auto op = std::unique_ptr<BoundaryOpPar>{
+          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
+      op->apply(*this);
+      break;
     }
   }
 }
@@ -603,28 +532,22 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
   TRACE("Field3D::applyParallelBoundary(region, condition, f)");
 
   checkData(*this);
+  ASSERT1(hasParallelSlices());
 
-  if (background != nullptr) {
-    // Apply boundary to the total of this and background
-    Field3D tot = *this + (*background);
-    tot.applyParallelBoundary(region, condition, f);
-    *this = tot - (*background);
-  } else {
-    /// Get the boundary factory (singleton)
-    BoundaryFactory *bfact = BoundaryFactory::getInstance();
+  /// Get the boundary factory (singleton)
+  BoundaryFactory* bfact = BoundaryFactory::getInstance();
 
-    /// Loop over the mesh boundary regions
-    for(const auto& reg : fieldmesh->getBoundariesPar()) {
-      if (reg->label == region) {
-        // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
-        // boundary of the right type
-        auto tmp = std::unique_ptr<BoundaryOpPar>{
-            dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
-        // then clone that with the actual argument
-        auto op = std::unique_ptr<BoundaryOpPar>{tmp->clone(reg, f)};
-        op->apply(*this);
-        break;
-      }
+  /// Loop over the mesh boundary regions
+  for (const auto& reg : fieldmesh->getBoundariesPar()) {
+    if (reg->label == region) {
+      // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
+      // boundary of the right type
+      auto tmp = std::unique_ptr<BoundaryOpPar>{
+          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
+      // then clone that with the actual argument
+      auto op = std::unique_ptr<BoundaryOpPar>{tmp->clone(reg, f)};
+      op->apply(*this);
+      break;
     }
   }
 }
@@ -882,7 +805,6 @@ void swap(Field3D& first, Field3D& second) noexcept {
   swap(static_cast<Field&>(first), static_cast<Field&>(second));
 
   swap(first.data, second.data);
-  swap(first.background, second.background);
   swap(first.nx, second.nx);
   swap(first.ny, second.ny);
   swap(first.nz, second.nz);

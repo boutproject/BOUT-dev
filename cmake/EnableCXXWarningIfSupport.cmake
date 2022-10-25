@@ -35,7 +35,10 @@ function(target_enable_cxx_warning_if_supported TARGET)
     if (HAS_FLAG_${WARNING_FLAG_STRIPPED})
       message(STATUS "Warning flag is supported by compiler: ${WARNING_FLAG}")      
 
-      target_compile_options(${TARGET} PRIVATE ${WARNING_FLAG})
+      target_compile_options(${TARGET} PRIVATE 
+        $<$<NOT:$<COMPILE_LANGUAGE:CUDA>>:${WARNING_FLAG} >
+        $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${WARNING_FLAG} >
+      )
     else()
       message(STATUS "Warning flag not supported by compiler: ${WARNING_FLAG}")
     endif()

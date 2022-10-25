@@ -33,10 +33,11 @@
 #include "dcomplex.hxx"
 #include "boutexception.hxx"
 
-#include "bout/array.hxx"
-#include "bout/assert.hxx"
 #include "msg_stack.hxx"
 #include "unused.hxx"
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/build_config.hxx"
 
 #include <algorithm>
 #include <cmath>
@@ -453,7 +454,7 @@ inline BoutReal randomu() {
  * i.e. t * t
  */
 template <typename T>
-T SQ(const T &t){
+BOUT_HOST_DEVICE inline T SQ(const T& t) {
   return t*t;
 }
 
@@ -518,7 +519,7 @@ inline BoutReal MINMOD(BoutReal a, BoutReal b) {
 #if CHECK > 0
 /// Throw an exception if \p f is not finite
 inline void checkData(BoutReal f) {
-  if (!finite(f)) {
+  if (!std::isfinite(f)) {
     throw BoutException("BoutReal: Operation on non-finite data");
   }
 }
@@ -694,5 +695,12 @@ std::string::size_type editDistance(const std::string& str1, const std::string& 
 /// This allows consistent handling of both in macros, templates
 template <typename T> T *pointer(T *val) { return val; }
 template <typename T> T *pointer(T &val) { return &val; }
+
+#ifndef BOUT_CONCAT
+/// Utility to evaluate and concatenate macro symbols
+/// Note that ## operator doesn't evaluate symols A or B
+#define BOUT_CONCAT_(A,B) A##B
+#define BOUT_CONCAT(A,B) BOUT_CONCAT_(A,B)
+#endif
 
 #endif // __UTILS_H__

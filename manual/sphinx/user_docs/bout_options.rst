@@ -85,7 +85,8 @@ Expressions can include addition (``+``), subtraction (``-``),
 multiplication (``*``), division (``/``) and exponentiation (``^``)
 operators, with the usual precedence rules. In addition to ``π``,
 expressions can use predefined variables ``x``, ``y``, ``z`` and ``t``
-to refer to the spatial and time coordinates.
+to refer to the spatial and time coordinates (for definitions of the values
+these variables take see :ref:`sec-expressions`).
 A number of functions are defined, listed in table
 :numref:`tab-initexprfunc`. One slightly unusual feature (borrowed from `Julia <https://julialang.org/>`_)
 is that if a number comes before a symbol or an opening bracket (``(``)
@@ -174,6 +175,8 @@ The format can be controlled through the following four format codes:
 * ``k``: only include the key, and not the value
 
 * ``s``: include the ``source`` attribute, if it's present
+
+* ``u``: if the option is unused add a comment, including whether it is conditionally used
 
 Here are some examples of formatting the same `Options` object using different
 combinations of the format codes::
@@ -271,8 +274,8 @@ models, and the most useful of them are:
 
 .. code-block:: cfg
 
-    NOUT = 100       # number of time-points output
-    TIMESTEP = 1.0   # time between outputs
+    nout = 100       # number of time-points output
+    timestep = 1.0   # time between outputs
 
 which set the number of outputs, and the time step between them. Note
 that this has nothing to do with the internal timestep used to advance
@@ -356,10 +359,10 @@ multiples or fractions of :math:`2\pi`. To specify a fraction of
 
 .. code-block:: cfg
 
-    ZPERIOD = 10
+    zperiod = 10
 
 This specifies a Z range from :math:`0` to
-:math:`2\pi / {\texttt{ZPERIOD}}`, and is useful for simulation of
+:math:`2\pi / {\texttt{zperiod}}`, and is useful for simulation of
 tokamaks to make sure that the domain is an integer fraction of a torus.
 If instead you want to specify the Z range directly (for example if Z is
 not an angle), there are the options
@@ -702,6 +705,27 @@ These are equivalent, but the initializer list method makes the tree structure c
 Note that the list can contain many of the types which ``Options`` can hold, including
 ``Field2D`` and ``Field3D`` objects.
 
+Setting option attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Options can have attributes attached to them, that can be ``bool``,
+``int``, ``BoutReal`` or ``std::string`` type. These are stored in an
+``attributes`` map that can be assigned to::
+
+  Options options;
+  options["value"].attributes["property"] = "something";
+
+An arbitrary number of attributes can be attached to an option. If
+assigning multiple attributes, an ``initializer_list`` can be more
+readable::
+
+  Options options;
+  options["value"].setAttributes({
+      {"units", "m/s"},
+      {"conversion", 10.2},
+      {"long_name", "important value"}
+    });
+
 Overriding library defaults
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -866,20 +890,22 @@ quantities from the grid file are accessed through Mesh::get.
 Time dependence
 ~~~~~~~~~~~~~~~
 
-When writing NetCDF files, some variables should have a time
-dimension added, and then be added to each time they are written. This
-has been implemented using an attribute: If variables in the ``Options``
-tree have an attribute "time_dimension" then that is used as the name
+When writing NetCDF files, some variables should have a time dimension
+added, and then be added to each time they are written. This has been
+implemented using an attribute: If variables in the ``Options`` tree
+have an attribute ``"time_dimension"`` then that is used as the name
 of the time dimension in the output file. This allows multiple time
 dimensions e.g. high frequency diagnostics and low frequency outputs,
-to exist in the same file::
+to exist in the same file. `Options::assignRepeat` can be used to
+automatically set the ``"time_dimension"`` attribute::
 
   Options data;
   data["scalar"] = 1.0;
+  // You can set the attribute manually like so:
   data["scalar"].attributes["time_dimension"] = "t";
   
-  data["field"] = Field3D(2.0);
-  data["field"].attributes["time_dimension"] = "t";
+  // Or use `assignRepeat` to do it automatically:
+  data["field"].assignRepeat(Field3D(2.0));
   
   OptionsNetCDF("time.nc").write(data);
   
@@ -891,14 +917,11 @@ to exist in the same file::
   // Append data to file
   OptionsNetCDF("time.nc", OptionsNetCDF::FileMode::append).write(data);
 
-Some issues:
-
-* Currently all variables in the Options tree are written when passed
-  to ``OptionsNetCDF::write``. This means that the variables with
-  different time dimensions should be stored in different Options
-  trees, so they can be written at different times. One possibility is
-  to have an optional argument to write, so that only variables with
-  one specified time dimension are updated.
+.. note:: By default, `OptionsNetCDF::write` will only write variables
+          with a ``"time_dimension"`` of ``"t"``. You can write
+          variables with a different time dimension by passing it as
+          the second argument:
+          ``OptionsNetCDF(filename).write(options, "t2")`` for example.
 
 
 FFT

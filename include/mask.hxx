@@ -65,11 +65,9 @@ public:
   }
 
   inline bool& operator()(int jx, int jy, int jz) {
-    TRACE("BoutMask::operator()({}, {}, {})", jx, jy, jz);
     return mask(jx, jy, jz);
   }
   inline const bool& operator()(int jx, int jy, int jz) const {
-    TRACE("BoutMask::operator()({}, {}, {})", jx, jy, jz);
     return mask(jx, jy, jz);
   }
 };
