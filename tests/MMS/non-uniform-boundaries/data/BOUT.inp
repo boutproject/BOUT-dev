@@ -4,7 +4,7 @@ timestep = 0.1
 periodicX = true
 
 [mesh]
-staggerGrids= True
+staggergrids= True
 nx=2+2*mxg
 ny=10
 nz=1

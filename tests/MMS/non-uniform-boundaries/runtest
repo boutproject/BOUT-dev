@@ -102,7 +102,7 @@ def test(bdry, func, loc):
             f[i, :, 0] = fds
 
         fo = mget(f)
-        opt = bc.Options("")
+        opt = bc.Options.root("")
 
         myg = int(opt.get("mesh:myg", 0))
 
