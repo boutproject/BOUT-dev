@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 from jinja2 import Environment
+import sys
 import stencils_sympy as sten
+
+from boundary_nonuniform_common import *
 
 header = """\
 #include <boundary_standard.hxx>
@@ -267,33 +270,32 @@ return facs;
 }
 """
 
-orders = range(2, 5)
-boundaries = ["Dirichlet", "Neumann", "Free"]
 
 if __name__ == "__main__":
-    print(header)
+    with maybeopen(sys.argv) as print:
+        print(header)
 
-    for order in orders:
-        for boundary in boundaries:
-            if boundary == "Neumann":
-                mat = sten.neumann
-            else:
-                mat = sten.dirichlet
-            try:
-                code = sten.gen_code(order, mat)
-            except:
-                import sys
+        for order in orders:
+            for boundary in boundaries:
+                if boundary == "Neumann":
+                    mat = sten.neumann
+                else:
+                    mat = sten.dirichlet
+                try:
+                    code = sten.gen_code(order, mat)
+                except:
+                    import sys
 
-                print("Order:", order, "boundary:", boundary, file=sys.stderr)
-                raise
-            args = {
-                "order": order,
-                "type": boundary,
-                "class": "Boundary%sNonUniform_O%d" % (boundary, order),
-                "stencil_code": code,
-                "with_fg": boundary != "Free",
-            }
+                    print("Order:", order, "boundary:", boundary, file=sys.stderr)
+                    raise
+                args = {
+                    "order": order,
+                    "type": boundary,
+                    "class": "Boundary%sNonUniform_O%d" % (boundary, order),
+                    "stencil_code": code,
+                    "with_fg": boundary != "Free",
+                }
 
-            print(env.from_string(apply_str).render(**args))
-            print(env.from_string(clone_str).render(**args))
-            print(env.from_string(stencil_str).render(**args))
+                print(env.from_string(apply_str).render(**args))
+                print(env.from_string(clone_str).render(**args))
+                print(env.from_string(stencil_str).render(**args))

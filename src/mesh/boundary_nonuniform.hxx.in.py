@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
+import sys
+
 from jinja2 import Environment
+from boundary_nonuniform_common import orders, bounderies, maybeopen
 
 env = Environment(trim_blocks=True)
-
-
-orders = range(2, 5)
-boundaries = ["Dirichlet", "Neumann", "Free"]
 
 header = """
 #include <utility>
@@ -60,14 +59,15 @@ private:
 
 
 if __name__ == "__main__":
-    print(header)
-    for order in orders:
-        print(env.from_string(vecs).render(order=order))
-    for order in orders:
-        for boundary in boundaries:
-            args = {
-                "order": order,
-                "boundary": boundary,
-                "class": "Boundary%sNonUniform_O%d" % (boundary, order),
-            }
-            print(env.from_string(class_str).render(**args))
+    with maybeopen(sys.argv) as print:
+        print(header)
+        for order in orders:
+            print(env.from_string(vecs).render(order=order))
+        for order in orders:
+            for boundary in boundaries:
+                args = {
+                    "order": order,
+                    "boundary": boundary,
+                    "class": "Boundary%sNonUniform_O%d" % (boundary, order),
+                }
+                print(env.from_string(class_str).render(**args))
