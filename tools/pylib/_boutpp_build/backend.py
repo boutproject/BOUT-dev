@@ -95,7 +95,7 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
             else:
                 opts += f" {k}=ON"
     tag = gettag()
-    whlname = f"{pkgname}-{getversion()}-{tag}.whl"
+    whlname = f"{pkgname.replace('-', '_')}-{getversion()}-{tag}.whl"
     trueprefix = f"{os.getcwd()}/_wheel_install/"
     prefix = f"{trueprefix}/boutpp/"
     run(
@@ -200,7 +200,7 @@ def prepare_metadata_for_build_wheel(
     if not record and os.path.isfile("PKG-INFO"):
         parse("PKG-INFO")
 
-    thisdir = f"{pkgname}-{getversion()}.dist-info"
+    thisdir = f"{pkgname.replace('-', '_')}-{getversion()}.dist-info"
     distinfo = f"{metadata_directory}/{thisdir}"
     mkdir_p(distinfo)
     with open(f"{distinfo}/METADATA", "w") as f:
