@@ -19,7 +19,7 @@ int GasCompress::init(bool restarting) {
   gamma_ratio = options["gamma"].withDefault(0.1);
   include_viscosity = options["include_viscosity"].withDefault(false);
   nu = options["viscosity"].withDefault(0.0);
-  
+
   BoutReal v0_multiply = options["v0_multiply"].withDefault(1.0);
   V0 *= v0_multiply;
   
@@ -28,11 +28,11 @@ int GasCompress::init(bool restarting) {
   V.y.setLocation(CELL_YLOW); // Stagger
   
   // Set evolving variables
-  
+
   solver->add(N, "density", "description");
   solver->add(P, "pressure");
   solver->add(V, "v");
-  
+
   if(!restarting) {
     // Set variables to these values (+ the initial perturbation)
     // NOTE: This must be after the calls to bout_solve

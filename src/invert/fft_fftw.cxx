@@ -62,8 +62,9 @@ void fft_init(Options* options) {
     options = Options::getRoot()->getSection("fft");
   }
   fft_measurement_flag = (*options)["fft_measurement_flag"]
-                    .doc("Level speed measurements to optimise FFT settings: [estimate], measure, exhaustive")
-                    .withDefault(FFT_MEASUREMENT_FLAG::estimate);
+                             .doc("Level speed measurements to optimise FFT settings: "
+                                  "[estimate], measure, exhaustive")
+                             .withDefault(FFT_MEASUREMENT_FLAG::estimate);
 
   fft_init(fft_measurement_flag);
 }

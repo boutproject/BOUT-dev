@@ -104,7 +104,8 @@ protected:
   FieldGeneratorPtr resolve(const std::string& name) const override;
 
   std::multiset<ExpressionParser::FuzzyMatch>
-  fuzzyFind(const std::string& name, std::string::size_type max_distance = 2) const override;
+  fuzzyFind(const std::string& name,
+            std::string::size_type max_distance = 2) const override;
 
 private:
   /// The default mesh for create functions.

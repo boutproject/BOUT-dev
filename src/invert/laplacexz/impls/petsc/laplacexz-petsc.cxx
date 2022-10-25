@@ -20,10 +20,9 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 
-LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
-  : LaplaceXZ(m, opt, loc),
-    lib(opt==nullptr ? &(Options::root()["laplacexz"]) : opt),
-    coefs_set(false) {
+LaplaceXZpetsc::LaplaceXZpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
+    : LaplaceXZ(m, opt, loc), lib(opt == nullptr ? &(Options::root()["laplacexz"]) : opt),
+      coefs_set(false) {
 
   /* Constructor: LaplaceXZpetsc
    * Purpose:     - Setting inversion solver options
@@ -252,7 +251,6 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
     /// Add to slice vector
     slice.push_back(data);
   }
-
 }
 
 LaplaceXZpetsc::~LaplaceXZpetsc() {
@@ -480,16 +478,16 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
           // and (x+1/2,z-1/2) corner
 
           // (x+1/2,z+1/2)
-          //xp += 0.25 * val;  Note cancels
+          // xp += 0.25 * val;  Note cancels
           xpzp += 0.25 * val;
           zp += 0.25 * val;
-          //c += 0.25 * val;   Note cancels
+          // c += 0.25 * val;   Note cancels
 
           // (x+1/2,z-1/2)
-          //xp -= 0.25 * val;  Note cancels
+          // xp -= 0.25 * val;  Note cancels
           xpzm -= 0.25 * val;
           zm -= 0.25 * val;
-          //c -= 0.25 * val;   Note cancels
+          // c -= 0.25 * val;   Note cancels
         }
         {
           //
@@ -546,14 +544,14 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
               Acoef * J * g13 / (coords->J(x, y, z) * dx * coords->dz(x, y, z));
 
           // (x+1/2,z+1/2)
-          //zp += 0.25 * val;  Note cancels
+          // zp += 0.25 * val;  Note cancels
           xpzp += 0.25 * val;
           xp += 0.25 * val;
-          //c += 0.25 * val;   Note cancels
+          // c += 0.25 * val;   Note cancels
 
           // (x-1/2,z+1/2)
-          //zp -= 0.25 * val;  Note cancels
-          //c -= 0.25 * val;   Note cancels
+          // zp -= 0.25 * val;  Note cancels
+          // c -= 0.25 * val;   Note cancels
           xm -= 0.25 * val;
           xmzp -= 0.25 * val;
         }
@@ -961,9 +959,9 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
       for(int z=0; z < localmesh->LocalNz; z++) {
         PetscScalar val;
         VecGetValues(xs, 1, &ind, &val );
-	for (int x = localmesh->xstart - 1; x >= 0; --x){
-	  result(x,y,z) = val;
-	}
+        for (int x = localmesh->xstart - 1; x >= 0; --x) {
+          result(x, y, z) = val;
+        }
         ind++;
       }
     }
@@ -982,9 +980,9 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
       for(int z=0; z < localmesh->LocalNz; z++) {
         PetscScalar val;
         VecGetValues(xs, 1, &ind, &val );
- 	for(int x=localmesh->xend+1; x<localmesh->LocalNx; ++x){
-	  result(x,y,z) = val;
-	}
+        for (int x = localmesh->xend + 1; x < localmesh->LocalNx; ++x) {
+          result(x, y, z) = val;
+        }
         ind++;
       }
     }

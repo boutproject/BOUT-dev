@@ -1,11 +1,12 @@
-#include <bout.hxx>
 #include <bout/physicsmodel.hxx>
+#include <bout.hxx>
 
 #include <bout/region.hxx>
 #include <bout/assert.hxx>
 
 class Test_region_iterator : public PhysicsModel {
   Field3D n;
+
 protected:
   int init(bool UNUSED(restarting)) override;
   int rhs(BoutReal UNUSED(t)) override;
@@ -65,6 +66,5 @@ int Test_region_iterator::rhs(BoutReal UNUSED(t)) {
   ddt(n) = 0.;
   return 0;
 }
-
 
 BOUTMAIN(Test_region_iterator)

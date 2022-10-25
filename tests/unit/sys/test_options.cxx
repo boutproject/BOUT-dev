@@ -998,7 +998,7 @@ TEST_F(OptionsTest, TypeAttributeFieldPerp) {
   // Casting to FieldPerp should modify the "type" attribute
   FieldPerp value = option.withDefault<FieldPerp>(FieldPerp(-1, bout::globals::mesh));
 
-  EXPECT_EQ(value(0,0,0), 36);
+  EXPECT_EQ(value(0, 0, 0), 36);
   EXPECT_EQ(option.attributes["type"].as<std::string>(), "FieldPerp");
 }
 
@@ -1053,17 +1053,15 @@ TEST_F(OptionsTest, DocStringNotCopied) {
 }
 
 TEST_F(OptionsTest, InitializeInt) {
-  Options option {3};
+  Options option{3};
   EXPECT_EQ(option.as<int>(), 3);
 }
 
 TEST_F(OptionsTest, InitialiseTree) {
-  Options option {{"section1", {{"value1", 42},
-                                {"value2", "hello"}}},
-                  {"section2", {{"subsection1", {{"value3", true},
-                                                 {"value4", 3.2}}},
-                                {"value5", 3}}}};
-  
+  Options option{{"section1", {{"value1", 42}, {"value2", "hello"}}},
+                 {"section2",
+                  {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}}};
+
   EXPECT_EQ(option["section1"]["value1"].as<int>(), 42);
   EXPECT_EQ(option["section1"]["value2"].as<std::string>(), "hello");
   EXPECT_EQ(option["section2"]["subsection1"]["value3"].as<bool>(), true);
@@ -1108,7 +1106,8 @@ TEST_F(OptionsTest, FormatValue) {
   options["value1"].doc("This is a value").assign(4, "some test");
   options["value1"].attributes["type"] = "int";
 
-  const std::string expected = "value1 = 4		# type: int, doc: This is a value, source: some test";
+  const std::string expected =
+      "value1 = 4		# type: int, doc: This is a value, source: some test";
 
   EXPECT_EQ(expected, fmt::format("{:ds}", options["value1"]));
 }
@@ -1250,9 +1249,8 @@ TEST_F(OptionsTest, GetUnused) {
   MAYBE_UNUSED(auto value1) = option["section1"]["value1"].as<int>();
   MAYBE_UNUSED(auto value3) = option["section2"]["subsection1"]["value3"].as<bool>();
 
-  Options expected_unused{
-      {"section1", {{"value2", "hello"}}},
-      {"section2", {{"subsection1", {{"value4", 3.2}}}}}};
+  Options expected_unused{{"section1", {{"value2", "hello"}}},
+                          {"section2", {{"subsection1", {{"value4", 3.2}}}}}};
 
   EXPECT_EQ(option.getUnused(), expected_unused);
 
@@ -1278,10 +1276,11 @@ TEST_F(OptionsTest, SetConditionallyUsed) {
 }
 
 TEST_F(OptionsTest, FuzzyFind) {
-  Options option{{"value1", 21},
-                 {"section1", {{"value1", 42}, {"value2", "hello"}, {"not this", 1}}},
-                 {"section2",
-                  {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value_5", 3}}}};
+  Options option{
+      {"value1", 21},
+      {"section1", {{"value1", 42}, {"value2", "hello"}, {"not this", 1}}},
+      {"section2",
+       {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value_5", 3}}}};
 
   auto fuzzy_matches = option.fuzzyFind("value1");
   EXPECT_EQ(fuzzy_matches.size(), 6);
@@ -1351,7 +1350,7 @@ TEST_F(OptionsTest, CheckForUnusedOptionsGlobalRoot) {
 }
 
 class BoolTrueTestParametrized : public OptionsTest,
-                                public ::testing::WithParamInterface<std::string> {};
+                                 public ::testing::WithParamInterface<std::string> {};
 
 TEST_P(BoolTrueTestParametrized, BoolTrueFromString) {
   std::string testval = GetParam();
@@ -1361,13 +1360,9 @@ TEST_P(BoolTrueTestParametrized, BoolTrueFromString) {
   ASSERT_TRUE(options["bool_key"].as<bool>());
 }
 
-INSTANTIATE_TEST_CASE_P(
-    BoolTrueTests,
-    BoolTrueTestParametrized,
-    ::testing::Values(
-      "y", "Y", "yes", "Yes", "yeS", "t", "true", "T", "True", "tRuE", "1"
-    )
-);
+INSTANTIATE_TEST_CASE_P(BoolTrueTests, BoolTrueTestParametrized,
+                        ::testing::Values("y", "Y", "yes", "Yes", "yeS", "t", "true", "T",
+                                          "True", "tRuE", "1"));
 
 class BoolFalseTestParametrized : public OptionsTest,
                                   public ::testing::WithParamInterface<std::string> {};
@@ -1380,16 +1375,12 @@ TEST_P(BoolFalseTestParametrized, BoolFalseFromString) {
   ASSERT_FALSE(options["bool_key"].as<bool>());
 }
 
-INSTANTIATE_TEST_CASE_P(
-    BoolFalseTests,
-    BoolFalseTestParametrized,
-    ::testing::Values(
-      "n", "N", "no", "No", "nO", "f", "false", "F", "False", "fAlSe", "0"
-    )
-);
+INSTANTIATE_TEST_CASE_P(BoolFalseTests, BoolFalseTestParametrized,
+                        ::testing::Values("n", "N", "no", "No", "nO", "f", "false", "F",
+                                          "False", "fAlSe", "0"));
 
 class BoolInvalidTestParametrized : public OptionsTest,
-                                  public ::testing::WithParamInterface<std::string> {};
+                                    public ::testing::WithParamInterface<std::string> {};
 
 TEST_P(BoolInvalidTestParametrized, BoolInvalidFromString) {
   std::string testval = GetParam();
@@ -1399,11 +1390,7 @@ TEST_P(BoolInvalidTestParametrized, BoolInvalidFromString) {
   EXPECT_THROW(options["bool_key"].as<bool>(), BoutException);
 }
 
-INSTANTIATE_TEST_CASE_P(
-    BoolInvalidTests,
-    BoolInvalidTestParametrized,
-    ::testing::Values(
-      "a", "B", "yellow", "Yogi", "test", "truelong", "Tim", "2", "not", "No bool",
-      "nOno", "falsebuttoolong", "-1"
-    )
-);
+INSTANTIATE_TEST_CASE_P(BoolInvalidTests, BoolInvalidTestParametrized,
+                        ::testing::Values("a", "B", "yellow", "Yogi", "test", "truelong",
+                                          "Tim", "2", "not", "No bool", "nOno",
+                                          "falsebuttoolong", "-1"));

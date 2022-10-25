@@ -125,7 +125,9 @@ public:
 
 protected:
   /// This will be called to resolve any unknown symbols
-  virtual FieldGeneratorPtr resolve(const std::string& UNUSED(name)) const { return nullptr; }
+  virtual FieldGeneratorPtr resolve(const std::string& UNUSED(name)) const {
+    return nullptr;
+  }
 
   /// A result that's almost what we were looking for. Return type of
   /// `ExpressionParser::fuzzyFind`

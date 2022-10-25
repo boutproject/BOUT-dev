@@ -1,9 +1,9 @@
-#include <bout.hxx>
-#include <bout/physicsmodel.hxx>
-#include <initialprofiles.hxx>
-#include <derivs.hxx>
-#include <cmath>
 #include <bout/constants.hxx>
+#include <bout/physicsmodel.hxx>
+#include <bout.hxx>
+#include <cmath>
+#include <derivs.hxx>
+#include <initialprofiles.hxx>
 #include <unused.hxx>
 
 class Diffusion : public PhysicsModel {
@@ -11,7 +11,6 @@ protected:
   int init(bool UNUSED(restarting)) override;
   int rhs(BoutReal t) override;
 };
-
 
 using bout::globals::mesh;
 

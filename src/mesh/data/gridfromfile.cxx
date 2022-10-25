@@ -121,10 +121,12 @@ bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const std::string &name, Bou
  * Successfully reads Field2D or FieldPerp if the variable in the file is 0-D or 2-D.
  * Successfully reads Field3D if the variable in the file is 0-D, 2-D or 3-D.
  */
-bool GridFile::get(Mesh *m, Field2D &var, const std::string &name, BoutReal def, CELL_LOC location) {
+bool GridFile::get(Mesh* m, Field2D& var, const std::string& name, BoutReal def,
+                   CELL_LOC location) {
   return getField(m, var, name, def, location);
 }
-bool GridFile::get(Mesh *m, Field3D &var, const std::string &name, BoutReal def, CELL_LOC location) {
+bool GridFile::get(Mesh* m, Field3D& var, const std::string& name, BoutReal def,
+                   CELL_LOC location) {
   return getField(m, var, name, def, location);
 }
 
@@ -290,8 +292,8 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
 
   if (location != CELL_DEFAULT and var.getLocation() != location) {
     throw BoutException("Incorrect location of field {:s} in grid file, expected {:s}, "
-                        "got {:s}.", name, toString(location),
-                        toString(var.getLocation()));
+                        "got {:s}.",
+                        name, toString(location), toString(var.getLocation()));
   }
 
   if (var.isAllocated()) {

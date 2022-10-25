@@ -4,9 +4,9 @@
  * 
  */
 
-#include <bout.hxx>
-#include <bout/physicsmodel.hxx>
 #include <bout/globalfield.hxx>
+#include <bout/physicsmodel.hxx>
+#include <bout.hxx>
 
 class Test_globalfield : public PhysicsModel {
 protected:
@@ -14,9 +14,8 @@ protected:
   int rhs(BoutReal UNUSED(t)) override;
 };
 
-
 int Test_globalfield::init(bool UNUSED(restarting)) {
-  
+
   /////////////////////////////////////////////////////////////
   // 2D fields
 
@@ -128,6 +127,5 @@ int Test_globalfield::rhs(BoutReal UNUSED(t)) {
   // Doesn't do anything
   return 1;
 }
-
 
 BOUTMAIN(Test_globalfield)

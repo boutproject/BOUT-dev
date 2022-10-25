@@ -13,8 +13,8 @@ using bout::generator::Context;
 // protected parseString as a public method
 class ExpressionParserSubClass : public ExpressionParser {
 public:
-  using ExpressionParser::parseString;
   using ExpressionParser::fuzzyFind;
+  using ExpressionParser::parseString;
 };
 
 class ExpressionParserTest : public ::testing::Test {

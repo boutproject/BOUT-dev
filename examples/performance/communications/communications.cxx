@@ -1,5 +1,5 @@
-#include <bout.hxx>
 #include <bout/sys/timer.hxx>
+#include <bout.hxx>
 #include <initialprofiles.hxx>
 
 int main(int argc, char** argv) {

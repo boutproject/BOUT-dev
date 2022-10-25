@@ -33,8 +33,8 @@
 #if not BOUT_HAS_PETSC
 
 namespace {
-RegisterUnavailableSolver registerunavailablepetsc("petsc",
-                                                   "BOUT++ was not configured with PETSc");
+RegisterUnavailableSolver
+    registerunavailablepetsc("petsc", "BOUT++ was not configured with PETSc");
 }
 
 #else

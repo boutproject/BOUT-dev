@@ -24,8 +24,8 @@ class Mesh;
 class ParallelTransform {
 public:
   ParallelTransform(Mesh& mesh_in, Options* opt = nullptr)
-    : mesh(mesh_in),
-      options(opt == nullptr ? Options::root()["mesh:paralleltransform"] : *opt) {}
+      : mesh(mesh_in),
+        options(opt == nullptr ? Options::root()["mesh:paralleltransform"] : *opt) {}
   virtual ~ParallelTransform() = default;
 
   /// Given a 3D field, calculate and set the Y up down fields
@@ -97,7 +97,7 @@ protected:
   virtual void checkInputGrid() = 0;
 
   Mesh &mesh; ///< The mesh this paralleltransform is part of
-  Options &options; ///< Options for this ParallelTransform
+  Options& options; ///< Options for this ParallelTransform
 };
 
 /*!
@@ -154,11 +154,10 @@ public:
     return result.setDirectionY(YDirectionType::Standard);
   }
 
-  virtual std::vector<PositionsAndWeights> getWeightsForYApproximation(int i,
-      int j, int k, int yoffset) override {
+  virtual std::vector<PositionsAndWeights>
+  getWeightsForYApproximation(int i, int j, int k, int yoffset) override {
     return {{i, j + yoffset, k, 1.0}};
   }
-
 
   bool canToFromFieldAligned() override { return true; }
 
@@ -230,7 +229,7 @@ public:
     // Twist-shift only if field-aligned
     if (ytype == YDirectionType::Aligned and not twist_shift_enabled) {
       throw BoutException("'twistshift = true' is required to communicate field-aligned "
-          "Field3Ds when using ShiftedMetric.");
+                          "Field3Ds when using ShiftedMetric.");
     }
     return ytype == YDirectionType::Aligned;
   }

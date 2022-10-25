@@ -574,7 +574,7 @@ inline std::string toString(const bool& val) {
 }
 
 inline std::string toString(const DirectionTypes& dir) {
-  return "{"+toString(dir.y)+", "+toString(dir.z)+"}";
+  return "{" + toString(dir.y) + ", " + toString(dir.z) + "}";
 }
 
 /// Convert a time stamp to a string
@@ -699,8 +699,8 @@ template <typename T> T *pointer(T &val) { return &val; }
 #ifndef BOUT_CONCAT
 /// Utility to evaluate and concatenate macro symbols
 /// Note that ## operator doesn't evaluate symols A or B
-#define BOUT_CONCAT_(A,B) A##B
-#define BOUT_CONCAT(A,B) BOUT_CONCAT_(A,B)
+#define BOUT_CONCAT_(A, B) A##B
+#define BOUT_CONCAT(A, B) BOUT_CONCAT_(A, B)
 #endif
 
 #endif // __UTILS_H__

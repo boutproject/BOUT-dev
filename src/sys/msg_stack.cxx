@@ -58,9 +58,7 @@ void MsgStack::pop() {
   if (position <= 0) {
     return;
   }
-  BOUT_OMP(single) {
-    --position;
-  }
+  BOUT_OMP(single) { --position; }
 }
 
 void MsgStack::pop(int id) {
@@ -73,7 +71,7 @@ void MsgStack::pop(int id) {
     id = 0;
 
   if (id <= static_cast<int>(position)) {
-      position = id;
+    position = id;
   }
 }
 

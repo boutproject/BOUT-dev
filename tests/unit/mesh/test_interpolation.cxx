@@ -67,12 +67,15 @@ protected:
         : std::list<CELL_LOC>{CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW}) {
 
       static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, location);
-      static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
-          mesh, Field2D{1.0, mesh}, Field2D{1.0, mesh}, BoutReal{1.0}, Field2D{1.0, mesh},
-          Field2D{0.0, mesh}, Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{1.0, mesh},
-          Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{1.0, mesh},
-          Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh},
-          Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh}),
+      static_cast<FakeMesh*>(mesh)->setCoordinates(
+          std::make_shared<Coordinates>(
+              mesh, Field2D{1.0, mesh}, Field2D{1.0, mesh}, BoutReal{1.0},
+              Field2D{1.0, mesh}, Field2D{0.0, mesh}, Field2D{1.0, mesh},
+              Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{0.0, mesh},
+              Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{1.0, mesh},
+              Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{0.0, mesh},
+              Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh},
+              Field2D{0.0, mesh}),
           location);
       // No call to Coordinates::geometry() needed here
       mesh->getCoordinates(location)->setParallelTransform(
@@ -311,12 +314,15 @@ protected:
         : std::list<CELL_LOC>{CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW}) {
 
       static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, location);
-      static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
-          mesh, Field2D{1.0, mesh}, Field2D{1.0, mesh}, BoutReal{1.0}, Field2D{1.0, mesh},
-          Field2D{0.0, mesh}, Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{1.0, mesh},
-          Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{1.0, mesh},
-          Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh},
-          Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh}),
+      static_cast<FakeMesh*>(mesh)->setCoordinates(
+          std::make_shared<Coordinates>(
+              mesh, Field2D{1.0, mesh}, Field2D{1.0, mesh}, BoutReal{1.0},
+              Field2D{1.0, mesh}, Field2D{0.0, mesh}, Field2D{1.0, mesh},
+              Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{0.0, mesh},
+              Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{1.0, mesh},
+              Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{0.0, mesh},
+              Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh},
+              Field2D{0.0, mesh}),
           location);
       // No call to Coordinates::geometry() needed here
       mesh->getCoordinates(location)->setParallelTransform(

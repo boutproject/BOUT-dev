@@ -175,8 +175,8 @@ int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communic
   return 0;
 }
 
-int Mesh::get(Field3D &var, const std::string &name, BoutReal def,
-              bool communicate, CELL_LOC location) {
+int Mesh::get(Field3D& var, const std::string& name, BoutReal def, bool communicate,
+              CELL_LOC location) {
   TRACE("Loading 3D field: Mesh::get(Field3D, {:s})", name);
 
   if (source == nullptr or !source->get(this, var, name, def, location)) {
@@ -197,8 +197,8 @@ int Mesh::get(Field3D &var, const std::string &name, BoutReal def,
   return 0;
 }
 
-int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
-    bool UNUSED(communicate), CELL_LOC location) {
+int Mesh::get(FieldPerp& var, const std::string& name, BoutReal def,
+              bool UNUSED(communicate), CELL_LOC location) {
   TRACE("Loading FieldPerp: Mesh::get(FieldPerp, {:s})", name);
 
   if (source == nullptr or !source->get(this, var, name, def, location)) {
@@ -301,7 +301,7 @@ void Mesh::communicateXZ(FieldGroup &g) {
   wait(h);
 }
 
-void Mesh::communicateYZ(FieldGroup &g) {
+void Mesh::communicateYZ(FieldGroup& g) {
   TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
@@ -318,7 +318,7 @@ void Mesh::communicateYZ(FieldGroup &g) {
   }
 }
 
-void Mesh::communicate(FieldGroup &g) {
+void Mesh::communicate(FieldGroup& g) {
   TRACE("Mesh::communicate(FieldGroup&)");
 
   if (include_corner_cells) {
@@ -343,7 +343,7 @@ void Mesh::communicate(FieldGroup &g) {
 
   // Calculate yup and ydown fields for 3D fields
   if (calcParallelSlices_on_communicate) {
-    for(const auto& fptr : g.field3d()) {
+    for (const auto& fptr : g.field3d()) {
       fptr->calcParallelSlices();
     }
   }

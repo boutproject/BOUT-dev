@@ -132,16 +132,14 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
     }
   }
 #if CHECK > 0
-  if (not (
-            // if include_corner_cells=true, then we extrapolate valid data into the
-            // corner cells if they are not already filled
-            localmesh->include_corner_cells
+  if (not(
+          // if include_corner_cells=true, then we extrapolate valid data into the
+          // corner cells if they are not already filled
+          localmesh->include_corner_cells
 
-            // if we are not extrapolating at all, the corner cells should contain valid
-            // data
-            or (not extrapolate_x and not extrapolate_y)
-          )
-     ) {
+          // if we are not extrapolating at all, the corner cells should contain valid
+          // data
+          or (not extrapolate_x and not extrapolate_y))) {
     // Invalidate corner guard cells
     for (int i = 0; i < localmesh->xstart; i++) {
       for (int j = 0; j < localmesh->ystart; j++) {
@@ -950,7 +948,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
 void Coordinates::outputVars(Options& output_options) {
   Timer time("io");
-  const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
+  const std::string loc_string =
+      (location == CELL_CENTRE) ? "" : "_" + toString(location);
 
   output_options["dx" + loc_string].force(dx, "Coordinates");
   output_options["dy" + loc_string].force(dy, "Coordinates");
@@ -1468,8 +1467,8 @@ void Coordinates::setParallelTransform(Options* options) {
 
   if(ptstr == "identity") {
     // Identity method i.e. no transform needed
-    transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh,
-                                                                    ptoptions);
+    transform =
+        bout::utils::make_unique<ParallelTransformIdentity>(*localmesh, ptoptions);
 
   } else if (ptstr == "shifted" or ptstr == "shiftedinterp") {
     // Shifted metric method
@@ -1571,7 +1570,7 @@ Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
 Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) {
 #if BOUT_USE_METRIC_3D
-  if (! f.hasParallelSlices() and ! transform->canToFromFieldAligned()) {
+  if (!f.hasParallelSlices() and !transform->canToFromFieldAligned()) {
     Field3D f_parallel = f;
     transform->calcParallelSlices(f_parallel);
     f_parallel.applyParallelBoundary("parallel_neumann");
@@ -1920,8 +1919,8 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
     const BoutReal outer_x_J = outer_x_avg(J);
     const BoutReal outer_x_g11 = outer_x_avg(g11);
     const BoutReal outer_x_dx = outer_x_avg(dx);
-    const BoutReal outer_x_value = outer_x_A * outer_x_J * outer_x_g11 /
-      (J[i] * outer_x_dx * dx[i]);
+    const BoutReal outer_x_value =
+        outer_x_A * outer_x_J * outer_x_g11 / (J[i] * outer_x_dx * dx[i]);
     result[i] += outer_x_value * (f[i.xp()] - f[i]);
 
     // inner x boundary
@@ -1930,8 +1929,8 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
     const BoutReal inner_x_J = inner_x_avg(J);
     const BoutReal inner_x_g11 = inner_x_avg(g11);
     const BoutReal inner_x_dx = inner_x_avg(dx);
-    const BoutReal inner_x_value = inner_x_A * inner_x_J * inner_x_g11 /
-      (J[i] * inner_x_dx * dx[i]);
+    const BoutReal inner_x_value =
+        inner_x_A * inner_x_J * inner_x_g11 / (J[i] * inner_x_dx * dx[i]);
     result[i] += inner_x_value * (f[i.xm()] - f[i]);
 
     // upper y boundary
@@ -1942,8 +1941,8 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
     const BoutReal upper_y_g23 = upper_y_avg(g23);
     const BoutReal upper_y_g_23 = upper_y_avg(g_23);
     const BoutReal upper_y_dy = upper_y_avg(dy);
-    const BoutReal upper_y_value = -upper_y_A * upper_y_J * upper_y_g23 *upper_y_g_23 /
-      (upper_y_g_22 * J[i] * upper_y_dy * dy[i]);
+    const BoutReal upper_y_value = -upper_y_A * upper_y_J * upper_y_g23 * upper_y_g_23
+                                   / (upper_y_g_22 * J[i] * upper_y_dy * dy[i]);
     result[i] += upper_y_value * (f[i.yp()] - f[i]);
 
     // lower y boundary
@@ -1954,8 +1953,8 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
     const BoutReal lower_y_g23 = lower_y_avg(g23);
     const BoutReal lower_y_g_23 = lower_y_avg(g_23);
     const BoutReal lower_y_dy = lower_y_avg(dy);
-    const BoutReal lower_y_value = -lower_y_A * lower_y_J * lower_y_g23 * lower_y_g_23 /
-      (lower_y_g_22 * J[i] * lower_y_dy * dy[i]);
+    const BoutReal lower_y_value = -lower_y_A * lower_y_J * lower_y_g23 * lower_y_g_23
+                                   / (lower_y_g_22 * J[i] * lower_y_dy * dy[i]);
     result[i] += lower_y_value * (f[i.ym()] - f[i]);
   }
 

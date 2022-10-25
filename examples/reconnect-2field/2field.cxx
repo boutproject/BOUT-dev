@@ -5,11 +5,11 @@
 
 #include <bout/physicsmodel.hxx>
 
+#include <bout/constants.hxx>
+#include <initialprofiles.hxx>
 #include <interpolation.hxx>
 #include <invert_laplace.hxx>
 #include <invert_parderiv.hxx>
-#include <initialprofiles.hxx>
-#include <bout/constants.hxx>
 
 class TwoField : public PhysicsModel {
 private:
@@ -217,7 +217,7 @@ protected:
     return 0;
   }
 
-  const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
+  const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
     Field3D result;
     if (nonlinear) {
       result = ::Grad_parP((Apar + Apar_ext) * beta_hat, f);
@@ -269,11 +269,10 @@ protected:
     ddt(U) = SQ(coord->Bxy) * Grad_parP(jpar / coord_ylow->Bxy, CELL_CENTRE);
 
     if (include_jpar0) {
-      ddt(U) -= SQ(coord->Bxy) * beta_hat *
-                interp_to(
-                    bracket(Apar + Apar_ext, Jpar0 / coord_ylow->Bxy, BRACKET_ARAKAWA),
-                    CELL_CENTRE
-                );
+      ddt(U) -=
+          SQ(coord->Bxy) * beta_hat
+          * interp_to(bracket(Apar + Apar_ext, Jpar0 / coord_ylow->Bxy, BRACKET_ARAKAWA),
+                      CELL_CENTRE);
     }
 
     ddt(U) -= bracket(Phi0_ext, U, bm); // ExB advection
@@ -335,8 +334,8 @@ public:
       }
     }
 
-    Field3D U1 = ddt(U) + gamma * SQ(coord->Bxy)
-                          * Grad_par(Jp / coord_ylow->Bxy, CELL_CENTRE);
+    Field3D U1 =
+        ddt(U) + gamma * SQ(coord->Bxy) * Grad_par(Jp / coord_ylow->Bxy, CELL_CENTRE);
 
     inv->setCoefB(-SQ(gamma * coord->Bxy) / beta_hat);
     ddt(U) = inv->solve(U1);

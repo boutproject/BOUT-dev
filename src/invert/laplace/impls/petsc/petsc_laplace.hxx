@@ -29,8 +29,8 @@
 #ifndef __PETSC_LAPLACE_H__
 #define __PETSC_LAPLACE_H__
 
-#include "bout/build_config.hxx"
 #include "invert_laplace.hxx"
+#include "bout/build_config.hxx"
 
 #if not BOUT_HAS_PETSC
 

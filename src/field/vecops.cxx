@@ -123,14 +123,14 @@ Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc, const std::string& method)
   SCOREP0();
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
 
-  Coordinates *metric = f.getCoordinates(outloc);
+  Coordinates* metric = f.getCoordinates(outloc);
 
   Vector2D result(f.getMesh());
 
   result.x = DDX(f, outloc, method)
              - metric->g_12 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
   result.y = 0.0;
-  result.z = - metric->g_23 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
+  result.z = -metric->g_23 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
 
   result.setLocation(result.x.getLocation());
 

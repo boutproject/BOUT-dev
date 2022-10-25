@@ -138,7 +138,7 @@ public:
       : mesh(mesh_), output_enabled(output_enabled_), restart_enabled(restart_enabled_) {}
 
   virtual ~PhysicsModel() = default;
-  
+
   Mesh* mesh{nullptr};
   bout::DataFileFacade dump{};
   bout::DataFileFacade restart{};
@@ -163,18 +163,18 @@ public:
    *
    * Output
    * ------
-   * 
+   *
    * The time derivatives will be put in the ddt() variables
-   * 
+   *
    * Returns a flag: 0 indicates success, non-zero an error flag
    */
   int runRHS(BoutReal time, bool linear = false);
-  
+
   /*!
    * True if this model uses split operators
    */ 
   bool splitOperator();
-  
+
   /*!
    * Run the convective (usually explicit) part of the model
    *
@@ -183,7 +183,7 @@ public:
    *
    */
   int runConvective(BoutReal time, bool linear = false);
-  
+
   /*!
    * Run the diffusive (usually implicit) part of the model
    *
@@ -192,7 +192,7 @@ public:
    *
    */
   int runDiffusive(BoutReal time, bool linear = false);
-  
+
   /*!
    * True if a preconditioner has been defined
    */ 
@@ -249,11 +249,11 @@ protected:
   /// @param[in] restarting   If true, will load state from restart file
   ///
   virtual int postInit(bool restarting);
-  
+
   /*!
    * @brief This function is called by the time integration solver
    * at least once per time step
-   * 
+   *
    * Variables being evolved will be set by the solver
    * before the call, and this function must calculate
    * and set the time-derivatives.
@@ -266,7 +266,7 @@ protected:
    * linearised. This is used in e.g. linear iterative solves.
    */
   virtual int rhs(BoutReal UNUSED(t)) {return 1;}
-  virtual int rhs(BoutReal t, bool UNUSED(linear)) {return rhs(t);}
+  virtual int rhs(BoutReal t, bool UNUSED(linear)) { return rhs(t); }
 
   /// Output additional variables other than the evolving variables
   virtual void outputVars(Options& options);
@@ -337,10 +337,10 @@ protected:
    * To evolve the state, the solver will set \p var, and the user-supplied
    * rhs() function should calculate ddt(var).
    */
-  void bout_solve(Field2D &var, const char *name, const std::string& description="");
-  void bout_solve(Field3D &var, const char *name, const std::string& description="");
-  void bout_solve(Vector2D &var, const char *name, const std::string& description="");
-  void bout_solve(Vector3D &var, const char *name, const std::string& description="");
+  void bout_solve(Field2D& var, const char* name, const std::string& description = "");
+  void bout_solve(Field3D& var, const char* name, const std::string& description = "");
+  void bout_solve(Vector2D& var, const char* name, const std::string& description = "");
+  void bout_solve(Vector3D& var, const char* name, const std::string& description = "");
 
   /// Helper function for reading from restart_options
   Options& readFromRestartFile(const std::string& name) { return restart_options[name]; }

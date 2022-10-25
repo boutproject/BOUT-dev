@@ -285,8 +285,9 @@ private:
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
-    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
-                                       .withDefault<std::string>("identity");
+    std::string ptstr =
+        Options::root()["mesh"]["paralleltransform"]["type"].withDefault<std::string>(
+            "identity");
 
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0;  // I disappears from metric
@@ -329,7 +330,7 @@ private:
     if(mesh->get(hthe0, "hthe0") == 0) {
       output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n", hthe0/rho_s);
     }
-    
+
     if (mesh->StaggerGrids) {
       ////////////////////////////////////////////////////////
       // SHIFTED GRIDS LOCATION
@@ -342,7 +343,7 @@ private:
       Apar.setLocation(CELL_YLOW);
       jpar.setLocation(CELL_YLOW);
     }
-    
+
     ////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
     
@@ -580,9 +581,9 @@ private:
     ////////////////////////////////////////////////////////
     // Update non-linear coefficients on the mesh
     if (mesh->StaggerGrids) {
-      nu      = nu_hat * interp_to(Nit / pow(Tet,1.5), CELL_YLOW);
+      nu = nu_hat * interp_to(Nit / pow(Tet, 1.5), CELL_YLOW);
     } else {
-      nu      = nu_hat * Nit / pow(Tet,1.5);
+      nu = nu_hat * Nit / pow(Tet, 1.5);
     }
     mu_i    = mui_hat * Nit / sqrt(Tit);
     kapa_Te = 3.2*(1./fmei)*(wci/nueix)*pow(Tet,2.5);
@@ -596,29 +597,29 @@ private:
     if (ZeroElMass) {
       // Set jpar,Ve,Ajpar neglecting the electron inertia term
       // Calculate Jpar, communicating across processors
-      jpar = -(Ni0*Grad_par(phi, CELL_YLOW)) / (fmei*0.51*nu);
-      
+      jpar = -(Ni0 * Grad_par(phi, CELL_YLOW)) / (fmei * 0.51 * nu);
+
       if (OhmPe) {
-        jpar += (Te0*Grad_par(Ni, CELL_YLOW)) / (fmei*0.51*nu);
+        jpar += (Te0 * Grad_par(Ni, CELL_YLOW)) / (fmei * 0.51 * nu);
       }
-      
+
       // Need to communicate jpar
       mesh->communicate(jpar);
       jpar.applyBoundary();
-      
+
       if (!mesh->StaggerGrids) {
-        Ve = Vi - jpar/Ni0;
+        Ve = Vi - jpar / Ni0;
       } else {
-        Ve = Vi - jpar/interp_to(Ni0, CELL_YLOW);
+        Ve = Vi - jpar / interp_to(Ni0, CELL_YLOW);
       }
       Ajpar = Ve;
     } else {
     
       Ve = Ajpar + Apar;
       if (!mesh->StaggerGrids) {
-        jpar = Ni0*(Vi - Ve);
+        jpar = Ni0 * (Vi - Ve);
       } else {
-        jpar = interp_to(Ni0, CELL_YLOW)*(Vi - Ve);
+        jpar = interp_to(Ni0, CELL_YLOW) * (Vi - Ve);
       }
     }
     
@@ -852,7 +853,7 @@ private:
       }    
       
       if (rho_jpar1) {
-        ddt(rho) += SQ(coord->Bxy)*Div_par(jpar, CELL_CENTRE);
+        ddt(rho) += SQ(coord->Bxy) * Div_par(jpar, CELL_CENTRE);
       }
 
       if (rho_rho1) {
@@ -870,20 +871,20 @@ private:
     ddt(Ajpar) = 0.0;
     if (evolve_ajpar) {
       TRACE("Ajpar equation");
-      
-      //ddt(Ajpar) -= vE_Grad(Ajpar0, phi) + vE_Grad(Ajpar, phi0) + vE_Grad(Ajpar, phi);
-      //ddt(Ajpar) -= (1./fmei)*1.71*Grad_par(Te, CELL_YLOW);
-      
-      ddt(Ajpar) += (1./fmei)*Grad_par(phi, CELL_YLOW);
-      
+
+      // ddt(Ajpar) -= vE_Grad(Ajpar0, phi) + vE_Grad(Ajpar, phi0) + vE_Grad(Ajpar, phi);
+      // ddt(Ajpar) -= (1./fmei)*1.71*Grad_par(Te, CELL_YLOW);
+
+      ddt(Ajpar) += (1. / fmei) * Grad_par(phi, CELL_YLOW);
+
       if (OhmPe) {
-        ddt(Ajpar) -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni, CELL_YLOW);
+        ddt(Ajpar) -= (1. / fmei) * (Te0 / Ni0) * Grad_par(Ni, CELL_YLOW);
       }
-      
+
       if (mesh->StaggerGrids) {
-        ddt(Ajpar) += 0.51*nu*jpar/interp_to(Ni0, CELL_YLOW);
+        ddt(Ajpar) += 0.51 * nu * jpar / interp_to(Ni0, CELL_YLOW);
       } else {
-        ddt(Ajpar) += 0.51*nu*jpar/Ni0;
+        ddt(Ajpar) += 0.51 * nu * jpar / Ni0;
       }
 
       if (lowPass_z > 0) {

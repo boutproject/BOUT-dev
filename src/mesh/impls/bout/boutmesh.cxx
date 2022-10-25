@@ -343,7 +343,7 @@ void BoutMesh::setDerivedGridSizes() {
   }
 
   // Set global grid sizes, excluding boundary points
-  GlobalNxNoBoundaries = nx - 2*MXG;
+  GlobalNxNoBoundaries = nx - 2 * MXG;
   GlobalNyNoBoundaries = ny;
   GlobalNzNoBoundaries = nz;
 
@@ -557,7 +557,7 @@ int BoutMesh::load() {
 
   if (!boundary.empty()) {
     output_info << _("Boundary regions in this processor: ");
-    for (const auto &bndry : boundary) {
+    for (const auto& bndry : boundary) {
       output_info << bndry->label << ", ";
     }
     output_info << endl;
@@ -996,32 +996,47 @@ std::set<std::string> BoutMesh::getPossibleBoundaries() const {
   WithQuietOutput quiet_warn(output_warn);
 
   // Lambda that modifies `all_boundaries`
-  const auto get_boundaries_on_different_rank = [mesh = this, &all_boundaries](
-                                                    int x_rank, int y_rank) {
-    // Don't try to check boundaries on unphysical processors
-    if (x_rank < 0 or x_rank >= mesh->NXPE) {
-      return;
-    }
-    if (y_rank < 0 or y_rank >= mesh->NYPE) {
-      return;
-    }
+  const auto get_boundaries_on_different_rank =
+      [mesh = this, &all_boundaries](int x_rank, int y_rank) {
+        // Don't try to check boundaries on unphysical processors
+        if (x_rank < 0 or x_rank >= mesh->NXPE) {
+          return;
+        }
+        if (y_rank < 0 or y_rank >= mesh->NYPE) {
+          return;
+        }
 
-    // Make a copy of this mesh, EXCEPT we change the (X, Y) rank of the processor
-    BoutMesh mesh_copy{mesh->GlobalNx, mesh->GlobalNyNoBoundaries, mesh->GlobalNz,
-                       mesh->MXG, mesh->MYG, mesh->NXPE, mesh->NYPE, x_rank, y_rank,
-                       mesh->symmetricGlobalX, mesh->symmetricGlobalY, mesh->periodicX,
-                       mesh->ixseps1, mesh->ixseps2, mesh->jyseps1_1, mesh->jyseps2_1,
-                       mesh->jyseps1_2, mesh->jyseps2_2, mesh->ny_inner, false};
-    // We need to create the boundaries
-    mesh_copy.createXBoundaries();
-    mesh_copy.createYBoundaries();
+        // Make a copy of this mesh, EXCEPT we change the (X, Y) rank of the processor
+        BoutMesh mesh_copy{mesh->GlobalNx,
+                           mesh->GlobalNyNoBoundaries,
+                           mesh->GlobalNz,
+                           mesh->MXG,
+                           mesh->MYG,
+                           mesh->NXPE,
+                           mesh->NYPE,
+                           x_rank,
+                           y_rank,
+                           mesh->symmetricGlobalX,
+                           mesh->symmetricGlobalY,
+                           mesh->periodicX,
+                           mesh->ixseps1,
+                           mesh->ixseps2,
+                           mesh->jyseps1_1,
+                           mesh->jyseps2_1,
+                           mesh->jyseps1_2,
+                           mesh->jyseps2_2,
+                           mesh->ny_inner,
+                           false};
+        // We need to create the boundaries
+        mesh_copy.createXBoundaries();
+        mesh_copy.createYBoundaries();
 
-    // Get the boundaries and shove their names into the set
-    auto boundaries = mesh_copy.getBoundaries();
-    std::transform(boundaries.begin(), boundaries.end(),
-                   std::inserter(all_boundaries, all_boundaries.begin()),
-                   [](BoundaryRegionBase* boundary) { return boundary->label; });
-  };
+        // Get the boundaries and shove their names into the set
+        auto boundaries = mesh_copy.getBoundaries();
+        std::transform(boundaries.begin(), boundaries.end(),
+                       std::inserter(all_boundaries, all_boundaries.begin()),
+                       [](BoundaryRegionBase* boundary) { return boundary->label; });
+      };
 
   // This is sufficient to get the SOL boundary, if it exists
   get_boundaries_on_different_rank(NXPE - 1, 0);
@@ -1059,29 +1074,27 @@ const int OUT_SENT_DOWN = 3; ///< Data higher in X than branch-cut, at lower bou
 const int IN_SENT_OUT = 4; ///< Data going in positive X direction (in to out)
 const int OUT_SENT_IN = 5; ///< Data going in negative X direction (out to in)
 
-void BoutMesh::post_receiveX(CommHandle &ch) {
+void BoutMesh::post_receiveX(CommHandle& ch) {
   /// Post receive data from left (x-1)
 
   if (IDATA_DEST != -1) {
-    mpi->MPI_Irecv(std::begin(ch.imsg_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, 0,
-                           ch.include_x_corners ? LocalNy : MYSUB),
-                   PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(),
-                   &ch.request[4]);
+    mpi->MPI_Irecv(
+        std::begin(ch.imsg_recvbuff),
+        msg_len(ch.var_list.get(), 0, MXG, 0, ch.include_x_corners ? LocalNy : MYSUB),
+        PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(), &ch.request[4]);
   }
 
   // Post receive data from right (x+1)
 
   if (ODATA_DEST != -1) {
-    mpi->MPI_Irecv(std::begin(ch.omsg_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, 0,
-                           ch.include_x_corners ? LocalNy : MYSUB),
-                   PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(),
-                   &ch.request[5]);
+    mpi->MPI_Irecv(
+        std::begin(ch.omsg_recvbuff),
+        msg_len(ch.var_list.get(), 0, MXG, 0, ch.include_x_corners ? LocalNy : MYSUB),
+        PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(), &ch.request[5]);
   }
 }
 
-void BoutMesh::post_receiveY(CommHandle &ch) {
+void BoutMesh::post_receiveY(CommHandle& ch) {
   BoutReal *inbuff;
   int len;
 
@@ -1117,7 +1130,7 @@ void BoutMesh::post_receiveY(CommHandle &ch) {
   }
 }
 
-comm_handle BoutMesh::send(FieldGroup &g) {
+comm_handle BoutMesh::send(FieldGroup& g) {
   /// Start timer
   Timer timer("comms");
 
@@ -1132,16 +1145,16 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
 
   /// Get a communications handle of (at least) the needed size
-  CommHandle *ch = get_handle(xlen, ylen);
+  CommHandle* ch = get_handle(xlen, ylen);
   ch->var_list = g; // Group of fields to send
 
   sendX(g, ch, true);
   sendY(g, ch);
 
-  return static_cast<void *>(ch);
+  return static_cast<void*>(ch);
 }
 
-comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle, bool disable_corners) {
+comm_handle BoutMesh::sendX(FieldGroup& g, comm_handle handle, bool disable_corners) {
   /// Start timer
   Timer timer("comms");
 
@@ -1184,9 +1197,9 @@ comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle, bool disable_corn
   /// Send to the right (x+1)
 
   if (ODATA_DEST != -1) {
-    int len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, ch->include_x_corners ? 0 :
-                        MYG, ch->include_x_corners ? LocalNy : MYG + MYSUB,
-                        std::begin(ch->omsg_sendbuff));
+    int len = pack_data(
+        ch->var_list.get(), MXSUB, MXSUB + MXG, ch->include_x_corners ? 0 : MYG,
+        ch->include_x_corners ? LocalNy : MYG + MYSUB, std::begin(ch->omsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
                      OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
@@ -1199,10 +1212,10 @@ comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle, bool disable_corn
   /// Mark communication handle as in progress
   ch->in_progress = true;
 
-  return static_cast<void *>(ch);
+  return static_cast<void*>(ch);
 }
 
-comm_handle BoutMesh::sendY(FieldGroup &g, comm_handle handle) {
+comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
   /// Start timer
   Timer timer("comms");
 
@@ -1507,7 +1520,7 @@ int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
   return 0;
 }
 
-comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
+comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
   if (PE_XIND == NXPE - 1)
     return nullptr;
 
@@ -2553,7 +2566,7 @@ void BoutMesh::addBoundaryRegions() {
     // Include corner cells on x-boundary
     xe = LocalNx - 1;
   }
-  
+
   addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,

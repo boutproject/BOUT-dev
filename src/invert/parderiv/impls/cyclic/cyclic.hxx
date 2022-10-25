@@ -1,14 +1,14 @@
 /************************************************************************
  * Inversion of parallel derivatives
- * 
- * Inverts a matrix of the form 
+ *
+ * Inverts a matrix of the form
  *
  * A + B * Grad2_par2
- * 
+ *
  * Parallel algorithm, using Cyclic Reduction
  *
  * Author: Ben Dudson, University of York, Oct 2011
- * 
+ *
  * Known issues:
  * ------------
  *
@@ -21,7 +21,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -100,7 +100,7 @@ public:
 private:
   Field2D A{0.0}, B{0.0}, C{0.0}, D{0.0}, E{0.0};
   Field2D sg; // Coefficient of DDY contribution to Grad2_par2
-  
+
   int nsys;
 };
 

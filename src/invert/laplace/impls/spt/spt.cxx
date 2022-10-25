@@ -111,7 +111,7 @@ FieldPerp LaplaceSPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   finish(slicedata, x);
 
   checkData(x);
-  
+
   return x;
 }
 

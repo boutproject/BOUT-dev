@@ -26,8 +26,8 @@
 
 #include <utility>
 
-#include "bout/sys/gettext.hxx"
 #include "utils.hxx"
+#include "bout/sys/gettext.hxx"
 
 using std::list;
 using std::string;
@@ -249,7 +249,8 @@ FieldGeneratorPtr ExpressionParser::parseString(const string& input) const {
 // Private functions
 
 std::multiset<ExpressionParser::FuzzyMatch>
-ExpressionParser::fuzzyFind(const std::string& name, std::string::size_type max_distance) const {
+ExpressionParser::fuzzyFind(const std::string& name,
+                            std::string::size_type max_distance) const {
   std::multiset<ExpressionParser::FuzzyMatch> matches;
   for (const auto& key : gen) {
     if ((key.first != name) and (lowercase(key.first) == lowercase(name))) {

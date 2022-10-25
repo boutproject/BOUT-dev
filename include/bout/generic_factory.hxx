@@ -136,7 +136,9 @@ public:
   ///
   /// @param[in] name  The identifier for the type to be removed
   /// @returns true if the type was successfully removed
-  bool removeUnavailable(const std::string& name) { return unavailable_options.erase(name) == 1; }
+  bool removeUnavailable(const std::string& name) {
+    return unavailable_options.erase(name) == 1;
+  }
 
   /// Get the name of the type to create
   ///
@@ -183,8 +185,8 @@ public:
     if (unavailable_index != std::end(unavailable_options)) {
       throw BoutException("Error when trying to create a {0:s}: '{1:s}' is not available "
                           "because {2:s}\nAvailable {0:s}s are:\n{3:s}",
-                          DerivedFactory::type_name,
-                          unavailable_index->first, unavailable_index->second, available);
+                          DerivedFactory::type_name, unavailable_index->first,
+                          unavailable_index->second, available);
     }
 
     throw BoutException("Error when trying to create a {0:s}: Could not find "

@@ -620,8 +620,7 @@ void LaplacePCR ::cr_pcr_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomplex>& b_mpi
  * to ensure we pass a square system of interior rows to the PCR library.
  */
 void LaplacePCR ::eliminate_boundary_rows(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
-                                          Matrix<dcomplex>& c,
-                                          Matrix<dcomplex>& r) {
+                                          Matrix<dcomplex>& c, Matrix<dcomplex>& r) {
 
   if (localmesh->firstX()) {
     for (int kz = 0; kz < nsys; kz++) {
@@ -629,10 +628,8 @@ void LaplacePCR ::eliminate_boundary_rows(Matrix<dcomplex>& a, Matrix<dcomplex>&
       // This fixes the case where INVERT_BNDRY_ONE is true, but there are more
       // than 1 guard cells.
       for (int ix = 1; ix < localmesh->xstart + 1; ix++) {
-        b(kz, ix) =
-            b(kz, ix) - c(kz, ix - 1) * a(kz, ix) / b(kz, ix - 1);
-        r(kz, ix) =
-            r(kz, ix) - r(kz, ix - 1) * a(kz, ix) / b(kz, ix - 1);
+        b(kz, ix) = b(kz, ix) - c(kz, ix - 1) * a(kz, ix) / b(kz, ix - 1);
+        r(kz, ix) = r(kz, ix) - r(kz, ix - 1) * a(kz, ix) / b(kz, ix - 1);
         a(kz, ix) = 0.0;
       }
     }
@@ -1086,23 +1083,25 @@ void LaplacePCR ::verify_solution(const Matrix<dcomplex>& a_ver,
       y_ver(kz, i) = a_ver(kz, i) * x_ver(kz, i) + b_ver(kz, i) * x_ver(kz, i + 1)
                      + c_ver(kz, i) * x_ver(kz, i + 2);
       error(kz, i) = y_ver(kz, i) - r_ver(kz, i);
-      if(std::abs(error(kz, i)) > max_error){
+      if (std::abs(error(kz, i)) > max_error) {
         max_loc_x = i;
         max_loc_z = kz;
       }
 
       max_error = std::max(max_error, std::abs(error(kz, i)));
-      if( error(kz, i).real() > 0.01 || error(kz, i).imag() > 0.01 ){
-	      output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, "
-			   "x={}, x+ = {}\n",
-			   error(kz, i).real(), r_ver(kz, i).real(), y_ver(kz, i).real(), kz, i,
-			   a_ver(kz, i).real(), b_ver(kz, i).real(), c_ver(kz, i).real(),
-			   x_ver(kz, i).real(), x_ver(kz, i + 1).real(), x_ver(kz, i + 2).real());
-	      output.write("abs error imag {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, "
-			   "x={}, x+ = {}\n",
-			   error(kz, i).imag(), r_ver(kz, i).imag(), y_ver(kz, i).imag(), kz, i,
-			   a_ver(kz, i).imag(), b_ver(kz, i).imag(), c_ver(kz, i).imag(),
-			   x_ver(kz, i).imag(), x_ver(kz, i + 1).imag(), x_ver(kz, i + 2).imag());
+      if (error(kz, i).real() > 0.01 || error(kz, i).imag() > 0.01) {
+        output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, "
+                     "x={}, x+ = {}\n",
+                     error(kz, i).real(), r_ver(kz, i).real(), y_ver(kz, i).real(), kz, i,
+                     a_ver(kz, i).real(), b_ver(kz, i).real(), c_ver(kz, i).real(),
+                     x_ver(kz, i).real(), x_ver(kz, i + 1).real(),
+                     x_ver(kz, i + 2).real());
+        output.write(
+            "abs error imag {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, "
+            "x={}, x+ = {}\n",
+            error(kz, i).imag(), r_ver(kz, i).imag(), y_ver(kz, i).imag(), kz, i,
+            a_ver(kz, i).imag(), b_ver(kz, i).imag(), c_ver(kz, i).imag(),
+            x_ver(kz, i).imag(), x_ver(kz, i + 1).imag(), x_ver(kz, i + 2).imag());
       }
     }
   }

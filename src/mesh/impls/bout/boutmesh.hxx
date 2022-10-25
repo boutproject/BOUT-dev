@@ -66,10 +66,10 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // X communications
 
-  bool firstX() const override; ///< Is this processor the first in X? i.e. is there a boundary
-                          ///< to the left in X?
-  bool lastX() const override; ///< Is this processor last in X? i.e. is there a boundary to the
-                         ///< right in X?
+  bool firstX() const override; ///< Is this processor the first in X? i.e. is there a
+                                ///< boundary to the left in X?
+  bool lastX() const override; ///< Is this processor last in X? i.e. is there a boundary
+                               ///< to the right in X?
 
   /// Send a buffer of data to processor at X index +1
   ///
@@ -135,7 +135,8 @@ class BoutMesh : public Mesh {
   ///                                 poloidal circuit if there is a branch cut
   std::pair<bool, BoutReal> hasBranchCutUpper(int jx) const override;
 
-  int ySize(int xpos) const override; ///< The number of points in Y at fixed X index \p jx
+  int ySize(
+      int xpos) const override; ///< The number of points in Y at fixed X index \p jx
 
   /////////////////////////////////////////////
   // Y communications
@@ -202,7 +203,7 @@ protected:
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
            int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y, bool periodic_X,
            int ixseps1_, int ixseps2_, int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
-           int jyseps2_2_, int ny_inner_, bool create_regions=true);
+           int jyseps2_2_, int ny_inner_, bool create_regions = true);
 
   /// Very basic initialisation, only suitable for testing
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int input_npes)
@@ -214,8 +215,7 @@ protected:
   /// the send and receive buffers share memory. This allows for
   /// communications to be faked between meshes as though they were on
   /// different processors.
-  void overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
-			   BoutMesh* xout);
+  void overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin, BoutMesh* xout);
 
   /// Set the various y-decomposition indices, enforcing the following invariants:
   ///
@@ -279,6 +279,7 @@ protected:
 
   /// Set the shift angle and enable twist shift. Should only be used for testing!
   void setShiftAngle(const std::vector<BoutReal>& shift_angle);
+
 private:
   std::string gridname;
   int nx, ny, nz; ///< Size of the grid in the input file

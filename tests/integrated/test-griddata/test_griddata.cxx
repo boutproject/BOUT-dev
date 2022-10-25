@@ -1,5 +1,5 @@
-#include <bout.hxx>
 #include <bout/version.hxx>
+#include <bout.hxx>
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);

@@ -1,9 +1,9 @@
 #include "bout/build_config.hxx"
 
-#include <mpi.h>
 #include <boutcomm.hxx>
 #include <boutexception.hxx>
 #include <iostream>
+#include <mpi.h>
 #include <msg_stack.hxx>
 #include <output.hxx>
 #include <utils.hxx>

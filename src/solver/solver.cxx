@@ -22,7 +22,6 @@
 
 #include "bout/build_config.hxx"
 
-#include "bout/solver.hxx"
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
 #include "field_factory.hxx"
@@ -33,6 +32,7 @@
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/region.hxx"
+#include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
 #include "bout/sys/uuid.h"
 
@@ -168,7 +168,7 @@ void Solver::add(Field2D& v, const std::string& name, const std::string& descrip
     // Allocate storage for error variable
     d.MMS_err = bout::utils::make_unique<Field2D>(zeroFrom(v));
   }
-  
+
   // Check if the boundary regions should be evolved
   // First get option from section "all"
   // then use that as default for specific section
@@ -227,7 +227,7 @@ void Solver::add(Field3D& v, const std::string& name, const std::string& descrip
   if (mms) {
     d.MMS_err = bout::utils::make_unique<Field3D>(zeroFrom(v));
   }
-  
+
   // Check if the boundary regions should be evolved
   // First get option from section "all"
   // then use that as default for specific section
@@ -1399,13 +1399,12 @@ void Solver::pre_rhs(BoutReal t) {
       f.var->applyBoundary(t);
     }
   }
-  
+
   for (const auto& f : f3d) {
     if (!f.constraint) {
       f.var->applyBoundary(t);
     }
   }
-  
 }
 
 void Solver::post_rhs(BoutReal UNUSED(t)) {
@@ -1439,11 +1438,12 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 
   // Apply boundary conditions to the time-derivatives
   for (const auto& f : f2d) {
-    if (!f.constraint && f.evolve_bndry) { // If it's not a constraint and if the boundary is evolving
+    if (!f.constraint
+        && f.evolve_bndry) { // If it's not a constraint and if the boundary is evolving
       f.var->applyTDerivBoundary();
     }
   }
-  
+
   for (const auto& f : f3d) {
     if (!f.constraint && f.evolve_bndry) {
       f.var->applyTDerivBoundary();

@@ -33,8 +33,8 @@
 #if not BOUT_HAS_SLEPC
 
 namespace {
-RegisterUnavailableSolver registerunavailableslepc("slepc",
-                                                   "BOUT++ was not configured with SLEPc");
+RegisterUnavailableSolver
+    registerunavailableslepc("slepc", "BOUT++ was not configured with SLEPc");
 }
 
 #else

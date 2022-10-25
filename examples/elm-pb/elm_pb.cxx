@@ -1484,8 +1484,7 @@ protected:
 
       if (eHall) { // electron parallel pressure
         ddt(Psi) += 0.25 * delta_i
-                    * (Grad_parP(P, loc)
-                       + bracket(interp_to(P0, loc), Psi, bm_mag));
+                    * (Grad_parP(P, loc) + bracket(interp_to(P0, loc), Psi, bm_mag));
       }
 
       if (diamag_phi0) { // Equilibrium flow
@@ -1532,7 +1531,7 @@ protected:
 
     ////////////////////////////////////////////////////
     // Vorticity equation
-    Psi_loc = interp_to(Psi, CELL_CENTRE,"RGN_ALL");
+    Psi_loc = interp_to(Psi, CELL_CENTRE, "RGN_ALL");
     Psi_loc.applyBoundary();
     // Grad j term
     ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi_loc, J0, CELL_CENTRE);

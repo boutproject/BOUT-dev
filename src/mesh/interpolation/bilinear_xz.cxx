@@ -20,16 +20,16 @@
  *
  **************************************************************************/
 
-#include "bout/mesh.hxx"
 #include "globals.hxx"
 #include "interpolation_xz.hxx"
+#include "bout/mesh.hxx"
 
 #include <string>
 #include <vector>
 
-XZBilinear::XZBilinear(int y_offset, Mesh *mesh)
-  : XZInterpolation(y_offset, mesh),
-    w0(localmesh), w1(localmesh), w2(localmesh), w3(localmesh) {
+XZBilinear::XZBilinear(int y_offset, Mesh* mesh)
+    : XZInterpolation(y_offset, mesh), w0(localmesh), w1(localmesh), w2(localmesh),
+      w3(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);

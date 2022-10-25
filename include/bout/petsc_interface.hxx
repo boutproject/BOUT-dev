@@ -329,8 +329,9 @@ public:
   // preallocating memory if requeted and possible.
   PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
       : matrix(new Mat(), MatrixDeleter()), indexConverter(indConverter) {
-    const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? indConverter->getMesh()->getXcomm() : BoutComm::get();
+    const MPI_Comm comm = std::is_same<T, FieldPerp>::value
+                              ? indConverter->getMesh()->getXcomm()
+                              : BoutComm::get();
     pt = &indConverter->getMesh()->getCoordinates()->getParallelTransform();
     const int size = indexConverter->size();
 

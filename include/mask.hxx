@@ -53,8 +53,8 @@ public:
     mask(nx, ny, nz) {
     mask = value;
   }
-  explicit BoutMask(const Mesh& mesh, bool value=false) :
-    BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz, value) {}
+  explicit BoutMask(const Mesh& mesh, bool value = false)
+      : BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz, value) {}
   explicit BoutMask(const Mesh* mesh = nullptr, bool value = false)
       : BoutMask(mesh == nullptr ? *bout::globals::mesh : *mesh, value) {}
 

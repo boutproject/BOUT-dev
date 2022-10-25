@@ -88,21 +88,21 @@ public:
    * Constructor. Note that this is a base class,
    * with pure virtual members, so can't be created directly.
    * To create an InvertPar object call the create() static function.
-   */ 
-  InvertPar(Options *UNUSED(opt), CELL_LOC location_in, Mesh *mesh_in = nullptr)
-    : location(location_in),
-      localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {}
+   */
+  InvertPar(Options* UNUSED(opt), CELL_LOC location_in, Mesh* mesh_in = nullptr)
+      : location(location_in),
+        localmesh(mesh_in == nullptr ? bout::globals::mesh : mesh_in) {}
   virtual ~InvertPar() = default;
 
   /*!
    * Create an instance of InvertPar
    */
-  static std::unique_ptr<InvertPar> create(Options *opt_in = nullptr,
+  static std::unique_ptr<InvertPar> create(Options* opt_in = nullptr,
                                            CELL_LOC location_in = CELL_CENTRE,
-                                           Mesh *mesh_in = nullptr) {
+                                           Mesh* mesh_in = nullptr) {
     return InvertParFactory::getInstance().create(opt_in, location_in, mesh_in);
   }
-  
+
   /*!
    * Solve the system of equations
    * Warning: Default implementation very inefficient. This converts
@@ -134,7 +134,7 @@ public:
     A.setLocation(location);
     setCoefA(A);
   }
-  
+
   /*!
    * Set the Grad2_par2 coefficient B
    */ 
@@ -145,7 +145,7 @@ public:
     B.setLocation(location);
     setCoefB(B);
   }
-  
+
   /*!
    * Set the D2DYDZ coefficient C
    */

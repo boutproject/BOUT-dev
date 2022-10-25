@@ -12,7 +12,7 @@ public:
     SOLVE_FOR(f);
     return 0;
   }
-  
+
   int rhs(BoutReal) override {
     ddt(f) = -f;
     return 0;

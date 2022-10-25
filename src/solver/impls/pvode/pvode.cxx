@@ -70,7 +70,7 @@ PvodeSolver::PvodeSolver(Options* opts)
 }
 
 PvodeSolver::~PvodeSolver() {
-  if(pvode_initialised) {
+  if (pvode_initialised) {
     // Free CVODE memory
     
     N_VFree(u);
@@ -208,7 +208,7 @@ int PvodeSolver::init() {
 
   // PvodeSolver is now initialised fully
   pvode_initialised = true;
-  
+
   return(0);
 }
 
@@ -218,8 +218,8 @@ int PvodeSolver::init() {
 
 int PvodeSolver::run() {
   TRACE("PvodeSolver::run()");
-  
-  if(!pvode_initialised)
+
+  if (!pvode_initialised)
     throw BoutException("PvodeSolver not initialised\n");
 
   for (int i = 0; i < getNumberOutputSteps(); i++) {

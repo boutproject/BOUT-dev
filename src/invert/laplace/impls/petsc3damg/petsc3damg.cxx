@@ -289,7 +289,8 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   //       (in the first boundary cell) so one boundary cell is already set
   BOUT_FOR(i, indexer->getRegionInnerX()) {
     for (int b = 1; b < localmesh->xstart; b++) {
-      solution[i.xm(b)] = 3.*solution[i.xm(b-1)] - 3.*solution[i.xm(b-2)] + solution[i.xm(b-3)];
+      solution[i.xm(b)] =
+          3. * solution[i.xm(b - 1)] - 3. * solution[i.xm(b - 2)] + solution[i.xm(b - 3)];
     }
   }
 
@@ -298,7 +299,8 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   //       (in the first boundary cell) so one boundary cell is already set
   BOUT_FOR(i, indexer->getRegionOuterX()) {
     for (int b = 1; b < localmesh->xstart; b++) {
-      solution[i.xp(b)] = 3.*solution[i.xp(b-1)] - 3.*solution[i.xp(b-2)] + solution[i.xp(b-3)];
+      solution[i.xp(b)] =
+          3. * solution[i.xp(b - 1)] - 3. * solution[i.xp(b - 2)] + solution[i.xp(b - 3)];
     }
   }
 
@@ -432,9 +434,9 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     }
     C_df_dy /= 2 * coords->dy[l];
     C_d2f_dy2 /= SQ(coords->dy[l]);
-    C_d2f_dxdy /= 4*coords->dx[l]; // NOTE: This value is not completed here. It needs to
-                                   // be divide by dx(i +/- 1, j, k) when using to set a
-                                   // matrix element
+    C_d2f_dxdy /= 4 * coords->dx[l]; // NOTE: This value is not completed here. It needs
+                                     // to be divide by dx(i +/- 1, j, k) when using to
+                                     // set a matrix element
     C_d2f_dydz /= 4 * coords->dy[l] * coords->dz[l];
 
     // The values stored in the y-boundary are already interpolated

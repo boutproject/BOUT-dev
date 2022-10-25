@@ -3,15 +3,15 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "gtest/gtest.h"
 
+#include "boutexception.hxx"
+#include "fieldperp.hxx"
+#include "output.hxx"
+#include "test_extras.hxx"
+#include "unused.hxx"
+#include "utils.hxx"
 #include "bout/array.hxx"
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "fieldperp.hxx"
-#include "test_extras.hxx"
-#include "output.hxx"
-#include "unused.hxx"
-#include "utils.hxx"
 
 #include <cmath>
 #include <numeric>
@@ -1829,6 +1829,5 @@ TEST_F(FieldPerpTest, Inequality) {
   field5.setIndex(3);
   EXPECT_FALSE(field1 == field5);
 }
-
 
 #pragma GCC diagnostic pop

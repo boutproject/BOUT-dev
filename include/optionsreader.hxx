@@ -101,9 +101,9 @@ class OptionsReader {
   ///   return 0;
   /// }
   void parseCommandLine(Options *options, int argc, char **argv);
-  void parseCommandLine(Options *options, const std::vector<std::string>& argv);
-  
- private:
+  void parseCommandLine(Options* options, const std::vector<std::string>& argv);
+
+private:
   /// The instance of this singleton
   static OptionsReader *instance;
   

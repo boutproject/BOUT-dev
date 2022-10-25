@@ -415,7 +415,8 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowRead) {
 
   Field2D expected_xlow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
-        return (nx - index.x() + 0.5) + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
+        return (nx - index.x() + 0.5) + (TWOPI * index.y()) + (TWOPI * index.z() / nz)
+               + 3;
       },
       &mesh_from_options);
 
@@ -443,7 +444,7 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
   // make the mesh have boundaries to avoid NaNs in guard cells after interpolating
   mesh_from_options.createBoundaries();
 
-  auto *coords = mesh_from_options.getCoordinates(CELL_YLOW);
+  auto* coords = mesh_from_options.getCoordinates(CELL_YLOW);
 
   Field2D expected_ylow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
@@ -492,7 +493,8 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
 
   Field2D expected_ylow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
-        return index.x() + (TWOPI * (ny - index.y() + 0.5)) + (TWOPI * index.z() / nz) + 3;
+        return index.x() + (TWOPI * (ny - index.y() + 0.5)) + (TWOPI * index.z() / nz)
+               + 3;
       },
       &mesh_from_options);
 

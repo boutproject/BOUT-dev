@@ -121,8 +121,9 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
       // We can't interpolate in y unless we're field-aligned
       // Field2D doesn't need to shift to/from field-aligned because it is axisymmetric,
       // so always set is_unaligned=false for Field2D.
-      const bool is_unaligned = std::is_same<T, Field2D>::value ? false
-                                : (var.getDirectionY() == YDirectionType::Standard);
+      const bool is_unaligned = std::is_same<T, Field2D>::value
+                                    ? false
+                                    : (var.getDirectionY() == YDirectionType::Standard);
       const T var_fa = is_unaligned ? toFieldAligned(var, "RGN_NOX") : var;
 
       if (not std::is_base_of<Field2D, T>::value) {

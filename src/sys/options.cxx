@@ -39,7 +39,8 @@ void Options::cleanup() {
 Options::Options(const Options& other)
     : value(other.value), attributes(other.attributes),
       parent_instance(other.parent_instance), full_name(other.full_name),
-      is_section(other.is_section), children(other.children), value_used(other.value_used) {
+      is_section(other.is_section), children(other.children),
+      value_used(other.value_used) {
 
   // Ensure that this is the parent of all children,
   // otherwise will point to the original Options instance
@@ -65,9 +66,11 @@ Options::Options(std::initializer_list<std::pair<std::string, Options>> values) 
   // use a lambda. And to make that lambda recursive, we need to have
   // a nested lambda.
   auto append_section_name = [](auto& children, const std::string& section_name) {
-    auto append_impl = [](auto& children, const std::string& section_name, auto& append_ref) mutable -> void {
+    auto append_impl = [](auto& children, const std::string& section_name,
+                          auto& append_ref) mutable -> void {
       for (auto& child : children) {
-        child.second.full_name = fmt::format("{}:{}", section_name, child.second.full_name);
+        child.second.full_name =
+            fmt::format("{}:{}", section_name, child.second.full_name);
         if (child.second.is_section) {
           append_ref(child.second.children, section_name, append_ref);
         }
@@ -91,10 +94,11 @@ Options& Options::operator[](const std::string& name) {
   TRACE("Options::operator[]");
 
   if (isValue()) {
-    throw BoutException(
-        _("Trying to index Option '{0}' with '{1}', but '{0}' is a value, not a section.\n"
-          "This is likely the result of clashing input options, and you may have to rename one of them.\n"),
-        full_name, name);
+    throw BoutException(_("Trying to index Option '{0}' with '{1}', but '{0}' is a "
+                          "value, not a section.\n"
+                          "This is likely the result of clashing input options, and you "
+                          "may have to rename one of them.\n"),
+                        full_name, name);
   }
 
   if (name.empty()) {
@@ -129,10 +133,11 @@ const Options& Options::operator[](const std::string& name) const {
   TRACE("Options::operator[] const");
 
   if (isValue()) {
-    throw BoutException(
-        _("Trying to index Option '{0}' with '{1}', but '{0}' is a value, not a section.\n"
-          "This is likely the result of clashing input options, and you may have to rename one of them.\n"),
-        full_name, name);
+    throw BoutException(_("Trying to index Option '{0}' with '{1}', but '{0}' is a "
+                          "value, not a section.\n"
+                          "This is likely the result of clashing input options, and you "
+                          "may have to rename one of them.\n"),
+                        full_name, name);
   }
 
   if (name.empty()) {
@@ -416,7 +421,7 @@ template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
   if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
-  
+
   bool result;
   
   if (bout::utils::holds_alternative<bool>(value)) {
@@ -425,12 +430,12 @@ template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
   } else if(bout::utils::holds_alternative<std::string>(value)) {
     // case-insensitve check, so convert string to lower case
     const auto strvalue = lowercase(bout::utils::get<std::string>(value));
-  
+
     if ((strvalue == "y") or (strvalue == "yes") or (strvalue == "t")
         or (strvalue == "true") or (strvalue == "1")) {
       result = true;
     } else if ((strvalue == "n") or (strvalue == "no") or (strvalue == "f")
-        or (strvalue == "false") or (strvalue == "0")) {
+               or (strvalue == "false") or (strvalue == "0")) {
       result = false;
     } else {
       throw BoutException(_("\tOption '{:s}': Boolean expected. Got '{:s}'\n"), full_name,
@@ -467,7 +472,7 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
     
     // Check that meta-data is consistent
     ASSERT1_FIELDS_COMPATIBLE(stored_value, similar_to);
-    
+
     return stored_value;
   }
 
@@ -521,7 +526,7 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
   if (is_section) {
     throw BoutException("Option {:s} has no value", full_name);
   }
-  
+
   // Mark value as used
   value_used = true;
 

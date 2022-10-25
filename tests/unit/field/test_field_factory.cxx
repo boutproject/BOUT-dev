@@ -482,7 +482,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateMaxX) {
 TYPED_TEST(FieldFactoryCreationTest, CreateClampX) {
   // Check that the first argument is within low and high limits
   // Also check that each input can be an expression
-  
+
   auto output = this->create("clamp(1 + 1, 1, 3)");
 
   EXPECT_TRUE(IsFieldEqual(output, 2.));
@@ -490,7 +490,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateClampX) {
   output = this->create("clamp(-1, 2 - 1, 3)");
 
   EXPECT_TRUE(IsFieldEqual(output, 1.));
-  
+
   output = this->create("clamp(5, 1, 6 / 2)");
 
   EXPECT_TRUE(IsFieldEqual(output, 3.));
@@ -599,9 +599,10 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
 // testing
 class FieldFactoryExposer : public FieldFactory {
 public:
-  explicit FieldFactoryExposer(Mesh* mesh, Options* opt = nullptr) : FieldFactory(mesh, opt) {}
-  using FieldFactory::resolve;
+  explicit FieldFactoryExposer(Mesh* mesh, Options* opt = nullptr)
+      : FieldFactory(mesh, opt) {}
   using FieldFactory::fuzzyFind;
+  using FieldFactory::resolve;
 };
 
 // The following tests still use the FieldFactory, but don't need to

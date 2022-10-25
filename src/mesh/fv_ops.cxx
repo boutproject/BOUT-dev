@@ -391,7 +391,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
               const BoutReal d3fdx3 = (f(i, j + 2, k) - 3. * f(i, j + 1, k)
                                        + 3. * f(i, j, k) - f(i, j - 1, k));
 
-              result(i,j,  k) += d3fdx3 * factor_rc;
+              result(i, j, k) += d3fdx3 * factor_rc;
               result(i, j + 1, k) -= d3fdx3 * factor_rp;
             }
           } else {

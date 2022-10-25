@@ -535,15 +535,16 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
               int xi = x + xoffset[c];
               int yi = y + yoffset[c];
 
-              if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx) || (yi >= mesh->LocalNy)) {
+              if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
+                  || (yi >= mesh->LocalNy)) {
                 continue;
-	      }
+              }
 
               int ind2 = ROUND(index(xi, yi, 0));
 
               if (ind2 < 0) {
                 continue; // A boundary point
-	      }
+              }
 
               // Depends on all variables on this cell
               for (int j = 0; j < n2d; j++) {
@@ -564,7 +565,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
               PetscInt row = ind + i;
               if (z == 0) {
                 row += n2d;
-	      }
+              }
 
               // Depends on 2D fields
               for (int j = 0; j < n2d; j++) {
@@ -581,16 +582,16 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
                 if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
                     || (yi >= mesh->LocalNy)) {
                   continue;
-		}
+                }
 
                 int ind2 = ROUND(index(xi, yi, z));
                 if (ind2 < 0) {
                   continue; // Boundary point
-		}
+                }
 
                 if (z == 0) {
                   ind2 += n2d;
-		}
+                }
 
                 // 3D fields on this cell
                 for (int j = 0; j < n3d; j++) {
@@ -609,7 +610,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
                 int ind2 = ROUND(index(x, y, zp));
                 if (zp == 0) {
                   ind2 += n2d;
-		}
+                }
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
                   // output.write("SETTING 4: {:d}, {:d}\n", row, col);
@@ -620,7 +621,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
                 ind2 = ROUND(index(x, y, zm));
                 if (zm == 0) {
                   ind2 += n2d;
-		}
+                }
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
                   // output.write("SETTING 5: {:d}, {:d}\n", row, col);
@@ -790,11 +791,11 @@ int IMEXBDF2::run() {
 
         // Validate our desired next timestep
         if (dtNext < dtMinFatal) {
-	  // Don't allow the timestep to go below requested fatal min
+          // Don't allow the timestep to go below requested fatal min
           throw BoutException(
               "Aborting: Timestep ({:f}) tried to go below minimum allowed", dtNext);
         }
-	if (dtNext < dtMin) { // Don't allow timestep below requested min
+        if (dtNext < dtMin) { // Don't allow timestep below requested min
           dtNext = dtMin;
         } else if (dtNext > dtMax) { // Don't allow timestep above request max
           dtNext = dtMax;
@@ -837,7 +838,7 @@ int IMEXBDF2::run() {
             // An error occurred. If adaptive, reduce timestep
             if (!adaptive) {
               throw;
-	    }
+            }
 
             failCounter++;
             if (failCounter > 10) {
@@ -872,7 +873,7 @@ int IMEXBDF2::run() {
           // An error occurred. If adaptive, reduce timestep
           if (!adaptive) {
             throw;
-	  }
+          }
 
           failCounter++;
           if (failCounter > 10) {

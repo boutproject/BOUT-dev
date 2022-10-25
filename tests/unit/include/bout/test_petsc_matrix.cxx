@@ -264,8 +264,7 @@ TYPED_TEST(PetscMatrixTest, TestDestroy) {
 
 // Test getting yup
 TYPED_TEST(PetscMatrixTest, TestYUp) {
-  PetscMatrix<TypeParam> matrix(this->indexer, false),
-      expected(this->indexer, false);
+  PetscMatrix<TypeParam> matrix(this->indexer, false), expected(this->indexer, false);
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YUp");
   if (std::is_same<TypeParam, FieldPerp>::value) {
@@ -294,8 +293,7 @@ TYPED_TEST(PetscMatrixTest, TestYUp) {
 
 // Test getting ydown
 TYPED_TEST(PetscMatrixTest, TestYDown) {
-  PetscMatrix<TypeParam> matrix(this->indexer, false),
-      expected(this->indexer, false);
+  PetscMatrix<TypeParam> matrix(this->indexer, false), expected(this->indexer, false);
   BoutReal val = 3.141592;
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YDown");
@@ -324,8 +322,7 @@ TYPED_TEST(PetscMatrixTest, TestYDown) {
 
 // Test getting ynext(0)
 TYPED_TEST(PetscMatrixTest, TestYNext0) {
-  PetscMatrix<TypeParam> matrix(this->indexer),
-      expected(this->indexer);
+  PetscMatrix<TypeParam> matrix(this->indexer), expected(this->indexer);
   BoutReal val = 3.141592;
   SCOPED_TRACE("YNext0");
   matrix.ynext(0)(this->indexA, this->indexB) = val;
@@ -340,8 +337,7 @@ TYPED_TEST(PetscMatrixTest, TestYNext0) {
 
 // Test getting ynext(1)
 TYPED_TEST(PetscMatrixTest, TestYNextPos) {
-  PetscMatrix<TypeParam> matrix(this->indexer, false),
-      expected(this->indexer, false);
+  PetscMatrix<TypeParam> matrix(this->indexer, false), expected(this->indexer, false);
   BoutReal val = 3.141592;
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YNextPos");
@@ -367,8 +363,7 @@ TYPED_TEST(PetscMatrixTest, TestYNextPos) {
 
 // Test getting ynext(-1)
 TYPED_TEST(PetscMatrixTest, TestYNextNeg) {
-  PetscMatrix<TypeParam> matrix(this->indexer, false),
-      expected(this->indexer, false);
+  PetscMatrix<TypeParam> matrix(this->indexer, false), expected(this->indexer, false);
   BoutReal val = 3.141592;
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YNextNeg");

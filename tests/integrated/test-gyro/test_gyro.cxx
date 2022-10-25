@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
   output.write("\nFinished running test.\n\n");
 
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
-  
+
   bout::checkForUnusedOptions();
   BoutFinalise();
   return 0;

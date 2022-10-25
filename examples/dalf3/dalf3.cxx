@@ -20,11 +20,11 @@
 
 #include <bout/physicsmodel.hxx>
 
-#include <utils.hxx>
+#include <bout/invert/laplacexy.hxx>
 #include <interpolation.hxx>
 #include <invert_laplace.hxx>
-#include <bout/invert/laplacexy.hxx>
 #include <math.h>
+#include <utils.hxx>
 
 #include <bout/constants.hxx>
 
@@ -119,7 +119,7 @@ protected:
     jpar.setLocation(CELL_YLOW);
     Ajpar.setLocation(CELL_YLOW);
     apar.setLocation(CELL_YLOW);
-    
+
     //////////////////////////////////////////////////////////////
     // Options
 
@@ -176,8 +176,8 @@ protected:
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
-    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
-                        .withDefault("identity");
+    std::string ptstr =
+        Options::root()["mesh"]["paralleltransform"]["type"].withDefault("identity");
 
     if(lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system
@@ -327,25 +327,25 @@ protected:
     
     return 2.*bracket(log(B0), f, bm);
   }
-  
-  const Field3D Grad_parP(const Field3D &f, CELL_LOC loc) {
+
+  const Field3D Grad_parP(const Field3D& f, CELL_LOC loc) {
     Field3D result;
     if (mesh->StaggerGrids) {
       result = Grad_par(f, loc);
       if (nonlinear) {
-        result -= beta_hat * bracket(interp_to(apar, loc), interp_to(f, loc),
-                                     BRACKET_ARAKAWA);
+        result -=
+            beta_hat * bracket(interp_to(apar, loc), interp_to(f, loc), BRACKET_ARAKAWA);
       }
     } else {
       if (nonlinear) {
-        result = ::Grad_parP(apar*beta_hat, f);
+        result = ::Grad_parP(apar * beta_hat, f);
       } else {
         result = Grad_par(f, loc);
       }
     }
     return result;
   }
-  
+
   int rhs(BoutReal UNUSED(time)) {
     
     // Invert vorticity to get electrostatic potential
@@ -428,11 +428,9 @@ protected:
     
     
     // Vorticity equation
-    ddt(Vort) = 
-      B0*B0*Grad_parP(jpar/interp_to(B0, CELL_YLOW), CELL_CENTRE)
-      - B0*Kappa(Pe)
-      ;
-    
+    ddt(Vort) = B0 * B0 * Grad_parP(jpar / interp_to(B0, CELL_YLOW), CELL_CENTRE)
+                - B0 * Kappa(Pe);
+
     if (nonlinear) {
       ddt(Vort) -= bracket(phi, Vort, bm);    // ExB advection
     }
@@ -455,12 +453,9 @@ protected:
     // Parallel Ohm's law
     if (!(estatic && ZeroElMass)) {
       // beta_hat*apar + mu_hat*jpar
-      ddt(Ajpar) =
-        Grad_parP(Pe - phi, CELL_YLOW)
-        - beta_hat * bracket(apar, Pe0, BRACKET_ARAKAWA)
-        - eta*jpar
-        ;
-      
+      ddt(Ajpar) = Grad_parP(Pe - phi, CELL_YLOW)
+                   - beta_hat * bracket(apar, Pe0, BRACKET_ARAKAWA) - eta * jpar;
+
       if (nonlinear) {
         ddt(Ajpar) -= mu_hat*bracket(phi, jpar, bm);
       }
@@ -471,11 +466,9 @@ protected:
     }
     
     // Parallel velocity
-    ddt(Vpar) =
-      - Grad_parP(Pe, CELL_YLOW)
-      + beta_hat * bracket(apar, interp_to(Pe0, CELL_YLOW), BRACKET_ARAKAWA)
-      ;
-    
+    ddt(Vpar) = -Grad_parP(Pe, CELL_YLOW)
+                + beta_hat * bracket(apar, interp_to(Pe0, CELL_YLOW), BRACKET_ARAKAWA);
+
     if (nonlinear) {
       ddt(Vpar) -= bracket(phi, Vpar, bm);
     }
@@ -490,13 +483,11 @@ protected:
 
     // Electron pressure
     ddt(Pe) =
-      - bracket(phi, Pet, bm)
-      + Pet * (
-               Kappa(phi - Pe)
-               + B0*Grad_parP( (jpar - Vpar)/interp_to(B0, CELL_YLOW) , CELL_YLOW)
-               )
-      ;
-    
+        -bracket(phi, Pet, bm)
+        + Pet
+              * (Kappa(phi - Pe)
+                 + B0 * Grad_parP((jpar - Vpar) / interp_to(B0, CELL_YLOW), CELL_YLOW));
+
     if (smooth_separatrix) {
       // Experimental smoothing across separatrix
       ddt(Vort) += mesh->smoothSeparatrix(Vort);
@@ -529,7 +520,7 @@ protected:
           for (int k = 0; k < mesh->LocalNz; k++) {
             ddt(Vort)(i,j,k) -= avg;
           }
-      }
+        }
       }
     }
     if (mesh->lastX()) {

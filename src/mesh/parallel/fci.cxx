@@ -135,10 +135,12 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
       zt_prime_corner[i] = -1.0;
     } else {
       xt_prime_corner[i] =
-          0.25 * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
+          0.25
+          * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
 
       zt_prime_corner[i] =
-          0.25 * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
+          0.25
+          * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
     }
   }
 
@@ -300,7 +302,7 @@ Field3D FCIMap::integrate(Field3D &f) const {
           // which would include cell edges and corners
           result(x, ynext, z) = 0.5 * (f_c + 0.25 * (f_pp + f_mp + f_pm + f_mm));
 
-          ASSERT2(std::isfinite(result(x,ynext,z)));
+          ASSERT2(std::isfinite(result(x, ynext, z)));
         }
       }
     }

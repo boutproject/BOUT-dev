@@ -7,15 +7,14 @@
  * 
  */
 
-#include <bout.hxx>
 #include <bout/physicsmodel.hxx>
+#include <bout.hxx>
 
 class Test_delp2 : public PhysicsModel {
 protected:
   int init(bool UNUSED(restarting)) override;
   int rhs(BoutReal UNUSED(t)) override;
 };
-
 
 int Test_delp2::init(bool UNUSED(restarting)) {
   Field3D input, reference, result;
@@ -45,6 +44,5 @@ int Test_delp2::rhs(BoutReal UNUSED(t)) {
   // Doesn't do anything
   return 1;
 }
-
 
 BOUTMAIN(Test_delp2)

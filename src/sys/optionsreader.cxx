@@ -47,7 +47,8 @@ void OptionsReader::parseCommandLine(Options* options, int argc, char** argv) {
   return parseCommandLine(options, std::vector<std::string>(argv, argv + argc));
 }
 
-void OptionsReader::parseCommandLine(Options *options, const std::vector<std::string>& argv) {
+void OptionsReader::parseCommandLine(Options* options,
+                                     const std::vector<std::string>& argv) {
 
   // A key/value pair, separated by a '=' or a switch
   // and sections separated with an '_' but don't start with a '-'

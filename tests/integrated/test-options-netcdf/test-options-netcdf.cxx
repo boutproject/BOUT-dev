@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
   fields2["f2d"] = f2d;
   fields2["f3d"] = f3d;
   fields2["fperp"] = fperp;
-  
+
   // Write out again
   OptionsNetCDF("fields2.nc").write(fields2);
   

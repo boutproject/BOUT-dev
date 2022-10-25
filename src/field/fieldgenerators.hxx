@@ -227,7 +227,7 @@ public:
   }
 
 private:
-  FieldGeneratorPtr value; ///< The value to be clamped
+  FieldGeneratorPtr value;     ///< The value to be clamped
   FieldGeneratorPtr low, high; ///< The range within which the result will be
 };
 

@@ -181,8 +181,8 @@ public:
                     bool UNUSED(disable_corners) = false) override {
     return nullptr;
   }
-  comm_handle sendY(FieldGroup& UNUSED(g), comm_handle UNUSED(handle) = nullptr) override
-  {
+  comm_handle sendY(FieldGroup& UNUSED(g),
+                    comm_handle UNUSED(handle) = nullptr) override {
     return nullptr;
   }
   int wait(comm_handle UNUSED(handle)) override { return 0; }
@@ -412,6 +412,7 @@ public:
   bool hasXBoundaryGuards(Mesh* UNUSED(m)) override { return true; }
 
   bool hasYBoundaryGuards() override { return true; }
+
 private:
   Options values; ///< Store values to be returned by get()
 };

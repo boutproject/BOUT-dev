@@ -159,7 +159,7 @@ class Mesh;  // #include "bout/mesh.hxx"
 
  */
 class Field3D : public Field {
- public:
+public:
   using ind_type = Ind3D;
   
   /*!
@@ -412,7 +412,7 @@ class Field3D : public Field {
   /// Assignment operators
   ///@{
   Field3D & operator=(const Field3D &rhs);
-  Field3D & operator=(Field3D&& rhs);
+  Field3D& operator=(Field3D&& rhs);
   Field3D & operator=(const Field2D &rhs);
   /// return void, as only part initialised
   void      operator=(const FieldPerp &rhs);
@@ -482,7 +482,7 @@ class Field3D : public Field {
   void applyParallelBoundary(const std::string &region, const std::string &condition, Field3D *f);
 
   friend void swap(Field3D& first, Field3D& second) noexcept;
-  
+
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};

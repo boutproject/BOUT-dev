@@ -40,23 +40,23 @@
 
 #if not BOUT_USE_METRIC_3D
 
-#include <derivs.hxx>
-#include <globals.hxx>
-#include <utils.hxx>
-#include <fft.hxx>
+#include <bout/constants.hxx>
 #include <boutexception.hxx>
 #include <cyclic_reduction.hxx>
+#include <derivs.hxx>
+#include <fft.hxx>
+#include <globals.hxx>
 #include <msg_stack.hxx>
-#include <bout/constants.hxx>
+#include <utils.hxx>
 
 #include <bout/surfaceiter.hxx>
 
 #include <cmath>
 
-InvertParCR::InvertParCR(Options *opt, CELL_LOC location, Mesh *mesh_in)
-  : InvertPar(opt, location, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
+InvertParCR::InvertParCR(Options* opt, CELL_LOC location, Mesh* mesh_in)
+    : InvertPar(opt, location, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
   // Number of k equations to solve for each x location
-  nsys = 1 + (localmesh->LocalNz)/2; 
+  nsys = 1 + (localmesh->LocalNz)/2;
 
   sg = sqrt(localmesh->getCoordinates(location)->g_22);
   sg = DDY(1. / sg) / sg;
@@ -150,14 +150,13 @@ const Field3D InvertParCR::solve(const Field3D &f) {
       BoutReal kwave = k * 2.0 * PI / zlength; // wave number is 1/length
       for (int y = 0; y < localmesh->LocalNy - localmesh->ystart - local_ystart; y++) {
 
-        BoutReal acoef = A(x, y + local_ystart);                       // Constant
+        BoutReal acoef = A(x, y + local_ystart); // Constant
         BoutReal bcoef =
             B(x, y + local_ystart) / coord->g_22(x, y + local_ystart); // d2dy2
         BoutReal ccoef = C(x, y + local_ystart);                       // d2dydz
         BoutReal dcoef = D(x, y + local_ystart);                       // d2dz2
-        BoutReal ecoef =
-            E(x, y + local_ystart)
-            + sg(x, y + local_ystart)*B(x, y + local_ystart);          // ddy
+        BoutReal ecoef = E(x, y + local_ystart)
+                         + sg(x, y + local_ystart) * B(x, y + local_ystart); // ddy
 
         if (coord->non_uniform) {
           ecoef += bcoef * coord->d1_dy(x, y + local_ystart);

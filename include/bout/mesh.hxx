@@ -72,8 +72,8 @@ class Mesh;
 #include "bout/generic_factory.hxx"
 
 #include <list>
-#include <memory>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 
@@ -100,170 +100,171 @@ class Mesh {
 
   /// Constructor for a "bare", uninitialised Mesh
   /// Only useful for testing
-  Mesh() : source(nullptr), options(nullptr),
-           include_corner_cells(true) {}
+   Mesh() : source(nullptr), options(nullptr), include_corner_cells(true) {}
 
-  /// Constructor
-  /// @param[in] s  The source to be used for loading variables
-  /// @param[in] options  The options section for settings
-  Mesh(GridDataSource *s, Options *options);
+   /// Constructor
+   /// @param[in] s  The source to be used for loading variables
+   /// @param[in] options  The options section for settings
+   Mesh(GridDataSource* s, Options* options);
 
-  /// Destructor
-  virtual ~Mesh();
+   /// Destructor
+   virtual ~Mesh();
 
-  /// Create a Mesh object
-  ///
-  /// @param[in] source  The data source to use for loading variables
-  /// @param[in] opt     The option section. By default this is "mesh"
-  static Mesh *create(GridDataSource *source, Options *opt = nullptr);
+   /// Create a Mesh object
+   ///
+   /// @param[in] source  The data source to use for loading variables
+   /// @param[in] opt     The option section. By default this is "mesh"
+   static Mesh* create(GridDataSource* source, Options* opt = nullptr);
 
-  /// Create a Mesh object
-  ///
-  /// The source is determined by
-  ///  1) If "file" is set in the options, read that
-  ///  2) If "grid" is set in global options, read that
-  ///  3) Use options as data source
-  ///
-  /// @param[in] opt  Input options. Default is "mesh" section
-  static Mesh *create(Options *opt = nullptr);
+   /// Create a Mesh object
+   ///
+   /// The source is determined by
+   ///  1) If "file" is set in the options, read that
+   ///  2) If "grid" is set in global options, read that
+   ///  3) Use options as data source
+   ///
+   /// @param[in] opt  Input options. Default is "mesh" section
+   static Mesh* create(Options* opt = nullptr);
 
-  /// Loads the mesh values
-  /// 
-  /// Currently need to create and load mesh in separate calls
-  /// because creating Fields uses the global "mesh" pointer
-  /// which isn't created until Mesh is constructed
-  virtual int load() {return 1;}
+   /// Loads the mesh values
+   ///
+   /// Currently need to create and load mesh in separate calls
+   /// because creating Fields uses the global "mesh" pointer
+   /// which isn't created until Mesh is constructed
+   virtual int load() { return 1; }
 
-  /// Add output variables to \p output_options
-  /// These are used for post-processing
-  virtual void outputVars(MAYBE_UNUSED(Options& output_options)) {}
+   /// Add output variables to \p output_options
+   /// These are used for post-processing
+   virtual void outputVars(MAYBE_UNUSED(Options& output_options)) {}
 
-  // Get routines to request data from mesh file
-  
-  /// Get a string from the input source
-  /// 
-  /// @param[out] sval  The value will be put into this variable
-  /// @param[in] name   The name of the variable to read
-  /// @param[in] def    The default value if not found
-  ///
-  /// @returns zero if successful, non-zero on failure
-  int get(std::string& sval, const std::string& name, const std::string& def="");
+   // Get routines to request data from mesh file
 
-  /// Get an integer from the input source
-  /// 
-  /// @param[out] ival  The value will be put into this variable
-  /// @param[in] name   The name of the variable to read
-  /// @param[in] def    The default value if not found
-  ///
-  /// @returns zero if successful, non-zero on failure
-  int get(int &ival, const std::string &name, int def=0);
+   /// Get a string from the input source
+   ///
+   /// @param[out] sval  The value will be put into this variable
+   /// @param[in] name   The name of the variable to read
+   /// @param[in] def    The default value if not found
+   ///
+   /// @returns zero if successful, non-zero on failure
+   int get(std::string& sval, const std::string& name, const std::string& def = "");
 
-  /// Get a BoutReal from the input source
-  /// 
-  /// @param[out] rval  The value will be put into this variable
-  /// @param[in] name   The name of the variable to read
-  /// @param[in] def    The default value if not found
-  ///
-  /// @returns zero if successful, non-zero on failure
-  int get(BoutReal& rval, const std::string& name, BoutReal def=0.0);
+   /// Get an integer from the input source
+   ///
+   /// @param[out] ival  The value will be put into this variable
+   /// @param[in] name   The name of the variable to read
+   /// @param[in] def    The default value if not found
+   ///
+   /// @returns zero if successful, non-zero on failure
+   int get(int& ival, const std::string& name, int def = 0);
 
-  /// Get a bool from the input source
-  ///
-  /// @param[out] bval  The value will be put into this variable
-  /// @param[in] name   The name of the variable to read
-  /// @param[in] def    The default value if not found
-  ///
-  /// @returns zero if successful, non-zero on failure
-  int get(bool &bval, const std::string &name, bool def=false);
+   /// Get a BoutReal from the input source
+   ///
+   /// @param[out] rval  The value will be put into this variable
+   /// @param[in] name   The name of the variable to read
+   /// @param[in] def    The default value if not found
+   ///
+   /// @returns zero if successful, non-zero on failure
+   int get(BoutReal& rval, const std::string& name, BoutReal def = 0.0);
 
-  /// Get a Field2D from the input source
-  /// including communicating guard cells
-  ///
-  /// @param[out] var   This will be set to the value. Will be allocated if needed
-  /// @param[in] name   Name of the variable to read
-  /// @param[in] def    The default value if not found
-  /// @param[in] communicate  Should the field be communicated to fill guard cells?
-  ///
-  /// @returns zero if successful, non-zero on failure
-  int get(Field2D& var, const std::string& name, BoutReal def=0.0,
-          bool communicate = true, CELL_LOC location=CELL_DEFAULT);
+   /// Get a bool from the input source
+   ///
+   /// @param[out] bval  The value will be put into this variable
+   /// @param[in] name   The name of the variable to read
+   /// @param[in] def    The default value if not found
+   ///
+   /// @returns zero if successful, non-zero on failure
+   int get(bool& bval, const std::string& name, bool def = false);
 
-  /// Get a Field3D from the input source
-  ///
-  /// @param[out] var   This will be set to the value. Will be allocated if needed
-  /// @param[in] name   Name of the variable to read
-  /// @param[in] def    The default value if not found
-  /// @param[in] communicate  Should the field be communicated to fill guard cells?
-  ///
-  /// @returns zero if successful, non-zero on failure
-  int get(Field3D &var, const std::string &name, BoutReal def=0.0, bool communicate=true, CELL_LOC location=CELL_DEFAULT);
+   /// Get a Field2D from the input source
+   /// including communicating guard cells
+   ///
+   /// @param[out] var   This will be set to the value. Will be allocated if needed
+   /// @param[in] name   Name of the variable to read
+   /// @param[in] def    The default value if not found
+   /// @param[in] communicate  Should the field be communicated to fill guard cells?
+   ///
+   /// @returns zero if successful, non-zero on failure
+   int get(Field2D& var, const std::string& name, BoutReal def = 0.0,
+           bool communicate = true, CELL_LOC location = CELL_DEFAULT);
 
-  /// Get a FieldPerp from the input source
-  ///
-  /// @param[out] var   This will be set to the value. Will be allocated if needed
-  /// @param[in] name   Name of the variable to read
-  /// @param[in] def    The default value if not found
-  /// @param[in] communicate  Should the field be communicated to fill guard cells?
-  ///
-  /// @returns zero if successful, non-zero on failure
-  int get(FieldPerp &var, const std::string &name, BoutReal def=0.0, bool communicate=true, CELL_LOC location=CELL_DEFAULT);
+   /// Get a Field3D from the input source
+   ///
+   /// @param[out] var   This will be set to the value. Will be allocated if needed
+   /// @param[in] name   Name of the variable to read
+   /// @param[in] def    The default value if not found
+   /// @param[in] communicate  Should the field be communicated to fill guard cells?
+   ///
+   /// @returns zero if successful, non-zero on failure
+   int get(Field3D& var, const std::string& name, BoutReal def = 0.0,
+           bool communicate = true, CELL_LOC location = CELL_DEFAULT);
 
-  /// Get a Vector2D from the input source.
-  /// If \p var is covariant then this gets three
-  /// Field2D variables with "_x", "_y", "_z" appended to \p name
-  /// If \p var is contravariant, then "x", "y", "z" are appended to \p name
-  ///
-  /// By default all fields revert to zero
-  ///
-  /// @param[in] var  This will be set to the value read
-  /// @param[in] name  The name of the vector. Individual fields are read based on this
-  /// name by appending. See above
-  /// @param[in] def   The default value if not found (used for all the components)
-  /// @param[in] communicate  Should the field be communicated to fill guard cells?
-  ///
-  /// @returns zero always.
-  int get(Vector2D& var, const std::string& name, BoutReal def = 0.0,
-          bool communicate = true);
+   /// Get a FieldPerp from the input source
+   ///
+   /// @param[out] var   This will be set to the value. Will be allocated if needed
+   /// @param[in] name   Name of the variable to read
+   /// @param[in] def    The default value if not found
+   /// @param[in] communicate  Should the field be communicated to fill guard cells?
+   ///
+   /// @returns zero if successful, non-zero on failure
+   int get(FieldPerp& var, const std::string& name, BoutReal def = 0.0,
+           bool communicate = true, CELL_LOC location = CELL_DEFAULT);
 
-  /// Get a Vector3D from the input source.
-  /// If \p var is covariant then this gets three
-  /// Field3D variables with "_x", "_y", "_z" appended to \p name
-  /// If \p var is contravariant, then "x", "y", "z" are appended to \p name
-  ///
-  /// By default all fields revert to zero
-  ///
-  /// @param[in] var  This will be set to the value read
-  /// @param[in] name  The name of the vector. Individual fields are read based on this
-  /// name by appending. See above
-  /// @param[in] def    The default value if not found (used for all the components)
-  /// @param[in] communicate  Should the field be communicated to fill guard cells?
-  ///
-  /// @returns zero always.
-  int get(Vector3D& var, const std::string& name, BoutReal def = 0.0,
-          bool communicate = true);
+   /// Get a Vector2D from the input source.
+   /// If \p var is covariant then this gets three
+   /// Field2D variables with "_x", "_y", "_z" appended to \p name
+   /// If \p var is contravariant, then "x", "y", "z" are appended to \p name
+   ///
+   /// By default all fields revert to zero
+   ///
+   /// @param[in] var  This will be set to the value read
+   /// @param[in] name  The name of the vector. Individual fields are read based on this
+   /// name by appending. See above
+   /// @param[in] def   The default value if not found (used for all the components)
+   /// @param[in] communicate  Should the field be communicated to fill guard cells?
+   ///
+   /// @returns zero always.
+   int get(Vector2D& var, const std::string& name, BoutReal def = 0.0,
+           bool communicate = true);
 
-  /// Test if input source was a grid file
-  bool isDataSourceGridFile() const;
+   /// Get a Vector3D from the input source.
+   /// If \p var is covariant then this gets three
+   /// Field3D variables with "_x", "_y", "_z" appended to \p name
+   /// If \p var is contravariant, then "x", "y", "z" are appended to \p name
+   ///
+   /// By default all fields revert to zero
+   ///
+   /// @param[in] var  This will be set to the value read
+   /// @param[in] name  The name of the vector. Individual fields are read based on this
+   /// name by appending. See above
+   /// @param[in] def    The default value if not found (used for all the components)
+   /// @param[in] communicate  Should the field be communicated to fill guard cells?
+   ///
+   /// @returns zero always.
+   int get(Vector3D& var, const std::string& name, BoutReal def = 0.0,
+           bool communicate = true);
 
-  /// Wrapper for GridDataSource::hasVar
-  bool sourceHasVar(const std::string &name);
+   /// Test if input source was a grid file
+   bool isDataSourceGridFile() const;
 
-  /// Wrapper for GridDataSource::hasXBoundaryGuards
-  bool sourceHasXBoundaryGuards();
+   /// Wrapper for GridDataSource::hasVar
+   bool sourceHasVar(const std::string& name);
 
-  /// Wrapper for GridDataSource::hasYBoundaryGuards
-  bool sourceHasYBoundaryGuards();
-  
-  // Communications
-  /*!
-   * Communicate a list of FieldData objects
-   * Uses a variadic template (C++11) to pack all
-   * arguments into a FieldGroup
-   */
-  template <typename... Ts>
-  void communicate(Ts&... ts) {
-    FieldGroup g(ts...);
-    communicate(g);
+   /// Wrapper for GridDataSource::hasXBoundaryGuards
+   bool sourceHasXBoundaryGuards();
+
+   /// Wrapper for GridDataSource::hasYBoundaryGuards
+   bool sourceHasYBoundaryGuards();
+
+   // Communications
+   /*!
+    * Communicate a list of FieldData objects
+    * Uses a variadic template (C++11) to pack all
+    * arguments into a FieldGroup
+    */
+   template <typename... Ts>
+   void communicate(Ts&... ts) {
+     FieldGroup g(ts...);
+     communicate(g);
   }
 
   template <typename... Ts>
@@ -293,7 +294,7 @@ class Mesh {
   /// i.e. no X communication
   ///
   /// @param g  The group of fields to communicate. Guard cells will be modified
-  void communicateYZ(FieldGroup &g);
+  void communicateYZ(FieldGroup& g);
 
   /*!
    * Communicate an X-Z field
@@ -334,14 +335,14 @@ class Mesh {
   ///
   /// \param g Group of fields to communicate
   /// \returns handle to be used as input to wait()
-  virtual comm_handle send(FieldGroup &g) = 0;  
+  virtual comm_handle send(FieldGroup &g) = 0;
 
   /// Send only the x-guard cells
-  virtual comm_handle sendX(FieldGroup &g, comm_handle handle = nullptr,
+  virtual comm_handle sendX(FieldGroup& g, comm_handle handle = nullptr,
                             bool disable_corners = false) = 0;
 
   /// Send only the y-guard cells
-  virtual comm_handle sendY(FieldGroup &g, comm_handle handle = nullptr) = 0;
+  virtual comm_handle sendY(FieldGroup& g, comm_handle handle = nullptr) = 0;
 
   /// Wait for the handle, return error code
   virtual int wait(comm_handle handle) = 0; ///< Wait for the handle, return error code
@@ -354,8 +355,10 @@ class Mesh {
   virtual int getYProcIndex() = 0; ///< This processor's index in Y direction
   
   // X communications
-  virtual bool firstX() const = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?
-  virtual bool lastX() const = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
+  virtual bool firstX() const = 0; ///< Is this processor first in X? i.e. is there a
+                                   ///< boundary to the left in X?
+  virtual bool lastX() const = 0;  ///< Is this processor last in X? i.e. is there a
+                                   ///< boundary to the right in X?
 
   /// Domain is periodic in X?
   bool periodicX{false};
@@ -487,8 +490,8 @@ class Mesh {
   virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
   
   /// Branch-cut special handling (experimental)
-  virtual Field3D smoothSeparatrix(const Field3D &f) {return f;}
-  
+  virtual Field3D smoothSeparatrix(const Field3D& f) { return f; }
+
   virtual BoutReal GlobalX(int jx) const = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0; ///< Continuous Y index (0 -> 1)
   virtual BoutReal GlobalX(BoutReal jx) const = 0; ///< Continuous X index between 0 and 1
@@ -693,7 +696,7 @@ class Mesh {
   ///
   /// Throws if region_name not found
   template <class T>
-  const Region<typename T::ind_type>& getRegion(const std::string &region_name) const;
+  const Region<typename T::ind_type>& getRegion(const std::string& region_name) const;
 
   const Region<> &getRegion(const std::string &region_name) const{
     return getRegion3D(region_name);
@@ -808,15 +811,18 @@ private:
 };
 
 template <>
-inline const Region<Ind3D>& Mesh::getRegion<Field3D>(const std::string& region_name) const {
+inline const Region<Ind3D>&
+Mesh::getRegion<Field3D>(const std::string& region_name) const {
   return getRegion3D(region_name);
 }
 template <>
-inline const Region<Ind2D>& Mesh::getRegion<Field2D>(const std::string& region_name) const {
+inline const Region<Ind2D>&
+Mesh::getRegion<Field2D>(const std::string& region_name) const {
   return getRegion2D(region_name);
 }
 template <>
-inline const Region<IndPerp>& Mesh::getRegion<FieldPerp>(const std::string& region_name) const {
+inline const Region<IndPerp>&
+Mesh::getRegion<FieldPerp>(const std::string& region_name) const {
   return getRegionPerp(region_name);
 }
 

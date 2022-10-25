@@ -66,7 +66,7 @@ public:
    * Ensure that PETSc has been initialised
    */
   explicit PetscLib(Options* opt = nullptr);
-  
+
   /*!
    * Calls PetscFinalize when all PetscLib instances are destroyed
    */ 
@@ -86,10 +86,10 @@ public:
   /// was passed to the constructor.
   void setOptionsFromInputFile(KSP& ksp);
 
-  /// Set options for a SNES linear solver that uses the options specific to this PetscLib,
-  /// by setting an options prefix for the SNES, and adding that prefix to all the options
-  /// set in the [petsc] section, or [petsc] subsection of the options, if non-null 'opt'
-  /// was passed to the constructor.
+  /// Set options for a SNES linear solver that uses the options specific to this
+  /// PetscLib, by setting an options prefix for the SNES, and adding that prefix to all
+  /// the options set in the [petsc] section, or [petsc] subsection of the options, if
+  /// non-null 'opt' was passed to the constructor.
   void setOptionsFromInputFile(SNES& snes);
 
   /*!
@@ -104,7 +104,7 @@ private:
   // Command-line arguments
   static int* pargc;
   static char*** pargv;
-  
+
   // Prefix for object-specific options
   std::string options_prefix;
 
@@ -139,7 +139,7 @@ public:
   ~PetscLib() {}
   
   static void setArgs(int &UNUSED(c), char** &UNUSED(v)) {}
-  
+
   void setOptionsFromInputFile(KSP& UNUSED(ksp)) {}
   void setOptionsFromInputFile(SNES& UNUSED(snes)) {}
 

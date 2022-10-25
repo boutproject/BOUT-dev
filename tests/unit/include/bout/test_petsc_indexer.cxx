@@ -469,20 +469,20 @@ TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
   // Test y boundaries
   BOUT_FOR(i, this->localmesh->getRegion3D("RGN_YGUARDS")) {
     if (i.y() < this->ystart) {
-      
+
       if (i.x() == this->xstart) {
-	const int global = index->getGlobal(i.xm()),
-	  otherXind = (this->pe_xind == 0) ? this->pe_xind : this->pe_xind - 1,
-	  otherYind = this->pe_yind - 1;
-	const Ind3D otherInd = i.offset((this->pe_xind == 0) ? -1 :
-					this->xend - this->xstart,
-					this->yend - this->ystart + 1, 0);
-	const int otherGlobal =
-	  this->getIndexer<Field3D>(indexers, otherXind, otherYind)->getGlobal(otherInd);
-	EXPECT_NE(global, -1);
-	EXPECT_EQ(global, otherGlobal);
+        const int global = index->getGlobal(i.xm()),
+                  otherXind = (this->pe_xind == 0) ? this->pe_xind : this->pe_xind - 1,
+                  otherYind = this->pe_yind - 1;
+        const Ind3D otherInd =
+            i.offset((this->pe_xind == 0) ? -1 : this->xend - this->xstart,
+                     this->yend - this->ystart + 1, 0);
+        const int otherGlobal = this->getIndexer<Field3D>(indexers, otherXind, otherYind)
+                                    ->getGlobal(otherInd);
+        EXPECT_NE(global, -1);
+        EXPECT_EQ(global, otherGlobal);
       }
-      
+
       int global = index->getGlobal(i);
       int otherGlobal =
           this->getIndexer<Field3D>(indexers, this->pe_xind, this->pe_yind - 1)
@@ -490,31 +490,32 @@ TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
       EXPECT_EQ(global, otherGlobal);
 
       if (i.x() == this->xend) {
-	const int global = index->getGlobal(i.xp()),
-	  otherXind = (this->pe_xind == this->nxpe - 1) ? this->pe_xind : this->pe_xind + 1,
-	  otherYind = this->pe_yind - 1;
-	const Ind3D otherInd = i.offset((this->pe_xind == this->nxpe - 1) ? 1 :
-					this->xstart - this->xend,
-					this->yend - this->ystart + 1, 0);
-	const int otherGlobal =
-	  this->getIndexer<Field3D>(indexers, otherXind, otherYind)->getGlobal(otherInd);
-	EXPECT_NE(global, -1);
-	EXPECT_EQ(global, otherGlobal);
+        const int global = index->getGlobal(i.xp()),
+                  otherXind = (this->pe_xind == this->nxpe - 1) ? this->pe_xind
+                                                                : this->pe_xind + 1,
+                  otherYind = this->pe_yind - 1;
+        const Ind3D otherInd =
+            i.offset((this->pe_xind == this->nxpe - 1) ? 1 : this->xstart - this->xend,
+                     this->yend - this->ystart + 1, 0);
+        const int otherGlobal = this->getIndexer<Field3D>(indexers, otherXind, otherYind)
+                                    ->getGlobal(otherInd);
+        EXPECT_NE(global, -1);
+        EXPECT_EQ(global, otherGlobal);
       }
-      
+
     } else if (i.y() >= this->yend && i.x() >= this->xstart && i.x() <= this->xend) {
 
       if (i.x() == this->xstart) {
-	const int global = index->getGlobal(i.xm()),
-	  otherXind = (this->pe_xind == 0) ? this->pe_xind : this->pe_xind - 1,
-	  otherYind = this->pe_yind + 1;
-	const Ind3D otherInd = i.offset((this->pe_xind == 0) ? -1 :
-					this->xend - this->xstart,
-					this->ystart - this->yend - 1, 0);
-	const int otherGlobal =
-	  this->getIndexer<Field3D>(indexers, otherXind, otherYind)->getGlobal(otherInd);
-	EXPECT_NE(global, -1);
-	EXPECT_EQ(global, otherGlobal);
+        const int global = index->getGlobal(i.xm()),
+                  otherXind = (this->pe_xind == 0) ? this->pe_xind : this->pe_xind - 1,
+                  otherYind = this->pe_yind + 1;
+        const Ind3D otherInd =
+            i.offset((this->pe_xind == 0) ? -1 : this->xend - this->xstart,
+                     this->ystart - this->yend - 1, 0);
+        const int otherGlobal = this->getIndexer<Field3D>(indexers, otherXind, otherYind)
+                                    ->getGlobal(otherInd);
+        EXPECT_NE(global, -1);
+        EXPECT_EQ(global, otherGlobal);
       }
 
       int global = index->getGlobal(i);
@@ -524,18 +525,18 @@ TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
       EXPECT_EQ(global, otherGlobal);
 
       if (i.x() == this->xend) {
-	const int global = index->getGlobal(i.xp()),
-	  otherXind = (this->pe_xind == this->nxpe - 1) ? this->pe_xind : this->pe_xind + 1,
-	  otherYind = this->pe_yind + 1;
-	const Ind3D otherInd = i.offset((this->pe_xind == this->nxpe - 1) ? 1 :
-					this->xstart - this->xend,
-					this->ystart - this->yend - 1, 0);
-	const int otherGlobal =
-	  this->getIndexer<Field3D>(indexers, otherXind, otherYind)->getGlobal(otherInd);
-	EXPECT_NE(global, -1);
-	EXPECT_EQ(global, otherGlobal);
+        const int global = index->getGlobal(i.xp()),
+                  otherXind = (this->pe_xind == this->nxpe - 1) ? this->pe_xind
+                                                                : this->pe_xind + 1,
+                  otherYind = this->pe_yind + 1;
+        const Ind3D otherInd =
+            i.offset((this->pe_xind == this->nxpe - 1) ? 1 : this->xstart - this->xend,
+                     this->ystart - this->yend - 1, 0);
+        const int otherGlobal = this->getIndexer<Field3D>(indexers, otherXind, otherYind)
+                                    ->getGlobal(otherInd);
+        EXPECT_NE(global, -1);
+        EXPECT_EQ(global, otherGlobal);
       }
-
     }
   }
 }
@@ -580,52 +581,53 @@ TEST_P(ParallelIndexerTest, TestConvertIndex2D) {
       EXPECT_EQ(global, otherGlobal);
 
       if (i.x() == this->xend) {
-	const int global = index->getGlobal(i.xp()),
-	  otherXind = (this->pe_xind == this->nxpe - 1) ? this->pe_xind : this->pe_xind + 1,
-	  otherYind = this->pe_yind - 1;
-	const Ind2D otherInd = i.offset((this->pe_xind == this->nxpe - 1) ? 1 :
-					this->xstart - this->xend,
-					this->yend - this->ystart + 1, 0);
-	const int otherGlobal =
-	  this->getIndexer<Field2D>(indexers, otherXind, otherYind)->getGlobal(otherInd);
-	EXPECT_NE(global, -1);
-	EXPECT_EQ(global, otherGlobal);
+        const int global = index->getGlobal(i.xp()),
+                  otherXind = (this->pe_xind == this->nxpe - 1) ? this->pe_xind
+                                                                : this->pe_xind + 1,
+                  otherYind = this->pe_yind - 1;
+        const Ind2D otherInd =
+            i.offset((this->pe_xind == this->nxpe - 1) ? 1 : this->xstart - this->xend,
+                     this->yend - this->ystart + 1, 0);
+        const int otherGlobal = this->getIndexer<Field2D>(indexers, otherXind, otherYind)
+                                    ->getGlobal(otherInd);
+        EXPECT_NE(global, -1);
+        EXPECT_EQ(global, otherGlobal);
       }
-      
+
     } else if (i.y() >= this->yend) {
 
       if (i.x() == this->xstart) {
-	const int global = index->getGlobal(i.xm()),
-	  otherXind = (this->pe_xind == 0) ? this->pe_xind : this->pe_xind - 1,
-	  otherYind = this->pe_yind + 1;
-	const Ind2D otherInd = i.offset((this->pe_xind == 0) ? -1 :
-					this->xend - this->xstart,
-					this->ystart - this->yend - 1, 0);
-	const int otherGlobal =
-	  this->getIndexer<Field2D>(indexers, otherXind, otherYind)->getGlobal(otherInd);
-	EXPECT_NE(global, -1);
-	EXPECT_EQ(global, otherGlobal);
+        const int global = index->getGlobal(i.xm()),
+                  otherXind = (this->pe_xind == 0) ? this->pe_xind : this->pe_xind - 1,
+                  otherYind = this->pe_yind + 1;
+        const Ind2D otherInd =
+            i.offset((this->pe_xind == 0) ? -1 : this->xend - this->xstart,
+                     this->ystart - this->yend - 1, 0);
+        const int otherGlobal = this->getIndexer<Field2D>(indexers, otherXind, otherYind)
+                                    ->getGlobal(otherInd);
+        EXPECT_NE(global, -1);
+        EXPECT_EQ(global, otherGlobal);
       }
 
-  int global = index->getGlobal(i);
+      int global = index->getGlobal(i);
       int otherGlobal =
           this->getIndexer<Field2D>(indexers, this->pe_xind, this->pe_yind + 1)
               ->getGlobal(i.ym(this->yend - this->ystart + 1));
       EXPECT_EQ(global, otherGlobal);
 
       if (i.x() == this->xend) {
-	const int global = index->getGlobal(i.xp()),
-	  otherXind = (this->pe_xind == this->nxpe - 1) ? this->pe_xind : this->pe_xind + 1,
-	  otherYind = this->pe_yind + 1;
-	const Ind2D otherInd = i.offset((this->pe_xind == this->nxpe - 1) ? 1 :
-					this->xstart - this->xend,
-					this->ystart - this->yend - 1, 0);
-	const int otherGlobal =
-	  this->getIndexer<Field2D>(indexers, otherXind, otherYind)->getGlobal(otherInd);
-	EXPECT_NE(global, -1);
-	EXPECT_EQ(global, otherGlobal);
+        const int global = index->getGlobal(i.xp()),
+                  otherXind = (this->pe_xind == this->nxpe - 1) ? this->pe_xind
+                                                                : this->pe_xind + 1,
+                  otherYind = this->pe_yind + 1;
+        const Ind2D otherInd =
+            i.offset((this->pe_xind == this->nxpe - 1) ? 1 : this->xstart - this->xend,
+                     this->ystart - this->yend - 1, 0);
+        const int otherGlobal = this->getIndexer<Field2D>(indexers, otherXind, otherYind)
+                                    ->getGlobal(otherInd);
+        EXPECT_NE(global, -1);
+        EXPECT_EQ(global, otherGlobal);
       }
-      
     }
   }
 }

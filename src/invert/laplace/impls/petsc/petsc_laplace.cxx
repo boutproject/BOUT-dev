@@ -48,7 +48,6 @@
 #define KSP_BICG        "bicg"
 #define KSP_PREONLY     "preonly"
 
-
 static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   int ierr;
 

@@ -67,16 +67,14 @@ bool SurfaceIter::lastY() {
   return myp == np-1;
 }
 
-void SurfaceIter::first() {
-  xpos = firstpos;
-}
+void SurfaceIter::first() { xpos = firstpos; }
 
 void SurfaceIter::next() {
   if(xpos < 0)
     return;
   
   xpos++;
-  if(xpos > lastpos)
+  if (xpos > lastpos)
     xpos = -1;
 }
 

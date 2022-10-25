@@ -40,26 +40,26 @@ class Options;
 #define __OPTIONS_H__
 
 #include "bout_types.hxx"
-#include "unused.hxx"
-#include "output.hxx"
-#include "utils.hxx"
-#include "bout/sys/variant.hxx"
-#include "bout/sys/type_name.hxx"
-#include "bout/traits.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "fieldperp.hxx"
+#include "output.hxx"
+#include "unused.hxx"
+#include "utils.hxx"
+#include "bout/sys/type_name.hxx"
+#include "bout/sys/variant.hxx"
+#include "bout/traits.hxx"
 
 #include <fmt/core.h>
 
+#include <cmath>
+#include <iomanip>
 #include <map>
 #include <ostream>
 #include <set>
-#include <string>
 #include <sstream>
-#include <iomanip>
+#include <string>
 #include <utility>
-#include <cmath>
 
 /// Class to represent hierarchy of options
 /*!
@@ -175,13 +175,13 @@ public:
   Options(T value) {
     assign<T>(value);
   }
-  
+
   /// Construct with a nested initializer list
   /// This allows Options trees to be constructed, using a mix of types.
   ///
   /// Example:  { {"key1", 42}, {"key2", field} }
   Options(std::initializer_list<std::pair<std::string, Options>> values);
-  
+
   /// Copy constructor
   Options(const Options& other);
 
@@ -377,13 +377,13 @@ public:
   /// option["test"].assign(42, "some source");
   ///
   /// Note: Specialised versions for types stored in ValueType
-  template<typename T>
-  void assign(T val, std::string source="") {
+  template <typename T>
+  void assign(T val, std::string source = "") {
     std::stringstream ss;
     ss << val;
     _set(ss.str(), std::move(source), false);
   }
-  
+
   /// Force to a value
   /// Overwrites any existing setting
   template<typename T>
@@ -503,7 +503,7 @@ public:
 
     // Set the type
     attributes["type"] = bout::utils::typeName<T>();
-    
+
     if (is_section) {
       // Option not found
       assign(def, DEFAULT_SOURCE);
@@ -762,7 +762,7 @@ public:
     attributes["doc"] = docstring;
     return *this;
   }
-  
+
   friend bool operator==(const Options& lhs, const Options& rhs) {
     if (lhs.isValue() and rhs.isValue()) {
       return lhs.value == rhs.value;
@@ -782,14 +782,16 @@ private:
   std::string full_name; // full path name for logging only
 
   // An Option object can either be a section or a value, defaulting to a section
-  bool is_section = true; ///< Is this Options object a section?
+  bool is_section = true;                  ///< Is this Options object a section?
   std::map<std::string, Options> children; ///< If a section then has children
   mutable bool value_used = false; ///< Record whether this value is used
-  
+
   template <typename T>
   void _set_no_check(T val, std::string source) {
     if (not children.empty()) {
-      throw BoutException("Trying to assign value to Option '{}', but it's a non-empty section", full_name);
+      throw BoutException(
+          "Trying to assign value to Option '{}', but it's a non-empty section",
+          full_name);
     }
 
     value = std::move(val);
@@ -830,12 +832,27 @@ private:
 };
 
 // Specialised assign methods for types stored in ValueType
-template<> inline void Options::assign<>(bool val, std::string source) { _set(val, std::move(source), false); }
-template<> inline void Options::assign<>(int val, std::string source) { _set(val, std::move(source), false); }
-template<> inline void Options::assign<>(BoutReal val, std::string source) { _set(val, std::move(source), false); }
-template<> inline void Options::assign<>(std::string val, std::string source) { _set(std::move(val), std::move(source), false); }
+template <>
+inline void Options::assign<>(bool val, std::string source) {
+  _set(val, std::move(source), false);
+}
+template <>
+inline void Options::assign<>(int val, std::string source) {
+  _set(val, std::move(source), false);
+}
+template <>
+inline void Options::assign<>(BoutReal val, std::string source) {
+  _set(val, std::move(source), false);
+}
+template <>
+inline void Options::assign<>(std::string val, std::string source) {
+  _set(std::move(val), std::move(source), false);
+}
 // Note: const char* version needed to avoid conversion to bool
-template<> inline void Options::assign<>(const char *val, std::string source) { _set(std::string(val), source, false);}
+template <>
+inline void Options::assign<>(const char* val, std::string source) {
+  _set(std::string(val), source, false);
+}
 // Note: Field assignments don't check for previous assignment (always force)
 template <>
 void Options::assign<>(Field2D val, std::string source);
@@ -860,7 +877,8 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& similar_to) const;
 template <> bool Options::as<bool>(const bool& similar_to) const;
 template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const;
 template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
-template <> FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
+template <>
+FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
 template <>
 Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) const;
 template <>
@@ -894,7 +912,7 @@ void checkForUnusedOptions();
 /// used to customise the error message for the actual input file used
 void checkForUnusedOptions(const Options& options, const std::string& data_dir,
                            const std::string& option_file);
-}
+} // namespace bout
 
 namespace bout {
 namespace details {
@@ -902,8 +920,7 @@ namespace details {
 /// so that we can put the function definitions in the .cxx file,
 /// avoiding lengthy recompilation if we change it
 struct OptionsFormatterBase {
-  auto parse(fmt::format_parse_context& ctx)
-      -> fmt::format_parse_context::iterator;
+  auto parse(fmt::format_parse_context& ctx) -> fmt::format_parse_context::iterator;
   auto format(const Options& options, fmt::format_context& ctx)
       -> fmt::format_context::iterator;
 
@@ -961,26 +978,31 @@ struct fmt::formatter<Options> : public bout::details::OptionsFormatterBase {};
     pointer(options)->get(#var4, var4, def);                      \
     pointer(options)->get(#var5, var5, def);}
 
-#define OPTION6(options, var1, var2, var3, var4, var5, var6, def){      \
-    pointer(options)->get(#var1, var1, def);                            \
-    pointer(options)->get(#var2, var2, def);                            \
-    pointer(options)->get(#var3, var3, def);                            \
-    pointer(options)->get(#var4, var4, def);                            \
-    pointer(options)->get(#var5, var5, def);                            \
-    pointer(options)->get(#var6, var6, def);}
+#define OPTION6(options, var1, var2, var3, var4, var5, var6, def) \
+  {                                                               \
+    pointer(options)->get(#var1, var1, def);                      \
+    pointer(options)->get(#var2, var2, def);                      \
+    pointer(options)->get(#var3, var3, def);                      \
+    pointer(options)->get(#var4, var4, def);                      \
+    pointer(options)->get(#var5, var5, def);                      \
+    pointer(options)->get(#var6, var6, def);                      \
+  }
 
-#define VAROPTION(options, var, def) {					\
-    if (pointer(options)->isSet(#var)){                                 \
-      pointer(options)->get(#var, var, def);                            \
-    } else {								\
-      Options::getRoot()->getSection("all")->get(#var, var, def);	\
-    }}									\
+#define VAROPTION(options, var, def)                              \
+  {                                                               \
+    if (pointer(options)->isSet(#var)) {                          \
+      pointer(options)->get(#var, var, def);                      \
+    } else {                                                      \
+      Options::getRoot()->getSection("all")->get(#var, var, def); \
+    }                                                             \
+  }
 
 /// Define for over-riding library defaults for options, should be called in global
 /// namespace so that the new default is set before main() is called.
-#define BOUT_OVERRIDE_DEFAULT_OPTION(name, value)               \
-  namespace {                                                   \
-    const auto BOUT_CONCAT(user_default,__LINE__) =             \
-      Options::root()[name].overrideDefault(value); }           \
+#define BOUT_OVERRIDE_DEFAULT_OPTION(name, value)                                  \
+  namespace {                                                                      \
+  const auto BOUT_CONCAT(user_default,                                             \
+                         __LINE__) = Options::root()[name].overrideDefault(value); \
+  }
 
 #endif // __OPTIONS_H__

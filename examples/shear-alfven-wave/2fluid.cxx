@@ -111,9 +111,10 @@ protected:
     /************* SHIFTED RADIAL COORDINATES ************/
 
     // Check type of parallel transform
-    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
-                        .withDefault<std::string>("identity");
-    
+    std::string ptstr =
+        Options::root()["mesh"]["paralleltransform"]["type"].withDefault<std::string>(
+            "identity");
+
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0; // I disappears from metric
       b0xcv.z += I * b0xcv.x;
