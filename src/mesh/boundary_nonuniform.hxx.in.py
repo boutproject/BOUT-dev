@@ -12,11 +12,6 @@ header = """
 
 #include "boundary_op.hxx"
 
-// Define structs used
-struct Indices{
-  int x,y,z;
-};
-
 """
 vecs = """
 struct vec{{order}}{

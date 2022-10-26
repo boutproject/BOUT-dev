@@ -3,11 +3,6 @@
 
 #include "boundary_op.hxx"
 
-// Define structs used
-struct Indices {
-  int x, y, z;
-};
-
 struct vec2 {
   BoutReal f0;
   BoutReal f1;

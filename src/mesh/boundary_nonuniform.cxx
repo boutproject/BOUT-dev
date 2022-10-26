@@ -41,6 +41,14 @@ static void update_stagger_offsets(int& x_boundary_offset, int& y_boundary_offse
 }
 
 #if !BOUT_USE_METRIC_3D
+using IndMetric = Ind2D;
+#define IND(var, x, y, z) IndMetric var(x* localNy + y, localNy, 1)
+#define IND3D(var, x, y, z) Ind3D var((x * localNy + y) * localNz + z, localNy, localNz)
+#else
+using IndMetric = Ind3D;
+#define IND(var, x, y, z) IndMetric var((x * localNy + y) * localNz + z, localNy, localNz)
+#define IND3D(var, x, y, z)
+#endif
 
 void BoundaryDirichletNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
@@ -49,93 +57,9 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
 
   // Decide which generator to use
   std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
+  if (!fg) {
     fg = f.getBndryGenerator(bndry->location);
-
-  std::vector<BoutReal> vals;
-  vals.reserve(mesh->LocalNz);
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      // Calculate the X and Y normalised values half-way between the guard cell and
-      // grid cell
-      const BoutReal xnorm =
-          0.5
-          * (mesh->GlobalX(bndry->x)                         // In the guard cell
-             + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-      const BoutReal ynorm =
-          TWOPI * 0.5
-          * (mesh->GlobalY(bndry->y)                         // In the guard cell
-             + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-      const BoutReal zfac = TWOPI / mesh->LocalNz;
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm,
-                                                               "z", zfac * zk, "t", t));
-      }
-    }
-
-    vec2 spacing;
-
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    if (stagger == 0) {
-      BoutReal offset;
-      spacing.f0 = 0;
-      BoutReal total_offset = 0;
-      offset = coords_field(i1.x, i1.y);
-      spacing.f1 = total_offset + offset / 2;
-      total_offset += offset;
-    } else {
-      spacing.f0 = 0;
-      spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
-    }
-    if (stagger == -1) {
-      i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    }
-    // with dirichlet, we specify the value on the boundary, even if
-    // the value is part of the evolving system.
-    for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
-      Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      vec2 facs;
-      if (stagger == 0) {
-        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
-        spacing += to_add;
-        facs = calc_interp_to_stencil(spacing);
-        spacing += to_add;
-      } else {
-        if (stagger == -1 && i != -1) {
-          spacing += coords_field(ic.x, ic.y);
-        }
-        facs = calc_interp_to_stencil(spacing);
-        if (stagger == 1) {
-          spacing += coords_field(ic.x, ic.y);
-        }
-      }
-      for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        const BoutReal val = (fg) ? vals[iz] : 0.0;
-        f(ic.x, ic.y, iz) = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz);
-      }
-    }
   }
-}
-
-#else // BOUT_USE_METRIC_3D
-
-void BoundaryDirichletNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
 
   std::vector<BoutReal> vals;
   vals.reserve(mesh->LocalNz);
@@ -147,8 +71,6 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
 
   for (; !bndry->isDone(); bndry->next1d()) {
     if (fg) {
-      ;
-      const BoutReal zfac = TWOPI / mesh->LocalNz;
       // Calculate the X and Y normalised values half-way between the guard cell and
       // grid cell
       const BoutReal xnorm =
@@ -159,6 +81,7 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
           TWOPI * 0.5
           * (mesh->GlobalY(bndry->y)                         // In the guard cell
              + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
+      const BoutReal zfac = TWOPI / mesh->LocalNz;
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
         vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm,
                                                                "z", zfac * zk, "t", t));
@@ -169,1641 +92,1298 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
 
     const Coordinates::FieldMetric& coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    for (int iz = 0; iz < mesh->LocalNz; iz++) {
-      Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
+
+#if BOUT_USE_METRIC_3D
+    for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#else
+    const int iz = 0;
+#endif
+      const int localNy = mesh->LocalNy;
+      const int localNz = mesh->LocalNz;
+      const int offset = (bndry->bx * localNy + bndry->by)
+#if BOUT_USE_METRIC_3D
+                         * localNz
+#endif
+          ;
+      const IND(temp, bndry->x, bndry->y, 0);
+      IND3D(temp3d, bndry->x, bndry->y, 0);
+      IndMetric i1{temp - 1 * offset};
+#if !BOUT_USE_METRIC_3D
+      Ind3D i13d{temp3d - 1 * offset * localNz};
+#endif
+
       if (stagger == 0) {
-        BoutReal offset;
         spacing.f0 = 0;
         BoutReal total_offset = 0;
-        offset = coords_field(i1.x, i1.y, iz);
+        BoutReal offset = coords_field[i1 + iz];
         spacing.f1 = total_offset + offset / 2;
-        total_offset += offset;
       } else {
         spacing.f0 = 0;
-        spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y, iz);
+        spacing.f1 = spacing.f0 + coords_field[i1 + iz];
       }
       if (stagger == -1) {
-        i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, iz};
+#if BOUT_USE_METRIC_3D
+        i1 = temp - 2 * offset;
+#else
+      i13d = temp3d - 2 * offset;
+#endif
       }
+
       // with dirichlet, we specify the value on the boundary, even if
       // the value is part of the evolving system.
       for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
-        Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, iz};
+        IndMetric icm{temp + IndMetric(i * offset)};
+#if BOUT_USE_METRIC_3D
+        icm + iz;
+        IndMetric ic = icm;
+#else
+      Ind3D ic{temp3d + Ind3D(i * offset * localNz)};
+#endif
         vec2 facs;
         if (stagger == 0) {
-          BoutReal to_add = coords_field(ic.x, ic.y, iz) / 2;
+          BoutReal to_add = coords_field[icm] / 2;
           spacing += to_add;
           facs = calc_interp_to_stencil(spacing);
           spacing += to_add;
         } else {
           if (stagger == -1 && i != -1) {
-            spacing += coords_field(ic.x, ic.y, iz);
+            spacing += coords_field[icm];
           }
           facs = calc_interp_to_stencil(spacing);
           if (stagger == 1) {
-            spacing += coords_field(ic.x, ic.y, iz);
+            spacing += coords_field[icm];
           }
         }
-        const BoutReal val = (fg) ? vals[iz] : 0.0;
-        f(ic.x, ic.y, iz) = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz);
-      }
-    }
-  }
-}
-
-#endif // BOUT_USE_METRIC_3D
-
-BoundaryOp* BoundaryDirichletNonUniform_O2::clone(BoundaryRegion* region,
-                                                  const std::list<std::string>& args) {
-
-  std::shared_ptr<FieldGenerator> newgen;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryDirichletNonUniform_O2(region, newgen);
-}
-
-vec2 BoundaryDirichletNonUniform_O2::calc_interp_to_stencil(const vec2& spacing) const {
-  vec2 facs;
-  // Stencil Code
-  facs.f0 = -spacing.f1 / (spacing.f0 - spacing.f1);
-  facs.f1 = spacing.f0 / (spacing.f0 - spacing.f1);
-
-  return facs;
-}
-
 #if !BOUT_USE_METRIC_3D
+        for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#endif
+#if BOUT_USE_METRIC_3D
+#define MAKE3D(x) x
+#else
+#define MAKE3D(x) x##3d
+#endif
+          const BoutReal val = (fg) ? vals[iz] : 0.0;
+          f[ic] = facs.f0 * val + facs.f1 * f[MAKE3D(i1) + iz];
+        }
+      }
+    }
+  }
 
-void BoundaryNeumannNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
+  BoundaryOp* BoundaryDirichletNonUniform_O2::clone(BoundaryRegion * region,
+                                                    const std::list<std::string>& args) {
 
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
+    std::shared_ptr<FieldGenerator> newgen;
+    if (!args.empty()) {
+      // First argument should be an expression
+      newgen = FieldFactory::get()->parse(args.front());
+    }
+    return new BoundaryDirichletNonUniform_O2(region, newgen);
+  }
 
-  std::vector<BoutReal> vals;
-  vals.reserve(mesh->LocalNz);
+  vec2 BoundaryDirichletNonUniform_O2::calc_interp_to_stencil(const vec2& spacing) const {
+    vec2 facs;
+    // Stencil Code
+    facs.f0 = -spacing.f1 / (spacing.f0 - spacing.f1);
+    facs.f1 = spacing.f0 / (spacing.f0 - spacing.f1);
 
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
+    return facs;
+  }
 
-  for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      // Calculate the X and Y normalised values half-way between the guard cell and
-      // grid cell
-      const BoutReal xnorm =
-          0.5
-          * (mesh->GlobalX(bndry->x)                         // In the guard cell
-             + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-      const BoutReal ynorm =
-          TWOPI * 0.5
-          * (mesh->GlobalY(bndry->y)                         // In the guard cell
-             + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-      const BoutReal zfac = TWOPI / mesh->LocalNz;
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm,
-                                                               "z", zfac * zk, "t", t));
+  void BoundaryNeumannNonUniform_O2::apply(Field3D & f, MAYBE_UNUSED(BoutReal t)) {
+    bndry->first();
+    Mesh* mesh = f.getMesh();
+    CELL_LOC loc = f.getLocation();
+
+    // Decide which generator to use
+    std::shared_ptr<FieldGenerator> fg = gen;
+    if (!fg) {
+      fg = f.getBndryGenerator(bndry->location);
+    }
+
+    std::vector<BoutReal> vals;
+    vals.reserve(mesh->LocalNz);
+
+    int x_boundary_offset = bndry->bx;
+    int y_boundary_offset = bndry->by;
+    int stagger = 0;
+    update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
+
+    for (; !bndry->isDone(); bndry->next1d()) {
+      if (fg) {
+        // Calculate the X and Y normalised values half-way between the guard cell and
+        // grid cell
+        const BoutReal xnorm =
+            0.5
+            * (mesh->GlobalX(bndry->x)                         // In the guard cell
+               + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
+        const BoutReal ynorm =
+            TWOPI * 0.5
+            * (mesh->GlobalY(bndry->y)                         // In the guard cell
+               + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
+        const BoutReal zfac = TWOPI / mesh->LocalNz;
+        for (int zk = 0; zk < mesh->LocalNz; zk++) {
+          vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm,
+                                                                 "z", zfac * zk, "t", t));
+        }
+      }
+
+      vec2 spacing;
+
+      const Coordinates::FieldMetric& coords_field =
+          bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
+
+      const int localNy = mesh->LocalNy;
+      const int localNz = mesh->LocalNz;
+      const int offset = (bndry->bx * localNy + bndry->by)
+#if BOUT_USE_METRIC_3D
+                         * localNz
+#endif
+          ;
+      const IND(temp, bndry->x, bndry->y, 0);
+      IND3D(temp3d, bndry->x, bndry->y, 0);
+      IndMetric i1{temp - 1 * offset};
+#if !BOUT_USE_METRIC_3D
+      Ind3D i13d{temp3d - 1 * offset * localNz};
+#endif
+
+#if BOUT_USE_METRIC_3D
+      for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#else
+    const int iz = 0;
+#endif
+        if (stagger == 0) {
+          spacing.f0 = 0;
+          BoutReal total_offset = 0;
+          BoutReal offset = coords_field[i1 + iz];
+          spacing.f1 = total_offset + offset / 2;
+        } else { // stagger != 0
+          spacing.f0 = 0;
+          // Check if we are staggered and also boundary in low
+          //  direction
+          // In the case of Neumann we have in this case two values
+          //  defined at the same point
+          if (stagger == -1
+              && ((bndry->bx && x_boundary_offset == -1)
+                  || (bndry->by && y_boundary_offset == -1))) {
+            spacing.f1 = spacing.f0;
+          } else {
+            spacing.f1 = spacing.f0 + coords_field[i1 + iz];
+          }
+        } // stagger != 0
+        // With neumann (and free) the value is not set if the point is
+        // evolved and it is on the boundary.
+        for (int i = 0; i < bndry->width; i++) {
+          IndMetric icm{temp + IndMetric(i * offset)};
+#if BOUT_USE_METRIC_3D
+          icm += iz;
+          IndMetric ic = icm;
+#else
+      Ind3D ic{temp3d + Ind3D(i * offset * localNz)};
+#endif
+          vec2 facs;
+          if (stagger == 0) {
+            BoutReal to_add = coords_field[icm] / 2;
+            spacing += to_add;
+            facs = calc_interp_to_stencil(spacing);
+            spacing += to_add;
+          } else {
+            if (stagger == -1) {
+              spacing += coords_field[icm];
+            }
+            facs = calc_interp_to_stencil(spacing);
+            if (stagger == 1) {
+              spacing += coords_field[icm];
+            }
+          }
+#if !BOUT_USE_METRIC_3D
+          for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#endif
+#if BOUT_USE_METRIC_3D
+#define MAKE3D(x) x
+#else
+#define MAKE3D(x) x##3d
+#endif
+            const BoutReal val = (fg) ? vals[iz] : 0.0;
+            f[ic] = facs.f0 * val + facs.f1 * f[MAKE3D(i1) + iz];
+          }
+        }
       }
     }
 
-    vec2 spacing;
+    BoundaryOp* BoundaryNeumannNonUniform_O2::clone(BoundaryRegion * region,
+                                                    const std::list<std::string>& args) {
 
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    if (stagger == 0) {
-      BoutReal offset;
-      spacing.f0 = 0;
-      BoutReal total_offset = 0;
-      offset = coords_field(i1.x, i1.y);
-      spacing.f1 = total_offset + offset / 2;
-      total_offset += offset;
-    } else {
-      spacing.f0 = 0;
-      // Check if we are staggered and also boundary in low
-      //  direction
-      // In the case of Neumann we have in this case two values
-      //  defined at the same point
-      if (stagger == -1
-          && ((bndry->bx && x_boundary_offset == -1)
-              || (bndry->by && y_boundary_offset == -1))) {
-        spacing.f1 = spacing.f0;
-      } else {
-        spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
+      std::shared_ptr<FieldGenerator> newgen;
+      if (!args.empty()) {
+        // First argument should be an expression
+        newgen = FieldFactory::get()->parse(args.front());
       }
+      return new BoundaryNeumannNonUniform_O2(region, newgen);
     }
-    // With free and neumann the value is not set if the point is
-    // evolved and it is on the boundary.
-    for (int i = 0; i < bndry->width; i++) {
-      Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+
+    vec2 BoundaryNeumannNonUniform_O2::calc_interp_to_stencil(const vec2& spacing) const {
       vec2 facs;
-      if (stagger == 0) {
-        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
-        spacing += to_add;
-        facs = calc_interp_to_stencil(spacing);
-        spacing += to_add;
-      } else {
-        if (stagger == -1) {
-          spacing += coords_field(ic.x, ic.y);
-        }
-        facs = calc_interp_to_stencil(spacing);
-        if (stagger == 1) {
-          spacing += coords_field(ic.x, ic.y);
-        }
-      }
-      for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        const BoutReal val = (fg) ? vals[iz] : 0.0;
-        f(ic.x, ic.y, iz) = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz);
-      }
-    }
-  }
-}
+      // Stencil Code
+      facs.f0 = -spacing.f1;
+      facs.f1 = 1;
 
-#else // BOUT_USE_METRIC_3D
-
-void BoundaryNeumannNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
-
-  std::vector<BoutReal> vals;
-  vals.reserve(mesh->LocalNz);
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      ;
-      const BoutReal zfac = TWOPI / mesh->LocalNz;
-      // Calculate the X and Y normalised values half-way between the guard cell and
-      // grid cell
-      const BoutReal xnorm =
-          0.5
-          * (mesh->GlobalX(bndry->x)                         // In the guard cell
-             + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-      const BoutReal ynorm =
-          TWOPI * 0.5
-          * (mesh->GlobalY(bndry->y)                         // In the guard cell
-             + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm,
-                                                               "z", zfac * zk, "t", t));
-      }
+      return facs;
     }
 
-    vec2 spacing;
+    void BoundaryFreeNonUniform_O2::apply(Field3D & f, MAYBE_UNUSED(BoutReal t)) {
+      bndry->first();
+      Mesh* mesh = f.getMesh();
+      CELL_LOC loc = f.getLocation();
 
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    for (int iz = 0; iz < mesh->LocalNz; iz++) {
-      if (stagger == 0) {
-        BoutReal offset;
-        spacing.f0 = 0;
-        BoutReal total_offset = 0;
-        offset = coords_field(i1.x, i1.y, iz);
-        spacing.f1 = total_offset + offset / 2;
-        total_offset += offset;
-      } else { // stagger != 0
-        spacing.f0 = 0;
-        // Check if we are staggered and also boundary in low
-        //  direction
-        // In the case of Neumann we have in this case two values
-        //  defined at the same point
-        if (stagger == -1
-            && ((bndry->bx && x_boundary_offset == -1)
-                || (bndry->by && y_boundary_offset == -1))) {
-          spacing.f1 = spacing.f0;
-        } else {
-          spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y, iz);
+      int x_boundary_offset = bndry->bx;
+      int y_boundary_offset = bndry->by;
+      int stagger = 0;
+      update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
+
+      for (; !bndry->isDone(); bndry->next1d()) {
+
+        vec2 spacing;
+
+        const Coordinates::FieldMetric& coords_field =
+            bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
+
+        const int localNy = mesh->LocalNy;
+        const int localNz = mesh->LocalNz;
+        const int offset = (bndry->bx * localNy + bndry->by)
+#if BOUT_USE_METRIC_3D
+                           * localNz
+#endif
+            ;
+        const IND(temp, bndry->x, bndry->y, 0);
+        IND3D(temp3d, bndry->x, bndry->y, 0);
+        const IndMetric i0{temp - 1 * offset};
+#if !BOUT_USE_METRIC_3D
+        const Ind3D i03d{temp3d - 1 * offset * localNz};
+#endif
+        const IndMetric i1{temp - 2 * offset};
+#if !BOUT_USE_METRIC_3D
+        const Ind3D i13d{temp3d - 2 * offset * localNz};
+#endif
+
+#if BOUT_USE_METRIC_3D
+        for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#else
+    const int iz = 0;
+#endif
+          if (stagger == 0) {
+            BoutReal total_offset = 0;
+            BoutReal offset = coords_field[i0 + iz];
+            spacing.f0 = total_offset + offset / 2;
+            total_offset += offset;
+            offset = coords_field[i1 + iz];
+            spacing.f1 = total_offset + offset / 2;
+          } else {
+            spacing.f0 = coords_field[i0 + iz];
+            spacing.f1 = spacing.f0 + coords_field[i1 + iz];
+          }
+
+          // With free (and neumann) the value is not set if the point is
+          // evolved and it is on the boundary.
+          for (int i = 0; i < bndry->width; i++) {
+            IndMetric icm{temp + IndMetric(i * offset)};
+#if BOUT_USE_METRIC_3D
+            icm += iz;
+            IndMetric ic = icm;
+#else
+      Ind3D ic{temp3d + Ind3D(i * offset * localNz)};
+#endif
+            vec2 facs;
+            if (stagger == 0) {
+              BoutReal to_add = coords_field[icm] / 2;
+              spacing += to_add;
+              facs = calc_interp_to_stencil(spacing);
+              spacing += to_add;
+            } else {
+              facs = calc_interp_to_stencil(spacing);
+              spacing += coords_field[icm];
+            }
+#if !BOUT_USE_METRIC_3D
+            for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#endif
+#if BOUT_USE_METRIC_3D
+#define MAKE3D(x) x
+#else
+#define MAKE3D(x) x##3d
+#endif
+              const BoutReal val = f[MAKE3D(i0) + iz];
+              f[ic] = facs.f0 * val + facs.f1 * f[MAKE3D(i1) + iz];
+            }
+          }
         }
-      } // stagger != 0
-      // With neumann (and free) the value is not set if the point is
-      // evolved and it is on the boundary.
-      for (int i = 0; i < bndry->width; i++) {
-        Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      }
+
+      BoundaryOp* BoundaryFreeNonUniform_O2::clone(BoundaryRegion * region,
+                                                   const std::list<std::string>& args) {
+
+        std::shared_ptr<FieldGenerator> newgen;
+        if (!args.empty()) {
+          // First argument should be an expression
+          newgen = FieldFactory::get()->parse(args.front());
+        }
+        return new BoundaryFreeNonUniform_O2(region, newgen);
+      }
+
+      vec2 BoundaryFreeNonUniform_O2::calc_interp_to_stencil(const vec2& spacing) const {
         vec2 facs;
-        if (stagger == 0) {
-          BoutReal to_add = coords_field(ic.x, ic.y, iz) / 2;
-          spacing += to_add;
-          facs = calc_interp_to_stencil(spacing);
-          spacing += to_add;
-        } else {
-          if (stagger == -1) {
-            spacing += coords_field(ic.x, ic.y, iz);
-          }
-          facs = calc_interp_to_stencil(spacing);
-          if (stagger == 1) {
-            spacing += coords_field(ic.x, ic.y, iz);
-          }
-        }
-        const BoutReal val = (fg) ? vals[iz] : 0.0;
-        f(ic.x, ic.y, iz) = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz);
+        // Stencil Code
+        facs.f0 = -spacing.f1 / (spacing.f0 - spacing.f1);
+        facs.f1 = spacing.f0 / (spacing.f0 - spacing.f1);
+
+        return facs;
       }
-    }
-  }
-}
 
-#endif // BOUT_USE_METRIC_3D
+      void BoundaryDirichletNonUniform_O3::apply(Field3D & f, MAYBE_UNUSED(BoutReal t)) {
+        bndry->first();
+        Mesh* mesh = f.getMesh();
+        CELL_LOC loc = f.getLocation();
 
-BoundaryOp* BoundaryNeumannNonUniform_O2::clone(BoundaryRegion* region,
-                                                const std::list<std::string>& args) {
+        // Decide which generator to use
+        std::shared_ptr<FieldGenerator> fg = gen;
+        if (!fg) {
+          fg = f.getBndryGenerator(bndry->location);
+        }
 
-  std::shared_ptr<FieldGenerator> newgen;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryNeumannNonUniform_O2(region, newgen);
-}
+        std::vector<BoutReal> vals;
+        vals.reserve(mesh->LocalNz);
 
-vec2 BoundaryNeumannNonUniform_O2::calc_interp_to_stencil(const vec2& spacing) const {
-  vec2 facs;
-  // Stencil Code
-  facs.f0 = -spacing.f1;
-  facs.f1 = 1;
+        int x_boundary_offset = bndry->bx;
+        int y_boundary_offset = bndry->by;
+        int stagger = 0;
+        update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
 
-  return facs;
-}
+        for (; !bndry->isDone(); bndry->next1d()) {
+          if (fg) {
+            // Calculate the X and Y normalised values half-way between the guard cell and
+            // grid cell
+            const BoutReal xnorm =
+                0.5
+                * (mesh->GlobalX(bndry->x)                         // In the guard cell
+                   + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
+            const BoutReal ynorm =
+                TWOPI * 0.5
+                * (mesh->GlobalY(bndry->y)                         // In the guard cell
+                   + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
+            const BoutReal zfac = TWOPI / mesh->LocalNz;
+            for (int zk = 0; zk < mesh->LocalNz; zk++) {
+              vals[zk] = fg->generate(bout::generator::Context().set(
+                  "x", xnorm, "y", ynorm, "z", zfac * zk, "t", t));
+            }
+          }
 
+          vec3 spacing;
+
+          const Coordinates::FieldMetric& coords_field =
+              bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
+
+#if BOUT_USE_METRIC_3D
+          for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#else
+    const int iz = 0;
+#endif
+            const int localNy = mesh->LocalNy;
+            const int localNz = mesh->LocalNz;
+            const int offset = (bndry->bx * localNy + bndry->by)
+#if BOUT_USE_METRIC_3D
+                               * localNz
+#endif
+                ;
+            const IND(temp, bndry->x, bndry->y, 0);
+            IND3D(temp3d, bndry->x, bndry->y, 0);
+            IndMetric i1{temp - 1 * offset};
 #if !BOUT_USE_METRIC_3D
-
-void BoundaryFreeNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-
-    vec2 spacing;
-
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    const Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    const Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    if (stagger == 0) {
-      BoutReal total_offset = 0;
-      BoutReal offset;
-      offset = coords_field(i0.x, i0.y);
-      spacing.f0 = total_offset + offset / 2;
-      total_offset += offset;
-      offset = coords_field(i1.x, i1.y);
-      spacing.f1 = total_offset + offset / 2;
-      total_offset += offset;
-    } else {
-      spacing.f0 = coords_field(i0.x, i0.y);
-      spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
-    }
-
-    // With free and neumann the value is not set if the point is
-    // evolved and it is on the boundary.
-    for (int i = 0; i < bndry->width; i++) {
-      Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      vec2 facs;
-      if (stagger == 0) {
-        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
-        spacing += to_add;
-        facs = calc_interp_to_stencil(spacing);
-        spacing += to_add;
-      } else {
-        facs = calc_interp_to_stencil(spacing);
-        spacing += coords_field(ic.x, ic.y);
-      }
-      for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        f(ic.x, ic.y, iz) = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz);
-      }
-    }
-  }
-}
-
-#else // BOUT_USE_METRIC_3D
-
-void BoundaryFreeNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-
-    vec2 spacing;
-
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    const Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    const Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    for (int iz = 0; iz < mesh->LocalNz; iz++) {
-      if (stagger == 0) {
-        BoutReal total_offset = 0;
-        BoutReal offset;
-        offset = coords_field(i0.x, i0.y, iz);
-        spacing.f0 = total_offset + offset / 2;
-        total_offset += offset;
-        offset = coords_field(i1.x, i1.y, iz);
-        spacing.f1 = total_offset + offset / 2;
-        total_offset += offset;
-      } else {
-        spacing.f0 = coords_field(i0.x, i0.y, iz);
-        spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y, iz);
-      }
-
-      // With free (and neumann) the value is not set if the point is
-      // evolved and it is on the boundary.
-      for (int i = 0; i < bndry->width; i++) {
-        Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-        vec2 facs;
-        if (stagger == 0) {
-          BoutReal to_add = coords_field(ic.x, ic.y, iz) / 2;
-          spacing += to_add;
-          facs = calc_interp_to_stencil(spacing);
-          spacing += to_add;
-        } else {
-          facs = calc_interp_to_stencil(spacing);
-          spacing += coords_field(ic.x, ic.y, iz);
-        }
-        f(ic.x, ic.y, iz) = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz);
-      }
-    }
-  }
-}
-
-#endif // BOUT_USE_METRIC_3D
-
-BoundaryOp* BoundaryFreeNonUniform_O2::clone(BoundaryRegion* region,
-                                             const std::list<std::string>& args) {
-
-  std::shared_ptr<FieldGenerator> newgen;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryFreeNonUniform_O2(region, newgen);
-}
-
-vec2 BoundaryFreeNonUniform_O2::calc_interp_to_stencil(const vec2& spacing) const {
-  vec2 facs;
-  // Stencil Code
-  facs.f0 = -spacing.f1 / (spacing.f0 - spacing.f1);
-  facs.f1 = spacing.f0 / (spacing.f0 - spacing.f1);
-
-  return facs;
-}
-
+            Ind3D i13d{temp3d - 1 * offset * localNz};
+#endif
+            IndMetric i2{temp - 2 * offset};
 #if !BOUT_USE_METRIC_3D
+            Ind3D i23d{temp3d - 2 * offset * localNz};
+#endif
 
-void BoundaryDirichletNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
+            if (stagger == 0) {
+              spacing.f0 = 0;
+              BoutReal total_offset = 0;
+              BoutReal offset = coords_field[i1 + iz];
+              spacing.f1 = total_offset + offset / 2;
+              total_offset += offset;
+              offset = coords_field[i2 + iz];
+              spacing.f2 = total_offset + offset / 2;
+            } else {
+              spacing.f0 = 0;
+              spacing.f1 = spacing.f0 + coords_field[i1 + iz];
+              spacing.f2 = spacing.f1 + coords_field[i2 + iz];
+            }
+            if (stagger == -1) {
+#if BOUT_USE_METRIC_3D
+              i1 = temp - 2 * offset;
+#else
+      i13d = temp3d - 2 * offset;
+#endif
+#if BOUT_USE_METRIC_3D
+              i2 = temp - 3 * offset;
+#else
+      i23d = temp3d - 3 * offset;
+#endif
+            }
 
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
-
-  std::vector<BoutReal> vals;
-  vals.reserve(mesh->LocalNz);
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      // Calculate the X and Y normalised values half-way between the guard cell and
-      // grid cell
-      const BoutReal xnorm =
-          0.5
-          * (mesh->GlobalX(bndry->x)                         // In the guard cell
-             + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-      const BoutReal ynorm =
-          TWOPI * 0.5
-          * (mesh->GlobalY(bndry->y)                         // In the guard cell
-             + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-      const BoutReal zfac = TWOPI / mesh->LocalNz;
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm,
-                                                               "z", zfac * zk, "t", t));
-      }
-    }
-
-    vec3 spacing;
-
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    if (stagger == 0) {
-      BoutReal offset;
-      spacing.f0 = 0;
-      BoutReal total_offset = 0;
-      offset = coords_field(i1.x, i1.y);
-      spacing.f1 = total_offset + offset / 2;
-      total_offset += offset;
-      offset = coords_field(i2.x, i2.y);
-      spacing.f2 = total_offset + offset / 2;
-      total_offset += offset;
-    } else {
-      spacing.f0 = 0;
-      spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
-      spacing.f2 = spacing.f1 + coords_field(i2.x, i2.y);
-    }
-    if (stagger == -1) {
-      i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-      i2 = {bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
-    }
-    // with dirichlet, we specify the value on the boundary, even if
-    // the value is part of the evolving system.
-    for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
-      Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      vec3 facs;
-      if (stagger == 0) {
-        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
-        spacing += to_add;
-        facs = calc_interp_to_stencil(spacing);
-        spacing += to_add;
-      } else {
-        if (stagger == -1 && i != -1) {
-          spacing += coords_field(ic.x, ic.y);
-        }
-        facs = calc_interp_to_stencil(spacing);
-        if (stagger == 1) {
-          spacing += coords_field(ic.x, ic.y);
-        }
-      }
-      for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        const BoutReal val = (fg) ? vals[iz] : 0.0;
-        f(ic.x, ic.y, iz) =
-            facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz) + facs.f2 * f(i2.x, i2.y, iz);
-      }
-    }
-  }
-}
-
-#else // BOUT_USE_METRIC_3D
-
-void BoundaryDirichletNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
-
-  std::vector<BoutReal> vals;
-  vals.reserve(mesh->LocalNz);
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      ;
-      const BoutReal zfac = TWOPI / mesh->LocalNz;
-      // Calculate the X and Y normalised values half-way between the guard cell and
-      // grid cell
-      const BoutReal xnorm =
-          0.5
-          * (mesh->GlobalX(bndry->x)                         // In the guard cell
-             + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-      const BoutReal ynorm =
-          TWOPI * 0.5
-          * (mesh->GlobalY(bndry->y)                         // In the guard cell
-             + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm,
-                                                               "z", zfac * zk, "t", t));
-      }
-    }
-
-    vec3 spacing;
-
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    for (int iz = 0; iz < mesh->LocalNz; iz++) {
-      Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-      Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-      if (stagger == 0) {
-        BoutReal offset;
-        spacing.f0 = 0;
-        BoutReal total_offset = 0;
-        offset = coords_field(i1.x, i1.y, iz);
-        spacing.f1 = total_offset + offset / 2;
-        total_offset += offset;
-        offset = coords_field(i2.x, i2.y, iz);
-        spacing.f2 = total_offset + offset / 2;
-        total_offset += offset;
-      } else {
-        spacing.f0 = 0;
-        spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y, iz);
-        spacing.f2 = spacing.f1 + coords_field(i2.x, i2.y, iz);
-      }
-      if (stagger == -1) {
-        i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, iz};
-        i2 = {bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, iz};
-      }
-      // with dirichlet, we specify the value on the boundary, even if
-      // the value is part of the evolving system.
-      for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
-        Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, iz};
-        vec3 facs;
-        if (stagger == 0) {
-          BoutReal to_add = coords_field(ic.x, ic.y, iz) / 2;
-          spacing += to_add;
-          facs = calc_interp_to_stencil(spacing);
-          spacing += to_add;
-        } else {
-          if (stagger == -1 && i != -1) {
-            spacing += coords_field(ic.x, ic.y, iz);
-          }
-          facs = calc_interp_to_stencil(spacing);
-          if (stagger == 1) {
-            spacing += coords_field(ic.x, ic.y, iz);
-          }
-        }
-        const BoutReal val = (fg) ? vals[iz] : 0.0;
-        f(ic.x, ic.y, iz) =
-            facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz) + facs.f2 * f(i2.x, i2.y, iz);
-      }
-    }
-  }
-}
-
-#endif // BOUT_USE_METRIC_3D
-
-BoundaryOp* BoundaryDirichletNonUniform_O3::clone(BoundaryRegion* region,
-                                                  const std::list<std::string>& args) {
-
-  std::shared_ptr<FieldGenerator> newgen;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryDirichletNonUniform_O3(region, newgen);
-}
-
-vec3 BoundaryDirichletNonUniform_O3::calc_interp_to_stencil(const vec3& spacing) const {
-  vec3 facs;
-  // Stencil Code
-  facs.f0 =
-      spacing.f1 * spacing.f2 / ((spacing.f0 - spacing.f1) * (spacing.f0 - spacing.f2));
-  facs.f1 =
-      -spacing.f0 * spacing.f2 / ((spacing.f0 - spacing.f1) * (spacing.f1 - spacing.f2));
-  facs.f2 =
-      spacing.f0 * spacing.f1 / ((spacing.f0 - spacing.f2) * (spacing.f1 - spacing.f2));
-
-  return facs;
-}
-
+            // with dirichlet, we specify the value on the boundary, even if
+            // the value is part of the evolving system.
+            for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
+              IndMetric icm{temp + IndMetric(i * offset)};
+#if BOUT_USE_METRIC_3D
+              icm + iz;
+              IndMetric ic = icm;
+#else
+      Ind3D ic{temp3d + Ind3D(i * offset * localNz)};
+#endif
+              vec3 facs;
+              if (stagger == 0) {
+                BoutReal to_add = coords_field[icm] / 2;
+                spacing += to_add;
+                facs = calc_interp_to_stencil(spacing);
+                spacing += to_add;
+              } else {
+                if (stagger == -1 && i != -1) {
+                  spacing += coords_field[icm];
+                }
+                facs = calc_interp_to_stencil(spacing);
+                if (stagger == 1) {
+                  spacing += coords_field[icm];
+                }
+              }
 #if !BOUT_USE_METRIC_3D
-
-void BoundaryNeumannNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
-
-  std::vector<BoutReal> vals;
-  vals.reserve(mesh->LocalNz);
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      // Calculate the X and Y normalised values half-way between the guard cell and
-      // grid cell
-      const BoutReal xnorm =
-          0.5
-          * (mesh->GlobalX(bndry->x)                         // In the guard cell
-             + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-      const BoutReal ynorm =
-          TWOPI * 0.5
-          * (mesh->GlobalY(bndry->y)                         // In the guard cell
-             + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-      const BoutReal zfac = TWOPI / mesh->LocalNz;
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm,
-                                                               "z", zfac * zk, "t", t));
-      }
-    }
-
-    vec3 spacing;
-
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    if (stagger == 0) {
-      BoutReal offset;
-      spacing.f0 = 0;
-      BoutReal total_offset = 0;
-      offset = coords_field(i1.x, i1.y);
-      spacing.f1 = total_offset + offset / 2;
-      total_offset += offset;
-      offset = coords_field(i2.x, i2.y);
-      spacing.f2 = total_offset + offset / 2;
-      total_offset += offset;
-    } else {
-      spacing.f0 = 0;
-      // Check if we are staggered and also boundary in low
-      //  direction
-      // In the case of Neumann we have in this case two values
-      //  defined at the same point
-      if (stagger == -1
-          && ((bndry->bx && x_boundary_offset == -1)
-              || (bndry->by && y_boundary_offset == -1))) {
-        spacing.f1 = spacing.f0;
-        spacing.f2 = spacing.f1 + coords_field(i1.x, i1.y);
-      } else {
-        spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
-        spacing.f2 = spacing.f1 + coords_field(i2.x, i2.y);
-      }
-    }
-    // With free and neumann the value is not set if the point is
-    // evolved and it is on the boundary.
-    for (int i = 0; i < bndry->width; i++) {
-      Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      vec3 facs;
-      if (stagger == 0) {
-        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
-        spacing += to_add;
-        facs = calc_interp_to_stencil(spacing);
-        spacing += to_add;
-      } else {
-        if (stagger == -1) {
-          spacing += coords_field(ic.x, ic.y);
-        }
-        facs = calc_interp_to_stencil(spacing);
-        if (stagger == 1) {
-          spacing += coords_field(ic.x, ic.y);
-        }
-      }
-      for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        const BoutReal val = (fg) ? vals[iz] : 0.0;
-        f(ic.x, ic.y, iz) =
-            facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz) + facs.f2 * f(i2.x, i2.y, iz);
-      }
-    }
-  }
-}
-
-#else // BOUT_USE_METRIC_3D
-
-void BoundaryNeumannNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
-
-  std::vector<BoutReal> vals;
-  vals.reserve(mesh->LocalNz);
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      ;
-      const BoutReal zfac = TWOPI / mesh->LocalNz;
-      // Calculate the X and Y normalised values half-way between the guard cell and
-      // grid cell
-      const BoutReal xnorm =
-          0.5
-          * (mesh->GlobalX(bndry->x)                         // In the guard cell
-             + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-      const BoutReal ynorm =
-          TWOPI * 0.5
-          * (mesh->GlobalY(bndry->y)                         // In the guard cell
-             + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm,
-                                                               "z", zfac * zk, "t", t));
-      }
-    }
-
-    vec3 spacing;
-
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    for (int iz = 0; iz < mesh->LocalNz; iz++) {
-      if (stagger == 0) {
-        BoutReal offset;
-        spacing.f0 = 0;
-        BoutReal total_offset = 0;
-        offset = coords_field(i1.x, i1.y, iz);
-        spacing.f1 = total_offset + offset / 2;
-        total_offset += offset;
-        offset = coords_field(i2.x, i2.y, iz);
-        spacing.f2 = total_offset + offset / 2;
-        total_offset += offset;
-      } else { // stagger != 0
-        spacing.f0 = 0;
-        // Check if we are staggered and also boundary in low
-        //  direction
-        // In the case of Neumann we have in this case two values
-        //  defined at the same point
-        if (stagger == -1
-            && ((bndry->bx && x_boundary_offset == -1)
-                || (bndry->by && y_boundary_offset == -1))) {
-          spacing.f1 = spacing.f0;
-          spacing.f2 = spacing.f1 + coords_field(i1.x, i1.y, iz);
-        } else {
-          spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y, iz);
-          spacing.f2 = spacing.f1 + coords_field(i2.x, i2.y, iz);
-        }
-      } // stagger != 0
-      // With neumann (and free) the value is not set if the point is
-      // evolved and it is on the boundary.
-      for (int i = 0; i < bndry->width; i++) {
-        Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-        vec3 facs;
-        if (stagger == 0) {
-          BoutReal to_add = coords_field(ic.x, ic.y, iz) / 2;
-          spacing += to_add;
-          facs = calc_interp_to_stencil(spacing);
-          spacing += to_add;
-        } else {
-          if (stagger == -1) {
-            spacing += coords_field(ic.x, ic.y, iz);
-          }
-          facs = calc_interp_to_stencil(spacing);
-          if (stagger == 1) {
-            spacing += coords_field(ic.x, ic.y, iz);
+              for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#endif
+#if BOUT_USE_METRIC_3D
+#define MAKE3D(x) x
+#else
+#define MAKE3D(x) x##3d
+#endif
+                const BoutReal val = (fg) ? vals[iz] : 0.0;
+                f[ic] = facs.f0 * val + facs.f1 * f[MAKE3D(i1) + iz]
+                        + facs.f2 * f[MAKE3D(i2) + iz];
+              }
+            }
           }
         }
-        const BoutReal val = (fg) ? vals[iz] : 0.0;
-        f(ic.x, ic.y, iz) =
-            facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz) + facs.f2 * f(i2.x, i2.y, iz);
-      }
-    }
-  }
-}
 
-#endif // BOUT_USE_METRIC_3D
+        BoundaryOp* BoundaryDirichletNonUniform_O3::clone(
+            BoundaryRegion * region, const std::list<std::string>& args) {
 
-BoundaryOp* BoundaryNeumannNonUniform_O3::clone(BoundaryRegion* region,
-                                                const std::list<std::string>& args) {
+          std::shared_ptr<FieldGenerator> newgen;
+          if (!args.empty()) {
+            // First argument should be an expression
+            newgen = FieldFactory::get()->parse(args.front());
+          }
+          return new BoundaryDirichletNonUniform_O3(region, newgen);
+        }
 
-  std::shared_ptr<FieldGenerator> newgen;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryNeumannNonUniform_O3(region, newgen);
-}
+        vec3 BoundaryDirichletNonUniform_O3::calc_interp_to_stencil(const vec3& spacing)
+            const {
+          vec3 facs;
+          // Stencil Code
+          facs.f0 = spacing.f1 * spacing.f2
+                    / ((spacing.f0 - spacing.f1) * (spacing.f0 - spacing.f2));
+          facs.f1 = -spacing.f0 * spacing.f2
+                    / ((spacing.f0 - spacing.f1) * (spacing.f1 - spacing.f2));
+          facs.f2 = spacing.f0 * spacing.f1
+                    / ((spacing.f0 - spacing.f2) * (spacing.f1 - spacing.f2));
 
-vec3 BoundaryNeumannNonUniform_O3::calc_interp_to_stencil(const vec3& spacing) const {
-  vec3 facs;
-  // Stencil Code
-  facs.f0 = spacing.f1 * spacing.f2 / (2 * spacing.f0 - spacing.f1 - spacing.f2);
-  facs.f1 = -spacing.f2 * (2 * spacing.f0 - spacing.f2)
-            / ((spacing.f1 - spacing.f2) * (2 * spacing.f0 - spacing.f1 - spacing.f2));
-  facs.f2 = spacing.f1 * (2 * spacing.f0 - spacing.f1)
-            / ((spacing.f1 - spacing.f2) * (2 * spacing.f0 - spacing.f1 - spacing.f2));
+          return facs;
+        }
 
-  return facs;
-}
+        void BoundaryNeumannNonUniform_O3::apply(Field3D & f, MAYBE_UNUSED(BoutReal t)) {
+          bndry->first();
+          Mesh* mesh = f.getMesh();
+          CELL_LOC loc = f.getLocation();
 
+          // Decide which generator to use
+          std::shared_ptr<FieldGenerator> fg = gen;
+          if (!fg) {
+            fg = f.getBndryGenerator(bndry->location);
+          }
+
+          std::vector<BoutReal> vals;
+          vals.reserve(mesh->LocalNz);
+
+          int x_boundary_offset = bndry->bx;
+          int y_boundary_offset = bndry->by;
+          int stagger = 0;
+          update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
+
+          for (; !bndry->isDone(); bndry->next1d()) {
+            if (fg) {
+              // Calculate the X and Y normalised values half-way between the guard cell
+              // and grid cell
+              const BoutReal xnorm =
+                  0.5
+                  * (mesh->GlobalX(bndry->x)                         // In the guard cell
+                     + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
+              const BoutReal ynorm =
+                  TWOPI * 0.5
+                  * (mesh->GlobalY(bndry->y)                         // In the guard cell
+                     + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
+              const BoutReal zfac = TWOPI / mesh->LocalNz;
+              for (int zk = 0; zk < mesh->LocalNz; zk++) {
+                vals[zk] = fg->generate(bout::generator::Context().set(
+                    "x", xnorm, "y", ynorm, "z", zfac * zk, "t", t));
+              }
+            }
+
+            vec3 spacing;
+
+            const Coordinates::FieldMetric& coords_field =
+                bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
+
+            const int localNy = mesh->LocalNy;
+            const int localNz = mesh->LocalNz;
+            const int offset = (bndry->bx * localNy + bndry->by)
+#if BOUT_USE_METRIC_3D
+                               * localNz
+#endif
+                ;
+            const IND(temp, bndry->x, bndry->y, 0);
+            IND3D(temp3d, bndry->x, bndry->y, 0);
+            IndMetric i1{temp - 1 * offset};
 #if !BOUT_USE_METRIC_3D
-
-void BoundaryFreeNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-
-    vec3 spacing;
-
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    const Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    const Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    const Indices i2{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
-    if (stagger == 0) {
-      BoutReal total_offset = 0;
-      BoutReal offset;
-      offset = coords_field(i0.x, i0.y);
-      spacing.f0 = total_offset + offset / 2;
-      total_offset += offset;
-      offset = coords_field(i1.x, i1.y);
-      spacing.f1 = total_offset + offset / 2;
-      total_offset += offset;
-      offset = coords_field(i2.x, i2.y);
-      spacing.f2 = total_offset + offset / 2;
-      total_offset += offset;
-    } else {
-      spacing.f0 = coords_field(i0.x, i0.y);
-      spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
-      spacing.f2 = spacing.f1 + coords_field(i2.x, i2.y);
-    }
-
-    // With free and neumann the value is not set if the point is
-    // evolved and it is on the boundary.
-    for (int i = 0; i < bndry->width; i++) {
-      Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      vec3 facs;
-      if (stagger == 0) {
-        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
-        spacing += to_add;
-        facs = calc_interp_to_stencil(spacing);
-        spacing += to_add;
-      } else {
-        facs = calc_interp_to_stencil(spacing);
-        spacing += coords_field(ic.x, ic.y);
-      }
-      for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        f(ic.x, ic.y, iz) = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz)
-                            + facs.f2 * f(i2.x, i2.y, iz);
-      }
-    }
-  }
-}
-
-#else // BOUT_USE_METRIC_3D
-
-void BoundaryFreeNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-
-    vec3 spacing;
-
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    const Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    const Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    const Indices i2{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
-    for (int iz = 0; iz < mesh->LocalNz; iz++) {
-      if (stagger == 0) {
-        BoutReal total_offset = 0;
-        BoutReal offset;
-        offset = coords_field(i0.x, i0.y, iz);
-        spacing.f0 = total_offset + offset / 2;
-        total_offset += offset;
-        offset = coords_field(i1.x, i1.y, iz);
-        spacing.f1 = total_offset + offset / 2;
-        total_offset += offset;
-        offset = coords_field(i2.x, i2.y, iz);
-        spacing.f2 = total_offset + offset / 2;
-        total_offset += offset;
-      } else {
-        spacing.f0 = coords_field(i0.x, i0.y, iz);
-        spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y, iz);
-        spacing.f2 = spacing.f1 + coords_field(i2.x, i2.y, iz);
-      }
-
-      // With free (and neumann) the value is not set if the point is
-      // evolved and it is on the boundary.
-      for (int i = 0; i < bndry->width; i++) {
-        Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-        vec3 facs;
-        if (stagger == 0) {
-          BoutReal to_add = coords_field(ic.x, ic.y, iz) / 2;
-          spacing += to_add;
-          facs = calc_interp_to_stencil(spacing);
-          spacing += to_add;
-        } else {
-          facs = calc_interp_to_stencil(spacing);
-          spacing += coords_field(ic.x, ic.y, iz);
-        }
-        f(ic.x, ic.y, iz) = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz)
-                            + facs.f2 * f(i2.x, i2.y, iz);
-      }
-    }
-  }
-}
-
-#endif // BOUT_USE_METRIC_3D
-
-BoundaryOp* BoundaryFreeNonUniform_O3::clone(BoundaryRegion* region,
-                                             const std::list<std::string>& args) {
-
-  std::shared_ptr<FieldGenerator> newgen;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryFreeNonUniform_O3(region, newgen);
-}
-
-vec3 BoundaryFreeNonUniform_O3::calc_interp_to_stencil(const vec3& spacing) const {
-  vec3 facs;
-  // Stencil Code
-  facs.f0 =
-      spacing.f1 * spacing.f2 / ((spacing.f0 - spacing.f1) * (spacing.f0 - spacing.f2));
-  facs.f1 =
-      -spacing.f0 * spacing.f2 / ((spacing.f0 - spacing.f1) * (spacing.f1 - spacing.f2));
-  facs.f2 =
-      spacing.f0 * spacing.f1 / ((spacing.f0 - spacing.f2) * (spacing.f1 - spacing.f2));
-
-  return facs;
-}
-
+            Ind3D i13d{temp3d - 1 * offset * localNz};
+#endif
+            IndMetric i2{temp - 2 * offset};
 #if !BOUT_USE_METRIC_3D
+            Ind3D i23d{temp3d - 2 * offset * localNz};
+#endif
 
-void BoundaryDirichletNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
-
-  std::vector<BoutReal> vals;
-  vals.reserve(mesh->LocalNz);
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      // Calculate the X and Y normalised values half-way between the guard cell and
-      // grid cell
-      const BoutReal xnorm =
-          0.5
-          * (mesh->GlobalX(bndry->x)                         // In the guard cell
-             + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-      const BoutReal ynorm =
-          TWOPI * 0.5
-          * (mesh->GlobalY(bndry->y)                         // In the guard cell
-             + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-      const BoutReal zfac = TWOPI / mesh->LocalNz;
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm,
-                                                               "z", zfac * zk, "t", t));
-      }
-    }
-
-    vec4 spacing;
-
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    Indices i3{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
-    if (stagger == 0) {
-      BoutReal offset;
-      spacing.f0 = 0;
-      BoutReal total_offset = 0;
-      offset = coords_field(i1.x, i1.y);
-      spacing.f1 = total_offset + offset / 2;
-      total_offset += offset;
-      offset = coords_field(i2.x, i2.y);
-      spacing.f2 = total_offset + offset / 2;
-      total_offset += offset;
-      offset = coords_field(i3.x, i3.y);
-      spacing.f3 = total_offset + offset / 2;
-      total_offset += offset;
-    } else {
-      spacing.f0 = 0;
-      spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
-      spacing.f2 = spacing.f1 + coords_field(i2.x, i2.y);
-      spacing.f3 = spacing.f2 + coords_field(i3.x, i3.y);
-    }
-    if (stagger == -1) {
-      i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-      i2 = {bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
-      i3 = {bndry->x - 4 * bndry->bx, bndry->y - 4 * bndry->by, 0};
-    }
-    // with dirichlet, we specify the value on the boundary, even if
-    // the value is part of the evolving system.
-    for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
-      Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      vec4 facs;
-      if (stagger == 0) {
-        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
-        spacing += to_add;
-        facs = calc_interp_to_stencil(spacing);
-        spacing += to_add;
-      } else {
-        if (stagger == -1 && i != -1) {
-          spacing += coords_field(ic.x, ic.y);
-        }
-        facs = calc_interp_to_stencil(spacing);
-        if (stagger == 1) {
-          spacing += coords_field(ic.x, ic.y);
-        }
-      }
-      for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        const BoutReal val = (fg) ? vals[iz] : 0.0;
-        f(ic.x, ic.y, iz) = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz)
-                            + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
-      }
-    }
-  }
-}
-
-#else // BOUT_USE_METRIC_3D
-
-void BoundaryDirichletNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
-
-  std::vector<BoutReal> vals;
-  vals.reserve(mesh->LocalNz);
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      ;
-      const BoutReal zfac = TWOPI / mesh->LocalNz;
-      // Calculate the X and Y normalised values half-way between the guard cell and
-      // grid cell
-      const BoutReal xnorm =
-          0.5
-          * (mesh->GlobalX(bndry->x)                         // In the guard cell
-             + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-      const BoutReal ynorm =
-          TWOPI * 0.5
-          * (mesh->GlobalY(bndry->y)                         // In the guard cell
-             + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm,
-                                                               "z", zfac * zk, "t", t));
-      }
-    }
-
-    vec4 spacing;
-
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    for (int iz = 0; iz < mesh->LocalNz; iz++) {
-      Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-      Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-      Indices i3{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
-      if (stagger == 0) {
-        BoutReal offset;
-        spacing.f0 = 0;
-        BoutReal total_offset = 0;
-        offset = coords_field(i1.x, i1.y, iz);
-        spacing.f1 = total_offset + offset / 2;
-        total_offset += offset;
-        offset = coords_field(i2.x, i2.y, iz);
-        spacing.f2 = total_offset + offset / 2;
-        total_offset += offset;
-        offset = coords_field(i3.x, i3.y, iz);
-        spacing.f3 = total_offset + offset / 2;
-        total_offset += offset;
-      } else {
-        spacing.f0 = 0;
-        spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y, iz);
-        spacing.f2 = spacing.f1 + coords_field(i2.x, i2.y, iz);
-        spacing.f3 = spacing.f2 + coords_field(i3.x, i3.y, iz);
-      }
-      if (stagger == -1) {
-        i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, iz};
-        i2 = {bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, iz};
-        i3 = {bndry->x - 4 * bndry->bx, bndry->y - 4 * bndry->by, iz};
-      }
-      // with dirichlet, we specify the value on the boundary, even if
-      // the value is part of the evolving system.
-      for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
-        Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, iz};
-        vec4 facs;
-        if (stagger == 0) {
-          BoutReal to_add = coords_field(ic.x, ic.y, iz) / 2;
-          spacing += to_add;
-          facs = calc_interp_to_stencil(spacing);
-          spacing += to_add;
-        } else {
-          if (stagger == -1 && i != -1) {
-            spacing += coords_field(ic.x, ic.y, iz);
-          }
-          facs = calc_interp_to_stencil(spacing);
-          if (stagger == 1) {
-            spacing += coords_field(ic.x, ic.y, iz);
-          }
-        }
-        const BoutReal val = (fg) ? vals[iz] : 0.0;
-        f(ic.x, ic.y, iz) = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz)
-                            + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
-      }
-    }
-  }
-}
-
-#endif // BOUT_USE_METRIC_3D
-
-BoundaryOp* BoundaryDirichletNonUniform_O4::clone(BoundaryRegion* region,
-                                                  const std::list<std::string>& args) {
-
-  std::shared_ptr<FieldGenerator> newgen;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryDirichletNonUniform_O4(region, newgen);
-}
-
-vec4 BoundaryDirichletNonUniform_O4::calc_interp_to_stencil(const vec4& spacing) const {
-  vec4 facs;
-  // Stencil Code
-  facs.f0 = -spacing.f1 * spacing.f2 * spacing.f3
-            / ((spacing.f0 - spacing.f1) * (spacing.f0 - spacing.f2)
-               * (spacing.f0 - spacing.f3));
-  facs.f1 = spacing.f0 * spacing.f2 * spacing.f3
-            / ((spacing.f0 - spacing.f1) * (spacing.f1 - spacing.f2)
-               * (spacing.f1 - spacing.f3));
-  facs.f2 = -spacing.f0 * spacing.f1 * spacing.f3
-            / ((spacing.f0 - spacing.f2) * (spacing.f1 - spacing.f2)
-               * (spacing.f2 - spacing.f3));
-  facs.f3 = spacing.f0 * spacing.f1 * spacing.f2
-            / ((spacing.f0 - spacing.f3) * (spacing.f1 - spacing.f3)
-               * (spacing.f2 - spacing.f3));
-
-  return facs;
-}
-
+#if BOUT_USE_METRIC_3D
+            for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#else
+    const int iz = 0;
+#endif
+              if (stagger == 0) {
+                spacing.f0 = 0;
+                BoutReal total_offset = 0;
+                BoutReal offset = coords_field[i1 + iz];
+                spacing.f1 = total_offset + offset / 2;
+                total_offset += offset;
+                offset = coords_field[i2 + iz];
+                spacing.f2 = total_offset + offset / 2;
+              } else { // stagger != 0
+                spacing.f0 = 0;
+                // Check if we are staggered and also boundary in low
+                //  direction
+                // In the case of Neumann we have in this case two values
+                //  defined at the same point
+                if (stagger == -1
+                    && ((bndry->bx && x_boundary_offset == -1)
+                        || (bndry->by && y_boundary_offset == -1))) {
+                  spacing.f1 = spacing.f0;
+                  spacing.f2 = spacing.f1 + coords_field[i1 + iz];
+                } else {
+                  spacing.f1 = spacing.f0 + coords_field[i1 + iz];
+                  spacing.f2 = spacing.f1 + coords_field[i2 + iz];
+                }
+              } // stagger != 0
+              // With neumann (and free) the value is not set if the point is
+              // evolved and it is on the boundary.
+              for (int i = 0; i < bndry->width; i++) {
+                IndMetric icm{temp + IndMetric(i * offset)};
+#if BOUT_USE_METRIC_3D
+                icm += iz;
+                IndMetric ic = icm;
+#else
+      Ind3D ic{temp3d + Ind3D(i * offset * localNz)};
+#endif
+                vec3 facs;
+                if (stagger == 0) {
+                  BoutReal to_add = coords_field[icm] / 2;
+                  spacing += to_add;
+                  facs = calc_interp_to_stencil(spacing);
+                  spacing += to_add;
+                } else {
+                  if (stagger == -1) {
+                    spacing += coords_field[icm];
+                  }
+                  facs = calc_interp_to_stencil(spacing);
+                  if (stagger == 1) {
+                    spacing += coords_field[icm];
+                  }
+                }
 #if !BOUT_USE_METRIC_3D
-
-void BoundaryNeumannNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
-
-  std::vector<BoutReal> vals;
-  vals.reserve(mesh->LocalNz);
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      // Calculate the X and Y normalised values half-way between the guard cell and
-      // grid cell
-      const BoutReal xnorm =
-          0.5
-          * (mesh->GlobalX(bndry->x)                         // In the guard cell
-             + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-      const BoutReal ynorm =
-          TWOPI * 0.5
-          * (mesh->GlobalY(bndry->y)                         // In the guard cell
-             + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-      const BoutReal zfac = TWOPI / mesh->LocalNz;
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm,
-                                                               "z", zfac * zk, "t", t));
-      }
-    }
-
-    vec4 spacing;
-
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    Indices i3{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
-    if (stagger == 0) {
-      BoutReal offset;
-      spacing.f0 = 0;
-      BoutReal total_offset = 0;
-      offset = coords_field(i1.x, i1.y);
-      spacing.f1 = total_offset + offset / 2;
-      total_offset += offset;
-      offset = coords_field(i2.x, i2.y);
-      spacing.f2 = total_offset + offset / 2;
-      total_offset += offset;
-      offset = coords_field(i3.x, i3.y);
-      spacing.f3 = total_offset + offset / 2;
-      total_offset += offset;
-    } else {
-      spacing.f0 = 0;
-      // Check if we are staggered and also boundary in low
-      //  direction
-      // In the case of Neumann we have in this case two values
-      //  defined at the same point
-      if (stagger == -1
-          && ((bndry->bx && x_boundary_offset == -1)
-              || (bndry->by && y_boundary_offset == -1))) {
-        spacing.f1 = spacing.f0;
-        spacing.f2 = spacing.f1 + coords_field(i1.x, i1.y);
-        spacing.f3 = spacing.f2 + coords_field(i2.x, i2.y);
-      } else {
-        spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
-        spacing.f2 = spacing.f1 + coords_field(i2.x, i2.y);
-        spacing.f3 = spacing.f2 + coords_field(i3.x, i3.y);
-      }
-    }
-    // With free and neumann the value is not set if the point is
-    // evolved and it is on the boundary.
-    for (int i = 0; i < bndry->width; i++) {
-      Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      vec4 facs;
-      if (stagger == 0) {
-        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
-        spacing += to_add;
-        facs = calc_interp_to_stencil(spacing);
-        spacing += to_add;
-      } else {
-        if (stagger == -1) {
-          spacing += coords_field(ic.x, ic.y);
-        }
-        facs = calc_interp_to_stencil(spacing);
-        if (stagger == 1) {
-          spacing += coords_field(ic.x, ic.y);
-        }
-      }
-      for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        const BoutReal val = (fg) ? vals[iz] : 0.0;
-        f(ic.x, ic.y, iz) = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz)
-                            + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
-      }
-    }
-  }
-}
-
-#else // BOUT_USE_METRIC_3D
-
-void BoundaryNeumannNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
-
-  std::vector<BoutReal> vals;
-  vals.reserve(mesh->LocalNz);
-
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-
-  for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      ;
-      const BoutReal zfac = TWOPI / mesh->LocalNz;
-      // Calculate the X and Y normalised values half-way between the guard cell and
-      // grid cell
-      const BoutReal xnorm =
-          0.5
-          * (mesh->GlobalX(bndry->x)                         // In the guard cell
-             + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-      const BoutReal ynorm =
-          TWOPI * 0.5
-          * (mesh->GlobalY(bndry->y)                         // In the guard cell
-             + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm,
-                                                               "z", zfac * zk, "t", t));
-      }
-    }
-
-    vec4 spacing;
-
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    Indices i3{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
-    for (int iz = 0; iz < mesh->LocalNz; iz++) {
-      if (stagger == 0) {
-        BoutReal offset;
-        spacing.f0 = 0;
-        BoutReal total_offset = 0;
-        offset = coords_field(i1.x, i1.y, iz);
-        spacing.f1 = total_offset + offset / 2;
-        total_offset += offset;
-        offset = coords_field(i2.x, i2.y, iz);
-        spacing.f2 = total_offset + offset / 2;
-        total_offset += offset;
-        offset = coords_field(i3.x, i3.y, iz);
-        spacing.f3 = total_offset + offset / 2;
-        total_offset += offset;
-      } else { // stagger != 0
-        spacing.f0 = 0;
-        // Check if we are staggered and also boundary in low
-        //  direction
-        // In the case of Neumann we have in this case two values
-        //  defined at the same point
-        if (stagger == -1
-            && ((bndry->bx && x_boundary_offset == -1)
-                || (bndry->by && y_boundary_offset == -1))) {
-          spacing.f1 = spacing.f0;
-          spacing.f2 = spacing.f1 + coords_field(i1.x, i1.y, iz);
-          spacing.f3 = spacing.f2 + coords_field(i2.x, i2.y, iz);
-        } else {
-          spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y, iz);
-          spacing.f2 = spacing.f1 + coords_field(i2.x, i2.y, iz);
-          spacing.f3 = spacing.f2 + coords_field(i3.x, i3.y, iz);
-        }
-      } // stagger != 0
-      // With neumann (and free) the value is not set if the point is
-      // evolved and it is on the boundary.
-      for (int i = 0; i < bndry->width; i++) {
-        Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-        vec4 facs;
-        if (stagger == 0) {
-          BoutReal to_add = coords_field(ic.x, ic.y, iz) / 2;
-          spacing += to_add;
-          facs = calc_interp_to_stencil(spacing);
-          spacing += to_add;
-        } else {
-          if (stagger == -1) {
-            spacing += coords_field(ic.x, ic.y, iz);
+                for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#endif
+#if BOUT_USE_METRIC_3D
+#define MAKE3D(x) x
+#else
+#define MAKE3D(x) x##3d
+#endif
+                  const BoutReal val = (fg) ? vals[iz] : 0.0;
+                  f[ic] = facs.f0 * val + facs.f1 * f[MAKE3D(i1) + iz]
+                          + facs.f2 * f[MAKE3D(i2) + iz];
+                }
+              }
+            }
           }
-          facs = calc_interp_to_stencil(spacing);
-          if (stagger == 1) {
-            spacing += coords_field(ic.x, ic.y, iz);
+
+          BoundaryOp* BoundaryNeumannNonUniform_O3::clone(
+              BoundaryRegion * region, const std::list<std::string>& args) {
+
+            std::shared_ptr<FieldGenerator> newgen;
+            if (!args.empty()) {
+              // First argument should be an expression
+              newgen = FieldFactory::get()->parse(args.front());
+            }
+            return new BoundaryNeumannNonUniform_O3(region, newgen);
           }
-        }
-        const BoutReal val = (fg) ? vals[iz] : 0.0;
-        f(ic.x, ic.y, iz) = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz)
-                            + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
-      }
-    }
-  }
-}
 
-#endif // BOUT_USE_METRIC_3D
+          vec3 BoundaryNeumannNonUniform_O3::calc_interp_to_stencil(const vec3& spacing)
+              const {
+            vec3 facs;
+            // Stencil Code
+            facs.f0 =
+                spacing.f1 * spacing.f2 / (2 * spacing.f0 - spacing.f1 - spacing.f2);
+            facs.f1 = -spacing.f2 * (2 * spacing.f0 - spacing.f2)
+                      / ((spacing.f1 - spacing.f2)
+                         * (2 * spacing.f0 - spacing.f1 - spacing.f2));
+            facs.f2 = spacing.f1 * (2 * spacing.f0 - spacing.f1)
+                      / ((spacing.f1 - spacing.f2)
+                         * (2 * spacing.f0 - spacing.f1 - spacing.f2));
 
-BoundaryOp* BoundaryNeumannNonUniform_O4::clone(BoundaryRegion* region,
-                                                const std::list<std::string>& args) {
+            return facs;
+          }
 
-  std::shared_ptr<FieldGenerator> newgen;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryNeumannNonUniform_O4(region, newgen);
-}
+          void BoundaryFreeNonUniform_O3::apply(Field3D & f, MAYBE_UNUSED(BoutReal t)) {
+            bndry->first();
+            Mesh* mesh = f.getMesh();
+            CELL_LOC loc = f.getLocation();
 
-vec4 BoundaryNeumannNonUniform_O4::calc_interp_to_stencil(const vec4& spacing) const {
-  vec4 facs;
-  // Stencil Code
-  facs.f0 =
-      -spacing.f1 * spacing.f2 * spacing.f3
-      / (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f1
-         - 2 * spacing.f0 * spacing.f2 - 2 * spacing.f0 * spacing.f3
-         + spacing.f1 * spacing.f2 + spacing.f1 * spacing.f3 + spacing.f2 * spacing.f3);
-  facs.f1 = spacing.f2 * spacing.f3
-            * (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f2
-               - 2 * spacing.f0 * spacing.f3 + spacing.f2 * spacing.f3)
-            / ((spacing.f1 - spacing.f2) * (spacing.f1 - spacing.f3)
-               * (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f1
-                  - 2 * spacing.f0 * spacing.f2 - 2 * spacing.f0 * spacing.f3
-                  + spacing.f1 * spacing.f2 + spacing.f1 * spacing.f3
-                  + spacing.f2 * spacing.f3));
-  facs.f2 = -spacing.f1 * spacing.f3
-            * (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f1
-               - 2 * spacing.f0 * spacing.f3 + spacing.f1 * spacing.f3)
-            / ((spacing.f1 - spacing.f2) * (spacing.f2 - spacing.f3)
-               * (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f1
-                  - 2 * spacing.f0 * spacing.f2 - 2 * spacing.f0 * spacing.f3
-                  + spacing.f1 * spacing.f2 + spacing.f1 * spacing.f3
-                  + spacing.f2 * spacing.f3));
-  facs.f3 = spacing.f1 * spacing.f2
-            * (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f1
-               - 2 * spacing.f0 * spacing.f2 + spacing.f1 * spacing.f2)
-            / ((spacing.f1 - spacing.f3) * (spacing.f2 - spacing.f3)
-               * (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f1
-                  - 2 * spacing.f0 * spacing.f2 - 2 * spacing.f0 * spacing.f3
-                  + spacing.f1 * spacing.f2 + spacing.f1 * spacing.f3
-                  + spacing.f2 * spacing.f3));
+            int x_boundary_offset = bndry->bx;
+            int y_boundary_offset = bndry->by;
+            int stagger = 0;
+            update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
 
-  return facs;
-}
+            for (; !bndry->isDone(); bndry->next1d()) {
 
+              vec3 spacing;
+
+              const Coordinates::FieldMetric& coords_field =
+                  bndry->by != 0 ? mesh->getCoordinates()->dy
+                                 : mesh->getCoordinates()->dx;
+
+              const int localNy = mesh->LocalNy;
+              const int localNz = mesh->LocalNz;
+              const int offset = (bndry->bx * localNy + bndry->by)
+#if BOUT_USE_METRIC_3D
+                                 * localNz
+#endif
+                  ;
+              const IND(temp, bndry->x, bndry->y, 0);
+              IND3D(temp3d, bndry->x, bndry->y, 0);
+              const IndMetric i0{temp - 1 * offset};
 #if !BOUT_USE_METRIC_3D
+              const Ind3D i03d{temp3d - 1 * offset * localNz};
+#endif
+              const IndMetric i1{temp - 2 * offset};
+#if !BOUT_USE_METRIC_3D
+              const Ind3D i13d{temp3d - 2 * offset * localNz};
+#endif
+              const IndMetric i2{temp - 3 * offset};
+#if !BOUT_USE_METRIC_3D
+              const Ind3D i23d{temp3d - 3 * offset * localNz};
+#endif
 
-void BoundaryFreeNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
+#if BOUT_USE_METRIC_3D
+              for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#else
+    const int iz = 0;
+#endif
+                if (stagger == 0) {
+                  BoutReal total_offset = 0;
+                  BoutReal offset = coords_field[i0 + iz];
+                  spacing.f0 = total_offset + offset / 2;
+                  total_offset += offset;
+                  offset = coords_field[i1 + iz];
+                  spacing.f1 = total_offset + offset / 2;
+                  total_offset += offset;
+                  offset = coords_field[i2 + iz];
+                  spacing.f2 = total_offset + offset / 2;
+                } else {
+                  spacing.f0 = coords_field[i0 + iz];
+                  spacing.f1 = spacing.f0 + coords_field[i1 + iz];
+                  spacing.f2 = spacing.f1 + coords_field[i2 + iz];
+                }
 
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
+                // With free (and neumann) the value is not set if the point is
+                // evolved and it is on the boundary.
+                for (int i = 0; i < bndry->width; i++) {
+                  IndMetric icm{temp + IndMetric(i * offset)};
+#if BOUT_USE_METRIC_3D
+                  icm += iz;
+                  IndMetric ic = icm;
+#else
+      Ind3D ic{temp3d + Ind3D(i * offset * localNz)};
+#endif
+                  vec3 facs;
+                  if (stagger == 0) {
+                    BoutReal to_add = coords_field[icm] / 2;
+                    spacing += to_add;
+                    facs = calc_interp_to_stencil(spacing);
+                    spacing += to_add;
+                  } else {
+                    facs = calc_interp_to_stencil(spacing);
+                    spacing += coords_field[icm];
+                  }
+#if !BOUT_USE_METRIC_3D
+                  for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#endif
+#if BOUT_USE_METRIC_3D
+#define MAKE3D(x) x
+#else
+#define MAKE3D(x) x##3d
+#endif
+                    const BoutReal val = f[MAKE3D(i0) + iz];
+                    f[ic] = facs.f0 * val + facs.f1 * f[MAKE3D(i1) + iz]
+                            + facs.f2 * f[MAKE3D(i2) + iz];
+                  }
+                }
+              }
+            }
 
-  for (; !bndry->isDone(); bndry->next1d()) {
+            BoundaryOp* BoundaryFreeNonUniform_O3::clone(
+                BoundaryRegion * region, const std::list<std::string>& args) {
 
-    vec4 spacing;
+              std::shared_ptr<FieldGenerator> newgen;
+              if (!args.empty()) {
+                // First argument should be an expression
+                newgen = FieldFactory::get()->parse(args.front());
+              }
+              return new BoundaryFreeNonUniform_O3(region, newgen);
+            }
 
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    const Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    const Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    const Indices i2{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
-    const Indices i3{bndry->x - 4 * bndry->bx, bndry->y - 4 * bndry->by, 0};
-    if (stagger == 0) {
-      BoutReal total_offset = 0;
-      BoutReal offset;
-      offset = coords_field(i0.x, i0.y);
-      spacing.f0 = total_offset + offset / 2;
-      total_offset += offset;
-      offset = coords_field(i1.x, i1.y);
-      spacing.f1 = total_offset + offset / 2;
-      total_offset += offset;
-      offset = coords_field(i2.x, i2.y);
-      spacing.f2 = total_offset + offset / 2;
-      total_offset += offset;
-      offset = coords_field(i3.x, i3.y);
-      spacing.f3 = total_offset + offset / 2;
-      total_offset += offset;
-    } else {
-      spacing.f0 = coords_field(i0.x, i0.y);
-      spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
-      spacing.f2 = spacing.f1 + coords_field(i2.x, i2.y);
-      spacing.f3 = spacing.f2 + coords_field(i3.x, i3.y);
-    }
+            vec3 BoundaryFreeNonUniform_O3::calc_interp_to_stencil(const vec3& spacing)
+                const {
+              vec3 facs;
+              // Stencil Code
+              facs.f0 = spacing.f1 * spacing.f2
+                        / ((spacing.f0 - spacing.f1) * (spacing.f0 - spacing.f2));
+              facs.f1 = -spacing.f0 * spacing.f2
+                        / ((spacing.f0 - spacing.f1) * (spacing.f1 - spacing.f2));
+              facs.f2 = spacing.f0 * spacing.f1
+                        / ((spacing.f0 - spacing.f2) * (spacing.f1 - spacing.f2));
 
-    // With free and neumann the value is not set if the point is
-    // evolved and it is on the boundary.
-    for (int i = 0; i < bndry->width; i++) {
-      Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      vec4 facs;
-      if (stagger == 0) {
-        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
-        spacing += to_add;
-        facs = calc_interp_to_stencil(spacing);
-        spacing += to_add;
-      } else {
-        facs = calc_interp_to_stencil(spacing);
-        spacing += coords_field(ic.x, ic.y);
-      }
-      for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        f(ic.x, ic.y, iz) = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz)
-                            + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
-      }
-    }
-  }
-}
+              return facs;
+            }
 
-#else // BOUT_USE_METRIC_3D
+            void BoundaryDirichletNonUniform_O4::apply(Field3D & f,
+                                                       MAYBE_UNUSED(BoutReal t)) {
+              bndry->first();
+              Mesh* mesh = f.getMesh();
+              CELL_LOC loc = f.getLocation();
 
-void BoundaryFreeNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
-  bndry->first();
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
+              // Decide which generator to use
+              std::shared_ptr<FieldGenerator> fg = gen;
+              if (!fg) {
+                fg = f.getBndryGenerator(bndry->location);
+              }
 
-  int x_boundary_offset = bndry->bx;
-  int y_boundary_offset = bndry->by;
-  int stagger = 0;
-  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
+              std::vector<BoutReal> vals;
+              vals.reserve(mesh->LocalNz);
 
-  for (; !bndry->isDone(); bndry->next1d()) {
+              int x_boundary_offset = bndry->bx;
+              int y_boundary_offset = bndry->by;
+              int stagger = 0;
+              update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
 
-    vec4 spacing;
+              for (; !bndry->isDone(); bndry->next1d()) {
+                if (fg) {
+                  // Calculate the X and Y normalised values half-way between the guard
+                  // cell and grid cell
+                  const BoutReal xnorm =
+                      0.5
+                      * (mesh->GlobalX(bndry->x) // In the guard cell
+                         + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
+                  const BoutReal ynorm =
+                      TWOPI * 0.5
+                      * (mesh->GlobalY(bndry->y) // In the guard cell
+                         + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
+                  const BoutReal zfac = TWOPI / mesh->LocalNz;
+                  for (int zk = 0; zk < mesh->LocalNz; zk++) {
+                    vals[zk] = fg->generate(bout::generator::Context().set(
+                        "x", xnorm, "y", ynorm, "z", zfac * zk, "t", t));
+                  }
+                }
 
-    const Coordinates::FieldMetric& coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-    const Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    const Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    const Indices i2{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
-    const Indices i3{bndry->x - 4 * bndry->bx, bndry->y - 4 * bndry->by, 0};
-    for (int iz = 0; iz < mesh->LocalNz; iz++) {
-      if (stagger == 0) {
-        BoutReal total_offset = 0;
-        BoutReal offset;
-        offset = coords_field(i0.x, i0.y, iz);
-        spacing.f0 = total_offset + offset / 2;
-        total_offset += offset;
-        offset = coords_field(i1.x, i1.y, iz);
-        spacing.f1 = total_offset + offset / 2;
-        total_offset += offset;
-        offset = coords_field(i2.x, i2.y, iz);
-        spacing.f2 = total_offset + offset / 2;
-        total_offset += offset;
-        offset = coords_field(i3.x, i3.y, iz);
-        spacing.f3 = total_offset + offset / 2;
-        total_offset += offset;
-      } else {
-        spacing.f0 = coords_field(i0.x, i0.y, iz);
-        spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y, iz);
-        spacing.f2 = spacing.f1 + coords_field(i2.x, i2.y, iz);
-        spacing.f3 = spacing.f2 + coords_field(i3.x, i3.y, iz);
-      }
+                vec4 spacing;
 
-      // With free (and neumann) the value is not set if the point is
-      // evolved and it is on the boundary.
-      for (int i = 0; i < bndry->width; i++) {
-        Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-        vec4 facs;
-        if (stagger == 0) {
-          BoutReal to_add = coords_field(ic.x, ic.y, iz) / 2;
-          spacing += to_add;
-          facs = calc_interp_to_stencil(spacing);
-          spacing += to_add;
-        } else {
-          facs = calc_interp_to_stencil(spacing);
-          spacing += coords_field(ic.x, ic.y, iz);
-        }
-        f(ic.x, ic.y, iz) = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz)
-                            + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
-      }
-    }
-  }
-}
+                const Coordinates::FieldMetric& coords_field =
+                    bndry->by != 0 ? mesh->getCoordinates()->dy
+                                   : mesh->getCoordinates()->dx;
 
-#endif // BOUT_USE_METRIC_3D
+#if BOUT_USE_METRIC_3D
+                for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#else
+    const int iz = 0;
+#endif
+                  const int localNy = mesh->LocalNy;
+                  const int localNz = mesh->LocalNz;
+                  const int offset = (bndry->bx * localNy + bndry->by)
+#if BOUT_USE_METRIC_3D
+                                     * localNz
+#endif
+                      ;
+                  const IND(temp, bndry->x, bndry->y, 0);
+                  IND3D(temp3d, bndry->x, bndry->y, 0);
+                  IndMetric i1{temp - 1 * offset};
+#if !BOUT_USE_METRIC_3D
+                  Ind3D i13d{temp3d - 1 * offset * localNz};
+#endif
+                  IndMetric i2{temp - 2 * offset};
+#if !BOUT_USE_METRIC_3D
+                  Ind3D i23d{temp3d - 2 * offset * localNz};
+#endif
+                  IndMetric i3{temp - 3 * offset};
+#if !BOUT_USE_METRIC_3D
+                  Ind3D i33d{temp3d - 3 * offset * localNz};
+#endif
 
-BoundaryOp* BoundaryFreeNonUniform_O4::clone(BoundaryRegion* region,
-                                             const std::list<std::string>& args) {
+                  if (stagger == 0) {
+                    spacing.f0 = 0;
+                    BoutReal total_offset = 0;
+                    BoutReal offset = coords_field[i1 + iz];
+                    spacing.f1 = total_offset + offset / 2;
+                    total_offset += offset;
+                    offset = coords_field[i2 + iz];
+                    spacing.f2 = total_offset + offset / 2;
+                    total_offset += offset;
+                    offset = coords_field[i3 + iz];
+                    spacing.f3 = total_offset + offset / 2;
+                  } else {
+                    spacing.f0 = 0;
+                    spacing.f1 = spacing.f0 + coords_field[i1 + iz];
+                    spacing.f2 = spacing.f1 + coords_field[i2 + iz];
+                    spacing.f3 = spacing.f2 + coords_field[i3 + iz];
+                  }
+                  if (stagger == -1) {
+#if BOUT_USE_METRIC_3D
+                    i1 = temp - 2 * offset;
+#else
+      i13d = temp3d - 2 * offset;
+#endif
+#if BOUT_USE_METRIC_3D
+                    i2 = temp - 3 * offset;
+#else
+      i23d = temp3d - 3 * offset;
+#endif
+#if BOUT_USE_METRIC_3D
+                    i3 = temp - 4 * offset;
+#else
+      i33d = temp3d - 4 * offset;
+#endif
+                  }
 
-  std::shared_ptr<FieldGenerator> newgen;
-  if (!args.empty()) {
-    // First argument should be an expression
-    newgen = FieldFactory::get()->parse(args.front());
-  }
-  return new BoundaryFreeNonUniform_O4(region, newgen);
-}
+                  // with dirichlet, we specify the value on the boundary, even if
+                  // the value is part of the evolving system.
+                  for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
+                    IndMetric icm{temp + IndMetric(i * offset)};
+#if BOUT_USE_METRIC_3D
+                    icm + iz;
+                    IndMetric ic = icm;
+#else
+      Ind3D ic{temp3d + Ind3D(i * offset * localNz)};
+#endif
+                    vec4 facs;
+                    if (stagger == 0) {
+                      BoutReal to_add = coords_field[icm] / 2;
+                      spacing += to_add;
+                      facs = calc_interp_to_stencil(spacing);
+                      spacing += to_add;
+                    } else {
+                      if (stagger == -1 && i != -1) {
+                        spacing += coords_field[icm];
+                      }
+                      facs = calc_interp_to_stencil(spacing);
+                      if (stagger == 1) {
+                        spacing += coords_field[icm];
+                      }
+                    }
+#if !BOUT_USE_METRIC_3D
+                    for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#endif
+#if BOUT_USE_METRIC_3D
+#define MAKE3D(x) x
+#else
+#define MAKE3D(x) x##3d
+#endif
+                      const BoutReal val = (fg) ? vals[iz] : 0.0;
+                      f[ic] = facs.f0 * val + facs.f1 * f[MAKE3D(i1) + iz]
+                              + facs.f2 * f[MAKE3D(i2) + iz]
+                              + facs.f3 * f[MAKE3D(i3) + iz];
+                    }
+                  }
+                }
+              }
 
-vec4 BoundaryFreeNonUniform_O4::calc_interp_to_stencil(const vec4& spacing) const {
-  vec4 facs;
-  // Stencil Code
-  facs.f0 = -spacing.f1 * spacing.f2 * spacing.f3
-            / ((spacing.f0 - spacing.f1) * (spacing.f0 - spacing.f2)
-               * (spacing.f0 - spacing.f3));
-  facs.f1 = spacing.f0 * spacing.f2 * spacing.f3
-            / ((spacing.f0 - spacing.f1) * (spacing.f1 - spacing.f2)
-               * (spacing.f1 - spacing.f3));
-  facs.f2 = -spacing.f0 * spacing.f1 * spacing.f3
-            / ((spacing.f0 - spacing.f2) * (spacing.f1 - spacing.f2)
-               * (spacing.f2 - spacing.f3));
-  facs.f3 = spacing.f0 * spacing.f1 * spacing.f2
-            / ((spacing.f0 - spacing.f3) * (spacing.f1 - spacing.f3)
-               * (spacing.f2 - spacing.f3));
+              BoundaryOp* BoundaryDirichletNonUniform_O4::clone(
+                  BoundaryRegion * region, const std::list<std::string>& args) {
 
-  return facs;
-}
+                std::shared_ptr<FieldGenerator> newgen;
+                if (!args.empty()) {
+                  // First argument should be an expression
+                  newgen = FieldFactory::get()->parse(args.front());
+                }
+                return new BoundaryDirichletNonUniform_O4(region, newgen);
+              }
+
+              vec4 BoundaryDirichletNonUniform_O4::calc_interp_to_stencil(
+                  const vec4& spacing) const {
+                vec4 facs;
+                // Stencil Code
+                facs.f0 = -spacing.f1 * spacing.f2 * spacing.f3
+                          / ((spacing.f0 - spacing.f1) * (spacing.f0 - spacing.f2)
+                             * (spacing.f0 - spacing.f3));
+                facs.f1 = spacing.f0 * spacing.f2 * spacing.f3
+                          / ((spacing.f0 - spacing.f1) * (spacing.f1 - spacing.f2)
+                             * (spacing.f1 - spacing.f3));
+                facs.f2 = -spacing.f0 * spacing.f1 * spacing.f3
+                          / ((spacing.f0 - spacing.f2) * (spacing.f1 - spacing.f2)
+                             * (spacing.f2 - spacing.f3));
+                facs.f3 = spacing.f0 * spacing.f1 * spacing.f2
+                          / ((spacing.f0 - spacing.f3) * (spacing.f1 - spacing.f3)
+                             * (spacing.f2 - spacing.f3));
+
+                return facs;
+              }
+
+              void BoundaryNeumannNonUniform_O4::apply(Field3D & f,
+                                                       MAYBE_UNUSED(BoutReal t)) {
+                bndry->first();
+                Mesh* mesh = f.getMesh();
+                CELL_LOC loc = f.getLocation();
+
+                // Decide which generator to use
+                std::shared_ptr<FieldGenerator> fg = gen;
+                if (!fg) {
+                  fg = f.getBndryGenerator(bndry->location);
+                }
+
+                std::vector<BoutReal> vals;
+                vals.reserve(mesh->LocalNz);
+
+                int x_boundary_offset = bndry->bx;
+                int y_boundary_offset = bndry->by;
+                int stagger = 0;
+                update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger,
+                                       loc);
+
+                for (; !bndry->isDone(); bndry->next1d()) {
+                  if (fg) {
+                    // Calculate the X and Y normalised values half-way between the guard
+                    // cell and grid cell
+                    const BoutReal xnorm =
+                        0.5
+                        * (mesh->GlobalX(bndry->x) // In the guard cell
+                           + mesh->GlobalX(bndry->x
+                                           - x_boundary_offset)); // the grid cell
+                    const BoutReal ynorm =
+                        TWOPI * 0.5
+                        * (mesh->GlobalY(bndry->y) // In the guard cell
+                           + mesh->GlobalY(bndry->y
+                                           - y_boundary_offset)); // the grid cell
+                    const BoutReal zfac = TWOPI / mesh->LocalNz;
+                    for (int zk = 0; zk < mesh->LocalNz; zk++) {
+                      vals[zk] = fg->generate(bout::generator::Context().set(
+                          "x", xnorm, "y", ynorm, "z", zfac * zk, "t", t));
+                    }
+                  }
+
+                  vec4 spacing;
+
+                  const Coordinates::FieldMetric& coords_field =
+                      bndry->by != 0 ? mesh->getCoordinates()->dy
+                                     : mesh->getCoordinates()->dx;
+
+                  const int localNy = mesh->LocalNy;
+                  const int localNz = mesh->LocalNz;
+                  const int offset = (bndry->bx * localNy + bndry->by)
+#if BOUT_USE_METRIC_3D
+                                     * localNz
+#endif
+                      ;
+                  const IND(temp, bndry->x, bndry->y, 0);
+                  IND3D(temp3d, bndry->x, bndry->y, 0);
+                  IndMetric i1{temp - 1 * offset};
+#if !BOUT_USE_METRIC_3D
+                  Ind3D i13d{temp3d - 1 * offset * localNz};
+#endif
+                  IndMetric i2{temp - 2 * offset};
+#if !BOUT_USE_METRIC_3D
+                  Ind3D i23d{temp3d - 2 * offset * localNz};
+#endif
+                  IndMetric i3{temp - 3 * offset};
+#if !BOUT_USE_METRIC_3D
+                  Ind3D i33d{temp3d - 3 * offset * localNz};
+#endif
+
+#if BOUT_USE_METRIC_3D
+                  for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#else
+    const int iz = 0;
+#endif
+                    if (stagger == 0) {
+                      spacing.f0 = 0;
+                      BoutReal total_offset = 0;
+                      BoutReal offset = coords_field[i1 + iz];
+                      spacing.f1 = total_offset + offset / 2;
+                      total_offset += offset;
+                      offset = coords_field[i2 + iz];
+                      spacing.f2 = total_offset + offset / 2;
+                      total_offset += offset;
+                      offset = coords_field[i3 + iz];
+                      spacing.f3 = total_offset + offset / 2;
+                    } else { // stagger != 0
+                      spacing.f0 = 0;
+                      // Check if we are staggered and also boundary in low
+                      //  direction
+                      // In the case of Neumann we have in this case two values
+                      //  defined at the same point
+                      if (stagger == -1
+                          && ((bndry->bx && x_boundary_offset == -1)
+                              || (bndry->by && y_boundary_offset == -1))) {
+                        spacing.f1 = spacing.f0;
+                        spacing.f2 = spacing.f1 + coords_field[i1 + iz];
+                        spacing.f3 = spacing.f2 + coords_field[i2 + iz];
+                      } else {
+                        spacing.f1 = spacing.f0 + coords_field[i1 + iz];
+                        spacing.f2 = spacing.f1 + coords_field[i2 + iz];
+                        spacing.f3 = spacing.f2 + coords_field[i3 + iz];
+                      }
+                    } // stagger != 0
+                    // With neumann (and free) the value is not set if the point is
+                    // evolved and it is on the boundary.
+                    for (int i = 0; i < bndry->width; i++) {
+                      IndMetric icm{temp + IndMetric(i * offset)};
+#if BOUT_USE_METRIC_3D
+                      icm += iz;
+                      IndMetric ic = icm;
+#else
+      Ind3D ic{temp3d + Ind3D(i * offset * localNz)};
+#endif
+                      vec4 facs;
+                      if (stagger == 0) {
+                        BoutReal to_add = coords_field[icm] / 2;
+                        spacing += to_add;
+                        facs = calc_interp_to_stencil(spacing);
+                        spacing += to_add;
+                      } else {
+                        if (stagger == -1) {
+                          spacing += coords_field[icm];
+                        }
+                        facs = calc_interp_to_stencil(spacing);
+                        if (stagger == 1) {
+                          spacing += coords_field[icm];
+                        }
+                      }
+#if !BOUT_USE_METRIC_3D
+                      for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#endif
+#if BOUT_USE_METRIC_3D
+#define MAKE3D(x) x
+#else
+#define MAKE3D(x) x##3d
+#endif
+                        const BoutReal val = (fg) ? vals[iz] : 0.0;
+                        f[ic] = facs.f0 * val + facs.f1 * f[MAKE3D(i1) + iz]
+                                + facs.f2 * f[MAKE3D(i2) + iz]
+                                + facs.f3 * f[MAKE3D(i3) + iz];
+                      }
+                    }
+                  }
+                }
+
+                BoundaryOp* BoundaryNeumannNonUniform_O4::clone(
+                    BoundaryRegion * region, const std::list<std::string>& args) {
+
+                  std::shared_ptr<FieldGenerator> newgen;
+                  if (!args.empty()) {
+                    // First argument should be an expression
+                    newgen = FieldFactory::get()->parse(args.front());
+                  }
+                  return new BoundaryNeumannNonUniform_O4(region, newgen);
+                }
+
+                vec4 BoundaryNeumannNonUniform_O4::calc_interp_to_stencil(
+                    const vec4& spacing) const {
+                  vec4 facs;
+                  // Stencil Code
+                  facs.f0 = -spacing.f1 * spacing.f2 * spacing.f3
+                            / (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f1
+                               - 2 * spacing.f0 * spacing.f2 - 2 * spacing.f0 * spacing.f3
+                               + spacing.f1 * spacing.f2 + spacing.f1 * spacing.f3
+                               + spacing.f2 * spacing.f3);
+                  facs.f1 = spacing.f2 * spacing.f3
+                            * (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f2
+                               - 2 * spacing.f0 * spacing.f3 + spacing.f2 * spacing.f3)
+                            / ((spacing.f1 - spacing.f2) * (spacing.f1 - spacing.f3)
+                               * (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f1
+                                  - 2 * spacing.f0 * spacing.f2
+                                  - 2 * spacing.f0 * spacing.f3 + spacing.f1 * spacing.f2
+                                  + spacing.f1 * spacing.f3 + spacing.f2 * spacing.f3));
+                  facs.f2 = -spacing.f1 * spacing.f3
+                            * (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f1
+                               - 2 * spacing.f0 * spacing.f3 + spacing.f1 * spacing.f3)
+                            / ((spacing.f1 - spacing.f2) * (spacing.f2 - spacing.f3)
+                               * (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f1
+                                  - 2 * spacing.f0 * spacing.f2
+                                  - 2 * spacing.f0 * spacing.f3 + spacing.f1 * spacing.f2
+                                  + spacing.f1 * spacing.f3 + spacing.f2 * spacing.f3));
+                  facs.f3 = spacing.f1 * spacing.f2
+                            * (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f1
+                               - 2 * spacing.f0 * spacing.f2 + spacing.f1 * spacing.f2)
+                            / ((spacing.f1 - spacing.f3) * (spacing.f2 - spacing.f3)
+                               * (3 * pow(spacing.f0, 2) - 2 * spacing.f0 * spacing.f1
+                                  - 2 * spacing.f0 * spacing.f2
+                                  - 2 * spacing.f0 * spacing.f3 + spacing.f1 * spacing.f2
+                                  + spacing.f1 * spacing.f3 + spacing.f2 * spacing.f3));
+
+                  return facs;
+                }
+
+                void BoundaryFreeNonUniform_O4::apply(Field3D & f,
+                                                      MAYBE_UNUSED(BoutReal t)) {
+                  bndry->first();
+                  Mesh* mesh = f.getMesh();
+                  CELL_LOC loc = f.getLocation();
+
+                  int x_boundary_offset = bndry->bx;
+                  int y_boundary_offset = bndry->by;
+                  int stagger = 0;
+                  update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger,
+                                         loc);
+
+                  for (; !bndry->isDone(); bndry->next1d()) {
+
+                    vec4 spacing;
+
+                    const Coordinates::FieldMetric& coords_field =
+                        bndry->by != 0 ? mesh->getCoordinates()->dy
+                                       : mesh->getCoordinates()->dx;
+
+                    const int localNy = mesh->LocalNy;
+                    const int localNz = mesh->LocalNz;
+                    const int offset = (bndry->bx * localNy + bndry->by)
+#if BOUT_USE_METRIC_3D
+                                       * localNz
+#endif
+                        ;
+                    const IND(temp, bndry->x, bndry->y, 0);
+                    IND3D(temp3d, bndry->x, bndry->y, 0);
+                    const IndMetric i0{temp - 1 * offset};
+#if !BOUT_USE_METRIC_3D
+                    const Ind3D i03d{temp3d - 1 * offset * localNz};
+#endif
+                    const IndMetric i1{temp - 2 * offset};
+#if !BOUT_USE_METRIC_3D
+                    const Ind3D i13d{temp3d - 2 * offset * localNz};
+#endif
+                    const IndMetric i2{temp - 3 * offset};
+#if !BOUT_USE_METRIC_3D
+                    const Ind3D i23d{temp3d - 3 * offset * localNz};
+#endif
+                    const IndMetric i3{temp - 4 * offset};
+#if !BOUT_USE_METRIC_3D
+                    const Ind3D i33d{temp3d - 4 * offset * localNz};
+#endif
+
+#if BOUT_USE_METRIC_3D
+                    for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#else
+    const int iz = 0;
+#endif
+                      if (stagger == 0) {
+                        BoutReal total_offset = 0;
+                        BoutReal offset = coords_field[i0 + iz];
+                        spacing.f0 = total_offset + offset / 2;
+                        total_offset += offset;
+                        offset = coords_field[i1 + iz];
+                        spacing.f1 = total_offset + offset / 2;
+                        total_offset += offset;
+                        offset = coords_field[i2 + iz];
+                        spacing.f2 = total_offset + offset / 2;
+                        total_offset += offset;
+                        offset = coords_field[i3 + iz];
+                        spacing.f3 = total_offset + offset / 2;
+                      } else {
+                        spacing.f0 = coords_field[i0 + iz];
+                        spacing.f1 = spacing.f0 + coords_field[i1 + iz];
+                        spacing.f2 = spacing.f1 + coords_field[i2 + iz];
+                        spacing.f3 = spacing.f2 + coords_field[i3 + iz];
+                      }
+
+                      // With free (and neumann) the value is not set if the point is
+                      // evolved and it is on the boundary.
+                      for (int i = 0; i < bndry->width; i++) {
+                        IndMetric icm{temp + IndMetric(i * offset)};
+#if BOUT_USE_METRIC_3D
+                        icm += iz;
+                        IndMetric ic = icm;
+#else
+      Ind3D ic{temp3d + Ind3D(i * offset * localNz)};
+#endif
+                        vec4 facs;
+                        if (stagger == 0) {
+                          BoutReal to_add = coords_field[icm] / 2;
+                          spacing += to_add;
+                          facs = calc_interp_to_stencil(spacing);
+                          spacing += to_add;
+                        } else {
+                          facs = calc_interp_to_stencil(spacing);
+                          spacing += coords_field[icm];
+                        }
+#if !BOUT_USE_METRIC_3D
+                        for (int iz{0}; iz < mesh->LocalNz; iz++) {
+#endif
+#if BOUT_USE_METRIC_3D
+#define MAKE3D(x) x
+#else
+#define MAKE3D(x) x##3d
+#endif
+                          const BoutReal val = f[MAKE3D(i0) + iz];
+                          f[ic] = facs.f0 * val + facs.f1 * f[MAKE3D(i1) + iz]
+                                  + facs.f2 * f[MAKE3D(i2) + iz]
+                                  + facs.f3 * f[MAKE3D(i3) + iz];
+                        }
+                      }
+                    }
+                  }
+
+                  BoundaryOp* BoundaryFreeNonUniform_O4::clone(
+                      BoundaryRegion * region, const std::list<std::string>& args) {
+
+                    std::shared_ptr<FieldGenerator> newgen;
+                    if (!args.empty()) {
+                      // First argument should be an expression
+                      newgen = FieldFactory::get()->parse(args.front());
+                    }
+                    return new BoundaryFreeNonUniform_O4(region, newgen);
+                  }
+
+                  vec4 BoundaryFreeNonUniform_O4::calc_interp_to_stencil(
+                      const vec4& spacing) const {
+                    vec4 facs;
+                    // Stencil Code
+                    facs.f0 = -spacing.f1 * spacing.f2 * spacing.f3
+                              / ((spacing.f0 - spacing.f1) * (spacing.f0 - spacing.f2)
+                                 * (spacing.f0 - spacing.f3));
+                    facs.f1 = spacing.f0 * spacing.f2 * spacing.f3
+                              / ((spacing.f0 - spacing.f1) * (spacing.f1 - spacing.f2)
+                                 * (spacing.f1 - spacing.f3));
+                    facs.f2 = -spacing.f0 * spacing.f1 * spacing.f3
+                              / ((spacing.f0 - spacing.f2) * (spacing.f1 - spacing.f2)
+                                 * (spacing.f2 - spacing.f3));
+                    facs.f3 = spacing.f0 * spacing.f1 * spacing.f2
+                              / ((spacing.f0 - spacing.f3) * (spacing.f1 - spacing.f3)
+                                 * (spacing.f2 - spacing.f3));
+
+                    return facs;
+                  }
