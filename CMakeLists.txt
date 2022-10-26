@@ -363,19 +363,20 @@ if (BOUT_GENERATE_CXX)
   if (NOT sympy_FOUND)
     message(FATAL_ERROR "sympy not found, but you have requested to generate code!")
   endif()
+  string(RANDOM rand_suffix)
   add_custom_command( OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/field/generated_fieldops.cxx
-    COMMAND ${Python3_EXECUTABLE} gen_fieldops.py --filename generated_fieldops.cxx.tmp
-    COMMAND ${ClangFormat_BIN} generated_fieldops.cxx.tmp -i
-    COMMAND ${CMAKE_COMMAND} -E rename generated_fieldops.cxx.tmp generated_fieldops.cxx
+    COMMAND ${Python3_EXECUTABLE} gen_fieldops.py --filename generated_fieldops.cxx.tmp.${rand_suffix}
+    COMMAND ${ClangFormat_BIN} generated_fieldops.cxx.tmp.${rand_suffix} -i
+    COMMAND ${CMAKE_COMMAND} -E rename generated_fieldops.cxx.tmp.${rand_suffix} generated_fieldops.cxx
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.jinja  ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.py
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/field/
     COMMENT "Generating source code (src/field/generated_fieldops.cxx)" )
   foreach(ext in "cxx" "hxx")
     set(_outfile ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh/boundary_nonuniform.${ext})
     add_custom_command( OUTPUT ${_outfile}
-      COMMAND ${Python3_EXECUTABLE} ${_outfile}.in.py ${_outfile}.tmp
-      COMMAND ${ClangFormat_BIN} ${_outfile}.tmp -i
-      COMMAND ${CMAKE_COMMAND} -E rename ${_outfile}.tmp ${_outfile}
+      COMMAND ${Python3_EXECUTABLE} ${_outfile}.in.py ${_outfile}.tmp.${rand_suffix}
+      COMMAND ${ClangFormat_BIN} ${_outfile}.tmp.${rand_suffix} -i
+      COMMAND ${CMAKE_COMMAND} -E rename ${_outfile}.tmp.${rand_suffix} ${_outfile}
       DEPENDS ${_outfile}.in.py ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh/boundary_nonuniform_common.py ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh/stencils_sympy.py
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh
       COMMENT "Generating source code (src/mesh/boundary_nonuniform.${ext})" )
