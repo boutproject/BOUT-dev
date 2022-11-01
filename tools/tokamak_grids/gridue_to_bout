@@ -15,12 +15,7 @@ import matplotlib.pyplot as plt
 from scipy import linalg
 
 
-def _importSN(values, f):
-    """
-    Import a single null file
-    """
-    HeaderItems = ["nxm", "nym", "ixpt1", "ixpt2", "iyseptrx1"]
-    gridue_settings = dict(zip(HeaderItems, values))
+def _importBody(gridue_settings, f):
     next(f)
     BodyItems = ["rm", "zm", "psi", "br", "bz", "bpol", "bphi", "b"]
     Str = {i: [] for i in BodyItems}
@@ -61,6 +56,52 @@ def _importSN(values, f):
     return gridue_settings
 
 
+def _importSN(values, f):
+    """
+    Import a single null file
+    """
+    HeaderItems = ["nxm", "nym", "ixpt1", "ixpt2", "iyseparatrix1"]
+    gridue_settings = dict(zip(HeaderItems, values))
+
+    # Add indices that are present in DN but not SN
+    gridue_settings.update(
+        {
+            "iyseparatrix2": gridue_settings["nym"] + 10,  # Outside grid
+            "ix_cut1": gridue_settings["ixpt1"],
+            "ix_cut2": gridue_settings["nxm"] // 2,
+            "ix_inner": gridue_settings["nxm"] // 2,
+            "ix_cut3": gridue_settings["nxm"] // 2,
+            "ix_cut4": gridue_settings["ixpt2"],
+        }
+    )
+
+    return _importBody(gridue_settings, f)
+
+
+def _importDN(values, f):
+
+    gridue_settings = dict(zip(["nxm", "nym"], values))
+
+    header_rows = [
+        ["iyseparatrix1", "iyseparatrix2"],
+        ["ix_plate1", "ix_cut1", "_FILLER_", "ix_cut2", "ix_plate2"],
+        ["iyseparatrix3", "iyseparatrix4"],
+        ["ix_plate3", "ix_cut3", "_FILLER_", "ix_cut4", "ix_plate4"],
+    ]
+
+    for row in header_rows:
+        values = [int(x) for x in next(f).split()]
+        if len(values) != len(row):
+            raise ValueError(
+                "Expected row with {} integers, found {}".format(len(row), len(values))
+            )
+        gridue_settings.update(zip(row, values))
+
+    gridue_settings.update({"ix_inner": gridue_settings["ix_plate2"]})
+
+    return _importBody(gridue_settings, f)
+
+
 def importGridue(fname: str = "gridue") -> dict:
     """
     Import UEDGE grid file as dictionary.
@@ -80,6 +121,8 @@ def importGridue(fname: str = "gridue") -> dict:
 
     if len(values) == 5:
         return _importSN(values, f)
+    if len(values) == 2:
+        return _importDN(values, f)
 
     raise ValueError("Unrecognised gridue format")
 
@@ -527,6 +570,20 @@ Note that in most cases these grids are non-orthogonal."""
     for name in grd:
         grd[name] = grd[name][:, 1:-1]
 
+    if g["ix_cut2"] != g["ix_cut3"]:
+        # Double null -> Remove upper Y guard cells
+        ny_inner = g["ix_inner"]
+        for name in grd:
+            var = grd[name]
+            nx, ny = var.shape
+            newvar = np.zeros((nx, ny - 2))
+            newvar[:, :ny_inner] = var[:, :ny_inner]
+            newvar[:, ny_inner:] = var[:, (ny_inner + 2) :]
+            grd[name] = newvar
+        g["ix_cut2"] = g["ix_cut2"] - 1
+        g["ix_cut3"] = g["ix_cut3"] - 3
+        g["ix_cut4"] = g["ix_cut4"] - 2
+
     # Extrapolate X (radial) boundary cells
     # Removing one cell, adding two on each X boundary
     for name in grd:
@@ -555,30 +612,69 @@ Note that in most cases these grids are non-orthogonal."""
     nx, ny = Rxy.shape
 
     # Grid indices
-    ixseps1 = g["iyseptrx1"] + 2
-    ixseps2 = nx
-    jyseps1_1 = g["ixpt1"] - 1
-    # int jyseps2_1 ;
-    # int ny_inner ;
-    # int jyseps1_2 ;
-    jyseps2_2 = g["ixpt2"] - 1
+    ixseps1 = g["iyseparatrix1"] + 2  # Lower X-point separatrix
+    ixseps2 = min(g["iyseparatrix2"] + 2, nx)  # Upper X-point separatrix
+    jyseps1_1 = g["ix_cut1"] - 1
+    jyseps2_1 = g["ix_cut2"]
+    ny_inner = g["ix_inner"]
+    jyseps1_2 = g["ix_cut3"]
+    jyseps2_2 = g["ix_cut4"] - 1
 
     # Calculate zShift and ShiftAngle
     zShift = np.zeros((nx, ny))
 
-    # Core region
+    # Inner core region
     zShift[:, jyseps1_1 + 1] = 0.5 * dphidy[:, jyseps1_1 + 1] * dy
-    for jy in range(jyseps1_1 + 2, jyseps2_2 + 2):
+    # Note: This goes to jyseps2_1 + 1, the first cell in the upper inner leg (including upper PF)
+    for jy in range(jyseps1_1 + 2, jyseps2_1 + 2):
         zShift[:, jy] = (
             zShift[:, jy - 1] + 0.5 * (dphidy[:, jy] + dphidy[:, jy - 1]) * dy
         )
-    # Outer leg
+
+    # Outer core
+    # Note: ixseps2 points are connected from inner to outer core
+    # If single null, ixseps2 = nx, jyseps1_2 = jyseps2_1
+    zShift[:, jyseps1_2 + 1] = (
+        zShift[:, jyseps2_1]
+        + 0.5 * (dphidy[:, jyseps2_1] + dphidy[:, jyseps1_2 + 1]) * dy
+    )
+    for jy in range(jyseps1_2 + 2, jyseps2_2 + 2):
+        zShift[:, jy] = (
+            zShift[:, jy - 1] + 0.5 * (dphidy[:, jy] + dphidy[:, jy - 1]) * dy
+        )
+
+    if jyseps2_1 != jyseps1_2:
+        # Double null, with upper X-point
+
+        # Upper inner leg. Note that upper PF region set from core at y index jyseps2_1 + 1
+        for jy in range(jyseps2_1 + 2, ny_inner):
+            zShift[:, jy] = (
+                zShift[:, jy - 1] + 0.5 * (dphidy[:, jy] + dphidy[:, jy - 1]) * dy
+            )
+
+        # Upper outer leg. Joins onto upper inner leg (jyseps2_1 + 1) for x < ixseps2
+        zShift[:ixseps2, jyseps1_2] = (
+            zShift[:ixseps2, jyseps2_1 + 1]
+            - 0.5 * (dphidy[:ixseps2, jyseps2_1 + 1] + dphidy[:ixseps2, jyseps1_2]) * dy
+        )
+        # joins outer core/SOL region for x >= ixseps2
+        zShift[ixseps2:, jyseps1_2] = (
+            zShift[ixseps2:, jyseps1_2 + 1]
+            - 0.5 * (dphidy[ixseps2:, jyseps1_2 + 1] + dphidy[ixseps2:, jyseps1_2]) * dy
+        )
+        # Iterate backwards along upper outer leg from X-point towards target
+        for jy in range(jyseps1_2 - 1, ny_inner - 1, -1):
+            zShift[:, jy] = (
+                zShift[:, jy + 1] - 0.5 * (dphidy[:, jy] + dphidy[:, jy - 1]) * dy
+            )
+
+    # Lower outer leg
     zShift[:ixseps1, jyseps2_2 + 1] = 0.5 * dphidy[:ixseps1, jyseps2_2 + 1] * dy
     for jy in range(jyseps2_2 + 2, ny):
         zShift[:, jy] = (
             zShift[:, jy - 1] + 0.5 * (dphidy[:, jy] + dphidy[:, jy - 1]) * dy
         )
-    # Inner leg
+    # Lower inner leg. Going backwards in Y toward the plate
     zShift[:ixseps1, jyseps1_1] = -0.5 * dphidy[:ixseps1, jyseps1_1] * dy
     for jy in range(jyseps1_1 - 1, -1, -1):
         zShift[:, jy] = (
@@ -587,18 +683,37 @@ Note that in most cases these grids are non-orthogonal."""
 
     ShiftAngle = np.zeros(nx)
     ShiftAngle[:ixseps1] = np.sum(
-        dphidy[:ixseps1, (jyseps1_1 + 1) : (jyseps2_2 + 1)], axis=1
+        dphidy[:ixseps1, (jyseps1_1 + 1) : (jyseps2_1 + 1)] * dy, axis=1  # Inner core
+    ) + np.sum(
+        dphidy[:ixseps1, (jyseps1_2 + 1) : (jyseps2_2 + 1)] * dy, axis=1  # Outer core
     )
+
+    if verbose:
+        print(
+            "Safety factor: min {}, mean {}, max {}".format(
+                np.amin(ShiftAngle[:ixseps1]) / (2 * np.pi),
+                np.mean(ShiftAngle[:ixseps1]) / (2 * np.pi),
+                np.amax(ShiftAngle[:ixseps1]) / (2 * np.pi),
+            )
+        )
 
     if plotting:
         plt.plot(Rxy, Zxy, "x")
-        plt.plot(Rxy[ixseps1, :], Zxy[ixseps1, :], color="b")
-        plt.plot(Rxy[:, jyseps1_1], Zxy[:, jyseps1_1], color="g")
-        plt.plot(Rxy[:, jyseps2_2], Zxy[:, jyseps2_2], color="r")
+        plt.plot(Rxy[ixseps1, :], Zxy[ixseps1, :], color="b", label="ixseps1")
+        if ixseps2 < nx:
+            plt.plot(Rxy[ixseps2, :], Zxy[ixseps2, :], color="r", label="ixseps2")
+
+        plt.plot(Rxy[:, jyseps1_1], Zxy[:, jyseps1_1], color="k", label="jyseps1_1")
+        plt.plot(Rxy[:, jyseps1_2], Zxy[:, jyseps1_2], color="b", label="jyseps1_2")
+        plt.plot(Rxy[:, ny_inner], Zxy[:, ny_inner], color="c", label="ny_inner")
+        plt.plot(Rxy[:, jyseps2_1], Zxy[:, jyseps2_1], color="g", label="jyseps2_1")
+        plt.plot(Rxy[:, jyseps2_2], Zxy[:, jyseps2_2], color="r", label="jyseps2_2")
+
         ax = plt.gca()
         ax.set_aspect("equal", adjustable="box")
         ax.set_xlabel("R")
         ax.set_ylabel("Z")
+        plt.legend()
         plt.show()
 
     from boututils.datafile import DataFile
@@ -618,11 +733,14 @@ Note that in most cases these grids are non-orthogonal."""
         f.write("ixseps1", ixseps1)
         f.write("ixseps2", ixseps2)
         f.write("jyseps1_1", jyseps1_1)
-        # f.write("jyseps2_1", jyseps2_1)
-        # f.write("ny_inner", ny_inner)
-        # f.write("jyseps1_2", jyseps1_2)
+        f.write("jyseps2_1", jyseps2_1)
+        f.write("ny_inner", ny_inner)
+        f.write("jyseps1_2", jyseps1_2)
         f.write("jyseps2_2", jyseps2_2)
 
         # 2D fields
         for name in grd:
             f.write(name, grd[name])
+
+        f.write("zShift", zShift)
+        f.write("ShiftAngle", ShiftAngle)
