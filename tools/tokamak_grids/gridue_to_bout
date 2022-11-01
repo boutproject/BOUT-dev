@@ -262,6 +262,175 @@ def calcRZderivs(R, Z, var):
     return dR, dZ  # dvar/dR, dvar/dZ at cell center
 
 
+def calcMetric(grd: dict, bpsign, verbose=False, ignore_checks=False):
+    """
+    Calculate metric tensor given BOUT++ cell centers
+    """
+    Rxy = grd["Rxy"]
+    Zxy = grd["Zxy"]
+    Brxy = grd["Brxy"]
+    Bzxy = grd["Bzxy"]
+    Btxy = grd["Btxy"]
+    Bpxy = grd["Bpxy"]
+    Bxy = grd["Bxy"]
+    hy = grd["hy"]
+    cosBeta = grd["cosBeta"]
+    tanBeta = grd["tanBeta"]
+    curl_bOverB_Rhat = grd["curl_bOverB_Rhat"]
+    curl_bOverB_Zhat = grd["curl_bOverB_Zhat"]
+    curl_bOverB_zetahat = grd["curl_bOverB_zetahat"]
+
+    if verbose:
+        for var, name in [
+            (cosBeta, "cos(beta)"),
+            (tanBeta, "tan(beta)"),
+        ]:
+            print(
+                "{} min {}, mean {}, max {}".format(
+                    name, np.amin(var), np.mean(var), np.amax(var)
+                )
+            )
+
+    dphidy = hy * Btxy / (Bpxy * Rxy)
+
+    I = np.zeros(Rxy.shape)
+
+    g11 = (Rxy * Bpxy) ** 2
+    g22 = 1.0 / (hy * cosBeta) ** 2
+    g33 = (
+        1.0 / Rxy**2
+        + (Rxy * Bpxy * I) ** 2
+        + (dphidy / (hy * cosBeta)) ** 2
+        + 2.0 * Rxy * Bpxy * I * dphidy * tanBeta / hy
+    )
+    g12 = Rxy * np.abs(Bpxy) * tanBeta / hy
+    g13 = -Rxy * Bpxy * dphidy * tanBeta / hy - I * (Rxy * Bpxy) ** 2
+    g23 = -bpsign * dphidy / (hy * cosBeta) ** 2 - Rxy * np.abs(Bpxy) * I * tanBeta / hy
+
+    J = hy / Bpxy
+
+    g_11 = 1.0 / (Rxy * Bpxy * cosBeta) ** 2 + (I * Rxy) ** 2
+    g_22 = hy**2 + (dphidy * Rxy) ** 2
+    g_33 = Rxy**2
+    g_12 = bpsign * I * dphidy * Rxy**2 - hy * tanBeta / (Rxy * np.abs(Bpxy))
+    g_13 = I * Rxy**2
+    g_23 = bpsign * dphidy * Rxy**2
+
+    Jcheck = (
+        bpsign
+        * 1.0
+        / np.sqrt(
+            g11 * g22 * g33
+            + 2.0 * g12 * g13 * g23
+            - g11 * g23**2
+            - g22 * g13**2
+            - g33 * g12**2
+        )
+    )
+
+    rel_error = (J - Jcheck) / J
+
+    if verbose:
+        for var, name in [
+            (hy, "hy"),
+            (J, "J"),
+            (Jcheck, "Jcheck"),
+            (J - Jcheck, "J - Jcheck"),
+            (rel_error, "(J - Jcheck)/J"),
+        ]:
+            print(
+                "{} min {}, mean {}, max {}".format(
+                    name, np.amin(var), np.mean(var), np.amax(var)
+                )
+            )
+
+    if np.max(np.abs(rel_error)) > 1e-6:
+        if ignore_checks:
+            print("WARNING: Relative error in Jacobian too large.")
+        else:
+            raise ValueError("Relative error in Jacobian too large.")
+
+    # We want to output contravariant components of Curl(b/B) in the
+    # locally field-aligned coordinate system.
+    # The contravariant components of an arbitrary vector A are
+    # A^x = A.Grad(x)
+    # A^y = A.Grad(y)
+    # A^z = A.Grad(z)
+
+    # Grad in cylindrical coordinates is
+    # Grad(f) = df/dR Rhat + 1/R df/dzeta zetahat + df/dZ Zhat
+    # https://en.wikipedia.org/wiki/Del_in_cylindrical_and_spherical_coordinates,
+
+    # x = psi - psi_min
+    # dpsi/dR = -R*BZ
+    # dpsi/dZ = R*BR
+    # => Grad(x) = (dpsi/dR, 0, dpsi/dZ).(Rhat, zetahat, Zhat)
+    # => Grad(x) = (-R BZ, 0, R BR).(Rhat, zetahat, Zhat)
+    curl_bOverB_x = -Rxy * Bzxy * curl_bOverB_Rhat + Rxy * Brxy * curl_bOverB_Zhat
+
+    # Grad(y) = (d_Z, 0, -d_R)/(hy*cosBeta)
+    #         = (BR*cosBeta-BZ*sinBeta, 0, BZ*cosBeta+BR*sinBeta)
+    #           /(Bp*hy*cosBeta)
+    #         = (BR-BZ*tanBeta, 0, BZ+BR*tanBeta)/(Bp*hy)
+    curl_bOverB_y = (
+        curl_bOverB_Rhat * (Brxy - Bzxy * tanBeta)
+        + curl_bOverB_Zhat * (Bzxy + Brxy * tanBeta)
+    ) / (Bpxy * hy)
+
+    # Grad(z) = Grad(zeta) - Bt*hy/(Bp*R)*Grad(y) - I*Grad(x)
+    # Grad(z) = (0, 1/R, 0) - Bt*hy/(Bp*R)*Grad(y) - I*Grad(x)
+    curl_bOverB_z = (
+        curl_bOverB_zetahat / Rxy
+        - Btxy * hy / (Bpxy * Rxy) * curl_bOverB_y
+        - I * curl_bOverB_x
+    )
+
+    bxcvx = Bxy / 2.0 * curl_bOverB_x
+    bxcvy = Bxy / 2.0 * curl_bOverB_y
+    bxcvz = Bxy / 2.0 * curl_bOverB_z
+
+    if verbose:
+        for var, name in [
+            (bxcvx, "bxcvx"),
+            (bxcvy, "bxcvy"),
+            (bxcvz, "bxcvz"),
+        ]:
+            print(
+                "{} min {}, mean {}, max {}".format(
+                    name, np.amin(var), np.mean(var), np.amax(var)
+                )
+            )
+
+    return {
+        "dphidy": dphidy,
+        # Metric tensor
+        "g11": g11,
+        "g22": g22,
+        "g33": g33,
+        "g12": g12,
+        "g13": g13,
+        "g23": g23,
+        # Inverse metric tensor
+        "g_11": g_11,
+        "g_22": g_22,
+        "g_33": g_33,
+        "g_12": g_12,
+        "g_13": g_13,
+        "g_23": g_23,
+        # Jacobian
+        "J": J,
+        # Integrated shear
+        "sinty": I,
+        # Curvature
+        "curl_bOverB_x": curl_bOverB_x,
+        "curl_bOverB_y": curl_bOverB_y,
+        "curl_bOverB_z": curl_bOverB_z,
+        "bxcvx": bxcvx,
+        "bxcvy": bxcvy,
+        "bxcvz": bxcvz,
+    }
+
+
 def calcRZCurvature(g: dict):
     """
     Calculate curvature in (R, Z, zeta)
@@ -332,6 +501,7 @@ Note that in most cases these grids are non-orthogonal."""
     parser.add_argument("-o", "--output", default="bout.grd.nc")
     parser.add_argument("-p", "--plot", action="store_true", default=False)
     parser.add_argument("-v", "--verbose", action="store_true", default=False)
+    parser.add_argument("-i", "--ignore-checks", action="store_true", default=False)
     try:
         import argcomplete
 
@@ -344,6 +514,7 @@ Note that in most cases these grids are non-orthogonal."""
     output_filename = args.output
     plotting = args.plot
     verbose = args.verbose
+    ignore_checks = args.ignore_checks
 
     g = importGridue(gridue_file)
 
@@ -403,126 +574,9 @@ Note that in most cases these grids are non-orthogonal."""
     # Calculate angle between x and y coordinates. sinBeta = 0, cosBeta = 1 for an orthogonal mesh
     sinBeta, cosBeta = calcGridAngle(g)
     tanBeta = sinBeta / cosBeta
-    if verbose:
-        for var, name in [
-            (sinBeta, "sin(beta)"),
-            (cosBeta, "cos(beta)"),
-            (tanBeta, "tan(beta)"),
-        ]:
-            print(
-                "{} min {}, mean {}, max {}".format(
-                    name, np.amin(var), np.mean(var), np.amax(var)
-                )
-            )
 
-    dphidy = hy * Btxy / (Bpxy * Rxy)
-
-    I = np.zeros((nx, ny))
-
-    g11 = (Rxy * Bpxy) ** 2
-    g22 = 1.0 / (hy * cosBeta) ** 2
-    g33 = (
-        1.0 / Rxy**2
-        + (Rxy * Bpxy * I) ** 2
-        + (dphidy / (hy * cosBeta)) ** 2
-        + 2.0 * Rxy * Bpxy * I * dphidy * tanBeta / hy
-    )
-    g12 = Rxy * np.abs(Bpxy) * tanBeta / hy
-    g13 = -Rxy * Bpxy * dphidy * tanBeta / hy - I * (Rxy * Bpxy) ** 2
-    g23 = -bpsign * dphidy / (hy * cosBeta) ** 2 - Rxy * np.abs(Bpxy) * I * tanBeta / hy
-
-    J = hy / Bpxy
-
-    g_11 = 1.0 / (Rxy * Bpxy * cosBeta) ** 2 + (I * Rxy) ** 2
-    g_22 = hy**2 + (dphidy * Rxy) ** 2
-    g_33 = Rxy**2
-    g_12 = bpsign * I * dphidy * Rxy**2 - hy * tanBeta / (Rxy * np.abs(Bpxy))
-    g_13 = I * Rxy**2
-    g_23 = bpsign * dphidy * Rxy**2
-
-    Jcheck = (
-        bpsign
-        * 1.0
-        / np.sqrt(
-            g11 * g22 * g33
-            + 2.0 * g12 * g13 * g23
-            - g11 * g23**2
-            - g22 * g13**2
-            - g33 * g12**2
-        )
-    )
-
-    rel_error = (J - Jcheck) / J
-
-    if verbose:
-        for var, name in [
-            (hy, "hy"),
-            (J, "J"),
-            (Jcheck, "Jcheck"),
-            (J - Jcheck, "J - Jcheck"),
-            (rel_error, "(J - Jcheck)/J"),
-        ]:
-            print(
-                "{} min {}, mean {}, max {}".format(
-                    name, np.amin(var), np.mean(var), np.amax(var)
-                )
-            )
-
-    if np.max(np.abs(rel_error)) > 1e-6:
-        raise ValueError("Relative error in Jacobian too large.")
-
+    # Calculate curvature
     curl_bOverB_Rhat, curl_bOverB_Zhat, curl_bOverB_zetahat = calcRZCurvature(g)
-
-    # We want to output contravariant components of Curl(b/B) in the
-    # locally field-aligned coordinate system.
-    # The contravariant components of an arbitrary vector A are
-    # A^x = A.Grad(x)
-    # A^y = A.Grad(y)
-    # A^z = A.Grad(z)
-
-    # Grad in cylindrical coordinates is
-    # Grad(f) = df/dR Rhat + 1/R df/dzeta zetahat + df/dZ Zhat
-    # https://en.wikipedia.org/wiki/Del_in_cylindrical_and_spherical_coordinates,
-
-    # x = psi - psi_min
-    # dpsi/dR = -R*BZ
-    # dpsi/dZ = R*BR
-    # => Grad(x) = (dpsi/dR, 0, dpsi/dZ).(Rhat, zetahat, Zhat)
-    # => Grad(x) = (-R BZ, 0, R BR).(Rhat, zetahat, Zhat)
-    curl_bOverB_x = -Rxy * Bzxy * curl_bOverB_Rhat + Rxy * Brxy * curl_bOverB_Zhat
-
-    # Grad(y) = (d_Z, 0, -d_R)/(hy*cosBeta)
-    #         = (BR*cosBeta-BZ*sinBeta, 0, BZ*cosBeta+BR*sinBeta)
-    #           /(Bp*hy*cosBeta)
-    #         = (BR-BZ*tanBeta, 0, BZ+BR*tanBeta)/(Bp*hy)
-    curl_bOverB_y = (
-        curl_bOverB_Rhat * (Brxy - Bzxy * tanBeta)
-        + curl_bOverB_Zhat * (Bzxy + Brxy * tanBeta)
-    ) / (Bpxy * hy)
-
-    # Grad(z) = Grad(zeta) - Bt*hy/(Bp*R)*Grad(y) - I*Grad(x)
-    # Grad(z) = (0, 1/R, 0) - Bt*hy/(Bp*R)*Grad(y) - I*Grad(x)
-    curl_bOverB_z = (
-        curl_bOverB_zetahat / Rxy
-        - Btxy * hy / (Bpxy * Rxy) * curl_bOverB_y
-        - I * curl_bOverB_x
-    )
-
-    bxcvx = Bxy / 2.0 * curl_bOverB_x
-    bxcvy = Bxy / 2.0 * curl_bOverB_y
-    bxcvz = Bxy / 2.0 * curl_bOverB_z
-
-    if verbose:
-        for var, name in [
-            (bxcvx, "bxcvx"),
-            (bxcvy, "bxcvy"),
-            (bxcvz, "bxcvz"),
-        ]:
-            print(
-                "{} min {}, mean {}, max {}".format(
-                    name, np.amin(var), np.mean(var), np.amax(var)
-                )
-            )
 
     # Collect 2D variables for output
     grd = {
@@ -537,33 +591,16 @@ Note that in most cases these grids are non-orthogonal."""
         "Bpxy": Bpxy,
         "Btxy": Btxy,
         "Bxy": Bxy,
-        #
+        # Poloidal arc length
         "hy": hy,
         "hthe": hy,
-        "dphidy": dphidy,
-        # Metric tensor
-        "g11": g11,
-        "g22": g22,
-        "g33": g33,
-        "g12": g12,
-        "g13": g13,
-        "g23": g23,
-        # Inverse metric tensor
-        "g_11": g_11,
-        "g_22": g_22,
-        "g_33": g_33,
-        "g_12": g_12,
-        "g_13": g_13,
-        "g_23": g_23,
-        # Jacobian
-        "J": J,
         # Curvature
-        "curl_bOverB_x": curl_bOverB_x,
-        "curl_bOverB_y": curl_bOverB_y,
-        "curl_bOverB_z": curl_bOverB_z,
-        "bxcvx": bxcvx,
-        "bxcvy": bxcvy,
-        "bxcvz": bxcvz,
+        "curl_bOverB_Rhat": curl_bOverB_Rhat,
+        "curl_bOverB_Zhat": curl_bOverB_Zhat,
+        "curl_bOverB_zetahat": curl_bOverB_zetahat,
+        # Grid angles
+        "cosBeta": cosBeta,
+        "tanBeta": tanBeta,
     }
 
     # Remove Y (poloidal) boundary cells
@@ -605,7 +642,9 @@ Note that in most cases these grids are non-orthogonal."""
             newvar[-1, :] = newvar[-3, :]
         grd[name] = newvar
 
-    # Get new grid sizes
+    # Calculate metric tensor
+    grd.update(calcMetric(grd, bpsign, verbose, ignore_checks))
+
     dphidy = grd["dphidy"]
     Rxy = grd["Rxy"]
     Zxy = grd["Zxy"]
