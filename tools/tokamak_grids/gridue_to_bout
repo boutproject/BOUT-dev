@@ -1,0 +1,628 @@
+#!/usr/bin/env python3
+#
+# Convert UEDGE grid files (gridue) to BOUT++ grids
+#
+# Parts adapted from INGRID https://github.com/LLNL/INGRID
+#  Copyright (c) 2020, Lawrence Livermore National Security, LLC
+# Parts adapted from Hypnotoad https://github.com/boutproject/hypnotoad/
+#  Copyright 2019 J.T. Omotani
+#
+
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+
+from scipy import linalg
+
+
+def _importSN(values, f):
+    """
+    Import a single null file
+    """
+    HeaderItems = ["nxm", "nym", "ixpt1", "ixpt2", "iyseptrx1"]
+    gridue_settings = dict(zip(HeaderItems, values))
+    next(f)
+    BodyItems = ["rm", "zm", "psi", "br", "bz", "bpol", "bphi", "b"]
+    Str = {i: [] for i in BodyItems}
+    k = iter(Str.keys())
+    Key = next(k)
+
+    for line in f:
+        if line == "iogridue\n":
+            continue
+        if line == "\n":
+            try:
+                Key = next(k)
+            except:
+                continue
+        else:
+            Str[Key].append(line)
+    f.close()
+    nx = gridue_settings["nxm"] + 2
+    ny = gridue_settings["nym"] + 2
+
+    for k, v in Str.items():
+        L = ("".join(v).replace("\n", "").replace("D", "e")).split()
+        _l = iter(L)
+        vv = next(_l)
+
+        data_ = np.zeros((nx, ny, 5))
+        for n in range(5):
+            for j in range(ny):
+                for i in range(nx):
+
+                    data_[i][j][n] = float(vv)
+
+                    try:
+                        vv = next(_l)
+                    except:
+                        continue
+                    gridue_settings[k] = data_
+    return gridue_settings
+
+
+def importGridue(fname: str = "gridue") -> dict:
+    """
+    Import UEDGE grid file as dictionary.
+
+    Parameters
+    ----------
+    fname : str, optional
+        Path/file name to gridue formatted file.
+
+    Returns
+    -------
+    A dict containing header and body information from the gridue file.
+
+    """
+    f = open(fname, mode="r")
+    values = [int(x) for x in next(f).split()]
+
+    if len(values) == 5:
+        return _importSN(values, f)
+
+    raise ValueError("Unrecognised gridue format")
+
+
+def plot(GridueParams: dict, edgecolor="black", ax: object = None, show=True):
+    """
+    Plot UEDGE grid from 'dict' obtained from method 'ImportGridue'
+
+    Parameters
+    ----------
+    GridueParams : dict
+        Gridue header and body information as a dictionary.
+
+    edgecolor : str, optional
+        Color of grid.
+
+    ax : object, optional
+        Matplotlib axes to plot on.
+
+    """
+    r = GridueParams["rm"]
+    z = GridueParams["zm"]
+    Nx = len(r)
+    Ny = len(r[0])
+    patches = []
+    plt.figure(figsize=(6, 10))
+    if ax is None:
+        ax = plt.gca()
+    idx = [np.array([1, 2, 4, 3, 1])]
+    for i in range(Nx):
+        for j in range(Ny):
+            p = matplotlib.patches.Polygon(
+                np.concatenate((r[i][j][idx], z[i][j][idx])).reshape(2, 5).T,
+                fill=False,
+                closed=True,
+                edgecolor=edgecolor,
+            )
+            ax.add_patch(p)  # draw the contours
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_xlabel("R")
+    ax.set_ylabel("Z")
+    ax.set_ylim(z.min(), z.max())
+    ax.set_xlim(r.min(), r.max())
+    if show:
+        plt.show()
+    return ax
+
+
+def calcHy(g: dict, dy: float):
+    """
+    Calculate poloidal arc length metric from gridue dictionary
+    """
+    rm = g["rm"]
+    zm = g["zm"]
+
+    hy = np.zeros((nx, ny))
+    for i in range(nx):
+        for j in range(ny):
+            r = rm[j, i, :]
+            z = zm[j, i, :]
+            # Find intersection with (1) -- (3)
+            R1 = 0.5 * (r[1] + r[3])
+            Z1 = 0.5 * (z[1] + z[3])
+            # Find intersection with (2) -- (4)
+            R2 = 0.5 * (r[2] + r[4])
+            Z2 = 0.5 * (z[2] + z[4])
+
+            # Distance from one side to the other
+            dl = np.sqrt((R2 - R1) ** 2 + (Z2 - Z1) ** 2)
+            hy[i, j] = dl / dy
+    return hy
+
+
+def calcGridAngle(g: dict):
+    Brxy = g["br"][:, :, 0].T
+    Bzxy = g["bz"][:, :, 0].T
+    Bpxy = g["bpol"][:, :, 0].T
+
+    psi = g["psi"]
+    rm = g["rm"]
+    zm = g["zm"]
+
+    delta_y = [Brxy / Bpxy, Bzxy / Bpxy]  # Unit vector along e_y
+
+    R_xlow = 0.5 * (rm[:, :, 1] + rm[:, :, 2]).T
+    Z_xlow = 0.5 * (zm[:, :, 1] + zm[:, :, 2]).T
+    R_xhigh = 0.5 * (rm[:, :, 3] + rm[:, :, 4]).T
+    Z_xhigh = 0.5 * (zm[:, :, 3] + zm[:, :, 4]).T
+    dR = R_xhigh - R_xlow
+    dZ = Z_xhigh - Z_xlow
+    dl = np.sqrt(dR**2 + dZ**2)
+    delta_x = [dR / dl, dZ / dl]  # unit vector along e_x
+
+    # Calculate angle between x and y unit vectors.
+    # sin(beta) = cos(pi/2 - beta) = e_x_hat.e_y_hat = delta_x.delta_y
+    sinBeta = delta_x[0] * delta_y[0] + delta_x[1] * delta_y[1]
+
+    # Rotate delta_y by 90 degrees anticlockwise to get unit vector in psi direction
+    delta_psi = [-delta_y[1], delta_y[0]]
+
+    # cosBeta = delta_x.delta_psi
+    cosBeta = delta_x[0] * delta_psi[0] + delta_x[1] * delta_psi[1]
+
+    return sinBeta, cosBeta
+
+
+def calcRZderivs(R, Z, var):
+    """
+    Calculate derivatives of var w.r.t R and Z, using 5 points
+
+    Inputs R, Z and var should be 3D [poloidal, radial, 5]
+    as stored in gridue files.
+
+    Returns (dvar/dR, dvar/dZ) as 2D arrays [poloidal, radial]
+    at the location of point index 0
+    """
+    npol, nr, _ = R.shape
+    dR = np.zeros((npol, nr))
+    dZ = np.zeros((npol, nr))
+    for i in range(npol):
+        for j in range(nr):
+            A = np.zeros((5, 5))
+            for p in range(5):
+                # Constraint on derivatives for this point
+                A[p, 0] = 1.0  # Constant
+                A[p, 1] = R[i, j, p] - R[i, j, 0]  # dR
+                A[p, 2] = Z[i, j, p] - Z[i, j, 0]  # dZ
+                A[p, 3] = (R[i, j, p] - R[i, j, 0]) ** 2  # dR^2
+                A[p, 4] = (Z[i, j, p] - Z[i, j, 0]) ** 2  # dR^2
+            # Values of the function being fitted
+            b = var[i, j, :].squeeze()
+            # Invert using LU for stability
+            lu, piv = linalg.lu_factor(A)
+            x = linalg.lu_solve((lu, piv), b)
+            dR[i, j] = x[1]
+            dZ[i, j] = x[2]
+    return dR, dZ  # dvar/dR, dvar/dZ at cell center
+
+
+def calcRZCurvature(g: dict):
+    """
+    Calculate curvature in (R, Z, zeta)
+    Returns 2D arrays [radial, poloidal]
+    """
+    # Variables in UEDGE format [poloidal, radial, 5]
+    BR = g["br"]
+    BZ = g["bz"]
+    Bzeta = g["bphi"]
+    B2 = g["b"] ** 2
+    R = g["rm"]
+    Z = g["zm"]
+
+    dBzetadR, dBzetadZ = calcRZderivs(R, Z, Bzeta)
+    dBRdR, dBRdZ = calcRZderivs(R, Z, BR)
+    dBZdR, dBZdZ = calcRZderivs(R, Z, BZ)
+    dB2dR, dB2dZ = calcRZderivs(R, Z, B2)
+
+    # Select point at centre of cell
+    BR = BR[:, :, 0]
+    BZ = BZ[:, :, 0]
+    Bzeta = Bzeta[:, :, 0]
+    B2 = B2[:, :, 0]
+    R = R[:, :, 0]
+    Z = Z[:, :, 0]
+
+    # In cylindrical coords
+    # curl(A) = (1/R*d(AZ)/dzeta - d(Azeta)/dZ)  * Rhat
+    #           + 1/R*(d(R Azeta)/dR - d(AR)/dzeta) * Zhat
+    #           + (d(AR)/dZ - d(AZ)/dR) * zetahat
+    # Where AR, AZ and Azeta are the components on a basis of unit vectors,
+    # i.e. AR = A.Rhat; AZ = A.Zhat; Azeta = A.zetahat
+    # https://en.wikipedia.org/wiki/Del_in_cylindrical_and_spherical_coordinates,
+    #
+    # curl(b/B) = curl((BR/B2), (BZ/B2), (Bzeta/B2))
+    # curl(b/B)_Rhat = 1/R d(BZ/B2)/dzeta - d(Bzeta/B2)/dZ
+    #                = 1/(R*B2)*d(BZ)/dzeta - BZ/(R*B4)*d(B2)/dzeta
+    #                  - 1/B2*d(Bzeta)/dZ + Bzeta/B4*d(B2)/dZ
+    #                = -1/B2*d(Bzeta)/dZ + Bzeta/B4*d(B2)/dZ
+    # curl(b/B)_Zhat = 1/R * (d(R Bzeta/B2)/dR - d(BR/B2)/dzeta)
+    #                = Bzeta/(R*B2) + 1/B2*d(Bzeta)/dR - Bzeta/B4*d(B2)/dR
+    #                  - 1/(R*B2)*d(BR)/dzeta + BR/(R*B4)*d(B2)/dzeta
+    #                = Bzeta/(R*B2) + 1/B2*d(Bzeta)/dR - Bzeta/B4*d(B2)/dR
+    # curl(b/B)_zetahat = d(BR/B2)/dZ - d(BZ/B2)/dR
+    #                   = 1/B2*d(BR)/dZ - BR/B4*d(B2)/dZ
+    #                     - 1/B2*d(BZ)/dR + BZ/B4*d(B2)/dR
+    # remembering d/dzeta=0 for axisymmetric equilibrium
+
+    curl_bOverB_Rhat = -dBzetadZ / B2 + Bzeta / B2**2 * dB2dZ
+    curl_bOverB_Zhat = Bzeta / (R * B2) + dBzetadR / B2 - Bzeta / B2**2 * dB2dR
+    curl_bOverB_zetahat = (
+        dBRdZ / B2 - BR / B2**2 * dB2dZ - dBZdR / B2 + BZ / B2**2 * dB2dR
+    )
+
+    # Return as [radial, poloidal]
+    return curl_bOverB_Rhat.T, curl_bOverB_Zhat.T, curl_bOverB_zetahat.T
+
+
+if __name__ == "__main__":
+
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="""Converts UEDGE grid files (gridue) into BOUT++ grids.
+Note that in most cases these grids are non-orthogonal."""
+    )
+    parser.add_argument("gridue_file", type=str)
+    parser.add_argument("-o", "--output", default="bout.grd.nc")
+    parser.add_argument("-p", "--plot", action="store_true", default=False)
+    parser.add_argument("-v", "--verbose", action="store_true", default=False)
+    try:
+        import argcomplete
+
+        argcomplete.autocomplete(parser)
+    except ImportError:
+        pass
+
+    args = parser.parse_args()
+    gridue_file = args.gridue_file
+    output_filename = args.output
+    plotting = args.plot
+    verbose = args.verbose
+
+    g = importGridue(gridue_file)
+
+    if plotting:
+        plot(g)
+
+    psi = g["psi"]
+    rm = g["rm"]
+    zm = g["zm"]
+
+    Rxy = rm[:, :, 0].T
+    Zxy = zm[:, :, 0].T
+    Brxy = g["br"][:, :, 0].T
+    Bzxy = g["bz"][:, :, 0].T
+    Bpxy = g["bpol"][:, :, 0].T
+    Btxy = g["bphi"][:, :, 0].T
+    Bxy = g["b"][:, :, 0].T
+    psixy = psi[:, :, 0].T
+    nx, ny = Rxy.shape
+
+    # Ordering
+    # (1) -- (3)
+    #  |      |
+    #  |  (0) |  -> Radial, BOUT++ "x"
+    #  |      |
+    # (2) -- (4)
+
+    # calculate change in psi across cell -> dx
+
+    dx = np.zeros((nx, ny))
+    for i in range(nx):
+        for j in range(ny):
+            dx[i, j] = 0.5 * (psi[j, i, 3] + psi[j, i, 4] - psi[j, i, 1] - psi[j, i, 2])
+
+    # Note: UEDGE grids have narrow cells on the radial
+    # boundaries. BOUT++ applies boundary conditions half-way between
+    # cells, and usually expects two boundary cells.
+
+    # Calculate direction of magnetic field Bp dot Grad(y)
+    Bp_dot_grady = Brxy[1, 1] * (Rxy[1, 1] - Rxy[1, 0]) + Bzxy[1, 1] * (
+        Zxy[1, 1] - Zxy[1, 0]
+    )
+
+    if Bp_dot_grady * Bpxy[1, 1] < 0.0:
+        raise ValueError("Bp_dot_grady and Bpxy have opposite signs")
+    bpsign = np.sign(Bpxy[1, 1])  # Sign of the poloidal magnetic field
+
+    # Choose angle dy across poloidal cell. This is somewhat arbitrary,
+    # but it is helpful if the y angle changes by 2pi for each poloidal transit of the core
+
+    dy = 2 * np.pi / ny
+
+    # Calculate hy, the arc length along the flux surface passing through
+    # the center of each cell.
+    hy = calcHy(g, dy)
+
+    # Calculate angle between x and y coordinates. sinBeta = 0, cosBeta = 1 for an orthogonal mesh
+    sinBeta, cosBeta = calcGridAngle(g)
+    tanBeta = sinBeta / cosBeta
+    if verbose:
+        for var, name in [
+            (sinBeta, "sin(beta)"),
+            (cosBeta, "cos(beta)"),
+            (tanBeta, "tan(beta)"),
+        ]:
+            print(
+                "{} min {}, mean {}, max {}".format(
+                    name, np.amin(var), np.mean(var), np.amax(var)
+                )
+            )
+
+    dphidy = hy * Btxy / (Bpxy * Rxy)
+
+    I = np.zeros((nx, ny))
+
+    g11 = (Rxy * Bpxy) ** 2
+    g22 = 1.0 / (hy * cosBeta) ** 2
+    g33 = (
+        1.0 / Rxy**2
+        + (Rxy * Bpxy * I) ** 2
+        + (dphidy / (hy * cosBeta)) ** 2
+        + 2.0 * Rxy * Bpxy * I * dphidy * tanBeta / hy
+    )
+    g12 = Rxy * np.abs(Bpxy) * tanBeta / hy
+    g13 = -Rxy * Bpxy * dphidy * tanBeta / hy - I * (Rxy * Bpxy) ** 2
+    g23 = -bpsign * dphidy / (hy * cosBeta) ** 2 - Rxy * np.abs(Bpxy) * I * tanBeta / hy
+
+    J = hy / Bpxy
+
+    g_11 = 1.0 / (Rxy * Bpxy * cosBeta) ** 2 + (I * Rxy) ** 2
+    g_22 = hy**2 + (dphidy * Rxy) ** 2
+    g_33 = Rxy**2
+    g_12 = bpsign * I * dphidy * Rxy**2 - hy * tanBeta / (Rxy * np.abs(Bpxy))
+    g_13 = I * Rxy**2
+    g_23 = bpsign * dphidy * Rxy**2
+
+    Jcheck = (
+        bpsign
+        * 1.0
+        / np.sqrt(
+            g11 * g22 * g33
+            + 2.0 * g12 * g13 * g23
+            - g11 * g23**2
+            - g22 * g13**2
+            - g33 * g12**2
+        )
+    )
+
+    rel_error = (J - Jcheck) / J
+
+    if verbose:
+        for var, name in [
+            (hy, "hy"),
+            (J, "J"),
+            (Jcheck, "Jcheck"),
+            (J - Jcheck, "J - Jcheck"),
+            (rel_error, "(J - Jcheck)/J"),
+        ]:
+            print(
+                "{} min {}, mean {}, max {}".format(
+                    name, np.amin(var), np.mean(var), np.amax(var)
+                )
+            )
+
+    if np.max(np.abs(rel_error)) > 1e-6:
+        raise ValueError("Relative error in Jacobian too large.")
+
+    curl_bOverB_Rhat, curl_bOverB_Zhat, curl_bOverB_zetahat = calcRZCurvature(g)
+
+    # We want to output contravariant components of Curl(b/B) in the
+    # locally field-aligned coordinate system.
+    # The contravariant components of an arbitrary vector A are
+    # A^x = A.Grad(x)
+    # A^y = A.Grad(y)
+    # A^z = A.Grad(z)
+
+    # Grad in cylindrical coordinates is
+    # Grad(f) = df/dR Rhat + 1/R df/dzeta zetahat + df/dZ Zhat
+    # https://en.wikipedia.org/wiki/Del_in_cylindrical_and_spherical_coordinates,
+
+    # x = psi - psi_min
+    # dpsi/dR = -R*BZ
+    # dpsi/dZ = R*BR
+    # => Grad(x) = (dpsi/dR, 0, dpsi/dZ).(Rhat, zetahat, Zhat)
+    # => Grad(x) = (-R BZ, 0, R BR).(Rhat, zetahat, Zhat)
+    curl_bOverB_x = -Rxy * Bzxy * curl_bOverB_Rhat + Rxy * Brxy * curl_bOverB_Zhat
+
+    # Grad(y) = (d_Z, 0, -d_R)/(hy*cosBeta)
+    #         = (BR*cosBeta-BZ*sinBeta, 0, BZ*cosBeta+BR*sinBeta)
+    #           /(Bp*hy*cosBeta)
+    #         = (BR-BZ*tanBeta, 0, BZ+BR*tanBeta)/(Bp*hy)
+    curl_bOverB_y = (
+        curl_bOverB_Rhat * (Brxy - Bzxy * tanBeta)
+        + curl_bOverB_Zhat * (Bzxy + Brxy * tanBeta)
+    ) / (Bpxy * hy)
+
+    # Grad(z) = Grad(zeta) - Bt*hy/(Bp*R)*Grad(y) - I*Grad(x)
+    # Grad(z) = (0, 1/R, 0) - Bt*hy/(Bp*R)*Grad(y) - I*Grad(x)
+    curl_bOverB_z = (
+        curl_bOverB_zetahat / Rxy
+        - Btxy * hy / (Bpxy * Rxy) * curl_bOverB_y
+        - I * curl_bOverB_x
+    )
+
+    bxcvx = Bxy / 2.0 * curl_bOverB_x
+    bxcvy = Bxy / 2.0 * curl_bOverB_y
+    bxcvz = Bxy / 2.0 * curl_bOverB_z
+
+    if verbose:
+        for var, name in [
+            (bxcvx, "bxcvx"),
+            (bxcvy, "bxcvy"),
+            (bxcvz, "bxcvz"),
+        ]:
+            print(
+                "{} min {}, mean {}, max {}".format(
+                    name, np.amin(var), np.mean(var), np.amax(var)
+                )
+            )
+
+    # Collect 2D variables for output
+    grd = {
+        "Rxy": Rxy,
+        "Zxy": Zxy,
+        "psixy": psixy,
+        "dx": dx,
+        "dy": np.full((nx, ny), dy),
+        # Magnetic field components
+        "Brxy": Brxy,
+        "Bzxy": Bzxy,
+        "Bpxy": Bpxy,
+        "Btxy": Btxy,
+        "Bxy": Bxy,
+        #
+        "hy": hy,
+        "hthe": hy,
+        "dphidy": dphidy,
+        # Metric tensor
+        "g11": g11,
+        "g22": g22,
+        "g33": g33,
+        "g12": g12,
+        "g13": g13,
+        "g23": g23,
+        # Inverse metric tensor
+        "g_11": g_11,
+        "g_22": g_22,
+        "g_33": g_33,
+        "g_12": g_12,
+        "g_13": g_13,
+        "g_23": g_23,
+        # Jacobian
+        "J": J,
+        # Curvature
+        "curl_bOverB_x": curl_bOverB_x,
+        "curl_bOverB_y": curl_bOverB_y,
+        "curl_bOverB_z": curl_bOverB_z,
+        "bxcvx": bxcvx,
+        "bxcvy": bxcvy,
+        "bxcvz": bxcvz,
+    }
+
+    # Remove Y (poloidal) boundary cells
+    for name in grd:
+        grd[name] = grd[name][:, 1:-1]
+
+    # Extrapolate X (radial) boundary cells
+    # Removing one cell, adding two on each X boundary
+    for name in grd:
+        var = grd[name]
+        nx, ny = var.shape
+        newvar = np.zeros((nx + 2, ny))
+        newvar[2:-2, :] = var[1:-1, :]
+        if name in ["Rxy", "Zxy", "psixy"]:
+            # Linear extrapolation
+            newvar[1, :] = 2.0 * newvar[2, :] - newvar[3, :]
+            newvar[0, :] = 2.0 * newvar[1, :] - newvar[2, :]
+            newvar[-2, :] = 2.0 * newvar[-3, :] - newvar[-4, :]
+            newvar[-1, :] = 2.0 * newvar[-2, :] - newvar[-3, :]
+        else:
+            # Constant extrapolation
+            newvar[1, :] = newvar[2, :]
+            newvar[0, :] = newvar[2, :]
+            newvar[-2, :] = newvar[-3, :]
+            newvar[-1, :] = newvar[-3, :]
+        grd[name] = newvar
+
+    # Get new grid sizes
+    dphidy = grd["dphidy"]
+    Rxy = grd["Rxy"]
+    Zxy = grd["Zxy"]
+    nx, ny = Rxy.shape
+
+    # Grid indices
+    ixseps1 = g["iyseptrx1"] + 2
+    ixseps2 = nx
+    jyseps1_1 = g["ixpt1"] - 1
+    # int jyseps2_1 ;
+    # int ny_inner ;
+    # int jyseps1_2 ;
+    jyseps2_2 = g["ixpt2"] - 1
+
+    # Calculate zShift and ShiftAngle
+    zShift = np.zeros((nx, ny))
+
+    # Core region
+    zShift[:, jyseps1_1 + 1] = 0.5 * dphidy[:, jyseps1_1 + 1] * dy
+    for jy in range(jyseps1_1 + 2, jyseps2_2 + 2):
+        zShift[:, jy] = (
+            zShift[:, jy - 1] + 0.5 * (dphidy[:, jy] + dphidy[:, jy - 1]) * dy
+        )
+    # Outer leg
+    zShift[:ixseps1, jyseps2_2 + 1] = 0.5 * dphidy[:ixseps1, jyseps2_2 + 1] * dy
+    for jy in range(jyseps2_2 + 2, ny):
+        zShift[:, jy] = (
+            zShift[:, jy - 1] + 0.5 * (dphidy[:, jy] + dphidy[:, jy - 1]) * dy
+        )
+    # Inner leg
+    zShift[:ixseps1, jyseps1_1] = -0.5 * dphidy[:ixseps1, jyseps1_1] * dy
+    for jy in range(jyseps1_1 - 1, -1, -1):
+        zShift[:, jy] = (
+            zShift[:, jy + 1] - 0.5 * (dphidy[:, jy] + dphidy[:, jy + 1]) * dy
+        )
+
+    ShiftAngle = np.zeros(nx)
+    ShiftAngle[:ixseps1] = np.sum(
+        dphidy[:ixseps1, (jyseps1_1 + 1) : (jyseps2_2 + 1)], axis=1
+    )
+
+    if plotting:
+        plt.plot(Rxy, Zxy, "x")
+        plt.plot(Rxy[ixseps1, :], Zxy[ixseps1, :], color="b")
+        plt.plot(Rxy[:, jyseps1_1], Zxy[:, jyseps1_1], color="g")
+        plt.plot(Rxy[:, jyseps2_2], Zxy[:, jyseps2_2], color="r")
+        ax = plt.gca()
+        ax.set_aspect("equal", adjustable="box")
+        ax.set_xlabel("R")
+        ax.set_ylabel("Z")
+        plt.show()
+
+    from boututils.datafile import DataFile
+
+    if verbose:
+        print("Saving to " + output_filename)
+
+    with DataFile(output_filename, create=True, format="NETCDF4") as f:
+        # Save unique ID for grid file
+        import uuid
+
+        f.write_file_attribute("grid_id", str(uuid.uuid1()))
+        f.write_file_attribute("gridue", str(gridue_file))
+
+        f.write("nx", nx)
+        f.write("ny", ny)
+        f.write("ixseps1", ixseps1)
+        f.write("ixseps2", ixseps2)
+        f.write("jyseps1_1", jyseps1_1)
+        # f.write("jyseps2_1", jyseps2_1)
+        # f.write("ny_inner", ny_inner)
+        # f.write("jyseps1_2", jyseps1_2)
+        f.write("jyseps2_2", jyseps2_2)
+
+        # 2D fields
+        for name in grd:
+            f.write(name, grd[name])
