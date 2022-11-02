@@ -400,7 +400,7 @@ int LaplaceSPT::next(SPT_data &data) {
     }else if(localmesh->firstX()) {
       // Back to the start
 
-BOUT_OMP(parallel for)
+      BOUT_OMP(parallel for)
       for(int kz = 0; kz <= maxmode; kz++) {
 	dcomplex gp, up;
 	gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);

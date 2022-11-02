@@ -105,6 +105,8 @@ SpacesInContainerLiterals: true
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
+StatementMacros:
+  - BOUT_OMP
 Standard:        c++14
 TabWidth:        8
 UseTab:          Never
