@@ -229,6 +229,16 @@ public:
       return *this;
     }
 
+    /// Copy assignment operator
+    AttributeType& operator=(const AttributeType& other) = default;
+
+    /// Initialise with a value
+    /// This enables AttributeTypes to be constructed using initializer lists
+    template <typename T>
+    AttributeType(T value) {
+      operator=(value);
+    }
+
     /// Cast operator, which allows this class to be
     /// assigned to type T
     /// This will throw std::bad_cast if it can't be done
@@ -265,6 +275,33 @@ public:
   /// Return true if this value has attribute \p key
   bool hasAttribute(const std::string& key) const {
     return attributes.find(key) != attributes.end();
+  }
+
+  /// Set attributes, overwriting any already set
+  ///
+  /// Parameters
+  /// ----------
+  /// An initializer_list so that multiple attributes can be set at the same time
+  ///
+  /// Returns
+  /// -------
+  /// A reference to `this`, for method chaining
+  ///
+  /// Example
+  /// -------
+  ///
+  ///     Options options;
+  ///     options["value"].setAttributes({
+  ///         {"units", "m/s"},
+  ///         {"conversion", 10.2},
+  ///         {"long_name", "some velocity"}
+  ///       });
+  Options& setAttributes(
+      std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
+    for (const auto& attr : attrs) {
+      attributes[attr.first] = attr.second;
+    }
+    return *this;
   }
 
   /// Get a sub-section or value

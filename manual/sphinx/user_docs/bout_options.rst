@@ -705,6 +705,27 @@ These are equivalent, but the initializer list method makes the tree structure c
 Note that the list can contain many of the types which ``Options`` can hold, including
 ``Field2D`` and ``Field3D`` objects.
 
+Setting option attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Options can have attributes attached to them, that can be ``bool``,
+``int``, ``BoutReal`` or ``std::string`` type. These are stored in an
+``attributes`` map that can be assigned to::
+
+  Options options;
+  options["value"].attributes["property"] = "something";
+
+An arbitrary number of attributes can be attached to an option. If
+assigning multiple attributes, an ``initializer_list`` can be more
+readable::
+
+  Options options;
+  options["value"].setAttributes({
+      {"units", "m/s"},
+      {"conversion", 10.2},
+      {"long_name", "important value"}
+    });
+
 Overriding library defaults
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
