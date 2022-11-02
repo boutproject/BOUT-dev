@@ -105,13 +105,9 @@ void PhysicsModel::initialise(Solver* s) {
   }
 }
 
-int PhysicsModel::runRHS(BoutReal time, bool linear) {
-  return rhs(time, linear);
-}
+int PhysicsModel::runRHS(BoutReal time, bool linear) { return rhs(time, linear); }
 
-bool PhysicsModel::splitOperator() {
-  return splitop;
-}
+bool PhysicsModel::splitOperator() { return splitop; }
 
 int PhysicsModel::runConvective(BoutReal time, bool linear) {
   return convective(time, linear);
@@ -124,7 +120,7 @@ int PhysicsModel::runDiffusive(BoutReal time, bool linear) {
 bool PhysicsModel::hasPrecon() { return (userprecon != nullptr); }
 
 int PhysicsModel::runPrecon(BoutReal t, BoutReal gamma, BoutReal delta) {
-  if(!userprecon)
+  if (!userprecon)
     return 1;
   return (*this.*userprecon)(t, gamma, delta);
 }
@@ -137,23 +133,23 @@ int PhysicsModel::runJacobian(BoutReal t) {
   return (*this.*userjacobian)(t);
 }
 
-void PhysicsModel::bout_solve(Field2D &var, const char *name,
+void PhysicsModel::bout_solve(Field2D& var, const char* name,
                               const std::string& description) {
   // Add to solver
   solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Field3D &var, const char *name,
+void PhysicsModel::bout_solve(Field3D& var, const char* name,
                               const std::string& description) {
   solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector2D &var, const char *name,
+void PhysicsModel::bout_solve(Vector2D& var, const char* name,
                               const std::string& description) {
   solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector3D &var, const char *name,
+void PhysicsModel::bout_solve(Vector3D& var, const char* name,
                               const std::string& description) {
   solver->add(var, name, description);
 }

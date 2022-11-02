@@ -29,31 +29,27 @@
 #include <output.hxx>
 #include <unused.hxx>
 
-void printLocation(const Field3D& var) {
-  output << toString(var.getLocation());
-}
-void printLocation(const Field2D& var) {
-  output << toString(var.getLocation());
-}
+void printLocation(const Field3D& var) { output << toString(var.getLocation()); }
+void printLocation(const Field2D& var) { output << toString(var.getLocation()); }
 
 const char* strLocation(CELL_LOC loc) { return toString(loc).c_str(); }
 
-const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
-                          const Field3D &delta_z) {
+const Field3D interpolate(const Field3D& f, const Field3D& delta_x,
+                          const Field3D& delta_z) {
   TRACE("Interpolating 3D field");
   XZLagrange4pt interpolateMethod{f.getMesh()};
   return interpolateMethod.interpolate(f, delta_x, delta_z);
 }
 
-const Field3D interpolate(const Field2D &f, const Field3D &delta_x,
-                          const Field3D &UNUSED(delta_z)) {
+const Field3D interpolate(const Field2D& f, const Field3D& delta_x,
+                          const Field3D& UNUSED(delta_z)) {
   return interpolate(f, delta_x);
 }
 
-const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
+const Field3D interpolate(const Field2D& f, const Field3D& delta_x) {
   TRACE("interpolate(Field2D, Field3D)");
 
-  Mesh *mesh = f.getMesh();
+  Mesh* mesh = f.getMesh();
   ASSERT1(mesh == delta_x.getMesh());
   Field3D result{emptyFrom(delta_x)};
 
@@ -99,6 +95,9 @@ RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
 } // namespace
 
 constexpr decltype(XZInterpolationFactory::type_name) XZInterpolationFactory::type_name;
-constexpr decltype(XZInterpolationFactory::section_name) XZInterpolationFactory::section_name;
-constexpr decltype(XZInterpolationFactory::option_name) XZInterpolationFactory::option_name;
-constexpr decltype(XZInterpolationFactory::default_type) XZInterpolationFactory::default_type;
+constexpr decltype(XZInterpolationFactory::section_name)
+    XZInterpolationFactory::section_name;
+constexpr decltype(XZInterpolationFactory::option_name)
+    XZInterpolationFactory::option_name;
+constexpr decltype(XZInterpolationFactory::default_type)
+    XZInterpolationFactory::default_type;

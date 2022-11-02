@@ -42,15 +42,18 @@
  */
 
 // Tri-diagonal solvers
-int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r, dcomplex *u, int n);
-bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutReal *r, BoutReal *x, int n);
+int tridag(const dcomplex* a, const dcomplex* b, const dcomplex* c, const dcomplex* r,
+           dcomplex* u, int n);
+bool tridag(const BoutReal* a, const BoutReal* b, const BoutReal* c, const BoutReal* r,
+            BoutReal* x, int n);
 
 // Cyclic tridiagonal
-void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n);
-void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex *x, int n);
+void cyclic_tridag(BoutReal* a, BoutReal* b, BoutReal* c, BoutReal* r, BoutReal* x,
+                   int n);
+void cyclic_tridag(dcomplex* a, dcomplex* b, dcomplex* c, dcomplex* r, dcomplex* x,
+                   int n);
 
 /// Complex band matrix solver
-void cband_solve(Matrix<dcomplex> &a, int n, int m1, int m2, Array<dcomplex> &b);
+void cband_solve(Matrix<dcomplex>& a, int n, int m1, int m2, Array<dcomplex>& b);
 
 #endif // __LAPACK_ROUTINES_H__
-

@@ -84,7 +84,8 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED
   }
   // Cannot use multigrid on 1 core
   if (n == 1 and max_level != 0) {
-    throw BoutException("LaplaceIPT error: must have max_level=0 if using one processor. ");
+    throw BoutException(
+        "LaplaceIPT error: must have max_level=0 if using one processor. ");
   }
 
   static int ipt_solver_count = 1;
@@ -492,10 +493,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
           cycle_eta = 0;
           for (int kz = 0; kz < nmode; kz++) {
             const BoutReal ratio = errornorm[kz] / errornorm_old[kz];
-            const int eta =
-                std::ceil(std::log(1.0 / errornorm[kz]) / std::log(ratio));
+            const int eta = std::ceil(std::log(1.0 / errornorm[kz]) / std::log(ratio));
             cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
-
           }
         }
       }
@@ -1225,12 +1224,17 @@ void LaplaceIPT::Level::calculate_total_residual(const LaplaceIPT& l,
     if (!converged[kz]) {
       errornorm[kz] = 0.0;
 
-      BoutReal w = pow( l.rtol*sqrt(pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)) + l.atol , 2);
-      subtotal[kz] = ( pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2) ) / w;
+      BoutReal w = pow(
+          l.rtol * sqrt(pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)) + l.atol,
+          2);
+      subtotal[kz] =
+          (pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2)) / w;
       if (l.localmesh->lastX()) {
-        w = pow( l.rtol*sqrt(pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2)) + l.atol , 2);
+        w = pow(l.rtol * sqrt(pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2))
+                    + l.atol,
+                2);
         subtotal[kz] +=
-            ( pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2) ) / w;
+            (pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2)) / w;
       }
     }
   }
@@ -1241,7 +1245,7 @@ void LaplaceIPT::Level::calculate_total_residual(const LaplaceIPT& l,
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      errornorm[kz] = sqrt(errornorm[kz]/BoutReal(l.ncx));
+      errornorm[kz] = sqrt(errornorm[kz] / BoutReal(l.ncx));
       if (errornorm[kz] < 1.0) {
         converged[kz] = true;
       }

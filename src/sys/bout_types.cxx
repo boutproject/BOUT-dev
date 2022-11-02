@@ -23,7 +23,7 @@ const T& safeAt(const std::map<std::string, T>& mymap, const std::string& s) {
   }
   return found->second;
 }
-}
+} // namespace
 
 std::string toString(CELL_LOC location) {
   AUTO_TRACE();
@@ -37,8 +37,8 @@ std::string toString(CELL_LOC location) {
 CELL_LOC CELL_LOCFromString(const std::string& location_string) {
   AUTO_TRACE();
   const static std::map<std::string, CELL_LOC> stringtoCELL_LOC = {
-    STRENUM(CELL_DEFAULT), STRENUM(CELL_CENTRE), STRENUM(CELL_XLOW),
-    STRENUM(CELL_YLOW),    STRENUM(CELL_ZLOW),   STRENUM(CELL_VSHIFT)};
+      STRENUM(CELL_DEFAULT), STRENUM(CELL_CENTRE), STRENUM(CELL_XLOW),
+      STRENUM(CELL_YLOW),    STRENUM(CELL_ZLOW),   STRENUM(CELL_VSHIFT)};
 
   return safeAt(stringtoCELL_LOC, location_string);
 }
@@ -140,8 +140,7 @@ std::string toString(DERIV deriv) {
 std::string toString(YDirectionType d) {
   AUTO_TRACE();
   const static std::map<YDirectionType, std::string> YDirectionTypeToString = {
-      {YDirectionType::Standard, "Standard"},
-      {YDirectionType::Aligned, "Aligned"}};
+      {YDirectionType::Standard, "Standard"}, {YDirectionType::Aligned, "Aligned"}};
 
   return safeAt(YDirectionTypeToString, d);
 }
@@ -149,8 +148,7 @@ std::string toString(YDirectionType d) {
 YDirectionType YDirectionTypeFromString(const std::string& y_direction_string) {
   AUTO_TRACE();
   const static std::map<std::string, YDirectionType> stringToYDirectionType = {
-    {"Standard", YDirectionType::Standard},
-    {"Aligned", YDirectionType::Aligned}};
+      {"Standard", YDirectionType::Standard}, {"Aligned", YDirectionType::Aligned}};
 
   return safeAt(stringToYDirectionType, y_direction_string);
 }
@@ -158,8 +156,7 @@ YDirectionType YDirectionTypeFromString(const std::string& y_direction_string) {
 std::string toString(ZDirectionType d) {
   AUTO_TRACE();
   const static std::map<ZDirectionType, std::string> ZDirectionTypeToString = {
-      {ZDirectionType::Standard, "Standard"},
-      {ZDirectionType::Average, "Average"}};
+      {ZDirectionType::Standard, "Standard"}, {ZDirectionType::Average, "Average"}};
 
   return safeAt(ZDirectionTypeToString, d);
 }
@@ -167,8 +164,7 @@ std::string toString(ZDirectionType d) {
 ZDirectionType ZDirectionTypeFromString(const std::string& z_direction_string) {
   AUTO_TRACE();
   const static std::map<std::string, ZDirectionType> stringToZDirectionType = {
-    {"Standard", ZDirectionType::Standard},
-    {"Average", ZDirectionType::Average}};
+      {"Standard", ZDirectionType::Standard}, {"Average", ZDirectionType::Average}};
 
   return safeAt(stringToZDirectionType, z_direction_string);
 }

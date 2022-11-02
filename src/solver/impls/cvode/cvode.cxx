@@ -37,9 +37,9 @@
 #include "options.hxx"
 #include "output.hxx"
 #include "unused.hxx"
+#include "utils.hxx"
 #include "bout/bout_enum_class.hxx"
 #include "bout/mesh.hxx"
-#include "utils.hxx"
 
 #include "fmt/core.h"
 
@@ -445,36 +445,42 @@ int CvodeSolver::init() {
   return 0;
 }
 
-template<class FieldType>
-std::vector<BoutReal> CvodeSolver::create_constraints(
-    const std::vector<VarStr<FieldType>>& fields) {
+template <class FieldType>
+std::vector<BoutReal>
+CvodeSolver::create_constraints(const std::vector<VarStr<FieldType>>& fields) {
 
   std::vector<BoutReal> constraints;
   constraints.reserve(fields.size());
   std::transform(begin(fields), end(fields), std::back_inserter(constraints),
                  [](const VarStr<FieldType>& f) {
                    auto f_options = Options::root()[f.name];
-                   const auto value = f_options["positivity_constraint"]
-                                      .doc(fmt::format(
-                                           "Constraint to apply to {} if "
-                                           "solver:apply_positivity_constraint=true. "
-                                           "Possible values are: none (default), "
-                                           "positive, non_negative, negative, or "
-                                           "non_positive.", f.name))
-                                      .withDefault(positivity_constraint::none);
+                   const auto value =
+                       f_options["positivity_constraint"]
+                           .doc(fmt::format("Constraint to apply to {} if "
+                                            "solver:apply_positivity_constraint=true. "
+                                            "Possible values are: none (default), "
+                                            "positive, non_negative, negative, or "
+                                            "non_positive.",
+                                            f.name))
+                           .withDefault(positivity_constraint::none);
                    switch (value) {
-                     case positivity_constraint::none: return 0.0;
-                     case positivity_constraint::positive: return 2.0;
-                     case positivity_constraint::non_negative: return 1.0;
-                     case positivity_constraint::negative: return -2.0;
-                     case positivity_constraint::non_positive: return -1.0;
-                     default: throw BoutException("Incorrect value for "
-                                                  "positivity_constraint");
+                   case positivity_constraint::none:
+                     return 0.0;
+                   case positivity_constraint::positive:
+                     return 2.0;
+                   case positivity_constraint::non_negative:
+                     return 1.0;
+                   case positivity_constraint::negative:
+                     return -2.0;
+                   case positivity_constraint::non_positive:
+                     return -1.0;
+                   default:
+                     throw BoutException("Incorrect value for "
+                                         "positivity_constraint");
                    }
                  });
   return constraints;
 }
-
 
 /**************************************************************************
  * Run - Advance time
@@ -530,9 +536,9 @@ int CvodeSolver::run() {
 
     if (diagnose) {
       // Print additional diagnostics
-      output.write(
-          "\nCVODE: nsteps {:d}, nfevals {:d}, nniters {:d}, npevals {:d}, nliters {:d}\n",
-          nsteps, nfevals, nniters, npevals, nliters);
+      output.write("\nCVODE: nsteps {:d}, nfevals {:d}, nniters {:d}, npevals {:d}, "
+                   "nliters {:d}\n",
+                   nsteps, nfevals, nniters, npevals, nliters);
 
       output.write("    -> Newton iterations per step: {:e}\n",
                    static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
@@ -764,8 +770,8 @@ void CvodeSolver::set_vector_option_values(BoutReal* option_data,
 
 void CvodeSolver::loop_vector_option_values_op(Ind2D UNUSED(i2d), BoutReal* option_data,
                                                int& p, std::vector<BoutReal>& f2dtols,
-                                               std::vector<BoutReal>& f3dtols, bool bndry)
-{
+                                               std::vector<BoutReal>& f3dtols,
+                                               bool bndry) {
   // Loop over 2D variables
   for (std::vector<BoutReal>::size_type i = 0; i < f2dtols.size(); i++) {
     if (bndry && !f2d[i].evolve_bndry) {

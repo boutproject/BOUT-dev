@@ -47,18 +47,19 @@
 //#define DIAGNOSE 1
 
 #include "mpi.h"
-#include "utils.hxx"
 #include "msg_stack.hxx"
+#include "utils.hxx"
 #include <lapack_routines.hxx>
 
-#include "bout/assert.hxx"
 #include "boutexception.hxx"
+#include "bout/assert.hxx"
 
 #include "output.hxx"
 
 #include "bout/openmpwrap.hxx"
 
-template <class T> class CyclicReduce {
+template <class T>
+class CyclicReduce {
 public:
   CyclicReduce() = default;
 
@@ -90,7 +91,7 @@ public:
   /// By default not periodic
   void setPeriodic(bool p = true) { periodic = p; }
 
-  void setCoefs(const Array<T> &a, const Array<T> &b, const Array<T> &c) {
+  void setCoefs(const Array<T>& a, const Array<T>& b, const Array<T>& c) {
     ASSERT2(a.size() == b.size());
     ASSERT2(a.size() == c.size());
     ASSERT2(a.size() == N);
@@ -99,7 +100,7 @@ public:
     Matrix<T> bMatrix(1, N);
     Matrix<T> cMatrix(1, N);
 
-    BOUT_OMP(parallel for)    
+    BOUT_OMP(parallel for)
     for (int i = 0; i < N; ++i) {
       aMatrix(0, i) = a[i];
       bMatrix(0, i) = b[i];
@@ -139,7 +140,7 @@ public:
   ///
   /// @param[in] rhs Array storing Values of the rhs for a single system
   /// @param[out] x  Array storing the result for a single system
-  void solve(const Array<T> &rhs, Array<T> &x) {
+  void solve(const Array<T>& rhs, Array<T>& x) {
     ASSERT2(rhs.size() == x.size());
     ASSERT2(rhs.size() == N);
 
@@ -166,7 +167,7 @@ public:
   ///
   /// @param[in] rhs Matrix storing Values of the rhs for each system
   /// @param[out] x  Matrix storing the result for each system
-  void solve(const Matrix<T> &rhs, Matrix<T> &x) {
+  void solve(const Matrix<T>& rhs, Matrix<T>& x) {
     TRACE("CyclicReduce::solve");
     ASSERT2(static_cast<int>(std::get<0>(rhs.shape())) == Nsys);
     ASSERT2(static_cast<int>(std::get<0>(x.shape())) == Nsys);
@@ -227,7 +228,7 @@ public:
 
         if (p == myproc) {
           // Just copy the data
-	  BOUT_OMP(parallel for)
+          BOUT_OMP(parallel for)
           for (int i = 0; i < myns; i++)
             for (int j = 0; j < 8; j++)
               ifcs(i, 8 * p + j) = myif(sys0 + i, j);
@@ -278,7 +279,7 @@ public:
 #ifdef DIAGNOSE
           output << "Copying received data from " << p << endl;
 #endif
-	  BOUT_OMP(parallel for)
+          BOUT_OMP(parallel for)
           for (int i = 0; i < myns; i++)
             for (int j = 0; j < 8; j++) {
 #ifdef DIAGNOSE
@@ -308,7 +309,7 @@ public:
       if2x2.ensureUnique();
       x1.ensureUnique();
       xn.ensureUnique();
-      
+
       BOUT_OMP(parallel for)
       for (int i = 0; i < myns; ++i) {
         //  (a  b) (x1) = (b1)
@@ -355,7 +356,7 @@ public:
 
         if (p == myproc) {
           // Just copy the data
-	  BOUT_OMP(parallel for)	  
+          BOUT_OMP(parallel for)
           for (int i = 0; i < myns; i++) {
             x1[sys0 + i] = ifx(i, 2 * p);
             xn[sys0 + i] = ifx(i, 2 * p + 1);
@@ -379,7 +380,7 @@ public:
         // Send data
         for (int p = 0; p < nprocs; p++) { // Loop over processor
           if (p != myproc) {
-	    BOUT_OMP(parallel for)	    
+            BOUT_OMP(parallel for)
             for (int i = 0; i < myns; i++) {
               ifp[2 * i] = ifx(i, 2 * p);
               ifp[2 * i + 1] = ifx(i, 2 * p + 1);
@@ -414,8 +415,8 @@ public:
           nsp = ns;
           if (fromproc < nsextra)
             nsp++;
-	  
-	  BOUT_OMP(parallel for)
+
+          BOUT_OMP(parallel for)
           for (int i = 0; i < nsp; i++) {
             x1[s0 + i] = recvbuffer(fromproc, 2 * i);
             xn[s0 + i] = recvbuffer(fromproc, 2 * i + 1);
@@ -520,12 +521,12 @@ private:
   /// (      a3 b3 c3            )   =>  (   A2 B2 C2)
   /// (              ...         )
   /// (                  an bn cn)
-  void reduce(int ns, int nloc, Matrix<T> &co, Matrix<T> &ifc) {
+  void reduce(int ns, int nloc, Matrix<T>& co, Matrix<T>& ifc) {
 #ifdef DIAGNOSE
     if (nloc < 2)
       throw BoutException("CyclicReduce::reduce nloc < 2");
 #endif
-    
+
     BOUT_OMP(parallel for)
     for (int j = 0; j < ns; j++) {
       // Calculate upper interface equation
@@ -598,20 +599,20 @@ private:
                   const Array<T>& xn, Matrix<T>& xa) {
 
     xa.ensureUnique(); // Going to be modified, so call this outside parallel region
-    
+
     // Tridiagonal system, solve using serial Thomas algorithm
     // xa -- Result for each system
     // co -- Coefficients & rhs for each system
     BOUT_OMP(parallel for)
     for (int i = 0; i < ns; i++) { // Loop over systems
-      Array<T> gam(nloc); // Thread-local array
+      Array<T> gam(nloc);          // Thread-local array
       T bet = 1.0;
       xa(i, 0) = x1[i]; // Already know the first
       gam[1] = 0.;
       for (int j = 1; j < nloc - 1; j++) {
         bet = co(i, 4 * j + 1) - co(i, 4 * j) * gam[j]; // bet = b[j]-a[j]*gam[j]
-        xa(i, j) = (co(i, 4 * j + 3) - co(i, 4 * j) * xa(i, j - 1)) /
-                   bet;                      // x[j] = (r[j]-a[j]*x[j-1])/bet;
+        xa(i, j) = (co(i, 4 * j + 3) - co(i, 4 * j) * xa(i, j - 1))
+                   / bet;                    // x[j] = (r[j]-a[j]*x[j-1])/bet;
         gam[j + 1] = co(i, 4 * j + 2) / bet; // gam[j+1] = c[j]/bet
       }
       xa(i, nloc - 1) = xn[i]; // Know the last value

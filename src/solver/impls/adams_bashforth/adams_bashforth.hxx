@@ -57,8 +57,8 @@ public:
 private:
   // Take a single timestep of specified order. If adaptive also calculates
   // and returns an error estimate.
-  BoutReal take_step(BoutReal timeIn, BoutReal dt, int order,
-                     Array<BoutReal>& current, Array<BoutReal>& result);
+  BoutReal take_step(BoutReal timeIn, BoutReal dt, int order, Array<BoutReal>& current,
+                     Array<BoutReal>& result);
 
   // Holds the current/next state
   Array<BoutReal> state, nextState;
@@ -92,8 +92,8 @@ private:
   BoutReal timestep;
 
   // Internal vars
-  int current_order;     // The current order of the scheme
-  int nlocal, neq;       // Number of variables on local processor and in total
+  int current_order; // The current order of the scheme
+  int nlocal, neq;   // Number of variables on local processor and in total
 };
 
 #endif // __ADAMSBASHFORTH_SOLVER_H__

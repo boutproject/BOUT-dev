@@ -19,9 +19,9 @@ std::string Options::getDefaultSource() { return DEFAULT_SOURCE; }
 /// having been used
 constexpr auto conditionally_used_attribute = "conditionally used";
 
-Options *Options::root_instance{nullptr};
+Options* Options::root_instance{nullptr};
 
-Options &Options::root() {
+Options& Options::root() {
   if (root_instance == nullptr) {
     // Create the singleton
     root_instance = new Options();
@@ -39,7 +39,8 @@ void Options::cleanup() {
 Options::Options(const Options& other)
     : value(other.value), attributes(other.attributes),
       parent_instance(other.parent_instance), full_name(other.full_name),
-      is_section(other.is_section), children(other.children), value_used(other.value_used) {
+      is_section(other.is_section), children(other.children),
+      value_used(other.value_used) {
 
   // Ensure that this is the parent of all children,
   // otherwise will point to the original Options instance
@@ -65,9 +66,11 @@ Options::Options(std::initializer_list<std::pair<std::string, Options>> values) 
   // use a lambda. And to make that lambda recursive, we need to have
   // a nested lambda.
   auto append_section_name = [](auto& children, const std::string& section_name) {
-    auto append_impl = [](auto& children, const std::string& section_name, auto& append_ref) mutable -> void {
+    auto append_impl = [](auto& children, const std::string& section_name,
+                          auto& append_ref) mutable -> void {
       for (auto& child : children) {
-        child.second.full_name = fmt::format("{}:{}", section_name, child.second.full_name);
+        child.second.full_name =
+            fmt::format("{}:{}", section_name, child.second.full_name);
         if (child.second.is_section) {
           append_ref(child.second.children, section_name, append_ref);
         }
@@ -91,10 +94,11 @@ Options& Options::operator[](const std::string& name) {
   TRACE("Options::operator[]");
 
   if (isValue()) {
-    throw BoutException(
-        _("Trying to index Option '{0}' with '{1}', but '{0}' is a value, not a section.\n"
-          "This is likely the result of clashing input options, and you may have to rename one of them.\n"),
-        full_name, name);
+    throw BoutException(_("Trying to index Option '{0}' with '{1}', but '{0}' is a "
+                          "value, not a section.\n"
+                          "This is likely the result of clashing input options, and you "
+                          "may have to rename one of them.\n"),
+                        full_name, name);
   }
 
   if (name.empty()) {
@@ -129,10 +133,11 @@ const Options& Options::operator[](const std::string& name) const {
   TRACE("Options::operator[] const");
 
   if (isValue()) {
-    throw BoutException(
-        _("Trying to index Option '{0}' with '{1}', but '{0}' is a value, not a section.\n"
-          "This is likely the result of clashing input options, and you may have to rename one of them.\n"),
-        full_name, name);
+    throw BoutException(_("Trying to index Option '{0}' with '{1}', but '{0}' is a "
+                          "value, not a section.\n"
+                          "This is likely the result of clashing input options, and you "
+                          "may have to rename one of them.\n"),
+                        full_name, name);
   }
 
   if (name.empty()) {
@@ -290,7 +295,8 @@ void Options::assign<>(Tensor<BoutReal> val, std::string source) {
   _set_no_check(std::move(val), std::move(source));
 }
 
-template <> std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
+template <>
+std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
   if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
@@ -299,7 +305,7 @@ template <> std::string Options::as<std::string>(const std::string& UNUSED(simil
   value_used = true;
 
   std::string result = bout::utils::variantToString(value);
-  
+
   output_info << _("\tOption ") << full_name << " = " << result;
   if (attributes.count("source")) {
     // Specify the source of the setting
@@ -331,7 +337,8 @@ double parseExpression(const Options::ValueType& value, const Options* options,
 }
 } // namespace
 
-template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
+template <>
+int Options::as<int>(const int& UNUSED(similar_to)) const {
   if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
@@ -340,14 +347,14 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
 
   if (bout::utils::holds_alternative<int>(value)) {
     result = bout::utils::get<int>(value);
-    
+
   } else {
     // Cases which get a BoutReal then check if close to an integer
     BoutReal rval;
-    
+
     if (bout::utils::holds_alternative<BoutReal>(value)) {
       rval = bout::utils::get<BoutReal>(value);
-    
+
     } else if (bout::utils::holds_alternative<std::string>(value)) {
       rval = parseExpression(value, this, "integer", full_name);
 
@@ -355,10 +362,10 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
       // Another type which can't be converted
       throw BoutException(_("Value for option {:s} is not an integer"), full_name);
     }
-    
+
     // Convert to int by rounding
     result = ROUND(rval);
-    
+
     // Check that the value is close to an integer
     if (fabs(rval - static_cast<BoutReal>(result)) > 1e-3) {
       throw BoutException(_("Value for option {:s} = {:e} is not an integer"), full_name,
@@ -378,19 +385,20 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
   return result;
 }
 
-template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
+template <>
+BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
   if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
   BoutReal result;
-  
+
   if (bout::utils::holds_alternative<int>(value)) {
     result = static_cast<BoutReal>(bout::utils::get<int>(value));
-    
+
   } else if (bout::utils::holds_alternative<BoutReal>(value)) {
     result = bout::utils::get<BoutReal>(value);
-      
+
   } else if (bout::utils::holds_alternative<std::string>(value)) {
     result = parseExpression(value, this, "BoutReal", full_name);
 
@@ -398,39 +406,40 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) c
     throw BoutException(_("Value for option {:s} cannot be converted to a BoutReal"),
                         full_name);
   }
-  
+
   // Mark this option as used
   value_used = true;
-  
+
   output_info << _("\tOption ") << full_name << " = " << result;
   if (attributes.count("source")) {
     // Specify the source of the setting
     output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
   }
   output_info << endl;
-  
+
   return result;
 }
 
-template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
+template <>
+bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
   if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
-  
+
   bool result;
-  
+
   if (bout::utils::holds_alternative<bool>(value)) {
     result = bout::utils::get<bool>(value);
-  
-  } else if(bout::utils::holds_alternative<std::string>(value)) {
+
+  } else if (bout::utils::holds_alternative<std::string>(value)) {
     // case-insensitve check, so convert string to lower case
     const auto strvalue = lowercase(bout::utils::get<std::string>(value));
-  
+
     if ((strvalue == "y") or (strvalue == "yes") or (strvalue == "t")
         or (strvalue == "true") or (strvalue == "1")) {
       result = true;
     } else if ((strvalue == "n") or (strvalue == "no") or (strvalue == "f")
-        or (strvalue == "false") or (strvalue == "0")) {
+               or (strvalue == "false") or (strvalue == "0")) {
       result = false;
     } else {
       throw BoutException(_("\tOption '{:s}': Boolean expected. Got '{:s}'\n"), full_name,
@@ -440,11 +449,11 @@ template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
     throw BoutException(_("Value for option {:s} cannot be converted to a bool"),
                         full_name);
   }
-  
+
   value_used = true;
-  
+
   output_info << _("\tOption ") << full_name << " = " << toString(result);
-  
+
   if (attributes.count("source")) {
     // Specify the source of the setting
     output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
@@ -454,7 +463,8 @@ template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
   return result;
 }
 
-template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
+template <>
+Field3D Options::as<Field3D>(const Field3D& similar_to) const {
   if (is_section) {
     throw BoutException("Option {:s} has no value", full_name);
   }
@@ -464,10 +474,10 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
 
   if (bout::utils::holds_alternative<Field3D>(value)) {
     Field3D stored_value = bout::utils::get<Field3D>(value);
-    
+
     // Check that meta-data is consistent
     ASSERT1_FIELDS_COMPATIBLE(stored_value, similar_to);
-    
+
     return stored_value;
   }
 
@@ -482,8 +492,9 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
 
   if (bout::utils::holds_alternative<BoutReal>(value)
       or bout::utils::holds_alternative<int>(value)) {
-    BoutReal scalar_value = bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
-    
+    BoutReal scalar_value =
+        bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
+
     // Get metadata from similar_to, fill field with scalar_value
     return filledFrom(similar_to, scalar_value);
   }
@@ -517,17 +528,18 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
                       full_name);
 }
 
-template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
+template <>
+Field2D Options::as<Field2D>(const Field2D& similar_to) const {
   if (is_section) {
     throw BoutException("Option {:s} has no value", full_name);
   }
-  
+
   // Mark value as used
   value_used = true;
 
   if (bout::utils::holds_alternative<Field2D>(value)) {
     Field2D stored_value = bout::utils::get<Field2D>(value);
-    
+
     // Check that meta-data is consistent
     ASSERT1_FIELDS_COMPATIBLE(stored_value, similar_to);
 
@@ -536,7 +548,8 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
 
   if (bout::utils::holds_alternative<BoutReal>(value)
       or bout::utils::holds_alternative<int>(value)) {
-    BoutReal scalar_value = bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
+    BoutReal scalar_value =
+        bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
     // Get metadata from similar_to, fill field with scalar_value
     return filledFrom(similar_to, scalar_value);
@@ -866,9 +879,9 @@ void Options::setConditionallyUsed() {
 
 void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
 
-std::map<std::string, const Options *> Options::subsections() const {
-  std::map<std::string, const Options *> sections;
-  for (const auto &it : children) {
+std::map<std::string, const Options*> Options::subsections() const {
+  std::map<std::string, const Options*> sections;
+  for (const auto& it : children) {
     if (it.second.is_section) {
       sections[it.first] = &it.second;
     }

@@ -789,9 +789,8 @@ private:
   decltype(HYPRE_ParCSRGMRESSetTol)* solverSetTol{nullptr};
   decltype(HYPRE_ParCSRGMRESSetAbsoluteTol)* solverSetAbsoluteTol{nullptr};
   decltype(HYPRE_ParCSRGMRESSetMaxIter)* solverSetMaxIter{nullptr};
-  decltype(
-      HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm)* solverGetFinalRelativeResidualNorm{
-      nullptr};
+  decltype(HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm)*
+      solverGetFinalRelativeResidualNorm{nullptr};
   decltype(HYPRE_ParCSRGMRESGetNumIterations)* solverGetNumIterations{nullptr};
   decltype(HYPRE_ParCSRGMRESSetPrecond)* solverSetPrecond{nullptr};
   decltype(HYPRE_ParCSRGMRESSetup)* solverSetup{nullptr};

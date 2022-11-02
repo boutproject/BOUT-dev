@@ -30,7 +30,8 @@
 ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in)
     : ZInterpolation(y_offset, mesh, region_in),
       fz_region(region_in.size() != 0 ? "RGN_ALL"
-                                      : y_offset == 0 ? "RGN_NOBNDRY" : "RGN_NOX"),
+                : y_offset == 0       ? "RGN_NOBNDRY"
+                                      : "RGN_NOX"),
       h00(localmesh), h01(localmesh), h10(localmesh), h11(localmesh) {
 
   if (region_in.size() != 0) {
@@ -40,7 +41,7 @@ ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in
   }
 
   // Index arrays contain guard cells in order to get subscripts right
-  const int n_total = localmesh->LocalNx*localmesh->LocalNy*localmesh->LocalNz;
+  const int n_total = localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz;
   k_corner.reallocate(n_total);
 
   // Initialise in order to avoid 'uninitialized value' errors from Valgrind when using
@@ -62,7 +63,8 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
 
   // Calculate weights for all points if y_offset==0 in case they are needed, otherwise
   // only calculate weights for RGN_NOY, which should be a superset of 'region'
-  const auto& local_region = (y_offset == 0) ? delta_z.getRegion("RGN_ALL") : delta_z.getRegion("RGN_NOY");
+  const auto& local_region =
+      (y_offset == 0) ? delta_z.getRegion("RGN_ALL") : delta_z.getRegion("RGN_NOY");
 
   BOUT_FOR(i, local_region) {
     const int x = i.x();
@@ -83,7 +85,7 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
     corner_zind = ((corner_zind % ncz) + ncz) % ncz;
 
     // Convert z-index to Ind3D
-    k_corner[i.ind] = Ind3D((x*ncy + y)*ncz + corner_zind, ncy, ncz);
+    k_corner[i.ind] = Ind3D((x * ncy + y) * ncz + corner_zind, ncy, ncz);
 
     // Check that t_z is in range
     if ((t_z < 0.0) || (t_z > 1.0)) {
@@ -132,19 +134,20 @@ ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) co
   ASSERT3(k <= localmesh->LocalNz);
 
   const int ncz = localmesh->LocalNz;
-  const auto corner = k_corner[(i*localmesh->LocalNy + j)*ncz + k];
+  const auto corner = k_corner[(i * localmesh->LocalNy + j) * ncz + k];
   const int k_mod = corner.z();
   const int k_mod_m1 = corner.zm().z();
   const int k_mod_p1 = corner.zp().z();
   const int k_mod_p2 = corner.zpp().z();
 
   return {{i, j + yoffset, k_mod_m1, -0.5 * h10(i, j, k)},
-          {i, j + yoffset, k_mod,    h00(i, j, k) - 0.5 * h11(i, j, k)},
+          {i, j + yoffset, k_mod, h00(i, j, k) - 0.5 * h11(i, j, k)},
           {i, j + yoffset, k_mod_p1, h01(i, j, k) + 0.5 * h10(i, j, k)},
           {i, j + yoffset, k_mod_p2, 0.5 * h11(i, j, k)}};
 }
 
-Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region_str) const {
+Field3D ZHermiteSpline::interpolate(const Field3D& f,
+                                    const std::string& region_str) const {
 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
@@ -191,8 +194,8 @@ RegisterZInterpolation<ZHermiteSpline> registerzinterphermitespline{"hermitespli
 } // namespace
 
 constexpr decltype(ZInterpolationFactory::type_name) ZInterpolationFactory::type_name;
-constexpr decltype(
-    ZInterpolationFactory::section_name) ZInterpolationFactory::section_name;
+constexpr decltype(ZInterpolationFactory::section_name)
+    ZInterpolationFactory::section_name;
 constexpr decltype(ZInterpolationFactory::option_name) ZInterpolationFactory::option_name;
-constexpr decltype(
-    ZInterpolationFactory::default_type) ZInterpolationFactory::default_type;
+constexpr decltype(ZInterpolationFactory::default_type)
+    ZInterpolationFactory::default_type;

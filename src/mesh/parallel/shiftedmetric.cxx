@@ -16,7 +16,7 @@
 #include <cmath>
 
 ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
-    BoutReal zlength_in, Options* opt)
+                             BoutReal zlength_in, Options* opt)
     : ParallelTransform(m, opt), location(location_in), zShift(std::move(zShift_)),
       zlength(zlength_in) {
   ASSERT1(zShift.getLocation() == location);
@@ -28,7 +28,8 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
 
 void ShiftedMetric::checkInputGrid() {
   std::string parallel_transform;
-  if (mesh.isDataSourceGridFile() and !mesh.get(parallel_transform, "parallel_transform")) {
+  if (mesh.isDataSourceGridFile()
+      and !mesh.get(parallel_transform, "parallel_transform")) {
     if (parallel_transform != "shiftedmetric") {
       throw BoutException("Incorrect parallel transform type '" + parallel_transform
                           + "' used to generate metric components for ShiftedMetric. "
@@ -41,7 +42,8 @@ void ShiftedMetric::checkInputGrid() {
 
 void ShiftedMetric::outputVars(Options& output_options) {
   Timer time("io");
-  const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
+  const std::string loc_string =
+      (location == CELL_CENTRE) ? "" : "_" + toString(location);
 
   output_options["zShift" + loc_string].force(zShift, "ShiftedMetric");
 }
@@ -185,7 +187,7 @@ FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
 
   int y = f.getIndex();
   // Note that this loop is essentially hardcoded to be RGN_NOX
-  for (int i=mesh.xstart; i<=mesh.xend; ++i) {
+  for (int i = mesh.xstart; i <= mesh.xend; ++i) {
     shiftZ(&f(i, 0), &phs(i, y, 0), &result(i, 0));
   }
 

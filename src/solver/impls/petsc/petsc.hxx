@@ -33,8 +33,8 @@
 #if not BOUT_HAS_PETSC
 
 namespace {
-RegisterUnavailableSolver registerunavailablepetsc("petsc",
-                                                   "BOUT++ was not configured with PETSc");
+RegisterUnavailableSolver
+    registerunavailablepetsc("petsc", "BOUT++ was not configured with PETSc");
 }
 
 #else
@@ -66,17 +66,17 @@ using rhsfunc = int (*)(BoutReal);
 extern BoutReal simtime;
 
 /// Monitor function called on every internal timestep
-extern PetscErrorCode PetscMonitor(TS, PetscInt, PetscReal, Vec, void *ctx);
+extern PetscErrorCode PetscMonitor(TS, PetscInt, PetscReal, Vec, void* ctx);
 /// Monitor function for SNES
-extern PetscErrorCode PetscSNESMonitor(SNES, PetscInt, PetscReal, void *ctx);
+extern PetscErrorCode PetscSNESMonitor(SNES, PetscInt, PetscReal, void* ctx);
 
 /// Compute IJacobian = dF/dU + a dF/dUdot  - a dummy matrix used for pc=none
 #if PETSC_VERSION_GE(3, 5, 0)
 extern PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat, Mat,
-                                       void *);
+                                       void*);
 #else
-extern PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat *, Mat *,
-                                       MatStructure *, void *);
+extern PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat*, Mat*,
+                                       MatStructure*, void*);
 #endif
 
 /// Data for SNES
@@ -89,7 +89,7 @@ struct snes_info {
 
 class PetscSolver : public Solver {
 public:
-  PetscSolver(Options *opts = nullptr);
+  PetscSolver(Options* opts = nullptr);
   ~PetscSolver();
 
   int init() override;
@@ -105,14 +105,14 @@ public:
   PetscErrorCode jac(Vec x, Vec y);
 
   // Call back functions that need to access internal state
-  friend PetscErrorCode PetscMonitor(TS, PetscInt, PetscReal, Vec, void *ctx);
-  friend PetscErrorCode PetscSNESMonitor(SNES, PetscInt, PetscReal, void *ctx);
+  friend PetscErrorCode PetscMonitor(TS, PetscInt, PetscReal, Vec, void* ctx);
+  friend PetscErrorCode PetscSNESMonitor(SNES, PetscInt, PetscReal, void* ctx);
 #if PETSC_VERSION_GE(3, 5, 0)
   friend PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat, Mat,
-                                         void *);
+                                         void*);
 #else
-  friend PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat *, Mat *,
-                                         MatStructure *, void *);
+  friend PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat*, Mat*,
+                                         MatStructure*, void*);
 #endif
 
   PetscLogEvent solver_event, loop_event, init_event;

@@ -38,8 +38,8 @@
 #include "options.hxx"
 #include "output.hxx"
 #include "unused.hxx"
-#include "bout/mesh.hxx"
 #include "utils.hxx"
+#include "bout/mesh.hxx"
 
 #if SUNDIALS_VERSION_MAJOR >= 4
 #include <arkode/arkode_arkstep.h>
@@ -622,7 +622,8 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
   run_rhs(simtime);
   // run_diffusive(simtime);
   if (flag != ARK_SUCCESS) {
-    output_error.write("ERROR ARKODE solve failed at t = {:e}, flag = {:d}\n", simtime, flag);
+    output_error.write("ERROR ARKODE solve failed at t = {:e}, flag = {:d}\n", simtime,
+                       flag);
     return -1.0;
   }
 

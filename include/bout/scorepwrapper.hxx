@@ -3,8 +3,8 @@
 
 #include "bout/build_config.hxx"
 
-#include <bout_types.hxx>
 #include "msg_stack.hxx"
+#include <bout_types.hxx>
 
 #if BOUT_HAS_SCOREP
 #include <scorep/SCOREP_User.h>
@@ -19,7 +19,7 @@
 /// The scorep call is identical for all levels, so just define it here.
 /// If we don't have scorep support then just define a null function
 #if BOUT_HAS_SCOREP
-#define SCOREP_BASE_CALL(...)						\
+#define SCOREP_BASE_CALL(...) \
   SCOREP_USER_REGION(__thefunc__, SCOREP_USER_REGION_TYPE_FUNCTION)
 #else
 #define SCOREP_BASE_CALL(...)
@@ -52,7 +52,7 @@
 
 /// Instrument a region with scorep
 #if BOUT_HAS_SCOREP
-#define BOUT_SCOREP_REGION(...)						\
+#define BOUT_SCOREP_REGION(...) \
   SCOREP_USER_REGION(__VA_ARGS__, SCOREP_USER_REGION_TYPE_COMMON)
 #else
 #define BOUT_SCOREP_REGION(...)

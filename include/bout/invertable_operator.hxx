@@ -28,7 +28,7 @@ namespace inversion {
 template <typename T>
 class InvertableOperator;
 };
-};
+}; // namespace bout
 
 #ifndef __INVERTABLE_OPERATOR_H__
 #define __INVERTABLE_OPERATOR_H__
@@ -136,8 +136,7 @@ public:
       : operatorFunction(func), preconditionerFunction(func),
         opt(optIn == nullptr ? Options::getRoot()->getSection("invertableOperator")
                              : optIn),
-        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
-        lib(opt) {
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn), lib(opt) {
     AUTO_TRACE();
   };
 
@@ -565,7 +564,7 @@ public:
 };
 
 #endif // PETSC
-};
-};
+};     // namespace inversion
+};     // namespace bout
 
 #endif // HEADER GUARD

@@ -92,10 +92,10 @@ constexpr auto SOLVERIMEXBDF2 = "imexbdf2";
 constexpr auto SOLVERSNES = "snes";
 constexpr auto SOLVERRKGENERIC = "rkgeneric";
 
-enum class SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
+enum class SOLVER_VAR_OP { LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS };
 
 /// A type to set where in the list monitors are added
-enum class MonitorPosition {BACK, FRONT};
+enum class MonitorPosition { BACK, FRONT };
 
 class SolverFactory : public Factory<Solver, SolverFactory, Options*> {
 public:
@@ -250,10 +250,14 @@ public:
 
   /// Add a variable to be solved. This must be done in the
   /// initialisation stage, before the simulation starts.
-  virtual void add(Field2D& v, const std::string& name, const std::string& description = "");
-  virtual void add(Field3D& v, const std::string& name, const std::string& description = "");
-  virtual void add(Vector2D& v, const std::string& name, const std::string& description = "");
-  virtual void add(Vector3D& v, const std::string& name, const std::string& description = "");
+  virtual void add(Field2D& v, const std::string& name,
+                   const std::string& description = "");
+  virtual void add(Field3D& v, const std::string& name,
+                   const std::string& description = "");
+  virtual void add(Vector2D& v, const std::string& name,
+                   const std::string& description = "");
+  virtual void add(Vector3D& v, const std::string& name,
+                   const std::string& description = "");
 
   /// Returns true if constraints available
   virtual bool constraints() { return has_constraints; }
@@ -384,13 +388,13 @@ protected:
   };
 
   /// Does \p var represent field \p name?
-  template<class T>
+  template <class T>
   friend bool operator==(const VarStr<T>& var, const std::string& name) {
     return var.name == name;
   }
 
   /// Does \p vars contain a field with \p name?
-  template<class T>
+  template <class T>
   bool contains(const std::vector<VarStr<T>>& vars, const std::string& name) {
     const auto in_vars = std::find(begin(vars), end(vars), name);
     return in_vars != end(vars);
@@ -415,16 +419,16 @@ protected:
   /// Vectors of diagnostic variables to save
   std::vector<VarStr<int>> diagnostic_int;
   std::vector<VarStr<BoutReal>> diagnostic_BoutReal;
-  void add_int_diagnostic(int &i, const std::string &name,
-                          const std::string &description = "") {
+  void add_int_diagnostic(int& i, const std::string& name,
+                          const std::string& description = "") {
     VarStr<int> v;
     v.var = &i;
     v.name = name;
     v.description = description;
     diagnostic_int.emplace_back(std::move(v));
   };
-  void add_BoutReal_diagnostic(BoutReal &r, const std::string &name,
-                               const std::string &description = "") {
+  void add_BoutReal_diagnostic(BoutReal& r, const std::string& name,
+                               const std::string& description = "") {
     VarStr<BoutReal> v;
     v.var = &r;
     v.name = name;
@@ -553,7 +557,7 @@ private:
 
   /// Should non-split physics models be treated as diffusive?
   bool is_nonsplit_model_diffusive{true};
-  
+
   /// Enable sources and solutions for Method of Manufactured Solutions
   bool mms{false};
   /// Initialise variables to the manufactured solution

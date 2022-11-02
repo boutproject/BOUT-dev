@@ -33,8 +33,8 @@
 #if not BOUT_HAS_SLEPC
 
 namespace {
-RegisterUnavailableSolver registerunavailableslepc("slepc",
-                                                   "BOUT++ was not configured with SLEPc");
+RegisterUnavailableSolver
+    registerunavailableslepc("slepc", "BOUT++ was not configured with SLEPc");
 }
 
 #else
@@ -76,10 +76,10 @@ RegisterSolver<SlepcSolver> registersolverslepc("slepc");
 
 class SlepcSolver : public Solver {
 public:
-  SlepcSolver(Options *options);
+  SlepcSolver(Options* options);
   ~SlepcSolver();
 
-  int advanceStep(Mat &matOperator, Vec &inData, Vec &outData);
+  int advanceStep(Mat& matOperator, Vec& inData, Vec& outData);
   int compareEigs(PetscScalar ar, PetscScalar ai, PetscScalar br, PetscScalar bi);
   void monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], PetscScalar eigi[],
                PetscReal errest[], PetscInt nest);
@@ -98,7 +98,7 @@ public:
   ///      use of additional solver
   ////////////////////////////////////////
 
-  void setModel(PhysicsModel *model) override { // New API
+  void setModel(PhysicsModel* model) override { // New API
     Solver::setModel(model);
     if (!selfSolve) {
       advanceSolver->setModel(model);
@@ -195,8 +195,8 @@ public:
 
   int compareState;
 
-  void slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn, BoutReal &reEigOut,
-                   BoutReal &imEigOut, bool force = false);
+  void slepcToBout(PetscScalar& reEigIn, PetscScalar& imEigIn, BoutReal& reEigOut,
+                   BoutReal& imEigOut, bool force = false);
 
   Mat shellMat; //"Shell" matrix operator
 private:
@@ -206,17 +206,18 @@ private:
   ST st;               // Spectral transform object
   PetscBool stIsShell; // Is the ST a shell object?
 
-  std::unique_ptr<Solver> advanceSolver{nullptr}; // Pointer to actual solver used to advance fields
+  std::unique_ptr<Solver> advanceSolver{
+      nullptr}; // Pointer to actual solver used to advance fields
 
-  void vecToFields(Vec &inVec);
-  void fieldsToVec(Vec &outVec);
+  void vecToFields(Vec& inVec);
+  void fieldsToVec(Vec& outVec);
 
   void createShellMat();
   void createEPS();
 
   void analyseResults();
-  void boutToSlepc(BoutReal &reEigIn, BoutReal &imEigIn, PetscScalar &reEigOut,
-                   PetscScalar &imEigOut, bool force = false);
+  void boutToSlepc(BoutReal& reEigIn, BoutReal& imEigIn, PetscScalar& reEigOut,
+                   PetscScalar& imEigOut, bool force = false);
 
   SlepcLib slib;  // Handles initialize / finalize
   bool ddtMode;   // If true then slepc deals with the ddt operator

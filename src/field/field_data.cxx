@@ -1,11 +1,11 @@
 
-#include <bout/mesh.hxx>
-#include <globals.hxx>
-#include <field_data.hxx>
-#include <boundary_factory.hxx>
-#include <output.hxx>
-#include <field_factory.hxx>
 #include "unused.hxx"
+#include <bout/mesh.hxx>
+#include <boundary_factory.hxx>
+#include <field_data.hxx>
+#include <field_factory.hxx>
+#include <globals.hxx>
+#include <output.hxx>
 
 namespace bout {
 /// Make sure \p location is a sensible value for \p mesh
@@ -67,9 +67,9 @@ FieldData::FieldData(const FieldData& other) {
 }
 
 FieldData::~FieldData() {
-  if(!boundaryIsCopy) {
+  if (!boundaryIsCopy) {
     // Delete the boundary operations
-    for(const auto& bndry : bndry_op)
+    for (const auto& bndry : bndry_op)
       delete bndry;
   }
 }
@@ -162,7 +162,7 @@ void FieldData::setBoundary(const std::string& name) {
   boundaryIsCopy = false;
 }
 
-void FieldData::copyBoundary(const FieldData &f) {
+void FieldData::copyBoundary(const FieldData& f) {
   bndry_op = f.bndry_op;
   bndry_op_par = f.bndry_op_par;
   boundaryIsCopy = true;
@@ -170,7 +170,7 @@ void FieldData::copyBoundary(const FieldData &f) {
 }
 
 //JMAD
-void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
+void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location) {
   addBndryGenerator(std::make_shared<FieldFunction>(userfunc), location);
 }
 
@@ -192,7 +192,7 @@ void FieldData::addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location) {
 
 FieldGeneratorPtr FieldData::getBndryGenerator(BndryLoc location) {
   auto it = bndry_generator.find(location);
-  if(it == bndry_generator.end())
+  if (it == bndry_generator.end())
     return nullptr;
 
   return it->second;

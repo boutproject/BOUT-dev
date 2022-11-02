@@ -288,7 +288,8 @@ BoutReal IdaSolver::run(BoutReal tout) {
   run_rhs(simtime);
 
   if (flag < 0) {
-    output_error.write("ERROR IDA solve failed at t = {:e}, flag = {:d}\n", simtime, flag);
+    output_error.write("ERROR IDA solve failed at t = {:e}, flag = {:d}\n", simtime,
+                       flag);
     return -1.0;
   }
 

@@ -11,7 +11,7 @@ template <>
 std::string typeName<bool>() {
   return "bool";
 }
-  
+
 template <>
 std::string typeName<int>() {
   return "int";
@@ -41,5 +41,5 @@ template <>
 std::string typeName<FieldPerp>() {
   return "FieldPerp";
 }
-}
-}
+} // namespace utils
+} // namespace bout

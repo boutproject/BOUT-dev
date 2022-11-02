@@ -104,28 +104,28 @@ using is_Options = std::is_base_of<Options, T>;
 /// `Field2D` if `V` is `Field2D`, and `Field3D` if `V` is `Field3D`.
 template <class... Ts>
 using EnableIfField =
-    typename std::enable_if<details::and_all(is_Field<Ts>::value ...),
+    typename std::enable_if<details::and_all(is_Field<Ts>::value...),
                             typename std::common_type<Ts...>::type>::type;
 
 /// Enable a function if all the Ts are subclasses of `Field2D`, and
 /// returns the common type
 template <class... Ts>
 using EnableIfField2D =
-    typename std::enable_if<details::and_all(is_Field2D<Ts>::value ...),
+    typename std::enable_if<details::and_all(is_Field2D<Ts>::value...),
                             typename std::common_type<Ts...>::type>::type;
 
 /// Enable a function if all the Ts are subclasses of `Field3D`, and
 /// returns the common type
 template <class... Ts>
 using EnableIfField3D =
-    typename std::enable_if<details::and_all(is_Field3D<Ts>::value ...),
+    typename std::enable_if<details::and_all(is_Field3D<Ts>::value...),
                             typename std::common_type<Ts...>::type>::type;
 
 /// Enable a function if all the Ts are subclasses of `FieldPerp`, and
 /// returns the common type
 template <class... Ts>
 using EnableIfFieldPerp =
-    typename std::enable_if<details::and_all(is_FieldPerp<Ts>::value ...),
+    typename std::enable_if<details::and_all(is_FieldPerp<Ts>::value...),
                             typename std::common_type<Ts...>::type>::type;
 
 /// Enable a function if T is a subclass of Options
