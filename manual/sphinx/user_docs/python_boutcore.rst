@@ -28,7 +28,7 @@ required, as the provided one may be only for the compute nodes.
 Further, numpy header files are required, therefore numpy needs to be
 compiled as well.
 Further, the header files need to be exposed to the boutcore cython
-compilation, e.g. by adding them to ``_boutcore_build/boutcore.pyx.in``.
+compilation, e.g. by adding them to ``_boutcore/boutcore.pyx.in``.
 It seems both ``NUMPY/numpy/core/include`` and
 ``NUMPY/build/src.linux-x86_64-2.7/numpy/core/include/numpy`` need to be
 added, where ``NUMPY`` is the path of the numpy directory.
