@@ -60,8 +60,9 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z))
+    if (skip_mask(x, y, z)) {
       continue;
+    }
 
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
@@ -180,8 +181,9 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z))
+    if (skip_mask(x, y, z)) {
       continue;
+    }
 
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around

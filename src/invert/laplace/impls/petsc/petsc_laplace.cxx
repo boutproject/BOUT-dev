@@ -72,10 +72,11 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   Ez.setLocation(location);
 
   // Get Options in Laplace Section
-  if (!opt)
+  if (!opt) {
     opts = Options::getRoot()->getSection("laplace");
-  else
+  } else {
     opts = opt;
+  }
 
 #if CHECK > 0
   // These are the implemented flags
@@ -84,10 +85,11 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   // Checking flags are set to something which is not implemented
   // This is done binary (which is possible as each flag is a power of 2)
   if (global_flags & ~implemented_flags) {
-    if (global_flags & INVERT_4TH_ORDER)
+    if (global_flags & INVERT_4TH_ORDER) {
       output << "For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
                 "setting INVERT_4TH_ORDER flag"
              << endl;
+    }
     throw BoutException("Attempted to set Laplacian inversion flag that is not "
                         "implemented in petsc_laplace.cxx");
   }
@@ -112,19 +114,22 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   // Need to determine local size to use based on prior parallelisation
   // Coefficient values are stored only on local processors.
   localN = (localmesh->xend - localmesh->xstart + 1) * (localmesh->LocalNz);
-  if (localmesh->firstX())
+  if (localmesh->firstX()) {
     localN +=
         localmesh->xstart
         * (localmesh->LocalNz); // If on first processor add on width of boundary region
-  if (localmesh->lastX())
+  }
+  if (localmesh->lastX()) {
     localN +=
         localmesh->xstart
         * (localmesh->LocalNz); // If on last processor add on width of boundary region
+  }
 
   // Calculate 'size' (the total number of points in physical grid)
   if (bout::globals::mpi->MPI_Allreduce(&localN, &size, 1, MPI_INT, MPI_SUM, comm)
-      != MPI_SUCCESS)
+      != MPI_SUCCESS) {
     throw BoutException("Error in MPI_Allreduce during LaplacePetsc initialisation");
+  }
 
   // Calculate total (physical) grid dimensions
   meshz = localmesh->LocalNz;
@@ -360,10 +365,11 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Checking flags are set to something which is not implemented (see
   // constructor for details)
   if (global_flags & !implemented_flags) {
-    if (global_flags & INVERT_4TH_ORDER)
+    if (global_flags & INVERT_4TH_ORDER) {
       output << "For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
                 "setting INVERT_4TH_ORDER flag"
              << endl;
+    }
     throw BoutException("Attempted to set Laplacian inversion flag that is not "
                         "implemented in petsc_laplace.cxx");
   }
@@ -468,10 +474,11 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
 
           // Set Components of RHS
           // If the inner boundary value should be set by b or x0
-          if (inner_boundary_flags & INVERT_RHS)
+          if (inner_boundary_flags & INVERT_RHS) {
             val = b[x][z];
-          else if (inner_boundary_flags & INVERT_SET)
+          } else if (inner_boundary_flags & INVERT_SET) {
             val = x0[x][z];
+          }
 
           // Set components of the RHS (the PETSc vector bs)
           // 1 element is being set in row i to val
@@ -728,10 +735,11 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
           // Set Components of RHS
           // If the inner boundary value should be set by b or x0
           val = 0;
-          if (outer_boundary_flags & INVERT_RHS)
+          if (outer_boundary_flags & INVERT_RHS) {
             val = b[x][z];
-          else if (outer_boundary_flags & INVERT_SET)
+          } else if (outer_boundary_flags & INVERT_SET) {
             val = x0[x][z];
+          }
 
           // Set components of the RHS (the PETSc vector bs)
           // 1 element is being set in row i to val
@@ -790,14 +798,17 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
     } else {                            // If a iterative solver has been chosen
       KSPSetType(ksp, ksptype.c_str()); // Set the type of the solver
 
-      if (ksptype == KSPRICHARDSON)
+      if (ksptype == KSPRICHARDSON) {
         KSPRichardsonSetScale(ksp, richardson_damping_factor);
+      }
 #ifdef KSPCHEBYSHEV
-      else if (ksptype == KSPCHEBYSHEV)
+      else if (ksptype == KSPCHEBYSHEV) {
         KSPChebyshevSetEigenvalues(ksp, chebyshev_max, chebyshev_min);
+      }
 #endif
-      else if (ksptype == KSPGMRES)
+      else if (ksptype == KSPGMRES) {
         KSPGMRESSetRestart(ksp, gmres_max_steps);
+      }
 
       // Set the relative and absolute tolerances
       KSPSetTolerances(ksp, rtol, atol, dtol, maxits);
@@ -821,8 +832,9 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         PCShellSetContext(pc, this);
         if (rightprec) {
           KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
-        } else
+        } else {
           KSPSetPCSide(ksp, PC_LEFT); // Left preconditioning
+        }
         //ierr = PCShellSetApply(pc,laplacePCapply);CHKERRQ(ierr);
         //ierr = PCShellSetContext(pc,this);CHKERRQ(ierr);
         //ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
@@ -914,20 +926,23 @@ void LaplacePetsc::Element(int i, int x, int z, int xshift, int zshift, PetscSca
   // Need to convert LOCAL x to GLOBAL x in order to correctly calculate
   // PETSC Matrix Index.
   int xoffset = Istart / meshz;
-  if (Istart % meshz != 0)
+  if (Istart % meshz != 0) {
     throw BoutException("Petsc index sanity check 3 failed");
+  }
 
   // Calculate the row to be set
   int row_new = x + xshift; // should never be out of range.
-  if (!localmesh->firstX())
+  if (!localmesh->firstX()) {
     row_new += (xoffset - localmesh->xstart);
+  }
 
   // Calculate the column to be set
   int col_new = z + zshift;
-  if (col_new < 0)
+  if (col_new < 0) {
     col_new += meshz;
-  else if (col_new > meshz - 1)
+  } else if (col_new > meshz - 1) {
     col_new -= meshz;
+  }
 
   // Convert to global indices
   int index = (row_new * meshz) + col_new;
@@ -1033,21 +1048,25 @@ void LaplacePetsc::Coeffs(int x, int y, int z, BoutReal& coef1, BoutReal& coef2,
     //   if( (x > 0) && (x < (localmesh->LocalNx-1)) ) //Valid if doing second order derivative, not if fourth: should only be called for xstart<=x<=xend anyway
     if ((x > 1) && (x < (localmesh->LocalNx - 2))) {
       int zp = z + 1; // z plus 1
-      if (zp > meshz - 1)
+      if (zp > meshz - 1) {
         zp -= meshz;
+      }
       int zm = z - 1; // z minus 1
-      if (zm < 0)
+      if (zm < 0) {
         zm += meshz;
+      }
       BoutReal ddx_C;
       BoutReal ddz_C;
 
       if (fourth_order) {
         int zpp = z + 2; // z plus 1 plus 1
-        if (zpp > meshz - 1)
+        if (zpp > meshz - 1) {
           zpp -= meshz;
+        }
         int zmm = z - 2; // z minus 1 minus 1
-        if (zmm < 0)
+        if (zmm < 0) {
           zmm += meshz;
+        }
         // Fourth order discretization of C in x
         ddx_C = (-C2(x + 2, y, z) + 8. * C2(x + 1, y, z) - 8. * C2(x - 1, y, z)
                  + C2(x - 2, y, z))

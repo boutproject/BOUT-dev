@@ -41,21 +41,24 @@ Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge,
 
   mglevel = level;
 
-  if (pcheck > 0)
+  if (pcheck > 0) {
     output << "Construct MG1DP " << endl;
+  }
   commMG = comm;
   MPI_Comm_size(commMG, &xNP);
   MPI_Comm_rank(commMG, &rProcI);
   xProcI = rProcI;
   if (xNP > 1) {
-    if (xProcI == 0)
+    if (xProcI == 0) {
       xProcM = xNP - 1;
-    else
+    } else {
       xProcM = xProcI - 1;
-    if (xProcI == xNP - 1)
+    }
+    if (xProcI == xNP - 1) {
       xProcP = 0;
-    else
+    } else {
       xProcP = xProcI + 1;
+    }
   } else {
     xProcI = 0;
     xProcM = 0;
@@ -81,9 +84,9 @@ Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge,
       int mm = static_cast<int>(sqrt(numP));
       kk = 1;
       for (int n = nn; n > 1; n--) {
-        if (nn % 2 != 0)
+        if (nn % 2 != 0) {
           n = 1;
-        else {
+        } else {
           kk += 1;
           nn = nn / 2;
         }
@@ -91,16 +94,17 @@ Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge,
       nn = lnz[0];
       int kz = 1;
       for (int n = nn; n > 1; n--) {
-        if (nn % 2 != 0)
+        if (nn % 2 != 0) {
           n = 1;
-        else {
+        } else {
           kz += 1;
           nn = nn / 2;
         }
       }
 
-      if (kz < kk)
+      if (kz < kk) {
         kk = kz;
+      }
       nz = 1;
       nx = xNP;
       for (int n = 0; n < kk; n++) {
@@ -123,15 +127,18 @@ Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge,
           kk += 1;
           llx = llx / 2;
           llz = llz / 2;
-        } else
+        } else {
           n = 1;
+        }
       }
-      if (kk > 0)
+      if (kk > 0) {
         kflag = 1;
-      else
+      } else {
         kflag = 2;
-    } else
+      }
+    } else {
       kflag = 2;
+    }
     if (kflag == 1) {
       if (pcheck == 1) {
         output << "To MG2DP " << kk << "xNP=" << nx << "(" << nz << ")" << endl;
@@ -152,8 +159,9 @@ Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge,
           kk += 1;
           nn = nn / 2;
           mm = mm / 2;
-        } else
+        } else {
           n = 1;
+        }
       }
       if (pcheck == 1) {
         output << "To Ser " << kk << " xNP=" << xNP << "(" << zNP << ")" << endl;
@@ -161,8 +169,9 @@ Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge,
       }
       sMG = bout::utils::make_unique<MultigridSerial>(kk, gnx[0], lnz[0], commMG, pcheck);
     }
-  } else
+  } else {
     kflag = 0;
+  }
 }
 
 void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
@@ -180,8 +189,9 @@ void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
     level = rMG->mglevel - 1;
     convertMatrixF2D(level);
 
-    if (level > 0)
+    if (level > 0) {
       rMG->setMultigridC(0);
+    }
 
     if (pcheck == 2) {
       for (int i = level; i >= 0; i--) {
@@ -195,8 +205,9 @@ void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
 
         for (int ii = 0; ii < dim; ii++) {
           fprintf(outf, "%d ==", ii);
-          for (int j = 0; j < 9; j++)
+          for (int j = 0; j < 9; j++) {
             fprintf(outf, "%12.6f,", rMG->matmg[i][ii * 9 + j]);
+          }
           fprintf(outf, "\n");
         }
         fclose(outf);
@@ -206,8 +217,9 @@ void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
     level = sMG->mglevel - 1;
     convertMatrixFS(level);
 
-    if (level > 0)
+    if (level > 0) {
       sMG->setMultigridC(0);
+    }
     if (pcheck == 3) {
       for (int i = level; i >= 0; i--) {
         FILE* outf;
@@ -220,8 +232,9 @@ void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
 
         for (int ii = 0; ii < dim; ii++) {
           fprintf(outf, "%d ==", ii);
-          for (int j = 0; j < 9; j++)
+          for (int j = 0; j < 9; j++) {
             fprintf(outf, "%12.6f,", sMG->matmg[i][ii * 9 + j]);
+          }
           fprintf(outf, "\n");
         }
         fclose(outf);
@@ -386,8 +399,9 @@ void Multigrid1DP::lowestSolver(BoutReal* x, BoutReal* b, int UNUSED(plag)) {
                                       MPI_SUM, commMG);
     BOUT_OMP(parallel default(shared))
     BOUT_OMP(for)
-    for (int i = 0; i < dim; i++)
+    for (int i = 0; i < dim; i++) {
       y[i] = 0.0;
+    }
     sMG->getSolution(std::begin(y), std::begin(r), 1);
 
     BOUT_OMP(parallel default(shared))
@@ -451,8 +465,9 @@ void Multigrid1DP::convertMatrixF2D(int level) {
 
     for (int ii = 0; ii < dim; ii++) {
       fprintf(outf, "%d ==", ii);
-      for (int j = 0; j < 9; j++)
+      for (int j = 0; j < 9; j++) {
         fprintf(outf, "%12.6f,", yl[ii * 9 + j]);
+      }
       fprintf(outf, "\n");
     }
     fclose(outf);
@@ -470,8 +485,9 @@ void Multigrid1DP::convertMatrixF2D(int level) {
 
     for (int ii = 0; ii < dim; ii++) {
       fprintf(outf, "%d ==", ii);
-      for (int j = 0; j < 9; j++)
+      for (int j = 0; j < 9; j++) {
         fprintf(outf, "%12.6f,", yg[ii * 9 + j]);
+      }
       fprintf(outf, "\n");
     }
     fclose(outf);
@@ -539,22 +555,26 @@ Multigrid2DPf1D::Multigrid2DPf1D(int level, int lx, int lz, int gx, int gz, int 
   MPI_Comm_rank(comm, &rProcI);
   xProcI = rProcI / zNP;
   zProcI = rProcI % zNP;
-  if (xProcI == 0)
+  if (xProcI == 0) {
     xProcM = numP - zNP + zProcI;
-  else
+  } else {
     xProcM = rProcI - zNP;
-  if (xProcI == xNP - 1)
+  }
+  if (xProcI == xNP - 1) {
     xProcP = zProcI;
-  else
+  } else {
     xProcP = rProcI + zNP;
-  if (zProcI == 0)
+  }
+  if (zProcI == 0) {
     zProcM = rProcI + zNP - 1;
-  else
+  } else {
     zProcM = rProcI - 1;
-  if (zProcI == zNP - 1)
+  }
+  if (zProcI == zNP - 1) {
     zProcP = xProcI * zNP;
-  else
+  } else {
     zProcP = rProcI + 1;
+  }
   if (pcheck == 2) {
     output << "In 2DP " << mglevel << "xNP=" << xNP << "(" << zNP << ")" << dl << endl;
     for (int i = mglevel - 1; i >= 0; i--) {
@@ -572,8 +592,9 @@ Multigrid2DPf1D::Multigrid2DPf1D(int level, int lx, int lz, int gx, int gz, int 
         kk += 1;
         nn = nn / 2;
         mm = mm / 2;
-      } else
+      } else {
         n = 0;
+      }
     }
     if (pcheck == 2) {
       output << "In 2DP To Ser" << kk << "xNP=" << xNP << "(" << zNP << ")" << endl;
@@ -581,8 +602,9 @@ Multigrid2DPf1D::Multigrid2DPf1D(int level, int lx, int lz, int gx, int gz, int 
     }
     kflag = 2;
     sMG = bout::utils::make_unique<MultigridSerial>(kk, gnx[0], gnz[0], commMG, pcheck);
-  } else
+  } else {
     kflag = 0;
+  }
 }
 
 void Multigrid2DPf1D::setMultigridC(int UNUSED(plag)) {
@@ -598,8 +620,9 @@ void Multigrid2DPf1D::setMultigridC(int UNUSED(plag)) {
   if (kflag == 2) {
     level = sMG->mglevel - 1;
     convertMatrixFS(level);
-    if (level > 0)
+    if (level > 0) {
       sMG->setMultigridC(0);
+    }
     if (pcheck == 2) {
       for (int i = level; i >= 0; i--) {
         FILE* outf;
@@ -612,8 +635,9 @@ void Multigrid2DPf1D::setMultigridC(int UNUSED(plag)) {
 
         for (int ii = 0; ii < dim; ii++) {
           fprintf(outf, "%d ==", ii);
-          for (int j = 0; j < 9; j++)
+          for (int j = 0; j < 9; j++) {
             fprintf(outf, "%12.6f,", sMG->matmg[i][ii * 9 + j]);
+          }
           fprintf(outf, "\n");
         }
         fclose(outf);
@@ -674,8 +698,9 @@ void Multigrid2DPf1D::lowestSolver(BoutReal* x, BoutReal* b, int UNUSED(plag)) {
                                       MPI_SUM, commMG);
     BOUT_OMP(parallel default(shared))
     BOUT_OMP(for)
-    for (int i = 0; i < dim; i++)
+    for (int i = 0; i < dim; i++) {
       y[i] = 0.0;
+    }
     sMG->getSolution(std::begin(y), std::begin(r), 1);
     BOUT_OMP(parallel default(shared))
     {

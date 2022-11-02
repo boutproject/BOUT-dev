@@ -51,20 +51,23 @@ const Field3D smooth_x(const Field3D& f) {
   Field3D result{emptyFrom(f)};
 
   // Copy boundary region
-  for (int jy = 0; jy < mesh->LocalNy; jy++)
+  for (int jy = 0; jy < mesh->LocalNy; jy++) {
     for (int jz = 0; jz < mesh->LocalNz; jz++) {
       result(0, jy, jz) = f(0, jy, jz);
       result(mesh->LocalNx - 1, jy, jz) = f(mesh->LocalNx - 1, jy, jz);
     }
+  }
 
   // Smooth using simple 1-2-1 filter
 
-  for (int jx = 1; jx < mesh->LocalNx - 1; jx++)
-    for (int jy = 0; jy < mesh->LocalNy; jy++)
+  for (int jx = 1; jx < mesh->LocalNx - 1; jx++) {
+    for (int jy = 0; jy < mesh->LocalNy; jy++) {
       for (int jz = 0; jz < mesh->LocalNz; jz++) {
         result(jx, jy, jz) =
             0.5 * f(jx, jy, jz) + 0.25 * (f(jx - 1, jy, jz) + f(jx + 1, jy, jz));
       }
+    }
+  }
 
   // Need to communicate boundaries
   mesh->communicate(result);
@@ -78,21 +81,24 @@ const Field3D smooth_y(const Field3D& f) {
   Field3D result{emptyFrom(f)};
 
   // Copy boundary region
-  for (int jx = 0; jx < mesh->LocalNx; jx++)
+  for (int jx = 0; jx < mesh->LocalNx; jx++) {
     for (int jz = 0; jz < mesh->LocalNz; jz++) {
       result(jx, 0, jz) = f(jx, 0, jz);
       result(jx, mesh->LocalNy - 1, jz) = f(jx, mesh->LocalNy - 1, jz);
     }
+  }
 
   // Smooth using simple 1-2-1 filter
 
-  for (int jx = 0; jx < mesh->LocalNx; jx++)
-    for (int jy = 1; jy < mesh->LocalNy - 1; jy++)
+  for (int jx = 0; jx < mesh->LocalNx; jx++) {
+    for (int jy = 1; jy < mesh->LocalNy - 1; jy++) {
       for (int jz = 0; jz < mesh->LocalNz; jz++) {
         result(jx, jy, jz) =
             0.5 * f(jx, jy, jz)
             + 0.25 * (f.ydown()(jx, jy - 1, jz) + f.yup()(jx, jy + 1, jz));
       }
+    }
+  }
 
   // Need to communicate boundaries
   mesh->communicate(result);
@@ -137,14 +143,18 @@ const Field2D averageX(const Field2D& f) {
   MPI_Comm_size(comm_x, &np);
 
   if (np == 1) {
-    for (int x = 0; x < ngx; x++)
-      for (int y = 0; y < ngy; y++)
+    for (int x = 0; x < ngx; x++) {
+      for (int y = 0; y < ngy; y++) {
         r(x, y) = input[y];
+      }
+    }
   } else {
     MPI_Allreduce(input.begin(), result.begin(), ngy, MPI_DOUBLE, MPI_SUM, comm_x);
-    for (int x = 0; x < ngx; x++)
-      for (int y = 0; y < ngy; y++)
+    for (int x = 0; x < ngx; x++) {
+      for (int y = 0; y < ngy; y++) {
         r(x, y) = result[y] / static_cast<BoutReal>(np);
+      }
+    }
   }
 
   return r;
@@ -178,7 +188,7 @@ const Field3D averageX(const Field3D& f) {
   auto result = Matrix<BoutReal>(ngy, ngz);
 
   // Average on this processor
-  for (int y = 0; y < ngy; y++)
+  for (int y = 0; y < ngy; y++) {
     for (int z = 0; z < ngz; z++) {
       input(y, z) = 0.;
       // Sum values, not including boundaries
@@ -187,6 +197,7 @@ const Field3D averageX(const Field3D& f) {
       }
       input(y, z) /= (mesh->xend - mesh->xstart + 1);
     }
+  }
 
   Field3D r{emptyFrom(f)};
 
@@ -198,17 +209,21 @@ const Field3D averageX(const Field3D& f) {
     MPI_Allreduce(std::begin(input), std::begin(result), ngy * ngz, MPI_DOUBLE, MPI_SUM,
                   comm_x);
 
-    for (int x = 0; x < ngx; x++)
-      for (int y = 0; y < ngy; y++)
+    for (int x = 0; x < ngx; x++) {
+      for (int y = 0; y < ngy; y++) {
         for (int z = 0; z < ngz; z++) {
           r(x, y, z) = result(y, z) / static_cast<BoutReal>(np);
         }
+      }
+    }
   } else {
-    for (int x = 0; x < ngx; x++)
-      for (int y = 0; y < ngy; y++)
+    for (int x = 0; x < ngx; x++) {
+      for (int y = 0; y < ngy; y++) {
         for (int z = 0; z < ngz; z++) {
           r(x, y, z) = input(y, z);
         }
+      }
+    }
   }
 
   return r;
@@ -242,14 +257,18 @@ const Field2D averageY(const Field2D& f) {
   MPI_Comm_size(comm_inner, &np);
 
   if (np == 1) {
-    for (int x = 0; x < ngx; x++)
-      for (int y = 0; y < ngy; y++)
+    for (int x = 0; x < ngx; x++) {
+      for (int y = 0; y < ngy; y++) {
         r(x, y) = input[x];
+      }
+    }
   } else {
     MPI_Allreduce(input.begin(), result.begin(), ngx, MPI_DOUBLE, MPI_SUM, comm_inner);
-    for (int x = 0; x < ngx; x++)
-      for (int y = 0; y < ngy; y++)
+    for (int x = 0; x < ngx; x++) {
+      for (int y = 0; y < ngy; y++) {
         r(x, y) = result[x] / static_cast<BoutReal>(np);
+      }
+    }
   }
 
   return r;
@@ -268,7 +287,7 @@ const Field3D averageY(const Field3D& f) {
   auto result = Matrix<BoutReal>(ngx, ngz);
 
   // Average on this processor
-  for (int x = 0; x < ngx; x++)
+  for (int x = 0; x < ngx; x++) {
     for (int z = 0; z < ngz; z++) {
       input(x, z) = 0.;
       // Sum values, not including boundaries
@@ -277,6 +296,7 @@ const Field3D averageY(const Field3D& f) {
       }
       input(x, z) /= (mesh->yend - mesh->ystart + 1);
     }
+  }
 
   Field3D r{emptyFrom(f)};
 
@@ -289,17 +309,21 @@ const Field3D averageY(const Field3D& f) {
     MPI_Allreduce(std::begin(input), std::begin(result), ngx * ngz, MPI_DOUBLE, MPI_SUM,
                   comm_inner);
 
-    for (int x = 0; x < ngx; x++)
-      for (int y = 0; y < ngy; y++)
+    for (int x = 0; x < ngx; x++) {
+      for (int y = 0; y < ngy; y++) {
         for (int z = 0; z < ngz; z++) {
           r(x, y, z) = result(x, z) / static_cast<BoutReal>(np);
         }
+      }
+    }
   } else {
-    for (int x = 0; x < ngx; x++)
-      for (int y = 0; y < ngy; y++)
+    for (int x = 0; x < ngx; x++) {
+      for (int y = 0; y < ngy; y++) {
         for (int z = 0; z < ngz; z++) {
           r(x, y, z) = input(x, z);
         }
+      }
+    }
   }
 
   return r;
@@ -314,8 +338,9 @@ BoutReal Average_XY(const Field2D& var) {
   Vol_Loc = 0.;
   Vol_Glb = 0.;
 
-  for (i = mesh->xstart; i <= mesh->xend; i++)
+  for (i = mesh->xstart; i <= mesh->xend; i++) {
     Vol_Loc += result(i, 0);
+  }
 
   MPI_Comm comm_x = mesh->getXcomm();
 
@@ -350,8 +375,8 @@ const Field3D smoothXY(const Field3D& f) {
   Mesh* mesh = f.getMesh();
   Field3D result{emptyFrom(f)};
 
-  for (int x = 2; x < mesh->LocalNx - 2; x++)
-    for (int y = 2; y < mesh->LocalNy - 2; y++)
+  for (int x = 2; x < mesh->LocalNx - 2; x++) {
+    for (int y = 2; y < mesh->LocalNy - 2; y++) {
       for (int z = 0; z < mesh->LocalNz; z++) {
         result(x, y, z) = 0.5 * f(x, y, z)
                           + 0.125
@@ -372,6 +397,8 @@ const Field3D smoothXY(const Field3D& f) {
                                          * (f(x + 1, y + 1, z) + f(x - 1, y + 1, z)
                                             + f(x, y, z) + f(x, y + 2, z)));
       }
+    }
+  }
 
   return result;
 }

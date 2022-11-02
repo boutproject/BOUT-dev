@@ -69,8 +69,9 @@ FieldPerp& FieldPerp::allocate() {
 #if CHECK > 2
     invalidateGuards(*this);
 #endif
-  } else
+  } else {
     data.ensureUnique();
+  }
 
   return *this;
 }

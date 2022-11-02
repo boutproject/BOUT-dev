@@ -273,8 +273,9 @@ Field3D FCIMap::integrate(Field3D& f) const {
       int ynext = y + offset;
 
       for (int z = 0; z < nz; z++) {
-        if (boundary_mask(x, y, z))
+        if (boundary_mask(x, y, z)) {
           continue;
+        }
 
         int zm = z - 1;
         if (z == 0) {

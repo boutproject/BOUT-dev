@@ -195,10 +195,13 @@ template <typename Expr>
 const Field3D eval3D(Expr e) {
   Field3D result;
   result.allocate();
-  for (int i = 0; i < bout::globals::mesh->LocalNx; i++)
-    for (int j = 0; j < bout::globals::mesh->LocalNy; j++)
-      for (int k = 0; k < bout::globals::mesh->LocalNz; k++)
+  for (int i = 0; i < bout::globals::mesh->LocalNx; i++) {
+    for (int j = 0; j < bout::globals::mesh->LocalNy; j++) {
+      for (int k = 0; k < bout::globals::mesh->LocalNz; k++) {
         result(i, j, k) = e(i, j, k);
+      }
+    }
+  }
   return result;
 }
 

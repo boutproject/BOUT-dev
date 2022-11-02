@@ -283,8 +283,9 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
     error_abs = max(abs(error3D, "RGN_NOBNDRY"), true, "RGN_NOBNDRY");
     error_rel = error_abs / RMS_rhsOverD;
 
-    if (error_rel < rtol or error_abs < atol)
+    if (error_rel < rtol or error_abs < atol) {
       break;
+    }
 
     ++count;
     if (count > maxits) {
@@ -318,8 +319,9 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
     }
 
     // Might have met convergence criterion while in underrelaxation loop
-    if (error_rel < rtol or error_abs < atol)
+    if (error_rel < rtol or error_abs < atol) {
       break;
+    }
 
     last_error = error_abs;
     b_x_pair_old = b_x_pair;
@@ -343,16 +345,22 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
 
 void LaplaceNaulin::copy_x_boundaries(Field3D& x, const Field3D& x0, Mesh* localmesh) {
   if (localmesh->firstX()) {
-    for (int i = localmesh->xstart - 1; i >= 0; --i)
-      for (int j = localmesh->ystart; j <= localmesh->yend; ++j)
-        for (int k = 0; k < localmesh->LocalNz; ++k)
+    for (int i = localmesh->xstart - 1; i >= 0; --i) {
+      for (int j = localmesh->ystart; j <= localmesh->yend; ++j) {
+        for (int k = 0; k < localmesh->LocalNz; ++k) {
           x(i, j, k) = x0(i, j, k);
+        }
+      }
+    }
   }
   if (localmesh->lastX()) {
-    for (int i = localmesh->xend + 1; i < localmesh->LocalNx; ++i)
-      for (int j = localmesh->ystart; j <= localmesh->yend; ++j)
-        for (int k = 0; k < localmesh->LocalNz; ++k)
+    for (int i = localmesh->xend + 1; i < localmesh->LocalNx; ++i) {
+      for (int j = localmesh->ystart; j <= localmesh->yend; ++j) {
+        for (int k = 0; k < localmesh->LocalNz; ++k) {
           x(i, j, k) = x0(i, j, k);
+        }
+      }
+    }
   }
 }
 

@@ -348,26 +348,30 @@ public:
   inline BoutReal& operator()(int jx, int jy, int jz) {
 #if CHECK > 2
     // Perform bounds checking
-    if (data.empty())
+    if (data.empty()) {
       throw BoutException("Field3D: () operator on empty data");
+    }
 
-    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny) || (jz < 0) || (jz >= nz))
+    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny) || (jz < 0) || (jz >= nz)) {
       throw BoutException(
           "Field3D: ({:d}, {:d}, {:d}) operator out of bounds ({:d}, {:d}, {:d})", jx, jy,
           jz, nx, ny, nz);
+    }
 #endif
     return data[(jx * ny + jy) * nz + jz];
   }
 
   inline const BoutReal& operator()(int jx, int jy, int jz) const {
 #if CHECK > 2
-    if (data.empty())
+    if (data.empty()) {
       throw BoutException("Field3D: () operator on empty data");
+    }
 
-    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny) || (jz < 0) || (jz >= nz))
+    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny) || (jz < 0) || (jz >= nz)) {
       throw BoutException(
           "Field3D: ({:d}, {:d}, {:d}) operator out of bounds ({:d}, {:d}, {:d})", jx, jy,
           jz, nx, ny, nz);
+    }
 #endif
     return data[(jx * ny + jy) * nz + jz];
   }
@@ -381,24 +385,28 @@ public:
    */
   inline const BoutReal* operator()(int jx, int jy) const {
 #if CHECK > 2
-    if (data.empty())
+    if (data.empty()) {
       throw BoutException("Field3D: () operator on empty data");
+    }
 
-    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny))
+    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny)) {
       throw BoutException("Field3D: ({:d}, {:d}) operator out of bounds ({:d}, {:d})", jx,
                           jy, nx, ny);
+    }
 #endif
     return &data[(jx * ny + jy) * nz];
   }
 
   inline BoutReal* operator()(int jx, int jy) {
 #if CHECK > 2
-    if (data.empty())
+    if (data.empty()) {
       throw BoutException("Field3D: () operator on empty data");
+    }
 
-    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny))
+    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny)) {
       throw BoutException("Field3D: ({:d}, {:d}) operator out of bounds ({:d}, {:d})", jx,
                           jy, nx, ny);
+    }
 #endif
     return &data[(jx * ny + jy) * nz];
   }

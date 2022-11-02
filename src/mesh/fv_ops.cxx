@@ -307,7 +307,7 @@ const Field3D D4DY4(const Field3D& d_in, const Field3D& f_in) {
 
   Field3D result{zeroFrom(f)};
 
-  for (int i = mesh->xstart; i <= mesh->xend; i++)
+  for (int i = mesh->xstart; i <= mesh->xend; i++) {
     for (int j = mesh->ystart; j <= mesh->yend; j++) {
       for (int k = 0; k < mesh->LocalNz; k++) {
         BoutReal dy3 = SQ(coord->dy(i, j, k)) * coord->dy(i, j, k);
@@ -337,6 +337,7 @@ const Field3D D4DY4(const Field3D& d_in, const Field3D& f_in) {
         }
       }
     }
+  }
 
   // Convert result back to non-aligned coordinates
   return are_unaligned ? fromFieldAligned(result, "RGN_NOBNDRY") : result;
@@ -473,8 +474,9 @@ void communicateFluxes(Field3D& f) {
   Mesh* mesh = f.getMesh();
 
   // Use X=0 as temporary buffer
-  if (mesh->xstart != 2)
+  if (mesh->xstart != 2) {
     throw BoutException("communicateFluxes: Sorry!");
+  }
 
   int size = mesh->LocalNy * mesh->LocalNz;
   comm_handle xin, xout;
@@ -499,18 +501,20 @@ void communicateFluxes(Field3D& f) {
   if (not_first) {
     mesh->wait(xin);
     // Add to cells
-    for (int y = mesh->ystart; y <= mesh->yend; y++)
+    for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int z = 0; z < mesh->LocalNz; z++) {
         f(2, y, z) += f(0, y, z);
       }
+    }
   }
   if (not_last) {
     mesh->wait(xout);
     // Add to cells
-    for (int y = mesh->ystart; y <= mesh->yend; y++)
+    for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int z = 0; z < mesh->LocalNz; z++) {
         f(mesh->LocalNx - 3, y, z) += f(mesh->LocalNx - 1, y, z);
       }
+    }
   }
 }
 
@@ -535,8 +539,8 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
   Coordinates* coords = a.getCoordinates(outloc);
   Mesh* mesh = f.getMesh();
 
-  for (int i = mesh->xstart; i <= mesh->xend; i++)
-    for (int j = mesh->ystart; j <= mesh->yend; j++)
+  for (int i = mesh->xstart; i <= mesh->xend; i++) {
+    for (int j = mesh->ystart; j <= mesh->yend; j++) {
       for (int k = 0; k < mesh->LocalNz; k++) {
 
         // wrap k-index around as Z is (currently) periodic.
@@ -593,6 +597,8 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
                * (a(i, j, km) + a(i, j, k));
         result(i, j, k) += flux / (coords->dz(i, j, k) * coords->J(i, j, k));
       }
+    }
+  }
 
   return result;
 }

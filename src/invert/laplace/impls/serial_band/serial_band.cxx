@@ -49,8 +49,9 @@ LaplaceSerialBand::LaplaceSerialBand(Options* opt, const CELL_LOC loc, Mesh* mes
   Ccoef.setLocation(location);
   Dcoef.setLocation(location);
 
-  if (!localmesh->firstX() || !localmesh->lastX())
+  if (!localmesh->firstX() || !localmesh->lastX()) {
     throw BoutException("LaplaceSerialBand only works for localmesh->NXPE = 1");
+  }
   if (localmesh->periodicX) {
     throw BoutException("LaplaceSerialBand does not work with periodicity in the x "
                         "direction (localmesh->PeriodicX == true). Change boundary "
@@ -98,8 +99,9 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   int xbndry = localmesh->xstart; // Width of the x boundary
   // If the flags to assign that only one guard cell should be used is set
-  if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2))
+  if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
     xbndry = 1;
+  }
 
   BOUT_OMP(parallel for)
   for (int ix = 0; ix < localmesh->LocalNx; ix++) {
@@ -109,8 +111,9 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         || ((ncx - ix < xbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
       rfft(x0[ix], ncz, &bk(ix, 0));
-    } else
+    } else {
       rfft(b[ix], ncz, &bk(ix, 0));
+    }
   }
 
   int xstart, xend;
@@ -134,8 +137,9 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     const Field2D kwave_ = iz * kwave_fac;
 
     // set bk1d
-    for (int ix = 0; ix < localmesh->LocalNx; ix++)
+    for (int ix = 0; ix < localmesh->LocalNx; ix++) {
       bk1d[ix] = bk(ix, iz);
+    }
 
     // Fill in interior points
 
@@ -173,19 +177,21 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       if (nonuniform) {
         // non-uniform localmesh correction
-        if ((ix != 0) && (ix != ncx))
+        if ((ix != 0) && (ix != ncx)) {
           coef4 += coords->g11(ix, jy)
                    * ((1.0 / coords->dx(ix + 1, jy)) - (1.0 / coords->dx(ix - 1, jy)))
                    / (2.0 * coords->dx(ix, jy));
+        }
       }
 
       // A first order derivative term (1/c)\nabla_perp c\cdot\nabla_\perp x
 
-      if ((ix > 1) && (ix < (localmesh->LocalNx - 2)))
+      if ((ix > 1) && (ix < (localmesh->LocalNx - 2))) {
         coef4 += coords->g11(ix, jy)
                  * (Ccoef(ix - 2, jy) - 8. * Ccoef(ix - 1, jy) + 8. * Ccoef(ix + 1, jy)
                     - Ccoef(ix + 2, jy))
                  / (12. * coords->dx(ix, jy) * (Ccoef(ix, jy)));
+      }
 
       // Put into matrix
       coef1 /= 12. * SQ(coords->dx(ix, jy));
@@ -241,10 +247,12 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     for (int ix = 0; ix < xbndry; ix++) {
       // Set zero-value. Change to zero-gradient if needed
 
-      if (!(inner_boundary_flags & (INVERT_RHS | INVERT_SET)))
+      if (!(inner_boundary_flags & (INVERT_RHS | INVERT_SET))) {
         bk1d[ix] = 0.0;
-      if (!(outer_boundary_flags & (INVERT_RHS | INVERT_SET)))
+      }
+      if (!(outer_boundary_flags & (INVERT_RHS | INVERT_SET))) {
         bk1d[ncx - ix] = 0.0;
+      }
 
       A(ix, 0) = A(ix, 1) = A(ix, 3) = A(ix, 4) = 0.0;
       A(ix, 2) = 1.0;
@@ -309,8 +317,9 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
       // Outer boundary
       if (outer_boundary_flags & INVERT_DC_GRAD) {
         // Zero gradient at outer boundary
-        for (int ix = 0; ix < xbndry; ix++)
+        for (int ix = 0; ix < xbndry; ix++) {
           A(ncx - ix, 1) = -1.0;
+        }
       }
 
     } else {
@@ -319,8 +328,9 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
       // Inner boundarySQ(kwave)*coef2
       if (inner_boundary_flags & INVERT_AC_GRAD) {
         // Zero gradient at inner boundary
-        for (int ix = 0; ix < xbndry; ix++)
+        for (int ix = 0; ix < xbndry; ix++) {
           A(ix, 3) = -1.0;
+        }
       } else if (inner_boundary_flags & INVERT_AC_LAP) {
         // Enforce zero laplacian for 2nd and 4th-order
 
@@ -361,8 +371,9 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
       // Outer boundary
       if (outer_boundary_flags & INVERT_AC_GRAD) {
         // Zero gradient at outer boundary
-        for (int ix = 0; ix < xbndry; ix++)
+        for (int ix = 0; ix < xbndry; ix++) {
           A(ncx - ix, 1) = -1.0;
+        }
       } else if (outer_boundary_flags & INVERT_AC_LAP) {
         // Enforce zero laplacian for 2nd and 4th-order
         // NOTE: Currently ignoring XZ term and coef4 assumed zero on boundary
@@ -411,23 +422,27 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
       // Should do in the inversion e.g. Sherman-Morrison formula
 
       dcomplex offset(0.0);
-      for (int ix = 0; ix <= ncx; ix++)
+      for (int ix = 0; ix <= ncx; ix++) {
         offset += bk1d[ix];
+      }
       offset /= static_cast<BoutReal>(ncx + 1);
-      for (int ix = 0; ix <= ncx; ix++)
+      for (int ix = 0; ix <= ncx; ix++) {
         bk1d[ix] -= offset;
+      }
     }
 
     // Fill xk
-    for (int ix = 0; ix <= ncx; ix++)
+    for (int ix = 0; ix <= ncx; ix++) {
       xk(ix, iz) = bk1d[ix];
+    }
   }
 
   // Done inversion, transform back
 
   for (int ix = 0; ix <= ncx; ix++) {
-    if (global_flags & INVERT_ZERO_DC)
+    if (global_flags & INVERT_ZERO_DC) {
       xk(ix, 0) = 0.0;
+    }
 
     irfft(&xk(ix, 0), ncz, x[ix]);
   }

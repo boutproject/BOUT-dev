@@ -177,8 +177,9 @@ private:
 } // namespace
 
 FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
-  if (args.size() != 2)
+  if (args.size() != 2) {
     throw ParseException("Binary operator expecting 2 arguments. Got {{}}", args.size());
+  }
 
   return std::make_shared<FieldBinary>(args.front(), args.back(), op);
 }
@@ -399,9 +400,10 @@ FieldGeneratorPtr ExpressionParser::parseParenExpr(LexInfo& lex) const {
 
   FieldGeneratorPtr g = parseExpression(lex);
 
-  if ((lex.curtok != ')') && (lex.curtok != ']'))
+  if ((lex.curtok != ')') && (lex.curtok != ']')) {
     throw ParseException("Expecting ')' or ']' but got curtok={:d} ({:c})",
                          static_cast<int>(lex.curtok), static_cast<char>(lex.curtok));
+  }
 
   lex.nextToken(); // eat ')'
   return g;
@@ -498,21 +500,24 @@ FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo& lex, int ExprPrec,
   while (true) {
     // Check for end of input
     if ((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',')
-        || (lex.curtok == ']'))
+        || (lex.curtok == ']')) {
       return lhs;
+    }
 
     // Next token should be a binary operator
     auto it = bin_op.find(lex.curtok);
 
-    if (it == bin_op.end())
+    if (it == bin_op.end()) {
       throw ParseException("Unexpected binary operator '{:c}'",
                            static_cast<char>(lex.curtok));
+    }
 
     FieldGeneratorPtr op = it->second.first;
     int TokPrec = it->second.second;
 
-    if (TokPrec < ExprPrec)
+    if (TokPrec < ExprPrec) {
       return lhs;
+    }
 
     lex.nextToken(); // Eat binop
 
@@ -531,9 +536,10 @@ FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo& lex, int ExprPrec,
     // Find next binop
     it = bin_op.find(lex.curtok);
 
-    if (it == bin_op.end())
+    if (it == bin_op.end()) {
       throw ParseException("Unexpected character '{:c}' ({:d})",
                            static_cast<char>(lex.curtok), static_cast<int>(lex.curtok));
+    }
 
     int NextPrec = it->second.second;
     if (TokPrec < NextPrec) {
@@ -567,8 +573,9 @@ ExpressionParser::LexInfo::LexInfo(const std::string& input, std::string reserve
 }
 
 char ExpressionParser::LexInfo::nextToken() {
-  while (isspace(static_cast<unsigned char>(LastChar)))
+  while (isspace(static_cast<unsigned char>(LastChar))) {
     LastChar = static_cast<signed char>(ss.get());
+  }
 
   if (!ss.good()) {
     curtok = 0;
@@ -601,8 +608,9 @@ char ExpressionParser::LexInfo::nextToken() {
           throw ParseException(
               "ExpressionParser error: Expecting '+', '-' or number after 'e'");
         }
-      } else if (!isdigit(static_cast<unsigned char>(LastChar)))
+      } else if (!isdigit(static_cast<unsigned char>(LastChar))) {
         break;
+      }
 
       NumStr += LastChar;
       LastChar = static_cast<signed char>(ss.get());

@@ -153,8 +153,9 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
         }
 
         // Copy into array, transposing so kz is first index
-        for (int kz = 0; kz < nmode; kz++)
+        for (int kz = 0; kz < nmode; kz++) {
           bcmplx(kz, ix - xs) = k1d[kz];
+        }
       }
 
       // Get elements of the tridiagonal matrix

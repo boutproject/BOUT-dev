@@ -63,9 +63,10 @@ std::string BoutException::getBacktrace() const {
     void* ptr = trace[i];
     if (dladdr(trace[i], &info)) {
       // Additionally, check whether this is the default offset for an executable
-      if (info.dli_fbase != reinterpret_cast<void*>(0x400000))
+      if (info.dli_fbase != reinterpret_cast<void*>(0x400000)) {
         ptr = reinterpret_cast<void*>(reinterpret_cast<size_t>(trace[i])
                                       - reinterpret_cast<size_t>(info.dli_fbase));
+      }
     }
 
     // Pipe stderr to /dev/null to avoid cluttering output
@@ -80,8 +81,9 @@ std::string BoutException::getBacktrace() const {
       std::string buf;
       do {
         retstr = fgets(out, sizeof(out) - 1, fp);
-        if (retstr != nullptr)
+        if (retstr != nullptr) {
           buf += retstr;
+        }
       } while (retstr != nullptr);
       int status = pclose(fp);
       if (status == 0) {

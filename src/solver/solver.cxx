@@ -106,11 +106,13 @@ Solver::Solver(Options* opts)
  **************************************************************************/
 
 void Solver::setModel(PhysicsModel* m) {
-  if (model)
+  if (model) {
     throw BoutException("Solver can only evolve one model");
+  }
 
-  if (initialised)
+  if (initialised) {
     throw BoutException("Solver already initialised");
+  }
 
   // Initialise them model, which specifies which variables to evolve
   m->initialise(this);
@@ -126,12 +128,14 @@ void Solver::add(Field2D& v, const std::string& name, const std::string& descrip
   TRACE("Adding 2D field: Solver::add({:s})", name);
 
 #if CHECK > 0
-  if (varAdded(name))
+  if (varAdded(name)) {
     throw BoutException("Variable '{:s}' already added to Solver", name);
+  }
 #endif
 
-  if (initialised)
+  if (initialised) {
     throw BoutException("Error: Cannot add to solver after initialisation\n");
+  }
 
   // Set boundary conditions
   v.setBoundary(name);
@@ -186,12 +190,14 @@ void Solver::add(Field3D& v, const std::string& name, const std::string& descrip
   Mesh* mesh = v.getMesh();
 
 #if CHECK > 0
-  if (varAdded(name))
+  if (varAdded(name)) {
     throw BoutException("Variable '{:s}' already added to Solver", name);
+  }
 #endif
 
-  if (initialised)
+  if (initialised) {
     throw BoutException("Error: Cannot add to solver after initialisation\n");
+  }
 
   // Set boundary conditions
   v.setBoundary(name);
@@ -244,11 +250,13 @@ void Solver::add(Field3D& v, const std::string& name, const std::string& descrip
 void Solver::add(Vector2D& v, const std::string& name, const std::string& description) {
   TRACE("Adding 2D vector: Solver::add({:s})", name);
 
-  if (varAdded(name))
+  if (varAdded(name)) {
     throw BoutException("Variable '{:s}' already added to Solver", name);
+  }
 
-  if (initialised)
+  if (initialised) {
     throw BoutException("Error: Cannot add to solver after initialisation\n");
+  }
 
   // Set boundary conditions
   v.setBoundary(name);
@@ -284,11 +292,13 @@ void Solver::add(Vector2D& v, const std::string& name, const std::string& descri
 void Solver::add(Vector3D& v, const std::string& name, const std::string& description) {
   TRACE("Adding 3D vector: Solver::add({:s})", name);
 
-  if (varAdded(name))
+  if (varAdded(name)) {
     throw BoutException("Variable '{:s}' already added to Solver", name);
+  }
 
-  if (initialised)
+  if (initialised) {
     throw BoutException("Error: Cannot add to solver after initialisation\n");
+  }
 
   // Set boundary conditions
   v.setBoundary(name);
@@ -329,15 +339,18 @@ void Solver::constraint(Field2D& v, Field2D& C_v, std::string name) {
   }
 
 #if CHECK > 0
-  if (varAdded(name))
+  if (varAdded(name)) {
     throw BoutException("Variable '{:s}' already added to Solver", name);
+  }
 #endif
 
-  if (!has_constraints)
+  if (!has_constraints) {
     throw BoutException("ERROR: This solver doesn't support constraints\n");
+  }
 
-  if (initialised)
+  if (initialised) {
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
+  }
 
   VarStr<Field2D> d;
 
@@ -357,15 +370,18 @@ void Solver::constraint(Field3D& v, Field3D& C_v, std::string name) {
   }
 
 #if CHECK > 0
-  if (varAdded(name))
+  if (varAdded(name)) {
     throw BoutException("Variable '{:s}' already added to Solver", name);
+  }
 #endif
 
-  if (!has_constraints)
+  if (!has_constraints) {
     throw BoutException("ERROR: This solver doesn't support constraints\n");
+  }
 
-  if (initialised)
+  if (initialised) {
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
+  }
 
   VarStr<Field3D> d;
 
@@ -386,15 +402,18 @@ void Solver::constraint(Vector2D& v, Vector2D& C_v, std::string name) {
   }
 
 #if CHECK > 0
-  if (varAdded(name))
+  if (varAdded(name)) {
     throw BoutException("Variable '{:s}' already added to Solver", name);
+  }
 #endif
 
-  if (!has_constraints)
+  if (!has_constraints) {
     throw BoutException("ERROR: This solver doesn't support constraints\n");
+  }
 
-  if (initialised)
+  if (initialised) {
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
+  }
 
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
@@ -426,15 +445,18 @@ void Solver::constraint(Vector3D& v, Vector3D& C_v, std::string name) {
   }
 
 #if CHECK > 0
-  if (varAdded(name))
+  if (varAdded(name)) {
     throw BoutException("Variable '{:s}' already added to Solver", name);
+  }
 #endif
 
-  if (!has_constraints)
+  if (!has_constraints) {
     throw BoutException("ERROR: This solver doesn't support constraints\n");
+  }
 
-  if (initialised)
+  if (initialised) {
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
+  }
 
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
@@ -479,10 +501,11 @@ int Solver::solve(int nout, BoutReal timestep) {
   output_progress.write(
       _("Solver running for {:d} outputs with output timestep of {:e}\n"), nout,
       timestep);
-  if (default_monitor_period > 1)
+  if (default_monitor_period > 1) {
     output_progress.write(
         _("Solver running for {:d} outputs with monitor timestep of {:e}\n"),
         nout / default_monitor_period, timestep * default_monitor_period);
+  }
 
   // Initialise
   if (init()) {
@@ -638,8 +661,9 @@ int Solver::init() {
 
   TRACE("Solver::init()");
 
-  if (initialised)
+  if (initialised) {
     throw BoutException(_("ERROR: Solver is already initialised\n"));
+  }
 
   output_progress.write(_("Initialising solver\n"));
 
@@ -922,13 +946,15 @@ void Solver::addTimestepMonitor(TimestepMonitorFunc f) {
 void Solver::removeTimestepMonitor(TimestepMonitorFunc f) { timestep_monitors.remove(f); }
 
 int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
-  if (!monitor_timestep)
+  if (!monitor_timestep) {
     return 0;
+  }
 
   for (const auto& monitor : timestep_monitors) {
     const int ret = monitor(this, simtime, lastdt);
-    if (ret != 0)
+    if (ret != 0) {
       return ret; // Return first time an error is encountered
+    }
   }
 
   // Call physics model monitor
@@ -995,8 +1021,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
 
     // Loop over 2D variables
     for (const auto& f : f2d) {
-      if (bndry && !f.evolve_bndry)
+      if (bndry && !f.evolve_bndry) {
         continue;
+      }
       (*f.var)[i2d] = udata[p];
       p++;
     }
@@ -1005,8 +1032,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
 
       // Loop over 3D variables
       for (const auto& f : f3d) {
-        if (bndry && !f.evolve_bndry)
+        if (bndry && !f.evolve_bndry) {
           continue;
+        }
         (*f.var)[f.var->getMesh()->ind2Dto3D(i2d, jz)] = udata[p];
         p++;
       }
@@ -1019,8 +1047,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
 
     // Loop over 2D variables
     for (const auto& f : f2d) {
-      if (bndry && !f.evolve_bndry)
+      if (bndry && !f.evolve_bndry) {
         continue;
+      }
       (*f.F_var)[i2d] = udata[p];
       p++;
     }
@@ -1029,8 +1058,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
 
       // Loop over 3D variables
       for (const auto& f : f3d) {
-        if (bndry && !f.evolve_bndry)
+        if (bndry && !f.evolve_bndry) {
           continue;
+        }
         (*f.F_var)[f.F_var->getMesh()->ind2Dto3D(i2d, jz)] = udata[p];
         p++;
       }
@@ -1043,8 +1073,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
 
     // Loop over 2D variables
     for (const auto& f : f2d) {
-      if (bndry && !f.evolve_bndry)
+      if (bndry && !f.evolve_bndry) {
         continue;
+      }
       if (f.constraint) {
         udata[p] = 0;
       } else {
@@ -1057,8 +1088,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
 
       // Loop over 3D variables
       for (const auto& f : f3d) {
-        if (bndry && !f.evolve_bndry)
+        if (bndry && !f.evolve_bndry) {
           continue;
+        }
         if (f.constraint) {
           udata[p] = 0;
         } else {
@@ -1075,8 +1107,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
 
     // Loop over 2D variables
     for (const auto& f : f2d) {
-      if (bndry && !f.evolve_bndry)
+      if (bndry && !f.evolve_bndry) {
         continue;
+      }
       udata[p] = (*f.var)[i2d];
       p++;
     }
@@ -1085,8 +1118,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
 
       // Loop over 3D variables
       for (const auto& f : f3d) {
-        if (bndry && !f.evolve_bndry)
+        if (bndry && !f.evolve_bndry) {
           continue;
+        }
         udata[p] = (*f.var)[f.var->getMesh()->ind2Dto3D(i2d, jz)];
         p++;
       }
@@ -1098,8 +1132,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
 
     // Loop over 2D variables
     for (const auto& f : f2d) {
-      if (bndry && !f.evolve_bndry)
+      if (bndry && !f.evolve_bndry) {
         continue;
+      }
       udata[p] = (*f.F_var)[i2d];
       p++;
     }
@@ -1108,8 +1143,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
 
       // Loop over 3D variables
       for (const auto& f : f3d) {
-        if (bndry && !f.evolve_bndry)
+        if (bndry && !f.evolve_bndry) {
           continue;
+        }
         udata[p] = (*f.F_var)[f.F_var->getMesh()->ind2Dto3D(i2d, jz)];
         p++;
       }
@@ -1139,8 +1175,9 @@ void Solver::loop_vars(BoutReal* udata, SOLVER_VAR_OP op) {
 
 void Solver::load_vars(BoutReal* udata) {
   // Make sure data is allocated
-  for (const auto& f : f2d)
+  for (const auto& f : f2d) {
     f.var->allocate();
+  }
   for (const auto& f : f3d) {
     f.var->allocate();
     f.var->setLocation(f.location);
@@ -1150,16 +1187,19 @@ void Solver::load_vars(BoutReal* udata) {
 
   // Mark each vector as either co- or contra-variant
 
-  for (const auto& v : v2d)
+  for (const auto& v : v2d) {
     v.var->covariant = v.covariant;
-  for (const auto& v : v3d)
+  }
+  for (const auto& v : v3d) {
     v.var->covariant = v.covariant;
+  }
 }
 
 void Solver::load_derivs(BoutReal* udata) {
   // Make sure data is allocated
-  for (const auto& f : f2d)
+  for (const auto& f : f2d) {
     f.F_var->allocate();
+  }
   for (const auto& f : f3d) {
     f.F_var->allocate();
     f.F_var->setLocation(f.location);
@@ -1169,34 +1209,42 @@ void Solver::load_derivs(BoutReal* udata) {
 
   // Mark each vector as either co- or contra-variant
 
-  for (const auto& v : v2d)
+  for (const auto& v : v2d) {
     v.F_var->covariant = v.covariant;
-  for (const auto& v : v3d)
+  }
+  for (const auto& v : v3d) {
     v.F_var->covariant = v.covariant;
+  }
 }
 
 // This function only called during initialisation
 void Solver::save_vars(BoutReal* udata) {
-  for (const auto& f : f2d)
-    if (!f.var->isAllocated())
+  for (const auto& f : f2d) {
+    if (!f.var->isAllocated()) {
       throw BoutException(_("Variable '{:s}' not initialised"), f.name);
+    }
+  }
 
-  for (const auto& f : f3d)
-    if (!f.var->isAllocated())
+  for (const auto& f : f3d) {
+    if (!f.var->isAllocated()) {
       throw BoutException(_("Variable '{:s}' not initialised"), f.name);
+    }
+  }
 
   // Make sure vectors in correct basis
   for (const auto& v : v2d) {
     if (v.covariant) {
       v.var->toCovariant();
-    } else
+    } else {
       v.var->toContravariant();
+    }
   }
   for (const auto& v : v3d) {
     if (v.covariant) {
       v.var->toCovariant();
-    } else
+    } else {
       v.var->toContravariant();
+    }
   }
 
   loop_vars(udata, SOLVER_VAR_OP::SAVE_VARS);
@@ -1207,14 +1255,16 @@ void Solver::save_derivs(BoutReal* dudata) {
   for (const auto& v : v2d) {
     if (v.covariant) {
       v.F_var->toCovariant();
-    } else
+    } else {
       v.F_var->toContravariant();
+    }
   }
   for (const auto& v : v3d) {
     if (v.covariant) {
       v.F_var->toCovariant();
-    } else
+    } else {
       v.F_var->toContravariant();
+    }
   }
 
   // Make sure 3D fields are at the correct cell location
@@ -1248,13 +1298,15 @@ Field3D Solver::globalIndex(int localStart) {
   // Find how many boundary cells are evolving
   int n2dbndry = 0;
   for (const auto& f : f2d) {
-    if (f.evolve_bndry)
+    if (f.evolve_bndry) {
       ++n2dbndry;
+    }
   }
   int n3dbndry = 0;
   for (const auto& f : f3d) {
-    if (f.evolve_bndry)
+    if (f.evolve_bndry) {
       ++n3dbndry;
+    }
   }
 
   if (n2dbndry + n3dbndry > 0) {
@@ -1353,10 +1405,12 @@ int Solver::run_convective(BoutReal t, bool linear) {
     status = model->runRHS(t, linear);
   } else {
     // Zero if not split
-    for (const auto& f : f3d)
+    for (const auto& f : f3d) {
       *(f.F_var) = 0.0;
-    for (const auto& f : f2d)
+    }
+    for (const auto& f : f2d) {
       *(f.F_var) = 0.0;
+    }
     status = 0;
   }
   post_rhs(t);
@@ -1383,10 +1437,12 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
     status = model->runRHS(t, linear);
   } else {
     // Zero if not split
-    for (const auto& f : f3d)
+    for (const auto& f : f3d) {
       *(f.F_var) = 0.0;
-    for (const auto& f : f2d)
+    }
+    for (const auto& f : f2d) {
       *(f.F_var) = 0.0;
+    }
     status = 0;
   }
   rhs_ncalls_i++;
@@ -1478,8 +1534,9 @@ int Solver::runJacobian(BoutReal time) { return model->runJacobian(time); }
 
 // Add source terms to time derivatives
 void Solver::add_mms_sources(BoutReal t) {
-  if (!mms)
+  if (!mms) {
     return;
+  }
 
   FieldFactory* fact = FieldFactory::get();
 

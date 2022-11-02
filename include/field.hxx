@@ -90,14 +90,18 @@ public:
   // Routines to test guard/boundary cells set
 
   virtual bool bndryValid() {
-    if (!bndry_xin)
+    if (!bndry_xin) {
       throw BoutException("Inner X guard cells not set\n");
-    if (!bndry_xout)
+    }
+    if (!bndry_xout) {
       throw BoutException("Outer X guard cells not set\n");
-    if (!bndry_yup)
+    }
+    if (!bndry_yup) {
       throw BoutException("Upper y guard cells not set\n");
-    if (!bndry_ydown)
+    }
+    if (!bndry_ydown) {
       throw BoutException("Lower y guard cells not set\n");
+    }
     return true;
   }
 

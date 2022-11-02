@@ -195,11 +195,13 @@ public:
   BoutReal& operator()(int jx, int jz) {
 #if CHECK > 2
     // Bounds check both indices
-    if (data.empty())
+    if (data.empty()) {
       throw BoutException("FieldPerp: () operator on empty data");
-    if ((jx < 0) || (jx >= nx) || (jz < 0) || (jz >= nz))
+    }
+    if ((jx < 0) || (jx >= nx) || (jz < 0) || (jz >= nz)) {
       throw BoutException("FieldPerp: ({:d}, {:d}) operator out of bounds ({:d}, {:d})",
                           jx, jz, nx, nz);
+    }
 #endif
     return data[jx * nz + jz];
   }
@@ -210,11 +212,13 @@ public:
   const BoutReal& operator()(int jx, int jz) const {
 #if CHECK > 2
     // Bounds check both indices
-    if (data.empty())
+    if (data.empty()) {
       throw BoutException("FieldPerp: () operator on empty data");
-    if ((jx < 0) || (jx >= nx) || (jz < 0) || (jz >= nz))
+    }
+    if ((jx < 0) || (jx >= nx) || (jz < 0) || (jz >= nz)) {
       throw BoutException("FieldPerp: ({:d}, {:d}) operator out of bounds ({:d}, {:d})",
                           jx, jz, nx, nz);
+    }
 #endif
     return data[jx * nz + jz];
   }

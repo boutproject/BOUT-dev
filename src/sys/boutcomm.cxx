@@ -6,8 +6,9 @@ BoutComm* BoutComm::instance = nullptr;
 BoutComm::BoutComm() : comm(MPI_COMM_NULL) {}
 
 BoutComm::~BoutComm() {
-  if (comm != MPI_COMM_NULL)
+  if (comm != MPI_COMM_NULL) {
     MPI_Comm_free(&comm);
+  }
 
   if (!isSet()) {
     // If BoutComm was set, then assume that MPI_Finalize is called elsewhere
@@ -17,8 +18,9 @@ BoutComm::~BoutComm() {
 }
 
 void BoutComm::setComm(MPI_Comm c) {
-  if (comm != MPI_COMM_NULL)
+  if (comm != MPI_COMM_NULL) {
     MPI_Comm_free(&comm);
+  }
   MPI_Comm_dup(c, &comm);
   hasBeenSet = true;
 }

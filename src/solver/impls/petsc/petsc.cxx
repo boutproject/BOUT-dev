@@ -651,8 +651,9 @@ PetscErrorCode PetscSolver::pre(PC UNUSED(pc), Vec x, Vec y) {
 
   BoutReal* data;
 
-  if (diagnose)
+  if (diagnose) {
     output << "Preconditioning" << endl;
+  }
 
   // Load state
   VecGetArray(state, &data);
@@ -688,8 +689,9 @@ PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
 
   BoutReal* data;
 
-  if (diagnose)
+  if (diagnose) {
     output << "Jacobian evaluation\n";
+  }
 
   // Load state
   VecGetArray(state, &data);
@@ -800,8 +802,9 @@ PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin, Vec UNUSED(glob
   ////// Save data for preconditioner
   auto* solver = static_cast<PetscSolver*>(f_data);
 
-  if (solver->diagnose)
+  if (solver->diagnose) {
     output << "Saving state, t = " << t << ", a = " << a << endl;
+  }
 
   solver->shift = a;        // Save the shift 'a'
   solver->state = globalin; // Save system state
@@ -822,8 +825,9 @@ PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin,
   ////// Save data for preconditioner
   PetscSolver* solver = (PetscSolver*)f_data;
 
-  if (solver->diagnose)
+  if (solver->diagnose) {
     output << "Saving state, t = " << t << ", a = " << a << endl;
+  }
 
   solver->shift = a;        // Save the shift 'a'
   solver->state = globalin; // Save system state
@@ -1002,8 +1006,9 @@ PetscErrorCode PetscSNESMonitor(SNES snes, PetscInt its, PetscReal norm, void* c
 
   PetscFunctionBegin;
 
-  if (!its)
+  if (!its) {
     s->prev_linear_its = 0;
+  }
   ierr = SNESGetLinearSolveIterations(snes, &linear_its);
   CHKERRQ(ierr);
   tmp = bout::globals::mpi->MPI_Wtime();

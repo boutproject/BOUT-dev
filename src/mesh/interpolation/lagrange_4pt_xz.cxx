@@ -45,8 +45,9 @@ void XZLagrange4pt::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z))
+    if (skip_mask(x, y, z)) {
       continue;
+    }
 
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
@@ -94,8 +95,9 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z))
+    if (skip_mask(x, y, z)) {
       continue;
+    }
 
     const int jx = i_corner(x, y, z);
     const int jx2mnew = (jx == 0) ? 0 : (jx - 1);

@@ -76,6 +76,7 @@ IndentCaseLabels: false
 # IndentPPDirectives: None
 IndentWidth:     2
 IndentWrappedFunctionNames: false
+InsertBraces: true
 KeepEmptyLinesAtTheStartOfBlocks: true
 MacroBlockBegin: ''
 MacroBlockEnd:   ''
@@ -110,4 +111,3 @@ StatementMacros:
 Standard:        c++14
 TabWidth:        8
 UseTab:          Never
-...

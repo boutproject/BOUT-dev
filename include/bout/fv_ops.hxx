@@ -122,11 +122,13 @@ private:
      * with the minimum magnitude.
      */
   BoutReal _minmod(BoutReal a, BoutReal b) {
-    if (a * b <= 0.0)
+    if (a * b <= 0.0) {
       return 0.0;
+    }
 
-    if (fabs(a) < fabs(b))
+    if (fabs(a) < fabs(b)) {
       return a;
+    }
     return b;
   }
 };

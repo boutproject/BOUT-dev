@@ -206,30 +206,34 @@ public:
         // to only include unique points
         Region<Ind3D> nocorner3D = localmesh->getRegion3D("RGN_NOBNDRY");
         if (!localmesh->periodicX) {
-          if (localmesh->firstX())
+          if (localmesh->firstX()) {
             nocorner3D += Region<Ind3D>(0, localmesh->xstart - 1, localmesh->ystart,
                                         localmesh->yend, 0, localmesh->LocalNz - 1,
                                         localmesh->LocalNy, localmesh->LocalNz,
                                         localmesh->maxregionblocksize);
-          if (localmesh->lastX())
+          }
+          if (localmesh->lastX()) {
             nocorner3D += Region<Ind3D>(
                 localmesh->LocalNx - localmesh->xstart, localmesh->LocalNx - 1,
                 localmesh->ystart, localmesh->yend, 0, localmesh->LocalNz - 1,
                 localmesh->LocalNy, localmesh->LocalNz, localmesh->maxregionblocksize);
+          }
         }
         if (localmesh->firstY() or localmesh->lastY()) {
           for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
             if (not localmesh->periodicY(ix)) {
-              if (localmesh->firstY())
+              if (localmesh->firstY()) {
                 nocorner3D +=
                     Region<Ind3D>(ix, ix, 0, localmesh->ystart - 1, 0,
                                   localmesh->LocalNz - 1, localmesh->LocalNy,
                                   localmesh->LocalNz, localmesh->maxregionblocksize);
-              if (localmesh->lastY())
+              }
+              if (localmesh->lastY()) {
                 nocorner3D += Region<Ind3D>(
                     ix, ix, localmesh->LocalNy - localmesh->ystart,
                     localmesh->LocalNy - 1, 0, localmesh->LocalNz - 1, localmesh->LocalNy,
                     localmesh->LocalNz, localmesh->maxregionblocksize);
+              }
             }
           }
         }
@@ -243,28 +247,32 @@ public:
         // This avoids all guard cells and corners but includes boundaries
         Region<Ind2D> nocorner2D = localmesh->getRegion2D("RGN_NOBNDRY");
         if (!localmesh->periodicX) {
-          if (localmesh->firstX())
+          if (localmesh->firstX()) {
             nocorner2D += Region<Ind2D>(0, localmesh->xstart - 1, localmesh->ystart,
                                         localmesh->yend, 0, 0, localmesh->LocalNy, 1,
                                         localmesh->maxregionblocksize);
-          if (localmesh->lastX())
+          }
+          if (localmesh->lastX()) {
             nocorner2D +=
                 Region<Ind2D>(localmesh->LocalNx - localmesh->xstart,
                               localmesh->LocalNx - 1, localmesh->ystart, localmesh->yend,
                               0, 0, localmesh->LocalNy, 1, localmesh->maxregionblocksize);
+          }
         }
         if (localmesh->firstY() or localmesh->lastY()) {
           for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
             if (not localmesh->periodicY(ix)) {
-              if (localmesh->firstY())
+              if (localmesh->firstY()) {
                 nocorner2D +=
                     Region<Ind2D>(ix, ix, 0, localmesh->ystart - 1, 0, 0,
                                   localmesh->LocalNy, 1, localmesh->maxregionblocksize);
-              if (localmesh->lastY())
+              }
+              if (localmesh->lastY()) {
                 nocorner2D +=
                     Region<Ind2D>(ix, ix, localmesh->LocalNy - localmesh->ystart,
                                   localmesh->LocalNy - 1, 0, 0, localmesh->LocalNy, 1,
                                   localmesh->maxregionblocksize);
+              }
             }
           }
         }
@@ -277,15 +285,17 @@ public:
         // This avoids all guard cells and corners but includes boundaries
         Region<IndPerp> nocornerPerp = localmesh->getRegionPerp("RGN_NOBNDRY");
         if (!localmesh->periodicX) {
-          if (localmesh->firstX())
+          if (localmesh->firstX()) {
             nocornerPerp +=
                 Region<IndPerp>(0, localmesh->xstart - 1, 0, 0, 0, localmesh->LocalNz - 1,
                                 1, localmesh->LocalNz, localmesh->maxregionblocksize);
-          if (localmesh->lastX())
+          }
+          if (localmesh->lastX()) {
             nocornerPerp +=
                 Region<IndPerp>(localmesh->LocalNx - localmesh->xstart,
                                 localmesh->LocalNx - 1, 0, 0, 0, localmesh->LocalNz - 1,
                                 1, localmesh->LocalNz, localmesh->maxregionblocksize);
+          }
         }
         nocornerPerp.unique();
         localmesh->addRegionPerp("RGN_WITHBNDRIES", nocornerPerp);

@@ -338,12 +338,14 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
               // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++)
+              for (int i = 0; i < n2d + n3d; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
+              }
             } else {
               // Only 3D fields
-              for (int i = 0; i < n3d; i++)
+              for (int i = 0; i < n3d; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
+              }
             }
           }
         }
@@ -378,12 +380,14 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
               // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++)
+              for (int i = 0; i < n2d + n3d; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
+              }
             } else {
               // Only 3D fields
-              for (int i = 0; i < n3d; i++)
+              for (int i = 0; i < n3d; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
+              }
             }
           }
         }
@@ -1250,8 +1254,9 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   ierr = VecGetArray(snes_x, &xdata);
   CHKERRQ(ierr);
 
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
     u[i] = xdata[i];
+  }
   ierr = VecRestoreArray(snes_x, &xdata);
   CHKERRQ(ierr);
 
@@ -1368,20 +1373,22 @@ void IMEXBDF2::loopVars(BoutReal* u) {
 
       // Inner X
       if (mesh->firstX() && !mesh->periodicX) {
-        for (int jx = 0; jx < mesh->xstart; ++jx)
+        for (int jx = 0; jx < mesh->xstart; ++jx) {
           for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
             op.run(jx, jy, u);
             ++u;
           }
+        }
       }
 
       // Outer X
       if (mesh->lastX() && !mesh->periodicX) {
-        for (int jx = mesh->xend + 1; jx < mesh->LocalNx; ++jx)
+        for (int jx = mesh->xend + 1; jx < mesh->LocalNx; ++jx) {
           for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
             op.run(jx, jy, u);
             ++u;
           }
+        }
       }
       // Lower Y
       for (RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); ++xi) {
@@ -1401,11 +1408,12 @@ void IMEXBDF2::loopVars(BoutReal* u) {
     }
 
     // Bulk of points
-    for (int jx = mesh->xstart; jx <= mesh->xend; ++jx)
+    for (int jx = mesh->xstart; jx <= mesh->xend; ++jx) {
       for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
         op.run(jx, jy, u);
         ++u;
       }
+    }
   }
 
   // Loop over 3D variables

@@ -20,8 +20,9 @@ RK3SSP::RK3SSP(Options* opt)
                  .withDefault(500)) {}
 
 void RK3SSP::setMaxTimestep(BoutReal dt) {
-  if (dt > timestep)
+  if (dt > timestep) {
     return; // Already less than this
+  }
 
   timestep = dt; // Won't be used this time, but next
 }
@@ -108,22 +109,25 @@ void RK3SSP::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
   save_derivs(std::begin(L));
 
   BOUT_OMP(parallel for)
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
     u1[i] = start[i] + dt * L[i];
+  }
 
   load_vars(std::begin(u1));
   run_rhs(curtime + dt);
   save_derivs(std::begin(L));
 
   BOUT_OMP(parallel for )
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
     u2[i] = 0.75 * start[i] + 0.25 * u1[i] + 0.25 * dt * L[i];
+  }
 
   load_vars(std::begin(u2));
   run_rhs(curtime + 0.5 * dt);
   save_derivs(std::begin(L));
 
   BOUT_OMP(parallel for)
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
     result[i] = (1. / 3) * start[i] + (2. / 3.) * (u2[i] + dt * L[i]);
+  }
 }

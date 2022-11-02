@@ -580,8 +580,9 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   for (int ix = 0; ix < 4; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
       if (!finite(levels[0].xloc(ix, kz).real())
-          or !finite(levels[0].xloc(ix, kz).imag()))
+          or !finite(levels[0].xloc(ix, kz).imag())) {
         throw BoutException("Non-finite xloc at {:d}, {:d}, {:d}", ix, jy, kz);
+      }
     }
   }
 #endif
@@ -598,8 +599,9 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 #if CHECK > 2
   for (int ix = 0; ix < ncx; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
-      if (!finite(xk1d(kz, ix).real()) or !finite(xk1d(kz, ix).imag()))
+      if (!finite(xk1d(kz, ix).real()) or !finite(xk1d(kz, ix).imag())) {
         throw BoutException("Non-finite xloc at {:d}, {:d}, {:d}", ix, jy, kz);
+      }
     }
   }
 #endif
@@ -637,9 +639,11 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     irfft(&xk(ix, 0), ncz, x[ix]);
 
 #if CHECK > 2
-    for (int kz = 0; kz < ncz; kz++)
-      if (!finite(x(ix, kz)))
+    for (int kz = 0; kz < ncz; kz++) {
+      if (!finite(x(ix, kz))) {
         throw BoutException("Non-finite at {:d}, {:d}, {:d}", ix, jy, kz);
+      }
+    }
 #endif
   }
 

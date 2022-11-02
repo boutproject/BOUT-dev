@@ -49,8 +49,9 @@ STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc,
   ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == allowedStaggerLoc)
           || (outloc == allowedStaggerLoc && inloc == CELL_CENTRE));
 
-  if ((!StaggerGrids) || outloc == inloc)
+  if ((!StaggerGrids) || outloc == inloc) {
     return STAGGER::None;
+  }
   if (outloc == allowedStaggerLoc) {
     return STAGGER::C2L;
   } else {
@@ -223,17 +224,21 @@ REGISTER_STANDARD_DERIVATIVE(DDX_CWENO3, "W3", 2, DERIV::Standard) {
   BoutReal a, ma = fabs(f.c);
   // Split flux
   a = fabs(f.m);
-  if (a > ma)
+  if (a > ma) {
     ma = a;
+  }
   a = fabs(f.p);
-  if (a > ma)
+  if (a > ma) {
     ma = a;
+  }
   a = fabs(f.mm);
-  if (a > ma)
+  if (a > ma) {
     ma = a;
+  }
   a = fabs(f.pp);
-  if (a > ma)
+  if (a > ma) {
     ma = a;
+  }
 
   stencil sp, sm;
 
@@ -433,10 +438,12 @@ public:
 
     int kfilter = static_cast<int>(theMesh->fft_derivs_filter * ncz
                                    / 2); // truncates, rounding down
-    if (kfilter < 0)
+    if (kfilter < 0) {
       kfilter = 0;
-    if (kfilter > (ncz / 2))
+    }
+    if (kfilter > (ncz / 2)) {
       kfilter = ncz / 2;
+    }
     const int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
 
     BOUT_OMP(parallel)

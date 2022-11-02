@@ -57,10 +57,11 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
   D.setLocation(location);
 
   // Get Options in Laplace Section
-  if (!opt)
+  if (!opt) {
     opts = Options::getRoot()->getSection("laplace");
-  else
+  } else {
     opts = opt;
+  }
   opts->get("multigridlevel", mglevel, 100, true);
   opts->get("rtol", rtol, pow(10.0, -8), true);
   opts->get("atol", atol, pow(10.0, -20), true);
@@ -144,8 +145,9 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
       }
       nn = nn / 2;
     }
-  } else
+  } else {
     mglevel = 1;
+  }
 
   // Compute available levels on each processor along x-direction
   // aclevel is the number of levels that can be used in parallel, i.e. set by
@@ -177,8 +179,9 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
       }
       nn = nn / 2;
     }
-  } else
+  } else {
     aclevel = 1;
+  }
   adlevel = mglevel - aclevel;
 
   kMG = bout::utils::make_unique<Multigrid1DP>(aclevel, Nx_local, Nz_local, Nx_global,
@@ -202,17 +205,19 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
     if (mgsm == 0) {
       output << "Jacobi smoother";
       output << "with omega = " << omega << endl;
-    } else if (mgsm == 1)
+    } else if (mgsm == 1) {
       output << " Gauss-Seidel smoother" << endl;
-    else
+    } else {
       throw BoutException("Undefined smoother");
+    }
     output << "Solver type is ";
-    if (mglevel == 1)
+    if (mglevel == 1) {
       output << "PGMRES with simple Preconditioner" << endl;
-    else if (mgplag == 1)
+    } else if (mgplag == 1) {
       output << "PGMRES with multigrid Preconditioner" << endl;
-    else
+    } else {
       output << "Multigrid solver with merging " << mgmpi << endl;
+    }
 #if BOUT_USE_OPENMP
     BOUT_OMP(parallel)
     BOUT_OMP(master)
@@ -384,8 +389,9 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
   t0 = bout::globals::mpi->MPI_Wtime();
   generateMatrixF(level);
 
-  if (kMG->xNP > 1)
+  if (kMG->xNP > 1) {
     bout::globals::mpi->MPI_Barrier(commX);
+  }
 
   if ((pcheck == 3) && (mgcount == 0)) {
     FILE* outf;
@@ -398,15 +404,17 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
 
     for (int i = 0; i < dim; i++) {
       fprintf(outf, "%d ==", i);
-      for (int j = 0; j < 9; j++)
+      for (int j = 0; j < 9; j++) {
         fprintf(outf, "%12.6f,", kMG->matmg[level][i * 9 + j]);
+      }
       fprintf(outf, "\n");
     }
     fclose(outf);
   }
 
-  if (level > 0)
+  if (level > 0) {
     kMG->setMultigridC(0);
+  }
 
   if ((pcheck == 3) && (mgcount == 0)) {
     for (int i = level; i > 0; i--) {
@@ -423,8 +431,9 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
 
       for (int ii = 0; ii < dim; ii++) {
         fprintf(outf, "%d ==", ii);
-        for (int j = 0; j < 9; j++)
+        for (int j = 0; j < 9; j++) {
           fprintf(outf, "%12.6f,", kMG->matmg[i - 1][ii * 9 + j]);
+        }
         fprintf(outf, "\n");
       }
       fclose(outf);
@@ -437,8 +446,9 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
   // Compute solution.
 
   mgcount++;
-  if (pcheck > 0)
+  if (pcheck > 0) {
     t0 = bout::globals::mpi->MPI_Wtime();
+  }
 
   kMG->getSolution(std::begin(x), std::begin(b), 0);
 

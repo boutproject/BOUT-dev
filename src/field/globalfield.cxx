@@ -11,8 +11,9 @@ GlobalField::GlobalField(Mesh* m, int proc, int xsize, int ysize, int zsize)
   MPI_Comm_size(comm, &npes);
   MPI_Comm_rank(comm, &mype);
 
-  if (nx * ny * nz <= 0)
+  if (nx * ny * nz <= 0) {
     throw BoutException("GlobalField data must have non-zero size");
+  }
 
   if (mype == proc) {
     // Allocate memory
@@ -24,13 +25,15 @@ void GlobalField::proc_local_origin(int proc, int* x, int* y, int* z) const {
   int nxpe = mesh->getNXPE();
   if (proc % nxpe == 0) {
     *x = 0;
-  } else
+  } else {
     *x = mesh->xstart;
+  }
 
   *y = mesh->ystart;
 
-  if (z != nullptr)
+  if (z != nullptr) {
     *z = 0;
+  }
 }
 
 void GlobalField::proc_origin(int proc, int* x, int* y, int* z) const {
@@ -50,11 +53,13 @@ void GlobalField::proc_origin(int proc, int* x, int* y, int* z) const {
   // Set the origin values
   *x = pex * nx;
   *y = pey * ny;
-  if (z != nullptr)
+  if (z != nullptr) {
     *z = 0;
+  }
 
-  if (pex != 0)
+  if (pex != 0) {
     *x += mesh->xstart;
+  }
 }
 
 void GlobalField::proc_size(int proc, int* lx, int* ly, int* lz) const {
@@ -63,15 +68,18 @@ void GlobalField::proc_size(int proc, int* lx, int* ly, int* lz) const {
 
   *lx = mesh->xend - mesh->xstart + 1;
   *ly = mesh->yend - mesh->ystart + 1;
-  if (lz != nullptr)
+  if (lz != nullptr) {
     *lz = mesh->LocalNz;
+  }
 
   int nxpe = mesh->getNXPE();
   int pex = proc % nxpe;
-  if (pex == 0)
+  if (pex == 0) {
     *lx += mesh->xstart;
-  if (pex == (nxpe - 1))
+  }
+  if (pex == (nxpe - 1)) {
     *lx += mesh->xstart;
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -81,14 +89,16 @@ GlobalField2D::GlobalField2D(Mesh* m, int proc)
                   m->GlobalNy - m->numberOfYBoundaries() * 2 * m->ystart, 1),
       data_valid(false) {
 
-  if ((proc < 0) || (proc >= npes))
+  if ((proc < 0) || (proc >= npes)) {
     throw BoutException("Processor out of range");
+  }
 
   if (mype == data_on_proc) {
     // Gathering onto this processor
     buffer = new BoutReal*[npes];
-    for (int p = 0; p < npes; p++)
+    for (int p = 0; p < npes; p++) {
       buffer[p] = new BoutReal[msg_len(p)];
+    }
   } else {
     buffer = new BoutReal*[1];
     buffer[0] = new BoutReal[msg_len(mype)];
@@ -97,10 +107,12 @@ GlobalField2D::GlobalField2D(Mesh* m, int proc)
 
 GlobalField2D::~GlobalField2D() {
   if (mype == data_on_proc) {
-    for (int p = 0; p < npes; p++)
+    for (int p = 0; p < npes; p++) {
       delete[] buffer[p];
-  } else
+    }
+  } else {
     delete[] buffer[0];
+  }
   delete[] buffer;
 }
 
@@ -132,10 +144,11 @@ void GlobalField2D::gather(const Field2D& f) {
     int xsize, ysize;
     proc_size(mype, &xsize, &ysize);
 
-    for (int x = 0; x < xsize; x++)
+    for (int x = 0; x < xsize; x++) {
       for (int y = 0; y < ysize; y++) {
         (*this)(x + xorig, y + yorig) = f(local_xorig + x, local_yorig + y);
       }
+    }
 
     if (npes > 1) {
       // Wait for receives, process as they arrive
@@ -151,11 +164,12 @@ void GlobalField2D::gather(const Field2D& f) {
           int remote_xsize, remote_ysize;
           proc_size(pe, &remote_xsize, &remote_ysize);
 
-          for (int x = 0; x < remote_xsize; x++)
+          for (int x = 0; x < remote_xsize; x++) {
             for (int y = 0; y < remote_ysize; y++) {
               (*this)(x + remote_xorig, y + remote_yorig) =
                   buffer[pe][x * remote_ysize + y];
             }
+          }
 
           req[pe] = MPI_REQUEST_NULL;
         }
@@ -169,10 +183,11 @@ void GlobalField2D::gather(const Field2D& f) {
     int xsize, ysize;
     proc_size(mype, &xsize, &ysize);
 
-    for (int x = 0; x < xsize; x++)
+    for (int x = 0; x < xsize; x++) {
       for (int y = 0; y < ysize; y++) {
         buffer[0][x * ysize + y] = f(local_xorig + x, local_yorig + y);
       }
+    }
 
     bout::globals::mpi->MPI_Send(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 3141,
                                  comm);
@@ -189,8 +204,9 @@ const Field2D GlobalField2D::scatter() const {
     // Data is on this processor. Send to other processors
 
     for (int p = 0; p < npes; p++) {
-      if (p == mype)
+      if (p == mype) {
         continue;
+      }
 
       int xorig, yorig;
       proc_origin(p, &xorig, &yorig);
@@ -198,10 +214,11 @@ const Field2D GlobalField2D::scatter() const {
       proc_size(p, &xsize, &ysize);
 
       // Send to processor p
-      for (int x = 0; x < xsize; x++)
+      for (int x = 0; x < xsize; x++) {
         for (int y = 0; y < ysize; y++) {
           buffer[p][x * ysize + y] = (*this)(x + xorig, y + yorig);
         }
+      }
 
       bout::globals::mpi->MPI_Send(buffer[p], xsize * ysize, MPI_DOUBLE, p, 1413, comm);
     }
@@ -214,10 +231,11 @@ const Field2D GlobalField2D::scatter() const {
     proc_size(mype, &xsize, &ysize);
 
     // Copy to result
-    for (int x = 0; x < xsize; x++)
+    for (int x = 0; x < xsize; x++) {
       for (int y = 0; y < ysize; y++) {
         result(local_xorig + x, local_yorig + y) = (*this)(x + xorig, y + yorig);
       }
+    }
   } else {
     // Receive data
     bout::globals::mpi->MPI_Recv(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 1413,
@@ -230,10 +248,11 @@ const Field2D GlobalField2D::scatter() const {
     int xsize, ysize;
     proc_size(mype, &xsize, &ysize);
 
-    for (int x = 0; x < xsize; x++)
+    for (int x = 0; x < xsize; x++) {
       for (int y = 0; y < ysize; y++) {
         result(local_xorig + x, local_yorig + y) = buffer[0][x * ysize + y];
       }
+    }
   }
   return result;
 }
@@ -251,14 +270,16 @@ GlobalField3D::GlobalField3D(Mesh* m, int proc)
                   m->GlobalNy - m->numberOfYBoundaries() * 2 * m->ystart, m->LocalNz),
       data_valid(false) {
 
-  if ((proc < 0) || (proc >= npes))
+  if ((proc < 0) || (proc >= npes)) {
     throw BoutException("Processor out of range");
+  }
 
   if (mype == data_on_proc) {
     // Gathering onto this processor
     buffer = new BoutReal*[npes];
-    for (int p = 0; p < npes; p++)
+    for (int p = 0; p < npes; p++) {
       buffer[p] = new BoutReal[msg_len(p)];
+    }
   } else {
     buffer = new BoutReal*[1];
     buffer[0] = new BoutReal[msg_len(mype)];
@@ -267,10 +288,12 @@ GlobalField3D::GlobalField3D(Mesh* m, int proc)
 
 GlobalField3D::~GlobalField3D() {
   if (mype == data_on_proc) {
-    for (int p = 0; p < npes; p++)
+    for (int p = 0; p < npes; p++) {
       delete[] buffer[p];
-  } else
+    }
+  } else {
     delete[] buffer[0];
+  }
   delete[] buffer;
 }
 
@@ -302,11 +325,13 @@ void GlobalField3D::gather(const Field3D& f) {
     int xsize, ysize;
     proc_size(mype, &xsize, &ysize);
 
-    for (int x = 0; x < xsize; x++)
-      for (int y = 0; y < ysize; y++)
+    for (int x = 0; x < xsize; x++) {
+      for (int y = 0; y < ysize; y++) {
         for (int z = 0; z < mesh->LocalNz; z++) {
           (*this)(x + xorig, y + yorig, z) = f(local_xorig + x, local_yorig + y, z);
         }
+      }
+    }
 
     if (npes > 1) {
       // Wait for receives, process as they arrive
@@ -323,12 +348,14 @@ void GlobalField3D::gather(const Field3D& f) {
           proc_size(pe, &remote_xsize, &remote_ysize);
           int zsize = mesh->LocalNz;
 
-          for (int x = 0; x < remote_xsize; x++)
-            for (int y = 0; y < remote_ysize; y++)
+          for (int x = 0; x < remote_xsize; x++) {
+            for (int y = 0; y < remote_ysize; y++) {
               for (int z = 0; z < mesh->LocalNz; z++) {
                 (*this)(x + remote_xorig, y + remote_yorig, z) =
                     buffer[pe][x * remote_ysize * zsize + y * zsize + z];
               }
+            }
+          }
 
           req[pe] = MPI_REQUEST_NULL;
         }
@@ -343,12 +370,14 @@ void GlobalField3D::gather(const Field3D& f) {
     proc_size(mype, &xsize, &ysize);
     int zsize = mesh->LocalNz;
 
-    for (int x = 0; x < xsize; x++)
-      for (int y = 0; y < ysize; y++)
+    for (int x = 0; x < xsize; x++) {
+      for (int y = 0; y < ysize; y++) {
         for (int z = 0; z < mesh->LocalNz; z++) {
           buffer[0][x * ysize * zsize + y * zsize + z] =
               f(local_xorig + x, local_yorig + y, z);
         }
+      }
+    }
 
     bout::globals::mpi->MPI_Send(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 3141,
                                  comm);
@@ -365,8 +394,9 @@ const Field3D GlobalField3D::scatter() const {
     // Data is on this processor. Send to other processors
 
     for (int p = 0; p < npes; p++) {
-      if (p == mype)
+      if (p == mype) {
         continue;
+      }
 
       int xorig, yorig;
       proc_origin(p, &xorig, &yorig);
@@ -375,12 +405,14 @@ const Field3D GlobalField3D::scatter() const {
       int zsize = mesh->LocalNz;
 
       // Send to processor p
-      for (int x = 0; x < xsize; x++)
-        for (int y = 0; y < ysize; y++)
+      for (int x = 0; x < xsize; x++) {
+        for (int y = 0; y < ysize; y++) {
           for (int z = 0; z < zsize; z++) {
             buffer[p][x * ysize * zsize + y * zsize + z] =
                 (*this)(x + xorig, y + yorig, z);
           }
+        }
+      }
 
       bout::globals::mpi->MPI_Send(buffer[p], xsize * ysize * zsize, MPI_DOUBLE, p, 1413,
                                    comm);
@@ -395,11 +427,13 @@ const Field3D GlobalField3D::scatter() const {
     int zsize = mesh->LocalNz;
 
     // Copy to result
-    for (int x = 0; x < xsize; x++)
-      for (int y = 0; y < ysize; y++)
+    for (int x = 0; x < xsize; x++) {
+      for (int y = 0; y < ysize; y++) {
         for (int z = 0; z < zsize; z++) {
           result(local_xorig + x, local_yorig + y, z) = (*this)(x + xorig, y + yorig, z);
         }
+      }
+    }
   } else {
     // Receive data
     bout::globals::mpi->MPI_Recv(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 1413,
@@ -413,12 +447,14 @@ const Field3D GlobalField3D::scatter() const {
     proc_size(mype, &xsize, &ysize);
     int zsize = mesh->LocalNz;
 
-    for (int x = 0; x < xsize; x++)
-      for (int y = 0; y < ysize; y++)
+    for (int x = 0; x < xsize; x++) {
+      for (int y = 0; y < ysize; y++) {
         for (int z = 0; z < zsize; z++) {
           result(local_xorig + x, local_yorig + y, z) =
               buffer[0][x * ysize * zsize + y * zsize + z];
         }
+      }
+    }
   }
   return result;
 }

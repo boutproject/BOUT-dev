@@ -105,15 +105,17 @@ Field2D& Field2D::allocate() {
 #if CHECK > 2
     invalidateGuards(*this);
 #endif
-  } else
+  } else {
     data.ensureUnique();
+  }
 
   return *this;
 }
 
 BOUT_HOST_DEVICE Field2D* Field2D::timeDeriv() {
-  if (deriv == nullptr)
+  if (deriv == nullptr) {
     deriv = new Field2D{emptyFrom(*this)};
+  }
   return deriv;
 }
 
@@ -139,8 +141,9 @@ BOUT_HOST_DEVICE const BoutReal& Field2D::operator[](const Ind3D& d) const {
 
 Field2D& Field2D::operator=(const Field2D& rhs) {
   // Check for self-assignment
-  if (this == &rhs)
+  if (this == &rhs) {
     return (*this); // skip this assignment
+  }
 
   TRACE("Field2D: Assignment from Field2D");
 

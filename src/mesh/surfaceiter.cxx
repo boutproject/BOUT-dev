@@ -30,8 +30,9 @@ int SurfaceIter::yGlobal(int UNUSED(yloc)) {
 }
 
 bool SurfaceIter::firstY() { ///< Is this processor at the lower end?
-  if (closed())
+  if (closed()) {
     return false;
+  }
 
   // Communicator for this surface
   MPI_Comm comm = communicator();
@@ -44,8 +45,9 @@ bool SurfaceIter::firstY() { ///< Is this processor at the lower end?
 }
 
 bool SurfaceIter::lastY() {
-  if (closed())
+  if (closed()) {
     return false;
+  }
 
   // Communicator for this surface
   MPI_Comm comm = communicator();
@@ -62,12 +64,14 @@ bool SurfaceIter::lastY() {
 void SurfaceIter::first() { xpos = firstpos; }
 
 void SurfaceIter::next() {
-  if (xpos < 0)
+  if (xpos < 0) {
     return;
+  }
 
   xpos++;
-  if (xpos > lastpos)
+  if (xpos > lastpos) {
     xpos = -1;
+  }
 }
 
 bool SurfaceIter::isDone() { return xpos < 0; }

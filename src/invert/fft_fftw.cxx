@@ -152,8 +152,9 @@ void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
   }
 
   // Put the input to fin
-  for (int i = 0; i < n; i++)
+  for (int i = 0; i < n; i++) {
     fin[i] = in[i];
+  }
 
   // fftw call executing the fft
   fftw_execute(p);
@@ -163,8 +164,9 @@ void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
   const int nmodes = (n / 2) + 1;
 
   // Store the output in out, and normalize
-  for (int i = 0; i < nmodes; i++)
+  for (int i = 0; i < nmodes; i++) {
     out[i] = dcomplex(fout[i][0], fout[i][1]) * fac; // Normalise
+  }
 #endif
 }
 
@@ -224,8 +226,9 @@ void irfft(MAYBE_UNUSED(const dcomplex* in), MAYBE_UNUSED(int length),
   fftw_execute(p);
 
   // Store the output of the fftw to the out
-  for (int i = 0; i < n; i++)
+  for (int i = 0; i < n; i++) {
     out[i] = fout[i];
+  }
 #endif
 }
 #else
@@ -259,8 +262,9 @@ void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
     if ((size != length) || (nthreads < n_th)) {
       if (size > 0) {
         // Free all memory
-        for (int i = 0; i < nthreads; i++)
+        for (int i = 0; i < nthreads; i++) {
           fftw_destroy_plan(p[i]);
+        }
         delete[] p;
         fftw_free(finall);
         fftw_free(foutall);
@@ -275,12 +279,13 @@ void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
 
       auto flags = get_measurement_flag(fft_measurement_flag);
 
-      for (int i = 0; i < n_th; i++)
+      for (int i = 0; i < n_th; i++) {
         // fftw call
         // Plan a real-input/complex-output discrete Fourier transform (DFT)
         // in 1 dimensions. Returns a fftw_plan (containing pointers etc.)
         p[i] = fftw_plan_dft_r2c_1d(length, finall + i * length,
                                     foutall + i * (length / 2 + 1), flags);
+      }
       size = length;
       nthreads = n_th;
     }
@@ -290,8 +295,9 @@ void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
   double* fin = finall + th_id * size;
   fftw_complex* fout = foutall + th_id * (size / 2 + 1);
 
-  for (int i = 0; i < size; i++)
+  for (int i = 0; i < size; i++) {
     fin[i] = in[i];
+  }
 
   // fftw call executing the fft
   fftw_execute(p[th_id]);
@@ -300,8 +306,9 @@ void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
   const BoutReal fac = 1.0 / static_cast<BoutReal>(size);
   const int nmodes = (size / 2) + 1;
 
-  for (int i = 0; i < nmodes; i++)
+  for (int i = 0; i < nmodes; i++) {
     out[i] = dcomplex(fout[i][0], fout[i][1]) * fac; // Normalise
+  }
 #endif
 }
 
@@ -332,8 +339,9 @@ void irfft(MAYBE_UNUSED(const dcomplex* in), MAYBE_UNUSED(int length),
     if ((size != length) || (nthreads < n_th)) {
       if (size > 0) {
         // Free all memory
-        for (int i = 0; i < nthreads; i++)
+        for (int i = 0; i < nthreads; i++) {
           fftw_destroy_plan(p[i]);
+        }
         delete[] p;
         fftw_free(finall);
         fftw_free(foutall);
@@ -349,9 +357,10 @@ void irfft(MAYBE_UNUSED(const dcomplex* in), MAYBE_UNUSED(int length),
 
       auto flags = get_measurement_flag(fft_measurement_flag);
 
-      for (int i = 0; i < n_th; i++)
+      for (int i = 0; i < n_th; i++) {
         p[i] = fftw_plan_dft_c2r_1d(length, finall + i * (length / 2 + 1),
                                     foutall + i * length, flags);
+      }
       size = length;
       nthreads = n_th;
     }
@@ -371,8 +380,9 @@ void irfft(MAYBE_UNUSED(const dcomplex* in), MAYBE_UNUSED(int length),
   // fftw call executing the fft
   fftw_execute(p[th_id]);
 
-  for (int i = 0; i < size; i++)
+  for (int i = 0; i < size; i++) {
     out[i] = fout[i];
+  }
 #endif
 }
 #endif
@@ -412,8 +422,9 @@ void DST(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
 
     n = length;
   }
-  for (int i = 0; i < n; i++)
+  for (int i = 0; i < n; i++) {
     fin[i] = in[i];
+  }
 
   fin[0] = 0.;
   fin[length - 1] = 0.;
@@ -429,8 +440,9 @@ void DST(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
   out[0] = 0.0;
   out[length - 1] = 0.0;
 
-  for (int i = 1; i < length - 1; i++)
+  for (int i = 1; i < length - 1; i++) {
     out[i] = -fout[i][1] / (static_cast<BoutReal>(length) - 1); // Normalise
+  }
 #endif
 }
 
@@ -489,8 +501,9 @@ void DST_rev(MAYBE_UNUSED(dcomplex* in), MAYBE_UNUSED(int length),
 
   out[0] = 0.0;
   out[length - 1] = 0.0;
-  for (int i = 1; i < length - 1; i++)
+  for (int i = 1; i < length - 1; i++) {
     out[i] = fout[i];
+  }
 #endif
 }
 

@@ -77,8 +77,9 @@ public:
     int np, myp;
     MPI_Comm_size(c, &np);
     MPI_Comm_rank(c, &myp);
-    if ((size != N) || (np != nprocs) || (myp != myproc))
+    if ((size != N) || (np != nprocs) || (myp != myproc)) {
       Nsys = 0; // Need to re-size
+    }
     N = size;
     periodic = false;
     nprocs = np;
@@ -177,8 +178,9 @@ public:
     // Multiple RHS
     int nrhs = std::get<0>(rhs.shape());
 
-    if (nrhs != Nsys)
+    if (nrhs != Nsys) {
       throw BoutException("Sorry, can't yet handle nrhs != nsys");
+    }
 
     // Insert RHS into coefs array. Ordered to allow efficient partitioning
     // for MPI send/receives
@@ -229,9 +231,11 @@ public:
         if (p == myproc) {
           // Just copy the data
           BOUT_OMP(parallel for)
-          for (int i = 0; i < myns; i++)
-            for (int j = 0; j < 8; j++)
+          for (int i = 0; i < myns; i++) {
+            for (int j = 0; j < 8; j++) {
               ifcs(i, 8 * p + j) = myif(sys0 + i, j);
+            }
+          }
         } else {
 #ifdef DIAGNOSE
           output << "Expecting to receive " << len << " from " << p << endl;
@@ -250,13 +254,15 @@ public:
     int s0 = 0;
     for (int p = 0; p < nprocs; p++) { // Loop over processor
       int nsp = ns;
-      if (p < nsextra)
+      if (p < nsextra) {
         nsp++;
+      }
       if ((p != myproc) && (nsp > 0)) {
 #ifdef DIAGNOSE
         output << "Sending to " << p << endl;
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 8; i++) {
           output << "value " << i << " : " << myif(s0, i) << endl;
+        }
 #endif
         MPI_Send(&myif(s0, 0),        // Data pointer
                  8 * nsp * sizeof(T), // Number
@@ -280,13 +286,14 @@ public:
           output << "Copying received data from " << p << endl;
 #endif
           BOUT_OMP(parallel for)
-          for (int i = 0; i < myns; i++)
+          for (int i = 0; i < myns; i++) {
             for (int j = 0; j < 8; j++) {
 #ifdef DIAGNOSE
               output << "Value " << j << " : " << recvbuffer(p, 8 * i + j) << endl;
 #endif
               ifcs(i, 8 * p + j) = recvbuffer(p, 8 * i + j);
             }
+          }
           req[p] = MPI_REQUEST_NULL;
         }
       } while (p != MPI_UNDEFINED);
@@ -350,8 +357,9 @@ public:
       // Post receives
       for (int p = 0; p < nprocs; p++) { // Loop over processor
         int nsp = ns;
-        if (p < nsextra)
+        if (p < nsextra) {
           nsp++;
+        }
         int len = 2 * nsp * sizeof(T); // 2 values per system
 
         if (p == myproc) {
@@ -372,8 +380,9 @@ public:
                     p,        // Identifier
                     comm,     // Communicator
                     &req[p]); // Request
-        } else
+        } else {
           req[p] = MPI_REQUEST_NULL;
+        }
       }
 
       if (myns > 0) {
@@ -409,12 +418,14 @@ public:
           int s0 = fromproc * ns;
           if (fromproc > nsextra) {
             s0 += nsextra;
-          } else
+          } else {
             s0 += fromproc;
+          }
 
           nsp = ns;
-          if (fromproc < nsextra)
+          if (fromproc < nsextra) {
             nsp++;
+          }
 
           BOUT_OMP(parallel for)
           for (int i = 0; i < nsp; i++) {
@@ -462,8 +473,9 @@ private:
   /// @param[in] nsys  Number of independent systems to solve
   /// @param[in] n     Size of each system of equations
   void allocMemory(int np, int nsys, int n) {
-    if ((nsys == Nsys) && (n == N) && (np == nprocs))
+    if ((nsys == Nsys) && (n == N) && (np == nprocs)) {
       return; // No need to allocate memory
+    }
 
     nprocs = np;
     Nsys = nsys;
@@ -523,8 +535,9 @@ private:
   /// (                  an bn cn)
   void reduce(int ns, int nloc, Matrix<T>& co, Matrix<T>& ifc) {
 #ifdef DIAGNOSE
-    if (nloc < 2)
+    if (nloc < 2) {
       throw BoutException("CyclicReduce::reduce nloc < 2");
+    }
 #endif
 
     BOUT_OMP(parallel for)
@@ -539,8 +552,9 @@ private:
 
       for (int i = nloc - 3; i >= 0; i--) {
         // Check for zero pivot
-        if (std::abs(ifc(j, 1)) < 1e-10)
+        if (std::abs(ifc(j, 1)) < 1e-10) {
           throw BoutException("Zero pivot in CyclicReduce::reduce");
+        }
 
         // beta <- v_{i,i+1} / v_u,i
         T beta = co(j, 4 * i + 2) / ifc(j, 1);
@@ -560,13 +574,15 @@ private:
 
       // v_l <- v_(k+1)
       // b_l <- b_{k+1}
-      for (int i = 0; i < 4; i++)
+      for (int i = 0; i < 4; i++) {
         ifc(j, 4 + i) = co(j, 4 + i);
+      }
 
       for (int i = 2; i < nloc; i++) {
 
-        if (std::abs(ifc(j, 4 + 1)) < 1e-10)
+        if (std::abs(ifc(j, 4 + 1)) < 1e-10) {
           throw BoutException("Zero pivot in CyclicReduce::reduce");
+        }
 
         // alpha <- v_{i,i-1} / v_l,i-1
         T alpha = co(j, 4 * i) / ifc(j, 4 + 1);

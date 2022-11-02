@@ -87,8 +87,9 @@ void PowerSolver::outputVars(Options& output_options, bool save_repeat) {
 BoutReal PowerSolver::norm(Array<BoutReal>& state) {
   BoutReal total = 0.0, result;
 
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
     total += state[i] * state[i];
+  }
 
   total /= static_cast<BoutReal>(nglobal);
 
@@ -99,6 +100,7 @@ BoutReal PowerSolver::norm(Array<BoutReal>& state) {
 }
 
 void PowerSolver::divide(Array<BoutReal>& in, BoutReal value) {
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
     in[i] /= value;
+  }
 }

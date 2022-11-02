@@ -30,8 +30,9 @@ Options& Options::root() {
 }
 
 void Options::cleanup() {
-  if (root_instance == nullptr)
+  if (root_instance == nullptr) {
     return;
+  }
   delete root_instance;
   root_instance = nullptr;
 }

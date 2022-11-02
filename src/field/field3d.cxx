@@ -119,8 +119,9 @@ Field3D& Field3D::allocate() {
 #if CHECK > 2
     invalidateGuards(*this);
 #endif
-  } else
+  } else {
     data.ensureUnique();
+  }
 
   return *this;
 }
@@ -237,8 +238,9 @@ const Region<Ind2D>& Field3D::getRegion2D(const std::string& region_name) const 
 
 Field3D& Field3D::operator=(const Field3D& rhs) {
   /// Check for self-assignment
-  if (this == &rhs)
+  if (this == &rhs) {
     return (*this); // skip this assignment
+  }
 
   TRACE("Field3D: Assignment from Field3D");
 
@@ -675,8 +677,9 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string
       rfft(var(i.x(), i.y()), ncz, f.begin());
 
       // Filter in z
-      for (int jz = zmax + 1; jz <= ncz / 2; jz++)
+      for (int jz = zmax + 1; jz <= ncz / 2; jz++) {
         f[jz] = 0.0;
+      }
 
       // Filter zonal mode
       if (!keep_zonal) {
@@ -701,8 +704,9 @@ void shiftZ(Field3D& var, int jx, int jy, double zangle) {
   Mesh* localmesh = var.getMesh();
 
   int ncz = localmesh->LocalNz;
-  if (ncz == 1)
+  if (ncz == 1) {
     return; // Shifting doesn't do anything
+  }
 
   Array<dcomplex> v(ncz / 2 + 1);
 
@@ -754,8 +758,9 @@ void checkDataIsFiniteOnRegion(const Field3D& UNUSED(f),
 
 #if CHECK > 0
 void checkData(const Field3D& f, const std::string& region) {
-  if (!f.isAllocated())
+  if (!f.isAllocated()) {
     throw BoutException("Field3D: Operation on empty data\n");
+  }
 
   checkDataIsFiniteOnRegion(f, region);
 }

@@ -302,8 +302,9 @@ const Options* FieldFactory::findOption(const Options* opt, const std::string& n
 
     while (!result->isSet(name)) {
       result = result->getParent();
-      if (result == nullptr)
+      if (result == nullptr) {
         throw ParseException("Cannot find variable '{:s}'", name);
+      }
     }
     result->get(name, val, "");
 

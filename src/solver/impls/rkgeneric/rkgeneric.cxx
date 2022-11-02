@@ -29,11 +29,13 @@ RKGenericSolver::RKGenericSolver(Options* opts)
 }
 
 void RKGenericSolver::setMaxTimestep(BoutReal dt) {
-  if (dt > timestep)
+  if (dt > timestep) {
     return; // Already less than this
+  }
 
-  if (adaptive)
+  if (adaptive) {
     timestep = dt; // Won't be used this time, but next
+  }
 }
 
 int RKGenericSolver::init() {
@@ -115,9 +117,10 @@ int RKGenericSolver::run() {
           //approaches, but the non-adaptive can be determined without needing
           //to do any solves so could perhaps be check during init instead.
           internal_steps++;
-          if (internal_steps > mxstep)
+          if (internal_steps > mxstep) {
             throw BoutException("ERROR: MXSTEP exceeded. timestep = {:e}, err={:e}\n",
                                 timestep, err);
+          }
 
           //Update the time step if required, note we ignore increases to the timestep
           //when on the last internal step as here we may have an artificially small dt
@@ -127,13 +130,15 @@ int RKGenericSolver::run() {
             timestep = scheme->updateTimestep(dt, err);
 
             //Limit timestep to specified maximum
-            if ((max_timestep > 0) && (timestep > max_timestep))
+            if ((max_timestep > 0) && (timestep > max_timestep)) {
               timestep = max_timestep;
+            }
           }
 
           //If accuracy ok then break
-          if (err < rtol)
+          if (err < rtol) {
             break;
+          }
 
         } else {
           // No adaptive timestepping so just accept step

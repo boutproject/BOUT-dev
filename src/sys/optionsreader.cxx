@@ -15,8 +15,9 @@
 OptionsReader* OptionsReader::instance = nullptr;
 
 OptionsReader* OptionsReader::getInstance() {
-  if (instance == nullptr)
+  if (instance == nullptr) {
     instance = new OptionsReader(); // Create the singleton object
+  }
 
   return instance;
 }

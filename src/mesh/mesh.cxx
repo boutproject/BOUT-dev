@@ -270,8 +270,9 @@ bool Mesh::isDataSourceGridFile() const { return source != nullptr and source->i
 
 bool Mesh::sourceHasVar(const std::string& name) {
   TRACE("Mesh::sourceHasVar({:s})", name);
-  if (source == nullptr)
+  if (source == nullptr) {
     return false;
+  }
   return source->hasVar(name);
 }
 

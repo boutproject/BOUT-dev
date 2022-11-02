@@ -94,10 +94,12 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if (inner_boundary_flags & INVERT_BNDRY_ONE)
+  if (inner_boundary_flags & INVERT_BNDRY_ONE) {
     inbndry = 1;
-  if (outer_boundary_flags & INVERT_BNDRY_ONE)
+  }
+  if (outer_boundary_flags & INVERT_BNDRY_ONE) {
     outbndry = 1;
+  }
 
   /* Allocation fo
    * bk   = The fourier transformed of b, where b is one of the inputs in
@@ -226,15 +228,18 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Done inversion, transform back
   for (int ix = 0; ix < ncx; ix++) {
 
-    if (global_flags & INVERT_ZERO_DC)
+    if (global_flags & INVERT_ZERO_DC) {
       xk(ix, 0) = 0.0;
+    }
 
     irfft(&xk(ix, 0), ncz, x[ix]);
 
 #if CHECK > 2
-    for (int kz = 0; kz < ncz; kz++)
-      if (!finite(x(ix, kz)))
+    for (int kz = 0; kz < ncz; kz++) {
+      if (!finite(x(ix, kz))) {
         throw BoutException("Non-finite at {:d}, {:d}, {:d}", ix, jy, kz);
+      }
+    }
 #endif
   }
 

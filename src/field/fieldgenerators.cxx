@@ -67,10 +67,12 @@ FieldGeneratorPtr FieldBallooning::clone(const std::list<FieldGeneratorPtr> args
 
 BoutReal FieldBallooning::generate(const Context& ctx) {
   Mesh* localmesh = ctx.getMesh();
-  if (!localmesh)
+  if (!localmesh) {
     throw BoutException("ballooning function needs a valid mesh");
-  if (ball_n < 1)
+  }
+  if (ball_n < 1) {
     throw BoutException("ballooning function ball_n less than 1");
+  }
 
   BoutReal ts; // Twist-shift angle
   Coordinates* coords = localmesh->getCoordinates();
@@ -111,8 +113,9 @@ FieldMixmode::FieldMixmode(FieldGeneratorPtr a, BoutReal seed) : arg(std::move(a
   // Calculate the phases -PI to +PI
   // using genRand [0,1]
 
-  for (int i = 0; i < 14; i++)
+  for (int i = 0; i < 14; i++) {
     phase[i] = PI * (2. * genRand(seed + i) - 1.);
+  }
 }
 
 FieldGeneratorPtr FieldMixmode::clone(const std::list<FieldGeneratorPtr> args) {
@@ -144,8 +147,9 @@ BoutReal FieldMixmode::generate(const Context& ctx) {
 
 BoutReal FieldMixmode::genRand(BoutReal seed) {
   // Make sure seed is
-  if (seed < 0.0)
+  if (seed < 0.0) {
     seed *= -1;
+  }
 
   // Round the seed to get the number of iterations
   int niter = 11 + (23 + ROUND(seed)) % 79;
@@ -155,8 +159,9 @@ BoutReal FieldMixmode::genRand(BoutReal seed) {
   BoutReal x = (A + fmod(seed, B)) / (B + 2. * A);
 
   // Iterate logistic map
-  for (int i = 0; i != niter; ++i)
+  for (int i = 0; i != niter; ++i) {
     x = 3.99 * x * (1. - x);
+  }
 
   return x;
 }

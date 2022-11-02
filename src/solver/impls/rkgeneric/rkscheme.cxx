@@ -37,8 +37,9 @@ void RKScheme::init(int nlocalIn, int neqIn, bool adaptiveIn, BoutReal atolIn,
   zeroSteps();
 
   // Allocate array for storing alternative order result
-  if (adaptive)
+  if (adaptive) {
     resultAlt.reallocate(nlocal); // Result--alternative order
+  }
 
   // Will probably only want the following when debugging, but leave it on for now
   if (diagnose) {
@@ -64,13 +65,15 @@ void RKScheme::setCurState(const Array<BoutReal>& start, Array<BoutReal>& out,
   }
 
   //If on the first stage we don't need to modify the state
-  if (curStage == 0)
+  if (curStage == 0) {
     return; //Don't realy need this as below loop won't execute
+  }
 
   //Construct the current state from previous results -- This is expensive
   for (int j = 0; j < curStage; j++) {
-    if (std::abs(stageCoeffs(curStage, j)) < atol)
+    if (std::abs(stageCoeffs(curStage, j)) < atol) {
       continue;
+    }
     BoutReal fac = stageCoeffs(curStage, j) * dt;
 
     BOUT_OMP(parallel for)
@@ -170,8 +173,9 @@ void RKScheme::constructOutput(const Array<BoutReal>& start, const BoutReal dt,
 
   //Construct the solution
   for (int curStage = 0; curStage < getStageCount(); curStage++) {
-    if (resultCoeffs(curStage, index) == 0.)
+    if (resultCoeffs(curStage, index) == 0.) {
       continue; // Real comparison not great
+    }
     BoutReal fac = dt * resultCoeffs(curStage, index);
     BOUT_OMP(parallel for)
     for (int i = 0; i < nlocal; i++) {
@@ -221,8 +225,9 @@ void RKScheme::verifyCoeffs() {
       tmp += stageCoeffs(i, j);
     }
     output << std::setw(10) << timeCoeffs[i] << " | " << std::setw(10) << tmp << endl;
-    if (std::abs(timeCoeffs[i] - tmp) > atol)
+    if (std::abs(timeCoeffs[i] - tmp) > atol) {
       warn = true;
+    }
   }
 
   //Optional warning
@@ -242,8 +247,9 @@ void RKScheme::verifyCoeffs() {
       tmp += resultCoeffs(i, j);
     }
     output << "Order : " << j << " = " << tmp << endl;
-    if (std::abs(1.0 - tmp) > atol)
+    if (std::abs(1.0 - tmp) > atol) {
       warn = true;
+    }
   }
 
   //Optional warning

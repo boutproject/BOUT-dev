@@ -255,20 +255,24 @@ int CvodeSolver::init() {
   }
 
   // For callbacks, need pointer to solver object
-  if (CVodeSetUserData(cvode_mem, this) < 0)
+  if (CVodeSetUserData(cvode_mem, this) < 0) {
     throw BoutException("CVodeSetUserData failed\n");
+  }
 
-  if (CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) < 0)
+  if (CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) < 0) {
     throw BoutException("CVodeInit failed\n");
+  }
 
   if (max_order > 0) {
-    if (CVodeSetMaxOrd(cvode_mem, max_order) < 0)
+    if (CVodeSetMaxOrd(cvode_mem, max_order) < 0) {
       throw BoutException("CVodeSetMaxOrder failed\n");
+    }
   }
 
   if (stablimdet) {
-    if (CVodeSetStabLimDet(cvode_mem, stablimdet) < 0)
+    if (CVodeSetStabLimDet(cvode_mem, stablimdet) < 0) {
       throw BoutException("CVodeSetStabLimDet failed\n");
+    }
   }
 
   if (use_vector_abstol) {
@@ -294,18 +298,21 @@ int CvodeSolver::init() {
                    });
 
     N_Vector abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext);
-    if (abstolvec == nullptr)
+    if (abstolvec == nullptr) {
       throw BoutException("SUNDIALS memory allocation (abstol vector) failed\n");
+    }
 
     set_vector_option_values(NV_DATA_P(abstolvec), f2dtols, f3dtols);
 
-    if (CVodeSVtolerances(cvode_mem, reltol, abstolvec) < 0)
+    if (CVodeSVtolerances(cvode_mem, reltol, abstolvec) < 0) {
       throw BoutException("CVodeSVtolerances failed\n");
+    }
 
     N_VDestroy_Parallel(abstolvec);
   } else {
-    if (CVodeSStolerances(cvode_mem, reltol, abstol) < 0)
+    if (CVodeSStolerances(cvode_mem, reltol, abstol) < 0) {
       throw BoutException("CVodeSStolerances failed\n");
+    }
   }
 
   CVodeSetMaxNumSteps(cvode_mem, mxsteps);
@@ -341,15 +348,17 @@ int CvodeSolver::init() {
     auto f3d_constraints = create_constraints(f3d);
 
     N_Vector constraints_vec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext);
-    if (constraints_vec == nullptr)
+    if (constraints_vec == nullptr) {
       throw BoutException("SUNDIALS memory allocation (positivity constraints vector) "
                           "failed\n");
+    }
 
     set_vector_option_values(NV_DATA_P(constraints_vec), f2d_constraints,
                              f3d_constraints);
 
-    if (CVodeSetConstraints(cvode_mem, constraints_vec) < 0)
+    if (CVodeSetConstraints(cvode_mem, constraints_vec) < 0) {
       throw BoutException("CVodeSetConstraints failed\n");
+    }
 
     N_VDestroy_Parallel(constraints_vec);
   }
@@ -366,11 +375,13 @@ int CvodeSolver::init() {
       if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl, suncontext)) == nullptr) {
         throw BoutException("Creating SUNDIALS linear solver failed\n");
       }
-      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS)
+      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS) {
         throw BoutException("CVSpilsSetLinearSolver failed\n");
+      }
 #else
-      if (CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS)
+      if (CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS) {
         throw BoutException("CVSpgmr failed\n");
+      }
 #endif
 
       if (!hasPreconditioner()) {
@@ -395,14 +406,16 @@ int CvodeSolver::init() {
         const auto mlkeep = (*options)["mlkeep"].withDefault(n3Dvars() + n2Dvars());
 
         if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, ZERO,
-                          cvode_bbd_rhs, nullptr))
+                          cvode_bbd_rhs, nullptr)) {
           throw BoutException("CVBBDPrecInit failed\n");
+        }
 
       } else {
         output_info.write("\tUsing user-supplied preconditioner\n");
 
-        if (CVSpilsSetPreconditioner(cvode_mem, nullptr, cvode_pre_shim))
+        if (CVSpilsSetPreconditioner(cvode_mem, nullptr, cvode_pre_shim)) {
           throw BoutException("CVSpilsSetPreconditioner failed\n");
+        }
       }
     } else {
       output_info.write("\tNo preconditioning\n");
@@ -412,11 +425,13 @@ int CvodeSolver::init() {
           == nullptr) {
         throw BoutException("Creating SUNDIALS linear solver failed\n");
       }
-      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS)
+      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS) {
         throw BoutException("CVSpilsSetLinearSolver failed\n");
+      }
 #else
-      if (CVSpgmr(cvode_mem, SUN_PREC_NONE, maxl) != CVSPILS_SUCCESS)
+      if (CVSpgmr(cvode_mem, SUN_PREC_NONE, maxl) != CVSPILS_SUCCESS) {
         throw BoutException("CVSpgmr failed\n");
+      }
 #endif
     }
 
@@ -424,10 +439,12 @@ int CvodeSolver::init() {
     if (use_jacobian and hasJacobian()) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
 
-      if (CVSpilsSetJacTimes(cvode_mem, nullptr, cvode_jac) != CV_SUCCESS)
+      if (CVSpilsSetJacTimes(cvode_mem, nullptr, cvode_jac) != CV_SUCCESS) {
         throw BoutException("CVSpilsSetJacTimesVecFn failed\n");
-    } else
+      }
+    } else {
       output_info.write("\tUsing difference quotient approximation for Jacobian\n");
+    }
   } else {
     output_info.write("\tUsing Functional iteration\n");
 #if SUNDIALS_VERSION_MAJOR >= 4
@@ -435,8 +452,9 @@ int CvodeSolver::init() {
       throw BoutException("SUNNonlinSol_FixedPoint failed\n");
     }
 
-    if (CVodeSetNonlinearSolver(cvode_mem, nonlinear_solver))
+    if (CVodeSetNonlinearSolver(cvode_mem, nonlinear_solver)) {
       throw BoutException("CVodeSetNonlinearSolver failed\n");
+    }
 #endif
   }
 
@@ -489,8 +507,9 @@ CvodeSolver::create_constraints(const std::vector<VarStr<FieldType>>& fields) {
 int CvodeSolver::run() {
   TRACE("CvodeSolver::run()");
 
-  if (!cvode_initialised)
+  if (!cvode_initialised) {
     throw BoutException("CvodeSolver not initialised\n");
+  }
 
   for (int i = 0; i < getNumberOutputSteps(); i++) {
 
@@ -649,8 +668,9 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
 
   if (!hasPreconditioner()) {
     // Identity (but should never happen)
-    for (int i = 0; i < N; i++)
+    for (int i = 0; i < N; i++) {
       zvec[i] = rvec[i];
+    }
     return;
   }
 
@@ -797,8 +817,9 @@ void CvodeSolver::resetInternalFields() {
   TRACE("CvodeSolver::resetInternalFields");
   save_vars(NV_DATA_P(uvec));
 
-  if (CVodeReInit(cvode_mem, simtime, uvec) < 0)
+  if (CVodeReInit(cvode_mem, simtime, uvec) < 0) {
     throw BoutException("CVodeReInit failed\n");
+  }
 }
 
 #endif

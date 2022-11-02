@@ -23,8 +23,9 @@ EulerSolver::EulerSolver(Options* options)
                    .withDefault(getOutputTimestep())) {}
 
 void EulerSolver::setMaxTimestep(BoutReal dt) {
-  if (dt >= cfl_factor * timestep)
+  if (dt >= cfl_factor * timestep) {
     return; // Already less than this
+  }
 
   timestep = dt * 0.99
              / cfl_factor; // Slightly below to avoid re-setting to same value over again
@@ -87,8 +88,9 @@ int EulerSolver::run() {
       // Check with all processors if timestep was reduced
 
       BoutReal newdt_local = 10. * old_timestep; // Signal no change
-      if (timestep_reduced)
+      if (timestep_reduced) {
         newdt_local = timestep;
+      }
 
       BoutReal newdt;
       if (bout::globals::mpi->MPI_Allreduce(&newdt_local, &newdt, 1, MPI_DOUBLE, MPI_MIN,
@@ -109,9 +111,10 @@ int EulerSolver::run() {
       simtime += timestep;
 
       internal_steps++;
-      if (internal_steps > mxstep)
+      if (internal_steps > mxstep) {
         throw BoutException("ERROR: MXSTEP exceeded. simtime={:e}, timestep = {:e}\n",
                             simtime, timestep);
+      }
 
       // Call timestep monitors
       call_timestep_monitors(simtime, timestep);
@@ -142,6 +145,7 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
   save_derivs(std::begin(result));
 
   BOUT_OMP(parallel for)
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
     result[i] = start[i] + dt * result[i];
+  }
 }

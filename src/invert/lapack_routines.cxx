@@ -184,8 +184,9 @@ void cyclic_tridag(BoutReal* a, BoutReal* b, BoutReal* c, BoutReal* r, BoutReal*
   b[n - 1] = b[n - 1] - c[n - 1] * a[0] / gamma;
 
   // Solve tridiagonal system Ax=r
-  if (!tridag(a, b, c, r, x, n))
+  if (!tridag(a, b, c, r, x, n)) {
     throw BoutException("ERROR: first tridag call failed in cyclic_tridag\n");
+  }
 
   u[0] = gamma;
   u[n - 1] = c[n - 1];
@@ -298,8 +299,9 @@ void cband_solve(Matrix<dcomplex>&, int, int, int, Array<dcomplex>&) {
 /// Solve a cyclic tridiagonal matrix
 void cyclic_tridag(dcomplex* a, dcomplex* b, dcomplex* c, dcomplex* r, dcomplex* x,
                    int n) {
-  if (n <= 2)
+  if (n <= 2) {
     throw BoutException("n too small in cyclic_tridag(dcomplex)");
+  }
 
   Array<dcomplex> u(n), z(n);
 
@@ -314,23 +316,27 @@ void cyclic_tridag(dcomplex* a, dcomplex* b, dcomplex* c, dcomplex* r, dcomplex*
   b[n - 1] = b[n - 1] - c[n - 1] * a[0] / gamma;
 
   // Solve tridiagonal system Ax=r
-  if (tridag(a, b, c, r, x, n))
+  if (tridag(a, b, c, r, x, n)) {
     throw BoutException("First tridag call failed in cyclic_tridag(dcomplex)");
+  }
 
   u[0] = gamma;
   u[n - 1] = c[n - 1];
-  for (int i = 1; i < (n - 1); i++)
+  for (int i = 1; i < (n - 1); i++) {
     u[i] = 0.;
+  }
 
   // Solve Az = u
-  if (tridag(a, b, c, u.begin(), z.begin(), n))
+  if (tridag(a, b, c, u.begin(), z.begin(), n)) {
     throw BoutException("Second tridag call failed in cyclic_tridag(dcomplex)\n");
+  }
 
   dcomplex fact = (x[0] + a[0] * x[n - 1] / gamma) / // v.x / (1 + v.z)
                   (1.0 + z[0] + a[0] * z[n - 1] / gamma);
 
-  for (int i = 0; i < n; i++)
+  for (int i = 0; i < n; i++) {
     x[i] -= fact * z[i];
+  }
 
   // Restore coefficients
   b[0] = b0;

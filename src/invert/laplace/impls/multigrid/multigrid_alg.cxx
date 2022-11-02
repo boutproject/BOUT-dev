@@ -41,8 +41,9 @@ MultigridAlg::MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm c
                            int check)
     : mglevel(level), pcheck(check), commMG(comm) {
 
-  if (pcheck > 0)
+  if (pcheck > 0) {
     output << "Construct MG " << level << endl;
+  }
 
   // Memory allocate for Multigrid
   gnx.reallocate(mglevel);
@@ -72,8 +73,9 @@ MultigridAlg::MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm c
 
 MultigridAlg::~MultigridAlg() {
   output << "End deconstruction Malg AAAA " << numP << endl;
-  for (int i = 0; i < mglevel; i++)
+  for (int i = 0; i < mglevel; i++) {
     delete[] matmg[i];
+  }
   delete[] matmg;
 }
 
@@ -86,12 +88,13 @@ void MultigridAlg::getSolution(BoutReal* x, BoutReal* b, int flag) {
 
   if (flag == 0) {
     //Solve exaclty
-    if (mglevel == 1)
+    if (mglevel == 1) {
       pGMRES(x, b, mglevel - 1, 1);
-    else if (mgplag == 1)
+    } else if (mgplag == 1) {
       pGMRES(x, b, mglevel - 1, 1);
-    else
+    } else {
       solveMG(x, b, mglevel - 1);
+    }
   } else {
     cycleMG(mglevel - 1, x, b);
     if (flag > 1) {
@@ -103,13 +106,15 @@ void MultigridAlg::getSolution(BoutReal* x, BoutReal* b, int flag) {
         residualVec(level, x, b, std::begin(r));
         BOUT_OMP(parallel default(shared))
         BOUT_OMP(for)
-        for (int i = 0; i < ldim; i++)
+        for (int i = 0; i < ldim; i++) {
           y[i] = 0.0;
+        }
         cycleMG(level, std::begin(y), std::begin(r));
         BOUT_OMP(parallel default(shared))
         BOUT_OMP(for)
-        for (int i = 0; i < ldim; i++)
+        for (int i = 0; i < ldim; i++) {
           x[i] = x[i] + y[i];
+        }
       }
     }
   }
@@ -132,16 +137,18 @@ void MultigridAlg::cycleMG(int level, BoutReal* sol, BoutReal* rhs) {
 
     BOUT_OMP(parallel default(shared))
     BOUT_OMP(for)
-    for (int i = 0; i < (lnx[level - 1] + 2) * (lnz[level - 1] + 2); i++)
+    for (int i = 0; i < (lnx[level - 1] + 2) * (lnz[level - 1] + 2); i++) {
       y[i] = 0.0;
+    }
 
     cycleMG(level - 1, std::begin(y), std::begin(pr));
 
     prolongation(level - 1, std::begin(y), std::begin(iy));
     BOUT_OMP(parallel default(shared))
     BOUT_OMP(for)
-    for (int i = 0; i < (lnx[level] + 2) * (lnz[level] + 2); i++)
+    for (int i = 0; i < (lnx[level] + 2) * (lnz[level] + 2); i++) {
       sol[i] += iy[i];
+    }
 
     smoothings(level, sol, rhs);
   }
@@ -152,8 +159,9 @@ void MultigridAlg::projection(int level, BoutReal* r, BoutReal* pr) {
   BOUT_OMP(parallel default(shared))
   {
     BOUT_OMP(for)
-    for (int i = 0; i < (lnx[level - 1] + 2) * (lnz[level - 1] + 2); i++)
+    for (int i = 0; i < (lnx[level - 1] + 2) * (lnz[level - 1] + 2); i++) {
       pr[i] = 0.;
+    }
     int xend = lnx[level - 1] + 1;
     int zend = lnz[level - 1] + 1;
     BOUT_OMP(for collapse(2))
@@ -178,8 +186,9 @@ void MultigridAlg::prolongation(int level, BoutReal* x, BoutReal* ix) {
   BOUT_OMP(parallel default(shared))
   {
     BOUT_OMP(for)
-    for (int i = 0; i < (lnx[level + 1] + 2) * (lnz[level + 1] + 2); i++)
+    for (int i = 0; i < (lnx[level + 1] + 2) * (lnz[level + 1] + 2); i++) {
       ix[i] = 0.;
+    }
 
     int xend = lnx[level] + 1;
     int zend = lnz[level] + 1;
@@ -213,13 +222,14 @@ void MultigridAlg::smoothings(int level, BoutReal* x, BoutReal* b) {
     BOUT_OMP(parallel default(shared))
     for (int num = 0; num < 2; num++) {
       BOUT_OMP(for)
-      for (int i = 0; i < dim; i++)
+      for (int i = 0; i < dim; i++) {
         x0[i] = x[i];
+      }
 
       int xend = lnx[level] + 1;
       int zend = lnz[level] + 1;
       BOUT_OMP(for collapse(2))
-      for (int i = 1; i < xend; i++)
+      for (int i = 1; i < xend; i++) {
         for (int k = 1; k < zend; k++) {
           int nn = i * mm + k;
           BoutReal val = b[nn] - matmg[level][nn * 9 + 3] * x0[nn - 1]
@@ -230,15 +240,17 @@ void MultigridAlg::smoothings(int level, BoutReal* x, BoutReal* b) {
                          - matmg[level][nn * 9 + 2] * x0[nn - mm + 1]
                          - matmg[level][nn * 9 + 6] * x0[nn + mm - 1]
                          - matmg[level][nn * 9 + 8] * x0[nn + mm + 1];
-          if (fabs(matmg[level][nn * 9 + 4]) < atol)
+          if (fabs(matmg[level][nn * 9 + 4]) < atol) {
             throw BoutException("Error at matmg({:d}-{:d})", level, nn);
+          }
 
           x[nn] = (1.0 - omega) * x[nn] + omega * val / matmg[level][nn * 9 + 4];
         }
+      }
       communications(x, level);
     }
   } else {
-    for (int i = 1; i < lnx[level] + 1; i++)
+    for (int i = 1; i < lnx[level] + 1; i++) {
       for (int k = 1; k < lnz[level] + 1; k++) {
         int nn = i * mm + k;
         BoutReal val = b[nn] - matmg[level][nn * 9 + 3] * x[nn - 1]
@@ -249,12 +261,14 @@ void MultigridAlg::smoothings(int level, BoutReal* x, BoutReal* b) {
                        - matmg[level][nn * 9 + 2] * x[nn - mm + 1]
                        - matmg[level][nn * 9 + 6] * x[nn + mm - 1]
                        - matmg[level][nn * 9 + 8] * x[nn + mm + 1];
-        if (fabs(matmg[level][nn * 9 + 4]) < atol)
+        if (fabs(matmg[level][nn * 9 + 4]) < atol) {
           throw BoutException("Error at matmg({:d}-{:d})", level, nn);
+        }
         x[nn] = val / matmg[level][nn * 9 + 4];
       }
+    }
     communications(x, level);
-    for (int i = lnx[level]; i > 0; i--)
+    for (int i = lnx[level]; i > 0; i--) {
       for (int k = lnz[level]; k > 0; k--) {
         int nn = i * mm + k;
         BoutReal val = b[nn] - matmg[level][nn * 9 + 3] * x[nn - 1]
@@ -265,10 +279,12 @@ void MultigridAlg::smoothings(int level, BoutReal* x, BoutReal* b) {
                        - matmg[level][nn * 9 + 2] * x[nn - mm + 1]
                        - matmg[level][nn * 9 + 6] * x[nn + mm - 1]
                        - matmg[level][nn * 9 + 8] * x[nn + mm + 1];
-        if (fabs(matmg[level][nn * 9 + 4]) < atol)
+        if (fabs(matmg[level][nn * 9 + 4]) < atol) {
           throw BoutException("Error at matmg({:d}-{:d})", level, nn);
+        }
         x[nn] = val / matmg[level][nn * 9 + 4];
       }
+    }
     communications(x, level);
   }
 }
@@ -280,16 +296,18 @@ void MultigridAlg::pGMRES(BoutReal* sol, BoutReal* rhs, int level, int iplag) {
   BoutReal c[MAXGM + 1], s[MAXGM + 1], y[MAXGM + 1], g[MAXGM + 1],
       h[MAXGM + 1][MAXGM + 1];
 
-  if ((level == 0) || (iplag == 0))
+  if ((level == 0) || (iplag == 0)) {
     MAXIT = 40000;
-  else
+  } else {
     MAXIT = 500;
+  }
 
   int ldim = (lnx[level] + 2) * (lnz[level] + 2);
   // Could we use a Matrix here?
   v = new BoutReal*[MAXGM + 1];
-  for (int i = 0; i < MAXGM + 1; i++)
+  for (int i = 0; i < MAXGM + 1; i++) {
     v[i] = new BoutReal[ldim];
+  }
 
   Array<BoutReal> p(ldim);
   Array<BoutReal> q(ldim);
@@ -297,8 +315,9 @@ void MultigridAlg::pGMRES(BoutReal* sol, BoutReal* rhs, int level, int iplag) {
 
   BOUT_OMP(parallel default(shared))
   BOUT_OMP(for)
-  for (int i = 0; i < ldim; i++)
+  for (int i = 0; i < ldim; i++) {
     sol[i] = 0.0;
+  }
   int num = 0;
 
   ini_e = sqrt(vectorProd(level, rhs, rhs));
@@ -318,16 +337,19 @@ void MultigridAlg::pGMRES(BoutReal* sol, BoutReal* rhs, int level, int iplag) {
   }
   BOUT_OMP(parallel default(shared))
   BOUT_OMP(for)
-  for (int i = 0; i < ldim; i++)
+  for (int i = 0; i < ldim; i++) {
     r[i] = 0.0;
-  if (iplag == 0)
+  }
+  if (iplag == 0) {
     smoothings(level, std::begin(r), rhs);
-  else
+  } else {
     cycleMG(level, std::begin(r), rhs);
+  }
   BOUT_OMP(parallel default(shared))
   BOUT_OMP(for)
-  for (int i = 0; i < ldim; i++)
+  for (int i = 0; i < ldim; i++) {
     v[0][i] = r[i];
+  }
   perror = ini_e;
   do {
     a1 = vectorProd(level, v[0], v[0]);
@@ -341,30 +363,36 @@ void MultigridAlg::pGMRES(BoutReal* sol, BoutReal* rhs, int level, int iplag) {
     BOUT_OMP(parallel default(shared))
     {
       BOUT_OMP(for)
-      for (int i = 0; i < ldim; i++)
+      for (int i = 0; i < ldim; i++) {
         v[0][i] *= a0;
+      }
       BOUT_OMP(for)
-      for (int i = 1; i < MAXGM + 1; i++)
+      for (int i = 1; i < MAXGM + 1; i++) {
         g[i] = 0.0;
+      }
     }
     for (it = 0; it < MAXGM; it++) {
       multiAVec(level, v[it], std::begin(q));
       BOUT_OMP(parallel default(shared))
       BOUT_OMP(for)
-      for (int i = 0; i < ldim; i++)
+      for (int i = 0; i < ldim; i++) {
         v[it + 1][i] = 0.0;
+      }
 
-      if (iplag == 0)
+      if (iplag == 0) {
         smoothings(level, v[it + 1], std::begin(q));
-      else
+      } else {
         cycleMG(level, v[it + 1], std::begin(q));
+      }
 
-      for (int i = 0; i < it + 1; i++)
+      for (int i = 0; i < it + 1; i++) {
         h[i][it] = vectorProd(level, v[it + 1], v[i]);
+      }
       for (int i = 0; i < it + 1; i++) {
         a0 = -h[i][it];
-        for (int k = 0; k < ldim; k++)
+        for (int k = 0; k < ldim; k++) {
           v[it + 1][k] += a0 * v[i][k];
+        }
       }
       a1 = vectorProd(level, v[it + 1], v[it + 1]);
       a1 = sqrt(a1);
@@ -381,8 +409,9 @@ void MultigridAlg::pGMRES(BoutReal* sol, BoutReal* rhs, int level, int iplag) {
       h[it + 1][it] = a1;
       BOUT_OMP(parallel default(shared))
       BOUT_OMP(for)
-      for (int i = 0; i < ldim; i++)
+      for (int i = 0; i < ldim; i++) {
         v[it + 1][i] *= a0;
+      }
 
       for (int i = 0; i < it; i++) {
         a0 = c[i] * h[i][it] - s[i] * h[i + 1][it];
@@ -391,11 +420,13 @@ void MultigridAlg::pGMRES(BoutReal* sol, BoutReal* rhs, int level, int iplag) {
         h[i + 1][it] = a1;
       }
       a0 = h[it][it] * h[it][it] + h[it + 1][it] * h[it + 1][it];
-      if (a0 < 0.0)
+      if (a0 < 0.0) {
         throw BoutException("a0 in GMRES is negative \n");
+      }
       a0 = sqrt(a0);
-      if (fabs(a0) < atol * rtol)
+      if (fabs(a0) < atol * rtol) {
         throw BoutException("a0 in GMRES is wrong \n");
+      }
       c[it] = h[it][it] / a0;
       s[it] = -h[it + 1][it] / a0;
       h[it][it] = a0;
@@ -408,31 +439,37 @@ void MultigridAlg::pGMRES(BoutReal* sol, BoutReal* rhs, int level, int iplag) {
       /* Get solution y and x_m*/
       for (int i = it; i >= 0; i--) {
         y[i] = g[i];
-        for (int j = i + 1; j <= it; j++)
+        for (int j = i + 1; j <= it; j++) {
           y[i] -= h[i][j] * y[j];
+        }
         y[i] = y[i] / h[i][i];
       }
       BOUT_OMP(parallel default(shared))
       {
         BOUT_OMP(for)
-        for (int i = 0; i < ldim; i++)
+        for (int i = 0; i < ldim; i++) {
           p[i] = sol[i];
+        }
         BOUT_OMP(for)
-        for (int k = 0; k < ldim; k++)
-          for (int i = 0; i <= it; i++)
+        for (int k = 0; k < ldim; k++) {
+          for (int i = 0; i <= it; i++) {
             p[k] += y[i] * v[i][k];
+          }
+        }
       }
 
       /* Get r_m and test convergence.*/
       residualVec(level, std::begin(p), rhs, std::begin(r));
       error = sqrt(vectorProd(level, std::begin(r), std::begin(r)));
       num += 1;
-      if (error > dtol)
+      if (error > dtol) {
         throw BoutException("GMRES reached dtol with error {:16.10f} at iteration {:d}\n",
                             error, num);
-      if (num > MAXIT)
+      }
+      if (num > MAXIT) {
         throw BoutException(
             "GMRES reached MAXIT with error {:16.10f} at iteration {:d}\n", error, num);
+      }
       if (error <= rtol * ini_e + atol) {
         etest = 0;
         break;
@@ -446,8 +483,9 @@ void MultigridAlg::pGMRES(BoutReal* sol, BoutReal* rhs, int level, int iplag) {
       // Therefore, check that this is not the top-level solver before applying
       // this test.
       if ((level < mglevel - 1) && (fabs(perror - error) / error < rtol)) {
-        if (it == 0)
+        if (it == 0) {
           etest = 0;
+        }
         num -= 1;
         break;
       }
@@ -456,19 +494,23 @@ void MultigridAlg::pGMRES(BoutReal* sol, BoutReal* rhs, int level, int iplag) {
     /* Restart with new initial */
     BOUT_OMP(parallel default(shared))
     BOUT_OMP(for)
-    for (int i = 0; i < ldim; i++)
+    for (int i = 0; i < ldim; i++) {
       v[0][i] = 0.0;
-    if (iplag == 0)
+    }
+    if (iplag == 0) {
       smoothings(level, v[0], std::begin(r));
-    else
+    } else {
       cycleMG(level, v[0], std::begin(r));
+    }
 
     BOUT_OMP(parallel default(shared))
     BOUT_OMP(for)
-    for (int i = 0; i < ldim; i++)
+    for (int i = 0; i < ldim; i++) {
       sol[i] = p[i];
-    if (num > MAXIT)
+    }
+    if (num > MAXIT) {
       throw BoutException(" GMRES Iteration limit.\n");
+    }
     //    if((etest == 1) & (xProcI == 0))
     //  printf("Restart GMRES  %d | %20.14f\n",num,error/ini_e);
   } while (etest == 1);
@@ -529,10 +571,11 @@ BoutReal MultigridAlg::vectorProd(int level, BoutReal* x, BoutReal* y) {
       }
     }
   }
-  if (numP > 1)
+  if (numP > 1) {
     bout::globals::mpi->MPI_Allreduce(&ini_e, &val, 1, MPI_DOUBLE, MPI_SUM, commMG);
-  else
+  } else {
     val = ini_e;
+  }
 
   return (val);
 }
@@ -543,8 +586,9 @@ void MultigridAlg::multiAVec(int level, BoutReal* x, BoutReal* b) {
   BOUT_OMP(parallel default(shared))
   {
     BOUT_OMP(for)
-    for (int i = 0; i < mm * (lnx[level] + 2); i++)
+    for (int i = 0; i < mm * (lnx[level] + 2); i++) {
       b[i] = 0.0;
+    }
 
     int xend = lnx[level] + 1;
     int zend = lnz[level] + 1;
@@ -573,8 +617,9 @@ void MultigridAlg::residualVec(int level, BoutReal* x, BoutReal* b, BoutReal* r)
   BOUT_OMP(parallel default(shared))
   {
     BOUT_OMP(for)
-    for (int i = 0; i < mm * (lnx[level] + 2); i++)
+    for (int i = 0; i < mm * (lnx[level] + 2); i++) {
       r[i] = 0.0;
+    }
 
     int xend = lnx[level] + 1;
     int zend = lnz[level] + 1;
@@ -604,8 +649,9 @@ void MultigridAlg::setMatrixC(int level) {
   BOUT_OMP(parallel default(shared))
   {
     BOUT_OMP(for)
-    for (int i = 0; i < (lnx[level - 1] + 2) * (lnz[level - 1] + 2) * 9; i++)
+    for (int i = 0; i < (lnx[level - 1] + 2) * (lnz[level - 1] + 2) * 9; i++) {
       matmg[level - 1][i] = 0.0;
+    }
 
     int xend = lnx[level - 1] + 1;
     int zend = lnz[level - 1] + 1;
@@ -765,52 +811,62 @@ void MultigridAlg::solveMG(BoutReal* sol, BoutReal* rhs, int level) {
 
   BOUT_OMP(parallel default(shared))
   BOUT_OMP(for)
-  for (int i = 0; i < ldim; i++)
+  for (int i = 0; i < ldim; i++) {
     sol[i] = 0.0;
+  }
 
   ini_e = vectorProd(level, rhs, rhs);
-  if (ini_e < 0.0)
+  if (ini_e < 0.0) {
     throw BoutException("In MG Initial Error {:10.4e} \n", ini_e);
+  }
   ini_e = sqrt(ini_e);
-  if ((pcheck == 1) && (rProcI == 0))
+  if ((pcheck == 1) && (rProcI == 0)) {
     printf("%d \n  In MGsolve ini = %24.18f\n", numP, ini_e);
+  }
   Array<BoutReal> y(ldim);
   Array<BoutReal> r(ldim);
   BOUT_OMP(parallel default(shared))
    BOUT_OMP(for)
-   for (int i = 0; i < ldim; i++)
-    r[i] = rhs[i];
+   for (int i = 0; i < ldim; i++) {
+     r[i] = rhs[i];
+   }
 
    perror = ini_e;
    for (m = 0; m < MAXIT; m++) {
-    BOUT_OMP(parallel default(shared))
+     BOUT_OMP(parallel default(shared))
     BOUT_OMP(for)
-    for (int i = 0; i < ldim; i++)
+    for (int i = 0; i < ldim; i++) {
       y[i] = 0.0;
+    }
     cycleMG(level, std::begin(y), std::begin(r));
     BOUT_OMP(parallel default(shared))
     BOUT_OMP(for)
-    for (int i = 0; i < ldim; i++)
+    for (int i = 0; i < ldim; i++) {
       sol[i] = sol[i] + y[i];
+    }
     residualVec(level, sol, rhs, std::begin(r));
     error = sqrt(vectorProd(level, std::begin(r), std::begin(r)));
-    if ((pcheck == 1) && (rProcI == 0))
+    if ((pcheck == 1) && (rProcI == 0)) {
       printf("%d \n  In MGsolve error = %24.18f\n", m, error);
-    if (error < rtol * ini_e + atol)
+    }
+    if (error < rtol * ini_e + atol) {
       break;
-    if ((fabs(perror - error) / error < rtol) || (error > dtol))
+    }
+    if ((fabs(perror - error) / error < rtol) || (error > dtol)) {
       throw BoutException("In MG Limited Error {:10.4e} \n", error);
+    }
     perror = error;
    }
 
    if ((rProcI == 0) && (pcheck == 1)) {
-    rederr = log(error / ini_e) / (static_cast<BoutReal>(m) + 1.0);
-    rederr = exp(rederr);
-    if (m == MAXIT)
-      printf("Reached maximum iteration: %14.8f\n", error);
-    printf("The average error reduction of MG %d: %14.8f(%18.12f)\n", m + 1, rederr,
-           error);
-    fflush(stdout);
+     rederr = log(error / ini_e) / (static_cast<BoutReal>(m) + 1.0);
+     rederr = exp(rederr);
+     if (m == MAXIT) {
+       printf("Reached maximum iteration: %14.8f\n", error);
+     }
+     printf("The average error reduction of MG %d: %14.8f(%18.12f)\n", m + 1, rederr,
+            error);
+     fflush(stdout);
    }
 }
 

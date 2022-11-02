@@ -101,8 +101,9 @@ public:
         args.size());
   }
   BoutReal generate(const bout::generator::Context& pos) override {
-    if (B == nullptr)
+    if (B == nullptr) {
       return atan(A->generate(pos));
+    }
     return atan2(A->generate(pos), B->generate(pos));
   }
 
@@ -153,8 +154,9 @@ public:
     BoutReal result = (*it)->generate(pos);
     for (; it != input.end(); it++) {
       BoutReal val = (*it)->generate(pos);
-      if (val < result)
+      if (val < result) {
         result = val;
+      }
     }
     return result;
   }
@@ -179,8 +181,9 @@ public:
     BoutReal result = (*it)->generate(pos);
     for (; it != input.end(); it++) {
       BoutReal val = (*it)->generate(pos);
-      if (val > result)
+      if (val > result) {
         result = val;
+      }
     }
     return result;
   }

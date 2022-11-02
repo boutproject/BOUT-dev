@@ -36,8 +36,9 @@ SlepcLib::~SlepcLib() {
 }
 
 void SlepcLib::cleanup() {
-  if (count == 0)
+  if (count == 0) {
     return; // Either never initialised, or already cleaned up
+  }
 
   output << "Finalising SLEPCc. Warning: Instances of SlepcLib still exist.\n";
   PetscLogEventEnd(USER_EVENT, 0, 0, 0, 0);

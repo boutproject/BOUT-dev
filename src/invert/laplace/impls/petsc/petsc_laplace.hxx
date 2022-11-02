@@ -91,8 +91,9 @@ public:
     ASSERT1(localmesh == val.getMesh());
     A = val;
     /*Acoefchanged = true;*/
-    if (pcsolve)
+    if (pcsolve) {
       pcsolve->setCoefA(val);
+    }
   }
   void setCoefC(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
@@ -100,8 +101,9 @@ public:
     C1 = val;
     C2 = val;
     issetC = true; /*coefchanged = true;*/
-    if (pcsolve)
+    if (pcsolve) {
       pcsolve->setCoefC(val);
+    }
   }
   void setCoefC1(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
@@ -120,24 +122,27 @@ public:
     ASSERT1(localmesh == val.getMesh());
     D = val;
     issetD = true; /*coefchanged = true;*/
-    if (pcsolve)
+    if (pcsolve) {
       pcsolve->setCoefD(val);
+    }
   }
   void setCoefEx(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ex = val;
     issetE = true; /*coefchanged = true;*/
-    if (pcsolve)
+    if (pcsolve) {
       pcsolve->setCoefEx(val);
+    }
   }
   void setCoefEz(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ez = val;
     issetE = true; /*coefchanged = true;*/
-    if (pcsolve)
+    if (pcsolve) {
       pcsolve->setCoefEz(val);
+    }
   }
 
   void setCoefA(const Field3D& val) override {
@@ -145,8 +150,9 @@ public:
     ASSERT1(localmesh == val.getMesh());
     A = val;
     /*Acoefchanged = true;*/
-    if (pcsolve)
+    if (pcsolve) {
       pcsolve->setCoefA(val);
+    }
   }
   void setCoefC(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
@@ -154,8 +160,9 @@ public:
     C1 = val;
     C2 = val;
     issetC = true; /*coefchanged = true;*/
-    if (pcsolve)
+    if (pcsolve) {
       pcsolve->setCoefC(val);
+    }
   }
   void setCoefC1(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
@@ -174,24 +181,27 @@ public:
     ASSERT1(localmesh == val.getMesh());
     D = val;
     issetD = true; /*coefchanged = true;*/
-    if (pcsolve)
+    if (pcsolve) {
       pcsolve->setCoefD(val);
+    }
   }
   void setCoefEx(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ex = val;
     issetE = true; /*coefchanged = true;*/
-    if (pcsolve)
+    if (pcsolve) {
       pcsolve->setCoefEx(val);
+    }
   }
   void setCoefEz(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ez = val;
     issetE = true; /*coefchanged = true;*/
-    if (pcsolve)
+    if (pcsolve) {
       pcsolve->setCoefEz(val);
+    }
   }
 
   using Laplacian::solve;

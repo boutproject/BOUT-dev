@@ -40,8 +40,9 @@ RangeIterator::RangeIterator(const RangeIterator& r) {
   ie = r.ie;
   n = r.n;
   cur = r.cur;
-  if (cur == &r)
+  if (cur == &r) {
     cur = this;
+  }
   curend = r.curend;
 }
 
@@ -67,8 +68,9 @@ void RangeIterator::first() {
 }
 
 void RangeIterator::next() {
-  if (isDone())
+  if (isDone()) {
     return;
+  }
   ind++;
   if (ind > curend) {
     // End of this range
@@ -84,18 +86,22 @@ void RangeIterator::next() {
 bool RangeIterator::isDone() const { return cur == nullptr; }
 
 bool RangeIterator::intersects(const RangeIterator& other, bool all) const {
-  if ((other.is <= ie) && (other.ie >= is))
+  if ((other.is <= ie) && (other.ie >= is)) {
     return true;
-  if (all && (n != nullptr))
+  }
+  if (all && (n != nullptr)) {
     return n->intersects(other, all);
+  }
   return false;
 }
 
 bool RangeIterator::intersects(int ind, bool all) const {
-  if ((is <= ind) && (ie >= ind))
+  if ((is <= ind) && (ie >= ind)) {
     return true;
-  if (all && (n != nullptr))
+  }
+  if (all && (n != nullptr)) {
     return n->intersects(ind, all);
+  }
   return false;
 }
 
@@ -105,8 +111,9 @@ RangeIterator& RangeIterator::operator=(const RangeIterator& r) {
   ie = r.ie;
   n = r.n;
   cur = r.cur;
-  if (cur == &r)
+  if (cur == &r) {
     cur = this;
+  }
   curend = r.curend;
 
   return *this;

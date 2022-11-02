@@ -69,8 +69,9 @@ BoundaryFactory* BoundaryFactory::getInstance() {
 }
 
 void BoundaryFactory::cleanup() {
-  if (instance == nullptr)
+  if (instance == nullptr) {
     return;
+  }
 
   // Just delete the instance
   delete instance;
@@ -85,14 +86,16 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
     // No more (opening) brackets. Should be a boundary operation
     // Need to strip whitespace
 
-    if ((name == "null") || (name == "none"))
+    if ((name == "null") || (name == "none")) {
       return nullptr;
+    }
 
     if (region->isParallel) {
       // Parallel boundary
       BoundaryOpPar* pop = findBoundaryOpPar(trim(name));
-      if (pop == nullptr)
+      if (pop == nullptr) {
         throw BoutException("Could not find parallel boundary condition '{:s}'", name);
+      }
 
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
@@ -101,8 +104,9 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
     } else {
       // Perpendicular boundary
       BoundaryOp* op = findBoundaryOp(trim(name));
-      if (op == nullptr)
+      if (op == nullptr) {
         throw BoutException("Could not find boundary condition '{:s}'", name);
+      }
 
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
@@ -172,8 +176,9 @@ BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* 
   if (mod != nullptr) {
     // The first argument should be an operation
     auto* op = dynamic_cast<BoundaryOp*>(create(arglist.front(), region));
-    if (op == nullptr)
+    if (op == nullptr) {
       return nullptr;
+    }
 
     // Remove the first element (name of operation)
     arglist.pop_front();
@@ -211,8 +216,9 @@ BoundaryOpBase* BoundaryFactory::create(const char* name, BoundaryRegionBase* re
 
 BoundaryOpBase* BoundaryFactory::createFromOptions(const string& varname,
                                                    BoundaryRegionBase* region) {
-  if (region == nullptr)
+  if (region == nullptr) {
     return nullptr;
+  }
 
   output_info << "\t" << region->label << " region: ";
 
@@ -362,21 +368,24 @@ void BoundaryFactory::addMod(BoundaryModifier* bmod, const char* name) {
 
 BoundaryOp* BoundaryFactory::findBoundaryOp(const string& s) {
   auto it = opmap.find(lowercase(s));
-  if (it == opmap.end())
+  if (it == opmap.end()) {
     return nullptr;
+  }
   return it->second;
 }
 
 BoundaryModifier* BoundaryFactory::findBoundaryMod(const string& s) {
   auto it = modmap.find(lowercase(s));
-  if (it == modmap.end())
+  if (it == modmap.end()) {
     return nullptr;
+  }
   return it->second;
 }
 
 BoundaryOpPar* BoundaryFactory::findBoundaryOpPar(const string& s) {
   auto it = par_opmap.find(lowercase(s));
-  if (it == par_opmap.end())
+  if (it == par_opmap.end()) {
     return nullptr;
+  }
   return it->second;
 }

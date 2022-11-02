@@ -63,8 +63,9 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z))
+    if (skip_mask(x, y, z)) {
       continue;
+    }
 
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around

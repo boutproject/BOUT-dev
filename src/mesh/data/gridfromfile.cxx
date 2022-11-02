@@ -563,8 +563,9 @@ bool GridFile::readgrid_3dvar_fft(Mesh* m, const std::string& name, int yread, i
   } else {
     // Get maximum mode in the input which is a multiple of zperiod
     int mm = (maxmode / zperiod) * zperiod;
-    if ((ncz / 2) * zperiod < mm)
+    if ((ncz / 2) * zperiod < mm) {
       mm = (ncz / 2) * zperiod; // Limited by Z resolution
+    }
 
     if (mm == zperiod) {
       output_info.write(" => Reading n = 0, {:d}\n", zperiod);
@@ -692,8 +693,9 @@ bool GridFile::readgrid_perpvar_fft(Mesh* m, const std::string& name, int xread,
   } else {
     // Get maximum mode in the input which is a multiple of zperiod
     int mm = (maxmode / zperiod) * zperiod;
-    if ((ncz / 2) * zperiod < mm)
+    if ((ncz / 2) * zperiod < mm) {
       mm = (ncz / 2) * zperiod; // Limited by Z resolution
+    }
 
     if (mm == zperiod) {
       output_info.write(" => Reading n = 0, {:d}\n", zperiod);

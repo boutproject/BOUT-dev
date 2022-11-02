@@ -69,8 +69,9 @@ FieldData::FieldData(const FieldData& other) {
 FieldData::~FieldData() {
   if (!boundaryIsCopy) {
     // Delete the boundary operations
-    for (const auto& bndry : bndry_op)
+    for (const auto& bndry : bndry_op) {
       delete bndry;
+    }
   }
 }
 
@@ -143,8 +144,9 @@ void FieldData::setBoundary(const std::string& name) {
   /// Loop over the mesh boundary regions
   for (const auto& reg : mesh->getBoundaries()) {
     auto* op = dynamic_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
-    if (op != nullptr)
+    if (op != nullptr) {
       bndry_op.push_back(op);
+    }
     output_info << endl;
   }
 
@@ -153,8 +155,9 @@ void FieldData::setBoundary(const std::string& name) {
   /// Loop over the mesh parallel boundary regions
   for (const auto& reg : mesh->getBoundariesPar()) {
     auto* op = dynamic_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
-    if (op != nullptr)
+    if (op != nullptr) {
       bndry_op_par.push_back(op);
+    }
     output_info << endl;
   }
 
@@ -192,8 +195,9 @@ void FieldData::addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location) {
 
 FieldGeneratorPtr FieldData::getBndryGenerator(BndryLoc location) {
   auto it = bndry_generator.find(location);
-  if (it == bndry_generator.end())
+  if (it == bndry_generator.end()) {
     return nullptr;
+  }
 
   return it->second;
 }

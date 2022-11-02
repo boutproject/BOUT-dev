@@ -521,30 +521,36 @@ public:
       : ny(ny), nz(nz) {
 #if CHECK > 1
     if (std::is_base_of<Ind2D, T>::value) {
-      if (nz != 1)
+      if (nz != 1) {
         throw BoutException(
             "Trying to make Region<Ind2D> with nz = {:d}, but expected nz = 1", nz);
-      if (zstart != 0)
+      }
+      if (zstart != 0) {
         throw BoutException(
             "Trying to make Region<Ind2D> with zstart = {:d}, but expected zstart = 0",
             zstart);
-      if (zstart != 0)
+      }
+      if (zstart != 0) {
         throw BoutException(
             "Trying to make Region<Ind2D> with zend = {:d}, but expected zend = 0", zend);
+      }
     }
 
     if (std::is_base_of<IndPerp, T>::value) {
-      if (ny != 1)
+      if (ny != 1) {
         throw BoutException(
             "Trying to make Region<IndPerp> with ny = {:d}, but expected ny = 1", ny);
-      if (ystart != 0)
+      }
+      if (ystart != 0) {
         throw BoutException(
             "Trying to make Region<IndPerp> with ystart = {:d}, but expected ystart = 0",
             ystart);
-      if (ystart != 0)
+      }
+      if (ystart != 0) {
         throw BoutException(
             "Trying to make Region<IndPerp> with yend = {:d}, but expected yend = 0",
             yend);
+      }
     }
 #endif
 
@@ -748,8 +754,9 @@ public:
     RegionStats result;
 
     result.numBlocks = blocks.size();
-    if (result.numBlocks == 0)
+    if (result.numBlocks == 0) {
       return result;
+    }
 
     std::vector<int> blockSizes(result.numBlocks);
 
@@ -811,8 +818,9 @@ private:
     int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
     ASSERT1(len > 0);
     // Guard against invalid length ranges
-    if (len <= 0)
+    if (len <= 0) {
       return {};
+    }
 
     RegionIndices region(len, {-1, ny, nz});
 

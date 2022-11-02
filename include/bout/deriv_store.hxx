@@ -251,8 +251,9 @@ struct DerivativeStore {
     };
 
     const auto resultOfFind = theMap->find(key);
-    if (resultOfFind != theMap->end())
+    if (resultOfFind != theMap->end()) {
       return resultOfFind->second;
+    }
 
     throw BoutException("Couldn't find requested method {:s} in map for standard "
                         "derivative of type {:s}.",
@@ -293,8 +294,9 @@ struct DerivativeStore {
     };
 
     const auto resultOfFind = theMap->find(key);
-    if (resultOfFind != theMap->end())
+    if (resultOfFind != theMap->end()) {
       return resultOfFind->second;
+    }
 
     throw BoutException(
         "Couldn't find requested method {:s} in map for standard flow of type {:s}.",

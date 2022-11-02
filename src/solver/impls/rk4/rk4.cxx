@@ -28,11 +28,13 @@ RK4Solver::RK4Solver(Options* opts)
 }
 
 void RK4Solver::setMaxTimestep(BoutReal dt) {
-  if (dt > timestep)
+  if (dt > timestep) {
     return; // Already less than this
+  }
 
-  if (adaptive)
+  if (adaptive) {
     timestep = dt; // Won't be used this time, but next
+  }
 }
 
 int RK4Solver::init() {
@@ -118,16 +120,18 @@ int RK4Solver::run() {
           err /= static_cast<BoutReal>(neq);
 
           internal_steps++;
-          if (internal_steps > mxstep)
+          if (internal_steps > mxstep) {
             throw BoutException("ERROR: MXSTEP exceeded. timestep = {:e}, err={:e}\n",
                                 timestep, err);
+          }
 
           if ((err > rtol) || (err < 0.1 * rtol)) {
             // Need to change timestep. Error ~ dt^5
             timestep /= pow(err / (0.5 * rtol), 0.2);
 
-            if ((max_timestep > 0) && (timestep > max_timestep))
+            if ((max_timestep > 0) && (timestep > max_timestep)) {
               timestep = max_timestep;
+            }
           }
           if (err < rtol) {
             break; // Acceptable accuracy
@@ -179,30 +183,34 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
   save_derivs(std::begin(k1));
 
   BOUT_OMP(parallel for)
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
     k5[i] = start[i] + 0.5 * dt * k1[i];
+  }
 
   load_vars(std::begin(k5));
   run_rhs(curtime + 0.5 * dt);
   save_derivs(std::begin(k2));
 
   BOUT_OMP(parallel for )
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
     k5[i] = start[i] + 0.5 * dt * k2[i];
+  }
 
   load_vars(std::begin(k5));
   run_rhs(curtime + 0.5 * dt);
   save_derivs(std::begin(k3));
 
   BOUT_OMP(parallel for)
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
     k5[i] = start[i] + dt * k3[i];
+  }
 
   load_vars(std::begin(k5));
   run_rhs(curtime + dt);
   save_derivs(std::begin(k4));
 
   BOUT_OMP(parallel for)
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
     result[i] = start[i] + (1. / 6.) * dt * (k1[i] + 2. * k2[i] + 2. * k3[i] + k4[i]);
+  }
 }

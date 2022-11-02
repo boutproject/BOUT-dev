@@ -138,15 +138,18 @@ LaplaceXY::LaplaceXY(Mesh* m, Options* opt, const CELL_LOC loc)
   }
 
   xstart = localmesh->xstart;
-  if (localmesh->firstX())
+  if (localmesh->firstX()) {
     xstart -= 1; // Include X guard cells
+  }
   xend = localmesh->xend;
-  if (localmesh->lastX())
+  if (localmesh->lastX()) {
     xend += 1;
-  for (int x = xstart; x <= xend; x++)
+  }
+  for (int x = xstart; x <= xend; x++) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       indexXY(x, y) = ind++;
     }
+  }
 
   ASSERT1(ind == localN); // Reached end of range
 
@@ -1235,8 +1238,9 @@ const Field2D LaplaceXY::solve(const Field2D& rhs, const Field2D& x0) {
       int ind = globalIndex(localmesh->xstart - 1, y);
       PetscScalar val;
       VecGetValues(xs, 1, &ind, &val);
-      for (int x = localmesh->xstart - 1; x >= 0; x--)
+      for (int x = localmesh->xstart - 1; x >= 0; x--) {
         result(x, y) = val;
+      }
     }
   }
 
@@ -1246,8 +1250,9 @@ const Field2D LaplaceXY::solve(const Field2D& rhs, const Field2D& x0) {
       int ind = globalIndex(localmesh->xend + 1, y);
       PetscScalar val;
       VecGetValues(xs, 1, &ind, &val);
-      for (int x = localmesh->xend + 1; x < localmesh->LocalNx; x++)
+      for (int x = localmesh->xend + 1; x < localmesh->LocalNx; x++) {
         result(x, y) = val;
+      }
     }
   }
 
@@ -1265,8 +1270,9 @@ const Field2D LaplaceXY::solve(const Field2D& rhs, const Field2D& x0) {
     int ind = globalIndex(it.ind, localmesh->ystart - 1);
     PetscScalar val;
     VecGetValues(xs, 1, &ind, &val);
-    for (int y = localmesh->ystart - 1; y >= 0; y--)
+    for (int y = localmesh->ystart - 1; y >= 0; y--) {
       result(it.ind, y) = val;
+    }
   }
 
   // Upper Y boundary
@@ -1283,8 +1289,9 @@ const Field2D LaplaceXY::solve(const Field2D& rhs, const Field2D& x0) {
     int ind = globalIndex(it.ind, localmesh->yend + 1);
     PetscScalar val;
     VecGetValues(xs, 1, &ind, &val);
-    for (int y = localmesh->yend + 1; y < localmesh->LocalNy; y++)
+    for (int y = localmesh->yend + 1; y < localmesh->LocalNy; y++) {
       result(it.ind, y) = val;
+    }
   }
 
   return result;
@@ -1799,10 +1806,12 @@ int LaplaceXY::localSize() {
   int n = nx * ny;
 
   // X boundaries
-  if (localmesh->firstX())
+  if (localmesh->firstX()) {
     n += ny;
-  if (localmesh->lastX())
+  }
+  if (localmesh->lastX()) {
     n += ny;
+  }
 
   // Y boundaries
   for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
@@ -1840,8 +1849,9 @@ int LaplaceXY::localSize() {
 }
 
 int LaplaceXY::globalIndex(int x, int y) {
-  if ((x < 0) || (x >= localmesh->LocalNx) || (y < 0) || (y >= localmesh->LocalNy))
+  if ((x < 0) || (x >= localmesh->LocalNx) || (y < 0) || (y >= localmesh->LocalNy)) {
     return -1; // Out of range
+  }
 
   // Get the index from a Field2D, round to integer
   return static_cast<int>(std::round(indexXY(x, y)));

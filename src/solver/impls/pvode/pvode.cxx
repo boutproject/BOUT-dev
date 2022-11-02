@@ -220,8 +220,9 @@ int PvodeSolver::init() {
 int PvodeSolver::run() {
   TRACE("PvodeSolver::run()");
 
-  if (!pvode_initialised)
+  if (!pvode_initialised) {
     throw BoutException("PvodeSolver not initialised\n");
+  }
 
   for (int i = 0; i < getNumberOutputSteps(); i++) {
 

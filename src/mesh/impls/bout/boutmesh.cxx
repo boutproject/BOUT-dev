@@ -1463,8 +1463,9 @@ int BoutMesh::wait(comm_handle handle) {
 
 #if CHECK > 0
   // Keeping track of whether communications have been done
-  for (const auto& var : ch->var_list)
+  for (const auto& var : ch->var_list) {
     var->doneComms();
+  }
 #endif
 
   free_handle(ch);
@@ -1521,8 +1522,9 @@ int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
 }
 
 comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
-  if (PE_XIND == NXPE - 1)
+  if (PE_XIND == NXPE - 1) {
     return nullptr;
+  }
 
   Timer timer("comms");
 

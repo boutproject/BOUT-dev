@@ -142,8 +142,9 @@ Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in,
 std::unique_ptr<Laplacian> Laplacian::instance = nullptr;
 
 Laplacian* Laplacian::defaultInstance() {
-  if (instance == nullptr)
+  if (instance == nullptr) {
     instance = create();
+  }
   return instance.get();
 }
 
@@ -163,15 +164,17 @@ Field3D Laplacian::solve(const Field3D& b) {
   int ys = localmesh->ystart, ye = localmesh->yend;
 
   if (localmesh->hasBndryLowerY()) {
-    if (include_yguards)
+    if (include_yguards) {
       ys = 0; // Mesh contains a lower boundary and we are solving in the guard cells
+    }
 
     ys += extra_yguards_lower;
   }
   if (localmesh->hasBndryUpperY()) {
-    if (include_yguards)
+    if (include_yguards) {
       ye = localmesh->LocalNy
            - 1; // Contains upper boundary and we are solving in the guard cells
+    }
 
     ye -= extra_yguards_upper;
   }
@@ -223,10 +226,12 @@ Field3D Laplacian::solve(const Field3D& b, const Field3D& x0) {
 
   // Setting the start and end range of the y-slices
   int ys = localmesh->ystart, ye = localmesh->yend;
-  if (localmesh->hasBndryLowerY() && include_yguards)
+  if (localmesh->hasBndryLowerY() && include_yguards) {
     ys = 0; // Mesh contains a lower boundary
-  if (localmesh->hasBndryUpperY() && include_yguards)
+  }
+  if (localmesh->hasBndryUpperY() && include_yguards) {
     ye = localmesh->LocalNy - 1; // Contains upper boundary
+  }
 
   Field3D x{emptyFrom(b)};
 
@@ -258,8 +263,9 @@ Field2D Laplacian::solve(const Field2D& b, const Field2D& x0) {
 void Laplacian::tridagCoefs(int jx, int jy, int jz, dcomplex& a, dcomplex& b, dcomplex& c,
                             const Field2D* ccoef, const Field2D* d, CELL_LOC loc) {
 
-  if (loc == CELL_DEFAULT)
+  if (loc == CELL_DEFAULT) {
     loc = location;
+  }
 
   ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
   ASSERT1(d == nullptr || d->getLocation() == loc);
@@ -446,10 +452,12 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
   // Do not want boundary cells if x is periodic for cyclic solver. Only other solver which
   // works with periodicX is serial_tri, which uses includeguards==true, so the below isn't called.
   if (!includeguards) {
-    if (!localmesh->firstX() || localmesh->periodicX)
+    if (!localmesh->firstX() || localmesh->periodicX) {
       xs = localmesh->xstart; // Inner edge is a guard cell
-    if (!localmesh->lastX() || localmesh->periodicX)
+    }
+    if (!localmesh->lastX() || localmesh->periodicX) {
       xe = localmesh->xend; // Outer edge is a guard cell
+    }
   }
 
   int ncx = xe - xs; // Total number of points in x to be used
@@ -462,19 +470,22 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
   if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if (inner_boundary_flags & INVERT_BNDRY_ONE)
+  if (inner_boundary_flags & INVERT_BNDRY_ONE) {
     inbndry = 1;
-  if (outer_boundary_flags & INVERT_BNDRY_ONE)
+  }
+  if (outer_boundary_flags & INVERT_BNDRY_ONE) {
     outbndry = 1;
+  }
 
   // Loop through our specified x-domain.
   // The boundaries will be set according to the if-statements below.
   for (int ix = 0; ix <= ncx; ix++) {
     // Actually set the metric coefficients
     tridagCoefs(xs + ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], c1coef, c2coef, d);
-    if (a != nullptr)
+    if (a != nullptr) {
       // Add A to bvec (the main diagonal in the matrix)
       bvec[ix] += (*a)(xs + ix, jy);
+    }
   }
 
   // Set the boundary conditions if x is not periodic
@@ -485,8 +496,9 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
       // If no user specified value is set on inner boundary, set the first
       // element in b (in the equation AX=b) to 0
       if (!(inner_boundary_flags & (INVERT_RHS | INVERT_SET))) {
-        for (int ix = 0; ix < inbndry; ix++)
+        for (int ix = 0; ix < inbndry; ix++) {
           bk[ix] = 0.;
+        }
       }
 
       // DC i.e. kz = 0 (the offset mode)
@@ -524,8 +536,9 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
           BoutReal k = 0.0;
           if (a != nullptr) {
             BoutReal ksq = -((*a)(inbndry, jy));
-            if (ksq < 0.0)
+            if (ksq < 0.0) {
               throw BoutException("ksq must be positive");
+            }
             k = sqrt(ksq);
           }
           for (int ix = 0; ix < inbndry; ix++) {
@@ -683,8 +696,9 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
           BoutReal k = 0.0;
           if (a != nullptr) {
             BoutReal ksq = -((*a)(inbndry, jy));
-            if (ksq < 0.0)
+            if (ksq < 0.0) {
               throw BoutException("ksq must be positive");
+            }
             k = sqrt(ksq);
           }
           for (int ix = 0; ix < inbndry; ix++) {

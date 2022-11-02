@@ -120,16 +120,18 @@ int PhysicsModel::runDiffusive(BoutReal time, bool linear) {
 bool PhysicsModel::hasPrecon() { return (userprecon != nullptr); }
 
 int PhysicsModel::runPrecon(BoutReal t, BoutReal gamma, BoutReal delta) {
-  if (!userprecon)
+  if (!userprecon) {
     return 1;
+  }
   return (*this.*userprecon)(t, gamma, delta);
 }
 
 bool PhysicsModel::hasJacobian() { return (userjacobian != nullptr); }
 
 int PhysicsModel::runJacobian(BoutReal t) {
-  if (!userjacobian)
+  if (!userjacobian) {
     return 1;
+  }
   return (*this.*userjacobian)(t);
 }
 

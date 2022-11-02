@@ -556,8 +556,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   bout::checkFinite(g_23, "g_23", "RGN_NOCORNERS");
 
   /// Calculate Jacobian and Bxy
-  if (jacobian())
+  if (jacobian()) {
     throw BoutException("Error in jacobian call");
+  }
 
   // Attempt to read J from the grid file
   auto Jcalc = J;
@@ -1009,14 +1010,17 @@ int Coordinates::geometry(bool recalculate_staggered,
 
   output_progress.write("Calculating differential geometry terms\n");
 
-  if (min(abs(dx)) < 1e-8)
+  if (min(abs(dx)) < 1e-8) {
     throw BoutException("dx magnitude less than 1e-8");
+  }
 
-  if (min(abs(dy)) < 1e-8)
+  if (min(abs(dy)) < 1e-8) {
     throw BoutException("dy magnitude less than 1e-8");
+  }
 
-  if (min(abs(dz)) < 1e-8)
+  if (min(abs(dz)) < 1e-8) {
     throw BoutException("dz magnitude less than 1e-8");
+  }
 
   // Check input metrics
   // Diagonal metric components should be finite
@@ -1771,8 +1775,9 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
 
       // Take forward FFT
 
-      for (int jx = 0; jx < localmesh->LocalNx; jx++)
+      for (int jx = 0; jx < localmesh->LocalNx; jx++) {
         rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
+      }
 
       // Loop over kz
       for (int jz = 0; jz <= ncz / 2; jz++) {
@@ -1833,8 +1838,9 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
     auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
 
     // Take forward FFT
-    for (int jx = 0; jx < localmesh->LocalNx; jx++)
+    for (int jx = 0; jx < localmesh->LocalNx; jx++) {
       rfft(&f(jx, 0), ncz, &ft(jx, 0));
+    }
 
     // Loop over kz
     for (int jz = 0; jz <= ncz / 2; jz++) {

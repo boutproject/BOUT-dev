@@ -58,10 +58,12 @@ LaplaceSPT::LaplaceSPT(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   // Get start and end indices
   ys = localmesh->ystart;
   ye = localmesh->yend;
-  if (localmesh->hasBndryLowerY() && include_yguards)
+  if (localmesh->hasBndryLowerY() && include_yguards) {
     ys = 0; // Mesh contains a lower boundary
-  if (localmesh->hasBndryUpperY() && include_yguards)
+  }
+  if (localmesh->hasBndryUpperY() && include_yguards) {
     ye = localmesh->LocalNy - 1; // Contains upper boundary
+  }
 
   alldata = new SPT_data[ye - ys + 1];
   alldata -= ys; // Re-number indices to start at ys
@@ -93,23 +95,29 @@ FieldPerp LaplaceSPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
     int xbndry = localmesh->xstart;
     // If the flags to assign that only one guard cell should be used is set
-    if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2))
+    if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
       xbndry = 1;
+    }
     if ((inner_boundary_flags & INVERT_SET) && localmesh->firstX()) {
       // Copy x0 inner boundary into bs
-      for (int ix = 0; ix < xbndry; ix++)
-        for (int iz = 0; iz < localmesh->LocalNz; iz++)
+      for (int ix = 0; ix < xbndry; ix++) {
+        for (int iz = 0; iz < localmesh->LocalNz; iz++) {
           bs[ix][iz] = x0[ix][iz];
+        }
+      }
     }
     if ((outer_boundary_flags & INVERT_SET) && localmesh->lastX()) {
       // Copy x0 outer boundary into bs
-      for (int ix = localmesh->LocalNx - 1; ix >= localmesh->LocalNx - xbndry; ix--)
-        for (int iz = 0; iz < localmesh->LocalNz; iz++)
+      for (int ix = localmesh->LocalNx - 1; ix >= localmesh->LocalNx - xbndry; ix--) {
+        for (int iz = 0; iz < localmesh->LocalNz; iz++) {
           bs[ix][iz] = x0[ix][iz];
+        }
+      }
     }
     start(bs, slicedata);
-  } else
+  } else {
     start(b, slicedata);
+  }
   finish(slicedata, x);
 
   checkData(x);
@@ -136,15 +144,17 @@ Field3D LaplaceSPT::solve(const Field3D& b) {
     start(sliceXZ(b, jy), alldata[jy]);
 
     // Move each calculation along one processor
-    for (int jy2 = ys; jy2 < jy; jy2++)
+    for (int jy2 = ys; jy2 < jy; jy2++) {
       next(alldata[jy2]);
+    }
   }
 
   bool running = true;
   do {
     // Move each calculation along until the last one is finished
-    for (int jy = ys; jy <= ye; jy++)
+    for (int jy = ys; jy <= ye; jy++) {
       running = next(alldata[jy]) == 0;
+    }
   } while (running);
 
   FieldPerp xperp(localmesh);
@@ -169,22 +179,29 @@ Field3D LaplaceSPT::solve(const Field3D& b, const Field3D& x0) {
 
     int xbndry = localmesh->xstart;
     // If the flags to assign that only one guard cell should be used is set
-    if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2))
+    if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
       xbndry = 1;
+    }
 
     if ((inner_boundary_flags & INVERT_SET) && localmesh->firstX()) {
       // Copy x0 inner boundary into bs
-      for (int ix = 0; ix < xbndry; ix++)
-        for (int iy = 0; iy < localmesh->LocalNy; iy++)
-          for (int iz = 0; iz < localmesh->LocalNz; iz++)
+      for (int ix = 0; ix < xbndry; ix++) {
+        for (int iy = 0; iy < localmesh->LocalNy; iy++) {
+          for (int iz = 0; iz < localmesh->LocalNz; iz++) {
             bs(ix, iy, iz) = x0(ix, iy, iz);
+          }
+        }
+      }
     }
     if ((outer_boundary_flags & INVERT_SET) && localmesh->lastX()) {
       // Copy x0 outer boundary into bs
-      for (int ix = localmesh->LocalNx - 1; ix >= localmesh->LocalNx - xbndry; ix--)
-        for (int iy = 0; iy < localmesh->LocalNy; iy++)
-          for (int iz = 0; iz < localmesh->LocalNz; iz++)
+      for (int ix = localmesh->LocalNx - 1; ix >= localmesh->LocalNx - xbndry; ix--) {
+        for (int iy = 0; iy < localmesh->LocalNy; iy++) {
+          for (int iz = 0; iz < localmesh->LocalNz; iz++) {
             bs(ix, iy, iz) = x0(ix, iy, iz);
+          }
+        }
+      }
     }
     return solve(bs);
   }
@@ -226,8 +243,9 @@ void LaplaceSPT::tridagForward(dcomplex* a, dcomplex* b, dcomplex* c, dcomplex* 
   for (j = 1; j < n; j++) {
     gam[j] = c[j - 1] / bet;
     bet = b[j] - a[j] * gam[j];
-    if (bet == 0.0)
+    if (bet == 0.0) {
       throw BoutException("Tridag: Zero pivot\n");
+    }
 
     u[j] = (r[j] - a[j] * u[j - 1]) / bet;
   }
@@ -275,8 +293,9 @@ void LaplaceSPT::tridagBack(dcomplex* u, int n, dcomplex* gam, dcomplex& gp,
 /// @param[in]    b      RHS values (Ax = b)
 /// @param[out]   data   Structure containing data needed for second half of inversion
 int LaplaceSPT::start(const FieldPerp& b, SPT_data& data) {
-  if (localmesh->firstX() && localmesh->lastX())
+  if (localmesh->firstX() && localmesh->lastX()) {
     throw BoutException("Error: SPT method only works for localmesh->NXPE > 1\n");
+  }
 
   ASSERT1(b.getLocation() == location);
 
@@ -294,8 +313,9 @@ int LaplaceSPT::start(const FieldPerp& b, SPT_data& data) {
 
   for (int ix = 0; ix < localmesh->LocalNx; ix++) {
     rfft(b[ix], ncz, std::begin(dc1d));
-    for (int kz = 0; kz <= maxmode; kz++)
+    for (int kz = 0; kz <= maxmode; kz++) {
       data.bk(kz, ix) = dc1d[kz];
+    }
   }
 
   BoutReal kwaveFactor = 2.0 * PI / getUniform(coords->zlength());
@@ -335,8 +355,9 @@ int LaplaceSPT::start(const FieldPerp& b, SPT_data& data) {
   }
 
   data.proc++; // Now moved onto the next processor
-  if (localmesh->NXPE == 2)
+  if (localmesh->NXPE == 2) {
     data.dir = -1; // Special case. Otherwise reversal handled in spt_continue
+  }
 
   return 0;
 }
@@ -348,8 +369,9 @@ int LaplaceSPT::start(const FieldPerp& b, SPT_data& data) {
   @param[inout] data  Structure which keeps track of the calculation
 */
 int LaplaceSPT::next(SPT_data& data) {
-  if (data.proc < 0) // Already finished
+  if (data.proc < 0) { // Already finished
     return 1;
+  }
 
   if (localmesh->PE_XIND == data.proc) {
     /// This processor's turn to do inversion
@@ -440,8 +462,9 @@ int LaplaceSPT::next(SPT_data& data) {
 
       if (data.dir > 0) {
         localmesh->sendXOut(std::begin(data.buffer), 4 * (maxmode + 1), data.comm_tag);
-      } else
+      } else {
         localmesh->sendXIn(std::begin(data.buffer), 4 * (maxmode + 1), data.comm_tag);
+      }
     }
 
   } else if (localmesh->PE_XIND == data.proc + data.dir) {
@@ -450,15 +473,17 @@ int LaplaceSPT::next(SPT_data& data) {
     if (data.dir > 0) {
       data.recv_handle =
           localmesh->irecvXIn(std::begin(data.buffer), 4 * (maxmode + 1), data.comm_tag);
-    } else
+    } else {
       data.recv_handle =
           localmesh->irecvXOut(std::begin(data.buffer), 4 * (maxmode + 1), data.comm_tag);
+    }
   }
 
   data.proc += data.dir;
 
-  if (data.proc == localmesh->NXPE - 1)
+  if (data.proc == localmesh->NXPE - 1) {
     data.dir = -1; // Reverses direction at the end
+  }
 
   return 0;
 }
@@ -487,11 +512,13 @@ void LaplaceSPT::finish(SPT_data& data, FieldPerp& x) {
     for (int kz = 0; kz <= maxmode; kz++) {
       dc1d[kz] = data.xk(kz, ix);
     }
-    for (int kz = maxmode + 1; kz <= ncz / 2; kz++)
+    for (int kz = maxmode + 1; kz <= ncz / 2; kz++) {
       dc1d[kz] = 0.0;
+    }
 
-    if (global_flags & INVERT_ZERO_DC)
+    if (global_flags & INVERT_ZERO_DC) {
       dc1d[0] = 0.0;
+    }
 
     irfft(std::begin(dc1d), ncz, x[ix]);
   }
@@ -499,15 +526,17 @@ void LaplaceSPT::finish(SPT_data& data, FieldPerp& x) {
   if (!localmesh->firstX()) {
     // Set left boundary to zero (Prevent unassigned values in corners)
     for (int ix = 0; ix < localmesh->xstart; ix++) {
-      for (int kz = 0; kz < localmesh->LocalNz; kz++)
+      for (int kz = 0; kz < localmesh->LocalNz; kz++) {
         x(ix, kz) = 0.0;
+      }
     }
   }
   if (!localmesh->lastX()) {
     // Same for right boundary
     for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
-      for (int kz = 0; kz < localmesh->LocalNz; kz++)
+      for (int kz = 0; kz < localmesh->LocalNz; kz++) {
         x(ix, kz) = 0.0;
+      }
     }
   }
 }
