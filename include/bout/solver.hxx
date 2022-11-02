@@ -36,9 +36,10 @@
 #ifndef __SOLVER_H__
 #define __SOLVER_H__
 
+#include "bout/build_config.hxx"
+
 #include "bout_types.hxx"
 #include "boutexception.hxx"
-#include "datafile.hxx"
 #include "options.hxx"
 #include "unused.hxx"
 #include "bout/monitor.hxx"
@@ -67,6 +68,7 @@ using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal l
 #include "field3d.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
+#include "bout/generic_factory.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "physicsmodel.hxx"
@@ -81,7 +83,6 @@ constexpr auto SOLVERPVODE = "pvode";
 constexpr auto SOLVERIDA = "ida";
 constexpr auto SOLVERPETSC = "petsc";
 constexpr auto SOLVERSLEPC = "slepc";
-constexpr auto SOLVERKARNIADAKIS = "karniadakis";
 constexpr auto SOLVERRK4 = "rk4";
 constexpr auto SOLVEREULER = "euler";
 constexpr auto SOLVERRK3SSP = "rk3ssp";
@@ -95,6 +96,34 @@ enum class SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS
 
 /// A type to set where in the list monitors are added
 enum class MonitorPosition {BACK, FRONT};
+
+class SolverFactory : public Factory<Solver, SolverFactory, Options*> {
+public:
+  static constexpr auto type_name = "Solver";
+  static constexpr auto section_name = "solver";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type =
+#if BOUT_HAS_CVODE
+      SOLVERCVODE;
+#elif BOUT_HAS_IDA
+      SOLVERIDA;
+#else
+      SOLVERPVODE;
+#endif
+};
+
+/// Simpler name for Factory registration helper class
+///
+/// Usage:
+///
+///     #include <bout/solverfactory.hxx>
+///     namespace {
+///     RegisterSolver<MySolver> registersolvermine("mysolver");
+///     }
+template <typename DerivedType>
+using RegisterSolver = SolverFactory::RegisterInFactory<DerivedType>;
+
+using RegisterUnavailableSolver = SolverFactory::RegisterUnavailableInFactory;
 
 ///////////////////////////////////////////////////////////////////
 
@@ -111,19 +140,19 @@ enum class MonitorPosition {BACK, FRONT};
  *
  * Instead, use the create() static function:
  *
- *     Solver *solver = Solver::create(); // ok
+ *     auto solver = Solver::create(); // ok
  *
  * By default this will use the options in the "solver" section
  * of the options, equivalent to:
  *
  *     Options *opts = Options::getRoot()->getSection("solver");
- *     Solver *solver = Solver::create(opts);
+ *     auto solver = Solver::create(opts);
  *
  * To use a different set of options, for example if there are
  * multiple solvers, use a different option section:
  *
  *     Options *opts = Options::getRoot()->getSection("anothersolver");
- *     Solver *anothersolver = Solver::create(opts);
+ *     auto anothersolver = Solver::create(opts);
  *
  * Problem specification
  * ---------------------
@@ -186,18 +215,6 @@ public:
   virtual void setModel(PhysicsModel* model);
 
   /////////////////////////////////////////////
-  // Old API
-
-  /// Set the RHS function
-  virtual void setRHS(rhsfunc f) { phys_run = f; }
-  /// Specify a preconditioner (optional)
-  void setPrecon(PhysicsPrecon f) { prefunc = f; }
-  /// Specify a Jacobian (optional)
-  virtual void setJacobian(Jacobian jacobian) { user_jacobian = jacobian; }
-  /// Split operator solves
-  virtual void setSplitOperator(rhsfunc fC, rhsfunc fD);
-
-  /////////////////////////////////////////////
   // Monitors
 
   // Alternative names so that Solver::BACK and Solver::FRONT can be used as names for
@@ -249,7 +266,7 @@ public:
   virtual void constraint(Vector3D& v, Vector3D& C_v, std::string name);
 
   /// Set a maximum internal timestep (only for explicit schemes)
-  virtual void setMaxTimestep(BoutReal dt) { max_dt = dt; }
+  virtual void setMaxTimestep(MAYBE_UNUSED(BoutReal dt)) {}
   /// Return the current internal timestep
   virtual BoutReal getCurrentTimestep() { return 0.0; }
 
@@ -257,14 +274,12 @@ public:
   /// to determine the number of steps and the output timestep.
   /// If nout and dt are specified here then the options are not used
   ///
-  /// @param[in] nout   Number of output timesteps
-  /// @param[in] dt     The time between outputs
-  int solve(int nout = -1, BoutReal dt = 0.0);
+  /// @param[in] nout     Number of output timesteps to run for
+  /// @param[in] timestep The time between outputs
+  int solve(int nout = -1, BoutReal timestep = 0.0);
 
   /// Initialise the solver
-  /// NOTE: nout and tstep should be passed to run, not init.
-  ///       Needed because of how the PETSc TS code works
-  virtual int init(int nout, BoutReal tstep);
+  virtual int init();
 
   /// Run the solver, calling monitors nout times, at intervals of
   /// tstep. This function is called by solve(), and is specific to
@@ -293,22 +308,25 @@ public:
   int resetRHSCounter_i();
 
   /// Test if this solver supports split operators (e.g. implicit/explicit)
-  bool splitOperator() { return split_operator; }
+  bool splitOperator();
 
   bool canReset{false};
 
   /// Add evolving variables to output (dump) file or restart file
   ///
-  /// @param[inout] outputfile   The file to add variable to
+  /// @param[inout] outputfile  The `Options` to add variable to
   /// @param[in] save_repeat    If true, add variables with time dimension
-  virtual void outputVars(Datafile& outputfile, bool save_repeat = true);
+  virtual void outputVars(Options& output_options, bool save_repeat = true);
+
+  /// Copy evolving variables out of \p options
+  virtual void readEvolvingVariablesFromOptions(Options& options);
 
   /// Create a Solver object. This uses the "type" option in the given
   /// Option section to determine which solver type to create.
-  static Solver* create(Options* opts = nullptr);
+  static std::unique_ptr<Solver> create(Options* opts = nullptr);
 
   /// Create a Solver object, specifying the type
-  static Solver* create(const SolverType& type, Options* opts = nullptr);
+  static std::unique_ptr<Solver> create(const SolverType& type, Options* opts = nullptr);
 
   /// Pass the command-line arguments. This static function is
   /// called by BoutInitialise, and puts references
@@ -330,6 +348,9 @@ public:
   /// Add one to the iteration count, used by BoutMonitor, but could be called by a
   // user-defined monitor (if `bout_run()` is not used)
   int incrementIterationCounter() { return ++iteration; }
+
+  /// Write \p options to the model's output file
+  void writeToModelOutputFile(const Options& options);
 
 protected:
   /// Number of command-line arguments
@@ -420,11 +441,11 @@ protected:
   BoutReal simtime{0.0};
 
   /// Run the user's RHS function
-  int run_rhs(BoutReal t);
+  int run_rhs(BoutReal t, bool linear = false);
   /// Calculate only the convective parts
-  int run_convective(BoutReal t);
+  int run_convective(BoutReal t, bool linear = false);
   /// Calculate only the diffusive parts
-  int run_diffusive(BoutReal t, bool linear = true);
+  int run_diffusive(BoutReal t, bool linear = false);
 
   /// Reset the iteration counter
   void resetIterationCounter(int value = 0) { iteration = value; }
@@ -454,12 +475,8 @@ protected:
 
   /// Do we have a user preconditioner?
   bool hasPreconditioner();
-  DEPRECATED(bool have_user_precon)() { return hasPreconditioner(); }
   /// Run the user preconditioner
   int runPreconditioner(BoutReal time, BoutReal gamma, BoutReal delta);
-  DEPRECATED(int run_precon)(BoutReal time, BoutReal gamma, BoutReal delta) {
-    return runPreconditioner(time, gamma, delta);
-  }
 
   /// Do we have a user Jacobian?
   bool hasJacobian();
@@ -479,8 +496,28 @@ protected:
   /// Maximum internal timestep
   BoutReal max_dt{-1.0};
 
+  /// Helper struct for Monitor and the name of its time dimension
+  struct MonitorInfo {
+    /// Non-owning pointer to a monitor instance
+    Monitor* monitor;
+    /// Name of the time dimension for writing outputs to
+    /// file. Monitors with the same period as the outputs have plain
+    /// "t", all other monitors have an ascending integer suffix,
+    /// starting with the front monitor. WARNING! This could change if
+    /// there are different monitors added on subsequent restarts, or
+    /// if they are added in a different order.
+    std::string time_dimension;
+  };
+
   /// Get the list of monitors
-  auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }
+  auto getMonitors() const -> const std::list<MonitorInfo>& { return monitors; }
+
+  /// Get the currently set number of output steps requested
+  int getNumberOutputSteps() const { return number_output_steps; }
+  /// Change the number of requested output steps
+  void setNumberOutputSteps(int nout) { number_output_steps = nout; }
+  /// Get the currently set output timestep
+  BoutReal getOutputTimestep() const { return output_timestep; }
 
 private:
   /// Generate a random UUID (version 4) and broadcast it to all processors
@@ -495,6 +532,8 @@ private:
   std::string run_id = default_run_id;
   /// The run from which this was restarted.
   std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
+  /// Save `run_id` and `run_restart_from` every output
+  bool save_repeat_run_id{false};
 
   /// Current iteration (output time-step) number
   int iteration{0};
@@ -512,20 +551,6 @@ private:
   /// Physics model being evolved
   PhysicsModel* model{nullptr};
 
-  /// The user's RHS function
-  rhsfunc phys_run{nullptr};
-  /// The user's preconditioner function
-  PhysicsPrecon prefunc{nullptr};
-  /// The user's Jacobian function
-  Jacobian user_jacobian{nullptr};
-  /// Is the physics model using separate convective (explicit) and
-  /// diffusive (implicit) RHS functions?
-  bool split_operator{false};
-  /// Convective part (if split operator)
-  rhsfunc phys_conv{nullptr};
-  /// Diffusive part (if split operator)
-  rhsfunc phys_diff{nullptr};
-
   /// Should non-split physics models be treated as diffusive?
   bool is_nonsplit_model_diffusive{true};
   
@@ -538,7 +563,7 @@ private:
   void calculate_mms_error(BoutReal t);
 
   /// List of monitor functions
-  std::list<Monitor*> monitors;
+  std::list<MonitorInfo> monitors;
   /// List of timestep monitor functions
   std::list<TimestepMonitorFunc> timestep_monitors;
 
@@ -561,6 +586,11 @@ private:
   /// Fix all the monitor periods based on \p output_timestep, as well
   /// as adjusting \p NOUT and \p output_timestep to be consistent
   void finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep);
+
+  /// Number of requested output steps
+  int number_output_steps;
+  /// Requested timestep between outputs
+  BoutReal output_timestep;
 };
 
 #endif // __SOLVER_H__

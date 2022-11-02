@@ -33,16 +33,19 @@
 #ifndef __LAPLACE_XY_H__
 #define __LAPLACE_XY_H__
 
-#ifndef BOUT_HAS_PETSC
+#include "bout/build_config.hxx"
+
+#if !BOUT_HAS_PETSC
 // If no PETSc
 
 #warning LaplaceXY requires PETSc. No LaplaceXY available
 
-#include <bout/mesh.hxx>
-#include "bout/solver.hxx"
-#include "datafile.hxx"
-#include <options.hxx>
 #include <boutexception.hxx>
+
+class Field2D;
+class Mesh;
+class Options;
+class Solver;
 
 /*!
  * Create a dummy class so that code will compile
@@ -59,19 +62,33 @@ public:
   const Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
-  void savePerformance(Datafile&, Solver&, std::string) {
+  void savePerformance(Solver&, std::string) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
 };
 
 #else // BOUT_HAS_PETSC
 
+// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
+#undef MPI_Allreduce
+#undef MPI_Gatherv
+#undef MPI_Irecv
+#undef MPI_Isend
+#undef MPI_Recv
+#undef MPI_Scatterv
+#undef MPI_Send
+#undef MPI_Wait
+#undef MPI_Waitall
+#undef MPI_Waitany
+
+#include "utils.hxx"
+#include "bout/solver.hxx"
 #include <bout/mesh.hxx>
 #include <bout/petsclib.hxx>
-#include "bout/solver.hxx"
-#include "datafile.hxx"
 #include <cyclic_reduction.hxx>
-#include "utils.hxx"
+
+class Options;
+class Solver;
 
 class LaplaceXY {
 public:
@@ -119,8 +136,8 @@ public:
   /*!
    * If this method is called, save some performance monitoring information
    */
-  void savePerformance(Datafile& outputfile, Solver& solver,
-                       std::string name = "");
+  void savePerformance(Solver& solver, const std::string& name = "");
+
 private:
   
   PetscLib lib;     ///< Requires PETSc library
@@ -131,9 +148,9 @@ private:
 
   Mesh *localmesh;   ///< The mesh this operates on, provides metrics and communication
 
-  static int instance_count;
-  int my_id = 0;
-  
+  /// default prefix for writing performance logging variables
+  std::string default_prefix;
+
   // Preconditioner
   int xstart, xend;
   int nloc, nsys;
@@ -191,6 +208,14 @@ private:
   // Running total of number of calls to the solver in each output timestep
   int n_calls = 0;
 
+  // Utility methods
+  void setPreallocationFiniteVolume(PetscInt* d_nnz, PetscInt* o_nnz);
+  void setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nnz);
+  void setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B);
+  void setMatrixElementsFiniteDifference(const Field2D &A, const Field2D &B);
+  void solveFiniteVolume(const Field2D &x0);
+  void solveFiniteDifference(const Field2D &x0);
+
   // Monitor class used to reset performance-monitoring variables for a new
   // output timestep
   friend class LaplaceXYMonitor;
@@ -198,14 +223,9 @@ private:
   public:
     LaplaceXYMonitor(LaplaceXY& owner) : laplacexy(owner) {}
 
-    int call(Solver*, BoutReal, int, int) {
-      laplacexy.output_average_iterations = laplacexy.average_iterations;
+    int call(Solver* /*solver*/, BoutReal /*time*/, int /*iter*/, int /*nout*/) override;
+    void outputVars(Options& output_options, const std::string& time_dimension) override;
 
-      laplacexy.n_calls = 0;
-      laplacexy.average_iterations = 0.;
-
-      return 0;
-    }
   private:
     // LaplaceXY object that this monitor belongs to
     LaplaceXY& laplacexy;

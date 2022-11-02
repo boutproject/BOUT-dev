@@ -92,7 +92,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
       // Parallel boundary
       BoundaryOpPar *pop = findBoundaryOpPar(trim(name));
       if (pop == nullptr)
-        throw BoutException("Could not find parallel boundary condition '%s'",  name.c_str());
+        throw BoutException("Could not find parallel boundary condition '{:s}'", name);
 
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
@@ -102,7 +102,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
       // Perpendicular boundary
       BoundaryOp *op = findBoundaryOp(trim(name));
       if (op == nullptr)
-        throw BoutException("Could not find boundary condition '%s'",  name.c_str());
+        throw BoutException("Could not find boundary condition '{:s}'", name);
 
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
@@ -198,7 +198,8 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
   }
 
   // Otherwise nothing matches
-  throw BoutException("  Boundary setting is neither an operation nor modifier: %s\n",func.c_str());
+  throw BoutException("  Boundary setting is neither an operation nor modifier: {:s}\n",
+                      func);
 
   return nullptr;
 }
@@ -233,12 +234,20 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
     side = "yup";
     break;
   }
-  case BNDRY_PAR_FWD: {
-    side = "par_yup";
+  case BNDRY_PAR_FWD_XIN: {
+    side = "par_yup_xin";
     break;
   }
-  case BNDRY_PAR_BKWD: {
-    side = "par_ydown";
+  case BNDRY_PAR_FWD_XOUT: {
+    side = "par_yup_xout";
+    break;
+  }
+  case BNDRY_PAR_BKWD_XIN: {
+    side = "par_ydown_xin";
+    break;
+  }
+  case BNDRY_PAR_BKWD_XOUT: {
+    side = "par_ydown_xout";
     break;
   }
   default: {
@@ -280,7 +289,7 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
   }
 
   // Get the "all" options
-  varOpts = options->getSection("All");
+  varOpts = options->getSection("all");
 
   /// Then (all, region)
   if(varOpts->isSet(prefix+region->label)) {

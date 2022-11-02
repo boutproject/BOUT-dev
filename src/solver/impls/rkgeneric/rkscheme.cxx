@@ -1,47 +1,47 @@
-#include "rkschemefactory.hxx"
 #include "unused.hxx"
+#include <bout/mpi_wrapper.hxx>
 #include <bout/rkscheme.hxx>
 #include <boutcomm.hxx>
 #include <cmath>
+#include <options.hxx>
 #include <output.hxx>
+
+// Implementations
+#include "impls/rkf45/rkf45.hxx"
+#include "impls/cashkarp/cashkarp.hxx"
+#include "impls/rk4simple/rk4simple.hxx"
+#include "impls/rkf34/rkf34.hxx"
 
 ////////////////////
 // PUBLIC
 ////////////////////
 
-//Initialise
-RKScheme::RKScheme(Options *UNUSED(opts)) {
-  // Currently not reading anything from the options here
+RKScheme::RKScheme(Options* options, bool default_follow_high_order)
+    : followHighOrder((*options)["followHighOrder"]
+                          .doc("Use the higher order solution")
+                          .withDefault(default_follow_high_order)),
+      diagnose((*options)["diagnose"].doc("Enable diagnostics").withDefault(false)),
+      dtfac((*options)["dtfac"].doc("Time step adjustment factor").withDefault(1.0)) {}
 
-  // Initialise internals
-  dtfac = 1.0; // Time step factor
-}
-
-//Finish generic initialisation
-void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, const BoutReal atolIn, 
-		    const BoutReal rtolIn, Options *options){
-
-  bool diagnose;
-  OPTION(options, dtfac, dtfac); //Time step adjustment factor
-  OPTION(options, diagnose, false); //Diagnostics enabled?
-
-  //Store configuration data
+void RKScheme::init(int nlocalIn, int neqIn, bool adaptiveIn, BoutReal atolIn,
+                    BoutReal rtolIn) {
+  // Store configuration data
   nlocal = nlocalIn;
   neq = neqIn;
   atol = atolIn;
   rtol = rtolIn;
   adaptive = adaptiveIn;
 
-  //Allocate storage for stages
+  // Allocate storage for stages
   steps.reallocate(getStageCount(), nlocal);
   zeroSteps();
 
-  //Allocate array for storing alternative order result
+  // Allocate array for storing alternative order result
   if (adaptive)
     resultAlt.reallocate(nlocal); // Result--alternative order
 
-  //Will probably only want the following when debugging, but leave it on for now
-  if(diagnose){
+  // Will probably only want the following when debugging, but leave it on for now
+  if (diagnose) {
     verifyCoeffs();
     printButcherTableau();
   }
@@ -144,7 +144,8 @@ BoutReal RKScheme::getErr(Array<BoutReal> &solA, Array<BoutReal> &solB) {
         std::abs(solA[i] - solB[i]) / (std::abs(solA[i]) + std::abs(solB[i]) + atol);
   }
   //Reduce over procs
-  if(MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed");
   }
   //Normalise by number of values
@@ -294,3 +295,7 @@ void RKScheme::zeroSteps(){
   }
 }
 
+constexpr decltype(RKSchemeFactory::type_name) RKSchemeFactory::type_name;
+constexpr decltype(RKSchemeFactory::section_name) RKSchemeFactory::section_name;
+constexpr decltype(RKSchemeFactory::option_name) RKSchemeFactory::option_name;
+constexpr decltype(RKSchemeFactory::default_type) RKSchemeFactory::default_type;

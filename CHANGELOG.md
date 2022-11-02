@@ -1,19 +1,101 @@
 # Changelog
 
+## [v5.0.0-alpha](https://github.com/boutproject/BOUT-dev/tree/next)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.2...next)
+
+### Breaking changes
+
+- `BoutMesh::GlobalNy` now counts points from all y-boundaries. Previously it
+  only counted points from the boundaries at the upper and lower edges of the
+  logical grid, even if there was another boundary in the grid.
+  [\#1829](https://github.com/boutproject/BOUT-dev/pull/1829)
+- `invert_laplace` free function removed
+  [\#1834](https://github.com/boutproject/BOUT-dev/pull/1834)
+- Most factories and `create` methods standardised. Run
+  `bin/bout-v5-factory-upgrader.py` on your physics models to update
+  them [\#1842](https://github.com/boutproject/BOUT-dev/pull/1842)
+  [\#2087](https://github.com/boutproject/BOUT-dev/pull/2087)
+- We now use [fmt](https://fmt.dev) for all our string formatting,
+  instead of the printf-style formatting. This affects calls to
+  `Output`, `BoutException`/`ParseException`, `DataFile`,
+  `OptionsReader`, and `MsgStack`/`TRACE`. Run
+  `bin/bout-v5-format-upgrader.py` on your physics models to update
+  them. [\#1847](https://github.com/boutproject/BOUT-dev/pull/1847)
+- The option `laplacexy:y_bndry_dirichlet` has been deprecated. Use
+  `laplacexy:y_bndry=dirichlet` instead.
+  [\#1789](https://github.com/boutproject/BOUT-dev/pull/1789)
+- The variable `BOUT_VERSION`, and the macros `REVISION`,
+  `BOUT_VERSION_STRING` and `BOUT_VERSION_DOUBLE` have been replaced
+  with `constexpr` variables in the `bout::version`
+  namespace. `REVISION` is found in `include/bout/revision.hxx`, while
+  the rest are in `include/bout/version.hxx`. Both files are generated
+  at configure time. Run `bin/bout-v5-macro-upgrader.py` to
+  update. [\#1920](https://github.com/boutproject/BOUT-dev/pull/1920)
+- The `MUMPS` Laplacian inversion wrapper has been removed. It is still possible
+  to use `MUMPS` for Laplacian inversions through the `PETSc`
+  wrapper. [\#2018](https://github.com/boutproject/BOUT-dev/pull/2018)
+- The `using namespace bout::globals` statement has been removed from
+  `physics_model.hxx`, and `PhysicsModel` has gained public `mesh` and
+  `dump` members. Custom `main`s, free functions and legacy models
+  will need to be updated to either use `bout::globals::mesh` or
+  `Field::getMesh()` in free
+  functions. [\#2042](https://github.com/boutproject/BOUT-dev/pull/2042)
+- The `LaplaceShoot` Laplacian implementation was removed. There are
+  very few cases, if any, where this implementation actually
+  works. [\#2177](https://github.com/boutproject/BOUT-dev/pull/2177)
+- `PhysicsModel` expects the options `datadir` and `dump_format` to
+  have been set; this is only a problem if you don't call
+  `BoutInitialise`. [\#2062](https://github.com/boutproject/BOUT-dev/pull/2062)
+- `dz` is now a `Field2D`, and `Coordinates::zlength()` also returns a
+  `Field2D`. In most cases, wrapping these in a call to `getUniform`
+  in order to get a `BoutReal` will do the correct thing. If checks
+  are enabled, `getUniform` will throw an exception if its argument is
+  not uniform (that is, that all values are identical).
+  [\#2025](https://github.com/boutproject/BOUT-dev/pull/2025)
+- The parallel boundaries `BNDRY_PAR_FWD` and `BNDRY_PAR_BKWD` have
+  been expanded to distinguish between the inner and outer boundaries
+  in x; the enums have been replaced with `BNDRY_PAR_*_XIN`, and
+  `BNDRY_PAR_*_XOUT` for both `FWD` and
+  `BKWD`. [\#2025](https://github.com/boutproject/BOUT-dev/pull/2025)
+- Support for reading/writing HDF5 files has been removed ahead of completely
+  refactoring the I/O
+- Support for reading/writing HDF5 files has been removed ahead of
+  completely refactoring the I/O
+  systems. [\#2208](https://github.com/boutproject/BOUT-dev/pull/2208)
+- Removed the Karniadakis time solver. Other choices for split-operator schemes
+  are: `splitrk` (built-in), `imexbdf2` (requires PETSc), and `arkode` (requires
+  SUNDIALS) [\#2241](https://github.com/boutproject/BOUT-dev/pull/2241)
+- Conversion of Option to bool is now stricter.  Previously, only tested
+  (case-insensitively) if first character was 'n', 'f', '0', 'y', 't', or '1'.
+  Now only allow (still case-insensitively but checking full strings) 'n',
+  'no', 'f', 'false', '0', 'y', 'yes', 't', 'true', or '1'.
+  [\#2282](https://github.com/boutproject/BOUT-dev/pull/2282)
+- Having any unused options remaining after the first call to the physics model
+  `rhs` is now an error. Set `input:error_on_unused_options = false` for old
+  behaviour [\#2210](https://github.com/boutproject/BOUT-dev/pull/2210)
+- Input options are now case sensitive. Run `bin/bout-v5-input-file-upgrader.py`
+  to automatically fix the most common library options
+  [\#2210](https://github.com/boutproject/BOUT-dev/pull/2210)
+- Input options are now required to be either a section or a value, and not
+  both. This requires renaming the `restart` section to
+  `restart_files`. `bin/bout-v5-input-file-upgrader.py` can automatically make
+  this change. [\#2277](https://github.com/boutproject/BOUT-dev/pull/2277)
+- `Options` are now only implicitly-castable to types stored in the internal
+  variant. Other types now require a call to `Options::as<T>()`
+  [\#2341](https://github.com/boutproject/BOUT-dev/pull/2341)
+- The Laplacian inversion solver `LaplacePDD` (`"pdd"`) has been
+  removed. This implementation had some quite significant drawbacks
+  that made it not terribly useful in practice
+  [\#3566](https://github.com/boutproject/BOUT-dev/pull/3566)
+- `DataFile` and `bout::globals::dump` have been removed in favour of
+  `OptionsNetCDF`. Uses of `SAVE_ONCE/REPEAT` inside `PhysicsModel` code will
+  still work for the time being; outside of `PhysicsModel` methods, these macros
+  will need to be manually replaced. See **FIXME: DOCS TO BE WRITTEN** for more
+  details. [\#2209](https://github.com/boutproject/BOUT-dev/pull/2209)
+
+
 ## v4 known bugs
 
-- `FieldPerp` I/O has a couple of issues:
-  - the `global_yindex` attribute written in output files does not account for
-    boundary cells at the second (i.e.  upper) targets in double-null
-    configuration. This will be fixed in v5 using updated (but not
-    backward-compatible) indexing methods from `Mesh`.
-  - A `FieldPerp` may be read in on processors at different (but adjacent)
-    y-locations as it may be read in the guard cells. This is not the expected
-    behaviour (a given `FieldPerp`, if it represents a physical quantity rather
-    than just being a temporary variable for an x-z slice) should only be
-    defined and used at a single, global y-position. Should not be a problem
-    for `PhysicsModel` implementations that define a `FieldPerp` correctly, but
-    caused a problem for `test-io` and `test-io_hdf5`.
 
   See [\#2154](https://github.com/boutproject/BOUT-dev/pull/2154).
 
@@ -145,7 +227,6 @@ The following were backported from v5.0.0 in [\#2389](https://github.com/boutpro
 - Fix links to open-mpi.org and lam-mpi.org [\#2122](https://github.com/boutproject/BOUT-dev/pull/2122) ([tobyjamez](https://github.com/users/tobyjamez))
 
 ## [v4.3.2](https://github.com/boutproject/BOUT-dev/tree/v4.3.2) (2020-10-19)
-
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.1...v4.3.2)
 
 **Merged pull requests:**
@@ -172,7 +253,6 @@ The following were backported from v5.0.0 in [\#2389](https://github.com/boutpro
 - Prevent deadlock in downloading mpark [\#2017](https://github.com/boutproject/BOUT-dev/pull/2017) ([dschwoerer](https://github.com/dschwoerer))
 
 ## [v4.3.1](https://github.com/boutproject/BOUT-dev/tree/v4.3.1) (2020-03-27)
-
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.0...v4.3.1)
 
 **Merged pull requests:**

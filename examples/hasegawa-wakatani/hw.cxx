@@ -19,7 +19,7 @@ private:
   // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
   BRACKET_METHOD bm; // Bracket method for advection terms
   
-  class Laplacian* phiSolver; // Laplacian solver for vort -> phi
+  std::unique_ptr<Laplacian> phiSolver; // Laplacian solver for vort -> phi
 
   // Simple implementation of 4th order perpendicular Laplacian
   Field3D Delp4(const Field3D &var) {

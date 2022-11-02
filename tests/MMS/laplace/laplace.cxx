@@ -5,7 +5,6 @@
 #include <bout/constants.hxx>
 
 using bout::globals::mesh;
-using bout::globals::dump;
 
 int main(int argc, char **argv) {
   int init_err = BoutInitialise(argc, argv);
@@ -28,7 +27,7 @@ int main(int argc, char **argv) {
   /////
 
   // Create a Laplacian inversion solver
-  Laplacian *lap = Laplacian::create();
+  auto lap = Laplacian::create();
   
   FieldFactory fact(mesh);
 
@@ -43,9 +42,13 @@ int main(int argc, char **argv) {
 
   Field3D error = result - solution;
 
-  SAVE_ONCE4(input, result, solution, error);
-  dump.write();
-  
+  Options dump;
+  dump["input"] = input;
+  dump["result"] = result;
+  dump["solution"] = solution;
+  dump["error"] = error;
+  bout::writeDefaultOutputFile(dump);
+
   BoutFinalise();
   return 0;
 }

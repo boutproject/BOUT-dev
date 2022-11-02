@@ -33,9 +33,15 @@ class LaplaceSerialTri;
 #include <dcomplex.hxx>
 #include <options.hxx>
 
+namespace {
+RegisterLaplace<LaplaceSerialTri> registerlaplaceserialtri(LAPLACE_TRI);
+}
+
 class LaplaceSerialTri : public Laplacian {
 public:
-  LaplaceSerialTri(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplaceSerialTri(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+                   Mesh* mesh_in = nullptr, Solver* solver = nullptr,
+                   Datafile* dump = nullptr);
   ~LaplaceSerialTri(){};
 
   using Laplacian::setCoefA;

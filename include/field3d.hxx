@@ -38,8 +38,6 @@ class Mesh;  // #include "bout/mesh.hxx"
 
 #include "bout/assert.hxx"
 
-#include "bout/field_visitor.hxx"
-
 #include "utils.hxx"
 
 #include <vector>
@@ -160,7 +158,7 @@ class Mesh;  // #include "bout/mesh.hxx"
       f.yup()(0,1,0) // ok
 
  */
-class Field3D : public Field, public FieldData {
+class Field3D : public Field {
  public:
   using ind_type = Ind3D;
   
@@ -211,7 +209,7 @@ class Field3D : public Field, public FieldData {
    * The first time this is called, a new field will be
    * allocated. Subsequent calls return the same field
    */
-  Field3D* timeDeriv();
+  BOUT_HOST_DEVICE Field3D* timeDeriv();
 
   /*!
    * Return the number of nx points
@@ -227,12 +225,12 @@ class Field3D : public Field, public FieldData {
   int getNz() const override {return nz;};
 
   // these methods return Field3D to allow method chaining
-  Field3D& setLocation(CELL_LOC new_location) {
+  Field3D& setLocation(CELL_LOC new_location) override {
     Field::setLocation(new_location);
     return *this;
   }
-  Field3D& setDirectionY(YDirectionType d) {
-    directions.y = d;
+  Field3D& setDirectionY(YDirectionType d) override {
+    Field::setDirectionY(d);
     return *this;
   }
 
@@ -242,29 +240,25 @@ class Field3D : public Field, public FieldData {
    */
   void splitParallelSlices();
 
-  [[deprecated("Please use Field3D::splitParallelSlices instead")]]
-  void splitYupYdown() {
-    splitParallelSlices();
-  }
-
   /*!
    * Clear the parallel slices, yup and ydown
    */
   void clearParallelSlices();
   
-  [[deprecated("Please use Field3D::clearParallelSlices instead")]]
-  void mergeYupYdown() {
-    clearParallelSlices();
-  }
-
   /// Check if this field has yup and ydown fields
   bool hasParallelSlices() const {
+#if CHECK > 2
+    if (yup_fields.size() != ydown_fields.size()) {
+      throw BoutException(
+          "Field3D::splitParallelSlices: forward/backward parallel slices not in sync.\n"
+          "    This is an internal library error");
+    }
+#endif
+#if CHECK
     return !yup_fields.empty() and !ydown_fields.empty();
-  }
-
-  [[deprecated("Please use Field3D::hasParallelSlices instead")]]
-  bool hasYupYdown() const {
-    return hasParallelSlices();
+#else
+    return !yup_fields.empty();
+#endif
   }
 
   /// Check if this field has yup and ydown fields
@@ -328,20 +322,18 @@ class Field3D : public Field, public FieldData {
   
   Region<Ind3D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
   Region<Ind3D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
-  
-  BoutReal& operator[](const Ind3D &d) {
-    return data[d.ind];
-  }
-  const BoutReal& operator[](const Ind3D &d) const {
+
+  BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) { return data[d.ind]; }
+  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) const {
     return data[d.ind];
   }
 
-  BoutReal& operator()(const IndPerp &d, int jy);
-  const BoutReal& operator()(const IndPerp &d, int jy) const;
+  BoutReal& BOUT_HOST_DEVICE operator()(const IndPerp& d, int jy);
+  const BoutReal& BOUT_HOST_DEVICE operator()(const IndPerp& d, int jy) const;
 
-  BoutReal& operator()(const Ind2D &d, int jz);
-  const BoutReal& operator()(const Ind2D &d, int jz) const;
-  
+  BoutReal& BOUT_HOST_DEVICE operator()(const Ind2D& d, int jz);
+  const BoutReal& BOUT_HOST_DEVICE operator()(const Ind2D& d, int jz) const;
+
   /*!
    * Direct access to the underlying data array
    *
@@ -359,8 +351,9 @@ class Field3D : public Field, public FieldData {
     if((jx < 0) || (jx >= nx) || 
        (jy < 0) || (jy >= ny) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("Field3D: (%d, %d, %d) operator out of bounds (%d, %d, %d)", 
-			  jx, jy, jz, nx, ny, nz);
+      throw BoutException(
+          "Field3D: ({:d}, {:d}, {:d}) operator out of bounds ({:d}, {:d}, {:d})", jx, jy,
+          jz, nx, ny, nz);
 #endif
     return data[(jx*ny +jy)*nz + jz];
   }
@@ -373,8 +366,9 @@ class Field3D : public Field, public FieldData {
     if((jx < 0) || (jx >= nx) || 
        (jy < 0) || (jy >= ny) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("Field3D: (%d, %d, %d) operator out of bounds (%d, %d, %d)", 
-			  jx, jy, jz, nx, ny, nz);
+      throw BoutException(
+          "Field3D: ({:d}, {:d}, {:d}) operator out of bounds ({:d}, {:d}, {:d})", jx, jy,
+          jz, nx, ny, nz);
 #endif
     return data[(jx*ny +jy)*nz + jz];
   }
@@ -393,8 +387,8 @@ class Field3D : public Field, public FieldData {
 
     if((jx < 0) || (jx >= nx) ||
        (jy < 0) || (jy >= ny))
-      throw BoutException("Field3D: (%d, %d) operator out of bounds (%d, %d)",
-                          jx, jy, nx, ny);
+      throw BoutException("Field3D: ({:d}, {:d}) operator out of bounds ({:d}, {:d})", jx,
+                          jy, nx, ny);
 #endif
     return &data[(jx*ny +jy)*nz];
   }
@@ -406,8 +400,8 @@ class Field3D : public Field, public FieldData {
 
     if((jx < 0) || (jx >= nx) ||
        (jy < 0) || (jy >= ny))
-      throw BoutException("Field3D: (%d, %d) operator out of bounds (%d, %d)",
-                          jx, jy, nx, ny);
+      throw BoutException("Field3D: ({:d}, {:d}) operator out of bounds ({:d}, {:d})", jx,
+                          jy, nx, ny);
 #endif
     return &data[(jx*ny +jy)*nz];
   }
@@ -418,6 +412,7 @@ class Field3D : public Field, public FieldData {
   /// Assignment operators
   ///@{
   Field3D & operator=(const Field3D &rhs);
+  Field3D & operator=(Field3D&& rhs);
   Field3D & operator=(const Field2D &rhs);
   /// return void, as only part initialised
   void      operator=(const FieldPerp &rhs);
@@ -451,17 +446,10 @@ class Field3D : public Field, public FieldData {
   Field3D & operator/=(const Field2D &rhs);
   Field3D & operator/=(BoutReal rhs);
   ///@}
-  
-  // FieldData virtual functions
-  
-  bool isReal() const override   { return true; }         // Consists of BoutReal values
-  bool is3D() const override     { return true; }         // Field is 3D
-  int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
-  int  BoutRealSize() const override { return 1; }
 
-  /// Visitor pattern support
-  void accept(FieldVisitor &v) override { v.accept(*this); }
-  
+  // FieldData virtual functions
+  bool is3D() const override { return true; }
+
 #if CHECK > 0
   void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else
@@ -469,6 +457,7 @@ class Field3D : public Field, public FieldData {
 #endif
 
   friend class Vector3D;
+  friend class Vector2D;
 
   Field3D& calcParallelSlices();
 
@@ -492,31 +481,9 @@ class Field3D : public Field, public FieldData {
   void applyParallelBoundary(const std::string &region, const std::string &condition);
   void applyParallelBoundary(const std::string &region, const std::string &condition, Field3D *f);
 
-  friend void swap(Field3D& first, Field3D& second) noexcept {
-    using std::swap;
-
-    // Swap base class members
-    swap(static_cast<Field&>(first), static_cast<Field&>(second));
-
-    swap(first.data, second.data);
-    swap(first.background, second.background);
-    swap(first.nx, second.nx);
-    swap(first.ny, second.ny);
-    swap(first.nz, second.nz);
-    swap(first.deriv, second.deriv);
-    swap(first.yup_fields, second.yup_fields);
-    swap(first.ydown_fields, second.ydown_fields);
-    swap(first.bndry_op, second.bndry_op);
-    swap(first.boundaryIsCopy, second.boundaryIsCopy);
-    swap(first.boundaryIsSet, second.boundaryIsSet);
-    swap(first.bndry_op_par, second.bndry_op_par);
-    swap(first.bndry_generator, second.bndry_generator);
-  }
+  friend void swap(Field3D& first, Field3D& second) noexcept;
   
 private:
-  /// Boundary - add a 2D field
-  const Field2D *background{nullptr};
-
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};
 
@@ -574,17 +541,7 @@ Field3D operator-(const Field3D &f);
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn = "RGN_ALL");
-[[deprecated("Please use pow(const Field3D& lhs, const Field2D& rhs"
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
-  return pow(lhs, rhs, toString(rgn));
-}
 FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, const std::string& rgn = "RGN_ALL");
-[[deprecated("Please use pow(const Field3D& lhs, const FieldPerp& rhs"
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, REGION rgn) {
-  return pow(lhs, rhs, toString(rgn));
-}
 
 #if CHECK > 0
 /// Throw an exception if \p f is not allocated or if any
@@ -592,18 +549,10 @@ inline FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, REGION rgn) {
 /// Loops over all points including the boundaries by
 /// default (can be changed using the \p rgn argument
 void checkData(const Field3D& f, const std::string& region = "RGN_NOBNDRY");
-[[deprecated("Please use checkData(const Field3D& f, "
-    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
-inline void checkData(const Field3D &f, REGION region) {
-  return checkData(f, toString(region));
-}
 #else
 /// Ignored with disabled CHECK; Throw an exception if \p f is not
 /// allocated or if any elements are non-finite (for CHECK > 2)
 inline void checkData(const Field3D& UNUSED(f), const std::string& UNUSED(region) = "RGN_NOBNDRY") {};
-[[deprecated("Please use checkData(const Field3D& f, "
-    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
-inline void checkData(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 
 /// Fourier filtering, removes all except one mode
@@ -612,11 +561,6 @@ inline void checkData(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 /// @param[in] N0  The component to keep
 /// @param[in] rgn The region to calculate the result over
 Field3D filter(const Field3D& var, int N0, const std::string& rgn = "RGN_ALL");
-[[deprecated("Please use filter(const Field3D& var, int N0, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline Field3D filter(const Field3D& var, int N0, REGION rgn) {
-  return filter(var, N0, toString(rgn));
-}
 
 /// Fourier low pass filtering. Removes modes
 /// higher than \p zmax and optionally the zonal component
@@ -627,16 +571,10 @@ inline Field3D filter(const Field3D& var, int N0, REGION rgn) {
 /// @param[in] rgn   The region to calculate the result over
 Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal,
     const std::string& rgn = "RGN_ALL");
-[[deprecated("Please use lowpass(const Field3D& var, int zmax, bool keep_zonal, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, REGION rgn) {
-  return lowPass(var, zmax, keep_zonal, toString(rgn));
-}
-
 /// The argument \p keep_zonal used to be integer "zmin" -- this was a
 /// misnomer. Please use the version above which uses a bool instead
-DEPRECATED(inline Field3D lowPass(const Field3D& var, int zmax, int keep_zonal,
-                                  REGION rgn = RGN_ALL)) {
+[[deprecated("Please use a bool for `keep_zonal`")]] inline Field3D
+lowPass(const Field3D& var, int zmax, int keep_zonal, REGION rgn = RGN_ALL) {
   ASSERT0(static_cast<bool>(keep_zonal) == keep_zonal);
   return lowPass(var, zmax, static_cast<bool>(keep_zonal), toString(rgn));
 }
@@ -648,11 +586,6 @@ DEPRECATED(inline Field3D lowPass(const Field3D& var, int zmax, int keep_zonal,
 /// @param[in] rgn   The region to calculate the result over
 inline Field3D lowPass(const Field3D &var, int zmax, const std::string rgn = "RGN_ALL") {
   return lowPass(var, zmax, true, rgn);
-}
-[[deprecated("Please use lowpass(const Field3D& var, int zmax, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline Field3D lowPass(const Field3D &var, int zmax, REGION rgn) {
-  return lowPass(var, zmax, toString(rgn));
 }
 
 /// Perform a shift by a given angle in Z
@@ -669,22 +602,12 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle);
 /// @param[in] zangle  The angle to shift by in Z
 /// @param[in] rgn     The region to calculate the result over
 void shiftZ(Field3D &var, BoutReal zangle, const std::string& rgn="RGN_ALL");
-[[deprecated("Please use shiftZ(const Field3D& var, BoutReal zangle, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline void shiftZ(Field3D &var, BoutReal zangle, REGION rgn) {
-  return shiftZ(var, zangle, toString(rgn));
-}
 
 /// Average in the Z direction
 ///
 /// @param[in] f     Variable to average
 /// @param[in] rgn   The region to calculate the result over
 Field2D DC(const Field3D &f, const std::string& rgn = "RGN_ALL");
-[[deprecated("Please use DC(const Field3D& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline Field2D DC(const Field3D &f, REGION rgn) {
-  return DC(f, toString(rgn));
-}
 
 /// Force guard cells of passed field \p var to NaN
 #if CHECK > 2
@@ -696,9 +619,7 @@ inline void invalidateGuards(Field3D &UNUSED(var)) {}
 /// Returns a reference to the time-derivative of a field \p f
 ///
 /// Wrapper around member function f.timeDeriv()
-inline Field3D& ddt(Field3D &f) {
-  return *(f.timeDeriv());
-}
+BOUT_HOST_DEVICE inline Field3D& ddt(Field3D& f) { return *(f.timeDeriv()); }
 
 /// toString template specialisation
 /// Defined in utils.hxx

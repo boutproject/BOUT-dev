@@ -6,18 +6,18 @@
  *
  */
 
+#include "bout/paralleltransform.hxx"
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
-#include "bout/paralleltransform.hxx"
+#include <bout/sys/timer.hxx>
 #include <fft.hxx>
+#include <output.hxx>
 
 #include <cmath>
 
-#include <output.hxx>
-
 ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
-    BoutReal zlength_in)
-    : ParallelTransform(m), location(location_in), zShift(std::move(zShift_)),
+    BoutReal zlength_in, Options* opt)
+    : ParallelTransform(m, opt), location(location_in), zShift(std::move(zShift_)),
       zlength(zlength_in) {
   ASSERT1(zShift.getLocation() == location);
   // check the coordinate system used for the grid data source
@@ -39,10 +39,11 @@ void ShiftedMetric::checkInputGrid() {
     //       correct
 }
 
-void ShiftedMetric::outputVars(Datafile& file) {
+void ShiftedMetric::outputVars(Options& output_options) {
+  Timer time("io");
   const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
 
-  file.addOnce(zShift, "zShift" + loc_string);
+  output_options["zShift" + loc_string].force(zShift, "ShiftedMetric");
 }
 
 void ShiftedMetric::cachePhases() {
@@ -121,12 +122,11 @@ void ShiftedMetric::cachePhases() {
  * Shift the field so that X-Z is not orthogonal,
  * and Y is then field aligned.
  */
-const Field3D ShiftedMetric::toFieldAligned(const Field3D& f, const std::string& region) {
+Field3D ShiftedMetric::toFieldAligned(const Field3D& f, const std::string& region) {
   ASSERT2(f.getDirectionY() == YDirectionType::Standard);
   return shiftZ(f, toAlignedPhs, YDirectionType::Aligned, region);
 }
-const FieldPerp ShiftedMetric::toFieldAligned(const FieldPerp& f,
-                                              const std::string& region) {
+FieldPerp ShiftedMetric::toFieldAligned(const FieldPerp& f, const std::string& region) {
   ASSERT2(f.getDirectionY() == YDirectionType::Standard);
   // In principle, other regions are possible, but not yet implemented
   ASSERT2(region == "RGN_NOX");
@@ -137,22 +137,20 @@ const FieldPerp ShiftedMetric::toFieldAligned(const FieldPerp& f,
  * Shift back, so that X-Z is orthogonal,
  * but Y is not field aligned.
  */
-const Field3D ShiftedMetric::fromFieldAligned(const Field3D& f,
-                                              const std::string& region) {
+Field3D ShiftedMetric::fromFieldAligned(const Field3D& f, const std::string& region) {
   ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
   return shiftZ(f, fromAlignedPhs, YDirectionType::Standard, region);
 }
-const FieldPerp ShiftedMetric::fromFieldAligned(const FieldPerp& f,
-                                                const std::string& region) {
+FieldPerp ShiftedMetric::fromFieldAligned(const FieldPerp& f, const std::string& region) {
   ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
   // In principle, other regions are possible, but not yet implemented
   ASSERT2(region == "RGN_NOX");
   return shiftZ(f, fromAlignedPhs, YDirectionType::Standard, region);
 }
 
-const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
-                                    const YDirectionType y_direction_out,
-                                    const std::string& region) const {
+Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
+                              const YDirectionType y_direction_out,
+                              const std::string& region) const {
   ASSERT1(f.getMesh() == &mesh);
   ASSERT1(f.getLocation() == location);
 
@@ -171,9 +169,9 @@ const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& ph
   return result;
 }
 
-const FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
-                                      const YDirectionType y_direction_out,
-                                      const std::string& UNUSED(region)) const {
+FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
+                                const YDirectionType y_direction_out,
+                                const std::string& UNUSED(region)) const {
   ASSERT1(f.getMesh() == &mesh);
   ASSERT1(f.getLocation() == location);
 
@@ -195,7 +193,15 @@ const FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>
 }
 
 void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out) const {
+#if BOUT_HAS_UMPIRE
+  // TODO: This static keyword is a hotfix and should be removed in
+  //      future iterations. It is here because otherwise many allocations
+  //      lead to very poor performance
+  static Array<dcomplex> cmplx(nmodes);
+#warning static hotfix used in ShiftedMetric::shiftZ. Not thread-safe.
+#else
   Array<dcomplex> cmplx(nmodes);
+#endif
 
   // Take forward FFT
   rfft(in, mesh.LocalNz, &cmplx[0]);
@@ -281,46 +287,4 @@ ShiftedMetric::shiftZ(const Field3D& f,
   }
 
   return results;
-}
-
-// Old approach retained so we can still specify a general zShift
-const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Field2D& zangle,
-                                    const std::string& region) const {
-  ASSERT1(&mesh == f.getMesh());
-  ASSERT1(f.getLocation() == zangle.getLocation());
-  if (mesh.LocalNz == 1)
-    return f; // Shifting makes no difference
-
-  Field3D result{emptyFrom(f)};
-
-  // We only use methods in ShiftedMetric to get fields for parallel operations
-  // like interp_to or DDY.
-  // Therefore we don't need x-guard cells, so do not set them.
-  // (Note valgrind complains about corner guard cells if we try to loop over
-  // the whole grid, because zShift is not initialized in the corner guard
-  // cells.)
-  BOUT_FOR(i, mesh.getRegion2D(toString(region))) {
-    shiftZ(&f(i, 0), mesh.LocalNz, zangle[i], &result(i, 0));
-  }
-
-  return result;
-}
-
-void ShiftedMetric::shiftZ(const BoutReal* in, int len, BoutReal zangle,
-                           BoutReal* out) const {
-  int nmodes = len / 2 + 1;
-
-  // Complex array used for FFTs
-  Array<dcomplex> cmplxLoc(nmodes);
-
-  // Take forward FFT
-  rfft(in, len, &cmplxLoc[0]);
-
-  // Apply phase shift
-  for (int jz = 1; jz < nmodes; jz++) {
-    BoutReal kwave = jz * 2.0 * PI / zlength; // wave number is 1/[rad]
-    cmplxLoc[jz] *= dcomplex(cos(kwave * zangle), -sin(kwave * zangle));
-  }
-
-  irfft(&cmplxLoc[0], len, out); // Reverse FFT
 }

@@ -45,9 +45,11 @@ class PetscLib;
 #ifndef __PETSCLIB_H__
 #define __PETSCLIB_H__
 
+#include "bout/build_config.hxx"
+
 class Options;
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 #include <petsc.h>
 #include <petscversion.h>

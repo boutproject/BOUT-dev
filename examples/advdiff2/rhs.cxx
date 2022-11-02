@@ -5,7 +5,7 @@
 
 int AdvDiff::rhs(BoutReal UNUSED(t)) {
   // Run communications
-  mesh->communicate(V);
+  V.getMesh()->communicate(V);
 
   ddt(V) = DDX(V);
 

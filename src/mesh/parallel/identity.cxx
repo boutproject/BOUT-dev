@@ -16,11 +16,15 @@ void ParallelTransformIdentity::calcParallelSlices(Field3D& f) {
     return;
   }
 
+  // Make a copy of f without the parallel slices
+  Field3D f_copy = f;
+  f_copy.clearParallelSlices();
+
   f.splitParallelSlices();
 
   for (int i = 0; i < f.getMesh()->ystart; ++i) {
-    f.yup(i) = f;
-    f.ydown(i) = f;
+    f.yup(i) = f_copy;
+    f.ydown(i) = f_copy;
   }
 }
 

@@ -11,6 +11,17 @@
 
 #include <output.hxx>
 
+EulerSolver::EulerSolver(Options* options)
+    : Solver(options), mxstep((*options)["mxstep"]
+                                  .doc("Maximum number of steps between outputs")
+                                  .withDefault(500)),
+      cfl_factor((*options)["cfl_factor"]
+                     .doc("Factor by which timestep must be smaller than maximum")
+                     .withDefault(2.)),
+      timestep((*options)["timestep"]
+                   .doc("Internal timestep (defaults to output timestep)")
+                   .withDefault(getOutputTimestep())) {}
+
 void EulerSolver::setMaxTimestep(BoutReal dt) {
   if(dt >= cfl_factor*timestep)
     return; // Already less than this
@@ -19,33 +30,24 @@ void EulerSolver::setMaxTimestep(BoutReal dt) {
   timestep_reduced = true;
 }
 
-int EulerSolver::init(int nout, BoutReal tstep) {
+int EulerSolver::init() {
   TRACE("Initialising Euler solver");
-  
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
-    return 1;
-  
-  output << "\n\tEuler solver\n";
 
-  nsteps = nout; // Save number of output steps
-  out_timestep = tstep;
-  
-  // Get options
-  OPTION(options, timestep, tstep);
-  OPTION(options, mxstep, 500); // Maximum number of steps between outputs
-  OPTION(options, cfl_factor, 2.);
+  Solver::init();
+
+  output << "\n\tEuler solver\n";
 
   // Calculate number of variables
   nlocal = getLocalN();
   
   // Get total problem size
   int neq;
-  if(MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed in EulerSolver::init");
   }
   
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
@@ -60,10 +62,10 @@ int EulerSolver::init(int nout, BoutReal tstep) {
 
 int EulerSolver::run() {
   TRACE("EulerSolver::run()");
-  
-  for(int s=0;s<nsteps;s++) {
-    BoutReal target = simtime + out_timestep;
-    
+
+  for (int s = 0; s < getNumberOutputSteps(); s++) {
+    BoutReal target = simtime + getOutputTimestep();
+
     bool running = true;
     int internal_steps = 0;
     do {
@@ -88,7 +90,8 @@ int EulerSolver::run() {
         newdt_local = timestep;
       
       BoutReal newdt;
-      if(MPI_Allreduce(&newdt_local, &newdt, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get())) {
+      if (bout::globals::mpi->MPI_Allreduce(&newdt_local, &newdt, 1, MPI_DOUBLE, MPI_MIN,
+                                            BoutComm::get())) {
         throw BoutException("MPI_Allreduce failed in EulerSolver::run");
       }
 
@@ -106,8 +109,9 @@ int EulerSolver::run() {
 
       internal_steps++;
       if(internal_steps > mxstep)
-        throw BoutException("ERROR: MXSTEP exceeded. simtime=%e, timestep = %e\n", simtime, timestep);
-      
+        throw BoutException("ERROR: MXSTEP exceeded. simtime={:e}, timestep = {:e}\n",
+                            simtime, timestep);
+
       // Call timestep monitors
       call_timestep_monitors(simtime, timestep);
       
@@ -119,13 +123,13 @@ int EulerSolver::run() {
     run_rhs(simtime);
     
     /// Call the monitor function
-    
-    if(call_monitors(simtime, s, nsteps)) {
+
+    if (call_monitors(simtime, s, getNumberOutputSteps())) {
       // Stop simulation
       break;
     }
   }
-  
+
   return 0;
 }
 

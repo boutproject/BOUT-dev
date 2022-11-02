@@ -78,6 +78,8 @@ public:
     BoundaryOpPar(region, value) {}
   BoundaryOpPar_dirichlet(BoundaryRegionPar *region, BoutReal value) :
     BoundaryOpPar(region, value) {}
+
+  using BoundaryOpPar::clone;
   BoundaryOpPar* clone(BoundaryRegionPar *region, const std::list<std::string> &args) override;
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) override;
 
@@ -98,6 +100,8 @@ public:
     BoundaryOpPar(region, value) {}
   BoundaryOpPar_dirichlet_O3(BoundaryRegionPar *region, BoutReal value) :
     BoundaryOpPar(region, value) {}
+
+  using BoundaryOpPar::clone;
   BoundaryOpPar* clone(BoundaryRegionPar *region, const std::list<std::string> &args) override;
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) override;
 
@@ -118,6 +122,8 @@ public:
     BoundaryOpPar(region, value) {}
   BoundaryOpPar_dirichlet_interp(BoundaryRegionPar *region, BoutReal value) :
     BoundaryOpPar(region, value) {}
+
+  using BoundaryOpPar::clone;
   BoundaryOpPar* clone(BoundaryRegionPar *region, const std::list<std::string> &args) override;
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) override;
 
@@ -138,6 +144,8 @@ public:
     BoundaryOpPar(region, value) {}
   BoundaryOpPar_neumann(BoundaryRegionPar *region, BoutReal value) :
     BoundaryOpPar(region, value) {}
+
+  using BoundaryOpPar::clone;
   BoundaryOpPar* clone(BoundaryRegionPar *region, const std::list<std::string> &args) override;
   BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) override;
 

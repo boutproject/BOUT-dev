@@ -5,8 +5,8 @@
 
 # settings used by the core code
 
-NOUT = 100    # number of time-steps
-TIMESTEP = 50 # time between outputs
+nout = 100    # number of time-steps
+timestep = 50 # time between outputs
 MXG = 2
 MYG = 0      # No y derivatives, so no guard cells needed in y
 
@@ -30,7 +30,7 @@ Bxy = 0.35
 Btxy = 0.0
 hthe = 1.0
 
-dx = 3.87747e-3 # 8 * rho_s * Rxy * Bxy
+dx = 0.00387747 # 8 * rho_s * Rxy * Bxy
 dy = 1.0
 
 
@@ -39,7 +39,7 @@ dy = 1.0
 
 [mesh:ddx]
 
-first = C2  
+first = C2
 second = C2
 upwind = W3
 
@@ -64,8 +64,8 @@ type = pvode
 #type = rk4
 timestep = 1
 
-ATOL = 1.0e-10  # absolute tolerance
-RTOL = 1.0e-5   # relative tolerance
+atol = 1e-10  # absolute tolerance
+rtol = 1e-05   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 
@@ -74,8 +74,8 @@ mxstep = 10000  # Maximum internal steps per output
 
 [GBS]
 
-ionvis  = false # Ion Viscosity
-Ti      = 10    # Ion temperature for viscosity cslculation
+ionvis = false # Ion Viscosity
+Ti = 10    # Ion temperature for viscosity cslculation
 elecvis = false # Electron viscosity
 resistivity = true
 
@@ -85,9 +85,9 @@ startprofiles = false # Start from profiles in input file
 
 # Normalisation paarameters
 Tnorm = 5     # Electron Temperature (eV)
-Nnorm = 2e18  # Background plasma density (m^-3)
+Nnorm = 2e+18  # Background plasma density (m^-3)
 Bnorm = 0.35  # Magnetic field [T]
-AA    = 2     # Ion atomic mass
+AA = 2     # Ion atomic mass
 
 # Cs=1.547399e+04, rho_s=9.232080e-04, Omega_ci=1.676111e+07
 
@@ -97,28 +97,28 @@ AA    = 2     # Ion atomic mass
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 bndry_all = neumann # Zero-gradient on all boundaries
 
 [Ne]  # Density
 evolve = true
-D = 1e-3 # Numerical diffusion
+D = 0.001 # Numerical diffusion
 
 scale = 1.0 # size of perturbation
 function = 1 + 0.27*gauss(x-0.25, 0.08333)*gauss(z-pi,0.52)
 
 [Te]
 evolve = true
-D = 1e-3
+D = 0.001
 
 scale = 1.0
-function =  1
+function = 1
 
 [Vort]
 evolve = true
-D = 1e-3
+D = 0.001
 
 function = 0
 
@@ -129,4 +129,3 @@ D = 10
 [Vi]
 evolve = false
 D = 10
-

@@ -30,28 +30,16 @@ using namespace bout::globals;
 // Reuse the "standard" fixture for FakeMesh
 using Field2DTest = FakeMeshFixture;
 
-TEST_F(Field2DTest, IsReal) {
-  Field2D field;
-
-  EXPECT_TRUE(field.isReal());
-}
-
 TEST_F(Field2DTest, Is3D) {
   Field2D field;
 
   EXPECT_FALSE(field.is3D());
 }
 
-TEST_F(Field2DTest, ByteSize) {
-  Field2D field;
-
-  EXPECT_EQ(field.byteSize(), sizeof(BoutReal));
-}
-
 TEST_F(Field2DTest, BoutRealSize) {
   Field2D field;
 
-  EXPECT_EQ(field.BoutRealSize(), 1);
+  EXPECT_EQ(field.elementSize(), 1);
 }
 
 TEST_F(Field2DTest, Allocate) {
@@ -535,7 +523,7 @@ TEST_F(Field2DTest, IterateOverRGN_XGUARDS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1]) = sentinel;
   }
 
@@ -578,7 +566,7 @@ TEST_F(Field2DTest, IterateOverRGN_YGUARDS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1]) = sentinel;
   }
 
@@ -620,7 +608,7 @@ TEST_F(Field2DTest, IterateOverRGN_ZGUARDS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1]) = sentinel;
   }
 
@@ -665,7 +653,7 @@ TEST_F(Field2DTest, IterateOverRGN_NOCORNERS) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1]) = sentinel;
   }
 
@@ -771,7 +759,7 @@ TEST_F(Field2DTest, ConstIndexingInd3D) {
   EXPECT_DOUBLE_EQ(field2[ind], 10);
 }
 
-#if CHECK > 2
+#if CHECK > 2 && !BOUT_USE_CUDA
 TEST_F(Field2DTest, CheckNotEmpty) {
   Field2D field;
 
@@ -820,9 +808,8 @@ TEST_F(Field2DTest, CheckData) {
   field(0, 0) = std::nan("");
 
   EXPECT_NO_THROW(checkData(field));
-  EXPECT_NO_THROW(checkData(field, RGN_NOBNDRY));
-  EXPECT_THROW(checkData(field, RGN_ALL), BoutException);
-
+  EXPECT_NO_THROW(checkData(field, "RGN_NOBNDRY"));
+  EXPECT_THROW(checkData(field, "RGN_ALL"), BoutException);
 }
 
 #if CHECK > 0
@@ -1312,8 +1299,8 @@ TEST_F(Field2DTest, Min) {
   const BoutReal min_value = 40.0;
 
   EXPECT_EQ(min(field, false), min_value);
-  EXPECT_EQ(min(field, false, RGN_ALL), -99.0);
-  EXPECT_EQ(min(field, true, RGN_ALL), -99.0);
+  EXPECT_EQ(min(field, false, "RGN_ALL"), -99.0);
+  EXPECT_EQ(min(field, true, "RGN_ALL"), -99.0);
 }
 
 TEST_F(Field2DTest, Max) {
@@ -1329,8 +1316,8 @@ TEST_F(Field2DTest, Max) {
   const BoutReal max_value = 60.0;
 
   EXPECT_EQ(max(field, false), max_value);
-  EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
-  EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
+  EXPECT_EQ(max(field, false, "RGN_ALL"), 99.0);
+  EXPECT_EQ(max(field, true, "RGN_ALL"), 99.0);
 }
 
 TEST_F(Field2DTest, Swap) {
@@ -1485,4 +1472,11 @@ TEST_F(Field2DTest, ZeroFrom) {
   EXPECT_TRUE(field2.isAllocated());
   EXPECT_TRUE(IsFieldEqual(field2, 0.));
 }
+
+TEST_F(Field2DTest, DC) {
+  Field2D field =
+      makeField<Field2D>([](const Ind2D& i) -> BoutReal { return i.x() * i.y(); });
+  EXPECT_EQ(DC(field), field);
+}
+
 #pragma GCC diagnostic pop

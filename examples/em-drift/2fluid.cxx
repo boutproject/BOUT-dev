@@ -47,10 +47,10 @@ private:
   FieldGroup comms;
 
   // Inverts a Laplacian to get potential
-  Laplacian *phiSolver;
+  std::unique_ptr<Laplacian> phiSolver;
   
   // Solves the electromagnetic potential
-  Laplacian *aparSolver;
+  std::unique_ptr<Laplacian> aparSolver;
   Field2D acoef; // Coefficient in the Helmholtz equation
   
   int init(bool UNUSED(restarting)) override {
@@ -86,8 +86,8 @@ private:
 
     /*************** READ OPTIONS *************************/
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["2fluid"];
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["2fluid"];
 
     AA = options["AA"].withDefault(2.0);
     ZZ = options["ZZ"].withDefault(1.0);
@@ -96,7 +96,7 @@ private:
     ZeroElMass = options["ZeroElMass"].withDefault(false);
     AparInEpar = options["AparInEpar"].withDefault(true);
 
-    zeff = options["zeff"].withDefault(1.0);
+    zeff = options["Zeff"].withDefault(1.0);
     nu_perp = options["nu_perp"].withDefault(0.0);
     ShearFactor = options["ShearFactor"].withDefault(1.0);
     nu_factor = options["nu_factor"].withDefault(1.0);
@@ -110,7 +110,8 @@ private:
     /************* SHIFTED RADIAL COORDINATES ************/
 
     // Check type of parallel transform
-    std::string ptstr =  Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
+                                       .withDefault<std::string>("identity");
 
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0; // I disappears from metric
@@ -130,8 +131,9 @@ private:
 
     if (nu_perp < 1.e-10) {
       mui_hat = (3. / 10.) * nuiix / wci;
-    } else
+    } else {
       mui_hat = nu_perp;
+    }
 
     if (estatic) {
       beta_p = 1.e-29;
@@ -141,20 +143,20 @@ private:
 
     Vi_x = wci * rho_s;
 
-    output.write("Normalisation: rho_s = %e  wci = %e  beta_p = %e\n", rho_s, wci,
+    output.write("Normalisation: rho_s = {:e}  wci = {:e}  beta_p = {:e}\n", rho_s, wci,
                  beta_p);
 
     /************** PRINT Z INFORMATION ******************/
 
     BoutReal hthe0;
     if (mesh->get(hthe0, "hthe0") == 0) {
-      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n",
+      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n",
                    hthe0 / rho_s);
     }
 
     /************** NORMALISE QUANTITIES *****************/
 
-    output.write("\tNormalising to rho_s = %e\n", rho_s);
+    output.write("\tNormalising to rho_s = {:e}\n", rho_s);
 
     // Normalise profiles
     Ni0 /= Ni_x / 1.0e14;
@@ -226,13 +228,15 @@ private:
     SAVE_ONCE(Te_x, Ti_x, Ni_x, rho_s, wci, zeff, AA);
     
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create(&options["phiSolver"]);
+    phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
 
     if (! (estatic || ZeroElMass)) {
       // Create a solver for the electromagnetic potential
-      aparSolver = Laplacian::create(&options["aparSolver"]);
+      aparSolver = Laplacian::create(&globalOptions["aparSolver"]);
       acoef = (-0.5 * beta_p / fmei) * Ni0;
       aparSolver->setCoefA(acoef);
+    } else {
+      globalOptions["aparSolver"].setConditionallyUsed();
     }
     
     return 0;

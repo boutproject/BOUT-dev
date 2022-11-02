@@ -110,16 +110,31 @@ To see some of the other command-line options try "-h"::
 
 and see the section on options (:ref:`sec-options`).
 
+There is also a python tool called |bout_runners|_ which can be used for executing ``BOUT++`` runs.
+In addition, this tool can be used to
+
+-  programmatically change parameters of a project in python
+
+-  keep track of all the metadata of the runs of the project
+
+-  automate the orchestration (including pre- and post-processing routines) of chains of runs locally or on a cluster
+
 To analyse the output of the simulation, cd into the ``data``
 subdirectory and start Python.
 
-Analysing the output Using python
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. |bout_runners| replace:: ``bout_runners``
+.. _bout_runners: https://pypi.org/project/bout-runners/
 
-.. note:: We now recommend using `xBOUT
-          <https://xbout.readthedocs.io/en/latest>` to analyse BOUT++
-          simulations.
+Analysing the output using Python
+---------------------------------
 
+The recommended tool for analysing BOUT++ output is xBOUT, a Python library
+that provides analysis, plotting and animation with human-readable syntax (no
+magic numbers!) using `xarray <http://xarray.pydata.org/en/stable/>`_. See the
+xBOUT documentation
+`xbout.readthedocs.io <https://xbout.readthedocs.io/en/latest/>`_.
+
+There is also an older set of NumPy-based Python tools, described below.
 In order to analyse the output of the simulation using Python, you
 will first need to have set up python to use the BOUT++ libraries
 ``boutdata`` and ``boututils``; see section
@@ -128,14 +143,14 @@ some requirements such as SciPy; see section
 :ref:`sec-python-requirements` for details.
 
 To print a list of variables in the output files, one way is to use the ``DataFile``
-class. This is a wrapper around the various NetCDF and HDF5 libraries for python:
+class. This is a wrapper around the various NetCDF libraries for python:
 
 .. code-block:: pycon
 
     >>> from boututils.datafile import DataFile
     >>> DataFile("BOUT.dmp.0.nc").list()
 
-To collect a variable, reading in the data as a NumPy array:
+To collect a variable, reading in the data as a NumPy-like ``BoutArray`` array:
 
 .. code-block:: pycon
 
@@ -144,8 +159,11 @@ To collect a variable, reading in the data as a NumPy array:
     >>> T.shape
 
 Note that the order of the indices is different in Python and IDL: In
-Python, 4D variables are arranged as ``[t, x, y, z]``. To show an
-animation
+Python, 4D variables are arranged as ``[t, x, y, z]``.
+
+``BoutArray`` as a thin wrapper for ``numpy.ndarray`` which adds BOUT++ attributes.
+
+To show an animation
 
 .. code-block:: pycon
 
@@ -462,7 +480,7 @@ starts::
     Run started at  : Tue 07 Dec 2021 17:50:39 GMT
 
 The ``Run ID`` here is a `universally unique identifier
-<https://en.wikipedia.org/wiki/Universally_unique_identifier>` (UUID)
+<https://en.wikipedia.org/wiki/Universally_unique_identifier>`_ (UUID)
 which is a random 128-bit label unique to this current
 simulation. This makes it easier to identify all of the associated
 outputs of a simulation, and record the data for future reference.
@@ -536,9 +554,9 @@ it never will be (regardless of the values of ``restart`` and ``append``).
 
 If you need to restart from a different point in your simulation, or
 the ``BOUT.restart`` files become corrupted, you can use `xBOUT
-<https://xbout.readthedocs.io/en/latest>` to create new restart files
+<https://xbout.readthedocs.io/en/latest>`_ to create new restart files
 from any time-point in your output files. Use the `.to_restart()
-<https://xbout.readthedocs.io/en/latest/xbout.html#xbout.boutdataset.BoutDatasetAccessor.to_restart>`
+<https://xbout.readthedocs.io/en/latest/xbout.html#xbout.boutdataset.BoutDatasetAccessor.to_restart>`_
 method:
 
 .. code-block:: pycon
@@ -656,3 +674,4 @@ then the BOUT++ restart will fail.
 **Note** It is a good idea to set ``nxpe`` in the ``BOUT.inp`` file to be consistent with
 what you set here. If it is inconsistent then the restart will fail, but the error message may
 not be particularly enlightening.
+

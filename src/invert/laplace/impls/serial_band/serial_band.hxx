@@ -29,14 +29,31 @@ class LaplaceSerialBand;
 #ifndef __SERIAL_BAND_H__
 #define __SERIAL_BAND_H__
 
-#include <invert_laplace.hxx>
+#include "invert_laplace.hxx"
+#include "bout/build_config.hxx"
+
+#if BOUT_USE_METRIC_3D
+
+namespace {
+RegisterUnavailableLaplace
+    registerlaplaceserialband(LAPLACE_BAND, "BOUT++ was configured with 3D metrics");
+}
+
+#else
+
 #include <dcomplex.hxx>
 #include <options.hxx>
 #include <utils.hxx>
 
+namespace {
+RegisterLaplace<LaplaceSerialBand> registerlaplaceserialband(LAPLACE_BAND);
+}
+
 class LaplaceSerialBand : public Laplacian {
 public:
-  LaplaceSerialBand(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplaceSerialBand(Options* opt = nullptr, const CELL_LOC = CELL_CENTRE,
+                    Mesh* mesh_in = nullptr, Solver* solver = nullptr,
+                    Datafile* dump = nullptr);
   ~LaplaceSerialBand(){};
   
   using Laplacian::setCoefA;
@@ -75,5 +92,7 @@ private:
   Matrix<dcomplex> bk, xk, A;
   Array<dcomplex> bk1d, xk1d;
 };
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // __SERIAL_BAND_H__

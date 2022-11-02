@@ -25,24 +25,26 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <globals.hxx>
 #include <options.hxx>
 #include <fft.hxx>
 #include <unused.hxx>
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
 
 #include <fftw3.h>
 #include <cmath>
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP
 #include <omp.h>
-#endif
+#endif // _OPENMP
 #else
 #include <boutexception.hxx>
-#endif
+#endif // BOUT_HAS_FFTW
 
 namespace bout {
 namespace fft {
@@ -59,37 +61,29 @@ void fft_init(Options* options) {
   if (options == nullptr) {
     options = Options::getRoot()->getSection("fft");
   }
-  bool fft_measure = (*options)["fft_measure"]
-                    .doc("Perform speed measurements to optimise settings?")
-                    .withDefault(false);
   fft_measurement_flag = (*options)["fft_measurement_flag"]
                     .doc("Level speed measurements to optimise FFT settings: [estimate], measure, exhaustive")
                     .withDefault(FFT_MEASUREMENT_FLAG::estimate);
 
-  if ((*options)["fft_measure"].isSet()) {
-    output << "WARNING: fft_measure is deprecated and will be removed in BOUT++ v5.0. "
-           << "Use fft_measurement_flag instead." << std::endl;
-    if ((*options)["fft_measurement_flag"].isSet()) {
-      throw BoutException("Cannot set both fft_measure and fft_measurement_flag");
-    }
-    fft_init(fft_measure);
-  } else {
-    fft_init(fft_measurement_flag);
-  }
+  fft_init(fft_measurement_flag);
 }
 
+#if BOUT_HAS_FFTW
+namespace {
 unsigned int get_measurement_flag(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
   switch (fft_measurement_flag) {
-    case FFT_MEASUREMENT_FLAG::estimate:
-      return FFTW_ESTIMATE;
-    case FFT_MEASUREMENT_FLAG::measure:
-      return FFTW_MEASURE;
-    case FFT_MEASUREMENT_FLAG::exhaustive:
-      return FFTW_EXHAUSTIVE;
-    default:
-      throw BoutException("Error, unimplemented fft_measurement_flag");
+  case FFT_MEASUREMENT_FLAG::estimate:
+    return FFTW_ESTIMATE;
+  case FFT_MEASUREMENT_FLAG::measure:
+    return FFTW_MEASURE;
+  case FFT_MEASUREMENT_FLAG::exhaustive:
+    return FFTW_EXHAUSTIVE;
+  default:
+    throw BoutException("Error, unimplemented fft_measurement_flag");
   }
 }
+} // namespace
+#endif
 
 void fft_init(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
   bout::fft::fft_measurement_flag = fft_measurement_flag;
@@ -109,10 +103,10 @@ void fft_init(bool fft_measure) {
  * Real FFTs
  ***********************************************************/
 
-#ifndef _OPENMP
+#if !BOUT_USE_OPENMP
 // Serial code
 void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   // static variables initialized once
@@ -134,13 +128,13 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
     fft_init();
 
     // Initialize the input for the fourier transformation
-    fin = (double*) fftw_malloc(sizeof(double) * length);
+    fin = static_cast<double*>(fftw_malloc(sizeof(double) * length));
     // Initialize the output of the fourier transformation
     /* NOTE: Only the non-redundant output is given
      *       I.e the offset and the positive frequencies (so no mirroring
      *       around the Nyquist frequency)
      */
-    fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1));
+    fout = static_cast<fftw_complex*>(fftw_malloc(sizeof(fftw_complex) * (length/2 + 1)));
 
     auto flags = get_measurement_flag(fft_measurement_flag);
 
@@ -162,7 +156,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
   fftw_execute(p);
   
   //Normalising factor
-  const BoutReal fac = 1.0/((double) n);
+  const BoutReal fac = 1.0 / n;
   const int nmodes = (n/2) + 1;
 
   // Store the output in out, and normalize
@@ -172,7 +166,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
 }
 
 void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   // static variables initialized once
@@ -198,9 +192,9 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
      *       I.e the offset and the positive frequencies (so no mirroring
      *       around the Nyquist frequency)
      */
-    fin = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1));
+    fin = static_cast<fftw_complex*>(fftw_malloc(sizeof(fftw_complex) * (length/2 + 1)));
     // Initialize the output of the fourier transformation
-    fout = (double*) fftw_malloc(sizeof(double) * length);
+    fout = static_cast<double*>(fftw_malloc(sizeof(double) * length));
 
     auto flags = get_measurement_flag(fft_measurement_flag);
 
@@ -229,13 +223,14 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
     out[i] = fout[i];
 #endif
 }
-
 #else
 // Parallel thread-safe version of rfft and irfft
 void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
+  // ensure we are not nested
+  ASSERT1(omp_get_active_level() < 2);
   static double *finall;
   static fftw_complex *foutall;
   static fftw_plan *p;
@@ -305,7 +300,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
 }
 
 void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   static fftw_complex *finall;
@@ -374,11 +369,10 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
 #endif
 }
 #endif
-
 //  Discrete sine transforms (B Shanahan)
 
 void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   static double *fin;
@@ -433,7 +427,7 @@ void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSE
 }
 
 void DST_rev(MAYBE_UNUSED(dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   static fftw_complex *fin;

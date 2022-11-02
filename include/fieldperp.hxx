@@ -144,12 +144,12 @@ class FieldPerp : public Field {
   FieldPerp& setIndexFromGlobal(int y_global);
 
   // these methods return FieldPerp to allow method chaining
-  FieldPerp& setLocation(CELL_LOC new_location) {
+  FieldPerp& setLocation(CELL_LOC new_location) override {
     Field::setLocation(new_location);
     return *this;
   }
-  FieldPerp& setDirectionY(YDirectionType d) {
-    directions.y = d;
+  FieldPerp& setDirectionY(YDirectionType d) override {
+    Field::setDirectionY(d);
     return *this;
   }
 
@@ -198,8 +198,8 @@ class FieldPerp : public Field {
       throw BoutException("FieldPerp: () operator on empty data");
     if((jx < 0) || (jx >= nx) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("FieldPerp: (%d, %d) operator out of bounds (%d, %d)", 
-			  jx, jz, nx, nz);
+      throw BoutException("FieldPerp: ({:d}, {:d}) operator out of bounds ({:d}, {:d})",
+                          jx, jz, nx, nz);
 #endif
     return data[jx*nz + jz];
   }
@@ -214,8 +214,8 @@ class FieldPerp : public Field {
       throw BoutException("FieldPerp: () operator on empty data");
     if((jx < 0) || (jx >= nx) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("FieldPerp: (%d, %d) operator out of bounds (%d, %d)", 
-			  jx, jz, nx, nz);
+      throw BoutException("FieldPerp: ({:d}, {:d}) operator out of bounds ({:d}, {:d})",
+                          jx, jz, nx, nz);
 #endif
     return data[jx*nz + jz];
   }
@@ -277,7 +277,11 @@ class FieldPerp : public Field {
    * Return the number of nz points
    */
   int getNz() const override {return nz;};
-  
+
+  bool is3D() const override { return false; }
+
+  friend void swap(FieldPerp& first, FieldPerp& second) noexcept;
+
 private:
   /// The Y index at which this FieldPerp is defined
   int yindex{-1};
@@ -336,16 +340,8 @@ inline FieldPerp emptyFrom<FieldPerp>(const FieldPerp& f) {
 
 #if CHECK > 0
 void checkData(const FieldPerp &f, const std::string& region = "RGN_NOX");
-[[deprecated("Please use checkData(const FieldPerp& f, "
-    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
-inline void checkData(const FieldPerp &f, REGION region) {
-  return checkData(f, toString(region));
-}
 #else
 inline void checkData(const FieldPerp &UNUSED(f), const std::string& UNUSED(region) = "RGN_NOX") {}
-[[deprecated("Please use checkData(const FieldPerp& f, "
-    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
-inline void checkData(const FieldPerp &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 
 /// Force guard cells of passed field \p var to NaN

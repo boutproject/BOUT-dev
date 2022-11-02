@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     for(int i=0;i<n;i++) {
       T val = ((mype*n + i) % 4) - 2.;
       output << "\t" << i << " : " << val << " ?= " << x(s, i) << endl;
-      if(abs(val - x(s, i)) > tol) {
+      if(std::abs(val - x(s, i)) > tol) {
         passed = 0;
       }
     }
@@ -107,21 +107,15 @@ int main(int argc, char **argv) {
   int allpassed;
   MPI_Allreduce(&passed, &allpassed, 1, MPI_INT, MPI_MIN, BoutComm::get());
 
-  // Saving state to file
-  SAVE_ONCE(allpassed);
-
   output << "******* Cyclic test case: ";
   if(allpassed) {
     output << "PASSED" << endl;
   }else
     output << "FAILED" << endl;
 
-  // Write data to file
-  dump.write();
-  dump.close();
-
   MPI_Barrier(BoutComm::get());
 
+  bout::checkForUnusedOptions();
   BoutFinalise();
-  return 0;
+  return allpassed;
 }

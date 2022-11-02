@@ -1,4 +1,6 @@
-#ifdef BOUT_HAS_SLEPC
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_SLEPC
 
 #include <bout/slepclib.hxx>
 #include <output.hxx>

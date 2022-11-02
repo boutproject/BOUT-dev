@@ -43,7 +43,7 @@ private:
   bool compressible; ///< If allow inclusion of n grad phi term in density evolution
   bool sheath;       ///< Sheath connected?
 
-  Laplacian *phiSolver; ///< Performs Laplacian inversions to calculate phi
+  std::unique_ptr<Laplacian> phiSolver{nullptr}; ///< Performs Laplacian inversions to calculate phi
 
 protected:
   int init(bool UNUSED(restarting)) {
@@ -85,22 +85,31 @@ protected:
     c_s = sqrt(e * Te0 / m_i); // Bohm sound speed
     rho_s = c_s / Omega_i;     // Bohm gyro-radius
 
-    output.write("\n\n\t----------Parameters: ------------ \n\tOmega_i = %e /s,\n\tc_s = "
-                 "%e m/s,\n\trho_s = %e m\n",
+    output.write("\n\n\t----------Parameters: ------------ \n\tOmega_i = {:e} /s,\n\tc_s = "
+                 "{:e} m/s,\n\trho_s = {:e} m\n",
                  Omega_i, c_s, rho_s);
 
     // Calculate delta_*, blob size scaling
-    output.write("\tdelta_* = rho_s * (dn/n) * %e ",
+    output.write("\tdelta_* = rho_s * (dn/n) * {:e} ",
                  pow(L_par * L_par / (R_c * rho_s), 1. / 5));
 
     /************ Create a solver for potential ********/
 
+    Options& boussinesq_options = Options::root()["phiBoussinesq"];
+    Options& non_boussinesq_options = Options::root()["phiSolver"];
+
     if (boussinesq) {
-       // BOUT.inp section "phiBoussinesq"
-      phiSolver = Laplacian::create(Options::getRoot()->getSection("phiBoussinesq"));
+      // BOUT.inp section "phiBoussinesq"
+      phiSolver = Laplacian::create(&boussinesq_options);
+      // Mark other section as conditionally used so we don't get errors from unused
+      // options
+      non_boussinesq_options.setConditionallyUsed();
     } else {
       // BOUT.inp section "phiSolver"
-      phiSolver = Laplacian::create(Options::getRoot()->getSection("phiSolver")); 
+      phiSolver = Laplacian::create(&non_boussinesq_options);
+      // Mark other section as conditionally used so we don't get errors from unused
+      // options
+      boussinesq_options.setConditionallyUsed();
     }
     phi = 0.0; // Starting guess for first solve (if iterative)
 
@@ -138,9 +147,9 @@ protected:
     // Density Evolution
     /////////////////////////////////////////////////////////////////////////////
 
-    ddt(n) = -bracket(phi, n, BRACKET_SIMPLE) // ExB term
-             + 2 * DDZ(n) * (rho_s / R_c)     // Curvature term
-             + D_n * Delp2(n);                // Diffusion term
+    ddt(n) = -bracket(phi, n, BRACKET_ARAKAWA) // ExB term
+             + 2 * DDZ(n) * (rho_s / R_c)      // Curvature term
+             + D_n * Delp2(n);                 // Diffusion term
     if (compressible) {
       ddt(n) -= 2 * n * DDZ(phi) * (rho_s / R_c); // ExB Compression term
     }
@@ -153,9 +162,9 @@ protected:
     // Vorticity evolution
     /////////////////////////////////////////////////////////////////////////////
 
-    ddt(omega) = -bracket(phi, omega, BRACKET_SIMPLE) // ExB term
-                 + 2 * DDZ(n) * (rho_s / R_c) / n     // Curvature term
-                 + D_vort * Delp2(omega) / n          // Viscous diffusion term
+    ddt(omega) = -bracket(phi, omega, BRACKET_ARAKAWA) // ExB term
+                 + 2 * DDZ(n) * (rho_s / R_c) / n      // Curvature term
+                 + D_vort * Delp2(omega) / n           // Viscous diffusion term
         ;
 
     if (sheath) {

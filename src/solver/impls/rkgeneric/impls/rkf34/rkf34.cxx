@@ -1,14 +1,12 @@
 #include "rkf34.hxx"
 
-RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
+RKF34Scheme::RKF34Scheme(Options* options) : RKScheme(options, false) {
   //Set characteristics of scheme
   numStages = 5;
   numOrders = 2;
   order = 3;
   label = "rkf34";
-  followHighOrder = false;//true;
 
-  OPTION(options, followHighOrder, followHighOrder);
   if(followHighOrder){
     dtfac = 0.9;
   }else{
@@ -83,5 +81,4 @@ RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
   timeCoeffs[3] = 6.0/7.0;
   //Level 4
   timeCoeffs[4] = 1.0;
-
 }

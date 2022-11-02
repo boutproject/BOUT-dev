@@ -1,5 +1,6 @@
+#include "bout/build_config.hxx"
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 #include "snes.hxx"
 
@@ -23,7 +24,7 @@
  * to an SNESSolver object.
  */
 static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void* ctx) {
-  return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
+  return static_cast<SNESSolver*>(ctx)->snes_function(x, f, false);
 }
 
 /*!
@@ -32,7 +33,7 @@ static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void* ctx) {
  * This function can be a linearised form of FormFunction
  */
 static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
-  return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
+  return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
 
 /*!
@@ -42,7 +43,7 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  */
 static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
                                               void* ctx) {
-  return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
+  return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
 
 static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
@@ -56,21 +57,75 @@ static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
-SNESSolver::SNESSolver(Options* opt)
-    : Solver(opt), lib((opt == nullptr) ? &(Options::root()["solver"]) : opt) {}
+SNESSolver::SNESSolver(Options* opts)
+    : Solver(opts),
+      timestep(
+          (*options)["timestep"].doc("Initial backward Euler timestep").withDefault(1.0)),
+      dt_min_reset((*options)["dt_min_reset"]
+                       .doc("If dt falls below this, reset to starting dt")
+                       .withDefault(1e-6)),
+      max_timestep((*options)["max_timestep"].doc("Maximum timestep").withDefault(1e37)),
+      snes_type((*options)["snes_type"]
+                    .doc("PETSc nonlinear solver method to use")
+                    .withDefault("anderson")),
+      atol((*options)["atol"].doc("Absolute tolerance in SNES solve").withDefault(1e-16)),
+      rtol((*options)["rtol"].doc("Relative tolerance in SNES solve").withDefault(1e-10)),
+      stol((*options)["stol"]
+               .doc("Convergence tolerance in terms of the norm of the change in "
+                    "the solution between steps")
+               .withDefault(1e-8)),
+      maxits((*options)["max_nonlinear_iterations"]
+                 .doc("Maximum number of nonlinear iterations per SNES solve")
+                 .withDefault(50)),
+      lower_its((*options)["lower_its"]
+                    .doc("Iterations below which the next timestep is increased")
+                    .withDefault(static_cast<int>(maxits * 0.5))),
+      upper_its((*options)["upper_its"]
+                    .doc("Iterations above which the next timestep is reduced")
+                    .withDefault(static_cast<int>(maxits * 0.8))),
+      diagnose(
+          (*options)["diagnose"].doc("Print additional diagnostics").withDefault(false)),
+      diagnose_failures((*options)["diagnose_failures"]
+                            .doc("Print more diagnostics when SNES fails")
+                            .withDefault<bool>(false)),
+      equation_form(
+          (*options)["equation_form"]
+              .doc("Form of equation to solve: rearranged_backward_euler (default);"
+                   " pseudo_transient; backward_euler; direct_newton")
+              .withDefault(BoutSnesEquationForm::rearranged_backward_euler)),
+      predictor((*options)["predictor"].doc("Use linear predictor?").withDefault(true)),
+      use_precon((*options)["use_precon"]
+                     .doc("Use user-supplied preconditioner?")
+                     .withDefault<bool>(false)),
+      ksp_type((*options)["ksp_type"]
+                   .doc("Linear solver type. By default let PETSc decide (gmres)")
+                   .withDefault("default")),
+      kspsetinitialguessnonzero((*options)["kspsetinitialguessnonzero"]
+                                    .doc("Set the initial guess to be non-zero")
+                                    .withDefault<bool>(false)),
+      maxl((*options)["maxl"].doc("Maximum number of linear iterations").withDefault(20)),
+      pc_type(
+          (*options)["pc_type"]
+              .doc("Preconditioner type. By default lets PETSc decide (ilu or bjacobi)")
+              .withDefault("default")),
+      line_search_type((*options)["line_search_type"]
+                           .doc("Line search type: basic, bt, l2, cp, nleqerr")
+                           .withDefault("default")),
+      matrix_free((*options)["matrix_free"]
+                      .doc("Use matrix free Jacobian?")
+                      .withDefault<bool>(false)),
+      lag_jacobian((*options)["lag_jacobian"]
+                       .doc("Re-use the Jacobian this number of SNES iterations")
+                       .withDefault(50)),
+      use_coloring((*options)["use_coloring"]
+                       .doc("Use matrix coloring to calculate Jacobian?")
+                       .withDefault<bool>(true)) {}
 
-int SNESSolver::init(int nout, BoutReal tstep) {
+int SNESSolver::init() {
 
   TRACE("Initialising SNES solver");
 
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep) != 0) {
-    return 1;
-  }
-
-  out_timestep = tstep; // Output timestep
-  nsteps = nout;        // Save number of output steps
-
+  Solver::init();
   output << "\n\tSNES steady state solver\n";
 
   // Calculate number of variables
@@ -78,32 +133,15 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
   // Get total problem size
   int ntmp;
-  if (MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed!");
   }
   neq = ntmp;
-  
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
-	       n3Dvars(), n2Dvars(), neq, nlocal);
 
-  timestep =
-      (*options)["timestep"].doc("Initial backward Euler timestep").withDefault(1.0);
+  output_info.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
+                    n3Dvars(), n2Dvars(), neq, nlocal);
 
-  dt_min_reset = (*options)["dt_min_reset"]
-                   .doc("If dt falls below this, reset to starting dt")
-                   .withDefault(1e-6);
-
-  diagnose =
-      (*options)["diagnose"].doc("Print additional diagnostics").withDefault<bool>(false);
-
-  predictor =
-      (*options)["predictor"].doc("Use linear predictor?").withDefault<bool>(true);
-
-  equation_form = (*options)["equation_form"]
-    .doc("Form of equation to solve: Pseudo-transient;"
-         " Rearranged Backward-Euler; Backward Euler;"
-         " Direct Newton")
-    .withDefault(BoutSnesEquationForm::rearranged_backward_euler);
   // Initialise PETSc components
   int ierr;
 
@@ -134,13 +172,9 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   // Set the callback function
   SNESSetFunction(snes, snes_f, FormFunction, this);
 
-  std::string snes_type = (*options)["snes_type"].withDefault("newtonls");
   SNESSetType(snes, snes_type.c_str());
 
   // Line search
-  std::string line_search_type = (*options)["line_search_type"]
-    .doc("Line search type: basic, bt, l2, cp, nleqerr")
-    .withDefault("default");
   if (line_search_type != "default") {
     SNESLineSearch linesearch;
     SNESGetLineSearch(snes, &linesearch);
@@ -148,8 +182,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   }
 
   // Set up the Jacobian
-  bool matrix_free =
-      (*options)["matrix_free"].doc("Use matrix free Jacobian?").withDefault<bool>(false);
   if (matrix_free) {
     /*
       PETSc SNES matrix free Jacobian, using a different
@@ -172,11 +204,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
   } else {
     // Calculate the Jacobian using finite differences
-
-    bool use_coloring = (*options)["use_coloring"]
-                            .doc("Use matrix coloring to calculate Jacobian?")
-                            .withDefault<bool>(true);
-
     if (use_coloring) {
       // Use matrix coloring
       // This greatly reduces the number of times the rhs() function needs
@@ -191,6 +218,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
       //////////////////////////////////////////////////
       // Pre-allocate PETSc storage
+
+      output_progress.write("Setting Jacobian matrix sizes\n");
 
       int localN = getLocalN(); // Number of rows on this processor
       int n2d = f2d.size();
@@ -281,6 +310,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
         // z = 0 case
         int localIndex = ROUND(index(x, mesh->ystart, 0));
+        ASSERT2(localIndex >= 0);
+
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
           o_nnz[localIndex + i] += (n3d + n2d);
@@ -317,6 +348,10 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
         // z = 0 case
         int localIndex = ROUND(index(it.ind, mesh->ystart, 0));
+        if (localIndex < 0) {
+          // This can occur because it.ind includes values in x boundary e.g. x=0
+          continue;
+        }
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
           o_nnz[localIndex + i] -= (n3d + n2d);
@@ -337,6 +372,10 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
         // z = 0 case
         int localIndex = ROUND(index(it.ind, mesh->yend, 0));
+        if (localIndex < 0) {
+          continue; // Out of domain
+        }
+
         // All 2D and 3D fields
         for (int i = 0; i < n2d + n3d; i++) {
           o_nnz[localIndex + i] -= (n3d + n2d);
@@ -351,6 +390,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
           }
         }
       }
+
+      output_progress.write("Pre-allocating Jacobian\n");
 
       // Pre-allocate
       MatMPIAIJSetPreallocation(Jmf, 0, d_nnz.data(), 0, o_nnz.data());
@@ -369,6 +410,8 @@ int SNESSolver::init(int nout, BoutReal tstep) {
 
       //////////////////////////////////////////////////
       // Mark non-zero entries
+
+      output_progress.write("Marking non-zero Jacobian entries\n");
 
       // Offsets for a 5-point pattern
       constexpr std::size_t stencil_size = 5;
@@ -485,9 +528,13 @@ int SNESSolver::init(int nout, BoutReal tstep) {
       }
       // Finished marking non-zero entries
 
+      output_progress.write("Assembling Jacobian matrix\n");
+
       // Assemble Matrix
       MatAssemblyBegin(Jmf, MAT_FINAL_ASSEMBLY);
       MatAssemblyEnd(Jmf, MAT_FINAL_ASSEMBLY);
+
+      output_progress.write("Creating Jacobian coloring\n");
 
       ISColoring iscoloring;
 
@@ -530,10 +577,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
     }
 
     // Re-use Jacobian
-    const int lag_jacobian =
-        (*options)["lag_jacobian"]
-            .doc("Re-use the Jacobian this number of SNES iterations")
-            .withDefault(50);
     SNESSetLagJacobian(snes, lag_jacobian);
     // Set Jacobian and preconditioner to persist across time steps
     SNESSetLagJacobianPersists(snes, PETSC_TRUE);
@@ -542,26 +585,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   }
 
   // Set tolerances
-  BoutReal atol =
-      (*options)["atol"].doc("Absolute tolerance in SNES solve").withDefault(1e-12);
-  BoutReal rtol =
-      (*options)["rtol"].doc("Relative tolerance in SNES solve").withDefault(1e-5);
-  BoutReal stol = (*options)["stol"]
-    .doc("Convergence tolerance in terms of the norm of the change in the solution between steps")
-    .withDefault(1e-8);
-
-  int maxits = (*options)["max_nonlinear_iterations"]
-                   .doc("Maximum number of nonlinear iterations per SNES solve")
-                   .withDefault(20);
-
-  upper_its = (*options)["upper_its"]
-                  .doc("Iterations above which the next timestep is reduced")
-                  .withDefault(static_cast<int>(maxits * 0.8));
-
-  lower_its = (*options)["lower_its"]
-                  .doc("Iterations below which the next timestep is increased")
-                  .withDefault(static_cast<int>(maxits * 0.5));
-
   SNESSetTolerances(snes, atol, rtol, stol, maxits, PETSC_DEFAULT);
 
   // Force SNES to take at least one nonlinear iteration.
@@ -570,30 +593,19 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   SNESSetForceIteration(snes, PETSC_TRUE);
 #endif
 
-  bool use_precon =
-      (*options)["use_precon"].doc("Use user-supplied preconditioner?").withDefault<bool>(false);
-
   // Get KSP context from SNES
   KSP ksp;
   SNESGetKSP(snes, &ksp);
 
-  std::string ksp_type = (*options)["ksp_type"]
-    .doc("Linear solver type. By default let PETSc decide (gmres)")
-    .withDefault("default");
   if (ksp_type != "default") {
     KSPSetType(ksp, ksp_type.c_str());
   }
 
-  bool kspsetinitialguessnonzero = (*options)["kspsetinitialguessnonzero"]
-                                       .doc("Set the initial guess to be non-zero")
-                                       .withDefault<bool>(false);
   if (kspsetinitialguessnonzero) {
     // Set the initial guess to be non-zero
     KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
   }
 
-  int maxl =
-      (*options)["maxl"].doc("Maximum number of linear iterations").withDefault(20);
   KSPSetTolerances(ksp,
                    PETSC_DEFAULT, // rtol
                    PETSC_DEFAULT, // abstol
@@ -605,7 +617,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   KSPGetPC(ksp, &pc);
 
   if (use_precon && hasPreconditioner()) {
-    output.write("\tUsing user-supplied preconditioner\n");
+    output_info.write("\tUsing user-supplied preconditioner\n");
 
     // Set a Shell (matrix-free) preconditioner type
     PCSetType(pc, PCSHELL);
@@ -619,10 +631,6 @@ int SNESSolver::init(int nout, BoutReal tstep) {
     PCSetType(pc, PCNONE);
   } else {
     // Set PC type from input
-    std::string pc_type = (*options)["pc_type"]
-      .doc("Preconditioner type. By default lets PETSc decide (ilu or bjacobi)")
-      .withDefault("default");
-
     if (pc_type != "default") {
       PCSetType(pc, pc_type.c_str());
     }
@@ -639,12 +647,12 @@ int SNESSolver::init(int nout, BoutReal tstep) {
     KSPGetType(ksp, &ksptype);
     SNESType snestype;
     SNESGetType(snes, &snestype);
-    output.write("SNES Type : %s\n", snestype);
+    output_info.write("SNES Type : {}\n", snestype);
     if (ksptype) {
-      output.write("KSP Type  : %s\n", ksptype);
+      output_info.write("KSP Type  : {}\n", ksptype);
     }
     if (pctype) {
-      output.write("PC Type   : %s\n", pctype);
+      output_info.write("PC Type   : {}\n", pctype);
     }
   }
 
@@ -663,8 +671,8 @@ int SNESSolver::run() {
     CHKERRQ(ierr);
   }
 
-  for (int s = 0; s < nsteps; s++) {
-    BoutReal target = simtime + out_timestep;
+  for (int s = 0; s < getNumberOutputSteps(); s++) {
+    BoutReal target = simtime + getOutputTimestep();
 
     bool looping = true;
     int snes_failures = 0; // Count SNES convergence failures
@@ -674,18 +682,18 @@ int SNESSolver::run() {
       VecCopy(snes_x, x0);
 
       if (timestep < dt_min_reset) {
-	// Hit the minimum timestep, probably through repeated failures
+        // Hit the minimum timestep, probably through repeated failures
 
-	if (saved_jacobian_lag != 0) {
-	  // Already tried this and it didn't work
-	  throw BoutException("Solver failed after many attempts");
-	}
+        if (saved_jacobian_lag != 0) {
+          // Already tried this and it didn't work
+          throw BoutException("Solver failed after many attempts");
+        }
 
-	// Try resetting the preconditioner, turn off predictor, and use a large timestep
-	SNESGetLagJacobian(snes, &saved_jacobian_lag);
-	SNESSetLagJacobian(snes, 1);
-	timestep = out_timestep;
-	predictor = false; // Predictor can cause problems in near steady-state.
+        // Try resetting the preconditioner, turn off predictor, and use a large timestep
+        SNESGetLagJacobian(snes, &saved_jacobian_lag);
+        SNESSetLagJacobian(snes, 1);
+        timestep = getOutputTimestep();
+        predictor = false; // Predictor can cause problems in near steady-state.
       }
 
       // Set the timestep
@@ -714,22 +722,26 @@ int SNESSolver::run() {
       if ((ierr != 0) or (reason < 0)) {
         // Diverged or SNES failed
 
-        // Print diagnostics to help identify source of the problem
+        if (diagnose_failures) {
+          // Print diagnostics to help identify source of the problem
 
-        output.write("\n======== SNES failed =========\n");
-        output.write("\nReturn code: %d, reason: %d\n", ierr, reason);
-        for (const auto& f : f2d) {
-          output.write("%s : (%e -> %e), ddt: (%e -> %e)\n", f.name.c_str(),
-                       min(*f.var, true, "RGN_NOBNDRY"), max(*f.var, true, "RGN_NOBNDRY"),
-                       min(*f.F_var, true, "RGN_NOBNDRY"), max(*f.F_var, true, "RGN_NOBNDRY"));
-        }
-        for (const auto& f : f3d) {
-          output.write("%s : (%e -> %e), ddt: (%e -> %e)\n", f.name.c_str(),
-                       min(*f.var, true, "RGN_NOBNDRY"), max(*f.var, true, "RGN_NOBNDRY"),
-                       min(*f.F_var, true, "RGN_NOBNDRY"), max(*f.F_var, true, "RGN_NOBNDRY"));
+          output.write("\n======== SNES failed =========\n");
+          output.write("\nReturn code: {}, reason: {}\n", ierr, reason);
+          for (const auto& f : f2d) {
+            output.write(
+                "{} : ({} -> {}), ddt: ({} -> {})\n", f.name,
+                min(*f.var, true, "RGN_NOBNDRY"), max(*f.var, true, "RGN_NOBNDRY"),
+                min(*f.F_var, true, "RGN_NOBNDRY"), max(*f.F_var, true, "RGN_NOBNDRY"));
+          }
+          for (const auto& f : f3d) {
+            output.write(
+                "{} : ({} -> {}), ddt: ({} -> {})\n", f.name,
+                min(*f.var, true, "RGN_NOBNDRY"), max(*f.var, true, "RGN_NOBNDRY"),
+                min(*f.F_var, true, "RGN_NOBNDRY"), max(*f.F_var, true, "RGN_NOBNDRY"));
+          }
         }
 
-	++snes_failures;
+        ++snes_failures;
 
         // Try a smaller timestep
         timestep /= 2.0;
@@ -741,20 +753,20 @@ int SNESSolver::run() {
         VecLockGet(snes_x, &lock_state);
         if (lock_state > 0) {
           // Locked for read
-          output.write("WARNING: snes_x locked for reading\n");
+          output_warn.write("WARNING: snes_x locked for reading\n");
         } else if (lock_state < 0) {
           // Locked for write
-          output.write("WARNING: snes_x locked for writing\n");
+          output_warn.write("WARNING: snes_x locked for writing\n");
         }
         looping = true;
         continue; // Try again
       }
 
       if (saved_jacobian_lag != 0) {
-	// Following successful step, reset Jacobian lag
-	// to previous value
-	SNESSetLagJacobian(snes, saved_jacobian_lag);
-	saved_jacobian_lag = 0;
+        // Following successful step, reset Jacobian lag
+        // to previous value
+        SNESSetLagJacobian(snes, saved_jacobian_lag);
+        saved_jacobian_lag = 0;
       }
 
       if (predictor) {
@@ -803,19 +815,23 @@ int SNESSolver::run() {
         SNESGetLinearSolveIterations(snes, &lin_its);
 
         output.print("\r"); // Carriage return for printing to screen
-        output.write("Time: %e, timestep: %e, nl iter: %d, lin iter: %d, reason: %d", simtime, timestep,
-                     nl_its, lin_its, reason);
+        output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}",
+                     simtime, timestep, nl_its, lin_its, reason);
         if (snes_failures > 0) {
-	  output.write(", SNES failures: %d", snes_failures);
-	  snes_failures = 0;
-	}
-	output.write("\n");
+          output.write(", SNES failures: {}", snes_failures);
+          snes_failures = 0;
+        }
+        output.write("\n");
       }
 
       if (looping) {
         if (nl_its <= lower_its) {
           // Increase timestep slightly
           timestep *= 1.1;
+
+          if (timestep > max_timestep) {
+            timestep = max_timestep;
+          }
         } else if (nl_its >= upper_its) {
           // Reduce timestep slightly
           timestep *= 0.9;
@@ -834,9 +850,7 @@ int SNESSolver::run() {
     }
     run_rhs(simtime); // Run RHS to calculate auxilliary variables
 
-    /// Call the monitor function
-
-    if (call_monitors(simtime, s, nsteps) != 0) {
+    if (call_monitors(simtime, s, getNumberOutputSteps()) != 0) {
       break; // User signalled to quit
     }
   }
@@ -845,7 +859,7 @@ int SNESSolver::run() {
 }
 
 // f = rhs
-PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
+PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   // Get data from PETSc into BOUT++ fields
   const BoutReal* xdata = nullptr;
   int ierr = VecGetArrayRead(x, &xdata);
@@ -856,11 +870,11 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
 
   try {
     // Call RHS function
-    run_rhs(simtime + dt);
+    run_rhs(simtime + dt, linear);
   } catch (BoutException& e) {
     // Simulation might fail, e.g. negative densities
     // if timestep too large
-    output.write("WARNING: BoutException thrown: %s\n", e.what());
+    output_warn.write("WARNING: BoutException thrown: {}\n", e.what());
 
     // Tell SNES that the input was out of domain
     SNESSetFunctionDomainError(snes);
@@ -880,15 +894,15 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
   case BoutSnesEquationForm::pseudo_transient: {
     // Pseudo-transient timestepping (as in UEDGE)
     // f <- f - x/Δt
-    VecAXPY(f, -1./dt, x);
+    VecAXPY(f, -1. / dt, x);
     break;
   }
   case BoutSnesEquationForm::rearranged_backward_euler: {
     // Rearranged Backward Euler
     // f = (x0 - x)/Δt + f
     // First calculate x - x0 to minimise floating point issues
-    VecWAXPY(delta_x, -1.0, x0, x);  // delta_x = x - x0
-    VecAXPY(f, -1./dt, delta_x); // f <- f - delta_x / dt
+    VecWAXPY(delta_x, -1.0, x0, x); // delta_x = x - x0
+    VecAXPY(f, -1. / dt, delta_x);  // f <- f - delta_x / dt
     break;
   }
   case BoutSnesEquationForm::backward_euler: {

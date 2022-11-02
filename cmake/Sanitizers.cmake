@@ -95,12 +95,15 @@ function(enable_sanitizers target_name)
 
   endif()
 
+  # Default value gets overridden below
+  set(BOUT_USE_SANITIZERS "None" PARENT_SCOPE)
+
   if(LIST_OF_SANITIZERS)
     if(NOT
        "${LIST_OF_SANITIZERS}"
        STREQUAL
        "")
-      message(STATUS "Sanitizers enabled: ${LIST_OF_SANITIZERS}")
+      set(BOUT_USE_SANITIZERS ${LIST_OF_SANITIZERS} PARENT_SCOPE)
       target_compile_options(${target_name} PUBLIC -fsanitize=${LIST_OF_SANITIZERS} -fno-omit-frame-pointer)
       target_link_options(${target_name} PUBLIC -fsanitize=${LIST_OF_SANITIZERS})
     endif()

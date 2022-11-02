@@ -35,6 +35,33 @@
 #include <field3d.hxx>
 #include <bout/mesh.hxx>
 #include <unused.hxx>
+#include <bout/generic_factory.hxx>
+
+class LaplaceXZ;
+
+class LaplaceXZFactory
+    : public Factory<LaplaceXZ, LaplaceXZFactory, Mesh*, Options*, CELL_LOC> {
+public:
+  static constexpr auto type_name = "LaplaceXZ";
+  static constexpr auto section_name = "laplacexz";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = "cyclic";
+
+  ReturnType create(Mesh* mesh = nullptr, Options* options = nullptr,
+                    CELL_LOC loc = CELL_CENTRE) const {
+    return Factory::create(getType(options), mesh, optionsOrDefaultSection(options), loc);
+  }
+  ReturnType create(const std::string& type, Options* options) const {
+    return Factory::create(type, nullptr, options, CELL_CENTRE);
+  }
+
+  static void ensureRegistered();
+};
+
+template <class DerivedType>
+using RegisterLaplaceXZ = LaplaceXZFactory::RegisterInFactory<DerivedType>;
+
+using RegisterUnavailableLaplaceXZ = LaplaceXZFactory::RegisterUnavailableInFactory;
 
 class LaplaceXZ {
 public:
@@ -48,7 +75,10 @@ public:
 
   virtual Field3D solve(const Field3D &b, const Field3D &x0) = 0;
 
-  static LaplaceXZ *create(Mesh *m = nullptr, Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  static std::unique_ptr<LaplaceXZ> create(Mesh* m = nullptr, Options* opt = nullptr,
+                                           CELL_LOC loc = CELL_CENTRE) {
+    return LaplaceXZFactory::getInstance().create(m, opt, loc);
+  }
 
 protected:
   static const int INVERT_DC_GRAD  = 1;

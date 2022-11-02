@@ -107,12 +107,14 @@
 ///     BOUT_FOR(index, region) {
 ///        A[index] = B[index] + C[index];
 ///     }
+//
+
 #define BOUT_FOR_SERIAL(index, region)                                                   \
   for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();        \
        block < end; ++block)                                                             \
     for (auto index = block->first; index < block->second; ++index)
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP
 #define BOUT_FOR_OMP(index, region, omp_pragmas)                                         \
   BOUT_OMP(omp_pragmas)                                                                  \
   for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
@@ -123,12 +125,11 @@
 #define BOUT_FOR_OMP(index, region, omp_pragmas) BOUT_FOR_SERIAL(index, region)
 #endif
 
-#define BOUT_FOR(index, region)                                                          \
-  BOUT_FOR_OMP(index, region, parallel for schedule(OPENMP_SCHEDULE))
+#define BOUT_FOR(index, region) \
+  BOUT_FOR_OMP(index, region, parallel for schedule(BOUT_OPENMP_SCHEDULE))
 
-#define BOUT_FOR_INNER(index, region)                                                    \
-  BOUT_FOR_OMP(index, region, for schedule(OPENMP_SCHEDULE) nowait)
-
+#define BOUT_FOR_INNER(index, region) \
+  BOUT_FOR_OMP(index, region, for schedule(BOUT_OPENMP_SCHEDULE) nowait)
 
 enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
 
@@ -155,17 +156,17 @@ enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
 ///     auto index = std::begin(region);
 ///
 ///     result = field[index->yp()] - field[index->ym()];
-template<IND_TYPE N>
-class SpecificInd {
-public:
-  int ind = -1; //< 1D index into Field
-private:
-  int ny = -1, nz = -1; //< Sizes of y and z dimensions
+template <IND_TYPE N>
+struct SpecificInd {
+  int ind = -1;         ///< 1D index into Field
+  int ny = -1, nz = -1; ///< Sizes of y and z dimensions
 
-public:
   SpecificInd() = default;
   SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
   explicit SpecificInd(int i) : ind(i) {};
+
+  /// Allow explicit conversion to an int
+  explicit operator int() const { return ind; }
 
   /// Pre-increment operator
   SpecificInd &operator++() {
@@ -273,7 +274,7 @@ public:
   const inline SpecificInd yp(int dy = 1) const {
 #if CHECK >= 4
     if (y() + dy < 0 or y() + dy >= ny) {
-      throw BoutException("Offset in y (%d) would go out of bounds at %d", dy, ind);
+      throw BoutException("Offset in y ({:d}) would go out of bounds at {:d}", dy, ind);
     }
 #endif
     ASSERT3(std::abs(dy) < ny);
@@ -410,7 +411,6 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
   return out;
 }
 
-
 /// Specifies a set of indices which can be iterated over and begin()
 /// and end() methods for range-based for loops.
 ///
@@ -460,7 +460,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 ///     }
 ///
 /// If you wish to vectorise but can't use OpenMP then
-/// there is a serial verion of the macro:
+/// there is a serial version of the macro:
 ///
 ///     BoutReal max=0.;
 ///     BOUT_FOR_SERIAL(i, region) {
@@ -509,21 +509,29 @@ public:
 #if CHECK > 1
     if (std::is_base_of<Ind2D, T>::value) {
       if (nz != 1)
-	throw BoutException("Trying to make Region<Ind2D> with nz = %d, but expected nz = 1", nz);
+        throw BoutException(
+            "Trying to make Region<Ind2D> with nz = {:d}, but expected nz = 1", nz);
       if (zstart != 0)
-	throw BoutException("Trying to make Region<Ind2D> with zstart = %d, but expected zstart = 0", zstart);
+        throw BoutException(
+            "Trying to make Region<Ind2D> with zstart = {:d}, but expected zstart = 0",
+            zstart);
       if (zstart != 0)
-	throw BoutException("Trying to make Region<Ind2D> with zend = %d, but expected zend = 0", zend);
-
+        throw BoutException(
+            "Trying to make Region<Ind2D> with zend = {:d}, but expected zend = 0", zend);
     }
 
     if (std::is_base_of<IndPerp, T>::value) {
       if (ny != 1)
-	throw BoutException("Trying to make Region<IndPerp> with ny = %d, but expected ny = 1", ny);
+        throw BoutException(
+            "Trying to make Region<IndPerp> with ny = {:d}, but expected ny = 1", ny);
       if (ystart != 0)
-	throw BoutException("Trying to make Region<IndPerp> with ystart = %d, but expected ystart = 0", ystart);
+        throw BoutException(
+            "Trying to make Region<IndPerp> with ystart = {:d}, but expected ystart = 0",
+            ystart);
       if (ystart != 0)
-	throw BoutException("Trying to make Region<IndPerp> with yend = %d, but expected yend = 0", yend);
+        throw BoutException(
+            "Trying to make Region<IndPerp> with yend = {:d}, but expected yend = 0",
+            yend);
     }
 #endif
     
@@ -635,6 +643,35 @@ public:
 
     return *this; // To allow command chaining
   };
+
+  /// Returns a new region including only indices contained in both
+  /// this region and the other.
+  Region<T> getIntersection(const Region<T>& otherRegion) {
+    // Get other indices and sort as we're going to be searching through
+    // this vector so if it's sorted we can be more efficient
+    auto otherIndices = otherRegion.getIndices();
+    std::sort(std::begin(otherIndices), std::end(otherIndices));
+
+    // Get the current set of indices that we're going to get the
+    // union with and then use to create the result region.
+    auto currentIndices = getIndices();
+
+    // Lambda that returns true/false depending if the passed value is in otherIndices
+    // With C++14 T can be auto instead
+    auto notInVector = [&](T val) {
+      return !std::binary_search(std::begin(otherIndices), std::end(otherIndices), val);
+    };
+
+    // Erase elements of currentIndices that are in maskIndices
+    currentIndices.erase(
+        std::remove_if(std::begin(currentIndices), std::end(currentIndices), notInVector),
+        std::end(currentIndices));
+
+    // Update indices
+    setIndices(currentIndices);
+
+    return *this; // To allow command chaining
+  }
 
   /// Accumulate operator
   Region<T> & operator+=(const Region<T> &rhs){
@@ -848,20 +885,27 @@ private:
 template<typename T>
 Region<T> sort(Region<T> &region) {
   return region.asSorted();
-};
+}
 
 /// Return a new region with unique indices
 template<typename T>
 Region<T> unique(Region<T> &region) {
   return region.asUnique();
-};
+}
 
 /// Return a masked version of a region
 template<typename T>
 Region<T> mask(const Region<T> &region, const Region<T> &mask) {
   auto result = region;
   return result.mask(mask);
-};
+}
+
+/// Return the intersection of two regions
+template <typename T>
+Region<T> getIntersection(const Region<T>& region, const Region<T>& otherRegion) {
+  auto result = region;
+  return result.getIntersection(otherRegion);
+}
 
 /// Return a new region with combined indices from two Regions
 /// This doesn't attempt to avoid duplicate elements or enforce

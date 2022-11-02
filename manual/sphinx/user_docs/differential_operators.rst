@@ -179,9 +179,9 @@ implemented.
    };
 
    
-Here `DEFINE_STANARD_DERIV` is a macro that acts on the kernel `return
-0.5*(f.p - f.m);` and produces the functor that will apply the
-differencing method over an entire field.  The macro takes several
+Here `DEFINE_STANARD_DERIV` is a macro that acts on the kernel
+``return 0.5*(f.p - f.m);`` and produces the functor that will apply
+the differencing method over an entire field.  The macro takes several
 arguments;
 
 - the first (`DDX_C2`) is the name of the generated functor -- this
@@ -189,14 +189,14 @@ arguments;
   derivative functor without having to go through the derivative store
   if desired.
 
-- the second (`"C2"`) is the string key that is used to refer to this
+- the second (``"C2"``) is the string key that is used to refer to this
   specific method when registering/retrieving the method from the
   derivative store.
 
-- the third (`1`) is the number of guard cells required to be able to
-  use this method (i.e. here the stencil will consist of three values
-  -- the field at the current point and one point either side). This
-  can be 1 or 2.
+- the third (``1``) is the number of guard cells required to be able
+  to use this method (i.e. here the stencil will consist of three
+  values -- the field at the current point and one point either
+  side). This can be 1 or 2.
 
 - the fourth (`DERIV::Standard`) identifies the type of method - here
   a central method.
@@ -221,7 +221,7 @@ no staggering for both field types we can then use the following code:
 For the common case where the user wishes to register the method in
 `X`, `Y` and `Z` and for both field types we provide the helper
 macros, `REGISTER_DERIVATIVE` and `REGISTER_STAGGERED_DERIVATIVE`
-which could be used as `REGISTER_DERIVATIVE(DDX_C2)`.
+which could be used as ``REGISTER_DERIVATIVE(DDX_C2)``.
 
 To simplify matters further we provide `REGISTER_STANDARD_DERIVATIVE`,
 `REGISTER_UPWIND_DERIVATIVE`, `REGISTER_FLUX_DERIVATIVE`,
@@ -236,7 +236,7 @@ register a stencil using kernel in a single step. For example:
 
 
 Will define the `DDX_C2` functor and register it with the derivative
-store using key `"C2"` for all three directions and both fields with
+store using key ``"C2"`` for all three directions and both fields with
 no staggering.
 
 
@@ -277,7 +277,7 @@ communications or boundary conditions here)
 
     Field3D D2DXDY(Field3D f) {
       auto result{emptyFrom(f)};
-      auto& coords = \*f.getCoordinates()
+      auto& coords = *f.getCoordinates()
 
       auto dfdx_yup = DDX(f.yup());
       auto dfdx_ydown = DDX(f.ydown());
@@ -430,7 +430,7 @@ is the background *equilibrium* magnetic field.
 |                  | derivatives. The `Laplacian` solver performs the   |
 |                  | inverse operation                                  |
 +------------------+----------------------------------------------------+
-| ``brackets``     | Poisson brackets. The Arakawa option, neglects the |
+| ``bracket``      | Poisson brackets. The Arakawa option, neglects the |
 |                  | parallel :math:`y` derivatives if :math:`g_{xy}`   |
 |                  | and :math:`g_{yz}` are non-zero                    |
 +------------------+----------------------------------------------------+
@@ -491,7 +491,7 @@ and so the :math:`\nabla y` term cancels out:
 The bracket operators
 ---------------------
 
-The bracket operator ``brackets(phi, f, method)`` aims to
+The bracket operator ``bracket(phi, f, method)`` aims to
 differentiate equations on the form
 
 .. math::

@@ -8,6 +8,8 @@ int main(int argc, char** argv) {
 
   Field3D test_aligned = toFieldAligned(test);
 
+  using bout::globals::mesh;
+
   // zero guard cells to check that communication is doing something
   for (int x=0; x<mesh->LocalNx; x++) {
     for (int z=0; z<mesh->LocalNz; z++) {
@@ -22,11 +24,13 @@ int main(int argc, char** argv) {
 
   mesh->communicate(test_aligned);
 
-  Field3D check = FieldFactory::get()->create3D("check", nullptr, nullptr, CELL_YLOW);
+  Options::root()["check"] =
+      FieldFactory::get()->create3D("check", nullptr, nullptr, CELL_YLOW);
 
-  SAVE_ONCE(test, test_aligned, check);
+  Options::root()["test"] = test;
+  Options::root()["test_aligned"] = test_aligned;
 
-  dump.write();
+  bout::writeDefaultOutputFile();
 
   BoutFinalise();
 }

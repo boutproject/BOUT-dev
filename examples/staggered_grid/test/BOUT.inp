@@ -13,7 +13,7 @@ ny = 16
 dy = 0.0625
 
 ixseps1 = 1000 # Make domain periodic
-ixseps2 = 1000 
+ixseps2 = 1000
 
 [mesh:ddy]
 
@@ -25,7 +25,7 @@ scale = 1
 
 [n]
 #function = 1 + 0.01*cos(8.*y)
-function = 1 + h(y-0.9*pi) * h(1.1*pi - y)
+function = 1 + H(y-0.9*pi) * H(1.1*pi - y)
 
 [v]
-function = 0.
+function = 0.0

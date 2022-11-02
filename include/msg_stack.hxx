@@ -29,23 +29,25 @@ class MsgStack;
 #ifndef __MSG_STACK_H__
 #define __MSG_STACK_H__
 
+#include "bout/build_config.hxx"
+
 #include "unused.hxx"
 #include "bout/format.hxx"
+
+#include "fmt/core.h"
 
 #include <exception>
 #include <cstdarg>
 #include <string>
 #include <vector>
 
-/// The maximum length (in chars) of messages, not including terminating '0'
-#define MSG_MAX_SIZE 127
-
-/// The __PRETTY_FUNCTION__ variable is defined by GCC (and some other families) but is not a part 
-/// of the standard. The __func__ variable *is* a part of the c++11 standard so we'd like to fall back
-/// to this if possible. However as these are variables/constants and not macros we can't just
-/// check if __PRETTY_FUNCITON__ is defined or not. Instead we need to say if we support this
-/// or not by defining HAS_PRETTY_FUNCTION (to be implemented in configure)
-#ifdef HAS_PRETTY_FUNCTION
+/// The __PRETTY_FUNCTION__ variable is defined by GCC (and some other families) but is
+/// not a part of the standard. The __func__ variable *is* a part of the c++11 standard so
+/// we'd like to fall back to this if possible. However as these are variables/constants
+/// and not macros we can't just check if __PRETTY_FUNCITON__ is defined or not. Instead
+/// we need to say if we support this or not by defining BOUT_HAS_PRETTY_FUNCTION (to be
+/// implemented in configure)
+#if BOUT_HAS_PRETTY_FUNCTION
 #define __thefunc__ __PRETTY_FUNCTION__ 
 #else
 #define __thefunc__ __func__
@@ -68,12 +70,15 @@ public:
   MsgStack() = default;
   ~MsgStack() { clear(); }
 
-#if CHECK > 1
-  int push(const char *s, ...)
-    BOUT_FORMAT_ARGS( 2, 3); ///< Add a message to the stack. Returns a message id
+#if BOUT_USE_MSGSTACK
+  /// Add a message to the stack. Returns a message id
+  int push(std::string message);
+  int push() { return push(""); }
 
-  [[deprecated("Please use `MsgStack::push` with an empty message instead")]]
-  int setPoint(); ///< get a message point
+  template <class S, class... Args>
+  int push(const S& format, const Args&... args) {
+    return push(fmt::format(format, args...));
+  }
 
   void pop();       ///< Remove the last message
   void pop(int id); ///< Remove all messages back to msg \p id
@@ -83,10 +88,11 @@ public:
   std::string getDump(); ///< Write out all messages to a string
 #else
   /// Dummy functions which should be optimised out
-  int push(const char *UNUSED(s), ...) { return 0; }
-
-  [[deprecated("Please use `MsgStack::push` with an empty message instead")]]
-  int setPoint() { return 0; }
+  int push(const std::string&) { return 0; }
+  template <class S, class... Args>
+  int push(const S&, const Args&...) {
+    return 0;
+  }
 
   void pop() {}
   void pop(int UNUSED(id)) {}
@@ -97,8 +103,6 @@ public:
 #endif
 
 private:
-  char buffer[256]; ///< Buffer for vsnprintf
-
   std::vector<std::string> stack;               ///< Message stack;
   std::vector<std::string>::size_type position{0}; ///< Position in stack
 };
@@ -127,31 +131,44 @@ GLOBAL MsgStack msg_stack;
  * constructor, and pops the message on destruction.
  */
 class MsgStackItem {
+  /// Backfill for C++14: note this _wrong_ and only useful for our
+  /// purposes here, that is, telling us if there has been an uncaught
+  /// exception, which is why this is a private method
+  static int uncaught_exceptions() {
+#if __cpp_lib_uncaught_exceptions >= 201411L
+    // C++17 version
+    return std::uncaught_exceptions();
+#else
+    // C++14 version
+    return static_cast<int>(std::uncaught_exception());
+#endif
+  }
+  // Number of uncaught exceptions when this instance was created
+  int exception_count = uncaught_exceptions();
+
 public:
   // Not currently used anywhere
-  MsgStackItem(const char *msg) { point = msg_stack.push("%s",msg); }
+  MsgStackItem(std::string message) : point(msg_stack.push(std::move(message))) {}
   // Not currently used anywhere
-  MsgStackItem(const char *msg, const char *file, int line) {
-    point = msg_stack.push("%s on line %d of '%s'", msg, line, file);
-  }
-  MsgStackItem(const char *file, int line, const char *msg, ...)
-    BOUT_FORMAT_ARGS( 4, 5) {
-    va_list args;
-    va_start(args, msg);
-    vsnprintf(buffer, MSG_MAX_SIZE, msg, args);
-    point = msg_stack.push("%s on line %d of '%s'", buffer, line, file);
-    va_end(args);
-  }
+  MsgStackItem(const std::string& message, const char* file, int line)
+      : point(msg_stack.push("{:s} on line {:d} of '{:s}'", message, line, file)) {}
+
+  MsgStackItem(const std::string& file, int line, const char* msg)
+      : point(msg_stack.push("{:s} on line {:d} of '{:s}'", msg, line, file)) {}
+
+  template <class S, class... Args>
+  MsgStackItem(const std::string& file, int line, const S& msg, const Args&... args)
+      : point(msg_stack.push("{:s} on line {:d} of '{:s}'", fmt::format(msg, args...),
+                             line, file)) {}
   ~MsgStackItem() {
     // If an exception has occurred, don't pop the message
-    if (!std::uncaught_exception()) {
+    if (exception_count == uncaught_exceptions()) {
       msg_stack.pop(point);
     }
   }
 
 private:
   int point;
-  char buffer[256];
 };
 
 /// To concatenate strings for a variable name
@@ -171,7 +188,7 @@ private:
  *
  * } // Scope ends, message popped
  */
-#if CHECK > 0
+#if BOUT_USE_MSGSTACK
 
 /* Would like to have something like TRACE(message, ...) so that we can directly refer
    to the (required) first argument, which is the main message string. However because
@@ -206,6 +223,6 @@ private:
  *
  * } // Scope ends, message popped
  */
-#define AUTO_TRACE() TRACE("%s", __thefunc__)
+#define AUTO_TRACE() TRACE(__thefunc__) // NOLINT
 
 #endif // __MSG_STACK_H__

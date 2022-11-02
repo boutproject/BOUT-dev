@@ -1,4 +1,7 @@
 #include "laplacexz-cyclic.hxx"
+#include "bout/build_config.hxx"
+
+#if not BOUT_USE_METRIC_3D
 
 #include <utils.hxx>
 #include <fft.hxx>
@@ -9,21 +12,22 @@
 #include <output.hxx>
 
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc) {
+  // Note: `m` may be nullptr, but localmesh is set in LaplaceXZ base constructor
 
   // Number of Z Fourier modes, including DC
-  nmode = (m->LocalNz) / 2 + 1;
+  nmode = (localmesh->LocalNz) / 2 + 1;
 
   // Number of independent systems of
   // equations to solve
-  nsys = nmode * (m->yend - m->ystart + 1);
+  nsys = nmode * (localmesh->yend - localmesh->ystart + 1);
 
   // Start and end X index
-  xstart = m->xstart; // Starting X index
-  if (m->firstX()) {
+  xstart = localmesh->xstart; // Starting X index
+  if (localmesh->firstX()) {
     xstart -= 1;
   }
-  xend = m->xend;
-  if (m->lastX()) {
+  xend = localmesh->xend;
+  if (localmesh->lastX()) {
     xend += 1;
   }
 
@@ -37,8 +41,8 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) 
   xcmplx.reallocate(nsys, nloc);
   rhscmplx.reallocate(nsys, nloc);
 
-  k1d.reallocate((m->LocalNz) / 2 + 1);
-  k1d_2.reallocate((m->LocalNz) / 2 + 1);
+  k1d.reallocate((localmesh->LocalNz) / 2 + 1);
+  k1d_2.reallocate((localmesh->LocalNz) / 2 + 1);
 
   // Create a cyclic reduction object, operating on dcomplex values
   cr = bout::utils::make_unique<CyclicReduce<dcomplex>>(localmesh->getXcomm(), nloc);
@@ -72,9 +76,10 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   ASSERT2(max(abs(coord->g13)) < 1e-5);
   
   int ind = 0;
+  const BoutReal zlength = getUniform(coord->zlength());
   for(int y=localmesh->ystart; y <= localmesh->yend; y++) {
     for(int kz = 0; kz < nmode; kz++) {
-      BoutReal kwave=kz*2.0*PI/(coord->zlength());
+      BoutReal kwave = kz * 2.0 * PI / zlength;
 
       if(localmesh->firstX()) {
         // Inner X boundary
@@ -267,3 +272,5 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   
   return result;
 }
+
+#endif // BOUT_USE_METRIC_3D

@@ -8,7 +8,7 @@
 
 // Provide the C++ wrapper for multiplication of Field3D and Field3D
 Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -27,7 +27,7 @@ Field3D& Field3D::operator*=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
@@ -48,7 +48,7 @@ Field3D& Field3D::operator*=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for division of Field3D and Field3D
 Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -67,7 +67,7 @@ Field3D& Field3D::operator/=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
@@ -88,7 +88,7 @@ Field3D& Field3D::operator/=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for addition of Field3D and Field3D
 Field3D operator+(const Field3D& lhs, const Field3D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -107,7 +107,7 @@ Field3D& Field3D::operator+=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
@@ -128,7 +128,7 @@ Field3D& Field3D::operator+=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field3D and Field3D
 Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -147,7 +147,7 @@ Field3D& Field3D::operator-=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
@@ -168,7 +168,7 @@ Field3D& Field3D::operator-=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for multiplication of Field3D and Field2D
 Field3D operator*(const Field3D& lhs, const Field2D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -192,7 +192,7 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
@@ -218,7 +218,7 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for division of Field3D and Field2D
 Field3D operator/(const Field3D& lhs, const Field2D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -243,7 +243,7 @@ Field3D& Field3D::operator/=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
@@ -270,7 +270,7 @@ Field3D& Field3D::operator/=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for addition of Field3D and Field2D
 Field3D operator+(const Field3D& lhs, const Field2D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -294,7 +294,7 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
@@ -320,7 +320,7 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field3D and Field2D
 Field3D operator-(const Field3D& lhs, const Field2D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -344,7 +344,7 @@ Field3D& Field3D::operator-=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
@@ -370,7 +370,7 @@ Field3D& Field3D::operator-=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for multiplication of Field3D and FieldPerp
 FieldPerp operator*(const Field3D& lhs, const FieldPerp& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -390,7 +390,7 @@ FieldPerp operator*(const Field3D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for division of Field3D and FieldPerp
 FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -410,7 +410,7 @@ FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for addition of Field3D and FieldPerp
 FieldPerp operator+(const Field3D& lhs, const FieldPerp& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -430,7 +430,7 @@ FieldPerp operator+(const Field3D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field3D and FieldPerp
 FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -596,7 +596,7 @@ Field3D& Field3D::operator-=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for multiplication of Field2D and Field3D
 Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -617,7 +617,7 @@ Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for division of Field2D and Field3D
 Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -638,7 +638,7 @@ Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for addition of Field2D and Field3D
 Field3D operator+(const Field2D& lhs, const Field3D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -659,7 +659,7 @@ Field3D operator+(const Field2D& lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field2D and Field3D
 Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -680,7 +680,7 @@ Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for multiplication of Field2D and Field2D
 Field2D operator*(const Field2D& lhs, const Field2D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -699,7 +699,7 @@ Field2D& Field2D::operator*=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -716,7 +716,7 @@ Field2D& Field2D::operator*=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for division of Field2D and Field2D
 Field2D operator/(const Field2D& lhs, const Field2D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -735,7 +735,7 @@ Field2D& Field2D::operator/=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -752,7 +752,7 @@ Field2D& Field2D::operator/=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for addition of Field2D and Field2D
 Field2D operator+(const Field2D& lhs, const Field2D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -771,7 +771,7 @@ Field2D& Field2D::operator+=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -788,7 +788,7 @@ Field2D& Field2D::operator+=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field2D and Field2D
 Field2D operator-(const Field2D& lhs, const Field2D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -807,7 +807,7 @@ Field2D& Field2D::operator-=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -824,7 +824,7 @@ Field2D& Field2D::operator-=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for multiplication of Field2D and FieldPerp
 FieldPerp operator*(const Field2D& lhs, const FieldPerp& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -844,7 +844,7 @@ FieldPerp operator*(const Field2D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for division of Field2D and FieldPerp
 FieldPerp operator/(const Field2D& lhs, const FieldPerp& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -864,7 +864,7 @@ FieldPerp operator/(const Field2D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for addition of Field2D and FieldPerp
 FieldPerp operator+(const Field2D& lhs, const FieldPerp& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -884,7 +884,7 @@ FieldPerp operator+(const Field2D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field2D and FieldPerp
 FieldPerp operator-(const Field2D& lhs, const FieldPerp& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1034,7 +1034,7 @@ Field2D& Field2D::operator-=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for multiplication of FieldPerp and Field3D
 FieldPerp operator*(const FieldPerp& lhs, const Field3D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1057,7 +1057,7 @@ FieldPerp& FieldPerp::operator*=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -1080,7 +1080,7 @@ FieldPerp& FieldPerp::operator*=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for division of FieldPerp and Field3D
 FieldPerp operator/(const FieldPerp& lhs, const Field3D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1103,7 +1103,7 @@ FieldPerp& FieldPerp::operator/=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -1126,7 +1126,7 @@ FieldPerp& FieldPerp::operator/=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for addition of FieldPerp and Field3D
 FieldPerp operator+(const FieldPerp& lhs, const Field3D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1149,7 +1149,7 @@ FieldPerp& FieldPerp::operator+=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -1172,7 +1172,7 @@ FieldPerp& FieldPerp::operator+=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for subtraction of FieldPerp and Field3D
 FieldPerp operator-(const FieldPerp& lhs, const Field3D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1195,7 +1195,7 @@ FieldPerp& FieldPerp::operator-=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -1218,7 +1218,7 @@ FieldPerp& FieldPerp::operator-=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for multiplication of FieldPerp and Field2D
 FieldPerp operator*(const FieldPerp& lhs, const Field2D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1241,7 +1241,7 @@ FieldPerp& FieldPerp::operator*=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -1264,7 +1264,7 @@ FieldPerp& FieldPerp::operator*=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for division of FieldPerp and Field2D
 FieldPerp operator/(const FieldPerp& lhs, const Field2D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1287,7 +1287,7 @@ FieldPerp& FieldPerp::operator/=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -1310,7 +1310,7 @@ FieldPerp& FieldPerp::operator/=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for addition of FieldPerp and Field2D
 FieldPerp operator+(const FieldPerp& lhs, const Field2D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1333,7 +1333,7 @@ FieldPerp& FieldPerp::operator+=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -1356,7 +1356,7 @@ FieldPerp& FieldPerp::operator+=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for subtraction of FieldPerp and Field2D
 FieldPerp operator-(const FieldPerp& lhs, const Field2D& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1379,7 +1379,7 @@ FieldPerp& FieldPerp::operator-=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -1402,7 +1402,7 @@ FieldPerp& FieldPerp::operator-=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for multiplication of FieldPerp and FieldPerp
 FieldPerp operator*(const FieldPerp& lhs, const FieldPerp& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1421,7 +1421,7 @@ FieldPerp& FieldPerp::operator*=(const FieldPerp& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -1438,7 +1438,7 @@ FieldPerp& FieldPerp::operator*=(const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for division of FieldPerp and FieldPerp
 FieldPerp operator/(const FieldPerp& lhs, const FieldPerp& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1457,7 +1457,7 @@ FieldPerp& FieldPerp::operator/=(const FieldPerp& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -1474,7 +1474,7 @@ FieldPerp& FieldPerp::operator/=(const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for addition of FieldPerp and FieldPerp
 FieldPerp operator+(const FieldPerp& lhs, const FieldPerp& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1493,7 +1493,7 @@ FieldPerp& FieldPerp::operator+=(const FieldPerp& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);
@@ -1510,7 +1510,7 @@ FieldPerp& FieldPerp::operator+=(const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for subtraction of FieldPerp and FieldPerp
 FieldPerp operator-(const FieldPerp& lhs, const FieldPerp& rhs) {
-  ASSERT1(areFieldsCompatible(lhs, rhs));
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1529,7 +1529,7 @@ FieldPerp& FieldPerp::operator-=(const FieldPerp& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    ASSERT1(areFieldsCompatible(*this, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     checkData(*this);
     checkData(rhs);

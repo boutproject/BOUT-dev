@@ -24,27 +24,36 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_PETSC
-
-class PetscSolver;
-
 #ifndef __PETSC_SOLVER_H__
 #define __PETSC_SOLVER_H__
 
-#include <petsc.h>
+#include "bout/build_config.hxx"
+#include "bout/solver.hxx"
+
+#if not BOUT_HAS_PETSC
+
+namespace {
+RegisterUnavailableSolver registerunavailablepetsc("petsc",
+                                                   "BOUT++ was not configured with PETSc");
+}
+
+#else
+
+class PetscSolver;
 
 #include <field2d.hxx>
 #include <field3d.hxx>
 #include <vector2d.hxx>
 #include <vector3d.hxx>
 
-#include <bout/solver.hxx>
+#include <petsc.h>
+// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
+#undef MPI_Allreduce
 
 #include <bout/petsclib.hxx>
 
 #include <vector>
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<PetscSolver> registersolverpetsc("petsc");
 }
@@ -83,8 +92,7 @@ public:
   PetscSolver(Options *opts = nullptr);
   ~PetscSolver();
 
-  int init(int NOUT, BoutReal TIMESTEP) override;
-
+  int init() override;
   int run() override;
 
   // These functions used internally (but need to be public)
@@ -116,29 +124,32 @@ private:
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
 
-  Vec u;      ///< PETSc solution vector
-  TS ts;      ///< PETSc timestepper object
-  Mat J, Jmf; ///< RHS Jacobian
-  MatFDColoring matfdcoloring;
-
-  int nout;       ///< The number of outputs
-  BoutReal tstep; ///< Time between outputs
+  Vec u{nullptr}; ///< PETSc solution vector
+  TS ts{nullptr}; ///< PETSc timestepper object
+  Mat J{nullptr}; ///< RHS Jacobian
+  Mat Jmf{nullptr};
+  MatFDColoring matfdcoloring{nullptr};
 
   bool diagnose; ///< If true, print some information about current stage
 
   BoutReal next_output; ///< When the monitor should be called next
 
-  PetscBool interpolate; ///< Whether to interpolate or not
+  PetscBool interpolate{PETSC_TRUE}; ///< Whether to interpolate or not
 
   char output_name[PETSC_MAX_PATH_LEN];
-  PetscBool output_flag;
+  PetscBool output_flag{PETSC_FALSE};
   PetscInt prev_linear_its;
-  BoutReal bout_snes_time;
+  BoutReal bout_snes_time{0.0};
   std::vector<snes_info> snes_list;
 
   bool adaptive; ///< Use adaptive timestepping
+  bool use_precon, use_jacobian;
+  BoutReal abstol, reltol;
+  bool adams_moulton;
+  BoutReal start_timestep;
+  int mxstep;
 };
 
-#endif // __PETSC_SOLVER_H__
-
 #endif // BOUT_HAS_PETSC
+
+#endif // __PETSC_SOLVER_H__

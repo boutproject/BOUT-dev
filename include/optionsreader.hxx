@@ -37,6 +37,11 @@ class OptionsReader;
 #include "options.hxx"
 #include "bout/format.hxx"
 
+#include "fmt/core.h"
+
+#include <string>
+#include <vector>
+
 /// Class to handle reading options from file
 ///
 /// Example
@@ -62,16 +67,24 @@ class OptionsReader {
   ///
   /// @param[inout] options  The options section to insert values and subsections into
   /// @param[in] file  The name of the file. printf style arguments can be used to create the file name.
-  void read(Options *options, const char *file, ...)
-    BOUT_FORMAT_ARGS( 3, 4);
+  void read(Options *options, const std::string& filename);
+
+  template <class S, class... Args>
+  void read(Options* options, const S& format, const Args&... args) {
+    return read(options, fmt::format(format, args...));
+  }
 
   /// Write options to file
   ///
   /// @param[in] options  The options tree to be written
   /// @param[in] file   The name of the file to (over)write
-  void write(Options *options, const char *file, ...)
-    BOUT_FORMAT_ARGS( 3, 4);
-  
+  void write(Options *options, const std::string& filename);
+
+  template <class S, class... Args>
+  void write(Options* options, const S& format, const Args&... args) {
+    return write(options, fmt::format(format, args...));
+  }
+
   /// Parse options from the command line
   ///
   /// @param[inout] options The options section to insert values and subsections into
@@ -88,6 +101,7 @@ class OptionsReader {
   ///   return 0;
   /// }
   void parseCommandLine(Options *options, int argc, char **argv);
+  void parseCommandLine(Options *options, const std::vector<std::string>& argv);
   
  private:
   /// The instance of this singleton

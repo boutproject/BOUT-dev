@@ -41,8 +41,9 @@ class LaplaceSPT;
 #ifndef __SPT_H__
 #define __SPT_H__
 
-#include <invert_laplace.hxx>
+#include <bout/mesh.hxx>
 #include <dcomplex.hxx>
+#include <invert_laplace.hxx>
 #include <options.hxx>
 #include <utils.hxx>
 
@@ -66,7 +67,8 @@ class LaplaceSPT;
  */
 class LaplaceSPT : public Laplacian {
 public:
-  LaplaceSPT(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplaceSPT(Options* opt = nullptr, const CELL_LOC = CELL_CENTRE,
+             Mesh* mesh_in = nullptr, Solver* solver = nullptr, Datafile* dump = nullptr);
   ~LaplaceSPT();
   
   using Laplacian::setCoefA;
@@ -111,27 +113,27 @@ private:
   struct SPT_data {
     SPT_data() : comm_tag(SPT_DATA) {}
     void allocate(int mm, int nx); // Allocates memory
-    ~SPT_data(){}; // Free memory
-    
+    ~SPT_data(){};                 // Free memory
+
     int jy; ///< Y index
-    
-    Matrix<dcomplex> bk;  ///< b vector in Fourier space
+
+    Matrix<dcomplex> bk; ///< b vector in Fourier space
     Matrix<dcomplex> xk;
 
     Matrix<dcomplex> gam;
-  
+
     Matrix<dcomplex> avec, bvec, cvec; ///< Diagonal bands of matrix
 
     int proc; // Which processor has this reached?
     int dir;  // Which direction is it going?
-  
+
     comm_handle recv_handle; // Handle for receives
-  
+
     int comm_tag; // Tag for communication
-  
+
     Array<BoutReal> buffer;
   };
-  
+
   int ys, ye;         // Range of Y indices
   SPT_data slicedata; // Used to solve for a single FieldPerp
   SPT_data* alldata;  // Used to solve a Field3D
@@ -152,5 +154,11 @@ private:
   void finish(SPT_data &data, FieldPerp &x);
 
 };
+
+namespace {
+// Note: After class definition so compiler knows that
+//       registered class is derived from Laplacian
+RegisterLaplace<LaplaceSPT> registerlaplacespt(LAPLACE_SPT);
+} // namespace
 
 #endif // __SPT_H__

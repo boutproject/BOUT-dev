@@ -35,9 +35,35 @@
 #include "field2d.hxx"
 #include "options.hxx"
 #include "unused.hxx"
+#include "bout/generic_factory.hxx"
 
 // Parderiv implementations
-#define PARDERIVCYCLIC "cyclic"
+constexpr auto PARDERIVCYCLIC = "cyclic";
+
+class InvertPar;
+
+class InvertParFactory
+    : public Factory<InvertPar, InvertParFactory, Options*, CELL_LOC, Mesh*> {
+public:
+  static constexpr auto type_name = "InvertPar";
+  static constexpr auto section_name = "parderiv";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = PARDERIVCYCLIC;
+
+  ReturnType create(Options* options = nullptr, CELL_LOC location = CELL_CENTRE,
+                    Mesh* mesh = nullptr) const {
+    return Factory::create(getType(options), options, location, mesh);
+  }
+  ReturnType create(const std::string& type, Options* options) const {
+    return Factory::create(type, options, CELL_CENTRE, nullptr);
+  }
+  static void ensureRegistered();
+};
+
+template <class DerivedType>
+using RegisterInvertPar = InvertParFactory::RegisterInFactory<DerivedType>;
+
+using RegisterUnavailableInvertPar = InvertParFactory::RegisterUnavailableInFactory;
 
 /// Base class for parallel inversion solvers
 /*!
@@ -49,7 +75,7 @@
  * Example
  * -------
  *
- * InvertPar *inv = InvertPar::Create();
+ * auto inv = InvertPar::Create();
  * inv->setCoefA(1.0);
  * inv->setCoefB(-0.1);
  * 
@@ -70,10 +96,12 @@ public:
 
   /*!
    * Create an instance of InvertPar
-   * 
-   * Note: For consistency this should be renamed "create" and take an Options* argument
    */
-  static InvertPar* Create(Mesh *mesh_in = nullptr);
+  static std::unique_ptr<InvertPar> create(Options *opt_in = nullptr,
+                                           CELL_LOC location_in = CELL_CENTRE,
+                                           Mesh *mesh_in = nullptr) {
+    return InvertParFactory::getInstance().create(opt_in, location_in, mesh_in);
+  }
   
   /*!
    * Solve the system of equations
@@ -158,22 +186,6 @@ protected:
 private:
 };
 
-class ParDerivFactory {
- public:
-  /// Return a pointer to the only instance
-  static ParDerivFactory* getInstance();
-
-  InvertPar* createInvertPar(CELL_LOC location = CELL_CENTRE,
-                             Mesh* mesh_in = bout::globals::mesh);
-  InvertPar *createInvertPar(const char *type, Options *opt = nullptr,
-                             CELL_LOC location = CELL_CENTRE,
-                             Mesh* mesh_in = bout::globals::mesh);
-  InvertPar* createInvertPar(Options *opts, CELL_LOC location = CELL_CENTRE,
-                             Mesh* mesh_in = bout::globals::mesh);
- private:
-  ParDerivFactory() {} // Prevent instantiation of this class
-  static ParDerivFactory* instance; ///< The only instance of this class (Singleton)
-};
 
 #endif // __INV_PAR_H__
 

@@ -28,7 +28,7 @@ required, as the provided one may be only for the compute nodes.
 Further, numpy header files are required, therefore numpy needs to be
 compiled as well.
 Further, the header files need to be exposed to the boutcore cython
-compilation, e.g. by adding them to ``_boutcore_build/boutcore.pyx.in``.
+compilation, e.g. by adding them to ``_boutcore/boutcore.pyx.in``.
 It seems both ``NUMPY/numpy/core/include`` and
 ``NUMPY/build/src.linux-x86_64-2.7/numpy/core/include/numpy`` need to be
 added, where ``NUMPY`` is the path of the numpy directory.
@@ -74,9 +74,7 @@ Vectors are not exposed yet.
 Functions
 ---------
 
-.. automodule:: boutcore
-   :members:
-
+See the API documentation :ref:`boutcore_api`
 
 Examples
 --------
@@ -176,17 +174,3 @@ A real example - check derivative contributions:
               ExB[tind,:,:,:]=(-bracket(phi, vort, bm, "CELL_CENTRE")).getAll()
               par_adv[tind,:,:,:]=(- Vpar_Grad_par(U, vort)).getAll()
 
-
-
-Functions - undocumented
-------------------------
-
-.. automodule:: boutcore
-   :undoc-members:
-
-Functions - special and inherited
----------------------------------
-
-.. automodule:: boutcore
-   :special-members:
-   :inherited-members:

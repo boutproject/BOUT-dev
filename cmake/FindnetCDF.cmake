@@ -26,17 +26,20 @@
 #   Set to TRUE to get extra debugging output
 
 include(BOUT++functions)
+include(CMakePrintHelpers)
 
-if (NOT EXISTS ${NC_CONFIG})
-  # Only search if NC_CONFIG was not set explicitly
-  find_package(netCDF QUIET CONFIG)
-  if (netCDF_FOUND)
-    set(netCDF_FOUND TRUE)
-    if (NOT TARGET netCDF::netcdf)
-      bout_add_library_alias(netCDF::netcdf netcdf)
-    endif()
-    return()
+find_package(netCDF QUIET CONFIG)
+
+if (netCDF_FOUND)
+  message(STATUS "netCDF CONFIG found")
+  set(netCDF_FOUND TRUE)
+  if (NOT TARGET netCDF::netcdf)
+    bout_add_library_alias(netCDF::netcdf netcdf)
   endif()
+  if (netCDF_DEBUG)
+     cmake_print_properties(TARGETS netcdf PROPERTIES LOCATION VERSION)
+  endif (netCDF_DEBUG)
+  return()
 endif()
 
 find_program(NC_CONFIG "nc-config"

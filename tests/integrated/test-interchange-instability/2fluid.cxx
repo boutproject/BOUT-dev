@@ -33,7 +33,7 @@ class Interchange : public PhysicsModel {
   BoutReal Te_x, Ti_x, Ni_x, bmag, rho_s, AA, ZZ, wci;
 
   // Laplacian inversion
-  Laplacian* phi_solver;
+  std::unique_ptr<Laplacian> phi_solver;
 
   Coordinates *coord;
 protected:
@@ -90,8 +90,8 @@ protected:
     phi_solver = Laplacian::create();
 
     /************* SHIFTED RADIAL COORDINATES ************/
-    bool ShiftXderivs;
-    globalOptions->get("shiftXderivs", ShiftXderivs, false); // Read global flag
+
+    const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
       ShearFactor = 0.0; // I disappears from metric
       b0xcv.z += I * b0xcv.x;
@@ -106,13 +106,13 @@ protected:
 
     BoutReal hthe0;
     if (mesh->get(hthe0, "hthe0") == 0) {
-      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n",
+      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n",
                    hthe0 / rho_s);
     }
 
     /************** NORMALISE QUANTITIES *****************/
 
-    output.write("\tNormalising to rho_s = %e\n", rho_s);
+    output.write("\tNormalising to rho_s = {:e}\n", rho_s);
 
     // Normalise profiles
     Ni0 /= Ni_x / 1.0e14;

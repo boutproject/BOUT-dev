@@ -36,12 +36,14 @@
 #ifndef __BOUT_H__
 #define __BOUT_H__
 
+#include "bout/build_config.hxx"
+
 #include "boutcomm.hxx"
-#include "datafile.hxx"
 #include "difops.hxx" // Differential operators
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "globals.hxx"
+#include "options_netcdf.hxx"
 #include "output.hxx"
 #include "smoothing.hxx" // Smoothing functions
 #include "sourcex.hxx"   // source and mask functions
@@ -52,15 +54,7 @@
 #include "where.hxx"
 #include "bout/mesh.hxx"
 #include "bout/solver.hxx"
-
-const BoutReal BOUT_VERSION = BOUT_VERSION_DOUBLE; ///< Version number
-
-#ifndef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
-// Include using statement by default in user code.
-// Macro allows us to include bout.hxx or physicsmodel.hxx without the using
-// statement in library code.
-using namespace bout::globals;
-#endif // BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+#include "bout/version.hxx"
 
 // BOUT++ main functions
 
@@ -119,6 +113,9 @@ struct CommandLineArgs {
   std::string log_file{"BOUT.log"};      ///< File name for the log file
   /// The original set of command line arguments
   std::vector<std::string> original_argv;
+  /// The "canonicalised" command line arguments, with single-letter
+  /// arguments expanded
+  std::vector<std::string> argv;
 };
 
 /// Parse the "fixed" command line arguments, like --help and -d
@@ -166,37 +163,32 @@ void setRunFinishInfo(Options& options);
 void writeSettingsFile(Options& options, const std::string& data_dir,
                        const std::string& settings_file);
 
-/// Setup the output dump files from \p options using the \p
-/// mesh. Files are created in the \p data_dir directory
-Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir);
+/// Add the configure-time build options to \p options
+void addBuildFlagsToOptions(Options& options);
 } // namespace experimental
 } // namespace bout
 
 /*!
- * Run the given solver. This function is only used
- * for old-style physics models with standalone C functions
- * The main() function in boutmain.hxx calls this function
- * to set up the RHS function and add bout_monitor.
- *
- */
-int bout_run(Solver* solver, rhsfunc physics_run);
-
-/*!
  * Monitor class for output. Called by the solver every output timestep.
  *
- * This is added to the solver in bout_run (for C-style models)
- * or in bout/physicsmodel.hxx
+ * This is added to the solver in bout/physicsmodel.hxx
  */
 class BoutMonitor : public Monitor {
 public:
-  BoutMonitor(BoutReal timestep = -1) : Monitor(timestep) {
-    // Add wall clock time etc to dump file
-    run_data.outputVars(bout::globals::dump);
-  }
+  BoutMonitor(BoutReal timestep = -1);
+  BoutMonitor(BoutReal timestep, Options& options);
 
 private:
   int call(Solver* solver, BoutReal t, int iter, int NOUT) override;
   RunMetrics run_data;
+  /// Wall time limit in seconds
+  BoutReal wall_limit;
+  /// Starting time
+  BoutReal mpi_start_time;
+  /// Stop if file `stop_check_name` exists
+  bool stop_check;
+  /// Filename for `stop_check`
+  std::string stop_check_name;
 };
 
 /*!

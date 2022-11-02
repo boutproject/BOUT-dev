@@ -105,7 +105,7 @@ protected:
  * 
  *     for ( int x=0; x<g2d.xSize(); x++)
  *       for ( int y=0; y<g2d.ySize(); y++)
- *         output.write(" Value at (%d ,%d) is %e\n" ,
+ *         output.write(" Value at ({:d} ,{:d}) is {:e}\n" ,
  *                        x, y,
  *                        g2d(x, y));
  *
@@ -200,7 +200,7 @@ private:
  *     for ( int x=0; x<g3d.xSize(); x++)
  *       for ( int y=0; y<g3d.ySize(); y++)
  *         for ( int z=0; z<g3d.zSize(); z++)
- *           output.write(" Value at (%d ,%d ,%d) is %e\n" ,
+ *           output.write(" Value at ({:d} ,{:d} ,{:d}) is {:e}\n" ,
  *                        x, y, z,
  *                        g3d(x, y, z));
  *

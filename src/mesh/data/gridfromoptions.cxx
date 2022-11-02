@@ -5,6 +5,8 @@
 #include <output.hxx>
 #include <unused.hxx>
 
+using bout::generator::Context;
+
 bool GridFromOptions::hasVar(const std::string& name) { return options->isSet(name); }
 
 namespace {
@@ -14,7 +16,7 @@ template <class T>
 auto getWithDefault(const Options& options, const std::string& name, const T& def) -> T {
   const bool has_var = options.isSet(name);
   if (!has_var) {
-    output_warn.write("Variable '%s' not in mesh options. Setting to ", name.c_str());
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to ", name);
     output_warn << def << "\n";
   }
   // Note! We don't use `Options::withDefault` here because that
@@ -43,45 +45,45 @@ bool GridFromOptions::get(Mesh*, BoutReal& rval, const std::string& name, BoutRe
   return hasVar(name);
 }
 
-bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutReal def) {
+bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutReal def, CELL_LOC location) {
   if (!hasVar(name)) {
-    output_warn.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(),
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to {:e}\n", name,
                       def);
     var = def;
     return false;
   }
 
-  var = FieldFactory::get()->create2D(name, options, m);
+  var = FieldFactory::get()->create2D(name, options, m, location);
   return true;
 }
 
-bool GridFromOptions::get(Mesh* m, Field3D& var, const std::string& name, BoutReal def) {
+bool GridFromOptions::get(Mesh* m, Field3D& var, const std::string& name, BoutReal def, CELL_LOC location) {
   if (!hasVar(name)) {
-    output_warn.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(),
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to {:e}\n", name,
                       def);
     var = def;
     return false;
   }
 
-  var = FieldFactory::get()->create3D(name, options, m);
+  var = FieldFactory::get()->create3D(name, options, m, location);
   return true;
 }
 
-bool GridFromOptions::get(Mesh* m, FieldPerp& var, const std::string& name, BoutReal def) {
+bool GridFromOptions::get(Mesh* m, FieldPerp& var, const std::string& name, BoutReal def, CELL_LOC location) {
   // Cannot set attributes from options at the moment, so don't know what 'yindex' this
   // FieldPerp should have: just set to 0 for now, and create FieldPerp on all processors
   // (note: this is different to behaviour of GridFromFile which will only create the
   // FieldPerp at a single global y-index).
 
   if (!hasVar(name)) {
-    output_warn.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(),
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to {:e}\n", name,
                       def);
     var = def;
     var.setIndex(0);
     return false;
   }
 
-  var = FieldFactory::get()->createPerp(name, options, m);
+  var = FieldFactory::get()->createPerp(name, options, m, location);
   var.setIndex(0);
 
   return true;
@@ -92,8 +94,7 @@ bool GridFromOptions::get(Mesh* m, std::vector<int>& var, const std::string& nam
                           GridDataSource::Direction UNUSED(dir)) {
   if (!hasVar(name)) {
     std::vector<int> def{};
-    output_warn.write("Variable '%s' not in mesh options. Setting to empty vector\n",
-                      name.c_str());
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to empty vector\n", name);
     var = def;
     return false;
   }
@@ -111,8 +112,7 @@ bool GridFromOptions::get(Mesh* m, std::vector<BoutReal>& var, const std::string
                           int len, int offset, GridDataSource::Direction dir) {
   if (!hasVar(name)) {
     std::vector<BoutReal> def{};
-    output_warn.write("Variable '%s' not in mesh options. Setting to empty vector\n",
-                      name.c_str());
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to empty vector\n", name);
     var = def;
     return false;
   }
@@ -122,24 +122,27 @@ bool GridFromOptions::get(Mesh* m, std::vector<BoutReal>& var, const std::string
 
   var.resize(len);
 
+  Context pos(0,0,0,CELL_CENTRE, m, 0.0);
+
   switch (dir) {
   case GridDataSource::X: {
     for (int x = 0; x < len; x++) {
-      var[x] = gen->generate(m->GlobalX(x - m->OffsetX + offset), 0.0, 0.0, 0.0);
+      pos.set("x", m->GlobalX(x - m->OffsetX + offset));
+      var[x] = gen->generate(pos);
     }
     break;
   }
   case GridDataSource::Y: {
-    for (int y = 0; y < len; y++) {
-      var[y] = gen->generate(0.0, TWOPI * m->GlobalY(y - m->OffsetY + offset), 0.0, 0.0);
+    for (int y = 0; y < len; y++){
+      pos.set("y", TWOPI * m->GlobalY(y - m->OffsetY + offset));
+      var[y] = gen->generate(pos);
     }
     break;
   }
   case GridDataSource::Z: {
     for (int z = 0; z < len; z++) {
-      var[z] = gen->generate(
-          0.0, 0.0,
-          (TWOPI * (z - m->OffsetZ + offset)) / static_cast<BoutReal>(m->LocalNz), 0.0);
+      pos.set("z", (TWOPI * (z - m->OffsetZ + offset)) / static_cast<BoutReal>(m->LocalNz));
+      var[z] = gen->generate(pos);
     }
     break;
   }

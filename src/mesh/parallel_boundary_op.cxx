@@ -5,13 +5,11 @@
 #include "output.hxx"
 #include "parallel_boundary_op.hxx"
 
+using bout::generator::Context;
+
 BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 
   Mesh* mesh = bndry->localmesh;
-
-  BoutReal xnorm;
-  BoutReal ynorm;
-  BoutReal znorm;
 
   BoutReal value;
 
@@ -20,10 +18,7 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
     // This works but doesn't quite do the right thing... should
     // generate value on the boundary, but that gives wrong
     // answer. This instead generates the value at the gridpoint
-    xnorm = mesh->GlobalX(x);
-    ynorm = mesh->GlobalY(y);
-    znorm = static_cast<BoutReal>(z) / (mesh->LocalNz);
-    return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
+    return gen_values->generate(Context(x, y, z, CELL_CENTRE, mesh, t));
   case ValueType::FIELD:
     value = (*field_values)(x,y,z);
     return value;
@@ -39,19 +34,11 @@ BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
 
   Mesh* mesh = bndry.localmesh;
 
-  BoutReal xnorm;
-  BoutReal ynorm;
-  BoutReal znorm;
-
   BoutReal value;
 
   switch (value_type) {
   case ValueType::GEN:
-    // Need to use GlobalX, except with BoutReal as argument...
-    xnorm = mesh->GlobalX(bndry.s_x);
-    ynorm = mesh->GlobalY(bndry.s_y);
-    znorm = bndry.s_z/(mesh->LocalNz);
-    return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
+    return gen_values->generate(Context(bndry.s_x, bndry.s_y, bndry.s_z, CELL_CENTRE, mesh, t));
   case ValueType::FIELD:
     // FIXME: Interpolate to s_x, s_y, s_z...
     value = (*field_values)(bndry.x,bndry.y,bndry.z);
@@ -87,7 +74,6 @@ BoundaryOpPar* BoundaryOpPar_dirichlet::clone(BoundaryRegionPar *region, Field3D
 }
 
 void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
-
   Field3D& f_next = f.ynext(bndry->dir);
 
   Coordinates& coord = *(f.getCoordinates());
@@ -103,7 +89,7 @@ void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
 
     // Scale the field and normalise to the desired value
     BoutReal y_prime = bndry->length;
-    BoutReal f2 = (f(x,y,z) - value) * (coord.dy(x, y) - y_prime) / y_prime;
+    BoutReal f2 = (f(x, y, z) - value) * (coord.dy(x, y, z) - y_prime) / y_prime;
 
     f_next(x, y+bndry->dir, z) = value - f2;
   }
@@ -148,9 +134,9 @@ void BoundaryOpPar_dirichlet_O3::apply(Field3D &f, BoutReal t) {
     BoutReal fb = getValue(*bndry, t);
     BoutReal f1 = f_prev(x, y-bndry->dir, z);
     BoutReal f2 = f(x,y,z);
-    BoutReal l1 = coord.dy(x, y);
+    BoutReal l1 = coord.dy(x, y, z);
     BoutReal l2 = bndry->length;
-    BoutReal l3 = coord.dy(x, y) - l2;
+    BoutReal l3 = coord.dy(x, y, z) - l2;
 
     BoutReal denom = (l1*l1*l2 + l1*l2*l2);
     BoutReal term1 = (l2*l2*l3 + l2*l3*l3);
@@ -200,7 +186,7 @@ void BoundaryOpPar_dirichlet_interp::apply(Field3D &f, BoutReal t) {
     BoutReal fs = getValue(*bndry, t);
 
     // Scale the field and normalise to the desired value
-    BoutReal dy = coord.dy(x, y);
+    BoutReal dy = coord.dy(x, y, z);
     BoutReal s = bndry->length*dy;
 
     f_next(x, y+bndry->dir, z) = f_prev(x, y-bndry->dir, z)*(1.-(2.*s/(dy+s)))
@@ -248,7 +234,7 @@ void BoundaryOpPar_neumann::apply(Field3D &f, BoutReal t) {
 
     // Generate the boundary value
     BoutReal value = getValue(x, y, z, t);
-    BoutReal dy = coord.dy(x, y);
+    BoutReal dy = coord.dy(x, y, z);
 
     f_next(x, y+bndry->dir, z) = f(x, y, z) + bndry->dir*value*dy;
   }

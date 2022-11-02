@@ -2,6 +2,8 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+#include "bout/build_config.hxx"
+
 #include "gtest/gtest.h"
 
 #include "bout/constants.hxx"
@@ -30,28 +32,16 @@ using namespace bout::globals;
 // Reuse the "standard" fixture for FakeMesh
 using Field3DTest = FakeMeshFixture;
 
-TEST_F(Field3DTest, IsReal) {
-  Field3D field;
-
-  EXPECT_TRUE(field.isReal());
-}
-
 TEST_F(Field3DTest, Is3D) {
   Field3D field;
 
   EXPECT_TRUE(field.is3D());
 }
 
-TEST_F(Field3DTest, ByteSize) {
-  Field3D field;
-
-  EXPECT_EQ(field.byteSize(), sizeof(BoutReal));
-}
-
 TEST_F(Field3DTest, BoutRealSize) {
   Field3D field;
 
-  EXPECT_EQ(field.BoutRealSize(), 1);
+  EXPECT_EQ(field.elementSize(), 1);
 }
 
 TEST_F(Field3DTest, Allocate) {
@@ -1150,9 +1140,8 @@ TEST_F(Field3DTest, CheckData) {
   field(0, 0, 0) = std::nan("");
 
   EXPECT_NO_THROW(checkData(field));
-  EXPECT_NO_THROW(checkData(field, RGN_NOBNDRY));
-  EXPECT_THROW(checkData(field, RGN_ALL), BoutException);
-  
+  EXPECT_NO_THROW(checkData(field, "RGN_NOBNDRY"));
+  EXPECT_THROW(checkData(field, "RGN_ALL"), BoutException);
 }
 
 #if CHECK > 0
@@ -2083,8 +2072,8 @@ TEST_F(Field3DTest, Min) {
   const BoutReal min_value = 40.0;
 
   EXPECT_EQ(min(field, false), min_value);
-  EXPECT_EQ(min(field, false, RGN_ALL), -99.0);
-  EXPECT_EQ(min(field, true, RGN_ALL), -99.0);
+  EXPECT_EQ(min(field, false, "RGN_ALL"), -99.0);
+  EXPECT_EQ(min(field, true, "RGN_ALL"), -99.0);
 }
 
 TEST_F(Field3DTest, Max) {
@@ -2100,8 +2089,8 @@ TEST_F(Field3DTest, Max) {
   const BoutReal max_value = 60.0;
 
   EXPECT_EQ(max(field, false), max_value);
-  EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
-  EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
+  EXPECT_EQ(max(field, false, "RGN_ALL"), 99.0);
+  EXPECT_EQ(max(field, true, "RGN_ALL"), 99.0);
 }
 
 TEST_F(Field3DTest, Mean) {
@@ -2119,8 +2108,8 @@ TEST_F(Field3DTest, Mean) {
   const BoutReal mean_value_all = 50.0 + 10.0/npoints_all;
 
   EXPECT_EQ(mean(field, false), mean_value_nobndry);
-  EXPECT_EQ(mean(field, false, RGN_ALL), mean_value_all);
-  EXPECT_EQ(mean(field, true, RGN_ALL), mean_value_all);
+  EXPECT_EQ(mean(field, false, "RGN_ALL"), mean_value_all);
+  EXPECT_EQ(mean(field, true, "RGN_ALL"), mean_value_all);
 }
 
 TEST_F(Field3DTest, DC) {
@@ -2290,7 +2279,7 @@ TEST_F(Field3DTest, FillField) {
   EXPECT_TRUE(IsFieldEqual(f, g));
 }
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 namespace bout {
 namespace testing {
 

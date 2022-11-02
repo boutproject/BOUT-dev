@@ -31,15 +31,29 @@ class LaplaceNaulin;
 #include <invert_laplace.hxx>
 #include <options.hxx>
 
+namespace {
+RegisterLaplace<LaplaceNaulin> registerlaplacenaulin(LAPLACE_NAULIN);
+}
+
 /// Solves the 2D Laplacian equation
 /*!
  * 
  */
 class LaplaceNaulin : public Laplacian {
 public:
-  LaplaceNaulin(Options *opt = NULL, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
-  ~LaplaceNaulin();
+  LaplaceNaulin(Options* opt = NULL, const CELL_LOC loc = CELL_CENTRE,
+                Mesh* mesh_in = nullptr, Solver* solver = nullptr,
+                Datafile* dump = nullptr);
+  ~LaplaceNaulin() = default;
   
+  using Laplacian::setCoefA;
+  using Laplacian::setCoefC;
+  using Laplacian::setCoefC1;
+  using Laplacian::setCoefC2;
+  using Laplacian::setCoefD;
+  using Laplacian::setCoefEx;
+  using Laplacian::setCoefEz;
+
   // ACoef is not implemented because the delp2solver that we use can probably
   // only handle a Field2D for Acoef, but we would have to pass Acoef/Dcoef,
   // where we allow Dcoef to be a Field3D
@@ -104,6 +118,8 @@ public:
 
   bool uses3DCoefs() const override { return true; }
 
+  using Laplacian::solve;
+
   FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
   FieldPerp solve(const FieldPerp &UNUSED(b),
                         const FieldPerp &UNUSED(x0)) override {
@@ -122,13 +138,17 @@ public:
 
   BoutReal getMeanIterations() const { return naulinsolver_mean_its; }
   void resetMeanIterations() { naulinsolver_mean_its = 0; }
+
+  void outputVars(Options& output_options,
+                  const std::string& time_dimension) const override;
+
 private:
   LaplaceNaulin(const LaplaceNaulin&);
   LaplaceNaulin& operator=(const LaplaceNaulin&);
   Field3D Acoef, C1coef, C2coef, Dcoef;
 
   /// Laplacian solver used to solve the equation with constant-in-z coefficients
-  Laplacian* delp2solver;
+  std::unique_ptr<Laplacian> delp2solver{nullptr};
 
   /// Solver tolerances
   BoutReal rtol, atol;

@@ -1,13 +1,15 @@
 #include "gtest/gtest.h"
 
-#include "bout/constants.hxx"
-#include "bout/mesh.hxx"
 #include "boutexception.hxx"
+#if not(BOUT_USE_METRIC_3D)
 #include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
+#include "bout/constants.hxx"
+#include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
 
 /// Global mesh
 namespace bout{
@@ -21,9 +23,9 @@ using namespace bout::globals;
 
 /// Test fixture to make sure the global mesh is our fake one
 class Vector2DTest : public ::testing::Test {
+  WithQuietOutput quiet{output_info};
 protected:
   Vector2DTest() {
-    WithQuietOutput quiet{output_info};
     // Delete any existing mesh
     if (mesh != nullptr) {
       // Delete boundary regions
@@ -34,6 +36,7 @@ protected:
       delete mesh;
       mesh = nullptr;
     }
+    bout::globals::mpi = new MpiWrapper();
     mesh = new FakeMesh(nx, ny, nz);
     static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
     mesh->createDefaultRegions();
@@ -47,7 +50,8 @@ protected:
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
         Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
-        Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}, false));
+        Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}));
+    // No call to Coordinates::geometry() needed here
 
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
@@ -68,6 +72,8 @@ protected:
     }
     delete mesh_staggered;
     mesh_staggered = nullptr;
+    delete bout::globals::mpi;
+    bout::globals::mpi = nullptr;
   }
 
 public:
@@ -99,28 +105,16 @@ TEST_F(Vector2DTest, ApplyBoundaryString) {
   EXPECT_DOUBLE_EQ(v.x(2,2), 0.0);
 }
 
-TEST_F(Vector2DTest, IsReal) {
-  Vector2D vector;
-
-  EXPECT_TRUE(vector.isReal());
-}
-
 TEST_F(Vector2DTest, Is3D) {
   Vector2D vector;
 
   EXPECT_FALSE(vector.is3D());
 }
 
-TEST_F(Vector2DTest, ByteSize) {
-  Vector2D vector;
-
-  EXPECT_EQ(vector.byteSize(), 3 * sizeof(BoutReal));
-}
-
 TEST_F(Vector2DTest, BoutRealSize) {
   Vector2D vector;
 
-  EXPECT_EQ(vector.BoutRealSize(), 3);
+  EXPECT_EQ(vector.elementSize(), 3);
 }
 
 TEST_F(Vector2DTest, TimeDeriv) {
@@ -219,7 +213,7 @@ TEST_F(Vector2DTest, SetLocationVSHIFT) {
 TEST_F(Vector2DTest, SetLocationDEFAULT) {
   Vector2D vector;
   CELL_LOC targetLoc = CELL_CENTRE;
-  vector.x.getMesh()->StaggerGrids = true;
+  vector.getMesh()->StaggerGrids = true;
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
   EXPECT_NO_THROW(vector.setLocation(CELL_DEFAULT));
   EXPECT_EQ(vector.getLocation(), targetLoc);
@@ -748,3 +742,4 @@ TEST_F(Vector2DTest, AbsContra) {
 
   EXPECT_TRUE(IsFieldEqual(result, 24.819347291981714));
 }
+#endif

@@ -35,7 +35,7 @@ struct Durations {
 
 class Arithmetic : public PhysicsModel {
 protected:
-  int init(bool restarting) {
+  int init(bool) {
 
     Field3D a = 1.0;
     Field3D b = 2.0;
@@ -82,7 +82,7 @@ protected:
     //#define PRINT(str,elapsed)   output << str << elapsed.min.count()<<
     //elapsed.avg.count()<< elapsed.max.count() << endl;
 #define PRINT(str, elapsed)                                                              \
-  output.write("%s %8.3g %8.3g %8.3g\n", str, elapsed.min.count(), elapsed.avg.count(),  \
+  output.write("{:s} {:8.3g} {:8.3g} {:8.3g}\n", str, elapsed.min.count(), elapsed.avg.count(),  \
                elapsed.max.count())
     PRINT("Fields:    ", elapsed1);
     PRINT("C loop:    ", elapsed2);
@@ -92,7 +92,7 @@ protected:
     SOLVE_FOR(n);
     return 0;
   }
-  
+
   int rhs(BoutReal) {
     ddt(n) = 0;
     return 0;

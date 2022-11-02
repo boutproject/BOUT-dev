@@ -30,33 +30,38 @@
 #ifndef __IDA_SOLVER_H__
 #define __IDA_SOLVER_H__
 
-#ifdef BOUT_HAS_IDA
-
+#include "bout/build_config.hxx"
 #include "bout/solver.hxx"
+
+#if not BOUT_HAS_IDA
+
+namespace {
+RegisterUnavailableSolver
+    registerunavailableida("ida", "BOUT++ was not configured with IDA/SUNDIALS");
+}
+
+#else
+
 #include "bout_types.hxx"
+#include "bout/sundials_backports.hxx"
 
 #include <sundials/sundials_config.h>
-#if SUNDIALS_VERSION_MAJOR >= 3
-#include <sunlinsol/sunlinsol_spgmr.h>
-#endif
 
 #include <nvector/nvector_parallel.h>
 
 class IdaSolver;
 class Options;
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<IdaSolver> registersolverida("ida");
 }
 
 class IdaSolver : public Solver {
 public:
-  IdaSolver(Options* opts = nullptr);
+  explicit IdaSolver(Options* opts = nullptr);
   ~IdaSolver();
 
-  int init(int nout, BoutReal tstep) override;
-
+  int init() override;
   int run() override;
   BoutReal run(BoutReal tout);
 
@@ -66,8 +71,16 @@ public:
            BoutReal* zvec);
 
 private:
-  int NOUT;          // Number of outputs. Specified in init, needed in run
-  BoutReal TIMESTEP; // Time between outputs
+  /// Absolute tolerance
+  BoutReal abstol;
+  /// Relative tolerance
+  BoutReal reltol;
+  /// Maximum number of steps to take between outputs
+  int mxsteps;
+  /// Use user-supplied preconditioner
+  bool use_precon;
+  /// Correct the initial values
+  bool correct_start;
 
   N_Vector uvec{nullptr};  // Values
   N_Vector duvec{nullptr}; // Time-derivatives
@@ -77,10 +90,10 @@ private:
   BoutReal pre_Wtime{0.0}; // Time in preconditioner
   int pre_ncalls{0};       // Number of calls to preconditioner
 
-#if SUNDIALS_VERSION_MAJOR >= 3
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
-#endif
+  /// Context for SUNDIALS memory allocations
+  sundials::Context suncontext;
 };
 
 #endif // BOUT_HAS_IDA

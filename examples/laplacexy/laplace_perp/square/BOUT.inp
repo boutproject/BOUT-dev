@@ -8,11 +8,10 @@ non_uniform = true  # Include corrections to second derivatives
 nz = 1
 dx = 0.5*(1 + x)  # Non-uniform x grid spacing
 
-nx=20
-ny=20
+nx = 20
+ny = 20
 g23 = 0.5  # Non-zero, so y derivatives appear in Laplace_perp
 
 [laplacexy]
 pctype = sor  # Preconditioner
 include_y_derivs = true
-

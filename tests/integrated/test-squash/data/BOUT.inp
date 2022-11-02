@@ -1,22 +1,20 @@
-timestep = 1.
+timestep = 1.0
 nout = 1
 
 MZ = 1
 
 [mesh]
-MXG=1
-MYG=1
+MXG = 1
+MYG = 1
 nx = 4
 ny = 2
 
-dx = 1.
-dy = 1.
-
-[solver]
+dx = 1.0
+dy = 1.0
 
 [f2]
-scale = 1.
-function = 0.
+scale = 1.0
+function = 0.0
 
 [f3]
-function = 0.
+function = 0.0

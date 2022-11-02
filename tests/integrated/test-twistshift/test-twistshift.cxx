@@ -8,6 +8,8 @@ int main(int argc, char** argv) {
 
   Field3D test_aligned = toFieldAligned(test);
 
+  using bout::globals::mesh;
+
   // zero guard cells to check that communication is doing something
   for (int x=0; x<mesh->LocalNx; x++) {
     for (int z=0; z<mesh->LocalNz; z++) {
@@ -22,11 +24,11 @@ int main(int argc, char** argv) {
 
   mesh->communicate(test_aligned);
 
-  Field3D result = fromFieldAligned(test_aligned);
+  Options::root()["result"] = fromFieldAligned(test_aligned);
+  Options::root()["test"] = test;
+  Options::root()["test_aligned"] = test_aligned;
 
-  SAVE_ONCE(test, test_aligned, result);
-
-  dump.write();
+  bout::writeDefaultOutputFile();
 
   BoutFinalise();
 }

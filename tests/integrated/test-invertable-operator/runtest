@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
-#requires: petsc
+# requires: petsc
+# requires: not metric_3d
+# cores: 2
 
-# 
+#
 # Run the test, compare results against expected value
 #
 
@@ -14,9 +16,9 @@ from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
-nprocs = [1,2]       # Number of processors to run on
-reltol = 1.e-3  # Allowed relative tolerance
-nthreads=1
+nprocs = [1, 2]  # Number of processors to run on
+reltol = 1.0e-3  # Allowed relative tolerance
+nthreads = 1
 
 
 build_and_log("invertable operator test")
@@ -24,11 +26,14 @@ build_and_log("invertable operator test")
 # Delete old output files
 shell("rm data/BOUT.dmp.*")
 
+
 def run(path, nproc, log=False):
     pipe = False
     if log != False:
         pipe = True
-    s, out = launch_safe("./invertable_operator -d "+path, nproc=nproc, mthread=nthreads, pipe=pipe)
+    s, out = launch_safe(
+        "./invertable_operator -d " + path, nproc=nproc, mthread=nthreads, pipe=pipe
+    )
     if pipe:
         f = open(log, "w")
         f.write(out)
@@ -39,17 +44,22 @@ def run(path, nproc, log=False):
     maxRelErrLaplacians = collect("maxRelErrLaplacians", path=path)[-1]
 
     if passVerification == 0:
-        print("  => Failed (verification step - value is {s})".format(s=passVerification))
+        print(
+            "  => Failed (verification step - value is {s})".format(s=passVerification)
+        )
         exit(1)
 
     if maxRelErrLaplacians > reltol:
-        print("  => Failed (relative tolerance step -- difference of {s})".format(s=maxRelErrLaplacians))
+        print(
+            "  => Failed (relative tolerance step -- difference of {s})".format(
+                s=maxRelErrLaplacians
+            )
+        )
         exit(1)
 
 
 for np in nprocs:
-    run("data",np)
+    run("data", np)
 
 print("  => All tests passed")
 exit(0)
-

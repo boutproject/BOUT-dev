@@ -80,13 +80,13 @@ FieldPerp& FieldPerp::allocate() {
  *                         ASSIGNMENT 
  ***************************************************************/
 
-FieldPerp &FieldPerp::operator=(const FieldPerp &rhs) {
+FieldPerp& FieldPerp::operator=(const FieldPerp& rhs) {
   /// Check for self-assignment
   if (this == &rhs) {
     return (*this); // skip this assignment
   }
 
-  copyFieldMembers(rhs);
+  Field::operator=(rhs);
 
   nx = rhs.nx;
   nz = rhs.nz;
@@ -108,10 +108,10 @@ FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
 
 const Region<IndPerp> &FieldPerp::getRegion(REGION region) const {
   return fieldmesh->getRegionPerp(toString(region));
-};
+}
 const Region<IndPerp> &FieldPerp::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegionPerp(region_name);
-};
+}
 
 int FieldPerp::getGlobalIndex() const {
   auto& fieldmesh = *getMesh();
@@ -176,8 +176,8 @@ void checkDataIsFiniteOnRegion(const FieldPerp &f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!::finite(f[i])) {
-      throw BoutException("FieldPerp: Operation on non-finite data at [%d][%d]\n", i.x(),
-                          i.z());
+      throw BoutException("FieldPerp: Operation on non-finite data at [{:d}][{:d}]\n",
+                          i.x(), i.z());
     }
   }
 }
@@ -215,4 +215,15 @@ bool operator==(const FieldPerp& a, const FieldPerp& b) {
 std::ostream& operator<<(std::ostream& out, const FieldPerp& value) {
   out << toString(value);
   return out;
+}
+
+void swap(FieldPerp& first, FieldPerp& second) noexcept {
+  using std::swap;
+
+  swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
+  swap(first.nx, second.nx);
+  swap(first.nz, second.nz);
+  swap(first.yindex, second.yindex);
+  swap(first.data, second.data);
 }

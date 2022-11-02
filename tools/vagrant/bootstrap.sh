@@ -10,7 +10,7 @@ apt-get install -y python-scipy
 # get the bout++ code
 apt-get install -y git
 rm -rf BOUT
-git clone git://github.com/bendudson/BOUT.git
+git clone https://github.com/bendudson/BOUT.git
 
 # environment variables for both this session and the vagrant user
 echo "export IDL_PATH=$(pwd)/BOUT/tools/idllib" >> $(pwd)/.bashrc

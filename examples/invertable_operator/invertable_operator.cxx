@@ -67,7 +67,7 @@ private:
   // or even a Lambda
   // mySolver([](const Field3D &input) { return input + Delp2(input); });
 
-  class Laplacian* laplacianSolver;
+  std::unique_ptr<Laplacian> laplacianSolver{nullptr};
 
   const int nits = 10;
 

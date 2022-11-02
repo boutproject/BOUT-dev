@@ -69,7 +69,7 @@ private:
   Field3D phi; // Electrostatic potential
   Field3D Ve;  // parallel electron velocity
   
-  Laplacian *phiSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
 
   BoutReal nu; // Resistivity parameter
 };
