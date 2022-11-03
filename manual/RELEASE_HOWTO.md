@@ -77,11 +77,16 @@ After PR is merged:
     - [ ]  [`manual/doxygen/Doxyfile_readthedocs`][Doxyfile_readthedocs]: `PROJECT_NUMBER`
     - [ ]  [`manual/doxygen/Doxyfile`][Doxyfile]: `PROJECT_NUMBER`
     - [ ]  [`CMakeLists.txt`][CMakeLists.txt]: `_bout_previous_version`, `_bout_next_version`
+    - [ ]  [`tools/pylib/_boutpp_build/backend.py`][backend.py]: `_bout_previous_version`, `_bout_next_version`
 
 [Doxyfile]: ../manual/doxygen/Doxyfile
 [Doxyfile_readthedocs]: ../manual/doxygen/Doxyfile_readthedocs
 [citation]: ../CITATION.cff
 [configure]: ../configure.ac
 [sphinx_conf]: ../manual/sphinx/conf.py
+[README.md]: ../README.md
+[CHANGELOG.md]: ../CHANGELOG.md
+[CMakeLists.txt]: ../CMakeLists.txt
+[backend.py]: ../tools/pylib/_boutpp_build/backend.py
 [gcg]: https://github.com/github-changelog-generator/github-changelog-generator
 [gh_release]: https://github.com/boutproject/BOUT-dev/releases/new

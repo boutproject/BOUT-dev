@@ -4,6 +4,7 @@ import hashlib  # corelib
 import base64  # corelib
 import tempfile  # corelib
 import subprocess  # corelib
+import re  # corelib
 
 try:
     import packaging.tags  # packaging
@@ -18,26 +19,29 @@ def run(cmd):
 
 
 useLocalVersion = True
+version = None
 
 
 def getversion(_cache={}):
-    if "r" not in _cache:
+    global version
+    if version is None:
+        _bout_previous_version = "v4.0.0"
+        _bout_next_version = "5.0.0.alpha"
+
         try:
-            tmp = run2("git describe --tags --match=v4.0.0")
+            tmp = run2(f"git describe --tags --match={_bout_previous_version}").strip()
+            tmp = re.sub(f"{_bout_previous_version}-", f"{_bout_next_version}.dev", tmp)
             if useLocalVersion:
-                tmp = run2(
-                    f"echo {tmp.strip()} | sed -e s/v4.0.0-/v5.0.0.dev/ -e s/-/+/"
-                )
+                tmp = re.sub("-", "+", tmp)
             else:
-                tmp = run2(
-                    f"echo {tmp.strip()} | sed -e s/v4.0.0-/v5.0.0.dev/ -e s/-.*//"
-                )
-            _cache["r"] = tmp
+                tmp = re.sub("-.*", "+", tmp)
+            version = tmp
             with open("_version.txt", "w") as f:
-                f.write(_cache["r"])
+                f.write(version + "\n")
         except AssertionError:
-            _cache["r"] = run2("cat _version.txt")
-    return _cache["r"].strip()
+            with open("_version.txt") as f:
+                version = f.read().strip()
+    return version
 
 
 def run2(cmd):
