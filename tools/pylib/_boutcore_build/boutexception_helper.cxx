@@ -8,4 +8,3 @@ void raise_bout_py_error() {
     PyErr_SetString(PyExc_RuntimeError, e.getBacktrace().c_str());
   }
 }
-    
