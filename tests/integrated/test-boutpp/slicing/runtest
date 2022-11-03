@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# requires boutcore
+# requires boutpp
 # requires not make
 
 import numpy as np
-import boutcore as bc
+import boutpp as bc
 import inspect
 
 bc.init("-d test")
