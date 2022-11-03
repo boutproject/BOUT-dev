@@ -428,8 +428,8 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
             //  direction
             // In the case of Neumann we have in this case two values
             //  defined at the same point
-            if ((bndry->bx && x_boundary_offset == -1)
-                || (bndry->by && y_boundary_offset == -1)) {
+            if ((bndry->bx != 0 && x_boundary_offset == -1)
+                || (bndry->by != 0 && y_boundary_offset == -1)) {
               spacing.f1 = spacing.f0;
             } else {
               spacing.f1 = spacing.f0 + coords_field[i1 + iz];
@@ -1330,8 +1330,8 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                               //  direction
                               // In the case of Neumann we have in this case two values
                               //  defined at the same point
-                              if ((bndry->bx && x_boundary_offset == -1)
-                                  || (bndry->by && y_boundary_offset == -1)) {
+                              if ((bndry->bx != 0 && x_boundary_offset == -1)
+                                  || (bndry->by != 0 && y_boundary_offset == -1)) {
                                 spacing.f1 = spacing.f0;
                                 spacing.f2 = spacing.f1 + coords_field[i1 + iz];
                               } else {
@@ -2450,8 +2450,9 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                                                 // In the case of Neumann we have in this
                                                 // case two values
                                                 //  defined at the same point
-                                                if ((bndry->bx && x_boundary_offset == -1)
-                                                    || (bndry->by
+                                                if ((bndry->bx != 0
+                                                     && x_boundary_offset == -1)
+                                                    || (bndry->by != 0
                                                         && y_boundary_offset == -1)) {
                                                   spacing.f1 = spacing.f0;
                                                   spacing.f2 =
