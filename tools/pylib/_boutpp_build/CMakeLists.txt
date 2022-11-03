@@ -105,6 +105,8 @@ add_library(boutpp${PYTHON_EXT_SUFFIX} SHARED
   ${tar}/boutexception_helper.cxx
   )
 
+add_library(boutpp ALIAS boutpp${PYTHON_EXT_SUFFIX})
+
 add_custom_target(boutpp.py ALL
   COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libboutpp${PYTHON_EXT_SUFFIX}.so  ${CMAKE_CURRENT_BINARY_DIR}/../boutpp/__init__.py
   COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/boutpp.py ${CMAKE_CURRENT_BINARY_DIR}/../boutpp/
