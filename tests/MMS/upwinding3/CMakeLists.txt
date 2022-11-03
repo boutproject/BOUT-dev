@@ -4,5 +4,4 @@ bout_add_mms_test(MMS-upwinding3
   REQUIRES BOUT_ENABLE_PYTHON
 )
 
-add_dependencies(MMS-upwinding3 boutcore)
-add_dependencies(MMS-upwinding3 boutcore)
+add_dependencies(MMS-upwinding3 boutpp)

@@ -5,4 +5,3 @@ bout_add_mms_test(MMS-bracket
 )
 
 add_dependencies(MMS-bracket boutpp)
-add_dependencies(MMS-bracket boutpp)

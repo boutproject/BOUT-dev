@@ -5,4 +5,3 @@ bout_add_mms_test(MMS-shiftedmetricinterp
 )
 
 add_dependencies(MMS-shiftedmetricinterp boutpp)
-add_dependencies(MMS-shiftedmetricinterp boutpp)
