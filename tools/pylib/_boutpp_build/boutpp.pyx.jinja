@@ -744,13 +744,8 @@ cdef class Mesh:
     def __dealloc__(self):
         self.__boutpp_dealloc()
 
-<<<<<<<< HEAD:tools/pylib/_boutpp_build/boutpp.pyx.jinja
     def __boutpp_dealloc(self):
-        if self.cobj and not self.isGlobal:
-========
-    def __boutcore_dealloc(self):
         if self.cobj and self.isSelfOwned:
->>>>>>>> origin/next:tools/pylib/_boutcore/boutcore.pyx.jinja
             del self.cobj
             self.cobj = NULL
 
@@ -1208,15 +1203,9 @@ def finalise():
                   PhysicsModel, PhysicsModelBase, Vector2D, Vector3D,
                   PythonModelCallback)
     for obj in objects:
-<<<<<<<< HEAD:tools/pylib/_boutpp_build/boutpp.pyx.jinja
-        if isinstance(obj,ourClasses):
+        if isinstance(obj, ourClasses):
             if hasattr(obj, "__boutpp_dealloc"):
                 obj.__boutpp_dealloc()
-========
-        if isinstance(obj, ourClasses):
-            if hasattr(obj, "__boutcore_dealloc"):
-                obj.__boutcore_dealloc()
->>>>>>>> origin/next:tools/pylib/_boutcore/boutcore.pyx.jinja
             else:
                 for ourClass in ourClasses:
                     if isinstance(obj, ourClass):
