@@ -41,7 +41,7 @@ public:
   BoundaryDirichletNonUniform_O2() {}
   BoundaryDirichletNonUniform_O2(BoundaryRegion* region,
                                  std::shared_ptr<FieldGenerator> gen = nullptr)
-      : BoundaryOp(region), gen(gen) {}
+      : BoundaryOp(region), gen(std::move(gen)) {}
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
@@ -54,14 +54,17 @@ private:
   std::shared_ptr<FieldGenerator> gen; // Generator
   static vec2 calc_interp_to_stencil(const vec2& spacing);
   void apply_no_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                        const int x_boundary_offset, const int y_boundary_offset);
+                        const std::shared_ptr<FieldGenerator>& fg,
+                        std::vector<BoutReal>& vals, int x_boundary_offset,
+                        int y_boundary_offset);
   void apply_co_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                        const int x_boundary_offset, const int y_boundary_offset);
+                        const std::shared_ptr<FieldGenerator>& fg,
+                        std::vector<BoutReal>& vals, int x_boundary_offset,
+                        int y_boundary_offset);
   void apply_anti_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                          std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                          const int x_boundary_offset, const int y_boundary_offset);
+                          const std::shared_ptr<FieldGenerator>& fg,
+                          std::vector<BoutReal>& vals, int x_boundary_offset,
+                          int y_boundary_offset);
 };
 
 class BoundaryNeumannNonUniform_O2 : public BoundaryOp {
@@ -69,7 +72,7 @@ public:
   BoundaryNeumannNonUniform_O2() {}
   BoundaryNeumannNonUniform_O2(BoundaryRegion* region,
                                std::shared_ptr<FieldGenerator> gen = nullptr)
-      : BoundaryOp(region), gen(gen) {}
+      : BoundaryOp(region), gen(std::move(gen)) {}
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
@@ -82,14 +85,17 @@ private:
   std::shared_ptr<FieldGenerator> gen; // Generator
   static vec2 calc_interp_to_stencil(const vec2& spacing);
   void apply_no_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                        const int x_boundary_offset, const int y_boundary_offset);
+                        const std::shared_ptr<FieldGenerator>& fg,
+                        std::vector<BoutReal>& vals, int x_boundary_offset,
+                        int y_boundary_offset);
   void apply_co_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                        const int x_boundary_offset, const int y_boundary_offset);
+                        const std::shared_ptr<FieldGenerator>& fg,
+                        std::vector<BoutReal>& vals, int x_boundary_offset,
+                        int y_boundary_offset);
   void apply_anti_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                          std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                          const int x_boundary_offset, const int y_boundary_offset);
+                          const std::shared_ptr<FieldGenerator>& fg,
+                          std::vector<BoutReal>& vals, int x_boundary_offset,
+                          int y_boundary_offset);
 };
 
 class BoundaryFreeNonUniform_O2 : public BoundaryOp {
@@ -97,7 +103,7 @@ public:
   BoundaryFreeNonUniform_O2() {}
   BoundaryFreeNonUniform_O2(BoundaryRegion* region,
                             std::shared_ptr<FieldGenerator> gen = nullptr)
-      : BoundaryOp(region), gen(gen) {}
+      : BoundaryOp(region), gen(std::move(gen)) {}
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
@@ -125,7 +131,7 @@ public:
   BoundaryDirichletNonUniform_O3() {}
   BoundaryDirichletNonUniform_O3(BoundaryRegion* region,
                                  std::shared_ptr<FieldGenerator> gen = nullptr)
-      : BoundaryOp(region), gen(gen) {}
+      : BoundaryOp(region), gen(std::move(gen)) {}
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
@@ -138,14 +144,17 @@ private:
   std::shared_ptr<FieldGenerator> gen; // Generator
   static vec3 calc_interp_to_stencil(const vec3& spacing);
   void apply_no_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                        const int x_boundary_offset, const int y_boundary_offset);
+                        const std::shared_ptr<FieldGenerator>& fg,
+                        std::vector<BoutReal>& vals, int x_boundary_offset,
+                        int y_boundary_offset);
   void apply_co_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                        const int x_boundary_offset, const int y_boundary_offset);
+                        const std::shared_ptr<FieldGenerator>& fg,
+                        std::vector<BoutReal>& vals, int x_boundary_offset,
+                        int y_boundary_offset);
   void apply_anti_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                          std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                          const int x_boundary_offset, const int y_boundary_offset);
+                          const std::shared_ptr<FieldGenerator>& fg,
+                          std::vector<BoutReal>& vals, int x_boundary_offset,
+                          int y_boundary_offset);
 };
 
 class BoundaryNeumannNonUniform_O3 : public BoundaryOp {
@@ -153,7 +162,7 @@ public:
   BoundaryNeumannNonUniform_O3() {}
   BoundaryNeumannNonUniform_O3(BoundaryRegion* region,
                                std::shared_ptr<FieldGenerator> gen = nullptr)
-      : BoundaryOp(region), gen(gen) {}
+      : BoundaryOp(region), gen(std::move(gen)) {}
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
@@ -166,14 +175,17 @@ private:
   std::shared_ptr<FieldGenerator> gen; // Generator
   static vec3 calc_interp_to_stencil(const vec3& spacing);
   void apply_no_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                        const int x_boundary_offset, const int y_boundary_offset);
+                        const std::shared_ptr<FieldGenerator>& fg,
+                        std::vector<BoutReal>& vals, int x_boundary_offset,
+                        int y_boundary_offset);
   void apply_co_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                        const int x_boundary_offset, const int y_boundary_offset);
+                        const std::shared_ptr<FieldGenerator>& fg,
+                        std::vector<BoutReal>& vals, int x_boundary_offset,
+                        int y_boundary_offset);
   void apply_anti_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                          std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                          const int x_boundary_offset, const int y_boundary_offset);
+                          const std::shared_ptr<FieldGenerator>& fg,
+                          std::vector<BoutReal>& vals, int x_boundary_offset,
+                          int y_boundary_offset);
 };
 
 class BoundaryFreeNonUniform_O3 : public BoundaryOp {
@@ -181,7 +193,7 @@ public:
   BoundaryFreeNonUniform_O3() {}
   BoundaryFreeNonUniform_O3(BoundaryRegion* region,
                             std::shared_ptr<FieldGenerator> gen = nullptr)
-      : BoundaryOp(region), gen(gen) {}
+      : BoundaryOp(region), gen(std::move(gen)) {}
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
@@ -209,7 +221,7 @@ public:
   BoundaryDirichletNonUniform_O4() {}
   BoundaryDirichletNonUniform_O4(BoundaryRegion* region,
                                  std::shared_ptr<FieldGenerator> gen = nullptr)
-      : BoundaryOp(region), gen(gen) {}
+      : BoundaryOp(region), gen(std::move(gen)) {}
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
@@ -222,14 +234,17 @@ private:
   std::shared_ptr<FieldGenerator> gen; // Generator
   static vec4 calc_interp_to_stencil(const vec4& spacing);
   void apply_no_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                        const int x_boundary_offset, const int y_boundary_offset);
+                        const std::shared_ptr<FieldGenerator>& fg,
+                        std::vector<BoutReal>& vals, int x_boundary_offset,
+                        int y_boundary_offset);
   void apply_co_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                        const int x_boundary_offset, const int y_boundary_offset);
+                        const std::shared_ptr<FieldGenerator>& fg,
+                        std::vector<BoutReal>& vals, int x_boundary_offset,
+                        int y_boundary_offset);
   void apply_anti_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                          std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                          const int x_boundary_offset, const int y_boundary_offset);
+                          const std::shared_ptr<FieldGenerator>& fg,
+                          std::vector<BoutReal>& vals, int x_boundary_offset,
+                          int y_boundary_offset);
 };
 
 class BoundaryNeumannNonUniform_O4 : public BoundaryOp {
@@ -237,7 +252,7 @@ public:
   BoundaryNeumannNonUniform_O4() {}
   BoundaryNeumannNonUniform_O4(BoundaryRegion* region,
                                std::shared_ptr<FieldGenerator> gen = nullptr)
-      : BoundaryOp(region), gen(gen) {}
+      : BoundaryOp(region), gen(std::move(gen)) {}
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
@@ -250,14 +265,17 @@ private:
   std::shared_ptr<FieldGenerator> gen; // Generator
   static vec4 calc_interp_to_stencil(const vec4& spacing);
   void apply_no_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                        const int x_boundary_offset, const int y_boundary_offset);
+                        const std::shared_ptr<FieldGenerator>& fg,
+                        std::vector<BoutReal>& vals, int x_boundary_offset,
+                        int y_boundary_offset);
   void apply_co_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                        const int x_boundary_offset, const int y_boundary_offset);
+                        const std::shared_ptr<FieldGenerator>& fg,
+                        std::vector<BoutReal>& vals, int x_boundary_offset,
+                        int y_boundary_offset);
   void apply_anti_stagger(Field3D& f, Mesh* mesh, BoutReal t,
-                          std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                          const int x_boundary_offset, const int y_boundary_offset);
+                          const std::shared_ptr<FieldGenerator>& fg,
+                          std::vector<BoutReal>& vals, int x_boundary_offset,
+                          int y_boundary_offset);
 };
 
 class BoundaryFreeNonUniform_O4 : public BoundaryOp {
@@ -265,7 +283,7 @@ public:
   BoundaryFreeNonUniform_O4() {}
   BoundaryFreeNonUniform_O4(BoundaryRegion* region,
                             std::shared_ptr<FieldGenerator> gen = nullptr)
-      : BoundaryOp(region), gen(gen) {}
+      : BoundaryOp(region), gen(std::move(gen)) {}
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;

@@ -110,7 +110,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
 }
 {% for stagger in [-1, 0, 1] %}
 void Boundary{{type}}NonUniform_O{{order}}::apply_ {{- {0: 'no', 1: 'co', -1:'anti'}[stagger] -}} _stagger(Field3D &f, Mesh * mesh
-{{ ", BoutReal t, std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals, const int x_boundary_offset, const int y_boundary_offset" if (not type == "Free")  }}
+{{ ", BoutReal t, const std::shared_ptr<FieldGenerator>& fg, std::vector<BoutReal>& vals, const int x_boundary_offset, const int y_boundary_offset" if (not type == "Free")  }}
 ) {
 
   for (; !bndry->isDone(); bndry->next1d()) {
@@ -225,8 +225,8 @@ void Boundary{{type}}NonUniform_O{{order}}::apply_ {{- {0: 'no', 1: 'co', -1:'an
         // In the case of Neumann we have in this case two values
         //  defined at the same point
 {%       if stagger == -1 %}
-        if (    (bndry->bx && x_boundary_offset == -1)
-             || (bndry->by && y_boundary_offset == -1)){
+        if (    (bndry->bx != 0 && x_boundary_offset == -1)
+             || (bndry->by != 0 && y_boundary_offset == -1)){
           spacing.f1 = spacing.f0;
 {% for i in range(2,order) %}
           spacing.f{{i}} = spacing.f{{i-1}} + coords_field[i{{i-1}} + iz];

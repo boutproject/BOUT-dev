@@ -78,8 +78,8 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
   }
 }
 void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
-    Field3D& f, Mesh* mesh, BoutReal t, std::shared_ptr<FieldGenerator> fg,
-    std::vector<BoutReal> vals, const int x_boundary_offset,
+    Field3D& f, Mesh* mesh, BoutReal t, const std::shared_ptr<FieldGenerator>& fg,
+    std::vector<BoutReal>& vals, const int x_boundary_offset,
     const int y_boundary_offset) {
 
   for (; !bndry->isDone(); bndry->next1d()) {
@@ -144,7 +144,6 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
       Ind3D ic{temp3d + i * index_offset * localNz};
 #endif
         vec2 facs;
-
         if (i != -1) {
           spacing += coords_field[icm];
         }
@@ -165,8 +164,8 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
     }
   }
   void BoundaryDirichletNonUniform_O2::apply_no_stagger(
-      Field3D & f, Mesh * mesh, BoutReal t, std::shared_ptr<FieldGenerator> fg,
-      std::vector<BoutReal> vals, const int x_boundary_offset,
+      Field3D & f, Mesh * mesh, BoutReal t, const std::shared_ptr<FieldGenerator>& fg,
+      std::vector<BoutReal>& vals, const int x_boundary_offset,
       const int y_boundary_offset) {
 
     for (; !bndry->isDone(); bndry->next1d()) {
@@ -230,7 +229,6 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
       Ind3D ic{temp3d + i * index_offset * localNz};
 #endif
           vec2 facs;
-
           BoutReal to_add = coords_field[icm] / 2;
           spacing += to_add;
           facs = calc_interp_to_stencil(spacing);
@@ -251,8 +249,8 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
       }
     }
     void BoundaryDirichletNonUniform_O2::apply_co_stagger(
-        Field3D & f, Mesh * mesh, BoutReal t, std::shared_ptr<FieldGenerator> fg,
-        std::vector<BoutReal> vals, const int x_boundary_offset,
+        Field3D & f, Mesh * mesh, BoutReal t, const std::shared_ptr<FieldGenerator>& fg,
+        std::vector<BoutReal>& vals, const int x_boundary_offset,
         const int y_boundary_offset) {
 
       for (; !bndry->isDone(); bndry->next1d()) {
@@ -312,7 +310,6 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
       Ind3D ic{temp3d + i * index_offset * localNz};
 #endif
             vec2 facs;
-
             facs = calc_interp_to_stencil(spacing);
             spacing += coords_field[icm];
 
@@ -379,8 +376,8 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
         }
       }
       void BoundaryNeumannNonUniform_O2::apply_anti_stagger(
-          Field3D & f, Mesh * mesh, BoutReal t, std::shared_ptr<FieldGenerator> fg,
-          std::vector<BoutReal> vals, const int x_boundary_offset,
+          Field3D & f, Mesh * mesh, BoutReal t, const std::shared_ptr<FieldGenerator>& fg,
+          std::vector<BoutReal>& vals, const int x_boundary_offset,
           const int y_boundary_offset) {
 
         for (; !bndry->isDone(); bndry->next1d()) {
@@ -465,9 +462,9 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
           }
         }
         void BoundaryNeumannNonUniform_O2::apply_no_stagger(
-            Field3D & f, Mesh * mesh, BoutReal t, std::shared_ptr<FieldGenerator> fg,
-            std::vector<BoutReal> vals, const int x_boundary_offset,
-            const int y_boundary_offset) {
+            Field3D & f, Mesh * mesh, BoutReal t,
+            const std::shared_ptr<FieldGenerator>& fg, std::vector<BoutReal>& vals,
+            const int x_boundary_offset, const int y_boundary_offset) {
 
           for (; !bndry->isDone(); bndry->next1d()) {
             if (fg) {
@@ -548,9 +545,9 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
             }
           }
           void BoundaryNeumannNonUniform_O2::apply_co_stagger(
-              Field3D & f, Mesh * mesh, BoutReal t, std::shared_ptr<FieldGenerator> fg,
-              std::vector<BoutReal> vals, const int x_boundary_offset,
-              const int y_boundary_offset) {
+              Field3D & f, Mesh * mesh, BoutReal t,
+              const std::shared_ptr<FieldGenerator>& fg, std::vector<BoutReal>& vals,
+              const int x_boundary_offset, const int y_boundary_offset) {
 
             for (; !bndry->isDone(); bndry->next1d()) {
               if (fg) {
@@ -926,8 +923,9 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                   }
                   void BoundaryDirichletNonUniform_O3::apply_anti_stagger(
                       Field3D & f, Mesh * mesh, BoutReal t,
-                      std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                      const int x_boundary_offset, const int y_boundary_offset) {
+                      const std::shared_ptr<FieldGenerator>& fg,
+                      std::vector<BoutReal>& vals, const int x_boundary_offset,
+                      const int y_boundary_offset) {
 
                     for (; !bndry->isDone(); bndry->next1d()) {
                       if (fg) {
@@ -1004,7 +1002,6 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
       Ind3D ic{temp3d + i * index_offset * localNz};
 #endif
                           vec3 facs;
-
                           if (i != -1) {
                             spacing += coords_field[icm];
                           }
@@ -1027,8 +1024,9 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                     }
                     void BoundaryDirichletNonUniform_O3::apply_no_stagger(
                         Field3D & f, Mesh * mesh, BoutReal t,
-                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                        const int x_boundary_offset, const int y_boundary_offset) {
+                        const std::shared_ptr<FieldGenerator>& fg,
+                        std::vector<BoutReal>& vals, const int x_boundary_offset,
+                        const int y_boundary_offset) {
 
                       for (; !bndry->isDone(); bndry->next1d()) {
                         if (fg) {
@@ -1101,7 +1099,6 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
       Ind3D ic{temp3d + i * index_offset * localNz};
 #endif
                             vec3 facs;
-
                             BoutReal to_add = coords_field[icm] / 2;
                             spacing += to_add;
                             facs = calc_interp_to_stencil(spacing);
@@ -1124,8 +1121,9 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                       }
                       void BoundaryDirichletNonUniform_O3::apply_co_stagger(
                           Field3D & f, Mesh * mesh, BoutReal t,
-                          std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
-                          const int x_boundary_offset, const int y_boundary_offset) {
+                          const std::shared_ptr<FieldGenerator>& fg,
+                          std::vector<BoutReal>& vals, const int x_boundary_offset,
+                          const int y_boundary_offset) {
 
                         for (; !bndry->isDone(); bndry->next1d()) {
                           if (fg) {
@@ -1192,7 +1190,6 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
       Ind3D ic{temp3d + i * index_offset * localNz};
 #endif
                               vec3 facs;
-
                               facs = calc_interp_to_stencil(spacing);
                               spacing += coords_field[icm];
 
@@ -1274,8 +1271,8 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                         }
                         void BoundaryNeumannNonUniform_O3::apply_anti_stagger(
                             Field3D & f, Mesh * mesh, BoutReal t,
-                            std::shared_ptr<FieldGenerator> fg,
-                            std::vector<BoutReal> vals, const int x_boundary_offset,
+                            const std::shared_ptr<FieldGenerator>& fg,
+                            std::vector<BoutReal>& vals, const int x_boundary_offset,
                             const int y_boundary_offset) {
 
                           for (; !bndry->isDone(); bndry->next1d()) {
@@ -1371,8 +1368,8 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                           }
                           void BoundaryNeumannNonUniform_O3::apply_no_stagger(
                               Field3D & f, Mesh * mesh, BoutReal t,
-                              std::shared_ptr<FieldGenerator> fg,
-                              std::vector<BoutReal> vals, const int x_boundary_offset,
+                              const std::shared_ptr<FieldGenerator>& fg,
+                              std::vector<BoutReal>& vals, const int x_boundary_offset,
                               const int y_boundary_offset) {
 
                             for (; !bndry->isDone(); bndry->next1d()) {
@@ -1468,8 +1465,8 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                             }
                             void BoundaryNeumannNonUniform_O3::apply_co_stagger(
                                 Field3D & f, Mesh * mesh, BoutReal t,
-                                std::shared_ptr<FieldGenerator> fg,
-                                std::vector<BoutReal> vals, const int x_boundary_offset,
+                                const std::shared_ptr<FieldGenerator>& fg,
+                                std::vector<BoutReal>& vals, const int x_boundary_offset,
                                 const int y_boundary_offset) {
 
                               for (; !bndry->isDone(); bndry->next1d()) {
@@ -1920,8 +1917,8 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                                     void
                                     BoundaryDirichletNonUniform_O4::apply_anti_stagger(
                                         Field3D & f, Mesh * mesh, BoutReal t,
-                                        std::shared_ptr<FieldGenerator> fg,
-                                        std::vector<BoutReal> vals,
+                                        const std::shared_ptr<FieldGenerator>& fg,
+                                        std::vector<BoutReal>& vals,
                                         const int x_boundary_offset,
                                         const int y_boundary_offset) {
 
@@ -2020,7 +2017,6 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
       Ind3D ic{temp3d + i * index_offset * localNz};
 #endif
                                             vec4 facs;
-
                                             if (i != -1) {
                                               spacing += coords_field[icm];
                                             }
@@ -2046,8 +2042,8 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                                       void
                                       BoundaryDirichletNonUniform_O4::apply_no_stagger(
                                           Field3D & f, Mesh * mesh, BoutReal t,
-                                          std::shared_ptr<FieldGenerator> fg,
-                                          std::vector<BoutReal> vals,
+                                          const std::shared_ptr<FieldGenerator>& fg,
+                                          std::vector<BoutReal>& vals,
                                           const int x_boundary_offset,
                                           const int y_boundary_offset) {
 
@@ -2143,7 +2139,6 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
       Ind3D ic{temp3d + i * index_offset * localNz};
 #endif
                                               vec4 facs;
-
                                               BoutReal to_add = coords_field[icm] / 2;
                                               spacing += to_add;
                                               facs = calc_interp_to_stencil(spacing);
@@ -2170,8 +2165,8 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                                         void
                                         BoundaryDirichletNonUniform_O4::apply_co_stagger(
                                             Field3D & f, Mesh * mesh, BoutReal t,
-                                            std::shared_ptr<FieldGenerator> fg,
-                                            std::vector<BoutReal> vals,
+                                            const std::shared_ptr<FieldGenerator>& fg,
+                                            std::vector<BoutReal>& vals,
                                             const int x_boundary_offset,
                                             const int y_boundary_offset) {
 
@@ -2265,7 +2260,6 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
       Ind3D ic{temp3d + i * index_offset * localNz};
 #endif
                                                 vec4 facs;
-
                                                 facs = calc_interp_to_stencil(spacing);
                                                 spacing += coords_field[icm];
 
@@ -2370,8 +2364,9 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                                           void BoundaryNeumannNonUniform_O4::
                                               apply_anti_stagger(
                                                   Field3D & f, Mesh * mesh, BoutReal t,
-                                                  std::shared_ptr<FieldGenerator> fg,
-                                                  std::vector<BoutReal> vals,
+                                                  const std::shared_ptr<FieldGenerator>&
+                                                      fg,
+                                                  std::vector<BoutReal>& vals,
                                                   const int x_boundary_offset,
                                                   const int y_boundary_offset) {
 
@@ -2509,8 +2504,9 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                                             void BoundaryNeumannNonUniform_O4::
                                                 apply_no_stagger(
                                                     Field3D & f, Mesh * mesh, BoutReal t,
-                                                    std::shared_ptr<FieldGenerator> fg,
-                                                    std::vector<BoutReal> vals,
+                                                    const std::shared_ptr<FieldGenerator>&
+                                                        fg,
+                                                    std::vector<BoutReal>& vals,
                                                     const int x_boundary_offset,
                                                     const int y_boundary_offset) {
 
@@ -2650,8 +2646,9 @@ void BoundaryDirichletNonUniform_O2::apply_anti_stagger(
                                                   apply_co_stagger(
                                                       Field3D & f, Mesh * mesh,
                                                       BoutReal t,
-                                                      std::shared_ptr<FieldGenerator> fg,
-                                                      std::vector<BoutReal> vals,
+                                                      const std::shared_ptr<
+                                                          FieldGenerator>& fg,
+                                                      std::vector<BoutReal>& vals,
                                                       const int x_boundary_offset,
                                                       const int y_boundary_offset) {
 
