@@ -20,6 +20,7 @@ if (BOUT_ENABLE_PYTHON)
   add_subdirectory(derivatives3)
   add_subdirectory(shiftedmetricinterp)
   add_subdirectory(upwinding3)
+  add_subdirectory(non-uniform-boundaries)
 endif()
 
 ########################################

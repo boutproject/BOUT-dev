@@ -97,9 +97,8 @@ def test(bdry, func, loc):
         y = integrate(mdy, loc == "YLOW")
         fd = func(y)
         f = bc.create3D("y", mesh, outloc=loc)
-        fds = fd.reshape((1, int(ny) + 4, 1))
         for i in range(6):
-            f[i, :, 0] = fds
+            f[i, :, 0] = fd
 
         fo = mget(f)
         opt = bc.Options.root("")
@@ -107,8 +106,8 @@ def test(bdry, func, loc):
         myg = int(opt.get("mesh:myg", 0))
 
         for i in range(myg):
-            f[0, i, 0] = -1
-            f[0, -1 - i, 0] = -1
+            f[0, i, 0] = -1.0
+            f[0, -1 - i, 0] = -1.0
 
         f.applyBoundary(bdry)
         f = mget(f)
