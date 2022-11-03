@@ -52,7 +52,16 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  vec2 calc_interp_to_stencil(const vec2& spacing) const;
+  static vec2 calc_interp_to_stencil(const vec2& spacing);
+  void apply_no_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                        const int x_boundary_offset, const int y_boundary_offset);
+  void apply_co_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                        const int x_boundary_offset, const int y_boundary_offset);
+  void apply_anti_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                          std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                          const int x_boundary_offset, const int y_boundary_offset);
 };
 
 class BoundaryNeumannNonUniform_O2 : public BoundaryOp {
@@ -71,7 +80,16 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  vec2 calc_interp_to_stencil(const vec2& spacing) const;
+  static vec2 calc_interp_to_stencil(const vec2& spacing);
+  void apply_no_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                        const int x_boundary_offset, const int y_boundary_offset);
+  void apply_co_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                        const int x_boundary_offset, const int y_boundary_offset);
+  void apply_anti_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                          std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                          const int x_boundary_offset, const int y_boundary_offset);
 };
 
 class BoundaryFreeNonUniform_O2 : public BoundaryOp {
@@ -90,7 +108,16 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  vec2 calc_interp_to_stencil(const vec2& spacing) const;
+  static vec2 calc_interp_to_stencil(const vec2& spacing);
+  void apply_no_stagger(Field3D& f, Mesh* mesh
+
+  );
+  void apply_co_stagger(Field3D& f, Mesh* mesh
+
+  );
+  void apply_anti_stagger(Field3D& f, Mesh* mesh
+
+  );
 };
 
 class BoundaryDirichletNonUniform_O3 : public BoundaryOp {
@@ -109,7 +136,16 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  vec3 calc_interp_to_stencil(const vec3& spacing) const;
+  static vec3 calc_interp_to_stencil(const vec3& spacing);
+  void apply_no_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                        const int x_boundary_offset, const int y_boundary_offset);
+  void apply_co_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                        const int x_boundary_offset, const int y_boundary_offset);
+  void apply_anti_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                          std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                          const int x_boundary_offset, const int y_boundary_offset);
 };
 
 class BoundaryNeumannNonUniform_O3 : public BoundaryOp {
@@ -128,7 +164,16 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  vec3 calc_interp_to_stencil(const vec3& spacing) const;
+  static vec3 calc_interp_to_stencil(const vec3& spacing);
+  void apply_no_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                        const int x_boundary_offset, const int y_boundary_offset);
+  void apply_co_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                        const int x_boundary_offset, const int y_boundary_offset);
+  void apply_anti_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                          std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                          const int x_boundary_offset, const int y_boundary_offset);
 };
 
 class BoundaryFreeNonUniform_O3 : public BoundaryOp {
@@ -147,7 +192,16 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  vec3 calc_interp_to_stencil(const vec3& spacing) const;
+  static vec3 calc_interp_to_stencil(const vec3& spacing);
+  void apply_no_stagger(Field3D& f, Mesh* mesh
+
+  );
+  void apply_co_stagger(Field3D& f, Mesh* mesh
+
+  );
+  void apply_anti_stagger(Field3D& f, Mesh* mesh
+
+  );
 };
 
 class BoundaryDirichletNonUniform_O4 : public BoundaryOp {
@@ -166,7 +220,16 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  vec4 calc_interp_to_stencil(const vec4& spacing) const;
+  static vec4 calc_interp_to_stencil(const vec4& spacing);
+  void apply_no_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                        const int x_boundary_offset, const int y_boundary_offset);
+  void apply_co_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                        const int x_boundary_offset, const int y_boundary_offset);
+  void apply_anti_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                          std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                          const int x_boundary_offset, const int y_boundary_offset);
 };
 
 class BoundaryNeumannNonUniform_O4 : public BoundaryOp {
@@ -185,7 +248,16 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  vec4 calc_interp_to_stencil(const vec4& spacing) const;
+  static vec4 calc_interp_to_stencil(const vec4& spacing);
+  void apply_no_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                        const int x_boundary_offset, const int y_boundary_offset);
+  void apply_co_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                        std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                        const int x_boundary_offset, const int y_boundary_offset);
+  void apply_anti_stagger(Field3D& f, Mesh* mesh, BoutReal t,
+                          std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals,
+                          const int x_boundary_offset, const int y_boundary_offset);
 };
 
 class BoundaryFreeNonUniform_O4 : public BoundaryOp {
@@ -204,5 +276,14 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  vec4 calc_interp_to_stencil(const vec4& spacing) const;
+  static vec4 calc_interp_to_stencil(const vec4& spacing);
+  void apply_no_stagger(Field3D& f, Mesh* mesh
+
+  );
+  void apply_co_stagger(Field3D& f, Mesh* mesh
+
+  );
+  void apply_anti_stagger(Field3D& f, Mesh* mesh
+
+  );
 };

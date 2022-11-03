@@ -48,7 +48,12 @@ public:
   
 private:
   std::shared_ptr<FieldGenerator>  gen; // Generator
-  vec{{order}} calc_interp_to_stencil(const vec{{order}}& spacing) const;
+  static vec{{order}} calc_interp_to_stencil(const vec{{order}}& spacing);
+{% for stagger in "no", "co", "anti" %}
+  void apply_ {{- stagger -}} _stagger (Field3D &f, Mesh * mesh
+{{ ", BoutReal t, std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals, const int x_boundary_offset, const int y_boundary_offset" if boundary != "Free"  }}
+);
+{% endfor %}
 };
 """
 

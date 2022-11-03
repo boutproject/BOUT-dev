@@ -66,7 +66,7 @@ apply_str = """
 {% macro setindicies(order, start=1, offset=0, const='') -%}
     const int localNy = mesh->LocalNy;
     const int localNz = mesh->LocalNz;
-    const int offset = (bndry->bx * localNy + bndry->by)
+    const int index_offset = (bndry->bx * localNy + bndry->by)
 # if BOUT_USE_METRIC_3D
          * localNz
 # endif
@@ -74,9 +74,9 @@ apply_str = """
     const IND(temp, bndry->x, bndry->y, 0);
     IND3D(temp3d,  bndry->x, bndry->y, 0);
 {% for i in range(start, order) %}
-    {{ const }} IndMetric i{{i}}{temp - {{i + offset}} * offset};
+    {{ const }} IndMetric i{{i}}{temp - {{i + offset}} * index_offset};
 # if ! BOUT_USE_METRIC_3D
-    {{ const }} Ind3D i{{i}}3d{temp3d - {{i + offset}} * offset * localNz};
+    {{ const }} Ind3D i{{i}}3d{temp3d - {{i + offset}} * index_offset * localNz};
 # endif
 {% endfor %}
 {%- endmacro %}
@@ -101,8 +101,20 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
   int stagger = 0;
   update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
 
+{% for stagger in [-1, 0, 1] %}
+  if (stagger == {{stagger}}) {
+    apply_{{- {0: 'no', 1: 'co', -1:'anti'}[stagger] -}}_stagger(f, mesh
+{{ ", t, fg, vals, x_boundary_offset, y_boundary_offset" if with_fg  }});
+  } {{ "else" if not loop.last }}
+{% endfor %}
+}
+{% for stagger in [-1, 0, 1] %}
+void Boundary{{type}}NonUniform_O{{order}}::apply_ {{- {0: 'no', 1: 'co', -1:'anti'}[stagger] -}} _stagger(Field3D &f, Mesh * mesh
+{{ ", BoutReal t, std::shared_ptr<FieldGenerator> fg, std::vector<BoutReal> vals, const int x_boundary_offset, const int y_boundary_offset" if (not type == "Free")  }}
+) {
+
   for (; !bndry->isDone(); bndry->next1d()) {
-{% if with_fg %}
+{%   if with_fg %}
     if (fg) {
       // Calculate the X and Y normalised values half-way between the guard cell and
       // grid cell
@@ -117,177 +129,185 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
         vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm, "z", zfac * zk, "t" , t));
       }
     }
-{% endif %}
+{%   endif %}
 
     vec{{order}} spacing;
 
     const Coordinates::FieldMetric &coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
 
-{% if type == "Dirichlet" %}{# DIRICHLET  DIRICHLET  DIRICHLET  DIRICHLET  DIRICHLET  DIRICHLET #}
+{%   if type == "Dirichlet" %}{# DIRICHLET  DIRICHLET  DIRICHLET  DIRICHLET  DIRICHLET  DIRICHLET #}
 # if BOUT_USE_METRIC_3D
     for (int iz{0}; iz < mesh->LocalNz; iz++) {
 # else
     const int iz = 0;
 # endif
 {{    setindicies(order) }}
-      if (stagger == 0) {
+{%     if (stagger == 0)  %}
+      {
         spacing.f0 = 0;
         BoutReal total_offset = 0;
-{% for i in range(1,order) %}
-        {% if loop.first %}BoutReal {% endif %}offset = coords_field[i{{i}}+iz];
+{%       for i in range(1,order) %}
+        {{ "BoutReal " if loop.first }}offset = coords_field[i{{i}}+iz];
         spacing.f{{i}} = total_offset + offset / 2;
- {% if not loop.last %}
+{%         if not loop.last %}
         total_offset += offset;
- {% endif %}
-{% endfor %}
-      } else {
+{%         endif %}
+{%       endfor %}
+      }
+{%     else %}
         spacing.f0 = 0;
-{% for i in range(1,order) %}
+{%        for i in range(1,order) %}
           spacing.f{{i}} = spacing.f{{i-1}} + coords_field[i{{i}} + iz];
-{% endfor %}
-      }
-      if (stagger == -1) {
-{% for i in range(1,order) %}
+{%       endfor %}
+{%       if (stagger == -1) %}
+{%         for i in range(1,order) %}
 # if BOUT_USE_METRIC_3D
-        i{{i}} = temp - {{i+1}} * offset;
+        i{{i}} = temp - {{i+1}} * index_offset;
 # else
-        i{{i}}3d = temp3d - {{i+1}} * offset;
+        i{{i}}3d = temp3d - {{i+1}} * index_offset;
 # endif
-{% endfor %}
-      }
+{%         endfor %}
+{%       endif %}
+{%     endif %}
       
       // with dirichlet, we specify the value on the boundary, even if
       // the value is part of the evolving system.
-      for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
-        IndMetric icm{temp + IndMetric(i*offset)};
+      for (int i = {{ -1 if stagger == -1 else 0 }}; i < bndry->width; i++) {
+        IndMetric icm{temp + i * index_offset};
 # if BOUT_USE_METRIC_3D
         icm + iz;
         IndMetric ic = icm;
 # else
-        Ind3D ic{temp3d + Ind3D(i*offset*localNz)};
+        Ind3D ic{temp3d + i * index_offset * localNz};
 # endif
         vec{{order}} facs;
-        if (stagger == 0) {
+{%       if stagger == 0 %}
           BoutReal to_add = coords_field[icm] / 2;
           spacing += to_add;
           facs = calc_interp_to_stencil(spacing);
           spacing += to_add;
-        } else {
-          if (stagger == -1
-                && i != -1) {
+{%       else %}
+{%         if stagger == -1 %}
+          if (i != -1) {
             spacing += coords_field[icm];
           }
+{%         endif %}
           facs = calc_interp_to_stencil(spacing);
-          if (stagger == 1) {
+{%         if stagger == 1 %}
             spacing += coords_field[icm];
-          }
-        }
-{% elif type == "Neumann" %}{# NEUMANN  NEUMANN  NEUMANN  NEUMANN  NEUMANN  NEUMANN  NEUMANN #}
-{{  setindicies(order) }}
+{%         endif %}
+{%       endif %}
+
+{%   elif type == "Neumann" %}{# NEUMANN  NEUMANN  NEUMANN  NEUMANN  NEUMANN  NEUMANN  NEUMANN #}
+{{     setindicies(order) }}
 # if BOUT_USE_METRIC_3D
     for (int iz{0}; iz < mesh->LocalNz; iz++) {
 # else
     const int iz = 0;
 # endif
-      if (stagger == 0) {
+{%     if stagger == 0 %}
+      {
         spacing.f0 = 0;
         BoutReal total_offset=0;
-{% for i in range(1,order) %}
+{%       for i in range(1,order) %}
         {% if loop.first %}BoutReal {% endif %}offset = coords_field[i{{i}} + iz];
         spacing.f{{i}} = total_offset + offset / 2;
- {% if not loop.last %}
+{%         if not loop.last %}
         total_offset += offset;
- {% endif %}
-{% endfor %}
-      } else { // stagger != 0
+{%         endif %}
+{%       endfor %}
+      }
+{%     else %}
         spacing.f0 = 0;
         // Check if we are staggered and also boundary in low
         //  direction
         // In the case of Neumann we have in this case two values
         //  defined at the same point
-        if (stagger == -1 &&
-                (    (bndry->bx && x_boundary_offset == -1)
-                  || (bndry->by && y_boundary_offset == -1))){
+{%       if stagger == -1 %}
+        if (    (bndry->bx && x_boundary_offset == -1)
+             || (bndry->by && y_boundary_offset == -1)){
           spacing.f1 = spacing.f0;
 {% for i in range(2,order) %}
           spacing.f{{i}} = spacing.f{{i-1}} + coords_field[i{{i-1}} + iz];
 {% endfor %}
-        } else {
+        } else
+{%       endif %}
+        {
 {% for i in range(1,order) %}
           spacing.f{{i}} = spacing.f{{i-1}} + coords_field[i{{i}} + iz];
 {% endfor %}
         }
-      } // stagger != 0
+{%     endif %}
       // With neumann (and free) the value is not set if the point is
       // evolved and it is on the boundary.
       for (int i = 0; i < bndry->width; i++) {
-        IndMetric icm{temp + IndMetric(i*offset)};
+        IndMetric icm{temp + IndMetric(i * index_offset)};
 # if BOUT_USE_METRIC_3D
         icm += iz;
         IndMetric ic = icm;
 # else
-        Ind3D ic{temp3d + Ind3D(i*offset*localNz)};
+        Ind3D ic{temp3d + Ind3D(i * index_offset * localNz)};
 # endif
         vec{{order}} facs;
-        if (stagger == 0) {
+{%     if stagger == 0 %}
           BoutReal to_add = coords_field[icm] / 2;
           spacing += to_add;
           facs = calc_interp_to_stencil(spacing);
           spacing += to_add;
-        } else {
-          if (stagger == -1) {
+{%     else %}
+{%       if stagger == -1 %}
             spacing += coords_field[icm];
-          }
+{%       endif %}
           facs = calc_interp_to_stencil(spacing);
-          if (stagger == 1) {
+{%       if stagger == 1 %}
             spacing += coords_field[icm];
-          }
-        }
-{% elif type == "Free" %}{# FREE  FREE  FREE  FREE  FREE  FREE  FREE  FREE  FREE  FREE  FREE  FREE #}
-{{  setindicies(order, 0, 1, 'const ') }}
+{%       endif %}
+{%     endif %}
+{%   elif type == "Free" %}{# FREE  FREE  FREE  FREE  FREE  FREE  FREE  FREE  FREE  FREE  FREE  FREE #}
+{{     setindicies(order, 0, 1, 'const ') }}
 # if BOUT_USE_METRIC_3D
     for (int iz{0}; iz < mesh->LocalNz; iz++) {
 # else
     const int iz = 0;
 # endif
-      if (stagger == 0) {
+{%     if stagger == 0 %}
         BoutReal total_offset = 0;
-{% for i in range(order) %}
+{%       for i in range(order) %}
         {% if loop.first %}BoutReal {% endif %}offset = coords_field[i{{i}} + iz];
         spacing.f{{i}} = total_offset + offset / 2;
- {% if not loop.last %}
+{%         if not loop.last %}
         total_offset += offset;
- {% endif %}
-{% endfor %}
-      } else {
+{%         endif %}
+{%       endfor %}
+{%     else %}
         spacing.f0 = coords_field[i0 + iz];
 {% for i in range(1,order) %}
         spacing.f{{i}} = spacing.f{{i-1}} + coords_field[i{{i}} + iz];
 {% endfor %}
-      }
+{%     endif %}
 
       // With free (and neumann) the value is not set if the point is
       // evolved and it is on the boundary.
       for (int i = 0; i < bndry->width; i++) {
-        IndMetric icm{temp + IndMetric(i*offset)};
+        IndMetric icm{temp + IndMetric(i * index_offset)};
 # if BOUT_USE_METRIC_3D
         icm += iz;
         IndMetric ic = icm;
 # else
-        Ind3D ic{temp3d + Ind3D(i*offset*localNz)};
+        Ind3D ic{temp3d + Ind3D(i * index_offset * localNz)};
 # endif
         vec{{order}} facs;
-        if (stagger == 0) {
+{%     if stagger == 0 %}
           BoutReal to_add = coords_field[icm] / 2;
           spacing += to_add;
           facs = calc_interp_to_stencil(spacing);
           spacing += to_add;
-        } else {
+{%     else %}
           facs = calc_interp_to_stencil(spacing);
           spacing += coords_field[icm];
-        }
-{% endif %}{# END  END  END  END  END  END  END  END  END  END  END  END #}
+{%     endif %}
+{%   endif %}{# END  END  END  END  END  END  END  END  END  END  END  END #}
 # if ! BOUT_USE_METRIC_3D
     for (int iz{0}; iz < mesh->LocalNz; iz++) {
 # endif
@@ -297,21 +317,21 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
 #define MAKE3D(x) x##3d
 #endif
         const BoutReal val =
-{% if type != "Free" %}
+{%   if type != "Free" %}
            (fg) ? vals[iz] : 0.0;
-{% else %}
+{%   else %}
            f[MAKE3D(i0) + iz];
-{% endif %}
+{%   endif %}
         f[ic] = facs.f0 * val
-{% for i in range(1,order) %}
+{%   for i in range(1,order) %}
            + facs.f{{i}} *f[MAKE3D(i{{i}}) + iz]
-{% endfor %}
+{%    endfor %}
         ;
       }
     }
   }
 }
-
+{% endfor %}
 """
 clone_str = """
 BoundaryOp * {{class}}::clone(BoundaryRegion *region,
@@ -326,7 +346,7 @@ BoundaryOp * {{class}}::clone(BoundaryRegion *region,
 }
 """
 stencil_str = """
-vec{{order}} {{class}}::calc_interp_to_stencil(const vec{{order}} & spacing) const {
+vec{{order}} {{class}}::calc_interp_to_stencil(const vec{{order}} & spacing) {
 vec{{order}} facs;
 // Stencil Code
 {{stencil_code}}
