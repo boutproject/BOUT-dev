@@ -254,8 +254,8 @@ to enable AVX512 vectorization.
           ``./configure`` and before running ``make``. ``-lnetcdf``
           needs also to be removed from ``bin/bout-config`` to allow a
           successful build of the python interface. Recreation of
-          ``boutcore.pyx`` needs to be manually triggered, if
-          ``boutcore.pyx`` has already been created.
+          ``boutpp.pyx`` needs to be manually triggered, if
+          ``boutpp.pyx`` has already been created.
 
 Marconi with gnu compilers
 **************************

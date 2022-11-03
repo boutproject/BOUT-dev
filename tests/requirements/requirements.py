@@ -17,7 +17,7 @@ class Requirements(object):
 
     #requires not make
 
-    #requires not (boutcore and netcdf)
+    #requires not (boutpp and netcdf)
 
     The individual requirements (netcdf, make, etc.)
     are gathered from the bout-config scipt, or from executable

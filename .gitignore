@@ -69,7 +69,12 @@ src/fmt/format.cxx
 /tests/integrated/test-options-netcdf/time.nc
 /tests/integrated/test-yupdown-weights/test_yupdown_weights
 
+# Potential user build directories
 /build/
 /build*/
 /*_build/
 /build_*/
+
+# Python stuff
+/_wheel*/
+/dist/
