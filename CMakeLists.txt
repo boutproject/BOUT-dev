@@ -342,6 +342,14 @@ else()
   set(BOUT_GENERATE_FIELDOPS_DEFAULT OFF)
 endif()
 
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import zoidberg"
+  RESULT_VARIABLE zoidberg_FOUND)
+if (zoidberg_FOUND EQUAL 0)
+  set(zoidberg_FOUND ON)
+else()
+  set(zoidberg_FOUND OFF)
+endif()
+
 option(BOUT_GENERATE_FIELDOPS "Automatically re-generate the Field arithmetic operators from the Python templates. \
 Requires Python3, clang-format, and Jinja2. Turn this OFF to skip generating them if, for example, \
 you are unable to install the Jinja2 Python module. This is only important for BOUT++ developers." ${BOUT_GENERATE_FIELDOPS_DEFAULT})
