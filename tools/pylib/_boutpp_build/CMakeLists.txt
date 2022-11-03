@@ -106,8 +106,8 @@ add_library(boutpp${PYTHON_EXT_SUFFIX} SHARED
   )
 
 add_custom_target(boutpp ALL
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libboutpp${PYTHON_EXT_SUFFIX}.so  ${CMAKE_CURRENT_BINARY_DIR}/../boutpp/__init__.py
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/boutpp.py ${CMAKE_CURRENT_BINARY_DIR}/../boutpp/
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libboutpp${PYTHON_EXT_SUFFIX}.so  ${CMAKE_CURRENT_BINARY_DIR}/../boutpp/
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/boutpp.py ${CMAKE_CURRENT_BINARY_DIR}/../boutpp/__init__.py
   DEPENDS boutpp${PYTHON_EXT_SUFFIX}
   COMMENT "Building python interface"
 )
