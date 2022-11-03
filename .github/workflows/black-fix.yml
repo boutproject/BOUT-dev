@@ -39,7 +39,7 @@ jobs:
       run: |
         pwd
         ls
-        $HOME/.local/bin/black tests/ tools/ $(grep '^#.*python.*$' bin/ tests/ tools/ src/ -Ir|cut -d: -f1|grep -v _boutpp_build)
+        $HOME/.local/bin/black tests/ tools/ $(grep -EIlr '^#!.*python.*$' bin/ tests/ tools/ src/ | grep -v _boutpp_build)
 
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:

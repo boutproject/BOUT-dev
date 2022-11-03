@@ -4,6 +4,8 @@ import hashlib  # corelib
 import base64  # corelib
 import tempfile  # corelib
 import subprocess  # corelib
+import re  # corelib
+import pathlib.Path  # corelib
 
 try:
     import packaging.tags  # packaging
@@ -11,50 +13,60 @@ except:
     packaging = None
 
 
-def run(cmd):
-    print(f"running `{cmd}`")
-    ret = os.system(cmd)
-    assert ret == 0, f"{cmd} failed with {ret}"
-
-
 useLocalVersion = True
 pkgname = "boutpp"
 version = None
 
 
-def getversion(_cache={}):
-    if version is not None:
-        return version
-    if "r" not in _cache:
+def getversion():
+    """
+    Get the current BOUT++ version.
+
+    Use a version similar to setuptools_scm but fancier. Similar to cmake's
+    versioning.
+    """
+    global version
+    if version is None:
+        _bout_previous_version = "v4.0.0"
+        _bout_next_version = "5.0.0.alpha"
+
         try:
-            tmp = run2("git describe --tags --match=v4.0.0")
+            tmp = run2(f"git describe --tags --match={_bout_previous_version}").strip()
+            tmp = re.sub(f"{_bout_previous_version}-", f"{_bout_next_version}.dev", tmp)
             if useLocalVersion:
-                tmp = run2(
-                    f"echo {tmp.strip()} | sed -e s/v4.0.0-/v5.0.0.dev/ -e s/-/+/"
-                )
+                tmp = re.sub("-", "+", tmp)
             else:
-                tmp = run2(
-                    f"echo {tmp.strip()} | sed -e s/v4.0.0-/v5.0.0.dev/ -e s/-.*//"
-                )
-            _cache["r"] = tmp
+                tmp = re.sub("-.*", "+", tmp)
+            version = tmp
             with open("_version.txt", "w") as f:
-                f.write(_cache["r"])
-        except AssertionError:
-            _cache["r"] = run2("cat _version.txt")
-    return _cache["r"].strip()
+                f.write(version + "\n")
+        except subprocess.CalledProcessError:
+            with open("_version.txt") as f:
+                version = f.read().strip()
+    return version
+
+
+def run(cmd):
+    """
+    Run a command without capturing output, so it gets printed.
+    """
+    print(f"running `{cmd}`")
+    ret = os.system(cmd)
+    if ret != 0:
+        raise subprocess.CalledProcessError(ret, cmd)
 
 
 def run2(cmd):
-    child = subprocess.Popen(
-        cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True
-    )
-    output = child.stdout.read().decode("utf-8", "ignore")
-    child.communicate()
-    assert child.returncode == 0, f"{cmd} failed with {child.returncode}"
-    return output
+    """
+    Run a command and return standard-out
+    """
+    return subprocess.run(cmd, capture_output=True, shell=True, check=True).stdout
 
 
 def hash(fn):
+    """
+    Calculate the hash of a file
+    """
     sha256_hash = hashlib.sha256()
     with open(fn, "rb") as f:
         # Read and update hash string value in blocks of 4K
@@ -64,19 +76,29 @@ def hash(fn):
 
 
 def size(fn):
+    """
+    Return the size of a file in bytes
+    """
     return os.path.getsize(fn)
 
 
 def gettag():
+    """
+    Get the platform tag
+    """
     thisos = list(packaging.tags.platform_tags())[-1]
     tag = "-".join(str(next(packaging.tags.sys_tags())).split("-")[:2] + [thisos])
     return tag
 
 
 def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
+    """
+    Build the wheel.
+
+    Calls cmake internaly.
+    """
     if metadata_directory:
         parse(f"{metadata_directory}/METADATA")
-
     opts = ""
     if config_settings is not None:
         global useLocalVersion, pkgname
@@ -111,12 +133,13 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
 
     # Do not add --symlink as python's does not extract that as symlinks
     run(f"cd {trueprefix} ; zip  {wheel_directory}/{whlname} . -rq")
-    # cmd = f"git archive HEAD -o {wheel_directory}/{whlname}"
-    # run(cmd)
     return whlname
 
 
 def build_sdist(sdist_directory, config_settings=None):
+    """
+    Create an archive of the code including some metadata files
+    """
     print(config_settings, sdist_directory)
     enable_gz = True
     enable_xz = False
@@ -150,7 +173,6 @@ def build_sdist(sdist_directory, config_settings=None):
         run(f"tar -Af {sdist_directory}/{fname} {tmp}")
         run(f"rm {tmp}")
 
-    # _, tmpd = tempfile.mkdtemp()
     with open(tmp, "w") as f:
         f.write(
             f"""Metadata-Version: 2.1
@@ -186,18 +208,15 @@ def get_requires_for_build_wheel(config_settings=None):
 
 
 def mkdir_p(path):
-    full = ""
-    for k in path.split("/"):
-        full += k + "/"
-        try:
-            os.mkdir(full)
-        except FileExistsError:
-            pass
+    return pathlib.Path.mkdir(path, parents=True, exist_ok=True)
 
 
 def prepare_metadata_for_build_wheel(
     metadata_directory, config_settings=None, record=False
 ):
+    """
+    Create dist-info directory with files
+    """
     if not record and os.path.isfile("PKG-INFO"):
         parse("PKG-INFO")
 
