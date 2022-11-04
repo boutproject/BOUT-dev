@@ -56,9 +56,6 @@ first = C2
 second = C2
 upwind = W3
 
-[output]
-floats = false # -> Output in double precision
-
 ###################################################
 # Time-integration solver
 

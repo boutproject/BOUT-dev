@@ -11,9 +11,6 @@ MYG = 1
 xl = x * mesh:Lx # A "global" setting, so can be used anywhere
 zl = z * mesh:Lx
 
-[output]
-floats = false # -> Output in double precision
-
 [mesh]
 
 symmetricGlobalX = true

@@ -30,7 +30,7 @@ public:
 };
 
 namespace {
-class BaseFactory : public Factory<Base, BaseFactory> {
+class BaseFactory : public Factory<Base, BaseFactory, Options*> {
 public:
   static constexpr auto type_name = "Base";
   static constexpr auto section_name = "base";
@@ -42,10 +42,10 @@ constexpr decltype(BaseFactory::section_name) BaseFactory::section_name;
 constexpr decltype(BaseFactory::option_name) BaseFactory::option_name;
 constexpr decltype(BaseFactory::default_type) BaseFactory::default_type;
 
-RegisterInFactory<Base, Base, BaseFactory> registerme("base");
-RegisterInFactory<Base, Derived1, BaseFactory> registerme1("derived1");
-RegisterInFactory<Base, Derived2, BaseFactory> registerme2("derived2");
-RegisterUnavailableInFactory<Base, BaseFactory> dontregisterme("not here", "this is only a test");
+BaseFactory::RegisterInFactory<Base> registerme("base");
+BaseFactory::RegisterInFactory<Derived1> registerme1("derived1");
+BaseFactory::RegisterInFactory<Derived2> registerme2("derived2");
+BaseFactory::RegisterUnavailableInFactory dontregisterme("not here", "this is only a test");
 } // namespace
 
 class BaseComplicated {
@@ -67,9 +67,7 @@ public:
 };
 
 class ComplicatedFactory
-    : public Factory<
-          BaseComplicated, ComplicatedFactory,
-          std::function<std::unique_ptr<BaseComplicated>(const std::string&)>> {
+    : public Factory<BaseComplicated, ComplicatedFactory, const std::string&> {
 public:
   static constexpr auto type_name = "Complicated";
   static constexpr auto section_name = "complicated";
@@ -82,24 +80,11 @@ constexpr decltype(ComplicatedFactory::section_name) ComplicatedFactory::section
 constexpr decltype(ComplicatedFactory::option_name) ComplicatedFactory::option_name;
 constexpr decltype(ComplicatedFactory::default_type) ComplicatedFactory::default_type;
 
-// We need to specialise the helper class to pass arguments to the constructor
-template<typename DerivedType>
-class RegisterInFactory<BaseComplicated, DerivedType, ComplicatedFactory> {
-public:
-  RegisterInFactory(const std::string& name) {
-    ComplicatedFactory::getInstance().add(
-        name, [](std::string name) -> std::unique_ptr<BaseComplicated> {
-          return std::make_unique<DerivedType>(name);
-        });
-  }
-};
-
 namespace {
-RegisterInFactory<BaseComplicated, BaseComplicated, ComplicatedFactory>
-    registerme3("basecomplicated");
-RegisterInFactory<BaseComplicated, DerivedComplicated1, ComplicatedFactory>
+ComplicatedFactory::RegisterInFactory<BaseComplicated> registerme3("basecomplicated");
+ComplicatedFactory::RegisterInFactory<DerivedComplicated1>
     registerme4("derivedcomplicated1");
-RegisterInFactory<BaseComplicated, DerivedComplicated2, ComplicatedFactory>
+ComplicatedFactory::RegisterInFactory<DerivedComplicated2>
     registerme5("derivedcomplicated2");
 } // namespace
 
@@ -143,7 +128,7 @@ TEST(GenericFactory, Remove) {
   EXPECT_EQ(available, expected2);
 
   // Better add this back in as this object is shared between tests!
-  RegisterInFactory<Base, Derived2, BaseFactory> registerme("derived2");
+  BaseFactory::RegisterInFactory<Derived2> registerme("derived2");
 }
 
 TEST(GenericFactory, RemoveNonexistant) {

@@ -4,8 +4,6 @@ nout = 0  # No timesteps
 
 MZ = 32    # Z size
 
-dump_format = "nc"  # NetCDF format. Alternative is "pdb"
-
 NYPE = 1 # Set to 1 to ensure we only parallelize over x in scaling scan
 
 [LaplaceTest]

@@ -13,11 +13,6 @@ ZMAX = 0.15915494309189535# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*
 #number of guard cells
 MYG = 1  #noy comm for now
 
-dump_format = "nc"     # Write NetCDF format files
-
-[output]
-floats = false #false -> output in doubles
-
 [mesh]
 staggergrids = true
 

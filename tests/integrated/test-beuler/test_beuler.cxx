@@ -69,9 +69,6 @@ int main(int argc, char** argv) {
   bout::globals::mesh = Mesh::create();
   bout::globals::mesh->load();
 
-  bout::globals::dump =
-      bout::experimental::setupDumpFile(Options::root(), *bout::globals::mesh, ".");
-
   // Global options
   root["nout"] = 20;
   root["timestep"] = 1;

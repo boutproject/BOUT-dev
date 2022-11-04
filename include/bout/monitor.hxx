@@ -7,7 +7,7 @@
 
 #include <cmath>
 
-class Datafile;
+class Options;
 class Solver;
 
 /// Return true if either \p a is a multiple of \p b or vice-versa
@@ -49,6 +49,9 @@ public:
 
   /// Callback function for when a clean shutdown is initiated
   virtual void cleanup(){};
+
+  virtual void outputVars(MAYBE_UNUSED(Options& options),
+                          MAYBE_UNUSED(const std::string& time_dimension)) {}
 
 protected:
   /// Get the currently set timestep for this monitor
@@ -109,7 +112,7 @@ struct RunMetrics {
   /*!
    * Adds variables to the output file, for post-processing
    */
-  void outputVars(Datafile &file);
+  void outputVars(Options& output_options) const;
 
   /*!
    * Calculates derived metrics

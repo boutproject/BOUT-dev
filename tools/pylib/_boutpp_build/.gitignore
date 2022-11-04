@@ -1,0 +1,17 @@
+boutpp.pyx
+helper.cxx
+helper.h
+resolve_enum.pxd
+boutcpp.pxd
+setup.py
+boutpp.cpp
+\#*#
+.#*
+BOUT.settings
+BOUT.log.*
+BOUT.restart.*.nc
+data/BOUT.dmp.*.nc
+mini/BOUT.dmp.*.nc
+
+*so
+debug.cpp

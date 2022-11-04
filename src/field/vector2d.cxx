@@ -476,7 +476,7 @@ const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs) {
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Coordinates::FieldMetric abs(const Vector2D& v, const std::string& region) {
+Coordinates::FieldMetric abs(const Vector2D& v, const std::string& region) {
   return sqrt(v*v, region);
 }
 

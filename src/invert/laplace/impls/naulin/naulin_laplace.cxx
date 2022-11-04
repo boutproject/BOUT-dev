@@ -146,7 +146,8 @@
 
 #include "naulin_laplace.hxx"
 
-LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
+LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
+                             Solver* UNUSED(solver), Datafile* UNUSED(dump))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
       delp2solver(nullptr), naulinsolver_mean_its(0.), ncalls(0) {
 
@@ -175,11 +176,7 @@ LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   delp2solver->setOuterBoundaryFlags(outer_boundary_flags);
 
   static int naulinsolver_count = 1;
-  bout::globals::dump.addRepeat(naulinsolver_mean_its,
-      "naulinsolver"+std::to_string(naulinsolver_count)+"_mean_its");
-  bout::globals::dump.addRepeat(naulinsolver_mean_underrelax_counts,
-      "naulinsolver"+std::to_string(naulinsolver_count)+"_mean_underrelax_counts");
-  ++naulinsolver_count;
+  setPerformanceName(fmt::format("{}{}", "naulinsolver", ++naulinsolver_count));
 }
 
 Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
@@ -345,4 +342,12 @@ void LaplaceNaulin::copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *local
         for (int k=0; k<localmesh->LocalNz; ++k)
           x(i, j, k) = x0(i, j, k);
   }
+}
+
+void LaplaceNaulin::outputVars(Options& output_options,
+                               const std::string& time_dimension) const {
+  output_options[fmt::format("{}_mean_its", getPerformanceName())].assignRepeat(
+      naulinsolver_mean_its, time_dimension);
+  output_options[fmt::format("{}_mean_underrelax_counts", getPerformanceName())]
+      .assignRepeat(naulinsolver_mean_underrelax_counts, time_dimension);
 }

@@ -3,69 +3,52 @@
 #include <bout/physicsmodel.hxx>
 #include <bout.hxx>
 
-// Simplify the datafile with sane defaults
-// Note that you should never ever copy the datafile.
-// The constructor takes a pointer to an options object, or the name
-// of a section.
-// Unlike the default Datafile, SimpleDatafile always ends up in the
-// correct folder, and should throw if it possible to detect the error.
-class SimpleDatafile : public Datafile {
-public:
-  SimpleDatafile(std::string section)
-      : SimpleDatafile(Options::root()[section], section){};
-  SimpleDatafile(Options& ops, std::string section = "Default") : Datafile(&ops) {
+#include <string>
 
-    // Open a file for the output
-    std::string datadir = "data";
-    if (ops.isSet("path")) {
-      datadir = ops["path"].as<std::string>();
-    } else {
-      datadir = Options::root()["datadir"].withDefault(datadir);
-    }
-
-    const std::string default_filename = section + ".dmp";
-    const std::string file = ops["file"].withDefault(default_filename);
-
-    bool append;
-    if (ops.isSet("append")) {
-      append = ops["append"].withDefault(false);
-    } else {
-      append = Options::root()["append"].withDefault(false);
-    }
-
-    const std::string dump_ext = "nc";
-
-    if (append) {
-      if (!this->opena("{:s}/{:s}.{:s}", datadir, file, dump_ext)) {
-        throw BoutException("Failed to open file for appending!");
-      }
-    } else {
-      if (!this->openw("{:s}/{:s}.{:s}", datadir, file, dump_ext)) {
-        throw BoutException("Failed to open file for writing!");
-      }
-    }
-  }
-};
+std::string getCustomOutputName(Options& options) {
+  const std::string default_filename = fmt::format("{}.{}", options.name(), "dmp");
+  return fmt::format("{}/{}.{}.nc", options["datadir"].withDefault("data"),
+                     options["file"].withDefault(default_filename), BoutComm::rank());
+}
 
 // Monitor to write out 1d Data
 class Monitor1dDump : public Monitor {
 public:
   Monitor1dDump(BoutReal timestep, std::string section_name)
-      : Monitor(timestep), dump(bout::utils::make_unique<SimpleDatafile>(section_name)) {
-    dump->add(time, "t_array", true);
-  };
+      : Monitor(timestep),
+        output_file(getCustomOutputName(Options::root()[section_name]),
+                    Options::root()[section_name]["append"].withDefault(false)
+                        ? bout::OptionsNetCDF::FileMode::append
+                        : bout::OptionsNetCDF::FileMode::replace) {}
+
   int call(Solver*, BoutReal _time, int, int) override {
-    time = _time;
-    dump->write();
+    // This method writes all the diagnostics to a unique file
+    Options output;
+    output["t_array"].assignRepeat(_time);
+    for (const auto& item : dump.getData()) {
+      bout::utils::visit(bout::OptionsConversionVisitor{output, item.name}, item.value);
+      if (item.repeat) {
+        output[item.name].attributes["time_dimension"] = "t";
+      }
+    }
+    output_file.write(output);
+
     return 0;
   }
-  void add(BoutReal& data, const std::string& name) {
-    dump->add(data, name.c_str(), true);
+
+  void outputVars(Options& options, const std::string& time_dimension) override {
+    // This method writes all the diagnostics to the main output file
+    for (const auto& item : dump.getData()) {
+      bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
+      options[item.name].attributes["time_dimension"] = time_dimension;
+    }
   }
 
+  void add(BoutReal& data, const std::string& name) { dump.addRepeat(data, name); }
+
 private:
-  BoutReal time;
-  std::unique_ptr<Datafile> dump{nullptr};
+  bout::DataFileFacade dump;
+  bout::OptionsNetCDF output_file;
 };
 
 /// An example of using multiple monitors on different timescales
@@ -97,9 +80,8 @@ protected:
     probes->add(n(mesh->xstart, mesh->ystart, 0), "n_up");
     probes->add(T(mesh->xstart, mesh->ystart, 0), "T_up");
 
-    // Add the corner value. T is already present in BOUT.dmp - but
-    // as it is a different file, this doesn't cause issues
-    slow->add(T(mesh->xstart, mesh->ystart, 0), "T");
+    // Add the corner value
+    slow->add(T(mesh->xstart, mesh->ystart, 0), "T_corner");
     return 0;
   }
 
