@@ -111,7 +111,7 @@ found, a warning will be printed and the default values used.
 -  Differencing quantities in 2D/3D arrays ``dx(nx,ny[,nz])``,
    ``dy(nx,ny[,nz])`` and ``dz(nx,ny[,nz])``. If these are not found
    they will be set to 1. To allow variation in ``z`` direction, BOUT++
-   has to be configured ``--enable-metric-3d``, otherwise 2D fields are
+   has to be configured ``-DBOUT_ENABLE_METRIC_3D``, otherwise 2D fields are
    used for the metric fields. Note that prior to BOUT++ version 5
    ``dz`` was a constant.
 
