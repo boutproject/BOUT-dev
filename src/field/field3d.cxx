@@ -173,7 +173,7 @@ const Field3D& Field3D::ynext(int dir) const {
   if (dir > 0) {
     return yup(dir - 1);
   } else if (dir < 0) {
-    return ydown(- dir - 1);
+    return ydown(-dir - 1);
   } else {
     return *this;
   }
