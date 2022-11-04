@@ -296,7 +296,7 @@ BOUT++ will look for ``ncxx4-config`` or ``nc-config`` in your
 version than the one you want, you can point it at the correct version
 using::
 
-   ./configure --with-netcdf=/path/to/ncxx4-config
+   cmake -S .. -B . -DBOUT_USE_NETCDF=ON -DnetCDFCxx_ROOT=/path/to/ncxx4-config
 
 where ``/path/to/ncxx4-config`` is the location of the
 ``ncxx4-config`` tool (``nc-config`` will also work, but
@@ -353,9 +353,9 @@ OpenMP
 ------
 
 BOUT++ can make use of OpenMP parallelism. To enable OpenMP, use the
-``--enable-openmp`` flag to configure::
+``-DBOUT_ENABLE_OPENMP=ON`` flag to configure::
 
-    ./configure --enable-openmp
+    cmake -S .. -B . -DBOUT_ENABLE_OPENMP=ON
 
 OpenMP can be used to parallelise in more directions than can be
 achieved with MPI alone. For example, it is currently difficult to
@@ -378,7 +378,7 @@ some problem sizes on some machines) is setting the OpenMP schedule
 used in some of the OpenMP loops (specifically those using
 `BOUT_FOR`). This can be set using::
 
-    ./configure --enable-openmp --with-openmp-schedule=<schedule>
+    cmake . -DBOUT_ENABLE_OPENMP=ON -DBOUT_OPENMP_SCHEDULE=<schedule>
 
 with ``<schedule>`` being one of: ``static`` (the default),
 ``dynamic``, ``guided``, ``auto`` or ``runtime``.
@@ -448,9 +448,9 @@ solver, which evolves a system of the form
 :math:`\mathbf{f}(\mathbf{u},\dot{\mathbf{u}},t) = 0`. This allows
 algebraic constraints on variables to be specified.
 
-Use the ``--with-sundials`` option to configure BOUT++ with SUNDIALS::
+Use the ``-DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=`` option to configure BOUT++ with SUNDIALS::
 
-    $ ./configure --with-sundials=/path/to/sundials/install
+    $ cmake . -DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials/install
 
 SUNDIALS will allow you to select at run-time which solver to use. See
 :ref:`sec-timeoptions` for more details on how to do this.
@@ -458,8 +458,6 @@ SUNDIALS will allow you to select at run-time which solver to use. See
 Notes:
 
 * If compiling SUNDIALS, make sure that it is configured with MPI (``MPI_ENABLE=ON``)
-* If you install SUNDIALS to a non-standard (system) directory, you will probably have
-  to add the ``lib`` directory to the ``LD_LIBRARY_PATH`` environment variable.
 
 .. _sec-PETSc-install:
 
@@ -558,11 +556,11 @@ serial performance. This does not add new features, but may be faster
 in some cases. LAPACK is however written in FORTRAN 77, which can
 cause linking headaches. To enable these routines use::
 
-    $ ./configure --with-lapack
+    $ cmake . -DBOUT_USE_LAPACK=ON
 
 and to specify a non-standard path::
 
-    $ ./configure --with-lapack=/path/to/lapack
+    $ cmake . -DBOUT_USE_LAPACK=ON -DLAPACK_ROOT=/path/to/lapack
 
 
 MPI compilers
@@ -570,9 +568,7 @@ MPI compilers
 
 These are usually called something like mpicc and mpiCC (or mpicxx), and
 the configure script will look for several common names. If your
-compilers aren’t recognised then set them using::
-
-    $ ./configure MPICC=<your C compiler> MPICXX=<your C++ compiler>
+compilers aren’t recognised then check the `cmake documentation for MPI <https://cmake.org/cmake/help/latest/module/FindMPI.html#variables-for-locating-mpi>`_
 
 NOTES:
 
@@ -849,15 +845,11 @@ to ``next``, with an error like the following::
    make: *** [src] Error 2
 
 it's possible something has gone wrong with the submodules. To fix,
-just run ``make submodules``::
+just run::
 
-  $ make submodules
-  Downloading mpark.variant
-  git submodule update --init --recursive /home/peter/Codes/BOUT-dev/externalpackages/mpark.variant
-  Submodule path 'externalpackages/mpark.variant': checked out '0b488da9bebac980e7ba0e158a959c956a449676'
+  $ git submodule update --init --recursive  ./externalpackages/*
 
-If you regularly work on two different branches and need to run ``make
-submodules`` a lot, you may consider telling git to automatically
+If you regularly work on two different branches and need to run the above command a lot, you may consider telling git to automatically
 update the submodules::
 
   git config submodule.recurse=true
