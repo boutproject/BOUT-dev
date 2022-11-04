@@ -60,7 +60,6 @@ Before merging PR:
 
 After PR is merged:
 
-- [ ] Make tarball: `./configure && make dist`
 - [ ] Try to summarise the changes!
 - [ ] Make [GitHub Release][gh_release], include change summary **NB:** tag should have
       leading `v`
@@ -78,6 +77,7 @@ After PR is merged:
     - [ ]  [`manual/doxygen/Doxyfile`][Doxyfile]: `PROJECT_NUMBER`
     - [ ]  [`CMakeLists.txt`][CMakeLists.txt]: `_bout_previous_version`, `_bout_next_version`
     - [ ]  [`tools/pylib/_boutpp_build/backend.py`][backend.py]: `_bout_previous_version`, `_bout_next_version`
+- [ ] Make tarball: `cmake -S . -B build && make dist -C build`
 
 [Doxyfile]: ../manual/doxygen/Doxyfile
 [Doxyfile_readthedocs]: ../manual/doxygen/Doxyfile_readthedocs
