@@ -1,0 +1,6 @@
+[build-system]
+# Defined by PEP 518:
+requires = []
+# Defined by PEP 517:
+build-backend = "backend"
+backend-path = ["tools/pylib/_boutpp_build/"]

@@ -57,7 +57,7 @@ The documentation is divided into the following sections:
    :name: model-outputs
    
    user_docs/output_and_post
-   user_docs/python_boutcore
+   user_docs/python_boutpp
    
 .. toctree::
    :maxdepth: 2
