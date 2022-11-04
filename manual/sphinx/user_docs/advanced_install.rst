@@ -14,53 +14,24 @@ SUNDIALS and PETSc.
 Optimisation and run-time checking
 ----------------------------------
 
-Configure with ``--enable-checks=3`` enables a lot of checks of
+Configure with ``-DCHECK=3`` enables a lot of checks of
 operations performed by the field objects. This is very useful for
 debugging a code, and can be omitted once bugs have been removed.
-``--enable=checks=2`` enables less checking, especially the
-computationally rather expensive ones, while ``--enable-checks=0``
+``--DCHECK=2`` enables less checking, especially the
+computationally rather expensive ones, while ``-DCHECK=0``
 disables most checks.
 
-To get most checking, both from BOUT++ and from the compiler
-``--enable-debug`` can be used. That enables checks of level 3, as
-well as debug flags, e.g. ``-g`` for gcc.
-
 For (sometimes) more useful error messages, there is the
-``--enable-track`` option. This keeps track of the names of variables
-and includes these in error messages.
+``-DBOUT_ENABLE_TRACK=ON`` option. This keeps track of the names of
+variables and includes these in error messages.
 
 To get a backtrace, you can set the environment variable
 ``BOUT_SHOW_BACKTRACE`` in order for the exception to include the
 backtrace.
 
-To enable optimization, configure with ``--enable-optimize=3``.
-This will try to set appropriate flags, but may not set the best ones.
-This should work well for gcc. Similar to checks, different levels can
-be specified, where 3 is high, and 0 means disabling all
-optimization. ``--enable-optimize=fast`` will set the ``-Ofast`` flag
-for gcc which enables optimizations that are not standard conforming, so
-proceed at own risk.
+To enable optimization, configure with appropriate flags for your
+compiler, e.g. with ``-DCMAKE_CXX_FLAGS=" -O3 "`` for a gnu compiler.
 
-Manually set compilation flags
-------------------------------
-
-You can set the following environment variables if you need more
-control over how BOUT++ is built:
-
-- ``LDFLAGS``: extra flags for linking, e.g. ``-L<library dir>``
-
-- ``LIBS``: extra libraries for linking, e.g. ``-l<library>``
-
-- ``CPPFLAGS``: preprocessor flags, e.g. ``-I<include dir>``
-
-- ``CXXFLAGS``: compiler flags, e.g. ``-Wall``
-
-- ``SUNDIALS_EXTRA_LIBS`` specifies additional libraries for linking
-  to SUNDIALS, which are put at the end of the link command.
-
-It is possible to change flags for BOUT++ after running configure, by
-editing the ``make.config`` file. Note that this is not recommended,
-as e.g. PVODE will not be built with these flags.
 
 Install dependencies:
 ---------------------
