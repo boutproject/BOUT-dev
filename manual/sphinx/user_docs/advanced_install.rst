@@ -474,9 +474,9 @@ ways, so this is not guaranteed. To install PETSc version 3.13, use the
 following steps::
 
     $ cd ~
-    $ wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.13.4.tar.gz
-    $ tar -xzvf petsc-3.13.4.tar.gz
-    $ cd petsc-3.13.4
+    $ wget https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.5.tar.gz
+    $ tar -xzvf petsc-3.17.5.tar.gz
+    $ cd petsc-3.17.5
 
 Use the following configure options to ensure PETSc is compatible with BOUT++::
 
