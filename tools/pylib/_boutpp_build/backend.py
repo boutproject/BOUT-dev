@@ -60,7 +60,9 @@ def run2(cmd):
     """
     Run a command and return standard-out
     """
-    return subprocess.run(cmd, capture_output=True, shell=True, check=True).stdout.decode()
+    return subprocess.run(
+        cmd, capture_output=True, shell=True, check=True
+    ).stdout.decode()
 
 
 def hash(fn):
