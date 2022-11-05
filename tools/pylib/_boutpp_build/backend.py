@@ -5,7 +5,7 @@ import base64  # corelib
 import tempfile  # corelib
 import subprocess  # corelib
 import re  # corelib
-import pathlib.Path  # corelib
+import pathlib  # corelib
 
 try:
     import packaging.tags  # packaging
