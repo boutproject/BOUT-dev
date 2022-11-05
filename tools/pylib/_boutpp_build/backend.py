@@ -282,6 +282,6 @@ def wheel():
 if __name__ == "__main__":
     import sys
 
-    todos = dict(nightly=nightly, sdist=sdist, wheel=wheel)
+    todos = dict(nightly=nightly, sdist=sdist, wheel=wheel,version=lambda:print(getversion()))
     for todo in sys.argv[1:]:
         todos[todo]()
