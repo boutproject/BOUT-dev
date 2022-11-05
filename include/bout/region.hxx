@@ -552,7 +552,8 @@ public:
     if (this->size() != other.size()) {
       return false;
     }
-    for (auto i1 = const_cast<const Region<T>*>(this)->begin(), i2 = other.begin(); i1 != this->end(); ++i1, ++i2) {
+    for (auto i1 = const_cast<const Region<T>*>(this)->begin(), i2 = other.begin();
+         i1 != this->end(); ++i1, ++i2) {
       if (i1 != i2) {
         return false;
       }
