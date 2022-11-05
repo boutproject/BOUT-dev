@@ -36,7 +36,7 @@ def getversion():
             if useLocalVersion:
                 tmp = re.sub("-", "+", tmp)
             else:
-                tmp = re.sub("-.*", "+", tmp)
+                tmp = re.sub("-.*", "", tmp)
             version = tmp
             with open("_version.txt", "w") as f:
                 f.write(version + "\n")
