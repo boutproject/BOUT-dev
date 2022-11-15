@@ -43,7 +43,7 @@ public:
 protected:
   Mesh* localmesh{nullptr};
 
-  std::string region_name{""};
+  std::string region_name;
   std::shared_ptr<Region<Ind3D>> region{nullptr};
 
 public:
