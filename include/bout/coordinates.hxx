@@ -232,6 +232,9 @@ private:
   /// `Coordinates::geometry` is called
   mutable std::unique_ptr<Field2D> zlength_cache{nullptr};
 
+  /// Cache variable for Grad2_par2
+  std::unique_ptr<FieldMetric> Grad2_par2_DDY_invSg{nullptr};
+
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);

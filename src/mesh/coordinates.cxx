@@ -1279,6 +1279,7 @@ int Coordinates::geometry(bool recalculate_staggered,
 
   // Invalidate and recalculate cached variables
   zlength_cache.reset();
+  Grad2_par2_DDY_invSg.reset();
 
   return 0;
 }
@@ -1683,11 +1684,17 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
-  auto invSg = 1.0 / sqrt(g_22);
-  // Communicate to get parallel slices
-  localmesh->communicate(invSg);
-  invSg.applyParallelBoundary("parallel_neumann");
-  auto result = DDY(invSg, outloc, method) * DDY(f, outloc, method) * invSg
+  
+  if (Grad2_par2_DDY_invSg == nullptr) {
+    auto invSg = 1.0 / sqrt(g_22);
+    // Communicate to get parallel slices
+    localmesh->communicate(invSg);
+    invSg.applyParallelBoundary("parallel_neumann");
+    // cache
+    Grad2_par2_DDY_invSg = std::make_unique<FieldMetric>();
+    (*Grad2_par2_DDY_invSg) = DDY(invSg, outloc, method) * invSg;
+  }
+  auto result = (*Grad2_par2_DDY_invSg) * DDY(f, outloc, method)
                 + D2DY2(f, outloc, method) / g_22;
 
   return result;
@@ -1701,17 +1708,20 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
   }
   ASSERT1(location == outloc);
 
-  auto invSg = 1.0 / sqrt(g_22);
-  // Communicate to get parallel slices
-  localmesh->communicate(invSg);
-  invSg.applyParallelBoundary("parallel_neumann");
-  auto sg = DDY(invSg, outloc, method) * invSg;
-
+  if (Grad2_par2_DDY_invSg == nullptr) {
+    auto invSg = 1.0 / sqrt(g_22);
+    // Communicate to get parallel slices
+    localmesh->communicate(invSg);
+    invSg.applyParallelBoundary("parallel_neumann");
+    // cache
+    Grad2_par2_DDY_invSg = std::make_unique<FieldMetric>();
+    (*Grad2_par2_DDY_invSg) = DDY(invSg, outloc, method) * invSg;
+  }
   Field3D result = ::DDY(f, outloc, method);
 
   Field3D r2 = D2DY2(f, outloc, method) / g_22;
 
-  result = sg * result + r2;
+  result = (*Grad2_par2_DDY_invSg) * result + r2;
 
   ASSERT2(result.getLocation() == outloc);
 
