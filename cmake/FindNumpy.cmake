@@ -7,12 +7,18 @@
 #
 # ::
 #
-#   Numpy_FOUND - true if FFTW was found
-#   Numpy_VERSION - Location of the FFTW includes
-#   Numpy_INCLUDE_DIR - Required libraries
+#   Numpy_FOUND
+#   Numpy_VERSION
+#   Numpy_INCLUDE_DIR
 
 
-find_package(Python3 3.6 REQUIRED COMPONENTS Interpreter Development)
+find_package(Python3 3.6 COMPONENTS Interpreter Development)
+
+if (NOT Python3_FOUND)
+  message(STATUS "Could not find numpy as python was not found. Maybe the developement package is missing?")
+  set(Numpy_FOUND ${Python3_FOUND})
+  return()
+endif()
 
 if (NOT Numpy_FOUND)
   execute_process(COMMAND ${Python3_EXECUTABLE} -c "import numpy ; print(numpy.__version__)"
