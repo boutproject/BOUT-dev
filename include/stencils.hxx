@@ -34,18 +34,18 @@
 /// Used for calculating derivatives
 struct stencil {
   /// stencil 2 each side of the centre -- in effect means M?G > 2 is not supported
-  BoutReal mm = BoutNaN, m = BoutNaN, c = BoutNaN, p = BoutNaN, pp = BoutNaN; 
+  BoutReal mm = BoutNaN, m = BoutNaN, c = BoutNaN, p = BoutNaN, pp = BoutNaN;
 };
 
-
-template<DIRECTION direction, STAGGER stagger = STAGGER::None, int nGuard = 1, typename FieldType>
-void inline populateStencil(stencil &s, const FieldType& f, const typename FieldType::ind_type i){
+template <DIRECTION direction, STAGGER stagger = STAGGER::None, int nGuard = 1,
+          typename FieldType>
+void inline populateStencil(stencil& s, const FieldType& f,
+                            const typename FieldType::ind_type i) {
   static_assert(nGuard == 1 || nGuard == 2,
-		"populateStencil currently only supports one or two guard cells"
-		);
-  
-  switch(stagger) {
-  case(STAGGER::None):
+                "populateStencil currently only supports one or two guard cells");
+
+  switch (stagger) {
+  case (STAGGER::None):
     if (nGuard == 2) {
       if (direction == DIRECTION::YOrthogonal) {
         s.mm = f.ynext(-2)[i.template minus<2, direction>()];
@@ -72,7 +72,7 @@ void inline populateStencil(stencil &s, const FieldType& f, const typename Field
       }
     }
     break;
-  case(STAGGER::C2L):
+  case (STAGGER::C2L):
     if (nGuard == 2) {
       if (direction == DIRECTION::YOrthogonal) {
         s.mm = f.ynext(-2)[i.template minus<2, direction>()];
@@ -93,7 +93,7 @@ void inline populateStencil(stencil &s, const FieldType& f, const typename Field
       s.pp = f[i.template plus<1, direction>()];
     }
     break;
-  case(STAGGER::L2C):
+  case (STAGGER::L2C):
     if (direction == DIRECTION::YOrthogonal) {
       s.mm = f.ynext(-1)[i.template minus<1, direction>()];
     } else {
@@ -118,8 +118,9 @@ void inline populateStencil(stencil &s, const FieldType& f, const typename Field
   return;
 }
 
-template<DIRECTION direction, STAGGER stagger = STAGGER::None, int nGuard = 1, typename FieldType >
-stencil inline populateStencil(const FieldType& f, const typename FieldType::ind_type i){
+template <DIRECTION direction, STAGGER stagger = STAGGER::None, int nGuard = 1,
+          typename FieldType>
+stencil inline populateStencil(const FieldType& f, const typename FieldType::ind_type i) {
   stencil s;
   populateStencil<direction, stagger, nGuard, FieldType>(s, f, i);
   return s;

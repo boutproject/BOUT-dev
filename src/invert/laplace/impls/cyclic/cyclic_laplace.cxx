@@ -131,7 +131,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
   }
 
   if (dst) {
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
           localmesh->LocalNz); // ZFFT routine expects input of this length
@@ -152,8 +153,9 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
         }
 
         // Copy into array, transposing so kz is first index
-        for (int kz = 0; kz < nmode; kz++)
+        for (int kz = 0; kz < nmode; kz++) {
           bcmplx(kz, ix - xs) = k1d[kz];
+        }
       }
 
       // Get elements of the tridiagonal matrix
@@ -178,7 +180,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     cr->solve(bcmplx, xcmplx);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
 
       // ZFFT routine expects input of this length
@@ -202,7 +205,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     }
   } else {
     const BoutReal zlength = getUniform(coords->zlength());
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of this length
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 + 1);
@@ -247,7 +251,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     cr->solve(bcmplx, xcmplx);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of this length
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 + 1);
@@ -335,7 +340,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   auto bcmplx3D = Matrix<dcomplex>(nsys, nx);
 
   if (dst) {
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of this length
       auto k1d = Array<dcomplex>(localmesh->LocalNz);
@@ -392,7 +398,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     cr->solve(bcmplx3D, xcmplx3D);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of length LocalNz
       auto k1d = Array<dcomplex>(localmesh->LocalNz);
@@ -419,7 +426,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     }
   } else {
     const BoutReal zlength = getUniform(coords->zlength());
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of this length
       auto k1d = Array<dcomplex>(localmesh->LocalNz / 2 + 1);
@@ -475,7 +483,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     // verify_solution(a3D,b3D,c3D,bcmplx3D,xcmplx3D,nsys);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
                                  + 1); // ZFFT routine expects input of this length

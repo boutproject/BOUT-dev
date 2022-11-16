@@ -135,10 +135,12 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
       zt_prime_corner[i] = -1.0;
     } else {
       xt_prime_corner[i] =
-          0.25 * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
+          0.25
+          * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
 
       zt_prime_corner[i] =
-          0.25 * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
+          0.25
+          * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
     }
   }
 
@@ -245,7 +247,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
   interp->setMask(boundary_mask);
 }
 
-Field3D FCIMap::integrate(Field3D &f) const {
+Field3D FCIMap::integrate(Field3D& f) const {
   TRACE("FCIMap::integrate");
 
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
@@ -265,25 +267,26 @@ Field3D FCIMap::integrate(Field3D &f) const {
 
   int nz = map_mesh.LocalNz;
 
-  for(int x = map_mesh.xstart; x <= map_mesh.xend; x++) {
-    for(int y = map_mesh.ystart; y <= map_mesh.yend; y++) {
+  for (int x = map_mesh.xstart; x <= map_mesh.xend; x++) {
+    for (int y = map_mesh.ystart; y <= map_mesh.yend; y++) {
 
-      int ynext = y+offset;
+      int ynext = y + offset;
 
-      for(int z = 0; z < nz; z++) {
-        if (boundary_mask(x,y,z))
+      for (int z = 0; z < nz; z++) {
+        if (boundary_mask(x, y, z)) {
           continue;
+        }
 
         int zm = z - 1;
         if (z == 0) {
-          zm = nz-1;
+          zm = nz - 1;
         }
 
-        BoutReal f_c  = centre(x,ynext,z);
+        BoutReal f_c = centre(x, ynext, z);
 
-        if (corner_boundary_mask(x, y, z) || corner_boundary_mask(x - 1, y, z) ||
-            corner_boundary_mask(x, y, zm) || corner_boundary_mask(x - 1, y, zm) ||
-            (x == map_mesh.xstart)) {
+        if (corner_boundary_mask(x, y, z) || corner_boundary_mask(x - 1, y, z)
+            || corner_boundary_mask(x, y, zm) || corner_boundary_mask(x - 1, y, zm)
+            || (x == map_mesh.xstart)) {
           // One of the corners leaves the domain.
           // Use the cell centre value, since boundary conditions are not
           // currently applied to corners.
@@ -300,7 +303,7 @@ Field3D FCIMap::integrate(Field3D &f) const {
           // which would include cell edges and corners
           result(x, ynext, z) = 0.5 * (f_c + 0.25 * (f_pp + f_mp + f_pm + f_mm));
 
-          ASSERT2(std::isfinite(result(x,ynext,z)));
+          ASSERT2(std::isfinite(result(x, ynext, z)));
         }
       }
     }
@@ -310,10 +313,13 @@ Field3D FCIMap::integrate(Field3D &f) const {
 
 void FCITransform::checkInputGrid() {
   std::string parallel_transform;
-  if (mesh.isDataSourceGridFile() && !mesh.get(parallel_transform, "parallel_transform")) {
+  if (mesh.isDataSourceGridFile()
+      && !mesh.get(parallel_transform, "parallel_transform")) {
     if (parallel_transform != "fci") {
-      throw BoutException("Incorrect parallel transform type '"+parallel_transform+"' used "
-          "to generate metric components for FCITransform. Should be 'fci'.");
+      throw BoutException(
+          "Incorrect parallel transform type '" + parallel_transform
+          + "' used "
+            "to generate metric components for FCITransform. Should be 'fci'.");
     }
   } // else: parallel_transform variable not found in grid input, indicates older input
     //       file or grid from options so must rely on the user having ensured the type is

@@ -35,9 +35,9 @@ class RKScheme;
 #ifndef __RKSCHEME_H__
 #define __RKSCHEME_H__
 
+#include "bout/generic_factory.hxx"
 #include <bout_types.hxx>
 #include <utils.hxx>
-#include "bout/generic_factory.hxx"
 
 #include <iomanip>
 #include <string>
@@ -75,26 +75,27 @@ public:
   void init(int nlocalIn, int neqIn, bool adaptiveIn, BoutReal atolIn, BoutReal rtolIn);
 
   /// Get the time at given stage
-  BoutReal setCurTime(BoutReal timeIn,BoutReal dt,int curStage);
+  BoutReal setCurTime(BoutReal timeIn, BoutReal dt, int curStage);
 
   /// Get the state vector at given stage
-  virtual void setCurState(const Array<BoutReal> &start, Array<BoutReal> &out,int curStage, 
-			   BoutReal dt);
+  virtual void setCurState(const Array<BoutReal>& start, Array<BoutReal>& out,
+                           int curStage, BoutReal dt);
 
   /// Calculate the output state and return the error estimate (if adaptive)
-  virtual BoutReal setOutputStates(const Array<BoutReal> &start,BoutReal dt, Array<BoutReal> &resultFollow);
+  virtual BoutReal setOutputStates(const Array<BoutReal>& start, BoutReal dt,
+                                   Array<BoutReal>& resultFollow);
 
   /// Update the timestep
-  virtual BoutReal updateTimestep(BoutReal dt,BoutReal err);
+  virtual BoutReal updateTimestep(BoutReal dt, BoutReal err);
 
   /// Returns the string name for the given scheme
-  virtual std::string getType(){return label;};
+  virtual std::string getType() { return label; };
 
   /// Returns the number of stages for the current scheme
-  int getStageCount(){return numStages;};
+  int getStageCount() { return numStages; };
 
   /// Returns the number of orders for the current scheme
-  int getNumOrders(){return numOrders;};
+  int getNumOrders() { return numOrders; };
 
   /// The intermediate stages
   Matrix<BoutReal> steps;

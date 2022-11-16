@@ -9,8 +9,8 @@ class BoundaryFactory;
 #include "parallel_boundary_op.hxx"
 #include "parallel_boundary_region.hxx"
 
-#include <string>
 #include <map>
+#include <string>
 
 /// Create BoundaryOp objects on demand
 /*!
@@ -59,7 +59,7 @@ class BoundaryFactory;
  * 
  */
 class BoundaryFactory {
- public:
+public:
   ~BoundaryFactory();
   /// Return a pointer to the only instance
   static BoundaryFactory* getInstance();
@@ -67,45 +67,46 @@ class BoundaryFactory {
   static void cleanup(); ///< Frees all memory
 
   /// Create a boundary operation object
-  BoundaryOpBase* create(const std::string &name, BoundaryRegionBase *region);
-  BoundaryOpBase* create(const char* name, BoundaryRegionBase *region);
+  BoundaryOpBase* create(const std::string& name, BoundaryRegionBase* region);
+  BoundaryOpBase* create(const char* name, BoundaryRegionBase* region);
 
   /// Create a boundary object using the options file
-  BoundaryOpBase* createFromOptions(const std::string &varname, BoundaryRegionBase *region);
-  BoundaryOpBase* createFromOptions(const char* varname, BoundaryRegionBase *region);
+  BoundaryOpBase* createFromOptions(const std::string& varname,
+                                    BoundaryRegionBase* region);
+  BoundaryOpBase* createFromOptions(const char* varname, BoundaryRegionBase* region);
 
   /*!
    * Add available boundary conditions and modifiers
    * Supply an object, and the name to be used
    */
-  void add(BoundaryOp* bop, const std::string &name);
-  
+  void add(BoundaryOp* bop, const std::string& name);
+
   /*!
    * Add a boundary condition.
    *
    * Note: This method should be removed, as the string method is sufficient
    */
-  void add(BoundaryOp* bop, const char *name);
-  
+  void add(BoundaryOp* bop, const char* name);
+
   /*!
    * Add a boundary condition modifier
    */
-  void addMod(BoundaryModifier* bmod, const std::string &name);
-  
+  void addMod(BoundaryModifier* bmod, const std::string& name);
+
   /*!
    * Note: This method should be removed, as the string method is sufficient
-   */ 
-  void addMod(BoundaryModifier* bmod, const char *name);
-  
-  // Parallel boundaries
-  void add(BoundaryOpPar* bop, const std::string &name);
-  void add(BoundaryOpPar* bop, const char *name);
+   */
+  void addMod(BoundaryModifier* bmod, const char* name);
 
- private:
+  // Parallel boundaries
+  void add(BoundaryOpPar* bop, const std::string& name);
+  void add(BoundaryOpPar* bop, const char* name);
+
+private:
   /*!
    * Private constructor, preventing instantiation of this class
-   */ 
-  BoundaryFactory(); 
+   */
+  BoundaryFactory();
   static BoundaryFactory* instance; ///< The only instance of this class (Singleton)
 
   // Database of available boundary conditions and modifiers
@@ -117,14 +118,12 @@ class BoundaryFactory {
   // map<string, BoundaryModifier*> par_modmap;
 
   // Functions to look up operations and modifiers
-  BoundaryOp* findBoundaryOp(const std::string &s);
-  BoundaryModifier* findBoundaryMod(const std::string &s);
+  BoundaryOp* findBoundaryOp(const std::string& s);
+  BoundaryModifier* findBoundaryMod(const std::string& s);
   // Parallel boundary conditions
-  BoundaryOpPar* findBoundaryOpPar(const std::string &s);
+  BoundaryOpPar* findBoundaryOpPar(const std::string& s);
   // To be implemented...
   // BoundaryModifier* findBoundaryMod(const string &s);
-
 };
 
 #endif // __BNDRY_FACTORY_H__
-

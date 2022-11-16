@@ -36,14 +36,8 @@
 Field::Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
     : FieldData(localmesh, location_in), directions(directions_in) {}
 
-int Field::getNx() const{
-  return getMesh()->LocalNx;
-}
+int Field::getNx() const { return getMesh()->LocalNx; }
 
-int Field::getNy() const{
-  return getMesh()->LocalNy;
-}
+int Field::getNy() const { return getMesh()->LocalNy; }
 
-int Field::getNz() const{
-  return getMesh()->LocalNz;
-}
+int Field::getNz() const { return getMesh()->LocalNz; }

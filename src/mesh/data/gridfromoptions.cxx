@@ -45,7 +45,8 @@ bool GridFromOptions::get(Mesh*, BoutReal& rval, const std::string& name, BoutRe
   return hasVar(name);
 }
 
-bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutReal def, CELL_LOC location) {
+bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutReal def,
+                          CELL_LOC location) {
   if (!hasVar(name)) {
     output_warn.write("Variable '{:s}' not in mesh options. Setting to {:e}\n", name,
                       def);
@@ -57,7 +58,8 @@ bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutRe
   return true;
 }
 
-bool GridFromOptions::get(Mesh* m, Field3D& var, const std::string& name, BoutReal def, CELL_LOC location) {
+bool GridFromOptions::get(Mesh* m, Field3D& var, const std::string& name, BoutReal def,
+                          CELL_LOC location) {
   if (!hasVar(name)) {
     output_warn.write("Variable '{:s}' not in mesh options. Setting to {:e}\n", name,
                       def);
@@ -69,7 +71,8 @@ bool GridFromOptions::get(Mesh* m, Field3D& var, const std::string& name, BoutRe
   return true;
 }
 
-bool GridFromOptions::get(Mesh* m, FieldPerp& var, const std::string& name, BoutReal def, CELL_LOC location) {
+bool GridFromOptions::get(Mesh* m, FieldPerp& var, const std::string& name, BoutReal def,
+                          CELL_LOC location) {
   // Cannot set attributes from options at the moment, so don't know what 'yindex' this
   // FieldPerp should have: just set to 0 for now, and create FieldPerp on all processors
   // (note: this is different to behaviour of GridFromFile which will only create the
@@ -94,7 +97,8 @@ bool GridFromOptions::get(Mesh* m, std::vector<int>& var, const std::string& nam
                           GridDataSource::Direction UNUSED(dir)) {
   if (!hasVar(name)) {
     std::vector<int> def{};
-    output_warn.write("Variable '{:s}' not in mesh options. Setting to empty vector\n", name);
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to empty vector\n",
+                      name);
     var = def;
     return false;
   }
@@ -112,7 +116,8 @@ bool GridFromOptions::get(Mesh* m, std::vector<BoutReal>& var, const std::string
                           int len, int offset, GridDataSource::Direction dir) {
   if (!hasVar(name)) {
     std::vector<BoutReal> def{};
-    output_warn.write("Variable '{:s}' not in mesh options. Setting to empty vector\n", name);
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to empty vector\n",
+                      name);
     var = def;
     return false;
   }
@@ -122,7 +127,7 @@ bool GridFromOptions::get(Mesh* m, std::vector<BoutReal>& var, const std::string
 
   var.resize(len);
 
-  Context pos(0,0,0,CELL_CENTRE, m, 0.0);
+  Context pos(0, 0, 0, CELL_CENTRE, m, 0.0);
 
   switch (dir) {
   case GridDataSource::X: {
@@ -133,7 +138,7 @@ bool GridFromOptions::get(Mesh* m, std::vector<BoutReal>& var, const std::string
     break;
   }
   case GridDataSource::Y: {
-    for (int y = 0; y < len; y++){
+    for (int y = 0; y < len; y++) {
       pos.set("y", TWOPI * m->GlobalY(y - m->OffsetY + offset));
       var[y] = gen->generate(pos);
     }
@@ -141,12 +146,15 @@ bool GridFromOptions::get(Mesh* m, std::vector<BoutReal>& var, const std::string
   }
   case GridDataSource::Z: {
     for (int z = 0; z < len; z++) {
-      pos.set("z", (TWOPI * (z - m->OffsetZ + offset)) / static_cast<BoutReal>(m->LocalNz));
+      pos.set("z",
+              (TWOPI * (z - m->OffsetZ + offset)) / static_cast<BoutReal>(m->LocalNz));
       var[z] = gen->generate(pos);
     }
     break;
   }
-  default: { throw BoutException("Invalid direction argument"); }
+  default: {
+    throw BoutException("Invalid direction argument");
+  }
   }
   return true;
 }

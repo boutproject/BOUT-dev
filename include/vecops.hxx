@@ -30,11 +30,11 @@
 #define __VECOPS_H__
 
 #include "bout_types.hxx"
-#include "bout/coordinates.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
+#include "bout/coordinates.hxx"
 
 /// Gradient of scalar field \p f, returning a covariant vector
 ///

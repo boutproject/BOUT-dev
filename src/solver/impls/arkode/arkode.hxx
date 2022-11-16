@@ -35,8 +35,8 @@
 #if not BOUT_HAS_ARKODE
 
 namespace {
-RegisterUnavailableSolver registerunavailablearkode("arkode",
-                                                    "BOUT++ was not configured with ARKODE/SUNDIALS");
+RegisterUnavailableSolver
+    registerunavailablearkode("arkode", "BOUT++ was not configured with ARKODE/SUNDIALS");
 }
 
 #else
@@ -44,8 +44,8 @@ RegisterUnavailableSolver registerunavailablearkode("arkode",
 #include "bout_types.hxx"
 #include "bout/sundials_backports.hxx"
 
-#include <sundials/sundials_config.h>
 #include <nvector/nvector_parallel.h>
+#include <sundials/sundials_config.h>
 
 #include <vector>
 

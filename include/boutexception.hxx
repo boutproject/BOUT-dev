@@ -28,9 +28,7 @@ public:
 
   ~BoutException() override;
 
-  const char* what() const noexcept override {
-    return message.c_str();
-  }
+  const char* what() const noexcept override { return message.c_str(); }
 
   /// Return the exception message along with the MsgStack and
   /// backtrace (if available)

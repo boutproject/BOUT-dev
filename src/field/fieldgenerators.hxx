@@ -24,9 +24,7 @@ public:
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldValuePtr>(ptr);
   }
-  BoutReal generate(const bout::generator::Context&) override {
-    return *ptr;
-  }
+  BoutReal generate(const bout::generator::Context&) override { return *ptr; }
 
 private:
   BoutReal* ptr;
@@ -37,10 +35,11 @@ private:
 
 /// Template class to define generators around a C function
 using single_arg_op = BoutReal (*)(BoutReal);
-template<single_arg_op Op>
+template <single_arg_op Op>
 class FieldGenOneArg : public FieldGenerator { ///< Template for single-argument function
 public:
-  FieldGenOneArg(FieldGeneratorPtr g, const std::string& name = "function") : gen(g), name(name) {}
+  FieldGenOneArg(FieldGeneratorPtr g, const std::string& name = "function")
+      : gen(g), name(name) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 1) {
       throw ParseException("Incorrect number of arguments to {:s}. Expecting 1, got {:d}",
@@ -65,7 +64,9 @@ using double_arg_op = BoutReal (*)(BoutReal, BoutReal);
 template <double_arg_op Op>
 class FieldGenTwoArg : public FieldGenerator { ///< Template for two-argument function
 public:
-  FieldGenTwoArg(FieldGeneratorPtr a, FieldGeneratorPtr b, const std::string& name = "function") : A(a), B(b), name(name) {}
+  FieldGenTwoArg(FieldGeneratorPtr a, FieldGeneratorPtr b,
+                 const std::string& name = "function")
+      : A(a), B(b), name(name) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 2) {
       throw ParseException("Incorrect number of arguments to {:s}. Expecting 2, got {:d}",
@@ -100,8 +101,9 @@ public:
         args.size());
   }
   BoutReal generate(const bout::generator::Context& pos) override {
-    if (B == nullptr)
+    if (B == nullptr) {
       return atan(A->generate(pos));
+    }
     return atan2(A->generate(pos), B->generate(pos));
   }
 
@@ -152,8 +154,9 @@ public:
     BoutReal result = (*it)->generate(pos);
     for (; it != input.end(); it++) {
       BoutReal val = (*it)->generate(pos);
-      if (val < result)
+      if (val < result) {
         result = val;
+      }
     }
     return result;
   }
@@ -178,8 +181,9 @@ public:
     BoutReal result = (*it)->generate(pos);
     for (; it != input.end(); it++) {
       BoutReal val = (*it)->generate(pos);
-      if (val > result)
+      if (val > result) {
         result = val;
+      }
     }
     return result;
   }
@@ -227,7 +231,7 @@ public:
   }
 
 private:
-  FieldGeneratorPtr value; ///< The value to be clamped
+  FieldGeneratorPtr value;     ///< The value to be clamped
   FieldGeneratorPtr low, high; ///< The range within which the result will be
 };
 
@@ -303,7 +307,7 @@ public:
   // Constructor
   FieldTanhHat(FieldGeneratorPtr xin, FieldGeneratorPtr widthin,
                FieldGeneratorPtr centerin, FieldGeneratorPtr steepnessin)
-      : X(xin), width(widthin), center(centerin), steepness(steepnessin) {};
+      : X(xin), width(widthin), center(centerin), steepness(steepnessin){};
   // Clone containing the list of arguments
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
   BoutReal generate(const bout::generator::Context& pos) override;
@@ -347,6 +351,5 @@ public:
 private:
   FieldGeneratorPtr test, gt0, lt0;
 };
-
 
 #endif // __FIELDGENERATORS_H__

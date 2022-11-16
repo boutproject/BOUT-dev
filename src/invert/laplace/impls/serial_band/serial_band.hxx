@@ -55,40 +55,41 @@ public:
                     Mesh* mesh_in = nullptr, Solver* solver = nullptr,
                     Datafile* dump = nullptr);
   ~LaplaceSerialBand(){};
-  
+
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &val) override {
+  void setCoefA(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Acoef = val;
   }
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &val) override {
+  void setCoefC(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ccoef = val;
   }
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &val) override {
+  void setCoefD(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Dcoef = val;
   }
   using Laplacian::setCoefEx;
-  void setCoefEx(const Field2D &UNUSED(val)) override {
+  void setCoefEx(const Field2D& UNUSED(val)) override {
     throw BoutException("LaplaceSerialBand does not have Ex coefficient");
   }
   using Laplacian::setCoefEz;
-  void setCoefEz(const Field2D &UNUSED(val)) override {
+  void setCoefEz(const Field2D& UNUSED(val)) override {
     throw BoutException("LaplaceSerialBand does not have Ez coefficient");
   }
 
   using Laplacian::solve;
-  FieldPerp solve(const FieldPerp &b) override;
-  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp& b) override;
+  FieldPerp solve(const FieldPerp& b, const FieldPerp& x0) override;
+
 private:
   Field2D Acoef, Ccoef, Dcoef;
-  
+
   Matrix<dcomplex> bk, xk, A;
   Array<dcomplex> bk1d, xk1d;
 };
