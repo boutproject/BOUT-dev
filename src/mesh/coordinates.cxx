@@ -1669,8 +1669,8 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
   Field3D f_B = f / Bxy_floc;
   f_B.splitParallelSlices();
   for (int i = 0; i < f.getMesh()->ystart; ++i) {
-    f_B.yup(i) = f.yup(i) / Bxy_floc;
-    f_B.ydown(i) = f.ydown(i) / Bxy_floc;
+    f_B.yup(i) = f.yup(i) / Bxy_floc.yup(i);
+    f_B.ydown(i) = f.ydown(i) / Bxy_floc.ydown(i);
   }
   return Bxy * Grad_par(f_B, outloc, method);
 }
@@ -1684,7 +1684,6 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
-  
   if (Grad2_par2_DDY_invSg == nullptr) {
     auto invSg = 1.0 / sqrt(g_22);
     // Communicate to get parallel slices
