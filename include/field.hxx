@@ -387,7 +387,7 @@ inline bool isUniform(const T& f, bool allpe = false,
 /// @param[in] allpe   Check over all processors
 /// @param[in] region  The region to assume is uniform
 template <typename T, typename = bout::utils::EnableIfField<T>>
-inline BoutReal getUniform(const T& f, bool allpe = false,
+inline BoutReal getUniform(const T& f, MAYBE_UNUSED(bool allpe) = false,
                            const std::string& region = "RGN_ALL") {
 #if CHECK > 1
   if (not isUniform(f, allpe, region)) {
