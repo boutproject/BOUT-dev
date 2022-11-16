@@ -3,27 +3,27 @@
 #include <math.h>
 #include <tuple>
 
-#include "gtest/gtest.h"
-#include "test_extras.hxx"
-#include "invert_laplace.hxx"
 #include "../../../../src/invert/laplacexz/impls/petsc/laplacexz-petsc.hxx"
+#include "invert_laplace.hxx"
+#include "test_extras.hxx"
+#include "gtest/gtest.h"
 
-#include "bout/mesh.hxx"
-#include "bout/griddata.hxx"
-#include "options.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
 #include "derivs.hxx"
 #include "difops.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "options.hxx"
 #include "vecops.hxx"
+#include "bout/griddata.hxx"
+#include "bout/mesh.hxx"
 #include "bout/petsc_interface.hxx"
 
 #if BOUT_HAS_PETSC
 
 /// Global mesh
-namespace bout{
-namespace globals{
-extern Mesh *mesh;
+namespace bout {
+namespace globals {
+extern Mesh* mesh;
 } // namespace globals
 } // namespace bout
 
@@ -34,7 +34,7 @@ class ForwardOperatorXZ {
 public:
   ForwardOperatorXZ() {}
   ForwardOperatorXZ(Mesh* mesh, bool xin_neumann, bool xout_neumann)
-    : A(1.0, mesh), B(0.0, mesh), coords(mesh->getCoordinates(CELL_CENTER)),
+      : A(1.0, mesh), B(0.0, mesh), coords(mesh->getCoordinates(CELL_CENTER)),
         inner_x_neumann(xin_neumann), outer_x_neumann(xout_neumann) {}
 
   Field3D operator()(Field3D& f) const {
@@ -59,8 +59,8 @@ public:
   Coordinates* coords;
 
 private:
-  bool inner_x_neumann, outer_x_neumann;  // If false then use Dirichlet conditions
-    // lower_y_neumann, upper_y_neumann;
+  bool inner_x_neumann, outer_x_neumann; // If false then use Dirichlet conditions
+                                         // lower_y_neumann, upper_y_neumann;
 
   void applyBoundaries(Field3D& newF, Field3D& f) const {
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_INNER_X")) {
@@ -84,7 +84,8 @@ private:
 class LaplaceXZPetscTest : public FakeMeshFixture,
                            public testing::WithParamInterface<std::tuple<bool, bool>> {
 public:
-  WithQuietOutput info{output_info}, warn{output_warn}, progress{output_progress}, all{output};
+  WithQuietOutput info{output_info}, warn{output_warn}, progress{output_progress},
+      all{output};
   LaplaceXZPetscTest()
       : FakeMeshFixture(), solver(bout::globals::mesh, getOptions(GetParam())),
         forward(bout::globals::mesh, std::get<0>(GetParam()), std::get<1>(GetParam())) {
@@ -124,15 +125,16 @@ public:
   ForwardOperatorXZ forward;
 
 private:
-
   static Options* getOptions(std::tuple<bool, bool> param) {
-    Options *options = Options::getRoot()->getSection("laplacexz");
+    Options* options = Options::getRoot()->getSection("laplacexz");
     (*options)["type"] = "petsc";
-    (*options)["inner_boundary_flags"] = (std::get<0>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
-    (*options)["outer_boundary_flags"] = (std::get<1>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
+    (*options)["inner_boundary_flags"] =
+        (std::get<0>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
+    (*options)["outer_boundary_flags"] =
+        (std::get<1>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
     (*options)["fourth_order"] = false;
-    (*options)["atol"] = tol/30; // Need to specify smaller than desired tolerance to
-    (*options)["rtol"] = tol/30; // ensure it is satisfied for every element.
+    (*options)["atol"] = tol / 30; // Need to specify smaller than desired tolerance to
+    (*options)["rtol"] = tol / 30; // ensure it is satisfied for every element.
     return options;
   }
 };
@@ -140,7 +142,7 @@ private:
 INSTANTIATE_TEST_SUITE_P(LaplaceXZTest, LaplaceXZPetscTest,
                          testing::Values(std::make_tuple(true, false)));
 
-TEST_P(LaplaceXZPetscTest, TestSolve3D){
+TEST_P(LaplaceXZPetscTest, TestSolve3D) {
   Field3D expected = f3;
   solver.setCoefs(A, B);
   forward.A = A;
@@ -149,8 +151,8 @@ TEST_P(LaplaceXZPetscTest, TestSolve3D){
   EXPECT_TRUE(IsFieldEqual(actual, expected, "RGN_NOBNDRY", tol));
 }
 
-TEST_P(LaplaceXZPetscTest, TestSolve3DGuess){
-  Field3D expected = f3, guess = f3*1.01;
+TEST_P(LaplaceXZPetscTest, TestSolve3DGuess) {
+  Field3D expected = f3, guess = f3 * 1.01;
   solver.setCoefs(A, B);
   forward.A = A;
   forward.B = B;
