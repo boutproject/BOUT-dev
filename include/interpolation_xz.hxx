@@ -147,6 +147,8 @@ protected:
   Field3D h10_z;
   Field3D h11_z;
 
+  std::vector<Field3D> newWeights;
+
 public:
   XZHermiteSpline(Mesh *mesh = nullptr)
       : XZHermiteSpline(0, mesh) {}

@@ -49,6 +49,13 @@ XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh *mesh)
   h01_z.allocate();
   h10_z.allocate();
   h11_z.allocate();
+
+
+  newWeights.reserve(16);
+  for (int w=0; w<16;++w){
+    newWeights.emplace_back(localmesh);
+    newWeights[w].allocate();
+  }
 }
 
 void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
@@ -108,6 +115,115 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
 
     h11_x[i] = (t_x * t_x * t_x) - (t_x * t_x);
     h11_z[i] = (t_z * t_z * t_z) - (t_z * t_z);
+
+#define USE_NEW_WEIGHTS 1
+#if USE_NEW_WEIGHTS
+
+    for (int w =0; w<16;++w){
+      newWeights[w][i]=0;
+    }
+    // The distribution of our weights:
+    //  0   4   8    12
+    //  1   5   9    13
+    //  2   6   10   14
+    //  3   7   11   15
+    // e.g. 1 == ic.xm(); 4 == ic.zm(); 5 == ic;  7 == ic.zp(2);
+
+    // f[ic] * h00_x[i] + f[icxp] * h01_x[i] + fx[ic] * h10_x[i] + fx[icxp] * h11_x[i];
+    newWeights[5][i]  += h00_x[i] * h00_z[i];
+    newWeights[9][i]  += h01_x[i] * h00_z[i];
+    newWeights[9][i]  += h10_x[i] * h00_z[i] / 2;
+    newWeights[1][i]  -= h10_x[i] * h00_z[i] / 2;
+    newWeights[13][i] += h11_x[i] * h00_z[i] / 2;
+    newWeights[5][i]  -= h11_x[i] * h00_z[i] / 2;
+
+    // f[iczp] * h00_x[i] + f[icxpzp] * h01_x[i] +
+    // fx[iczp] * h10_x[i] + fx[icxpzp] * h11_x[i];
+    newWeights[6][i]  += h00_x[i] * h01_z[i];
+    newWeights[10][i] += h01_x[i] * h01_z[i];
+    newWeights[10][i] += h10_x[i] * h01_z[i] / 2;
+    newWeights[2][i]  -= h10_x[i] * h01_z[i] / 2;
+    newWeights[14][i] += h11_x[i] * h01_z[i] / 2;
+    newWeights[6][i]  -= h11_x[i] * h01_z[i] / 2;
+
+    // fz[ic] * h00_x[i] + fz[icxp] * h01_x[i] +
+    // fxz[ic] * h10_x[i]+ fxz[icxp] * h11_x[i];
+    newWeights[6][i]  += h00_x[i] * h10_z[i] / 2;
+    newWeights[4][i]  -= h00_x[i] * h10_z[i] / 2;
+    newWeights[10][i] += h01_x[i] * h10_z[i] / 2;
+    newWeights[8][i]  -= h01_x[i] * h10_z[i] / 2;
+    newWeights[10][i] += h10_x[i] * h10_z[i] / 4;
+    newWeights[8][i]  -= h10_x[i] * h10_z[i] / 4;
+    newWeights[2][i]  -= h10_x[i] * h10_z[i] / 4;
+    newWeights[0][i]  += h10_x[i] * h10_z[i] / 4;
+    newWeights[14][i] += h11_x[i] * h10_z[i] / 4;
+    newWeights[12][i] -= h11_x[i] * h10_z[i] / 4;
+    newWeights[6][i] -= h11_x[i] * h10_z[i] / 4;
+    newWeights[4][i]  += h11_x[i] * h10_z[i] / 4;
+
+    // fz[iczp] * h00_x[i] + fz[icxpzp] * h01_x[i] +
+    // fxz[iczp] * h10_x[i] + fxz[icxpzp] * h11_x[i];
+    newWeights[7][i]  += h00_x[i] * h11_z[i] / 2;
+    newWeights[5][i]  -= h00_x[i] * h11_z[i] / 2;
+    newWeights[11][i] += h01_x[i] * h11_z[i] / 2;
+    newWeights[9][i]  -= h01_x[i] * h11_z[i] / 2;
+    newWeights[11][i] += h10_x[i] * h11_z[i] / 4;
+    newWeights[9][i]  -= h10_x[i] * h11_z[i] / 4;
+    newWeights[3][i]  -= h10_x[i] * h11_z[i] / 4;
+    newWeights[1][i]  += h10_x[i] * h11_z[i] / 4;
+    newWeights[15][i] += h11_x[i] * h11_z[i] / 4;
+    newWeights[13][i] -= h11_x[i] * h11_z[i] / 4;
+    newWeights[7][i]  -= h11_x[i] * h11_z[i] / 4;
+    newWeights[5][i]  += h11_x[i] * h11_z[i] / 4;
+
+
+    //   // f[ic] * h00_x[i] + f[icxp] * h01_x[i] + fx[ic] * h10_x[i] + fx[icxp] * h11_x[i];
+    // newWeights[5][i]  += h00_x[i] * h00_z[i];
+    // newWeights[9][i]  += h01_x[i] * h00_z[i];
+    // newWeights[9][i]  += h10_x[i] * h00_z[i] / 2 / localmesh->dx[ic];
+    // newWeights[1][i]  -= h10_x[i] * h00_z[i] / 2 / localmesh->dx[ic];
+    // newWeights[13][i] += h11_x[i] * h00_z[i] / 2 / localmesh->dx[ic.xp()];
+    // newWeights[5][i]  -= h11_x[i] * h00_z[i] / 2 / localmesh->dx[ic.xp()];
+
+    // // f[iczp] * h00_x[i] + f[icxpzp] * h01_x[i] +
+    // // fx[iczp] * h10_x[i] + fx[icxpzp] * h11_x[i];
+    // newWeights[6][i]  += h00_x[i] * h01_z[i];
+    // newWeights[10][i]  += h01_x[i] * h01_z[i];
+    // newWeights[10][i]  += h10_x[i] * h01_z[i] / 2/ localmesh->dx[ic.zp()];
+    // newWeights[2][i]  -= h10_x[i] * h01_z[i] / 2/ localmesh->dx[ic.zp()];
+    // newWeights[14][i] += h11_x[i] * h01_z[i] / 2/ localmesh->dx[ic.zp().xp()];
+    // newWeights[6][i]  -= h11_x[i] * h01_z[i] / 2/ localmesh->dx[ic.zp().xp()];
+
+    // // fz[ic] * h00_x[i] + fz[icxp] * h01_x[i] +
+    // // fxz[ic] * h10_x[i]+ fxz[icxp] * h11_x[i];
+    // newWeights[6][i]  += h00_x[i] * h10_z[i] / 2 / localmesh->dz[ic];
+    // newWeights[4][i]  -= h00_x[i] * h10_z[i] / 2 / localmesh->dz[ic];
+    // newWeights[10][i] += h01_x[i] * h10_z[i] / 2 / localmesh->dz[ic.xp()];
+    // newWeights[8][i]  -= h01_x[i] * h10_z[i] / 2 / localmesh->dz[ic.xp()];
+    // newWeights[10][i] += h10_x[i] * h10_z[i] / 4 / localmesh->dz[ic] / localmesh->dx[ic];
+    // newWeights[8][i]  -= h10_x[i] * h10_z[i] / 4 / localmesh->dz[ic] / localmesh->dx[ic];
+    // newWeights[2][i]  -= h10_x[i] * h10_z[i] / 4 / localmesh->dz[ic] / localmesh->dx[ic];
+    // newWeights[0][i]  += h10_x[i] * h10_z[i] / 4 / localmesh->dz[ic] / localmesh->dx[ic];
+    // newWeights[14][i] += h11_x[i] * h10_z[i] / 4 / localmesh->dz[ic.xp()] / localmesh->dx[ic.xp()];
+    // newWeights[12][i] -= h11_x[i] * h10_z[i] / 4 / localmesh->dz[ic.xp()] / localmesh->dx[ic.xp()];
+    // newWeights[6][i] -= h11_x[i] * h10_z[i] / 4 / localmesh->dz[ic.xp()] / localmesh->dx[ic.xp()];
+    // newWeights[4][i]  += h11_x[i] * h10_z[i] / 4 / localmesh->dz[ic.xp()] / localmesh->dx[ic.xp()];
+
+    // // fz[iczp] * h00_x[i] + fz[icxpzp] * h01_x[i] +
+    // // fxz[iczp] * h10_x[i] + fxz[icxpzp] * h11_x[i];
+    // newWeights[7][i]  += h00_x[i] * h11_z[i] / 2 / localmesh->dz[ic.zp()];
+    // newWeights[5][i]  -= h00_x[i] * h11_z[i] / 2 / localmesh->dz[ic.zp()];
+    // newWeights[11][i] += h01_x[i] * h11_z[i] / 2 / localmesh->dz[ic.zp().xp()];
+    // newWeights[9][i]  -= h01_x[i] * h11_z[i] / 2 / localmesh->dz[ic.zp().xp()];
+    // newWeights[11][i] += h10_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp()] / localmesh->dx[ic.zp()];
+    // newWeights[9][i]  -= h10_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp()] / localmesh->dx[ic.zp()];
+    // newWeights[3][i]  -= h10_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp()] / localmesh->dx[ic.zp()];
+    // newWeights[1][i]  += h10_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp()] / localmesh->dx[ic.zp()];
+    // newWeights[15][i] += h11_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp().xp()] / localmesh->dx[ic.zp().xp()];
+    // newWeights[13][i] -= h11_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp().xp()] / localmesh->dx[ic.zp().xp()];
+    // newWeights[7][i]  -= h11_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp().xp()] / localmesh->dx[ic.zp().xp()];
+    // newWeights[5][i]  += h11_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp().xp()] / localmesh->dx[ic.zp().xp()];
+#endif
   }
 }
 
@@ -152,29 +268,31 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
+
+#if USE_NEW_WEIGHTS
+  BOUT_FOR(i, getRegion(region)) {
+    auto ic =  i_corner[i];
+    auto iyp = i.yp(y_offset);
+
+    f_interp[iyp]=0;
+    for (int w = 0; w < 4; ++w){
+      f_interp[iyp] += newWeights[w*4+0][i] * f[ic.zm().xp(w-1)];
+      f_interp[iyp] += newWeights[w*4+1][i] * f[ic.xp(w-1)];
+      f_interp[iyp] += newWeights[w*4+2][i] * f[ic.zp().xp(w-1)];
+      f_interp[iyp] += newWeights[w*4+3][i] * f[ic.zp(2).xp(w-1)];
+    }
+  }
+  return f_interp;
+#else
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
-  Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT");
-  localmesh->communicateXZ(fx);
-  // communicate in y, but do not calculate parallel slices
-  {
-    auto h = localmesh->sendY(fx);
-    localmesh->wait(h);
-  }
-  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", "RGN_ALL");
-  localmesh->communicateXZ(fz);
-  // communicate in y, but do not calculate parallel slices
-  {
-    auto h = localmesh->sendY(fz);
-    localmesh->wait(h);
-  }
-  Field3D fxz = bout::derivatives::index::DDX(fz, CELL_DEFAULT, "DEFAULT");
-  localmesh->communicateXZ(fxz);
-  // communicate in y, but do not calculate parallel slices
-  {
-    auto h = localmesh->sendY(fxz);
-    localmesh->wait(h);
-  }
+  const auto region2 = fmt::format("RGN_YPAR_{:+d}", y_offset);
+  // f has been communcated, and thus we can assume that the x-boundaries are
+  // also valid in the y-boundary.  Thus the differentiated field needs no
+  // extra comms.
+  Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT", region2);
+  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", region2);
+  Field3D fxz = bout::derivatives::index::DDZ(fx, CELL_DEFAULT, "DEFAULT", region2);
 
   BOUT_FOR(i, getRegion(region)) {
     const auto iyp = i.yp(y_offset);
@@ -208,6 +326,7 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
             || i.x() > localmesh->xend);
   }
   return f_interp;
+# endif
 }
 
 Field3D XZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_x,
