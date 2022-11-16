@@ -32,46 +32,40 @@ class RK4Solver;
 
 #include "mpi.h"
 
-#include <bout_types.hxx>
 #include <bout/solver.hxx>
+#include <bout_types.hxx>
 
 namespace {
 RegisterSolver<RK4Solver> registersolverrk4("rk4");
 }
 
 class RK4Solver : public Solver {
- public:
-  RK4Solver(Options *options);
+public:
+  explicit RK4Solver(Options* opts = nullptr);
 
   void resetInternalFields() override;
   void setMaxTimestep(BoutReal dt) override;
-  BoutReal getCurrentTimestep() override {return timestep; }
-  
-  int init(int nout, BoutReal tstep) override;
-  
-  int run() override;
- private:
-  BoutReal atol, rtol;   // Tolerances for adaptive timestepping
-  BoutReal max_timestep; // Maximum timestep
-  int mxstep; // Maximum number of internal steps between outputs
-  
-  Array<BoutReal> f0, f1, f2;
-  
-  BoutReal out_timestep; // The output timestep
-  int nsteps; // Number of output steps
-  
-  BoutReal timestep; // The internal timestep
-  
-  bool adaptive;   // Adapt timestep?
+  BoutReal getCurrentTimestep() override { return timestep; }
 
-  int nlocal, neq; // Number of variables on local processor and in total
-  
-  void take_step(BoutReal curtime, BoutReal dt, 
-                 Array<BoutReal> &start, Array<BoutReal> &result); // Take a single step to calculate f1
-  
-  Array<BoutReal> k1, k2, k3, k4, k5; // Time-stepping arrays
-  
+  int init() override;
+  int run() override;
+
+private:
+  BoutReal atol, rtol;   //< Tolerances for adaptive timestepping
+  BoutReal max_timestep; //< Maximum timestep
+  BoutReal timestep;     //< The internal timestep
+  int mxstep;            //< Maximum number of internal steps between outputs
+  bool adaptive;         //< Adapt timestep?
+
+  Array<BoutReal> f0, f1, f2;
+
+  int nlocal, neq; //< Number of variables on local processor and in total
+
+  /// Take a single step to calculate f1
+  void take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
+                 Array<BoutReal>& result);
+
+  Array<BoutReal> k1, k2, k3, k4, k5; //< Time-stepping arrays
 };
 
 #endif // __RK4_SOLVER_H__
-

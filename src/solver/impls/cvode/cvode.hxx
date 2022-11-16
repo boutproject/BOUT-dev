@@ -34,23 +34,16 @@
 #if not BOUT_HAS_CVODE
 
 namespace {
-RegisterUnavailableSolver registerunavailablecvode("cvode",
-                                                   "BOUT++ was not configured with CVODE/SUNDIALS");
+RegisterUnavailableSolver
+    registerunavailablecvode("cvode", "BOUT++ was not configured with CVODE/SUNDIALS");
 }
 
 #else
 
 #include "bout_types.hxx"
+#include "bout/sundials_backports.hxx"
 
 #include <sundials/sundials_config.h>
-#if SUNDIALS_VERSION_MAJOR >= 3
-#include <sunlinsol/sunlinsol_spgmr.h>
-#endif
-
-#if SUNDIALS_VERSION_MAJOR >= 4
-#include <sunnonlinsol/sunnonlinsol_fixedpoint.h>
-#endif
-
 #include <nvector/nvector_parallel.h>
 
 #include <vector>
@@ -64,13 +57,12 @@ RegisterSolver<CvodeSolver> registersolvercvode("cvode");
 
 class CvodeSolver : public Solver {
 public:
-  CvodeSolver(Options* opts = nullptr);
+  explicit CvodeSolver(Options* opts = nullptr);
   ~CvodeSolver();
 
   BoutReal getCurrentTimestep() override { return hcur; }
 
-  int init(int nout, BoutReal tstep) override;
-
+  int init() override;
   int run() override;
   BoutReal run(BoutReal tout);
 
@@ -83,17 +75,54 @@ public:
   void jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
 
 private:
-  int NOUT;          // Number of outputs. Specified in init, needed in run
-  BoutReal TIMESTEP; // Time between outputs
-  BoutReal hcur;     // Current internal timestep
+  BoutReal hcur; //< Current internal timestep
 
-  bool diagnose{false};      // Output additional diagnostics
+  bool diagnose{false}; //< Output additional diagnostics
 
-  N_Vector uvec{nullptr};   // Values
-  void* cvode_mem{nullptr}; // CVODE internal memory block
+  N_Vector uvec{nullptr};   //< Values
+  void* cvode_mem{nullptr}; //< CVODE internal memory block
 
-  BoutReal pre_Wtime{0.0}; // Time in preconditioner
-  int pre_ncalls{0};       // Number of calls to preconditioner
+  BoutReal pre_Wtime{0.0}; //< Time in preconditioner
+  int pre_ncalls{0};       //< Number of calls to preconditioner
+
+  /// Use Adams Moulton implicit multistep. Otherwise BDF method
+  bool adams_moulton;
+  /// Use functional iteration instead of Newton
+  bool func_iter;
+  /// Maximum order of method to use. < 0 means no limit
+  int max_order;
+  bool stablimdet;
+  /// Absolute tolerance
+  BoutReal abstol;
+  /// Relative tolerance
+  BoutReal reltol;
+  /// Use separate absolute tolerance for each field
+  bool use_vector_abstol;
+  /// Maximum number of internal steps between outputs.
+  int mxsteps;
+  /// Maximum time step size
+  BoutReal max_timestep;
+  /// Minimum time step size
+  BoutReal min_timestep;
+  /// Starting time step. < 0 then chosen by CVODE.
+  BoutReal start_timestep;
+  /// Maximum order
+  int mxorder;
+  /// Maximum number of nonlinear iterations allowed by CVODE before
+  /// reducing timestep. CVODE default (used if this option is
+  /// negative) is 3
+  int max_nonlinear_iterations;
+  /// Use CVODE function CVodeSetConstraints to constrain variables -
+  /// the constraint to be applied is set by the positivity_constraint
+  /// option in the subsection for each variable
+  bool apply_positivity_constraints;
+  /// Maximum number of linear iterations
+  int maxl;
+  /// Use preconditioner?
+  bool use_precon;
+  /// Use right preconditioner? Otherwise use left.
+  bool rightprec;
+  bool use_jacobian;
 
   // Diagnostics from CVODE
   int nsteps{0};
@@ -114,16 +143,15 @@ private:
   void loop_vector_option_values_op(Ind2D i2d, BoutReal* option_data, int& p,
                                     std::vector<BoutReal>& f2dtols,
                                     std::vector<BoutReal>& f3dtols, bool bndry);
-  template<class FieldType>
+  template <class FieldType>
   std::vector<BoutReal> create_constraints(const std::vector<VarStr<FieldType>>& fields);
-#if SUNDIALS_VERSION_MAJOR >= 3
+
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
-#endif
-#if SUNDIALS_VERSION_MAJOR >= 4
   /// Solver for functional iterations for Adams-Moulton
   SUNNonlinearSolver nonlinear_solver{nullptr};
-#endif
+  /// Context for SUNDIALS memory allocations
+  sundials::Context suncontext;
 };
 
 #endif // BOUT_HAS_CVODE

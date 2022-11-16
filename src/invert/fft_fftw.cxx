@@ -39,12 +39,12 @@
 #include <fftw3.h>
 #include <cmath>
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP
 #include <omp.h>
-#endif
+#endif // _OPENMP
 #else
 #include <boutexception.hxx>
-#endif
+#endif // BOUT_HAS_FFTW
 
 namespace bout {
 namespace fft {
@@ -68,18 +68,22 @@ void fft_init(Options* options) {
   fft_init(fft_measurement_flag);
 }
 
+#if BOUT_HAS_FFTW
+namespace {
 unsigned int get_measurement_flag(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
   switch (fft_measurement_flag) {
-    case FFT_MEASUREMENT_FLAG::estimate:
-      return FFTW_ESTIMATE;
-    case FFT_MEASUREMENT_FLAG::measure:
-      return FFTW_MEASURE;
-    case FFT_MEASUREMENT_FLAG::exhaustive:
-      return FFTW_EXHAUSTIVE;
-    default:
-      throw BoutException("Error, unimplemented fft_measurement_flag");
+  case FFT_MEASUREMENT_FLAG::estimate:
+    return FFTW_ESTIMATE;
+  case FFT_MEASUREMENT_FLAG::measure:
+    return FFTW_MEASURE;
+  case FFT_MEASUREMENT_FLAG::exhaustive:
+    return FFTW_EXHAUSTIVE;
+  default:
+    throw BoutException("Error, unimplemented fft_measurement_flag");
   }
 }
+} // namespace
+#endif
 
 void fft_init(FFT_MEASUREMENT_FLAG fft_measurement_flag) {
   bout::fft::fft_measurement_flag = fft_measurement_flag;
@@ -99,7 +103,7 @@ void fft_init(bool fft_measure) {
  * Real FFTs
  ***********************************************************/
 
-#ifndef _OPENMP
+#if !BOUT_USE_OPENMP
 // Serial code
 void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
 #if !BOUT_HAS_FFTW
@@ -219,7 +223,6 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
     out[i] = fout[i];
 #endif
 }
-
 #else
 // Parallel thread-safe version of rfft and irfft
 void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
@@ -366,7 +369,6 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
 #endif
 }
 #endif
-
 //  Discrete sine transforms (B Shanahan)
 
 void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {

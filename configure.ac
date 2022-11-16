@@ -36,6 +36,8 @@ AC_INIT([BOUT++],[5.0.0-alpha],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
+AC_MSG_WARN([./configure is deprecated and will be removed in a future version, please use CMake instead])
+
 AC_ARG_WITH(netcdf,       [AS_HELP_STRING([--with-netcdf],
         [Enable support for netCDF files])],,[])
 AC_ARG_WITH(pnetcdf,      [AS_HELP_STRING([--with-pnetcdf],
@@ -60,6 +62,10 @@ AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
         [Use the SUNDIALS ARKODE solver])],,[])
 AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
         [Enable support for scorep based instrumentation])],,[with_scorep=no])
+AC_ARG_WITH(hypre,       [AS_HELP_STRING([--with-hypre],
+        [Enable support for HYPRE])],,[with_hypre=no])
+
+dnl --with-hdf5 flags are set in AX_LIB_{PARALLEL}HDF5
 AC_ARG_WITH(system_mpark, [AS_HELP_STRING([--with-system-mpark],
         [Use mpark.variant already installed rather then the bundled one])],,[with_system_mpark=auto])
 AC_ARG_WITH(system_uuid,  [AS_HELP_STRING([--with-system-uuid],
@@ -97,6 +103,8 @@ AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static/dynam
         [Set OpenMP schedule (default: static)])],,[with_openmp_schedule=static])
 AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
+AC_ARG_ENABLE(metric_3d, [AS_HELP_STRING([--enable-metric-3d],
+        [Use Field3D to store coordinates metric data])],,[enable_metric_3d=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -421,6 +429,14 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
       AC_MSG_WARN([Native backtrace disabled])
     ])
   ])
+])
+
+AS_IF([test "x$enable_metric_3d" != "xno"], [
+  AC_MSG_WARN([Using Field3D to store coordinates data, this is experimental.])
+  BOUT_METRIC_TYPE="3D"
+], [
+  AC_MSG_NOTICE([Using Field2D to store coordinates data])
+  BOUT_METRIC_TYPE="2D"
 ])
 
 #############################################################
@@ -1066,6 +1082,24 @@ AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
 ])
 
 #############################################################
+# HYPRE
+#############################################################
+
+BOUT_HAS_HYPRE="no"
+AS_IF([test "$with_hypre" != "no"], [
+  BOUT_ADDPATH_CHECK_HEADER(HYPRE.h,
+    BOUT_ADDPATH_CHECK_LIB(HYPRE, HYPRE_IJVectorCreate,
+      [
+       BOUT_HAS_HYPRE="yes"
+      ],
+      AC_MSG_ERROR([HYPRE requested but not found]),
+      $with_hypre),
+    AC_MSG_ERROR([HYPRE requested but not found]),
+    $with_hypre
+  )
+])
+
+#############################################################
 # Scorep setup
 #############################################################
 
@@ -1310,6 +1344,19 @@ CONFIG_CFLAGS=`$MAKE cflags -f output.make`
 CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 
 #############################################################
+# Defines which are supported by CMake build but not autoconf
+
+BOUT_USE_CUDA="no"
+BOUT_HAS_RAJA="no"
+BOUT_HAS_UMPIRE="no"
+BOUT_HAS_CALIPER="no"
+
+BOUT_DEFINE_SUBST(BOUT_USE_CUDA, [Enable CUDA])
+BOUT_DEFINE_SUBST(BOUT_HAS_RAJA, [RAJA support])
+BOUT_DEFINE_SUBST(BOUT_HAS_UMPIRE, [Umpire support])
+BOUT_DEFINE_SUBST(BOUT_HAS_CALIPER, [Caliper support])
+
+#############################################################
 # Write configuration to bout-config
 #############################################################
 
@@ -1357,6 +1404,7 @@ BOUT_DEFINE_SUBST(BOUT_HAS_LAPACK, [LAPACK support])
 BOUT_DEFINE_SUBST(BOUT_HAS_NETCDF, [NETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_LEGACY_NETCDF, [NETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PETSC, [PETSc support])
+BOUT_DEFINE_SUBST(BOUT_HAS_HYPRE, [Hypre support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PNETCDF, [PNETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PRETTY_FUNCTION, [Compiler PRETTYFUNCTION support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PVODE, [PVODE support])
@@ -1372,6 +1420,10 @@ BOUT_DEFINE_SUBST(BOUT_USE_SIGFPE, [Enable floating point exceptions])
 BOUT_DEFINE_SUBST(BOUT_USE_SIGNAL, [Enable signal handlers])
 BOUT_DEFINE_SUBST(BOUT_USE_TRACK, [Enable field name tracking])
 BOUT_DEFINE_SUBST(BOUT_USE_MSGSTACK, [Enable MsgStack for traces])
+AC_DEFINE_UNQUOTED([BOUT_METRIC_TYPE], $BOUT_METRIC_TYPE, [Type of the metric fields])
+BOUT_METRIC_3D=$(test $BOUT_METRIC_TYPE != 3D ; echo $?)
+AC_DEFINE_UNQUOTED([BOUT_USE_METRIC_3D], $BOUT_METRIC_3D, [Is the metric field 3D])
+AC_SUBST(BOUT_METRIC_TYPE)
 
 AC_SUBST(PETSC_HAS_SUNDIALS)
 AC_SUBST(PETSC_MAKE_INCLUDE)
@@ -1411,6 +1463,7 @@ AC_MSG_NOTICE([  Lapack support          : $BOUT_HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $BOUT_HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $BOUT_USE_OPENMP (schedule: $OPENMP_SCHEDULE)])
 AC_MSG_NOTICE([  Natural language support: $BOUT_HAS_GETTEXT (path: $localedir)])
+AC_MSG_NOTICE([  HYPRE support           : $BOUT_HAS_HYPRE])
 AC_MSG_NOTICE([  System UUID generator   : $BOUT_HAS_UUID_SYSTEM_GENERATOR])
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([  Enable backtrace        : $BOUT_USE_BACKTRACE])
@@ -1420,6 +1473,7 @@ AC_MSG_NOTICE([  Enable OpenMP           : $BOUT_USE_OPENMP])
 AC_MSG_NOTICE([  Enable FP exceptions    : $BOUT_USE_SIGFPE])
 AC_MSG_NOTICE([  Enable signal handlers  : $BOUT_USE_SIGNAL])
 AC_MSG_NOTICE([  Enable field names      : $BOUT_USE_TRACK])
+AC_MSG_NOTICE([  Metric type             : $BOUT_METRIC_TYPE])
 
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([-------------------------------])
@@ -1441,3 +1495,5 @@ AC_MSG_NOTICE([])
 AC_MSG_NOTICE([   export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH])
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([*** Now run '$MAKE' to compile BOUT++ ***])
+AC_MSG_NOTICE([])
+AC_MSG_WARN([./configure is deprecated and will be removed in a future version, please use CMake instead])

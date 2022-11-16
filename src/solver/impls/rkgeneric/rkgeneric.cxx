@@ -11,8 +11,20 @@
 
 #include <output.hxx>
 
-RKGenericSolver::RKGenericSolver(Options* options) : Solver(options) {
-  scheme = RKSchemeFactory::getInstance().create(options);
+RKGenericSolver::RKGenericSolver(Options* opts)
+    : Solver(opts), atol((*options)["atol"].doc("Absolute tolerance").withDefault(1.e-5)),
+      rtol((*options)["rtol"].doc("Relative tolerance").withDefault(1.e-3)),
+      max_timestep((*options)["max_timestep"]
+                       .doc("Maximum timestep")
+                       .withDefault(getOutputTimestep())),
+      timestep((*options)["timestep"].doc("Starting timestep").withDefault(max_timestep)),
+      mxstep((*options)["mxstep"]
+                 .doc("Maximum number of steps between outputs")
+                 .withDefault(500)),
+      adaptive((*options)["adaptive"]
+                   .doc("Adapt internal timestep using 'atol' and 'rtol'.")
+                   .withDefault(true)),
+      scheme(RKSchemeFactory::getInstance().create(options)) {
   canReset = true;
 }
 
@@ -24,20 +36,13 @@ void RKGenericSolver::setMaxTimestep(BoutReal dt) {
     timestep = dt; // Won't be used this time, but next
 }
 
-int RKGenericSolver::init(int nout, BoutReal tstep) {
+int RKGenericSolver::init() {
 
   TRACE("Initialising RKGeneric solver");
-  
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
-    return 1;
 
+  Solver::init();
   output << "\n\tRunge-Kutta generic solver with scheme type "<<scheme->getType()<<"\n";
 
-  nsteps = nout; // Save number of output steps
-  out_timestep = tstep;
-  max_dt = tstep;
-  
   // Calculate number of variables
   nlocal = getLocalN();
   
@@ -52,14 +57,6 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
-  // Get options
-  atol = (*options)["atol"].doc("Absolute tolerance").withDefault(1.e-5);
-  rtol = (*options)["rtol"].doc("Relative tolerance").withDefault(1.e-3);
-  max_timestep = (*options)["max_timestep"].doc("Maximum timestep").withDefault(tstep);
-  timestep = (*options)["timestep"].doc("Starting timestep").withDefault(max_timestep);
-  mxstep = (*options)["mxstep"].doc("Maximum number of steps between outputs").withDefault(500);
-  adaptive = (*options)["adaptive"].doc("Adapt internal timestep using 'atol' and 'rtol'.").withDefault(true);
-
   // Allocate memory
   f0.reallocate(nlocal); // Input
   f2.reallocate(nlocal); // Result--follow order
@@ -68,8 +65,7 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   // Put starting values into f0
   save_vars(std::begin(f0));
 
-  //Initialise scheme
-  scheme->init(nlocal,neq,adaptive,atol,rtol,options);
+  scheme->init(nlocal, neq, adaptive, atol, rtol);
 
   return 0;
 }
@@ -87,10 +83,10 @@ void RKGenericSolver::resetInternalFields(){
 
 int RKGenericSolver::run() {
   TRACE("RKGenericSolver::run()");
-  
-  for(int s=0;s<nsteps;s++) {
-    BoutReal target = simtime + out_timestep;
-    
+
+  for (int s = 0; s < getNumberOutputSteps(); s++) {
+    BoutReal target = simtime + getOutputTimestep();
+
     BoutReal dt;
     bool running = true;
     int internal_steps = 0;
@@ -155,12 +151,13 @@ int RKGenericSolver::run() {
 
     run_rhs(simtime); //Ensure aux. variables are up to date
 
-    iteration++; // Advance iteration number
-    
-    /// Call the output step monitor function
-    if(call_monitors(simtime, s, nsteps)) break; // Stop simulation
+    iteration++;
+
+    if (call_monitors(simtime, s, getNumberOutputSteps())) {
+      break;
+    }
   }
-  
+
   return 0;
 }
 

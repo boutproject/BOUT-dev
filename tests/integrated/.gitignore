@@ -2,6 +2,7 @@
 *.log.*
 *.restart.*
 BOUT.settings
+/test-bout-override-default-option/test-bout-override-default-option
 /test-cyclic/test_cyclic
 /test-delp2/test_delp2
 /test-drift-instability/data

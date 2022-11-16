@@ -59,11 +59,13 @@ int main(int argc, char** argv) {
   mesh->communicate(solved);
   
   // Now differentiate using Laplace_perp
-  Field2D result = Laplace_perp(solved);
+  Options::root()["result"] = Laplace_perp(solved);
 
   // Write fields to output
-  SAVE_ONCE3(input, solved, result);
-  bout::globals::dump.write();
+  Options::root()["input"] = input;
+  Options::root()["solved"] = solved;
+
+  bout::writeDefaultOutputFile();
 
   BoutFinalise();
   return 0;

@@ -31,7 +31,18 @@ class LaplaceCyclic;
 #ifndef __LAP_CYCLIC_H__
 #define __LAP_CYCLIC_H__
 
-#include <invert_laplace.hxx>
+#include "invert_laplace.hxx"
+#include "bout/build_config.hxx"
+
+#if BOUT_USE_METRIC_3D
+
+namespace {
+RegisterUnavailableLaplace registerlaplacecycle(LAPLACE_CYCLIC,
+                                                "BOUT++ was configured with 3D metrics");
+}
+
+#else
+
 #include <cyclic_reduction.hxx>
 #include <dcomplex.hxx>
 #include <options.hxx>
@@ -48,7 +59,9 @@ RegisterLaplace<LaplaceCyclic> registerlaplacecycle(LAPLACE_CYCLIC);
  */
 class LaplaceCyclic : public Laplacian {
 public:
-  LaplaceCyclic(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplaceCyclic(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+                Mesh* mesh_in = nullptr, Solver* solver = nullptr,
+                Datafile* dump = nullptr);
   ~LaplaceCyclic();
   
   using Laplacian::setCoefA;
@@ -110,5 +123,7 @@ private:
   
   CyclicReduce<dcomplex> *cr; ///< Tridiagonal solver
 };
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // __SPT_H__

@@ -216,14 +216,19 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   if (transform_from_field_aligned) {
     auto coords = result.getCoordinates();
     if (coords == nullptr) {
-      throw BoutException("Unable to transform result: Mesh does not have Coordinates set");
-    }
-    if (coords->getParallelTransform().canToFromFieldAligned()) {
-      // Transform from field aligned coordinates, to be compatible with
-      // older BOUT++ inputs. This is not a particularly "nice" solution.
-      result = fromFieldAligned(result, "RGN_ALL");
+      // Should not lead to issues. If called from the coordinates
+      // constructor, then this is expected, and the result will be
+      // transformed. Otherwise, if the field is used untransformed,
+      // the inconsistency will be detected.
+      output_warn.write("Skipping parallel transformation - coordinates not set!\n");
     } else {
-      result.setDirectionY(YDirectionType::Standard);
+      if (coords->getParallelTransform().canToFromFieldAligned()) {
+        // Transform from field aligned coordinates, to be compatible with
+        // older BOUT++ inputs. This is not a particularly "nice" solution.
+        result = fromFieldAligned(result, "RGN_ALL");
+      } else {
+        result.setDirectionY(YDirectionType::Standard);
+      }
     }
   }
 
@@ -262,12 +267,17 @@ FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_
   if (transform_from_field_aligned) {
     auto coords = result.getCoordinates();
     if (coords == nullptr) {
-      throw BoutException("Unable to transform result: Mesh does not have Coordinates set");
-    }
-    if (coords->getParallelTransform().canToFromFieldAligned()) {
-      // Transform from field aligned coordinates, to be compatible with
-      // older BOUT++ inputs. This is not a particularly "nice" solution.
-      result = fromFieldAligned(result, "RGN_ALL");
+      // Should not lead to issues. If called from the coordinates
+      // constructor, then this is expected, and the result will be
+      // transformed. Otherwise, if the field is used untransformed,
+      // the inconsistency will be detected.
+      output_warn.write("Skipping parallel transformation - coordinates not set!\n");
+    } else {
+      if (coords->getParallelTransform().canToFromFieldAligned()) {
+        // Transform from field aligned coordinates, to be compatible with
+        // older BOUT++ inputs. This is not a particularly "nice" solution.
+        result = fromFieldAligned(result, "RGN_ALL");
+      }
     }
   }
 

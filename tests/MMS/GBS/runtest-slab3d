@@ -74,7 +74,7 @@ for nx in nxlist:
         E = collect("E_" + var, tind=[1, 1], path=path, info=False)
         E = E[0, 2:-2, :, :]
 
-        l2 = sqrt(mean(E ** 2))
+        l2 = sqrt(mean(E**2))
         linf = max(abs(E))
 
         error_2[var].append(l2)

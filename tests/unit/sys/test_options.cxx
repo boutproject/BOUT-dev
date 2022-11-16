@@ -548,6 +548,21 @@ TEST_F(OptionsTest, WithDefaultStringCaseSensitive) {
   EXPECT_NE(value, "hello");
 }
 
+TEST_F(OptionsTest, AssignRepeat) {
+  Options options;
+
+  options["int"].assignRepeat(67);
+  ASSERT_TRUE(options["int"].hasAttribute("time_dimension"));
+  EXPECT_EQ(options["int"].attributes["time_dimension"].as<std::string>(), "t");
+
+  options["double"].assignRepeat(76.0, "t2");
+  ASSERT_TRUE(options["double"].hasAttribute("time_dimension"));
+  EXPECT_EQ(options["double"].attributes["time_dimension"].as<std::string>(), "t2");
+
+  options["string"].assignRepeat("67", "t3", false);
+  ASSERT_FALSE(options["string"].hasAttribute("time_dimension"));
+}
+
 TEST_F(OptionsTest, OptionsMacroPointer) {
   Options options;
 
@@ -811,6 +826,45 @@ TEST_F(OptionsTest, AttributeTimeDimension) {
   option = 4;
 
   EXPECT_EQ(option.as<int>(), 4);
+}
+
+TEST_F(OptionsTest, AttributeSetOne) {
+  Options option;
+
+  option.setAttributes({{"answer", 42}});
+
+  EXPECT_TRUE(option.hasAttribute("answer"));
+  EXPECT_EQ(option.attributes["answer"].as<int>(), 42);
+}
+
+TEST_F(OptionsTest, AttributeSetTwo) {
+  Options option;
+
+  option.setAttributes({{"one", 1}, {"two", 2}});
+
+  EXPECT_TRUE(option.hasAttribute("one"));
+  EXPECT_EQ(option.attributes["one"].as<int>(), 1);
+
+  EXPECT_TRUE(option.hasAttribute("two"));
+  EXPECT_EQ(option.attributes["two"].as<int>(), 2);
+}
+
+TEST_F(OptionsTest, AttributeSetReplace) {
+  Options option;
+
+  option.attributes["one"] = 1;
+  EXPECT_TRUE(option.hasAttribute("one"));
+  EXPECT_EQ(option.attributes["one"].as<int>(), 1);
+
+  option.setAttributes({{"one", 2}, {"two", 2}});
+
+  // Has changed previously set attribute
+  EXPECT_TRUE(option.hasAttribute("one"));
+  EXPECT_EQ(option.attributes["one"].as<int>(), 2);
+
+  // Has inserted new attribute
+  EXPECT_TRUE(option.hasAttribute("two"));
+  EXPECT_EQ(option.attributes["two"].as<int>(), 2);
 }
 
 TEST_F(OptionsTest, EqualityBool) {
@@ -1168,6 +1222,21 @@ section3:subsection2:value6		# source: a test
   EXPECT_EQ(fmt::format("{:ksdi}", option), expected);
   // Order of format spec shouldn't matter
   EXPECT_EQ(fmt::format("{:idsk}", option), expected);
+}
+
+TEST_F(OptionsTest, FormatUnused) {
+  Options option{{"section1", {{"value1", 42}}}};
+  std::string expected =
+      "section1:value1\t\t# unused value (NOT marked conditionally used)\n";
+  EXPECT_EQ(fmt::format("{:iku}", option), expected);
+}
+
+TEST_F(OptionsTest, FormatConditionallyUsed) {
+  Options option{{"section1", {{"value1", 42}}}};
+  option.setConditionallyUsed();
+  std::string expected =
+      "section1:value1\t\t# unused value (marked conditionally used)\n";
+  EXPECT_EQ(fmt::format("{:iku}", option), expected);
 }
 
 TEST_F(OptionsTest, GetUnused) {

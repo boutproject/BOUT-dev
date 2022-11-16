@@ -28,19 +28,23 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
+#include "bout/build_config.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include <bout/mesh.hxx>
 #include <msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP
 #include <omp.h>
 #endif
 
 BoutReal soltime=0.0,settime=0.0;
 
-LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
-  Laplacian(opt, loc, mesh_in),
-  A(0.0), C1(1.0), C2(1.0), D(1.0) {
+LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
+                                   Solver* UNUSED(solver), Datafile* UNUSED(dump))
+    : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0) {
 
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
   
@@ -60,7 +64,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
   opts->get("atol",atol,pow(10.0,-20),true);
   opts->get("dtol",dtol,pow(10.0,5),true);
   opts->get("smtype",mgsm,1,true);
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP
   if (mgsm != 0 && omp_get_max_threads()>1) {
     output_warn << "WARNING: in multigrid Laplace solver, for smtype!=0 the smoothing cannot be parallelised with OpenMP threads."<<endl
                 << "         Consider using smtype=0 instead when using OpenMP threads."<<endl;
@@ -191,14 +195,11 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
     if (mglevel == 1) output<<"PGMRES with simple Preconditioner"<<endl;
     else if(mgplag == 1) output<<"PGMRES with multigrid Preconditioner"<<endl;
     else output<<"Multigrid solver with merging "<<mgmpi<<endl;
-#ifdef OPENMP
-BOUT_OMP(parallel)
-BOUT_OMP(master)
-    {
-      output<<"Num threads = "<<omp_get_num_threads()<<endl;
-    } 
+#if BOUT_USE_OPENMP
+    BOUT_OMP(parallel)
+    BOUT_OMP(master) { output << "Num threads = " << omp_get_num_threads() << endl; }
 #endif
-  }  
+  }
 }
 
 FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
@@ -549,7 +550,6 @@ BOUT_OMP(for)
 }
 
 void LaplaceMultigrid::generateMatrixF(int level) {
-
   TRACE("LaplaceMultigrid::generateMatrixF(int)");
   
   // Set (fine-level) matrix entries
@@ -567,20 +567,23 @@ BOUT_OMP(for collapse(2))
       int k2 = k-1;
       int k2p  = (k2+1)%Nz_global;
       int k2m  = (k2+Nz_global-1)%Nz_global;
-      
+
+      BoutReal dz = coords->dz(i2, yindex);
       BoutReal ddx_C = (C2(i2+1, yindex, k2) - C2(i2-1, yindex, k2))/2./coords->dx(i2, yindex)/C1(i2, yindex, k2);
-      BoutReal ddz_C = (C2(i2, yindex, k2p) - C2(i2, yindex, k2m)) /2./coords->dz/C1(i2, yindex, k2);
-      
+      BoutReal ddz_C =
+          (C2(i2, yindex, k2p) - C2(i2, yindex, k2m)) / 2. / dz / C1(i2, yindex, k2);
+
       BoutReal ddx = D(i2, yindex, k2)*coords->g11(i2, yindex)/coords->dx(i2, yindex)/coords->dx(i2, yindex); 
                // coefficient of 2nd derivative stencil (x-direction)
-      
-      BoutReal ddz = D(i2, yindex, k2)*coords->g33(i2, yindex)/coords->dz/coords->dz; 
-              // coefficient of 2nd derivative stencil (z-direction)
-      
-      BoutReal dxdz = D(i2, yindex, k2)*2.*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz; 
-              // coefficient of mixed derivative stencil (could assume zero, at least initially, 
-              // if easier; then check this is true in constructor)
-      
+
+      BoutReal ddz = D(i2, yindex, k2) * coords->g33(i2, yindex) / SQ(dz);
+      // coefficient of 2nd derivative stencil (z-direction)
+
+      BoutReal dxdz =
+          D(i2, yindex, k2) * 2. * coords->g13(i2, yindex) / coords->dx(i2, yindex) / dz;
+      // coefficient of mixed derivative stencil (could assume zero, at least initially,
+      // if easier; then check this is true in constructor)
+
       BoutReal dxd = (D(i2, yindex, k2)*coords->G1(i2, yindex)
         + coords->g11(i2, yindex)*ddx_C
         + coords->g13(i2, yindex)*ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
@@ -589,12 +592,15 @@ BOUT_OMP(for collapse(2))
         // add correction for non-uniform dx
         dxd += D(i2, yindex, k2)*coords->d1_dx(i2, yindex);
       }
-      
-      BoutReal dzd = (D(i2, yindex, k2)*coords->G3(i2, yindex)
-        + coords->g33(i2, yindex)*ddz_C
-        + coords->g13(i2, yindex)*ddx_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
-      )/coords->dz; // coefficient of 1st derivative stencil (z-direction)
-      
+
+      BoutReal dzd =
+          (D(i2, yindex, k2) * coords->G3(i2, yindex) + coords->g33(i2, yindex) * ddz_C
+           + coords->g13(i2, yindex)
+                 * ddx_C // (could assume zero, at least initially, if easier; then check
+                         // this is true in constructor)
+           )
+          / dz; // coefficient of 1st derivative stencil (z-direction)
+
       int ic = i*(llz+2)+k;
       mat[ic*9] = dxdz/4.;
       mat[ic*9+1] = ddx - dxd/2.;
@@ -684,3 +690,4 @@ BOUT_OMP(for)
   }
 }
 
+#endif // BOUT_USE_METRIC_3D

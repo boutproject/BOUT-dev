@@ -73,7 +73,7 @@ def run_mms(options, exit=True):
             E_f = collect("E_f", xguards=False, tind=[1, 1], info=False, path="data")
 
             # Average error over domain
-            l2 = sqrt(mean(E_f ** 2))
+            l2 = sqrt(mean(E_f**2))
             linf = max(abs(E_f))
 
             error_2.append(l2)

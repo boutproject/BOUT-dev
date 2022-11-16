@@ -6,9 +6,6 @@ RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
   numOrders = 2;
   order = 4;
   label = "rkf45";
-  followHighOrder = false;
-
-  OPTION(options, followHighOrder, followHighOrder);
 
   //Allocate coefficient arrays
   stageCoeffs.reallocate(numStages, numStages);
