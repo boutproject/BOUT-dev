@@ -247,8 +247,7 @@ FCI boundary conditions
 When using the FCI method (:ref:`sec-fci`), parallel boundary
 conditions must be applied to the parallel slices using
 `bndry_par_yup` and `bndry_par_ydown`, or `bndry_par_all` to set both
-together. The only option suitable for FCI currently implemented is
-``parallel_dirichlet_interp``. It is suggested, at least if there are
+together.  It is suggested, at least if there are
 boundaries in the y-direction of the grid, to set ``bndry_yup = none``
 and ``bndry_down = none`` to skip unnecessary operations on y-boundary
 cells of the base variable. For example, for an evolving variable
@@ -259,9 +258,23 @@ cells of the base variable. For example, for an evolving variable
     [f]
     bndry_xin = dirichlet
     bndry_xout = dirichlet
-    bndry_par_all = parallel_dirichlet_interp
+    bndry_par_all = parallel_dirichlet
     bndry_ydown = none
     bndry_yup = none
+
+One should not that the parallel boundary conditions have to be applied after
+communication, while the perpendicular ones before:
+
+.. code-block:: C++
+
+    f.applyBoundary();
+    mesh->communicate(f);
+    f.applyParallelBoundary("parallel_neumann");
+
+Note that during grid generation care has to be taken to ensure that there are
+no "short" connection lengths. Otherwise it can happen that for a point on a
+slice, both yup() and ydown() are boundary cells, and interpolation into the
+boundary can only use the single point on the given cell.
 
 Relaxing boundaries
 -------------------
