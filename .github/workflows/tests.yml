@@ -86,6 +86,20 @@ jobs:
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
 
+          - name: "new PETSc"
+            os: ubuntu-20.04
+            cmake_options: "-DBUILD_SHARED_LIBS=ON
+                            -DBOUT_ENABLE_METRIC_3D=ON
+                            -DBOUT_ENABLE_OPENMP=ON
+                            -DBOUT_USE_PETSC=ON
+                            -DBOUT_USE_SLEPC=ON
+                            -DBOUT_USE_SUNDIALS=ON
+                            -DBOUT_ENABLE_PYTHON=ON
+                            -DSUNDIALS_ROOT=/home/runner/local
+                            -DPETSC_DIR=/home/runner/local/petsc"
+
+            build_petsc: -petsc
+
           - name: "Coverage"
             os: ubuntu-20.04
             configure_options: "--enable-shared
@@ -145,10 +159,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/local
-          key: bout-sundials-${{ matrix.config.os }}
+          key: bout-sundials-${{ matrix.config.os }}${{ matrix.config.build_petsc }}
 
       - name: Build SUNDIALS
         run: ./.build_sundials_for_ci.sh
+
+      - name: Build PETSc
+        run: BUILD_PETSC=${{ matrix.config.build_petsc }} ./.build_petsc_for_ci.sh
 
       - name: Build (configure)
         if: ${{ ! contains(matrix.config.name, 'CMake') }}
