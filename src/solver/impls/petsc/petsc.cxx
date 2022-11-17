@@ -63,7 +63,7 @@ PetscSolver::PetscSolver(Options *opts) : Solver(opts) {
   J = nullptr;
   Jmf = nullptr;
   matfdcoloring = nullptr;
-  interpolate = PETSC_TRUE;
+  interpolate = (*opts)["interpolate"].withDefault(true)? PETSC_TRUE : PETSC_FALSE;
   initialised = false;
   bout_snes_time = .0;
 
