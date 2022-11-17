@@ -160,7 +160,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     newWeights[0][i]  += h10_x[i] * h10_z[i] / 4;
     newWeights[14][i] += h11_x[i] * h10_z[i] / 4;
     newWeights[12][i] -= h11_x[i] * h10_z[i] / 4;
-    newWeights[6][i] -= h11_x[i] * h10_z[i] / 4;
+    newWeights[6][i]  -= h11_x[i] * h10_z[i] / 4;
     newWeights[4][i]  += h11_x[i] * h10_z[i] / 4;
 
     // fz[iczp] * h00_x[i] + fz[icxpzp] * h01_x[i] +
@@ -177,54 +177,6 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     newWeights[13][i] -= h11_x[i] * h11_z[i] / 4;
     newWeights[7][i]  -= h11_x[i] * h11_z[i] / 4;
     newWeights[5][i]  += h11_x[i] * h11_z[i] / 4;
-
-
-    //   // f[ic] * h00_x[i] + f[icxp] * h01_x[i] + fx[ic] * h10_x[i] + fx[icxp] * h11_x[i];
-    // newWeights[5][i]  += h00_x[i] * h00_z[i];
-    // newWeights[9][i]  += h01_x[i] * h00_z[i];
-    // newWeights[9][i]  += h10_x[i] * h00_z[i] / 2 / localmesh->dx[ic];
-    // newWeights[1][i]  -= h10_x[i] * h00_z[i] / 2 / localmesh->dx[ic];
-    // newWeights[13][i] += h11_x[i] * h00_z[i] / 2 / localmesh->dx[ic.xp()];
-    // newWeights[5][i]  -= h11_x[i] * h00_z[i] / 2 / localmesh->dx[ic.xp()];
-
-    // // f[iczp] * h00_x[i] + f[icxpzp] * h01_x[i] +
-    // // fx[iczp] * h10_x[i] + fx[icxpzp] * h11_x[i];
-    // newWeights[6][i]  += h00_x[i] * h01_z[i];
-    // newWeights[10][i]  += h01_x[i] * h01_z[i];
-    // newWeights[10][i]  += h10_x[i] * h01_z[i] / 2/ localmesh->dx[ic.zp()];
-    // newWeights[2][i]  -= h10_x[i] * h01_z[i] / 2/ localmesh->dx[ic.zp()];
-    // newWeights[14][i] += h11_x[i] * h01_z[i] / 2/ localmesh->dx[ic.zp().xp()];
-    // newWeights[6][i]  -= h11_x[i] * h01_z[i] / 2/ localmesh->dx[ic.zp().xp()];
-
-    // // fz[ic] * h00_x[i] + fz[icxp] * h01_x[i] +
-    // // fxz[ic] * h10_x[i]+ fxz[icxp] * h11_x[i];
-    // newWeights[6][i]  += h00_x[i] * h10_z[i] / 2 / localmesh->dz[ic];
-    // newWeights[4][i]  -= h00_x[i] * h10_z[i] / 2 / localmesh->dz[ic];
-    // newWeights[10][i] += h01_x[i] * h10_z[i] / 2 / localmesh->dz[ic.xp()];
-    // newWeights[8][i]  -= h01_x[i] * h10_z[i] / 2 / localmesh->dz[ic.xp()];
-    // newWeights[10][i] += h10_x[i] * h10_z[i] / 4 / localmesh->dz[ic] / localmesh->dx[ic];
-    // newWeights[8][i]  -= h10_x[i] * h10_z[i] / 4 / localmesh->dz[ic] / localmesh->dx[ic];
-    // newWeights[2][i]  -= h10_x[i] * h10_z[i] / 4 / localmesh->dz[ic] / localmesh->dx[ic];
-    // newWeights[0][i]  += h10_x[i] * h10_z[i] / 4 / localmesh->dz[ic] / localmesh->dx[ic];
-    // newWeights[14][i] += h11_x[i] * h10_z[i] / 4 / localmesh->dz[ic.xp()] / localmesh->dx[ic.xp()];
-    // newWeights[12][i] -= h11_x[i] * h10_z[i] / 4 / localmesh->dz[ic.xp()] / localmesh->dx[ic.xp()];
-    // newWeights[6][i] -= h11_x[i] * h10_z[i] / 4 / localmesh->dz[ic.xp()] / localmesh->dx[ic.xp()];
-    // newWeights[4][i]  += h11_x[i] * h10_z[i] / 4 / localmesh->dz[ic.xp()] / localmesh->dx[ic.xp()];
-
-    // // fz[iczp] * h00_x[i] + fz[icxpzp] * h01_x[i] +
-    // // fxz[iczp] * h10_x[i] + fxz[icxpzp] * h11_x[i];
-    // newWeights[7][i]  += h00_x[i] * h11_z[i] / 2 / localmesh->dz[ic.zp()];
-    // newWeights[5][i]  -= h00_x[i] * h11_z[i] / 2 / localmesh->dz[ic.zp()];
-    // newWeights[11][i] += h01_x[i] * h11_z[i] / 2 / localmesh->dz[ic.zp().xp()];
-    // newWeights[9][i]  -= h01_x[i] * h11_z[i] / 2 / localmesh->dz[ic.zp().xp()];
-    // newWeights[11][i] += h10_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp()] / localmesh->dx[ic.zp()];
-    // newWeights[9][i]  -= h10_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp()] / localmesh->dx[ic.zp()];
-    // newWeights[3][i]  -= h10_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp()] / localmesh->dx[ic.zp()];
-    // newWeights[1][i]  += h10_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp()] / localmesh->dx[ic.zp()];
-    // newWeights[15][i] += h11_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp().xp()] / localmesh->dx[ic.zp().xp()];
-    // newWeights[13][i] -= h11_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp().xp()] / localmesh->dx[ic.zp().xp()];
-    // newWeights[7][i]  -= h11_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp().xp()] / localmesh->dx[ic.zp().xp()];
-    // newWeights[5][i]  += h11_x[i] * h11_z[i] / 4 / localmesh->dz[ic.zp().xp()] / localmesh->dx[ic.zp().xp()];
 #endif
   }
 }
