@@ -84,7 +84,7 @@ jobs:
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
 
-          - name: "new PETSc"
+          - name: "CMake, new PETSc"
             os: ubuntu-20.04
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
