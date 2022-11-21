@@ -3,7 +3,7 @@
 set -e
 
 if test $BUILD_PETSC ; then
-    if [[ ! -d $HOME/local/include/petsc ]]; then
+    if [[ ! -d $HOME/local/petsc/include/petsc ]]; then
 	echo "****************************************"
 	echo "Building PETSc"
 	echo "****************************************"
