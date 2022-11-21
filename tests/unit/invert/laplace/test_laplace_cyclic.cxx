@@ -37,14 +37,14 @@ public:
   }
 
   const Field3D operator()(Field3D& f) {
-    auto result = d * Delp2(f, CELL_DEFAULT, "free", "RGN_NOY")
-                  + (Grad(f) * Grad(c2) - DDY(c2) * DDY(f) / coords->g_22) / c1 + a * f
+    auto result = d * Delp2(f)
+                  + (coords->g11 * DDX(f) + coords->g13 * DDZ(f)) * DDX(c2) / c1 + a * f
                   + ex * DDX(f) + ez * DDZ(f);
     applyBoundaries(result, f);
     return result;
   }
 
-  Field3D a, c1, c2, d, ex, ez;
+  Field2D a, c1, c2, d, ex, ez;
   Coordinates* coords;
 
 private:
@@ -70,14 +70,15 @@ private:
   }
 };
 
-class LaplaceCyclicTest
-    : public FakeMeshFixture,
-      public testing::WithParamInterface<std::tuple<bool, bool, bool>> {
+class CyclicTest : public FakeMeshFixture,
+                   public testing::WithParamInterface<std::tuple<bool, bool, bool>> {
 public:
   WithQuietOutput info{output_info}, warn{output_warn}, progress{output_progress},
       all{output};
-  LaplaceCyclicTest() : FakeMeshFixture(), solver(getOptions(GetParam())) {
+  CyclicTest()
+      : FakeMeshFixture(), param(GetParam()), solver(getOptions(param)), forward(std::get<1>(param), std::get<2>(param)) {
     int nx = mesh->GlobalNx, ny = mesh->GlobalNy, nz = mesh->GlobalNz;
+
     static_cast<FakeMesh*>(bout::globals::mesh)
         ->setGridDataSource(new GridFromOptions(Options::getRoot()));
     bout::globals::mesh->getCoordinates()->geometry();
@@ -100,10 +101,10 @@ public:
     auto param = GetParam();
 
     bool periodicX = std::get<0>(param);
-    forward = ForwardOperator(std::get<1>(param), std::get<2>(param));
+
   }
 
-  ~LaplaceCyclicTest() { Options::cleanup(); }
+  ~CyclicTest() { Options::cleanup(); }
 
   const BoutReal sigmasq = 0.02;
   LaplaceCyclic solver;
@@ -113,6 +114,8 @@ public:
   ForwardOperator forward;
 
 private:
+  std::tuple<bool, bool, bool> param;
+
   Options* getOptions(std::tuple<bool, bool, bool> param) {
     Options& options = Options::root()["laplace"];
     options["type"] = "cyclic";
