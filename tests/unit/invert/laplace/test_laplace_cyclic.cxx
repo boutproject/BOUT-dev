@@ -135,3 +135,7 @@ INSTANTIATE_TEST_SUITE_P(LaplaceCyclicTest, CyclicTest,
                                          std::make_tuple(false, false, true),
                                          std::make_tuple(false, true, false),
                                          std::make_tuple(true, false, false)));
+
+TEST_P(CyclicTest, DummyTest) {
+  // No test yet
+}
