@@ -460,10 +460,6 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   operator3D.assemble();
   MatSetBlockSize(*operator3D.get(), 1);
 
-#if PETSC_VERSION_GE(3, 18, 0)
-  MatSetOption(*operator3D.get(), MAT_SYMMETRIC, PETSC_TRUE);
-#endif
-
   // Declare KSP Context (abstract PETSc object that manages all Krylov methods)
   if (kspInitialised) {
     KSPDestroy(&ksp);
