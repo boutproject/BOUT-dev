@@ -210,7 +210,7 @@ def get_requires_for_build_wheel(config_settings=None):
 
 
 def mkdir_p(path):
-    return pathlib.Path.mkdir(path, parents=True, exist_ok=True)
+    return pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
 
 def prepare_metadata_for_build_wheel(
