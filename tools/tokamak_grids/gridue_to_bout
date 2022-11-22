@@ -547,7 +547,11 @@ Note that in most cases these grids are non-orthogonal."""
     dx = np.zeros((nx, ny))
     for i in range(nx):
         for j in range(ny):
-            dx[i, j] = 0.5 * (psi[j, i, 3] + psi[j, i, 4] - psi[j, i, 1] - psi[j, i, 2])
+            if i > 1 and i < nx-2:
+                dx[i, j] = 0.5*(psi[j, i + 1, 0] - psi[j, i - 1, 0])
+            else:
+                dx[i, j] = 0.5 * (psi[j, i, 3] + psi[j, i, 4] - psi[j, i, 1] - psi[j, i, 2])
+    # Note: psi and dx are not necessarily constant on flux surfaces
 
     # Note: UEDGE grids have narrow cells on the radial
     # boundaries. BOUT++ applies boundary conditions half-way between
