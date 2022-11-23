@@ -58,7 +58,7 @@ Initialisation of time evolved variables
 Each variable being evolved has its own section, with the same name as
 the output data. For example, the high-\ :math:`\beta` model has
 variables “P”, “jpar”, and “U”, and so has sections ``[P]``, ``[jpar]``,
-``[U]`` (not case sensitive).
+``[U]`` (names are case sensitive).
 
 .. _sec-expressions:
 
