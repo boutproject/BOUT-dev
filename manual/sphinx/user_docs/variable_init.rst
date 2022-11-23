@@ -148,6 +148,10 @@ upper, outer divertor leg it joins smoothly to the outer-core/outer-SOL.
 grid. So :math:`z` is 0 at the first grid point, and would be :math:`2\pi` at
 the next point after the last grid point.
 
+If a variable is at a staggered grid location ``CELL_XLOW``, ``CELL_YLOW``, or
+``CELL_ZLOW``, the values of :math:`x`, :math:`y`, or :math:`z` respectively
+will take into account the half-grid-point shift.
+
 By default the expressions are evaluated in a field-aligned coordinate system,
 i.e. if you are using the ``[mesh]`` option ``paralleltransform = shifted``,
 the input ``f`` will have ``f = fromFieldAligned(f)`` applied before being
