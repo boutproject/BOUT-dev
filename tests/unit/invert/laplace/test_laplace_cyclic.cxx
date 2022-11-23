@@ -1,5 +1,7 @@
 #include "bout/build_config.hxx"
 
+#if not BOUT_USE_METRIC_3D
+
 #include <math.h>
 #include <tuple>
 
@@ -139,3 +141,5 @@ INSTANTIATE_TEST_SUITE_P(LaplaceCyclicTest, CyclicTest,
 TEST_P(CyclicTest, DummyTest) {
   // No test yet
 }
+
+#endif // BOUT_USE_METRIC_3D
