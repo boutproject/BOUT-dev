@@ -144,6 +144,10 @@ upper, outer divertor leg it joins smoothly to the outer-core/outer-SOL.
         [mesh]
         symmetricGlobalY = false
 
+:math:`z` is defined as ``k / nz`` where ``k`` is the z-index value on the
+grid. So :math:`z` is 0 at the first grid point, and would be :math:`2\pi` at
+the next point after the last grid point.
+
 By default the expressions are evaluated in a field-aligned coordinate system,
 i.e. if you are using the ``[mesh]`` option ``paralleltransform = shifted``,
 the input ``f`` will have ``f = fromFieldAligned(f)`` applied before being
