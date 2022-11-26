@@ -78,7 +78,8 @@ public:
   WithQuietOutput info{output_info}, warn{output_warn}, progress{output_progress},
       all{output};
   CyclicTest()
-      : FakeMeshFixture(), param(GetParam()), solver(getOptions(param)), forward(std::get<1>(param), std::get<2>(param)) {
+      : FakeMeshFixture(), param(GetParam()), solver(getOptions(param)),
+        forward(std::get<1>(param), std::get<2>(param)) {
     int nx = mesh->GlobalNx, ny = mesh->GlobalNy, nz = mesh->GlobalNz;
 
     static_cast<FakeMesh*>(bout::globals::mesh)
@@ -103,7 +104,6 @@ public:
     auto param = GetParam();
 
     bool periodicX = std::get<0>(param);
-
   }
 
   ~CyclicTest() { Options::cleanup(); }
