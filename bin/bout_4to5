@@ -181,7 +181,7 @@ then
         fi
     done
 
-    pydir=$DIR/../tools/pylib/_boutcore_build
+    pydir=$DIR/../tools/pylib/_boutpp_build
     for f in $pydir/*in
     do
 	matched=$(grep '[/_a-z$A-Z0-9]*.hxx' -o $f|sort -u)

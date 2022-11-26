@@ -14,7 +14,7 @@ import re
 # cores: 4
 
 IGNORED_VARS_PATTERN = re.compile(
-    "(wtime|ncalls|arkode|cvode|run_id|run_restart_from).*"
+    "(wtime|ncalls|arkode|cvode|run_id|run_restart_from|M.?SUB|N.?PE|iteration|wall_time|has_legacy_netcdf).*"
 )
 
 
@@ -50,12 +50,13 @@ def verify(f1, f2):
         d1 = DataFile(f1)
         d2 = DataFile(f2)
         for v in d1.keys():
-            if d1[v].shape != d2[v].shape:
-                raise RuntimeError("shape mismatch in ", v, d1[v], d2[v])
-            if v in ["MXSUB", "MYSUB", "NXPE", "NYPE", "iteration", "wall_time"]:
-                continue
             if IGNORED_VARS_PATTERN.match(v):
                 continue
+
+            if d1[v].shape != d2[v].shape:
+                raise RuntimeError(
+                    "shape mismatch in '{}': {} vs {}".format(v, d1[v], d2[v])
+                )
 
             v1 = d1[v]
             v2 = d2[v]
@@ -84,18 +85,18 @@ build_and_log("Squash test")
 
 bout_squashoutput = args.executable + "/bout-squashoutput"
 
-# Run once to get normal data
+print("Run once to get normal data")
 timed_shell_safe("./squash -q -q -q nout=2")
 timed_shell_safe("mv data/BOUT.dmp.0.nc f1.nc")
 
-# Parallel test
+print("Parallel test")
 timed_shell_safe("rm -f f2.nc")
 timed_launch_safe("./squash -q -q -q nout=2", nproc=4, mthread=1)
 timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
 
 verify("f1.nc", "f2.nc")
 
-# Parallel and in two pieces
+print("Parallel and in two pieces")
 timed_shell_safe("rm -f f2.nc")
 timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
 timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
@@ -104,7 +105,7 @@ timed_shell_safe("{} -qdcal 9 data --outputname ../f2.nc".format(bout_squashoutp
 
 verify("f1.nc", "f2.nc")
 
-# Parallel and in two pieces without dump_on_restart
+print("Parallel and in two pieces without dump_on_restart")
 timed_shell_safe("rm -f f2.nc")
 timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
 timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
@@ -113,7 +114,7 @@ timed_shell_safe("{} -qdcal 9 data --outputname ../f2.nc".format(bout_squashoutp
 
 verify("f1.nc", "f2.nc")
 
-# Sequential test
+print("Sequential test")
 timed_shell_safe("rm -f f2.nc")
 timed_shell_safe("./squash -q -q -q nout=2")
 timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))

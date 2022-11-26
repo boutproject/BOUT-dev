@@ -129,8 +129,8 @@ void OptionINI::read(Options *options, const string &filename) {
 
         string firstline = value; // Store the first line for error message
 
-        while (count % 2 == 1) {
-          // An odd number, so read another line
+        while (count > 0) {
+          // Unbalanced brackets, so read another line
 
           if (fin.eof()) {
             throw BoutException("\t'{:s}': Unbalanced brackets\n\tStarting line: {:s}",
@@ -161,7 +161,7 @@ void OptionINI::write(Options *options, const std::string &filename) {
   }
   
   // Call recursive function to write to file
-  fout << fmt::format("{:ds}", *options);
+  fout << fmt::format("{:uds}", *options);
 
   fout.close();
 }

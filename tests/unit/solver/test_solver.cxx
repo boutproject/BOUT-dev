@@ -42,7 +42,8 @@ private:
 
 class MockPhysicsModel : public PhysicsModel {
 public:
-  MockPhysicsModel() : PhysicsModel() {}
+  // Don't enable the output/restart files
+  MockPhysicsModel() : PhysicsModel(bout::globals::mesh, false, false) {}
   MOCK_METHOD(int, init, (bool restarting), (override));
   // Mock postInit even though it's not pure virtual because it does
   // stuff with files
@@ -708,6 +709,10 @@ TEST_F(SolverTest, RunJacobian) {
 TEST_F(SolverTest, AddMonitor) {
   Options options;
   FakeSolver solver{&options};
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+  solver.setModel(&model);
 
   FakeMonitor monitor;
   EXPECT_NO_THROW(monitor.setTimestepShim(10.0));
@@ -726,6 +731,10 @@ TEST_F(SolverTest, AddMonitorFront) {
   WithQuietOutput quiet{output_error};
   Options options;
   FakeSolver solver{&options};
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+  solver.setModel(&model);
 
   FakeMonitor monitor1;
   FakeMonitor monitor2;
@@ -757,6 +766,10 @@ TEST_F(SolverTest, AddMonitorBack) {
   WithQuietOutput quiet{output_error};
   Options options;
   FakeSolver solver{&options};
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+  solver.setModel(&model);
 
   FakeMonitor monitor1;
   FakeMonitor monitor2;
@@ -787,6 +800,10 @@ TEST_F(SolverTest, AddMonitorBack) {
 TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   Options options;
   FakeSolver solver{&options};
+  MockPhysicsModel model{};
+  EXPECT_CALL(model, init).Times(1);
+  EXPECT_CALL(model, postInit).Times(1);
+  solver.setModel(&model);
 
   FakeMonitor default_timestep;
   FakeMonitor smaller_timestep{0.1};
@@ -868,7 +885,7 @@ TEST_F(SolverTest, RemoveMonitor) {
 
   solver.removeMonitor(&monitor1);
 
-  std::list<Monitor*> expected{&monitor2};
+  std::list<FakeSolver::MonitorInfo> expected{{&monitor2, ""}};
   EXPECT_EQ(solver.getMonitors(), expected);
 
   // Removing same monitor again should be a no-op

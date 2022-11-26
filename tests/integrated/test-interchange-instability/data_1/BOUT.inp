@@ -25,8 +25,6 @@ MYG = 2
 
 grid = "slab.6b5.r1.cdl"
 
-dump_format = "nc" # Output format. nc = NetCDF
-
 ##################################################
 # derivative methods
 

@@ -38,9 +38,7 @@ MeshFactory::ReturnType MeshFactory::create(const std::string& type, Options* op
         (*options)["format"].withDefault(Options::root()["format"].withDefault(""));
 
     // Create a grid file
-    source = static_cast<GridDataSource*>(new GridFile(
-        data_format((grid_ext.empty()) ? grid_name.c_str() : grid_ext.c_str()),
-        grid_name));
+    source = static_cast<GridDataSource*>(new GridFile(grid_name));
   } else {
     output << "\nGetting grid data from options\n";
     source = static_cast<GridDataSource*>(new GridFromOptions(options));

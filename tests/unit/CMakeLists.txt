@@ -1,5 +1,13 @@
 bout_update_submodules()
 
+if (NOT EXISTS "${PROJECT_SOURCE_DIR}/externalpackages/googletest/CMakeLists.txt")
+  set(BOUT_ENABLE_UNIT_TESTS OFF PARENT_SCOPE)
+  message(WARNING "googletest not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
+  return()
+endif()
+
+set(BOUT_ENABLE_UNIT_TESTS ON PARENT_SCOPE)
+
 # disable gtest pthreads for proper execution of Death tests (on some platforms)
 add_definitions(-DGTEST_HAS_PTHREAD=0)
 set(gtest_disable_pthreads ON CACHE BOOL "" FORCE)
