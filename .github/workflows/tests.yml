@@ -69,6 +69,7 @@ jobs:
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
                             -DBOUT_BUILD_DOCS=OFF
+                            -DBOUT_GENERATE_CXX=OFF
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
 
@@ -81,6 +82,7 @@ jobs:
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
                             -DBOUT_ENABLE_PYTHON=ON
+                            -DBOUT_GENERATE_CXX=OFF
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
 

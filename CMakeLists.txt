@@ -234,6 +234,8 @@ set(BOUT_SOURCES
   ./src/mesh/boundary_factory.cxx
   ./src/mesh/boundary_region.cxx
   ./src/mesh/boundary_standard.cxx
+  ./src/mesh/boundary_nonuniform.cxx
+  ./src/mesh/boundary_nonuniform.hxx
   ./src/mesh/coordinates.cxx
   ./src/mesh/coordinates_accessor.cxx
   ./src/mesh/data/gridfromfile.cxx
@@ -262,6 +264,8 @@ set(BOUT_SOURCES
   ./src/mesh/parallel_boundary_op.cxx
   ./src/mesh/parallel_boundary_region.cxx
   ./src/mesh/surfaceiter.cxx
+  ./src/mesh/boundary_nonuniform.hxx
+  ./src/mesh/boundary_nonuniform.cxx
   ./src/physics/gyro_average.cxx
   ./src/physics/physicsmodel.cxx
   ./src/physics/smoothing.cxx
@@ -337,37 +341,71 @@ set(BOUT_SOURCES
 find_package(Python3)
 find_package(ClangFormat)
 
-if (Python3_FOUND AND ClangFormat_FOUND)
-  set(BOUT_GENERATE_FIELDOPS_DEFAULT ON)
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import jinja2"
+  RESULT_VARIABLE jinja2_FOUND)
+if (jinja2_FOUND EQUAL 0)
+  set(jinja2_FOUND ON)
 else()
-  set(BOUT_GENERATE_FIELDOPS_DEFAULT OFF)
+  set(jinja2_FOUND OFF)
 endif()
 
-option(BOUT_GENERATE_FIELDOPS "Automatically re-generate the Field arithmetic operators from the Python templates. \
-Requires Python3, clang-format, and Jinja2. Turn this OFF to skip generating them if, for example, \
-you are unable to install the Jinja2 Python module. This is only important for BOUT++ developers." ${BOUT_GENERATE_FIELDOPS_DEFAULT})
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import sympy"
+  RESULT_VARIABLE sympy_FOUND)
+if (sympy_FOUND EQUAL 0)
+  set(sympy_FOUND ON)
+else()
+  set(sympy_FOUND OFF)
+endif()
 
-if (BOUT_GENERATE_FIELDOPS)
+
+if (Python3_FOUND AND ClangFormat_FOUND AND jinja2_FOUND AND sympy_FOUND)
+  set(BOUT_GENERATE_CXX_DEFAULT ON)
+else()
+  set(BOUT_GENERATE_CXX_DEFAULT OFF)
+endif()
+
+option(BOUT_GENERATE_CXX "Automatically re-generate the Field arithmetic operators and  from the Python templates. \
+Requires Python3, clang-format, Jinja2 and sympy. Turn this OFF to skip generating them if, for example, \
+you are unable to install the Jinja2 Python module. This is only important for BOUT++ developers." ${BOUT_GENERATE_CXX_DEFAULT})
+
+if (BOUT_GENERATE_CXX)
   if (NOT Python3_FOUND)
     message(FATAL_ERROR "python not found, but you have requested to generate code!")
   endif()
   if (NOT ClangFormat_FOUND)
     message(FATAL_ERROR "clang-format not found, but you have requested to generate code!")
   endif()
+  if (NOT jinja2_FOUND)
+    message(FATAL_ERROR "Jinja2 not found, but you have requested to generate code!")
+  endif()
+  if (NOT sympy_FOUND)
+    message(FATAL_ERROR "sympy not found, but you have requested to generate code!")
+  endif()
+  string(RANDOM rand_suffix)
   add_custom_command( OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/field/generated_fieldops.cxx
-    COMMAND ${Python3_EXECUTABLE} gen_fieldops.py --filename generated_fieldops.cxx.tmp
-    COMMAND ${ClangFormat_BIN} generated_fieldops.cxx.tmp -i
-    COMMAND ${CMAKE_COMMAND} -E rename generated_fieldops.cxx.tmp generated_fieldops.cxx
+    COMMAND ${Python3_EXECUTABLE} gen_fieldops.py --filename generated_fieldops.cxx.tmp.${rand_suffix}
+    COMMAND ${ClangFormat_BIN} generated_fieldops.cxx.tmp.${rand_suffix} -i
+    COMMAND ${CMAKE_COMMAND} -E rename generated_fieldops.cxx.tmp.${rand_suffix} generated_fieldops.cxx
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.jinja  ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.py
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/field/
-    COMMENT "Generating source code" )
+    COMMENT "Generating source code (src/field/generated_fieldops.cxx)" )
+  foreach(ext in "cxx" "hxx")
+    set(_outfile ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh/boundary_nonuniform.${ext})
+    add_custom_command( OUTPUT ${_outfile}
+      COMMAND ${Python3_EXECUTABLE} ${_outfile}.in.py ${_outfile}.tmp.${rand_suffix}
+      COMMAND ${ClangFormat_BIN} ${_outfile}.tmp.${rand_suffix} -i
+      COMMAND ${CMAKE_COMMAND} -E rename ${_outfile}.tmp.${rand_suffix} ${_outfile}
+      DEPENDS ${_outfile}.in.py ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh/boundary_nonuniform_common.py ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh/stencils_sympy.py
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/mesh
+      COMMENT "Generating source code (src/mesh/boundary_nonuniform.${ext})" )
+  endforeach()
 else()
-  message(AUTHOR_WARNING "'src/field/generated_fieldops.cxx' will not be \
+  message(AUTHOR_WARNING "'src/field/generated_fieldops.cxx' and src/mesh/boundary_nonuniform.?xx will not be \
 regenerated when you make changes to either \
 'src/field/gen_fieldops.py' or 'src/field/gen_fieldops.jinja'. \
-This is because either Python3 or clang-format is missing \
+This is because either Python3, clang-format, jinja2 or sympy is missing \
 (see above messages for more information) \
-or BOUT_GENERATE_FIELDOPS is OFF (current value: ${BOUT_GENERATE_FIELDOPS}). \
+or BOUT_GENERATE_CXX is OFF (current value: ${BOUT_GENERATE_CXX}). \
 This warning is only important for BOUT++ developers and can otherwise be \
 safely ignored.")
 endif()

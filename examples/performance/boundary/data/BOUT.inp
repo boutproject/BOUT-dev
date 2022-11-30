@@ -1,0 +1,9 @@
+[mesh]
+nx = 128
+ny = 128
+nz = 128
+
+ixseps1 = -1
+
+[f]
+bndry_all = free_nu_o3
