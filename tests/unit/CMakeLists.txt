@@ -58,6 +58,7 @@ set(serial_tests_source
   ./include/test_mask.cxx
   ./invert/test_fft.cxx
   ./invert/laplace/test_laplace_petsc3damg.cxx
+  ./invert/laplacexz/test_laplacexz_petsc.cxx
   ./mesh/data/test_gridfromoptions.cxx
   ./mesh/parallel/test_shiftedmetric.cxx
   ./mesh/test_boundary_factory.cxx

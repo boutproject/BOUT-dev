@@ -14,6 +14,8 @@
 #include <derivs.hxx>
 #include <field_factory.hxx>
 
+using bout::globals::mesh;
+
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
