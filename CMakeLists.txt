@@ -332,7 +332,7 @@ endif()
 # SYCL
 
 # An option to select a SYCL runtime, or none
-set(BOUT_SYCL_RUNTIME "NONE" CACHE STRING "SYCL runtime implementation")
+option(BOUT_SYCL_RUNTIME "SYCL runtime implementation" "NONE")
 # Specify the values that SYCL_RUNTIME can have
 set_property(CACHE BOUT_SYCL_RUNTIME PROPERTY STRINGS NONE HIPSYCL COMPUTECPP DPCPP)
 
