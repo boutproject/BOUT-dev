@@ -27,7 +27,7 @@ def update_progress(progress, barLength=10, ascii=False, **kwargs):
     if ascii:
         cursor = "#"
     else:
-        cursor = u"█"
+        cursor = "█"
 
     status = ""
     if isinstance(progress, int):
@@ -42,7 +42,7 @@ def update_progress(progress, barLength=10, ascii=False, **kwargs):
         progress = 1
         status = "Done...\r\n"
     block = int(round(barLength * progress))
-    text = u"\rPercent: [{prog:-<{len}}] {perc:6.2f}% {stat}".format(
+    text = "\rPercent: [{prog:-<{len}}] {perc:6.2f}% {stat}".format(
         len=barLength, prog=cursor * block, perc=progress * 100, stat=status
     )
 
@@ -55,8 +55,8 @@ def update_progress(progress, barLength=10, ascii=False, **kwargs):
                 face = " (;,,,;) "
                 ink = "#"
             else:
-                face = u" (°,,,°) "
-                ink = u"█"
+                face = " (°,,,°) "
+                ink = "█"
 
             open_claw = "(\/)"
             closed_claw = "(|)"
@@ -71,7 +71,7 @@ def update_progress(progress, barLength=10, ascii=False, **kwargs):
             zb = left_claw + face + right_claw
             zb_middle = int(len(zb) / 2)
             start = int(round((barLength - zb_middle) * progress))
-            text = u"\rProgress: [{start}{zb}{rest}] {perc:6.2f}% {stat}".format(
+            text = "\rProgress: [{start}{zb}{rest}] {perc:6.2f}% {stat}".format(
                 start=ink * start,
                 zb=zb,
                 perc=progress * 100,

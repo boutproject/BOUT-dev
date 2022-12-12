@@ -50,7 +50,7 @@ for nx in nxlist:
     E = collect("error", tind=[nout, nout], path="data")
     E = E[1:-1, 0, :]
 
-    l2 = sqrt(mean(E ** 2))
+    l2 = sqrt(mean(E**2))
     linf = max(abs(E))
 
     error_2.append(l2)

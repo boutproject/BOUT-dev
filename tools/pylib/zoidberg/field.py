@@ -384,7 +384,7 @@ try:
             self.z = Symbol("z")
             self.y = Symbol("y")
             self.r = Symbol("r")
-            self.r = (self.x ** 2 + self.z ** 2) ** (0.5)
+            self.r = (self.x**2 + self.z**2) ** (0.5)
             self.phi = Symbol("phi")
 
             self.xcentre = xcentre
@@ -410,7 +410,7 @@ try:
 
             for c in self.coil_list:
                 xc, zc, Ic = c
-                rc = (xc ** 2 + zc ** 2) ** (0.5)
+                rc = (xc**2 + zc**2) ** (0.5)
                 r2 = (self.x - xc) ** 2 + (self.z - zc) ** 2
                 theta = atan2(self.z - zc, self.x - xc)  # Angle relative to coil
 
@@ -425,7 +425,6 @@ try:
 
             self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
             self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
-
 
 except ImportError:
 

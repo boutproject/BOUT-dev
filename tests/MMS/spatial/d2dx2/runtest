@@ -62,7 +62,7 @@ for nx in nxlist:
     err = result[1:-1, 0, 0] - solution[1:-1, 0, 0]
 
     # Average error
-    l2 = sqrt(mean(err ** 2))
+    l2 = sqrt(mean(err**2))
     linf = max(abs(err))
 
     error_2.append(l2)

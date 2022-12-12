@@ -100,7 +100,7 @@ def fix_model_operator(source, model_name, operator_name, operator_type, new_nam
 
     # Fix definition and any existing declarations
     modified = operator_re.sub(
-        fr"int {model_name}::{new_name}({operator_type}\1)", source
+        rf"int {model_name}::{new_name}({operator_type}\1)", source
     )
 
     # Create the declaration
