@@ -1278,6 +1278,7 @@ int Coordinates::geometry(bool recalculate_staggered,
   // Invalidate and recalculate cached variables
   zlength_cache.reset();
   Grad2_par2_DDY_invSg.reset();
+  invSg.reset();
 
   return 0;
 }
@@ -1605,7 +1606,11 @@ Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
   ASSERT1(location == outloc
           || (outloc == CELL_DEFAULT && location == var.getLocation()));
 
-  return DDY(var) / sqrt(g_22);
+  if (invSg == nullptr) {
+    invSg = std::make_unique<FieldMetric>();
+    (*invSg) = 1.0 / sqrt(g_22);
+  }
+  return DDY(var) * (*invSg);
 }
 
 Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
@@ -1613,7 +1618,11 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
   TRACE("Coordinates::Grad_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  return ::DDY(var, outloc, method) / sqrt(g_22);
+  if (invSg == nullptr) {
+    invSg = std::make_unique<FieldMetric>();
+    (*invSg) = 1.0 / sqrt(g_22);
+  }
+  return ::DDY(var, outloc, method) * (*invSg);
 }
 
 /////////////////////////////////////////////////////////
@@ -1624,13 +1633,23 @@ Coordinates::FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Fiel
                                                     MAYBE_UNUSED(CELL_LOC outloc),
                                                     const std::string& UNUSED(method)) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
-  return VDDY(v, f) / sqrt(g_22);
+
+  if (invSg == nullptr) {
+    invSg = std::make_unique<FieldMetric>();
+    (*invSg) = 1.0 / sqrt(g_22);
+  }
+  return VDDY(v, f) * (*invSg);
 }
 
 Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
     const std::string& method) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return VDDY(v, f, outloc, method) / sqrt(g_22);
+
+  if (invSg == nullptr) {
+    invSg = std::make_unique<FieldMetric>();
+    (*invSg) = 1.0 / sqrt(g_22);
+  }
+  return VDDY(v, f, outloc, method) * (*invSg);
 }
 
 /////////////////////////////////////////////////////////
@@ -1682,14 +1701,17 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
+  if (invSg == nullptr) {
+    invSg = std::make_unique<FieldMetric>();
+    (*invSg) = 1.0 / sqrt(g_22);
+  }
   if (Grad2_par2_DDY_invSg == nullptr) {
-    auto invSg = 1.0 / sqrt(g_22);
     // Communicate to get parallel slices
-    localmesh->communicate(invSg);
-    invSg.applyParallelBoundary("parallel_neumann");
+    localmesh->communicate(*invSg);
+    invSg->applyParallelBoundary("parallel_neumann");
     // cache
     Grad2_par2_DDY_invSg = std::make_unique<FieldMetric>();
-    (*Grad2_par2_DDY_invSg) = DDY(invSg, outloc, method) * invSg;
+    (*Grad2_par2_DDY_invSg) = DDY(*invSg, outloc, method) * (*invSg);
   }
   auto result = (*Grad2_par2_DDY_invSg) * DDY(f, outloc, method)
                 + D2DY2(f, outloc, method) / g_22;
@@ -1705,14 +1727,18 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
   }
   ASSERT1(location == outloc);
 
+
+  if (invSg == nullptr) {
+    invSg = std::make_unique<FieldMetric>();
+    (*invSg) = 1.0 / sqrt(g_22);
+  }
   if (Grad2_par2_DDY_invSg == nullptr) {
-    auto invSg = 1.0 / sqrt(g_22);
     // Communicate to get parallel slices
-    localmesh->communicate(invSg);
-    invSg.applyParallelBoundary("parallel_neumann");
+    localmesh->communicate(*invSg);
+    invSg->applyParallelBoundary("parallel_neumann");
     // cache
     Grad2_par2_DDY_invSg = std::make_unique<FieldMetric>();
-    (*Grad2_par2_DDY_invSg) = DDY(invSg, outloc, method) * invSg;
+    (*Grad2_par2_DDY_invSg) = DDY(*invSg, outloc, method) * (*invSg);
   }
   Field3D result = ::DDY(f, outloc, method);
 
