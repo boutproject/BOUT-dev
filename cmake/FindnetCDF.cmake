@@ -28,6 +28,10 @@
 include(BOUT++functions)
 include(CMakePrintHelpers)
 
+if (NOT netCDF_ROOT AND EXISTS "${BOUT_USE_NETCDF}")
+  set(netCDF_ROOT "${BOUT_USE_NETCDF}")
+endif()
+
 if (BOUT_NETCDF_VERSION)
   find_package(netCDF ${BOUT_NETCDF_VERSION} EXACT QUIET CONFIG)
 else()

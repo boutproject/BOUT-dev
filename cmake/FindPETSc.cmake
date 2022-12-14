@@ -58,6 +58,12 @@ else()
   endforeach()
 endif()
 
+if(NOT PETSC_DIR)
+  if(EXISTS "${BOUT_USE_PETSC}")
+    set(PETSC_DIR "${BOUT_USE_PETSC}")
+  endif()
+endif()
+
 function (petsc_get_version)
   if (EXISTS "${PETSC_DIR}/include/petscversion.h")
     file (STRINGS "${PETSC_DIR}/include/petscversion.h" vstrings REGEX "#define PETSC_VERSION_(RELEASE|MAJOR|MINOR|SUBMINOR|PATCH) ")
