@@ -27,6 +27,11 @@
 
 include(BOUT++functions)
 
+
+if (NOT netCDFCxx_ROOT AND EXISTS "${BOUT_USE_NETCDF}")
+  set(netCDFCxx_ROOT "${BOUT_USE_NETCDF}")
+endif()
+
 find_package(netCDFCxx QUIET CONFIG)
 if (netCDFCxx_FOUND)
   set(netCDFCxx_FOUND TRUE)
