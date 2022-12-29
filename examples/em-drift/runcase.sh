@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
         
 MPIEXEC=mpirun
 NP=2
