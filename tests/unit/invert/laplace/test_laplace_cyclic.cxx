@@ -67,6 +67,7 @@ private:
       }
     }
   }
+
 public:
   Field2D a, c1, c2, d, ex, ez;
   Coordinates* coords;
