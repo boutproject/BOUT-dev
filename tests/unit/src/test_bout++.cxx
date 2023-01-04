@@ -364,11 +364,11 @@ public:
 using SignalHandlerTestDeathTest = SignalHandlerTest;
 
 #if !defined(__NVCC__)
-//TEST_F(SignalHandlerTestDeathTest, SegFault) {
-//  bout::experimental::setupSignalHandler(bout::experimental::defaultSignalHandler);
-//  // This test is *incredibly* expensive, maybe as much as 1s, so only test the one signal
-//  EXPECT_DEATH(std::raise(SIGSEGV), "SEGMENTATION FAULT");
-//}
+// TEST_F(SignalHandlerTestDeathTest, SegFault) {
+//   bout::experimental::setupSignalHandler(bout::experimental::defaultSignalHandler);
+//   // This test is *incredibly* expensive, maybe as much as 1s, so only test the one
+//   signal EXPECT_DEATH(std::raise(SIGSEGV), "SEGMENTATION FAULT");
+// }
 #endif
 #endif
 TEST(BoutInitialiseFunctions, SetRunStartInfo) {
