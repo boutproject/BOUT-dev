@@ -32,7 +32,7 @@ using namespace bout::globals;
 class ForwardOperator {
 public:
   ForwardOperator(bool xin_neumann, bool xout_neumann)
-      : inner_x_neumann(inner_x_neumann), outer_x_neumann(outer_x_neumann),
+      : inner_x_neumann(xin_neumann), outer_x_neumann(xout_neumann),
 
         a(0.0), c1(1.0), c2(1.0), d(1.0), ex(0.0), ez(0.0) {
     coords = mesh->getCoordinates(CELL_CENTER);
@@ -45,9 +45,6 @@ public:
     applyBoundaries(result, f);
     return result;
   }
-
-  Field2D a, c1, c2, d, ex, ez;
-  Coordinates* coords;
 
 private:
   ForwardOperator();
@@ -70,6 +67,9 @@ private:
       }
     }
   }
+public:
+  Field2D a, c1, c2, d, ex, ez;
+  Coordinates* coords;
 };
 
 class CyclicTest : public FakeMeshFixture,
@@ -101,35 +101,34 @@ public:
       f3[i] = 1e3 * exp(-0.5 * sqrt(x * x + y * y + z * z) / sigmasq);
       coef3[i] = x + y + sin(2 * 3.14159265358979323846 * z);
     }
-    auto param = GetParam();
-
-    bool periodicX = std::get<0>(param);
   }
 
   ~CyclicTest() { Options::cleanup(); }
 
+private:
+  std::tuple<bool, bool, bool> param;
+
+  Options* getOptions(std::tuple<bool, bool, bool> param) {
+    Options::root()["mesh"]["periodicX"] = std::get<0>(param);
+    Options& options = Options::root()["laplace"];
+    options["type"] = "cyclic";
+    options["inner_boundary_flags"] =
+        (std::get<1>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
+    options["outer_boundary_flags"] =
+        (std::get<2>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
+    options["fourth_order"] = false;
+    options["atol"] = tol / 30; // Need to specify smaller than desired tolerance to
+    options["rtol"] = tol / 30; // ensure it is satisfied for every element.
+    return &options;
+  }
+
+public:
   const BoutReal sigmasq = 0.02;
   LaplaceCyclic solver;
   Field2D coef2;
   Field3D f3, coef3;
   static constexpr BoutReal tol = 1e-8;
   ForwardOperator forward;
-
-private:
-  std::tuple<bool, bool, bool> param;
-
-  Options* getOptions(std::tuple<bool, bool, bool> param) {
-    Options& options = Options::root()["laplace"];
-    options["type"] = "cyclic";
-    options["inner_boundary_flags"] =
-        (std::get<0>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
-    options["outer_boundary_flags"] =
-        (std::get<1>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
-    options["fourth_order"] = false;
-    options["atol"] = tol / 30; // Need to specify smaller than desired tolerance to
-    options["rtol"] = tol / 30; // ensure it is satisfied for every element.
-    return &options;
-  }
 };
 
 INSTANTIATE_TEST_SUITE_P(LaplaceCyclicTest, CyclicTest,
