@@ -48,6 +48,7 @@ jobs:
                                 --with-slepc
                                 --with-sundials=/home/runner/local"
             script_flags: "-uim -t shared -t python"
+            omp_num_threads: 1
 
           - name: "Debug, shared"
             os: ubuntu-18.04
@@ -59,6 +60,7 @@ jobs:
                                 --with-slepc
                                 --with-sundials=/home/runner/local"
             script_flags: "-uim"
+            omp_num_threads: 1
 
           - name: "CMake, shared, release, Ubuntu 20.04"
             os: ubuntu-20.04
@@ -94,6 +96,7 @@ jobs:
                                 --with-petsc
                                 --with-slepc
                                 --with-sundials=/home/runner/local"
+            omp_num_threads: 1
             script_flags: "-u"
         exclude:
           # Don't run the coverage tests if the branch isn't master or next
