@@ -253,7 +253,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
       const auto iyp = i.yp();
       const auto iym = i.ym();
 
-      if (bndry_flux || !mesh->lastY() || (i.y() != mesh->yend)) {
+      if (bndry_flux || !mesh->lastY(i.x()) || (i.y() != mesh->yend)) {
 
         BoutReal c = 0.5*(K[i] + Kup[iyp]); // K at the upper boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iyp]); // Jacobian at boundary
@@ -267,7 +267,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
       }
       
       // Calculate flux at lower surface
-      if (bndry_flux || !mesh->firstY() || (i.y() != mesh->ystart)) {
+      if (bndry_flux || !mesh->firstY(i.x()) || (i.y() != mesh->ystart)) {
         BoutReal c = 0.5*(K[i] + Kdown[iym]); // K at the lower boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iym]); // Jacobian at boundary
         
@@ -325,7 +325,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
           result(i, j, k) += flux / (coord->J(i, j, k) * coord->dy(i, j, k));
           result(i, j + 1, k) -= flux / (coord->J(i, j + 1, k) * coord->dy(i, j + 1, k));
 
-          if(j == mesh->ystart && (!mesh->firstY())) {
+          if(j == mesh->ystart && (!mesh->firstY(i))) {
             // Left cell boundary, no flux through boundaries
             d3fdx3 = (
                       f(i,j+1,k)
