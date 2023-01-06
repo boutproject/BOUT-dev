@@ -253,7 +253,8 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
       const auto iyp = i.yp();
       const auto iym = i.ym();
 
-      if (bndry_flux || mesh->periodicY(i.x()) || !mesh->lastY(i.x()) || (i.y() != mesh->yend)) {
+      if (bndry_flux || mesh->periodicY(i.x()) || !mesh->lastY(i.x())
+          || (i.y() != mesh->yend)) {
 
         BoutReal c = 0.5*(K[i] + Kup[iyp]); // K at the upper boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iyp]); // Jacobian at boundary
@@ -267,7 +268,8 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
       }
 
       // Calculate flux at lower surface
-      if (bndry_flux || mesh->periodicY(i.x()) || !mesh->firstY(i.x()) || (i.y() != mesh->ystart)) {
+      if (bndry_flux || mesh->periodicY(i.x()) || !mesh->firstY(i.x())
+          || (i.y() != mesh->ystart)) {
         BoutReal c = 0.5*(K[i] + Kdown[iym]); // K at the lower boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iym]); // Jacobian at boundary
         
@@ -305,33 +307,33 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     Field3D f = are_unaligned ? toFieldAligned(f_in, "RGN_NOX") : f_in;
 
     Field3D result{zeroFrom(f)};
-    
-    for(int i=mesh->xstart;i<=mesh->xend;i++) {
+
+    for (int i = mesh->xstart; i <= mesh->xend; i++) {
       // Check for boundaries
       bool yperiodic = mesh->periodicY(i);
       bool has_upper_boundary = !yperiodic && mesh->lastY(i);
       bool has_lower_boundary = !yperiodic && mesh->firstY(i);
 
       // Always calculate fluxes at upper Y cell boundary
-      const int ystart = has_lower_boundary ?
-        mesh->ystart :    // Don't calculate flux from boundary mesh->ystart-1 into domain
-        mesh->ystart - 1; // Calculate flux from last guard cell into domain
+      const int ystart =
+          has_lower_boundary
+              ? mesh->ystart
+              : // Don't calculate flux from boundary mesh->ystart-1 into domain
+              mesh->ystart - 1; // Calculate flux from last guard cell into domain
 
-      const int yend = has_upper_boundary ?
-        mesh->yend - 1 : // Don't calculate flux from mesh->yend into boundary
-        mesh->yend;
+      const int yend = has_upper_boundary
+                           ? mesh->yend - 1
+                           : // Don't calculate flux from mesh->yend into boundary
+                           mesh->yend;
 
-      for(int j = ystart; j <= yend;j++) {
+      for (int j = ystart; j <= yend; j++) {
         for(int k=0;k<mesh->LocalNz;k++) {
           BoutReal dy3 = SQ(coord->dy(i, j, k)) * coord->dy(i, j, k);
           // 3rd derivative at upper boundary
 
-          BoutReal d3fdy3 = (
-                             f(i,j+2,k)
-                             - 3.*f(i,j+1,k)
-                             + 3.*f(i,j,  k)
-                             -    f(i,j-1,k)
-                             ) / dy3;
+          BoutReal d3fdy3 =
+              (f(i, j + 2, k) - 3. * f(i, j + 1, k) + 3. * f(i, j, k) - f(i, j - 1, k))
+              / dy3;
 
           BoutReal flux = 0.5 * (d(i, j, k) + d(i, j + 1, k))
                           * (coord->J(i, j, k) + coord->J(i, j + 1, k)) * d3fdy3;
@@ -341,7 +343,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
         }
       }
     }
-    
+
     // Convert result back to non-aligned coordinates
     return are_unaligned ? fromFieldAligned(result, "RGN_NOBNDRY") : result;
   }
