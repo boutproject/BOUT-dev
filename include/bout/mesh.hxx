@@ -434,13 +434,11 @@ class Mesh {
 
   /// Is this processor first in Y?
   /// Note: First on the global grid, not necessarily at a boundary
-  [[deprecated("Please use firstY(xind) instead")]]
-  virtual bool firstY() const = 0;
+  [[deprecated("Please use firstY(xind) instead")]] virtual bool firstY() const = 0;
 
   /// Is this processor last in Y?
   /// Note: Last on the global grid, not necessarily at a boundary
-  [[deprecated("Please use lastY(xind) instead")]]
-  virtual bool lastY() const = 0;
+  [[deprecated("Please use lastY(xind) instead")]] virtual bool lastY() const = 0;
 
   /// Is this processor first in Y?
   /// Note: Not necessarily at a boundary, but first in the Y communicator
