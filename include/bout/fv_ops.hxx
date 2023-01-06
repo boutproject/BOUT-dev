@@ -45,6 +45,8 @@ Div_a_Laplace_perp(const Field3D& a, const Field3D& x) {
    *                   f_b
    *
    * NB: Uses to/from FieldAligned coordinates
+   *
+   * No fluxes through domain boundaries
    */
   const Field3D D4DY4(const Field3D &d, const Field3D &f);
 
