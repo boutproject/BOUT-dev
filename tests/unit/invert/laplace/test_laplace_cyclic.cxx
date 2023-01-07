@@ -29,9 +29,9 @@ extern Mesh* mesh;
 // The unit tests use the global mesh
 using namespace bout::globals;
 
-class ForwardOperator {
+class CyclicForwardOperator {
 public:
-  ForwardOperator(bool xin_neumann, bool xout_neumann)
+  CyclicForwardOperator(bool xin_neumann, bool xout_neumann)
       : inner_x_neumann(xin_neumann), outer_x_neumann(xout_neumann),
 
         a(0.0), c1(1.0), c2(1.0), d(1.0), ex(0.0), ez(0.0) {
@@ -47,7 +47,7 @@ public:
   }
 
 private:
-  ForwardOperator();
+  CyclicForwardOperator();
   bool inner_x_neumann, outer_x_neumann; // If false then use Dirichlet conditions
 
   void applyBoundaries(Field3D& newF, const Field3D& f) {
@@ -129,7 +129,7 @@ public:
   Field2D coef2;
   Field3D f3, coef3;
   static constexpr BoutReal tol = 1e-8;
-  ForwardOperator forward;
+  CyclicForwardOperator forward;
 };
 
 INSTANTIATE_TEST_SUITE_P(LaplaceCyclicTest, CyclicTest,
