@@ -130,7 +130,6 @@ jobs:
                  slepc-dev
                  liblapack-dev
                  libparpack2-dev
-                 valgrind
 
       - uses: actions/checkout@v3
         with:
