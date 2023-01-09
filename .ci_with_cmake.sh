@@ -21,7 +21,7 @@ cmake --build build
 cd -
 
 make install -j 2
-rm -rf build
+rm -rf * .*
 # Test installation with plain `make`
 cd ../examples/make-script
 rm test
