@@ -59,7 +59,6 @@ protected:
   enum class ValueType {GEN, FIELD, REAL};
   const ValueType value_type{ValueType::REAL};
 
-  BoutReal getValue(int x, int y, int z, BoutReal t);
   BoutReal getValue(const BoundaryRegionPar &bndry, BoutReal t);
 
 };
