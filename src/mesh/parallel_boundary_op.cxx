@@ -7,29 +7,6 @@
 
 using bout::generator::Context;
 
-BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
-
-  Mesh* mesh = bndry->localmesh;
-
-  BoutReal value;
-
-  switch (value_type) {
-  case ValueType::GEN:
-    // This works but doesn't quite do the right thing... should
-    // generate value on the boundary, but that gives wrong
-    // answer. This instead generates the value at the gridpoint
-    return gen_values->generate(Context(x, y, z, CELL_CENTRE, mesh, t));
-  case ValueType::FIELD:
-    value = (*field_values)(x,y,z);
-    return value;
-  case ValueType::REAL:
-    return real_value;
-  default:
-    throw BoutException("Invalid value_type encountered in BoundaryOpPar::getValue");
-  }
-
-}
-
 BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
 
   Mesh* mesh = bndry.localmesh;
