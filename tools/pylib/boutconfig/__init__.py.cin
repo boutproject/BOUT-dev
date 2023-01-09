@@ -3,19 +3,18 @@
 """
 # Created by cmake
 _yesno = {"TRUE": True, "ON": True, "FALSE": False, "OFF": False}
-_iyesno = {True: "yes", False: "no"}
 
 config = {
     "cc": "@CMAKE_C_COMPILER@",
     "cxx": "@CMAKE_CXX_COMPILER@",
     "ld": "@CMAKE_CXX_COMPILER@",
     "checks": "@BOUT_CHECK_LEVEL@",
-    "cflags": "@BOUT_CFLAGS@",
-    "libs": "@BOUT_LIBS@",
+    "cflags": "@CONFIG_CFLAGS@",
+    "libs": "@CONFIG_LIBS@",
     "version": "@BOUT_VERSION@",
     "git": "@BOUT_REVISION@",
     "idlpath": "@IDLCONFIGPATH@",
-    "pythonpath": "@BOUT_PYTHONPATH@",
+    "pythonpath": "@PYTHONCONFIGPATH@",
     "has_netcdf": "@BOUT_HAS_NETCDF@",
     "has_legacy_netcdf": "@BOUT_HAS_LEGACY_NETCDF@",
     "has_pnetcdf": "OFF",
@@ -33,6 +32,19 @@ config = {
     "petsc_has_sundials": "@PETSC_HAS_SUNDIALS@",
     "metric_type": "@BOUT_METRIC_TYPE@",
 }
+
+for k, v in config.items():
+    config[k] = (
+        v.replace(
+            "${BOUT_INCLUDE_PATH}", "@BOUT_INCLUDE_PATH@"
+        )
+        .replace(
+            "${MPARK_VARIANT_INCLUDE_PATH}", "@MPARK_VARIANT_INCLUDE_PATH@"
+        )
+        .replace(
+            "${FMT_INCLUDE_PATH}", "@FMT_INCLUDE_PATH@"
+        )
+    )
 
 
 @property
