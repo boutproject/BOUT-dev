@@ -233,7 +233,7 @@ void BoundaryOpPar_neumann::apply(Field3D &f, BoutReal t) {
     int x = bndry->x; int y = bndry->y; int z = bndry->z;
 
     // Generate the boundary value
-    BoutReal value = getValue(x, y, z, t);
+    BoutReal value = getValue(*bndry, t);
     BoutReal dy = coord.dy(x, y, z);
 
     f_next(x, y+bndry->dir, z) = f(x, y, z) + bndry->dir*value*dy;
