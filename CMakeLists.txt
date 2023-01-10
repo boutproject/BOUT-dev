@@ -9,6 +9,7 @@ endif()
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.15)
   cmake_policy(SET CMP0094 NEW)
 endif()
+cmake_policy(SET CMP0095 NEW)
 # We support the new syntax, so avoid deprecation warning
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.22)
   cmake_policy(SET CMP0127 NEW)
@@ -379,9 +380,16 @@ This warning is only important for BOUT++ developers and can otherwise be \
 safely ignored.")
 endif()
 
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import site ; print('/'.join(site.getusersitepackages().split('/')[-2:]))"
+  RESULT_VARIABLE PYTHON_WORKING
+  OUTPUT_VARIABLE PYTHON_SITEPATH_SUFFIX
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+set(CMAKE_INSTALL_PYTHON_SITEARCH lib/${PYTHON_SITEPATH_SUFFIX} CACHE STRING "Location to install python arch-specific modules")
+
 set(BOUT_ENABLE_PYTHON MAYBE CACHE STRING "Build the Python interface")
 if (BOUT_ENABLE_PYTHON OR BOUT_ENABLE_PYTHON STREQUAL "MAYBE")
-  add_subdirectory(tools/pylib/_boutcore)
+  add_subdirectory(tools/pylib/_boutpp_build)
 else()
   set(BOUT_ENABLE_PYTHON OFF)
 endif()
@@ -623,9 +631,11 @@ if(BOUT_TESTS)
   add_subdirectory(tests/MMS EXCLUDE_FROM_ALL)
 
   # Targets for running the tests
-  add_custom_target(check-unit-tests
-    COMMAND ctest -R serial_tests --output-on-failure)
-  add_dependencies(check-unit-tests build-check-unit-tests)
+  if (BOUT_ENABLE_UNIT_TESTS)
+    add_custom_target(check-unit-tests
+      COMMAND ctest -R serial_tests --output-on-failure)
+    add_dependencies(check-unit-tests build-check-unit-tests)
+  endif()
 
   add_custom_target(check-integrated-tests
     COMMAND ctest -R "test-" --output-on-failure)
@@ -637,7 +647,11 @@ if(BOUT_TESTS)
 
   # Run all the tests
   add_custom_target(check)
-  add_dependencies(check check-unit-tests check-integrated-tests check-mms-tests)
+  add_dependencies(check check-integrated-tests check-mms-tests)
+  if (BOUT_ENABLE_UNIT_TESTS)
+    add_dependencies(check check-unit-tests)
+  endif()
+
 endif()
 
 option(BOUT_BUILD_EXAMPLES "Build the examples" ON)
@@ -645,6 +659,38 @@ if(BOUT_BUILD_EXAMPLES)
   add_custom_target(build-all-examples)
   add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
+
+
+##################################################
+# L10N: localisation - include translations
+
+
+include(GNUInstallDirs)
+
+find_package(Gettext)
+
+if (GETTEXT_FOUND)
+  #add_custom_target(mofiles ALL)
+  set(bout_langs es de fr zh_CN zh_TW)
+
+  foreach(_lang IN LISTS bout_langs)
+    set(_gmoFile ${CMAKE_CURRENT_BINARY_DIR}/locale/${_lang}/libbout.gmo)
+    set(_poFile ${CMAKE_CURRENT_SOURCE_DIR}/locale/${_lang}/libbout.po)
+    add_custom_command(OUTPUT ${_gmoFile} _mo_file_${_lang}
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/locale/${_lang}/
+      COMMAND ${GETTEXT_MSGFMT_EXECUTABLE} -o ${_gmoFile} ${_poFile}
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      DEPENDS ${_poFile}
+    )
+
+    list(APPEND _gmoFiles ${_gmoFile})
+
+    install(FILES ${_gmoFile} DESTINATION ${CMAKE_INSTALL_LOCALEDIR}/${_lang}/LC_MESSAGES/ RENAME libbout.mo)
+  endforeach()
+  add_custom_target(mofiles ALL
+    DEPENDS ${_gmoFiles})
+endif()
+
 
 ##################################################
 # Documentation
@@ -654,6 +700,13 @@ if (BOUT_BUILD_DOCS)
   add_subdirectory(manual EXCLUDE_FROM_ALL)
 endif()
 
+
+add_custom_target(dist
+  COMMAND ${CMAKE_SOURCE_DIR}/bin/bout-archive-helper.sh v${BOUT_FULL_VERSION}
+  # there is no cmake equivalent to `mv` - so only works on systems that are not inentionally non-POSIX complient
+  COMMAND mv BOUT++-v${BOUT_FULL_VERSION}.tar.gz ${CMAKE_CURRENT_BINARY_DIR}/
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  )
 ##################################################
 # Generate the build config header
 
@@ -711,7 +764,6 @@ configure_file(bin/bout-config.in bin/bout-config-install @ONLY)
 ##################################################
 # Installation
 
-include(GNUInstallDirs)
 install(TARGETS bout++
   EXPORT bout++Targets
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
@@ -729,7 +781,11 @@ install(DIRECTORY "${PROJECT_BINARY_DIR}/include/"
 # The various helper scripts
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/"
   USE_SOURCE_PERMISSIONS
-  DESTINATION "${CMAKE_INSTALL_BINDIR}")
+  DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  REGEX "bout-squashoutput" EXCLUDE
+  REGEX "bout-config\.in" EXCLUDE
+  REGEX "bout-pylib-cmd-to-bin" EXCLUDE
+)
 
 # The installed version of bout-config needs renaming when we install
 # it. Note this MUST be done after the installation of bin/, to make
@@ -786,7 +842,7 @@ configure_package_config_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib
 
 install(
   FILES "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/boutconfig"
+  DESTINATION "${CMAKE_INSTALL_PYTHON_SITEARCH}/boutconfig"
   )
 
 export(EXPORT bout++Targets

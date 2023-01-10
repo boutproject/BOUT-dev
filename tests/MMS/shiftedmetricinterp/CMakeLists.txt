@@ -4,5 +4,4 @@ bout_add_mms_test(MMS-shiftedmetricinterp
   REQUIRES BOUT_ENABLE_PYTHON
 )
 
-add_dependencies(MMS-shiftedmetricinterp boutcore)
-add_dependencies(MMS-shiftedmetricinterp boutcore)
+add_dependencies(MMS-shiftedmetricinterp boutpp)

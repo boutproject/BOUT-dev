@@ -11,10 +11,10 @@ from builtins import str
 
 import numpy as np
 
-# Requires: boutcore
+# Requires: boutpp
 # requires: not make
 
-import boutcore as bc
+import boutpp as bc
 
 bc.init("-q -q -q")
 

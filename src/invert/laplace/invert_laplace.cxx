@@ -413,6 +413,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomple
  * \param[in] c2coef    C2 in the equation above. DO NOT CONFUSE WITH cvec
  * \param[in] d         D in the equation above
  * \param[in] includeguards Whether or not the guard points in x should be used
+ * \param[in] zperiodic Whether a special case for kx=kz=0 is needed
  *
  * \param[out] avec     Lower diagonal of the tridiagonal matrix.
  *                      DO NOT CONFUSE WITH "A"
@@ -426,7 +427,8 @@ void Laplacian::tridagMatrix(dcomplex* /*avec*/, dcomplex* /*bvec*/, dcomplex* /
                              int /*global_flags*/, int /*inner_boundary_flags*/,
                              int /*outer_boundary_flags*/, const Field2D* /*a*/,
                              const Field2D* /*c1coef*/, const Field2D* /*c2coef*/,
-                             const Field2D* /*d*/, bool /*includeguards*/) {
+                             const Field2D* /*d*/, bool /*includeguards*/,
+                             bool /*zperiodic*/) {
   throw BoutException("Error: tridagMatrix does not yet work with 3D metric.");
 }
 #else
@@ -434,8 +436,8 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
                              int jy, int kz, BoutReal kwave, int global_flags,
                              int inner_boundary_flags, int outer_boundary_flags,
                              const Field2D* a, const Field2D* c1coef,
-                             const Field2D* c2coef, const Field2D* d,
-                             bool includeguards) {
+                             const Field2D* c2coef, const Field2D* d, bool includeguards,
+                             bool zperiodic) {
   ASSERT1(a->getLocation() == location);
   ASSERT1(c1coef->getLocation() == location);
   ASSERT1(c2coef->getLocation() == location);
@@ -757,6 +759,14 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
         }
       }
     }
+  } else if (zperiodic and (kz == 0) and localmesh->firstX()) {
+    // Special case for doubly-periodic domains. Pin the
+    // kz=0 mode to zero at one location
+    avec[0] = 0.0;
+    bvec[0] = 1.0;
+    cvec[0] = 0.0;
+    // RHS vector is also modified, setting this component to zero
+    bk[0] = 0.0;
   }
 }
 #endif

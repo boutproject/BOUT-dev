@@ -4,5 +4,4 @@ bout_add_mms_test(MMS-derivatives3
   REQUIRES BOUT_ENABLE_PYTHON
 )
 
-add_dependencies(MMS-derivatives3 boutcore)
-add_dependencies(MMS-derivatives3 boutcore)
+add_dependencies(MMS-derivatives3 boutpp)

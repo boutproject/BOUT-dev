@@ -14,7 +14,7 @@ add_subdirectory(wave-1d)
 add_subdirectory(wave-1d-y)
 
 ########################################
-# The following require boutcore:
+# The following require boutpp:
 if (BOUT_ENABLE_PYTHON)
   add_subdirectory(bracket)
   add_subdirectory(derivatives3)

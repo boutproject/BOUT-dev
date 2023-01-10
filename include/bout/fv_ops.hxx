@@ -46,6 +46,8 @@ const Field3D Div_par_K_Grad_par(const Field3D& k, const Field3D& f,
    *                   f_b
    *
    * NB: Uses to/from FieldAligned coordinates
+   *
+   * No fluxes through domain boundaries
    */
 const Field3D D4DY4(const Field3D& d, const Field3D& f);
 

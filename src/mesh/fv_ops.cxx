@@ -254,7 +254,8 @@ const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
     const auto iyp = i.yp();
     const auto iym = i.ym();
 
-    if (bndry_flux || !mesh->lastY() || (i.y() != mesh->yend)) {
+    if (bndry_flux || mesh->periodicY(i.x()) || !mesh->lastY(i.x())
+        || (i.y() != mesh->yend)) {
 
       BoutReal c = 0.5 * (K[i] + Kup[iyp]);             // K at the upper boundary
       BoutReal J = 0.5 * (coord->J[i] + coord->J[iyp]); // Jacobian at boundary
@@ -268,7 +269,8 @@ const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
     }
 
     // Calculate flux at lower surface
-    if (bndry_flux || !mesh->firstY() || (i.y() != mesh->ystart)) {
+    if (bndry_flux || mesh->periodicY(i.x()) || !mesh->firstY(i.x())
+        || (i.y() != mesh->ystart)) {
       BoutReal c = 0.5 * (K[i] + Kdown[iym]);           // K at the lower boundary
       BoutReal J = 0.5 * (coord->J[i] + coord->J[iym]); // Jacobian at boundary
 
@@ -308,33 +310,37 @@ const Field3D D4DY4(const Field3D& d_in, const Field3D& f_in) {
   Field3D result{zeroFrom(f)};
 
   for (int i = mesh->xstart; i <= mesh->xend; i++) {
-    for (int j = mesh->ystart; j <= mesh->yend; j++) {
+    // Check for boundaries
+    bool yperiodic = mesh->periodicY(i);
+    bool has_upper_boundary = !yperiodic && mesh->lastY(i);
+    bool has_lower_boundary = !yperiodic && mesh->firstY(i);
+
+    // Always calculate fluxes at upper Y cell boundary
+    const int ystart =
+        has_lower_boundary
+            ? mesh->ystart
+            : // Don't calculate flux from boundary mesh->ystart-1 into domain
+            mesh->ystart - 1; // Calculate flux from last guard cell into domain
+
+    const int yend = has_upper_boundary
+                         ? mesh->yend - 1
+                         : // Don't calculate flux from mesh->yend into boundary
+                         mesh->yend;
+
+    for (int j = ystart; j <= yend; j++) {
       for (int k = 0; k < mesh->LocalNz; k++) {
         BoutReal dy3 = SQ(coord->dy(i, j, k)) * coord->dy(i, j, k);
-        // 3rd derivative at right boundary
+        // 3rd derivative at upper boundary
 
-        BoutReal d3fdx3 =
+        BoutReal d3fdy3 =
             (f(i, j + 2, k) - 3. * f(i, j + 1, k) + 3. * f(i, j, k) - f(i, j - 1, k))
             / dy3;
 
         BoutReal flux = 0.5 * (d(i, j, k) + d(i, j + 1, k))
-                        * (coord->J(i, j, k) + coord->J(i, j + 1, k)) * d3fdx3;
+                        * (coord->J(i, j, k) + coord->J(i, j + 1, k)) * d3fdy3;
 
         result(i, j, k) += flux / (coord->J(i, j, k) * coord->dy(i, j, k));
         result(i, j + 1, k) -= flux / (coord->J(i, j + 1, k) * coord->dy(i, j + 1, k));
-
-        if (j == mesh->ystart && (!mesh->firstY())) {
-          // Left cell boundary, no flux through boundaries
-          d3fdx3 =
-              (f(i, j + 1, k) - 3. * f(i, j, k) + 3. * f(i, j - 1, k) - f(i, j - 2, k))
-              / dy3;
-
-          flux = 0.5 * (d(i, j, k) + d(i, j - 1, k))
-                 * (coord->J(i, j, k) + coord->J(i, j - 1, k)) * d3fdx3;
-
-          result(i, j, k) -= flux / (coord->J(i, j, k) * coord->dy(i, j, k));
-          result(i, j - 1, k) += flux / (coord->J(i, j - 1, k) * coord->dy(i, j - 1, k));
-        }
       }
     }
   }

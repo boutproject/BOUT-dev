@@ -436,13 +436,13 @@ public:
 
   // Y communications
 
-  ///< Is this processor first in Y?
+  /// Is this processor first in Y?
   /// Note: First on the global grid, not necessarily at a boundary
-  virtual bool firstY() const = 0;
+  [[deprecated("Please use firstY(xind) instead")]] virtual bool firstY() const = 0;
 
-  ///< Is this processor last in Y?
+  /// Is this processor last in Y?
   /// Note: Last on the global grid, not necessarily at a boundary
-  virtual bool lastY() const = 0;
+  [[deprecated("Please use lastY(xind) instead")]] virtual bool lastY() const = 0;
 
   /// Is this processor first in Y?
   /// Note: Not necessarily at a boundary, but first in the Y communicator
