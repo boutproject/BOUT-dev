@@ -5,7 +5,6 @@
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 
-
 BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar& bndry, BoutReal t) {
 
   Mesh* mesh = bndry.localmesh;
