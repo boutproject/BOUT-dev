@@ -674,6 +674,8 @@ happened will be printed::
     }
 
 
+.. _sec-physicsmodel-boundary-conditions:
+
 Boundary conditions
 ~~~~~~~~~~~~~~~~~~~
 
