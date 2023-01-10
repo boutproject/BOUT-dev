@@ -45,5 +45,9 @@ Context::Context(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal t, 
   parameters["t"] = t;
 }
 
+Context::Context(BoutReal x, BoutReal y, BoutReal z, Mesh* msh, BoutReal t)
+    : localmesh(msh), parameters{{"x", x}, {"y", y}, {"z", z}, {"t", t}}
+{}
+
 } // namespace generator
 } // namespace bout
