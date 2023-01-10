@@ -28,15 +28,8 @@ Before merging PR:
     - Be aware that this *will* update the timestamps and *possibly*
       reorder file paths in the .po and .pot files
 - [ ] Update [`CHANGELOG.md`][changelog]:
-    - Install [`github_changelog_generator`][gcg]
-        - Make sure it is at least v1.15!
-    - Run like `make changelog LAST_VERSION=vA.B.C RELEASE_BRANCH=master|next`
+    - Run [bout-changelog-generator.py LAST_RELEASE NEXT_RELEASE][bin/bout-changelog-generator.py]
         - See the docs for how to get the token
-        - `RELEASE_BRANCH` might need to be the RC branch to get
-          bugfix PRs
-    - Check [`CHANGELOG.md`][changelog]!
-        - Remove duplicate header/footer
-        - Replace extraneous escaping: `\(\)`
 - [ ] Get list of authors:
     - [ ] `git log --format='%aN' | sort | uniq`
     - [ ] Compare to list in [`CITATION.cff`][citation], add new authors
