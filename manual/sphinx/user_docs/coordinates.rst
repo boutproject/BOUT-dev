@@ -2214,7 +2214,7 @@ The perpendicular gradient is:
 .. math::
 
    \begin{aligned}
-   {\nabla}_perp &= {\nabla} - {\boldsymbol{b}}{\boldsymbol{b}}{\nabla}\\
+   {\nabla}_{\perp} &= {\nabla} - {\boldsymbol{b}}{\boldsymbol{b}}{\nabla}\\
    &= {\boldsymbol{e}}^x \frac{\partial}{\partial x} + {\boldsymbol{e}}^y \frac{\partial}{\partial y} + {\boldsymbol{e}}^z \frac{\partial}{\partial z} - \frac{g_{xy}{\boldsymbol{e}}^x}{g_{yy}}\frac{\partial}{\partial x} - {\boldsymbol{e}}^y \frac{\partial}{\partial y} - \frac{g_{yz}{\boldsymbol{e}}^z}{g_{yy}}\frac{\partial}{\partial z}\\
    &= {\boldsymbol{e}}^x\left(\frac{\partial}{\partial x} -  \frac{g_{xy}}{g_{yy}}\frac{\partial}{\partial y}\right) + {\boldsymbol{e}}^z\left(\frac{\partial}{\partial z} -  \frac{g_{yz}}{g_{yy}}\frac{\partial}{\partial y}\right)
    \end{aligned}
