@@ -42,7 +42,7 @@ public:
 protected:
   /// Possible ways to get boundary values
   std::shared_ptr<FieldGenerator> gen_values;
-  Field3D* field_values;
+  Field3D* field_values{nullptr};
   BoutReal real_value{0.};
 
   /// Where to take boundary values from - the generator, field or BoutReal
@@ -60,7 +60,7 @@ public:
   using BoundaryOpPar::clone;
 
   // Note: All methods must implement clone, except for modifiers (see below)
-  BoundaryOpPar* clone(BoundaryRegionPar* region, const std::list<std::string>& args) {
+  BoundaryOpPar* clone(BoundaryRegionPar* region, const std::list<std::string>& args) override {
     if (!args.empty()) {
       try {
         real_value = stringToReal(args.front());
@@ -76,7 +76,7 @@ public:
     return new T(region);
   }
 
-  BoundaryOpPar* clone(BoundaryRegionPar* region, Field3D* f) { return new T(region, f); }
+  BoundaryOpPar* clone(BoundaryRegionPar* region, Field3D* f) override { return new T(region, f); }
 
   using BoundaryOpBase::apply;
   void apply(Field2D& UNUSED(f)) final {

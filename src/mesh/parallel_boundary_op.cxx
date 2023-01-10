@@ -5,7 +5,6 @@
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 
-using bout::generator::Context;
 
 BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar& bndry, BoutReal t) {
 
@@ -16,7 +15,7 @@ BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar& bndry, BoutReal t) {
   switch (value_type) {
   case ValueType::GEN:
     return gen_values->generate(
-        Context(bndry.s_x, bndry.s_y, bndry.s_z, CELL_CENTRE, mesh, t));
+        bout::generator::Context(bndry.s_x, bndry.s_y, bndry.s_z, CELL_CENTRE, mesh, t));
   case ValueType::FIELD:
     // FIXME: Interpolate to s_x, s_y, s_z...
     value = (*field_values)(bndry.x, bndry.y, bndry.z);
@@ -146,5 +145,4 @@ void BoundaryOpPar_neumann::apply(Field3D& f, BoutReal t) {
 
     f_next(x, y + bndry->dir, z) = f(x, y, z) + bndry->dir * value * dy;
   }
-
 }
