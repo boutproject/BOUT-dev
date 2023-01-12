@@ -138,9 +138,9 @@ private:
   int lag_jacobian;               ///< Re-use Jacobian
   bool use_coloring;              ///< Use matrix coloring
 
-  bool scale_rhs;           ///< Scale time derivatives?
-  Vec rhs_scaling_factors;  ///< Factors to multiply RHS function
-  Vec jac_row_inv_norms;    ///< 1 / Norm of the rows of the Jacobian
+  bool scale_rhs;          ///< Scale time derivatives?
+  Vec rhs_scaling_factors; ///< Factors to multiply RHS function
+  Vec jac_row_inv_norms;   ///< 1 / Norm of the rows of the Jacobian
 };
 
 #else

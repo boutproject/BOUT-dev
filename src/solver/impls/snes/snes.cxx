@@ -65,8 +65,10 @@ static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
 ///
 /// Output Parameters:
 ///   J - Jacobian matrix (not altered in this routine)
-///   B - newly computed Jacobian matrix to use with preconditioner (generally the same as J)
-PetscErrorCode SNESComputeJacobianScaledColor(SNES snes, Vec x1, Mat J, Mat B, void *ctx) {
+///   B - newly computed Jacobian matrix to use with preconditioner (generally the same as
+///   J)
+PetscErrorCode SNESComputeJacobianScaledColor(SNES snes, Vec x1, Mat J, Mat B,
+                                              void* ctx) {
   PetscErrorCode err = SNESComputeJacobianDefaultColor(snes, x1, J, B, ctx);
 
   if ((err != 0) or (ctx == nullptr)) {
@@ -145,10 +147,10 @@ SNESSolver::SNESSolver(Options* opts)
                        .withDefault(50)),
       use_coloring((*options)["use_coloring"]
                        .doc("Use matrix coloring to calculate Jacobian?")
-                   .withDefault<bool>(true)),
+                       .withDefault<bool>(true)),
       scale_rhs((*options)["scale_rhs"]
-                .doc("Scale time derivatives?")
-                .withDefault<bool>(false)) {}
+                    .doc("Scale time derivatives?")
+                    .withDefault<bool>(false)) {}
 
 int SNESSolver::init() {
 
@@ -1022,7 +1024,7 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat B) {
   }
 
   int ierr;
-  
+
   // Get index of rows owned by this processor
   int rstart, rend;
   MatGetOwnershipRange(B, &rstart, &rend);
@@ -1031,16 +1033,17 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat B) {
   int istart, iend;
   VecGetOwnershipRange(jac_row_inv_norms, &istart, &iend);
   if ((rstart != istart) or (rend != iend)) {
-    throw BoutException("Ownership ranges different: [{}, {}) and [{}, {})\n", rstart, rend, istart, iend);
+    throw BoutException("Ownership ranges different: [{}, {}) and [{}, {})\n", rstart,
+                        rend, istart, iend);
   }
 
   // Calculate the norm of each row of the Jacobian
-  PetscScalar *row_inv_norm_data;
+  PetscScalar* row_inv_norm_data;
   ierr = VecGetArray(jac_row_inv_norms, &row_inv_norm_data);
   CHKERRQ(ierr);
 
   PetscInt ncols;
-  const PetscScalar *vals;
+  const PetscScalar* vals;
   for (int row = rstart; row < rend; row++) {
     MatGetRow(B, row, &ncols, nullptr, &vals);
 
