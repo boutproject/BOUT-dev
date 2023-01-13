@@ -449,9 +449,7 @@ int SNESSolver::init() {
 
       // Convert local into global indices
       // Note: Omit boundary cells since those are set to -1 to indicate boundaries
-      BOUT_FOR(i, index.getRegion("RGN_NOBNDRY")) {
-        index[i] += Istart;
-      }
+      BOUT_FOR(i, index.getRegion("RGN_NOBNDRY")) { index[i] += Istart; }
 
       // Now communicate to fill guard cells
       mesh->communicate(index);
