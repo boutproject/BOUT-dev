@@ -70,6 +70,7 @@ static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
 PetscErrorCode SNESComputeJacobianScaledColor(SNES snes, Vec x1, Mat J, Mat B,
                                               void* ctx) {
   PetscErrorCode err = SNESComputeJacobianDefaultColor(snes, x1, J, B, ctx);
+  CHKERRQ(err);
 
   if ((err != 0) or (ctx == nullptr)) {
     return err;
@@ -266,24 +267,23 @@ int SNESSolver::init() {
 
       output_progress.write("Setting Jacobian matrix sizes\n");
 
-      int localN = getLocalN(); // Number of rows on this processor
       int n2d = f2d.size();
       int n3d = f3d.size();
 
-      // Set size of Matrix on each processor to localN x localN
+      // Set size of Matrix on each processor to nlocal x nlocal
       MatCreate(BoutComm::get(), &Jmf);
-      MatSetSizes(Jmf, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE);
+      MatSetSizes(Jmf, nlocal, nlocal, PETSC_DETERMINE, PETSC_DETERMINE);
       MatSetFromOptions(Jmf);
 
-      std::vector<PetscInt> d_nnz(localN);
-      std::vector<PetscInt> o_nnz(localN);
+      std::vector<PetscInt> d_nnz(nlocal);
+      std::vector<PetscInt> o_nnz(nlocal);
 
       // Set values for most points
 
       const auto star_pattern_2d = 5 * (n3d + n2d);
       const auto star_pattern_3d = 7 * n3d + 5 * n2d;
       const auto star_pattern = (mesh->LocalNz > 1) ? star_pattern_3d : star_pattern_2d;
-      for (int i = 0; i < localN; i++) {
+      for (int i = 0; i < nlocal; i++) {
         // Non-zero elements on this processor
         d_nnz[i] = star_pattern;
         // Non-zero elements on neighboring processor
@@ -296,7 +296,7 @@ int SNESSolver::init() {
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
           for (int z = 0; z < mesh->LocalNz; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
-            ASSERT2((localIndex >= 0) && (localIndex < localN));
+            ASSERT2((localIndex >= 0) && (localIndex < nlocal));
             const int num_fields = (z == 0) ? n2d + n3d : n3d;
             for (int i = 0; i < num_fields; i++) {
               d_nnz[localIndex + i] -= (n3d + n2d);
@@ -308,7 +308,7 @@ int SNESSolver::init() {
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
           for (int z = 0; z < mesh->LocalNz; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
-            ASSERT2((localIndex >= 0) && (localIndex < localN));
+            ASSERT2((localIndex >= 0) && (localIndex < nlocal));
             const int num_fields = (z == 0) ? n2d + n3d : n3d;
             for (int i = 0; i < num_fields; i++) {
               d_nnz[localIndex + i] -= (n3d + n2d);
@@ -323,7 +323,7 @@ int SNESSolver::init() {
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
           for (int z = 0; z < mesh->LocalNz; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
-            ASSERT2((localIndex >= 0) && (localIndex < localN));
+            ASSERT2((localIndex >= 0) && (localIndex < nlocal));
             const int num_fields = (z == 0) ? n2d + n3d : n3d;
             for (int i = 0; i < num_fields; i++) {
               d_nnz[localIndex + i] -= (n3d + n2d);
@@ -335,7 +335,7 @@ int SNESSolver::init() {
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
           for (int z = 0; z < mesh->LocalNz; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
-            ASSERT2((localIndex >= 0) && (localIndex < localN));
+            ASSERT2((localIndex >= 0) && (localIndex < nlocal));
             const int num_fields = (z == 0) ? n2d + n3d : n3d;
             for (int i = 0; i < num_fields; i++) {
               d_nnz[localIndex + i] -= (n3d + n2d);
@@ -448,7 +448,10 @@ int SNESSolver::init() {
       MatGetOwnershipRange(Jmf, &Istart, &Iend);
 
       // Convert local into global indices
-      index += Istart;
+      // Note: Omit boundary cells since those are set to -1 to indicate boundaries
+      BOUT_FOR(i, index.getRegion("RGN_NOBNDRY")) {
+        index[i] += Istart;
+      }
 
       // Now communicate to fill guard cells
       mesh->communicate(index);
