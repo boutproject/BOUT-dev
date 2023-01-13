@@ -508,7 +508,10 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
 
     // Set the relative and absolute tolerances
     PCSetType(pc, pctype.c_str());
+#if !PETSC_VERSION_GE(3, 18, 0)
+    // This was removed in 3.18
     PCGAMGSetSymGraph(pc, PETSC_TRUE);
+#endif
   }
   lib.setOptionsFromInputFile(ksp);
 
