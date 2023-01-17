@@ -115,6 +115,18 @@ public:
   BoutReal length() const { return bndry_position->length; }
   char valid() const { return bndry_position->valid; }
 
+  // setter
+  void setValid(char val) { bndry_position->valid = val; }
+
+  bool contains(const Ind3D ind) const {
+    for (auto it = begin(bndry_points); end(bndry_points) != it; ++it) {
+      if (it->index == ind) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // extrapolate a given point to the boundary
   BoutReal extrapolate_o1(const Field3D& f) const { return f[ind()]; }
   BoutReal extrapolate_o2(const Field3D& f) const {
