@@ -113,6 +113,11 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
 
   interp_from_aligned->calcWeights(zt_prime_from);
 
+  int yvalid = mesh.LocalNy - 2 * mesh.ystart;
+  // avoid overflow - no stencil need more than 5 points
+  if (yvalid > 20) {
+    yvalid = 20;
+  }
   // Create regions for parallel boundary conditions
   Field2D dy;
   mesh.get(dy, "dy", 1.);
@@ -127,10 +132,9 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
               + 0.5 * (zShift(it.ind, mesh.yend + 1) - zShift(it.ind, mesh.yend)),
           0.25
-              * (dy(it.ind, mesh.yend) // dy/2
-                 + dy(it.ind, mesh.yend + 1)),
-          0. // angle?
-      );
+              * (1                                                     // dy/2
+                 + dy(it.ind, mesh.yend + 1) / dy(it.ind, mesh.yend)), // length
+          yvalid);
     }
   }
   auto backward_boundary_xin =
@@ -144,10 +148,9 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
               + 0.5 * (zShift(it.ind, mesh.ystart) - zShift(it.ind, mesh.ystart - 1)),
           0.25
-              * (dy(it.ind, mesh.ystart - 1) // dy/2
-                 + dy(it.ind, mesh.ystart)),
-          0. // angle?
-      );
+              * (1 // dy/2
+                 + dy(it.ind, mesh.ystart - 1) / dy(it.ind, mesh.ystart)),
+          yvalid);
     }
   }
   // Create regions for parallel boundary conditions
@@ -162,10 +165,9 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
               + 0.5 * (zShift(it.ind, mesh.yend + 1) - zShift(it.ind, mesh.yend)),
           0.25
-              * (dy(it.ind, mesh.yend) // dy/2
-                 + dy(it.ind, mesh.yend + 1)),
-          0. // angle?
-      );
+              * (1 // dy/2
+                 + dy(it.ind, mesh.yend + 1) / dy(it.ind, mesh.yend)),
+          yvalid);
     }
   }
   auto backward_boundary_xout =
@@ -179,10 +181,9 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
               + 0.5 * (zShift(it.ind, mesh.ystart) - zShift(it.ind, mesh.ystart - 1)),
           0.25
-              * (dy(it.ind, mesh.ystart - 1) // dy/2
-                 + dy(it.ind, mesh.ystart)),
-          0. // angle?
-      );
+              * (dy(it.ind, mesh.ystart - 1) / dy(it.ind, mesh.ystart) // dy/2
+                 + 1),
+          yvalid);
     }
   }
 
