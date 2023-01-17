@@ -26,6 +26,8 @@
 
 #include "mask.hxx"
 
+class Options;
+
 /// Interpolate a field onto a perturbed set of points
 const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
                           const Field3D &delta_z);
@@ -271,9 +273,8 @@ public:
   static constexpr auto option_name = "type";
   static constexpr auto default_type = "hermitespline";
 
-  using Factory::create;
-  ReturnType create(Mesh* mesh = nullptr) const {
-    return Factory::create(getType(nullptr), mesh);
+  ReturnType create(Options* options = nullptr, Mesh* mesh = nullptr) const {
+    return Factory::create(getType(options), mesh);
   }
   ReturnType create(const std::string& type, MAYBE_UNUSED(Options* options)) const {
     return Factory::create(type, nullptr);

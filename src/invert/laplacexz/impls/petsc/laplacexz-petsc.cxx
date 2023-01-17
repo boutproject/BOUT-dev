@@ -264,7 +264,7 @@ LaplaceXZpetsc::~LaplaceXZpetsc() {
 
   for (auto &it : slice) {
     MatDestroy(&it.MatA);
-    if(coefs_set) {
+    if (coefs_set) {
       MatDestroy(&it.MatP);
     }
 

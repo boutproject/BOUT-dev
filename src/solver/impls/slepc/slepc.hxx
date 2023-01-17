@@ -85,7 +85,7 @@ public:
                PetscReal errest[], PetscInt nest);
 
   // These contain slepc specific code and call the advanceSolver code
-  int init(int NOUT, BoutReal TIMESTEP) override;
+  int init() override;
   int run() override;
 
   ////////////////////////////////////////
@@ -181,19 +181,16 @@ public:
       return advanceSolver->n3Dvars();
     }
   }
-  // Time steps
   void setMaxTimestep(BoutReal dt) override {
-    if (selfSolve) {
-      Solver::setMaxTimestep(dt);
-    } else {
+    if (not selfSolve) {
       advanceSolver->setMaxTimestep(dt);
     }
   }
   BoutReal getCurrentTimestep() override {
     if (selfSolve) {
-      return Solver::max_dt;
+      return Solver::getCurrentTimestep();
     }
-    { return advanceSolver->getCurrentTimestep(); }
+    return advanceSolver->getCurrentTimestep();
   }
 
   int compareState;
@@ -228,10 +225,6 @@ private:
 
   // For selfSolve=true
   Array<BoutReal> f0, f1;
-
-  // Timestep details
-  int nout;
-  BoutReal tstep;
 
   // Used for SLEPc options
   int nEig, maxIt;

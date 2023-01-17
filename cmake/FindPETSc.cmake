@@ -23,9 +23,6 @@
 #
 # Taken from https://github.com/jedbrown/cmake-modules/blob/master/FindPETSc.cmake
 
-cmake_policy(VERSION 3.3)
-cmake_policy(SET CMP0074 NEW)
-
 find_package(MPI REQUIRED)
 
 set(PETSC_VALID_COMPONENTS

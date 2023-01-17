@@ -39,7 +39,7 @@ RegisterSolver<AdamsBashforthSolver> registersolveradamsbashforth("adams-bashfor
 
 class AdamsBashforthSolver : public Solver {
 public:
-  AdamsBashforthSolver(Options* options = nullptr);
+  explicit AdamsBashforthSolver(Options* options = nullptr);
   ~AdamsBashforthSolver() = default;
 
   void resetInternalFields() override;
@@ -49,7 +49,7 @@ public:
   BoutReal getCurrentTimestep() override { return timestep; }
 
   // Setup solver and scheme
-  int init(int nout, BoutReal tstep) override;
+  int init() override;
 
   // Actually evolve
   int run() override;
@@ -72,21 +72,27 @@ private:
   std::deque<BoutReal> times;          // Times at which above states calculated
 
   // Inputs
-  BoutReal atol, rtol;   // Tolerances for adaptive timestepping
-  BoutReal max_timestep; // Maximum timestep
-  int mxstep;            // Maximum number of internal steps between outputs
-  bool adaptive;         // Adapt timestep?
-  bool adaptive_order;   // Adapt order?
-  bool
-      followHighOrder; // If true and adaptive the solution used is the more accurate one.
-  BoutReal dtFac;      // Factor we scale timestep estimate by when adapting.
-  int maximum_order;   // The maximum order scheme to use.
-  BoutReal timestep;   // The internal timestep
+  /// Tolerances for adaptive timestepping
+  BoutReal atol, rtol;
+  /// Maximum number of internal steps between outputs
+  int mxstep;
+  /// Adapt timestep?
+  bool adaptive;
+  /// Adapt order?
+  bool adaptive_order;
+  /// If true and adaptive the solution used is the more accurate one.
+  bool followHighOrder;
+  /// Factor we scale timestep estimate by when adapting.
+  BoutReal dtFac;
+  /// The maximum order scheme to use.
+  int maximum_order;
+  /// Maximum timestep
+  BoutReal max_timestep;
+  /// The internal timestep
+  BoutReal timestep;
 
   // Internal vars
-  BoutReal out_timestep; // The output timestep
   int current_order;     // The current order of the scheme
-  int nsteps;            // Number of output steps
   int nlocal, neq;       // Number of variables on local processor and in total
 };
 

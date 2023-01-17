@@ -39,7 +39,7 @@
 #include <fftw3.h>
 #include <cmath>
 
-#if BOUT_USE_OPENMP 
+#if BOUT_USE_OPENMP
 #include <omp.h>
 #endif // _OPENMP
 #else
@@ -103,7 +103,7 @@ void fft_init(bool fft_measure) {
  * Real FFTs
  ***********************************************************/
 
-#if ! BOUT_USE_OPENMP
+#if !BOUT_USE_OPENMP
 // Serial code
 void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
 #if !BOUT_HAS_FFTW

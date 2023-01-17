@@ -108,7 +108,7 @@ struct ArrayData {
   }
 
   /// Move assignment
-  ArrayData<T>& operator=(ArrayData<T>&& in) {
+  ArrayData<T>& operator=(ArrayData<T>&& in) noexcept {
     if (this != &in) {
       // Free resources
 #if BOUT_HAS_UMPIRE
@@ -131,6 +131,7 @@ struct ArrayData {
 
   inline T& operator[](int ind) { return data[ind]; }
   inline const T& operator[](int ind) const { return data[ind]; }
+
 private:
   int len; ///< Size of the array
   T* data; ///< Array of data
@@ -199,9 +200,7 @@ public:
   /*!
    * Copy constructor
    */
-  Array(const Array& other) noexcept {
-    ptr = other.ptr;
-  }
+  Array(const Array& other) noexcept { ptr = other.ptr; }
 
   /*!
    * Assignment operator

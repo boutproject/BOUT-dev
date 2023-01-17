@@ -1,23 +1,17 @@
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 
-
-set(BOUT_DEPENDS "")
-
 # determined in SetupCompilers.cmake
 if (BOUT_USE_MPI)
-  list(APPEND BOUT_DEPENDS mpi)
   target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
 endif ()
 
 # determined in SetupCompilers.cmake
 if (BOUT_USE_OPENMP)
-  list(APPEND BOUT_DEPENDS openmp)
   target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
 # determined in SetupCompilers.cmake
 if (BOUT_USE_CUDA)
-  list(APPEND BOUT_DEPENDS cuda)
   enable_language(CUDA)
   message(STATUS "BOUT_USE_CUDA ${CMAKE_CUDA_COMPILER}")
 
@@ -26,11 +20,7 @@ if (BOUT_USE_CUDA)
   list(FILTER BOUT_SOURCES_CXX INCLUDE REGEX ".*\.cxx")
 
   set_source_files_properties(${BOUT_SOURCES_CXX} PROPERTIES LANGUAGE CUDA )
-  # CMAKE 3.14 if we don't use deprecated FindCUDA, then need to compute CUDA_TOOLKIT_ROOT_DIR
-  #cmake 3.17 has FindCUDAToolkit
-  get_filename_component(cuda_bin_dir ${CMAKE_CUDA_COMPILER} DIRECTORY)
-  set(BOUT_CUDA_LIB_DIR ${cuda_bin_dir}/../lib64 CACHE STRING "CUDA Library DIR")
-  message(STATUS "CUDA LIBRARY DIR: ${BOUT_CUDA_LIB_DIR}")
+  find_package(CUDAToolkit)
   set_target_properties(bout++ PROPERTIES CUDA_STANDARD 14)
   set_target_properties(bout++ PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
   set_target_properties(bout++ PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -41,7 +31,6 @@ endif ()
 option(BOUT_ENABLE_CALIPER "Enable Caliper" OFF)
 if (BOUT_ENABLE_CALIPER)
   find_package(caliper REQUIRED)
-  list(APPEND BOUT_DEPENDS caliper)
   target_include_directories(bout++ PUBLIC ${caliper_INCLUDE_DIR})
   target_link_libraries(bout++ PUBLIC caliper)
 endif ()
@@ -51,7 +40,6 @@ set(BOUT_HAS_CALIPER ${BOUT_ENABLE_CALIPER})
 option(BOUT_ENABLE_UMPIRE "Enable UMPIRE memory management" OFF)
 if (BOUT_ENABLE_UMPIRE)
   find_package(UMPIRE REQUIRED)
-  list(APPEND BOUT_DEPENDS umpire)
   target_include_directories(bout++ PUBLIC ${UMPIRE_INCLUDE_DIRS}/include)
   target_link_libraries(bout++ PUBLIC umpire)
 endif ()
@@ -61,7 +49,6 @@ set(BOUT_HAS_UMPIRE ${BOUT_ENABLE_UMPIRE})
 option(BOUT_ENABLE_RAJA "Enable RAJA" OFF)
 if (BOUT_ENABLE_RAJA)
   find_package(RAJA REQUIRED)
-  list(APPEND BOUT_DEPENDS RAJA)
   message(STATUS "RAJA_CONFIG:" ${RAJA_CONFIG}) 
   string(FIND ${RAJA_CONFIG} "raja" loc)
   math(EXPR value "${loc} + 5" OUTPUT_FORMAT DECIMAL)
@@ -74,17 +61,16 @@ set(BOUT_HAS_RAJA ${BOUT_ENABLE_RAJA})
 
 # Hypre
 option(BOUT_USE_HYPRE "Enable support for Hypre solvers" OFF)
-set(HYPRE_DIR "" CACHE STRING "Point to HYPRE Install")
 if (BOUT_USE_HYPRE)
   enable_language(C)
   find_package(HYPRE REQUIRED)
-  list(APPEND BOUT_DEPENDS HYPRE)
   target_link_libraries(bout++ PUBLIC HYPRE::HYPRE)
-  if (HYPRE_CUDA)
+  if (HYPRE_WITH_CUDA AND BOUT_USE_CUDA)
      target_compile_definitions(bout++ PUBLIC "HYPRE_USING_CUDA;HYPRE_USING_UNIFIED_MEMORY")
-     target_link_libraries(bout++ PUBLIC "${BOUT_CUDA_LIB_DIR}/libcusparse_static.a;${BOUT_CUDA_LIB_DIR}/libcurand_static.a;${BOUT_CUDA_LIB_DIR}/libculibos.a;${BOUT_CUDA_LIB_DIR}/libcublas_static.a;${BOUT_CUDA_LIB_DIR}/libcublasLt_static.a")
+     target_link_libraries(bout++ PUBLIC CUDA::cusparse CUDA::curand CUDA::culibos CUDA::cublas CUDA::cublasLt)
   endif ()
 endif ()
+message(STATUS "HYPRE support: ${BOUT_USE_HYPRE}")
 set(BOUT_HAS_HYPRE ${BOUT_USE_HYPRE})
 
 # PETSc
@@ -93,7 +79,6 @@ if (BOUT_USE_PETSC)
   if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     # Cray wrappers sort this out for us
     find_package(PETSc REQUIRED)
-    list(APPEND BOUT_DEPENDS PETSc)
     target_link_libraries(bout++ PUBLIC PETSc::PETSc)
     string(JOIN " " CONFIG_PETSC_LIBRARIES ${PETSC_LIBRARIES})
     set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${CONFIG_PETSC_LIBRARIES}")
@@ -313,5 +298,3 @@ if (BOUT_USE_UUID_SYSTEM_GENERATOR)
 endif()
 message(STATUS "UUID_SYSTEM_GENERATOR: ${BOUT_USE_UUID_SYSTEM_GENERATOR}")
 set(BOUT_HAS_UUID_SYSTEM_GENERATOR ${BOUT_USE_UUID_SYSTEM_GENERATOR})
-
-message(STATUS "BOUT_DEPENDS: ${BOUT_DEPENDS}")

@@ -169,7 +169,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
                      kwave, // kwave (inverse wave length)
                      global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
                      &C1coef, &C2coef, &Dcoef,
-                     false); // Don't include guard cells in arrays
+                     false,  // Don't include guard cells in arrays
+                     false); // Z domain not periodic
       }
     }
 
@@ -246,6 +247,23 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     cr->setCoefs(a, b, c);
     cr->solve(bcmplx, xcmplx);
 
+    if (localmesh->periodicX) {
+      // Subtract X average of kz=0 mode
+      BoutReal local[2] = {
+          0.0,                               // index 0 = sum of coefficients
+          static_cast<BoutReal>(xe - xs + 1) // number of grid cells
+      };
+      for (int ix = xs; ix <= xe; ix++) {
+        local[0] += xcmplx(0, ix - xs).real();
+      }
+      BoutReal global[2];
+      MPI_Allreduce(local, global, 2, MPI_DOUBLE, MPI_SUM, localmesh->getXcomm());
+      BoutReal avg = global[0] / global[1];
+      for (int ix = xs; ix <= xe; ix++) {
+        xcmplx(0, ix - xs) -= avg;
+      }
+    }
+
     // FFT back to real space
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
@@ -296,7 +314,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   if (((global_flags & INVERT_BOTH_BNDRY_ONE) != 0) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if ((inner_boundary_flags & INVERT_BNDRY_ONE) != 0){
+  if ((inner_boundary_flags & INVERT_BNDRY_ONE) != 0) {
     inbndry = 1;
   }
   if ((outer_boundary_flags & INVERT_BNDRY_ONE) != 0) {
@@ -383,7 +401,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
                      kwave, // kwave (inverse wave length)
                      global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
                      &C1coef, &C2coef, &Dcoef,
-                     false); // Don't include guard cells in arrays
+                     false,  // Don't include guard cells in arrays
+                     false); // Z domain not periodic
       }
     }
 
@@ -435,7 +454,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
         // Take FFT in Z direction, apply shift, and put result in k1d
 
-        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0) && localmesh->firstX())
+        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
+             && localmesh->firstX())
             || ((localmesh->LocalNx - ix - 1 < outbndry)
                 && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
           // Use the values in x0 in the boundary
@@ -471,7 +491,29 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     // Solve tridiagonal systems
     cr->setCoefs(a3D, b3D, c3D);
     cr->solve(bcmplx3D, xcmplx3D);
-    // verify_solution(a3D,b3D,c3D,bcmplx3D,xcmplx3D,nsys);
+
+    if (localmesh->periodicX) {
+      // Subtract X average of kz=0 mode
+      BoutReal local[ny + 1];
+      for (int y = 0; y < ny; y++) {
+        local[y] = 0.0;
+        for (int ix = xs; ix <= xe; ix++) {
+          local[y] += xcmplx3D(y * nmode, ix - xs).real();
+        }
+      }
+      local[ny] = static_cast<BoutReal>(xe - xs + 1);
+
+      // Global reduce
+      BoutReal global[ny + 1];
+      MPI_Allreduce(local, global, ny + 1, MPI_DOUBLE, MPI_SUM, localmesh->getXcomm());
+      // Subtract average from kz=0 modes
+      for (int y = 0; y < ny; y++) {
+        BoutReal avg = global[y] / global[ny];
+        for (int ix = xs; ix <= xe; ix++) {
+          xcmplx3D(y * nmode, ix - xs) -= avg;
+        }
+      }
+    }
 
     // FFT back to real space
     BOUT_OMP(parallel) {

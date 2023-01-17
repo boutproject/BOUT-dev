@@ -270,7 +270,7 @@ The mesh spacing is given by the public members `Coordinates::dx`,
     Field2D zlength();   // Computed from dz
 
 `Coordinates::FieldMetric` can be either `Field2D` or if BOUT++ has
-been configured with `--enable-metric-3d` then a `Field3D`.
+been configured with ``--enable-metric-3d`` then a `Field3D`.
 
 Metrics
 -------

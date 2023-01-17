@@ -1,28 +1,28 @@
 /*!************************************************************************
  * Provides access to the Hypre library, handling initialisation and
- * finalisation. 
+ * finalisation.
  *
  * Usage
  * -----
  *
  * #include <bout/hyprelib.hxx>
- * 
+ *
  * class MyClass {
  *   public:
- *   
+ *
  *   private:
  *     HypreLib lib;
  * };
- * 
+ *
  *
  * This will then automatically initialise Hypre the first time an object
  * is created, and finalise it when the last object is destroyed.
- * 
+ *
  **************************************************************************
  * Copyright 2012 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -40,73 +40,43 @@
  *
  **************************************************************************/
 
-class HypreLib;
-
-#ifndef __HYPRELIB_H__
-#define __HYPRELIB_H__
+#ifndef BOUT_HYPRELIB_H
+#define BOUT_HYPRELIB_H
 
 #include "bout/build_config.hxx"
 
-class Options;
-
+namespace bout {
 #if BOUT_HAS_HYPRE
-
-#include <HYPRE.h>
-#include "HYPRE_utilities.h"
-#include "_hypre_utilities.h"
-
-
 /*!
  * Handles initialisation and finalisation of Hypre library.
- * The first instance which is created initialises Hypre
+ * The first instance which is created initialises Hypre.
  * Keeps a count of the number of how many instances exist
- * When the last instance is destroyed it finalises Hypre.
- */ 
+ * when the last instance is destroyed it finalises Hypre.
+ */
 class HypreLib {
 public:
-  /*!
-   * Ensure that Hypre has been initialised
-   */
   explicit HypreLib();
 
-  /// Copy constructor
-  HypreLib(const HypreLib &other) noexcept;
+  HypreLib(const HypreLib& other) noexcept;
+  HypreLib(HypreLib&& other) noexcept;
+  HypreLib& operator=(const HypreLib& other) = default;
+  HypreLib& operator=(HypreLib&& other) = default;
 
-  /// Move constructor
-  HypreLib(HypreLib &&other) noexcept;
-
-  /// Assignment doesn't do anything
-  HypreLib& operator=(const HypreLib &other) noexcept {
-    return *this;
-  }
-
-  /// Move assignment doesn't do anything
-  HypreLib& operator=(HypreLib &&other) noexcept {
-    return *this;
-  }
-  
   ~HypreLib();
-  
-  static void cleanup(); 
+
+  static void cleanup();
+
 private:
   static int count; ///< How many instances?
 };
 
-
 #else // BOUT_HAS_HYPRE
-
-#include "unused.hxx"
-
 
 class HypreLib {
 public:
-  explicit HypreLib(Options* UNUSED(opt) = nullptr) {}
-  ~HypreLib() {}
-  
   static void cleanup() {}
 };
 
 #endif // BOUT_HAS_HYPRE
-
-
-#endif //  __HYPRELIB_H__
+} // namespace bout
+#endif //  BOUT_HYPRELIB_H

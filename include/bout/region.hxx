@@ -110,13 +110,12 @@ class BoutMask;
 ///     }
 //
 
-
 #define BOUT_FOR_SERIAL(index, region)                                                   \
   for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();        \
        block < end; ++block)                                                             \
     for (auto index = block->first; index < block->second; ++index)
 
-#if BOUT_USE_OPENMP 
+#if BOUT_USE_OPENMP
 #define BOUT_FOR_OMP(index, region, omp_pragmas)                                         \
   BOUT_OMP(omp_pragmas)                                                                  \
   for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
@@ -158,9 +157,9 @@ enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
 ///     auto index = std::begin(region);
 ///
 ///     result = field[index->yp()] - field[index->ym()];
-template<IND_TYPE N>
+template <IND_TYPE N>
 struct SpecificInd {
-  int ind = -1; ///< 1D index into Field
+  int ind = -1;         ///< 1D index into Field
   int ny = -1, nz = -1; ///< Sizes of y and z dimensions
 
   SpecificInd() = default;
@@ -412,7 +411,6 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
   out << ", " << "Small block count : " << stats.numSmallBlocks;
   return out;
 }
-
 
 /// Specifies a set of indices which can be iterated over and begin()
 /// and end() methods for range-based for loops.

@@ -210,8 +210,8 @@ private:
 
   BoutReal rmp_factor;  // Multiply amplitude by this factor
   BoutReal rmp_ramp;    // Ramp-up time for RMP [s]. negative -> instant
-  BoutReal rmp_freq;    // Amplitude oscillation frequency [Hz] (negative -> no oscillation)
-  BoutReal rmp_rotate;  // Rotation rate [Hz]
+  BoutReal rmp_freq; // Amplitude oscillation frequency [Hz] (negative -> no oscillation)
+  BoutReal rmp_rotate; // Rotation rate [Hz]
   bool rmp_vac_mask;
   Field3D rmp_Psi0; // Parallel vector potential from Resonant Magnetic Perturbation (RMP)
                     // coils
@@ -478,7 +478,9 @@ protected:
 
     noshear = options["noshear"].withDefault(false);
 
-    relax_j_vac = options["relax_j_vac"].doc("Relax vacuum current to zero").withDefault<bool>(false);
+    relax_j_vac = options["relax_j_vac"]
+                      .doc("Relax vacuum current to zero")
+                      .withDefault<bool>(false);
     relax_j_tconst = options["relax_j_tconst"]
                          .doc("Time constant for relaxation of vacuum current. Alfven "
                               "(normalised) units")
@@ -533,14 +535,18 @@ protected:
                             .withDefault(false);
 
     // Parallel differencing
-    parallel_lr_diff = options["parallel_lr_diff"]
+    parallel_lr_diff =
+        options["parallel_lr_diff"]
             .doc("Use left and right shifted stencils for parallel differences?")
             .withDefault<bool>(false);
 
     // RMP-related options
-    include_rmp = options["include_rmp"].doc("Read RMP field rmp_A from grid?").withDefault<bool>(false);
+    include_rmp = options["include_rmp"]
+                      .doc("Read RMP field rmp_A from grid?")
+                      .withDefault<bool>(false);
 
-    simple_rmp = options["simple_rmp"].doc("Include a simple RMP model?").withDefault<bool>(false);
+    simple_rmp =
+        options["simple_rmp"].doc("Include a simple RMP model?").withDefault<bool>(false);
     rmp_factor = options["rmp_factor"].withDefault(1.0);
     rmp_ramp = options["rmp_ramp"].withDefault(-1.0);
     rmp_freq = options["rmp_freq"].withDefault(-1.0);
@@ -559,7 +565,9 @@ protected:
     core_lund = options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
     hyperresist = options["hyperresist"].withDefault(-1.0);
     ehyperviscos = options["ehyperviscos"].withDefault(-1.0);
-    spitzer_resist = options["spitzer_resist"].doc("Use Spitzer resistivity?").withDefault<bool>(false);
+    spitzer_resist = options["spitzer_resist"]
+                         .doc("Use Spitzer resistivity?")
+                         .withDefault<bool>(false);
     Zeff = options["Zeff"].withDefault(2.0); // Z effective
 
     // Inner boundary damping
@@ -627,7 +635,8 @@ protected:
     su_lengthr = options["su_lengthr"].withDefault(0.15);
 
     // Compressional terms
-    phi_curv = options["phi_curv"].doc("ExB compression in P equation?").withDefault<bool>(true);
+    phi_curv =
+        options["phi_curv"].doc("ExB compression in P equation?").withDefault<bool>(true);
     g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
 
     x = (Psixy - Psiaxis) / (Psibndry - Psiaxis);
@@ -1533,7 +1542,7 @@ protected:
 
     ddt(U) += b0xcv * Grad(P); // curvature term
 
-    if (!nogradparj) { // Parallel current term
+    if (!nogradparj) {                                 // Parallel current term
       ddt(U) -= SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
     }
 
@@ -1693,7 +1702,7 @@ protected:
                 * D2DX2(P) * (Tbar / Lbar / Lbar); // radial diffusion
     }
 
-    if (sink_P > 0.0) { // sink terms
+    if (sink_P > 0.0) {                                                  // sink terms
       ddt(P) -= sink_P * sink_tanhxr(P0, P, sp_width, sp_length) * Tbar; // sink
     }
 

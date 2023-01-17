@@ -58,11 +58,6 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // non-local communications
 
-  MPI_Request sendToProc(int xproc, int yproc, BoutReal* buffer, int size,
-                         int tag) override;
-  comm_handle receiveFromProc(int xproc, int yproc, BoutReal* buffer, int size,
-                              int tag) override;
-
   int getNXPE() override;       ///< The number of processors in the X direction
   int getNYPE() override;       ///< The number of processors in the Y direction
   int getXProcIndex() override; ///< This processor's index in X direction
@@ -149,16 +144,6 @@ class BoutMesh : public Mesh {
   bool lastY() const override;
   bool firstY(int xpos) const override;
   bool lastY(int xpos) const override;
-  int UpXSplitIndex() override;
-  int DownXSplitIndex() override;
-  int sendYOutIndest(BoutReal* buffer, int size, int tag) override;
-  int sendYOutOutdest(BoutReal* buffer, int size, int tag) override;
-  int sendYInIndest(BoutReal* buffer, int size, int tag) override;
-  int sendYInOutdest(BoutReal* buffer, int size, int tag) override;
-  comm_handle irecvYOutIndest(BoutReal* buffer, int size, int tag) override;
-  comm_handle irecvYOutOutdest(BoutReal* buffer, int size, int tag) override;
-  comm_handle irecvYInIndest(BoutReal* buffer, int size, int tag) override;
-  comm_handle irecvYInOutdest(BoutReal* buffer, int size, int tag) override;
 
   // Boundary iteration
   RangeIterator iterateBndryLowerY() const override;
@@ -187,7 +172,7 @@ class BoutMesh : public Mesh {
   BoutReal getIxseps1() const { return ixseps1; }
   BoutReal getIxseps2() const { return ixseps2; }
 
-  void outputVars(Datafile& file) override;
+  void outputVars(Options& output_options) override;
 
   int getGlobalXIndex(int xlocal) const override;
   int getGlobalXIndexNoBoundaries(int xlocal) const override;
@@ -312,7 +297,6 @@ private:
   /// Is this processor in the core region?
   bool MYPE_IN_CORE{false};
 
-  using Mesh::YGLOBAL;
   int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
   int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
 

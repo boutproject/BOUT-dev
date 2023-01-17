@@ -5,13 +5,13 @@
 #include <map>
 
 namespace {
-  /// Associate each Coordinates object with an Array object
-  /// which contains the coordinates data in striped form.
-  ///
-  /// Note: This association could perhaps be done by putting
-  ///       the Array inside Coordinates, but this keeps things decoupled
-  std::map<const Coordinates*, Array<BoutReal>> coords_store;
-}
+/// Associate each Coordinates object with an Array object
+/// which contains the coordinates data in striped form.
+///
+/// Note: This association could perhaps be done by putting
+///       the Array inside Coordinates, but this keeps things decoupled
+std::map<const Coordinates*, Array<BoutReal>> coords_store;
+} // namespace
 
 CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
   ASSERT0(coords != nullptr);
@@ -40,16 +40,16 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
 
   // Copy data from Coordinates variable into data array
   // Uses the symbol to look up the corresponding Offset
-#define COPY_STRIPE1(symbol)                                           \
+#define COPY_STRIPE1(symbol) \
   data[stripe_size * ind.ind + static_cast<int>(Offset::symbol)] = coords->symbol[ind];
 
   // Implement copy for each argument
-#define COPY_STRIPE(...)                                \
+#define COPY_STRIPE(...) \
   { MACRO_FOR_EACH(COPY_STRIPE1, __VA_ARGS__) }
 
   // Iterate over all points in the field
   // Note this could be 2D or 3D, depending on FieldMetric type
-  for (const auto &ind : coords->dx.getRegion("RGN_ALL")) {
+  for (const auto& ind : coords->dx.getRegion("RGN_ALL")) {
     COPY_STRIPE(dx, dy, dz);
     COPY_STRIPE(d1_dx, d1_dy, d1_dz);
     COPY_STRIPE(J);

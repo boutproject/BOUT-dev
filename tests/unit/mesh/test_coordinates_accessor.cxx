@@ -23,7 +23,7 @@ TEST_F(CoordinatesAccessorTest, CreateAccessor) {
   // Basic sanity checks
   EXPECT_TRUE(acc.mesh_nz == mesh->LocalNz);
   EXPECT_TRUE(acc.data != nullptr);
-  EXPECT_FLOAT_EQ(mesh->getCoordinates()->dx(0,0,0), acc.dx(0));
+  EXPECT_FLOAT_EQ(mesh->getCoordinates()->dx(0, 0, 0), acc.dx(0));
 }
 
 TEST_F(CoordinatesAccessorTest, CreateTwoAccessors) {
@@ -64,24 +64,24 @@ TEST_F(CoordinatesAccessorTest, ClearBoth) {
 
   // Make a new Coordinates object to access
   Coordinates coords{mesh,
-                     FieldMetric{1.0}, // dx
-                     FieldMetric{1.0}, // dy
-                     FieldMetric{1.0}, // dz
-                     FieldMetric{1.0}, // J
-                     FieldMetric{1.0}, // Bxy
-                     FieldMetric{1.0}, // g11
-                     FieldMetric{1.0}, // g22
-                     FieldMetric{1.0}, // g33
-                     FieldMetric{0.0}, // g12
-                     FieldMetric{0.0}, // g13
-                     FieldMetric{0.0}, // g23
-                     FieldMetric{1.0}, // g_11
-                     FieldMetric{1.0}, // g_22
-                     FieldMetric{1.0}, // g_23
-                     FieldMetric{0.0}, // g_12
-                     FieldMetric{0.0}, // g_13
-                     FieldMetric{0.0}, // g_23
-                     FieldMetric{0.0}, // ShiftTorsion
+                     FieldMetric{1.0},  // dx
+                     FieldMetric{1.0},  // dy
+                     FieldMetric{1.0},  // dz
+                     FieldMetric{1.0},  // J
+                     FieldMetric{1.0},  // Bxy
+                     FieldMetric{1.0},  // g11
+                     FieldMetric{1.0},  // g22
+                     FieldMetric{1.0},  // g33
+                     FieldMetric{0.0},  // g12
+                     FieldMetric{0.0},  // g13
+                     FieldMetric{0.0},  // g23
+                     FieldMetric{1.0},  // g_11
+                     FieldMetric{1.0},  // g_22
+                     FieldMetric{1.0},  // g_23
+                     FieldMetric{0.0},  // g_12
+                     FieldMetric{0.0},  // g_13
+                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
   // Need to set geometry information
   coords.G1 = coords.G2 = coords.G3 = 0.2;
@@ -104,24 +104,24 @@ TEST_F(CoordinatesAccessorTest, ClearOneTwo) {
 
   // Make a new Coordinates object to access
   Coordinates coords{mesh,
-                     FieldMetric{1.0}, // dx
-                     FieldMetric{1.0}, // dy
-                     FieldMetric{1.0}, // dz
-                     FieldMetric{1.0}, // J
-                     FieldMetric{1.0}, // Bxy
-                     FieldMetric{1.0}, // g11
-                     FieldMetric{1.0}, // g22
-                     FieldMetric{1.0}, // g33
-                     FieldMetric{0.0}, // g12
-                     FieldMetric{0.0}, // g13
-                     FieldMetric{0.0}, // g23
-                     FieldMetric{1.0}, // g_11
-                     FieldMetric{1.0}, // g_22
-                     FieldMetric{1.0}, // g_23
-                     FieldMetric{0.0}, // g_12
-                     FieldMetric{0.0}, // g_13
-                     FieldMetric{0.0}, // g_23
-                     FieldMetric{0.0}, // ShiftTorsion
+                     FieldMetric{1.0},  // dx
+                     FieldMetric{1.0},  // dy
+                     FieldMetric{1.0},  // dz
+                     FieldMetric{1.0},  // J
+                     FieldMetric{1.0},  // Bxy
+                     FieldMetric{1.0},  // g11
+                     FieldMetric{1.0},  // g22
+                     FieldMetric{1.0},  // g33
+                     FieldMetric{0.0},  // g12
+                     FieldMetric{0.0},  // g13
+                     FieldMetric{0.0},  // g23
+                     FieldMetric{1.0},  // g_11
+                     FieldMetric{1.0},  // g_22
+                     FieldMetric{1.0},  // g_23
+                     FieldMetric{0.0},  // g_12
+                     FieldMetric{0.0},  // g_13
+                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
   // Need to set geometry information
   coords.G1 = coords.G2 = coords.G3 = 0.2;
@@ -146,24 +146,24 @@ TEST_F(CoordinatesAccessorTest, ClearTwoOneNone) {
 
   // Make a new Coordinates object to access
   Coordinates coords{mesh,
-                     FieldMetric{1.0}, // dx
-                     FieldMetric{1.0}, // dy
-                     FieldMetric{1.0}, // dz
-                     FieldMetric{1.0}, // J
-                     FieldMetric{1.0}, // Bxy
-                     FieldMetric{1.0}, // g11
-                     FieldMetric{1.0}, // g22
-                     FieldMetric{1.0}, // g33
-                     FieldMetric{0.0}, // g12
-                     FieldMetric{0.0}, // g13
-                     FieldMetric{0.0}, // g23
-                     FieldMetric{1.0}, // g_11
-                     FieldMetric{1.0}, // g_22
-                     FieldMetric{1.0}, // g_23
-                     FieldMetric{0.0}, // g_12
-                     FieldMetric{0.0}, // g_13
-                     FieldMetric{0.0}, // g_23
-                     FieldMetric{0.0}, // ShiftTorsion
+                     FieldMetric{1.0},  // dx
+                     FieldMetric{1.0},  // dy
+                     FieldMetric{1.0},  // dz
+                     FieldMetric{1.0},  // J
+                     FieldMetric{1.0},  // Bxy
+                     FieldMetric{1.0},  // g11
+                     FieldMetric{1.0},  // g22
+                     FieldMetric{1.0},  // g33
+                     FieldMetric{0.0},  // g12
+                     FieldMetric{0.0},  // g13
+                     FieldMetric{0.0},  // g23
+                     FieldMetric{1.0},  // g_11
+                     FieldMetric{1.0},  // g_22
+                     FieldMetric{1.0},  // g_23
+                     FieldMetric{0.0},  // g_12
+                     FieldMetric{0.0},  // g_13
+                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
   // Need to set geometry information
   coords.G1 = coords.G2 = coords.G3 = 0.2;

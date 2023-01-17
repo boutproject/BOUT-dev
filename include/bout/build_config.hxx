@@ -57,4 +57,3 @@ constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 #endif
 
 #endif // BOUT_BUILD_OPTIONS_HXX
-

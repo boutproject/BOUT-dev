@@ -40,10 +40,10 @@
 
 #warning LaplaceXY requires Hypre. No LaplaceXY available
 
+#include "bout/globalindexer.hxx"
 #include <bout/mesh.hxx>
 #include <boutexception.hxx>
 #include <options.hxx>
-#include "bout/globalindexer.hxx"
 
 /*!
  * Create a dummy class so that code will compile
@@ -64,25 +64,16 @@ public:
 
 #else // BOUT_HAS_HYPRE
 
+class Mesh;
+
 #include "utils.hxx"
 #include <bout/hypre_interface.hxx>
-#include <bout/mesh.hxx>
-#include <cyclic_reduction.hxx>
-
-#include "HYPRE.h"
-#include "HYPRE_parcsr_ls.h"
 
 class LaplaceXY2Hypre {
 public:
-  /*!
-   * Constructor
-   */
   LaplaceXY2Hypre(Mesh* m = nullptr, Options* opt = nullptr,
                   const CELL_LOC loc = CELL_CENTRE);
-  /*!
-   * Destructor
-   */
-  ~LaplaceXY2Hypre();
+  ~LaplaceXY2Hypre() = default;
 
   /*!
    * Set coefficients (A, B) in equation:
@@ -107,22 +98,22 @@ public:
    * The solution as a Field2D. On failure an exception will be raised
    *
    */
-   Field2D solve(Field2D& rhs, Field2D& x0);
+  Field2D solve(Field2D& rhs, Field2D& x0);
 
   /*!
    * Preconditioner function
    * This is called by Hypre via a static function.
    * and should not be called by external users
    */
-  //int precon(HYPRE_IJVector x, HYPRE_IJVector y);
+  // int precon(HYPRE_IJVector x, HYPRE_IJVector y);
 
 private:
   Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
   IndexerPtr<Field2D> indexConverter;
-  bout::HypreMatrix<Field2D> *M;
-  bout::HypreVector<Field2D> *x;
-  bout::HypreVector<Field2D> *b;
-  bout::HypreSystem<Field2D> *linearSystem;
+  bout::HypreMatrix<Field2D> M;
+  bout::HypreVector<Field2D> x;
+  bout::HypreVector<Field2D> b;
+  bout::HypreSystem<Field2D> linearSystem;
 
   // Y derivatives
   bool include_y_derivs; // Include Y derivative terms?

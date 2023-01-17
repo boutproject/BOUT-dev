@@ -11,20 +11,20 @@
  * Based on model code,  Yining Qin update GPU RAJA code since 1117-2020
  *******************************************************************************/
 
-#define DISABLE_RAJA 0        // Turn off RAJA in this file?
+#define DISABLE_RAJA 0 // Turn off RAJA in this file?
 
-#define EVOLVE_JPAR false     // Evolve ddt(Jpar) rather than ddt(Psi)?
-#define RELAX_J_VAC false     // Relax to zero-current in the vacuum?
-#define EHALL false           // Include electron pressure effects in Ohm's law?
-#define DIAMAG_PHI0 true      // Balance ExB against Vd for stationary equilibrium?
-#define DIAMAG_GRAD_T false   // Include Grad_par(Te) term in Psi equation?
-#define HYPERRESIST true      // Enable hyper-resistivity term?
-#define EHYPERVISCOS false    // Enable electron hyper-viscosity?
-#define INCLUDE_RMP false     // Include external magnetic field perturbation?
-#define GRADPARJ true  // parallel j term in vorticity (inverse of nogradparj setting)
-#define VISCOS_PERP false     // Perpendicular viscosity
-#define EVOLVE_PRESSURE true  // If false, switch off all pressure evolution
-#define NONLINEAR false       // Include non-linear terms?
+#define EVOLVE_JPAR false   // Evolve ddt(Jpar) rather than ddt(Psi)?
+#define RELAX_J_VAC false   // Relax to zero-current in the vacuum?
+#define EHALL false         // Include electron pressure effects in Ohm's law?
+#define DIAMAG_PHI0 true    // Balance ExB against Vd for stationary equilibrium?
+#define DIAMAG_GRAD_T false // Include Grad_par(Te) term in Psi equation?
+#define HYPERRESIST true    // Enable hyper-resistivity term?
+#define EHYPERVISCOS false  // Enable electron hyper-viscosity?
+#define INCLUDE_RMP false   // Include external magnetic field perturbation?
+#define GRADPARJ true     // parallel j term in vorticity (inverse of nogradparj setting)
+#define VISCOS_PERP false // Perpendicular viscosity
+#define EVOLVE_PRESSURE true // If false, switch off all pressure evolution
+#define NONLINEAR false      // Include non-linear terms?
 
 /*******************************************************************************/
 
@@ -48,7 +48,7 @@
 #include <invert_laplace.hxx>
 #include <smoothing.hxx>
 
-#include <bout/rajalib.hxx>  // Defines BOUT_FOR_RAJA
+#include <bout/rajalib.hxx> // Defines BOUT_FOR_RAJA
 
 #if BOUT_HAS_HYPRE
 #include <bout/invert/laplacexy2_hypre.hxx>
@@ -67,28 +67,23 @@ CELL_LOC loc = CELL_CENTRE;
                         compiletime, runtime);                                  \
   }
 
-/// Concatenate two macros, evaluating first. Utility macro
-#define CONCAT_(A, B) A##B
-#define CONCAT(A, B) CONCAT_(A, B)
-
 /// Decide whether an expression is evaluated.
 /// Note: In C++17 or later this might be replaced by constexpr
 ///
 /// If the first argument is true, evaluate to expr
 ///  false -> 0.0
 ///  Other -> Probably invalid symbol, compile error
-#define EVAL_IF(setting, expr) CONCAT(EVAL_IF_, setting)(expr)
+#define EVAL_IF(setting, expr) BOUT_CONCAT(EVAL_IF_, setting)(expr)
 #define EVAL_IF_true(expr) (expr)
 #define EVAL_IF_false(expr) 0.0
 
 /// Gradient along perturbed magnetic field
 /// Note: This relies on Psi_acc, B0_acc, i, i2d and rmp_Psi_acc
-#define GRAD_PARP(f_acc)                                                \
-  (Grad_par(f_acc, i)                                                   \
-  + EVAL_IF(NONLINEAR,                                                  \
-            bracket(Psi_acc, f_acc, i) * B0_acc[i2d]                    \
-            + EVAL_IF(INCLUDE_RMP,                                      \
-                      bracket(rmp_Psi_acc, f_acc, i) * B0_acc[i2d])))
+#define GRAD_PARP(f_acc)                              \
+  (Grad_par(f_acc, i)                                 \
+   + EVAL_IF(NONLINEAR,                               \
+             bracket(Psi_acc, f_acc, i) * B0_acc[i2d] \
+                 + EVAL_IF(INCLUDE_RMP, bracket(rmp_Psi_acc, f_acc, i) * B0_acc[i2d])))
 
 /// Set default options
 /// This sets sensible defaults for when it's not set in the input
@@ -100,11 +95,11 @@ BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
 class ELMpb : public PhysicsModel {
 private:
   // 2D inital profiles
-  Field2D J0, P0;         // Current and pressure
-  Vector2D b0xcv;         // Curvature term
-  Field2D beta;           // Used for Vpar terms
+  Field2D J0, P0; // Current and pressure
+  Vector2D b0xcv; // Curvature term
+  Field2D beta;   // Used for Vpar terms
   Coordinates::FieldMetric gradparB;
-  Field2D phi0;           // When diamagnetic terms used
+  Field2D phi0; // When diamagnetic terms used
   Field2D Psixy, x;
   Coordinates::FieldMetric U0; // 0th vorticity of equilibrium flow,
   // radial flux coordinate, normalized radial flux coordinate
@@ -268,13 +263,13 @@ private:
 
   bool phi_constraint; // Solver for phi using a solver constraint
 
-  bool include_rmp;     // Include RMP coil perturbation
-  bool simple_rmp;      // Just use a simple form for the perturbation
+  bool include_rmp; // Include RMP coil perturbation
+  bool simple_rmp;  // Just use a simple form for the perturbation
 
-  BoutReal rmp_factor;  // Multiply amplitude by this factor
-  BoutReal rmp_ramp;    // Ramp-up time for RMP [s]. negative -> instant
-  BoutReal rmp_freq;    // Amplitude oscillation frequency [Hz] (negative -> no oscillation)
-  BoutReal rmp_rotate;  // Rotation rate [Hz]
+  BoutReal rmp_factor; // Multiply amplitude by this factor
+  BoutReal rmp_ramp;   // Ramp-up time for RMP [s]. negative -> instant
+  BoutReal rmp_freq; // Amplitude oscillation frequency [Hz] (negative -> no oscillation)
+  BoutReal rmp_rotate; // Rotation rate [Hz]
   bool rmp_vac_mask;
   Field3D rmp_Psi0; // Parallel vector potential from Resonant Magnetic Perturbation (RMP)
                     // coils
@@ -433,9 +428,8 @@ public:
 
     density = options["density"].doc("Number density [m^-3]").withDefault(1.0e19);
 
-    evolve_jpar = options["evolve_jpar"]
-                       .doc("If true, evolve J raher than Psi")
-                       .withDefault(false);
+    evolve_jpar =
+        options["evolve_jpar"].doc("If true, evolve J raher than Psi").withDefault(false);
     phi_constraint = options["phi_constraint"]
                          .doc("Use solver constraint for phi?")
                          .withDefault(false);
@@ -481,7 +475,8 @@ public:
       throw BoutException("Invalid choice of bracket method. Must be 0 - 3\n");
     }
 
-    bm_mag_flag = options["bm_mag_flag"].doc("magnetic flutter Poisson Bracket").withDefault(0);
+    bm_mag_flag =
+        options["bm_mag_flag"].doc("magnetic flutter Poisson Bracket").withDefault(0);
     switch (bm_mag_flag) {
     case 0: {
       bm_mag = BRACKET_STD;
@@ -516,7 +511,8 @@ public:
     diamag_grad_t = options["diamag_grad_t"]
                         .doc("Grad_par(Te) term in Psi equation")
                         .withDefault(diamag);
-    diamag_phi0 = options["diamag_phi0"].doc("Include equilibrium phi0").withDefault(diamag);
+    diamag_phi0 =
+        options["diamag_phi0"].doc("Include equilibrium phi0").withDefault(diamag);
     dia_fact = options["dia_fact"]
                    .doc("Scale diamagnetic effects by this factor")
                    .withDefault(1.0);
@@ -540,7 +536,9 @@ public:
 
     bool noshear = options["noshear"].withDefault<bool>(false);
 
-    relax_j_vac = options["relax_j_vac"].doc("Relax vacuum current to zero").withDefault<bool>(false);
+    relax_j_vac = options["relax_j_vac"]
+                      .doc("Relax vacuum current to zero")
+                      .withDefault<bool>(false);
     relax_j_tconst = options["relax_j_tconst"]
                          .doc("Time constant for relaxation of vacuum current. Alfven "
                               "(normalised) units")
@@ -595,30 +593,38 @@ public:
                             .withDefault(false);
 
     // Parallel differencing
-    parallel_lr_diff = options["parallel_lr_diff"]
+    parallel_lr_diff =
+        options["parallel_lr_diff"]
             .doc("Use left and right shifted stencils for parallel differences?")
             .withDefault<bool>(false);
 
     // RMP-related options
-    include_rmp = options["include_rmp"].doc("Read RMP field rmp_A from grid?").withDefault<bool>(false);
+    include_rmp = options["include_rmp"]
+                      .doc("Read RMP field rmp_A from grid?")
+                      .withDefault<bool>(false);
 
-    simple_rmp = options["simple_rmp"].doc("Include a simple RMP model?").withDefault<bool>(false);
+    simple_rmp =
+        options["simple_rmp"].doc("Include a simple RMP model?").withDefault<bool>(false);
     rmp_factor = options["rmp_factor"].withDefault(1.0);
     rmp_ramp = options["rmp_ramp"].withDefault(-1.0);
     rmp_freq = options["rmp_freq"].withDefault(-1.0);
     rmp_rotate = options["rmp_rotate"].withDefault(0.0);
 
     // Vacuum region control
-    vacuum_pressure = options["vacuum_pressure"]
+    vacuum_pressure =
+        options["vacuum_pressure"]
             .doc("Fraction of peak pressure, below which is considered vacuum.")
             .withDefault(0.02);
-    vacuum_trans = options["vacuum_trans"]
+    vacuum_trans =
+        options["vacuum_trans"]
             .doc("Vacuum boundary transition width, as fraction of peak pressure.")
             .withDefault(0.005);
 
     // Resistivity and hyper-resistivity options
-    vac_lund = options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
-    core_lund = options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
+    vac_lund =
+        options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
+    core_lund =
+        options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
     hyperresist =
         options["hyperresist"].doc("Hyper-resistivity coefficient").withDefault(-1.0);
     ehyperviscos = options["ehyperviscos"]
@@ -633,7 +639,8 @@ public:
     damp_width = options["damp_width"]
                      .doc("Width of the radial damping regions, in grid cells")
                      .withDefault(0);
-    damp_t_const = options["damp_t_const"]
+    damp_t_const =
+        options["damp_t_const"]
             .doc("Time constant for damping in radial regions. Normalised time units.")
             .withDefault(0.1);
 
@@ -642,7 +649,8 @@ public:
     viscos_perp = options["viscos_perp"].doc("Perpendicular viscosity").withDefault(-1.0);
     hyperviscos = options["hyperviscos"].doc("Radial hyperviscosity").withDefault(-1.0);
 
-    diffusion_par = options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
+    diffusion_par =
+        options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
     diffusion_p4 = options["diffusion_p4"]
                        .doc("parallel hyper-viscous diffusion for pressure")
                        .withDefault(-1.0);
@@ -694,7 +702,8 @@ public:
     su_lengthr = options["su_lengthr"].withDefault(0.15);
 
     // Compressional terms
-    phi_curv = options["phi_curv"].doc("ExB compression in P equation?").withDefault<bool>(true);
+    phi_curv =
+        options["phi_curv"].doc("ExB compression in P equation?").withDefault<bool>(true);
     g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
 
     x = (Psixy - Psiaxis) / (Psibndry - Psiaxis);
@@ -1165,7 +1174,7 @@ public:
       setPrecon(&ELMpb::precon);
 
       // Set Jacobian
-      setJacobian( (jacobianfunc) &ELMpb::jacobian );
+      setJacobian((jacobianfunc)&ELMpb::jacobian);
     }
 
     // Diamagnetic phi0
@@ -1584,10 +1593,10 @@ public:
     // Note: Capture all class member variables into local scope
     //       or an illegal memory access may occur on GPUs
 
-    BOUT_FOR_RAJA(i, Jpar.getRegion("RGN_NOBNDRY"),
-		  CAPTURE(delta_i, hyperresist, relax_j_tconst,
-			  dnorm, ehyperviscos, viscos_perp)) {
-      int i2d = static_cast<int>(i) / Jpar_acc.mesh_nz;  // An index for 2D objects
+    BOUT_FOR_RAJA(
+        i, Jpar.getRegion("RGN_NOBNDRY"),
+        CAPTURE(delta_i, hyperresist, relax_j_tconst, dnorm, ehyperviscos, viscos_perp)) {
+      int i2d = static_cast<int>(i) / Jpar_acc.mesh_nz; // An index for 2D objects
 
       ////////////////////////////////////////////////////
       // Parallel electric field
@@ -1595,38 +1604,38 @@ public:
 #if EVOLVE_JPAR
       // Evolving parallel current ddt(Jpar)
 
-      ddt(Jpar_acc)[i] =
-          - Grad_par(B0U_acc, i) / B0_acc[i2d] + eta_acc[i] * Delp2(Jpar_acc, i)
+      ddt(Jpar_acc)[i] = -Grad_par(B0U_acc, i) / B0_acc[i2d]
+                         + eta_acc[i] * Delp2(Jpar_acc, i)
 
-          - EVAL_IF(RELAX_J_VAC, // Relax current to zero
-                    vac_mask_acc[i] * Jpar_acc[i] / relax_j_tconst)
-        ;
+                         - EVAL_IF(RELAX_J_VAC, // Relax current to zero
+                                   vac_mask_acc[i] * Jpar_acc[i] / relax_j_tconst);
 
 #else
       // Evolve vector potential ddt(psi)
-      ddt(Psi_acc)[i] = - GRAD_PARP(phi_acc) + eta_acc[i] * Jpar_acc[i]
+      ddt(Psi_acc)[i] =
+          -GRAD_PARP(phi_acc) + eta_acc[i] * Jpar_acc[i]
 
-        + EVAL_IF(EHALL, // electron parallel pressure
-                  0.25 * delta_i * (GRAD_PARP(P_acc) + bracket(P0_acc, Psi_acc, i)))
+          + EVAL_IF(EHALL, // electron parallel pressure
+                    0.25 * delta_i * (GRAD_PARP(P_acc) + bracket(P0_acc, Psi_acc, i)))
 
-        - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
-                  bracket(phi0_acc, Psi_acc, i))
+          - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
+                    bracket(phi0_acc, Psi_acc, i))
 
-        + EVAL_IF(DIAMAG_GRAD_T, // grad_par(T_e) correction
-                  1.71 * dnorm * 0.5 * GRAD_PARP(P_acc) / B0_acc[i2d])
+          + EVAL_IF(DIAMAG_GRAD_T, // grad_par(T_e) correction
+                    1.71 * dnorm * 0.5 * GRAD_PARP(P_acc) / B0_acc[i2d])
 
-        - EVAL_IF(HYPERRESIST, // Hyper-resistivity
-                  eta_acc[i] * hyperresist * Delp2(Jpar_acc, i))
+          - EVAL_IF(HYPERRESIST, // Hyper-resistivity
+                    eta_acc[i] * hyperresist * Delp2(Jpar_acc, i))
 
-        - EVAL_IF(EHYPERVISCOS, // electron Hyper-viscosity
-                  eta_acc[i] * ehyperviscos * Delp2(Jpar2_acc, i))
-      ;
+          - EVAL_IF(EHYPERVISCOS, // electron Hyper-viscosity
+                    eta_acc[i] * ehyperviscos * Delp2(Jpar2_acc, i));
 #endif
 
       ////////////////////////////////////////////////////
       // Vorticity equation
 
-      ddt(U_acc)[i] = SQ(B0_acc[i2d]) * b0xGrad_dot_Grad(Psi_acc, J0_acc, i)
+      ddt(U_acc)[i] =
+          SQ(B0_acc[i2d]) * b0xGrad_dot_Grad(Psi_acc, J0_acc, i)
 
           + EVAL_IF(INCLUDE_RMP, // External magnetic field perturbation
                     SQ(B0_acc[i2d]) * b0xGrad_dot_Grad(rmp_Psi_acc, J0_acc, i))
@@ -1641,38 +1650,35 @@ public:
                     bracket(phi_acc, U_acc, i) * B0_acc[i2d])
 
           + EVAL_IF(VISCOS_PERP, // Perpendicular viscosity
-                    viscos_perp * Delp2(U_acc, i))
-          ;
+                    viscos_perp * Delp2(U_acc, i));
 
       ////////////////////////////////////////////////////
       // Pressure equation
 
 #if EVOLVE_PRESSURE
-      ddt(P_acc)[i] = - b0xGrad_dot_Grad(phi_acc, P0_acc, i)
+      ddt(P_acc)[i] = -b0xGrad_dot_Grad(phi_acc, P0_acc, i)
 
-        - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
-                  b0xGrad_dot_Grad(phi0_acc, P_acc, i))
+                      - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
+                                b0xGrad_dot_Grad(phi0_acc, P_acc, i))
 
-        - EVAL_IF(NONLINEAR, // Advection
-                  bracket(phi_acc, P_acc, i) * B0_acc[i2d])
-        ;
+                      - EVAL_IF(NONLINEAR, // Advection
+                                bracket(phi_acc, P_acc, i) * B0_acc[i2d]);
 
 #else
       ddt(P_acc)[i] = 0.0;
 #endif
-
     };
 
-    // Terms which are not yet single index operators
-    // Note: Terms which are included in the single index loop
-    //       may be commented out here, to allow comparison/testing
+      // Terms which are not yet single index operators
+      // Note: Terms which are included in the single index loop
+      //       may be commented out here, to allow comparison/testing
 
-    ////////////////////////////////////////////////////
-    // Parallel electric field
+      ////////////////////////////////////////////////////
+      // Parallel electric field
 
 #if not EVOLVE_JPAR
     // Vector potential
-    //ddt(Psi) = -Grad_parP(phi, loc) + eta * Jpar;
+    // ddt(Psi) = -Grad_parP(phi, loc) + eta * Jpar;
 
     // if (eHall) { // electron parallel pressure
     //   ddt(Psi) += 0.25 * delta_i
@@ -1726,7 +1732,7 @@ public:
     // Vorticity equation
 
     // Grad j term
-    //ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi, J0, CELL_CENTRE);
+    // ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi, J0, CELL_CENTRE);
 
     // if (include_rmp) {
     //   ddt(U) += SQ(B0) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
@@ -1858,7 +1864,7 @@ public:
 
     if (evolve_pressure) {
 
-      //ddt(P) -= b0xGrad_dot_Grad(phi, P0);
+      // ddt(P) -= b0xGrad_dot_Grad(phi, P0);
 
       // if (diamag_phi0) { // Equilibrium flow
       //   ddt(P) -= b0xGrad_dot_Grad(phi0, P);

@@ -8,39 +8,46 @@
 
 namespace FV {
 
-  // Div ( a Laplace_perp(f) )  -- Vorticity
-  const Field3D Div_a_Laplace_perp(const Field3D &a, const Field3D &f) {
-    ASSERT2(a.getLocation() == f.getLocation());
+// Div ( a Grad_perp(f) ) -- ∇⊥ ( a ⋅ ∇⊥ f) --  Vorticity
+Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
+  ASSERT2(a.getLocation() == f.getLocation());
 
-    Mesh *mesh = a.getMesh();
+  Mesh* mesh = a.getMesh();
 
-    Field3D result{zeroFrom(f)};
+  Field3D result{zeroFrom(f)};
 
-    Coordinates *coord = f.getCoordinates();
-    
-    // Flux in x
-  
-    int xs = mesh->xstart-1;
-    int xe = mesh->xend;
+  Coordinates* coord = f.getCoordinates();
 
-    ASSERT2(xs >= 0);
+  // Flux in x
 
-    for (int i = xs; i <= xe; i++) {
-      for (int j = mesh->ystart; j <= mesh->yend; j++) {
-        for (int k = 0; k < mesh->LocalNz; k++) {
-          // Calculate flux from i to i+1 in x direction
+  int xs = mesh->xstart - 1;
+  int xe = mesh->xend;
 
-          BoutReal fout = 0.5 * (a(i, j, k) + a(i + 1, j, k))
-                          * (coord->J(i, j, k) * coord->g11(i, j, k)
-                             + coord->J(i + 1, j, k) * coord->g11(i + 1, j, k))
-                          * (f(i + 1, j, k) - f(i, j, k))
-                          / (coord->dx(i, j, k) + coord->dx(i + 1, j, k));
+  /*
+    if(mesh->firstX())
+    xs += 1;
+  */
+  /*
+    if(mesh->lastX())
+    xe -= 1;
+  */
 
-          result(i, j, k) += fout / (coord->dx(i, j, k) * coord->J(i, j, k));
-          result(i + 1, j, k) -= fout / (coord->dx(i + 1, j, k) * coord->J(i + 1, j, k));
-        }
+  for (int i = xs; i <= xe; i++) {
+    for (int j = mesh->ystart; j <= mesh->yend; j++) {
+      for (int k = 0; k < mesh->LocalNz; k++) {
+        // Calculate flux from i to i+1
+
+        BoutReal fout = 0.5 * (a(i, j, k) + a(i + 1, j, k))
+                        * (coord->J(i, j, k) * coord->g11(i, j, k)
+                           + coord->J(i + 1, j, k) * coord->g11(i + 1, j, k))
+                        * (f(i + 1, j, k) - f(i, j, k))
+                        / (coord->dx(i, j, k) + coord->dx(i + 1, j, k));
+
+        result(i, j, k) += fout / (coord->dx(i, j, k) * coord->J(i, j, k));
+        result(i + 1, j, k) -= fout / (coord->dx(i + 1, j, k) * coord->J(i + 1, j, k));
       }
     }
+  }
 
     const bool fci = f.hasParallelSlices() && a.hasParallelSlices();
 
@@ -151,7 +158,7 @@ namespace FV {
     }
     
     return result;
-  }
+}
 
   const Field3D Div_par_K_Grad_par(const Field3D &Kin, const Field3D &fin, bool bndry_flux) {
     TRACE("FV::Div_par_K_Grad_par");
@@ -181,7 +188,8 @@ namespace FV {
       const auto iyp = i.yp();
       const auto iym = i.ym();
 
-      if (bndry_flux || !mesh->lastY() || (i.y() != mesh->yend)) {
+      if (bndry_flux || mesh->periodicY(i.x()) || !mesh->lastY(i.x())
+          || (i.y() != mesh->yend)) {
 
         BoutReal c = 0.5*(K[i] + Kup[iyp]); // K at the upper boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iyp]); // Jacobian at boundary
@@ -193,9 +201,10 @@ namespace FV {
             
         result[i] += flux / (coord->dy[i] * coord->J[i]);
       }
-      
+
       // Calculate flux at lower surface
-      if (bndry_flux || !mesh->firstY() || (i.y() != mesh->ystart)) {
+      if (bndry_flux || mesh->periodicY(i.x()) || !mesh->firstY(i.x())
+          || (i.y() != mesh->ystart)) {
         BoutReal c = 0.5*(K[i] + Kdown[iym]); // K at the lower boundary
         BoutReal J = 0.5*(coord->J[i] + coord->J[iym]); // Jacobian at boundary
         
@@ -233,45 +242,43 @@ namespace FV {
     Field3D f = are_unaligned ? toFieldAligned(f_in, "RGN_NOX") : f_in;
 
     Field3D result{zeroFrom(f)};
-    
-    for(int i=mesh->xstart;i<=mesh->xend;i++)
-      for(int j=mesh->ystart;j<=mesh->yend;j++) {
+
+    for (int i = mesh->xstart; i <= mesh->xend; i++) {
+      // Check for boundaries
+      bool yperiodic = mesh->periodicY(i);
+      bool has_upper_boundary = !yperiodic && mesh->lastY(i);
+      bool has_lower_boundary = !yperiodic && mesh->firstY(i);
+
+      // Always calculate fluxes at upper Y cell boundary
+      const int ystart =
+          has_lower_boundary
+              ? mesh->ystart
+              : // Don't calculate flux from boundary mesh->ystart-1 into domain
+              mesh->ystart - 1; // Calculate flux from last guard cell into domain
+
+      const int yend = has_upper_boundary
+                           ? mesh->yend - 1
+                           : // Don't calculate flux from mesh->yend into boundary
+                           mesh->yend;
+
+      for (int j = ystart; j <= yend; j++) {
         for(int k=0;k<mesh->LocalNz;k++) {
           BoutReal dy3 = SQ(coord->dy(i, j, k)) * coord->dy(i, j, k);
-          // 3rd derivative at right boundary
-          
-          BoutReal d3fdx3 = (
-                             f(i,j+2,k)
-                             - 3.*f(i,j+1,k)
-                             + 3.*f(i,j,  k)
-                             -    f(i,j-1,k)
-                             ) / dy3;
+          // 3rd derivative at upper boundary
+
+          BoutReal d3fdy3 =
+              (f(i, j + 2, k) - 3. * f(i, j + 1, k) + 3. * f(i, j, k) - f(i, j - 1, k))
+              / dy3;
 
           BoutReal flux = 0.5 * (d(i, j, k) + d(i, j + 1, k))
-                          * (coord->J(i, j, k) + coord->J(i, j + 1, k)) * d3fdx3;
+                          * (coord->J(i, j, k) + coord->J(i, j + 1, k)) * d3fdy3;
 
           result(i, j, k) += flux / (coord->J(i, j, k) * coord->dy(i, j, k));
           result(i, j + 1, k) -= flux / (coord->J(i, j + 1, k) * coord->dy(i, j + 1, k));
-
-          if(j == mesh->ystart && (!mesh->firstY())) {
-            // Left cell boundary, no flux through boundaries
-            d3fdx3 = (
-                      f(i,j+1,k)
-                      - 3.*f(i,j,  k)
-                      + 3.*f(i,j-1,k)
-                      -    f(i,j-2,k)
-                      ) / dy3;
-
-            flux = 0.5 * (d(i, j, k) + d(i, j - 1, k))
-                   * (coord->J(i, j, k) + coord->J(i, j - 1, k)) * d3fdx3;
-
-            result(i, j, k) -= flux / (coord->J(i, j, k) * coord->dy(i, j, k));
-            result(i, j - 1, k) +=
-                flux / (coord->J(i, j - 1, k) * coord->dy(i, j - 1, k));
-          }
         }
       }
-    
+    }
+
     // Convert result back to non-aligned coordinates
     return are_unaligned ? fromFieldAligned(result, "RGN_NOBNDRY") : result;
   }

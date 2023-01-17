@@ -47,6 +47,9 @@
 #include <output.hxx>
 #include <utils.hxx>
 
+#include "parallel_boundary_region.hxx"
+#include "boundary_region.hxx"
+
 #include <algorithm>
 #include <iterator>
 #include <set>
@@ -1466,33 +1469,6 @@ int BoutMesh::wait(comm_handle handle) {
  *             Non-Local Communications
  ***************************************************************/
 
-MPI_Request BoutMesh::sendToProc(int xproc, int yproc, BoutReal *buffer, int size,
-                                 int tag) {
-  Timer timer("comms");
-
-  MPI_Request request{};
-
-  mpi->MPI_Isend(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(xproc, yproc), tag,
-                 BoutComm::get(), &request);
-
-  return request;
-}
-
-comm_handle BoutMesh::receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size,
-                                      int tag) {
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle *ch = get_handle(0, 0);
-
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(xproc, yproc), tag,
-                 BoutComm::get(), ch->request);
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
-}
-
 int BoutMesh::getNXPE() { return NXPE; }
 
 int BoutMesh::getNYPE() { return NYPE; }
@@ -1612,161 +1588,6 @@ bool BoutMesh::lastY(int xpos) const {
     MPI_Comm_rank(comm_outer, &rank);
   }
   return rank == size - 1;
-}
-
-int BoutMesh::UpXSplitIndex() { return UDATA_XSPLIT; }
-
-int BoutMesh::DownXSplitIndex() { return DDATA_XSPLIT; }
-
-int BoutMesh::sendYOutIndest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == NYPE - 1) {
-    return 1;
-  }
-
-  Timer timer("comms");
-
-  if (UDATA_INDEST != -1) {
-    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_INDEST, tag, BoutComm::get());
-  } else {
-    throw BoutException("Expected UDATA_INDEST to exist, but it does not.");
-  }
-  return 0;
-}
-
-int BoutMesh::sendYOutOutdest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == NYPE - 1) {
-    return 1;
-  }
-
-  Timer timer("comms");
-
-  if (UDATA_OUTDEST != -1) {
-    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, tag, BoutComm::get());
-  } else {
-    throw BoutException("Expected UDATA_OUTDEST to exist, but it does not.");
-  }
-
-  return 0;
-}
-
-int BoutMesh::sendYInIndest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == 0) {
-    return 1;
-  }
-
-  Timer timer("comms");
-
-  if (DDATA_INDEST != -1) {
-    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_INDEST, tag, BoutComm::get());
-  } else {
-    throw BoutException("Expected DDATA_INDEST to exist, but it does not.");
-  }
-
-  return 0;
-}
-
-int BoutMesh::sendYInOutdest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == 0) {
-    return 1;
-  }
-
-  Timer timer("comms");
-
-  if (DDATA_OUTDEST != -1) {
-    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, tag, BoutComm::get());
-  } else {
-    throw BoutException("Expected DDATA_OUTDEST to exist, but it does not.");
-  }
-
-  return 0;
-}
-
-comm_handle BoutMesh::irecvYOutIndest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == NYPE - 1) {
-    return nullptr;
-  }
-
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
-
-  if (UDATA_INDEST != -1) {
-    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_INDEST, tag, BoutComm::get(),
-                   ch->request);
-  } else {
-    throw BoutException("Expected UDATA_INDEST to exist, but it does not.");
-  }
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
-}
-
-comm_handle BoutMesh::irecvYOutOutdest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == NYPE - 1) {
-    return nullptr;
-  }
-
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
-
-  if (UDATA_OUTDEST != -1) {
-    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, tag, BoutComm::get(),
-                   ch->request);
-  } else {
-    throw BoutException("Expected UDATA_OUTDEST to exist, but it does not.");
-  }
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
-}
-
-comm_handle BoutMesh::irecvYInIndest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == 0) {
-    return nullptr;
-  }
-
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
-
-  if (DDATA_INDEST != -1) {
-    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_INDEST, tag, BoutComm::get(),
-                   ch->request);
-  } else {
-    throw BoutException("Expected DDATA_INDEST to exist, but it does not.");
-  }
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
-}
-
-comm_handle BoutMesh::irecvYInOutdest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == 0) {
-    return nullptr;
-  }
-
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
-
-  if (DDATA_OUTDEST != -1) {
-    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, tag, BoutComm::get(),
-                   ch->request);
-  } else {
-    throw BoutException("Expected DDATA_OUTDEST to exist, but it does not.");
-  }
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
 }
 
 /****************************************************************
@@ -3236,9 +3057,10 @@ BoutReal BoutMesh::GlobalY(int jy) const {
     int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
     if (yi < ny_inner) {
+      // before upper target
       yi -= jyseps1_1 + 0.5;
     } else {
-      // Result in core between 0.5 and 1.0
+      // after upper target
       yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
     }
     return yi / nycore;
@@ -3282,9 +3104,10 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
     int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
     if (yi < ny_inner) {
+      // before upper target
       yi -= jyseps1_1 + 0.5;
     } else {
-      // Result in core between 0.5 and 1.0
+      // after upper target
       yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
     }
     return yi / nycore;
@@ -3316,62 +3139,46 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
   return yglo / static_cast<BoutReal>(nycore);
 }
 
-void BoutMesh::outputVars(Datafile &file) {
-  file.add(zperiod, "zperiod", false);
-  file.add(MXSUB, "MXSUB", false);
-  file.add(MYSUB, "MYSUB", false);
-  file.add(MZSUB, "MZSUB", false);
-  file.add(PE_XIND, "PE_XIND", false);
-  file.add(PE_YIND, "PE_YIND", false);
-  file.add(MYPE, "MYPE", false);
-  file.add(MXG, "MXG", false);
-  file.add(MYG, "MYG", false);
-  file.add(MZG, "MZG", false);
-  file.add(nx, "nx", false);
-  file.add(ny, "ny", false);
-  file.add(nz, "nz", false);
-  file.add(MZ, "MZ", false);
-  file.add(NXPE, "NXPE", false);
-  file.add(NYPE, "NYPE", false);
-  file.add(NZPE, "NZPE", false);
-  file.add(ZMAX, "ZMAX", false);
-  file.add(ZMIN, "ZMIN", false);
-  file.add(ixseps1, "ixseps1", false);
-  file.add(ixseps2, "ixseps2", false);
-  file.add(jyseps1_1, "jyseps1_1", false);
-  file.add(jyseps1_2, "jyseps1_2", false);
-  file.add(jyseps2_1, "jyseps2_1", false);
-  file.add(jyseps2_2, "jyseps2_2", false);
-  file.add(ny_inner, "ny_inner", false);
+void BoutMesh::outputVars(Options& output_options) {
+  Timer time("io");
+  output_options["zperiod"].force(zperiod, "BoutMesh");
+  output_options["MXSUB"].force(MXSUB, "BoutMesh");
+  output_options["MYSUB"].force(MYSUB, "BoutMesh");
+  output_options["MZSUB"].force(MZSUB, "BoutMesh");
+  output_options["PE_XIND"].force(PE_XIND, "BoutMesh");
+  output_options["PE_YIND"].force(PE_YIND, "BoutMesh");
+  output_options["MYPE"].force(MYPE, "BoutMesh");
+  output_options["MXG"].force(MXG, "BoutMesh");
+  output_options["MYG"].force(MYG, "BoutMesh");
+  output_options["MZG"].force(MZG, "BoutMesh");
+  output_options["nx"].force(nx, "BoutMesh");
+  output_options["ny"].force(ny, "BoutMesh");
+  output_options["nz"].force(nz, "BoutMesh");
+  output_options["MZ"].force(MZ, "BoutMesh");
+  output_options["NXPE"].force(NXPE, "BoutMesh");
+  output_options["NYPE"].force(NYPE, "BoutMesh");
+  output_options["NZPE"].force(NZPE, "BoutMesh");
+  output_options["ZMAX"].force(ZMAX, "BoutMesh");
+  output_options["ZMIN"].force(ZMIN, "BoutMesh");
+  output_options["ixseps1"].force(ixseps1, "BoutMesh");
+  output_options["ixseps2"].force(ixseps2, "BoutMesh");
+  output_options["jyseps1_1"].force(jyseps1_1, "BoutMesh");
+  output_options["jyseps1_2"].force(jyseps1_2, "BoutMesh");
+  output_options["jyseps2_1"].force(jyseps2_1, "BoutMesh");
+  output_options["jyseps2_2"].force(jyseps2_2, "BoutMesh");
+  output_options["ny_inner"].force(ny_inner, "BoutMesh");
 
-  getCoordinates()->outputVars(file);
+  getCoordinates()->outputVars(output_options);
 
   // Try and save some provenance tracking info that new enough versions of
   // hypnotoad provide in the grid file.
-  // Note with current Datafile/DataFormat implementation, must not write an
-  // empty string because it ends up as a null char* pointer, which causes a
-  // segfault.
-  if (this->get(grid_id, "grid_id") == 0 and not grid_id.empty()) {
-    file.add(grid_id, "grid_id", false);
-  }
-  if (this->get(hypnotoad_version, "hypnotoad_version") == 0
-      and not hypnotoad_version.empty()) {
-
-    file.add(hypnotoad_version, "hypnotoad_version", false);
-  }
-  if (this->get(hypnotoad_git_hash, "hypnotoad_git_hash") == 0
-      and not hypnotoad_git_hash.empty()) {
-
-    file.add(hypnotoad_git_hash, "hypnotoad_git_hash", false);
-  }
-  if (this->get(hypnotoad_git_diff, "hypnotoad_git_diff") == 0
-      and not hypnotoad_git_diff.empty()) {
-
-    file.add(hypnotoad_git_diff, "hypnotoad_git_diff", false);
-  }
-  if (this->get(hypnotoad_geqdsk_filename, "hypnotoad_geqdsk_filename") == 0
-      and not hypnotoad_geqdsk_filename.empty()) {
-
-    file.add(hypnotoad_geqdsk_filename, "hypnotoad_geqdsk_filename", false);
+  using namespace std::literals;
+  for (const auto& hypnotoad_var :
+       {"grid_id"s, "hypnotoad_version"s, "hypnotoad_git_hash"s, "hypnotoad_git_diff"s,
+        "hypnotoad_geqdsk_filename"s}) {
+    std::string temp;
+    if (this->get(temp, hypnotoad_var) == 0) {
+      output_options[hypnotoad_var].force(temp, "BoutMesh");
+    }
   }
 }

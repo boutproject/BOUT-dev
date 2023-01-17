@@ -32,9 +32,9 @@ const char DEFAULT_DIR[] = "data";
 #define GLOBALORIGIN
 
 #include "boundary_factory.hxx"
+#include "bout++-time.hxx"
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
-#include "datafile.hxx"
 #include "interpolation_xz.hxx"
 #include "interpolation_z.hxx"
 #include "invert_laplace.hxx"
@@ -42,6 +42,7 @@ const char DEFAULT_DIR[] = "data";
 #include "msg_stack.hxx"
 #include "optionsreader.hxx"
 #include "output.hxx"
+#include "bout/coordinates_accessor.hxx"
 #include "bout/hyprelib.hxx"
 #include "bout/invert/laplacexz.hxx"
 #include "bout/mpi_wrapper.hxx"
@@ -53,13 +54,12 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
 #include "bout/version.hxx"
-#include "fmt/format.h"
-#include "bout++-time.hxx"
-#include "bout/coordinates_accessor.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+
+#include <fmt/format.h>
 
 #include <csignal>
 #include <ctime>
@@ -201,10 +201,9 @@ int BoutInitialise(int& argc, char**& argv) {
     // Load from sources. Required for Field initialisation
     bout::globals::mesh->load();
 
-    bout::globals::dump =
-        setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);
-    //after MPI 
-    bout::globals::hyprelib = new HypreLib();
+    // time_report options are used in BoutFinalise, i.e. after we
+    // check for unused options
+    Options::root()["time_report"].setConditionallyUsed();
 
   } catch (const BoutException& e) {
     output_error.write(_("Error encountered during initialisation: {:s}\n"), e.what());
@@ -678,61 +677,27 @@ void setRunFinishInfo(Options& options) {
   options["run"]["finished"].force(ctime(&end_time), "Output");
 }
 
-Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir) {
-  // Check if restarting
-  const bool append = options["append"]
-                        .doc("Add output data to existing (dump) files?")
-                        .withDefault(false);
+void addBuildFlagsToOptions(Options& options) {
+  output_progress << "Setting up output (experimental output) file\n";
 
-  // Get file extensions
-  constexpr auto default_dump_format = bout::build::has_netcdf ? "nc" : "h5";
-  const auto dump_ext = options["dump_format"]
-                            .doc("File extension for output files")
-                            .withDefault(default_dump_format);
-  output_progress << "Setting up output (dump) file\n";
-
-  auto dump_file = Datafile(&(options["output"]), &mesh);
-
-  if (append) {
-    dump_file.opena("{}/BOUT.dmp.{}", data_dir, dump_ext);
-  } else {
-    dump_file.openw("{}/BOUT.dmp.{}", data_dir, dump_ext);
-  }
-
-  // Add book-keeping variables to the output files
-  dump_file.add(const_cast<BoutReal&>(bout::version::as_double), "BOUT_VERSION", false);
-  // Appends the time of dumps into an array
-  dump_file.add(simtime, "t_array", true);
-  dump_file.add(iteration, "iteration", false);
-
-  // Save mesh configuration into output file
-  mesh.outputVars(dump_file);
-
-  // Add compile-time options
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_fftw), "has_fftw");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_gettext), "has_gettext");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_lapack), "has_lapack");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_netcdf), "has_netcdf");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_legacy_netcdf),
-                    "has_legacy_netcdf");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_petsc), "has_petsc");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_pretty_function),
-                    "has_pretty_function");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_pvode), "has_pvode");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_scorep), "has_scorep");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_slepc), "has_slepc");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_sundials), "has_sundials");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_backtrace), "use_backtrace");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_color), "use_color");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_openmp), "use_openmp");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_output_debug), "use_output_debug");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_sigfpe), "use_sigfpe");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_signal), "use_signal");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_track), "use_track");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_metric_3d), "use_metric_3d");
-  dump_file.addOnce(const_cast<bool&>(bout::build::use_msgstack), "use_msgstack");
-
-  return dump_file;
+  options["BOUT_VERSION"] = bout::version::as_double;
+  options["has_fftw"] = bout::build::has_fftw;
+  options["has_gettext"] = bout::build::has_gettext;
+  options["has_lapack"] = bout::build::has_lapack;
+  options["has_netcdf"] = bout::build::has_netcdf;
+  options["has_petsc"] = bout::build::has_petsc;
+  options["has_pretty_function"] = bout::build::has_pretty_function;
+  options["has_pvode"] = bout::build::has_pvode;
+  options["has_scorep"] = bout::build::has_scorep;
+  options["has_slepc"] = bout::build::has_slepc;
+  options["has_sundials"] = bout::build::has_sundials;
+  options["use_backtrace"] = bout::build::use_backtrace;
+  options["use_color"] = bout::build::use_color;
+  options["use_openmp"] = bout::build::use_openmp;
+  options["use_output_debug"] = bout::build::use_output_debug;
+  options["use_sigfpe"] = bout::build::use_sigfpe;
+  options["use_signal"] = bout::build::use_signal;
+  options["use_track"] = bout::build::use_track;
 }
 
 void writeSettingsFile(Options& options, const std::string& data_dir,
@@ -774,9 +739,6 @@ int BoutFinalise(bool write_settings) {
   // Delete the mesh
   delete bout::globals::mesh;
 
-  // Close the output file
-  bout::globals::dump.close();
-
   // Make sure all processes have finished writing before exit
   bout::globals::mpi->MPI_Barrier(BoutComm::get());
 
@@ -809,7 +771,7 @@ int BoutFinalise(bool write_settings) {
   PetscLib::cleanup();
 
   // Call HYPER_Finalize if not already called
-  HypreLib::cleanup();
+  bout::HypreLib::cleanup();
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();
@@ -844,10 +806,7 @@ BoutMonitor::BoutMonitor(BoutReal timestep, Options& options)
           fmt::format("{}/{}", Options::root()["datadir"].withDefault(DEFAULT_DIR),
                       options["stopCheckName"]
                           .doc(_("Name of file whose existence triggers a stop"))
-                          .withDefault("BOUT.stop"))) {
-  // Add wall clock time etc to dump file
-  run_data.outputVars(bout::globals::dump);
-}
+                          .withDefault("BOUT.stop"))) {}
 
 int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
@@ -906,8 +865,10 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
       " ETA {:s}",
       time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1)));
 
-  /// Write dump file
-  bout::globals::dump.write();
+  // Write dump file
+  Options run_data_output;
+  run_data.outputVars(run_data_output);
+  solver->writeToModelOutputFile(run_data_output);
 
   if (wall_limit > 0.0) {
     // Check if enough time left
@@ -944,7 +905,8 @@ void bout_signal_handler(int sig) {
   // Set signal handler back to default to prevent possible infinite loop
   signal(SIGSEGV, SIG_DFL);
   // print number of process to stderr, so the user knows which log to check
-  fmt::print(stderr, FMT_STRING("\nSighandler called on process {:d} with sig {:d}\n"), BoutComm::rank(), sig);
+  fmt::print(stderr, FMT_STRING("\nSighandler called on process {:d} with sig {:d}\n"),
+             BoutComm::rank(), sig);
 
   switch (sig) {
   case SIGSEGV:
@@ -1014,25 +976,32 @@ char get_spin() {
  * Functions for writing run information
  **************************************************************************/
 
-/*!
- * Adds variables to the output file, for post-processing
- */
-void RunMetrics::outputVars(Datafile& file) {
-  file.add(t_elapsed, "wall_time", true);
-  file.add(wtime, "wtime", true);
-  file.add(ncalls, "ncalls", true);
-  file.add(ncalls_e, "ncalls_e", true);
-  file.add(ncalls_i, "ncalls_i", true);
-  file.add(wtime_rhs, "wtime_rhs", true);
-  file.add(wtime_invert, "wtime_invert", true);
-  file.add(wtime_comms, "wtime_comms", true);
-  file.add(wtime_io, "wtime_io", true);
-  file.add(wtime_per_rhs, "wtime_per_rhs", true);
-  file.add(wtime_per_rhs_e, "wtime_per_rhs_e", true);
-  file.add(wtime_per_rhs_i, "wtime_per_rhs_i", true);
+void RunMetrics::outputVars(Options& output_options) const {
+  Timer time("io");
+  output_options["wall_time"].assignRepeat(t_elapsed, "t", true, "Output");
+  output_options["wtime"].assignRepeat(wtime, "t", true, "Output");
+  output_options["ncalls"].assignRepeat(ncalls, "t", true, "Output");
+  output_options["ncalls_e"].assignRepeat(ncalls_e, "t", true, "Output");
+  output_options["ncalls_i"].assignRepeat(ncalls_i, "t", true, "Output");
+  output_options["wtime_rhs"].assignRepeat(wtime_rhs, "t", true, "Output");
+  output_options["wtime_invert"].assignRepeat(wtime_invert, "t", true, "Output");
+  output_options["wtime_comms"].assignRepeat(wtime_comms, "t", true, "Output");
+  output_options["wtime_io"].assignRepeat(wtime_io, "t", true, "Output");
+  output_options["wtime_per_rhs"].assignRepeat(wtime_per_rhs, "t", true, "Output");
+  output_options["wtime_per_rhs_e"].assignRepeat(wtime_per_rhs_e, "t", true, "Output");
+  output_options["wtime_per_rhs_i"].assignRepeat(wtime_per_rhs_i, "t", true, "Output");
 }
 
 void RunMetrics::calculateDerivedMetrics() {
+  // Terrible hack avoid divide-by-zero, needed because SLEPc solver
+  // doesn't call `run_rhs` which increments `ncalls`. Better fix is
+  // change `Solver::addMonitor` API to take a name so that we can
+  // replace `BoutMonitor` with a different implementation. Currently
+  // not possible because `Solver::removeMonitor` needs the pointer to
+  // the specific instance
+  if (ncalls == 0) {
+    return;
+  }
   wtime_per_rhs = wtime / ncalls;
   wtime_per_rhs_e = wtime / ncalls_e;
   wtime_per_rhs_i = wtime / ncalls_i;

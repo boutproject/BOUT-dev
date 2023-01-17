@@ -276,7 +276,7 @@ OperatorStencil<T> squareStencil(Mesh* localmesh) {
                     || (localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend))
                 && (std::is_same<T, Ind2D>::value
                     || (localmesh->zstart <= ind.z() && ind.z() <= localmesh->zend)));
-              },
+      },
       offsetsVec);
   stencil.add([](T UNUSED(ind)) -> bool { return true; }, {zero});
   return stencil;

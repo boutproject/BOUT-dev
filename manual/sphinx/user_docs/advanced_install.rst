@@ -62,6 +62,31 @@ It is possible to change flags for BOUT++ after running configure, by
 editing the ``make.config`` file. Note that this is not recommended,
 as e.g. PVODE will not be built with these flags.
 
+Install dependencies:
+---------------------
+
+BOUT++ provides a way to install some (optional) dependencies that are
+not always found on HPC systems. To do this, run from your BOUT++
+source directory:
+
+.. code-block:: bash
+
+    bin/bout-build-deps.sh
+    # or without any checks:
+    CHECK=no bin/bout-build-deps.sh
+    # or with openmp - not tested, maybe not good to add it to FFTW
+    PETSCFLAGS=--with-openmp=1 FFTWFLAGS="--enable-avx512 --enable-avx-128-fma --with-openmp --enable-threads" bin/bout-build-deps.sh
+    # and add "--enable-openmp" to ./configure
+
+Infos about options and further info can be obtained by running:
+
+.. code-block:: bash
+
+    bin/bout-build-deps.sh --help
+
+If the script fails, it might be fixed by removing the folders that
+are used for compiling and installing, and start again.
+
 .. _sec-machine-specific:
 
 Machine-specific installation
@@ -229,8 +254,8 @@ to enable AVX512 vectorization.
           ``./configure`` and before running ``make``. ``-lnetcdf``
           needs also to be removed from ``bin/bout-config`` to allow a
           successful build of the python interface. Recreation of
-          ``boutcore.pyx`` needs to be manually triggered, if
-          ``boutcore.pyx`` has already been created.
+          ``boutpp.pyx`` needs to be manually triggered, if
+          ``boutpp.pyx`` has already been created.
 
 Marconi with gnu compilers
 **************************
@@ -248,55 +273,9 @@ It is also possible to configure on Marconi using gnu compilers, which may give 
     module load python/3.6.4
     module load szip/2.1--gnu--6.1.0 zlib/1.2.8--gnu--6.1.0
 
-Then download source code for hdf5-1.12.0 (hdf5 is available in a module on
-Marconi, but has issues linking OpenMPI), netCDF-c-4.7.4, netCDF-cxx4-4.3.1,
-and FFTW-3.3.9. Optionally also SUNDIALS-5.7.0 or PETSc-3.15.0. Configure and
-compile all of the downloaded packages. Make sure to install netCDF and
-netCDF-cxx4 into the same directory (this is assumed by netCDF's linking
-strategy, and makes netCDF configuration simpler).
+    bin/bout-build-deps.sh
 
-The following configuration commands have been used successfully:
-
-* hdf5-1.12.0::
-
-    ./configure --prefix /directory/to/install/hdf5 --enable-build-mode=production
-    make
-    make install
-
-* netCDF-4.7.4 (note: using cmake to build gave errors in ``make test`` while the autotools build with ``configure`` passed all tests in ``make check``; netCDF-4.8.0 failed to link to hdf5-1.12.0 and failed tests with both cmake and autotools)::
-
-    CPPFLAGS="-I<prefix for hdf5>/include" LDFLAGS="-L<prefix for hdf5>/lib/" ./configure --prefix=/directory/to/install/netcdf
-    make
-    make install
-
-* netCDF-cxx4-4.3.1 (note: cmake build works, but installs to a ``lib64`` subdirectory, while autotools installs to ``lib``, so easier to use autotools to match netCDF)::
-
-    CPPFLAGS="-I<prefix for hdf5>/include -I<prefix for netcdf>/include" LDFLAGS="-L<prefix for hdf5>/lib/ -L<prefix for netcdf>/lib/" ./configure --prefix=<prefix for netcdf>
-    make
-    make install
-
-* FFTW-3.3.9::
-
-    ./configure --prefix /directory/to/install/fftw --enable-shared --enable-sse2 --enable-avx --enable-avx2 --enable-avx512 --enable-avx-128-fma
-    make
-    make install
-
-* SUNDIALS-5.7.0::
-
-    mkdir build
-    cd build
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/directory/to/install/sundials -DMPI_ENABLE=ON ..
-    make
-    make install
-
-* PETSc-3.15.0::
-
-    unset PETSC_DIR
-    ./configure COPTFLAGS="-O3" CXXOPTFLAGS="-O3" FOPTFLAGS="-O3" --with-batch --known-mpi-shared-libraries=1 --with-mpi-dir=$OPENMPI_HOME --download-fblaslapack --known-64-bit-blas-indices=0 --download-hypre --with-debugging=0 --prefix=/directory/to/install/petsc
-
-  then follow the instructions printed by PETSc at the end of each step to make, install and check the build.
-
-Finally example configurations for BOUT++, where you should replace <...> by appropriate directories that you used to install the libraries:
+And follow the instructions. The result could look something like this with <...> the appropriate path.
 
 * for an optimized build (some experimentation with optimisation flags would be welcome, please share the results if you do!)::
 
@@ -312,6 +291,24 @@ Ubgl
 .. code-block:: bash
 
    ./configure --with-netcdf CXXFLAGS=-DMPICH_IGNORE_CXX_SEEK CFLAGS=-DMPICH_IGNORE_CXX_SEEK --with-pdb=/usr/gapps/pact/new_s/lnx-2.5-ib --with-netcdf=/usr/local/tools/netcdf/netcdf-4.1_c++
+
+Raven / Cobra / Draco
+~~~~~~~~~~~~~~~~~~~~~
+.. code-block:: bash
+
+    module purge # or at least onload intel and impi and mkl
+    module load gcc/10 cmake/3.18 openmpi/4
+    # ensure python3 is >= python3.6 - skip if you have a newer python3 loaded
+    mkdir -p $HOME/bin ; test -e $HOME/bin/python3 || ln -s $(which python3.6) $HOME/bin/python3
+    BUILD=/ptmp/$USER/bout-deps bin/bout-build-deps.sh
+
+and follow the instructions for configuring BOUT++. To enable openMP
+for a production run use:
+
+.. code-block:: bash
+
+    module load bout-dep
+    ./configure --with-netcdf=$BOUT_DEP --with-sundials=$BOUT_DEP --with-fftw=$BOUT_DEP --with-petsc=$BOUT_DEP --enable-optimize --enable-openmp
 
 
 File formats
@@ -515,16 +512,19 @@ following steps::
 Use the following configure options to ensure PETSc is compatible with BOUT++::
 
     $ ./configure \
-      --with-clanguage=cxx \
       --with-mpi=yes \
       --with-precision=double \
       --with-scalar-type=real \
       --with-shared-libraries=1 \
       --with-debugging=0 \
+      {C,CXX,F}OPTFLAGS="-O3 -march=native" \
       --prefix=$HOME/local/petsc-version-options
 
 You may also wish to change to ``--with-debugging=yes`` in the
-arguments to ``./configure``, in order to allow debugging.
+arguments to ``./configure``, in order to allow debugging of PETSc.
+The optimisation flags need changing for cross compiling or non gcc 
+compilers. Set a different prefix to change the place PETSc will be
+installed to.
 
 .. note:: If you build BOUT++ using a standalone version of SUNDIALS,
           it is advisable to not also build PETSc with SUNDIALS.
@@ -535,7 +535,7 @@ arguments to ``./configure``, in order to allow debugging.
               --download-mumps \
               --download-scalapack \
               --download-blacs \
-              --download-fblas-lapack=1 \
+              --download-fblaslapack=1 \
               --download-parmetis \
               --download-ptscotch \
               --download-metis
@@ -608,55 +608,6 @@ NOTES:
 -  On LLNL’s Grendel, mpicxx is broken. Use mpiCC instead by passing
    “MPICXX=mpiCC” to configure. Also need to specify this to NetCDF
    library by passing “CXX=mpiCC” to NetCDF configure.
-
-.. _sec-mpi-from-source:
-
-Installing MPICH from source
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In your home directory, create
-two subdirectories: One called “install” where we’ll put the source
-code, and one called “local” where we’ll install the MPI compiler::
-
-    $ cd
-    $ mkdir install
-    $ mkdir local
-
-Download the latest stable version of MPICH from https://www.mpich.org/ and put the
-file in the “install” subdirectory created above. At the time of writing
-(January 2018), the file was called ``mpich-3.2.1.tar.gz``. Untar the file::
-
-    $ tar -xzvf mpich-3.2.1.tar.gz
-
-which will create a directory containing the source code. ’cd’ into this
-directory and run::
-
-    $ ./configure --prefix=$HOME/local
-    $ make
-    $ make install
-
-Each of which might take a while. This is the standard way of installing
-software from source, and will also be used for installing libraries
-later. The ``–prefix=`` option specifies where the software should be
-installed. Since we don’t have permission to write in the system
-directories (e.g. ``/usr/bin``), we just use a subdirectory of our home
-directory. The ``configure`` command configures the install, finding the
-libraries and commands it needs. ``make`` compiles everything using the
-options found by ``configure``. The final ``make install`` step copies
-the compiled code into the correct places under ``$HOME/local``.
-
-To be able to use the MPI compiler, you need to modify the ``PATH``
-environment variable. To do this, run::
-
-    $ export PATH=$PATH:$HOME/local/bin
-
-and add this to the end of your startup file ``$HOME/.bashrc``. If
-you’re using CSH rather than BASH, the command is::
-
-    % setenv PATH ${PATH}:${HOME}/local/bin
-
-and the startup file is ``$HOME/.cshrc``. You should now be able to run
-``mpicc`` and so have a working MPI compiler.
 
 .. _sec-fftw-from-source:
 

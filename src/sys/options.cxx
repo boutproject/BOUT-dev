@@ -13,6 +13,8 @@
 /// The source label given to default values
 const std::string Options::DEFAULT_SOURCE{_("default")};
 
+std::string Options::getDefaultSource() { return DEFAULT_SOURCE; }
+
 /// Name of the attribute to indicate an Option should always count as
 /// having been used
 constexpr auto conditionally_used_attribute = "conditionally used";
@@ -251,6 +253,41 @@ bool Options::isSection(const std::string& name) const {
   } else {
     return it->second.isSection();
   }
+}
+
+template <>
+void Options::assign<>(Field2D val, std::string source) {
+  attributes["cell_location"] = toString(val.getLocation());
+  attributes["direction_y"] = toString(val.getDirectionY());
+  attributes["direction_z"] = toString(val.getDirectionZ());
+  _set_no_check(std::move(val), std::move(source));
+}
+template <>
+void Options::assign<>(Field3D val, std::string source) {
+  attributes["cell_location"] = toString(val.getLocation());
+  attributes["direction_y"] = toString(val.getDirectionY());
+  attributes["direction_z"] = toString(val.getDirectionZ());
+  _set_no_check(std::move(val), std::move(source));
+}
+template <>
+void Options::assign<>(FieldPerp val, std::string source) {
+  attributes["cell_location"] = toString(val.getLocation());
+  attributes["direction_y"] = toString(val.getDirectionY());
+  attributes["direction_z"] = toString(val.getDirectionZ());
+  attributes["yindex_global"] = val.getGlobalIndex();
+  _set_no_check(std::move(val), std::move(source));
+}
+template <>
+void Options::assign<>(Array<BoutReal> val, std::string source) {
+  _set_no_check(std::move(val), std::move(source));
+}
+template <>
+void Options::assign<>(Matrix<BoutReal> val, std::string source) {
+  _set_no_check(std::move(val), std::move(source));
+}
+template <>
+void Options::assign<>(Tensor<BoutReal> val, std::string source) {
+  _set_no_check(std::move(val), std::move(source));
 }
 
 template <> std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
@@ -608,9 +645,122 @@ FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
     // to select a region from it using Mesh e.g. if this
     // is from the input grid file.
   }
-
-  throw BoutException(_("Value for option {:s} cannot be converted to a Field3D"),
+  throw BoutException(_("Value for option {:s} cannot be converted to a FieldPerp"),
                       full_name);
+}
+
+namespace {
+/// Visitor to convert an int, BoutReal or Array/Matrix/Tensor to the
+/// appropriate container
+template <class Container>
+struct ConvertContainer {
+  ConvertContainer(std::string error, Container similar_to_)
+      : error_message(std::move(error)), similar_to(std::move(similar_to_)) {}
+
+  Container operator()(int value) {
+    Container result(similar_to);
+    std::fill(std::begin(result), std::end(result), value);
+    return result;
+  }
+
+  Container operator()(BoutReal value) {
+    Container result(similar_to);
+    std::fill(std::begin(result), std::end(result), value);
+    return result;
+  }
+
+  Container operator()(const Container& value) { return value; }
+
+  template <class Other>
+  Container operator()(MAYBE_UNUSED(const Other& value)) {
+    throw BoutException(error_message);
+  }
+
+private:
+  std::string error_message;
+  Container similar_to;
+};
+} // namespace
+
+template <>
+Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) const {
+  if (is_section) {
+    throw BoutException(_("Option {:s} has no value"), full_name);
+  }
+
+  Array<BoutReal> result = bout::utils::visit(
+      ConvertContainer<Array<BoutReal>>{
+          fmt::format(
+              _("Value for option {:s} cannot be converted to an Array<BoutReal>"),
+              full_name),
+          similar_to},
+      value);
+
+  // Mark this option as used
+  value_used = true;
+
+  output_info << _("\tOption ") << full_name << " = Array<BoutReal>";
+  if (hasAttribute("source")) {
+    // Specify the source of the setting
+    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
+  }
+  output_info << endl;
+
+  return result;
+}
+
+template <>
+Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_to) const {
+  if (is_section) {
+    throw BoutException(_("Option {:s} has no value"), full_name);
+  }
+
+  auto result = bout::utils::visit(
+      ConvertContainer<Matrix<BoutReal>>{
+          fmt::format(
+              _("Value for option {:s} cannot be converted to an Matrix<BoutReal>"),
+              full_name),
+          similar_to},
+      value);
+
+  // Mark this option as used
+  value_used = true;
+
+  output_info << _("\tOption ") << full_name << " = Matrix<BoutReal>";
+  if (hasAttribute("source")) {
+    // Specify the source of the setting
+    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
+  }
+  output_info << endl;
+
+  return result;
+}
+
+template <>
+Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_to) const {
+  if (is_section) {
+    throw BoutException(_("Option {:s} has no value"), full_name);
+  }
+
+  auto result = bout::utils::visit(
+      ConvertContainer<Tensor<BoutReal>>{
+          fmt::format(
+              _("Value for option {:s} cannot be converted to an Tensor<BoutReal>"),
+              full_name),
+          similar_to},
+      value);
+
+  // Mark this option as used
+  value_used = true;
+
+  output_info << _("\tOption ") << full_name << " = Tensor<BoutReal>";
+  if (hasAttribute("source")) {
+    // Specify the source of the setting
+    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
+  }
+  output_info << endl;
+
+  return result;
 }
 
 // Note: This is defined here rather than in the header
@@ -716,18 +866,6 @@ void Options::setConditionallyUsed() {
 
 void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
 
-std::map<std::string, Options::OptionValue> Options::values() const {
-  std::map<std::string, OptionValue> options;
-  for (const auto& it : children) {
-    if (it.second.isValue()) {
-      options.emplace(it.first, OptionValue { bout::utils::variantToString(it.second.value),
-                                               bout::utils::variantToString(it.second.attributes.at("source")),
-                                               it.second.value_used});
-    }
-  }
-  return options;
-}
-
 std::map<std::string, const Options *> Options::subsections() const {
   std::map<std::string, const Options *> sections;
   for (const auto &it : children) {
@@ -777,6 +915,9 @@ bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
     case 's':
       source = true;
       break;
+    case 'u':
+      unused = true;
+      break;
     default:
       throw fmt::format_error("invalid format for 'Options'");
     }
@@ -824,7 +965,7 @@ bout::details::OptionsFormatterBase::format(const Options& options,
 
     std::vector<std::string> comments;
 
-    if (not options.valueUsed()) {
+    if (unused and not options.valueUsed()) {
       if (conditionally_used(options)) {
         comments.emplace_back("unused value (marked conditionally used)");
       } else {

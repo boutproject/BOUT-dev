@@ -225,7 +225,8 @@ TEST(TimerTest, Cleanup) {
               bout::testing::TimerTolerance);
 }
 
-// Don't currently know why this test fails, and also causes segfault when unwinding the tests
+// Don't currently know why this test fails, and also causes segfault when unwinding the
+// tests
 #if 1
 TEST(TimerTest, ListAllInfo) {
   Timer::cleanup();
@@ -260,8 +261,8 @@ TEST(TimerTest, ListAllInfo) {
   std::cout.rdbuf(old_cout_rdbuf);
 #else
 
-  std::stringstream   cout_capture;
-  std::streambuf*     oldbuf  = std::cout.rdbuf( cout_capture.rdbuf() );  
+  std::stringstream cout_capture;
+  std::streambuf* oldbuf = std::cout.rdbuf(cout_capture.rdbuf());
   Timer::printTimeReport();
   std::cout.rdbuf(oldbuf);
 

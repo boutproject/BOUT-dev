@@ -53,7 +53,19 @@ const BoutReal ZERO = 0.0;
 long int iopt[OPT_SIZE];
 BoutReal ropt[OPT_SIZE];
 
-PvodeSolver::PvodeSolver(Options *options) : Solver(options) {
+PvodeSolver::PvodeSolver(Options* opts)
+    : Solver(opts), use_precon((*options)["use_precon"]
+                                   .doc("Use user-supplied preconditioner")
+                                   .withDefault(false)),
+      precon_dimens(
+          (*options)["precon_dimens"].doc("Maximum Krylov dimension").withDefault(50)),
+      precon_tol((*options)["precon_tol"]
+                     .doc("Tolerance for preconditioner")
+                     .withDefault(1.0e-4)),
+      pvode_mxstep(
+          (*options)["mxstep"].doc("Maximum number of internal steps").withDefault(500)),
+      abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
+      reltol((*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5)) {
   has_constraints = false; ///< This solver doesn't have constraints
 }
 
@@ -68,31 +80,26 @@ PvodeSolver::~PvodeSolver() {
   }
 }
 
+#if SUNDIALS_VERSION_MAJOR >= 6
+#else
+#define SUN_MODIFIED_GS MODIFIED_GS
+#endif
+
 /**************************************************************************
  * Initialise
  **************************************************************************/
 
-int PvodeSolver::init(int nout, BoutReal tstep) {
+int PvodeSolver::init() {
   TRACE("Initialising PVODE solver");
 
   int mudq, mldq, mukeep, mlkeep;
   boole optIn;
   int i;
-  bool use_precon;
-  int precon_dimens;
-  BoutReal precon_tol;
 
   int n2d = n2Dvars(); // Number of 2D variables
   int n3d = n3Dvars(); // Number of 3D variables
 
-  /// Call the generic initialisation first
-  if(Solver::init(nout, tstep))
-    return 1;
-  
-  // Save nout and tstep for use in run
-  NOUT = nout;
-  TIMESTEP = tstep;
-
+  Solver::init();
   output.write("Initialising PVODE solver\n");
 
   int local_N = getLocalN();
@@ -124,7 +131,6 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
 
   ///////////// GET OPTIONS /////////////
 
-  int pvode_mxstep;
   // Compute band_width_default from actually added fields, to allow for multiple Mesh objects
   //
   // Previous implementation was equivalent to:
@@ -136,17 +142,10 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
     band_width_default += localmesh->xend - localmesh->xstart + 3;
   }
 
-  
   options->get("mudq", mudq, band_width_default);
   options->get("mldq", mldq, band_width_default);
   options->get("mukeep", mukeep, 0);
   options->get("mlkeep", mlkeep, 0);
-  options->get("atol", abstol, 1.0e-12);
-  options->get("rtol", reltol, 1.0e-5);
-  options->get("use_precon", use_precon, false);
-  options->get("precon_dimens", precon_dimens, 50);
-  options->get("precon_tol", precon_tol, 1.0e-4);
-  options->get("mxstep", pvode_mxstep, 500);
 
   pdata = PVBBDAlloc(local_N, mudq, mldq, mukeep, mlkeep, ZERO, 
                      solver_gloc, solver_cfn, static_cast<void*>(this));
@@ -178,9 +177,14 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
 
      A pointer to CVODE problem memory is returned and stored in cvode_mem.  */
 
-  optIn = TRUE; for(i=0;i<OPT_SIZE;i++)iopt[i]=0; 
-                for(i=0;i<OPT_SIZE;i++)ropt[i]=ZERO;
-		iopt[MXSTEP]=pvode_mxstep;
+  optIn = TRUE;
+  for (i = 0; i < OPT_SIZE; i++) {
+    iopt[i] = 0;
+  }
+  for (i = 0; i < OPT_SIZE; i++) {
+    ropt[i] = ZERO;
+  }
+  iopt[MXSTEP] = pvode_mxstep;
 
   cvode_mem = CVodeMalloc(neq, solver_f, simtime, u, BDF, NEWTON, SS, &reltol, &abstol,
                           this, nullptr, optIn, iopt, ropt, machEnv);
@@ -195,13 +199,12 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
      parameter delt, preconditioner setup and solve routines from the
      PVBBDPRE module, and the pointer to the preconditioner data block.    */
 
-  if(use_precon) {
-    CVSpgmr(cvode_mem, LEFT, MODIFIED_GS, precon_dimens, precon_tol, PVBBDPrecon, PVBBDPSol, pdata);
-  }else {
-    CVSpgmr(cvode_mem, NONE, MODIFIED_GS, 10, ZERO, PVBBDPrecon, PVBBDPSol, pdata);
+  if (use_precon) {
+    CVSpgmr(cvode_mem, LEFT, SUN_MODIFIED_GS, precon_dimens, precon_tol, PVBBDPrecon,
+            PVBBDPSol, pdata);
+  } else {
+    CVSpgmr(cvode_mem, NONE, SUN_MODIFIED_GS, 10, ZERO, PVBBDPrecon, PVBBDPSol, pdata);
   }
-
-  /*  CVSpgmr(cvode_mem, NONE, MODIFIED_GS, 10, 0.0, PVBBDPrecon, PVBBDPSol, pdata); */
 
   // PvodeSolver is now initialised fully
   pvode_initialised = true;
@@ -218,11 +221,11 @@ int PvodeSolver::run() {
   
   if(!pvode_initialised)
     throw BoutException("PvodeSolver not initialised\n");
-  
-  for(int i=0;i<NOUT;i++) {
-    
+
+  for (int i = 0; i < getNumberOutputSteps(); i++) {
+
     /// Run the solver for one output timestep
-    simtime = run(simtime + TIMESTEP);
+    simtime = run(simtime + getOutputTimestep());
     iteration++;
 
     /// Check if the run succeeded
@@ -234,13 +237,13 @@ int PvodeSolver::run() {
     }
     
     /// Call the monitor function
-    
-    if(call_monitors(simtime, i, NOUT)) {
+
+    if (call_monitors(simtime, i, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }
   }
-  
+
   return 0;
 }
 

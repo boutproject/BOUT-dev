@@ -3,7 +3,6 @@
 #include "field_factory.hxx"
 
 using bout::globals::mesh;
-using bout::globals::dump;
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
@@ -21,10 +20,15 @@ int main(int argc, char** argv) {
   BoutReal l_2{sqrt(mean(SQ(error), true, "RGN_NOBNDRY"))};
   BoutReal l_inf{max(abs(error), true, "RGN_NOBNDRY")};
 
-  SAVE_ONCE2(f, g);
-  SAVE_ONCE5(solution, result, error, l_2, l_inf);
-
-  dump.write();
+  Options dump;
+  dump["f"] = f;
+  dump["g"] = g;
+  dump["solution"] = solution;
+  dump["result"] = result;
+  dump["error"] = error;
+  dump["l_2"] = l_2;
+  dump["l_inf"] = l_inf;
+  bout::writeDefaultOutputFile(dump);
 
   BoutFinalise();
 }

@@ -59,9 +59,9 @@ RegisterLaplace<LaplacePetsc3dAmg> registerlaplacepetsc3damg(LAPLACE_PETSC3DAMG)
 
 class LaplacePetsc3dAmg : public Laplacian {
 public:
-  LaplacePetsc3dAmg(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-                    Mesh *mesh_in = nullptr, Solver *solver = nullptr,
-                    Datafile *dump = nullptr);
+  LaplacePetsc3dAmg(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+                    Mesh* mesh_in = nullptr, Solver* solver = nullptr,
+                    Datafile* dump = nullptr);
   ~LaplacePetsc3dAmg() override;
 
   void setCoefA(const Field2D &val) override {

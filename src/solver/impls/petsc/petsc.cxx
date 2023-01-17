@@ -58,50 +58,45 @@ extern PetscErrorCode PhysicsPCApply(PC,Vec x,Vec y);
 extern PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y);
 extern PetscErrorCode PhysicsSNESApply(SNES,Vec);
 
-PetscSolver::PetscSolver(Options *opts) : Solver(opts) {
-  has_constraints = false; // No constraints
-  J = nullptr;
-  Jmf = nullptr;
-  matfdcoloring = nullptr;
-  interpolate = (*opts)["interpolate"].withDefault(true)? PETSC_TRUE : PETSC_FALSE;
-  initialised = false;
-  bout_snes_time = .0;
-
-  output_flag = PETSC_FALSE;
-}
+PetscSolver::PetscSolver(Options* opts)
+    : Solver(opts),
+      diagnose(
+          (*options)["diagnose"].doc("Enable some diagnostic output").withDefault(false)),
+      adaptive(
+          (*options)["adaptive"].doc("Use adaptive timestepping").withDefault(false)),
+      use_precon((*options)["use_precon"]
+                     .doc("Use user-supplied preconditioning function")
+                     .withDefault(false)),
+      use_jacobian((*options)["use_jacobian"]
+                       .doc("Use user-supplied Jacobian function")
+                       .withDefault(false)),
+      abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
+      reltol((*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5)),
+      adams_moulton((*options)["adams_moulton"]
+                        .doc("Use Adams-Moulton implicit multistep method instead of BDF "
+                             "(requires PETSc to have been built with SUNDIALS)")
+                        .withDefault(false)),
+      start_timestep((*options)["start_timestep"]
+                         .doc("Initial internal timestep (defaults to output timestep)")
+                         .withDefault(getOutputTimestep())),
+      mxstep(
+          (*options)["mxstep"].doc("Number of steps between outputs").withDefault(500)) {}
 
 PetscSolver::~PetscSolver() {
-  if(initialised) {
-    // Free memory
-
-    VecDestroy(&u);
-    if (J) {MatDestroy(&J);}
-    if (Jmf) {MatDestroy(&Jmf);}
-    if (matfdcoloring) {MatFDColoringDestroy(&matfdcoloring);}
-
-    PetscBool petsc_is_finalised;
-    PetscFinalized(&petsc_is_finalised);
-
-    if (!petsc_is_finalised) {
-      // PetscFinalize may already have destroyed this object
-      TSDestroy(&ts);
-    }
-
-    initialised = false;
-  }
+  VecDestroy(&u);
+  MatDestroy(&J);
+  MatDestroy(&Jmf);
+  MatFDColoringDestroy(&matfdcoloring);
+  TSDestroy(&ts);
 }
 
 /**************************************************************************
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init() {
   PetscErrorCode  ierr;
   int             neq;
-  int             mudq, mldq, mukeep, mlkeep;
-  bool            use_precon, use_jacobian;
-  int             precon_dimens;
-  BoutReal        precon_tol;
   MPI_Comm        comm = PETSC_COMM_WORLD;
   PetscMPIInt     rank;
 
@@ -112,17 +107,12 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   PetscLogEventRegister("loop_vars",PETSC_VIEWER_CLASSID,&loop_event);
   PetscLogEventRegister("solver_f",PETSC_VIEWER_CLASSID,&solver_event);
 
-  /// Call the generic initialisation first
-  Solver::init(NOUT, TIMESTEP);
+  Solver::init();
 
   ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
   output.write("Initialising PETSc-dev solver\n");
   ierr = bout::globals::mpi->MPI_Comm_rank(comm, &rank);
   CHKERRQ(ierr);
-
-  // Save NOUT and TIMESTEP for use later
-  nout = NOUT;
-  tstep = TIMESTEP;
 
   PetscInt local_N = getLocalN(); // Number of evolving variables on this processor
 
@@ -171,41 +161,14 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   ierr = TSSetRHSFunction(ts,rhs_vec,solver_f,this);CHKERRQ(ierr);
   ierr = VecDestroy(&rhs_vec);CHKERRQ(ierr);
 
-  ///////////// GET OPTIONS /////////////
-  // Compute band_width_default from actually added fields, to allow for multiple Mesh objects
-  //
-  // Previous implementation was equivalent to:
-  //   int MXSUB = mesh->xend - mesh->xstart + 1;
-  //   int band_width_default = n3Dvars()*(MXSUB+2);
-  int band_width_default = 0;
-  for (const auto& fvar : f3d) {
-    Mesh* localmesh = fvar.var->getMesh();
-    band_width_default += localmesh->xend - localmesh->xstart + 3;
-  }
-
-  OPTION(options, mudq, band_width_default);
-  OPTION(options, mldq, band_width_default);
-  OPTION(options, mukeep, 0);
-  OPTION(options, mlkeep, 0);
-  OPTION(options, use_precon, false);
-  OPTION(options, use_jacobian, false);
-  OPTION(options, precon_dimens, 50);
-  OPTION(options, precon_tol, 1.0e-4);
-  OPTION(options, diagnose,     false);
-
   // Set up adaptive time-stepping
   TSAdapt adapt;
   ierr = TSGetAdapt(ts, &adapt);CHKERRQ(ierr);
-  OPTION(options, adaptive, false);
   if (adaptive) {
     ierr = TSAdaptSetType(adapt, TSADAPTBASIC);CHKERRQ(ierr);
   } else {
     ierr = TSAdaptSetType(adapt, TSADAPTNONE);CHKERRQ(ierr);
   }
-
-  BoutReal abstol, reltol;
-  options->get("atol", abstol, 1.0e-12);
-  options->get("rtol", reltol, 1.0e-5);
 
   // Set default absolute/relative tolerances
   ierr = TSSetTolerances(ts, abstol, nullptr, reltol, nullptr);CHKERRQ(ierr);
@@ -219,8 +182,6 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
 
   // Select Sundials Adams-Moulton or BDF method
-  bool adams_moulton;
-  OPTION(options, adams_moulton, false);
   if (adams_moulton) {
     output.write("\tUsing Adams-Moulton implicit multistep method\n");
     ierr = TSSundialsSetType(ts, SUNDIALS_ADAMS);CHKERRQ(ierr);
@@ -228,27 +189,27 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     output.write("\tUsing BDF method\n");
     ierr = TSSundialsSetType(ts, SUNDIALS_BDF);CHKERRQ(ierr);
   }
-#endif 
+#endif
 
-  // Initial time and timestep. By default just use TIMESTEP
-  BoutReal start_timestep;
-  OPTION(options, start_timestep, TIMESTEP);
+  // Initial time and timestep
   ierr = TSSetTime(ts, simtime); CHKERRQ(ierr);
   ierr = TSSetTimeStep(ts, start_timestep); CHKERRQ(ierr);
   next_output = simtime;
 
-  // Maximum number of steps
-  int mxstep;
-  OPTION(options, mxstep, 500); // Number of steps between outputs
-  mxstep *= NOUT; // Total number of steps
-  PetscReal tfinal = simtime + NOUT*TIMESTEP; // Final output time
-  output.write("\tSet mxstep {:d}, tfinal {:g}, simtime {:g}\n",mxstep,tfinal,simtime);
+  // Total number of steps
+  PetscInt total_steps = mxstep * getNumberOutputSteps();
+  // Final output time
+  PetscReal tfinal = simtime + (getNumberOutputSteps() * getOutputTimestep());
+  output.write("\tSet total_steps {:d}, tfinal {:g}, simtime {:g}\n", total_steps, tfinal,
+               simtime);
 
 #if PETSC_VERSION_GE(3,8,0)
-  ierr = TSSetMaxSteps(ts, mxstep); CHKERRQ(ierr);
+  ierr = TSSetMaxSteps(ts, total_steps);
+  CHKERRQ(ierr);
   ierr = TSSetMaxTime(ts, tfinal); CHKERRQ(ierr);
 #else
-  ierr = TSSetDuration(ts,mxstep,tfinal);CHKERRQ(ierr);
+  ierr = TSSetDuration(ts, total_steps, tfinal);
+  CHKERRQ(ierr);
 #endif
 
   // Set the current solution
@@ -503,7 +464,7 @@ PetscErrorCode PetscSolver::run() {
   FILE *fp = nullptr;
 
   // Set when the next call to monitor is desired
-  next_output = simtime + tstep;
+  next_output = simtime + getOutputTimestep();
 
   PetscFunctionBegin;
 
@@ -847,11 +808,11 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
     s->load_vars(const_cast<BoutReal *>(x));
     ierr = VecRestoreArrayRead(interpolatedX,&x);CHKERRQ(ierr);
 
-    if (s->call_monitors(simtime,i++,s->nout)) {
+    if (s->call_monitors(simtime, i++, s->getNumberOutputSteps())) {
       PetscFunctionReturn(1);
     }
 
-    s->next_output += s->tstep;
+    s->next_output += s->getOutputTimestep();
     simtime = s->next_output;
   }
 

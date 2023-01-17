@@ -356,7 +356,7 @@ iterations within a given range.
 +===========================+===============+====================================================+
 | snes_type                 | newtonls      | PETSc SNES nonlinear solver (try anderson, qn)     |
 +---------------------------+---------------+----------------------------------------------------+
-| ksp_type                  | gmres         | PETSc KSP linear solver
+| ksp_type                  | gmres         | PETSc KSP linear solver                            |
 +---------------------------+---------------+----------------------------------------------------+
 | pc_type                   | ilu / bjacobi | PETSc PC preconditioner                            |
 +---------------------------+---------------+----------------------------------------------------+
@@ -378,7 +378,7 @@ iterations within a given range.
 +---------------------------+---------------+----------------------------------------------------+
 | matrix_free               | false         | Use matrix free Jacobian-vector product?           |
 +---------------------------+---------------+----------------------------------------------------+
-| use_coloring              | true          | If `matrix_free=false`, use coloring to speed up   |
+| use_coloring              | true          | If ``matrix_free=false``, use coloring to speed up |
 |                           |               | calculation of the Jacobian elements.              |
 +---------------------------+---------------+----------------------------------------------------+
 | lag_jacobian              | 50            | Re-use the Jacobian for successive inner solves    |
@@ -406,14 +406,14 @@ function includes Fourier transforms, or matrix inversions
 (e.g. potential solves) then these will introduce longer-range
 coupling and the Jacobian calculation will give spurious
 results. Generally the method will then fail to converge. Two
-solutions are to a) switch to matrix-free (`matrix_free=true`), or b)
+solutions are to a) switch to matrix-free (``matrix_free=true``), or b)
 solve the matrix inversion as a constraint.
 
 The `SNES type
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESType.html>`_
 can be set through PETSc command-line options, or in the BOUT++
 options as setting `snes_type`. Good choices for unpreconditioned
-problems where the Jacobian is not available (`matrix_free=true`) seem to be `anderson
+problems where the Jacobian is not available (``matrix_free=true``) seem to be `anderson
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESANDERSON.html#SNESANDERSON>`_
 and `qn
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESQN.html#SNESQN>`_
@@ -1008,12 +1008,12 @@ be ignored.
 Once the problem to be solved has been specified, the solver can be
 initialised using::
 
-    int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
+    int init();
 
 which returns an error code (0 on success). This is currently called in
 :doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`::
 
-    if(solver.init(rhs, argc, argv, restart, NOUT, TIMESTEP)) {
+    if (solver.init()) {
       output.write("Failed to initialise solver. Aborting\n");
       return(1);
     }

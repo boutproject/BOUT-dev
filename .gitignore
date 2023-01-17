@@ -40,8 +40,6 @@ src/.libfast
 .*.mk
 *.mo
 .BOUT.pid.*
-build/
-build*/
 /.vs
 /CMakeSettings.json
 /CppProperties.json
@@ -72,3 +70,14 @@ src/fmt/format.cxx
 /tests/integrated/test-yupdown-weights/test_yupdown_weights
 coverage.info
 coverage/
+
+# Potential user build directories
+/build/
+/build*/
+/*_build/
+/build_*/
+
+# Python stuff
+/_wheel*/
+/dist/
+/_version.txt

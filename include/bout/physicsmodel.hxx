@@ -37,17 +37,86 @@ class PhysicsModel;
 #ifndef __PHYSICS_MODEL_H__
 #define __PHYSICS_MODEL_H__
 
-#include <bout.hxx>
-#include <options.hxx>
-#include <msg_stack.hxx>
+#include "bout.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "options_netcdf.hxx"
 #include "solver.hxx"
 #include "unused.hxx"
 #include "utils.hxx"
 #include "bout/macro_for_each.hxx"
+#include "bout/sys/variant.hxx"
 
 #include <type_traits>
+#include <vector>
 
 class Mesh;
+
+namespace bout {
+/// Stop-gap shim for `DataFile`: allows PhysicsModels to still save
+/// outputs using the old `DataFile` interface without upgrading to
+/// the new `OptionsNetCDF`.
+///
+/// Stores pointers to objects in a vector, using a variant, which can
+/// then be pushed into an `Options` and written to file using the
+/// default implementaion of `PhysicsModel::outputVars`
+class DataFileFacade {
+public:
+  /// This is `Options::ValueType` but using pointers rather than values
+  using ValueType = bout::utils::variant<bool*, int*, BoutReal*, std::string*, Field2D*,
+                                         Field3D*, FieldPerp*, Array<BoutReal>*,
+                                         Matrix<BoutReal>*, Tensor<BoutReal>*>;
+
+  template <class T>
+  void addRepeat(T& value, const std::string& name) {
+    add(&value, name, true);
+  }
+  template <class T>
+  void addOnce(T& value, const std::string& name) {
+    add(&value, name, false);
+  }
+  template <class T>
+  void add(T& value, const std::string& name, bool save_repeat = false) {
+    add(&value, name, save_repeat);
+  }
+
+  void addRepeat(ValueType value, const std::string& name) { add(value, name, true); }
+  void addOnce(ValueType value, const std::string& name) { add(value, name, false); }
+  void add(ValueType value, const std::string& name, bool save_repeat = false);
+
+  /// Write stored data to file immediately
+  bool write();
+
+private:
+  /// Helper struct to save enough information so that we can save an
+  /// object to file later
+  struct StoredValue {
+    StoredValue(std::string name_, ValueType value_, bool repeat_)
+        : name(std::move(name_)), value(value_), repeat(repeat_) {}
+    std::string name;
+    ValueType value;
+    bool repeat;
+  };
+  std::vector<StoredValue> data;
+
+public:
+  const std::vector<StoredValue>& getData() { return data; }
+};
+
+struct OptionsConversionVisitor {
+private:
+  Options& options;
+  std::string name;
+
+public:
+  OptionsConversionVisitor(Options& options_, std::string name_)
+      : options(options_), name(std::move(name_)) {}
+  template <class T>
+  void operator()(T* value) {
+    options[name] = *value;
+  }
+};
+} // namespace bout
 
 /*!
   Base class for physics models
@@ -65,42 +134,22 @@ public:
   using ModelJacobianFunc = int (Model::*)(BoutReal t);
 
   PhysicsModel();
-  
+  PhysicsModel(Mesh* mesh_, bool output_enabled_, bool restart_enabled_)
+      : mesh(mesh_), output_enabled(output_enabled_), restart_enabled(restart_enabled_) {}
+
   virtual ~PhysicsModel() = default;
   
   Mesh* mesh{nullptr};
-  Datafile& dump;
+  bout::DataFileFacade dump{};
+  bout::DataFileFacade restart{};
 
   /*!
    * Initialse the model, calling the init() and postInit() methods
    *
    * Note: this is usually only called by the Solver
    */
-  void initialise(Solver *s) {
-    if(initialised)
-      return; // Ignore second initialisation
-    initialised = true;
-    
-    // Restart option
-    bool restarting;
-    Options::getRoot()->get("restart", restarting, false);
-    
-    // Set the protected variable, so user code can
-    // call the solver functions
-    solver = s;
+  void initialise(Solver* s);
 
-    // Call user init code to specify evolving variables
-    if ( init(restarting) ) {
-      throw BoutException("Couldn't initialise physics model");
-    }
-    
-    // Post-initialise, which reads restart files
-    // This function can be overridden by the user
-    if (postInit(restarting)) {
-      throw BoutException("Couldn't restart physics model");
-    }
-  }
-  
   /*!
    * Run the RHS function, to calculate the time derivatives
    *
@@ -172,7 +221,16 @@ public:
   int runJacobian(BoutReal t);
 
   int runTimestepMonitor(BoutReal simtime, BoutReal dt) {return timestepMonitor(simtime, dt);}
-  
+
+  /// Write \p options to `output_file`
+  void writeOutputFile(const Options& options);
+  /// Write variables with \p time_dimension from \p options to `output_file`
+  void writeOutputFile(const Options& options, const std::string& time_dimension);
+
+  /// Finish the output for this timestep, verifying all evolving
+  /// variables have the correct length
+  void finishOutputTimestep() const;
+
 protected:
   
   // The init and rhs functions are implemented by user code to specify problem
@@ -209,6 +267,11 @@ protected:
    */
   virtual int rhs(BoutReal UNUSED(t)) {return 1;}
   virtual int rhs(BoutReal t, bool UNUSED(linear)) {return rhs(t);}
+
+  /// Output additional variables other than the evolving variables
+  virtual void outputVars(Options& options);
+  /// Add additional variables other than the evolving variables to the restart files
+  virtual void restartVars(Options& options);
 
   /* 
      If split operator is set to true, then
@@ -279,8 +342,13 @@ protected:
   void bout_solve(Vector2D &var, const char *name, const std::string& description="");
   void bout_solve(Vector3D &var, const char *name, const std::string& description="");
 
-  /// Stores the state for restarting
-  Datafile restart; 
+  /// Helper function for reading from restart_options
+  Options& readFromRestartFile(const std::string& name) { return restart_options[name]; }
+
+  /// Write the restart file to disk now
+  void writeRestartFile();
+  /// Write the output file to disk now
+  void writeOutputFile();
 
   /*!
    * Specify a constrained variable \p var, which will be
@@ -301,20 +369,25 @@ protected:
   public:
     PhysicsModelMonitor() = delete;
     PhysicsModelMonitor(PhysicsModel *model) : model(model) {}
-    int call(Solver* UNUSED(solver), BoutReal simtime, int iter, int nout) override {
-      // Save state to restart file
-      model->restart.write();
-      // Call user output monitor
-      return model->outputMonitor(simtime, iter, nout);
-    }
+    int call(Solver* solver, BoutReal simtime, int iter, int nout) override;
 
   private:
     PhysicsModel *model;
   };
 
-  /// write restarts and pass outputMonitor method inside a Monitor subclass
-  PhysicsModelMonitor modelMonitor;
 private:
+  /// State for outputs
+  Options output_options;
+  /// File to write the outputs to
+  bout::OptionsNetCDF output_file;
+  /// Should we write output files
+  bool output_enabled{true};
+  /// Stores the state for restarting
+  Options restart_options;
+  /// File to write the restart-state to
+  bout::OptionsNetCDF restart_file;
+  /// Should we write restart files
+  bool restart_enabled{true};
   /// Split operator model?
   bool splitop{false};
   /// Pointer to user-supplied preconditioner function
@@ -323,6 +396,8 @@ private:
   jacobianfunc userjacobian{nullptr};
   /// True if model already initialised
   bool initialised{false};
+  /// write restarts and pass outputMonitor method inside a Monitor subclass
+  PhysicsModelMonitor modelMonitor{this};
 };
 
 /*!
@@ -355,10 +430,9 @@ private:
       solver->setModel(model.get());                               \
       auto bout_monitor = bout::utils::make_unique<BoutMonitor>(); \
       solver->addMonitor(bout_monitor.get(), Solver::BACK);        \
-      solver->outputVars(bout::globals::dump);                     \
       solver->solve();                                             \
     } catch (const BoutException& e) {                             \
-      output << "Error encountered\n";                             \
+      output << "Error encountered: " << e.what();                 \
       output << e.getBacktrace() << endl;                          \
       MPI_Abort(BoutComm::get(), 1);                               \
     }                                                              \
@@ -398,6 +472,88 @@ private:
 /// This should accept up to ten arguments
 #define SOLVE_FOR(...)                  \
   { MACRO_FOR_EACH(SOLVE_FOR1, __VA_ARGS__) }
+
+/// Write this variable once to the grid file
+#define SAVE_ONCE1(var) dump.addOnce(var, #var);
+#define SAVE_ONCE2(var1, var2) \
+  {                            \
+    dump.addOnce(var1, #var1); \
+    dump.addOnce(var2, #var2); \
+  }
+#define SAVE_ONCE3(var1, var2, var3) \
+  {                                  \
+    dump.addOnce(var1, #var1);       \
+    dump.addOnce(var2, #var2);       \
+    dump.addOnce(var3, #var3);       \
+  }
+#define SAVE_ONCE4(var1, var2, var3, var4) \
+  {                                        \
+    dump.addOnce(var1, #var1);             \
+    dump.addOnce(var2, #var2);             \
+    dump.addOnce(var3, #var3);             \
+    dump.addOnce(var4, #var4);             \
+  }
+#define SAVE_ONCE5(var1, var2, var3, var4, var5) \
+  {                                              \
+    dump.addOnce(var1, #var1);                   \
+    dump.addOnce(var2, #var2);                   \
+    dump.addOnce(var3, #var3);                   \
+    dump.addOnce(var4, #var4);                   \
+    dump.addOnce(var5, #var5);                   \
+  }
+#define SAVE_ONCE6(var1, var2, var3, var4, var5, var6) \
+  {                                                    \
+    dump.addOnce(var1, #var1);                         \
+    dump.addOnce(var2, #var2);                         \
+    dump.addOnce(var3, #var3);                         \
+    dump.addOnce(var4, #var4);                         \
+    dump.addOnce(var5, #var5);                         \
+    dump.addOnce(var6, #var6);                         \
+  }
+
+#define SAVE_ONCE(...) \
+  { MACRO_FOR_EACH(SAVE_ONCE1, __VA_ARGS__) }
+
+/// Write this variable every timestep
+#define SAVE_REPEAT1(var) dump.addRepeat(var, #var);
+#define SAVE_REPEAT2(var1, var2) \
+  {                              \
+    dump.addRepeat(var1, #var1); \
+    dump.addRepeat(var2, #var2); \
+  }
+#define SAVE_REPEAT3(var1, var2, var3) \
+  {                                    \
+    dump.addRepeat(var1, #var1);       \
+    dump.addRepeat(var2, #var2);       \
+    dump.addRepeat(var3, #var3);       \
+  }
+#define SAVE_REPEAT4(var1, var2, var3, var4) \
+  {                                          \
+    dump.addRepeat(var1, #var1);             \
+    dump.addRepeat(var2, #var2);             \
+    dump.addRepeat(var3, #var3);             \
+    dump.addRepeat(var4, #var4);             \
+  }
+#define SAVE_REPEAT5(var1, var2, var3, var4, var5) \
+  {                                                \
+    dump.addRepeat(var1, #var1);                   \
+    dump.addRepeat(var2, #var2);                   \
+    dump.addRepeat(var3, #var3);                   \
+    dump.addRepeat(var4, #var4);                   \
+    dump.addRepeat(var5, #var5);                   \
+  }
+#define SAVE_REPEAT6(var1, var2, var3, var4, var5, var6) \
+  {                                                      \
+    dump.addRepeat(var1, #var1);                         \
+    dump.addRepeat(var2, #var2);                         \
+    dump.addRepeat(var3, #var3);                         \
+    dump.addRepeat(var4, #var4);                         \
+    dump.addRepeat(var5, #var5);                         \
+    dump.addRepeat(var6, #var6);                         \
+  }
+
+#define SAVE_REPEAT(...) \
+  { MACRO_FOR_EACH(SAVE_REPEAT1, __VA_ARGS__) }
 
 #endif // __PHYSICS_MODEL_H__
 

@@ -55,12 +55,12 @@ struct RajaForAll {
   ///
   /// @param region    The region to iterate over
   ///
-  template<typename IndType>
+  template <typename IndType>
   RajaForAll(const Region<IndType>& region) {
     auto indices = region.getIndices(); // A std::vector of Ind3D objects
     _ob_i_ind.reallocate(indices.size());
     // Copy indices into Array
-    for(auto i = 0; i < indices.size(); i++) {
+    for (auto i = 0; i < indices.size(); i++) {
       _ob_i_ind[i] = indices[i].ind;
     }
   }
@@ -75,29 +75,29 @@ struct RajaForAll {
   ///
   /// @param f   Lambda function to call each iteration
   ///
-  template<typename F>
+  template <typename F>
   const RajaForAll& operator<<(F f) const {
     // Get the raw pointer to use on the device
     // Note: must be a local variable
     const int* _ob_i_ind_raw = &_ob_i_ind[0];
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, _ob_i_ind.size()),
-			   [=] RAJA_DEVICE(int id) {
-			     // Look up index and call user function
-			     f(_ob_i_ind_raw[id]);
-			   });
+                           [=] RAJA_DEVICE(int id) {
+                             // Look up index and call user function
+                             f(_ob_i_ind_raw[id]);
+                           });
     return *this;
   }
+
 private:
   Array<int> _ob_i_ind; ///< Holds the index array
 };
 
 /// Create a variable which shadows another (has the same name)
-#define SHADOW_ARG(var) var=var
+#define SHADOW_ARG(var) var = var
 
 /// Transform a list of variables into a list of var=var assignments
 /// Useful for capturing class members in lambda function arguments.
-#define CAPTURE(...) \
-  MACRO_FOR_EACH_ARG(SHADOW_ARG, __VA_ARGS__)
+#define CAPTURE(...) MACRO_FOR_EACH_ARG(SHADOW_ARG, __VA_ARGS__)
 
 /// Iterate an index over a region
 ///
@@ -127,7 +127,7 @@ private:
 /// to create variables which shadow the class members.
 ///
 #define BOUT_FOR_RAJA(index, region, ...) \
-  RajaForAll(region) << [=, ## __VA_ARGS__] RAJA_DEVICE(int index)
+  RajaForAll(region) << [ =, ##__VA_ARGS__ ] RAJA_DEVICE(int index)
 
 #else // BOUT_HAS_RAJA
 
@@ -136,8 +136,7 @@ private:
 /// If no RAJA, BOUT_FOR_RAJA reverts to BOUT_FOR
 /// Note: Redundant ';' after closing brace should be ignored by compiler
 ///       Ignores any additional arguments
-#define BOUT_FOR_RAJA(index, region, ...) \
-  BOUT_FOR(index, region)
+#define BOUT_FOR_RAJA(index, region, ...) BOUT_FOR(index, region)
 
 /// If not using RAJA, CAPTURE doesn't do anything
 #define CAPTURE(...)

@@ -7,6 +7,7 @@
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/sys/timer.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>
 #include <utils.hxx>
@@ -947,35 +948,36 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   }
 }
 
-void Coordinates::outputVars(Datafile& file) {
+void Coordinates::outputVars(Options& output_options) {
+  Timer time("io");
   const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
 
-  file.addOnce(dx, "dx" + loc_string);
-  file.addOnce(dy, "dy" + loc_string);
-  file.addOnce(dz, "dz" + loc_string);
+  output_options["dx" + loc_string].force(dx, "Coordinates");
+  output_options["dy" + loc_string].force(dy, "Coordinates");
+  output_options["dz" + loc_string].force(dz, "Coordinates");
 
-  file.addOnce(g11, "g11" + loc_string);
-  file.addOnce(g22, "g22" + loc_string);
-  file.addOnce(g33, "g33" + loc_string);
-  file.addOnce(g12, "g12" + loc_string);
-  file.addOnce(g13, "g13" + loc_string);
-  file.addOnce(g23, "g23" + loc_string);
+  output_options["g11" + loc_string].force(g11, "Coordinates");
+  output_options["g22" + loc_string].force(g22, "Coordinates");
+  output_options["g33" + loc_string].force(g33, "Coordinates");
+  output_options["g12" + loc_string].force(g12, "Coordinates");
+  output_options["g13" + loc_string].force(g13, "Coordinates");
+  output_options["g23" + loc_string].force(g23, "Coordinates");
 
-  file.addOnce(g_11, "g_11" + loc_string);
-  file.addOnce(g_22, "g_22" + loc_string);
-  file.addOnce(g_33, "g_33" + loc_string);
-  file.addOnce(g_12, "g_12" + loc_string);
-  file.addOnce(g_13, "g_13" + loc_string);
-  file.addOnce(g_23, "g_23" + loc_string);
+  output_options["g_11" + loc_string].force(g_11, "Coordinates");
+  output_options["g_22" + loc_string].force(g_22, "Coordinates");
+  output_options["g_33" + loc_string].force(g_33, "Coordinates");
+  output_options["g_12" + loc_string].force(g_12, "Coordinates");
+  output_options["g_13" + loc_string].force(g_13, "Coordinates");
+  output_options["g_23" + loc_string].force(g_23, "Coordinates");
 
-  file.addOnce(J, "J" + loc_string);
-  file.addOnce(Bxy, "Bxy" + loc_string);
+  output_options["J" + loc_string].force(J, "Coordinates");
+  output_options["Bxy" + loc_string].force(Bxy, "Coordinates");
 
-  file.addOnce(G1, "G1" + loc_string);
-  file.addOnce(G2, "G2" + loc_string);
-  file.addOnce(G3, "G3" + loc_string);
+  output_options["G1" + loc_string].force(G1, "Coordinates");
+  output_options["G2" + loc_string].force(G2, "Coordinates");
+  output_options["G3" + loc_string].force(G3, "Coordinates");
 
-  getParallelTransform().outputVars(file);
+  getParallelTransform().outputVars(output_options);
 }
 
 const Field2D& Coordinates::zlength() const {

@@ -23,6 +23,70 @@ either physics models (e.g. ``test-delp2`` and
 ``test-drift-instability``), or define their own ``main`` function
 (e.g. ``test-io`` and ``test-cyclic``).
 
+.. _sec-build-examples:
+
+Building Physics Models
+-----------------------
+
+After building the library (see :ref:`sec-cmake`), you can build a
+physics model in several different ways.
+
+For the bundled examples, perhaps the easiest is to build it directly
+in the build directory. For example, to build the ``conduction``
+example::
+
+  $ cmake --build build --target conduction
+
+(assuming that your build directory is called ``build``!) which will
+build the executable in ``build/examples/conduction``.
+
+You can also ``cd`` into that directory and build it there::
+
+  $ cd build/examples/conduction
+  $ make
+
+(Note for advanced users that this won't work if you've used the
+``Ninja`` CMake generator).
+
+Either of these two methods will actually build the entire BOUT++
+library if necessary, which can be especially useful when developing.
+
+.. _sec-cmake-physics-model:
+
+Using CMake with your physics model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can write a CMake configuration file (``CMakeLists.txt``) for your
+physics model in only four lines:
+
+.. code-block:: cmake
+
+    project(blob2d LANGUAGES CXX)
+    find_package(bout++ REQUIRED)
+    add_executable(blob2d blob2d.cxx)
+    target_link_libraries(blob2d PRIVATE bout++::bout++)
+
+You just need to give CMake the location where you built or installed
+BOUT++ via the ``bout++_DIR`` variable::
+
+  $ cmake . -B build -Dbout++_DIR=/path/to/built/BOUT++
+
+If you want to modify BOUT++ along with developing your model, you may
+instead wish to place the BOUT++ as a subdirectory of your model and
+use ``add_subdirectory`` instead of ``find_package`` above:
+
+.. code-block:: cmake
+
+    project(blob2d LANGUAGES CXX)
+    add_subdirectory(BOUT++/source)
+    add_executable(blob2d blob2d.cxx)
+    target_link_libraries(blob2d PRIVATE bout++::bout++)
+
+where ``BOUT++/source`` is the subdirectory containing the BOUT++
+source. Doing this has the advantage that any changes you make to
+BOUT++ source files will trigger a rebuild of both the BOUT++ library
+and your model when you next build your code.
+
 .. _sec-heat-conduction-model:
 
 Heat conduction

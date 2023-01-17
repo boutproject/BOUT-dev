@@ -32,11 +32,7 @@ if (NOT netCDF_ROOT AND EXISTS "${BOUT_USE_NETCDF}")
   set(netCDF_ROOT "${BOUT_USE_NETCDF}")
 endif()
 
-if (BOUT_NETCDF_VERSION)
-  find_package(netCDF ${BOUT_NETCDF_VERSION} EXACT QUIET CONFIG)
-else()
-  find_package(netCDF QUIET CONFIG)
-endif()
+find_package(netCDF QUIET CONFIG)
    
 if (netCDF_FOUND)
   message(STATUS "netCDF CONFIG found")
@@ -128,8 +124,6 @@ if (netCDF_C_INCLUDE_DIR)
   unset(_netcdf_version_note)
   unset(_netcdf_version_lines)
 endif ()
-
-message(STATUS "netCDF_VERSION ${netCDF_VERSION}")
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(netCDF

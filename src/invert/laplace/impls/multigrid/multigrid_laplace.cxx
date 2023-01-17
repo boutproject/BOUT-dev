@@ -64,7 +64,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
   opts->get("atol",atol,pow(10.0,-20),true);
   opts->get("dtol",dtol,pow(10.0,5),true);
   opts->get("smtype",mgsm,1,true);
-#if BOUT_USE_OPENMP 
+#if BOUT_USE_OPENMP
   if (mgsm != 0 && omp_get_max_threads()>1) {
     output_warn << "WARNING: in multigrid Laplace solver, for smtype!=0 the smoothing cannot be parallelised with OpenMP threads."<<endl
                 << "         Consider using smtype=0 instead when using OpenMP threads."<<endl;
@@ -195,12 +195,9 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
     if (mglevel == 1) output<<"PGMRES with simple Preconditioner"<<endl;
     else if(mgplag == 1) output<<"PGMRES with multigrid Preconditioner"<<endl;
     else output<<"Multigrid solver with merging "<<mgmpi<<endl;
-#if BOUT_USE_OPENMP 
-BOUT_OMP(parallel)
-BOUT_OMP(master)
-    {
-      output<<"Num threads = "<<omp_get_num_threads()<<endl;
-    } 
+#if BOUT_USE_OPENMP
+    BOUT_OMP(parallel)
+    BOUT_OMP(master) { output << "Num threads = " << omp_get_num_threads() << endl; }
 #endif
   }
 }

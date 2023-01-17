@@ -5,6 +5,10 @@ defaults:
   run:
     shell: bash
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   standard_tests:
     timeout-minutes: 60
@@ -27,7 +31,7 @@ jobs:
         is_master_or_next:
           - ${{ github.ref ==  'refs/heads/master' || github.ref == 'refs/heads/next'  || github.base_ref ==  'master' || github.base_ref == 'next' }}
         config:
-          - name: "Default options"
+          - name: "Default options, Ubuntu 18.04"
             os: ubuntu-18.04
             cmake_options: "-DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
@@ -71,6 +75,7 @@ jobs:
             os: ubuntu-20.04
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_OPENMP=ON
+                            -DCMAKE_BUILD_TYPE=Release
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
@@ -85,7 +90,6 @@ jobs:
                             -DBOUT_ENABLE_OPENMP=ON
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
-                            -DBOUT_USE_HDF5=ON
                             -DBOUT_USE_SUNDIALS=ON
                             -DBOUT_ENABLE_PYTHON=ON
                             -DSUNDIALS_ROOT=/home/runner/local"
@@ -136,13 +140,13 @@ jobs:
                  liblapack-dev
                  libparpack2-dev
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
 
       - name: Install pip packages
         run: |
-          ./.pip_install_for_travis.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'gcovr' 'cmake' 'h5py' zoidberg fastcov
+          ./.pip_install_for_ci.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'gcovr' 'cmake' 'h5py' zoidberg fastcov
           # Add the pip install location to the runner's PATH
           echo ~/.local/bin >> $GITHUB_PATH
 
@@ -153,7 +157,7 @@ jobs:
           key: bout-sundials-${{ matrix.config.os }}
 
       - name: Build SUNDIALS
-        run: ./.build_sundials_for_travis.sh
+        run: ./.build_sundials_for_ci.sh
 
       - name: Build (CMake)
         run: UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
@@ -161,7 +165,7 @@ jobs:
       - name: Capture coverage
         if: ${{ matrix.config.name == 'Coverage' }}
         # Explicitly run the coverage capture target, because
-        # travis_script.sh also does the upload, and we're going to do
+        # ci_script.sh also does the upload, and we're going to do
         # that ourselves in the next step
         run: |
           # Ensure that there is a corresponding .gcda file for every .gcno file
@@ -184,7 +188,7 @@ jobs:
         with:
           submodules: true
       - name: Build Fedora rawhide
-        run: ./.travis_fedora.sh setup mpich rawhide
+        run: ./.ci_fedora.sh setup mpich rawhide
         shell: bash
         env:
           TRAVIS_BUILD_DIR: ${{ github.workspace }}
