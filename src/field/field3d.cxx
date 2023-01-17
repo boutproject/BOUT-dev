@@ -756,6 +756,7 @@ void checkDataIsFiniteOnRegion(const Field3D& f, const std::string& region, cons
 #elif CHECK > 0
 // No-op for no checking
 void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), const std::string& UNUSED(region)) {}
+void checkDataIsFiniteOnRegion(const Field3D& UNUSED(f), const std::string& UNUSED(region), const std::string& UNUSED(src), const Field3D& UNUSED(s1), const Field3D& UNUSED(s2)) {}
 #endif
 }
 
