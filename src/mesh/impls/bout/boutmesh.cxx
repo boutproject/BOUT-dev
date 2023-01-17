@@ -47,6 +47,9 @@
 #include <output.hxx>
 #include <utils.hxx>
 
+#include "parallel_boundary_region.hxx"
+#include "boundary_region.hxx"
+
 #include <algorithm>
 #include <iterator>
 #include <set>

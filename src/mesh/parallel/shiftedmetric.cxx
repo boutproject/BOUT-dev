@@ -12,6 +12,7 @@
 #include <bout/sys/timer.hxx>
 #include <fft.hxx>
 #include <output.hxx>
+#include "parallel_boundary_region.hxx"
 
 #include <cmath>
 
