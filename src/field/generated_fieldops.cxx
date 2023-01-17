@@ -20,7 +20,7 @@ Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
     result[index] = lhs[index] * rhs[index];
   }
 
-  checkData(result);
+  checkData(result, "RGN_NOBNDRY", "*", lhs, rhs);
   return result;
 }
 
@@ -64,7 +64,7 @@ Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
     result[index] = lhs[index] / rhs[index];
   }
 
-  checkData(result);
+  checkData(result, "RGN_NOBNDRY", "/", lhs, rhs);
   return result;
 }
 
@@ -108,7 +108,7 @@ Field3D operator+(const Field3D& lhs, const Field3D& rhs) {
     result[index] = lhs[index] + rhs[index];
   }
 
-  checkData(result);
+  checkData(result, "RGN_NOBNDRY", "+", lhs, rhs);
   return result;
 }
 
@@ -152,7 +152,7 @@ Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
     result[index] = lhs[index] - rhs[index];
   }
 
-  checkData(result);
+  checkData(result, "RGN_NOBNDRY", "-", lhs, rhs);
   return result;
 }
 

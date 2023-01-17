@@ -61,7 +61,11 @@
 	}
   {% endif %}
 
+  {% if lhs == rhs == "Field3D" %}
+  checkData({{out.name}}, "RGN_NOBNDRY", "{{operator}}", lhs, rhs);
+  {% else %}
   checkData({{out.name}});
+  {% endif %}
   return {{out.name}};
 }
 

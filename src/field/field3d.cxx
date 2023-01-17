@@ -828,6 +828,15 @@ void checkDataIsFiniteOnRegion(const Field3D& f, const std::string& region) {
     }
   }
 }
+void checkDataIsFiniteOnRegion(const Field3D& f, const std::string& region, const std::string& src, const Field3D& s1, const Field3D& s2) {
+  // Do full checks
+  BOUT_FOR_SERIAL(i, f.getDefaultRegion(region)) {
+    if (!finite(f[i])) {
+      throw BoutException("Field3D: Operation on non-finite data at [{:d}][{:d}][{:d}] From: {:s} {:e} {:e}\n",
+                          i.x(), i.y(), i.z(), src, s1[i], s2[i]);
+    }
+  }
+}
 #elif CHECK > 0
 // No-op for no checking
 void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), const std::string& UNUSED(region)) {}
@@ -840,6 +849,13 @@ void checkData(const Field3D &f, const std::string& region) {
     throw BoutException("Field3D: Operation on empty data\n");
 
   checkDataIsFiniteOnRegion(f, region);
+}
+
+void checkData(const Field3D &f, const std::string& region, const std::string& src, const Field3D& s1, const Field3D& s2) {
+  if (!f.isAllocated())
+    throw BoutException("Field3D: Operation on empty data\n");
+
+  checkDataIsFiniteOnRegion(f, region, src, s1, s2);
 }
 #endif
 

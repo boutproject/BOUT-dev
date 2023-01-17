@@ -577,6 +577,7 @@ inline FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, REGION rgn) {
 /// Loops over all points including the boundaries by
 /// default (can be changed using the \p rgn argument
 void checkData(const Field3D& f, const std::string& region = "RGN_NOBNDRY");
+void checkData(const Field3D& f, const std::string& region, const std::string& src, const Field3D& s1, const Field3D& s2);
 [[deprecated("Please use checkData(const Field3D& f, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline void checkData(const Field3D &f, REGION region) {
@@ -586,6 +587,7 @@ inline void checkData(const Field3D &f, REGION region) {
 /// Ignored with disabled CHECK; Throw an exception if \p f is not
 /// allocated or if any elements are non-finite (for CHECK > 2)
 inline void checkData(const Field3D& UNUSED(f), const std::string& UNUSED(region) = "RGN_NOBNDRY") {};
+inline void checkData(const Field3D& f, const std::string& region, const std::string& src, const Field3D& s1, const Field3D& s2) {};
 [[deprecated("Please use checkData(const Field3D& f, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline void checkData(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
