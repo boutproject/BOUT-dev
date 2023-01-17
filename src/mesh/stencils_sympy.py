@@ -51,6 +51,8 @@ def taylor(x, i, j):
 
 
 class dirichlet:
+    name = "dirichlet"
+
     def __init__(self, x):
         self.x = x
 
@@ -59,6 +61,8 @@ class dirichlet:
 
 
 class neumann:
+    name = "neumann"
+
     def __init__(self, x):
         self.x = x
 
