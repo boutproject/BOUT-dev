@@ -237,7 +237,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
     auto* boundary = (xt_prime[i] < 0.0) ? inner_boundary : outer_boundary;
     boundary->add_point(x, y, z, x + dx, y + 0.5 * offset,
                         z + dz, // Intersection point in local index space
-                        0.5,    // Distance to intersection
+                        0,    // Distance to intersection
                         1       // Default to that there is a point in the other direction
     );
   }
