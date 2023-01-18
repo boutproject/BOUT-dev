@@ -118,13 +118,8 @@ public:
   // setter
   void setValid(char val) { bndry_position->valid = val; }
 
-  bool contains(const Ind3D ind) const {
-    for (auto it = begin(bndry_points); end(bndry_points) != it; ++it) {
-      if (it->index == ind) {
-        return true;
-      }
-    }
-    return false;
+  bool contains(const BoundaryRegionPar& bndry) const {
+    return std::binary_search(begin(bndry_points), end(bndry_points), *bndry.bndry_position, [](const Indices& i1, const Indices& i2) { return i1.index < i2.index; });
   }
 
   // extrapolate a given point to the boundary
