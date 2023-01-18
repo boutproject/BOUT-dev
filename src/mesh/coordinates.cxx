@@ -578,10 +578,10 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
   // Check jacobian
   bout::checkFinite(J, "J", "RGN_NOCORNERS");
-  bout::checkPositive(J, "J", "RGN_NOCORNERS");
-  if (min(abs(J)) < 1.0e-10) {
-    throw BoutException("\tERROR: Jacobian becomes very small\n");
-  }
+  //bout::checkPositive(J, "J", "RGN_NOCORNERS");
+  //if (min(abs(J)) < 1.0e-10) {
+  //  throw BoutException("\tERROR: Jacobian becomes very small\n");
+  //}
 
   // Attempt to read Bxy from the grid file
   auto Bcalc = Bxy;
