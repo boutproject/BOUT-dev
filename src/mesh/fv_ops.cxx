@@ -110,7 +110,9 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
                             * (Jc[i] * g23c[i] + Jup[i.yp()] * g23up[i.yp()])
                             * (dfdz - coef * dfdy);
 
+      ASSERT1(std::isfinite(yzresult[i]));
       yzresult[i] += fout / (dyc[i] * Jc[i]);
+      ASSERT1(std::isfinite(yzresult[i]));
     }
     {
       // Calculate flux between j and j-1
@@ -128,6 +130,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
                             * (dfdz - coef * dfdy);
 
       yzresult[i] -= fout / (dyc[i] * Jc[i]);
+      ASSERT1(std::isfinite(yzresult[i]))
     }
     // Z flux
     {
@@ -145,6 +148,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
       yzresult[i] += fout / (Jc[i] * dzc[i]);
       yzresult[ikp] -= fout / (Jc[ikp] * dzc[ikp]);
+      ASSERT1(std::isfinite(yzresult[i]));
     }
   }
 
