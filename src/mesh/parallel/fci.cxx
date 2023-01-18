@@ -47,7 +47,7 @@
 
 #include <string>
 
-FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
+FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& options,
                int offset_, BoundaryRegionPar* inner_boundary,
                BoundaryRegionPar* outer_boundary, bool zperiodic)
     : map_mesh(mesh), offset(offset_),
