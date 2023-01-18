@@ -110,7 +110,7 @@ public:
           continue;
         }
         for (bndry->first(); !bndry->isDone(); bndry->next()) {
-          if (bndry2->contains(bndry->ind().yp(-2 * bndry->dir))) {
+          if (bndry2->contains(*bndry)) {
             bndry->setValid(0);
           }
         }
