@@ -1,6 +1,8 @@
 #include <globals.hxx>
 #include <boundary_factory.hxx>
 #include <boundary_standard.hxx>
+#include "parallel_boundary_region.hxx"
+#include "parallel_boundary_op.hxx"
 #include <options.hxx>
 #include <utils.hxx>
 

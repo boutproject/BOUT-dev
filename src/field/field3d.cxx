@@ -39,6 +39,8 @@
 #include <interpolation.hxx>
 #include <boundary_op.hxx>
 #include <boundary_factory.hxx>
+#include "parallel_boundary_region.hxx"
+#include "parallel_boundary_op.hxx"
 #include <boutexception.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>

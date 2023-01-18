@@ -3,6 +3,8 @@
 #include <globals.hxx>
 #include <field_data.hxx>
 #include <boundary_factory.hxx>
+#include "parallel_boundary_region.hxx"
+#include "parallel_boundary_op.hxx"
 #include <output.hxx>
 #include <field_factory.hxx>
 #include "unused.hxx"

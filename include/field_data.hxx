@@ -38,15 +38,14 @@ class FieldData;
 #include <string>
 #include <vector>
 
-// Including the next line leads to compiler errors
-//#include "boundary_op.hxx"
 class BoundaryOp;
 class BoundaryOpPar;
 class Coordinates;
 class Mesh;
 
-#include "boundary_region.hxx"
-#include "parallel_boundary_region.hxx"
+class BoundaryRegion;
+class BoundaryRegionPar;
+enum class BndryLoc;
 
 #include "bout/sys/expressionparser.hxx"
 

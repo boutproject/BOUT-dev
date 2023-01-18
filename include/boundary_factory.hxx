@@ -4,10 +4,13 @@ class BoundaryFactory;
 #ifndef __BNDRY_FACTORY_H__
 #define __BNDRY_FACTORY_H__
 
-#include "boundary_op.hxx"
-#include "boundary_region.hxx"
-#include "parallel_boundary_op.hxx"
-#include "parallel_boundary_region.hxx"
+class BoundaryOpBase;
+class BoundaryOpPar;
+class BoundaryOp;
+class BoundaryRegionBase;
+class BoundaryRegionPar;
+class BoundaryRegion;
+class BoundaryModifier;
 
 #include <string>
 #include <map>
