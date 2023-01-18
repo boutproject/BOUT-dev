@@ -57,7 +57,7 @@ class Mesh;
 
 #include "fieldgroup.hxx"
 
-#include "boundary_region.hxx"
+class BoundaryRegion;
 class BoundaryRegionPar;
 
 #include "sys/range.hxx" // RangeIterator
