@@ -51,6 +51,8 @@ class PhysicsModel;
 #include <vector>
 
 class Mesh;
+class Vector2D;
+class Vector3D;
 
 namespace bout {
 /// Stop-gap shim for `DataFile`: allows PhysicsModels to still save
@@ -83,6 +85,8 @@ public:
   void addRepeat(ValueType value, const std::string& name) { add(value, name, true); }
   void addOnce(ValueType value, const std::string& name) { add(value, name, false); }
   void add(ValueType value, const std::string& name, bool save_repeat = false);
+  void add(Vector2D* value, const std::string& name, bool save_repeat = false);
+  void add(Vector3D* value, const std::string& name, bool save_repeat = false);
 
   /// Write stored data to file immediately
   bool write();
