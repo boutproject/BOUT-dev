@@ -46,20 +46,18 @@ namespace bout {
 void DataFileFacade::add(ValueType value, const std::string& name, bool save_repeat) {
   data.emplace_back(name, value, save_repeat);
 }
-void DataFileFacade::add(Vector2D* value, const std::string& name, bool save_repeat){
+void DataFileFacade::add(Vector2D* value, const std::string& name, bool save_repeat) {
   auto name_prefix = value->covariant ? name + "_" : name;
   add(value->x, name_prefix + "x"s, save_repeat);
   add(value->y, name_prefix + "y"s, save_repeat);
   add(value->z, name_prefix + "z"s, save_repeat);
 }
-void DataFileFacade::add(Vector3D* value, const std::string& name, bool save_repeat){
+void DataFileFacade::add(Vector3D* value, const std::string& name, bool save_repeat) {
   auto name_prefix = value->covariant ? name + "_" : name;
   add(value->x, name_prefix + "x"s, save_repeat);
   add(value->y, name_prefix + "y"s, save_repeat);
   add(value->z, name_prefix + "z"s, save_repeat);
 }
-
-
 
 bool DataFileFacade::write() {
   for (const auto& item : data) {
