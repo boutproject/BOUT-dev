@@ -122,14 +122,14 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
     // Point interpolated from (x+1/2, z+1/2)
 
     // Cache the offsets
-    auto i_xplus = i.xp();
-    auto i_zplus = i.zp();
-    auto i_xzplus = i_zplus.xp();
+    auto i_xplus = i.xp().eval(xt_prime);
+    auto i_zplus = i.zp().eval(xt_prime);
+    auto i_xzplus = i_zplus.xp().eval(xt_prime);
 
     if ((xt_prime[i] < 0.0) || (xt_prime[i_xplus] < 0.0) || (xt_prime[i_xzplus] < 0.0)
         || (xt_prime[i_zplus] < 0.0)) {
       // Hit a boundary
-      corner_boundary_mask(i.x(), i.y(), i.z()) = true;
+      corner_boundary_mask(i.x(xt_prime), i.y(xt_prime), i.z(xt_prime)) = true;
 
       xt_prime_corner[i] = -1.0;
       zt_prime_corner[i] = -1.0;
@@ -174,9 +174,9 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
       continue;
     }
 
-    const auto x = i.x();
-    const auto y = i.y();
-    const auto z = i.z();
+    const auto x = i.x(xt_prime);
+    const auto y = i.y(xt_prime);
+    const auto z = i.z(xt_prime);
 
     //----------------------------------------
     // Boundary stuff

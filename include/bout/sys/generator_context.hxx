@@ -4,7 +4,6 @@
 #include "bout/assert.hxx"
 
 class BoundaryRegion;
-class Mesh;
 
 #include <map>
 #include <string>
@@ -15,14 +14,20 @@ namespace generator {
 class Context {
 public:
   /// Set using an index. Can be Ind2D, Ind3D or IndPerp.
-  template<IND_TYPE N>
+  template <IND_TYPE N,
+            std::enable_if_t<
+                not std::is_base_of<SpecificInd<IND_TYPE::IND_2D>, SpecificInd<N>>::value,
+                bool> = true>
   Context(const SpecificInd<N>& i, CELL_LOC loc, Mesh* msh, BoutReal t)
-      : Context(i.x(), i.y(), i.z(), loc, msh, t) {}
+      : Context(i.x(msh), i.y(msh), i.z(msh), loc, msh, t) {}
 
   // If Ind2D, z should be 0.0 even if ZLOW (Is this sensible?)
-  Context(const Ind2D& i, CELL_LOC loc, Mesh* msh, BoutReal t)
-    : Context(i.x(), i.y(), 0, (loc == CELL_ZLOW) ? CELL_CENTRE : loc, msh, t) {}
-  
+  template <IND_TYPE N, std::enable_if_t<std::is_base_of<SpecificInd<IND_TYPE::IND_2D>,
+                                                         SpecificInd<N>>::value,
+                                         bool> = true>
+  Context(const SpecificInd<N>& i, CELL_LOC loc, Mesh* msh, BoutReal t)
+      : Context(i.x(msh), i.y(msh), 0, (loc == CELL_ZLOW) ? CELL_CENTRE : loc, msh, t) {}
+
   /// Specify a cell index, together with the cell location, mesh and time
   /// 
   Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t);

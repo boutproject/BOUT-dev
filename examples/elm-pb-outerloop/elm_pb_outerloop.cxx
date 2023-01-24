@@ -322,7 +322,7 @@ private:
       mesh->get(Jysep2, "jyseps2_2");
 
       for (auto i : result) {
-        BoutReal mgx = mesh->GlobalX(i.x());
+        BoutReal mgx = mesh->GlobalX(i.x(result));
         BoutReal xgrid_num = (Jxsep + 1.) / Grid_NX;
 
         int globaly = mesh->getGlobalYIndex(i.y());
@@ -338,7 +338,7 @@ private:
       }
     } else { // circular geometry
       for (auto i : result) {
-        BoutReal mgx = mesh->GlobalX(i.x());
+        BoutReal mgx = mesh->GlobalX(i.x(result));
         BoutReal xgrid_num = Grid_NXlimit / Grid_NX;
         if (mgx > xgrid_num) {
           mgx = xgrid_num;

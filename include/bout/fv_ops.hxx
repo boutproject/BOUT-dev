@@ -415,7 +415,7 @@ Div_a_Laplace_perp(const Field3D& a, const Field3D& x) {
 
       cellboundary(s);
 
-      if ((i.x() == mesh->xend) && (mesh->lastX())) {
+      if ((i.x(mesh) == mesh->xend) && (mesh->lastX())) {
         // At right boundary in X
         if (bndry_flux) {
           BoutReal flux;
@@ -441,7 +441,7 @@ Div_a_Laplace_perp(const Field3D& a, const Field3D& x) {
 
       // Left side
 
-      if ((i.x() == mesh->xstart) && (mesh->firstX())) {
+      if ((i.x(mesh) == mesh->xstart) && (mesh->firstX())) {
         // At left boundary in X
 
         if (bndry_flux) {

@@ -421,7 +421,7 @@ TEST_F(Field3DTest, IterateOverWholeField) {
   for (const auto &i : field) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.y(), i.z()});
+      result_indices.insert({i.x(field), i.y(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -454,7 +454,7 @@ TEST_F(Field3DTest, IterateOverRegionInd3D_RGN_ALL) {
   for (const auto &i : field.getMesh()->getRegion("RGN_ALL")) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.y(), i.z()});
+      result_indices.insert({i.x(field), i.y(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -499,7 +499,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOBNDRY) {
   for (const auto &i : field.getRegion(RGN_NOBNDRY)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.y(), i.z()});
+      result_indices.insert({i.x(field), i.y(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -547,7 +547,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOX) {
   for (const auto &i : field.getRegion(RGN_NOX)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.y(), i.z()});
+      result_indices.insert({i.x(field), i.y(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -596,7 +596,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOY) {
   for (const auto &i : field.getRegion(RGN_NOY)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.y(), i.z()});
+      result_indices.insert({i.x(field), i.y(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -650,7 +650,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOZ) {
   for (const auto& i : field.getRegion(RGN_NOZ)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.y(), i.z()});
+      result_indices.insert({i.x(field), i.y(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -699,7 +699,7 @@ TEST_F(Field3DTest, IterateOverRGN_XGUARDS) {
   for (const auto &i : field.getRegion("RGN_XGUARDS")) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.y(), i.z()});
+      result_indices.insert({i.x(field), i.y(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -747,7 +747,7 @@ TEST_F(Field3DTest, IterateOverRGN_YGUARDS) {
   for (const auto &i : field.getRegion("RGN_YGUARDS")) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.y(), i.z()});
+      result_indices.insert({i.x(field), i.y(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -793,7 +793,7 @@ TEST_F(Field3DTest, IterateOverRGN_ZGUARDS) {
   for (const auto &i : field.getRegion("RGN_ZGUARDS")) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.y(), i.z()});
+      result_indices.insert({i.x(field), i.y(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -845,7 +845,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOCORNERS) {
   for (const auto &i : field.getRegion("RGN_NOCORNERS")) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.y(), i.z()});
+      result_indices.insert({i.x(field), i.y(field), i.z(field)});
       ++found_sentinels;
     }
   }

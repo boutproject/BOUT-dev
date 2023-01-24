@@ -620,7 +620,7 @@ Field3D filter(const Field3D &var, int N0, const std::string& rgn) {
 
     BOUT_FOR_INNER(i, region) {
       // Forward FFT
-      rfft(var(i.x(), i.y()), ncz, f.begin());
+      rfft(var(i.x(var), i.y(var)), ncz, f.begin());
 
       for (int jz = 0; jz <= ncz / 2; jz++) {
         if (jz != N0) {
@@ -630,7 +630,7 @@ Field3D filter(const Field3D &var, int N0, const std::string& rgn) {
       }
 
       // Reverse FFT
-      irfft(f.begin(), ncz, result(i.x(), i.y()));
+      irfft(f.begin(), ncz, result(i.x(var), i.y(var)));
     }
   }
 
@@ -669,7 +669,7 @@ Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, const std::string
 
     BOUT_FOR_INNER(i, region) {
       // Take FFT in the Z direction
-      rfft(var(i.x(), i.y()), ncz, f.begin());
+      rfft(var(i.x(var), i.y(var)), ncz, f.begin());
 
       // Filter in z
       for (int jz = zmax + 1; jz <= ncz / 2; jz++)
@@ -680,7 +680,7 @@ Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, const std::string
         f[0] = 0.0;
       }
       // Reverse FFT
-      irfft(f.begin(), ncz, result(i.x(), i.y()));
+      irfft(f.begin(), ncz, result(i.x(var), i.y(var)));
     }
   }
 
@@ -726,9 +726,7 @@ void shiftZ(Field3D &var, double zangle, const std::string& rgn) {
   const Region<Ind2D> &region = var.getRegion2D(region_str);
 
   // Could be OpenMP if shiftZ(Field3D, int, int, double) didn't throw
-  BOUT_FOR_SERIAL(i, region) {
-    shiftZ(var, i.x(), i.y(), zangle);
-  }
+  BOUT_FOR_SERIAL(i, region) { shiftZ(var, i.x(var), i.y(var), zangle); }
 }
 
 namespace {
@@ -740,7 +738,7 @@ void checkDataIsFiniteOnRegion(const Field3D& f, const std::string& region) {
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!finite(f[i])) {
       throw BoutException("Field3D: Operation on non-finite data at [{:d}][{:d}][{:d}]\n",
-                          i.x(), i.y(), i.z());
+                          i.x(f), i.y(f), i.z(f));
     }
   }
 }

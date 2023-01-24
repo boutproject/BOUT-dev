@@ -27,11 +27,6 @@
 #ifndef __EXPRESSION_PARSER_H__
 #define __EXPRESSION_PARSER_H__
 
-#include "bout/format.hxx"
-#include "unused.hxx"
-
-#include "fmt/core.h"
-
 #include <exception>
 #include <list>
 #include <map>
@@ -41,10 +36,15 @@
 #include <string>
 #include <utility>
 
-#include "generator_context.hxx"
-
 class FieldGenerator;
 using FieldGeneratorPtr = std::shared_ptr<FieldGenerator>;
+
+#include "unused.hxx"
+#include "bout/format.hxx"
+
+#include "fmt/core.h"
+
+#include "generator_context.hxx"
 
 //////////////////////////////////////////////////////////
 

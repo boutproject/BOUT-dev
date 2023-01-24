@@ -46,9 +46,9 @@ void XZBilinear::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                              const std::string& region) {
 
   BOUT_FOR(i, delta_x.getRegion(region)) {
-    const int x = i.x();
-    const int y = i.y();
-    const int z = i.z();
+    const int x = i.x(delta_x);
+    const int y = i.y(delta_x);
+    const int z = i.z(delta_x);
 
     if (skip_mask(x, y, z))
       continue;
@@ -96,9 +96,9 @@ Field3D XZBilinear::interpolate(const Field3D& f, const std::string& region) con
   Field3D f_interp{emptyFrom(f)};
 
   BOUT_FOR(i, f.getRegion(region)) {
-    const int x = i.x();
-    const int y = i.y();
-    const int z = i.z();
+    const int x = i.x(f);
+    const int y = i.y(f);
+    const int z = i.z(f);
 
     if (skip_mask(x, y, z))
       continue;

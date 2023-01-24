@@ -315,11 +315,12 @@ If a more general OpenMP directive is needed, there is
       result = f[i] > result ? f[i] : result;
     }
   
-The iterator provides access to the x, y, z indices::
+The iterator provides access to the x, y, z indices, but needs a field
+or a mesh to evaluate the indices::
 
     Field3D f(0.0);
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_ALL")) {
-      f[i] = i.x() + i.y() + i.z();
+      f[i] = i.x(f) + i.y(f) + i.z(f);
     }
 
 Note that calculating these indices involves some overhead: The

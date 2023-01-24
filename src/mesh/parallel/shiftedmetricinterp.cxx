@@ -66,7 +66,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (const auto& i : zt_prime_up.getRegion(RGN_NOY)) {
       // Field line moves in z by an angle zShift(i,j+1)-zShift(i,j) when going
       // from j to j+1, but we want the shift in index-space
-      zt_prime_up[i] = static_cast<BoutReal>(i.z())
+      zt_prime_up[i] = static_cast<BoutReal>(i.z(zt_prime_up))
                        + (zShift[i.yp(y_offset + 1)] - zShift[i])
                              * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
     }
@@ -76,7 +76,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (const auto& i : zt_prime_down.getRegion(RGN_NOY)) {
       // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
       // from j to j-1, but we want the shift in index-space
-      zt_prime_down[i] = static_cast<BoutReal>(i.z())
+      zt_prime_down[i] = static_cast<BoutReal>(i.z(zt_prime_up))
                          - (zShift[i] - zShift[i.ym(y_offset + 1)])
                                * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
     }
@@ -96,7 +96,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   for (const auto& i : zt_prime_to) {
     // Field line moves in z by an angle zShift(i,j) when going
     // from y0 to y(j), but we want the shift in index-space
-    zt_prime_to[i] = static_cast<BoutReal>(i.z())
+    zt_prime_to[i] = static_cast<BoutReal>(i.z(zt_prime_to))
                      + zShift[i] * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
   }
 
@@ -106,7 +106,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     // Field line moves in z by an angle zShift(i,j) when going
     // from y0 to y(j), but we want the shift in index-space.
     // Here we reverse the shift, so subtract zShift
-    zt_prime_from[i] = static_cast<BoutReal>(i.z())
+    zt_prime_from[i] = static_cast<BoutReal>(i.z(zt_prime_to))
                        - zShift[i] * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
   }
 

@@ -59,9 +59,9 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
   }
 
   BOUT_FOR(i, f.getRegion(region)) {
-    const int x = i.x();
-    const int y = i.y();
-    const int z = i.z();
+    const int x = i.x(f);
+    const int y = i.y(f);
+    const int z = i.z(f);
 
     if (skip_mask(x, y, z))
       continue;

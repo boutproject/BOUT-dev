@@ -110,12 +110,14 @@ class FieldPerp : public Field {
   }  
 
   inline BoutReal& operator[](const Ind3D &d) {
-    ASSERT3(d.y() == yindex);
-    return operator()(d.x(), d.z()); //Could use mesh->ind3DtoPerp if we had access to mesh here
+    ASSERT3(d.y(*this) == yindex);
+    return operator()(
+        d.x(*this),
+        d.z(*this)); // Could use mesh->ind3DtoPerp if we had access to mesh here
   }
   inline const BoutReal& operator[](const Ind3D &d) const {
-    ASSERT3(d.y() == yindex);
-    return operator()(d.x(), d.z());
+    ASSERT3(d.y(*this) == yindex);
+    return operator()(d.x(*this), d.z(*this));
   }
 
   /// Return the y index at which this field is defined. This value is

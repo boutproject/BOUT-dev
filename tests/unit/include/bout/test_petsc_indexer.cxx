@@ -169,41 +169,41 @@ TYPED_TEST(IndexerTest, TestGetRegionNobndry) {
   rgn = this->globalSquareIndexer.getRegionNobndry();
   EXPECT_EQ(rgn.asUnique().size(), this->nx * this->ny * this->nz);
   BOUT_FOR(i, rgn) {
-    EXPECT_GE(i.x(), this->globalSquareIndexer.getMesh()->xstart);
-    EXPECT_LE(i.x(), this->globalSquareIndexer.getMesh()->xend);
+    EXPECT_GE(i.x(*this), this->globalSquareIndexer.getMesh()->xstart);
+    EXPECT_LE(i.x(*this), this->globalSquareIndexer.getMesh()->xend);
     if (!std::is_same<TypeParam, FieldPerp>::value) {
-      EXPECT_GE(i.y(), this->globalSquareIndexer.getMesh()->ystart);
-      EXPECT_LE(i.y(), this->globalSquareIndexer.getMesh()->yend);
+      EXPECT_GE(i.y(*this), this->globalSquareIndexer.getMesh()->ystart);
+      EXPECT_LE(i.y(*this), this->globalSquareIndexer.getMesh()->yend);
     }
   }
   rgn = this->globalStarIndexer.getRegionNobndry();
   EXPECT_EQ(rgn.asUnique().size(), this->nx * this->ny * this->nz);
   BOUT_FOR(i, rgn) {
-    EXPECT_GE(i.x(), this->globalStarIndexer.getMesh()->xstart);
-    EXPECT_LE(i.x(), this->globalStarIndexer.getMesh()->xend);
+    EXPECT_GE(i.x(*this), this->globalStarIndexer.getMesh()->xstart);
+    EXPECT_LE(i.x(*this), this->globalStarIndexer.getMesh()->xend);
     if (!std::is_same<TypeParam, FieldPerp>::value) {
-      EXPECT_GE(i.y(), this->globalStarIndexer.getMesh()->ystart);
-      EXPECT_LE(i.y(), this->globalStarIndexer.getMesh()->yend);
+      EXPECT_GE(i.y(*this), this->globalStarIndexer.getMesh()->ystart);
+      EXPECT_LE(i.y(*this), this->globalStarIndexer.getMesh()->yend);
     }
   }
   rgn = this->globalDefaultIndexer.getRegionNobndry();
   EXPECT_EQ(rgn.asUnique().size(), this->nx * this->ny * this->nz);
   BOUT_FOR(i, rgn) {
-    EXPECT_GE(i.x(), this->globalDefaultIndexer.getMesh()->xstart);
-    EXPECT_LE(i.x(), this->globalDefaultIndexer.getMesh()->xend);
+    EXPECT_GE(i.x(*this), this->globalDefaultIndexer.getMesh()->xstart);
+    EXPECT_LE(i.x(*this), this->globalDefaultIndexer.getMesh()->xend);
     if (!std::is_same<TypeParam, FieldPerp>::value) {
-      EXPECT_GE(i.y(), this->globalDefaultIndexer.getMesh()->ystart);
-      EXPECT_LE(i.y(), this->globalDefaultIndexer.getMesh()->yend);
+      EXPECT_GE(i.y(*this), this->globalDefaultIndexer.getMesh()->ystart);
+      EXPECT_LE(i.y(*this), this->globalDefaultIndexer.getMesh()->yend);
     }
   }
   rgn = this->localIndexer.getRegionNobndry();
   EXPECT_EQ(rgn.asUnique().size(), 0);
   BOUT_FOR(i, rgn) {
-    EXPECT_GE(i.x(), this->localIndexer.getMesh()->xstart);
-    EXPECT_LE(i.x(), this->localIndexer.getMesh()->xend);
+    EXPECT_GE(i.x(*this), this->localIndexer.getMesh()->xstart);
+    EXPECT_LE(i.x(*this), this->localIndexer.getMesh()->xend);
     if (!std::is_same<TypeParam, FieldPerp>::value) {
-      EXPECT_GE(i.y(), this->localIndexer.getMesh()->ystart);
-      EXPECT_LE(i.y(), this->localIndexer.getMesh()->yend);
+      EXPECT_GE(i.y(*this), this->localIndexer.getMesh()->ystart);
+      EXPECT_LE(i.y(*this), this->localIndexer.getMesh()->yend);
     }
   }
 }
@@ -231,10 +231,12 @@ TYPED_TEST(IndexerTest, TestGetRegionLowerY) {
   } else {
     rgn = this->globalSquareIndexer.getRegionLowerY();
     EXPECT_EQ(rgn.asUnique().size(), (this->nx + 2 * this->guardx) * this->nz);
-    BOUT_FOR(i, rgn) { EXPECT_LT(i.y(), this->globalSquareIndexer.getMesh()->ystart); }
+    BOUT_FOR(i, rgn) {
+      EXPECT_LT(i.y(*this), this->globalSquareIndexer.getMesh()->ystart);
+    }
     rgn = this->globalStarIndexer.getRegionLowerY();
     EXPECT_EQ(rgn.asUnique().size(), this->nx * this->nz);
-    BOUT_FOR(i, rgn) { EXPECT_LT(i.y(), this->globalStarIndexer.getMesh()->ystart); }
+    BOUT_FOR(i, rgn) { EXPECT_LT(i.y(*this), this->globalStarIndexer.getMesh()->ystart); }
   }
   rgn = this->globalDefaultIndexer.getRegionLowerY();
   EXPECT_EQ(rgn.asUnique().size(), 0);
@@ -252,10 +254,10 @@ TYPED_TEST(IndexerTest, TestGetRegionUpperY) {
   } else {
     rgn = this->globalSquareIndexer.getRegionUpperY();
     EXPECT_EQ(rgn.asUnique().size(), (this->nx + 2 * this->guardx) * this->nz);
-    BOUT_FOR(i, rgn) { EXPECT_GT(i.y(), this->globalSquareIndexer.getMesh()->yend); }
+    BOUT_FOR(i, rgn) { EXPECT_GT(i.y(*this), this->globalSquareIndexer.getMesh()->yend); }
     rgn = this->globalStarIndexer.getRegionUpperY();
     EXPECT_EQ(rgn.asUnique().size(), this->nx * this->nz);
-    BOUT_FOR(i, rgn) { EXPECT_GT(i.y(), this->globalStarIndexer.getMesh()->yend); }
+    BOUT_FOR(i, rgn) { EXPECT_GT(i.y(*this), this->globalStarIndexer.getMesh()->yend); }
   }
   rgn = this->globalDefaultIndexer.getRegionUpperY();
   EXPECT_EQ(rgn.asUnique().size(), 0);
@@ -267,10 +269,10 @@ TYPED_TEST(IndexerTest, TestGetRegionInnerX) {
   Region<typename TypeParam::ind_type> rgn;
   rgn = this->globalSquareIndexer.getRegionInnerX();
   EXPECT_EQ(rgn.asUnique().size(), this->ny * this->nz);
-  BOUT_FOR(i, rgn) { EXPECT_LT(i.x(), this->globalSquareIndexer.getMesh()->xstart); }
+  BOUT_FOR(i, rgn) { EXPECT_LT(i.x(*this), this->globalSquareIndexer.getMesh()->xstart); }
   rgn = this->globalStarIndexer.getRegionInnerX();
   EXPECT_EQ(rgn.asUnique().size(), this->ny * this->nz);
-  BOUT_FOR(i, rgn) { EXPECT_LT(i.x(), this->globalStarIndexer.getMesh()->xstart); }
+  BOUT_FOR(i, rgn) { EXPECT_LT(i.x(*this), this->globalStarIndexer.getMesh()->xstart); }
   rgn = this->globalDefaultIndexer.getRegionInnerX();
   EXPECT_EQ(rgn.asUnique().size(), 0);
   rgn = this->localIndexer.getRegionInnerX();
@@ -281,10 +283,10 @@ TYPED_TEST(IndexerTest, TestGetRegionOuterX) {
   Region<typename TypeParam::ind_type> rgn;
   rgn = this->globalSquareIndexer.getRegionOuterX();
   EXPECT_EQ(rgn.asUnique().size(), this->ny * this->nz);
-  BOUT_FOR(i, rgn) { EXPECT_GT(i.x(), this->globalSquareIndexer.getMesh()->xend); }
+  BOUT_FOR(i, rgn) { EXPECT_GT(i.x(*this), this->globalSquareIndexer.getMesh()->xend); }
   rgn = this->globalStarIndexer.getRegionOuterX();
   EXPECT_EQ(rgn.asUnique().size(), this->ny * this->nz);
-  BOUT_FOR(i, rgn) { EXPECT_GT(i.x(), this->globalStarIndexer.getMesh()->xend); }
+  BOUT_FOR(i, rgn) { EXPECT_GT(i.x(*this), this->globalStarIndexer.getMesh()->xend); }
   rgn = this->globalDefaultIndexer.getRegionOuterX();
   EXPECT_EQ(rgn.asUnique().size(), 0);
   rgn = this->localIndexer.getRegionOuterX();
@@ -442,7 +444,8 @@ TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
 
   // Test x boundaries
   BOUT_FOR(i, this->localmesh->getRegion3D("RGN_XGUARDS")) {
-    if (i.x() < this->xstart && i.y() >= this->ystart && i.y() <= this->yend) {
+    if (i.x(*this) < this->xstart && i.y(*this) >= this->ystart
+        && i.y(*this) <= this->yend) {
       int global = index->getGlobal(i);
       if (this->pe_xind > 0) {
         int otherGlobal =
@@ -453,7 +456,8 @@ TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
         EXPECT_NE(global, -1);
       }
     }
-    if (i.x() >= this->xend && i.y() >= this->ystart && i.y() <= this->yend) {
+    if (i.x(*this) >= this->xend && i.y(*this) >= this->ystart
+        && i.y(*this) <= this->yend) {
       int global = index->getGlobal(i);
       if (this->pe_xind < this->nxpe - 1) {
         int otherGlobal =
@@ -468,10 +472,10 @@ TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
 
   // Test y boundaries
   BOUT_FOR(i, this->localmesh->getRegion3D("RGN_YGUARDS")) {
-    if (i.y() < this->ystart) {
-      
-      if (i.x() == this->xstart) {
-	const int global = index->getGlobal(i.xm()),
+    if (i.y(*this) < this->ystart) {
+
+      if (i.x(*this) == this->xstart) {
+        const int global = index->getGlobal(i.xm()),
 	  otherXind = (this->pe_xind == 0) ? this->pe_xind : this->pe_xind - 1,
 	  otherYind = this->pe_yind - 1;
 	const Ind3D otherInd = i.offset((this->pe_xind == 0) ? -1 :
@@ -482,15 +486,15 @@ TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
 	EXPECT_NE(global, -1);
 	EXPECT_EQ(global, otherGlobal);
       }
-      
+
       int global = index->getGlobal(i);
       int otherGlobal =
           this->getIndexer<Field3D>(indexers, this->pe_xind, this->pe_yind - 1)
               ->getGlobal(i.yp(this->yend - this->ystart + 1));
       EXPECT_EQ(global, otherGlobal);
 
-      if (i.x() == this->xend) {
-	const int global = index->getGlobal(i.xp()),
+      if (i.x(*this) == this->xend) {
+        const int global = index->getGlobal(i.xp()),
 	  otherXind = (this->pe_xind == this->nxpe - 1) ? this->pe_xind : this->pe_xind + 1,
 	  otherYind = this->pe_yind - 1;
 	const Ind3D otherInd = i.offset((this->pe_xind == this->nxpe - 1) ? 1 :
@@ -501,11 +505,12 @@ TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
 	EXPECT_NE(global, -1);
 	EXPECT_EQ(global, otherGlobal);
       }
-      
-    } else if (i.y() >= this->yend && i.x() >= this->xstart && i.x() <= this->xend) {
 
-      if (i.x() == this->xstart) {
-	const int global = index->getGlobal(i.xm()),
+    } else if (i.y(*this) >= this->yend && i.x(*this) >= this->xstart
+               && i.x(*this) <= this->xend) {
+
+      if (i.x(*this) == this->xstart) {
+        const int global = index->getGlobal(i.xm()),
 	  otherXind = (this->pe_xind == 0) ? this->pe_xind : this->pe_xind - 1,
 	  otherYind = this->pe_yind + 1;
 	const Ind3D otherInd = i.offset((this->pe_xind == 0) ? -1 :
@@ -523,8 +528,8 @@ TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
               ->getGlobal(i.ym(this->yend - this->ystart + 1));
       EXPECT_EQ(global, otherGlobal);
 
-      if (i.x() == this->xend) {
-	const int global = index->getGlobal(i.xp()),
+      if (i.x(*this) == this->xend) {
+        const int global = index->getGlobal(i.xp()),
 	  otherXind = (this->pe_xind == this->nxpe - 1) ? this->pe_xind : this->pe_xind + 1,
 	  otherYind = this->pe_yind + 1;
 	const Ind3D otherInd = i.offset((this->pe_xind == this->nxpe - 1) ? 1 :
@@ -535,7 +540,6 @@ TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
 	EXPECT_NE(global, -1);
 	EXPECT_EQ(global, otherGlobal);
       }
-
     }
   }
 }
@@ -546,7 +550,7 @@ TEST_P(ParallelIndexerTest, TestConvertIndex2D) {
 
   // Test x boundaries
   BOUT_FOR(i, this->localmesh->getRegion2D("RGN_XGUARDS")) {
-    if (i.x() < this->xstart) {
+    if (i.x(*this) < this->xstart) {
       int global = index->getGlobal(i);
       if (this->pe_xind > 0) {
         int otherGlobal =
@@ -557,7 +561,7 @@ TEST_P(ParallelIndexerTest, TestConvertIndex2D) {
         EXPECT_NE(global, -1);
       }
     }
-    if (i.x() >= this->xend) {
+    if (i.x(*this) >= this->xend) {
       int global = index->getGlobal(i);
       if (this->pe_xind < this->nxpe - 1) {
         int otherGlobal =
@@ -572,15 +576,16 @@ TEST_P(ParallelIndexerTest, TestConvertIndex2D) {
 
   // Test y boundaries
   BOUT_FOR(i, this->localmesh->getRegion2D("RGN_YGUARDS")) {
-    if (i.y() < this->ystart && i.x() >= this->xstart && i.x() <= this->xend) {
+    if (i.y(*this) < this->ystart && i.x(*this) >= this->xstart
+        && i.x(*this) <= this->xend) {
       int global = index->getGlobal(i);
       int otherGlobal =
           this->getIndexer<Field2D>(indexers, this->pe_xind, this->pe_yind - 1)
               ->getGlobal(i.yp(this->yend - this->ystart + 1));
       EXPECT_EQ(global, otherGlobal);
 
-      if (i.x() == this->xend) {
-	const int global = index->getGlobal(i.xp()),
+      if (i.x(*this) == this->xend) {
+        const int global = index->getGlobal(i.xp()),
 	  otherXind = (this->pe_xind == this->nxpe - 1) ? this->pe_xind : this->pe_xind + 1,
 	  otherYind = this->pe_yind - 1;
 	const Ind2D otherInd = i.offset((this->pe_xind == this->nxpe - 1) ? 1 :
@@ -591,11 +596,11 @@ TEST_P(ParallelIndexerTest, TestConvertIndex2D) {
 	EXPECT_NE(global, -1);
 	EXPECT_EQ(global, otherGlobal);
       }
-      
-    } else if (i.y() >= this->yend) {
 
-      if (i.x() == this->xstart) {
-	const int global = index->getGlobal(i.xm()),
+    } else if (i.y(*this) >= this->yend) {
+
+      if (i.x(*this) == this->xstart) {
+        const int global = index->getGlobal(i.xm()),
 	  otherXind = (this->pe_xind == 0) ? this->pe_xind : this->pe_xind - 1,
 	  otherYind = this->pe_yind + 1;
 	const Ind2D otherInd = i.offset((this->pe_xind == 0) ? -1 :
@@ -613,8 +618,8 @@ TEST_P(ParallelIndexerTest, TestConvertIndex2D) {
               ->getGlobal(i.ym(this->yend - this->ystart + 1));
       EXPECT_EQ(global, otherGlobal);
 
-      if (i.x() == this->xend) {
-	const int global = index->getGlobal(i.xp()),
+      if (i.x(*this) == this->xend) {
+        const int global = index->getGlobal(i.xp()),
 	  otherXind = (this->pe_xind == this->nxpe - 1) ? this->pe_xind : this->pe_xind + 1,
 	  otherYind = this->pe_yind + 1;
 	const Ind2D otherInd = i.offset((this->pe_xind == this->nxpe - 1) ? 1 :
@@ -625,7 +630,6 @@ TEST_P(ParallelIndexerTest, TestConvertIndex2D) {
 	EXPECT_NE(global, -1);
 	EXPECT_EQ(global, otherGlobal);
       }
-      
     }
   }
 }
@@ -636,7 +640,7 @@ TEST_P(ParallelIndexerTest, TestConvertIndexPerp) {
 
   // Test x boundaries
   BOUT_FOR(i, this->localmesh->getRegionPerp("RGN_XGUARDS")) {
-    if (i.x() < this->xstart) {
+    if (i.x(*this) < this->xstart) {
       int global = index->getGlobal(i);
       if (this->pe_xind > 0) {
         int otherGlobal =
@@ -647,7 +651,7 @@ TEST_P(ParallelIndexerTest, TestConvertIndexPerp) {
         EXPECT_NE(global, -1);
       }
     }
-    if (i.x() >= this->xend) {
+    if (i.x(*this) >= this->xend) {
       int global = index->getGlobal(i);
       if (this->pe_xind < this->nxpe - 1) {
         int otherGlobal =
@@ -673,10 +677,10 @@ TEST_P(ParallelIndexerTest, TestRegions3D) {
   rgn = index->getRegionNobndry();
   EXPECT_EQ(rgn.size(), (this->nx - 2) * this->ny * this->nz);
   BOUT_FOR(i, rgn) {
-    EXPECT_GE(i.x(), index->getMesh()->xstart);
-    EXPECT_LE(i.x(), index->getMesh()->xend);
-    EXPECT_GE(i.y(), index->getMesh()->ystart);
-    EXPECT_LE(i.y(), index->getMesh()->yend);
+    EXPECT_GE(i.x(*(index->getMesh())), index->getMesh()->xstart);
+    EXPECT_LE(i.x(*(index->getMesh())), index->getMesh()->xend);
+    EXPECT_GE(i.y(*(index->getMesh())), index->getMesh()->ystart);
+    EXPECT_LE(i.y(*(index->getMesh())), index->getMesh()->yend);
   }
 
   Region<Ind3D> bounds = index->getRegionLowerY() + index->getRegionUpperY()
@@ -693,9 +697,9 @@ TEST_P(ParallelIndexerTest, TestRegions3D) {
   if (this->pe_xind == 0) {
     EXPECT_EQ(rgn.size(), this->ny * this->nz);
     BOUT_FOR(i, rgn) {
-      EXPECT_EQ(i.x(), index->getMesh()->xstart - 1);
-      EXPECT_GE(i.y(), index->getMesh()->ystart);
-      EXPECT_LE(i.y(), index->getMesh()->yend);
+      EXPECT_EQ(i.x(*(index->getMesh())), index->getMesh()->xstart - 1);
+      EXPECT_GE(i.y(*(index->getMesh())), index->getMesh()->ystart);
+      EXPECT_LE(i.y(*(index->getMesh())), index->getMesh()->yend);
     }
   } else {
     EXPECT_EQ(rgn.size(), 0);
@@ -704,9 +708,9 @@ TEST_P(ParallelIndexerTest, TestRegions3D) {
   if (this->pe_xind == this->nxpe - 1) {
     EXPECT_EQ(rgn.size(), this->ny * this->nz);
     BOUT_FOR(i, rgn) {
-      EXPECT_EQ(i.x(), index->getMesh()->xend + 1);
-      EXPECT_GE(i.y(), index->getMesh()->ystart);
-      EXPECT_LE(i.y(), index->getMesh()->yend);
+      EXPECT_EQ(i.x(*(index->getMesh())), index->getMesh()->xend + 1);
+      EXPECT_GE(i.y(*(index->getMesh())), index->getMesh()->ystart);
+      EXPECT_LE(i.y(*(index->getMesh())), index->getMesh()->yend);
     }
   } else {
     EXPECT_EQ(rgn.size(), 0);
@@ -725,10 +729,10 @@ TEST_P(ParallelIndexerTest, TestRegions2D) {
   rgn = index->getRegionNobndry();
   EXPECT_EQ(rgn.size(), (this->nx - 2) * this->ny);
   BOUT_FOR(i, rgn) {
-    EXPECT_GE(i.x(), index->getMesh()->xstart);
-    EXPECT_LE(i.x(), index->getMesh()->xend);
-    EXPECT_GE(i.y(), index->getMesh()->ystart);
-    EXPECT_LE(i.y(), index->getMesh()->yend);
+    EXPECT_GE(i.x(*(index->getMesh())), index->getMesh()->xstart);
+    EXPECT_LE(i.x(*(index->getMesh())), index->getMesh()->xend);
+    EXPECT_GE(i.y(*(index->getMesh())), index->getMesh()->ystart);
+    EXPECT_LE(i.y(*(index->getMesh())), index->getMesh()->yend);
   }
 
   Region<Ind2D> bounds = index->getRegionLowerY() + index->getRegionUpperY()
@@ -745,9 +749,9 @@ TEST_P(ParallelIndexerTest, TestRegions2D) {
   if (this->pe_xind == 0) {
     EXPECT_EQ(rgn.size(), this->ny);
     BOUT_FOR(i, rgn) {
-      EXPECT_EQ(i.x(), index->getMesh()->xstart - 1);
-      EXPECT_GE(i.y(), index->getMesh()->ystart);
-      EXPECT_LE(i.y(), index->getMesh()->yend);
+      EXPECT_EQ(i.x(*(index->getMesh())), index->getMesh()->xstart - 1);
+      EXPECT_GE(i.y(*(index->getMesh())), index->getMesh()->ystart);
+      EXPECT_LE(i.y(*(index->getMesh())), index->getMesh()->yend);
     }
   } else {
     EXPECT_EQ(rgn.size(), 0);
@@ -756,9 +760,9 @@ TEST_P(ParallelIndexerTest, TestRegions2D) {
   if (this->pe_xind == this->nxpe - 1) {
     EXPECT_EQ(rgn.size(), this->ny);
     BOUT_FOR(i, rgn) {
-      EXPECT_EQ(i.x(), index->getMesh()->xend + 1);
-      EXPECT_GE(i.y(), index->getMesh()->ystart);
-      EXPECT_LE(i.y(), index->getMesh()->yend);
+      EXPECT_EQ(i.x(*(index->getMesh())), index->getMesh()->xend + 1);
+      EXPECT_GE(i.y(*(index->getMesh())), index->getMesh()->ystart);
+      EXPECT_LE(i.y(*(index->getMesh())), index->getMesh()->yend);
     }
   } else {
     EXPECT_EQ(rgn.size(), 0);
@@ -777,8 +781,8 @@ TEST_P(ParallelIndexerTest, TestRegionsPerp) {
   rgn = index->getRegionNobndry();
   EXPECT_EQ(rgn.size(), (this->nx - 2) * this->nz);
   BOUT_FOR(i, rgn) {
-    EXPECT_GE(i.x(), index->getMesh()->xstart);
-    EXPECT_LE(i.x(), index->getMesh()->xend);
+    EXPECT_GE(i.x(*(index->getMesh())), index->getMesh()->xstart);
+    EXPECT_LE(i.x(*(index->getMesh())), index->getMesh()->xend);
   }
 
   Region<IndPerp> bounds = index->getRegionLowerY() + index->getRegionUpperY()
@@ -794,14 +798,16 @@ TEST_P(ParallelIndexerTest, TestRegionsPerp) {
   rgn = index->getRegionInnerX();
   if (this->pe_xind == 0) {
     EXPECT_EQ(rgn.size(), this->nz);
-    BOUT_FOR(i, rgn) { EXPECT_EQ(i.x(), index->getMesh()->xstart - 1); }
+    BOUT_FOR(i, rgn) {
+      EXPECT_EQ(i.x(*(index->getMesh())), index->getMesh()->xstart - 1);
+    }
   } else {
     EXPECT_EQ(rgn.size(), 0);
   }
   rgn = index->getRegionOuterX();
   if (this->pe_xind == this->nxpe - 1) {
     EXPECT_EQ(rgn.size(), this->nz);
-    BOUT_FOR(i, rgn) { EXPECT_EQ(i.x(), index->getMesh()->xend + 1); }
+    BOUT_FOR(i, rgn) { EXPECT_EQ(i.x(*(index->getMesh())), index->getMesh()->xend + 1); }
   } else {
     EXPECT_EQ(rgn.size(), 0);
   }

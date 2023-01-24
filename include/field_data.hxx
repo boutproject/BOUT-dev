@@ -39,7 +39,6 @@ class FieldData;
 #include <vector>
 
 // Including the next line leads to compiler errors
-//#include "boundary_op.hxx"
 class BoundaryOp;
 class BoundaryOpPar;
 class Coordinates;
@@ -48,7 +47,8 @@ class Mesh;
 #include "boundary_region.hxx"
 #include "parallel_boundary_region.hxx"
 
-#include "bout/sys/expressionparser.hxx"
+class FieldGenerator;
+using FieldGeneratorPtr = std::shared_ptr<FieldGenerator>;
 
 /// Base class for both scalar and vector fields, holds common
 /// information about the grid, coordinates, and boundaries

@@ -177,7 +177,7 @@ void checkDataIsFiniteOnRegion(const FieldPerp &f, const std::string& region) {
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!::finite(f[i])) {
       throw BoutException("FieldPerp: Operation on non-finite data at [{:d}][{:d}]\n",
-                          i.x(), i.z());
+                          i.x(f), i.z(f));
     }
   }
 }

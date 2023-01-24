@@ -311,7 +311,7 @@ TEST_F(FieldPerpTest, IterateOverWholeField) {
   for (auto &i : field) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.z()});
+      result_indices.insert({i.x(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -348,7 +348,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_ALL) {
   for (auto &i : field) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.z()});
+      result_indices.insert({i.x(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -392,7 +392,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOZ) {
   for (auto &i : field.getRegion(RGN_NOZ)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.z()});
+      result_indices.insert({i.x(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -434,7 +434,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOX) {
   for (auto &i : field.getRegion(RGN_NOX)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.z()});
+      result_indices.insert({i.x(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -478,7 +478,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_XGUARDS) {
   for (const auto &i : field.getRegion("RGN_XGUARDS")) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.z()});
+      result_indices.insert({i.x(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -520,7 +520,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_YGUARDS) {
   for (const auto &i : field.getRegion("RGN_YGUARDS")) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.z()});
+      result_indices.insert({i.x(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -562,7 +562,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_ZGUARDS) {
   for (const auto &i : field.getRegion("RGN_ZGUARDS")) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.z()});
+      result_indices.insert({i.x(field), i.z(field)});
       ++found_sentinels;
     }
   }
@@ -608,7 +608,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOCORNERS) {
   for (const auto &i : field.getRegion("RGN_NOCORNERS")) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x(), i.z()});
+      result_indices.insert({i.x(field), i.z(field)});
       ++found_sentinels;
     }
   }

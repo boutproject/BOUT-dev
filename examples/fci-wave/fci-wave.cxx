@@ -47,8 +47,8 @@ private:
                   (2. * coord->dy[i] * sqrt(coord->g_22[i]));
 
       if (!finite(result[i])) {
-        output.write("[{:d},{:d},{:d}]: {:e}, {:e} -> {:e}\n", i.x(), i.y(), i.z(), f_B.yup()[i.yp()],
-                     f_B.ydown()[i.ym()], result[i]);
+        output.write("[{:d},{:d},{:d}]: {:e}, {:e} -> {:e}\n", i.x(result), i.y(result),
+                     i.z(result), f_B.yup()[i.yp()], f_B.ydown()[i.ym()], result[i]);
       }
     }
 

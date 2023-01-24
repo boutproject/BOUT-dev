@@ -48,9 +48,12 @@
 #include <utility>
 #include <vector>
 
+#include "field_data.hxx"
+
 #include "bout_types.hxx"
 #include "bout/assert.hxx"
 #include "bout/openmpwrap.hxx"
+#include "bout/traits.hxx"
 
 /// The MAXREGIONBLOCKSIZE value can be tuned to try to optimise
 /// performance on specific hardware. It determines what the largest
@@ -133,6 +136,39 @@
 
 enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
 
+namespace {
+
+template <typename M, std::enable_if_t<std::is_base_of<Mesh, M>::value, bool> = true>
+int getNz(const M* mesh) {
+  return mesh->LocalNz;
+}
+template <typename M, std::enable_if_t<std::is_base_of<Mesh, M>::value, bool> = true>
+int getNy(const M* mesh) {
+  return mesh->LocalNy;
+}
+
+template <typename M, std::enable_if_t<std::is_base_of<Mesh, M>::value, bool> = true>
+int getNz(const M& mesh) {
+  return mesh.LocalNz;
+}
+template <typename M, std::enable_if_t<std::is_base_of<Mesh, M>::value, bool> = true>
+int getNy(const M& mesh) {
+  return mesh.LocalNy;
+}
+
+template <typename T, std::enable_if_t<std::is_base_of<Field, T>::value, bool> = true>
+int getNz(const T& f) {
+  return f.getNz();
+}
+template <typename T, std::enable_if_t<std::is_base_of<Field, T>::value, bool> = true>
+int getNy(const T& f) {
+  return f.getNy();
+}
+
+constexpr bool seq_or(bool b1, bool b2, bool b3) { return b1 or b2 or b3; };
+
+} // namespace
+
 /// Indices base class for Fields -- Regions are dereferenced into these
 ///
 /// Provides methods for offsetting by fixed amounts in x, y, z, as
@@ -157,12 +193,106 @@ enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
 ///
 ///     result = field[index->yp()] - field[index->ym()];
 template <IND_TYPE N>
-struct SpecificInd {
+struct SpecificInd;
+
+template <IND_TYPE N>
+struct GeneralSpecificInd {};
+
+template <IND_TYPE N>
+struct ShiftedXSpecificInd : public GeneralSpecificInd<N> {
+  int ind = -1;
+  int xp = 0;
+  ShiftedXSpecificInd() = default;
+  ShiftedXSpecificInd(SpecificInd<N> i, int offset)
+      : GeneralSpecificInd<N>(i), xp(offset){};
+  template <typename T>
+  SpecificInd<N> eval(const T& t) const {
+    return SpecificInd<N>{ind + getNz(t) * getNy(t) * xp};
+  }
+};
+
+template <IND_TYPE N>
+struct ShiftedYSpecificInd : public GeneralSpecificInd<N> {
+  int ind = -1;
+  int yp = 0;
+  ShiftedYSpecificInd() = default;
+  ShiftedYSpecificInd(SpecificInd<N> i, int offset)
+      : GeneralSpecificInd<N>(i), yp(offset){};
+  template <typename T>
+  SpecificInd<N> eval(const T& t) const {
+    return SpecificInd<N>{ind + getNz(t) * yp};
+  }
+};
+template <IND_TYPE N>
+struct ShiftedZpSpecificInd : public GeneralSpecificInd<N> {
+  int ind = -1;
+  int zp = 0;
+  ShiftedZpSpecificInd() = default;
+  ShiftedZpSpecificInd(SpecificInd<N> i, int offset)
+      : GeneralSpecificInd<N>(i), zp(offset){};
+  template <typename T>
+  SpecificInd<N> eval(const T& t) const {
+    ASSERT3(zp >= 0);
+    const int nz = getNz(t);
+    int zpt = zp <= nz ? zp : zp % nz; // Fix in case zp > nz, if not force it to be in range
+    return SpecificInd<N>{(ind + zpt) % nz < zpt ? ind - nz + zpt : ind + zpt};
+  }
+};
+template <IND_TYPE N>
+struct ShiftedZmSpecificInd : public GeneralSpecificInd<N> {
+  int ind = -1;
+  int zm = 0;
+  ShiftedZmSpecificInd() = default;
+  ShiftedZmSpecificInd(SpecificInd<N> i, int offset)
+      : GeneralSpecificInd<N>(i), zm(offset){};
+  template <typename T>
+  SpecificInd<N> eval(const T& t) const {
+    const int nz = getNz(t);
+    ASSERT3(zm >= 0);
+    int zmt = zm <= nz ? zm : zm % nz; // Fix in case zm > nz, if not force it to be in range
+    return SpecificInd<N>{(ind) % nz < zmt ? ind + nz - zmt : ind - zmt};
+  }
+};
+template <IND_TYPE N>
+struct ShiftedZSpecificInd : public GeneralSpecificInd<N> {
+  int ind = -1;
+  int zp = 0;
+  ShiftedZSpecificInd() = default;
+  ShiftedZSpecificInd(SpecificInd<N> i, int offset)
+      : GeneralSpecificInd<N>(i), zp(offset){};
+  template <typename T>
+  SpecificInd<N> eval(const T& t) const {
+    if (zp > 0) {
+      return ShiftedZpSpecificInd(ind, zp).eval(t);
+    }
+    return ShiftedZmSpecificInd(ind, -zp).eval(t);
+  }
+};
+
+template <IND_TYPE N>
+struct ShiftedXYZSpecificInd : public GeneralSpecificInd<N> {
+  int ind = -1;
+  int xp = 0;
+  int yp = 0;
+  int zp = 0;
+  ShiftedXYZSpecificInd() = default;
+  ShiftedXYZSpecificInd(SpecificInd<N> i, int dx, int dy, int dz)
+      : GeneralSpecificInd<N>(i), xp(dx), yp(dy), zp(dz){};
+  template <typename T>
+  SpecificInd<N> eval(const T& t) {
+    return ShiftedZSpecificInd<N>(SpecificInd<N>(ind + ((xp * getNy(t) + yp) * getNz(t))),
+                                  zp)
+        .eval(t);
+  }
+};
+
+template <IND_TYPE N>
+class SpecificInd : public GeneralSpecificInd<N> {
+public:
   int ind = -1;         ///< 1D index into Field
-  int ny = -1, nz = -1; ///< Sizes of y and z dimensions
+  //  int ny = -1, nz = -1; ///< Sizes of y and z dimensions
 
   SpecificInd() = default;
-  SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
   explicit SpecificInd(int i) : ind(i) {};
 
   /// Allow explicit conversion to an int
@@ -217,103 +347,168 @@ struct SpecificInd {
   }
 
   /// Modulus operator
-  SpecificInd operator%(int n) {
-    SpecificInd new_ind{ind % n, ny, nz};
-    return new_ind;
-  }
+  // SpecificInd operator%(int n) {
+  //   SpecificInd new_ind{ind % n, ny, nz};
+  //   return new_ind;
+  // }
 
   /// Convenience functions for converting to (x, y, z)
-  int x() const { return (ind / nz) / ny; }
-  int y() const { return (ind / nz) % ny; }
-  int z() const { return (ind % nz); }
+  template <typename T>
+  int x(const T& t) const {
+    return (ind / getNz(t)) / getNy(t);
+  }
+  template <typename T>
+  int y(const T& t) const {
+    return (ind / getNz(t)) % getNy(t);
+  }
+  template <typename T>
+  int z(const T& t) const {
+    return (ind % getNz(t));
+  }
 
   /// Templated routine to return index.?p(offset), where `?` is one of {x,y,z}
   /// and is determined by the `dir` template argument. The offset corresponds
   /// to the `dd` template argument.
-  template<int dd, DIRECTION dir>
-  const inline SpecificInd plus() const{
-    static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
-                      || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
-                  "Unhandled DIRECTION in SpecificInd::plus");
-    switch(dir) {
-    case(DIRECTION::X):
-      return xp(dd);
-    case(DIRECTION::Y):
-    case(DIRECTION::YAligned):
-    case(DIRECTION::YOrthogonal):
-      return yp(dd);
-    case(DIRECTION::Z):
-      return zp(dd);
-    }
+  // template<int dd, DIRECTION dir>
+  // const inline SpecificInd plus() const{
+  //   static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
+  //                     || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
+  //                 "Unhandled DIRECTION in SpecificInd::plus");
+  //   switch(dir) {
+  //   case(DIRECTION::X):
+  //     return xp(dd);
+  //   case(DIRECTION::Y):
+  //   case(DIRECTION::YAligned):
+  //   case(DIRECTION::YOrthogonal):
+  //     return yp(dd);
+  //   case(DIRECTION::Z):
+  //     return zp(dd);
+  //   }
+  // }
+
+  /// Emulate C++17 std::conjunction.
+  // template<bool...> struct seq_or: std::false_type {};
+
+  // template<bool B1, bool... Bs>
+  // struct seq_or<B1,Bs...>:
+  //   std::conditional_t<B1,std::true_type,seq_or<Bs...>> {};
+
+  template <int dd, DIRECTION dir,
+            typename std::enable_if_t<dir == DIRECTION::X, bool> = true>
+  const inline ShiftedXSpecificInd<N> plus() const {
+    return xp(dd);
+  }
+  template <int dd, DIRECTION dir,
+            typename std::enable_if_t<dir == DIRECTION::Y, bool> = true>
+  const inline ShiftedYSpecificInd<N> plus() const {
+    return yp(dd);
+  }
+  template <int dd, DIRECTION dir,
+            typename std::enable_if_t<dir == DIRECTION::YAligned, bool> = true>
+  const inline ShiftedYSpecificInd<N> plus() const {
+    return yp(dd);
+  }
+  template <int dd, DIRECTION dir,
+            typename std::enable_if_t<dir == DIRECTION::YOrthogonal, bool> = true>
+  const inline ShiftedYSpecificInd<N> plus() const {
+    return yp(dd);
+  }
+  template <int dd, DIRECTION dir,
+            typename std::enable_if_t<dir == DIRECTION::Z, bool> = true>
+  const inline ShiftedZpSpecificInd<N> plus() const {
+    return zp(dd);
   }
 
   /// Templated routine to return index.?m(offset), where `?` is one of {x,y,z}
   /// and is determined by the `dir` template argument. The offset corresponds
   /// to the `dd` template argument.
-  template<int dd, DIRECTION dir>
-  const inline SpecificInd minus() const{
-    static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
-                      || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
-                  "Unhandled DIRECTION in SpecificInd::minus");
-    switch(dir) {
-    case(DIRECTION::X):
-      return xm(dd);
-    case(DIRECTION::Y):
-    case(DIRECTION::YAligned):
-    case(DIRECTION::YOrthogonal):
-      return ym(dd);
-    case(DIRECTION::Z):
-      return zm(dd);
-    }
+  template <int dd, DIRECTION dir,
+            typename std::enable_if_t<dir == DIRECTION::X, bool> = true>
+  const inline ShiftedXSpecificInd<N> minus() const {
+    return xm(dd);
   }
+  template <
+      int dd, DIRECTION dir,
+      typename std::enable_if_t<seq_or(dir == DIRECTION::Y, dir == DIRECTION::YAligned,
+                                       dir == DIRECTION::YOrthogonal),
+                                bool> = true>
+  const inline ShiftedYSpecificInd<N> minus() const {
+    return ym(dd);
+  }
+  template <int dd, DIRECTION dir,
+            typename std::enable_if_t<dir == DIRECTION::Z, bool> = true>
+  const inline ShiftedZmSpecificInd<N> minus() const {
+    return zm(dd);
+  }
+  // template<int dd, DIRECTION dir>
+  // const inline SpecificInd minus() const{
+  //   static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
+  //                     || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
+  //                 "Unhandled DIRECTION in SpecificInd::minus");
+  //   switch(dir) {
+  //   case(DIRECTION::X):
+  //     return xm(dd);
+  //   case(DIRECTION::Y):
+  //   case(DIRECTION::YAligned):
+  //   case(DIRECTION::YOrthogonal):
+  //     return ym(dd);
+  //   case(DIRECTION::Z):
+  //     return zm(dd);
+  //   }
+  // }
 
-  const inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
+  const inline ShiftedXSpecificInd<N> xp(int dx = 1) const {
+    return {*this, dx};
+  } //+ (dx * ny * nz), ny, nz}; }
   /// The index one point -1 in x
-  const inline SpecificInd xm(int dx = 1) const { return xp(-dx); }
+  const inline ShiftedXSpecificInd<N> xm(int dx = 1) const { return xp(-dx); }
   /// The index one point +1 in y
-  const inline SpecificInd yp(int dy = 1) const {
-#if CHECK >= 4
-    if (y() + dy < 0 or y() + dy >= ny) {
-      throw BoutException("Offset in y ({:d}) would go out of bounds at {:d}", dy, ind);
-    }
-#endif
-    ASSERT3(std::abs(dy) < ny);
-    return {ind + (dy * nz), ny, nz};
-  }
+  const inline ShiftedYSpecificInd<N> yp(int dy = 1) const { return {*this, dy}; }
+  // #if CHECK >= 4
+  //     if (y() + dy < 0 or y() + dy >= ny) {
+  //       throw BoutException("Offset in y ({:d}) would go out of bounds at {:d}", dy,
+  //       ind);
+  //     }
+  // #endif
+  //     ASSERT3(std::abs(dy) < ny);
+  //     return {ind + (dy * nz), ny, nz};
+  //   }
   /// The index one point -1 in y
-  const inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
+  const inline ShiftedYSpecificInd<N> ym(int dy = 1) const { return yp(-dy); }
   /// The index one point +1 in z. Wraps around zend to zstart
   /// An alternative, non-branching calculation is :
   /// ind + dz - nz * ((ind + dz) / nz  - ind / nz)
-  /// but this appears no faster (and perhaps slower).  
-  const inline SpecificInd zp(int dz = 1) const {
-    ASSERT3(dz >= 0);
-    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
-    return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
-  }
+  /// but this appears no faster (and perhaps slower).
+  const inline ShiftedZpSpecificInd<N> zp(int dz = 1) const { return {*this, dz}; }
+  //   ASSERT3(dz >= 0);
+  //   dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
+  //   return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
+  // }
   /// The index one point -1 in z. Wraps around zstart to zend
   /// An alternative, non-branching calculation is :
   /// ind - dz + nz * ( (nz + ind) / nz - (nz + ind - dz) / nz)
   /// but this appears no faster (and perhaps slower).
-  const inline SpecificInd zm(int dz = 1) const {
-    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
-    ASSERT3(dz >= 0);
-    return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
-  }
+  const inline ShiftedZmSpecificInd<N> zm(int dz = 1) const { return {*this, dz}; }
+  //   dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
+  //   ASSERT3(dz >= 0);
+  //   return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
+  // }
 
   // and for 2 cells
-  const inline SpecificInd xpp() const { return xp(2); }
-  const inline SpecificInd xmm() const { return xm(2); }
-  const inline SpecificInd ypp() const { return yp(2); }
-  const inline SpecificInd ymm() const { return ym(2); }
-  const inline SpecificInd zpp() const { return zp(2); }
-  const inline SpecificInd zmm() const { return zm(2); }
+  const inline ShiftedXSpecificInd<N> xpp() const { return xp(2); }
+  const inline ShiftedXSpecificInd<N> xmm() const { return xm(2); }
+  const inline ShiftedYSpecificInd<N> ypp() const { return yp(2); }
+  const inline ShiftedYSpecificInd<N> ymm() const { return ym(2); }
+  const inline ShiftedZpSpecificInd<N> zpp() const { return zp(2); }
+  const inline ShiftedZmSpecificInd<N> zmm() const { return zm(2); }
 
   /// Generic offset of \p index in multiple directions simultaneously
-  const inline SpecificInd offset(int dx, int dy, int dz) const {
-    auto temp = (dz > 0) ? zp(dz) : zm(-dz);
-    return temp.yp(dy).xp(dx);
+  const inline ShiftedXYZSpecificInd<N> offset(int dx, int dy, int dz) const {
+    return {ind, dx, dy, dz};
   }
+  //   auto temp = (dz > 0) ? zp(dz) : zm(-dz);
+  //   return temp.yp(dy).xp(dx);
+  // }
 };
 
 /// Relational operators
@@ -369,20 +564,20 @@ using Ind2D = SpecificInd<IND_TYPE::IND_2D>;
 using IndPerp = SpecificInd<IND_TYPE::IND_PERP>;
 
 /// Get string representation of Ind3D
-inline const std::string toString(const Ind3D& i) {
-  return "(" + std::to_string(i.x()) + ", "
-             + std::to_string(i.y()) + ", "
-             + std::to_string(i.z()) + ")";
+template <typename T>
+inline const std::string toString(const Ind3D& i, const T& t) {
+  return "(" + std::to_string(i.x(t)) + ", " + std::to_string(i.y(t)) + ", "
+         + std::to_string(i.z(t)) + ")";
 }
 /// Get string representation of Ind2D
-inline const std::string toString(const Ind2D& i) {
-  return "(" + std::to_string(i.x()) + ", "
-             + std::to_string(i.y()) + ")";
+template <typename T>
+inline const std::string toString(const Ind2D& i, const T& t) {
+  return "(" + std::to_string(i.x(t)) + ", " + std::to_string(i.y(t)) + ")";
 }
 /// Get string representation of IndPerp
-inline const std::string toString(const IndPerp& i) {
-  return "(" + std::to_string(i.x()) + ", "
-             + std::to_string(i.z()) + ")";
+template <typename T>
+inline const std::string toString(const IndPerp& i, const T& t) {
+  return "(" + std::to_string(i.x(t)) + ", " + std::to_string(i.z(t)) + ")";
 }
 
 /// Structure to hold various derived "statistics" from a particular region
@@ -802,7 +997,7 @@ private:
     // Guard against invalid length ranges
     if (len <= 0 ) return {};
 
-    RegionIndices region(len, {-1, ny, nz});
+    RegionIndices region(len, T{-1});
 
     int x = xstart;
     int y = ystart;

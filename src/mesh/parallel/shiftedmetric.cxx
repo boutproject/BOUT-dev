@@ -64,8 +64,8 @@ void ShiftedMetric::cachePhases() {
 
   // To/From field aligned phases
   BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
-    int ix = i.x();
-    int iy = i.y();
+    int ix = i.x(mesh);
+    int iy = i.y(mesh);
     for (int jz = 0; jz < nmodes; jz++) {
       BoutReal kwave = jz * 2.0 * PI / zlength; // wave number is 1/[rad]
       fromAlignedPhs(ix, iy, jz) =
@@ -103,8 +103,8 @@ void ShiftedMetric::cachePhases() {
   for (auto& slice : parallel_slice_phases) {
     BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
 
-      int ix = i.x();
-      int iy = i.y();
+      int ix = i.x(mesh);
+      int iy = i.y(mesh);
       BoutReal slice_shift = zShift[i] - zShift[i.yp(slice.y_offset)];
 
       for (int jz = 0; jz < nmodes; jz++) {
@@ -163,7 +163,7 @@ Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
   Field3D result{emptyFrom(f).setDirectionY(y_direction_out)};
 
   BOUT_FOR(i, mesh.getRegion2D(toString(region))) {
-    shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
+    shiftZ(&f(i, 0), &phs(i.x(result), i.y(result), 0), &result(i, 0));
   }
 
   return result;
@@ -231,8 +231,8 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
     auto& f_slice = f.ynext(phase.y_offset);
     f_slice.allocate();
     BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
-      const int ix = i.x();
-      const int iy = i.y();
+      const int ix = i.x(f);
+      const int iy = i.y(f);
       const int iy_offset = iy + phase.y_offset;
       shiftZ(&(f(ix, iy_offset, 0)), &(phase.phase_shift(ix, iy, 0)),
              &(f_slice(ix, iy_offset, 0)));
@@ -254,8 +254,8 @@ ShiftedMetric::shiftZ(const Field3D& f,
   f_fft = Array<dcomplex>(nmodes);
 
   BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
-    int ix = i.x();
-    int iy = i.y();
+    int ix = i.x(f);
+    int iy = i.y(f);
     f_fft(ix, iy).ensureUnique();
     rfft(&f(i, 0), mesh.LocalNz, f_fft(ix, iy).begin());
   }
@@ -272,8 +272,8 @@ ShiftedMetric::shiftZ(const Field3D& f,
 
     BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
       // Deep copy the FFT'd field
-      int ix = i.x();
-      int iy = i.y();
+      int ix = i.x(f);
+      int iy = i.y(f);
 
       Array<dcomplex> shifted_temp(f_fft(ix, iy + phase.y_offset));
       shifted_temp.ensureUnique();
@@ -282,7 +282,8 @@ ShiftedMetric::shiftZ(const Field3D& f,
         shifted_temp[jz] *= phase.phase_shift(ix, iy, jz);
       }
 
-      irfft(shifted_temp.begin(), mesh.LocalNz, &current_result(i.yp(phase.y_offset), 0));
+      irfft(shifted_temp.begin(), mesh.LocalNz,
+            &current_result(i.yp(phase.y_offset).eval(f), 0));
     }
   }
 

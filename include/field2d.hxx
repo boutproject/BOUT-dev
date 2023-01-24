@@ -186,6 +186,14 @@ public:
   const BoutReal& BOUT_HOST_DEVICE operator[](const Ind2D& d) const {
     return data[d.ind];
   }
+  template <typename T>
+  BoutReal& BOUT_HOST_DEVICE operator[](const T& d) {
+    return data[d.eval(*this).ind];
+  }
+  template <typename T>
+  const BoutReal& BOUT_HOST_DEVICE operator[](const T& d) const {
+    return data[d.eval(*this).ind];
+  }
   BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d);
   // const BoutReal&  operator[](const Ind3D &d) const;
 

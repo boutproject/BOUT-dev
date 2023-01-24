@@ -11,10 +11,10 @@ int main(int argc, char** argv) {
 
   // interior cells
   BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
-    f[i] = mesh->GlobalNzNoBoundaries*(
-             mesh->GlobalNyNoBoundaries*mesh->getGlobalXIndexNoBoundaries(i.x())
-             + mesh->getGlobalYIndexNoBoundaries(i.y()))
-           + i.z();
+    f[i] = mesh->GlobalNzNoBoundaries
+               * (mesh->GlobalNyNoBoundaries * mesh->getGlobalXIndexNoBoundaries(i.x(f))
+                  + mesh->getGlobalYIndexNoBoundaries(i.y(f)))
+           + i.z(f);
   }
 
   // lower x-boundary cells

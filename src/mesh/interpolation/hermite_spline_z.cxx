@@ -45,8 +45,7 @@ ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in
 
   // Initialise in order to avoid 'uninitialized value' errors from Valgrind when using
   // guard-cell values
-  std::fill(std::begin(k_corner), std::end(k_corner),
-            Ind3D(-1, localmesh->LocalNy, localmesh->LocalNz));
+  std::fill(std::begin(k_corner), std::end(k_corner), Ind3D(-1));
 
   // Allocate Field3D members
   h00.allocate();
@@ -65,9 +64,9 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
   const auto& local_region = (y_offset == 0) ? delta_z.getRegion("RGN_ALL") : delta_z.getRegion("RGN_NOY");
 
   BOUT_FOR(i, local_region) {
-    const int x = i.x();
-    const int y = i.y();
-    const int z = i.z();
+    const int x = i.x(delta_z);
+    const int y = i.y(delta_z);
+    const int z = i.z(delta_z);
 
     // The integer part of zt_prime are the indices of the cell
     // containing the field line end-point
@@ -83,7 +82,7 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
     corner_zind = ((corner_zind % ncz) + ncz) % ncz;
 
     // Convert z-index to Ind3D
-    k_corner[i.ind] = Ind3D((x*ncy + y)*ncz + corner_zind, ncy, ncz);
+    k_corner[i.ind] = Ind3D((x * ncy + y) * ncz + corner_zind);
 
     // Check that t_z is in range
     if ((t_z < 0.0) || (t_z > 1.0)) {
@@ -133,10 +132,10 @@ ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) co
 
   const int ncz = localmesh->LocalNz;
   const auto corner = k_corner[(i*localmesh->LocalNy + j)*ncz + k];
-  const int k_mod = corner.z();
-  const int k_mod_m1 = corner.zm().z();
-  const int k_mod_p1 = corner.zp().z();
-  const int k_mod_p2 = corner.zpp().z();
+  const int k_mod = corner.z(localmesh);
+  const int k_mod_m1 = corner.zm().eval(localmesh).z(localmesh);
+  const int k_mod_p1 = corner.zp().eval(localmesh).z(localmesh);
+  const int k_mod_p2 = corner.zpp().eval(localmesh).z(localmesh);
 
   return {{i, j + yoffset, k_mod_m1, -0.5 * h10(i, j, k)},
           {i, j + yoffset, k_mod,    h00(i, j, k) - 0.5 * h11(i, j, k)},
@@ -165,15 +164,15 @@ Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region_
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", local_fz_region);
 
   BOUT_FOR(i, local_region) {
-    const auto corner = k_corner[i.ind].yp(y_offset);
+    const auto corner = k_corner[i.ind].yp(y_offset).eval(*localmesh);
     const auto corner_zp1 = corner.zp();
 
     // Interpolate in Z
     f_interp[i.yp(y_offset)] = f[corner] * h00[i] + f[corner_zp1] * h01[i]
                                + fz[corner] * h10[i] + fz[corner_zp1] * h11[i];
 
-    ASSERT2(std::isfinite(f_interp[i.yp(y_offset)]) || i.x() < localmesh->xstart
-            || i.x() > localmesh->xend);
+    ASSERT2(std::isfinite(f_interp[i.yp(y_offset)]) || i.x(f) < localmesh->xstart
+            || i.x(f) > localmesh->xend);
   }
   return f_interp;
 }

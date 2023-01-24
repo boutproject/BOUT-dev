@@ -682,7 +682,7 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
     BOUT_FOR(j2D, result.getRegion2D("RGN_NOBNDRY")) {
       // Get constants for this iteration
       const BoutReal spacingFactor = 1.0 / (12 * metric->dz[j2D] * metric->dx[j2D]);
-      const int jy = j2D.y(), jx = j2D.x();
+      const int jy = j2D.y(result), jx = j2D.x(result);
       const int xm = jx - 1, xp = jx + 1;
 
       // Extract relevant Field2D values
@@ -972,7 +972,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
 #if not(BOUT_USE_METRIC_3D)
       const BoutReal spacingFactor = 1.0 / (12 * metric->dz[j2D] * metric->dx[j2D]);
 #endif
-      const int jy = j2D.y(), jx = j2D.x();
+      const int jy = j2D.y(result), jx = j2D.x(result);
       const int xm = jx - 1, xp = jx + 1;
 
       const auto Fxm = f_temp(xm, jy), Fx = f_temp(jx, jy), Fxp = f_temp(xp, jy);

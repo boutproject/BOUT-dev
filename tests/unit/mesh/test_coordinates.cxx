@@ -53,11 +53,11 @@ TEST_F(CoordinatesTest, ZLength) {
 
 #if BOUT_USE_METRIC_3D
 TEST_F(CoordinatesTest, ZLength3D) {
-  auto dz = makeField<FieldMetric>([](const Ind3D& i) -> BoutReal {
-    return static_cast<BoutReal>(i.x() + i.y()) / nz;
+  auto dz = makeField<FieldMetric>([Mesh * mesh](const Ind3D& i) -> BoutReal {
+    return static_cast<BoutReal>(i.x(mesh) + i.y(mesh)) / nz;
   });
-  auto expected =
-      makeField<Field2D>([](const Ind2D& i) -> BoutReal { return i.x() + i.y(); });
+  auto expected = makeField<Field2D>(
+      [](const Ind2D& i) -> BoutReal { return i.x(*mesh) + i.y(*mesh); });
 
   Coordinates coords{mesh,
                      FieldMetric{1.0}, // dx

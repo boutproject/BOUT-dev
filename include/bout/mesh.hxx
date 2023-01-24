@@ -724,23 +724,27 @@ class Mesh {
   void addRegionPerp(const std::string &region_name, const Region<IndPerp> &region);
 
   /// Converts an Ind2D to an Ind3D using calculation
-  Ind3D ind2Dto3D(const Ind2D &ind2D, int jz = 0) { return {ind2D.ind * LocalNz + jz, LocalNy, LocalNz}; }
+  Ind3D ind2Dto3D(const Ind2D& ind2D, int jz = 0) {
+    return Ind3D{ind2D.ind * LocalNz + jz};
+  }
 
   /// Converts an Ind3D to an Ind2D using calculation
-  Ind2D ind3Dto2D(const Ind3D &ind3D) { return {ind3D.ind / LocalNz, LocalNy, 1}; }
+  Ind2D ind3Dto2D(const Ind3D& ind3D) { return Ind2D{ind3D.ind / LocalNz}; }
 
   /// Converts an Ind3D to an IndPerp using calculation
-  IndPerp ind3DtoPerp(const Ind3D &ind3D) { return {ind3D.x() * LocalNz + ind3D.z(), 1, LocalNz}; }
+  IndPerp ind3DtoPerp(const Ind3D& ind3D) {
+    return IndPerp{ind3D.x(this) * LocalNz + ind3D.z(this)};
+  }
 
   /// Converts an IndPerp to an Ind3D using calculation
   Ind3D indPerpto3D(const IndPerp &indPerp, int jy = 0) {
-    int jz = indPerp.z();
-    return { (indPerp.ind - jz) * LocalNy + LocalNz * jy + jz , LocalNy, LocalNz};
+    int jz = indPerp.z(this);
+    return Ind3D{(indPerp.ind - jz) * LocalNy + LocalNz * jy + jz};
   }
   
   /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
   BOUT_HOST_DEVICE Ind2D map3Dto2D(const Ind3D& ind3D) {
-    return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
+    return Ind2D{indexLookup3Dto2D[ind3D.ind]};
   }
 
   /// Create the default regions for the data iterator

@@ -323,6 +323,15 @@ class Field3D : public Field {
   Region<Ind3D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
   Region<Ind3D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
 
+  template <typename T>
+  BoutReal& BOUT_HOST_DEVICE operator[](const T& d) {
+    return data[d.eval(*this).ind];
+  }
+  template <typename T>
+  const BoutReal& BOUT_HOST_DEVICE operator[](const T& d) const {
+    return data[d.eval(*this).ind];
+  }
+
   BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) { return data[d.ind]; }
   const BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) const {
     return data[d.ind];
