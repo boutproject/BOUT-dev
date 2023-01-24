@@ -239,6 +239,9 @@ private:
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
+
+  void checkCovariant();
+  void checkContravariant();
 };
 
 /*

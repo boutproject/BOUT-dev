@@ -476,18 +476,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   g23 = getUnalignedAtLocation(g23, "g23", 0.0);
 
   // Check input metrics
-  // Diagonal metric components should be finite
-  bout::checkFinite(g11, "g11", "RGN_NOCORNERS");
-  bout::checkFinite(g22, "g22", "RGN_NOCORNERS");
-  bout::checkFinite(g33, "g33", "RGN_NOCORNERS");
-  // Diagonal metric components should be positive
-  bout::checkPositive(g11, "g11", "RGN_NOCORNERS");
-  bout::checkPositive(g22, "g22", "RGN_NOCORNERS");
-  bout::checkPositive(g33, "g33", "RGN_NOCORNERS");
-  // Off-diagonal metric components should be finite
-  bout::checkFinite(g12, "g12", "RGN_NOCORNERS");
-  bout::checkFinite(g13, "g13", "RGN_NOCORNERS");
-  bout::checkFinite(g23, "g23", "RGN_NOCORNERS");
+  checkContravariant();
 
   /// Find covariant metric components
   auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
@@ -540,18 +529,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
                                    transform.get());
 
   // Check covariant metrics
-  // Diagonal metric components should be finite
-  bout::checkFinite(g_11, "g_11", "RGN_NOCORNERS");
-  bout::checkFinite(g_22, "g_22", "RGN_NOCORNERS");
-  bout::checkFinite(g_33, "g_33", "RGN_NOCORNERS");
-  // Diagonal metric components should be positive
-  bout::checkPositive(g_11, "g_11", "RGN_NOCORNERS");
-  bout::checkPositive(g_22, "g_22", "RGN_NOCORNERS");
-  bout::checkPositive(g_33, "g_33", "RGN_NOCORNERS");
-  // Off-diagonal metric components should be finite
-  bout::checkFinite(g_12, "g_12", "RGN_NOCORNERS");
-  bout::checkFinite(g_13, "g_13", "RGN_NOCORNERS");
-  bout::checkFinite(g_23, "g_23", "RGN_NOCORNERS");
+  checkCovariant();
 
   /// Calculate Jacobian and Bxy
   if (jacobian())
@@ -699,18 +677,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                           extrapolate_y, false, transform.get());
 
     // Check input metrics
-    // Diagonal metric components should be finite
-    bout::checkFinite(g11, "g11", "RGN_NOCORNERS");
-    bout::checkFinite(g22, "g22", "RGN_NOCORNERS");
-    bout::checkFinite(g33, "g33", "RGN_NOCORNERS");
-    // Diagonal metric components should be positive
-    bout::checkPositive(g11, "g11", "RGN_NOCORNERS");
-    bout::checkPositive(g22, "g22", "RGN_NOCORNERS");
-    bout::checkPositive(g33, "g33", "RGN_NOCORNERS");
-    // Off-diagonal metric components should be finite
-    bout::checkFinite(g12, "g12", "RGN_NOCORNERS");
-    bout::checkFinite(g13, "g13", "RGN_NOCORNERS");
-    bout::checkFinite(g23, "g23", "RGN_NOCORNERS");
+    checkContravariant();
 
     /// Find covariant metric components
     auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
@@ -764,18 +731,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                      transform.get());
 
     // Check covariant metrics
-    // Diagonal metric components should be finite
-    bout::checkFinite(g_11, "g_11", "RGN_NOCORNERS");
-    bout::checkFinite(g_22, "g_22", "RGN_NOCORNERS");
-    bout::checkFinite(g_33, "g_33", "RGN_NOCORNERS");
-    // Diagonal metric components should be positive
-    bout::checkPositive(g_11, "g_11", "RGN_NOCORNERS");
-    bout::checkPositive(g_22, "g_22", "RGN_NOCORNERS");
-    bout::checkPositive(g_33, "g_33", "RGN_NOCORNERS");
-    // Off-diagonal metric components should be finite
-    bout::checkFinite(g_12, "g_12", "RGN_NOCORNERS");
-    bout::checkFinite(g_13, "g_13", "RGN_NOCORNERS");
-    bout::checkFinite(g_23, "g_23", "RGN_NOCORNERS");
+    checkCovariant();
 
     /// Calculate Jacobian and Bxy
     if (jacobian()) {
@@ -906,27 +862,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                      transform.get());
 
     // Check input metrics
-    // Diagonal metric components should be finite
-    bout::checkFinite(g11, "g11", "RGN_NOCORNERS");
-    bout::checkFinite(g22, "g22", "RGN_NOCORNERS");
-    bout::checkFinite(g33, "g33", "RGN_NOCORNERS");
-    bout::checkFinite(g_11, "g_11", "RGN_NOCORNERS");
-    bout::checkFinite(g_22, "g_22", "RGN_NOCORNERS");
-    bout::checkFinite(g_33, "g_33", "RGN_NOCORNERS");
-    // Diagonal metric components should be positive
-    bout::checkPositive(g11, "g11", "RGN_NOCORNERS");
-    bout::checkPositive(g22, "g22", "RGN_NOCORNERS");
-    bout::checkPositive(g33, "g33", "RGN_NOCORNERS");
-    bout::checkPositive(g_11, "g_11", "RGN_NOCORNERS");
-    bout::checkPositive(g_22, "g_22", "RGN_NOCORNERS");
-    bout::checkPositive(g_33, "g_33", "RGN_NOCORNERS");
-    // Off-diagonal metric components should be finite
-    bout::checkFinite(g12, "g12", "RGN_NOCORNERS");
-    bout::checkFinite(g13, "g13", "RGN_NOCORNERS");
-    bout::checkFinite(g23, "g23", "RGN_NOCORNERS");
-    bout::checkFinite(g_12, "g_12", "RGN_NOCORNERS");
-    bout::checkFinite(g_13, "g_13", "RGN_NOCORNERS");
-    bout::checkFinite(g_23, "g_23", "RGN_NOCORNERS");
+    checkContravariant();
+    checkCovariant();
 
     J = interpolateAndExtrapolate(coords_in->J, location, true, true, false,
                                   transform.get());
@@ -1013,31 +950,8 @@ int Coordinates::geometry(bool recalculate_staggered,
     throw BoutException("dz magnitude less than 1e-8");
 
   // Check input metrics
-  // Diagonal metric components should be finite
-  bout::checkFinite(g11, "g11", "RGN_NOCORNERS");
-  bout::checkFinite(g22, "g22", "RGN_NOCORNERS");
-  bout::checkFinite(g33, "g33", "RGN_NOCORNERS");
-  // Diagonal metric components should be positive
-  bout::checkPositive(g11, "g11", "RGN_NOCORNERS");
-  bout::checkPositive(g22, "g22", "RGN_NOCORNERS");
-  bout::checkPositive(g33, "g33", "RGN_NOCORNERS");
-  // Off-diagonal metric components should be finite
-  bout::checkFinite(g12, "g12", "RGN_NOCORNERS");
-  bout::checkFinite(g13, "g13", "RGN_NOCORNERS");
-  bout::checkFinite(g23, "g23", "RGN_NOCORNERS");
-
-  // Diagonal metric components should be finite
-  bout::checkFinite(g_11, "g_11", "RGN_NOCORNERS");
-  bout::checkFinite(g_22, "g_22", "RGN_NOCORNERS");
-  bout::checkFinite(g_33, "g_33", "RGN_NOCORNERS");
-  // Diagonal metric components should be positive
-  bout::checkPositive(g_11, "g_11", "RGN_NOCORNERS");
-  bout::checkPositive(g_22, "g_22", "RGN_NOCORNERS");
-  bout::checkPositive(g_33, "g_33", "RGN_NOCORNERS");
-  // Off-diagonal metric components should be finite
-  bout::checkFinite(g_12, "g_12", "RGN_NOCORNERS");
-  bout::checkFinite(g_13, "g_13", "RGN_NOCORNERS");
-  bout::checkFinite(g_23, "g_23", "RGN_NOCORNERS");
+  checkContravariant();
+  checkCovariant();
 
   // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric
@@ -2000,4 +1914,91 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
 #else
   throw BoutException("Coordinates::Laplace_perpXY for 3D metric not implemented");
 #endif
+}
+
+
+void Coordinates::checkCovariant() {
+  // Diagonal metric components should be finite
+  bout::checkFinite(g_11, "g_11", "RGN_NOCORNERS");
+  bout::checkFinite(g_22, "g_22", "RGN_NOCORNERS");
+  bout::checkFinite(g_33, "g_33", "RGN_NOCORNERS");
+  if (g_11.hasParallelSlices()){
+    ASSERT0(localmesh->ystart == 1);
+    output_info.write("Checking paralle components\n");
+    bout::checkFinite(g_11.ynext(+1), "g_11.ynext", "RGN_YPAR_+1");
+    bout::checkFinite(g_22.ynext(+1), "g_22.ynext", "RGN_YPAR_+1");
+    bout::checkFinite(g_33.ynext(+1), "g_33.ynext", "RGN_YPAR_+1");
+    bout::checkFinite(g_11.ynext(-1), "g_11.yprev", "RGN_YPAR_-1");
+    bout::checkFinite(g_22.ynext(-1), "g_22.yprev", "RGN_YPAR_-1");
+    bout::checkFinite(g_33.ynext(-1), "g_33.yprev", "RGN_YPAR_-1");
+  }
+  // Diagonal metric components should be positive
+  bout::checkPositive(g_11, "g_11", "RGN_NOCORNERS");
+  bout::checkPositive(g_22, "g_22", "RGN_NOCORNERS");
+  bout::checkPositive(g_33, "g_33", "RGN_NOCORNERS");
+  if (g_11.hasParallelSlices()){
+    bout::checkPositive(g_11.ynext(+1), "g_11.ynext", "RGN_YPAR_+1");
+    bout::checkPositive(g_22.ynext(+1), "g_22.ynext", "RGN_YPAR_+1");
+    bout::checkPositive(g_33.ynext(+1), "g_33.ynext", "RGN_YPAR_+1");
+    bout::checkPositive(g_11.ynext(-1), "g_11.yprev", "RGN_YPAR_-1");
+    bout::checkPositive(g_22.ynext(-1), "g_22.yprev", "RGN_YPAR_-1");
+    bout::checkPositive(g_33.ynext(-1), "g_33.yprev", "RGN_YPAR_-1");
+  }
+
+  // Off-diagonal metric components should be finite
+  bout::checkFinite(g_12, "g_12", "RGN_NOCORNERS");
+  bout::checkFinite(g_13, "g_13", "RGN_NOCORNERS");
+  bout::checkFinite(g_23, "g_23", "RGN_NOCORNERS");
+  if (g_23.hasParallelSlices()) {
+    bout::checkFinite(g_12.ynext(+1), "g_12.ynext", "RGN_YPAR_+1");
+    bout::checkFinite(g_13.ynext(+1), "g_13.ynext", "RGN_YPAR_+1");
+    bout::checkFinite(g_23.ynext(+1), "g_23.ynext", "RGN_YPAR_+1");
+    bout::checkFinite(g_12.ynext(-1), "g_12.yprev", "RGN_YPAR_-1");
+    bout::checkFinite(g_13.ynext(-1), "g_13.yprev", "RGN_YPAR_-1");
+    bout::checkFinite(g_23.ynext(-1), "g_23.yprev", "RGN_YPAR_-1");
+  }
+}
+
+
+
+void Coordinates::checkContravariant() {
+  // Diagonal metric components should be finite
+  bout::checkFinite(g11, "g11", "RGN_NOCORNERS");
+  bout::checkFinite(g22, "g22", "RGN_NOCORNERS");
+  bout::checkFinite(g33, "g33", "RGN_NOCORNERS");
+  if (g11.hasParallelSlices()){
+    ASSERT0(localmesh->ystart == 1);
+    output_info.write("Checking paralle components\n");
+    bout::checkFinite(g11.ynext(+1), "g11.ynext", "RGN_YPAR_+1");
+    bout::checkFinite(g22.ynext(+1), "g22.ynext", "RGN_YPAR_+1");
+    bout::checkFinite(g33.ynext(+1), "g33.ynext", "RGN_YPAR_+1");
+    bout::checkFinite(g11.ynext(-1), "g11.yprev", "RGN_YPAR_-1");
+    bout::checkFinite(g22.ynext(-1), "g22.yprev", "RGN_YPAR_-1");
+    bout::checkFinite(g33.ynext(-1), "g33.yprev", "RGN_YPAR_-1");
+  }
+  // Diagonal metric components should be positive
+  bout::checkPositive(g11, "g11", "RGN_NOCORNERS");
+  bout::checkPositive(g22, "g22", "RGN_NOCORNERS");
+  bout::checkPositive(g33, "g33", "RGN_NOCORNERS");
+  if (g11.hasParallelSlices()){
+    bout::checkPositive(g11.ynext(+1), "g11.ynext", "RGN_YPAR_+1");
+    bout::checkPositive(g22.ynext(+1), "g22.ynext", "RGN_YPAR_+1");
+    bout::checkPositive(g33.ynext(+1), "g33.ynext", "RGN_YPAR_+1");
+    bout::checkPositive(g11.ynext(-1), "g11.yprev", "RGN_YPAR_-1");
+    bout::checkPositive(g22.ynext(-1), "g22.yprev", "RGN_YPAR_-1");
+    bout::checkPositive(g33.ynext(-1), "g33.yprev", "RGN_YPAR_-1");
+  }
+
+  // Off-diagonal metric components should be finite
+  bout::checkFinite(g12, "g12", "RGN_NOCORNERS");
+  bout::checkFinite(g13, "g13", "RGN_NOCORNERS");
+  bout::checkFinite(g23, "g23", "RGN_NOCORNERS");
+  if (g23.hasParallelSlices()) {
+    bout::checkFinite(g12.ynext(+1), "g12.ynext", "RGN_YPAR_+1");
+    bout::checkFinite(g13.ynext(+1), "g13.ynext", "RGN_YPAR_+1");
+    bout::checkFinite(g23.ynext(+1), "g23.ynext", "RGN_YPAR_+1");
+    bout::checkFinite(g12.ynext(-1), "g12.yprev", "RGN_YPAR_-1");
+    bout::checkFinite(g13.ynext(-1), "g13.yprev", "RGN_YPAR_-1");
+    bout::checkFinite(g23.ynext(-1), "g23.yprev", "RGN_YPAR_-1");
+  }
 }
