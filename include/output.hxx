@@ -138,8 +138,10 @@ private:
 /// 
 class DummyOutput : public Output {
 public:
+  void write(const std::string&) override {};
   template <class S, class... Args>
   void write(const S&, const Args&...) {};
+  void print(const std::string&) override {};
   template <class S, class... Args>
   void print(const S&, const Args&...) {};
   void enable() override{};
