@@ -253,8 +253,8 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
       const auto iyp = i.yp();
       const auto iym = i.ym();
 
-      if (bndry_flux || mesh->periodicY(i.x()) || !mesh->lastY(i.x())
-          || (i.y() != mesh->yend)) {
+      if (bndry_flux || mesh->periodicY(i.x(f)) || !mesh->lastY(i.x(f))
+          || (i.y(f) != mesh->yend)) {
 
       const BoutReal c = 0.5 * (K[i] + Kup[iyp]);             // K at the upper boundary
       const BoutReal J = 0.5 * (coord->J[i] + coord->J[iyp]); // Jacobian at boundary
@@ -268,8 +268,8 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
       }
 
       // Calculate flux at lower surface
-      if (bndry_flux || mesh->periodicY(i.x()) || !mesh->firstY(i.x())
-          || (i.y() != mesh->ystart)) {
+      if (bndry_flux || mesh->periodicY(i.x(f)) || !mesh->firstY(i.x(f))
+          || (i.y(f) != mesh->ystart)) {
       const BoutReal c = 0.5 * (K[i] + Kdown[iym]);           // K at the lower boundary
       const BoutReal J = 0.5 * (coord->J[i] + coord->J[iym]); // Jacobian at boundary
 
