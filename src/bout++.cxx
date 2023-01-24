@@ -681,11 +681,18 @@ void addBuildFlagsToOptions(Options& options) {
   output_progress << "Setting up output (experimental output) file\n";
 
   options["BOUT_VERSION"] = bout::version::as_double;
+  options["use_check_level"] = bout::build::check_level;
+  options["use_openmp_schedule"] = bout::build::openmp_schedule;
   options["has_fftw"] = bout::build::has_fftw;
   options["has_gettext"] = bout::build::has_gettext;
   options["has_lapack"] = bout::build::has_lapack;
   options["has_netcdf"] = bout::build::has_netcdf;
   options["has_petsc"] = bout::build::has_petsc;
+  options["has_legacy_netcdf"] = bout::build::has_legacy_netcdf;
+  options["has_hypre"] = bout::build::has_hypre;
+  options["has_umpire"] = bout::build::has_umpire;
+  options["has_caliper"] = bout::build::has_caliper;
+  options["has_raja"] = bout::build::has_raja;
   options["has_pretty_function"] = bout::build::has_pretty_function;
   options["has_pvode"] = bout::build::has_pvode;
   options["has_scorep"] = bout::build::has_scorep;
@@ -698,6 +705,9 @@ void addBuildFlagsToOptions(Options& options) {
   options["use_sigfpe"] = bout::build::use_sigfpe;
   options["use_signal"] = bout::build::use_signal;
   options["use_track"] = bout::build::use_track;
+  options["use_cuda"] = bout::build::use_cuda;
+  options["use_metric_3d"] = bout::build::use_metric_3d;
+  options["use_msgstack"] = bout::build::use_msgstack;
 }
 
 void writeSettingsFile(Options& options, const std::string& data_dir,
