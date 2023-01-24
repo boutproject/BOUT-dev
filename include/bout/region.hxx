@@ -504,7 +504,7 @@ public:
 
   /// Generic offset of \p index in multiple directions simultaneously
   const inline ShiftedXYZSpecificInd<N> offset(int dx, int dy, int dz) const {
-    return {ind, dx, dy, dz};
+    return ShiftedXYZSpecificInd<N>{ind, dx, dy, dz};
   }
   //   auto temp = (dz > 0) ? zp(dz) : zm(-dz);
   //   return temp.yp(dy).xp(dx);
