@@ -705,7 +705,7 @@ void addBuildFlagsToOptions(Options& options) {
   options["use_sigfpe"] = bout::build::use_sigfpe;
   options["use_signal"] = bout::build::use_signal;
   options["use_track"] = bout::build::use_track;
-  options["use_cuda"] = bout::build::use_cuda;
+  options["has_cuda"] = bout::build::has_cuda;
   options["use_metric_3d"] = bout::build::use_metric_3d;
   options["use_msgstack"] = bout::build::use_msgstack;
 }

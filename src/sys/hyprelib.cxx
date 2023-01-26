@@ -18,7 +18,7 @@ namespace bout {
 // Define all the static member variables
 int HypreLib::count = 0;
 
-#if BOUT_USE_CUDA
+#if BOUT_HAS_CUDA
 static constexpr auto BOUT_HYPRE_EXEC = HYPRE_EXEC_DEVICE;
 static constexpr auto BOUT_HYPRE_MEMORY = HYPRE_MEMORY_DEVICE;
 #else

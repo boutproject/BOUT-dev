@@ -874,7 +874,7 @@ message("
    RAJA enabled             : ${BOUT_HAS_RAJA}
    Umpire enabled           : ${BOUT_HAS_UMPIRE}
    Caliper enabled          : ${BOUT_HAS_CALIPER}
-   CUDA enabled             : ${BOUT_USE_CUDA}
+   CUDA enabled             : ${BOUT_HAS_CUDA}
    Metric type              : ${BOUT_METRIC_TYPE}
    Python API support       : ${BOUT_USE_PYTHON}
    Sanitizers enabled       : ${BOUT_USE_SANITIZERS}

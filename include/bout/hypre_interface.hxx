@@ -26,7 +26,7 @@
 BOUT_ENUM_CLASS(HYPRE_SOLVER_TYPE, gmres, bicgstab, pcg);
 
 namespace bout {
-#if BOUT_USE_CUDA && defined(__CUDACC__) // HYPRE with Cuda enabled
+#if BOUT_HAS_CUDA && defined(__CUDACC__) // HYPRE with Cuda enabled
 #define HypreMalloc(P, SIZE) cudaMallocManaged(&P, SIZE)
 #define HypreFree(P) cudaFree(P)
 #else
@@ -870,7 +870,7 @@ public:
 
     HYPRE_BoomerAMGCreate(&precon);
     HYPRE_BoomerAMGSetOldDefault(precon);
-#if BOUT_USE_CUDA
+#if BOUT_HAS_CUDA
     // 18 or 7 for GPU implementation, 7 is slower to converge
     HYPRE_BoomerAMGSetRelaxType(precon, 18);
     HYPRE_BoomerAMGSetRelaxOrder(precon, false); // must be false for GPU
