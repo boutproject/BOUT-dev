@@ -482,8 +482,8 @@ int BoutMesh::load() {
   }
 
   // Get X and Y processor indices
-  PE_YIND = MYPE / NXPE;
-  PE_XIND = MYPE % NXPE;
+  PE_YIND = MYPE % NXPE;
+  PE_XIND = MYPE / NXPE;
 
   // Set the other grid sizes from nx, ny, nz
   setDerivedGridSizes();
@@ -1600,7 +1600,7 @@ int BoutMesh::PROC_NUM(int xind, int yind) const {
     return -1;
   }
 
-  return yind * NXPE + xind;
+  return xind * NYPE + yind;
 }
 
 /// Returns the global X index given a local index
