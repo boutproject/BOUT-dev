@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 #
-# Test file I/O by loading from restart files and writing to dump files
+# Test the DataFileFacade interface by writing to dump files using the SAVE_ONCE macro
 #
 # requires: netcdf
-# cores: 4
+# cores: 2
 
 from boutdata.collect import collect
 from boututils.run_wrapper import build_and_log, shell, launch_safe
@@ -67,7 +67,7 @@ for nproc in [1, 2]:
             print(f"{name} is different: {numpy.max(numpy.abs(expected - result))}")
 
 if success:
-    print("=> All restart I/O tests passed")
+    print("=> All DataFileFacade tests passed")
     # clean up binary files
     shell(
         "rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc"
