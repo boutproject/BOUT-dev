@@ -73,55 +73,88 @@ function(bout_update_submodules)
 endfunction()
 
 set(BOUT_SOURCES
-  ./include/boundary_factory.hxx
-  ./include/boundary_op.hxx
-  ./include/boundary_region.hxx
-  ./include/boundary_standard.hxx
-  ./include/bout.hxx
   ./include/bout/array.hxx
   ./include/bout/assert.hxx
+  ./include/bout/boundary_factory.hxx
+  ./include/bout/boundary_op.hxx
+  ./include/bout/boundary_region.hxx
+  ./include/bout/boundary_standard.hxx
+  ./include/bout/bout.hxx
   ./include/bout/bout_enum_class.hxx
+  ./include/bout/bout_types.hxx
+  ./include/bout/boutcomm.hxx
+  ./include/bout/boutexception.hxx
   ./include/bout/caliper_wrapper.hxx
   ./include/bout/constants.hxx
   ./include/bout/coordinates.hxx
   ./include/bout/coordinates_accessor.hxx
+  ./include/bout/cyclic_reduction.hxx
+  ./include/bout/dcomplex.hxx
   ./include/bout/deriv_store.hxx
+  ./include/bout/derivs.hxx
+  ./include/bout/difops.hxx
   ./include/bout/expr.hxx
+  ./include/bout/fft.hxx
+  ./include/bout/field.hxx
+  ./include/bout/field2d.hxx
+  ./include/bout/field3d.hxx
+  ./include/bout/field_accessor.hxx
+  ./include/bout/field_data.hxx
+  ./include/bout/field_factory.hxx
   ./include/bout/fieldgroup.hxx
+  ./include/bout/fieldperp.hxx
   ./include/bout/format.hxx
   ./include/bout/fv_ops.hxx
   ./include/bout/generic_factory.hxx
   ./include/bout/globalfield.hxx
   ./include/bout/globalindexer.hxx
+  ./include/bout/globals.hxx
   ./include/bout/griddata.hxx
+  ./include/bout/gyro_average.hxx
   ./include/bout/hypre_interface.hxx
   ./include/bout/index_derivs.hxx
   ./include/bout/index_derivs_interface.hxx
+  ./include/bout/initialprofiles.hxx
+  ./include/bout/interpolation.hxx
   ./include/bout/invert/laplacexy.hxx
   ./include/bout/invert/laplacexz.hxx
+  ./include/bout/invert_laplace.hxx
+  ./include/bout/invert_parderiv.hxx
   ./include/bout/invertable_operator.hxx
+  ./include/bout/lapack_routines.hxx
   ./include/bout/macro_for_each.hxx
+  ./include/bout/mask.hxx
   ./include/bout/mesh.hxx
   ./include/bout/monitor.hxx
   ./include/bout/mpi_wrapper.hxx
+  ./include/bout/msg_stack.hxx
+  ./include/bout/multiostream.hxx
   ./include/bout/openmpwrap.hxx
+  ./include/bout/operatorstencil.hxx
+  ./include/bout/options.hxx
+  ./include/bout/options_netcdf.hxx
+  ./include/bout/optionsreader.hxx
+  ./include/bout/output.hxx
+  ./include/bout/output_bout_types.hxx
+  ./include/bout/parallel_boundary_op.hxx
+  ./include/bout/parallel_boundary_region.hxx
   ./include/bout/paralleltransform.hxx
-  ./include/bout/petsclib.hxx
   ./include/bout/petsc_interface.hxx
+  ./include/bout/petsclib.hxx
   ./include/bout/physicsmodel.hxx
   ./include/bout/region.hxx
   ./include/bout/rkscheme.hxx
   ./include/bout/rvec.hxx
   ./include/bout/scorepwrapper.hxx
   ./include/bout/single_index_ops.hxx
-  ./include/bout/field_accessor.hxx
   ./include/bout/slepclib.hxx
+  ./include/bout/smoothing.hxx
   ./include/bout/snb.hxx
   ./include/bout/solver.hxx
   ./include/bout/solverfactory.hxx
+  ./include/bout/sourcex.hxx
+  ./include/bout/stencils.hxx
   ./include/bout/surfaceiter.hxx
-  ./include/bout/operatorstencil.hxx
-  ./include/bout/output_bout_types.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
@@ -132,45 +165,12 @@ set(BOUT_SOURCES
   ./include/bout/sys/variant.hxx
   ./include/bout/template_combinations.hxx
   ./include/bout/traits.hxx
-  ./include/bout_types.hxx
-  ./include/boutcomm.hxx
-  ./include/boutexception.hxx
-  ./include/cyclic_reduction.hxx
-  ./include/dcomplex.hxx
-  ./include/derivs.hxx
-  ./include/difops.hxx
-  ./include/fft.hxx
-  ./include/field.hxx
-  ./include/field2d.hxx
-  ./include/field3d.hxx
-  ./include/field_data.hxx
-  ./include/field_factory.hxx
-  ./include/fieldperp.hxx
-  ./include/globals.hxx
-  ./include/gyro_average.hxx
-  ./include/initialprofiles.hxx
-  ./include/interpolation.hxx
-  ./include/invert_laplace.hxx
-  ./include/invert_parderiv.hxx
-  ./include/lapack_routines.hxx
-  ./include/mask.hxx
-  ./include/msg_stack.hxx
-  ./include/multiostream.hxx
-  ./include/options.hxx
-  ./include/options_netcdf.hxx
-  ./include/optionsreader.hxx
-  ./include/output.hxx
-  ./include/parallel_boundary_op.hxx
-  ./include/parallel_boundary_region.hxx
-  ./include/smoothing.hxx
-  ./include/sourcex.hxx
-  ./include/stencils.hxx
-  ./include/unused.hxx
-  ./include/utils.hxx
-  ./include/vecops.hxx
-  ./include/vector2d.hxx
-  ./include/vector3d.hxx
-  ./include/where.hxx
+  ./include/bout/unused.hxx
+  ./include/bout/utils.hxx
+  ./include/bout/vecops.hxx
+  ./include/bout/vector2d.hxx
+  ./include/bout/vector3d.hxx
+  ./include/bout/where.hxx
   ./src/bout++.cxx
   ./src/bout++-time.hxx
   ./src/field/field.cxx
