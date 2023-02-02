@@ -77,8 +77,12 @@ for nslice in nslices:
             grid, field, maps, new_names=False, metric2d=conf.isMetric2D(), quiet=True
         )
 
-        args = " MZ={} MYG={} mesh:paralleltransform:y_periodic={} mesh:ddy:first={} NXPE=2".format(
-            n, nslice, yperiodic, method_orders[nslice]["name"]
+        args = " MZ={} MYG={} mesh:paralleltransform:y_periodic={} mesh:ddy:first={} NXPE={}".format(
+            n,
+            nslice,
+            yperiodic,
+            method_orders[nslice]["name"],
+            2 if conf.has["petsc"] else 1,
         )
 
         # Command to run
