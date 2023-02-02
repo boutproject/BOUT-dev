@@ -40,7 +40,6 @@ import subprocess
 def corral(
     cached=True, refresh=False, debug=False, IConly=1, logname="status.log", skew=False
 ):
-
     print("in corral")
     log = read_log(logname=logname)
     # done = log['done']
@@ -53,7 +52,6 @@ def corral(
     print("current:", current)
 
     if refresh == True:
-
         for i, path in enumerate(runs):
             print(i, path)
             a = post_bout.save(path=path, IConly=IConly)  # re post-process a run
@@ -61,7 +59,6 @@ def corral(
     elif (
         cached == False
     ):  # if all the ind. simulation pkl files are in place skip this part
-
         a = post_bout.save(path=current)  # save to current dir
         # here is really where you shoudl write to status.log
         # write_log('status.log',
@@ -111,7 +108,6 @@ def corral(
 
 class LinRes(object):
     def __init__(self, all_modes):
-
         self.mode_db = all_modes
         self.db = all_modes
         # self.ave_db = all_ave
