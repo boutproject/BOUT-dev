@@ -30,7 +30,6 @@ def generate(
     mxg=2,
     file="circle.nc",
 ):
-
     # q = rBt / RBp
     Bp = r * Bt / (R * q)
 
