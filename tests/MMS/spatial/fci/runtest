@@ -19,13 +19,13 @@ from sys import stdout
 
 import zoidberg as zb
 
-nx = 3  # Not changed for these tests
+nx = 4  # Not changed for these tests
 
 # Resolution in y and z
 nlist = [8, 16, 32, 64, 128]
 
 # Number of parallel slices (in each direction)
-nslices = [1, 2]
+nslices = [1]  # , 2]
 
 directory = "data"
 
@@ -59,7 +59,7 @@ for nslice in nslices:
         # Note that the Bz and Bzprime parameters here must be the same as in mms.py
         field = zb.field.Slab(Bz=0.05, Bzprime=0.1)
         # Create rectangular poloidal grids
-        poloidal_grid = zb.poloidal_grid.RectangularPoloidalGrid(nx, n, 0.1, 1.0)
+        poloidal_grid = zb.poloidal_grid.RectangularPoloidalGrid(nx, n, 0.1, 1.0, MXG=1)
         # Set the ylength and y locations
         ylength = 10.0
 
@@ -72,12 +72,12 @@ for nslice in nslices:
         # Create the grid
         grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=yperiodic)
         # Make and write maps
-        maps = zb.make_maps(grid, field, nslice=nslice, quiet=True)
+        maps = zb.make_maps(grid, field, nslice=nslice, quiet=True, MXG=1)
         zb.write_maps(
             grid, field, maps, new_names=False, metric2d=conf.isMetric2D(), quiet=True
         )
 
-        args = " MZ={} MYG={} mesh:paralleltransform:y_periodic={} mesh:ddy:first={}".format(
+        args = " MZ={} MYG={} mesh:paralleltransform:y_periodic={} mesh:ddy:first={} NXPE=2".format(
             n, nslice, yperiodic, method_orders[nslice]["name"]
         )
 

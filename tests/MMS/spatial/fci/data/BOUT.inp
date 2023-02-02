@@ -20,4 +20,4 @@ y_periodic = true
 z_periodic = true
 
 [mesh:paralleltransform:xzinterpolation]
-type = lagrange4pt
+type = hermitespline
