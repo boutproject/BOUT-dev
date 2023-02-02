@@ -1,7 +1,7 @@
 #include <cstdio>
 
-#include "fft.hxx"
-#include "output.hxx"
+#include "bout/fft.hxx"
+#include "bout/output.hxx"
 #include "bout/array.hxx"
 #include "bout/globalindexer.hxx"
 #include "gtest/gtest.h"

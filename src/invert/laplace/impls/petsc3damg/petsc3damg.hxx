@@ -30,7 +30,7 @@ class LaplacePetsc3dAmg;
 #ifndef __PETSC_LAPLACE_3DAMG_H__
 #define __PETSC_LAPLACE_3DAMG_H__
 
-#include "invert_laplace.hxx"
+#include "bout/invert_laplace.hxx"
 #include "bout/build_config.hxx"
 
 #if not BOUT_HAS_PETSC
@@ -45,10 +45,10 @@ RegisterUnavailableLaplace
 #include <bout/operatorstencil.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/petsclib.hxx>
-#include <boutexception.hxx>
-#include <globals.hxx>
-#include <options.hxx>
-#include <output.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/globals.hxx>
+#include <bout/options.hxx>
+#include <bout/output.hxx>
 #include <petscksp.h>
 
 class LaplacePetsc3dAmg;

@@ -49,16 +49,16 @@ class Mesh;
 #include <bout/index_derivs_interface.hxx>
 #include <bout/mpi_wrapper.hxx>
 
-#include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "field_data.hxx"
-#include "options.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/field_data.hxx"
+#include "bout/options.hxx"
 
 #include "fieldgroup.hxx"
 
-#include "boundary_region.hxx"
-#include "parallel_boundary_region.hxx"
+#include "bout/boundary_region.hxx"
+#include "bout/parallel_boundary_region.hxx"
 
 #include "sys/range.hxx" // RangeIterator
 
@@ -66,7 +66,7 @@ class Mesh;
 
 #include "coordinates.hxx" // Coordinates class
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #include "bout/generic_factory.hxx"
 #include <bout/region.hxx>

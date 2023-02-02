@@ -1,9 +1,9 @@
 #include <bout/constants.hxx>
 #include <bout/griddata.hxx>
-#include <boutexception.hxx>
-#include <field_factory.hxx>
-#include <output.hxx>
-#include <unused.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/output.hxx>
+#include <bout/unused.hxx>
 
 using bout::generator::Context;
 

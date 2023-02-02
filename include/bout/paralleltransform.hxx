@@ -6,10 +6,10 @@
 #ifndef __PARALLELTRANSFORM_H__
 #define __PARALLELTRANSFORM_H__
 
-#include "bout_types.hxx"
-#include "field3d.hxx"
-#include "options.hxx"
-#include "unused.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field3d.hxx"
+#include "bout/options.hxx"
+#include "bout/unused.hxx"
 
 class Mesh;
 

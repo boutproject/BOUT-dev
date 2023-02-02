@@ -29,7 +29,7 @@
 #ifndef __PETSC_LAPLACE_H__
 #define __PETSC_LAPLACE_H__
 
-#include "invert_laplace.hxx"
+#include "bout/invert_laplace.hxx"
 #include "bout/build_config.hxx"
 
 #if not BOUT_HAS_PETSC
@@ -42,10 +42,10 @@ RegisterUnavailableLaplace registerlaplacepetsc(LAPLACE_PETSC,
 #else
 
 #include <bout/petsclib.hxx>
-#include <boutexception.hxx>
-#include <globals.hxx>
-#include <options.hxx>
-#include <output.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/globals.hxx>
+#include <bout/options.hxx>
+#include <bout/output.hxx>
 #include <petscksp.h>
 
 // PETSc creates macros for MPI calls, which interfere with the MpiWrapper class

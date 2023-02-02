@@ -27,18 +27,18 @@ class Field3D;
 #define __FIELD3D_H__
 
 class Mesh; // #include "bout/mesh.hxx"
-#include "bout_types.hxx"
-#include "field.hxx"
-#include "field2d.hxx"
-#include "fieldperp.hxx"
-#include "stencils.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field.hxx"
+#include "bout/field2d.hxx"
+#include "bout/fieldperp.hxx"
+#include "bout/stencils.hxx"
 
 #include "bout/array.hxx"
 #include "bout/region.hxx"
 
 #include "bout/assert.hxx"
 
-#include "utils.hxx"
+#include "bout/utils.hxx"
 
 #include <vector>
 

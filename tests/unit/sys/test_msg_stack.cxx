@@ -2,7 +2,7 @@
 #if BOUT_USE_MSGSTACK
 
 #include "gtest/gtest.h"
-#include "msg_stack.hxx"
+#include "bout/msg_stack.hxx"
 #include "test_extras.hxx"
 
 #include <iostream>

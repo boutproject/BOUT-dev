@@ -5,9 +5,9 @@
 
 #if BOUT_HAS_HYPRE
 
-#include "boutcomm.hxx"
-#include "field.hxx"
-#include "utils.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/field.hxx"
+#include "bout/utils.hxx"
 #include "bout/bout_enum_class.hxx"
 #include "bout/caliper_wrapper.hxx"
 #include "bout/globalindexer.hxx"

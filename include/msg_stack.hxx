@@ -31,7 +31,7 @@ class MsgStack;
 
 #include "bout/build_config.hxx"
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 #include "bout/format.hxx"
 
 #include "fmt/core.h"

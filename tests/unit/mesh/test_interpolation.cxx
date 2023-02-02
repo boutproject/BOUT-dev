@@ -1,18 +1,18 @@
 #include "gtest/gtest.h"
 
 #include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "interpolation.hxx"
-#include "output.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/interpolation.hxx"
+#include "bout/output.hxx"
 #include "test_extras.hxx"
 
 ////// delete these
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "field3d.hxx"
-#include "unused.hxx"
-#include "utils.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field3d.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 #include <cmath>
 #include <set>
 #include <vector>

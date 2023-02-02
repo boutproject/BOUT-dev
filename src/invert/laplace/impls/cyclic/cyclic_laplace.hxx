@@ -31,7 +31,7 @@ class LaplaceCyclic;
 #ifndef __LAP_CYCLIC_H__
 #define __LAP_CYCLIC_H__
 
-#include "invert_laplace.hxx"
+#include "bout/invert_laplace.hxx"
 #include "bout/build_config.hxx"
 
 #if BOUT_USE_METRIC_3D
@@ -43,11 +43,11 @@ RegisterUnavailableLaplace registerlaplacecycle(LAPLACE_CYCLIC,
 
 #else
 
-#include <cyclic_reduction.hxx>
-#include <dcomplex.hxx>
-#include <options.hxx>
+#include <bout/cyclic_reduction.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/options.hxx>
 
-#include "utils.hxx"
+#include "bout/utils.hxx"
 
 namespace {
 RegisterLaplace<LaplaceCyclic> registerlaplacecycle(LAPLACE_CYCLIC);

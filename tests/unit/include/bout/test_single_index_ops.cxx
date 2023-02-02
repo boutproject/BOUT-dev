@@ -2,8 +2,8 @@
 
 #include "test_extras.hxx"
 
-#include "derivs.hxx"
-#include "difops.hxx"
+#include "bout/derivs.hxx"
+#include "bout/difops.hxx"
 #include "bout/single_index_ops.hxx"
 
 #include <random>

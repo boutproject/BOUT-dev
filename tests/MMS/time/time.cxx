@@ -7,7 +7,7 @@
 
 
 #include <bout/physicsmodel.hxx>
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 class TimeTest : public PhysicsModel {
 public:

@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "boutcomm.hxx"
-#include "cyclic_reduction.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/cyclic_reduction.hxx"
 #include "test_extras.hxx"
 #include "bout/array.hxx"
 

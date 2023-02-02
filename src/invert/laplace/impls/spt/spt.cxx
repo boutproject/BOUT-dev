@@ -35,10 +35,10 @@
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <utils.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/utils.hxx>
 
 #include "spt.hxx"
 

@@ -31,17 +31,17 @@ class Field2D;
 #define __FIELD2D_H__
 
 class Mesh;
-#include "field.hxx"
-#include "field_data.hxx"
-class Field3D; //#include "field3d.hxx"
-#include "fieldperp.hxx"
-#include "stencils.hxx"
+#include "bout/field.hxx"
+#include "bout/field_data.hxx"
+class Field3D; //#include "bout/field3d.hxx"
+#include "bout/fieldperp.hxx"
+#include "bout/stencils.hxx"
 
-#include "utils.hxx"
+#include "bout/utils.hxx"
 #include "bout/array.hxx"
 #include "bout/region.hxx"
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #if BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib

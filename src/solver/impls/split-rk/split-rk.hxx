@@ -33,7 +33,7 @@ class SplitRK;
 #define SPLITRK_HXX
 
 #include <bout/solver.hxx>
-#include <bout_types.hxx>
+#include <bout/bout_types.hxx>
 
 namespace {
 RegisterSolver<SplitRK> registersolversplitrk("splitrk");

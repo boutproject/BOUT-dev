@@ -21,7 +21,7 @@
  **************************************************************************/
 
 #include <bout/mesh.hxx>
-#include <interpolation_z.hxx>
+#include <bout/interpolation_z.hxx>
 
 ZInterpolation::ZInterpolation(int y_offset, Mesh* mesh, Region<Ind3D> region_in)
     : localmesh(mesh == nullptr ? bout::globals::mesh : mesh), region(region_in),

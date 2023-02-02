@@ -47,14 +47,14 @@
 //#define DIAGNOSE 1
 
 #include "mpi.h"
-#include "msg_stack.hxx"
-#include "utils.hxx"
-#include <lapack_routines.hxx>
+#include "bout/msg_stack.hxx"
+#include "bout/utils.hxx"
+#include <bout/lapack_routines.hxx>
 
-#include "boutexception.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/assert.hxx"
 
-#include "output.hxx"
+#include "bout/output.hxx"
 
 #include "bout/openmpwrap.hxx"
 

@@ -3,14 +3,14 @@
  **************************************************************/
 
 #include <cmath>
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
 #include <bout/mesh.hxx>
-#include <field2d.hxx>
-#include <msg_stack.hxx>
-#include <sourcex.hxx>
+#include <bout/field2d.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/sourcex.hxx>
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 BoutReal TanH(BoutReal a) {
   BoutReal temp = exp(a);

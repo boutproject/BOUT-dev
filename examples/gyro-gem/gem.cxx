@@ -12,9 +12,9 @@
 #include <bout/physicsmodel.hxx>
 #include <bout/constants.hxx>
 
-#include <gyro_average.hxx>
-#include <interpolation.hxx>
-#include <invert_laplace.hxx>
+#include <bout/gyro_average.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/invert_laplace.hxx>
 
 /// Fundamental constants
 

@@ -26,7 +26,7 @@
 
 #include <utility>
 
-#include "utils.hxx"
+#include "bout/utils.hxx"
 #include "bout/sys/gettext.hxx"
 
 using std::list;

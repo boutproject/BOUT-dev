@@ -29,9 +29,9 @@ class LaplaceSerialTri;
 #ifndef __SERIAL_TRI_H__
 #define __SERIAL_TRI_H__
 
-#include <dcomplex.hxx>
-#include <invert_laplace.hxx>
-#include <options.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/options.hxx>
 
 namespace {
 RegisterLaplace<LaplaceSerialTri> registerlaplaceserialtri(LAPLACE_TRI);

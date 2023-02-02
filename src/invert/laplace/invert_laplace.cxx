@@ -36,15 +36,15 @@
 #include <bout/openmpwrap.hxx>
 #include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
-#include <bout_types.hxx>
-#include <boutexception.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
 #include <cmath>
-#include <globals.hxx>
-#include <invert_laplace.hxx>
-#include <msg_stack.hxx>
-#include <options.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/globals.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/options.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 // Implementations:
 #include "impls/cyclic/cyclic_laplace.hxx"

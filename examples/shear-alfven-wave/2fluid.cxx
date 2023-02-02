@@ -5,9 +5,9 @@
 
 #include <bout/physicsmodel.hxx>
 
-#include <initialprofiles.hxx>
-#include <invert_laplace.hxx>
-#include <derivs.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/derivs.hxx>
 
 class ShearAlfven : public PhysicsModel {
 private:

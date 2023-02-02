@@ -42,7 +42,7 @@
 #ifndef __INV_PAR_CR_H__
 #define __INV_PAR_CR_H__
 
-#include "invert_parderiv.hxx"
+#include "bout/invert_parderiv.hxx"
 #include "bout/build_config.hxx"
 
 #if BOUT_USE_METRIC_3D
@@ -54,9 +54,9 @@ RegisterUnavailableInvertPar registerinvertparcyclic{
 
 #else
 
-#include "dcomplex.hxx"
-#include "utils.hxx"
-#include <globals.hxx>
+#include "bout/dcomplex.hxx"
+#include "bout/utils.hxx"
+#include <bout/globals.hxx>
 
 class InvertParCR : public InvertPar {
 public:

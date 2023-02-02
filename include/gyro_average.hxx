@@ -32,8 +32,8 @@
 #ifndef __GYRO_AVERAGE_H__
 #define __GYRO_AVERAGE_H__
 
-#include "field3d.hxx"
-#include "invert_laplace.hxx"
+#include "bout/field3d.hxx"
+#include "bout/invert_laplace.hxx"
 
 /// INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS; uses old-style
 /// Laplacian inversion flags

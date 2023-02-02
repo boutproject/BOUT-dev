@@ -36,20 +36,20 @@ class Field;
 #include <memory>
 #include <string>
 
-#include "field_data.hxx"
+#include "bout/field_data.hxx"
 
-#include "bout_types.hxx"
-#include "boutcomm.hxx"
-#include "boutexception.hxx"
-#include "msg_stack.hxx"
-#include "stencils.hxx"
-#include "utils.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/stencils.hxx"
+#include "bout/utils.hxx"
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
 #include <bout/rvec.hxx>
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 class Mesh;
 

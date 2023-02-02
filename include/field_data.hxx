@@ -30,8 +30,8 @@ class FieldData;
 #ifndef FIELD_DATA_H
 #define FIELD_DATA_H
 
-#include "bout_types.hxx"
-#include "unused.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/unused.hxx"
 
 #include <map>
 #include <memory>
@@ -39,14 +39,14 @@ class FieldData;
 #include <vector>
 
 // Including the next line leads to compiler errors
-//#include "boundary_op.hxx"
+//#include "bout/boundary_op.hxx"
 class BoundaryOp;
 class BoundaryOpPar;
 class Coordinates;
 class Mesh;
 
-#include "boundary_region.hxx"
-#include "parallel_boundary_region.hxx"
+#include "bout/boundary_region.hxx"
+#include "bout/parallel_boundary_region.hxx"
 
 #include "bout/sys/expressionparser.hxx"
 

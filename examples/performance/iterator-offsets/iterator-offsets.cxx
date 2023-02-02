@@ -3,7 +3,7 @@
  *
  */
 
-#include <bout.hxx>
+#include <bout/bout.hxx>
 
 #include <algorithm>
 #include <chrono>

@@ -141,10 +141,10 @@
 #include <bout/coordinates.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
-#include <derivs.hxx>
-#include <difops.hxx>
-#include <globals.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/derivs.hxx>
+#include <bout/difops.hxx>
+#include <bout/globals.hxx>
 
 #include "naulin_laplace.hxx"
 

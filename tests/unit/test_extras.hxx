@@ -8,9 +8,9 @@
 #include <iostream>
 #include <vector>
 
-#include "boutcomm.hxx"
-#include "field3d.hxx"
-#include "unused.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/field3d.hxx"
+#include "bout/unused.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/mesh.hxx"
 #include "bout/mpi_wrapper.hxx"

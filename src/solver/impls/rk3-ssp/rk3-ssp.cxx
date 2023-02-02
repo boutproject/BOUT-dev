@@ -2,13 +2,13 @@
 #include "rk3-ssp.hxx"
 
 #include <bout/openmpwrap.hxx>
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
 #include <cmath>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 RK3SSP::RK3SSP(Options* opt)
     : Solver(opt), max_timestep((*options)["max_timestep"]

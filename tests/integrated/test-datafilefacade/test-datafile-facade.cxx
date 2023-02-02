@@ -1,5 +1,5 @@
-#include "vector2d.hxx"
-#include "vector3d.hxx"
+#include "bout/vector2d.hxx"
+#include "bout/vector3d.hxx"
 #include "bout/physicsmodel.hxx"
 #include "bout/sys/timer.hxx"
 

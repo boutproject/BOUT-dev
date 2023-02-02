@@ -31,7 +31,7 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 #include <vector>
 
 #include "fmt/chrono.h"

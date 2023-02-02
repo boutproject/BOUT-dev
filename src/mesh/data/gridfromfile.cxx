@@ -4,14 +4,14 @@
 
 #include <bout/constants.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
-#include <fft.hxx>
-#include <msg_stack.hxx>
-#include <options_netcdf.hxx>
-#include <output.hxx>
-#include <unused.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/fft.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/options_netcdf.hxx>
+#include <bout/output.hxx>
+#include <bout/unused.hxx>
 #include <utility>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 GridFile::GridFile(std::string gridfilename)
     : GridDataSource(true), data(bout::OptionsNetCDF(gridfilename).read()),

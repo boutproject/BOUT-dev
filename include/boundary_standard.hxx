@@ -3,10 +3,10 @@
 #ifndef __BNDRY_STD_H__
 #define __BNDRY_STD_H__
 
-#include "boundary_op.hxx"
-#include "bout_types.hxx"
-#include "unused.hxx"
-#include <field_factory.hxx>
+#include "bout/boundary_op.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/unused.hxx"
+#include <bout/field_factory.hxx>
 
 #include <utility>
 

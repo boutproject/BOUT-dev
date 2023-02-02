@@ -34,7 +34,7 @@
 
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
-#include <msg_stack.hxx>
+#include <bout/msg_stack.hxx>
 
 #if BOUT_USE_OPENMP
 #include <omp.h>

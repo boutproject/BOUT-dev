@@ -2,8 +2,8 @@
 #include <bout/invert/laplacexy.hxx>
 #include <bout/invert/laplacexz.hxx>
 #include <bout/physicsmodel.hxx>
-#include <field_factory.hxx>
-#include <invert_laplace.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/invert_laplace.hxx>
 
 /// Fundamental constants
 const BoutReal PI = 3.14159265;

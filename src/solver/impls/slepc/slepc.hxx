@@ -54,11 +54,11 @@ class SlepcSolver;
 #undef MPI_Waitall
 #undef MPI_Waitany
 
-#include <field2d.hxx>
-#include <field3d.hxx>
-#include <utils.hxx>
-#include <vector2d.hxx>
-#include <vector3d.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/utils.hxx>
+#include <bout/vector2d.hxx>
+#include <bout/vector3d.hxx>
 
 #include <bout/petsclib.hxx>
 #include <bout/slepclib.hxx>

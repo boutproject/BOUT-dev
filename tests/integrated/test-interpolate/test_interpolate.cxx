@@ -10,11 +10,11 @@
 #include <random>
 #include <string>
 
-#include "bout.hxx"
+#include "bout/bout.hxx"
 #include "bout/constants.hxx"
-#include "field_factory.hxx"
+#include "bout/field_factory.hxx"
 #include "bout/sys/generator_context.hxx"
-#include "interpolation_xz.hxx"
+#include "bout/interpolation_xz.hxx"
 
 /// Get a FieldGenerator from the options for a variable
 std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varname,

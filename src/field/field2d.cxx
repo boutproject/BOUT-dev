@@ -28,23 +28,23 @@
 #include "bout/build_config.hxx"
 
 #include <bout/rvec.hxx>
-#include <boutcomm.hxx>
+#include <bout/boutcomm.hxx>
 
-#include <globals.hxx> // for mesh
+#include <bout/globals.hxx> // for mesh
 
-#include <field2d.hxx>
+#include <bout/field2d.hxx>
 
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
-#include <boundary_factory.hxx>
-#include <boundary_op.hxx>
+#include <bout/boundary_factory.hxx>
+#include <bout/boundary_op.hxx>
 
 #include <bout/mesh.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
 
 #include <cmath>
-#include <output.hxx>
+#include <bout/output.hxx>
 
 #include <bout/assert.hxx>
 

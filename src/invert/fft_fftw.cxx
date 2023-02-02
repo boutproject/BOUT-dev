@@ -27,10 +27,10 @@
 
 #include "bout/build_config.hxx"
 
-#include <fft.hxx>
-#include <globals.hxx>
-#include <options.hxx>
-#include <unused.hxx>
+#include <bout/fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/options.hxx>
+#include <bout/unused.hxx>
 
 #if BOUT_HAS_FFTW
 #include <bout/constants.hxx>
@@ -43,7 +43,7 @@
 #include <omp.h>
 #endif // _OPENMP
 #else
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 #endif // BOUT_HAS_FFTW
 
 namespace bout {

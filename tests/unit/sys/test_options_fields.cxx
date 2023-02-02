@@ -4,9 +4,9 @@
 #include "gtest/gtest.h"
 
 #include "bout/mesh.hxx"
-#include "field3d.hxx"
+#include "bout/field3d.hxx"
 #include "test_extras.hxx"
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 /// Global mesh
 namespace bout {

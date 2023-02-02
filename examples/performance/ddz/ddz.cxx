@@ -3,7 +3,7 @@
  *
  */
 
-#include <bout.hxx>
+#include <bout/bout.hxx>
 
 #include <algorithm>
 #include <chrono>
@@ -14,7 +14,7 @@
 
 #include "bout/openmpwrap.hxx"
 #include "bout/region.hxx"
-#include "derivs.hxx"
+#include "bout/derivs.hxx"
 
 using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;

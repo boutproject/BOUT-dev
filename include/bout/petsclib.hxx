@@ -132,7 +132,7 @@ private:
 
 #else // BOUT_HAS_PETSC
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 // PETSc not available, so KSP and SNES not already defined. KSP and SNES should never be
 // called, so forward declaration OK here.

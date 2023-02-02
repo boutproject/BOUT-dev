@@ -20,9 +20,9 @@
 
 #include <bout/physicsmodel.hxx>
 
-#include <utils.hxx>
-#include <interpolation.hxx>
-#include <invert_laplace.hxx>
+#include <bout/utils.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/invert/laplacexy.hxx>
 #include <math.h>
 

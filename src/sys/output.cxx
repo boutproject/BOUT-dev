@@ -26,8 +26,8 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 void Output::enable() {
   add(std::cout);

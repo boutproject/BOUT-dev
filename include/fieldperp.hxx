@@ -28,19 +28,19 @@ class FieldPerp;
 #ifndef __FIELDPERP_H__
 #define __FIELDPERP_H__
 
-#include "field.hxx"
+#include "bout/field.hxx"
 
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/region.hxx"
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #include <ostream>
 #include <string>
 
-class Field2D; // #include "field2d.hxx"
-class Field3D; // #include "field3d.hxx"
+class Field2D; // #include "bout/field2d.hxx"
+class Field3D; // #include "bout/field3d.hxx"
 
 /*!
  * Represents a 2D field perpendicular to the magnetic field

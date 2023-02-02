@@ -10,8 +10,8 @@
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
-#include <fft.hxx>
-#include <output.hxx>
+#include <bout/fft.hxx>
+#include <bout/output.hxx>
 
 #include <cmath>
 

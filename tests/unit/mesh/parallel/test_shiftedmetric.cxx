@@ -2,7 +2,7 @@
 
 #include "gtest/gtest.h"
 
-#include "fft.hxx"
+#include "bout/fft.hxx"
 #include "test_extras.hxx"
 
 #if BOUT_HAS_FFTW

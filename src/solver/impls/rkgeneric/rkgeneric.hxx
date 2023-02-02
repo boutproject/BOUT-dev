@@ -32,7 +32,7 @@ class RKGenericSolver;
 
 #include <bout/rkscheme.hxx>
 #include <bout/solver.hxx>
-#include <bout_types.hxx>
+#include <bout/bout_types.hxx>
 
 namespace {
 RegisterSolver<RKGenericSolver> registersolverrkgeneric("rkgeneric");

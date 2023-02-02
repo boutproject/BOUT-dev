@@ -6,8 +6,8 @@
 #include <bout/paralleltransform.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
-#include <bout_types.hxx>
-#include <boutcomm.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutcomm.hxx>
 
 template <class T>
 class GlobalIndexer;

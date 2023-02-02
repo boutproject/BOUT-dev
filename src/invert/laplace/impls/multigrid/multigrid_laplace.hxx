@@ -31,7 +31,7 @@
 #ifndef __MULTIGRID_LAPLACE_H__
 #define __MULTIGRID_LAPLACE_H__
 
-#include "invert_laplace.hxx"
+#include "bout/invert_laplace.hxx"
 #include "bout/build_config.hxx"
 
 #if BOUT_USE_METRIC_3D
@@ -45,11 +45,11 @@ RegisterUnavailableLaplace
 
 #include <bout/mpi_wrapper.hxx>
 
-#include <boutexception.hxx>
-#include <globals.hxx>
-#include <options.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/globals.hxx>
+#include <bout/options.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 #define MAXGM 15
 

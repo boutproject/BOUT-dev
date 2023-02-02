@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
 #include "bout/sys/expressionparser.hxx"
-#include "bout_types.hxx"
-#include "unused.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/unused.hxx"
 #include "test_extras.hxx"
 
 #include <vector>

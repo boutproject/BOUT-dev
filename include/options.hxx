@@ -39,13 +39,13 @@ class Options;
 #ifndef __OPTIONS_H__
 #define __OPTIONS_H__
 
-#include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "fieldperp.hxx"
-#include "output.hxx"
-#include "unused.hxx"
-#include "utils.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/fieldperp.hxx"
+#include "bout/output.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 #include "bout/sys/type_name.hxx"
 #include "bout/sys/variant.hxx"
 #include "bout/traits.hxx"

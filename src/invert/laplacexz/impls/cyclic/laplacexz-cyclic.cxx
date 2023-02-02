@@ -5,11 +5,11 @@
 
 #include <bout/constants.hxx>
 #include <bout/sys/timer.hxx>
-#include <fft.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/fft.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh* m, Options* options, const CELL_LOC loc)
     : LaplaceXZ(m, options, loc) {

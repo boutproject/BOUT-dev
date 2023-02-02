@@ -31,14 +31,14 @@
 
 #if BOUT_HAS_ARKODE
 
-#include "boutcomm.hxx"
-#include "boutexception.hxx"
-#include "field3d.hxx"
-#include "msg_stack.hxx"
-#include "options.hxx"
-#include "output.hxx"
-#include "unused.hxx"
-#include "utils.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field3d.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/options.hxx"
+#include "bout/output.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 #include "bout/mesh.hxx"
 
 #if SUNDIALS_VERSION_MAJOR >= 4

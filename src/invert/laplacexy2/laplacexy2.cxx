@@ -9,11 +9,11 @@
 #include <bout/assert.hxx>
 
 #include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <globals.hxx>
-#include <utils.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/globals.hxx>
+#include <bout/utils.hxx>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 #include <cmath>
 

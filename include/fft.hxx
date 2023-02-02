@@ -28,7 +28,7 @@
 #ifndef __FFT_H__
 #define __FFT_H__
 
-#include "dcomplex.hxx"
+#include "bout/dcomplex.hxx"
 #include <bout/array.hxx>
 #include <bout/bout_enum_class.hxx>
 

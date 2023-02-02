@@ -1,12 +1,12 @@
 #include "bout/build_config.hxx"
 
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
 #include <iostream>
 #include <mpi.h>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 #if BOUT_USE_BACKTRACE
 #include <dlfcn.h>

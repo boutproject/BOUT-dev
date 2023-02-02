@@ -4,8 +4,8 @@
 #ifndef __BOUT_GENERIC_FACTORY_H__
 #define __BOUT_GENERIC_FACTORY_H__
 
-#include "boutexception.hxx"
-#include "options.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/options.hxx"
 
 #include <fmt/core.h>
 

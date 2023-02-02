@@ -4,10 +4,10 @@ class BoundaryFactory;
 #ifndef __BNDRY_FACTORY_H__
 #define __BNDRY_FACTORY_H__
 
-#include "boundary_op.hxx"
-#include "boundary_region.hxx"
-#include "parallel_boundary_op.hxx"
-#include "parallel_boundary_region.hxx"
+#include "bout/boundary_op.hxx"
+#include "bout/boundary_region.hxx"
+#include "bout/parallel_boundary_op.hxx"
+#include "bout/parallel_boundary_region.hxx"
 
 #include <map>
 #include <string>

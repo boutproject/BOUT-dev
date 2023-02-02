@@ -27,12 +27,12 @@
 #include <bout/mesh.hxx>
 #include <bout/scorepwrapper.hxx>
 
-#include <derivs.hxx>
-#include <globals.hxx>
-#include <msg_stack.hxx>
-#include <unused.hxx>
-#include <utils.hxx>
-#include <vecops.hxx>
+#include <bout/derivs.hxx>
+#include <bout/globals.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/unused.hxx>
+#include <bout/utils.hxx>
+#include <bout/vecops.hxx>
 
 /**************************************************************************
  * Gradient operators

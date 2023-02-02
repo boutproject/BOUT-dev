@@ -32,13 +32,13 @@
 //#include <private/tsimpl.h>
 #include <petsc.h>
 
-#include <boutcomm.hxx>
+#include <bout/boutcomm.hxx>
 
 #include <cstdlib>
 
-#include <interpolation.hxx> // Cell interpolation
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include <bout/interpolation.hxx> // Cell interpolation
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 
 extern PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout,
                                void* f_data);

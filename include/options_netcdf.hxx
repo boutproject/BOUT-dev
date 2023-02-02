@@ -10,8 +10,8 @@
 
 #include <string>
 
-#include "boutexception.hxx"
-#include "options.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/options.hxx"
 
 namespace bout {
 
@@ -44,7 +44,7 @@ public:
 #include <memory>
 #include <string>
 
-#include "options.hxx"
+#include "bout/options.hxx"
 
 /// Forward declare netCDF file type so we don't need to depend
 /// directly on netCDF

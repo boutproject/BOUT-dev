@@ -1,14 +1,14 @@
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
-#include <boundary_standard.hxx>
-#include <boutexception.hxx>
-#include <derivs.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <invert_laplace.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/boundary_standard.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/derivs.hxx>
+#include <bout/fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 using bout::generator::Context;
 

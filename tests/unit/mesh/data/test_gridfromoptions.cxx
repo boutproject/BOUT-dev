@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "options.hxx"
-#include "output.hxx"
+#include "bout/options.hxx"
+#include "bout/output.hxx"
 #include "test_extras.hxx"
 #include "bout/constants.hxx"
 #include "bout/griddata.hxx"

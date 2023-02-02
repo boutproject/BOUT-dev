@@ -7,7 +7,7 @@
  * 
  */
 
-#include <bout.hxx>
+#include <bout/bout.hxx>
 #include <bout/physicsmodel.hxx>
 
 class Test_delp2 : public PhysicsModel {

@@ -48,7 +48,7 @@
 #include <utility>
 #include <vector>
 
-#include "bout_types.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/assert.hxx"
 #include "bout/openmpwrap.hxx"
 

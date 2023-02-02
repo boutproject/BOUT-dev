@@ -1,11 +1,11 @@
 #ifndef __PAR_BNDRY_OP_H__
 #define __PAR_BNDRY_OP_H__
 
-#include "boundary_op.hxx"
-#include "bout_types.hxx"
-#include "parallel_boundary_region.hxx"
-#include "unused.hxx"
-#include "utils.hxx"
+#include "bout/boundary_op.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/parallel_boundary_region.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 
 #include <utility>
 

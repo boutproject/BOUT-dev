@@ -20,8 +20,8 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
-#include "interpolation_xz.hxx"
+#include "bout/globals.hxx"
+#include "bout/interpolation_xz.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/mesh.hxx"
 

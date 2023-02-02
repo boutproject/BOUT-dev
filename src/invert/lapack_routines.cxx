@@ -36,10 +36,10 @@
 
 #include "bout/build_config.hxx"
 
-#include <boutexception.hxx>
-#include <dcomplex.hxx>
-#include <globals.hxx>
-#include <utils.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/globals.hxx>
+#include <bout/utils.hxx>
 
 #if BOUT_HAS_LAPACK
 

@@ -50,9 +50,9 @@
  **************************************************************************/
 
 #include "options_ini.hxx"
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
 #include <algorithm>
 

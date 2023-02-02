@@ -33,10 +33,10 @@ class Vector3D;
 #ifndef __VECTOR3D_H__
 #define __VECTOR3D_H__
 
-class Field2D; //#include "field2d.hxx"
-#include "field3d.hxx"
+class Field2D; //#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 
-class Vector2D; //#include "vector2d.hxx"
+class Vector2D; //#include "bout/vector2d.hxx"
 
 /*!
  * Represents a 3D vector, with x,y,z components

@@ -24,8 +24,8 @@
 
 #include <vector>
 
-#include "globals.hxx"
-#include "msg_stack.hxx"
+#include "bout/globals.hxx"
+#include "bout/msg_stack.hxx"
 #include "bout/mesh.hxx"
 
 /**

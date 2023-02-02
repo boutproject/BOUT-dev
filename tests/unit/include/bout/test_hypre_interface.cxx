@@ -3,7 +3,7 @@
 #include "gtest/gtest.h"
 #include <cmath>
 
-#include "field3d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/hypre_interface.hxx"
 
 #if BOUT_HAS_HYPRE

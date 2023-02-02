@@ -34,7 +34,7 @@ class OptionsReader;
 #ifndef __OPTIONSREADER_H__
 #define __OPTIONSREADER_H__
 
-#include "options.hxx"
+#include "bout/options.hxx"
 #include "bout/format.hxx"
 
 #include "fmt/core.h"

@@ -2,7 +2,7 @@
 ///
 
 #include "bout/snb.hxx"
-#include "derivs.hxx"
+#include "bout/derivs.hxx"
 #include "bout/constants.hxx"
 #include "bout/fv_ops.hxx"
 

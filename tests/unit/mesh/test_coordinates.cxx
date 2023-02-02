@@ -4,7 +4,7 @@
 #include "bout/coordinates.hxx"
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
-#include "output.hxx"
+#include "bout/output.hxx"
 
 #include "test_extras.hxx"
 

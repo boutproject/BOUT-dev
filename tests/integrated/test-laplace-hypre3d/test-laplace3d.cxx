@@ -23,9 +23,9 @@
  *
  **************************************************************************/
 
-#include "bout.hxx"
-#include "initialprofiles.hxx"
-#include "invert_laplace.hxx"
+#include "bout/bout.hxx"
+#include "bout/initialprofiles.hxx"
+#include "bout/invert_laplace.hxx"
 
 int main(int argc, char** argv) {
 

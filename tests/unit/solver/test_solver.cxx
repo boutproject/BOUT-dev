@@ -1,9 +1,9 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "boutexception.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "test_extras.hxx"
 #include "test_fakesolver.hxx"
 #include "bout/physicsmodel.hxx"

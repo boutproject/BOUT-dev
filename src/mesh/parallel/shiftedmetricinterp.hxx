@@ -28,7 +28,7 @@
 #define __SHIFTEDINTERP_H__
 
 #include <bout/paralleltransform.hxx>
-#include <interpolation_z.hxx>
+#include <bout/interpolation_z.hxx>
 
 /*!
  * Shifted metric method

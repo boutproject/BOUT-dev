@@ -23,16 +23,16 @@
  *
  **************************************************************************/
 
-#include <boutcomm.hxx>
-#include <globals.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/globals.hxx>
 
 #include <cmath>
 
 #include <bout/mesh.hxx>
-#include <boutexception.hxx>
-#include <fieldperp.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/fieldperp.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
 FieldPerp::FieldPerp(Mesh* localmesh, CELL_LOC location_in, int yindex_in,
                      DirectionTypes directions)

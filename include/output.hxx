@@ -29,14 +29,14 @@ class Output;
 #ifndef __OUTPUT_H__
 #define __OUTPUT_H__
 
-#include "multiostream.hxx"
+#include "bout/multiostream.hxx"
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <string>
 
-#include "boutexception.hxx"
-#include "unused.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/unused.hxx"
 #include "bout/assert.hxx"
 #include "bout/format.hxx"
 #include "bout/sys/gettext.hxx" // for gettext _() macro

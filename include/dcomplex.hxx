@@ -32,7 +32,7 @@
 #ifndef __DCOMPLEX_H__
 #define __DCOMPLEX_H__
 
-#include "bout_types.hxx"
+#include "bout/bout_types.hxx"
 #include <complex>
 
 using dcomplex = std::complex<BoutReal>;

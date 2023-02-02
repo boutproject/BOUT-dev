@@ -32,8 +32,8 @@
 #include <bout/assert.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <utils.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/utils.hxx>
 
 #define KSP_RICHARDSON "richardson"
 #define KSP_CHEBYSHEV "chebyshev"

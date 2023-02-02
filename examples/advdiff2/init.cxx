@@ -1,5 +1,5 @@
 #include <bout/physicsmodel.hxx>
-#include <bout.hxx>
+#include <bout/bout.hxx>
 
 #include "header.hxx"
 

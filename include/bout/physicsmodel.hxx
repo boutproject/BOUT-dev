@@ -37,13 +37,13 @@ class PhysicsModel;
 #ifndef __PHYSICS_MODEL_H__
 #define __PHYSICS_MODEL_H__
 
-#include "bout.hxx"
-#include "msg_stack.hxx"
-#include "options.hxx"
-#include "options_netcdf.hxx"
+#include "bout/bout.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/options.hxx"
+#include "bout/options_netcdf.hxx"
 #include "solver.hxx"
-#include "unused.hxx"
-#include "utils.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 #include "bout/macro_for_each.hxx"
 #include "bout/sys/variant.hxx"
 

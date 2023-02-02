@@ -24,7 +24,7 @@
 #ifndef __INTERP_XZ_H__
 #define __INTERP_XZ_H__
 
-#include "mask.hxx"
+#include "bout/mask.hxx"
 
 class Options;
 

@@ -3,7 +3,7 @@
  *
  */
 
-#include <bout.hxx>
+#include <bout/bout.hxx>
 
 #include <chrono>
 #include <iomanip>
@@ -12,8 +12,8 @@
 #include <time.h>
 #include <vector>
 
-#include <field_factory.hxx>
-#include <initialprofiles.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/initialprofiles.hxx>
 
 #include "bout/openmpwrap.hxx"
 #include "bout/region.hxx"

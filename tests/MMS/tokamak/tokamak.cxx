@@ -7,8 +7,8 @@
  */
 
 #include <bout/physicsmodel.hxx>
-#include <field_factory.hxx>
-#include <derivs.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/derivs.hxx>
 
 class TokamakMMS : public PhysicsModel {
 public:

@@ -6,12 +6,12 @@
 #include "bout/array.hxx"
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "fieldperp.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/fieldperp.hxx"
 #include "test_extras.hxx"
-#include "output.hxx"
-#include "unused.hxx"
-#include "utils.hxx"
+#include "bout/output.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 
 #include <cmath>
 #include <numeric>

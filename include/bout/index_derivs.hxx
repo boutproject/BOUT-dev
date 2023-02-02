@@ -40,12 +40,12 @@
 #include <bout/scorepwrapper.hxx>
 #include <bout/template_combinations.hxx>
 
-#include <bout_types.hxx>
-#include <fft.hxx>
-#include <interpolation.hxx>
-#include <msg_stack.hxx>
-#include <stencils.hxx>
-#include <unused.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/fft.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/stencils.hxx>
+#include <bout/unused.hxx>
 
 class Field3D;
 class Field2D;

@@ -3,7 +3,7 @@
  */
 
 #include <bout/physicsmodel.hxx>
-#include <bout.hxx>
+#include <bout/bout.hxx>
 
 void f1() {
   BoutReal a = 1;

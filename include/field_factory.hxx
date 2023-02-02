@@ -33,11 +33,11 @@ class FieldFactory;
 
 #include "bout/sys/expressionparser.hxx"
 
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "options.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/options.hxx"
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #include <list>
 #include <map>

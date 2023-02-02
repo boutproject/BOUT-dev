@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "mask.hxx"
-#include "boutexception.hxx"
+#include "bout/mask.hxx"
+#include "bout/boutexception.hxx"
 #include "test_extras.hxx"
 
 /// Global mesh

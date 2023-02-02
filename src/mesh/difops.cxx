@@ -27,18 +27,18 @@
 
 #include <bout/assert.hxx>
 #include <bout/solver.hxx>
-#include <derivs.hxx>
-#include <difops.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
-#include <vecops.hxx>
+#include <bout/derivs.hxx>
+#include <bout/difops.hxx>
+#include <bout/fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
+#include <bout/vecops.hxx>
 
-#include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
+#include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
-#include <interpolation.hxx>
-#include <unused.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/unused.hxx>
 
 #include <cmath>
 

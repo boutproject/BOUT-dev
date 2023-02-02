@@ -29,21 +29,21 @@
 
 #if not BOUT_USE_METRIC_3D
 
-#include "globals.hxx"
+#include "bout/globals.hxx"
 
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 #include <cmath>
-#include <fft.hxx>
-#include <lapack_routines.hxx>
-#include <utils.hxx>
+#include <bout/fft.hxx>
+#include <bout/lapack_routines.hxx>
+#include <bout/utils.hxx>
 
-#include "boutcomm.hxx"
-#include <output.hxx>
+#include "bout/boutcomm.hxx"
+#include <bout/output.hxx>
 
 #include <bout/scorepwrapper.hxx>
 
