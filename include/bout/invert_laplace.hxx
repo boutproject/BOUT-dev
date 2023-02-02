@@ -51,7 +51,6 @@ class Laplacian;
 #include "bout/dcomplex.hxx"
 
 class Solver;
-class Datafile;
 
 constexpr auto LAPLACE_SPT = "spt";
 constexpr auto LAPLACE_TRI = "tri";
@@ -134,7 +133,7 @@ constexpr int INVERT_KX_ZERO = 16;
  */
 
 class LaplaceFactory : public Factory<Laplacian, LaplaceFactory, Options*, CELL_LOC,
-                                      Mesh*, Solver*, Datafile*> {
+                                      Mesh*, Solver*> {
 public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
@@ -142,13 +141,12 @@ public:
   static constexpr auto default_type = LAPLACE_CYCLIC;
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
-                    Mesh* mesh = nullptr, Solver* solver = nullptr,
-                    Datafile* dump = nullptr) {
+                    Mesh* mesh = nullptr, Solver* solver = nullptr) {
     options = optionsOrDefaultSection(options);
-    return Factory::create(getType(options), options, loc, mesh, solver, dump);
+    return Factory::create(getType(options), options, loc, mesh, solver);
   }
   ReturnType create(const std::string& type, Options* options) const {
-    return Factory::create(type, options, CELL_CENTRE, nullptr, nullptr, nullptr);
+    return Factory::create(type, options, CELL_CENTRE, nullptr, nullptr);
   }
 };
 
@@ -172,7 +170,7 @@ class Solver;
 class Laplacian {
 public:
   Laplacian(Options* options = nullptr, const CELL_LOC loc = CELL_CENTRE,
-            Mesh* mesh_in = nullptr, Solver* solver = nullptr, Datafile* dump = nullptr);
+            Mesh* mesh_in = nullptr, Solver* solver = nullptr);
   virtual ~Laplacian() = default;
 
   /// Set coefficients for inversion. Re-builds matrices if necessary
@@ -265,8 +263,8 @@ public:
    */
   static std::unique_ptr<Laplacian>
   create(Options* opts = nullptr, const CELL_LOC location = CELL_CENTRE,
-         Mesh* mesh_in = nullptr, Solver* solver = nullptr, Datafile* dump = nullptr) {
-    return LaplaceFactory::getInstance().create(opts, location, mesh_in, solver, dump);
+         Mesh* mesh_in = nullptr, Solver* solver = nullptr) {
+    return LaplaceFactory::getInstance().create(opts, location, mesh_in, solver);
   }
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
 
