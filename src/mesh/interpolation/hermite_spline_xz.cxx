@@ -342,7 +342,7 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
   VecRestoreArray(rhs, &ptr);
   MatMult(petscWeights, rhs, result);
   VecGetArrayRead(result, &cptr);
-  const auto region2 = fmt::format("RGN_YPAR_{:+d}", y_offset);
+  const auto region2 = y_offset == 0 ? region : fmt::format("RGN_YPAR_{:+d}", y_offset);
   BOUT_FOR(i, f.getRegion(region2)) {
     f_interp[i] = cptr[int(i)];
     ASSERT2(std::isfinite(cptr[int(i)]));
