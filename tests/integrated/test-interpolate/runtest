@@ -16,9 +16,6 @@ show_plot = False
 # List of NX values to use
 nxlist = [16, 32, 64, 128]
 
-# Only testing 2D (x, z) slices, so only need one processor
-nproc = 2
-
 # Variables to compare
 varlist = ["a", "b", "c"]
 markers = ["bo", "r^", "kx"]
@@ -50,8 +47,8 @@ for method in methods:
         dx = 1.0 / (nx)
 
         args = f" mesh:nx={nx + 4} mesh:dx={dx} MZ={nx} xzinterpolation:type={method}"
-        NXPE = 2 if method == "hermitespline" and boutconfig.has["petsc"] else 1
-        args += f" NXPE={NXPE}"
+        nproc = 2 if method == "hermitespline" and boutconfig.has["petsc"] else 1
+        args += f" NXPE={nproc}"
 
         cmd = "./test_interpolate" + args
 
