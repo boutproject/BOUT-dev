@@ -45,9 +45,7 @@ public:
   virtual Field3D interpolate(const Field3D& f, const Field3D& delta_z,
                               const std::string& region_str = "DEFAULT") = 0;
 
-  void setRegion(Region<Ind3D> new_region) {
-    region = new_region;
-  }
+  void setRegion(Region<Ind3D> new_region) { region = new_region; }
 
   virtual std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYUpApproximation(int i, int j, int k) const {
@@ -76,7 +74,6 @@ public:
   static constexpr auto option_name = "type";
   static constexpr auto default_type = "hermitespline";
 
-  using Factory::create;
   ReturnType create(Options* options, int y_offset = 0, Mesh* mesh = nullptr,
                     Region<Ind3D> region_in = {}) const {
     return Factory::create(options, y_offset, mesh, region_in);

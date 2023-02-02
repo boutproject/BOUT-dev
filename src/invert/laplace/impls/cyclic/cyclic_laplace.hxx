@@ -63,65 +63,65 @@ public:
                 Mesh* mesh_in = nullptr, Solver* solver = nullptr,
                 Datafile* dump = nullptr);
   ~LaplaceCyclic();
-  
+
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &val) override {
+  void setCoefA(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Acoef = val;
   }
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &val) override {
+  void setCoefC(const Field2D& val) override {
     setCoefC1(val);
     setCoefC2(val);
   }
   using Laplacian::setCoefC1;
-  void setCoefC1(const Field2D &val) override {
+  void setCoefC1(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1coef = val;
   }
   using Laplacian::setCoefC2;
-  void setCoefC2(const Field2D &val) override {
+  void setCoefC2(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C2coef = val;
   }
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &val) override {
+  void setCoefD(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Dcoef = val;
   }
   using Laplacian::setCoefEx;
-  void setCoefEx(const Field2D &UNUSED(val)) override {
+  void setCoefEx(const Field2D& UNUSED(val)) override {
     throw BoutException("LaplaceCyclic does not have Ex coefficient");
   }
   using Laplacian::setCoefEz;
-  void setCoefEz(const Field2D &UNUSED(val)) override {
+  void setCoefEz(const Field2D& UNUSED(val)) override {
     throw BoutException("LaplaceCyclic does not have Ez coefficient");
   }
 
   using Laplacian::solve;
-  FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
-  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp& b) override { return solve(b, b); }
+  FieldPerp solve(const FieldPerp& b, const FieldPerp& x0) override;
 
-  Field3D solve(const Field3D &b) override {return solve(b,b);}
-  Field3D solve(const Field3D &b, const Field3D &x0) override;
+  Field3D solve(const Field3D& b) override { return solve(b, b); }
+  Field3D solve(const Field3D& b, const Field3D& x0) override;
   void verify_solution(const Matrix<dcomplex>& a_ver, const Matrix<dcomplex>& b_ver,
                        const Matrix<dcomplex>& c_ver, const Matrix<dcomplex>& r_ver,
                        const Matrix<dcomplex>& x_sol, int nsys);
 
 private:
   Field2D Acoef, C1coef, C2coef, Dcoef;
-  
+
   int nmode;  // Number of modes being solved
   int xs, xe; // Start and end X indices
   Matrix<dcomplex> a, b, c, bcmplx, xcmplx;
-  
+
   bool dst;
-  
-  CyclicReduce<dcomplex> *cr; ///< Tridiagonal solver
+
+  CyclicReduce<dcomplex>* cr; ///< Tridiagonal solver
 };
 
 #endif // BOUT_USE_METRIC_3D

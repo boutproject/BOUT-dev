@@ -79,7 +79,7 @@ void Output::print(const std::string& message) {
   std::cout.flush();
 }
 
-Output *Output::getInstance() {
+Output* Output::getInstance() {
   static Output instance;
   return &instance;
 }

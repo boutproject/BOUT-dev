@@ -9,7 +9,6 @@
 #include "bout/version.hxx"
 
 #include <algorithm>
-#include <csignal>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -48,6 +47,37 @@ TEST(ParseCommandLineArgsDeathTest, HelpLongOption) {
 
   std::cout.rdbuf(cout_buf);
 }
+
+#if BOUT_USE_SIGNAL
+#include <csignal>
+#if BOUT_USE_SIGFPE
+#include <fenv.h>
+#endif
+
+class SignalHandlerTest : public ::testing::Test {
+public:
+  SignalHandlerTest() = default;
+  virtual ~SignalHandlerTest() {
+    std::signal(SIGUSR1, SIG_DFL);
+    std::signal(SIGFPE, SIG_DFL);
+    std::signal(SIGSEGV, SIG_DFL);
+#if BOUT_USE_SIGFPE
+    std::signal(SIGFPE, SIG_DFL);
+    fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+#endif
+  }
+};
+
+using SignalHandlerTestDeathTest = SignalHandlerTest;
+
+#if !defined(__NVCC__)
+TEST_F(SignalHandlerTestDeathTest, SegFault) {
+  bout::experimental::setupSignalHandler(bout::experimental::defaultSignalHandler);
+  // This test is *incredibly* expensive, maybe as much as 1s, so only test the one signal
+  EXPECT_DEATH(std::raise(SIGSEGV), "SEGMENTATION FAULT");
+}
+#endif
+#endif
 
 TEST(ParseCommandLineArgs, DataDir) {
   std::vector<std::string> v_args{"test", "-d", "test_data_directory"};
@@ -341,36 +371,7 @@ TEST_F(PrintStartupTest, CommandLineArguments) {
     EXPECT_TRUE(IsSubString(buffer.str(), arg));
   }
 }
-#if BOUT_USE_SIGNAL
 
-#if BOUT_USE_SIGFPE
-#include <fenv.h>
-#endif
-
-class SignalHandlerTest : public ::testing::Test {
-public:
-  SignalHandlerTest() = default;
-  virtual ~SignalHandlerTest() {
-    std::signal(SIGUSR1, SIG_DFL);
-    std::signal(SIGFPE, SIG_DFL);
-    std::signal(SIGSEGV, SIG_DFL);
-#if BOUT_USE_SIGFPE
-    std::signal(SIGFPE, SIG_DFL);
-    fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
-#endif
-  }
-};
-
-using SignalHandlerTestDeathTest = SignalHandlerTest;
-
-#if !defined(__NVCC__)
-TEST_F(SignalHandlerTestDeathTest, SegFault) {
-  bout::experimental::setupSignalHandler(bout::experimental::defaultSignalHandler);
-  // This test is *incredibly* expensive, maybe as much as 1s, so only test the one signal
-  EXPECT_DEATH(std::raise(SIGSEGV), "SEGMENTATION FAULT");
-}
-#endif
-#endif
 TEST(BoutInitialiseFunctions, SetRunStartInfo) {
   WithQuietOutput quiet{output_info};
 

@@ -34,6 +34,7 @@
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
 #include <cmath>
@@ -83,13 +84,12 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED
   }
   // Cannot use multigrid on 1 core
   if (n == 1 and max_level != 0) {
-    throw BoutException("LaplaceIPT error: must have max_level=0 if using one processor. ");
+    throw BoutException(
+        "LaplaceIPT error: must have max_level=0 if using one processor. ");
   }
 
   static int ipt_solver_count = 1;
-  bout::globals::dump.addRepeat(
-      ipt_mean_its, "ipt_solver" + std::to_string(ipt_solver_count) + "_mean_its");
-  ++ipt_solver_count;
+  setPerformanceName(fmt::format("{}{}", "ipt_solver", ++ipt_solver_count));
 
   resetSolver();
 }
@@ -493,10 +493,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
           cycle_eta = 0;
           for (int kz = 0; kz < nmode; kz++) {
             const BoutReal ratio = errornorm[kz] / errornorm_old[kz];
-            const int eta =
-                std::ceil(std::log(1.0 / errornorm[kz]) / std::log(ratio));
+            const int eta = std::ceil(std::log(1.0 / errornorm[kz]) / std::log(ratio));
             cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
-
           }
         }
       }
@@ -582,8 +580,9 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   for (int ix = 0; ix < 4; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
       if (!finite(levels[0].xloc(ix, kz).real())
-          or !finite(levels[0].xloc(ix, kz).imag()))
+          or !finite(levels[0].xloc(ix, kz).imag())) {
         throw BoutException("Non-finite xloc at {:d}, {:d}, {:d}", ix, jy, kz);
+      }
     }
   }
 #endif
@@ -600,8 +599,9 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 #if CHECK > 2
   for (int ix = 0; ix < ncx; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
-      if (!finite(xk1d(kz, ix).real()) or !finite(xk1d(kz, ix).imag()))
+      if (!finite(xk1d(kz, ix).real()) or !finite(xk1d(kz, ix).imag())) {
         throw BoutException("Non-finite xloc at {:d}, {:d}, {:d}", ix, jy, kz);
+      }
     }
   }
 #endif
@@ -639,9 +639,11 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     irfft(&xk(ix, 0), ncz, x[ix]);
 
 #if CHECK > 2
-    for (int kz = 0; kz < ncz; kz++)
-      if (!finite(x(ix, kz)))
+    for (int kz = 0; kz < ncz; kz++) {
+      if (!finite(x(ix, kz))) {
         throw BoutException("Non-finite at {:d}, {:d}, {:d}", ix, jy, kz);
+      }
+    }
 #endif
   }
 
@@ -1226,12 +1228,17 @@ void LaplaceIPT::Level::calculate_total_residual(const LaplaceIPT& l,
     if (!converged[kz]) {
       errornorm[kz] = 0.0;
 
-      BoutReal w = pow( l.rtol*sqrt(pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)) + l.atol , 2);
-      subtotal[kz] = ( pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2) ) / w;
+      BoutReal w = pow(
+          l.rtol * sqrt(pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)) + l.atol,
+          2);
+      subtotal[kz] =
+          (pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2)) / w;
       if (l.localmesh->lastX()) {
-        w = pow( l.rtol*sqrt(pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2)) + l.atol , 2);
+        w = pow(l.rtol * sqrt(pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2))
+                    + l.atol,
+                2);
         subtotal[kz] +=
-            ( pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2) ) / w;
+            (pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2)) / w;
       }
     }
   }
@@ -1242,7 +1249,7 @@ void LaplaceIPT::Level::calculate_total_residual(const LaplaceIPT& l,
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      errornorm[kz] = sqrt(errornorm[kz]/BoutReal(l.ncx));
+      errornorm[kz] = sqrt(errornorm[kz] / BoutReal(l.ncx));
       if (errornorm[kz] < 1.0) {
         converged[kz] = true;
       }
@@ -1454,6 +1461,12 @@ void LaplaceIPT::Level::synchronize_reduced_field(const LaplaceIPT& l,
     MPI_Sendrecv(&field(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &field(3, 0),
                  l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
   }
+}
+
+void LaplaceIPT::outputVars(Options& output_options,
+                            const std::string& time_dimension) const {
+  output_options[fmt::format("{}_mean_its", getPerformanceName())].assignRepeat(
+      ipt_mean_its, time_dimension);
 }
 
 #endif // BOUT_USE_METRIC_3D

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # Usage example: ./runcase.sh -m "aprun -n" -n 2
 #================================================#

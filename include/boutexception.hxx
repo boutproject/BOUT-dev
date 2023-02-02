@@ -10,7 +10,6 @@ class BoutException;
 #include <string>
 #include <utility>
 
-#include "bout/deprecated.hxx"
 #include "bout/format.hxx"
 
 #include "fmt/core.h"
@@ -29,10 +28,7 @@ public:
 
   ~BoutException() override;
 
-  const char* what() const noexcept override {
-    return message.c_str();
-  }
-  void DEPRECATED(Backtrace()) {};
+  const char* what() const noexcept override { return message.c_str(); }
 
   /// Return the exception message along with the MsgStack and
   /// backtrace (if available)

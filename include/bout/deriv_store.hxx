@@ -50,9 +50,10 @@
 /// upwind and flux).
 template <typename FieldType>
 struct DerivativeStore {
-  using standardFunc = std::function<void(const FieldType&, FieldType&, const std::string&)>;
-  using flowFunc =
-      std::function<void(const FieldType&, const FieldType&, FieldType&, const std::string&)>;
+  using standardFunc =
+      std::function<void(const FieldType&, FieldType&, const std::string&)>;
+  using flowFunc = std::function<void(const FieldType&, const FieldType&, FieldType&,
+                                      const std::string&)>;
   using upwindFunc = flowFunc;
   using fluxFunc = flowFunc;
 
@@ -202,8 +203,7 @@ struct DerivativeStore {
     };
 
     // Register this method name in lookup of known methods
-    registeredMethods[getKey(direction, stagger, toString(derivType))].insert(
-        methodName);
+    registeredMethods[getKey(direction, stagger, toString(derivType))].insert(methodName);
   };
 
   /// Templated versions of the above registration routines.
@@ -251,8 +251,9 @@ struct DerivativeStore {
     };
 
     const auto resultOfFind = theMap->find(key);
-    if (resultOfFind != theMap->end())
+    if (resultOfFind != theMap->end()) {
       return resultOfFind->second;
+    }
 
     throw BoutException("Couldn't find requested method {:s} in map for standard "
                         "derivative of type {:s}.",
@@ -293,8 +294,9 @@ struct DerivativeStore {
     };
 
     const auto resultOfFind = theMap->find(key);
-    if (resultOfFind != theMap->end())
+    if (resultOfFind != theMap->end()) {
       return resultOfFind->second;
+    }
 
     throw BoutException(
         "Couldn't find requested method {:s} in map for standard flow of type {:s}.",
@@ -391,8 +393,8 @@ struct DerivativeStore {
         defaultMethods[getKey(theDirection, STAGGER::C2L, theDerivTypeString)] =
             theDefault;
         output_verbose << "The default method for staggered derivative type "
-                       << theDerivTypeString << " in direction "
-                       << toString(theDirection) << " is " << theDefault << "\n";
+                       << theDerivTypeString << " in direction " << toString(theDirection)
+                       << " is " << theDefault << "\n";
       }
     }
   }
@@ -489,8 +491,7 @@ private:
   std::string getMethodName(std::string name, DIRECTION direction,
                             STAGGER stagger = STAGGER::None) const {
     AUTO_TRACE();
-    return name + " (" + toString(direction) + ", " + toString(stagger)
-           + ")";
+    return name + " (" + toString(direction) + ", " + toString(stagger) + ")";
   };
 
   std::string nameLookup(const std::string name, const std::string defaultName) const {

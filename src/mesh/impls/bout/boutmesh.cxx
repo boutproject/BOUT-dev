@@ -54,7 +54,7 @@
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
-BoutMesh::BoutMesh(GridDataSource *s, Options *opt) : Mesh(s, opt) {
+BoutMesh::BoutMesh(GridDataSource* s, Options* opt) : Mesh(s, opt) {
   OPTION(options, symmetricGlobalX, true);
   if (!options->isSet("symmetricGlobalY")) {
     std::string optionfile = Options::root()["optionfile"].withDefault("BOUT.inp");
@@ -343,7 +343,7 @@ void BoutMesh::setDerivedGridSizes() {
   }
 
   // Set global grid sizes, excluding boundary points
-  GlobalNxNoBoundaries = nx - 2*MXG;
+  GlobalNxNoBoundaries = nx - 2 * MXG;
   GlobalNyNoBoundaries = ny;
   GlobalNzNoBoundaries = nz;
 
@@ -530,7 +530,7 @@ int BoutMesh::load() {
     output_info.write("Applying Twist-Shift condition. Interpolation: FFT\n");
     if (ShiftAngle.empty()) {
       throw BoutException("ERROR: Twist-shift angle 'ShiftAngle' not found. "
-          "Required when TwistShift==true.");
+                          "Required when TwistShift==true.");
     }
   }
 
@@ -557,7 +557,7 @@ int BoutMesh::load() {
 
   if (!boundary.empty()) {
     output_info << _("Boundary regions in this processor: ");
-    for (const auto &bndry : boundary) {
+    for (const auto& bndry : boundary) {
       output_info << bndry->label << ", ";
     }
     output_info << endl;
@@ -996,32 +996,47 @@ std::set<std::string> BoutMesh::getPossibleBoundaries() const {
   WithQuietOutput quiet_warn(output_warn);
 
   // Lambda that modifies `all_boundaries`
-  const auto get_boundaries_on_different_rank = [mesh = this, &all_boundaries](
-                                                    int x_rank, int y_rank) {
-    // Don't try to check boundaries on unphysical processors
-    if (x_rank < 0 or x_rank >= mesh->NXPE) {
-      return;
-    }
-    if (y_rank < 0 or y_rank >= mesh->NYPE) {
-      return;
-    }
+  const auto get_boundaries_on_different_rank =
+      [mesh = this, &all_boundaries](int x_rank, int y_rank) {
+        // Don't try to check boundaries on unphysical processors
+        if (x_rank < 0 or x_rank >= mesh->NXPE) {
+          return;
+        }
+        if (y_rank < 0 or y_rank >= mesh->NYPE) {
+          return;
+        }
 
-    // Make a copy of this mesh, EXCEPT we change the (X, Y) rank of the processor
-    BoutMesh mesh_copy{mesh->GlobalNx, mesh->GlobalNyNoBoundaries, mesh->GlobalNz,
-                       mesh->MXG, mesh->MYG, mesh->NXPE, mesh->NYPE, x_rank, y_rank,
-                       mesh->symmetricGlobalX, mesh->symmetricGlobalY, mesh->periodicX,
-                       mesh->ixseps1, mesh->ixseps2, mesh->jyseps1_1, mesh->jyseps2_1,
-                       mesh->jyseps1_2, mesh->jyseps2_2, mesh->ny_inner, false};
-    // We need to create the boundaries
-    mesh_copy.createXBoundaries();
-    mesh_copy.createYBoundaries();
+        // Make a copy of this mesh, EXCEPT we change the (X, Y) rank of the processor
+        BoutMesh mesh_copy{mesh->GlobalNx,
+                           mesh->GlobalNyNoBoundaries,
+                           mesh->GlobalNz,
+                           mesh->MXG,
+                           mesh->MYG,
+                           mesh->NXPE,
+                           mesh->NYPE,
+                           x_rank,
+                           y_rank,
+                           mesh->symmetricGlobalX,
+                           mesh->symmetricGlobalY,
+                           mesh->periodicX,
+                           mesh->ixseps1,
+                           mesh->ixseps2,
+                           mesh->jyseps1_1,
+                           mesh->jyseps2_1,
+                           mesh->jyseps1_2,
+                           mesh->jyseps2_2,
+                           mesh->ny_inner,
+                           false};
+        // We need to create the boundaries
+        mesh_copy.createXBoundaries();
+        mesh_copy.createYBoundaries();
 
-    // Get the boundaries and shove their names into the set
-    auto boundaries = mesh_copy.getBoundaries();
-    std::transform(boundaries.begin(), boundaries.end(),
-                   std::inserter(all_boundaries, all_boundaries.begin()),
-                   [](BoundaryRegionBase* boundary) { return boundary->label; });
-  };
+        // Get the boundaries and shove their names into the set
+        auto boundaries = mesh_copy.getBoundaries();
+        std::transform(boundaries.begin(), boundaries.end(),
+                       std::inserter(all_boundaries, all_boundaries.begin()),
+                       [](BoundaryRegionBase* boundary) { return boundary->label; });
+      };
 
   // This is sufficient to get the SOL boundary, if it exists
   get_boundaries_on_different_rank(NXPE - 1, 0);
@@ -1059,30 +1074,28 @@ const int OUT_SENT_DOWN = 3; ///< Data higher in X than branch-cut, at lower bou
 const int IN_SENT_OUT = 4; ///< Data going in positive X direction (in to out)
 const int OUT_SENT_IN = 5; ///< Data going in negative X direction (out to in)
 
-void BoutMesh::post_receiveX(CommHandle &ch) {
+void BoutMesh::post_receiveX(CommHandle& ch) {
   /// Post receive data from left (x-1)
 
   if (IDATA_DEST != -1) {
-    mpi->MPI_Irecv(std::begin(ch.imsg_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, 0,
-                           ch.include_x_corners ? LocalNy : MYSUB),
-                   PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(),
-                   &ch.request[4]);
+    mpi->MPI_Irecv(
+        std::begin(ch.imsg_recvbuff),
+        msg_len(ch.var_list.get(), 0, MXG, 0, ch.include_x_corners ? LocalNy : MYSUB),
+        PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(), &ch.request[4]);
   }
 
   // Post receive data from right (x+1)
 
   if (ODATA_DEST != -1) {
-    mpi->MPI_Irecv(std::begin(ch.omsg_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, 0,
-                           ch.include_x_corners ? LocalNy : MYSUB),
-                   PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(),
-                   &ch.request[5]);
+    mpi->MPI_Irecv(
+        std::begin(ch.omsg_recvbuff),
+        msg_len(ch.var_list.get(), 0, MXG, 0, ch.include_x_corners ? LocalNy : MYSUB),
+        PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(), &ch.request[5]);
   }
 }
 
-void BoutMesh::post_receiveY(CommHandle &ch) {
-  BoutReal *inbuff;
+void BoutMesh::post_receiveY(CommHandle& ch) {
+  BoutReal* inbuff;
   int len;
 
   /// Post receive data from above (y+1)
@@ -1117,7 +1130,7 @@ void BoutMesh::post_receiveY(CommHandle &ch) {
   }
 }
 
-comm_handle BoutMesh::send(FieldGroup &g) {
+comm_handle BoutMesh::send(FieldGroup& g) {
   /// Start timer
   Timer timer("comms");
 
@@ -1132,16 +1145,16 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
 
   /// Get a communications handle of (at least) the needed size
-  CommHandle *ch = get_handle(xlen, ylen);
+  CommHandle* ch = get_handle(xlen, ylen);
   ch->var_list = g; // Group of fields to send
 
   sendX(g, ch, true);
   sendY(g, ch);
 
-  return static_cast<void *>(ch);
+  return static_cast<void*>(ch);
 }
 
-comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle, bool disable_corners) {
+comm_handle BoutMesh::sendX(FieldGroup& g, comm_handle handle, bool disable_corners) {
   /// Start timer
   Timer timer("comms");
 
@@ -1184,9 +1197,9 @@ comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle, bool disable_corn
   /// Send to the right (x+1)
 
   if (ODATA_DEST != -1) {
-    int len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, ch->include_x_corners ? 0 :
-                        MYG, ch->include_x_corners ? LocalNy : MYG + MYSUB,
-                        std::begin(ch->omsg_sendbuff));
+    int len = pack_data(
+        ch->var_list.get(), MXSUB, MXSUB + MXG, ch->include_x_corners ? 0 : MYG,
+        ch->include_x_corners ? LocalNy : MYG + MYSUB, std::begin(ch->omsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
                      OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
@@ -1199,10 +1212,10 @@ comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle, bool disable_corn
   /// Mark communication handle as in progress
   ch->in_progress = true;
 
-  return static_cast<void *>(ch);
+  return static_cast<void*>(ch);
 }
 
-comm_handle BoutMesh::sendY(FieldGroup &g, comm_handle handle) {
+comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
   /// Start timer
   Timer timer("comms");
 
@@ -1296,7 +1309,7 @@ comm_handle BoutMesh::sendY(FieldGroup &g, comm_handle handle) {
   /// Mark as y-communication
   ch->has_y_communication = true;
 
-  return static_cast<void *>(ch);
+  return static_cast<void*>(ch);
 }
 
 int BoutMesh::wait(comm_handle handle) {
@@ -1450,8 +1463,9 @@ int BoutMesh::wait(comm_handle handle) {
 
 #if CHECK > 0
   // Keeping track of whether communications have been done
-  for (const auto &var : ch->var_list)
+  for (const auto& var : ch->var_list) {
     var->doneComms();
+  }
 #endif
 
   free_handle(ch);
@@ -1462,33 +1476,6 @@ int BoutMesh::wait(comm_handle handle) {
 /***************************************************************
  *             Non-Local Communications
  ***************************************************************/
-
-MPI_Request BoutMesh::sendToProc(int xproc, int yproc, BoutReal *buffer, int size,
-                                 int tag) {
-  Timer timer("comms");
-
-  MPI_Request request{};
-
-  mpi->MPI_Isend(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(xproc, yproc), tag,
-                 BoutComm::get(), &request);
-
-  return request;
-}
-
-comm_handle BoutMesh::receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size,
-                                      int tag) {
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle *ch = get_handle(0, 0);
-
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(xproc, yproc), tag,
-                 BoutComm::get(), ch->request);
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
-}
 
 int BoutMesh::getNXPE() { return NXPE; }
 
@@ -1534,14 +1521,15 @@ int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
   return 0;
 }
 
-comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
-  if (PE_XIND == NXPE - 1)
+comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
+  if (PE_XIND == NXPE - 1) {
     return nullptr;
+  }
 
   Timer timer("comms");
 
   // Get a communications handle. Not fussy about size of arrays
-  CommHandle *ch = get_handle(0, 0);
+  CommHandle* ch = get_handle(0, 0);
 
   mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
                  BoutComm::get(), ch->request);
@@ -1611,161 +1599,6 @@ bool BoutMesh::lastY(int xpos) const {
   return rank == size - 1;
 }
 
-int BoutMesh::UpXSplitIndex() { return UDATA_XSPLIT; }
-
-int BoutMesh::DownXSplitIndex() { return DDATA_XSPLIT; }
-
-int BoutMesh::sendYOutIndest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == NYPE - 1) {
-    return 1;
-  }
-
-  Timer timer("comms");
-
-  if (UDATA_INDEST != -1) {
-    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_INDEST, tag, BoutComm::get());
-  } else {
-    throw BoutException("Expected UDATA_INDEST to exist, but it does not.");
-  }
-  return 0;
-}
-
-int BoutMesh::sendYOutOutdest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == NYPE - 1) {
-    return 1;
-  }
-
-  Timer timer("comms");
-
-  if (UDATA_OUTDEST != -1) {
-    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, tag, BoutComm::get());
-  } else {
-    throw BoutException("Expected UDATA_OUTDEST to exist, but it does not.");
-  }
-
-  return 0;
-}
-
-int BoutMesh::sendYInIndest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == 0) {
-    return 1;
-  }
-
-  Timer timer("comms");
-
-  if (DDATA_INDEST != -1) {
-    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_INDEST, tag, BoutComm::get());
-  } else {
-    throw BoutException("Expected DDATA_INDEST to exist, but it does not.");
-  }
-
-  return 0;
-}
-
-int BoutMesh::sendYInOutdest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == 0) {
-    return 1;
-  }
-
-  Timer timer("comms");
-
-  if (DDATA_OUTDEST != -1) {
-    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, tag, BoutComm::get());
-  } else {
-    throw BoutException("Expected DDATA_OUTDEST to exist, but it does not.");
-  }
-
-  return 0;
-}
-
-comm_handle BoutMesh::irecvYOutIndest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == NYPE - 1) {
-    return nullptr;
-  }
-
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
-
-  if (UDATA_INDEST != -1) {
-    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_INDEST, tag, BoutComm::get(),
-                   ch->request);
-  } else {
-    throw BoutException("Expected UDATA_INDEST to exist, but it does not.");
-  }
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
-}
-
-comm_handle BoutMesh::irecvYOutOutdest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == NYPE - 1) {
-    return nullptr;
-  }
-
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
-
-  if (UDATA_OUTDEST != -1) {
-    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, tag, BoutComm::get(),
-                   ch->request);
-  } else {
-    throw BoutException("Expected UDATA_OUTDEST to exist, but it does not.");
-  }
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
-}
-
-comm_handle BoutMesh::irecvYInIndest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == 0) {
-    return nullptr;
-  }
-
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
-
-  if (DDATA_INDEST != -1) {
-    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_INDEST, tag, BoutComm::get(),
-                   ch->request);
-  } else {
-    throw BoutException("Expected DDATA_INDEST to exist, but it does not.");
-  }
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
-}
-
-comm_handle BoutMesh::irecvYInOutdest(BoutReal* buffer, int size, int tag) {
-  if (PE_YIND == 0) {
-    return nullptr;
-  }
-
-  Timer timer("comms");
-
-  // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
-
-  if (DDATA_OUTDEST != -1) {
-    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, tag, BoutComm::get(),
-                   ch->request);
-  } else {
-    throw BoutException("Expected DDATA_OUTDEST to exist, but it does not.");
-  }
-
-  ch->in_progress = true;
-
-  return static_cast<comm_handle>(ch);
-}
-
 /****************************************************************
  *                 GRID INDEX ROUTINES
  *
@@ -1786,7 +1619,7 @@ int BoutMesh::PROC_NUM(int xind, int yind) const {
 }
 
 /// Returns the global X index given a local index
-int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal &xglo) const {
+int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal& xglo) const {
   xglo = xloc + PE_XIND * MXSUB;
   return static_cast<int>(xglo);
 }
@@ -1803,16 +1636,16 @@ int BoutMesh::getLocalXIndexNoBoundaries(int xglobal) const {
   return xglobal - PE_XIND * MXSUB + MXG;
 }
 
-int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal &yglo) const {
+int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal& yglo) const {
   yglo = yloc + PE_YIND * MYSUB - MYG;
   return static_cast<int>(yglo);
 }
 
 int BoutMesh::getGlobalYIndex(int ylocal) const {
-  int yglobal =  ylocal + PE_YIND * MYSUB;
-  if (jyseps1_2 > jyseps2_1 and PE_YIND*MYSUB + 2*MYG + 1 > ny_inner) {
+  int yglobal = ylocal + PE_YIND * MYSUB;
+  if (jyseps1_2 > jyseps2_1 and PE_YIND * MYSUB + 2 * MYG + 1 > ny_inner) {
     // Double null, and we are past the upper target
-    yglobal += 2*MYG;
+    yglobal += 2 * MYG;
   }
   return yglobal;
 }
@@ -2002,9 +1835,9 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
         ypos1, ypos2, xge, xlt);
   }
 
-  output_info.write(
-      "Connection between top of Y processor {:d} and bottom of {:d} in range {:d} <= x < {:d}\n",
-      ypeup, ypedown, xge, xlt);
+  output_info.write("Connection between top of Y processor {:d} and bottom of {:d} in "
+                    "range {:d} <= x < {:d}\n",
+                    ypeup, ypedown, xge, xlt);
 
   // Convert X coordinates into local indices
 
@@ -2100,8 +1933,8 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
   }
 
   output_info.write(
-      "Target at top of Y processor {:d} and bottom of {:d} in range {:d} <= x < {:d}\n", ypeup,
-      ypedown, xge, xlt);
+      "Target at top of Y processor {:d} and bottom of {:d} in range {:d} <= x < {:d}\n",
+      ypeup, ypedown, xge, xlt);
 
   // Convert X coordinates into local indices
   xge = getLocalXIndex(xge);
@@ -2287,7 +2120,7 @@ void BoutMesh::topology() {
  *                     Communication handles
  ****************************************************************/
 
-BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
+BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen) {
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 
@@ -2319,7 +2152,7 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
   }
 
   // Pop first pointer off the list
-  CommHandle *ch = comm_list.front();
+  CommHandle* ch = comm_list.front();
   comm_list.pop_front();
 
   // Check that the buffers are big enough (NOTE: Could search list for bigger buffers)
@@ -2349,14 +2182,14 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
   return ch;
 }
 
-void BoutMesh::free_handle(CommHandle *h) {
+void BoutMesh::free_handle(CommHandle* h) {
   h->var_list.clear();
   comm_list.push_front(h);
 }
 
 void BoutMesh::clear_handles() {
   while (!comm_list.empty()) {
-    CommHandle *ch = comm_list.front();
+    CommHandle* ch = comm_list.front();
 
     delete ch;
 
@@ -2416,13 +2249,13 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
  *                   Communication utilities
  ****************************************************************/
 
-int BoutMesh::pack_data(const std::vector<FieldData *> &var_list, int xge, int xlt, int yge,
-                        int ylt, BoutReal *buffer) {
+int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt,
+                        int yge, int ylt, BoutReal* buffer) {
 
   int len = 0;
 
   /// Loop over variables
-  for (const auto &var : var_list) {
+  for (const auto& var : var_list) {
     if (var->is3D()) {
       // 3D variable
       auto& var3d_ref = *dynamic_cast<Field3D*>(var);
@@ -2449,13 +2282,13 @@ int BoutMesh::pack_data(const std::vector<FieldData *> &var_list, int xge, int x
   return (len);
 }
 
-int BoutMesh::unpack_data(const std::vector<FieldData *> &var_list, int xge, int xlt, int yge,
-                          int ylt, BoutReal *buffer) {
+int BoutMesh::unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt,
+                          int yge, int ylt, BoutReal* buffer) {
 
   int len = 0;
 
   /// Loop over variables
-  for (const auto &var : var_list) {
+  for (const auto& var : var_list) {
     if (var->is3D()) {
       // 3D variable
       auto& var3d_ref = *dynamic_cast<Field3D*>(var);
@@ -2508,8 +2341,8 @@ int BoutMesh::numberOfYBoundaries() const {
 }
 
 std::pair<bool, BoutReal> BoutMesh::hasBranchCutLower(int jx) const {
-  if ( (TS_down_in and DDATA_INDEST != -1 and jx < DDATA_XSPLIT)
-      or (TS_down_out and DDATA_OUTDEST != -1 and jx >= DDATA_XSPLIT) ) {
+  if ((TS_down_in and DDATA_INDEST != -1 and jx < DDATA_XSPLIT)
+      or (TS_down_out and DDATA_OUTDEST != -1 and jx >= DDATA_XSPLIT)) {
     // this processor has branch cut at lower boundary for jx
     if (ShiftAngle.empty()) {
       // This function should only be called during initialization, so always check
@@ -2521,10 +2354,9 @@ std::pair<bool, BoutReal> BoutMesh::hasBranchCutLower(int jx) const {
   return std::make_pair(false, 0.);
 }
 
-
 std::pair<bool, BoutReal> BoutMesh::hasBranchCutUpper(int jx) const {
-  if ( (TS_up_in and UDATA_INDEST != -1 and jx < UDATA_XSPLIT)
-      or (TS_up_out and UDATA_OUTDEST != -1 and jx >= UDATA_XSPLIT) ) {
+  if ((TS_up_in and UDATA_INDEST != -1 and jx < UDATA_XSPLIT)
+      or (TS_up_out and UDATA_OUTDEST != -1 and jx >= UDATA_XSPLIT)) {
     // this processor has branch cut at upper boundary for jx
     if (ShiftAngle.empty()) {
       // This function should only be called during initialization, so always check
@@ -2544,8 +2376,8 @@ int BoutMesh::ySize(int xpos) const {
     // Lower PF region
     return (jyseps1_1 + 1) + (ny - jyseps2_2);
 
-  } else if ((xglobal < ixseps_upper) && (yglobal > jyseps2_1) &&
-             (yglobal >= jyseps1_2)) {
+  } else if ((xglobal < ixseps_upper) && (yglobal > jyseps2_1)
+             && (yglobal >= jyseps1_2)) {
     // Upper PF region
     return jyseps1_2 - jyseps2_1;
 
@@ -2592,7 +2424,7 @@ MPI_Comm BoutMesh::getYcomm(int xpos) const {
 
 void BoutMesh::addBoundaryRegions() {
   std::list<std::string> all_boundaries; ///< Keep track of all boundary regions
-  
+
   // Lower Inner Y
   int xs = 0;
   int xe = LocalNx - 1;
@@ -2624,16 +2456,16 @@ void BoutMesh::addBoundaryRegions() {
       xe = LocalNx - 1;
     }
   }
-  
-  addRegion3D("RGN_LOWER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+
+  addRegion3D("RGN_LOWER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, 0, LocalNz - 1,
                                                  LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_LOWER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
-                                                 LocalNy, 1, maxregionblocksize));
+  addRegion2D("RGN_LOWER_INNER_Y",
+              Region<Ind2D>(xs, xe, 0, ystart - 1, 0, 0, LocalNy, 1, maxregionblocksize));
 
   all_boundaries.emplace_back("RGN_LOWER_INNER_Y");
 
   // Lower Outer Y
-  
+
   xs = 0;
   xe = LocalNx - 1;
   if (!firstY()) {
@@ -2664,12 +2496,12 @@ void BoutMesh::addBoundaryRegions() {
     xe = -2;
   }
 
-  addRegion3D("RGN_LOWER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+  addRegion3D("RGN_LOWER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, 0, LocalNz - 1,
                                                  LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_LOWER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
-                                                 LocalNy, 1, maxregionblocksize));
+  addRegion2D("RGN_LOWER_OUTER_Y",
+              Region<Ind2D>(xs, xe, 0, ystart - 1, 0, 0, LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_LOWER_OUTER_Y");
-  
+
   // Lower Y
 
   xs = 0;
@@ -2697,12 +2529,12 @@ void BoutMesh::addBoundaryRegions() {
     xe = LocalNx - 1;
   }
 
-  addRegion3D("RGN_LOWER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
-                                           LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_LOWER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
-                                           LocalNy, 1, maxregionblocksize));
+  addRegion3D("RGN_LOWER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, 0, LocalNz - 1, LocalNy,
+                                           LocalNz, maxregionblocksize));
+  addRegion2D("RGN_LOWER_Y",
+              Region<Ind2D>(xs, xe, 0, ystart - 1, 0, 0, LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_LOWER_Y");
-  
+
   // Upper Inner Y
 
   xs = 0;
@@ -2735,15 +2567,16 @@ void BoutMesh::addBoundaryRegions() {
     // Include corner cells on x-boundary
     xe = LocalNx - 1;
   }
-  
-  addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
-                                                 LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
+
+  addRegion3D("RGN_UPPER_INNER_Y",
+              Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, 0, LocalNz - 1, LocalNy,
+                            LocalNz, maxregionblocksize));
+  addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, yend + 1, LocalNy - 1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_INNER_Y");
 
   // Upper Outer Y
-  
+
   xs = 0;
   xe = LocalNx - 1;
 
@@ -2775,9 +2608,10 @@ void BoutMesh::addBoundaryRegions() {
     }
   }
 
-  addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
-                                                 LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
+  addRegion3D("RGN_UPPER_OUTER_Y",
+              Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, 0, LocalNz - 1, LocalNy,
+                            LocalNz, maxregionblocksize));
+  addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, yend + 1, LocalNy - 1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_OUTER_Y");
 
@@ -2808,14 +2642,14 @@ void BoutMesh::addBoundaryRegions() {
     xe = LocalNx - 1;
   }
 
-  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
+  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, 0, LocalNz - 1,
                                            LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
-                                           LocalNy, 1, maxregionblocksize));
+  addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, yend + 1, LocalNy - 1, 0, 0, LocalNy,
+                                           1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_Y");
-  
+
   // Inner X
-  if(firstX() && !periodicX) {
+  if (firstX() && !periodicX) {
     addRegion3D("RGN_INNER_X_THIN",
                 Region<Ind3D>(xstart - 1, xstart - 1, ystart, yend, 0, LocalNz - 1,
                               LocalNy, LocalNz, maxregionblocksize));
@@ -2824,14 +2658,14 @@ void BoutMesh::addBoundaryRegions() {
     addRegionPerp("RGN_INNER_X_THIN",
                   Region<IndPerp>(xstart - 1, xstart - 1, 0, 0, 0, LocalNz - 1, 1,
                                   LocalNz, maxregionblocksize));
-    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart-1, ystart, yend, 0, LocalNz-1,
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, 0, LocalNz - 1,
                                              LocalNy, LocalNz, maxregionblocksize));
-    addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
-                                             LocalNy, 1, maxregionblocksize));
+    addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy,
+                                             1, maxregionblocksize));
     addRegionPerp("RGN_INNER_X", Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1,
                                                  LocalNz, maxregionblocksize));
     all_boundaries.emplace_back("RGN_INNER_X");
-    
+
     output_info.write("\tBoundary region inner X\n");
   } else {
     // Empty region
@@ -2841,16 +2675,16 @@ void BoutMesh::addBoundaryRegions() {
                 Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
     addRegionPerp("RGN_INNER_X_THIN",
                   Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
-    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
-                                             LocalNy, LocalNz, maxregionblocksize));
-    addRegion2D("RGN_INNER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
-                                             LocalNy, 1, maxregionblocksize));
+    addRegion3D("RGN_INNER_X",
+                Region<Ind3D>(0, -1, 0, 0, 0, 0, LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X",
+                Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
     addRegionPerp("RGN_INNER_X",
                   Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
   }
 
   // Outer X
-  if(lastX() && !periodicX) {
+  if (lastX() && !periodicX) {
     addRegion3D("RGN_OUTER_X_THIN",
                 Region<Ind3D>(xend + 1, xend + 1, ystart, yend, 0, LocalNz - 1, LocalNy,
                               LocalNz, maxregionblocksize));
@@ -2859,15 +2693,16 @@ void BoutMesh::addBoundaryRegions() {
     addRegionPerp("RGN_OUTER_X_THIN",
                   Region<IndPerp>(xend + 1, xend + 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
                                   maxregionblocksize));
-    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
-                                             LocalNy, LocalNz, maxregionblocksize));
-    addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
+    addRegion3D("RGN_OUTER_X",
+                Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, 0, LocalNz - 1,
+                              LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0, 0,
                                              LocalNy, 1, maxregionblocksize));
     addRegionPerp("RGN_OUTER_X",
                   Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
                                   maxregionblocksize));
     all_boundaries.emplace_back("RGN_OUTER_X");
-    
+
     output_info.write("\tBoundary region outer X\n");
   } else {
     // Empty region
@@ -2877,18 +2712,18 @@ void BoutMesh::addBoundaryRegions() {
                 Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
     addRegionPerp("RGN_OUTER_X_THIN",
                   Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
-    addRegion3D("RGN_OUTER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
-                                             LocalNy, LocalNz, maxregionblocksize));
-    addRegion2D("RGN_OUTER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
-                                             LocalNy, 1, maxregionblocksize));
+    addRegion3D("RGN_OUTER_X",
+                Region<Ind3D>(0, -1, 0, 0, 0, 0, LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X",
+                Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
     addRegionPerp("RGN_OUTER_X",
                   Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
   }
 
   // Join boundary regions together
-  
+
   Region<Ind3D> bndry3d; // Empty
-  for (const auto &region_name : all_boundaries) {
+  for (const auto& region_name : all_boundaries) {
     bndry3d += getRegion3D(region_name);
   }
   bndry3d.unique(); // Ensure that the points are unique
@@ -2914,7 +2749,7 @@ void BoutMesh::addBoundaryRegions() {
   addRegion3D("RGN_WITH_BNDRIES", bndry3d);
 
   Region<Ind2D> bndry2d; // Empty
-  for (const auto &region_name : all_boundaries) {
+  for (const auto& region_name : all_boundaries) {
     bndry2d += getRegion2D(region_name);
   }
   bndry2d.unique(); // Ensure that the points are unique
@@ -3135,11 +2970,11 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
   return RangeIterator(xs, xe);
 }
 
-std::vector<BoundaryRegion *> BoutMesh::getBoundaries() { return boundary; }
+std::vector<BoundaryRegion*> BoutMesh::getBoundaries() { return boundary; }
 
-std::vector<BoundaryRegionPar *> BoutMesh::getBoundariesPar() { return par_boundary; }
+std::vector<BoundaryRegionPar*> BoutMesh::getBoundariesPar() { return par_boundary; }
 
-void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry) {
+void BoutMesh::addBoundaryPar(BoundaryRegionPar* bndry) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;
   par_boundary.push_back(bndry);
 }
@@ -3212,9 +3047,10 @@ BoutReal BoutMesh::GlobalY(int jy) const {
     int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
     if (yi < ny_inner) {
+      // before upper target
       yi -= jyseps1_1 + 0.5;
     } else {
-      // Result in core between 0.5 and 1.0
+      // after upper target
       yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
     }
     return yi / nycore;
@@ -3258,9 +3094,10 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
     int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
     if (yi < ny_inner) {
+      // before upper target
       yi -= jyseps1_1 + 0.5;
     } else {
-      // Result in core between 0.5 and 1.0
+      // after upper target
       yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
     }
     return yi / nycore;
@@ -3292,62 +3129,46 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
   return yglo / static_cast<BoutReal>(nycore);
 }
 
-void BoutMesh::outputVars(Datafile &file) {
-  file.add(zperiod, "zperiod", false);
-  file.add(MXSUB, "MXSUB", false);
-  file.add(MYSUB, "MYSUB", false);
-  file.add(MZSUB, "MZSUB", false);
-  file.add(PE_XIND, "PE_XIND", false);
-  file.add(PE_YIND, "PE_YIND", false);
-  file.add(MYPE, "MYPE", false);
-  file.add(MXG, "MXG", false);
-  file.add(MYG, "MYG", false);
-  file.add(MZG, "MZG", false);
-  file.add(nx, "nx", false);
-  file.add(ny, "ny", false);
-  file.add(nz, "nz", false);
-  file.add(MZ, "MZ", false);
-  file.add(NXPE, "NXPE", false);
-  file.add(NYPE, "NYPE", false);
-  file.add(NZPE, "NZPE", false);
-  file.add(ZMAX, "ZMAX", false);
-  file.add(ZMIN, "ZMIN", false);
-  file.add(ixseps1, "ixseps1", false);
-  file.add(ixseps2, "ixseps2", false);
-  file.add(jyseps1_1, "jyseps1_1", false);
-  file.add(jyseps1_2, "jyseps1_2", false);
-  file.add(jyseps2_1, "jyseps2_1", false);
-  file.add(jyseps2_2, "jyseps2_2", false);
-  file.add(ny_inner, "ny_inner", false);
+void BoutMesh::outputVars(Options& output_options) {
+  Timer time("io");
+  output_options["zperiod"].force(zperiod, "BoutMesh");
+  output_options["MXSUB"].force(MXSUB, "BoutMesh");
+  output_options["MYSUB"].force(MYSUB, "BoutMesh");
+  output_options["MZSUB"].force(MZSUB, "BoutMesh");
+  output_options["PE_XIND"].force(PE_XIND, "BoutMesh");
+  output_options["PE_YIND"].force(PE_YIND, "BoutMesh");
+  output_options["MYPE"].force(MYPE, "BoutMesh");
+  output_options["MXG"].force(MXG, "BoutMesh");
+  output_options["MYG"].force(MYG, "BoutMesh");
+  output_options["MZG"].force(MZG, "BoutMesh");
+  output_options["nx"].force(nx, "BoutMesh");
+  output_options["ny"].force(ny, "BoutMesh");
+  output_options["nz"].force(nz, "BoutMesh");
+  output_options["MZ"].force(MZ, "BoutMesh");
+  output_options["NXPE"].force(NXPE, "BoutMesh");
+  output_options["NYPE"].force(NYPE, "BoutMesh");
+  output_options["NZPE"].force(NZPE, "BoutMesh");
+  output_options["ZMAX"].force(ZMAX, "BoutMesh");
+  output_options["ZMIN"].force(ZMIN, "BoutMesh");
+  output_options["ixseps1"].force(ixseps1, "BoutMesh");
+  output_options["ixseps2"].force(ixseps2, "BoutMesh");
+  output_options["jyseps1_1"].force(jyseps1_1, "BoutMesh");
+  output_options["jyseps1_2"].force(jyseps1_2, "BoutMesh");
+  output_options["jyseps2_1"].force(jyseps2_1, "BoutMesh");
+  output_options["jyseps2_2"].force(jyseps2_2, "BoutMesh");
+  output_options["ny_inner"].force(ny_inner, "BoutMesh");
 
-  getCoordinates()->outputVars(file);
+  getCoordinates()->outputVars(output_options);
 
   // Try and save some provenance tracking info that new enough versions of
   // hypnotoad provide in the grid file.
-  // Note with current Datafile/DataFormat implementation, must not write an
-  // empty string because it ends up as a null char* pointer, which causes a
-  // segfault.
-  if (this->get(grid_id, "grid_id") == 0 and not grid_id.empty()) {
-    file.add(grid_id, "grid_id", false);
-  }
-  if (this->get(hypnotoad_version, "hypnotoad_version") == 0
-      and not hypnotoad_version.empty()) {
-
-    file.add(hypnotoad_version, "hypnotoad_version", false);
-  }
-  if (this->get(hypnotoad_git_hash, "hypnotoad_git_hash") == 0
-      and not hypnotoad_git_hash.empty()) {
-
-    file.add(hypnotoad_git_hash, "hypnotoad_git_hash", false);
-  }
-  if (this->get(hypnotoad_git_diff, "hypnotoad_git_diff") == 0
-      and not hypnotoad_git_diff.empty()) {
-
-    file.add(hypnotoad_git_diff, "hypnotoad_git_diff", false);
-  }
-  if (this->get(hypnotoad_geqdsk_filename, "hypnotoad_geqdsk_filename") == 0
-      and not hypnotoad_geqdsk_filename.empty()) {
-
-    file.add(hypnotoad_geqdsk_filename, "hypnotoad_geqdsk_filename", false);
+  using namespace std::literals;
+  for (const auto& hypnotoad_var :
+       {"grid_id"s, "hypnotoad_version"s, "hypnotoad_git_hash"s, "hypnotoad_git_diff"s,
+        "hypnotoad_geqdsk_filename"s}) {
+    std::string temp;
+    if (this->get(temp, hypnotoad_var) == 0) {
+      output_options[hypnotoad_var].force(temp, "BoutMesh");
+    }
   }
 }

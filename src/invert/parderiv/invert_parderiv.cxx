@@ -27,12 +27,12 @@
  *
  ************************************************************************/
 
-#include <invert_parderiv.hxx>
 #include "impls/cyclic/cyclic.hxx"
+#include <invert_parderiv.hxx>
 
-const Field2D InvertPar::solve(const Field2D &f) {
+const Field2D InvertPar::solve(const Field2D& f) {
   Field3D var(f);
-  
+
   var = solve(var);
   return DC(var);
 }

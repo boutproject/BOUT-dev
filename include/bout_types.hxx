@@ -22,8 +22,6 @@
 #ifndef __BOUT_TYPES_H__
 #define __BOUT_TYPES_H__
 
-#include "bout/deprecated.hxx"
-
 #include <limits>
 #include <string>
 
@@ -33,11 +31,13 @@ using BoutReal = double;
 /// Quiet NaN
 constexpr BoutReal BoutNaN = std::numeric_limits<BoutReal>::quiet_NaN();
 
+// clang-format off
 #define ENUMSTR(val) {val, #val}
 #define STRENUM(val) {#val, val}
+// clang-format on
 
 /// 4 possible variable locations. Default is for passing to functions
-enum class CELL_LOC {deflt, centre, xlow, ylow, zlow, vshift};
+enum class CELL_LOC { deflt, centre, xlow, ylow, zlow, vshift };
 constexpr CELL_LOC CELL_DEFAULT = CELL_LOC::deflt;
 constexpr CELL_LOC CELL_CENTRE = CELL_LOC::centre;
 constexpr CELL_LOC CELL_CENTER = CELL_LOC::centre;
@@ -48,12 +48,9 @@ constexpr CELL_LOC CELL_VSHIFT = CELL_LOC::vshift;
 
 std::string toString(CELL_LOC location);
 CELL_LOC CELL_LOCFromString(const std::string& location_string);
-DEPRECATED(inline std::string CELL_LOC_STRING(CELL_LOC location)) {
-  return toString(location);
-}
 
 /// Differential methods. Both central and upwind
-enum class DIFF_METHOD {deflt, u1, u2, c2, w2, w3, c4, u3, fft, split, s2};
+enum class DIFF_METHOD { deflt, u1, u2, c2, w2, w3, c4, u3, fft, split, s2 };
 constexpr DIFF_METHOD DIFF_DEFAULT = DIFF_METHOD::deflt;
 constexpr DIFF_METHOD DIFF_U1 = DIFF_METHOD::u1;
 constexpr DIFF_METHOD DIFF_U2 = DIFF_METHOD::u2;
@@ -67,12 +64,9 @@ constexpr DIFF_METHOD DIFF_SPLIT = DIFF_METHOD::split;
 constexpr DIFF_METHOD DIFF_S2 = DIFF_METHOD::s2;
 
 std::string toString(DIFF_METHOD location);
-DEPRECATED(inline std::string DIFF_METHOD_STRING(DIFF_METHOD location)) {
-  return toString(location);
-}
 
 /// Specify grid region for looping
-enum class REGION {all, nobndry, nox, noy, noz};
+enum class REGION { all, nobndry, nox, noy, noz };
 constexpr REGION RGN_ALL = REGION::all;
 constexpr REGION RGN_NOBNDRY = REGION::nobndry;
 constexpr REGION RGN_NOX = REGION::nox;
@@ -80,7 +74,6 @@ constexpr REGION RGN_NOY = REGION::noy;
 constexpr REGION RGN_NOZ = REGION::noz;
 
 std::string toString(REGION region);
-DEPRECATED(inline std::string REGION_STRING(REGION region)) { return toString(region); }
 
 /// To identify particular directions (in index space):
 ///   - X, Y, Z are the coordinate directions
@@ -92,9 +85,6 @@ DEPRECATED(inline std::string REGION_STRING(REGION region)) { return toString(re
 enum class DIRECTION { X, Y, Z, YAligned, YOrthogonal };
 
 std::string toString(DIRECTION direction);
-DEPRECATED(inline std::string DIRECTION_STRING(DIRECTION direction)) {
-  return toString(direction);
-}
 
 /// Identify kind of a field's y-direction
 /// - Standard is the default for the Mesh/Coordinates/ParallelTransform
@@ -131,27 +121,23 @@ void swap(const DirectionTypes& first, const DirectionTypes& second);
 enum class STAGGER { None, C2L, L2C };
 
 std::string toString(STAGGER stagger);
-DEPRECATED(inline std::string STAGGER_STRING(STAGGER stagger)) {
-  return toString(stagger);
-}
 
 /// To identify types of derivative method combinations
 enum class DERIV { Standard, StandardSecond, StandardFourth, Upwind, Flux };
 
 std::string toString(DERIV deriv);
-DEPRECATED(inline std::string DERIV_STRING(DERIV deriv)) { return toString(deriv); }
 
 // A small struct that can be used to wrap a specific enum value, giving
 // it a unique type that can be passed as a valid type to templates and
 // which can be inspected to provide the actual value of the enum
-template<typename T, T val>
+template <typename T, T val>
 struct enumWrapper {
   using type = T;
   static const type value = val;
-  T lookup(){return val;};
+  T lookup() { return val; };
 };
 
 /// Boundary condition function
-using FuncPtr = BoutReal(*)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
+using FuncPtr = BoutReal (*)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
 
 #endif // __BOUT_TYPES_H__

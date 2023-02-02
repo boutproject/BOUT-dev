@@ -189,7 +189,6 @@ def returnType(f1, f2):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description="Generate code for the Field arithmetic operators"
     )
@@ -274,7 +273,6 @@ if __name__ == "__main__":
         rhs.name = "rhs"
 
         for operator, operator_name in operators.items():
-
             template_args = {
                 "operator": operator,
                 "operator_name": operator_name,

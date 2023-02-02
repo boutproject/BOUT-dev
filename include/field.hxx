@@ -38,17 +38,16 @@ class Field;
 
 #include "field_data.hxx"
 
-#include "bout/region.hxx"
 #include "bout_types.hxx"
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
-#include <globals.hxx>
 #include "msg_stack.hxx"
-#include "bout/region.hxx"
 #include "stencils.hxx"
 #include "utils.hxx"
-#include <bout/rvec.hxx>
+#include "bout/region.hxx"
 #include "bout/traits.hxx"
+#include <bout/rvec.hxx>
+#include <globals.hxx>
 
 #include "unused.hxx"
 
@@ -67,15 +66,9 @@ public:
   Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in);
 
   /// Getters for DIRECTION types
-  DirectionTypes getDirections() const {
-    return directions;
-  }
-  YDirectionType getDirectionY() const {
-    return directions.y;
-  }
-  ZDirectionType getDirectionZ() const {
-    return directions.z;
-  }
+  DirectionTypes getDirections() const { return directions; }
+  YDirectionType getDirectionY() const { return directions.y; }
+  ZDirectionType getDirectionZ() const { return directions.z; }
 
   /// Setters for *DirectionType
   virtual Field& setDirections(DirectionTypes directions_in) {
@@ -95,19 +88,23 @@ public:
 
 #if CHECK > 0
   // Routines to test guard/boundary cells set
-  
+
   virtual bool bndryValid() {
-    if(!bndry_xin)
+    if (!bndry_xin) {
       throw BoutException("Inner X guard cells not set\n");
-    if(!bndry_xout)
+    }
+    if (!bndry_xout) {
       throw BoutException("Outer X guard cells not set\n");
-    if(!bndry_yup)
+    }
+    if (!bndry_yup) {
       throw BoutException("Upper y guard cells not set\n");
-    if(!bndry_ydown)
+    }
+    if (!bndry_ydown) {
       throw BoutException("Lower y guard cells not set\n");
+    }
     return true;
   }
-  
+
   /// Status of the 4 boundaries
   bool bndry_xin{true}, bndry_xout{true}, bndry_yup{true}, bndry_ydown{true};
 #endif
@@ -139,56 +136,57 @@ private:
 
 /// Check if Fields have compatible meta-data
 inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
-  return
-      field1.getCoordinates() == field2.getCoordinates() &&
-      field1.getMesh() == field2.getMesh() &&
-      field1.getLocation() == field2.getLocation() &&
-      areDirectionsCompatible(field1.getDirections(), field2.getDirections());
+  return field1.getCoordinates() == field2.getCoordinates()
+         && field1.getMesh() == field2.getMesh()
+         && field1.getLocation() == field2.getLocation()
+         && areDirectionsCompatible(field1.getDirections(), field2.getDirections());
 }
 
 #if CHECKLEVEL >= 1
-#define ASSERT1_FIELDS_COMPATIBLE(field1, field2)			\
-  if ((field1).getLocation() != (field2).getLocation()){		\
-    throw BoutException("Error in {:s}:{:d}\nFields at different position:" \
-			"`{:s}` at {:s}, `{:s}` at {:s}",__FILE__,__LINE__, \
-			#field1, toString((field1).getLocation()),	\
-			#field2, toString((field2).getLocation()));	\
-  }									\
-  if ((field1).getCoordinates() != (field2).getCoordinates()){		\
-    throw BoutException("Error in {:s}:{:d}\nFields have different coordinates:" \
-			"`{:s}` at {:p}, `{:s}` at {:p}",__FILE__,__LINE__, \
-			#field1, static_cast<void*>((field1).getCoordinates()), \
-			#field2, static_cast<void*>((field2).getCoordinates())); \
-  }								\
-  if ((field1).getMesh() != (field2).getMesh()){			\
-    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:" \
-			"`{:s}` at {:p}, `{:s}` at {:p}",__FILE__,__LINE__, \
-			#field1, static_cast<void*>((field1).getMesh()), \
-			#field2, static_cast<void*>((field2).getMesh())); \
-  }									\
-  if (!areDirectionsCompatible((field1).getDirections(),		\
-			       (field2).getDirections())){		\
-    throw BoutException("Error in {:s}:{:d}\nFields at different directions:" \
-			"`{:s}` at {:s}, `{:s}` at {:s}",__FILE__,__LINE__, \
-			#field1, toString((field1).getDirections()),	\
-			#field2, toString((field2).getDirections()));	\
+#define ASSERT1_FIELDS_COMPATIBLE(field1, field2)                                        \
+  if ((field1).getLocation() != (field2).getLocation()) {                                \
+    throw BoutException("Error in {:s}:{:d}\nFields at different position:"              \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                                \
+                        __FILE__, __LINE__, #field1, toString((field1).getLocation()),   \
+                        #field2, toString((field2).getLocation()));                      \
+  }                                                                                      \
+  if ((field1).getCoordinates() != (field2).getCoordinates()) {                          \
+    throw BoutException("Error in {:s}:{:d}\nFields have different coordinates:"         \
+                        "`{:s}` at {:p}, `{:s}` at {:p}",                                \
+                        __FILE__, __LINE__, #field1,                                     \
+                        static_cast<void*>((field1).getCoordinates()), #field2,          \
+                        static_cast<void*>((field2).getCoordinates()));                  \
+  }                                                                                      \
+  if ((field1).getMesh() != (field2).getMesh()) {                                        \
+    throw BoutException("Error in {:s}:{:d}\nFields are on different Meshes:"            \
+                        "`{:s}` at {:p}, `{:s}` at {:p}",                                \
+                        __FILE__, __LINE__, #field1,                                     \
+                        static_cast<void*>((field1).getMesh()), #field2,                 \
+                        static_cast<void*>((field2).getMesh()));                         \
+  }                                                                                      \
+  if (!areDirectionsCompatible((field1).getDirections(), (field2).getDirections())) {    \
+    throw BoutException("Error in {:s}:{:d}\nFields at different directions:"            \
+                        "`{:s}` at {:s}, `{:s}` at {:s}",                                \
+                        __FILE__, __LINE__, #field1, toString((field1).getDirections()), \
+                        #field2, toString((field2).getDirections()));                    \
   }
 
 #else
-#define ASSERT1_FIELDS_COMPATIBLE(field1, field2);
+#define ASSERT1_FIELDS_COMPATIBLE(field1, field2) ;
 #endif
 
 /// Return an empty shell field of some type derived from Field, with metadata
 /// copied and a data array that is allocated but not initialised.
-template<typename T>
+template <typename T>
 inline T emptyFrom(const T& f) {
   static_assert(bout::utils::is_Field<T>::value, "emptyFrom only works on Fields");
-  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()}).allocate();
+  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()})
+      .allocate();
 }
 
 /// Return a field of some type derived from Field, with metadata copied from
 /// another field and a data array allocated and initialised to zero.
-template<typename T>
+template <typename T>
 inline T zeroFrom(const T& f) {
   static_assert(bout::utils::is_Field<T>::value, "zeroFrom only works on Fields");
   T result{emptyFrom(f)};
@@ -198,7 +196,7 @@ inline T zeroFrom(const T& f) {
 
 /// Return a field of some type derived from Field, with metadata copied from
 /// another field and a data array allocated and filled with the given value.
-template<typename T>
+template <typename T>
 inline T filledFrom(const T& f, BoutReal fill_value) {
   static_assert(bout::utils::is_Field<T>::value, "filledFrom only works on Fields");
   T result{emptyFrom(f)};
@@ -213,7 +211,7 @@ inline T filledFrom(const T& f, BoutReal fill_value) {
 ///   Field3D result = filledFrom(field, [&](const auto& index) {
 ///                                          return ...;
 ///                                      });
-/// 
+///
 /// An optional third argument is the region string
 template <
     typename T, typename Function,
@@ -221,15 +219,15 @@ template <
 inline T filledFrom(const T& f, Function func, std::string region_string = "RGN_ALL") {
   static_assert(bout::utils::is_Field<T>::value, "filledFrom only works on Fields");
   T result{emptyFrom(f)};
-  BOUT_FOR(i, result.getRegion(region_string)) {
-    result[i] = func(i);
-  }
+  BOUT_FOR(i, result.getRegion(region_string)) { result[i] = func(i); }
   return result;
 }
 
 /// Unary + operator. This doesn't do anything
-template<typename T, typename = bout::utils::EnableIfField<T>>
-T operator+(const T& f) {return f;}
+template <typename T, typename = bout::utils::EnableIfField<T>>
+T operator+(const T& f) {
+  return f;
+}
 
 namespace bout {
 /// Check if all values of a field \p var are finite.  Loops over all points including the
@@ -240,8 +238,9 @@ namespace bout {
 /// Note that checkFinite runs the check irrespective of CHECK level. It is intended to be
 /// used during initialization, where we always want to check inputs, even for optimized
 /// builds.
-template<typename T>
-inline void checkFinite(const T& f, const std::string& name="field", const std::string& rgn="RGN_ALL") {
+template <typename T>
+inline void checkFinite(const T& f, const std::string& name = "field",
+                        const std::string& rgn = "RGN_ALL") {
   AUTO_TRACE();
 
   if (!f.isAllocated()) {
@@ -263,8 +262,9 @@ inline void checkFinite(const T& f, const std::string& name="field", const std::
 /// Note that checkPositive runs the check irrespective of CHECK level. It is intended to
 /// be used during initialization, where we always want to check inputs, even for
 /// optimized builds.
-template<typename T>
-inline void checkPositive(const T& f, const std::string& name="field", const std::string& rgn="RGN_ALL") {
+template <typename T>
+inline void checkPositive(const T& f, const std::string& name = "field",
+                          const std::string& rgn = "RGN_ALL") {
   AUTO_TRACE();
 
   if (!f.isAllocated()) {
@@ -290,25 +290,11 @@ inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
 }
 
-template<typename T>
-[[deprecated("Please use toFieldAligned(const T& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline T toFieldAligned(const T& f, REGION region) {
-  return toFieldAligned(f, toString(region));
-}
-
 /// Convert \p f from field-aligned space in \p region (default: whole domain)
 template <typename T>
 inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field<T>::value, "fromFieldAligned only works on Fields");
   return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
-}
-
-template<typename T>
-[[deprecated("Please use fromFieldAligned(const T& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline T fromFieldAligned(const T& f, REGION region) {
-  return fromFieldAligned(f, toString(region));
 }
 
 /// Minimum of \p f, excluding the boundary/guard cells by default
@@ -343,13 +329,6 @@ inline BoutReal min(const T& f, bool allpe = false,
   }
 
   return result;
-}
-
-template<typename T, typename = bout::utils::EnableIfField<T>>
-[[deprecated("Please use Field3D min(const Field3D& f, bool allpe, "
-    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
-inline BoutReal min(const T& f, bool allpe, REGION rgn) {
-  return min(f, allpe, toString(rgn));
 }
 
 /// Returns true if all elements of \p f over \p region are equal. By
@@ -432,13 +411,6 @@ inline BoutReal max(const T& f, bool allpe = false,
   return result;
 }
 
-template<typename T, typename = bout::utils::EnableIfField<T>>
-[[deprecated("Please use Field3D max(const Field3D& f, bool allpe, "
-    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
-inline BoutReal max(const T& f, bool allpe, REGION rgn) {
-  return max(f, allpe, toString(rgn));
-}
-
 /// Mean of \p f, excluding the boundary/guard cells by default (can
 /// be changed with \p rgn argument).
 ///
@@ -475,19 +447,12 @@ inline BoutReal mean(const T& f, bool allpe = false,
   return result / static_cast<BoutReal>(count);
 }
 
-template<typename T, typename = bout::utils::EnableIfField<T>>
-[[deprecated("Please use Field3D mean(const Field3D& f, bool allpe, "
-    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
-inline BoutReal mean(const T& f, bool allpe, REGION rgn) {
-  return mean(f, allpe, toString(rgn));
-}
-
 /// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs
 ///
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument)
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template <typename T, typename = bout::utils::EnableIfField<T>>
 T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
   AUTO_TRACE();
 
@@ -500,15 +465,9 @@ T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
   checkData(result);
   return result;
 }
-template<typename T, typename = bout::utils::EnableIfField<T>>
-[[deprecated("Please use pow(const T& lhs, const T& rhs"
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline T pow(const T& lhs, const T& rhs, REGION rgn) {
-  return pow(lhs, rhs, toString(rgn));
-}
 
-template<typename T, typename = bout::utils::EnableIfField<T>>
-T pow(const T &lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
+template <typename T, typename = bout::utils::EnableIfField<T>>
+T pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
   AUTO_TRACE();
 
   // Check if the inputs are allocated
@@ -522,15 +481,9 @@ T pow(const T &lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
   checkData(result);
   return result;
 }
-template<typename T, typename = bout::utils::EnableIfField<T>>
-[[deprecated("Please use pow(const T& lhs, BoutReal rhs"
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline T pow(const T& lhs, BoutReal rhs, REGION rgn) {
-  return pow(lhs, rhs, toString(rgn));
-}
 
-template<typename T, typename = bout::utils::EnableIfField<T>>
-T pow(BoutReal lhs, const T &rhs, const std::string& rgn = "RGN_ALL") {
+template <typename T, typename = bout::utils::EnableIfField<T>>
+T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
   AUTO_TRACE();
 
   // Check if the inputs are allocated
@@ -545,13 +498,6 @@ T pow(BoutReal lhs, const T &rhs, const std::string& rgn = "RGN_ALL") {
   checkData(result);
   return result;
 }
-template<typename T, typename = bout::utils::EnableIfField<T>>
-[[deprecated("Please use pow(BoutReal lhs, const T& rhs"
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline T pow(BoutReal lhs, const T& rhs, REGION rgn) {
-  return pow(lhs, rhs, toString(rgn));
-}
-
 
 /*!
  * This macro takes a function \p func, which is
@@ -572,23 +518,17 @@ inline T pow(BoutReal lhs, const T& rhs, REGION rgn) {
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else
-#define FIELD_FUNC(name, func)                                                       \
-  template<typename T, typename = bout::utils::EnableIfField<T>>                     \
-  inline T name(const T &f, const std::string& rgn = "RGN_ALL") {                    \
-    AUTO_TRACE();                                                                    \
-    /* Check if the input is allocated */                                            \
-    checkData(f);                                                                    \
-    /* Define and allocate the output result */                                      \
-    T result{emptyFrom(f)};                                                          \
-    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                   \
-    checkData(result);                                                               \
-    return result;                                                                   \
-  }                                                                                  \
-  template<typename T, typename = bout::utils::EnableIfField<T>>                     \
-  [[deprecated("Please use func(const T& f, "                                   \
-      "const std::string& region = \"RGN_ALL\") instead")]]                          \
-  inline T name(const T& f, REGION region) {                                         \
-    return name(f, toString(region));                                                \
+#define FIELD_FUNC(name, func)                                     \
+  template <typename T, typename = bout::utils::EnableIfField<T>>  \
+  inline T name(const T& f, const std::string& rgn = "RGN_ALL") {  \
+    AUTO_TRACE();                                                  \
+    /* Check if the input is allocated */                          \
+    checkData(f);                                                  \
+    /* Define and allocate the output result */                    \
+    T result{emptyFrom(f)};                                        \
+    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); } \
+    checkData(result);                                             \
+    return result;                                                 \
   }
 #endif
 
@@ -687,8 +627,8 @@ FIELD_FUNC(tanh, ::tanh)
 /// Check if all values of a field \p var are finite.
 /// Loops over all points including the boundaries by
 /// default (can be changed using the \p rgn argument
-template<typename T, typename = bout::utils::EnableIfField<T>>
-inline bool finite(const T &f, const std::string& rgn = "RGN_ALL") {
+template <typename T, typename = bout::utils::EnableIfField<T>>
+inline bool finite(const T& f, const std::string& rgn = "RGN_ALL") {
   AUTO_TRACE();
 
   if (!f.isAllocated()) {
@@ -703,17 +643,11 @@ inline bool finite(const T &f, const std::string& rgn = "RGN_ALL") {
 
   return true;
 }
-template<typename T, typename = bout::utils::EnableIfField<T>>
-[[deprecated("Please use bool finite(const Field3D& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline bool finite(const T& f, REGION rgn) {
-  return finite(f, toString(rgn));
-}
 
 /// Makes a copy of a field \p f, ensuring that the underlying data is
 /// not shared.
-template<typename T, typename = bout::utils::EnableIfField<T>>
-T copy(const T &f) {
+template <typename T, typename = bout::utils::EnableIfField<T>>
+T copy(const T& f) {
   T result = f;
   result.allocate();
   return result;
@@ -725,7 +659,7 @@ T copy(const T &f) {
 /// @param[in] var  Variable to apply floor to
 /// @param[in] f    The floor value
 /// @param[in] rgn  The region to calculate the result over
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template <typename T, typename = bout::utils::EnableIfField<T>>
 inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
   checkData(var);
   T result = copy(var);
@@ -737,12 +671,6 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
   }
 
   return result;
-}
-template<typename T, typename = bout::utils::EnableIfField<T>>
-[[deprecated("Please use floor(const T& var, BoutReal f, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline T floor(const T& var, BoutReal f, REGION rgn) {
-  return floor(var, f, toString(rgn));
 }
 
 #undef FIELD_FUNC

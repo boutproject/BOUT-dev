@@ -43,8 +43,8 @@ RegisterUnavailableSolver
 #include "bout_types.hxx"
 #include "bout/sundials_backports.hxx"
 
-#include <sundials/sundials_config.h>
 #include <nvector/nvector_parallel.h>
+#include <sundials/sundials_config.h>
 
 #include <vector>
 

@@ -12,7 +12,6 @@ from .read_cxx import *
 
 
 def read_inp(path="", boutinp="BOUT.inp"):
-
     boutfile = path + "/" + boutinp
     boutinp = open(boutfile, "r").readlines()
 
@@ -29,7 +28,6 @@ def read_inp(path="", boutinp="BOUT.inp"):
 
 
 def parse_inp(boutlist):
-
     import re
     from ordereddict import OrderedDict
 
@@ -67,7 +65,6 @@ def parse_inp(boutlist):
 
 
 def read_log(path=".", logname="status.log"):
-
     print("in read_log")
     import re
     from ordereddict import OrderedDict

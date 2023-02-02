@@ -36,11 +36,11 @@ namespace utils {
 // using std::holds_alternative;
 // using std::get;
 
+using mpark::get;
+using mpark::holds_alternative;
 using mpark::variant;
 using mpark::visit;
-using mpark::holds_alternative;
-using mpark::get;
-  
+
 ////////////////////////////////////////////////////////////
 // Variant comparison
 
@@ -136,23 +136,25 @@ struct StaticCastOrThrow {
 /// Note: \p T can be a type which variant \p v cannot hold
 /// in which case std::bad_cast will be thrown at runtime
 template <typename Variant, typename T>
-T variantStaticCastOrThrow(const Variant &v) {
-  return bout::utils::visit( details::StaticCastOrThrow<T>(), v );
+T variantStaticCastOrThrow(const Variant& v) {
+  return bout::utils::visit(details::StaticCastOrThrow<T>(), v);
 }
 
 namespace details {
-  
+
 struct ToString {
   template <typename T>
   std::string operator()(T&& val) {
     return toString(std::forward<T>(val));
   }
 };
-  
+
 } // namespace details
 
 template <typename Variant>
-std::string variantToString(const Variant& v) { return bout::utils::visit(details::ToString(), v); }
+std::string variantToString(const Variant& v) {
+  return bout::utils::visit(details::ToString(), v);
+}
 
 } // namespace utils
 } // namespace bout

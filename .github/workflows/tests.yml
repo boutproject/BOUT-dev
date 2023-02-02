@@ -48,6 +48,7 @@ jobs:
                                 --with-slepc
                                 --with-sundials=/home/runner/local"
             script_flags: "-uim -t shared -t python"
+            omp_num_threads: 1
 
           - name: "Debug, shared"
             os: ubuntu-18.04
@@ -59,6 +60,7 @@ jobs:
                                 --with-slepc
                                 --with-sundials=/home/runner/local"
             script_flags: "-uim"
+            omp_num_threads: 1
 
           - name: "CMake, shared, release, Ubuntu 20.04"
             os: ubuntu-20.04
@@ -94,6 +96,7 @@ jobs:
                                 --with-petsc
                                 --with-slepc
                                 --with-sundials=/home/runner/local"
+            omp_num_threads: 1
             script_flags: "-u"
         exclude:
           # Don't run the coverage tests if the branch isn't master or next
@@ -134,7 +137,7 @@ jobs:
 
       - name: Install pip packages
         run: |
-          ./.pip_install_for_travis.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'gcovr' 'cmake' 'h5py' zoidberg
+          ./.pip_install_for_ci.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'gcovr' 'cmake' 'h5py' zoidberg
           # Add the pip install location to the runner's PATH
           echo ~/.local/bin >> $GITHUB_PATH
 
@@ -145,11 +148,11 @@ jobs:
           key: bout-sundials-${{ matrix.config.os }}
 
       - name: Build SUNDIALS
-        run: ./.build_sundials_for_travis.sh
+        run: ./.build_sundials_for_ci.sh
 
       - name: Build (configure)
         if: ${{ ! contains(matrix.config.name, 'CMake') }}
-        run: ./.travis_script.sh ${{ matrix.config.script_flags }}
+        run: ./.ci_script.sh ${{ matrix.config.script_flags }}
         env:
           LD_LIBRARY_PATH: /home/runner/local/lib:$LD_LIBRARY_PATH
           CONFIGURE_OPTIONS: ${{ matrix.config.configure_options }}
@@ -161,7 +164,7 @@ jobs:
       - name: Capture coverage
         if: ${{ matrix.config.name == 'Coverage' }}
         # Explicitly run the coverage capture target, because
-        # travis_script.sh also does the upload, and we're going to do
+        # ci_script.sh also does the upload, and we're going to do
         # that ourselves in the next step
         run: |
           # Ensure that there is a corresponding .gcda file for every .gcno file
@@ -184,7 +187,7 @@ jobs:
         with:
           submodules: true
       - name: Build Fedora rawhide
-        run: ./.travis_fedora.sh setup mpich rawhide
+        run: ./.ci_fedora.sh setup mpich rawhide
         shell: bash
         env:
           TRAVIS_BUILD_DIR: ${{ github.workspace }}

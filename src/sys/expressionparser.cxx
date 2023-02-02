@@ -26,8 +26,8 @@
 
 #include <utility>
 
-#include "bout/sys/gettext.hxx"
 #include "utils.hxx"
+#include "bout/sys/gettext.hxx"
 
 using std::list;
 using std::string;
@@ -43,7 +43,6 @@ double FieldGenerator::generate(const Context& ctx) {
   return generate(ctx.x(), ctx.y(), ctx.z(), ctx.t());
 }
 
-
 /////////////////////////////////////////////
 namespace { // These classes only visible in this file
 
@@ -54,9 +53,7 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldX>();
   }
-  double generate(const Context& ctx) override {
-    return ctx.x();
-  }
+  double generate(const Context& ctx) override { return ctx.x(); }
   std::string str() const override { return "x"s; }
 };
 
@@ -65,9 +62,7 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldY>();
   }
-  double generate(const Context& ctx) override {
-    return ctx.y();
-  }
+  double generate(const Context& ctx) override { return ctx.y(); }
   std::string str() const override { return "y"s; }
 };
 
@@ -76,9 +71,7 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldZ>();
   }
-  double generate(const Context& ctx) override {
-    return ctx.z();
-  }
+  double generate(const Context& ctx) override { return ctx.z(); }
   std::string str() const override { return "z"; }
 };
 
@@ -87,9 +80,7 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldT>();
   }
-  double generate(const Context& ctx) override {
-    return ctx.t();
-  }
+  double generate(const Context& ctx) override { return ctx.t(); }
   std::string str() const override { return "t"s; }
 };
 
@@ -100,6 +91,7 @@ public:
     return ctx.get(name); // Get a parameter
   }
   std::string str() const override { return "{"s + name + "}"s; }
+
 private:
   std::string name; // The name of the parameter to look up
 };
@@ -135,56 +127,59 @@ public:
     result += "]("s + expr->str() + ")"s;
     return result;
   }
+
 private:
   variable_list variables; ///< A list of context variables to modify
   FieldGeneratorPtr expr;  ///< The expression to evaluate in the new context
 };
 
-  /// Sum expressions in a loop, given symbol, count and expression
-  class FieldSum : public FieldGenerator {
-  public:
-    /// Loop a symbol counter SYM from 0 to count-1
-    /// The count is calculated by evaluating COUNTEXPR, which must be a non-negative integer
-    /// Each iteration the expression EXPR is evaluated and the results summed.
-    FieldSum(const std::string& sym, FieldGeneratorPtr countexpr, FieldGeneratorPtr expr)
-        : sym(sym), countexpr(countexpr), expr(expr) {}
+/// Sum expressions in a loop, given symbol, count and expression
+class FieldSum : public FieldGenerator {
+public:
+  /// Loop a symbol counter SYM from 0 to count-1
+  /// The count is calculated by evaluating COUNTEXPR, which must be a non-negative integer
+  /// Each iteration the expression EXPR is evaluated and the results summed.
+  FieldSum(const std::string& sym, FieldGeneratorPtr countexpr, FieldGeneratorPtr expr)
+      : sym(sym), countexpr(countexpr), expr(expr) {}
 
-    double generate(const Context& ctx) override {
-      // Get the count by evaluating the count expression
-      BoutReal countval = countexpr->generate(ctx);
-      int count = ROUND(countval);
-      
-      // Check that the count is a non-negaitve integer
-      if (fabs(countval - static_cast<BoutReal>(count)) > 1e-4) {
-        throw BoutException("Count {:e} is not an integer in sum expression", countval);
-      }
-      if (count < 0) {
-        throw BoutException("Negative count {:d} in sum expression", count);
-      }
+  double generate(const Context& ctx) override {
+    // Get the count by evaluating the count expression
+    BoutReal countval = countexpr->generate(ctx);
+    int count = ROUND(countval);
 
-      BoutReal result {0.0};
-      Context new_context{ctx}; // Make a copy, so the counter value can be set
-      for (int i = 0; i < count; i++) {
-        // Evaluate the expression, setting the given symbol to the loop counter
-        new_context.set(sym, i);
-        result += expr->generate(new_context);
-      }
-      return result;
+    // Check that the count is a non-negaitve integer
+    if (fabs(countval - static_cast<BoutReal>(count)) > 1e-4) {
+      throw BoutException("Count {:e} is not an integer in sum expression", countval);
     }
-    
-    std::string str() const override {
-      return "sum("s + sym + ","s + countexpr->str() + ","s + expr->str() + ")"s;
+    if (count < 0) {
+      throw BoutException("Negative count {:d} in sum expression", count);
     }
-  private:
-    std::string sym;
-    FieldGeneratorPtr countexpr, expr;
-  };
-  
+
+    BoutReal result{0.0};
+    Context new_context{ctx}; // Make a copy, so the counter value can be set
+    for (int i = 0; i < count; i++) {
+      // Evaluate the expression, setting the given symbol to the loop counter
+      new_context.set(sym, i);
+      result += expr->generate(new_context);
+    }
+    return result;
+  }
+
+  std::string str() const override {
+    return "sum("s + sym + ","s + countexpr->str() + ","s + expr->str() + ")"s;
+  }
+
+private:
+  std::string sym;
+  FieldGeneratorPtr countexpr, expr;
+};
+
 } // namespace
 
 FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
-  if (args.size() != 2)
+  if (args.size() != 2) {
     throw ParseException("Binary operator expecting 2 arguments. Got {{}}", args.size());
+  }
 
   return std::make_shared<FieldBinary>(args.front(), args.back(), op);
 }
@@ -192,12 +187,17 @@ FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
 BoutReal FieldBinary::generate(const Context& ctx) {
   BoutReal lval = lhs->generate(ctx);
   BoutReal rval = rhs->generate(ctx);
-  switch(op) {
-  case '+': return lval + rval;
-  case '-': return lval - rval;
-  case '*': return lval * rval;
-  case '/': return lval / rval;
-  case '^': return pow(lval, rval);
+  switch (op) {
+  case '+':
+    return lval + rval;
+  case '-':
+    return lval - rval;
+  case '*':
+    return lval * rval;
+  case '/':
+    return lval / rval;
+  case '^':
+    return pow(lval, rval);
   }
   // Unknown operator.
   throw ParseException("Unknown binary operator '{:c}'", op);
@@ -241,7 +241,7 @@ FieldGeneratorPtr ExpressionParser::parseString(const string& input) const {
   if (lex.curtok != 0) {
     throw ParseException("Tokens remaining unparsed in '{:s}'", input);
   }
-  
+
   return expr;
 }
 
@@ -249,7 +249,8 @@ FieldGeneratorPtr ExpressionParser::parseString(const string& input) const {
 // Private functions
 
 std::multiset<ExpressionParser::FuzzyMatch>
-ExpressionParser::fuzzyFind(const std::string& name, std::string::size_type max_distance) const {
+ExpressionParser::fuzzyFind(const std::string& name,
+                            std::string::size_type max_distance) const {
   std::multiset<ExpressionParser::FuzzyMatch> matches;
   for (const auto& key : gen) {
     if ((key.first != name) and (lowercase(key.first) == lowercase(name))) {
@@ -399,9 +400,10 @@ FieldGeneratorPtr ExpressionParser::parseParenExpr(LexInfo& lex) const {
 
   FieldGeneratorPtr g = parseExpression(lex);
 
-  if ((lex.curtok != ')') && (lex.curtok != ']'))
+  if ((lex.curtok != ')') && (lex.curtok != ']')) {
     throw ParseException("Expecting ')' or ']' but got curtok={:d} ({:c})",
                          static_cast<int>(lex.curtok), static_cast<char>(lex.curtok));
+  }
 
   lex.nextToken(); // eat ')'
   return g;
@@ -412,25 +414,27 @@ FieldGeneratorPtr ExpressionParser::parseContextExpr(LexInfo& lex) const {
   lex.nextToken(); // eat '['
 
   FieldContext::variable_list variables;
-  
+
   while (lex.curtok != ']') {
     if (lex.curtok == 0) {
       throw ParseException("Expecting ']' in context expression");
     }
-    
+
     // Definition, ident = expression
     // First comes the identifier symbol
     if (lex.curtok != -2) {
-      throw ParseException("Expecting an identifier in context expression, but got curtok={:d} ({:c})",
-                           static_cast<int>(lex.curtok), lex.curtok);
+      throw ParseException(
+          "Expecting an identifier in context expression, but got curtok={:d} ({:c})",
+          static_cast<int>(lex.curtok), lex.curtok);
     }
     string symbol = lex.curident;
     lex.nextToken();
-    
+
     // Now should be '='
     if (lex.curtok != '=') {
-      throw ParseException("Expecting '=' after '{:s}' in context expression, but got curtok={:d} ({:c})",
-                           symbol, static_cast<int>(lex.curtok), lex.curtok);
+      throw ParseException(
+          "Expecting '=' after '{:s}' in context expression, but got curtok={:d} ({:c})",
+          symbol, static_cast<int>(lex.curtok), lex.curtok);
     }
     lex.nextToken();
 
@@ -447,16 +451,17 @@ FieldGeneratorPtr ExpressionParser::parseContextExpr(LexInfo& lex) const {
 
   // Should now be '('
   if (lex.curtok != '(') {
-    throw ParseException("Expecting '(' after ] context expression,  but got curtok={:d} ({:c})",
-                         static_cast<int>(lex.curtok), static_cast<char>(lex.curtok));
+    throw ParseException(
+        "Expecting '(' after ] context expression,  but got curtok={:d} ({:c})",
+        static_cast<int>(lex.curtok), static_cast<char>(lex.curtok));
   }
-  
+
   // Get the next expression to evaluate, put into FieldContext
   // Note: Ensure that only the first expression in parentheses is parsed
   //       by calling parseParenExpr rather than parseExpression
   return std::make_shared<FieldContext>(variables, parseParenExpr(lex));
 }
-  
+
 FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo& lex) const {
   switch (lex.curtok) {
   case -1: {         // a number
@@ -481,11 +486,12 @@ FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo& lex) const {
     return parseParenExpr(lex);
   }
   case '[': {
-    // Define a new context (scope). 
+    // Define a new context (scope).
     return parseContextExpr(lex);
   }
   }
-  throw ParseException("Unexpected token {:d} ({:c})", static_cast<int>(lex.curtok), static_cast<char>(lex.curtok));
+  throw ParseException("Unexpected token {:d} ({:c})", static_cast<int>(lex.curtok),
+                       static_cast<char>(lex.curtok));
 }
 
 FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo& lex, int ExprPrec,
@@ -493,26 +499,32 @@ FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo& lex, int ExprPrec,
 
   while (true) {
     // Check for end of input
-    if ((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',') || (lex.curtok == ']'))
+    if ((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',')
+        || (lex.curtok == ']')) {
       return lhs;
+    }
 
     // Next token should be a binary operator
     auto it = bin_op.find(lex.curtok);
 
-    if (it == bin_op.end())
-      throw ParseException("Unexpected binary operator '{:c}'", static_cast<char>(lex.curtok));
+    if (it == bin_op.end()) {
+      throw ParseException("Unexpected binary operator '{:c}'",
+                           static_cast<char>(lex.curtok));
+    }
 
     FieldGeneratorPtr op = it->second.first;
     int TokPrec = it->second.second;
 
-    if (TokPrec < ExprPrec)
+    if (TokPrec < ExprPrec) {
       return lhs;
+    }
 
     lex.nextToken(); // Eat binop
 
     FieldGeneratorPtr rhs = parsePrimary(lex);
 
-    if ((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',') || (lex.curtok == ']')) {
+    if ((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',')
+        || (lex.curtok == ']')) {
       // Done
 
       list<FieldGeneratorPtr> args;
@@ -524,9 +536,11 @@ FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo& lex, int ExprPrec,
     // Find next binop
     it = bin_op.find(lex.curtok);
 
-    if (it == bin_op.end())
-      throw ParseException("Unexpected character '{:c}' ({:d})", static_cast<char>(lex.curtok), static_cast<int>(lex.curtok));
-    
+    if (it == bin_op.end()) {
+      throw ParseException("Unexpected character '{:c}' ({:d})",
+                           static_cast<char>(lex.curtok), static_cast<int>(lex.curtok));
+    }
+
     int NextPrec = it->second.second;
     if (TokPrec < NextPrec) {
       rhs = parseBinOpRHS(lex, TokPrec + 1, rhs);
@@ -559,8 +573,9 @@ ExpressionParser::LexInfo::LexInfo(const std::string& input, std::string reserve
 }
 
 char ExpressionParser::LexInfo::nextToken() {
-  while (isspace(static_cast<unsigned char>(LastChar)))
+  while (isspace(static_cast<unsigned char>(LastChar))) {
     LastChar = static_cast<signed char>(ss.get());
+  }
 
   if (!ss.good()) {
     curtok = 0;
@@ -568,7 +583,8 @@ char ExpressionParser::LexInfo::nextToken() {
   }
 
   // Handle numbers
-  if (isdigit(static_cast<unsigned char>(LastChar)) || (LastChar == '.')) { // Number: [0-9.]+
+  if (isdigit(static_cast<unsigned char>(LastChar))
+      || (LastChar == '.')) { // Number: [0-9.]+
     bool gotdecimal = false, gotexponent = false;
     std::string NumStr;
 
@@ -587,12 +603,14 @@ char ExpressionParser::LexInfo::nextToken() {
         // Next character should be a '+' or '-' or digit
         NumStr += 'e';
         LastChar = static_cast<signed char>(ss.get());
-        if ((LastChar != '+') && (LastChar != '-') && !isdigit(static_cast<unsigned char>(LastChar))) {
+        if ((LastChar != '+') && (LastChar != '-')
+            && !isdigit(static_cast<unsigned char>(LastChar))) {
           throw ParseException(
               "ExpressionParser error: Expecting '+', '-' or number after 'e'");
         }
-      } else if (!isdigit(static_cast<unsigned char>(LastChar)))
+      } else if (!isdigit(static_cast<unsigned char>(LastChar))) {
         break;
+      }
 
       NumStr += LastChar;
       LastChar = static_cast<signed char>(ss.get());
@@ -669,9 +687,9 @@ char ExpressionParser::LexInfo::nextToken() {
       curtok = '*';
       return curtok;
     }
-    
+
     curident.clear();
-    
+
     LastChar = static_cast<signed char>(ss.get()); // Skip the {
     do {
       curident += LastChar;
@@ -687,7 +705,7 @@ char ExpressionParser::LexInfo::nextToken() {
     curtok = -3;
     return curtok;
   }
-  
+
   // LastChar is unsigned, explicitly cast
   curtok = LastChar;
   LastChar = static_cast<signed char>(ss.get());

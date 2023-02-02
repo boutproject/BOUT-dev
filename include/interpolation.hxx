@@ -81,7 +81,7 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
 
   if (region != "RGN_NOBNDRY") {
     // result is requested in some boundary region(s)
-    result = var; // NOTE: This is just for boundaries. FIX!
+    result = var;            // NOTE: This is just for boundaries. FIX!
     result.setLocation(loc); // location gets reset when assigning from var
     result.allocate();
   }
@@ -121,8 +121,9 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
       // We can't interpolate in y unless we're field-aligned
       // Field2D doesn't need to shift to/from field-aligned because it is axisymmetric,
       // so always set is_unaligned=false for Field2D.
-      const bool is_unaligned = std::is_same<T, Field2D>::value ? false
-                                : (var.getDirectionY() == YDirectionType::Standard);
+      const bool is_unaligned = std::is_same<T, Field2D>::value
+                                    ? false
+                                    : (var.getDirectionY() == YDirectionType::Standard);
       const T var_fa = is_unaligned ? toFieldAligned(var, "RGN_NOX") : var;
 
       if (not std::is_base_of<Field2D, T>::value) {
@@ -139,7 +140,7 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
         // to get the boundary cells
         //
         // result is requested in some boundary region(s)
-        result = var_fa; // NOTE: This is just for boundaries. FIX!
+        result = var_fa;         // NOTE: This is just for boundaries. FIX!
         result.setLocation(loc); // location gets reset when assigning from var
         result.allocate();
       }
@@ -200,18 +201,5 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
   }
   return result;
 }
-template<typename T>
-[[deprecated("Please use interp_to(const T& var, CELL_LOC loc, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-const T interp_to(const T& var, CELL_LOC loc, REGION region) {
-  return interp_to(var, loc, toString(region));
-}
-
-/// Print out the cell location (for debugging)
-[[deprecated("Please use `output << toString(var.getLocation())` instead")]]
-void printLocation(const Field3D& var);
-
-[[deprecated("Please use `toString(loc)` instead")]]
-const char* strLocation(CELL_LOC loc);
 
 #endif // __INTERP_H__

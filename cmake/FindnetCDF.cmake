@@ -29,7 +29,7 @@ include(BOUT++functions)
 include(CMakePrintHelpers)
 
 find_package(netCDF QUIET CONFIG)
-   
+
 if (netCDF_FOUND)
   message(STATUS "netCDF CONFIG found")
   set(netCDF_FOUND TRUE)

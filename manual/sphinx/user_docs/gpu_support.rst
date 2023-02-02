@@ -22,7 +22,7 @@ variables which will be used in the loop into local variables
 
   auto _setting = setting; // Create a local variable to capture
 
-Then create ``FieldAccessor``s to efficiently access field and
+Then create a `FieldAccessor` to efficiently access field and
 coordinate system data inside the loop::
 
   auto n_acc = FieldAccessor<>(n);
@@ -195,7 +195,7 @@ which have been implemented.
 .. _tab-gpusupport-singleindexfunctions:
 .. table:: Single index operator functions
 
-   +------------------------------ +-------------------------------------------+
+   +-------------------------------+-------------------------------------------+
    | Function                      | Description                               |
    +===============================+===========================================+
    | DDX(F3D, i)                   | Derivative in X with ``ddx:first=C2``     |
@@ -319,8 +319,8 @@ Indices
 
 Setting up a RAJA loop to run on a GPU is still cumbersome and inefficient
 due to the need to transform CPU data structures into a form which can
-be passed to and used on the GPU. In the `bout/rajalib.hxx` header there
-is code like:
+be passed to and used on the GPU. In the ``bout/rajalib.hxx`` header there
+is code like::
 
     auto indices = n.getRegion("RGN_NOBNDRY").getIndices();
      Array<int> _ob_i_ind(indices.size()); // Backing data is device safe

@@ -30,25 +30,25 @@ class LaplacePetsc3dAmg;
 #ifndef __PETSC_LAPLACE_3DAMG_H__
 #define __PETSC_LAPLACE_3DAMG_H__
 
-#include "bout/build_config.hxx"
 #include "invert_laplace.hxx"
+#include "bout/build_config.hxx"
 
 #if not BOUT_HAS_PETSC
 
 namespace {
-RegisterUnavailableLaplace registerlaplacepetsc3damg(LAPLACE_PETSC3DAMG,
-                                                     "BOUT++ was not configured with PETSc");
+RegisterUnavailableLaplace
+    registerlaplacepetsc3damg(LAPLACE_PETSC3DAMG, "BOUT++ was not configured with PETSc");
 }
 
 #else
 
-#include <globals.hxx>
-#include <output.hxx>
-#include <options.hxx>
-#include <boutexception.hxx>
 #include <bout/operatorstencil.hxx>
-#include <bout/petsclib.hxx>
 #include <bout/petsc_interface.hxx>
+#include <bout/petsclib.hxx>
+#include <boutexception.hxx>
+#include <globals.hxx>
+#include <options.hxx>
+#include <output.hxx>
 #include <petscksp.h>
 
 class LaplacePetsc3dAmg;
@@ -64,115 +64,112 @@ public:
                     Datafile* dump = nullptr);
   ~LaplacePetsc3dAmg() override;
 
-  void setCoefA(const Field2D &val) override {
+  void setCoefA(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     A = val;
     updateRequired = true;
   }
-  void setCoefC(const Field2D &val) override {
+  void setCoefC(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
     updateRequired = issetC = true;
   }
-  void setCoefC1(const Field2D &val) override {
+  void setCoefC1(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
     issetC = true;
   }
-  void setCoefC2(const Field2D &val) override {
+  void setCoefC2(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C2 = val;
     updateRequired = issetC = true;
   }
-  void setCoefD(const Field2D &val) override {
+  void setCoefD(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     D = val;
     updateRequired = issetD = true;
   }
-  void setCoefEx(const Field2D &val) override {
+  void setCoefEx(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ex = val;
     updateRequired = issetE = true;
   }
-  void setCoefEz(const Field2D &val) override {
+  void setCoefEz(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ez = val;
     updateRequired = issetE = true;
   }
 
-  void setCoefA(const Field3D &val) override {
+  void setCoefA(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     A = val;
     updateRequired = true;
   }
-  void setCoefC(const Field3D &val) override {
+  void setCoefC(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
     updateRequired = issetC = true;
   }
-  void setCoefC1(const Field3D &val) override {
+  void setCoefC1(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
     updateRequired = issetC = true;
   }
-  void setCoefC2(const Field3D &val) override {
+  void setCoefC2(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C2 = val;
     updateRequired = issetC = true;
   }
-  void setCoefD(const Field3D &val) override {
+  void setCoefD(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     D = val;
     updateRequired = issetD = true;
   }
-  void setCoefEx(const Field3D &val) override {
+  void setCoefEx(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ex = val;
     updateRequired = issetE = true;
   }
-  void setCoefEz(const Field3D &val) override {
+  void setCoefEz(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ez = val;
     updateRequired = issetE = true;
   }
 
-  
   // Return a reference to the matrix objects representing the Laplace
   // operator. These will be (re)construct if necessary.
   PetscMatrix<Field3D>& getMatrix3D();
   IndexerPtr<Field3D> getIndexer() { return indexer; }
 
-  virtual Field2D solve(const Field2D &b) override;
+  virtual Field2D solve(const Field2D& b) override;
 
-  virtual Field3D solve(const Field3D &b) override {
+  virtual Field3D solve(const Field3D& b) override {
     Field3D zero = zeroFrom(b);
     return solve(b, zero);
   }
-  virtual Field3D solve(const Field3D &b_in, const Field3D &x0) override;
-
+  virtual Field3D solve(const Field3D& b_in, const Field3D& x0) override;
 
   virtual FieldPerp solve(const FieldPerp& UNUSED(b)) override {
     throw BoutException("LaplacePetsc3DAmg cannot solve for FieldPerp");
   }
 
 private:
-
   // (Re)compute the values of the matrix representing the Laplacian operator
   void updateMatrix3D();
 
@@ -201,7 +198,7 @@ private:
   int lower_boundary_flags;
   int upper_boundary_flags;
 
-  Options *opts;              // Laplace Section Options Object
+  Options* opts;       // Laplace Section Options Object
   std::string ksptype; ///< KSP solver type
   std::string pctype;  ///< Preconditioner type
 
@@ -213,7 +210,7 @@ private:
   // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
   // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
   BoutReal rtol, atol, dtol;
-  int maxits; // Maximum number of iterations in solver.
+  int maxits;  // Maximum number of iterations in solver.
   bool direct; //Use direct LU solver if true.
 
   RangeIterator lowerY, upperY;
@@ -226,7 +223,8 @@ private:
 
   // These are the implemented flags
   static constexpr int implemented_flags = INVERT_START_NEW,
-    implemented_boundary_flags = INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
+                       implemented_boundary_flags =
+                           INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
 };
 
 #endif //BOUT_HAS_PETSC

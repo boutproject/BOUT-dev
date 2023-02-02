@@ -32,8 +32,6 @@ int main(int argc, char** argv) {
 
   Field3D f2 = inv->solve(g, 0.0); // Invert the Laplacian.
 
-  SAVE_ONCE3(f, f2, g);
-
   coord->g13 = 0.0; // reset to 0.0 for original laplacexz test
 
   // Now the normal test.
@@ -47,8 +45,6 @@ int main(int argc, char** argv) {
       FieldFactory::get()->create3D("rhs", Options::getRoot(), bout::globals::mesh);
   Field3D x = inv->solve(rhs, 0.0);
 
-  SAVE_ONCE2(rhs, x);
-
   output.write("Second solve\n");
 
   inv->setCoefs(Field3D(2.0),Field3D(0.1));
@@ -56,9 +52,18 @@ int main(int argc, char** argv) {
   Field3D rhs2 =
       FieldFactory::get()->create3D("rhs", Options::getRoot(), bout::globals::mesh);
   Field3D x2 = inv->solve(rhs2, 0.0);
-  SAVE_ONCE2(rhs2, x2);
 
-  bout::globals::dump.write();
+  Options dump;
+
+  dump["f"] = f;
+  dump["f2"] = f2;
+  dump["g"] = g;
+  dump["rhs"] = rhs;
+  dump["x"] = x;
+  dump["rhs2"] = rhs2;
+  dump["x2"] = x2;
+
+  bout::writeDefaultOutputFile(dump);
 
   BoutFinalise();
   return 0;

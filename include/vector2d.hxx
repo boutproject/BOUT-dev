@@ -46,10 +46,10 @@ class Vector3D; //#include "vector3d.hxx"
 /*!
  * A vector with three components (x,y,z) which only vary in 2D
  * (x and y). Implemented as a collection of three Field2D objects.
- */ 
+ */
 class Vector2D : public FieldData {
 public:
-  Vector2D(const Vector2D &f);
+  Vector2D(const Vector2D& f);
 
   /// Many-argument constructor for fully specifying the initialisation of a Vector3D
   Vector2D(Mesh* localmesh = nullptr, bool covariant = true,
@@ -71,7 +71,7 @@ public:
   Vector2D* timeDeriv();
 
   /// Assignment
-  Vector2D & operator=(const Vector2D &rhs);
+  Vector2D& operator=(const Vector2D& rhs);
 
   /*!
    * Assign a BoutReal value. This sets all components
@@ -88,48 +88,52 @@ public:
    *
    * The only real use for this is setting vector to zero.
    */
-  Vector2D & operator=(BoutReal val);
+  Vector2D& operator=(BoutReal val);
 
   // operators
 
-  Vector2D & operator+=(const Vector2D &rhs);
+  Vector2D& operator+=(const Vector2D& rhs);
 
   /// Unary minus, changes sign of all components
   const Vector2D operator-() const;
 
   /// Subtract another vector
-  Vector2D & operator-=(const Vector2D &rhs);
+  Vector2D& operator-=(const Vector2D& rhs);
 
   /// Multiply all components by \p rhs
-  Vector2D & operator*=(BoutReal rhs);
+  Vector2D& operator*=(BoutReal rhs);
 
   /// Multiply all components by \p rhs
-  Vector2D & operator*=(const Field2D &rhs);
+  Vector2D& operator*=(const Field2D& rhs);
 
   /// Divide all components by \p rhs
-  Vector2D & operator/=(BoutReal rhs);
+  Vector2D& operator/=(BoutReal rhs);
 
   /// Divide all components by \p rhs
-  Vector2D & operator/=(const Field2D &rhs);
+  Vector2D& operator/=(const Field2D& rhs);
 
   // Binary operators
-  
-  const Vector2D operator+(const Vector2D &rhs) const; ///< Addition
-  const Vector3D operator+(const Vector3D &rhs) const; ///< Addition
 
-  const Vector2D operator-(const Vector2D &rhs) const; ///< Subtract vector \p rhs
-  const Vector3D operator-(const Vector3D &rhs) const; ///< Subtract vector \p rhs
+  const Vector2D operator+(const Vector2D& rhs) const; ///< Addition
+  const Vector3D operator+(const Vector3D& rhs) const; ///< Addition
+
+  const Vector2D operator-(const Vector2D& rhs) const; ///< Subtract vector \p rhs
+  const Vector3D operator-(const Vector3D& rhs) const; ///< Subtract vector \p rhs
 
   const Vector2D operator*(BoutReal rhs) const; ///< Multiply all components by \p rhs
-  const Vector2D operator*(const Field2D &rhs) const; ///< Multiply all components by \p rhs
-  const Vector3D operator*(const Field3D &rhs) const; ///< Multiply all components by \p rhs
+  const Vector2D
+  operator*(const Field2D& rhs) const; ///< Multiply all components by \p rhs
+  const Vector3D
+  operator*(const Field3D& rhs) const; ///< Multiply all components by \p rhs
 
   const Vector2D operator/(BoutReal rhs) const; ///< Divides all components by \p rhs
-  const Vector2D operator/(const Field2D &rhs) const; ///< Divides all components by \p rhs
-  const Vector3D operator/(const Field3D &rhs) const; ///< Divides all components by \p rhs
+  const Vector2D
+  operator/(const Field2D& rhs) const; ///< Divides all components by \p rhs
+  const Vector3D
+  operator/(const Field3D& rhs) const; ///< Divides all components by \p rhs
 
   const Coordinates::FieldMetric operator*(const Vector2D& rhs) const; ///< Dot product
-  const Field3D operator*(const Vector3D &rhs) const; ///< Dot product
+  const Field3D operator*(const Vector3D& rhs) const;                  ///< Dot product
 
   /// Set component locations consistently
   Vector2D& setLocation(CELL_LOC loc) override;
@@ -142,14 +146,15 @@ public:
   int elementSize() const override { return 3; }
 
   /// Apply boundary condition to all fields
-  void applyBoundary(bool init=false) override;
-  void applyBoundary(const std::string &condition) {
+  void applyBoundary(bool init = false) override;
+  void applyBoundary(const std::string& condition) {
     x.applyBoundary(condition);
     y.applyBoundary(condition);
     z.applyBoundary(condition);
   }
   void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
   void applyTDerivBoundary() override;
+
 private:
   Vector2D* deriv{nullptr};       ///< Time-derivative, can be NULL
   CELL_LOC location{CELL_CENTRE}; ///< Location of the variable in the cell
@@ -157,38 +162,31 @@ private:
 
 // Non-member overloaded operators
 
-const Vector2D operator*(BoutReal lhs, const Vector2D &rhs);
-const Vector2D operator*(const Field2D &lhs, const Vector2D &rhs);
-const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs);
-
+const Vector2D operator*(BoutReal lhs, const Vector2D& rhs);
+const Vector2D operator*(const Field2D& lhs, const Vector2D& rhs);
+const Vector3D operator*(const Field3D& lhs, const Vector2D& rhs);
 
 /// Cross product
-const Vector2D cross(const Vector2D & lhs, const Vector2D &rhs);
+const Vector2D cross(const Vector2D& lhs, const Vector2D& rhs);
 /// Cross product
-const Vector3D cross(const Vector2D & lhs, const Vector3D &rhs);
+const Vector3D cross(const Vector2D& lhs, const Vector3D& rhs);
 
 /*!
  * Absolute value (Modulus) of given vector \p v
  *
  * |v| = sqrt( v dot v )
  */
-const Coordinates::FieldMetric abs(const Vector2D& v,
-                                   const std::string& region = "RGN_ALL");
-[[deprecated(
-    "Please use Vector2D abs(const Vector2D& f, "
-    "const std::string& region = \"RGN_ALL\") instead")]] inline const Coordinates::
-    FieldMetric
-    abs(const Vector2D& v, REGION region) {
-  return abs(v, toString(region));
-}
+Coordinates::FieldMetric abs(const Vector2D& v, const std::string& region = "RGN_ALL");
 
 /// Transform to and from field-aligned coordinates
-inline Vector2D toFieldAligned(Vector2D v, const std::string& UNUSED(region) = "RGN_ALL") {
+inline Vector2D toFieldAligned(Vector2D v,
+                               const std::string& UNUSED(region) = "RGN_ALL") {
   // toFieldAligned is a null operation for the Field2D components of v, so return a copy
   // of the argument (hence pass-by-value instead of pass-by-reference)
   return v;
 }
-inline Vector2D fromFieldAligned(Vector2D v, const std::string& UNUSED(region) = "RGN_ALL") {
+inline Vector2D fromFieldAligned(Vector2D v,
+                                 const std::string& UNUSED(region) = "RGN_ALL") {
   // fromFieldAligned is a null operation for the Field2D components of v, so return a copy
   // of the argument (hence pass-by-value instead of pass-by-reference)
   return v;
@@ -217,8 +215,6 @@ inline Vector2D zeroFrom(const Vector2D& v) {
 /*!
  * @brief Time derivative of 2D vector field
  */
-inline Vector2D& ddt(Vector2D &f) {
-  return *(f.timeDeriv());
-}
+inline Vector2D& ddt(Vector2D& f) { return *(f.timeDeriv()); }
 
 #endif // __VECTOR2D_H__

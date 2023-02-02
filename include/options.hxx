@@ -40,27 +40,26 @@ class Options;
 #define __OPTIONS_H__
 
 #include "bout_types.hxx"
-#include "unused.hxx"
-#include "output.hxx"
-#include "utils.hxx"
-#include "bout/sys/variant.hxx"
-#include "bout/sys/type_name.hxx"
-#include "bout/traits.hxx"
-#include "bout/deprecated.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "fieldperp.hxx"
+#include "output.hxx"
+#include "unused.hxx"
+#include "utils.hxx"
+#include "bout/sys/type_name.hxx"
+#include "bout/sys/variant.hxx"
+#include "bout/traits.hxx"
 
 #include <fmt/core.h>
 
+#include <cmath>
+#include <iomanip>
 #include <map>
 #include <ostream>
 #include <set>
-#include <string>
 #include <sstream>
-#include <iomanip>
+#include <string>
 #include <utility>
-#include <cmath>
 
 /// Class to represent hierarchy of options
 /*!
@@ -162,12 +161,12 @@ class Options {
 public:
   /// Constructor. This is called to create the root object
   Options() = default;
-  
+
   /// Constructor used to create non-root objects
   ///
   /// @param[in] parent        Parent object
   /// @param[in] sectionName   Name of the section, including path from the root
-  Options(Options *parent_instance, std::string full_name)
+  Options(Options* parent_instance, std::string full_name)
       : parent_instance(parent_instance), full_name(std::move(full_name)){};
 
   /// Initialise with a value
@@ -176,21 +175,21 @@ public:
   Options(T value) {
     assign<T>(value);
   }
-  
+
   /// Construct with a nested initializer list
   /// This allows Options trees to be constructed, using a mix of types.
   ///
   /// Example:  { {"key1", 42}, {"key2", field} }
   Options(std::initializer_list<std::pair<std::string, Options>> values);
-  
+
   /// Copy constructor
   Options(const Options& other);
 
   ~Options() = default;
 
   /// Get a reference to the only root instance
-  static Options &root();
-  
+  static Options& root();
+
   /// Free all memory
   static void cleanup();
 
@@ -206,7 +205,7 @@ public:
   /// Note: Due to default initialisation rules, if an attribute
   /// is used without being set, it will be false, 0, 0.0 and
   /// throw std::bad_cast if cast to std::string
-  /// 
+  ///
   class AttributeType : public bout::utils::variant<bool, int, BoutReal, std::string> {
   public:
     using Base = bout::utils::variant<bool, int, BoutReal, std::string>;
@@ -230,10 +229,23 @@ public:
       return *this;
     }
 
+    /// Copy assignment operator
+    AttributeType& operator=(const AttributeType& other) = default;
+
+    /// Initialise with a value
+    /// This enables AttributeTypes to be constructed using initializer lists
+    template <typename T>
+    AttributeType(T value) {
+      operator=(value);
+    }
+
     /// Cast operator, which allows this class to be
     /// assigned to type T
     /// This will throw std::bad_cast if it can't be done
-    template <typename T> operator T() const { return as<T>(); }
+    template <typename T>
+    operator T() const {
+      return as<T>();
+    }
 
     /// Get the value as a specified type
     /// This will throw std::bad_cast if it can't be done
@@ -245,7 +257,7 @@ public:
 
   /// The value stored
   ValueType value;
-  
+
   /// A collection of attributes belonging to the value
   /// Special attributes:
   ///  - time_dimension   [string] If this is set then changes to the value
@@ -255,10 +267,10 @@ public:
   ///
   ///  - source           [string] Describes where the value came from
   ///                     e.g. a file name, or "default".
-  /// 
+  ///
   ///  - type             [string] The type the Option is converted to
   ///                     when used.
-  /// 
+  ///
   ///  - doc              [string] Documentation, describing what the variable does
   ///
   std::map<std::string, AttributeType> attributes;
@@ -267,7 +279,34 @@ public:
   bool hasAttribute(const std::string& key) const {
     return attributes.find(key) != attributes.end();
   }
-  
+
+  /// Set attributes, overwriting any already set
+  ///
+  /// Parameters
+  /// ----------
+  /// An initializer_list so that multiple attributes can be set at the same time
+  ///
+  /// Returns
+  /// -------
+  /// A reference to `this`, for method chaining
+  ///
+  /// Example
+  /// -------
+  ///
+  ///     Options options;
+  ///     options["value"].setAttributes({
+  ///         {"units", "m/s"},
+  ///         {"conversion", 10.2},
+  ///         {"long_name", "some velocity"}
+  ///       });
+  Options& setAttributes(
+      std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
+    for (const auto& attr : attrs) {
+      attributes[attr.first] = attr.second;
+    }
+    return *this;
+  }
+
   /// Get a sub-section or value
   ///
   /// Example:
@@ -276,15 +315,15 @@ public:
   /// auto child  = parent["child"];
   ///
   /// parent is now a section.
-  Options& operator[](const std::string &name);
+  Options& operator[](const std::string& name);
   // Prevent ambiguous overload resolution due to operator T() below
-  Options& operator[](const char *name) { return (*this)[std::string(name)]; }
+  Options& operator[](const char* name) { return (*this)[std::string(name)]; }
 
   /// Get a sub-section or value
   /// If this object is not a section, or if name
   /// is not a child, then a BoutException will be thrown
-  const Options& operator[](const std::string &name) const;
-  const Options& operator[](const char *name) const { return (*this)[std::string(name)]; }
+  const Options& operator[](const std::string& name) const;
+  const Options& operator[](const char* name) const { return (*this)[std::string(name)]; }
 
   /// Return type of `Options::fuzzyFind`
   struct FuzzyMatch {
@@ -331,7 +370,7 @@ public:
   /// the value member directly e.g. option2.value = option1.value;
   ///
   Options& operator=(const Options& other);
-  
+
   /// Assign a value to the option.
   /// This will throw an exception if already has a value
   ///
@@ -341,21 +380,35 @@ public:
   /// option["test"].assign(42, "some source");
   ///
   /// Note: Specialised versions for types stored in ValueType
-  template<typename T>
-  void assign(T val, std::string source="") {
+  template <typename T>
+  void assign(T val, std::string source = "") {
     std::stringstream ss;
     ss << val;
     _set(ss.str(), std::move(source), false);
   }
-  
+
   /// Force to a value
   /// Overwrites any existing setting
-  template<typename T>
+  template <typename T>
   void force(T val, const std::string source = "") {
     is_section = true; // Invalidates any existing setting
     assign(val, source);
   }
-  
+
+  /// Assign a value that is expected to vary in time.
+  ///
+  /// Overwrites any existing setting, and ensures the "time_dimension"
+  /// attribute is set. If \p save_repeat is false, doesn't set
+  /// "time_dimension". This can be useful in some generic functions
+  template <typename T>
+  void assignRepeat(T val, std::string time_dimension = "t", bool save_repeat = true,
+                    std::string source = "") {
+    force(val, std::move(source));
+    if (save_repeat) {
+      attributes["time_dimension"] = std::move(time_dimension);
+    }
+  }
+
   /// Test if a key is set by the user.
   /// Values set via default values are ignored.
   bool isSet() const;
@@ -369,9 +422,9 @@ public:
   ///
   /// Example:
   ///
-  /// Options option;
-  /// option["test"] = 2.0;
-  /// int value = option["test"];
+  ///     Options option;
+  ///     option["test"] = 2.0;
+  ///     int value = option["test"];
   ///
   template <typename T, typename = typename std::enable_if_t<
                             bout::utils::isVariantMember<T, ValueType>::value>>
@@ -379,21 +432,21 @@ public:
     return as<T>();
   }
 
-  /// Get the value as a specified type
-  /// If there is no value then an exception is thrown
-  /// Note there are specialised versions of this template
-  /// for some types.
+  /// Get the value as a specified type. If there is no value then an
+  /// exception is thrown. Note there are specialised versions of
+  /// this template for some types.
   ///
   /// Example:
   ///
-  /// Options option;
-  /// option["test"] = 2.0;
-  /// int value = option["test"].as<int>();
+  ///     Options option;
+  ///     option["test"] = 2.0;
+  ///     int value = option["test"].as<int>();
   ///
   /// An optional argument is an object which the result should be similar to.
   /// The main use for this is in Field2D and Field3D specialisations,
   /// where the Mesh and cell location are taken from this input.
-  /// 
+  ///
+  /// Attributes override properties of the \p similar_to argument.
   template <typename T>
   T as(const T& UNUSED(similar_to) = {}) const {
     if (is_section) {
@@ -401,27 +454,27 @@ public:
     }
 
     T val;
-    
+
     // Try casting. This will throw std::bad_cast if it can't be done
     try {
       val = bout::utils::variantStaticCastOrThrow<ValueType, T>(value);
-    } catch (const std::bad_cast &e) {
+    } catch (const std::bad_cast& e) {
       // If the variant is a string then we may be able to parse it
-      
+
       if (bout::utils::holds_alternative<std::string>(value)) {
         std::stringstream ss(bout::utils::get<std::string>(value));
         ss >> val;
-        
+
         // Check if the parse failed
         if (ss.fail()) {
           throw BoutException("Option {:s} could not be parsed ('{:s}')", full_name,
                               bout::utils::variantToString(value));
         }
-        
+
         // Check if there are characters remaining
         std::string remainder;
         std::getline(ss, remainder);
-        for (const char &ch : remainder) {
+        for (const char& ch : remainder) {
           if (!std::isspace(static_cast<unsigned char>(ch))) {
             // Meaningful character not parsed
             throw BoutException("Option {:s} could not be parsed", full_name);
@@ -433,11 +486,11 @@ public:
                             typeid(T).name());
       }
     }
-    
+
     // Mark this option as used
     value_used = true; // Note this is mutable
 
-    output_info << "\tOption " << full_name  << " = " << val;
+    output_info << "\tOption " << full_name << " = " << val;
     if (attributes.count("source")) {
       // Specify the source of the setting
       output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
@@ -449,11 +502,12 @@ public:
 
   /// Get the value of this option. If not found,
   /// set to the default value
-  template <typename T> T withDefault(T def) {
+  template <typename T>
+  T withDefault(T def) {
 
     // Set the type
     attributes["type"] = bout::utils::typeName<T>();
-    
+
     if (is_section) {
       // Option not found
       assign(def, DEFAULT_SOURCE);
@@ -481,7 +535,7 @@ public:
   std::string withDefault(const char* def) {
     return withDefault<std::string>(std::string(def));
   }
-  
+
   /// Overloaded version to copy from another option
   Options& withDefault(const Options& def) {
     // if def is a section, then it does not make sense to try to use it as a default for
@@ -512,7 +566,8 @@ public:
 
   /// Get the value of this option. If not found,
   /// return the default value but do not set
-  template <typename T> T withDefault(T def) const {
+  template <typename T>
+  T withDefault(T def) const {
     if (is_section) {
       // Option not found
       output_info << _("\tOption ") << full_name << " = " << def << " (" << DEFAULT_SOURCE
@@ -534,7 +589,8 @@ public:
 
   /// Allow the user to override defaults set later, also used by the
   /// BOUT_OVERRIDE_DEFAULT_OPTION.
-  template <typename T> T overrideDefault(T def) {
+  template <typename T>
+  T overrideDefault(T def) {
 
     // Set the type
     attributes["type"] = bout::utils::typeName<T>();
@@ -556,7 +612,7 @@ public:
   }
 
   /// Get the parent Options object
-  Options &parent() {
+  Options& parent() {
     if (parent_instance == nullptr) {
       throw BoutException("Option {:s} has no parent", full_name);
     }
@@ -566,79 +622,83 @@ public:
   /// Equality operator
   /// Converts to the same type and compares
   /// This conversion may fail, throwing std::bad_cast
-  template<typename T>
+  template <typename T>
   bool operator==(const T& other) const {
     return as<T>() == other;
   }
 
   /// Overloaded equality operator for literal strings
   bool operator==(const char* other) const;
-  
+
   /// Comparison operator
-  template<typename T>
+  template <typename T>
   bool operator<(const T& other) const {
     return as<T>() < other;
   }
 
   /// Overloaded comparison operator for literal strings
   bool operator<(const char* other) const;
-  
+
   //////////////////////////////////////
   // Backward-compatible interface
-  
+
   /// Get a pointer to the only root instance (singleton)
   static Options* getRoot() { return &root(); }
 
-  template<typename T>
-  void set(const std::string &key, T val, const std::string &source = "", bool force = false) {
+  template <typename T>
+  void set(const std::string& key, T val, const std::string& source = "",
+           bool force = false) {
     if (force) {
       (*this)[key].force(val, source);
     } else {
       (*this)[key].assign(val, source);
     }
   }
-  
+
   // Setting options
-  template<typename T> void forceSet(const std::string &key, T t, const std::string &source=""){
-    (*this)[key].force(t,source);
+  template <typename T>
+  void forceSet(const std::string& key, T t, const std::string& source = "") {
+    (*this)[key].force(t, source);
   }
-  
+
   /*!
    * Test if a key is set by the user.
    * Values set via default values are ignored.
    */
-  bool isSet(const std::string &key) const {
+  bool isSet(const std::string& key) const {
     // Note using operator[] here would result in exception if key does not exist
-    if (!is_section)
+    if (!is_section) {
       return false;
+    }
     auto it = children.find(key);
-    if (it == children.end())
+    if (it == children.end()) {
       return false;
+    }
     return it->second.isSet();
   }
 
   /// Get options, passing in a reference to a variable
   /// which will be set to the requested value.
-  template<typename T, typename U>
-  void get(const std::string &key, T &val, U def, bool UNUSED(log)=false) {
+  template <typename T, typename U>
+  void get(const std::string& key, T& val, U def, bool UNUSED(log) = false) {
     val = (*this)[key].withDefault<T>(def);
   }
-  template<typename T, typename U>
-  void get(const std::string &key, T &val, U def, bool UNUSED(log)=false) const {
+  template <typename T, typename U>
+  void get(const std::string& key, T& val, U def, bool UNUSED(log) = false) const {
     val = (*this)[key].withDefault<T>(def);
   }
 
   /// Creates new section if doesn't exist
-  Options* getSection(const std::string &name) { return &(*this)[name]; }
-  const Options* getSection(const std::string &name) const { return &(*this)[name]; }
-  Options* getParent() const {return parent_instance;}
-  
+  Options* getSection(const std::string& name) { return &(*this)[name]; }
+  const Options* getSection(const std::string& name) const { return &(*this)[name]; }
+  Options* getParent() const { return parent_instance; }
+
   //////////////////////////////////////
-  
+
   /*!
    * Print string representation of this object and all sections in a tree structure
    */
-  std::string str() const {return full_name;}
+  std::string str() const { return full_name; }
 
   /// Print just the name of this object without parent sections
   std::string name() const {
@@ -670,15 +730,15 @@ public:
 
   /// clean the cache of parsed options
   static void cleanCache();
-  
+
   /*!
    * Class used to store values, together with
    * information about their origin and usage
    */
   struct OptionValue {
     std::string value;
-    std::string source;     // Source of the setting
-    mutable bool used = false;  // Set to true when used
+    std::string source;        // Source of the setting
+    mutable bool used = false; // Set to true when used
 
     /// This constructor needed for map::emplace
     /// Can be removed in C++17 with map::insert and brace initialisation
@@ -688,13 +748,9 @@ public:
 
   /// Read-only access to internal options and sections
   /// to allow iteration over the tree
-  using ValuesMap = std::map<std::string, OptionValue>;
-  DEPRECATED(ValuesMap values() const);
   std::map<std::string, const Options*> subsections() const;
 
-  const std::map<std::string, Options>& getChildren() const {
-    return children;
-  }
+  const std::map<std::string, Options>& getChildren() const { return children; }
 
   /// Return a vector of all the full names of all the keys below this
   /// in the tree (not gauranteed to be sorted)
@@ -714,7 +770,7 @@ public:
     attributes["doc"] = docstring;
     return *this;
   }
-  
+
   friend bool operator==(const Options& lhs, const Options& rhs) {
     if (lhs.isValue() and rhs.isValue()) {
       return lhs.value == rhs.value;
@@ -722,25 +778,28 @@ public:
     return lhs.children == rhs.children;
   }
 
- private:
-  
+  static std::string getDefaultSource();
+
+private:
   /// The source label given to default values
   static const std::string DEFAULT_SOURCE;
-  
-  static Options *root_instance; ///< Only instance of the root section
 
-  Options *parent_instance {nullptr};
+  static Options* root_instance; ///< Only instance of the root section
+
+  Options* parent_instance{nullptr};
   std::string full_name; // full path name for logging only
 
   // An Option object can either be a section or a value, defaulting to a section
-  bool is_section = true; ///< Is this Options object a section?
+  bool is_section = true;                  ///< Is this Options object a section?
   std::map<std::string, Options> children; ///< If a section then has children
-  mutable bool value_used = false; ///< Record whether this value is used
-  
+  mutable bool value_used = false;         ///< Record whether this value is used
+
   template <typename T>
   void _set_no_check(T val, std::string source) {
     if (not children.empty()) {
-      throw BoutException("Trying to assign value to Option '{}', but it's a non-empty section", full_name);
+      throw BoutException(
+          "Trying to assign value to Option '{}', but it's a non-empty section",
+          full_name);
     }
 
     value = std::move(val);
@@ -775,37 +834,77 @@ public:
 
     _set_no_check(std::move(val), std::move(source));
   }
-  
-  /// Tests if two values are similar. 
-  template <typename T> bool similar(T a, T b) const { return a == b; }
+
+  /// Tests if two values are similar.
+  template <typename T>
+  bool similar(T a, T b) const {
+    return a == b;
+  }
 };
 
 // Specialised assign methods for types stored in ValueType
-template<> inline void Options::assign<>(bool val, std::string source) { _set(val, std::move(source), false); }
-template<> inline void Options::assign<>(int val, std::string source) { _set(val, std::move(source), false); }
-template<> inline void Options::assign<>(BoutReal val, std::string source) { _set(val, std::move(source), false); }
-template<> inline void Options::assign<>(std::string val, std::string source) { _set(std::move(val), std::move(source), false); }
+template <>
+inline void Options::assign<>(bool val, std::string source) {
+  _set(val, std::move(source), false);
+}
+template <>
+inline void Options::assign<>(int val, std::string source) {
+  _set(val, std::move(source), false);
+}
+template <>
+inline void Options::assign<>(BoutReal val, std::string source) {
+  _set(val, std::move(source), false);
+}
+template <>
+inline void Options::assign<>(std::string val, std::string source) {
+  _set(std::move(val), std::move(source), false);
+}
 // Note: const char* version needed to avoid conversion to bool
-template<> inline void Options::assign<>(const char *val, std::string source) { _set(std::string(val), source, false);}
+template <>
+inline void Options::assign<>(const char* val, std::string source) {
+  _set(std::string(val), source, false);
+}
 // Note: Field assignments don't check for previous assignment (always force)
-template<> inline void Options::assign<>(Field2D val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(Field3D val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(FieldPerp val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(Array<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(Matrix<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
-template<> inline void Options::assign<>(Tensor<BoutReal> val, std::string source) { _set_no_check(std::move(val), std::move(source)); }
+template <>
+void Options::assign<>(Field2D val, std::string source);
+template <>
+void Options::assign<>(Field3D val, std::string source);
+template <>
+void Options::assign<>(FieldPerp val, std::string source);
+template <>
+void Options::assign<>(Array<BoutReal> val, std::string source);
+template <>
+void Options::assign<>(Matrix<BoutReal> val, std::string source);
+template <>
+void Options::assign<>(Tensor<BoutReal> val, std::string source);
 
 /// Specialised similar comparison methods
-template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }
+template <>
+inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const {
+  return fabs(a - b) < 1e-10;
+}
 
 /// Specialised as routines
-template <> std::string Options::as<std::string>(const std::string& similar_to) const;
-template <> int Options::as<int>(const int& similar_to) const;
-template <> BoutReal Options::as<BoutReal>(const BoutReal& similar_to) const;
-template <> bool Options::as<bool>(const bool& similar_to) const;
-template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const;
-template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
-template <> FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
+template <>
+std::string Options::as<std::string>(const std::string& similar_to) const;
+template <>
+int Options::as<int>(const int& similar_to) const;
+template <>
+BoutReal Options::as<BoutReal>(const BoutReal& similar_to) const;
+template <>
+bool Options::as<bool>(const bool& similar_to) const;
+template <>
+Field2D Options::as<Field2D>(const Field2D& similar_to) const;
+template <>
+Field3D Options::as<Field3D>(const Field3D& similar_to) const;
+template <>
+FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
+template <>
+Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) const;
+template <>
+Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_to) const;
+template <>
+Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_to) const;
 
 /// Convert \p value to string
 std::string toString(const Options& value);
@@ -833,7 +932,7 @@ void checkForUnusedOptions();
 /// used to customise the error message for the actual input file used
 void checkForUnusedOptions(const Options& options, const std::string& data_dir,
                            const std::string& option_file);
-}
+} // namespace bout
 
 namespace bout {
 namespace details {
@@ -841,8 +940,7 @@ namespace details {
 /// so that we can put the function definitions in the .cxx file,
 /// avoiding lengthy recompilation if we change it
 struct OptionsFormatterBase {
-  auto parse(fmt::format_parse_context& ctx)
-      -> fmt::format_parse_context::iterator;
+  auto parse(fmt::format_parse_context& ctx) -> fmt::format_parse_context::iterator;
   auto format(const Options& options, fmt::format_context& ctx)
       -> fmt::format_context::iterator;
 
@@ -875,51 +973,63 @@ template <>
 struct fmt::formatter<Options> : public bout::details::OptionsFormatterBase {};
 
 /// Define for reading options which passes the variable name
-#define OPTION(options, var, def)  \
-  pointer(options)->get(#var, var, def)
+#define OPTION(options, var, def) pointer(options)->get(#var, var, def)
 
-#define OPTION2(options, var1, var2, def){ \
-    pointer(options)->get(#var1, var1, def);  \
-    pointer(options)->get(#var2, var2, def);}
+#define OPTION2(options, var1, var2, def)    \
+  {                                          \
+    pointer(options)->get(#var1, var1, def); \
+    pointer(options)->get(#var2, var2, def); \
+  }
 
-#define OPTION3(options, var1, var2, var3, def){  \
-    pointer(options)->get(#var1, var1, def);               \
-    pointer(options)->get(#var2, var2, def);               \
-    pointer(options)->get(#var3, var3, def);}
+#define OPTION3(options, var1, var2, var3, def) \
+  {                                             \
+    pointer(options)->get(#var1, var1, def);    \
+    pointer(options)->get(#var2, var2, def);    \
+    pointer(options)->get(#var3, var3, def);    \
+  }
 
-#define OPTION4(options, var1, var2, var3, var4, def){ \
-    pointer(options)->get(#var1, var1, def);               \
-    pointer(options)->get(#var2, var2, def);               \
-    pointer(options)->get(#var3, var3, def);               \
-    pointer(options)->get(#var4, var4, def);}
+#define OPTION4(options, var1, var2, var3, var4, def) \
+  {                                                   \
+    pointer(options)->get(#var1, var1, def);          \
+    pointer(options)->get(#var2, var2, def);          \
+    pointer(options)->get(#var3, var3, def);          \
+    pointer(options)->get(#var4, var4, def);          \
+  }
 
-#define OPTION5(options, var1, var2, var3, var4, var5, def){ \
+#define OPTION5(options, var1, var2, var3, var4, var5, def) \
+  {                                                         \
+    pointer(options)->get(#var1, var1, def);                \
+    pointer(options)->get(#var2, var2, def);                \
+    pointer(options)->get(#var3, var3, def);                \
+    pointer(options)->get(#var4, var4, def);                \
+    pointer(options)->get(#var5, var5, def);                \
+  }
+
+#define OPTION6(options, var1, var2, var3, var4, var5, var6, def) \
+  {                                                               \
     pointer(options)->get(#var1, var1, def);                      \
     pointer(options)->get(#var2, var2, def);                      \
     pointer(options)->get(#var3, var3, def);                      \
     pointer(options)->get(#var4, var4, def);                      \
-    pointer(options)->get(#var5, var5, def);}
+    pointer(options)->get(#var5, var5, def);                      \
+    pointer(options)->get(#var6, var6, def);                      \
+  }
 
-#define OPTION6(options, var1, var2, var3, var4, var5, var6, def){      \
-    pointer(options)->get(#var1, var1, def);                            \
-    pointer(options)->get(#var2, var2, def);                            \
-    pointer(options)->get(#var3, var3, def);                            \
-    pointer(options)->get(#var4, var4, def);                            \
-    pointer(options)->get(#var5, var5, def);                            \
-    pointer(options)->get(#var6, var6, def);}
-
-#define VAROPTION(options, var, def) {					\
-    if (pointer(options)->isSet(#var)){                                 \
-      pointer(options)->get(#var, var, def);                            \
-    } else {								\
-      Options::getRoot()->getSection("all")->get(#var, var, def);	\
-    }}									\
+#define VAROPTION(options, var, def)                              \
+  {                                                               \
+    if (pointer(options)->isSet(#var)) {                          \
+      pointer(options)->get(#var, var, def);                      \
+    } else {                                                      \
+      Options::getRoot()->getSection("all")->get(#var, var, def); \
+    }                                                             \
+  }
 
 /// Define for over-riding library defaults for options, should be called in global
 /// namespace so that the new default is set before main() is called.
-#define BOUT_OVERRIDE_DEFAULT_OPTION(name, value)               \
-  namespace {                                                   \
-    const auto BOUT_CONCAT(user_default,__LINE__) =             \
-      Options::root()[name].overrideDefault(value); }           \
+#define BOUT_OVERRIDE_DEFAULT_OPTION(name, value)                                  \
+  namespace {                                                                      \
+  const auto BOUT_CONCAT(user_default,                                             \
+                         __LINE__) = Options::root()[name].overrideDefault(value); \
+  }
 
 #endif // __OPTIONS_H__

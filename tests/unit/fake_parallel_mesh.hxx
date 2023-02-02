@@ -225,17 +225,13 @@ public:
       // return the appropriate index. Some corners cells are actually
       // sent along with the rest of the edge. This can be predicted
       // based on teh value of xy[In|Out][Up|Down]Mesh_SendsInner.
-      if (mesh->yUpMesh && wait_any_count < 0 && mesh->communicatingY &&
-	  mesh->UpXSplitIndex() > 0) {
+      if (mesh->yUpMesh && wait_any_count < 0 && mesh->communicatingY) {
         *indx = wait_any_count = 0;
-      } else if (mesh->yDownMesh && wait_any_count < 1 && mesh->communicatingY &&
-		 mesh->UpXSplitIndex() == 0) {
+      } else if (mesh->yDownMesh && wait_any_count < 1 && mesh->communicatingY) {
         *indx = wait_any_count = 1;
-      } else if (mesh->yDownMesh && wait_any_count < 2 && mesh->communicatingY &&
-		 mesh->DownXSplitIndex() > 0) {
+      } else if (mesh->yDownMesh && wait_any_count < 2 && mesh->communicatingY) {
         *indx = wait_any_count = 2;
-      } else if (mesh->yDownMesh && wait_any_count < 3 && mesh->communicatingY &&
-		 mesh->DownXSplitIndex() == 0) {
+      } else if (mesh->yDownMesh && wait_any_count < 3 && mesh->communicatingY) {
         *indx = wait_any_count = 3;
       } else if (mesh->xInMesh && wait_any_count < 4 && mesh->communicatingX) {
         *indx = wait_any_count = 4;

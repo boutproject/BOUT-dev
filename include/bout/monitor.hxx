@@ -2,12 +2,12 @@
 #define __MONITOR_H__
 
 #include "bout_types.hxx"
-#include "bout/assert.hxx"
 #include "utils.hxx"
+#include "bout/assert.hxx"
 
 #include <cmath>
 
-class Datafile;
+class Options;
 class Solver;
 
 /// Return true if either \p a is a multiple of \p b or vice-versa
@@ -17,23 +17,23 @@ inline bool isMultiple(BoutReal a, BoutReal b) {
   ASSERT2(a > 0);
   ASSERT2(b > 0);
 
-  auto min = a>b?b:a;
-  auto max = a>b?a:b;
-  auto ratio = std::round(max/min);
-  auto error = ratio*min - max;
-  return (std::abs(error/max) < 1e-12);
+  auto min = a > b ? b : a;
+  auto max = a > b ? a : b;
+  auto ratio = std::round(max / min);
+  auto error = ratio * min - max;
+  return (std::abs(error / max) < 1e-12);
 }
 
 /// Monitor baseclass for the Solver
 ///
 /// Can be called ether with a specified frequency, or with the
 /// frequency of the BOUT++ output monitor.
-class Monitor{
+class Monitor {
   friend class Solver; ///< needs access to timestep and freq
 public:
   /// A \p timestep_ of -1 defaults to the the frequency of the BOUT++
   /// output monitor
-  Monitor(BoutReal timestep_ = -1) : timestep(timestep_) {};
+  Monitor(BoutReal timestep_ = -1) : timestep(timestep_){};
 
   virtual ~Monitor() = default;
 
@@ -49,6 +49,9 @@ public:
 
   /// Callback function for when a clean shutdown is initiated
   virtual void cleanup(){};
+
+  virtual void outputVars(MAYBE_UNUSED(Options& options),
+                          MAYBE_UNUSED(const std::string& time_dimension)) {}
 
 protected:
   /// Get the currently set timestep for this monitor
@@ -75,7 +78,7 @@ private:
 };
 
 struct RunMetrics {
-  public:
+public:
   /// cumulative wall clock time in seconds
   BoutReal t_elapsed = 0;
   /// time step's wall clock time in seconds
@@ -109,7 +112,7 @@ struct RunMetrics {
   /*!
    * Adds variables to the output file, for post-processing
    */
-  void outputVars(Datafile &file);
+  void outputVars(Options& output_options) const;
 
   /*!
    * Calculates derived metrics
@@ -120,8 +123,6 @@ struct RunMetrics {
    * Write job progress to screen
    */
   void writeProgress(BoutReal simtime, bool output_split);
-
 };
-
 
 #endif // __MONITOR_H__

@@ -11,10 +11,10 @@ from builtins import str
 
 import numpy as np
 
-# Requires: boutcore
+# Requires: boutpp
 # requires: not make
 
-import boutcore as bc
+import boutpp as bc
 
 bc.init("-q -q -q")
 
@@ -63,7 +63,7 @@ for in1, in2, outfunc in funcs:
             inf = bc.bracket(inf1, inf2, method=name)
             outf = bc.create3D(outfunc, mesh)
             err = inf - outf
-            slize = [slice(2, -2), 0, slice(None)]
+            slize = (slice(2, -2), 0, slice(None))
             err = err[slize]
             err = np.sqrt(np.mean(err**2))
             errors.append(err)
