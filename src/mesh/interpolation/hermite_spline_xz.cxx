@@ -269,7 +269,10 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     newWeights[7][i]  -= h11_x[i] * h11_z[i] / 4;
     newWeights[5][i]  += h11_x[i] * h11_z[i] / 4;
 #ifdef HS_USE_PETSC
-    PetscInt idxn[1] = {/* ;  idxn[0] = */ conv.fromLocalToGlobal(x, y + y_offset, z)};
+    PetscInt idxn[1] = {conv.fromLocalToGlobal(x, y + y_offset, z)};
+    // output.write("debug: {:d} -> {:d}: {:d}:{:d} -> {:d}:{:d}\n", conv.fromLocalToGlobal(x, y + y_offset, z),
+    //     conv.fromMeshToGlobal(i_corn, y + y_offset, k_corner(x, y, z)),
+    //     x, z, i_corn, k_corner(x, y, z));
     // ixstep = mesh->LocalNx * mesh->LocalNz;
     for (int j = 0; j < 4; ++j) {
       PetscInt idxm[4];
