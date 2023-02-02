@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
     BoutReal dz = index.z() + dice();
     // For the last point, put the displacement inwards
     // Otherwise we try to interpolate in the guard cells, which doesn't work so well
-    if (index.x() >= mesh->xend) {
+    if (index.x() >= mesh->xend && mesh->getNXPE() - 1 == mesh->getXProcIndex()) {
       dx = index.x() - dice();
     }
     deltax[index] = dx;
@@ -87,6 +87,7 @@ int main(int argc, char **argv) {
     c_solution[index] = c_gen->generate(pos);
   }
 
+  deltax += (mesh->LocalNx - mesh->xstart * 2) * mesh->getXProcIndex();
   // Create the interpolation object from the input options
   auto interp = XZInterpolationFactory::getInstance().create();
 
