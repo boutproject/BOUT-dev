@@ -23,9 +23,83 @@
 #include "globals.hxx"
 #include "interpolation_xz.hxx"
 #include "bout/index_derivs_interface.hxx"
-#include "bout/mesh.hxx"
+#include "../impls/bout/boutmesh.hxx"
 
 #include <vector>
+
+class IndConverter {
+public:
+  IndConverter(Mesh* mesh)
+      : mesh(dynamic_cast<BoutMesh*>(mesh)), nxpe(mesh->getNXPE()), nype(mesh->getNYPE()),
+        xstart(mesh->xstart), ystart(mesh->ystart), zstart(0),
+        lnx(mesh->LocalNx - 2 * xstart), lny(mesh->LocalNy - 2 * ystart),
+        lnz(mesh->LocalNz - 2 * zstart) {}
+  // ix and iy are global indices
+  // iy is local
+  int fromMeshToGlobal(int ix, int iy, int iz) {
+    const int xstart = mesh->xstart;
+    const int lnx = mesh->LocalNx - xstart * 2;
+    // x-proc-id
+    int pex = divToNeg(ix - xstart, lnx);
+    if (pex < 0) {
+      pex = 0;
+    }
+    if (pex >= nxpe) {
+      pex = nxpe - 1;
+    }
+    const int zstart = 0;
+    const int lnz = mesh->LocalNz - zstart * 2;
+    // z-proc-id
+    // pez only for wrapping around ; later needs similar treatment than pey
+    const int pez = divToNeg(iz - zstart, lnz);
+    // y proc-id - y is already local
+    const int ystart = mesh->ystart;
+    const int lny = mesh->LocalNy - ystart * 2;
+    const int pey_offset = divToNeg(iy - ystart, lny);
+    int pey = pey_offset + mesh->getYProcIndex();
+    while (pey < 0) {
+      pey += nype;
+    }
+    while (pey >= nype) {
+      pey -= nype;
+    }
+    ASSERT2(pex >= 0);
+    ASSERT2(pex < nxpe);
+    ASSERT2(pey >= 0);
+    ASSERT2(pey < nype);
+    return fromLocalToGlobal(ix - pex * lnx, iy - pey_offset * lny, iz - pez * lnz, pex,
+                             pey, 0);
+  }
+  int fromLocalToGlobal(const int ilocalx, const int ilocaly, const int ilocalz) {
+    return fromLocalToGlobal(ilocalx, ilocaly, ilocalz, mesh->getXProcIndex(),
+                             mesh->getYProcIndex(), 0);
+  }
+  int fromLocalToGlobal(const int ilocalx, const int ilocaly, const int ilocalz,
+                        const int pex, const int pey, const int pez) {
+    ASSERT3(ilocalx >= 0);
+    ASSERT3(ilocaly >= 0);
+    ASSERT3(ilocalz >= 0);
+    const int ilocal = ((ilocalx * mesh->LocalNy) + ilocaly) * mesh->LocalNz + ilocalz;
+    const int ret = ilocal
+                    + mesh->LocalNx * mesh->LocalNy * mesh->LocalNz
+                          * ((pey * nxpe + pex) * nzpe + pez);
+    ASSERT3(ret >= 0);
+    ASSERT3(ret < nxpe * nype * mesh->LocalNx * mesh->LocalNy * mesh->LocalNz);
+    return ret;
+  }
+
+private:
+  // number of procs
+  BoutMesh* mesh;
+  const int nxpe;
+  const int nype;
+  const int nzpe{1};
+  const int xstart, ystart, zstart;
+  const int lnx, lny, lnz;
+  static int divToNeg(const int n, const int d) {
+    return (n < 0) ? ((n - d + 1) / d) : (n / d);
+  }
+};
 
 XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh *mesh)
     : XZInterpolation(y_offset, mesh),
@@ -50,12 +124,27 @@ XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh *mesh)
   h10_z.allocate();
   h11_z.allocate();
 
-
+#if USE_NEW_WEIGHTS
   newWeights.reserve(16);
   for (int w=0; w<16;++w){
     newWeights.emplace_back(localmesh);
     newWeights[w].allocate();
   }
+#ifdef HS_USE_PETSC
+  petsclib = new PetscLib(
+      &Options::root()["mesh:paralleltransform:xzinterpolation:hermitespline"]);
+  // MatCreate(MPI_Comm comm,Mat *A)
+  // MatCreate(MPI_COMM_WORLD, &petscWeights);
+  //  MatSetSizes(petscWeights, m, m, M, M);
+  // PetscErrorCode MatCreateAIJ(MPI_Comm comm, PetscInt m, PetscInt n, PetscInt M,
+  // PetscInt N, 			      PetscInt d_nz, const PetscInt d_nnz[], PetscInt o_nz, const PetscInt
+  //o_nnz[], Mat *A)
+  //  MatSetSizes(Mat A,PetscInt m,PetscInt n,PetscInt M,PetscInt N)
+  const int m = mesh->LocalNx * mesh->LocalNy * mesh->LocalNz;
+  const int M = m * mesh->getNXPE() * mesh->getNYPE();
+  MatCreateAIJ(MPI_COMM_WORLD, m, m, M, M, 16, nullptr, 16, nullptr, &petscWeights);
+#endif
+#endif
 }
 
 void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
@@ -63,6 +152,11 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
 
   const int ny = localmesh->LocalNy;
   const int nz = localmesh->LocalNz;
+  const int xend = (localmesh->xend - localmesh->xstart + 1) * localmesh->getNXPE()
+                   + localmesh->xstart - 1;
+#ifdef HS_USE_PETSC
+  IndConverter conv{localmesh};
+#endif
   BOUT_FOR(i, getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
@@ -79,8 +173,8 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
     // NOTE: A (small) hack to avoid one-sided differences
-    if (i_corn >= localmesh->xend) {
-      i_corn = localmesh->xend - 1;
+    if (i_corn >= xend) {
+      i_corn = xend - 1;
       t_x = 1.0;
     }
     if (i_corn < localmesh->xstart) {
@@ -116,7 +210,6 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     h11_x[i] = (t_x * t_x * t_x) - (t_x * t_x);
     h11_z[i] = (t_z * t_z * t_z) - (t_z * t_z);
 
-#define USE_NEW_WEIGHTS 1
 #if USE_NEW_WEIGHTS
 
     for (int w =0; w<16;++w){
@@ -175,8 +268,28 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     newWeights[13][i] -= h11_x[i] * h11_z[i] / 4;
     newWeights[7][i]  -= h11_x[i] * h11_z[i] / 4;
     newWeights[5][i]  += h11_x[i] * h11_z[i] / 4;
+#ifdef HS_USE_PETSC
+    PetscInt idxn[1] = {/* ;  idxn[0] = */ conv.fromLocalToGlobal(x, y + y_offset, z)};
+    // ixstep = mesh->LocalNx * mesh->LocalNz;
+    for (int j = 0; j < 4; ++j) {
+      PetscInt idxm[4];
+      PetscScalar vals[4];
+      for (int k = 0; k < 4; ++k) {
+        idxm[k] = conv.fromMeshToGlobal(i_corn - 1 + j, y + y_offset,
+                                        k_corner(x, y, z) - 1 + k);
+        vals[k] = newWeights[j * 4 + k][i];
+      }
+      MatSetValues(petscWeights, 1, idxn, 4, idxm, vals, INSERT_VALUES);
+    }
+#endif
 #endif
   }
+#ifdef HS_USE_PETSC
+  isInit = true;
+  MatAssemblyBegin(petscWeights, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(petscWeights, MAT_FINAL_ASSEMBLY);
+  MatCreateVecs(petscWeights, &rhs, &result);
+#endif
 }
 
 void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
@@ -220,8 +333,22 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
-
 #if USE_NEW_WEIGHTS
+#ifdef HS_USE_PETSC
+  BoutReal* ptr;
+  const BoutReal* cptr;
+  VecGetArray(rhs, &ptr);
+  BOUT_FOR(i, f.getRegion("RGN_NOY")) { ptr[int(i)] = f[i]; }
+  VecRestoreArray(rhs, &ptr);
+  MatMult(petscWeights, rhs, result);
+  VecGetArrayRead(result, &cptr);
+  const auto region2 = fmt::format("RGN_YPAR_{:+d}", y_offset);
+  BOUT_FOR(i, f.getRegion(region2)) {
+    f_interp[i] = cptr[int(i)];
+    ASSERT2(std::isfinite(cptr[int(i)]));
+  }
+  VecRestoreArrayRead(result, &cptr);
+#else
   BOUT_FOR(i, getRegion(region)) {
     auto ic =  i_corner[i];
     auto iyp = i.yp(y_offset);
@@ -234,6 +361,7 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
       f_interp[iyp] += newWeights[w*4+3][i] * f[ic.zp(2).xp(w-1)];
     }
   }
+#endif
   return f_interp;
 #else
   // Derivatives are used for tension and need to be on dimensionless

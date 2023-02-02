@@ -26,6 +26,15 @@
 
 #include "mask.hxx"
 
+#define USE_NEW_WEIGHTS 1
+#if BOUT_HAS_PETSC
+#define HS_USE_PETSC 1
+#endif
+
+#ifdef HS_USE_PETSC
+#include "bout/petsclib.hxx"
+#endif
+
 class Options;
 
 /// Interpolate a field onto a perturbed set of points
@@ -149,6 +158,13 @@ protected:
 
   std::vector<Field3D> newWeights;
 
+#if HS_USE_PETSC
+  PetscLib* petsclib;
+  bool isInit{false};
+  Mat petscWeights;
+  Vec rhs, result;
+#endif
+
 public:
   XZHermiteSpline(Mesh *mesh = nullptr)
       : XZHermiteSpline(0, mesh) {}
@@ -156,6 +172,17 @@ public:
   XZHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : XZHermiteSpline(y_offset, mesh) {
     setRegion(regionFromMask(mask, localmesh));
+  }
+  ~XZHermiteSpline() {
+#if HS_USE_PETSC
+    if (isInit) {
+      MatDestroy(&petscWeights);
+      VecDestroy(&rhs);
+      VecDestroy(&result);
+      isInit = false;
+      delete petsclib;
+    }
+#endif
   }
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
