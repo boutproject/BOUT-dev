@@ -83,7 +83,7 @@ def fix_library_header_locations(
 def make_header_regex(deprecated_headers: List[str]) -> re.Pattern:
     """Create a regular expression to match deprecated header locations"""
     deprecated_header_joined = "|".join((header.name for header in deprecated_headers))
-    return re.compile(rf'(#include\s+<|")(?:\.\./)({deprecated_header_joined})(>|")')
+    return re.compile(rf'(#include\s+<|")(?:\.\./)?({deprecated_header_joined})(>|")')
 
 
 def apply_fixes(header_regex, source):
