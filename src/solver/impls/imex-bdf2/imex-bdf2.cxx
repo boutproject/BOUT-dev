@@ -5,9 +5,9 @@
 #include "imex-bdf2.hxx"
 
 #include <bout/assert.hxx>
-#include <bout/mesh.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>
 

@@ -138,13 +138,13 @@
  */
 // clang-format on
 
-#include <bout/coordinates.hxx>
-#include <bout/mesh.hxx>
-#include <bout/sys/timer.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/difops.hxx>
 #include <bout/globals.hxx>
+#include <bout/mesh.hxx>
+#include <bout/sys/timer.hxx>
 
 #include "naulin_laplace.hxx"
 

@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-#include <bout/template_combinations.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/output.hxx>
+#include <bout/template_combinations.hxx>
 
 #include <typeindex>
 

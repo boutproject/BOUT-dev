@@ -28,8 +28,8 @@ class AdamsBashforthSolver;
 #ifndef __ADAMSBASHFORTH_SOLVER_H__
 #define __ADAMSBASHFORTH_SOLVER_H__
 
-#include <bout/solver.hxx>
 #include <bout/bout_types.hxx>
+#include <bout/solver.hxx>
 
 #include <deque>
 

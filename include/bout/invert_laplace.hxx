@@ -43,9 +43,9 @@ class Laplacian;
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/fieldperp.hxx"
-#include "bout/unused.hxx"
 #include "bout/generic_factory.hxx"
 #include "bout/monitor.hxx"
+#include "bout/unused.hxx"
 #include <bout/boutexception.hxx>
 
 #include "bout/dcomplex.hxx"

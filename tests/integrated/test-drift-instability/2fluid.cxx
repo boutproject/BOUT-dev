@@ -3,8 +3,8 @@
  * Same as Maxim's version of BOUT - simplified 2-fluid for benchmarking
  *******************************************************************************/
 
-#include <bout/physicsmodel.hxx>
 #include <bout/bout.hxx>
+#include <bout/physicsmodel.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>

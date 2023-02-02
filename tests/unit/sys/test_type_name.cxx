@@ -1,7 +1,7 @@
-#include "gtest/gtest.h"
-#include "bout/sys/type_name.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/sys/type_name.hxx"
+#include "gtest/gtest.h"
 
 #include <string>
 

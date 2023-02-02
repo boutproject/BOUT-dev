@@ -6,8 +6,8 @@
 
 #include <bout/physicsmodel.hxx>
 
-#include <bout/initialprofiles.hxx>
 #include <bout/derivs.hxx>
+#include <bout/initialprofiles.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/msg_stack.hxx>

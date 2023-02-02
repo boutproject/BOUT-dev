@@ -1,8 +1,8 @@
 #include <bout/bout.hxx>
 
-#include <bout/invert_laplace.hxx>
-#include <bout/field_factory.hxx>
 #include <bout/constants.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/invert_laplace.hxx>
 
 using bout::globals::mesh;
 

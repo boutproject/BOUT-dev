@@ -3,8 +3,8 @@
 #if BOUT_HAS_PETSC
 
 #include "bout/boutcomm.hxx"
-#include "bout/options.hxx"
 #include "bout/openmpwrap.hxx"
+#include "bout/options.hxx"
 #include <bout/petsclib.hxx>
 
 #include <bout/output.hxx>

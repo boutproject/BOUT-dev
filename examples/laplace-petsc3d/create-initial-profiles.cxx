@@ -23,8 +23,8 @@
  *
  **************************************************************************/
 
-#include "bout/physicsmodel.hxx"
 #include "bout/initialprofiles.hxx"
+#include "bout/physicsmodel.hxx"
 
 class CreateInitialProfiles : public PhysicsModel {
   int init(bool) {

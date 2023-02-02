@@ -40,9 +40,9 @@
 
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/monitor.hxx"
 #include "bout/options.hxx"
 #include "bout/unused.hxx"
-#include "bout/monitor.hxx"
 
 #include <memory>
 
@@ -66,9 +66,9 @@ using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal l
 //#include "bout/globals.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/generic_factory.hxx"
 #include "bout/vector2d.hxx"
 #include "bout/vector3d.hxx"
-#include "bout/generic_factory.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "physicsmodel.hxx"

@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 
+#include "test_extras.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
-#include "bout/region.hxx"
-#include "bout/boutexception.hxx"
 #include "bout/output.hxx"
-#include "test_extras.hxx"
+#include "bout/region.hxx"
 #include "bout/unused.hxx"
 
 #include <algorithm>

@@ -29,12 +29,12 @@
 
 #if BOUT_HAS_PVODE
 
-#include <bout/mesh.hxx>
-#include <bout/sys/timer.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
+#include <bout/sys/timer.hxx>
 
 #include "bout/unused.hxx"
 

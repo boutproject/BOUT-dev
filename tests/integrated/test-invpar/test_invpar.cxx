@@ -5,8 +5,8 @@
 
 #include <bout/bout.hxx>
 #include <bout/derivs.hxx>
-#include <bout/invert_parderiv.hxx>
 #include <bout/field_factory.hxx>
+#include <bout/invert_parderiv.hxx>
 #include <bout/utils.hxx>
 
 using bout::globals::mesh;

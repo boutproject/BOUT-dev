@@ -37,6 +37,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <bout/bout_types.hxx>
+#include <bout/boutcomm.hxx>
 #include <bout/globalindexer.hxx>
 #include <bout/mesh.hxx>
 #include <bout/operatorstencil.hxx>
@@ -44,8 +46,6 @@
 #include <bout/petsclib.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
-#include <bout/bout_types.hxx>
-#include <bout/boutcomm.hxx>
 
 #if BOUT_HAS_PETSC
 

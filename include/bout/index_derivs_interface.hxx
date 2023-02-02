@@ -30,8 +30,8 @@
 #define __INDEX_DERIVS_INTERFACE_HXX__
 
 #include "bout/traits.hxx"
-#include <bout/deriv_store.hxx>
 #include <bout/bout_types.hxx>
+#include <bout/deriv_store.hxx>
 #include <bout/msg_stack.hxx>
 
 class Field3D;

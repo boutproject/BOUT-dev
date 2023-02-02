@@ -38,13 +38,13 @@
 
 #if not BOUT_USE_METRIC_3D
 
-#include <bout/constants.hxx>
-#include <bout/mesh.hxx>
-#include <bout/sys/timer.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/constants.hxx>
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
+#include <bout/mesh.hxx>
 #include <bout/output.hxx>
+#include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
 #include "cyclic_laplace.hxx"

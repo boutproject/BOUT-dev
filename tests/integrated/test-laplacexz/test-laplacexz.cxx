@@ -10,9 +10,9 @@
  */
 #include <bout/bout.hxx>
 
-#include <bout/invert/laplacexz.hxx>
 #include <bout/derivs.hxx>
 #include <bout/field_factory.hxx>
+#include <bout/invert/laplacexz.hxx>
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);

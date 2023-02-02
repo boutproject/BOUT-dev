@@ -2,11 +2,11 @@
  * radial source and mask operators
  **************************************************************/
 
-#include <cmath>
 #include <bout/globals.hxx>
+#include <cmath>
 
-#include <bout/mesh.hxx>
 #include <bout/field2d.hxx>
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/sourcex.hxx>
 

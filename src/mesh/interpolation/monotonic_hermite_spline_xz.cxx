@@ -21,10 +21,10 @@
  **************************************************************************/
 
 #include "bout/globals.hxx"
-#include "bout/interpolation_xz.hxx"
-#include "bout/output.hxx"
 #include "bout/index_derivs_interface.hxx"
+#include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
 
 #include <vector>
 

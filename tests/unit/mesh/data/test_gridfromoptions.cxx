@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 
-#include "bout/options.hxx"
-#include "bout/output.hxx"
 #include "test_extras.hxx"
 #include "bout/constants.hxx"
 #include "bout/griddata.hxx"
 #include "bout/mesh.hxx"
+#include "bout/options.hxx"
+#include "bout/output.hxx"
 
 #include <numeric>
 #include <string>

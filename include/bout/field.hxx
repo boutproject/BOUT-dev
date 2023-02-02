@@ -42,12 +42,12 @@ class Field;
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/msg_stack.hxx"
-#include "bout/stencils.hxx"
-#include "bout/utils.hxx"
 #include "bout/region.hxx"
+#include "bout/stencils.hxx"
 #include "bout/traits.hxx"
-#include <bout/rvec.hxx>
+#include "bout/utils.hxx"
 #include <bout/globals.hxx>
+#include <bout/rvec.hxx>
 
 #include "bout/unused.hxx"
 

@@ -14,9 +14,9 @@
 
 #include "gbs.hxx"
 
-#include <bout/initialprofiles.hxx>
 #include <bout/derivs.hxx>
 #include <bout/field_factory.hxx>
+#include <bout/initialprofiles.hxx>
 
 int GBS::init(bool restarting) {
   Options *opt = Options::getRoot();

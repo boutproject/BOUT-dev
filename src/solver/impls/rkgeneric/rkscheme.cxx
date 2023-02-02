@@ -1,10 +1,10 @@
 #include "bout/unused.hxx"
-#include <bout/mpi_wrapper.hxx>
-#include <bout/rkscheme.hxx>
 #include <bout/boutcomm.hxx>
-#include <cmath>
+#include <bout/mpi_wrapper.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
+#include <bout/rkscheme.hxx>
+#include <cmath>
 
 // Implementations
 #include "impls/cashkarp/cashkarp.hxx"

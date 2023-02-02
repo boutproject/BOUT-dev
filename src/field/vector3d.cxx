@@ -31,10 +31,10 @@
 #include <bout/globals.hxx>
 
 #include <bout/assert.hxx>
-#include <bout/scorepwrapper.hxx>
 #include <bout/boundary_op.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/interpolation.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <bout/vector3d.hxx>
 
 Vector3D::Vector3D(const Vector3D& f)

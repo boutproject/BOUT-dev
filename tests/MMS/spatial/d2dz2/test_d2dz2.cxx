@@ -3,8 +3,8 @@
  */
 
 #include <bout/bout.hxx>
-#include <bout/field_factory.hxx>
 #include <bout/derivs.hxx>
+#include <bout/field_factory.hxx>
 
 using bout::globals::mesh;
 

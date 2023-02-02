@@ -40,15 +40,15 @@
 #include "bout/globals.hxx"
 
 #include "bout/boutcomm.hxx"
-#include <bout/constants.hxx>
-#include <bout/mesh.hxx>
-#include <bout/openmpwrap.hxx>
-#include <bout/scorepwrapper.hxx>
-#include <bout/sys/timer.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/constants.hxx>
 #include <bout/fft.hxx>
 #include <bout/lapack_routines.hxx>
+#include <bout/mesh.hxx>
+#include <bout/openmpwrap.hxx>
 #include <bout/output.hxx>
+#include <bout/scorepwrapper.hxx>
+#include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
 #include <algorithm>

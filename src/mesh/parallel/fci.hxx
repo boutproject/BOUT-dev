@@ -26,10 +26,10 @@
 #ifndef __FCITRANSFORM_H__
 #define __FCITRANSFORM_H__
 
-#include <bout/paralleltransform.hxx>
 #include <bout/interpolation_xz.hxx>
 #include <bout/mask.hxx>
 #include <bout/parallel_boundary_region.hxx>
+#include <bout/paralleltransform.hxx>
 #include <bout/unused.hxx>
 
 #include <memory>

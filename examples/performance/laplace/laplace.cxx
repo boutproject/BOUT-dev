@@ -4,8 +4,8 @@
  */
 
 #include <bout/bout.hxx>
-#include <bout/invert_laplace.hxx>
 #include <bout/field_factory.hxx>
+#include <bout/invert_laplace.hxx>
 
 #include <algorithm>
 #include <chrono>

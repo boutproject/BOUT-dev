@@ -2,11 +2,11 @@
 
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
-#include <iostream>
-#include <mpi.h>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/utils.hxx>
+#include <iostream>
+#include <mpi.h>
 
 #if BOUT_USE_BACKTRACE
 #include <dlfcn.h>

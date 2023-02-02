@@ -2,13 +2,13 @@
 
 #if BOUT_HAS_HYPRE
 
+#include "bout/assert.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/globals.hxx"
-#include "bout/output.hxx"
-#include "bout/utils.hxx"
-#include "bout/assert.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/utils.hxx"
 
 #include <cmath>
 

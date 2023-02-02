@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 
-#include "bout/boutexception.hxx"
-#include "bout/field.hxx"
-#include "bout/output.hxx"
 #include "test_extras.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
+#include "bout/field.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
 
 /// Global mesh
 namespace bout {

@@ -8,10 +8,10 @@
 
 #include <bout/physicsmodel.hxx>
 
+#include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/invert_laplace.hxx>
-#include <bout/derivs.hxx>
 
 const BoutReal PI = 3.14159265;
 

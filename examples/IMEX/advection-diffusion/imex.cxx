@@ -7,8 +7,8 @@
  *
  * *******************************************************************/
 
-#include <bout/physicsmodel.hxx>
 #include <bout/derivs.hxx>
+#include <bout/physicsmodel.hxx>
 
 class IMEXexample : public PhysicsModel {
 private:

@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "bout/mesh.hxx"
-#include "bout/region.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/mesh.hxx"
 #include "bout/output.hxx"
+#include "bout/region.hxx"
 
 #include "test_extras.hxx"
 

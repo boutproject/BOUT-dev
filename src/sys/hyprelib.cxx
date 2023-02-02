@@ -5,10 +5,10 @@
 #include <bout/hyprelib.hxx>
 
 #include "bout/boutcomm.hxx"
+#include "bout/openmpwrap.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
 #include "bout/unused.hxx"
-#include "bout/openmpwrap.hxx"
 
 #include <HYPRE.h>
 #include <HYPRE_utilities.h>

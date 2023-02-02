@@ -42,8 +42,8 @@
 #ifndef __INV_PAR_CR_H__
 #define __INV_PAR_CR_H__
 
-#include "bout/invert_parderiv.hxx"
 #include "bout/build_config.hxx"
+#include "bout/invert_parderiv.hxx"
 
 #if BOUT_USE_METRIC_3D
 

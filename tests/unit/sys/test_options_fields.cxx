@@ -3,9 +3,9 @@
 
 #include "gtest/gtest.h"
 
-#include "bout/mesh.hxx"
-#include "bout/field3d.hxx"
 #include "test_extras.hxx"
+#include "bout/field3d.hxx"
+#include "bout/mesh.hxx"
 #include "bout/unused.hxx"
 
 /// Global mesh

@@ -39,15 +39,15 @@
 #include "pcr.hxx"
 #include "bout/globals.hxx"
 
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/fft.hxx>
+#include <bout/lapack_routines.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/sys/timer.hxx>
-#include <bout/boutexception.hxx>
-#include <cmath>
-#include <bout/fft.hxx>
-#include <bout/lapack_routines.hxx>
 #include <bout/utils.hxx>
+#include <cmath>
 
 #include "bout/boutcomm.hxx"
 #include <bout/output.hxx>

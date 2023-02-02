@@ -26,8 +26,8 @@
 
 #include <utility>
 
-#include "bout/utils.hxx"
 #include "bout/sys/gettext.hxx"
+#include "bout/utils.hxx"
 
 using std::list;
 using std::string;

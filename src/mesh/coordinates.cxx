@@ -7,9 +7,9 @@
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
-#include <bout/sys/timer.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
+#include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
 #include <bout/derivs.hxx>

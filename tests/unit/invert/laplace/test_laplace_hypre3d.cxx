@@ -4,19 +4,19 @@
 #include <tuple>
 
 #include "../../../../src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx"
-#include "bout/invert_laplace.hxx"
 #include "test_extras.hxx"
+#include "bout/invert_laplace.hxx"
 #include "gtest/gtest.h"
 
 #include "bout/derivs.hxx"
 #include "bout/difops.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
-#include "bout/options.hxx"
-#include "bout/vecops.hxx"
 #include "bout/griddata.hxx"
 #include "bout/hypre_interface.hxx"
 #include "bout/mesh.hxx"
+#include "bout/options.hxx"
+#include "bout/vecops.hxx"
 
 #if BOUT_HAS_HYPRE
 

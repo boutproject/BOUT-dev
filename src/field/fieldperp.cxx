@@ -28,9 +28,9 @@
 
 #include <cmath>
 
-#include <bout/mesh.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/fieldperp.hxx>
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>
 

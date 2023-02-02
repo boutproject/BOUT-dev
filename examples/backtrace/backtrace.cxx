@@ -2,8 +2,8 @@
  * Check for backtrace after throw
  */
 
-#include <bout/physicsmodel.hxx>
 #include <bout/bout.hxx>
+#include <bout/physicsmodel.hxx>
 
 void f1() {
   BoutReal a = 1;

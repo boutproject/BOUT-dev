@@ -32,8 +32,8 @@ class EulerSolver;
 
 #include "mpi.h"
 
-#include <bout/solver.hxx>
 #include <bout/bout_types.hxx>
+#include <bout/solver.hxx>
 
 namespace {
 RegisterSolver<EulerSolver> registersolvereuler("euler");

@@ -44,11 +44,11 @@ class Options;
 #include "bout/field3d.hxx"
 #include "bout/fieldperp.hxx"
 #include "bout/output.hxx"
-#include "bout/unused.hxx"
-#include "bout/utils.hxx"
 #include "bout/sys/type_name.hxx"
 #include "bout/sys/variant.hxx"
 #include "bout/traits.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 
 #include <fmt/core.h>
 

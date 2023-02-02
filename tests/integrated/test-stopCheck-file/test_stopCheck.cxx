@@ -3,9 +3,9 @@
  * 
  */
 
+#include "bout/unused.hxx"
 #include <bout/bout.hxx>
 #include <bout/physicsmodel.hxx>
-#include "bout/unused.hxx"
 
 class Test_stopcheck : public PhysicsModel {
   Field3D N;

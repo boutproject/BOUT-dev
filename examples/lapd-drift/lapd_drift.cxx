@@ -5,11 +5,11 @@
  *******************************************************************************/
 #include <bout/physicsmodel.hxx>
 
-#include <bout/initialprofiles.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/derivs.hxx>
+#include <bout/initialprofiles.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/invert_laplace.hxx>
-#include <bout/boutexception.hxx>
 
 #include <math.h>
 #include <stdio.h>

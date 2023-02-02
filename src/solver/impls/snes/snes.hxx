@@ -38,8 +38,8 @@ class SNESSolver;
 #include "mpi.h"
 
 #include <bout/bout_enum_class.hxx>
-#include <bout/petsclib.hxx>
 #include <bout/bout_types.hxx>
+#include <bout/petsclib.hxx>
 
 #include <petsc.h>
 #include <petscsnes.h>

@@ -6,12 +6,12 @@
 
 #include "gtest/gtest.h"
 
-#include "bout/constants.hxx"
-#include "bout/mesh.hxx"
-#include "bout/boutexception.hxx"
-#include "bout/field3d.hxx"
-#include "bout/output.hxx"
 #include "test_extras.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/constants.hxx"
+#include "bout/field3d.hxx"
+#include "bout/mesh.hxx"
+#include "bout/output.hxx"
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
 

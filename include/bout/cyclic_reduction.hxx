@@ -51,8 +51,8 @@
 #include "bout/utils.hxx"
 #include <bout/lapack_routines.hxx>
 
-#include "bout/boutexception.hxx"
 #include "bout/assert.hxx"
+#include "bout/boutexception.hxx"
 
 #include "bout/output.hxx"
 

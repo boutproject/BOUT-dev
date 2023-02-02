@@ -19,9 +19,9 @@
  *
  *************************************************************/
 
-#include <bout/physicsmodel.hxx>
 #include <bout/bout.hxx>
 #include <bout/initialprofiles.hxx>
+#include <bout/physicsmodel.hxx>
 
 class Split_operator : public PhysicsModel {
   Field3D U; // Evolving variable

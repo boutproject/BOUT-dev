@@ -30,10 +30,10 @@
 
 #include <bout/globals.hxx>
 
-#include <bout/scorepwrapper.hxx>
 #include <bout/boundary_op.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/interpolation.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <bout/vector2d.hxx>
 
 Vector2D::Vector2D(const Vector2D& f)

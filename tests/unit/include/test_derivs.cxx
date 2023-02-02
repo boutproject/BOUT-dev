@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 
-#include "bout/bout_types.hxx"
-#include "bout/fft.hxx"
-#include "bout/field3d.hxx"
 #include "test_extras.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/constants.hxx"
 #include "bout/deriv_store.hxx"
+#include "bout/fft.hxx"
+#include "bout/field3d.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/paralleltransform.hxx"
 

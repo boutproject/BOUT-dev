@@ -2,9 +2,9 @@
 
 #include "gtest/gtest.h"
 
+#include "test_extras.hxx"
 #include "bout/bout.hxx"
 #include "bout/boutexception.hxx"
-#include "test_extras.hxx"
 #include "bout/utils.hxx"
 #include "bout/version.hxx"
 

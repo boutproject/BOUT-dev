@@ -1,7 +1,7 @@
-#include "gtest/gtest.h"
 #include "bout/boutexception.hxx"
 #include "bout/output.hxx"
 #include "bout/output_bout_types.hxx"
+#include "gtest/gtest.h"
 
 #include <cstdio>
 #include <string>

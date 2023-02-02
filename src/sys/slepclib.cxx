@@ -2,8 +2,8 @@
 
 #if BOUT_HAS_SLEPC
 
-#include <bout/slepclib.hxx>
 #include <bout/output.hxx>
+#include <bout/slepclib.hxx>
 
 // Define all the static member variables
 int SlepcLib::count = 0;

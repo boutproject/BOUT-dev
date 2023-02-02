@@ -26,12 +26,12 @@
 #include "bout/build_config.hxx"
 
 #include <bout/assert.hxx>
-#include <bout/solver.hxx>
 #include <bout/derivs.hxx>
 #include <bout/difops.hxx>
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/solver.hxx>
 #include <bout/utils.hxx>
 #include <bout/vecops.hxx>
 

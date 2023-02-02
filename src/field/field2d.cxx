@@ -27,8 +27,8 @@
 
 #include "bout/build_config.hxx"
 
-#include <bout/rvec.hxx>
 #include <bout/boutcomm.hxx>
+#include <bout/rvec.hxx>
 
 #include <bout/globals.hxx> // for mesh
 
@@ -39,12 +39,12 @@
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
 
-#include <bout/mesh.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 
-#include <cmath>
 #include <bout/output.hxx>
+#include <cmath>
 
 #include <bout/assert.hxx>
 

@@ -7,13 +7,13 @@
 #ifndef FIELD_ACCESSOR_H__
 #define FIELD_ACCESSOR_H__
 
+#include "build_config.hxx"
+#include "coordinates.hxx"
+#include "coordinates_accessor.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
-#include "build_config.hxx"
-#include "coordinates.hxx"
-#include "coordinates_accessor.hxx"
 
 /// Simple wrapper around a BoutReal* 1D array
 ///

@@ -8,10 +8,10 @@
 
 #include "bout/paralleltransform.hxx"
 #include <bout/constants.hxx>
-#include <bout/mesh.hxx>
-#include <bout/sys/timer.hxx>
 #include <bout/fft.hxx>
+#include <bout/mesh.hxx>
 #include <bout/output.hxx>
+#include <bout/sys/timer.hxx>
 
 #include <cmath>
 

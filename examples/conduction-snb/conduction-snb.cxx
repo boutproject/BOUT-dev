@@ -1,7 +1,7 @@
 // SNB heat conduction model
 
-#include <bout/snb.hxx>
 #include <bout/bout.hxx>
+#include <bout/snb.hxx>
 
 int main(int argc, char** argv) {
   using bout::HeatFluxSNB;

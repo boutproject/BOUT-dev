@@ -2,16 +2,16 @@
 #include "bout/traits.hxx"
 #include <bout/griddata.hxx>
 
-#include <bout/constants.hxx>
-#include <bout/sys/timer.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/constants.hxx>
 #include <bout/fft.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/options_netcdf.hxx>
 #include <bout/output.hxx>
+#include <bout/sys/timer.hxx>
 #include <bout/unused.hxx>
-#include <utility>
 #include <bout/utils.hxx>
+#include <utility>
 
 GridFile::GridFile(std::string gridfilename)
     : GridDataSource(true), data(bout::OptionsNetCDF(gridfilename).read()),

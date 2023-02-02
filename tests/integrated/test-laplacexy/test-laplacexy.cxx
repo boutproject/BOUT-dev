@@ -25,9 +25,9 @@
 
 #include <bout/bout.hxx>
 #include <bout/constants.hxx>
-#include <bout/invert/laplacexy.hxx>
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
+#include <bout/invert/laplacexy.hxx>
 #include <bout/options.hxx>
 
 using bout::globals::dump;

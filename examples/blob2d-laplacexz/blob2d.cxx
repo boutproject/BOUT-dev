@@ -4,9 +4,9 @@
          NR Walkden, B Dudson  20 January 2012
  *******************************************************************/
 
-#include "bout/bout.hxx"                  // Commonly used BOUT++ components
+#include "bout/bout.hxx"             // Commonly used BOUT++ components
+#include "bout/derivs.hxx"           // To use DDZ()
 #include "bout/invert/laplacexz.hxx" // Laplacian inversion
-#include "bout/derivs.hxx"                // To use DDZ()
 
 class Blob2D : public PhysicsModel {
 private:

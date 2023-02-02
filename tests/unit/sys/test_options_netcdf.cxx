@@ -6,9 +6,9 @@
 
 #include "gtest/gtest.h"
 
-#include "bout/mesh.hxx"
-#include "bout/field3d.hxx"
 #include "test_extras.hxx"
+#include "bout/field3d.hxx"
+#include "bout/mesh.hxx"
 #include "bout/options_netcdf.hxx"
 
 using bout::OptionsNetCDF;

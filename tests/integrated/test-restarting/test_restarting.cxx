@@ -1,5 +1,5 @@
-#include <bout/physicsmodel.hxx>
 #include "bout/unused.hxx"
+#include <bout/physicsmodel.hxx>
 
 class RestartTest : public PhysicsModel {
 private:

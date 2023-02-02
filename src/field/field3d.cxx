@@ -33,10 +33,10 @@
 #include <cmath>
 
 #include <bout/assert.hxx>
-#include <bout/constants.hxx>
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/constants.hxx>
 #include <bout/dcomplex.hxx>
 #include <bout/fft.hxx>
 #include <bout/field3d.hxx>

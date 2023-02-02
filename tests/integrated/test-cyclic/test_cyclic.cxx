@@ -5,9 +5,9 @@
 
 #include <bout/bout.hxx>
 
+#include "bout/utils.hxx"
 #include <bout/cyclic_reduction.hxx>
 #include <bout/dcomplex.hxx>
-#include "bout/utils.hxx"
 
 // Change this to dcomplex to test complex matrix inversion
 using T = BoutReal;

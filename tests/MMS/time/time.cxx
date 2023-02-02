@@ -5,9 +5,8 @@
  * in the solver code itself.
  */
 
-
-#include <bout/physicsmodel.hxx>
 #include "bout/unused.hxx"
+#include <bout/physicsmodel.hxx>
 
 class TimeTest : public PhysicsModel {
 public:

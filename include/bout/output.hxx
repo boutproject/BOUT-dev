@@ -35,11 +35,11 @@ class Output;
 #include <iostream>
 #include <string>
 
-#include "bout/boutexception.hxx"
-#include "bout/unused.hxx"
 #include "bout/assert.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/format.hxx"
 #include "bout/sys/gettext.hxx" // for gettext _() macro
+#include "bout/unused.hxx"
 
 #include "fmt/core.h"
 

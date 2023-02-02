@@ -15,9 +15,9 @@
  *
  */
 
-#include <bout/physicsmodel.hxx>
 #include <bout/fv_ops.hxx>
 #include <bout/invert_parderiv.hxx>
+#include <bout/physicsmodel.hxx>
 
 class DiffusionNL : public PhysicsModel {
 protected:

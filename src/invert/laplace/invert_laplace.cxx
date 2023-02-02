@@ -31,20 +31,20 @@
  *
  */
 
-#include <bout/constants.hxx>
-#include <bout/mesh.hxx>
-#include <bout/openmpwrap.hxx>
-#include <bout/solver.hxx>
-#include <bout/sys/timer.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
-#include <cmath>
+#include <bout/constants.hxx>
 #include <bout/globals.hxx>
 #include <bout/invert_laplace.hxx>
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/openmpwrap.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
+#include <bout/solver.hxx>
+#include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
+#include <cmath>
 
 // Implementations:
 #include "impls/cyclic/cyclic_laplace.hxx"

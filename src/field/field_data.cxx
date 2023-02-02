@@ -1,10 +1,10 @@
 
 #include "bout/unused.hxx"
-#include <bout/mesh.hxx>
 #include <bout/boundary_factory.hxx>
 #include <bout/field_data.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/globals.hxx>
+#include <bout/mesh.hxx>
 #include <bout/output.hxx>
 
 namespace bout {

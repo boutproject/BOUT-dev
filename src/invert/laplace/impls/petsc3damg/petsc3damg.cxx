@@ -31,12 +31,12 @@
 #include "petsc3damg.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/derivs.hxx>
 #include <bout/mesh.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/sys/timer.hxx>
-#include <bout/boutcomm.hxx>
-#include <bout/derivs.hxx>
 #include <bout/utils.hxx>
 
 LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mesh_in,

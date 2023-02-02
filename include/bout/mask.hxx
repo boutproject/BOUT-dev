@@ -25,8 +25,8 @@
 #include <vector>
 
 #include "bout/globals.hxx"
-#include "bout/msg_stack.hxx"
 #include "bout/mesh.hxx"
+#include "bout/msg_stack.hxx"
 
 /**
  * 3D array of bools to mask Field3Ds
