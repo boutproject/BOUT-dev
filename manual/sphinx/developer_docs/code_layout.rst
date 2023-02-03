@@ -134,44 +134,6 @@ The current source code files are:
      functions for choosing between values based on selection
      criteria.
 
-- fileio
-
-   - :doc:`datafile.cxx<../_breathe_autogen/file/datafile_8cxx>`
-     supplies an abstract `DataFile` interface for data
-     input and output. Handles the conversion of data in fields and
-     vectors into blocks of data which are then sent to a specific
-     file format.
-
-   - :doc:`formatfactory.cxx<../_breathe_autogen/file/formatfactory_8cxx>`
-
-   - :doc:`formatfactory.hxx<../_breathe_autogen/file/formatfactory_8hxx>`
-
-   - impls
-
-      - :doc:`emptyformat.hxx<../_breathe_autogen/file/emptyformat_8hxx>`
-
-      - netcdf
-
-         - :doc:`nc_format.cxx<../_breathe_autogen/file/nc__format_8cxx>` implements an
-           interface to the NetCDF-4 library
-
-         - :doc:`nc_format.hxx<../_breathe_autogen/file/nc__format_8hxx>`
-
-      - netcdf4
-
-         - :doc:`ncxx<../_breathe_autogen/file/ncxx4_8cxx>`
-           implements an interface to the NetCDF-4 library using the
-           C++ API
-
-         - :doc:`ncxx<../_breathe_autogen/file/ncxx4_8hxx>`
-
-      - pnetcdf
-
-         - :doc:`pnetcdf.cxx<../_breathe_autogen/file/pnetcdf_8cxx>`
-           Parallel NetCDF interface
-
-         - :doc:`pnetcdf.hxx<../_breathe_autogen/file/pnetcdf_8hxx>`
-
 - invert
 
    - :doc:`fft_fftw.cxx<../_breathe_autogen/file/fft__fftw_8cxx>`
