@@ -5,6 +5,9 @@ on:
     paths:
       - '**.cxx'
       - '**.hxx'
+    branches-ignore:
+      # Release candidate branches tend to have big PRs which causes all sorts of problems
+      - 'v*rc'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
