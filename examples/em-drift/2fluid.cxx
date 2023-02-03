@@ -48,11 +48,11 @@ private:
 
   // Inverts a Laplacian to get potential
   std::unique_ptr<Laplacian> phiSolver;
-  
+
   // Solves the electromagnetic potential
   std::unique_ptr<Laplacian> aparSolver;
   Field2D acoef; // Coefficient in the Helmholtz equation
-  
+
   int init(bool UNUSED(restarting)) override {
     Field2D I; // Shear factor
 
@@ -106,12 +106,13 @@ private:
     if (ZeroElMass) {
       evolve_ajpar = 0; // Don't need ajpar - calculated from ohm's law
     }
-    
+
     /************* SHIFTED RADIAL COORDINATES ************/
 
     // Check type of parallel transform
-    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
-                                       .withDefault<std::string>("identity");
+    std::string ptstr =
+        Options::root()["mesh"]["paralleltransform"]["type"].withDefault<std::string>(
+            "identity");
 
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0; // I disappears from metric
@@ -150,8 +151,9 @@ private:
 
     BoutReal hthe0;
     if (mesh->get(hthe0, "hthe0") == 0) {
-      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n",
-                   hthe0 / rho_s);
+      output.write(
+          "    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n",
+          hthe0 / rho_s);
     }
 
     /************** NORMALISE QUANTITIES *****************/
@@ -223,14 +225,14 @@ private:
 
     // Add any other variables to be dumped to file
     SAVE_REPEAT(phi, Apar, jpar);
-    
+
     SAVE_ONCE(Ni0, Te0, Ti0);
     SAVE_ONCE(Te_x, Ti_x, Ni_x, rho_s, wci, zeff, AA);
-    
+
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
 
-    if (! (estatic || ZeroElMass)) {
+    if (!(estatic || ZeroElMass)) {
       // Create a solver for the electromagnetic potential
       aparSolver = Laplacian::create(&globalOptions["aparSolver"]);
       acoef = (-0.5 * beta_p / fmei) * Ni0;
@@ -238,7 +240,7 @@ private:
     } else {
       globalOptions["aparSolver"].setConditionallyUsed();
     }
-    
+
     return 0;
   }
 

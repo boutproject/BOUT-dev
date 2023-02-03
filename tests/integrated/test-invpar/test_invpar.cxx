@@ -35,8 +35,8 @@ int test(const std::string& acoef, const std::string& bcoef, const std::string& 
   Field3D result = inv->solve(input);
   mesh->communicate(result);
 
-  Field3D deriv = A*result + B*Grad2_par2(result) + C*D2DYDZ(result)
-	  + D*D2DZ2(result) + E*DDY(result);
+  Field3D deriv = A * result + B * Grad2_par2(result) + C * D2DYDZ(result)
+                  + D * D2DZ2(result) + E * DDY(result);
 
   // Check the result
   bool success{true};

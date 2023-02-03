@@ -124,8 +124,8 @@ private:
     /************* SHIFTED RADIAL COORDINATES ************/
     // Check type of parallel transform
     std::string ptstr =
-        Options::root()["mesh"]["paralleltransform"]["type"]
-                       .withDefault<std::string>("identity");
+        Options::root()["mesh"]["paralleltransform"]["type"].withDefault<std::string>(
+            "identity");
 
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0; // I disappears from metric
@@ -151,8 +151,9 @@ private:
 
     BoutReal hthe0;
     if (mesh->get(hthe0, "hthe0") == 0) {
-      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n",
-                   hthe0 / rho_s);
+      output.write(
+          "    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n",
+          hthe0 / rho_s);
     }
 
     /************** NORMALISE QUANTITIES *****************/
@@ -235,10 +236,10 @@ private:
     dump.addOnce(mesh->LocalNy, "ngy");
     dump.addOnce(mesh->LocalNz, "ngz");
     SAVE_ONCE(nu_hat, hthe0);
-    
+
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create();
-    
+
     return 0;
   }
 

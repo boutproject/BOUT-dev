@@ -13,7 +13,6 @@ public:
   std::string ownOpType;
 };
 
-
 int VecTest::init(bool UNUSED(restarting)) {
   TRACE("Halt in VecTest::init");
   SOLVE_FOR(n);

@@ -46,7 +46,7 @@ protected:
     ddt(f) = 0.0;
     return 0;
   }
-  
+
   /*!
    * Diffusive part of the problem. In an IMEX scheme
    * this will be treated implicitly
@@ -98,7 +98,7 @@ protected:
    */
   int precon(BoutReal, BoutReal gamma, BoutReal) {
     // Preconditioner
-    
+
     static std::unique_ptr<InvertPar> inv{nullptr};
     if (!inv) {
       // Initialise parallel inversion class
@@ -107,13 +107,14 @@ protected:
     }
 
     // Set the coefficient in front of Grad2_par2
-    inv->setCoefB(-gamma*D);
+    inv->setCoefB(-gamma * D);
     //mesh->communicate(ddt(f));
-    
+
     ddt(f) = inv->solve(ddt(f));
-    
+
     return 0;
   }
+
 private:
   Field3D f;      // Evolving quantity
   BoutReal alpha; // Input parameter, D = f^alpha

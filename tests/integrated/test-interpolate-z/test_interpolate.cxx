@@ -21,7 +21,7 @@ using bout::globals::mesh;
 /// Get a FieldGenerator from the options for a variable
 std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varname,
                                                         std::string& func) {
-  Options *options = Options::getRoot()->getSection(varname);
+  Options* options = Options::getRoot()->getSection(varname);
   options->get("solution", func, "0.0");
 
   if (func.empty()) {
@@ -30,7 +30,7 @@ std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varna
   return FieldFactory::get()->parse(func);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
   // Random number generator
@@ -65,14 +65,14 @@ int main(int argc, char **argv) {
   // Bind the random number generator and distribution into a single function
   auto dice = std::bind(distribution, generator);
 
-  for (const auto &index : deltaz) {
+  for (const auto& index : deltaz) {
     // Get some random displacements
     BoutReal dz = index.z() + dice();
     deltaz[index] = dz;
     // Get the global indices
     bout::generator::Context pos{index, CELL_CENTRE, deltaz.getMesh(), 0.0};
-    pos.set("x", mesh->GlobalX(index.x()),
-            "z", TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz));
+    pos.set("x", mesh->GlobalX(index.x()), "z",
+            TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz));
     // Generate the analytic solution at the displacements
     a_solution[index] = a_gen->generate(pos);
     b_solution[index] = b_gen->generate(pos);

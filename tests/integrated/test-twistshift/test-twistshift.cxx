@@ -11,12 +11,12 @@ int main(int argc, char** argv) {
   using bout::globals::mesh;
 
   // zero guard cells to check that communication is doing something
-  for (int x=0; x<mesh->LocalNx; x++) {
-    for (int z=0; z<mesh->LocalNz; z++) {
-      for (int y=0; y<mesh->ystart; y++) {
+  for (int x = 0; x < mesh->LocalNx; x++) {
+    for (int z = 0; z < mesh->LocalNz; z++) {
+      for (int y = 0; y < mesh->ystart; y++) {
         test_aligned(x, y, z) = 0.;
       }
-      for (int y=mesh->yend+1; y<mesh->LocalNy; y++) {
+      for (int y = mesh->yend + 1; y < mesh->LocalNy; y++) {
         test_aligned(x, y, z) = 0.;
       }
     }

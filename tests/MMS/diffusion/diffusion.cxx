@@ -12,7 +12,6 @@ protected:
   int rhs(BoutReal t) override;
 };
 
-
 using bout::globals::mesh;
 
 Field3D N;
@@ -20,25 +19,25 @@ Field3D N;
 BoutReal mu_N; // Parallel collisional diffusion coefficient
 BoutReal Lx, Ly, Lz;
 
-Coordinates *coord;
+Coordinates* coord;
 
 int Diffusion::init(bool UNUSED(restarting)) {
   // Get the options
-  Options *meshoptions = Options::getRoot()->getSection("mesh");
+  Options* meshoptions = Options::getRoot()->getSection("mesh");
 
   coord = mesh->getCoordinates();
-  
-  meshoptions->get("Lx",Lx,1.0);
-  meshoptions->get("Ly",Ly,1.0);
+
+  meshoptions->get("Lx", Lx, 1.0);
+  meshoptions->get("Ly", Ly, 1.0);
 
   /*this assumes equidistant grid*/
   int nguard = mesh->xstart;
-  coord->dx = Lx/(mesh->GlobalNx - 2*nguard);
-  coord->dy = Ly/(mesh->GlobalNy - 2*nguard);
+  coord->dx = Lx / (mesh->GlobalNx - 2 * nguard);
+  coord->dy = Ly / (mesh->GlobalNy - 2 * nguard);
 
-  SAVE_ONCE2(Lx,Ly);
+  SAVE_ONCE2(Lx, Ly);
 
-  Options *cytooptions = Options::getRoot()->getSection("cyto");
+  Options* cytooptions = Options::getRoot()->getSection("cyto");
   cytooptions->get("dis", mu_N, 1);
 
   SAVE_ONCE(mu_N);
@@ -70,7 +69,7 @@ int Diffusion::rhs(BoutReal t) {
 
   N.applyBoundary(t);
 
-  ddt(N) = mu_N* D2DX2(N);
+  ddt(N) = mu_N * D2DX2(N);
 
   return 0;
 }

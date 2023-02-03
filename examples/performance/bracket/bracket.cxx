@@ -23,18 +23,18 @@ using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
 using bout::globals::mesh;
 
-#define ITERATOR_TEST_BLOCK(NAME, ...)                                                   \
-  {                                                                                      \
-    __VA_ARGS__                                                                          \
-    names.push_back(NAME);                                                               \
-    SteadyClock start = steady_clock::now();                                             \
-    for (int repetitionIndex = 0; repetitionIndex < NUM_LOOPS; repetitionIndex++) {      \
-      __VA_ARGS__;                                                                       \
-    }                                                                                    \
-    times.push_back(steady_clock::now() - start);                                        \
+#define ITERATOR_TEST_BLOCK(NAME, ...)                                              \
+  {                                                                                 \
+    __VA_ARGS__                                                                     \
+    names.push_back(NAME);                                                          \
+    SteadyClock start = steady_clock::now();                                        \
+    for (int repetitionIndex = 0; repetitionIndex < NUM_LOOPS; repetitionIndex++) { \
+      __VA_ARGS__;                                                                  \
+    }                                                                               \
+    times.push_back(steady_clock::now() - start);                                   \
   }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
   std::vector<std::string> names;
   std::vector<Duration> times;
@@ -74,8 +74,7 @@ int main(int argc, char **argv) {
     ITERATOR_TEST_BLOCK("Bracket [2D,3D] SIMPLE",
                         result = bracket(a, c, BRACKET_SIMPLE););
 
-    ITERATOR_TEST_BLOCK("Bracket [2D,3D] DEFAULT",
-                        result = bracket(a, c, BRACKET_STD););
+    ITERATOR_TEST_BLOCK("Bracket [2D,3D] DEFAULT", result = bracket(a, c, BRACKET_STD););
   }
 
   if (do3D3D) {
@@ -88,8 +87,7 @@ int main(int argc, char **argv) {
     ITERATOR_TEST_BLOCK("Bracket [3D,3D] SIMPLE",
                         result = bracket(a, b, BRACKET_SIMPLE););
 
-    ITERATOR_TEST_BLOCK("Bracket [3D,3D] DEFAULT",
-                        result = bracket(a, b, BRACKET_STD););
+    ITERATOR_TEST_BLOCK("Bracket [3D,3D] DEFAULT", result = bracket(a, b, BRACKET_STD););
   }
 
   // Uncomment below for a "correctness" check

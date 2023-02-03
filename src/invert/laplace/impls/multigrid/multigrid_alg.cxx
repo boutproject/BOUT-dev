@@ -828,12 +828,12 @@ void MultigridAlg::solveMG(BoutReal* sol, BoutReal* rhs, int level) {
   BOUT_OMP(parallel default(shared))
    BOUT_OMP(for)
    for (int i = 0; i < ldim; i++) {
-     r[i] = rhs[i];
+    r[i] = rhs[i];
    }
 
    perror = ini_e;
    for (m = 0; m < MAXIT; m++) {
-     BOUT_OMP(parallel default(shared))
+    BOUT_OMP(parallel default(shared))
     BOUT_OMP(for)
     for (int i = 0; i < ldim; i++) {
       y[i] = 0.0;
@@ -859,14 +859,14 @@ void MultigridAlg::solveMG(BoutReal* sol, BoutReal* rhs, int level) {
    }
 
    if ((rProcI == 0) && (pcheck == 1)) {
-     rederr = log(error / ini_e) / (static_cast<BoutReal>(m) + 1.0);
-     rederr = exp(rederr);
-     if (m == MAXIT) {
-       printf("Reached maximum iteration: %14.8f\n", error);
-     }
-     printf("The average error reduction of MG %d: %14.8f(%18.12f)\n", m + 1, rederr,
-            error);
-     fflush(stdout);
+    rederr = log(error / ini_e) / (static_cast<BoutReal>(m) + 1.0);
+    rederr = exp(rederr);
+    if (m == MAXIT) {
+      printf("Reached maximum iteration: %14.8f\n", error);
+    }
+    printf("The average error reduction of MG %d: %14.8f(%18.12f)\n", m + 1, rederr,
+           error);
+    fflush(stdout);
    }
 }
 

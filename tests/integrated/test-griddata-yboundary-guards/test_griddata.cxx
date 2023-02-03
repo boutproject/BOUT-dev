@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
   bout::writeDefaultOutputFile(dump);
 
   MPI_Barrier(BoutComm::get());
-  
+
   BoutFinalise();
   return 0;
 }

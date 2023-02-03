@@ -1,6 +1,6 @@
 #include "bout/constants.hxx"
-#include "bout/physicsmodel.hxx"
 #include "bout/petsclib.hxx"
+#include "bout/physicsmodel.hxx"
 #include "bout/slepclib.hxx"
 
 #include <cmath>

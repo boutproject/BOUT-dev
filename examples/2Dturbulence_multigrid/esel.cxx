@@ -9,12 +9,12 @@ private:
   Field3D n, vort; // Evolving density, temp and vorticity
   Field3D N;       // ln(n)
   Field3D phi;
-  Field2D B;                            // Magnetic field
-  BoutReal D, mu;                       // Diffusion coefficients
-  Field2D sigma_n, sigma_T, sigma_vort; // dissipation terms
-  BoutReal zeta;                        // rho/R0
-  BRACKET_METHOD bm;                    // Bracket method for advection terms
-  std::unique_ptr<Laplacian> phiSolver{nullptr};                 // Laplacian solver for vort -> phi
+  Field2D B;                                     // Magnetic field
+  BoutReal D, mu;                                // Diffusion coefficients
+  Field2D sigma_n, sigma_T, sigma_vort;          // dissipation terms
+  BoutReal zeta;                                 // rho/R0
+  BRACKET_METHOD bm;                             // Bracket method for advection terms
+  std::unique_ptr<Laplacian> phiSolver{nullptr}; // Laplacian solver for vort -> phi
   bool test_laplacian; // If true, compute the error on the Laplacian inversion and abort
   Field3D vort_error;
 

@@ -1,5 +1,5 @@
-#include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include "bout/boutexception.hxx"
 #include "bout/mesh.hxx"
@@ -159,7 +159,7 @@ TEST_F(MeshTest, MapInd3DTo2D) {
 TEST_F(MeshTest, IndPerpTo3D) {
   std::vector<int> globalInds = {0, 1, 49, 50, 98, 99};
 
-  for (const auto &i : globalInds) {
+  for (const auto& i : globalInds) {
     const auto tmp3D = Ind3D(i, ny, nz);
     const auto tmpPerp = IndPerp(tmp3D.x() * nz + tmp3D.z(), 1, nz);
 
@@ -177,8 +177,8 @@ TEST_F(MeshTest, Ind3DToPerp) {
                             11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
   std::vector<int> jyVals{0, 1, 2, 3, 4};
 
-  for (const auto &jy : jyVals) {
-    for (const auto &i : perpInds) {
+  for (const auto& jy : jyVals) {
+    for (const auto& i : perpInds) {
       const auto tmpPerp = IndPerp(i, 1, nz);
       const auto tmp3D = Ind3D(tmpPerp.z() + nz * (jy + ny * tmpPerp.x()), ny, nz);
 
@@ -287,7 +287,7 @@ TEST_F(MeshTest, MsgLen) {
   Field2D f2D_1(0., &localmesh);
   Field2D f2D_2(0., &localmesh);
 
-  std::vector<FieldData*> var_list {&f3D_1, &f2D_1, &f3D_2, &f2D_2};
+  std::vector<FieldData*> var_list{&f3D_1, &f2D_1, &f3D_2, &f2D_2};
 
   const int len = localmesh.msg_len(var_list, 0, nx, 0, ny);
 

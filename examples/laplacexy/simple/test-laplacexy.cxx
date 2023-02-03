@@ -5,7 +5,7 @@
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
-  
+
   /// Create a LaplaceXY object
   LaplaceXY laplacexy(bout::globals::mesh);
 
@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
 
   /// Solution
   Field2D x = 0.0;
-  
+
   x = laplacexy.solve(rhs, x);
 
   Options dump;
@@ -26,4 +26,3 @@ int main(int argc, char** argv) {
   BoutFinalise();
   return 0;
 }
-

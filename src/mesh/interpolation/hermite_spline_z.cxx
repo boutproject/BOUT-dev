@@ -30,7 +30,8 @@
 ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in)
     : ZInterpolation(y_offset, mesh, region_in),
       fz_region(region_in.size() != 0 ? "RGN_ALL"
-                                      : y_offset == 0 ? "RGN_NOBNDRY" : "RGN_NOX"),
+                : y_offset == 0       ? "RGN_NOBNDRY"
+                                      : "RGN_NOX"),
       h00(localmesh), h01(localmesh), h10(localmesh), h11(localmesh) {
 
   if (region_in.size() != 0) {
@@ -193,8 +194,8 @@ RegisterZInterpolation<ZHermiteSpline> registerzinterphermitespline{"hermitespli
 } // namespace
 
 constexpr decltype(ZInterpolationFactory::type_name) ZInterpolationFactory::type_name;
-constexpr decltype(
-    ZInterpolationFactory::section_name) ZInterpolationFactory::section_name;
+constexpr decltype(ZInterpolationFactory::section_name)
+    ZInterpolationFactory::section_name;
 constexpr decltype(ZInterpolationFactory::option_name) ZInterpolationFactory::option_name;
-constexpr decltype(
-    ZInterpolationFactory::default_type) ZInterpolationFactory::default_type;
+constexpr decltype(ZInterpolationFactory::default_type)
+    ZInterpolationFactory::default_type;

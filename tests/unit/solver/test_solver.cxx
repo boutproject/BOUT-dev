@@ -59,13 +59,11 @@ public:
     return static_cast<int>(time + gamma + delta);
   }
 
-  int jacobian(BoutReal time) {
-    return static_cast<int>(time);
-  }
+  int jacobian(BoutReal time) { return static_cast<int>(time); }
 
   // Expose some protected methods to aid testing
-  using PhysicsModel::setPrecon;
   using PhysicsModel::setJacobian;
+  using PhysicsModel::setPrecon;
   using PhysicsModel::setSplitOperator;
 };
 
@@ -1199,4 +1197,3 @@ TEST_F(SolverTest, SolveFixDefaultTimestepLarger) {
   EXPECT_EQ(default_timestep.last_called, 9);
   EXPECT_EQ(smaller_timestep.last_called, 99);
 }
-

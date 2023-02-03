@@ -133,7 +133,7 @@ TEST(MsgStackTest, DumpTest) {
   // Write cout to buffer instead of stdout
   std::stringstream buffer;
   // Save cout's buffer here
-  std::streambuf *sbuf(std::cout.rdbuf());
+  std::streambuf* sbuf(std::cout.rdbuf());
   std::cout.rdbuf(buffer.rdbuf());
 
   MsgStack msg_stack;

@@ -1,5 +1,5 @@
-#include "gtest/gtest.h"
 #include "test_extras.hxx"
+#include "gtest/gtest.h"
 
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"

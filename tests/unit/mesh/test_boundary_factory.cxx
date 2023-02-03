@@ -6,9 +6,9 @@
 #include "test_extras.hxx"
 
 /// Global mesh
-namespace bout{
-namespace globals{
-extern Mesh *mesh;
+namespace bout {
+namespace globals {
+extern Mesh* mesh;
 } // namespace globals
 } // namespace bout
 
@@ -17,9 +17,9 @@ using namespace bout::globals;
 
 class TestBoundary : public BoundaryOp {
 public:
-  BoundaryOp *clone(BoundaryRegion *UNUSED(region), const std::list<std::string> &args,
-                    const std::map<std::string, std::string> &keywords) override {
-    auto *testboundary = new TestBoundary();
+  BoundaryOp* clone(BoundaryRegion* UNUSED(region), const std::list<std::string>& args,
+                    const std::map<std::string, std::string>& keywords) override {
+    auto* testboundary = new TestBoundary();
     testboundary->args = args;
     testboundary->keywords = keywords;
     return testboundary;
@@ -27,8 +27,8 @@ public:
   std::list<std::string> args;
   std::map<std::string, std::string> keywords;
 
-  void apply(Field2D &UNUSED(f)) override {}
-  void apply(Field3D &UNUSED(f)) override {}
+  void apply(Field2D& UNUSED(f)) override {}
+  void apply(Field3D& UNUSED(f)) override {}
 };
 
 class BoundaryFactoryTest : public ::testing::Test {

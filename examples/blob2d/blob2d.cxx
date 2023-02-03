@@ -43,7 +43,8 @@ private:
   bool compressible; ///< If allow inclusion of n grad phi term in density evolution
   bool sheath;       ///< Sheath connected?
 
-  std::unique_ptr<Laplacian> phiSolver{nullptr}; ///< Performs Laplacian inversions to calculate phi
+  std::unique_ptr<Laplacian> phiSolver{
+      nullptr}; ///< Performs Laplacian inversions to calculate phi
 
 protected:
   int init(bool UNUSED(restarting)) {
@@ -55,7 +56,7 @@ protected:
 
     // Load system parameters
     Te0 = options["Te0"].doc("Temperature in eV").withDefault(30.0);
-    
+
     e = options["e"].withDefault(1.602e-19);
     m_i = options["m_i"].withDefault(2 * 1.667e-27);
     m_e = options["m_e"].withDefault(9.11e-31);
@@ -85,9 +86,10 @@ protected:
     c_s = sqrt(e * Te0 / m_i); // Bohm sound speed
     rho_s = c_s / Omega_i;     // Bohm gyro-radius
 
-    output.write("\n\n\t----------Parameters: ------------ \n\tOmega_i = {:e} /s,\n\tc_s = "
-                 "{:e} m/s,\n\trho_s = {:e} m\n",
-                 Omega_i, c_s, rho_s);
+    output.write(
+        "\n\n\t----------Parameters: ------------ \n\tOmega_i = {:e} /s,\n\tc_s = "
+        "{:e} m/s,\n\trho_s = {:e} m\n",
+        Omega_i, c_s, rho_s);
 
     // Calculate delta_*, blob size scaling
     output.write("\tdelta_* = rho_s * (dn/n) * {:e} ",

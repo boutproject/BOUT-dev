@@ -229,7 +229,6 @@ TEST(ParseCommandLineArgs, VerbosityWithDataDir) {
   EXPECT_EQ(args.argv, expected_argv);
 }
 
-
 TEST(ParseCommandLineArgs, VerbosityLong) {
   std::vector<std::string> v_args{"test", "--verbose"};
   auto v_args_copy = v_args;
@@ -426,5 +425,6 @@ TEST(BoutInitialiseFunctions, SavePIDtoFile) {
 
   std::remove(filename.c_str());
 
-  EXPECT_THROW(bout::experimental::savePIDtoFile("/does/likely/not/exists", 2), BoutException);
+  EXPECT_THROW(bout::experimental::savePIDtoFile("/does/likely/not/exists", 2),
+               BoutException);
 }

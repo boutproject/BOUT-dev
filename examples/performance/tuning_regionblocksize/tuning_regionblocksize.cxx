@@ -22,15 +22,15 @@ using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
 using namespace bout::globals;
 
-#define ITERATOR_TEST_BLOCK(NAME, ...)                                                   \
-  {                                                                                      \
-    __VA_ARGS__                                                                          \
-    names.push_back(NAME);                                                               \
-    SteadyClock start = steady_clock::now();                                             \
-    for (int repetitionIndex = 0; repetitionIndex < NUM_LOOPS; repetitionIndex++) {      \
-      __VA_ARGS__;                                                                       \
-    }                                                                                    \
-    times.push_back(steady_clock::now() - start);                                        \
+#define ITERATOR_TEST_BLOCK(NAME, ...)                                              \
+  {                                                                                 \
+    __VA_ARGS__                                                                     \
+    names.push_back(NAME);                                                          \
+    SteadyClock start = steady_clock::now();                                        \
+    for (int repetitionIndex = 0; repetitionIndex < NUM_LOOPS; repetitionIndex++) { \
+      __VA_ARGS__;                                                                  \
+    }                                                                               \
+    times.push_back(steady_clock::now() - start);                                   \
   }
 
 int main(int argc, char** argv) {

@@ -2149,7 +2149,8 @@ TEST(BoutMeshTest, GetPossibleBoundariesDND) {
   WithQuietOutput warn{output_warn};
 
   BoutMeshExposer mesh_DND_1x6(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
-  BoutMeshExposer mesh_DND_32x64(createDisconnectedDoubleNull({12, 3, 1, 1, 32, 64, 0, 4}));
+  BoutMeshExposer mesh_DND_32x64(
+      createDisconnectedDoubleNull({12, 3, 1, 1, 32, 64, 0, 4}));
 
   std::set<std::string> boundaries{"core", "pf", "sol", "upper_target", "lower_target"};
 

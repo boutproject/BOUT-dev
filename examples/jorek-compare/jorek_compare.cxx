@@ -114,7 +114,8 @@ private:
 
       Field2D factor = P0 / (Charge * (Ti0 + Te0) * rho0);
 
-      output.write("\tPressure factor {:e} -> {:e}\n", min(factor, true), max(factor, true));
+      output.write("\tPressure factor {:e} -> {:e}\n", min(factor, true),
+                   max(factor, true));
 
       // Multiply temperatures by this factor
       Te0 *= factor;
@@ -239,8 +240,8 @@ private:
 
     // Check type of parallel transform
     std::string ptstr =
-        Options::root()["mesh"]["paralleltransform"]["type"]
-                       .withDefault<std::string>("identity");
+        Options::root()["mesh"]["paralleltransform"]["type"].withDefault<std::string>(
+            "identity");
 
     if (lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system
@@ -334,7 +335,8 @@ private:
     eta = eta0;
     tau_e = tau_enorm * pow(Te0, 1.5) / rho0;
 
-    output.write("\tNormalised tau_e = {:e} -> {:e}\n", min(tau_e, true), max(tau_e, true));
+    output.write("\tNormalised tau_e = {:e} -> {:e}\n", min(tau_e, true),
+                 max(tau_e, true));
 
     // Set locations for staggered grids
     vD.setLocation(CELL_VSHIFT);
@@ -356,7 +358,7 @@ private:
 
     SAVE_REPEAT(phi, Jpar); // Save each timestep
     SAVE_REPEAT(divExB);
-    
+
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create();
     if (vorticity_momentum) {

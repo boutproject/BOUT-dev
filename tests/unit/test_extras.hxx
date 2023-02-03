@@ -3,9 +3,9 @@
 
 #include "gtest/gtest.h"
 
-#include <numeric>
 #include <functional>
 #include <iostream>
+#include <numeric>
 #include <vector>
 
 #include "bout/boutcomm.hxx"
@@ -21,8 +21,8 @@ static constexpr BoutReal BoutRealTolerance{1e-15};
 static constexpr BoutReal FFTTolerance{1.e-12};
 
 /// Does \p str contain \p substring?
-::testing::AssertionResult IsSubString(const std::string &str,
-                                       const std::string &substring);
+::testing::AssertionResult IsSubString(const std::string& str,
+                                       const std::string& substring);
 
 void fillField(Field3D& f, std::vector<std::vector<std::vector<BoutReal>>> values);
 void fillField(Field2D& f, std::vector<std::vector<BoutReal>> values);
@@ -45,8 +45,8 @@ T makeField(const std::function<BoutReal(typename T::ind_type&)>& fill_function,
 }
 
 /// Teach googletest how to print SpecificInds
-template<IND_TYPE N>
-inline std::ostream& operator<< (std::ostream &out, const SpecificInd<N> &index) {
+template <IND_TYPE N>
+inline std::ostream& operator<<(std::ostream& out, const SpecificInd<N>& index) {
   return out << index.ind;
 }
 
@@ -146,8 +146,8 @@ public:
     zstart = 0;
     zend = nz - 1;
 
-    StaggerGrids=false;
-    
+    StaggerGrids = false;
+
     // Unused variables
     periodicX = false;
     NXPE = 1;
@@ -160,13 +160,12 @@ public:
     mpi = bout::globals::mpi;
   }
 
-  void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
+  void setCoordinates(std::shared_ptr<Coordinates> coords,
+                      CELL_LOC location = CELL_CENTRE) {
     coords_map[location] = coords;
   }
 
-  void setGridDataSource(GridDataSource* source_in) {
-    source = source_in;
-  }
+  void setGridDataSource(GridDataSource* source_in) { source = source_in; }
 
   // Use this if the FakeMesh needs x- and y-boundaries
   void createBoundaries() {
@@ -181,8 +180,8 @@ public:
                     bool UNUSED(disable_corners) = false) override {
     return nullptr;
   }
-  comm_handle sendY(FieldGroup& UNUSED(g), comm_handle UNUSED(handle) = nullptr) override
-  {
+  comm_handle sendY(FieldGroup& UNUSED(g),
+                    comm_handle UNUSED(handle) = nullptr) override {
     return nullptr;
   }
   int wait(comm_handle UNUSED(handle)) override { return 0; }
@@ -253,8 +252,8 @@ public:
   int getLocalZIndex(int) const override { return 0; }
   int getLocalZIndexNoBoundaries(int) const override { return 0; }
 
-  void initDerivs(Options * opt){
-    StaggerGrids=true;
+  void initDerivs(Options* opt) {
+    StaggerGrids = true;
     derivs_init(opt);
   }
 
@@ -322,7 +321,7 @@ public:
   using Mesh::msg_len;
 
 private:
-  std::vector<BoundaryRegion *> boundaries;
+  std::vector<BoundaryRegion*> boundaries;
 };
 
 /// FakeGridDataSource provides a non-null GridDataSource* source to use with FakeMesh, to
@@ -412,6 +411,7 @@ public:
   bool hasXBoundaryGuards(Mesh* UNUSED(m)) override { return true; }
 
   bool hasYBoundaryGuards() override { return true; }
+
 private:
   Options values; ///< Store values to be returned by get()
 };
@@ -455,8 +455,8 @@ public:
 
     // No call to Coordinates::geometry() needed here
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
-    static_cast<FakeMesh*>(bout::globals::mesh)->setGridDataSource(
-        new FakeGridDataSource());
+    static_cast<FakeMesh*>(bout::globals::mesh)
+        ->setGridDataSource(new FakeGridDataSource());
     // May need a ParallelTransform to create fields, because create3D calls
     // fromFieldAligned
     test_coords->setParallelTransform(
