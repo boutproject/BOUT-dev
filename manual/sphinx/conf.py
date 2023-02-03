@@ -224,18 +224,20 @@ napoleon_use_param = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-if on_readthedocs:
-    import sphinx_rtd_theme
-
-    html_theme = "sphinx_rtd_theme"
-else:
-    html_theme = "sphinxdoc"
-
+html_theme = "sphinx_book_theme"
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = dict(
+    repository_url="https://github.com/boutproject/BOUT-dev",
+    path_to_docs="manual/sphinx",
+    use_edit_page_button=True,
+    use_repository_button=True,
+    use_issues_button=True,
+    home_page_in_toc=False,
+)
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
