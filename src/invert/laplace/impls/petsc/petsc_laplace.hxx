@@ -46,19 +46,8 @@ RegisterUnavailableLaplace registerlaplacepetsc(LAPLACE_PETSC,
 #include <bout/options.hxx>
 #include <bout/output.hxx>
 #include <bout/petsclib.hxx>
-#include <petscksp.h>
 
-// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
-#undef MPI_Allreduce
-#undef MPI_Gatherv
-#undef MPI_Irecv
-#undef MPI_Isend
-#undef MPI_Recv
-#undef MPI_Scatterv
-#undef MPI_Send
-#undef MPI_Wait
-#undef MPI_Waitall
-#undef MPI_Waitany
+#include <petscksp.h>
 
 class LaplacePetsc;
 

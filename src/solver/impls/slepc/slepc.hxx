@@ -41,27 +41,16 @@ RegisterUnavailableSolver
 
 class SlepcSolver;
 
-#include <slepc.h>
-// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
-#undef MPI_Allreduce
-#undef MPI_Gatherv
-#undef MPI_Irecv
-#undef MPI_Isend
-#undef MPI_Recv
-#undef MPI_Scatterv
-#undef MPI_Send
-#undef MPI_Wait
-#undef MPI_Waitall
-#undef MPI_Waitany
-
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
+#include <bout/petsclib.hxx>
+#include <bout/slepclib.hxx>
 #include <bout/utils.hxx>
 #include <bout/vector2d.hxx>
 #include <bout/vector3d.hxx>
 
-#include <bout/petsclib.hxx>
-#include <bout/slepclib.hxx>
+#include <slepc.h>
+
 #include <vector>
 
 #define OPT_SIZE 40
