@@ -372,6 +372,21 @@ This warning is only important for BOUT++ developers and can otherwise be \
 safely ignored.")
 endif()
 
+include(GNUInstallDirs)
+
+# use, i.e. don't skip the full RPATH for the build tree
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+
+# when building, don't use the install RPATH already
+# (but later on when installing)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+
 execute_process(COMMAND ${Python3_EXECUTABLE} -c "import site ; print('/'.join(site.getusersitepackages().split('/')[-2:]))"
   RESULT_VARIABLE PYTHON_WORKING
   OUTPUT_VARIABLE PYTHON_SITEPATH_SUFFIX
@@ -394,6 +409,7 @@ add_custom_command(
   DEPENDS ${BOUT_SOURCES}
   MAIN_DEPENDENCY "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
   )
+
 
 add_library(bout++
   ${BOUT_SOURCES}
@@ -655,9 +671,6 @@ endif()
 
 ##################################################
 # L10N: localisation - include translations
-
-
-include(GNUInstallDirs)
 
 find_package(Gettext)
 
