@@ -87,11 +87,12 @@
   removed. This implementation had some quite significant drawbacks
   that made it not terribly useful in practice
   [\#3566](https://github.com/boutproject/BOUT-dev/pull/3566)
-- `DataFile` and `bout::globals::dump` have been removed in favour of
-  `OptionsNetCDF`. Uses of `SAVE_ONCE/REPEAT` inside `PhysicsModel` code will
-  still work for the time being; outside of `PhysicsModel` methods, these macros
-  will need to be manually replaced. See **FIXME: DOCS TO BE WRITTEN** for more
-  details. [\#2209](https://github.com/boutproject/BOUT-dev/pull/2209)
+- `Datafile` and `bout::globals::dump` have been removed in favour of
+  `OptionsNetCDF`. Uses of `SAVE_ONCE/REPEAT` inside `PhysicsModel`
+  code will still work for the time being; outside of `PhysicsModel`
+  methods, these macros will need to be manually replaced. See the
+  [file IO changes for v5 docs](https://bout-dev.readthedocs.io/en/latest/developer_docs/file_io.html#changes-in-bout-v5)
+  for more details. [\#2209](https://github.com/boutproject/BOUT-dev/pull/2209)
 
 
 ## [v5.0.0](https://github.com/boutproject/BOUT-dev/tree/v5.0.0) (2023-01-10)

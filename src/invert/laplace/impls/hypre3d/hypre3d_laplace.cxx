@@ -42,7 +42,7 @@
 #include <datafile.hxx>
 
 LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
-                               Solver* solver, Datafile* dump)
+                               Solver* solver)
     : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
       opts(opt == nullptr ? Options::getRoot()->getSection("laplace") : opt),
       lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
@@ -145,7 +145,7 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
     }
   }
 
-  // Set up output
+  // FIXME: This needs to be converted to outputVars
   if (solver == nullptr or dump == nullptr) {
     output_warn << "Warning: Need to pass both a Solver and a Datafile to "
                    "Laplacian::create() to get iteration counts in the output."
