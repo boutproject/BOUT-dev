@@ -288,10 +288,12 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
 #endif
   }
 #ifdef HS_USE_PETSC
-  isInit = true;
   MatAssemblyBegin(petscWeights, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(petscWeights, MAT_FINAL_ASSEMBLY);
-  MatCreateVecs(petscWeights, &rhs, &result);
+  if (!isInit) {
+    MatCreateVecs(petscWeights, &rhs, &result);
+  }
+  isInit = true;
 #endif
 }
 
