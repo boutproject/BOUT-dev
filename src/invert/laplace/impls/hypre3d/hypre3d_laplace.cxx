@@ -145,7 +145,7 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
     }
   }
 
-  // Set up output
+  // FIXME: This needs to be converted to outputVars
   if (solver == nullptr or dump == nullptr) {
     output_warn << "Warning: Need to pass both a Solver and a Datafile to "
                    "Laplacian::create() to get iteration counts in the output."
