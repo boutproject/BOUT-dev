@@ -7,9 +7,9 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "fieldperp.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/fieldperp.hxx"
 #include "bout/operatorstencil.hxx"
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"

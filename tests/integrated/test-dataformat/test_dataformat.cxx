@@ -1,6 +1,6 @@
 
+#include <bout/output.hxx>
 #include <dataformat.hxx>
-#include <output.hxx>
 
 int main() {
   const std::string izfilename="sample.nc";

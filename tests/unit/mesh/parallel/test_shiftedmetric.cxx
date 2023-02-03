@@ -2,8 +2,8 @@
 
 #include "gtest/gtest.h"
 
-#include "fft.hxx"
 #include "test_extras.hxx"
+#include "bout/fft.hxx"
 
 #if BOUT_HAS_FFTW
 // The unit tests use the global mesh

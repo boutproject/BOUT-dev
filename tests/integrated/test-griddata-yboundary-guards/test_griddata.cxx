@@ -1,4 +1,4 @@
-#include <bout.hxx>
+#include <bout/bout.hxx>
 #include <mpi.h>
 
 int main(int argc, char** argv) {

@@ -9,9 +9,9 @@
 
 #include <iostream>
 
+#include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/single_index_ops.hxx>
-#include <invert_laplace.hxx>
 
 #define DISABLE_RAJA 0
 #include <bout/rajalib.hxx>

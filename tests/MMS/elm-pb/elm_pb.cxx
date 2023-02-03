@@ -9,19 +9,19 @@
  *
  *******************************************************************************/
 
-#include <bout.hxx>
-#include <initialprofiles.hxx>
-#include <invert_laplace.hxx>
-#include <invert_parderiv.hxx>
-#include <interpolation.hxx>
-#include <derivs.hxx>
-#include <sourcex.hxx>
-#include <bout/physicsmodel.hxx>
+#include <bout/bout.hxx>
 #include <bout/constants.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/derivs.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/invert_parderiv.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/physicsmodel.hxx>
+#include <bout/sourcex.hxx>
+#include <bout/utils.hxx>
 
-#include <field_factory.hxx>
+#include <bout/field_factory.hxx>
 
 #include <math.h>
 

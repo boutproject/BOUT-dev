@@ -1,8 +1,8 @@
 
+#include <bout/derivs.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
-#include <smoothing.hxx>
-#include <invert_laplace.hxx>
-#include <derivs.hxx>
+#include <bout/smoothing.hxx>
 
 class HW : public PhysicsModel {
 private:

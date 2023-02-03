@@ -29,16 +29,16 @@
 
 #if not BOUT_USE_METRIC_3D
 
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/lapack_routines.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
-#include <boutexception.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <lapack_routines.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 //#define SECONDORDER // Define to use 2nd order differencing
 

@@ -28,11 +28,11 @@
 #if BOUT_HAS_SLEPC
 
 #include "slepc.hxx"
-#include <boutcomm.hxx>
-#include <globals.hxx>
-#include <interpolation.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/globals.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 
 #include <cstdlib>
 

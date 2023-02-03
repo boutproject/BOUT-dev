@@ -1126,7 +1126,7 @@ class PhysicsModel(PhysicsModelBase):
     def __boutpp_dealloc(self):
         super(PhysicsModel,self).__boutpp_dealloc()
 
-cdef extern from "bout.hxx":
+cdef extern from "bout/bout.hxx":
     int BoutInitialise(int&, char **&) except +raise_bout_py_error
     void BoutFinalise()
 

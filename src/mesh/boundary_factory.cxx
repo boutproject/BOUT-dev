@@ -1,8 +1,8 @@
-#include <boundary_factory.hxx>
-#include <boundary_standard.hxx>
-#include <globals.hxx>
-#include <options.hxx>
-#include <utils.hxx>
+#include <bout/boundary_factory.hxx>
+#include <bout/boundary_standard.hxx>
+#include <bout/globals.hxx>
+#include <bout/options.hxx>
+#include <bout/utils.hxx>
 
 #include <list>
 #include <map>
@@ -10,7 +10,7 @@
 using std::list;
 using std::string;
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 BoundaryFactory* BoundaryFactory::instance = nullptr;
 

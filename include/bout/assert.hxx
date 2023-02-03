@@ -17,7 +17,7 @@
 #ifndef __BOUT_ASSERT_H__
 #define __BOUT_ASSERT_H__
 
-#include "../boutexception.hxx"
+#include "bout/boutexception.hxx"
 
 #ifndef CHECK
 #define CHECKLEVEL 0

@@ -23,7 +23,7 @@
 
 #include "mpark/variant.hpp"
 
-#include "utils.hxx"
+#include "bout/utils.hxx"
 
 namespace bout {
 namespace utils {

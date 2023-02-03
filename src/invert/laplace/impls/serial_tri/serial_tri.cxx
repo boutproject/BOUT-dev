@@ -25,18 +25,18 @@
  **************************************************************************/
 
 #include "serial_tri.hxx"
-#include "globals.hxx"
+#include "bout/globals.hxx"
 
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/fft.hxx>
+#include <bout/lapack_routines.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
-#include <boutexception.hxx>
+#include <bout/utils.hxx>
 #include <cmath>
-#include <fft.hxx>
-#include <lapack_routines.hxx>
-#include <utils.hxx>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 LaplaceSerialTri::LaplaceSerialTri(Options* opt, CELL_LOC loc, Mesh* mesh_in,
                                    Solver* UNUSED(solver), Datafile* UNUSED(dump))

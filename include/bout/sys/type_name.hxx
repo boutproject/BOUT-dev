@@ -4,7 +4,7 @@
 #ifndef TYPE_NAME_HXX
 #define TYPE_NAME_HXX
 
-#include "bout_types.hxx"
+#include "bout/bout_types.hxx"
 #include <string>
 #include <typeinfo>
 

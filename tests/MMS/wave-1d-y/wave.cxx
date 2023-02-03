@@ -1,7 +1,7 @@
+#include <bout/derivs.hxx>
+#include <bout/field_factory.hxx>
 #include <bout/physicsmodel.hxx>
-#include <derivs.hxx>
-#include <field_factory.hxx>
-#include <unused.hxx>
+#include <bout/unused.hxx>
 
 class Wave1D : public PhysicsModel {
 private:

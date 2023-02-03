@@ -1,15 +1,15 @@
 #include "gtest/gtest.h"
 
-#include "boutexception.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "field_factory.hxx"
-#include "output.hxx"
 #include "test_extras.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/field_factory.hxx"
 #include "bout/mesh.hxx"
-#include "bout/traits.hxx"
+#include "bout/output.hxx"
 #include "bout/paralleltransform.hxx"
+#include "bout/traits.hxx"
 
 /// Global mesh
 namespace bout {

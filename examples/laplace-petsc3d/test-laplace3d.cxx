@@ -23,10 +23,10 @@
  *
  **************************************************************************/
 
-#include "bout.hxx"
-#include "derivs.hxx"
-#include "initialprofiles.hxx"
-#include "invert_laplace.hxx"
+#include "bout/bout.hxx"
+#include "bout/derivs.hxx"
+#include "bout/initialprofiles.hxx"
+#include "bout/invert_laplace.hxx"
 
 // The discretisation used in the solver is subtly different from that
 // in Laplace_perp, which can introduce error with some grids

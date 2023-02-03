@@ -31,22 +31,22 @@ const char DEFAULT_DIR[] = "data";
 
 #define GLOBALORIGIN
 
-#include "boundary_factory.hxx"
 #include "bout++-time.hxx"
-#include "boutcomm.hxx"
-#include "boutexception.hxx"
-#include "interpolation_xz.hxx"
-#include "interpolation_z.hxx"
-#include "invert_laplace.hxx"
-#include "invert_parderiv.hxx"
-#include "msg_stack.hxx"
-#include "optionsreader.hxx"
-#include "output.hxx"
+#include "bout/boundary_factory.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/coordinates_accessor.hxx"
 #include "bout/hyprelib.hxx"
+#include "bout/interpolation_xz.hxx"
+#include "bout/interpolation_z.hxx"
 #include "bout/invert/laplacexz.hxx"
+#include "bout/invert_laplace.hxx"
+#include "bout/invert_parderiv.hxx"
 #include "bout/mpi_wrapper.hxx"
+#include "bout/msg_stack.hxx"
 #include "bout/openmpwrap.hxx"
+#include "bout/optionsreader.hxx"
+#include "bout/output.hxx"
 #include "bout/petsclib.hxx"
 #include "bout/revision.hxx"
 #include "bout/rkscheme.hxx"
@@ -56,7 +56,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/version.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
-#include "bout.hxx"
+#include "bout/bout.hxx"
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 #include <fmt/format.h>

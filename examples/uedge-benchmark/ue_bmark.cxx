@@ -10,9 +10,9 @@
  *
  *******************************************************************************/
 
-#include <bout.hxx>
+#include <bout/bout.hxx>
+#include <bout/derivs.hxx>
 #include <bout/physicsmodel.hxx>
-#include <derivs.hxx>
 
 #include <cmath>
 

@@ -40,7 +40,7 @@
 
 #warning LaplaceXY requires PETSc. No LaplaceXY available
 
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 
 class Field2D;
 class Mesh;
@@ -81,11 +81,11 @@ public:
 #undef MPI_Waitall
 #undef MPI_Waitany
 
-#include "utils.hxx"
 #include "bout/solver.hxx"
+#include "bout/utils.hxx"
+#include <bout/cyclic_reduction.hxx>
 #include <bout/mesh.hxx>
 #include <bout/petsclib.hxx>
-#include <cyclic_reduction.hxx>
 
 class Options;
 class Solver;

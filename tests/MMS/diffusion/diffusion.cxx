@@ -1,10 +1,10 @@
-#include <bout.hxx>
-#include <bout/physicsmodel.hxx>
-#include <initialprofiles.hxx>
-#include <derivs.hxx>
-#include <cmath>
+#include <bout/bout.hxx>
 #include <bout/constants.hxx>
-#include <unused.hxx>
+#include <bout/derivs.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/physicsmodel.hxx>
+#include <bout/unused.hxx>
+#include <cmath>
 
 class Diffusion : public PhysicsModel {
 protected:

@@ -38,11 +38,11 @@
 
 #include "bout/build_config.hxx"
 
-#include "bout_types.hxx"
-#include "boutexception.hxx"
-#include "options.hxx"
-#include "unused.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/monitor.hxx"
+#include "bout/options.hxx"
+#include "bout/unused.hxx"
 
 #include <memory>
 
@@ -63,12 +63,12 @@ using Jacobian = int (*)(BoutReal t);
 /// Solution monitor, called each timestep
 using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal lastdt);
 
-//#include "globals.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
+//#include "bout/globals.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/generic_factory.hxx"
+#include "bout/vector2d.hxx"
+#include "bout/vector3d.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "physicsmodel.hxx"

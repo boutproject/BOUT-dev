@@ -1,14 +1,14 @@
 #include <bout/coordinates.hxx>
+#include <bout/derivs.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
-#include <derivs.hxx>
-#include <globals.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
 #include <cmath>
 
-#include <boutcomm.hxx>
-#include <output.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/output.hxx>
 
 #include "impls/bout/boutmesh.hxx"
 

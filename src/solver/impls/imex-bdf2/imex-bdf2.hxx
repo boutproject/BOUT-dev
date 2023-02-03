@@ -51,8 +51,8 @@ class IMEXBDF2;
 
 #include "mpi.h"
 
+#include <bout/bout_types.hxx>
 #include <bout/petsclib.hxx>
-#include <bout_types.hxx>
 
 #include <petsc.h>
 #include <petscsnes.h>

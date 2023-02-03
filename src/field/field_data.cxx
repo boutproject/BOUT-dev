@@ -1,11 +1,11 @@
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
+#include <bout/boundary_factory.hxx>
+#include <bout/field_data.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
-#include <boundary_factory.hxx>
-#include <field_data.hxx>
-#include <field_factory.hxx>
-#include <globals.hxx>
-#include <output.hxx>
+#include <bout/output.hxx>
 
 namespace bout {
 /// Make sure \p location is a sensible value for \p mesh

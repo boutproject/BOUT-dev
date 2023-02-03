@@ -33,11 +33,11 @@
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "utils.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/paralleltransform.hxx"
-#include <bout_types.hxx>
+#include "bout/utils.hxx"
+#include <bout/bout_types.hxx>
 
 class Datafile;
 class Mesh;

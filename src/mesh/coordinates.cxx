@@ -7,16 +7,16 @@
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
-#include <derivs.hxx>
-#include <fft.hxx>
-#include <interpolation.hxx>
+#include <bout/derivs.hxx>
+#include <bout/fft.hxx>
+#include <bout/interpolation.hxx>
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
@@ -1731,7 +1731,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 /////////////////////////////////////////////////////////
 // perpendicular Laplacian operator
 
-#include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
+#include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
 Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
                                             bool UNUSED(useFFT)) {

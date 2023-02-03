@@ -1,8 +1,8 @@
 
-#include "bout.hxx"
+#include "bout/bout.hxx"
 
-#include "options_netcdf.hxx"
-#include "optionsreader.hxx"
+#include "bout/options_netcdf.hxx"
+#include "bout/optionsreader.hxx"
 
 using bout::OptionsNetCDF;
 

@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 #include "test_extras.hxx"
 
-#include "options.hxx"
-#include "output.hxx"
-#include <boutexception.hxx>
+#include "bout/options.hxx"
+#include "bout/output.hxx"
+#include <bout/boutexception.hxx>
 
 #include <string>
 

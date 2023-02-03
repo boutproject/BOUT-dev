@@ -3,15 +3,15 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "gtest/gtest.h"
 
-#include "bout/array.hxx"
-#include "bout/constants.hxx"
-#include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "fieldperp.hxx"
 #include "test_extras.hxx"
-#include "output.hxx"
-#include "unused.hxx"
-#include "utils.hxx"
+#include "bout/array.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/constants.hxx"
+#include "bout/fieldperp.hxx"
+#include "bout/mesh.hxx"
+#include "bout/output.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 
 #include <cmath>
 #include <numeric>

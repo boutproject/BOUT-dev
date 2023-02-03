@@ -1,10 +1,10 @@
 
 #include <bout/fv_ops.hxx>
-#include <globals.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/globals.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 namespace FV {
 

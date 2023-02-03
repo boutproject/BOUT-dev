@@ -1,5 +1,5 @@
+#include "bout/unused.hxx"
 #include <bout/physicsmodel.hxx>
-#include "unused.hxx"
 
 class TestDelp2 : public PhysicsModel {
 protected:

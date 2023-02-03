@@ -36,8 +36,8 @@ class RKScheme;
 #define __RKSCHEME_H__
 
 #include "bout/generic_factory.hxx"
-#include <bout_types.hxx>
-#include <utils.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/utils.hxx>
 
 #include <iomanip>
 #include <string>

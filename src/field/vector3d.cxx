@@ -28,14 +28,14 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
 #include <bout/assert.hxx>
+#include <bout/boundary_op.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/interpolation.hxx>
 #include <bout/scorepwrapper.hxx>
-#include <boundary_op.hxx>
-#include <boutexception.hxx>
-#include <interpolation.hxx>
-#include <vector3d.hxx>
+#include <bout/vector3d.hxx>
 
 Vector3D::Vector3D(const Vector3D& f)
     : FieldData(f), x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),

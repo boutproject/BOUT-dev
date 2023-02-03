@@ -1,10 +1,10 @@
-#include "gtest/gtest.h"
 #include "test_extras.hxx"
-#include "optionsreader.hxx"
+#include "bout/optionsreader.hxx"
+#include "gtest/gtest.h"
 
-#include "boutexception.hxx"
-#include "output.hxx"
-#include "utils.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/output.hxx"
+#include "bout/utils.hxx"
 
 #include <cstdio>
 #include <fstream>

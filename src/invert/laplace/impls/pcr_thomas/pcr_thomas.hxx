@@ -29,10 +29,10 @@ class LaplacePCR_THOMAS;
 #ifndef BOUT_PCR_THOMAS_H
 #define BOUT_PCR_THOMAS_H
 
-#include <dcomplex.hxx>
-#include <invert_laplace.hxx>
-#include <options.hxx>
-#include <utils.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/options.hxx>
+#include <bout/utils.hxx>
 
 namespace {
 RegisterLaplace<LaplacePCR_THOMAS> registerlaplacepcrthomas(LAPLACE_PCR_THOMAS);

@@ -6,8 +6,8 @@
 #include <string>
 #include <type_traits>
 
-#include "msg_stack.hxx"
-#include "output.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/output.hxx"
 
 /*!
  * Timing class for performance benchmarking and diagnosis

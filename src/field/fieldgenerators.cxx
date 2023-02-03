@@ -2,7 +2,7 @@
 #include "fieldgenerators.hxx"
 
 #include <bout/constants.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 using bout::generator::Context;
 

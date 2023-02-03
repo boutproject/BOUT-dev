@@ -75,7 +75,7 @@ private:
 
 #else // BOUT_HAS_SLEPC
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 class SlepcLib {
 public:

@@ -4,7 +4,7 @@
 
 #include "mpi.h"
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 #include <bout/mesh.hxx>
 
 #include <cmath>

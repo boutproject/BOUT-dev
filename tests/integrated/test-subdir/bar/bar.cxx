@@ -1,4 +1,4 @@
-#include <bout.hxx>
+#include <bout/bout.hxx>
 void bar(){
   output.print("Bar!\n");
 }

@@ -22,10 +22,10 @@
 #ifndef __BOUT_ENUM_CLASS_H__
 #define __BOUT_ENUM_CLASS_H__
 
-#include "boutexception.hxx"
-#include "msg_stack.hxx"
-#include "options.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/macro_for_each.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/options.hxx"
 
 #include <map>
 #include <string>

@@ -3,8 +3,8 @@
 
 #include "bout/build_config.hxx"
 
-#include "msg_stack.hxx"
-#include <bout_types.hxx>
+#include "bout/msg_stack.hxx"
+#include <bout/bout_types.hxx>
 
 #if BOUT_HAS_SCOREP
 #include <scorep/SCOREP_User.h>

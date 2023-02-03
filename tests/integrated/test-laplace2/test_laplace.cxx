@@ -3,10 +3,10 @@
  * 
  */
 
-#include <bout.hxx>
+#include <bout/bout.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
-#include <invert_laplace.hxx>
-#include <field_factory.hxx>
 
 class Test_laplace : public PhysicsModel {
 protected:

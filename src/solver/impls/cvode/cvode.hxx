@@ -40,7 +40,7 @@ RegisterUnavailableSolver
 
 #else
 
-#include "bout_types.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/sundials_backports.hxx"
 
 #include <nvector/nvector_parallel.h>

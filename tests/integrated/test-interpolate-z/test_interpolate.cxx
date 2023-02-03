@@ -10,11 +10,11 @@
 #include <random>
 #include <string>
 
-#include "bout.hxx"
+#include "bout/bout.hxx"
 #include "bout/constants.hxx"
-#include "field_factory.hxx"
+#include "bout/field_factory.hxx"
+#include "bout/interpolation_z.hxx"
 #include "bout/sys/generator_context.hxx"
-#include "interpolation_z.hxx"
 
 using bout::globals::mesh;
 

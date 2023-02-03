@@ -14,9 +14,9 @@
 
 #warning expr.hxx is deprecated. Do not use!
 
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 #include <bout/mesh.hxx>
-#include <field2d.hxx>
-#include <field3d.hxx>
 
 /// Literal class to capture BoutReal values in expressions
 class Literal {

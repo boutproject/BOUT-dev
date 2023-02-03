@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "boundary_factory.hxx"
-#include "boundary_region.hxx"
+#include "bout/boundary_factory.hxx"
+#include "bout/boundary_region.hxx"
 
 #include "test_extras.hxx"
 

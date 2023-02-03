@@ -34,15 +34,15 @@
 
 #include "bout/build_config.hxx"
 
+#include <bout/bout_types.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
-#include <bout_types.hxx>
-#include <globals.hxx>
-#include <msg_stack.hxx>
-#include <smoothing.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/smoothing.hxx>
 
 #include <bout/constants.hxx>
 #include <bout/rvec.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 // Smooth using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D& f) {

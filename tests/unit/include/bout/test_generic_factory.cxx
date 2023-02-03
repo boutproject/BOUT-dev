@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "boutexception.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/generic_factory.hxx"
 
 #include <exception>

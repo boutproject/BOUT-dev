@@ -33,11 +33,11 @@
 
 #if BOUT_HAS_IDA
 
-#include "boutcomm.hxx"
-#include "boutexception.hxx"
-#include "msg_stack.hxx"
-#include "output.hxx"
-#include "unused.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/output.hxx"
+#include "bout/unused.hxx"
 
 #include <ida/ida.h>
 

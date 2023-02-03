@@ -6,7 +6,7 @@
 #include <bout/physicsmodel.hxx>
 
 #include <bout/constants.hxx>
-#include <invert_laplace.hxx>
+#include <bout/invert_laplace.hxx>
 
 class Jorek : public PhysicsModel {
 private:

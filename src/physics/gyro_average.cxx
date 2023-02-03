@@ -27,12 +27,12 @@
  *
  **************************************************************/
 
+#include <bout/difops.hxx>
+#include <bout/globals.hxx>
+#include <bout/gyro_average.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
-#include <difops.hxx>
-#include <globals.hxx>
-#include <gyro_average.hxx>
-#include <invert_laplace.hxx>
 
 Field3D gyroTaylor0(const Field3D& f, const Field3D& rho) {
   return f + SQ(rho) * Delp2(f);

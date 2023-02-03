@@ -36,10 +36,10 @@
 
 #include <bout/scorepwrapper.hxx>
 
-#include <bout_types.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <options.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/options.hxx>
 
 /// Here we have a templated singleton that is used to store DerivativeFunctions
 /// for all types of derivatives. It is templated on the FieldType (2D or 3D) as

@@ -5,8 +5,8 @@
  *  d^2f/dt^2 = d^2f/dx^2
  */
 
+#include <bout/derivs.hxx>
 #include <bout/physicsmodel.hxx>
-#include <derivs.hxx>
 
 class EigenBox : public PhysicsModel {
 protected:

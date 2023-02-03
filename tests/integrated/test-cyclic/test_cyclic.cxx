@@ -3,11 +3,11 @@
  *
  */
 
-#include <bout.hxx>
+#include <bout/bout.hxx>
 
-#include <cyclic_reduction.hxx>
-#include <dcomplex.hxx>
-#include "utils.hxx"
+#include "bout/utils.hxx"
+#include <bout/cyclic_reduction.hxx>
+#include <bout/dcomplex.hxx>
 
 // Change this to dcomplex to test complex matrix inversion
 using T = BoutReal;

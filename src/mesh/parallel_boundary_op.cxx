@@ -1,9 +1,9 @@
-#include "parallel_boundary_op.hxx"
-#include "field_factory.hxx"
-#include "globals.hxx"
-#include "output.hxx"
+#include "bout/parallel_boundary_op.hxx"
 #include "bout/constants.hxx"
+#include "bout/field_factory.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
 
 using bout::generator::Context;
 

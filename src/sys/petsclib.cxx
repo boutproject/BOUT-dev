@@ -2,12 +2,12 @@
 
 #if BOUT_HAS_PETSC
 
-#include "boutcomm.hxx"
-#include "options.hxx"
+#include "bout/boutcomm.hxx"
 #include "bout/openmpwrap.hxx"
+#include "bout/options.hxx"
 #include <bout/petsclib.hxx>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 // Define all the static member variables
 int PetscLib::count = 0;

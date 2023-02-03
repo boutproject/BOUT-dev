@@ -25,9 +25,9 @@
  **************************************************************************/
 
 #include "bout/openmpwrap.hxx"
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <cstdarg>
-#include <msg_stack.hxx>
-#include <output.hxx>
 #include <string>
 
 #if BOUT_USE_OPENMP

@@ -23,11 +23,11 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
-#include <interpolation_xz.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <unused.hxx>
+#include <bout/globals.hxx>
+#include <bout/interpolation_xz.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/unused.hxx>
 
 void printLocation(const Field3D& var) { output << toString(var.getLocation()); }
 void printLocation(const Field2D& var) { output << toString(var.getLocation()); }

@@ -1,12 +1,12 @@
-#include <invert_laplace.hxx>
-#include <msg_stack.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/msg_stack.hxx>
 
+#include <bout/derivs.hxx>
 #include <bout/invertable_operator.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/sys/timer.hxx>
-#include <derivs.hxx>
 
-#include <boundary_region.hxx>
+#include <bout/boundary_region.hxx>
 
 Field3D minus(const Field3D &input) { return -1.0 * input; };
 Field3D delp(const Field3D &input) { return input + Delp2(input); };

@@ -30,7 +30,7 @@
 #ifndef __TEMPLATE_COMBINATIONS_H__
 #define __TEMPLATE_COMBINATIONS_H__
 
-#include <unused.hxx>
+#include <bout/unused.hxx>
 
 /// Here we define an empty templated struct that can represent
 /// a collection of arbitrary types. This is useful for passing

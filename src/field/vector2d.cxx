@@ -28,13 +28,13 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
+#include <bout/globals.hxx>
 
+#include <bout/boundary_op.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/interpolation.hxx>
 #include <bout/scorepwrapper.hxx>
-#include <boundary_op.hxx>
-#include <boutexception.hxx>
-#include <interpolation.hxx>
-#include <vector2d.hxx>
+#include <bout/vector2d.hxx>
 
 Vector2D::Vector2D(const Vector2D& f)
     : FieldData(f), x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),

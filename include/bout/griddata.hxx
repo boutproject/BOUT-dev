@@ -28,12 +28,12 @@ class GridDataSource;
 #ifndef __GRIDDATA_H__
 #define __GRIDDATA_H__
 
-#include "bout_types.hxx"
 #include "mesh.hxx"
-#include "options.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/options.hxx"
 
-#include <field2d.hxx>
-#include <field3d.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 
 /// Interface class to serve grid data
 /*!

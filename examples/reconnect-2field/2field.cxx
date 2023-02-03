@@ -5,11 +5,11 @@
 
 #include <bout/physicsmodel.hxx>
 
-#include <interpolation.hxx>
-#include <invert_laplace.hxx>
-#include <invert_parderiv.hxx>
-#include <initialprofiles.hxx>
 #include <bout/constants.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/invert_parderiv.hxx>
 
 class TwoField : public PhysicsModel {
 private:

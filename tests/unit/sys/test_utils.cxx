@@ -1,5 +1,5 @@
+#include "bout/utils.hxx"
 #include "gtest/gtest.h"
-#include "utils.hxx"
 
 #include <set>
 #include <string>

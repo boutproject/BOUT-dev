@@ -41,11 +41,11 @@ class LaplaceSPT;
 #ifndef __SPT_H__
 #define __SPT_H__
 
+#include <bout/dcomplex.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
-#include <dcomplex.hxx>
-#include <invert_laplace.hxx>
-#include <options.hxx>
-#include <utils.hxx>
+#include <bout/options.hxx>
+#include <bout/utils.hxx>
 
 /// Simple parallelisation of the Thomas tridiagonal solver algorithm (serial code)
 /*!

@@ -1,6 +1,6 @@
-#include <bout.hxx>
-#include <derivs.hxx>
 #include "../../../src/mesh/parallel/shiftedmetricinterp.hxx"
+#include <bout/bout.hxx>
+#include <bout/derivs.hxx>
 
 // Y derivative using yup() and ydown() fields
 Field3D DDY_yud(const Field3D &f) {

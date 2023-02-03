@@ -3,11 +3,11 @@
  *
  */
 
-#include <bout.hxx>
-#include <derivs.hxx>
-#include <invert_parderiv.hxx>
-#include <field_factory.hxx>
-#include <utils.hxx>
+#include <bout/bout.hxx>
+#include <bout/derivs.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/invert_parderiv.hxx>
+#include <bout/utils.hxx>
 
 using bout::globals::mesh;
 

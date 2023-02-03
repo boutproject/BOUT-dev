@@ -1,7 +1,7 @@
-#include <bout_types.hxx>
-#include <boutexception.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
 #include <map>
-#include <msg_stack.hxx>
 
 namespace {
 template <typename T>

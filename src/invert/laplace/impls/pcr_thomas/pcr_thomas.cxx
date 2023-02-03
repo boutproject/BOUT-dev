@@ -37,19 +37,19 @@
  **************************************************************************/
 
 #include "pcr_thomas.hxx"
-#include "globals.hxx"
+#include "bout/globals.hxx"
 
-#include "boutcomm.hxx"
+#include "bout/boutcomm.hxx"
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/fft.hxx>
+#include <bout/lapack_routines.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/output.hxx>
 #include <bout/scorepwrapper.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
-#include <fft.hxx>
-#include <lapack_routines.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 #include <algorithm>
 #include <cmath>

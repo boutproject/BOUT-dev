@@ -13,10 +13,10 @@ RegisterUnavailableLaplaceXZ registerlaplacexzcylic{
 
 #else
 
-#include "utils.hxx"
-#include <cyclic_reduction.hxx>
-#include <dcomplex.hxx>
-#include <globals.hxx>
+#include "bout/utils.hxx"
+#include <bout/cyclic_reduction.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/globals.hxx>
 
 class LaplaceXZcyclic : public LaplaceXZ {
 public:

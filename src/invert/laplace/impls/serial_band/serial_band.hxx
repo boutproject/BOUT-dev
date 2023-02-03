@@ -29,8 +29,8 @@ class LaplaceSerialBand;
 #ifndef __SERIAL_BAND_H__
 #define __SERIAL_BAND_H__
 
-#include "invert_laplace.hxx"
 #include "bout/build_config.hxx"
+#include "bout/invert_laplace.hxx"
 
 #if BOUT_USE_METRIC_3D
 
@@ -41,9 +41,9 @@ RegisterUnavailableLaplace
 
 #else
 
-#include <dcomplex.hxx>
-#include <options.hxx>
-#include <utils.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/options.hxx>
+#include <bout/utils.hxx>
 
 namespace {
 RegisterLaplace<LaplaceSerialBand> registerlaplaceserialband(LAPLACE_BAND);

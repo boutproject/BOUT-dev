@@ -3,20 +3,20 @@
 #include <math.h>
 #include <tuple>
 
-#include "gtest/gtest.h"
-#include "test_extras.hxx"
-#include "invert_laplace.hxx"
 #include "../../../../src/invert/laplace/impls/petsc3damg/petsc3damg.hxx"
+#include "test_extras.hxx"
+#include "bout/invert_laplace.hxx"
+#include "gtest/gtest.h"
 
-#include "bout/mesh.hxx"
+#include "bout/derivs.hxx"
+#include "bout/difops.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/griddata.hxx"
-#include "options.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "derivs.hxx"
-#include "difops.hxx"
-#include "vecops.hxx"
+#include "bout/mesh.hxx"
+#include "bout/options.hxx"
 #include "bout/petsc_interface.hxx"
+#include "bout/vecops.hxx"
 
 #if BOUT_HAS_PETSC
 

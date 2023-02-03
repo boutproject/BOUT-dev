@@ -5,7 +5,7 @@ class RK4SIMPLEScheme;
 #define __RK4SIMPLE_SCHEME_H__
 
 #include <bout/rkscheme.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 class RK4SIMPLEScheme : public RKScheme {
 public:

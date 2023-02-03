@@ -28,8 +28,8 @@ class LaplaceNaulin;
 #ifndef __LAP_NAULIN_H__
 #define __LAP_NAULIN_H__
 
-#include <invert_laplace.hxx>
-#include <options.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/options.hxx>
 
 namespace {
 RegisterLaplace<LaplaceNaulin> registerlaplacenaulin(LAPLACE_NAULIN);

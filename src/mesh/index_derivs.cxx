@@ -25,8 +25,8 @@
 #include "bout/traits.hxx"
 #include <bout/index_derivs.hxx>
 #include <bout/mesh.hxx>
-#include <msg_stack.hxx>
-#include <unused.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/unused.hxx>
 
 /*******************************************************************************
  * Helper routines

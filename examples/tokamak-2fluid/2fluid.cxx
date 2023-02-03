@@ -6,11 +6,11 @@
 
 #include <bout/physicsmodel.hxx>
 
-#include <initialprofiles.hxx>
-#include <derivs.hxx>
-#include <interpolation.hxx>
-#include <invert_laplace.hxx>
-#include <msg_stack.hxx>
+#include <bout/derivs.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/msg_stack.hxx>
 
 class TwoFluid : public PhysicsModel {
 private:

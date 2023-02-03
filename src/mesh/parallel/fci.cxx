@@ -37,13 +37,13 @@
  **************************************************************************/
 
 #include "fci.hxx"
-#include "parallel_boundary_op.hxx"
-#include "parallel_boundary_region.hxx"
+#include "bout/parallel_boundary_op.hxx"
+#include "bout/parallel_boundary_region.hxx"
+#include <bout/bout_types.hxx>
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
-#include <bout_types.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
 #include <string>
 

@@ -1,8 +1,8 @@
-#include <boutexception.hxx>
-#include <field_factory.hxx> // Used for parsing expressions
-#include <options.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/field_factory.hxx> // Used for parsing expressions
+#include <bout/options.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 #include <fmt/format.h>
 
