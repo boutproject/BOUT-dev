@@ -30,7 +30,7 @@ std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varna
 
 int main(int argc, char **argv) {
   BoutInitialise(argc, argv);
-
+  {
   // Random number generator
   std::default_random_engine generator;
   // Uniform distribution of BoutReals from 0 to 1
@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
   bout::writeDefaultOutputFile(dump);
 
   bout::checkForUnusedOptions();
-  interp.reset();
+  }
   BoutFinalise();
 
   return 0;
