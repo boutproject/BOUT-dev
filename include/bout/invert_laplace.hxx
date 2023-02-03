@@ -132,8 +132,8 @@ constexpr int INVERT_KX_ZERO = 16;
   const int INVERT_DC_IN_GRADPARINV = 2097152;
  */
 
-class LaplaceFactory : public Factory<Laplacian, LaplaceFactory, Options*, CELL_LOC,
-                                      Mesh*, Solver*> {
+class LaplaceFactory
+    : public Factory<Laplacian, LaplaceFactory, Options*, CELL_LOC, Mesh*, Solver*> {
 public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
@@ -261,9 +261,10 @@ public:
    *
    * @param[in] opt  The options section to use. By default "laplace" will be used
    */
-  static std::unique_ptr<Laplacian>
-  create(Options* opts = nullptr, const CELL_LOC location = CELL_CENTRE,
-         Mesh* mesh_in = nullptr, Solver* solver = nullptr) {
+  static std::unique_ptr<Laplacian> create(Options* opts = nullptr,
+                                           const CELL_LOC location = CELL_CENTRE,
+                                           Mesh* mesh_in = nullptr,
+                                           Solver* solver = nullptr) {
     return LaplaceFactory::getInstance().create(opts, location, mesh_in, solver);
   }
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
