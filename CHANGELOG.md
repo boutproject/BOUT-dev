@@ -1,6 +1,6 @@
 # Changelog
 
-## [v5.0.0-alpha](https://github.com/boutproject/BOUT-dev/tree/next)
+## [v5.0.0](https://github.com/boutproject/BOUT-dev/tree/next)
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.2...next)
 
 ### Breaking changes
