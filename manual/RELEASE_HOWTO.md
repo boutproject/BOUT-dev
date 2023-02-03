@@ -40,7 +40,7 @@ Before merging PR:
     - Add any new authors
     - Save draft
 - [ ] Change DOI in [`CITATION.cff`][citation] to new DOI
-- [ ] Change DOI in [`README.md`][README.md] to new DOI
+- [ ] Change DOI in [`README.md`][README] to new DOI
 - [ ] Change date-released in [`CITATION.cff`][citation]
 - [ ] Check `abidiff` to see if `soname` needs bumping in `makefile`:
 - [ ] Change version number, removing prerelease tag in:
@@ -49,7 +49,7 @@ Before merging PR:
     - [ ]  [`manual/sphinx/conf.py`][sphinx_conf]: `version` and `release`
     - [ ]  [`manual/doxygen/Doxyfile_readthedocs`][Doxyfile_readthedocs]: `PROJECT_NUMBER`
     - [ ]  [`manual/doxygen/Doxyfile`][Doxyfile]: `PROJECT_NUMBER`
-    - [ ]  [`CMakeLists.txt`][CMakeLists.txt]: `_bout_previous_version`, `_bout_next_version`
+    - [ ]  [`CMakeLists.txt`][CMakeLists]: `_bout_previous_version`, `_bout_next_version`
 
 After PR is merged:
 
@@ -69,7 +69,7 @@ After PR is merged:
     - [ ]  [`manual/sphinx/conf.py`][sphinx_conf]: `version` and `release`
     - [ ]  [`manual/doxygen/Doxyfile_readthedocs`][Doxyfile_readthedocs]: `PROJECT_NUMBER`
     - [ ]  [`manual/doxygen/Doxyfile`][Doxyfile]: `PROJECT_NUMBER`
-    - [ ]  [`CMakeLists.txt`][CMakeLists.txt]: `_bout_previous_version`, `_bout_next_version`
+    - [ ]  [`CMakeLists.txt`][CMakeLists]: `_bout_previous_version`, `_bout_next_version`
     - [ ]  [`tools/pylib/_boutpp_build/backend.py`][backend.py]: `_bout_previous_version`, `_bout_next_version`
 
 [Doxyfile]: ../manual/doxygen/Doxyfile
@@ -77,9 +77,9 @@ After PR is merged:
 [citation]: ../CITATION.cff
 [configure]: ../configure.ac
 [sphinx_conf]: ../manual/sphinx/conf.py
-[README.md]: ../README.md
-[CHANGELOG.md]: ../CHANGELOG.md
-[CMakeLists.txt]: ../CMakeLists.txt
+[README]: ../README.md
+[changelog]: ../CHANGELOG.md
+[CMakeLists]: ../CMakeLists.txt
 [backend.py]: ../tools/pylib/_boutpp_build/backend.py
 [gcg]: https://github.com/github-changelog-generator/github-changelog-generator
 [gh_release]: https://github.com/boutproject/BOUT-dev/releases/new
