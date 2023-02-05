@@ -17,6 +17,9 @@
  *
  * This will then automatically initialise Petsc the first time an object
  * is created, and finalise it when the last object is destroyed.
+ *
+ * This header tries to workaround some annoying PETSc features, and
+ * so it *must* be included before *any* PETSc header.
  * 
  **************************************************************************
  * Copyright 2012 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -50,6 +53,13 @@ class PetscLib;
 class Options;
 
 #if BOUT_HAS_PETSC
+
+// PETSc "helpfully" defines macros for MPI functions that clobber the
+// real names, and short of `#undef`-ing all of them in every file
+// that includes any PETSc header, we can define the following macro
+// which should disable them, which I'm sure will work forever. This
+// means we _must_ `#include` this header _before_ any PETSc header!
+#define PETSC_HAVE_BROKEN_RECURSIVE_MACRO
 
 #include <petsc.h>
 #include <petscversion.h>
