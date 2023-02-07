@@ -5,7 +5,7 @@
  * Can also include the Vpar compressional term
  * This version uses indexed operators
  * which reduce the number of loops over the domain
- * GPU processing is enabled if BOUT_ENABLE_CUDA is defined
+ * GPU processing is enabled if BOUT_HAS_CUDA is defined
  * GPU version Hypre solver is enable if BOUT_HAS_HYPRE is defined
  * Profiling markers and ranges are set if USE_NVTX is defined
  * Based on model code,  Yining Qin update GPU RAJA code since 1117-2020
