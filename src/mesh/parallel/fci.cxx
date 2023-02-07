@@ -158,6 +158,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
   const int ncz = map_mesh.LocalNz;
 
   BoutMask to_remove(map_mesh);
+  const int xend = map_mesh.xstart + (map_mesh.xend - map_mesh.xstart + 1) * map_mesh.getNXPE() - 1;
   // Serial loop because call to BoundaryRegionPar::addPoint
   // (probably?) can't be done in parallel
   BOUT_FOR_SERIAL(i, xt_prime.getRegion("RGN_NOBNDRY")) {
@@ -171,7 +172,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
       }
     }
 
-    if ((xt_prime[i] >= map_mesh.xstart) and (xt_prime[i] <= map_mesh.xend)) {
+    if ((xt_prime[i] >= map_mesh.xstart) and (xt_prime[i] <= xend)) {
       // Not a boundary
       continue;
     }
