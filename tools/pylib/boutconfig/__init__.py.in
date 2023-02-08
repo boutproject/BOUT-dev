@@ -2,7 +2,7 @@
 
 """
 
-_yesno = {'"yes"': True, '"no"': False}
+_yesno = {'"yes"': True, '"no"': False, "yes": True, "no": False}
 
 _vars = dict(
     BOUT_LIB_PATH="@BOUT_LIB_PATH@",
