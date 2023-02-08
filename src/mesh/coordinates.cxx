@@ -1715,8 +1715,8 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
     Grad2_par2_DDY_invSg = std::make_unique<FieldMetric>();
     (*Grad2_par2_DDY_invSg) = DDY(*invSg, outloc, method) * (*invSg);
   }
-  auto result = (*Grad2_par2_DDY_invSg) * DDY(f, outloc, method)
-                + D2DY2(f, outloc, method) / g_22;
+  auto result =
+      (*Grad2_par2_DDY_invSg) * DDY(f, outloc, method) + D2DY2(f, outloc, method) / g_22;
 
   return result;
 }
@@ -1728,7 +1728,6 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
     outloc = f.getLocation();
   }
   ASSERT1(location == outloc);
-
 
   if (invSg == nullptr) {
     invSg = std::make_unique<FieldMetric>();
