@@ -20,10 +20,10 @@
  *
  **************************************************************************/
 
+#include "../impls/bout/boutmesh.hxx"
 #include "globals.hxx"
 #include "interpolation_xz.hxx"
 #include "bout/index_derivs_interface.hxx"
-#include "../impls/bout/boutmesh.hxx"
 
 #include <vector>
 
@@ -126,7 +126,7 @@ XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh *mesh)
 
 #if USE_NEW_WEIGHTS
   newWeights.reserve(16);
-  for (int w=0; w<16;++w){
+  for (int w = 0; w < 16; ++w) {
     newWeights.emplace_back(localmesh);
     newWeights[w].allocate();
   }
@@ -137,8 +137,9 @@ XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh *mesh)
   // MatCreate(MPI_COMM_WORLD, &petscWeights);
   //  MatSetSizes(petscWeights, m, m, M, M);
   // PetscErrorCode MatCreateAIJ(MPI_Comm comm, PetscInt m, PetscInt n, PetscInt M,
-  // PetscInt N, 			      PetscInt d_nz, const PetscInt d_nnz[], PetscInt o_nz, const PetscInt
-  //o_nnz[], Mat *A)
+  // PetscInt N, 			      PetscInt d_nz, const PetscInt d_nnz[], PetscInt o_nz,
+  // const PetscInt
+  // o_nnz[], Mat *A)
   //  MatSetSizes(Mat A,PetscInt m,PetscInt n,PetscInt M,PetscInt N)
   const int m = mesh->LocalNx * mesh->LocalNy * mesh->LocalNz;
   const int M = m * mesh->getNXPE() * mesh->getNYPE();
@@ -185,8 +186,8 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     // Check that t_x and t_z are in range
     if ((t_x < 0.0) || (t_x > 1.0)) {
       throw BoutException(
-          "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corn={:d})", t_x,
-          x, y, z, delta_x(x, y, z), i_corn);
+          "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corn={:d})", t_x, x,
+          y, z, delta_x(x, y, z), i_corn);
     }
 
     if ((t_z < 0.0) || (t_z > 1.0)) {
@@ -212,8 +213,8 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
 
 #if USE_NEW_WEIGHTS
 
-    for (int w =0; w<16;++w){
-      newWeights[w][i]=0;
+    for (int w = 0; w < 16; ++w) {
+      newWeights[w][i] = 0;
     }
     // The distribution of our weights:
     //  0   4   8    12
@@ -223,54 +224,55 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     // e.g. 1 == ic.xm(); 4 == ic.zm(); 5 == ic;  7 == ic.zp(2);
 
     // f[ic] * h00_x[i] + f[icxp] * h01_x[i] + fx[ic] * h10_x[i] + fx[icxp] * h11_x[i];
-    newWeights[5][i]  += h00_x[i] * h00_z[i];
-    newWeights[9][i]  += h01_x[i] * h00_z[i];
-    newWeights[9][i]  += h10_x[i] * h00_z[i] / 2;
-    newWeights[1][i]  -= h10_x[i] * h00_z[i] / 2;
+    newWeights[5][i] += h00_x[i] * h00_z[i];
+    newWeights[9][i] += h01_x[i] * h00_z[i];
+    newWeights[9][i] += h10_x[i] * h00_z[i] / 2;
+    newWeights[1][i] -= h10_x[i] * h00_z[i] / 2;
     newWeights[13][i] += h11_x[i] * h00_z[i] / 2;
-    newWeights[5][i]  -= h11_x[i] * h00_z[i] / 2;
+    newWeights[5][i] -= h11_x[i] * h00_z[i] / 2;
 
     // f[iczp] * h00_x[i] + f[icxpzp] * h01_x[i] +
     // fx[iczp] * h10_x[i] + fx[icxpzp] * h11_x[i];
-    newWeights[6][i]  += h00_x[i] * h01_z[i];
+    newWeights[6][i] += h00_x[i] * h01_z[i];
     newWeights[10][i] += h01_x[i] * h01_z[i];
     newWeights[10][i] += h10_x[i] * h01_z[i] / 2;
-    newWeights[2][i]  -= h10_x[i] * h01_z[i] / 2;
+    newWeights[2][i] -= h10_x[i] * h01_z[i] / 2;
     newWeights[14][i] += h11_x[i] * h01_z[i] / 2;
-    newWeights[6][i]  -= h11_x[i] * h01_z[i] / 2;
+    newWeights[6][i] -= h11_x[i] * h01_z[i] / 2;
 
     // fz[ic] * h00_x[i] + fz[icxp] * h01_x[i] +
     // fxz[ic] * h10_x[i]+ fxz[icxp] * h11_x[i];
-    newWeights[6][i]  += h00_x[i] * h10_z[i] / 2;
-    newWeights[4][i]  -= h00_x[i] * h10_z[i] / 2;
+    newWeights[6][i] += h00_x[i] * h10_z[i] / 2;
+    newWeights[4][i] -= h00_x[i] * h10_z[i] / 2;
     newWeights[10][i] += h01_x[i] * h10_z[i] / 2;
-    newWeights[8][i]  -= h01_x[i] * h10_z[i] / 2;
+    newWeights[8][i] -= h01_x[i] * h10_z[i] / 2;
     newWeights[10][i] += h10_x[i] * h10_z[i] / 4;
-    newWeights[8][i]  -= h10_x[i] * h10_z[i] / 4;
-    newWeights[2][i]  -= h10_x[i] * h10_z[i] / 4;
-    newWeights[0][i]  += h10_x[i] * h10_z[i] / 4;
+    newWeights[8][i] -= h10_x[i] * h10_z[i] / 4;
+    newWeights[2][i] -= h10_x[i] * h10_z[i] / 4;
+    newWeights[0][i] += h10_x[i] * h10_z[i] / 4;
     newWeights[14][i] += h11_x[i] * h10_z[i] / 4;
     newWeights[12][i] -= h11_x[i] * h10_z[i] / 4;
-    newWeights[6][i]  -= h11_x[i] * h10_z[i] / 4;
-    newWeights[4][i]  += h11_x[i] * h10_z[i] / 4;
+    newWeights[6][i] -= h11_x[i] * h10_z[i] / 4;
+    newWeights[4][i] += h11_x[i] * h10_z[i] / 4;
 
     // fz[iczp] * h00_x[i] + fz[icxpzp] * h01_x[i] +
     // fxz[iczp] * h10_x[i] + fxz[icxpzp] * h11_x[i];
-    newWeights[7][i]  += h00_x[i] * h11_z[i] / 2;
-    newWeights[5][i]  -= h00_x[i] * h11_z[i] / 2;
+    newWeights[7][i] += h00_x[i] * h11_z[i] / 2;
+    newWeights[5][i] -= h00_x[i] * h11_z[i] / 2;
     newWeights[11][i] += h01_x[i] * h11_z[i] / 2;
-    newWeights[9][i]  -= h01_x[i] * h11_z[i] / 2;
+    newWeights[9][i] -= h01_x[i] * h11_z[i] / 2;
     newWeights[11][i] += h10_x[i] * h11_z[i] / 4;
-    newWeights[9][i]  -= h10_x[i] * h11_z[i] / 4;
-    newWeights[3][i]  -= h10_x[i] * h11_z[i] / 4;
-    newWeights[1][i]  += h10_x[i] * h11_z[i] / 4;
+    newWeights[9][i] -= h10_x[i] * h11_z[i] / 4;
+    newWeights[3][i] -= h10_x[i] * h11_z[i] / 4;
+    newWeights[1][i] += h10_x[i] * h11_z[i] / 4;
     newWeights[15][i] += h11_x[i] * h11_z[i] / 4;
     newWeights[13][i] -= h11_x[i] * h11_z[i] / 4;
-    newWeights[7][i]  -= h11_x[i] * h11_z[i] / 4;
-    newWeights[5][i]  += h11_x[i] * h11_z[i] / 4;
+    newWeights[7][i] -= h11_x[i] * h11_z[i] / 4;
+    newWeights[5][i] += h11_x[i] * h11_z[i] / 4;
 #ifdef HS_USE_PETSC
     PetscInt idxn[1] = {conv.fromLocalToGlobal(x, y + y_offset, z)};
-    // output.write("debug: {:d} -> {:d}: {:d}:{:d} -> {:d}:{:d}\n", conv.fromLocalToGlobal(x, y + y_offset, z),
+    // output.write("debug: {:d} -> {:d}: {:d}:{:d} -> {:d}:{:d}\n",
+    // conv.fromLocalToGlobal(x, y + y_offset, z),
     //     conv.fromMeshToGlobal(i_corn, y + y_offset, k_corner(x, y, z)),
     //     x, z, i_corn, k_corner(x, y, z));
     // ixstep = mesh->LocalNx * mesh->LocalNz;
@@ -355,15 +357,15 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
   VecRestoreArrayRead(result, &cptr);
 #else
   BOUT_FOR(i, getRegion(region)) {
-    auto ic =  i_corner[i];
+    auto ic = i_corner[i];
     auto iyp = i.yp(y_offset);
 
-    f_interp[iyp]=0;
-    for (int w = 0; w < 4; ++w){
-      f_interp[iyp] += newWeights[w*4+0][i] * f[ic.zm().xp(w-1)];
-      f_interp[iyp] += newWeights[w*4+1][i] * f[ic.xp(w-1)];
-      f_interp[iyp] += newWeights[w*4+2][i] * f[ic.zp().xp(w-1)];
-      f_interp[iyp] += newWeights[w*4+3][i] * f[ic.zp(2).xp(w-1)];
+    f_interp[iyp] = 0;
+    for (int w = 0; w < 4; ++w) {
+      f_interp[iyp] += newWeights[w * 4 + 0][i] * f[ic.zm().xp(w - 1)];
+      f_interp[iyp] += newWeights[w * 4 + 1][i] * f[ic.xp(w - 1)];
+      f_interp[iyp] += newWeights[w * 4 + 2][i] * f[ic.zp().xp(w - 1)];
+      f_interp[iyp] += newWeights[w * 4 + 3][i] * f[ic.zp(2).xp(w - 1)];
     }
   }
 #endif
@@ -411,7 +413,7 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
             || i.x() > localmesh->xend);
   }
   return f_interp;
-# endif
+#endif
 }
 
 Field3D XZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_x,

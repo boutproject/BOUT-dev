@@ -73,8 +73,7 @@ public:
   inline const bool& operator[](const Ind3D& i) const { return mask[i]; }
 };
 
-inline Region<Ind3D> regionFromMask(const BoutMask& mask,
-                                                     const Mesh* mesh) {
+inline Region<Ind3D> regionFromMask(const BoutMask& mask, const Mesh* mesh) {
   std::vector<Ind3D> indices;
   for (auto i : mesh->getRegion("RGN_ALL")) {
     if (not mask(i.x(), i.y(), i.z())) {

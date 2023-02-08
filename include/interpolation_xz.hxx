@@ -63,25 +63,23 @@ public:
     setMask(mask);
   }
   XZInterpolation(const std::string& region_name, int y_offset = 0, Mesh* mesh = nullptr)
-    : y_offset(y_offset), localmesh(mesh), region_id(localmesh->getRegionID(region_name)) {}
-  XZInterpolation(const Region<Ind3D>& region, int y_offset = 0,
-                  Mesh* mesh = nullptr)
-      : y_offset(y_offset), localmesh(mesh){
+      : y_offset(y_offset), localmesh(mesh),
+        region_id(localmesh->getRegionID(region_name)) {}
+  XZInterpolation(const Region<Ind3D>& region, int y_offset = 0, Mesh* mesh = nullptr)
+      : y_offset(y_offset), localmesh(mesh) {
     setRegion(region);
   }
   virtual ~XZInterpolation() = default;
 
-  void setMask(const BoutMask& mask) {
-    setRegion(regionFromMask(mask, localmesh));
-  }
+  void setMask(const BoutMask& mask) { setRegion(regionFromMask(mask, localmesh)); }
   void setRegion(const std::string& region_name) {
     this->region_id = localmesh->getRegionID(region_name);
   }
   void setRegion(const Region<Ind3D>& region) {
     std::string name;
-    int i=0;
+    int i = 0;
     do {
-      name = fmt::format("unsec_reg_xz_interp_{:d}",i++);
+      name = fmt::format("unsec_reg_xz_interp_{:d}", i++);
     } while (localmesh->hasRegion3D(name));
     localmesh->addRegion(name, region);
     this->region_id = localmesh->getRegionID(name);
@@ -94,10 +92,11 @@ public:
     if (region_id == -1) {
       return localmesh->getRegion(region);
     }
-    if (region == "" or region == "RGN_ALL"){
+    if (region == "" or region == "RGN_ALL") {
       return getRegion();
     }
-    return localmesh->getRegion(localmesh->getCommonRegion(localmesh->getRegionID(region), region_id));
+    return localmesh->getRegion(
+        localmesh->getCommonRegion(localmesh->getRegionID(region), region_id));
   }
   virtual void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                            const std::string& region = "RGN_NOBNDRY") = 0;

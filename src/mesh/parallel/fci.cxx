@@ -158,7 +158,8 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
   const int ncz = map_mesh.LocalNz;
 
   BoutMask to_remove(map_mesh);
-  const int xend = map_mesh.xstart + (map_mesh.xend - map_mesh.xstart + 1) * map_mesh.getNXPE() - 1;
+  const int xend =
+      map_mesh.xstart + (map_mesh.xend - map_mesh.xstart + 1) * map_mesh.getNXPE() - 1;
   // Serial loop because call to BoundaryRegionPar::addPoint
   // (probably?) can't be done in parallel
   BOUT_FOR_SERIAL(i, xt_prime.getRegion("RGN_NOBNDRY")) {
@@ -247,11 +248,10 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
   const auto region = fmt::format("RGN_YPAR_{:+d}", offset);
   if (not map_mesh.hasRegion3D(region)) {
     // The valid region for this slice
-    map_mesh.addRegion3D(region,
-			 Region<Ind3D>(map_mesh.xstart, map_mesh.xend,
-				       map_mesh.ystart+offset, map_mesh.yend+offset,
-				       0, map_mesh.LocalNz-1,
-				       map_mesh.LocalNy, map_mesh.LocalNz));
+    map_mesh.addRegion3D(
+        region, Region<Ind3D>(map_mesh.xstart, map_mesh.xend, map_mesh.ystart + offset,
+                              map_mesh.yend + offset, 0, map_mesh.LocalNz - 1,
+                              map_mesh.LocalNy, map_mesh.LocalNz));
   }
 }
 
