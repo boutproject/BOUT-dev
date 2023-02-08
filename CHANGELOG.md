@@ -99,6 +99,10 @@
 
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.4.2...v5.0.0)
 
+- Provide overloaded virtual function also in derived class [\#2653][https://github.com/boutproject/BOUT-dev/pull/2653] ([dschwoerer][https://github.com/dschwoerer])
+- Workaround PETSc clobbering MPI functions with its macros [\#2637][https://github.com/boutproject/BOUT-dev/pull/2637] ([ZedThree][https://github.com/ZedThree])
+- Fix use of removed `Datafile` in `Laplacian` constructor; update docs [\#2636][https://github.com/boutproject/BOUT-dev/pull/2636] ([ZedThree][https://github.com/ZedThree])
+- Fix `SAVE_ONCE` for `Vector2/3D` [\#2633][https://github.com/boutproject/BOUT-dev/pull/2633] ([ZedThree][https://github.com/ZedThree])
 - Ensure FCI test only runs if we have zoidberg [\#2607][https://github.com/boutproject/BOUT-dev/pull/2607] ([dschwoerer][https://github.com/dschwoerer])
 - Ignore hist_hi which is reset upon restart [\#2606][https://github.com/boutproject/BOUT-dev/pull/2606] ([dschwoerer][https://github.com/dschwoerer])
 - Clang format everything [\#2605][https://github.com/boutproject/BOUT-dev/pull/2605] ([ZedThree][https://github.com/ZedThree])
