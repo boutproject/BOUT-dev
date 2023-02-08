@@ -13,7 +13,6 @@ from boututils.moment_xyzt import moment_xyzt
 
 
 def avgrate(p, y=None, tind=None):
-
     if tind is None:
         tind = 0
 
@@ -25,7 +24,6 @@ def avgrate(p, y=None, tind=None):
     growth = np.zeros((ni, nj))
 
     with np.errstate(divide="ignore"):
-
         for i in range(ni):
             for j in range(nj):
                 growth[i, j] = np.gradient(np.log(rmsp_f[tind::, i, j]))[-1]

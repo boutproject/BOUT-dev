@@ -14,7 +14,6 @@ from boutdata.collect import collect
 
 
 def rms(f):
-
     nt = f.shape[0]
 
     ns = f.shape[1]

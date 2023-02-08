@@ -26,7 +26,6 @@ build_and_log("FCI MMS test")
 
 for nslice in nslices:
     for NXPE, NYPE in itertools.product(nlist, nlist):
-
         if NXPE * NYPE > maxcores:
             continue
 
