@@ -10,6 +10,7 @@
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
+#include <boundary_region.hxx>
 #include <fft.hxx>
 #include <output.hxx>
 

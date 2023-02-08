@@ -2,6 +2,7 @@
 
 #include "boundary_factory.hxx"
 #include "boundary_region.hxx"
+#include "boundary_op.hxx"
 
 #include "test_extras.hxx"
 

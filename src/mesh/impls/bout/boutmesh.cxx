@@ -39,6 +39,8 @@
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <boutexception.hxx>
+#include <boundary_region.hxx>
+#include <parallel_boundary_region.hxx>
 #include <dcomplex.hxx>
 #include <derivs.hxx>
 #include <fft.hxx>

@@ -17,6 +17,7 @@
 #include "bout/fieldgroup.hxx"
 #include "bout/mesh.hxx"
 #include "bout/mpi_wrapper.hxx"
+#include "boundary_region.hxx"
 
 class Options;
 
