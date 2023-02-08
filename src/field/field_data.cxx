@@ -1,13 +1,13 @@
 
-#include <bout/mesh.hxx>
-#include <globals.hxx>
-#include <field_data.hxx>
-#include <boundary_factory.hxx>
-#include "parallel_boundary_region.hxx"
 #include "parallel_boundary_op.hxx"
-#include <output.hxx>
-#include <field_factory.hxx>
+#include "parallel_boundary_region.hxx"
 #include "unused.hxx"
+#include <bout/mesh.hxx>
+#include <boundary_factory.hxx>
+#include <field_data.hxx>
+#include <field_factory.hxx>
+#include <globals.hxx>
+#include <output.hxx>
 
 namespace bout {
 /// Make sure \p location is a sensible value for \p mesh

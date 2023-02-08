@@ -2958,9 +2958,11 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
 
 std::vector<BoundaryRegion *> BoutMesh::getBoundaries() { return boundary; }
 
-std::vector<BoundaryRegionPar *> BoutMesh::getBoundariesPar(BoundaryParType type) { return par_boundary[static_cast<int>(type)] ; }
+std::vector<BoundaryRegionPar*> BoutMesh::getBoundariesPar(BoundaryParType type) {
+  return par_boundary[static_cast<int>(type)];
+}
 
-void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry, BoundaryParType type) {
+void BoutMesh::addBoundaryPar(BoundaryRegionPar* bndry, BoundaryParType type) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;
   switch (type) {
   case BoundaryParType::xin_fwd:

@@ -391,7 +391,8 @@ protected:
 
 private:
   std::vector<BoundaryRegion*> boundary;        // Vector of boundary regions
-  std::vector<std::vector<BoundaryRegionPar*>> par_boundary; // Vector of parallel boundary regions
+  std::vector<std::vector<BoundaryRegionPar*>>
+      par_boundary; // Vector of parallel boundary regions
 
   //////////////////////////////////////////////////
   // Communications
