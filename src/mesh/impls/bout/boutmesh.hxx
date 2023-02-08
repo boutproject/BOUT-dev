@@ -155,8 +155,8 @@ class BoutMesh : public Mesh {
 
   // Boundary regions
   std::vector<BoundaryRegion*> getBoundaries() override;
-  std::vector<BoundaryRegionPar*> getBoundariesPar(BoundaryParType type) override final;
-  void addBoundaryPar(BoundaryRegionPar* bndry, BoundaryParType type) override final;
+  std::vector<BoundaryRegionPar*> getBoundariesPar(BoundaryParType type) final;
+  void addBoundaryPar(BoundaryRegionPar* bndry, BoundaryParType type) final;
   std::set<std::string> getPossibleBoundaries() const override;
 
   Field3D smoothSeparatrix(const Field3D& f) override;

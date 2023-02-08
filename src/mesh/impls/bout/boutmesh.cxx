@@ -83,7 +83,7 @@ BoutMesh::~BoutMesh() {
   for (const auto& bndry : boundary) {
     delete bndry;
   }
-  if (par_boundary.size() > 0) {
+  if (!par_boundary.empty()) {
     for (const auto& bndry : par_boundary[0]) {
       delete bndry;
     }
