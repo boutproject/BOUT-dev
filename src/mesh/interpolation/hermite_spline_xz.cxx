@@ -84,7 +84,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
       t_x = 0.0;
     }
 
-    k_corner(x, y, z) = ((k_corner(x,y,z) % ncz) + ncz) % ncz;
+    k_corner(x, y, z) = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
 
     // Check that t_x and t_z are in range
     if ((t_x < 0.0) || (t_x > 1.0)) {
