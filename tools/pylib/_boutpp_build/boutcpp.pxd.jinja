@@ -122,6 +122,9 @@ cdef extern from "derivs.hxx":
     Field3D {{ DD }}(Field3D, Field3D, benum.CELL_LOC, string, string) except +raise_bout_py_error
 {% endfor %}
 {% endfor %}
+    Field3D D2DXDY(Field3D, benum.CELL_LOC, string, string) except +raise_bout_py_error
+    Field3D D2DXDZ(Field3D, benum.CELL_LOC, string, string) except +raise_bout_py_error
+    Field3D D2DYDZ(Field3D, benum.CELL_LOC, string, string) except +raise_bout_py_error
 
 cdef extern from "interpolation.hxx":
     Field3D interp_to(Field3D, benum.CELL_LOC)
