@@ -46,7 +46,6 @@ class NLinResDraw(LinRes):
         xscale="linear",
         xrange=1,
     ):
-
         colors = ["b", "g", "r", "c", "m", "y", "k", "b", "g", "r", "c", "m", "y", "k"]
 
         Modes = subset(self.db, "field", [field])  # pick  field

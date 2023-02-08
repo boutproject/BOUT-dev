@@ -149,7 +149,6 @@ for nproc in [1, 2, 4]:
         else:
             npe_max = 1
         for np_split in [i for i in [1, 2, 4] if i <= npe_max]:
-
             if split is not None:
                 extra_args = " {}={}".format(split, np_split)
             else:

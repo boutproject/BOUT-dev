@@ -241,6 +241,7 @@ if args.get_list:
             print(test)
     sys.exit(0)
 
+
 # A function to get more threads from the job server
 def get_threads():
     global js_read

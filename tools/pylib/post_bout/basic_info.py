@@ -10,7 +10,6 @@ import math
 
 
 def basic_info(data, meta, rescale=True, rotate=False, user_peak=0, nonlinear=None):
-
     print("in basic_info")
     # from . import read_grid,parse_inp,read_inp,show
 
@@ -227,7 +226,6 @@ def fft_info(
             jumps = np.where(abs(phase_r) > old_div(np.pi, 32))
             # print jumps
             if len(jumps[0]) != 0:
-
                 all_pts = np.array(list(range(0, nt)))
                 good_pts = (np.where(abs(phase_r) < old_div(np.pi, 3)))[0]
                 # print good_pts,good_pts
@@ -363,7 +361,6 @@ def fft_info(
 
 # return a 2d array fof boolean values, a very simple boolian filter
 def local_maxima(array2d, user_peak, index=False, count=4, floor=0, bug=False):
-
     from operator import itemgetter, attrgetter
 
     if user_peak == 0:
