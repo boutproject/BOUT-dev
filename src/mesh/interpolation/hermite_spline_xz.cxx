@@ -137,9 +137,8 @@ XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh *mesh)
   // MatCreate(MPI_COMM_WORLD, &petscWeights);
   //  MatSetSizes(petscWeights, m, m, M, M);
   // PetscErrorCode MatCreateAIJ(MPI_Comm comm, PetscInt m, PetscInt n, PetscInt M,
-  // PetscInt N, 			      PetscInt d_nz, const PetscInt d_nnz[], PetscInt o_nz,
-  // const PetscInt
-  // o_nnz[], Mat *A)
+  // PetscInt N, 			      PetscInt d_nz, const PetscInt d_nnz[], PetscInt
+  // o_nz, const PetscInt o_nnz[], Mat *A)
   //  MatSetSizes(Mat A,PetscInt m,PetscInt n,PetscInt M,PetscInt N)
   const int m = mesh->LocalNx * mesh->LocalNy * mesh->LocalNz;
   const int M = m * mesh->getNXPE() * mesh->getNYPE();
