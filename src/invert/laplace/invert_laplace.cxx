@@ -424,11 +424,11 @@ void Laplacian::tridagMatrix(dcomplex* /*avec*/, dcomplex* /*bvec*/, dcomplex* /
   throw BoutException("Error: tridagMatrix does not yet work with 3D metric.");
 }
 #else
-void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
-                             dcomplex *bk, int jy, int kz, BoutReal kwave,
-                             int global_flags, int inner_boundary_flags, int outer_boundary_flags,
-                             const Field2D *a, const Field2D *c1coef, const Field2D *c2coef,
-                             const Field2D *d,
+void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dcomplex* bk,
+                             int jy, int kz, BoutReal kwave, int global_flags,
+                             int inner_boundary_flags, int outer_boundary_flags,
+                             const Field2D* a, const Field2D* c1coef,
+                             const Field2D* c2coef, const Field2D* d,
                              bool includeguards) {
   ASSERT1(a->getLocation() == location);
   ASSERT1(c1coef->getLocation() == location);

@@ -88,7 +88,7 @@ TEST_F(OutputTest, JustPrint) {
 TEST_F(OutputTest, DisableEnableStdout) {
   Output local_output;
 
- std::string file_only = "To file only\n";
+  std::string file_only = "To file only\n";
   std::string file_and_stdout = "To stdout and file\n";
 
   // Open temporary file and close stdout

@@ -25,8 +25,8 @@ bool IsFieldEqual(const T& field, const U& reference,
                   const std::string& region = "RGN_ALL", BoutReal tolerance = 1e-10) {
   for (auto i : field.getRegion(region)) {
     if (fabs(field[i] - reference[i]) > tolerance) {
-      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i], reference[i],
-                   tolerance);
+      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i],
+                   reference[i], tolerance);
       return false;
     }
   }
@@ -55,8 +55,8 @@ bool IsFieldClose(const T& field, const U& reference,
   for (auto i : field.getRegion(region)) {
     if (fabs(field[i] - reference[i])
         > tolerance * (fabs(reference[i]) + fabs(field[i]))) {
-      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i], reference[i],
-                   tolerance * (fabs(reference[i]) + fabs(field[i])));
+      output.write("Field: {:e}, reference: {:e}, tolerance: {:e}\n", field[i],
+                   reference[i], tolerance * (fabs(reference[i]) + fabs(field[i])));
       return false;
     }
   }

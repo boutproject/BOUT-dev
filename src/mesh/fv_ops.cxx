@@ -265,7 +265,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
             
         result[i] += flux / (coord->dy[i] * coord->J[i]);
       }
-      
+
       // Calculate flux at lower surface
       if (bndry_flux || !mesh->firstY() || (i.y() != mesh->ystart)) {
         BoutReal c = 0.5*(K[i] + Kdown[iym]); // K at the lower boundary
@@ -305,19 +305,16 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     Field3D f = are_unaligned ? toFieldAligned(f_in, "RGN_NOX") : f_in;
 
     Field3D result{zeroFrom(f)};
-    
-    for(int i=mesh->xstart;i<=mesh->xend;i++)
-      for(int j=mesh->ystart;j<=mesh->yend;j++) {
+
+    for (int i = mesh->xstart; i <= mesh->xend; i++)
+      for (int j = mesh->ystart; j <= mesh->yend; j++) {
         for(int k=0;k<mesh->LocalNz;k++) {
           BoutReal dy3 = SQ(coord->dy(i, j, k)) * coord->dy(i, j, k);
           // 3rd derivative at right boundary
-          
-          BoutReal d3fdx3 = (
-                             f(i,j+2,k)
-                             - 3.*f(i,j+1,k)
-                             + 3.*f(i,j,  k)
-                             -    f(i,j-1,k)
-                             ) / dy3;
+
+          BoutReal d3fdx3 =
+              (f(i, j + 2, k) - 3. * f(i, j + 1, k) + 3. * f(i, j, k) - f(i, j - 1, k))
+              / dy3;
 
           BoutReal flux = 0.5 * (d(i, j, k) + d(i, j + 1, k))
                           * (coord->J(i, j, k) + coord->J(i, j + 1, k)) * d3fdx3;
@@ -325,14 +322,11 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
           result(i, j, k) += flux / (coord->J(i, j, k) * coord->dy(i, j, k));
           result(i, j + 1, k) -= flux / (coord->J(i, j + 1, k) * coord->dy(i, j + 1, k));
 
-          if(j == mesh->ystart && (!mesh->firstY())) {
+          if (j == mesh->ystart && (!mesh->firstY())) {
             // Left cell boundary, no flux through boundaries
-            d3fdx3 = (
-                      f(i,j+1,k)
-                      - 3.*f(i,j,  k)
-                      + 3.*f(i,j-1,k)
-                      -    f(i,j-2,k)
-                      ) / dy3;
+            d3fdx3 =
+                (f(i, j + 1, k) - 3. * f(i, j, k) + 3. * f(i, j - 1, k) - f(i, j - 2, k))
+                / dy3;
 
             flux = 0.5 * (d(i, j, k) + d(i, j - 1, k))
                    * (coord->J(i, j, k) + coord->J(i, j - 1, k)) * d3fdx3;
@@ -343,7 +337,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
           }
         }
       }
-    
+
     // Convert result back to non-aligned coordinates
     return are_unaligned ? fromFieldAligned(result, "RGN_NOBNDRY") : result;
   }
