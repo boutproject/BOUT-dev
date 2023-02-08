@@ -7,6 +7,3 @@ ny = 4
 
 [ode]   # Solver used for internal calculations
 enablerestart = false   # Disable use of restart files
-
-
-

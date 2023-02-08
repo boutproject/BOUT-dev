@@ -38,8 +38,8 @@ class OptionINI;
 
 #include "optionparser.hxx"
 
-#include <string>
 #include <fstream>
+#include <string>
 
 /// Class for reading INI style configuration files
 /*!
@@ -48,18 +48,15 @@ class OptionINI;
 class OptionINI : public OptionParser {
 public:
   /// Read options from file
-  void read(Options *options, const std::string &filename) override;
+  void read(Options* options, const std::string& filename) override;
 
   /// Write options to file
-  void write(Options *options, const std::string &filename) override;
+  void write(Options* options, const std::string& filename) override;
+
 private:
-
   // Helper functions for reading
-  void parse(const std::string &, std::string &, std::string &);
-  std::string getNextLine(std::ifstream &fin);
-
-  // Helper functions for writing
-  void writeSection(const Options *options, std::ofstream &fout);
+  void parse(const std::string&, std::string&, std::string&);
+  std::string getNextLine(std::ifstream& fin);
 };
 
 #endif // __OPTIONS_INI_H__

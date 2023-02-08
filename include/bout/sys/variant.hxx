@@ -23,7 +23,7 @@
 
 #include "mpark/variant.hpp"
 
-#include "utils.hxx"
+#include "bout/utils.hxx"
 
 namespace bout {
 namespace utils {
@@ -36,11 +36,11 @@ namespace utils {
 // using std::holds_alternative;
 // using std::get;
 
+using mpark::get;
+using mpark::holds_alternative;
 using mpark::variant;
 using mpark::visit;
-using mpark::holds_alternative;
-using mpark::get;
-  
+
 ////////////////////////////////////////////////////////////
 // Variant comparison
 
@@ -72,13 +72,31 @@ struct IsEqual {
     return CompareTypes<T, U>()(t, u);
   }
 };
+
+/// Backport of std::disjunction
+template <class...>
+struct disjunction : std::false_type {};
+template <class B1>
+struct disjunction<B1> : B1 {};
+template <class B1, class... Bn>
+struct disjunction<B1, Bn...>
+    : std::conditional_t<bool(B1::value), B1, disjunction<Bn...>> {};
+
 } // namespace details
+
+template <typename T, typename VARIANT_T>
+struct isVariantMember;
+
+/// Is type `T` a member of variant `variant<ALL_T>`?
+template <typename T, typename... ALL_T>
+struct isVariantMember<T, variant<ALL_T...>>
+    : public details::disjunction<std::is_same<T, ALL_T>...> {};
 
 /// Return true only if the given variant \p v
 /// has the same type and value as \p t
 ///
 /// Note: Handles the case that \p t is not of a type
-/// which \v can hold.
+/// which \p v can hold.
 template <typename Variant, typename T>
 bool variantEqualTo(const Variant& v, const T& t) {
   return bout::utils::visit(details::IsEqual<T>(t), v);
@@ -115,26 +133,28 @@ struct StaticCastOrThrow {
 /// Cast a variant to a given type using static_cast
 /// If this can't be done then a std::bad_cast exception is thrown
 ///
-/// Note: \p T can be a type which variant \v cannot hold
+/// Note: \p T can be a type which variant \p v cannot hold
 /// in which case std::bad_cast will be thrown at runtime
 template <typename Variant, typename T>
-T variantStaticCastOrThrow(const Variant &v) {
-  return bout::utils::visit( details::StaticCastOrThrow<T>(), v );
+T variantStaticCastOrThrow(const Variant& v) {
+  return bout::utils::visit(details::StaticCastOrThrow<T>(), v);
 }
 
 namespace details {
-  
+
 struct ToString {
   template <typename T>
   std::string operator()(T&& val) {
     return toString(std::forward<T>(val));
   }
 };
-  
+
 } // namespace details
 
 template <typename Variant>
-std::string variantToString(const Variant& v) { return bout::utils::visit(details::ToString(), v); }
+std::string variantToString(const Variant& v) {
+  return bout::utils::visit(details::ToString(), v);
+}
 
 } // namespace utils
 } // namespace bout

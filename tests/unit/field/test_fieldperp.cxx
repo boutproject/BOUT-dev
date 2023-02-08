@@ -3,15 +3,15 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "gtest/gtest.h"
 
-#include "bout/array.hxx"
-#include "bout/constants.hxx"
-#include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "fieldperp.hxx"
 #include "test_extras.hxx"
-#include "output.hxx"
-#include "unused.hxx"
-#include "utils.hxx"
+#include "bout/array.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/constants.hxx"
+#include "bout/fieldperp.hxx"
+#include "bout/mesh.hxx"
+#include "bout/output.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 
 #include <cmath>
 #include <numeric>
@@ -21,9 +21,9 @@
 #include <vector>
 
 /// Global mesh
-namespace bout{
-namespace globals{
-extern Mesh *mesh;
+namespace bout {
+namespace globals {
+extern Mesh* mesh;
 } // namespace globals
 } // namespace bout
 
@@ -43,7 +43,7 @@ TEST_F(FieldPerpTest, Allocate) {
   EXPECT_TRUE(field.isAllocated());
 
   int counter = 0;
-  for (const auto &i : field) {
+  for (const auto& i : field) {
     field[i] = 1.; // Hits Array bounds checking
     counter++;
   }
@@ -78,7 +78,7 @@ TEST_F(FieldPerpTest, SliceXZ) {
   EXPECT_EQ(result.getIndex(), yindex);
   EXPECT_TRUE(areFieldsCompatible(masterField, result));
 
-  for (const auto &i : result) {
+  for (const auto& i : result) {
     EXPECT_EQ(result[i], 1.0);
   }
 }
@@ -279,7 +279,7 @@ TEST_F(FieldPerpTest, IterateOverWholeField) {
 
   // Basic test first: do we visit the correct number of elements?
   int count = 0;
-  for (auto &UNUSED(i) : field) {
+  for (auto& UNUSED(i) : field) {
     ++count;
   }
 
@@ -308,7 +308,7 @@ TEST_F(FieldPerpTest, IterateOverWholeField) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field) {
+  for (auto& i : field) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.z()});
@@ -345,7 +345,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_ALL) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field) {
+  for (auto& i : field) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.z()});
@@ -389,7 +389,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOZ) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.getRegion(RGN_NOZ)) {
+  for (auto& i : field.getRegion(RGN_NOZ)) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.z()});
@@ -431,7 +431,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOX) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.getRegion(RGN_NOX)) {
+  for (auto& i : field.getRegion(RGN_NOX)) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.z()});
@@ -475,7 +475,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_XGUARDS) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (const auto &i : field.getRegion("RGN_XGUARDS")) {
+  for (const auto& i : field.getRegion("RGN_XGUARDS")) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.z()});
@@ -517,7 +517,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_YGUARDS) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (const auto &i : field.getRegion("RGN_YGUARDS")) {
+  for (const auto& i : field.getRegion("RGN_YGUARDS")) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.z()});
@@ -559,7 +559,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_ZGUARDS) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (const auto &i : field.getRegion("RGN_ZGUARDS")) {
+  for (const auto& i : field.getRegion("RGN_ZGUARDS")) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.z()});
@@ -605,7 +605,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOCORNERS) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (const auto &i : field.getRegion("RGN_NOCORNERS")) {
+  for (const auto& i : field.getRegion("RGN_NOCORNERS")) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.z()});
@@ -617,7 +617,6 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOCORNERS) {
   EXPECT_EQ(sum, ((nx * nz) - num_sentinels) + (num_sentinels * sentinel));
   EXPECT_TRUE(region_indices == result_indices);
 }
-
 
 TEST_F(FieldPerpTest, Indexing) {
   FieldPerp field;
@@ -818,8 +817,8 @@ TEST_F(FieldPerpTest, CheckData) {
   field(0, 0) = BoutNaN;
 
   EXPECT_NO_THROW(checkData(field));
-  EXPECT_NO_THROW(checkData(field, RGN_NOX));
-  EXPECT_THROW(checkData(field, RGN_ALL), BoutException);
+  EXPECT_NO_THROW(checkData(field, "RGN_NOX"));
+  EXPECT_THROW(checkData(field, "RGN_ALL"), BoutException);
 }
 
 TEST_F(FieldPerpTest, InvalidateGuards) {
@@ -830,7 +829,7 @@ TEST_F(FieldPerpTest, InvalidateGuards) {
   const int nmesh = nx * nz;
 
   int sum = 0;
-  for (const auto &i : field) {
+  for (const auto& i : field) {
     field[i] = 0.0; // Reset field value
     sum++;
   }
@@ -838,7 +837,7 @@ TEST_F(FieldPerpTest, InvalidateGuards) {
 
   // Count the number of non-boundary points
   sum = 0;
-  for (const auto &i : field.getRegion(RGN_NOX)) {
+  for (const auto& i : field.getRegion(RGN_NOX)) {
     field[i] = 0.0; // Reset field value
     sum++;
   }
@@ -854,7 +853,7 @@ TEST_F(FieldPerpTest, InvalidateGuards) {
   EXPECT_NO_THROW(checkData(field(localmesh->xstart, 0)));
 
   sum = 0;
-  for (const auto &i : field) {
+  for (const auto& i : field) {
     if (!finite(field[i]))
       sum++;
   }
@@ -1713,8 +1712,8 @@ TEST_F(FieldPerpTest, Min) {
   const BoutReal min_value = 40.0;
 
   EXPECT_EQ(min(field, false), min_value);
-  EXPECT_EQ(min(field, false, RGN_ALL), -99.0);
-  EXPECT_EQ(min(field, true, RGN_ALL), -99.0);
+  EXPECT_EQ(min(field, false, "RGN_ALL"), -99.0);
+  EXPECT_EQ(min(field, true, "RGN_ALL"), -99.0);
 }
 
 TEST_F(FieldPerpTest, Max) {
@@ -1731,8 +1730,8 @@ TEST_F(FieldPerpTest, Max) {
   const BoutReal max_value = 60.0;
 
   EXPECT_EQ(max(field, false), max_value);
-  EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
-  EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
+  EXPECT_EQ(max(field, false, "RGN_ALL"), 99.0);
+  EXPECT_EQ(max(field, true, "RGN_ALL"), 99.0);
 }
 
 TEST_F(FieldPerpTest, OperatorEqualsFieldPerp) {
@@ -1742,7 +1741,8 @@ TEST_F(FieldPerpTest, OperatorEqualsFieldPerp) {
   // to 'field'.
   // Note that Average z-direction type is not really allowed for FieldPerp, but
   // we don't check anywhere at the moment.
-  FieldPerp field2{mesh_staggered, CELL_XLOW, 2, {YDirectionType::Aligned, ZDirectionType::Average}};
+  FieldPerp field2{
+      mesh_staggered, CELL_XLOW, 2, {YDirectionType::Aligned, ZDirectionType::Average}};
 
   field = field2;
 
@@ -1758,7 +1758,8 @@ TEST_F(FieldPerpTest, EmptyFrom) {
   // to 'field2'.
   // Note that Average z-direction type is not really allowed for FieldPerp, but
   // we don't check anywhere at the moment.
-  FieldPerp field{mesh_staggered, CELL_XLOW, 3, {YDirectionType::Aligned, ZDirectionType::Average}};
+  FieldPerp field{
+      mesh_staggered, CELL_XLOW, 3, {YDirectionType::Aligned, ZDirectionType::Average}};
   field = 5.;
 
   FieldPerp field2{emptyFrom(field)};
@@ -1775,7 +1776,8 @@ TEST_F(FieldPerpTest, ZeroFrom) {
   // to 'field2'.
   // Note that Average z-direction type is not really allowed for FieldPerp, but
   // we don't check anywhere at the moment.
-  FieldPerp field{mesh_staggered, CELL_XLOW, 3, {YDirectionType::Aligned, ZDirectionType::Average}};
+  FieldPerp field{
+      mesh_staggered, CELL_XLOW, 3, {YDirectionType::Aligned, ZDirectionType::Average}};
   field = 5.;
 
   FieldPerp field2{zeroFrom(field)};
@@ -1829,6 +1831,5 @@ TEST_F(FieldPerpTest, Inequality) {
   field5.setIndex(3);
   EXPECT_FALSE(field1 == field5);
 }
-
 
 #pragma GCC diagnostic pop

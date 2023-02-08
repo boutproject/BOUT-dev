@@ -1,8 +1,6 @@
-#include "bout/constants.hxx"
 #include "bout/petsclib.hxx"
 #include "bout/physicsmodel.hxx"
-#include "bout/slepclib.hxx"
-#include "bout/solverfactory.hxx"
+#include "bout/solver.hxx"
 
 #include <cmath>
 #include <memory>
@@ -37,6 +35,9 @@ public:
     // Return true if correct solution
     return (std::abs(f(1, 1, 0)) < atol) and (std::abs(g(1, 1, 0) - 1) < atol);
   }
+
+  // Don't need any restarting, or options to control data paths
+  int postInit(bool) override { return 0; }
 };
 
 int main(int argc, char** argv) {
@@ -57,21 +58,20 @@ int main(int argc, char** argv) {
   root["mesh"]["nz"] = 1;
 
   root["output"]["enabled"] = false;
-  root["restart"]["enabled"] = false;
+  root["restart_files"]["enabled"] = false;
 
   PetscLib::setArgs(argc, argv);
   Solver::setArgs(argc, argv);
   BoutComm::setArgs(argc, argv);
 
+  bout::globals::mpi = new MpiWrapper();
+
   bout::globals::mesh = Mesh::create();
   bout::globals::mesh->load();
 
-  bout::globals::dump =
-      bout::experimental::setupDumpFile(Options::root(), *bout::globals::mesh, ".");
-
   // Global options
-  root["NOUT"] = 20;
-  root["TIMESTEP"] = 1;
+  root["nout"] = 20;
+  root["timestep"] = 1;
 
   // Get specific options section for this solver. Can't just use default
   // "solver" section, as we run into problems when solvers use the same

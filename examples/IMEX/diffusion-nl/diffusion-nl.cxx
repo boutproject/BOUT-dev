@@ -15,9 +15,9 @@
  *
  */
 
-#include <bout/physicsmodel.hxx>
 #include <bout/fv_ops.hxx>
-#include <invert_parderiv.hxx>
+#include <bout/invert_parderiv.hxx>
+#include <bout/physicsmodel.hxx>
 
 class DiffusionNL : public PhysicsModel {
 protected:
@@ -31,7 +31,7 @@ protected:
     setSplitOperator();
 
     // Specify the preconditioner function
-    setPrecon( (preconfunc) &DiffusionNL::precon );
+    setPrecon(&DiffusionNL::precon);
 
     // Add the field "f" to the time integration solver
     SOLVE_FOR(f);
@@ -46,7 +46,7 @@ protected:
     ddt(f) = 0.0;
     return 0;
   }
-  
+
   /*!
    * Diffusive part of the problem. In an IMEX scheme
    * this will be treated implicitly
@@ -98,22 +98,23 @@ protected:
    */
   int precon(BoutReal, BoutReal gamma, BoutReal) {
     // Preconditioner
-    
-    static InvertPar *inv = NULL;
+
+    static std::unique_ptr<InvertPar> inv{nullptr};
     if (!inv) {
       // Initialise parallel inversion class
-      inv = InvertPar::Create();
+      inv = InvertPar::create();
       inv->setCoefA(1.0);
     }
 
     // Set the coefficient in front of Grad2_par2
-    inv->setCoefB(-gamma*D);
+    inv->setCoefB(-gamma * D);
     //mesh->communicate(ddt(f));
-    
+
     ddt(f) = inv->solve(ddt(f));
-    
+
     return 0;
   }
+
 private:
   Field3D f;      // Evolving quantity
   BoutReal alpha; // Input parameter, D = f^alpha

@@ -1,7 +1,6 @@
 #include "bout/constants.hxx"
-#include "bout/physicsmodel.hxx"
-#include "bout/solverfactory.hxx"
 #include "bout/petsclib.hxx"
+#include "bout/physicsmodel.hxx"
 #include "bout/slepclib.hxx"
 
 #include <cmath>
@@ -41,13 +40,13 @@ int main(int argc, char** argv) {
   std::vector<std::string> eigen_solvers = {"power", "slepc", "snes", "beuler"};
 
   for (auto& eigen_solver : eigen_solvers) {
-    if (SolverFactory::getInstance()->remove(eigen_solver)) {
+    if (SolverFactory::getInstance().remove(eigen_solver)) {
       output_test << "Removed '" << eigen_solver << "' eigen solver\n";
     }
   }
 
   output_test << "\nTesting the following solvers:\n";
-  for (auto& solver : SolverFactory::getInstance()->listAvailable()) {
+  for (auto& solver : SolverFactory::getInstance().listAvailable()) {
     output_test << "  " << solver << "\n";
   }
   // Explicit flush to make sure list of available solvers gets printed
@@ -62,7 +61,8 @@ int main(int argc, char** argv) {
   root["mesh"]["nz"] = 1;
 
   root["output"]["enabled"] = false;
-  root["restart"]["enabled"] = false;
+  root["restart_files"]["enabled"] = false;
+  root["datadir"] = "data";
 
   // Set the command-line arguments
   SlepcLib::setArgs(argc, argv);
@@ -73,18 +73,20 @@ int main(int argc, char** argv) {
   // Turn off writing to stdout for the main library
   Output::getInstance()->disable();
 
+  bout::globals::mpi = new MpiWrapper();
+
   bout::globals::mesh = Mesh::create();
   bout::globals::mesh->load();
-
-  bout::globals::dump =
-      bout::experimental::setupDumpFile(Options::root(), *bout::globals::mesh, ".");
 
   constexpr BoutReal end = PI / 2.;
   constexpr int NOUT = 100;
 
   // Global options
-  root["NOUT"] = NOUT;
-  root["TIMESTEP"] = end / NOUT;
+  root["nout"] = NOUT;
+  root["timestep"] = end / NOUT;
+
+  // Don't error just because we haven't used all the options yet
+  root["input"]["error_on_unused_options"] = false;
 
   // Solver-specific options
   root["euler"]["mxstep"] = 100000;
@@ -97,9 +99,6 @@ int main(int argc, char** argv) {
 
   root["imexbdf2"]["adaptive"] = true;
   root["imexbdf2"]["adaptRtol"] = 1.e-5;
-
-  root["karniadakis"]["nout"] = 100;
-  root["karniadakis"]["timestep"] = end / (NOUT * 10000);
 
   root["petsc"]["nout"] = 10000;
   root["petsc"]["output_step"] = end / 10000;
@@ -114,7 +113,7 @@ int main(int argc, char** argv) {
   // Solver and its actual value if it didn't pass
   std::map<std::string, BoutReal> errors;
 
-  for (auto& name : SolverFactory::getInstance()->listAvailable()) {
+  for (auto& name : SolverFactory::getInstance().listAvailable()) {
 
     output_test << "Testing " << name << " solver:";
     try {
@@ -141,8 +140,8 @@ int main(int argc, char** argv) {
     } catch (BoutException& e) {
       // Don't let one bad solver stop us trying the rest
       output_test << " ERROR\n";
-      output_info << "Error encountered with solver " << name << "\n";
-      output_info << e.what() << endl;
+      output_test << "Error encountered with solver " << name << "\n";
+      output_test << e.what() << endl;
       errors[name] = 0.;
     }
   }

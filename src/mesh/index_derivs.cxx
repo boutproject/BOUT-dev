@@ -20,11 +20,13 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include "bout/traits.hxx"
 #include <bout/index_derivs.hxx>
 #include <bout/mesh.hxx>
-#include <msg_stack.hxx>
-#include <unused.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/unused.hxx>
 
 /*******************************************************************************
  * Helper routines
@@ -47,8 +49,9 @@ STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc,
   ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == allowedStaggerLoc)
           || (outloc == allowedStaggerLoc && inloc == CELL_CENTRE));
 
-  if ((!StaggerGrids) || outloc == inloc)
+  if ((!StaggerGrids) || outloc == inloc) {
     return STAGGER::None;
+  }
   if (outloc == allowedStaggerLoc) {
     return STAGGER::C2L;
   } else {
@@ -70,7 +73,7 @@ STAGGER Mesh::getStagger(const CELL_LOC vloc, MAYBE_UNUSED(const CELL_LOC inloc)
 /// central, 2nd order
 REGISTER_STANDARD_DERIVATIVE(DDX_C2, "C2", 1, DERIV::Standard) {
   return 0.5 * (f.p - f.m);
-};
+}
 
 /// central, 4th order
 REGISTER_STANDARD_DERIVATIVE(DDX_C4, "C4", 2, DERIV::Standard) {
@@ -221,17 +224,21 @@ REGISTER_STANDARD_DERIVATIVE(DDX_CWENO3, "W3", 2, DERIV::Standard) {
   BoutReal a, ma = fabs(f.c);
   // Split flux
   a = fabs(f.m);
-  if (a > ma)
+  if (a > ma) {
     ma = a;
+  }
   a = fabs(f.p);
-  if (a > ma)
+  if (a > ma) {
     ma = a;
+  }
   a = fabs(f.mm);
-  if (a > ma)
+  if (a > ma) {
     ma = a;
+  }
   a = fabs(f.pp);
-  if (a > ma)
+  if (a > ma) {
     ma = a;
+  }
 
   stencil sp, sm;
 
@@ -280,11 +287,12 @@ REGISTER_FLUX_DERIVATIVE(FDDX_U2, "U2", 2, DERIV::Flux) { // No vec
 
   // Velocity at lower end
   BoutReal vs = 0.5 * (v.m + v.c);
-  BoutReal result = (vs >= 0.0) ? vs * (1.5*f.m - 0.5*f.mm) : vs * (1.5*f.c - 0.5*f.p);
+  BoutReal result =
+      (vs >= 0.0) ? vs * (1.5 * f.m - 0.5 * f.mm) : vs * (1.5 * f.c - 0.5 * f.p);
   // and at upper
   vs = 0.5 * (v.c + v.p);
   // Existing form doesn't vectorise due to branching
-  result -= (vs >= 0.0) ? vs * (1.5*f.c - 0.5*f.m) : vs * (1.5*f.p - 0.5*f.pp);
+  result -= (vs >= 0.0) ? vs * (1.5 * f.c - 0.5 * f.m) : vs * (1.5 * f.p - 0.5 * f.pp);
   return -result;
 }
 
@@ -410,7 +418,7 @@ REGISTER_FLUX_DERIVATIVE_STAGGERED(FDDX_U2_stag, "U2", 2, DERIV::Flux) {
 /// into the standard stencil based approach.
 // /////////////////////////////////////////////////////////////////////////////////
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 class FFTDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
@@ -420,11 +428,8 @@ public:
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
-    ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
-
-    // Only allow a whitelist of regions for now
-    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
-            || region == "RGN_NOX" || region == "RGN_NOY");
+    ASSERT2(
+        bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
 
     auto* theMesh = var.getMesh();
 
@@ -433,13 +438,16 @@ public:
 
     int kfilter = static_cast<int>(theMesh->fft_derivs_filter * ncz
                                    / 2); // truncates, rounding down
-    if (kfilter < 0)
+    if (kfilter < 0) {
       kfilter = 0;
-    if (kfilter > (ncz / 2))
+    }
+    if (kfilter > (ncz / 2)) {
       kfilter = ncz / 2;
+    }
     const int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
 
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       Array<dcomplex> cv(ncz / 2 + 1);
       const BoutReal kwaveFac = TWOPI / ncz;
 
@@ -475,8 +483,9 @@ public:
     AUTO_TRACE();
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
   }
-  metaData meta{"FFT", 0, DERIV::Standard};
+  static constexpr metaData meta{"FFT", 0, DERIV::Standard};
 };
+constexpr metaData FFTDerivativeType::meta;
 
 class FFT2ndDerivativeType {
 public:
@@ -487,11 +496,8 @@ public:
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
-    ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
-
-    // Only allow a whitelist of regions for now
-    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
-            || region == "RGN_NOX" || region == "RGN_NOY");
+    ASSERT2(
+        bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
 
     auto* theMesh = var.getMesh();
 
@@ -499,7 +505,8 @@ public:
     const int ncz = theMesh->getNpoints(direction);
     const int kmax = ncz / 2;
 
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       Array<dcomplex> cv(ncz / 2 + 1);
       const BoutReal kwaveFac = TWOPI / ncz;
 
@@ -535,8 +542,9 @@ public:
     AUTO_TRACE();
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
   }
-  metaData meta{"FFT", 0, DERIV::StandardSecond};
+  static constexpr metaData meta{"FFT", 0, DERIV::StandardSecond};
 };
+constexpr metaData FFT2ndDerivativeType::meta;
 
 produceCombinations<Set<WRAP_ENUM(DIRECTION, Z)>, Set<WRAP_ENUM(STAGGER, None)>,
                     Set<TypeContainer<Field3D>>,
@@ -553,7 +561,8 @@ public:
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void upwindOrFlux(const T& vel, const T& var, T& result, const std::string region) const {
+  void upwindOrFlux(const T& vel, const T& var, T& result,
+                    const std::string region) const {
     AUTO_TRACE();
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
@@ -563,13 +572,13 @@ public:
                   vel, result.getLocation(), "DEFAULT", region)
               * interp_to(var, result.getLocation());
   }
-  metaData meta{"SPLIT", 2, DERIV::Flux};
+  static constexpr metaData meta{"SPLIT", 2, DERIV::Flux};
 };
+constexpr metaData SplitFluxDerivativeType::meta;
 
-produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),
-                        WRAP_ENUM(DIRECTION, YOrthogonal), WRAP_ENUM(DIRECTION, Z)>,
-                    Set<WRAP_ENUM(STAGGER, None), WRAP_ENUM(STAGGER, C2L),
-                        WRAP_ENUM(STAGGER, L2C)>,
-                    Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
-                    Set<SplitFluxDerivativeType>>
+produceCombinations<
+    Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),
+        WRAP_ENUM(DIRECTION, YOrthogonal), WRAP_ENUM(DIRECTION, Z)>,
+    Set<WRAP_ENUM(STAGGER, None), WRAP_ENUM(STAGGER, C2L), WRAP_ENUM(STAGGER, L2C)>,
+    Set<TypeContainer<Field3D>, TypeContainer<Field2D>>, Set<SplitFluxDerivativeType>>
     registerSplitDerivative(registerMethod{});

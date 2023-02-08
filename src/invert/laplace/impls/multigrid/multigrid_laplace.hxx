@@ -31,90 +31,98 @@
 #ifndef __MULTIGRID_LAPLACE_H__
 #define __MULTIGRID_LAPLACE_H__
 
-#include <mpi.h>
+#include "bout/build_config.hxx"
+#include "bout/invert_laplace.hxx"
 
-#include <globals.hxx>
-#include <output.hxx>
-#include <options.hxx>
-#include <invert_laplace.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
+#if BOUT_USE_METRIC_3D
+
+namespace {
+RegisterUnavailableLaplace
+    registerlaplacemultigrid(LAPLACE_MULTIGRID, "BOUT++ was configured with 3D metrics");
+}
+
+#else
+
+#include <bout/mpi_wrapper.hxx>
+
+#include <bout/boutexception.hxx>
+#include <bout/globals.hxx>
+#include <bout/options.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 #define MAXGM 15
 
 // In multigrid_alg.cxx
 
-class MultigridAlg{
+class MultigridAlg {
 public:
-  MultigridAlg(int ,int ,int ,int ,int ,MPI_Comm ,int);
+  MultigridAlg(int, int, int, int, int, MPI_Comm, int);
   virtual ~MultigridAlg();
 
-  void setMultigridC(int );
-  void getSolution(BoutReal *,BoutReal *,int ); 
+  void setMultigridC(int);
+  void getSolution(BoutReal*, BoutReal*, int);
 
-  int mglevel,mgplag,cftype,mgsm,pcheck,xNP,zNP,rProcI;
-  BoutReal rtol,atol,dtol,omega;
+  int mglevel, mgplag, cftype, mgsm, pcheck, xNP, zNP, rProcI;
+  BoutReal rtol, atol, dtol, omega;
   Array<int> gnx, gnz, lnx, lnz;
-  BoutReal **matmg;
+  BoutReal** matmg;
 
 protected:
   /******* Start implementation ********/
-  int numP,xProcI,zProcI,xProcP,xProcM,zProcP,zProcM;
+  int numP, xProcI, zProcI, xProcP, xProcM, zProcP, zProcM;
 
   MPI_Comm commMG;
 
-  void communications(BoutReal *, int );
-  void setMatrixC(int );
+  void communications(BoutReal*, int);
+  void setMatrixC(int);
 
-  void cycleMG(int ,BoutReal *, BoutReal *);
-  void smoothings(int , BoutReal *, BoutReal *);
-  void projection(int , BoutReal *, BoutReal *);
-  void prolongation(int ,BoutReal *, BoutReal *);
-  void pGMRES(BoutReal *, BoutReal *, int , int);
-  void solveMG(BoutReal *, BoutReal *, int );
-  void multiAVec(int , BoutReal *, BoutReal *);
-  void residualVec(int , BoutReal *, BoutReal *, BoutReal *);
-  BoutReal vectorProd(int , BoutReal *, BoutReal *); 
+  void cycleMG(int, BoutReal*, BoutReal*);
+  void smoothings(int, BoutReal*, BoutReal*);
+  void projection(int, BoutReal*, BoutReal*);
+  void prolongation(int, BoutReal*, BoutReal*);
+  void pGMRES(BoutReal*, BoutReal*, int, int);
+  void solveMG(BoutReal*, BoutReal*, int);
+  void multiAVec(int, BoutReal*, BoutReal*);
+  void residualVec(int, BoutReal*, BoutReal*, BoutReal*);
+  BoutReal vectorProd(int, BoutReal*, BoutReal*);
 
-  virtual void lowestSolver(BoutReal *, BoutReal *, int );
-  
+  virtual void lowestSolver(BoutReal*, BoutReal*, int);
 };
-
 
 // Define three different type of multigrid solver
 // in multigrid_solver.cxx
 
-class MultigridSerial: public MultigridAlg{
+class MultigridSerial : public MultigridAlg {
 public:
   MultigridSerial(int level, int gx, int gz, MPI_Comm comm, int check);
-  ~MultigridSerial() {};
+  ~MultigridSerial(){};
 
-  void convertMatrixF(BoutReal *); 
+  void convertMatrixF(BoutReal*);
 };
 
-class Multigrid2DPf1D: public MultigridAlg{
+class Multigrid2DPf1D : public MultigridAlg {
 public:
-  Multigrid2DPf1D(int ,int ,int ,int ,int ,int ,int ,int ,MPI_Comm ,int );
-  ~Multigrid2DPf1D() {};
+  Multigrid2DPf1D(int, int, int, int, int, int, int, int, MPI_Comm, int);
+  ~Multigrid2DPf1D(){};
 
-  void setMultigridC(int );
-  void setPcheck(int );
+  void setMultigridC(int);
+  void setPcheck(int);
   void setValueS();
   int kflag;
 
 private:
   std::unique_ptr<MultigridSerial> sMG;
-  void convertMatrixFS(int  ); 
-  void lowestSolver(BoutReal *, BoutReal *, int );
-  
+  void convertMatrixFS(int);
+  void lowestSolver(BoutReal*, BoutReal*, int);
 };
 
-class Multigrid1DP: public MultigridAlg{
+class Multigrid1DP : public MultigridAlg {
 public:
-  Multigrid1DP(int ,int ,int ,int ,int ,int, MPI_Comm ,int );
-  ~Multigrid1DP() {};
-  void setMultigridC(int );
-  void setPcheck(int );
+  Multigrid1DP(int, int, int, int, int, int, MPI_Comm, int);
+  ~Multigrid1DP(){};
+  void setMultigridC(int);
+  void setPcheck(int);
   void setValueS();
   int kflag;
 
@@ -122,71 +130,80 @@ private:
   MPI_Comm comm2D;
   std::unique_ptr<MultigridSerial> sMG;
   std::unique_ptr<Multigrid2DPf1D> rMG;
-  void convertMatrixF2D(int ); 
-  void convertMatrixFS(int ); 
-  void lowestSolver(BoutReal *, BoutReal *, int );
-  
+  void convertMatrixF2D(int);
+  void convertMatrixFS(int);
+  void lowestSolver(BoutReal*, BoutReal*, int);
 };
-
-
 
 class LaplaceMultigrid : public Laplacian {
 public:
-  LaplaceMultigrid(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-      Mesh *mesh_in = nullptr);
-  ~LaplaceMultigrid() {};
-  
-  void setCoefA(const Field2D &val) override {
+  LaplaceMultigrid(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+                   Mesh* mesh_in = nullptr, Solver* solver = nullptr);
+  ~LaplaceMultigrid(){};
+
+  using Laplacian::setCoefA;
+  using Laplacian::setCoefC;
+  using Laplacian::setCoefC1;
+  using Laplacian::setCoefC2;
+  using Laplacian::setCoefD;
+  using Laplacian::setCoefEx;
+  using Laplacian::setCoefEz;
+
+  void setCoefA(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     A = val;
   }
-  void setCoefC(const Field2D &val) override {
+  void setCoefC(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
   }
-  void setCoefC1(const Field2D &val) override {
+  void setCoefC1(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
   }
-  void setCoefC2(const Field2D &val) override {
+  void setCoefC2(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C2 = val;
   }
-  void setCoefD(const Field2D &val) override {
+  void setCoefD(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     D = val;
   }
-  void setCoefEx(const Field2D &UNUSED(val)) override { throw BoutException("setCoefEx is not implemented in LaplaceMultigrid"); }
-  void setCoefEz(const Field2D &UNUSED(val)) override { throw BoutException("setCoefEz is not implemented in LaplaceMultigrid"); }
-  
-  void setCoefA(const Field3D &val) override {
+  void setCoefEx(const Field2D& UNUSED(val)) override {
+    throw BoutException("setCoefEx is not implemented in LaplaceMultigrid");
+  }
+  void setCoefEz(const Field2D& UNUSED(val)) override {
+    throw BoutException("setCoefEz is not implemented in LaplaceMultigrid");
+  }
+
+  void setCoefA(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     A = val;
   }
-  void setCoefC(const Field3D &val) override {
+  void setCoefC(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
   }
-  void setCoefC1(const Field3D &val) override {
+  void setCoefC1(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
   }
-  void setCoefC2(const Field3D &val) override {
+  void setCoefC2(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C2 = val;
   }
-  void setCoefD(const Field3D &val) override {
+  void setCoefD(const Field3D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     D = val;
@@ -194,32 +211,39 @@ public:
 
   bool uses3DCoefs() const override { return true; }
 
-  FieldPerp solve(const FieldPerp &b) override {
+  using Laplacian::solve;
+  FieldPerp solve(const FieldPerp& b) override {
     ASSERT1(localmesh == b.getMesh());
 
     return solve(b, zeroFrom(b));
   }
-  FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp& b_in, const FieldPerp& x0) override;
 
 private:
-  Field3D A,C1,C2,D; // ODE Coefficients
+  Field3D A, C1, C2, D;                         // ODE Coefficients
   int Nx_local, Nx_global, Nz_local, Nz_global; // Local and global grid sizes
-  int yindex; // y-position of the current solution phase
+  int yindex;        // y-position of the current solution phase
   Array<BoutReal> x; // solution vector
   Array<BoutReal> b; // RHS vector
   std::unique_ptr<Multigrid1DP> kMG;
 
   /******* Start implementation ********/
-  int mglevel,mgplag,cftype,mgsm,pcheck;
-  int mgcount,mgmpi;
+  int mglevel, mgplag, cftype, mgsm, pcheck;
+  int mgcount, mgmpi;
 
-  Options *opts;
-  BoutReal rtol,atol,dtol,omega;
+  Options* opts;
+  BoutReal rtol, atol, dtol, omega;
   MPI_Comm commX;
 
   int comms_tagbase;
 
   void generateMatrixF(int);
 };
+
+namespace {
+RegisterLaplace<LaplaceMultigrid> registerlaplacemultigrid(LAPLACE_MULTIGRID);
+}
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // __MULTIGRID_LAPLACE_H__

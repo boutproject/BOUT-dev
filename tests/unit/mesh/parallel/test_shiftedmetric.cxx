@@ -1,9 +1,11 @@
+#include "bout/build_config.hxx"
+
 #include "gtest/gtest.h"
 
-#include "fft.hxx"
 #include "test_extras.hxx"
+#include "bout/fft.hxx"
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 // The unit tests use the global mesh
 using namespace bout::globals;
 
@@ -39,12 +41,12 @@ public:
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
-        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}));
+    // No call to Coordinates::geometry() needed here
 
     auto coords = mesh->getCoordinates();
-    coords->setParallelTransform(
-        bout::utils::make_unique<ShiftedMetric>(*mesh, CELL_CENTRE, zShift,
-            coords->zlength()));
+    coords->setParallelTransform(bout::utils::make_unique<ShiftedMetric>(
+        *mesh, CELL_CENTRE, zShift, coords->zlength()(0, 0)));
 
     Field3D input_temp{mesh};
 
@@ -122,8 +124,7 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
 
   Field3D result = toFieldAligned(input);
 
-  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
-                           FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL", FFTTolerance));
   EXPECT_TRUE(IsFieldEqual(fromFieldAligned(result), input));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
@@ -164,10 +165,8 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
   Field3D result = fromFieldAligned(input);
 
   // Loosen tolerance a bit due to FFTs
-  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
-                           FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), input,
-			   "RGN_ALL", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), input, "RGN_ALL", FFTTolerance));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
 }
@@ -262,8 +261,8 @@ TEST_F(ShiftedMetricTest, FromFieldAlignedFieldPerp) {
   // FieldPerp does not have a getRegion2D() method. Values are never set in
   // the x-guard or x-boundary cells
   EXPECT_TRUE(IsFieldEqual(result, sliceXZ(expected, 4), "RGN_NOBNDRY", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result, "RGN_NOX"), sliceXZ(input, 4), "RGN_NOBNDRY",
-                           FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result, "RGN_NOX"), sliceXZ(input, 4),
+                           "RGN_NOBNDRY", FFTTolerance));
   EXPECT_TRUE(areFieldsCompatible(result, sliceXZ(expected, 4)));
   EXPECT_FALSE(areFieldsCompatible(result, sliceXZ(input, 4)));
 }

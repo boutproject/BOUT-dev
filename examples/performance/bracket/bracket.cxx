@@ -3,7 +3,7 @@
  *
  */
 
-#include <bout.hxx>
+#include <bout/bout.hxx>
 
 #include <chrono>
 #include <iomanip>
@@ -12,8 +12,8 @@
 #include <time.h>
 #include <vector>
 
-#include <field_factory.hxx>
-#include <initialprofiles.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/initialprofiles.hxx>
 
 #include "bout/openmpwrap.hxx"
 #include "bout/region.hxx"
@@ -21,19 +21,20 @@
 using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
+using bout::globals::mesh;
 
-#define ITERATOR_TEST_BLOCK(NAME, ...)                                                   \
-  {                                                                                      \
-    __VA_ARGS__                                                                          \
-    names.push_back(NAME);                                                               \
-    SteadyClock start = steady_clock::now();                                             \
-    for (int repetitionIndex = 0; repetitionIndex < NUM_LOOPS; repetitionIndex++) {      \
-      __VA_ARGS__;                                                                       \
-    }                                                                                    \
-    times.push_back(steady_clock::now() - start);                                        \
+#define ITERATOR_TEST_BLOCK(NAME, ...)                                              \
+  {                                                                                 \
+    __VA_ARGS__                                                                     \
+    names.push_back(NAME);                                                          \
+    SteadyClock start = steady_clock::now();                                        \
+    for (int repetitionIndex = 0; repetitionIndex < NUM_LOOPS; repetitionIndex++) { \
+      __VA_ARGS__;                                                                  \
+    }                                                                               \
+    times.push_back(steady_clock::now() - start);                                   \
   }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
   std::vector<std::string> names;
   std::vector<Duration> times;
@@ -73,8 +74,7 @@ int main(int argc, char **argv) {
     ITERATOR_TEST_BLOCK("Bracket [2D,3D] SIMPLE",
                         result = bracket(a, c, BRACKET_SIMPLE););
 
-    ITERATOR_TEST_BLOCK("Bracket [2D,3D] DEFAULT",
-                        result = bracket(a, c, BRACKET_STD););
+    ITERATOR_TEST_BLOCK("Bracket [2D,3D] DEFAULT", result = bracket(a, c, BRACKET_STD););
   }
 
   if (do3D3D) {
@@ -87,8 +87,7 @@ int main(int argc, char **argv) {
     ITERATOR_TEST_BLOCK("Bracket [3D,3D] SIMPLE",
                         result = bracket(a, b, BRACKET_SIMPLE););
 
-    ITERATOR_TEST_BLOCK("Bracket [3D,3D] DEFAULT",
-                        result = bracket(a, b, BRACKET_STD););
+    ITERATOR_TEST_BLOCK("Bracket [3D,3D] DEFAULT", result = bracket(a, b, BRACKET_STD););
   }
 
   // Uncomment below for a "correctness" check
@@ -99,7 +98,7 @@ int main(int argc, char **argv) {
 
   if (profileMode) {
     int nthreads = 0;
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP
     nthreads = omp_get_max_threads();
 #endif
 
@@ -109,7 +108,7 @@ int main(int argc, char **argv) {
       time_output << "Case legend";
       time_output << "\n------------------------------------------------\n";
 
-      for (int i = 0; i < names.size(); i++) {
+      for (std::size_t i = 0; i < names.size(); i++) {
         time_output << std::setw(width) << "Case " << i << ".\t" << names[i] << "\n";
       }
       time_output << "\n";
@@ -127,7 +126,7 @@ int main(int argc, char **argv) {
                   << "\t";
       time_output << std::setw(width) << "Nz (global)"
                   << "\t";
-      for (int i = 0; i < names.size(); i++) {
+      for (std::size_t i = 0; i < names.size(); i++) {
         time_output << std::setw(width) << "Case " << i << "\t";
       }
       time_output << "\n";
@@ -140,12 +139,12 @@ int main(int argc, char **argv) {
     time_output << std::setw(width) << mesh->GlobalNx << "\t";
     time_output << std::setw(width) << mesh->GlobalNy << "\t";
     time_output << std::setw(width) << mesh->GlobalNz << "\t";
-    for (int i = 0; i < names.size(); i++) {
+    for (std::size_t i = 0; i < names.size(); i++) {
       time_output << std::setw(width) << times[i].count() / NUM_LOOPS << "\t";
     }
     time_output << "\n";
   } else {
-    int width = 0;
+    std::size_t width = 0;
     for (const auto i : names) {
       width = i.size() > width ? i.size() : width;
     };
@@ -154,7 +153,7 @@ int main(int argc, char **argv) {
                 << "\t"
                 << "Time per iteration (s)"
                 << "\n";
-    for (int i = 0; i < names.size(); i++) {
+    for (std::size_t i = 0; i < names.size(); i++) {
       time_output << std::setw(width) << names[i] << "\t" << times[i].count() / NUM_LOOPS
                   << "\n";
     }

@@ -6,10 +6,10 @@
  *******************************************************************************/
 #include <bout/physicsmodel.hxx>
 
-#include <derivs.hxx>
-#include <initialprofiles.hxx>
-#include <interpolation.hxx>
-#include <invert_laplace.hxx>
+#include <bout/derivs.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/invert_laplace.hxx>
 
 class CWM : public PhysicsModel {
 private:
@@ -58,7 +58,7 @@ private:
   Coordinates* coord;
 
   // Inverts a Laplacian to get potential
-  Laplacian* phiSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
 
   int init(bool UNUSED(restarting)) override {
     Field2D I; // Shear factor
@@ -124,7 +124,8 @@ private:
     /************* SHIFTED RADIAL COORDINATES ************/
     // Check type of parallel transform
     std::string ptstr =
-        Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
+        Options::root()["mesh"]["paralleltransform"]["type"].withDefault<std::string>(
+            "identity");
 
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0; // I disappears from metric
@@ -144,19 +145,20 @@ private:
 
     Vi_x = wci * rho_s;
 
-    output.write("Collisions: nueix = %e, nu_hat = %e\n", nueix, nu_hat);
+    output.write("Collisions: nueix = {:e}, nu_hat = {:e}\n", nueix, nu_hat);
 
     /************** PRINT Z INFORMATION ******************/
 
     BoutReal hthe0;
     if (mesh->get(hthe0, "hthe0") == 0) {
-      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n",
-                   hthe0 / rho_s);
+      output.write(
+          "    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n",
+          hthe0 / rho_s);
     }
 
     /************** NORMALISE QUANTITIES *****************/
 
-    output.write("\tNormalising to rho_s = %e\n", rho_s);
+    output.write("\tNormalising to rho_s = {:e}\n", rho_s);
 
     // Normalise profiles
     Ni0 /= Ni_x / 1.0e14;
@@ -234,13 +236,13 @@ private:
     dump.addOnce(mesh->LocalNy, "ngy");
     dump.addOnce(mesh->LocalNz, "ngz");
     SAVE_ONCE(nu_hat, hthe0);
-    
+
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create();
-    
+
     return 0;
   }
-  // End of physics_init()
+
   //////////////////////////////////////////////////////////////////
 
   ///////////////////////////////////////////////////////////////////
@@ -275,7 +277,7 @@ private:
 
     return 0;
   }
-  // End of physics_run
+
   /////////////////////////////////////////////////////////////////
 
   /****************BOUNDARY FUNCTIONS*****************************/
@@ -299,30 +301,34 @@ private:
 
     RangeIterator xrup = mesh->iterateBndryUpperY();
 
-    for (xrup.first(); !xrup.isDone(); xrup.next())
-      for (int jy = mesh->yend + 1; jy < mesh->LocalNy; jy++)
+    for (xrup.first(); !xrup.isDone(); xrup.next()) {
+      for (int jy = mesh->yend + 1; jy < mesh->LocalNy; jy++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           var(xrup.ind, jy, jz) = var(xrup.ind, jy - 1, jz)
-                                  + coord->dy(xrup.ind, jy)
-                                        * sqrt(coord->g_22(xrup.ind, jy))
+                                  + coord->dy(xrup.ind, jy, jz)
+                                        * sqrt(coord->g_22(xrup.ind, jy, jz))
                                         * value(xrup.ind, jy, jz);
         }
+      }
+    }
   }
 
   void bndry_ydown_Grad_par(Field3D& var, const Field3D& value) {
 
     RangeIterator xrdn = mesh->iterateBndryLowerY();
 
-    for (xrdn.first(); !xrdn.isDone(); xrdn.next())
-      for (int jy = mesh->ystart - 1; jy >= 0; jy--)
+    for (xrdn.first(); !xrdn.isDone(); xrdn.next()) {
+      for (int jy = mesh->ystart - 1; jy >= 0; jy--) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           var(xrdn.ind, jy, jz) = var(xrdn.ind, jy + 1, jz)
-                                  - coord->dy(xrdn.ind, jy)
-                                        * sqrt(coord->g_22(xrdn.ind, jy))
+                                  - coord->dy(xrdn.ind, jy, jz)
+                                        * sqrt(coord->g_22(xrdn.ind, jy, jz))
                                         * value(xrdn.ind, jy, jz);
         }
+      }
+    }
   }
 
   /////////////////////////////////////////////////////////////////

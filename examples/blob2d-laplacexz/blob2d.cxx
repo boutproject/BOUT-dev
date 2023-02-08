@@ -4,9 +4,9 @@
          NR Walkden, B Dudson  20 January 2012
  *******************************************************************/
 
-#include "bout.hxx"                  // Commonly used BOUT++ components
+#include "bout/bout.hxx"             // Commonly used BOUT++ components
+#include "bout/derivs.hxx"           // To use DDZ()
 #include "bout/invert/laplacexz.hxx" // Laplacian inversion
-#include "derivs.hxx"                // To use DDZ()
 
 class Blob2D : public PhysicsModel {
 private:
@@ -18,7 +18,7 @@ private:
 
   // Parameters
   // Bohm gyro radius, Ion cyclotron frequency, Bohm sound speed
-  BoutReal rho_s, Omega_i, c_s, n0; 
+  BoutReal rho_s, Omega_i, c_s, n0;
 
   // Constants to calculate the parameters
   BoutReal Te0, e, B0, D_n, D_vort, m_i, m_e;
@@ -30,7 +30,7 @@ private:
   bool compressible; // If allow inclusion of n grad phi term in density evolution
   bool sheath;       // Sheath connected?
 
-  LaplaceXZ *phiSolver;
+  std::unique_ptr<LaplaceXZ> phiSolver{nullptr};
 
   int boussinesq_reuse; // Determines how long between updates of the density in the
                         // vorticity
@@ -41,8 +41,8 @@ protected:
 
     /******************Reading options *****************/
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["model"];
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["model"];
 
     // Load system parameters
     Te0 = options["Te0"].withDefault(30); // Temp in eV
@@ -76,24 +76,34 @@ protected:
     c_s = sqrt(e * Te0 / m_i); // Bohm sound speed
     rho_s = c_s / Omega_i;     // Bohm gyro-radius
 
-    output.write("\n\n\t----------Parameters: ------------ \n\tOmega_i = %e /s,\n\tc_s = "
-                 "%e m/s,\n\trho_s = %e m\n",
-                 Omega_i, c_s, rho_s);
+    output.write(
+        "\n\n\t----------Parameters: ------------ \n\tOmega_i = {:e} /s,\n\tc_s = "
+        "{:e} m/s,\n\trho_s = {:e} m\n",
+        Omega_i, c_s, rho_s);
 
     // Calculate delta_*, blob size scaling
-    output.write("\tdelta_* = rho_s * (dn/n) * %e\n",
+    output.write("\tdelta_* = rho_s * (dn/n) * {:e}\n",
                  pow(L_par * L_par / (R_c * rho_s), 1. / 5));
 
     /************ Create a solver for potential ********/
 
+    auto& boussinesq_options = Options::root()["phiBoussinesq"];
+    auto& non_boussinesq_options = Options::root()["phiSolver"];
+
     if (boussinesq) {
-      // Use options in BOUT.inp section "phiBoussinesq"
-      phiSolver = LaplaceXZ::create(mesh, &Options::root()["phiBoussinesq"]);
+      // BOUT.inp section "phiBoussinesq"
+      phiSolver = LaplaceXZ::create(mesh, &boussinesq_options);
+      // Mark other section as conditionally used so we don't get errors from unused
+      // options
+      non_boussinesq_options.setConditionallyUsed();
       // Set the coefficients once here
       phiSolver->setCoefs(Field2D(1.0), Field2D(0.0));
     } else {
-      // Use options in BOUT.inp section "phiSolver"
-      phiSolver = LaplaceXZ::create(mesh, &Options::root()["phiSolver"]);
+      // BOUT.inp section "phiSolver"
+      phiSolver = LaplaceXZ::create(mesh, &non_boussinesq_options);
+      // Mark other section as conditionally used so we don't get errors from unused
+      // options
+      boussinesq_options.setConditionallyUsed();
       // Coefficients will be set every RHS call
     }
     phi = 0.0; // Starting guess for first solve (if iterative)

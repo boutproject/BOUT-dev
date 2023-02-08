@@ -2,18 +2,20 @@
  * Test of initialization of Coordinates objects in Mesh::coords_map
  */
 
-#include "bout.hxx"
-#include "optionsreader.hxx"
+#include "bout/bout.hxx"
+#include "bout/optionsreader.hxx"
 
 int main() {
 
   // Initialize options, needed to load mesh from BOUT.inp
-  Options *options = Options::getRoot();
-  OptionsReader *reader = OptionsReader::getInstance();
-  reader->read(options, "%s/%s", "data", "BOUT.inp");
+  Options* options = Options::getRoot();
+  OptionsReader* reader = OptionsReader::getInstance();
+  reader->read(options, "data/BOUT.inp");
+
+  bout::globals::mpi = new MpiWrapper();
 
   // Initialize a mesh
-  mesh = Mesh::create();
+  auto mesh = Mesh::create();
   mesh->load();
 
   // Test CELL_CENTRE

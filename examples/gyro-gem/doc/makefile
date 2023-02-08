@@ -4,9 +4,8 @@ DOCS=gem.pdf
 all:$(DOCS)
 
 %.pdf: %.tex 
-	pdflatex $(@F:.pdf=.tex)
-	pdflatex $(@F:.pdf=.tex)
+	latexmk -pdf $< -interaction=batchmode
 
 .PHONY: clean
 clean:
-	rm $(DOCS)
+	latexmk -C

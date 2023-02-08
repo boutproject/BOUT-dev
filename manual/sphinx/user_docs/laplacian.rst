@@ -38,6 +38,9 @@ implementations are listed in table :numref:`tab-laplacetypes`.
    | `petsc                 | Serial/parallel. Lots of methods, no Boussinesq              | PETSc (section :ref:`sec-PETSc-install`) |
    | <sec-petsc-laplace_>`__|                                                              |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | petsc3damg             | Serial/parallel. Solves full 3D operator (with               | PETSc (section :ref:`sec-PETSc-install`) |
+   |                        | y-derivatives) with algebraic multigrid.                     |                                          |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
    | multigrid              | Serial/parallel. Geometric multigrid, no Boussinesq          |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
    | `naulin                | Serial/parallel. Iterative treatment of non-Boussinesq terms |                                          |
@@ -52,12 +55,8 @@ implementations are listed in table :numref:`tab-laplacetypes`.
    | `spt                   | Parallel only (NXPE>1). Thomas algorithm.                    |                                          |
    | <sec-spt_>`__          |                                                              |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
-   | mumps                  | Serial/parallel. Direct solver                               | MUMPS (section :ref:`sec-mumps`)         |
-   +------------------------+--------------------------------------------------------------+------------------------------------------+
-   | `pdd                   | Parallel Diagnonally Dominant algorithm. Experimental        |                                          |
-   | <sec-pdd_>`__          |                                                              |                                          |
-   +------------------------+--------------------------------------------------------------+------------------------------------------+
-   | shoot                  | Shooting method. Experimental                                |                                          |
+   | `ipt                   | Iterative parallel tridiagonal solver. Parallel only, but    |                                          |
+   | <sec-ipt_>`__          | automatically falls back to Thomas algorithm for NXPE=1.     |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
 
 Usage of the laplacian inversion
@@ -99,7 +98,7 @@ The `Laplacian` class is defined in ``invert_laplace.hxx`` and solves
 problems formulated like equation :eq:`full_laplace_inv` To use this
 class, first create an instance of it::
 
-    Laplacian *lap = Laplacian::create();
+    std::unique_ptr<Laplacian> lap = Laplacian::create();
 
 By default, this will use the options in a section called “laplace”, but
 can be given a different section as an argument. By default
@@ -699,14 +698,14 @@ calculate coefficients in a Tridiagonal matrix::
 
 For the user of the class, some static functions are defined::
 
-      static Laplacian* create(Options *opt = nullptr);
+      static std::unique_ptr<Laplacian> create(Options *opt = nullptr);
       static Laplacian* defaultInstance();
 
 The create function allows new Laplacian implementations to be created,
 based on options. To use the options in the ``[laplace]`` section, just
 use the default::
 
-      Laplacian* lap = Laplacian::create();
+      std::unique_ptr<Laplacian> lap = Laplacian::create();
 
 The code for the `Laplacian` base class is in
 ``src/invert/laplace/invert_laplace.cxx``. The actual creation of new
@@ -765,16 +764,6 @@ set of 3 poloidal slices (i.e. MYSUB=3)
    periods are where a processor is idle - in this case about 40% of the
    time
 
-.. _sec-pdd:
-
-PDD algorithm
-~~~~~~~~~~~~~
-
-This is the Parallel Diagonally Dominant (PDD) algorithm. It’s very
-fast, but achieves this by neglecting some cross-processor terms. For
-ELM simulations, it has been found that these terms are important, so
-this method is not usually used.
-
 .. _sec-cyclic:
 
 Cyclic algorithm
@@ -797,7 +786,7 @@ Naulin solver
 ~~~~~~~~~~~~~
 
 This scheme was introduced for BOUT++ by Michael Løiten in the `CELMA code
-<https://github.com/CELMA-project/CELMA>`_ and the iterative algoritm is detailed in
+<https://github.com/CELMA-project/CELMA>`_ and the iterative algorithm is detailed in
 his thesis [Løiten2017]_.
 
 The iteration can be under-relaxed (see ``naulin_laplace.cxx`` for more details of the
@@ -823,6 +812,44 @@ output files to help in choosing this value. With ``<i>`` being the number of th
 
 .. [Løiten2017] Michael Løiten, "Global numerical modeling of magnetized plasma
    in a linear device", 2017, https://celma-project.github.io/.
+
+.. _sec-ipt:
+
+Iterative Parallel Tridiagonal solver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This solver uses a hybrid of multigrid and the Thomas algorithm to invert
+tridiagonal matrices in parallel.
+The complexity of the algorithm is ``O(nx)`` work and ``O(log(NXPE))``
+communications.
+
+The Laplacian is second-order, so to invert it we need two boundary conditions,
+one at each end of the domain.
+If we only have one processor, that processor knows both boundary conditions,
+and we can invert the Laplacian locally using the Thomas algorithm.
+When the domain is subdivided between two or more processors, we can no longer
+use the Thomas algorithm, as processors do not know the solution at the
+subdomain boundaries.
+
+In this hybrid approach, we reduce the original system of equations to a
+smaller system for solution at the boundaries of each processor's subdomain.
+We solve this system in parallel using multigrid.
+Once the boundary values are known, each processor can find the solution on its
+subdomain using the Thomas algorithm.
+
+**Parameters.**
+
+* ``type = ipt`` selects this solver.
+* ``rtol`` and ``atol`` are the relative and absolute error tolerances to determine when the residual has converged. The goal of setting these is to minimize the runtime by minimizing the number of iterations required to meet the tolerance. Intuitively we would expect tightening tolerances is bad, as doing so requires more iterations. This is true, but also *loosening* the tolerances too far can lead to very slowly convergence. Generally, as we scan from large to small tolerances, we start with very slow calculations, then meet some threshold in tolerance where the runtime drops sharply, then see runtime slowly increase again as tolerances tighten further. The run time for all tolerances below this threshold are similar though, and generally it is best to err on the side of tighter tolerances.
+* ``maxits`` is the maximum number of iterations allowed before the job fails.
+* ``max_cycle`` is the number of pre and post smoothing operations applied on each multigrid level. The optimal value appears to be ``max_cycle = 1``.
+* ``max_level`` sets the number of multigrid levels. The optimal value is usually the largest possible value ``max_level = log2(NXPE) - 2`` (see "constraints" below), but sometimes one or two levels less than this can be faster.
+* ``predict_exit``.  Multigrid convergence rates are very robust. When ``predict_exit = true``, we calculate the convergence rate from early iterations and predict the iteration at which the algorithm will have converged. This allows us to skip convergence checks at most iterations (these checks are expensive as they require global communication). Whether this is advantageous is problem-dependent: it is probably useful at low ``Z`` resolution but not at higher ``Z`` resolution. This is because the algorithm skips work associated with ``kz`` modes which have converged; but if we do not check convergence, we do not know which modes we can skip. Therefore at higher ``Z`` resolution we find that reduced communication costs are offset by increased work. ``predict_exit`` defaults to ``false``.
+
+**Constraints.** This method requires that:
+
+* ``NXPE`` is a power of 2. 
+* ``NXPE > 2^(max_levels+1)``
 
 .. _sec-LaplaceXY:
 
@@ -888,8 +915,8 @@ cell faces.
 Notes:
 
 -  The ``ShiftedMetric`` or ``FCITransform`` ParallelTransform must be used
-   (i.e. ``mesh:paralleltransform = shifted`` or
-   ``mesh:paralleltransform = fci``) for this to work, since it assumes that
+   (i.e. ``mesh:paralleltransform:type = shifted`` or
+   ``mesh:paralleltransform:type = fci``) for this to work, since it assumes that
    :math:`g^{xz} = 0`
 -  Setting the option ``pctype = hypre`` seems to work well, if PETSc has been
    compiled with the algebraic multigrid library hypre; this can be included by
@@ -948,7 +975,7 @@ discretised in terms of fluxes through cell faces.
 The header file is ``include/bout/invert/laplacexz.hxx``. The solver is
 constructed by using the `LaplaceXZ::create` function::
 
-      LaplaceXZ *lap = LaplaceXZ::create(mesh);
+      std::unique_ptr<LaplaceXZ> lap = LaplaceXZ::create(mesh);
 
 Note that a pointer to a `Mesh` object must be given, which
 for now is the global variable `mesh`. By default the
@@ -1006,7 +1033,7 @@ The code in ``examples/test-laplacexz`` is a simple test case for
 `LaplaceXZ` . First it creates a `LaplaceXZ`
 object::
 
-      LaplaceXZ *inv = LaplaceXZ::create(mesh);
+      std::unique_ptr<LaplaceXZ> inv = LaplaceXZ::create(mesh);
 
 For this test the ``petsc`` implementation is the default:
 

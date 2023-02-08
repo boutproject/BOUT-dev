@@ -7,6 +7,7 @@ class Field;
 class Field2D;
 class Field3D;
 class FieldPerp;
+class Options;
 
 namespace bout {
 namespace utils {
@@ -66,6 +67,11 @@ using is_Field3D = std::is_base_of<Field3D, T>;
 template <class T>
 using is_FieldPerp = std::is_base_of<FieldPerp, T>;
 
+/// If `T` is derived from `Options`, provides the member constant
+/// `value` equal to `true`. Otherwise `value is `false`.
+template <class T>
+using is_Options = std::is_base_of<Options, T>;
+
 /// Enable a function if all the Ts are subclasses of `Field`, and
 /// returns the common type: i.e. `Field3D` if at least one argument
 /// is `Field3D`, otherwise `Field2D` if they are all `Field2D`
@@ -98,29 +104,33 @@ using is_FieldPerp = std::is_base_of<FieldPerp, T>;
 /// `Field2D` if `V` is `Field2D`, and `Field3D` if `V` is `Field3D`.
 template <class... Ts>
 using EnableIfField =
-    typename std::enable_if<details::and_all(is_Field<Ts>::value ...),
+    typename std::enable_if<details::and_all(is_Field<Ts>::value...),
                             typename std::common_type<Ts...>::type>::type;
 
 /// Enable a function if all the Ts are subclasses of `Field2D`, and
 /// returns the common type
 template <class... Ts>
 using EnableIfField2D =
-    typename std::enable_if<details::and_all(is_Field2D<Ts>::value ...),
+    typename std::enable_if<details::and_all(is_Field2D<Ts>::value...),
                             typename std::common_type<Ts...>::type>::type;
 
 /// Enable a function if all the Ts are subclasses of `Field3D`, and
 /// returns the common type
 template <class... Ts>
 using EnableIfField3D =
-    typename std::enable_if<details::and_all(is_Field3D<Ts>::value ...),
+    typename std::enable_if<details::and_all(is_Field3D<Ts>::value...),
                             typename std::common_type<Ts...>::type>::type;
 
 /// Enable a function if all the Ts are subclasses of `FieldPerp`, and
 /// returns the common type
 template <class... Ts>
 using EnableIfFieldPerp =
-    typename std::enable_if<details::and_all(is_FieldPerp<Ts>::value ...),
+    typename std::enable_if<details::and_all(is_FieldPerp<Ts>::value...),
                             typename std::common_type<Ts...>::type>::type;
+
+/// Enable a function if T is a subclass of Options
+template <class T>
+using EnableIfOptions = std::enable_if_t<std::is_base_of<Options, T>::value>;
 } // namespace utils
 } // namespace bout
 

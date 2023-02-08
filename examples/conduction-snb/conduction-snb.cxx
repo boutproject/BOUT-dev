@@ -1,7 +1,7 @@
 // SNB heat conduction model
 
+#include <bout/bout.hxx>
 #include <bout/snb.hxx>
-#include <bout.hxx>
 
 int main(int argc, char** argv) {
   using bout::HeatFluxSNB;
@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
   Field3D Ne = opt["Ne"].doc("Electron density in m^-3").as<Field3D>();
   Field3D Te = opt["Te"].doc("Electron temperature in eV").as<Field3D>();
 
-  mesh->communicate(Ne, Te);
+  bout::globals::mesh->communicate(Ne, Te);
 
   // Calculate divergence of heat flux
   HeatFluxSNB snb;
@@ -22,8 +22,12 @@ int main(int argc, char** argv) {
   Field3D Div_Q = snb.divHeatFlux(Te, Ne, &Div_Q_SH);
 
   // Save to the output
-  SAVE_ONCE(Ne, Te, Div_Q, Div_Q_SH);
-  dump.write();
+  Options::root()["Ne"] = Ne;
+  Options::root()["Te"] = Te;
+  Options::root()["Div_Q"] = Div_Q;
+  Options::root()["Div_Q_SH"] = Div_Q_SH;
+
+  bout::writeDefaultOutputFile();
 
   BoutFinalise();
   return 0;

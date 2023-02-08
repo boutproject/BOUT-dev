@@ -3,10 +3,10 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 30       # number of time-steps
-TIMESTEP = 1e1   # time between outputs
+nout = 30       # number of time-steps
+timestep = 10.0   # time between outputs
 
-TwistShift = false  # use twist-shift condition?
+twistshift = false  # use twist-shift condition?
 
 MZ = 33     # number of points in z direction (2^n + 1)
 ZMIN = 0.0
@@ -16,8 +16,6 @@ MXG = 2
 MYG = 2
 
 grid = "uedge.grd_beta.nc"
-
-output_format="nc"
 
 ##################################################
 # derivative methods
@@ -46,8 +44,8 @@ upwind = W3
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-12 # absolute tolerance
-RTOL = 1.0e-7  # relative tolerance
+atol = 1e-12 # absolute tolerance
+rtol = 1e-07  # relative tolerance
 
 ##################################################
 # settings for 2fluid
@@ -61,11 +59,11 @@ estatic = false   # if true, electrostatic (Apar = 0)
 ZeroElMass = true # Use Ohms law without electron inertia
 AparInEpar = false
 Zeff = 128.0        # Z effective
-nu_perp = 1.0e-20
+nu_perp = 1e-20
 
 ShearFactor = 0.0
 
-nu_factor = 5.18718e-4
+nu_factor = 0.000518718
 #nu_factor = 1e-3
 
 [phiSolver]
@@ -82,24 +80,15 @@ outer_boundary_flags = 0
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 bndry_all = neumann # Zero gradient
 
 [Ni]
-scale = 1.0e-8 # only perturbing Ni
+scale = 1e-08 # only perturbing Ni
 
 function = sin(y) * sin(z)
-
-[Vi]
-evolve = false
-
-[Te]
-evolve = false
-
-[Ti]
-evolve = false
 
 [jpar]
 bndry_all = neumann # Zero gradient

@@ -5,6 +5,9 @@ on:
     paths:
       - '**.cxx'
       - '**.hxx'
+    branches-ignore:
+      # Release candidate branches tend to have big PRs which causes all sorts of problems
+      - 'v*rc'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,7 +17,7 @@ jobs:
   review:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
 
@@ -29,13 +32,15 @@ jobs:
           # the unit tests until they're fixed or ignored upstream
           exclude: "tests/unit/*cxx"
           cmake_command: |
-            git config --global --add safe.directory '*' &&
+            pip install cmake && \
+            cmake --version && \
+            git config --global --add safe.directory "$GITHUB_WORKSPACE" && \
             cmake . -B build -DBUILD_SHARED_LIBS=ON \
-                             -DBOUT_ENABLE_OPENMP=ON \
                              -DBOUT_USE_PETSC=ON \
                              -DBOUT_USE_SLEPC=ON \
                              -DBOUT_USE_SUNDIALS=ON \
                              -DBOUT_BUILD_EXAMPLES=ON \
                              -DBOUT_BUILD_DOCS=OFF \
                              -DBOUT_ENABLE_PYTHON=OFF \
-                             -DCMAKE_EXPORT_COMPILE_COMMANDS=On
+                             -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
+                             -DBOUT_UPDATE_GIT_SUBMODULE=OFF

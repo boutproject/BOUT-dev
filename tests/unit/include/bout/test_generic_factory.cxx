@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "boutexception.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/generic_factory.hxx"
 
 #include <exception>
@@ -8,26 +8,45 @@
 #include <string>
 #include <vector>
 
+class Options;
+
 class Base {
 public:
+  Base(Options*) {}
   virtual ~Base() = default;
   virtual std::string foo() { return "Base"; }
 };
 
 class Derived1 : public Base {
 public:
+  Derived1(Options*) : Base({}) {}
   std::string foo() override { return "Derived1"; }
 };
 
 class Derived2 : public Base {
 public:
+  Derived2(Options*) : Base({}) {}
   std::string foo() override { return "Derived2"; }
 };
 
 namespace {
-RegisterInFactory<Base, Base> registerme("base");
-RegisterInFactory<Base, Derived1> registerme1("derived1");
-RegisterInFactory<Base, Derived2> registerme2("derived2");
+class BaseFactory : public Factory<Base, BaseFactory, Options*> {
+public:
+  static constexpr auto type_name = "Base";
+  static constexpr auto section_name = "base";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = "base";
+};
+constexpr decltype(BaseFactory::type_name) BaseFactory::type_name;
+constexpr decltype(BaseFactory::section_name) BaseFactory::section_name;
+constexpr decltype(BaseFactory::option_name) BaseFactory::option_name;
+constexpr decltype(BaseFactory::default_type) BaseFactory::default_type;
+
+BaseFactory::RegisterInFactory<Base> registerme("base");
+BaseFactory::RegisterInFactory<Derived1> registerme1("derived1");
+BaseFactory::RegisterInFactory<Derived2> registerme2("derived2");
+BaseFactory::RegisterUnavailableInFactory dontregisterme("not here",
+                                                         "this is only a test");
 } // namespace
 
 class BaseComplicated {
@@ -48,72 +67,82 @@ public:
   DerivedComplicated2(std::string name) : BaseComplicated(std::move(name)) {}
 };
 
-// Save some typing later
-using ComplicatedFactory =
-    Factory<BaseComplicated, std::function<BaseComplicated*(const std::string&)>>;
-
-// We need to specialise the helper class to pass arguments to the constructor
-template<typename DerivedType>
-class RegisterInFactory<BaseComplicated, DerivedType> {
+class ComplicatedFactory
+    : public Factory<BaseComplicated, ComplicatedFactory, const std::string&> {
 public:
-  RegisterInFactory(const std::string &name) {
-    ComplicatedFactory::getInstance().add(
-        name, [](std::string name) -> BaseComplicated * { return new DerivedType(name); });
-  }
+  static constexpr auto type_name = "Complicated";
+  static constexpr auto section_name = "complicated";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = "basecomplicated";
 };
 
+constexpr decltype(ComplicatedFactory::type_name) ComplicatedFactory::type_name;
+constexpr decltype(ComplicatedFactory::section_name) ComplicatedFactory::section_name;
+constexpr decltype(ComplicatedFactory::option_name) ComplicatedFactory::option_name;
+constexpr decltype(ComplicatedFactory::default_type) ComplicatedFactory::default_type;
+
 namespace {
-RegisterInFactory<BaseComplicated, BaseComplicated>
-    registerme3("basecomplicated");
-RegisterInFactory<BaseComplicated, DerivedComplicated1>
+ComplicatedFactory::RegisterInFactory<BaseComplicated> registerme3("basecomplicated");
+ComplicatedFactory::RegisterInFactory<DerivedComplicated1>
     registerme4("derivedcomplicated1");
-RegisterInFactory<BaseComplicated, DerivedComplicated2>
+ComplicatedFactory::RegisterInFactory<DerivedComplicated2>
     registerme5("derivedcomplicated2");
 } // namespace
 
 TEST(GenericFactory, RegisterAndCreate) {
 
-  std::unique_ptr<Base> base_{Factory<Base>::getInstance().create("base")};
+  auto base_{BaseFactory::getInstance().create("base")};
   EXPECT_EQ(base_->foo(), "Base");
 
-  std::unique_ptr<Base> derived1_{Factory<Base>::getInstance().create("derived1")};
+  auto derived1_{BaseFactory::getInstance().create("derived1")};
   EXPECT_EQ(derived1_->foo(), "Derived1");
 
-  std::unique_ptr<Base> derived2_{Factory<Base>::getInstance().create("derived2")};
+  auto derived2_{BaseFactory::getInstance().create("derived2")};
   EXPECT_EQ(derived2_->foo(), "Derived2");
 }
 
 TEST(GenericFactory, ListAvailable) {
-  auto available = Factory<Base>::getInstance().listAvailable();
+  auto available = BaseFactory::getInstance().listAvailable();
   std::vector<std::string> expected{"base", "derived1", "derived2"};
+
+  EXPECT_EQ(available, expected);
+}
+
+TEST(GenericFactory, ListUnavailable) {
+  auto available = BaseFactory::getInstance().listUnavailableReasons();
+  std::vector<std::string> expected{"not here (this is only a test)"};
 
   EXPECT_EQ(available, expected);
 }
 
 TEST(GenericFactory, Remove) {
-  auto available = Factory<Base>::getInstance().listAvailable();
+  auto available = BaseFactory::getInstance().listAvailable();
   std::vector<std::string> expected{"base", "derived1", "derived2"};
 
   EXPECT_EQ(available, expected);
 
-  EXPECT_TRUE(Factory<Base>::getInstance().remove("derived2"));
+  EXPECT_TRUE(BaseFactory::getInstance().remove("derived2"));
 
   std::vector<std::string> expected2{"base", "derived1"};
-  available = Factory<Base>::getInstance().listAvailable();
+  available = BaseFactory::getInstance().listAvailable();
 
   EXPECT_EQ(available, expected2);
 
   // Better add this back in as this object is shared between tests!
-  RegisterInFactory<Base, Derived2> registerme("derived2");
+  BaseFactory::RegisterInFactory<Derived2> registerme("derived2");
 }
 
 TEST(GenericFactory, RemoveNonexistant) {
   // Try a remove for something that shouldn't be registered
-  EXPECT_FALSE(Factory<Base>::getInstance().remove("derived83"));
+  EXPECT_FALSE(BaseFactory::getInstance().remove("derived83"));
 }
 
 TEST(GenericFactory, GetUnknownType) {
-  EXPECT_THROW(Factory<Base>::getInstance().create("unknown"), BoutException);
+  EXPECT_THROW(BaseFactory::getInstance().create("unknown"), BoutException);
+}
+
+TEST(GenericFactory, GetUnavailableType) {
+  EXPECT_THROW(BaseFactory::getInstance().create("not here"), BoutException);
 }
 
 TEST(GenericFactory, Complicated) {

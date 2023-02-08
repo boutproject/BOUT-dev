@@ -29,10 +29,10 @@
 #ifndef __INDEX_DERIVS_INTERFACE_HXX__
 #define __INDEX_DERIVS_INTERFACE_HXX__
 
-#include <bout/deriv_store.hxx>
-#include <bout_types.hxx>
-#include <msg_stack.hxx>
 #include "bout/traits.hxx"
+#include <bout/bout_types.hxx>
+#include <bout/deriv_store.hxx>
+#include <bout/msg_stack.hxx>
 
 class Field3D;
 class Field2D;
@@ -350,7 +350,10 @@ T VDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
                                 and (vel.getDirectionY() == YDirectionType::Standard));
 
     const T f_aligned = are_unaligned ? toFieldAligned(f, "RGN_NOX") : f;
-    const T vel_aligned = are_unaligned ? toFieldAligned(vel, "RGN_NOX") : vel;
+    const T vel_aligned =
+        are_unaligned
+            ? toFieldAligned(vel, stagger == STAGGER::None ? "RGN_NOBNDRY" : "RGN_NOX")
+            : vel;
     T result = flowDerivative<T, DIRECTION::Y, DERIV::Upwind>(vel_aligned, f_aligned,
                                                               outloc, method, region);
     return are_unaligned ? fromFieldAligned(result, region) : result;

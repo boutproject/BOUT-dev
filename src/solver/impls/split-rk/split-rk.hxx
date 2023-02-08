@@ -32,52 +32,49 @@ class SplitRK;
 #ifndef SPLITRK_HXX
 #define SPLITRK_HXX
 
-#include <bout_types.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/solver.hxx>
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<SplitRK> registersolversplitrk("splitrk");
 }
 
 class SplitRK : public Solver {
 public:
-  explicit SplitRK(Options *opt = nullptr) : Solver(opt) {}
+  explicit SplitRK(Options* opts = nullptr);
   ~SplitRK() = default;
 
-  int init(int nout, BoutReal tstep) override;
-
+  int init() override;
   int run() override;
+
 private:
-  int nstages{2}; ///< Number of stages in the RKL 
-  
-  BoutReal out_timestep{0.0}; ///< The output timestep
-  int nsteps{0}; ///< Number of output steps
-  
+  int nstages{2}; ///< Number of stages in the RKL
+
   BoutReal timestep{0.0}; ///< The internal timestep
 
-  bool adaptive{true};   ///< Adapt timestep using tolerances?
-  BoutReal atol{1e-10};  ///< Absolute tolerance
-  BoutReal rtol{1e-5};   ///< Relative tolerance
+  bool adaptive{true};        ///< Adapt timestep using tolerances?
+  BoutReal atol{1e-10};       ///< Absolute tolerance
+  BoutReal rtol{1e-5};        ///< Relative tolerance
   BoutReal max_timestep{1.0}; ///< Maximum timestep
-  BoutReal max_timestep_change{2.0};  ///< Maximum factor by which the timestep should be changed
-  int mxstep{1000};      ///< Maximum number of internal steps between outputs
-  int adapt_period{1};   ///< Number of steps between checks
+  BoutReal max_timestep_change{
+      2.0};            ///< Maximum factor by which the timestep should be changed
+  int mxstep{1000};    ///< Maximum number of internal steps between outputs
+  int adapt_period{1}; ///< Number of steps between checks
 
-  bool diagnose{false};  ///< Turn on diagnostic output
-  
+  bool diagnose{false}; ///< Turn on diagnostic output
+
   int nlocal{0}, neq{0}; ///< Number of variables on local processor and in total
-  
+
   /// System state
   Array<BoutReal> state;
-  
+
   /// Temporary time-stepping arrays
-  /// These are used by both diffusion and advection time-step routines 
+  /// These are used by both diffusion and advection time-step routines
   Array<BoutReal> u1, u2, u3, dydt;
 
   /// Arrays used for adaptive timestepping
   Array<BoutReal> state1, state2;
-  
+
   /// Take a combined step
   /// Uses 2nd order Strang splitting
   ///
@@ -89,8 +86,8 @@ private:
   /// Uses the Runge-Kutta-Legendre 2nd order method
   ///
   /// Note: start and result can be the same
-  void take_diffusion_step(BoutReal curtime, BoutReal dt,
-                                      Array<BoutReal>& start, Array<BoutReal>& result);
+  void take_diffusion_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
+                           Array<BoutReal>& result);
 
   /// Take a step of the advection terms
   /// Uses the Strong Stability Preserving Runge-Kutta 3rd order method

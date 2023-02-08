@@ -5,11 +5,15 @@ class CASHKARPScheme;
 #define __CASHKARP_SCHEME_H__
 
 #include <bout/rkscheme.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 class CASHKARPScheme : public RKScheme {
 public:
   CASHKARPScheme(Options* options);
 };
+
+namespace {
+RegisterRKScheme<CASHKARPScheme> registerrkschemecashkarp(RKSCHEME_CASHKARP);
+}
 
 #endif // __CASHKARP_SCHEME_H__

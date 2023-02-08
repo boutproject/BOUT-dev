@@ -6,7 +6,7 @@
 #include <bout/physicsmodel.hxx>
 
 #include <bout/constants.hxx>
-#include <invert_laplace.hxx>
+#include <bout/invert_laplace.hxx>
 
 class Jorek : public PhysicsModel {
 private:
@@ -59,8 +59,6 @@ private:
 
   bool include_profiles; // Include zero-order equilibrium terms
 
-  bool parallel_lc; // Use CtoL and LtoC differencing
-
   int low_pass_z; // Toroidal (Z) filtering of all variables
 
   Vector3D vExB, vD; // Velocities
@@ -80,13 +78,13 @@ private:
   Coordinates* coord;
 
   // Inverts a Laplacian to get potential
-  Laplacian* phiSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
 
   int init(bool UNUSED(restarting)) override {
 
     output.write("Solving JOREK-like reduced MHD equations\n");
-    output.write("\tFile    : %s\n", __FILE__);
-    output.write("\tCompiled: %s at %s\n", __DATE__, __TIME__);
+    output.write("\tFile    : {:s}\n", __FILE__);
+    output.write("\tCompiled: {:s} at {:s}\n", __DATE__, __TIME__);
 
     auto globalOptions = Options::root();
     auto options = globalOptions["jorek"];
@@ -116,7 +114,8 @@ private:
 
       Field2D factor = P0 / (Charge * (Ti0 + Te0) * rho0);
 
-      output.write("\tPressure factor %e -> %e\n", min(factor, true), max(factor, true));
+      output.write("\tPressure factor {:e} -> {:e}\n", min(factor, true),
+                   max(factor, true));
 
       // Multiply temperatures by this factor
       Te0 *= factor;
@@ -127,38 +126,45 @@ private:
     // Load dissipation coefficients, override in options file
     if (options["D_perp"].isSet()) {
       D_perp = options["D_perp"].withDefault<BoutReal>(0.0);
-    } else
+    } else {
       mesh->get(D_perp, "D_perp");
+    }
 
     if (options["chi_eperp"].isSet()) {
       chi_eperp = options["chi_eperp"].withDefault<BoutReal>(0.0);
-    } else
+    } else {
       mesh->get(chi_eperp, "chi_eperp");
+    }
 
     if (options["chi_iperp"].isSet()) {
       chi_iperp = options["chi_iperp"].withDefault<BoutReal>(0.0);
-    } else
+    } else {
       mesh->get(chi_iperp, "chi_iperp");
+    }
 
     if (options["chi_epar"].isSet()) {
       chi_epar = options["chi_epar"].withDefault<BoutReal>(0.0);
-    } else
+    } else {
       mesh->get(chi_epar, "chi_epar");
+    }
 
     if (options["chi_ipar"].isSet()) {
       chi_ipar = options["chi_ipar"].withDefault<BoutReal>(0.0);
-    } else
+    } else {
       mesh->get(chi_ipar, "chi_ipar");
+    }
 
     if (options["viscos_perp"].isSet()) {
       viscos_perp = options["viscos_perp"].withDefault<BoutReal>(-1.0);
-    } else
+    } else {
       mesh->get(viscos_perp, "viscos_perp");
+    }
 
     if (options["viscos_par"].isSet()) {
       viscos_par = options["viscos_par"].withDefault<BoutReal>(-1.0);
-    } else
+    } else {
       mesh->get(viscos_par, "viscos_par");
+    }
 
     viscos_coll = options["viscos_coll"].withDefault(-1.0);
 
@@ -196,7 +202,6 @@ private:
     electron_density = options["electron_density"].withDefault(false);
     vorticity_momentum = options["vorticity_momentum"].withDefault(false);
     include_profiles = options["include_profiles"].withDefault(false);
-    parallel_lc = options["parallel_lc"].withDefault(true);
 
     low_pass_z = options["low_pass_z"].withDefault(-1); // Default is no filtering
 
@@ -235,7 +240,8 @@ private:
 
     // Check type of parallel transform
     std::string ptstr =
-        Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
+        Options::root()["mesh"]["paralleltransform"]["type"].withDefault<std::string>(
+            "identity");
 
     if (lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system
@@ -329,7 +335,8 @@ private:
     eta = eta0;
     tau_e = tau_enorm * pow(Te0, 1.5) / rho0;
 
-    output.write("\tNormalised tau_e = %e -> %e\n", min(tau_e, true), max(tau_e, true));
+    output.write("\tNormalised tau_e = {:e} -> {:e}\n", min(tau_e, true),
+                 max(tau_e, true));
 
     // Set locations for staggered grids
     vD.setLocation(CELL_VSHIFT);
@@ -351,7 +358,7 @@ private:
 
     SAVE_REPEAT(phi, Jpar); // Save each timestep
     SAVE_REPEAT(divExB);
-    
+
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create();
     if (vorticity_momentum) {
@@ -365,13 +372,7 @@ private:
     // Derivative along equilibrium field-line
     Field3D result;
 
-    if (parallel_lc) {
-      if (loc == CELL_YLOW) {
-        result = Grad_par_CtoL(f);
-      } else
-        result = Grad_par_LtoC(f);
-    } else
-      result = Grad_par(f, loc);
+    result = Grad_par(f, loc);
 
     if (nonlinear) {
       if (full_bfield) {
@@ -391,7 +392,7 @@ private:
   }
 
   int rhs(BoutReal t) override {
-    TRACE("Started physics_run(%e)", t);
+    TRACE("Started Jorek::rhs({:e})", t);
 
     // Invert laplacian for phi
     if (vorticity_momentum) {
@@ -419,18 +420,22 @@ private:
     if (jpar_bndry_width > 0) {
       // Boundary in jpar
       if (mesh->firstX()) {
-        for (int i = jpar_bndry_width; i >= 0; i--)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = jpar_bndry_width; i >= 0; i--) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
               Jpar(i, j, k) = 0.5 * Jpar(i + 1, j, k);
             }
+          }
+        }
       }
       if (mesh->lastX()) {
-        for (int i = mesh->LocalNx - jpar_bndry_width - 1; i < mesh->LocalNx; i++)
-          for (int j = 0; j < mesh->LocalNy; j++)
+        for (int i = mesh->LocalNx - jpar_bndry_width - 1; i < mesh->LocalNx; i++) {
+          for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
               Jpar(i, j, k) = 0.5 * Jpar(i - 1, j, k);
             }
+          }
+        }
       }
     }
 
@@ -518,8 +523,9 @@ private:
           ddt(rho) += (Mi / (Charge * sqrt(MU0 * rhonorm))) * Div_parP(Jpar, CELL_CENTRE);
         }
 
-        if (low_pass_z > 0)
+        if (low_pass_z > 0) {
           ddt(rho) = lowPass(ddt(rho), low_pass_z);
+        }
       }
 
       {
@@ -531,8 +537,9 @@ private:
                   + chi_eperp * Delp2(Te) / rhot // Perpendicular diffusion
             ;
 
-        if (ohmic_heating)
+        if (ohmic_heating) {
           ddt(Te) += (2. / 3) * eta * Jpar * Jpar / rhot; // Ohmic heating
+        }
       }
 
       {
@@ -596,11 +603,13 @@ private:
       }
 
       // Viscosity terms
-      if (viscos_par > 0.0)
+      if (viscos_par > 0.0) {
         ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
+      }
 
-      if (viscos_perp > 0.0)
+      if (viscos_perp > 0.0) {
         ddt(U) += viscos_perp * rhot * Delp2(U / rhot); // Perpendicular viscosity
+      }
 
     } else {
       TRACE("vorticity");
@@ -630,19 +639,23 @@ private:
       }
 
       // Viscosity terms
-      if (viscos_par > 0.0)
+      if (viscos_par > 0.0) {
         ddt(U) += viscos_par * Grad2_par2(U) / rhot; // Parallel viscosity
+      }
 
-      if (viscos_perp > 0.0)
+      if (viscos_perp > 0.0) {
         ddt(U) += viscos_perp * Delp2(U) / rhot; // Perpendicular viscosity
+      }
 
       // Collisional viscosity
-      if (viscos_coll > 0.0)
+      if (viscos_coll > 0.0) {
         ddt(U) += viscos_coll / MU0 * eta * Delp2(U) / rhot;
+      }
     }
 
-    if (low_pass_z > 0)
+    if (low_pass_z > 0) {
       ddt(U) = lowPass(ddt(U), low_pass_z);
+    }
 
     ////////// Parallel velocity equation ////////////
 
@@ -655,8 +668,9 @@ private:
         ddt(Vpar) -= Vpar_Grad_par(Vpar, Vpar); // Parallel advection
       }
 
-      if (low_pass_z > 0)
+      if (low_pass_z > 0) {
         ddt(Vpar) = lowPass(ddt(Vpar), low_pass_z);
+      }
     }
 
     ////////// Magnetic potential equation ////////////
@@ -670,8 +684,9 @@ private:
       }
     }
 
-    if (low_pass_z > 0)
+    if (low_pass_z > 0) {
       ddt(Apar) = lowPass(ddt(Apar), low_pass_z);
+    }
 
     return 0;
   }

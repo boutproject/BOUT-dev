@@ -1,15 +1,15 @@
+#include "bout/unused.hxx"
 #include <bout/physicsmodel.hxx>
-#include "unused.hxx"
 
 class TestDelp2 : public PhysicsModel {
 protected:
   int init(bool UNUSED(restarting)) override {
-    Options *opt = Options::getRoot()->getSection("diffusion");
+    Options* opt = Options::getRoot()->getSection("diffusion");
     OPTION(opt, D, 0.1);
     OPTION(opt, useFFT, true);
 
     SOLVE_FOR(n);
-  
+
     return 0;
   }
 

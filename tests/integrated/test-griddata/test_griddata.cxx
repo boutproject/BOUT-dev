@@ -1,22 +1,20 @@
-#include <bout.hxx>
+#include <bout/bout.hxx>
+#include <bout/version.hxx>
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
-  Datafile df(Options::getRoot()->getSection("output"));
-  df.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
-
-  mesh->outputVars(df);
-
   Field2D Rxy, Bpxy;
-  mesh->get(Rxy, "Rxy");
-  mesh->get(Bpxy, "Bpxy");
+  bout::globals::mesh->get(Rxy, "Rxy");
+  bout::globals::mesh->get(Bpxy, "Bpxy");
 
-  df.add(Rxy, "Rxy");
-  df.add(Bpxy, "Bpxy");
+  Options dump;
+  dump["Rxy"] = Rxy;
+  dump["Bpxy"] = Bpxy;
+  bout::experimental::addBuildFlagsToOptions(dump);
+  bout::globals::mesh->outputVars(dump);
+  bout::OptionsNetCDF("data.nc").write(dump);
 
-  df.write("data.nc");
-  
   BoutFinalise();
   return 0;
 }

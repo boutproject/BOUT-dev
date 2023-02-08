@@ -8,20 +8,21 @@
  * http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex6f.F.html
  */
 
+#include "bout/build_config.hxx"
+
 #include "laplacexz-petsc.hxx"
 
-#ifdef BOUT_HAS_PETSC  // Requires PETSc
+#if BOUT_HAS_PETSC // Requires PETSc
 
 #include <bout/assert.hxx>
 #include <bout/sys/timer.hxx>
 
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 
-LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
-  : LaplaceXZ(m, opt, loc),
-    lib(opt==nullptr ? &(Options::root()["laplacexz"]) : opt),
-    coefs_set(false) {
+LaplaceXZpetsc::LaplaceXZpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
+    : LaplaceXZ(m, opt, loc), lib(opt == nullptr ? &(Options::root()["laplacexz"]) : opt),
+      coefs_set(false) {
 
   /* Constructor: LaplaceXZpetsc
    * Purpose:     - Setting inversion solver options
@@ -133,22 +134,27 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
   // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
 
   const BoutReal rtol = (*opt)["rtol"].doc("Relative tolerance").withDefault(1e-5);
-  const BoutReal atol = (*opt)["atol"]
+  const BoutReal atol =
+      (*opt)["atol"]
           .doc("Absolute tolerance. The solution is considered converged if |Ax-b| "
                "< max( rtol * |b| , atol )")
           .withDefault(1e-10);
-  const BoutReal dtol = (*opt)["dtol"]
-                      .doc("The solution is considered diverged if |Ax-b| > dtol * |b|")
-                      .withDefault(1e3);
+  const BoutReal dtol =
+      (*opt)["dtol"]
+          .doc("The solution is considered diverged if |Ax-b| > dtol * |b|")
+          .withDefault(1e3);
   const int maxits = (*opt)["maxits"].doc("Maximum iterations").withDefault(100000);
 
   // Get KSP Solver Type
-  const std::string ksptype = (*opt)["ksptype"].doc("KSP solver type").withDefault("gmres");
-  
-  // Get PC type
-  const std::string pctype = (*opt)["pctype"].doc("Preconditioner type").withDefault("none");
+  const std::string ksptype =
+      (*opt)["ksptype"].doc("KSP solver type").withDefault("gmres");
 
-  const std::string factor_package = (*opt)["factor_package"]
+  // Get PC type
+  const std::string pctype =
+      (*opt)["pctype"].doc("Preconditioner type").withDefault("none");
+
+  const std::string factor_package =
+      (*opt)["factor_package"]
           .doc("Package to use in preconditioner. Passed to PCFactorSetMatSolver")
           .withDefault("petsc");
 
@@ -165,10 +171,10 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
   }
 
   // Create Vectors
-  VecCreate( comm, &xs );
-  VecSetSizes( xs, localN, PETSC_DETERMINE );
-  VecSetFromOptions( xs );
-  VecDuplicate( xs , &bs );
+  VecCreate(comm, &xs);
+  VecSetSizes(xs, localN, PETSC_DETERMINE);
+  VecSetFromOptions(xs);
+  VecDuplicate(xs, &bs);
 
   for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
     YSlice data;
@@ -176,22 +182,22 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
     data.yindex = y;
 
     // Set size of Matrix on each processor to localN x localN
-    MatCreate( comm, &data.MatA );
-    MatSetSizes( data.MatA, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE );
+    MatCreate(comm, &data.MatA);
+    MatSetSizes(data.MatA, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE);
     MatSetFromOptions(data.MatA);
 
     //////////////////////////////////////////////////
     // Pre-allocate space for matrix elements
 
     PetscInt *d_nnz, *o_nnz;
-    PetscMalloc( (localN)*sizeof(PetscInt), &d_nnz );
-    PetscMalloc( (localN)*sizeof(PetscInt), &o_nnz );
+    PetscMalloc((localN) * sizeof(PetscInt), &d_nnz);
+    PetscMalloc((localN) * sizeof(PetscInt), &o_nnz);
 
-    for (int i=0;i<localN;i++) {
+    for (int i = 0; i < localN; i++) {
       // Non-zero elements on this processor
-      d_nnz[i] = 5; // Star pattern in 2D
+      d_nnz[i] = 9;
       // Non-zero elements on neighboring processor
-      o_nnz[i] = 0;
+      o_nnz[i] = 3;
     }
 
     // X boundaries
@@ -221,28 +227,28 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
       }
     }
 
-    MatMPIAIJSetPreallocation( data.MatA, 0, d_nnz, 0, o_nnz );
+    MatMPIAIJSetPreallocation(data.MatA, 0, d_nnz, 0, o_nnz);
     MatSetUp(data.MatA);
-    PetscFree( d_nnz );
-    PetscFree( o_nnz );
+    PetscFree(d_nnz);
+    PetscFree(o_nnz);
 
     //////////////////////////////////////////////////
     // Declare KSP Context
     KSPCreate(comm, &data.ksp);
 
     // Set KSP type
-    KSPSetType( data.ksp, ksptype.c_str() );
+    KSPSetType(data.ksp, ksptype.c_str());
     // Set KSP tolerances
-    KSPSetTolerances( data.ksp, rtol, atol, dtol, maxits );
+    KSPSetTolerances(data.ksp, rtol, atol, dtol, maxits);
 
     // Set KSP preconditioner
     PC pc;
-    KSPGetPC(data.ksp,&pc);
+    KSPGetPC(data.ksp, &pc);
     PCSetType(pc, pctype.c_str());
-#if PETSC_VERSION_GE(3,9,0)
-    PCFactorSetMatSolverType(pc,factor_package.c_str());
+#if PETSC_VERSION_GE(3, 9, 0)
+    PCFactorSetMatSolverType(pc, factor_package.c_str());
 #else
-    PCFactorSetMatSolverPackage(pc,factor_package.c_str());
+    PCFactorSetMatSolverPackage(pc, factor_package.c_str());
 #endif
 
     lib.setOptionsFromInputFile(data.ksp);
@@ -250,7 +256,6 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
     /// Add to slice vector
     slice.push_back(data);
   }
-
 }
 
 LaplaceXZpetsc::~LaplaceXZpetsc() {
@@ -260,9 +265,11 @@ LaplaceXZpetsc::~LaplaceXZpetsc() {
   PetscBool petsc_is_finalised;
   PetscFinalized(&petsc_is_finalised);
 
-  for (auto &it : slice) {
+  for (auto& it : slice) {
     MatDestroy(&it.MatA);
-    MatDestroy(&it.MatP);
+    if (coefs_set) {
+      MatDestroy(&it.MatP);
+    }
 
     if (!petsc_is_finalised) {
       // PetscFinalize may already have destroyed this object
@@ -274,7 +281,7 @@ LaplaceXZpetsc::~LaplaceXZpetsc() {
   VecDestroy(&xs);
 }
 
-void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
+void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
   /* Function: LaplaceXZpetsc::setCoefs
    * Purpose:  - Set the matrix coefficients in the matrix MatA (member data)
    *             in Ax=b
@@ -293,16 +300,18 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
   ASSERT1(Ain.getLocation() == location);
   ASSERT1(Bin.getLocation() == location);
 
-  #if CHECK > 0
-    // Checking flags are set to something which is not implemented
-    // This is done binary (which is possible as each flag is a power of 2)
-    if ( inner_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }
-    if ( outer_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }
-  #endif
+#if CHECK > 0
+  // Checking flags are set to something which is not implemented
+  // This is done binary (which is possible as each flag is a power of 2)
+  if (inner_boundary_flags & ~implemented_boundary_flags) {
+    throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not "
+                        "implemented in petsc_laplace.cxx");
+  }
+  if (outer_boundary_flags & ~implemented_boundary_flags) {
+    throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not "
+                        "implemented in petsc_laplace.cxx");
+  }
+#endif
   Timer timer("invert");
   // Set coefficients
 
@@ -310,7 +319,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
   Field3D B = Bin;
 
   // Each Y slice is handled as a separate set of matrices and KSP context
-  for (auto &it : slice) {
+  for (auto& it : slice) {
     // Get Y index
     int y = it.yindex;
 
@@ -320,13 +329,13 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     ////////////////////////////////////////////////
     // Inner X boundary (see note about BC in LaplaceXZ constructor)
     int row = Istart;
-    if(localmesh->firstX()) {
-      if (inner_boundary_flags & INVERT_AC_GRAD){
+    if (localmesh->firstX()) {
+      if (inner_boundary_flags & INVERT_AC_GRAD) {
         // Neumann 0
         /* NOTE: Sign of the elements are opposite of what one might expect,
          *       see note about BC in LaplaceXZ constructor for more details
          */
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           PetscScalar val = 1.0;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
@@ -336,10 +345,9 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
           row++;
         }
-      }
-      else if(inner_boundary_flags & INVERT_SET){
+      } else if (inner_boundary_flags & INVERT_SET) {
         // Setting BC from x0
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           PetscScalar val = 1.0;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
@@ -349,10 +357,9 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
           row++;
         }
-      }
-      else if(inner_boundary_flags & INVERT_RHS){
+      } else if (inner_boundary_flags & INVERT_RHS) {
         // Setting BC from b
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           PetscScalar val = 1.0;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
@@ -362,13 +369,12 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
           row++;
         }
-      }
-      else{
+      } else {
         // Default: Dirichlet on inner x boundary
         /* NOTE: Sign of the elements are opposite of what one might expect,
          *       see note about BC in LaplaceXZ constructor for more details
          */
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           PetscScalar val = 0.5;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
@@ -384,65 +390,219 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     // Set matrix elements
     //
     // (1/J) d/dx ( A * J * g11 d/dx ) + (1/J) d/dz ( A * J * g33 d/dz ) + B
+    Coordinates* coords = localmesh->getCoordinates(location);
 
-    Coordinates *coords = localmesh->getCoordinates(location);
-
-    // NOTE: For now the X-Z terms are omitted, so check that they are small
-    ASSERT2(max(abs(coords->g13)) < 1e-5);
-    
-    for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
-      for(int z=0; z < localmesh->LocalNz; z++) {
+    for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
         // stencil entries
         PetscScalar c, xm, xp, zm, zp;
+        // Diagonal entries
+        PetscScalar xpzp{0.0}, xpzm{0.0}, xmzp{0.0}, xmzm{0.0};
 
         // XX component
+        {
+          // Metrics on x+1/2 boundary
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x + 1, y, z));
+          const BoutReal g11 = 0.5 * (coords->g11(x, y, z) + coords->g11(x + 1, y, z));
+          const BoutReal dx = 0.5 * (coords->dx(x, y, z) + coords->dx(x + 1, y, z));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x + 1, y, z));
 
-        // Metrics on x+1/2 boundary
-        BoutReal J = 0.5*(coords->J(x,y) + coords->J(x+1,y));
-        BoutReal g11 = 0.5*(coords->g11(x,y) + coords->g11(x+1,y));
-        BoutReal dx = 0.5*(coords->dx(x,y) + coords->dx(x+1,y));
-        BoutReal Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
+          const BoutReal val =
+              Acoef * J * g11 / (coords->J(x, y, z) * dx * coords->dx(x, y, z));
+          xp = val;
+          c = -val;
+        }
 
-        BoutReal val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
-        xp = val;
-        c  = -val;
+        {
+          // Metrics on x-1/2 boundary
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x - 1, y, z));
+          const BoutReal g11 = 0.5 * (coords->g11(x, y, z) + coords->g11(x - 1, y, z));
+          const BoutReal dx = 0.5 * (coords->dx(x, y, z) + coords->dx(x - 1, y, z));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x - 1, y, z));
 
-        // Metrics on x-1/2 boundary
-        J = 0.5*(coords->J(x,y) + coords->J(x-1,y));
-        g11 = 0.5*(coords->g11(x,y) + coords->g11(x-1,y));
-        dx = 0.5*(coords->dx(x,y) + coords->dx(x-1,y));
-        Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
-
-        val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
-        xm = val;
-        c  -= val;
+          const BoutReal val =
+              Acoef * J * g11 / (coords->J(x, y, z) * dx * coords->dx(x, y, z));
+          xm = val;
+          c -= val;
+        }
 
         // ZZ component
-        // Note that because metrics are constant in Z many terms cancel
-
         // Wrap around z-1 and z+1 indices
-        int zminus = (z - 1 + (localmesh->LocalNz)) % (localmesh->LocalNz);
-        int zplus = (z + 1) % (localmesh->LocalNz);
+        const int zminus = (z - 1 + (localmesh->LocalNz)) % (localmesh->LocalNz);
+        const int zplus = (z + 1) % (localmesh->LocalNz);
 
-        // Metrics on z+1/2 boundary
-        Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
+        {
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x, y, zplus));
+          const BoutReal g33 = 0.5 * (coords->g33(x, y, z) + coords->g33(x, y, zplus));
+          const BoutReal dz = 0.5 * (coords->dz(x, y, z) + coords->dz(x, y, zplus));
+          // Metrics on z+1/2 boundary
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zplus));
 
-        val = Acoef * coords->g33(x,y) / (coords->dz*coords->dz);
-        zp = val;
-        c -= val;
+          const BoutReal val = Acoef * J * g33 / (coords->J(x, y, z) * dz * dz);
+          zp = val;
+          c -= val;
+        }
+        {
+          // Metrics on z-1/2 boundary
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x, y, zminus));
+          const BoutReal g33 = 0.5 * (coords->g33(x, y, z) + coords->g33(x, y, zminus));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zminus));
+          const BoutReal dz = 0.5 * (coords->dz(x, y, z) + coords->dz(x, y, zminus));
 
-        // Metrics on z-1/2 boundary
-        Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
+          const BoutReal val = Acoef * J * g33 / (coords->J(x, y, z) * dz * dz);
+          zm = val;
+          c -= val;
+        }
 
-        val = Acoef * coords->g33(x,y) / (coords->dz*coords->dz);
-        zm = val;
-        c -= val;
+        // XZ components
+        // (1/J) d/dx ( A * J * g13 d/dz )
+        {
+          //
+          // x+1/2
+          //
+          //     --o------x--
+          //       |      |        z
+          //       |   c  -> flux  ^
+          //       |      |        |
+          //     --o------x--       -> x
+          //
+          //   Taking derivative in z (between corners marked x)
+          //   so metrics at (x+1/2,z)
+
+          // Metrics
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x + 1, y, z));
+          const BoutReal g13 = 0.5 * (coords->g13(x, y, z) + coords->g13(x + 1, y, z));
+          const BoutReal dz = 0.5 * (coords->dz(x, y, z) + coords->dz(x + 1, y, z));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x + 1, y, z));
+
+          const BoutReal val =
+              Acoef * J * g13 / (coords->J(x, y, z) * dz * coords->dx(x, y, z));
+
+          // This val coefficient is multiplied by the (x+1/2,z+1/2) corner
+          // and (x+1/2,z-1/2) corner
+
+          // (x+1/2,z+1/2)
+          //xp += 0.25 * val;  Note cancels
+          xpzp += 0.25 * val;
+          zp += 0.25 * val;
+          //c += 0.25 * val;   Note cancels
+
+          // (x+1/2,z-1/2)
+          //xp -= 0.25 * val;  Note cancels
+          xpzm -= 0.25 * val;
+          zm -= 0.25 * val;
+          //c -= 0.25 * val;   Note cancels
+        }
+        {
+          //
+          // x-1/2
+          //
+          //     --x------o--
+          //       |      |        z
+          //  flux ->  c  |        ^
+          //       |      |        |
+          //     --x------o--       -> x
+          //
+          //   Taking derivative in z (between corners marked x)
+          //   so metrics at (x-1/2,z)
+
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x - 1, y, z));
+          const BoutReal g13 = 0.5 * (coords->g13(x, y, z) + coords->g13(x - 1, y, z));
+          const BoutReal dz = 0.5 * (coords->dz(x, y, z) + coords->dz(x - 1, y, z));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x - 1, y, z));
+
+          const BoutReal val =
+              -Acoef * J * g13 / (coords->J(x, y, z) * dz * coords->dx(x, y, z));
+
+          // (x+1/2,z+1/2)
+          xpzp += 0.25 * val;
+          zp += 0.25 * val;
+
+          // (x+1/2,z-1/2)
+          xpzm -= 0.25 * val;
+          zm -= 0.25 * val;
+        }
+
+        // ZX components
+        // (1/J) d/dz ( A * J * g13 d/dx )
+        {
+          // z+1/2
+          //
+          //         flux
+          //           ^
+          //     --x---|--x--
+          //       |      |        z
+          //       |   c  |        ^
+          //       |      |        |
+          //     --o------o--       -> x
+          //
+          //   Taking derivative in x (between corners marked x)
+          //   so metrics at (x,z+1/2)
+
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x, y, zplus));
+          const BoutReal g13 = 0.5 * (coords->g13(x, y, z) + coords->g13(x, y, zplus));
+          const BoutReal dx = 0.5 * (coords->dx(x, y, z) + coords->dx(x, y, zplus));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zplus));
+
+          const BoutReal val =
+              Acoef * J * g13 / (coords->J(x, y, z) * dx * coords->dz(x, y, z));
+
+          // (x+1/2,z+1/2)
+          //zp += 0.25 * val;  Note cancels
+          xpzp += 0.25 * val;
+          xp += 0.25 * val;
+          //c += 0.25 * val;   Note cancels
+
+          // (x-1/2,z+1/2)
+          //zp -= 0.25 * val;  Note cancels
+          //c -= 0.25 * val;   Note cancels
+          xm -= 0.25 * val;
+          xmzp -= 0.25 * val;
+        }
+        {
+          // z-1/2
+          //
+          //     --o------o--
+          //       |      |        z
+          //       |   c  |        ^
+          //       |   ^  |        |
+          //     --x---|--x--       -> x
+          //          flux
+          //
+          //   Taking derivative in x (between corners marked x)
+          //   so metrics at (x,z-1/2)
+
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x, y, zminus));
+          const BoutReal g13 = 0.5 * (coords->g13(x, y, z) + coords->g13(x, y, zminus));
+          const BoutReal dx = 0.5 * (coords->dx(x, y, z) + coords->dx(x, y, zminus));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zminus));
+
+          const BoutReal val =
+              -Acoef * J * g13 / (coords->J(x, y, z) * dx * coords->dz(x, y, z));
+
+          // (x+1/2,z-1/2)
+          xpzm += 0.25 * val;
+          xp += 0.25 * val;
+
+          // (x-1/2,z+1/2)
+          xm -= 0.25 * val;
+          xmzm -= 0.25 * val;
+        }
 
         // B term
-        c += B(x,y,z);
+        c += B(x, y, z);
 
         /////////////////////////////////////////////////
-        // Now have a 5-point stencil for the Laplacian
+        // Now have a 9-point stencil for the Laplacian
+        //
+        // o------o------o------o
+        // | xmzp |  zp  | xpzp |
+        // o------o------o------o
+        // |  xm  |  c   |  xp  |
+        // o------o------o------o
+        // | xmzm |  zm  | xpzm |
+        // o------o------o------o
+        //
 
         // Set the centre (diagonal)
         MatSetValues(it.MatA, 1, &row, 1, &row, &c, INSERT_VALUES);
@@ -457,17 +617,34 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
         // Z + 1
         col = row + 1;
-        if(z == localmesh->LocalNz-1) {
-          col -= localmesh->LocalNz;  // Wrap around
+        if (z == localmesh->LocalNz - 1) {
+          col -= localmesh->LocalNz; // Wrap around
         }
+
         MatSetValues(it.MatA, 1, &row, 1, &col, &zp, INSERT_VALUES);
+
+        // X + 1, Z + 1
+        const int xpzp_col = col + localmesh->LocalNz;
+        MatSetValues(it.MatA, 1, &row, 1, &xpzp_col, &xpzp, INSERT_VALUES);
+
+        // X - 1, Z + 1
+        const int xmzp_col = col - localmesh->LocalNz;
+        MatSetValues(it.MatA, 1, &row, 1, &xmzp_col, &xmzp, INSERT_VALUES);
 
         // Z - 1
         col = row - 1;
-        if(z == 0) {
-          col += localmesh->LocalNz;  // Wrap around
+        if (z == 0) {
+          col += localmesh->LocalNz; // Wrap around
         }
         MatSetValues(it.MatA, 1, &row, 1, &col, &zm, INSERT_VALUES);
+
+        // X + 1, Z - 1
+        const int xpzm_col = col + localmesh->LocalNz;
+        MatSetValues(it.MatA, 1, &row, 1, &xpzm_col, &xpzm, INSERT_VALUES);
+
+        // X - 1, Z - 1
+        const int xmzm_col = col - localmesh->LocalNz;
+        MatSetValues(it.MatA, 1, &row, 1, &xmzm_col, &xmzm, INSERT_VALUES);
 
         row++;
       }
@@ -475,10 +652,10 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
     ////////////////////////////////////////////////
     // Outer X boundary (see note about BC in LaplaceXZ constructor)
-    if(localmesh->lastX()) {
-      if (outer_boundary_flags & INVERT_AC_GRAD){
+    if (localmesh->lastX()) {
+      if (outer_boundary_flags & INVERT_AC_GRAD) {
         // Neumann 0
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           PetscScalar val = 1.0;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
@@ -488,10 +665,9 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
           row++;
         }
-      }
-      else if (outer_boundary_flags & INVERT_SET){
+      } else if (outer_boundary_flags & INVERT_SET) {
         // Setting BC from x0
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           PetscScalar val = 1.0;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
@@ -501,10 +677,9 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
           row++;
         }
-      }
-      else if (outer_boundary_flags & INVERT_RHS){
+      } else if (outer_boundary_flags & INVERT_RHS) {
         // Setting BC from b
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           PetscScalar val = 1.0;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
@@ -514,12 +689,11 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
           row++;
         }
-      }
-      else{
+      } else {
         //Default: Dirichlet on outer X boundary
         PetscScalar val = 0.5;
 
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           int col = row - (localmesh->LocalNz); // -1 in X
@@ -539,14 +713,14 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
   // Increase reuse count
   reuse_count++;
-  if(reuse_count > reuse_limit) {
+  if (reuse_count > reuse_limit) {
     // Reuse limit exceeded. Reset count
     reuse_count = 0;
 
     // Modifying preconditioner matrix
-    for (auto &it : slice) {
+    for (auto& it : slice) {
       // Copy matrix into preconditioner
-      if(coefs_set) {
+      if (coefs_set) {
         // Preconditioner already set
         MatDestroy(&it.MatP);
       }
@@ -554,20 +728,20 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     }
 
     // Set operators
-    for (auto &it : slice) {
+    for (auto& it : slice) {
 
       // Note: This is a hack to force update of the preconditioner matrix
-#if PETSC_VERSION_GE(3,5,0)
+#if PETSC_VERSION_GE(3, 5, 0)
       KSPSetOperators(it.ksp, it.MatA, it.MatP);
 #else
       KSPSetOperators(it.ksp, it.MatA, it.MatP, SAME_NONZERO_PATTERN);
 #endif
     }
-  }else {
-    for (auto &it : slice) {
+  } else {
+    for (auto& it : slice) {
       /// Reuse the preconditioner, even if the operator changes
 
-#if PETSC_VERSION_GE(3,5,0)
+#if PETSC_VERSION_GE(3, 5, 0)
       KSPSetReusePreconditioner(it.ksp, PETSC_TRUE);
 #else
       KSPSetOperators(it.ksp, it.MatA, it.MatP, SAME_PRECONDITIONER);
@@ -578,7 +752,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
   coefs_set = true;
 }
 
-Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
+Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
   /* Function: LaplaceXZpetsc::solve
    * Purpose:  - Set the values of b in  Ax=b
    *           - Set the initial guess x0, and use this for x in  Ax=b
@@ -600,7 +774,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
   ASSERT1(bin.getLocation() == location);
   ASSERT1(x0in.getLocation() == location);
 
-  if(!coefs_set) {
+  if (!coefs_set) {
     throw BoutException("LaplaceXZpetsc: solve called before setCoefs");
   }
 
@@ -611,7 +785,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
 
   Field3D result{emptyFrom(bin)};
 
-  for (auto &it : slice) {
+  for (auto& it : slice) {
     /// Get y index
     int y = it.yindex;
 
@@ -627,127 +801,121 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
     int ind = Istart;
 
     // Inner X boundary (see note about BC in LaplaceXZ constructor)
-    if(localmesh->firstX()) {
-      if (inner_boundary_flags & INVERT_AC_GRAD){
+    if (localmesh->firstX()) {
+      if (inner_boundary_flags & INVERT_AC_GRAD) {
         // Neumann 0
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(localmesh->xstart-1,y,z);
-          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+          PetscScalar val = x0(localmesh->xstart - 1, y, z);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
           // Setting the solution b
           val = 0.0;
-          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
           ind++;
         }
-      }
-      else if (inner_boundary_flags & INVERT_SET){
+      } else if (inner_boundary_flags & INVERT_SET) {
         // Setting BC from x0
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(localmesh->xstart-1,y,z);
-          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+          PetscScalar val = x0(localmesh->xstart - 1, y, z);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
           // Setting the solution b
-          val = x0(localmesh->xstart,y,z);
-          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+          val = x0(localmesh->xstart, y, z);
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
           ind++;
         }
-      }
-      else if (inner_boundary_flags & INVERT_RHS){
+      } else if (inner_boundary_flags & INVERT_RHS) {
         // Setting BC from b
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(localmesh->xstart-1,y,z);
-          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+          PetscScalar val = x0(localmesh->xstart - 1, y, z);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
           // Setting the solution b
-          val = b(localmesh->xstart,y,z);
-          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+          val = b(localmesh->xstart, y, z);
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
           ind++;
         }
-      }
-      else{
+      } else {
         // Default: Neumann on inner x boundary
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(localmesh->xstart-1,y,z);
-          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+          PetscScalar val = x0(localmesh->xstart - 1, y, z);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
           // Setting the solution b
-          val = x0(localmesh->xstart-1,y,z) - x0(localmesh->xstart,y,z);
-          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+          val = x0(localmesh->xstart - 1, y, z) - x0(localmesh->xstart, y, z);
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
           ind++;
         }
       }
     }
 
     // Set the inner points
-    for(int x=localmesh->xstart;x<= localmesh->xend;x++) {
-      for(int z=0; z < localmesh->LocalNz; z++) {
-        PetscScalar val = x0(x,y,z);
-        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+    for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
+        PetscScalar val = x0(x, y, z);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
-        val = b(x,y,z);
-        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+        val = b(x, y, z);
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
         ind++;
       }
     }
 
     // Outer X boundary (see note about BC in LaplaceXZ constructor)
-    if(localmesh->lastX()) {
-      if (outer_boundary_flags & INVERT_AC_GRAD){
+    if (localmesh->lastX()) {
+      if (outer_boundary_flags & INVERT_AC_GRAD) {
         // Neumann 0
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(localmesh->xend+1,y,z);
-          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+          PetscScalar val = x0(localmesh->xend + 1, y, z);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
           // Setting the solution b
           val = 0.0;
-          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
 
           ind++;
         }
-      }
-      else if (outer_boundary_flags & INVERT_SET){
+      } else if (outer_boundary_flags & INVERT_SET) {
         // Setting BC from x0
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(localmesh->xend+1,y,z);
-          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+          PetscScalar val = x0(localmesh->xend + 1, y, z);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
           // Setting the solution b
-          val = x0(localmesh->xend+1,y,z);
-          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+          val = x0(localmesh->xend + 1, y, z);
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
 
           ind++;
         }
-      }
-      else if (outer_boundary_flags & INVERT_RHS){
+      } else if (outer_boundary_flags & INVERT_RHS) {
         // Setting BC from b
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(localmesh->xend+1,y,z);
-          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+          PetscScalar val = x0(localmesh->xend + 1, y, z);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
           // Setting the solution b
-          val = b(localmesh->xend+1,y,z);
-          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+          val = b(localmesh->xend + 1, y, z);
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
 
           ind++;
         }
-      }
-      else{
+      } else {
         //Default: Dirichlet on outer X boundary
-        for(int z=0; z < localmesh->LocalNz; z++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(localmesh->xend+1,y,z);
-          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+          PetscScalar val = x0(localmesh->xend + 1, y, z);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
           // Setting the solution b
-          val = 0.5*(x0(localmesh->xend,y,z) + x0(localmesh->xend+1,y,z));
-          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+          val = 0.5 * (x0(localmesh->xend, y, z) + x0(localmesh->xend + 1, y, z));
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
 
           ind++;
         }
@@ -773,8 +941,8 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
     KSPConvergedReason reason;
     KSPGetConvergedReason(it.ksp, &reason);
 
-    if(reason <= 0) {
-      throw BoutException("LaplaceXZ failed to converge. Reason %d", reason);
+    if (reason <= 0) {
+      throw BoutException("LaplaceXZ failed to converge. Reason {:d}", reason);
     }
 
     //////////////////////////
@@ -782,30 +950,34 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
 
     ind = Istart;
     // Inner X boundary
-    if(localmesh->firstX()) {
-      for(int z=0; z < localmesh->LocalNz; z++) {
+    if (localmesh->firstX()) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
         PetscScalar val;
-        VecGetValues(xs, 1, &ind, &val );
-        result(localmesh->xstart-1,y,z) = val;
+        VecGetValues(xs, 1, &ind, &val);
+        for (int x = localmesh->xstart - 1; x >= 0; --x) {
+          result(x, y, z) = val;
+        }
         ind++;
       }
     }
 
-    for(int x=localmesh->xstart;x<= localmesh->xend;x++) {
-      for(int z=0; z < localmesh->LocalNz; z++) {
+    for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
         PetscScalar val;
-        VecGetValues(xs, 1, &ind, &val );
-        result(x,y,z) = val;
+        VecGetValues(xs, 1, &ind, &val);
+        result(x, y, z) = val;
         ind++;
       }
     }
 
     // Outer X boundary
-    if(localmesh->lastX()) {
-      for(int z=0; z < localmesh->LocalNz; z++) {
+    if (localmesh->lastX()) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
         PetscScalar val;
-        VecGetValues(xs, 1, &ind, &val );
-        result(localmesh->xend+1,y,z) = val;
+        VecGetValues(xs, 1, &ind, &val);
+        for (int x = localmesh->xend + 1; x < localmesh->LocalNx; ++x) {
+          result(x, y, z) = val;
+        }
         ind++;
       }
     }

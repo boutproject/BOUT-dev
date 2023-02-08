@@ -36,10 +36,10 @@
 
 #include <bout/scorepwrapper.hxx>
 
-#include <bout_types.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <options.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/options.hxx>
 
 /// Here we have a templated singleton that is used to store DerivativeFunctions
 /// for all types of derivatives. It is templated on the FieldType (2D or 3D) as
@@ -50,9 +50,10 @@
 /// upwind and flux).
 template <typename FieldType>
 struct DerivativeStore {
-  using standardFunc = std::function<void(const FieldType&, FieldType&, const std::string&)>;
-  using flowFunc =
-      std::function<void(const FieldType&, const FieldType&, FieldType&, const std::string&)>;
+  using standardFunc =
+      std::function<void(const FieldType&, FieldType&, const std::string&)>;
+  using flowFunc = std::function<void(const FieldType&, const FieldType&, FieldType&,
+                                      const std::string&)>;
   using upwindFunc = flowFunc;
   using fluxFunc = flowFunc;
 
@@ -140,40 +141,35 @@ struct DerivativeStore {
     case (DERIV::Standard):
       if (standard.count(key) != 0) {
         throw BoutException("Trying to override standard derivative : "
-                            "direction %s, stagger %s, key %s",
-                            toString(direction).c_str(),
-                            toString(stagger).c_str(), methodName.c_str());
+                            "direction {:s}, stagger {:s}, key {:s}",
+                            toString(direction), toString(stagger), methodName);
       }
       standard[key] = func;
       break;
     case (DERIV::StandardSecond):
       if (standardSecond.count(key) != 0) {
         throw BoutException("Trying to override standardSecond derivative : "
-                            "direction %s, stagger %s, key %s",
-                            toString(direction).c_str(),
-                            toString(stagger).c_str(), methodName.c_str());
+                            "direction {:s}, stagger {:s}, key {:s}",
+                            toString(direction), toString(stagger), methodName);
       }
       standardSecond[key] = func;
       break;
     case (DERIV::StandardFourth):
       if (standardFourth.count(key) != 0) {
         throw BoutException("Trying to override standardFourth derivative : "
-                            "direction %s, stagger %s, key %s",
-                            toString(direction).c_str(),
-                            toString(stagger).c_str(), methodName.c_str());
+                            "direction {:s}, stagger {:s}, key {:s}",
+                            toString(direction), toString(stagger), methodName);
       }
       standardFourth[key] = func;
       break;
     default:
       throw BoutException("Invalid function signature in registerDerivative : Function "
-                          "signature 'standard' but derivative type %s passed",
-                          toString(derivType).c_str());
+                          "signature 'standard' but derivative type {:s} passed",
+                          toString(derivType));
     };
 
     // Register this method name in lookup of known methods
-    registeredMethods[getKey(direction, stagger, toString(derivType))].insert(
-        methodName);
-
+    registeredMethods[getKey(direction, stagger, toString(derivType))].insert(methodName);
   };
 
   /// Register a function with upwindFunc/fluxFunc interface. Which map is used
@@ -187,30 +183,27 @@ struct DerivativeStore {
     case (DERIV::Upwind):
       if (upwind.count(key) != 0) {
         throw BoutException("Trying to override upwind derivative : "
-                            "direction %s, stagger %s, key %s",
-                            toString(direction).c_str(),
-                            toString(stagger).c_str(), methodName.c_str());
+                            "direction {:s}, stagger {:s}, key {:s}",
+                            toString(direction), toString(stagger), methodName);
       }
       upwind[key] = func;
       break;
     case (DERIV::Flux):
       if (flux.count(key) != 0) {
         throw BoutException("Trying to override flux derivative : "
-                            "direction %s, stagger %s, key %s",
-                            toString(direction).c_str(),
-                            toString(stagger).c_str(), methodName.c_str());
+                            "direction {:s}, stagger {:s}, key {:s}",
+                            toString(direction), toString(stagger), methodName);
       }
       flux[key] = func;
       break;
     default:
       throw BoutException("Invalid function signature in registerDerivative : Function "
-                          "signature 'upwind/flux' but derivative type %s passed",
-                          toString(derivType).c_str());
+                          "signature 'upwind/flux' but derivative type {:s} passed",
+                          toString(derivType));
     };
 
     // Register this method name in lookup of known methods
-    registeredMethods[getKey(direction, stagger, toString(derivType))].insert(
-        methodName);
+    registeredMethods[getKey(direction, stagger, toString(derivType))].insert(methodName);
   };
 
   /// Templated versions of the above registration routines.
@@ -220,14 +213,14 @@ struct DerivativeStore {
     AUTO_TRACE();
     registerDerivative(func, method.meta.derivType, direction.lookup(), stagger.lookup(),
                        method.meta.key);
-  };
+  }
   template <typename Direction, typename Stagger, typename Method>
   void registerDerivative(upwindFunc func, Direction direction, Stagger stagger,
                           Method method) {
     AUTO_TRACE();
     registerDerivative(func, method.meta.derivType, direction.lookup(), stagger.lookup(),
                        method.meta.key);
-  };
+  }
 
   /// Routines to return a specific differential operator. Note we
   /// have to have a separate routine for different methods as they
@@ -252,19 +245,19 @@ struct DerivativeStore {
     } else if (derivType == DERIV::StandardFourth) {
       theMap = &standardFourth;
     } else {
-      throw BoutException("getStandardDerivative only works for derivType in {Standard, "
-                          "StandardSecond, StandardFourth} but receieved %s",
-                          toString(derivType).c_str());
+      throw BoutException("getStandardDerivative only works for derivType in {{Standard, "
+                          "StandardSecond, StandardFourth}} but receieved {:s}",
+                          toString(derivType));
     };
 
     const auto resultOfFind = theMap->find(key);
-    if (resultOfFind != theMap->end())
+    if (resultOfFind != theMap->end()) {
       return resultOfFind->second;
+    }
 
-    throw BoutException(
-        "Couldn't find requested method %s in map for standard derivative of type %s.",
-        getMethodName(realName, direction, stagger).c_str(),
-        toString(derivType).c_str());
+    throw BoutException("Couldn't find requested method {:s} in map for standard "
+                        "derivative of type {:s}.",
+                        getMethodName(realName, direction, stagger), toString(derivType));
   };
 
   standardFunc getStandard2ndDerivative(std::string name, DIRECTION direction,
@@ -295,18 +288,19 @@ struct DerivativeStore {
       theMap = &flux;
     } else {
       throw BoutException(
-          "getFlowDerivative only works for derivType in {Upwind, Flux} but receieved %s",
-          toString(derivType).c_str());
+          "getFlowDerivative only works for derivType in {{Upwind, Flux}} "
+          "but received {:s}",
+          toString(derivType));
     };
 
     const auto resultOfFind = theMap->find(key);
-    if (resultOfFind != theMap->end())
+    if (resultOfFind != theMap->end()) {
       return resultOfFind->second;
+    }
 
     throw BoutException(
-        "Couldn't find requested method %s in map for standard flow of type %s.",
-        getMethodName(realName, direction, stagger).c_str(),
-        toString(derivType).c_str());
+        "Couldn't find requested method {:s} in map for standard flow of type {:s}.",
+        getMethodName(realName, direction, stagger), toString(derivType));
   }
 
   upwindFunc getUpwindDerivative(std::string name, DIRECTION direction,
@@ -333,11 +327,11 @@ struct DerivativeStore {
                                                    {DIRECTION::YOrthogonal, "ddy"},
                                                    {DIRECTION::Z, "ddz"}};
 
-    std::map<DERIV, std::string> derivTypes = {{DERIV::Standard, "First"},
-                                               {DERIV::StandardSecond, "Second"},
-                                               {DERIV::StandardFourth, "Fourth"},
-                                               {DERIV::Upwind, "Upwind"},
-                                               {DERIV::Flux, "Flux"}};
+    std::map<DERIV, std::string> derivTypes = {{DERIV::Standard, "first"},
+                                               {DERIV::StandardSecond, "second"},
+                                               {DERIV::StandardFourth, "fourth"},
+                                               {DERIV::Upwind, "upwind"},
+                                               {DERIV::Flux, "flux"}};
 
     for (const auto& direction : directions) {
       for (const auto& deriv : derivTypes) {
@@ -399,8 +393,8 @@ struct DerivativeStore {
         defaultMethods[getKey(theDirection, STAGGER::C2L, theDerivTypeString)] =
             theDefault;
         output_verbose << "The default method for staggered derivative type "
-                       << theDerivTypeString << " in direction "
-                       << toString(theDirection) << " is " << theDefault << "\n";
+                       << theDerivTypeString << " in direction " << toString(theDirection)
+                       << " is " << theDefault << "\n";
       }
     }
   }
@@ -497,8 +491,7 @@ private:
   std::string getMethodName(std::string name, DIRECTION direction,
                             STAGGER stagger = STAGGER::None) const {
     AUTO_TRACE();
-    return name + " (" + toString(direction) + ", " + toString(stagger)
-           + ")";
+    return name + " (" + toString(direction) + ", " + toString(stagger) + ")";
   };
 
   std::string nameLookup(const std::string name, const std::string defaultName) const {

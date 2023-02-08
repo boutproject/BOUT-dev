@@ -2,25 +2,27 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+#include "bout/build_config.hxx"
+
 #include "gtest/gtest.h"
 
-#include "bout/constants.hxx"
-#include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "field3d.hxx"
-#include "output.hxx"
 #include "test_extras.hxx"
-#include "unused.hxx"
-#include "utils.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/constants.hxx"
+#include "bout/field3d.hxx"
+#include "bout/mesh.hxx"
+#include "bout/output.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 
 #include <cmath>
 #include <set>
 #include <vector>
 
 /// Global mesh
-namespace bout{
-namespace globals{
-extern Mesh *mesh;
+namespace bout {
+namespace globals {
+extern Mesh* mesh;
 } // namespace globals
 } // namespace bout
 
@@ -30,28 +32,16 @@ using namespace bout::globals;
 // Reuse the "standard" fixture for FakeMesh
 using Field3DTest = FakeMeshFixture;
 
-TEST_F(Field3DTest, IsReal) {
-  Field3D field;
-
-  EXPECT_TRUE(field.isReal());
-}
-
 TEST_F(Field3DTest, Is3D) {
   Field3D field;
 
   EXPECT_TRUE(field.is3D());
 }
 
-TEST_F(Field3DTest, ByteSize) {
-  Field3D field;
-
-  EXPECT_EQ(field.byteSize(), sizeof(BoutReal));
-}
-
 TEST_F(Field3DTest, BoutRealSize) {
   Field3D field;
 
-  EXPECT_EQ(field.BoutRealSize(), 1);
+  EXPECT_EQ(field.elementSize(), 1);
 }
 
 TEST_F(Field3DTest, Allocate) {
@@ -268,14 +258,14 @@ TEST_F(Field3DTest, MultipleParallelSlices) {
 
   EXPECT_TRUE(field.hasParallelSlices());
 
-  auto &yup = field.yup();
+  auto& yup = field.yup();
   EXPECT_NE(&field, &yup);
-  auto &ydown = field.ydown();
+  auto& ydown = field.ydown();
   EXPECT_NE(&field, &ydown);
-  auto &yup1 = field.yup(1);
+  auto& yup1 = field.yup(1);
   EXPECT_NE(&field, &yup1);
   EXPECT_NE(&yup, &yup1);
-  auto &ydown1 = field.ydown(1);
+  auto& ydown1 = field.ydown(1);
   EXPECT_NE(&field, &ydown1);
   EXPECT_NE(&ydown, &ydown1);
 
@@ -395,7 +385,7 @@ TEST_F(Field3DTest, IterateOverWholeField) {
 
   // Basic test first: do we visit the correct number of elements?
   int count = 0;
-  for (const auto &UNUSED(i) : field) {
+  for (const auto& UNUSED(i) : field) {
     ++count;
   }
 
@@ -428,7 +418,7 @@ TEST_F(Field3DTest, IterateOverWholeField) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (const auto &i : field) {
+  for (const auto& i : field) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.y(), i.z()});
@@ -453,7 +443,7 @@ TEST_F(Field3DTest, IterateOverRegionInd3D_RGN_ALL) {
   const int num_sentinels = test_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto &index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -461,7 +451,7 @@ TEST_F(Field3DTest, IterateOverRegionInd3D_RGN_ALL) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (const auto &i : field.getMesh()->getRegion("RGN_ALL")) {
+  for (const auto& i : field.getMesh()->getRegion("RGN_ALL")) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.y(), i.z()});
@@ -498,7 +488,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOBNDRY) {
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
-  for (const auto &index : test_indices) {
+  for (const auto& index : test_indices) {
     field(index[0], index[1], index[2]) = sentinel;
   }
 
@@ -506,7 +496,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOBNDRY) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (const auto &i : field.getRegion(RGN_NOBNDRY)) {
+  for (const auto& i : field.getRegion(RGN_NOBNDRY)) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.y(), i.z()});
@@ -554,7 +544,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOX) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (const auto &i : field.getRegion(RGN_NOX)) {
+  for (const auto& i : field.getRegion(RGN_NOX)) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.y(), i.z()});
@@ -603,7 +593,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOY) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (const auto &i : field.getRegion(RGN_NOY)) {
+  for (const auto& i : field.getRegion(RGN_NOY)) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.y(), i.z()});
@@ -706,7 +696,7 @@ TEST_F(Field3DTest, IterateOverRGN_XGUARDS) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (const auto &i : field.getRegion("RGN_XGUARDS")) {
+  for (const auto& i : field.getRegion("RGN_XGUARDS")) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.y(), i.z()});
@@ -754,7 +744,7 @@ TEST_F(Field3DTest, IterateOverRGN_YGUARDS) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (const auto &i : field.getRegion("RGN_YGUARDS")) {
+  for (const auto& i : field.getRegion("RGN_YGUARDS")) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.y(), i.z()});
@@ -800,7 +790,7 @@ TEST_F(Field3DTest, IterateOverRGN_ZGUARDS) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (const auto &i : field.getRegion("RGN_ZGUARDS")) {
+  for (const auto& i : field.getRegion("RGN_ZGUARDS")) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.y(), i.z()});
@@ -852,7 +842,7 @@ TEST_F(Field3DTest, IterateOverRGN_NOCORNERS) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (const auto &i : field.getRegion("RGN_NOCORNERS")) {
+  for (const auto& i : field.getRegion("RGN_NOCORNERS")) {
     sum += field[i];
     if (field[i] == sentinel) {
       result_indices.insert({i.x(), i.y(), i.z()});
@@ -869,12 +859,12 @@ TEST_F(Field3DTest, IterateOver2DRGN_ALL) {
   Field3D field;
   field.allocate();
 
-  for (const auto &i : field) {
+  for (const auto& i : field) {
     field[i] = 1.0 + i.z();
   }
 
   BoutReal sum = 0.0;
-  for (const auto &i : field.getMesh()->getRegion2D("RGN_ALL")) {
+  for (const auto& i : field.getMesh()->getRegion2D("RGN_ALL")) {
     sum += field(i, 0);
     EXPECT_EQ(field(i, 0), 1.0);
     EXPECT_EQ(i.z(), 0);
@@ -887,12 +877,12 @@ TEST_F(Field3DTest, IterateOver2DRGN_NOBNDRY) {
   Field3D field;
   field.allocate();
 
-  for (const auto &i : field) {
+  for (const auto& i : field) {
     field[i] = 1.0 + i.z();
   }
 
   BoutReal sum = 0.0;
-  for (const auto &i : field.getMesh()->getRegion2D("RGN_NOBNDRY")) {
+  for (const auto& i : field.getMesh()->getRegion2D("RGN_NOBNDRY")) {
     sum += field(i, 0);
     EXPECT_EQ(field(i, 0), 1.0);
     EXPECT_EQ(i.z(), 0);
@@ -905,12 +895,12 @@ TEST_F(Field3DTest, IterateOver2DRGN_NOX) {
   Field3D field;
   field.allocate();
 
-  for (const auto &i : field) {
+  for (const auto& i : field) {
     field[i] = 1.0 + i.z();
   }
 
   BoutReal sum = 0.0;
-  for (const auto &i : field.getMesh()->getRegion2D("RGN_NOX")) {
+  for (const auto& i : field.getMesh()->getRegion2D("RGN_NOX")) {
     sum += field(i, 0);
     EXPECT_EQ(field(i, 0), 1.0);
     EXPECT_EQ(i.z(), 0);
@@ -923,12 +913,12 @@ TEST_F(Field3DTest, IterateOver2DRGN_NOY) {
   Field3D field;
   field.allocate();
 
-  for (const auto &i : field) {
+  for (const auto& i : field) {
     field[i] = 1.0 + i.z();
   }
 
   BoutReal sum = 0.0;
-  for (const auto &i : field.getMesh()->getRegion2D("RGN_NOY")) {
+  for (const auto& i : field.getMesh()->getRegion2D("RGN_NOY")) {
     sum += field(i, 0);
     EXPECT_EQ(field(i, 0), 1.0);
     EXPECT_EQ(i.z(), 0);
@@ -966,7 +956,7 @@ TEST_F(Field3DTest, IndexingInd3D) {
     }
   }
 
-  Ind3D ind{(2*ny + 2)*nz + 2};
+  Ind3D ind{(2 * ny + 2) * nz + 2};
 
   EXPECT_DOUBLE_EQ(field[ind], 6);
 }
@@ -986,7 +976,7 @@ TEST_F(Field3DTest, ConstIndexingInd3D) {
 
   const Field3D field2{field1};
 
-  Ind3D ind{(2*ny + 2)*nz + 2};
+  Ind3D ind{(2 * ny + 2) * nz + 2};
 
   EXPECT_DOUBLE_EQ(field2[ind], 6);
 }
@@ -1050,7 +1040,7 @@ TEST_F(Field3DTest, IndexingToZPointer) {
     }
   }
 
-  for (const auto &i : field) {
+  for (const auto& i : field) {
     EXPECT_EQ(field[i], -1.0);
   }
 
@@ -1079,7 +1069,7 @@ TEST_F(Field3DTest, ConstIndexingToZPointer) {
     }
   }
 
-  for (const auto &i : field2) {
+  for (const auto& i : field2) {
     EXPECT_EQ(field2[i], 1.0);
   }
 
@@ -1150,9 +1140,8 @@ TEST_F(Field3DTest, CheckData) {
   field(0, 0, 0) = std::nan("");
 
   EXPECT_NO_THROW(checkData(field));
-  EXPECT_NO_THROW(checkData(field, RGN_NOBNDRY));
-  EXPECT_THROW(checkData(field, RGN_ALL), BoutException);
-  
+  EXPECT_NO_THROW(checkData(field, "RGN_NOBNDRY"));
+  EXPECT_THROW(checkData(field, "RGN_ALL"), BoutException);
 }
 
 #if CHECK > 0
@@ -1202,7 +1191,7 @@ TEST_F(Field3DTest, InvalidateGuards) {
   const int nmesh = nx * ny * nz;
 
   int sum = 0;
-  for (const auto &i : field) {
+  for (const auto& i : field) {
     field[i] = 0.0; // Reset field value
     sum++;
   }
@@ -1210,7 +1199,7 @@ TEST_F(Field3DTest, InvalidateGuards) {
 
   // Count the number of non-boundary points
   sum = 0;
-  for (const auto &i : field.getRegion(RGN_NOBNDRY)) {
+  for (const auto& i : field.getRegion(RGN_NOBNDRY)) {
     field[i] = 0.0; // Reset field value
     sum++;
   }
@@ -1226,7 +1215,7 @@ TEST_F(Field3DTest, InvalidateGuards) {
   EXPECT_NO_THROW(checkData(field(localmesh->xstart, localmesh->ystart, 0)));
 
   sum = 0;
-  for (const auto &i : field) {
+  for (const auto& i : field) {
     if (!finite(field[i]))
       sum++;
   }
@@ -1296,7 +1285,7 @@ TEST_F(Field3DTest, AssignFromFieldPerp) {
   field2 = 2.0;
   field = field2;
 
-  for (const auto &i : field) {
+  for (const auto& i : field) {
     if (i.y() == yindex) {
       EXPECT_EQ(field[i], 2.0);
     } else {
@@ -2083,8 +2072,8 @@ TEST_F(Field3DTest, Min) {
   const BoutReal min_value = 40.0;
 
   EXPECT_EQ(min(field, false), min_value);
-  EXPECT_EQ(min(field, false, RGN_ALL), -99.0);
-  EXPECT_EQ(min(field, true, RGN_ALL), -99.0);
+  EXPECT_EQ(min(field, false, "RGN_ALL"), -99.0);
+  EXPECT_EQ(min(field, true, "RGN_ALL"), -99.0);
 }
 
 TEST_F(Field3DTest, Max) {
@@ -2100,8 +2089,8 @@ TEST_F(Field3DTest, Max) {
   const BoutReal max_value = 60.0;
 
   EXPECT_EQ(max(field, false), max_value);
-  EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
-  EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
+  EXPECT_EQ(max(field, false, "RGN_ALL"), 99.0);
+  EXPECT_EQ(max(field, true, "RGN_ALL"), 99.0);
 }
 
 TEST_F(Field3DTest, Mean) {
@@ -2114,13 +2103,13 @@ TEST_F(Field3DTest, Mean) {
   field(2, 4, 3) = 109.0;
 
   // mean doesn't include guard cells by default
-  const int npoints_all = nx*ny*nz;
+  const int npoints_all = nx * ny * nz;
   const BoutReal mean_value_nobndry = 50.0;
-  const BoutReal mean_value_all = 50.0 + 10.0/npoints_all;
+  const BoutReal mean_value_all = 50.0 + 10.0 / npoints_all;
 
   EXPECT_EQ(mean(field, false), mean_value_nobndry);
-  EXPECT_EQ(mean(field, false, RGN_ALL), mean_value_all);
-  EXPECT_EQ(mean(field, true, RGN_ALL), mean_value_all);
+  EXPECT_EQ(mean(field, false, "RGN_ALL"), mean_value_all);
+  EXPECT_EQ(mean(field, true, "RGN_ALL"), mean_value_all);
 }
 
 TEST_F(Field3DTest, DC) {
@@ -2290,7 +2279,7 @@ TEST_F(Field3DTest, FillField) {
   EXPECT_TRUE(IsFieldEqual(f, g));
 }
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 namespace bout {
 namespace testing {
 
@@ -2419,7 +2408,8 @@ TEST_F(Field3DTest, OperatorEqualsField3D) {
   // to 'field'.
   // Note that Average z-direction type is not really allowed for Field3D, but
   // we don't check anywhere at the moment.
-  Field3D field2{mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  Field3D field2{
+      mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
 
   field = field2;
 
@@ -2435,7 +2425,8 @@ TEST_F(Field3DTest, EmptyFrom) {
   // to 'field2'.
   // Note that Average z-direction type is not really allowed for Field3D, but
   // we don't check anywhere at the moment.
-  Field3D field{mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  Field3D field{
+      mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
   field = 5.;
 
   Field3D field2{emptyFrom(field)};
@@ -2451,7 +2442,8 @@ TEST_F(Field3DTest, ZeroFrom) {
   // to 'field2'.
   // Note that Average z-direction type is not really allowed for Field3D, but
   // we don't check anywhere at the moment.
-  Field3D field{mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  Field3D field{
+      mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
   field = 5.;
 
   Field3D field2{zeroFrom(field)};

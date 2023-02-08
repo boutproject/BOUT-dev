@@ -1,18 +1,20 @@
 #include "gtest/gtest.h"
 
+#include "bout/boutexception.hxx"
+#if not(BOUT_USE_METRIC_3D)
+#include "test_extras.hxx"
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "output.hxx"
-#include "test_extras.hxx"
-#include "unused.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
+#include "bout/mpi_wrapper.hxx"
+#include "bout/output.hxx"
+#include "bout/unused.hxx"
+#include "bout/vector2d.hxx"
+#include "bout/vector3d.hxx"
 
 /// Global mesh
-namespace bout{
-namespace globals{
-extern Mesh *mesh;
+namespace bout {
+namespace globals {
+extern Mesh* mesh;
 } // namespace globals
 } // namespace bout
 
@@ -21,19 +23,21 @@ using namespace bout::globals;
 
 /// Test fixture to make sure the global mesh is our fake one
 class Vector2DTest : public ::testing::Test {
+  WithQuietOutput quiet{output_info};
+
 protected:
   Vector2DTest() {
-    WithQuietOutput quiet{output_info};
     // Delete any existing mesh
     if (mesh != nullptr) {
       // Delete boundary regions
-      for (auto &r : mesh->getBoundaries()) {
+      for (auto& r : mesh->getBoundaries()) {
         delete r;
       }
 
       delete mesh;
       mesh = nullptr;
     }
+    bout::globals::mpi = new MpiWrapper();
     mesh = new FakeMesh(nx, ny, nz);
     static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
     mesh->createDefaultRegions();
@@ -47,7 +51,8 @@ protected:
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
         Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
-        Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}, false));
+        Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}));
+    // No call to Coordinates::geometry() needed here
 
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
@@ -60,7 +65,7 @@ protected:
   virtual ~Vector2DTest() {
     if (mesh != nullptr) {
       // Delete boundary regions
-      for (auto &r : mesh->getBoundaries()) {
+      for (auto& r : mesh->getBoundaries()) {
         delete r;
       }
       delete mesh;
@@ -68,6 +73,8 @@ protected:
     }
     delete mesh_staggered;
     mesh_staggered = nullptr;
+    delete bout::globals::mpi;
+    bout::globals::mpi = nullptr;
   }
 
 public:
@@ -88,21 +95,15 @@ TEST_F(Vector2DTest, ApplyBoundaryString) {
   v.applyBoundary("dirichlet(1.0)");
 
   // boundary cell in x
-  EXPECT_DOUBLE_EQ(v.x(0,2), 2.0);
-  EXPECT_DOUBLE_EQ(v.y(4,2), 2.0);
-  
+  EXPECT_DOUBLE_EQ(v.x(0, 2), 2.0);
+  EXPECT_DOUBLE_EQ(v.y(4, 2), 2.0);
+
   // boundary cell in y
-  EXPECT_DOUBLE_EQ(v.x(2,0), 2.0);
-  EXPECT_DOUBLE_EQ(v.z(2,4), 2.0);
+  EXPECT_DOUBLE_EQ(v.x(2, 0), 2.0);
+  EXPECT_DOUBLE_EQ(v.z(2, 4), 2.0);
 
   // Middle cell not changed
-  EXPECT_DOUBLE_EQ(v.x(2,2), 0.0);
-}
-
-TEST_F(Vector2DTest, IsReal) {
-  Vector2D vector;
-
-  EXPECT_TRUE(vector.isReal());
+  EXPECT_DOUBLE_EQ(v.x(2, 2), 0.0);
 }
 
 TEST_F(Vector2DTest, Is3D) {
@@ -111,16 +112,10 @@ TEST_F(Vector2DTest, Is3D) {
   EXPECT_FALSE(vector.is3D());
 }
 
-TEST_F(Vector2DTest, ByteSize) {
-  Vector2D vector;
-
-  EXPECT_EQ(vector.byteSize(), 3 * sizeof(BoutReal));
-}
-
 TEST_F(Vector2DTest, BoutRealSize) {
   Vector2D vector;
 
-  EXPECT_EQ(vector.BoutRealSize(), 3);
+  EXPECT_EQ(vector.elementSize(), 3);
 }
 
 TEST_F(Vector2DTest, TimeDeriv) {
@@ -171,7 +166,7 @@ TEST_F(Vector2DTest, SetLocationXLOW) {
 }
 
 TEST_F(Vector2DTest, SetLocationYLOW) {
-  FakeMesh local_mesh{Vector2DTest::nx,Vector2DTest::ny,Vector2DTest::nz};
+  FakeMesh local_mesh{Vector2DTest::nx, Vector2DTest::ny, Vector2DTest::nz};
   local_mesh.setCoordinates(nullptr);
   local_mesh.StaggerGrids = true;
   local_mesh.setCoordinates(nullptr, CELL_YLOW);
@@ -186,7 +181,7 @@ TEST_F(Vector2DTest, SetLocationYLOW) {
 }
 
 TEST_F(Vector2DTest, SetLocationZLOW) {
-  FakeMesh local_mesh{Vector2DTest::nx,Vector2DTest::ny,Vector2DTest::nz};
+  FakeMesh local_mesh{Vector2DTest::nx, Vector2DTest::ny, Vector2DTest::nz};
   local_mesh.setCoordinates(nullptr);
   local_mesh.StaggerGrids = true;
   local_mesh.setCoordinates(nullptr, CELL_ZLOW);
@@ -201,7 +196,7 @@ TEST_F(Vector2DTest, SetLocationZLOW) {
 }
 
 TEST_F(Vector2DTest, SetLocationVSHIFT) {
-  FakeMesh local_mesh{Vector2DTest::nx,Vector2DTest::ny,Vector2DTest::nz};
+  FakeMesh local_mesh{Vector2DTest::nx, Vector2DTest::ny, Vector2DTest::nz};
   local_mesh.setCoordinates(nullptr);
   local_mesh.StaggerGrids = true;
   local_mesh.setCoordinates(nullptr, CELL_XLOW);
@@ -219,7 +214,7 @@ TEST_F(Vector2DTest, SetLocationVSHIFT) {
 TEST_F(Vector2DTest, SetLocationDEFAULT) {
   Vector2D vector;
   CELL_LOC targetLoc = CELL_CENTRE;
-  vector.x.getMesh()->StaggerGrids = true;
+  vector.getMesh()->StaggerGrids = true;
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
   EXPECT_NO_THROW(vector.setLocation(CELL_DEFAULT));
   EXPECT_EQ(vector.getLocation(), targetLoc);
@@ -399,7 +394,7 @@ TEST_F(Vector2DTest, MultiplyEqualsBoutReal) {
   vector.y = 5.0;
   vector.z = 6.0;
 
-  BoutReal real {4.0};
+  BoutReal real{4.0};
 
   vector *= real;
 
@@ -429,7 +424,7 @@ TEST_F(Vector2DTest, MultiplyVector2DBoutReal) {
   vector.y = 2.0;
   vector.z = 3.0;
 
-  BoutReal real {2.0};
+  BoutReal real{2.0};
 
   Vector2D result = vector * real;
 
@@ -474,7 +469,7 @@ TEST_F(Vector2DTest, MultiplyBoutRealVector2D) {
   vector.y = 2.0;
   vector.z = 3.0;
 
-  BoutReal real {2.0};
+  BoutReal real{2.0};
 
   Vector2D result = real * vector;
 
@@ -549,7 +544,7 @@ TEST_F(Vector2DTest, DivideVector2DBoutReal) {
   vector.y = 2.0;
   vector.z = 3.0;
 
-  BoutReal real {2.0};
+  BoutReal real{2.0};
 
   Vector2D result = vector / real;
 
@@ -748,3 +743,4 @@ TEST_F(Vector2DTest, AbsContra) {
 
   EXPECT_TRUE(IsFieldEqual(result, 24.819347291981714));
 }
+#endif

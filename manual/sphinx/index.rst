@@ -25,9 +25,11 @@ The documentation is divided into the following sections:
    :name: getting-started
 
    user_docs/introduction
+   user_docs/quickstart
    user_docs/installing
    user_docs/advanced_install
    user_docs/running_bout
+   user_docs/new_in_v5
    
 .. toctree::
    :maxdepth: 2
@@ -39,6 +41,7 @@ The documentation is divided into the following sections:
    user_docs/variable_init
    user_docs/boundary_options
    user_docs/testing
+   user_docs/gpu_support
    
 .. toctree::
    :maxdepth: 2
@@ -54,7 +57,7 @@ The documentation is divided into the following sections:
    :name: model-outputs
    
    user_docs/output_and_post
-   user_docs/python_boutcore
+   user_docs/python_boutpp
    
 .. toctree::
    :maxdepth: 2
@@ -90,6 +93,7 @@ The documentation is divided into the following sections:
    developer_docs/git_basics
    developer_docs/code_layout
    developer_docs/data_types
+   developer_docs/petsc_interface
    developer_docs/mesh
    developer_docs/file_io
    developer_docs/natural_language

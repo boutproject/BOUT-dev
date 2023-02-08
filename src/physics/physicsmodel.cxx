@@ -33,23 +33,99 @@
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 #include <bout/mesh.hxx>
+#include <bout/sys/timer.hxx>
+#include <bout/vector2d.hxx>
+#include <bout/vector3d.hxx>
 
-PhysicsModel::PhysicsModel() : modelMonitor(this) {
+#include <fmt/core.h>
 
-  // Set up restart file
-  restart = Datafile(Options::getRoot()->getSection("restart"));
+#include <string>
+using namespace std::literals;
+
+namespace bout {
+void DataFileFacade::add(ValueType value, const std::string& name, bool save_repeat) {
+  data.emplace_back(name, value, save_repeat);
+}
+void DataFileFacade::add(Vector2D* value, const std::string& name, bool save_repeat) {
+  auto name_prefix = value->covariant ? name + "_" : name;
+  add(value->x, name_prefix + "x"s, save_repeat);
+  add(value->y, name_prefix + "y"s, save_repeat);
+  add(value->z, name_prefix + "z"s, save_repeat);
+}
+void DataFileFacade::add(Vector3D* value, const std::string& name, bool save_repeat) {
+  auto name_prefix = value->covariant ? name + "_" : name;
+  add(value->x, name_prefix + "x"s, save_repeat);
+  add(value->y, name_prefix + "y"s, save_repeat);
+  add(value->z, name_prefix + "z"s, save_repeat);
 }
 
-int PhysicsModel::runRHS(BoutReal time) {
-  return rhs(time);
+bool DataFileFacade::write() {
+  for (const auto& item : data) {
+    bout::utils::visit(bout::OptionsConversionVisitor{Options::root(), item.name},
+                       item.value);
+    if (item.repeat) {
+      Options::root()[item.name].attributes["time_dimension"] = "t";
+    }
+  }
+  writeDefaultOutputFile();
+  return true;
+}
+} // namespace bout
+
+PhysicsModel::PhysicsModel()
+    : mesh(bout::globals::mesh),
+      output_file(bout::getOutputFilename(Options::root()),
+                  Options::root()["append"]
+                          .doc("Add output data to existing (dump) files?")
+                          .withDefault(false)
+                      ? bout::OptionsNetCDF::FileMode::append
+                      : bout::OptionsNetCDF::FileMode::replace),
+      output_enabled(Options::root()["output"]["enabled"]
+                         .doc("Write output files")
+                         .withDefault(true)),
+      restart_file(bout::getRestartFilename(Options::root())),
+      restart_enabled(Options::root()["restart_files"]["enabled"]
+                          .doc("Write restart files")
+                          .withDefault(true)) {}
+
+void PhysicsModel::initialise(Solver* s) {
+  if (initialised) {
+    return; // Ignore second initialisation
+  }
+  initialised = true;
+
+  // Set the protected variable, so user code can
+  // call the solver functions
+  solver = s;
+
+  bout::experimental::addBuildFlagsToOptions(output_options);
+  mesh->outputVars(output_options);
+
+  // Restart option
+  const bool restarting = Options::root()["restart"].withDefault(false);
+
+  if (restarting) {
+    restart_options = restart_file.read();
+  }
+
+  // Call user init code to specify evolving variables
+  if (init(restarting) != 0) {
+    throw BoutException("Couldn't initialise physics model");
+  }
+
+  // Post-initialise, which reads restart files
+  // This function can be overridden by the user
+  if (postInit(restarting) != 0) {
+    throw BoutException("Couldn't restart physics model");
+  }
 }
 
-bool PhysicsModel::splitOperator() {
-  return splitop;
-}
+int PhysicsModel::runRHS(BoutReal time, bool linear) { return rhs(time, linear); }
 
-int PhysicsModel::runConvective(BoutReal time) {
-  return convective(time);
+bool PhysicsModel::splitOperator() { return splitop; }
+
+int PhysicsModel::runConvective(BoutReal time, bool linear) {
+  return convective(time, linear);
 }
 
 int PhysicsModel::runDiffusive(BoutReal time, bool linear) {
@@ -59,98 +135,58 @@ int PhysicsModel::runDiffusive(BoutReal time, bool linear) {
 bool PhysicsModel::hasPrecon() { return (userprecon != nullptr); }
 
 int PhysicsModel::runPrecon(BoutReal t, BoutReal gamma, BoutReal delta) {
-  if(!userprecon)
+  if (!userprecon) {
     return 1;
+  }
   return (*this.*userprecon)(t, gamma, delta);
 }
 
 bool PhysicsModel::hasJacobian() { return (userjacobian != nullptr); }
 
 int PhysicsModel::runJacobian(BoutReal t) {
-  if (!userjacobian)
+  if (!userjacobian) {
     return 1;
+  }
   return (*this.*userjacobian)(t);
 }
 
-void PhysicsModel::bout_solve(Field2D &var, const char *name,
+void PhysicsModel::bout_solve(Field2D& var, const char* name,
                               const std::string& description) {
   // Add to solver
   solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Field3D &var, const char *name,
+void PhysicsModel::bout_solve(Field3D& var, const char* name,
                               const std::string& description) {
   solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector2D &var, const char *name,
+void PhysicsModel::bout_solve(Vector2D& var, const char* name,
                               const std::string& description) {
   solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector3D &var, const char *name,
+void PhysicsModel::bout_solve(Vector3D& var, const char* name,
                               const std::string& description) {
   solver->add(var, name, description);
 }
 
 int PhysicsModel::postInit(bool restarting) {
   TRACE("PhysicsModel::postInit");
-  
-  std::string restart_dir;  ///< Directory for restart files
-  std::string dump_ext, restart_ext;  ///< Dump, Restart file extension
-  
-  Options *options = Options::getRoot();
-  if (options->isSet("restartdir")) {
-    // Solver-specific restart directory
-    options->get("restartdir", restart_dir, "data");
-  } else {
-    // Use the root data directory
-    options->get("datadir", restart_dir, "data");
-  }
-  /// Get restart file extension
-  options->get("dump_format", dump_ext, "nc");
-  options->get("restart_format", restart_ext, dump_ext);
-
-  std::string filename = restart_dir + "/BOUT.restart."+restart_ext;
-
-  // Add the solver variables to the restart file
-  // Second argument specifies no time history
-  // Open and close the restart file first so that it knows it's filename - needed so
-  // can_write_strings() works and we can skip writing run_id for HDF5 files.
-  if (!restart.openr("%s",filename.c_str())) {
-    throw BoutException("Error: Could not open restart file %s\n", filename.c_str());
-  }
-  restart.close();
-  solver->outputVars(restart, false);
 
   if (restarting) {
-    output.write("Loading restart file: %s\n", filename.c_str());
-
-    /// Load restart file
-    if (!restart.openr("%s",filename.c_str()))
-      throw BoutException("Error: Could not open restart file %s\n", filename.c_str());
-    if (!restart.read())
-      throw BoutException("Error: Could not read restart file %s\n", filename.c_str());
-    restart.close();
+    solver->readEvolvingVariablesFromOptions(restart_options);
   }
 
-  // Add mesh information to restart file
-  // Note this is done after reading, so mesh variables
-  // are not overwritten.
-  bout::globals::mesh->outputVars(restart);
-  // Version expected by collect routine
-  restart.addOnce(const_cast<BoutReal &>(BOUT_VERSION), "BOUT_VERSION");
+  if (restart_enabled) {
+    restartVars(restart_options);
+    solver->outputVars(restart_options, false);
+    bout::globals::mesh->outputVars(restart_options);
 
-  /// Open the restart file for writing
-  if (!restart.openw("%s",filename.c_str()))
-    throw BoutException("Error: Could not open restart file for writing\n");
+    restart_options["BOUT_VERSION"].force(bout::version::as_double, "PhysicsModel");
 
-  if (restarting) {
-    // Write variables to the restart files so that the initial data is not lost if there is
-    // a crash before modelMonitor is called for the first time
-    if (!restart.write()) {
-      throw BoutException("Error: Failed to write initial data back to restart file");
-    }
+    // Write _everything_ to restart file
+    restart_file.write(restart_options);
   }
 
   // Add monitor to the solver which calls restart.write() and
@@ -158,4 +194,71 @@ int PhysicsModel::postInit(bool restarting) {
   solver->addMonitor(&modelMonitor);
 
   return 0;
+}
+
+void PhysicsModel::outputVars(Options& options) {
+  Timer time("io");
+  for (const auto& item : dump.getData()) {
+    bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
+    if (item.repeat) {
+      options[item.name].attributes["time_dimension"] = "t";
+    }
+  }
+}
+
+void PhysicsModel::restartVars(Options& options) {
+  Timer time("io");
+  for (const auto& item : restart.getData()) {
+    bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
+    if (item.repeat) {
+      options[item.name].attributes["time_dimension"] = "t";
+    }
+  }
+}
+
+void PhysicsModel::writeRestartFile() {
+  if (restart_enabled) {
+    restart_file.write(restart_options);
+  }
+}
+
+void PhysicsModel::writeOutputFile() { writeOutputFile(output_options); }
+
+void PhysicsModel::writeOutputFile(const Options& options) {
+  if (output_enabled) {
+    output_file.write(options, "t");
+  }
+}
+
+void PhysicsModel::writeOutputFile(const Options& options,
+                                   const std::string& time_dimension) {
+  if (output_enabled) {
+    output_file.write(options, time_dimension);
+  }
+}
+
+void PhysicsModel::finishOutputTimestep() const {
+  if (output_enabled) {
+    output_file.verifyTimesteps();
+  }
+}
+
+int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
+                                            int iteration, int nout) {
+  // Restart file variables
+  solver->outputVars(model->restart_options, false);
+  model->restartVars(model->restart_options);
+  model->writeRestartFile();
+
+  // Main output file variables
+  // t_array for backwards compatibility? needed?
+  model->output_options["t_array"].assignRepeat(simtime);
+  model->output_options["iteration"].assignRepeat(iteration);
+
+  solver->outputVars(model->output_options, true);
+  model->outputVars(model->output_options);
+  model->writeOutputFile();
+
+  // Call user output monitor
+  return model->outputMonitor(simtime, iteration, nout);
 }

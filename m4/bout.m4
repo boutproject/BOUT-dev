@@ -163,8 +163,9 @@ AC_DEFUN([BOUT_CHECK_PRETTYFUNCTION], [
     [AC_LANG_PROGRAM([[]],
                  [[const char* name = __PRETTY_FUNCTION__;]])],
     [AC_MSG_RESULT(yes)
-     CXXFLAGS="$CXXFLAGS -DHAS_PRETTY_FUNCTION"],
-    [AC_MSG_RESULT(no)])
+     BOUT_HAS_PRETTY_FUNCTION=yes],
+    [AC_MSG_RESULT(no)
+     BOUT_HAS_PRETTY_FUNCTION=no])
   AC_LANG_POP([C++])
 ])
 
@@ -282,7 +283,6 @@ $2
   AC_MSG_NOTICE([=> $module_upper solver enabled])
   EXTRA_LIBS="$EXTRA_LIBS $SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
   EXTRA_INCS="$EXTRA_INCS $sundials_module_includes"
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_$module_upper"
 
   dnl The following is slightly complicated, but basically we use
   dnl AS_TR_SH to construct a shell variable from the variable
@@ -291,4 +291,16 @@ $2
   AS_VAR_SET([AS_TR_SH([BOUT_HAS_$module_upper])], [yes])
   AS_VAR_SET([AS_TR_SH([${module_upper}LIBS])], ["$SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"])
   AS_VAR_SET([AS_TR_SH([${module_upper}INCS])], ["$sundials_module_includes"])
+])
+
+
+# BOUT_DEFINE_SUBST(NAME, VALUE, DESCRIPTION)
+# Create an output variable and also define it for headers
+# Taken from https://stackoverflow.com/a/8735145/2043465
+# -----------------------------------------
+AC_DEFUN([BOUT_DEFINE_SUBST], [
+AS_IF([test "x$$1" = "xyes"],
+[AC_DEFINE([$1], [1], [$2])],
+[AC_DEFINE([$1], [0], [$2])])
+AC_SUBST([$1])
 ])

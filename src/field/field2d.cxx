@@ -25,29 +25,30 @@
  *
  **************************************************************************/
 
-#include <boutcomm.hxx>
+#include "bout/build_config.hxx"
+
+#include <bout/boutcomm.hxx>
 #include <bout/rvec.hxx>
 
-#include <globals.hxx> // for mesh
+#include <bout/globals.hxx> // for mesh
 
-#include <field2d.hxx>
+#include <bout/field2d.hxx>
 
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
-#include <boundary_op.hxx>
-#include <boundary_factory.hxx>
+#include <bout/boundary_factory.hxx>
+#include <bout/boundary_op.hxx>
 
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/mesh.hxx>
+#include <bout/msg_stack.hxx>
 
+#include <bout/output.hxx>
 #include <cmath>
-#include <output.hxx>
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in,
-      DirectionTypes directions_in)
+Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
     : Field(localmesh, location_in, directions_in) {
 
   if (fieldmesh) {
@@ -55,7 +56,7 @@ Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in,
     ny = fieldmesh->LocalNy;
   }
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = "<F2D>";
 #endif
 }
@@ -63,7 +64,7 @@ Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in,
 Field2D::Field2D(const Field2D& f) : Field(f), data(f.data) {
   TRACE("Field2D(Field2D&)");
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = f.name;
 #endif
 
@@ -71,14 +72,9 @@ Field2D::Field2D(const Field2D& f) : Field(f), data(f.data) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
   }
-
-  location = f.location;
-  fieldCoordinates = f.fieldCoordinates;
 }
 
-Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field2D(localmesh) {
-  *this = val;
-}
+Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field2D(localmesh) { *this = val; }
 
 Field2D::Field2D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
                  DirectionTypes directions_in)
@@ -97,62 +93,61 @@ Field2D::Field2D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation
 Field2D::~Field2D() { delete deriv; }
 
 Field2D& Field2D::allocate() {
-  if(data.empty()) {
-    if(!fieldmesh) {
+  if (data.empty()) {
+    if (!fieldmesh) {
       // fieldmesh was not initialized when this field was initialized, so use
       // the global mesh and set some members to default values
       fieldmesh = bout::globals::mesh;
       nx = fieldmesh->LocalNx;
       ny = fieldmesh->LocalNy;
     }
-    data.reallocate(nx*ny);
+    data.reallocate(nx * ny);
 #if CHECK > 2
     invalidateGuards(*this);
 #endif
-  }else
+  } else {
     data.ensureUnique();
+  }
 
   return *this;
 }
 
-Field2D* Field2D::timeDeriv() {
-  if(deriv == nullptr)
+BOUT_HOST_DEVICE Field2D* Field2D::timeDeriv() {
+  if (deriv == nullptr) {
     deriv = new Field2D{emptyFrom(*this)};
+  }
   return deriv;
 }
 
 ////////////// Indexing ///////////////////
 
-const Region<Ind2D> &Field2D::getRegion(REGION region) const {
+const Region<Ind2D>& Field2D::getRegion(REGION region) const {
   return fieldmesh->getRegion2D(toString(region));
-};
-const Region<Ind2D> &Field2D::getRegion(const std::string &region_name) const {
+}
+const Region<Ind2D>& Field2D::getRegion(const std::string& region_name) const {
   return fieldmesh->getRegion2D(region_name);
-};
+}
 
 // Not in header because we need to access fieldmesh
-BoutReal& Field2D::operator[](const Ind3D &d) {
+BOUT_HOST_DEVICE BoutReal& Field2D::operator[](const Ind3D& d) {
   return operator[](fieldmesh->map3Dto2D(d));
 }
 
-const BoutReal& Field2D::operator[](const Ind3D &d) const {
+BOUT_HOST_DEVICE const BoutReal& Field2D::operator[](const Ind3D& d) const {
   return operator[](fieldmesh->map3Dto2D(d));
 }
 
 ///////////// OPERATORS ////////////////
 
-Field2D &Field2D::operator=(const Field2D &rhs) {
+Field2D& Field2D::operator=(const Field2D& rhs) {
   // Check for self-assignment
-  if (this == &rhs)
+  if (this == &rhs) {
     return (*this); // skip this assignment
+  }
 
   TRACE("Field2D: Assignment from Field2D");
 
-#ifdef TRACK
-  name = rhs.name;
-#endif
-
-  copyFieldMembers(rhs);
+  Field::operator=(rhs);
 
   // Copy the data and data sizes
   nx = rhs.nx;
@@ -164,8 +159,29 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
   return *this;
 }
 
-Field2D &Field2D::operator=(const BoutReal rhs) {
-#ifdef TRACK
+Field2D& Field2D::operator=(Field2D&& rhs) noexcept {
+  // Check for self-assignment
+  if (this == &rhs) {
+    return (*this); // skip this assignment
+  }
+
+  TRACE("Field2D: Move assignment from Field2D");
+
+  // Move the data and data sizes
+  nx = rhs.nx;
+  ny = rhs.ny;
+
+  // Move reference to data
+  data = std::move(rhs.data);
+
+  // Move base slice last
+  Field::operator=(std::move(rhs));
+
+  return *this;
+}
+
+Field2D& Field2D::operator=(const BoutReal rhs) {
+#if BOUT_USE_TRACK
   name = "<r2D>";
 #endif
 
@@ -184,79 +200,83 @@ void Field2D::applyBoundary(bool init) {
 
 #if CHECK > 0
   if (init) {
-
-    if(!boundaryIsSet)
-      output_warn << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
+    if (not isBoundarySet()) {
+      output_warn << "WARNING: Call to Field2D::applyBoundary(), but no boundary set\n";
+    }
   }
 #endif
 
   checkData(*this);
 
-  for(const auto& bndry : bndry_op)
-    if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+  for (const auto& bndry : getBoundaryOps()) {
+    // Always apply to the values when initialising
+    // fields, otherwise apply only if wanted
+    if (!bndry->apply_to_ddt || init) {
       bndry->apply(*this);
+    }
+  }
 }
 
 void Field2D::applyBoundary(BoutReal time) {
   TRACE("Field2D::applyBoundary(time)");
 
 #if CHECK > 0
-  if (!boundaryIsSet) {
+  if (not isBoundarySet()) {
     output_warn << "WARNING: Call to Field2D::applyBoundary(time), but no boundary set\n";
   }
 #endif
 
   checkData(*this);
 
-  for (const auto& bndry : bndry_op) {
+  for (const auto& bndry : getBoundaryOps()) {
     bndry->apply(*this, time);
   }
 }
 
-void Field2D::applyBoundary(const std::string &condition) {
+void Field2D::applyBoundary(const std::string& condition) {
   TRACE("Field2D::applyBoundary(condition)");
 
   checkData(*this);
 
   /// Get the boundary factory (singleton)
-  BoundaryFactory *bfact = BoundaryFactory::getInstance();
+  BoundaryFactory* bfact = BoundaryFactory::getInstance();
 
   /// Loop over the mesh boundary regions
-  for(const auto& reg : fieldmesh->getBoundaries()) {
+  for (const auto& reg : fieldmesh->getBoundaries()) {
     auto op = std::unique_ptr<BoundaryOp>{
         dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};
     op->apply(*this);
   }
 
   // Set the corners to zero
-  for(int jx=0;jx<fieldmesh->xstart;jx++) {
-    for(int jy=0;jy<fieldmesh->ystart;jy++) {
-      operator()(jx,jy) = 0.;
+  for (int jx = 0; jx < fieldmesh->xstart; jx++) {
+    for (int jy = 0; jy < fieldmesh->ystart; jy++) {
+      operator()(jx, jy) = 0.;
     }
-    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-      operator()(jx,jy) = 0.;
+    for (int jy = fieldmesh->yend + 1; jy < fieldmesh->LocalNy; jy++) {
+      operator()(jx, jy) = 0.;
     }
   }
-  for(int jx=fieldmesh->xend+1;jx<fieldmesh->LocalNx;jx++) {
-    for(int jy=0;jy<fieldmesh->ystart;jy++) {
-      operator()(jx,jy) = 0.;
+  for (int jx = fieldmesh->xend + 1; jx < fieldmesh->LocalNx; jx++) {
+    for (int jy = 0; jy < fieldmesh->ystart; jy++) {
+      operator()(jx, jy) = 0.;
     }
-    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-      operator()(jx,jy) = 0.;
+    for (int jy = fieldmesh->yend + 1; jy < fieldmesh->LocalNy; jy++) {
+      operator()(jx, jy) = 0.;
     }
   }
 }
 
-void Field2D::applyBoundary(const std::string &region, const std::string &condition) {
+void Field2D::applyBoundary(const std::string& region, const std::string& condition) {
   TRACE("Field2D::applyBoundary(string, string)");
   checkData(*this);
 
   /// Get the boundary factory (singleton)
-  BoundaryFactory *bfact = BoundaryFactory::getInstance();
+  BoundaryFactory* bfact = BoundaryFactory::getInstance();
 
   bool region_found = false;
   /// Loop over the mesh boundary regions
-  for (const auto &reg : fieldmesh->getBoundaries()) {
+  for (const auto& reg : fieldmesh->getBoundaries()) {
     if (reg->label == region) {
       region_found = true;
       auto op = std::unique_ptr<BoundaryOp>{
@@ -267,24 +287,24 @@ void Field2D::applyBoundary(const std::string &region, const std::string &condit
   }
 
   if (!region_found) {
-    throw BoutException("Region '%s' not found", region.c_str());
+    throw BoutException("Region '{:s}' not found", region);
   }
 
   // Set the corners to zero
-  for(int jx=0;jx<fieldmesh->xstart;jx++) {
-    for(int jy=0;jy<fieldmesh->ystart;jy++) {
-      operator()(jx,jy) = 0.;
+  for (int jx = 0; jx < fieldmesh->xstart; jx++) {
+    for (int jy = 0; jy < fieldmesh->ystart; jy++) {
+      operator()(jx, jy) = 0.;
     }
-    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-      operator()(jx,jy) = 0.;
+    for (int jy = fieldmesh->yend + 1; jy < fieldmesh->LocalNy; jy++) {
+      operator()(jx, jy) = 0.;
     }
   }
-  for(int jx=fieldmesh->xend+1;jx<fieldmesh->LocalNx;jx++) {
-    for(int jy=0;jy<fieldmesh->ystart;jy++) {
-      operator()(jx,jy) = 0.;
+  for (int jx = fieldmesh->xend + 1; jx < fieldmesh->LocalNx; jx++) {
+    for (int jy = 0; jy < fieldmesh->ystart; jy++) {
+      operator()(jx, jy) = 0.;
     }
-    for(int jy=fieldmesh->yend+1;jy<fieldmesh->LocalNy;jy++) {
-      operator()(jx,jy) = 0.;
+    for (int jy = fieldmesh->yend + 1; jy < fieldmesh->LocalNy; jy++) {
+      operator()(jx, jy) = 0.;
     }
   }
 }
@@ -296,11 +316,12 @@ void Field2D::applyTDerivBoundary() {
   ASSERT1(deriv != nullptr);
   checkData(*deriv);
 
-  for(const auto& bndry : bndry_op)
+  for (const auto& bndry : getBoundaryOps()) {
     bndry->apply_ddt(*this);
+  }
 }
 
-void Field2D::setBoundaryTo(const Field2D &f2d) {
+void Field2D::setBoundaryTo(const Field2D& f2d) {
   TRACE("Field2D::setBoundary(const Field2D&)");
 
   checkData(f2d);
@@ -308,13 +329,14 @@ void Field2D::setBoundaryTo(const Field2D &f2d) {
   allocate(); // Make sure data allocated
 
   /// Loop over boundary regions
-  for(const auto& reg : fieldmesh->getBoundaries()) {
+  for (const auto& reg : fieldmesh->getBoundaries()) {
     /// Loop within each region
-    for(reg->first(); !reg->isDone(); reg->next()) {
+    for (reg->first(); !reg->isDone(); reg->next()) {
       // Get value half-way between cells
-      BoutReal val = 0.5*(f2d(reg->x,reg->y) + f2d(reg->x-reg->bx, reg->y-reg->by));
+      BoutReal val =
+          0.5 * (f2d(reg->x, reg->y) + f2d(reg->x - reg->bx, reg->y - reg->by));
       // Set to this value
-      (*this)(reg->x,reg->y) = 2.*val - (*this)(reg->x-reg->bx, reg->y-reg->by);
+      (*this)(reg->x, reg->y) = 2. * val - (*this)(reg->x - reg->bx, reg->y - reg->by);
     }
   }
 }
@@ -322,32 +344,33 @@ void Field2D::setBoundaryTo(const Field2D &f2d) {
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
 // Unary minus
-Field2D operator-(const Field2D &f) { return -1.0 * f; }
+Field2D operator-(const Field2D& f) { return -1.0 * f; }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 namespace {
-  // Internal routine to avoid ugliness with interactions between CHECK
-  // levels and UNUSED parameters
+// Internal routine to avoid ugliness with interactions between CHECK
+// levels and UNUSED parameters
 #if CHECK > 2
 void checkDataIsFiniteOnRegion(const Field2D& f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!::finite(f[i])) {
-      throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x(),
-                          i.y());
+      throw BoutException("Field2D: Operation on non-finite data at [{:d}][{:d}]\n",
+                          i.x(), i.y());
     }
   }
 }
 #elif CHECK > 0
 // No-op for no checking
-void checkDataIsFiniteOnRegion(const Field2D &UNUSED(f), const std::string& UNUSED(region)) {}
+void checkDataIsFiniteOnRegion(const Field2D& UNUSED(f),
+                               const std::string& UNUSED(region)) {}
 #endif
-}
+} // namespace
 
 #if CHECK > 0
 /// Check if the data is valid
-void checkData(const Field2D &f, const std::string& region) {
+void checkData(const Field2D& f, const std::string& region) {
   if (!f.isAllocated()) {
     throw BoutException("Field2D: Operation on empty data\n");
   }
@@ -357,19 +380,31 @@ void checkData(const Field2D &f, const std::string& region) {
 #endif
 
 #if CHECK > 2
-void invalidateGuards(Field2D &var) {
+void invalidateGuards(Field2D& var) {
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif
 
-bool operator==(const Field2D &a, const Field2D &b) {
+bool operator==(const Field2D& a, const Field2D& b) {
   if (!a.isAllocated() || !b.isAllocated()) {
     return false;
   }
   return min(abs(a - b)) < 1e-10;
 }
 
-std::ostream& operator<<(std::ostream &out, const Field2D &value) {
+std::ostream& operator<<(std::ostream& out, const Field2D& value) {
   out << toString(value);
   return out;
+}
+
+void swap(Field2D& first, Field2D& second) noexcept {
+  using std::swap;
+
+  // Swap base class members
+  swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
+  swap(first.data, second.data);
+  swap(first.nx, second.nx);
+  swap(first.ny, second.ny);
+  swap(first.deriv, second.deriv);
 }

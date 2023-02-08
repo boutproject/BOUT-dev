@@ -1,18 +1,18 @@
 
 MZ = 8
-ZPERIOD = 1
+zperiod = 1
 
-mxg = 0  # No guard cells in X
-myg = 1  # No guard cells in Y
+MXG = 0  # No guard cells in X
+MYG = 1  # No guard cells in Y
 
 input = sin(z)
 solution = -sin(z)
-
-[mesh:ddz]
-
-second = c2
 
 [mesh]
 
 nx = 1
 ny = 1
+
+[mesh:ddz]
+
+second = c2

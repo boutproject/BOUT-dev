@@ -1,0 +1,46 @@
+name: black
+
+on:
+  push:
+    paths:
+      - '**.py'
+      - 'bin/**'
+      - '**/runtest'
+      - '**/run'
+      - 'tests/integrated/test_suite'
+      - 'tests/requirements/*'
+      - 'tools/tokamak_grids/**'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  black:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.head_ref }}
+
+    - name: Install black
+      run: |
+        sudo apt update -y
+        sudo apt -y install python3-pip python3-setuptools python3-wheel
+        pip3 install black
+
+    - name: Version
+      run: |
+        python3 --version
+        $HOME/.local/bin/black --version
+
+    - name: Run black
+      run: |
+        pwd
+        ls
+        $HOME/.local/bin/black tests/ tools/ $(grep -EIlr '^#!.*python.*$' bin/ tests/ tools/ src/ | grep -v _boutpp_build)
+
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: "Apply black changes"

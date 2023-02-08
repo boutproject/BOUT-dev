@@ -121,6 +121,8 @@ function(bout_add_example EXAMPLENAME)
   endif()
 
   set_target_properties(${EXAMPLENAME} PROPERTIES FOLDER examples)
+
+  add_dependencies(build-all-examples ${EXAMPLENAME})
 endfunction()
 
 
@@ -160,7 +162,7 @@ endfunction()
 #
 function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
-  set(oneValueArgs EXECUTABLE_NAME)
+  set(oneValueArgs EXECUTABLE_NAME PROCESSORS)
   set(multiValueArgs SOURCES EXTRA_FILES REQUIRES CONFLICTS TESTARGS EXTRA_DEPENDS)
   cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -204,9 +206,15 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
     add_dependencies(${TESTNAME} ${BOUT_TEST_OPTIONS_EXTRA_DEPENDS})
   endif()
 
+  if (NOT BOUT_TEST_OPTIONS_PROCESSORS)
+    set(BOUT_TEST_OPTIONS_PROCESSORS 1)
+  endif()
+
   # Set the actual test command
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
-    add_test(NAME ${TESTNAME} COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS})
+    add_test(NAME ${TESTNAME}
+      COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS}
+      )
     set_tests_properties(${TESTNAME} PROPERTIES
       ENVIRONMENT PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
       )
@@ -214,6 +222,11 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
   else()
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME} ${BOUT_TEST_OPTIONS_TESTARGS})
   endif()
+
+  set_tests_properties(${TESTNAME} PROPERTIES
+    PROCESSORS ${BOUT_TEST_OPTIONS_PROCESSORS}
+    PROCESSOR_AFFINITY ON
+    )
 
   # Copy the input file if needed
   if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)

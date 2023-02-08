@@ -1,11 +1,11 @@
-#include <bout.hxx>
-#include <derivs.hxx>
+#include <bout/bout.hxx>
+#include <bout/derivs.hxx>
 
 #include "header.hxx"
 
 int AdvDiff::rhs(BoutReal UNUSED(t)) {
   // Run communications
-  mesh->communicate(V);
+  V.getMesh()->communicate(V);
 
   ddt(V) = DDX(V);
 

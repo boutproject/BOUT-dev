@@ -23,16 +23,18 @@
  *
  **************************************************************************/
 
-#include <utils.hxx>
-#include <cstring>
-#include <cstdlib>
-#include <cctype>
-#include <vector>
+#include <bout/utils.hxx>
 #include <algorithm>
-#include <sstream>
+#include <cctype>
 #include <cmath>
+#include <cstdlib>
+#include <cstring>
 #include <ctime>
 #include <iomanip>
+#include <sstream>
+#include <vector>
+
+#include "fmt/chrono.h"
 
 /**************************************************************************
  * String routines
@@ -40,20 +42,19 @@
 
 // Allocate memory for a copy of given string
 char* copy_string(const char* s) {
-  char *s2;
-  int n;
 
-  if (s == nullptr)
+  if (s == nullptr) {
     return nullptr;
+  }
 
-  n = strlen(s);
-  s2 = static_cast<char *>(malloc(n + 1));
+  const auto n = strlen(s);
+  auto s2 = static_cast<char*>(malloc(n + 1));
   strcpy(s2, s);
   return s2;
 }
 
 // Convert a string to lower case
-const std::string lowercase(const std::string &str) {
+const std::string lowercase(const std::string& str) {
   std::string strlow(str);
 
   std::transform(strlow.begin(), strlow.end(), strlow.begin(), ::tolower);
@@ -69,11 +70,11 @@ const std::string uppercase(const std::string& str) {
 }
 
 // Convert to lowercase, except for inside strings
-const std::string lowercasequote(const std::string &str) {
+const std::string lowercasequote(const std::string& str) {
   std::string strlow(str);
 
   bool quote = false, dquote = false;
-  for (char &i : strlow) {
+  for (char& i : strlow) {
     if (i == '\'') {
       quote ^= true;
     } else if (i == '"') {
@@ -85,70 +86,101 @@ const std::string lowercasequote(const std::string &str) {
   return strlow;
 }
 
-BoutReal stringToReal(const std::string &s) {
+BoutReal stringToReal(const std::string& s) {
   std::stringstream ss(s);
   BoutReal val;
-  if(!(ss >> val)) {
-    throw BoutException("Could not convert string '%s' to BoutReal\n", s.c_str());
+  if (!(ss >> val)) {
+    throw BoutException("Could not convert string '{:s}' to BoutReal\n", s);
   }
   return val;
 }
 
-int stringToInt(const std::string &s) {
+int stringToInt(const std::string& s) {
   std::stringstream ss(s);
   int val;
-  if(!(ss >> val)) {
-    throw BoutException("Could not convert string '%s' to int\n", s.c_str());
+  if (!(ss >> val)) {
+    throw BoutException("Could not convert string '{:s}' to int\n", s);
   }
   return val;
 }
 
-std::list<std::string> &strsplit(const std::string &s, char delim, std::list<std::string> &elems) {
-    std::stringstream ss(s);
-    std::string item;
-    while(std::getline(ss, item, delim)) {
-        elems.push_back(item);
-    }
-    return elems;
+std::list<std::string>& strsplit(const std::string& s, char delim,
+                                 std::list<std::string>& elems) {
+  std::stringstream ss(s);
+  std::string item;
+  while (std::getline(ss, item, delim)) {
+    elems.push_back(item);
+  }
+  return elems;
 }
 
-std::list<std::string> strsplit(const std::string &s, char delim) {
-    std::list<std::string> elems;
-    return strsplit(s, delim, elems);
+std::list<std::string> strsplit(const std::string& s, char delim) {
+  std::list<std::string> elems;
+  return strsplit(s, delim, elems);
 }
 
 // Strips leading and trailing spaces from a string
-std::string trim(const std::string &s, const std::string &c) {
+std::string trim(const std::string& s, const std::string& c) {
   return trimLeft(trimRight(s, c), c);
 }
 
-std::string trimRight(const std::string &s, const std::string &c) {
+std::string trimRight(const std::string& s, const std::string& c) {
   std::string str(s);
-  return str.erase(s.find_last_not_of(c)+1);
+  return str.erase(s.find_last_not_of(c) + 1);
 }
 
-std::string trimLeft(const std::string &s, const std::string &c) {
+std::string trimLeft(const std::string& s, const std::string& c) {
   std::string str(s);
   return str.erase(0, s.find_first_not_of(c));
 }
 
 // Strips the comments from a string
 // This is the compliment of trimLeft
-std::string trimComments(const std::string &s, const std::string &c) {
+std::string trimComments(const std::string& s, const std::string& c) {
   return s.substr(0, s.find_first_of(c));
 }
 
 std::string toString(const time_t& time) {
-  // Get local time
-  std::tm *tm = std::localtime(&time);
+  return fmt::format("{:%c}", *std::localtime(&time));
+}
 
-  // Note: With GCC >= 5 `put_time` becomes available
-  // std::stringstream ss;
-  // ss << std::put_time(tm, "%c %Z");
-  // return ss.str();
+std::string::size_type editDistance(const std::string& str1, const std::string& str2) {
 
-  // Older compilers
-  char buffer[80];
-  strftime(buffer, 80, "%Ec", tm);
-  return std::string(buffer);
+  using str_size_t = std::string::size_type;
+
+  const auto str1_size = str1.size() + 1;
+  const auto str2_size = str2.size() + 1;
+
+  auto distance = Matrix<str_size_t>(str1_size, str2_size);
+
+  // Initialise zeroth column and row with string index
+  for (str_size_t i = 0; i < str1_size; ++i) {
+    distance(i, 0) = i;
+  }
+  for (str_size_t j = 0; j < str2_size; ++j) {
+    distance(0, j) = j;
+  }
+
+  // Wikipedia uses 1-indexing for the input strings, but 0-indexing
+  // for the `d` matrix, so the input strings have an additional `-1`
+  // when indexing them
+  for (str_size_t i = 1; i < str1_size; ++i) {
+    for (str_size_t j = 1; j < str2_size; ++j) {
+      const str_size_t cost = (str1[i - 1] == str2[j - 1]) ? 0 : 1;
+
+      distance(i, j) = std::min({
+          distance(i - 1, j) + 1,       // deletion
+          distance(i, j - 1) + 1,       // insertion
+          distance(i - 1, j - 1) + cost // substitution
+      });
+
+      if (i > 1 and j > 1 and (str1[i - 1] == str2[j - 2])
+          and (str1[i - 2] == str2[j - 1])) {
+        // transposition
+        distance(i, j) = std::min(distance(i, j), distance(i - 2, j - 2) + 1);
+      }
+    }
+  }
+
+  return distance(str1_size - 1, str2_size - 1);
 }

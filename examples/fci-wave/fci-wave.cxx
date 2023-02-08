@@ -14,7 +14,7 @@ private:
   BoutReal log_background; // Log(background)
 
   /// Parallel divergence, using integration over projected cells
-  Field3D Div_par_integrate(const Field3D &f) {
+  Field3D Div_par_integrate(const Field3D& f) {
     Field3D f_B = f / Bxyz;
 
     f_B.splitParallelSlices();
@@ -25,30 +25,30 @@ private:
     // then the boundary condition is simpler since f = 0 gives f_B=0 boundary condition.
 
     /// Loop over the mesh boundary regions
-    for (const auto &reg : mesh->getBoundariesPar()) {
-      Field3D &f_B_next = f_B.ynext(reg->dir);
-      const Field3D &f_next = f.ynext(reg->dir);
-      const Field3D &B_next = Bxyz.ynext(reg->dir);
+    for (const auto& reg : mesh->getBoundariesPar()) {
+      Field3D& f_B_next = f_B.ynext(reg->dir);
+      const Field3D& f_next = f.ynext(reg->dir);
+      const Field3D& B_next = Bxyz.ynext(reg->dir);
 
       for (reg->first(); !reg->isDone(); reg->next()) {
         f_B_next(reg->x, reg->y + reg->dir, reg->z) =
-            f_next(reg->x, reg->y + reg->dir, reg->z) /
-            B_next(reg->x, reg->y + reg->dir, reg->z);
+            f_next(reg->x, reg->y + reg->dir, reg->z)
+            / B_next(reg->x, reg->y + reg->dir, reg->z);
       }
     }
 
     Field3D result;
     result.allocate();
 
-    Coordinates *coord = mesh->getCoordinates();
+    Coordinates* coord = mesh->getCoordinates();
 
     for (auto i : result.getRegion(RGN_NOBNDRY)) {
-      result[i] = Bxyz[i] * (f_B.yup()[i.yp()] - f_B.ydown()[i.ym()]) /
-                  (2. * coord->dy[i] * sqrt(coord->g_22[i]));
+      result[i] = Bxyz[i] * (f_B.yup()[i.yp()] - f_B.ydown()[i.ym()])
+                  / (2. * coord->dy[i] * sqrt(coord->g_22[i]));
 
       if (!finite(result[i])) {
-        output.write("[%d,%d,%d]: %e, %e -> %e\n", i.x(), i.y(), i.z(), f_B.yup()[i.yp()],
-                     f_B.ydown()[i.ym()], result[i]);
+        output.write("[{:d},{:d},{:d}]: {:e}, {:e} -> {:e}\n", i.x(), i.y(), i.z(),
+                     f_B.yup()[i.yp()], f_B.ydown()[i.ym()], result[i]);
       }
     }
 
@@ -116,14 +116,14 @@ protected:
     // between v, nv and momentum flux
 
     momflux.splitParallelSlices();
-    for (const auto &reg : mesh->getBoundariesPar()) {
+    for (const auto& reg : mesh->getBoundariesPar()) {
       // Using the values of density and velocity on the boundary
-      const Field3D &n_next = n.ynext(reg->dir);
-      const Field3D &v_next = v.ynext(reg->dir);
+      const Field3D& n_next = n.ynext(reg->dir);
+      const Field3D& v_next = v.ynext(reg->dir);
 
       // Set the momentum and momentum flux
-      Field3D &nv_next = nv.ynext(reg->dir);
-      Field3D &momflux_next = momflux.ynext(reg->dir);
+      Field3D& nv_next = nv.ynext(reg->dir);
+      Field3D& momflux_next = momflux.ynext(reg->dir);
       momflux_next.allocate();
 
       for (reg->first(); !reg->isDone(); reg->next()) {

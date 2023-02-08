@@ -1,13 +1,13 @@
 #include "gtest/gtest.h"
 
-#include "mask.hxx"
-#include "boutexception.hxx"
 #include "test_extras.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/mask.hxx"
 
 /// Global mesh
-namespace bout{
-namespace globals{
-extern Mesh *mesh;
+namespace bout {
+namespace globals {
+extern Mesh* mesh;
 } // namespace globals
 } // namespace bout
 
@@ -114,7 +114,7 @@ TEST_F(MaskTest, CreateOnMesh) {
   constexpr int nx{2};
   constexpr int ny{3};
   constexpr int nz{4};
-  
+
   FakeMesh mesh{nx, ny, nz};
 
   BoutMask mask{mesh};
@@ -132,7 +132,7 @@ TEST_F(MaskTest, CreateOnMeshWithValueTrue) {
   constexpr int nx{2};
   constexpr int ny{3};
   constexpr int nz{4};
-  
+
   FakeMesh mesh{nx, ny, nz};
 
   BoutMask mask{mesh, true};
@@ -150,7 +150,7 @@ TEST_F(MaskTest, CreateOnMeshWithValueFalse) {
   constexpr int nx{2};
   constexpr int ny{3};
   constexpr int nz{4};
-  
+
   FakeMesh mesh{nx, ny, nz};
 
   BoutMask mask{mesh, false};
