@@ -23,8 +23,9 @@ int main(int argc, char** argv) {
       }
     }
     output.write("{:s} done\n", toString(static_cast<BoundaryParType>(i)));
-    
-    dump[fmt::format("field_{:s}", toString(static_cast<BoundaryParType>(i)))] = fields[i];
+
+    dump[fmt::format("field_{:s}", toString(static_cast<BoundaryParType>(i)))] =
+        fields[i];
   }
 
   bout::writeDefaultOutputFile(dump);

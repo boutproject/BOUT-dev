@@ -37,16 +37,16 @@
 
 #include <bout/constants.hxx>
 #include <bout/sys/timer.hxx>
+#include <boundary_region.hxx>
 #include <boutcomm.hxx>
 #include <boutexception.hxx>
-#include <boundary_region.hxx>
-#include <parallel_boundary_region.hxx>
 #include <dcomplex.hxx>
 #include <derivs.hxx>
 #include <fft.hxx>
 #include <msg_stack.hxx>
 #include <options.hxx>
 #include <output.hxx>
+#include <parallel_boundary_region.hxx>
 #include <utils.hxx>
 
 #include <algorithm>
