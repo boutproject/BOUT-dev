@@ -4,6 +4,8 @@
 #
 
 # Cores: 2
+# only working with cmake
+# requires: False
 from boututils.run_wrapper import launch_safe
 from boututils.datafile import DataFile
 from boutdata.collect import collect as _collect
