@@ -1,4 +1,4 @@
-#include "bout/invert_parderiv.hxx"
+#include "bout/invert_pardiv.hxx"
 #include "bout/options.hxx"
 
 #include <memory>
@@ -24,7 +24,7 @@ public:
 
   /// Construct using options in given section.
   explicit HeatFluxSNB(Options& options) {
-    invertpar = std::unique_ptr<InvertPar>{InvertPar::create()};
+    invertpardiv = std::unique_ptr<InvertParDiv>{InvertParDiv::create()};
 
     // Read options. Note that the defaults are initialised already
     r = options["r"]
@@ -58,7 +58,7 @@ public:
 
 private:
   /// Parallel inversion of tridiagonal matrices
-  std::unique_ptr<InvertPar> invertpar{nullptr};
+  std::unique_ptr<InvertParDiv> invertpardiv{nullptr};
 
   BoutReal Z{1};           ///< Average ion charge (1 = Hydrogen)
   BoutReal r{2};           ///< Electron-electron mean free path scaling factor
