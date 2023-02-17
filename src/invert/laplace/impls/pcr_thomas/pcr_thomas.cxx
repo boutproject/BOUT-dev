@@ -37,19 +37,19 @@
  **************************************************************************/
 
 #include "pcr_thomas.hxx"
-#include "globals.hxx"
+#include "bout/globals.hxx"
 
-#include "boutcomm.hxx"
+#include "bout/boutcomm.hxx"
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/fft.hxx>
+#include <bout/lapack_routines.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/output.hxx>
 #include <bout/scorepwrapper.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
-#include <fft.hxx>
-#include <lapack_routines.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 #include <algorithm>
 #include <cmath>
@@ -59,7 +59,7 @@
 using namespace std;
 
 LaplacePCR_THOMAS::LaplacePCR_THOMAS(Options* opt, CELL_LOC loc, Mesh* mesh_in,
-                                     Solver* UNUSED(solver), Datafile* UNUSED(dump))
+                                     Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
       C2coef(1.0, localmesh), Dcoef(1.0, localmesh), nmode(maxmode + 1),
       ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
@@ -157,7 +157,8 @@ FieldPerp LaplacePCR_THOMAS::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
   if (dst) {
     const BoutReal zlength = getUniform(coords->dz) * (localmesh->LocalNz - 3);
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
           localmesh->LocalNz); // ZFFT routine expects input of this length
@@ -204,7 +205,8 @@ FieldPerp LaplacePCR_THOMAS::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     pcr_thomas_solver(a, b, c, bcmplx, xcmplx);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
           localmesh->LocalNz); // ZFFT routine expects input of this length
@@ -227,7 +229,8 @@ FieldPerp LaplacePCR_THOMAS::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     }
   } else {
     const BoutReal zlength = getUniform(coords->zlength());
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
                                  + 1); // ZFFT routine expects input of this length
@@ -272,7 +275,8 @@ FieldPerp LaplacePCR_THOMAS::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     pcr_thomas_solver(a, b, c, bcmplx, xcmplx);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
                                  + 1); // ZFFT routine expects input of this length
@@ -363,7 +367,8 @@ Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
 
   if (dst) {
     const BoutReal zlength = getUniform(coords->dz) * (localmesh->LocalNz - 3);
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
           localmesh->LocalNz); // ZFFT routine expects input of this length
@@ -418,7 +423,8 @@ Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
     pcr_thomas_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
           localmesh->LocalNz); // ZFFT routine expects input of this length
@@ -445,7 +451,8 @@ Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
     }
   } else {
     const BoutReal zlength = getUniform(coords->zlength());
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(localmesh->LocalNz / 2
                                  + 1); // ZFFT routine expects input of this length
@@ -500,7 +507,8 @@ Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
     pcr_thomas_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
                                  + 1); // ZFFT routine expects input of this length

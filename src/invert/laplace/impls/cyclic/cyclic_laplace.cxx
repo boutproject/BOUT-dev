@@ -38,19 +38,19 @@
 
 #if not BOUT_USE_METRIC_3D
 
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/fft.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 #include "cyclic_laplace.hxx"
 
 LaplaceCyclic::LaplaceCyclic(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
-                             Solver* UNUSED(solver), Datafile* UNUSED(dump))
+                             Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(1.0), Dcoef(1.0) {
 
   Acoef.setLocation(location);
@@ -131,7 +131,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
   }
 
   if (dst) {
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
           localmesh->LocalNz); // ZFFT routine expects input of this length
@@ -152,8 +153,9 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
         }
 
         // Copy into array, transposing so kz is first index
-        for (int kz = 0; kz < nmode; kz++)
+        for (int kz = 0; kz < nmode; kz++) {
           bcmplx(kz, ix - xs) = k1d[kz];
+        }
       }
 
       // Get elements of the tridiagonal matrix
@@ -179,7 +181,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     cr->solve(bcmplx, xcmplx);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
 
       // ZFFT routine expects input of this length
@@ -203,7 +206,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     }
   } else {
     const BoutReal zlength = getUniform(coords->zlength());
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of this length
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 + 1);
@@ -265,7 +269,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     }
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of this length
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 + 1);
@@ -353,7 +358,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   auto bcmplx3D = Matrix<dcomplex>(nsys, nx);
 
   if (dst) {
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of this length
       auto k1d = Array<dcomplex>(localmesh->LocalNz);
@@ -411,7 +417,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     cr->solve(bcmplx3D, xcmplx3D);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of length LocalNz
       auto k1d = Array<dcomplex>(localmesh->LocalNz);
@@ -438,7 +445,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     }
   } else {
     const BoutReal zlength = getUniform(coords->zlength());
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of this length
       auto k1d = Array<dcomplex>(localmesh->LocalNz / 2 + 1);
@@ -516,7 +524,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     }
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
                                  + 1); // ZFFT routine expects input of this length

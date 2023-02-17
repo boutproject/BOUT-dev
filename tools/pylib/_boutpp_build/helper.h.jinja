@@ -1,5 +1,5 @@
-#include <field3d.hxx>
-#include <bout_types.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/field3d.hxx>
 
 {% for field in [field3d, field2d] %}
 void c_get_{{ field.fdd }}_all(const {{ field.field_type }} * f, double * data);

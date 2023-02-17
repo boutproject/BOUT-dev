@@ -12,7 +12,6 @@ build_and_log("parallel slices test")
 failed = False
 
 for shifttype in ["shifted", "shiftedinterp"]:
-
     s, out = launch_safe(
         "./test_yupdown mesh:paralleltransform:type=" + shifttype,
         nproc=1,
