@@ -77,7 +77,7 @@ def verify(f1, f2):
 
 parser = argparse.ArgumentParser(description="Test the bout-squashoutput wrapper")
 parser.add_argument(
-    "executable", help="Path to bout-squashoutput", default="../../../bin"
+    "executable", help="Path to bout-squashoutput", default="../../../bin", nargs="?"
 )
 args = parser.parse_args()
 
