@@ -49,7 +49,7 @@ then
     sudo -u test ${0/\/tmp/\/home\/test} $mpi
 ## If we are called as normal user, run test
 else
-    pip install --user zoidberg
+    pip install --user zoidberg natsort
     . /etc/profile.d/modules.sh
     module load mpi/${1}-x86_64
     export OMPI_MCA_rmaps_base_oversubscribe=yes
