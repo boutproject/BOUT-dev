@@ -7,6 +7,7 @@ import numpy as np
 from boututils.run_wrapper import launch_safe, shell_safe, build_and_log
 import argparse
 import re
+import os.path
 
 
 # requires: all_tests
@@ -84,6 +85,9 @@ args = parser.parse_args()
 build_and_log("Squash test")
 
 bout_squashoutput = args.executable + "/bout-squashoutput"
+
+if not os.path.exists(bout_squashoutput):
+    bout_squashoutput = "bout-squashoutput"
 
 print("Run once to get normal data")
 timed_shell_safe("./squash -q -q -q nout=2")
