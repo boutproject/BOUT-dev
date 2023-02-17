@@ -15,6 +15,10 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.22)
   cmake_policy(SET CMP0127 NEW)
 endif()
 
+if ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  message(FATAL_ERROR "BOUT++ does not currently supports in source buildds. Try building out of source, e.g. with `cmake -S . -B build`")
+endif()
+
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
