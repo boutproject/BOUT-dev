@@ -14,7 +14,7 @@ import re
 # cores: 4
 
 IGNORED_VARS_PATTERN = re.compile(
-    "(wtime|ncalls|arkode|cvode|run_id|run_restart_from|M.?SUB|N.?PE|iteration|wall_time|has_legacy_netcdf).*"
+    "(wtime|ncalls|arkode|cvode|run_id|run_restart_from|M.?SUB|N.?PE|iteration|wall_time|has_legacy_netcdf|hist_hi).*"
 )
 
 

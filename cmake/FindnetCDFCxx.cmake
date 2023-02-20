@@ -27,18 +27,20 @@
 
 include(BOUT++functions)
 
-
 if (NOT netCDFCxx_ROOT AND EXISTS "${BOUT_USE_NETCDF}")
   set(netCDFCxx_ROOT "${BOUT_USE_NETCDF}")
 endif()
 
-find_package(netCDFCxx QUIET CONFIG)
-if (netCDFCxx_FOUND)
-  set(netCDFCxx_FOUND TRUE)
-  if (NOT TARGET netCDF::netcdf-cxx4)
-    bout_add_library_alias(netCDF::netcdf-cxx4 netcdf-cxx4)
+if (NOT EXISTS ${NCXX4_CONFIG})
+  # Only search if NCXX4_CONFIG was not set explicitly
+  find_package(netCDFCxx QUIET CONFIG)
+  if (netCDFCxx_FOUND)
+    set(netCDFCxx_FOUND TRUE)
+    if (NOT TARGET netCDF::netcdf-cxx4)
+      bout_add_library_alias(netCDF::netcdf-cxx4 netcdf-cxx4)
+    endif()
+    return()
   endif()
-  return()
 endif()
 
 find_package(netCDF REQUIRED)
@@ -107,7 +109,7 @@ bout_inspect_netcdf_config(_ncxx4_version "${NCXX4_CONFIG}" "--version")
 if (_ncxx4_version)
   # Change to lower case before matching, to avoid case problems
   string(TOLOWER "${_ncxx4_version}" _ncxx4_version_lower)
-  string(REGEX REPLACE "netcdf-cxx4 \([0-9]+\\.[0-9]+\\.[0-9]+\)" "\\1" netCDFCxx_VERSION "${_ncxx4_version_lower}")
+  string(REGEX REPLACE "netcdf-cxx4 \([0-9]+\\.[0-9]+\\.[0-9]+\).*" "\\1" netCDFCxx_VERSION "${_ncxx4_version_lower}")
   message(STATUS "Found netCDFCxx version ${netCDFCxx_VERSION}")
 else ()
   message(WARNING "Couldn't get NetCDF version")

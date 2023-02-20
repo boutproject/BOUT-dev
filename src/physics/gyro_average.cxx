@@ -27,18 +27,19 @@
  *
  **************************************************************/
 
+#include <bout/difops.hxx>
+#include <bout/globals.hxx>
+#include <bout/gyro_average.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
-#include <difops.hxx>
-#include <globals.hxx>
-#include <gyro_average.hxx>
-#include <invert_laplace.hxx>
 
 Field3D gyroTaylor0(const Field3D& f, const Field3D& rho) {
   return f + SQ(rho) * Delp2(f);
 }
 
-Field3D gyroPade0(const Field3D& f, BoutReal rho, int inner_boundary_flags, int outer_boundary_flags) {
+Field3D gyroPade0(const Field3D& f, BoutReal rho, int inner_boundary_flags,
+                  int outer_boundary_flags) {
   const Field2D a = 1.0;
   const Field2D d = -rho * rho;
 
@@ -57,7 +58,8 @@ Field3D gyroPade0(const Field3D& f, BoutReal rho, int inner_boundary_flags, int 
   return lap->solve(f).setLocation(f.getLocation());
 }
 
-Field3D gyroPade0(const Field3D& f, const Field2D& rho, int inner_boundary_flags, int outer_boundary_flags) {
+Field3D gyroPade0(const Field3D& f, const Field2D& rho, int inner_boundary_flags,
+                  int outer_boundary_flags) {
   const Field2D a = 1.0;
   const Field2D d = -rho * rho;
 
@@ -75,12 +77,14 @@ Field3D gyroPade0(const Field3D& f, const Field2D& rho, int inner_boundary_flags
   return lap->solve(f).setLocation(f.getLocation());
 }
 
-Field3D gyroPade0(const Field3D& f, const Field3D& rho, int inner_boundary_flags, int outer_boundary_flags) {
+Field3D gyroPade0(const Field3D& f, const Field3D& rho, int inner_boundary_flags,
+                  int outer_boundary_flags) {
   // Have to use Z average of rho for efficient inversion
   return gyroPade0(f, DC(rho), inner_boundary_flags, outer_boundary_flags);
 }
 
-Field3D gyroPade1(const Field3D& f, BoutReal rho, int inner_boundary_flags, int outer_boundary_flags) {
+Field3D gyroPade1(const Field3D& f, BoutReal rho, int inner_boundary_flags,
+                  int outer_boundary_flags) {
   const Field2D a = 1.0;
   const Field2D d = -0.5 * rho * rho;
 
@@ -98,7 +102,8 @@ Field3D gyroPade1(const Field3D& f, BoutReal rho, int inner_boundary_flags, int 
   return lap->solve(f).setLocation(f.getLocation());
 }
 
-Field3D gyroPade1(const Field3D& f, const Field2D& rho, int inner_boundary_flags, int outer_boundary_flags) {
+Field3D gyroPade1(const Field3D& f, const Field2D& rho, int inner_boundary_flags,
+                  int outer_boundary_flags) {
   const Field2D a = 1.0;
   const Field2D d = -0.5 * rho * rho;
 
@@ -116,20 +121,24 @@ Field3D gyroPade1(const Field3D& f, const Field2D& rho, int inner_boundary_flags
   return lap->solve(f).setLocation(f.getLocation());
 }
 
-Field3D gyroPade1(const Field3D& f, const Field3D& rho, int inner_boundary_flags, int outer_boundary_flags) {
+Field3D gyroPade1(const Field3D& f, const Field3D& rho, int inner_boundary_flags,
+                  int outer_boundary_flags) {
   return gyroPade1(f, DC(rho), inner_boundary_flags, outer_boundary_flags);
 }
 
-Field2D gyroPade1(const Field2D& f, const Field2D& rho, int inner_boundary_flags, int outer_boundary_flags) {
+Field2D gyroPade1(const Field2D& f, const Field2D& rho, int inner_boundary_flags,
+                  int outer_boundary_flags) {
   // Very inefficient implementation
   Field3D tmp = f;
   tmp = gyroPade1(tmp, rho, inner_boundary_flags, outer_boundary_flags);
   return DC(tmp);
 }
 
-Field3D gyroPade2(const Field3D& f, BoutReal rho, int inner_boundary_flags, int outer_boundary_flags) {
-  Field3D result = gyroPade1(gyroPade1(f, rho, inner_boundary_flags, outer_boundary_flags),
-      rho, inner_boundary_flags, outer_boundary_flags);
+Field3D gyroPade2(const Field3D& f, BoutReal rho, int inner_boundary_flags,
+                  int outer_boundary_flags) {
+  Field3D result =
+      gyroPade1(gyroPade1(f, rho, inner_boundary_flags, outer_boundary_flags), rho,
+                inner_boundary_flags, outer_boundary_flags);
 
   result.getMesh()->communicate(result);
   result = 0.5 * rho * rho * Delp2(result);
@@ -137,16 +146,19 @@ Field3D gyroPade2(const Field3D& f, BoutReal rho, int inner_boundary_flags, int 
   return result;
 }
 
-Field3D gyroPade2(const Field3D& f, const Field2D& rho, int inner_boundary_flags, int outer_boundary_flags) {
-  Field3D result = gyroPade1(gyroPade1(f, rho, inner_boundary_flags, outer_boundary_flags),
-      rho, inner_boundary_flags, outer_boundary_flags);
+Field3D gyroPade2(const Field3D& f, const Field2D& rho, int inner_boundary_flags,
+                  int outer_boundary_flags) {
+  Field3D result =
+      gyroPade1(gyroPade1(f, rho, inner_boundary_flags, outer_boundary_flags), rho,
+                inner_boundary_flags, outer_boundary_flags);
   result.getMesh()->communicate(result);
   result = 0.5 * rho * rho * Delp2(result);
   result.applyBoundary("dirichlet");
   return result;
 }
 
-Field3D gyroPade2(const Field3D& f, const Field3D& rho, int inner_boundary_flags, int outer_boundary_flags) {
+Field3D gyroPade2(const Field3D& f, const Field3D& rho, int inner_boundary_flags,
+                  int outer_boundary_flags) {
   // Have to use Z average of rho for efficient inversion
   return gyroPade2(f, DC(rho), inner_boundary_flags, outer_boundary_flags);
 }

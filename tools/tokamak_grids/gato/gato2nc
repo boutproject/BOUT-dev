@@ -68,6 +68,7 @@ print("Date: " + date)
 desc = f.readline()
 print("Description: " + desc)
 
+
 # Define a generator to get the next token from the file
 def file_tokens(fp):
     """Generator to get numbers from a text file"""

@@ -1,4 +1,4 @@
-#include "boutexception.hxx"
+#include "bout/boutexception.hxx"
 #include <Python.h>
 
 void raise_bout_py_error() {

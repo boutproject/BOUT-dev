@@ -2,7 +2,7 @@
 #include "fieldgenerators.hxx"
 
 #include <bout/constants.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 using bout::generator::Context;
 
@@ -28,7 +28,7 @@ FieldGeneratorPtr FieldGaussian::clone(const std::list<FieldGeneratorPtr> args) 
 
 BoutReal FieldGaussian::generate(const Context& ctx) {
   BoutReal sigma = s->generate(ctx);
-  return exp(-SQ(X->generate(ctx)/sigma)/2.) / (sqrt(TWOPI) * sigma);
+  return exp(-SQ(X->generate(ctx) / sigma) / 2.) / (sqrt(TWOPI) * sigma);
 }
 
 FieldGeneratorPtr FieldHeaviside::clone(const std::list<FieldGeneratorPtr> args) {
@@ -51,11 +51,11 @@ BoutReal FieldHeaviside::generate(const Context& ctx) {
 
 FieldGeneratorPtr FieldBallooning::clone(const std::list<FieldGeneratorPtr> args) {
   int n = ball_n;
-  switch(args.size()) {
+  switch (args.size()) {
   case 2: {
     // Second optional argument is ball_n, an integer
     // This should probably warn if arg isn't constant
-    n = ROUND( args.back()->generate(Context()) );
+    n = ROUND(args.back()->generate(Context()));
   } // Fall through
   case 1: {
     return std::make_shared<FieldBallooning>(mesh, args.front(), n);
@@ -66,19 +66,22 @@ FieldGeneratorPtr FieldBallooning::clone(const std::list<FieldGeneratorPtr> args
 }
 
 BoutReal FieldBallooning::generate(const Context& ctx) {
-  Mesh *localmesh = ctx.getMesh();
-  if (!localmesh)
+  Mesh* localmesh = ctx.getMesh();
+  if (!localmesh) {
     throw BoutException("ballooning function needs a valid mesh");
-  if (ball_n < 1)
+  }
+  if (ball_n < 1) {
     throw BoutException("ballooning function ball_n less than 1");
+  }
 
   BoutReal ts; // Twist-shift angle
   Coordinates* coords = localmesh->getCoordinates();
 
   // Need to find the nearest flux surface (x index)
   // This assumes that localmesh->GlobalX is linear in x index
-  BoutReal dx = (localmesh->GlobalX(localmesh->xend) - localmesh->GlobalX(localmesh->xstart))
-                / (localmesh->xend - localmesh->xstart);
+  BoutReal dx =
+      (localmesh->GlobalX(localmesh->xend) - localmesh->GlobalX(localmesh->xstart))
+      / (localmesh->xend - localmesh->xstart);
   int jx = ROUND((ctx.x() - localmesh->GlobalX(0)) / dx);
 
   const BoutReal zlength = getUniform(coords->zlength());
@@ -110,13 +113,14 @@ FieldMixmode::FieldMixmode(FieldGeneratorPtr a, BoutReal seed) : arg(std::move(a
   // Calculate the phases -PI to +PI
   // using genRand [0,1]
 
-  for (int i = 0; i < 14; i++)
+  for (int i = 0; i < 14; i++) {
     phase[i] = PI * (2. * genRand(seed + i) - 1.);
+  }
 }
 
 FieldGeneratorPtr FieldMixmode::clone(const std::list<FieldGeneratorPtr> args) {
   BoutReal seed = 0.5;
-  switch(args.size()) {
+  switch (args.size()) {
   case 2: {
     // Second optional argument is the seed, which should be a constant
     seed = args.back()->generate(Context());
@@ -133,10 +137,9 @@ BoutReal FieldMixmode::generate(const Context& ctx) {
   BoutReal result = 0.0;
 
   // A mixture of mode numbers
-  for(int i=0;i<14;i++) {
+  for (int i = 0; i < 14; i++) {
     // This produces a spectrum which is peaked around mode number 4
-    result += ( 1./SQ(1. + std::abs(i - 4)) ) *
-      cos(i * arg->generate(ctx) + phase[i]);
+    result += (1. / SQ(1. + std::abs(i - 4))) * cos(i * arg->generate(ctx) + phase[i]);
   }
 
   return result;
@@ -144,19 +147,21 @@ BoutReal FieldMixmode::generate(const Context& ctx) {
 
 BoutReal FieldMixmode::genRand(BoutReal seed) {
   // Make sure seed is
-  if(seed < 0.0)
+  if (seed < 0.0) {
     seed *= -1;
+  }
 
   // Round the seed to get the number of iterations
   int niter = 11 + (23 + ROUND(seed)) % 79;
 
   // Start x between 0 and 1 (exclusive)
   const BoutReal A = 0.01, B = 1.23456789;
-  BoutReal x = (A + fmod(seed,B)) / (B + 2.*A);
+  BoutReal x = (A + fmod(seed, B)) / (B + 2. * A);
 
   // Iterate logistic map
-  for(int i=0;i!=niter;++i)
+  for (int i = 0; i != niter; ++i) {
     x = 3.99 * x * (1. - x);
+  }
 
   return x;
 }
@@ -190,11 +195,10 @@ FieldGeneratorPtr FieldTanhHat::clone(const std::list<FieldGeneratorPtr> args) {
 
 BoutReal FieldTanhHat::generate(const Context& ctx) {
   // The following are constants
-  BoutReal w = width    ->generate(Context());
-  BoutReal c = center   ->generate(Context());
+  BoutReal w = width->generate(Context());
+  BoutReal c = center->generate(Context());
   BoutReal s = steepness->generate(Context());
-  return 0.5*(
-                 tanh( s*(X->generate(ctx) - (c - 0.5*w)) )
-               - tanh( s*(X->generate(ctx) - (c + 0.5*w)) )
-             );
+  return 0.5
+         * (tanh(s * (X->generate(ctx) - (c - 0.5 * w)))
+            - tanh(s * (X->generate(ctx) - (c + 0.5 * w))));
 }

@@ -33,7 +33,7 @@ if (NOT netCDF_ROOT AND EXISTS "${BOUT_USE_NETCDF}")
 endif()
 
 find_package(netCDF QUIET CONFIG)
-   
+
 if (netCDF_FOUND)
   message(STATUS "netCDF CONFIG found")
   set(netCDF_FOUND TRUE)

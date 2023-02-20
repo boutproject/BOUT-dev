@@ -95,7 +95,6 @@ with open("mms-slab3d.pkl", "wb") as output:
 # plot errors
 
 for var, mark in zip(varlist, markers):
-
     order = log(error_2[var][-1] / error_2[var][-2]) / log(dx[-1] / dx[-2])
     print("%s Convergence order = %f" % (var, order))
     if 1.9 < order < 2.1:

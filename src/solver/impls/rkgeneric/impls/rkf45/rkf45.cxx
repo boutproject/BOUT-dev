@@ -1,6 +1,6 @@
 #include "rkf45.hxx"
 
-RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
+RKF45Scheme::RKF45Scheme(Options* options) : RKScheme(options) {
   //Set characteristics of scheme
   numStages = 6;
   numOrders = 2;
@@ -13,12 +13,12 @@ RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
   timeCoeffs.reallocate(numStages);
 
   //Zero out arrays (shouldn't be needed, but do for testing)
-  for(int i=0;i<numStages;i++){
-    timeCoeffs[i]=0.;
-    for(int j=0;j<numStages;j++){
+  for (int i = 0; i < numStages; i++) {
+    timeCoeffs[i] = 0.;
+    for (int j = 0; j < numStages; j++) {
       stageCoeffs(i, j) = 0.;
     }
-    for(int j=0;j<numOrders;j++){
+    for (int j = 0; j < numOrders; j++) {
       resultCoeffs(i, j) = 0.;
     }
   }
@@ -77,14 +77,13 @@ RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
   //Level 0
   timeCoeffs[0] = 0.0;
   //Level 1
-  timeCoeffs[1] = 1.0/4.0;
+  timeCoeffs[1] = 1.0 / 4.0;
   //Level 2
-  timeCoeffs[2] = 3.0/8.0;
+  timeCoeffs[2] = 3.0 / 8.0;
   //Level 3
-  timeCoeffs[3] = 12.0/13.0;
+  timeCoeffs[3] = 12.0 / 13.0;
   //Level 4
   timeCoeffs[4] = 1.0;
   //Level 5
-  timeCoeffs[5] = 1.0/2.0;
-
+  timeCoeffs[5] = 1.0 / 2.0;
 }
