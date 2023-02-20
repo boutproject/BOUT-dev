@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #pragma once
 // BOUT++ header shim
 #warning Header "parallel_boundary_op.hxx" has moved to "bout/parallel_boundary_op.hxx". Run `bin/bout-v5-header-upgrader.py` to fix
