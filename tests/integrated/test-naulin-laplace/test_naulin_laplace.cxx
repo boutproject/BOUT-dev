@@ -23,18 +23,18 @@
  *
  **************************************************************************/
 
-#include <bout.hxx>
-#include <bout/constants.hxx>
-#include <field_factory.hxx>
-#include <boutexception.hxx>
-#include <options.hxx>
-#include <invert_laplace.hxx>
-#include <cmath>
-#include <derivs.hxx>
 #include "../../../src/invert/laplace/impls/naulin/naulin_laplace.hxx"
+#include <bout/bout.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/constants.hxx>
+#include <bout/derivs.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/options.hxx>
+#include <cmath>
 
-BoutReal max_error_at_ystart(const Field3D &error);
-Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g);
+BoutReal max_error_at_ystart(const Field3D& error);
+Field3D this_Grad_perp_dot_Grad_perp(const Field3D& f, const Field3D& g);
 
 int main(int argc, char** argv) {
 
@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
   LaplaceNaulin invert(options);
 
   // Solving equations of the form d*Grad_perp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various boundary conditions
-  Field3D f1,a1,b1,c1,d1,sol1,bcheck1;
+  Field3D f1, a1, b1, c1, d1, sol1, bcheck1;
   Field3D absolute_error1;
   BoutReal max_error1; //Output of test
 
@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
   c1 = FieldFactory::get()->create3D("c1:function", Options::getRoot(), mesh);
   a1 = FieldFactory::get()->create3D("a1:function", Options::getRoot(), mesh);
 
-  b1 = d1*Delp2(f1) + this_Grad_perp_dot_Grad_perp(c1,f1)/c1 + a1*f1;
+  b1 = d1 * Delp2(f1) + this_Grad_perp_dot_Grad_perp(c1, f1) / c1 + a1 * f1;
   sol1 = 0.;
 
   invert.setInnerBoundaryFlags(0);
@@ -73,10 +73,10 @@ int main(int argc, char** argv) {
     sol1 = invert.solve(b1);
     mesh->communicate(sol1);
     checkData(sol1);
-    bcheck1 = d1*Delp2(sol1) + this_Grad_perp_dot_Grad_perp(c1,sol1)/c1 + a1*sol1;
-    absolute_error1 = f1-sol1;
+    bcheck1 = d1 * Delp2(sol1) + this_Grad_perp_dot_Grad_perp(c1, sol1) / c1 + a1 * sol1;
+    absolute_error1 = f1 - sol1;
     max_error1 = max_error_at_ystart(abs(absolute_error1, "RGN_NOBNDRY"));
-  } catch (BoutException &err) {
+  } catch (BoutException& err) {
     output << "BoutException occured in invert->solve(b1): " << err.what() << endl
            << "Laplacian inversion failed to converge (probably)" << endl;
     max_error1 = -1;
@@ -85,9 +85,10 @@ int main(int argc, char** argv) {
     absolute_error1 = -1.;
   }
 
-  output<<endl<<"Test 1: zero Dirichlet"<<endl;
-  output<<"Magnitude of maximum absolute error is "<<max_error1<<endl;
-  output<<"Solver took "<<invert.getMeanIterations()<<" iterations to converge"<<endl;
+  output << endl << "Test 1: zero Dirichlet" << endl;
+  output << "Magnitude of maximum absolute error is " << max_error1 << endl;
+  output << "Solver took " << invert.getMeanIterations() << " iterations to converge"
+         << endl;
 
   dump["a1"] = a1;
   dump["b1"] = b1;
@@ -102,7 +103,7 @@ int main(int argc, char** argv) {
   ////////////////////////////////////////////////////////////////////////////////
 
   invert.resetMeanIterations();
-  Field3D f2,a2,b2,c2,d2,sol2,bcheck2;
+  Field3D f2, a2, b2, c2, d2, sol2, bcheck2;
   Field3D absolute_error2;
   BoutReal max_error2; //Output of test
   // Test 2: zero-value Neumann boundaries
@@ -111,7 +112,7 @@ int main(int argc, char** argv) {
   c2 = FieldFactory::get()->create3D("c2:function", Options::getRoot(), mesh);
   a2 = FieldFactory::get()->create3D("a2:function", Options::getRoot(), mesh);
 
-  b2 = d2*Delp2(f2) + this_Grad_perp_dot_Grad_perp(c2,f2)/c2 + a2*f2;
+  b2 = d2 * Delp2(f2) + this_Grad_perp_dot_Grad_perp(c2, f2) / c2 + a2 * f2;
   sol2 = 0.;
 
   invert.setInnerBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD);
@@ -123,10 +124,10 @@ int main(int argc, char** argv) {
   try {
     sol2 = invert.solve(b2);
     mesh->communicate(sol2);
-    bcheck2 = d2*Delp2(sol2) + this_Grad_perp_dot_Grad_perp(c2,sol2)/c2 + a2*sol2;
-    absolute_error2 = f2-sol2;
+    bcheck2 = d2 * Delp2(sol2) + this_Grad_perp_dot_Grad_perp(c2, sol2) / c2 + a2 * sol2;
+    absolute_error2 = f2 - sol2;
     max_error2 = max_error_at_ystart(abs(absolute_error2, "RGN_NOBNDRY"));
-  } catch (BoutException &err) {
+  } catch (BoutException& err) {
     output << "BoutException occured in invert->solve(b2): " << err.what() << endl
            << "Laplacian inversion failed to converge (probably)" << endl;
     max_error2 = -1;
@@ -135,9 +136,10 @@ int main(int argc, char** argv) {
     absolute_error2 = -1.;
   }
 
-  output<<endl<<"Test 2: zero Neumann"<<endl;
-  output<<"Magnitude of maximum absolute error is "<<max_error2<<endl;
-  output<<"Solver took "<<invert.getMeanIterations()<<" iterations to converge"<<endl;
+  output << endl << "Test 2: zero Neumann" << endl;
+  output << "Magnitude of maximum absolute error is " << max_error2 << endl;
+  output << "Solver took " << invert.getMeanIterations() << " iterations to converge"
+         << endl;
 
   dump["a2"] = a2;
   dump["b2"] = b2;
@@ -152,7 +154,7 @@ int main(int argc, char** argv) {
   ////////////////////////////////////////////////////////////////////////////////
 
   invert.resetMeanIterations();
-  Field3D f3,a3,b3,c3,d3,sol3,bcheck3;
+  Field3D f3, a3, b3, c3, d3, sol3, bcheck3;
   Field3D absolute_error3;
   BoutReal max_error3; //Output of test
   // Test 3: set-value Dirichlet boundaries
@@ -161,7 +163,7 @@ int main(int argc, char** argv) {
   c3 = FieldFactory::get()->create3D("c3:function", Options::getRoot(), mesh);
   a3 = FieldFactory::get()->create3D("a3:function", Options::getRoot(), mesh);
 
-  b3 = d3*Delp2(f3) + this_Grad_perp_dot_Grad_perp(c3,f3)/c3 + a3*f3;
+  b3 = d3 * Delp2(f3) + this_Grad_perp_dot_Grad_perp(c3, f3) / c3 + a3 * f3;
   sol3 = 0.;
 
   invert.setInnerBoundaryFlags(INVERT_SET);
@@ -173,19 +175,22 @@ int main(int argc, char** argv) {
   // make field to pass in boundary conditions
   Field3D x0 = 0.;
   if (mesh->firstX())
-    for (int k=0;k<mesh->LocalNz;k++)
-      x0(mesh->xstart-1,mesh->ystart,k) = 0.5*(f3(mesh->xstart-1,mesh->ystart,k)+f3(mesh->xstart,mesh->ystart,k));
+    for (int k = 0; k < mesh->LocalNz; k++)
+      x0(mesh->xstart - 1, mesh->ystart, k) =
+          0.5
+          * (f3(mesh->xstart - 1, mesh->ystart, k) + f3(mesh->xstart, mesh->ystart, k));
   if (mesh->lastX())
-    for (int k=0;k<mesh->LocalNz;k++)
-      x0(mesh->xend+1,mesh->ystart,k) = 0.5*(f3(mesh->xend+1,mesh->ystart,k)+f3(mesh->xend,mesh->ystart,k));
+    for (int k = 0; k < mesh->LocalNz; k++)
+      x0(mesh->xend + 1, mesh->ystart, k) =
+          0.5 * (f3(mesh->xend + 1, mesh->ystart, k) + f3(mesh->xend, mesh->ystart, k));
 
   try {
     sol3 = invert.solve(b3, x0);
     mesh->communicate(sol3);
-    bcheck3 = d3*Delp2(sol3) + this_Grad_perp_dot_Grad_perp(c3,f3)/c3 + a3*sol3;
-    absolute_error3 = f3-sol3;
+    bcheck3 = d3 * Delp2(sol3) + this_Grad_perp_dot_Grad_perp(c3, f3) / c3 + a3 * sol3;
+    absolute_error3 = f3 - sol3;
     max_error3 = max_error_at_ystart(abs(absolute_error3, "RGN_NOBNDRY"));
-  } catch (BoutException &err) {
+  } catch (BoutException& err) {
     output << "BoutException occured in invert->solve(b3): " << err.what() << endl
            << "Laplacian inversion failed to converge (probably)" << endl;
     max_error3 = -1;
@@ -194,9 +199,10 @@ int main(int argc, char** argv) {
     absolute_error3 = -1.;
   }
 
-  output<<endl<<"Test 3: set Dirichlet"<<endl;
-  output<<"Magnitude of maximum absolute error is "<<max_error3<<endl;
-  output<<"Solver took "<<invert.getMeanIterations()<<" iterations to converge"<<endl;
+  output << endl << "Test 3: set Dirichlet" << endl;
+  output << "Magnitude of maximum absolute error is " << max_error3 << endl;
+  output << "Solver took " << invert.getMeanIterations() << " iterations to converge"
+         << endl;
 
   dump["a3"] = a3;
   dump["b3"] = b3;
@@ -211,7 +217,7 @@ int main(int argc, char** argv) {
   ////////////////////////////////////////////////////////////////////////////////
 
   invert.resetMeanIterations();
-  Field3D f4,a4,b4,c4,d4,sol4,bcheck4;
+  Field3D f4, a4, b4, c4, d4, sol4, bcheck4;
   Field3D absolute_error4;
   BoutReal max_error4; //Output of test
   // Test 4: set-value Neumann boundaries
@@ -220,7 +226,7 @@ int main(int argc, char** argv) {
   c4 = FieldFactory::get()->create3D("c4:function", Options::getRoot(), mesh);
   a4 = FieldFactory::get()->create3D("a4:function", Options::getRoot(), mesh);
 
-  b4 = d4*Delp2(f4) + this_Grad_perp_dot_Grad_perp(c4,f4)/c4 + a4*f4;
+  b4 = d4 * Delp2(f4) + this_Grad_perp_dot_Grad_perp(c4, f4) / c4 + a4 * f4;
   sol4 = 0.;
 
   invert.setInnerBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_SET);
@@ -232,13 +238,13 @@ int main(int argc, char** argv) {
   // make field to pass in boundary conditions
   x0 = 0.;
   if (mesh->firstX())
-    for (int k=0;k<mesh->LocalNz;k++)
+    for (int k = 0; k < mesh->LocalNz; k++)
       x0(mesh->xstart - 1, mesh->ystart, k) =
           (f4(mesh->xstart, mesh->ystart, k) - f4(mesh->xstart - 1, mesh->ystart, k))
           / mesh->getCoordinates()->dx(mesh->xstart, mesh->ystart, k)
           / sqrt(mesh->getCoordinates()->g_11(mesh->xstart, mesh->ystart, k));
   if (mesh->lastX())
-    for (int k=0;k<mesh->LocalNz;k++)
+    for (int k = 0; k < mesh->LocalNz; k++)
       x0(mesh->xend + 1, mesh->ystart, k) =
           (f4(mesh->xend + 1, mesh->ystart, k) - f4(mesh->xend, mesh->ystart, k))
           / mesh->getCoordinates()->dx(mesh->xend, mesh->ystart, k)
@@ -247,10 +253,10 @@ int main(int argc, char** argv) {
   try {
     sol4 = invert.solve(b4, x0);
     mesh->communicate(sol4);
-    bcheck4 = d4*Delp2(sol4) + this_Grad_perp_dot_Grad_perp(c4,sol4)/c4 + a4*sol4;
-    absolute_error4 = f4-sol4;
+    bcheck4 = d4 * Delp2(sol4) + this_Grad_perp_dot_Grad_perp(c4, sol4) / c4 + a4 * sol4;
+    absolute_error4 = f4 - sol4;
     max_error4 = max_error_at_ystart(abs(absolute_error4, "RGN_NOBNDRY"));
-  } catch (BoutException &err) {
+  } catch (BoutException& err) {
     output << "BoutException occured in invert->solve(b4): " << err.what() << endl
            << "Laplacian inversion failed to converge (probably)" << endl;
     max_error4 = -1;
@@ -259,9 +265,10 @@ int main(int argc, char** argv) {
     absolute_error4 = -1.;
   }
 
-  output<<endl<<"Test 4: set Neumann"<<endl;
-  output<<"Magnitude of maximum absolute error is "<<max_error4<<endl;
-  output<<"Solver took "<<invert.getMeanIterations()<<" iterations to converge"<<endl;
+  output << endl << "Test 4: set Neumann" << endl;
+  output << "Magnitude of maximum absolute error is " << max_error4 << endl;
+  output << "Solver took " << invert.getMeanIterations() << " iterations to converge"
+         << endl;
 
   dump["a4"] = a4;
   dump["b4"] = b4;
@@ -285,10 +292,9 @@ int main(int argc, char** argv) {
 
   BoutFinalise();
   return 0;
-
 }
 
-Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g) {
+Field3D this_Grad_perp_dot_Grad_perp(const Field3D& f, const Field3D& g) {
   const auto* coords = f.getCoordinates();
   Field3D result = coords->g11 * ::DDX(f) * ::DDX(g) + coords->g33 * ::DDZ(f) * ::DDZ(g)
                    + coords->g13 * (DDX(f) * DDZ(g) + DDZ(f) * DDX(g));
@@ -296,14 +302,15 @@ Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g) {
   return result;
 }
 
-BoutReal max_error_at_ystart(const Field3D &error) {
+BoutReal max_error_at_ystart(const Field3D& error) {
   const auto* mesh = error.getMesh();
   BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
 
-  for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
-    for (int jz=0; jz<mesh->LocalNz; jz++)
-      if (local_max_error<error(jx, mesh->ystart, jz)) local_max_error=error(jx, mesh->ystart, jz);
-  
+  for (int jx = mesh->xstart; jx <= mesh->xend; jx++)
+    for (int jz = 0; jz < mesh->LocalNz; jz++)
+      if (local_max_error < error(jx, mesh->ystart, jz))
+        local_max_error = error(jx, mesh->ystart, jz);
+
   BoutReal max_error;
 
   MPI_Allreduce(&local_max_error, &max_error, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());

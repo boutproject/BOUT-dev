@@ -42,9 +42,9 @@ class OptionParser;
 #ifndef __OPTIONPARSER_H__
 #define __OPTIONPARSER_H__
 
-#include "bout_types.hxx"
-#include "options.hxx"
-#include <boutexception.hxx>
+#include "bout/bout_types.hxx"
+#include "bout/options.hxx"
+#include <bout/boutexception.hxx>
 
 /// Base class for input file types
 class OptionParser {
@@ -53,11 +53,12 @@ public:
   virtual ~OptionParser() = default;
 
   /// Read \p filename into \p options
-  virtual void read(Options *options, const std::string &filename) = 0;
+  virtual void read(Options* options, const std::string& filename) = 0;
 
   /// Write \p options to \p filename
-  virtual void write(Options *options, const std::string &filename) = 0;
- private:
+  virtual void write(Options* options, const std::string& filename) = 0;
+
+private:
 };
 
 #endif // __OPTIONPARSER_H__

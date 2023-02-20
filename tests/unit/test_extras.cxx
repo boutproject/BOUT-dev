@@ -1,5 +1,5 @@
-#include "gtest/gtest.h"
 #include "test_extras.hxx"
+#include "gtest/gtest.h"
 
 #include <cmath>
 
@@ -8,8 +8,8 @@ constexpr int FakeMeshFixture::nx;
 constexpr int FakeMeshFixture::ny;
 constexpr int FakeMeshFixture::nz;
 
-::testing::AssertionResult IsSubString(const std::string &str,
-                                       const std::string &substring) {
+::testing::AssertionResult IsSubString(const std::string& str,
+                                       const std::string& substring) {
   if (str.find(substring) != std::string::npos) {
     return ::testing::AssertionSuccess();
   } else {

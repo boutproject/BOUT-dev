@@ -9,9 +9,9 @@
 
 #include <iostream>
 
+#include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/single_index_ops.hxx>
-#include <invert_laplace.hxx>
 
 #define DISABLE_RAJA 0
 #include <bout/rajalib.hxx>
@@ -40,7 +40,7 @@ public:
 
     SOLVE_FOR(n, vort);
     SAVE_REPEAT(phi);
-    phiSolver = Laplacian::create(nullptr, CELL_CENTRE, mesh, solver, &dump);
+    phiSolver = Laplacian::create(nullptr, CELL_CENTRE, mesh, solver);
 
     phi = 0.; // Starting phi
 

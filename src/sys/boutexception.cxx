@@ -1,23 +1,23 @@
 #include "bout/build_config.hxx"
 
-#include <mpi.h>
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 #include <iostream>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <utils.hxx>
+#include <mpi.h>
 
 #if BOUT_USE_BACKTRACE
-#include <execinfo.h>
 #include <dlfcn.h>
+#include <execinfo.h>
 #endif
 
 #include <cstdlib>
 
 #include <fmt/format.h>
 
-void BoutParallelThrowRhsFail(int status, const char *message) {
+void BoutParallelThrowRhsFail(int status, const char* message) {
   int allstatus;
   MPI_Allreduce(&status, &allstatus, 1, MPI_INT, MPI_LOR, BoutComm::get());
 
@@ -60,28 +60,30 @@ std::string BoutException::getBacktrace() const {
 
     // If we are compiled as PIE, need to get base pointer of .so and substract
     Dl_info info;
-    void * ptr=trace[i];
-    if (dladdr(trace[i],&info)){
+    void* ptr = trace[i];
+    if (dladdr(trace[i], &info)) {
       // Additionally, check whether this is the default offset for an executable
-      if (info.dli_fbase != reinterpret_cast<void*>(0x400000))
+      if (info.dli_fbase != reinterpret_cast<void*>(0x400000)) {
         ptr = reinterpret_cast<void*>(reinterpret_cast<size_t>(trace[i])
                                       - reinterpret_cast<size_t>(info.dli_fbase));
+      }
     }
 
     // Pipe stderr to /dev/null to avoid cluttering output
     // when addr2line fails or is not installed
-    const auto syscom =
-      fmt::format(FMT_STRING("addr2line {:p} -Cfpie {:.{}s} 2> /dev/null"), ptr, messages[i], p);
+    const auto syscom = fmt::format(
+        FMT_STRING("addr2line {:p} -Cfpie {:.{}s} 2> /dev/null"), ptr, messages[i], p);
     // last parameter is the file name of the symbol
-    FILE *fp = popen(syscom.c_str(), "r");
+    FILE* fp = popen(syscom.c_str(), "r");
     if (fp != nullptr) {
       char out[1024];
-      char *retstr;
+      char* retstr;
       std::string buf;
       do {
         retstr = fgets(out, sizeof(out) - 1, fp);
-        if (retstr != nullptr)
-          buf+=retstr;
+        if (retstr != nullptr) {
+          buf += retstr;
+        }
       } while (retstr != nullptr);
       int status = pclose(fp);
       if (status == 0) {
