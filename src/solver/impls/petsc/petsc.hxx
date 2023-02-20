@@ -43,14 +43,11 @@ class PetscSolver;
 
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
+#include <bout/petsclib.hxx>
 #include <bout/vector2d.hxx>
 #include <bout/vector3d.hxx>
 
 #include <petsc.h>
-// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
-#undef MPI_Allreduce
-
-#include <bout/petsclib.hxx>
 
 #include <vector>
 

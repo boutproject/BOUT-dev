@@ -39,7 +39,7 @@
 #include <bout/output.hxx>
 
 LaplaceSerialTri::LaplaceSerialTri(Options* opt, CELL_LOC loc, Mesh* mesh_in,
-                                   Solver* UNUSED(solver), Datafile* UNUSED(dump))
+                                   Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0) {
   A.setLocation(location);
   C.setLocation(location);

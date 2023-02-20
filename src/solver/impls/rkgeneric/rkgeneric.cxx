@@ -159,8 +159,6 @@ int RKGenericSolver::run() {
 
     run_rhs(simtime); //Ensure aux. variables are up to date
 
-    iteration++;
-
     if (call_monitors(simtime, s, getNumberOutputSteps())) {
       break;
     }

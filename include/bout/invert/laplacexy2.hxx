@@ -65,18 +65,6 @@ public:
 
 #else // BOUT_HAS_PETSC and 2D metrics
 
-// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
-#undef MPI_Allreduce
-#undef MPI_Gatherv
-#undef MPI_Irecv
-#undef MPI_Isend
-#undef MPI_Recv
-#undef MPI_Scatterv
-#undef MPI_Send
-#undef MPI_Wait
-#undef MPI_Waitall
-#undef MPI_Waitany
-
 #include "bout/utils.hxx"
 #include <bout/cyclic_reduction.hxx>
 #include <bout/mesh.hxx>

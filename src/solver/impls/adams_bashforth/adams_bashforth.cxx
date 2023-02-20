@@ -9,6 +9,8 @@
 
 #include <bout/output.hxx>
 
+#include <array>
+
 namespace {
 BoutReal lagrange_at_position_denominator(const std::deque<BoutReal>& grid,
                                           const int position, const int order) {

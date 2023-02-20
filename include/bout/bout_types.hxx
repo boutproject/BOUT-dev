@@ -31,12 +31,10 @@ using BoutReal = double;
 /// Quiet NaN
 constexpr BoutReal BoutNaN = std::numeric_limits<BoutReal>::quiet_NaN();
 
-#define ENUMSTR(val) \
-  { val, #val }
-#define STRENUM(val) \
-  {                  \
-#val, val        \
-  }
+// clang-format off
+#define ENUMSTR(val) {val, #val}
+#define STRENUM(val) {#val, val}
+// clang-format on
 
 /// 4 possible variable locations. Default is for passing to functions
 enum class CELL_LOC { deflt, centre, xlow, ylow, zlow, vshift };

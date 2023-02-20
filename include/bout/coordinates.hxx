@@ -39,7 +39,6 @@
 #include "bout/utils.hxx"
 #include <bout/bout_types.hxx>
 
-class Datafile;
 class Mesh;
 
 /*!

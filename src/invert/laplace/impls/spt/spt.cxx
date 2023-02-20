@@ -43,7 +43,7 @@
 #include "spt.hxx"
 
 LaplaceSPT::LaplaceSPT(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
-                       Solver* UNUSED(solver), Datafile* UNUSED(dump))
+                       Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   Acoef.setLocation(location);
   Ccoef.setLocation(location);
@@ -429,17 +429,17 @@ int LaplaceSPT::next(SPT_data& data) {
     } else if (localmesh->firstX()) {
       // Back to the start
 
-BOUT_OMP(parallel for)
-for (int kz = 0; kz <= maxmode; kz++) {
-  dcomplex gp, up;
-  gp = dcomplex(data.buffer[4 * kz], data.buffer[4 * kz + 1]);
-  up = dcomplex(data.buffer[4 * kz + 2], data.buffer[4 * kz + 3]);
+      BOUT_OMP(parallel for)
+      for (int kz = 0; kz <= maxmode; kz++) {
+        dcomplex gp, up;
+        gp = dcomplex(data.buffer[4 * kz], data.buffer[4 * kz + 1]);
+        up = dcomplex(data.buffer[4 * kz + 2], data.buffer[4 * kz + 3]);
 
-  tridagBack(&data.xk(kz, 0), localmesh->xend + 1, &data.gam(kz, 0), gp, up);
-}
+        tridagBack(&data.xk(kz, 0), localmesh->xend + 1, &data.gam(kz, 0), gp, up);
+      }
 
     } else {
-// Middle of X, back-substitution stage
+      // Middle of X, back-substitution stage
 
       BOUT_OMP(parallel for)
       for (int kz = 0; kz <= maxmode; kz++) {

@@ -816,10 +816,12 @@ BoutMonitor::BoutMonitor(BoutReal timestep, Options& options)
 int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
 
+  // Increment Solver's iteration counter, and set the global `iteration`
+  iteration = solver->incrementIterationCounter();
+
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
   simtime = t;
-  iteration = iter;
 
   /// Collect timing information
   run_data.wtime = Timer::resetTime("run");
@@ -864,11 +866,11 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
 
   run_data.t_elapsed = bout::globals::mpi->MPI_Wtime() - mpi_start_time;
 
-  output_progress.print("{:c}  Step {:d} of {:d}. Elapsed {:s}", get_spin(),
-                        iteration + 1, NOUT, time_to_hms(run_data.t_elapsed));
+  output_progress.print("{:c}  Step {:d} of {:d}. Elapsed {:s}", get_spin(), iteration,
+                        NOUT, time_to_hms(run_data.t_elapsed));
   output_progress.print(
       " ETA {:s}",
-      time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1)));
+      time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 2)));
 
   // Write dump file
   Options run_data_output;

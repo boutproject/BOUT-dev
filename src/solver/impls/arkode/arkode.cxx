@@ -564,7 +564,6 @@ int ArkodeSolver::run() {
 
     /// Run the solver for one output timestep
     simtime = run(simtime + getOutputTimestep());
-    iteration++;
 
     /// Check if the run succeeded
     if (simtime < 0.0) {

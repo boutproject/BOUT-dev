@@ -292,28 +292,28 @@ void Multigrid1DP::lowestSolver(BoutReal* x, BoutReal* b, int UNUSED(plag)) {
 
     BOUT_OMP(parallel default(shared))
     {
-BOUT_OMP(for)
-for (int i = 0; i < dim; i++) {
-  y[i] = 0.0;
-  r[i] = 0.0;
-}
+      BOUT_OMP(for)
+      for (int i = 0; i < dim; i++) {
+        y[i] = 0.0;
+        r[i] = 0.0;
+      }
 
-BOUT_OMP(for)
-for (int i = 0; i < dimg; i++) {
-  yl[i] = 0.0;
-  yg[i] = 0.0;
-}
+      BOUT_OMP(for)
+      for (int i = 0; i < dimg; i++) {
+        yl[i] = 0.0;
+        yg[i] = 0.0;
+      }
 
-int xend = lnx[0] + 1;
-int zend = lnz[0] + 1;
-BOUT_OMP(for collapse(2))
-for (int ix = 1; ix < xend; ix++) {
-  for (int iz = 1; iz < zend; iz++) {
-    int nn = (nx + ix) * (lnz[0] + 2) + iz;
-    int mm = ix * (lnz[0] + 2) + iz;
-    yl[nn] = b[mm];
-  }
-}
+      int xend = lnx[0] + 1;
+      int zend = lnz[0] + 1;
+      BOUT_OMP(for collapse(2))
+      for (int ix = 1; ix < xend; ix++) {
+        for (int iz = 1; iz < zend; iz++) {
+          int nn = (nx + ix) * (lnz[0] + 2) + iz;
+          int mm = ix * (lnz[0] + 2) + iz;
+          yl[nn] = b[mm];
+        }
+      }
     }
     bout::globals::mpi->MPI_Allreduce(std::begin(yl), std::begin(yg), dimg, MPI_DOUBLE,
                                       MPI_SUM, comm2D);
@@ -321,54 +321,54 @@ for (int ix = 1; ix < xend; ix++) {
     int nz = (xProcI % rMG->zNP) * (rMG->lnz[level]);
     BOUT_OMP(parallel default(shared))
     {
-int xend = rMG->lnx[level] + 1;
-int zend = rMG->lnz[level] + 1;
-BOUT_OMP(for collapse(2))
-for (int ix = 1; ix < xend; ix++) {
-  for (int iz = 1; iz < zend; iz++) {
-    int nn = ix * (lnz[0] + 2) + nz + iz;
-    int mm = ix * (rMG->lnz[level] + 2) + iz;
-    r[mm] = yg[nn];
-  }
-}
+      int xend = rMG->lnx[level] + 1;
+      int zend = rMG->lnz[level] + 1;
+      BOUT_OMP(for collapse(2))
+      for (int ix = 1; ix < xend; ix++) {
+        for (int iz = 1; iz < zend; iz++) {
+          int nn = ix * (lnz[0] + 2) + nz + iz;
+          int mm = ix * (rMG->lnz[level] + 2) + iz;
+          r[mm] = yg[nn];
+        }
+      }
     }
 
     rMG->getSolution(std::begin(y), std::begin(r), 1);
 
     BOUT_OMP(parallel default(shared))
     {
-BOUT_OMP(for)
-for (int i = 0; i < dimg; i++) {
-  yl[i] = 0.0;
-  yg[i] = 0.0;
-}
+    BOUT_OMP(for)
+    for (int i = 0; i < dimg; i++) {
+      yl[i] = 0.0;
+      yg[i] = 0.0;
+    }
 
-int xend = rMG->lnx[level] + 1;
-int zend = rMG->lnz[level] + 1;
-BOUT_OMP(for collapse(2))
-for (int ix = 1; ix < xend; ix++) {
-  for (int iz = 1; iz < zend; iz++) {
-    int nn = ix * (lnz[0] + 2) + nz + iz;
-    int mm = ix * (rMG->lnz[level] + 2) + iz;
-    yl[nn] = y[mm];
-  }
-}
+    int xend = rMG->lnx[level] + 1;
+    int zend = rMG->lnz[level] + 1;
+      BOUT_OMP(for collapse(2))
+      for (int ix = 1; ix < xend; ix++) {
+        for (int iz = 1; iz < zend; iz++) {
+          int nn = ix * (lnz[0] + 2) + nz + iz;
+          int mm = ix * (rMG->lnz[level] + 2) + iz;
+          yl[nn] = y[mm];
+        }
+      }
     }
     bout::globals::mpi->MPI_Allreduce(std::begin(yl), std::begin(yg), dimg, MPI_DOUBLE,
                                       MPI_SUM, comm2D);
 
     BOUT_OMP(parallel default(shared))
     {
-int xend = lnx[0] + 1;
-int zend = lnz[0] + 1;
-BOUT_OMP(for collapse(2))
-for (int ix = 1; ix < xend; ix++) {
-  for (int iz = 1; iz < zend; iz++) {
-    int nn = (nx + ix) * (lnz[0] + 2) + iz;
-    int mm = ix * (lnz[0] + 2) + iz;
-    x[mm] = yg[nn];
-  }
-}
+      int xend = lnx[0] + 1;
+      int zend = lnz[0] + 1;
+      BOUT_OMP(for collapse(2))
+      for (int ix = 1; ix < xend; ix++) {
+        for (int iz = 1; iz < zend; iz++) {
+          int nn = (nx + ix) * (lnz[0] + 2) + iz;
+          int mm = ix * (lnz[0] + 2) + iz;
+          x[mm] = yg[nn];
+        }
+      }
     }
     communications(x, 0);
   } else if (kflag == 2) {
@@ -379,47 +379,47 @@ for (int ix = 1; ix < xend; ix++) {
     int nx = xProcI * lnx[0];
     BOUT_OMP(parallel default(shared))
     {
-BOUT_OMP(for)
-for (int i = 0; i < dim; i++) {
-  y[i] = 0.0;
-  r[i] = 0.0;
-}
-int xend = lnx[0] + 1;
-int zend = lnz[0] + 1;
-BOUT_OMP(for collapse(2))
-for (int ix = 1; ix < xend; ix++) {
-  for (int iz = 1; iz < zend; iz++) {
-    int nn = (nx + ix) * (lnz[0] + 2) + iz;
-    int mm = ix * (lnz[0] + 2) + iz;
-    y[nn] = b[mm];
-  }
-}
+      BOUT_OMP(for)
+      for (int i = 0; i < dim; i++) {
+        y[i] = 0.0;
+        r[i] = 0.0;
+      }
+      int xend = lnx[0] + 1;
+      int zend = lnz[0] + 1;
+      BOUT_OMP(for collapse(2))
+      for (int ix = 1; ix < xend; ix++) {
+        for (int iz = 1; iz < zend; iz++) {
+          int nn = (nx + ix) * (lnz[0] + 2) + iz;
+          int mm = ix * (lnz[0] + 2) + iz;
+          y[nn] = b[mm];
+        }
+      }
     }
     bout::globals::mpi->MPI_Allreduce(std::begin(y), std::begin(r), dim, MPI_DOUBLE,
                                       MPI_SUM, commMG);
     BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-for (int i = 0; i < dim; i++) {
-y[i] = 0.0;
-}
-sMG->getSolution(std::begin(y), std::begin(r), 1);
+    BOUT_OMP(for)
+    for (int i = 0; i < dim; i++) {
+      y[i] = 0.0;
+    }
+    sMG->getSolution(std::begin(y), std::begin(r), 1);
 
-BOUT_OMP(parallel default(shared))
-{
-int xend = lnx[0] + 1;
-int zend = lnz[0] + 1;
-BOUT_OMP(for collapse(2))
-for (int ix = 1; ix < xend; ix++) {
-  for (int iz = 1; iz < zend; iz++) {
-    int nn = (nx + ix) * (lnz[0] + 2) + iz;
-    int mm = ix * (lnz[0] + 2) + iz;
-    x[mm] = y[nn];
-  }
-}
-}
-communications(x, 0);
+    BOUT_OMP(parallel default(shared))
+    {
+      int xend = lnx[0] + 1;
+      int zend = lnz[0] + 1;
+      BOUT_OMP(for collapse(2))
+      for (int ix = 1; ix < xend; ix++) {
+        for (int iz = 1; iz < zend; iz++) {
+          int nn = (nx + ix) * (lnz[0] + 2) + iz;
+          int mm = ix * (lnz[0] + 2) + iz;
+          x[mm] = y[nn];
+        }
+      }
+    }
+    communications(x, 0);
   } else {
-pGMRES(x, b, 0, 0);
+    pGMRES(x, b, 0, 0);
   }
 }
 
@@ -432,82 +432,82 @@ void Multigrid1DP::convertMatrixF2D(int level) {
   int nx = (xProcI % rMG->zNP) * lnx[0];
   BOUT_OMP(parallel default(shared))
   {
-BOUT_OMP(for)
-for (int i = 0; i < dim * 9; i++) {
-yl[i] = 0.0;
-yg[i] = 0.0;
-}
-BOUT_OMP(for)
-for (int i = 0; i < (rMG->lnx[level] + 2) * (rMG->lnz[level] + 2) * 9; i++) {
-rMG->matmg[level][i] = 0.0;
-}
+    BOUT_OMP(for)
+    for (int i = 0; i < dim * 9; i++) {
+      yl[i] = 0.0;
+      yg[i] = 0.0;
+    }
+    BOUT_OMP(for)
+    for (int i = 0; i < (rMG->lnx[level] + 2) * (rMG->lnz[level] + 2) * 9; i++) {
+      rMG->matmg[level][i] = 0.0;
+    }
 
-int xend = lnx[0] + 1;
-int zend = lnz[0] + 1;
-BOUT_OMP(for collapse(2))
-for (int ix = 1; ix < xend; ix++) {
-for (int iz = 1; iz < zend; iz++) {
-  int nn = (nx + ix) * (lnz[0] + 2) + iz;
-  int mm = ix * (lnz[0] + 2) + iz;
-  for (int k = 0; k < 9; k++) {
-    yl[nn * 9 + k] = matmg[0][mm * 9 + k];
-  }
-}
-}
+    int xend = lnx[0] + 1;
+    int zend = lnz[0] + 1;
+    BOUT_OMP(for collapse(2))
+    for (int ix = 1; ix < xend; ix++) {
+      for (int iz = 1; iz < zend; iz++) {
+        int nn = (nx + ix) * (lnz[0] + 2) + iz;
+        int mm = ix * (lnz[0] + 2) + iz;
+        for (int k = 0; k < 9; k++) {
+          yl[nn * 9 + k] = matmg[0][mm * 9 + k];
+        }
+      }
+    }
   }
   if (pcheck == 3) {
-FILE* outf;
-char outfile[256];
-sprintf(outfile, "2DP_CP_%d.mat", rProcI);
-output << "Out file= " << outfile << endl;
-outf = fopen(outfile, "w");
-fprintf(outf, "dim = (%d, %d)\n", ggx, gnz[0]);
+    FILE* outf;
+    char outfile[256];
+    sprintf(outfile, "2DP_CP_%d.mat", rProcI);
+    output << "Out file= " << outfile << endl;
+    outf = fopen(outfile, "w");
+    fprintf(outf, "dim = (%d, %d)\n", ggx, gnz[0]);
 
-for (int ii = 0; ii < dim; ii++) {
-fprintf(outf, "%d ==", ii);
-for (int j = 0; j < 9; j++) {
-  fprintf(outf, "%12.6f,", yl[ii * 9 + j]);
-}
-fprintf(outf, "\n");
-}
-fclose(outf);
+    for (int ii = 0; ii < dim; ii++) {
+      fprintf(outf, "%d ==", ii);
+      for (int j = 0; j < 9; j++) {
+        fprintf(outf, "%12.6f,", yl[ii * 9 + j]);
+      }
+      fprintf(outf, "\n");
+    }
+    fclose(outf);
   }
   bout::globals::mpi->MPI_Allreduce(std::begin(yl), std::begin(yg), dim * 9, MPI_DOUBLE,
                                     MPI_SUM, comm2D);
 
   if (pcheck == 3) {
-FILE* outf;
-char outfile[256];
-sprintf(outfile, "2DP_Conv_%d.mat", rProcI);
-output << "Out file= " << outfile << endl;
-outf = fopen(outfile, "w");
-fprintf(outf, "dim = (%d, %d)\n", ggx, gnz[0]);
+    FILE* outf;
+    char outfile[256];
+    sprintf(outfile, "2DP_Conv_%d.mat", rProcI);
+    output << "Out file= " << outfile << endl;
+    outf = fopen(outfile, "w");
+    fprintf(outf, "dim = (%d, %d)\n", ggx, gnz[0]);
 
-for (int ii = 0; ii < dim; ii++) {
-fprintf(outf, "%d ==", ii);
-for (int j = 0; j < 9; j++) {
-  fprintf(outf, "%12.6f,", yg[ii * 9 + j]);
-}
-fprintf(outf, "\n");
-}
-fclose(outf);
+    for (int ii = 0; ii < dim; ii++) {
+      fprintf(outf, "%d ==", ii);
+      for (int j = 0; j < 9; j++) {
+        fprintf(outf, "%12.6f,", yg[ii * 9 + j]);
+      }
+      fprintf(outf, "\n");
+    }
+    fclose(outf);
   }
   int nz = (xProcI % rMG->zNP) * (rMG->lnz[level]);
 
   BOUT_OMP(parallel default(shared))
   {
-int xend = rMG->lnx[level] + 1;
-int zend = rMG->lnz[level] + 1;
-BOUT_OMP(for collapse(2))
-for (int ix = 1; ix < xend; ix++) {
-for (int iz = 1; iz < zend; iz++) {
-  int nn = ix * (lnz[0] + 2) + nz + iz;
-  int mm = ix * (rMG->lnz[level] + 2) + iz;
-  for (int k = 0; k < 9; k++) {
-    rMG->matmg[level][mm * 9 + k] = yg[nn * 9 + k];
-  }
-}
-}
+    int xend = rMG->lnx[level] + 1;
+    int zend = rMG->lnz[level] + 1;
+    BOUT_OMP(for collapse(2))
+    for (int ix = 1; ix < xend; ix++) {
+      for (int iz = 1; iz < zend; iz++) {
+        int nn = ix * (lnz[0] + 2) + nz + iz;
+        int mm = ix * (rMG->lnz[level] + 2) + iz;
+        for (int k = 0; k < 9; k++) {
+          rMG->matmg[level][mm * 9 + k] = yg[nn * 9 + k];
+        }
+      }
+    }
   }
 }
 
@@ -519,23 +519,23 @@ void Multigrid1DP::convertMatrixFS(int level) {
   int nx = xProcI * lnx[0];
   BOUT_OMP(parallel default(shared))
   {
-BOUT_OMP(for)
-for (int i = 0; i < dim * 9; i++) {
-yl[i] = 0.0;
-yg[i] = 0.0;
-}
-int xend = lnx[0] + 1;
-int zend = lnz[0] + 1;
-BOUT_OMP(for collapse(2))
-for (int ix = 1; ix < xend; ix++) {
-for (int iz = 1; iz < zend; iz++) {
-  int nn = (nx + ix) * (lnz[0] + 2) + iz;
-  int mm = ix * (lnz[0] + 2) + iz;
-  for (int k = 0; k < 9; k++) {
-    yl[nn * 9 + k] = matmg[0][mm * 9 + k];
-  }
-}
-}
+    BOUT_OMP(for)
+    for (int i = 0; i < dim * 9; i++) {
+      yl[i] = 0.0;
+      yg[i] = 0.0;
+    }
+    int xend = lnx[0] + 1;
+    int zend = lnz[0] + 1;
+    BOUT_OMP(for collapse(2))
+    for (int ix = 1; ix < xend; ix++) {
+      for (int iz = 1; iz < zend; iz++) {
+        int nn = (nx + ix) * (lnz[0] + 2) + iz;
+        int mm = ix * (lnz[0] + 2) + iz;
+        for (int k = 0; k < 9; k++) {
+          yl[nn * 9 + k] = matmg[0][mm * 9 + k];
+        }
+      }
+    }
   }
   bout::globals::mpi->MPI_Allreduce(std::begin(yl), yg, dim * 9, MPI_DOUBLE, MPI_SUM,
                                     commMG);
@@ -556,54 +556,54 @@ Multigrid2DPf1D::Multigrid2DPf1D(int level, int lx, int lz, int gx, int gz, int 
   xProcI = rProcI / zNP;
   zProcI = rProcI % zNP;
   if (xProcI == 0) {
-xProcM = numP - zNP + zProcI;
+    xProcM = numP - zNP + zProcI;
   } else {
-xProcM = rProcI - zNP;
+    xProcM = rProcI - zNP;
   }
   if (xProcI == xNP - 1) {
-xProcP = zProcI;
+    xProcP = zProcI;
   } else {
-xProcP = rProcI + zNP;
+    xProcP = rProcI + zNP;
   }
   if (zProcI == 0) {
-zProcM = rProcI + zNP - 1;
+    zProcM = rProcI + zNP - 1;
   } else {
-zProcM = rProcI - 1;
+    zProcM = rProcI - 1;
   }
   if (zProcI == zNP - 1) {
-zProcP = xProcI * zNP;
+    zProcP = xProcI * zNP;
   } else {
-zProcP = rProcI + 1;
+    zProcP = rProcI + 1;
   }
   if (pcheck == 2) {
-output << "In 2DP " << mglevel << "xNP=" << xNP << "(" << zNP << ")" << dl << endl;
-for (int i = mglevel - 1; i >= 0; i--) {
-output << i << " loc dim " << lnx[i] << "," << lnz[i] << endl;
-output << i << " glo dim " << gnx[i] << "," << gnz[i] << endl;
-}
+    output << "In 2DP " << mglevel << "xNP=" << xNP << "(" << zNP << ")" << dl << endl;
+    for (int i = mglevel - 1; i >= 0; i--) {
+      output << i << " loc dim " << lnx[i] << "," << lnz[i] << endl;
+      output << i << " glo dim " << gnx[i] << "," << gnz[i] << endl;
+    }
   }
 
   if (dl > 0) {
-int nn = gnx[0];
-int mm = gnz[0];
-int kk = 1;
-for (int n = dl; n > 0; n--) {
-if ((nn % 2 == 0) && (mm % 2 == 0)) {
-  kk += 1;
-  nn = nn / 2;
-  mm = mm / 2;
-} else {
-  n = 0;
-}
-}
-if (pcheck == 2) {
-output << "In 2DP To Ser" << kk << "xNP=" << xNP << "(" << zNP << ")" << endl;
-output << "total dim" << gnx[0] << "(" << gnz[0] << ")" << endl;
-}
-kflag = 2;
-sMG = bout::utils::make_unique<MultigridSerial>(kk, gnx[0], gnz[0], commMG, pcheck);
+    int nn = gnx[0];
+    int mm = gnz[0];
+    int kk = 1;
+    for (int n = dl; n > 0; n--) {
+      if ((nn % 2 == 0) && (mm % 2 == 0)) {
+        kk += 1;
+        nn = nn / 2;
+        mm = mm / 2;
+      } else {
+        n = 0;
+      }
+    }
+    if (pcheck == 2) {
+      output << "In 2DP To Ser" << kk << "xNP=" << xNP << "(" << zNP << ")" << endl;
+      output << "total dim" << gnx[0] << "(" << gnz[0] << ")" << endl;
+    }
+    kflag = 2;
+    sMG = bout::utils::make_unique<MultigridSerial>(kk, gnx[0], gnz[0], commMG, pcheck);
   } else {
-kflag = 0;
+    kflag = 0;
   }
 }
 
@@ -611,50 +611,50 @@ void Multigrid2DPf1D::setMultigridC(int UNUSED(plag)) {
 
   int level = mglevel - 1;
   for (int n = level; n > 0; n--) {
-setMatrixC(n);
-if (pcheck == 2) {
-output << n << "Cmatrix in 2DP = " << lnx[n - 1] << "," << lnz[n - 1] << endl;
-output << gnx[n - 1] << "," << gnz[n - 1] << endl;
-}
+    setMatrixC(n);
+    if (pcheck == 2) {
+      output << n << "Cmatrix in 2DP = " << lnx[n - 1] << "," << lnz[n - 1] << endl;
+      output << gnx[n - 1] << "," << gnz[n - 1] << endl;
+    }
   }
   if (kflag == 2) {
-level = sMG->mglevel - 1;
-convertMatrixFS(level);
-if (level > 0) {
-sMG->setMultigridC(0);
-}
-if (pcheck == 2) {
-for (int i = level; i >= 0; i--) {
-  FILE* outf;
-  char outfile[256];
-  sprintf(outfile, "S2D_matC%1d_%d.mat", i, sMG->rProcI);
-  outf = fopen(outfile, "w");
-  output << "Out file= " << outfile << endl;
-  int dim = (sMG->lnx[i] + 2) * (sMG->lnz[i] + 2);
-  fprintf(outf, "dim = %d\n", dim);
-
-  for (int ii = 0; ii < dim; ii++) {
-    fprintf(outf, "%d ==", ii);
-    for (int j = 0; j < 9; j++) {
-      fprintf(outf, "%12.6f,", sMG->matmg[i][ii * 9 + j]);
+    level = sMG->mglevel - 1;
+    convertMatrixFS(level);
+    if (level > 0) {
+      sMG->setMultigridC(0);
     }
-    fprintf(outf, "\n");
-  }
-  fclose(outf);
-}
-}
+    if (pcheck == 2) {
+      for (int i = level; i >= 0; i--) {
+        FILE* outf;
+        char outfile[256];
+        sprintf(outfile, "S2D_matC%1d_%d.mat", i, sMG->rProcI);
+        outf = fopen(outfile, "w");
+        output << "Out file= " << outfile << endl;
+        int dim = (sMG->lnx[i] + 2) * (sMG->lnz[i] + 2);
+        fprintf(outf, "dim = %d\n", dim);
+
+        for (int ii = 0; ii < dim; ii++) {
+          fprintf(outf, "%d ==", ii);
+          for (int j = 0; j < 9; j++) {
+            fprintf(outf, "%12.6f,", sMG->matmg[i][ii * 9 + j]);
+          }
+          fprintf(outf, "\n");
+        }
+        fclose(outf);
+      }
+    }
   }
 }
 
 void Multigrid2DPf1D::setValueS() {
   if (kflag == 2) {
-sMG->mgplag = mgplag;
-sMG->mgsm = mgsm;
-sMG->cftype = cftype;
-sMG->rtol = rtol;
-sMG->atol = atol;
-sMG->dtol = dtol;
-sMG->omega = omega;
+    sMG->mgplag = mgplag;
+    sMG->mgsm = mgsm;
+    sMG->cftype = cftype;
+    sMG->rtol = rtol;
+    sMG->atol = atol;
+    sMG->dtol = dtol;
+    sMG->omega = omega;
   }
 }
 
@@ -662,62 +662,62 @@ void Multigrid2DPf1D::setPcheck(int check) {
 
   pcheck = check;
   if (kflag == 2) {
-sMG->pcheck = check;
+    sMG->pcheck = check;
   }
 }
 
 void Multigrid2DPf1D::lowestSolver(BoutReal* x, BoutReal* b, int UNUSED(plag)) {
 
   if (kflag == 2) {
-int level = sMG->mglevel - 1;
-int dim = (sMG->lnx[level] + 2) * (sMG->lnz[level] + 2);
-Array<BoutReal> y(dim);
-Array<BoutReal> r(dim);
-int nx = xProcI * lnx[0];
-int nz = zProcI * lnz[0];
-BOUT_OMP(parallel default(shared))
-{
-BOUT_OMP(for)
-for (int i = 0; i < dim; i++) {
-  y[i] = 0.0;
-  r[i] = 0.0;
-}
+    int level = sMG->mglevel - 1;
+    int dim = (sMG->lnx[level] + 2) * (sMG->lnz[level] + 2);
+    Array<BoutReal> y(dim);
+    Array<BoutReal> r(dim);
+    int nx = xProcI * lnx[0];
+    int nz = zProcI * lnz[0];
+    BOUT_OMP(parallel default(shared))
+    {
+      BOUT_OMP(for)
+      for (int i = 0; i < dim; i++) {
+        y[i] = 0.0;
+        r[i] = 0.0;
+      }
 
-int xend = lnx[0] + 1;
-int zend = lnz[0] + 1;
-BOUT_OMP(for collapse(2))
-for (int ix = 1; ix < xend; ix++) {
-  for (int iz = 1; iz < zend; iz++) {
-    int nn = (nx + ix) * (gnz[0] + 2) + nz + iz;
-    int mm = ix * (lnz[0] + 2) + iz;
-    y[nn] = b[mm];
-  }
-}
-}
-bout::globals::mpi->MPI_Allreduce(std::begin(y), std::begin(r), dim, MPI_DOUBLE, MPI_SUM,
-                                  commMG);
-BOUT_OMP(parallel default(shared))
-BOUT_OMP(for)
-for (int i = 0; i < dim; i++) {
-y[i] = 0.0;
-}
-sMG->getSolution(std::begin(y), std::begin(r), 1);
-BOUT_OMP(parallel default(shared))
-{
-int xend = lnx[0] + 1;
-int zend = lnz[0] + 1;
-BOUT_OMP(for collapse(2))
-for (int ix = 1; ix < xend; ix++) {
-  for (int iz = 1; iz < zend; iz++) {
-    int nn = (nx + ix) * (gnz[0] + 2) + nz + iz;
-    int mm = ix * (lnz[0] + 2) + iz;
-    x[mm] = y[nn];
-  }
-}
-}
-communications(x, 0);
+      int xend = lnx[0] + 1;
+      int zend = lnz[0] + 1;
+      BOUT_OMP(for collapse(2))
+      for (int ix = 1; ix < xend; ix++) {
+        for (int iz = 1; iz < zend; iz++) {
+          int nn = (nx + ix) * (gnz[0] + 2) + nz + iz;
+          int mm = ix * (lnz[0] + 2) + iz;
+          y[nn] = b[mm];
+        }
+      }
+    }
+    bout::globals::mpi->MPI_Allreduce(std::begin(y), std::begin(r), dim, MPI_DOUBLE,
+                                      MPI_SUM, commMG);
+    BOUT_OMP(parallel default(shared))
+    BOUT_OMP(for)
+    for (int i = 0; i < dim; i++) {
+      y[i] = 0.0;
+    }
+    sMG->getSolution(std::begin(y), std::begin(r), 1);
+    BOUT_OMP(parallel default(shared))
+    {
+      int xend = lnx[0] + 1;
+      int zend = lnz[0] + 1;
+      BOUT_OMP(for collapse(2))
+      for (int ix = 1; ix < xend; ix++) {
+        for (int iz = 1; iz < zend; iz++) {
+          int nn = (nx + ix) * (gnz[0] + 2) + nz + iz;
+          int mm = ix * (lnz[0] + 2) + iz;
+          x[mm] = y[nn];
+        }
+      }
+    }
+    communications(x, 0);
   } else {
-pGMRES(x, b, 0, 0);
+    pGMRES(x, b, 0, 0);
   }
 }
 
@@ -730,23 +730,23 @@ void Multigrid2DPf1D::convertMatrixFS(int level) {
   int nz = zProcI * lnz[0];
   BOUT_OMP(parallel default(shared))
   {
-BOUT_OMP(for)
-for (int i = 0; i < dim * 9; i++) {
-yl[i] = 0.0;
-yg[i] = 0.0;
-}
-int xend = lnx[0] + 1;
-int zend = lnz[0] + 1;
-BOUT_OMP(for collapse(2))
-for (int ix = 1; ix < xend; ix++) {
-for (int iz = 1; iz < zend; iz++) {
-  int nn = (nx + ix) * (gnz[0] + 2) + nz + iz;
-  int mm = ix * (lnz[0] + 2) + iz;
-  for (int k = 0; k < 9; k++) {
-    yl[nn * 9 + k] = matmg[0][mm * 9 + k];
-  }
-}
-}
+    BOUT_OMP(for)
+    for (int i = 0; i < dim * 9; i++) {
+      yl[i] = 0.0;
+      yg[i] = 0.0;
+    }
+    int xend = lnx[0] + 1;
+    int zend = lnz[0] + 1;
+    BOUT_OMP(for collapse(2))
+    for (int ix = 1; ix < xend; ix++) {
+      for (int iz = 1; iz < zend; iz++) {
+        int nn = (nx + ix) * (gnz[0] + 2) + nz + iz;
+        int mm = ix * (lnz[0] + 2) + iz;
+        for (int k = 0; k < 9; k++) {
+          yl[nn * 9 + k] = matmg[0][mm * 9 + k];
+        }
+      }
+    }
   }
   bout::globals::mpi->MPI_Allreduce(std::begin(yl), yg, dim * 9, MPI_DOUBLE, MPI_SUM,
                                     commMG);
@@ -766,11 +766,11 @@ MultigridSerial::MultigridSerial(int level, int gx, int gz, MPI_Comm comm, int c
   zProcM = rProcI;
   zProcP = rProcI;
   if (pcheck == 2) {
-output << "In SerMG " << mglevel << "xNP=" << xNP << "(" << zNP << ")" << endl;
-for (int i = mglevel - 1; i >= 0; i--) {
-output << i << " Ser loc dim " << lnx[i] << "," << lnz[i] << endl;
-output << i << " Ser glo dim " << gnx[i] << "," << gnz[i] << endl;
-}
+    output << "In SerMG " << mglevel << "xNP=" << xNP << "(" << zNP << ")" << endl;
+    for (int i = mglevel - 1; i >= 0; i--) {
+      output << i << " Ser loc dim " << lnx[i] << "," << lnz[i] << endl;
+      output << i << " Ser glo dim " << gnx[i] << "," << gnz[i] << endl;
+    }
   }
 }
 

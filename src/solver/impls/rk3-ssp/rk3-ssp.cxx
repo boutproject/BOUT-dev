@@ -92,8 +92,6 @@ int RK3SSP::run() {
     // Call rhs function to get extra variables at this time
     run_rhs(simtime);
 
-    iteration++; // Advance iteration number
-
     if (call_monitors(simtime, s, getNumberOutputSteps())) {
       // User signalled to quit
       break;

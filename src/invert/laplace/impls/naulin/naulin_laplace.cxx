@@ -1,3 +1,4 @@
+// clang-format off
 /*!
  * \file naulin_laplace.cxx
  *
@@ -77,7 +78,7 @@
  *         vort = (vortD/n) - grad_perp(ln_n)*grad_perp(phiCur)
  *         [Delp2(phiNext) + 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiNext) + DC(A/D)*phiNext
  *          = b(phiCur)
- *          = (rhs/D) - (1/C1/D*grad_perp(C2)*grad_perp(phiCur) - 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiNext)) - (A/D - DC(A/D))*phiCur]
+ *          = (rhs/D) - (1/C1/D*grad_perp(C2)*grad_perp(phiCur) - 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiCur)) - (A/D - DC(A/D))*phiCur]
  *         \endcode
  *         where phiCur is phi of the current iteration
  *         [and DC(f) is the constant-in-z component of f]
@@ -135,6 +136,7 @@
  *          * if no
  *              * Stop: Function returns phiNext
  */
+// clang-format on
 
 #include <bout/boutexception.hxx>
 #include <bout/coordinates.hxx>
@@ -147,7 +149,7 @@
 #include "naulin_laplace.hxx"
 
 LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
-                             Solver* UNUSED(solver), Datafile* UNUSED(dump))
+                             Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
       delp2solver(nullptr), naulinsolver_mean_its(0.), ncalls(0) {
 

@@ -580,7 +580,7 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
   static bool first = true;
   if (eigenValOnly && first) {
     first = false;
-    iteration = 0;
+    resetIterationCounter();
   }
 
   // Temporary eigenvalues, converted from the SLEPc eigenvalues
@@ -609,8 +609,8 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
         // Silence the default monitor
         WithQuietOutput progress{output_progress};
         // Call monitors so fields get written
-        call_monitors(reEigBout, iteration++, getNumberOutputSteps());
-        call_monitors(imEigBout, iteration++, getNumberOutputSteps());
+        call_monitors(reEigBout, incrementIterationCounter(), getNumberOutputSteps());
+        call_monitors(imEigBout, incrementIterationCounter(), getNumberOutputSteps());
       }
     }
   }
@@ -702,7 +702,7 @@ void SlepcSolver::analyseResults() {
   output << "Converged eigenvalues :\n"
             "\tIndex\tSlepc eig (mag.)\t\t\tBOUT eig (mag.)\n";
 
-  iteration = 0;
+  resetIterationCounter();
 
   // Declare and create vectors to store eigenfunctions
   Vec vecReal, vecImag;
@@ -744,12 +744,12 @@ void SlepcSolver::analyseResults() {
     // Silence the default monitor
     WithQuietOutput progress{output_progress};
     // Call monitors so fields get written
-    call_monitors(reEigBout, iteration++, getNumberOutputSteps());
+    call_monitors(reEigBout, incrementIterationCounter(), getNumberOutputSteps());
 
     // Now write imaginary part of eigen data
     // First dump imag part to fields
     vecToFields(vecImag);
-    call_monitors(imEigBout, iteration++, getNumberOutputSteps());
+    call_monitors(imEigBout, incrementIterationCounter(), getNumberOutputSteps());
   }
 
   // Destroy vectors
