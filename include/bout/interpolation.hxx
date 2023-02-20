@@ -81,7 +81,7 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
 
   if (region != "RGN_NOBNDRY") {
     // result is requested in some boundary region(s)
-    result = var; // NOTE: This is just for boundaries. FIX!
+    result = var;            // NOTE: This is just for boundaries. FIX!
     result.setLocation(loc); // location gets reset when assigning from var
     result.allocate();
   }
@@ -101,12 +101,12 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
       ASSERT0(fieldmesh->xstart >= 2);
 
       if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) { // C2L
-        BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+        BOUT_FOR (i, result.getRegion("RGN_NOBNDRY")) {
           // Producing a stencil centred around a lower X value
           result[i] = interp(populateStencil<DIRECTION::X, STAGGER::C2L, 2>(var, i));
         }
       } else if (location == CELL_XLOW) { // L2C
-        BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+        BOUT_FOR (i, result.getRegion("RGN_NOBNDRY")) {
           // Stencil centred around a cell centre
           result[i] = interp(populateStencil<DIRECTION::X, STAGGER::L2C, 2>(var, i));
         }
@@ -121,8 +121,9 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
       // We can't interpolate in y unless we're field-aligned
       // Field2D doesn't need to shift to/from field-aligned because it is axisymmetric,
       // so always set is_unaligned=false for Field2D.
-      const bool is_unaligned = std::is_same<T, Field2D>::value ? false
-                                : (var.getDirectionY() == YDirectionType::Standard);
+      const bool is_unaligned = std::is_same<T, Field2D>::value
+                                    ? false
+                                    : (var.getDirectionY() == YDirectionType::Standard);
       const T var_fa = is_unaligned ? toFieldAligned(var, "RGN_NOX") : var;
 
       if (not std::is_base_of<Field2D, T>::value) {
@@ -139,19 +140,19 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
         // to get the boundary cells
         //
         // result is requested in some boundary region(s)
-        result = var_fa; // NOTE: This is just for boundaries. FIX!
+        result = var_fa;         // NOTE: This is just for boundaries. FIX!
         result.setLocation(loc); // location gets reset when assigning from var
         result.allocate();
       }
 
       if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) { // C2L
-        BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+        BOUT_FOR (i, result.getRegion("RGN_NOBNDRY")) {
           // Producing a stencil centred around a lower X value
           result[i] =
               interp(populateStencil<DIRECTION::YAligned, STAGGER::C2L, 2>(var_fa, i));
         }
       } else if (location == CELL_YLOW) { // L2C
-        BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+        BOUT_FOR (i, result.getRegion("RGN_NOBNDRY")) {
           // Stencil centred around a cell centre
           result[i] =
               interp(populateStencil<DIRECTION::YAligned, STAGGER::L2C, 2>(var_fa, i));
@@ -167,12 +168,12 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
     case CELL_ZLOW: {
 
       if ((location == CELL_CENTRE) && (loc == CELL_ZLOW)) { // C2L
-        BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+        BOUT_FOR (i, result.getRegion("RGN_NOBNDRY")) {
           // Producing a stencil centred around a lower X value
           result[i] = interp(populateStencil<DIRECTION::Z, STAGGER::C2L, 2>(var, i));
         }
       } else if (location == CELL_ZLOW) { // L2C
-        BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+        BOUT_FOR (i, result.getRegion("RGN_NOBNDRY")) {
           // Stencil centred around a cell centre
           result[i] = interp(populateStencil<DIRECTION::Z, STAGGER::L2C, 2>(var, i));
         }

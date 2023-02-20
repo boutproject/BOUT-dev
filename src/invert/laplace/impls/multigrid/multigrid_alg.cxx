@@ -33,7 +33,7 @@
 
 #include "multigrid_laplace.hxx"
 #include <bout/openmpwrap.hxx>
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 // Define basic multigrid algorithm
 

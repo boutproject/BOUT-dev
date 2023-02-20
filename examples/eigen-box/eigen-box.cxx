@@ -6,7 +6,7 @@
  */
 
 #include <bout/physicsmodel.hxx>
-#include <derivs.hxx>
+#include <bout/derivs.hxx>
 
 class EigenBox : public PhysicsModel {
 protected:
@@ -17,12 +17,13 @@ protected:
   }
   int rhs(BoutReal) override {
     mesh->communicate(f);
-    
+
     ddt(g) = D2DX2(f);
     ddt(f) = g;
-    
+
     return 0;
   }
+
 private:
   Field3D f, g;
 };

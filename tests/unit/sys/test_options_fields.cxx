@@ -3,10 +3,10 @@
 
 #include "gtest/gtest.h"
 
-#include "bout/mesh.hxx"
-#include "field3d.hxx"
+#include "bout/field3d.hxx"
 #include "test_extras.hxx"
-#include "unused.hxx"
+#include "bout/unused.hxx"
+#include "bout/mesh.hxx"
 
 /// Global mesh
 namespace bout {
@@ -25,7 +25,7 @@ TEST_F(OptionsFieldTest, StoreField3D) {
   Options options;
 
   EXPECT_FALSE(options.isValue());
-  
+
   options = field;
 
   EXPECT_TRUE(options.isValue());
@@ -36,7 +36,7 @@ TEST_F(OptionsFieldTest, StoreField2D) {
   Options options;
 
   EXPECT_FALSE(options.isValue());
-  
+
   options = field;
 
   EXPECT_TRUE(options.isValue());
@@ -44,15 +44,15 @@ TEST_F(OptionsFieldTest, StoreField2D) {
 
 TEST_F(OptionsFieldTest, RetrieveField3D) {
   Field3D field = 1.0;
-  field(0,1,1) = 2.0;
-  
+  field(0, 1, 1) = 2.0;
+
   Options options;
   options = field;
 
   Field3D other = options;
 
-  EXPECT_DOUBLE_EQ(other(0,1,0), 1.0);
-  EXPECT_DOUBLE_EQ(other(0,1,1), 2.0);
+  EXPECT_DOUBLE_EQ(other(0, 1, 0), 1.0);
+  EXPECT_DOUBLE_EQ(other(0, 1, 1), 2.0);
 }
 
 TEST_F(OptionsFieldTest, RetrieveField3DfromBoutReal) {
@@ -61,8 +61,8 @@ TEST_F(OptionsFieldTest, RetrieveField3DfromBoutReal) {
 
   Field3D other = options;
 
-  EXPECT_DOUBLE_EQ(other(0,1,0), 1.2);
-  EXPECT_DOUBLE_EQ(other(0,0,1), 1.2);
+  EXPECT_DOUBLE_EQ(other(0, 1, 0), 1.2);
+  EXPECT_DOUBLE_EQ(other(0, 0, 1), 1.2);
 }
 
 TEST_F(OptionsFieldTest, RetrieveBoutRealfromField3D) {
@@ -87,7 +87,7 @@ TEST_F(OptionsFieldTest, RetrieveField3DfromField2D) {
   options = field;
 
   Field3D value = options.as<Field3D>();
-  EXPECT_DOUBLE_EQ(value(0,1,0), 1.2);
+  EXPECT_DOUBLE_EQ(value(0, 1, 0), 1.2);
 }
 
 TEST_F(OptionsFieldTest, RetrieveStringfromField3D) {
@@ -116,8 +116,8 @@ TEST_F(OptionsFieldTest, RetrieveField3DfromString) {
 
   Field3D other = options.as<Field3D>();
 
-  EXPECT_DOUBLE_EQ(other(0,1,0), 3.0);
-  EXPECT_DOUBLE_EQ(other(0,0,1), 3.0);
+  EXPECT_DOUBLE_EQ(other(0, 1, 0), 3.0);
+  EXPECT_DOUBLE_EQ(other(0, 0, 1), 3.0);
 }
 
 TEST_F(OptionsFieldTest, RetrieveField2DfromString) {
@@ -126,8 +126,8 @@ TEST_F(OptionsFieldTest, RetrieveField2DfromString) {
 
   Field2D other = options.as<Field2D>();
 
-  EXPECT_DOUBLE_EQ(other(0,1,0), 3.0);
-  EXPECT_DOUBLE_EQ(other(0,0,1), 3.0);
+  EXPECT_DOUBLE_EQ(other(0, 1, 0), 3.0);
+  EXPECT_DOUBLE_EQ(other(0, 0, 1), 3.0);
 }
 
 TEST_F(OptionsFieldTest, RetrieveField2DfromBadString) {
@@ -136,4 +136,3 @@ TEST_F(OptionsFieldTest, RetrieveField2DfromBadString) {
 
   EXPECT_THROW(Field2D other = options.as<Field2D>(), ParseException);
 }
-

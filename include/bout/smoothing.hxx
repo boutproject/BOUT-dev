@@ -28,16 +28,16 @@
 #ifndef __SMOOTHING_H__
 #define __SMOOTHING_H__
 
-#include "field3d.hxx"
+#include "bout/field3d.hxx"
 
 /// Smooth in X using simple 1-2-1 filter
-const Field3D smooth_x(const Field3D &f);
+const Field3D smooth_x(const Field3D& f);
 
 /// Smooth in Y using 1-2-1 filter
-const Field3D smooth_y(const Field3D &f);
+const Field3D smooth_y(const Field3D& f);
 
 /// Smooth using a stencil in X and Y
-const Field3D smoothXY(const Field3D &f);
+const Field3D smoothXY(const Field3D& f);
 
 /*! 
  * Average over Y
@@ -50,7 +50,7 @@ const Field3D smoothXY(const Field3D &f);
  * Assumes every processor has the same domain shape
  * 
  */
-const Field2D averageY(const Field2D &f);
+const Field2D averageY(const Field2D& f);
 
 /*!
  * Average in Y
@@ -67,11 +67,11 @@ const Field2D averageY(const Field2D &f);
  * Assumes every processor has the same domain shape
  * 
  */
-const Field3D averageY(const Field3D &f);
+const Field3D averageY(const Field3D& f);
 
 /// Average over X
-const Field2D averageX(const Field2D &f);
-const Field3D averageX(const Field3D &f);
+const Field2D averageX(const Field2D& f);
+const Field3D averageX(const Field3D& f);
 
 /*!
   Volume integral of Field2D variable
@@ -85,11 +85,11 @@ const Field3D averageX(const Field3D &f);
   Will only work if X communicator is constant in Y
   so no processor/branch cuts in X
  */
-BoutReal Average_XY(const Field2D &var);
+BoutReal Average_XY(const Field2D& var);
 
 /// Volume integral of Field2D variable
 /// which uses Average_XY
-BoutReal Vol_Integral(const Field2D &var);
+BoutReal Vol_Integral(const Field2D& var);
 
 /// Nonlinear filtering to remove grid-scale noise in X
 /*!
@@ -100,7 +100,7 @@ BoutReal Vol_Integral(const Field2D &var);
   "On the Suppression of Numerical Oscillations Using a Non-Linear Filter"
   
  */
-const Field3D nl_filter_x(const Field3D &f, BoutReal w=1.0);
+const Field3D nl_filter_x(const Field3D& f, BoutReal w = 1.0);
 
 /// Nonlinear filtering to remove grid-scale noise in Y
 /*!
@@ -111,7 +111,7 @@ const Field3D nl_filter_x(const Field3D &f, BoutReal w=1.0);
   "On the Suppression of Numerical Oscillations Using a Non-Linear Filter"
   
  */
-const Field3D nl_filter_y(const Field3D &f, BoutReal w=1.0);
+const Field3D nl_filter_y(const Field3D& f, BoutReal w = 1.0);
 
 /// Nonlinear filtering to remove grid-scale noise in Z
 /*!
@@ -122,7 +122,7 @@ const Field3D nl_filter_y(const Field3D &f, BoutReal w=1.0);
   "On the Suppression of Numerical Oscillations Using a Non-Linear Filter"
   
  */
-const Field3D nl_filter_z(const Field3D &f, BoutReal w=1.0);
+const Field3D nl_filter_z(const Field3D& f, BoutReal w = 1.0);
 
 /// Nonlinear filtering to remove grid-scale noise in X,Y and Z
 /*!
@@ -133,6 +133,6 @@ const Field3D nl_filter_z(const Field3D &f, BoutReal w=1.0);
   "On the Suppression of Numerical Oscillations Using a Non-Linear Filter"
   
  */
-const Field3D nl_filter(const Field3D &f, BoutReal w=1.0);
+const Field3D nl_filter(const Field3D& f, BoutReal w = 1.0);
 
 #endif // __SMOOTHING_H__

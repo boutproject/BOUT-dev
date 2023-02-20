@@ -50,7 +50,7 @@ template <typename T>
 using iterator = T*;
 template <typename T>
 using const_iterator = const T*;
-}
+} // namespace
 
 /*!
  * ArrayData holds the actual data
@@ -169,7 +169,7 @@ private:
  *  - Arrays can't be used in GPU code. To access Array data
  *    inside a RAJA loop, first extract the raw pointer
  */
-template<typename T, typename Backing = ArrayData<T>>
+template <typename T, typename Backing = ArrayData<T>>
 class Array {
 public:
   using data_type = T;
@@ -193,9 +193,7 @@ public:
   /*!
    * Destructor. Releases the underlying dataBlock
    */
-  ~Array() noexcept {
-    release(ptr);
-  }
+  ~Array() noexcept { release(ptr); }
 
   /*!
    * Copy constructor
@@ -216,9 +214,7 @@ public:
   /*!
    * Move constructor
    */
-  Array(Array&& other) noexcept {
-    swap(*this, other);
-  }
+  Array(Array&& other) noexcept { swap(*this, other); }
 
   /*!
    * Reallocate the array with size = \p new_size
@@ -271,9 +267,7 @@ public:
   /*!
    * Returns true if the Array is empty
    */
-  bool empty() const noexcept {
-    return ptr == nullptr;
-  }
+  bool empty() const noexcept { return ptr == nullptr; }
 
   /*!
    * Return size of the array. Zero if the array is empty.
@@ -492,4 +486,3 @@ bool operator==(const Array<T, B1>& lhs, const Array<T, B2>& rhs) {
 }
 
 #endif // __ARRAY_H__
-

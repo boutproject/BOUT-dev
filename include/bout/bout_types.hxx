@@ -31,11 +31,15 @@ using BoutReal = double;
 /// Quiet NaN
 constexpr BoutReal BoutNaN = std::numeric_limits<BoutReal>::quiet_NaN();
 
-#define ENUMSTR(val) {val, #val}
-#define STRENUM(val) {#val, val}
+#define ENUMSTR(val) \
+  { val, #val }
+#define STRENUM(val) \
+  {                  \
+#val, val        \
+  }
 
 /// 4 possible variable locations. Default is for passing to functions
-enum class CELL_LOC {deflt, centre, xlow, ylow, zlow, vshift};
+enum class CELL_LOC { deflt, centre, xlow, ylow, zlow, vshift };
 constexpr CELL_LOC CELL_DEFAULT = CELL_LOC::deflt;
 constexpr CELL_LOC CELL_CENTRE = CELL_LOC::centre;
 constexpr CELL_LOC CELL_CENTER = CELL_LOC::centre;
@@ -48,7 +52,7 @@ std::string toString(CELL_LOC location);
 CELL_LOC CELL_LOCFromString(const std::string& location_string);
 
 /// Differential methods. Both central and upwind
-enum class DIFF_METHOD {deflt, u1, u2, c2, w2, w3, c4, u3, fft, split, s2};
+enum class DIFF_METHOD { deflt, u1, u2, c2, w2, w3, c4, u3, fft, split, s2 };
 constexpr DIFF_METHOD DIFF_DEFAULT = DIFF_METHOD::deflt;
 constexpr DIFF_METHOD DIFF_U1 = DIFF_METHOD::u1;
 constexpr DIFF_METHOD DIFF_U2 = DIFF_METHOD::u2;
@@ -64,7 +68,7 @@ constexpr DIFF_METHOD DIFF_S2 = DIFF_METHOD::s2;
 std::string toString(DIFF_METHOD location);
 
 /// Specify grid region for looping
-enum class REGION {all, nobndry, nox, noy, noz};
+enum class REGION { all, nobndry, nox, noy, noz };
 constexpr REGION RGN_ALL = REGION::all;
 constexpr REGION RGN_NOBNDRY = REGION::nobndry;
 constexpr REGION RGN_NOX = REGION::nox;
@@ -128,14 +132,14 @@ std::string toString(DERIV deriv);
 // A small struct that can be used to wrap a specific enum value, giving
 // it a unique type that can be passed as a valid type to templates and
 // which can be inspected to provide the actual value of the enum
-template<typename T, T val>
+template <typename T, T val>
 struct enumWrapper {
   using type = T;
   static const type value = val;
-  T lookup(){return val;};
+  T lookup() { return val; };
 };
 
 /// Boundary condition function
-using FuncPtr = BoutReal(*)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
+using FuncPtr = BoutReal (*)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
 
 #endif // __BOUT_TYPES_H__

@@ -29,17 +29,17 @@ class Output;
 #ifndef __OUTPUT_H__
 #define __OUTPUT_H__
 
-#include "multiostream.hxx"
-#include <iostream>
+#include "bout/multiostream.hxx"
 #include <fstream>
 #include <functional>
+#include <iostream>
 #include <string>
 
+#include "bout/boutexception.hxx"
+#include "bout/unused.hxx"
 #include "bout/assert.hxx"
-#include "boutexception.hxx"
-#include "unused.hxx"
 #include "bout/format.hxx"
-#include "bout/sys/gettext.hxx"  // for gettext _() macro
+#include "bout/sys/gettext.hxx" // for gettext _() macro
 
 #include "fmt/core.h"
 
@@ -79,9 +79,7 @@ public:
   template <class S, class... Args>
   Output(const S& format, const Args&... args) : Output(fmt::format(format, args...)) {}
 
-  ~Output() override {
-    close();
-  }
+  ~Output() override { close(); }
 
   virtual void enable();  ///< Enables writing to stdout (default)
   virtual void disable(); ///< Disables stdout
@@ -113,35 +111,35 @@ public:
   }
 
   /// Add an output stream. All output will be sent to all streams
-  void add(std::basic_ostream<char, _Tr> &str) { multioutbuf_init::buf()->add(str); }
+  void add(std::basic_ostream<char, _Tr>& str) { multioutbuf_init::buf()->add(str); }
 
   /// Remove an output stream
-  void remove(std::basic_ostream<char, _Tr> &str) {
+  void remove(std::basic_ostream<char, _Tr>& str) {
     multioutbuf_init::buf()->remove(str);
   }
 
-  static Output *getInstance(); ///< Return pointer to instance
+  static Output* getInstance(); ///< Return pointer to instance
 
 protected:
   friend class ConditionalOutput;
-  virtual Output *getBase() { return this; }
+  virtual Output* getBase() { return this; }
   virtual bool isEnabled() { return true; }
 
 private:
-  std::ofstream file;                 ///< Log file stream
-  bool enabled;                       ///< Whether output to stdout is enabled
+  std::ofstream file; ///< Log file stream
+  bool enabled;       ///< Whether output to stdout is enabled
 };
 
 /// Class which behaves like Output, but has no effect.
 /// This is to allow debug outputs to be disabled at compile time
-/// 
-/// 
+///
+///
 class DummyOutput : public Output {
 public:
   template <class S, class... Args>
-  void write(const S&, const Args&...) {};
+  void write(const S&, const Args&...){};
   template <class S, class... Args>
-  void print(const S&, const Args&...) {};
+  void print(const S&, const Args&...){};
   void enable() override{};
   void disable() override{};
   void enable(MAYBE_UNUSED(bool enable)){};
@@ -157,14 +155,13 @@ class ConditionalOutput : public Output {
 public:
   /// @param[in] base    The Output object which will be written to if enabled
   /// @param[in] enabled Should this be enabled by default?
-  ConditionalOutput(Output *base, bool enabled = true) : base(base), enabled(enabled) {};
+  ConditionalOutput(Output* base, bool enabled = true) : base(base), enabled(enabled){};
 
   /// Constuctor taking ConditionalOutput. This allows several layers of conditions
-  /// 
+  ///
   /// @param[in] base    A ConditionalOutput which will be written to if enabled
-  /// 
-  ConditionalOutput(ConditionalOutput *base)
-      : base(base), enabled(base->enabled) {};
+  ///
+  ConditionalOutput(ConditionalOutput* base) : base(base), enabled(base->enabled){};
 
   /// If enabled, writes a string using fmt formatting
   /// by calling base->write
@@ -192,7 +189,7 @@ public:
   }
 
   /// Get the lowest-level Output object which is the base of this ConditionalOutput
-  Output *getBase() override {
+  Output* getBase() override {
     ASSERT1(base != nullptr);
     return base->getBase();
   };
@@ -216,7 +213,7 @@ public:
 
 private:
   /// The lower-level Output to send output to
-  Output *base;
+  Output* base;
 
 protected:
   friend class WithQuietOutput;
@@ -228,36 +225,40 @@ protected:
 /// statements like
 ///    output_debug << "debug message";
 /// compile but have no effect if BOUT_USE_OUTPUT_DEBUG is false
-template <typename T> DummyOutput &operator<<(DummyOutput &out, T const &UNUSED(t)) {
+template <typename T>
+DummyOutput& operator<<(DummyOutput& out, T const& UNUSED(t)) {
   return out;
 }
 
-template <typename T> DummyOutput &operator<<(DummyOutput &out, const T *UNUSED(t)) {
+template <typename T>
+DummyOutput& operator<<(DummyOutput& out, const T* UNUSED(t)) {
   return out;
 }
 
 // Function pointer so we can apply unused macro to pf in function below
-using stream_manipulator = std::ostream &(*)(std::ostream &);
+using stream_manipulator = std::ostream& (*)(std::ostream&);
 
-inline DummyOutput &operator<<(DummyOutput &out, stream_manipulator UNUSED(pf)) {
+inline DummyOutput& operator<<(DummyOutput& out, stream_manipulator UNUSED(pf)) {
   return out;
 }
 
-inline ConditionalOutput &operator<<(ConditionalOutput &out, stream_manipulator pf) {
+inline ConditionalOutput& operator<<(ConditionalOutput& out, stream_manipulator pf) {
   if (out.isEnabled()) {
     *out.getBase() << pf;
   }
   return out;
 }
 
-template <typename T> ConditionalOutput &operator<<(ConditionalOutput &out, T const &t) {
+template <typename T>
+ConditionalOutput& operator<<(ConditionalOutput& out, T const& t) {
   if (out.isEnabled()) {
     *out.getBase() << t;
   }
   return out;
 }
 
-template <typename T> ConditionalOutput &operator<<(ConditionalOutput &out, const T *t) {
+template <typename T>
+ConditionalOutput& operator<<(ConditionalOutput& out, const T* t) {
   if (out.isEnabled()) {
     *out.getBase() << t;
   }
@@ -293,11 +294,11 @@ extern ConditionalOutput output_debug;
 #else
 extern DummyOutput output_debug;
 #endif
-extern ConditionalOutput output_warn;  ///< warnings
-extern ConditionalOutput output_progress;  ///< progress
-extern ConditionalOutput output_info;  ///< information 
-extern ConditionalOutput output_error; ///< errors
-extern ConditionalOutput output_verbose; ///< less interesting messages
+extern ConditionalOutput output_warn;     ///< warnings
+extern ConditionalOutput output_progress; ///< progress
+extern ConditionalOutput output_info;     ///< information
+extern ConditionalOutput output_error;    ///< errors
+extern ConditionalOutput output_verbose;  ///< less interesting messages
 
 /// Generic output, given the same level as output_progress
 extern ConditionalOutput output;

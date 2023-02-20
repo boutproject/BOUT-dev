@@ -1,15 +1,15 @@
-#include <invert_laplace.hxx>
-#include <msg_stack.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/msg_stack.hxx>
 
 #include <bout/invertable_operator.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/sys/timer.hxx>
-#include <derivs.hxx>
+#include <bout/derivs.hxx>
 
-#include <boundary_region.hxx>
+#include <bout/boundary_region.hxx>
 
-Field3D minus(const Field3D &input) { return -1.0 * input; };
-Field3D delp(const Field3D &input) { return input + Delp2(input); };
+Field3D minus(const Field3D& input) { return -1.0 * input; };
+Field3D delp(const Field3D& input) { return input + Delp2(input); };
 
 class HW : public PhysicsModel {
 private:
@@ -17,7 +17,7 @@ private:
 
   struct myOp {
     BoutReal factor = 1.;
-    Field3D operator()(const Field3D &input) { return factor * input + Delp2(input); };
+    Field3D operator()(const Field3D& input) { return factor * input + Delp2(input); };
   };
   myOp myDelp;
 
@@ -25,7 +25,7 @@ private:
     Field3D D = 1.0, C = 1.0, A = 0.0;
 
     // Drop C term for now
-    Field3D operator()(const Field3D &input) {
+    Field3D operator()(const Field3D& input) {
       TRACE("myLaplacian::operator()");
       Timer timer("invertable_operator_operate");
       Field3D result = A * input + D * Delp2(input);
@@ -42,7 +42,7 @@ private:
     bool withDiv = false;
 
     // Drop C term for now
-    Field3D operator()(const Field3D &input) {
+    Field3D operator()(const Field3D& input) {
       TRACE("myLaplacian::operator()");
       Timer timer("invertable_operator_operate");
       Field3D result = A * input + B * Laplace_perp(input);
@@ -112,7 +112,7 @@ protected:
         solutionInv = mySolver.invert(n, solutionInv);
         // mesh->communicate(solutionInv);
       }
-    } catch (BoutException &e) {
+    } catch (BoutException& e) {
     };
 
     mesh->communicate(solutionInv);
@@ -128,7 +128,7 @@ protected:
         for (int i = 0; i < nits; i++) {
           solutionLap = laplacianSolver->solve(n);
         }
-      } catch (BoutException &e) {
+      } catch (BoutException& e) {
       };
     }
 

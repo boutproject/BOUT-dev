@@ -1,7 +1,7 @@
 #ifndef EXAMPLE_MAKE_SUBDIR_FUU_FUU_HXX_
 #define EXAMPLE_MAKE_SUBDIR_FUU_FUU_HXX_
 
-#include <bout.hxx>
+#include <bout/bout.hxx>
 
 void fuu();
 

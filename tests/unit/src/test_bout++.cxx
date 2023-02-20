@@ -2,10 +2,10 @@
 
 #include "gtest/gtest.h"
 
-#include "bout.hxx"
-#include "boutexception.hxx"
+#include "bout/bout.hxx"
+#include "bout/boutexception.hxx"
 #include "test_extras.hxx"
-#include "utils.hxx"
+#include "bout/utils.hxx"
 #include "bout/version.hxx"
 
 #include <algorithm>
@@ -198,7 +198,6 @@ TEST(ParseCommandLineArgs, VerbosityWithDataDir) {
   EXPECT_EQ(args.original_argv, v_args);
   EXPECT_EQ(args.argv, expected_argv);
 }
-
 
 TEST(ParseCommandLineArgs, VerbosityLong) {
   std::vector<std::string> v_args{"test", "--verbose"};
@@ -425,5 +424,6 @@ TEST(BoutInitialiseFunctions, SavePIDtoFile) {
 
   std::remove(filename.c_str());
 
-  EXPECT_THROW(bout::experimental::savePIDtoFile("/does/likely/not/exists", 2), BoutException);
+  EXPECT_THROW(bout::experimental::savePIDtoFile("/does/likely/not/exists", 2),
+               BoutException);
 }

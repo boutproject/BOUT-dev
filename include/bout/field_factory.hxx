@@ -33,11 +33,11 @@ class FieldFactory;
 
 #include "bout/sys/expressionparser.hxx"
 
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "options.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/options.hxx"
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #include <list>
 #include <map>
@@ -72,7 +72,8 @@ public:
   /// using the given options \p opt, over Mesh \p m at time \p t.
   /// The resulting field is at cell location \p loc.
   FieldPerp createPerp(const std::string& value, const Options* opt = nullptr,
-      Mesh* m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
+                       Mesh* m = nullptr, CELL_LOC loc = CELL_CENTRE,
+                       BoutReal t = 0.0) const;
 
   /// Parse a string into a tree of generators
   FieldGeneratorPtr parse(const std::string& input, const Options* opt = nullptr) const;
@@ -90,7 +91,7 @@ public:
   /// Create a FieldPerp from a generator, over a given mesh
   /// at a given cell location and time.
   FieldPerp createPerp(FieldGeneratorPtr generator, Mesh* m = nullptr,
-      CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
+                       CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
 
   /// Get the Singleton object
   static FieldFactory* get();
@@ -104,7 +105,8 @@ protected:
   FieldGeneratorPtr resolve(const std::string& name) const override;
 
   std::multiset<ExpressionParser::FuzzyMatch>
-  fuzzyFind(const std::string& name, std::string::size_type max_distance = 2) const override;
+  fuzzyFind(const std::string& name,
+            std::string::size_type max_distance = 2) const override;
 
 private:
   /// The default mesh for create functions.
@@ -114,7 +116,7 @@ private:
   bool transform_from_field_aligned{true};
 
   int max_recursion_depth{0};
-  
+
   /// The default options used in resolve(), can be *temporarily*
   /// overridden in parse()/create2D()/create3D()
   mutable const Options* options;
@@ -152,9 +154,7 @@ private:
 class FieldNull : public FieldGenerator {
 public:
   FieldNull() = default;
-  BoutReal generate(const bout::generator::Context&) override {
-    return 0.0;
-  }
+  BoutReal generate(const bout::generator::Context&) override { return 0.0; }
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
     return get();
   }

@@ -1,20 +1,20 @@
-#include "parallel_boundary_op.hxx"
-#include "parallel_boundary_region.hxx"
-#include <boundary_factory.hxx>
-#include <boundary_standard.hxx>
-#include <globals.hxx>
-#include <options.hxx>
-#include <utils.hxx>
+#include "bout/parallel_boundary_op.hxx"
+#include "bout/parallel_boundary_region.hxx"
+#include <bout/boundary_factory.hxx>
+#include <bout/boundary_standard.hxx>
+#include <bout/globals.hxx>
+#include <bout/options.hxx>
+#include <bout/utils.hxx>
 
 #include <list>
-#include <string>
 #include <map>
+#include <string>
 using std::list;
 using std::string;
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
-BoundaryFactory *BoundaryFactory::instance = nullptr;
+BoundaryFactory* BoundaryFactory::instance = nullptr;
 
 BoundaryFactory::BoundaryFactory() {
   add(new BoundaryDirichlet(), "dirichlet");
@@ -36,7 +36,7 @@ BoundaryFactory::BoundaryFactory() {
   add(new BoundaryFree(), "free");
   add(new BoundaryFree_O2(), "free_o2");
   add(new BoundaryFree_O3(), "free_o3");
-  
+
   addMod(new BoundaryRelax(), "relax");
   addMod(new BoundaryWidth(), "width");
   addMod(new BoundaryToFieldAligned(), "toFieldAligned");
@@ -51,13 +51,13 @@ BoundaryFactory::BoundaryFactory() {
 
 BoundaryFactory::~BoundaryFactory() {
   // Free any boundaries
-  for (const auto &it : opmap) {
+  for (const auto& it : opmap) {
     delete it.second;
   }
-  for (const auto &it : modmap) {
+  for (const auto& it : modmap) {
     delete it.second;
   }
-  for (const auto &it : par_opmap) {
+  for (const auto& it : par_opmap) {
     delete it.second;
   }
 }
@@ -71,15 +71,16 @@ BoundaryFactory* BoundaryFactory::getInstance() {
 }
 
 void BoundaryFactory::cleanup() {
-  if (instance == nullptr)
+  if (instance == nullptr) {
     return;
+  }
 
   // Just delete the instance
   delete instance;
   instance = nullptr;
 }
 
-BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *region) {
+BoundaryOpBase* BoundaryFactory::create(const string& name, BoundaryRegionBase* region) {
 
   // Search for a string of the form: modifier(operation)
   auto pos = name.find('(');
@@ -87,14 +88,16 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
     // No more (opening) brackets. Should be a boundary operation
     // Need to strip whitespace
 
-    if( (name == "null") || (name == "none") )
+    if ((name == "null") || (name == "none")) {
       return nullptr;
+    }
 
-    if(region->isParallel) {
+    if (region->isParallel) {
       // Parallel boundary
-      BoundaryOpPar *pop = findBoundaryOpPar(trim(name));
-      if (pop == nullptr)
+      BoundaryOpPar* pop = findBoundaryOpPar(trim(name));
+      if (pop == nullptr) {
         throw BoutException("Could not find parallel boundary condition '{:s}'", name);
+      }
 
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
@@ -102,9 +105,10 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
       return pop->clone(dynamic_cast<BoundaryRegionPar*>(region), args, {});
     } else {
       // Perpendicular boundary
-      BoundaryOp *op = findBoundaryOp(trim(name));
-      if (op == nullptr)
+      BoundaryOp* op = findBoundaryOp(trim(name));
+      if (op == nullptr) {
         throw BoutException("Could not find boundary condition '{:s}'", name);
+      }
 
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
@@ -114,14 +118,15 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
   }
   // Contains a bracket. Find the last bracket and remove
   auto pos2 = name.rfind(')');
-  if(pos2 == string::npos) {
-    output_warn << "\tWARNING: Unmatched brackets in boundary condition: " << name << endl;
+  if (pos2 == string::npos) {
+    output_warn << "\tWARNING: Unmatched brackets in boundary condition: " << name
+                << endl;
   }
 
   // Find the function name before the bracket
-  string func = trim(name.substr(0,pos));
+  string func = trim(name.substr(0, pos));
   // And the argument inside the bracket
-  string arg = trim(name.substr(pos+1, pos2-pos-1));
+  string arg = trim(name.substr(pos + 1, pos2 - pos - 1));
   // Split the argument on commas
   // NOTE: Commas could be part of sub-expressions, so
   //       need to take account of brackets
@@ -143,7 +148,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
       break;
     case ',': {
       if (level == 0) {
-        string s = arg.substr(start, i-start);
+        string s = arg.substr(start, i - start);
 
         // Check if s contains '=', and if so treat as a keyword
         auto poseq = s.find('=');
@@ -162,19 +167,20 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
   std::string s = arg.substr(start);
   auto poseq = s.find('=');
   if (poseq != string::npos) {
-    keywords[trim(s.substr(0,poseq))] = trim(s.substr(poseq+1));
+    keywords[trim(s.substr(0, poseq))] = trim(s.substr(poseq + 1));
   } else {
     // No '=', so a positional argument
     arglist.push_back(trim(s));
   }
 
   // Test if func is a modifier
-  BoundaryModifier *mod = findBoundaryMod(func);
+  BoundaryModifier* mod = findBoundaryMod(func);
   if (mod != nullptr) {
     // The first argument should be an operation
     auto* op = dynamic_cast<BoundaryOp*>(create(arglist.front(), region));
-    if (op == nullptr)
+    if (op == nullptr) {
       return nullptr;
+    }
 
     // Remove the first element (name of operation)
     arglist.pop_front();
@@ -183,16 +189,16 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
     return mod->cloneMod(op, arglist);
   }
 
-  if(region->isParallel) {
+  if (region->isParallel) {
     // Parallel boundary
-    BoundaryOpPar *pop = findBoundaryOpPar(trim(func));
+    BoundaryOpPar* pop = findBoundaryOpPar(trim(func));
     if (pop != nullptr) {
       // An operation with arguments
       return pop->clone(dynamic_cast<BoundaryRegionPar*>(region), arglist, keywords);
     }
   } else {
     // Perpendicular boundary
-    BoundaryOp *op = findBoundaryOp(trim(func));
+    BoundaryOp* op = findBoundaryOp(trim(func));
     if (op != nullptr) {
       // An operation with arguments
       return op->clone(dynamic_cast<BoundaryRegion*>(region), arglist, keywords);
@@ -206,20 +212,22 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
   return nullptr;
 }
 
-BoundaryOpBase* BoundaryFactory::create(const char* name, BoundaryRegionBase *region) {
+BoundaryOpBase* BoundaryFactory::create(const char* name, BoundaryRegionBase* region) {
   return create(string(name), region);
 }
 
-BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, BoundaryRegionBase *region) {
-  if (region == nullptr)
+BoundaryOpBase* BoundaryFactory::createFromOptions(const string& varname,
+                                                   BoundaryRegionBase* region) {
+  if (region == nullptr) {
     return nullptr;
+  }
 
   output_info << "\t" << region->label << " region: ";
 
   string prefix("bndry_");
 
   string side;
-  switch(region->location) {
+  switch (region->location) {
   case BNDRY_XIN: {
     side = "xin";
     break;
@@ -259,33 +267,33 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
   }
 
   // Get options
-  Options *options = Options::getRoot();
+  Options* options = Options::getRoot();
 
   // Get variable options
-  Options *varOpts = options->getSection(varname);
+  Options* varOpts = options->getSection(varname);
   string set;
 
   /// First try looking for (var, region)
-  if(varOpts->isSet(prefix+region->label)) {
-    varOpts->get(prefix+region->label, set, "");
+  if (varOpts->isSet(prefix + region->label)) {
+    varOpts->get(prefix + region->label, set, "");
     return create(set, region);
   }
 
   /// Then (var, side)
-  if(varOpts->isSet(prefix+side)) {
-    varOpts->get(prefix+side, set, "");
+  if (varOpts->isSet(prefix + side)) {
+    varOpts->get(prefix + side, set, "");
     return create(set, region);
   }
 
   /// Then (var, all)
-  if(region->isParallel) {
-    if(varOpts->isSet(prefix+"par_all")) {
-      varOpts->get(prefix+"par_all", set, "");
+  if (region->isParallel) {
+    if (varOpts->isSet(prefix + "par_all")) {
+      varOpts->get(prefix + "par_all", set, "");
       return create(set, region);
     }
   } else {
-    if(varOpts->isSet(prefix+"all")) {
-      varOpts->get(prefix+"all", set, "");
+    if (varOpts->isSet(prefix + "all")) {
+      varOpts->get(prefix + "all", set, "");
       return create(set, region);
     }
   }
@@ -294,34 +302,35 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
   varOpts = options->getSection("all");
 
   /// Then (all, region)
-  if(varOpts->isSet(prefix+region->label)) {
-    varOpts->get(prefix+region->label, set, "");
+  if (varOpts->isSet(prefix + region->label)) {
+    varOpts->get(prefix + region->label, set, "");
     return create(set, region);
   }
 
   /// Then (all, side)
-  if(varOpts->isSet(prefix+side)) {
-    varOpts->get(prefix+side, set, "");
+  if (varOpts->isSet(prefix + side)) {
+    varOpts->get(prefix + side, set, "");
     return create(set, region);
   }
 
   /// Then (all, all)
-  if(region->isParallel) {
+  if (region->isParallel) {
     // Different default for parallel boundary regions
-    varOpts->get(prefix+"par_all", set, "parallel_dirichlet");
+    varOpts->get(prefix + "par_all", set, "parallel_dirichlet");
   } else {
-    varOpts->get(prefix+"all", set, "dirichlet");
+    varOpts->get(prefix + "all", set, "dirichlet");
   }
   return create(set, region);
   // Defaults to Dirichlet conditions, to prevent undefined boundary
   // values. If a user want to override, specify "none" or "null"
 }
 
-BoundaryOpBase* BoundaryFactory::createFromOptions(const char* varname, BoundaryRegionBase *region) {
+BoundaryOpBase* BoundaryFactory::createFromOptions(const char* varname,
+                                                   BoundaryRegionBase* region) {
   return createFromOptions(string(varname), region);
 }
 
-void BoundaryFactory::add(BoundaryOp* bop, const string &name) {
+void BoundaryFactory::add(BoundaryOp* bop, const string& name) {
   if ((findBoundaryMod(name) != nullptr) || (findBoundaryOp(name) != nullptr)) {
     // error - already exists
     output_error << "ERROR: Trying to add an already existing boundary: " << name << endl;
@@ -330,11 +339,9 @@ void BoundaryFactory::add(BoundaryOp* bop, const string &name) {
   opmap[lowercase(name)] = bop;
 }
 
-void BoundaryFactory::add(BoundaryOp* bop, const char *name) {
-  add(bop, string(name));
-}
+void BoundaryFactory::add(BoundaryOp* bop, const char* name) { add(bop, string(name)); }
 
-void BoundaryFactory::add(BoundaryOpPar* bop, const string &name) {
+void BoundaryFactory::add(BoundaryOpPar* bop, const string& name) {
   if (findBoundaryOpPar(name) != nullptr) {
     // error - already exists
     output_error << "ERROR: Trying to add an already existing boundary: " << name << endl;
@@ -343,40 +350,44 @@ void BoundaryFactory::add(BoundaryOpPar* bop, const string &name) {
   par_opmap[lowercase(name)] = bop;
 }
 
-void BoundaryFactory::add(BoundaryOpPar* bop, const char *name) {
+void BoundaryFactory::add(BoundaryOpPar* bop, const char* name) {
   add(bop, string(name));
 }
 
-void BoundaryFactory::addMod(BoundaryModifier* bmod, const string &name) {
+void BoundaryFactory::addMod(BoundaryModifier* bmod, const string& name) {
   if ((findBoundaryMod(name) != nullptr) || (findBoundaryOp(name) != nullptr)) {
     // error - already exists
-    output_error << "ERROR: Trying to add an already existing boundary modifier: " << name << endl;
+    output_error << "ERROR: Trying to add an already existing boundary modifier: " << name
+                 << endl;
     return;
   }
   modmap[lowercase(name)] = bmod;
 }
 
-void BoundaryFactory::addMod(BoundaryModifier* bmod, const char *name) {
+void BoundaryFactory::addMod(BoundaryModifier* bmod, const char* name) {
   addMod(bmod, string(name));
 }
 
-BoundaryOp* BoundaryFactory::findBoundaryOp(const string &s) {
+BoundaryOp* BoundaryFactory::findBoundaryOp(const string& s) {
   auto it = opmap.find(lowercase(s));
-  if(it == opmap.end())
+  if (it == opmap.end()) {
     return nullptr;
+  }
   return it->second;
 }
 
-BoundaryModifier* BoundaryFactory::findBoundaryMod(const string &s) {
+BoundaryModifier* BoundaryFactory::findBoundaryMod(const string& s) {
   auto it = modmap.find(lowercase(s));
-  if(it == modmap.end())
+  if (it == modmap.end()) {
     return nullptr;
+  }
   return it->second;
 }
 
-BoundaryOpPar* BoundaryFactory::findBoundaryOpPar(const string &s) {
+BoundaryOpPar* BoundaryFactory::findBoundaryOpPar(const string& s) {
   auto it = par_opmap.find(lowercase(s));
-  if(it == par_opmap.end())
+  if (it == par_opmap.end()) {
     return nullptr;
+  }
   return it->second;
 }

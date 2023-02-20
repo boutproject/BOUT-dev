@@ -39,7 +39,7 @@ class SNESSolver;
 
 #include <bout/bout_enum_class.hxx>
 #include <bout/petsclib.hxx>
-#include <bout_types.hxx>
+#include <bout/bout_types.hxx>
 
 #include <petsc.h>
 #include <petscsnes.h>
@@ -85,8 +85,8 @@ public:
   PetscErrorCode precon(Vec x, Vec f);
 
 private:
-  BoutReal timestep; ///< Internal timestep
-  BoutReal dt;       ///< Current timestep used in snes_function
+  BoutReal timestep;     ///< Internal timestep
+  BoutReal dt;           ///< Current timestep used in snes_function
   BoutReal dt_min_reset; ///< If dt falls below this, reset solve
   BoutReal max_timestep; ///< Maximum timestep
 
@@ -98,7 +98,7 @@ private:
   int maxits;               ///< Maximum nonlinear iterations
   int lower_its, upper_its; ///< Limits on iterations for timestep adjustment
 
-  bool diagnose; ///< Output additional diagnostics
+  bool diagnose;          ///< Output additional diagnostics
   bool diagnose_failures; ///< Print diagnostics on SNES failures
 
   int nlocal; ///< Number of variables on local processor

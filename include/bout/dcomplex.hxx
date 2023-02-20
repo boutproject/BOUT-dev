@@ -32,12 +32,12 @@
 #ifndef __DCOMPLEX_H__
 #define __DCOMPLEX_H__
 
+#include "bout/bout_types.hxx"
 #include <complex>
-#include "bout_types.hxx"
 
 using dcomplex = std::complex<BoutReal>;
 
-const dcomplex Im(0,1); // 1i 
+const dcomplex Im(0, 1); // 1i
 
 /// Complex type for passing data to/from FORTRAN
 struct fcmplx {

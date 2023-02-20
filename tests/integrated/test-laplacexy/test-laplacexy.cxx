@@ -23,12 +23,12 @@
  *
  **************************************************************************/
 
-#include <bout.hxx>
 #include <bout/constants.hxx>
 #include <bout/invert/laplacexy.hxx>
-#include <derivs.hxx>
-#include <initialprofiles.hxx>
-#include <options.hxx>
+#include <bout/bout.hxx>
+#include <bout/derivs.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/options.hxx>
 
 using bout::globals::dump;
 using bout::globals::mesh;
@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
   auto coords = mesh->getCoordinates();
 
   auto& opt = Options::root();
-  
+
   LaplaceXY laplacexy;
 
   bool include_y_derivs = opt["laplacexy"]["include_y_derivs"];
@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
   // A*Laplace_perp(f) + Grad_perp(A).Grad_perp(f) + B*f = rhs
   Field2D f, a, b, sol;
   Field2D error, absolute_error; //Absolute value of relative error: abs((f - sol)/f)
-  BoutReal max_error; //Output of test
+  BoutReal max_error;            //Output of test
 
   initial_profile("f", f);
   initial_profile("a", a);
@@ -65,25 +65,26 @@ int main(int argc, char** argv) {
 
   Field2D rhs, rhs_check;
   if (include_y_derivs) {
-    rhs = a*Laplace_perp(f) + Grad_perp(a)*Grad_perp(f) + b*f;
+    rhs = a * Laplace_perp(f) + Grad_perp(a) * Grad_perp(f) + b * f;
   } else {
-    rhs = a*Delp2(f, CELL_DEFAULT, false) + coords->g11*DDX(a)*DDX(f) + b*f;
+    rhs = a * Delp2(f, CELL_DEFAULT, false) + coords->g11 * DDX(a) * DDX(f) + b * f;
   }
 
   laplacexy.setCoefs(a, b);
-  
+
   sol = laplacexy.solve(rhs, 0.);
-  error = (f - sol)/f;
+  error = (f - sol) / f;
   absolute_error = f - sol;
   max_error = max(abs(absolute_error), true);
 
-  output<<"Magnitude of maximum absolute error is "<<max_error<<endl;
+  output << "Magnitude of maximum absolute error is " << max_error << endl;
 
   mesh->communicate(sol);
   if (include_y_derivs) {
-    rhs_check = a*Laplace_perp(sol) + Grad_perp(a)*Grad_perp(sol) + b*sol;
+    rhs_check = a * Laplace_perp(sol) + Grad_perp(a) * Grad_perp(sol) + b * sol;
   } else {
-    rhs_check = a*Delp2(sol, CELL_DEFAULT, false) + coords->g11*DDX(a)*DDX(sol) + b*sol;
+    rhs_check =
+        a * Delp2(sol, CELL_DEFAULT, false) + coords->g11 * DDX(a) * DDX(sol) + b * sol;
   }
 
   dump.add(a, "a");

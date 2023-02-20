@@ -7,7 +7,7 @@
 
 #include <fmt/format.h>
 
-#include "output.hxx"
+#include "bout/output.hxx"
 #include "bout/region.hxx"
 
 template <IND_TYPE N>

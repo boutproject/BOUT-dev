@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 
 #include <bout/deriv_store.hxx>
-#include <bout_types.hxx>
-#include <boutexception.hxx>
-#include <output.hxx>
-#include <unused.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/output.hxx>
+#include <bout/unused.hxx>
 
 #include <typeindex>
 

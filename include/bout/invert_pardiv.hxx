@@ -31,10 +31,10 @@
 #ifndef INV_PARDIV_H
 #define INV_PARDIV_H
 
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "options.hxx"
-#include "unused.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/options.hxx"
+#include "bout/unused.hxx"
 #include "bout/generic_factory.hxx"
 
 // Pardivergence implementations

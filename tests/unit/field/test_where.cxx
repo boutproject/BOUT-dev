@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "field.hxx"
+#include "bout/field.hxx"
 #include "test_extras.hxx"
-#include "where.hxx"
+#include "bout/where.hxx"
 
 /// Global mesh
 namespace bout {

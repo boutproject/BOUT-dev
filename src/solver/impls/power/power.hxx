@@ -29,8 +29,8 @@ class PowerSolver;
 #ifndef __POWER_SOLVER_H__
 #define __POWER_SOLVER_H__
 
-#include <bout_types.hxx>
 #include <bout/solver.hxx>
+#include <bout/bout_types.hxx>
 
 namespace {
 RegisterSolver<PowerSolver> registersolverpower("power");
@@ -61,4 +61,3 @@ private:
 };
 
 #endif // __KARNIADAKIS_SOLVER_H__
-

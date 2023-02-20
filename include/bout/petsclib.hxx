@@ -59,26 +59,29 @@ class Options;
  * The first instance which is created initialises PETSc
  * Keeps a count of the number of how many instances exist
  * When the last instance is destroyed it finalises PETSc.
- */ 
+ */
 class PetscLib {
 public:
   /*!
    * Ensure that PETSc has been initialised
    */
   explicit PetscLib(Options* opt = nullptr);
-  
+
   /*!
    * Calls PetscFinalize when all PetscLib instances are destroyed
-   */ 
+   */
   ~PetscLib();
-  
+
   /*!
    * This is called once to set the command-line options.
    * Should be done early in the program, before any instances of
    * PetscLib are created.
    * The arguments will be passed to PetscInitialize()
-   */ 
-  static void setArgs(int &c, char** &v) { pargc = &c; pargv = &v;}
+   */
+  static void setArgs(int& c, char**& v) {
+    pargc = &c;
+    pargv = &v;
+  }
 
   /// Set options for a KSP linear solver that uses the options specific to this PetscLib,
   /// by setting an options prefix for the KSP, and adding that prefix to all the options
@@ -95,16 +98,17 @@ public:
   /*!
    * Force cleanup. This will call PetscFinalize, printing a warning
    * if any instances of PetscLib still exist
-   */ 
-  static void cleanup(); 
+   */
+  static void cleanup();
+
 private:
-  static int count; ///< How many instances?
+  static int count;   ///< How many instances?
   static char help[]; ///< Help string
-  
+
   // Command-line arguments
   static int* pargc;
   static char*** pargv;
-  
+
   // Prefix for object-specific options
   std::string options_prefix;
 
@@ -117,16 +121,18 @@ private:
 // Newer versions of PETSc define these symbols for testing library version
 // This is a re-implementation of the PETSc BSD-licensed code
 
-#define PETSC_VERSION_GE(MAJOR,MINOR,SUBMINOR)                          \
-  ( (PETSC_VERSION_MAJOR > MAJOR) ||                                    \
-    ( (PETSC_VERSION_MAJOR == MAJOR) && ( (PETSC_VERSION_MINOR > MINOR) || \
-                                          ( (PETSC_VERSION_MINOR == MINOR) && (PETSC_VERSION_SUBMINOR >= SUBMINOR)))))
+#define PETSC_VERSION_GE(MAJOR, MINOR, SUBMINOR) \
+  ((PETSC_VERSION_MAJOR > MAJOR)                 \
+   || ((PETSC_VERSION_MAJOR == MAJOR)            \
+       && ((PETSC_VERSION_MINOR > MINOR)         \
+           || ((PETSC_VERSION_MINOR == MINOR)    \
+               && (PETSC_VERSION_SUBMINOR >= SUBMINOR)))))
 
 #endif // PETSC_VERSION_GE
 
 #else // BOUT_HAS_PETSC
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 // PETSc not available, so KSP not already defined. KSP should never be called, so forward
 // declaration OK here.
@@ -137,9 +143,9 @@ class PetscLib {
 public:
   explicit PetscLib(Options* UNUSED(opt) = nullptr) {}
   ~PetscLib() {}
-  
-  static void setArgs(int &UNUSED(c), char** &UNUSED(v)) {}
-  
+
+  static void setArgs(int& UNUSED(c), char**& UNUSED(v)) {}
+
   void setOptionsFromInputFile(KSP& UNUSED(ksp)) {}
   void setOptionsFromInputFile(SNES& UNUSED(snes)) {}
 
@@ -147,6 +153,5 @@ public:
 };
 
 #endif // BOUT_HAS_PETSC
-
 
 #endif //  __PETSCLIB_H__

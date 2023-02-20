@@ -5,9 +5,9 @@
 #include "test_extras.hxx"
 #include "gtest/gtest.h"
 
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "fieldperp.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/fieldperp.hxx"
 #include "bout/operatorstencil.hxx"
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
@@ -44,9 +44,7 @@ public:
     PetscErrorPrintf = PetscErrorPrintfNone;
   }
 
-  virtual ~PetscVectorTest() {
-    PetscErrorPrintf = PetscErrorPrintfDefault;
-  }
+  virtual ~PetscVectorTest() { PetscErrorPrintf = PetscErrorPrintfDefault; }
 };
 
 using FieldTypes = ::testing::Types<Field3D, Field2D, FieldPerp>;
@@ -71,7 +69,7 @@ void testVectorsEqual(Vec* v1, Vec* v2) {
 
 // Test constructor from field
 TYPED_TEST(PetscVectorTest, FieldConstructor) {
-  BOUT_FOR(i, this->field.getRegion("RGN_ALL")) {
+  BOUT_FOR (i, this->field.getRegion("RGN_ALL")) {
     this->field[i] = static_cast<BoutReal>(i.ind);
   }
   PetscVector<TypeParam> vector(this->field, this->indexer);
@@ -82,7 +80,9 @@ TYPED_TEST(PetscVectorTest, FieldConstructor) {
   VecGetLocalSize(*vectorPtr, &n);
   ASSERT_EQ(n, this->field.getNx() * this->field.getNy() * this->field.getNz());
   TypeParam result = vector.toField();
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) { EXPECT_EQ(result[i], this->field[i]); }
+  BOUT_FOR (i, this->field.getRegion("RGN_NOY")) {
+    EXPECT_EQ(result[i], this->field[i]);
+  }
 }
 
 // Test copy constructor
@@ -118,7 +118,9 @@ TYPED_TEST(PetscVectorTest, FieldAssignment) {
   VecGetLocalSize(*vectorPtr, &n);
   ASSERT_EQ(n, this->field.getNx() * this->field.getNy() * this->field.getNz());
   TypeParam result = vector.toField();
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) { EXPECT_EQ(result[i], val[i]); }
+  BOUT_FOR (i, this->field.getRegion("RGN_NOY")) {
+    EXPECT_EQ(result[i], val[i]);
+  }
 }
 
 // Test copy assignment
@@ -144,7 +146,7 @@ TYPED_TEST(PetscVectorTest, MoveAssignment) {
 // Test getting elements
 TYPED_TEST(PetscVectorTest, TestGetElements) {
   PetscVector<TypeParam> vector(this->field, this->indexer);
-  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR (i, this->field.getRegion("RGN_NOBNDRY")) {
     vector(i) = (2.5 * this->field[i] - 1.0);
   }
   Vec* rawvec = vector.get();
@@ -153,7 +155,7 @@ TYPED_TEST(PetscVectorTest, TestGetElements) {
   VecAssemblyEnd(*rawvec);
   VecGetArray(*rawvec, &vecContents);
   TypeParam result = vector.toField();
-  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR (i, this->field.getRegion("RGN_NOBNDRY")) {
     EXPECT_EQ(result[i], 2.5 * this->field[i] - 1.0);
   }
 }
@@ -161,7 +163,7 @@ TYPED_TEST(PetscVectorTest, TestGetElements) {
 // Test getting constant elements
 TYPED_TEST(PetscVectorTest, TestGetElementsConst) {
   const PetscVector<TypeParam> vector(this->field, this->indexer);
-  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR (i, this->field.getRegion("RGN_NOBNDRY")) {
     const BoutReal element = vector(i);
     EXPECT_EQ(element, this->field[i]);
   }

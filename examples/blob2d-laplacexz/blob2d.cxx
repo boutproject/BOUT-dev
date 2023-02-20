@@ -4,9 +4,9 @@
          NR Walkden, B Dudson  20 January 2012
  *******************************************************************/
 
-#include "bout.hxx"                  // Commonly used BOUT++ components
+#include "bout/bout.hxx"                  // Commonly used BOUT++ components
+#include "bout/derivs.hxx"                // To use DDZ()
 #include "bout/invert/laplacexz.hxx" // Laplacian inversion
-#include "derivs.hxx"                // To use DDZ()
 
 class Blob2D : public PhysicsModel {
 private:
@@ -18,7 +18,7 @@ private:
 
   // Parameters
   // Bohm gyro radius, Ion cyclotron frequency, Bohm sound speed
-  BoutReal rho_s, Omega_i, c_s, n0; 
+  BoutReal rho_s, Omega_i, c_s, n0;
 
   // Constants to calculate the parameters
   BoutReal Te0, e, B0, D_n, D_vort, m_i, m_e;
@@ -76,9 +76,10 @@ protected:
     c_s = sqrt(e * Te0 / m_i); // Bohm sound speed
     rho_s = c_s / Omega_i;     // Bohm gyro-radius
 
-    output.write("\n\n\t----------Parameters: ------------ \n\tOmega_i = {:e} /s,\n\tc_s = "
-                 "{:e} m/s,\n\trho_s = {:e} m\n",
-                 Omega_i, c_s, rho_s);
+    output.write(
+        "\n\n\t----------Parameters: ------------ \n\tOmega_i = {:e} /s,\n\tc_s = "
+        "{:e} m/s,\n\trho_s = {:e} m\n",
+        Omega_i, c_s, rho_s);
 
     // Calculate delta_*, blob size scaling
     output.write("\tdelta_* = rho_s * (dn/n) * {:e}\n",

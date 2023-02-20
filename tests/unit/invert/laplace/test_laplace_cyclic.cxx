@@ -6,16 +6,16 @@
 #include <tuple>
 
 #include "../../../../src/invert/laplace/impls/cyclic/cyclic_laplace.hxx"
-#include "invert_laplace.hxx"
+#include "bout/invert_laplace.hxx"
 #include "test_extras.hxx"
 #include "gtest/gtest.h"
 
-#include "derivs.hxx"
-#include "difops.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "options.hxx"
-#include "vecops.hxx"
+#include "bout/derivs.hxx"
+#include "bout/difops.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/options.hxx"
+#include "bout/vecops.hxx"
 #include "bout/griddata.hxx"
 #include "bout/mesh.hxx"
 
@@ -51,7 +51,7 @@ private:
   bool inner_x_neumann, outer_x_neumann; // If false then use Dirichlet conditions
 
   void applyBoundaries(Field3D& newF, const Field3D& f) {
-    BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_INNER_X")) {
+    BOUT_FOR (i, f.getMesh()->getRegion3D("RGN_INNER_X")) {
       if (inner_x_neumann) {
         newF[i] = (f[i.xp()] - f[i]) / coords->dx[i] / sqrt(coords->g_11[i]);
       } else {
@@ -59,7 +59,7 @@ private:
       }
     }
 
-    BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_OUTER_X")) {
+    BOUT_FOR (i, f.getMesh()->getRegion3D("RGN_OUTER_X")) {
       if (outer_x_neumann) {
         newF[i] = (f[i] - f[i.xm()]) / coords->dx[i] / sqrt(coords->g_11[i]);
       } else {
@@ -90,12 +90,12 @@ public:
     coef2.allocate();
     coef3.allocate();
 
-    BOUT_FOR(i, mesh->getRegion2D("RGN_ALL")) {
+    BOUT_FOR (i, mesh->getRegion2D("RGN_ALL")) {
       BoutReal x = i.x() / (BoutReal)nx - 0.5;
       BoutReal y = i.y() / (BoutReal)ny - 0.5;
       coef2[i] = x + y;
     }
-    BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
+    BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
       BoutReal x = i.x() / (BoutReal)nx - 0.5;
       BoutReal y = i.y() / (BoutReal)ny - 0.5;
       BoutReal z = i.z() / (BoutReal)nz - 0.5;

@@ -3,9 +3,9 @@
  * 
  */
 
-#include <bout.hxx>
+#include "bout/unused.hxx"
 #include <bout/physicsmodel.hxx>
-#include "unused.hxx"
+#include <bout/bout.hxx>
 
 class Test_stopcheck : public PhysicsModel {
 protected:
@@ -13,11 +13,10 @@ protected:
   int rhs(BoutReal UNUSED(t)) override;
 };
 
-
 Field3D N;
 
 int Test_stopcheck::init(bool UNUSED(restarting)) {
-  solver->add(N,"N");
+  solver->add(N, "N");
   return 0;
 }
 
@@ -26,6 +25,5 @@ int Test_stopcheck::rhs(BoutReal UNUSED(t)) {
   ddt(N) = 0.;
   return 0;
 }
-
 
 BOUTMAIN(Test_stopcheck)

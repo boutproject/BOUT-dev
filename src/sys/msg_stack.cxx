@@ -25,9 +25,9 @@
  **************************************************************************/
 
 #include "bout/openmpwrap.hxx"
-#include <msg_stack.hxx>
-#include <output.hxx>
 #include <cstdarg>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <string>
 
 #if BOUT_USE_OPENMP
@@ -58,9 +58,7 @@ void MsgStack::pop() {
   if (position <= 0) {
     return;
   }
-  BOUT_OMP(single) {
-    --position;
-  }
+  BOUT_OMP(single) { --position; }
 }
 
 void MsgStack::pop(int id) {
@@ -69,11 +67,12 @@ void MsgStack::pop(int id) {
     return;
   }
 #endif
-  if (id < 0)
+  if (id < 0) {
     id = 0;
+  }
 
   if (id <= static_cast<int>(position)) {
-      position = id;
+    position = id;
   }
 }
 

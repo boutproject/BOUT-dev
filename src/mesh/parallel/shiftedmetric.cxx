@@ -10,14 +10,14 @@
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
-#include <boundary_region.hxx>
-#include <fft.hxx>
-#include <output.hxx>
+#include <bout/boundary_region.hxx>
+#include <bout/fft.hxx>
+#include <bout/output.hxx>
 
 #include <cmath>
 
 ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
-    BoutReal zlength_in, Options* opt)
+                             BoutReal zlength_in, Options* opt)
     : ParallelTransform(m, opt), location(location_in), zShift(std::move(zShift_)),
       zlength(zlength_in) {
   ASSERT1(zShift.getLocation() == location);
@@ -29,7 +29,8 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
 
 void ShiftedMetric::checkInputGrid() {
   std::string parallel_transform;
-  if (mesh.isDataSourceGridFile() and !mesh.get(parallel_transform, "parallel_transform")) {
+  if (mesh.isDataSourceGridFile()
+      and !mesh.get(parallel_transform, "parallel_transform")) {
     if (parallel_transform != "shiftedmetric") {
       throw BoutException("Incorrect parallel transform type '" + parallel_transform
                           + "' used to generate metric components for ShiftedMetric. "
@@ -42,7 +43,8 @@ void ShiftedMetric::checkInputGrid() {
 
 void ShiftedMetric::outputVars(Options& output_options) {
   Timer time("io");
-  const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
+  const std::string loc_string =
+      (location == CELL_CENTRE) ? "" : "_" + toString(location);
 
   output_options["zShift" + loc_string].force(zShift, "ShiftedMetric");
 }
@@ -64,7 +66,7 @@ void ShiftedMetric::cachePhases() {
   toAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
 
   // To/From field aligned phases
-  BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
+  BOUT_FOR (i, mesh.getRegion2D("RGN_ALL")) {
     int ix = i.x();
     int iy = i.y();
     for (int jz = 0; jz < nmodes; jz++) {
@@ -102,7 +104,7 @@ void ShiftedMetric::cachePhases() {
 
   // Parallel slice phases -- note we don't shift in the boundaries/guards
   for (auto& slice : parallel_slice_phases) {
-    BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
+    BOUT_FOR (i, mesh.getRegion2D("RGN_NOY")) {
 
       int ix = i.x();
       int iy = i.y();
@@ -163,7 +165,7 @@ Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
 
   Field3D result{emptyFrom(f).setDirectionY(y_direction_out)};
 
-  BOUT_FOR(i, mesh.getRegion2D(toString(region))) {
+  BOUT_FOR (i, mesh.getRegion2D(toString(region))) {
     shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
   }
 
@@ -186,7 +188,7 @@ FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
 
   int y = f.getIndex();
   // Note that this loop is essentially hardcoded to be RGN_NOX
-  for (int i=mesh.xstart; i<=mesh.xend; ++i) {
+  for (int i = mesh.xstart; i <= mesh.xend; ++i) {
     shiftZ(&f(i, 0), &phs(i, y, 0), &result(i, 0));
   }
 
@@ -231,7 +233,7 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
   for (const auto& phase : parallel_slice_phases) {
     auto& f_slice = f.ynext(phase.y_offset);
     f_slice.allocate();
-    BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
+    BOUT_FOR (i, mesh.getRegion2D("RGN_NOY")) {
       const int ix = i.x();
       const int iy = i.y();
       const int iy_offset = iy + phase.y_offset;
@@ -254,7 +256,7 @@ ShiftedMetric::shiftZ(const Field3D& f,
   Matrix<Array<dcomplex>> f_fft(mesh.LocalNx, mesh.LocalNy);
   f_fft = Array<dcomplex>(nmodes);
 
-  BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
+  BOUT_FOR (i, mesh.getRegion2D("RGN_ALL")) {
     int ix = i.x();
     int iy = i.y();
     f_fft(ix, iy).ensureUnique();
@@ -271,7 +273,7 @@ ShiftedMetric::shiftZ(const Field3D& f,
     current_result.allocate();
     current_result.setLocation(f.getLocation());
 
-    BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
+    BOUT_FOR (i, mesh.getRegion2D("RGN_NOY")) {
       // Deep copy the FFT'd field
       int ix = i.x();
       int iy = i.y();

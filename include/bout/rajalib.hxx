@@ -136,7 +136,7 @@ private:
 /// If no RAJA, BOUT_FOR_RAJA reverts to BOUT_FOR
 /// Note: Redundant ';' after closing brace should be ignored by compiler
 ///       Ignores any additional arguments
-#define BOUT_FOR_RAJA(index, region, ...) BOUT_FOR(index, region)
+#define BOUT_FOR_RAJA(index, region, ...) BOUT_FOR (index, region)
 
 /// If not using RAJA, CAPTURE doesn't do anything
 #define CAPTURE(...)

@@ -48,7 +48,7 @@
 #include <utility>
 #include <vector>
 
-#include "bout_types.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/assert.hxx"
 #include "bout/openmpwrap.hxx"
 
@@ -109,16 +109,16 @@
 ///     }
 //
 
-#define BOUT_FOR_SERIAL(index, region)                                                   \
-  for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();        \
-       block < end; ++block)                                                             \
+#define BOUT_FOR_SERIAL(index, region)                                            \
+  for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend(); \
+       block < end; ++block)                                                      \
     for (auto index = block->first; index < block->second; ++index)
 
 #if BOUT_USE_OPENMP
-#define BOUT_FOR_OMP(index, region, omp_pragmas)                                         \
-  BOUT_OMP(omp_pragmas)                                                                  \
-  for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
-       ++block)                                                                          \
+#define BOUT_FOR_OMP(index, region, omp_pragmas)                                    \
+  BOUT_OMP(omp_pragmas)                                                             \
+  for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend(); \
+       ++block)                                                                     \
     for (auto index = block->first; index < block->second; ++index)
 #else
 // No OpenMP, so fall back to slightly more efficient serial form
@@ -163,13 +163,13 @@ struct SpecificInd {
 
   SpecificInd() = default;
   SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
-  explicit SpecificInd(int i) : ind(i) {};
+  explicit SpecificInd(int i) : ind(i){};
 
   /// Allow explicit conversion to an int
   explicit operator int() const { return ind; }
 
   /// Pre-increment operator
-  SpecificInd &operator++() {
+  SpecificInd& operator++() {
     ++ind;
     return *this;
   }
@@ -182,7 +182,7 @@ struct SpecificInd {
   }
 
   /// Pre-decrement operator
-  SpecificInd &operator--() {
+  SpecificInd& operator--() {
     --ind;
     return *this;
   }
@@ -195,23 +195,23 @@ struct SpecificInd {
   }
 
   /// In-place addition
-  SpecificInd &operator+=(SpecificInd n) {
+  SpecificInd& operator+=(SpecificInd n) {
     ind += n.ind;
     return *this;
   }
 
-  SpecificInd &operator+=(int n) {
+  SpecificInd& operator+=(int n) {
     ind += n;
     return *this;
   }
 
   /// In-place subtraction
-  SpecificInd &operator-=(SpecificInd n) {
+  SpecificInd& operator-=(SpecificInd n) {
     ind -= n.ind;
     return *this;
   }
 
-  SpecificInd &operator-=(int n) {
+  SpecificInd& operator-=(int n) {
     ind -= n;
     return *this;
   }
@@ -230,19 +230,19 @@ struct SpecificInd {
   /// Templated routine to return index.?p(offset), where `?` is one of {x,y,z}
   /// and is determined by the `dir` template argument. The offset corresponds
   /// to the `dd` template argument.
-  template<int dd, DIRECTION dir>
-  const inline SpecificInd plus() const{
+  template <int dd, DIRECTION dir>
+  const inline SpecificInd plus() const {
     static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
                       || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
                   "Unhandled DIRECTION in SpecificInd::plus");
-    switch(dir) {
-    case(DIRECTION::X):
+    switch (dir) {
+    case (DIRECTION::X):
       return xp(dd);
-    case(DIRECTION::Y):
-    case(DIRECTION::YAligned):
-    case(DIRECTION::YOrthogonal):
+    case (DIRECTION::Y):
+    case (DIRECTION::YAligned):
+    case (DIRECTION::YOrthogonal):
       return yp(dd);
-    case(DIRECTION::Z):
+    case (DIRECTION::Z):
       return zp(dd);
     }
   }
@@ -250,19 +250,19 @@ struct SpecificInd {
   /// Templated routine to return index.?m(offset), where `?` is one of {x,y,z}
   /// and is determined by the `dir` template argument. The offset corresponds
   /// to the `dd` template argument.
-  template<int dd, DIRECTION dir>
-  const inline SpecificInd minus() const{
+  template <int dd, DIRECTION dir>
+  const inline SpecificInd minus() const {
     static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
                       || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
                   "Unhandled DIRECTION in SpecificInd::minus");
-    switch(dir) {
-    case(DIRECTION::X):
+    switch (dir) {
+    case (DIRECTION::X):
       return xm(dd);
-    case(DIRECTION::Y):
-    case(DIRECTION::YAligned):
-    case(DIRECTION::YOrthogonal):
+    case (DIRECTION::Y):
+    case (DIRECTION::YAligned):
+    case (DIRECTION::YOrthogonal):
       return ym(dd);
-    case(DIRECTION::Z):
+    case (DIRECTION::Z):
       return zm(dd);
     }
   }
@@ -285,7 +285,7 @@ struct SpecificInd {
   /// The index one point +1 in z. Wraps around zend to zstart
   /// An alternative, non-branching calculation is :
   /// ind + dz - nz * ((ind + dz) / nz  - ind / nz)
-  /// but this appears no faster (and perhaps slower).  
+  /// but this appears no faster (and perhaps slower).
   const inline SpecificInd zp(int dz = 1) const {
     ASSERT3(dz >= 0);
     dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
@@ -317,97 +317,108 @@ struct SpecificInd {
 };
 
 /// Relational operators
-template<IND_TYPE N>
-inline bool operator==(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
+template <IND_TYPE N>
+inline bool operator==(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
   return lhs.ind == rhs.ind;
 }
 
-template<IND_TYPE N>
-inline bool operator!=(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
+template <IND_TYPE N>
+inline bool operator!=(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
   return !operator==(lhs, rhs);
 }
 
-template<IND_TYPE N>
-inline bool operator<(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
+template <IND_TYPE N>
+inline bool operator<(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
   return lhs.ind < rhs.ind;
 }
 
-template<IND_TYPE N>
-inline bool operator>(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
+template <IND_TYPE N>
+inline bool operator>(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
   return operator<(rhs, lhs);
 }
 
-template<IND_TYPE N>
-inline bool operator>=(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
+template <IND_TYPE N>
+inline bool operator>=(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
   return !operator<(lhs, rhs);
 }
 
-template<IND_TYPE N>
-inline bool operator<=(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
+template <IND_TYPE N>
+inline bool operator<=(const SpecificInd<N>& lhs, const SpecificInd<N>& rhs) {
   return !operator>(lhs, rhs);
 }
 
 /// Arithmetic operators with integers
-template<IND_TYPE N>
-inline SpecificInd<N> operator+(SpecificInd<N> lhs, const SpecificInd<N> &rhs) { return lhs += rhs; }
+template <IND_TYPE N>
+inline SpecificInd<N> operator+(SpecificInd<N> lhs, const SpecificInd<N>& rhs) {
+  return lhs += rhs;
+}
 
-template<IND_TYPE N>
-inline SpecificInd<N> operator+(SpecificInd<N> lhs, int n) { return lhs += SpecificInd<N>(n); }
+template <IND_TYPE N>
+inline SpecificInd<N> operator+(SpecificInd<N> lhs, int n) {
+  return lhs += SpecificInd<N>(n);
+}
 
-template<IND_TYPE N>
-inline SpecificInd<N> operator+(int n, SpecificInd<N> rhs) { return rhs += SpecificInd<N>(n); }
+template <IND_TYPE N>
+inline SpecificInd<N> operator+(int n, SpecificInd<N> rhs) {
+  return rhs += SpecificInd<N>(n);
+}
 
-template<IND_TYPE N>
-inline SpecificInd<N> operator-(SpecificInd<N> lhs, int n) { return lhs -= SpecificInd<N>(n); }
+template <IND_TYPE N>
+inline SpecificInd<N> operator-(SpecificInd<N> lhs, int n) {
+  return lhs -= SpecificInd<N>(n);
+}
 
-template<IND_TYPE N>
-inline SpecificInd<N> operator-(SpecificInd<N> lhs, const SpecificInd<N> &rhs) { return lhs -= rhs; }
+template <IND_TYPE N>
+inline SpecificInd<N> operator-(SpecificInd<N> lhs, const SpecificInd<N>& rhs) {
+  return lhs -= rhs;
+}
 
-/// Define aliases for global indices in 3D and 2D 
+/// Define aliases for global indices in 3D and 2D
 using Ind3D = SpecificInd<IND_TYPE::IND_3D>;
 using Ind2D = SpecificInd<IND_TYPE::IND_2D>;
 using IndPerp = SpecificInd<IND_TYPE::IND_PERP>;
 
 /// Get string representation of Ind3D
 inline const std::string toString(const Ind3D& i) {
-  return "(" + std::to_string(i.x()) + ", "
-             + std::to_string(i.y()) + ", "
-             + std::to_string(i.z()) + ")";
+  return "(" + std::to_string(i.x()) + ", " + std::to_string(i.y()) + ", "
+         + std::to_string(i.z()) + ")";
 }
 /// Get string representation of Ind2D
 inline const std::string toString(const Ind2D& i) {
-  return "(" + std::to_string(i.x()) + ", "
-             + std::to_string(i.y()) + ")";
+  return "(" + std::to_string(i.x()) + ", " + std::to_string(i.y()) + ")";
 }
 /// Get string representation of IndPerp
 inline const std::string toString(const IndPerp& i) {
-  return "(" + std::to_string(i.x()) + ", "
-             + std::to_string(i.z()) + ")";
+  return "(" + std::to_string(i.x()) + ", " + std::to_string(i.z()) + ")";
 }
 
 /// Structure to hold various derived "statistics" from a particular region
 struct RegionStats {
-  int numBlocks = 0;           ///< How many blocks
-  int minBlockSize = 0;        ///< Size of smallest block
-  int numMinBlocks = 0;        ///< Number of blocks with min size
-  int maxBlockSize = 0;        ///< Size of largest block
-  int numMaxBlocks = 0;        ///< Number of blocks with max size
-  int numSmallBlocks = 0;      ///< Number of "small" blocks, for definition see Region::getStats
-  BoutReal maxImbalance = 0;   ///< Ratio of largest block to smallest
+  int numBlocks = 0;    ///< How many blocks
+  int minBlockSize = 0; ///< Size of smallest block
+  int numMinBlocks = 0; ///< Number of blocks with min size
+  int maxBlockSize = 0; ///< Size of largest block
+  int numMaxBlocks = 0; ///< Number of blocks with max size
+  int numSmallBlocks =
+      0; ///< Number of "small" blocks, for definition see Region::getStats
+  BoutReal maxImbalance = 0; ///< Ratio of largest block to smallest
 };
 
 /// Provide an easy way to report a Region's statistics
-inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
-  if ( stats.numBlocks == 0 ) {
+inline std::ostream& operator<<(std::ostream& out, const RegionStats& stats) {
+  if (stats.numBlocks == 0) {
     out << "Empty";
     return out;
   }
-  out << "Total blocks : "<< stats.numBlocks;
-  out << ", " << "min(count)/max(count) :";
+  out << "Total blocks : " << stats.numBlocks;
+  out << ", "
+      << "min(count)/max(count) :";
   out << " " << stats.minBlockSize << " (" << stats.numMinBlocks << ")/";
   out << " " << stats.maxBlockSize << " (" << stats.numMaxBlocks << ")";
-  out << ", " << "Max imbalance : " << stats.maxImbalance;
-  out << ", " << "Small block count : " << stats.numSmallBlocks;
+  out << ", "
+      << "Max imbalance : " << stats.maxImbalance;
+  out << ", "
+      << "Small block count : " << stats.numSmallBlocks;
   return out;
 }
 
@@ -466,10 +477,12 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 ///     BOUT_FOR_SERIAL(i, region) {
 ///       max = f[i] > max ? f[i] : max;
 ///     }
-template <typename T = Ind3D> class Region {
+template <typename T = Ind3D>
+class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D, Ind3D or IndPerp as template type
-  static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value || std::is_base_of<IndPerp, T>::value,
+  static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value
+                    || std::is_base_of<IndPerp, T>::value,
                 "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
@@ -508,44 +521,49 @@ public:
       : ny(ny), nz(nz) {
 #if CHECK > 1
     if (std::is_base_of<Ind2D, T>::value) {
-      if (nz != 1)
+      if (nz != 1) {
         throw BoutException(
             "Trying to make Region<Ind2D> with nz = {:d}, but expected nz = 1", nz);
-      if (zstart != 0)
+      }
+      if (zstart != 0) {
         throw BoutException(
             "Trying to make Region<Ind2D> with zstart = {:d}, but expected zstart = 0",
             zstart);
-      if (zstart != 0)
+      }
+      if (zstart != 0) {
         throw BoutException(
             "Trying to make Region<Ind2D> with zend = {:d}, but expected zend = 0", zend);
+      }
     }
 
     if (std::is_base_of<IndPerp, T>::value) {
-      if (ny != 1)
+      if (ny != 1) {
         throw BoutException(
             "Trying to make Region<IndPerp> with ny = {:d}, but expected ny = 1", ny);
-      if (ystart != 0)
+      }
+      if (ystart != 0) {
         throw BoutException(
             "Trying to make Region<IndPerp> with ystart = {:d}, but expected ystart = 0",
             ystart);
-      if (ystart != 0)
+      }
+      if (ystart != 0) {
         throw BoutException(
             "Trying to make Region<IndPerp> with yend = {:d}, but expected yend = 0",
             yend);
+      }
     }
 #endif
-    
+
     indices = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
     blocks = getContiguousBlocks(maxregionblocksize);
   };
 
-  Region<T>(RegionIndices &indices, int maxregionblocksize = MAXREGIONBLOCKSIZE) : indices(indices) {
+  Region<T>(RegionIndices& indices, int maxregionblocksize = MAXREGIONBLOCKSIZE)
+      : indices(indices) {
     blocks = getContiguousBlocks(maxregionblocksize);
   };
 
-  Region<T>(ContiguousBlocks &blocks) : blocks(blocks) {
-    indices = getRegionIndices();
-  };
+  Region<T>(ContiguousBlocks& blocks) : blocks(blocks) { indices = getRegionIndices(); };
 
   /// Destructor
   ~Region() = default;
@@ -562,24 +580,24 @@ public:
   typename RegionIndices::const_iterator end() const { return std::end(indices); };
   typename RegionIndices::const_iterator cend() const { return indices.cend(); };
 
-  const ContiguousBlocks &getBlocks() const { return blocks; };
-  const RegionIndices &getIndices() const { return indices; };
+  const ContiguousBlocks& getBlocks() const { return blocks; };
+  const RegionIndices& getIndices() const { return indices; };
 
   /// Set the indices and ensure blocks updated
-  void setIndices (RegionIndices &indicesIn, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
+  void setIndices(RegionIndices& indicesIn, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
     indices = indicesIn;
     blocks = getContiguousBlocks(maxregionblocksize);
   };
 
   /// Set the blocks and ensure indices updated
-  void setBlocks (ContiguousBlocks &blocksIn) {
+  void setBlocks(ContiguousBlocks& blocksIn) {
     blocks = blocksIn;
     indices = getRegionIndices();
   };
 
   /// Return a new Region that has the same indices as this one but
   /// ensures the indices are sorted.
-  Region<T> asSorted(){
+  Region<T> asSorted() {
     auto sortedIndices = getIndices();
     std::sort(std::begin(sortedIndices), std::end(sortedIndices));
     return Region<T>(sortedIndices);
@@ -615,7 +633,7 @@ public:
 
   /// Return a new region equivalent to *this but with indices contained
   /// in mask Region removed
-  Region<T> mask(const Region<T> & maskRegion){
+  Region<T> mask(const Region<T>& maskRegion) {
     // Get mask indices and sort as we're going to be searching through
     // this vector so if it's sorted we can be more efficient
     auto maskIndices = maskRegion.getIndices();
@@ -627,16 +645,14 @@ public:
 
     // Lambda that returns true/false depending if the passed value is in maskIndices
     // With C++14 T can be auto instead
-    auto isInVector = [&](T val){
+    auto isInVector = [&](T val) {
       return std::binary_search(std::begin(maskIndices), std::end(maskIndices), val);
     };
 
     // Erase elements of currentIndices that are in maskIndices
     currentIndices.erase(
-             std::remove_if(std::begin(currentIndices), std::end(currentIndices),
-                    isInVector),
-             std::end(currentIndices)
-             );
+        std::remove_if(std::begin(currentIndices), std::end(currentIndices), isInVector),
+        std::end(currentIndices));
 
     // Update indices
     setIndices(currentIndices);
@@ -674,13 +690,13 @@ public:
   }
 
   /// Accumulate operator
-  Region<T> & operator+=(const Region<T> &rhs){
+  Region<T>& operator+=(const Region<T>& rhs) {
     (*this) = (*this) + rhs;
     return *this;
   }
 
   /// Offset all indices by fixed value
-  Region<T> &offset(int offset) {
+  Region<T>& offset(int offset) {
     // Exit early if possible
     if (offset == 0) {
       return *this;
@@ -704,14 +720,14 @@ public:
   /// directions (e.g. z). For example for shift = 1, period = mesh->LocalNz
   /// we would find the zplus indices. For shift = mesh->LocalNy*mesh->LocalNz,
   /// period = mesh->LocalNx*mesh->LocalNy*mesh->LocalNz we find xplus indices.
-  Region<T> & periodicShift(int shift, int period){
+  Region<T>& periodicShift(int shift, int period) {
     // Exit early if possible
-    if ( shift == 0 || period == 1 ){
+    if (shift == 0 || period == 1) {
       return *this;
     }
     // Handle -ve shifts as a +ve shift
-    if ( shift < 0 ){
-      return periodicShift(period+shift, period);
+    if (shift < 0) {
+      return periodicShift(period + shift, period);
     }
     auto newInd = getIndices();
 
@@ -719,7 +735,7 @@ public:
     //   localPos = index + shift % period;  // Find the shifted position within the period
     //   globalPos = (index/period) * period; // Find which period block we're in
     //   newIndex = globalPos + localPos;
-    for (unsigned int i = 0; i < newInd.size(); i++){
+    for (unsigned int i = 0; i < newInd.size(); i++) {
       int index = newInd[i].ind;
       int whichBlock = index / period;
       newInd[i].ind = ((index + shift) % period) + period * whichBlock;
@@ -731,41 +747,45 @@ public:
   }
 
   /// Number of indices (possibly repeated)
-  unsigned int size() const {
-    return indices.size();
-  }
+  unsigned int size() const { return indices.size(); }
 
   /// Returns a RegionStats struct desribing the region
   RegionStats getStats() const {
     RegionStats result;
 
     result.numBlocks = blocks.size();
-    if ( result.numBlocks == 0 ) return result;
-    
+    if (result.numBlocks == 0) {
+      return result;
+    }
+
     std::vector<int> blockSizes(result.numBlocks);
-    
+
     // Get the size of each block using lambda to calculate size
     std::transform(std::begin(blocks), std::end(blocks), std::begin(blockSizes),
-		   [](const ContiguousBlock &a) { return a.second.ind - a.first.ind;});
+                   [](const ContiguousBlock& a) { return a.second.ind - a.first.ind; });
 
     auto minMaxSize = std::minmax_element(std::begin(blockSizes), std::end(blockSizes));
 
-    result.minBlockSize = *(minMaxSize.first); //Note have to derefence to get actual value
-    result.numMinBlocks = std::count(std::begin(blockSizes), std::end(blockSizes), result.minBlockSize);
+    result.minBlockSize =
+        *(minMaxSize.first); //Note have to derefence to get actual value
+    result.numMinBlocks =
+        std::count(std::begin(blockSizes), std::end(blockSizes), result.minBlockSize);
 
-    result.maxBlockSize = *(minMaxSize.second); //Note have to derefence to get actual value
-    result.numMaxBlocks = std::count(std::begin(blockSizes), std::end(blockSizes), result.maxBlockSize);
+    result.maxBlockSize =
+        *(minMaxSize.second); //Note have to derefence to get actual value
+    result.numMaxBlocks =
+        std::count(std::begin(blockSizes), std::end(blockSizes), result.maxBlockSize);
 
-    
-    result.maxImbalance = static_cast<BoutReal>(result.maxBlockSize)/static_cast<BoutReal>(result.minBlockSize);
+    result.maxImbalance = static_cast<BoutReal>(result.maxBlockSize)
+                          / static_cast<BoutReal>(result.minBlockSize);
 
     // Count the number of small blocks, defined as blocks less than smallSizeFrac of maxBlockSize
     const BoutReal smallSizeFrac = 0.5;
     result.numSmallBlocks =
-      std::count_if(std::begin(blockSizes), std::end(blockSizes),
-		    [&result, smallSizeFrac](int theSize) {
-		      return theSize < smallSizeFrac * result.maxBlockSize;
-		    });
+        std::count_if(std::begin(blockSizes), std::end(blockSizes),
+                      [&result, smallSizeFrac](int theSize) {
+                        return theSize < smallSizeFrac * result.maxBlockSize;
+                      });
 
     return result;
   }
@@ -787,9 +807,7 @@ private:
   inline RegionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
                                            int zstart, int zend, int ny, int nz) {
 
-    if ((xend + 1 <= xstart) ||
-        (yend + 1 <= ystart) ||
-        (zend + 1 <= zstart)) {
+    if ((xend + 1 <= xstart) || (yend + 1 <= ystart) || (zend + 1 <= zstart)) {
       // Empty region
       return {};
     }
@@ -800,7 +818,9 @@ private:
     int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
     ASSERT1(len > 0);
     // Guard against invalid length ranges
-    if (len <= 0 ) return {};
+    if (len <= 0) {
+      return {};
+    }
 
     RegionIndices region(len, {-1, ny, nz});
 
@@ -829,13 +849,12 @@ private:
     return region;
   }
 
-
   /// Returns a vector of all contiguous blocks contained in the passed region.
   /// Limits the maximum size of any contiguous block to maxBlockSize.
   /// A contiguous block is described by the inclusive start and the exclusive end
   /// of the contiguous block.
   ContiguousBlocks getContiguousBlocks(int maxregionblocksize) const {
-    ASSERT1(maxregionblocksize>0);
+    ASSERT1(maxregionblocksize > 0);
     const int npoints = indices.size();
     ContiguousBlocks result;
     int index = 0; // Index within vector of indices
@@ -858,7 +877,7 @@ private:
       }
 
       // This contains the inclusive end currently
-      T lastIndex = indices[index-1];
+      T lastIndex = indices[index - 1];
       // Increase the index stored by one to get exclusive end
       lastIndex++;
       // Add pair to output, denotes inclusive start and exclusive end
@@ -868,34 +887,31 @@ private:
     return result;
   }
 
-
   /// Constructs the vector of indices from the stored blocks information
   RegionIndices getRegionIndices() {
     RegionIndices result;
     // This has to be serial unless we can make result large enough in advance
     // otherwise there will be a race between threads to extend the vector
-    BOUT_FOR_SERIAL(curInd, (*this)) {
-      result.push_back(curInd);
-    }
+    BOUT_FOR_SERIAL(curInd, (*this)) { result.push_back(curInd); }
     return result;
   }
 };
 
 /// Return a new region with sorted indices
-template<typename T>
-Region<T> sort(Region<T> &region) {
+template <typename T>
+Region<T> sort(Region<T>& region) {
   return region.asSorted();
 }
 
 /// Return a new region with unique indices
-template<typename T>
-Region<T> unique(Region<T> &region) {
+template <typename T>
+Region<T> unique(Region<T>& region) {
   return region.asUnique();
 }
 
 /// Return a masked version of a region
-template<typename T>
-Region<T> mask(const Region<T> &region, const Region<T> &mask) {
+template <typename T>
+Region<T> mask(const Region<T>& region, const Region<T>& mask) {
   auto result = region;
   return result.mask(mask);
 }
@@ -911,14 +927,14 @@ Region<T> getIntersection(const Region<T>& region, const Region<T>& otherRegion)
 /// This doesn't attempt to avoid duplicate elements or enforce
 /// any sorting etc. but could be done if desired.
 /// -
-/// Addition is currently simple and just extends. Probably mostly ok 
+/// Addition is currently simple and just extends. Probably mostly ok
 /// but we could seek to remove duplicate points. Note we do
 /// want to allow duplicate points (one reason we use vector and
 /// not set) but what if we add a region that has some duplicates?
 /// We could retain them but common usage would probably not want
 /// the duplicates.
-template<typename T>
-Region<T> operator+(const Region<T> &lhs, const Region<T> &rhs){
+template <typename T>
+Region<T> operator+(const Region<T>& lhs, const Region<T>& rhs) {
   auto indices = lhs.getIndices(); // Indices is a copy of the indices
   auto indicesRhs = rhs.getIndices();
   indices.insert(std::end(indices), std::begin(indicesRhs), std::end(indicesRhs));
@@ -927,15 +943,15 @@ Region<T> operator+(const Region<T> &lhs, const Region<T> &rhs){
 
 /// Returns a new region based on input but with indices offset by
 /// a constant
-template<typename T>
-Region<T> offset(const Region<T> &region, int offset){
+template <typename T>
+Region<T> offset(const Region<T>& region, int offset) {
   auto result = region;
   return result.offset(offset);
 }
 
 /// Return the number of indices in a Region
-template<typename T>
-unsigned int size(const Region<T> &region){
+template <typename T>
+unsigned int size(const Region<T>& region) {
   return region.size();
 }
 

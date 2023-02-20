@@ -20,16 +20,16 @@
  *
  **************************************************************************/
 
+#include "bout/globals.hxx"
+#include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
-#include "globals.hxx"
-#include "interpolation_xz.hxx"
 
 #include <string>
 #include <vector>
 
-XZBilinear::XZBilinear(int y_offset, Mesh *mesh)
-  : XZInterpolation(y_offset, mesh),
-    w0(localmesh), w1(localmesh), w2(localmesh), w3(localmesh) {
+XZBilinear::XZBilinear(int y_offset, Mesh* mesh)
+    : XZInterpolation(y_offset, mesh), w0(localmesh), w1(localmesh), w2(localmesh),
+      w3(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
@@ -45,13 +45,14 @@ XZBilinear::XZBilinear(int y_offset, Mesh *mesh)
 void XZBilinear::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                              const std::string& region) {
 
-  BOUT_FOR(i, delta_x.getRegion(region)) {
+  BOUT_FOR (i, delta_x.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z))
+    if (skip_mask(x, y, z)) {
       continue;
+    }
 
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
@@ -95,13 +96,14 @@ Field3D XZBilinear::interpolate(const Field3D& f, const std::string& region) con
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
-  BOUT_FOR(i, f.getRegion(region)) {
+  BOUT_FOR (i, f.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z))
+    if (skip_mask(x, y, z)) {
       continue;
+    }
 
     const int y_next = y + y_offset;
     // Due to lack of guard cells in z-direction, we need to ensure z-index

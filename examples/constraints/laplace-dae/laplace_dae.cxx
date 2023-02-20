@@ -4,10 +4,10 @@
  *************************************************************/
 
 #include <bout/physicsmodel.hxx>
-#include <bout.hxx>
-#include <boutexception.hxx>
-#include <initialprofiles.hxx>
-#include <invert_laplace.hxx>
+#include <bout/bout.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/invert_laplace.hxx>
 
 class Laplace_dae : public PhysicsModel {
   Field3D U, Apar; // Evolving variables

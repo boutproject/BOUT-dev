@@ -1,8 +1,8 @@
 #include "bout/build_config.hxx"
 
-#include "gtest/gtest.h"
-#include "boutexception.hxx"
+#include "bout/boutexception.hxx"
 #include "test_extras.hxx"
+#include "gtest/gtest.h"
 
 #include <iostream>
 #include <string>
@@ -15,23 +15,22 @@ TEST(BoutExceptionTest, What) {
   std::string test_message{"Test message"};
   try {
     throw BoutException(test_message);
-  } catch (const BoutException &e) {
+  } catch (const BoutException& e) {
     EXPECT_EQ(e.what(), test_message);
   }
   try {
     throw BoutException("this is {}", "second");
-  } catch (const BoutException &e) {
+  } catch (const BoutException& e) {
     std::string message(e.what());
     EXPECT_EQ(message, "this is second");
   }
 }
 
-
 TEST(BoutExceptionTest, GetBacktrace) {
   std::string test_message{"Test message"};
   try {
     throw BoutException(test_message);
-  } catch (const BoutException &e) {
+  } catch (const BoutException& e) {
     std::string expected_1{"[bt] #1"};
     std::string expected_2{"serial_tests"};
 #if BOUT_USE_BACKTRACE
@@ -45,7 +44,6 @@ TEST(BoutExceptionTest, GetBacktrace) {
 #endif
   }
 }
-
 
 TEST(BoutRhsFailTest, ThrowCorrect) {
   EXPECT_THROW(throw BoutRhsFail("RHS Fail test"), BoutRhsFail);

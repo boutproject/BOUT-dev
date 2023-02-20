@@ -29,12 +29,12 @@
 #ifndef __DERIVS_H__
 #define __DERIVS_H__
 
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/vector2d.hxx"
+#include "bout/vector3d.hxx"
 
-#include "bout_types.hxx"
+#include "bout/bout_types.hxx"
 
 ////////// FIRST DERIVATIVES //////////
 
@@ -50,8 +50,9 @@
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+            const std::string& method = "DEFAULT",
+            const std::string& region = "RGN_NOBNDRY");
 
 /// Calculate first partial derivative in X
 ///
@@ -81,8 +82,9 @@ Coordinates::FieldMetric DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+            const std::string& method = "DEFAULT",
+            const std::string& region = "RGN_NOBNDRY");
 
 /// Calculate first partial derivative in Y
 ///
@@ -112,8 +114,9 @@ Coordinates::FieldMetric DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+            const std::string& method = "DEFAULT",
+            const std::string& region = "RGN_NOBNDRY");
 
 /// Calculate first partial derivative in Z
 ///
@@ -143,8 +146,9 @@ Coordinates::FieldMetric DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Vector3D DDZ(const Vector3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+Vector3D DDZ(const Vector3D& f, CELL_LOC outloc = CELL_DEFAULT,
+             const std::string& method = "DEFAULT",
+             const std::string& region = "RGN_NOBNDRY");
 
 /// Calculate first partial derivative in Z
 ///
@@ -158,8 +162,9 @@ Vector3D DDZ(const Vector3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::strin
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Vector2D DDZ(const Vector2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+Vector2D DDZ(const Vector2D& f, CELL_LOC outloc = CELL_DEFAULT,
+             const std::string& method = "DEFAULT",
+             const std::string& region = "RGN_NOBNDRY");
 
 ////////// SECOND DERIVATIVES //////////
 
@@ -175,8 +180,9 @@ Vector2D DDZ(const Vector2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::strin
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D D2DX2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+Field3D D2DX2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY");
 
 /// Calculate second partial derivative in X
 ///
@@ -206,8 +212,9 @@ Coordinates::FieldMetric D2DX2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D D2DY2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+Field3D D2DY2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY");
 
 /// Calculate second partial derivative in Y
 ///
@@ -237,8 +244,9 @@ Coordinates::FieldMetric D2DY2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D D2DZ2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+Field3D D2DZ2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY");
 
 /// Calculate second partial derivative in Z
 ///
@@ -270,8 +278,9 @@ Coordinates::FieldMetric D2DZ2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D D4DX4(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+Field3D D4DX4(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY");
 
 /// Calculate forth partial derivative in X
 ///
@@ -301,8 +310,9 @@ Coordinates::FieldMetric D4DX4(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D D4DY4(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+Field3D D4DY4(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY");
 
 /// Calculate forth partial derivative in Y
 ///
@@ -332,8 +342,9 @@ Coordinates::FieldMetric D4DY4(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D D4DZ4(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+Field3D D4DZ4(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY");
 
 /// Calculate forth partial derivative in Z
 ///
@@ -365,7 +376,8 @@ Coordinates::FieldMetric D4DZ4(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
 Field3D VDDX(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+             const std::string& method = "DEFAULT",
+             const std::string& region = "RGN_NOBNDRY");
 
 /// For terms of form v * grad(f)
 ///
@@ -399,7 +411,8 @@ Coordinates::FieldMetric VDDX(const Field2D& v, const Field2D& f,
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
 Field3D VDDY(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+             const std::string& method = "DEFAULT",
+             const std::string& region = "RGN_NOBNDRY");
 
 /// For terms of form v * grad(f)
 ///
@@ -433,7 +446,8 @@ Coordinates::FieldMetric VDDY(const Field2D& v, const Field2D& f,
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
 Field3D VDDZ(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+             const std::string& method = "DEFAULT",
+             const std::string& region = "RGN_NOBNDRY");
 
 /// For terms of form v * grad(f)
 ///
@@ -485,7 +499,8 @@ Coordinates::FieldMetric VDDZ(const Field3D& v, const Field2D& f,
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
 Field3D FDDX(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+             const std::string& method = "DEFAULT",
+             const std::string& region = "RGN_NOBNDRY");
 
 /// for terms of form div(v * f)
 ///
@@ -519,7 +534,8 @@ Coordinates::FieldMetric FDDX(const Field2D& v, const Field2D& f,
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
 Field3D FDDY(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+             const std::string& method = "DEFAULT",
+             const std::string& region = "RGN_NOBNDRY");
 
 /// for terms of form div(v * f)
 ///
@@ -553,7 +569,8 @@ Coordinates::FieldMetric FDDY(const Field2D& v, const Field2D& f,
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
 Field3D FDDZ(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+             const std::string& method = "DEFAULT",
+             const std::string& region = "RGN_NOBNDRY");
 
 /// for terms of form div(v * f)
 ///
@@ -614,11 +631,11 @@ Field3D D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                        (default) then the same as the region for the calculation as a
 ///                        whole. If dfdy_region < region in size then this will cause
 ///                        errors.
-Coordinates::FieldMetric
-D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-       const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY",
-       const std::string& dfdy_boundary_condition = "free_o3",
-       const std::string& dfdy_region = "");
+Coordinates::FieldMetric D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                                const std::string& method = "DEFAULT",
+                                const std::string& region = "RGN_NOBNDRY",
+                                const std::string& dfdy_boundary_condition = "free_o3",
+                                const std::string& dfdy_region = "");
 
 /// Calculate mixed partial derivative in x and z
 ///
@@ -632,8 +649,9 @@ D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D D2DXDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+Field3D D2DXDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+               const std::string& method = "DEFAULT",
+               const std::string& region = "RGN_NOBNDRY");
 
 /// Calculate mixed partial derivative in x and z
 ///
@@ -663,8 +681,9 @@ Coordinates::FieldMetric D2DXDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+               const std::string& method = "DEFAULT",
+               const std::string& region = "RGN_NOBNDRY");
 
 /// Calculate mixed partial derivative in y and z
 ///
@@ -681,6 +700,5 @@ Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::stri
 Coordinates::FieldMetric D2DYDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                                 const std::string& method = "DEFAULT",
                                 const std::string& region = "RGN_NOBNDRY");
-
 
 #endif // __DERIVS_H__

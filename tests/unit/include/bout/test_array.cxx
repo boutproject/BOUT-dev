@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
+#include "bout/boutexception.hxx"
 #include "bout/array.hxx"
-#include "boutexception.hxx"
 
 #include <iostream>
 #include <numeric>

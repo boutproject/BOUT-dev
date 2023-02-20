@@ -10,31 +10,29 @@
 
 #include <string>
 
-#include "boutexception.hxx"
-#include "options.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/options.hxx"
 
 namespace bout {
 
 class OptionsNetCDF {
 public:
   enum class FileMode {
-                       replace, ///< Overwrite file when writing
-                       append   ///< Append to file when writing
+    replace, ///< Overwrite file when writing
+    append   ///< Append to file when writing
   };
-  
-  OptionsNetCDF(const std::string &filename, FileMode mode = FileMode::replace) {}
+
+  OptionsNetCDF(const std::string& filename, FileMode mode = FileMode::replace) {}
   OptionsNetCDF(const OptionsNetCDF&) = default;
   OptionsNetCDF(OptionsNetCDF&&) = default;
   OptionsNetCDF& operator=(const OptionsNetCDF&) = default;
   OptionsNetCDF& operator=(OptionsNetCDF&&) = default;
 
   /// Read options from file
-  Options read() {
-    throw BoutException("OptionsNetCDF not available\n");
-  }
+  Options read() { throw BoutException("OptionsNetCDF not available\n"); }
 
   /// Write options to file
-  void write(const Options &options) {
+  void write(const Options& options) {
     throw BoutException("OptionsNetCDF not available\n");
   }
 };
@@ -46,7 +44,7 @@ public:
 #include <memory>
 #include <string>
 
-#include "options.hxx"
+#include "bout/options.hxx"
 
 /// Forward declare netCDF file type so we don't need to depend
 /// directly on netCDF
@@ -59,8 +57,8 @@ namespace bout {
 class OptionsNetCDF {
 public:
   enum class FileMode {
-                       replace, ///< Overwrite file when writing
-                       append   ///< Append to file when writing
+    replace, ///< Overwrite file when writing
+    append   ///< Append to file when writing
   };
 
   // Constructors need to be defined in implementation due to forward

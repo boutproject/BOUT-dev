@@ -42,8 +42,8 @@ public:
   /// Shortcut method
   static MPI_Comm get();
 
-  static void setArgs(int &c, char** &v);
-  
+  static void setArgs(int& c, char**& v);
+
   static void cleanup();
 
   static int rank(); ///< Rank: my processor number
@@ -56,7 +56,7 @@ public:
   MPI_Comm getComm();
   bool isSet();
 
- private:
+private:
   BoutComm();
 
   int* pargc{nullptr};
@@ -64,9 +64,8 @@ public:
                           ///< so pointers are used
   bool hasBeenSet{false};
   MPI_Comm comm;
-  
-  static BoutComm* instance; ///< The only instance of this class (Singleton)
 
+  static BoutComm* instance; ///< The only instance of this class (Singleton)
 };
 
 #endif // __BOUTCOMM_H__

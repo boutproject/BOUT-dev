@@ -31,13 +31,13 @@ class MsgStack;
 
 #include "bout/build_config.hxx"
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 #include "bout/format.hxx"
 
 #include "fmt/core.h"
 
-#include <exception>
 #include <cstdarg>
+#include <exception>
 #include <string>
 #include <vector>
 
@@ -48,7 +48,7 @@ class MsgStack;
 /// we need to say if we support this or not by defining BOUT_HAS_PRETTY_FUNCTION (to be
 /// implemented in configure)
 #if BOUT_HAS_PRETTY_FUNCTION
-#define __thefunc__ __PRETTY_FUNCTION__ 
+#define __thefunc__ __PRETTY_FUNCTION__
 #else
 #define __thefunc__ __func__
 #endif
@@ -103,7 +103,7 @@ public:
 #endif
 
 private:
-  std::vector<std::string> stack;               ///< Message stack;
+  std::vector<std::string> stack;                  ///< Message stack;
   std::vector<std::string>::size_type position{0}; ///< Position in stack
 };
 
@@ -200,7 +200,7 @@ private:
    original MsgStackItem constructor so that the message is the last of the required
    arguments and the optional arguments follow from there.
  */
-#define TRACE(...)                                                                       \
+#define TRACE(...) \
   MsgStackItem CONCATENATE(msgTrace_, __LINE__)(__FILE__, __LINE__, __VA_ARGS__)
 #else
 #define TRACE(...)

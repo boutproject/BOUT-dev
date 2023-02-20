@@ -4,7 +4,8 @@
 
 #include <sstream>
 
-#define INC(x) {++(x);}
+#define INC(x) \
+  { ++(x); }
 
 // Test that the macro is expanded
 // the correct number of times
@@ -41,15 +42,14 @@ TEST(MacroForEachTest, NoBraces) {
   int a = 0;
 
   // Only the first expansion is disabled
-  if(false)
+  if (false) {
     MACRO_FOR_EACH(INC, a, a, a);
+  }
 
   EXPECT_EQ(a, 2);
 }
 
-void inc(int &val) {
-  val++;
-}
+void inc(int& val) { val++; }
 
 TEST(MacroForEachFnTest, IncludeSemiColon) {
   int a = 0;
@@ -83,4 +83,3 @@ TEST(MacroForEachFnTest, Order) {
   MACRO_FOR_EACH_FN(PUSH_NAME, a, b, c);
   EXPECT_EQ(ss.str(), "abc");
 }
-

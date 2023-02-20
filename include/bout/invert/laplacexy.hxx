@@ -40,7 +40,7 @@
 
 #warning LaplaceXY requires PETSc. No LaplaceXY available
 
-#include <boutexception.hxx>
+#include <bout/boutexception.hxx>
 
 class Field2D;
 class Mesh;
@@ -81,11 +81,11 @@ public:
 #undef MPI_Waitall
 #undef MPI_Waitany
 
-#include "utils.hxx"
+#include "bout/utils.hxx"
 #include "bout/solver.hxx"
 #include <bout/mesh.hxx>
 #include <bout/petsclib.hxx>
-#include <cyclic_reduction.hxx>
+#include <bout/cyclic_reduction.hxx>
 
 class Options;
 class Solver;
@@ -95,7 +95,7 @@ public:
   /*! 
    * Constructor
    */
-  LaplaceXY(Mesh *m = nullptr, Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  LaplaceXY(Mesh* m = nullptr, Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
   /*!
    * Destructor
    */
@@ -105,8 +105,8 @@ public:
    * Set coefficients (A, B) in equation:
    * Div( A * Grad_perp(x) ) + B*x = b
    */
-  void setCoefs(const Field2D &A, const Field2D &B);
-  
+  void setCoefs(const Field2D& A, const Field2D& B);
+
   /*!
    * Solve Laplacian in X-Y
    * 
@@ -124,7 +124,7 @@ public:
    * The solution as a Field2D. On failure an exception will be raised
    * 
    */
-  const Field2D solve(const Field2D &rhs, const Field2D &x0);
+  const Field2D solve(const Field2D& rhs, const Field2D& x0);
 
   /*!
    * Preconditioner function
@@ -139,14 +139,13 @@ public:
   void savePerformance(Solver& solver, const std::string& name = "");
 
 private:
-  
-  PetscLib lib;     ///< Requires PETSc library
-  Mat MatA;         ///< Matrix to be inverted
-  Vec xs, bs;       ///< Solution and RHS vectors
-  KSP ksp;          ///< Krylov Subspace solver
-  PC pc;            ///< Preconditioner
+  PetscLib lib; ///< Requires PETSc library
+  Mat MatA;     ///< Matrix to be inverted
+  Vec xs, bs;   ///< Solution and RHS vectors
+  KSP ksp;      ///< Krylov Subspace solver
+  PC pc;        ///< Preconditioner
 
-  Mesh *localmesh;   ///< The mesh this operates on, provides metrics and communication
+  Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
 
   /// default prefix for writing performance logging variables
   std::string default_prefix;
@@ -162,25 +161,25 @@ private:
 
   // Y derivatives
   bool include_y_derivs; // Include Y derivative terms?
-  
+
   // Boundary conditions
-  bool x_inner_dirichlet; // Dirichlet on inner X boundary?
-  bool x_outer_dirichlet; // Dirichlet on outer X boundary?
+  bool x_inner_dirichlet;         // Dirichlet on inner X boundary?
+  bool x_outer_dirichlet;         // Dirichlet on outer X boundary?
   std::string y_bndry{"neumann"}; // Boundary condition for y-boundary
 
   // Location of the rhs and solution
   CELL_LOC location;
-  
+
   /*!
    * Number of grid points on this processor
    */
   int localSize();
-  
+
   /*!
    * Return the communicator for XY
    */
   MPI_Comm communicator();
-  
+
   /*!
    * Return the global index of a local (x,y) coordinate
    * including guard cells.
@@ -191,7 +190,7 @@ private:
    * to an integer. Guard cells are filled by communication
    * so no additional logic is needed in Mesh.
    */
-  int globalIndex(int x, int y);  
+  int globalIndex(int x, int y);
   Field2D indexXY; ///< Global index (integer stored as BoutReal)
 
   // Save performance information?
@@ -211,10 +210,10 @@ private:
   // Utility methods
   void setPreallocationFiniteVolume(PetscInt* d_nnz, PetscInt* o_nnz);
   void setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nnz);
-  void setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B);
-  void setMatrixElementsFiniteDifference(const Field2D &A, const Field2D &B);
-  void solveFiniteVolume(const Field2D &x0);
-  void solveFiniteDifference(const Field2D &x0);
+  void setMatrixElementsFiniteVolume(const Field2D& A, const Field2D& B);
+  void setMatrixElementsFiniteDifference(const Field2D& A, const Field2D& B);
+  void solveFiniteVolume(const Field2D& x0);
+  void solveFiniteDifference(const Field2D& x0);
 
   // Monitor class used to reset performance-monitoring variables for a new
   // output timestep

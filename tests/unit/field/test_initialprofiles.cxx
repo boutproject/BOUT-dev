@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 
-#include "boutexception.hxx"
-#include "field.hxx"
-#include "initialprofiles.hxx"
-#include "output.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field.hxx"
+#include "bout/initialprofiles.hxx"
+#include "bout/output.hxx"
 #include "test_extras.hxx"
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"

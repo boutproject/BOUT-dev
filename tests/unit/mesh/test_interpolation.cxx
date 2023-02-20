@@ -1,27 +1,27 @@
 #include "gtest/gtest.h"
 
-#include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "interpolation.hxx"
-#include "output.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/interpolation.hxx"
+#include "bout/output.hxx"
 #include "test_extras.hxx"
+#include "bout/mesh.hxx"
 
 ////// delete these
+#include "bout/boutexception.hxx"
+#include "bout/field3d.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
-#include "boutexception.hxx"
-#include "field3d.hxx"
-#include "unused.hxx"
-#include "utils.hxx"
 #include <cmath>
 #include <set>
 #include <vector>
 ///////
 
 /// Global mesh
-namespace bout{
-namespace globals{
-extern Mesh *mesh;
+namespace bout {
+namespace globals {
+extern Mesh* mesh;
 } // namespace globals
 } // namespace bout
 
@@ -63,16 +63,19 @@ protected:
 
     // We need Coordinates so a parallel transform is available as
     // FieldFactory::create3D wants to un-field-align the result
-    for (const auto& location
-        : std::list<CELL_LOC>{CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW}) {
+    for (const auto& location :
+         std::list<CELL_LOC>{CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW}) {
 
       static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, location);
-      static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
-          mesh, Field2D{1.0, mesh}, Field2D{1.0, mesh}, BoutReal{1.0}, Field2D{1.0, mesh},
-          Field2D{0.0, mesh}, Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{1.0, mesh},
-          Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{1.0, mesh},
-          Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh},
-          Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh}),
+      static_cast<FakeMesh*>(mesh)->setCoordinates(
+          std::make_shared<Coordinates>(
+              mesh, Field2D{1.0, mesh}, Field2D{1.0, mesh}, BoutReal{1.0},
+              Field2D{1.0, mesh}, Field2D{0.0, mesh}, Field2D{1.0, mesh},
+              Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{0.0, mesh},
+              Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{1.0, mesh},
+              Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{0.0, mesh},
+              Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh},
+              Field2D{0.0, mesh}),
           location);
       // No call to Coordinates::geometry() needed here
       mesh->getCoordinates(location)->setParallelTransform(
@@ -307,16 +310,19 @@ protected:
 
     // We need Coordinates so a parallel transform is available as
     // FieldFactory::create3D wants to un-field-align the result
-    for (const auto& location
-        : std::list<CELL_LOC>{CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW}) {
+    for (const auto& location :
+         std::list<CELL_LOC>{CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW}) {
 
       static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, location);
-      static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
-          mesh, Field2D{1.0, mesh}, Field2D{1.0, mesh}, BoutReal{1.0}, Field2D{1.0, mesh},
-          Field2D{0.0, mesh}, Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{1.0, mesh},
-          Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{1.0, mesh},
-          Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh},
-          Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh}),
+      static_cast<FakeMesh*>(mesh)->setCoordinates(
+          std::make_shared<Coordinates>(
+              mesh, Field2D{1.0, mesh}, Field2D{1.0, mesh}, BoutReal{1.0},
+              Field2D{1.0, mesh}, Field2D{0.0, mesh}, Field2D{1.0, mesh},
+              Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{0.0, mesh},
+              Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{1.0, mesh},
+              Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{0.0, mesh},
+              Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh},
+              Field2D{0.0, mesh}),
           location);
       // No call to Coordinates::geometry() needed here
       mesh->getCoordinates(location)->setParallelTransform(

@@ -5,9 +5,9 @@
 
 #if BOUT_HAS_HYPRE
 
-#include "boutcomm.hxx"
-#include "field.hxx"
-#include "utils.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/field.hxx"
+#include "bout/utils.hxx"
 #include "bout/bout_enum_class.hxx"
 #include "bout/caliper_wrapper.hxx"
 #include "bout/globalindexer.hxx"
@@ -42,10 +42,10 @@ int checkHypreError(int error) {
     // warning, or otherwise investigate further.
     char error_cstr[2048];
     HYPRE_DescribeError(error, &error_cstr[0]);
-    if (error > 1)
+    if (error > 1) {
       throw BoutException("A Hypre call failed with error code {:d}: {:s}", error,
                           &error_cstr[0]);
-    else if (error == 1) {
+    } else if (error == 1) {
       output_error.write("Hypre returns {} {}\n", error, error_cstr);
       HYPRE_ClearAllErrors();
     }
@@ -256,9 +256,10 @@ public:
           break;
         }
       }
-      if (vec_i < 0)
+      if (vec_i < 0) {
         throw BoutException("Error cannot find global index in HypreVector, index = {}",
                             index);
+      }
 
       value = vector->V[vec_i];
     }
@@ -789,9 +790,8 @@ private:
   decltype(HYPRE_ParCSRGMRESSetTol)* solverSetTol{nullptr};
   decltype(HYPRE_ParCSRGMRESSetAbsoluteTol)* solverSetAbsoluteTol{nullptr};
   decltype(HYPRE_ParCSRGMRESSetMaxIter)* solverSetMaxIter{nullptr};
-  decltype(
-      HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm)* solverGetFinalRelativeResidualNorm{
-      nullptr};
+  decltype(HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm)*
+      solverGetFinalRelativeResidualNorm{nullptr};
   decltype(HYPRE_ParCSRGMRESGetNumIterations)* solverGetNumIterations{nullptr};
   decltype(HYPRE_ParCSRGMRESSetPrecond)* solverSetPrecond{nullptr};
   decltype(HYPRE_ParCSRGMRESSetup)* solverSetup{nullptr};

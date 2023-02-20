@@ -32,8 +32,8 @@
 #ifndef __GYRO_AVERAGE_H__
 #define __GYRO_AVERAGE_H__
 
-#include "field3d.hxx"
-#include "invert_laplace.hxx"
+#include "bout/field3d.hxx"
+#include "bout/invert_laplace.hxx"
 
 /// INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS; uses old-style
 /// Laplacian inversion flags
@@ -67,14 +67,13 @@ Field3D gyroPade0(const Field3D& f, const Field3D& rho,
 Field3D gyroPade0(const Field3D& f, const Field2D& rho,
                   int inner_boundary_flags = GYRO_FLAGS,
                   int outer_boundary_flags = GYRO_FLAGS);
-Field3D gyroPade0(const Field3D& f, BoutReal rho,
-                  int inner_boundary_flags = GYRO_FLAGS,
+Field3D gyroPade0(const Field3D& f, BoutReal rho, int inner_boundary_flags = GYRO_FLAGS,
                   int outer_boundary_flags = GYRO_FLAGS);
 
 /// Pade approximation \f$Gamma_1 = (1 - \frac{1}{2} \rho^2 \nabla_\perp^2)g = f\f$
 ///
 /// Note: Have to use Z average of rho for efficient inversion
-/// 
+///
 /// @param[in] f   The field to gyro-average
 /// @param[in] rho  Gyro-radius
 /// @param[in] inner_boundary_flags  Flags for the inner boundary to be passed
@@ -87,14 +86,13 @@ Field3D gyroPade1(const Field3D& f, const Field3D& rho,
 Field3D gyroPade1(const Field3D& f, const Field2D& rho,
                   int inner_boundary_flags = GYRO_FLAGS,
                   int outer_boundary_flags = GYRO_FLAGS);
-Field3D gyroPade1(const Field3D& f, BoutReal rho,
-                  int inner_boundary_flags = GYRO_FLAGS,
+Field3D gyroPade1(const Field3D& f, BoutReal rho, int inner_boundary_flags = GYRO_FLAGS,
                   int outer_boundary_flags = GYRO_FLAGS);
 Field2D gyroPade1(const Field2D& f, const Field2D& rho,
                   int inner_boundary_flags = GYRO_FLAGS,
                   int outer_boundary_flags = GYRO_FLAGS);
 
-/// Pade approximation 
+/// Pade approximation
 ///
 /// \f[
 ///    \Gamma_2(f) = \frac{1}{2}\rho^2 \nabla_\perp^2 ( 1 - \frac{1}{2} \rho^2 \nabla_\perp^2)^{-1}\Gamma_1(f)
@@ -114,8 +112,7 @@ Field3D gyroPade2(const Field3D& f, const Field3D& rho,
 Field3D gyroPade2(const Field3D& f, const Field2D& rho,
                   int inner_boundary_flags = GYRO_FLAGS,
                   int outer_boundary_flags = GYRO_FLAGS);
-Field3D gyroPade2(const Field3D& f, BoutReal rho,
-                  int inner_boundary_flags = GYRO_FLAGS,
+Field3D gyroPade2(const Field3D& f, BoutReal rho, int inner_boundary_flags = GYRO_FLAGS,
                   int outer_boundary_flags = GYRO_FLAGS);
 
 #endif // __GYRO_AVERAGE_H__

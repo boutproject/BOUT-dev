@@ -1,7 +1,7 @@
-#include "bout.hxx"
-#include "derivs.hxx"
-#include "field_factory.hxx"
-#include "parallel_boundary_region.hxx"
+#include "bout/bout.hxx"
+#include "bout/derivs.hxx"
+#include "bout/field_factory.hxx"
+#include "bout/parallel_boundary_region.hxx"
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);

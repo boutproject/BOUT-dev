@@ -1,9 +1,9 @@
 // These tests rely on MsgStack::getDump, and so won't work without it
 #if BOUT_USE_MSGSTACK
 
-#include "gtest/gtest.h"
-#include "msg_stack.hxx"
+#include "bout/msg_stack.hxx"
 #include "test_extras.hxx"
+#include "gtest/gtest.h"
 
 #include <iostream>
 #include <string>
@@ -133,7 +133,7 @@ TEST(MsgStackTest, DumpTest) {
   // Write cout to buffer instead of stdout
   std::stringstream buffer;
   // Save cout's buffer here
-  std::streambuf *sbuf(std::cout.rdbuf());
+  std::streambuf* sbuf(std::cout.rdbuf());
   std::cout.rdbuf(buffer.rdbuf());
 
   MsgStack msg_stack;

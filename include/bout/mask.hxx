@@ -24,9 +24,9 @@
 
 #include <vector>
 
+#include "bout/globals.hxx"
+#include "bout/msg_stack.hxx"
 #include "bout/mesh.hxx"
-#include "globals.hxx"
-#include "msg_stack.hxx"
 
 /**
  * 3D array of bools to mask Field3Ds
@@ -48,13 +48,13 @@
 class BoutMask {
   // Internal data
   Tensor<bool> mask;
+
 public:
-  BoutMask(int nx, int ny, int nz, bool value=false) :
-    mask(nx, ny, nz) {
+  BoutMask(int nx, int ny, int nz, bool value = false) : mask(nx, ny, nz) {
     mask = value;
   }
-  explicit BoutMask(const Mesh& mesh, bool value=false) :
-    BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz, value) {}
+  explicit BoutMask(const Mesh& mesh, bool value = false)
+      : BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz, value) {}
   explicit BoutMask(const Mesh* mesh = nullptr, bool value = false)
       : BoutMask(mesh == nullptr ? *bout::globals::mesh : *mesh, value) {}
 
@@ -64,12 +64,8 @@ public:
     return *this;
   }
 
-  inline bool& operator()(int jx, int jy, int jz) {
-    return mask(jx, jy, jz);
-  }
-  inline const bool& operator()(int jx, int jy, int jz) const {
-    return mask(jx, jy, jz);
-  }
+  inline bool& operator()(int jx, int jy, int jz) { return mask(jx, jy, jz); }
+  inline const bool& operator()(int jx, int jy, int jz) const { return mask(jx, jy, jz); }
 };
 
 #endif //__MASK_H__

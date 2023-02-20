@@ -26,8 +26,8 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
-#include <output.hxx>
-#include <utils.hxx>
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 void Output::enable() {
   add(std::cout);
@@ -79,7 +79,7 @@ void Output::print(const std::string& message) {
   std::cout.flush();
 }
 
-Output *Output::getInstance() {
+Output* Output::getInstance() {
   static Output instance;
   return &instance;
 }

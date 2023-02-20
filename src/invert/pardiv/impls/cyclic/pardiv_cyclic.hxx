@@ -52,9 +52,9 @@ RegisterUnavailableInvertParDiv registerinvertpardivcyclic{
 
 #else
 
-#include "dcomplex.hxx"
-#include "utils.hxx"
-#include <globals.hxx>
+#include "bout/dcomplex.hxx"
+#include "bout/utils.hxx"
+#include <bout/globals.hxx>
 
 class InvertParDivCR : public InvertParDiv {
 public:

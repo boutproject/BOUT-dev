@@ -10,16 +10,16 @@
 #include <random>
 #include <string>
 
-#include "bout.hxx"
+#include "bout/bout.hxx"
+#include "bout/field_factory.hxx"
+#include "bout/interpolation_xz.hxx"
 #include "bout/constants.hxx"
-#include "field_factory.hxx"
 #include "bout/sys/generator_context.hxx"
-#include "interpolation_xz.hxx"
 
 /// Get a FieldGenerator from the options for a variable
 std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varname,
                                                         std::string& func) {
-  Options *options = Options::getRoot()->getSection(varname);
+  Options* options = Options::getRoot()->getSection(varname);
   options->get("solution", func, "0.0");
 
   if (func.empty()) {
@@ -28,7 +28,7 @@ std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varna
   return FieldFactory::get()->parse(func);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
   // Random number generator
@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
   // Bind the random number generator and distribution into a single function
   auto dice = std::bind(distribution, generator);
 
-  for (const auto &index : deltax) {
+  for (const auto& index : deltax) {
     // Get some random displacements
     BoutReal dx = index.x() + dice();
     BoutReal dz = index.z() + dice();
@@ -79,8 +79,8 @@ int main(int argc, char **argv) {
     deltaz[index] = dz;
     // Get the global indices
     bout::generator::Context pos{index, CELL_CENTRE, deltax.getMesh(), 0.0};
-    pos.set("x", mesh->GlobalX(dx),
-            "z", TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz));
+    pos.set("x", mesh->GlobalX(dx), "z",
+            TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz));
     // Generate the analytic solution at the displacements
     a_solution[index] = a_gen->generate(pos);
     b_solution[index] = b_gen->generate(pos);

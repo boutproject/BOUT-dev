@@ -32,10 +32,10 @@ class EulerSolver;
 
 #include "mpi.h"
 
-#include <bout_types.hxx>
 #include <bout/solver.hxx>
+#include <bout/bout_types.hxx>
 
-namespace{
+namespace {
 RegisterSolver<EulerSolver> registersolvereuler("euler");
 }
 
@@ -67,4 +67,3 @@ private:
 };
 
 #endif // __KARNIADAKIS_SOLVER_H__
-

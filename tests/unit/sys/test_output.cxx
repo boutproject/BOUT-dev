@@ -1,7 +1,7 @@
-#include "gtest/gtest.h"
-#include "boutexception.hxx"
-#include "output.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/output.hxx"
 #include "bout/output_bout_types.hxx"
+#include "gtest/gtest.h"
 
 #include <cstdio>
 #include <string>
@@ -26,7 +26,7 @@ public:
   // Write cout to buffer instead of stdout
   std::stringstream buffer;
   // Save cout's buffer here
-  std::streambuf *sbuf;
+  std::streambuf* sbuf;
   // A temporary filename
   std::string filename{std::tmpnam(nullptr)};
 };
@@ -122,11 +122,11 @@ TEST_F(OutputTest, DisableEnableStdout) {
 }
 
 TEST_F(OutputTest, GetInstance) {
-  Output *local_output = Output::getInstance();
+  Output* local_output = Output::getInstance();
 
   EXPECT_NE(local_output, nullptr);
 
-  Output *new_output = Output::getInstance();
+  Output* new_output = Output::getInstance();
 
   EXPECT_EQ(local_output, new_output);
 }

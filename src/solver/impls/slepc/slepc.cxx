@@ -28,11 +28,11 @@
 #if BOUT_HAS_SLEPC
 
 #include "slepc.hxx"
-#include <boutcomm.hxx>
-#include <globals.hxx>
-#include <interpolation.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/globals.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 
 #include <cstdlib>
 
@@ -220,8 +220,7 @@ SlepcSolver::SlepcSolver(Options* options) {
 
   if (!selfSolve && !ddtMode) {
     // Use a sub-section called "advance"
-    advanceSolver =
-        SolverFactory::getInstance().create(options->getSection("advance"));
+    advanceSolver = SolverFactory::getInstance().create(options->getSection("advance"));
   }
 }
 
@@ -385,7 +384,8 @@ void SlepcSolver::createShellMat() {
                  &shellMat);
   // Define the mat_mult operation --> Define what routine returns M.x, where M
   // is the time advance operator and x are the initial field conditions
-  MatShellSetOperation(shellMat, MATOP_MULT, reinterpret_cast<void (*)()>(&advanceStepWrapper));
+  MatShellSetOperation(shellMat, MATOP_MULT,
+                       reinterpret_cast<void (*)()>(&advanceStepWrapper));
 
   // The above function callback can cause issues as member functions have a hidden "this"
   // argument which means if Slepc calls this->advanceStep(Mat,Vec,Vec) this is actually

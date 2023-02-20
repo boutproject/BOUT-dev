@@ -61,6 +61,7 @@ ForEachMacros:
   - foreach
   - Q_FOREACH
   - BOOST_FOREACH
+  - BOUT_FOR
 # IncludeBlocks:   Regroup
 IncludeCategories:
   - Regex:           '^(<|")bout/'
@@ -107,7 +108,7 @@ SpacesInContainerLiterals: true
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-StatementMacros:
+StatementAttributeLikeMacros:
   - BOUT_OMP
 Standard:        c++14
 TabWidth:        8

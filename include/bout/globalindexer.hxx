@@ -6,8 +6,8 @@
 #include <bout/paralleltransform.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
-#include <bout_types.hxx>
-#include <boutcomm.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutcomm.hxx>
 
 template <class T>
 class GlobalIndexer;
@@ -183,7 +183,7 @@ private:
     numOffDiagonal = std::vector<int>(size(), 0);
 
     // Set initial guess for number of on-diagonal elements
-    BOUT_FOR(i, regionAll) {
+    BOUT_FOR (i, regionAll) {
       numDiagonal[getGlobal(i) - globalStart] = stencils.getStencilSize(i);
     }
 

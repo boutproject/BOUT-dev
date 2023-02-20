@@ -20,13 +20,13 @@
  *
  **************************************************************************/
 
+#include "bout/globals.hxx"
+#include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
-#include "globals.hxx"
-#include "interpolation_xz.hxx"
 
 #include <vector>
 
-XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh *mesh)
+XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
@@ -40,13 +40,14 @@ XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh *mesh)
 void XZLagrange4pt::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                                 const std::string& region) {
 
-  BOUT_FOR(i, delta_x.getRegion(region)) {
+  BOUT_FOR (i, delta_x.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z))
+    if (skip_mask(x, y, z)) {
       continue;
+    }
 
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
@@ -89,13 +90,14 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
-  BOUT_FOR(i, f.getRegion(region)) {
+  BOUT_FOR (i, f.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z))
+    if (skip_mask(x, y, z)) {
       continue;
+    }
 
     const int jx = i_corner(x, y, z);
     const int jx2mnew = (jx == 0) ? 0 : (jx - 1);
@@ -155,10 +157,10 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const Field3D& delta_x,
 BoutReal XZLagrange4pt::lagrange_4pt(const BoutReal v2m, const BoutReal vm,
                                      const BoutReal vp, const BoutReal v2p,
                                      const BoutReal offset) const {
-  return -offset * (offset - 1.0) * (offset - 2.0) * v2m / 6.0 +
-         0.5 * (offset * offset - 1.0) * (offset - 2.0) * vm -
-         0.5 * offset * (offset + 1.0) * (offset - 2.0) * vp +
-         offset * (offset * offset - 1.0) * v2p / 6.0;
+  return -offset * (offset - 1.0) * (offset - 2.0) * v2m / 6.0
+         + 0.5 * (offset * offset - 1.0) * (offset - 2.0) * vm
+         - 0.5 * offset * (offset + 1.0) * (offset - 2.0) * vp
+         + offset * (offset * offset - 1.0) * v2p / 6.0;
 }
 
 BoutReal XZLagrange4pt::lagrange_4pt(const BoutReal v[], const BoutReal offset) const {

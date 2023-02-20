@@ -1,8 +1,8 @@
 #include <bout/constants.hxx>
 #include <bout/physicsmodel.hxx>
-#include <bout.hxx>
-#include <derivs.hxx>
-#include <initialprofiles.hxx>
+#include <bout/bout.hxx>
+#include <bout/derivs.hxx>
+#include <bout/initialprofiles.hxx>
 #include <math.h>
 
 class Diffusion : public PhysicsModel {
@@ -64,14 +64,17 @@ protected:
 
     ddt(N) = 0.0;
 
-    if (Dx > 0.0)
+    if (Dx > 0.0) {
       ddt(N) += Dx * D2DX2(N);
+    }
 
-    if (Dy > 0.0)
+    if (Dy > 0.0) {
       ddt(N) += Dy * D2DY2(N);
+    }
 
-    if (Dz > 0.0)
+    if (Dz > 0.0) {
       ddt(N) += Dz * D2DZ2(N);
+    }
 
     return 0;
   }

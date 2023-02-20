@@ -34,11 +34,11 @@ class PvodeSolver;
 #define __PVODE_SOLVER_H__
 
 #include <bout/solver.hxx>
-#include <bout_types.hxx>
+#include <bout/bout_types.hxx>
 
+#include <pvode/cvode.h> // main CVODE header file
 #include <pvode/nvector.h>
-#include <pvode/cvode.h>     // main CVODE header file
-#include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
+#include <pvode/pvbbdpre.h> // band preconditioner function prototypes
 
 namespace {
 RegisterSolver<PvodeSolver> registersolverpvode("pvode");
