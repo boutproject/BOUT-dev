@@ -1,4 +1,4 @@
-#include <bout.hxx>
+#include <bout/bout.hxx>
 #include <mpi.h>
 
 int main(int argc, char** argv) {
@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
   bout::writeDefaultOutputFile(dump);
 
   MPI_Barrier(BoutComm::get());
-  
+
   BoutFinalise();
   return 0;
 }

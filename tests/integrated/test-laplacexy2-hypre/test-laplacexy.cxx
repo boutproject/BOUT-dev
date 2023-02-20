@@ -23,12 +23,12 @@
  *
  **************************************************************************/
 
+#include <bout/bout.hxx>
 #include <bout/constants.hxx>
+#include <bout/derivs.hxx>
+#include <bout/initialprofiles.hxx>
 #include <bout/invert/laplacexy2_hypre.hxx>
-#include <bout.hxx>
-#include <derivs.hxx>
-#include <initialprofiles.hxx>
-#include <options.hxx>
+#include <bout/options.hxx>
 
 int main(int argc, char** argv) {
 

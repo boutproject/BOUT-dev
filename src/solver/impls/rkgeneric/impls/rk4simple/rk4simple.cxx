@@ -1,6 +1,6 @@
 #include "rk4simple.hxx"
 
-RK4SIMPLEScheme::RK4SIMPLEScheme(Options *options):RKScheme(options){
+RK4SIMPLEScheme::RK4SIMPLEScheme(Options* options) : RKScheme(options) {
   //Set characteristics of scheme
   numStages = 11;
   numOrders = 2;
@@ -13,12 +13,12 @@ RK4SIMPLEScheme::RK4SIMPLEScheme(Options *options):RKScheme(options){
   timeCoeffs.reallocate(numStages);
 
   //Zero out arrays (shouldn't be needed, but do for testing)
-  for(int i=0;i<numStages;i++){
-    timeCoeffs[i]=0.;
-    for(int j=0;j<numStages;j++){
+  for (int i = 0; i < numStages; i++) {
+    timeCoeffs[i] = 0.;
+    for (int j = 0; j < numStages; j++) {
       stageCoeffs(i, j) = 0.;
     }
-    for(int j=0;j<numOrders;j++){
+    for (int j = 0; j < numOrders; j++) {
       resultCoeffs(i, j) = 0.;
     }
   }
@@ -89,63 +89,72 @@ RK4SIMPLEScheme::RK4SIMPLEScheme(Options *options):RKScheme(options){
   //////////////////////////////////
   //Large step
   timeCoeffs[0] = 0.0;
-  timeCoeffs[1] = 1.0/2.0;
-  timeCoeffs[2] = 1.0/2.0;
+  timeCoeffs[1] = 1.0 / 2.0;
+  timeCoeffs[2] = 1.0 / 2.0;
   timeCoeffs[3] = 1.0;
 
   //First small step
-  timeCoeffs[4] = 1.0/4.0;
-  timeCoeffs[5] = 1.0/4.0;
-  timeCoeffs[6] = 1.0/2.0;
+  timeCoeffs[4] = 1.0 / 4.0;
+  timeCoeffs[5] = 1.0 / 4.0;
+  timeCoeffs[6] = 1.0 / 2.0;
 
   //Second small step
-  timeCoeffs[7] = 1.0/2.0+0.0;
-  timeCoeffs[8] = 1.0/2.0+1.0/4.0;
-  timeCoeffs[9] = 1.0/2.0+1.0/4.0;
-  timeCoeffs[10] = 1.0/2.0+1.0/2.0;
-
+  timeCoeffs[7] = 1.0 / 2.0 + 0.0;
+  timeCoeffs[8] = 1.0 / 2.0 + 1.0 / 4.0;
+  timeCoeffs[9] = 1.0 / 2.0 + 1.0 / 4.0;
+  timeCoeffs[10] = 1.0 / 2.0 + 1.0 / 2.0;
 }
 
-BoutReal RK4SIMPLEScheme::setOutputStates(const Array<BoutReal> &start, const BoutReal dt,
-                                          Array<BoutReal> &resultFollow) {
+BoutReal RK4SIMPLEScheme::setOutputStates(const Array<BoutReal>& start, const BoutReal dt,
+                                          Array<BoutReal>& resultFollow) {
   //return RKScheme::setOutputStates(start,dt,resultFollow);
-  if(followHighOrder){
-    for(int i=0;i<nlocal;i++){
-      if(adaptive){
+  if (followHighOrder) {
+    for (int i = 0; i < nlocal; i++) {
+      if (adaptive) {
         resultAlt[i] =
-            start[i] +
-            dt * (resultCoeffs(0, 1) * steps(0, i) + resultCoeffs(1, 1) * steps(1, i) +
-                  resultCoeffs(2, 1) * steps(2, i) + resultCoeffs(3, 1) * steps(3, i));
+            start[i]
+            + dt
+                  * (resultCoeffs(0, 1) * steps(0, i) + resultCoeffs(1, 1) * steps(1, i)
+                     + resultCoeffs(2, 1) * steps(2, i)
+                     + resultCoeffs(3, 1) * steps(3, i));
       }
 
       resultFollow[i] =
-          start[i] +
-          dt * (resultCoeffs(0, 0) * steps(0, i) + resultCoeffs(4, 0) * steps(4, i) +
-                resultCoeffs(5, 0) * steps(5, i) + resultCoeffs(6, 0) * steps(6, i));
+          start[i]
+          + dt
+                * (resultCoeffs(0, 0) * steps(0, i) + resultCoeffs(4, 0) * steps(4, i)
+                   + resultCoeffs(5, 0) * steps(5, i) + resultCoeffs(6, 0) * steps(6, i));
 
       resultFollow[i] =
-          resultFollow[i] +
-          dt * (resultCoeffs(7, 0) * steps(7, i) + resultCoeffs(8, 0) * steps(8, i) +
-                resultCoeffs(9, 0) * steps(9, i) + resultCoeffs(10, 0) * steps(10, i));
+          resultFollow[i]
+          + dt
+                * (resultCoeffs(7, 0) * steps(7, i) + resultCoeffs(8, 0) * steps(8, i)
+                   + resultCoeffs(9, 0) * steps(9, i)
+                   + resultCoeffs(10, 0) * steps(10, i));
     }
-  }else{
-    for(int i=0;i<nlocal;i++){
+  } else {
+    for (int i = 0; i < nlocal; i++) {
 
       resultFollow[i] =
-          start[i] +
-          dt * (resultCoeffs(0, 1) * steps(0, i) + resultCoeffs(1, 1) * steps(1, i) +
-                resultCoeffs(2, 1) * steps(2, i) + resultCoeffs(3, 1) * steps(3, i));
+          start[i]
+          + dt
+                * (resultCoeffs(0, 1) * steps(0, i) + resultCoeffs(1, 1) * steps(1, i)
+                   + resultCoeffs(2, 1) * steps(2, i) + resultCoeffs(3, 1) * steps(3, i));
 
-      if(adaptive) {
+      if (adaptive) {
         resultAlt[i] =
-            start[i] +
-            dt * (resultCoeffs(0, 0) * steps(0, i) + resultCoeffs(4, 0) * steps(4, i) +
-                  resultCoeffs(5, 0) * steps(5, i) + resultCoeffs(6, 0) * steps(6, i));
+            start[i]
+            + dt
+                  * (resultCoeffs(0, 0) * steps(0, i) + resultCoeffs(4, 0) * steps(4, i)
+                     + resultCoeffs(5, 0) * steps(5, i)
+                     + resultCoeffs(6, 0) * steps(6, i));
 
         resultAlt[i] =
-            resultAlt[i] +
-            dt * (resultCoeffs(7, 0) * steps(7, i) + resultCoeffs(8, 0) * steps(8, i) +
-                  resultCoeffs(9, 0) * steps(9, i) + resultCoeffs(10, 0) * steps(10, i));
+            resultAlt[i]
+            + dt
+                  * (resultCoeffs(7, 0) * steps(7, i) + resultCoeffs(8, 0) * steps(8, i)
+                     + resultCoeffs(9, 0) * steps(9, i)
+                     + resultCoeffs(10, 0) * steps(10, i));
       }
     }
   }

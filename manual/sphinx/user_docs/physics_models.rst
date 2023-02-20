@@ -674,6 +674,8 @@ happened will be printed::
     }
 
 
+.. _sec-physicsmodel-boundary-conditions:
+
 Boundary conditions
 ~~~~~~~~~~~~~~~~~~~
 
@@ -882,6 +884,9 @@ which is equivalent to::
 
 Output variables
 ~~~~~~~~~~~~~~~~
+
+.. warning:: File IO has changed significantly in BOUT++ v5. See
+             :ref:`sec-file-io-v5` for more details
 
 BOUT++ always writes the evolving variables to file, but often it’s
 useful to add other variables to the output. For convenience you might

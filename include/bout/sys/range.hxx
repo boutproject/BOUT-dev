@@ -28,9 +28,9 @@ class RangeIterator {
 public:
   /// Can be given a single range
   RangeIterator() = default;
-  RangeIterator(int start, int end, RangeIterator *join = nullptr);
-  RangeIterator(int start, int end, const RangeIterator &join);
-  RangeIterator(const RangeIterator &r);
+  RangeIterator(int start, int end, RangeIterator* join = nullptr);
+  RangeIterator(int start, int end, const RangeIterator& join);
+  RangeIterator(const RangeIterator& r);
   ~RangeIterator();
 
   void first();
@@ -38,7 +38,7 @@ public:
   bool isDone() const;
 
   int operator*() { return ind; }
-  RangeIterator &operator++() {
+  RangeIterator& operator++() {
     next();
     return *this;
   }
@@ -48,15 +48,15 @@ public:
     return original;
   }
 
-  bool operator==(const RangeIterator &x) const { return cur == x.cur; }
-  bool operator!=(const RangeIterator &x) const { return cur != x.cur; }
+  bool operator==(const RangeIterator& x) const { return cur == x.cur; }
+  bool operator!=(const RangeIterator& x) const { return cur != x.cur; }
 
-  bool intersects(const RangeIterator &other, bool all = true) const;
+  bool intersects(const RangeIterator& other, bool all = true) const;
   bool intersects(int ind, bool all = true) const;
 
-  RangeIterator &operator=(const RangeIterator &r);
-  RangeIterator &operator+=(const RangeIterator &r); // Add ranges
-  RangeIterator &operator-=(const RangeIterator &r); // Remove ranges
+  RangeIterator& operator=(const RangeIterator& r);
+  RangeIterator& operator+=(const RangeIterator& r); // Add ranges
+  RangeIterator& operator-=(const RangeIterator& r); // Remove ranges
 
   static RangeIterator end() { return RangeIterator(1, 0); }
 
@@ -64,14 +64,14 @@ public:
 
   int min() const { return is; }
   int max() const { return ie; }
-  RangeIterator *nextRange() const { return n; };
+  RangeIterator* nextRange() const { return n; };
 
 private:
   int is{1}, ie{0};
   RangeIterator* n{nullptr};   // Next range. Doesn't change after creation
   RangeIterator* cur{nullptr}; // Currently iterating. Changes during iteration
-  int curend;               // End of current range
-  bool delete_next = false; // Flag to delete this->n if we created it
+  int curend;                  // End of current range
+  bool delete_next = false;    // Flag to delete this->n if we created it
 };
 
 #endif // __RANGE_H__

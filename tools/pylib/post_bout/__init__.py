@@ -15,7 +15,6 @@ import sys
 import os
 
 try:
-
     boutpath = os.environ["BOUT_TOP"]
     pylibpath = boutpath + "/tools/pylib"
     boutdatapath = pylibpath + "/boutdata"

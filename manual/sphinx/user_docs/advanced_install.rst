@@ -93,7 +93,10 @@ Machine-specific installation
 -----------------------------
 
 These are some configurations which have been found to work on
-particular machines.
+particular machines. There is also the repo
+https://github.com/boutproject/BOUT-configs which provides scripts for one or
+two line compilation, with dependencies, of known-good versions on several
+machines (different machines are in different branches).
 
 Archer
 ~~~~~~

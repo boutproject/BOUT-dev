@@ -35,14 +35,14 @@ class LaplaceHypre3d;
 
 #if BOUT_HAS_HYPRE
 
+#include <bout/boutexception.hxx>
+#include <bout/globals.hxx>
 #include <bout/hypre_interface.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/monitor.hxx>
 #include <bout/operatorstencil.hxx>
-#include <boutexception.hxx>
-#include <globals.hxx>
-#include <invert_laplace.hxx>
-#include <options.hxx>
-#include <output.hxx>
+#include <bout/options.hxx>
+#include <bout/output.hxx>
 
 class LaplaceHypre3d;
 
@@ -53,8 +53,7 @@ RegisterLaplace<LaplaceHypre3d> registerlaplacehypre3d(LAPLACE_HYPRE3D);
 class LaplaceHypre3d : public Laplacian {
 public:
   LaplaceHypre3d(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-                 Mesh* mesh_in = nullptr, Solver* solver = nullptr,
-                 Datafile* dump = nullptr);
+                 Mesh* mesh_in = nullptr, Solver* solver = nullptr);
   ~LaplaceHypre3d() override;
 
   void setCoefA(const Field2D& val) override {

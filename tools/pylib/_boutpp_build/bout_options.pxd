@@ -8,7 +8,7 @@ cdef extern from "boutexception_helper.hxx":
      cdef void raise_bout_py_error()
 
 
-cdef extern from "options_netcdf.hxx" namespace "bout":
+cdef extern from "bout/options_netcdf.hxx" namespace "bout":
     cdef void writeDefaultOutputFile();
     cdef void writeDefaultOutputFile(Options& options);
     cppclass OptionsNetCDF:
@@ -28,7 +28,7 @@ cdef extern from "options_netcdf.hxx" namespace "bout":
         void verifyTimesteps() const;
 
 
-cdef extern from "options.hxx":
+cdef extern from "bout/options.hxx":
     cppclass Options:
         Options()
         @staticmethod
@@ -54,7 +54,7 @@ cdef extern from "options.hxx":
         void cleanCache()
 
 
-cdef extern from "optionsreader.hxx":
+cdef extern from "bout/optionsreader.hxx":
     cppclass OptionsReader:
         @staticmethod
         OptionsReader *getInstance()
