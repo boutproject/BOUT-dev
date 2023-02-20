@@ -42,8 +42,9 @@ TEST(MacroForEachTest, NoBraces) {
   int a = 0;
 
   // Only the first expansion is disabled
-  if (false)
+  if (false) {
     MACRO_FOR_EACH(INC, a, a, a);
+  }
 
   EXPECT_EQ(a, 2);
 }

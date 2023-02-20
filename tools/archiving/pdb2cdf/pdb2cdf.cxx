@@ -112,8 +112,9 @@ int main(int argc, char** argv) {
 
     if (maxdims < 4) {
       dimlist = dimlist3d;
-    } else
+    } else {
       dimlist = dimlist4d;
+    }
 
     if (maxdims > 4) {
       fprintf(stderr, "ERROR: Can only handle up to 4D variables\n");
@@ -174,8 +175,9 @@ int main(int argc, char** argv) {
           if ((dimlist[d].min == min) && (dimlist[d].max == max)) {
             if (lastdim == -1) {
               printf("[%s", dimlist[d].label);
-            } else
+            } else {
               printf(",%s", dimlist[d].label);
+            }
             vardim[nd] = d;
             lastdim = d;
             break;
@@ -193,11 +195,13 @@ int main(int argc, char** argv) {
         dims = dims->next;
       }
 
-      if (!gotdims)
+      if (!gotdims) {
         continue; // Skip this variable
+      }
 
-      if (lastdim != -1)
+      if (lastdim != -1) {
         printf("] (%d elements) ", varsize);
+      }
 
       // Now know number of dimensions nd, and a list of dimension indices vardim
 
