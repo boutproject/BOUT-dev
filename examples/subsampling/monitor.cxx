@@ -1,7 +1,7 @@
 /*
  */
-#include <bout/physicsmodel.hxx>
 #include <bout/bout.hxx>
+#include <bout/physicsmodel.hxx>
 
 #include <string>
 

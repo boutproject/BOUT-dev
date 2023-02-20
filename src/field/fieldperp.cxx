@@ -28,9 +28,9 @@
 
 #include <cmath>
 
-#include <bout/mesh.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/fieldperp.hxx>
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>
 
@@ -101,9 +101,7 @@ FieldPerp& FieldPerp::operator=(const BoutReal rhs) {
 
   allocate();
 
-  BOUT_FOR (i, getRegion("RGN_ALL")) {
-    (*this)[i] = rhs;
-  }
+  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs; }
 
   return *this;
 }
@@ -167,9 +165,7 @@ const FieldPerp sliceXZ(const Field3D& f, int y) {
 
   // Allocate memory
   result.allocate();
-  BOUT_FOR (i, result.getRegion("RGN_ALL")) {
-    result[i] = f(i, y);
-  }
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = f(i, y); }
 
   checkData(result);
   return result;
@@ -205,9 +201,7 @@ void checkData(const FieldPerp& f, const std::string& region) {
 
 #if CHECK > 2
 void invalidateGuards(FieldPerp& var) {
-  BOUT_FOR (i, var.getRegion("RGN_GUARDS")) {
-    var[i] = BoutNaN;
-  }
+  BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif
 

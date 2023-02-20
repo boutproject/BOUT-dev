@@ -5,13 +5,13 @@
 
 #if BOUT_HAS_HYPRE
 
-#include "bout/boutcomm.hxx"
-#include "bout/field.hxx"
-#include "bout/utils.hxx"
 #include "bout/bout_enum_class.hxx"
+#include "bout/boutcomm.hxx"
 #include "bout/caliper_wrapper.hxx"
+#include "bout/field.hxx"
 #include "bout/globalindexer.hxx"
 #include "bout/hyprelib.hxx"
+#include "bout/utils.hxx"
 
 #include "HYPRE.h"
 #include "HYPRE_IJ_mv.h"

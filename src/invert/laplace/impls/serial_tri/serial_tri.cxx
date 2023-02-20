@@ -27,14 +27,14 @@
 #include "serial_tri.hxx"
 #include "bout/globals.hxx"
 
-#include <bout/constants.hxx>
-#include <bout/mesh.hxx>
-#include <bout/openmpwrap.hxx>
 #include <bout/boutexception.hxx>
-#include <cmath>
+#include <bout/constants.hxx>
 #include <bout/fft.hxx>
 #include <bout/lapack_routines.hxx>
+#include <bout/mesh.hxx>
+#include <bout/openmpwrap.hxx>
 #include <bout/utils.hxx>
+#include <cmath>
 
 #include <bout/output.hxx>
 

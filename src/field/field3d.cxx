@@ -35,10 +35,10 @@
 #include "bout/parallel_boundary_op.hxx"
 #include "bout/parallel_boundary_region.hxx"
 #include <bout/assert.hxx>
-#include <bout/constants.hxx>
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/constants.hxx>
 #include <bout/dcomplex.hxx>
 #include <bout/fft.hxx>
 #include <bout/field3d.hxx>
@@ -300,7 +300,7 @@ Field3D& Field3D::operator=(const Field2D& rhs) {
   ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
   /// Copy data
-  BOUT_FOR (i, rhs.getRegion("RGN_ALL")) {
+  BOUT_FOR(i, rhs.getRegion("RGN_ALL")) {
     for (int iz = 0; iz < nz; iz++) {
       (*this)(i, iz) = rhs[i];
     }
@@ -324,9 +324,7 @@ void Field3D::operator=(const FieldPerp& rhs) {
   allocate();
 
   /// Copy data
-  BOUT_FOR (i, rhs.getRegion("RGN_ALL")) {
-    (*this)(i, rhs.getIndex()) = rhs[i];
-  }
+  BOUT_FOR(i, rhs.getRegion("RGN_ALL")) { (*this)(i, rhs.getIndex()) = rhs[i]; }
 }
 
 Field3D& Field3D::operator=(const BoutReal val) {
@@ -338,9 +336,7 @@ Field3D& Field3D::operator=(const BoutReal val) {
 
   allocate();
 
-  BOUT_FOR (i, getRegion("RGN_ALL")) {
-    (*this)[i] = val;
-  }
+  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = val; }
 
   return *this;
 }
@@ -581,9 +577,7 @@ Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn) {
   // Define and allocate the output result
   Field3D result{emptyFrom(lhs)};
 
-  BOUT_FOR (i, result.getRegion(rgn)) {
-    result[i] = ::pow(lhs[i], rhs[i]);
-  }
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
 
   checkData(result);
   return result;
@@ -598,7 +592,7 @@ FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, const std::string& rgn) 
 
   FieldPerp result{emptyFrom(rhs)};
 
-  BOUT_FOR (i, result.getRegion(rgn)) {
+  BOUT_FOR(i, result.getRegion(rgn)) {
     result[i] = ::pow(lhs(i, rhs.getIndex()), rhs[i]);
   }
 
@@ -626,7 +620,8 @@ Field3D filter(const Field3D& var, int N0, const std::string& rgn) {
 
   const Region<Ind2D>& region = var.getRegion2D(region_str);
 
-  BOUT_OMP(parallel) {
+  BOUT_OMP(parallel)
+  {
     Array<dcomplex> f(ncz / 2 + 1);
 
     BOUT_FOR_INNER(i, region) {
@@ -675,7 +670,8 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string
 
   const Region<Ind2D>& region = var.getRegion2D(region_str);
 
-  BOUT_OMP(parallel) {
+  BOUT_OMP(parallel)
+  {
     Array<dcomplex> f(ncz / 2 + 1);
 
     BOUT_FOR_INNER(i, region) {
@@ -781,7 +777,7 @@ Field2D DC(const Field3D& f, const std::string& rgn) {
   Field2D result(localmesh, f.getLocation());
   result.allocate();
 
-  BOUT_FOR (i, result.getRegion(rgn)) {
+  BOUT_FOR(i, result.getRegion(rgn)) {
     result[i] = 0.0;
     for (int k = 0; k < localmesh->LocalNz; k++) {
       result[i] += f[localmesh->ind2Dto3D(i, k)];
@@ -795,9 +791,7 @@ Field2D DC(const Field3D& f, const std::string& rgn) {
 
 #if CHECK > 2
 void invalidateGuards(Field3D& var) {
-  BOUT_FOR (i, var.getRegion("RGN_GUARDS")) {
-    var[i] = BoutNaN;
-  }
+  BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif
 

@@ -40,8 +40,8 @@
 
 #warning LaplaceXY2 requires PETSc and 2D metrics. No LaplaceXY2 available
 
-#include <bout/mesh.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/mesh.hxx>
 #include <bout/options.hxx>
 
 /*!
@@ -78,10 +78,10 @@ public:
 #undef MPI_Waitany
 
 #include "bout/utils.hxx"
+#include <bout/cyclic_reduction.hxx>
 #include <bout/mesh.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/petsclib.hxx>
-#include <bout/cyclic_reduction.hxx>
 
 class LaplaceXY2 {
 public:

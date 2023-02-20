@@ -31,8 +31,8 @@ class LaplaceCyclic;
 #ifndef __LAP_CYCLIC_H__
 #define __LAP_CYCLIC_H__
 
-#include "bout/invert_laplace.hxx"
 #include "bout/build_config.hxx"
+#include "bout/invert_laplace.hxx"
 
 #if BOUT_USE_METRIC_3D
 

@@ -40,8 +40,8 @@
 
 #if not BOUT_USE_METRIC_3D
 
-#include <bout/constants.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/constants.hxx>
 #include <bout/cyclic_reduction.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>

@@ -33,9 +33,9 @@
 
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/generic_factory.hxx"
 #include "bout/options.hxx"
 #include "bout/unused.hxx"
-#include "bout/generic_factory.hxx"
 
 // Pardivergence implementations
 constexpr auto PARDIVCYCLIC = "cyclic";

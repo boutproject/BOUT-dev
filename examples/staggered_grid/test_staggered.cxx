@@ -2,9 +2,9 @@
  * Demonstrates how to use staggered grids with boundary conditions
  */
 
-#include <bout/physicsmodel.hxx>
 #include <bout/bout.hxx>
 #include <bout/derivs.hxx>
+#include <bout/physicsmodel.hxx>
 
 class TestStaggered : public PhysicsModel {
   Field3D n, v;

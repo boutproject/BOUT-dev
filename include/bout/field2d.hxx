@@ -37,9 +37,9 @@ class Field3D; //#include "bout/field3d.hxx"
 #include "bout/fieldperp.hxx"
 #include "bout/stencils.hxx"
 
-#include "bout/utils.hxx"
 #include "bout/array.hxx"
 #include "bout/region.hxx"
+#include "bout/utils.hxx"
 
 #include "bout/unused.hxx"
 

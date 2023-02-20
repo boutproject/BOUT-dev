@@ -41,8 +41,8 @@
 #warning LaplaceXY requires Hypre. No LaplaceXY available
 
 #include "bout/globalindexer.hxx"
-#include <bout/mesh.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/mesh.hxx>
 #include <bout/options.hxx>
 
 /*!

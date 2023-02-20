@@ -33,8 +33,8 @@
 #if not BOUT_USE_METRIC_3D
 
 #include <bout/mesh.hxx>
-#include <bout/openmpwrap.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/openmpwrap.hxx>
 
 #if BOUT_USE_OPENMP
 #include <omp.h>
@@ -220,7 +220,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
     }
 #if BOUT_USE_OPENMP
     BOUT_OMP(parallel)
-    BOUT_OMP(master) { output << "Num threads = " << omp_get_num_threads() << endl; }
+    BOUT_OMP(master)
+    { output << "Num threads = " << omp_get_num_threads() << endl; }
 #endif
   }
 }
@@ -465,9 +466,7 @@ FieldPerp result{emptyFrom(b_in)};
 
 #if CHECK > 2
 // Make any unused elements NaN so that user does not try to do calculations with them
-BOUT_FOR (i, result.getRegion("RGN_ALL")) {
-result[i] = BoutNaN;
-}
+BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = BoutNaN; }
 #endif
 
 // Copy solution into a FieldPerp to return

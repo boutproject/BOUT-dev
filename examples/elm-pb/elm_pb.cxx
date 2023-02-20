@@ -5,12 +5,12 @@
  * Can also include the Vpar compressional term
  *******************************************************************************/
 
-#include <bout/constants.hxx>
-#include <bout/invert/laplacexy.hxx>
 #include <bout/bout.hxx>
+#include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/interpolation.hxx>
+#include <bout/invert/laplacexy.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/invert_parderiv.hxx>
 #include <bout/msg_stack.hxx>

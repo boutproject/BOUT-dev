@@ -25,10 +25,10 @@
 
 //#include <bout/globals.hxx>
 
-#include <bout/coordinates.hxx>
-#include <bout/mesh.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/field.hxx>
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/utils.hxx>

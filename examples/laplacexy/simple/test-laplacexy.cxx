@@ -1,7 +1,7 @@
 
-#include <bout/invert/laplacexy.hxx>
 #include <bout/bout.hxx>
 #include <bout/field_factory.hxx>
+#include <bout/invert/laplacexy.hxx>
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);

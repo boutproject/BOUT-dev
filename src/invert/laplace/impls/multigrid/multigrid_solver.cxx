@@ -290,7 +290,8 @@ void Multigrid1DP::lowestSolver(BoutReal* x, BoutReal* b, int UNUSED(plag)) {
 
     int nx = (xProcI % rMG->zNP) * lnx[0];
 
-    BOUT_OMP(parallel default(shared)) {
+    BOUT_OMP(parallel default(shared))
+    {
 BOUT_OMP(for)
 for (int i = 0; i < dim; i++) {
   y[i] = 0.0;
@@ -318,7 +319,8 @@ for (int ix = 1; ix < xend; ix++) {
                                       MPI_SUM, comm2D);
 
     int nz = (xProcI % rMG->zNP) * (rMG->lnz[level]);
-    BOUT_OMP(parallel default(shared)) {
+    BOUT_OMP(parallel default(shared))
+    {
 int xend = rMG->lnx[level] + 1;
 int zend = rMG->lnz[level] + 1;
 BOUT_OMP(for collapse(2))
@@ -333,7 +335,8 @@ for (int ix = 1; ix < xend; ix++) {
 
     rMG->getSolution(std::begin(y), std::begin(r), 1);
 
-    BOUT_OMP(parallel default(shared)) {
+    BOUT_OMP(parallel default(shared))
+    {
 BOUT_OMP(for)
 for (int i = 0; i < dimg; i++) {
   yl[i] = 0.0;
@@ -354,7 +357,8 @@ for (int ix = 1; ix < xend; ix++) {
     bout::globals::mpi->MPI_Allreduce(std::begin(yl), std::begin(yg), dimg, MPI_DOUBLE,
                                       MPI_SUM, comm2D);
 
-    BOUT_OMP(parallel default(shared)) {
+    BOUT_OMP(parallel default(shared))
+    {
 int xend = lnx[0] + 1;
 int zend = lnz[0] + 1;
 BOUT_OMP(for collapse(2))
@@ -373,7 +377,8 @@ for (int ix = 1; ix < xend; ix++) {
     Array<BoutReal> y(dim);
     Array<BoutReal> r(dim);
     int nx = xProcI * lnx[0];
-    BOUT_OMP(parallel default(shared)) {
+    BOUT_OMP(parallel default(shared))
+    {
 BOUT_OMP(for)
 for (int i = 0; i < dim; i++) {
   y[i] = 0.0;
@@ -399,7 +404,8 @@ y[i] = 0.0;
 }
 sMG->getSolution(std::begin(y), std::begin(r), 1);
 
-BOUT_OMP(parallel default(shared)) {
+BOUT_OMP(parallel default(shared))
+{
 int xend = lnx[0] + 1;
 int zend = lnz[0] + 1;
 BOUT_OMP(for collapse(2))
@@ -424,7 +430,8 @@ void Multigrid1DP::convertMatrixF2D(int level) {
   Array<BoutReal> yl(dim * 9);
   Array<BoutReal> yg(dim * 9);
   int nx = (xProcI % rMG->zNP) * lnx[0];
-  BOUT_OMP(parallel default(shared)) {
+  BOUT_OMP(parallel default(shared))
+  {
 BOUT_OMP(for)
 for (int i = 0; i < dim * 9; i++) {
 yl[i] = 0.0;
@@ -487,7 +494,8 @@ fclose(outf);
   }
   int nz = (xProcI % rMG->zNP) * (rMG->lnz[level]);
 
-  BOUT_OMP(parallel default(shared)) {
+  BOUT_OMP(parallel default(shared))
+  {
 int xend = rMG->lnx[level] + 1;
 int zend = rMG->lnz[level] + 1;
 BOUT_OMP(for collapse(2))
@@ -509,7 +517,8 @@ void Multigrid1DP::convertMatrixFS(int level) {
   Array<BoutReal> yl(dim * 9);
   BoutReal* yg = sMG->matmg[level];
   int nx = xProcI * lnx[0];
-  BOUT_OMP(parallel default(shared)) {
+  BOUT_OMP(parallel default(shared))
+  {
 BOUT_OMP(for)
 for (int i = 0; i < dim * 9; i++) {
 yl[i] = 0.0;
@@ -666,7 +675,8 @@ Array<BoutReal> y(dim);
 Array<BoutReal> r(dim);
 int nx = xProcI * lnx[0];
 int nz = zProcI * lnz[0];
-BOUT_OMP(parallel default(shared)) {
+BOUT_OMP(parallel default(shared))
+{
 BOUT_OMP(for)
 for (int i = 0; i < dim; i++) {
   y[i] = 0.0;
@@ -692,7 +702,8 @@ for (int i = 0; i < dim; i++) {
 y[i] = 0.0;
 }
 sMG->getSolution(std::begin(y), std::begin(r), 1);
-BOUT_OMP(parallel default(shared)) {
+BOUT_OMP(parallel default(shared))
+{
 int xend = lnx[0] + 1;
 int zend = lnz[0] + 1;
 BOUT_OMP(for collapse(2))
@@ -717,7 +728,8 @@ void Multigrid2DPf1D::convertMatrixFS(int level) {
   BoutReal* yg = sMG->matmg[level];
   int nx = xProcI * lnx[0];
   int nz = zProcI * lnz[0];
-  BOUT_OMP(parallel default(shared)) {
+  BOUT_OMP(parallel default(shared))
+  {
 BOUT_OMP(for)
 for (int i = 0; i < dim * 9; i++) {
 yl[i] = 0.0;

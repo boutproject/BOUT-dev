@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
 #if BOUT_USE_OPENMP
   ITERATOR_TEST_BLOCK(
       "Region (omp)",
-      BOUT_FOR (i, mesh->getRegion("RGN_ALL")) { result[i] = a[i] + b[i]; });
+      BOUT_FOR(i, mesh->getRegion("RGN_ALL")) { result[i] = a[i] + b[i]; });
 #endif
 
   if (profileMode) {

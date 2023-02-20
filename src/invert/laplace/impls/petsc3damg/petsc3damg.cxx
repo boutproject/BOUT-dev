@@ -31,12 +31,12 @@
 #include "petsc3damg.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/derivs.hxx>
 #include <bout/mesh.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/sys/timer.hxx>
-#include <bout/boutcomm.hxx>
-#include <bout/derivs.hxx>
 #include <bout/utils.hxx>
 
 LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
@@ -273,19 +273,13 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   Field3D solution = guess.toField();
   localmesh->communicate(solution);
   if (solution.hasParallelSlices()) {
-    BOUT_FOR (i, indexer->getRegionLowerY()) {
-      solution.ydown()[i] = solution[i];
-    }
-    BOUT_FOR (i, indexer->getRegionUpperY()) {
-      solution.yup()[i] = solution[i];
-    }
+    BOUT_FOR(i, indexer->getRegionLowerY()) { solution.ydown()[i] = solution[i]; }
+    BOUT_FOR(i, indexer->getRegionUpperY()) { solution.yup()[i] = solution[i]; }
     for (int b = 1; b < localmesh->ystart; b++) {
-      BOUT_FOR (i, indexer->getRegionLowerY()) {
+      BOUT_FOR(i, indexer->getRegionLowerY()) {
         solution.ydown(b)[i.ym(b)] = solution[i];
       }
-      BOUT_FOR (i, indexer->getRegionUpperY()) {
-        solution.yup(b)[i.yp(b)] = solution[i];
-      }
+      BOUT_FOR(i, indexer->getRegionUpperY()) { solution.yup(b)[i.yp(b)] = solution[i]; }
     }
   }
 
@@ -293,7 +287,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   // from single boundary cell which is set by the solver
   // Note: RegionInnerX is the set of points just outside the domain
   //       (in the first boundary cell) so one boundary cell is already set
-  BOUT_FOR (i, indexer->getRegionInnerX()) {
+  BOUT_FOR(i, indexer->getRegionInnerX()) {
     for (int b = 1; b < localmesh->xstart; b++) {
       solution[i.xm(b)] =
           3. * solution[i.xm(b - 1)] - 3. * solution[i.xm(b - 2)] + solution[i.xm(b - 3)];
@@ -303,7 +297,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   // Set outer boundary cells by extrapolating
   // Note: RegionOuterX is the set of points just outside the domain
   //       (in the first boundary cell) so one boundary cell is already set
-  BOUT_FOR (i, indexer->getRegionOuterX()) {
+  BOUT_FOR(i, indexer->getRegionOuterX()) {
     for (int b = 1; b < localmesh->xstart; b++) {
       solution[i.xp(b)] =
           3. * solution[i.xp(b - 1)] - 3. * solution[i.xp(b - 2)] + solution[i.xp(b - 3)];

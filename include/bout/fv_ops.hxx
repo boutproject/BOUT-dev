@@ -404,7 +404,7 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
   Field3D vz = v.z;
   Field3D n = n_in;
 
-  BOUT_FOR (i, result.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Calculate velocities
     BoutReal vU = 0.25 * (vz[i.zp()] + vz[i]) * (coord->J[i.zp()] + coord->J[i]);
     BoutReal vD = 0.25 * (vz[i.zm()] + vz[i]) * (coord->J[i.zm()] + coord->J[i]);
@@ -505,7 +505,7 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
   Field3D yresult = 0.0;
   yresult.setDirectionY(YDirectionType::Aligned);
 
-  BOUT_FOR (i, result.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Y velocities on y boundaries
     BoutReal vU = 0.25 * (vy[i] + vy[i.yp()]) * (coord->J[i] + coord->J[i.yp()]);
     BoutReal vD = 0.25 * (vy[i] + vy[i.ym()]) * (coord->J[i] + coord->J[i.ym()]);

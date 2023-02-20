@@ -35,12 +35,12 @@ class LaplaceHypre3d;
 
 #if BOUT_HAS_HYPRE
 
-#include <bout/hypre_interface.hxx>
-#include <bout/monitor.hxx>
-#include <bout/operatorstencil.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/globals.hxx>
+#include <bout/hypre_interface.hxx>
 #include <bout/invert_laplace.hxx>
+#include <bout/monitor.hxx>
+#include <bout/operatorstencil.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
 

@@ -7,15 +7,15 @@
  *******************************************************************************/
 
 #include "bout/bout.hxx"
+#include "bout/constants.hxx"
 #include "bout/derivs.hxx"
 #include "bout/initialprofiles.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/invert_laplace.hxx"
 #include "bout/invert_parderiv.hxx"
 #include "bout/msg_stack.hxx"
-#include "bout/sourcex.hxx"
-#include "bout/constants.hxx"
 #include "bout/physicsmodel.hxx"
+#include "bout/sourcex.hxx"
 
 #include <cmath>
 

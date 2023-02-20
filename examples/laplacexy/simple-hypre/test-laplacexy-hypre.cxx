@@ -1,6 +1,6 @@
-#include <bout/invert/laplacexy2_hypre.hxx>
 #include <bout/bout.hxx>
 #include <bout/field_factory.hxx>
+#include <bout/invert/laplacexy2_hypre.hxx>
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);

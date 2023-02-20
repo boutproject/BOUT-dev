@@ -27,8 +27,8 @@
 
 #include "bout/build_config.hxx"
 
-#include <bout/rvec.hxx>
 #include <bout/boutcomm.hxx>
+#include <bout/rvec.hxx>
 
 #include <bout/globals.hxx> // for mesh
 
@@ -39,12 +39,12 @@
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
 
-#include <bout/mesh.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 
-#include <cmath>
 #include <bout/output.hxx>
+#include <cmath>
 
 #include <bout/assert.hxx>
 
@@ -188,9 +188,7 @@ Field2D& Field2D::operator=(const BoutReal rhs) {
   TRACE("Field2D = BoutReal");
   allocate();
 
-  BOUT_FOR (i, getRegion("RGN_ALL")) {
-    (*this)[i] = rhs;
-  }
+  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs; }
 
   return *this;
 }
@@ -383,9 +381,7 @@ void checkData(const Field2D& f, const std::string& region) {
 
 #if CHECK > 2
 void invalidateGuards(Field2D& var) {
-  BOUT_FOR (i, var.getRegion("RGN_GUARDS")) {
-    var[i] = BoutNaN;
-  }
+  BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif
 

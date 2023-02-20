@@ -1,8 +1,8 @@
 /*
  */
 
-#include <bout/physicsmodel.hxx>
 #include <bout/bout.hxx>
+#include <bout/physicsmodel.hxx>
 
 /// Create a function to be called every timestep
 int my_timestep_monitor(Solver* UNUSED(solver), BoutReal simtime, BoutReal dt) {

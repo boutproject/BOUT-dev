@@ -183,7 +183,7 @@ Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   result.allocate();
   result.setLocation(loc);
 
-  BOUT_FOR (i, result.getRegion("RGN_ALL")) {
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     result[i] = gen->generate(Context(i, loc, localmesh, t));
   };
 
@@ -215,7 +215,7 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
 
   auto result = Field3D(localmesh).setLocation(loc).setDirectionY(y_direction).allocate();
 
-  BOUT_FOR (i, result.getRegion("RGN_ALL")) {
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     result[i] = gen->generate(Context(i, loc, localmesh, t));
   };
 
@@ -267,7 +267,7 @@ FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_
   auto result =
       FieldPerp(localmesh).setLocation(loc).setDirectionY(y_direction).allocate();
 
-  BOUT_FOR (i, result.getRegion("RGN_ALL")) {
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     result[i] = gen->generate(Context(i, loc, localmesh, t));
   };
 

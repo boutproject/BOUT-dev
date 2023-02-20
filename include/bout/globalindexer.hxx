@@ -1,13 +1,13 @@
 #ifndef BOUT_GLOBALINDEXER_H
 #define BOUT_GLOBALINDEXER_H
 
+#include <bout/bout_types.hxx>
+#include <bout/boutcomm.hxx>
 #include <bout/mesh.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/paralleltransform.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
-#include <bout/bout_types.hxx>
-#include <bout/boutcomm.hxx>
 
 template <class T>
 class GlobalIndexer;
@@ -183,7 +183,7 @@ private:
     numOffDiagonal = std::vector<int>(size(), 0);
 
     // Set initial guess for number of on-diagonal elements
-    BOUT_FOR (i, regionAll) {
+    BOUT_FOR(i, regionAll) {
       numDiagonal[getGlobal(i) - globalStart] = stencils.getStencilSize(i);
     }
 

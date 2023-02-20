@@ -45,7 +45,7 @@ auto where(const T& test, const U& gt0, const V& le0) -> ResultType {
 
   ResultType result{emptyFrom(test)};
 
-  BOUT_FOR (i, result.getRegion("RGN_ALL")) {
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     result[i] = (test[i] > 0.0) ? gt0[i] : le0[i];
   }
   return result;
@@ -57,7 +57,7 @@ auto where(const T& test, const U& gt0, BoutReal le0) -> ResultType {
 
   ResultType result{emptyFrom(test)};
 
-  BOUT_FOR (i, result.getRegion("RGN_ALL")) { // clang-format: ignore
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) { // clang-format: ignore
     result[i] = (test[i] > 0.0) ? gt0[i] : le0;
   }
   return result;
@@ -69,7 +69,7 @@ auto where(const T& test, BoutReal gt0, const V& le0) -> ResultType {
 
   ResultType result{emptyFrom(test)};
 
-  BOUT_FOR (i, result.getRegion("RGN_ALL")) { // clang-format: ignore
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) { // clang-format: ignore
     result[i] = (test[i] > 0.0) ? gt0 : le0[i];
   }
   return result;
@@ -79,7 +79,7 @@ template <class T, class ResultType = T>
 auto where(const T& test, BoutReal gt0, BoutReal le0) -> ResultType {
   ResultType result{emptyFrom(test)};
 
-  BOUT_FOR (i, result.getRegion("RGN_ALL")) { // clang-format: ignore
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) { // clang-format: ignore
     result[i] = (test[i] > 0.0) ? gt0 : le0;
   }
   return result;

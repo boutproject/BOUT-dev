@@ -23,9 +23,9 @@
 #define __BOUT_ENUM_CLASS_H__
 
 #include "bout/boutexception.hxx"
+#include "bout/macro_for_each.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
-#include "bout/macro_for_each.hxx"
 
 #include <map>
 #include <string>

@@ -28,12 +28,12 @@
 
 /*******************************************************************************/
 
-#include <bout/constants.hxx>
-#include <bout/invert/laplacexy.hxx>
 #include <bout/bout.hxx>
+#include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/interpolation.hxx>
+#include <bout/invert/laplacexy.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/invert_parderiv.hxx>
 #include <bout/msg_stack.hxx>
@@ -42,10 +42,10 @@
 
 #include <math.h>
 
-#include <bout/physicsmodel.hxx>
-#include <bout/single_index_ops.hxx>
 #include <bout/derivs.hxx>
 #include <bout/invert_laplace.hxx>
+#include <bout/physicsmodel.hxx>
+#include <bout/single_index_ops.hxx>
 #include <bout/smoothing.hxx>
 
 #include <bout/rajalib.hxx> // Defines BOUT_FOR_RAJA

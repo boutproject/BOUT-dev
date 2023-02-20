@@ -31,10 +31,10 @@
 #include <bout/globals.hxx>
 
 #include <bout/assert.hxx>
-#include <bout/scorepwrapper.hxx>
 #include <bout/boundary_op.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/interpolation.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <bout/vector3d.hxx>
 
 Vector3D::Vector3D(const Vector3D& f)
@@ -86,7 +86,7 @@ void Vector3D::toCovariant() {
       const auto y_at_z = interp_to(y, z.getLocation());
 
       // multiply by g_{ij}
-      BOUT_FOR (i, localmesh->getRegion3D("RGN_ALL")) {
+      BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
         x[i] = metric_x->g_11[i] * x[i] + metric_x->g_12[i] * y_at_x[i]
                + metric_x->g_13[i] * z_at_x[i];
         y[i] = metric_y->g_22[i] * y[i] + metric_y->g_12[i] * x_at_y[i]
@@ -100,7 +100,7 @@ void Vector3D::toCovariant() {
       // Need to use temporary arrays to store result
       Field3D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
-      BOUT_FOR (i, localmesh->getRegion3D("RGN_ALL")) {
+      BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
         gx[i] = metric->g_11[i] * x[i] + metric->g_12[i] * y[i] + metric->g_13[i] * z[i];
         gy[i] = metric->g_22[i] * y[i] + metric->g_12[i] * x[i] + metric->g_23[i] * z[i];
         gz[i] = metric->g_33[i] * z[i] + metric->g_13[i] * x[i] + metric->g_23[i] * y[i];
@@ -140,7 +140,7 @@ void Vector3D::toContravariant() {
       const auto y_at_z = interp_to(y, z.getLocation());
 
       // multiply by g_{ij}
-      BOUT_FOR (i, localmesh->getRegion3D("RGN_ALL")) {
+      BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
         x[i] = metric_x->g11[i] * x[i] + metric_x->g12[i] * y_at_x[i]
                + metric_x->g13[i] * z_at_x[i];
         y[i] = metric_y->g22[i] * y[i] + metric_y->g12[i] * x_at_y[i]
@@ -155,7 +155,7 @@ void Vector3D::toContravariant() {
       // Need to use temporary arrays to store result
       Field3D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
-      BOUT_FOR (i, localmesh->getRegion3D("RGN_ALL")) {
+      BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
         gx[i] = metric->g11[i] * x[i] + metric->g12[i] * y[i] + metric->g13[i] * z[i];
         gy[i] = metric->g22[i] * y[i] + metric->g12[i] * x[i] + metric->g23[i] * z[i];
         gz[i] = metric->g33[i] * z[i] + metric->g13[i] * x[i] + metric->g23[i] * y[i];

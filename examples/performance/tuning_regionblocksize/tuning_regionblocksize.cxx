@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
                       mesh->LocalNy, mesh->LocalNz, blocksize);
 
     ITERATOR_TEST_BLOCK(
-        name, BOUT_FOR (i, region) { result[i] = a[i] + b[i]; });
+        name, BOUT_FOR(i, region) { result[i] = a[i] + b[i]; });
   }
 
   // Report

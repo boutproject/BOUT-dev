@@ -4,9 +4,9 @@
 #if not BOUT_USE_METRIC_3D
 
 #include <bout/constants.hxx>
-#include <bout/sys/timer.hxx>
 #include <bout/fft.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
 #include <bout/output.hxx>

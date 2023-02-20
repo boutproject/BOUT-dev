@@ -30,16 +30,16 @@
 #include "hypre3d_laplace.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/boutcomm.hxx>
 #include <bout/caliper_wrapper.hxx>
+#include <bout/derivs.hxx>
 #include <bout/hypre_interface.hxx>
 #include <bout/mesh.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
-#include <bout/boutcomm.hxx>
-#include <datafile.hxx>
-#include <bout/derivs.hxx>
 #include <bout/utils.hxx>
+#include <datafile.hxx>
 
 LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
                                Solver* solver, Datafile* dump)
@@ -249,28 +249,16 @@ Field3D LaplaceHypre3d::solve(const Field3D& b_in, const Field3D& x0) {
   Field3D result = solution.toField();
   localmesh->communicate(result);
   if (result.hasParallelSlices()) {
-    BOUT_FOR (i, indexer->getRegionLowerY()) {
-      result.ydown()[i] = result[i];
-    }
-    BOUT_FOR (i, indexer->getRegionUpperY()) {
-      result.yup()[i] = result[i];
-    }
+    BOUT_FOR(i, indexer->getRegionLowerY()) { result.ydown()[i] = result[i]; }
+    BOUT_FOR(i, indexer->getRegionUpperY()) { result.yup()[i] = result[i]; }
     for (int b = 1; b < localmesh->ystart; b++) {
-      BOUT_FOR (i, indexer->getRegionLowerY()) {
-        result.ydown(b)[i.ym(b)] = result[i];
-      }
-      BOUT_FOR (i, indexer->getRegionUpperY()) {
-        result.yup(b)[i.yp(b)] = result[i];
-      }
+      BOUT_FOR(i, indexer->getRegionLowerY()) { result.ydown(b)[i.ym(b)] = result[i]; }
+      BOUT_FOR(i, indexer->getRegionUpperY()) { result.yup(b)[i.yp(b)] = result[i]; }
     }
   }
   for (int b = 1; b < localmesh->xstart; b++) {
-    BOUT_FOR (i, indexer->getRegionInnerX()) {
-      result[i.xm(b)] = result[i];
-    }
-    BOUT_FOR (i, indexer->getRegionOuterX()) {
-      result[i.xp(b)] = result[i];
-    }
+    BOUT_FOR(i, indexer->getRegionInnerX()) { result[i.xm(b)] = result[i]; }
+    BOUT_FOR(i, indexer->getRegionOuterX()) { result[i.xp(b)] = result[i]; }
   }
 
   CALI_MARK_END("LaplaceHypre3d_solve:createField");

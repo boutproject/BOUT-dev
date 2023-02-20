@@ -48,8 +48,8 @@
 #include <utility>
 #include <vector>
 
-#include "bout/bout_types.hxx"
 #include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/openmpwrap.hxx"
 
 /// The MAXREGIONBLOCKSIZE value can be tuned to try to optimise

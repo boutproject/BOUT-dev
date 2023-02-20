@@ -1,10 +1,10 @@
 #include <bout/invert_laplace.hxx>
 #include <bout/msg_stack.hxx>
 
+#include <bout/derivs.hxx>
 #include <bout/invertable_operator.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/sys/timer.hxx>
-#include <bout/derivs.hxx>
 
 #include <bout/boundary_region.hxx>
 

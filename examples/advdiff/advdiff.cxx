@@ -4,8 +4,8 @@
  * MVU 19-july-2011
  *******************************************************************/
 
-#include <bout/physicsmodel.hxx>
 #include <bout/derivs.hxx>
+#include <bout/physicsmodel.hxx>
 
 class AdvDiff : public PhysicsModel {
 private:

@@ -8,9 +8,9 @@
 
 #include <bout/assert.hxx>
 
-#include <bout/sys/timer.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/globals.hxx>
+#include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
 #include <bout/output.hxx>

@@ -89,7 +89,7 @@ public:
             || meta.derivType == DERIV::StandardFourth)
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
 
-    BOUT_FOR (i, var.getRegion(region)) {
+    BOUT_FOR(i, var.getRegion(region)) {
       result[i] = apply(populateStencil<direction, stagger, nGuards>(var, i));
     }
     return;
@@ -103,12 +103,12 @@ public:
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
 
     if (meta.derivType == DERIV::Flux || stagger != STAGGER::None) {
-      BOUT_FOR (i, var.getRegion(region)) {
+      BOUT_FOR(i, var.getRegion(region)) {
         result[i] = apply(populateStencil<direction, stagger, nGuards>(vel, i),
                           populateStencil<direction, STAGGER::None, nGuards>(var, i));
       }
     } else {
-      BOUT_FOR (i, var.getRegion(region)) {
+      BOUT_FOR(i, var.getRegion(region)) {
         result[i] =
             apply(vel[i], populateStencil<direction, STAGGER::None, nGuards>(var, i));
       }

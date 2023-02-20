@@ -38,14 +38,14 @@ class InvertableOperator;
 #if BOUT_HAS_PETSC
 
 #include "bout/traits.hxx"
-#include <bout/mesh.hxx>
-#include <bout/sys/timer.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/globals.hxx>
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
+#include <bout/sys/timer.hxx>
 
 #include <petscksp.h>
 

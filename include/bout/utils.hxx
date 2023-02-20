@@ -33,11 +33,11 @@
 #include "bout/boutexception.hxx"
 #include "bout/dcomplex.hxx"
 
-#include "bout/msg_stack.hxx"
-#include "bout/unused.hxx"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/build_config.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/unused.hxx"
 
 #include <algorithm>
 #include <cmath>

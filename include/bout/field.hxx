@@ -42,12 +42,12 @@ class Field;
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/msg_stack.hxx"
-#include "bout/stencils.hxx"
-#include "bout/utils.hxx"
 #include "bout/region.hxx"
+#include "bout/stencils.hxx"
 #include "bout/traits.hxx"
-#include <bout/rvec.hxx>
+#include "bout/utils.hxx"
 #include <bout/globals.hxx>
+#include <bout/rvec.hxx>
 
 #include "bout/unused.hxx"
 
@@ -219,9 +219,7 @@ template <
 inline T filledFrom(const T& f, Function func, std::string region_string = "RGN_ALL") {
   static_assert(bout::utils::is_Field<T>::value, "filledFrom only works on Fields");
   T result{emptyFrom(f)};
-  BOUT_FOR (i, result.getRegion(region_string)) {
-    result[i] = func(i);
-  }
+  BOUT_FOR(i, result.getRegion(region_string)) { result[i] = func(i); }
   return result;
 }
 
@@ -462,9 +460,7 @@ T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 
   T result{emptyFrom(lhs)};
 
-  BOUT_FOR (i, result.getRegion(rgn)) {
-    result[i] = ::pow(lhs[i], rhs[i]);
-  }
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
 
   checkData(result);
   return result;
@@ -480,9 +476,7 @@ T pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
 
   T result{emptyFrom(lhs)};
 
-  BOUT_FOR (i, result.getRegion(rgn)) {
-    result[i] = ::pow(lhs[i], rhs);
-  }
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
 
   checkData(result);
   return result;
@@ -499,9 +493,7 @@ T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
   // Define and allocate the output result
   T result{emptyFrom(rhs)};
 
-  BOUT_FOR (i, result.getRegion(rgn)) {
-    result[i] = ::pow(lhs, rhs[i]);
-  }
+  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
 
   checkData(result);
   return result;
@@ -526,19 +518,17 @@ T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else
-#define FIELD_FUNC(name, func)                                    \
-  template <typename T, typename = bout::utils::EnableIfField<T>> \
-  inline T name(const T& f, const std::string& rgn = "RGN_ALL") { \
-    AUTO_TRACE();                                                 \
-    /* Check if the input is allocated */                         \
-    checkData(f);                                                 \
-    /* Define and allocate the output result */                   \
-    T result{emptyFrom(f)};                                       \
-    BOUT_FOR (d, result.getRegion(rgn)) {                         \
-      result[d] = func(f[d]);                                     \
-    }                                                             \
-    checkData(result);                                            \
-    return result;                                                \
+#define FIELD_FUNC(name, func)                                     \
+  template <typename T, typename = bout::utils::EnableIfField<T>>  \
+  inline T name(const T& f, const std::string& rgn = "RGN_ALL") {  \
+    AUTO_TRACE();                                                  \
+    /* Check if the input is allocated */                          \
+    checkData(f);                                                  \
+    /* Define and allocate the output result */                    \
+    T result{emptyFrom(f)};                                        \
+    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); } \
+    checkData(result);                                             \
+    return result;                                                 \
   }
 #endif
 
@@ -674,7 +664,7 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
   checkData(var);
   T result = copy(var);
 
-  BOUT_FOR (d, var.getRegion(rgn)) {
+  BOUT_FOR(d, var.getRegion(rgn)) {
     if (result[d] < f) {
       result[d] = f;
     }

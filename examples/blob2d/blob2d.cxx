@@ -6,9 +6,9 @@
  *        NR Walkden, B Dudson  20 January 2012
  *******************************************************************/
 
-#include <bout/physicsmodel.hxx> // Commonly used BOUT++ components
-#include <bout/derivs.hxx>            // To use DDZ()
-#include <bout/invert_laplace.hxx>    // Laplacian inversion
+#include <bout/derivs.hxx>         // To use DDZ()
+#include <bout/invert_laplace.hxx> // Laplacian inversion
+#include <bout/physicsmodel.hxx>   // Commonly used BOUT++ components
 
 /// 2D drift-reduced model, mainly used for blob studies
 ///
