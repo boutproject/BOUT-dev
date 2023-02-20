@@ -2,9 +2,9 @@
 
 #include "power.hxx"
 
-#include <bout/sys/timer.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/sys/timer.hxx>
 
 #include <cmath>
 

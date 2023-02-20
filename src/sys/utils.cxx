@@ -23,6 +23,7 @@
  *
  **************************************************************************/
 
+#include <bout/utils.hxx>
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -31,7 +32,6 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
-#include <bout/utils.hxx>
 #include <vector>
 
 #include "fmt/chrono.h"

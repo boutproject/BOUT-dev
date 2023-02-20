@@ -4,8 +4,8 @@
  */
 
 #include "bout/unused.hxx"
-#include <bout/physicsmodel.hxx>
 #include <bout/bout.hxx>
+#include <bout/physicsmodel.hxx>
 
 class Test_stopcheck : public PhysicsModel {
 protected:

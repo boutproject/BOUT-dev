@@ -11,9 +11,9 @@
 #include <string>
 
 #include "bout/bout.hxx"
+#include "bout/constants.hxx"
 #include "bout/field_factory.hxx"
 #include "bout/interpolation_xz.hxx"
-#include "bout/constants.hxx"
 #include "bout/sys/generator_context.hxx"
 
 /// Get a FieldGenerator from the options for a variable

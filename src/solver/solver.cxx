@@ -22,6 +22,8 @@
 
 #include "bout/build_config.hxx"
 
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field_factory.hxx"
@@ -29,8 +31,6 @@
 #include "bout/interpolation.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/output.hxx"
-#include "bout/array.hxx"
-#include "bout/assert.hxx"
 #include "bout/region.hxx"
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"

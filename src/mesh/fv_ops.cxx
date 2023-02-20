@@ -248,7 +248,7 @@ const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
 
   Coordinates* coord = fin.getCoordinates();
 
-  BOUT_FOR (i, result.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Calculate flux at upper surface
 
     const auto iyp = i.yp();

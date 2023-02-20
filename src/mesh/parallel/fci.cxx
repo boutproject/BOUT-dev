@@ -39,9 +39,9 @@
 #include "fci.hxx"
 #include "bout/parallel_boundary_op.hxx"
 #include "bout/parallel_boundary_region.hxx"
+#include <bout/bout_types.hxx>
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
-#include <bout/bout_types.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>
 
@@ -118,7 +118,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
   Field3D xt_prime_corner{emptyFrom(xt_prime)};
   Field3D zt_prime_corner{emptyFrom(zt_prime)};
 
-  BOUT_FOR (i, xt_prime_corner.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, xt_prime_corner.getRegion("RGN_NOBNDRY")) {
     // Point interpolated from (x+1/2, z+1/2)
 
     // Cache the offsets

@@ -170,7 +170,7 @@ TYPED_TEST(PetscMatrixTest, TestGetElements) {
   Mat* rawmat = matrix.get();
   MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
-  BOUT_FOR (i, this->field.getRegion("RGN_NOY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
     BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOY")) {
       int i_ind = this->indexer->getGlobal(i);
       int j_ind = this->indexer->getGlobal(j);
@@ -404,7 +404,7 @@ TYPED_TEST(PetscMatrixTest, TestSwap) {
 TYPED_TEST(PetscMatrixTest, TestMatrixVectorMultiplyIdentity) {
   PetscMatrix<TypeParam> matrix(this->indexer);
   this->field.allocate();
-  BOUT_FOR (i, this->field.getRegion("RGN_NOY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
     this->field[i] = static_cast<BoutReal>(i.ind);
     matrix(i, i) = 1.0;
   }
@@ -413,7 +413,7 @@ TYPED_TEST(PetscMatrixTest, TestMatrixVectorMultiplyIdentity) {
   matrix.assemble();
   PetscVector<TypeParam> product = matrix * vector;
   TypeParam prodField = product.toField();
-  BOUT_FOR (i, prodField.getRegion("RGN_NOY")) {
+  BOUT_FOR(i, prodField.getRegion("RGN_NOY")) {
     EXPECT_NEAR(prodField[i], this->field[i], 1.e-10);
   }
 }
@@ -434,7 +434,7 @@ TYPED_TEST(PetscMatrixTest, TestMatrixVectorMultiplyOnes) {
   matrix.assemble();
   PetscVector<TypeParam> product = matrix * vector;
   TypeParam prodField = product.toField();
-  BOUT_FOR (i, prodField.getRegion("RGN_NOY")) {
+  BOUT_FOR(i, prodField.getRegion("RGN_NOY")) {
     EXPECT_NEAR(prodField[i], total, 1.e-10);
   }
 }

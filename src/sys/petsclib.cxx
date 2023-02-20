@@ -3,8 +3,8 @@
 #if BOUT_HAS_PETSC
 
 #include "bout/boutcomm.hxx"
-#include "bout/options.hxx"
 #include "bout/openmpwrap.hxx"
+#include "bout/options.hxx"
 #include <bout/petsclib.hxx>
 
 #include <bout/output.hxx>
@@ -18,7 +18,8 @@ char*** PetscLib::pargv = nullptr;
 PetscLogEvent PetscLib::USER_EVENT = 0;
 
 PetscLib::PetscLib(Options* opt) {
-  BOUT_OMP(critical(PetscLib)) {
+  BOUT_OMP(critical(PetscLib))
+  {
     if (count == 0) {
       // Initialise PETSc
 
@@ -52,7 +53,8 @@ PetscLib::PetscLib(Options* opt) {
 }
 
 PetscLib::~PetscLib() {
-  BOUT_OMP(critical(PetscLib)) {
+  BOUT_OMP(critical(PetscLib))
+  {
     count--;
     if (count == 0) {
       // Finalise PETSc
@@ -88,7 +90,8 @@ void PetscLib::setOptionsFromInputFile(SNES& snes) {
 }
 
 void PetscLib::cleanup() {
-  BOUT_OMP(critical(PetscLib)) {
+  BOUT_OMP(critical(PetscLib))
+  {
     if (count > 0) {
       output << "Finalising PETSc. Warning: Instances of PetscLib still exist.\n";
       PetscLogEventEnd(USER_EVENT, 0, 0, 0, 0);

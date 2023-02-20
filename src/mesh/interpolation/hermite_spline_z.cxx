@@ -21,8 +21,8 @@
  **************************************************************************/
 
 #include "bout/globals.hxx"
-#include "bout/interpolation_z.hxx"
 #include "bout/index_derivs_interface.hxx"
+#include "bout/interpolation_z.hxx"
 #include "bout/mesh.hxx"
 
 #include <vector>
@@ -66,7 +66,7 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
   const auto& local_region =
       (y_offset == 0) ? delta_z.getRegion("RGN_ALL") : delta_z.getRegion("RGN_NOY");
 
-  BOUT_FOR (i, local_region) {
+  BOUT_FOR(i, local_region) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
@@ -167,7 +167,7 @@ Field3D ZHermiteSpline::interpolate(const Field3D& f,
   // coordinates
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", local_fz_region);
 
-  BOUT_FOR (i, local_region) {
+  BOUT_FOR(i, local_region) {
     const auto corner = k_corner[i.ind].yp(y_offset);
     const auto corner_zp1 = corner.zp();
 

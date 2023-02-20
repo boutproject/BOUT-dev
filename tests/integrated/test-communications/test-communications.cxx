@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
   // fill non-guard cells:
 
   // interior cells
-  BOUT_FOR (i, f.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
     f[i] = mesh->GlobalNzNoBoundaries
                * (mesh->GlobalNyNoBoundaries * mesh->getGlobalXIndexNoBoundaries(i.x())
                   + mesh->getGlobalYIndexNoBoundaries(i.y()))

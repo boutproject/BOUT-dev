@@ -1,12 +1,12 @@
 #include "gtest/gtest.h"
 
-#include "bout/boutexception.hxx"
-#include "bout/output.hxx"
 #include "test_extras.hxx"
-#include "bout/unused.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
 #include "bout/region.hxx"
+#include "bout/unused.hxx"
 
 #include <algorithm>
 #include <list>
@@ -196,9 +196,7 @@ TEST_F(RegionTest, regionLoopAll) {
 
   // Need to use a Field3D as a jig as OpenMP complicates things here
   Field3D a{0.};
-  BOUT_FOR (i, region) {
-    a[i] = 1.0;
-  }
+  BOUT_FOR(i, region) { a[i] = 1.0; }
 
   for (int i = 0; i < mesh->LocalNx; ++i) {
     for (int j = 0; j < mesh->LocalNy; ++j) {
@@ -213,9 +211,7 @@ TEST_F(RegionTest, regionLoopNoBndry) {
   const auto& region = mesh->getRegion3D("RGN_NOBNDRY");
 
   Field3D a{0.};
-  BOUT_FOR (i, region) {
-    a[i] = 1.0;
-  }
+  BOUT_FOR(i, region) { a[i] = 1.0; }
 
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   const int ninner =
@@ -266,7 +262,8 @@ TEST_F(RegionTest, regionLoopAllSection) {
   const auto& region = mesh->getRegion3D("RGN_ALL");
 
   int count = 0;
-  BOUT_OMP(parallel) {
+  BOUT_OMP(parallel)
+  {
     BOUT_FOR_OMP(i, region, for reduction(+:count)) {
       ++count;
     }
@@ -281,7 +278,8 @@ TEST_F(RegionTest, regionLoopNoBndrySection) {
   const auto& region = mesh->getRegion3D("RGN_NOBNDRY");
 
   int count = 0;
-  BOUT_OMP(parallel) {
+  BOUT_OMP(parallel)
+  {
     BOUT_FOR_OMP(i, region, for reduction(+:count)) {
       ++count;
     }
@@ -297,7 +295,8 @@ TEST_F(RegionTest, regionLoopAllInner) {
   const auto& region = mesh->getRegion3D("RGN_ALL");
 
   Field3D a{0.};
-  BOUT_OMP(parallel) {
+  BOUT_OMP(parallel)
+  {
     BOUT_FOR_INNER(i, region) { a[i] = 1.0; }
   }
 
@@ -314,7 +313,8 @@ TEST_F(RegionTest, regionLoopNoBndryInner) {
   const auto& region = mesh->getRegion3D("RGN_NOBNDRY");
 
   Field3D a{0.};
-  BOUT_OMP(parallel) {
+  BOUT_OMP(parallel)
+  {
     BOUT_FOR_INNER(i, region) { a[i] = 1.0; }
   }
 

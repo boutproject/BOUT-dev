@@ -21,8 +21,8 @@
  **************************************************************************/
 
 #include "bout/globals.hxx"
-#include "bout/interpolation_xz.hxx"
 #include "bout/index_derivs_interface.hxx"
+#include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
 
 #include <vector>
@@ -55,7 +55,7 @@ XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh* mesh)
 void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                                   const std::string& region) {
 
-  BOUT_FOR (i, delta_x.getRegion(region)) {
+  BOUT_FOR(i, delta_x.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
@@ -176,7 +176,7 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
     localmesh->wait(h);
   }
 
-  BOUT_FOR (i, f.getRegion(region)) {
+  BOUT_FOR(i, f.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();

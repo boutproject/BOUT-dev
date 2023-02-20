@@ -23,13 +23,13 @@
  *
  **************************************************************************/
 
-#include <bout/constants.hxx>
 #include <bout/bout.hxx>
+#include <bout/constants.hxx>
 // #include <bout/sys/timer.hxx>
 #include <bout/boutexception.hxx>
-#include <cmath>
 #include <bout/invert_laplace.hxx>
 #include <bout/options.hxx>
+#include <cmath>
 
 BoutReal max_error_at_ystart(const Field3D& error);
 

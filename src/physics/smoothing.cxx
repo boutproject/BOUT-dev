@@ -34,9 +34,9 @@
 
 #include "bout/build_config.hxx"
 
-#include <bout/mesh.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/globals.hxx>
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/smoothing.hxx>
 

@@ -1,9 +1,9 @@
 
 #include <bout/constants.hxx>
-#include <bout/physicsmodel.hxx>
 #include <bout/derivs.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/invert_laplace.hxx>
+#include <bout/physicsmodel.hxx>
 #include <bout/smoothing.hxx>
 
 class Hw : public PhysicsModel {

@@ -4,9 +4,9 @@
  * 
  */
 
+#include <bout/bout.hxx>
 #include <bout/globalfield.hxx>
 #include <bout/physicsmodel.hxx>
-#include <bout/bout.hxx>
 
 class Test_globalfield : public PhysicsModel {
 protected:

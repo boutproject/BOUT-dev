@@ -34,9 +34,7 @@ FieldType random_field(std::default_random_engine& re) {
   FieldType result;
   result.allocate();
   // Fill with random numbers
-  BOUT_FOR (i, result.getRegion("RGN_ALL")) {
-    result[i] = unif(re);
-  }
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = unif(re); }
   return result;
 }
 
@@ -56,9 +54,7 @@ TEST_F(SingleIndexOpsTest, DDX) {
   Field3D indexops;
   indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR (i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = DDX(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = DDX(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
@@ -83,9 +79,7 @@ TEST_F(SingleIndexOpsTest, DDY) {
   Field3D indexops;
   indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR (i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = DDY(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = DDY(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
@@ -107,9 +101,7 @@ TEST_F(SingleIndexOpsTest, DDZ) {
   Field3D indexops;
   indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR (i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = DDZ(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = DDZ(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
@@ -137,7 +129,7 @@ TEST_F(SingleIndexOpsTest, bracket2d3d) {
   indexops.allocate();
   auto input_acc = Field2DAccessor<>(input);
   auto input2_acc = FieldAccessor<>(input2);
-  BOUT_FOR (i, indexops.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, indexops.getRegion("RGN_NOBNDRY")) {
     indexops[i] = bracket(input_acc, input2_acc, i);
   }
 
@@ -164,7 +156,7 @@ TEST_F(SingleIndexOpsTest, bracket3d3d) {
   indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
   auto input2_acc = FieldAccessor<>(input2);
-  BOUT_FOR (i, indexops.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, indexops.getRegion("RGN_NOBNDRY")) {
     indexops[i] = bracket(input_acc, input2_acc, i);
   }
 
@@ -191,9 +183,7 @@ TEST_F(SingleIndexOpsTest, Delp2_3D) {
   Field3D indexops;
   indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR (i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = Delp2(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = Delp2(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
@@ -228,7 +218,7 @@ TEST_F(SingleIndexOpsTest, b0xGrad_dot_Grad_3D_2D) {
   indexops.allocate();
   auto input1_acc = FieldAccessor<>(input1);
   auto input2_acc = Field2DAccessor<>(input2);
-  BOUT_FOR (i, input1.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, input1.getRegion("RGN_NOBNDRY")) {
     indexops[i] = b0xGrad_dot_Grad(input1_acc, input2_acc, i);
   }
 
@@ -253,9 +243,7 @@ TEST_F(SingleIndexOpsTest, D2DY2) {
   Field3D indexops;
   indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR (i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = D2DY2(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = D2DY2(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
@@ -278,9 +266,7 @@ TEST_F(SingleIndexOpsTest, Grad_par) {
   Field3D indexops;
   indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR (i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = Grad_par(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = Grad_par(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));
@@ -303,9 +289,7 @@ TEST_F(SingleIndexOpsTest, Div_par) {
   Field3D indexops;
   indexops.allocate();
   auto input_acc = FieldAccessor<>(input);
-  BOUT_FOR (i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = Div_par(input_acc, i);
-  }
+  BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) { indexops[i] = Div_par(input_acc, i); }
 
   // Check the answer is the same
   ASSERT_TRUE(IsFieldEqual(difops, indexops, "RGN_NOBNDRY"));

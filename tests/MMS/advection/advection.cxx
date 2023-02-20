@@ -3,9 +3,9 @@
  *
  */
 
-#include <bout/physicsmodel.hxx>
 #include <bout/derivs.hxx>
 #include <bout/field_factory.hxx>
+#include <bout/physicsmodel.hxx>
 
 class AdvectMMS : public PhysicsModel {
 public:

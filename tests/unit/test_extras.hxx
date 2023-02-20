@@ -10,12 +10,12 @@
 
 #include "bout/boundary_region.hxx"
 #include "bout/boutcomm.hxx"
-#include "bout/field3d.hxx"
-#include "bout/unused.hxx"
 #include "bout/coordinates.hxx"
+#include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
 #include "bout/mpi_wrapper.hxx"
 #include "bout/operatorstencil.hxx"
+#include "bout/unused.hxx"
 
 static constexpr BoutReal BoutRealTolerance{1e-15};
 // FFTs have a slightly looser tolerance than other functions

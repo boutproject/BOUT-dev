@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 
-#include "bout/output.hxx"
 #include "bout/build_config.hxx"
 #include "bout/constants.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
 
 #include "test_extras.hxx"
 

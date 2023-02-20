@@ -38,8 +38,8 @@ class RK3SSP;
 
 #include "mpi.h"
 
-#include <bout/solver.hxx>
 #include <bout/bout_types.hxx>
+#include <bout/solver.hxx>
 
 namespace {
 RegisterSolver<RK3SSP> registersolverrk3ssp("rk3ssp");

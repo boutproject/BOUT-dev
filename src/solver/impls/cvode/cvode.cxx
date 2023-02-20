@@ -30,16 +30,16 @@
 
 #if BOUT_HAS_CVODE
 
+#include "bout/bout_enum_class.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
+#include "bout/mesh.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
-#include "bout/bout_enum_class.hxx"
-#include "bout/mesh.hxx"
 
 #include "fmt/core.h"
 

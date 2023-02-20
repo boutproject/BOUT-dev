@@ -4,19 +4,19 @@
 #include <tuple>
 
 #include "../../../../src/invert/laplace/impls/petsc3damg/petsc3damg.hxx"
-#include "bout/invert_laplace.hxx"
 #include "test_extras.hxx"
+#include "bout/invert_laplace.hxx"
 #include "gtest/gtest.h"
 
 #include "bout/derivs.hxx"
 #include "bout/difops.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
-#include "bout/options.hxx"
-#include "bout/vecops.hxx"
 #include "bout/griddata.hxx"
 #include "bout/mesh.hxx"
+#include "bout/options.hxx"
 #include "bout/petsc_interface.hxx"
+#include "bout/vecops.hxx"
 
 #if BOUT_HAS_PETSC
 
@@ -59,7 +59,7 @@ private:
       lower_y_neumann, upper_y_neumann;
 
   void applyBoundaries(Field3D& newF, Field3D& f) {
-    BOUT_FOR (i, f.getMesh()->getRegion3D("RGN_INNER_X")) {
+    BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_INNER_X")) {
       if (inner_x_neumann) {
         newF[i] = (f[i.xp()] - f[i]) / coords->dx[i] / sqrt(coords->g_11[i]);
       } else {
@@ -67,7 +67,7 @@ private:
       }
     }
 
-    BOUT_FOR (i, f.getMesh()->getRegion3D("RGN_OUTER_X")) {
+    BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_OUTER_X")) {
       if (outer_x_neumann) {
         newF[i] = (f[i] - f[i.xm()]) / coords->dx[i] / sqrt(coords->g_11[i]);
       } else {
@@ -75,7 +75,7 @@ private:
       }
     }
 
-    BOUT_FOR (i, f.getMesh()->getRegion3D("RGN_LOWER_Y")) {
+    BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_LOWER_Y")) {
       if (lower_y_neumann) {
         newF[i] = (f[i.yp()] - f[i]) / coords->dx[i] / sqrt(coords->g_11[i]);
       } else {
@@ -83,7 +83,7 @@ private:
       }
     }
 
-    BOUT_FOR (i, f.getMesh()->getRegion3D("RGN_UPPER_Y")) {
+    BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_UPPER_Y")) {
       if (upper_y_neumann) {
         newF[i] = (f[i] - f[i.ym()]) / coords->dx[i] / sqrt(coords->g_11[i]);
       } else {
@@ -109,12 +109,12 @@ public:
     coef2.allocate();
     coef3.allocate();
 
-    BOUT_FOR (i, mesh->getRegion2D("RGN_ALL")) {
+    BOUT_FOR(i, mesh->getRegion2D("RGN_ALL")) {
       BoutReal x = i.x() / (BoutReal)nx - 0.5;
       BoutReal y = i.y() / (BoutReal)ny - 0.5;
       coef2[i] = x + y;
     }
-    BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
+    BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
       BoutReal x = i.x() / (BoutReal)nx - 0.5;
       BoutReal y = i.y() / (BoutReal)ny - 0.5;
       BoutReal z = i.z() / (BoutReal)nz - 0.5;
@@ -169,9 +169,7 @@ TEST_P(Petsc3dAmgTest, TestMatrixConstruction3D) {
   PetscVector<Field3D> vector(f3, solver.getIndexer());
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefA_2D) {
@@ -181,9 +179,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefA_2D) {
   forward.a = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefA_3D) {
@@ -193,9 +189,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefA_3D) {
   forward.a = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefC_2D) {
@@ -206,9 +200,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC_2D) {
   forward.c2 = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefC_3D) {
@@ -219,9 +211,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC_3D) {
   forward.c2 = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefC1_2D) {
@@ -231,9 +221,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC1_2D) {
   forward.c1 = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefC1_3D) {
@@ -243,9 +231,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC1_3D) {
   forward.c1 = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefC2_2D) {
@@ -255,9 +241,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC2_2D) {
   forward.c2 = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefC2_3D) {
@@ -267,9 +251,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC2_3D) {
   forward.c2 = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefD_2D) {
@@ -279,9 +261,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefD_2D) {
   forward.d = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefD_3D) {
@@ -291,9 +271,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefD_3D) {
   forward.d = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefEx_2D) {
@@ -303,9 +281,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefEx_2D) {
   forward.ex = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefEx_3D) {
@@ -315,9 +291,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefEx_3D) {
   forward.ex = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefEz_2D) {
@@ -327,9 +301,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefEz_2D) {
   forward.ez = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefEz_3D) {
@@ -339,25 +311,19 @@ TEST_P(Petsc3dAmgTest, TestSetCoefEz_3D) {
   forward.ez = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSolve3D) {
   Field3D expected = f3;
   const Field3D actual = solver.solve(forward(f3));
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSolve3DGuess) {
   Field3D expected = f3, guess = f3 * 1.01;
   const Field3D actual = solver.solve(forward(f3), guess);
-  BOUT_FOR (i, mesh->getRegion3D("RGN_ALL")) {
-    EXPECT_NEAR(expected[i], actual[i], tol);
-  }
+  BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) { EXPECT_NEAR(expected[i], actual[i], tol); }
 }
 
 TEST_P(Petsc3dAmgTest, TestSolvePerp) {

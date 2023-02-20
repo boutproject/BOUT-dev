@@ -1,7 +1,7 @@
 #include <bout/coordinates.hxx>
-#include <bout/mesh.hxx>
 #include <bout/derivs.hxx>
 #include <bout/globals.hxx>
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>
 
@@ -715,7 +715,7 @@ void Mesh::createDefaultRegions() {
 
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx * LocalNy * LocalNz);
-  BOUT_FOR (ind3D, getRegion3D("RGN_ALL")) {
+  BOUT_FOR(ind3D, getRegion3D("RGN_ALL")) {
     indexLookup3Dto2D[ind3D.ind] = ind3Dto2D(ind3D).ind;
   }
 }

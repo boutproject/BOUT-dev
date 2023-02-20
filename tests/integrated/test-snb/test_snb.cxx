@@ -1,9 +1,9 @@
-#include <bout/constants.hxx>
-#include <bout/snb.hxx>
 #include <bout/bout.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/constants.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/output.hxx>
+#include <bout/snb.hxx>
 
 // Convert __LINE__ to string S__LINE__
 #define S(x) #x

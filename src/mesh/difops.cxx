@@ -26,12 +26,12 @@
 #include "bout/build_config.hxx"
 
 #include <bout/assert.hxx>
-#include <bout/solver.hxx>
 #include <bout/derivs.hxx>
 #include <bout/difops.hxx>
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/solver.hxx>
 #include <bout/utils.hxx>
 #include <bout/vecops.hxx>
 
@@ -704,7 +704,7 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
 #if not(BOUT_USE_METRIC_3D)
     const int ncz = mesh->LocalNz;
 
-    BOUT_FOR (j2D, result.getRegion2D("RGN_NOBNDRY")) {
+    BOUT_FOR(j2D, result.getRegion2D("RGN_NOBNDRY")) {
       // Get constants for this iteration
       const BoutReal spacingFactor = 1.0 / (12 * metric->dz[j2D] * metric->dx[j2D]);
       const int jy = j2D.y(), jx = j2D.x();
@@ -997,7 +997,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
     Field3D f_temp = f;
     Field3D g_temp = g;
 
-    BOUT_FOR (j2D, result.getRegion2D("RGN_NOBNDRY")) {
+    BOUT_FOR(j2D, result.getRegion2D("RGN_NOBNDRY")) {
 #if not(BOUT_USE_METRIC_3D)
       const BoutReal spacingFactor = 1.0 / (12 * metric->dz[j2D] * metric->dx[j2D]);
 #endif

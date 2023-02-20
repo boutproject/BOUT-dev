@@ -2,8 +2,8 @@
 #include "gtest/gtest.h"
 
 #include "bout/boutexception.hxx"
-#include "bout/output.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
 #include "bout/region.hxx"
 
 #include "test_extras.hxx"

@@ -446,7 +446,8 @@ public:
     }
     const int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
 
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       Array<dcomplex> cv(ncz / 2 + 1);
       const BoutReal kwaveFac = TWOPI / ncz;
 
@@ -504,7 +505,8 @@ public:
     const int ncz = theMesh->getNpoints(direction);
     const int kmax = ncz / 2;
 
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       Array<dcomplex> cv(ncz / 2 + 1);
       const BoutReal kwaveFac = TWOPI / ncz;
 

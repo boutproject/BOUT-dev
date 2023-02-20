@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 
-#include "bout/bout_types.hxx"
 #include "test_extras.hxx"
-#include "bout/unused.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/sys/expressionparser.hxx"
+#include "bout/unused.hxx"
 
 #include <vector>
 

@@ -40,7 +40,7 @@ XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh* mesh)
 void XZLagrange4pt::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                                 const std::string& region) {
 
-  BOUT_FOR (i, delta_x.getRegion(region)) {
+  BOUT_FOR(i, delta_x.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
@@ -90,7 +90,7 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
-  BOUT_FOR (i, f.getRegion(region)) {
+  BOUT_FOR(i, f.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();

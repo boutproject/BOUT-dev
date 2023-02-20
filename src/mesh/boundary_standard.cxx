@@ -1,11 +1,11 @@
-#include <bout/constants.hxx>
-#include <bout/mesh.hxx>
 #include <bout/boundary_standard.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
 #include <bout/invert_laplace.hxx>
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/utils.hxx>

@@ -37,7 +37,7 @@ using FieldTypes = ::testing::Types<Field3D, Field2D, FieldPerp>;
 TYPED_TEST_SUITE(HypreVectorTest, FieldTypes);
 
 TYPED_TEST(HypreVectorTest, FieldConstructor) {
-  BOUT_FOR (i, this->field.getRegion("RGN_ALL")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_ALL")) {
     this->field[i] = static_cast<BoutReal>(i.ind);
   }
 
@@ -120,12 +120,12 @@ TYPED_TEST(HypreVectorTest, Assemble) {
 }
 
 TYPED_TEST(HypreVectorTest, GetElements) {
-  BOUT_FOR (i, this->field.getRegion("RGN_ALL")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_ALL")) {
     this->field[i] = static_cast<BoutReal>(i.ind);
   }
   HypreVector<TypeParam> vector(this->field, this->indexer);
 
-  BOUT_FOR (i, this->field.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     EXPECT_EQ(vector(i), this->field[i]);
   }
 }
@@ -133,7 +133,7 @@ TYPED_TEST(HypreVectorTest, GetElements) {
 TYPED_TEST(HypreVectorTest, SetElements) {
   HypreVector<TypeParam> vector{this->field, this->indexer};
 
-  BOUT_FOR (i, this->field.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     vector(i) = static_cast<BoutReal>(i.ind);
     this->field[i] = static_cast<BoutReal>(i.ind);
   }
@@ -295,7 +295,7 @@ TYPED_TEST(HypreMatrixTest, SetAddGetValue) {
 TYPED_TEST(HypreMatrixTest, SetElements) {
   HypreMatrix<TypeParam> matrix(this->indexer);
 
-  BOUT_FOR (i, this->field.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     matrix.setVal(i, i, static_cast<BoutReal>(this->indexer->getGlobal(i)));
   }
 
@@ -303,15 +303,14 @@ TYPED_TEST(HypreMatrixTest, SetElements) {
 
   auto raw_matrix = matrix.get();
 
-  BOUT_FOR (i, this->field.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOBNDRY")) {
       auto i_index = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(i));
       auto j_index = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(j));
       HYPRE_Int ncolumns{1};
       HYPRE_Complex value;
-      BOUT_OMP(critical) {
-        HYPRE_IJMatrixGetValues(raw_matrix, 1, &ncolumns, &i_index, &j_index, &value);
-      }
+      BOUT_OMP(critical)
+      { HYPRE_IJMatrixGetValues(raw_matrix, 1, &ncolumns, &i_index, &j_index, &value); }
       if (i == j) {
         EXPECT_EQ(static_cast<BoutReal>(value),
                   static_cast<BoutReal>(this->indexer->getGlobal(i)));
@@ -338,7 +337,7 @@ TYPED_TEST(HypreMatrixTest, GetElements) {
   }
   matrix.assemble();
 
-  BOUT_FOR (i, this->field.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOBNDRY")) {
       if (i == j) {
         EXPECT_EQ(matrix.getVal(i, j),

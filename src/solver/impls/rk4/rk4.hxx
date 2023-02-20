@@ -32,8 +32,8 @@ class RK4Solver;
 
 #include "mpi.h"
 
-#include <bout/solver.hxx>
 #include <bout/bout_types.hxx>
+#include <bout/solver.hxx>
 
 namespace {
 RegisterSolver<RK4Solver> registersolverrk4("rk4");

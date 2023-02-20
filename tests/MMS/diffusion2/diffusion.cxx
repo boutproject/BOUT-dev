@@ -1,8 +1,8 @@
-#include <bout/constants.hxx>
-#include <bout/physicsmodel.hxx>
 #include <bout/bout.hxx>
+#include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
+#include <bout/physicsmodel.hxx>
 #include <math.h>
 
 class Diffusion : public PhysicsModel {

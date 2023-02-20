@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "bout/field.hxx"
 #include "test_extras.hxx"
+#include "bout/field.hxx"
 #include "bout/where.hxx"
 
 /// Global mesh

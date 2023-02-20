@@ -2,9 +2,9 @@
 #include "gtest/gtest.h"
 
 #include "../src/mesh/impls/bout/boutmesh.hxx"
+#include "bout/griddata.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
-#include "bout/griddata.hxx"
 
 #include "test_extras.hxx"
 

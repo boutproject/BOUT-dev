@@ -1,7 +1,7 @@
 #include "bout/build_config.hxx"
 
-#include "bout/boutexception.hxx"
 #include "test_extras.hxx"
+#include "bout/boutexception.hxx"
 #include "gtest/gtest.h"
 
 #include <iostream>
