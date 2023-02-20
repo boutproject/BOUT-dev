@@ -42,9 +42,11 @@ TEST(MacroForEachTest, NoBraces) {
   int a = 0;
 
   // Only the first expansion is disabled
-  if (false) {
+  // This is really confusing, and clang-format would fix this, to skip all
+  // clang-format off
+  if (false)
     MACRO_FOR_EACH(INC, a, a, a);
-  }
+  // clang-format on
 
   EXPECT_EQ(a, 2);
 }
