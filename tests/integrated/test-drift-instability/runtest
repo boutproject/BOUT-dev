@@ -197,7 +197,6 @@ def run_zeff_case(zeff):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser("Run drift-instability test")
     parser.add_argument(
         "-Z",

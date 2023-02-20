@@ -277,7 +277,6 @@ print("\nsource   = " + exprToStr(Sphi.subs(replace)))
 # print "\n\nDelp2 phi = ", Delp2(phi, metric).subs(replace)
 
 if not estatic:
-
     Spsi = Delp2(psi, metric) - 0.5 * Ne * mi_me * beta_e * psi - Ne * (Vi - VePsi)
     print("\n[psi]")
     print("\nsolution = " + exprToStr(psi.subs(replace)))

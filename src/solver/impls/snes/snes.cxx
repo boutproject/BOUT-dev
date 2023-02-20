@@ -4,16 +4,16 @@
 
 #include "snes.hxx"
 
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
 #include <array>
 #include <cmath>
 #include <vector>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 #include "petscsnes.h"
 /*

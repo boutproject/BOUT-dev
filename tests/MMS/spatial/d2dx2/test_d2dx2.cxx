@@ -2,9 +2,9 @@
  * Test D2DX2 operator without time integration
  */
 
-#include <bout.hxx>
-#include <field_factory.hxx>
-#include <derivs.hxx>
+#include <bout/bout.hxx>
+#include <bout/derivs.hxx>
+#include <bout/field_factory.hxx>
 
 using bout::globals::mesh;
 

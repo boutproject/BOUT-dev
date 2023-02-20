@@ -37,6 +37,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <bout/bout_types.hxx>
+#include <bout/boutcomm.hxx>
 #include <bout/globalindexer.hxx>
 #include <bout/mesh.hxx>
 #include <bout/operatorstencil.hxx>
@@ -44,8 +46,6 @@
 #include <bout/petsclib.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
-#include <bout_types.hxx>
-#include <boutcomm.hxx>
 
 #if BOUT_HAS_PETSC
 
@@ -166,7 +166,8 @@ public:
     Element(const Element& other) = default;
     Element(Vec* vector, int index) : petscVector(vector), petscIndex(index) {
       int status;
-      BOUT_OMP(critical) status = VecGetValues(*petscVector, 1, &petscIndex, &value);
+      BOUT_OMP(critical)
+      status = VecGetValues(*petscVector, 1, &petscIndex, &value);
       if (status != 0) {
         value = 0.;
       }
@@ -235,7 +236,8 @@ public:
 #endif
     BoutReal value;
     int status;
-    BOUT_OMP(critical) status = VecGetValues(*get(), 1, &global, &value);
+    BOUT_OMP(critical)
+    status = VecGetValues(*get(), 1, &global, &value);
     if (status != 0) {
       throw BoutException("Error when getting element of a PETSc vector.");
     }
@@ -329,8 +331,9 @@ public:
   // preallocating memory if requeted and possible.
   PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
       : matrix(new Mat(), MatrixDeleter()), indexConverter(indConverter) {
-    const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? indConverter->getMesh()->getXcomm() : BoutComm::get();
+    const MPI_Comm comm = std::is_same<T, FieldPerp>::value
+                              ? indConverter->getMesh()->getXcomm()
+                              : BoutComm::get();
     pt = &indConverter->getMesh()->getCoordinates()->getParallelTransform();
     const int size = indexConverter->size();
 

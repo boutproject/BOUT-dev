@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "boutexception.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/generic_factory.hxx"
 
 #include <exception>
@@ -45,7 +45,8 @@ constexpr decltype(BaseFactory::default_type) BaseFactory::default_type;
 BaseFactory::RegisterInFactory<Base> registerme("base");
 BaseFactory::RegisterInFactory<Derived1> registerme1("derived1");
 BaseFactory::RegisterInFactory<Derived2> registerme2("derived2");
-BaseFactory::RegisterUnavailableInFactory dontregisterme("not here", "this is only a test");
+BaseFactory::RegisterUnavailableInFactory dontregisterme("not here",
+                                                         "this is only a test");
 } // namespace
 
 class BaseComplicated {

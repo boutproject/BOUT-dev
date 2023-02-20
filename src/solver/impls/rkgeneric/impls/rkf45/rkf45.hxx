@@ -5,7 +5,7 @@ class RKF45Scheme;
 #define __RKF45_SCHEME_H__
 
 #include <bout/rkscheme.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 class RKF45Scheme : public RKScheme {
 public:
