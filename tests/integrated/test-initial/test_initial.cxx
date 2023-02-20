@@ -6,7 +6,7 @@
  *
  */
 
-#include "initialprofiles.hxx"
+#include "bout/initialprofiles.hxx"
 #include "bout/physicsmodel.hxx"
 
 int main(int argc, char** argv) {

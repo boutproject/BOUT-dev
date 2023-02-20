@@ -1,254 +1,100 @@
+.. _sec-file-io:
+
 File I/O
 ========
 
-BOUT++ needs to deal with binary format files to read the grid; read
-and write restart restart files; and write dump files. The two parts
-of the code which need to read and write data are therefore the grid
-routines (:doc:`grid.hxx<../_breathe_autogen/file/griddata_8hxx>`),
-and the `Datafile` class
-(:doc:`datafile.hxx<../_breathe_autogen/file/datafile_8hxx>` and
-:doc:`datafile.cxx<../_breathe_autogen/file/datafile_8cxx>`). All
-other parts which need to read or write data go through these methods.
+BOUT++ deals with essentially two types of binary files: "grid" files
+which are input files read collectively and distributed over all
+processes; and "dump" files which are used for input and/or output are
+unique to each process. Dump files are accessed through the
+`bout::OptionsNetCDF` interface, while grid files have another layer
+over the top of this in order to handle the distribution over
+processes.
 
-netCDF is used for binary I/O. For historical reasons (inherited from
-BOUT), BOUT++ originally used the Portable Data Binary (PDB) format
-developed at LLNL [1]_. HDF5 was also previously supported. To
-separate the basic file format functions from the higher level grid
-and Datafile classes, these use an abstract class `DataFormat`. Any
-class which implements the functions listed in
-:doc:`dataformat.hxx<../_breathe_autogen/file/dataformat_8hxx>` can
-therefore be passed to grid or datafile. This makes implementing a new
-file format, and switching between formats at run-time, relatively
-straightforward.
+`bout::OptionsNetCDF` provides an interface to read and write
+`Options` to/from netCDF files. See :ref:`sec-options` for how to use
+`Options`, and :ref:`sec-options-netcdf` for how to use
+`bout::OptionsNetCDF`.
 
-Access to data in files is provided using a Bridge pattern: The
-`Datafile` class provides an interface to the rest of the code to read
-and write variables, whilst file formats implement the `Dataformat`
-interface.
+.. _sec-file-io-v5:
 
-::
+Changes in BOUT++ v5
+--------------------
 
-    class Datafile {
-     public:
-      Datafile(Options *opt = nullptr, Mesh* mesh_in = nullptr);
-      Datafile(Datafile &&other) noexcept;
-      ~Datafile(); // need to delete filename
+BOUT++ previously also supported the Portable Data Binary (PDB)
+format, developed at LLNL, as well as HDF5 files directly, but support
+for these formats were removed in BOUT++ v4 and v5, respectively.  The
+whole file I/O system has been refactored in v5 to take advantage of
+`bout::OptionsNetCDF` and drastically simplify the library code. This
+has in turn changed how some I/O is handled. Previously, there was a
+global ``bout::globals::dump`` object of type ``Datafile``, which
+wrapped an internal ``Dataformat`` base class, which was an interface
+to various concrete implementations of the different file formats
+supported.
 
-      Datafile& operator=(Datafile &&rhs) noexcept;
-      Datafile& operator=(const Datafile &rhs) = delete;
+The ``dump`` instance stored non-``const`` pointers to variables, and
+wrote them to disk periodically. This had some significant downsides:
+writing ``const`` variables was painful, expressions required an
+intermediate variable, and variables had to remain in scope until
+``dump`` actually flushed to disk. This was easy to get wrong and
+accidentally end up writing nonsense.
 
-      bool openr(const char *filename, ...);
-      bool openw(const char *filename, ...); // Overwrites existing file
-      bool opena(const char *filename, ...); // Appends if exists
+In v5, file IO is now done entirely through `Options` and
+`bout::OptionsNetCDF`: data is stored in an ``Options`` instance and
+then written to disk through ``bout::OptionsNetCDF``. The data is
+copied into the ``Options`` instance, so there are no issues with
+``const`` variables, expressions, or scope.
 
-      bool isValid();  // Checks if the data source is valid
+With the defunct ``dump`` being a global instance, any object anywhere
+could write to file. Now that it has been removed, we have a new idiom
+for objects that wish to write data: ``void outputVars(Options&)``. An
+existing ``Options`` instance is passed in and the object sets whatever
+data it likes. This allows the same ``Options`` instance to be passed
+around and be added to before being written, as well as easily
+enabling objects to write to separate files if required.
 
-      void close();
+All of this has meant that some changes are necessary to physics
+models when it comes to writing data. There are now two more
+``virtual`` methods on `PhysicsModel`::
 
-      void setLowPrecision(); ///< Only output floats
-      template <typename t>
-      void addRepeat(t &value, std::string name){
-        add(value,name.c_str(),true);
-      }
-      template <typename t>
-      void addOnce(t &value, std::string name){
-        add(value,name.c_str(),false);
-      }
-      void add(int &i, const char *name, bool save_repeat = false);
-      void add(BoutReal &r, const char *name, bool save_repeat = false);
-      void add(bool &b, const char* name, bool save_repeat = false);
-      void add(Field2D &f, const char *name, bool save_repeat = false);
-      void add(Field3D &f, const char *name, bool save_repeat = false);
-      void add(FieldPerp &f, const char *name, bool save_repeat = false);
-      void add(Vector2D &f, const char *name, bool save_repeat = false);
-      void add(Vector3D &f, const char *name, bool save_repeat = false);
+  /// Output additional variables other than the evolving variables
+  virtual void outputVars(Options& options);
+  /// Add additional variables other than the evolving variables to the restart files
+  virtual void restartVars(Options& options);
 
-      bool read();  ///< Read data into added variables
-      bool write(); ///< Write added variables
+`PhysicsModel::outputVars` is our new idiomatic method, while
+`PhysicsModel::restartVars` is very similar just targeting the restart
+file only. This allows the developer to add auxiliary variables to the
+restart file. Instead of the global ``dump`` and member ``restart``
+``Datafile`` instances, there are two ``Options`` members of
+``PhysicsModel``: `PhysicsModel::output_file` and
+`PhysicsModel::restart_file`. These are ``private`` and so can only be
+accessed through the ``outputVars`` and ``restartVars`` methods.
 
-      /// Opens, writes, closes file
-      bool write(const char* filename, ...) const;
+As in previous versions, the `Solver` takes care of ensuring evolving
+variables are added to the output and restart files through
+`Solver::outputVars`, though now it takes a reference to an `Options`
+rather than a ``Datafile``.
 
-      void setAttribute(const std::string &varname, const std::string &attrname, const std::string &text);
-      void setAttribute(const std::string &varname, const std::string &attrname, int value);
-      void setAttribute(const std::string &varname, const std::string &attrname, BoutReal value);
-    };
+For non-evolving variables, the developer can ``override``
+``PhysicsModel::outputVars`` to add further data, diagnostics, and
+auxiliary variables to the output file.
 
-The important bits of the DataFormat interface are::
+The `PhysicsModel::PhysicsModelMonitor` is called by the solver every
+``nout`` timesteps (see :ref:`sec-options-general` fore more details
+on input options). This monitor calls `Solver::outputVars` to set the
+evolving variables, and then `PhysicsModel::outputVars` to set any
+model-specific data. The restart file is handled similarly.
 
-    class DataFormat {
-     public:
-      DataFormat(Mesh* mesh_in = nullptr);
-      virtual ~DataFormat() { }
-      // File opening routines
-      virtual bool openr(const char *name) = 0;
-      virtual bool openr(const std::string &name) {
-        return openr(name.c_str());
-      }
-      virtual bool openr(const std::string &base, int mype);
-      virtual bool openw(const char *name, bool append=false) = 0;
-      virtual bool openw(const std::string &name, bool append=false) {
-        return openw(name.c_str(), append);
-      }
-      virtual bool openw(const std::string &base, int mype, bool append=false);
+To help upgrading to BOUT++ v5, there is a `bout::DataFileFacade`
+member of `PhysicsModel` called ``dump``. This class provides a
+similar interface to ``Datafile``, and just like ``Datafile`` it also
+stores pointers to variables. This means that it still suffers from
+all of the downsides of ``Datafile``, and developers are encouraged to
+move to the ``outputVars`` approach. The `SAVE_ONCE`/`SAVE_REPEAT`
+macros also work through `DataFileFacade`` -- this means that they
+cannot be used outside of ``PhysicsModel`` methods!
 
-      virtual bool is_valid() = 0;
-
-      virtual void close() = 0;
-
-      virtual void flush() = 0;
-
-      virtual const std::vector<int> getSize(const char *var) = 0;
-      virtual const std::vector<int> getSize(const std::string &var) = 0;
-
-      // Set the origin for all subsequent calls
-      virtual bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) = 0;
-      virtual bool setLocalOrigin(int x = 0, int y = 0, int z = 0, int offset_x = 0, int offset_y = 0, int offset_z = 0);
-      virtual bool setRecord(int t) = 0; // negative -> latest
-
-      // Add a variable to the file
-      virtual bool addVarInt(const std::string &name, bool repeat) = 0;
-      virtual bool addVarBoutReal(const std::string &name, bool repeat) = 0;
-      virtual bool addVarField2D(const std::string &name, bool repeat) = 0;
-      virtual bool addVarField3D(const std::string &name, bool repeat) = 0;
-      virtual bool addVarFieldPerp(const std::string &name, bool repeat) = 0;
-
-      // Read / Write simple variables up to 3D
-
-      virtual bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
-      virtual bool read(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
-      virtual bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
-      virtual bool read(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
-      virtual bool read_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) = 0;
-
-      virtual bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
-      virtual bool write(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
-      virtual bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
-      virtual bool write(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
-      virtual bool write_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) = 0;
-
-      // Read / Write record-based variables
-
-      virtual bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
-      virtual bool read_rec(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
-      virtual bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
-      virtual bool read_rec(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
-      virtual bool read_rec_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) = 0;
-
-      virtual bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
-      virtual bool write_rec(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
-      virtual bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
-      virtual bool write_rec(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
-      virtual bool write_rec_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) = 0;
-
-      // Optional functions
-
-      virtual void setLowPrecision() { }  // By default doesn't do anything
-
-      // Attributes
-
-      /// Sets a string attribute
-      ///
-      /// Inputs
-      /// ------
-      ///
-      /// @param[in] varname     Variable name. The variable must already exist. If
-      ///                        varname is the empty string "" then the attribute
-      ///                        will be added to the file instead of to a
-      ///                        variable.
-      /// @param[in] attrname    Attribute name
-      /// @param[in] text        A string attribute to attach to the variable
-      virtual void setAttribute(const std::string &varname, const std::string &attrname,
-                                const std::string &text) = 0;
-
-      /// Sets an integer attribute
-      ///
-      /// Inputs
-      /// ------
-      ///
-      /// @param[in] varname     Variable name. The variable must already exist. If
-      ///                        varname is the empty string "" then the attribute
-      ///                        will be added to the file instead of to a
-      ///                        variable.
-      /// @param[in] attrname    Attribute name
-      /// @param[in] value       An int attribute to attach to the variable
-      virtual void setAttribute(const std::string &varname, const std::string &attrname,
-                                int value) = 0;
-
-      /// Sets a BoutReal attribute
-      ///
-      /// Inputs
-      /// ------
-      ///
-      /// @param[in] varname     Variable name. The variable must already exist. If
-      ///                        varname is the empty string "" then the attribute
-      ///                        will be added to the file instead of to a
-      ///                        variable.
-      /// @param[in] attrname    Attribute name
-      /// @param[in] value       A BoutReal attribute to attach to the variable
-      virtual void setAttribute(const std::string &varname, const std::string &attrname,
-                                BoutReal value) = 0;
-
-      /// Gets a string attribute
-      ///
-      /// Inputs
-      /// ------
-      ///
-      /// @param[in] varname     Variable name. The variable must already exist. If
-      ///                        varname is the empty string "" then get the
-      ///                        attribute from the top-level of the file instead
-      ///                        of from a variable.
-      /// @param[in] attrname    Attribute name
-      ///
-      /// Returns
-      /// -------
-      /// text                   A string attribute of the variable
-      virtual bool getAttribute(const std::string &varname, const std::string &attrname, std::string &text) = 0;
-
-      /// Gets an integer attribute
-      ///
-      /// Inputs
-      /// ------
-      ///
-      /// @param[in] varname     Variable name. The variable must already exist. If
-      ///                        varname is the empty string "" then get the
-      ///                        attribute from the top-level of the file instead
-      ///                        of from a variable.
-      /// @param[in] attrname    Attribute name
-      ///
-      /// Returns
-      /// -------
-      /// value                  An int attribute of the variable
-      virtual bool getAttribute(const std::string &varname, const std::string &attrname, int &value) = 0;
-
-      /// Gets a BoutReal attribute
-      ///
-      /// Inputs
-      /// ------
-      ///
-      /// @param[in] varname     Variable name. The variable must already exist. If
-      ///                        varname is the empty string "" then get the
-      ///                        attribute from the top-level of the file instead
-      ///                        of from a variable.
-      /// @param[in] attrname    Attribute name
-      ///
-      /// Returns
-      /// -------
-      /// value                  A BoutReal attribute of the variable
-      virtual bool getAttribute(const std::string &varname, const std::string &attrname, BoutReal &value) = 0;
-
-      /// Write out the meta-data of a field as attributes of the variable
-      void writeFieldAttributes(const std::string& name, const Field& f);
-      /// Overload for FieldPerp so we can also write 'yindex'
-      void writeFieldAttributes(const std::string& name, const FieldPerp& f);
-
-      /// Read the attributes of a field
-      void readFieldAttributes(const std::string& name, Field& f);
-      /// Overload for FieldPerp so we can also read 'yindex'
-      void readFieldAttributes(const std::string& name, FieldPerp& f);
-    };
-
-.. [1] Support for PDB files was removed in BOUT++ 4.0.0
 
 FieldPerp I/O
 -------------

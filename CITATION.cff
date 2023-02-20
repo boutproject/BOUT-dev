@@ -29,6 +29,9 @@ authors:
   - family-names: Dempsey
     given-names: Adam
 
+  - family-names: Fisher
+    given-names: Aaron
+
   - family-names: Allen
     given-names: Andrew
 
@@ -45,6 +48,9 @@ authors:
   - family-names: Ma
     given-names: Chenhao
 
+  - family-names: MacMackin
+    given-names: Chris
+
   - family-names: Bold
     given-names: David
     affiliation: Max Planck Institute for Plasma Physics, Greifswald
@@ -54,6 +60,9 @@ authors:
     given-names: Dmitry
 
   - family-names: Grinaker
+    given-names: Erik
+
+  - family-names: Medwedeff
     given-names: Eric
 
   - family-names: Breyiannis
@@ -85,8 +94,14 @@ authors:
     given-names: John
     orcid: https://orcid.org/0000-0002-3156-8227
 
+  - family-names: Jones
+    given-names: Holger
+
   - family-names: Sauppe
     given-names: Joshua
+
+  - family-names: Kang
+    given-names: Kab Seok
 
   - family-names: Savage
     given-names: Kevin
@@ -153,10 +168,16 @@ authors:
     given-names: Xiang
 
   - family-names: Xu
+    given-names: Xinliang
+
+  - family-names: Xu
     given-names: Xueqiao
 
   - family-names: Wang
     given-names: Zhanhui
+
+  - family-names: Qin
+    given-names: Yining
 
   - family-names: Ahmed
     given-names: Sajidah
@@ -164,11 +185,11 @@ authors:
   - family-names: James
     given-names: Toby
 
-version: 4.4.1
-date-released: 2022-01-13
+version: 5.0.0
+date-released: 2023-02-08
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
-doi: 10.5281/zenodo.5776785
+doi: 10.5281/zenodo.7603558
 license: 'LGPL-3.0-or-later'
 references:
   - type: article

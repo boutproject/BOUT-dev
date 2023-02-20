@@ -29,10 +29,10 @@ class LaplacePCR_THOMAS;
 #ifndef BOUT_PCR_THOMAS_H
 #define BOUT_PCR_THOMAS_H
 
-#include <dcomplex.hxx>
-#include <invert_laplace.hxx>
-#include <options.hxx>
-#include <utils.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/options.hxx>
+#include <bout/utils.hxx>
 
 namespace {
 RegisterLaplace<LaplacePCR_THOMAS> registerlaplacepcrthomas(LAPLACE_PCR_THOMAS);
@@ -41,8 +41,7 @@ RegisterLaplace<LaplacePCR_THOMAS> registerlaplacepcrthomas(LAPLACE_PCR_THOMAS);
 class LaplacePCR_THOMAS : public Laplacian {
 public:
   LaplacePCR_THOMAS(Options* opt = nullptr, CELL_LOC loc = CELL_CENTRE,
-                    Mesh* mesh_in = nullptr, Solver* solver = nullptr,
-                    Datafile* dump = nullptr);
+                    Mesh* mesh_in = nullptr, Solver* solver = nullptr);
   ~LaplacePCR_THOMAS() = default;
 
   using Laplacian::setCoefA;
