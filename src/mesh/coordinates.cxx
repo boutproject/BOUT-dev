@@ -1899,12 +1899,15 @@ void Coordinates::checkCovariant() {
   bout::checkFinite(g_11, "g_11", "RGN_NOCORNERS");
   bout::checkFinite(g_22, "g_22", "RGN_NOCORNERS");
   bout::checkFinite(g_33, "g_33", "RGN_NOCORNERS");
-  if (g_11.hasParallelSlices() && &g_11.ynext(1) != &g_11){
-    for (int dy=1; dy <= localmesh->ystart; ++dy) {
-      for (auto& sign : {1, -1}) {
-	bout::checkFinite(g_11.ynext(sign * dy), "g_11.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
-	bout::checkFinite(g_22.ynext(sign * dy), "g_22.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
-	bout::checkFinite(g_33.ynext(sign * dy), "g_33.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
+  if (g_11.hasParallelSlices() && &g_11.ynext(1) != &g_11) {
+    for (int dy = 1; dy <= localmesh->ystart; ++dy) {
+      for (const auto sign : {1, -1}) {
+        bout::checkFinite(g_11.ynext(sign * dy), "g_11.ynext",
+                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkFinite(g_22.ynext(sign * dy), "g_22.ynext",
+                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkFinite(g_33.ynext(sign * dy), "g_33.ynext",
+                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
   }
@@ -1912,12 +1915,15 @@ void Coordinates::checkCovariant() {
   bout::checkPositive(g_11, "g_11", "RGN_NOCORNERS");
   bout::checkPositive(g_22, "g_22", "RGN_NOCORNERS");
   bout::checkPositive(g_33, "g_33", "RGN_NOCORNERS");
-  if (g_11.hasParallelSlices() && &g_11.ynext(1) != &g_11){
-    for (int dy=1; dy <= localmesh->ystart; ++dy) {
-      for (auto& sign : {1, -1}) {
-	bout::checkPositive(g_11.ynext(sign * dy), "g_11.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
-	bout::checkPositive(g_22.ynext(sign * dy), "g_22.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
-	bout::checkPositive(g_33.ynext(sign * dy), "g_33.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
+  if (g_11.hasParallelSlices() && &g_11.ynext(1) != &g_11) {
+    for (int dy = 1; dy <= localmesh->ystart; ++dy) {
+      for (const auto sign : {1, -1}) {
+        bout::checkPositive(g_11.ynext(sign * dy), "g_11.ynext",
+                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkPositive(g_22.ynext(sign * dy), "g_22.ynext",
+                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkPositive(g_33.ynext(sign * dy), "g_33.ynext",
+                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
   }
@@ -1927,11 +1933,14 @@ void Coordinates::checkCovariant() {
   bout::checkFinite(g_13, "g_13", "RGN_NOCORNERS");
   bout::checkFinite(g_23, "g_23", "RGN_NOCORNERS");
   if (g_23.hasParallelSlices() && &g_23.ynext(1) != &g_23) {
-    for (int dy=1; dy <= localmesh->ystart; ++dy) {
-      for (auto& sign : {1, -1}) {
-	bout::checkFinite(g_12.ynext(sign * dy), "g_12.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
-	bout::checkFinite(g_13.ynext(sign * dy), "g_13.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
-	bout::checkFinite(g_23.ynext(sign * dy), "g_23.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
+    for (int dy = 1; dy <= localmesh->ystart; ++dy) {
+      for (const auto sign : {1, -1}) {
+        bout::checkFinite(g_12.ynext(sign * dy), "g_12.ynext",
+                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkFinite(g_13.ynext(sign * dy), "g_13.ynext",
+                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkFinite(g_23.ynext(sign * dy), "g_23.ynext",
+                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
   }
@@ -1946,7 +1955,7 @@ void Coordinates::checkContravariant() {
   bout::checkFinite(g33, "g33", "RGN_NOCORNERS");
   if (g11.hasParallelSlices() && &g11.ynext(1) != &g11 ){
     for (int dy=1; dy <= localmesh->ystart; ++dy) {
-      for (auto& sign : {1, -1}) {
+      for (const auto sign : {1, -1}) {
 	bout::checkFinite(g11.ynext(sign * dy), "g11.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
 	bout::checkFinite(g22.ynext(sign * dy), "g22.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
 	bout::checkFinite(g33.ynext(sign * dy), "g33.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
@@ -1957,12 +1966,15 @@ void Coordinates::checkContravariant() {
   bout::checkPositive(g11, "g11", "RGN_NOCORNERS");
   bout::checkPositive(g22, "g22", "RGN_NOCORNERS");
   bout::checkPositive(g33, "g33", "RGN_NOCORNERS");
-  if (g11.hasParallelSlices() && &g11.ynext(1) != &g11){
-    for (int dy=1; dy <= localmesh->ystart; ++dy) {
-      for (auto& sign : {1, -1}) {
-	bout::checkPositive(g11.ynext(sign * dy), "g11.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
-	bout::checkPositive(g22.ynext(sign * dy), "g22.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
-	bout::checkPositive(g33.ynext(sign * dy), "g33.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
+  if (g11.hasParallelSlices() && &g11.ynext(1) != &g11) {
+    for (int dy = 1; dy <= localmesh->ystart; ++dy) {
+      for (const auto sign : {1, -1}) {
+        bout::checkPositive(g11.ynext(sign * dy), "g11.ynext",
+                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkPositive(g22.ynext(sign * dy), "g22.ynext",
+                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkPositive(g33.ynext(sign * dy), "g33.ynext",
+                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
   }
@@ -1973,7 +1985,7 @@ void Coordinates::checkContravariant() {
   bout::checkFinite(g23, "g23", "RGN_NOCORNERS");
   if (g23.hasParallelSlices() && &g23.ynext(1) != &g23) {
     for (int dy=1; dy <= localmesh->ystart; ++dy) {
-      for (auto& sign : {1, -1}) {
+      for (const auto sign : {1, -1}) {
 	bout::checkFinite(g12.ynext(sign * dy), "g12.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
 	bout::checkFinite(g13.ynext(sign * dy), "g13.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
 	bout::checkFinite(g23.ynext(sign * dy), "g23.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
