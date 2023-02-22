@@ -544,7 +544,6 @@ int AdamsBashforthSolver::run() {
     // avoid any additional unrequired work associated with run_rhs.
     run_rhs(simtime);
 
-
     // Call the output step monitor function
     if (call_monitors(simtime, s, getNumberOutputSteps()) != 0) {
       break; // Stop simulation
