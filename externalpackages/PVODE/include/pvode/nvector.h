@@ -94,16 +94,6 @@ namespace pvode {
 #else
 #define PVEC_REAL_MPI_TYPE MPI_FLOAT
 #endif
-#else
-#if (LLNL_DOUBLE == 1)
-#if PVEC_REAL_MPI_TYPE != MPI_DOUBLE
-#error PVEC_REAL_MPI_TYPE changed
-#endif
-#else
-#if PVEC_REAL_MPI_TYPE != MPI_FLOAT
-#error PVEC_REAL_MPI_TYPE changed
-#endif
-#endif
 #endif
 
 // Ugh, potentionanlly bad but need to do this for now when compiling with both SUNDIALS and PVODE
