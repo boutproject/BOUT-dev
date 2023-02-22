@@ -82,6 +82,7 @@ set(BOUT_SOURCES
   ./include/bout/bout.hxx
   ./include/bout/bout_enum_class.hxx
   ./include/bout/bout_types.hxx
+  ./include/bout/build_config.hxx
   ./include/bout/boutcomm.hxx
   ./include/bout/boutexception.hxx
   ./include/bout/caliper_wrapper.hxx
@@ -116,10 +117,13 @@ set(BOUT_SOURCES
   ./include/bout/index_derivs_interface.hxx
   ./include/bout/initialprofiles.hxx
   ./include/bout/interpolation.hxx
+  ./include/bout/interpolation_xz.hxx
+  ./include/bout/interpolation_z.hxx
   ./include/bout/invert/laplacexy.hxx
   ./include/bout/invert/laplacexz.hxx
   ./include/bout/invert_laplace.hxx
   ./include/bout/invert_parderiv.hxx
+  ./include/bout/invert_pardiv.hxx
   ./include/bout/invertable_operator.hxx
   ./include/bout/lapack_routines.hxx
   ./include/bout/macro_for_each.hxx
@@ -142,6 +146,7 @@ set(BOUT_SOURCES
   ./include/bout/petsc_interface.hxx
   ./include/bout/petsclib.hxx
   ./include/bout/physicsmodel.hxx
+  ./include/bout/rajalib.hxx
   ./include/bout/region.hxx
   ./include/bout/rkscheme.hxx
   ./include/bout/rvec.hxx
@@ -154,6 +159,7 @@ set(BOUT_SOURCES
   ./include/bout/solverfactory.hxx
   ./include/bout/sourcex.hxx
   ./include/bout/stencils.hxx
+  ./include/bout/sundials_backports.hxx
   ./include/bout/surfaceiter.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/generator_context.hxx
@@ -162,6 +168,7 @@ set(BOUT_SOURCES
   ./include/bout/sys/timer.hxx
   ./include/bout/sys/type_name.hxx
   ./include/bout/sys/uncopyable.hxx
+  ./include/bout/sys/uuid.h
   ./include/bout/sys/variant.hxx
   ./include/bout/template_combinations.hxx
   ./include/bout/traits.hxx
@@ -231,6 +238,9 @@ set(BOUT_SOURCES
   ./src/invert/parderiv/impls/cyclic/cyclic.cxx
   ./src/invert/parderiv/impls/cyclic/cyclic.hxx
   ./src/invert/parderiv/invert_parderiv.cxx
+  ./src/invert/pardiv/impls/cyclic/pardiv_cyclic.cxx
+  ./src/invert/pardiv/impls/cyclic/pardiv_cyclic.hxx
+  ./src/invert/pardiv/invert_pardiv.cxx
   ./src/mesh/boundary_factory.cxx
   ./src/mesh/boundary_region.cxx
   ./src/mesh/boundary_standard.cxx
@@ -243,12 +253,10 @@ set(BOUT_SOURCES
   ./src/mesh/impls/bout/boutmesh.cxx
   ./src/mesh/impls/bout/boutmesh.hxx
   ./src/mesh/index_derivs.cxx
-  ./include/interpolation_xz.hxx
   ./src/mesh/interpolation_xz.cxx
   ./src/mesh/interpolation/bilinear_xz.cxx
   ./src/mesh/interpolation/hermite_spline_xz.cxx
   ./src/mesh/interpolation/hermite_spline_z.cxx
-  ./include/interpolation_z.hxx
   ./src/mesh/interpolation/interpolation_z.cxx
   ./src/mesh/interpolation/lagrange_4pt_xz.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx

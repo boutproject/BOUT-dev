@@ -1,4 +1,4 @@
-#include <options.hxx>
+#include <bout/options.hxx>
 
 // Use an integrated test for what is effectively a unit test of the
 // BOUT_OVERRIDE_DEFAULT_OPTION() macro because the functionality relies on the state of
