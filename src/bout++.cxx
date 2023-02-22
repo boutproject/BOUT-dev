@@ -693,7 +693,6 @@ void addBuildFlagsToOptions(Options& options) {
   options["has_lapack"] = bout::build::has_lapack;
   options["has_netcdf"] = bout::build::has_netcdf;
   options["has_petsc"] = bout::build::has_petsc;
-  options["has_legacy_netcdf"] = bout::build::has_legacy_netcdf;
   options["has_hypre"] = bout::build::has_hypre;
   options["has_umpire"] = bout::build::has_umpire;
   options["has_caliper"] = bout::build::has_caliper;
