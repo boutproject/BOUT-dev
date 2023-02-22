@@ -5,7 +5,17 @@
 #include <msg_stack.hxx>
 
 #include <output.hxx>
-
+namespace {
+template <class Field3D>
+struct Slices {
+  Field3D c;
+  Field3D up;
+  Field3D down;
+  Slices(bool use_slices, const Field3D& field)
+      : c(use_slices ? field : toFieldAligned(field)), up(use_slices ? field.yup() : c),
+        down(use_slices ? field.ydown() : c) {}
+};
+} // namespace
 namespace FV {
 
 // Div ( a Grad_perp(f) ) -- ∇⊥ ( a ⋅ ∇⊥ f) --  Vorticity
@@ -68,22 +78,17 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   // Values on this y slice (centre).
   // This is needed because toFieldAligned may modify the field
-#define GET(fci, a, b)                              \
-  const Field3D a##c = fci ? b : toFieldAligned(b); \
-  const Field3D a##up = fci ? b.yup() : a##c;       \
-  const Field3D a##down = fci ? b.ydown() : a##c;
+  Slices f_slice{fci, f};
+  Slices a_slice{fci, a};
 
-  GET(fci, f, f);
-  GET(fci, a, a);
   // Only in 3D case with FCI do the metrics have parallel slices
   const bool metric_fci = fci and bout::build::use_metric_3d;
-  GET(metric_fci, g23, coord->g23);
-  GET(metric_fci, g_23, coord->g_23);
-  GET(metric_fci, J, coord->J);
-  GET(metric_fci, dy, coord->dy);
-  GET(metric_fci, dz, coord->dz);
-  GET(metric_fci, Bxy, coord->Bxy);
-#undef GET
+  Slices g23{metric_fci, coord->g23};
+  Slices g_23{metric_fci, coord->g_23};
+  Slices J{metric_fci, coord->J};
+  Slices dy{metric_fci, coord->dy};
+  Slices dz{metric_fci, coord->dz};
+  Slices Bxy{metric_fci, coord->Bxy};
 
   // Result of the Y and Z fluxes
   Field3D yzresult(0.0, mesh);
@@ -96,55 +101,65 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     auto ikm = i.zm();
     {
       const BoutReal coef = 0.5
-                            * (g_23c[i] / SQ(Jc[i] * Bxyc[i])
-                               + g_23up[i.yp()] / SQ(Jup[i.yp()] * Bxyup[i.yp()]));
+                            * (g_23.c[i] / SQ(J.c[i] * Bxy.c[i])
+                               + g_23.up[i.yp()] / SQ(J.up[i.yp()] * Bxy.up[i.yp()]));
 
       // Calculate Z derivative at y boundary
-      const BoutReal dfdz = 0.5 * (fc[ikp] - fc[ikm] + fup[ikp.yp()] - fup[ikm.yp()])
-                            / (dzc[i] + dzup[i.yp()]);
+      const BoutReal dfdz = 0.5
+                            * (f_slice.c[ikp] - f_slice.c[ikm] + f_slice.up[ikp.yp()]
+                               - f_slice.up[ikm.yp()])
+                            / (dz.c[i] + dz.up[i.yp()]);
 
       // Y derivative
-      const BoutReal dfdy = 2. * (fup[i.yp()] - fc[i]) / (dyup[i.yp()] + dyc[i]);
+      const BoutReal dfdy =
+          2. * (f_slice.up[i.yp()] - f_slice.c[i]) / (dy.up[i.yp()] + dy.c[i]);
 
-      const BoutReal fout = 0.25 * (ac[i] + aup[i.yp()])
-                            * (Jc[i] * g23c[i] + Jup[i.yp()] * g23up[i.yp()])
+      const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.up[i.yp()])
+                            * (J.c[i] * g23.c[i] + J.up[i.yp()] * g23.up[i.yp()])
                             * (dfdz - coef * dfdy);
 
-      yzresult[i] += fout / (dyc[i] * Jc[i]);
+      yzresult[i] += fout / (dy.c[i] * J.c[i]);
     }
     {
       // Calculate flux between j and j-1
-      const BoutReal coef = 0.5
-                            * (g_23c[i] / SQ(Jc[i] * Bxyc[i])
-                               + g_23down[i.ym()] / SQ(Jdown[i.ym()] * Bxydown[i.ym()]));
+      const BoutReal coef =
+          0.5
+          * (g_23.c[i] / SQ(J.c[i] * Bxy.c[i])
+             + g_23.down[i.ym()] / SQ(J.down[i.ym()] * Bxy.down[i.ym()]));
 
-      const BoutReal dfdz = 0.5 * (fc[ikp] - fc[ikm] + fdown[ikp.ym()] - fdown[ikm.ym()])
-                            / (dzc[i] + dzdown[i.ym()]);
+      const BoutReal dfdz = 0.5
+                            * (f_slice.c[ikp] - f_slice.c[ikm] + f_slice.down[ikp.ym()]
+                               - f_slice.down[ikm.ym()])
+                            / (dz.c[i] + dz.down[i.ym()]);
 
-      const BoutReal dfdy = 2. * (fc[i] - fdown[i.ym()]) / (dyc[i] + dydown[i.ym()]);
+      const BoutReal dfdy =
+          2. * (f_slice.c[i] - f_slice.down[i.ym()]) / (dy.c[i] + dy.down[i.ym()]);
 
-      const BoutReal fout = 0.25 * (ac[i] + adown[i.ym()])
-                            * (Jc[i] * g23c[i] + Jdown[i.ym()] * g23down[i.ym()])
+      const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.down[i.ym()])
+                            * (J.c[i] * g23.c[i] + J.down[i.ym()] * g23.down[i.ym()])
                             * (dfdz - coef * dfdy);
 
-      yzresult[i] -= fout / (dyc[i] * Jc[i]);
+      yzresult[i] -= fout / (dy.c[i] * J.c[i]);
     }
     // Z flux
     {
 
       // Coefficient in front of df/dy term
-      const BoutReal coef =
-          g_23c[i] / (dyup[i.yp()] + 2. * dyc[i] + dydown[i.ym()]) / SQ(Jc[i] * Bxyc[i]);
+      const BoutReal coef = g_23.c[i] / (dy.up[i.yp()] + 2. * dy.c[i] + dy.down[i.ym()])
+                            / SQ(J.c[i] * Bxy.c[i]);
 
       const BoutReal fout =
-          0.25 * (ac[i] + ac[ikp]) * (Jc[i] * coord->g33[i] + Jc[ikp] * coord->g33[ikp])
+          0.25 * (a_slice.c[i] + a_slice.c[ikp])
+          * (J.c[i] * coord->g33[i] + J.c[ikp] * coord->g33[ikp])
           * ( // df/dz
-              (fc[ikp] - fc[i]) / dzc[i]
+              (f_slice.c[ikp] - f_slice.c[i]) / dz.c[i]
               // - g_yz * df/dy / SQ(J*B)
-              - coef * (fup[i.yp()] + fup[ikp.yp()] - fdown[i.ym()] - fdown[ikp.ym()]));
+              - coef
+                    * (f_slice.up[i.yp()] + f_slice.up[ikp.yp()] - f_slice.down[i.ym()]
+                       - f_slice.down[ikp.ym()]));
 
-      yzresult[i] += fout / (Jc[i] * dzc[i]);
-      yzresult[ikp] -= fout / (Jc[ikp] * dzc[ikp]);
+      yzresult[i] += fout / (J.c[i] * dz.c[i]);
+      yzresult[ikp] -= fout / (J.c[ikp] * dz.c[ikp]);
     }
   }
 
