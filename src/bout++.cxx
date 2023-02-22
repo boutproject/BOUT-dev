@@ -31,22 +31,22 @@ const char DEFAULT_DIR[] = "data";
 
 #define GLOBALORIGIN
 
-#include "boundary_factory.hxx"
 #include "bout++-time.hxx"
-#include "boutcomm.hxx"
-#include "boutexception.hxx"
-#include "interpolation_xz.hxx"
-#include "interpolation_z.hxx"
-#include "invert_laplace.hxx"
-#include "invert_parderiv.hxx"
-#include "msg_stack.hxx"
-#include "optionsreader.hxx"
-#include "output.hxx"
+#include "bout/boundary_factory.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/coordinates_accessor.hxx"
 #include "bout/hyprelib.hxx"
+#include "bout/interpolation_xz.hxx"
+#include "bout/interpolation_z.hxx"
 #include "bout/invert/laplacexz.hxx"
+#include "bout/invert_laplace.hxx"
+#include "bout/invert_parderiv.hxx"
 #include "bout/mpi_wrapper.hxx"
+#include "bout/msg_stack.hxx"
 #include "bout/openmpwrap.hxx"
+#include "bout/optionsreader.hxx"
+#include "bout/output.hxx"
 #include "bout/petsclib.hxx"
 #include "bout/revision.hxx"
 #include "bout/rkscheme.hxx"
@@ -56,7 +56,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/version.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
-#include "bout.hxx"
+#include "bout/bout.hxx"
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 #include <fmt/format.h>
@@ -382,9 +382,11 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
             "  --list-solvers\t\tList the available time solvers\n"
             "  --help-solver <solver>\tPrint help for the given time solver\n"
             "  --list-laplacians\t\tList the available Laplacian inversion solvers\n"
-            "  --help-laplacian <laplacian>\tPrint help for the given Laplacian inversion solver\n"
+            "  --help-laplacian <laplacian>\tPrint help for the given Laplacian "
+            "inversion solver\n"
             "  --list-laplacexz\t\tList the available LaplaceXZ inversion solvers\n"
-            "  --help-laplacexz <laplacexz>\tPrint help for the given LaplaceXZ inversion solver\n"
+            "  --help-laplacexz <laplacexz>\tPrint help for the given LaplaceXZ "
+            "inversion solver\n"
             "  --list-invertpars\t\tList the available InvertPar solvers\n"
             "  --help-invertpar <invertpar>\tPrint help for the given InvertPar solver\n"
             "  --list-rkschemes\t\tList the available Runge-Kutta schemes\n"
@@ -392,9 +394,11 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
             "  --list-meshes\t\t\tList the available Meshes\n"
             "  --help-mesh <mesh>\t\tPrint help for the given Mesh\n"
             "  --list-xzinterpolations\tList the available XZInterpolations\n"
-            "  --help-xzinterpolation <xzinterpolation>\tPrint help for the given XZInterpolation\n"
+            "  --help-xzinterpolation <xzinterpolation>\tPrint help for the given "
+            "XZInterpolation\n"
             "  --list-zinterpolations\tList the available ZInterpolations\n"
-            "  --help-zinterpolation <zinterpolation>\tPrint help for the given ZInterpolation\n"
+            "  --help-zinterpolation <zinterpolation>\tPrint help for the given "
+            "ZInterpolation\n"
             "  -h, --help\t\t\tThis message\n"
             "  restart [append]\t\tRestart the simulation. If append is specified, "
             "append to the existing output files, otherwise overwrite them\n"
@@ -525,7 +529,8 @@ void printStartupHeader(int MYPE, int NPES) {
 #ifdef MD5SUM
   output_progress.write("MD5 checksum: {:s}\n", BUILDFLAG(MD5SUM));
 #endif
-  output_progress.write(_("Code compiled on {:s} at {:s}\n\n"), boutcompiledate, boutcompiletime);
+  output_progress.write(_("Code compiled on {:s} at {:s}\n\n"), boutcompiledate,
+                        boutcompiletime);
   output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
   output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
@@ -811,10 +816,12 @@ BoutMonitor::BoutMonitor(BoutReal timestep, Options& options)
 int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
 
+  // Increment Solver's iteration counter, and set the global `iteration`
+  iteration = solver->incrementIterationCounter();
+
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
   simtime = t;
-  iteration = iter;
 
   /// Collect timing information
   run_data.wtime = Timer::resetTime("run");
@@ -859,11 +866,11 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
 
   run_data.t_elapsed = bout::globals::mpi->MPI_Wtime() - mpi_start_time;
 
-  output_progress.print("{:c}  Step {:d} of {:d}. Elapsed {:s}", get_spin(),
-                        iteration + 1, NOUT, time_to_hms(run_data.t_elapsed));
+  output_progress.print("{:c}  Step {:d} of {:d}. Elapsed {:s}", get_spin(), iteration,
+                        NOUT, time_to_hms(run_data.t_elapsed));
   output_progress.print(
       " ETA {:s}",
-      time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1)));
+      time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 2)));
 
   // Write dump file
   Options run_data_output;
@@ -1010,21 +1017,22 @@ void RunMetrics::calculateDerivedMetrics() {
 void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
   if (!output_split) {
     output_progress.write(
-        "{:.3e}      {:5d}       {:.2e}   {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n", simtime, ncalls,
-        wtime, 100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
+        "{:.3e}      {:5d}       {:.2e}   {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n",
+        simtime, ncalls, wtime, 100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
         100. * wtime_invert / wtime,                    // Inversions
         100. * wtime_comms / wtime,                     // Communications
         100. * wtime_io / wtime,                        // I/O
         100. * (wtime - wtime_io - wtime_rhs) / wtime); // Everything else
 
   } else {
-    output_progress.write(
-        "{:.3e}      {:5d}            {:5d}       {:.2e}   {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n",
-        simtime, ncalls_e, ncalls_i, wtime,
-        100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
-        100. * wtime_invert / wtime,                    // Inversions
-        100. * wtime_comms / wtime,                     // Communications
-        100. * wtime_io / wtime,                        // I/O
-        100. * (wtime - wtime_io - wtime_rhs) / wtime); // Everything else
+    output_progress.write("{:.3e}      {:5d}            {:5d}       {:.2e}   {:5.1f}  "
+                          "{:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n",
+                          simtime, ncalls_e, ncalls_i, wtime,
+                          100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
+                          100. * wtime_invert / wtime, // Inversions
+                          100. * wtime_comms / wtime,  // Communications
+                          100. * wtime_io / wtime,     // I/O
+                          100. * (wtime - wtime_io - wtime_rhs)
+                              / wtime); // Everything else
   }
 }

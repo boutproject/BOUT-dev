@@ -29,6 +29,11 @@ if (FFTW_INCLUDE_DIRS)
   set (FFTW_FIND_QUIETLY TRUE)
 endif (FFTW_INCLUDE_DIRS)
 
+if (EXISTS ${FFTW_ROOT})
+  # Make sure FFTW_ROOT is an absolute path by setting it as a 'FILEPATH'
+  set (FFTW_ROOT "" CACHE FILEPATH "Location of the FFTW library")
+endif()
+
 find_program(FFTW_WISDOM "fftw-wisdom"
   PATHS "${FFTW_ROOT}"
   PATH_SUFFIXES bin

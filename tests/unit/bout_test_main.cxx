@@ -1,9 +1,9 @@
 #include <cstdio>
 
-#include "fft.hxx"
-#include "output.hxx"
 #include "bout/array.hxx"
+#include "bout/fft.hxx"
 #include "bout/globalindexer.hxx"
+#include "bout/output.hxx"
 #include "gtest/gtest.h"
 // Note: petsclib included after globalindexer, or MPI_Waitall
 // in mpi_wrapper.hxx is expanded as a macro

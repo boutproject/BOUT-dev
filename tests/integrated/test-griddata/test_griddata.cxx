@@ -1,4 +1,4 @@
-#include <bout.hxx>
+#include <bout/bout.hxx>
 #include <bout/version.hxx>
 
 int main(int argc, char** argv) {
