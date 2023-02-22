@@ -544,8 +544,6 @@ int AdamsBashforthSolver::run() {
     // avoid any additional unrequired work associated with run_rhs.
     run_rhs(simtime);
 
-    // Advance iteration number
-    iteration++;
 
     // Call the output step monitor function
     if (call_monitors(simtime, s, getNumberOutputSteps()) != 0) {
