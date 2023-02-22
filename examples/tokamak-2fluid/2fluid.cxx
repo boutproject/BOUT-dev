@@ -4,6 +4,7 @@
  * for cross-benchmarking etc.
  *******************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include <bout/physicsmodel.hxx>
 
 #include <bout/derivs.hxx>
@@ -98,6 +99,9 @@ private:
   std::unique_ptr<Laplacian> aparSolver;
   Field2D acoef; // Coefficient in the Helmholtz equation
 
+  /// Location of possibly staggered fields
+  CELL_LOC stagger_loc = CELL_LOC::deflt;
+
   int init(bool UNUSED(restarting)) override {
     TRACE("int init(bool) ");
 
@@ -154,15 +158,15 @@ private:
     // READ OPTIONS
 
     // Read some parameters
-    auto globalOptions = Options::root();
-    auto options = globalOptions["2fluid"];
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["2fluid"];
 
     AA = options["AA"].withDefault(2.0);
     ZZ = options["ZZ"].withDefault(1.0);
 
     estatic = options["estatic"].withDefault(false);
     ZeroElMass = options["ZeroElMass"].withDefault(false);
-    zeff = options["zeff"].withDefault(1.0);
+    zeff = options["Zeff"].withDefault(1.0);
     nu_perp = options["nu_perp"].withDefault(0.0);
     ShearFactor = options["ShearFactor"].withDefault(1.0);
     OhmPe = options["OhmPe"].withDefault(true);
@@ -170,8 +174,7 @@ private:
     curv_upwind = options["curv_upwind"].withDefault(false);
 
     // Choose method to use for Poisson bracket advection terms
-    int bracket_method;
-    bracket_method = options["bracket_method"].withDefault(0);
+    int bracket_method = options["bracket_method"].withDefault(0);
     switch (bracket_method) {
     case 0: {
       bm = BRACKET_STD;
@@ -206,79 +209,92 @@ private:
     laplace_extra_rho_term = options["laplace_extra_rho_term"].withDefault(false);
     vort_include_pi = options["vort_include_pi"].withDefault(false);
 
-    lowPass_z = options["lowPass_z"].withDefault(-1);
-
-    evolve_ni = globalOptions["Ni"]["evolve"].withDefault(true);
-    evolve_rho = globalOptions["rho"]["evolve"].withDefault(true);
-    evolve_vi = globalOptions["vi"]["evolve"].withDefault(true);
-    evolve_ti = globalOptions["ti"]["evolve"].withDefault(true);
-    evolve_ajpar = globalOptions["Ajpar"]["evolve"].withDefault(true);
-
-    if (ZeroElMass) {
-      evolve_ajpar = 0; // Don't need ajpar - calculated from ohm's law
-    }
+    lowPass_z = options["low_pass_z"].withDefault(-1);
 
     ////////////////////////////////////////////////////////
     // Equation terms
 
+    auto& ni_options = globalOptions["Ni"];
+    ni_options.setConditionallyUsed();
+    evolve_ni = ni_options["evolve"].withDefault(true);
+
+    auto& rho_options = globalOptions["rho"];
+    rho_options.setConditionallyUsed();
+    evolve_rho = rho_options["evolve"].withDefault(true);
+
+    auto& vi_options = globalOptions["Vi"];
+    vi_options.setConditionallyUsed();
+    evolve_vi = vi_options["evolve"].withDefault(true);
+
+    auto& te_options = globalOptions["Te"];
+    te_options.setConditionallyUsed();
+    evolve_ti = te_options["evolve"].withDefault(true);
+
+    auto& ti_options = globalOptions["Ti"];
+    ti_options.setConditionallyUsed();
+    evolve_ti = ti_options["evolve"].withDefault(true);
+
+    auto& ajpar_options = globalOptions["Ajpar"];
+    ajpar_options.setConditionallyUsed();
+    evolve_ajpar = ajpar_options["evolve"].withDefault(true);
+
+    if (ZeroElMass) {
+      evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
+    }
+
     if (evolve_ni) {
-      Options* options = &globalOptions["Ni"];
-      options->get("ni1_phi0", ni_ni1_phi0, false);
-      options->get("ni0_phi1", ni_ni0_phi1, false);
-      options->get("ni1_phi1", ni_ni1_phi1, false);
-      options->get("nit_phit", ni_nit_phit, false);
-      options->get("vi1_ni0", ni_vi1_ni0, false);
-      options->get("vi0_ni1", ni_vi0_ni1, false);
-      options->get("vi1_ni1", ni_vi1_ni1, false);
-      options->get("vit_nit", ni_vit_nit, false);
-      options->get("jpar1", ni_jpar1, false);
-      options->get("pe1", ni_pe1, false);
-      options->get("ni0_curv_phi1", ni_ni0_curv_phi1, false);
-      options->get("ni1_curv_phi0", ni_ni1_curv_phi0, false);
-      options->get("ni1_curv_phi1", ni_ni1_curv_phi1, false);
-      options->get("nit_curv_phit", ni_nit_curv_phit, false);
+      ni_ni1_phi0 = ni_options["ni1_phi0"].withDefault(false);
+      ni_ni0_phi1 = ni_options["ni0_phi1"].withDefault(false);
+      ni_ni1_phi1 = ni_options["ni1_phi1"].withDefault(false);
+      ni_nit_phit = ni_options["nit_phit"].withDefault(false);
+      ni_vi1_ni0 = ni_options["vi1_ni0"].withDefault(false);
+      ni_vi0_ni1 = ni_options["vi0_ni1"].withDefault(false);
+      ni_vi1_ni1 = ni_options["vi1_ni1"].withDefault(false);
+      ni_vit_nit = ni_options["vit_nit"].withDefault(false);
+      ni_jpar1 = ni_options["jpar1"].withDefault(false);
+      ni_pe1 = ni_options["pe1"].withDefault(false);
+      ni_ni0_curv_phi1 = ni_options["ni0_curv_phi1"].withDefault(false);
+      ni_ni1_curv_phi0 = ni_options["ni1_curv_phi0"].withDefault(false);
+      ni_ni1_curv_phi1 = ni_options["ni1_curv_phi1"].withDefault(false);
+      ni_nit_curv_phit = ni_options["nit_curv_phit"].withDefault(false);
     }
 
     if (evolve_rho) {
-      Options* options = &globalOptions["rho"];
-      options->get("rho0_phi1", rho_rho0_phi1, false);
-      options->get("rho1_phi0", rho_rho1_phi0, false);
-      options->get("rho1_phi1", rho_rho1_phi1, false);
-      options->get("vi1_rho0", rho_vi1_rho0, false);
-      options->get("vi0_rho1", rho_vi0_rho1, false);
-      options->get("vi1_rho1", rho_vi1_rho1, false);
-      options->get("pei1", rho_pei1, false);
-      options->get("jpar1", rho_jpar1, false);
-      options->get("rho1", rho_rho1, false);
+      rho_rho0_phi1 = rho_options["rho0_phi1"].withDefault(false);
+      rho_rho1_phi0 = rho_options["rho1_phi0"].withDefault(false);
+      rho_rho1_phi1 = rho_options["rho1_phi1"].withDefault(false);
+      rho_vi1_rho0 = rho_options["vi1_rho0"].withDefault(false);
+      rho_vi0_rho1 = rho_options["vi0_rho1"].withDefault(false);
+      rho_vi1_rho1 = rho_options["vi1_rho1"].withDefault(false);
+      rho_pei1 = rho_options["pei1"].withDefault(false);
+      rho_jpar1 = rho_options["jpar1"].withDefault(false);
+      rho_rho1 = rho_options["rho1"].withDefault(false);
     }
 
     if (evolve_vi) {
-      Options* options = &globalOptions["vi"];
-      options->get("vi0_phi1", vi_vi0_phi1, false);
-      options->get("vi1_phi0", vi_vi1_phi0, false);
-      options->get("vi1_phi1", vi_vi1_phi1, false);
-      options->get("vit_phit", vi_vit_phit, false);
-      options->get("vi1_vi0", vi_vi1_vi0, false);
-      options->get("vi0_vi1", vi_vi0_vi1, false);
-      options->get("vi1_vi1", vi_vi1_vi1, false);
-      options->get("vit_vit", vi_vit_vit, false);
-      options->get("pei1", vi_pei1, false);
-      options->get("peit", vi_peit, false);
-      options->get("vi1", vi_vi1, false);
+      vi_vi0_phi1 = vi_options["vi0_phi1"].withDefault(false);
+      vi_vi1_phi0 = vi_options["vi1_phi0"].withDefault(false);
+      vi_vi1_phi1 = vi_options["vi1_phi1"].withDefault(false);
+      vi_vit_phit = vi_options["vit_phit"].withDefault(false);
+      vi_vi1_vi0 = vi_options["vi1_vi0"].withDefault(false);
+      vi_vi0_vi1 = vi_options["vi0_vi1"].withDefault(false);
+      vi_vi1_vi1 = vi_options["vi1_vi1"].withDefault(false);
+      vi_vit_vit = vi_options["vit_vit"].withDefault(false);
+      vi_pei1 = vi_options["pei1"].withDefault(false);
+      vi_peit = vi_options["peit"].withDefault(false);
+      vi_vi1 = vi_options["vi1"].withDefault(false);
     }
 
     if (evolve_te) {
-      Options* options = &globalOptions["te"];
-      options->get("te1_phi0", te_te1_phi0, false);
-      options->get("te0_phi1", te_te0_phi1, false);
-      options->get("te1_phi1", te_te1_phi1, false);
+      te_te1_phi0 = te_options["te1_phi0"].withDefault(false);
+      te_te0_phi1 = te_options["te0_phi1"].withDefault(false);
+      te_te1_phi1 = te_options["te1_phi1"].withDefault(false);
     }
 
     if (evolve_ti) {
-      Options* options = &globalOptions["ti"];
-      options->get("ti1_phi0", ti_ti1_phi0, false);
-      options->get("ti0_phi1", ti_ti0_phi1, false);
-      options->get("ti1_phi1", ti_ti1_phi1, false);
+      ti_ti1_phi0 = ti_options["ti1_phi0"].withDefault(false);
+      ti_ti0_phi1 = ti_options["ti0_phi1"].withDefault(false);
+      ti_ti1_phi1 = ti_options["ti1_phi1"].withDefault(false);
     }
 
     ////////////////////////////////////////////////////////
@@ -337,13 +353,15 @@ private:
       ////////////////////////////////////////////////////////
       // SHIFTED GRIDS LOCATION
 
+      stagger_loc = CELL_LOC::ylow;
+
       // Velocities defined on cell boundaries
-      Vi.setLocation(CELL_YLOW);
-      Ajpar.setLocation(CELL_YLOW);
+      Vi.setLocation(stagger_loc);
+      Ajpar.setLocation(stagger_loc);
 
       // Apar and jpar too
-      Apar.setLocation(CELL_YLOW);
-      jpar.setLocation(CELL_YLOW);
+      Apar.setLocation(stagger_loc);
+      jpar.setLocation(stagger_loc);
     }
 
     ////////////////////////////////////////////////////////
@@ -490,16 +508,17 @@ private:
     dump.addOnce(wci, "wci");
 
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create(&options["phiSolver"]);
+    phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
     if (laplace_extra_rho_term) {
       // Include the first order term Grad_perp Ni dot Grad_perp phi
       phiSolver->setCoefC(Ni0);
     }
 
+    globalOptions["aparSolver"].setConditionallyUsed();
+
     if (!(estatic || ZeroElMass)) {
       // Create a solver for the electromagnetic potential
-      aparSolver = Laplacian::create(&options["aparSolver"],
-                                     mesh->StaggerGrids ? CELL_YLOW : CELL_CENTRE);
+      aparSolver = Laplacian::create(&globalOptions["aparSolver"], stagger_loc);
       if (mesh->StaggerGrids) {
         acoef = (-0.5 * beta_p / fmei) * interp_to(Ni0, CELL_YLOW);
       } else {
@@ -599,10 +618,11 @@ private:
     if (ZeroElMass) {
       // Set jpar,Ve,Ajpar neglecting the electron inertia term
       // Calculate Jpar, communicating across processors
-      jpar = -(Ni0 * Grad_par(phi, CELL_YLOW)) / (fmei * 0.51 * nu);
+
+      jpar = -interp_to(Ni0, stagger_loc) * Grad_par(phi, stagger_loc) / (fmei * 0.51 * nu);
 
       if (OhmPe) {
-        jpar += (Te0 * Grad_par(Ni, CELL_YLOW)) / (fmei * 0.51 * nu);
+        jpar += interp_to(Te0, stagger_loc) * Grad_par(Ni, stagger_loc) / (fmei * 0.51 * nu);
       }
 
       // Need to communicate jpar
