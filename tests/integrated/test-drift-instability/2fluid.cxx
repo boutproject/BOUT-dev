@@ -3,13 +3,13 @@
  * Same as Maxim's version of BOUT - simplified 2-fluid for benchmarking
  *******************************************************************************/
 
+#include <bout/bout.hxx>
 #include <bout/physicsmodel.hxx>
-#include <bout.hxx>
 
-#include <derivs.hxx>
-#include <initialprofiles.hxx>
-#include <interpolation.hxx>
-#include <invert_laplace.hxx>
+#include <bout/derivs.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/invert_laplace.hxx>
 
 #include <cmath>
 #include <cstdio>

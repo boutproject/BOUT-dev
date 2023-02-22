@@ -8,9 +8,9 @@
 /// *this pointer, as the first argument, so often 2 would be the
 /// first argument.
 #if defined(__GNUC__)
-# define BOUT_FORMAT_ARGS(i,j) __attribute__ ((format (printf, i, j)))
+#define BOUT_FORMAT_ARGS(i, j) __attribute__((format(printf, i, j)))
 #else
-# define BOUT_FORMAT_ARGS(i,j)
+#define BOUT_FORMAT_ARGS(i, j)
 #endif
 
 #endif //__BOUT_FORMAT_H__

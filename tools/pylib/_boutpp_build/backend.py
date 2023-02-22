@@ -28,7 +28,7 @@ def getversion():
     global version
     if version is None:
         _bout_previous_version = "v4.0.0"
-        _bout_next_version = "5.0.0.alpha"
+        _bout_next_version = "5.0.0"
 
         try:
             tmp = run2(f"git describe --tags --match={_bout_previous_version}").strip()

@@ -2,10 +2,10 @@
 
 #if BOUT_HAS_NETCDF && !BOUT_HAS_LEGACY_NETCDF
 
-#include "options_netcdf.hxx"
+#include "bout/options_netcdf.hxx"
 
-#include "bout.hxx"
-#include "globals.hxx"
+#include "bout/bout.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/sys/timer.hxx"
 

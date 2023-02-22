@@ -1,6 +1,6 @@
 
 #include <bout/physicsmodel.hxx>
-#include <vecops.hxx>         // Gives the vec diff options
+#include <bout/vecops.hxx> // Gives the vec diff options
 
 class VecTest : public PhysicsModel {
 protected:
@@ -12,7 +12,6 @@ public:
   Vector3D gradPerpN;
   std::string ownOpType;
 };
-
 
 int VecTest::init(bool UNUSED(restarting)) {
   TRACE("Halt in VecTest::init");
