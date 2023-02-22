@@ -619,10 +619,12 @@ private:
       // Set jpar,Ve,Ajpar neglecting the electron inertia term
       // Calculate Jpar, communicating across processors
 
-      jpar = -interp_to(Ni0, stagger_loc) * Grad_par(phi, stagger_loc) / (fmei * 0.51 * nu);
+      jpar =
+          -interp_to(Ni0, stagger_loc) * Grad_par(phi, stagger_loc) / (fmei * 0.51 * nu);
 
       if (OhmPe) {
-        jpar += interp_to(Te0, stagger_loc) * Grad_par(Ni, stagger_loc) / (fmei * 0.51 * nu);
+        jpar +=
+            interp_to(Te0, stagger_loc) * Grad_par(Ni, stagger_loc) / (fmei * 0.51 * nu);
       }
 
       // Need to communicate jpar
