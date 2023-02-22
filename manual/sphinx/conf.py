@@ -67,6 +67,8 @@ if on_readthedocs:
         "scipy.ndimage.filters",
         "scipy.ndimage.morphology",
         "scipy.spatial",
+        "past",
+        "crosslines",
     ]
     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
     print(os.environ)
