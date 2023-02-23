@@ -1,4 +1,3 @@
-
 #include <bout/fv_ops.hxx>
 #include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>
@@ -79,17 +78,17 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   // Values on this y slice (centre).
   // This is needed because toFieldAligned may modify the field
-  const Slices f_slice{fci, f};
-  const Slices a_slice{fci, a};
+  const auto f_slice = Slices(fci, f);
+  const auto a_slice = Slices(fci, a);
 
   // Only in 3D case with FCI do the metrics have parallel slices
   const bool metric_fci = fci and bout::build::use_metric_3d;
-  const Slices g23{metric_fci, coord->g23};
-  const Slices g_23{metric_fci, coord->g_23};
-  const Slices J{metric_fci, coord->J};
-  const Slices dy{metric_fci, coord->dy};
-  const Slices dz{metric_fci, coord->dz};
-  const Slices Bxy{metric_fci, coord->Bxy};
+  const auto g23 = Slices(metric_fci, coord->g23);
+  const auto g_23 = Slices(metric_fci, coord->g_23);
+  const auto J = Slices(metric_fci, coord->J);
+  const auto dy = Slices(metric_fci, coord->dy);
+  const auto dz = Slices(metric_fci, coord->dz);
+  const auto Bxy = Slices(metric_fci, coord->Bxy);
 
   // Result of the Y and Z fluxes
   Field3D yzresult(0.0, mesh);
