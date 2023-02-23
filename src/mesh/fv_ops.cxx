@@ -5,15 +5,19 @@
 #include <bout/utils.hxx>
 
 namespace {
-template <class Field3D>
+template <class T>
 struct Slices {
-  Field3D c;
-  Field3D up;
-  Field3D down;
-  Slices(bool use_slices, const Field3D& field)
+  T c;
+  T up;
+  T down;
+  Slices(bool use_slices, const T& field)
       : c(use_slices ? field : toFieldAligned(field)), up(use_slices ? field.yup() : c),
         down(use_slices ? field.ydown() : c) {}
 };
+template <class T>
+Slices<T> makeslices(bool use_slices, const T& field) {
+  return Slices<T>(use_slices, field);
+}
 } // namespace
 
 namespace FV {
@@ -78,17 +82,17 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   // Values on this y slice (centre).
   // This is needed because toFieldAligned may modify the field
-  const auto f_slice = Slices(fci, f);
-  const auto a_slice = Slices(fci, a);
+  const auto f_slice = makeslices(fci, f);
+  const auto a_slice = makeslices(fci, a);
 
   // Only in 3D case with FCI do the metrics have parallel slices
   const bool metric_fci = fci and bout::build::use_metric_3d;
-  const auto g23 = Slices(metric_fci, coord->g23);
-  const auto g_23 = Slices(metric_fci, coord->g_23);
-  const auto J = Slices(metric_fci, coord->J);
-  const auto dy = Slices(metric_fci, coord->dy);
-  const auto dz = Slices(metric_fci, coord->dz);
-  const auto Bxy = Slices(metric_fci, coord->Bxy);
+  const auto g23 = makeslices(metric_fci, coord->g23);
+  const auto g_23 = makeslices(metric_fci, coord->g_23);
+  const auto J = makeslices(metric_fci, coord->J);
+  const auto dy = makeslices(metric_fci, coord->dy);
+  const auto dz = makeslices(metric_fci, coord->dz);
+  const auto Bxy = makeslices(metric_fci, coord->Bxy);
 
   // Result of the Y and Z fluxes
   Field3D yzresult(0.0, mesh);
