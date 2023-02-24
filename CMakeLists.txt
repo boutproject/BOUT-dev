@@ -18,7 +18,7 @@ endif()
 if ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   option(BOUT_ALLOW_INSOURCE_BUILD "Whether BOUT++ should really allow to build in source." OFF)
   if (NOT ${BOUT_ALLOW_INSOURCE_BUILD})
-    message(FATAL_ERROR "BOUT++ does not recommends in source builds. Try building out of source, e.g. with `cmake -S . -B build` or set -DBOUT_ALLOW_INSOURCE_BUILD=ON - but thinks may break!")
+    message(FATAL_ERROR "BOUT++ does not recommend in source builds. Try building out of source, e.g. with `cmake -S . -B build` or set -DBOUT_ALLOW_INSOURCE_BUILD=ON - but things may break!")
   endif()
 endif()
 
