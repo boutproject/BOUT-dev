@@ -101,7 +101,7 @@ IdaSolver::IdaSolver(Options* opts)
       correct_start((*options)["correct_start"]
                         .doc("Correct the initial values")
                         .withDefault(true)),
-      suncontext(MPI_COMM_WORLD) {
+      suncontext(static_cast<void *>(MPI_COMM_WORLD)) {
   has_constraints = true; // This solver has constraints
 }
 
