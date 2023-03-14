@@ -1825,7 +1825,9 @@ static int CVnls(CVodeMem cv_mem, int nflag)
   switch(iter) {
     case FUNCTIONAL : return(CVnlsFunctional(cv_mem));
     case NEWTON     : return(CVnlsNewton(cv_mem, nflag));
-    }
+  }
+  fprintf(errfp, "Should be unreachable ...");
+  return (ERR_FAILURE);
 }
 
 /***************** CVnlsFunctional ********************************
@@ -2391,7 +2393,9 @@ static int CVHandleFailure(CVodeMem cv_mem, int kflag)
                         return(SETUP_FAILURE);
     case SOLVE_FAILED:  fprintf(errfp, MSG_SOLVE_FAILED, tn);
                         return(SOLVE_FAILURE);
-    }
+  }
+  fprintf(errfp, "Should be unreachable ...");
+  return (ERR_FAILURE);
 }
 
 /*******************************************************************/
