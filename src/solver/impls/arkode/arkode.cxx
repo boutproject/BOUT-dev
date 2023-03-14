@@ -226,7 +226,7 @@ ArkodeSolver::ArkodeSolver(Options* opts)
                        .withDefault(false)),
       optimize(
           (*options)["optimize"].doc("Use ARKode optimal parameters").withDefault(false)),
-      suncontext(static_cast<void *>(MPI_COMM_WORLD)) {
+      suncontext(static_cast<void*>(MPI_COMM_WORLD)) {
   has_constraints = false; // This solver doesn't have constraints
 
   // Add diagnostics to output
