@@ -101,7 +101,7 @@ IdaSolver::IdaSolver(Options* opts)
       correct_start((*options)["correct_start"]
                         .doc("Correct the initial values")
                         .withDefault(true)),
-      suncontext(static_cast<void*>(&BoutComm::get())) {
+      suncontext(static_cast<void*>(BoutComm::get())) {
   has_constraints = true; // This solver has constraints
 }
 
