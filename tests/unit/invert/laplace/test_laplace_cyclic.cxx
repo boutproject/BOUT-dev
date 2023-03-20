@@ -6,18 +6,18 @@
 #include <tuple>
 
 #include "../../../../src/invert/laplace/impls/cyclic/cyclic_laplace.hxx"
-#include "invert_laplace.hxx"
 #include "test_extras.hxx"
+#include "bout/invert_laplace.hxx"
 #include "gtest/gtest.h"
 
-#include "derivs.hxx"
-#include "difops.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "options.hxx"
-#include "vecops.hxx"
+#include "bout/derivs.hxx"
+#include "bout/difops.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/griddata.hxx"
 #include "bout/mesh.hxx"
+#include "bout/options.hxx"
+#include "bout/vecops.hxx"
 
 /// Global mesh
 namespace bout {

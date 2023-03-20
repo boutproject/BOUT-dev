@@ -96,7 +96,6 @@ class LinResPresent(LinResDraw, NLinResDraw, Transport):
         for j in list(
             set(s.dz).union()
         ):  # looping over runs, over unique 'dz' key values
-
             ss = subset(s.db, "dz", [j])  # subset where dz = j
             plt.scatter(ss.MN[:, 1], ss.MN[:, 0], c=colors[i])
             plt.annotate(str(j), (ss.MN[0, 1], ss.MN[0, 0]))

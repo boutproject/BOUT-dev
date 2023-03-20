@@ -1,13 +1,13 @@
 #ifndef BOUT_GLOBALINDEXER_H
 #define BOUT_GLOBALINDEXER_H
 
+#include <bout/bout_types.hxx>
+#include <bout/boutcomm.hxx>
 #include <bout/mesh.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/paralleltransform.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
-#include <bout_types.hxx>
-#include <boutcomm.hxx>
 
 template <class T>
 class GlobalIndexer;

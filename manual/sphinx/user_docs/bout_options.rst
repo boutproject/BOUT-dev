@@ -265,6 +265,8 @@ Sections are separated by colons ’:’, so to set the solver type
 or put ``solver:type=rk4`` on the command line. This capability is used
 in many test suite cases to change the parameters for each run.
 
+.. _sec-options-general:
+
 General options
 ---------------
 
@@ -829,32 +831,30 @@ has a method::
 
 This is currently quite rudimentary and needs improving.
 
+.. _sec-options-netcdf:
+
 Reading and writing to NetCDF
 -----------------------------
 
-If NetCDF4 support is enabled, then the ``OptionsNetCDF`` class
-provides an experimental way to read and write options. To use this class::
+The `bout::OptionsNetCDF` class provides an interface to read and
+write options. Examples are in integrated test
+``tests/integrated/test-options-netcdf/``
 
-  #include "options_netcdf.hxx"
-  using bout::experimental::OptionsNetCDF;
-
-Examples are in integrated test ``tests/integrated/test-options-netcdf/``
-
-To write the current ``Options`` tree (e.g. from ``BOUT.inp``) to a
+To write the current `Options` tree (e.g. from ``BOUT.inp``) to a
 NetCDF file::
 
-  OptionsNetCDF("settings.nc").write(Options::root());
+  bout::OptionsNetCDF("settings.nc").write(Options::root());
 
 and to read it in again::
 
-  Options data = OptionsNetCDF("settings.nc").read();
+  Options data = bout::OptionsNetCDF("settings.nc").read();
 
 Fields can also be stored and written::
 
   Options fields;
   fields["f2d"] = Field2D(1.0);
   fields["f3d"] = Field3D(2.0);
-  OptionsNetCDF("fields.nc").write(fields);
+  bout::OptionsNetCDF("fields.nc").write(fields);
 
 This should allow the input settings and evolving variables to be
 combined into a single tree (see above on joining trees) and written
@@ -865,7 +865,7 @@ an ``Array<BoutReal>``, 2D as ``Matrix<BoutReal>`` and 3D as
 ``Tensor<BoutReal>``. These can be extracted directly from the
 ``Options`` tree, or converted to a Field::
 
-  Options fields_in = OptionsNetCDF("fields.nc").read();
+  Options fields_in = bout::OptionsNetCDF("fields.nc").read();
   Field2D f2d = fields_in["f2d"].as<Field2D>();
   Field3D f3d = fields_in["f3d"].as<Field3D>();
 
@@ -907,7 +907,7 @@ automatically set the ``"time_dimension"`` attribute::
   // Or use `assignRepeat` to do it automatically:
   data["field"].assignRepeat(Field3D(2.0));
   
-  OptionsNetCDF("time.nc").write(data);
+  bout::OptionsNetCDF("time.nc").write(data);
   
   // Update time-dependent values. This can be done without `force` if the time_dimension
   // attribute is set
@@ -915,9 +915,9 @@ automatically set the ``"time_dimension"`` attribute::
   data["field"] = Field3D(3.0);
   
   // Append data to file
-  OptionsNetCDF("time.nc", OptionsNetCDF::FileMode::append).write(data);
+  bout::OptionsNetCDF("time.nc", bout::OptionsNetCDF::FileMode::append).write(data);
 
-.. note:: By default, `OptionsNetCDF::write` will only write variables
+.. note:: By default, `bout::OptionsNetCDF::write` will only write variables
           with a ``"time_dimension"`` of ``"t"``. You can write
           variables with a different time dimension by passing it as
           the second argument:

@@ -1,5 +1,5 @@
-#include "options.hxx"
 #include "bout/invert_pardiv.hxx"
+#include "bout/options.hxx"
 
 #include <memory>
 

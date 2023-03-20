@@ -3,16 +3,16 @@
  *
  */
 
-#include <bout.hxx>
+#include <bout/bout.hxx>
 
-#include <cyclic_reduction.hxx>
-#include <dcomplex.hxx>
-#include "utils.hxx"
+#include "bout/utils.hxx"
+#include <bout/cyclic_reduction.hxx>
+#include <bout/dcomplex.hxx>
 
 // Change this to dcomplex to test complex matrix inversion
 using T = BoutReal;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
 
   int nsys;
   int n;
-  Options *options = Options::getRoot();
+  Options* options = Options::getRoot();
   OPTION(options, n, 5);
   OPTION(options, nsys, 1);
   BoutReal tol;
@@ -43,35 +43,35 @@ int main(int argc, char **argv) {
   x.reallocate(nsys, n);
 
   // Set coefficients to some random numbers
-  for(int s=0;s<nsys;s++) {
-    for(int i=0;i<n;i++) {
+  for (int s = 0; s < nsys; s++) {
+    for (int i = 0; i < n; i++) {
       a(s, i) = randomu();
       b(s, i) = 2. + randomu(); // So always diagonally dominant
       c(s, i) = randomu();
 
-      x(s, i) = ((mype*n + i) % 4) - 2.; // deterministic, so don't need to communicate
+      x(s, i) = ((mype * n + i) % 4) - 2.; // deterministic, so don't need to communicate
     }
 
     // Calculate RHS
 
     int i = 0;
-    if((mype == 0) && (!periodic)) {
-      rhs(s, i) = b(s, i)*x(s, i) + c(s, i)*x(s, i+1);
-    }else {
+    if ((mype == 0) && (!periodic)) {
+      rhs(s, i) = b(s, i) * x(s, i) + c(s, i) * x(s, i + 1);
+    } else {
       int pe = (mype - 1 + npe) % npe;
-      T xm = ((pe*n + (n-1)) % 4) - 2.;
-      rhs(s, i) = a(s, i)*xm + b(s, i)*x(s, i) + c(s, i)*x(s, i+1);
+      T xm = ((pe * n + (n - 1)) % 4) - 2.;
+      rhs(s, i) = a(s, i) * xm + b(s, i) * x(s, i) + c(s, i) * x(s, i + 1);
     }
 
-    for(i=1;i<n-1;i++)
-      rhs(s, i) = a(s, i)*x(s, i-1) + b(s, i)*x(s, i) + c(s, i)*x(s, i+1);
+    for (i = 1; i < n - 1; i++)
+      rhs(s, i) = a(s, i) * x(s, i - 1) + b(s, i) * x(s, i) + c(s, i) * x(s, i + 1);
 
-    if((mype == (npe-1)) && !periodic) {
-      rhs(s, i) = a(s, i)*x(s, i-1) + b(s, i)*x(s, i);
-    }else {
+    if ((mype == (npe - 1)) && !periodic) {
+      rhs(s, i) = a(s, i) * x(s, i - 1) + b(s, i) * x(s, i);
+    } else {
       int pe = (mype + 1) % npe;
-      T xp = ((pe*n) % 4) - 2.;
-      rhs(s, i) = a(s, i)*x(s, i-1) + b(s, i)*x(s, i) + c(s, i)*xp;
+      T xp = ((pe * n) % 4) - 2.;
+      rhs(s, i) = a(s, i) * x(s, i - 1) + b(s, i) * x(s, i) + c(s, i) * xp;
     }
 
     // Zero x, so that solve has to do something
@@ -89,16 +89,16 @@ int main(int argc, char **argv) {
 
   // Destroy solver
   delete cr;
-  
+
   // Check result
 
   int passed = 1;
-  for(int s=0;s<nsys;s++) {
+  for (int s = 0; s < nsys; s++) {
     output << "System " << s << endl;
-    for(int i=0;i<n;i++) {
-      T val = ((mype*n + i) % 4) - 2.;
+    for (int i = 0; i < n; i++) {
+      T val = ((mype * n + i) % 4) - 2.;
       output << "\t" << i << " : " << val << " ?= " << x(s, i) << endl;
-      if(std::abs(val - x(s, i)) > tol) {
+      if (std::abs(val - x(s, i)) > tol) {
         passed = 0;
       }
     }
@@ -108,9 +108,9 @@ int main(int argc, char **argv) {
   MPI_Allreduce(&passed, &allpassed, 1, MPI_INT, MPI_MIN, BoutComm::get());
 
   output << "******* Cyclic test case: ";
-  if(allpassed) {
+  if (allpassed) {
     output << "PASSED" << endl;
-  }else
+  } else
     output << "FAILED" << endl;
 
   MPI_Barrier(BoutComm::get());

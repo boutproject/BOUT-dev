@@ -1,5 +1,5 @@
-#include <bout.hxx>
-#include <derivs.hxx>
+#include <bout/bout.hxx>
+#include <bout/derivs.hxx>
 
 // Y derivative assuming field is aligned in Y
 const Field3D DDY_aligned(const Field3D& f) {
