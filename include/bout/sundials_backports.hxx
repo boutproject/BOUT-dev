@@ -39,7 +39,7 @@ inline void SUNNonlinSolFree(MAYBE_UNUSED(SUNNonlinearSolver solver)) {}
 #if SUNDIALS_VERSION_MAJOR < 6
 namespace sundials {
 struct Context {
-  Context(void* comm MAYBE_UNUSED() = MPI_COMM_NULL) {}
+  Context(void* comm MAYBE_UNUSED()) {}
 };
 } // namespace sundials
 
