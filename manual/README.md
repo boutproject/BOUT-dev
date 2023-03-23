@@ -15,19 +15,6 @@ To build the manual locally, you need at least "sphinx" and
 $ pip install -r sphinx/requirements.txt
 ```
 
-These documents can be built into a PDF using "sphinx-build":
-
-```bash
-$ make
-```
-
-To use e.g. "sphinx-build-3" instead of "sphinx-build", run
-```bash
-$ make sphinx-build=sphinx-build-3
-```
-
-This should create a file "BOUT.pdf" in the "manual" directory.
-
 To get a local html version, run
 
 ```bash
@@ -35,6 +22,18 @@ $ make html
 ```
 
 This should create a file "index.html" in the "manual/html" directory.
+
+To use e.g. "sphinx-build-3" instead of "sphinx-build", run
+```bash
+$ make sphinx-build=sphinx-build-3
+```
+
+These documents can be built into a PDF using "sphinx-build":
+
+```bash
+$ make
+```
+This should create a file "BOUT.pdf" in the "manual" directory.
 
 ### API documentation
 
