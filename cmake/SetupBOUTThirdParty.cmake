@@ -170,7 +170,7 @@ if (BOUT_USE_NETCDF)
     target_link_libraries(bout++ PUBLIC netCDF::netcdf-cxx4)
   else()
     find_package(netCDFCxx)
-    if (netCDFCxx_FOUND) {
+    if (netCDFCxx_FOUND)
       set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} ${netCDF_CXX_LIBRARY} ${netCDF_LIBRARIES}")
       target_link_libraries(bout++ PUBLIC netCDF::netcdf-cxx4)
     else()
