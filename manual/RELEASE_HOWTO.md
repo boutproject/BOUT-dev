@@ -19,7 +19,8 @@ releases
 - [ ] Run `make check-all`
     - Raise issues for any tests that fail
 - Possibly run `clang-tidy`, `clang-check`, `coverity`, etc.
-- [ ] Review pinned pip package versions for Travis
+- [ ] Review pinned pip package versions for CI
+- [ ] Review bundled libraries
     
 Before merging PR:
 
