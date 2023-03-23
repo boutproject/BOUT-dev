@@ -51,7 +51,7 @@ except FileExistsError:
     pass
 
 with DataFile(
-    os.path.join(restartdir, "BOUT.restart.0.nc"), create=True, format="NETCDF3_64BIT"
+    os.path.join(restartdir, "BOUT.restart.0.nc"), create=True
 ) as base_restart:
     base_restart.write("MXSUB", nx)
     base_restart.write("MYSUB", ny)
