@@ -35,14 +35,11 @@ config = {
 }
 
 
-@property
-def has():
-    """Get a dict of the enabled features"""
-    _has = {}
-    for k in config:
-        if k.startswith("has_"):
-            _has[k[4:]] = _yesno[config[k]]
-    return _has
+"""Get a dict of the enabled features"""
+has = {}
+for k in config:
+    if k.startswith("has_"):
+        has[k[4:]] = _yesno[config[k]]
 
 
 def isMetric2D():
