@@ -12,7 +12,7 @@ To build the manual locally, you need at least "sphinx" and
 "recommonmark", which you can install using pip (or pip3):
 
 ```bash
-$ pip install --user -r sphinx/requirements.txt
+$ pip install -r sphinx/requirements.txt
 ```
 
 These documents can be built into a PDF using "sphinx-build":
@@ -52,14 +52,7 @@ It is possible to build the API documentation into the main manual
 using "breathe". Install breathe:
 
 ```bash
-$ pip install --user breathe
-```
-
-and comment out the following line in `sphinx/conf.py`:
-
-```python
-# Disable breathe
-has_breathe = False
+$ pip install breathe
 ```
 
 You can then build the sphinx documentation as normal.
