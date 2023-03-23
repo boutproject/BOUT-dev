@@ -12,8 +12,7 @@ To build the manual locally, you need at least "sphinx" and
 "recommonmark", which you can install using pip (or pip3):
 
 ```bash
-$ pip install --user sphinx
-$ pip install --user recommonmark
+$ pip install --user -r sphinx/requirements.txt
 ```
 
 These documents can be built into a PDF using "sphinx-build":

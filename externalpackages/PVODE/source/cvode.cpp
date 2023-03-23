@@ -179,7 +179,7 @@ namespace pvode {
 
 #define MSG_Y0_NULL     CVM "y0=NULL illegal.\n\n"
 
-#define MSG_BAD_N CVM "N=%ld < 1 illegal.\n\n"
+#define MSG_BAD_N       CVM "N=%d < 1 illegal.\n\n"
 
 #define MSG_BAD_LMM_1   CVM "lmm=%d illegal.\n"
 #define MSG_BAD_LMM_2   "The legal values are ADAMS=%d and BDF=%d.\n\n"

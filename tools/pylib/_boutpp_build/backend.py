@@ -31,13 +31,20 @@ def getversion():
         _bout_next_version = "5.0.1"
 
         try:
-            tmp = run2(f"git describe --tags --match={_bout_previous_version}").strip()
-            tmp = re.sub(f"{_bout_previous_version}-", f"{_bout_next_version}.dev", tmp)
-            if useLocalVersion:
-                tmp = re.sub("-", "+", tmp)
-            else:
-                tmp = re.sub("-.*", "", tmp)
-            version = tmp
+            try:
+                version = run2("git describe --exact-match --tags HEAD").strip()
+            except subprocess.CalledProcessError:
+                tmp = run2(
+                    f"git describe --tags --match={_bout_previous_version}"
+                ).strip()
+                tmp = re.sub(
+                    f"{_bout_previous_version}-", f"{_bout_next_version}.dev", tmp
+                )
+                if useLocalVersion:
+                    tmp = re.sub("-", "+", tmp)
+                else:
+                    tmp = re.sub("-.*", "", tmp)
+                version = tmp
             with open("_version.txt", "w") as f:
                 f.write(version + "\n")
         except subprocess.CalledProcessError:

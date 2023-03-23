@@ -46,14 +46,6 @@ second = C4
 upwind = U1
 
 ##################################################
-# Laplacian inversion settings
-
-[laplace]
-all_terms = false
-nonuniform = true
-filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
-
-##################################################
 # Solver settings
 
 [solver]
@@ -80,8 +72,6 @@ Zeff = 32.0        # Z effective
 estatic = true     # if true, electrostatic (Apar = 0). (BOUT-06 = esop)
 ZeroElMass = true  # Use Ohms law without electron inertia
 bout_jpar = true   # Use BOUT-06 method to calculate ZeroElMass jpar
-
-bout_exb = true    # Use the BOUT-06 subset of ExB terms
 
 curv_upwind = false # Use upwinding for b0xkappa_dot_Grad terms
 
