@@ -1893,7 +1893,6 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
 #endif
 }
 
-
 void Coordinates::checkCovariant() {
   // Diagonal metric components should be finite
   bout::checkFinite(g_11, "g_11", "RGN_NOCORNERS");
@@ -1946,19 +1945,20 @@ void Coordinates::checkCovariant() {
   }
 }
 
-
-
 void Coordinates::checkContravariant() {
   // Diagonal metric components should be finite
   bout::checkFinite(g11, "g11", "RGN_NOCORNERS");
   bout::checkFinite(g22, "g22", "RGN_NOCORNERS");
   bout::checkFinite(g33, "g33", "RGN_NOCORNERS");
-  if (g11.hasParallelSlices() && &g11.ynext(1) != &g11 ){
-    for (int dy=1; dy <= localmesh->ystart; ++dy) {
+  if (g11.hasParallelSlices() && &g11.ynext(1) != &g11) {
+    for (int dy = 1; dy <= localmesh->ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-	bout::checkFinite(g11.ynext(sign * dy), "g11.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
-	bout::checkFinite(g22.ynext(sign * dy), "g22.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
-	bout::checkFinite(g33.ynext(sign * dy), "g33.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkFinite(g11.ynext(sign * dy), "g11.ynext",
+                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkFinite(g22.ynext(sign * dy), "g22.ynext",
+                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkFinite(g33.ynext(sign * dy), "g33.ynext",
+                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
   }
@@ -1984,11 +1984,14 @@ void Coordinates::checkContravariant() {
   bout::checkFinite(g13, "g13", "RGN_NOCORNERS");
   bout::checkFinite(g23, "g23", "RGN_NOCORNERS");
   if (g23.hasParallelSlices() && &g23.ynext(1) != &g23) {
-    for (int dy=1; dy <= localmesh->ystart; ++dy) {
+    for (int dy = 1; dy <= localmesh->ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-	bout::checkFinite(g12.ynext(sign * dy), "g12.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
-	bout::checkFinite(g13.ynext(sign * dy), "g13.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
-	bout::checkFinite(g23.ynext(sign * dy), "g23.ynext", fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkFinite(g12.ynext(sign * dy), "g12.ynext",
+                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkFinite(g13.ynext(sign * dy), "g13.ynext",
+                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        bout::checkFinite(g23.ynext(sign * dy), "g23.ynext",
+                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
   }
