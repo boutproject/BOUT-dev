@@ -686,11 +686,17 @@ void addBuildFlagsToOptions(Options& options) {
   output_progress << "Setting up output (experimental output) file\n";
 
   options["BOUT_VERSION"].force(bout::version::as_double);
+  options["use_check_level"].force(bout::build::check_level);
+  options["use_openmp_schedule"].force(bout::build::openmp_schedule);
   options["has_fftw"].force(bout::build::has_fftw);
   options["has_gettext"].force(bout::build::has_gettext);
   options["has_lapack"].force(bout::build::has_lapack);
   options["has_netcdf"].force(bout::build::has_netcdf);
   options["has_petsc"].force(bout::build::has_petsc);
+  options["has_hypre"].force(bout::build::has_hypre);
+  options["has_umpire"].force(bout::build::has_umpire);
+  options["has_caliper"].force(bout::build::has_caliper);
+  options["has_raja"].force(bout::build::has_raja);
   options["has_pretty_function"].force(bout::build::has_pretty_function);
   options["has_pvode"].force(bout::build::has_pvode);
   options["has_scorep"].force(bout::build::has_scorep);
@@ -703,6 +709,9 @@ void addBuildFlagsToOptions(Options& options) {
   options["use_sigfpe"].force(bout::build::use_sigfpe);
   options["use_signal"].force(bout::build::use_signal);
   options["use_track"].force(bout::build::use_track);
+  options["has_cuda"].force(bout::build::has_cuda);
+  options["use_metric_3d"].force(bout::build::use_metric_3d);
+  options["use_msgstack"].force(bout::build::use_msgstack);
 }
 
 void writeSettingsFile(Options& options, const std::string& data_dir,
