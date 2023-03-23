@@ -14,7 +14,7 @@ manual: all
 pdf: sphinx-pdf
 html: sphinx-html
 man: sphinx-man
-sphinx: sphinx-pdf
+sphinx: sphinx-html
 
 sphinx-pdf: doxygen
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b latex sphinx/ build/
