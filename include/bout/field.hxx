@@ -345,7 +345,8 @@ inline bool isUniform(const T& f, bool allpe = false,
   auto element = f[*f.getRegion(region).begin()];
   // TODO: maybe parallise this loop, as the early return is unlikely
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
-    if (f[i] != element) {
+    // by default we only check for exact equality, as that should cover most cases
+    if (f[i] != element and (not almost_equal(f[i], element))) {
       result = false;
       break;
     }
