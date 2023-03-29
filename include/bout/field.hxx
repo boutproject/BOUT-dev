@@ -371,11 +371,12 @@ inline BoutReal getUniform(const T& f, bool allpe = false,
                            const std::string& region = "RGN_ALL") {
 #if CHECK > 1
   if (not isUniform(f, allpe, region)) {
-    const BoutReal f1 = min(f);
-    const BoutReal f2 = max(f);
+    const BoutReal f1 = min(f, allpe, region);
+    const BoutReal f2 = max(f, allpe, region);
     throw BoutException("Requested getUniform({}, {}, {}) but Field is not const "
-                        "([{:.12f}...{:.12f}] Δ={:e})",
-                        f.name, allpe, region, f1, f2, f2 - f1);
+                        "([{:.15f}...{:.15f}] Δ={:e} {:e}ε)",
+                        f.name, allpe, region, f1, f2, f2 - f1,
+                        (f2 - f1) / (f1 + f2) / std::numeric_limits<BoutReal>::epsilon());
   }
 #endif
   return f[*f.getRegion(region).begin()];
