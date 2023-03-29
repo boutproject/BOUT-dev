@@ -212,6 +212,9 @@ int PvodeSolver::init() {
   for (i = 0; i < OPT_SIZE; i++) {
     ropt[i] = ZERO;
   }
+  /* iopt[MXSTEP] : maximum number of internal steps to be taken by *
+   *                the solver in its attempt to reach tout.        *
+   *                Optional input. (Default = 500).                */
   iopt[MXSTEP] = pvode_mxstep;
 
   {
