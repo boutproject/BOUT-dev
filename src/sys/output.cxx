@@ -109,5 +109,3 @@ ConditionalOutput output_progress(Output::getInstance());
 ConditionalOutput output_error(Output::getInstance());
 ConditionalOutput output_verbose(Output::getInstance(), false);
 ConditionalOutput output(Output::getInstance());
-
-#undef bout_vsnprint_pre

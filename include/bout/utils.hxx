@@ -673,32 +673,6 @@ typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type
         || std::fabs(x - y) < std::numeric_limits<T>::min();
 }
 
-
-/// the bout_vsnprintf macro:
-/// The first argument is an char * buffer of length len.
-/// It needs to have been allocated with new[], as it may be
-/// reallocated.
-/// len: the length of said buffer. May be changed, mussn't be const.
-/// fmt: the const char * descriping the format.
-/// note that fmt should be the first argument of the function of type
-/// const char * and has to be directly followed by the variable arguments.
-#define bout_vsnprintf(buf, len, fmt)                 \
-  {                                                   \
-    va_list va;                                       \
-    va_start(va, fmt);                                \
-    int _vsnprintflen = vsnprintf(buf, len, fmt, va); \
-    va_end(va);                                       \
-    if (_vsnprintflen + 1 > int(len)) {               \
-      _vsnprintflen += 1;                             \
-      delete[] buf;                                   \
-      buf = new char[_vsnprintflen];                  \
-      len = _vsnprintflen;                            \
-      va_start(va, fmt);                              \
-      vsnprintf(buf, len, fmt, va);                   \
-      va_end(va);                                     \
-    }                                                 \
-  }
-
 /// Convert pointer or reference to pointer
 /// This allows consistent handling of both in macros, templates
 template <typename T>
