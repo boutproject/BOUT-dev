@@ -17,7 +17,7 @@ Optimisation and run-time checking
 Configure with ``-DCHECK=3`` enables a lot of checks of
 operations performed by the field objects. This is very useful for
 debugging a code, and can be omitted once bugs have been removed.
-``--DCHECK=2`` enables less checking, especially the
+``-DCHECK=2`` enables less checking, especially the
 computationally rather expensive ones, while ``-DCHECK=0``
 disables most checks.
 
