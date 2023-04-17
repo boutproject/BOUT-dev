@@ -504,7 +504,9 @@ or conda::
 
     $ conda install numpy scipy matplotlib sympy netcdf4 h5py future importlib-metadata
 
-They may also be available from your Linux system's package manager::
+They may also be available from your Linux system's package manager. 
+
+For example on Fedora::
 
     $ sudo dnf install python3-boututils python3-boutdata
 
