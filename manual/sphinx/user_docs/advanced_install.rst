@@ -532,11 +532,11 @@ something like::
 
 To configure BOUT++ with PETSc, add to the cmake configure command::
 
-    -DBOUT_USE_PETSC=ON -DPETSC_ROOT=$HOME/local/petsc-version-options
+    -DBOUT_USE_PETSC=ON -DPETSC_DIR=$HOME/local/petsc-version-options
 
 For example like this::
 
-    $ cmake -DBOUT_USE_PETSC=ON -DPETSC_ROOT=$HOME/local/petsc-version-options
+    $ cmake -DBOUT_USE_PETSC=ON -DPETSC_DIR=$HOME/local/petsc-version-options
 
 BOUT++ can also work with PETSc if it has not been installed. In this
 case ensure that ``PETSC_DIR`` and ``PETSC_ARCH`` are set, for example
