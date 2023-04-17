@@ -567,11 +567,9 @@ Compiling BOUT++
 ----------------
 
 Once BOUT++ has been configured, you can compile the bulk of the code by
-going to the ``build`` directory and running::
+going to the ``BOUT-dev`` directory and running::
 
-    $ make
-
-(on OS-X, FreeBSD, and AIX this should be ``gmake``).
+    $ cmake --build <build-directory>
 
 At the end of this, you should see a file ``libbout++.so`` in the
 ``lib/`` subdirectory of the BOUT++ build directory. If you get an error,
