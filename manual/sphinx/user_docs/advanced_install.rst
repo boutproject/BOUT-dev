@@ -470,13 +470,13 @@ Helmholtz equations.
 
 Currently, BOUT++ supports PETSc versions 3.7 - 3.14. More recent versions may
 well work, but the PETSc API does sometimes change in backward-incompatible
-ways, so this is not guaranteed. To install PETSc version 3.13, use the
+ways, so this is not guaranteed. To install PETSc version 3.19, use the
 following steps::
 
     $ cd ~
-    $ wget https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.5.tar.gz
-    $ tar -xzvf petsc-3.17.5.tar.gz
-    $ cd petsc-3.17.5
+    $ wget https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.19.0.tar.gz
+    $ tar -xzvf petsc-3.19.0.tar.gz
+    $ cd petsc-3.19.0
 
 Use the following configure options to ensure PETSc is compatible with BOUT++::
 
@@ -514,7 +514,7 @@ installed to.
 To make PETSc type what is shown in the terminal output after the configure
 step, something like::
 
-    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug all
+    $ make PETSC_DIR=$HOME/petsc-3.19.0 PETSC_ARCH=arch-linux2-cxx-debug all
 
 Should BLAS, LAPACK, or any other packages be missing, you will get an
 error, and a suggestion that you can append
@@ -523,12 +523,12 @@ error, and a suggestion that you can append
 You may want to test that everything is configured properly. To do this replace
 ``all`` with ``test`` in the make command. It should be something like::
 
-    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug test
+    $ make PETSC_DIR=$HOME/petsc-3.19.0 PETSC_ARCH=arch-linux2-cxx-debug test
 
 To install PETSc, replace ``test``/``all`` with ``install`` and run
 something like::
 
-    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug install
+    $ make PETSC_DIR=$HOME/petsc-3.19.0 PETSC_ARCH=arch-linux2-cxx-debug install
 
 To configure BOUT++ with PETSc, add to the cmake configure command::
 
