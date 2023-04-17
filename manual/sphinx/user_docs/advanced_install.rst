@@ -511,7 +511,7 @@ installed to.
 
           to ``./configure``.
 
-To make PETSc type what is shown in the terminal output after the configure
+To make PETSc, type what is shown in the terminal output after the configure
 step, something like::
 
     $ make PETSC_DIR=$HOME/petsc-3.19.0 PETSC_ARCH=arch-linux2-cxx-debug all
