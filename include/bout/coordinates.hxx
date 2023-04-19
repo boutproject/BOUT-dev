@@ -235,6 +235,11 @@ private:
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
+
+  // check that covariant tensors are positive (if expected) and finite (always)
+  void checkCovariant();
+  // check that contravariant tensors are positive (if expected) and finite (always)
+  void checkContravariant();
 };
 
 /*
