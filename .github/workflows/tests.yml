@@ -31,13 +31,13 @@ jobs:
         is_master_or_next:
           - ${{ github.ref ==  'refs/heads/master' || github.ref == 'refs/heads/next'  || github.base_ref ==  'master' || github.base_ref == 'next' }}
         config:
-          - name: "Default options, Ubuntu 18.04"
-            os: ubuntu-18.04
+          - name: "Default options, Ubuntu 20.04"
+            os: ubuntu-20.04
             configure_options: ""
             script_flags: "-uim"
 
           - name: "Optimised, shared, Python"
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             configure_options: "--enable-shared
                                 --enable-checks=no
                                 --enable-optimize=3
@@ -51,7 +51,7 @@ jobs:
             omp_num_threads: 1
 
           - name: "Debug, shared"
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             configure_options: "--enable-shared
                                 --enable-sigfpe
                                 --enable-debug
