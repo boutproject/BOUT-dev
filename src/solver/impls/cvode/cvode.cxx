@@ -174,7 +174,7 @@ CvodeSolver::CvodeSolver(Options* opts)
                     .doc("Use right preconditioner? Otherwise use left.")
                     .withDefault(false)),
       use_jacobian((*options)["use_jacobian"].withDefault(false)),
-      suncontext(MPI_COMM_WORLD) {
+      suncontext(static_cast<void*>(&BoutComm::get())) {
   has_constraints = false; // This solver doesn't have constraints
   canReset = true;
 
