@@ -87,7 +87,7 @@ jobs:
             omp_num_threads: 2
 
           - name: "Coverage"
-            os: ubuntu-latest
+            os: ubuntu-20.04
             configure_options: "--enable-shared
                                 --enable-code-coverage
                                 --enable-debug
