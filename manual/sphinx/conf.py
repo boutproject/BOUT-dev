@@ -234,6 +234,7 @@ html_theme = "sphinx_book_theme"
 #
 html_theme_options = dict(
     repository_url="https://github.com/boutproject/BOUT-dev",
+    repository_branch="master",
     path_to_docs="manual/sphinx",
     use_edit_page_button=True,
     use_repository_button=True,
