@@ -214,7 +214,34 @@ int PvodeSolver::init() {
   }
   iopt[MXSTEP] = pvode_mxstep;
 
-  cvode_mem = CVodeMalloc(neq, solver_f, simtime, u, BDF, NEWTON, SS, &reltol, &abstol,
+  {
+    /* ropt[H0]      : initial step size. Optional input.             */
+
+    /* ropt[HMAX]    : maximum absolute value of step size allowed.   *
+     *                 Optional input. (Default is infinity).         */
+    const BoutReal hmax(
+        (*options)["max_timestep"].doc("Maximum internal timestep").withDefault(-1.));
+    if (hmax > 0) {
+      ropt[HMAX] = hmax;
+    }
+    /* ropt[HMIN]    : minimum absolute value of step size allowed.   *
+     *                 Optional input. (Default is 0.0).              */
+    const BoutReal hmin(
+        (*options)["min_timestep"].doc("Minimum internal timestep").withDefault(-1.));
+    if (hmin > 0) {
+      ropt[HMIN] = hmin;
+    }
+    /* iopt[MAXORD] : maximum lmm order to be used by the solver.     *
+     *                Optional input. (Default = 12 for ADAMS, 5 for  *
+     *                BDF).                                           */
+    const int maxOrder((*options)["max_order"].doc("Maximum order").withDefault(-1));
+    if (maxOrder > 0) {
+      iopt[MAXORD] = maxOrder;
+    }
+  }
+  const bool use_adam((*options)["adams_moulton"].doc("Use Adams Moulton solver instead of BDF").withDefault(false));
+
+  cvode_mem = CVodeMalloc(neq, solver_f, simtime, u, use_adam ? ADAMS : BDF, NEWTON, SS, &reltol, &abstol,
                           this, nullptr, optIn, iopt, ropt, machEnv);
 
   if (cvode_mem == nullptr) {
