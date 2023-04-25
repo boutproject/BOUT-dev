@@ -1289,8 +1289,8 @@ int Coordinates::geometry(bool recalculate_staggered,
 
   // Invalidate and recalculate cached variables
   zlength_cache.reset();
-  Grad2_par2_DDY_invSg.reset();
-  invSg.reset();
+  Grad2_par2_DDY_invSgCache.clear();
+  invSgCache.reset();
 
   return 0;
 }
@@ -1620,11 +1620,7 @@ Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
   ASSERT1(location == outloc
           || (outloc == CELL_DEFAULT && location == var.getLocation()));
 
-  if (invSg == nullptr) {
-    invSg = std::make_unique<FieldMetric>();
-    (*invSg) = 1.0 / sqrt(g_22);
-  }
-  return DDY(var) * (*invSg);
+  return DDY(var) * invSg();
 }
 
 Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
@@ -1632,11 +1628,7 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
   TRACE("Coordinates::Grad_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  if (invSg == nullptr) {
-    invSg = std::make_unique<FieldMetric>();
-    (*invSg) = 1.0 / sqrt(g_22);
-  }
-  return ::DDY(var, outloc, method) * (*invSg);
+  return ::DDY(var, outloc, method) * invSg();
 }
 
 /////////////////////////////////////////////////////////
@@ -1648,22 +1640,14 @@ Coordinates::FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Fiel
                                                     const std::string& UNUSED(method)) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
-  if (invSg == nullptr) {
-    invSg = std::make_unique<FieldMetric>();
-    (*invSg) = 1.0 / sqrt(g_22);
-  }
-  return VDDY(v, f) * (*invSg);
+  return VDDY(v, f) * invSg();
 }
 
 Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
                                    const std::string& method) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  if (invSg == nullptr) {
-    invSg = std::make_unique<FieldMetric>();
-    (*invSg) = 1.0 / sqrt(g_22);
-  }
-  return VDDY(v, f, outloc, method) * (*invSg);
+  return VDDY(v, f, outloc, method) * invSg();
 }
 
 /////////////////////////////////////////////////////////
@@ -1715,20 +1699,8 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
-  if (invSg == nullptr) {
-    invSg = std::make_unique<FieldMetric>();
-    (*invSg) = 1.0 / sqrt(g_22);
-  }
-  if (Grad2_par2_DDY_invSg == nullptr) {
-    // Communicate to get parallel slices
-    localmesh->communicate(*invSg);
-    invSg->applyParallelBoundary("parallel_neumann");
-    // cache
-    Grad2_par2_DDY_invSg = std::make_unique<FieldMetric>();
-    (*Grad2_par2_DDY_invSg) = DDY(*invSg, outloc, method) * (*invSg);
-  }
   auto result =
-      (*Grad2_par2_DDY_invSg) * DDY(f, outloc, method) + D2DY2(f, outloc, method) / g_22;
+    Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method) + D2DY2(f, outloc, method) / g_22;
 
   return result;
 }
@@ -1741,23 +1713,11 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
   }
   ASSERT1(location == outloc);
 
-  if (invSg == nullptr) {
-    invSg = std::make_unique<FieldMetric>();
-    (*invSg) = 1.0 / sqrt(g_22);
-  }
-  if (Grad2_par2_DDY_invSg == nullptr) {
-    // Communicate to get parallel slices
-    localmesh->communicate(*invSg);
-    invSg->applyParallelBoundary("parallel_neumann");
-    // cache
-    Grad2_par2_DDY_invSg = std::make_unique<FieldMetric>();
-    (*Grad2_par2_DDY_invSg) = DDY(*invSg, outloc, method) * (*invSg);
-  }
   Field3D result = ::DDY(f, outloc, method);
 
   Field3D r2 = D2DY2(f, outloc, method) / g_22;
 
-  result = (*Grad2_par2_DDY_invSg) * result + r2;
+  result = Grad2_par2_DDY_invSg(outloc, method) * result + r2;
 
   ASSERT2(result.getLocation() == outloc);
 
@@ -2013,4 +1973,31 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
 #else
   throw BoutException("Coordinates::Laplace_perpXY for 3D metric not implemented");
 #endif
+}
+
+const Coordinates::FieldMetric& Coordinates::invSg() const {
+  if (invSgCache == nullptr) {
+    auto ptr = std::make_unique<FieldMetric>();
+    (*ptr) = 1.0 / sqrt(g_22);
+    invSgCache = std::move(ptr);
+  }
+  return *invSgCache;
+}
+
+const Coordinates::FieldMetric& Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc,
+                                                 const std::string& method) const {
+  if (auto search = Grad2_par2_DDY_invSgCache.find(method); search != Grad2_par2_DDY_invSgCache.end()) {
+    return *search->second;
+  }
+  invSg();
+
+  // Communicate to get parallel slices
+  localmesh->communicate(*invSgCache);
+  invSgCache->applyParallelBoundary("parallel_neumann");
+
+  // cache
+  auto ptr = std::make_unique<FieldMetric>();
+  *ptr = DDY(*invSgCache, outloc, method) * invSg();
+  Grad2_par2_DDY_invSgCache[method] = std::move(ptr);
+  return *Grad2_par2_DDY_invSgCache[method];
 }
