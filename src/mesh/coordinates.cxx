@@ -1613,8 +1613,8 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
-  auto result =
-    Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method) + D2DY2(f, outloc, method) / g_22;
+  auto result = Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
+                + D2DY2(f, outloc, method) / g_22;
 
   return result;
 }
@@ -1898,9 +1898,10 @@ const Coordinates::FieldMetric& Coordinates::invSg() const {
   return *invSgCache;
 }
 
-const Coordinates::FieldMetric& Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc,
-                                                 const std::string& method) const {
-  if (auto search = Grad2_par2_DDY_invSgCache.find(method); search != Grad2_par2_DDY_invSgCache.end()) {
+const Coordinates::FieldMetric&
+Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) const {
+  if (auto search = Grad2_par2_DDY_invSgCache.find(method);
+      search != Grad2_par2_DDY_invSgCache.end()) {
     return *search->second;
   }
   invSg();

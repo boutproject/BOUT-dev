@@ -242,7 +242,7 @@ private:
 
   const FieldMetric& invSg() const;
   const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
-					  const std::string& method) const;
+                                          const std::string& method) const;
 
   // check that covariant tensors are positive (if expected) and finite (always)
   void checkCovariant();
