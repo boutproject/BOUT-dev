@@ -1577,13 +1577,13 @@ Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& m
 
 Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
                                           const std::string& method,
-                                          const std::string& region) {
+                                          const std::string& region) const {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
 
 Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
-                         const std::string& region) {
+                         const std::string& region) const {
 #if BOUT_USE_METRIC_3D
   if (!f.hasParallelSlices() and !transform->canToFromFieldAligned()) {
     Field3D f_parallel = f;

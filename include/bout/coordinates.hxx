@@ -149,7 +149,7 @@ public:
 
   FieldMetric DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT",
-                  const std::string& region = "RGN_NOBNDRY");
+                  const std::string& region = "RGN_NOBNDRY") const;
 
   FieldMetric DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT",
@@ -161,7 +161,7 @@ public:
 
   Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
-              const std::string& region = "RGN_NOBNDRY");
+              const std::string& region = "RGN_NOBNDRY") const;
 
   Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",

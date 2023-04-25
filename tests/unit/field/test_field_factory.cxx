@@ -856,7 +856,7 @@ public:
 
   void calcParallelSlices(Field3D&) override {}
 
-  bool canToFromFieldAligned() override { return allow_transform; }
+  bool canToFromFieldAligned() const override { return allow_transform; }
 
   bool requiresTwistShift(bool, YDirectionType) override { return false; }
 
