@@ -64,14 +64,17 @@ protected:
 
     ddt(N) = 0.0;
 
-    if (Dx > 0.0)
+    if (Dx > 0.0) {
       ddt(N) += Dx * D2DX2(N);
+    }
 
-    if (Dy > 0.0)
+    if (Dy > 0.0) {
       ddt(N) += Dy * D2DY2(N);
+    }
 
-    if (Dz > 0.0)
+    if (Dz > 0.0) {
       ddt(N) += Dz * D2DZ2(N);
+    }
 
     return 0;
   }
