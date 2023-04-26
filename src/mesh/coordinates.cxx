@@ -1203,6 +1203,8 @@ int Coordinates::geometry(bool recalculate_staggered,
 
   // Invalidate and recalculate cached variables
   zlength_cache.reset();
+  Grad2_par2_DDY_invSgCache.clear();
+  invSgCache.reset();
 
   return 0;
 }
@@ -1489,13 +1491,13 @@ Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& m
 
 Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
                                           const std::string& method,
-                                          const std::string& region) {
+                                          const std::string& region) const {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
 
 Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
-                         const std::string& region) {
+                         const std::string& region) const {
 #if BOUT_USE_METRIC_3D
   if (!f.hasParallelSlices() and !transform->canToFromFieldAligned()) {
     Field3D f_parallel = f;
@@ -1532,7 +1534,7 @@ Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
   ASSERT1(location == outloc
           || (outloc == CELL_DEFAULT && location == var.getLocation()));
 
-  return DDY(var) / sqrt(g_22);
+  return DDY(var) * invSg();
 }
 
 Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
@@ -1540,7 +1542,7 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
   TRACE("Coordinates::Grad_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  return ::DDY(var, outloc, method) / sqrt(g_22);
+  return ::DDY(var, outloc, method) * invSg();
 }
 
 /////////////////////////////////////////////////////////
@@ -1551,13 +1553,15 @@ Coordinates::FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Fiel
                                                     MAYBE_UNUSED(CELL_LOC outloc),
                                                     const std::string& UNUSED(method)) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
-  return VDDY(v, f) / sqrt(g_22);
+
+  return VDDY(v, f) * invSg();
 }
 
 Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
                                    const std::string& method) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return VDDY(v, f, outloc, method) / sqrt(g_22);
+
+  return VDDY(v, f, outloc, method) * invSg();
 }
 
 /////////////////////////////////////////////////////////
@@ -1594,8 +1598,8 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
   Field3D f_B = f / Bxy_floc;
   f_B.splitParallelSlices();
   for (int i = 0; i < f.getMesh()->ystart; ++i) {
-    f_B.yup(i) = f.yup(i) / Bxy_floc;
-    f_B.ydown(i) = f.ydown(i) / Bxy_floc;
+    f_B.yup(i) = f.yup(i) / Bxy_floc.yup(i);
+    f_B.ydown(i) = f.ydown(i) / Bxy_floc.ydown(i);
   }
   return Bxy * Grad_par(f_B, outloc, method);
 }
@@ -1609,10 +1613,7 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
-  auto invSg = 1.0 / sqrt(g_22);
-  // Communicate to get parallel slices
-  localmesh->communicate(invSg);
-  auto result = DDY(invSg, outloc, method) * DDY(f, outloc, method) * invSg
+  auto result = Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
                 + D2DY2(f, outloc, method) / g_22;
 
   return result;
@@ -1626,16 +1627,11 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
   }
   ASSERT1(location == outloc);
 
-  auto invSg = 1.0 / sqrt(g_22);
-  // Communicate to get parallel slices
-  localmesh->communicate(invSg);
-  auto sg = DDY(invSg, outloc, method) * invSg;
-
   Field3D result = ::DDY(f, outloc, method);
 
   Field3D r2 = D2DY2(f, outloc, method) / g_22;
 
-  result = sg * result + r2;
+  result = Grad2_par2_DDY_invSg(outloc, method) * result + r2;
 
   ASSERT2(result.getLocation() == outloc);
 
@@ -1891,6 +1887,34 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
 #else
   throw BoutException("Coordinates::Laplace_perpXY for 3D metric not implemented");
 #endif
+}
+
+const Coordinates::FieldMetric& Coordinates::invSg() const {
+  if (invSgCache == nullptr) {
+    auto ptr = std::make_unique<FieldMetric>();
+    (*ptr) = 1.0 / sqrt(g_22);
+    invSgCache = std::move(ptr);
+  }
+  return *invSgCache;
+}
+
+const Coordinates::FieldMetric&
+Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) const {
+  if (auto search = Grad2_par2_DDY_invSgCache.find(method);
+      search != Grad2_par2_DDY_invSgCache.end()) {
+    return *search->second;
+  }
+  invSg();
+
+  // Communicate to get parallel slices
+  localmesh->communicate(*invSgCache);
+  invSgCache->applyParallelBoundary("parallel_neumann");
+
+  // cache
+  auto ptr = std::make_unique<FieldMetric>();
+  *ptr = DDY(*invSgCache, outloc, method) * invSg();
+  Grad2_par2_DDY_invSgCache[method] = std::move(ptr);
+  return *Grad2_par2_DDY_invSgCache[method];
 }
 
 void Coordinates::checkCovariant() {
