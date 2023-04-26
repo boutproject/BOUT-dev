@@ -163,7 +163,7 @@ SlepcSolver::SlepcSolver(Options* options) {
 
   tol = options_ref["tol"].doc("SLEPc tolerance").withDefault(1.0e-6);
   maxIt = options_ref["maxIt"].doc("Maximum iterations").withDefault(-1);
-  if (maxIt == -1){
+  if (maxIt == -1) {
     maxIt = PETSC_DEFAULT;
   }
 
