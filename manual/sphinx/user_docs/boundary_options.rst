@@ -3,6 +3,8 @@
 Boundary conditions
 ===================
 
+See also :ref:`sec-physicsmodel-boundary-conditions`.
+
 Like the variable initialisation, boundary conditions can be set for
 each variable in individual sections, with default values in a section
 ``[All]``. Boundary conditions are specified for each variable, being
@@ -15,8 +17,8 @@ region, the options are checked in order from most to least specific:
 
 -  Section ``var``, ``bndry_`` + region name. Depending on the mesh
    file, regions of the grid are given labels. Currently these are
-   ``core``, ``sol``, ``pf`` and ``target`` which are intended for
-   tokamak edge simulations. Hence the variables checked are
+   ``core``, ``sol``, ``pf``, ``lower_target`` and ``upper_target`` which are
+   intended for tokamak edge simulations. Hence the variables checked are
    ``bndry_core``, ``bndry_pf`` etc.
 
 -  Section ``var``, ``bndry_`` + boundary side. These names are ``xin``,
@@ -84,13 +86,22 @@ following are available:
 -  ``relax`` - Relaxing boundaries. Evolve the variable towards the
    given boundary condition at a given rate
 
--  ``shifted`` - Apply boundary conditions in orthogonal X-Z
-   coordinates, rather than field-aligned
-
 -  ``width`` - Modifies the width of the region over which the boundary
    condition is applied
 
-These are described in later subsections.
+-  ``fromFieldAligned`` - Transform the variable from toroidal to field
+   aligned coordinates to apply the boundary condition (and transform
+   back afterwards). Provides a way to apply parallel boundary
+   conditions in a field aligned way, see
+   :ref:`sec-parallel-boundary-conditions`.
+
+-  ``toFieldAligned`` - Transform the variable from field aligned to
+   toroidal coordinates to apply the boundary condition (and transform
+   back afterwards). Could be used to apply radial boundary conditions
+   to a variable defined on a field aligned grid. Should probably
+   never be useful.
+
+These are described in the following subsections.
 
 Boundary conditions for non-orthogonal grids
 --------------------------------------------
@@ -109,6 +120,181 @@ do include the corner cells at the domain boundary corners.
 .. [#disablecorners] although this may be disabled, reverting to the behaviour of BOUT++
                      up to v4, by setting the option ``mesh:include_corner_cells =
                      false``.
+
+.. _sec-parallel-boundary-conditions:
+
+Parallel boundary conditions
+----------------------------
+
+Unless using slab geometry (with ``ParallelTransformIdentity``, see
+:ref:`sec-parallel-transforms`), some special handling is needed to
+apply parallel boundary conditions. The details depend on the parallel
+derivative scheme being used, see below. The default ``bndry_yup`` and
+``bndry_ydown`` settings would apply boundary conditions in the
+poloidal, rather than parallel direction. As the poloidal direction
+generally has a coarse resolution, that is not sufficient to resolve
+perpendicular gradients, this would result in large numerical
+inaccuracies in the boundary conditions.
+
+.. _sec-parallel-bc-shifted-metric:
+
+Shifted metric boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using the ``ShiftedMetric`` implementation of
+``ParallelTransform`` (by setting ``mesh:paralleltransform =
+shifted``, see :ref:`sec-shifted-metric`), the recommended method is
+to apply boundary conditions directly to the ``yup`` and ``ydown``
+parallel slices. This can be done by setting ``bndry_par_yup`` and
+``bndry_par_ydown``, or ``bndry_par_all`` to set both at once. The
+possible values are ``parallel_dirichlet``, ``parallel_dirichlet_O3``
+and ``parallel_neumann``. The stencils used are the same as for the
+standard boundary conditions without the ``parallel_`` prefix, but are
+applied directly to parallel slices. The boundary condition can only
+be applied after the parallel slices are calculated, which is usually
+done during a call to ``Mesh::communicate()``, so the
+``applyBoundary()`` method must be called explicitly (when boundary
+conditions are applied automatically to evolving variables, they
+cannot set these parallel boundary conditions). For maximum
+efficiency, set ``bndry_yup`` and ``bndry_ydown`` to ``none`` to skip
+using any boundary condition to set the unused boundary cells of the
+base variable.
+
+For example, for an evolving variable ``f``, put a section in the
+``BOUT.inp`` input file like
+
+.. code-block:: cfg
+
+    [f]
+    bndry_xin = dirichlet
+    bndry_xout = dirichlet
+    bndry_par_all = parallel_neumann
+    bndry_ydown = none
+    bndry_yup = none
+
+and in the ``PhysicsModel::rhs()`` function, before taking any
+derivatives of ``f``, call ::
+
+    mesh->communicate(f);
+    f.applyBoundary();
+
+The ``bndry_par_*`` options only provide a subset of boundary
+conditions. If others are required, they can be used with a different,
+slightly less optimised method. The modifier ``fromFieldAligned()``
+applies a boundary condition by first transforming the variable to a
+globally field aligned grid, then applying the boundary condition,
+then transforming back to the toroidal grid. When this method is used,
+the boundary conditions must be applied before communicating, so that
+the parallel slices are calculated using the boundary cells of the
+base variable (for variables that have been added to the time solver,
+this will automatically be the case). For example, the settings in
+``BOUT.inp`` for a Robin parallel boundary condition could be
+
+.. code-block:: cfg
+
+    [f]
+    bndry_xin = dirichlet
+    bndry_xout = dirichlet
+    bndry_yup = fromFieldAligned(robin(1, -1, 0))
+    bndry_ydown = fromFieldAligned(robin(1, 1, 0))
+
+.. _sec-parallel-bc-aligned-transform:
+
+Aligned transform boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using the 'aligned transform' method for parallel derivatives
+(see :ref:`sec-aligned-transform`), the way to apply parallel boundary
+conditions depends on how the method was implemented.
+
+For the 'implicit transform' version where the transformations to and
+from the field aligned grid are done within each parallel derivative
+or interpolation operator, the parallel boundary conditions must be
+applied to the base variable, so they must be applied using the
+``fromFieldAligned()`` modifier, as described in the previous section
+(:ref:`sec-parallel-bc-shifted-metric`).
+
+For the optimised method with separate objects for the field aligned
+versions of variables, it would be correct to apply boundary
+conditions using the ``fromFieldAligned()`` modifier before
+calculating the field aligned versions, but would add extra
+interpolations. Therefore the recommended way to apply parallel
+boundary conditions is to apply them directly to the field aligned
+versions of variables. Since the objects for the field aligned
+versions are not added to the time solver, it is necessary to load
+boundary conditions explicitly from the ``BOUT.inp`` input file during
+``PhysicsModel::init()``, for example by calling::
+
+    f_aligned.setBoundary("f_aligned")
+
+where the argument to ``setBoundary()`` specifies the name of the
+section in ``BOUT.inp`` from which boundary conditions will be read.
+Then the boundary conditions must be applied explicitly after the
+field aligned object has been calculated in ``PhysicsModel::rhs()``,
+for example::
+
+    f_aligned = fromFieldAligned(f);
+    f_aligned.applyBoundary();
+
+The boundary condition should be applied directly to the array in
+``f_aligned`` (not to parallel slices, which are not created for this
+scheme), so uses the 'standard' ``bndry_yup``/``bndry_ydown``. Radial
+boundary points should never be used from the aligned object, so its
+x-boundaries should be set to ``none``, and parallel boundary points
+should never be used from the base variable, so its y-boundaries
+should be set to ``none``. The input sections for ``f`` and
+``f_aligned`` might look like
+
+.. code-block:: cfg
+
+    [f]
+    bndry_xin = dirichlet
+    bndry_xout = dirichlet
+    bndry_yup = none
+    bndry_ydown = none
+
+    [f_aligned]
+    bndry_xin = none
+    bndry_xout = none
+    bndry_yup = free_o3
+    bndry_ydown = free_o3
+
+.. _sec-parallel-bc-fci:
+
+FCI boundary conditions
+^^^^^^^^^^^^^^^^^^^^^^^
+
+When using the FCI method (:ref:`sec-fci`), parallel boundary
+conditions must be applied to the parallel slices using
+`bndry_par_yup` and `bndry_par_ydown`, or `bndry_par_all` to set both
+together.  It is suggested, at least if there are
+boundaries in the y-direction of the grid, to set ``bndry_yup = none``
+and ``bndry_down = none`` to skip unnecessary operations on y-boundary
+cells of the base variable. For example, for an evolving variable
+``f``, put a section in the ``BOUT.inp`` input file like
+
+.. code-block:: cfg
+
+    [f]
+    bndry_xin = dirichlet
+    bndry_xout = dirichlet
+    bndry_par_all = parallel_dirichlet
+    bndry_ydown = none
+    bndry_yup = none
+
+One should not that the parallel boundary conditions have to be applied after
+communication, while the perpendicular ones before:
+
+.. code-block:: C++
+
+    f.applyBoundary();
+    mesh->communicate(f);
+    f.applyParallelBoundary("parallel_neumann");
+
+Note that during grid generation care has to be taken to ensure that there are
+no "short" connection lengths. Otherwise it can happen that for a point on a
+slice, both yup() and ydown() are boundary cells, and interpolation into the
+boundary can only use the single point on the given cell.
 
 Relaxing boundaries
 -------------------
@@ -137,22 +323,6 @@ By default, the relaxation rate is set to :math:`10` (i.e. a time-scale
 of :math:`\tau=0.1`). To change this, give the rate as the second
 argument e.g. ``relax(dirichlet, 2)`` would relax to a Dirichlet
 boundary condition at a rate of :math:`2`.
-
-Shifted boundaries
-------------------
-
-By default boundary conditions are applied in field-aligned coordinates,
-where :math:`y` is along field-lines but :math:`x` has a discontinuity
-at the twist-shift location. If radial derivatives are being done in
-shifted coordinates where :math:`x` and :math:`z` are orthogonal, then
-boundary conditions should also be applied in shifted coordinates. To do
-this, the ``shifted`` boundary modifier applies a :math:`z` shift,
-applies the boundary condition, then shifts back. For example::
-
-    bndry_core = shifted( neumann )
-
-would ensure that radial derivatives were zero in shifted coordinates on
-the core boundary.
 
 Changing the width of boundaries
 --------------------------------

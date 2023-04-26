@@ -3,7 +3,7 @@
 #include "gtest/gtest.h"
 #include <cmath>
 
-#include "field3d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/hypre_interface.hxx"
 
 #if BOUT_HAS_HYPRE
@@ -96,7 +96,7 @@ TYPED_TEST(HypreVectorTest, Assemble) {
 
   // HYPRE_IJVectorGetValues when using CUDA requires indices and values use device
   // compatible memory
-#if BOUT_USE_CUDA && defined(__CUDACC__)
+#if BOUT_HAS_CUDA && defined(__CUDACC__)
   HYPRE_BigInt* um_i;
   HYPRE_Complex* um_actual;
   cudaMallocManaged(&um_i, sizeof(HYPRE_BigInt));
@@ -309,9 +309,8 @@ TYPED_TEST(HypreMatrixTest, SetElements) {
       auto j_index = static_cast<HYPRE_BigInt>(this->indexer->getGlobal(j));
       HYPRE_Int ncolumns{1};
       HYPRE_Complex value;
-      BOUT_OMP(critical) {
-        HYPRE_IJMatrixGetValues(raw_matrix, 1, &ncolumns, &i_index, &j_index, &value);
-      }
+      BOUT_OMP(critical)
+      { HYPRE_IJMatrixGetValues(raw_matrix, 1, &ncolumns, &i_index, &j_index, &value); }
       if (i == j) {
         EXPECT_EQ(static_cast<BoutReal>(value),
                   static_cast<BoutReal>(this->indexer->getGlobal(i)));

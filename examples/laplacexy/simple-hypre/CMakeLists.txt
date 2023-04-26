@@ -10,6 +10,6 @@ bout_add_example(test_laplacexy_hypre
   SOURCES test-laplacexy-hypre.cxx
   REQUIRES BOUT_HAS_HYPRE)
 
-if(BOUT_USE_CUDA)
+if(BOUT_HAS_CUDA)
   set_source_files_properties(test-laplacexy-hypre.cxx PROPERTIES LANGUAGE CUDA )
 endif()

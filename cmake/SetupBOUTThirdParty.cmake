@@ -11,9 +11,9 @@ if (BOUT_USE_OPENMP)
 endif()
 
 # determined in SetupCompilers.cmake
-if (BOUT_USE_CUDA)
+if (BOUT_HAS_CUDA)
   enable_language(CUDA)
-  message(STATUS "BOUT_USE_CUDA ${CMAKE_CUDA_COMPILER}")
+  message(STATUS "BOUT_HAS_CUDA ${CMAKE_CUDA_COMPILER}")
 
   # Get all the .cxx files from BOUT_SOURCES
   set(BOUT_SOURCES_CXX ${BOUT_SOURCES})
@@ -65,7 +65,7 @@ if (BOUT_USE_HYPRE)
   enable_language(C)
   find_package(HYPRE REQUIRED)
   target_link_libraries(bout++ PUBLIC HYPRE::HYPRE)
-  if (HYPRE_WITH_CUDA AND BOUT_USE_CUDA)
+  if (HYPRE_WITH_CUDA AND BOUT_HAS_CUDA)
      target_compile_definitions(bout++ PUBLIC "HYPRE_USING_CUDA;HYPRE_USING_UNIFIED_MEMORY")
      target_link_libraries(bout++ PUBLIC CUDA::cusparse CUDA::curand CUDA::culibos CUDA::cublas CUDA::cublasLt)
   endif ()

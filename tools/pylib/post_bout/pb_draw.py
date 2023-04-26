@@ -140,7 +140,6 @@ class LinResDraw(LinRes):
             fig1.savefig(pp, format="pdf")
             plt.close(fig1)
         else:  # if not plot its probably plotted iwth sim data, print chi somewhere
-
             for i, m in enumerate(s.models):
                 textstr = r"$\chi^2$" + "$=%.2f$" % (m.chi[comp].sum())
                 print(textstr)
@@ -173,7 +172,6 @@ class LinResDraw(LinRes):
         trans=False,
         infobox=True,
     ):
-
         colors = [
             "b.",
             "r.",
@@ -1064,7 +1062,6 @@ class LinResDraw(LinRes):
         linestyle="-",
         summary=True,
     ):
-
         Nplots = self.nrun
 
         colors = ["b", "g", "r", "c", "m", "y", "k", "b", "g", "r", "c", "m", "y", "k"]
@@ -1265,7 +1262,6 @@ class LinResDraw(LinRes):
     def plotradeigen(
         self, pp, field="Ni", comp="amp", yscale="linear", xscale="linear"
     ):
-
         Nplots = self.nrun
         colors = ["b", "g", "r", "c", "m", "y", "k", "b", "g", "r", "c", "m", "y", "k"]
         fig1 = plt.figure()
@@ -1368,7 +1364,6 @@ class LinResDraw(LinRes):
         xrange=1,
         debug=False,
     ):
-
         Nplots = self.nrun
         Modes = subset(self.db, "field", [field])  # pick  field
         colors = ["b", "g", "r", "c", "m", "y", "k", "b", "g", "r", "c", "m", "y", "k"]
@@ -1464,7 +1459,6 @@ class LinResDraw(LinRes):
     def savemovie(
         self, field="Ni", yscale="log", xscale="log", moviename="spectrum.avi"
     ):
-
         print("Making movie animation.mpg - this make take a while")
         files = []
 
@@ -1504,7 +1498,6 @@ class LinResDraw(LinRes):
         os.system("rm *png")
 
     def printmeta(self, pp, filename="output2.pdf", debug=False):
-
         import os
         from pyPdf import PdfFileWriter, PdfFileReader
 

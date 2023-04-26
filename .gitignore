@@ -81,3 +81,4 @@ coverage/
 # Python stuff
 /_wheel*/
 /dist/
+/_version.txt

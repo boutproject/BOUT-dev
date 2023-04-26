@@ -309,6 +309,38 @@ with ``ixseps1 = ixseps2`` are connected together via communications.
    Schematic illustration of domain decomposition and communication in
    BOUT++ with ``ixseps1 = ixseps2``
 
+Periodic X domains
+~~~~~~~~~~~~~~~~~~
+
+The :math:`x` coordinate is usually a radial flux coordinate. In some
+simulations it is useful to make this direction periodic, for example
+flux tube simulations or the Hasegawa-Wakatani example in
+``examples/hasegawa-wakatani/hw.cxx``. In that example the :math:`x`
+coordinate is made periodic with the top-level ``periodicX`` option:
+
+.. code-block:: cfg
+
+   periodicX = true # Domain is periodic in X
+
+   [mesh]
+
+   nx = 260  # Note 4 guard cells in X
+   ny = 1
+   nz = 256  # Periodic, so no guard cells in Z
+
+Note that some care is now needed if the model uses Laplacian
+inversions, for example to calculate electrostatic potential from
+vorticity: If both :math:`x` and :math:`z` coordinates are both
+periodic then the inversion has no boundary conditions. In that case
+the laplacian has a null space and so is singular; an arbitrary
+constant offset can be added to the potential without changing the
+vorticity.
+
+The default ``cyclic`` solver treats the :math:`k_z =
+0` (DC) mode as a special case, setting the average of the potential
+over the :math:`x-z` domain to zero. Other solvers may not
+handle the ``periodicX`` case in the same way.
+
 Implementations
 ~~~~~~~~~~~~~~~
 
