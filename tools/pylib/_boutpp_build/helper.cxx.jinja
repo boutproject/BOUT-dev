@@ -1,9 +1,9 @@
-#include <field3d.hxx>
-#include <globals.hxx>
-#include <derivs.hxx>
-#include <difops.hxx>
+#include <bout/derivs.hxx>
+#include <bout/difops.hxx>
+#include <bout/field3d.hxx>
+#include <bout/globals.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
-#include <invert_laplace.hxx>
 {% for field in [field3d, field2d] %}
 
 void c_set_all({{ field.field_type }} * f, const double * data){

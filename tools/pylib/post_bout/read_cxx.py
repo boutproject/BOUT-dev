@@ -98,7 +98,6 @@ def get_evolved_cxx(cxxfile=None):
 
 
 def read_cxx(path=".", boutcxx="physics_code.cxx.ref", evolved=""):
-
     # print path, boutcxx
     boutcxx = path + "/" + boutcxx
     # boutcxx = open(boutcxx,'r').readlines()

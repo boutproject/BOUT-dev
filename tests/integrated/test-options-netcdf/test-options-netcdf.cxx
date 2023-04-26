@@ -1,8 +1,8 @@
 
-#include "bout.hxx"
+#include "bout/bout.hxx"
 
-#include "options_netcdf.hxx"
-#include "optionsreader.hxx"
+#include "bout/options_netcdf.hxx"
+#include "bout/optionsreader.hxx"
 
 using bout::OptionsNetCDF;
 
@@ -17,14 +17,14 @@ int main(int argc, char** argv) {
   values.printUnused();
 
   // Write to an INI text file
-  OptionsReader *reader = OptionsReader::getInstance();
+  OptionsReader* reader = OptionsReader::getInstance();
   reader->write(&values, "test-out.ini");
 
   // Write to a NetCDF file
   OptionsNetCDF("test-out.nc").write(values);
 
   ///////////////////////////
-  
+
   // Write the BOUT.inp settings to NetCDF file
   OptionsNetCDF("settings.nc").write(Options::root());
 
@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
 
   // Write to INI file
   reader->write(&settings, "settings.ini");
-  
+
   ///////////////////////////
   // Write fields
 
@@ -56,28 +56,28 @@ int main(int argc, char** argv) {
   fields2["f2d"] = f2d;
   fields2["f3d"] = f3d;
   fields2["fperp"] = fperp;
-  
+
   // Write out again
   OptionsNetCDF("fields2.nc").write(fields2);
-  
+
   ///////////////////////////
   // Time dependent values
 
   Options data;
   data["scalar"] = 1.0;
   data["scalar"].attributes["time_dimension"] = "t";
-  
+
   data["field"] = Field3D(2.0);
   data["field"].attributes["time_dimension"] = "t";
-  
+
   OptionsNetCDF("time.nc").write(data);
-  
+
   // Update time-dependent values
   data["scalar"] = 2.0;
   data["field"] = Field3D(3.0);
-  
+
   // Append data to file
   OptionsNetCDF("time.nc", OptionsNetCDF::FileMode::append).write(data);
-  
+
   BoutFinalise();
 };

@@ -27,8 +27,8 @@ def getversion():
     """
     global version
     if version is None:
-        _bout_previous_version = "v4.0.0"
-        _bout_next_version = "5.0.0.alpha"
+        _bout_previous_version = "v5.0.0"
+        _bout_next_version = "5.1.0"
 
         try:
             tmp = run2(f"git describe --tags --match={_bout_previous_version}").strip()
@@ -210,7 +210,7 @@ def get_requires_for_build_wheel(config_settings=None):
 
 
 def mkdir_p(path):
-    return pathlib.Path.mkdir(path, parents=True, exist_ok=True)
+    return pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
 
 def prepare_metadata_for_build_wheel(

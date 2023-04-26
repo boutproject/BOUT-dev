@@ -16,9 +16,9 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     env:
       BOUT_TEST_TIMEOUT: "6m"
-      PETSC_DIR: /usr/lib/petscdir/3.7.7/x86_64-linux-gnu-real
+      PETSC_DIR: /usr/lib/petscdir/petsc3.12/x86_64-linux-gnu-real
       PETSC_ARCH: ""
-      SLEPC_DIR: /usr/lib/slepcdir/3.7.4/x86_64-linux-gnu-real
+      SLEPC_DIR: /usr/lib/slepcdir/slepc3.12/x86_64-linux-gnu-real/
       SLEPC_ARCH: ""
       OMP_NUM_THREADS: ${{ matrix.config.omp_num_threads }}
       PYTHONPATH: ${{ github.workspace }}/tools/pylib
@@ -31,13 +31,13 @@ jobs:
         is_master_or_next:
           - ${{ github.ref ==  'refs/heads/master' || github.ref == 'refs/heads/next'  || github.base_ref ==  'master' || github.base_ref == 'next' }}
         config:
-          - name: "Default options, Ubuntu 18.04"
-            os: ubuntu-18.04
+          - name: "Default options, Ubuntu 20.04"
+            os: ubuntu-20.04
             configure_options: ""
             script_flags: "-uim"
 
           - name: "Optimised, shared, Python"
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             configure_options: "--enable-shared
                                 --enable-checks=no
                                 --enable-optimize=3
@@ -48,9 +48,10 @@ jobs:
                                 --with-slepc
                                 --with-sundials=/home/runner/local"
             script_flags: "-uim -t shared -t python"
+            omp_num_threads: 1
 
           - name: "Debug, shared"
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             configure_options: "--enable-shared
                                 --enable-sigfpe
                                 --enable-debug
@@ -59,9 +60,10 @@ jobs:
                                 --with-slepc
                                 --with-sundials=/home/runner/local"
             script_flags: "-uim"
+            omp_num_threads: 1
 
-          - name: "CMake, shared, release, Ubuntu 20.04"
-            os: ubuntu-20.04
+          - name: "CMake, shared, release"
+            os: ubuntu-latest
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_OPENMP=ON
                             -DCMAKE_BUILD_TYPE=Release
@@ -72,8 +74,8 @@ jobs:
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
 
-          - name: "CMake, shared, OpenMP, Ubuntu 20.04, 3D metrics"
-            os: ubuntu-20.04
+          - name: "CMake, shared, OpenMP, 3D metrics"
+            os: ubuntu-latest
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
                             -DBOUT_ENABLE_OPENMP=ON
@@ -99,7 +101,7 @@ jobs:
             build_petsc: -petsc
 
           - name: "Coverage"
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             configure_options: "--enable-shared
                                 --enable-code-coverage
                                 --enable-debug
@@ -108,6 +110,7 @@ jobs:
                                 --with-petsc
                                 --with-slepc
                                 --with-sundials=/home/runner/local"
+            omp_num_threads: 1
             script_flags: "-u"
         exclude:
           # Don't run the coverage tests if the branch isn't master or next
@@ -195,7 +198,7 @@ jobs:
     # This is its own job as it doesn't use most of the steps of the
     # standard_tests
     timeout-minutes: 60
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:

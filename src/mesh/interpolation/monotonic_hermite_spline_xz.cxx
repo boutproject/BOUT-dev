@@ -20,11 +20,11 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
-#include "interpolation_xz.hxx"
-#include "output.hxx"
+#include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
+#include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
 
 #include <vector>
 
@@ -63,8 +63,9 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z))
+    if (skip_mask(x, y, z)) {
       continue;
+    }
 
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around

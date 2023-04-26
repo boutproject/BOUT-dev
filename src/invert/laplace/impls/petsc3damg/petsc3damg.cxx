@@ -31,16 +31,16 @@
 #include "petsc3damg.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/derivs.hxx>
 #include <bout/mesh.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <derivs.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
 LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
-                                     Solver* UNUSED(solver), Datafile* UNUSED(dump))
+                                     Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
       lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
       indexer(std::make_shared<GlobalIndexer<Field3D>>(
@@ -289,7 +289,8 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   //       (in the first boundary cell) so one boundary cell is already set
   BOUT_FOR(i, indexer->getRegionInnerX()) {
     for (int b = 1; b < localmesh->xstart; b++) {
-      solution[i.xm(b)] = 3.*solution[i.xm(b-1)] - 3.*solution[i.xm(b-2)] + solution[i.xm(b-3)];
+      solution[i.xm(b)] =
+          3. * solution[i.xm(b - 1)] - 3. * solution[i.xm(b - 2)] + solution[i.xm(b - 3)];
     }
   }
 
@@ -298,7 +299,8 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   //       (in the first boundary cell) so one boundary cell is already set
   BOUT_FOR(i, indexer->getRegionOuterX()) {
     for (int b = 1; b < localmesh->xstart; b++) {
-      solution[i.xp(b)] = 3.*solution[i.xp(b-1)] - 3.*solution[i.xp(b-2)] + solution[i.xp(b-3)];
+      solution[i.xp(b)] =
+          3. * solution[i.xp(b - 1)] - 3. * solution[i.xp(b - 2)] + solution[i.xp(b - 3)];
     }
   }
 
@@ -432,9 +434,10 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     }
     C_df_dy /= 2 * coords->dy[l];
     C_d2f_dy2 /= SQ(coords->dy[l]);
-    C_d2f_dxdy /= 4*coords->dx[l]; // NOTE: This value is not completed here. It needs to
-                                   // be divide by dx(i +/- 1, j, k) when using to set a
-                                   // matrix element
+    C_d2f_dxdy /=
+        4 * coords->dx[l]; // NOTE: This value is not completed here. It needs to
+                           // be divide by dx(i +/- 1, j, k) when using to set a
+                           // matrix element
     C_d2f_dydz /= 4 * coords->dy[l] * coords->dz[l];
 
     // The values stored in the y-boundary are already interpolated

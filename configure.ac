@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[5.0.0-alpha],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[5.0.0],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -1346,12 +1346,12 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 #############################################################
 # Defines which are supported by CMake build but not autoconf
 
-BOUT_USE_CUDA="no"
+BOUT_HAS_CUDA="no"
 BOUT_HAS_RAJA="no"
 BOUT_HAS_UMPIRE="no"
 BOUT_HAS_CALIPER="no"
 
-BOUT_DEFINE_SUBST(BOUT_USE_CUDA, [Enable CUDA])
+BOUT_DEFINE_SUBST(BOUT_HAS_CUDA, [Enable CUDA])
 BOUT_DEFINE_SUBST(BOUT_HAS_RAJA, [RAJA support])
 BOUT_DEFINE_SUBST(BOUT_HAS_UMPIRE, [Umpire support])
 BOUT_DEFINE_SUBST(BOUT_HAS_CALIPER, [Caliper support])

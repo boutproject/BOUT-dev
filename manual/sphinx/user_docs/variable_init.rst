@@ -58,7 +58,7 @@ Initialisation of time evolved variables
 Each variable being evolved has its own section, with the same name as
 the output data. For example, the high-\ :math:`\beta` model has
 variables “P”, “jpar”, and “U”, and so has sections ``[P]``, ``[jpar]``,
-``[U]`` (not case sensitive).
+``[U]`` (names are case sensitive).
 
 .. _sec-expressions:
 
@@ -121,28 +121,36 @@ boundary to the right of the rightmost grid point.
 For tokamak geometries, :math:`y` is an angular coordinate which goes between
 :math:`0` and :math:`2\pi` in the core region. In a single-null geometry or
 before the upper divertor in a double-null, :math:`y` is defined as ``2*pi*(j -
-0.5 - jyseps1_1)``. After the upper divertor in a double-null, :math:`y` is
-defined as ``2*pi*(j - 0.5 - jyseps1_1 - (jyseps1_2 - jyseps2_1))``. So
-:math:`y` has values less than :math:`0` in the lower, inner divertor leg and
-greater than :math:`2\pi` in the lower, outer divertor leg. In the upper, inner
-divertor leg of a double-null geometry, :math:`y` increases smoothly from the
-value it had in the inner-core/inner-SOL, jumping at the location of the target
-so that in the upper, outer divertor leg it joins smoothly to the
-outer-core/outer-SOL.
+0.5 - jyseps1_1) / ny_core``, where ``ny_core = (jyseps2_1 - jyseps1_1) +
+(jyseps2_2 - jyseps1_2)`` is the number of points in the core region. After the
+upper divertor in a double-null, :math:`y` is defined as ``2*pi*(j - 0.5 -
+jyseps1_1 - (jyseps1_2 - jyseps2_1)) / ny_core``. So :math:`y` has values less
+than :math:`0` in the lower, inner divertor leg and greater than :math:`2\pi`
+in the lower, outer divertor leg. In the upper, inner divertor leg of a
+double-null geometry, :math:`y` increases smoothly from the value it had in the
+inner-core/inner-SOL, jumping at the location of the target so that in the
+upper, outer divertor leg it joins smoothly to the outer-core/outer-SOL.
 
 .. note::
   The previous default (prior to v3.0), was for :math:`y` to be defined as
   ``j_core / ny_core`` where ``j_core`` is the grid index excluding boundary
   points and points in any divertor legs (``j_core = 0`` in the lower, inner
   divertor leg, ``j_core = jyseps2_1 - jyseps1_1`` in the upper divertor legs
-  if present, ``j_core = ny_core`` in the lower, outer divertor leg) and
-  ``ny_core = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2)`` is the number
-  of points in the core region.  To revert to the old behaviour, set
+  if present, ``j_core = ny_core`` in the lower, outer divertor leg). To revert
+  to the old behaviour, set
 
   .. code-block:: cfg
 
         [mesh]
         symmetricGlobalY = false
+
+:math:`z` is defined as ``k / nz`` where ``k`` is the z-index value on the
+grid. So :math:`z` is 0 at the first grid point, and would be :math:`2\pi` at
+the next point after the last grid point.
+
+If a variable is at a staggered grid location ``CELL_XLOW``, ``CELL_YLOW``, or
+``CELL_ZLOW``, the values of :math:`x`, :math:`y`, or :math:`z` respectively
+will take into account the half-grid-point shift.
 
 By default the expressions are evaluated in a field-aligned coordinate system,
 i.e. if you are using the ``[mesh]`` option ``paralleltransform = shifted``,

@@ -1,7 +1,7 @@
-#include "gtest/gtest.h"
-#include "boutexception.hxx"
-#include "output.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/output.hxx"
 #include "bout/output_bout_types.hxx"
+#include "gtest/gtest.h"
 
 #include <cstdio>
 #include <string>
@@ -26,7 +26,7 @@ public:
   // Write cout to buffer instead of stdout
   std::stringstream buffer;
   // Save cout's buffer here
-  std::streambuf *sbuf;
+  std::streambuf* sbuf;
   // A temporary filename
   std::string filename{std::tmpnam(nullptr)};
 };
@@ -88,7 +88,7 @@ TEST_F(OutputTest, JustPrint) {
 TEST_F(OutputTest, DisableEnableStdout) {
   Output local_output;
 
- std::string file_only = "To file only\n";
+  std::string file_only = "To file only\n";
   std::string file_and_stdout = "To stdout and file\n";
 
   // Open temporary file and close stdout
@@ -97,32 +97,36 @@ TEST_F(OutputTest, DisableEnableStdout) {
 
   local_output << file_only;
 
-  std::ifstream test_file(filename);
-  std::stringstream test_buffer;
-  test_buffer << test_file.rdbuf();
+  {
+    std::ifstream test_file(filename);
+    std::stringstream test_buffer;
+    test_buffer << test_file.rdbuf();
 
-  EXPECT_EQ(file_only, test_buffer.str());
-  EXPECT_EQ("", buffer.str());
+    EXPECT_EQ(file_only, test_buffer.str());
+    EXPECT_EQ("", buffer.str());
+  }
 
   // Enable stdout again
   local_output.enable();
   local_output << file_and_stdout;
 
-  test_buffer << test_file.rdbuf();
+  {
+    std::ifstream test_file(filename);
+    std::stringstream test_buffer;
+    test_buffer << test_file.rdbuf();
 
-  // File should contain both outputs, stdout only latter
-  EXPECT_EQ(file_only + file_and_stdout, test_buffer.str());
-  EXPECT_EQ(file_and_stdout, buffer.str());
-
-  test_file.close();
+    // File should contain both outputs, stdout only latter
+    EXPECT_EQ(file_only + file_and_stdout, test_buffer.str());
+    EXPECT_EQ(file_and_stdout, buffer.str());
+  }
 }
 
 TEST_F(OutputTest, GetInstance) {
-  Output *local_output = Output::getInstance();
+  Output* local_output = Output::getInstance();
 
   EXPECT_NE(local_output, nullptr);
 
-  Output *new_output = Output::getInstance();
+  Output* new_output = Output::getInstance();
 
   EXPECT_EQ(local_output, new_output);
 }
