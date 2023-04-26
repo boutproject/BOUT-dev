@@ -59,8 +59,8 @@ int main(int argc, char** argv) {
   Field2D guess = 0.0;
   Field2D sol = laplacexy.solve(rhs, guess);
   Field2D error = (f - sol) / f;
-  Field2D absolute_error =
-      abs(f - sol); // Absolute value of relative error: abs((f - sol)/f)
+  // Absolute value of relative error: abs((f - sol)/f)
+  Field2D absolute_error = abs(f - sol);
   BoutReal max_error = max(absolute_error, true);
 
   output << "Magnitude of maximum absolute error is " << max_error << endl;
@@ -68,20 +68,17 @@ int main(int argc, char** argv) {
   sol.getMesh()->communicate(sol);
   Field2D rhs_check = Laplace_perpXY(a, sol);
 
-  using bout::globals::dump;
-
-  dump.add(a, "a");
-  dump.add(b, "b");
-  dump.add(f, "f");
-  dump.add(sol, "sol");
-  dump.add(error, "error");
-  dump.add(absolute_error, "absolute_error");
-  dump.add(max_error, "max_error");
-  dump.add(rhs, "rhs");
-  dump.add(rhs_check, "rhs_check");
-
-  dump.write();
-  dump.close();
+  Options dump;
+  dump["a"] = a;
+  dump["b"] = b;
+  dump["f"] = f;
+  dump["sol"] = sol;
+  dump["error"] = error;
+  dump["absolute_error"] = absolute_error;
+  dump["max_error"] = max_error;
+  dump["rhs"] = rhs;
+  dump["rhs_check"] = rhs_check;
+  bout::writeDefaultOutputFile(dump);
 
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
 
