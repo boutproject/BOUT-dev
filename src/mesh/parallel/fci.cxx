@@ -234,9 +234,12 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
     const BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
     const BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
 
-    // Negative xt_prime means we've hit the inner boundary, otherwise
-    // the outer boundary
-    auto* boundary = (xt_prime[i] < 0.0) ? inner_boundary : outer_boundary;
+    // Negative xt_prime means we've hit the inner boundary, otherwise the
+    // outer boundary. However, if any of the surrounding points are negative,
+    // that also means inner. So to differentiate between inner and outer we
+    // need at least 2 points in the domain.
+    ASSERT2(map_mesh.xend - map_mesh.xstart >= 2);
+    auto* boundary = (xt_prime[i] < 1.5) ? inner_boundary : outer_boundary;
     boundary->add_point(x, y, z, x + dx, y + 0.5 * offset,
                         z + dz,      // Intersection point in local index space
                         0.5 * dy[i], // Distance to intersection
