@@ -41,7 +41,8 @@ if test $BUILD_PETSC ; then
 	unset SLEPC_ARCH
     PETSC_DIR=$HOME/local/petsc ./configure --prefix=$HOME/local/slepc
 
-    make && make install
+    make SLEPC_DIR=$(pwd) PETSC_DIR=$HOME/local/petsc
+    make SLEPC_DIR=$(pwd) PETSC_DIR=$HOME/local/petsc install
     popd
 
 	echo "****************************************"
