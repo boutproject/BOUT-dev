@@ -261,8 +261,7 @@ int PetscSolver::init() {
   CHKERRQ(ierr);
 
 #if PETSC_VERSION_GE(3, 7, 0)
-  ierr = PetscOptionsGetBool(nullptr, nullptr, "-interpolate", &interpolate,
-                             nullptr);
+  ierr = PetscOptionsGetBool(nullptr, nullptr, "-interpolate", &interpolate, nullptr);
   CHKERRQ(ierr);
 #else
   ierr = PetscOptionsGetBool(nullptr, "-interpolate", &interpolate, nullptr);
@@ -591,7 +590,8 @@ PetscErrorCode PetscSolver::run() {
     petsc_info.disable();
     petsc_info.write("SNES Iteration, KSP Iterations, Wall Time, Norm\n");
     for (const auto& info : snes_list) {
-      petsc_info.write("{:d}, {:d}, {:e}, {:e}\n", info.it, info.linear_its, info.time, info.norm);
+      petsc_info.write("{:d}, {:d}, {:e}, {:e}\n", info.it, info.linear_its, info.time,
+                       info.norm);
     }
   }
 
