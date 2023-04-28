@@ -99,7 +99,7 @@ class Petsc3dAmgTest
 public:
   WithQuietOutput info{output_info}, warn{output_warn}, progress{output_progress},
       all{output};
-  Petsc3dAmgTest() : FakeMeshFixture(), solver(getOptions(GetParam())) {
+  Petsc3dAmgTest() : solver(&getOptions(GetParam())) {
     PetscErrorPrintf = PetscErrorPrintfNone;
     int nx = mesh->GlobalNx, ny = mesh->GlobalNy, nz = mesh->GlobalNz;
     static_cast<FakeMesh*>(bout::globals::mesh)
@@ -139,20 +139,20 @@ public:
   ForwardOperator forward;
 
 private:
-  static Options* getOptions(std::tuple<bool, bool, bool, bool> param) {
-    Options* options = Options::getRoot()->getSection("laplace");
-    (*options)["type"] = "petsc3damg";
-    (*options)["inner_boundary_flags"] =
+  static Options& getOptions(std::tuple<bool, bool, bool, bool> param) {
+    auto& options = Options::root()["laplace"];
+    options["type"] = "petsc3damg";
+    options["inner_boundary_flags"] =
         (std::get<0>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
-    (*options)["outer_boundary_flags"] =
+    options["outer_boundary_flags"] =
         (std::get<1>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
-    (*options)["lower_boundary_flags"] =
+    options["lower_boundary_flags"] =
         (std::get<2>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
-    (*options)["upper_boundary_flags"] =
+    options["upper_boundary_flags"] =
         (std::get<3>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
-    (*options)["fourth_order"] = false;
-    (*options)["atol"] = tol / 30; // Need to specify smaller than desired tolerance to
-    (*options)["rtol"] = tol / 30; // ensure it is satisfied for every element.
+    options["fourth_order"] = false;
+    options["atol"] = tol / 30; // Need to specify smaller than desired tolerance to
+    options["rtol"] = tol / 30; // ensure it is satisfied for every element.
     return options;
   }
 };
