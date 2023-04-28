@@ -34,6 +34,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <petscsystypes.h>
 #include <type_traits>
 #include <vector>
 
@@ -79,7 +80,8 @@ public:
   /// Copy constructor
   PetscVector(const PetscVector<T>& v)
       : vector(new Vec(), VectorDeleter()), indexConverter(v.indexConverter),
-        location(v.location), initialised(v.initialised) {
+        location(v.location), initialised(v.initialised), vector_values(v.vector_values),
+        vector_indices(v.vector_indices) {
     VecDuplicate(*v.vector, vector.get());
     VecCopy(*v.vector, *vector);
   }
@@ -87,7 +89,8 @@ public:
   /// Move constrcutor
   PetscVector(PetscVector<T>&& v) noexcept
       : indexConverter(v.indexConverter), location(v.location),
-        initialised(v.initialised) {
+        initialised(v.initialised), vector_values(std::move(v.vector_values)),
+        vector_indices(std::move(v.vector_indices)) {
     std::swap(vector, v.vector);
     v.initialised = false;
   }
@@ -95,7 +98,8 @@ public:
   /// Construct from a field, copying over the field values
   PetscVector(const T& field, IndexerPtr<T> indConverter)
       : vector(new Vec(), VectorDeleter()), indexConverter(indConverter),
-        location(field.getLocation()), initialised(true)) {
+        location(field.getLocation()), initialised(true),
+        vector_values(indexConverter->size()), vector_indices(indexConverter->size()) {
     ASSERT1(indConverter->getMesh() == field.getMesh());
     MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? field.getMesh()->getXcomm() : BoutComm::get();
@@ -148,69 +152,7 @@ public:
 
   friend void swap<T>(PetscVector<T>& first, PetscVector<T>& second);
 
-  /*!
-   * A class which is used to assign to a particular element of a PETSc
-   * vector. It is meant to be transient and will be destroyed immediately
-   * after use. In general you should not try to assign an instance to a
-   * variable.
-   *
-   * The Element object will store a copy of the value which has been
-   * assigned to it. This is because mixing calls to the PETSc
-   * function VecGetValues() and VecSetValues() without intermediate
-   * vector assembly will cause errors. Thus, if the user wishes to
-   * get the value of the vector, it must be stored here.
-   */
-  class Element {
-  public:
-    Element() = delete;
-    ~Element() = default;
-    Element(Element&&) = delete;
-    Element& operator=(Element&&) = delete;
-    Element(const Element& other) = default;
-    Element(Vec* vector, int index) : petscVector(vector), petscIndex(index) {
-      int status = 0;
-      BOUT_OMP(critical)
-      status = VecGetValues(*petscVector, 1, &petscIndex, &value);
-      if (status != 0) {
-        value = 0.;
-      }
-    }
-    Element& operator=(const Element& other) {
-      ASSERT3(finite(static_cast<BoutReal>(other)));
-      return *this = static_cast<BoutReal>(other);
-    }
-    Element& operator=(BoutReal val) {
-      ASSERT3(finite(val));
-      value = val;
-      int status = 0;
-      BOUT_OMP(critical)
-      status = VecSetValue(*petscVector, petscIndex, val, INSERT_VALUES);
-      if (status != 0) {
-        throw BoutException("Error when setting elements of a PETSc vector.");
-      }
-      return *this;
-    }
-    Element& operator+=(BoutReal val) {
-      ASSERT3(finite(val));
-      value += val;
-      ASSERT3(finite(value));
-      int status = 0;
-      BOUT_OMP(critical)
-      status = VecSetValue(*petscVector, petscIndex, val, ADD_VALUES);
-      if (status != 0) {
-        throw BoutException("Error when setting elements of a PETSc vector.");
-      }
-      return *this;
-    }
-    operator BoutReal() const { return value; }
-
-  private:
-    Vec* petscVector = nullptr;
-    PetscInt petscIndex;
-    PetscScalar value;
-  };
-
-  Element operator()(const ind_type& index) {
+  BoutReal& operator()(const ind_type& index) {
 #if CHECKLEVEL >= 1
     if (!initialised) {
       throw BoutException("Can not return element of uninitialised vector");
@@ -222,7 +164,9 @@ public:
       throw BoutException("Request to return invalid vector element");
     }
 #endif
-    return Element(vector.get(), global);
+    const auto index_as_int = static_cast<int>(index);
+    vector_indices[index_as_int] = global;
+    return vector_values[index_as_int];
   }
 
   BoutReal operator()(const ind_type& index) const {
@@ -248,6 +192,7 @@ public:
   }
 
   void assemble() {
+    VecSetValues(*vector, vector_indices.size(), vector_indices.begin(), vector_values.begin(), INSERT_VALUES);
     VecAssemblyBegin(*vector);
     VecAssemblyEnd(*vector);
   }
@@ -283,6 +228,8 @@ private:
   PetscLib lib{};
   std::unique_ptr<Vec, VectorDeleter> vector = nullptr;
   IndexerPtr<T> indexConverter;
+  Array<BoutReal> vector_values{};
+  Array<int> vector_indices{};
   CELL_LOC location = CELL_LOC::deflt;
   bool initialised = false;
 };
