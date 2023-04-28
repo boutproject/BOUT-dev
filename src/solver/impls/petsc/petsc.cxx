@@ -282,7 +282,7 @@ int PetscSolver::init() {
 #endif
 
   // If the output_name is not specified then use the standard monitor function
-  if (output_flag) {
+  if (output_flag != 0U) {
     ierr = SNESMonitorSet(snes, PetscSNESMonitor, this, nullptr);
     CHKERRQ(ierr);
   } else {
@@ -455,8 +455,8 @@ int PetscSolver::init() {
     ierr = MatMPIAIJSetPreallocation(J, prealloc, nullptr, prealloc, nullptr);
     CHKERRQ(ierr);
 
-    prealloc =
-        cols; // why nonzeros=295900, allocated nonzeros=2816000/12800000 (*dof*dof), number of mallocs used during MatSetValues calls =256?
+    // why nonzeros=295900, allocated nonzeros=2816000/12800000 (*dof*dof), number of mallocs used during MatSetValues calls =256?
+    prealloc = cols;
     ierr = MatSeqBAIJSetPreallocation(J, dof, prealloc, nullptr);
     CHKERRQ(ierr);
     ierr = MatMPIBAIJSetPreallocation(J, dof, prealloc, nullptr, prealloc, nullptr);
@@ -468,7 +468,7 @@ int PetscSolver::init() {
     ierr = PetscOptionsHasName(nullptr, "-J_slowfd", &J_slowfd);
     CHKERRQ(ierr);
 #endif
-    if (J_slowfd) { // create Jacobian matrix by slow fd
+    if (J_slowfd != 0U) { // create Jacobian matrix by slow fd
       ierr = SNESSetJacobian(snes, J, J, SNESComputeJacobianDefault, nullptr);
       CHKERRQ(ierr);
       output_info << "SNESComputeJacobian J by slow fd...\n";
@@ -529,8 +529,8 @@ int PetscSolver::init() {
   ierr = PetscOptionsHasName(nullptr, "-J_write", &J_write);
   CHKERRQ(ierr);
 #endif
-  if (J_write) {
-    PetscViewer viewer;
+  if (J_write != 0U) {
+    PetscViewer viewer = nullptr;
     output_info.write("\n[{:d}] Test TSComputeRHSJacobian() ...\n", rank);
 #if PETSC_VERSION_GE(3, 5, 0)
     ierr = TSComputeRHSJacobian(ts, simtime, u, J, J);
@@ -543,7 +543,7 @@ int PetscSolver::init() {
 
     output.write("[{:d}] TSComputeRHSJacobian is done\n", rank);
 
-    if (J_slowfd) {
+    if (J_slowfd != 0U) {
       output_info.write("[{:d}] writing J in binary to data/Jrhs_dense.dat...\n", rank);
       ierr = PetscViewerBinaryOpen(comm, "data/Jrhs_dense.dat", FILE_MODE_WRITE, &viewer);
       CHKERRQ(ierr);
@@ -584,7 +584,7 @@ PetscErrorCode PetscSolver::run() {
   CHKERRQ(TSSolve(ts, u));
 
   // Gawd, everything is a hack
-  if (this->output_flag and BoutComm::rank() == 0) {
+  if ((this->output_flag != 0U) and (BoutComm::rank() == 0)) {
     Output petsc_info(output_name);
     // Don't write to stdout
     petsc_info.disable();
