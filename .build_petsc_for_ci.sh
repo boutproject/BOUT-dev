@@ -37,6 +37,8 @@ if test $BUILD_PETSC ; then
     git clone -b release https://gitlab.com/slepc/slepc.git slepc --depth=1
 
     pushd slepc
+	unset SLEPC_DIR
+	unset SLEPC_ARCH
     PETSC_DIR=$HOME/local/petsc ./configure --prefix=$HOME/local/slepc
 
     make && make install
