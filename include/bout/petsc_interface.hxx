@@ -74,43 +74,42 @@ public:
 
   /// Default constructor does nothing
   PetscVector() : vector(new Vec(), VectorDeleter()) {}
+  ~PetscVector() = default;
 
   /// Copy constructor
-  PetscVector(const PetscVector<T>& v) : vector(new Vec(), VectorDeleter()) {
+  PetscVector(const PetscVector<T>& v)
+      : vector(new Vec(), VectorDeleter()), indexConverter(v.indexConverter),
+        location(v.location), initialised(v.initialised) {
     VecDuplicate(*v.vector, vector.get());
     VecCopy(*v.vector, *vector);
-    indexConverter = v.indexConverter;
-    location = v.location;
-    initialised = v.initialised;
   }
 
   /// Move constrcutor
-  PetscVector(PetscVector<T>&& v) {
+  PetscVector(PetscVector<T>&& v) noexcept
+      : indexConverter(v.indexConverter), location(v.location),
+        initialised(v.initialised) {
     std::swap(vector, v.vector);
-    indexConverter = v.indexConverter;
-    location = v.location;
-    initialised = v.initialised;
     v.initialised = false;
   }
 
   /// Construct from a field, copying over the field values
-  PetscVector(const T& f, IndexerPtr<T> indConverter)
-      : vector(new Vec(), VectorDeleter()), indexConverter(indConverter) {
-    ASSERT1(indConverter->getMesh() == f.getMesh());
-    const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
+  PetscVector(const T& field, IndexerPtr<T> indConverter)
+      : vector(new Vec(), VectorDeleter()), indexConverter(indConverter),
+        location(field.getLocation()), initialised(true)) {
+    ASSERT1(indConverter->getMesh() == field.getMesh());
+    MPI_Comm comm =
+        std::is_same<T, FieldPerp>::value ? field.getMesh()->getXcomm() : BoutComm::get();
     const int size = indexConverter->size();
     VecCreateMPI(comm, size, PETSC_DECIDE, vector.get());
-    location = f.getLocation();
-    initialised = true;
-    *this = f;
+    *this = field;
   }
 
   /// Construct a vector like v, but using data from a raw PETSc
   /// Vec. That Vec (not a copy) will then be owned by the new object.
   PetscVector(const PetscVector<T>& v, Vec* vec) {
 #if CHECKLEVEL >= 2
-    int fsize = v.indexConverter->size(), msize;
+    int fsize = v.indexConverter->size();
+    int msize = 0;
     VecGetLocalSize(*vec, &msize);
     ASSERT2(fsize == msize);
 #endif
@@ -122,11 +121,12 @@ public:
 
   /// Copy assignment
   PetscVector<T>& operator=(const PetscVector<T>& rhs) {
-    return *this = PetscVector<T>(rhs);
+    *this = PetscVector<T>(rhs);
+    return *this;
   }
 
   /// Move assignment
-  PetscVector<T>& operator=(PetscVector<T>&& rhs) {
+  PetscVector<T>& operator=(PetscVector<T>&& rhs)  noexcept {
     swap(*this, rhs);
     return *this;
   }
@@ -163,9 +163,12 @@ public:
   class Element {
   public:
     Element() = delete;
+    ~Element() = default;
+    Element(Element&&) = delete;
+    Element& operator=(Element&&) = delete;
     Element(const Element& other) = default;
     Element(Vec* vector, int index) : petscVector(vector), petscIndex(index) {
-      int status;
+      int status = 0;
       BOUT_OMP(critical)
       status = VecGetValues(*petscVector, 1, &petscIndex, &value);
       if (status != 0) {
@@ -179,7 +182,7 @@ public:
     Element& operator=(BoutReal val) {
       ASSERT3(finite(val));
       value = val;
-      int status;
+      int status = 0;
       BOUT_OMP(critical)
       status = VecSetValue(*petscVector, petscIndex, val, INSERT_VALUES);
       if (status != 0) {
@@ -191,7 +194,7 @@ public:
       ASSERT3(finite(val));
       value += val;
       ASSERT3(finite(value));
-      int status;
+      int status = 0;
       BOUT_OMP(critical)
       status = VecSetValue(*petscVector, petscIndex, val, ADD_VALUES);
       if (status != 0) {
@@ -234,8 +237,8 @@ public:
       throw BoutException("Request to return invalid vector element");
     }
 #endif
-    BoutReal value;
-    int status;
+    BoutReal value = BoutNaN;
+    int status = 0;
     BOUT_OMP(critical)
     status = VecGetValues(*get(), 1, &global, &value);
     if (status != 0) {
@@ -265,7 +268,7 @@ public:
     // Note that this only populates boundaries to a depth of 1
     BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
       PetscInt ind = indexConverter->getGlobal(i);
-      PetscScalar val;
+      PetscScalar val = BoutNaN;
       VecGetValues(*vector, 1, &ind, &val);
       result[i] = val;
     }
@@ -277,10 +280,10 @@ public:
   const Vec* get() const { return vector.get(); }
 
 private:
-  PetscLib lib;
+  PetscLib lib{};
   std::unique_ptr<Vec, VectorDeleter> vector = nullptr;
   IndexerPtr<T> indexConverter;
-  CELL_LOC location;
+  CELL_LOC location = CELL_LOC::deflt;
   bool initialised = false;
 };
 
@@ -309,32 +312,30 @@ public:
 
   /// Default constructor does nothing
   PetscMatrix() : matrix(new Mat(), MatrixDeleter()) {}
+  ~PetscMatrix() = default;
 
   /// Copy constructor
-  PetscMatrix(const PetscMatrix<T>& m) : matrix(new Mat(), MatrixDeleter()), pt(m.pt) {
+  PetscMatrix(const PetscMatrix<T>& m)
+      : matrix(new Mat(), MatrixDeleter()), indexConverter(m.indexConverter), pt(m.pt),
+        yoffset(m.yoffset), initialised(m.initialised) {
     MatDuplicate(*m.matrix, MAT_COPY_VALUES, matrix.get());
-    indexConverter = m.indexConverter;
-    yoffset = m.yoffset;
-    initialised = m.initialised;
   }
 
   /// Move constrcutor
-  PetscMatrix(PetscMatrix<T>&& m) : pt(m.pt) {
-    matrix = m.matrix;
-    indexConverter = m.indexConverter;
-    yoffset = m.yoffset;
-    initialised = m.initialised;
+  PetscMatrix(PetscMatrix<T>&& m) noexcept
+      : matrix(m.matrix), indexConverter(m.indexConverter), pt(m.pt), yoffset(m.yoffset),
+        initialised(m.initialised) {
     m.initialised = false;
   }
 
   // Construct a matrix capable of operating on the specified field,
   // preallocating memory if requeted and possible.
   PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
-      : matrix(new Mat(), MatrixDeleter()), indexConverter(indConverter) {
-    const MPI_Comm comm = std::is_same<T, FieldPerp>::value
-                              ? indConverter->getMesh()->getXcomm()
-                              : BoutComm::get();
-    pt = &indConverter->getMesh()->getCoordinates()->getParallelTransform();
+      : matrix(new Mat(), MatrixDeleter()), indexConverter(indConverter),
+        pt(&indConverter->getMesh()->getCoordinates()->getParallelTransform()) {
+    MPI_Comm comm = std::is_same<T, FieldPerp>::value
+                        ? indConverter->getMesh()->getXcomm()
+                        : BoutComm::get();
     const int size = indexConverter->size();
 
     MatCreate(comm, matrix.get());
@@ -358,7 +359,7 @@ public:
     return *this;
   }
   /// Move assignment
-  PetscMatrix<T>& operator=(PetscMatrix<T>&& rhs) {
+  PetscMatrix<T>& operator=(PetscMatrix<T>&& rhs)  noexcept {
     matrix = rhs.matrix;
     indexConverter = rhs.indexConverter;
     pt = rhs.pt;
@@ -384,6 +385,9 @@ public:
   class Element {
   public:
     Element() = delete;
+    ~Element() = default;
+    Element(Element&&) = delete;
+    Element& operator=(Element&&) = delete;
     Element(const Element& other) = default;
     Element(Mat* matrix, PetscInt row, PetscInt col, std::vector<PetscInt> p = {},
             std::vector<BoutReal> w = {})
@@ -441,7 +445,7 @@ public:
       std::transform(weights.begin(), weights.end(), std::back_inserter(values),
                      [&val](BoutReal weight) -> PetscScalar { return weight * val; });
 
-      int status;
+      int status = 0;
       BOUT_OMP(critical)
       status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
                             positions.data(), values.data(), mode);
@@ -457,8 +461,8 @@ public:
   };
 
   Element operator()(const ind_type& index1, const ind_type& index2) {
-    const int global1 = indexConverter->getGlobal(index1),
-              global2 = indexConverter->getGlobal(index2);
+    const int global1 = indexConverter->getGlobal(index1);
+    const int global2 = indexConverter->getGlobal(index2);
 #if CHECKLEVEL >= 1
     if (!initialised) {
       throw BoutException("Can not return element of uninitialised matrix");
@@ -475,12 +479,12 @@ public:
       const auto pw = [this, &index1, &index2]() {
         if (this->yoffset == -1) {
           return pt->getWeightsForYDownApproximation(index2.x(), index1.y(), index2.z());
-        } else if (this->yoffset == 1) {
-          return pt->getWeightsForYUpApproximation(index2.x(), index1.y(), index2.z());
-        } else {
-          return pt->getWeightsForYApproximation(index2.x(), index1.y(), index2.z(),
-                                                 this->yoffset);
         }
+        if (this->yoffset == 1) {
+          return pt->getWeightsForYUpApproximation(index2.x(), index1.y(), index2.z());
+        }
+        return pt->getWeightsForYApproximation(index2.x(), index1.y(), index2.z(),
+                                               this->yoffset);
       }();
 
       const int ny =
@@ -504,8 +508,8 @@ public:
 
   BoutReal operator()(const ind_type& index1, const ind_type& index2) const {
     ASSERT2(yoffset == 0);
-    const int global1 = indexConverter->getGlobal(index1),
-              global2 = indexConverter->getGlobal(index2);
+    const int global1 = indexConverter->getGlobal(index1);
+    const int global2 = indexConverter->getGlobal(index2);
 #if CHECKLEVEL >= 1
     if (!initialised) {
       throw BoutException("Can not return element of uninitialised matrix");
@@ -515,8 +519,8 @@ public:
       throw BoutException("Request to return invalid matrix element");
     }
 #endif
-    BoutReal value;
-    int status;
+    BoutReal value = BoutNaN;
+    int status = 0;
     BOUT_OMP(critical)
     status = MatGetValues(*get(), 1, &global1, 1, &global2, &value);
     if (status != 0) {
@@ -570,7 +574,7 @@ private:
   PetscLib lib;
   std::shared_ptr<Mat> matrix = nullptr;
   IndexerPtr<T> indexConverter;
-  ParallelTransform* pt;
+  ParallelTransform* pt{};
   int yoffset = 0;
   bool initialised = false;
 };
