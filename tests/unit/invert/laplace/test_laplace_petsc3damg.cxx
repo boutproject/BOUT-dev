@@ -153,6 +153,9 @@ private:
     options["fourth_order"] = false;
     options["atol"] = tol / 30; // Need to specify smaller than desired tolerance to
     options["rtol"] = tol / 30; // ensure it is satisfied for every element.
+    auto& petsc_options = options["petsc"];
+    petsc_options["mg_levels_ksp_max_it"] = 4;
+    petsc_options["mg_levels_pc_type"] = "sor";
     return options;
   }
 };
