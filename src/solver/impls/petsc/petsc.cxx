@@ -532,7 +532,7 @@ int PetscSolver::init() {
 #endif
   if (J_write) {
     PetscViewer viewer;
-    output_info << "\n[" << rank << "] Test TSComputeRHSJacobian() ...\n";
+    output_info.write("\n[{:d}] Test TSComputeRHSJacobian() ...\n", rank);
 #if PETSC_VERSION_GE(3, 5, 0)
     ierr = TSComputeRHSJacobian(ts, simtime, u, J, J);
     CHKERRQ(ierr);
@@ -542,22 +542,14 @@ int PetscSolver::init() {
     CHKERRQ(ierr);
 #endif
 
-    ierr = PetscSynchronizedPrintf(comm, "[{:d}] TSComputeRHSJacobian is done\n", rank);
-    CHKERRQ(ierr);
+    output.write("[{:d}] TSComputeRHSJacobian is done\n", rank);
 
-#if PETSC_VERSION_GE(3, 5, 0)
-    ierr = PetscSynchronizedFlush(comm, PETSC_STDOUT);
-    CHKERRQ(ierr);
-#else
-    ierr = PetscSynchronizedFlush(comm);
-    CHKERRQ(ierr);
-#endif
     if (J_slowfd) {
-      output_info << "[" << rank << "] writing J in binary to data/Jrhs_dense.dat...\n";
+      output_info.write("[{:d}] writing J in binary to data/Jrhs_dense.dat...\n", rank);
       ierr = PetscViewerBinaryOpen(comm, "data/Jrhs_dense.dat", FILE_MODE_WRITE, &viewer);
       CHKERRQ(ierr);
     } else {
-      output_info << "[" << rank << "] writing J in binary to data/Jrhs_sparse.dat...\n";
+      output_info.write("[{:d}] writing J in binary to data/Jrhs_sparse.dat...\n", rank);
       ierr =
           PetscViewerBinaryOpen(comm, "data/Jrhs_sparse.dat", FILE_MODE_WRITE, &viewer);
       CHKERRQ(ierr);
@@ -579,8 +571,6 @@ int PetscSolver::init() {
  **************************************************************************/
 
 PetscErrorCode PetscSolver::run() {
-  PetscErrorCode ierr;
-  FILE* fp = nullptr;
 
   // Set when the next call to monitor is desired
   next_output = simtime + getOutputTimestep();
@@ -592,23 +582,17 @@ PetscErrorCode PetscSolver::run() {
     bout_snes_time = bout::globals::mpi->MPI_Wtime();
   }
 
-  ierr = TSSolve(ts, u);
-  CHKERRQ(ierr);
+  CHKERRQ(TSSolve(ts, u));
 
   // Gawd, everything is a hack
-  if (this->output_flag) {
-    ierr = PetscFOpen(PETSC_COMM_WORLD, this->output_name, "w", &fp);
-    CHKERRQ(ierr);
-    ierr = PetscFPrintf(PETSC_COMM_WORLD, fp,
-                        "SNES Iteration, KSP Iterations, Wall Time, Norm\n");
-    CHKERRQ(ierr);
+  if (this->output_flag and BoutComm::rank() == 0) {
+    Output petsc_info(output_name);
+    // Don't write to stdout
+    petsc_info.disable();
+    petsc_info.write("SNES Iteration, KSP Iterations, Wall Time, Norm\n");
     for (const auto& info : snes_list) {
-      ierr = PetscFPrintf(PETSC_COMM_WORLD, fp, "{:d}, {:d}, {:e}, {:e}\n", info.it,
-                          info.linear_its, info.time, info.norm);
-      CHKERRQ(ierr);
+      petsc_info.write("{:d}, {:d}, {:e}, {:e}\n", info.it, info.linear_its, info.time, info.norm);
     }
-    ierr = PetscFClose(PETSC_COMM_WORLD, fp);
-    CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);
