@@ -852,9 +852,11 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   KSPGetConvergedReason(ksp, &reason);
   if (reason == -3) { // Too many iterations, might be fixed by taking smaller timestep
     throw BoutIterationFail("petsc_laplace: too many iterations");
-  } else if (reason <= 0) {
-    output << "KSPConvergedReason is " << reason << endl;
-    throw BoutException("petsc_laplace: inversion failed to converge.");
+  }
+  if (reason <= 0) {
+    throw BoutException(
+        "petsc_laplace: inversion failed to converge. KSPConvergedReason: {} ({})",
+        KSPConvergedReasons[reason], reason);
   }
 
   // Add data to FieldPerp Object

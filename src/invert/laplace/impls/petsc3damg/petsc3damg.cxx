@@ -265,8 +265,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
     throw BoutIterationFail("Petsc3dAmg: too many iterations");
   }
   if (reason <= 0) {
-    output << "KSPConvergedReason is " << reason << "\n";
-    throw BoutException("Petsc3dAmg: inversion failed to converge.");
+    throw BoutException(
+        "Petsc3dAmg: inversion failed to converge. KSPConvergedReason: {} ({})",
+        KSPConvergedReasons[reason], reason);
   }
 
   // Create field from result
