@@ -29,6 +29,22 @@ if test $BUILD_PETSC ; then
 	echo "****************************************"
 	echo " Finished building PETSc"
 	echo "****************************************"
+
+	echo "****************************************"
+	echo "Building SLEPc"
+	echo "****************************************"
+
+    git clone -b release https://gitlab.com/slepc/slepc.git slepc --depth=1
+
+    pushd slepc
+    PETSC_DIR=$HOME/local/petsc ./configure --prefix=$HOME/local/slepc
+
+    make && make install
+    popd
+
+	echo "****************************************"
+	echo " Finished building SLEPc"
+	echo "****************************************"
     else
 	echo "****************************************"
 	echo " PETSc already installed"
