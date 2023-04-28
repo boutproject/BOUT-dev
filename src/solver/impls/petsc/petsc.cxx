@@ -261,11 +261,11 @@ int PetscSolver::init() {
   CHKERRQ(ierr);
 
 #if PETSC_VERSION_GE(3, 7, 0)
-  ierr = PetscOptionsGetBool(PETSC_NULL, PETSC_NULL, "-interpolate", &interpolate,
-                             PETSC_NULL);
+  ierr = PetscOptionsGetBool(nullptr, nullptr, "-interpolate", &interpolate,
+                             nullptr);
   CHKERRQ(ierr);
 #else
-  ierr = PetscOptionsGetBool(PETSC_NULL, "-interpolate", &interpolate, PETSC_NULL);
+  ierr = PetscOptionsGetBool(nullptr, "-interpolate", &interpolate, nullptr);
   CHKERRQ(ierr);
 #endif
 
@@ -273,21 +273,21 @@ int PetscSolver::init() {
   // run, if they didn't then use the standard monitor function. TODO:
   // use PetscFList
 #if PETSC_VERSION_GE(3, 7, 0)
-  ierr = PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-output_name", this->output_name,
+  ierr = PetscOptionsGetString(nullptr, nullptr, "-output_name", this->output_name,
                                sizeof this->output_name, &output_flag);
   CHKERRQ(ierr);
 #else
-  ierr = PetscOptionsGetString(PETSC_NULL, "-output_name", this->output_name,
+  ierr = PetscOptionsGetString(nullptr, "-output_name", this->output_name,
                                sizeof this->output_name, &output_flag);
   CHKERRQ(ierr);
 #endif
 
   // If the output_name is not specified then use the standard monitor function
   if (output_flag) {
-    ierr = SNESMonitorSet(snes, PetscSNESMonitor, this, PETSC_NULL);
+    ierr = SNESMonitorSet(snes, PetscSNESMonitor, this, nullptr);
     CHKERRQ(ierr);
   } else {
-    ierr = TSMonitorSet(ts, PetscMonitor, this, PETSC_NULL);
+    ierr = TSMonitorSet(ts, PetscMonitor, this, nullptr);
     CHKERRQ(ierr);
   }
 
@@ -399,11 +399,11 @@ int PetscSolver::init() {
   // Create Jacobian matrix to be used by preconditioner
   output_info << " Get Jacobian matrix at simtime " << simtime << "\n";
 #if PETSC_VERSION_GE(3, 7, 0)
-  ierr = PetscOptionsGetString(PETSC_NULL, PETSC_NULL, "-J_load", load_file,
+  ierr = PetscOptionsGetString(nullptr, nullptr, "-J_load", load_file,
                                PETSC_MAX_PATH_LEN - 1, &J_load);
   CHKERRQ(ierr);
 #else
-  ierr = PetscOptionsGetString(PETSC_NULL, "-J_load", load_file, PETSC_MAX_PATH_LEN - 1,
+  ierr = PetscOptionsGetString(nullptr, "-J_load", load_file, PETSC_MAX_PATH_LEN - 1,
                                &J_load);
   CHKERRQ(ierr);
 #endif
@@ -451,26 +451,26 @@ int PetscSolver::init() {
 
     // Get nonzero pattern of J - color_none !!!
     prealloc = cols * dof * dof;
-    ierr = MatSeqAIJSetPreallocation(J, prealloc, PETSC_NULL);
+    ierr = MatSeqAIJSetPreallocation(J, prealloc, nullptr);
     CHKERRQ(ierr);
-    ierr = MatMPIAIJSetPreallocation(J, prealloc, PETSC_NULL, prealloc, PETSC_NULL);
+    ierr = MatMPIAIJSetPreallocation(J, prealloc, nullptr, prealloc, nullptr);
     CHKERRQ(ierr);
 
     prealloc =
         cols; // why nonzeros=295900, allocated nonzeros=2816000/12800000 (*dof*dof), number of mallocs used during MatSetValues calls =256?
-    ierr = MatSeqBAIJSetPreallocation(J, dof, prealloc, PETSC_NULL);
+    ierr = MatSeqBAIJSetPreallocation(J, dof, prealloc, nullptr);
     CHKERRQ(ierr);
-    ierr = MatMPIBAIJSetPreallocation(J, dof, prealloc, PETSC_NULL, prealloc, PETSC_NULL);
+    ierr = MatMPIBAIJSetPreallocation(J, dof, prealloc, nullptr, prealloc, nullptr);
     CHKERRQ(ierr);
 #if PETSC_VERSION_GE(3, 7, 0)
-    ierr = PetscOptionsHasName(PETSC_NULL, PETSC_NULL, "-J_slowfd", &J_slowfd);
+    ierr = PetscOptionsHasName(nullptr, nullptr, "-J_slowfd", &J_slowfd);
     CHKERRQ(ierr);
 #else
-    ierr = PetscOptionsHasName(PETSC_NULL, "-J_slowfd", &J_slowfd);
+    ierr = PetscOptionsHasName(nullptr, "-J_slowfd", &J_slowfd);
     CHKERRQ(ierr);
 #endif
     if (J_slowfd) { // create Jacobian matrix by slow fd
-      ierr = SNESSetJacobian(snes, J, J, SNESComputeJacobianDefault, PETSC_NULL);
+      ierr = SNESSetJacobian(snes, J, J, SNESComputeJacobianDefault, nullptr);
       CHKERRQ(ierr);
       output_info << "SNESComputeJacobian J by slow fd...\n";
 
@@ -524,10 +524,10 @@ int PetscSolver::init() {
 
   // Write J in binary for study - see ~petsc/src/mat/examples/tests/ex124.c
 #if PETSC_VERSION_GE(3, 7, 0)
-  ierr = PetscOptionsHasName(PETSC_NULL, PETSC_NULL, "-J_write", &J_write);
+  ierr = PetscOptionsHasName(nullptr, nullptr, "-J_write", &J_write);
   CHKERRQ(ierr);
 #else
-  ierr = PetscOptionsHasName(PETSC_NULL, "-J_write", &J_write);
+  ierr = PetscOptionsHasName(nullptr, "-J_write", &J_write);
   CHKERRQ(ierr);
 #endif
   if (J_write) {
@@ -876,7 +876,7 @@ PetscErrorCode PhysicsSNESApply(SNES snes, Vec x) {
   Mat A, B;
 
   PetscFunctionBegin;
-  ierr = SNESGetJacobian(snes, &A, &B, PETSC_NULL, PETSC_NULL);
+  ierr = SNESGetJacobian(snes, &A, &B, nullptr, nullptr);
   CHKERRQ(ierr);
 #if PETSC_VERSION_GE(3, 5, 0)
   ierr = SNESComputeJacobian(snes, x, A, B);
@@ -890,7 +890,7 @@ PetscErrorCode PhysicsSNESApply(SNES snes, Vec x) {
   CHKERRQ(ierr);
   ierr = KSPGetPC(ksp, &pc);
   CHKERRQ(ierr);
-  ierr = SNESGetFunction(snes, &F, PETSC_NULL, PETSC_NULL);
+  ierr = SNESGetFunction(snes, &F, nullptr, nullptr);
   CHKERRQ(ierr);
   ierr = SNESComputeFunction(snes, x, F);
   CHKERRQ(ierr);
@@ -913,7 +913,7 @@ PetscErrorCode PhysicsSNESApply(SNES snes, Vec x) {
               << ", F \\cdot Fout " << dot << "  ";
 #if PETSC_VERSION_GE(3, 5, 0)
   Vec func;
-  ierr = SNESGetFunction(snes, &func, PETSC_NULL, PETSC_NULL);
+  ierr = SNESGetFunction(snes, &func, nullptr, nullptr);
   CHKERRQ(ierr);
   ierr = VecNorm(func, NORM_2, &fnorm);
   CHKERRQ(ierr);
@@ -962,7 +962,7 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
   ierr = TSGetMaxTime(ts, &tfinal);
   CHKERRQ(ierr);
 #else
-  ierr = TSGetDuration(ts, PETSC_NULL, &tfinal);
+  ierr = TSGetDuration(ts, nullptr, &tfinal);
   CHKERRQ(ierr);
 #endif
 

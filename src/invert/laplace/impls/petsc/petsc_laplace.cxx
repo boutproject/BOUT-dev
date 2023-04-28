@@ -148,8 +148,6 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   MatCreate(comm, &MatA);
   MatSetSizes(MatA, localN, localN, size, size);
   MatSetFromOptions(MatA);
-  //   if (fourth_order) MatMPIAIJSetPreallocation( MatA, 25, PETSC_NULL, 10, PETSC_NULL );
-  //   else MatMPIAIJSetPreallocation( MatA, 9, PETSC_NULL, 3, PETSC_NULL );
 
   /* Pre allocate memory
    * nnz denotes an array containing the number of non-zeros in the various rows
