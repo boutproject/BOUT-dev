@@ -571,6 +571,8 @@ going to the ``BOUT-dev`` directory and running::
 
     $ cmake --build <build-directory>
 
+where ``<build-directory>`` is the path to the build directory
+
 At the end of this, you should see a file ``libbout++.so`` in the
 ``lib/`` subdirectory of the BOUT++ build directory. If you get an error,
 please `create an issue on Github <https://github.com/boutproject/BOUT-dev/issues>`__
@@ -591,14 +593,14 @@ BOUT++ comes with three sets of test suites: unit tests, integrated
 tests and method of manufactured solutions (MMS) tests. The easiest
 way to run all of them is to simply do::
 
-    $ make check
+    $ cmake --build <build-directory> --target check
 
-from the build directory. Alternatively, if you just want to run
+Alternatively, if you just want to run
 one set of them individually, you can do::
 
-    $ make check-unit-tests
-    $ make check-integrated-tests
-    $ make check-mms-tests
+    $ cmake --build <build-directory> --target check-unit-tests
+    $ cmake --build <build-directory> --target check-integrated-tests
+    $ cmake --build <build-directory> --target check-mms-tests
 
 **Note:** The integrated and MMS test suites currently uses the ``mpirun``
 command to launch the runs, so won’t work on machines which use a job
@@ -631,7 +633,7 @@ not widely used and so should be considered experimental.
 After configuring and compiling BOUT++ as above, BOUT++ can be installed
 to system directories by running as superuser or ``sudo``::
 
-   $ sudo make install
+   $ sudo cmake --build <build-directory> --target install
 
 .. DANGER:: Do not do this unless you know what you're doing!
 
@@ -653,14 +655,14 @@ This will install the following files under ``/usr/local/``:
 To install BOUT++ under a different directory, use the ``prefix=``
 flag e.g. to install in your home directory::
 
-   $ make install prefix=$HOME/local/
+   $ cmake --build <build-directory> --target install -DCMAKE_INSTALL_PREFIX=$HOME/local/
 
 You can also specify this prefix when configuring, in the usual way
 (see :ref:`sec-config-bout`)::
 
-     $ cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/local/
-     $ make -C build -j 4
-     $ make -C build install
+     $ cmake -S . -B <build-directory> -DCMAKE_INSTALL_PREFIX=$HOME/local/
+     $ cmake --build <build-directory> -j 4
+     $ cmake --build <build-directory> --target install
 
 More control over where files are installed is possible by passing options to
 ``cmake``, following the GNU conventions:

@@ -196,9 +196,11 @@ Compiling with Apple Clang 12, the following configuration has been known to wor
 
 .. code-block:: tcsh
 
-   cmake . -B build -DBOUT_ENABLE_BACKTRACE=Off -DBUILD_SHARED_LIBS=Off -DBOUT_USE_NLS=Off -DBOUT_USE_UUID_SYSTEM_GENERATOR=Off
-   cd build
-   make
+   cmake . -B <build-directory> -DBOUT_ENABLE_BACKTRACE=Off -DBUILD_SHARED_LIBS=Off -DBOUT_USE_NLS=Off -DBOUT_USE_UUID_SYSTEM_GENERATOR=Off
+   cd <build-directory>
+   cmake --build <build-directory>
+
+where ``<build-directory>`` is the path to the build directory
 
 Marconi
 ~~~~~~~
@@ -536,7 +538,7 @@ To configure BOUT++ with PETSc, add to the cmake configure command::
 
 For example like this::
 
-    $ cmake -DBOUT_USE_PETSC=ON -DPETSC_DIR=$HOME/local/petsc-version-options
+    $ cmake -S . -B <build-directory> -DBOUT_USE_PETSC=ON -DPETSC_DIR=$HOME/local/petsc-version-options
 
 BOUT++ can also work with PETSc if it has not been installed. In this
 case ensure that ``PETSC_DIR`` and ``PETSC_ARCH`` are set, for example
@@ -556,11 +558,11 @@ serial performance. This does not add new features, but may be faster
 in some cases. LAPACK is however written in FORTRAN 77, which can
 cause linking headaches. To enable these routines use::
 
-    $ cmake . -DBOUT_USE_LAPACK=ON
+    $ cmake -S . -B <build-directory> -DBOUT_USE_LAPACK=ON
 
 and to specify a non-standard path::
 
-    $ cmake . -DBOUT_USE_LAPACK=ON -DLAPACK_ROOT=/path/to/lapack
+    $ cmake -S . -B <build-directory> -DBOUT_USE_LAPACK=ON -DLAPACK_ROOT=/path/to/lapack
 
 
 MPI compilers
