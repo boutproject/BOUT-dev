@@ -158,6 +158,7 @@ def build_sdist(sdist_directory, config_settings=None):
     print(config_settings, sdist_directory)
     enable_gz = True
     enable_xz = False
+    external = {"fmt", "mpark.variant"}
     if config_settings is not None:
         global useLocalVersion, pkgname
         for k, v in config_settings.items():
@@ -172,6 +173,10 @@ def build_sdist(sdist_directory, config_settings=None):
                     enable_xz = True
                 else:
                     raise ValueError(f"unknown option {v} for {k}")
+            if k == "dist":
+                enable_xz = True
+                pkgname = "BOUT++"
+                external.add("googletest")
             if k == "useLocalVersion":
                 useLocalVersion = False
             if k == "nightly":
@@ -181,7 +186,7 @@ def build_sdist(sdist_directory, config_settings=None):
     fname = f"{prefix}.tar"
     run(f"git archive HEAD --prefix {prefix}/ -o {sdist_directory}/{fname}")
     _, tmp = tempfile.mkstemp(suffix=".tar")
-    for ext in "fmt", "mpark.variant":
+    for ext in sorted(external):
         run(
             f"git archive --remote=externalpackages/{ext} HEAD --prefix  {prefix}/externalpackages/{ext}/ --format=tar > {tmp}"
         )
@@ -301,6 +306,13 @@ def wheel():
     return build_wheel(os.getcwd() + "/dist/")
 
 
+def dist():
+    """
+    Build an archive for BOUT++ release
+    """
+    return build_sdist(os.getcwd(), config_settings=dict(dist=True))
+
+
 def help():
     """
     Print this help
@@ -324,6 +336,7 @@ todos = dict(
     nightly=nightly,
     sdist=sdist,
     wheel=wheel,
+    dist=dist,
     version=lambda: print(getversion()),
     help=help,
 )
