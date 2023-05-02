@@ -301,11 +301,42 @@ def wheel():
     return build_wheel(os.getcwd() + "/dist/")
 
 
+def help():
+    """
+    Print this help
+    """
+    table = []
+    for k, v in todos.items():
+        try:
+            doc = v.__doc__.strip()
+            doc = " : " + doc
+        except:
+            doc = ""
+        table.append((k, doc))
+    maxkey = max([len(k) for k, _ in table])
+    fmt = f"   %-{maxkey}s%s"
+    print(f"{sys.argv[0]} [command] [command]")
+    for row in table:
+        print(fmt % row)
+
+
+todos = dict(
+    nightly=nightly,
+    sdist=sdist,
+    wheel=wheel,
+    version=lambda: print(getversion()),
+    help=help,
+)
+todos.update(
+    {
+        "--help": help,
+        "-?": help,
+        "-h": help,
+    }
+)
+
 if __name__ == "__main__":
     import sys
 
-    todos = dict(
-        nightly=nightly, sdist=sdist, wheel=wheel, version=lambda: print(getversion())
-    )
     for todo in sys.argv[1:]:
         todos[todo]()
