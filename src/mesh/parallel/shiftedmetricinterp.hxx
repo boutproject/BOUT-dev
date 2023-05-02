@@ -75,7 +75,7 @@ public:
     throw BoutException("Not implemented yet");
   }
 
-  bool canToFromFieldAligned() override { return true; }
+  bool canToFromFieldAligned() const override { return true; }
 
   std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYUpApproximation(int i, int j, int k) override {

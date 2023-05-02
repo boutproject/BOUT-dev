@@ -680,7 +680,7 @@ CONFIG_CFLAGS
 BOUT_HAS_CALIPER
 BOUT_HAS_UMPIRE
 BOUT_HAS_RAJA
-BOUT_USE_CUDA
+BOUT_HAS_CUDA
 LTLIBOBJS
 POSUB
 LTLIBINTL
@@ -15264,19 +15264,19 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 #############################################################
 # Defines which are supported by CMake build but not autoconf
 
-BOUT_USE_CUDA="no"
+BOUT_HAS_CUDA="no"
 BOUT_HAS_RAJA="no"
 BOUT_HAS_UMPIRE="no"
 BOUT_HAS_CALIPER="no"
 
 
-if test "x$BOUT_USE_CUDA" = "xyes"; then :
+if test "x$BOUT_HAS_CUDA" = "xyes"; then :
 
-$as_echo "#define BOUT_USE_CUDA 1" >>confdefs.h
+$as_echo "#define BOUT_HAS_CUDA 1" >>confdefs.h
 
 else
 
-$as_echo "#define BOUT_USE_CUDA 0" >>confdefs.h
+$as_echo "#define BOUT_HAS_CUDA 0" >>confdefs.h
 
 fi
 
