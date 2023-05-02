@@ -275,14 +275,23 @@ def parse(fn):
 
 
 def nightly():
+    """
+    Build the python sdist for upload to boutpp-nightly.
+    """
     return build_sdist(os.getcwd() + "/dist/", dict(nightly=True))
 
 
 def sdist():
+    """
+    Build the python sdist
+    """
     return build_sdist(os.getcwd() + "/dist/")
 
 
 def wheel():
+    """
+    Build the python binary wheel
+    """
     return build_wheel(os.getcwd() + "/dist/")
 
 
