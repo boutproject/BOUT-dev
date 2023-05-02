@@ -25,7 +25,7 @@ PetscLib::PetscLib(Options* opt) {
 
       output << "Initialising PETSc\n";
       PETSC_COMM_WORLD = BoutComm::getInstance()->getComm();
-      PetscInitialize(pargc, pargv, PETSC_NULL, help);
+      PetscInitialize(pargc, pargv, nullptr, help);
       PetscPopSignalHandler();
 
       PetscLogEventRegister("Total BOUT++", 0, &USER_EVENT);
