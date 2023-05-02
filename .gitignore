@@ -79,3 +79,5 @@ src/fmt/format.cxx
 /_wheel*/
 /dist/
 /_version.txt
+/BOUT++-v*.tar.gz
+/BOUT++-v*.tar.xz
