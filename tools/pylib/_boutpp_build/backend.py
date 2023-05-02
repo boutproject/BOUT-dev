@@ -27,6 +27,12 @@ def getversion():
     """
     global version
     if version is None:
+        try:
+            version = os.environ["BOUT_PRETEND_VERSION"]
+            return version
+        except KeyError:
+            pass
+
         _bout_previous_version = "v5.0.0"
         _bout_next_version = "5.0.1"
 
