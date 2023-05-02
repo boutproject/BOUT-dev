@@ -717,7 +717,7 @@ endif()
 
 
 add_custom_target(dist
-  COMMAND ${CMAKE_SOURCE_DIR}/bin/bout-archive-helper.sh v${BOUT_FULL_VERSION}
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/pylib/_boutpp_build/backend.py dist
   # there is no cmake equivalent to `mv` - so only works on systems that are not inentionally non-POSIX complient
   COMMAND mv BOUT++-v${BOUT_FULL_VERSION}.tar.gz ${CMAKE_CURRENT_BINARY_DIR}/
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
