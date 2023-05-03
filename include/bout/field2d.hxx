@@ -277,6 +277,7 @@ public:
 
   friend void swap(Field2D& first, Field2D& second) noexcept;
 
+  int size() const override { return nx * ny; };
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
 
