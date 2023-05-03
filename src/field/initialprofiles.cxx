@@ -36,13 +36,13 @@
  *
  **************************************************************************/
 
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/globals.hxx>
+#include <bout/initialprofiles.hxx>
 #include <bout/mesh.hxx>
-#include <field2d.hxx>
-#include <field3d.hxx>
-#include <field_factory.hxx>
-#include <globals.hxx>
-#include <initialprofiles.hxx>
-#include <msg_stack.hxx>
+#include <bout/msg_stack.hxx>
 
 void initial_profile(const std::string& name, Field3D& var) {
   AUTO_TRACE();

@@ -28,9 +28,9 @@
  **************************************************************************/
 
 #include "shiftedmetricinterp.hxx"
-#include "mask.hxx"
 #include "bout/constants.hxx"
-#include "parallel_boundary_region.hxx"
+#include "bout/parallel_boundary_region.hxx"
+//#include "bout/mask.hxx"
 
 ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
                                          Field2D zShift_in, BoutReal zlength_in,
@@ -54,9 +54,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   // offset, so we don't need to faff about after this
   for (int y_offset = 0; y_offset < mesh.ystart; ++y_offset) {
     parallel_slice_interpolators[yup_index + y_offset] =
-      ZInterpolationFactory::getInstance().create(&interp_options, y_offset + 1, &mesh);
+        ZInterpolationFactory::getInstance().create(&interp_options, y_offset + 1, &mesh);
     parallel_slice_interpolators[ydown_index + y_offset] =
-      ZInterpolationFactory::getInstance().create(&interp_options, -y_offset - 1, &mesh);
+        ZInterpolationFactory::getInstance().create(&interp_options, -y_offset - 1,
+                                                    &mesh);
 
     // Find the index positions where the magnetic field line intersects the x-z plane
     // y_offset points up
@@ -86,7 +87,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   }
 
   // Set up interpolation to/from field-aligned coordinates
-  interp_to_aligned = ZInterpolationFactory::getInstance().create(&interp_options, 0, &mesh);
+  interp_to_aligned =
+      ZInterpolationFactory::getInstance().create(&interp_options, 0, &mesh);
   interp_from_aligned =
       ZInterpolationFactory::getInstance().create(&interp_options, 0, &mesh);
 

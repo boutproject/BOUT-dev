@@ -8,18 +8,17 @@
 #include <memory>
 
 #include "../../src/mesh/impls/bout/boutmesh.hxx"
-#include "boutcomm.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "fieldperp.hxx"
-#include "unused.hxx"
+#include "bout/boutcomm.hxx"
 #include "bout/coordinates.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/fieldgroup.hxx"
+#include "bout/fieldperp.hxx"
 #include "bout/mesh.hxx"
 #include "bout/mpi_wrapper.hxx"
-#include "boundary_region.hxx"
-#include "boundary_op.hxx"
-
+#include "bout/boundary_region.hxx"
+#include "bout/boundary_op.hxx"
+#include "bout/unused.hxx"
 
 class Options;
 
@@ -50,7 +49,7 @@ public:
       : BoutMesh((nxpe * (nx - 2)) + 2, nype * ny, nz, 1, 1, nxpe, nype, pe_xind,
                  pe_yind),
         yUpMesh(nullptr), yDownMesh(nullptr), xInMesh(nullptr), xOutMesh(nullptr),
-	mpiSmart(new FakeMpiWrapper(this)) {
+        mpiSmart(new FakeMpiWrapper(this)) {
     StaggerGrids = false;
     periodicX = false;
     IncIntShear = false;
@@ -94,14 +93,14 @@ public:
     if (xInMesh != nullptr && xInMesh != this) {
       FieldGroup xInGroup = makeGroup(xInMesh, ids);
       if (!disable_corners) {
-	xInMesh->wait(xInMesh->sendY(xInGroup, nullptr));
+        xInMesh->wait(xInMesh->sendY(xInGroup, nullptr));
       }
       xInMesh->parentSendX(xInGroup, nullptr, disable_corners);
     }
     if (xOutMesh != nullptr && xOutMesh != this) {
       FieldGroup xOutGroup = makeGroup(xOutMesh, ids);
       if (!disable_corners) {
-	xOutMesh->wait(xOutMesh->sendY(xOutGroup, nullptr));
+        xOutMesh->wait(xOutMesh->sendY(xOutGroup, nullptr));
       }
       xOutMesh->parentSendX(xOutGroup, nullptr, disable_corners);
     }
@@ -243,8 +242,8 @@ public:
       } else {
         *indx = MPI_UNDEFINED;
         wait_any_count = -1;
-	mesh->communicatingX = false;
-	mesh->communicatingY = false;
+        mesh->communicatingX = false;
+        mesh->communicatingY = false;
       }
       return 0;
     }

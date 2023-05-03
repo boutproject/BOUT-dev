@@ -6,14 +6,19 @@ class Enum(object):
             self.vals.remove("None")
         self.lower = self.name.lower()
         self.extra = {}
-        self.source = source.split("/")[-1]
+        self.source = source
 
     def __str__(self):
         return self.name
 
 
 enums = {}
-for inf in "../../../include/bout_types.hxx", "other_enums.hxx":
+# Repeat the filename as source so we don't have to do any fancy logic
+# to prepend "bout/" in front of one of the files
+for inf, source in (
+    ("../../../include/bout/bout_types.hxx", "bout/bout_types.hxx"),
+    ("other_enums.hxx", "other_enums.hxx"),
+):
     with open(inf) as f:
         for line in f:
             line = line.strip()
@@ -24,7 +29,7 @@ for inf in "../../../include/bout_types.hxx", "other_enums.hxx":
                     print(what, inf)
                 name, vals = what.split("{")
                 assert vals.endswith("};")
-                enum = Enum(name, vals[:-2], inf)
+                enum = Enum(name, vals[:-2], source)
                 enums[enum.name] = enum
             if line.startswith("constexpr"):
                 (enum, str), (val,) = [x.split() for x in line[10:].split("=")]

@@ -1,8 +1,8 @@
 /*
  */
 
+#include <bout/bout.hxx>
 #include <bout/physicsmodel.hxx>
-#include <bout.hxx>
 
 /// Create a function to be called every timestep
 int my_timestep_monitor(Solver* UNUSED(solver), BoutReal simtime, BoutReal dt) {
@@ -15,7 +15,8 @@ class MyOutputMonitor : public Monitor {
 public:
   explicit MyOutputMonitor(BoutReal timestep = -1) : Monitor(timestep){};
   int call(Solver* UNUSED(solver), BoutReal simtime, int iter, int NOUT) override {
-    output.write("\nOutput monitor, time = {:e}, step {:d} of {:d}\n", simtime, iter, NOUT);
+    output.write("\nOutput monitor, time = {:e}, step {:d} of {:d}\n", simtime, iter,
+                 NOUT);
     return 0;
   }
 };

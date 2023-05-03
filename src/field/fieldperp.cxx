@@ -23,28 +23,27 @@
  *
  **************************************************************************/
 
-#include <boutcomm.hxx>
-#include <globals.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/globals.hxx>
 
 #include <cmath>
 
+#include <bout/boutexception.hxx>
+#include <bout/fieldperp.hxx>
 #include <bout/mesh.hxx>
-#include <fieldperp.hxx>
-#include <utils.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
-FieldPerp::FieldPerp(Mesh *localmesh, CELL_LOC location_in, int yindex_in,
-      DirectionTypes directions)
-    : Field(localmesh, location_in, directions),
-      yindex(yindex_in) {
+FieldPerp::FieldPerp(Mesh* localmesh, CELL_LOC location_in, int yindex_in,
+                     DirectionTypes directions)
+    : Field(localmesh, location_in, directions), yindex(yindex_in) {
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     nz = fieldmesh->LocalNz;
   }
 }
 
-FieldPerp::FieldPerp(BoutReal val, Mesh *localmesh) : FieldPerp(localmesh) {
+FieldPerp::FieldPerp(BoutReal val, Mesh* localmesh) : FieldPerp(localmesh) {
   *this = val;
 }
 
@@ -70,8 +69,9 @@ FieldPerp& FieldPerp::allocate() {
 #if CHECK > 2
     invalidateGuards(*this);
 #endif
-  } else
+  } else {
     data.ensureUnique();
+  }
 
   return *this;
 }
@@ -96,7 +96,7 @@ FieldPerp& FieldPerp::operator=(const FieldPerp& rhs) {
   return *this;
 }
 
-FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
+FieldPerp& FieldPerp::operator=(const BoutReal rhs) {
   TRACE("FieldPerp = BoutReal");
 
   allocate();
@@ -106,10 +106,10 @@ FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
   return *this;
 }
 
-const Region<IndPerp> &FieldPerp::getRegion(REGION region) const {
+const Region<IndPerp>& FieldPerp::getRegion(REGION region) const {
   return fieldmesh->getRegionPerp(toString(region));
 }
-const Region<IndPerp> &FieldPerp::getRegion(const std::string &region_name) const {
+const Region<IndPerp>& FieldPerp::getRegion(const std::string& region_name) const {
   return fieldmesh->getRegionPerp(region_name);
 }
 
@@ -151,7 +151,7 @@ FieldPerp fromFieldAligned(const FieldPerp& f, const std::string& region) {
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
 // Unary minus
-FieldPerp operator-(const FieldPerp &f) { return -1.0 * f; }
+FieldPerp operator-(const FieldPerp& f) { return -1.0 * f; }
 
 /////////////////////////////////////////////////
 // functions
@@ -172,7 +172,7 @@ const FieldPerp sliceXZ(const Field3D& f, int y) {
 }
 
 #if CHECK > 2
-void checkDataIsFiniteOnRegion(const FieldPerp &f, const std::string& region) {
+void checkDataIsFiniteOnRegion(const FieldPerp& f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!::finite(f[i])) {
@@ -182,13 +182,13 @@ void checkDataIsFiniteOnRegion(const FieldPerp &f, const std::string& region) {
   }
 }
 #else
-void checkDataIsFiniteOnRegion(const FieldPerp &UNUSED(f), const std::string& UNUSED(region)) {}
+void checkDataIsFiniteOnRegion(const FieldPerp& UNUSED(f),
+                               const std::string& UNUSED(region)) {}
 #endif
-
 
 #if CHECK > 0
 /// Check if the data is valid
-void checkData(const FieldPerp &f, const std::string& region) {
+void checkData(const FieldPerp& f, const std::string& region) {
   if (!f.isAllocated()) {
     throw BoutException("FieldPerp: Operation on empty data\n");
   }
@@ -200,7 +200,7 @@ void checkData(const FieldPerp &f, const std::string& region) {
 #endif
 
 #if CHECK > 2
-void invalidateGuards(FieldPerp &var) {
+void invalidateGuards(FieldPerp& var) {
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif

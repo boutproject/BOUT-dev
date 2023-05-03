@@ -33,20 +33,19 @@
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "utils.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/paralleltransform.hxx"
-#include <bout_types.hxx>
+#include "bout/utils.hxx"
+#include <bout/bout_types.hxx>
 
-class Datafile;
 class Mesh;
 
 /*!
  * Represents a coordinate system, and associated operators
  *
  * This is a container for a collection of metric tensor components
- */ 
+ */
 class Coordinates {
 public:
 #if BOUT_USE_METRIC_3D
@@ -56,7 +55,7 @@ public:
 #endif
 
   /// Standard constructor from input
-  Coordinates(Mesh *mesh, Options* options = nullptr);
+  Coordinates(Mesh* mesh, Options* options = nullptr);
 
   /// Constructor interpolating from another Coordinates object
   /// By default attempts to read staggered Coordinates from grid data source,
@@ -64,8 +63,8 @@ public:
   /// force_interpolate_from_centre argument to true to always interpolate
   /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
   /// would not be correct).
-  Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc, const Coordinates* coords_in,
-      bool force_interpolate_from_centre=false);
+  Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
+              const Coordinates* coords_in, bool force_interpolate_from_centre = false);
 
   /// A constructor useful for testing purposes. To use it, inherit
   /// from Coordinates. If \p calculate_geometry is true (default),
@@ -117,7 +116,7 @@ public:
 
   /// Calculate differential geometry quantities from the metric tensor
   int geometry(bool recalculate_staggered = true,
-      bool force_interpolate_from_centre = false);
+               bool force_interpolate_from_centre = false);
   /// Invert contravatiant metric to get covariant components
   int calcCovariant(const std::string& region = "RGN_ALL");
   /// Invert covariant metric to get contravariant components
@@ -173,7 +172,7 @@ public:
                        const std::string& method = "DEFAULT");
 
   Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT");
+                   const std::string& method = "DEFAULT");
 
   /// Advection along magnetic field V*b.Grad(f)
   FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
@@ -181,21 +180,22 @@ public:
                             const std::string& method = "DEFAULT");
 
   Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
-      CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
+                        CELL_LOC outloc = CELL_DEFAULT,
+                        const std::string& method = "DEFAULT");
 
   /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
   FieldMetric Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                       const std::string& method = "DEFAULT");
 
   Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT");
+                  const std::string& method = "DEFAULT");
 
   // Second derivative along magnetic field
   FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                          const std::string& method = "DEFAULT");
 
   Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT");
+                     const std::string& method = "DEFAULT");
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code
   // since it makes use of the same coefficients and FFT routines
@@ -206,8 +206,8 @@ public:
   // Full parallel Laplacian operator on scalar field
   // Laplace_par(f) = Div( b (b dot Grad(f)) )
   FieldMetric Laplace_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
-  Field3D Laplace_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
-  
+  Field3D Laplace_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT);
+
   // Full Laplacian operator on scalar field
   FieldMetric Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                       const std::string& dfdy_boundary_conditions = "free_o3",
@@ -222,7 +222,7 @@ public:
 
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
-  Mesh * localmesh;
+  Mesh* localmesh;
   CELL_LOC location;
 
   /// Handles calculation of yup and ydown

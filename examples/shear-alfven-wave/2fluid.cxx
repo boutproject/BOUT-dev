@@ -5,9 +5,9 @@
 
 #include <bout/physicsmodel.hxx>
 
-#include <initialprofiles.hxx>
-#include <invert_laplace.hxx>
-#include <derivs.hxx>
+#include <bout/derivs.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/invert_laplace.hxx>
 
 class ShearAlfven : public PhysicsModel {
 private:
@@ -44,12 +44,12 @@ private:
   FieldGroup comms;
 
   // Coordinate system
-  Coordinates *coord;
+  Coordinates* coord;
 
   /// Solver for inverting Laplacian
   std::unique_ptr<Laplacian> phiSolver;
   std::unique_ptr<Laplacian> aparSolver;
-  
+
 protected:
   int init(bool UNUSED(restarting)) override {
     Field2D I; // Shear factor
@@ -85,7 +85,7 @@ protected:
     mesh->get(coord->Bxy, "Bxy");
     mesh->get(coord->dx, "dpsi");
     mesh->get(I, "sinty");
-    
+
     // Load normalisation values
     GRID_LOAD(Te_x);
     GRID_LOAD(Ti_x);
@@ -111,9 +111,10 @@ protected:
     /************* SHIFTED RADIAL COORDINATES ************/
 
     // Check type of parallel transform
-    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
-                        .withDefault<std::string>("identity");
-    
+    std::string ptstr =
+        Options::root()["mesh"]["paralleltransform"]["type"].withDefault<std::string>(
+            "identity");
+
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0; // I disappears from metric
       b0xcv.z += I * b0xcv.x;
@@ -134,8 +135,9 @@ protected:
 
     BoutReal hthe0;
     if (mesh->get(hthe0, "hthe0") == 0) {
-      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n",
-                   hthe0 / rho_s);
+      output.write(
+          "    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n",
+          hthe0 / rho_s);
     }
 
     /************** SHIFTED GRIDS LOCATION ***************/
@@ -222,7 +224,7 @@ protected:
 
     SAVE_ONCE(Ni0, Te0, Ti0);
     SAVE_ONCE(Te_x, Ti_x, Ni_x, rho_s, wci);
-    
+
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create(&options["phiSolver"]);
 
@@ -239,10 +241,10 @@ protected:
 
     if (ZeroElMass) {
       mesh->communicate(comms);
-      
+
       Apar = -Ajpar;
       jpar = -Delp2(Apar);
-      
+
       mesh->communicate(jpar);
     } else {
 
