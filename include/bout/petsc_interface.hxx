@@ -74,12 +74,12 @@ public:
   };
 
   /// Default constructor does nothing
-  PetscVector() : vector(new Vec(), VectorDeleter()) {}
+  PetscVector() : vector(new Vec{}) {}
   ~PetscVector() = default;
 
   /// Copy constructor
   PetscVector(const PetscVector<T>& v)
-      : vector(new Vec(), VectorDeleter()), indexConverter(v.indexConverter),
+      : vector(new Vec()), indexConverter(v.indexConverter),
         location(v.location), initialised(v.initialised), vector_values(v.vector_values),
         vector_indices(v.vector_indices) {
     VecDuplicate(*v.vector, vector.get());
@@ -97,7 +97,7 @@ public:
 
   /// Construct from a field, copying over the field values
   PetscVector(const T& field, IndexerPtr<T> indConverter)
-      : vector(new Vec(), VectorDeleter()), indexConverter(indConverter),
+      : vector(new Vec()), indexConverter(indConverter),
         location(field.getLocation()), initialised(true),
         vector_values(indexConverter->size()), vector_indices(indexConverter->size()) {
     ASSERT1(indConverter->getMesh() == field.getMesh());
@@ -258,12 +258,12 @@ public:
   };
 
   /// Default constructor does nothing
-  PetscMatrix() : matrix(new Mat(), MatrixDeleter()) {}
+  PetscMatrix() : matrix(new Mat()) {}
   ~PetscMatrix() = default;
 
   /// Copy constructor
   PetscMatrix(const PetscMatrix<T>& m)
-      : matrix(new Mat(), MatrixDeleter()), indexConverter(m.indexConverter), pt(m.pt),
+      : matrix(new Mat()), indexConverter(m.indexConverter), pt(m.pt),
         yoffset(m.yoffset), initialised(m.initialised) {
     MatDuplicate(*m.matrix, MAT_COPY_VALUES, matrix.get());
   }
@@ -278,7 +278,7 @@ public:
   // Construct a matrix capable of operating on the specified field,
   // preallocating memory if requeted and possible.
   PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
-      : matrix(new Mat(), MatrixDeleter()), indexConverter(indConverter),
+      : matrix(new Mat()), indexConverter(indConverter),
         pt(&indConverter->getMesh()->getCoordinates()->getParallelTransform()) {
     MPI_Comm comm = std::is_same<T, FieldPerp>::value
                         ? indConverter->getMesh()->getXcomm()
