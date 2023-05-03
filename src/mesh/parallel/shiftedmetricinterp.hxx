@@ -78,14 +78,9 @@ public:
   bool canToFromFieldAligned() const override { return true; }
 
   std::vector<ParallelTransform::PositionsAndWeights>
-  getWeightsForYUpApproximation(int i, int j, int k) override {
+  getWeightsForYApproximation(int i, int j, int k, int y_offset) override {
     return parallel_slice_interpolators[yup_index]->getWeightsForYApproximation(i, j, k,
-                                                                                1);
-  }
-  std::vector<ParallelTransform::PositionsAndWeights>
-  getWeightsForYDownApproximation(int i, int j, int k) override {
-    return parallel_slice_interpolators[ydown_index]->getWeightsForYApproximation(i, j, k,
-                                                                                  -1);
+                                                                                y_offset);
   }
 
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {

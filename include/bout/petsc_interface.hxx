@@ -424,17 +424,8 @@ public:
     std::vector<PetscScalar> weights;
     if (yoffset != 0) {
       ASSERT1(yoffset == index2.y() - index1.y());
-      const auto pw = [this, &index1, &index2]() {
-        if (this->yoffset == -1) {
-          return pt->getWeightsForYDownApproximation(index2.x(), index1.y(), index2.z());
-        }
-        if (this->yoffset == 1) {
-          return pt->getWeightsForYUpApproximation(index2.x(), index1.y(), index2.z());
-        }
-        return pt->getWeightsForYApproximation(index2.x(), index1.y(), index2.z(),
-                                               this->yoffset);
-      }();
-
+      const auto pw =
+          pt->getWeightsForYApproximation(index2.x(), index1.y(), index2.z(), yoffset);
       const int ny =
           std::is_same<T, FieldPerp>::value ? 1 : indexConverter->getMesh()->LocalNy;
       const int nz =

@@ -31,6 +31,8 @@ using ::testing::Return;
 class MockTransform : public ParallelTransformIdentity {
 public:
   MockTransform(Mesh& mesh_in) : ParallelTransformIdentity(mesh_in){};
+  MOCK_METHOD(std::vector<PositionsAndWeights>, getWeightsForYApproximation,
+              (int i, int j, int k, int y_offset), (override));
   MOCK_METHOD(std::vector<PositionsAndWeights>, getWeightsForYUpApproximation,
               (int i, int j, int k), (override));
   MOCK_METHOD(std::vector<PositionsAndWeights>, getWeightsForYDownApproximation,
@@ -273,8 +275,9 @@ TYPED_TEST(PetscMatrixTest, TestYUp) {
     if (std::is_same<TypeParam, Field2D>::value) {
       expected(this->indexA, this->indexB) = val;
     } else if (std::is_same<TypeParam, Field3D>::value) {
-      EXPECT_CALL(*transform, getWeightsForYUpApproximation(
-                                  this->indexB.x(), this->indexA.y(), this->indexB.z()))
+      EXPECT_CALL(*transform,
+                  getWeightsForYApproximation(this->indexB.x(), this->indexA.y(),
+                                              this->indexB.z(), 1))
           .WillOnce(Return(this->yUpWeights));
       expected(this->indexA, this->iWU0) = this->yUpWeights[0].weight * val;
       expected(this->indexA, this->iWU1) = this->yUpWeights[1].weight * val;
@@ -302,8 +305,9 @@ TYPED_TEST(PetscMatrixTest, TestYDown) {
     if (std::is_same<TypeParam, Field2D>::value) {
       expected(this->indexB, this->indexA) = val;
     } else if (std::is_same<TypeParam, Field3D>::value) {
-      EXPECT_CALL(*transform, getWeightsForYDownApproximation(
-                                  this->indexA.x(), this->indexB.y(), this->indexA.z()))
+      EXPECT_CALL(*transform,
+                  getWeightsForYApproximation(this->indexA.x(), this->indexB.y(),
+                                              this->indexA.z(), -1))
           .WillOnce(Return(this->yDownWeights));
       expected(this->indexB, this->iWD0) = this->yDownWeights[0].weight * val;
       expected(this->indexB, this->iWD1) = this->yDownWeights[1].weight * val;
@@ -344,8 +348,8 @@ TYPED_TEST(PetscMatrixTest, TestYNextPos) {
     EXPECT_THROW(matrix.ynext(1), BoutException);
   } else {
     if (std::is_same<TypeParam, Field3D>::value) {
-      EXPECT_CALL(*transform, getWeightsForYUpApproximation(
-                                  this->indexB.x(), this->indexA.y(), this->indexB.z()))
+      EXPECT_CALL(*transform, getWeightsForYApproximation(
+                    this->indexB.x(), this->indexA.y(), this->indexB.z(), 1))
           .Times(2)
           .WillRepeatedly(Return(this->yDownWeights));
     }
@@ -370,8 +374,8 @@ TYPED_TEST(PetscMatrixTest, TestYNextNeg) {
     EXPECT_THROW(matrix.ynext(-1), BoutException);
   } else {
     if (std::is_same<TypeParam, Field3D>::value) {
-      EXPECT_CALL(*transform, getWeightsForYDownApproximation(
-                                  this->indexA.x(), this->indexB.y(), this->indexA.z()))
+      EXPECT_CALL(*transform, getWeightsForYApproximation(
+                    this->indexA.x(), this->indexB.y(), this->indexA.z(), -1))
           .Times(2)
           .WillRepeatedly(Return(this->yDownWeights));
     }
