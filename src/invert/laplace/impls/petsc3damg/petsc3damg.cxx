@@ -204,7 +204,8 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   if (updateRequired) {
     updateMatrix3D();
   }
-  PetscVector<Field3D> rhs(b_in, indexer), guess(x0, indexer);
+  PetscVector<Field3D> rhs(b_in, indexer);
+  PetscVector<Field3D> guess(x0, indexer);
 
   // Adjust vectors to represent boundary conditions and check that
   // boundary cells are finite
