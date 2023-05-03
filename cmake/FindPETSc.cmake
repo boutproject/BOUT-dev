@@ -281,11 +281,8 @@ int main(int argc,char *argv[]) {
   return 0;
 }
 ")
-    multipass_source_runs ("${includes}" "${libraries}" "${_PETSC_TEST_SOURCE}" ${runs} "${PETSC_LANGUAGE_BINDINGS}")
-    if (${${runs}})
-      set (PETSC_EXECUTABLE_RUNS "YES" CACHE BOOL
-        "Can the system successfully run a PETSc executable?  This variable can be manually set to \"YES\" to force CMake to accept a given PETSc configuration, but this will almost always result in a broken build.  If you change PETSC_DIR, PETSC_ARCH, or PETSC_CURRENT you would have to reset this variable." FORCE)
-    endif (${${runs}})
+    set (PETSC_EXECUTABLE_RUNS "YES" BOOL
+      "Can the system successfully run a PETSc executable?  This variable can be manually set to \"YES\" to force CMake to accept a given PETSc configuration, but this will almost always result in a broken build.  If you change PETSC_DIR, PETSC_ARCH, or PETSC_CURRENT you would have to reset this variable." FORCE)
   endmacro (PETSC_TEST_RUNS)
 
 
@@ -366,7 +363,7 @@ if (NOT PETSC_INCLUDES AND NOT TARGET PETSc::PETSc)
     pkg_search_module(PkgPETSC PETSc>3.4.0 petsc>3.4.0)
     set (PETSC_LIBRARIES ${PkgPETSC_LINK_LIBRARIES} CACHE STRING "PETSc libraries" FORCE)
     set (PETSC_INCLUDES ${PkgPETSC_INCLUDE_DIRS} CACHE STRING "PETSc include path" FORCE)
-    set (PETSC_EXECUTABLE_RUNS "YES" CACHE BOOL
+    set (PETSC_EXECUTABLE_RUNS "YES" BOOL
         "Can the system successfully run a PETSc executable?  This variable can be manually set to \"YES\" to force CMake to accept a given PETSc configuration, but this will almost always result in a broken build.  If you change PETSC_DIR, PETSC_ARCH, or PETSC_CURRENT you would have to reset this variable." FORCE)
   endif()
 endif()

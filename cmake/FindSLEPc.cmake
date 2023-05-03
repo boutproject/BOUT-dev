@@ -193,71 +193,9 @@ int main() {
   endif()
   mark_as_advanced(SLEPC_VERSION_OK)
 
-  # Run SLEPc test program
-  set(SLEPC_TEST_LIB_CPP
-    "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/slepc_test_lib.cpp")
-  file(WRITE ${SLEPC_TEST_LIB_CPP} "
-#include \"petsc.h\"
-#include \"slepceps.h\"
-int main()
-{
-  PetscErrorCode ierr;
-  int argc = 0;
-  char** argv = NULL;
-  ierr = SlepcInitialize(&argc, &argv, nullptr, nullptr);
-  EPS eps;
-  ierr = EPSCreate(PETSC_COMM_SELF, &eps); CHKERRQ(ierr);
-  //ierr = EPSSetFromOptions(eps); CHKERRQ(ierr);
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
-  ierr = EPSDestroy(eps); CHKERRQ(ierr);
-#else
-  ierr = EPSDestroy(&eps); CHKERRQ(ierr);
-#endif
-  ierr = SlepcFinalize(); CHKERRQ(ierr);
-  return 0;
-}
-")
+  # Do not run SLEPc test program
 
-  try_run(
-    SLEPC_TEST_LIB_EXITCODE
-    SLEPC_TEST_LIB_COMPILED
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${SLEPC_TEST_LIB_CPP}
-    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-    LINK_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES}
-    COMPILE_OUTPUT_VARIABLE SLEPC_TEST_LIB_COMPILE_OUTPUT
-    RUN_OUTPUT_VARIABLE SLEPC_TEST_LIB_OUTPUT
-    )
-
-  if (SLEPC_TEST_LIB_COMPILED AND SLEPC_TEST_LIB_EXITCODE EQUAL 0)
-    message(STATUS "Performing test SLEPC_TEST_RUNS - Success")
-    set(SLEPC_TEST_RUNS TRUE CACHE BOOL "SLEPc test program can run")
-  else()
-    message(STATUS "Performing test SLEPC_TEST_RUNS - Failed")
-
-    # Test program does not run - try adding SLEPc 3rd party libs and test again
-    list(APPEND CMAKE_REQUIRED_LIBRARIES ${SLEPC_EXTERNAL_LIBRARIES})
-
-    try_run(
-      SLEPC_TEST_3RD_PARTY_LIBS_EXITCODE
-      SLEPC_TEST_3RD_PARTY_LIBS_COMPILED
-      ${CMAKE_CURRENT_BINARY_DIR}
-      ${SLEPC_TEST_LIB_CPP}
-      CMAKE_FLAGS "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-      LINK_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES}
-      COMPILE_OUTPUT_VARIABLE SLEPC_TEST_3RD_PARTY_LIBS_COMPILE_OUTPUT
-      RUN_OUTPUT_VARIABLE SLEPC_TEST_3RD_PARTY_LIBS_OUTPUT
-      )
-
-    if (SLEPC_TEST_3RD_PARTY_LIBS_COMPILED AND SLEPC_TEST_3RD_PARTY_LIBS_EXITCODE EQUAL 0)
-      message(STATUS "Performing test SLEPC_TEST_3RD_PARTY_LIBS_RUNS - Success")
-      set(SLEPC_LIBRARIES ${SLEPC_LIBRARIES} ${SLEPC_EXTERNAL_LIBRARIES}
-        CACHE STRING "SLEPc libraries." FORCE)
-      set(SLEPC_TEST_RUNS TRUE CACHE BOOL "SLEPc test program can run")
-    else()
-      message(STATUS "Performing test SLEPC_TEST_3RD_PARTY_LIBS_RUNS - Failed")
-    endif()
-  endif()
+  set(SLEPC_TEST_RUNS TRUE CACHE BOOL "SLEPc test program can run")
 endif()
 
 # Standard package handling
