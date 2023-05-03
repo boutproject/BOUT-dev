@@ -1420,37 +1420,37 @@ int BoutMesh::wait(comm_handle handle) {
         int jy = 0;
 
         // Perform Twist-shift using shifting method
-          // Lower boundary
-	if (TS_down_in && (DDATA_INDEST != -1)) {
-	  for (jx = 0; jx < DDATA_XSPLIT; jx++) {
-	    for (jy = 0; jy != MYG; jy++) {
-	      shiftZ(*var, jx, jy, ShiftAngle[jx]);
-	    }
-	  }
-	}
-	if (TS_down_out && (DDATA_OUTDEST != -1)) {
-	  for (jx = DDATA_XSPLIT; jx < LocalNx; jx++) {
-	    for (jy = 0; jy != MYG; jy++) {
-	      shiftZ(*var, jx, jy, ShiftAngle[jx]);
-	    }
-	  }
-	}
+        // Lower boundary
+        if (TS_down_in && (DDATA_INDEST != -1)) {
+          for (jx = 0; jx < DDATA_XSPLIT; jx++) {
+            for (jy = 0; jy != MYG; jy++) {
+              shiftZ(*var, jx, jy, ShiftAngle[jx]);
+            }
+          }
+        }
+        if (TS_down_out && (DDATA_OUTDEST != -1)) {
+          for (jx = DDATA_XSPLIT; jx < LocalNx; jx++) {
+            for (jy = 0; jy != MYG; jy++) {
+              shiftZ(*var, jx, jy, ShiftAngle[jx]);
+            }
+          }
+        }
 
-	// Upper boundary
-	if (TS_up_in && (UDATA_INDEST != -1)) {
-	  for (jx = 0; jx < UDATA_XSPLIT; jx++) {
-	    for (jy = LocalNy - MYG; jy != LocalNy; jy++) {
-	      shiftZ(*var, jx, jy, -ShiftAngle[jx]);
-	    }
-	  }
-	}
-	if (TS_up_out && (UDATA_OUTDEST != -1)) {
-	  for (jx = UDATA_XSPLIT; jx < LocalNx; jx++) {
-	    for (jy = LocalNy - MYG; jy != LocalNy; jy++) {
-	      shiftZ(*var, jx, jy, -ShiftAngle[jx]);
-	    }
-	  }
-	}
+        // Upper boundary
+        if (TS_up_in && (UDATA_INDEST != -1)) {
+          for (jx = 0; jx < UDATA_XSPLIT; jx++) {
+            for (jy = LocalNy - MYG; jy != LocalNy; jy++) {
+              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+            }
+          }
+        }
+        if (TS_up_out && (UDATA_OUTDEST != -1)) {
+          for (jx = UDATA_XSPLIT; jx < LocalNx; jx++) {
+            for (jy = LocalNy - MYG; jy != LocalNy; jy++) {
+              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+            }
+          }
+        }
       }
     }
   }
