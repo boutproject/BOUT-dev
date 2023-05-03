@@ -45,8 +45,9 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   }
 
   BoutReal sbp = 1.0; // Sign of Bp
-  if (min(Bpxy, true) < 0.0)
+  if (min(Bpxy, true) < 0.0) {
     sbp = -1.0;
+  }
 
   coords->g11 = pow(Rxy * Bpxy, 2);
   coords->g22 = 1.0 / pow(hthe, 2);

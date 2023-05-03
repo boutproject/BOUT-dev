@@ -63,8 +63,9 @@ int main(int argc, char** argv) {
       rhs(s, i) = a(s, i) * xm + b(s, i) * x(s, i) + c(s, i) * x(s, i + 1);
     }
 
-    for (i = 1; i < n - 1; i++)
+    for (i = 1; i < n - 1; i++) {
       rhs(s, i) = a(s, i) * x(s, i - 1) + b(s, i) * x(s, i) + c(s, i) * x(s, i + 1);
+    }
 
     if ((mype == (npe - 1)) && !periodic) {
       rhs(s, i) = a(s, i) * x(s, i - 1) + b(s, i) * x(s, i);
@@ -110,8 +111,9 @@ int main(int argc, char** argv) {
   output << "******* Cyclic test case: ";
   if (allpassed) {
     output << "PASSED" << endl;
-  } else
+  } else {
     output << "FAILED" << endl;
+  }
 
   MPI_Barrier(BoutComm::get());
 

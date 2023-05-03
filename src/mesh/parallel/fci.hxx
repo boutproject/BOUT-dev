@@ -138,7 +138,7 @@ public:
     throw BoutException("FCI method cannot transform from field aligned grid");
   }
 
-  bool canToFromFieldAligned() override { return false; }
+  bool canToFromFieldAligned() const override { return false; }
 
   bool requiresTwistShift(bool UNUSED(twist_shift_enabled),
                           MAYBE_UNUSED(YDirectionType ytype)) override {

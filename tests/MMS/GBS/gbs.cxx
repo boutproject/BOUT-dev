@@ -25,8 +25,9 @@ int GBS::init(bool restarting) {
   // Switches in model section
   Options* optgbs = opt->getSection("GBS");
   OPTION(optgbs, ionvis, false);
-  if (ionvis)
-    OPTION(optgbs, Ti, 10);          // Ion temperature [eV]
+  if (ionvis) {
+    OPTION(optgbs, Ti, 10); // Ion temperature [eV]
+  }
   OPTION(optgbs, elecvis, false);    // Include electron viscosity?
   OPTION(optgbs, resistivity, true); // Include resistivity?
   OPTION(optgbs, estatic, true);     // Electrostatic?
@@ -62,12 +63,15 @@ int GBS::init(bool restarting) {
 
   OPTION(opt->getSection("solver"), mms, false);
 
-  if (ionvis)
+  if (ionvis) {
     SAVE_REPEAT(Gi);
-  if (elecvis)
+  }
+  if (elecvis) {
     SAVE_REPEAT(Ge);
-  if (resistivity)
+  }
+  if (resistivity) {
     SAVE_REPEAT(nu);
+  }
 
   // Normalisation
   OPTION(optgbs, Tnorm, 100);  // Reference temperature [eV]
@@ -340,8 +344,9 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   }
 
   BoutReal sbp = 1.0; // Sign of Bp
-  if (min(Bpxy, true) < 0.0)
+  if (min(Bpxy, true) < 0.0) {
     sbp = -1.0;
+  }
 
   coords->g11 = SQ(Rxy * Bpxy);
   coords->g22 = 1.0 / SQ(hthe);
@@ -527,14 +532,16 @@ const Field3D GBS::C(const Field3D& f) { // Curvature operator
 }
 
 const Field3D GBS::D(const Field3D& f, BoutReal d) { // Diffusion operator
-  if (d < 0.0)
+  if (d < 0.0) {
     return 0.0;
+  }
   return d * Delp2(f);
 }
 
 const Field3D GBS::H(const Field3D& f, BoutReal h) { // Numerical hyper-diffusion operator
-  if (h < 0.0)
+  if (h < 0.0) {
     return 0.0;
+  }
   return -h * (dx4 * D4DX4(f) + dz4 * D4DZ4(f)); // + dy4*D4DY4(f)
 }
 

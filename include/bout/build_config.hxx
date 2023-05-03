@@ -36,7 +36,7 @@ constexpr auto use_output_debug = static_cast<bool>(BOUT_USE_OUTPUT_DEBUG);
 constexpr auto use_sigfpe = static_cast<bool>(BOUT_USE_SIGFPE);
 constexpr auto use_signal = static_cast<bool>(BOUT_USE_SIGNAL);
 constexpr auto use_track = static_cast<bool>(BOUT_USE_TRACK);
-constexpr auto use_cuda = static_cast<bool>(BOUT_USE_CUDA);
+constexpr auto has_cuda = static_cast<bool>(BOUT_HAS_CUDA);
 constexpr auto use_metric_3d = static_cast<bool>(BOUT_USE_METRIC_3D);
 constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 
@@ -46,7 +46,7 @@ constexpr auto use_msgstack = static_cast<bool>(BOUT_USE_MSGSTACK);
 #undef STRINGIFY1
 #undef STRINGIFY
 
-#if BOUT_USE_CUDA && defined(__CUDACC__)
+#if BOUT_HAS_CUDA && defined(__CUDACC__)
 #define BOUT_HOST_DEVICE __host__ __device__
 #define BOUT_HOST __host__
 #define BOUT_DEVICE __device__

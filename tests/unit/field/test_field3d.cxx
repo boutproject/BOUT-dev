@@ -1216,8 +1216,9 @@ TEST_F(Field3DTest, InvalidateGuards) {
 
   sum = 0;
   for (const auto& i : field) {
-    if (!finite(field[i]))
+    if (!finite(field[i])) {
       sum++;
+    }
   }
   EXPECT_EQ(sum, nbndry);
 }
