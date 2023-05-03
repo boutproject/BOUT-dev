@@ -413,10 +413,11 @@ public:
 #if CHECKLEVEL >= 1
     if (!initialised) {
       throw BoutException("Can not return element of uninitialised matrix");
-    } else if (global1 == -1 || global2 == -1) {
-      std::cout << "(" << index1.x() << ", " << index1.y() << ", " << index1.z() << ")  ";
-      std::cout << "(" << index2.x() << ", " << index2.y() << ", " << index2.z() << ")\n";
-      throw BoutException("Request to return invalid matrix element");
+    }
+    if (global1 == -1 || global2 == -1) {
+      throw BoutException(
+          "Request to return invalid matrix element: (({}, {}, {}), ({}, {}, {}))",
+          index1.x(), index1.y(), index1.z(), index2.x(), index2.y(), index2.z());
     }
 #endif
     std::vector<PetscInt> positions;
@@ -460,10 +461,11 @@ public:
 #if CHECKLEVEL >= 1
     if (!initialised) {
       throw BoutException("Can not return element of uninitialised matrix");
-    } else if (global1 == -1 || global2 == -1) {
-      std::cout << "(" << index1.x() << ", " << index1.y() << ", " << index1.z() << ")  ";
-      std::cout << "(" << index2.x() << ", " << index2.y() << ", " << index2.z() << ")\n";
-      throw BoutException("Request to return invalid matrix element");
+    }
+    if (global1 == -1 || global2 == -1) {
+      throw BoutException(
+          "Request to return invalid matrix element: (({}, {}, {}), ({}, {}, {}))",
+          index1.x(), index1.y(), index1.z(), index2.x(), index2.y(), index2.z());
     }
 #endif
     BoutReal value = BoutNaN;
