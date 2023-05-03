@@ -120,7 +120,9 @@ public:
   void setValid(char val) { bndry_position->valid = val; }
 
   bool contains(const BoundaryRegionPar& bndry) const {
-    return std::binary_search(begin(bndry_points), end(bndry_points), *bndry.bndry_position, [](const Indices& i1, const Indices& i2) { return i1.index < i2.index; });
+    return std::binary_search(
+        begin(bndry_points), end(bndry_points), *bndry.bndry_position,
+        [](const Indices& i1, const Indices& i2) { return i1.index < i2.index; });
   }
 
   // extrapolate a given point to the boundary

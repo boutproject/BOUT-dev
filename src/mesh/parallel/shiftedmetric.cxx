@@ -6,13 +6,13 @@
  *
  */
 
+#include "bout/parallel_boundary_region.hxx"
 #include "bout/paralleltransform.hxx"
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
-#include "bout/parallel_boundary_region.hxx"
 
 #include <cmath>
 
