@@ -38,8 +38,6 @@ class FieldData;
 #include <string>
 #include <vector>
 
-// Including the next line leads to compiler errors
-//#include "bout/boundary_op.hxx"
 class BoundaryOp;
 class BoundaryOpPar;
 class Coordinates;

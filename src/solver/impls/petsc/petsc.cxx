@@ -29,7 +29,6 @@
 
 #if BOUT_HAS_PETSC
 
-//#include <private/tsimpl.h>
 #include <petsc.h>
 
 #include <bout/boutcomm.hxx>

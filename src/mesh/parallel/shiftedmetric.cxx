@@ -12,8 +12,6 @@
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
-//#include <fft.hxx>
-//#include <output.hxx>
 #include "bout/parallel_boundary_region.hxx"
 
 #include <cmath>

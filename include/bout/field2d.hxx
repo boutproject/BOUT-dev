@@ -33,7 +33,7 @@ class Field2D;
 class Mesh;
 #include "bout/field.hxx"
 #include "bout/field_data.hxx"
-class Field3D; //#include "bout/field3d.hxx"
+class Field3D;
 #include "bout/fieldperp.hxx"
 #include "bout/stencils.hxx"
 
