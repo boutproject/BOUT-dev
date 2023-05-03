@@ -259,29 +259,7 @@ show :
   include(Check${PETSC_LANGUAGE_BINDINGS}SourceRuns)
 
   macro (PETSC_TEST_RUNS includes libraries runs)
-    message(STATUS "PETSc test with : ${includes} ${libraries}" )
-    if (PETSC_VERSION VERSION_GREATER 3.1)
-      set (_PETSC_TSDestroy "TSDestroy(&ts)")
-    else ()
-      set (_PETSC_TSDestroy "TSDestroy(ts)")
-    endif ()
-
-    set(_PETSC_TEST_SOURCE "
-static const char help[] = \"PETSc test program.\";
-#include <petscts.h>
-int main(int argc,char *argv[]) {
-  PetscErrorCode ierr;
-  TS ts;
-
-  ierr = PetscInitialize(&argc,&argv,0,help);CHKERRQ(ierr);
-  ierr = TSCreate(PETSC_COMM_WORLD,&ts);CHKERRQ(ierr);
-  ierr = TSSetFromOptions(ts);CHKERRQ(ierr);
-  ierr = ${_PETSC_TSDestroy};CHKERRQ(ierr);
-  ierr = PetscFinalize();CHKERRQ(ierr);
-  return 0;
-}
-")
-    set (PETSC_EXECUTABLE_RUNS "YES" BOOL
+    set (PETSC_EXECUTABLE_RUNS "YES" CACHE BOOL
       "Can the system successfully run a PETSc executable?  This variable can be manually set to \"YES\" to force CMake to accept a given PETSc configuration, but this will almost always result in a broken build.  If you change PETSC_DIR, PETSC_ARCH, or PETSC_CURRENT you would have to reset this variable." FORCE)
   endmacro (PETSC_TEST_RUNS)
 
