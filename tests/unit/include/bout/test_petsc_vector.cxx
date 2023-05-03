@@ -139,18 +139,39 @@ TYPED_TEST(PetscVectorTest, MoveAssignment) {
   EXPECT_EQ(vectorPtr, movedPtr);
 }
 
+TYPED_TEST(PetscVectorTest, SetElement) {
+  SCOPED_TRACE("FieldAssignment");
+  PetscVector<TypeParam> vector(this->field, this->indexer);
+  const TypeParam val(-10.);
+
+  BOUT_FOR(index, val.getRegion("RGN_ALL")) {
+    vector(index) = val[index];
+  }
+  vector.assemble();
+
+  Vec* vectorPtr = vector.get();
+  PetscScalar* vecContents = nullptr;
+  PetscInt size = 0;
+  VecGetArray(*vectorPtr, &vecContents);
+  VecGetLocalSize(*vectorPtr, &size);
+  ASSERT_EQ(size, this->field.size());
+  TypeParam result = vector.toField();
+  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) { EXPECT_EQ(result[i], val[i]); }
+}
+
 // Test getting elements
 TYPED_TEST(PetscVectorTest, TestGetElements) {
   PetscVector<TypeParam> vector(this->field, this->indexer);
   BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     vector(i) = (2.5 * this->field[i] - 1.0);
   }
+  vector.assemble();
+  TypeParam result = vector.toField();
   Vec* rawvec = vector.get();
-  PetscScalar* vecContents;
+  PetscScalar* vecContents = nullptr;
   VecAssemblyBegin(*rawvec);
   VecAssemblyEnd(*rawvec);
   VecGetArray(*rawvec, &vecContents);
-  TypeParam result = vector.toField();
   BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     EXPECT_EQ(result[i], 2.5 * this->field[i] - 1.0);
   }
@@ -163,19 +184,6 @@ TYPED_TEST(PetscVectorTest, TestGetElementsConst) {
     const BoutReal element = vector(i);
     EXPECT_EQ(element, this->field[i]);
   }
-}
-
-// Test assemble
-TYPED_TEST(PetscVectorTest, TestAssemble) {
-  PetscVector<TypeParam> vector(this->field, this->indexer);
-  Vec* rawvec = vector.get();
-  const PetscInt i = 4;
-  const PetscScalar r = 3.141592;
-  VecSetValues(*rawvec, 1, &i, &r, INSERT_VALUES);
-  vector.assemble();
-  PetscScalar* vecContents;
-  VecGetArray(*rawvec, &vecContents);
-  ASSERT_EQ(vecContents[i], r);
 }
 
 #ifdef PETSC_USE_DEBUG
@@ -201,14 +209,18 @@ TYPED_TEST(PetscVectorTest, TestGetOutOfBounds) {
 }
 #endif // CHECKLEVEL >= 3
 
-// Test trying to use both INSERT_VALUES and ADD_VALUES
 TYPED_TEST(PetscVectorTest, TestMixedSetting) {
   PetscVector<TypeParam> vector(this->field, this->indexer);
-  typename TypeParam::ind_type i = *(this->field.getRegion("RGN_NOBNDRY").begin());
-  typename TypeParam::ind_type j(i.ind + 1);
+  typename TypeParam::ind_type index1 = *(this->field.getRegion("RGN_NOBNDRY").begin());
+  typename TypeParam::ind_type index2(index1.ind + 1);
   const PetscScalar r = 3.141592;
-  vector(i) = r;
-  EXPECT_THROW(vector(j) += r, BoutException);
+  vector(index1) = r;
+  vector(index2) += r;
+  vector.assemble();
+  PetscScalar* vecContents = nullptr;
+  VecGetArray(*(vector.get()), &vecContents);
+  ASSERT_EQ(vecContents[index1.ind], r);
+  ASSERT_EQ(vecContents[index2.ind], this->field[index2] + r);
 }
 
 // Test destroy

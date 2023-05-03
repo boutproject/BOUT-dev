@@ -33,8 +33,10 @@
 #include "bout/build_config.hxx"
 
 #include <algorithm>
+#include <iterator>
 #include <memory>
 #include <petscsystypes.h>
+#include <petscvec.h>
 #include <type_traits>
 #include <vector>
 
@@ -61,6 +63,16 @@ template <class T>
 void swap(PetscVector<T>& first, PetscVector<T>& second);
 
 template <class T>
+inline MPI_Comm getComm([[maybe_unused]] const T& field) {
+  return BoutComm::get();
+}
+
+template <>
+inline MPI_Comm getComm([[maybe_unused]] const FieldPerp& field) {
+  return field.getMesh()->getXcomm();
+}
+
+template <class T>
 class PetscVector {
 public:
   static_assert(bout::utils::is_Field<T>::value, "PetscVector only works with Fields");
@@ -73,24 +85,19 @@ public:
     }
   };
 
-  /// Default constructor does nothing
   PetscVector() : vector(new Vec{}) {}
   ~PetscVector() = default;
 
-  /// Copy constructor
   PetscVector(const PetscVector<T>& v)
       : vector(new Vec()), indexConverter(v.indexConverter),
-        location(v.location), initialised(v.initialised), vector_values(v.vector_values),
-        vector_indices(v.vector_indices) {
+        location(v.location), initialised(v.initialised), vector_values(v.vector_values) {
     VecDuplicate(*v.vector, vector.get());
     VecCopy(*v.vector, *vector);
   }
 
-  /// Move constrcutor
   PetscVector(PetscVector<T>&& v) noexcept
       : indexConverter(v.indexConverter), location(v.location),
-        initialised(v.initialised), vector_values(std::move(v.vector_values)),
-        vector_indices(std::move(v.vector_indices)) {
+        initialised(v.initialised), vector_values(std::move(v.vector_values)) {
     std::swap(vector, v.vector);
     v.initialised = false;
   }
@@ -99,12 +106,14 @@ public:
   PetscVector(const T& field, IndexerPtr<T> indConverter)
       : vector(new Vec()), indexConverter(indConverter),
         location(field.getLocation()), initialised(true),
-        vector_values(indexConverter->size()), vector_indices(indexConverter->size()) {
+        vector_values(field.size()) {
     ASSERT1(indConverter->getMesh() == field.getMesh());
-    MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? field.getMesh()->getXcomm() : BoutComm::get();
+    MPI_Comm comm = getComm(field);
+
     const int size = indexConverter->size();
     VecCreateMPI(comm, size, PETSC_DECIDE, vector.get());
+    // This allows us to pass negative indices
+    VecSetOption(*vector, VEC_IGNORE_NEGATIVE_INDICES, PETSC_TRUE);
     *this = field;
   }
 
@@ -138,13 +147,7 @@ public:
   PetscVector<T>& operator=(const T& f) {
     ASSERT1(indexConverter); // Needs to have index set
     BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
-      const PetscInt ind = indexConverter->getGlobal(i);
-      if (ind != -1) {
-        // TODO: consider how VecSetValues() could be used where there
-        // are continuous stretches of field data which should be
-        // copied into the vector.
-        VecSetValue(*vector, ind, f[i], INSERT_VALUES);
-      }
+      (*this)(i) = f[i];
     }
     assemble();
     return *this;
@@ -158,15 +161,7 @@ public:
       throw BoutException("Can not return element of uninitialised vector");
     }
 #endif
-    const int global = indexConverter->getGlobal(index);
-#if CHECKLEVEL >= 1
-    if (global == -1) {
-      throw BoutException("Request to return invalid vector element");
-    }
-#endif
-    const auto index_as_int = static_cast<int>(index);
-    vector_indices[index_as_int] = global;
-    return vector_values[index_as_int];
+    return vector_values[index.ind];
   }
 
   BoutReal operator()(const ind_type& index) const {
@@ -192,9 +187,21 @@ public:
   }
 
   void assemble() {
-    VecSetValues(*vector, vector_indices.size(), vector_indices.begin(), vector_values.begin(), INSERT_VALUES);
-    VecAssemblyBegin(*vector);
-    VecAssemblyEnd(*vector);
+    auto ierr = VecSetValues(*vector, vector_values.size(),
+                             indexConverter->getIntIndices().begin(),
+                             vector_values.begin(), INSERT_VALUES);
+    if (ierr < 0) {
+      throw BoutException("PETSc error");
+    }
+
+    ierr = VecAssemblyBegin(*vector);
+    if (ierr < 0) {
+      throw BoutException("PETSc error");
+    }
+    ierr = VecAssemblyEnd(*vector);
+    if (ierr < 0) {
+      throw BoutException("PETSc error");
+    }
   }
 
   void destroy() {
@@ -228,10 +235,9 @@ private:
   PetscLib lib{};
   std::unique_ptr<Vec, VectorDeleter> vector = nullptr;
   IndexerPtr<T> indexConverter;
-  Array<BoutReal> vector_values{};
-  Array<int> vector_indices{};
   CELL_LOC location = CELL_LOC::deflt;
   bool initialised = false;
+  Array<BoutReal> vector_values{};
 };
 
 /*!
