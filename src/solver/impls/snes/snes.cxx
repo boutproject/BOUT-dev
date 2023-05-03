@@ -564,9 +564,9 @@ int SNESSolver::init() {
           BoutComm::get(), nlocal, nlocal,  // Local sizes
           PETSC_DETERMINE, PETSC_DETERMINE, // Global sizes
           3, // Number of nonzero entries in diagonal portion of local submatrix
-          PETSC_NULL,
+          nullptr,
           0, // Number of nonzeros per row in off-diagonal portion of local submatrix
-          PETSC_NULL, &Jmf);
+          nullptr, &Jmf);
 #if PETSC_VERSION_GE(3, 4, 0)
       SNESSetJacobian(snes, Jmf, Jmf, SNESComputeJacobianDefault, this);
 #else
