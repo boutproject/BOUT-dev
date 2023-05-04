@@ -109,9 +109,7 @@ public:
   void initialise() {
     // We need to ensure any _guard_ cells are -1 so we don't include them
     int_indices.reallocate(indices.size());
-    BOUT_FOR(index, indices.getRegion("RGN_GUARDS")) {
-      int_indices[index.ind] = -1;
-    }
+    BOUT_FOR(index, indices.getRegion("RGN_GUARDS")) { int_indices[index.ind] = -1; }
     // Now we can communicate to get global indices from neighbouring processes
     fieldmesh->communicate(indices);
     // Finally, we fill in the global indices including in the
@@ -119,7 +117,6 @@ public:
     BOUT_FOR(index, regionAll) {
       int_indices[index.ind] = static_cast<int>(indices[index]);
     }
-
   }
 
   Mesh* getMesh() const { return fieldmesh; }
@@ -172,9 +169,7 @@ public:
 
   int size() const { return regionAll.size(); }
 
-  const Array<int>& getIntIndices() const {
-    return int_indices;
-  }
+  const Array<int>& getIntIndices() const { return int_indices; }
 
 protected:
   // Must not be const as the index field needs to be mutable in order

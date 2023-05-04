@@ -36,7 +36,7 @@ public:
   IndexerPtr<F> indexer;
 
   PetscVectorTest()
-    : FakeMeshFixture(), field(1.5, bout::globals::mesh),
+      : FakeMeshFixture(), field(1.5, bout::globals::mesh),
         stencil(squareStencil<ind_type>(bout::globals::mesh)),
         indexer(std::make_shared<GlobalIndexer<F>>(bout::globals::mesh, stencil)) {
     PetscErrorPrintf = PetscErrorPrintfNone;
@@ -122,8 +122,8 @@ TYPED_TEST(PetscVectorTest, CopyAssignment) {
   SCOPED_TRACE("CopyAssignment");
   PetscVector<TypeParam> vector(this->field, this->indexer);
   PetscVector<TypeParam> copy = vector;
-  Vec *vectorPtr = vector.get();
-  Vec *copyPtr = copy.get();
+  Vec* vectorPtr = vector.get();
+  Vec* copyPtr = copy.get();
   EXPECT_NE(vectorPtr, copyPtr);
   testVectorsEqual(vectorPtr, copyPtr);
 }
@@ -143,9 +143,7 @@ TYPED_TEST(PetscVectorTest, SetElement) {
   PetscVector<TypeParam> vector(this->field, this->indexer);
   const TypeParam val(-10.);
 
-  BOUT_FOR(index, val.getRegion("RGN_ALL")) {
-    vector(index) = val[index];
-  }
+  BOUT_FOR(index, val.getRegion("RGN_ALL")) { vector(index) = val[index]; }
   vector.assemble();
 
   Vec* vectorPtr = vector.get();

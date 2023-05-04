@@ -694,7 +694,7 @@ namespace bout {
 namespace utils {
 /// Check that \p flag is set in \p bitset
 inline bool flagSet(int bitset, int flag) { return (bitset & flag) != 0; }
-}
-}
+} // namespace utils
+} // namespace bout
 
 #endif // __UTILS_H__

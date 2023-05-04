@@ -355,15 +355,16 @@ TYPED_TEST(PetscMatrixTest, TestYNextPos) {
     EXPECT_THROW(matrix.ynext(1), BoutException);
   } else {
     if (std::is_same<TypeParam, Field3D>::value) {
-      EXPECT_CALL(*transform, getWeightsForYApproximation(
-                    this->indexB.x(), this->indexA.y(), this->indexB.z(), 1))
+      EXPECT_CALL(*transform,
+                  getWeightsForYApproximation(this->indexB.x(), this->indexA.y(),
+                                              this->indexB.z(), 1))
           .Times(2)
           .WillRepeatedly(Return(this->yDownWeights));
     }
     matrix.ynext(1)(this->indexA, this->indexB) = val;
     expected.yup()(this->indexA, this->indexB) = val;
-    Mat *rawmat = matrix.get();
-    Mat *rawexp = expected.get();
+    Mat* rawmat = matrix.get();
+    Mat* rawexp = expected.get();
     MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyBegin(*rawexp, MAT_FINAL_ASSEMBLY);
@@ -383,15 +384,16 @@ TYPED_TEST(PetscMatrixTest, TestYNextNeg) {
     EXPECT_THROW(matrix.ynext(-1), BoutException);
   } else {
     if (std::is_same<TypeParam, Field3D>::value) {
-      EXPECT_CALL(*transform, getWeightsForYApproximation(
-                    this->indexA.x(), this->indexB.y(), this->indexA.z(), -1))
+      EXPECT_CALL(*transform,
+                  getWeightsForYApproximation(this->indexA.x(), this->indexB.y(),
+                                              this->indexA.z(), -1))
           .Times(2)
           .WillRepeatedly(Return(this->yDownWeights));
     }
     matrix.ynext(-1)(this->indexB, this->indexA) = val;
     expected.ydown()(this->indexB, this->indexA) = val;
-    Mat *rawmat = matrix.get();
-    Mat *rawexp = expected.get();
+    Mat* rawmat = matrix.get();
+    Mat* rawexp = expected.get();
     MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyBegin(*rawexp, MAT_FINAL_ASSEMBLY);

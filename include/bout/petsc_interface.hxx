@@ -89,8 +89,8 @@ public:
   ~PetscVector() = default;
 
   PetscVector(const PetscVector<T>& v)
-      : vector(new Vec()), indexConverter(v.indexConverter),
-        location(v.location), initialised(v.initialised), vector_values(v.vector_values) {
+      : vector(new Vec()), indexConverter(v.indexConverter), location(v.location),
+        initialised(v.initialised), vector_values(v.vector_values) {
     VecDuplicate(*v.vector, vector.get());
     VecCopy(*v.vector, *vector);
   }
@@ -104,9 +104,8 @@ public:
 
   /// Construct from a field, copying over the field values
   PetscVector(const T& field, IndexerPtr<T> indConverter)
-      : vector(new Vec()), indexConverter(indConverter),
-        location(field.getLocation()), initialised(true),
-        vector_values(field.size()) {
+      : vector(new Vec()), indexConverter(indConverter), location(field.getLocation()),
+        initialised(true), vector_values(field.size()) {
     ASSERT1(indConverter->getMesh() == field.getMesh());
     MPI_Comm comm = getComm(field);
 
@@ -139,16 +138,14 @@ public:
   }
 
   /// Move assignment
-  PetscVector<T>& operator=(PetscVector<T>&& rhs)  noexcept {
+  PetscVector<T>& operator=(PetscVector<T>&& rhs) noexcept {
     swap(*this, rhs);
     return *this;
   }
 
   PetscVector<T>& operator=(const T& f) {
     ASSERT1(indexConverter); // Needs to have index set
-    BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
-      (*this)(i) = f[i];
-    }
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) { (*this)(i) = f[i]; }
     assemble();
     return *this;
   }
@@ -269,8 +266,8 @@ public:
 
   /// Copy constructor
   PetscMatrix(const PetscMatrix<T>& m)
-      : matrix(new Mat()), indexConverter(m.indexConverter), pt(m.pt),
-        yoffset(m.yoffset), initialised(m.initialised) {
+      : matrix(new Mat()), indexConverter(m.indexConverter), pt(m.pt), yoffset(m.yoffset),
+        initialised(m.initialised) {
     MatDuplicate(*m.matrix, MAT_COPY_VALUES, matrix.get());
   }
 
@@ -312,7 +309,7 @@ public:
     return *this;
   }
   /// Move assignment
-  PetscMatrix<T>& operator=(PetscMatrix<T>&& rhs)  noexcept {
+  PetscMatrix<T>& operator=(PetscMatrix<T>&& rhs) noexcept {
     matrix = rhs.matrix;
     indexConverter = rhs.indexConverter;
     pt = rhs.pt;
