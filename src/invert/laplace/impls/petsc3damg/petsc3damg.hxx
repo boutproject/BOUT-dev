@@ -194,10 +194,10 @@ private:
   bool issetC = false;
   bool issetE = false;
   bool updateRequired = true;
-  int lower_boundary_flags;
-  int upper_boundary_flags;
 
   Options* opts;       // Laplace Section Options Object
+  int lower_boundary_flags;
+  int upper_boundary_flags;
   std::string ksptype; ///< KSP solver type
   std::string pctype;  ///< Preconditioner type
 
@@ -217,7 +217,7 @@ private:
   IndexerPtr<Field3D> indexer;
   PetscMatrix<Field3D> operator3D;
   KSP ksp;
-  bool kspInitialised;
+  bool kspInitialised = false;
   PetscLib lib;
 
   // These are the implemented flags

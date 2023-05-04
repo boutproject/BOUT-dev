@@ -39,14 +39,35 @@
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
+#ifdef PETSC_HAVE_HYPRE
+static constexpr auto DEFAULT_PC_TYPE = PCHYPRE;
+#else
+static constexpr auto DEFAULT_PC_TYPE = PCGAMG;
+#endif // PETSC_HAVE_HYPRE
+
 LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
                                      Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
+      opts(opt == nullptr ? &(Options::root()["laplace"]) : opt),
+      lower_boundary_flags((*opts)["lower_boundary_flags"].withDefault(0)),
+      upper_boundary_flags((*opts)["upper_boundary_flags"].withDefault(0)),
+      ksptype((*opts)["ksptype"].doc("KSP solver type").withDefault(KSPGMRES)),
+      pctype((*opts)["pctype"].doc("PC type").withDefault(DEFAULT_PC_TYPE)),
+      richardson_damping_factor((*opts)["richardson_damping_factor"].withDefault(1.0)),
+      chebyshev_max((*opts)["chebyshev_max"].withDefault(100.0)),
+      chebyshev_min((*opts)["chebyshev_min"].withDefault(0.01)),
+      gmres_max_steps((*opts)["gmres_max_steps"].withDefault(30)),
+      rtol((*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5)),
+      atol((*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-5)),
+      dtol((*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e6)),
+      maxits(
+          (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000)),
+      direct((*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false)),
       lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
       indexer(std::make_shared<GlobalIndexer<Field3D>>(
           localmesh, getStencil(localmesh, lowerY, upperY))),
-      operator3D(indexer), kspInitialised(false),
-      lib(opt == nullptr ? &(Options::root()["laplace"]) : opt) {
+      operator3D(indexer), lib(opts) {
+
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
   // Initialise PETSc objects
@@ -57,16 +78,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   Ex.setLocation(location);
   Ez.setLocation(location);
 
-  // Get Options in Laplace Section
-  if (!opt) {
-    opts = Options::getRoot()->getSection("laplace");
-  } else {
-    opts = opt;
-  }
-
   // Get y boundary flags
-  lower_boundary_flags = (*opts)["lower_boundary_flags"].withDefault(0);
-  upper_boundary_flags = (*opts)["upper_boundary_flags"].withDefault(0);
 
 #if CHECK > 0
   // Checking flags are set to something which is not implemented
@@ -103,36 +115,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   }
 #endif
 
-  // Get Tolerances for KSP solver
-  rtol = (*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5);
-  atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-5);
-  dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e6);
-  maxits = (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000);
-
-  richardson_damping_factor = (*opts)["richardson_damping_factor"].withDefault(1.0);
-  chebyshev_max = (*opts)["chebyshev_max"].withDefault(100.0);
-  chebyshev_min = (*opts)["chebyshev_min"].withDefault(0.01);
-  gmres_max_steps = (*opts)["gmres_max_steps"].withDefault(30);
-
-  // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
-  ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSPGMRES);
-
-  // Get preconditioner type
-#ifdef PETSC_HAVE_HYPRE
-  // PETSc was compiled with Hypre
-  pctype = (*opts)["pctype"].doc("PC type").withDefault(PCHYPRE);
-#else
-  // Hypre not available
-  pctype = (*opts)["pctype"].doc("PC type").withDefault(PCGAMG);
-#endif // PETSC_HAVE_HYPRE
-
-  // Get direct solver switch
-  direct = (*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false);
   if (direct) {
-    output << "\n"
-           << "Using LU decompostion for direct solution of system"
-           << "\n"
-           << "\n";
+    output.write("\nUsing LU decompostion for direct solution of system\n\n");
   }
 
   // Set up boundary conditions in operator
