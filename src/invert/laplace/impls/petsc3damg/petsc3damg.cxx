@@ -39,6 +39,8 @@
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
+using bout::utils::flagSet;
+
 #ifdef PETSC_HAVE_HYPRE
 static constexpr auto DEFAULT_PC_TYPE = PCHYPRE;
 #else
@@ -78,36 +80,32 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   Ex.setLocation(location);
   Ez.setLocation(location);
 
-  // Get y boundary flags
-
 #if CHECK > 0
   // Checking flags are set to something which is not implemented
   // This is done binary (which is possible as each flag is a power of 2)
-  if ((global_flags & ~implemented_flags) != 0) {
-    if ((global_flags & INVERT_4TH_ORDER) != 0) {
-      output << "For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
-                "setting INVERT_4TH_ORDER flag"
-             << "\n";
+  if (flagSet(global_flags, INVERT_4TH_ORDER)) {
+    output.write("For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
+                 "setting INVERT_4TH_ORDER flag\n");
+  }
+
+  if (flagSet(global_flags, ~implemented_flags)) {
+    throw BoutException("Attempted to set global Laplacian inversion flag that is not "
+                        "implemented in petsc_laplace.cxx");
+  }
+
+  auto unimplementedBoundaryFlag = [](int boundary_flag,
+                                      const std::string& name) -> void {
+    if (flagSet(boundary_flag, ~implemented_boundary_flags)) {
+      throw BoutException("Attempted to set Laplacian inversion {} boundary flag "
+                          "that is not implemented in petsc3damg.cxx",
+                          name);
     }
-    throw BoutException("Attempted to set Laplacian inversion flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
-  if ((inner_boundary_flags & ~implemented_boundary_flags) != 0) {
-    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
-  if ((outer_boundary_flags & ~implemented_boundary_flags) != 0) {
-    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
-  if ((lower_boundary_flags & ~implemented_boundary_flags) != 0) {
-    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
-  if ((upper_boundary_flags & ~implemented_boundary_flags) != 0) {
-    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
+  };
+  unimplementedBoundaryFlag(inner_boundary_flags, "inner");
+  unimplementedBoundaryFlag(outer_boundary_flags, "outer");
+  unimplementedBoundaryFlag(lower_boundary_flags, "lower");
+  unimplementedBoundaryFlag(upper_boundary_flags, "upper");
+
   if (localmesh->periodicX) {
     throw BoutException("LaplacePetsc3dAmg does not work with periodicity in the x "
                         "direction (localmesh->PeriodicX == true). Change boundary "
@@ -120,58 +118,57 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   }
 
   // Set up boundary conditions in operator
+  const bool inner_X_neumann = flagSet(inner_boundary_flags, INVERT_AC_GRAD);
+  const auto inner_X_BC = inner_X_neumann ? -1. / coords->dx / sqrt(coords->g_11) : 0.5;
+  const auto inner_X_BC_plus = inner_X_neumann ? -inner_X_BC : 0.5;
+
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
-    if ((inner_boundary_flags & INVERT_AC_GRAD) != 0) {
-      // Neumann on inner X boundary
-      operator3D(i, i) = -1. / coords->dx[i] / sqrt(coords->g_11[i]);
-      operator3D(i, i.xp()) = 1. / coords->dx[i] / sqrt(coords->g_11[i]);
-    } else {
-      // Dirichlet on inner X boundary
-      operator3D(i, i) = 0.5;
-      operator3D(i, i.xp()) = 0.5;
-    }
+    operator3D(i, i) = inner_X_BC[i];
+    operator3D(i, i.xp()) = inner_X_BC_plus[i];
   }
+
+  const bool outer_X_neumann = flagSet(outer_boundary_flags, INVERT_AC_GRAD);
+  const auto outer_X_BC = outer_X_neumann ? 1. / coords->dx / sqrt(coords->g_11) : 0.5;
+  const auto outer_X_BC_minus = outer_X_neumann ? -outer_X_BC : 0.5;
 
   BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
-    if ((outer_boundary_flags & INVERT_AC_GRAD) != 0) {
-      // Neumann on outer X boundary
-      operator3D(i, i) = 1. / coords->dx[i] / sqrt(coords->g_11[i]);
-      operator3D(i, i.xm()) = -1. / coords->dx[i] / sqrt(coords->g_11[i]);
-    } else {
-      // Dirichlet on outer X boundary
-      operator3D(i, i) = 0.5;
-      operator3D(i, i.xm()) = 0.5;
-    }
+    operator3D(i, i) = outer_X_BC[i];
+    operator3D(i, i.xm()) = outer_X_BC_minus[i];
   }
+
+  const bool lower_Y_neumann = flagSet(lower_boundary_flags, INVERT_AC_GRAD);
+  const auto lower_Y_BC = lower_Y_neumann ? -1. / coords->dy / sqrt(coords->g_22) : 0.5;
+  const auto lower_Y_BC_plus = lower_Y_neumann ? -lower_Y_BC : 0.5;
 
   BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
-    if ((lower_boundary_flags & INVERT_AC_GRAD) != 0) {
-      // Neumann on lower Y boundary
-      operator3D(i, i) = -1. / coords->dy[i] / sqrt(coords->g_22[i]);
-      operator3D(i, i.yp()) = 1. / coords->dy[i] / sqrt(coords->g_22[i]);
-    } else {
-      // Dirichlet on lower Y boundary
-      operator3D(i, i) = 0.5;
-      operator3D(i, i.yp()) = 0.5;
-    }
+    operator3D(i, i) = lower_Y_BC[i];
+    operator3D(i, i.yp()) = lower_Y_BC_plus[i];
   }
 
+  const bool upper_Y_neumann = flagSet(upper_boundary_flags, INVERT_AC_GRAD);
+  const auto upper_Y_BC = upper_Y_neumann ? 1. / coords->dy / sqrt(coords->g_22) : 0.5;
+  const auto upper_Y_BC_minus = upper_Y_neumann ? -upper_Y_BC : 0.5;
+
   BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
-    if ((upper_boundary_flags & INVERT_AC_GRAD) != 0) {
-      // Neumann on upper Y boundary
-      operator3D(i, i) = 1. / coords->dy[i] / sqrt(coords->g_22[i]);
-      operator3D(i, i.ym()) = -1. / coords->dy[i] / sqrt(coords->g_22[i]);
-    } else {
-      // Dirichlet on upper Y boundary
-      operator3D(i, i) = 0.5;
-      operator3D(i, i.ym()) = 0.5;
-    }
+    operator3D(i, i) = upper_Y_BC[i];
+    operator3D(i, i.ym()) = upper_Y_BC_minus[i];
   }
 }
 
 LaplacePetsc3dAmg::~LaplacePetsc3dAmg() {
   if (kspInitialised) {
     KSPDestroy(&ksp);
+  }
+}
+
+void setBC(PetscVector<Field3D>& rhs, const Field3D& b_in,
+           const Region<Field3D::ind_type>& region, int boundary_flags,
+           const Field3D& x0) {
+  if (flagSet(boundary_flags, INVERT_RHS)) {
+    BOUT_FOR(index, region) { ASSERT1(std::isfinite(b_in[index])); }
+  } else {
+    const auto& outer_X_BC = (flagSet(boundary_flags, INVERT_SET)) ? x0 : 0.0;
+    BOUT_FOR_SERIAL(index, region) { rhs(index) = outer_X_BC[index]; }
   }
 }
 
@@ -193,45 +190,10 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
 
   // Adjust vectors to represent boundary conditions and check that
   // boundary cells are finite
-  BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
-    const BoutReal val = (inner_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(std::isfinite(x0[i]));
-    if (!(inner_boundary_flags & INVERT_RHS)) {
-      rhs(i) = val;
-    } else {
-      ASSERT1(std::isfinite(b_in[i]));
-    }
-  }
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
-    const BoutReal val = (outer_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(std::isfinite(x0[i]));
-    if (!(outer_boundary_flags & INVERT_RHS)) {
-      rhs(i) = val;
-    } else {
-      ASSERT1(std::isfinite(b_in[i]));
-    }
-  }
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
-    const BoutReal val = (lower_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(std::isfinite(x0[i]));
-    if (!(lower_boundary_flags & INVERT_RHS)) {
-      rhs(i) = val;
-    } else {
-      ASSERT1(std::isfinite(b_in[i]));
-    }
-  }
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
-    const BoutReal val = (upper_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(std::isfinite(x0[i]));
-    if (!(upper_boundary_flags & INVERT_RHS)) {
-      rhs(i) = val;
-    } else {
-      ASSERT1(std::isfinite(b_in[i]));
-    }
-  }
+  setBC(rhs, b_in, indexer->getRegionInnerX(), inner_boundary_flags, x0);
+  setBC(rhs, b_in, indexer->getRegionOuterX(), outer_boundary_flags, x0);
+  setBC(rhs, b_in, indexer->getRegionLowerY(), lower_boundary_flags, x0);
+  setBC(rhs, b_in, indexer->getRegionUpperY(), upper_boundary_flags, x0);
 
   rhs.assemble();
   guess.assemble();
