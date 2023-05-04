@@ -107,11 +107,19 @@ public:
   /// processes and, if possible, calculating the sparsity pattern of
   /// any matrices.
   void initialise() {
-    fieldmesh->communicate(indices);
+    // We need to ensure any _guard_ cells are -1 so we don't include them
     int_indices.reallocate(indices.size());
-    BOUT_FOR(index, indices.getRegion("RGN_ALL")) {
+    BOUT_FOR(index, indices.getRegion("RGN_GUARDS")) {
+      int_indices[index.ind] = -1;
+    }
+    // Now we can communicate to get global indices from neighbouring processes
+    fieldmesh->communicate(indices);
+    // Finally, we fill in the global indices including in the
+    // _boundaries_ (*not* guards)
+    BOUT_FOR(index, regionAll) {
       int_indices[index.ind] = static_cast<int>(indices[index]);
     }
+
   }
 
   Mesh* getMesh() const { return fieldmesh; }
