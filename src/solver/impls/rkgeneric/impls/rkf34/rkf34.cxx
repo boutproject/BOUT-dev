@@ -1,17 +1,15 @@
 #include "rkf34.hxx"
 
-RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
+RKF34Scheme::RKF34Scheme(Options* options) : RKScheme(options, false) {
   //Set characteristics of scheme
   numStages = 5;
   numOrders = 2;
   order = 3;
   label = "rkf34";
-  followHighOrder = false;//true;
 
-  OPTION(options, followHighOrder, followHighOrder);
-  if(followHighOrder){
+  if (followHighOrder) {
     dtfac = 0.9;
-  }else{
+  } else {
     dtfac = 0.9; //Could make this different if needed
   }
 
@@ -21,12 +19,12 @@ RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
   timeCoeffs.reallocate(numStages);
 
   //Zero out arrays (shouldn't be needed, but do for testing)
-  for(int i=0;i<numStages;i++){
-    timeCoeffs[i]=0.;
-    for(int j=0;j<numStages;j++){
+  for (int i = 0; i < numStages; i++) {
+    timeCoeffs[i] = 0.;
+    for (int j = 0; j < numStages; j++) {
       stageCoeffs(i, j) = 0.;
     }
-    for(int j=0;j<numOrders;j++){
+    for (int j = 0; j < numOrders; j++) {
       resultCoeffs(i, j) = 0.;
     }
   }
@@ -76,12 +74,11 @@ RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
   //Level 0
   timeCoeffs[0] = 0.0;
   //Level 1
-  timeCoeffs[1] = 1.0/4.0;
+  timeCoeffs[1] = 1.0 / 4.0;
   //Level 2
-  timeCoeffs[2] = 4.0/9.0;
+  timeCoeffs[2] = 4.0 / 9.0;
   //Level 3
-  timeCoeffs[3] = 6.0/7.0;
+  timeCoeffs[3] = 6.0 / 7.0;
   //Level 4
   timeCoeffs[4] = 1.0;
-
 }

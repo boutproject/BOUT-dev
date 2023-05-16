@@ -37,20 +37,20 @@
  **************************************************************************/
 
 #include "pcr.hxx"
-#include "globals.hxx"
+#include "bout/globals.hxx"
 
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/fft.hxx>
+#include <bout/lapack_routines.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutexception.hxx>
+#include <bout/utils.hxx>
 #include <cmath>
-#include <fft.hxx>
-#include <lapack_routines.hxx>
-#include <utils.hxx>
 
-#include "boutcomm.hxx"
-#include <output.hxx>
+#include "bout/boutcomm.hxx"
+#include <bout/output.hxx>
 
 #include <bout/scorepwrapper.hxx>
 
@@ -61,7 +61,7 @@
 
 using namespace std;
 
-LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
+LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
       C2coef(1.0, localmesh), Dcoef(1.0, localmesh), nmode(maxmode + 1),
       ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
@@ -90,7 +90,9 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in)
 
   // Get options
 
-  OPTION(opt, dst, false);
+  dst = (*opt)["dst"]
+            .doc("Use Discrete Sine Transform in Z to enforce Dirichlet boundaries in Z")
+            .withDefault<bool>(false);
 
   if (dst) {
     nmode = localmesh->LocalNz - 2;
@@ -159,7 +161,8 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
   if (dst) {
     const BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
           localmesh->LocalNz); // ZFFT routine expects input of this length
@@ -206,7 +209,8 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     cr_pcr_solver(a, b, c, bcmplx, xcmplx);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
           localmesh->LocalNz); // ZFFT routine expects input of this length
@@ -229,7 +233,8 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     }
   } else {
     const BoutReal zlength = getUniform(coords->zlength());
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
                                  + 1); // ZFFT routine expects input of this length
@@ -274,7 +279,8 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     cr_pcr_solver(a, b, c, bcmplx, xcmplx);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
                                  + 1); // ZFFT routine expects input of this length
@@ -365,7 +371,8 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
 
   if (dst) {
     const BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
           localmesh->LocalNz); // ZFFT routine expects input of this length
@@ -420,7 +427,8 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
     cr_pcr_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
           localmesh->LocalNz); // ZFFT routine expects input of this length
@@ -447,7 +455,8 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
     }
   } else {
     const BoutReal zlength = getUniform(coords->zlength());
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(localmesh->LocalNz / 2
                                  + 1); // ZFFT routine expects input of this length
@@ -501,7 +510,8 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
     cr_pcr_solver(a3D, b3D, c3D, bcmplx3D, xcmplx3D);
 
     // FFT back to real space
-    BOUT_OMP(parallel) {
+    BOUT_OMP(parallel)
+    {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
                                  + 1); // ZFFT routine expects input of this length
@@ -617,8 +627,7 @@ void LaplacePCR ::cr_pcr_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomplex>& b_mpi
  * to ensure we pass a square system of interior rows to the PCR library.
  */
 void LaplacePCR ::eliminate_boundary_rows(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
-                                          Matrix<dcomplex>& c,
-                                          Matrix<dcomplex>& r) {
+                                          Matrix<dcomplex>& c, Matrix<dcomplex>& r) {
 
   if (localmesh->firstX()) {
     for (int kz = 0; kz < nsys; kz++) {
@@ -626,10 +635,8 @@ void LaplacePCR ::eliminate_boundary_rows(Matrix<dcomplex>& a, Matrix<dcomplex>&
       // This fixes the case where INVERT_BNDRY_ONE is true, but there are more
       // than 1 guard cells.
       for (int ix = 1; ix < localmesh->xstart + 1; ix++) {
-        b(kz, ix) =
-            b(kz, ix) - c(kz, ix - 1) * a(kz, ix) / b(kz, ix - 1);
-        r(kz, ix) =
-            r(kz, ix) - r(kz, ix - 1) * a(kz, ix) / b(kz, ix - 1);
+        b(kz, ix) = b(kz, ix) - c(kz, ix - 1) * a(kz, ix) / b(kz, ix - 1);
+        r(kz, ix) = r(kz, ix) - r(kz, ix - 1) * a(kz, ix) / b(kz, ix - 1);
         a(kz, ix) = 0.0;
       }
     }
@@ -1083,23 +1090,25 @@ void LaplacePCR ::verify_solution(const Matrix<dcomplex>& a_ver,
       y_ver(kz, i) = a_ver(kz, i) * x_ver(kz, i) + b_ver(kz, i) * x_ver(kz, i + 1)
                      + c_ver(kz, i) * x_ver(kz, i + 2);
       error(kz, i) = y_ver(kz, i) - r_ver(kz, i);
-      if(std::abs(error(kz, i)) > max_error){
+      if (std::abs(error(kz, i)) > max_error) {
         max_loc_x = i;
         max_loc_z = kz;
       }
 
       max_error = std::max(max_error, std::abs(error(kz, i)));
-      if( error(kz, i).real() > 0.01 || error(kz, i).imag() > 0.01 ){
-	      output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, "
-			   "x={}, x+ = {}\n",
-			   error(kz, i).real(), r_ver(kz, i).real(), y_ver(kz, i).real(), kz, i,
-			   a_ver(kz, i).real(), b_ver(kz, i).real(), c_ver(kz, i).real(),
-			   x_ver(kz, i).real(), x_ver(kz, i + 1).real(), x_ver(kz, i + 2).real());
-	      output.write("abs error imag {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, "
-			   "x={}, x+ = {}\n",
-			   error(kz, i).imag(), r_ver(kz, i).imag(), y_ver(kz, i).imag(), kz, i,
-			   a_ver(kz, i).imag(), b_ver(kz, i).imag(), c_ver(kz, i).imag(),
-			   x_ver(kz, i).imag(), x_ver(kz, i + 1).imag(), x_ver(kz, i + 2).imag());
+      if (error(kz, i).real() > 0.01 || error(kz, i).imag() > 0.01) {
+        output.write("abs error {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, "
+                     "x={}, x+ = {}\n",
+                     error(kz, i).real(), r_ver(kz, i).real(), y_ver(kz, i).real(), kz, i,
+                     a_ver(kz, i).real(), b_ver(kz, i).real(), c_ver(kz, i).real(),
+                     x_ver(kz, i).real(), x_ver(kz, i + 1).real(),
+                     x_ver(kz, i + 2).real());
+        output.write(
+            "abs error imag {}, r={}, y={}, kz {}, i {},  a={}, b={}, c={}, x-= {}, "
+            "x={}, x+ = {}\n",
+            error(kz, i).imag(), r_ver(kz, i).imag(), y_ver(kz, i).imag(), kz, i,
+            a_ver(kz, i).imag(), b_ver(kz, i).imag(), c_ver(kz, i).imag(),
+            x_ver(kz, i).imag(), x_ver(kz, i + 1).imag(), x_ver(kz, i + 2).imag());
       }
     }
   }

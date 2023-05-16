@@ -2,7 +2,7 @@
 
 """
 
-_yesno = {'"yes"': True, '"no"': False}
+_yesno = {'"yes"': True, '"no"': False, "yes": True, "no": False}
 
 _vars = dict(
     BOUT_LIB_PATH="@BOUT_LIB_PATH@",
@@ -48,15 +48,11 @@ for k, v in config.items():
             v = v.replace(f"${e}", s)
         config[k] = v
 
-
-@property
-def has():
-    """Get a dict of the enabled features"""
-    _has = {}
-    for k in config:
-        if k.startswith("has_"):
-            _has[k[4:]] = _yesno[config[k]]
-    return _has
+"""Get a dict of the enabled features"""
+has = {}
+for k in config:
+    if k.startswith("has_"):
+        has[k[4:]] = _yesno[config[k]]
 
 
 def isMetric2D():

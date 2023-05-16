@@ -8,15 +8,15 @@
 #include <memory>
 
 #include "../../src/mesh/impls/bout/boutmesh.hxx"
-#include "boutcomm.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "fieldperp.hxx"
-#include "unused.hxx"
+#include "bout/boutcomm.hxx"
 #include "bout/coordinates.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/fieldgroup.hxx"
+#include "bout/fieldperp.hxx"
 #include "bout/mesh.hxx"
 #include "bout/mpi_wrapper.hxx"
+#include "bout/unused.hxx"
 
 class Options;
 
@@ -47,7 +47,7 @@ public:
       : BoutMesh((nxpe * (nx - 2)) + 2, nype * ny, nz, 1, 1, nxpe, nype, pe_xind,
                  pe_yind),
         yUpMesh(nullptr), yDownMesh(nullptr), xInMesh(nullptr), xOutMesh(nullptr),
-	mpiSmart(new FakeMpiWrapper(this)) {
+        mpiSmart(new FakeMpiWrapper(this)) {
     StaggerGrids = false;
     periodicX = false;
     IncIntShear = false;
@@ -91,14 +91,14 @@ public:
     if (xInMesh != nullptr && xInMesh != this) {
       FieldGroup xInGroup = makeGroup(xInMesh, ids);
       if (!disable_corners) {
-	xInMesh->wait(xInMesh->sendY(xInGroup, nullptr));
+        xInMesh->wait(xInMesh->sendY(xInGroup, nullptr));
       }
       xInMesh->parentSendX(xInGroup, nullptr, disable_corners);
     }
     if (xOutMesh != nullptr && xOutMesh != this) {
       FieldGroup xOutGroup = makeGroup(xOutMesh, ids);
       if (!disable_corners) {
-	xOutMesh->wait(xOutMesh->sendY(xOutGroup, nullptr));
+        xOutMesh->wait(xOutMesh->sendY(xOutGroup, nullptr));
       }
       xOutMesh->parentSendX(xOutGroup, nullptr, disable_corners);
     }
@@ -225,17 +225,13 @@ public:
       // return the appropriate index. Some corners cells are actually
       // sent along with the rest of the edge. This can be predicted
       // based on teh value of xy[In|Out][Up|Down]Mesh_SendsInner.
-      if (mesh->yUpMesh && wait_any_count < 0 && mesh->communicatingY &&
-	  mesh->UpXSplitIndex() > 0) {
+      if (mesh->yUpMesh && wait_any_count < 0 && mesh->communicatingY) {
         *indx = wait_any_count = 0;
-      } else if (mesh->yDownMesh && wait_any_count < 1 && mesh->communicatingY &&
-		 mesh->UpXSplitIndex() == 0) {
+      } else if (mesh->yDownMesh && wait_any_count < 1 && mesh->communicatingY) {
         *indx = wait_any_count = 1;
-      } else if (mesh->yDownMesh && wait_any_count < 2 && mesh->communicatingY &&
-		 mesh->DownXSplitIndex() > 0) {
+      } else if (mesh->yDownMesh && wait_any_count < 2 && mesh->communicatingY) {
         *indx = wait_any_count = 2;
-      } else if (mesh->yDownMesh && wait_any_count < 3 && mesh->communicatingY &&
-		 mesh->DownXSplitIndex() == 0) {
+      } else if (mesh->yDownMesh && wait_any_count < 3 && mesh->communicatingY) {
         *indx = wait_any_count = 3;
       } else if (mesh->xInMesh && wait_any_count < 4 && mesh->communicatingX) {
         *indx = wait_any_count = 4;
@@ -244,8 +240,8 @@ public:
       } else {
         *indx = MPI_UNDEFINED;
         wait_any_count = -1;
-	mesh->communicatingX = false;
-	mesh->communicatingY = false;
+        mesh->communicatingX = false;
+        mesh->communicatingY = false;
       }
       return 0;
     }

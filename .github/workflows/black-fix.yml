@@ -1,6 +1,15 @@
 name: black
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - '**.py'
+      - 'bin/**'
+      - '**/runtest'
+      - '**/run'
+      - 'tests/integrated/test_suite'
+      - 'tests/requirements/*'
+      - 'tools/tokamak_grids/**'
 
 defaults:
   run:
@@ -11,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         ref: ${{ github.head_ref }}
 
@@ -30,8 +39,8 @@ jobs:
       run: |
         pwd
         ls
-        $HOME/.local/bin/black tests/ tools/ $(grep '^#.*python.*$' bin/ tests/ tools/ src/ -Ir|cut -d: -f1|grep -v _boutcore_build)
+        $HOME/.local/bin/black tests/ tools/ $(grep -EIlr '^#!.*python.*$' bin/ tests/ tools/ src/ | grep -v _boutpp_build)
 
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: "[skip ci] Apply black changes"
+        commit_message: "Apply black changes"

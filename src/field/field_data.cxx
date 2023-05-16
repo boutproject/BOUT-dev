@@ -1,11 +1,11 @@
 
+#include "bout/unused.hxx"
+#include <bout/boundary_factory.hxx>
+#include <bout/field_data.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
-#include <globals.hxx>
-#include <field_data.hxx>
-#include <boundary_factory.hxx>
-#include <output.hxx>
-#include <field_factory.hxx>
-#include "unused.hxx"
+#include <bout/output.hxx>
 
 namespace bout {
 /// Make sure \p location is a sensible value for \p mesh
@@ -67,10 +67,11 @@ FieldData::FieldData(const FieldData& other) {
 }
 
 FieldData::~FieldData() {
-  if(!boundaryIsCopy) {
+  if (!boundaryIsCopy) {
     // Delete the boundary operations
-    for(const auto& bndry : bndry_op)
+    for (const auto& bndry : bndry_op) {
       delete bndry;
+    }
   }
 }
 
@@ -143,8 +144,9 @@ void FieldData::setBoundary(const std::string& name) {
   /// Loop over the mesh boundary regions
   for (const auto& reg : mesh->getBoundaries()) {
     auto* op = dynamic_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
-    if (op != nullptr)
+    if (op != nullptr) {
       bndry_op.push_back(op);
+    }
     output_info << endl;
   }
 
@@ -153,8 +155,9 @@ void FieldData::setBoundary(const std::string& name) {
   /// Loop over the mesh parallel boundary regions
   for (const auto& reg : mesh->getBoundariesPar()) {
     auto* op = dynamic_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
-    if (op != nullptr)
+    if (op != nullptr) {
       bndry_op_par.push_back(op);
+    }
     output_info << endl;
   }
 
@@ -162,7 +165,7 @@ void FieldData::setBoundary(const std::string& name) {
   boundaryIsCopy = false;
 }
 
-void FieldData::copyBoundary(const FieldData &f) {
+void FieldData::copyBoundary(const FieldData& f) {
   bndry_op = f.bndry_op;
   bndry_op_par = f.bndry_op_par;
   boundaryIsCopy = true;
@@ -170,7 +173,7 @@ void FieldData::copyBoundary(const FieldData &f) {
 }
 
 //JMAD
-void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
+void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location) {
   addBndryGenerator(std::make_shared<FieldFunction>(userfunc), location);
 }
 
@@ -192,8 +195,9 @@ void FieldData::addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location) {
 
 FieldGeneratorPtr FieldData::getBndryGenerator(BndryLoc location) {
   auto it = bndry_generator.find(location);
-  if(it == bndry_generator.end())
+  if (it == bndry_generator.end()) {
     return nullptr;
+  }
 
   return it->second;
 }
@@ -228,7 +232,7 @@ CELL_LOC FieldData::getLocation() const {
   return location;
 }
 
-Coordinates* FieldData::getCoordinates() const {
+BOUT_HOST_DEVICE Coordinates* FieldData::getCoordinates() const {
   auto fieldCoordinates_shared = fieldCoordinates.lock();
   if (fieldCoordinates_shared) {
     return fieldCoordinates_shared.get();
@@ -237,7 +241,7 @@ Coordinates* FieldData::getCoordinates() const {
   return fieldCoordinates.lock().get();
 }
 
-Coordinates* FieldData::getCoordinates(CELL_LOC loc) const {
+BOUT_HOST_DEVICE Coordinates* FieldData::getCoordinates(CELL_LOC loc) const {
   if (loc == CELL_DEFAULT) {
     return getCoordinates();
   }

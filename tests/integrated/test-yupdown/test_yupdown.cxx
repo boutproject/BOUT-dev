@@ -1,14 +1,17 @@
-#include <bout.hxx>
-#include <derivs.hxx>
+#include <bout/bout.hxx>
+#include <bout/derivs.hxx>
 
 // Y derivative assuming field is aligned in Y
 const Field3D DDY_aligned(const Field3D& f) {
   Field3D result = emptyFrom(f);
   const auto* mesh = f.getMesh();
-  for (int i = 0; i < mesh->LocalNx; i++)
-    for (int j = mesh->ystart; j <= mesh->yend; j++)
-      for (int k = 0; k < mesh->LocalNz; k++)
+  for (int i = 0; i < mesh->LocalNx; i++) {
+    for (int j = mesh->ystart; j <= mesh->yend; j++) {
+      for (int k = 0; k < mesh->LocalNz; k++) {
         result(i, j, k) = 0.5 * (f(i, j + 1, k) - f(i, j - 1, k));
+      }
+    }
+  }
 
   return result;
 }
@@ -48,8 +51,11 @@ int main(int argc, char** argv) {
   ddy_check = fromFieldAligned(ddy_check, "RGN_NOBNDRY");
   mesh->communicate(ddy_check);
 
-  SAVE_ONCE3(ddy, ddy2, ddy_check);
-  bout::globals::dump.write();
+  Options dump;
+  dump["ddy"] = ddy;
+  dump["ddy2"] = ddy2;
+  dump["ddy_check"] = ddy_check;
+  bout::writeDefaultOutputFile(dump);
 
   bout::checkForUnusedOptions();
   BoutFinalise();

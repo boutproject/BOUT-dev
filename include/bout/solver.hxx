@@ -38,12 +38,11 @@
 
 #include "bout/build_config.hxx"
 
-#include "bout_types.hxx"
-#include "boutexception.hxx"
-#include "datafile.hxx"
-#include "options.hxx"
-#include "unused.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/monitor.hxx"
+#include "bout/options.hxx"
+#include "bout/unused.hxx"
 
 #include <memory>
 
@@ -64,12 +63,12 @@ using Jacobian = int (*)(BoutReal t);
 /// Solution monitor, called each timestep
 using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal lastdt);
 
-//#include "globals.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
+//#include "bout/globals.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/generic_factory.hxx"
+#include "bout/vector2d.hxx"
+#include "bout/vector3d.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "physicsmodel.hxx"
@@ -93,10 +92,10 @@ constexpr auto SOLVERIMEXBDF2 = "imexbdf2";
 constexpr auto SOLVERSNES = "snes";
 constexpr auto SOLVERRKGENERIC = "rkgeneric";
 
-enum class SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
+enum class SOLVER_VAR_OP { LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS };
 
 /// A type to set where in the list monitors are added
-enum class MonitorPosition {BACK, FRONT};
+enum class MonitorPosition { BACK, FRONT };
 
 class SolverFactory : public Factory<Solver, SolverFactory, Options*> {
 public:
@@ -251,10 +250,14 @@ public:
 
   /// Add a variable to be solved. This must be done in the
   /// initialisation stage, before the simulation starts.
-  virtual void add(Field2D& v, const std::string& name, const std::string& description = "");
-  virtual void add(Field3D& v, const std::string& name, const std::string& description = "");
-  virtual void add(Vector2D& v, const std::string& name, const std::string& description = "");
-  virtual void add(Vector3D& v, const std::string& name, const std::string& description = "");
+  virtual void add(Field2D& v, const std::string& name,
+                   const std::string& description = "");
+  virtual void add(Field3D& v, const std::string& name,
+                   const std::string& description = "");
+  virtual void add(Vector2D& v, const std::string& name,
+                   const std::string& description = "");
+  virtual void add(Vector3D& v, const std::string& name,
+                   const std::string& description = "");
 
   /// Returns true if constraints available
   virtual bool constraints() { return has_constraints; }
@@ -267,7 +270,7 @@ public:
   virtual void constraint(Vector3D& v, Vector3D& C_v, std::string name);
 
   /// Set a maximum internal timestep (only for explicit schemes)
-  virtual void setMaxTimestep(BoutReal dt) { max_dt = dt; }
+  virtual void setMaxTimestep(MAYBE_UNUSED(BoutReal dt)) {}
   /// Return the current internal timestep
   virtual BoutReal getCurrentTimestep() { return 0.0; }
 
@@ -280,9 +283,7 @@ public:
   int solve(int nout = -1, BoutReal timestep = 0.0);
 
   /// Initialise the solver
-  /// NOTE: nout and tstep should be passed to run, not init.
-  ///       Needed because of how the PETSc TS code works
-  virtual int init(int nout, BoutReal tstep);
+  virtual int init();
 
   /// Run the solver, calling monitors nout times, at intervals of
   /// tstep. This function is called by solve(), and is specific to
@@ -317,9 +318,12 @@ public:
 
   /// Add evolving variables to output (dump) file or restart file
   ///
-  /// @param[inout] outputfile   The file to add variable to
+  /// @param[inout] outputfile  The `Options` to add variable to
   /// @param[in] save_repeat    If true, add variables with time dimension
-  virtual void outputVars(Datafile& outputfile, bool save_repeat = true);
+  virtual void outputVars(Options& output_options, bool save_repeat = true);
+
+  /// Copy evolving variables out of \p options
+  virtual void readEvolvingVariablesFromOptions(Options& options);
 
   /// Create a Solver object. This uses the "type" option in the given
   /// Option section to determine which solver type to create.
@@ -341,6 +345,16 @@ public:
   std::string getRunID() const;
   /// The run from which this was restarted. Throws if the identifier hasn't been set yet.
   std::string getRunRestartFrom() const;
+
+  /// Get the number of completed output steps
+  int getIterationCounter() const { return iteration; }
+
+  /// Add one to the iteration count, used by BoutMonitor, but could be called by a
+  // user-defined monitor (if `bout_run()` is not used)
+  int incrementIterationCounter() { return ++iteration; }
+
+  /// Write \p options to the model's output file
+  void writeToModelOutputFile(const Options& options);
 
 protected:
   /// Number of command-line arguments
@@ -374,13 +388,13 @@ protected:
   };
 
   /// Does \p var represent field \p name?
-  template<class T>
+  template <class T>
   friend bool operator==(const VarStr<T>& var, const std::string& name) {
     return var.name == name;
   }
 
   /// Does \p vars contain a field with \p name?
-  template<class T>
+  template <class T>
   bool contains(const std::vector<VarStr<T>>& vars, const std::string& name) {
     const auto in_vars = std::find(begin(vars), end(vars), name);
     return in_vars != end(vars);
@@ -405,16 +419,16 @@ protected:
   /// Vectors of diagnostic variables to save
   std::vector<VarStr<int>> diagnostic_int;
   std::vector<VarStr<BoutReal>> diagnostic_BoutReal;
-  void add_int_diagnostic(int &i, const std::string &name,
-                          const std::string &description = "") {
+  void add_int_diagnostic(int& i, const std::string& name,
+                          const std::string& description = "") {
     VarStr<int> v;
     v.var = &i;
     v.name = name;
     v.description = description;
     diagnostic_int.emplace_back(std::move(v));
   };
-  void add_BoutReal_diagnostic(BoutReal &r, const std::string &name,
-                               const std::string &description = "") {
+  void add_BoutReal_diagnostic(BoutReal& r, const std::string& name,
+                               const std::string& description = "") {
     VarStr<BoutReal> v;
     v.var = &r;
     v.name = name;
@@ -429,8 +443,6 @@ protected:
 
   /// Current simulation time
   BoutReal simtime{0.0};
-  /// Current iteration (output time-step) number
-  int iteration{0};
 
   /// Run the user's RHS function
   int run_rhs(BoutReal t, bool linear = false);
@@ -438,6 +450,9 @@ protected:
   int run_convective(BoutReal t, bool linear = false);
   /// Calculate only the diffusive parts
   int run_diffusive(BoutReal t, bool linear = false);
+
+  /// Reset the iteration counter
+  void resetIterationCounter(int value = 0) { iteration = value; }
 
   /// Calls all monitor functions
   ///
@@ -485,8 +500,28 @@ protected:
   /// Maximum internal timestep
   BoutReal max_dt{-1.0};
 
+  /// Helper struct for Monitor and the name of its time dimension
+  struct MonitorInfo {
+    /// Non-owning pointer to a monitor instance
+    Monitor* monitor;
+    /// Name of the time dimension for writing outputs to
+    /// file. Monitors with the same period as the outputs have plain
+    /// "t", all other monitors have an ascending integer suffix,
+    /// starting with the front monitor. WARNING! This could change if
+    /// there are different monitors added on subsequent restarts, or
+    /// if they are added in a different order.
+    std::string time_dimension;
+  };
+
   /// Get the list of monitors
-  auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }
+  auto getMonitors() const -> const std::list<MonitorInfo>& { return monitors; }
+
+  /// Get the currently set number of output steps requested
+  int getNumberOutputSteps() const { return number_output_steps; }
+  /// Change the number of requested output steps
+  void setNumberOutputSteps(int nout) { number_output_steps = nout; }
+  /// Get the currently set output timestep
+  BoutReal getOutputTimestep() const { return output_timestep; }
 
 private:
   /// Generate a random UUID (version 4) and broadcast it to all processors
@@ -501,6 +536,11 @@ private:
   std::string run_id = default_run_id;
   /// The run from which this was restarted.
   std::string run_restart_from = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
+  /// Save `run_id` and `run_restart_from` every output
+  bool save_repeat_run_id{false};
+
+  /// Current iteration (output time-step) number
+  int iteration{0};
 
   /// Number of calls to the RHS function
   int rhs_ncalls{0};
@@ -517,7 +557,7 @@ private:
 
   /// Should non-split physics models be treated as diffusive?
   bool is_nonsplit_model_diffusive{true};
-  
+
   /// Enable sources and solutions for Method of Manufactured Solutions
   bool mms{false};
   /// Initialise variables to the manufactured solution
@@ -527,7 +567,7 @@ private:
   void calculate_mms_error(BoutReal t);
 
   /// List of monitor functions
-  std::list<Monitor*> monitors;
+  std::list<MonitorInfo> monitors;
   /// List of timestep monitor functions
   std::list<TimestepMonitorFunc> timestep_monitors;
 
@@ -550,6 +590,11 @@ private:
   /// Fix all the monitor periods based on \p output_timestep, as well
   /// as adjusting \p NOUT and \p output_timestep to be consistent
   void finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep);
+
+  /// Number of requested output steps
+  int number_output_steps;
+  /// Requested timestep between outputs
+  BoutReal output_timestep;
 };
 
 #endif // __SOLVER_H__

@@ -1,6 +1,6 @@
+#include "bout/petsclib.hxx"
 #include "bout/physicsmodel.hxx"
 #include "bout/solver.hxx"
-#include "bout/petsclib.hxx"
 
 #include <cmath>
 #include <memory>
@@ -68,9 +68,6 @@ int main(int argc, char** argv) {
 
   bout::globals::mesh = Mesh::create();
   bout::globals::mesh->load();
-
-  bout::globals::dump =
-      bout::experimental::setupDumpFile(Options::root(), *bout::globals::mesh, ".");
 
   // Global options
   root["nout"] = 20;

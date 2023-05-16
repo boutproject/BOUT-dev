@@ -4,8 +4,8 @@
 
 #include "mpi.h"
 
+#include "bout/unused.hxx"
 #include <bout/mesh.hxx>
-#include "unused.hxx"
 
 #include <cmath>
 #include <list>
@@ -18,8 +18,8 @@
 /// Topology and communications compatible with BOUT
 /// conventions.
 class BoutMesh : public Mesh {
- public:
-  BoutMesh(GridDataSource *s, Options *options = nullptr);
+public:
+  BoutMesh(GridDataSource* s, Options* options = nullptr);
   ~BoutMesh() override;
 
   /// Read in the mesh from data sources
@@ -58,11 +58,6 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // non-local communications
 
-  MPI_Request sendToProc(int xproc, int yproc, BoutReal* buffer, int size,
-                         int tag) override;
-  comm_handle receiveFromProc(int xproc, int yproc, BoutReal* buffer, int size,
-                              int tag) override;
-
   int getNXPE() override;       ///< The number of processors in the X direction
   int getNYPE() override;       ///< The number of processors in the Y direction
   int getXProcIndex() override; ///< This processor's index in X direction
@@ -71,10 +66,12 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // X communications
 
-  bool firstX() const override; ///< Is this processor the first in X? i.e. is there a boundary
-                          ///< to the left in X?
-  bool lastX() const override; ///< Is this processor last in X? i.e. is there a boundary to the
-                         ///< right in X?
+  bool
+  firstX() const override; ///< Is this processor the first in X? i.e. is there a boundary
+                           ///< to the left in X?
+  bool lastX()
+      const override; ///< Is this processor last in X? i.e. is there a boundary to the
+                      ///< right in X?
 
   /// Send a buffer of data to processor at X index +1
   ///
@@ -140,7 +137,8 @@ class BoutMesh : public Mesh {
   ///                                 poloidal circuit if there is a branch cut
   std::pair<bool, BoutReal> hasBranchCutUpper(int jx) const override;
 
-  int ySize(int xpos) const override; ///< The number of points in Y at fixed X index \p jx
+  int ySize(
+      int xpos) const override; ///< The number of points in Y at fixed X index \p jx
 
   /////////////////////////////////////////////
   // Y communications
@@ -149,16 +147,6 @@ class BoutMesh : public Mesh {
   bool lastY() const override;
   bool firstY(int xpos) const override;
   bool lastY(int xpos) const override;
-  int UpXSplitIndex() override;
-  int DownXSplitIndex() override;
-  int sendYOutIndest(BoutReal* buffer, int size, int tag) override;
-  int sendYOutOutdest(BoutReal* buffer, int size, int tag) override;
-  int sendYInIndest(BoutReal* buffer, int size, int tag) override;
-  int sendYInOutdest(BoutReal* buffer, int size, int tag) override;
-  comm_handle irecvYOutIndest(BoutReal* buffer, int size, int tag) override;
-  comm_handle irecvYOutOutdest(BoutReal* buffer, int size, int tag) override;
-  comm_handle irecvYInIndest(BoutReal* buffer, int size, int tag) override;
-  comm_handle irecvYInOutdest(BoutReal* buffer, int size, int tag) override;
 
   // Boundary iteration
   RangeIterator iterateBndryLowerY() const override;
@@ -187,7 +175,7 @@ class BoutMesh : public Mesh {
   BoutReal getIxseps1() const { return ixseps1; }
   BoutReal getIxseps2() const { return ixseps2; }
 
-  void outputVars(Datafile& file) override;
+  void outputVars(Options& output_options) override;
 
   int getGlobalXIndex(int xlocal) const override;
   int getGlobalXIndexNoBoundaries(int xlocal) const override;
@@ -217,7 +205,7 @@ protected:
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
            int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y, bool periodic_X,
            int ixseps1_, int ixseps2_, int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
-           int jyseps2_2_, int ny_inner_, bool create_regions=true);
+           int jyseps2_2_, int ny_inner_, bool create_regions = true);
 
   /// Very basic initialisation, only suitable for testing
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int input_npes)
@@ -229,8 +217,7 @@ protected:
   /// the send and receive buffers share memory. This allows for
   /// communications to be faked between meshes as though they were on
   /// different processors.
-  void overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
-			   BoutMesh* xout);
+  void overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin, BoutMesh* xout);
 
   /// Set the various y-decomposition indices, enforcing the following invariants:
   ///
@@ -294,6 +281,7 @@ protected:
 
   /// Set the shift angle and enable twist shift. Should only be used for testing!
   void setShiftAngle(const std::vector<BoutReal>& shift_angle);
+
 private:
   std::string gridname;
   int nx, ny, nz; ///< Size of the grid in the input file
@@ -312,7 +300,6 @@ private:
   /// Is this processor in the core region?
   bool MYPE_IN_CORE{false};
 
-  using Mesh::YGLOBAL;
   int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
   int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
 

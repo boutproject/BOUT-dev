@@ -135,11 +135,6 @@ xBOUT documentation
 `xbout.readthedocs.io <https://xbout.readthedocs.io/en/latest/>`_.
 
 There is also an older set of NumPy-based Python tools, described below.
-
-.. note:: We now recommend using `xBOUT
-          <https://xbout.readthedocs.io/en/latest>` to analyse BOUT++
-          simulations.
-
 In order to analyse the output of the simulation using Python, you
 will first need to have set up python to use the BOUT++ libraries
 ``boutdata`` and ``boututils``; see section
@@ -485,7 +480,7 @@ starts::
     Run started at  : Tue 07 Dec 2021 17:50:39 GMT
 
 The ``Run ID`` here is a `universally unique identifier
-<https://en.wikipedia.org/wiki/Universally_unique_identifier>` (UUID)
+<https://en.wikipedia.org/wiki/Universally_unique_identifier>`_ (UUID)
 which is a random 128-bit label unique to this current
 simulation. This makes it easier to identify all of the associated
 outputs of a simulation, and record the data for future reference.
@@ -559,9 +554,9 @@ it never will be (regardless of the values of ``restart`` and ``append``).
 
 If you need to restart from a different point in your simulation, or
 the ``BOUT.restart`` files become corrupted, you can use `xBOUT
-<https://xbout.readthedocs.io/en/latest>` to create new restart files
+<https://xbout.readthedocs.io/en/latest>`_ to create new restart files
 from any time-point in your output files. Use the `.to_restart()
-<https://xbout.readthedocs.io/en/latest/xbout.html#xbout.boutdataset.BoutDatasetAccessor.to_restart>`
+<https://xbout.readthedocs.io/en/latest/xbout.html#xbout.boutdataset.BoutDatasetAccessor.to_restart>`_
 method:
 
 .. code-block:: pycon

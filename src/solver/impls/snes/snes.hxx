@@ -38,13 +38,11 @@ class SNESSolver;
 #include "mpi.h"
 
 #include <bout/bout_enum_class.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/petsclib.hxx>
-#include <bout_types.hxx>
 
 #include <petsc.h>
 #include <petscsnes.h>
-// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
-#undef MPI_Allreduce
 
 namespace {
 RegisterSolver<SNESSolver> registersolversnes("snes");
@@ -58,16 +56,10 @@ BOUT_ENUM_CLASS(BoutSnesEquationForm, pseudo_transient, rearranged_backward_eule
 /// nonlinear ODE by integrating in time with Backward Euler
 class SNESSolver : public Solver {
 public:
-  explicit SNESSolver(Options* opt = nullptr);
-  ~SNESSolver() {}
+  explicit SNESSolver(Options* opts = nullptr);
+  ~SNESSolver() = default;
 
-  /// Initialise solver. Must be called once and only once
-  ///
-  /// @param[in] nout         Number of outputs
-  /// @param[in] tstep        Time between outputs. NB: Not internal timestep
-  int init(int nout, BoutReal tstep) override;
-
-  /// Run the simulation
+  int init() override;
   int run() override;
 
   /// Nonlinear function. This is called by PETSc SNES object
@@ -91,17 +83,20 @@ public:
   PetscErrorCode precon(Vec x, Vec f);
 
 private:
-  BoutReal timestep; ///< Internal timestep
-  BoutReal dt;       ///< Current timestep used in snes_function
+  BoutReal timestep;     ///< Internal timestep
+  BoutReal dt;           ///< Current timestep used in snes_function
   BoutReal dt_min_reset; ///< If dt falls below this, reset solve
   BoutReal max_timestep; ///< Maximum timestep
 
+  std::string snes_type;
+  BoutReal atol; ///< Absolute tolerance
+  BoutReal rtol; ///< Relative tolerance
+  BoutReal stol; ///< Convergence tolerance
+
+  int maxits;               ///< Maximum nonlinear iterations
   int lower_its, upper_its; ///< Limits on iterations for timestep adjustment
 
-  BoutReal out_timestep; ///< Output timestep
-  int nsteps;            ///< Number of steps to take
-
-  bool diagnose; ///< Output additional diagnostics
+  bool diagnose;          ///< Output additional diagnostics
   bool diagnose_failures; ///< Print diagnostics on SNES failures
 
   int nlocal; ///< Number of variables on local processor
@@ -124,6 +119,16 @@ private:
   Mat Jmf;                  ///< Matrix-free Jacobian
   MatFDColoring fdcoloring; ///< Matrix coloring context, used for finite difference
                             ///< Jacobian evaluation
+
+  bool use_precon;                ///< Use preconditioner
+  std::string ksp_type;           ///< Linear solver type
+  bool kspsetinitialguessnonzero; ///< Set initial guess to non-zero
+  int maxl;                       ///< Maximum linear iterations
+  std::string pc_type;            ///< Preconditioner type
+  std::string line_search_type;   ///< Line search type
+  bool matrix_free;               ///< Use matrix free Jacobian
+  int lag_jacobian;               ///< Re-use Jacobian
+  bool use_coloring;              ///< Use matrix coloring
 };
 
 #else

@@ -1,10 +1,14 @@
 #include <cstdio>
 
-#include "gtest/gtest.h"
 #include "bout/array.hxx"
+#include "bout/fft.hxx"
+#include "bout/globalindexer.hxx"
+#include "bout/output.hxx"
+#include "gtest/gtest.h"
+// Note: petsclib included after globalindexer, or MPI_Waitall
+// in mpi_wrapper.hxx is expanded as a macro
+#include "bout/hyprelib.hxx"
 #include "bout/petsclib.hxx"
-#include "fft.hxx"
-#include "output.hxx"
 
 GTEST_API_ int main(int argc, char** argv) {
 
@@ -22,6 +26,7 @@ GTEST_API_ int main(int argc, char** argv) {
   // with certain MPI implementations (see #1916 for details)
   output.disable();
   PetscLib petsclib{};
+  bout::HypreLib hyprelib{};
   output.enable();
 
   int result = RUN_ALL_TESTS();
@@ -29,6 +34,7 @@ GTEST_API_ int main(int argc, char** argv) {
   // Explicit cleanup of PetscLib because it might get destroyed
   // _after_ `output`
   output.disable();
+  bout::HypreLib::cleanup();
   PetscLib::cleanup();
   output.enable();
 
@@ -40,6 +46,5 @@ GTEST_API_ int main(int argc, char** argv) {
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();
-
   return result;
 }

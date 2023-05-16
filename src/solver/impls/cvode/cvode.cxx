@@ -30,16 +30,16 @@
 
 #if BOUT_HAS_CVODE
 
-#include "boutcomm.hxx"
-#include "boutexception.hxx"
-#include "field3d.hxx"
-#include "msg_stack.hxx"
-#include "options.hxx"
-#include "output.hxx"
-#include "unused.hxx"
 #include "bout/bout_enum_class.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
-#include "utils.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/options.hxx"
+#include "bout/output.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
 
 #include "fmt/core.h"
 
@@ -53,7 +53,6 @@
 #endif
 
 #include <cvode/cvode_bbdpre.h>
-#include <nvector/nvector_parallel.h>
 #include <sundials/sundials_types.h>
 
 #include <algorithm>
@@ -108,16 +107,74 @@ inline int CVSpilsSetJacTimes(void* arkode_mem, std::nullptr_t,
 
 #if SUNDIALS_VERSION_MAJOR >= 4
 // Shim for newer versions
-inline void* CVodeCreate(int lmm, int UNUSED(iter)) { return CVodeCreate(lmm); }
 constexpr auto CV_FUNCTIONAL = 0;
 constexpr auto CV_NEWTON = 0;
-#elif SUNDIALS_VERSION_MAJOR == 3
-namespace {
-constexpr auto& SUNLinSol_SPGMR = SUNSPGMR;
+#endif
+
+#if SUNDIALS_VERSION_MAJOR >= 3
+void* CVodeCreate(int lmm, MAYBE_UNUSED(int iter), MAYBE_UNUSED(SUNContext context)) {
+#if SUNDIALS_VERSION_MAJOR == 3
+  return CVodeCreate(lmm, iter);
+#elif SUNDIALS_VERSION_MAJOR == 4 || SUNDIALS_VERSION_MAJOR == 5
+  return CVodeCreate(lmm);
+#else
+  return CVodeCreate(lmm, context);
+#endif
 }
 #endif
 
-CvodeSolver::CvodeSolver(Options* opts) : Solver(opts) {
+CvodeSolver::CvodeSolver(Options* opts)
+    : Solver(opts), diagnose((*options)["diagnose"]
+                                 .doc("Print solver diagnostic information?")
+                                 .withDefault(false)),
+      adams_moulton(
+          (*options)["adams_moulton"]
+              .doc("Use Adams Moulton implicit multistep. Otherwise BDF method.")
+              .withDefault(false)),
+      func_iter((*options)["func_iter"]
+                    .doc("Use functional iteration instead of Newton")
+                    .withDefault(adams_moulton)),
+      max_order((*options)["cvode_max_order"]
+                    .doc("Maximum order of method to use. < 0 means no limit.")
+                    .withDefault(-1)),
+      stablimdet((*options)["cvode_stability_limit_detection"].withDefault(false)),
+      abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
+      reltol((*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5)),
+      use_vector_abstol((*options)["use_vector_abstol"]
+                            .doc("Use separate absolute tolerance for each field")
+                            .withDefault(false)),
+      mxsteps((*options)["mxstep"]
+                  .doc("Maximum number of internal steps between outputs.")
+                  .withDefault(500)),
+      max_timestep(
+          (*options)["max_timestep"].doc("Maximum time step size").withDefault(-1.0)),
+      min_timestep(
+          (*options)["min_timestep"].doc("Minimum time step size").withDefault(-1.0)),
+      start_timestep((*options)["start_timestep"]
+                         .doc("Starting time step. < 0 then chosen by CVODE.")
+                         .withDefault(-1.0)),
+      mxorder((*options)["mxorder"].doc("Maximum order").withDefault(-1)),
+      max_nonlinear_iterations(
+          (*options)["max_nonlinear_iterations"]
+              .doc("Maximum number of nonlinear iterations allowed by CVODE before "
+                   "reducing "
+                   "timestep. CVODE default (used if this option is negative) is 3.")
+              .withDefault(-1)),
+      apply_positivity_constraints(
+          (*options)["apply_positivity_constraints"]
+              .doc("Use CVODE function CVodeSetConstraints to constrain variables - the "
+                   "constraint "
+                   "to be applied is set by the positivity_constraint option in the "
+                   "subsection for "
+                   "each variable")
+              .withDefault(false)),
+      maxl((*options)["maxl"].doc("Maximum number of linear iterations").withDefault(5)),
+      use_precon((*options)["use_precon"].doc("Use preconditioner?").withDefault(false)),
+      rightprec((*options)["rightprec"]
+                    .doc("Use right preconditioner? Otherwise use left.")
+                    .withDefault(false)),
+      use_jacobian((*options)["use_jacobian"].withDefault(false)),
+      suncontext(MPI_COMM_WORLD) {
   has_constraints = false; // This solver doesn't have constraints
   canReset = true;
 
@@ -145,12 +202,8 @@ CvodeSolver::~CvodeSolver() {
   if (cvode_initialised) {
     N_VDestroy_Parallel(uvec);
     CVodeFree(&cvode_mem);
-#if SUNDIALS_VERSION_MAJOR >= 3
     SUNLinSolFree(sun_solver);
-#endif
-#if SUNDIALS_VERSION_MAJOR >= 4
     SUNNonlinSolFree(nonlinear_solver);
-#endif
   }
 }
 
@@ -158,16 +211,10 @@ CvodeSolver::~CvodeSolver() {
  * Initialise
  **************************************************************************/
 
-int CvodeSolver::init(int nout, BoutReal tstep) {
+int CvodeSolver::init() {
   TRACE("Initialising CVODE solver");
 
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
-    return 1;
-
-  // Save nout and tstep for use in run
-  NOUT = nout;
-  TIMESTEP = tstep;
+  Solver::init();
 
   output_progress.write("Initialising SUNDIALS' CVODE solver\n");
 
@@ -181,20 +228,16 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     throw BoutException("Allreduce localN -> GlobalN failed!\n");
   }
 
-  output_info.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3Dvars(),
-                    n2Dvars(), neq, local_N);
+  output_info.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
+                    n3Dvars(), n2Dvars(), neq, local_N);
 
   // Allocate memory
-  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext)) == nullptr) {
     throw BoutException("SUNDIALS memory allocation failed\n");
+  }
 
   // Put the variables into uvec
   save_vars(NV_DATA_P(uvec));
-
-  diagnose = (*options)["diagnose"].doc("Print solver diagnostic information?").withDefault(false);
-  const auto adams_moulton = (*options)["adams_moulton"]
-          .doc("Use Adams Moulton implicit multistep. Otherwise BDF method.")
-          .withDefault(false);
 
   if (adams_moulton) {
     // By default use functional iteration for Adams-Moulton
@@ -205,40 +248,38 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   }
 
   const auto lmm = adams_moulton ? CV_ADAMS : CV_BDF;
-  const auto func_iter = (*options)["func_iter"].withDefault(adams_moulton);
   const auto iter = func_iter ? CV_FUNCTIONAL : CV_NEWTON;
 
-  if ((cvode_mem = CVodeCreate(lmm, iter)) == nullptr)
+  if ((cvode_mem = CVodeCreate(lmm, iter, suncontext)) == nullptr) {
     throw BoutException("CVodeCreate failed\n");
+  }
 
   // For callbacks, need pointer to solver object
-  if (CVodeSetUserData(cvode_mem, this) < 0)
+  if (CVodeSetUserData(cvode_mem, this) < 0) {
     throw BoutException("CVodeSetUserData failed\n");
+  }
 
-  if (CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) < 0)
+  if (CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) < 0) {
     throw BoutException("CVodeInit failed\n");
+  }
 
-  const auto max_order = (*options)["cvode_max_order"].doc("Maximum order of method to use. < 0 means no limit.").withDefault(-1);
   if (max_order > 0) {
-    if (CVodeSetMaxOrd(cvode_mem, max_order) < 0)
+    if (CVodeSetMaxOrd(cvode_mem, max_order) < 0) {
       throw BoutException("CVodeSetMaxOrder failed\n");
+    }
   }
 
-  const auto stablimdet =
-      (*options)["cvode_stability_limit_detection"].withDefault(false);
   if (stablimdet) {
-    if (CVodeSetStabLimDet(cvode_mem, stablimdet) < 0)
+    if (CVodeSetStabLimDet(cvode_mem, stablimdet) < 0) {
       throw BoutException("CVodeSetStabLimDet failed\n");
+    }
   }
 
-  const auto abstol = (*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12);
-  const auto reltol = (*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5);
-  const auto use_vector_abstol = (*options)["use_vector_abstol"].withDefault(false);
   if (use_vector_abstol) {
     std::vector<BoutReal> f2dtols;
     f2dtols.reserve(f2d.size());
     std::transform(begin(f2d), end(f2d), std::back_inserter(f2dtols),
-                   [abstol](const VarStr<Field2D>& f2) {
+                   [this](const VarStr<Field2D>& f2) {
                      auto f2_options = Options::root()[f2.name];
                      const auto wrong_name = f2_options.isSet("abstol");
                      if (wrong_name) {
@@ -252,62 +293,51 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     std::vector<BoutReal> f3dtols;
     f3dtols.reserve(f3d.size());
     std::transform(begin(f3d), end(f3d), std::back_inserter(f3dtols),
-                   [abstol](const VarStr<Field3D>& f3) {
+                   [this](const VarStr<Field3D>& f3) {
                      return Options::root()[f3.name]["atol"].withDefault(abstol);
                    });
 
-    N_Vector abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq);
-    if (abstolvec == nullptr)
+    N_Vector abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext);
+    if (abstolvec == nullptr) {
       throw BoutException("SUNDIALS memory allocation (abstol vector) failed\n");
+    }
 
     set_vector_option_values(NV_DATA_P(abstolvec), f2dtols, f3dtols);
 
-    if (CVodeSVtolerances(cvode_mem, reltol, abstolvec) < 0)
+    if (CVodeSVtolerances(cvode_mem, reltol, abstolvec) < 0) {
       throw BoutException("CVodeSVtolerances failed\n");
+    }
 
     N_VDestroy_Parallel(abstolvec);
   } else {
-    if (CVodeSStolerances(cvode_mem, reltol, abstol) < 0)
+    if (CVodeSStolerances(cvode_mem, reltol, abstol) < 0) {
       throw BoutException("CVodeSStolerances failed\n");
+    }
   }
 
-  const auto mxsteps = (*options)["mxstep"].doc("Maximum number of internal steps between outputs.").withDefault(500);
   CVodeSetMaxNumSteps(cvode_mem, mxsteps);
 
-  const auto max_timestep = (*options)["max_timestep"].doc("Maximum time step size").withDefault(-1.0);
   if (max_timestep > 0.0) {
     CVodeSetMaxStep(cvode_mem, max_timestep);
   }
 
-  const auto min_timestep = (*options)["min_timestep"].doc("Minimum time step size").withDefault(-1.0);
   if (min_timestep > 0.0) {
     CVodeSetMinStep(cvode_mem, min_timestep);
   }
 
-  const auto start_timestep = (*options)["start_timestep"].doc("Starting time step. < 0 then chosen by CVODE.").withDefault(-1.0);
   if (start_timestep > 0.0) {
     CVodeSetInitStep(cvode_mem, start_timestep);
   }
 
-  const auto mxorder = (*options)["mxorder"].withDefault(-1);
   if (mxorder > 0) {
     CVodeSetMaxOrd(cvode_mem, mxorder);
   }
 
-  const auto max_nonlinear_iterations = (*options)["max_nonlinear_iterations"]
-    .doc("Maximum number of nonlinear iterations allowed by CVODE before reducing "
-         "timestep. CVODE default (used if this option is negative) is 3.")
-    .withDefault(-1);
   if (max_nonlinear_iterations > 0) {
     CVodeSetMaxNonlinIters(cvode_mem, max_nonlinear_iterations);
   }
 
-  const auto apply_positivity_constraints = (*options)["apply_positivity_constraints"]
-    .doc("Use CVODE function CVodeSetConstraints to constrain variables - the constraint "
-         "to be applied is set by the positivity_constraint option in the subsection for "
-         "each variable")
-    .withDefault(false);
-#if not (SUNDIALS_VERSION_MAJOR >= 3 and SUNDIALS_VERSION_MINOR >= 2)
+#if not(SUNDIALS_VERSION_MAJOR >= 3 and SUNDIALS_VERSION_MINOR >= 2)
   if (apply_positivity_constraints) {
     throw BoutException("The apply_positivity_constraints option is only available with "
                         "SUNDIALS>=3.2.0");
@@ -317,16 +347,18 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     auto f2d_constraints = create_constraints(f2d);
     auto f3d_constraints = create_constraints(f3d);
 
-    N_Vector constraints_vec = N_VNew_Parallel(BoutComm::get(), local_N, neq);
-    if (constraints_vec == nullptr)
+    N_Vector constraints_vec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext);
+    if (constraints_vec == nullptr) {
       throw BoutException("SUNDIALS memory allocation (positivity constraints vector) "
                           "failed\n");
+    }
 
     set_vector_option_values(NV_DATA_P(constraints_vec), f2d_constraints,
                              f3d_constraints);
 
-    if (CVodeSetConstraints(cvode_mem, constraints_vec) < 0)
+    if (CVodeSetConstraints(cvode_mem, constraints_vec) < 0) {
       throw BoutException("CVodeSetConstraints failed\n");
+    }
 
     N_VDestroy_Parallel(constraints_vec);
   }
@@ -336,24 +368,20 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   if (!func_iter) {
     output_info.write("\tUsing Newton iteration\n");
     TRACE("Setting preconditioner");
-    const auto maxl = (*options)["maxl"].doc("Maximum number of linear iterations").withDefault(5);
-    const auto use_precon = (*options)["use_precon"].doc("Use preconditioner?").withDefault(false);
-
     if (use_precon) {
-
-      const auto rightprec = (*options)["rightprec"]
-                                 .doc("Use right preconditioner? Otherwise use left.")
-                                 .withDefault(false);
-      const int prectype = rightprec ? PREC_RIGHT : PREC_LEFT;
+      const int prectype = rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT;
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-      if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl)) == nullptr)
+      if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl, suncontext)) == nullptr) {
         throw BoutException("Creating SUNDIALS linear solver failed\n");
-      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS)
+      }
+      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS) {
         throw BoutException("CVSpilsSetLinearSolver failed\n");
+      }
 #else
-      if (CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS)
+      if (CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS) {
         throw BoutException("CVSpgmr failed\n");
+      }
 #endif
 
       if (!hasPreconditioner()) {
@@ -378,46 +406,55 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
         const auto mlkeep = (*options)["mlkeep"].withDefault(n3Dvars() + n2Dvars());
 
         if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, ZERO,
-                          cvode_bbd_rhs, nullptr))
+                          cvode_bbd_rhs, nullptr)) {
           throw BoutException("CVBBDPrecInit failed\n");
+        }
 
       } else {
         output_info.write("\tUsing user-supplied preconditioner\n");
 
-        if (CVSpilsSetPreconditioner(cvode_mem, nullptr, cvode_pre_shim))
+        if (CVSpilsSetPreconditioner(cvode_mem, nullptr, cvode_pre_shim)) {
           throw BoutException("CVSpilsSetPreconditioner failed\n");
+        }
       }
     } else {
       output_info.write("\tNo preconditioning\n");
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-      if ((sun_solver = SUNLinSol_SPGMR(uvec, PREC_NONE, maxl)) == nullptr)
+      if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext))
+          == nullptr) {
         throw BoutException("Creating SUNDIALS linear solver failed\n");
-      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS)
+      }
+      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS) {
         throw BoutException("CVSpilsSetLinearSolver failed\n");
+      }
 #else
-      if (CVSpgmr(cvode_mem, PREC_NONE, maxl) != CVSPILS_SUCCESS)
+      if (CVSpgmr(cvode_mem, SUN_PREC_NONE, maxl) != CVSPILS_SUCCESS) {
         throw BoutException("CVSpgmr failed\n");
+      }
 #endif
     }
 
     /// Set Jacobian-vector multiplication function
-    const auto use_jacobian = (*options)["use_jacobian"].withDefault(false);
     if (use_jacobian and hasJacobian()) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
 
-      if (CVSpilsSetJacTimes(cvode_mem, nullptr, cvode_jac) != CV_SUCCESS)
+      if (CVSpilsSetJacTimes(cvode_mem, nullptr, cvode_jac) != CV_SUCCESS) {
         throw BoutException("CVSpilsSetJacTimesVecFn failed\n");
-    } else
+      }
+    } else {
       output_info.write("\tUsing difference quotient approximation for Jacobian\n");
+    }
   } else {
     output_info.write("\tUsing Functional iteration\n");
 #if SUNDIALS_VERSION_MAJOR >= 4
-    if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 0)) == nullptr)
+    if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 0, suncontext)) == nullptr) {
       throw BoutException("SUNNonlinSol_FixedPoint failed\n");
+    }
 
-    if (CVodeSetNonlinearSolver(cvode_mem, nonlinear_solver))
+    if (CVodeSetNonlinearSolver(cvode_mem, nonlinear_solver)) {
       throw BoutException("CVodeSetNonlinearSolver failed\n");
+    }
 #endif
   }
 
@@ -426,36 +463,42 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   return 0;
 }
 
-template<class FieldType>
-std::vector<BoutReal> CvodeSolver::create_constraints(
-    const std::vector<VarStr<FieldType>>& fields) {
+template <class FieldType>
+std::vector<BoutReal>
+CvodeSolver::create_constraints(const std::vector<VarStr<FieldType>>& fields) {
 
   std::vector<BoutReal> constraints;
   constraints.reserve(fields.size());
   std::transform(begin(fields), end(fields), std::back_inserter(constraints),
                  [](const VarStr<FieldType>& f) {
                    auto f_options = Options::root()[f.name];
-                   const auto value = f_options["positivity_constraint"]
-                                      .doc(fmt::format(
-                                           "Constraint to apply to {} if "
-                                           "solver:apply_positivity_constraint=true. "
-                                           "Possible values are: none (default), "
-                                           "positive, non_negative, negative, or "
-                                           "non_positive.", f.name))
-                                      .withDefault(positivity_constraint::none);
+                   const auto value =
+                       f_options["positivity_constraint"]
+                           .doc(fmt::format("Constraint to apply to {} if "
+                                            "solver:apply_positivity_constraint=true. "
+                                            "Possible values are: none (default), "
+                                            "positive, non_negative, negative, or "
+                                            "non_positive.",
+                                            f.name))
+                           .withDefault(positivity_constraint::none);
                    switch (value) {
-                     case positivity_constraint::none: return 0.0;
-                     case positivity_constraint::positive: return 2.0;
-                     case positivity_constraint::non_negative: return 1.0;
-                     case positivity_constraint::negative: return -2.0;
-                     case positivity_constraint::non_positive: return -1.0;
-                     default: throw BoutException("Incorrect value for "
-                                                  "positivity_constraint");
+                   case positivity_constraint::none:
+                     return 0.0;
+                   case positivity_constraint::positive:
+                     return 2.0;
+                   case positivity_constraint::non_negative:
+                     return 1.0;
+                   case positivity_constraint::negative:
+                     return -2.0;
+                   case positivity_constraint::non_positive:
+                     return -1.0;
+                   default:
+                     throw BoutException("Incorrect value for "
+                                         "positivity_constraint");
                    }
                  });
   return constraints;
 }
-
 
 /**************************************************************************
  * Run - Advance time
@@ -464,14 +507,14 @@ std::vector<BoutReal> CvodeSolver::create_constraints(
 int CvodeSolver::run() {
   TRACE("CvodeSolver::run()");
 
-  if (!cvode_initialised)
+  if (!cvode_initialised) {
     throw BoutException("CvodeSolver not initialised\n");
+  }
 
-  for (int i = 0; i < NOUT; i++) {
+  for (int i = 0; i < getNumberOutputSteps(); i++) {
 
     /// Run the solver for one output timestep
-    simtime = run(simtime + TIMESTEP);
-    iteration++;
+    simtime = run(simtime + getOutputTimestep());
 
     /// Check if the run succeeded
     if (simtime < 0.0) {
@@ -512,9 +555,9 @@ int CvodeSolver::run() {
 
     if (diagnose) {
       // Print additional diagnostics
-      output.write(
-          "\nCVODE: nsteps {:d}, nfevals {:d}, nniters {:d}, npevals {:d}, nliters {:d}\n",
-          nsteps, nfevals, nniters, npevals, nliters);
+      output.write("\nCVODE: nsteps {:d}, nfevals {:d}, nniters {:d}, npevals {:d}, "
+                   "nliters {:d}\n",
+                   nsteps, nfevals, nniters, npevals, nliters);
 
       output.write("    -> Newton iterations per step: {:e}\n",
                    static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
@@ -533,7 +576,7 @@ int CvodeSolver::run() {
 
     /// Call the monitor function
 
-    if (call_monitors(simtime, i, NOUT)) {
+    if (call_monitors(simtime, i, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }
@@ -625,8 +668,9 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
 
   if (!hasPreconditioner()) {
     // Identity (but should never happen)
-    for (int i = 0; i < N; i++)
+    for (int i = 0; i < N; i++) {
       zvec[i] = rvec[i];
+    }
     return;
   }
 
@@ -746,8 +790,8 @@ void CvodeSolver::set_vector_option_values(BoutReal* option_data,
 
 void CvodeSolver::loop_vector_option_values_op(Ind2D UNUSED(i2d), BoutReal* option_data,
                                                int& p, std::vector<BoutReal>& f2dtols,
-                                               std::vector<BoutReal>& f3dtols, bool bndry)
-{
+                                               std::vector<BoutReal>& f3dtols,
+                                               bool bndry) {
   // Loop over 2D variables
   for (std::vector<BoutReal>::size_type i = 0; i < f2dtols.size(); i++) {
     if (bndry && !f2d[i].evolve_bndry) {
@@ -773,8 +817,9 @@ void CvodeSolver::resetInternalFields() {
   TRACE("CvodeSolver::resetInternalFields");
   save_vars(NV_DATA_P(uvec));
 
-  if (CVodeReInit(cvode_mem, simtime, uvec) < 0)
+  if (CVodeReInit(cvode_mem, simtime, uvec) < 0) {
     throw BoutException("CVodeReInit failed\n");
+  }
 }
 
 #endif

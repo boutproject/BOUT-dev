@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #A simple example of using the iterator test to explore scaling of the different approaches
 

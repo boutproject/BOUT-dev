@@ -25,19 +25,19 @@
  **************************************************************************/
 
 #include "bout/openmpwrap.hxx"
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <cstdarg>
 #include <string>
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP
 #include <omp.h>
 #endif
 
 #if BOUT_USE_MSGSTACK
 int MsgStack::push(std::string message) {
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP
   // This is temporary fix: no messages from OMP regions if there's
   // more than one thread
   if (omp_get_num_threads() > 1) {
@@ -58,35 +58,36 @@ void MsgStack::pop() {
   if (position <= 0) {
     return;
   }
-  BOUT_OMP(single) {
-    --position;
-  }
+  BOUT_OMP(single)
+  { --position; }
 }
 
 void MsgStack::pop(int id) {
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP
   if (omp_get_num_threads() > 1) {
     return;
   }
 #endif
-
-  if (id < 0)
+  if (id < 0) {
     id = 0;
+  }
 
   if (id <= static_cast<int>(position)) {
-      position = id;
+    position = id;
   }
 }
 
 void MsgStack::clear() {
-  BOUT_OMP(single) {
+  BOUT_OMP(single)
+  {
     stack.clear();
     position = 0;
   }
 }
 
 void MsgStack::dump() {
-  BOUT_OMP(single) { output << this->getDump(); }
+  BOUT_OMP(single)
+  { output << this->getDump(); }
 }
 
 std::string MsgStack::getDump() {

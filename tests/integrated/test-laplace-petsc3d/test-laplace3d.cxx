@@ -23,9 +23,9 @@
  *
  **************************************************************************/
 
-#include "bout.hxx"
-#include "initialprofiles.hxx"
-#include "invert_laplace.hxx"
+#include "bout/bout.hxx"
+#include "bout/initialprofiles.hxx"
+#include "bout/invert_laplace.hxx"
 
 int main(int argc, char** argv) {
 
@@ -50,15 +50,15 @@ int main(int argc, char** argv) {
     int y = mesh->ystart - 1;
     if (x == mesh->xstart) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-	guess(x-1, y, z) = 0.5*(f(x-1, y - 1, z) + f(x-1, y, z));
+        guess(x - 1, y, z) = 0.5 * (f(x - 1, y - 1, z) + f(x - 1, y, z));
       }
     }
     for (int z = mesh->zstart; z <= mesh->zend; z++) {
-      guess(x, y, z) = 0.5*(f(x, y, z) + f(x, y + 1, z));
+      guess(x, y, z) = 0.5 * (f(x, y, z) + f(x, y + 1, z));
     }
     if (x == mesh->xend) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-	guess(x+1, y, z) = 0.5*(f(x+1, y - 1, z) + f(x+1, y, z));
+        guess(x + 1, y, z) = 0.5 * (f(x + 1, y - 1, z) + f(x + 1, y, z));
       }
     }
   }
@@ -67,15 +67,15 @@ int main(int argc, char** argv) {
     int y = mesh->yend + 1;
     if (x == mesh->xstart) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-	guess(x-1, y, z) = 0.5*(f(x-1, y - 1, z) + f(x-1, y, z));
+        guess(x - 1, y, z) = 0.5 * (f(x - 1, y - 1, z) + f(x - 1, y, z));
       }
     }
     for (int z = mesh->zstart; z <= mesh->zend; z++) {
-      guess(x, y, z) = 0.5*(f(x, y - 1, z) + f(x, y, z));
+      guess(x, y, z) = 0.5 * (f(x, y - 1, z) + f(x, y, z));
     }
     if (x == mesh->xend) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-	guess(x+1, y, z) = 0.5*(f(x+1, y - 1, z) + f(x+1, y, z));
+        guess(x + 1, y, z) = 0.5 * (f(x + 1, y - 1, z) + f(x + 1, y, z));
       }
     }
   }
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
     int x = mesh->xstart - 1;
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-        guess(x, y, z) = 0.5*(f(x, y, z) + f(x + 1, y, z));
+        guess(x, y, z) = 0.5 * (f(x, y, z) + f(x + 1, y, z));
       }
     }
   }
@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
     int x = mesh->xend + 1;
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-        guess(x, y, z) = 0.5*(f(x - 1, y, z) + f(x, y, z));
+        guess(x, y, z) = 0.5 * (f(x - 1, y, z) + f(x, y, z));
       }
     }
   }
@@ -123,12 +123,18 @@ int main(int argc, char** argv) {
   ///////////////////////////////////////////////////////////////////////////////////////
   // Calculate error
   ///////////////////////////////////////////////////////////////////////////////////////
-  Field3D rhs_check = D*Laplace_perp(f) + Grad_perp(C2)*Grad_perp(f)/C1 + A*f;
+  Field3D rhs_check = D * Laplace_perp(f) + Grad_perp(C2) * Grad_perp(f) / C1 + A * f;
   Field3D error = rhs_check - rhs;
   BoutReal error_max = max(abs(error), true);
 
-  SAVE_ONCE(f, rhs, rhs_check, error, error_max);
-  bout::globals::dump.write();
+  Options dump;
+  dump["f"] = f;
+  dump["rhs"] = rhs;
+  dump["rhs_check"] = rhs_check;
+  dump["error"] = error;
+  dump["error_max"] = error_max;
+
+  bout::writeDefaultOutputFile(dump);
 
   laplace_solver.reset(nullptr);
   BoutFinalise();

@@ -10,8 +10,8 @@ protected:
   ~Uncopyable() = default;
 
 public:
-  Uncopyable(const Uncopyable &) = delete;
-  Uncopyable &operator=(const Uncopyable &) = delete;
+  Uncopyable(const Uncopyable&) = delete;
+  Uncopyable& operator=(const Uncopyable&) = delete;
 };
 
 #endif // __UNCOPYABLE_H__

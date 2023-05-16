@@ -1,5 +1,5 @@
-#include <invert_laplace.hxx>
-#include <msg_stack.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/msg_stack.hxx>
 
 #include <bout/invertable_operator.hxx>
 #include <bout/physicsmodel.hxx>

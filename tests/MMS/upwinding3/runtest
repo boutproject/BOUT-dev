@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import boutcore
+import boutpp
 
-# requires boutcore
+# requires boutpp
 # requires not make
 
 import numpy as np
@@ -11,7 +11,7 @@ from sys import exit
 
 errorlist = []
 passlist = []
-boutcore.init("-d data -q -q -q".split(" "))
+boutpp.init("-d data -q -q -q".split(" "))
 
 
 def runtests(functions, derivatives, directions, stag, msg):
@@ -30,12 +30,12 @@ def runtests(functions, derivatives, directions, stag, msg):
 
             errors = []
             for nz in nzs:
-                boutcore.setOption(
+                boutpp.setOption(
                     "meshD:nD".replace("D", direction),
                     "%d" % (nz + (2 * guards if direction == "x" else 0)),
                     force=True,
                 )
-                boutcore.setOption(
+                boutpp.setOption(
                     "meshD:dD".replace(
                         "D",
                         direction,
@@ -44,9 +44,9 @@ def runtests(functions, derivatives, directions, stag, msg):
                     force=True,
                 )
                 dirnfac = direction + "*" + fac
-                mesh = boutcore.Mesh(section="mesh" + direction)
-                f = boutcore.create3D(ffunc.replace("%s", dirnfac), mesh, outloc=floc)
-                v = boutcore.create3D(vfunc.replace("%s", dirnfac), mesh, outloc=vloc)
+                mesh = boutpp.Mesh(section="mesh" + direction)
+                f = boutpp.create3D(ffunc.replace("%s", dirnfac), mesh, outloc=floc)
+                v = boutpp.create3D(vfunc.replace("%s", dirnfac), mesh, outloc=vloc)
                 sim = diff_func(v, f, method=diff, outloc=floc)
                 if sim.getLocation() != floc:
                     if floc == "centre" and sim.getLocation() == "centre":
@@ -56,9 +56,7 @@ def runtests(functions, derivatives, directions, stag, msg):
                             "Location does not match - expected %s but got %s"
                             % (floc, sim.getLocation())
                         )
-                ana = boutcore.create3D(
-                    outfunc.replace("%s", dirnfac), mesh, outloc=floc
-                )
+                ana = boutpp.create3D(outfunc.replace("%s", dirnfac), mesh, outloc=floc)
                 err = sim - ana
                 err = err.getAll().flatten()
                 if guards:
@@ -127,9 +125,9 @@ derivatives = [
 ]
 
 directions = [
-    ["x", "2*pi", 2, boutcore.VDDX],
-    ["y", "1", 2, boutcore.VDDY],
-    ["z", "1", 0, boutcore.VDDZ],
+    ["x", "2*pi", 2, boutpp.VDDX],
+    ["y", "1", 2, boutpp.VDDY],
+    ["z", "1", 0, boutpp.VDDZ],
 ]
 
 runtests(functions, derivatives, directions, stag=False, msg="DD")
@@ -144,7 +142,7 @@ derivatives = [
 
 runtests(functions, derivatives, directions, stag=True, msg="DD")
 
-boutcore.finalise()
+boutpp.finalise()
 
 if errorlist:
     for error in errorlist:

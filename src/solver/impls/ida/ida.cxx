@@ -33,11 +33,11 @@
 
 #if BOUT_HAS_IDA
 
-#include "boutcomm.hxx"
-#include "boutexception.hxx"
-#include "msg_stack.hxx"
-#include "output.hxx"
-#include "unused.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/output.hxx"
+#include "bout/unused.hxx"
 
 #include <ida/ida.h>
 
@@ -84,13 +84,24 @@ inline static int ida_pre_shim(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rr
 constexpr auto& ida_pre_shim = ida_pre;
 #endif
 
-#if SUNDIALS_VERSION_MAJOR == 3
-namespace {
-constexpr auto& SUNLinSol_SPGMR = SUNSPGMR;
-}
+#if SUNDIALS_VERSION_MAJOR < 6
+void* IDACreate(MAYBE_UNUSED(SUNContext)) { return IDACreate(); }
 #endif
 
-IdaSolver::IdaSolver(Options* opts) : Solver(opts) {
+IdaSolver::IdaSolver(Options* opts)
+    : Solver(opts),
+      abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
+      reltol((*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5)),
+      mxsteps((*options)["mxstep"]
+                  .doc("Maximum number of steps to take between outputs")
+                  .withDefault(500)),
+      use_precon((*options)["use_precon"]
+                     .doc("Use user-supplied preconditioner")
+                     .withDefault(false)),
+      correct_start((*options)["correct_start"]
+                        .doc("Correct the initial values")
+                        .withDefault(true)),
+      suncontext(MPI_COMM_WORLD) {
   has_constraints = true; // This solver has constraints
 }
 
@@ -100,9 +111,7 @@ IdaSolver::~IdaSolver() {
     N_VDestroy_Parallel(duvec);
     N_VDestroy_Parallel(id);
     IDAFree(&idamem);
-#if SUNDIALS_VERSION_MAJOR >= 3
     SUNLinSolFree(sun_solver);
-#endif
   }
 }
 
@@ -110,17 +119,11 @@ IdaSolver::~IdaSolver() {
  * Initialise
  **************************************************************************/
 
-int IdaSolver::init(int nout, BoutReal tstep) {
+int IdaSolver::init() {
 
   TRACE("Initialising IDA solver");
 
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
-    return 1;
-
-  // Save nout and tstep for use in run
-  NOUT = nout;
-  TIMESTEP = tstep;
+  Solver::init();
 
   output.write("Initialising IDA solver\n");
 
@@ -137,16 +140,19 @@ int IdaSolver::init(int nout, BoutReal tstep) {
     return 1;
   }
 
-  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3d, n2d, neq,
-               local_N);
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3d, n2d,
+               neq, local_N);
 
   // Allocate memory
-  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext)) == nullptr) {
     throw BoutException("SUNDIALS memory allocation failed\n");
-  if ((duvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+  }
+  if ((duvec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext)) == nullptr) {
     throw BoutException("SUNDIALS memory allocation failed\n");
-  if ((id = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
+  }
+  if ((id = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext)) == nullptr) {
     throw BoutException("SUNDIALS memory allocation failed\n");
+  }
 
   // Put the variables into uvec
   save_vars(NV_DATA_P(uvec));
@@ -161,41 +167,44 @@ int IdaSolver::init(int nout, BoutReal tstep) {
   set_id(NV_DATA_P(id));
 
   // Call IDACreate to initialise
-  if ((idamem = IDACreate()) == nullptr)
+  if ((idamem = IDACreate(suncontext)) == nullptr) {
     throw BoutException("IDACreate failed\n");
+  }
 
   // For callbacks, need pointer to solver object
-  if (IDASetUserData(idamem, this) < 0)
+  if (IDASetUserData(idamem, this) < 0) {
     throw BoutException("IDASetUserData failed\n");
+  }
 
-  if (IDASetId(idamem, id) < 0)
+  if (IDASetId(idamem, id) < 0) {
     throw BoutException("IDASetID failed\n");
+  }
 
-  if (IDAInit(idamem, idares, simtime, uvec, duvec) < 0)
+  if (IDAInit(idamem, idares, simtime, uvec, duvec) < 0) {
     throw BoutException("IDAInit failed\n");
+  }
 
-  const auto abstol = (*options)["atol"].withDefault(1.0e-12);
-  const auto reltol = (*options)["rtol"].withDefault(1.0e-5);
-  if (IDASStolerances(idamem, reltol, abstol) < 0)
+  if (IDASStolerances(idamem, reltol, abstol) < 0) {
     throw BoutException("IDASStolerances failed\n");
+  }
 
-  // Maximum number of steps to take between outputs
-  const auto mxsteps = (*options)["mxstep"].withDefault(500);
   IDASetMaxNumSteps(idamem, mxsteps);
 
   // Call IDASpgmr to specify the IDA linear solver IDASPGMR
   const auto maxl = (*options)["maxl"].withDefault(6 * n3d);
 #if SUNDIALS_VERSION_MAJOR >= 3
-  if ((sun_solver = SUNLinSol_SPGMR(uvec, PREC_NONE, maxl)) == nullptr)
+  if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext)) == nullptr) {
     throw BoutException("Creating SUNDIALS linear solver failed\n");
-  if (IDASpilsSetLinearSolver(idamem, sun_solver) != IDA_SUCCESS)
+  }
+  if (IDASpilsSetLinearSolver(idamem, sun_solver) != IDA_SUCCESS) {
     throw BoutException("IDASpilsSetLinearSolver failed\n");
+  }
 #else
-  if (IDASpgmr(idamem, maxl))
+  if (IDASpgmr(idamem, maxl)) {
     throw BoutException("IDASpgmr failed\n");
+  }
 #endif
 
-  const auto use_precon = (*options)["use_precon"].withDefault(false);
   if (use_precon) {
     if (!hasPreconditioner()) {
       output.write("\tUsing BBD preconditioner\n");
@@ -217,20 +226,22 @@ int IdaSolver::init(int nout, BoutReal tstep) {
       const auto mukeep = (*options)["mukeep"].withDefault(n3d);
       const auto mlkeep = (*options)["mlkeep"].withDefault(n3d);
       if (IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, ZERO, ida_bbd_res,
-                         nullptr))
+                         nullptr)) {
         throw BoutException("IDABBDPrecInit failed\n");
+      }
     } else {
       output.write("\tUsing user-supplied preconditioner\n");
-      if (IDASpilsSetPreconditioner(idamem, nullptr, ida_pre_shim))
+      if (IDASpilsSetPreconditioner(idamem, nullptr, ida_pre_shim)) {
         throw BoutException("IDASpilsSetPreconditioner failed\n");
+      }
     }
   }
 
   // Call IDACalcIC (with default options) to correct the initial values
-  const auto correct_start = (*options)["correct_start"].withDefault(true);
   if (correct_start) {
-    if (IDACalcIC(idamem, IDA_YA_YDP_INIT, 1e-6))
+    if (IDACalcIC(idamem, IDA_YA_YDP_INIT, 1e-6)) {
       throw BoutException("IDACalcIC failed\n");
+    }
   }
 
   return 0;
@@ -243,14 +254,14 @@ int IdaSolver::init(int nout, BoutReal tstep) {
 int IdaSolver::run() {
   TRACE("IDA IdaSolver::run()");
 
-  if (!initialised)
+  if (!initialised) {
     throw BoutException("IdaSolver not initialised\n");
+  }
 
-  for (int i = 0; i < NOUT; i++) {
+  for (int i = 0; i < getNumberOutputSteps(); i++) {
 
     /// Run the solver for one output timestep
-    simtime = run(simtime + TIMESTEP);
-    iteration++;
+    simtime = run(simtime + getOutputTimestep());
 
     /// Check if the run succeeded
     if (simtime < 0.0) {
@@ -258,9 +269,7 @@ int IdaSolver::run() {
       throw BoutException("SUNDIALS IDA timestep failed\n");
     }
 
-    /// Call the monitor function
-
-    if (call_monitors(simtime, i, NOUT)) {
+    if (call_monitors(simtime, i, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }
@@ -272,8 +281,9 @@ int IdaSolver::run() {
 BoutReal IdaSolver::run(BoutReal tout) {
   TRACE("Running solver: solver::run({:e})", tout);
 
-  if (!initialised)
+  if (!initialised) {
     throw BoutException("Running IDA solver without initialisation\n");
+  }
 
   pre_Wtime = 0.0;
   pre_ncalls = 0;
@@ -287,7 +297,8 @@ BoutReal IdaSolver::run(BoutReal tout) {
   run_rhs(simtime);
 
   if (flag < 0) {
-    output_error.write("ERROR IDA solve failed at t = {:e}, flag = {:d}\n", simtime, flag);
+    output_error.write("ERROR IDA solve failed at t = {:e}, flag = {:d}\n", simtime,
+                       flag);
     return -1.0;
   }
 
@@ -314,8 +325,9 @@ void IdaSolver::res(BoutReal t, BoutReal* udata, BoutReal* dudata, BoutReal* rda
   const int N = NV_LOCLENGTH_P(id);
   const BoutReal* idd = NV_DATA_P(id);
   for (int i = 0; i < N; i++) {
-    if (idd[i] > 0.5) // 1 -> differential, 0 -> algebraic
+    if (idd[i] > 0.5) { // 1 -> differential, 0 -> algebraic
       rdata[i] -= dudata[i];
+    }
   }
 }
 

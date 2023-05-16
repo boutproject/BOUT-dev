@@ -26,13 +26,23 @@
 #   Set to TRUE to get extra debugging output
 
 include(BOUT++functions)
+include(CMakePrintHelpers)
+
+if (NOT netCDF_ROOT AND EXISTS "${BOUT_USE_NETCDF}")
+  set(netCDF_ROOT "${BOUT_USE_NETCDF}")
+endif()
 
 find_package(netCDF QUIET CONFIG)
+
 if (netCDF_FOUND)
+  message(STATUS "netCDF CONFIG found")
   set(netCDF_FOUND TRUE)
   if (NOT TARGET netCDF::netcdf)
     bout_add_library_alias(netCDF::netcdf netcdf)
   endif()
+  if (netCDF_DEBUG)
+     cmake_print_properties(TARGETS netcdf PROPERTIES LOCATION VERSION)
+  endif (netCDF_DEBUG)
   return()
 endif()
 

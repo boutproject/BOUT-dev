@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "boutexception.hxx"
 #include "test_extras.hxx"
 #include "test_fakesolver.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/solver.hxx"
 
 #include <algorithm>

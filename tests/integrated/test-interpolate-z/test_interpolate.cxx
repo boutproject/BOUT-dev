@@ -10,18 +10,18 @@
 #include <random>
 #include <string>
 
-#include "bout.hxx"
+#include "bout/bout.hxx"
 #include "bout/constants.hxx"
-#include "field_factory.hxx"
+#include "bout/field_factory.hxx"
+#include "bout/interpolation_z.hxx"
 #include "bout/sys/generator_context.hxx"
-#include "interpolation_z.hxx"
 
 using bout::globals::mesh;
 
 /// Get a FieldGenerator from the options for a variable
 std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varname,
                                                         std::string& func) {
-  Options *options = Options::getRoot()->getSection(varname);
+  Options* options = Options::getRoot()->getSection(varname);
   options->get("solution", func, "0.0");
 
   if (func.empty()) {
@@ -30,7 +30,7 @@ std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varna
   return FieldFactory::get()->parse(func);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
   // Random number generator
@@ -65,14 +65,14 @@ int main(int argc, char **argv) {
   // Bind the random number generator and distribution into a single function
   auto dice = std::bind(distribution, generator);
 
-  for (const auto &index : deltaz) {
+  for (const auto& index : deltaz) {
     // Get some random displacements
     BoutReal dz = index.z() + dice();
     deltaz[index] = dz;
     // Get the global indices
     bout::generator::Context pos{index, CELL_CENTRE, deltaz.getMesh(), 0.0};
-    pos.set("x", mesh->GlobalX(index.x()),
-            "z", TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz));
+    pos.set("x", mesh->GlobalX(index.x()), "z",
+            TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz));
     // Generate the analytic solution at the displacements
     a_solution[index] = a_gen->generate(pos);
     b_solution[index] = b_gen->generate(pos);
@@ -87,11 +87,20 @@ int main(int argc, char **argv) {
   b_interp = interp->interpolate(b, deltaz);
   c_interp = interp->interpolate(c, deltaz);
 
-  SAVE_ONCE3(a, a_interp, a_solution);
-  SAVE_ONCE3(b, b_interp, b_solution);
-  SAVE_ONCE3(c, c_interp, c_solution);
+  Options dump;
+  dump["a"] = a;
+  dump["a_interp"] = a_interp;
+  dump["a_solution"] = a_solution;
 
-  bout::globals::dump.write();
+  dump["b"] = b;
+  dump["b_interp"] = b_interp;
+  dump["b_solution"] = b_solution;
+
+  dump["c"] = c;
+  dump["c_interp"] = c_interp;
+  dump["c_solution"] = c_solution;
+
+  bout::writeDefaultOutputFile(dump);
 
   bout::checkForUnusedOptions();
   BoutFinalise();

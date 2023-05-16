@@ -23,11 +23,9 @@ public:
   }
   bool run_called{false};
 
-  int init(int nout, BoutReal tstep) override {
+  int init() override {
     init_called = true;
-    if (Solver::init(nout, tstep)) {
-      return 1;
-    }
+    Solver::init();
     return (*options)["fail_init"].withDefault(0);
   }
   bool init_called{false};
@@ -64,15 +62,22 @@ public:
 
   // Shims for protected functions
   auto getMaxTimestepShim() const -> BoutReal { return max_dt; }
-  using Solver::getLocalN;
-  using Solver::hasPreconditioner;
-  using Solver::runPreconditioner;
-  using Solver::globalIndex;
-  using Solver::getMonitors;
   using Solver::call_monitors;
   using Solver::call_timestep_monitors;
+  using Solver::getLocalN;
+  using Solver::getMonitors;
+  using Solver::globalIndex;
   using Solver::hasJacobian;
+  using Solver::hasPreconditioner;
+  using Solver::MonitorInfo;
   using Solver::runJacobian;
+  using Solver::runPreconditioner;
 };
+
+// Equality operator for tests
+inline bool operator==(const FakeSolver::MonitorInfo& lhs,
+                       const FakeSolver::MonitorInfo& rhs) {
+  return lhs.monitor == rhs.monitor and lhs.time_dimension == rhs.time_dimension;
+}
 
 #endif // FAKESOLVER_H
