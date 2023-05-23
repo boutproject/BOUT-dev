@@ -1,5 +1,5 @@
 ARG BASE
-FROM docker.io/oi4ai/bout-base:$BASE
+FROM ghcr.io/dschwoerer/bout-container-base:$BASE
 
 # ----------------------------------------------------------------
 # Build and install BOUT++
@@ -47,7 +47,7 @@ RUN export PATH=$MPI_BIN:$PATH LD_LIBRARY_PATH=$MPI_LIB:$LD_LIBRARY_PATH \
  && cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/opt/bout++/ \
           -DBOUT_GENERATE_FIELDOPS=OFF \
           -DBOUT_USE_PETSC=ON -DPETSc_ROOT=/opt/petsc \
-          -DBOUT_ENABLE_METRIC_3D=ON -DBOUT_ENABLE_OPENMP=ON -DBOUT_ENABLE_PYTHON=ON \
+          -DBOUT_ENABLE_PYTHON=ON \
           -DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=/usr/lib64/$MPI/ -DSUNDIALS_INCLUDE_DIR=/usr/include/$MPI-x86_64/sundials/ \
 	  $CMAKE_OPTIONS || (cat /home/boutuser/BOUT-dev/build/CMakeFiles/CMake{Output,Error}.log  ; exit 1)
 

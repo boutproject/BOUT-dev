@@ -7,18 +7,31 @@ on:
       - next
       # Add your branch here if you want containers for it
       - db-WIP
+      - docker-ci
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build:
-    name: Build ${{ matrix.config.name }} Container
+    name: Build ${{ matrix.config.name }} Container (${{ matrix.metric3d.name }} ; ${{matrix.mpi}})
     runs-on: ubuntu-latest
-    env:
-      IMAGE_NAME: bout3d
-      USER: oi4ai
+    permissions:
+      contents: read
+      packages: write
+
     strategy:
       fail-fast: false
       matrix:
         mpi: [mpich]
+        metric3d:
+          - name: "With OpenMP"
+            prefix: "openmp-"
+            cmake: ON
+          - name: "Without OpenMP"
+            prefix: ""
+            cmake: OFF
         config:
           - name: "Debug"
             tag_postfix: "debug"
@@ -36,21 +49,32 @@ jobs:
             base_postfix: "full"
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Debug infos
-        run: |
-          echo ${{ github.sha }}
-          echo ${{ github.ref_name }}
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Build and push
-        env:
-          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-          DOCKER_USER: ${{ env.USER }}
-          BASE: openmp-${{ matrix.mpi }}-${{ matrix.config.base_postfix }}
-          MPI: ${{ matrix.mpi }}
-          CMAKE_OPTIONS: ${{ matrix.config.options }}
-        run: |
-          TAGS="${{ env.USER }}/${{ env.IMAGE_NAME }}:latest-${{ matrix.config.tag_postfix }} \
-                ${{ env.USER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-${{ matrix.config.tag_postfix }}" \
-          sh .docker/build.sh
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            prefix=${{ matrix.mpi }}-${{ matrix.config.prefix }}${{ matrix.type }}-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          build-args: |
+            BASE: ${{ matrix.mpi }}-${{ matrix.metric3d.prefix }}${{ matrix.config.base_postfix }}-main
+            MPI: ${{ matrix.mpi }}
+            CMAKE_OPTIONS: ${{ matrix.config.options }} -DBOUT_ENABLE_METRIC_3D=${{ matrix.metric3d.cmake }} -DBOUT_ENABLE_OPENMP=${{ matrix.metric3d.cmake }}
+          context: .docker/fedora/
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
