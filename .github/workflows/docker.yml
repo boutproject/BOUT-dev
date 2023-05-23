@@ -76,6 +76,7 @@ jobs:
             BASE=${{ matrix.mpi }}-${{ matrix.metric3d.base_prefix }}${{ matrix.config.base_postfix }}-main
             MPI=${{ matrix.mpi }}
             CMAKE_OPTIONS=${{ matrix.config.options }} -DBOUT_ENABLE_METRIC_3D=${{ matrix.metric3d.cmake }} -DBOUT_ENABLE_OPENMP=${{ matrix.metric3d.cmake }}
+            COMMIT=${{ github.sha }}
           context: .docker/fedora/
           push: true
           tags: ${{ steps.meta.outputs.tags }}
