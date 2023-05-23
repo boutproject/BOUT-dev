@@ -27,11 +27,13 @@ jobs:
         mpi: [mpich]
         metric3d:
           - name: "With OpenMP"
-            prefix: "openmp-"
             cmake: ON
+            base_prefix: "openmp-"
+            tag_prefix: "3d-"
           - name: "Without OpenMP"
-            prefix: ""
             cmake: OFF
+            base_prefix: ""
+            tag_prefix: ""
         config:
           - name: "Debug"
             tag_postfix: "debug"
@@ -65,15 +67,15 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
-            prefix=${{ matrix.mpi }}-${{ matrix.config.prefix }}${{ matrix.type }}-
+            prefix=${{ matrix.mpi }}-${{matrix.metric3d.tag_prefix}}${{ matrix.config.tag_prefix }}${{ matrix.type }}-
 
       - name: Build and push Docker image
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
           build-args: |
-            BASE: ${{ matrix.mpi }}-${{ matrix.metric3d.prefix }}${{ matrix.config.base_postfix }}-main
-            MPI: ${{ matrix.mpi }}
-            CMAKE_OPTIONS: ${{ matrix.config.options }} -DBOUT_ENABLE_METRIC_3D=${{ matrix.metric3d.cmake }} -DBOUT_ENABLE_OPENMP=${{ matrix.metric3d.cmake }}
+            BASE=${{ matrix.mpi }}-${{ matrix.metric3d.base_prefix }}${{ matrix.config.base_postfix }}-main
+            MPI=${{ matrix.mpi }}
+            CMAKE_OPTIONS=${{ matrix.config.options }} -DBOUT_ENABLE_METRIC_3D=${{ matrix.metric3d.cmake }} -DBOUT_ENABLE_OPENMP=${{ matrix.metric3d.cmake }}
           context: .docker/fedora/
           push: true
           tags: ${{ steps.meta.outputs.tags }}
