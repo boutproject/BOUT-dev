@@ -25,7 +25,7 @@ RUN git clone $URL \
  && chown -R boutuser /home/boutuser/BOUT-dev \
  && cd BOUT-dev \
  && git checkout $COMMIT \
- && git -c submodule.recurse=false submodule update --init --recursive
+ && git submodule update --init --recursive
 
 
 WORKDIR /home/boutuser/BOUT-dev
