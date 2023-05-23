@@ -13,6 +13,7 @@ USER boutuser
 WORKDIR /home/boutuser
 
 ARG MPI
+ARG URL
 ARG COMMIT
 ARG CMAKE_OPTIONS
 
@@ -20,7 +21,7 @@ RUN sudo ls
 
 # Checkout submodules now so configure later is fast, and iterating on
 # it less painful
-RUN git clone https://github.com/dschwoerer/BOUT-dev.git \
+RUN git clone $URL \
  && chown -R boutuser /home/boutuser/BOUT-dev \
  && cd BOUT-dev \
  && git checkout $COMMIT \
