@@ -670,8 +670,12 @@ int SNESSolver::init() {
       PCSetType(pc, pc_type.c_str());
 
       if (pc_type == "hypre") {
+#if PETSC_HAVE_HYPRE
         // Set the type of hypre preconditioner
         PCHYPRESetType(pc, pc_hypre_type.c_str());
+#else
+        throw BoutException("PETSc was not configured with Hypre.");
+#endif
       }
     }
   }
