@@ -109,8 +109,9 @@ SNESSolver::SNESSolver(Options* opts)
               .doc("Preconditioner type. By default lets PETSc decide (ilu or bjacobi)")
               .withDefault("default")),
       pc_hypre_type((*options)["pc_hypre_type"]
-                    .doc("hypre preconditioner type: euclid, pilut, parasails, boomeramg, ams, ads")
-                    .withDefault("pilut")),
+                        .doc("hypre preconditioner type: euclid, pilut, parasails, "
+                             "boomeramg, ams, ads")
+                        .withDefault("pilut")),
       line_search_type((*options)["line_search_type"]
                            .doc("Line search type: basic, bt, l2, cp, nleqerr")
                            .withDefault("default")),
@@ -173,10 +174,10 @@ int SNESSolver::init() {
   // Nonlinear solver interface (SNES)
   output.write("Create SNES\n");
   SNESCreate(BoutComm::get(), &snes);
-  
+
   // Set the callback function
   SNESSetFunction(snes, snes_f, FormFunction, this);
-  
+
   SNESSetType(snes, snes_type.c_str());
 
   // Line search
@@ -246,7 +247,7 @@ int SNESSolver::init() {
       const auto star_pattern = (1 + ncells_x + ncells_y) * (n3d + n2d) + ncells_z * n3d;
 
       // Offsets. Start with the central cell
-      std::vector<std::pair<int, int>> xyoffsets {{0, 0}};
+      std::vector<std::pair<int, int>> xyoffsets{{0, 0}};
       if (ncells_x != 0) {
         // Stencil includes points in X
         xyoffsets.push_back({-1, 0});
@@ -516,13 +517,14 @@ int SNESSolver::init() {
                 if (z == 0) {
                   ind2 += n2d;
                 }
-                
+
                 // 3D fields on this cell
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
                   ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
                   if (ierr != 0) {
-                    output.write("ERROR: {} : ({}, {}) -> ({}, {}) : {} -> {}\n", row, x, y, xi, yi, ind2, ind2 + n3d - 1);
+                    output.write("ERROR: {} : ({}, {}) -> ({}, {}) : {} -> {}\n", row, x,
+                                 y, xi, yi, ind2, ind2 + n3d - 1);
                   }
                   CHKERRQ(ierr);
                 }
