@@ -792,6 +792,12 @@ int SNESSolver::run() {
         // Restore state
         VecCopy(x0, snes_x);
 
+        // Recalculate the Jacobian
+        if (saved_jacobian_lag == 0) {
+          SNESGetLagJacobian(snes, &saved_jacobian_lag);
+          SNESSetLagJacobian(snes, 1);
+        }
+
         // Check lock state
         PetscInt lock_state;
         VecLockGet(snes_x, &lock_state);
