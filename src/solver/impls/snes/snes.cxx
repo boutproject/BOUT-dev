@@ -108,6 +108,9 @@ SNESSolver::SNESSolver(Options* opts)
           (*options)["pc_type"]
               .doc("Preconditioner type. By default lets PETSc decide (ilu or bjacobi)")
               .withDefault("default")),
+      pc_hypre_type((*options)["pc_hypre_type"]
+                    .doc("hypre preconditioner type: euclid, pilut, parasails, boomeramg, ams, ads")
+                    .withDefault("pilut")),
       line_search_type((*options)["line_search_type"]
                            .doc("Line search type: basic, bt, l2, cp, nleqerr")
                            .withDefault("default")),
@@ -146,6 +149,7 @@ int SNESSolver::init() {
   int ierr;
 
   // Vectors
+  output.write("Creating vector\n");
   ierr = VecCreate(BoutComm::get(), &snes_x);
   CHKERRQ(ierr);
   ierr = VecSetSizes(snes_x, nlocal, PETSC_DECIDE);
@@ -167,11 +171,12 @@ int SNESSolver::init() {
   }
 
   // Nonlinear solver interface (SNES)
+  output.write("Create SNES\n");
   SNESCreate(BoutComm::get(), &snes);
-
+  
   // Set the callback function
   SNESSetFunction(snes, snes_f, FormFunction, this);
-
+  
   SNESSetType(snes, snes_type.c_str());
 
   // Line search
@@ -234,10 +239,26 @@ int SNESSolver::init() {
       std::vector<PetscInt> o_nnz(localN);
 
       // Set values for most points
+      const int ncells_x = (mesh->LocalNx > 1) ? 2 : 0;
+      const int ncells_y = (mesh->LocalNy > 1) ? 2 : 0;
+      const int ncells_z = (mesh->LocalNz > 1) ? 2 : 0;
 
-      const auto star_pattern_2d = 5 * (n3d + n2d);
-      const auto star_pattern_3d = 7 * n3d + 5 * n2d;
-      const auto star_pattern = (mesh->LocalNz > 1) ? star_pattern_3d : star_pattern_2d;
+      const auto star_pattern = (1 + ncells_x + ncells_y) * (n3d + n2d) + ncells_z * n3d;
+
+      // Offsets. Start with the central cell
+      std::vector<std::pair<int, int>> xyoffsets {{0, 0}};
+      if (ncells_x != 0) {
+        // Stencil includes points in X
+        xyoffsets.push_back({-1, 0});
+        xyoffsets.push_back({1, 0});
+      }
+      if (ncells_y != 0) {
+        // Stencil includes points in Y
+        xyoffsets.push_back({0, -1});
+        xyoffsets.push_back({0, 1});
+      }
+
+      output.write("Star pattern: {} non-zero entries\n", star_pattern);
       for (int i = 0; i < localN; i++) {
         // Non-zero elements on this processor
         d_nnz[i] = star_pattern;
@@ -246,147 +267,153 @@ int SNESSolver::init() {
       }
 
       // X boundaries
-      if (mesh->firstX()) {
-        // Lower X boundary
-        for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
-            int localIndex = ROUND(index(mesh->xstart, y, z));
-            ASSERT2((localIndex >= 0) && (localIndex < localN));
-            const int num_fields = (z == 0) ? n2d + n3d : n3d;
-            for (int i = 0; i < num_fields; i++) {
-              d_nnz[localIndex + i] -= (n3d + n2d);
+      if (ncells_x != 0) {
+        if (mesh->firstX()) {
+          // Lower X boundary
+          for (int y = mesh->ystart; y <= mesh->yend; y++) {
+            for (int z = 0; z < mesh->LocalNz; z++) {
+              int localIndex = ROUND(index(mesh->xstart, y, z));
+              ASSERT2((localIndex >= 0) && (localIndex < localN));
+              const int num_fields = (z == 0) ? n2d + n3d : n3d;
+              for (int i = 0; i < num_fields; i++) {
+                d_nnz[localIndex + i] -= (n3d + n2d);
+              }
+            }
+          }
+        } else {
+          // On another processor
+          for (int y = mesh->ystart; y <= mesh->yend; y++) {
+            for (int z = 0; z < mesh->LocalNz; z++) {
+              int localIndex = ROUND(index(mesh->xstart, y, z));
+              ASSERT2((localIndex >= 0) && (localIndex < localN));
+              const int num_fields = (z == 0) ? n2d + n3d : n3d;
+              for (int i = 0; i < num_fields; i++) {
+                d_nnz[localIndex + i] -= (n3d + n2d);
+                o_nnz[localIndex + i] += (n3d + n2d);
+              }
             }
           }
         }
-      } else {
-        // On another processor
-        for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
-            int localIndex = ROUND(index(mesh->xstart, y, z));
-            ASSERT2((localIndex >= 0) && (localIndex < localN));
-            const int num_fields = (z == 0) ? n2d + n3d : n3d;
-            for (int i = 0; i < num_fields; i++) {
-              d_nnz[localIndex + i] -= (n3d + n2d);
-              o_nnz[localIndex + i] += (n3d + n2d);
+        if (mesh->lastX()) {
+          // Upper X boundary
+          for (int y = mesh->ystart; y <= mesh->yend; y++) {
+            for (int z = 0; z < mesh->LocalNz; z++) {
+              int localIndex = ROUND(index(mesh->xend, y, z));
+              ASSERT2((localIndex >= 0) && (localIndex < localN));
+              const int num_fields = (z == 0) ? n2d + n3d : n3d;
+              for (int i = 0; i < num_fields; i++) {
+                d_nnz[localIndex + i] -= (n3d + n2d);
+              }
             }
           }
-        }
-      }
-
-      if (mesh->lastX()) {
-        // Upper X boundary
-        for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
-            int localIndex = ROUND(index(mesh->xend, y, z));
-            ASSERT2((localIndex >= 0) && (localIndex < localN));
-            const int num_fields = (z == 0) ? n2d + n3d : n3d;
-            for (int i = 0; i < num_fields; i++) {
-              d_nnz[localIndex + i] -= (n3d + n2d);
-            }
-          }
-        }
-      } else {
-        // On another processor
-        for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
-            int localIndex = ROUND(index(mesh->xend, y, z));
-            ASSERT2((localIndex >= 0) && (localIndex < localN));
-            const int num_fields = (z == 0) ? n2d + n3d : n3d;
-            for (int i = 0; i < num_fields; i++) {
-              d_nnz[localIndex + i] -= (n3d + n2d);
-              o_nnz[localIndex + i] += (n3d + n2d);
+        } else {
+          // On another processor
+          for (int y = mesh->ystart; y <= mesh->yend; y++) {
+            for (int z = 0; z < mesh->LocalNz; z++) {
+              int localIndex = ROUND(index(mesh->xend, y, z));
+              ASSERT2((localIndex >= 0) && (localIndex < localN));
+              const int num_fields = (z == 0) ? n2d + n3d : n3d;
+              for (int i = 0; i < num_fields; i++) {
+                d_nnz[localIndex + i] -= (n3d + n2d);
+                o_nnz[localIndex + i] += (n3d + n2d);
+              }
             }
           }
         }
       }
 
       // Y boundaries
+      if (ncells_y != 0) {
+        for (int x = mesh->xstart; x <= mesh->xend; x++) {
+          // Default to no boundary
+          // NOTE: This assumes that communications in Y are to other
+          //   processors. If Y is communicated with this processor (e.g. NYPE=1)
+          //   then this will result in PETSc warnings about out of range allocations
 
-      for (int x = mesh->xstart; x <= mesh->xend; x++) {
-        // Default to no boundary
-        // NOTE: This assumes that communications in Y are to other
-        //   processors. If Y is communicated with this processor (e.g. NYPE=1)
-        //   then this will result in PETSc warnings about out of range allocations
+          // z = 0 case
+          int localIndex = ROUND(index(x, mesh->ystart, 0));
+          ASSERT2(localIndex >= 0);
 
-        // z = 0 case
-        int localIndex = ROUND(index(x, mesh->ystart, 0));
-        ASSERT2(localIndex >= 0);
-
-        // All 2D and 3D fields
-        for (int i = 0; i < n2d + n3d; i++) {
-          o_nnz[localIndex + i] += (n3d + n2d);
-        }
-
-        for (int z = 1; z < mesh->LocalNz; z++) {
-          localIndex = ROUND(index(x, mesh->ystart, z));
-
-          // Only 3D fields
-          for (int i = 0; i < n3d; i++) {
+          // All 2D and 3D fields
+          for (int i = 0; i < n2d + n3d; i++) {
             o_nnz[localIndex + i] += (n3d + n2d);
+            d_nnz[localIndex + i] -= (n3d + n2d);
+          }
+
+          for (int z = 1; z < mesh->LocalNz; z++) {
+            localIndex = ROUND(index(x, mesh->ystart, z));
+
+            // Only 3D fields
+            for (int i = 0; i < n3d; i++) {
+              o_nnz[localIndex + i] += (n3d + n2d);
+              d_nnz[localIndex + i] -= (n3d + n2d);
+            }
+          }
+
+          // z = 0 case
+          localIndex = ROUND(index(x, mesh->yend, 0));
+          // All 2D and 3D fields
+          for (int i = 0; i < n2d + n3d; i++) {
+            o_nnz[localIndex + i] += (n3d + n2d);
+            d_nnz[localIndex + i] -= (n3d + n2d);
+          }
+
+          for (int z = 1; z < mesh->LocalNz; z++) {
+            localIndex = ROUND(index(x, mesh->yend, z));
+
+            // Only 3D fields
+            for (int i = 0; i < n3d; i++) {
+              o_nnz[localIndex + i] += (n3d + n2d);
+              d_nnz[localIndex + i] -= (n3d + n2d);
+            }
           }
         }
 
-        // z = 0 case
-        localIndex = ROUND(index(x, mesh->yend, 0));
-        // All 2D and 3D fields
-        for (int i = 0; i < n2d + n3d; i++) {
-          o_nnz[localIndex + i] += (n3d + n2d);
-        }
+        for (RangeIterator it = mesh->iterateBndryLowerY(); !it.isDone(); it++) {
+          // A boundary, so no communication
 
-        for (int z = 1; z < mesh->LocalNz; z++) {
-          localIndex = ROUND(index(x, mesh->yend, z));
-
-          // Only 3D fields
-          for (int i = 0; i < n3d; i++) {
-            o_nnz[localIndex + i] += (n3d + n2d);
+          // z = 0 case
+          int localIndex = ROUND(index(it.ind, mesh->ystart, 0));
+          if (localIndex < 0) {
+            // This can occur because it.ind includes values in x boundary e.g. x=0
+            continue;
           }
-        }
-      }
-
-      for (RangeIterator it = mesh->iterateBndryLowerY(); !it.isDone(); it++) {
-        // A boundary, so no communication
-
-        // z = 0 case
-        int localIndex = ROUND(index(it.ind, mesh->ystart, 0));
-        if (localIndex < 0) {
-          // This can occur because it.ind includes values in x boundary e.g. x=0
-          continue;
-        }
-        // All 2D and 3D fields
-        for (int i = 0; i < n2d + n3d; i++) {
-          o_nnz[localIndex + i] -= (n3d + n2d);
-        }
-
-        for (int z = 1; z < mesh->LocalNz; z++) {
-          int localIndex = ROUND(index(it.ind, mesh->ystart, z));
-
-          // Only 3D fields
-          for (int i = 0; i < n3d; i++) {
+          // All 2D and 3D fields
+          for (int i = 0; i < n2d + n3d; i++) {
             o_nnz[localIndex + i] -= (n3d + n2d);
           }
-        }
-      }
 
-      for (RangeIterator it = mesh->iterateBndryUpperY(); !it.isDone(); it++) {
-        // A boundary, so no communication
+          for (int z = 1; z < mesh->LocalNz; z++) {
+            int localIndex = ROUND(index(it.ind, mesh->ystart, z));
 
-        // z = 0 case
-        int localIndex = ROUND(index(it.ind, mesh->yend, 0));
-        if (localIndex < 0) {
-          continue; // Out of domain
-        }
-
-        // All 2D and 3D fields
-        for (int i = 0; i < n2d + n3d; i++) {
-          o_nnz[localIndex + i] -= (n3d + n2d);
+            // Only 3D fields
+            for (int i = 0; i < n3d; i++) {
+              o_nnz[localIndex + i] -= (n3d + n2d);
+            }
+          }
         }
 
-        for (int z = 1; z < mesh->LocalNz; z++) {
-          int localIndex = ROUND(index(it.ind, mesh->yend, z));
+        for (RangeIterator it = mesh->iterateBndryUpperY(); !it.isDone(); it++) {
+          // A boundary, so no communication
 
-          // Only 3D fields
-          for (int i = 0; i < n3d; i++) {
+          // z = 0 case
+          int localIndex = ROUND(index(it.ind, mesh->yend, 0));
+          if (localIndex < 0) {
+            continue; // Out of domain
+          }
+
+          // All 2D and 3D fields
+          for (int i = 0; i < n2d + n3d; i++) {
             o_nnz[localIndex + i] -= (n3d + n2d);
+          }
+
+          for (int z = 1; z < mesh->LocalNz; z++) {
+            int localIndex = ROUND(index(it.ind, mesh->yend, z));
+
+            // Only 3D fields
+            for (int i = 0; i < n3d; i++) {
+              o_nnz[localIndex + i] -= (n3d + n2d);
+            }
           }
         }
       }
@@ -395,15 +422,19 @@ int SNESSolver::init() {
 
       // Pre-allocate
       MatMPIAIJSetPreallocation(Jmf, 0, d_nnz.data(), 0, o_nnz.data());
+      MatSeqAIJSetPreallocation(Jmf, 0, d_nnz.data());
       MatSetUp(Jmf);
-      MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+      MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
 
       // Determine which row/columns of the matrix are locally owned
       int Istart, Iend;
       MatGetOwnershipRange(Jmf, &Istart, &Iend);
 
       // Convert local into global indices
-      index += Istart;
+      // Note: Not in the boundary cells, to keep -1 values
+      for (const auto& i : mesh->getRegion3D("RGN_NOBNDRY")) {
+        index[i] += Istart;
+      }
 
       // Now communicate to fill guard cells
       mesh->communicate(index);
@@ -412,11 +443,6 @@ int SNESSolver::init() {
       // Mark non-zero entries
 
       output_progress.write("Marking non-zero Jacobian entries\n");
-
-      // Offsets for a 5-point pattern
-      constexpr std::size_t stencil_size = 5;
-      const std::array<int, stencil_size> xoffset = {0, -1, 1, 0, 0};
-      const std::array<int, stencil_size> yoffset = {0, 0, 0, -1, 1};
 
       PetscScalar val = 1.0;
 
@@ -430,9 +456,9 @@ int SNESSolver::init() {
             PetscInt row = ind0 + i;
 
             // Loop through each point in the 5-point stencil
-            for (std::size_t c = 0; c < stencil_size; c++) {
-              int xi = x + xoffset[c];
-              int yi = y + yoffset[c];
+            for (const auto& xyoffset : xyoffsets) {
+              int xi = x + xyoffset.first;
+              int yi = y + xyoffset.second;
 
               if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
                   || (yi >= mesh->LocalNy)) {
@@ -448,8 +474,8 @@ int SNESSolver::init() {
               // Depends on all variables on this cell
               for (int j = 0; j < n2d; j++) {
                 PetscInt col = ind2 + j;
-
-                MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                CHKERRQ(ierr);
               }
             }
           }
@@ -468,13 +494,14 @@ int SNESSolver::init() {
               // Depends on 2D fields
               for (int j = 0; j < n2d; j++) {
                 PetscInt col = ind0 + j;
-                MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                CHKERRQ(ierr);
               }
 
-              // 5 point star pattern
-              for (std::size_t c = 0; c < stencil_size; c++) {
-                int xi = x + xoffset[c];
-                int yi = y + yoffset[c];
+              // Star pattern
+              for (const auto& xyoffset : xyoffsets) {
+                int xi = x + xyoffset.first;
+                int yi = y + xyoffset.second;
 
                 if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
                     || (yi >= mesh->LocalNy)) {
@@ -489,11 +516,15 @@ int SNESSolver::init() {
                 if (z == 0) {
                   ind2 += n2d;
                 }
-
+                
                 // 3D fields on this cell
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
-                  MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  if (ierr != 0) {
+                    output.write("ERROR: {} : ({}, {}) -> ({}, {}) : {} -> {}\n", row, x, y, xi, yi, ind2, ind2 + n3d - 1);
+                  }
+                  CHKERRQ(ierr);
                 }
               }
 
@@ -509,7 +540,8 @@ int SNESSolver::init() {
                 }
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
-                  MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  CHKERRQ(ierr);
                 }
 
                 int zm = (z - 1 + nz) % nz;
@@ -519,7 +551,8 @@ int SNESSolver::init() {
                 }
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
-                  MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  CHKERRQ(ierr);
                 }
               }
             }
@@ -633,6 +666,11 @@ int SNESSolver::init() {
     // Set PC type from input
     if (pc_type != "default") {
       PCSetType(pc, pc_type.c_str());
+
+      if (pc_type == "hypre") {
+        // Set the type of hypre preconditioner
+        PCHYPRESetType(pc, pc_hypre_type.c_str());
+      }
     }
   }
 
