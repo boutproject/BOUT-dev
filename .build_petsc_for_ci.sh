@@ -21,7 +21,9 @@ if test $BUILD_PETSC ; then
 	    --with-shared-libraries=1 \
 	    --with-debugging=0 \
 	    {C,CXX,F}OPTFLAGS="-O3 -march=native" \
-	    --prefix=$HOME/local/petsc
+	    --prefix=$HOME/local/petsc \
+	    --download-hypre
+
 
 	make && make install
 	popd
