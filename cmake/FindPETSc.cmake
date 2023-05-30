@@ -277,45 +277,6 @@ show :
   set (petsc_mpi_include_dirs "${MPI_${PETSC_LANGUAGE_BINDINGS}_INCLUDE_DIRS}")
   #set (petsc_additional_libraries "MPI::MPI_${PETSC_LANGUAGE_BINDINGS}${petsc_openmp_library}")
 
-  petsc_test_runs ("${petsc_includes_minimal};${petsc_mpi_include_dirs}"
-    "${PETSC_LIBRARIES_TS};${petsc_additional_libraries}"
-    petsc_works_minimal)
-  if (petsc_works_minimal)
-    message (STATUS "Minimal PETSc includes and libraries work.  This probably means we are building with shared libs.")
-    set (petsc_includes_needed "${petsc_includes_minimal}")
-  else (petsc_works_minimal)     # Minimal includes fail, see if just adding full includes fixes it
-    petsc_test_runs ("${petsc_includes_all};${petsc_mpi_include_dirs}"
-      "${PETSC_LIBRARIES_TS};${petsc_additional_libraries}"
-      petsc_works_allincludes)
-    if (petsc_works_allincludes) # It does, we just need all the includes (
-      message (STATUS "PETSc requires extra include paths, but links correctly with only interface libraries.  This is an unexpected configuration (but it seems to work fine).")
-      set (petsc_includes_needed ${petsc_includes_all})
-    else (petsc_works_allincludes) # We are going to need to link the external libs explicitly
-      resolve_libraries (petsc_libraries_external "${petsc_libs_external}")
-      foreach (pkg SYS VEC MAT DM KSP SNES TS ALL)
-        list (APPEND PETSC_LIBRARIES_${pkg}  ${petsc_libraries_external})
-      endforeach (pkg)
-      petsc_test_runs ("${petsc_includes_minimal};${petsc_mpi_include_dirs}"
-        "${PETSC_LIBRARIES_TS};${petsc_additional_libraries}"
-        petsc_works_alllibraries)
-      if (petsc_works_alllibraries)
-         message (STATUS "PETSc only need minimal includes, but requires explicit linking to all dependencies.  This is expected when PETSc is built with static libraries.")
-        set (petsc_includes_needed ${petsc_includes_minimal})
-      else (petsc_works_alllibraries)
-        # It looks like we really need everything, should have listened to Matt
-        set (petsc_includes_needed ${petsc_includes_all})
-        petsc_test_runs ("${petsc_includes_all};${petsc_mpi_include_dirs}"
-          "${PETSC_LIBRARIES_TS};${petsc_additional_libraries}"
-          petsc_works_all)
-        if (petsc_works_all) # We fail anyways
-          message (STATUS "PETSc requires extra include paths and explicit linking to all dependencies.  This probably means you have static libraries and something unexpected in PETSc headers.")
-        else (petsc_works_all) # We fail anyways
-          message (STATUS "PETSc could not be used, maybe the install is broken.")
-        endif (petsc_works_all)
-      endif (petsc_works_alllibraries)
-    endif (petsc_works_allincludes)
-  endif (petsc_works_minimal)
-
   # We do an out-of-source build so __FILE__ will be an absolute path, hence __INSDIR__ is superfluous
   if (${PETSC_VERSION} VERSION_LESS 3.1)
     set (PETSC_DEFINITIONS "-D__SDIR__=\"\"" CACHE STRING "PETSc definitions" FORCE)
