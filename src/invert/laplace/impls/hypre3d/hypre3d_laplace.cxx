@@ -25,7 +25,7 @@
  **************************************************************************/
 #include "bout/build_config.hxx"
 
-#if BOUT_HAS_HYPRE
+#if BOUT_HAS_HYPRE && ! BOUT_USE_METRIC_3D
 
 #include "hypre3d_laplace.hxx"
 
@@ -39,7 +39,6 @@
 #include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
-#include <datafile.hxx>
 
 LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
                                Solver* solver)
@@ -146,15 +145,9 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   }
 
   // FIXME: This needs to be converted to outputVars
-  if (solver == nullptr or dump == nullptr) {
-    output_warn << "Warning: Need to pass both a Solver and a Datafile to "
-                   "Laplacian::create() to get iteration counts in the output."
-                << endl;
-  } else {
-    solver->addMonitor(&monitor);
-    auto name = opt->name();
-    dump->addRepeat(average_iterations, name + "_average_iterations");
-  }
+  //if (solver == nullptr) {
+  output_warn << "Warning: iteration counts in the output not implemented."
+	      << endl;
 }
 
 LaplaceHypre3d::~LaplaceHypre3d() {}

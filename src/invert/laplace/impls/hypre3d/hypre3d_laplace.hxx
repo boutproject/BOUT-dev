@@ -33,7 +33,7 @@ class LaplaceHypre3d;
 #ifndef __LAPLACE_HYPRE3D_H__
 #define __LAPLACE_HYPRE3D_H__
 
-#if BOUT_HAS_HYPRE
+#if BOUT_HAS_HYPRE && ! BOUT_USE_METRIC_3D
 
 #include <bout/boutexception.hxx>
 #include <bout/globals.hxx>
