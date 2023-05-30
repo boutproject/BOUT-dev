@@ -258,12 +258,6 @@ show :
 
   include(Check${PETSC_LANGUAGE_BINDINGS}SourceRuns)
 
-  macro (PETSC_TEST_RUNS includes libraries runs)
-    set (PETSC_EXECUTABLE_RUNS "YES" CACHE BOOL
-      "Can the system successfully run a PETSc executable?  This variable can be manually set to \"YES\" to force CMake to accept a given PETSc configuration, but this will almost always result in a broken build.  If you change PETSC_DIR, PETSC_ARCH, or PETSC_CURRENT you would have to reset this variable." FORCE)
-  endmacro (PETSC_TEST_RUNS)
-
-
   find_path (PETSC_INCLUDE_DIR petscts.h
     HINTS "${PETSC_DIR}"
     PATH_SUFFIXES include

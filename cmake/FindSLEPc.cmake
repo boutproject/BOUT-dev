@@ -137,10 +137,9 @@ show :
 endif()
 
 if (SLEPC_SKIP_BUILD_TESTS)
-  set(SLEPC_TEST_RUNS TRUE)
   set(SLEPC_VERSION "UNKNOWN")
   set(SLEPC_VERSION_OK TRUE)
-elseif (SLEPC_LIBRARIES AND SLEPC_INCLUDE_DIRS AND NOT SLEPC_TEST_RUNS)
+elseif (SLEPC_LIBRARIES AND SLEPC_INCLUDE_DIRS)
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${SLEPC_INCLUDE_DIRS})
@@ -192,10 +191,6 @@ int main() {
     set(SLEPC_VERSION_OK TRUE CACHE BOOL "")
   endif()
   mark_as_advanced(SLEPC_VERSION_OK)
-
-  # Do not run SLEPc test program
-
-  set(SLEPC_TEST_RUNS TRUE CACHE BOOL "SLEPc test program can run")
 endif()
 
 # Standard package handling
@@ -204,8 +199,7 @@ find_package_handle_standard_args(SLEPc
   FOUND_VAR SLEPC_FOUND
   FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR, PETSC_DIR, and PETSC_ARCH."
   VERSION_VAR SLEPC_VERSION
-  REQUIRED_VARS SLEPC_LIBRARIES SLEPC_DIR SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS
-                SLEPC_VERSION_OK)
+  REQUIRED_VARS SLEPC_LIBRARIES SLEPC_DIR SLEPC_INCLUDE_DIRS SLEPC_VERSION_OK)
 
 if (SLEPC_FOUND)
   if (NOT TARGET SLEPc::SLEPc)
