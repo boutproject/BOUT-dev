@@ -259,7 +259,7 @@ int SNESSolver::init() {
         xyoffsets.push_back({0, 1});
       }
 
-      output.write("Star pattern: {} non-zero entries\n", star_pattern);
+      output_info.write("Star pattern: {} non-zero entries\n", star_pattern);
       for (int i = 0; i < localN; i++) {
         // Non-zero elements on this processor
         d_nnz[i] = star_pattern;
