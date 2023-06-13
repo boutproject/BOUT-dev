@@ -172,7 +172,7 @@ int SNESSolver::init() {
   }
 
   // Nonlinear solver interface (SNES)
-  output.write("Create SNES\n");
+  output_info.write("Create SNES\n");
   SNESCreate(BoutComm::get(), &snes);
 
   // Set the callback function
