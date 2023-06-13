@@ -125,6 +125,7 @@ private:
   bool kspsetinitialguessnonzero; ///< Set initial guess to non-zero
   int maxl;                       ///< Maximum linear iterations
   std::string pc_type;            ///< Preconditioner type
+  std::string pc_hypre_type;      ///< Hypre preconditioner type
   std::string line_search_type;   ///< Line search type
   bool matrix_free;               ///< Use matrix free Jacobian
   int lag_jacobian;               ///< Re-use Jacobian
