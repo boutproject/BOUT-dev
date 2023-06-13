@@ -150,7 +150,7 @@ int SNESSolver::init() {
   int ierr;
 
   // Vectors
-  output.write("Creating vector\n");
+  output_info.write("Creating vector\n");
   ierr = VecCreate(BoutComm::get(), &snes_x);
   CHKERRQ(ierr);
   ierr = VecSetSizes(snes_x, nlocal, PETSC_DECIDE);
