@@ -34,33 +34,33 @@ needed to make the solver available.
 .. _tab-solvers:
 .. table:: Available time integration solvers
 	   
-   +---------------+-----------------------------------------+--------------------+
-   | Name          | Description                             | Compile options    |
-   +===============+=========================================+====================+
-   | euler         | Euler explicit method (example only)    | Always available   |
-   +---------------+-----------------------------------------+--------------------+
-   | rk4           | Runge-Kutta 4th-order explicit method   | Always available   |
-   +---------------+-----------------------------------------+--------------------+
-   | rkgeneric     | Generic Runge Kutta explicit methods    | Always available   |
-   +---------------+-----------------------------------------+--------------------+
-   | rk3ssp        | 3rd-order Strong Stability Preserving   | Always available   |
-   +---------------+-----------------------------------------+--------------------+
-   | splitrk       | Split RK3-SSP and RK-Legendre           | Always available   |
-   +---------------+-----------------------------------------+--------------------+
-   | pvode         | 1998 PVODE with BDF method              | Always available   |
-   +---------------+-----------------------------------------+--------------------+
-   | cvode         | SUNDIALS CVODE. BDF and Adams methods   | –with-cvode        |
-   +---------------+-----------------------------------------+--------------------+
-   | ida           | SUNDIALS IDA. DAE solver                | –with-ida          |
-   +---------------+-----------------------------------------+--------------------+
-   | arkode        | SUNDIALS ARKODE IMEX solver             | –with-arkode       |
-   +---------------+-----------------------------------------+--------------------+
-   | petsc         | PETSc TS methods                        | –with-petsc        |
-   +---------------+-----------------------------------------+--------------------+
-   | imexbdf2      | IMEX-BDF2 scheme                        | –with-petsc        |
-   +---------------+-----------------------------------------+--------------------+
-   | beuler / snes | Backward Euler with SNES solvers        | --with-petsc       |
-   +---------------+-----------------------------------------+--------------------+
+   +---------------+-----------------------------------------+------------------------+
+   | Name          | Description                             | Compile options        |
+   +===============+=========================================+========================+
+   | euler         | Euler explicit method (example only)    | Always available       |
+   +---------------+-----------------------------------------+------------------------+
+   | rk4           | Runge-Kutta 4th-order explicit method   | Always available       |
+   +---------------+-----------------------------------------+------------------------+
+   | rkgeneric     | Generic Runge Kutta explicit methods    | Always available       |
+   +---------------+-----------------------------------------+------------------------+
+   | rk3ssp        | 3rd-order Strong Stability Preserving   | Always available       |
+   +---------------+-----------------------------------------+------------------------+
+   | splitrk       | Split RK3-SSP and RK-Legendre           | Always available       |
+   +---------------+-----------------------------------------+------------------------+
+   | pvode         | 1998 PVODE with BDF method              | Always available       |
+   +---------------+-----------------------------------------+------------------------+
+   | cvode         | SUNDIALS CVODE. BDF and Adams methods   | -DBOUT_USE_SUNDIALS=ON |
+   +---------------+-----------------------------------------+------------------------+
+   | ida           | SUNDIALS IDA. DAE solver                | -DBOUT_USE_SUNDIALS=ON |
+   +---------------+-----------------------------------------+------------------------+
+   | arkode        | SUNDIALS ARKODE IMEX solver             | -DBOUT_USE_SUNDIALS=ON |
+   +---------------+-----------------------------------------+------------------------+
+   | petsc         | PETSc TS methods                        | -DBOUT_USE_PETSC=ON    |
+   +---------------+-----------------------------------------+------------------------+
+   | imexbdf2      | IMEX-BDF2 scheme                        | -DBOUT_USE_PETSC=ON    |
+   +---------------+-----------------------------------------+------------------------+
+   | beuler / snes | Backward Euler with SNES solvers        | -DBOUT_USE_PETSC=ON    |
+   +---------------+-----------------------------------------+------------------------+
 
 Each solver can have its own settings which work in slightly different
 ways, but some common settings and which solvers they are used in are
