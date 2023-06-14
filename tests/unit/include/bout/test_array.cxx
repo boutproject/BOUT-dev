@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "bout/array.hxx"
-#include "boutexception.hxx"
+#include "bout/boutexception.hxx"
 
 #include <iostream>
 #include <numeric>
@@ -243,7 +243,7 @@ TEST_F(ArrayTest, Assignment) {
   EXPECT_FALSE(b.unique());
 }
 
-#if CHECK > 2 && !BOUT_USE_CUDA
+#if CHECK > 2 && !BOUT_HAS_CUDA
 TEST_F(ArrayTest, OutOfBoundsThrow) {
   Array<double> a(34);
   EXPECT_NO_THROW(a[33] = 1.0);

@@ -2,15 +2,14 @@
 ///
 
 #include "bout/snb.hxx"
-#include "derivs.hxx"
 #include "bout/constants.hxx"
+#include "bout/derivs.hxx"
 #include "bout/fv_ops.hxx"
 
 namespace bout {
 
 Field3D HeatFluxSNB::divHeatFlux(const Field3D& Te, const Field3D& Ne,
                                  Field3D* Div_Q_SH_out) {
-  Coordinates* coord = Te.getCoordinates();
 
   Field3D thermal_speed = sqrt(2. * SI::qe * Te / SI::Me);
 
@@ -56,16 +55,14 @@ Field3D HeatFluxSNB::divHeatFlux(const Field3D& Te, const Field3D& Ne,
     Field3D lambda_g_ei = SQ(beta) * lambda_ei_Tprime;
 
     // Update coefficients in solver
-    invertpar->setCoefA(1. / lambda_g_ee); // Constant term
+    invertpardiv->setCoefA(1. / lambda_g_ee); // Constant term
 
-    // The divergence term is implemented as a second derivative and first derivative
-    // correction
+    // The divergence term Div_par(B Grad_par)
     Field3D coefB = (-1. / 3) * lambda_g_ei;
-    invertpar->setCoefB(coefB);                                          // Grad2_par2
-    invertpar->setCoefE(DDY(coefB * coord->J / coord->g_22) / coord->J); // DDY
+    invertpardiv->setCoefB(coefB);
 
     // Solve to get H_g
-    Field3D H_g = invertpar->solve((-weight) * Div_Q_SH);
+    Field3D H_g = invertpardiv->solve((-weight) * Div_Q_SH);
 
     // Add correction to divergence of heat flux
     // Note: The sum of weight over all groups approaches 1 as beta_max -> infinity

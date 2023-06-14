@@ -76,7 +76,7 @@
 #undef BOUT_USE_COLOR
 
 /* Enable CUDA */
-#undef BOUT_USE_CUDA
+#undef BOUT_HAS_CUDA
 
 /* Is the metric field 3D */
 #undef BOUT_USE_METRIC_3D

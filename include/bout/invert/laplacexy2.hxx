@@ -40,9 +40,9 @@
 
 #warning LaplaceXY2 requires PETSc and 2D metrics. No LaplaceXY2 available
 
+#include <bout/boutexception.hxx>
 #include <bout/mesh.hxx>
-#include <boutexception.hxx>
-#include <options.hxx>
+#include <bout/options.hxx>
 
 /*!
  * Create a dummy class so that code will compile
@@ -65,23 +65,11 @@ public:
 
 #else // BOUT_HAS_PETSC and 2D metrics
 
-// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
-#undef MPI_Allreduce
-#undef MPI_Gatherv
-#undef MPI_Irecv
-#undef MPI_Isend
-#undef MPI_Recv
-#undef MPI_Scatterv
-#undef MPI_Send
-#undef MPI_Wait
-#undef MPI_Waitall
-#undef MPI_Waitany
-
-#include "utils.hxx"
+#include "bout/utils.hxx"
+#include <bout/cyclic_reduction.hxx>
 #include <bout/mesh.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/petsclib.hxx>
-#include <cyclic_reduction.hxx>
 
 class LaplaceXY2 {
 public:

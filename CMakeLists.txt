@@ -9,6 +9,7 @@ endif()
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.15)
   cmake_policy(SET CMP0094 NEW)
 endif()
+cmake_policy(SET CMP0095 NEW)
 # We support the new syntax, so avoid deprecation warning
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.22)
   cmake_policy(SET CMP0127 NEW)
@@ -17,8 +18,8 @@ endif()
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
-set(_bout_previous_version "v4.0.0")
-set(_bout_next_version "5.0.0.alpha")
+set(_bout_previous_version "v5.0.0")
+set(_bout_next_version "5.1.0")
 execute_process(
   COMMAND "git" describe --tags --match=${_bout_previous_version}
   COMMAND sed -e s/${_bout_previous_version}-/${_bout_next_version}.dev/ -e s/-/+/
@@ -63,7 +64,7 @@ function(bout_update_submodules)
   if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     message(STATUS "Submodule update")
     execute_process(COMMAND ${GIT_EXECUTABLE} -c submodule.recurse=false submodule update --init --recursive
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
       RESULT_VARIABLE GIT_SUBMOD_RESULT)
     if(NOT GIT_SUBMOD_RESULT EQUAL "0")
       message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
@@ -72,55 +73,94 @@ function(bout_update_submodules)
 endfunction()
 
 set(BOUT_SOURCES
-  ./include/boundary_factory.hxx
-  ./include/boundary_op.hxx
-  ./include/boundary_region.hxx
-  ./include/boundary_standard.hxx
-  ./include/bout.hxx
   ./include/bout/array.hxx
   ./include/bout/assert.hxx
+  ./include/bout/boundary_factory.hxx
+  ./include/bout/boundary_op.hxx
+  ./include/bout/boundary_region.hxx
+  ./include/bout/boundary_standard.hxx
+  ./include/bout/bout.hxx
   ./include/bout/bout_enum_class.hxx
+  ./include/bout/bout_types.hxx
+  ./include/bout/build_config.hxx
+  ./include/bout/boutcomm.hxx
+  ./include/bout/boutexception.hxx
   ./include/bout/caliper_wrapper.hxx
   ./include/bout/constants.hxx
   ./include/bout/coordinates.hxx
   ./include/bout/coordinates_accessor.hxx
+  ./include/bout/cyclic_reduction.hxx
+  ./include/bout/dcomplex.hxx
   ./include/bout/deriv_store.hxx
+  ./include/bout/derivs.hxx
+  ./include/bout/difops.hxx
   ./include/bout/expr.hxx
+  ./include/bout/fft.hxx
+  ./include/bout/field.hxx
+  ./include/bout/field2d.hxx
+  ./include/bout/field3d.hxx
+  ./include/bout/field_accessor.hxx
+  ./include/bout/field_data.hxx
+  ./include/bout/field_factory.hxx
   ./include/bout/fieldgroup.hxx
+  ./include/bout/fieldperp.hxx
   ./include/bout/format.hxx
   ./include/bout/fv_ops.hxx
   ./include/bout/generic_factory.hxx
   ./include/bout/globalfield.hxx
   ./include/bout/globalindexer.hxx
+  ./include/bout/globals.hxx
   ./include/bout/griddata.hxx
+  ./include/bout/gyro_average.hxx
   ./include/bout/hypre_interface.hxx
   ./include/bout/index_derivs.hxx
   ./include/bout/index_derivs_interface.hxx
+  ./include/bout/initialprofiles.hxx
+  ./include/bout/interpolation.hxx
+  ./include/bout/interpolation_xz.hxx
+  ./include/bout/interpolation_z.hxx
   ./include/bout/invert/laplacexy.hxx
   ./include/bout/invert/laplacexz.hxx
+  ./include/bout/invert_laplace.hxx
+  ./include/bout/invert_parderiv.hxx
+  ./include/bout/invert_pardiv.hxx
   ./include/bout/invertable_operator.hxx
+  ./include/bout/lapack_routines.hxx
   ./include/bout/macro_for_each.hxx
+  ./include/bout/mask.hxx
   ./include/bout/mesh.hxx
   ./include/bout/monitor.hxx
   ./include/bout/mpi_wrapper.hxx
+  ./include/bout/msg_stack.hxx
+  ./include/bout/multiostream.hxx
   ./include/bout/openmpwrap.hxx
+  ./include/bout/operatorstencil.hxx
+  ./include/bout/options.hxx
+  ./include/bout/options_netcdf.hxx
+  ./include/bout/optionsreader.hxx
+  ./include/bout/output.hxx
+  ./include/bout/output_bout_types.hxx
+  ./include/bout/parallel_boundary_op.hxx
+  ./include/bout/parallel_boundary_region.hxx
   ./include/bout/paralleltransform.hxx
-  ./include/bout/petsclib.hxx
   ./include/bout/petsc_interface.hxx
+  ./include/bout/petsclib.hxx
   ./include/bout/physicsmodel.hxx
+  ./include/bout/rajalib.hxx
   ./include/bout/region.hxx
   ./include/bout/rkscheme.hxx
   ./include/bout/rvec.hxx
   ./include/bout/scorepwrapper.hxx
   ./include/bout/single_index_ops.hxx
-  ./include/bout/field_accessor.hxx
   ./include/bout/slepclib.hxx
+  ./include/bout/smoothing.hxx
   ./include/bout/snb.hxx
   ./include/bout/solver.hxx
   ./include/bout/solverfactory.hxx
+  ./include/bout/sourcex.hxx
+  ./include/bout/stencils.hxx
+  ./include/bout/sundials_backports.hxx
   ./include/bout/surfaceiter.hxx
-  ./include/bout/operatorstencil.hxx
-  ./include/bout/output_bout_types.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
@@ -128,48 +168,16 @@ set(BOUT_SOURCES
   ./include/bout/sys/timer.hxx
   ./include/bout/sys/type_name.hxx
   ./include/bout/sys/uncopyable.hxx
+  ./include/bout/sys/uuid.h
   ./include/bout/sys/variant.hxx
   ./include/bout/template_combinations.hxx
   ./include/bout/traits.hxx
-  ./include/bout_types.hxx
-  ./include/boutcomm.hxx
-  ./include/boutexception.hxx
-  ./include/cyclic_reduction.hxx
-  ./include/dcomplex.hxx
-  ./include/derivs.hxx
-  ./include/difops.hxx
-  ./include/fft.hxx
-  ./include/field.hxx
-  ./include/field2d.hxx
-  ./include/field3d.hxx
-  ./include/field_data.hxx
-  ./include/field_factory.hxx
-  ./include/fieldperp.hxx
-  ./include/globals.hxx
-  ./include/gyro_average.hxx
-  ./include/initialprofiles.hxx
-  ./include/interpolation.hxx
-  ./include/invert_laplace.hxx
-  ./include/invert_parderiv.hxx
-  ./include/lapack_routines.hxx
-  ./include/mask.hxx
-  ./include/msg_stack.hxx
-  ./include/multiostream.hxx
-  ./include/options.hxx
-  ./include/options_netcdf.hxx
-  ./include/optionsreader.hxx
-  ./include/output.hxx
-  ./include/parallel_boundary_op.hxx
-  ./include/parallel_boundary_region.hxx
-  ./include/smoothing.hxx
-  ./include/sourcex.hxx
-  ./include/stencils.hxx
-  ./include/unused.hxx
-  ./include/utils.hxx
-  ./include/vecops.hxx
-  ./include/vector2d.hxx
-  ./include/vector3d.hxx
-  ./include/where.hxx
+  ./include/bout/unused.hxx
+  ./include/bout/utils.hxx
+  ./include/bout/vecops.hxx
+  ./include/bout/vector2d.hxx
+  ./include/bout/vector3d.hxx
+  ./include/bout/where.hxx
   ./src/bout++.cxx
   ./src/bout++-time.hxx
   ./src/field/field.cxx
@@ -230,6 +238,9 @@ set(BOUT_SOURCES
   ./src/invert/parderiv/impls/cyclic/cyclic.cxx
   ./src/invert/parderiv/impls/cyclic/cyclic.hxx
   ./src/invert/parderiv/invert_parderiv.cxx
+  ./src/invert/pardiv/impls/cyclic/pardiv_cyclic.cxx
+  ./src/invert/pardiv/impls/cyclic/pardiv_cyclic.hxx
+  ./src/invert/pardiv/invert_pardiv.cxx
   ./src/mesh/boundary_factory.cxx
   ./src/mesh/boundary_region.cxx
   ./src/mesh/boundary_standard.cxx
@@ -242,12 +253,10 @@ set(BOUT_SOURCES
   ./src/mesh/impls/bout/boutmesh.cxx
   ./src/mesh/impls/bout/boutmesh.hxx
   ./src/mesh/index_derivs.cxx
-  ./include/interpolation_xz.hxx
   ./src/mesh/interpolation_xz.cxx
   ./src/mesh/interpolation/bilinear_xz.cxx
   ./src/mesh/interpolation/hermite_spline_xz.cxx
   ./src/mesh/interpolation/hermite_spline_z.cxx
-  ./include/interpolation_z.hxx
   ./src/mesh/interpolation/interpolation_z.cxx
   ./src/mesh/interpolation/lagrange_4pt_xz.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
@@ -340,6 +349,14 @@ if (Python3_FOUND AND ClangFormat_FOUND)
   set(BOUT_GENERATE_FIELDOPS_DEFAULT ON)
 else()
   set(BOUT_GENERATE_FIELDOPS_DEFAULT OFF)
+endif()
+
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import zoidberg"
+  RESULT_VARIABLE zoidberg_FOUND)
+if (zoidberg_FOUND EQUAL 0)
+  set(zoidberg_FOUND ON)
+else()
+  set(zoidberg_FOUND OFF)
 endif()
 
 option(BOUT_GENERATE_FIELDOPS "Automatically re-generate the Field arithmetic operators from the Python templates. \
@@ -873,7 +890,7 @@ message("
    RAJA enabled             : ${BOUT_HAS_RAJA}
    Umpire enabled           : ${BOUT_HAS_UMPIRE}
    Caliper enabled          : ${BOUT_HAS_CALIPER}
-   CUDA enabled             : ${BOUT_USE_CUDA}
+   CUDA enabled             : ${BOUT_HAS_CUDA}
    Metric type              : ${BOUT_METRIC_TYPE}
    Python API support       : ${BOUT_USE_PYTHON}
    Sanitizers enabled       : ${BOUT_USE_SANITIZERS}

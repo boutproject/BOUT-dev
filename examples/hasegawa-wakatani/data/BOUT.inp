@@ -7,6 +7,8 @@ nout = 200      # Number of output steps
 
 MYG = 0  # No need for Y communications
 
+periodicX = true  # Domain is periodic in X
+
 [mesh]
 
 nx = 260  # Note 4 guard cells in X

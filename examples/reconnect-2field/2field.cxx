@@ -5,11 +5,11 @@
 
 #include <bout/physicsmodel.hxx>
 
-#include <interpolation.hxx>
-#include <invert_laplace.hxx>
-#include <invert_parderiv.hxx>
-#include <initialprofiles.hxx>
 #include <bout/constants.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/invert_parderiv.hxx>
 
 class TwoField : public PhysicsModel {
 private:
@@ -45,26 +45,26 @@ private:
   // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
   BRACKET_METHOD bm; // Bracket method for advection terms
 
-
   bool nonlinear;
   bool include_jpar0;
   int jpar_bndry;
 
-  std::unique_ptr<InvertPar> inv{nullptr}; // Parallel inversion class used in preconditioner
+  std::unique_ptr<InvertPar> inv{
+      nullptr}; // Parallel inversion class used in preconditioner
 
   // Coordinate system metric
   Coordinates *coord, *coord_ylow;
 
   // Inverts a Laplacian to get potential
   std::unique_ptr<Laplacian> phiSolver{nullptr};
-  
+
 protected:
   int init(bool UNUSED(restarting)) override {
 
     // Load 2D profiles
     GRID_LOAD(Jpar0, Te0, Ni0);
     Ni0 *= 1e20; // To m^-3
-    
+
     // Coordinate system
     coord = mesh->getCoordinates();
     coord = mesh->getCoordinates(CELL_YLOW);
@@ -120,12 +120,12 @@ protected:
     if (Tenorm < 1) {
       Tenorm = 1000;
     }
-    
+
     Nenorm = max(Ni0, true);
     if (Nenorm < 1) {
       Nenorm = 1.e19;
     }
-    
+
     Bnorm = max(coord->Bxy, true);
 
     // Sound speed in m/s
@@ -213,11 +213,11 @@ protected:
 
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create();
-    
+
     return 0;
   }
 
-  const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
+  const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
     Field3D result;
     if (nonlinear) {
       result = ::Grad_parP((Apar + Apar_ext) * beta_hat, f);
@@ -269,11 +269,10 @@ protected:
     ddt(U) = SQ(coord->Bxy) * Grad_parP(jpar / coord_ylow->Bxy, CELL_CENTRE);
 
     if (include_jpar0) {
-      ddt(U) -= SQ(coord->Bxy) * beta_hat *
-                interp_to(
-                    bracket(Apar + Apar_ext, Jpar0 / coord_ylow->Bxy, BRACKET_ARAKAWA),
-                    CELL_CENTRE
-                );
+      ddt(U) -=
+          SQ(coord->Bxy) * beta_hat
+          * interp_to(bracket(Apar + Apar_ext, Jpar0 / coord_ylow->Bxy, BRACKET_ARAKAWA),
+                      CELL_CENTRE);
     }
 
     ddt(U) -= bracket(Phi0_ext, U, bm); // ExB advection
@@ -319,7 +318,7 @@ public:
         for (int i = jpar_bndry; i >= 0; i--) {
           for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
-              Jp(i,j,k) = Jp(i + 1,j,k);
+              Jp(i, j, k) = Jp(i + 1, j, k);
             }
           }
         }
@@ -328,15 +327,15 @@ public:
         for (int i = mesh->LocalNx - jpar_bndry - 1; i < mesh->LocalNx; i++) {
           for (int j = 0; j < mesh->LocalNy; j++) {
             for (int k = 0; k < mesh->LocalNz; k++) {
-              Jp(i,j,k) = Jp(i - 1,j,k);
+              Jp(i, j, k) = Jp(i - 1, j, k);
             }
           }
         }
       }
     }
 
-    Field3D U1 = ddt(U) + gamma * SQ(coord->Bxy)
-                          * Grad_par(Jp / coord_ylow->Bxy, CELL_CENTRE);
+    Field3D U1 =
+        ddt(U) + gamma * SQ(coord->Bxy) * Grad_par(Jp / coord_ylow->Bxy, CELL_CENTRE);
 
     inv->setCoefB(-SQ(gamma * coord->Bxy) / beta_hat);
     ddt(U) = inv->solve(U1);

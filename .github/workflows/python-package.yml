@@ -1,0 +1,149 @@
+name: Python package
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-wheel:
+    name: Build wheel and install
+
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        submodules: true
+    - name: Set up Python
+      uses: actions/setup-python@v1
+    - name: Install dependencies
+      run: python -m pip install --upgrade pip &&
+           pip install --upgrade build &&
+           sudo apt update &&
+           sudo apt install -y
+                 libfftw3-dev
+                 libnetcdf-dev
+                 libnetcdf-c++4-dev
+                 netcdf-bin
+                 python3
+                 python3-pip
+                 python3-pytest
+                 python3-numpy
+                 python3-scipy
+                 lcov
+                 openmpi-bin
+                 libopenmpi-dev
+                 petsc-dev
+                 slepc-dev
+                 liblapack-dev
+                 libparpack2-dev
+
+    - name: Build
+      run: |
+        python -m build
+        pip install dist/*whl
+
+  pip-install-sdist:
+    name: Build sdist and install
+
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        submodules: true
+    - name: Set up Python
+      uses: actions/setup-python@v1
+    - name: Install dependencies
+      run: python -m pip install --upgrade pip &&
+           pip install --upgrade build &&
+           sudo apt update &&
+           sudo apt install -y
+                 libfftw3-dev
+                 libnetcdf-dev
+                 libnetcdf-c++4-dev
+                 netcdf-bin
+                 python3
+                 python3-pip
+                 python3-pytest
+                 python3-numpy
+                 python3-scipy
+                 lcov
+                 openmpi-bin
+                 libopenmpi-dev
+                 petsc-dev
+                 slepc-dev
+                 liblapack-dev
+                 libparpack2-dev
+
+    - name: Build
+      run: |
+        python -m build --sdist
+        pip install dist/*tar.gz
+    - name: Upload
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        pip install twine
+        test -z $TWINE_PASSWORD || twine upload dist/*tar.gz
+
+
+  pip-install-nighly:
+    name: Build boutpp-nightly and install
+
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        submodules: true
+    - name: Set up Python
+      uses: actions/setup-python@v1
+    - name: Install dependencies
+      run: python -m pip install --upgrade pip &&
+           pip install --upgrade build &&
+           sudo apt update &&
+           sudo apt install -y
+                 libfftw3-dev
+                 libnetcdf-dev
+                 libnetcdf-c++4-dev
+                 netcdf-bin
+                 python3
+                 python3-pip
+                 python3-pytest
+                 python3-numpy
+                 python3-scipy
+                 lcov
+                 openmpi-bin
+                 libopenmpi-dev
+                 petsc-dev
+                 slepc-dev
+                 liblapack-dev
+                 libparpack2-dev
+
+    - name: Build and install
+      run: |
+        python -m build --sdist -Cnightly
+        pip install dist/*tar.gz
+
+    - name: Upload
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/next'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD_NIGHTLY }}
+      run: |
+        pip install twine
+        test -z $TWINE_PASSWORD || twine upload dist/*.tar.gz

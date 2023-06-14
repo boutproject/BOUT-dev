@@ -3,15 +3,15 @@
 /// This version uses indexed operators
 /// which reduce the number of loops over the domain
 ///
-/// GPU processing is enabled if BOUT_ENABLE_CUDA is defined
+/// GPU processing is enabled if BOUT_HAS_CUDA is defined
 /// Profiling markers and ranges are set if USE_NVTX is defined
 /// Based on Ben Dudson, Steven Glenn code, Yining Qin update 0521-2020
 
 #include <iostream>
 
+#include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/single_index_ops.hxx>
-#include <invert_laplace.hxx>
 
 #define DISABLE_RAJA 0
 #include <bout/rajalib.hxx>
@@ -40,7 +40,7 @@ public:
 
     SOLVE_FOR(n, vort);
     SAVE_REPEAT(phi);
-    phiSolver = Laplacian::create(nullptr, CELL_CENTRE, mesh, solver, &dump);
+    phiSolver = Laplacian::create(nullptr, CELL_CENTRE, mesh, solver);
 
     phi = 0.; // Starting phi
 
