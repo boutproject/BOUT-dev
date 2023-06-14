@@ -6,6 +6,7 @@ import tempfile  # corelib
 import subprocess  # corelib
 import re  # corelib
 import pathlib  # corelib
+import contextlib  # corelib
 
 try:
     import packaging.tags  # packaging
