@@ -685,24 +685,33 @@ void setRunFinishInfo(Options& options) {
 void addBuildFlagsToOptions(Options& options) {
   output_progress << "Setting up output (experimental output) file\n";
 
-  options["BOUT_VERSION"] = bout::version::as_double;
-  options["has_fftw"] = bout::build::has_fftw;
-  options["has_gettext"] = bout::build::has_gettext;
-  options["has_lapack"] = bout::build::has_lapack;
-  options["has_netcdf"] = bout::build::has_netcdf;
-  options["has_petsc"] = bout::build::has_petsc;
-  options["has_pretty_function"] = bout::build::has_pretty_function;
-  options["has_pvode"] = bout::build::has_pvode;
-  options["has_scorep"] = bout::build::has_scorep;
-  options["has_slepc"] = bout::build::has_slepc;
-  options["has_sundials"] = bout::build::has_sundials;
-  options["use_backtrace"] = bout::build::use_backtrace;
-  options["use_color"] = bout::build::use_color;
-  options["use_openmp"] = bout::build::use_openmp;
-  options["use_output_debug"] = bout::build::use_output_debug;
-  options["use_sigfpe"] = bout::build::use_sigfpe;
-  options["use_signal"] = bout::build::use_signal;
-  options["use_track"] = bout::build::use_track;
+  options["BOUT_VERSION"].force(bout::version::as_double);
+  options["use_check_level"].force(bout::build::check_level);
+  options["use_openmp_schedule"].force(bout::build::openmp_schedule);
+  options["has_fftw"].force(bout::build::has_fftw);
+  options["has_gettext"].force(bout::build::has_gettext);
+  options["has_lapack"].force(bout::build::has_lapack);
+  options["has_netcdf"].force(bout::build::has_netcdf);
+  options["has_petsc"].force(bout::build::has_petsc);
+  options["has_hypre"].force(bout::build::has_hypre);
+  options["has_umpire"].force(bout::build::has_umpire);
+  options["has_caliper"].force(bout::build::has_caliper);
+  options["has_raja"].force(bout::build::has_raja);
+  options["has_pretty_function"].force(bout::build::has_pretty_function);
+  options["has_pvode"].force(bout::build::has_pvode);
+  options["has_scorep"].force(bout::build::has_scorep);
+  options["has_slepc"].force(bout::build::has_slepc);
+  options["has_sundials"].force(bout::build::has_sundials);
+  options["use_backtrace"].force(bout::build::use_backtrace);
+  options["use_color"].force(bout::build::use_color);
+  options["use_openmp"].force(bout::build::use_openmp);
+  options["use_output_debug"].force(bout::build::use_output_debug);
+  options["use_sigfpe"].force(bout::build::use_sigfpe);
+  options["use_signal"].force(bout::build::use_signal);
+  options["use_track"].force(bout::build::use_track);
+  options["has_cuda"].force(bout::build::has_cuda);
+  options["use_metric_3d"].force(bout::build::use_metric_3d);
+  options["use_msgstack"].force(bout::build::use_msgstack);
 }
 
 void writeSettingsFile(Options& options, const std::string& data_dir,

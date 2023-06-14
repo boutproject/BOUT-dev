@@ -11,7 +11,7 @@ bout_add_example(elm_pb_outerloop
   EXTRA_FILES cbm18_dens8.grid_nx68ny64.nc
 )
 
-if(BOUT_USE_CUDA)
+if(BOUT_HAS_CUDA)
   set_source_files_properties(elm_pb_outerloop.cxx PROPERTIES LANGUAGE CUDA )
 endif()
 

@@ -758,7 +758,7 @@ TEST_F(Field2DTest, ConstIndexingInd3D) {
   EXPECT_DOUBLE_EQ(field2[ind], 10);
 }
 
-#if CHECK > 2 && !BOUT_USE_CUDA
+#if CHECK > 2 && !BOUT_HAS_CUDA
 TEST_F(Field2DTest, CheckNotEmpty) {
   Field2D field;
 
@@ -858,8 +858,9 @@ TEST_F(Field2DTest, InvalidateGuards) {
 
   sum = 0;
   for (const auto& i : field) {
-    if (!finite(field[i]))
+    if (!finite(field[i])) {
       sum++;
+    }
   }
   EXPECT_EQ(sum, nbndry);
 }
