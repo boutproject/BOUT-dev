@@ -108,7 +108,7 @@ add_test(NAME serial_tests COMMAND serial_tests --gtest_brief=1)
 set_target_properties(serial_tests PROPERTIES FOLDER tests/unit)
 add_dependencies(build-check-unit-tests serial_tests)
 
-if (BOUT_USE_CUDA)
+if (BOUT_HAS_CUDA)
    set_source_files_properties(${serial_tests_source} PROPERTIES LANGUAGE CUDA )
    set_target_properties(serial_tests PROPERTIES CUDA_STANDARD 14)
 endif ()   

@@ -149,7 +149,7 @@ public:
 
   FieldMetric DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT",
-                  const std::string& region = "RGN_NOBNDRY");
+                  const std::string& region = "RGN_NOBNDRY") const;
 
   FieldMetric DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT",
@@ -161,7 +161,7 @@ public:
 
   Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
-              const std::string& region = "RGN_NOBNDRY");
+              const std::string& region = "RGN_NOBNDRY") const;
 
   Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
@@ -232,9 +232,22 @@ private:
   /// `Coordinates::geometry` is called
   mutable std::unique_ptr<Field2D> zlength_cache{nullptr};
 
+  /// Cache variable for Grad2_par2
+  mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
+  mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
+
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
+
+  const FieldMetric& invSg() const;
+  const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
+                                          const std::string& method) const;
+
+  // check that covariant tensors are positive (if expected) and finite (always)
+  void checkCovariant();
+  // check that contravariant tensors are positive (if expected) and finite (always)
+  void checkContravariant();
 };
 
 /*

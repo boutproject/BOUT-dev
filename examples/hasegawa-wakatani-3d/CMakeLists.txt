@@ -8,6 +8,6 @@ endif()
 
 bout_add_example(hw3d SOURCES hw.cxx)
 
-if(BOUT_USE_CUDA)
+if(BOUT_HAS_CUDA)
   set_source_files_properties(hw.cxx PROPERTIES LANGUAGE CUDA)
 endif()

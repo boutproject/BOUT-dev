@@ -28,7 +28,7 @@ def getversion():
     global version
     if version is None:
         _bout_previous_version = "v5.0.0"
-        _bout_next_version = "5.0.1"
+        _bout_next_version = "5.1.0"
 
         try:
             try:

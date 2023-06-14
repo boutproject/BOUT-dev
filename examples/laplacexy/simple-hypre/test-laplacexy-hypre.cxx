@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     bout::writeDefaultOutputFile(dump);
   }
   BoutFinalise();
-#if BOUT_USE_CUDA
+#if BOUT_HAS_CUDA
   cudaDeviceReset();
 #endif
   return 0;

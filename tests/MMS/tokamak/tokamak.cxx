@@ -76,8 +76,9 @@ public:
     }
 
     BoutReal sbp = 1.0; // Sign of Bp
-    if (min(Bpxy, true) < 0.0)
+    if (min(Bpxy, true) < 0.0) {
       sbp = -1.0;
+    }
 
     coords->g11 = SQ(Rxy * Bpxy);
     coords->g22 = 1.0 / SQ(hthe);

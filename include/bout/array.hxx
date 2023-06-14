@@ -65,7 +65,7 @@ struct ArrayData {
     //       even though the Array object itself can't.
 #if BOUT_HAS_UMPIRE
     auto& rm = umpire::ResourceManager::getInstance();
-#if BOUT_USE_CUDA
+#if BOUT_HAS_CUDA
     auto allocator = rm.getAllocator(umpire::resource::Pinned);
 #else
     auto allocator = rm.getAllocator("HOST");
