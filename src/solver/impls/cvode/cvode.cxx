@@ -174,6 +174,15 @@ CvodeSolver::CvodeSolver(Options* opts)
                     .doc("Use right preconditioner? Otherwise use left.")
                     .withDefault(false)),
       use_jacobian((*options)["use_jacobian"].withDefault(false)),
+      cvode_nonlinear_convergence_coef(
+          (*options)["cvode_nonlinear_convergence_coef"]
+              .doc("Safety factor used in the nonlinear convergence test")
+              .withDefault(0.1)),
+      cvode_linear_convergence_coef(
+          (*options)["cvode_linear_convergence_coef"]
+              .doc("Factor by which the Krylov linear solver’s convergence test constant "
+                   "is reduced from the nonlinear solver test constant.")
+              .withDefault(0.05)),
       suncontext(static_cast<void*>(&BoutComm::get())) {
   has_constraints = false; // This solver doesn't have constraints
   canReset = true;
@@ -457,6 +466,10 @@ int CvodeSolver::init() {
     }
 #endif
   }
+
+  // Set internal tolerance factors
+  CVodeSetNonlinConvCoef(cvode_mem, cvode_nonlinear_convergence_coef);
+  CVodeSetEpsLin(cvode_mem, cvode_linear_convergence_coef);
 
   cvode_initialised = true;
 
