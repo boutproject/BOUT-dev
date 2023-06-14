@@ -23,16 +23,18 @@ PetscLib::PetscLib(Options* opt) {
     if (count == 0) {
       // Initialise PETSc
 
+      // Load global PETSc options from the [petsc] section of the input
+      // Note: This should be before PetscInitialize so that some options
+      //       can modify initialization e.g. -log_view.
+      setPetscOptions(Options::root()["petsc"], "");
+
       output << "Initialising PETSc\n";
       PETSC_COMM_WORLD = BoutComm::getInstance()->getComm();
-      PetscInitialize(pargc, pargv, PETSC_NULL, help);
+      PetscInitialize(pargc, pargv, nullptr, help);
       PetscPopSignalHandler();
 
       PetscLogEventRegister("Total BOUT++", 0, &USER_EVENT);
       PetscLogEventBegin(USER_EVENT, 0, 0, 0, 0);
-
-      // Load global PETSc options from the [petsc] section of the input
-      setPetscOptions(Options::root()["petsc"], "");
     }
 
     if (opt != nullptr and opt->isSection()) {

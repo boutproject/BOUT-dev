@@ -179,7 +179,7 @@ namespace pvode {
 
 #define MSG_Y0_NULL     CVM "y0=NULL illegal.\n\n"
 
-#define MSG_BAD_N CVM "N=%ld < 1 illegal.\n\n"
+#define MSG_BAD_N       CVM "N=%d < 1 illegal.\n\n"
 
 #define MSG_BAD_LMM_1   CVM "lmm=%d illegal.\n"
 #define MSG_BAD_LMM_2   "The legal values are ADAMS=%d and BDF=%d.\n\n"
@@ -1825,7 +1825,13 @@ static int CVnls(CVodeMem cv_mem, int nflag)
   switch(iter) {
     case FUNCTIONAL : return(CVnlsFunctional(cv_mem));
     case NEWTON     : return(CVnlsNewton(cv_mem, nflag));
+<<<<<<< HEAD
     }
+=======
+  }
+  fprintf(errfp, "Should be unreachable ...");
+  return (ERR_FAILURE);
+>>>>>>> v5.1.0-rc
 }
 
 /***************** CVnlsFunctional ********************************
@@ -2391,7 +2397,13 @@ static int CVHandleFailure(CVodeMem cv_mem, int kflag)
                         return(SETUP_FAILURE);
     case SOLVE_FAILED:  fprintf(errfp, MSG_SOLVE_FAILED, tn);
                         return(SOLVE_FAILURE);
+<<<<<<< HEAD
     }
+=======
+  }
+  fprintf(errfp, "Should be unreachable ...");
+  return (ERR_FAILURE);
+>>>>>>> v5.1.0-rc
 }
 
 /*******************************************************************/
